@@ -70,10 +70,16 @@
    * labels apart vertically; a label that moved from its spot (and a shuttle's, which is a tiny mark) gets a short leader line.
    */
   const CW = 5.5;
+  const MAX_LABELS = 4;
+  const fit = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1)}…` : t);
   const labels = $derived.by(() => {
-    const raw = [...ships, ...shuttles].map(({ c, p }) => {
-      const fit = (t: string) => (t.length > 26 ? `${t.slice(0, 25)}…` : t);
-      const text = c.kind === 'ship' ? fit( `${c.label}${c.head ? ` · ${c.head === 'in' ? 'INBOUND' : 'OUTBOUND'}` : ''}`) : c.label;
+    // You, the shuttles and then the nearest ships get a label; the rest stay silhouettes.
+    const dist = (c: { dx: number; dy: number }) => Math.hypot(c.dx, c.dy);
+    const wanted = [...ships.filter((x) => x.c.kind === 'you'), ...shuttles, ...ships.filter((x) => x.c.kind === 'ship').sort((a, b) => dist(a.c) - dist(b.c))].slice(0, MAX_LABELS);
+    const raw = wanted.map(({ c, p }) => {
+      const dir = c.head ? (c.head === 'in' ? 'INBOUND' : 'OUTBOUND') : '';
+      const name = fit(c.label, 16);
+      const text = c.kind === 'ship' ? (dir && name.length <= 12 ? `${name} · ${dir}` : name) : c.label;
       const tone = c.kind === 'you' ? 'you' : c.kind === 'shuttle' ? 'amber' : 'dim';
       const w = text.length * CW;
       const ly = c.kind === 'you' ? p.y - SPRITE.you / 2 + 2 : c.kind === 'ship' ? p.y + SPRITE.ship / 2 + 8 : p.y + 30;
@@ -81,10 +87,11 @@
       return { id: c.id, text, tone, w, x, y: ly, y0: ly, ax: p.x, ay: p.y + (c.kind === 'you' ? -SPRITE.you / 2 + 4 : c.kind === 'ship' ? SPRITE.ship / 2 : 3), lead: c.kind === 'shuttle' };
     });
     const out: typeof raw = [];
+    const onHolo = (l: { x: number; w: number }, y: number) => Math.abs(l.x - CX) < l.w / 2 + HOLO / 2 + 2 && y + 2 > CY - 50 && y - 8 < CY + 52;
     for (const l of raw.sort((a, b) => a.y - b.y)) {
-      const clash = (y: number) => out.some((o) => Math.abs(o.y - y) < 11 && Math.abs(o.x - l.x) < (o.w + l.w) / 2 + 4);
-      for (let k = 0; k < 8 && clash(l.y); k++) l.y += 11;
-      if (clash(l.y) || l.y > H - 5) { l.y = l.y0; for (let k = 0; k < 8 && clash(l.y); k++) l.y -= 11; }
+      const clash = (y: number) => onHolo(l, y) || out.some((o) => Math.abs(o.y - y) < 11 && Math.abs(o.x - l.x) < (o.w + l.w) / 2 + 4);
+      for (let k = 0; k < 14 && clash(l.y); k++) l.y += 11;
+      if (clash(l.y) || l.y > H - 5) { l.y = l.y0; for (let k = 0; k < 14 && clash(l.y); k++) l.y -= 11; }
       if (Math.abs(l.y - l.y0) > 1) l.lead = true;
       out.push(l);
     }

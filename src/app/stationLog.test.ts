@@ -38,6 +38,16 @@ describe('station traffic log', () => {
     expect(lines[0]!.at).toMatch(/^\d\d:\d\d$/);
   });
 
+  it('records ships already in range silently on the first look', () => {
+    const { sim, station } = setup();
+    for (const [x, y] of [[100, 50], [10, 10], [150, 120]] as const) sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
+    for (let i = 0; i < 5; i++) sim.step();
+    const log = new StationLog();
+    log.observe(sim);
+    log.observe(sim);
+    expect(log.view(station).log).toEqual([]);
+  });
+
   it('notes ships entering and leaving range, and which way they head', () => {
     const { sim, station } = setup();
     const log = new StationLog();

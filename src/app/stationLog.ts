@@ -79,6 +79,7 @@ export class StationLog {
     }
     for (const id of [...this.phases.keys()]) if (!live.has(id)) this.phases.delete(id);
     for (const station of stations) {
+      const fresh = !this.ships.has(station); // the first look at a station only records who is already in range
       const seen = this.ships.get(station) ?? new Map();
       const now = new Set<number>();
       for (const c of contactsOf(sim, station)) {
@@ -88,14 +89,14 @@ export class StationLog {
         const name = c.label.charAt(0) + c.label.slice(1).toLowerCase();
         const prev = seen.get(c.id);
         if (!prev) {
-          if (this.primed) this.push(station, sim.tick, name, 'entered sensor range');
+          if (!fresh) this.push(station, sim.tick, name, 'entered sensor range');
           seen.set(c.id, { dist, head: '', name });
           continue;
         }
         const delta = dist - prev.dist;
         if (Math.abs(delta) < MOVING) continue;
         const head = delta < 0 ? 'in' : 'out';
-        if (head !== prev.head && this.primed) this.push(station, sim.tick, name, head === 'in' ? 'on approach' : 'heading out');
+        if (head !== prev.head && !fresh) this.push(station, sim.tick, name, head === 'in' ? 'on approach' : 'heading out');
         seen.set(c.id, { dist, head, name });
       }
       for (const [id, v] of seen) if (!now.has(id)) { if (this.primed) this.push(station, sim.tick, v.name, 'left sensor range'); seen.delete(id); }
