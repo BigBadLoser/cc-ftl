@@ -133,7 +133,7 @@ export function bump(sim: Sim, from: number, to: number, delta: number, reason: 
 
 /** Set a score under the friend / rival rules: the caps, the labels and their hysteresis. */
 function setScore(sim: Sim, from: number, to: number, op: Opinion, raw: number): Crossing | null {
-  let s = Math.max(-BOND_MAX, Math.min(BOND_MAX, Math.round(raw * 100) / 100));
+  let s = Math.max(-BOND_MAX, Math.min(BOND_MAX, Math.round(raw * 1e4) / 1e4));
   let crossing: Crossing | null = null;
   const kind = s >= BOND_FRIEND ? 'friend' : s <= -BOND_FRIEND ? 'rival' : null;
   if (kind && op.kind !== kind) {

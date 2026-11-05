@@ -36,7 +36,7 @@ function minutesToFirstBond(seed: number, cap: number): { minutes: number; kind:
 }
 
 describe('bond pace', () => {
-  // At the designed numbers these seeds first bond at about minute 61 and 138 (the quick end and the slow end of the idle-heavy ship).
+  // At the designed numbers these seeds first bond at about minute 61 and 94 (the quick end and the slow end of the idle-heavy ship).
   for (const seed of [12, 3]) {
     it(`seed ${seed}: the first friend or rival forms between half an hour and three and a half hours in`, () => {
       const r = minutesToFirstBond(seed, 210);
