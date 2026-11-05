@@ -5,7 +5,7 @@ import { shipById } from '../combat/ships';
 import {
   AssignmentC, CrewC, DeadC, DraftedC, JobC, PathC, PositionC, type Position,
 } from '../crew/components';
-import { isIncapacitated, jobGoal, origin } from '../crew/helpers';
+import { isIncapacitated, jobGoal, refusesWork, origin } from '../crew/helpers';
 import { planWalk } from '../eva/route';
 import { isOffDuty } from '../fight/relations';
 import { AllegianceC } from '../fight/components';
@@ -32,13 +32,13 @@ export function chargeOrdered(sim: Sim, ship: number): boolean {
  * (no job) come before busy ones; within each, the best pilot, then the lowest id. The pilot is just the best-skilled crew member, so
  * with no pilot free (or aboard) anyone takes the seat.
  */
-function candidates(sim: Sim, ship: number): number[] {
+export function candidates(sim: Sim, ship: number): number[] {
   const faction = shipById(sim, ship)?.faction;
   const out: { id: number; busy: boolean; skill: number }[] = [];
   for (const id of sim.world.query(CrewC, PositionC, PathC)) {
     const crew = sim.world.get(id, CrewC);
     if (!crew || sim.world.has(id, DeadC) || sim.world.has(id, DraftedC) || sim.world.has(id, EmbarkOrderC) || sim.world.has(id, AboardC)) continue;
-    if (mealOf(sim, id) || claimedBed(sim, id) || isIncapacitated(sim, id) || isOffDuty(sim, id)) continue;
+    if (mealOf(sim, id) || claimedBed(sim, id) || isIncapacitated(sim, id) || isOffDuty(sim, id) || refusesWork(sim, id)) continue; // a work-refusing break takes no seat
     if (['sleeping', 'charging', 'eating'].includes(crew.activity) || sim.world.get(id, AllegianceC)?.faction !== faction) continue;
     if (shipIdOf(sim, sim.world.get(id, PositionC)) !== ship) continue;
     const a = sim.world.get(id, AssignmentC);

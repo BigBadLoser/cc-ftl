@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, AssignmentC, BreakdownC, JobC, ModuleC, PickupC, SuitC, VehicleC, destroyVehicle, suitDef, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
+  AirlockC, ShipC, AssignmentC, BreakdownC, JobC, ModuleC, PickupC, SuitC, VehicleC, destroyVehicle, suitDef, BreakMemoryC, CrewC, DraftedC, InterruptC, MoodC, NeedsC, PathC, PositionC, PrioritiesC, TaskC, TICK_HZ, TraitsC, deserialize,
   homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
 } from '../../sim';
 import { IntentC } from '../../sim/ai/components';
@@ -8,6 +8,7 @@ import { reserveJob } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
 import { breakChance, breakTerms, onCooldown, rollBreak } from '../../sim/crew/breakdown';
 import { isSettled } from '../../sim/crew/helpers';
+import { candidates } from '../../sim/ftl/order';
 import { quietSpot } from '../../sim/ai/machines/leisure';
 import { startBreak, endBreak } from '../../sim/systems/breakdown';
 import { tierOf } from '../../sim/crew/breakTable';
@@ -390,6 +391,31 @@ describe('a break in play', () => {
       sim.events.drain();
     }
     expect(alerts).toEqual([true, false]);
+  });
+
+  it('a second severe break on the ship within 60 s is log-only even when the first has ended', () => {
+    const { sim, c } = quiet();
+    const other = colonists(sim).find((o) => o !== c)!;
+    startBreak(sim, c, pick('panic', 'fire'));
+    expect((sim.events.drain().find((e) => e.type === 'crew.break') as { alert: boolean }).alert).toBe(true);
+    endBreak(sim, c);
+    sim.events.drain();
+    run(sim, 5 * TICK_HZ);
+    startBreak(sim, other, pick('panic', 'fire'));
+    expect((sim.events.drain().find((e) => e.type === 'crew.break') as { alert: boolean }).alert).toBe(false);
+    run(sim, 70 * TICK_HZ);
+    endBreak(sim, other);
+    startBreak(sim, c, pick('panic', 'fire'));
+    expect(sim.world.get(homeShip(sim), ShipC)!.lastSevereBreak).toBe(sim.tick);
+  });
+
+  it('a work-refusing crew member is not picked for the helm', () => {
+    const { sim, c } = quiet();
+    expect(candidates(sim, homeShip(sim))).toContain(c);
+    startBreak(sim, c, pick('refusal'));
+    expect(candidates(sim, homeShip(sim))).not.toContain(c);
+    endBreak(sim, c);
+    expect(candidates(sim, homeShip(sim))).toContain(c);
   });
 
   it('a tantrum makes a scene for the crew around, and a break ends early when its cause is gone', () => {

@@ -95,6 +95,8 @@ export interface Ship {
   outpost?: { style: 'surface' | 'dug'; kind: string; hidden: boolean; dock?: number };
   /** Set on a base the player claimed on an asteroid (`asteroid.claim`): immobile, never disabled or wrecked by the ship-state system. */
   base?: { asteroid: number };
+  /** The tick the last severe mental break began aboard (crew/breakdown): a second one within BREAK_ALERT_SHIP_SEC goes to the log, not the alerts. */
+  lastSevereBreak?: number;
   /** The player fired on it or boarded it while it was not hostile (combat/provoke.ts): it turned hostile then. */
   provoked?: 'fired' | 'boarded';
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */

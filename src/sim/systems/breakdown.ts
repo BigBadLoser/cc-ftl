@@ -9,6 +9,7 @@ import { isIncapacitated } from '../crew/helpers';
 import { EquipOrderC, FighterC, StowOrderC } from '../fight/components';
 import { hasMood } from '../crew/mood';
 import { contextPresent } from '../crew/stress';
+import { ShipC } from '../combat/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -77,17 +78,11 @@ function shouldEnd(sim: Sim, id: number): boolean {
   return b.goneSince !== 0 && sim.tick - b.goneSince >= BREAK_GONE_SEC * TICK_HZ;
 }
 
-/** Another severe break began on this ship within BREAK_ALERT_SHIP_SEC. */
+/** Another severe break began on this ship within BREAK_ALERT_SHIP_SEC (a ship field, so one that has already ended still counts). */
 function recentSevereOnShip(sim: Sim, id: number): boolean {
   const pos = sim.world.get(id, PositionC);
-  if (!pos) return false;
-  const ship = shipIdOf(sim, pos);
-  for (const o of sim.world.query(BreakdownC)) {
-    const b = sim.world.get(o, BreakdownC);
-    const p = sim.world.get(o, PositionC);
-    if (o !== id && b?.tier === 'severe' && sim.tick - b.since < BREAK_ALERT_SHIP_SEC * TICK_HZ && p && shipIdOf(sim, p) === ship) return true;
-  }
-  return false;
+  const last = pos && sim.world.get(shipIdOf(sim, pos), ShipC)?.lastSevereBreak;
+  return last !== undefined && sim.tick - last < BREAK_ALERT_SHIP_SEC * TICK_HZ;
 }
 
 /** Is this break worth an urgent alert: loud enough, none for this crew member in 10 min, not a second severe one on the ship within 60 s. */
@@ -108,6 +103,11 @@ export function startBreak(sim: Sim, id: number, pick: BreakPick): void {
   const alert = wantsAlert(sim, id, pick, memoryOf(sim, id));
   sim.world.add(id, BreakdownC, { kind: pick.kind, tier: pick.tier, context: pick.context, until: sim.tick + pick.ticks, since: sim.tick, goneSince: 0, ...(pick.src ? { src: { x: pick.src.x, y: pick.src.y } } : {}) });
   takeControl(sim, id, sim.world.get(id, BreakdownC) as Breakdown);
+  if (pick.tier === 'severe') {
+    const pos = sim.world.get(id, PositionC);
+    const ship = pos && sim.world.get(shipIdOf(sim, pos), ShipC);
+    if (ship) ship.lastSevereBreak = sim.tick;
+  }
   if (alert) memoryOf(sim, id).alertAt = sim.tick;
   if (pick.kind === 'tantrum') madeAScene(sim, id);
   sim.events.emit({ type: 'crew.break', crew: id, kind: pick.kind, context: pick.context, tier: pick.tier, alert });
