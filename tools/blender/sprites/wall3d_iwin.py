@@ -37,6 +37,7 @@ ARCH_SLOPE = (5 / 7, 5 / 7)  # from the cushion's foot at each post's edge, risi
 PANE_EDGE = "fTX6"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
 PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
 PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
+JOINT_CURVE = 3         # their ends' corners: the curve's radius, px (tan's cushions: 3)
 JOINT_BACK = 2          # the header split into cushions at each shoulder's ends: a joint (as the cushions' at a
                         # tile's edge) this many px back on the post from its edge, and one where the slope ends
 HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
@@ -331,7 +332,7 @@ def _joints(k, x0, x1, yf):
     built again as tan's cushion ends (TAN._header): curved in over HEAD_CURVE px, half a px short of the joint, the
     face behind the 1 px gap in the joints' dark."""
     from .faction.parts import prism, flat
-    L, C = T.LINE, TAN.HEAD_CURVE
+    L, C = T.LINE, JOINT_CURVE
     z1h = W.HF - 0.031
     zh0 = z1h - TAN.HEAD_H
     zg = zh0 - TAN._hid(TAN.HEAD_D)
@@ -358,7 +359,7 @@ def _joints(k, x0, x1, yf):
                         m.v += [tuple(p) for p in q]
                         out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
             m.f = out
-        flat(k, "y", yf, jx - L / 2, jx + L / 2, zg, z1h, T.PAINT, TAN.OUTER)      # (the gap)
+        flat(k, "y", yf, w0, w1, zg, z1h, T.PAINT, TAN.OUTER)      # (the face behind the gap and the curves: dark)
 
         def ins(x):
             return (C - math.sqrt(max(0.0, C * C - (C - x) ** 2))) * PZ
