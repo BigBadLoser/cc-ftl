@@ -33,14 +33,15 @@
       {/each}
     </div>
     <p class="mood" data-testid="social-mood">Mood from people:
-      {#each s.moodLine as m, i (i)}{i ? ' · ' : ' '}<b>{m.who} nearby {signed(m.value)}</b>{:else} <span class="dim">nobody close by</span>{/each}</p>
+      {#each s.moodLine as m, i (i)}{i ? ' · ' : ' '}<b class="it">{m.who} nearby {signed(m.value)}</b>{:else} <span class="dim">nobody close by</span>{/each}</p>
   {/if}
 </div>
 
 <style>
-  .list { max-height: min(62vh, 560px); overflow-y: auto; }
+  .list { max-height: min(560px, calc(100vh - 380px)); overflow-y: auto; }
   .none { margin: 2px 0 6px 10px; color: var(--dim); font-size: 13px; }
   /* Docked at the foot of the window, edge to edge like the tab strip (the body pads 10px); the list scrolls above it. */
   .mood { margin: 10px -10px -10px; padding: 9px 12px; background: var(--band); border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; }
+  .it { white-space: nowrap; }
   .mood b { color: var(--text); font-weight: 400; }
 </style>

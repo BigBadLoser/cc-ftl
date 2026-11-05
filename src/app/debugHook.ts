@@ -9,6 +9,7 @@ import { AsteroidC } from '../sim/asteroids/components';
 import { addHeat } from '../sim/combat/heat';
 import { explainAll, explainCrew } from '../sim/ai/explain';
 import { auditReservations } from '../sim/ai/audit';
+import { stageBondHistory } from './bondStage';
 import { begin as beginInteraction } from '../sim/crew/interact';
 import { parkCrew } from './parkCrew';
 import type { Loop } from './loop';
@@ -174,6 +175,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       parkCrew: (x: number, y: number) => parkCrew(sim, x, y),
       /** Put a crew member on a tile, standing (the relationship shots). */
       place: (id: number, x: number, y: number) => { const p = sim.world.get(id, PositionC); if (p) { p.x = p.toX = x; p.y = p.toY = y; p.progress = 0; } },
+      /** Give a pair of crew a dated history of reasons in both directions (the Social tab shots). */
+      bondHistory: (a: number, b: number) => stageBondHistory(sim, a, b),
       /** Force an interaction (`interaction.chat` or `interaction.shout`, outcome index) between two crew now (the relationship shots). */
       interact: (a: number, b: number, def: string, pick: number) => { const d = sim.content.interactions?.[def]; if (d) beginInteraction(sim, d, pick, a, b, 0); },
       /** Take stored `item` out of every storage until `keep` units are left (the "missing materials" shot). */

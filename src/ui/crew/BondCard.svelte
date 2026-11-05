@@ -53,13 +53,13 @@
   h4 { margin: 10px 10px 4px; color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .hist { list-style: none; margin: 0; padding: 0 10px; display: grid; gap: 4px; font-size: 13px; }
   .hist li { display: grid; grid-template-columns: 8px 44px 1fr auto; gap: 6px; align-items: baseline; }
-  .sq { width: 8px; height: 8px; background: var(--green); align-self: center; }
+  .sq { width: 8px; height: 8px; background: var(--green); align-self: start; margin-top: 5px; }
   .sq.bad { background: var(--red); }
   .w { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ago { color: var(--dim); font-size: 12px; white-space: nowrap; }
   .fx { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 10px; }
   .beh { list-style: none; margin: 8px 0 0; padding: 0 10px; display: grid; gap: 3px; color: var(--dim); font-size: 13px; }
   .beh li { display: flex; gap: 6px; align-items: center; }
-  .chip { padding: 3px 8px; border: 1px solid var(--green); background: #0c2218; color: var(--text); font-size: 13px; }
-  .chip.bad { border-color: var(--red); background: #221012; }
+  .chip { padding: 3px 8px; border: 1px solid color-mix(in srgb, var(--green) 35%, transparent); background: color-mix(in srgb, var(--green) 8%, transparent); color: var(--text); font-size: 13px; }
+  .chip.bad { border-color: color-mix(in srgb, var(--red) 35%, transparent); background: color-mix(in srgb, var(--red) 8%, transparent); }
 </style>
