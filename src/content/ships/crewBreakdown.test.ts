@@ -265,6 +265,31 @@ describe('a break in play', () => {
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
   });
 
+  it('a break that resumes mid-refill tears the refill down: no orphaned job or reservation', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    run(sim, 2);
+    const g = shipGrid(sim, homeShip(sim))!;
+    const vent = (): void => { for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('o2', x, y) > 0) g.set('o2', x, y, 0); };
+    vent();
+    sim.world.get(c, SuitC)!.air = 30;
+    startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 300 * TICK_HZ });
+    let refill = false;
+    for (let i = 0; i < 10 * TICK_HZ && !refill; i++) {
+      vent();
+      sim.step();
+      refill = sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'refill';
+    }
+    expect(refill).toBe(true);
+    expect(sim.world.get(c, BreakdownC)!.suspended).toBe(true);
+    sim.world.get(c, SuitC)!.air = suitDef(sim).airSec; // no longer critical, the refill not done
+    for (let i = 0; i < 5; i++) { vent(); sim.step(); }
+    expect(sim.world.get(c, BreakdownC)?.suspended).toBeUndefined();
+    expect(sim.world.has(c, AssignmentC)).toBe(false);
+    expect(auditReservations(sim).problems).toEqual([]);
+    expect(sim.world.get(c, TaskC)?.machine).toBe('break');
+  });
+
   it('keeps its own copy of the stressor position', () => {
     const { sim, c } = quiet();
     const live = sim.world.get(c, PositionC)!;

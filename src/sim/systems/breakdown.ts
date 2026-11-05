@@ -52,7 +52,17 @@ function suspendFor(sim: Sim, id: number): void {
   if (now) {
     b.suspended = true;
     if (sim.world.get(id, TaskC)?.machine === 'break') abortTask(sim, id, 'breakdown');
-  } else delete b.suspended;
+  } else {
+    delete b.suspended;
+    takeControl(sim, id, b); // resuming: the survival task that ran meanwhile (a refill, a meal) is torn down like any displaced task
+  }
+}
+
+/** The one entry for a break taking control of a crew member, at its start and when it resumes: the displaced task ends through `abortTask` (path, holds, job and reservations released). */
+function takeControl(sim: Sim, id: number, b: Breakdown): void {
+  // A tier that takes over the crew member ends whatever they were doing like any code that takes over a path; a mild break only lets go of a job.
+  if (isInterruptTier(b.tier)) standDown(sim, id);
+  if (isInterruptTier(b.tier) || sim.world.has(id, AssignmentC)) abortTask(sim, id, 'breakdown');
 }
 
 /** Has the running break run its course: the time is up, the crew member is down, a draft ended a break that yields to it, the context has been gone long enough. */
@@ -97,9 +107,7 @@ function memoryOf(sim: Sim, id: number): BreakMemory {
 export function startBreak(sim: Sim, id: number, pick: BreakPick): void {
   const alert = wantsAlert(sim, id, pick, memoryOf(sim, id));
   sim.world.add(id, BreakdownC, { kind: pick.kind, tier: pick.tier, context: pick.context, until: sim.tick + pick.ticks, since: sim.tick, goneSince: 0, ...(pick.src ? { src: { x: pick.src.x, y: pick.src.y } } : {}) });
-  // A tier that takes over the crew member ends whatever they were doing like any code that takes over a path; a mild break only lets go of a job.
-  if (isInterruptTier(pick.tier)) standDown(sim, id);
-  if (isInterruptTier(pick.tier) || sim.world.has(id, AssignmentC)) abortTask(sim, id, 'breakdown');
+  takeControl(sim, id, sim.world.get(id, BreakdownC) as Breakdown);
   if (alert) memoryOf(sim, id).alertAt = sim.tick;
   if (pick.kind === 'tantrum') madeAScene(sim, id);
   sim.events.emit({ type: 'crew.break', crew: id, kind: pick.kind, context: pick.context, tier: pick.tier, alert });
