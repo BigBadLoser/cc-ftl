@@ -34,6 +34,7 @@ One line per section; read the index, then only the sections your task touches.
 - [UI](#ui): Layout: a full-screen game view with Svelte panels over it.
   - [Combat view (user decisions, 2026-10-29)](#combat-view-user-decisions-2026-10-29): It replaces the colony HUD during a fight: the nav strip, node strip, drawers, build tools, inspector and...
   - [UI soft rules (user decisions, 2026-10-28)](#ui-soft-rules-user-decisions-2026-10-28): These are soft rules. They set the default direction. An agent or session should always feel free to suggest
+  - [Trade window and station panel (user decisions, 2026-11-05; not built yet)](#trade-window-and-station-panel-user-decisions-2026-11-05-not-built-yet): one floating trade window for every partner; the station panel as an open comms channel with a contact per service and a live sensor view.
   - [Boarding in ship combat (user decisions, 2026-10-29; not built yet)](#boarding-in-ship-combat-user-decisions-2026-10-29-not-built-yet): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
   - [Lessons: the tutorial system (user decisions, 2026-10-29)](#lessons-the-tutorial-system-user-decisions-2026-10-29): The goal chain (src/sim/story/goals.ts) says what to do next; lessons teach how a feature works. They are a
 - [Open questions](#open-questions): Mood and breakdown severity.
@@ -1039,6 +1040,43 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
    - **Amber** means warning.
    - **Gold** is for credits and rewards.
    - The build menu and the research screen keep their own black-and-amber look on purpose.
+
+### Trade window and station panel (user decisions, 2026-11-05; not built yet)
+
+Mocks: `docs/refs/mocks/trade-window-k.png` and `docs/refs/mocks/station-panel-w2.png`.
+
+**One trade window for every partner.** Trade leaves the station panel. A station and a trader ship open the same trade
+window. It is a floating window that can be moved and pinned, not a modal, so it can stay open while shuttles fly.
+
+- **Layout ("K").** One market list with a row per item: icon, name, aboard, what they pay, their stock, their price,
+  and a −/+ quantity picker. A positive amount buys and a negative one sells, and the word BUYING or SELLING shows
+  under the picker. Columns and headers are centred on each other, and the window is sized to its content (about
+  1010px).
+- **Quantities.** Click ±1, Shift ±5, Ctrl ±10, type a number, Alt for the max.
+- **The deal slip** sits at the top of the right column. It reads the deal back: "Buy 20 rations − ₵280",
+  "Sell 12 electronics + ₵372", with a red minus and a green plus before the gold amount. Then the total, where your
+  credits end up, the shuttle trips, and Clear and Propose.
+- **Queued deals.** Agreed deals queue in a Deliveries list pinned to the bottom of the right column, each with its
+  trip progress and a Call off. You can build the next deal while a shuttle flies. This needs the sim to allow
+  several deals per partner.
+- Black market and truce are chips in the title bar, not paragraphs. Credits are gold.
+
+**The station panel is an open channel ("U3" with the "W2" sensor column).** Three panes, as in the comms window:
+
+- **Left, video:** a live feed of the contact for the open service, with LIVE, signal, call timer and a CONNECTED
+  status word. Each service has its own person: dock control (the station overview), the quartermaster (trade), the
+  job broker (jobs), the recruiter (crew), the archivist (blueprints) and the yard master (shipyard). Switching
+  service switches the call, with a short static cut. Hailing plays static, then CONNECTING, then dock control. The
+  channel stays open while you are nearby.
+- **Middle, comms:** a line of narration, the contact's quote drawn from the real state ("Two runs on the board. The
+  Fenix one pays, if you've got the guns for it."), then the service's content (job cards, recruits, blueprints,
+  yard).
+- **Right, sensors:** a hologram of the station with callouts (docks free, defence) and live traffic drawn on it:
+  your ship in green holding off, your shuttle as an amber mark with its trip count, other ships faint. Under it, a
+  three-line traffic log, newest first ("Shuttle left airlock 2 with 8 rations", "Yard crew 12 of 40 tiles laid").
+  Then the owner and the services as decision buttons; Trade opens the trade window.
+- **Art:** stations need a hologram sprite per station type from the Blender pipeline. The mock scales up the 48px
+  starmap icon.
 
 ### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
 
