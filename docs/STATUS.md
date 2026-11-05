@@ -38,7 +38,7 @@ Last updated: 2026-11-03.
 ## In progress
 
 - **Encounters (#173):** steps 1-4 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314; the pirate
-  ambush in #327). The comms window rework (layout E, `ui/comms-173`) is built and approved, and its PR is next. Then: distress freighter,
+  ambush in #327). The comms window rework (layout E) merged in #329. Then: distress freighter,
   medical pod, each checked in play first. The ambush can grow slightly once relationships and interactions exist.
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).

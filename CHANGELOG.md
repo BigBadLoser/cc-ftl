@@ -6,6 +6,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
+- Encounter signals open a comms window: a video call with the caller's portrait and ship name, a transcript, and a sensor panel that scans the ship's hologram and marks what it finds. H hails and S scans (rebindable). Watch the caller closely: some tells only show on screen. ([#329](https://github.com/BigBadLoser/cc-ftl/pull/329))
 - Mental breaks: crew under stress (low mood, injuries, fire, combat, decompression, isolation) can snap. A break might be a panic (they flee, then cower), a freeze, hiding, a tantrum that sours the mood of everyone nearby, despair in bed, or refusing work. Severe breaks raise an urgent alert, and a breaking crew member still escapes fire or bad air. Player orders are refused while a crew member is breaking. ([#328](https://github.com/BigBadLoser/cc-ftl/pull/328))
 - Pirate ambush: the pirate you spared may hail you on the lane, asking to dock and repay the debt. Hail and scan it to judge whether they mean it: an honest crew drops missiles at your airlock, a trap boards you. ([#327](https://github.com/BigBadLoser/cc-ftl/pull/327))
 - Repair drones seal hull breaches from outside, paying 2 metal from a small load they refill from storage while docked (the bay panel shows it). Navy and rogue AI ships field their own defence drones from sector depth 3, and drones wreck with their ship. Recalled drones land one at a time, and the ship waits long enough for all of them. ([#326](https://github.com/BigBadLoser/cc-ftl/pull/326))
