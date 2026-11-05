@@ -13,7 +13,7 @@ import type { Sim } from '../../sim';
 import { BREAK_BED_RANGE } from '../../tuning';
 import { CrewC, PositionC } from '../../crew/components';
 import { TaskC } from '../components';
-import { setJoblessTask, setState } from '../task';
+import { abortTask, setJoblessTask, setState } from '../task';
 
 /**
  * The break machine (docs/TRAITS.md section 5, "Outcomes"): the behaviour of a break that takes the crew member over. It is a jobless
@@ -90,6 +90,8 @@ export function breakTurn(sim: Sim, id: number, pos: Position): void {
   const path = sim.world.get(id, PathC) as Path;
   let task = sim.world.get(id, TaskC);
   if (!task || task.machine !== 'break') {
+    // The break takes control over whatever task was there (a stray job or errand included): torn down through the one teardown, abortTask.
+    abortTask(sim, id, 'breakdown');
     clearPath(sim, id);
     setJoblessTask(sim, id, 'idle', 'break', startState(sim, id, pos, b));
     task = sim.world.get(id, TaskC)!;

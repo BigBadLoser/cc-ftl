@@ -3,6 +3,7 @@ import { CommandQueue, type Command } from './commands';
 import { World } from './ecs';
 import { EventBuffer } from './events';
 import { commandHandlers } from './handlers';
+import { breakOrderRejection } from './crew/breakOrders';
 import { newSectorGrid } from './stamp';
 import type { Sector } from './combat/components';
 import type { SectorArchive } from './sector/archive';
@@ -81,6 +82,11 @@ export class Sim {
   }
 
   private apply(cmd: Command): void {
+    const reason = breakOrderRejection(this, cmd);
+    if (reason) {
+      this.events.emit({ type: 'command.rejected', command: cmd.type, reason });
+      return;
+    }
     (commandHandlers[cmd.type] as (sim: Sim, cmd: Command) => void)(this, cmd);
   }
 }

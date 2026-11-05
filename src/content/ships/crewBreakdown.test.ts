@@ -4,6 +4,7 @@ import {
   homeShip, newGame, serialize, shipGrid, type BreakKind, type ContentRegistry, type Sim, type SimEvent,
 } from '../../sim';
 import { IntentC } from '../../sim/ai/components';
+import { reserveJob } from '../../sim/ai/task';
 import { auditReservations } from '../../sim/ai/audit';
 import { breakChance, breakTerms, onCooldown, rollBreak } from '../../sim/crew/breakdown';
 import { isSettled } from '../../sim/crew/helpers';
@@ -288,6 +289,32 @@ describe('a break in play', () => {
     expect(sim.world.has(c, AssignmentC)).toBe(false);
     expect(auditReservations(sim).problems).toEqual([]);
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
+  });
+
+  it('player orders that assign work are rejected while a break holds control, and a stray task is torn down when the break takes over', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    run(sim, 2);
+    startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 300 * TICK_HZ });
+    run(sim, 3);
+    const consoleId = sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.console)!;
+    sim.events.drain();
+    sim.enqueue({ type: 'crew.man', id: c, module: consoleId });
+    run(sim, 2);
+    expect(sim.events.drain().filter((e) => e.type === 'command.rejected')).toMatchObject([{ command: 'crew.man', reason: 'breaking' }]);
+    expect(sim.world.has(c, AssignmentC)).toBe(false);
+    expect(auditReservations(sim).problems).toEqual([]);
+    // A stray task with an assignment (anything that got past) is torn down when the break rebuilds its task.
+    const job = sim.world.createEntity();
+    const at = sim.world.get(c, PositionC)!;
+    sim.world.add(job, JobC, { category: 'operating', kind: 'operate', x: Math.round(at.x), y: Math.round(at.y), struct: 0, work: 1, progress: 0, reservedBy: 0, target: consoleId });
+    reserveJob(sim, c, job);
+    expect(sim.world.get(c, TaskC)?.machine).not.toBe('break');
+    run(sim, 2);
+    expect(sim.world.has(c, AssignmentC)).toBe(false);
+    expect(sim.world.get(job, JobC)?.reservedBy ?? 0).toBe(0);
+    expect(sim.world.get(c, TaskC)?.machine).toBe('break');
+    expect(auditReservations(sim).problems).toEqual([]);
   });
 
   it('keeps its own copy of the stressor position', () => {
