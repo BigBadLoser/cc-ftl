@@ -51,6 +51,7 @@ SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a ste
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
+BEND_DROP = 5           # that seam carried on down the ramps' block from the crest, px
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
 FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, PANE_EDGE) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
@@ -245,6 +246,11 @@ def _ramp_lines(k, x0, x1, yf):
         if a < u < b:
             strip([(min(u, u + sd * L), 0.0), (max(u, u + sd * L), 0.0), (max(u, u + sd * L), de),
                    (min(u, u + sd * L), de)])
+    for u, sd in ((x0 + DIP_RUN, 1), (x1 - DIP_RUN, -1)):  # (the sill's seam where a slope meets the level part,
+        if a < u < b:                                       # on down the block BEND_DROP px, on the level side)
+            ua, ub = sorted((u, u + sd * L))
+            t = top(u + sd * 1e-6)
+            strip([(ua, t), (ub, t), (ub, t + BEND_DROP * E), (ua, t + BEND_DROP * E)])
 
 
 def _reach(h, yf):
