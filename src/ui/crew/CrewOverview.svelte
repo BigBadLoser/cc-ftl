@@ -56,7 +56,7 @@
       {#each [['Friends', d.bonds.friends, 'friend'], ['Rivals', d.bonds.rivals, 'rival']] as const as [label, list, kind] (kind)}
         {#if list.length}
           <p class={kind} data-testid="crew-{kind}s"><span class="k">{label}</span>
-            {#each list as b, i (b.name)}<Tooltip text="{b.name}: {b.line}" side="bottom" label="{b.name}, {kind}"><span class="who" data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span></Tooltip>{/each}</p>
+            {#each list as b, i (b.id || b.name)}<Tooltip text="{b.name}: {b.line}" side="bottom" label="{b.name}, {kind}"><span class="who" data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span></Tooltip>{/each}</p>
         {/if}
       {/each}
     </div>
