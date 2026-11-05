@@ -203,7 +203,7 @@
     { id: 'stock', sticky: false, pinned: () => isPinned('stock'), isOpen: () => stockOpen, close: () => (stockOpen = false) },
     { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
     { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
-    { id: 'trade', sticky: false, isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
+    { id: 'trade', sticky: false, pinned: () => isPinned('trade'), isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
   ];
   const outside = outsideTap(() => closeOutside(panels));
@@ -340,7 +340,7 @@
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
 {#if stationOpen !== null}
-  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} />
+  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} onTrade={(s) => (tradeWith = s)} />
 {/if}
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />

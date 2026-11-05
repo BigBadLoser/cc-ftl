@@ -22,7 +22,8 @@
         {#if p.hail === 'answered'}
           <button class="go" data-testid="partner-trade-{p.id}" onclick={() => onOpen(p.id)}>Trade</button>
         {:else}
-          <button data-testid="partner-hail-{p.id}" onclick={() => hail(p.id)}>{p.hail === 'refused' ? 'Hail again' : 'Hail'}</button>
+          <!-- Hailing is the way in: the answer opens the trade window (which carries its own Hail again when they refuse). -->
+          <button class="go" data-testid="partner-hail-{p.id}" onclick={() => hail(p.id)}>{p.hail === 'refused' ? 'Hail again' : 'Hail'}</button>
         {/if}
       </div>
       {#if p.hail === 'refused'}<div class="refused" data-testid="partner-refused-{p.id}">No deal: {p.reason === 'weaponsHot' ? 'guns on you' : p.reason === 'silent' ? 'no answer' : 'not interested'}</div>{/if}
