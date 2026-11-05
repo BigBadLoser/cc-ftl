@@ -32,6 +32,9 @@ POST_IN = "fTS3"        # the post's inner side (into the opening): the face's t
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
 ARCH_SLOPE = (1.5, 0.5)  # from the cushion's foot at each post's edge, rising (px up per px along) at the -x post,
                         # the +x one: a clean 45 on screen both sides (the wall itself falls half a px per px)
+PANE_EDGE = "fTS5"      # the pane's edges (as the hull window's): its outline faces, a pane PANE_T thick, opaque
+PANE_T = 1 / 32         # and a hair proud of the frame (PANE_OUT), so each draws a dark line where the glass meets
+PANE_OUT = 0.003        # it (none where the pane runs on into the next tile)
 HEAD_EDGE = "fTS7"      # the cushion's cut foot over the opening: a brown edge, so it reads against the pane
 POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
 POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
@@ -41,7 +44,7 @@ RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END) + RAMP_FACE)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, PANE_EDGE) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -296,6 +299,18 @@ def hook(k, sp, own=True):
         _ramp_only(k, a, x0, x1, yb, yf)
     if not own:                                         # (a copy past the tile: no pane)
         return
+    h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
+    for u0, u1 in zip(us, us[1:]):
+        z0_, z1_ = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
+        _quad(k, [(u0, -h, z0_), (u1, -h, z1_), (u1, h, z1_), (u0, h, z0_)], (0, 0, -1), PANE_EDGE)
+    for u0, u1 in zip(ts, ts[1:]):
+        z0_, z1_ = _top(u0, x0, x1) - e, _top(u1, x0, x1) - e
+        _quad(k, [(u0, -h, z0_), (u1, -h, z1_), (u1, h, z1_), (u0, h, z0_)], (0, 0, 1), PANE_EDGE)
+    for xp, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
+        if on:
+            u = xp + sd * e
+            za, zb = _sill(u, x0, x1) + e, _top(u, x0, x1) - e
+            _quad(k, [(u, -h, za), (u, h, za), (u, h, zb), (u, -h, zb)], (-sd, 0, 0), PANE_EDGE)
     global GLASS
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
     GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((u, 0.0, _top(u, x0, x1))) for u in ts[::-1]],
