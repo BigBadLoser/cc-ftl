@@ -29,12 +29,13 @@ DIP_RUN = 11 / 32       # ... reached this far along the wall from a post (a slo
                         # tiles level all across)
 EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
+LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
 SLOPE_LIT = "fTS0"       # the lit edge across a sill slope's top, at the post
 SEAM = "fTS4"           # the seam where the slope meets the level part (the cushions' joint brown)
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
-FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT) + RAMP_FACE)
+FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
@@ -44,7 +45,7 @@ def _heights():
     zs = W.skirt_top()
     z1 = W.HF - 0.031                                   # (tan: the header's top under the cap's black)
     zs0 = z1 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)
-    return zs, zs0 - 3 * PZ
+    return zs, zs0 - 2 * PZ
 
 
 def _sill(x, x0, x1):
@@ -217,10 +218,11 @@ def hook(k, sp, own=True):
     a, b = max(x0, -0.5), min(x1, 0.5)
     bends = [u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b]
     k.side = None
-    if x0 > -0.5:                                       # the posts' sections
-        _quad(k, [(x0, yb, z0), (x0, yf, z0), (x0, yf, z1), (x0, yb, z1)], (1, 0, 0), POST_IN)
-    if x1 < 0.5:
-        _quad(k, [(x1, yb, z0), (x1, yf, z0), (x1, yf, z1), (x1, yb, z1)], (-1, 0, 0), POST_IN)
+    yl, zl = yf + TAN.LIP_D, z0 + TAN.LIP_TOP
+    for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sections, the lip's end on each
+        if on:
+            _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, z1), (u, yb, z1)], (sd, 0, 0), POST_IN)
+            _quad(k, [(u, yf, z0), (u, yl, z0), (u, yl, zl), (u, yf, zl)], (sd, 0, 0), LIP_END)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
