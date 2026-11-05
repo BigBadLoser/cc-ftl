@@ -31,6 +31,8 @@ EDGE_OUT = 0.0          # (the cut top out to the ramps' slope, no further)
 POST_IN = "fTS3"        # the post's inner side (into the opening): the face's tan, a step into the shade
 ARCH_CUT = 5 * PZ       # the arch: the opening up into the header cushion (its front 11 px) by about half of it,
 ARCH_RUN = 9 / 32       # rising from the beam's foot at a post over this (ref #2767's shoulders: ~9 px)
+POST_SEAM = (5, 26)     # the posts' fronts: a groove up each one's middle, lip to header (px columns: left post's,
+POST_PLAIN = "fTS3"     # right's), the slats gone from its half nearest the window (the face's plain tan)
 LIP_END = "fTS8"        # the face's foot lip's end there: a step darker than its front, so it reads apart
 SLOPE_TOP = "fTW2"      # the sill's top where it slopes down from a post, a step under the level part's
 RAMP_FACE = ("fTW2", "fTW3")    # the window tile's ramps' tan block, plain (lit, shade side) under its own lines
@@ -237,6 +239,7 @@ def hook(k, sp, own=True):
         if on:
             _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, z1), (u, yb, z1)], (sd, 0, 0), POST_IN)
             _quad(k, [(u, yf, z0), (u, yl, z0), (u, yl, zl), (u, yf, zl)], (sd, 0, 0), LIP_END)
+    _post_fronts(k, x0, x1, yf, z0)
     us = [a] + bends + [b]                              # the sill's top (the cut along the crest, out to the ramps'
     for u0, u1 in zip(us, us[1:]):                      # slopes: wider as it drops) and the beam's underside
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
@@ -279,6 +282,26 @@ def hook(k, sp, own=True):
     GLASS = T.Relief("iwin_glass")                      # (the pane down to the crest)
     GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((u, 0.0, _top(u, x0, x1))) for u in ts[::-1]],
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
+
+
+def _post_fronts(k, x0, x1, yf, z0):
+    """Each post's front: a groove up its middle from the lip to the header (as the face's grooves), and its half
+    nearest the window plain, the slats gone (up to the shadow under the header)."""
+    zl1 = z0 + TAN.LIP_TOP
+    zs0 = W.HF - 0.031 - TAN.HEAD_H - TAN._hid(TAN.HEAD_D)          # (the face's first row under the header)
+    P = T.PAINT
+
+    def col(n):
+        return -0.5 + (n + 0.3) / 32, -0.5 + (n + 1.0) / 32         # (TAN._col: a px column's groove)
+    for on, n, (pa, pb) in ((x0 > -0.5, POST_SEAM[0], (col(POST_SEAM[0])[1], col(10)[0])),
+                            (x1 < 0.5, POST_SEAM[1], (col(21)[1], col(POST_SEAM[1])[0]))):
+        if not on:
+            continue
+        _quad(k, [(pa, yf + 3 * P, zl1), (pb, yf + 3 * P, zl1), (pb, yf + 3 * P, zs0 - 3 * PZ),
+                  (pa, yf + 3 * P, zs0 - 3 * PZ)], (0, 1, 0), POST_PLAIN)
+        g0, g1 = col(n)
+        _quad(k, [(g0, yf + 4 * P, zl1), (g1, yf + 4 * P, zl1), (g1, yf + 4 * P, zs0), (g0, yf + 4 * P, zs0)],
+              (0, 1, 0), "fTS4")
 
 
 def _close(k, yf, h, z1):
