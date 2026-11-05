@@ -1,3 +1,6 @@
+import { abortTask } from '../ai/task';
+import { releaseBedOwner } from '../crew/beds';
+import { applyEffect } from '../story/effects';
 import { CrewC, DeadC, DownedC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import { turnCrew } from '../combat/turn';
@@ -51,16 +54,43 @@ export const visiting = (a: Ambush | undefined): boolean =>
 const inProgress = (a: Ambush): boolean => a.visit === 'granted' || a.visit === 'aboard' || (a.visit === 'delivered' && !a.home);
 
 /**
- * True while a let-in visit is really under way: its skiff is in play and its phase says so. The leave blocker reads this, so a visit whose skiff is
- * wrecked, taken or gone never holds the player (`tendVisit` settles what it left behind).
+ * The player leaves the scene (`leaveEvent`): a visit in progress is settled here, never a reason to stay. Visitors on the player's ship: an honest
+ * party is removed with a log line (what was delivered stays; not delivered yet, nothing comes and the debt is unpaid: `spared_pirate` cleared); a trap
+ * party springs now through `hostileAct`, so it travels with the ship as ordinary hostile boarders. A party not yet out, or a shuttle in flight, is
+ * cancelled and wiped with the scene. A skiff already wrecked, taken or gone settles as in `settleLost`.
  */
-export function visitUnderway(sim: Sim, spec: SceneSpec): boolean {
-  return spec.ships.some((s) => {
+export function settleVisits(sim: Sim, spec: SceneSpec): void {
+  const me = playerShipInfo(sim)?.id;
+  for (const s of spec.ships) {
+    const a = s.ambush;
+    if (!a || !inProgress(a)) continue;
     const id = live(sim, s);
-    const b = id === null ? undefined : sim.world.get(id, BoarderC);
-    // Only living people hold the player: a party member who is up and about, aboard or in the shuttle. A phase alone never does.
-    return !!s.ambush && inProgress(s.ambush) && !!b && b.crew.some((c) => sim.world.has(c, CrewC) && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
-  });
+    if (id === null) {
+      settleLost(sim, s, a);
+      continue;
+    }
+    const party = (sim.world.get(id, BoarderC)?.crew ?? []).filter((c) => {
+      const pos = sim.world.get(c, PositionC);
+      return able(sim, c) && !!pos && me !== undefined && shipIdOf(sim, pos) === me;
+    });
+    const name = sim.world.get(id, ShipC)?.name ?? s.contact.name ?? 'The skiff';
+    if (party.length > 0 && a.trap) turn(sim, a, id);
+    else if (party.length > 0) {
+      for (const c of party) {
+        abortTask(sim, c, 'removed');
+        releaseBedOwner(sim, c);
+        sim.world.destroyEntity(c);
+      }
+      if (a.visit !== 'delivered') applyEffect(sim, { type: 'flag', flag: 'spared_pirate', op: 'clear' }, { event: spec.event ?? spec.key, actor: null });
+      sim.events.emit({ type: 'scene.observed', rule: 'visitLeft', ship: id, text: `${name}'s crew take their leave`, tone: 'info' });
+      a.visit = a.visit === 'delivered' ? 'delivered' : 'refused';
+      a.home = true;
+    } else {
+      a.visit = a.trap ? 'refused' : a.visit === 'delivered' ? 'delivered' : 'refused';
+      a.home = true;
+    }
+    dismiss(sim, s);
+  }
 }
 
 /**
@@ -115,8 +145,8 @@ function reconcileGranted(sim: Sim, a: Ambush, b: Boarder): boolean {
 /**
  * Reconcile an honest party's way home, once a second: members not yet in the shuttle are (re)sent to it every VISIT_RETRY_TICKS (an order rejected
  * while the airlock was down is simply tried again); once all are seated the shuttle undocks and returns, and a shuttle that stopped short is told to
- * return again. True when the shuttle is home or gone. With no usable airlock the party waits aboard (the airlock is the player's to repair; the leave
- * blocker names them meanwhile).
+ * return again. True when the shuttle is home or gone. A shuttle that is not docked is sent to a usable airlock first. With no usable airlock the party waits aboard; nothing here has to make progress,
+ * because leaving settles the visit (`settleVisits`).
  */
 function reconcileHome(sim: Sim, a: Ambush, b: Boarder): boolean {
   const v = sim.world.get(b.vehicle, VehicleC);
@@ -124,6 +154,12 @@ function reconcileHome(sim: Sim, a: Ambush, b: Boarder): boolean {
   const retry = sim.tick % VISIT_RETRY_TICKS === 0;
   const waiting = b.crew.filter((c) => able(sim, c) && !sim.world.has(c, AboardC));
   if (waiting.length > 0) {
+    // A shuttle that is not at an airlock (the old one was replaced or lost) is sent to a usable one before the party is sent to it.
+    if (v.state !== 'docked') {
+      const airlock = retry && v.state === 'flying' && !v.dest ? pickAirlock(sim, b.vehicle) : 0;
+      if (airlock) sim.enqueue({ type: 'vehicle.dock', vehicle: b.vehicle, airlock });
+      return false;
+    }
     if (retry) for (const crew of waiting) if (!sim.world.has(crew, EmbarkOrderC)) sim.enqueue({ type: 'vehicle.embark', crew, vehicle: b.vehicle });
     return false;
   }

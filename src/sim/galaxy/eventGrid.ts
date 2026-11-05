@@ -21,7 +21,7 @@ import { shipIdOf } from '../regions';
 import { VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { observeLeave, observeScene } from '../scene/observer';
-import { visitUnderway } from '../scene/visit';
+import { settleVisits } from '../scene/visit';
 import { departScene, openScene, tendScene } from '../scene/open';
 import type { SceneSpec } from '../scene/types';
 
@@ -113,7 +113,6 @@ export function leaveBlocker(sim: Sim): string | null {
   if (sim.sector.state === 'deploying') return null;
   if (sim.trade.deals.some(isLive)) return 'tradeInProgress';
   if (crewAway(sim)) return 'crewAway';
-  if (visitUnderway(sim, sim.galaxy.event.scene)) return 'visitors'; // a let-in party and its shuttle must be settled first (scene/visit.ts)
   const me = playerShipInfo(sim);
   if (!me) return 'notPlayerShip';
   if (hostilesPresent(sim) > 0 && (ftlCharge(sim, me.id) ?? 0) + 1e-9 < FTL_CHARGE_SEC) return 'notCharged';
@@ -159,6 +158,7 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim, held: 'interdicted' | 'h
   let packet = sim.sector.packet;
   // Kills in the grid count before its ships are gone, and the observer has its last look.
   settleLosses(sim);
+  settleVisits(sim, ev.scene); // a visit in progress is settled, never a reason to stay
   observeLeave(sim, ev);
   if (sim.sector.state === 'active') {
     const me = playerShipInfo(sim) as NonNullable<ReturnType<typeof playerShipInfo>>;
