@@ -1033,6 +1033,12 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
    Alerts clear themselves once resolved. Anything that isn't urgent goes to the log, not the alerts.
 6. **The Esc menu:** Esc first cancels the active tool or aim. When there is nothing to cancel, it opens a medium-sized
    menu (about the size of the ship stock panel, or smaller) with resume, save and load, new game, controls and settings.
+7. **Colour roles (2026-11-05).**
+   - **Cyan** marks anything actionable: buttons, links, hover and selection. It is not a general accent, so headings, quotes, progress bars and borders aren't cyan.
+   - **Green and red** are for confirm and deny actions, and for good and bad state: friend and rival, gain and loss.
+   - **Amber** means warning.
+   - **Gold** is for credits and rewards.
+   - The build menu and the research screen keep their own black-and-amber look on purpose.
 
 ### Boarding in ship combat (user decisions, 2026-10-29; not built yet)
 
