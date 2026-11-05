@@ -37,7 +37,7 @@ function busyVehicles(sim: Sim): Set<number> {
 }
 
 /** The player's shuttle that can make a trade run, or a reason it cannot. */
-export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { error: string } {
+export function playerCourier(sim: Sim, queue = false): { vehicle: number; cap: number } | { error: string } {
   const me = playerShip(sim);
   const busy = busyVehicles(sim);
   let error = 'noCourier';
@@ -46,7 +46,9 @@ export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { er
     const cap = vehicleDefOf(sim, v)?.cargo ?? 0;
     if (v.homeShip !== me || cap <= 0 || vehicleDefOf(sim, v)?.class === 'pod') continue;
     // A shuttle that belongs to a boarding (launching, recalling, or waiting at the enemy for the party) or a salvage shift is not free either.
-    if (busy.has(id) || boardingReserved(sim, id) || sim.world.has(id, SiteRunC) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound) {
+    // A queued deal is planned for the shuttle's size while an earlier deal still has it: only a boarding or salvage shift makes it unavailable then.
+    const inUse = busy.has(id) || cargoCount(v) > 0 || (v.state === 'flying' && v.dest) || v.outbound;
+    if ((inUse && !queue) || boardingReserved(sim, id) || sim.world.has(id, SiteRunC)) {
       error = 'courierBusy';
       continue;
     }
@@ -58,23 +60,26 @@ export function playerCourier(sim: Sim): { vehicle: number; cap: number } | { er
 /**
  * Decide who flies a deal and where the goods come in (and how much one trip carries: `cap`). Goods the player hands over always travel on the player's shuttle,
  * and so do goods from a seller with no shuttle of its own (stations included); otherwise the seller sends its own.
- * `ownShuttle` forces the player's (a hiring run).
+ * `ownShuttle` forces the player's (a hiring run). `queue` plans a deal that waits behind another with the same partner: the shuttle may still be busy
+ * with that one, so only its size (and a free airlock) is checked.
  */
-export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], get: readonly ItemQty[], ownShuttle = false): CourierPlan | { error: string } {
+export function planCourier(sim: Sim, ship: number, give: readonly ItemQty[], get: readonly ItemQty[], ownShuttle = false, queue = false): CourierPlan | { error: string } {
   const trader = sim.world.get(ship, TraderC);
   if (!trader) return { error: 'noTrader' };
   if (!sim.world.has(ship, ShipC)) return { error: 'noTrader' };
   if (!playerShip(sim)) return { error: 'noShip' };
   const kind = sim.content.trade?.traders[trader.profile];
   if (ownShuttle || give.length > 0 || !kind?.shuttle) {
-    const c = playerCourier(sim);
+    const c = playerCourier(sim, queue);
     if ('error' in c) return c;
     const v = sim.world.get(c.vehicle, VehicleC) as Vehicle;
+    if (queue) return { courier: 'you', vehicle: c.vehicle, airlock: 0, cap: c.cap }; // the airlock is picked when the deal reaches the front
     const airlock = freeAirlock(sim, c.vehicle, v.state === 'docked' ? v.dock : 0);
     return airlock ? { courier: 'you', vehicle: c.vehicle, airlock, cap: c.cap } : { error: 'noAirlock' };
   }
   const cd = courierDef(sim);
   if (!cd) return { error: 'noCourier' };
+  if (queue) return { courier: 'them', vehicle: 0, airlock: 0, cap: cd.def.cargo ?? 0 };
   const airlock = freeAirlock(sim, 0);
   return airlock ? { courier: 'them', vehicle: 0, airlock, cap: cd.def.cargo ?? 0 } : { error: 'noAirlock' };
 }

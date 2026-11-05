@@ -854,6 +854,9 @@ export interface UiTradeLine {
   /** Units in the trader's stock / in the player's storage. */
   theirs: number;
   mine: number;
+  /** The part of each not already promised to a deal that waits (what a new order may use). */
+  theirsFree?: number;
+  mineFree?: number;
   /** Credits per unit: what they charge the player, and what they pay the player. */
   sell: number;
   buy: number;
@@ -1027,6 +1030,8 @@ export interface UiTradePartner {
   /** Why a refused hail was refused ('hostile', 'weaponsHot', 'silent', 'noTrade'). */
   reason: string;
   wallet: number;
+  /** Their credits not already promised to a deal that waits. */
+  walletFree?: number;
   rep: number;
   lines: UiTradeLine[];
   /** How a delivery would go: who flies ('them' | 'you') or the reject code that stops it, for goods going out / coming in. */
@@ -1064,6 +1069,8 @@ export interface UiTradeDeal {
 
 export interface UiTrade {
   credits: number;
+  /** Credits not already promised to deals that wait (what a new order may spend). */
+  free?: number;
   partners: UiTradePartner[];
   deals: UiTradeDeal[];
 }

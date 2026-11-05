@@ -1,5 +1,5 @@
 import {
-  CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, reputationWith, unitPrice, type Deal, type Sim,
+  CrewC, ForHireC, ShipC, TraderC, VehicleC, type Trader, hailVerdict, isSurplus, planCourier, playerItems, playerShip, profileFor, commitments, liveDealWith, reputationWith, unitPrice, type Deal, type Sim,
 } from '../sim';
 import { fetching } from '../sim/galaxy/recruit';
 import { contrabandRate, isContraband, setsOf, truceBanned, truceHolds } from '../sim';
@@ -9,6 +9,7 @@ import type { UiMarketServices, UiRecruit, UiTrade, UiTradeDeal, UiTradePartner 
 
 /** Short label of what a deal is doing now. */
 const PHASE: Record<Deal['phase'], string> = {
+  queued: 'Waiting for the earlier delivery',
   dispatch: 'Sending the shuttle', load: 'Loading the shuttle', out: 'Shuttle on its way over',
   dockStation: 'Docking at the station', stationWork: 'Station crew loading and unloading',
   exchange: 'Swapping cargo',
@@ -25,9 +26,9 @@ const list = (sim: Sim, lines: readonly { item: string; count: number }[]): stri
   lines.map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ');
 
 /** What stops a run in a direction, as a reject code, or '' if it can go. Probes with one unit of anything. */
-function probe(sim: Sim, ship: number, dir: 'out' | 'in'): { courier: string; error: string; cap: number } {
+function probe(sim: Sim, ship: number, dir: 'out' | 'in', queue: boolean): { courier: string; error: string; cap: number } {
   const unit = [{ item: Object.keys(sim.content.items)[0] ?? '', count: 1 }];
-  const plan = planCourier(sim, ship, dir === 'out' ? unit : [], dir === 'in' ? unit : []);
+  const plan = planCourier(sim, ship, dir === 'out' ? unit : [], dir === 'in' ? unit : [], false, queue);
   return 'error' in plan ? { courier: '', error: plan.error, cap: 0 } : { courier: plan.courier, error: '', cap: plan.cap };
 }
 
@@ -70,6 +71,7 @@ export function buildTrade(sim: Sim): UiTrade {
   const me = sim.world.get(playerShip(sim), ShipC);
   const partners: UiTradePartner[] = [];
   let hw: ReturnType<typeof hardware> | undefined;
+  const cm = commitments(sim);
   const candidates = [...sim.world.query(ShipC), ...sim.world.query(TraderC).filter((i) => !sim.world.has(i, ShipC))];
   for (const id of candidates) {
     const ship = sim.world.get(id, ShipC);
@@ -79,14 +81,17 @@ export function buildTrade(sim: Sim): UiTrade {
     const hail = sim.trade.hails.find((h) => h.ship === id);
     const answered = !!hail?.answered && !!trader && hailVerdict(sim, id).answers;
     const lines: UiTradePartner['lines'] = [];
+    const queued = !!liveDealWith(sim, id);
     if (answered && trader) {
       for (const item of Object.keys(sim.content.items)) {
         const theirs = trader.stock.find((s) => s.item === item)?.count ?? 0;
         const mine = playerItems(sim, item);
+        const mineFree = Math.max(0, mine - (cm.items.get(item) ?? 0));
+        const theirsFree = Math.max(0, theirs - (cm.stock.get(`${id}:${item}`) ?? 0));
         const sell = unitPrice(sim, id, item, 'sell');
         const buy = unitPrice(sim, id, item, 'buy');
         if (sell !== null && buy !== null && (theirs > 0 || mine > 0)) {
-          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}), ...(isContraband(sim, item) ? { contraband: true } : {}) });
+          lines.push({ item, name: sim.content.items[item]?.name ?? item, theirs, mine, mineFree, theirsFree, sell, buy, ...(isSurplus(sim, trader.profile, item) ? { surplus: true } : {}), ...(isContraband(sim, item) ? { contraband: true } : {}) });
         }
       }
     }
@@ -95,8 +100,8 @@ export function buildTrade(sim: Sim): UiTrade {
       id, name: trader?.name ?? ship?.name ?? 'Station', kind: ship ? 'ship' : 'station', station: !!trader?.station,
       role: profile ? (sim.content.trade?.traders[profile]?.name ?? '') : '', trades: profile !== null,
       hail: !hail ? 'none' : hail.answered && answered ? 'answered' : 'refused', reason: hail && !answered ? (hail.reason || 'hostile') : '',
-      wallet: trader?.credits ?? 0, rep: trader ? reputationWith(sim, id) : 0, lines,
-      out: answered ? probe(sim, id, 'out') : { courier: '', error: '', cap: 0 }, in: answered ? probe(sim, id, 'in') : { courier: '', error: '', cap: 0 },
+      wallet: trader?.credits ?? 0, walletFree: Math.max(0, (trader?.credits ?? 0) - (cm.theirs.get(id) ?? 0)), rep: trader ? reputationWith(sim, id) : 0, lines,
+      out: answered ? probe(sim, id, 'out', queued) : { courier: '', error: '', cap: 0 }, in: answered ? probe(sim, id, 'in', queued) : { courier: '', error: '', cap: 0 },
       offer: offer ? { id: offer.id, give: offer.give, get: offer.get, barter: offer.barter, balance: offer.balance } : null,
       recruits: trader?.station ? recruitsAt(sim, id) : [],
       hireError: trader?.station ? hireProbe(sim, id) : '',
@@ -111,8 +116,8 @@ export function buildTrade(sim: Sim): UiTrade {
       : d.crew ? HIRE_PHASE[d.phase] ?? PHASE[d.phase] : d.phase === 'exchange' && d.via === 'hover' ? 'Swapping cargo from a hover (no station airlock free)' : PHASE[d.phase],
     trip: d.trip ? { n: d.trip.n, of: d.trip.of, stopped: d.trip.stopped ?? '' } : null,
     courier: d.courier, give: list(sim, d.give), get: list(sim, d.get), balance: d.barter ? 0 : d.balance, barter: d.barter, vehicle: d.vehicle,
-    live: d.phase !== 'done' && d.phase !== 'failed', cancellable: d.phase === 'dispatch' || d.phase === 'load' || (!!d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork')),
+    live: d.phase !== 'done' && d.phase !== 'failed', cancellable: d.phase === 'queued' || d.phase === 'dispatch' || d.phase === 'load' || (!!d.crew && (d.phase === 'out' || d.phase === 'dockStation' || d.phase === 'stationWork')),
     flying: d.vehicle !== 0 && sim.world.get(d.vehicle, VehicleC)?.state === 'flying',
   }));
-  return { credits: sim.trade.credits, partners, deals };
+  return { credits: sim.trade.credits, free: Math.max(0, sim.trade.credits - cm.credits), partners, deals };
 }

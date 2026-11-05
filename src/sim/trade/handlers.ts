@@ -3,6 +3,8 @@ import type { Command } from '../commands';
 import type { Sim } from '../sim';
 import { planCourier } from './courier';
 import { failDeal, isLive, liveDealWith, openDeal } from './deals';
+import { commitments } from './commit';
+import { dropQueued } from './queue';
 import { checkOffer } from './offers';
 import { peakFunding, planTrips } from './trips';
 import { ensureTrader, hailVerdict } from './traders';
@@ -36,7 +38,6 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const c = checkOffer(sim, cmd.ship, cmd.give, cmd.get, cmd.barter === true);
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
-    if (liveDealWith(sim, cmd.ship)) return reject(sim, cmd.type, 'dealOpen');
     sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== cmd.ship);
     const offer = { id: sim.trade.nextId++, ship: cmd.ship, give: c.give, get: c.get, barter: cmd.barter === true, balance: c.quote.balance, tick: sim.tick };
     sim.trade.offers.push(offer);
@@ -46,10 +47,11 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
     const offer = sim.trade.offers.find((o) => o.id === cmd.offer);
     if (!offer) return reject(sim, cmd.type, 'noOffer');
-    if (liveDealWith(sim, offer.ship)) return reject(sim, cmd.type, 'dealOpen');
+    // A partner with a deal under way: this one is agreed now and waits its turn (queue.ts).
+    const queued = !!liveDealWith(sim, offer.ship);
     const c = checkOffer(sim, offer.ship, offer.give, offer.get, offer.barter);
     if (c.error || !c.quote) return reject(sim, cmd.type, c.error ?? 'noPrice');
-    const plan = planCourier(sim, offer.ship, c.give, c.get);
+    const plan = planCourier(sim, offer.ship, c.give, c.get, false, queued);
     if ('error' in plan) return reject(sim, cmd.type, plan.error);
     // More than one hold: haul trips in turn, each settled as it lands (see Deal.trip). The funds for the whole order were checked above.
     const trips = planTrips(sim, offer.ship, c.give, c.get, plan.cap, offer.barter);
@@ -57,10 +59,11 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     if (trips === 'tooBig') return reject(sim, cmd.type, 'tooBig');
     // Each trip settles on its own, so a mixed order can need more than its net balance along the way: check the peak, never overdraw a wallet.
     const need = peakFunding(trips, offer.barter);
-    if (need.player > sim.trade.credits) return reject(sim, cmd.type, 'noFunds');
-    if (need.trader > (sim.world.get(offer.ship, TraderC)?.credits ?? 0)) return reject(sim, cmd.type, 'theyBroke');
+    const cm = commitments(sim);
+    if (need.player > sim.trade.credits - cm.credits) return reject(sim, cmd.type, 'noFunds');
+    if (need.trader > (sim.world.get(offer.ship, TraderC)?.credits ?? 0) - (cm.theirs.get(offer.ship) ?? 0)) return reject(sim, cmd.type, 'theyBroke');
     offer.balance = c.quote.balance;
-    const deal = openDeal(sim, offer, c, plan, trips);
+    const deal = openDeal(sim, offer, c, plan, trips, queued);
     sim.events.emit({ type: 'trade.dealMade', deal: deal.id, ship: deal.ship, courier: deal.courier, balance: offer.balance });
   },
   'trade.cancel': (sim, cmd) => {
@@ -70,6 +73,7 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     }
     const deal = sim.trade.deals.find((d) => d.id === cmd.id);
     if (!deal || !isLive(deal)) return reject(sim, cmd.type, 'noDeal');
+    if (deal.phase === 'queued') return dropQueued(sim, deal, 'cancelled'); // nothing was held yet
     // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
     // unwound there (goods back where they were) and the shuttle flies home.
     const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';

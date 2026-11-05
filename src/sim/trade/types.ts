@@ -114,10 +114,11 @@ export interface Offer {
 }
 
 /**
- * Deal phases. At a station the player's shuttle docks (`dockStation`) and the station crew haul both ways
+ * Deal phases. `queued`: agreed while an earlier deal with the same partner is still running; nothing is held (no escrow, no stock, no
+ * shuttle) until it reaches the front (trade/queue.ts). At a station the player's shuttle docks (`dockStation`) and the station crew haul both ways
  * (`stationWork`) instead of the hover swap (`exchange`).
  */
-export type DealPhase = 'dispatch' | 'load' | 'out' | 'dockStation' | 'stationWork' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
+export type DealPhase = 'queued' | 'dispatch' | 'load' | 'out' | 'dockStation' | 'stationWork' | 'exchange' | 'back' | 'unload' | 'done' | 'failed';
 
 /** One haul trip of a larger order: its share of the goods, priced when the order was accepted. */
 export interface Trip {

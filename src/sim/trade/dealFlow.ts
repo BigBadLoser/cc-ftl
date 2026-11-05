@@ -18,6 +18,7 @@ import { TraderC, type Deal } from './types';
 import { stepHandover } from '../galaxy/handover';
 import { boardRecruits, landRecruits, lostRecruit, recruitsAboard } from './recruitLand';
 import { addCredits } from './credits';
+import { stepQueued } from './queue';
 
 /** Ticks between repeats of a flight command a deal keeps asking for until the shuttle obeys. */
 const REPEAT = 20;
@@ -41,6 +42,7 @@ export function advanceDeals(sim: Sim): void {
 }
 
 function step(sim: Sim, d: Deal): void {
+  if (d.phase === 'queued') return stepQueued(sim, d);
   d.timer++;
   if (d.handover) return stepHandover(sim, d);
   if (d.courier === 'them' && d.phase === 'dispatch') {

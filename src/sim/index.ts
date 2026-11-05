@@ -117,6 +117,7 @@ export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers
 export { planCourier, courierDef, type CourierPlan } from './trade/courier';
 export { playerShip, playerItems } from './trade/player';
 export { liveDealWith, isLive } from './trade/deals';
+export { commitments, type Commitments } from './trade/commit';
 export { ShipGrid, shipGridOf } from './shipGrid';
 export { packetFromTemplate, liftShip, stampPacket, type ShipPacket, type PacketEntity } from './sector/packet';
 export { archiveSector, restoreArchive, archiveOf, type SectorArchive } from './sector/archive';
