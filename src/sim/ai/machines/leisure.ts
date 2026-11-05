@@ -1,5 +1,5 @@
 import { BreakdownC } from '../../crew/breakTypes';
-import type { Grid } from '../../grid';
+import type { ShipGrid } from '../../shipGrid';
 import { CrewC, DeadC, PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { hasMood, noteLeisure } from '../../crew/mood';
@@ -102,7 +102,7 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
 }
 
 /** A walk to the nearest tile of the reachable room with the fewest crew (ties by distance); null when no room can be reached. */
-function quietSpot(sim: Sim, id: number, ship: number, grid: Grid, from: Tile): Tile[] | null {
+export function quietSpot(sim: Sim, id: number, ship: number, grid: ShipGrid, from: Tile): Tile[] | null {
   if (!grid.has('room')) return null;
   const crewIn = new Map<number, number>();
   for (const o of sim.world.query(CrewC, PositionC)) {
@@ -112,8 +112,8 @@ function quietSpot(sim: Sim, id: number, ship: number, grid: Grid, from: Tile): 
     if (room !== 0) crewIn.set(room, (crewIn.get(room) ?? 0) + 1);
   }
   const nearest = new Map<number, { x: number; y: number; d: number }>();
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) { // sector coordinates: the ship's rectangle, not from 0
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       const room = grid.get('room', x, y);
       if (room === 0 || !isTileWalkable(sim, grid, x, y) || unsafeFor(sim, id, ship, x, y)) continue;
       const d = Math.abs(x - from.x) + Math.abs(y - from.y);

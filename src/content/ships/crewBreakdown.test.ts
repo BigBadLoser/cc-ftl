@@ -7,6 +7,7 @@ import { IntentC } from '../../sim/ai/components';
 import { auditReservations } from '../../sim/ai/audit';
 import { breakChance, breakTerms, onCooldown, rollBreak } from '../../sim/crew/breakdown';
 import { isSettled } from '../../sim/crew/helpers';
+import { quietSpot } from '../../sim/ai/machines/leisure';
 import { startBreak, endBreak } from '../../sim/systems/breakdown';
 import { tierOf } from '../../sim/crew/breakTable';
 import { BREAK_BASE_P, BREAK_COOLDOWN_SEC } from '../../sim/tuning';
@@ -172,6 +173,37 @@ describe('a break in play', () => {
     run(sim, 40);
     expect(sim.world.get(c, InterruptC)?.reason).toBe('breakdown');
     expect(sim.world.get(c, TaskC)?.machine).toBe('break');
+  });
+
+  it('survival beats a break even for a drafted crew member who still holds an order: they are stepped off the fire', () => {
+    const { sim, c } = quiet();
+    sim.enqueue({ type: 'crew.draft', id: c, drafted: true });
+    run(sim, 2);
+    const p = sim.world.get(c, PositionC)!;
+    sim.world.get(c, DraftedC)!.target = { x: Math.round(p.x) + 3, y: Math.round(p.y) }; // an order the break suspends
+    startBreak(sim, c, { ...pick('freeze', 'combat'), ticks: 60 * TICK_HZ }); // a combat freeze: severe, stands still
+    run(sim, 5);
+    const at = { x: Math.round(sim.world.get(c, PositionC)!.x), y: Math.round(sim.world.get(c, PositionC)!.y) };
+    const seen = new Set<string>();
+    for (let i = 0; i < 80; i++) {
+      shipGrid(sim, homeShip(sim))!.set('fire', at.x, at.y, 200);
+      sim.step();
+      seen.add(sim.world.get(c, InterruptC)?.reason ?? 'none');
+    }
+    expect(seen.has('hazard')).toBe(true);
+    const now = sim.world.get(c, PositionC)!;
+    expect(Math.abs(now.x - at.x) + Math.abs(now.y - at.y)).toBeGreaterThan(0.5);
+    expect(sim.world.has(c, DraftedC)).toBe(true);
+    expect(sim.world.has(c, BreakdownC)).toBe(true);
+  });
+
+  it('isolation finds a quiet room on a ship whose origin is not (0, 0)', () => {
+    const { sim, c } = quiet();
+    const g = shipGrid(sim, homeShip(sim))!;
+    expect(g.x0 + g.y0).toBeGreaterThan(0);
+    const p = sim.world.get(c, PositionC)!;
+    const steps = quietSpot(sim, c, homeShip(sim), g, { x: Math.round(p.x), y: Math.round(p.y) });
+    expect(steps).not.toBeNull(); // scans the ship's own rectangle (sector coordinates), not from 0
   });
 
   it('a mild break scores the work drive 0 and holds no job, while needs still work', () => {

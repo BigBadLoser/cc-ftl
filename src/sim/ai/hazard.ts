@@ -1,3 +1,4 @@
+import { BreakdownC } from '../crew/breakTypes';
 import { AssignmentC, DraftedC, JobC, PathC, PositionC, type Position } from '../crew/components';
 import { exposure, HAZARD_AIR, HAZARD_COLD, HAZARD_FIRE, HAZARD_HEAT, hazardsHere, tileHazards } from '../crew/hazard';
 import { isSettled } from '../crew/helpers';
@@ -37,7 +38,8 @@ export function hazardHolds(sim: Sim, id: number): boolean {
   if (here === 0 || (here & ~toleratedHazards(sim, id)) === 0) return false;
   if (sim.world.get(id, TaskC)?.machine === 'escape') return true;
   const drafted = sim.world.get(id, DraftedC);
-  if (drafted && (drafted.target || sim.world.has(id, AssignmentC))) return false;
+  // A break suspends the draft's order (a frozen or cowering crew member does not walk to it): survival beats the break.
+  if (drafted && !sim.world.has(id, BreakdownC) && (drafted.target || sim.world.has(id, AssignmentC))) return false;
   const pos = sim.world.get(id, PositionC) as Position;
   return (sim.world.get(id, PathC)?.steps.length ?? 0) === 0 && isSettled(pos);
 }
