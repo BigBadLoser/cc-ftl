@@ -295,9 +295,29 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
         zt = z1 - MID_DROP if mid else z1
         paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                      # its top edge lit
         if mid and u1 < b - 1e-6:                       # (a seam where it meets the end block on its right, as the
-            paint(k, ax, plane, u1 - 1.5 * LINE, u1 - 0.5 * LINE, zb, zt - PZ, d, fam, 2)   # end block's side
-                                                        # shows on its left; clear of the end block's front)
+            e = RAIL_D + 2 * PAINT                      # end block's side shows on its left: a sheet the px left of
+            prism(k, ax, plane, u1 - 0.75 * LINE, u1 + 0.25 * LINE,   # the end block, up to its top; in front of
+                  [(e - PAINT, zb), (e, zb), (e, z1), (e - PAINT, z1)], fam, 2,   # it, so the px is whole: a px
+                  cols=[False, tone(fam, 2, OUT(ax), ax), False, False], cap=False)   # right at its depth)
     return z0
+
+
+PX0 = 0.875     # where the camera's px boundaries fall along the default wall's front (in px, off u's own grid)
+
+
+def _px(u, d):
+    """u on the default wall's front, d proud of it, in screen px (a depth shifts it a px left per LINE)."""
+    return u / LINE + PX0 - d / LINE
+
+
+def _u(n, d):
+    """The u that falls on px boundary n at depth d (_px's inverse)."""
+    return (n - PX0 + d / LINE) * LINE
+
+
+def _odd(x, par):
+    """x rounded to a whole number with par's parity (a part centred on a panel of that many px)."""
+    return 2 * round((x - par) / 2) + par
 
 
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
@@ -315,24 +335,31 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
+        n0, n1 = round(_px(p0, PAINT)), round(_px(p1, PAINT))                   # (its parts on whole px, each
+        p0, p1 = _u(n0, PAINT), _u(n1, PAINT)                                   # at its own depth)
         b0, b1 = q0, q1                                  # (the raised bar and fine lines placed as before ...)
         q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
         paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
-        paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
+        paint(k, ax, plane, _u(n0 + 1, 2 * PAINT), _u(n1 - 1, 2 * PAINT), q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if VARIANT[0]:
             from . import wall3d_variants as V
             V.wall_top(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, F, VARIANT[0])
             continue
-        bw = 0.42 * w
-        paint(k, ax, plane, uc - bw / 2 - LINE, uc + bw / 2 + LINE, q1 - 0.27, q1 - 0.07, 3 * PAINT, F, 0)
+        bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
+        ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
+        nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
+        paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27, q1 - 0.07,
+              3 * PAINT, F, 0)
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085
-            paint(k, ax, plane, uc - bw / 2, uc + bw / 2, bz - 0.05, bz, 4 * PAINT, "ochre", 3)
+            paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
+                  4 * PAINT, "ochre", 3)
         zr = b1 - 0.5
-        slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
-        gap = (zr - 0.07 - b0) / 3                       # (the two lines evenly between it and the panel's foot)
-        for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):
-            paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
+        slab(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), zr - 0.07, zr, FR, F, 3, ends=(False, False))  # raised
+        gap = (zr - 0.07 - b0) / 3                       # bar (its front the panel's full width between its seams)
+        for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # ... the two lines
+            paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
+                  3 * PAINT, F, 1)                                                              # evenly under it
 
 
 def hull_face(k, ax, plane, a, b, ends, zs, top, full, variant):
