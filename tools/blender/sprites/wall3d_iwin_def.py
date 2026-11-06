@@ -13,7 +13,7 @@ from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
 DIP = 10 * PZ           # the sill: the ramp's crest under the opening, this far under the ramp's top (as tan's) ...
-DIP_RUN = 8 / 32        # ... reached this far along the wall from a post (a sloped crest), then level
+DIP_RUN = 13 / 32       # ... reached this far along the wall from a post (a sloped crest), then level
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
@@ -25,6 +25,8 @@ PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair 
 PANE_T = 1 / 32
 PANE_OUT = 0.003
 POST = 11.25 / 32       # the end posts: the opening this far in from the tile's edge (as tan's POST_L)
+STEP_PX = 2              # under a sloped crest over the shelf the ramp's slope laid on over the shelf and the
+PD = 0.4 / 32            # step's lit edge (this many px down it) up to the cut: the step ends at the post
 PART = None
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
@@ -53,10 +55,22 @@ def _segs(x0, x1):
     """The opening along x between the crest's bends (and where it crosses the shelf): (u0, u1, h0, h1), past the
     tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    (t, f), zh = _dip(), T.lip_heights(W.skirt_top())[0]
-    c = DIP_RUN * (t - zh) / (t - f) if f < zh < t else None
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + ((x0 + c, x1 - c) if c else ()) if xa < u < xb})
+    (t, f), zs = _dip(), W.skirt_top()
+    cs = [DIP_RUN * (t - z) / (t - f) for z in _bends(zs) if f < z < t]
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + tuple(v for c in cs for v in (x0 + c, x1 - c))
+                            if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
+
+
+def _k():
+    return W.GN * W.RAMP_PX / W.ZART
+
+
+def _bends(zs):
+    """The crest's heights where the cut's reach bends: the shelf's, the slope's at the lip's front, at the step's
+    lit edge's foot."""
+    from .faction.slate import LIP_D
+    return T.lip_heights(zs)[0], zs - LIP_D * _k(), zs - (T.style().shelf + STEP_PX * PD) * _k()
 
 
 def _reach(h, yf):
@@ -65,7 +79,7 @@ def _reach(h, yf):
     from .faction.slate import LIP_D
     if h > T.lip_heights(W.skirt_top())[0] + 1e-9:
         return yf + LIP_D
-    return yf + (W.skirt_top() - h) / (W.GN * W.RAMP_PX / W.ZART)
+    return yf + (W.skirt_top() - h) / _k()
 
 
 def _cut(k, x0, x1, z1):
@@ -99,6 +113,26 @@ def _cut(k, x0, x1, z1):
         m.f = out
 
 
+def _over_step(k, u0, u1, h0, h1, yf, zs):
+    """The ramp's slope laid on over the shelf and the step's lit edge under a crest that cuts into them (near side),
+    from the cut down to the lit edge's foot, a hair proud of the plates (their tone: the wall's own)."""
+    from .faction.slate import LIP_D
+    kk, de = _k(), T.style().shelf + STEP_PX * PD
+    if (zs - max(h0, h1)) / kk >= de - 1e-9:
+        return
+    o = Vector((0.0, kk, 1.0)).normalized()
+    lift = o * (3 * T.PAINT)                        # (over the lit edge, which sits 2 PAINT up)
+
+    def top(h):
+        d = max(LIP_D, (zs - h) / kk)
+        return min(d, de)
+    pts = [(u0, top(h0)), (u1, top(h1)), (u1, de), (u0, de)]
+    pts = [p for i, p in enumerate(pts) if p != pts[i - 1]]     # (an end at the edge's foot: a triangle)
+    if len(pts) < 3:
+        return
+    k.poly([Vector((u, yf + d, zs - d * kk)) + lift for u, d in pts], "wall", 3, o)
+
+
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
     zs, z1 = W.skirt_top(), T.rail_foot(W.HF)           # (the beam's underside: the rail's foot)
@@ -121,6 +155,7 @@ def hook(k, sp, own=True):
         f0, f1 = (yf + T.style().shelf,) * 2 if over else (r0, r1)                     # glass, over its shelf)
         _quad(k, [(u0, -f0, h0), (u1, -f1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
+        _over_step(k, u0, u1, h0, h1, yf, zs)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
