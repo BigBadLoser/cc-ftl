@@ -56,5 +56,6 @@
   .prices .pr { font-size: 12px; color: var(--rest, var(--text)); }
   .prices .pr .ask { color: var(--dim); font-weight: 500; }
   .prices .pr.dear .nm small { color: var(--amber); }
-  .prices .pr.cheap .nm small { color: var(--green); }
+  .prices .pr.cheap .nm small { color: var(--good-ink); }
+  .prices .pr .nm small { margin-left: 6px; }
 </style>
