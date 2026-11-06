@@ -268,7 +268,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     return g ? regionOrigin(g) : ZERO;
   };
   const pickHost = (): PickHost => ({ scenes, cam, origin, hidden: (id) => !!world.get(id, ShipC)?.outpost?.hidden });
-  // PLACEHOLDER fight feedback and crew status marks, in the sector layer (see fightFx.ts, crewMarks.ts).
+  // PLACEHOLDER fight feedback (fightFx.ts) and the crew status marks (crewMarks.ts), in the sector layer.
   const fightFx = createFightFx(world, SL.ui, () => SL.scale, { ship: shipOf, muzzle: (id) => crewMuzzle(world, atlas, content.items, id) });
   const sectorMarks = createMarkers(SL.ui);
   const worldGrid = createWorldGrid(SL.ui);
@@ -283,17 +283,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
   const moduleGhost = createModuleGhost(SL.ui, thumbs, content.modules);
   /** Where a crew member's feet are drawn, in the sector-frame art px the overlays use (the sprite's own smoothed position). */
-  const crewSpritePos = (id: number): { x: number; y: number; h: number } | null => {
+  const crewSpritePos = (id: number): { x: number; y: number; h: number; bars: number } | null => {
     for (const [gid, sc] of scenes) {
       const p = sc.crewPos(id);
       if (!p) continue;
       const o = iso(origin(gid).x, origin(gid).y);
-      return { x: p.x + o.x, y: p.y + o.y, h: p.h };
+      return { x: p.x + o.x, y: p.y + o.y, h: p.h, bars: p.bars };
     }
     return null;
   };
   const orderFx = createOrderFx(world, SL.ui, crewSpritePos);
-  const crewMarks = createCrewMarks(world, SL.ui, { ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
+  const crewMarks = createCrewMarks(world, SL.ui, { atlas, figure: crewSpritePos, ship: shipOf, visible: (id, x, y) => { const sc = scenes.get(id); return !!sc && sc.layers.visible && !sc.hidesCrewAt(x, y); } });
 
   function shipOf(shipId: number): Ship | undefined {
     return shipId ? world.get(shipId, ShipC) : undefined;
@@ -557,7 +557,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       aimMarks.update();
       threatMarks.update();
       fightFx.update(dt);
-      crewMarks.update();
+      crewMarks.update(dt);
       orderFx.update();
       probe.end('render/views');
       probe.begin('render/fx');

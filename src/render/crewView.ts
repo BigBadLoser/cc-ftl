@@ -56,8 +56,11 @@ export interface CrewView {
   setSelectedCrew(ids: readonly number[]): void;
   /** Crew entity under an art-px point (the one whose feet are lowest on screen) and its feet's art y, or null. */
   pick(ax: number, ay: number): { id: number; y: number } | null;
-  /** Where a crew member's feet are drawn now (art px of this view's frame, smoothed like the sprite) and how tall the figure is, or null if not shown. */
-  spritePos(id: number): { x: number; y: number; h: number } | null;
+  /**
+   * Where a crew member's feet are drawn now (art px of this view's frame, smoothed like the sprite), how tall the figure is, and how far
+   * above the feet its health and air bars reach (0 with none shown), or null if not shown.
+   */
+  spritePos(id: number): { x: number; y: number; h: number; bars: number } | null;
   count(): number;
   dispose(): void;
 }
@@ -388,7 +391,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     },
     spritePos(id) {
       const s = slots.get(id);
-      return s && s.root.visible ? { x: s.root.x, y: s.root.y, h: s.height } : null;
+      if (!s?.root.visible) return null;
+      const bars = Math.max(0, s.barBg.visible ? -s.barBg.y : 0, s.airBg.visible ? -s.airBg.y : 0);
+      return { x: s.root.x, y: s.root.y, h: s.height, bars };
     },
     pick(ax, ay) {
       let best: number | null = null;
