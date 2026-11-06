@@ -27,17 +27,13 @@ RAMP_FOOT = "wD"        # (their upright foot)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
 PANE_OUT = 0.003
-POST_W = 9 / 32         # the end posts: this wide along the wall (the window's opening between them)
-POST_SLOT = (2, 2)      # a dark slot down each post's front: this many px in from its inner edge, this wide
-FOOT_H = 0.1            # each post's foot: this tall, standing PX further out, FOOT_OUT on into the opening
-FOOT_OUT = 2 / 32
 BEAM_OUT = T.PX         # the beam's blocks: this far proud of the header, split at the header's joints (a px gap)
 PART = None
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
 def _span(part):
-    return {"l": (-0.5 + POST_W, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - POST_W)}[part]
+    return {"l": (-0.5 + T.STILE, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - T.STILE)}[part]
 
 
 def _quad(k, pts, out, col):
@@ -115,9 +111,6 @@ def hook(k, sp, own=True):
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     _beam(k, z1)
-    for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # the end posts
-        if on:
-            _post(k, u, sd, zs, zs, z1, yf)
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2
@@ -167,19 +160,6 @@ def _beam(k, z1):
         a = u0 + (T.LINE if u0 > -0.5 else 0.0)
         b = u1 - (0.0 if u1 >= 0.5 else 0.0)
         T.slab(k, "y", yf, a, b, z1, zt, T.FR + BEAM_OUT, "wall", 3, ends=(u0 > -0.5, u1 < 0.5))
-
-
-def _post(k, u, sd, zs, z0, z1, yf):
-    """An end post from the tile's edge to u (the opening's edge; sd: the way to the edge), a dark slot down its
-    front, a foot."""
-    e = u + sd * POST_W                                  # (the tile's edge)
-    lo, hi = sorted((u, e))
-    T.slab(k, "y", yf, lo, hi, z0, z1, T.FR, "wall", 3, ends=(sd < 0, sd > 0))
-    s0 = u + sd * POST_SLOT[0] * T.LINE
-    s1 = s0 + sd * POST_SLOT[1] * T.LINE
-    T.paint(k, "y", yf, min(s0, s1), max(s0, s1), z0 + FOOT_H + 0.04, z1 - 0.06, T.FR, "wall", 0)
-    f0, f1 = sorted((e, u - sd * FOOT_OUT))
-    T.slab(k, "y", yf, f0, f1, z0, z0 + FOOT_H, T.FR + T.PX, "wall", 3, ends=(sd < 0, sd > 0))
 
 
 def window(fn, part):
