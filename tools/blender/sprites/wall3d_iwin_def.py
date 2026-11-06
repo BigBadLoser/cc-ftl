@@ -18,9 +18,12 @@ BEAM_DOWN = 0.15        # the beam's underside: the header's foot under the wall
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
-POST_IN = "wM"          # the posts' sides into the opening
-SILL_TOP = "wL"         # the sill's top
-BEAM_UNDER = "wK"       # the beam's underside
+POST_IN = "wD"          # the posts' sides into the opening (dark)
+SILL_TOP = "wH"         # the sill's level top (the light)
+SLOPE_TOP = "wS"        # the sill's top where it slopes down from a post (a step under)
+BEAM_UNDER = "wK"       # the beam's underside (the black)
+RAMP = "wM"             # the ramps on a window tile: plain, their art cleared
+RAMP_FOOT = "wD"        # (their upright foot)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -29,8 +32,6 @@ POST_SLOT = (2, 2)      # a dark slot down each post's front: this many px in fr
 FOOT_H = 0.1            # each post's foot: this tall, standing PX further out, FOOT_OUT on into the opening
 FOOT_OUT = 2 / 32
 BEAM_OUT = T.PX         # the beam's blocks: this far proud of the header, split at the header's joints (a px gap)
-AMBER = (0.5 / 32, 0.03)  # the sill's amber block under each post: this far in from the post's sides, from the ramp's
-                        # ends
 PART = None
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
@@ -97,9 +98,10 @@ def hook(k, sp, own=True):
     zs, z1 = W.skirt_top(), W.HF - BEAM_DOWN
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
+    k.side = None
+    _plain(k, zs, yf)
     _cut(k, x0, x1, z1)
     a, b = max(x0, -0.5), min(x1, 0.5)
-    k.side = None
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
         if on:
             _quad(k, [(u, -yr, zs), (u, yr, zs), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
@@ -109,10 +111,11 @@ def hook(k, sp, own=True):
             continue
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
         r0, r1 = _reach(h0, yf), _reach(h1, yf)
-        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SILL_TOP)
+        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
+              SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     _beam(k, z1)
-    for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # the end posts, their amber sill blocks
+    for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # the end posts
         if on:
             _post(k, u, sd, zs, zs, z1, yf)
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
@@ -137,6 +140,23 @@ def hook(k, sp, own=True):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
+def _plain(k, zs, yf):
+    """Clear the ramps' art (their plates, the shell's slope under them) over the tile and lay them again plain: the
+    slope from the wall's face down to the foot, the foot upright, both sides."""
+    ft = W.FOOT_PX / W.ZART
+    yt = yf + W.skirt_run()
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        m.f = [f for f in m.f if not all(m.v[i][2] <= zs + 1e-6 and abs(m.v[i][1]) >= yf - 1e-6 for i in f[0])]
+    sl = Vector((0.0, (zs - ft) / W.skirt_run(), 1.0)).normalized()
+    for sd in (1, -1):
+        _quad(k, [(-0.5, sd * yf, zs), (0.5, sd * yf, zs), (0.5, sd * yt, ft), (-0.5, sd * yt, ft)],
+              (0, sd * sl.y, sl.z), RAMP)
+        _quad(k, [(-0.5, sd * yt, ft), (0.5, sd * yt, ft), (0.5, sd * yt, 0.0), (-0.5, sd * yt, 0.0)], (0, sd, 0),
+              RAMP_FOOT)
+
+
 def _beam(k, z1):
     """The beam's blocks over the whole tile: the header (wall3d.wall_face) stood BEAM_OUT further out, split at its
     joints (header_marks: a long middle block, the end blocks across the tile's edges) by a px gap."""
@@ -151,7 +171,7 @@ def _beam(k, z1):
 
 def _post(k, u, sd, zs, z0, z1, yf):
     """An end post from the tile's edge to u (the opening's edge; sd: the way to the edge), a dark slot down its
-    front, a foot; under it on the ramp an amber block."""
+    front, a foot."""
     e = u + sd * POST_W                                  # (the tile's edge)
     lo, hi = sorted((u, e))
     T.slab(k, "y", yf, lo, hi, z0, z1, T.FR, "wall", 3, ends=(sd < 0, sd > 0))
@@ -160,14 +180,6 @@ def _post(k, u, sd, zs, z0, z1, yf):
     T.paint(k, "y", yf, min(s0, s1), max(s0, s1), z0 + FOOT_H + 0.04, z1 - 0.06, T.FR, "wall", 0)
     f0, f1 = sorted((e, u - sd * FOOT_OUT))
     T.slab(k, "y", yf, f0, f1, z0, z0 + FOOT_H, T.FR + T.PX, "wall", 3, ends=(sd < 0, sd > 0))
-    sl, run = W.GN * W.RAMP_PX / W.ZART, W.skirt_run()     # the amber block on the ramp's slope
-    zr = W.skirt_top()
-    a0, a1 = lo + AMBER[0], hi - AMBER[0]
-    d0, d1 = AMBER[1], run - AMBER[1]
-    n = Vector((0.0, sl, 1.0)).normalized()
-    off = 4 * T.PAINT
-    k.poly([Vector((x, yf + d, zr - d * sl)) + n * off for x, d in ((a0, d0), (a1, d0), (a1, d1), (a0, d1))],
-           "ochre", 3, n)
 
 
 def window(fn, part):
