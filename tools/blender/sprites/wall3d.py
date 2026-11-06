@@ -261,10 +261,9 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     from .faction.slate import LIP_D, LIP_H, _thirds
     mit = _mitres(ends)
     zh = zs - style().shelf * W.GN * W.RAMP_PX / W.ZART  # the ramp's shelf against the wall (Style.shelf)
-    zl = zh + 3 * PZ                                    # (the lip's foot meets the shelf's dark back on screen)
-    paint(k, ax, plane, a, b, zh - 0.01, zl, 0.0, fam, 2)                                       # (the face down to it)
-    prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
-          fam, 3, cols=[False, None, None, False], mitre=mit)
+    zl = zh + 3 * PZ                                    # (its top as slate's: LIP_H over this)
+    prism(k, ax, plane, a, b, [(0.0, zh), (LIP_D, zh), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
+          fam, 3, cols=[False, None, None, False], mitre=mit)     # (its front on down to the shelf: no undercut)
     zg = zl + 6 * PZ                                    # the seam over it
     if zg + PZ >= top - 0.03:
         return zg, zl + LIP_H
@@ -273,7 +272,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     for u in _thirds(a, b):
         q0, q1 = u, u + 0.7 * LINE
         dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
-        prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], fam, 1,
+        prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 1,
               cols=[False, None, None, False])
         paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
     return zg + PZ, zl + LIP_H
@@ -325,7 +324,8 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             paint(k, ax, plane, uc - bw / 2, uc + bw / 2, bz - 0.05, bz, 4 * PAINT, "ochre", 3)
         zr = q1 - 0.5
         slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
-        for zz in (zr - 0.17, zr - 0.27):
+        gap = (zr - 0.07 - q0) / 3                       # (the two lines evenly between it and the panel's foot)
+        for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):
             paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
 
 
@@ -492,6 +492,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 ed = pd                                 # it (a px across, about a px down the slope), its top
                 fd0, fd1 = fd0 + 4 * pd, fd1 - 2 * pd   # 4 px down, its bottom 2 px up (its top under the
                 fd0 = max(fd0, d0 + pd) + pd            # step's lit edge, not on it; then a px further down)
+                sb = fd1 - ed                           # (the bottom seam's top)
                 hz = fd1 - 4 * pd                       # either side a seam across to the slope's edges, its
                 ea = u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0) + g      # line 3 px over the
                 eb = u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0) - g      # panel's bottom one
@@ -518,8 +519,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam,
                   3 + LIFT(), base=rise)                # ... and the plate sunk in it (a shade over the slope)
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
-            if style().plain:                           # (the default walls: the slot a px down)
-                sd0, sd1 = sd0 + pd, sd1 + pd
+            if style().plain:                           # (the default walls: the slot a px down, clear of the
+                sd0, sd1 = sd0 + pd, min(sd1 + pd, sb - 1e-3)             # panel's bottom seam)
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + fr + 2 * PAINT, fam,
                   0, base=rise + fr)                                           # a dark slot on the frame
     toe_fam, toe_at = style().toe, style().toe_at
