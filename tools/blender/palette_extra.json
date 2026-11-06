@@ -3335,5 +3335,114 @@
  "scSteelD": {
   "hex": "#485a7a",
   "set": "scrapper"
+ },
+ "upSteel": {
+  "hex": "#8e99a6",
+  "set": "upgrades"
+ },
+ "upSteelD": {
+  "hex": "#5b6673",
+  "set": "upgrades"
+ },
+ "upGun": {
+  "hex": "#3a424d",
+  "set": "upgrades"
+ },
+ "upHeavy": {
+  "hex": "#7d838c",
+  "set": "upgrades"
+ },
+ "upBolt": {
+  "hex": "#c4ccd4",
+  "set": "upgrades"
+ },
+ "upBlack": {
+  "hex": "#161a20",
+  "set": "upgrades"
+ },
+ "upOlive": {
+  "hex": "#59634a",
+  "set": "upgrades"
+ },
+ "upYel": {
+  "hex": "#f2c230",
+  "set": "upgrades"
+ },
+ "upCy": {
+  "hex": "#9be8f5",
+  "set": "upgrades"
+ },
+ "upCyD": {
+  "hex": "#3a9fbf",
+  "set": "upgrades"
+ },
+ "upCu": {
+  "hex": "#c8743c",
+  "set": "upgrades"
+ },
+ "upCuD": {
+  "hex": "#8c4a24",
+  "set": "upgrades"
+ },
+ "upVio": {
+  "hex": "#7a5cff",
+  "set": "upgrades"
+ },
+ "upVioD": {
+  "hex": "#3e2f8a",
+  "set": "upgrades"
+ },
+ "upOr": {
+  "hex": "#ff5a1f",
+  "set": "upgrades"
+ },
+ "upOrD": {
+  "hex": "#8f2e12",
+  "set": "upgrades"
+ },
+ "upRed": {
+  "hex": "#e04058",
+  "set": "upgrades"
+ },
+ "upGrn": {
+  "hex": "#4fd47a",
+  "set": "upgrades"
+ },
+ "upBlu": {
+  "hex": "#4a8dff",
+  "set": "upgrades"
+ },
+ "upAmb": {
+  "hex": "#ffb02e",
+  "set": "upgrades"
+ },
+ "upGlass": {
+  "hex": "#d6eef5",
+  "set": "upgrades"
+ },
+ "upYelG": {
+  "hex": "#ffe14a",
+  "emissive": 2.5,
+  "set": "upgrades"
+ },
+ "upCyG": {
+  "hex": "#7ff0ff",
+  "emissive": 2.5,
+  "set": "upgrades"
+ },
+ "upHot": {
+  "hex": "#ff7a2e",
+  "emissive": 2.5,
+  "set": "upgrades"
+ },
+ "upVioG": {
+  "hex": "#b9a6ff",
+  "emissive": 3.0,
+  "set": "upgrades"
+ },
+ "upOrG": {
+  "hex": "#ff9a3c",
+  "emissive": 2.5,
+  "set": "upgrades"
  }
 }
