@@ -268,13 +268,13 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     if zg + PZ >= top - 0.03:
         return zg, zl + LIP_H
     paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ, 0.0, fam, 2)                                 # (the face over it)
-    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 2)
+    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
     for u in _thirds(a, b):
         q0, q1 = u, u + 0.7 * LINE
         dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
-        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 2)
+        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
     return zg + PZ, zl + LIP_H
 
 
@@ -311,7 +311,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04, zb + 0.1, zh - 0.06
-        paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 2)                                          # panel outline
+        paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
         paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if VARIANT[0]:
             from . import wall3d_variants as V
@@ -326,7 +326,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
         gap = (zr - 0.07 - q0) / 3                       # (the two lines evenly between it and the panel's foot)
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):
-            paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 2)
+            paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
 
 
 def hull_face(k, ax, plane, a, b, ends, zs, top, full, variant):
@@ -551,7 +551,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
 def _bands(d0, d1, run_, fam):
     """The ramp's plates from d0 to d1 down the run, split in the look's bands (Style.ramp_bands): (from, to, family,
     level) each; without bands one plate in the face's family, level 2."""
-    out, cur = [], (d0, fam, 2)
+    out, cur = [], (d0, fam, 3 if style().plain else 2)     # (the default walls' slope a shade lighter)
     for f, bf, bl, gap in style().ramp_bands:
         out.append((cur[0], f * run_ - gap, cur[1], cur[2]))
         cur = (f * run_, bf or fam, bl)
