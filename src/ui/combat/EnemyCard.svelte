@@ -50,7 +50,7 @@
       <b>{hull}%</b>
       <span class="lbl">Shields</span>
       <span class="bar" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">
-        <Pips total={enemy.shield.max} on={enemy.shield.layers} progress={enemy.shield.progress} height={10} gap={4} fill empty="no shields" emptyCaps />
+        <Pips total={enemy.shield.max} on={enemy.shield.layers} height={10} gap={4} fill empty="no shields" emptyCaps />
       </span>
       <b>{enemy.shield.layers}/{enemy.shield.max}</b>
       <span class="lbl">Heat</span>

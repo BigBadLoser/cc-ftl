@@ -46,7 +46,7 @@
     overflow: hidden;
     display: grid;
     place-items: center;
-    font: 600 15px var(--head-font);
+    font: 600 13px var(--head-font);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text);
