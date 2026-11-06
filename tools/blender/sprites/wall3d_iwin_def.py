@@ -20,7 +20,8 @@ LINE_COL = "fTG0"       # (blue)
 POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wH"         # the sill's level top (the light)
 SLOPE_TOP = "wS"        # the sill's top where it slopes down from a post (a step under)
-SIDES = (None, None)    # the channel's sides (near, far): None, the ramps' own tone
+REACH = 6 / 32          # the cut's near side: this far out of the wall's face (a quarter into the ramp), straight;
+                        # the sill's top level across it, a step down to the ramp where it stands over it
 BEAM_UNDER = "wK"       # the beam's underside (the black)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
@@ -51,8 +52,8 @@ def _sill(x, x0, x1):
 
 
 def _segs(x0, x1):
-    """The opening along x between the crest's bends (and where it crosses the channel's sides' tops): (u0, u1, h0,
-    h1), past the tile where it runs on."""
+    """The opening along x between the crest's bends (and where it crosses the ramp's height at the cut's near side):
+    (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
     (t, f), zs = _dip(), W.skirt_top()
     cs = [DIP_RUN * (t - z) / (t - f) for z in _bends(zs) if f < z < t]
@@ -66,9 +67,15 @@ def _k():
 
 
 def _bends(zs):
-    """The channel's sides' tops (where the crest crosses them): near the shelf's, far the slope's at the lip's
-    front."""
-    return T.lip_heights(zs)[0], zs - _lip_d() * _k()
+    """The ramp's height at the cut's near side (where the crest crosses it, the step there flips)."""
+    return (zs - REACH * _k(),)
+
+
+def _ys(yf):
+    """The cut across the wall: (far edge, near edge, the ramp's height at the near edge). Far: where the far ramp
+    falls under the level sill (no far ramp face over the sill); near: REACH out of the face."""
+    zs = W.skirt_top()
+    return -(yf + DIP / _k()), yf + REACH, zs - REACH * _k()
 
 
 def _lip_d():
@@ -76,17 +83,17 @@ def _lip_d():
     return LIP_D
 
 
-def _cut(k, x0, x1, z1, yb):
-    """Take everything over the crest and under the beam (z1) out over the opening, lip front to lip front (|y| <
-    yb): a straight channel, the ramps' slopes past it left whole."""
+def _cut(k, x0, x1, z1, yF, yb):
+    """Take everything over the crest and under the beam (z1) out over the opening, from the far edge (yF) to the
+    near one (yb): a straight channel, the near ramp past it left whole."""
     sg = _segs(x0, x1)
     xa, xb, hmin = sg[0][0], sg[-1][1], min(min(h0, h1) for _, _, h0, h1 in sg)
     inx = [(0, xa, 1), (0, xb, -1)]
-    regions = [[(0, xa, -1)], [(0, xb, 1)], inx + [(1, yb, 1)], inx + [(1, -yb, -1)],
-               inx + [(1, -yb, 1), (1, yb, -1), (2, z1, 1)]]
+    regions = [[(0, xa, -1)], [(0, xb, 1)], inx + [(1, yb, 1)], inx + [(1, yF, -1)],
+               inx + [(1, yF, 1), (1, yb, -1), (2, z1, 1)]]
     for u0, u1, h0, h1 in sg:
         g = (h1 - h0) / (u1 - u0)
-        regions.append([(0, u0, 1), (0, u1, -1), (1, -yb, 1), (1, yb, -1), ((g, 0.0, -1.0), g * u0 - h0)])
+        regions.append([(0, u0, 1), (0, u1, -1), (1, yF, 1), (1, yb, -1), ((g, 0.0, -1.0), g * u0 - h0)])
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -116,25 +123,29 @@ def hook(k, sp, own=True):
     zp = _dip()[0]                                      # (the crest at a post: the lip's top)
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
-    yb = yf + _lip_d() + 3 * T.PAINT                    # (the channel's sides: the lips' fronts, their seams' paint)
+    yF, yb, zq = _ys(yf)
     k.side = None
-    _cut(k, x0, x1, z1, yb)
+    _cut(k, x0, x1, z1, yF, yb)
     a, b = max(x0, -0.5), min(x1, 0.5)
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
         if on:
             _quad(k, [(u, -yr, zp), (u, yr, zp), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
-    zn, zf = _bends(zs)                                 # (the ramps' tops at the channel's sides: near, far)
-    for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: the cut along the crest, lip to lip
+    for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: level across the cut, along the crest
         u0, u1 = max(u0, a), min(u1, b)
         if u1 <= u0:
             continue
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
-        _quad(k, [(u0, -yb, h0), (u1, -yb, h1), (u1, yb, h1), (u0, yb, h0)], (0, 0, 1),
+        _quad(k, [(u0, yF, h0), (u1, yF, h1), (u1, yb, h1), (u0, yb, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
-        for (y, zt), col in zip(((yb, zn), (-yb, zf)), SIDES):             # the channel's sides, crest to the ramp's top there (near,
-            if max(abs(h0 - zt), abs(h1 - zt)) > 1e-9 and (y < 0 or max(h0, h1) < zt + 1e-9):   # over it the lip's)
-                k.poly([Vector(q) for q in ((u0, y, h0), (u1, y, h1), (u1, y, zt), (u0, y, zt))], "wall", 2,
-                       Vector((0, -1 if (y > 0) == (min(h0, h1) < zt - 1e-9) else 1, 0)), fixed=col)
+        if max(abs(h0 - zq), abs(h1 - zq)) > 1e-9:     # the step at the near side, the crest to the ramp (facing out
+            up = min(h0, h1) > zq - 1e-9                # where the sill stands over the ramp)
+            k.poly([Vector(q) for q in ((u0, yb, h0), (u1, yb, h1), (u1, yb, zq), (u0, yb, zq))], "wall", 2,
+                   Vector((0, 1 if up else -1, 0)))
+    dl, sh, zh = _lip_d(), T.style().shelf, T.lip_heights(zs)[0]
+    for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # at a post, the sill over the ramp: its end
+        if on and zp > zq:                                          # closed down to the ramp (lip, shelf, slope)
+            for poly in (((dl, zp), (REACH, zp), (REACH, zq), (sh, zh)), ((dl, zp), (sh, zh), (dl, zh))):
+                k.poly([Vector((u, yf + d, z)) for d, z in poly], "wall", 2, Vector((sd, 0, 0)))
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
