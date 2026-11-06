@@ -1,8 +1,7 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
-  import { ActionButton, Chip, chipTone, Frame, FrameGap, KeyBadge, Meter, Pips } from '../kit';
-  import { keyLabel, keymap } from '../keymap';
+  import { Chip, chipTone, Frame, FrameGap, Meter, Pips } from '../kit';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
   import HeatBar, { heatTone } from './HeatBar.svelte';
@@ -11,13 +10,10 @@
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
    */
-  let { enemy, state: pill, onFrame, onBoard, boardBlocker }: {
+  let { enemy, state: pill, onFrame }: {
     enemy: UiShipCombat;
     state: { text: string; tone: string };
     onFrame: () => void;
-    onBoard: () => void;
-    /** Why Board is disabled (null = it opens the party picker). */
-    boardBlocker: string | null;
   } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
@@ -46,34 +42,20 @@
   {/snippet}
   <div class="body">
     {#if sub}<span class="fac" class:neutral={calm}>{sub}</span>{/if}
-    <div class="def">
-      <div class="srow">
-        <Pips
-          total={enemy.shield.max}
-          on={enemy.shield.layers}
-          width={26}
-          height={7}
-          gap={2}
-          empty="no shields"
-          emptyCaps
-          title="Shield layers {enemy.shield.layers}/{enemy.shield.max}"
-        />
-        <span class="chip" title="Chance a shot misses">Evade <b>{Math.round(enemy.evasion * 100)}%</b></span>
-      </div>
-      <Meter
-        value={hull}
-        max={100}
-        tone="auto"
-        height={20}
-        edge="var(--hostile-track)"
-        label="{hull}%"
-        blink={hull < 30}
-        title="Hull integrity"
-      />
-      <div class="hrow" title="Heat">
-        <span class="grow"><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={8} edge="var(--hostile-track)" label="Enemy heat" /></span>
-        <span class="hp {hot}">Heat {heatPct}%</span>
-      </div>
+    <div class="stats">
+      <span class="lbl">Hull</span>
+      <span class="bar" title="Hull integrity. Evasion {Math.round(enemy.evasion * 100)}%: the chance a shot misses">
+        <Meter value={hull} max={100} tone="auto" height={10} edge="var(--line-hi)" blink={hull < 30} />
+      </span>
+      <b>{hull}%</b>
+      <span class="lbl">Shields</span>
+      <span class="bar" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">
+        <Pips total={enemy.shield.max} on={enemy.shield.layers} progress={enemy.shield.progress} height={10} gap={4} fill empty="no shields" emptyCaps />
+      </span>
+      <b>{enemy.shield.layers}/{enemy.shield.max}</b>
+      <span class="lbl">Heat</span>
+      <span class="bar" title="Heat"><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={10} edge="var(--line-hi)" label="Enemy heat" /></span>
+      <b class={hot}>{heatPct}%</b>
     </div>
 
     {#if enemy.charges && enemy.charges.length > 0}
@@ -83,21 +65,16 @@
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
             <span class="nm">{w.name}</span>
-            <span class="shotbar" style:border-color={shot ?? 'var(--hostile-track)'}>
-              <i style:width="{Math.round(w.charge * 100)}%" style:background={shot ?? 'var(--hud-bar)'}></i>
-              <u style:left="{Math.round(w.commitAt * 100)}%"></u>
-            </span>
-            <span class="st">{row.status}</span>
+            {#if w.eta !== null}
+              <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
+            {:else}
+              <span class="st">{row.status}</span>
+            {/if}
+            <i style:width="{Math.round(w.charge * 100)}%"></i>
           </div>
         {/each}
       </div>
     {/if}
-    <div class="board">
-      <ActionButton tone="plain" disabled={!!boardBlocker} title={boardBlocker ?? `Send a boarding party in a shuttle (${keyLabel($keymap, 'combat.board')})`} testid="combat-board" onclick={onBoard}>
-        <Icon name="shuttle" size={16} />Board<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.board')}</KeyBadge>
-      </ActionButton>
-      {#if boardBlocker}<span class="why" data-testid="board-blocker">{boardBlocker}</span>{/if}
-    </div>
   </div>
 </Frame>
 
@@ -106,9 +83,6 @@
     display: grid;
     gap: 10px;
   }
-  .board { display: flex; align-items: center; gap: var(--sp-2); height: 28px; }
-  .board :global(.btn) { width: 120px; }
-  .why { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
   .fr {
     min-height: 0;
     min-width: 0;
@@ -131,85 +105,78 @@
     color: var(--hostile-dim);
   }
   .fac.neutral { color: var(--dim); }
-  .def {
+  /* The same shape as the player's STATUS block: label, bar, value. */
+  .stats {
     display: grid;
-    gap: 3px;
-  }
-  .srow {
-    display: flex;
+    grid-template-columns: 58px minmax(0, 1fr) 34px;
     align-items: center;
-    justify-content: space-between;
-    height: 20px;
+    gap: 7px var(--sp-2);
   }
-  .chip {
-    font: 600 11px/1 var(--head-font);
+  .lbl {
+    font: 600 12px var(--head-font);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--dim);
-    padding: 2px 5px;
-    border: 1px solid var(--line);
   }
-  .chip b {
+  .bar { display: block; min-width: 0; }
+  .stats b {
+    font: 600 14px var(--head-font);
     color: var(--text);
-    font-weight: 700;
-  }
-  .hrow {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    margin-top: 3px;
-  }
-  .grow {
-    flex: 1;
-    display: block;
-  }
-  .hp {
-    font: 600 11px/1 var(--head-font);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--dim);
-    min-width: 62px;
     text-align: right;
   }
-  .hp.amber { color: var(--amber); }
-  .hp.red { color: var(--red); }
-  /* Weapons: name, charge bar, status. A committed shot takes its colour: the same as its line in the world and its timeline marker. */
+  .stats b.amber { color: var(--amber); }
+  .stats b.red { color: var(--red); }
+  /* Weapons: a slim panel each. A committed shot takes its colour (the line in the world and the marker on the timeline): a left accent and the countdown. */
   .wl {
     display: grid;
-    gap: 5px;
+    gap: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
   }
   .w {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr) 68px;
-    gap: var(--sp-2);
+    position: relative;
+    display: flex;
     align-items: center;
-    height: 16px;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    height: 30px;
+    padding: 0 8px 0 10px;
+    background: var(--panel-2);
+    overflow: hidden;
   }
-  /* A weapon's charge in the colour of its shot (the line in the world and the marker on the timeline), so tones can't carry it. */
-  .shotbar { position: relative; display: block; height: 8px; box-sizing: border-box; border: 1px solid var(--hostile-track); background: var(--track); }
-  .shotbar i { display: block; height: 100%; }
-  .shotbar u { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--dim); }
+  .w.aim { box-shadow: inset 3px 0 0 var(--c); }
+  .w i {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--hud-bar);
+  }
+  .w.aim i { background: var(--c); }
   .nm {
-    font: 600 13px/1 var(--head-font);
+    min-width: 0;
+    font: 600 14px/1 var(--head-font);
     letter-spacing: 0.03em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--text);
+    color: var(--dim);
   }
+  .aim .nm { color: var(--text); }
+  .eta {
+    flex: none;
+    font: 700 20px/1 var(--head-font);
+    color: var(--c);
+  }
+  .eta small { font-size: 13px; }
   .st {
+    flex: none;
     font: 600 11px/1 var(--head-font);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    text-align: right;
     white-space: nowrap;
     color: var(--dim);
   }
-  .aim .nm,
-  .aim .st {
-    color: var(--c);
-  }
-  .off {
-    opacity: 0.4;
-  }
+  .aim .st { color: var(--c); }
+  .off { opacity: 0.4; }
 </style>

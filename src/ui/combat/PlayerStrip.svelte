@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { UiAiming, UiApi, UiCombat } from '../api';
   import ActionButtons from './ActionButtons.svelte';
+  import BoardButton from './BoardButton.svelte';
   import FleeButton from './FleeButton.svelte';
   import HeatGauge from './HeatGauge.svelte';
   import OverchargeButtons from './OverchargeButtons.svelte';
@@ -12,7 +13,7 @@
   type Me = NonNullable<UiCombat['player']>;
   type Drive = { charge: number; max: number; helmManned: boolean; active: boolean };
   /** The player's strip along the bottom: it only lays out its sections (see the components it uses) and the thermal-overload cover. */
-  let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge }: {
+  let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge, onBoard, boardBlocker }: {
     api: UiApi;
     me: Me;
     flee: () => void;
@@ -22,6 +23,9 @@
     onSelect: (id: number) => void;
     onVent: () => void;
     onOvercharge: (k: 'weapons' | 'shields' | 'engines') => void;
+    /** Opens the boarding party picker; null while there is no enemy (no Board tab). */
+    onBoard: (() => void) | null;
+    boardBlocker: string | null;
   } = $props();
 
   const canVolley = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
@@ -31,6 +35,7 @@
 </script>
 
 <div class="dock steel">
+  {#if onBoard}<BoardButton {onBoard} blocker={boardBlocker} />{/if}
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
@@ -62,7 +67,7 @@
     min-width: 0;
     pointer-events: auto;
   }
-  /* The strip and its Flee tab side by side, with a gap between, on one shared backplane: a plain fill behind the sections, the Flee tab
+  /* The Board tab, the strip and its Flee tab side by side, with a gap between, on one shared backplane: a plain fill behind the sections, the tabs
      and the gaps between them, flush with their outer edges (no padding or border of its own). */
   .dock {
     position: relative;

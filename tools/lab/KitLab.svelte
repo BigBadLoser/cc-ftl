@@ -2,6 +2,7 @@
   import { Chip, Meter, Segmented } from '../../src/ui/kit';
   import { dangerColor } from '../../src/ui/starmapStyle';
   import HeatBar from '../../src/ui/combat/HeatBar.svelte';
+  import DockTab from '../../src/ui/combat/DockTab.svelte';
   import EnemyCard from '../../src/ui/combat/EnemyCard.svelte';
   import type { UiShipCombat } from '../../src/ui/api';
 
@@ -12,7 +13,7 @@
     ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
     heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
     evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
-    charges: [gun(1, 'Burst laser', 0.7, true, 0xf08a9a), gun(2, 'Missile launcher', 0.4, false, 0xffc06a)],
+    charges: [gun(1, 'Burst laser', 0.7, true, 0xf08a9a), gun(2, 'Missile launcher', 0.4, false, 0xffc06a), { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
   } as unknown as UiShipCombat);
   const cards = [
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
@@ -89,7 +90,14 @@
 
   <h3>Enemy card <small>a generated name shows only its call sign; an authored one whole; a long one cut short</small></h3>
   <div class="row top">
-    {#each cards as c (c.e.name)}<EnemyCard enemy={c.e} state={c.pill} onFrame={() => {}} onBoard={() => {}} boardBlocker={null} />{/each}
+    {#each cards as c (c.e.name)}<EnemyCard enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
+  </div>
+
+  <h3>Dock tabs <small>Board ready, Board blocked, Flee charging (the same DockTab)</small></h3>
+  <div class="row tabs">
+    <DockTab icon="shuttle" label="Board" keyText="B" tip="Board" testid="lab-board" onclick={() => {}} />
+    <DockTab icon="shuttle" label="Board" keyText="B" disabled dim note="Shields up" tip="Shields up" testid="lab-board-blocked" onclick={() => {}} />
+    <DockTab icon="fast" label="Flee" keyText="F" disabled fill={0.45} tip="Flee" testid="lab-flee" onclick={() => {}} />
   </div>
 </div>
 
@@ -102,5 +110,6 @@
   .lbl { width: 90px; color: var(--dim); font-size: 12px; }
   .m { width: 150px; }
   .row.top { align-items: flex-start; gap: 20px; padding-top: 10px; }
+  .row.tabs { height: 150px; align-items: stretch; }
   .m.tall { display: flex; height: 22px; }
 </style>
