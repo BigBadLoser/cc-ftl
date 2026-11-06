@@ -8,34 +8,34 @@
   "emissive": 2.5
  },
  "wH": {
-  "hex": "#6aa69c"
+  "hex": "#6aa69c", "aa": "teal"
  },
  "wL": {
-  "hex": "#528886"
+  "hex": "#528886", "aa": "teal"
  },
  "wS": {
-  "hex": "#42706e"
+  "hex": "#42706e", "aa": "teal"
  },
  "wM": {
-  "hex": "#325a5b"
+  "hex": "#325a5b", "aa": "teal"
  },
  "wD": {
-  "hex": "#213e40"
+  "hex": "#213e40", "aa": "teal"
  },
  "wK": {
   "hex": "#0a1113"
  },
  "wXL": {
-  "hex": "#3e6868"
+  "hex": "#3e6868", "aa": "teal"
  },
  "wXS": {
-  "hex": "#335858"
+  "hex": "#335858", "aa": "teal"
  },
  "wXM": {
-  "hex": "#264648"
+  "hex": "#264648", "aa": "teal"
  },
  "wXD": {
-  "hex": "#172e31"
+  "hex": "#172e31", "aa": "teal"
  },
  "bH": {
   "hex": "#86aab8"
