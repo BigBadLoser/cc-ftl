@@ -9,7 +9,7 @@
 **Context:**
 - Design: `docs/DESIGN.md`, "Trade window and station panel (user decisions, 2026-11-05)". The approved mock is `docs/refs/mocks/station-panel-w2.png`; see the right-hand column.
 - The station panel is an open comms channel. Its right column is a SENSORS screen: the station's hologram sits in the middle, the player's ship, shuttles and other ships are drawn around it as small starmap silhouettes, and callouts point at parts of it (DOCKS, DEFENCE).
-- For now, the panel (branch `ui/station-panel-332`, `src/ui/StationSensors.svelte`) scales up the 48 px starmap icon (`starmap.struct.station_<type>`) and tints it cyan with a CSS filter plus scanlines. Your sprites replace that.
+- For now, the panel (`src/ui/StationSensors.svelte`, merged in #335) scales up the 48 px starmap icon (`starmap.struct.station_<type>`) and tints it cyan with a CSS filter plus scanlines. Your sprites replace that.
 - The tint stays in code. Render the hologram in neutral tones (grey or lightly coloured, with clear value bands), not pre-tinted cyan. The code turns it into a hologram with a filter or shader. Check one preview through the panel's current filter (`i.holo` in `StationSensors.svelte`).
 
 **Station types** (from `structure.station_*` in `src/content/galaxy.ts`, plus the den):
