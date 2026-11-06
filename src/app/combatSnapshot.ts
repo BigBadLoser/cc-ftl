@@ -85,7 +85,8 @@ function heatOf(c: Combat): UiShipCombat['heat'] {
   };
 }
 
-const SIDE_LABEL: Record<string, string> = { hostile: 'Hostile', neutral: 'Neutral', rogue: 'Rogue', alien: 'Alien', player: 'Player' };
+/** A ship's side when no faction fields it (a scenario raider): 'Enemy', not 'Hostile', which the card's tag already says. */
+const SIDE_LABEL: Record<string, string> = { hostile: 'Enemy', neutral: 'Neutral', rogue: 'Rogue', alien: 'Alien', player: 'Player' };
 const capital = (v: string): string => v.charAt(0).toUpperCase() + v.slice(1);
 
 /** The faction a ship belongs to, as the card shows it: the galaxy faction that fields it, else its generator faction, else its combat side. */

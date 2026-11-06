@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import type { UiApi, UiMining, UiPod } from './api';
 
   /** The player's mining pods with their state; with `asteroid`, each row offers Mine (that asteroid, only if `canMine`: it has ore) or Recall. */
@@ -21,7 +22,7 @@
         <span>{p.name}{#if p.pilot}<small> · {p.pilot}</small>{/if}</span>
         <span class="dim" data-testid="pod-status-{p.id}">{status(p)}</span>
       </div>
-      <div class="bar" title="Hold {p.hold} / {p.cap}"><i style="width: {p.cap ? (100 * p.hold) / p.cap : 0}%"></i></div>
+      <span class="mt"><Meter value={p.hold} max={Math.max(1, p.cap)} height={4} title="Hold {p.hold} / {p.cap}" /></span>
       <div class="bot">
         <small class="dim">Hold {p.hold}/{p.cap}{#if p.trips} · {p.trips} trip{p.trips === 1 ? '' : 's'}{/if}{#if p.asteroid && !asteroid} · {target(p) ?? ''}{/if}</small>
         {#if p.phase}
@@ -41,8 +42,7 @@
   .top, .bot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .top small { color: var(--dim); }
   .dim { color: var(--dim); }
-  .bar { height: 4px; background: var(--panel-3); margin: 3px 0; }
-  .bar i { display: block; height: 100%; background: var(--cyan); }
+  .mt { display: block; margin: 3px 0; }
   .bot button { padding: 2px 10px; }
   .go { border-color: var(--go-edge); }
 </style>

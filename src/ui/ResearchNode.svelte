@@ -20,12 +20,12 @@
   .node:disabled { opacity: 1; cursor: default; }
   .known { border-color: #3f8a55; background: #08160d; color: #8fd3a0; }
   .known small { color: #4f8a60; }
-  .open, .queued, .active { border-color: var(--amber); background: #000; color: #ffe2a6; cursor: pointer; }
+  .open, .queued, .active { border-color: var(--amber); background: var(--build-bg-solid); color: #ffe2a6; cursor: pointer; }
   .open small, .queued small, .active small { color: var(--amber); }
-  .sel { box-shadow: 0 0 0 2px var(--amber), 0 0 14px rgba(240, 177, 58, 0.33); background: #000; }
-  .locked { border-color: #2e2e2e; border-style: dashed; background: #080808; color: #5a5a5a; }
+  .sel { box-shadow: 0 0 0 2px var(--amber), 0 0 14px rgba(240, 177, 58, 0.33); background: var(--build-bg-solid); }
+  .locked { border-color: var(--build-line); border-style: dashed; background: var(--build-fill); color: #5a5a5a; }
   .locked small { color: #444; }
-  .badge { position: absolute; top: -9px; right: -9px; width: 18px; height: 18px; background: var(--amber); color: #000; font: 700 12px var(--head-font); display: grid; place-items: center; }
-  .nbar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #2a2a2a; }
+  .badge { position: absolute; top: -9px; right: -9px; width: 18px; height: 18px; background: var(--amber); color: var(--build-on-amber); font: 700 12px var(--head-font); display: grid; place-items: center; }
+  .nbar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--build-line); }
   .nbar i { display: block; height: 100%; background: var(--amber); }
 </style>

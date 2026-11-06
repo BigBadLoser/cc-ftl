@@ -90,7 +90,7 @@
 
 <svelte:window onpointerdown={(e) => { if (pop && !(e.target as Element).closest?.('[data-testid="build-popover"], .card')) dismiss(); }} />
 
-<div class="cat legacy" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
+<div class="cat legacy build" role="group" aria-label="Build menu" class:collapsed data-testid="build-catalog" onpointerenter={() => (over = true)} onpointerleave={() => (over = false)}>
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
@@ -122,23 +122,22 @@
 
 <style>
   /* Same bottom gutter as the toolbar; it ends a gap before the toolbar's left edge (--tools-w, set by ToolBar) and centres in the room left. */
-  .cat { position: fixed; z-index: 5; left: calc(8px + var(--sal)); right: calc(var(--tools-w, 0px) + 16px + var(--sar)); max-width: 1180px; margin-inline: auto; box-sizing: border-box; bottom: calc(8px + var(--sab)); background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); }
-  .strip { display: flex; height: 150px; border-bottom: 1px solid #242424; overflow: hidden; transition: height 0.18s ease, border-color 0.18s ease; }
+  .cat { position: fixed; z-index: 5; left: calc(8px + var(--sal)); right: calc(var(--tools-w, 0px) + 16px + var(--sar)); max-width: 1180px; margin-inline: auto; box-sizing: border-box; bottom: calc(8px + var(--sab)); background: var(--build-bg); border: 1px solid var(--amber); }
+  .strip { display: flex; height: 150px; border-bottom: 1px solid var(--build-line); overflow: hidden; transition: height 0.18s ease, border-color 0.18s ease; }
   .cat.collapsed .strip { height: 0; border-bottom-color: transparent; }
-  .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: #3a3a3a transparent; }
-  .none { margin: auto; color: #9a9a9a; }
+  .cards { display: flex; gap: 6px; padding: 12px 8px 4px; overflow-x: auto; overflow-y: hidden; flex: 1; scrollbar-width: thin; scrollbar-color: var(--build-line-hi) transparent; }
+  .none { margin: auto; color: var(--build-dim); }
   .nav { display: flex; align-items: center; height: 36px; padding: 0 8px; gap: 4px; }
   .tabs { position: relative; display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1 1 0; min-width: 0; }
   .tab { min-height: 28px; height: 28px; min-width: 0; padding: 0 10px; font: 600 13px var(--head-font); text-transform: uppercase; letter-spacing: 0.04em; color: var(--amber); background: transparent; border-color: transparent; white-space: nowrap; flex: none; }
   .tab i { font-style: normal; color: #5c5c5c; margin-left: 5px; font-size: 11px; }
-  .tab:hover { border-color: #3a3a3a; }
-  .tab.on { background: var(--amber); border-color: var(--amber); color: #1a1204; }
+  .tab:hover { border-color: var(--build-line-hi); }
+  .tab.on { background: var(--amber); border-color: var(--amber); color: var(--build-on-amber); }
   .tab.on i { color: #4a3508; }
-  .rotb { flex: none; min-height: 28px; height: 28px; min-width: 0; padding: 0 10px; font-size: 12px; white-space: nowrap; background: #050505; border-color: #2c2c2c; color: #c8c8c8; display: inline-flex; align-items: center; gap: 4px; }
-  .rotb { color: var(--amber); }
-  .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: #050505; border: 1px solid #2c2c2c; color: #c8c8c8; padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
+  .rotb { flex: none; height: 28px; min-width: 0; display: inline-flex; align-items: center; gap: 4px; }
+  .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: var(--build-fill); border: 1px solid var(--build-line); color: var(--build-ink); padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }
-  .hint.ok { border-color: #c8c8c8; color: #fff; }
+  .hint.ok { border-color: var(--build-ink); color: #fff; }
   .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: var(--red); font-size: 12px; white-space: nowrap; }
   @media (max-width: 600px) {
     .cat { left: 0; right: calc(var(--tools-w, 0px) + 16px + var(--sar)); bottom: 0; border-width: 1px 1px 0 0; padding-bottom: var(--sab); }

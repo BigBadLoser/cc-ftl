@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiSite } from './api';
   import Icon from './Icon.svelte';
@@ -31,7 +32,7 @@
       <dt>Progress</dt><dd data-testid="site-progress">{pct(s)}%</dd>
       <dt>Time left</dt><dd data-testid="site-eta">{s.etaSec === null ? 'no builder' : s.frac >= 1 ? 'finishing' : `about ${secs(s.etaSec)} of work`}</dd>
     </dl>
-    <div class="bar" role="progressbar" aria-valuenow={pct(s)} aria-valuemin="0" aria-valuemax="100"><i style:width="{pct(s)}%"></i></div>
+    <Meter value={pct(s)} max={100} height={6} />
     {#if s.reason}<p class="why" data-testid="site-reason">{s.reason}</p>{/if}
     <h4>Materials</h4>
     <ul data-testid="site-materials">

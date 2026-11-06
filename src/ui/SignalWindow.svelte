@@ -1,9 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiStory } from './api';
-  import { Dialog } from './kit';
+  import { Chip, Dialog } from './kit';
   import ItemIcon from './ItemIcon.svelte';
-  import Icon from './Icon.svelte';
   import CommsWindow from './comms/CommsWindow.svelte';
   import PaneHeader from './comms/PaneHeader.svelte';
   import VideoFeed from './comms/VideoFeed.svelte';
@@ -94,8 +93,8 @@
     <Transcript lines={c.transcript} hint={c.hint}>
       {#if c.hailed && (c.goods.length || c.credits !== undefined)}
         <div class="stock">
-          {#each c.goods as q (q.item)}<span class="chip" title={q.name}><ItemIcon {api} item={q.item} size={20} />{q.name}<em>×{q.count}</em></span>{/each}
-          {#if c.credits !== undefined}<span class="chip cr" title="Credits to buy with"><Icon name="credits" size={14} />{c.credits}</span>{/if}
+          {#each c.goods as q (q.item)}<Chip size="md" caps={false} title={q.name}><ItemIcon {api} item={q.item} size={20} />{q.name}<em>×{q.count}</em></Chip>{/each}
+          {#if c.credits !== undefined}<Chip size="md" tone="gold" icon="credits" title="Credits to buy with">{c.credits}</Chip>{/if}
         </div>
       {/if}
     </Transcript>
@@ -118,7 +117,5 @@
   .col { padding: 12px; display: grid; gap: 12px; align-content: start; }
   .scroll { max-height: 420px; overflow-y: auto; }
   .stock { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 2px; font-size: 12px; background: var(--panel-3); border: 1px solid var(--line); }
-  .chip em { font-style: normal; color: var(--dim); }
-  .chip.cr { padding-left: 6px; color: var(--amber); }
+  .stock em { font-style: normal; color: var(--dim); }
 </style>

@@ -4,7 +4,7 @@
 
   /**
    * A titled frame: a thin border whose top edge is built from segments (line, title, line, optional right-hand items, line), so the break
-   * around the title is a real gap and works over a transparent panel. `right` renders items (a Pill, a button) into the top edge: put a
+   * around the title is a real gap and works over a transparent panel. `right` renders items (a Chip, a button) into the top edge: put a
    * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
    */
   let { title, tone = 'normal', style = '', testid, lesson, notch, children, head, right }: {
@@ -81,11 +81,20 @@
   .rail > :global(*) {
     pointer-events: auto;
   }
+  /* Only the title gives way: the right-hand items (a chip, a button) keep their size however long the title is. */
+  .rail > :global(:not(h3)) {
+    flex-shrink: 0;
+  }
+  /* The title gives way first: a long one is cut short with an ellipsis so the right-hand items stay on the frame. Its line box is taller than
+     the 13px rail (centred in it) so the clip for the ellipsis never cuts the glyphs. */
   h3 {
     margin: 0;
     padding: 0 5px;
-    flex: none;
-    font: 600 12px/13px var(--head-font);
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 600 12px/16px var(--head-font);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--dim);
@@ -93,7 +102,7 @@
     text-shadow: 0 0 3px #000, 0 0 3px #000;
   }
   .hostile h3 {
-    font: 700 18px/13px var(--head-font);
+    font: 700 18px/22px var(--head-font);
     color: var(--hostile);
   }
 </style>

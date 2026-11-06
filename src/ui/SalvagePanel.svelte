@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import type { UiApi, UiSalvage, UiScrapType } from './api';
   import InspectorAction from './InspectorAction.svelte';
 
@@ -22,7 +23,7 @@
 
 <InspectorAction {message} alert={order?.status === 'blocked'} {buttons} testid="salvage-panel" resetKey={ship}>
   {#if order?.status === 'running'}
-    <div class="bar" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100"><i style:width="{pct}%"></i></div>
+    <Meter value={pct} max={100} height={6} />
   {/if}
   <div class="rows">
     {#each salvage.types as t (t.type)}
@@ -40,8 +41,6 @@
 </InspectorAction>
 
 <style>
-  .bar { height: 6px; background: var(--panel-3); }
-  .bar i { display: block; height: 100%; background: var(--cyan); }
   .rows { display: grid; gap: 1px; }
   .row { display: flex; align-items: center; gap: 8px; padding: 3px 2px; font-size: 13px; cursor: pointer; }
   .row:hover { background: var(--panel-3); }

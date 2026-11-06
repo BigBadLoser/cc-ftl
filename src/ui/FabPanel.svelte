@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCost, UiFab, UiOrder, UiRecipe } from './api';
   import ItemIcon from './ItemIcon.svelte';
-  import { NumberStepper, Segmented } from './kit';
+  import { Meter, NumberStepper, Segmented } from './kit';
 
   let { api, id, def }: { api: UiApi; id: number; def: string } = $props();
   let fabs = $state<UiFab[]>([]);
@@ -49,7 +49,7 @@
     <div class="job" data-testid="fab-job">
       {#if fab.job}
         <div class="jl"><span>{fab.job.name}</span><b class:bad={fab.job.phase === 'power' || fab.job.phase === 'materials'}>{phaseText[fab.job.phase]}</b></div>
-        <div class="bar prog"><i style:width="{Math.round(fab.job.progress * 100)}%"></i></div>
+        <Meter value={fab.job.progress} height={6} />
       {:else}
         <div class="jl"><span class="dim">{fab.orders.some((o) => !finished(o)) ? 'Starting next batch' : 'Idle: no open orders'}</span></div>
       {/if}
@@ -118,7 +118,6 @@
   .jl { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .dim { color: var(--dim); }
   .bad { color: var(--red); }
-  .prog > i { background: var(--amber); }
   h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
