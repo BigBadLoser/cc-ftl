@@ -9,9 +9,11 @@ from mathutils import Vector
 
 from . import wall3d as T
 from . import walls as W
+from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
-SILL_UP = 0.2           # the sill: the low band's top over the face's foot (wall3d.wall_face)
+DIP = 10 * PZ           # the sill: the ramp's crest under the opening, this far under the ramp's top (as tan's) ...
+DIP_RUN = 8 / 32        # ... reached this far along the wall from a post (a sloped crest), then level
 BEAM_DOWN = 0.15        # the beam's underside: the header's foot under the wall's top (wall3d.wall_face)
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
@@ -41,10 +43,32 @@ def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
 
-def _cut(k, x0, x1, z0, z1):
-    """Take everything between the sill (z0) and the beam (z1) out over the opening [x0, x1], both faces alike."""
-    regions = [[(0, x0, -1)], [(0, x1, 1)], [(0, x0, 1), (0, x1, -1), (2, z0, -1)],
-               [(0, x0, 1), (0, x1, -1), (2, z1, 1)]]
+def _sill(x, x0, x1):
+    """The ramp's crest under the opening at x: the ramp's top at a post, down DIP over DIP_RUN from it."""
+    d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
+    return W.skirt_top() - DIP * min(1.0, max(0.0, d) / DIP_RUN)
+
+
+def _segs(x0, x1):
+    """The opening along x between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
+    xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if xa < u < xb})
+    return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
+
+
+def _reach(h, yf):
+    """How far out of the wall's middle the ramps' slope is at height h."""
+    return yf + (W.skirt_top() - h) / (W.GN * W.RAMP_PX / W.ZART)
+
+
+def _cut(k, x0, x1, z1):
+    """Take everything over the crest and under the beam (z1) out over the opening, wall and ramps alike."""
+    sg = _segs(x0, x1)
+    xa, xb, hmin = sg[0][0], sg[-1][1], min(min(h0, h1) for _, _, h0, h1 in sg)
+    regions = [[(0, xa, -1)], [(0, xb, 1)], [(0, xa, 1), (0, xb, -1), (2, z1, 1)]]
+    for u0, u1, h0, h1 in sg:
+        g = (h1 - h0) / (u1 - u0)
+        regions.append([(0, u0, 1), (0, u1, -1), ((g, 0.0, -1.0), g * u0 - h0)])
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -52,7 +76,7 @@ def _cut(k, x0, x1, z0, z1):
         for f in m.f:
             pts = [m.v[i] for i in f[0]]
             xs, zs = [p[0] for p in pts], [p[2] for p in pts]
-            if max(xs) <= x0 + 1e-9 or min(xs) >= x1 - 1e-9 or max(zs) <= z0 + 1e-9 or min(zs) >= z1 - 1e-9:
+            if max(xs) <= xa + 1e-9 or min(xs) >= xb - 1e-9 or max(zs) <= hmin + 1e-9 or min(zs) >= z1 - 1e-9:
                 out.append(f)
                 continue
             for r in regions:
@@ -70,21 +94,27 @@ def _cut(k, x0, x1, z0, z1):
 
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
-    z0, z1 = sp.zs + SILL_UP, W.HF - BEAM_DOWN
+    zs, z1 = W.skirt_top(), W.HF - BEAM_DOWN
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
-    _cut(k, x0, x1, z0, z1)
+    _cut(k, x0, x1, z1)
     a, b = max(x0, -0.5), min(x1, 0.5)
     k.side = None
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
         if on:
-            _quad(k, [(u, -yr, z0), (u, yr, z0), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
-    _quad(k, [(a, -yr, z0), (b, -yr, z0), (b, yr, z0), (a, yr, z0)], (0, 0, 1), SILL_TOP)      # the sill's top
+            _quad(k, [(u, -yr, zs), (u, yr, zs), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
+    for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: the cut along the crest, out to the ramps
+        u0, u1 = max(u0, a), min(u1, b)
+        if u1 <= u0:
+            continue
+        h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
+        r0, r1 = _reach(h0, yf), _reach(h1, yf)
+        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1), SILL_TOP)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     _beam(k, z1)
     for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # the end posts, their amber sill blocks
         if on:
-            _post(k, u, sd, sp.zs, z0, z1, yf)
+            _post(k, u, sd, zs, zs, z1, yf)
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2
@@ -92,15 +122,18 @@ def hook(k, sp, own=True):
     if not own:                                         # (a copy past the tile: no pane)
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
-    _quad(k, [(a, -h, z0 + e), (b, -h, z0 + e), (b, h, z0 + e), (a, h, z0 + e)], (0, 0, 1), PANE_EDGE)
+    us = sorted({a, b} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b})
+    for u0, u1 in zip(us, us[1:]):
+        h0, h1 = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
+        _quad(k, [(u0, -h, h0), (u1, -h, h1), (u1, h, h1), (u0, h, h0)], (0, 0, 1), PANE_EDGE)
     _quad(k, [(a, -h, z1 - e), (b, -h, z1 - e), (b, h, z1 - e), (a, h, z1 - e)], (0, 0, -1), PANE_EDGE)
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
             v = u + sd * e
-            _quad(k, [(v, -h, z0), (v, h, z0), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+            _quad(k, [(v, -h, zs), (v, h, zs), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
     global GLASS
     GLASS = T.Relief("iwin_def_glass")
-    GLASS.poly([Vector((a, 0.0, z0)), Vector((b, 0.0, z0)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
+    GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
