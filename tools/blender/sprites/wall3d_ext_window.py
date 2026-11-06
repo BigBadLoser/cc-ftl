@@ -142,7 +142,7 @@ def build(k, ax, plane, a, b, ends, H):
                     else col for p, q in zip(pts, pts[1:] + pts[:1])]
         f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
                                                                                     # back, the base's own
-        if PART == "w1":
+        if PART in ("w1", "w2"):                        # (W2: W1's header too)
             _w1_header(f, s, s0, s1, dv, zc, zh)
         win = _opening(w0, w1, zj, zh, end)
         _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
