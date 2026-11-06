@@ -8,7 +8,7 @@
 Each returns a Canvas-like key grid; preview ids are crew.mark.opt.<option>.<tier>.<kind>.<frame>."""
 import numpy as np
 
-from .crew_marks import BREAKS, COL, Canvas, H, W
+from .crew_marks import BREAKS, COL, Canvas, H, W, isolation
 
 TIER = {"mild": ("M", "m"), "moderate": ("A", "a"), "severe": ("R", "V")}
 COL.setdefault("Z", "#ffffff")
@@ -68,8 +68,24 @@ def pips(sym, tier):
     return c
 
 
-OPTIONS = {"ring": ring, "thought": thought, "stress": stress, "pips": pips}
-KINDS = ("panic", "tantrum", "isolation", "freeze")
+def bubble(sym, tier, bumps):
+    """A smooth thought bubble: an oval (with a few soft bumps along its top when `bumps`), dark inside, its rim in the tier
+    colour, two round puffs trailing down to the left."""
+    rim, fill = TIER[tier]
+    c = Canvas(W + 2, H)
+    shape = [(11, 9.4, 10.0, 8.0)] + ([(5.2, 4.6, 3.6, 3.0), (10, 3.4, 4.2, 3.0), (14.8, 4.6, 3.6, 3.0)] if bumps else [])
+    for x, y, rx, ry in shape:
+        c.disc(x, y, rx, rim, ry)
+    for x, y, rx, ry in shape:
+        c.disc(x, y, rx - 1.05, fill, ry - 1.05)
+    c.disc(4.2, 17.4, 1.6, rim)
+    c.disc(2.0, 19.2, 0.9, rim)
+    return over(c, np.pad(sym.k, ((0, 0), (1, 1)), constant_values=""))
+
+
+OPTIONS = {"ring": ring, "thought": thought, "stress": stress, "pips": pips,
+           "oval": lambda s, t: bubble(s, t, False)}
+KINDS = ("panic", "freeze", "hide", "tantrum", "despair", "refusal", "isolation")
 
 
 def items():
@@ -78,7 +94,9 @@ def items():
         for tier in TIER:
             for kind in KINDS:
                 draw, n = BREAKS[kind]
+                if kind == "isolation" and name == "oval":
+                    draw = lambda f: isolation(f, ring=False)  # noqa: E731
                 for f in range(n):
-                    out.append({"id": f"crew.mark.opt.{name}.{tier}.{kind}.{f}", "rgba": fn(draw(f), tier).rgba(),
-                                "ax": W // 2, "ay": H})
+                    c = fn(draw(f), tier)
+                    out.append({"id": f"crew.mark.opt.{name}.{tier}.{kind}.{f}", "rgba": c.rgba(), "ax": c.w // 2, "ay": H})
     return out

@@ -45,9 +45,10 @@ def rgb(h):
 class Canvas:
     """A W x H grid of colour keys ('' is empty), drawn with pixel centres at (x + 0.5, y + 0.5)."""
 
-    def __init__(self):
-        self.k = np.full((H, W), "", object)
-        yy, xx = np.mgrid[0:H, 0:W]
+    def __init__(self, w=W, h=H):
+        self.w, self.h = w, h
+        self.k = np.full((h, w), "", object)
+        yy, xx = np.mgrid[0:h, 0:w]
         self.cx, self.cy = xx + 0.5, yy + 0.5
 
     def mask(self, m, col):
@@ -61,7 +62,7 @@ class Canvas:
         self.k[y0:y1 + 1, x0:x1 + 1] = col
 
     def poly(self, pts, col):
-        x, y, inside = self.cx, self.cy, np.zeros((H, W), bool)
+        x, y, inside = self.cx, self.cy, np.zeros((self.h, self.w), bool)
         n = len(pts)
         for i in range(n):
             (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
@@ -79,7 +80,7 @@ class Canvas:
         """ASCII rows of colour keys ('.' empty) with the top-left at (x0, y0)."""
         for j, row in enumerate(rows):
             for i, ch in enumerate(row[::-1] if flip else row):
-                if ch != "." and 0 <= x0 + i < W and 0 <= y0 + j < H:
+                if ch != "." and 0 <= x0 + i < self.w and 0 <= y0 + j < self.h:
                     self.k[y0 + j, x0 + i] = ch
 
     def rgba(self, outline=True):
@@ -90,7 +91,7 @@ class Canvas:
             for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 near |= np.roll(op, (dy, dx), (0, 1))
             k[near & ~op] = "K"
-        out = np.zeros((H, W, 4), np.uint8)
+        out = np.zeros((self.h, self.w, 4), np.uint8)
         for key in set(k.ravel()) - {""}:
             out[k == key] = (*rgb(COL[key]), 255)
         return out
@@ -194,11 +195,11 @@ def freeze(f):
 def hide(f):
     """A crate with its lid lifted a crack, two eyes in the dark gap glancing left, right, then a blink."""
     c = Canvas()
-    c.rect(4, 10, 15, 15, "O")
-    for x in (7, 11):
+    c.rect(5, 10, 14, 15, "O")
+    for x in (8, 11):
         c.rect(x, 11, x, 15, "o")
-    c.rect(4, 6, 15, 9, "I")                                 # the dark gap
-    c.poly([(3.5, 4.5), (16.5, 3.0), (16.5, 5.0), (3.5, 6.5)], "O")   # the lid, tilted up
+    c.rect(5, 7, 14, 9, "I")                                 # the dark gap
+    c.poly([(4.5, 5.5), (15.5, 4.0), (15.5, 6.0), (4.5, 7.5)], "O")   # the lid, tilted up
     look = (-1, -1, 1, None)[f % 4]
     for ex in (7, 11):
         if look is None:
@@ -247,10 +248,10 @@ def refusal(f):
     return c
 
 
-def isolation(f):
-    """A lone figure inside a dashed ring that turns."""
+def isolation(f, ring=True):
+    """A lone figure inside a dashed ring that turns (in a thought bubble the bubble is the ring)."""
     c = Canvas()
-    for k in range(8):
+    for k in range(8 if ring else 0):
         a0 = k * math.pi / 4 + f * math.pi / 16
         p0 = (10 + math.cos(a0) * 6.3, 10 - math.sin(a0) * 6.3)
         p1 = (10 + math.cos(a0 + 0.5) * 6.3, 10 - math.sin(a0 + 0.5) * 6.3)

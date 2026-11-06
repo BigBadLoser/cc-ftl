@@ -17,13 +17,18 @@ from sprites import crew_marks, crew_marks_tiers, post  # noqa: E402
 out = Path(sys.argv[1] if len(sys.argv) > 1 else ".cache/marks-preview")
 out.mkdir(parents=True, exist_ok=True)
 its = crew_marks.items() + crew_marks_tiers.items()
-gap = 1
-sheet = np.zeros((crew_marks.H, len(its) * (crew_marks.W + gap), 4), np.uint8)
-frames = {}
-for i, it in enumerate(its):
-    x = i * (crew_marks.W + gap)
-    sheet[:, x:x + crew_marks.W] = it["rgba"]
-    frames[it["id"]] = {"x": x, "y": 0, "w": crew_marks.W, "h": crew_marks.H, "ax": it["ax"], "ay": it["ay"]}
+gap, row_w, cell = 1, 1024, crew_marks.H + 1          # rows of at most 1024 px: a browser texture stays small
+frames, x, y = {}, 0, 0
+for it in its:
+    h, w = it["rgba"].shape[:2]
+    if x + w > row_w:
+        x, y = 0, y + cell
+    frames[it["id"]] = {"x": x, "y": y, "w": w, "h": h, "ax": it["ax"], "ay": it["ay"]}
+    x += w + gap
+sheet = np.zeros((y + cell, row_w, 4), np.uint8)
+for it in its:
+    f = frames[it["id"]]
+    sheet[f["y"]:f["y"] + f["h"], f["x"]:f["x"] + f["w"]] = it["rgba"]
 post.write_png(out / "marks.png", sheet)
 (out / "marks.json").write_text(json.dumps({"fps": crew_marks.FPS, "frames": frames}, indent=1))
 print("MARKS_PREVIEW", out, len(its))

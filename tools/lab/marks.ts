@@ -168,8 +168,8 @@ export const marksPanel: LabPanel = {
       });
     }
     // tier options (preview only, crew_marks_tiers.py): each way to show the tier, a few symbols at 3x, then three crew at game scale
-    const OPTS = ['ring', 'thought', 'stress', 'pips'].filter((o) => get(`crew.mark.opt.${o}.mild.panic`).length);
-    const KINDS = ['panic', 'tantrum', 'isolation', 'freeze'];
+    const OPTS = (ctx.params.get('opts') ?? 'oval').split(',').filter((o) => get(`crew.mark.opt.${o}.mild.panic`).length);
+    const KINDS = BREAKS;
     OPTS.forEach((o) => {
       cells.push({
         label: `tier option: ${o}`,
@@ -199,7 +199,7 @@ export const marksPanel: LabPanel = {
           mount(root) {
             const feet = scene(ctx, root, 190, 200, dark, [{ gx: -1, gy: 1, dir: 1, seed: 22, role: 'role.gunner' }, { gx: 0, gy: 0, dir: 1, seed: 11, role: 'role.engineer' }, { gx: 1, gy: -1, dir: 1, seed: 33, role: 'role.medic' }]);
             const sets = feet.map((at, j) => {
-              const ic = icon(get, fps, `crew.mark.opt.${o}.${TIERS[j]}.${KINDS[j + 1]}`, S);
+              const ic = icon(get, fps, `crew.mark.opt.${o}.${TIERS[j]}.${KINDS[j * 2 + 1]}`, S);
               ic.node.position.set(at.x, at.y - HEAD);
               root.addChild(ic.node);
               return ic.set;
