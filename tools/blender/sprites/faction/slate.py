@@ -73,14 +73,16 @@ def slate(hull):
             prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
                   FACE, 3, cols=[False, None, top_, False], mitre=mit)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
-            if zg + PZ < top - 0.03:
-                T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
+            room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
+            if room or top - zl - LIP_H > 0.01:         # no seam over it)
+                if room:
+                    T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
                 for u in _thirds(a, b):                 # the lip in three a tile: a seam up its front, over its
                     q0, q1 = u, u + 0.7 * LINE         # top and up the face to the seam over it
                     dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT  # (over the lip: its top a step under the
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
                           cols=[False, None, "fGS4" if ax == "y" else "fGS5", False])    # front's line, darker)
-                    T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg, 0.0, FACE, 1)
+                    T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top), 0.0, FACE, 1)
             if full:                                                    # a faint line, 7 px under the stripe
                 T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
         if not full:

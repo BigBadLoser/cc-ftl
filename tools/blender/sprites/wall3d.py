@@ -105,6 +105,30 @@ class Relief:
                     out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
             m.f = out
 
+    def clip_above(self, z, start=(0, 0)):
+        """Cut the polygons from start (an index into each mesh's) off at height z: what lies under it stays."""
+        for m, s0 in zip((self.m, self.ns), start):
+            if m is None:
+                continue
+            out = m.f[:s0]
+            for f in m.f[s0:]:
+                pts = [m.v[i] for i in f[0]]
+                if max(p[2] for p in pts) <= z + 1e-6:
+                    out.append(f)
+                    continue
+                kept = []
+                for p, q in zip(pts, pts[1:] + pts[:1]):                    # (Sutherland-Hodgman, one plane)
+                    if p[2] <= z:
+                        kept.append(p)
+                    if (p[2] <= z) != (q[2] <= z):
+                        t = (z - p[2]) / (q[2] - p[2])
+                        kept.append(tuple(a + (b - a) * t for a, b in zip(p, q)))
+                if len(kept) >= 3 and min(p[2] for p in kept) < z - 1e-6:
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in kept]
+                    out.append((list(range(base, base + len(kept))),) + tuple(f[1:]))
+            m.f = out
+
     def build(self):
         """Its objects: the mesh, and the one casting no shadow if any (flagged "noshadow")."""
         obs = [self.m.build()]
@@ -275,17 +299,20 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     prism(k, ax, plane, a, b, [(0.0, zh), (LIP_D, zh), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
           fam, 3, cols=[False, None, None, False], mitre=mit)     # (its front on down to the shelf: no undercut)
     zg = zl + 6 * PZ                                    # the seam over it
-    if zg + PZ >= top - 0.03:
+    room = zg + PZ < top - 0.03                         # (under a low cut, walls down: the face to the cut, the lip's
+    zf = zg if room else min(zg, top)                   # seams up to it, no seam over it)
+    if not room and top - zl - LIP_H < 0.01:
         return zg, zl + LIP_H
-    paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ, 0.0, fam, 2)                                 # (the face over it)
-    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
+    paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ if room else top, 0.0, fam, 2)               # (the face over it)
+    if room:
+        paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
     for u in _thirds(a, b):
         q0, q1 = u, u + 0.7 * LINE
         dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
-        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
-    return zg + PZ, zl + LIP_H
+        paint(k, ax, plane, q0, q1, zl + LIP_H, zf, PAINT, fam, 1)
+    return (zg + PZ if room else zg), zl + LIP_H
 
 
 def rail_foot(top):
@@ -806,9 +833,14 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
-            if style().shelf and not hull:              # (a stub over a shelf: its face from the shelf up to the cut)
-                k.top = top
-                paint(k, ax, plane, a, b, lip_heights(sp.zs)[0] - 0.01, top, 0.0, "wall", 2)
+            if style().shelf and not hull:              # a stub over a shelf: the face's art from the shelf up to
+                from .faction.shell import _ends        # the cut (its lip and seams), cut off there, over a backing
+                k.top = top                             # (a wall's end face: the backing only)
+                paint(k, ax, plane, a, b, lip_heights(sp.zs)[0] - 0.01, top, -PAINT, "wall", 2)
+                if not _ends(ax, plane, b, ends)[0]:
+                    n0 = (len(k.m.f), len(k.ns.f) if k.ns is not None else 0)
+                    (style().wall or wall_face)(k, ax, plane, a, b, ends, sp.zs, top, False)
+                    k.clip_above(top, n0)
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
