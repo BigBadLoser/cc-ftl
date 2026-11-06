@@ -110,9 +110,10 @@ def rounded(c, x0, y0, x1, y1, col, r=3):
 
 def speech(c, body, shade):
     rounded(c, 3, 5, 28, 22, body, 4)
-    c.rect(4, 21, 27, 22, shade)
-    c.rect(5, 21, 26, 22, shade)
+    c.k[22, 5:27] = shade                                   # a shaded bottom edge, open where the tail leaves the bubble
+    c.k[22, 9:15] = body
     c.poly([(9, 22.5), (15, 22.5), (7, 29.5)], body)
+    c.k[(c.k == body) & (c.cy > 22.5) & (c.cx - 7 > (29.5 - c.cy) * 6 / 7 - 1.0)] = shade   # the tail's lower edge
 
 
 def chat(f):
