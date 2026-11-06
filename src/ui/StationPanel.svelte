@@ -7,12 +7,21 @@
   import { centerTop } from './floatingWindow';
   import JobCards from './JobCards.svelte';
   import RecruitList from './RecruitList.svelte';
-    import YardPane from './YardPane.svelte';
+  import PaneHeader from './comms/PaneHeader.svelte';
+  import Transcript from './comms/Transcript.svelte';
+  import StationDock from './StationDock.svelte';
+  import StationServices from './StationServices.svelte';
+  import StationSensors from './StationSensors.svelte';
+  import StationVideo from './StationVideo.svelte';
+  import { contactFor, linesFor, servicesFor, type ServiceId } from './stationChannel';
+  import YardPane from './YardPane.svelte';
 
-  /** A station's own panel (opened by selecting the station): Trade (a button that opens the trade window), Jobs (the work posted at the node), Crew (people for hire). */
+  /**
+   * A station's panel, an open comms channel with the station (selected station, "Hail station"): the contact of the open service on video, their
+   * quote and the service's content in the middle, the station's sensors and the services on the right. Trade opens the trade window instead.
+   */
   let { api, station, onClose, onTrade }: { api: UiApi; station: number; onClose: () => void; onTrade: (station: number) => void } = $props();
-  type Tab = 'jobs' | 'crew' | 'blueprints' | 'yard';
-  let tab = $state<Tab>('jobs');
+  let open = $state<ServiceId>('station');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
   let metal = $state(0);
@@ -22,52 +31,66 @@
   });
   const p = $derived(trade.partners.find((x) => x.id === station));
   const hiring = $derived(trade.deals.find((d) => d.ship === station && d.live && p?.recruits.some((r) => r.coming)));
-  const tabs = $derived<{ id: Tab; label: string; n: number }[]>([
-    { id: 'jobs', label: 'Jobs', n: jobs.offers.length + jobs.handIn.length }, { id: 'crew', label: 'Crew', n: p?.recruits.length ?? 0 },
-    ...(p?.info?.services.includes('Blueprints') ? [{ id: 'blueprints' as const, label: 'Blueprints', n: p.info.blueprints.filter((b) => !b.known).length }] : []),
-    ...(p?.info?.yard ? [{ id: 'yard' as const, label: 'Shipyard', n: 0 }] : []),
-  ]);
+  const njobs = $derived(jobs.offers.length + jobs.handIn.length);
+  const nhire = $derived(p?.recruits.length ?? 0);
+  const services = $derived(p ? servicesFor(p, njobs, nhire) : []);
+  const shown = $derived<ServiceId>(services.some((s) => s.id === open) ? open : 'station');
+  const contact = $derived(contactFor(station, shown));
+  const lines = $derived(p ? linesFor(shown, p, contact, njobs, nhire) : []);
+  function pick(id: ServiceId) {
+    if (id === 'trade') return onTrade(station);
+    open = id;
+  }
+  const TIER = { friendly: 'green', neutral: 'dim', hostile: 'red' } as const;
+  const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
 </script>
 
-<FloatingWindow id="station" title={p?.name ?? 'Station'} titleTestId="station-title" icon="hull" min={{ w: 400, h: 320 }} defaultRect={(b) => { const r = centerTop(b, 520, Math.min(600, b.bottom - b.top)); return { ...r, y: (b.top + b.bottom - r.h) / 2 }; }} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" padded>
+<FloatingWindow id="station" title="Channel open" titleFit icon="hull" min={{ w: 900, h: 420 }} defaultRect={(b) => centerTop(b, 1120)} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" titleTestId="station-title">
   {#snippet titleExtra()}
-    <small class="role">{p?.role ?? ''}</small>
-    <span class="chip" data-testid="station-credits" title="Your credits">₵ {trade.credits}</span>
+    <span class="sub" data-testid="station-name">{p?.name ?? 'Station'}{p?.role ? ` · ${p.role}` : ''}</span>
+    {#if p?.info?.owner}<span class="chip {TIER[p.info.owner.tier]}" title="Owner and how they regard you" data-testid="si-owner">{p.info.owner.name} · {p.info.owner.tier}</span>{/if}
+    {#if p?.market?.truce}<span class="chip" class:red={p.market.banned} class:green={!p.market.banned} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</span>{/if}
+    {#if p?.market}<span class="chip amber" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</span>{/if}
+    <span class="credits" title="Your credits" data-testid="station-credits">₵ {fmt(trade.credits)}</span>
   {/snippet}
-  <div class="tabs" role="tablist" data-lesson={anchor('station.tabs')}>
-    <button role="tab" aria-selected="false" class="open" data-testid="station-tab-trade" title="Open the trade window" onclick={() => onTrade(station)}>Trade<span class="n">↗</span></button>
-    {#each tabs as t (t.id)}
-      <button role="tab" aria-selected={tab === t.id} class:on={tab === t.id} data-testid="station-tab-{t.id}" onclick={() => (tab = t.id)}>{t.label}{#if t.n}<span class="n">{t.n}</span>{/if}</button>
-    {/each}
-  </div>
   {#if !p}
     <p class="none">Out of range.</p>
-  {:else if tab === 'jobs'}
-    <div class="body">
-    {#if jobs.here === null}<p class="none">Jobs cannot be taken now.</p>
-    {:else if !jobs.offers.length}<p class="none">No work posted here.</p>{/if}
-    {#if jobs.handIn.length}<JobCards {api} {jobs} list="handIn" />{/if}
-    <JobCards {api} {jobs} list="offers" />
-    <p class="note">You hold {jobs.active.length}/{jobs.max} jobs. The jobs button in the top bar lists them.</p>
-    </div>
-  {:else if tab === 'yard' && p.info?.yard}
-    <div class="body"><YardPane {api} {station} yard={p.info.yard} credits={trade.credits} {metal} /></div>
-  {:else if tab === 'blueprints' && p.info}
-    <div class="body"><BlueprintList {api} port={p.info.blueprintPort} blueprints={p.info.blueprints} credits={trade.credits} /></div>
   {:else}
-    <div class="body"><RecruitList {api} partner={p} credits={trade.credits} deal={hiring} /></div>
+    <div class="cols" data-lesson={anchor('station.tabs')}>
+      <div class="pane video"><StationVideo {api} {contact} station={p.name} /></div>
+      <div class="pane comms">
+        <PaneHeader label="COMMS" />
+        <div class="body">
+          <Transcript {lines} />
+          {#if shown === 'station' && p.info}<StationDock info={p.info} />
+          {:else if shown === 'jobs'}
+            {#if jobs.here === null}<p class="note">Jobs cannot be taken now.</p>{/if}
+            {#if jobs.handIn.length}<JobCards {api} {jobs} list="handIn" />{/if}
+            <JobCards {api} {jobs} list="offers" />
+            <p class="note">You hold {jobs.active.length}/{jobs.max} jobs. The jobs button in the top bar lists them.</p>
+          {:else if shown === 'yard' && p.info?.yard}<YardPane {api} {station} yard={p.info.yard} credits={trade.credits} {metal} />
+          {:else if shown === 'blueprints' && p.info}<BlueprintList {api} port={p.info.blueprintPort} blueprints={p.info.blueprints} credits={trade.credits} />
+          {:else if shown === 'crew'}<RecruitList {api} partner={p} credits={trade.credits} deal={hiring} />{/if}
+        </div>
+      </div>
+      <div class="pane sensors">
+        {#if p.info}<StationSensors {api} name={p.name} info={p.info} />{/if}
+        <StationServices {services} active={shown} onpick={pick} />
+      </div>
+    </div>
   {/if}
 </FloatingWindow>
 
 <style>
-  .body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-  .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
-  .chip { padding: 2px 8px; background: var(--bg); border: 1px solid var(--line); color: var(--amber); white-space: nowrap; font: inherit; letter-spacing: 0; }
-  .tabs { flex: none; display: flex; gap: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
-  .tabs button { flex: 1; background: transparent; border: 0; border-bottom: 2px solid transparent; min-height: 32px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-  .tabs button.on { color: var(--cyan); border-bottom-color: var(--cyan); }
-  .n { margin-left: 6px; color: var(--amber); }
-  .tabs button.open { color: var(--cyan); }
-  .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
-  .note { margin-top: 8px; }
+  .sub { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .chip { font: 600 11px var(--head-font); letter-spacing: 0.1em; padding: 1px 6px; border: 1px solid var(--line-hi); color: var(--dim); white-space: nowrap; text-transform: uppercase; }
+  .chip.green { color: var(--green); border-color: var(--green); }
+  .chip.red { color: var(--red); border-color: var(--red); }
+  .chip.amber { color: var(--amber); border-color: var(--amber); }
+  .credits { margin-left: auto; color: var(--gold); font: 700 14px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .cols { flex: 1 1 610px; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; }
+  .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); overflow-y: auto; }
+  .pane:last-child { border-right: 0; }
+  .body { padding: 10px 12px; display: grid; gap: 10px; align-content: start; }
+  .none, .note { color: var(--dim); font-size: 12px; margin: 8px 12px; }
 </style>

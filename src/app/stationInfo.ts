@@ -3,9 +3,11 @@ import { StationAlarmC } from '../sim/stations/components';
 import { portOffers } from '../sim/galaxy/jobOffers';
 import { portRecruits } from '../sim/galaxy/recruit';
 import type { UiBlueprint, UiStationInfo } from '../ui/api';
+import { iconOf } from './starmapSnapshot';
 import { marketAt, pricesAt } from './marketSnapshot';
 import { portHints } from './stockHints';
 import { yardOf } from './yardSnapshot';
+import { stationTraffic, type StationLogView } from './stationTraffic';
 
 /** Plain names of the structure services worth telling a player about. */
 const SERVICE: Record<string, string> = { trade: 'Trade', fuel: 'Fuel', repair: 'Repair', blueprints: 'Blueprints' };
@@ -55,8 +57,14 @@ function blueprintsOf(sim: Sim, port: Port): UiBlueprint[] {
   });
 }
 
+/** The starmap icon sprite of the station's type (the port's structure), or the trading one without a port. */
+function spriteOf(sim: Sim, port: Port | undefined): string {
+  const s = port ? nodeOf(sim, port.node)?.structures[Number(port.id.slice(port.id.indexOf('#') + 1))] : undefined;
+  return iconOf(sim, s?.def ?? '', port?.owner ?? null).sprite;
+}
+
 /** What the inspector shows for a station: owner and standing, services, market, docks and defences. Works without a port (debug spawns). */
-export function stationInfo(sim: Sim, station: number, portId: string | undefined, hw: ReturnType<typeof hardware>): UiStationInfo {
+export function stationInfo(sim: Sim, station: number, portId: string | undefined, hw: ReturnType<typeof hardware>, logView?: StationLogView): UiStationInfo {
   const port = portId ? portOf(sim, portId) : undefined;
   const h = hw.get(station);
   const alarm = sim.world.get(station, StationAlarmC);
@@ -72,5 +80,7 @@ export function stationInfo(sim: Sim, station: number, portId: string | undefine
     docks: h?.docks ?? 0, guns: h?.guns ?? 0, shields: sim.world.get(station, CombatC)?.shield.max ?? 0,
     alarm: alarm?.state === 'alarm' ? alarm.reason || 'alarm' : null,
     yard: yardOf(sim, station),
+    sprite: spriteOf(sim, port),
+    traffic: stationTraffic(sim, station, logView),
   };
 }

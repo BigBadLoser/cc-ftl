@@ -945,6 +945,20 @@ export interface UiStationInfo {
   alarm: string | null;
   /** The shipyard this station runs (hull expansion), or null. */
   yard: UiYardService | null;
+  /** The starmap sprite of its type (`starmap.struct.*`). */
+  sprite?: string;
+  /** Its sensors: ships near it and a short log of the deals running with it. */
+  traffic?: UiStationTraffic;
+}
+
+/** What a station's sensors show: contacts (positions in tiles from the station) and the newest deal lines. */
+export interface UiStationTraffic {
+  /** `fleet`: the starmap fleet sprite family ('player', 'trader', 'patrol', 'raider', 'miner'); `dir` its 0..7 facing (45 degree steps, as the starmap uses). */
+  contacts: { id: number; kind: 'you' | 'shuttle' | 'ship'; dx: number; dy: number; label: string; fleet: string; dir: number; head: 'in' | 'out' | '' }[];
+  /** Docks not taken by a docked or reserved shuttle, of `docks`. */
+  docksFree: number;
+  /** Newest first, each stamped with the game clock as the top bar shows it. */
+  log: { at: string; who: string; what: string }[];
 }
 
 /** What a station's shipyard offers. `price` is per tile now (the node's danger and the tier's multiplier included). */
