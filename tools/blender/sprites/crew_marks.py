@@ -21,7 +21,7 @@ import numpy as np
 W, H = 32, 32
 FPS = 4
 THOUGHT_DX = 15                 # a thought bubble sits this many px right of the head: its puffs rise from it (user pick)
-SPEECH_DX = 9                   # a speech bubble likewise: the tip of its tail (x 7) over the head
+SPEECH_DX = 11                  # a speech bubble likewise, its tail rising from the head (user pick)
 # name: hex. Tier and state colours are the UI's colour roles (theme.css: --red, --amber).
 COL = {
     "K": "#151c28",                                         # outline
