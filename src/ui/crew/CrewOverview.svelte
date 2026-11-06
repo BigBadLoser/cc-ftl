@@ -97,28 +97,28 @@
 
 <style>
   .top { display: grid; grid-template-columns: 64px 1fr; gap: 10px; margin-bottom: 10px; }
-  .face { width: 64px; height: 68px; background: #061020; border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
+  .face { width: 64px; height: 68px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
   .face.dead img { filter: grayscale(1) brightness(0.6); }
   .vitals { display: grid; gap: 0; align-content: center; min-width: 0; }
   .v { display: grid; grid-template-columns: 18px 1fr 84px; gap: 8px; align-items: center; min-height: 18px; font-size: 13px; }
-  .n.good { color: var(--text); } .n.warn { color: var(--amber); } .n.bad { color: #ff9a9a; }
+  .n.good { color: var(--text); } .n.warn { color: var(--amber); } .n.bad { color: var(--red); }
   .ic { display: inline-flex; color: var(--dim); }
   .n { text-align: right; white-space: nowrap; }
   .doing { display: flex; gap: 6px; align-items: center; margin: 0 0 10px; font-size: 13px; min-width: 0; }
   .doing > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .doing > span:last-child::first-letter { text-transform: uppercase; }
-  .bad { color: #ff9a9a; }
+  .bad { color: var(--red); }
   .bonds { margin: 0 0 10px; display: grid; gap: 2px; font-size: 13px; }
   .bonds p { margin: 0; display: flex; flex-wrap: wrap; gap: 0 6px; align-items: baseline; }
   .bonds .k { color: var(--dim); font: 600 11px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; min-width: 52px; }
   .bonds .friend .who { color: var(--green); }
-  .bonds .rival .who { color: #ff9a9a; }
+  .bonds .rival .who { color: var(--red); }
   .weapon { margin: -4px 0 10px; }
   .wl { display: flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; overflow: hidden; }
   .wl b { font-weight: 400; }
   .dim { color: var(--dim); font-size: 12px; }
-  .state { flex: none; padding: 3px 6px; border: 1px solid var(--red); color: #ff9a9a; font: 600 11px/1 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
+  .state { flex: none; padding: 3px 6px; border: 1px solid var(--red); color: var(--red); font: 600 11px/1 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
   .orders { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px; }
   .orders button { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--cyan); }
   .orders button span { color: var(--text); font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }

@@ -15,6 +15,6 @@
 <span class="face" style="width:{size}px;height:{Math.round(size * 1.06)}px">{#if pic}<img src={pic} alt="" />{/if}</span>
 
 <style>
-  .face { flex: none; display: inline-block; background: #061020; border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
+  .face { flex: none; display: inline-block; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
 </style>

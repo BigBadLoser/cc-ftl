@@ -26,7 +26,7 @@
 
 <style>
   /* Steel palette: graphite panel, cyan only on the item under the pointer or focus. */
-  .menu { position: fixed; z-index: 8; min-width: 170px; background: #0b0e11; border: 1px solid #3a424a; box-shadow: 0 6px 24px #000a; display: grid; padding: 3px; }
+  .menu { position: fixed; z-index: 8; min-width: 170px; background: #0b0e11; border: 1px solid #3a424a; box-shadow: var(--shadow-pop); display: grid; padding: 3px; }
   .menu button { display: flex; align-items: center; gap: 8px; text-align: left; min-height: 30px; padding: 0 10px; border-color: transparent; background: transparent; color: #e4e9ee; font-size: 13px; white-space: nowrap; }
   .menu button :global(.icon) { color: #8a949e; }
   .menu button:hover :global(.icon), .menu button:focus-visible :global(.icon) { color: inherit; }

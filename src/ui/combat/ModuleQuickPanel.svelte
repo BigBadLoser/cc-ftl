@@ -74,5 +74,5 @@
   .ok { text-align: center; }
   .bar { height: 6px; background: var(--panel-3); }
   .bar > i { display: block; height: 100%; background: var(--hp); }
-  .bar.low > i { background: #ff5a2d; }
+  .bar.low > i { background: var(--red); }
 </style>

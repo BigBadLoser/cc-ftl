@@ -20,5 +20,5 @@
 <style>
   .cost { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
   .c { display: inline-flex; align-items: center; gap: 1px; font-size: 12px; }
-  .short { color: #ff9a9a; }
+  .short { color: var(--red); }
 </style>

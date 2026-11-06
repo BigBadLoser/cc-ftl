@@ -65,7 +65,7 @@
 </div>
 
 <style>
-  .pop { position: fixed; z-index: 7; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: 0 6px 24px #000a; max-height: calc(100vh - 220px); box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .pop { position: fixed; z-index: 7; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: var(--shadow-pop); max-height: calc(100vh - 220px); box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); }
   .pop > * { min-width: 0; }
   .phd { box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: #000; border-bottom: 1px solid var(--amber); }
   .phd b { font: 700 15px var(--head-font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); }

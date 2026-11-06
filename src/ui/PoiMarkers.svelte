@@ -85,7 +85,7 @@
   .arrow { left: -12px; top: -12px; }
   .ico { left: calc(var(--ix) - 15px); top: calc(var(--iy) - 15px); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
   .poi:hover .arrow, .poi:hover .ico, .poi:focus-visible .arrow, .poi:focus-visible .ico { color: #fff; }
-  .poi.foe:hover .arrow, .poi.foe:hover .ico { color: #ff8a8a; }
+  .poi.foe:hover .arrow, .poi.foe:hover .ico { color: var(--red); }
   .poi:focus-visible .ico { outline: 2px solid var(--focus); outline-offset: -2px; }
   .name { display: none; position: absolute; top: calc(var(--iy) - 11px); left: calc(var(--ix) + 19px); max-width: var(--room); height: 22px; line-height: 22px; padding: 0 7px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(6, 9, 13, 0.78); color: var(--text); pointer-events: none; }
   .rev .name { left: auto; right: calc(19px - var(--ix)); }
