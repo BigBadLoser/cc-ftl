@@ -104,6 +104,8 @@ def build(k, ax, plane, a, b, ends, H):
                 return u0, u1, cap
             return mu(u1), mu(u0), cap[::-1] if isinstance(cap, tuple) else cap
 
+        fm = _Mirror(f, seg) if PART == "w3" else f     # (W1's details drawn in W1's u: on W3 mirrored)
+
         h0, w0, w1 = s0, s0, s1                         # (h0: the header's and the sill's start; w0: the glass's)
         if end:
             for z0, z1, d0 in ((0.0, zb, db), (zb, H, back)):     # the outer frame: the base section, whole
@@ -124,8 +126,8 @@ def build(k, ax, plane, a, b, ends, H):
         pf = [(db, 0.0), (fr, 0.0), (fr, zs), (dv, zj), (db, zj)]       # the sill: its slope, then flat back
         cols = s.cols(pf, "face")
         cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
-        if PART == "w1":                                # (E's recess cut in its slope, F's in its front)
-            _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, cols[1])
+        if end:                                         # (E's recess cut in its slope, F on its front)
+            _w1_sill(fm, s0, h0, w1, db, fr, zs, dv, zj, cols[1])
         elif PART == "w2":                              # (the frame's recess cut in its front)
             _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs)
         else:
@@ -142,8 +144,7 @@ def build(k, ax, plane, a, b, ends, H):
                     else col for p, q in zip(pts, pts[1:] + pts[:1])]
         f.top_line(s0, s1, back + 2 * T3.TOP_PX, back + 2.75 * T3.TOP_PX, YS[2])   # A: the top's seam along its
                                                                                     # back, the base's own
-        if PART in ("w1", "w2"):                        # (W2: W1's header too)
-            _w1_header(f, s, s0, s1, dv, zc, zh)
+        _w1_header(fm, s, s0, s1, dv, zc, zh)           # (W1's header on all three)
         win = _opening(w0, w1, zj, zh, end)
         _slab(GLASS, ax, plane, win, dp - PANE / 2, dp + PANE / 2, "glassL", [False] * len(win), back=False,
               mu=mu)                                    # the pane: its front only (one tinted layer: with its back,
@@ -156,16 +157,34 @@ def build(k, ax, plane, a, b, ends, H):
                   db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False, mu=mu)
             _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
                   [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
-            if PART == "w1":                            # a seam across the jamb's front where its foot's slope
-                zl = zj + fh + sh                       # starts, from the outer frame round its side to the glass
-                pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
-                      zl + 1 / core.ZPX)]
-                f.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
-                zt = zl - RIB_PLATE / core.ZPX          # a plate on the outer frame's side, across it (from the
-                pf = [(dv, zj)] + s.front(zs, zt) + [(dv, zt)]          # jamb's front to the frame's), its top
+            zl = zj + fh + sh                           # a seam across the jamb's front where its foot's slope
+            pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
+                  zl + 1 / core.ZPX)]                   # starts, from the outer frame round its side to the glass
+            fm.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
+            zt = zl - RIB_PLATE / core.ZPX              # a plate on the outer frame's side, across it (from the
+            pf = [(dv, zj)] + s.front(zs, zt) + [(dv, zt)]              # jamb's front to the frame's), its top
                                                         # RIB_PLATE px under that seam, down to the sill's slope
-                cols = s.cols(pf, "face")
-                f.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
+            cols = s.cols(pf, "face")
+            fm.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
+
+
+class _Mirror:
+    """A face drawn on in W1's u, mirrored onto W3's tile by seg (its spans flipped, their caps swapped)."""
+
+    def __init__(self, f, seg):
+        self.f, self.seg, self.sec = f, seg, f.sec
+
+    def part(self, u0, u1, prof, cols=None, cap=None, **kw):
+        a, b, cp = self.seg(u0, u1, cap)
+        self.f.part(a, b, prof, cols, cp, **kw)
+
+    def line(self, u0, u1, *args, **kw):
+        a, b, _ = self.seg(u0, u1)
+        self.f.line(a, b, *args, **kw)
+
+    def top_line(self, u0, u1, *args, **kw):
+        a, b, _ = self.seg(u0, u1)
+        self.f.top_line(a, b, *args, **kw)
 
 
 def _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs):
