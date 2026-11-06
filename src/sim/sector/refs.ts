@@ -48,6 +48,12 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (away && (gone(away.site) || gone(away.vehicle))) delete data.away;
   if (gone((data.siteRun as { site: number } | undefined)?.site)) delete data.siteRun;
   if (gone((data.awaySite as { vehicle: number } | undefined)?.vehicle)) delete data.awaySite;
+  // Leave to come aboard (consent/): a grant for a site or crew across the cut covers nobody here.
+  const consent = data.consent as { grants: { site?: number; crew?: number[] }[] } | undefined;
+  if (consent) {
+    consent.grants = consent.grants.filter((g) => !gone(g.site)).map((g) => (g.crew ? { ...g, crew: g.crew.filter((c) => !gone(c)) } : g));
+    if (!consent.grants.length) delete data.consent;
+  }
   // Air set aside (the air ledger) for crew or at sources across the cut is no longer anyone's.
   const holds = data.airHolds as { holds: { crew: number; id: number }[] } | undefined;
   if (holds) {

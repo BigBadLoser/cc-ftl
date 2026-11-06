@@ -1,3 +1,4 @@
+import { rotatedSize } from '../modules/footprint';
 import { findFreeBed } from '../crew/beds';
 import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
@@ -76,9 +77,13 @@ export function autoJobsSystem(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (m && def && m.hp >= def.maxHp) delete m.repairFirst; // mended: the priority repair order is done
+    if (m && def && m.hp >= def.maxHp) {
+      delete m.repairFirst; // mended: the priority repair order is done
+      delete m.outsideFix;
+    }
     if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`) || onWreck(sim, m)) continue;
-    addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
+    // Worked from beside any tile of the module, not only its anchor corner (a 2x2 reactor in a corner is otherwise out of reach).
+    addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id, size: rotatedSize(def, m.rot) });
   }
   for (const id of sim.world.query(DownedC, PositionC)) {
     const downed = sim.world.get(id, DownedC);

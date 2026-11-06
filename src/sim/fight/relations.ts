@@ -1,3 +1,4 @@
+import { guestOn } from '../consent/guests';
 import { shipIdOf } from '../regions';
 import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
 import { factionsHostile, rogueAlly } from '../combat/factions';
@@ -75,14 +76,15 @@ export function headingAboard(sim: Sim, crew: number): boolean {
   return job?.kind === 'passage' && job.holder === crew;
 }
 
-/** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */
+/** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors or an aid party's guests. */
 export function isInvader(sim: Sim, crew: number): boolean {
   if (sim.world.has(crew, AlienC)) return false; // creatures live where they hatched: they never board or take ships
   if (sim.world.has(crew, YardCrewC)) return false; // the shipyard's contractors are invited aboard to build
   const faction = sim.world.get(crew, AllegianceC)?.faction;
   const pos = sim.world.get(crew, PositionC);
-  const ship = pos && shipById(sim, shipIdOf(sim, pos));
-  return !!faction && !!ship && ship.faction !== faction;
+  const id = pos ? shipIdOf(sim, pos) : 0;
+  const ship = pos && shipById(sim, id);
+  return !!faction && !!ship && ship.faction !== faction && !guestOn(sim, crew, id); // an aid party is invited aboard to mend it
 }
 
 /** True if the player directs this crew member in combat: player side and drafted. */

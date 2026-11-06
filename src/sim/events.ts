@@ -285,6 +285,8 @@ export type SimEvent =
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
   /** A scene skiff asks to dock with the player's ship (answer with `galaxy.visit`). */
   | { type: 'scene.dockAsked'; ship: number }
+  /** Help agreed with a scene ship ('agreed'), finished ('done') or called off because the player turned on it ('broken'). */
+  | { type: 'scene.aid'; ship: number; state: 'agreed' | 'done' | 'broken' }
   | { type: 'scene.observed'; rule: string; ship: number; text: string; tone: 'good' | 'warn' | 'bad' | 'info' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }

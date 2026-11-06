@@ -354,6 +354,13 @@ function droneFightScenario(): void {
 }
 function startScenario(): void {
   if (scenario === 'log') return logScenario();
+  if (scenario === 'freighter') {
+    const raiders = params.get('raiders');
+    return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), {
+      trap: null, signal: params.has('signal'), event: 'event.distress_call', help: params.has('help'),
+      ...(raiders === 'none' || raiders === 'here' || raiders === 'coming' ? { raiders } : {}),
+    });
+  }
   if (scenario === 'ambush') return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), { trap: params.has('trap') ? true : params.has('honest') ? false : null, signal: params.has('signal'), ...(params.get('tell') === 'name' ? { tell: 'name' as const } : {}), ...(params.get('event') ? { event: `event.${params.get('event')}` } : {}) });
   if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
   if (scenario === 'fight' || scenario === 'boarding') {

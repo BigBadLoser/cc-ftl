@@ -1,3 +1,6 @@
+import { ModuleC } from '../modules/components';
+import { ShipC } from '../combat/components';
+import { AllegianceC } from '../fight/components';
 import { YardCrewC } from '../yard/types';
 import { passageFits } from '../away/crew';
 import { isErrand, findSuitSource } from '../eva/errands';
@@ -12,8 +15,15 @@ import { OPERATE_MAX_LEVEL } from '../tuning';
 import { isIncapacitated, jobGoal, origin, refusesWork } from './helpers';
 
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them. */
+/** A fault beyond the ship's own crew (`Module.outsideFix`): its people cannot take the repair, anyone else aboard can. */
+function ownCrewCannot(sim: Sim, crewId: number, job: Job): boolean {
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  return !!m?.outsideFix && sim.world.get(crewId, AllegianceC)?.faction === sim.world.get(shipIdOf(sim, m), ShipC)?.faction;
+}
+
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
+  if (job.kind === 'repair' && ownCrewCannot(sim, crewId, job)) return false;
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job) && passageFits(sim, crewId, job);
 }

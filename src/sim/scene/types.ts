@@ -40,6 +40,29 @@ export interface SceneShipRecipe {
   attitude?: number;
   /** The ship is a story's hidden question (the pirate ambush): the scene seed rolls whether it is a trap or honest. */
   ambush?: AmbushRecipe;
+  /** A name other parts of the recipe use for it (a timer acting on it, a ship that preys on it). Ships of one `group` share their seed rolls. */
+  tag?: string;
+  group?: string;
+  /** Only at these danger tiers (inclusive) is it in the scene, and only on `chance` of the seeds (rolled once per `group`). */
+  danger?: { min?: number; max?: number };
+  chance?: number;
+  /** On `chance` of the seeds (once per `group`) it is not there when you drop out: it jumps in `afterSec` later. Otherwise it is there from the start. */
+  arrive?: { chance: number; afterSec: Range };
+  /** Its weapons go for this ship (its `tag`) while that is in play, ahead of the player's (raiders on a crippled freighter). */
+  prey?: string;
+  /** What it suffered before you came: its modules of a `category` (or a `def`), `count` of them (absent: all), left at a rolled share of their hp, in percent. */
+  damage?: SceneDamageRecipe[];
+  /** The story its crew tell when hailed (what happened, what they want, what they offer). */
+  story?: string;
+}
+
+/** Damage a scene ship starts with (`SceneShipRecipe.damage`). `failing`: the system a scene timer counts down on (`SceneTimerRecipe.stopOn`). */
+export interface SceneDamageRecipe {
+  category?: string;
+  def?: string;
+  count?: number;
+  hp: Range;
+  failing?: true;
 }
 
 /**
@@ -84,10 +107,24 @@ export interface Ambush {
   home?: true;
 }
 
-/** A timer of a scene: it comes due `afterSec` after the scene opens. The observer reads it (fact 'timer'); it is not a script. */
+/**
+ * A timer of a scene: it comes due `afterSec` (rolled) after the scene opens. The observer reads it (fact 'timer'). It may also act on the world, as
+ * conditions, not a script (scene/clock.ts): about the ship tagged `ship`, it stops for good once that ship's failing systems are repaired (`stopOn`),
+ * breaks out fires aboard it in its last `fires.leadSec` (every `everySec`, one more each time, at most `max` at once), and at zero the ship blows (`due`).
+ */
 export interface SceneTimerRecipe {
   id: string;
-  afterSec: number;
+  afterSec: number | Range;
+  ship?: string;
+  stopOn?: 'repaired';
+  fires?: SceneFires;
+  due?: 'wreck';
+}
+
+export interface SceneFires {
+  leadSec: number;
+  everySec: number;
+  max: number;
 }
 
 /**
@@ -139,6 +176,22 @@ export interface SceneShip {
   hailed?: true;
   /** It jumped away: its entity is gone from the pocket and it is not respawned. */
   gone?: 'fled';
+  tag?: string;
+  /** Seconds after the scene opens that it jumps in (rolled from `arrive`), and the tick that is; until then it is not in the pocket. */
+  arriveAfter?: number;
+  arriveAt?: number;
+  /** The tag of the ship it preys on. */
+  prey?: string;
+  /** Damage it starts with (rolled percent of hp), applied when it is made real; then the modules it hit, and those of them failing. */
+  damage?: { category?: string; def?: string; count?: number; pct: number; failing?: true }[];
+  damaged?: number[];
+  failing?: number[];
+  story?: string;
+  /**
+   * Help agreed with it (DESIGN.md "Distress freighter": aid by hail): 'agreed' while it stands (its away site, owner 'aid', takes the party aboard as
+   * guests; `sent` once that site was opened), 'done' when the repairs are, 'broken' when the player turned on it (fired, boarded uninvited, took it).
+   */
+  aid?: { state: 'agreed' | 'done' | 'broken'; sent?: true };
 }
 
 /** What a scan reads off a derelict (taken from its ruin pass when the scene is built): no counts, only what sensors can tell from outside. */
@@ -179,9 +232,17 @@ export interface SceneDerelict {
 
 export interface SceneTimer {
   id: string;
-  /** Seconds after the scene opens; `at` is the tick it comes due, set when it opens. */
+  /** Seconds after the scene opens (rolled); `at` is the tick it comes due, set when it opens. */
   afterSec: number;
   at?: number;
+  ship?: string;
+  stopOn?: 'repaired';
+  fires?: SceneFires;
+  due?: 'wreck';
+  /** It was stopped (its ship's failing systems repaired in time): it never comes due. `fired`: its fires broken out so far; `blown`: its due effect is done. */
+  stopped?: true;
+  fired?: number;
+  blown?: true;
 }
 
 /**
@@ -205,9 +266,13 @@ export interface SceneSpec {
  * What the observer can see happen, read from sim state (never from the event stream). Per scene ship or derelict, except `timer` and `crewLost`
  * (per player crew member who was alive when the scene opened and is dead now). `ambushed`: a skiff's boarding party turned on the player after it was let
  * aboard; `boardersDown`: that party is all dead or down; `delivered`: an honest skiff's party came aboard (its debt is paid); `declined`: the player refused an honest skiff's dock. `salvaged`: a salvage order stripped parts of it (or stripped it
- * away entirely); `cleared`: it had something hostile aboard when it was made, and nothing hostile is aboard now.
+ * away entirely); `cleared`: it had something hostile aboard when it was made, and nothing hostile is aboard now. `repaired`: the damage it started with is
+ * mended and the player never turned on it; at leave only, `abandoned`: help agreed with it was still under way, `doomed`: a timer about it that blows it still runs.
+ * A `timer` rule whose timer is about a ship fires about that ship.
  */
-export type SceneFact = 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown' | 'delivered' | 'declined';
+export type SceneFact =
+  | 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown'
+  | 'delivered' | 'declined' | 'repaired' | 'abandoned' | 'doomed';
 
 /**
  * An observer rule (content: the shared `sceneRules`, plus an encounter's own in `SceneRecipe.rules`). The first time `on` is seen for a ship whose

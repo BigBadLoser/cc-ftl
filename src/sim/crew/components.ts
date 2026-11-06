@@ -121,7 +121,7 @@ export interface Job {
   freeSince?: number;
   /** For 'module' jobs: the blueprint. */
   module?: { def: string; rot: number };
-  /** For 'module' jobs: the rotated footprint [w, h] from (x, y); builders work from beside it, never on it. */
+  /** For 'module' and 'repair' jobs: the rotated footprint [w, h] from (x, y); the crew work from beside it, never on it. */
   size?: [number, number];
   /** Entity the job acts on: module (moduleDecon, repair) or downed crew (rescue). */
   target?: number;

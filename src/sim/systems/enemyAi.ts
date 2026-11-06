@@ -13,7 +13,7 @@ import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
 /**
  * Enemy doctrine. Hostile and rogue active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
  * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target on the first live player ship
- * (else any ship at war with them; rogue AIs fight raiders too) when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
+ * (else any ship at war with them; rogue AIs fight raiders too; a ship with a `prey` goes for that first while it is in play) when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
  * generators, 'random' at any module weighted by max hp. A hostile shuttle of another faction in flight is targeted
  * by the anti-vehicle weapons only (the others keep their ship target). The AI only issues commands, like the player does.
  */
@@ -42,7 +42,7 @@ export function enemyAiSystem(sim: Sim): void {
     if (fv && combat.vehicleTarget !== fv) {
       sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
     }
-    const foe = firstFoe(sim, ship.faction);
+    const foe = preyOf(sim, combat) || firstFoe(sim, ship.faction);
     if (!foe) continue;
     const t = combat.target;
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
@@ -57,6 +57,15 @@ function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
   for (const id of sim.world.query(VehicleC)) {
     if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, faction)) return id;
   }
+  return 0;
+}
+
+/** The ship's prey while it is in play (active or disabled), else 0; a prey gone from play is forgotten. */
+function preyOf(sim: Sim, combat: Combat): number {
+  if (combat.prey === undefined) return 0;
+  const s = sim.world.get(combat.prey, ShipC);
+  if (s && (s.state === 'active' || s.state === 'disabled')) return combat.prey;
+  delete combat.prey;
   return 0;
 }
 

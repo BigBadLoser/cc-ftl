@@ -272,8 +272,12 @@ export type Command =
   | { type: 'galaxy.leaveEvent' }
   /** Answer a scene skiff's request to dock (`grant`: let its shuttle dock and its party come aboard; else refuse). See scene/visit.ts. */
   | { type: 'galaxy.visit'; ship: number; grant: boolean }
+  /** Offer help to a helpless scene ship in the pocket (or send the aid party again after a recall): scene/aid.ts. */
+  | { type: 'galaxy.aid'; ship: number }
   /** Debug: make the open signal's ambush skiff a trap (or honest), whatever its seed rolled. */
   | { type: 'debug.ambush'; trap: boolean; tell?: 'name' | 'lag' }
+  /** Fix whether the open signal's late-or-not ships (a freighter's raiders) are left out, there from the start or coming (scene/debug.ts). */
+  | { type: 'debug.sceneArrivals'; mode: 'none' | 'here' | 'coming' }
   /** Debug: generate every chunk within `radius` chunks of the current galaxy node and discover all their nodes. */
   | { type: 'debug.galaxyReveal'; radius: number }
   /** Debug: move to any generated galaxy node at no cost, as if arriving there (no event draw). */

@@ -158,6 +158,8 @@ export interface Combat {
    * shooting `target`. Set by `combat.setTarget` with a vehicle and no weapon, or by the vehicle defence system. Cleared once it is gone.
    */
   vehicleTarget?: number;
+  /** A ship the AI goes for ahead of the player's while it is in play (a scene's raiders on the crippled ship they circle: scene/open.ts). */
+  prey?: number;
   doctrine: Doctrine;
   /** Seconds of FTL charge (flee needs FTL_CHARGE_SEC). */
   ftl: number;

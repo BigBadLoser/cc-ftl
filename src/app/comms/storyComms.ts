@@ -79,7 +79,8 @@ export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   return {
     ...base, caller, look: hailed ? sp.look : null, stutter: hailed && ship.ambush?.trap === true && ship.ambush.tell === 'lag',
     transcript: [...opening, ...spoken], hint: !hailed && remotes.hail ? 'Hail to hear more from the caller.' : null,
-    holo: holoRequestOf(ship), hullTitle: family ? `${family.toUpperCase()} CLASS` : null, scanHint: 'Scan for weapons, boarding craft and crew.',
+    holo: holoRequestOf(ship), hullTitle: family ? `${family.toUpperCase()} CLASS` : null,
+    scanHint: ship.damage ? 'Scan for its condition, cargo and anything near it.' : 'Scan for weapons, boarding craft and crew.',
     callouts: view.callouts, readout: view.readout,
   };
 }

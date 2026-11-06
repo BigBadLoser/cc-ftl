@@ -1,5 +1,6 @@
 import { ShipC } from '../combat/components';
-import { playerCrewOn } from '../away/crew';
+import { uninvitedOn } from '../consent/guests';
+import { mended, running, timerShip } from './clock';
 import { CrewC, DeadC } from '../crew/components';
 import { SalvageOrderC } from '../salvage/components';
 import { hostileAboard } from '../salvage/system';
@@ -11,7 +12,7 @@ import { applyEffect } from '../story/effects';
 import type { EventEffect } from '../story/defs';
 import { repKey } from '../galaxy/standing';
 import type { Contact, EventGrid } from '../galaxy/types';
-import type { Ambush, SceneDerelict, SceneFact, SceneRuleDef, Stance } from './types';
+import type { Ambush, SceneDerelict, SceneFact, SceneRuleDef, SceneShip, Stance } from './types';
 
 /**
  * The outcome observer (DESIGN.md "Physical encounters", part c). Once a second in an event grid it reads facts about the scene's ships from sim
@@ -25,10 +26,12 @@ interface Watched {
   contact: Contact;
   stance: Stance;
   ambush?: Ambush;
+  /** The scene ship itself (a fleet's ships have none). */
+  scene?: SceneShip;
 }
 
 function watched(ev: EventGrid): Watched[] {
-  const out: Watched[] = ev.scene.ships.map((s) => ({ contact: s.contact, stance: s.stance, ...(s.ambush ? { ambush: s.ambush } : {}) }));
+  const out: Watched[] = ev.scene.ships.map((s) => ({ contact: s.contact, stance: s.stance, scene: s, ...(s.ambush ? { ambush: s.ambush } : {}) }));
   const stance = ev.scene.fleet?.stance ?? 'hostile';
   for (const c of ev.fleet?.ships ?? []) out.push({ contact: c, stance });
   return out;
@@ -56,7 +59,9 @@ function factsOf(sim: Sim, ev: EventGrid, w: Watched): Set<SceneFact> {
   if (sim.trade.deals.some((d) => d.ship === id && d.phase === 'done')) out.add('traded');
   // Fired on by the player: the shot that provoked it (aiming alone is nothing; a hit from someone else is not the player's doing).
   if (ship.provoked === 'fired') out.add('attacked');
-  if (playerCrewOn(sim, id)) out.add('boarded');
+  if (uninvitedOn(sim, id)) out.add('boarded');
+  // Mended: the damage it started with is all repaired, by a player who never turned on it (its own crew cannot mend it: that is why it called).
+  if (w.scene?.damaged?.length && !ship.provoked && ship.state !== 'wreck' && mended(sim, w.scene.damaged)) out.add('repaired');
   if (ship.state === 'prize') out.add('captured');
   if (ship.state === 'wreck') out.add('destroyed');
   if (ship.state === 'fled') out.add('fled');
@@ -109,7 +114,7 @@ function fire(sim: Sim, ev: EventGrid, id: string, rule: SceneRuleDef, w: Subjec
 const stanceOk = (rule: SceneRuleDef, w: Watched): boolean =>
   rule.of !== 'derelict' && (!rule.stance || rule.stance.includes(w.stance)) && (rule.trap === undefined || (!!w.ambush && w.ambush.trap === rule.trap));
 const derelictOk = (rule: SceneRuleDef): boolean => rule.of !== 'ship' && !rule.stance && rule.trap === undefined;
-const SCENE_WIDE = new Set<SceneFact>(['timer', 'left', 'crewLost']);
+const SCENE_WIDE = new Set<SceneFact>(['timer', 'left', 'crewLost', 'abandoned', 'doomed']);
 
 /** Player crew alive when the scene opened who are dead now (or gone from the world, which only a death does inside the grid). */
 const lostCrew = (sim: Sim, ev: EventGrid): number[] => (ev.watch.crew ?? []).filter((c) => sim.world.has(c, DeadC) || !sim.world.has(c, CrewC));
@@ -129,19 +134,33 @@ export function observeScene(sim: Sim, ev: EventGrid): void {
   }
   for (const c of lostCrew(sim, ev)) for (const [id, rule] of rules) if (rule.on === 'crewLost') fire(sim, ev, id, rule, { crew: c });
   for (const t of ev.scene.timers) {
-    if (t.at === undefined || sim.tick < t.at) continue;
-    for (const [id, rule] of rules) if (rule.on === 'timer' && rule.timer === t.id) fire(sim, ev, id, rule, null);
+    if (t.at === undefined || t.stopped || sim.tick < t.at) continue;
+    // A timer about a ship fires about it (its name in the log, its owner's standing).
+    const about = timerShip(ev.scene, t);
+    const w = about ? watched(ev).find((x) => x.scene === about) : undefined;
+    for (const [id, rule] of rules) if (rule.on === 'timer' && rule.timer === t.id) fire(sim, ev, id, rule, w ? { ship: w } : null);
   }
+}
+
+/** What leaving now leaves behind for a ship: help agreed and still under way (`abandoned`), a timer that blows it still running (`doomed`). */
+function leaveFacts(ev: EventGrid, w: Watched): Set<SceneFact> {
+  const out = new Set<SceneFact>();
+  if (w.scene?.aid?.state === 'agreed') out.add('abandoned');
+  if (ev.scene.timers.some((t) => t.due === 'wreck' && running(t) && timerShip(ev.scene, t) === w.scene)) out.add('doomed');
+  return out;
 }
 
 /** On leaving the grid: a last look, then the `left` rules for every ship still in play there and every derelict still there. */
 export function observeLeave(sim: Sim, ev: EventGrid): void {
   observeScene(sim, ev);
   const rules = rulesFor(sim, ev).filter(([, r]) => r.on === 'left');
+  const atLeave = rulesFor(sim, ev).filter(([, r]) => r.on === 'abandoned' || r.on === 'doomed');
   for (const w of watched(ev)) {
     const s = w.contact.ship === undefined ? undefined : sim.world.get(w.contact.ship, ShipC);
     if (!s || (s.state !== 'active' && s.state !== 'disabled')) continue;
     for (const [id, rule] of rules) if (stanceOk(rule, w)) fire(sim, ev, id, rule, { ship: w });
+    const facts = leaveFacts(ev, w);
+    for (const [id, rule] of atLeave) if (facts.has(rule.on) && stanceOk(rule, w)) fire(sim, ev, id, rule, { ship: w });
   }
   for (const d of ev.scene.derelicts) {
     if (d.ship === undefined || !sim.world.has(d.ship, ShipC)) continue;

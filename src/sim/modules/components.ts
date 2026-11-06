@@ -24,6 +24,8 @@ export interface Module {
   o2Burn?: number;
   /** Priority repair (module.priorityRepair): crew pick this module's repair job before any other; a higher number was ordered later and goes first. Cleared at full hp. */
   repairFirst?: number;
+  /** A fault its own ship's crew cannot mend (a scene ship's damage: the reason it called for help); others can. Cleared once mended. */
+  outsideFix?: true;
 }
 export const ModuleC = defineComponent<Module>('module');
 
