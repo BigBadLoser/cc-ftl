@@ -47,8 +47,8 @@ FOOT_W = 5 / 32                     # sill's flat top (the slope measured off th
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
 JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
-RIB_PLATE = (3, 2)                  # W1's outer frame: a plate on its side (px under the jamb's seam, px tall),
-RIB_PLATE_TONE = YS[3]              # REC proud, its face the base's plates' tone
+RIB_PLATE = 3                       # W1's outer frame: a plate on its side, its top this many px under the jamb's
+RIB_PLATE_TONE = YS[3]              # seam, down to the sill; REC proud, its face the base's plates' tone
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -142,9 +142,9 @@ def build(k, ax, plane, a, b, ends, H):
                 pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
                       zl + 1 / core.ZPX)]
                 f.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
-                zt = zl - RIB_PLATE[0] / core.ZPX       # a plate on the outer frame's side, across it (from the
-                za = zt - RIB_PLATE[1] / core.ZPX       # jamb's front to the frame's), RIB_PLATE[1] px tall, its top
-                pf = [(dv, za)] + s.front(za, zt) + [(dv, zt)]          # RIB_PLATE[0] px under that seam
+                zt = zl - RIB_PLATE / core.ZPX          # a plate on the outer frame's side, across it (from the
+                pf = [(dv, zj)] + s.front(zs, zt) + [(dv, zt)]          # jamb's front to the frame's), its top
+                                                        # RIB_PLATE px under that seam, down to the sill's slope
                 cols = s.cols(pf, "face")
                 f.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
 
