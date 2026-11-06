@@ -109,18 +109,18 @@ def neck(f, z0, r=0.15, bands=()):
         f.vcyl(0, 0, z, r + 0.03, 0.06, "steel", top="steelL", sides=20)
 
 
-def motor(f, k, r, z, length=0.26, rad=0.11):
+def motor(f, k, r, z, length=0.26, rad=0.11, ribs=(0.35, 0.65), hub=0.45):
     """A drive motor bolted radially to flat k of an octagon of inradius r: a mounting flange, a ribbed body, a
     brass-hubbed end cap."""
     _g("motor")
     a = math.radians(45 * k)
     D.seg(f, (*P(a, r - 0.01), z), (*P(a, r + 0.04), z), rad + 0.04, "steelD", 16, cap="steel")
     D.seg(f, (*P(a, r + 0.04), z), (*P(a, r + length), z), rad, "gm", 16, cap="steelL")
-    for t in (0.35, 0.65):
+    for t in ribs:
         rr = r + 0.04 + (length - 0.04) * t
         D.seg(f, (*P(a, rr - 0.02), z), (*P(a, rr + 0.02), z), rad + 0.025, "steelL", 16, cap="steelL",
               capstart="steelL")
-    D.seg(f, (*P(a, r + length), z), (*P(a, r + length + 0.02), z), rad * 0.45, "brass", 12, cap="brass")
+    D.seg(f, (*P(a, r + length), z), (*P(a, r + length + 0.02), z), rad * hub, "brass", 12, cap="brass")
 
 
 def at(r, s_):
@@ -174,6 +174,36 @@ def mill(rot=0):
 
 # ---- B: AUGER ------------------------------------------------------------------------------------------------------
 
+def helix_window(f, r, z0, z1, k=1, n=4, t=0.06, slope=0.05):
+    """An inspection slot on flat k of an octagon tube, the screw's brass flights showing through it, each slanting
+    up to the right across the slot as a helix does."""
+    _g("window")
+    w = r * T8 - 0.025
+    flat(f, k, r, z0, z1, "dark", t=0.006, w=w)
+    a = math.radians(45 * k)
+    ca, sa = math.cos(a), math.sin(a)
+    ro = r + 0.012
+
+    def pt(s_, z):
+        return f.pt(ca * ro - sa * s_, sa * ro + ca * s_, z)
+    span = (z1 - z0 - 0.06) / n
+    for i in range(n):
+        zc = z0 + 0.04 + i * span
+        lo, hi = zc - slope / 2, zc + slope / 2                                              # left end, right end
+        f.poly([pt(w, lo), pt(-w, hi), pt(-w, hi + t), pt(w, lo + t)], "brass", flip=True)
+    for z in (z0 - 0.05, z1):                                                              # frame bands above, below
+        octa(f, r + 0.02, z, z + 0.05, "steel", "steelL")
+
+
+def rim_lip(f, r0, r1, z, h=0.03):
+    """A flat octagonal lip on top of a funnel rim, its flats painted yellow and black in turn."""
+    _g("lip")
+    a, b = oct_pts(r0), oct_pts(r1)
+    for i in range(8):
+        j = (i + 1) % 8
+        TB.prism(f, [a[i], b[i], b[j], a[j]], z, z + h, "hazY" if i % 2 == 0 else "hazK")
+
+
 def auger(rot=0):
     m = core.Mesh("bay_flak_auger")
     f = Frame(m, 1, square=True)
@@ -181,27 +211,23 @@ def auger(rot=0):
     lift(f)
     _g("gearbox")
     octa(f, 0.3, 0.14, 0.36, "steelD", "steel")
-    motor(f, 0, 0.3, 0.25, rad=0.09)
+    octa(f, 0.31, 0.3, 0.36, "steel", "steelL")
+    motor(f, 0, 0.3, 0.25, length=0.28, rad=0.1, ribs=(0.5,), hub=0.6)
     _g("tube")
     r = 0.2
     octa(f, r, 0.36, ZI, "gm", "steel")
-    for z in (0.36, 0.98, ZI - 0.08):
-        octa(f, r + 0.02, z, z + 0.06, "steelD", "steel")
-    _g("window")
-    z0, z1 = 1.06, ZI - 0.12
-    flat(f, 1, r, z0, z1, "dark", t=0.006, w=r * T8 - 0.025)
-    n = 5
-    for i in range(n):
-        z = z0 + 0.04 + i * (z1 - z0 - 0.08) / (n - 1)
-        flat(f, 1, r, z - 0.025, z + 0.025, "brass", t=0.008, w=r * T8 - 0.03)            # flights through the slot
+    octa(f, r + 0.02, 0.36, 0.42, "steelD", "steel")
+    helix_window(f, r, 1.06, ZI - 0.1)
     _g("funnel")
     zf0, zf1, rt = 0.66, 0.86, 0.48
+    octa(f, r + 0.04, zf0 - 0.06, zf0 + 0.02, "steel", "steelL")                            # funnel collar on the tube
     frustum(f, r + 0.01, zf0, rt, zf1, "steelD")
     frustum(f, rt + 0.01, zf1 - 0.05, rt + 0.01, zf1, "steel")                              # rim band (open)
-    hazard(f, rt, zf1 - 0.035, zf1 - 0.005)
-    for k in (1, 3, 5, 7):                                                                  # struts to the flange
+    rim_lip(f, rt - 0.03, rt + 0.03, zf1)
+    for k in (0, 2):                                                                        # gussets under it
         a = math.radians(45 * k)
-        D.rail(f, (*P(a, FL - 0.08), 0.14), (*P(a, rt - 0.02), zf1 - 0.04), 0.04, "steel")
+        pts = [P(a, r + 0.03), P(a, rt - 0.04)]
+        D.rail(f, (*pts[0], zf0 - 0.06), (*pts[1], zf1 - 0.06), 0.035, "steel")
     scrap(f, [P(FRONT + (k - 7.5) * 0.4, 0.33) for k in range(16)], 0.74)
     return [m.build()] if cmbkit.REC is None else []
 
