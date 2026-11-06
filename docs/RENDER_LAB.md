@@ -28,6 +28,10 @@ move in a browser).
 - `shield`: the combat shield dome (#301): layer counts at rest, then every effect as a strip of stills through its
   length (`effects=`, `frames=8`, `rx`, `ry`, `rot`, `rest=1,2,3,4`).
 
+- `holo`: a DOM panel (`tools/lab/holoLab.ts`): the station holograms `starmap.holo.<kind>` (#332) neutral at 1x and 3x,
+  through the sensor screen's cyan filter and scanlines beside the 48 px starmap icons, and their anchors. Before they are
+  in the manifest it reads a preview sheet from `&src=` (default `/.cache/holo-preview/`, written by
+  `SPRITE_SAMPLES=16 blender -b --factory-startup --python tools/blender/review/holo_preview.py -- .cache/holo-preview`).
 - `comms`: not a Pixi panel but a DOM one (`tools/lab/commsLab.ts`, `CommsLab.svelte`): every piece of `src/ui/comms` on its own in its
   states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
   composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
