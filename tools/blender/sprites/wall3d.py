@@ -806,6 +806,9 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
         if not getattr(sp, "no_skirt", False):
             skirt(k, sp, ax, plane, a, b, "blue" if hull else "wall", ends)
         if top <= sp.zs + 0.05:
+            if style().shelf and not hull:              # (a stub over a shelf: its face from the shelf up to the cut)
+                k.top = top
+                paint(k, ax, plane, a, b, lip_heights(sp.zs)[0] - 0.01, top, 0.0, "wall", 2)
             continue
         full = top > W.skirt_top() + W.CUT + 0.05            # the hull stays full in the cutaway
         k.top = None if full else top
