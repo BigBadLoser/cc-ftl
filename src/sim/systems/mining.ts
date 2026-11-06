@@ -1,3 +1,4 @@
+import { launchVehicle } from '../vehicles/transitions';
 import { ALT, BodyC, type Body } from '../body';
 import { cargoAdd, cargoCount, cargoSpace } from '../vehicles/cargo';
 import { bumpStat } from '../story/goals';
@@ -115,10 +116,8 @@ export function miningSystem(sim: Sim): void {
       aim(sim, pod, v, order, next);
       order.progress = 0;
       order.trips++;
-      v.state = 'flying';
-      v.dest = null;
+      launchVehicle(sim, pod, v);
       b.alt = ALT.cruise;
-      sim.events.emit({ type: 'vehicle.launched', vehicle: pod, ship: v.homeShip, x: b.x, y: b.y });
       sim.events.emit({ type: 'mining.launched', pod, asteroid: order.asteroid, x: next.x, y: next.y, trip: order.trips });
       continue;
     }

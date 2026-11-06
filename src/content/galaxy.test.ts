@@ -163,7 +163,7 @@ describe('starmap travel', () => {
       for (let t = 0; t < 30; t++) {
         sim.tick = sim.galaxy.nextArrival;
         rollArrival(sim);
-        for (const e of sim.events.drain()) if (e.type === 'galaxy.shipArrived') arrived.push(`${t}:${e.faction}:${e.ship ?? '-'}`);
+        for (const e of sim.events.drain()) if (e.type === 'ship.arrived') arrived.push(`${t}:${e.owner}:${e.ship ?? '-'}`);
       }
       return arrived;
     };
@@ -206,7 +206,7 @@ describe('starmap travel', () => {
     for (let i = 0; i < 20; i++) galaxySystem(sim);
     rollArrival(sim);
     expect(sim.galaxy.rng).toBe(rng);
-    expect(sim.events.drain().filter((e) => e.type === 'galaxy.shipArrived')).toEqual([]);
+    expect(sim.events.drain().filter((e) => e.type === 'ship.arrived')).toEqual([]);
     sim.enqueue({ type: 'debug.chargeFtl' });
     jumpTo(sim, neighbours(sim, far.id)[0] as string);
     sim.step();

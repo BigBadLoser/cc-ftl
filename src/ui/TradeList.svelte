@@ -40,6 +40,6 @@
   .nm { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
   .nm small { color: var(--dim); }
   .go { background: var(--act-fill); border-color: var(--act-edge); }
-  .refused { color: #ff9a9a; font-size: 12px; margin-top: 2px; }
+  .refused { color: var(--red); font-size: 12px; margin-top: 2px; }
   .deal { margin-top: 6px; font-size: 12px; color: var(--amber); }
 </style>

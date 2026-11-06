@@ -30,7 +30,7 @@
   li.known { opacity: 0.6; }
   .t { display: flex; justify-content: space-between; gap: 8px; }
   .t b { color: var(--text); font-weight: 600; }
-  .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
+  .pay { color: var(--gold); font-weight: 600; white-space: nowrap; }
   .d { color: var(--dim); font-size: 12px; }
   .warn { color: var(--red); font-size: 12px; }
   li button { justify-self: end; min-height: 30px; padding: 0 12px; }

@@ -117,18 +117,18 @@
   section { margin-top: 8px; }
   .jl { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .dim { color: var(--dim); }
-  .bad { color: #ff9a9a; }
-  .prog > i { background: #ff9a3c; }
+  .bad { color: var(--red); }
+  .prog > i { background: var(--amber); }
   h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
   .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  .orders li { background: #0e1626; border: 1px solid var(--line); border-radius: 0; padding: 4px 6px; }
-  .orders li.active { border-color: #ff9a3c; }
+  .orders li { background: var(--track); border: 1px solid var(--line); border-radius: 0; padding: 4px 6px; }
+  .orders li.active { border-color: var(--amber); }
   .orders li.done { opacity: 0.6; }
   .orders li.none { color: var(--dim); border-style: dashed; padding: 8px; }
   .orders .rf { color: var(--dim); font-size: 12px; margin-top: 2px; }
   .orders .rf b { margin-left: 6px; font-weight: 600; }
-  .orders .rf .ok { margin-left: 6px; color: #7fd38a; }
+  .orders .rf .ok { margin-left: 6px; color: var(--good-ink); }
   .l1 { display: flex; align-items: center; gap: 6px; }
   .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pr { color: var(--dim); font-size: 12px; white-space: nowrap; }
@@ -136,7 +136,7 @@
   .l2 button, .form button, .picker .cancel { min-height: 36px; min-width: 36px; padding: 0 8px; }
   .mode { min-width: 56px; }
   .mv { display: flex; gap: 4px; }
-  .rm { color: #ff9a9a; }
+  .rm { color: var(--red); }
   .addbtn { margin-top: 8px; width: 100%; }
   .picker { margin-top: 8px; display: grid; gap: 4px; }
   .rec.locked { opacity: 0.5; cursor: default; }

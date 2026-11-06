@@ -44,8 +44,8 @@
   .drive { margin: 0 0 8px; }
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
-  dd.bad { color: #ff9a9a; }
-  .hp > i { background: var(--hp); } .hp.low > i { background: #ff5a2d; }
+  dd.bad { color: var(--red); }
+  .hp > i { background: var(--hp); } .hp.low > i { background: var(--red); }
   .btns { display: flex; gap: 4px; margin-top: 10px; }
   .resbtn { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px; color: var(--amber); border-color: var(--amber); background: #000; justify-content: center; }
   .prio { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; margin-top: 8px; min-height: 32px; }

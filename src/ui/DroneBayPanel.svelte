@@ -27,9 +27,9 @@
   .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 22px; }
   .dim { color: var(--dim); }
-  .bad { color: #ff9a9a; }
+  .bad { color: var(--red); }
   .cap { margin-top: 6px; }
-  .bar { height: 4px; background: #1c2630; margin: 2px 0 6px; }
+  .bar { height: 4px; background: var(--track); margin: 2px 0 6px; }
   .bar i { display: block; height: 100%; background: var(--cyan); }
-  .bar.low i { background: #ffb060; }
+  .bar.low i { background: var(--amber); }
 </style>
