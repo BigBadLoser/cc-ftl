@@ -43,7 +43,7 @@ function shipsInPlay(sim: Sim): number {
  */
 export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): void {
   if (node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
-  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c);
+  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet' });
 }
 
 /**
@@ -95,7 +95,7 @@ export function liftFleet(sim: Sim, f: Fleet): void {
   for (const c of f.ships) {
     if (c.ship === undefined) continue;
     loseStrandedCrew(sim, c.ship, 'lifted'); // a boarding party left aboard goes with the ship
-    liftShip(sim, c.ship);
+    liftShip(sim, c.ship, { reason: 'fleet' });
     gone.add(c.ship);
     c.ship = undefined;
   }

@@ -29,6 +29,18 @@ describe('ship log and alerts', () => {
     expect(t.list()).toHaveLength(1);
   });
 
+  it('logs a hostile ship arriving (no alert), and not a neutral one', () => {
+    const t = setup();
+    t.sim.sector.state = 'active';
+    const ship = homeShip(t.sim);
+    t.feed({ type: 'ship.arrived', node: 'n', ship, name: 'Raider', faction: 'hostile', owner: 'pirates', reason: 'jump-in', x: 0, y: 0 });
+    t.feed({ type: 'ship.arrived', node: 'n', ship, name: 'Skiff', faction: 'neutral', owner: 'traders', reason: 'spawn', x: 0, y: 0 });
+    expect(t.list().map((e) => e.text)).toEqual(['Raider jumped in: hostile']);
+    let n = -1;
+    t.alerts.list.subscribe((l) => (n = l.length));
+    expect(n).toBe(0);
+  });
+
   it('logs log-only events without raising an alert', () => {
     const t = setup();
     t.feed({ type: 'trade.hailAnswered', ship: 9, name: 'Mira' });

@@ -2,7 +2,7 @@ import { ShipC } from '../combat/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { planCourier } from './courier';
-import { holdTrip, isLive, trimHistory } from './deals';
+import { holdTrip, isLive, setPhase, trimHistory } from './deals';
 import { playerItems } from './player';
 import { TraderC, type Deal } from './types';
 
@@ -14,10 +14,9 @@ import { TraderC, type Deal } from './types';
 
 /** End a queued deal that never started: nothing was held, so nothing is returned. */
 export function dropQueued(sim: Sim, d: Deal, reason: string): void {
-  d.phase = 'failed';
   d.reason = reason;
-  d.timer = 0;
   if (d.trip) d.trip.rest = [];
+  setPhase(sim, d, 'failed');
   sim.events.emit({ type: 'trade.failed', deal: d.id, ship: d.ship, reason });
   trimHistory(sim);
 }
@@ -52,8 +51,7 @@ export function stepQueued(sim: Sim, d: Deal): void {
   d.courier = plan.courier;
   d.vehicle = plan.vehicle;
   d.airlock = plan.airlock;
-  d.phase = 'dispatch';
-  d.timer = 0;
+  setPhase(sim, d, 'dispatch');
   holdTrip(sim, d, sim.world.get(d.ship, TraderC));
   const v = plan.vehicle ? sim.world.get(plan.vehicle, VehicleC) : undefined;
   if (v && d.courier === 'you') v.autopilot = true;

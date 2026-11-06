@@ -1,3 +1,4 @@
+import type { DepartReason } from '../events';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
 import { EvaFloatC } from '../eva/components';
 import { AllegianceC } from '../fight/components';
@@ -21,6 +22,8 @@ export type WithDocked = boolean | readonly number[];
 
 export interface LiftOptions {
   withDocked?: WithDocked;
+  /** Why a non-player ship in play is lifted out, as `ship.departed` reports it (default 'jump-away'). */
+  reason?: DepartReason;
 }
 
 /** Vehicles docked at one of the ship's airlocks or stowed in one of its bays, by whether they are the player's. */

@@ -1,4 +1,4 @@
-import { homeShip } from '../sim/index';
+import { factionsHostile, homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry, UiSubject } from '../ui/api';
@@ -90,6 +90,10 @@ export function createDescriber(sim: Sim) {
       case 'transfer.delivered': return e.final ? { kind: 'transfer', tone: 'good', text: `Transfer delivered to ${shipName(e.to)}`, ...onShip(e.to) } : null;
       case 'transfer.blocked': return { kind: 'transfer', tone: 'warn', text: `Transfer blocked: ${BLOCKED[e.reason]}` };
       case 'outpost.discovered': return { kind: 'outpost', tone: 'warn', text: 'Hidden base discovered', ...onShip(e.ship) };
+      case 'ship.arrived': // a hostile ship turning up is worth a line (an alert only comes when it attacks: combat.started)
+        return e.ship !== null && sim.sector.state === 'active' && factionsHostile('player', e.faction)
+          ? { kind: 'combat', tone: 'warn', text: `${e.name} ${e.reason === 'jump-in' ? 'jumped in' : 'arrived'}: hostile`, ...onShip(e.ship) }
+          : null;
       case 'trade.hailAnswered': return { kind: 'hail', tone: 'info', text: `${e.name} answered the hail`, ...onShip(e.ship) };
       case 'trade.hailRefused': return { kind: 'hail', tone: 'warn', text: `${e.name} refused to talk`, ...onShip(e.ship) };
       case 'trade.dealMade': {

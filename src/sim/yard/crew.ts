@@ -1,3 +1,4 @@
+import { reportLaunched } from '../vehicles/transitions';
 import { ALT, BodyC } from '../body';
 import { abortTask } from '../ai/task';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from '../away/components';
@@ -8,7 +9,7 @@ import { CrewC, DeadC, PrioritiesC, WORK_CATEGORIES, type Priorities } from '../
 import { createCrew } from '../crew/spawn';
 import type { Sim } from '../sim';
 import { courierDef } from '../trade/courier';
-import { VehicleC } from '../vehicles/components';
+import { VehicleC, type Vehicle } from '../vehicles/components';
 import { boardCrew } from '../vehicles/lifecycle';
 import { YardCrewC, type YardOrder } from './types';
 
@@ -44,6 +45,7 @@ export function launchShuttle(sim: Sim, o: YardOrder): boolean {
     sim.world.destroyEntity(vehicle);
     return false;
   }
+  reportLaunched(sim, vehicle, sim.world.get(vehicle, VehicleC) as Vehicle);
   Object.assign(sim.world.get(o.ship, AwaySiteC)!, { demand: {}, dock: o.airlock, outside: true, noLoot: true });
   const n = Math.min(spec.count, cd.def.eva?.suits ?? spec.count, cd.def.capacity + 1);
   for (let i = 0; i < n; i++) {
