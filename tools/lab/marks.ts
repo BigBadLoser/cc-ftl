@@ -18,8 +18,8 @@ const SOCIAL = ['chat', 'chatBad', 'shout'];
 const BREAKS = ['panic', 'freeze', 'hide', 'tantrum', 'despair', 'refusal', 'isolation'];
 const FIGHT = ['downed', 'surrendered'];
 const TIERS = ['mild', 'moderate', 'severe'];
-/** Head height of a standing figure (crewMarks.ts), where an icon's bottom sits. */
-const HEAD = 1.6 * Z_PX;
+/** Where an icon's bottom sits over a standing figure: the placeholder bubble's spot in crewMarks.ts (1.7 tiles of height, then 8 art px). */
+const HEAD = 1.7 * Z_PX + 8 * S;
 
 type Frames = (id: string) => Texture[];
 

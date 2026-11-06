@@ -154,22 +154,23 @@ def drop(c, x, y, r, tip, body="B", shade="b", hi="E"):
     c.poly([(x - r * 0.82, y - r * 0.5), (x, y - tip), (x + r * 0.82, y - r * 0.5)], body)
     c.mask((((c.cx - x) / r) ** 2 + ((c.cy - y) / r) ** 2 <= 1.0) & ((c.cx - x) + (c.cy - y) > r * 0.7), shade)
     if hi:
-        c.ell(x - r * 0.45, y - r * 0.35, max(1.1, r * 0.25), hi, max(1.4, r * 0.38))
+        hx, hy = round(x - r * 0.55), round(y - r * 0.5)
+        c.rect(hx, hy, hx, hy + 2, hi)
 
 
 def panic(f):
     """Sweat drops: a big one, and two small ones flicking off it."""
     c = Canvas()
-    drop(c, 19, 17, 5.2, 12)
-    for (x, y) in (((12, 9), (10.5, 17)), ((10.5, 7.5), (8.5, 18.5)), ((9, 6), (6.8, 20)))[f % 3]:
-        drop(c, x, y, 1.9, 4, hi=None)
+    drop(c, 18.5, 15.8, 4.4, 10)
+    for (x, y) in (((12.6, 10.0), (11.6, 16)), ((11.6, 9.2), (10.6, 17)), ((10.8, 9.0), (10.2, 17.6)))[f % 3]:
+        drop(c, x, y, 1.7, 3.6, hi=None)
     return c
 
 
 def freeze(f):
     """A snowflake, a glint running round its arms."""
     c = Canvas()
-    x0, y0, L = 16, 14, 8.6
+    x0, y0, L = 16, 13, 7.2
     for k in range(3):
         a = math.pi / 2 + k * math.pi / 3
         dx, dy = math.cos(a) * L, -math.sin(a) * L
@@ -178,9 +179,9 @@ def freeze(f):
             bx, by = x0 + s * dx * 0.6, y0 + s * dy * 0.6
             for t in (0.75, -0.75):
                 b = a + (0 if s > 0 else math.pi) + t
-                c.seg((bx, by), (bx + math.cos(b) * 3.4, by - math.sin(b) * 3.4), 0.85, "e")
-    c.ell(x0, y0, 2.6, "E")
-    tx, ty = ((16, 5.6), (23.4, 9.8), (23.4, 18.2))[f % 3]
+                c.seg((bx, by), (bx + math.cos(b) * 2.8, by - math.sin(b) * 2.8), 0.85, "e")
+    c.ell(x0, y0, 2.3, "E")
+    tx, ty = ((16, 6.2), (22.2, 9.4), (22.2, 16.6))[f % 3]
     c.ell(tx, ty, 1.5, "W")
     return c
 
@@ -188,42 +189,42 @@ def freeze(f):
 def hide(f):
     """A crate with its lid lifted a crack, two eyes in the dark gap glancing left, right, then a blink."""
     c = Canvas()
-    c.rect(7, 15, 24, 23, "O")
-    c.rect(7, 15, 24, 15, "U")
-    for x in (12, 19):
-        c.rect(x, 16, x, 23, "o")
-    c.rect(7, 10, 24, 14, "I")                                           # the dark gap
-    c.poly([(6, 7.5), (25.6, 4.6), (25.6, 7.6), (6, 10.5)], "O")         # the lid, tilted up
-    c.poly([(6, 9.4), (25.6, 6.5), (25.6, 7.6), (6, 10.5)], "o")
+    c.rect(9, 14, 22, 20, "O")
+    c.rect(9, 14, 22, 14, "U")
+    for x in (13, 18):
+        c.rect(x, 15, x, 20, "o")
+    c.rect(9, 10, 22, 13, "I")                                           # the dark gap
+    c.poly([(8.2, 7.6), (23.6, 5.4), (23.6, 7.8), (8.2, 10.0)], "O")     # the lid, tilted up
+    c.poly([(8.2, 9.2), (23.6, 7.0), (23.6, 7.8), (8.2, 10.0)], "o")
     look = (-1, -1, 1, None)[f % 4]
-    for ex in (10, 18):
+    for ex in (11, 17):
         if look is None:
-            c.rect(ex, 13, ex + 3, 13, "S")
+            c.rect(ex, 12, ex + 3, 12, "S")
         else:
-            c.rect(ex, 11, ex + 3, 13, "W")
-            c.rect(ex + 1 + look, 12, ex + 2 + look, 13, "I")
+            c.rect(ex, 10, ex + 3, 12, "W")
+            c.rect(ex + 1 + look, 11, ex + 2 + look, 12, "I")
     return c
 
 
 def cloud(c, top, mid, low):
-    c.ell(11.5, 12.5, 5.6, mid, 4.6)
-    c.ell(19.5, 11.0, 6.4, mid, 5.4)
-    c.rect(7, 13, 25, 16, mid)
-    c.ell(7.6, 14.2, 2.6, mid, 2.6)
-    c.ell(24.4, 14.2, 2.6, mid, 2.6)
-    c.ell(18.2, 8.6, 3.8, top, 2.4)
-    c.ell(11.0, 10.2, 2.4, top, 1.6)
-    c.rect(7, 16, 25, 17, low)
+    """A cloud in the bubble's top half, about x 7..24, y 5..15."""
+    c.ell(12.4, 10.8, 4.6, mid, 3.8)
+    c.ell(18.4, 10.0, 5.2, mid, 4.2)
+    c.ell(16, 12.6, 7.4, mid, 2.6)
+    c.ell(10.2, 12.6, 2.8, mid, 2.4)
+    c.ell(21.8, 12.6, 2.8, mid, 2.4)
+    c.ell(17.6, 7.4, 3.2, top, 2.0)
+    c.ell(11.6, 9.0, 2.0, top, 1.4)
+    c.mask((c.cy > 13.6) & (c.k == mid), low)
 
 
 def tantrum(f):
     """A storm cloud with a lightning bolt that flickers."""
     c = Canvas()
     cloud(c, "L", "D", "d")
-    bolt = [(16.5, 15), (21, 15), (18.4, 18.6), (21.4, 18.6), (13.4, 26), (16, 20.6), (13.2, 20.6)]
-    c.poly(bolt, "Y" if f % 2 == 0 else "y")
+    c.poly([(16.4, 14), (19.8, 14), (17.9, 16.8), (20.4, 16.8), (14.2, 21.6), (15.8, 18.2), (13.6, 18.2)], "Y" if f % 2 == 0 else "y")
     if f % 2:
-        c.poly([(17.2, 16), (19.4, 16), (16.6, 19.6), (18.6, 19.6), (15, 23.4), (16.4, 19.6), (15.4, 19.6)], "E")
+        c.poly([(17.0, 15), (18.6, 15), (16.8, 17.6), (18.2, 17.6), (15.4, 20.0), (16.4, 17.6), (15.4, 17.6)], "E")
     return c
 
 
@@ -231,31 +232,49 @@ def despair(f):
     """A grey rain cloud, the rain falling from it."""
     c = Canvas()
     cloud(c, "S", "G", "g")
-    for i, x in enumerate((9, 13, 17, 21)):
-        y = 19 + (f + i * 2) % 4 * 1.5
-        c.seg((x + 0.5, y), (x - 0.3, y + 2.4), 0.6, "B")
+    for i, x in enumerate((12, 15, 18, 20)):
+        y = 16.0 + (f + i * 2) % 4 * 0.7
+        c.seg((x + 0.5, y), (x - 0.3, y + 1.8), 0.6, "B")
     return c
+
+
+HAND = [                                                    # a raised right palm: four fingers, the thumb out to the left
+    "......WW......",
+    "...WW.WW.WW...",
+    "...WW.WW.WW...",
+    "...WW.WW.WW.WW",
+    "...WW.WW.WW.WW",
+    "...WW.WW.WW.WW",
+    "...WW.WW.WW.WW",
+    "W..WWWWWWWWWWW",
+    "WW.WWWWWWWWWWS",
+    "WWWWWWWWWWWWWS",
+    ".WWWWWWWWWWWWS",
+    "..WWWWWWWWWWWS",
+    "...WWWWWWWWWS.",
+    "....SWWWWWWS..",
+    ".....SSSSSS...",
+]
 
 
 def refusal(f):
     """A raised palm, a small stop-shake."""
     c = Canvas()
     dx = (0, 1, 0, -1)[f % 4]
-    for x, top in ((11, 8.5), (15, 6.5), (19, 7), (23, 9.5)):                  # four fingers, a dark gap between them
-        c.seg((x + dx - 0.5, top), (x + dx - 0.5, 16), 1.3, "W")
-    c.seg((9.4 + dx, 19.5), (7.0 + dx, 14.2), 1.4, "W")                         # the thumb
-    rounded(c, 9 + dx, 14, 23 + dx, 23, "W", 3)
-    c.rect(10 + dx, 22, 22 + dx, 23, "S")
-    c.rect(22 + dx, 15, 23 + dx, 21, "S")
+    for j, row in enumerate(HAND):
+        for i, ch in enumerate(row):
+            if ch != ".":
+                c.k[5 + j, 9 + i + dx] = ch
     return c
 
 
 def isolation(f):
     """A lone figure, small, standing apart (its bubble is a plain circle)."""
     c = Canvas()
-    c.ell(16, 9.5, 2.8, "W")
-    c.mask((((c.cx - 16) / 5.6) ** 2 + ((c.cy - 20) / 6.2) ** 2 <= 1) & (c.cy < 22), "W")
-    c.rect(11, 21, 20, 21, "S")
+    c.rect(15, 6, 16, 10, "W")                                  # a round head, 4 x 5 with the corners off, a neck gap
+    c.rect(14, 7, 17, 9, "W")
+    c.mask((((c.cx - 16) / 5.2) ** 2 + ((c.cy - 18.6) / 5.6) ** 2 <= 1) & (c.cy < 20), "W")
+    c.rect(11, 19, 20, 19, "S")
     return c
 
 
