@@ -49,9 +49,9 @@ SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, un
 JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
 RIB_PLATE = 3                       # W1's outer frame: a plate on its side, its top this many px under the jamb's
 RIB_PLATE_TONE = YS[3]              # seam, down to the sill; REC proud, its face the base's plates' tone
-MID_PLATE = (3, 7)                  # W2's sill: a plate on its slope, these px in from the tile's sides, from the
-MID_PLATE_RISE = 1                  # slope's top this many px down it on screen; this many px proud, its sides
-MID_PLATE_SIDE = YS[1]              # in this tone
+MID_PLATE = (3, 3, 4)               # W2's sill: a plate on its slope, these px in from the tile's sides, from this
+MID_PLATE_RISE = 1                  # many px down it on screen (from its top) this many px on down it; this many
+MID_PLATE_SIDE = YS[1]              # px proud, its sides in this tone
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -155,15 +155,17 @@ def build(k, ax, plane, a, b, ends, H):
 
 
 def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
-    """W2's plate on its sill's slope: from the slope's top MID_PLATE[1] px down it on screen, MID_PLATE_RISE px
-    proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot) darker."""
+    """W2's plate on its sill's slope: MID_PLATE[1] px down it on screen from its top, MID_PLATE[2] px on down it,
+    MID_PLATE_RISE px proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot) darker."""
     k = (zs - zj) / (fr - dv)                           # (the slope's dz per unit out)
     dy = -k * core.ZPX + core.TILE_H / 2                # (px down on screen per unit out along it)
-    d1 = min(fr, dv + MID_PLATE[1] / dy)
-    z1, r = zj + k * (d1 - dv), MID_PLATE_RISE / core.ZPX
-    pf = [(dv, zj), (d1, z1), (d1, z1 + r), (dv, zj + r)]
+    d0 = dv + MID_PLATE[1] / dy
+    d1 = min(fr, d0 + MID_PLATE[2] / dy)
+    z0, z1, r = zj + k * (d0 - dv), zj + k * (d1 - dv), MID_PLATE_RISE / core.ZPX
+    pf = [(d0, z0), (d1, z1), (d1, z1 + r), (d0, z0 + r)]
     cols = s.cols(pf, "face")
-    cols[1], cols[2] = MID_PLATE_SIDE, SILL_SLOPE      # (its foot's face a side too)
+    cols[1], cols[2], cols[3] = MID_PLATE_SIDE, SILL_SLOPE, MID_PLATE_SIDE     # (its foot's and head's faces sides
+                                                                            # too)
     f.part(s0 + T3.px(MID_PLATE[0]), s1 - T3.px(MID_PLATE[0]), pf, cols, MID_PLATE_SIDE, end=False)
 
 
