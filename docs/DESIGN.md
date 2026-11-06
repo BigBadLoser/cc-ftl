@@ -379,6 +379,14 @@ scripts. Not every scene has one.
   - Observed: repaired -> reputation, gift by hail; boarded and robbed -> reputation loss; captured -> prize rules; destroyed -> wreck; left
     while repairing -> its fate follows its own timer.
   - Persistence: transient. Timer: **yes** (a failing reactor, or raiders on an arrival clock when present).
+  - **User rulings (2026-11-06):**
+    - **Aid by hail.** Help is agreed in the comms window (offer help, they accept). The away party then goes aboard as invited guests
+      and does not provoke while it works. Going aboard without that agreement is boarding, as today.
+    - **Reactor: fires, then it blows.** As the clock runs down, fires break out and spread aboard the freighter. At zero it becomes
+      a wreck (salvageable), and anyone still aboard is in danger. Repairing the failing reactor in time stops the clock.
+    - **Raiders, by seed, deeper only:** some scenes have them already circling the freighter when you drop out, others have them
+      jump in on a clock that the scan warns about.
+    - **Survivors later,** with passengers (medical pod, step 6). The freighter is built without them.
 - **Medical pod** (`medical_emergency`). Eligible: a bed aboard.
   - Signal: a pod beacon with a faint life sign.
   - Remote: scan (patient's injury, species, skills hinted), ignore.
