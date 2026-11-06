@@ -190,6 +190,8 @@ def plain_relief():
     """The default walls' relief (Style): their own faces and grid skirt, with the looks' square free ends."""
     if not _PLAIN:
         from .shell import FreeEnds, LookShell
+        from .slate import SHELF
         _PLAIN.append(Style(wall=_plain_face(False), hull=_plain_face(True), shell=LookShell, features=(FreeEnds(),),
-                            plain=True))
+                            plain=True, ramp_solid=True, shelf=SHELF, shelf_back=(0, 1)))   # (slate's ramp top: a
+                                                                                            # flat shelf at the wall)
     return _PLAIN[0]
