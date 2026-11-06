@@ -27,7 +27,6 @@ RAMP_FOOT = "wD"        # (their upright foot)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
 PANE_OUT = 0.003
-BEAM_OUT = T.PX         # the beam's blocks: this far proud of the header, split at the header's joints (a px gap)
 POST = 11.25 / 32       # the end posts: the opening this far in from the tile's edge (as tan's POST_L)
 PART = None
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
@@ -111,7 +110,6 @@ def hook(k, sp, own=True):
         _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
-    _beam(k, z1)
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2
@@ -149,18 +147,6 @@ def _plain(k, zs, yf):
               (0, sd * sl.y, sl.z), RAMP)
         _quad(k, [(-0.5, sd * yt, ft), (0.5, sd * yt, ft), (0.5, sd * yt, 0.0), (-0.5, sd * yt, 0.0)], (0, sd, 0),
               RAMP_FOOT)
-
-
-def _beam(k, z1):
-    """The beam's blocks over the whole tile: the header (wall3d.wall_face) stood BEAM_OUT further out, split at its
-    joints (header_marks: a long middle block, the end blocks across the tile's edges) by a px gap."""
-    yf = W.wall_back() - 0.5 + W.TW
-    zt = W.HF - 0.02
-    cuts = [-0.5, -0.18, 0.18 - T.LINE, 0.5]
-    for u0, u1 in zip(cuts, cuts[1:]):
-        a = u0 + (T.LINE if u0 > -0.5 else 0.0)
-        b = u1 - (0.0 if u1 >= 0.5 else 0.0)
-        T.slab(k, "y", yf, a, b, z1, zt, T.FR + BEAM_OUT, "wall", 3, ends=(u0 > -0.5, u1 < 0.5))
 
 
 def window(fn, part):
