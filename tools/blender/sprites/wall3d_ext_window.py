@@ -20,7 +20,9 @@ from .wall3d_ext_geom import LEAN_RISE, LINE, YS, D, Face, Section
 PART = None                         # the piece being built: "w1" | "w2" | "w3" (None: not a window)
 HEAD = 21                           # the header: the lean's top this many px on screen (down its front)
 GLASS_IN = 3 / 32                   # the glass this far behind the armour's own face
-SILL = 25                           # the sill's front, px tall
+SILL = 25                           # the sill's front, px tall (as measured: the slope's top set off it)
+SILL_UP = 4                         # ours: the front this many px taller, the slope's top where it was (its slope
+                                    # the shorter)
 SILL_RISE = 7.5                     # its top's slope: its rise from the front to the glass, px of height; cut off
                                     # level with the frame's front (behind it the top flat, to the glass)
 SILL_FLAT = "hsXS"                  # that flat (shaded under the header; well under the slope's)
@@ -81,10 +83,10 @@ def build(k, ax, plane, a, b, ends, H):
     f = Face(k, ax, plane, a, b, ends, s, T3.CORNER_C)
     zb, fr = s.zb, D + T3.BACK                          # (fr: the upright part's front, out from the block's face)
     zh = s.z_at(H, HEAD)                                # the header's foot
-    zs = SILL / core.ZPX                                # the sill's front top
+    zs = (SILL + SILL_UP) / core.ZPX                    # the sill's front top
     gl = T3.BACK - GLASS_IN
     dv = T3.BACK + BEVEL                                # the header's upright front (and the jamb's)
-    zj = zs + SILL_RISE / core.ZPX * (fr - dv) / (fr - gl)   # the sill's top level with it (the slope's top)
+    zj = (SILL + SILL_RISE * (fr - dv) / (fr - gl)) / core.ZPX   # the sill's top level with it (the slope's top)
     zc = H - LEAN_RISE * BEVEL / D
     dp = dv - PANE_IN - PANE / 2                        # the pane's centre
     db = dp - PANE / 2 - WALL_BACK                      # the wall's back (the section reaches back to it)
