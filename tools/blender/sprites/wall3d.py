@@ -482,8 +482,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             im = 0.2 * min(1.0, w / 0.76)
             dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
+            pd = 0.4 / 32                               # (about an art px down the slope)
             if style().plain:                           # the default walls: the panel drawn, a seam line round
-                ed = 0.4 / 32                           # it (a px across, about a px down the slope)
+                ed = pd                                 # it (a px across, about a px down the slope), its top
+                fd0, fd1 = fd0 + 2 * pd, fd1 - pd       # 2 px down, its bottom a px up
                 for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
                           (fu1 - LINE, fu1, fd0, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,
@@ -493,6 +495,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                       base=rise)
             fu0, fu1, fd0, fd1 = fu0 + LINE, fu1 - LINE, fd0 + 0.03, fd1 - 0.03
             iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_ + dn, 0.52 * run_ + dn
+            if style().plain:                           # (the default walls: the light plate a px in at its top
+                iu0, iu1, id0, id1 = iu0 + LINE, iu1 - LINE, id0 + 2 * pd, id1 + pd    # and sides, a px down)
             fr = 0.0 if style().plain else PX           # (the raised frame's height: none on the default walls)
             if fr:
                 for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
@@ -501,6 +505,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam,
                   3 + LIFT(), base=rise)                # ... and the plate sunk in it (a shade over the slope)
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
+            if style().plain:                           # (the default walls: the slot a px down)
+                sd0, sd1 = sd0 + pd, sd1 + pd
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + fr + 2 * PAINT, fam,
                   0, base=rise + fr)                                           # a dark slot on the frame
     toe_fam, toe_at = style().toe, style().toe_at
