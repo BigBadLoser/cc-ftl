@@ -31,6 +31,14 @@ PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), 
 DESIGN = {"laser": ("S", "laser"), "driver": ("H", "driver"), "pd": ("R", "laser"), "missile": ("M", "missile"),
           "ion": ("M", "ion"), "incendiary": ("M", "incendiary"), "flak": ("F", "flak")}
 TB.BAYS["flak"] = TB.BAYS["laser"]   # stand-in until the flak bay has its own model (tinted in game: artTint)
+# Flak bay concepts, look iteration only: FLAK_BAYS=1 adds turret_bay_flak.CONCEPTS as flakbay_a, flakbay_b.. (under
+# the flak turret).
+if os.environ.get("FLAK_BAYS"):
+    from . import turret_bay_flak
+    for _k in turret_bay_flak.CONCEPTS:
+        PICKS[f"flakbay_{_k[-1].lower()}"] = (_k, 0.64, 2)
+        DESIGN[_k] = ("F", "flak")
+        TC.PICKS[_k] = TC.PICKS["flak"]
 # Look iteration only, never for commits: WEAPONS_ONLY=stem,stem limits the stems; WEAPONS_QUICK=1 renders just the
 # preview set (aims 1, 3, 6, aim 1 charged, stowed, bay r0).
 ONLY = [s for s in os.environ.get("WEAPONS_ONLY", "").split(",") if s]
