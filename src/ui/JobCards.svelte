@@ -77,10 +77,10 @@
 <style>
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   li { display: grid; gap: 8px; padding: 10px; background: var(--panel-2); border: 1px solid var(--line); }
-  li.due { border-color: #ffb43c; }
+  li.due { border-color: var(--amber); }
   .t { display: flex; justify-content: space-between; gap: 8px; }
   .t b { color: var(--text); font-weight: 600; }
-  .pay { color: #ffd77a; font-weight: 600; white-space: nowrap; }
+  .pay { color: var(--gold); font-weight: 600; white-space: nowrap; }
   .sub { color: var(--dim); font-size: 12px; margin-top: -6px; }
   .facts { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 12px; }
   .facts > div { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -94,7 +94,7 @@
   .badge { font-size: 12px; font-weight: 600; padding: 3px 8px; border: 1px solid currentColor; white-space: nowrap; }
   .badge.outmatched { color: var(--red); }
   .badge.even { color: var(--dim); }
-  .badge.weaker { color: #7fd18b; }
+  .badge.weaker { color: var(--good-ink); }
   .warn { color: var(--red); font-size: 12px; }
   .act { display: flex; justify-content: flex-end; }
   li button { min-height: 30px; padding: 0 12px; }

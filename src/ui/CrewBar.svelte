@@ -88,7 +88,7 @@
   .card.bad { border-color: var(--red); }
   .card.on { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
   /* The portrait: a crop of the real crew sprite in whole art px (16 x 18), shown at a whole multiple (2x) with hard edges. */
-  .face { grid-row: 1 / 3; width: var(--face); height: calc(var(--face) * 1.0689); background: #061020; overflow: hidden; }
+  .face { grid-row: 1 / 3; width: var(--face); height: calc(var(--face) * 1.0689); background: var(--track); overflow: hidden; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
   .face.dead img { filter: grayscale(1) brightness(0.6); }
   .face.down img { filter: saturate(0.6) brightness(0.75) sepia(1) hue-rotate(-45deg) saturate(2.2); }
@@ -97,7 +97,7 @@
   .name { font: 600 14px/1.1 var(--head-font); color: var(--ink-accent); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role { font: 10px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bars { grid-column: 1 / 3; align-self: end; display: grid; gap: 2px; width: 100%; }
-  .bars i { display: block; height: 3px; background: #061020; }
+  .bars i { display: block; height: 3px; background: var(--track); }
   .bars b { display: block; height: 100%; }
   .hp b { background: var(--hp); } .rest b { background: var(--rest); } .hunger b { background: var(--hunger); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

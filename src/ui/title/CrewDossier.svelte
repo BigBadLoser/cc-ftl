@@ -84,7 +84,7 @@
   .ph { flex: none; }
   .body { flex: 1 1 auto; padding: 14px; overflow-y: auto; min-height: 0; }
   .id { display: grid; grid-template-columns: 112px 1fr; gap: 16px; }
-  .face { width: 112px; height: 128px; background: #061020; border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
+  .face { width: 112px; height: 128px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
   .ctl { display: grid; gap: 8px; align-content: start; }
   .name { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; background: var(--track); border: 1px solid var(--line); color: var(--dim); }
@@ -117,5 +117,5 @@
   .stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
   .stat { display: flex; justify-content: space-between; gap: 8px; min-height: 24px; align-items: center; border-bottom: 1px solid var(--panel-3); font-size: 13px; }
   .why { color: var(--dim); font-size: 12px; margin-left: 6px; }
-  .dim { color: var(--dim); } .pos { color: #9fe0a8; } .neg { color: #ff9a9a; } .warn { color: var(--amber); }
+  .dim { color: var(--dim); } .pos { color: var(--good-ink); } .neg { color: var(--red); } .warn { color: var(--amber); }
 </style>

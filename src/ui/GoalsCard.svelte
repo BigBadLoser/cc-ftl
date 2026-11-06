@@ -115,7 +115,7 @@
   li.done em { text-decoration: line-through; }
   .box { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-top: 1px; border: 1px solid var(--dim); color: var(--green); }
   li.done .box { border-color: var(--green); }
-  .reward { margin: 6px 0 0; color: #ffd77a; font-size: 12px; }
+  .reward { margin: 6px 0 0; color: var(--gold); font-size: 12px; }
   .confirm p { margin: 4px 0 6px; font-size: 12px; color: var(--text); }
   .confirm .row { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
   .confirm button { min-height: 30px; }

@@ -31,6 +31,6 @@
   }
   .tip b { font-weight: 600; margin-right: 4px; }
   .tip span { color: var(--dim); }
-  .good { border-color: var(--green, #4cd964); }
+  .good { border-color: var(--green); }
   .bad { border-color: var(--red); }
 </style>

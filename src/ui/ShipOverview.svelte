@@ -83,7 +83,7 @@
   .food { display: grid; gap: 2px; margin-top: 4px; padding: 6px 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 13px; }
   .food b { color: var(--text); font-weight: 600; }
   .food .fs { color: var(--dim); font-size: 12px; }
-  .food.low { border-color: #ffb43c; } .food.low b { color: #ffb43c; }
+  .food.low { border-color: var(--amber); } .food.low b { color: var(--amber); }
   .food.out { border-color: var(--red); } .food.out b { color: var(--red); }
   .heat .pay { margin-top: 4px; padding: 6px 8px; background: var(--panel-3); border: 1px solid var(--line); color: var(--text); font: inherit; cursor: pointer; }
   .heat .pay:disabled { color: var(--dim); cursor: default; }

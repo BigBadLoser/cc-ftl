@@ -36,7 +36,7 @@
 
 <style>
   .strip button.tile { position: relative; }
-  .badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: #ffb43c; color: #111; font: 700 10px/14px var(--head-font); }
+  .badge { position: absolute; top: 2px; right: 2px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: var(--amber); color: #111; font: 700 10px/14px var(--head-font); }
   .strip { display: flex; background: var(--panel); border: 1px solid var(--line-hi); }
   .strip button.tile { border: 0; border-right: 1px solid var(--line); background: transparent; }
   .strip button.tile:last-child { border-right: 0; }

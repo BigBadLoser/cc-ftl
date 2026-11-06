@@ -40,5 +40,5 @@
   .track > s { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--panel); }
   .base { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: #fff; }
   .v { text-align: right; color: var(--text); white-space: nowrap; }
-  .low .v { color: #ff9a9a; }
+  .low .v { color: var(--red); }
 </style>
