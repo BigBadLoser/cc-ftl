@@ -473,9 +473,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             im = 0.2 * min(1.0, w / 0.76)
             dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
-            plate(k, [(fu0 - LINE, fd0), (fu1, fd0), (fu1, fd1), (fu0 - LINE, fd1)], pt, nrm, 0.0, rise + PAINT,
-                  fam, 1, base=rise)                    # the frame's dark outline (2 px on its left, as its raised
-                                                        # side shows on its right)
+            if not style().plain:                       # the frame's dark outline (the default walls: none)
+                plate(k, [(fu0, fd0), (fu1, fd0), (fu1, fd1), (fu0, fd1)], pt, nrm, 0.0, rise + PAINT, fam, 1,
+                      base=rise)
             fu0, fu1, fd0, fd1 = fu0 + LINE, fu1 - LINE, fd0 + 0.03, fd1 - 0.03
             iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_ + dn, 0.52 * run_ + dn
             for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
