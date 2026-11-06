@@ -5,6 +5,7 @@
   import { keyLabel, keymap } from '../keymap';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
+  import HeatBar, { heatTone } from './HeatBar.svelte';
 
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
@@ -19,12 +20,11 @@
   } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
-  const hot = $derived(heatPct >= 90 ? 'red' : heatPct >= 70 ? 'amber' : '');
+  const hot = $derived(((t) => (t === 'cool' ? '' : t))(heatTone(enemy.heat.value / enemy.heat.max)));
   const sub = $derived(
     [enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '),
   );
   const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
-  const HEAT_TONE = { '': 'neutral', amber: 'warn', red: 'bad' } as const;
   const tone = $derived(chipTone(pill.tone));
 </script>
 
@@ -67,7 +67,7 @@
         title="Hull integrity"
       />
       <div class="hrow" title="Heat">
-        <span class="grow"><Meter value={heatPct} max={100} tone={HEAT_TONE[hot]} height={8} edge="var(--hostile-track)" /></span>
+        <span class="grow"><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={8} edge="var(--hostile-track)" label="Enemy heat" /></span>
         <span class="hp {hot}">Heat {heatPct}%</span>
       </div>
     </div>
@@ -80,7 +80,7 @@
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
             <span class="nm">{w.name}</span>
             <span class="shotbar" style:border-color={shot ?? 'var(--hostile-track)'}>
-              <i style:width="{Math.round(w.charge * 100)}%" style:background={shot ?? 'var(--cyan)'}></i>
+              <i style:width="{Math.round(w.charge * 100)}%" style:background={shot ?? 'var(--hud-bar)'}></i>
               <u style:left="{Math.round(w.commitAt * 100)}%"></u>
             </span>
             <span class="st">{row.status}</span>

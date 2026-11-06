@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Chip, Meter } from '../../src/ui/kit';
   import { dangerColor } from '../../src/ui/starmapStyle';
+  import HeatBar from '../../src/ui/combat/HeatBar.svelte';
 
   const tones = ['dim', 'good', 'warn', 'bad', 'gold', 'select'] as const;
   const meterTones = ['auto', 'good', 'warn', 'bad', 'neutral'] as const;
@@ -38,6 +39,15 @@
     <span class="lbl">notch .5</span><span class="m"><Meter value={0.3} notches={[0.5]} height={6} /></span>
     <span class="lbl">80/50 at 70</span><span class="m"><Meter value={70} max={100} tone="auto" thresholds={{ good: 80, warn: 50 }} height={6} /></span>
   </div>
+  <h3>Heat bar <small>heat's own scale, shared by the player's gauge (marks, auto-vent line) and the enemy card (8px), at 30, 60, 80, 95 percent</small></h3>
+  <div class="row">
+    <span class="lbl">player</span>
+    {#each [30, 60, 80, 95] as v (v)}<span class="m tall"><HeatBar value={v} max={100} marks autoVent={0.7} /></span>{/each}
+  </div>
+  <div class="row">
+    <span class="lbl">enemy 8</span>
+    {#each [30, 60, 80, 95] as v (v)}<span class="m"><HeatBar value={v} max={100} height={8} edge="var(--hostile-track)" /></span>{/each}
+  </div>
 </div>
 
 <style>
@@ -47,4 +57,5 @@
   .row { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
   .lbl { width: 90px; color: var(--dim); font-size: 12px; }
   .m { width: 150px; }
+  .m.tall { display: flex; height: 22px; }
 </style>
