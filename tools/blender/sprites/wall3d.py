@@ -323,7 +323,7 @@ def _odd(x, par):
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     """Partition (set 7): a low band, posts with a groove, a header in three blocks; in each field an outlined panel
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
-    from .faction.parts import PZ
+    from .faction.parts import PZ, prism
     F = "wall"
     zb, zlt = _lip(k, ax, plane, a, b, ends, zs, top, F)                                        # the lip
     if not full:
@@ -348,15 +348,17 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         bw, nc = 0.42 * w, n0 + n1                       # (centred on the panel: twice its centre, in px)
         ns = _odd(bw / LINE + 2, nc % 2)                 # the slot's width in px (a px round the bars)
         nl = _odd(0.5 * w / LINE, nc % 2)                # the fine lines'
-        paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27, q1 - 0.07,
-              3 * PAINT, F, 0)
+        paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
+              3 * PAINT, F, 0)                           # (its foot a px further down)
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085
             paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
                   4 * PAINT, "ochre", 3)
         zr = b1 - 0.5
-        slab(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), zr - 0.07, zr, FR, F, 3, ends=(False, False))  # raised
-        gap = (zr - 0.07 - b0) / 3                       # bar (its front the panel's full width between its seams)
+        prism(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), [(0.0, zr - 0.07), (FR, zr - 0.07), (FR, zr), (0.0, zr)],
+              F, 3, cols=[False, None, None, False], cap=False, mitre=(0.0, -1.0))   # raised bar: its front the panel's
+        gap = (zr - 0.07 - b0) / 3                       # full width between its seams, its top cut back square on
+                                                         # screen at its right end (clear of the seam, no AA blend)
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # ... the two lines
             paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
                   3 * PAINT, F, 1)                                                              # evenly under it
