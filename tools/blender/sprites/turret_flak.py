@@ -227,100 +227,89 @@ def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
         g.hcyl(ua, ub, 0, z, ra, heat(hot, k, UNDER), r1=rb, sides=24)
 
 
-# ---- A: TRUMPET --------------------------------------------------------------------------------------------------
+# ---- the cradle: one housing on the deck that the gun nests in ------------------------------------------------------
+DECK = 0.29        # top of the turntable's upper deck (radius 0.44): the cradle stays inside it
 
-def trumpet(hot):
-    BZ, PU = 0.56, -0.26
-    rig = TC.Rig("flak_trumpet", (PU, BZ), SCALE)
-    TC.coaming(rig.f("fixed"), R)
-    h = rig.f("head")
-    TC.turntable(h, R, hot, None, ribs=12)
-    yoke(h, 0.22, -0.44, -0.08, PU, BZ)
-    feed(h, (-0.56, 0, 0.32), (-0.52, 0, BZ - 0.17))
-    g = rig.f("gun")
-    _g("chamber")
-    prism(g, -0.62, 0.0, octa(0.2), octa(0.2), BZ)
-    prism(g, -0.68, -0.62, octa(0.17), octa(0.17), BZ, cap0=EDGE)                        # rear cap
-    bolts(g, -0.685, BZ, 0.12, n=6, mat=BODY)
-    for u in (-0.5, -0.14):
-        prism(g, u - 0.025, u + 0.025, octa(0.225), octa(0.225), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)  # bands
-    _g("wings")
+
+def cradle(h, PU, BZ, u0, u1, vin, vout, rise=0.08, fall=0.02, c=0.05, cheek=BODY):
+    """The mount as one mass growing from the deck: a chamfered floor plate and two cheek walls (vin..vout either side)
+    whose tops slope from BZ + rise at the back down to BZ - fall at the front; the trunnions sit inside the walls,
+    shown only as capped bearing bosses flush on their outer faces. Everything stays within the deck's radius."""
+    _g("cradle")
+    prism(h, u0, u1, csec(vout, 0.035, 0.02), csec(vout, 0.035, 0.02), DECK + 0.035)       # floor plate
     for sv in (-1, 1):
-        radiator(g, (-0.52, sv * 0.21, BZ + 0.02), (0.4, 0, 0), (0, sv * 0.4, 0.08), hot, pipes=3, r=0.02)
-    _g("throat")
-    collar(g, 0.02, BZ, 0.2)
-    u = hot_run(g, 0.04, ((3, 0.08), (2, 0.08), (1, 0.08)), 0, BZ, 0.15, hot, sides=18)
-    collar(g, u, BZ, 0.18, w=0.03)
-    _g("bell")
-    g.hcyl(u, 0.95, 0, BZ, 0.16, BODY, r1=0.34, sides=28)
-    hot_cone(g, u, 0.95, 0.16, 0.34, BZ, hot)
-    g.hcyl(u + 0.01, u + 0.02, 0, BZ, 0.13, heat(hot, 4, UNDER), sides=18, cap=heat(hot, 4, UNDER))  # white core
-    um = u + (0.95 - u) * 0.5
-    D.annulus(g, um - 0.02, um + 0.02, 0, BZ, 0.27, 0.24, EDGE, EDGE, sides=28)          # stiffening ring
-    for k in range(6):                                                                  # flush strakes
-        a = math.tau * k / 6 + math.pi / 6
-        c, s = math.cos(a), math.sin(a)
-        D.seg(g, (u + 0.04, 0.175 * c, BZ + 0.175 * s), (0.92, 0.345 * c, BZ + 0.345 * s), 0.016, EDGE, 4)
-    D.annulus(g, 0.94, 1.0, 0, BZ, 0.37, 0.32, EDGE, BODY, sides=28)                   # rolled lip
-    return rig
+        def sec(top):
+            pts = [(vout, DECK), (vout, top - c), (vout - c, top), (vin, top), (vin, DECK)]
+            return [(sv * v, z) for v, z in pts]
+        s0, s1 = sec(BZ + rise), sec(BZ - fall)
+        if sv < 0:
+            s0, s1 = s0[::-1], s1[::-1]
+        prism(h, u0, u1, s0, s1, 0.0, side=cheek, cap0=SIDE, cap1=EDGE)
+        vo = sv * vout
+        D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.03, BZ), 0.095, SIDE, 16, cap=EDGE, capstart=SIDE)  # bearing boss
+        D.seg(h, (PU, vo + sv * 0.025, BZ), (PU, vo + sv * 0.045, BZ), 0.04, UNDER, 10, cap=BODY)
+        for k in range(6):                                                              # its bolt ring
+            a = math.tau * (k + 0.5) / 6
+            h.box(PU + 0.07 * math.cos(a), vo + sv * 0.035, BZ + 0.07 * math.sin(a), 0.022, 0.02, 0.022, EDGE,
+                  base=False)
+        h.box((u0 + u1) / 2, sv * (vout - 0.004), DECK + 0.06, u1 - u0 - 0.08, 0.012, 0.02, UNDER)  # seam
 
 
-# ---- B: LETTERBOX ------------------------------------------------------------------------------------------------
+# ---- A: LETTERBOX ------------------------------------------------------------------------------------------------
 
 def letterbox(hot):
-    BZ, PU = 0.54, -0.22
+    BZ, PU = 0.56, -0.06
     rig = TC.Rig("flak_letterbox", (PU, BZ), SCALE)
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    yoke(h, 0.25, -0.42, -0.02, PU, BZ)
-    feed(h, (-0.6, 0, 0.32), (-0.56, 0, BZ - 0.16))
+    cradle(h, PU, BZ, -0.3, 0.18, 0.19, 0.3)
     g = rig.f("gun")
     _g("receiver")
-    prism(g, -0.62, 0.04, csec(0.23, 0.15, 0.05), csec(0.23, 0.15, 0.05), BZ)
-    prism(g, -0.67, -0.62, csec(0.2, 0.12, 0.04), csec(0.2, 0.12, 0.04), BZ, cap0=EDGE)  # breech cover
-    for sv in (-1, 1):
-        D.panel(g, -0.3, sv * 0.23, BZ - 0.01, 0.4, 0.16, mat=BODY, seam=UNDER, face="+v" if sv > 0 else "-v")
+    prism(g, -0.56, 0.1, csec(0.18, 0.14, 0.045), csec(0.18, 0.14, 0.045), BZ)
+    prism(g, -0.6, -0.56, csec(0.15, 0.11, 0.035), csec(0.15, 0.11, 0.035), BZ, cap0=EDGE)   # breech cover
+    for u in (-0.44, -0.2):                                                             # bands, same chamfer
+        prism(g, u - 0.02, u + 0.02, csec(0.195, 0.155, 0.05), csec(0.195, 0.155, 0.05), BZ, side=EDGE,
+              cap0=EDGE, cap1=EDGE)
     _g("sail")
-    radiator(g, (-0.52, 0, BZ + 0.17), (0.5, 0, 0), (-0.1, 0, 0.38), hot, pipes=4, r=0.02)
+    radiator(g, (-0.5, 0, BZ + 0.155), (0.44, 0, 0), (-0.1, 0, 0.36), hot, pipes=4, r=0.02)
     _g("nozzle")
-    prism(g, 0.04, 0.09, csec(0.25, 0.17, 0.05), csec(0.25, 0.17, 0.05), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)  # flange
-    prism(g, 0.09, 0.88, csec(0.22, 0.15, 0.05), csec(0.36, 0.08, 0.03), BZ)            # widening flat nozzle
-    for i, (ua, ub) in enumerate(((0.14, 0.26), (0.28, 0.4))):                           # throat grille on the top
+    prism(g, 0.1, 0.14, csec(0.205, 0.165, 0.05), csec(0.205, 0.165, 0.05), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
+    prism(g, 0.14, 0.9, csec(0.18, 0.14, 0.045), csec(0.34, 0.075, 0.03), BZ)            # widening flat nozzle
+    for i, (ua, ub) in enumerate(((0.2, 0.32), (0.34, 0.46))):                          # throat grille on the top
         k = 3 - i
-        zt = BZ + 0.15 - 0.07 * ((ua + ub) / 2 - 0.09) / 0.79
-        g.box((ua + ub) / 2, 0, zt - 0.01, ub - ua, 0.3, 0.012, UNDER)
-        for j, hv in enumerate((0.0, 0.06, 0.12)):
+        zt = BZ + 0.14 - 0.065 * ((ua + ub) / 2 - 0.14) / 0.76
+        g.box((ua + ub) / 2, 0, zt - 0.008, ub - ua, 0.26, 0.012, UNDER)
+        for j, hv in enumerate((0.0, 0.055, 0.11)):
             for sv in ((1,) if j == 0 else (-1, 1)):
-                g.box((ua + ub) / 2, sv * hv, zt, ub - ua - 0.03, 0.04, 0.006, heat(hot, k - j, UNDER))
-        for vb in (-0.09, -0.03, 0.03, 0.09):
+                g.box((ua + ub) / 2, sv * hv, zt, ub - ua - 0.03, 0.035, 0.006, heat(hot, k - j, UNDER))
+        for vb in (-0.083, -0.028, 0.028, 0.083):
             g.box((ua + ub) / 2, vb, zt, ub - ua, 0.012, 0.014, EDGE)
-    prism(g, 0.86, 0.93, csec(0.38, 0.1, 0.03), csec(0.38, 0.1, 0.03), BZ, side=EDGE, cap1=UNDER)  # lip
+    prism(g, 0.88, 0.94, csec(0.36, 0.09, 0.03), csec(0.36, 0.09, 0.03), BZ, side=EDGE, cap1=UNDER)  # lip
     for k in range(9):                                                                  # the slot, white at the middle
-        v = -0.32 + k * 0.08
-        g.box(0.932, v, BZ, 0.006, 0.08, 0.1, heat(hot, 4 - min(4, abs(k - 4)), UNDER), base=False)
+        v = -0.3 + k * 0.075
+        g.box(0.942, v, BZ, 0.006, 0.075, 0.1, heat(hot, 4 - min(4, abs(k - 4)), UNDER), base=False)
     return rig
 
 
-# ---- C: FINNED BORE ----------------------------------------------------------------------------------------------
+# ---- B: FINNED BORE ----------------------------------------------------------------------------------------------
 
 def finned(hot):
-    BZ, PU = 0.6, -0.3
+    BZ, PU = 0.58, -0.08
     rig = TC.Rig("flak_finned", (PU, BZ), SCALE)
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    yoke(h, 0.26, -0.5, -0.1, PU, BZ)
-    feed(h, (-0.62, 0, 0.32), (-0.62, 0, BZ - 0.18))
+    cradle(h, PU, BZ, -0.32, 0.14, 0.2, 0.3, rise=0.06, fall=0.0)
     g = rig.f("gun")
     _g("breech")
-    prism(g, -0.68, -0.08, octa(0.23), octa(0.23), BZ)
-    prism(g, -0.73, -0.68, octa(0.19), octa(0.19), BZ, cap0=EDGE)
-    bolts(g, -0.735, BZ, 0.13, n=8, mat=BODY)
-    prism(g, -0.4, -0.35, octa(0.25), octa(0.25), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
-    collar(g, -0.06, BZ, 0.27, w=0.05, sides=20)
+    prism(g, -0.58, 0.14, octa(0.19), octa(0.19), BZ)
+    prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, cap0=EDGE)
+    bolts(g, -0.635, BZ, 0.105, n=8, mat=BODY)
+    for u in (-0.46, 0.12):
+        prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
     _g("bore")
-    g.hcyl(-0.04, 0.84, 0, BZ, 0.19, SIDE, sides=20)
+    g.hcyl(0.14, 0.88, 0, BZ, 0.16, SIDE, sides=20)
     _g("fins")
     for a in range(8):                                                                 # radial fins, hot at the root
         ang = math.radians(22.5 + a * 45)
@@ -329,29 +318,28 @@ def finned(hot):
         def at(u, r):
             return (u, r * c, BZ + r * s)
         NU, NR = 4, 3
+
+        def pt(tu, tr):
+            ur0, ur1 = 0.17 + 0.66 * tu, 0.21 + 0.56 * tu                           # root and tip edges in u
+            rt = 0.34 - 0.05 * tu                                                   # tip radius tapers forward
+            return at(ur0 + (ur1 - ur0) * tr, 0.16 + (rt - 0.16) * tr)
         for iu in range(NU):
             for ir in range(NR):
-                t0, t1 = iu / NU, (iu + 1) / NU
-                q0, q1 = ir / NR, (ir + 1) / NR
-
-                def pt(tu, tr):
-                    ur0, ur1 = -0.02 + 0.8 * tu, 0.02 + 0.66 * tu                       # root and tip edges in u
-                    rt = 0.37 - 0.06 * tu                                               # tip radius tapers forward
-                    return at(ur0 + (ur1 - ur0) * tr, 0.19 + (rt - 0.19) * tr)
+                t0, t1, q0, q1 = iu / NU, (iu + 1) / NU, ir / NR, (ir + 1) / NR
                 k = 4 - iu - ir
-                qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.03, BODY,
+                qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.028, BODY,
                       face=heat(hot, k, "rustD" if k >= 4 else BODY) if k >= 1 else BODY)
-        D.seg(g, at(0.02, 0.375), at(0.68, 0.315), 0.02, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
-    D.annulus(g, 0.78, 0.83, 0, BZ, 0.33, 0.19, EDGE, BODY, sides=24)                  # fin clamp ring
+        D.seg(g, at(0.21, 0.345), at(0.77, 0.29), 0.018, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
+    D.annulus(g, 0.82, 0.86, 0, BZ, 0.3, 0.16, EDGE, BODY, sides=24)                   # fin clamp ring
     _g("muzzle")
-    g.hcyl(0.83, 0.92, 0, BZ, 0.22, BODY, sides=20)
-    D.annulus(g, 0.92, 0.96, 0, BZ, 0.24, 0.15, EDGE, EDGE, sides=20)
-    hot_cone(g, 0.8, 0.95, 0.12, 0.155, BZ, hot, steps=(2, 1), wall=0.0)
-    g.hcyl(0.8, 0.81, 0, BZ, 0.12, heat(hot, 4, UNDER), sides=16, cap=heat(hot, 4, UNDER))
+    prism(g, 0.86, 0.95, octa(0.195), octa(0.195), BZ, cap1=UNDER)
+    D.annulus(g, 0.95, 0.98, 0, BZ, 0.2, 0.13, EDGE, EDGE, sides=20)
+    hot_cone(g, 0.84, 0.975, 0.1, 0.135, BZ, hot, steps=(2, 1), wall=0.0)
+    g.hcyl(0.84, 0.85, 0, BZ, 0.1, heat(hot, 4, UNDER), sides=16, cap=heat(hot, 4, UNDER))
     return rig
 
 
-CONCEPTS = {"flakA": trumpet, "flakB": letterbox, "flakC": finned}
+CONCEPTS = {"flakA": letterbox, "flakB": finned}
 for _k, _fn in CONCEPTS.items():
     TC.TURRETS[("F", _k)] = _fn
     TC.PICKS[_k] = _fn
