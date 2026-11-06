@@ -324,3 +324,10 @@ def items():
     for k, (fn, n) in FIGHT.items():
         add(f"crew.mark.{k}", fn, n)
     return out
+
+
+def build(out):
+    """The family's sheet `marks` under <out>/sprites -> (sheets, assets) for pack.merge. Frames stay whole (32 x 32: the
+    anchor is fixed), with no glow."""
+    from . import pack
+    return pack.pack("marks", [{**it, "fp": (1, 1), "g": np.zeros_like(it["rgba"])} for it in items()], out)

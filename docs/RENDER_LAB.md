@@ -28,10 +28,11 @@ move in a browser).
 - `shield`: the combat shield dome (#301): layer counts at rest, then every effect as a strip of stills through its
   length (`effects=`, `frames=8`, `rx`, `ry`, `rot`, `rest=1,2,3,4`).
 
-- `marks`: the overhead crew icons `crew.mark.*` (social cues, break symbols on their tier plates, downed, surrendered): every
-  icon's frames at 1x and 3x, one symbol on the three plates, each over a real crew figure on a lit and a dark floor, and a
-  shouting pair. Before they are in the manifest it reads `&src=` (default `/.cache/marks-preview/`, written by
-  `python3 -I tools/blender/review/marks_preview.py`).
+- `marks`: the overhead crew icons `crew.mark.*` (sheet `marks`; social cues, break symbols in their tier's thought bubble, downed,
+  surrendered): every icon's frames at 1x and 3x, every break at the three tiers, each over a real crew figure on a lit and a
+  dark floor, and a shouting pair. `&preview=1` reads the quick preview sheet instead of the manifest (`&src=`, default
+  `/.cache/marks-preview/`, written by `python3 -I tools/blender/review/marks_preview.py`), to try a change before
+  `npm run sprites -- -- public/assets/1x marks`.
 - `comms`: not a Pixi panel but a DOM one (`tools/lab/commsLab.ts`, `CommsLab.svelte`): every piece of `src/ui/comms` on its own in its
   states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
   composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
