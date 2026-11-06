@@ -514,7 +514,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 sd0, sd1, sw = style().slot_d
                 plate(k, [(uc - sw, sd0 * run_), (uc + sw, sd0 * run_), (uc + sw, sd1 * run_),
                           (uc - sw, sd1 * run_)], pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
-        if field and w >= 0.36 and sk == "panel" and VARIANT[1] and not rv:
+        if field and w >= 0.36 and sk == "panel" and VARIANT[1] and not rv and not style().plain:
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
                          u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
@@ -548,6 +548,11 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             if style().plain:                           # (the default walls: the light plate a px in at its top
                 iu0, iu1, id0, id1 = iu0 + LINE, iu1 - LINE, id0 + 2 * pd, id1 + pd    # and sides, a px down)
             fr = 0.0 if style().plain else PX           # (the raised frame's height: none on the default walls)
+            if style().plain and VARIANT[1]:            # (a ramp design: its own drawing in the frame)
+                from . import wall3d_variants as V
+                V.ramp_plain(lambda q, lvl: plate(k, q, pt, nrm, 0.0, rise + 2 * PAINT, fam, lvl, base=rise),
+                             fu0, fu1, fd0, iu0, iu1, id1, sb, pd, VARIANT[1])
+                continue
             if fr:
                 for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX,
