@@ -30,7 +30,9 @@ Each must read as its type at a glance, and as the same station as its starmap i
 **Sheet:** one sheet, `starmap.holo.<type>` (or agree another id with me), listed in the manifest like the other starmap sprites.
 
 **First preview:**
-- All four at 1x and 3x, neutral, side by side.
-- The same four through the panel's cyan filter and scanlines on the dark sensor background (#05080b-ish), each beside its 48 px starmap icon, to compare.
+- Shoot it in the render lab, not the game (`npm run lab -- --panel <id>`, see `docs/RENDER_LAB.md`). Add a panel for the holograms:
+  - all four at 1x and 3x, neutral, side by side;
+  - the same four through the panel's cyan filter and scanlines on the dark sensor background (#05080b-ish), each beside its 48 px starmap icon, to compare.
+- Only shoot the real station panel once the sprites are wired, to judge them in place.
 
 Render it quickly, then wait for feedback.

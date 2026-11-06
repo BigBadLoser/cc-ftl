@@ -36,8 +36,10 @@
 - Sheet ids like `crew.mark.<id>` (e.g. `crew.mark.chat`, `crew.mark.break.panic`, `crew.mark.tier.severe`), listed in the manifest. Agree the ids with me before wiring.
 
 **First preview:**
-- Every icon at 1x and 3x on a sheet, labelled.
-- The same set floating over a crew sprite in a room, on a lit floor and on a dark floor, at game zoom.
-- One break symbol shown on all three tier plates.
+- Shoot it in the render lab, not the game (`npm run lab -- --panel <id>`, see `docs/RENDER_LAB.md`). Add a panel for these icons:
+  - every icon at 1x and 3x, labelled;
+  - the set floating over a crew sprite on a lit floor and on a dark floor, at game zoom;
+  - one break symbol on all three tier plates.
+- Only shoot the real game once the icons are wired, to judge them in a scene.
 
 Render it quickly, then wait for feedback.
