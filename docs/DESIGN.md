@@ -34,7 +34,7 @@ One line per section; read the index, then only the sections your task touches.
 - [UI](#ui): Layout: a full-screen game view with Svelte panels over it.
   - [Combat view (user decisions, 2026-10-29)](#combat-view-user-decisions-2026-10-29): It replaces the colony HUD during a fight: the nav strip, node strip, drawers, build tools, inspector and...
   - [UI soft rules (user decisions, 2026-10-28)](#ui-soft-rules-user-decisions-2026-10-28): These are soft rules. They set the default direction. An agent or session should always feel free to suggest
-  - [Trade window and station panel (user decisions, 2026-11-05; not built yet)](#trade-window-and-station-panel-user-decisions-2026-11-05-not-built-yet): one floating trade window for every partner; the station panel as an open comms channel with a contact per service and a live sensor view.
+  - [Trade window and station panel (user decisions, 2026-11-05; built, hologram art pending)](#trade-window-and-station-panel-user-decisions-2026-11-05-built-hologram-art-pending): one floating trade window for every partner; the station panel as an open comms channel with a contact per service and a live sensor view.
   - [Boarding in ship combat (user decisions, 2026-10-29; not built yet)](#boarding-in-ship-combat-user-decisions-2026-10-29-not-built-yet): The sim already boards both ways (shuttle, dock at an airlock, crew fight aboard, hold the bridge to...
   - [Lessons: the tutorial system (user decisions, 2026-10-29)](#lessons-the-tutorial-system-user-decisions-2026-10-29): The goal chain (src/sim/story/goals.ts) says what to do next; lessons teach how a feature works. They are a
 - [Open questions](#open-questions): Mood and breakdown severity.
@@ -1041,7 +1041,7 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
    - **Gold** is for credits and rewards.
    - The build menu and the research screen keep their own black-and-amber look on purpose.
 
-### Trade window and station panel (user decisions, 2026-11-05; not built yet)
+### Trade window and station panel (user decisions, 2026-11-05; built, hologram art pending)
 
 Mocks: `docs/refs/mocks/trade-window-k.png` and `docs/refs/mocks/station-panel-w2.png`.
 
