@@ -249,17 +249,60 @@ def header_marks(k, ax, plane, a, b, z0, z1, fam):
                 paint(k, ax, plane, u, u + LINE, z0, z1, FR, fam, 1)
 
 
+def _mitres(ends):
+    return tuple({"out": 1.0, "in": -1.0}.get(e, 0.0) for e in ends)
+
+
+def _lip(k, ax, plane, a, b, ends, zs, top, fam):
+    """Slate's lip at the face's foot (faction.slate): 2 px proud, a dark seam 2 px over it, both in three a tile
+    (a seam up the lip's front, over its top and up the face to the seam over it). Returns the face's foot over it."""
+    from .faction.parts import PZ, prism
+    from .faction.slate import LIP_D, LIP_H, _thirds
+    mit = _mitres(ends)
+    zl = zs - 0.03 + PZ                                 # (its foot on the ramp's top)
+    prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
+          fam, 3, cols=[False, None, None, False], mitre=mit)
+    zg = zl + 6 * PZ                                    # the seam over it
+    if zg + PZ >= top - 0.03:
+        return zg
+    paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ, 0.0, fam, 2)                                 # (the face over it)
+    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
+    for u in _thirds(a, b):
+        q0, q1 = u, u + 0.7 * LINE
+        dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
+        prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], fam, 1,
+              cols=[False, None, None, False])
+        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
+    return zg + PZ
+
+
+def _rail(k, ax, plane, a, b, ends, top, fam):
+    """Slate's rail under the cap (faction.slate): three blocks a tile, the end ones 2 px proud, the middle one a px
+    back with its top sloping down to the front, each front's top edge lit. Returns its foot."""
+    from .faction.parts import PZ, prism
+    from .faction.slate import MID_D, MID_DROP, RAIL_D, RAIL_H, _blocks
+    mit = _mitres(ends)
+    z1 = min(top, W.wall_top("wall", "up")) - 0.031    # (under the cap's black)
+    z0 = z1 - RAIL_H
+    for u0, u1, mid in _blocks(a, b):
+        d = MID_D if mid else RAIL_D
+        zb = z0 - PZ if mid else z0
+        prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]
+        m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
+        prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m)
+        zt = z1 - MID_DROP if mid else z1
+        paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                      # its top edge lit
+    return z0
+
+
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     """Partition (set 7): a low band, posts with a groove, a header in three blocks; in each field an outlined panel
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
     F = "wall"
-    zb = zs + 0.2
-    run(k, ax, plane, a, b, ends, zs - 0.03, zb, FR, F, 3, 0)                                    # low band
+    zb = _lip(k, ax, plane, a, b, ends, zs, top, F)                                             # the lip
     if not full:
         return
-    zh = top - 0.15
-    run(k, ax, plane, a, b, ends, zh, top - 0.02, FR, F, 3, 0)                                   # header
-    header_marks(k, ax, plane, a, b, zh, top - 0.02, F)
+    zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
     for f0, f1 in posts(k, ax, plane, a, b, ends, zb, zh, F):
         paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                                            # the field
         if f1 - f0 < 0.3:
