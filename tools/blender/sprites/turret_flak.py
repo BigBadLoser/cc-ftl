@@ -1,4 +1,4 @@
-"""FLAK CANNON turret concepts (round 3; rounds 1 and 2 are in git history). It throws a cloud of scrap fragments with
+"""FLAK CANNON turret concepts (round 4: round 3 refined; earlier rounds are in git history). It throws a cloud of scrap fragments with
 loose accuracy, so every variant has a wide mouth, never a slim precise barrel. Scrap is prepared in the bay below and
 comes up through the mount (a ribbed feed trunk from the deck). Firing heats the metal, and in vacuum heat only leaves by
 radiating, so each variant carries big radiating surfaces; the accent is that heat: idle, dark with temper colours on the
@@ -13,6 +13,8 @@ steel beside it; charged, a hot-metal ramp (HEAT, deep red up to white-hot), hot
 
 Rig conventions as turret_concepts (fixed / head / gun about the trunnion PIVOT, aim d0, z from the roof plane)."""
 import math
+
+from mathutils import Vector
 
 from . import detail as D
 from . import turret_concepts as TC
@@ -32,8 +34,8 @@ def heat(hot, k, cold="dark"):
 
 
 def stain(k):
-    """Temper colours on the steel beside a hot part (idle and charged alike): k 0 clean, 1 heat-blued, 2 bronze."""
-    return ("gm", "navy", "rustD")[k]
+    """Temper colours on the steel beside a hot part (idle and charged alike): k 0 clean, 1 faint, 2 bronze."""
+    return ("gm", "steelL", "rustD")[k]
 
 
 def _hexa(f, P, mats):
@@ -76,14 +78,117 @@ def conduit(f, a, b, r, n, mat="steelD", rib="steel"):
 
 
 def hot_run(g, u, segs, v, z, r, hot, sides=14):
-    """Barrel stretch leaving a hot part: (ramp step, length) pieces, each stained when cold. Returns the end u."""
+    """Barrel stretch leaving a hot part: (ramp step, length) pieces; cold, only the hottest is bronze. Returns the end u."""
     for k, ln in segs:
-        g.hcyl(u, u + ln, v, z, r, heat(hot, k, stain(min(k + 1, 2))), sides=sides)
+        g.hcyl(u, u + ln, v, z, r, heat(hot, k, "rustD" if k >= 3 else "gm"), sides=sides)
         u += ln
     return u
 
 
-# ---- shared radiator parts ---------------------------------------------------------------------------------------
+# ---- finish kit: shaped sections, framed radiators, bolted joints --------------------------------------------------
+# Values run lighter than the rest of the kit: bodies BODY, lit chamfers and rims EDGE, sides SIDE, undersides and
+# recesses UNDER; the dark tones only where light would not reach.
+BODY, EDGE, SIDE, UNDER = "steelL", "plate", "steel", "steelD"
+
+
+def _face(f, pts, ref, col):
+    """A polygon wound so its normal points away from ref (both local u, v, z)."""
+    P = [Vector(f.pt(*q)) for q in pts]
+    n = (P[1] - P[0]).cross(P[2] - P[0])
+    if n.dot(sum(P, Vector()) / len(P) - Vector(f.pt(*ref))) < 0:
+        P = P[::-1]
+    f.poly(P, col, flip=False)
+
+
+def prism(f, u0, u1, sec0, sec1, z, top=BODY, edge=EDGE, side=BODY, under=UNDER, cap0=SIDE, cap1=SIDE, dz1=0.0):
+    """A body swept along u from section sec0 at u0 to sec1 at u1 (same-length lists of (v, dz) round the centre line
+    at height z, z + dz1 at u1). Each side face takes its colour from where it faces: top, a lit chamfer (edge), the
+    sides, or underneath, so bevels catch the light the way machined parts do."""
+    c0 = (u0, 0.0, z)
+    c1 = (u1, 0.0, z + dz1)
+    ref = ((u0 + u1) / 2, 0.0, z + dz1 / 2)
+    n = len(sec0)
+    for i in range(n):
+        (va, za), (vb, zb) = sec0[i], sec0[(i + 1) % n]
+        (vc, zc), (vd, zd) = sec1[(i + 1) % n], sec1[i]
+        nv, nz = zb - za, -(vb - va)                                                     # outward for a CCW section
+        if nv * (va + vb) + nz * (za + zb) < 0:
+            nv, nz = -nv, -nz
+        ln = math.hypot(nv, nz) or 1.0
+        nz /= ln
+        col = top if nz > 0.85 else edge if nz > 0.25 else under if nz < -0.25 else side
+        _face(f, [(u0, va, z + za), (u0, vb, z + zb), (u1, vc, z + dz1 + zc), (u1, vd, z + dz1 + zd)], ref, col)
+    _face(f, [(u0, v, z + dz) for v, dz in sec0], (u1, 0.0, z), cap0)
+    _face(f, [(u1, v, z + dz1 + dz) for v, dz in sec1], c0, cap1)
+    return c1
+
+
+def csec(hv, hz, c):
+    """A rectangle hv across and hz up (half sizes) with chamfered corners c."""
+    return [(hv, -hz + c), (hv, hz - c), (hv - c, hz), (-hv + c, hz), (-hv, hz - c), (-hv, -hz + c), (-hv + c, -hz),
+            (hv - c, -hz)]
+
+
+def octa(r):
+    """A regular octagon of inradius r with flat top, bottom and sides."""
+    R_ = r / math.cos(math.pi / 8)
+    return [(R_ * math.cos(math.radians(22.5 + 45 * k)), R_ * math.sin(math.radians(22.5 + 45 * k))) for k in range(8)]
+
+
+def bolts(g, u, z, r, n=6, mat=EDGE, size=0.032):
+    """A bolt circle on an end face at u (facing +u), radius r round the centre line at height z."""
+    for k in range(n):
+        a = math.tau * (k + 0.5) / n
+        g.box(u, r * math.cos(a), z + r * math.sin(a), size * 0.6, size, size, mat, base=False)
+
+
+def collar(g, u, z, r, w=0.04, mat=EDGE, sides=16):
+    """A raised flange where two parts meet."""
+    g.hcyl(u - w / 2, u + w / 2, 0, z, r, mat, sides=sides, cap=mat, capstart=mat)
+
+
+def qslab(f, P00, P10, P01, P11, t, mat, face=None):
+    """A plate over four corners (P10 - P00 one edge, P01 - P00 the other) of thickness t: face on the big sides."""
+    a = [P10[i] - P00[i] for i in range(3)]
+    b = [P01[i] - P00[i] for i in range(3)]
+    n = (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+    ln = math.sqrt(sum(c * c for c in n)) or 1.0
+    n = tuple(c / ln * t / 2 for c in n)
+    corner = {(-1, -1): P00, (1, -1): P10, (-1, 1): P01, (1, 1): P11}
+    fc = face or mat
+    _hexa(f, {(i, j, d): f.pt(*(corner[(i, j)][k] + d * n[k] for k in range(3)))
+              for i in (-1, 1) for j in (-1, 1) for d in (-1, 1)}, (fc, fc, mat, mat, mat, mat))
+
+
+def _lerp(a, b, t):
+    return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
+
+
+def radiator(g, o, eu, ew, hot, pipes=4, steps=4, core=4, r=0.026):
+    """A framed radiator: a thin sheet (corner o, edge eu along the root, ew out to the tip) in a frame, a manifold
+    along the root that glows nearly white when charged, and heat pipes on both faces from the manifold to a header
+    at the tip, cooling a ramp step per stretch (the middle pipes hottest). Cold: bare pipes with bronze at the root."""
+    t = 0.018
+    slab(g, o, eu, ew, t, SIDE, face=SIDE)
+    ln = math.sqrt(sum(c * c for c in eu))
+    e = tuple(c * 0.035 / ln for c in eu)
+    for k in (0.0, 1.0):                                                               # side rails of the frame
+        slab(g, tuple(o[i] + eu[i] * k - e[i] * k for i in range(3)), e, ew, 0.04, BODY, face=EDGE)
+    tip = tuple(o[i] + ew[i] for i in range(3))
+    D.seg(g, tip, tuple(tip[i] + eu[i] for i in range(3)), 0.024, EDGE, 8, cap=EDGE, capstart=EDGE)  # header
+    D.seg(g, tuple(o[i] - e[i] for i in range(3)), tuple(o[i] + eu[i] + e[i] for i in range(3)), 0.05,
+          heat(hot, core - 1, BODY), 12, cap=EDGE, capstart=EDGE)                      # root manifold
+    nrm = _normal(eu, ew)
+    for p in range(pipes):
+        fr = (p + 0.5) / pipes
+        k0 = core - (0 if 0.25 < fr < 0.75 else 1)
+        for side in (-1, 1):
+            base = tuple(o[i] + eu[i] * fr + side * nrm[i] * (t / 2 + r * 0.8) for i in range(3))
+            for s in range(steps):
+                a0, a1 = 0.04 + s * 0.94 / steps, 0.04 + (s + 1) * 0.94 / steps
+                D.seg(g, tuple(base[i] + ew[i] * a0 for i in range(3)), tuple(base[i] + ew[i] * a1 for i in range(3)),
+                      r, heat(hot, k0 - s, "rustD" if s == 0 else EDGE), 6)
+
 
 def _normal(eu, ew):
     n = (eu[1] * ew[2] - eu[2] * ew[1], eu[2] * ew[0] - eu[0] * ew[2], eu[0] * ew[1] - eu[1] * ew[0])
@@ -91,32 +196,35 @@ def _normal(eu, ew):
     return tuple(c / ln for c in n)
 
 
-def panel(g, o, eu, ew, hot, pipes=4, steps=4, core=4, t=0.025, both=True):
-    """A radiator panel (corner o, edges eu along its root and ew out to its edge) with heat pipes running from the
-    root (ramp `core`, the middle pipes hottest) out to the edge, cooling a step per stretch; an edge rail and a root
-    manifold. Cold, the pipes are bronze at the root and bare steel beyond."""
-    slab(g, o, eu, ew, t, "steel", face="steelD")
-    ln = math.sqrt(sum(c * c for c in ew))
-    e = tuple(c * 0.035 / ln for c in ew)
-    slab(g, tuple(o[i] + ew[i] for i in range(3)), eu, e, t * 1.6, "steelL")               # edge rail
-    slab(g, tuple(o[i] - e[i] for i in range(3)), eu, tuple(c * 2 for c in e), t * 2.4, "steel", face="steelL")
-    nrm = _normal(eu, ew)
-    for p in range(pipes):
-        f = (p + 0.5) / pipes
-        k0 = core - (0 if 0.25 < f < 0.75 else 1)
-        for s in range(steps):
-            a = 0.06 + s * 0.94 / steps
-            o2 = tuple(o[i] + eu[i] * (f - 0.035) + ew[i] * a for i in range(3))
-            for side in ((-1, 1) if both else (1,)):
-                oo = tuple(o2[i] + side * nrm[i] * (t / 2 + 0.006) for i in range(3))
-                slab(g, oo, tuple(c * 0.07 for c in eu), tuple(c * 0.94 / steps * 0.92 for c in ew), 0.008,
-                     heat(hot, k0 - s, "rustD" if s == 0 else "steelL"))
+def yoke(h, vs, u0, u1, PU, BZ):
+    """Trunnion brackets either side: a chamfered plate with a lighter inset, a foot on the deck and a capped bearing."""
+    _g("yoke")
+    top = BZ + 0.12
+    for sv in (-1, 1):
+        h.box((u0 + u1) / 2, sv * (vs + 0.04), 0.29, u1 - u0 + 0.08, 0.12, 0.04, SIDE, top=BODY)   # foot
+        _uz(h, [(u0, 0.29), (u1, 0.29), (u1, top - 0.1), (u1 - 0.1, top), (u0 + 0.1, top), (u0, top - 0.1)],
+            sv * vs, sv * (vs + 0.07), BODY, EDGE)
+        _uz(h, [(u0 + 0.06, 0.36), (u1 - 0.06, 0.36), (u1 - 0.06, top - 0.12), (u1 - 0.12, top - 0.06),
+                (u0 + 0.12, top - 0.06), (u0 + 0.06, top - 0.12)], sv * (vs + 0.07), sv * (vs + 0.085), EDGE, EDGE)
+        D.seg(h, (PU, sv * (vs + 0.07), BZ), (PU, sv * (vs + 0.11), BZ), 0.1, SIDE, 16, cap=EDGE, capstart=SIDE)
+        D.seg(h, (PU, sv * (vs + 0.1), BZ), (PU, sv * (vs + 0.125), BZ), 0.045, UNDER, 10, cap=BODY)
 
 
-def hot_core(g, u, z, rs, hot):
-    """Glow layers sunk in a wide bore at u: (radius, ramp step) from the rim inwards, each a hair further out."""
-    for i, (r, k) in enumerate(rs):
-        g.hcyl(u + i * 0.004, u + i * 0.004 + 0.006, 0, z, r, heat(hot, k), sides=18, cap=heat(hot, k))
+def feed(h, a, b, r=0.07):
+    """The scrap feed rising from the bay through the deck: a ribbed armoured trunk with a flange at each end."""
+    _g("feed")
+    conduit(h, a, b, r, 3, mat=SIDE, rib=BODY)
+    for p in (a, b):
+        D.seg(h, (p[0], p[1], p[2] - 0.02), (p[0], p[1], p[2] + 0.02), r * 1.45, EDGE, 12, cap=EDGE, capstart=EDGE)
+
+
+def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
+    """The inside of a flared bore: a cone just inside the outer one, glowing hottest at the throat when charged."""
+    n = len(steps)
+    for i, k in enumerate(steps):
+        ua, ub = u0 + (u1 - u0) * i / n, u0 + (u1 - u0) * (i + 1) / n
+        ra, rb = r0 + (r1 - r0) * i / n - wall, r0 + (r1 - r0) * (i + 1) / n - wall
+        g.hcyl(ua, ub, 0, z, ra, heat(hot, k, UNDER), r1=rb, sides=24)
 
 
 # ---- A: TRUMPET --------------------------------------------------------------------------------------------------
@@ -127,31 +235,33 @@ def trumpet(hot):
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    _g("yoke")
-    for sv in (-1, 1):
-        _uz(h, [(-0.44, 0.29), (-0.06, 0.29), (-0.12, BZ + 0.06), (-0.38, BZ + 0.06)], sv * 0.21, sv * 0.28, "steelD", "steel")
-    _g("feed")
-    conduit(h, (-0.56, 0, 0.3), (-0.5, 0, BZ - 0.14), 0.07, 3)
+    yoke(h, 0.22, -0.44, -0.08, PU, BZ)
+    feed(h, (-0.56, 0, 0.32), (-0.52, 0, BZ - 0.17))
     g = rig.f("gun")
-    _g("trunnion")
-    D.seg(g, (PU, -0.3, BZ), (PU, 0.3, BZ), 0.08, "steelL", 12, cap="plate", capstart="plate")
     _g("chamber")
-    g.hcyl(-0.62, 0.02, 0, BZ, 0.2, "steelD", sides=18, capstart="steel")
-    for u in (-0.6, -0.04):
-        g.hcyl(u, u + 0.05, 0, BZ, 0.22, "steel", sides=18, cap="steelL", capstart="steelL")
+    prism(g, -0.62, 0.0, octa(0.2), octa(0.2), BZ)
+    prism(g, -0.68, -0.62, octa(0.17), octa(0.17), BZ, cap0=EDGE)                        # rear cap
+    bolts(g, -0.685, BZ, 0.12, n=6, mat=BODY)
+    for u in (-0.5, -0.14):
+        prism(g, u - 0.025, u + 0.025, octa(0.225), octa(0.225), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)  # bands
     _g("wings")
-    for sv in (-1, 1):                                                                 # flat radiator wings
-        panel(g, (-0.56, sv * 0.2, BZ + 0.02), (0.5, 0, 0), (0, sv * 0.42, 0.07), hot)
+    for sv in (-1, 1):
+        radiator(g, (-0.52, sv * 0.21, BZ + 0.02), (0.4, 0, 0), (0, sv * 0.4, 0.08), hot, pipes=3, r=0.02)
     _g("throat")
-    u = hot_run(g, 0.02, ((3, 0.08), (2, 0.08), (1, 0.08)), 0, BZ, 0.16, hot, sides=18)
+    collar(g, 0.02, BZ, 0.2)
+    u = hot_run(g, 0.04, ((3, 0.08), (2, 0.08), (1, 0.08)), 0, BZ, 0.15, hot, sides=18)
+    collar(g, u, BZ, 0.18, w=0.03)
     _g("bell")
-    g.hcyl(u, 0.96, 0, BZ, 0.16, "steel", r1=0.34, sides=24)
-    for a in (45, 135, 225, 315):                                                      # gussets throat to rim
-        c, s = math.cos(math.radians(a)), math.sin(math.radians(a))
-        D.seg(g, (u + 0.02, 0.17 * c, BZ + 0.17 * s), (0.92, 0.33 * c, BZ + 0.33 * s), 0.022, "steelL", 6)
-    D.annulus(g, 0.95, 1.0, 0, BZ, 0.36, 0.3, "steelL", "steelL", sides=24)
-    g.hcyl(0.95, 0.96, 0, BZ, 0.3, "dark", sides=24, cap="dark")
-    hot_core(g, 0.955, BZ, ((0.27, 0), (0.21, 1), (0.14, 2), (0.08, 3), (0.04, 4)), hot)
+    g.hcyl(u, 0.95, 0, BZ, 0.16, BODY, r1=0.34, sides=28)
+    hot_cone(g, u, 0.95, 0.16, 0.34, BZ, hot)
+    g.hcyl(u + 0.01, u + 0.02, 0, BZ, 0.13, heat(hot, 4, UNDER), sides=18, cap=heat(hot, 4, UNDER))  # white core
+    um = u + (0.95 - u) * 0.5
+    D.annulus(g, um - 0.02, um + 0.02, 0, BZ, 0.27, 0.24, EDGE, EDGE, sides=28)          # stiffening ring
+    for k in range(6):                                                                  # flush strakes
+        a = math.tau * k / 6 + math.pi / 6
+        c, s = math.cos(a), math.sin(a)
+        D.seg(g, (u + 0.04, 0.175 * c, BZ + 0.175 * s), (0.92, 0.345 * c, BZ + 0.345 * s), 0.016, EDGE, 4)
+    D.annulus(g, 0.94, 1.0, 0, BZ, 0.37, 0.32, EDGE, BODY, sides=28)                   # rolled lip
     return rig
 
 
@@ -163,33 +273,32 @@ def letterbox(hot):
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    _g("yoke")
-    for sv in (-1, 1):
-        _uz(h, [(-0.44, 0.29), (0.0, 0.29), (-0.06, BZ + 0.06), (-0.36, BZ + 0.06)], sv * 0.24, sv * 0.31, "steelD", "steel")
-    _g("feed")
-    conduit(h, (-0.58, 0, 0.3), (-0.52, 0, BZ - 0.12), 0.07, 3)
+    yoke(h, 0.25, -0.42, -0.02, PU, BZ)
+    feed(h, (-0.6, 0, 0.32), (-0.56, 0, BZ - 0.16))
     g = rig.f("gun")
-    _g("trunnion")
-    D.seg(g, (PU, -0.34, BZ), (PU, 0.34, BZ), 0.08, "steelL", 12, cap="plate", capstart="plate")
     _g("receiver")
-    loft(g, -0.6, 0.22, 0.15, 0.06, 0.22, 0.15, BZ, "steelD", top="steel", cap0="steel")
+    prism(g, -0.62, 0.04, csec(0.23, 0.15, 0.05), csec(0.23, 0.15, 0.05), BZ)
+    prism(g, -0.67, -0.62, csec(0.2, 0.12, 0.04), csec(0.2, 0.12, 0.04), BZ, cap0=EDGE)  # breech cover
+    for sv in (-1, 1):
+        D.panel(g, -0.3, sv * 0.23, BZ - 0.01, 0.4, 0.16, mat=BODY, seam=UNDER, face="+v" if sv > 0 else "-v")
     _g("sail")
-    panel(g, (-0.52, 0, BZ + 0.15), (0.62, 0, 0), (-0.12, 0, 0.4), hot, pipes=5)        # dorsal radiator
+    radiator(g, (-0.52, 0, BZ + 0.17), (0.5, 0, 0), (-0.1, 0, 0.38), hot, pipes=4, r=0.02)
     _g("nozzle")
-    loft(g, 0.06, 0.22, 0.15, 0.9, 0.36, 0.08, BZ, "steelD", top="steel")              # widening flat nozzle
-    for i, (ua, ub) in enumerate(((0.08, 0.22), (0.22, 0.36))):                         # throat heat, on the top
+    prism(g, 0.04, 0.09, csec(0.25, 0.17, 0.05), csec(0.25, 0.17, 0.05), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)  # flange
+    prism(g, 0.09, 0.88, csec(0.22, 0.15, 0.05), csec(0.36, 0.08, 0.03), BZ)            # widening flat nozzle
+    for i, (ua, ub) in enumerate(((0.14, 0.26), (0.28, 0.4))):                           # throat grille on the top
         k = 3 - i
-        for j, hv in enumerate((0.05, 0.11, 0.17)):
+        zt = BZ + 0.15 - 0.07 * ((ua + ub) / 2 - 0.09) / 0.79
+        g.box((ua + ub) / 2, 0, zt - 0.01, ub - ua, 0.3, 0.012, UNDER)
+        for j, hv in enumerate((0.0, 0.06, 0.12)):
             for sv in ((1,) if j == 0 else (-1, 1)):
-                zt = BZ + 0.15 - (0.15 - 0.08) * ((ua + ub) / 2 - 0.06) / 0.84 + 0.003
-                g.box((ua + ub) / 2, sv * hv if j else 0.0, zt, ub - ua - 0.03, 0.05 if j == 0 else 0.055, 0.004,
-                      heat(hot, k - j, stain(2 - min(j, 1))))
-    for v in (-0.22, 0.22):                                                             # side stiffeners
-        D.seg(g, (0.1, v, BZ + 0.12), (0.86, v * 1.55, BZ + 0.07), 0.02, "steelL", 4)
-    loft(g, 0.88, 0.37, 0.09, 0.94, 0.38, 0.095, BZ, "steelL", top="steelL", cap1="dark")  # lip
+                g.box((ua + ub) / 2, sv * hv, zt, ub - ua - 0.03, 0.04, 0.006, heat(hot, k - j, UNDER))
+        for vb in (-0.09, -0.03, 0.03, 0.09):
+            g.box((ua + ub) / 2, vb, zt, ub - ua, 0.012, 0.014, EDGE)
+    prism(g, 0.86, 0.93, csec(0.38, 0.1, 0.03), csec(0.38, 0.1, 0.03), BZ, side=EDGE, cap1=UNDER)  # lip
     for k in range(9):                                                                  # the slot, white at the middle
         v = -0.32 + k * 0.08
-        g.box(0.945, v, BZ, 0.006, 0.08, 0.1, heat(hot, 4 - min(4, abs(k - 4))), base=False)
+        g.box(0.932, v, BZ, 0.006, 0.08, 0.1, heat(hot, 4 - min(4, abs(k - 4)), UNDER), base=False)
     return rig
 
 
@@ -201,37 +310,44 @@ def finned(hot):
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    _g("yoke")
-    for sv in (-1, 1):
-        _uz(h, [(-0.5, 0.29), (-0.1, 0.29), (-0.16, BZ + 0.06), (-0.44, BZ + 0.06)], sv * 0.25, sv * 0.32, "steelD", "steel")
-    _g("feed")
-    conduit(h, (-0.6, 0, 0.3), (-0.6, 0, BZ - 0.12), 0.07, 3)
+    yoke(h, 0.26, -0.5, -0.1, PU, BZ)
+    feed(h, (-0.62, 0, 0.32), (-0.62, 0, BZ - 0.18))
     g = rig.f("gun")
-    _g("trunnion")
-    D.seg(g, (PU, -0.36, BZ), (PU, 0.36, BZ), 0.08, "steelL", 12, cap="plate", capstart="plate")
     _g("breech")
-    g.hcyl(-0.7, -0.08, 0, BZ, 0.23, "steelD", sides=20, capstart="steel")
-    g.hcyl(-0.7, -0.64, 0, BZ, 0.25, "steel", sides=20, cap="steelL", capstart="steelL")
+    prism(g, -0.68, -0.08, octa(0.23), octa(0.23), BZ)
+    prism(g, -0.73, -0.68, octa(0.19), octa(0.19), BZ, cap0=EDGE)
+    bolts(g, -0.735, BZ, 0.13, n=8, mat=BODY)
+    prism(g, -0.4, -0.35, octa(0.25), octa(0.25), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
+    collar(g, -0.06, BZ, 0.27, w=0.05, sides=20)
     _g("bore")
-    g.hcyl(-0.08, 0.86, 0, BZ, 0.19, "gm", sides=20)
+    g.hcyl(-0.04, 0.84, 0, BZ, 0.19, SIDE, sides=20)
     _g("fins")
-    U0, UL, NU = -0.04, 0.78, 4
     for a in range(8):                                                                 # radial fins, hot at the root
         ang = math.radians(22.5 + a * 45)
         c, s = math.cos(ang), math.sin(ang)
+
+        def at(u, r):
+            return (u, r * c, BZ + r * s)
+        NU, NR = 4, 3
         for iu in range(NU):
-            for ir in range(3):
-                u0 = U0 + iu * UL / NU
-                r0 = 0.19 + ir * 0.06
+            for ir in range(NR):
+                t0, t1 = iu / NU, (iu + 1) / NU
+                q0, q1 = ir / NR, (ir + 1) / NR
+
+                def pt(tu, tr):
+                    ur0, ur1 = -0.02 + 0.8 * tu, 0.02 + 0.66 * tu                       # root and tip edges in u
+                    rt = 0.37 - 0.06 * tu                                               # tip radius tapers forward
+                    return at(ur0 + (ur1 - ur0) * tr, 0.19 + (rt - 0.19) * tr)
                 k = 4 - iu - ir
-                slab(g, (u0, r0 * c, BZ + r0 * s), (UL / NU, 0, 0), (0, 0.06 * c, 0.06 * s), 0.03,
-                     "steelD", face=heat(hot, k, "rustD" if k >= 4 else "steelD") if k >= 1 else "steelD")
-        slab(g, (U0, 0.37 * c, BZ + 0.37 * s), (UL, 0, 0), (0, 0.025 * c, 0.025 * s), 0.04, "steelL")  # tip rail
-    D.annulus(g, U0 + UL, U0 + UL + 0.05, 0, BZ, 0.4, 0.19, "steel", "steelL", sides=24)  # fin clamp ring
+                qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.03, BODY,
+                      face=heat(hot, k, "rustD" if k >= 4 else BODY) if k >= 1 else BODY)
+        D.seg(g, at(0.02, 0.375), at(0.68, 0.315), 0.02, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
+    D.annulus(g, 0.78, 0.83, 0, BZ, 0.33, 0.19, EDGE, BODY, sides=24)                  # fin clamp ring
     _g("muzzle")
-    D.annulus(g, 0.86, 0.94, 0, BZ, 0.23, 0.15, "steelL", "steelL", sides=22)
-    g.hcyl(0.9, 0.91, 0, BZ, 0.15, "dark", sides=20, cap="dark")
-    hot_core(g, 0.905, BZ, ((0.13, 0), (0.09, 1), (0.05, 3)), hot)
+    g.hcyl(0.83, 0.92, 0, BZ, 0.22, BODY, sides=20)
+    D.annulus(g, 0.92, 0.96, 0, BZ, 0.24, 0.15, EDGE, EDGE, sides=20)
+    hot_cone(g, 0.8, 0.95, 0.12, 0.155, BZ, hot, steps=(2, 1), wall=0.0)
+    g.hcyl(0.8, 0.81, 0, BZ, 0.12, heat(hot, 4, UNDER), sides=16, cap=heat(hot, 4, UNDER))
     return rig
 
 
