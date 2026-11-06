@@ -10,7 +10,7 @@ import type { LabCell, LabCtx, LabPanel } from './panel';
 
 /**
  * `?panel=marks`: the overhead crew icons (`crew.mark.*`, #239 social cues and #175 break symbols). Every icon's frames at 1x and 3x (one art px
- * per device px in a 2x shot at the default zoom 0.5), one break symbol on the three tier plates, then each icon over a real crew figure (the
+ * per device px in a 2x shot at the default zoom 0.5), every break in its bubble at the three tiers, then each icon over a real crew figure (the
  * game's loadout and crew filter) on a lit floor and on a dark one, at game scale (two device px per art px), and a shouting pair facing each other.
  *   &src=/.cache/marks-preview/   where to read marks.png + marks.json while the manifest has no `crew.mark.*` (tools/blender/review/marks_preview.py)
  */
@@ -39,23 +39,19 @@ async function frames(atlas: Atlas, src: string): Promise<{ get: Frames; fps: nu
   };
 }
 
-/** An icon (a break symbol on its plate) as a container whose bottom centre is its origin; `set(t)` picks the frame. */
-function icon(get: Frames, fps: number, id: string, k: number, tier?: string, flip = false): { node: Container; set: (t: number) => void } {
+/** An icon as a container whose bottom centre is its origin; `set(t)` picks the frame. */
+function icon(get: Frames, fps: number, id: string, k: number, flip = false): { node: Container; set: (t: number) => void } {
   const node = new Container();
-  const plate = tier ? get(`crew.mark.tier.${tier}`)[0] : undefined;
   const fr = get(id);
-  for (const t of [plate, fr[0]]) {
-    if (!t) continue;
-    const s = new Sprite(t);
-    s.anchor.set(0.5, 1);
-    s.scale.set(k * (flip ? -1 : 1), k);
-    node.addChild(s);
-  }
-  const top = node.children[node.children.length - 1] as Sprite;
-  return { node, set: (t) => { if (fr.length) top.texture = fr[Math.floor(t * fps) % fr.length] as Texture; } };
+  const s = new Sprite(fr[0] ?? Texture.EMPTY);
+  s.anchor.set(0.5, 1);
+  s.scale.set(k * (flip ? -1 : 1), k);
+  node.addChild(s);
+  return { node, set: (t) => { if (fr.length) s.texture = fr[Math.floor(t * fps) % fr.length] as Texture; } };
 }
 
-const ID = (k: string) => (BREAKS.includes(k) ? `crew.mark.break.${k}` : `crew.mark.${k}`);
+const ID = (k: string, tier = 'moderate') => (BREAKS.includes(k) ? `crew.mark.break.${k}.${tier}` : `crew.mark.${k}`);
+const F = 32;
 const ALL = [...SOCIAL, ...BREAKS, ...FIGHT];
 
 /** A small floor of 3 x 3 tiles, lit or dark, with crew standing on it; returns the root and the feet points. */
@@ -98,27 +94,27 @@ export const marksPanel: LabPanel = {
   id: 'marks',
   title: 'Overhead crew icons',
   zoom: 0.5,
-  help: 'crew.mark.*: every icon at 1x and 3x, a break symbol on the three tier plates, each over a crew figure on a lit and a dark floor; src=/.cache/marks-preview/',
+  help: 'crew.mark.*: every icon at 1x and 3x, every break at the three tiers, each over a crew figure on a lit and a dark floor; src=/.cache/marks-preview/',
   async cells(ctx) {
     const { get, fps } = await frames(ctx.atlas, ctx.params.get('src') ?? '/.cache/marks-preview/');
     for (const seed of [11, 22, 33]) for (const role of ['role.engineer', 'role.gunner', 'role.medic']) preloadLayers(crewLoadout(ctx.atlas, { species: 'species.human', role, appearanceSeed: seed } as never));
     ctx.atlas.stat('tile.floor.a');
     await ctx.atlas.whenIdle();
     const cells: LabCell[] = [];
-    // every icon, its frames side by side, at 1x then 3x (a break symbol on the moderate plate)
+    // every icon, its frames side by side, at 1x then 3x (a break in its moderate bubble)
     for (const [k, tag] of [[1, '1x'], [3, '3x']] as const) {
       ALL.forEach((name, i) => {
         const n = Math.max(1, get(ID(name)).length);
         cells.push({
           label: name,
           note: `${tag} · ${n} frame${n > 1 ? 's' : ''}`,
-          w: Math.max((n * 22 + 2) * k, 200),
-          h: 24 * k,
+          w: Math.max((n * (F + 2) + 2) * k, 200),
+          h: (F + 4) * k,
           newRow: i === 0,
           mount(root) {
             for (let f = 0; f < n; f++) {
-              const ic = icon(get, fps, ID(name), k, BREAKS.includes(name) ? 'moderate' : undefined);
-              ic.node.position.set((f * 22 + 12) * k, 22 * k);
+              const ic = icon(get, fps, ID(name), k);
+              ic.node.position.set((f * (F + 2) + F / 2 + 2) * k, (F + 2) * k);
               ic.set(f / fps + 0.01);
               root.addChild(ic.node);
             }
@@ -127,39 +123,39 @@ export const marksPanel: LabPanel = {
         });
       });
     }
-    // one symbol on each tier plate, and bare
-    for (const k of [1, 3]) {
-      [undefined, ...TIERS].forEach((tier, i) => {
-        cells.push({
-          label: tier ? `tantrum, ${tier}` : 'tantrum, no plate',
-          note: `${k}x`,
-          w: Math.max(24 * k, 200),
-          h: 24 * k,
-          newRow: i === 0,
-          loop: 2 / fps,
-          mount(root) {
-            const ic = icon(get, fps, ID('tantrum'), k, tier);
-            ic.node.position.set(12 * k, 22 * k);
-            root.addChild(ic.node);
-            return ic.set;
-          },
-        });
-      });
-    }
-    // each icon over a crew figure at game scale, on a lit floor then a dark one
+    // every break at the three tiers, 3x
+    cells.push({
+      label: 'breaks: mild, moderate, severe',
+      note: '3x',
+      w: BREAKS.length * 3 * (F + 2) * 3 + BREAKS.length * 16,
+      h: (F + 4) * 3,
+      newRow: true,
+      loop: 1,
+      mount(root) {
+        const sets: ((t: number) => void)[] = [];
+        BREAKS.forEach((k, a) => TIERS.forEach((t, b) => {
+          const ic = icon(get, fps, ID(k, t), 3);
+          ic.node.position.set(((a * 3 + b) * (F + 2) + F / 2 + 1) * 3 + a * 16, (F + 2) * 3);
+          root.addChild(ic.node);
+          sets.push(ic.set);
+        }));
+        return (t) => sets.forEach((s) => s(t));
+      },
+    });
+    // each icon over a crew figure at game scale, on a lit floor then a dark one (break tiers rotate mild, moderate, severe)
     for (const dark of [false, true]) {
       ALL.forEach((name, i) => {
+        const tier = TIERS[i % 3] as string;
         cells.push({
           label: name,
-          note: dark ? 'dark floor' : 'lit floor',
+          note: `${dark ? 'dark' : 'lit'} floor${BREAKS.includes(name) ? ` · ${tier}` : ''}`,
           w: 200,
-          h: 280,
+          h: 300,
           newRow: i === 0,
           loop: 1,
           mount(root) {
-            const [at] = scene(ctx, root, 100, 220, dark, [{ gx: 0, gy: 0, dir: 1, seed: i % 2 ? 11 : 22, role: i % 2 ? 'role.engineer' : 'role.gunner' }]);
-            const tier = BREAKS.includes(name) ? TIERS[i % 3] : undefined;
-            const ic = icon(get, fps, ID(name), S, tier);
+            const [at] = scene(ctx, root, 100, 240, dark, [{ gx: 0, gy: 0, dir: 1, seed: i % 2 ? 11 : 22, role: i % 2 ? 'role.engineer' : 'role.gunner' }]);
+            const ic = icon(get, fps, ID(name, tier), S);
             ic.node.position.set(at!.x, at!.y - HEAD);
             root.addChild(ic.node);
             return ic.set;
@@ -167,61 +163,40 @@ export const marksPanel: LabPanel = {
         });
       });
     }
-    // tier options (preview only, crew_marks_tiers.py): each way to show the tier, a few symbols at 3x, then three crew at game scale
-    const OPTS = (ctx.params.get('opts') ?? 'oval').split(',').filter((o) => get(`crew.mark.opt.${o}.mild.panic`).length);
-    const KINDS = BREAKS;
-    OPTS.forEach((o) => {
+    // three crew side by side, mild, moderate, severe
+    for (const dark of [false, true]) {
       cells.push({
-        label: `tier option: ${o}`,
-        note: '3x · mild, moderate, severe',
-        w: KINDS.length * 3 * 22 * 3 + KINDS.length * 12,
-        h: 24 * 3,
-        newRow: true,
+        label: 'three breaks side by side',
+        note: `${dark ? 'dark' : 'lit'} floor · mild, moderate, severe`,
+        w: 380,
+        h: 300,
+        newRow: !dark,
         loop: 1,
         mount(root) {
-          const sets: ((t: number) => void)[] = [];
-          KINDS.forEach((k, a) => TIERS.forEach((t, b) => {
-            const ic = icon(get, fps, `crew.mark.opt.${o}.${t}.${k}`, 3);
-            ic.node.position.set(((a * 3 + b) * 22 + 11) * 3 + a * 12, 22 * 3);
+          const feet = scene(ctx, root, 190, 240, dark, [{ gx: -1, gy: 1, dir: 1, seed: 22, role: 'role.gunner' }, { gx: 0, gy: 0, dir: 1, seed: 11, role: 'role.engineer' }, { gx: 1, gy: -1, dir: 1, seed: 33, role: 'role.medic' }]);
+          const sets = feet.map((at, j) => {
+            const ic = icon(get, fps, ID(['hide', 'tantrum', 'refusal'][j] as string, TIERS[j]), S);
+            ic.node.position.set(at.x, at.y - HEAD);
             root.addChild(ic.node);
-            sets.push(ic.set);
-          }));
+            return ic.set;
+          });
           return (t) => sets.forEach((s) => s(t));
         },
       });
-      for (const dark of [false, true]) {
-        cells.push({
-          label: o,
-          note: `${dark ? 'dark' : 'lit'} floor · mild, moderate, severe`,
-          w: 380,
-          h: 280,
-          loop: 1,
-          mount(root) {
-            const feet = scene(ctx, root, 190, 200, dark, [{ gx: -1, gy: 1, dir: 1, seed: 22, role: 'role.gunner' }, { gx: 0, gy: 0, dir: 1, seed: 11, role: 'role.engineer' }, { gx: 1, gy: -1, dir: 1, seed: 33, role: 'role.medic' }]);
-            const sets = feet.map((at, j) => {
-              const ic = icon(get, fps, `crew.mark.opt.${o}.${TIERS[j]}.${KINDS[j * 2 + 1]}`, S);
-              ic.node.position.set(at.x, at.y - HEAD);
-              root.addChild(ic.node);
-              return ic.set;
-            });
-            return (t) => sets.forEach((s) => s(t));
-          },
-        });
-      }
-    });
+    }
     // a shouting match: two crew facing each other, one icon mirrored
     for (const dark of [false, true]) {
       cells.push({
         label: 'shout, a pair facing each other',
         note: dark ? 'dark floor' : 'lit floor',
         w: 320,
-        h: 280,
+        h: 300,
         newRow: !dark,
         loop: 1,
         mount(root) {
-          const feet = scene(ctx, root, 160, 200, dark, [{ gx: 0, gy: 1, dir: 7, seed: 22, role: 'role.gunner' }, { gx: 1, gy: 0, dir: 3, seed: 11, role: 'role.engineer' }]);
+          const feet = scene(ctx, root, 160, 240, dark, [{ gx: 0, gy: 1, dir: 7, seed: 22, role: 'role.gunner' }, { gx: 1, gy: 0, dir: 3, seed: 11, role: 'role.engineer' }]);
           const sets = feet.map((at, j) => {
-            const ic = icon(get, fps, ID('shout'), S, undefined, j === 1);
+            const ic = icon(get, fps, ID('shout'), S, j === 1);
             ic.node.position.set(at.x, at.y - HEAD);
             root.addChild(ic.node);
             return ic.set;

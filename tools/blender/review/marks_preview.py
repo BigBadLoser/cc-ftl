@@ -12,12 +12,12 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from sprites import crew_marks, crew_marks_tiers, post  # noqa: E402
+from sprites import crew_marks, post  # noqa: E402
 
 out = Path(sys.argv[1] if len(sys.argv) > 1 else ".cache/marks-preview")
 out.mkdir(parents=True, exist_ok=True)
-its = crew_marks.items() + crew_marks_tiers.items()
-gap, row_w, cell = 1, 1024, crew_marks.H + 1          # rows of at most 1024 px: a browser texture stays small
+its = crew_marks.items()
+gap, row_w, cell = 1, 1024, crew_marks.H + 1         # rows of at most 1024 px: a browser texture stays small
 frames, x, y = {}, 0, 0
 for it in its:
     h, w = it["rgba"].shape[:2]
