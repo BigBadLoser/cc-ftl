@@ -32,7 +32,7 @@
         <span class="empty">Empty</span>
       {/if}
     </div>
-    {#each slot.options as o (o.item)}
+    {#each slot.options.filter((o) => o.item !== slot.fitted?.item) as o (o.item)}
       <div class="row" data-testid="upgrade-option">
         <ItemIcon {api} item={o.item} size={30} />
         <span class="txt"><b>{o.name} <em>×{o.count}</em></b><small>{row(o)}</small></span>

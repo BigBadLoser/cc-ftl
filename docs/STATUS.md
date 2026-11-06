@@ -11,6 +11,15 @@ Last updated: 2026-11-03.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
+## Branch `combat/weapon-upgrades` (#338, slice 1; not merged)
+
+Module upgrade slots with the three general weapon upgrades and the flak cannon. Mechanism: `ModuleDef.upgradeSlot`, `ItemDef.upgrade`
+(`slot`, `fits`, `mods`), `Module.upgrade`; read through `sim/upgrades/stats.ts` (effective weapon def, damage-taken multiplier). Fitting is the
+`fit` crew job (commands `module.fitUpgrade/removeUpgrade/cancelUpgrade`); the module is offline while the work runs (power system). Enemy
+loadouts by faction (`FactionDef.upgrades`, `sim/upgrades/loadout.ts`), strip drops and losses, station stock, ruin loot. Slice 2 (behaviour
+upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item icons are placeholders
+(`ItemDef.placeholderIcon`). Save version 96.
+
 ## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
