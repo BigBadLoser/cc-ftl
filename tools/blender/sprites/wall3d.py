@@ -490,7 +490,14 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             if style().plain:                           # the default walls: the panel drawn, a seam line round
                 ed = pd                                 # it (a px across, about a px down the slope), its top
                 fd0, fd1 = fd0 + 4 * pd, fd1 - 2 * pd   # 4 px down, its bottom 2 px up (its top under the
-                fd0 = max(fd0, d0 + pd)                 # step's lit edge, not on it)
+                fd0 = max(fd0, d0 + pd) + pd            # step's lit edge, not on it; then a px further down)
+                hz = fd1 - 4 * pd                       # either side a seam across to the slope's edges, its
+                ea = u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0) + g      # line 3 px over the
+                eb = u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0) - g      # panel's bottom one
+                for q in ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
+                    poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
+                    if len(poly) >= 3:
+                        plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
                 for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
                           (fu1 - LINE, fu1, fd0, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,

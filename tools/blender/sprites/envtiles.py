@@ -137,5 +137,5 @@ def _with_runs(fn, mask, level):
 for _k, (_sid, _fp, _kind, _fn) in enumerate(SPRITES):     # every wall piece by mask, at each level, with its runs
     _mm = _WALL.match(_sid)
     if _mm and _kind == "block":
-        SPRITES[_k] = (_sid, _fp, "wide", _with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
-            _mm.group(1) or "", "cut")))
+        SPRITES[_k] = (_sid, _fp, "wide", _plain(_with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
+            _mm.group(1) or "", "cut"))))          # (the runs in the plain look's relief too, as the piece)
