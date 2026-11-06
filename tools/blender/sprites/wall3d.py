@@ -294,12 +294,16 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
         prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m)
         zt = z1 - MID_DROP if mid else z1
         paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                      # its top edge lit
+        if mid and u1 < b - 1e-6:                       # (a seam where it meets the end block on its right, as the
+            paint(k, ax, plane, u1 - 1.5 * LINE, u1 - 0.5 * LINE, zb, zt - PZ, d, fam, 2)   # end block's side
+                                                        # shows on its left; clear of the end block's front)
     return z0
 
 
 def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     """Partition (set 7): a low band, posts with a groove, a header in three blocks; in each field an outlined panel
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
+    from .faction.parts import PZ
     F = "wall"
     zb, zlt = _lip(k, ax, plane, a, b, ends, zs, top, F)                                        # the lip
     if not full:
@@ -311,6 +315,8 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
+        b0, b1 = q0, q1                                  # (the raised bar and fine lines placed as before ...)
+        q0, q1 = q0 - 2 * PZ, q1 - 2 * PZ                # (... the panel's top and foot 2 px down, the slot with it)
         paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
         paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if VARIANT[0]:
@@ -322,9 +328,9 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         for j in range(2):                                                                       # ochre bars
             bz = q1 - 0.09 - j * 0.085
             paint(k, ax, plane, uc - bw / 2, uc + bw / 2, bz - 0.05, bz, 4 * PAINT, "ochre", 3)
-        zr = q1 - 0.5
+        zr = b1 - 0.5
         slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
-        gap = (zr - 0.07 - q0) / 3                       # (the two lines evenly between it and the panel's foot)
+        gap = (zr - 0.07 - b0) / 3                       # (the two lines evenly between it and the panel's foot)
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):
             paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
 
