@@ -46,6 +46,7 @@ FOOT_H = 3                          # on a foot this many px tall, this far on f
 FOOT_W = 5 / 32                     # sill's flat top (the slope measured off the reference's glass line)
 SLOPE_COL = YS[2]                   # the slope (between the side's tone and the flat's)
 SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, under the header: facing down, darker)
+JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -134,6 +135,11 @@ def build(k, ax, plane, a, b, ends, H):
                   db, dv, HEAD_FRONT, [False, SIDE, SILL_FLAT, SLOPE_COL, False], back=False, mu=mu)
             _slab(k, ax, plane, [(w0, zh), (w0, zh - sh), (w0 + SLOPE, zh)], db, dv, HEAD_FRONT,   # the top corner's
                   [False, SLOPE_TOP, False], back=False, mu=mu)                                  # slope
+            if PART == "w1":                            # a seam across the jamb's front where its foot's slope
+                zl = zj + fh + sh                       # starts, from the outer frame round its side to the glass
+                pf = [(dp + PANE / 2, zl), (dv + 0.001, zl), (dv + 0.001, zl + 1 / core.ZPX), (dp + PANE / 2,
+                      zl + 1 / core.ZPX)]
+                f.part(s0 + FRAME, w0 + 0.001, pf, [JAMB_SEAM] * 4, (None, JAMB_SEAM), end=False)
 
 
 def _w1_header(f, s, s0, s1, dv, zc, zh):
