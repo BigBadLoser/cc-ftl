@@ -51,7 +51,7 @@
 
 <style>
   /* One grid for the whole strip, shared by every column: row 1 status, weapons, heat; row 2 stations, actions, overcharge. Sections in a row
-     are the same height. One shared backplane behind every section, so no game shows between them; each section keeps its own frame. */
+     are the same height. The dock's backplane fills the gaps between sections; each section keeps its own frame. */
   .strip {
     position: relative;
     display: grid;
@@ -60,25 +60,25 @@
     gap: var(--sp-3) var(--gutter);
     flex: 1;
     min-width: 0;
-    isolation: isolate;
     pointer-events: auto;
   }
-  /* The shared backplane: a plain fill behind the sections and the gaps between them (no padding, no border of its own). It reaches 7px up
-     like the frames' top rails, whose titles sit on the strip's top edge. */
-  .strip::before {
-    content: '';
-    position: absolute;
-    inset: -7px 0 0 0;
-    z-index: -1;
-    background: var(--panel);
-  }
-  /* The strip and its Flee tab side by side, with a gap between. */
+  /* The strip and its Flee tab side by side, with a gap between, on one shared backplane: a plain fill behind the sections, the Flee tab
+     and the gaps between them, flush with their outer edges (no padding or border of its own). */
   .dock {
+    position: relative;
+    isolation: isolate;
     display: flex;
     align-items: stretch;
     gap: 10px;
     width: min(1320px, calc(100vw - 24px));
     pointer-events: auto;
+  }
+  .dock::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--panel);
   }
   /* Thermal overload: covers the whole strip and blocks it. */
   .lock {
