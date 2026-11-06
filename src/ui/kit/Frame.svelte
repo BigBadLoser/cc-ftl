@@ -81,11 +81,16 @@
   .rail > :global(*) {
     pointer-events: auto;
   }
+  /* The title gives way first: a long one is cut short with an ellipsis so the right-hand items stay on the frame. Its line box is taller than
+     the 13px rail (centred in it) so the clip for the ellipsis never cuts the glyphs. */
   h3 {
     margin: 0;
     padding: 0 5px;
-    flex: none;
-    font: 600 12px/13px var(--head-font);
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 600 12px/16px var(--head-font);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--dim);
@@ -93,7 +98,7 @@
     text-shadow: 0 0 3px #000, 0 0 3px #000;
   }
   .hostile h3 {
-    font: 700 18px/13px var(--head-font);
+    font: 700 18px/22px var(--head-font);
     color: var(--hostile);
   }
 </style>

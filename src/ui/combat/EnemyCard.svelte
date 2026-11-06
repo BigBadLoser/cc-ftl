@@ -6,6 +6,7 @@
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
   import HeatBar, { heatTone } from './HeatBar.svelte';
+  import { cardName } from './enemyName';
 
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
@@ -24,14 +25,15 @@
   const sub = $derived(
     [enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '),
   );
+  const title = $derived(cardName(enemy.name, enemy.faction, enemy.klass));
   const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
   const tone = $derived(chipTone(pill.tone));
 </script>
 
 <Frame
-  title={enemy.name}
+  {title}
   tone={enemy.neutral ? 'normal' : 'hostile'}
-  style="width:290px; pointer-events:auto; background: var(--panel)"
+  style="width:320px; pointer-events:auto; background: var(--panel)"
   testid="enemy-card"
   lesson={anchor('combat.enemy')}
 >
@@ -41,7 +43,7 @@
     <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
   {/snippet}
   <div class="body">
-    {#if sub}<span class="fac">{sub}</span>{/if}
+    {#if sub}<span class="fac" class:neutral={enemy.neutral}>{sub}</span>{/if}
     <div class="def">
       <div class="srow">
         <Pips
@@ -114,10 +116,10 @@
     display: grid;
     place-items: center;
     background: var(--panel);
-    border: 1px solid var(--hostile);
+    border: 1px solid var(--edge);
     border-radius: 0;
     margin: 0 4px;
-    color: var(--hostile);
+    color: var(--edge);
   }
   .fac {
     margin: 2px 0 -4px;
@@ -126,6 +128,7 @@
     text-transform: uppercase;
     color: var(--hostile-dim);
   }
+  .fac.neutral { color: var(--dim); }
   .def {
     display: grid;
     gap: 3px;
@@ -189,6 +192,7 @@
     letter-spacing: 0.03em;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--text);
   }
   .st {

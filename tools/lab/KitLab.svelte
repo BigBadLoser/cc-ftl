@@ -2,6 +2,23 @@
   import { Chip, Meter, Segmented } from '../../src/ui/kit';
   import { dangerColor } from '../../src/ui/starmapStyle';
   import HeatBar from '../../src/ui/combat/HeatBar.svelte';
+  import EnemyCard from '../../src/ui/combat/EnemyCard.svelte';
+  import type { UiShipCombat } from '../../src/ui/api';
+
+  const oc = { left: 0, cooldown: 0 };
+  const gun = (id: number, name: string, charge: number, committed: boolean, color: number) =>
+    ({ id, name, charge, commitAt: 0.6, committed, stalled: false, destroyed: false, eta: committed ? 2.7 : null, fired: false, color });
+  const ship = (name: string, faction: string, klass: string | null, neutral: boolean): UiShipCombat => ({
+    ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
+    heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
+    evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
+    charges: [gun(1, 'Burst laser', 0.7, true, 0xf08a9a), gun(2, 'Missile launcher', 0.4, false, 0xffc06a)],
+  } as unknown as UiShipCombat);
+  const cards = [
+    { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Shields down', tone: 'good' } },
+    { e: ship('Raider', 'Hostile', null, false), pill: { text: 'You hold fire', tone: 'warn' } },
+    { e: ship('Trade station hub C3AA', 'Neutral', 'Hub', true), pill: { text: 'Not hostile', tone: 'dim' } },
+  ];
 
   const tones = ['dim', 'good', 'warn', 'bad', 'gold', 'select'] as const;
   const meterTones = ['auto', 'good', 'warn', 'bad', 'neutral'] as const;
@@ -68,6 +85,11 @@
     <Segmented label="Build all disabled" value="" onChange={() => {}} options={allOff} />
     <Segmented label="Build three" value={v.e} onChange={(x) => (v.e = x)} options={three} />
   </div>
+
+  <h3>Enemy card <small>a generated name shows only its call sign; an authored one whole; a long one cut short</small></h3>
+  <div class="row top">
+    {#each cards as c (c.e.name)}<EnemyCard enemy={c.e} state={c.pill} onFrame={() => {}} onBoard={() => {}} boardBlocker={null} />{/each}
+  </div>
 </div>
 
 <style>
@@ -78,5 +100,6 @@
   .row { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
   .lbl { width: 90px; color: var(--dim); font-size: 12px; }
   .m { width: 150px; }
+  .row.top { align-items: flex-start; gap: 20px; padding-top: 10px; }
   .m.tall { display: flex; height: 22px; }
 </style>
