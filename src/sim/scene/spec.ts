@@ -73,6 +73,7 @@ function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: r
   if (r.tag) ship.tag = r.tag;
   if (r.prey) ship.prey = r.prey;
   if (r.story) ship.story = r.story;
+  if (r.lacks) ship.lacks = [...r.lacks];
   if (r.damage) ship.damage = r.damage.map((d) => ({ ...(d.category ? { category: d.category } : {}), ...(d.def ? { def: d.def } : {}), ...(d.count !== undefined ? { count: d.count } : {}), pct: roll(rng, d.hp), ...(d.failing ? { failing: true as const } : {}) }));
   return ship;
 }
@@ -110,6 +111,7 @@ function buildTimer(rng: Rng, t: SceneTimerRecipe): SceneTimer {
   return {
     id: t.id, afterSec: typeof t.afterSec === 'number' ? t.afterSec : roll(rng, t.afterSec),
     ...(t.ship ? { ship: t.ship } : {}), ...(t.stopOn ? { stopOn: t.stopOn } : {}), ...(t.fires ? { fires: { ...t.fires } } : {}), ...(t.due ? { due: t.due } : {}),
+    ...(t.blast ? { blast: t.blast.map((e) => ({ ...e })) } : {}),
   };
 }
 

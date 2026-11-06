@@ -387,6 +387,10 @@ scripts. Not every scene has one.
     - **Raiders, by seed, deeper only:** some scenes have them already circling the freighter when you drop out, others have them
       jump in on a clock that the scan warns about.
     - **Survivors later,** with passengers (medical pod, step 6). The freighter is built without them.
+    - **Round 2 (2026-11-06):** its crew cannot repair (a per-crew work block, the general mechanism traits will use); the clock starts at
+      deploy and runs 110-130 s (a party sent at once finishes with about 25-45 s to spare); the reactor blast is real (module damage,
+      breach, crew hurt by distance, fire), then the ship goes dark and wrecks, and guests aboard face fire and vacuum, not instant death;
+      enemy AI targets a recent attacker first, then its prey, then other foes, so raiders turn on a player who shoots them.
 - **Medical pod** (`medical_emergency`). Eligible: a bed aboard.
   - Signal: a pod beacon with a faint life sign.
   - Remote: scan (patient's injury, species, skills hinted), ignore.

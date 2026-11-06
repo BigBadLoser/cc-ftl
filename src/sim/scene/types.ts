@@ -1,6 +1,7 @@
-import type { ItemQty } from '../registry';
+import type { Effect, ItemQty } from '../registry';
 import type { EventEffect } from '../story/defs';
 import type { Contact } from '../galaxy/types';
+import type { WorkCategory } from '../crew/components';
 
 /**
  * Physical encounters (DESIGN.md "Physical encounters"; #173). A scene says what exists in a deep-space pocket and under what conditions, never how
@@ -52,6 +53,11 @@ export interface SceneShipRecipe {
   prey?: string;
   /** What it suffered before you came: its modules of a `category` (or a `def`), `count` of them (absent: all), left at a rolled share of their hp, in percent. */
   damage?: SceneDamageRecipe[];
+  /**
+   * Work none of its crew can do (a work block on each, reason 'scene': crew/workBlock.ts): a freighter with no engineer aboard cannot mend its own
+   * damage, which is why it calls for help. Anyone else aboard (a party let aboard to help) does that work as usual.
+   */
+  lacks?: WorkCategory[];
   /** The story its crew tell when hailed (what happened, what they want, what they offer). */
   story?: string;
 }
@@ -119,6 +125,11 @@ export interface SceneTimerRecipe {
   stopOn?: 'repaired';
   fires?: SceneFires;
   due?: 'wreck';
+  /**
+   * With `due: 'wreck'`: the failing system explodes, as a weapon hit at its middle would with these effects (module damage, hull, crew hurt in rings
+   * that fall off with distance, fire), and a hull wall near it is breached; then the ship goes dark. Absent: it only goes dark, with a fire.
+   */
+  blast?: Effect[];
 }
 
 export interface SceneFires {
@@ -186,6 +197,8 @@ export interface SceneShip {
   damage?: { category?: string; def?: string; count?: number; pct: number; failing?: true }[];
   damaged?: number[];
   failing?: number[];
+  /** Work its crew do not do (`SceneShipRecipe.lacks`), set on them when it is made real. */
+  lacks?: WorkCategory[];
   story?: string;
   /**
    * Help agreed with it (DESIGN.md "Distress freighter": aid by hail): 'agreed' while it stands (its away site, owner 'aid', takes the party aboard as
@@ -232,13 +245,14 @@ export interface SceneDerelict {
 
 export interface SceneTimer {
   id: string;
-  /** Seconds after the scene opens (rolled); `at` is the tick it comes due, set when it opens. */
+  /** Seconds after the player deploys in the pocket (rolled); `at` is the tick it comes due, set then (scene/clock.ts). */
   afterSec: number;
   at?: number;
   ship?: string;
   stopOn?: 'repaired';
   fires?: SceneFires;
   due?: 'wreck';
+  blast?: Effect[];
   /** It was stopped (its ship's failing systems repaired in time): it never comes due. `fired`: its fires broken out so far; `blown`: its due effect is done. */
   stopped?: true;
   fired?: number;

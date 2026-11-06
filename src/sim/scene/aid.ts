@@ -59,7 +59,7 @@ function send(sim: Sim, id: number): boolean {
   if (openSite(sim, id, 'aid') === 'noShuttle') return false;
   const site = sim.world.get(id, AwaySiteC);
   if (site) site.noLoot = true; // guests take nothing home
-  grant(sim, id, { by: 'aid', faction: 'player', site: id }); // the party is aboard by the ship's leave
+  grant(sim, id, { by: 'aid', faction: 'player', site: id, work: true }); // the party is aboard by the ship's leave, to work
   return true;
 }
 

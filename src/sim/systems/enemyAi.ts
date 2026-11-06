@@ -8,12 +8,13 @@ import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { BoarderC, VehicleC } from '../vehicles/components';
 import { partyOut } from '../boarding/partyOut';
-import { AI_RETARGET_TICKS, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
+import { AI_RETARGET_TICKS, AI_THREAT_SEC, FLEE_BELOW, FTL_CHARGE_SEC } from '../tuning';
+import { TICK_HZ } from '../time';
 
 /**
  * Enemy doctrine. Hostile and rogue active ships (a) retreat via combat.flee once integrity < FLEE_BELOW and the FTL drive
- * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target on the first live player ship
- * (else any ship at war with them; rogue AIs fight raiders too; a ship with a `prey` goes for that first while it is in play) when theirs is missing or destroyed: 'weapons' doctrine aims at weapon modules, 'shields' at shield
+ * is charged, (b) never hold fire, and (c) every AI_RETARGET_TICKS pick a target ship by `TARGET_ORDER` (`chooseFoe`) and, when the ship changed
+ * or the aimed module is destroyed, a module on it: 'weapons' doctrine aims at weapon modules, 'shields' at shield
  * generators, 'random' at any module weighted by max hp. A hostile shuttle of another faction in flight is targeted
  * by the anti-vehicle weapons only (the others keep their ship target). The AI only issues commands, like the player does.
  */
@@ -42,7 +43,7 @@ export function enemyAiSystem(sim: Sim): void {
     if (fv && combat.vehicleTarget !== fv) {
       sim.enqueue({ type: 'combat.setTarget', ship: id, weaponId: null, targetShip: 0, targetModuleId: 0, targetVehicle: fv });
     }
-    const foe = preyOf(sim, combat) || firstFoe(sim, ship.faction);
+    const foe = chooseFoe(sim, ship, combat);
     if (!foe) continue;
     const t = combat.target;
     const hp = t && sim.world.get(t.moduleId, ModuleC)?.hp;
@@ -57,6 +58,34 @@ function flyingFoeVehicle(sim: Sim, faction: Ship['faction']): number {
   for (const id of sim.world.query(VehicleC)) {
     if (sim.world.get(id, VehicleC)?.state === 'flying' && hostileVehicle(sim, id, faction)) return id;
   }
+  return 0;
+}
+
+/**
+ * The AI's target choice, in rank order (data, not a special case): a `threat` (the last ship that fired on it, while it is recent: AI_THREAT_SEC, in
+ * play and at war with it), then its `prey` (a scene's raiders on the freighter), then a `foe` (`firstFoe`: a player ship first, else any ship at
+ * war with it). So raiders hunting a freighter turn on the player the moment the player shoots them, and go back to the freighter when the player
+ * stops; in an ordinary fight the player is both threat and first foe.
+ */
+const TARGET_ORDER = ['threat', 'prey', 'foe'] as const;
+
+function chooseFoe(sim: Sim, ship: Ship, combat: Combat): number {
+  for (const k of TARGET_ORDER) {
+    const id = k === 'threat' ? threatOf(sim, ship, combat) : k === 'prey' ? preyOf(sim, combat) : firstFoe(sim, ship.faction);
+    if (id) return id;
+  }
+  return 0;
+}
+
+/** The ship's recent attacker while it is in play and at war with it, else 0; an old or gone threat is forgotten. */
+function threatOf(sim: Sim, ship: Ship, combat: Combat): number {
+  const t = combat.threat;
+  if (!t) return 0;
+  const s = sim.world.get(t.ship, ShipC);
+  const ok = sim.tick - t.at <= AI_THREAT_SEC * TICK_HZ && !!s && (s.state === 'active' || s.state === 'disabled') && factionsHostile(ship.faction, s.faction)
+    && !(ship.faction === 'rogue' && rogueAlly(sim, t.ship));
+  if (ok) return t.ship;
+  delete combat.threat;
   return 0;
 }
 

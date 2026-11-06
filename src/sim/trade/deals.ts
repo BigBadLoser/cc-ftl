@@ -12,6 +12,7 @@ import { undock } from '../vehicles/lifecycle';
 import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
+import { grant, revoke } from '../consent/guests';
 
 /**
  * Stop crew taking anything more out of a trader's shuttle: remove every haul job that still has to pick up from it (a crew member already
@@ -60,8 +61,15 @@ export function touchMarket(sim: Sim, trader: { port?: string } | undefined): vo
   if (trader?.port) sim.galaxy.rev++;
 }
 
-/** The one place a deal's phase changes: sets it, restarts the phase timer and reports it as `trade.phase` (output only). */
+/**
+ * The one place a deal's phase changes: sets it, restarts the phase timer and reports it as `trade.phase` (output only). While a run is docked at a
+ * station (docking or the station crew at work) the player's side is aboard it by its leave (a 'trade' consent grant from the shuttle, consent/: its
+ * alarm, provocation and the fight code read it); the leave goes with the phase.
+ */
 export function setPhase(sim: Sim, d: Deal, to: DealPhase, from: DealPhase | null = d.phase): void {
+  const atDock = (p: DealPhase | null): boolean => d.via === 'dock' && (p === 'dockStation' || p === 'stationWork');
+  if (atDock(to)) grant(sim, d.ship, { by: 'trade', faction: 'player', from: d.vehicle });
+  else revoke(sim, d.ship, 'trade', { from: d.vehicle });
   d.phase = to;
   d.timer = 0;
   sim.events.emit({

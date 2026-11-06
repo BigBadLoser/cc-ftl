@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
-import { CrewC, PositionC } from '../sim/crew/components';
+import { CombatC, WeaponC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
+import { CrewC, DeadC, JobC, PositionC, WorkBlockC } from '../sim/crew/components';
+import { jobFits } from '../sim/crew/jobFit';
 import { AllegianceC } from '../sim/fight/components';
 import { AwayC, AwaySiteC } from '../sim/away/components';
 import { ModuleC } from '../sim/modules/components';
@@ -78,6 +79,7 @@ function inScene(seed: number, opts: { help?: boolean; c?: typeof content } = {}
   if (opts.help) choose(sim, 'hail');
   choose(sim, opts.help ? 'help' : 'approach');
   deploy(sim);
+  for (let i = 0; i < 40 && sim.galaxy.event?.scene.timers.some((t) => t.at === undefined); i++) step(sim); // the clock starts at deploy (next scene second)
   const s = sim.galaxy.event?.scene.ships.find((x) => x.tag === 'freighter');
   return { sim, freighter: s?.contact.ship as number };
 }
@@ -103,6 +105,13 @@ function standOn(sim: Sim, ship: number, crew: number): void {
     }
   }
 }
+const countSpace = (sim: Sim, ship: number): number => {
+  const s = sim.world.get(ship, ShipC)!;
+  const g = shipGrid(sim, ship)!;
+  let n = 0;
+  for (let y = s.y; y < s.y + s.height; y++) for (let x = s.x; x < s.x + s.width; x++) if (g.get('struct', x, y) === 0) n++;
+  return n;
+};
 const playerCrewIds = (sim: Sim): number[] => sim.world.query(CrewC, PositionC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player');
 
 describe('distress freighter: signal', () => {
@@ -113,7 +122,7 @@ describe('distress freighter: signal', () => {
     expect(s.ships[0]).toMatchObject({ tag: 'freighter', stance: 'helpless' });
     expect(s.ships[0]?.damage?.find((d) => d.failing)?.def).toBe('module.reactor');
     expect(s.timers[0]).toMatchObject({ id: 'reactor', ship: 'freighter', stopOn: 'repaired', due: 'wreck' });
-    expect(s.timers[0]!.afterSec).toBeGreaterThanOrEqual(130);
+    expect(s.timers[0]!.afterSec).toBeGreaterThanOrEqual(110);
   });
 
   it('offering help needs the hail first, and agrees help before dropping out', () => {
@@ -141,6 +150,21 @@ describe('distress freighter: the scene', () => {
     expect(sim.world.get(s.failing![0]!, ModuleC)!.hp).toBe(m.hp); // its own crew cannot mend it
   });
 
+  it('its crew cannot repair (a work block, reason scene); anyone else aboard can take the repair', () => {
+    const { sim, freighter } = inScene(3);
+    const own = sim.world.query(CrewC, PositionC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === freighter);
+    expect(own.length).toBeGreaterThan(0);
+    for (const c of own) expect(sim.world.get(c, WorkBlockC)?.blocked).toEqual([{ category: 'repair', why: 'scene' }]);
+    const reactor = spec(sim).failing![0]!;
+    const job = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'repair' && j.target === reactor)!;
+    expect(job).toBeDefined();
+    const at = sim.world.get(own[0]!, PositionC)!;
+    expect(jobFits(sim, own[0]!, at, job)).toBe(false);
+    const ours = playerCrewIds(sim)[0]!;
+    standOn(sim, freighter, ours);
+    expect(jobFits(sim, ours, sim.world.get(ours, PositionC)!, job)).toBe(true);
+  });
+
   it('breaks out fires as the clock runs down, then blows: a wreck, everyone aboard gone, the rules fire', () => {
     const { sim, freighter } = inScene(4);
     const t = timer(sim);
@@ -154,6 +178,45 @@ describe('distress freighter: the scene', () => {
     expect(t.blown).toBe(true);
     expect(sim.world.get(freighter, ShipC)?.state).toBe('wreck');
     expect(fired(sim)).toEqual(expect.arrayContaining(['reactorBlew', 'destroyed']));
+  }, 60000);
+
+  it('the clock starts when the player deploys, not while the deploy spot is picked', () => {
+    const sim = signalled(4, withRaiders('none'));
+    choose(sim, 'approach');
+    step(sim, 200); // picking a spot
+    expect(sim.sector.state).toBe('deploying');
+    expect(timer(sim).at).toBeUndefined();
+    deploy(sim);
+    const deployed = sim.tick;
+    step(sim, 21);
+    expect(timer(sim).at).toBeGreaterThanOrEqual(deployed + timer(sim).afterSec * 20);
+    expect(timer(sim).at).toBeLessThanOrEqual(deployed + timer(sim).afterSec * 20 + 21);
+  }, 60000);
+
+  it('the reactor blows: a blast at it (event, breach, fire), the ship goes dark and wrecks; a guest far off lives, its own crew do not', () => {
+    const { sim, freighter } = inScene(4, { help: true });
+    step(sim, 21);
+    const site = sim.world.get(freighter, AwaySiteC)!;
+    const guest = playerCrewIds(sim)[0] as number;
+    sim.world.add(guest, AwayC, { site: freighter, vehicle: site.vehicle, cat: 'repair' });
+    standOn(sim, freighter, guest);
+    const own = sim.world.query(CrewC, PositionC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === freighter && c !== guest);
+    const reactor = sim.world.get(spec(sim).failing![0]!, ModuleC)!;
+    const far = Math.max(Math.abs(sim.world.get(guest, PositionC)!.x - reactor.x), Math.abs(sim.world.get(guest, PositionC)!.y - reactor.y));
+    expect(far).toBeGreaterThan(7); // out of the blast's reach
+    const g = shipGrid(sim, freighter)!;
+    const space0 = countSpace(sim, freighter);
+    timer(sim).at = sim.tick + 1;
+    const out = step(sim, 21);
+    const blast = out.find((e) => e.type === 'ship.blast') as { x: number; y: number; radius: number } | undefined;
+    expect(blast).toBeDefined();
+    expect(blast!.radius).toBe(6);
+    expect(sim.world.get(freighter, ShipC)?.state).toBe('wreck');
+    expect(countSpace(sim, freighter)).toBeGreaterThan(space0); // the hull is breached
+    expect(firesOn(sim, freighter)).toBeGreaterThan(0);
+    expect(g).toBeDefined();
+    expect(sim.world.has(guest, DeadC)).toBe(false); // the wreck does not take the guest
+    expect(own.every((c) => !sim.world.has(c, CrewC) || sim.world.has(c, DeadC))).toBe(true);
   }, 60000);
 
   it('repairing the failing reactor in time stops the clock', () => {
@@ -288,6 +351,28 @@ describe('distress freighter: raiders', () => {
     expect(sim.world.get(r.contact.ship!, CombatC)?.prey).toBe(freighter);
     step(sim, 10 * 20);
     expect(sim.world.get(r.contact.ship!, CombatC)?.target?.ship).toBe(freighter);
+  }, 60000);
+
+  it('target choice: a threat beats the prey (the player firing on a raider turns it), and the prey beats an idle foe again once the player stops', () => {
+    const { sim, freighter } = inScene(3, { c: withRaiders('here') });
+    const r = sim.galaxy.event!.scene.ships.find((x) => x.tag === 'raider')!.contact.ship!;
+    const me = playerShip(sim);
+    step(sim, 5 * 20);
+    expect(sim.world.get(r, CombatC)?.target?.ship).toBe(freighter); // prey over the player, who has not fired
+    const mod = sim.world.query(ModuleC).find((m) => shipIdOf(sim, sim.world.get(m, ModuleC)!) === r)!;
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: r, targetModuleId: mod });
+    for (let i = 0; i < 40 * 20 && sim.world.get(r, CombatC)?.threat === undefined; i++) step(sim);
+    expect(sim.world.get(r, CombatC)?.threat?.ship).toBe(me); // firing.ts: who fired on it
+    step(sim, 3 * 20);
+    expect(sim.world.get(r, CombatC)?.target?.ship).toBe(me);
+    expect(sim.world.get(r, CombatC)?.prey).toBe(freighter); // the prey is kept, ranked below the threat
+    sim.enqueue({ type: 'combat.setTarget', ship: me, weaponId: null, targetShip: 0, targetModuleId: 0 });
+    for (const id of sim.world.query(ModuleC)) {
+      const w = sim.world.get(id, WeaponC);
+      if (w && shipIdOf(sim, sim.world.get(id, ModuleC)!) === me) w.target = null;
+    }
+    step(sim, 20 * 20);
+    expect(sim.world.get(r, CombatC)?.target?.ship).toBe(freighter);
   }, 60000);
 
   it('coming on a clock: not there at open, jumps in when it is due', () => {

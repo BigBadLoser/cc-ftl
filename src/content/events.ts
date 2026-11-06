@@ -26,6 +26,7 @@ export const events = {
         {
           tag: 'freighter', owner: 'traders', shipgen: 'faction.civilian', family: 'freighter', stance: 'helpless', crew: [2, 4], credits: [150, 400], attitude: 3,
           damage: [{ def: 'module.reactor', count: 1, hp: [20, 35], failing: true }, { def: 'module.engine', count: 1, hp: [5, 30] }],
+          lacks: ['repair'], // no engineer aboard: "we cannot fix it with what we have"
           cargo: {
             lines: [2, 3],
             pool: [
@@ -41,7 +42,16 @@ export const events = {
           danger: { min: 2 }, chance: 0.6, arrive: { chance: 0.5, afterSec: [60, 100] },
         },
       ],
-      timers: [{ id: 'reactor', ship: 'freighter', afterSec: [130, 180], stopOn: 'repaired', fires: { leadSec: 100, everySec: 20, max: 4 }, due: 'wreck' }],
+      timers: [{
+        id: 'reactor', ship: 'freighter', afterSec: [110, 130], stopOn: 'repaired', fires: { leadSec: 45, everySec: 15, max: 3 }, due: 'wreck',
+        // The reactor blows: wrecked systems and hull around it, crew hurt less the further they stand (three rings), fire; then the ship goes dark.
+        blast: [
+          { type: 'moduleDamage', amount: 300, radius: 2 },
+          { type: 'hullDamage', amount: 300, radius: 3, falloff: 0.5 },
+          { type: 'crewDamage', amount: 35, radius: 2 }, { type: 'crewDamage', amount: 25, radius: 4 }, { type: 'crewDamage', amount: 15, radius: 6 },
+          { type: 'ignite', radius: 4 },
+        ],
+      }],
       rules: {
         reactorBlew: { on: 'timer', timer: 'reactor', log: "The {ship}'s reactor blows", tone: 'bad' },
       },

@@ -11,6 +11,8 @@ import { startVisitClock, tendVisit, visiting } from './visit';
 import { BoarderC } from '../vehicles/components';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
+import { CrewC, PositionC, type WorkCategory } from '../crew/components';
+import { blockWork } from '../crew/workBlock';
 import type { SceneShip, SceneSpec, Stance } from './types';
 
 /**
@@ -41,6 +43,7 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
     if (!s.ambush.trap) delete party.weapon; // an honest party comes unarmed
   }
   if (s.damage) applyDamage(sim, s, s.contact.ship);
+  if (s.lacks) idleHands(sim, s.contact.ship, s.lacks);
   return true;
 }
 
@@ -62,7 +65,6 @@ function applyDamage(sim: Sim, s: SceneShip, ship: number): void {
       const m = sim.world.get(id, ModuleC) as { def: string; hp: number };
       const def = sim.content.modules[m.def] as { maxHp: number; power: number };
       m.hp = Math.max(def.power > 0 ? 1 : 0, Math.round((def.maxHp * d.pct) / 100));
-      if (m.hp < def.maxHp) (m as { outsideFix?: true }).outsideFix = true; // beyond its own crew: why it called for help
       damaged.push(id);
       if (d.failing) failing.push(id);
     }
@@ -71,7 +73,15 @@ function applyDamage(sim: Sim, s: SceneShip, ship: number): void {
   if (failing.length) s.failing = failing;
 }
 
-/** Point a scene ship's guns at its prey (by tag) once both are real: the combat AI goes for it first while it is in play. */
+/** The ship's crew cannot do this work (`SceneShip.lacks`, a work block for 'scene' on each: crew/workBlock.ts), so its jobs wait for someone else aboard. */
+function idleHands(sim: Sim, ship: number, lacks: readonly WorkCategory[]): void {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number }) !== ship) continue;
+    for (const c of lacks) blockWork(sim, id, c, 'scene');
+  }
+}
+
+/** Point a scene ship's guns at its prey (by tag) once both are real: the combat AI's target choice ranks it above other foes (systems/enemyAi.ts). */
 function aimAtPrey(sim: Sim, spec: SceneSpec, s: SceneShip): void {
   const prey = s.prey ? spec.ships.find((o) => o.tag === s.prey)?.contact.ship : undefined;
   const combat = s.contact.ship === undefined ? undefined : sim.world.get(s.contact.ship, CombatC);
@@ -82,7 +92,7 @@ function aimAtPrey(sim: Sim, spec: SceneSpec, s: SceneShip): void {
 /** A ship that comes in late is not in the pocket until its tick. */
 const due = (sim: Sim, s: SceneShip): boolean => s.arriveAt === undefined || sim.tick >= s.arriveAt;
 
-/** Open a scene in the (fresh) event grid: spawn its derelicts and ships and start its timers. */
+/** Open a scene in the (fresh) event grid: spawn its derelicts and ships (its timers start at deploy). */
 export function openScene(sim: Sim, spec: SceneSpec): void {
   for (const d of spec.derelicts) if (d.ship === undefined) spawnSceneDerelict(sim, d);
   for (const s of spec.ships) {
@@ -92,7 +102,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
     if (s.contact.ship === undefined && due(sim, s)) spawnSceneShip(sim, s);
   }
   for (const s of spec.ships) aimAtPrey(sim, spec, s);
-  for (const t of spec.timers) t.at = sim.tick + Math.round(t.afterSec * TICK_HZ);
+  // The timers start once the player's ship is deployed (scene/clock.ts `tendClocks`): choosing where to deploy costs no time on them.
 }
 
 /**

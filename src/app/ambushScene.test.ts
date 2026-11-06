@@ -6,6 +6,9 @@ import { shipIdOf } from '../sim/regions';
 import { AirlockC } from '../sim/modules/airlock';
 import { ModuleC } from '../sim';
 import { hostileAct } from '../sim/combat/provoke';
+import { ConsentC } from '../sim/consent/components';
+import { guestOn } from '../sim/consent/guests';
+import { isInvader, isOffDuty } from '../sim/fight/relations';
 import { killCrew } from '../sim/crew/death';
 import { applyEffect, giveItems } from '../sim/story/effects';
 import { RolledSkillsC } from '../sim/crew/traits';
@@ -177,6 +180,10 @@ describe('the returning pirate: in its pocket', () => {
     sim.enqueue({ type: 'galaxy.visit', ship: skiff, grant: true });
     let aboard = false;
     const me = playerShip(sim);
+    step(sim);
+    // The dock granted is leave aboard the player's ship: a consent grant from the skiff, not a working one.
+    expect(sim.world.get(me, ConsentC)?.grants).toEqual([expect.objectContaining({ by: 'visit', faction: 'neutral', from: skiff })]);
+    expect(sim.world.get(me, ConsentC)?.grants[0]?.work).toBeUndefined();
     for (let i = 0; i < 90 * 20 && ambushOf(sim)?.visit !== 'aboard' && ambushOf(sim)?.visit !== 'sprung'; i++) step(sim);
     expect(['aboard', 'sprung']).toContain(ambushOf(sim)?.visit);
     const party = sim.world.get(skiff, BoarderC)?.crew ?? [];
@@ -186,8 +193,14 @@ describe('the returning pirate: in its pocket', () => {
     if (ambushOf(sim)?.visit === 'aboard') {
       expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'neutral')).toBe(true); // still passing for guests
       expect(sim.world.get(skiff, ShipC)?.faction).toBe('neutral');
+      // Guests by the grant, named crew: not invaders, and off duty (they stand by, they take none of the ship's work).
+      expect(sim.world.get(me, ConsentC)?.grants[0]?.crew).toEqual(party);
+      expect(party.every((c) => guestOn(sim, c, me) && !isInvader(sim, c) && isOffDuty(sim, c))).toBe(true);
     }
     const out = step(sim, 20 * 15);
+    // Sprung: the leave is gone, and the party are boarders now.
+    expect(sim.world.has(me, ConsentC)).toBe(false);
+    expect(party.filter((c) => sim.world.has(c, CrewC)).every((c) => isInvader(sim, c))).toBe(true);
     expect(out.some((e) => e.type === 'ship.provoked' && e['reason'] === 'ambush')).toBe(true);
     expect(sim.world.get(skiff, ShipC)?.faction).toBe('hostile');
     expect(party.every((c) => sim.world.get(c, AllegianceC)?.faction === 'hostile')).toBe(true);
@@ -245,6 +258,7 @@ describe('the returning pirate: in its pocket', () => {
     expect(floorMissiles(sim)).toBe(floor0);
     expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before + 4);
     expect(ambushOf(sim)?.home).toBe(true);
+    expect(sim.world.has(playerShip(sim), ConsentC)).toBe(false); // gone home: the leave went with them
     // The party is back in its shuttle, and the skiff may jump away.
     const out = step(sim, 20 * 90);
     expect(sim.galaxy.event?.scene.ships[0]?.gone === 'fled' || sim.world.get(skiff, ShipC)?.state === 'fled' || out.some((e) => e.type === 'ship.fled')).toBe(true);
@@ -264,6 +278,7 @@ describe('the returning pirate: in its pocket', () => {
     expect(withPlayerAboard(sim, () => playerStock(sim, 'item.missile'))).toBe(before);
     expect(sim.story.flags['spared_pirate'] ?? 0).toBe(0);
     expect(out.some((e) => e.type === 'ship.fled')).toBe(true);
+    expect(sim.world.has(playerShip(sim), ConsentC)).toBe(false); // refused: no leave was ever given
   });
 
   it('a skiff wrecked after the dock was granted does not hold the player: the visit settles', () => {

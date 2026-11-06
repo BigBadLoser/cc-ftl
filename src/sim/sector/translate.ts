@@ -70,7 +70,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,
   container: null, allegiance: null, equip: null, equipOrder: null, emergencyArm: null, stowOrder: null, surrendered: null, prisoner: null, skillXp: null, traits: null, rolledSkills: null,
-  implants: null, storage: null, carrying: null, production: null, crew: null, priorities: null, needs: null,
+  implants: null, storage: null, carrying: null, production: null, crew: null, priorities: null, workBlock: null, needs: null,
   assignment: null, health: null, downed: null, dead: null, carried: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
   intent: null, interrupt: null, pickup: null, breakMemory: null, person: null, interaction: null,
   trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,

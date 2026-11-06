@@ -2,13 +2,18 @@ import type { Faction } from '../combat/components';
 import { defineComponent } from '../ecs';
 
 /**
- * Consent to come aboard (#173): on a host ship, who is aboard it as a guest, by whose leave. One record for every party that crosses onto a ship that is not
- * its own with the owner's agreement, so the rest of the sim asks one question (consent/guests.ts `guestOn`) instead of each owner's special case.
+ * Consent to come aboard (#173): on a host ship, who is aboard it as a guest, by whose leave. The one record for every party that crosses onto a ship that is
+ * not its own with the owner's agreement, so the rest of the sim asks one question (consent/guests.ts `guestOn`) instead of each owner's special case:
+ * the fight code (`isInvader`), provocation, the observer, a station's alarm, bed ownership and who works aboard read it and nothing else.
  *
- * - Who: the guests are a side (`faction`) and either an away site's party (crew whose `AwayC.site` is `site`) or named `crew`, or both.
- * - Granted by: `by`, the code that agreed it and owns its end. Built: 'aid' (scene/aid.ts: help agreed with a scene ship, guests = its aid site's party).
- *   The shape fits the others that cross today: an ambush skiff's party let aboard the player's ship ('visit', named crew), yard contractors ('yard',
- *   named crew), trade handover crews ('trade').
+ * - Who: the guests are a side (`faction`) and an away site's party (crew whose `AwayC.site` is `site`), named `crew`, or both; a grant naming neither
+ *   covers its whole side.
+ * - Granted by: `by`, the code that agreed it and owns its end; `from` tells apart the grants of one owner (the guests' own ship or craft).
+ *   - 'aid' (scene/aid.ts): help agreed with a scene ship; on that ship, for its aid site's party. Works aboard.
+ *   - 'yard' (yard/crew.ts): the shipyard's contractors, on the player's ship, for the yard site's party and its named crew. Works aboard.
+ *   - 'visit' (scene/visit.ts): a scene skiff's party let dock with the player's ship, its named crew, `from` the skiff. Does not work aboard.
+ *   - 'trade' (trade/deals.ts): the player's side, on a station, while a trade run is docked there, `from` the shuttle. Does not work aboard.
+ * - Works aboard (`work`): the guests take the host ship's jobs. A guest without it is off duty there: no jobs, no boarding drive (they stand by).
  * - Revoked by: its owner dropping it (`revoke`), or, whatever the owner does, the host being at war with the guests' side (a provoked ship's leave is void
  *   at once). A grant whose site is gone covers nobody by that site.
  */
@@ -17,6 +22,8 @@ export interface Grant {
   faction: Faction;
   site?: number;
   crew?: number[];
+  from?: number;
+  work?: true;
   since: number;
 }
 export interface Consent {

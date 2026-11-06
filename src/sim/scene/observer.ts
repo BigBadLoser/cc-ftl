@@ -1,6 +1,6 @@
 import { ShipC } from '../combat/components';
 import { uninvitedOn } from '../consent/guests';
-import { mended, running, timerShip } from './clock';
+import { mended, pending, timerShip } from './clock';
 import { CrewC, DeadC } from '../crew/components';
 import { SalvageOrderC } from '../salvage/components';
 import { hostileAboard } from '../salvage/system';
@@ -146,7 +146,7 @@ export function observeScene(sim: Sim, ev: EventGrid): void {
 function leaveFacts(ev: EventGrid, w: Watched): Set<SceneFact> {
   const out = new Set<SceneFact>();
   if (w.scene?.aid?.state === 'agreed') out.add('abandoned');
-  if (ev.scene.timers.some((t) => t.due === 'wreck' && running(t) && timerShip(ev.scene, t) === w.scene)) out.add('doomed');
+  if (ev.scene.timers.some((t) => t.due === 'wreck' && pending(t) && timerShip(ev.scene, t) === w.scene)) out.add('doomed');
   return out;
 }
 

@@ -12,6 +12,7 @@ import { courierDef } from '../trade/courier';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { boardCrew } from '../vehicles/lifecycle';
 import { YardCrewC, type YardOrder } from './types';
+import { grant, revoke } from '../consent/guests';
 
 /** Station crew who build for the player work construction and nothing else. */
 function builderPriorities(): Priorities {
@@ -28,7 +29,8 @@ export const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC)
  * (its home), with the crew already aboard: they are the site's party from the start. The site (owner 'yard') docks the shuttle at the
  * player's airlock the order chose, lands the party suited (`outside`: their work is on the hull), takes nothing home (`noLoot`) and has
  * no seats to offer (`demand` none); the site's run flies it, brings tired or hurt contractors home to the station, and brings everyone home
- * when the order closes the site. Contractors are the station's people but neutral to everyone. Returns false when it cannot be made.
+ * when the order closes the site. Contractors are the station's people but neutral to everyone, aboard the player's ship by its leave (a 'yard'
+ * consent grant for the site's party and the named crew, working; revoked in `dismiss`). Returns false when it cannot be made.
  */
 export function launchShuttle(sim: Sim, o: YardOrder): boolean {
   const cd = courierDef(sim);
@@ -62,6 +64,7 @@ export function launchShuttle(sim: Sim, o: YardOrder): boolean {
     dismiss(sim, o);
     return false;
   }
+  grant(sim, o.ship, { by: 'yard', faction: 'neutral', site: o.ship, crew: [...o.crew], from: o.station, work: true });
   return true;
 }
 
@@ -80,6 +83,7 @@ export function dismiss(sim: Sim, o: YardOrder): void {
     sim.world.destroyEntity(id);
   }
   o.crew = [];
+  revoke(sim, o.ship, 'yard', { site: o.ship });
   if (o.vehicle) sim.world.destroyEntity(o.vehicle);
   o.vehicle = 0;
 }

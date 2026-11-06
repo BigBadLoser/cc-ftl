@@ -1514,9 +1514,9 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
 - **Pirate ambush (step 4)** (`scene/visit.ts`, `boarding/party.ts`): a scene ship recipe may carry `ambush` (`AmbushRecipe`): the scene seed rolls
   trap or honest (`SceneShip.ambush`: `trap`, `party` 3, the hail `talk`, a `tell`, `askAfter`, `visit`). `attitude` adds to the hail score
   (`Trader.relation`) so a ship with a reason answers. **Boarding trigger outside combat:** either variant asks to dock `askAfter` s after the scene opens
-  (`visit: 'asked'`, event `scene.dockAsked`, EventPanel's request with Let them dock / Refuse = command `galaxy.visit`). Granted: `Boarder.visit`
-  lets `boardingAiSystem` run the neutral ship's party (`startParty`, moved to `boarding/party.ts`, sent from `tendVisit` so embark orders are in
-  place); once one of them stands on the player's ship (`aboard`) they pass for guests `AMBUSH_SPRING_SEC`, then `hostileAct(ship, 'ambush')` turns
+  (`visit: 'asked'`, event `scene.dockAsked`, EventPanel's request with Let them dock / Refuse = command `galaxy.visit`). Granted: a 'visit' consent
+  grant on the player's ship (`ConsentC`, from the skiff, see "Consent" below) lets `boardingAiSystem` run the neutral ship's party (`startParty`, moved to `boarding/party.ts`, sent from `tendVisit` so embark orders are in
+  place); once one of them stands on the player's ship (`aboard`) they are guests (not invaders, off duty) for `AMBUSH_SPRING_SEC`, then `hostileAct(ship, 'ambush')` turns
   the group (`turnShip` now also turns `Boarder.crew` standing on another grid) and records it as every provocation does. Refusing a trap does the same
   without a party. An honest party never springs: at `aboard` it becomes `delivered` (observer fact, rule `honestPaid`; its missiles are an `items` effect with `at: 'visitAirlock'`: `spillItems` on the floor just inside the airlock the shuttle is docked at, hauled by the crew), `HONEST_STAY_SEC` later
   its crew `vehicle.embark`, the shuttle `undock`s and `return`s, `home` is set and the skiff is dismissed (`leaveAt` now, so `departScene` jumps it
@@ -1540,6 +1540,16 @@ a snapshot. Its stock and wallet are rolled from `hash(world seed, ship.gen.seed
 depend on when the ship is hailed and never touch `sim.rng`.
 
 **Content** (`ContentRegistry.trade`, `src/content/trade.ts`; item prices are `ItemDef.price`, an item with no price is not for sale):
+- **Consent** (`src/sim/consent/`, #173): leave to come aboard is one record, `ConsentC` on the host ship: grants `{ by, faction, site?, crew?, from?, work? }`
+  (`aid` scene help, `yard` contractors, `visit` an ambush skiff's party, `trade` the player's side on a station while a run is docked). `guestOn` is
+  the one question: `isInvader`, provocation, the observer (`uninvitedOn`), a station's alarm, bed ownership and `wreckShip` (guests survive a wreck)
+  read it; a guest without `work` is off duty. A grant is void while the host is at war with the guests' side.
+- **Work blocks** (`WorkBlockC`, `crew/workBlock.ts`): work categories a crew member cannot do, each with a reason; `jobFits` skips them. A scene ship's
+  `lacks` blocks them for its crew (reason 'scene': the freighter's crew cannot repair).
+- **Enemy target choice** (`systems/enemyAi.ts` `TARGET_ORDER`): threat (`Combat.threat`, the last ship that fired on it, `AI_THREAT_SEC`), then
+  `Combat.prey`, then `firstFoe`.
+- **Distress freighter (step 5)**: scene timers start at deploy (`scene/clock.ts`); `due: 'wreck'` with `blast` applies weapon effects at the failing
+  module, breaches the nearest hull wall, emits `ship.blast` (drawn by `render/sectorFx.ts`) and destroys every power source (the ship-state system wrecks it).
 - `spread {sell, buy}` and `repStep`/`repMax`: a trader sells at base x 1.25 and buys at base x 0.6 before modifiers.
 - `factions`: `TradeFactionDef` by generator faction id (`faction.civilian`) or combat side (`side.hostile`): `relation`, the `reputation`
   key into `story.reputation`, optional `sell`/`buy` multipliers. This table stands in for the faction system being built separately.

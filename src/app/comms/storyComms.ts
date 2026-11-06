@@ -18,7 +18,7 @@ import { transcriptOf } from './transcript';
 const FACTION_COLOUR: Record<string, string> = { pirates: '#c96b3a', civilian: 'var(--green)', government: 'var(--cyan)', corporation: 'var(--amber)', rogue: 'var(--red)' };
 const cap = (t: string): string => `${t[0]?.toUpperCase() ?? ''}${t.slice(1)}`;
 const STANCE: Record<SceneShip['stance'], { label: string; tone: CommsTone }> = {
-  neutral: { label: 'Neutral', tone: 'amber' }, hostile: { label: 'Hostile', tone: 'red' }, helpless: { label: 'Helpless', tone: 'cyan' },
+  neutral: { label: 'Neutral', tone: 'amber' }, hostile: { label: 'Hostile', tone: 'red' }, helpless: { label: 'Helpless', tone: 'amber' },
 };
 
 export interface CommsInput {

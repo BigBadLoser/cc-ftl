@@ -67,6 +67,20 @@ export const CrewC = defineComponent<Crew>('crew');
 export type Priorities = Record<WorkCategory, number>;
 export const PrioritiesC = defineComponent<Priorities>('priorities');
 
+/**
+ * Work this crew member cannot do, whatever their priorities say: each entry a work category and why (`'scene'`: a scene ship's crew that lack the
+ * hands for it, scene/open.ts; traits and conditions add their own reasons). Job picks skip jobs of a blocked category (crew/jobFit.ts); the priority
+ * grid shows it dim with the reason. Written through crew/workBlock.ts.
+ */
+export interface WorkBlock {
+  category: WorkCategory;
+  why: string;
+}
+export interface WorkBlocks {
+  blocked: WorkBlock[];
+}
+export const WorkBlockC = defineComponent<WorkBlocks>('workBlock');
+
 /** Needs on a 0..100 scale where 100 = fully satisfied. */
 export interface Needs {
   rest: number;

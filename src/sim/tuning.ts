@@ -195,6 +195,8 @@ export const FLEE_BELOW = 0.3;
 /** Ticks between ship-state and AI re-evaluations. */
 export const SHIP_STATE_INTERVAL = 10;
 export const AI_RETARGET_TICKS = 40;
+/** Seconds a ship that fired on an AI ship stays its threat (`Combat.threat`): the first in its target choice while it lasts. */
+export const AI_THREAT_SEC = 15;
 /** Fire intensity set by incendiary hits. */
 export const IGNITE_INTENSITY = 90;
 /** Crew with operating priority at or below this level (1 or 2) will man consoles on their own. */

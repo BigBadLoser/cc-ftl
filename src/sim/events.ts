@@ -272,6 +272,8 @@ export type SimEvent =
   /** A ship of `owner` jumped into the node but found no room to appear (`ship` null; `name`, `faction` and the position are empty); it stays a contact and is retried. */
   | { type: 'ship.arrived'; node: string; ship: null; name: ''; faction: null; owner: string; reason: ArriveReason; x: 0; y: 0 }
   /** A ship left the current grid, lifted out of it or wrecked, from tile centre (x, y). */
+  /** A blast aboard a ship (a scene's failing reactor, scene/clock.ts) at a tile, reaching `radius` tiles: what the renderer shows as an explosion. */
+  | { type: 'ship.blast'; ship: number; x: number; y: number; radius: number }
   | { type: 'ship.departed'; ship: number; name: string; faction: Faction; owner: string; reason: DepartReason; x: number; y: number }
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }

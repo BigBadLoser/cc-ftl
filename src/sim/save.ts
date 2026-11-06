@@ -117,7 +117,7 @@ import { newYard, type YardState } from './yard/types';
  * v94 (the pirate ambush, #173): `SceneShip.ambush` and `attitude`; `Trader.relation`; `Boarder.visit`; `Ship.provoked` may be 'ambush'.
  * v95 (relationships, #239): `bonds` (the opinion store, keyed by person id), `PersonC` on crew, `InteractionC` while two chat or shout, optional `Mood.grief`, `chat` and `row`.
  * v96 (the distress freighter, #173): `SceneShip` tag, damage, arrivals, prey and `aid`; `SceneTimer` world conditions; `Combat.prey`;
- *     `Module.outsideFix`; `ConsentC` (leave to come aboard) on host ships; away site owner 'aid'.
+ *     `SceneShip.lacks`; `Combat.threat`; `WorkBlockC` (work a crew member cannot do); `ConsentC` (leave to come aboard) on host ships; away site owner 'aid'.
  */
 export const SAVE_VERSION = 96;
 

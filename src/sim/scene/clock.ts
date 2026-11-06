@@ -1,10 +1,13 @@
 import { ShipC } from '../combat/components';
 import { hash32, strHash } from '../galaxy/hash';
 import { ModuleC } from '../modules/components';
-import { shipGrid } from '../regions';
+import { shipGrid, shipIdOf } from '../regions';
+import { applyEffects, damageModule } from '../combat/effects';
+import { damageStruct } from '../combat/hull';
+import { rotatedSize } from '../modules/footprint';
 import { Rng } from '../rng';
 import type { Sim } from '../sim';
-import { Struct } from '../structure';
+import { Struct, bordersSpace } from '../structure';
 import { TICK_HZ } from '../time';
 import { FIRE_START_INTENSITY } from '../tuning';
 import type { SceneShip, SceneSpec, SceneTimer } from './types';
@@ -13,8 +16,10 @@ import type { SceneShip, SceneSpec, SceneTimer } from './types';
  * Scene timers that act on the world (DESIGN.md "Physical encounters", timers; "Distress freighter": the reactor fires, then it blows). A timer is a
  * condition, not a script: about the ship it names, it stops for good once that ship's failing systems are mended (`stopOn: 'repaired'`), breaks out
  * fires aboard it as it runs down (`fires`: in the last `leadSec`, a wave every `everySec`, each one fire larger, at most `max`), and at zero does its
- * `due` (`wreck`: every power source aboard is destroyed, and the ship-state system makes it a wreck, as any ship with no power left; whoever is still
- * aboard goes with it). Run once a second by the scene system; deterministic (the fires' tiles are rolled from the scene key, the timer and the wave).
+ * `due` (`wreck`: the failing system blows, `blow`: its `blast` effects at its middle, the weapon effects any hit is made of, and a hull breach beside
+ * it; then every power source aboard is destroyed and the ship-state system makes it a wreck, as any ship with no power left. The wreck takes its own
+ * crew; a guest party aboard lives or dies by the blast, the fire and the vacuum, combat/wreck.ts). Timers start when the player deploys. Run once a
+ * second by the scene system; deterministic (the fires' tiles are rolled from the scene key, the timer and the wave).
  */
 
 /** The scene ship a timer is about, by tag. */
@@ -31,6 +36,8 @@ export function mended(sim: Sim, ids: readonly number[] | undefined): boolean {
 
 /** True while a timer still runs: it started, was not stopped, and has not come due. */
 export const running = (t: SceneTimer): boolean => t.at !== undefined && !t.stopped && !t.blown;
+/** True while a timer has not been stopped or come due (started or still waiting for the player to deploy). */
+export const pending = (t: SceneTimer): boolean => !t.stopped && !t.blown;
 
 /** The burnable tiles of a ship (floor and doors), nearest the first of `near` first (ties in tile order). */
 function burnable(sim: Sim, ship: number, near: { x: number; y: number } | undefined): { x: number; y: number }[] {
@@ -60,19 +67,60 @@ function ignite(sim: Sim, spec: SceneSpec, t: SceneTimer, ship: number, near: { 
   }
 }
 
-/** Destroy every power source aboard (the ship-state system wrecks a ship with none left) and set the failing system's room alight. */
-function blow(sim: Sim, spec: SceneSpec, t: SceneTimer, ship: number, near: { x: number; y: number } | undefined): void {
-  for (const id of sim.world.query(ModuleC)) {
-    const m = sim.world.get(id, ModuleC);
-    const def = m && sim.content.modules[m.def];
-    if (m && def && def.power > 0 && shipGrid(sim, ship)?.inBounds(m.x, m.y)) m.hp = 0;
+/** The wall tile nearest `at` that borders space (a hull wall), or null. */
+function nearestHull(sim: Sim, ship: number, at: { x: number; y: number }): { x: number; y: number } | null {
+  const grid = shipGrid(sim, ship);
+  if (!grid) return null;
+  let best: { x: number; y: number; d: number } | null = null;
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      if (grid.get('struct', x, y) !== Struct.Wall || !bordersSpace(grid, x, y)) continue;
+      const d = Math.max(Math.abs(x - at.x), Math.abs(y - at.y));
+      if (!best || d < best.d) best = { x, y, d };
+    }
   }
-  ignite(sim, spec, t, ship, near, 1, 8);
+  return best;
 }
 
-/** Once a second in the event grid: stop, burn and blow per each timer's conditions. True when a timer stopped or came due. */
+/**
+ * The failing system explodes (`SceneTimer.blast` at its middle, as a hit there; the nearest hull wall breached; a `ship.blast` event the renderer
+ * shows), then the ship goes dark: every power source aboard is destroyed (the ship-state system wrecks a ship with none left).
+ */
+function blow(sim: Sim, spec: SceneSpec, t: SceneTimer, ship: number, failing: number | undefined): void {
+  const m = failing === undefined ? undefined : sim.world.get(failing, ModuleC);
+  const def = m && sim.content.modules[m.def];
+  const grid = shipGrid(sim, ship);
+  if (m && def && t.blast && grid) {
+    const [w, h] = rotatedSize(def, m.rot);
+    const at = { x: m.x + Math.floor(w / 2), y: m.y + Math.floor(h / 2) };
+    applyEffects(sim, { shipId: ship, x: at.x, y: at.y, projectile: 0, weapon: '' }, t.blast);
+    const wall = nearestHull(sim, ship, at);
+    if (wall) damageStruct(grid, wall.x, wall.y, Infinity);
+    const radius = Math.max(0, ...t.blast.map((e) => ('radius' in e ? e.radius ?? 0 : 0)));
+    sim.events.emit({ type: 'ship.blast', ship, x: at.x + 0.5, y: at.y + 0.5, radius });
+  } else ignite(sim, spec, t, ship, m ? { x: m.x, y: m.y } : undefined, 1, 8);
+  for (const id of sim.world.query(ModuleC)) {
+    const p = sim.world.get(id, ModuleC);
+    const pd = p && sim.content.modules[p.def];
+    if (p && pd && pd.power > 0 && p.hp > 0 && shipIdOf(sim, p) === ship) damageModule(sim, id, p.hp, ship);
+  }
+}
+
+/** Start the scene's timers once the player's ship is deployed in the pocket (not while it picks its spot). True when one started. */
+function startClocks(sim: Sim, spec: SceneSpec): boolean {
+  if (sim.sector.state !== 'active') return false;
+  let started = false;
+  for (const t of spec.timers) {
+    if (t.at !== undefined) continue;
+    t.at = sim.tick + Math.round(t.afterSec * TICK_HZ);
+    started = true;
+  }
+  return started;
+}
+
+/** Once a second in the event grid: start, stop, burn and blow per each timer's conditions. True when a timer started, stopped or came due. */
 export function tendClocks(sim: Sim, spec: SceneSpec): boolean {
-  let changed = false;
+  let changed = startClocks(sim, spec);
   for (const t of spec.timers) {
     if (!running(t) || (!t.stopOn && !t.fires && !t.due)) continue;
     const s = timerShip(spec, t);
@@ -89,7 +137,7 @@ export function tendClocks(sim: Sim, spec: SceneSpec): boolean {
     const near = m ? { x: m.x, y: m.y } : undefined;
     const at = t.at as number;
     if (sim.tick >= at) {
-      if (t.due === 'wreck') blow(sim, spec, t, id, near);
+      if (t.due === 'wreck') blow(sim, spec, t, id, s.failing?.[0]);
       t.blown = true;
       changed = true;
       continue;
