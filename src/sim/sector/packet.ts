@@ -1,4 +1,5 @@
 import { ShipC } from '../combat/components';
+import { reportDeparted } from '../combat/departure';
 import { restoreTasks } from '../ai/task';
 import type { EntityData } from '../ecs';
 import type { DenseGrid } from '../grid';
@@ -76,6 +77,7 @@ export function liftShip(sim: Sim, ship: number, opts: LiftOptions = {}): ShipPa
     const body = sim.world.get(id, BodyC);
     if (body) body.alt = ALT.cruise;
   }
+  reportDeparted(sim, ship, opts.reason ?? 'jump-away');
   const rect = shipRect(s);
   const grid = sim.sector.grid;
   const tiles: Record<string, number[]> = {};

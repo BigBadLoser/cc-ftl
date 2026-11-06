@@ -3,6 +3,13 @@ import type { BreakContext, BreakKind, BreakTier } from './crew/breakTypes';
 import type { JobKind } from './crew/components';
 import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
+import type { DealPhase } from './trade/types';
+import type { ItemQty } from './registry';
+
+/** Why a ship turned up in the current grid (`ship.arrived`). */
+export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
+/** Why a ship left the current grid (`ship.departed`). */
+export type DepartReason = 'jump-away' | 'fled' | 'fleet' | 'scene' | 'wrecked';
 
 /** Outbound notifications for UI and audio. */
 export type SimEvent =
@@ -254,6 +261,18 @@ export type SimEvent =
   /** The deal's credits were paid out (`credits`: positive = the player paid, negative = the player was paid, 0 = barter). */
   | { type: 'trade.settled'; deal: number; ship: number; credits: number }
   | { type: 'trade.failed'; deal: number; ship: number; reason: string }
+  /**
+   * A deal's phase changed (`from` null: the deal was just opened). `ship` is the trading partner, `vehicle` the shuttle (0: none yet), `dock` the airlock
+   * the deal holds at the station (0: none), `trip` the order's trip n of `of` (null: a single trip). `give`/`get` are the goods of the current trip.
+   * Handover deals (station jobs) carry `handover`.
+   */
+  | { type: 'trade.phase'; deal: number; ship: number; from: DealPhase | null; to: DealPhase; vehicle: number; dock: number; trip: { n: number; of: number } | null; give: ItemQty[]; get: ItemQty[]; handover: boolean; reason?: string }
+  /** A ship came into the current grid (`owner`: the faction that owns it, '' if unknown; `faction`: its combat side) at tile centre (x, y). Not for the player's own ship. */
+  | { type: 'ship.arrived'; node: string; ship: number; name: string; faction: Faction; owner: string; reason: ArriveReason; x: number; y: number }
+  /** A ship of `owner` jumped into the node but found no room to appear (`ship` null; `name`, `faction` and the position are empty); it stays a contact and is retried. */
+  | { type: 'ship.arrived'; node: string; ship: null; name: ''; faction: null; owner: string; reason: ArriveReason; x: 0; y: 0 }
+  /** A ship left the current grid, lifted out of it or wrecked, from tile centre (x, y). */
+  | { type: 'ship.departed'; ship: number; name: string; faction: Faction; owner: string; reason: DepartReason; x: number; y: number }
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }
   | { type: 'galaxy.hyperspace'; ship: number; route: string[]; charge: number }
@@ -317,7 +336,6 @@ export type SimEvent =
   | { type: 'goal.actDone'; act: string; title: string }
   | { type: 'job.closed'; id: number; kind: StationJobKind; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
   | { type: 'galaxy.discovered'; count: number }
-  | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 
@@ -327,10 +345,20 @@ export type SimEvent =
  */
 export class EventBuffer {
   private buffer: SimEvent[] = [];
+  private stamps = new WeakMap<SimEvent, number>();
+
+  /** `clock` reads the tick an event is emitted in (see `tickOf`). */
+  constructor(private readonly clock: () => number = () => 0) {}
 
   /** Record an event. */
   emit(e: SimEvent): void {
+    this.stamps.set(e, this.clock());
     this.buffer.push(e);
+  }
+
+  /** The tick an event was emitted in (a drained event keeps its stamp), or `fallback` for an event this buffer never saw. */
+  tickOf(e: SimEvent, fallback: number): number {
+    return this.stamps.get(e) ?? fallback;
   }
 
   /** Return all buffered events and clear the buffer. */

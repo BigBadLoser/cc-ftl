@@ -324,6 +324,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
         lastReport = done.report;
         alerts.post({ kind: 'fight.report', key: 'fr', text: done.summary.text, report: true });
       }
+      bridge.onEvents(events);
       alerts.onEvents(events);
       alerts.syncIncoming();
       log.onEvents(events);

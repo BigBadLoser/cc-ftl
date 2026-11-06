@@ -30,7 +30,7 @@ export class Sim {
   rng: Rng;
   world = new World();
   commands = new CommandQueue();
-  events = new EventBuffer();
+  events = new EventBuffer(() => this.tick);
   /** Event system state: flags, reputation, the open decision, queue (see story/). */
   story: StoryState;
   /** Trade state: the player's credits, hails, offers and deals (see trade/). NPC wallets and stock are `TraderC` components. */

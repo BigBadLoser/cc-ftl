@@ -1,3 +1,4 @@
+import { reportDeparted } from './departure';
 import { killCrew } from '../crew/death';
 import { CrewC, PositionC } from '../crew/components';
 import { ModuleC } from '../modules/components';
@@ -21,6 +22,7 @@ function playerTargets(sim: Sim, shipId: number): boolean {
 export function wreckShip(sim: Sim, shipId: number): void {
   const ship = sim.world.get(shipId, ShipC) as Ship;
   if (ship.faction !== 'player' && playerTargets(sim, shipId)) ship.killedBy = 'player';
+  reportDeparted(sim, shipId, 'wrecked');
   ship.state = 'wreck';
   ship.integrity = Math.min(ship.integrity, WRECK_BELOW);
   for (const id of sim.world.query(CrewC, PositionC)) {

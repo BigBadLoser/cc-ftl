@@ -4,7 +4,7 @@ import { bumpStat } from '../story/goals';
 import { FUEL_ITEM } from '../galaxy/fuel';
 import { settlement, type OfferCheck } from './offers';
 import { unitPrice } from './pricing';
-import { TraderC, type Deal, type Offer, type Trader, type Trip } from './types';
+import { TraderC, type Deal, type DealPhase, type Offer, type Trader, type Trip } from './types';
 import type { CourierPlan } from './courier';
 import { releaseRecruits } from './recruitLand';
 import { canStart } from './trips';
@@ -60,6 +60,16 @@ export function touchMarket(sim: Sim, trader: { port?: string } | undefined): vo
   if (trader?.port) sim.galaxy.rev++;
 }
 
+/** The one place a deal's phase changes: sets it, restarts the phase timer and reports it as `trade.phase` (output only). */
+export function setPhase(sim: Sim, d: Deal, to: DealPhase, from: DealPhase | null = d.phase): void {
+  d.phase = to;
+  d.timer = 0;
+  sim.events.emit({
+    type: 'trade.phase', deal: d.id, ship: d.ship, from, to, vehicle: d.vehicle, dock: d.dock?.airlock ?? 0, trip: d.trip && d.trip.of > 1 ? { n: d.trip.n, of: d.trip.of } : null,
+    give: d.give.map((l) => ({ ...l })), get: d.get.map((l) => ({ ...l })), handover: !!d.handover, ...(d.reason ? { reason: d.reason } : {}),
+  });
+}
+
 export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: CourierPlan, trips: Trip[] = [], queued = false): Deal {
   const trader = sim.world.get(offer.ship, TraderC);
   const first = trips[0];
@@ -72,6 +82,7 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
     // Behind an earlier deal with this partner: nothing is held until it reaches the front (queue.ts).
     sim.trade.deals.push(deal);
     sim.trade.offers = sim.trade.offers.filter((o) => o.id !== offer.id);
+    setPhase(sim, deal, 'queued', null);
     return deal;
   }
   holdTrip(sim, deal, trader);
@@ -80,6 +91,7 @@ export function openDeal(sim: Sim, offer: Offer, check: OfferCheck, plan: Courie
   if (v && deal.give.length > 0) v.outbound = true;
   sim.trade.deals.push(deal);
   sim.trade.offers = sim.trade.offers.filter((o) => o.id !== offer.id);
+  setPhase(sim, deal, 'dispatch', null);
   return deal;
 }
 
@@ -135,9 +147,8 @@ export function settleDeal(sim: Sim, d: Deal): boolean {
     if (canStart(sim, d.ship, next, d.barter)) return startTrip(sim, d, next);
     d.trip.stopped = 'short';
   }
-  d.phase = 'done';
-  d.timer = 0;
   if (d.trip) d.trip.rest = [];
+  setPhase(sim, d, 'done');
   bumpStat(sim, 'trades');
   trimHistory(sim);
   return false;
@@ -161,8 +172,7 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
   } else if (v && d.give.length > 0) v.outbound = true;
   delete d.dock;
   delete d.via;
-  d.phase = 'dispatch';
-  d.timer = 0;
+  setPhase(sim, d, 'dispatch');
   return true;
 }
 
@@ -178,10 +188,9 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
   touchMarket(sim, trader);
   d.held = 0;
-  d.phase = 'failed';
   d.reason = reason;
   if (d.trip) d.trip.rest = []; // the trips still to come were never started: nothing is held for them
-  d.timer = 0;
+  setPhase(sim, d, 'failed');
   const v = d.vehicle ? sim.world.get(d.vehicle, VehicleC) : undefined;
   if (v) {
     v.outbound = false;
