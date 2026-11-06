@@ -368,3 +368,22 @@ describe('sources', () => {
     expect(storageCount).toBeDefined();
   });
 });
+describe('hold all and the flak order', () => {
+  it('releasing hold all puts each weapon back on the mode it had, flak AUTO included', () => {
+    const { sim, gun, ship } = setup();
+    const at = sim.world.get(gun, ModuleC) as { x: number; y: number };
+    const flak = spawnModule(sim, 'module.flakCannon', at.x, at.y, 0);
+    const laser = sim.world.get(gun, WeaponC) as { mode: string };
+    laser.mode = 'hold';
+    const w = sim.world.get(flak, WeaponC) as { mode: string; autoDrone?: boolean };
+    expect(w.mode).toBe('auto');
+    sim.enqueue({ type: 'combat.holdAll', ship, hold: true });
+    sim.step();
+    expect([w.mode, laser.mode]).toEqual(['hold', 'hold']);
+    expect(w.autoDrone).toBe(true);
+    sim.enqueue({ type: 'combat.holdAll', ship, hold: false });
+    sim.step();
+    expect([w.mode, laser.mode]).toEqual(['auto', 'hold']);
+    expect(w.autoDrone).toBe(true);
+  });
+});
