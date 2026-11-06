@@ -10,7 +10,8 @@
 lighting). So each icon is rasterised here at 1x from simple shapes (ellipses, polygons, thick segments) in a fixed set of
 colours, with the dark 1 px outline every sprite has. No bpy: plain numpy, it renders in well under a second.
 
-Every frame is a W x H canvas anchored at the bottom centre. Animations are 2-4 frames that loop. Symbols sit in the
+Every frame is a W x H canvas anchored at the bottom centre; a thought bubble's anchor is THOUGHT_DX px left of
+centre, so the bubble floats up and to the right with its puffs over the head. Animations are 2-4 frames that loop. Symbols sit in the
 bubble's inside, about x 7..25, y 5..23."""
 import math
 
@@ -18,6 +19,7 @@ import numpy as np
 
 W, H = 32, 32
 FPS = 4
+THOUGHT_DX = 10                 # a thought bubble sits this many px right of the head, so its puffs rise from it
 # name: hex. Tier and state colours are the UI's colour roles (theme.css: --red, --amber).
 COL = {
     "K": "#151c28",                                         # outline
@@ -307,15 +309,15 @@ def items():
     from .crew_marks_bubbles import TIERS, in_bubble
     out = []
 
-    def add(sid, fn, n):
+    def add(sid, fn, n, dx=0):
         for f in range(n):
             c = fn(f)
-            out.append({"id": f"{sid}.{f}", "rgba": c.rgba(), "ax": c.w // 2, "ay": c.h})
+            out.append({"id": f"{sid}.{f}", "rgba": c.rgba(), "ax": c.w // 2 - dx, "ay": c.h})
     for k, (fn, n) in SOCIAL.items():
         add(f"crew.mark.{k}", fn, n)
     for k, (fn, n) in BREAKS.items():
         for t in TIERS:
-            add(f"crew.mark.break.{k}.{t}", lambda f, k=k, t=t, fn=fn: in_bubble(k, fn(f), t, f), n)
+            add(f"crew.mark.break.{k}.{t}", lambda f, k=k, t=t, fn=fn: in_bubble(k, fn(f), t, f), n, THOUGHT_DX)
     for k, (fn, n) in FIGHT.items():
         add(f"crew.mark.{k}", fn, n)
     return out

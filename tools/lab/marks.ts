@@ -28,23 +28,25 @@ async function frames(atlas: Atlas, src: string): Promise<{ get: Frames; fps: nu
   if (atlas.ids('crew.mark.').length) {
     return { fps: 4, get: (id) => atlas.ids(`${id}.`).concat(atlas.ids(id).filter((x) => x === id)).map((x) => atlas.stat(x)?.tex).filter((t): t is Texture => !!t) };
   }
-  const j = await (await fetch(`${src}marks.json`)).json() as { fps: number; frames: Record<string, { x: number; y: number; w: number; h: number }> };
+  const j = await (await fetch(`${src}marks.json`)).json() as { fps: number; frames: Record<string, { x: number; y: number; w: number; h: number; ax: number; ay: number }> };
   const sheet = await Assets.load<Texture>(`${src}marks.png?t=${Date.now()}`);
   sheet.source.scaleMode = 'nearest';
   const tex = new Map<string, Texture>();
-  for (const [id, f] of Object.entries(j.frames)) tex.set(id, new Texture({ source: sheet.source, frame: new Rectangle(f.x, f.y, f.w, f.h) }));
+  for (const [id, f] of Object.entries(j.frames)) {
+    tex.set(id, new Texture({ source: sheet.source, frame: new Rectangle(f.x, f.y, f.w, f.h), defaultAnchor: { x: f.ax / f.w, y: f.ay / f.h } }));
+  }
   return {
     fps: j.fps,
     get: (id) => (tex.has(id) ? [tex.get(id) as Texture] : [...tex.keys()].filter((k) => k.startsWith(`${id}.`)).map((k) => tex.get(k) as Texture)),
   };
 }
 
-/** An icon as a container whose bottom centre is its origin; `set(t)` picks the frame. */
-function icon(get: Frames, fps: number, id: string, k: number, flip = false): { node: Container; set: (t: number) => void } {
+/** An icon as a container whose anchor (its bottom centre with `centred`) is its origin; `set(t)` picks the frame. */
+function icon(get: Frames, fps: number, id: string, k: number, flip = false, centred = false): { node: Container; set: (t: number) => void } {
   const node = new Container();
   const fr = get(id);
   const s = new Sprite(fr[0] ?? Texture.EMPTY);
-  s.anchor.set(0.5, 1);
+  s.anchor.copyFrom(!centred && fr[0]?.defaultAnchor ? fr[0].defaultAnchor : { x: 0.5, y: 1 }); // the grids centre each frame; scenes use its anchor
   s.scale.set(k * (flip ? -1 : 1), k);
   node.addChild(s);
   return { node, set: (t) => { if (fr.length) s.texture = fr[Math.floor(t * fps) % fr.length] as Texture; } };
@@ -113,7 +115,7 @@ export const marksPanel: LabPanel = {
           newRow: i === 0,
           mount(root) {
             for (let f = 0; f < n; f++) {
-              const ic = icon(get, fps, ID(name), k);
+              const ic = icon(get, fps, ID(name), k, false, true);
               ic.node.position.set((f * (F + 2) + F / 2 + 2) * k, (F + 2) * k);
               ic.set(f / fps + 0.01);
               root.addChild(ic.node);
@@ -134,7 +136,7 @@ export const marksPanel: LabPanel = {
       mount(root) {
         const sets: ((t: number) => void)[] = [];
         BREAKS.forEach((k, a) => TIERS.forEach((t, b) => {
-          const ic = icon(get, fps, ID(k, t), 3);
+          const ic = icon(get, fps, ID(k, t), 3, false, true);
           ic.node.position.set(((a * 3 + b) * (F + 2) + F / 2 + 1) * 3 + a * 16, (F + 2) * 3);
           root.addChild(ic.node);
           sets.push(ic.set);
