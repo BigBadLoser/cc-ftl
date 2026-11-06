@@ -26,7 +26,7 @@
     <button class:on={!hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: false })} data-testid="hull-add">Add</button>
     <button class:on={hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: true })} title="Takes planned tiles out; real hull stays" data-testid="hull-erase">Erase</button>
   </div>
-  <div class="seg" role="group" aria-label="Mirror">
+  <div class="tools">
     <button class:on={hull.mirror} onclick={() => set({ mirror: !hull.mirror })} title="Repeat every stroke on the other side of the ship's long axis" aria-pressed={hull.mirror} data-testid="hull-mirror">Mirror</button>
     <button disabled={!plan?.tiles.length} onclick={() => plan && api.dispatch({ type: 'hull.plan', ship: plan.ship, tiles: [] })} data-testid="hull-clear">Clear</button>
   </div>
@@ -43,10 +43,17 @@
 <style>
   .planbar { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 52px); display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); font-size: 13px; color: #c8c8c8; }
   .t { white-space: nowrap; color: var(--amber); font: 600 13px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .seg { display: flex; gap: 3px; }
-  .seg button { flex: none; white-space: nowrap; min-height: 26px; height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
-  .seg button.on { border-color: var(--amber); background: var(--amber); color: #1a1204; }
-  .seg button:disabled { opacity: 0.4; }
+  /* Build look (black, amber), like the build catalog. A `.seg` is one joined control: the options share the outer border and a 1px divider. */
+  .seg { display: flex; border: 1px solid #3a3a3a; }
+  .tools { display: flex; gap: 6px; }
+  .seg button, .tools button { flex: none; white-space: nowrap; min-width: 0; min-height: 26px; height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; background: #050505; color: var(--amber); }
+  .seg button { border: 0; }
+  .seg button + button { border-left: 1px solid #3a3a3a; }
+  .tools button { border: 1px solid #3a3a3a; }
+  .seg button:hover:not(:disabled), .tools button:hover:not(:disabled) { background: #161106; }
+  .seg button.on, .tools button.on { background: var(--amber); color: #1a1204; }
+  .tools button.on { border-color: var(--amber); }
+  .seg button:disabled, .tools button:disabled { opacity: 0.4; }
   .s { white-space: nowrap; }
   .bad { color: var(--red); }
   .dim { color: #8a8a8a; }
