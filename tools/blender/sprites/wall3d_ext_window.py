@@ -54,7 +54,7 @@ RIB_PLATE_TONE = YS[3]              # seam, down to the sill; REC proud, its fac
 MID_PLATE = (3, 0, 5)               # W2's sill: a plate on its slope, these px in from the tile's sides, from this
 MID_PLATE_RISE = 1                  # many px down it on screen (from its top) this many px on down it; this many
 MID_PLATE_SIDE = YS[1]              # px proud, its sides in this tone
-FRONT_PLATES = (5, 3, 5, 3)         # W2's sill front: two plates, from these px either side of the tile's centre,
+FRONT_PLATES = (5, 4, 8, 3)         # W2's sill front: two plates, from these px either side of the tile's centre,
                                     # this many px wide, from its top this many px down, wrapping over onto the
                                     # slope this many px up it on screen; REC proud (on the slope MID_PLATE_RISE),
                                     # the window post's tone
