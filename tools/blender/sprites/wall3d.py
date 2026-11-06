@@ -218,9 +218,9 @@ def paint(k, ax, plane, u0, u1, z0, z1, on, fam, lvl):
     slab(k, ax, plane, u0, u1, z0, z1, on + PAINT, fam, lvl)
 
 
-def posts(k, ax, plane, a, b, ends, z0, z1, fam):
-    """A post at each tile edge and each face end (running on round an outer corner), a groove down each; returns
-    the fields between them: (u0, u1)."""
+def posts(k, ax, plane, a, b, ends, z0, z1, fam, groove=True):
+    """A post at each tile edge and each face end (running on round an outer corner), a groove down each (unless
+    not groove); returns the fields between them: (u0, u1)."""
     fields = []
     for u0, u1 in spans(a, b):
         f0, f1 = u0, u1
@@ -231,7 +231,8 @@ def posts(k, ax, plane, a, b, ends, z0, z1, fam):
             q0, q1 = (edge - x, edge + STILE) if lo else (edge - STILE, edge + x)
             slab(k, ax, plane, q0, q1, z0, z1, FR, fam, 3, ends=(not seam, True) if lo else (True, not seam))
             g = edge + 0.065 if lo else edge - 0.065 - LINE
-            paint(k, ax, plane, g, g + LINE, z0, z1, FR, fam, 1)
+            if groove:
+                paint(k, ax, plane, g, g + LINE, z0, z1, FR, fam, 1)
             if lo:
                 f0 = edge + STILE
             else:
@@ -266,7 +267,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
           fam, 3, cols=[False, None, None, False], mitre=mit)
     zg = zl + 6 * PZ                                    # the seam over it
     if zg + PZ >= top - 0.03:
-        return zg
+        return zg, zl + LIP_H
     paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ, 0.0, fam, 2)                                 # (the face over it)
     paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
     for u in _thirds(a, b):
@@ -275,7 +276,7 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
         prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], fam, 1,
               cols=[False, None, None, False])
         paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
-    return zg + PZ
+    return zg + PZ, zl + LIP_H
 
 
 def _rail(k, ax, plane, a, b, ends, top, fam):
@@ -301,12 +302,12 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     """Partition (set 7): a low band, posts with a groove, a header in three blocks; in each field an outlined panel
     with two ochre bars in a dark slot, a raised bar across it and two fine lines under it."""
     F = "wall"
-    zb = _lip(k, ax, plane, a, b, ends, zs, top, F)                                             # the lip
+    zb, zlt = _lip(k, ax, plane, a, b, ends, zs, top, F)                                        # the lip
     if not full:
         return
     zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
-    for f0, f1 in posts(k, ax, plane, a, b, ends, zb, zh, F):
-        paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                                            # the field
+    for f0, f1 in posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False):      # (the posts plain, on down to the
+        paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                            # lip's top) ... the field
         if f1 - f0 < 0.3:
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
