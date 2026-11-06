@@ -42,7 +42,7 @@
   const tip = $derived(
     selected ? 'Click an enemy module in the world to aim this weapon (Esc cancels)' : 'Select, then click an enemy module to aim',
   );
-  const fill = $derived(held ? 'var(--amber)' : 'var(--hud-bar, var(--health-good))');
+  const tone = $derived(held ? 'warn' : 'neutral');
 </script>
 
 <!-- A div, not a button: the bottom line inside is a button of its own. -->
@@ -68,9 +68,9 @@
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
   {#if compact}
-    <span class="cm"><Meter value={weapon.charge} {fill} height={4} edge="var(--track)" /></span>
+    <span class="cm"><Meter value={weapon.charge} {tone} height={4} /></span>
   {:else}
-    <Meter value={weapon.charge} {fill} height={4} edge="var(--track)" />
+    <Meter value={weapon.charge} {tone} height={4} />
     <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>

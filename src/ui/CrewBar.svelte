@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
   import Icon, { type IconName } from './Icon.svelte';
-  import { Meter } from './kit';
   import { keyLabel, keymap } from './keymap';
 
   /** `compact`: small portraits only (the combat view). `stations`: battle stations are called (the tile beside Draft all toggles them). */
@@ -52,6 +51,7 @@
       default: return { icon: 'idle', label: 'Idle', tone: 'dim' };
     }
   }
+  const pct = (v: number) => `${Math.max(0, Math.min(100, Math.round(v)))}%`;
   /** Needs attention: hungry, badly hurt, or down. */
   const trouble = (c: UiCrew) => !c.dead && (c.downed !== null || (c.hunger !== null && c.hunger < 35) || c.hp < c.maxHp * 0.5);
 </script>
@@ -66,9 +66,9 @@
       <span class="name">{c.name}</span>
       <span class="role">{c.role}</span>
       <span class="bars">
-        <Meter value={c.hp / Math.max(1, c.maxHp)} fill="var(--hp)" height={3} edgeWidth={0} />
-        <Meter value={c.rest / 100} fill="var(--rest)" height={3} edgeWidth={0} />
-        {#if c.hunger !== null}<Meter value={c.hunger / 100} fill="var(--hunger)" height={3} edgeWidth={0} />{/if}
+        <i class="hp"><b style:width={pct((c.hp / c.maxHp) * 100)}></b></i>
+        <i class="rest"><b style:width={pct(c.rest)}></b></i>
+        {#if c.hunger !== null}<i class="hunger"><b style:width={pct(c.hunger)}></b></i>{/if}
       </span>
       <span class="sr" data-testid="crew-line">{s.label}</span>
     </button>
@@ -97,6 +97,9 @@
   .name { font: 600 14px/1.1 var(--head-font); color: var(--ink-accent); letter-spacing: 0.02em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .role { font: 10px/1.2 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.05em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bars { grid-column: 1 / 3; align-self: end; display: grid; gap: 2px; width: 100%; }
+  .bars i { display: block; height: 3px; background: var(--track); }
+  .bars b { display: block; height: 100%; }
+  .hp b { background: var(--hp); } .rest b { background: var(--rest); } .hunger b { background: var(--hunger); }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   nav.compact .card { --face: 30px; width: calc(var(--face) + 10px); height: auto; padding: 3px; display: block; }
   nav.compact .name, nav.compact .role, nav.compact .bars { display: none; }

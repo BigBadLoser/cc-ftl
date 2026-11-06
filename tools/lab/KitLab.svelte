@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Chip, Meter } from '../../src/ui/kit';
+  import { dangerColor } from '../../src/ui/starmapStyle';
 
   const tones = ['dim', 'good', 'warn', 'bad', 'gold', 'select'] as const;
   const meterTones = ['auto', 'good', 'warn', 'bad', 'neutral'] as const;
@@ -8,7 +9,7 @@
 </script>
 
 <div class="lab">
-  <h3>Chip <small>tone x size, then outline off, icon, own colour</small></h3>
+  <h3>Chip <small>tone x size, then outline off, icon, swatch</small></h3>
   {#each ['sm', 'md'] as const as size (size)}
     <div class="row">{#each tones as tone (tone)}<Chip {tone} {size}>{tone} {size}</Chip>{/each}</div>
   {/each}
@@ -18,7 +19,7 @@
   <div class="row">
     <Chip tone="gold" size="md" icon="credits">1200</Chip>
     <Chip tone="warn" icon="alert">Black market</Chip>
-    <Chip size="md" color="#c96b3a">own colour</Chip>
+    <Chip size="md" swatch={dangerColor(6)}>danger 6</Chip>
     <Chip size="md" caps={false}>Mixed Case</Chip>
   </div>
 
@@ -34,7 +35,7 @@
   <h3>Meter <small>base marker, notch, explicit thresholds 80/50</small></h3>
   <div class="row">
     <span class="lbl">base 40</span><span class="m"><Meter value={65} max={100} base={40} height={8} /></span>
-    <span class="lbl">notch .5</span><span class="m"><Meter value={0.3} notches={[0.5]} height={6} fill="var(--hud-bar)" /></span>
+    <span class="lbl">notch .5</span><span class="m"><Meter value={0.3} notches={[0.5]} height={6} /></span>
     <span class="lbl">80/50 at 70</span><span class="m"><Meter value={70} max={100} tone="auto" thresholds={{ good: 80, warn: 50 }} height={6} /></span>
   </div>
 </div>

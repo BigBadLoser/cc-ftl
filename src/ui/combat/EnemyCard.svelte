@@ -5,7 +5,6 @@
   import { keyLabel, keymap } from '../keymap';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
-  import { hullTone } from './hullTone';
 
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
@@ -25,12 +24,7 @@
     [enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '),
   );
   const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
-  const HULL_FILL = { green: 'var(--health-good)', amber: 'var(--health-warn)', red: 'var(--health-bad)' } as const;
-  const HEAT_FILL = {
-    '': 'linear-gradient(90deg, var(--heat-low), var(--cyan))',
-    amber: 'linear-gradient(90deg, var(--heat-low), var(--amber))',
-    red: 'linear-gradient(90deg, var(--amber), var(--red))',
-  } as const;
+  const HEAT_TONE = { '': 'neutral', amber: 'warn', red: 'bad' } as const;
   const tone = $derived(chipTone(pill.tone));
 </script>
 
@@ -63,8 +57,9 @@
         <span class="chip" title="Chance a shot misses">Evade <b>{Math.round(enemy.evasion * 100)}%</b></span>
       </div>
       <Meter
-        value={hull / 100}
-        fill={HULL_FILL[hullTone(hull)]}
+        value={hull}
+        max={100}
+        tone="auto"
         height={20}
         edge="var(--hostile-track)"
         label="{hull}%"
@@ -72,7 +67,7 @@
         title="Hull integrity"
       />
       <div class="hrow" title="Heat">
-        <span class="grow"><Meter value={heatPct / 100} fill={HEAT_FILL[hot]} height={8} edge="var(--hostile-track)" /></span>
+        <span class="grow"><Meter value={heatPct} max={100} tone={HEAT_TONE[hot]} height={8} edge="var(--hostile-track)" /></span>
         <span class="hp {hot}">Heat {heatPct}%</span>
       </div>
     </div>
@@ -84,13 +79,10 @@
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
             <span class="nm">{w.name}</span>
-            <Meter
-              value={w.charge}
-              fill={shot ?? 'var(--cyan)'}
-              height={8}
-              edge={shot ?? 'var(--hostile-track)'}
-              notches={[w.commitAt]}
-            />
+            <span class="shotbar" style:border-color={shot ?? 'var(--hostile-track)'}>
+              <i style:width="{Math.round(w.charge * 100)}%" style:background={shot ?? 'var(--cyan)'}></i>
+              <u style:left="{Math.round(w.commitAt * 100)}%"></u>
+            </span>
             <span class="st">{row.status}</span>
           </div>
         {/each}
@@ -188,6 +180,10 @@
     align-items: center;
     height: 16px;
   }
+  /* A weapon's charge in the colour of its shot (the line in the world and the marker on the timeline), so tones can't carry it. */
+  .shotbar { position: relative; display: block; height: 8px; box-sizing: border-box; border: 1px solid var(--hostile-track); background: var(--track); }
+  .shotbar i { display: block; height: 100%; }
+  .shotbar u { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--dim); }
   .nm {
     font: 600 13px/1 var(--head-font);
     letter-spacing: 0.03em;

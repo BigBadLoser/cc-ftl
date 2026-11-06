@@ -10,7 +10,6 @@
   let { api, b, named = false }: { api: UiApi; b: UiBoarding; named?: boolean } = $props();
   const STATE = { sabotage: 'wrecking', paused: 'fighting', fighting: 'fighting', holding: 'ready', returning: 'returning', down: 'down' } as const;
   const TONE = { sabotage: 'green', paused: 'amber', fighting: 'amber', holding: 'dim', returning: 'neutral', down: 'red' } as const;
-  const hpFill = (v: number) => (v < 0.3 ? 'var(--health-bad)' : v < 0.6 ? 'var(--health-warn)' : 'var(--health-good)');
   /** Boarders who can still be ordered; at least one is needed to recall. */
   const mobileIds = $derived(b.party.filter((p) => p.state !== 'returning' && p.state !== 'down').map((p) => p.id));
   /** The recall names the downed too, so the sim reports them as left behind (the stranded alert) instead of dropping them silently. */
@@ -34,7 +33,7 @@
       {#each b.party as p (p.id)}
         <li data-state={p.state}>
           <button class="nm" title="Select {p.name}" onclick={() => api.selectCrew(p.id)}>{p.name}</button>
-          <Meter value={p.hp} fill={hpFill(p.hp)} height={6} />
+          <Meter value={p.hp} tone="auto" height={6} />
           <span class="st {TONE[p.state]}">{STATE[p.state]}</span>
         </li>
       {/each}
@@ -45,7 +44,7 @@
           <b>{s.name}</b>
           <Chip plate tone={s.state === 'active' ? 'good' : 'warn'}>{s.state === 'active' ? 'Sabotage active' : 'Sabotage paused'}</Chip>
         </div>
-        <Meter value={s.hp / Math.max(1, s.maxHp)} fill="var(--hud-bar, var(--dim))" height={14} edge="var(--hostile-track)" label="{s.hp}/{s.maxHp}" title="Module health" />
+        <Meter value={s.hp / Math.max(1, s.maxHp)} height={14} edge="var(--hostile-track)" label="{s.hp}/{s.maxHp}" title="Module health" />
         <div class="line">
           <span class="dim">{s.state === 'paused' ? 'Resumes after the fight: ' : ''}{s.crew.join(', ')}</span>
           <button class="act" data-testid="sabotage-cancel" onclick={() => api.dispatch({ type: 'crew.cancelSabotage', ids: s.crewIds })}>Cancel</button>

@@ -10,7 +10,7 @@
   <div class="chg" data-testid="enemy-charges" aria-label="Enemy weapon charge">
     {#each weapons as w (w.id)}
       <div class="w" class:hot={w.committed} class:off={w.stalled} title="{w.name}: {Math.round(w.charge * 100)}%{w.committed ? ', aimed at your ship' : ''}{w.stalled ? ' (offline)' : ''}">
-        <Meter value={w.charge} tone={w.committed ? 'bad' : 'neutral'} height={6} notches={[w.commitAt]} edge={w.committed ? 'var(--red)' : 'transparent'} edgeWidth={1} />
+        <Meter value={w.charge} tone={w.committed ? 'bad' : 'neutral'} height={6} notches={[w.commitAt]} edge={w.committed ? 'var(--red)' : 'var(--line)'} />
       </div>
     {/each}
   </div>

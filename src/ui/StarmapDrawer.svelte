@@ -83,9 +83,9 @@
       <h4>Sector</h4>
       <div class="row"><b>{sector?.known ? sector.name : 'Uncharted sector'}</b>{#if cluster?.revealed}<span class="dim">{cluster.name}, {cluster.typeLabel}</span>{/if}</div>
       <div class="row">
-        <Chip size="md" color={dangerColor(node.danger)}>Danger {node.danger}</Chip>
+        <Chip size="md" swatch={dangerColor(node.danger)}>Danger {node.danger}</Chip>
         {#if node.known}
-          {#if owner}<Chip size="md" color={toneColor(owner.tone)}>{owner.name}</Chip><Chip size="md" tone={owner.tier === 'hostile' ? 'bad' : owner.tier === 'friendly' ? 'good' : 'dim'}>{owner.tier}</Chip>{:else}<span class="dim">Open space</span>{/if}
+          {#if owner}<Chip size="md" swatch={toneColor(owner.tone)}>{owner.name}</Chip><Chip size="md" tone={owner.tier === 'hostile' ? 'bad' : owner.tier === 'friendly' ? 'good' : 'dim'}>{owner.tier}</Chip>{:else}<span class="dim">Open space</span>{/if}
         {/if}
       </div>
       {#if node.known}

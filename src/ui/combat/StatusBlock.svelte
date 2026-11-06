@@ -2,13 +2,11 @@
   import { Frame, Meter, Pips } from '../kit';
   import { anchor } from '../lessons/anchors';
   import type { UiCombat } from '../api';
-  import { hullTone } from './hullTone';
 
   type Me = NonNullable<UiCombat['player']>;
   /** The player's STATUS frame: hull (bar and %), shield layers (pips and n/max) and evasion. */
   let { me, style = '' }: { me: Me; style?: string } = $props();
   const hull = $derived(Math.round(me.integrity * 100));
-  const HULL_FILL = { green: 'var(--health-good)', amber: 'var(--health-warn)', red: 'var(--health-bad)' } as const;
 </script>
 
 <Frame title="Status" {style} lesson={anchor('combat.status')}>
@@ -16,7 +14,7 @@
     <div class="line" title="Hull integrity">
       <span class="lbl">Hull</span>
       <span class="grow">
-        <Meter value={hull / 100} fill={HULL_FILL[hullTone(hull)]} height={12} />
+        <Meter value={hull} max={100} tone="auto" height={12} />
       </span>
       <b>{hull}%</b>
     </div>
