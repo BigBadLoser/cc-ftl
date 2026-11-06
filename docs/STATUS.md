@@ -19,8 +19,8 @@ Module upgrade slots with the three general weapon upgrades and the flak cannon.
 general work hold, `sim/modules/hold.ts`; power reads that, not fits). Enemy loadouts by faction (`FactionDef.upgrades`) are rolled once when a
 generated ship is created (`shipCreated`, `combat/ships.ts`, fed by `spawnShip` `opts.gen` and the derelict spawner; `sim/upgrades/loadout.ts`), strip drops and losses, station stock, ruin loot. Slice 2 (behaviour
 upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item icons are placeholders
-(`ItemDef.placeholderIcon`). Flak: HOLD stops all fire; the per-weapon `Weapon.autoDrone` order (command `combat.setAutoDrone`, default on, flak now starts on auto) lets it engage
-drones when not held. Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
+(`ItemDef.placeholderIcon`). Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Drones are covered by point defence and defence drones, not flak.
+Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
 scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
 
 ## On `main` now (merged PRs through #308)

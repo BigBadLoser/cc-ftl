@@ -10,7 +10,7 @@
    * AUTO reads "Ship"; HOLD reads "HOLD · Ship" with the bar in amber, and "HOLD · READY" once a held weapon is charged. Compact cards
    * (five or more weapons) have no bottom line: hold is shown by the amber bar alone.
    */
-  let { api, weapon, label, hotkey, selected, onSelect, onMode, onAutoDrone, compact = false }: {
+  let { api, weapon, label, hotkey, selected, onSelect, onMode, compact = false }: {
     api?: UiApi;
     weapon: UiWeapon;
     label: string;
@@ -20,8 +20,6 @@
     selected: boolean;
     onSelect: () => void;
     onMode: (mode: 'auto' | 'hold') => void;
-    /** Flip the anti-drone standing order (flak only). */
-    onAutoDrone?: (on: boolean) => void;
   } = $props();
   const own = $derived(weapon.target !== null);
   const aimText = $derived(selected ? 'Select target' : own ? weapon.target : 'Ship');
@@ -32,15 +30,6 @@
     e.stopPropagation();
     onMode(held ? 'auto' : 'hold');
   };
-  const flipDrone = (e: Event) => {
-    e.stopPropagation();
-    onAutoDrone?.(!weapon.autoDrone);
-  };
-  const droneTip = $derived(
-    weapon.autoDrone
-      ? `AUTO vs drones: engages hostile drones in range on its own${held ? ' (but it is on HOLD, so it fires nothing)' : ''}. Click to turn off`
-      : 'Not engaging drones on its own. Click for AUTO vs drones',
-  );
   const modeTip = $derived(
     held
       ? 'HOLD: charges and waits for a volley or an aim. Click or right-click the card for AUTO'
@@ -79,7 +68,6 @@
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
     {#if api && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><ItemIcon {api} item={weapon.upgrade.item} size={compact ? 14 : 20} /></span>{/if}
-    {#if !compact && weapon.autoDrone !== null}<button class="drn" class:on={weapon.autoDrone} aria-pressed={weapon.autoDrone} data-testid="weapon-autodrone" title={droneTip} onclick={flipDrone}>Drones</button>{/if}
     {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
@@ -142,8 +130,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .drn { flex: none; min-height: 0; padding: 1px 5px; font-size: 10px; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dim); background: transparent; border: 1px solid var(--line-hi); }
-  .drn.on { color: var(--cyan); border-color: var(--cyan); }
   .up { flex: none; display: inline-flex; }
   .fit { color: var(--amber); }
   .am {

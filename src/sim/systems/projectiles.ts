@@ -1,20 +1,18 @@
 import { BodyC } from '../body';
 import { ProjectileC } from '../combat/components';
 import type { Sim } from '../sim';
-import { DroneC } from '../drones/components';
 import { VehicleC } from '../vehicles/components';
 
 /**
  * Moves every projectile along its straight sector-space flight; t reaches 1 on arrival (resolved by impacts). A shot
- * aimed at a shuttle (or a flak pellet at a drone) homes in on it: it flies at its launch speed straight at the shuttle's current position and
+ * aimed at a shuttle homes in on it: it flies at its launch speed straight at the shuttle's current position and
  * arrives when it catches up (t is the share of the distance covered so far). A shuttle that is gone stops the homing.
  */
 export function projectileSystem(sim: Sim): void {
   for (const id of sim.world.query(ProjectileC)) {
     const p = sim.world.get(id, ProjectileC);
     if (!p || p.t >= 1) continue;
-    const v = p.target.vehicle && sim.world.has(p.target.vehicle, VehicleC) ? sim.world.get(p.target.vehicle, BodyC)
-      : p.target.drone && sim.world.has(p.target.drone, DroneC) ? sim.world.get(p.target.drone, BodyC) : undefined;
+    const v = p.target.vehicle && sim.world.has(p.target.vehicle, VehicleC) ? sim.world.get(p.target.vehicle, BodyC) : undefined;
     if (v) {
       home(p, v);
       continue;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deserialize, serialize, CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
+import { CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
 import { damageModule } from '../sim/combat/effects';
 import { fitJobOf } from '../sim/upgrades/fit';
 import { stripUpgrade } from '../sim/upgrades/loadout';
@@ -205,77 +205,51 @@ describe('flak cannon', () => {
   });
 });
 
-describe('flak against drones', () => {
-  it('shoots an enemy drone out in space with pellets', () => {
+describe('hold means hold', () => {
+  /** Flak volleys launched over 20 s with a target ship, the weapon and the ship in the given state. */
+  function volleys(o: { mode: 'auto' | 'hold'; holdAll?: boolean }): number {
     const { sim, gun, ship } = setup();
     (sim.world.get(gun, ModuleC) as { def: string }).def = 'module.flakCannon';
-    stock(sim, ship, 'item.scrap_hull', 20);
-    spawn(sim, 'faction.navy', 5, 100, 60, 8);
-    const hits: string[] = [];
-    for (let t = 0; t < 40 * TICK_HZ; t++) {
-      sim.step();
-      for (const e of sim.events.drain()) {
-        if (e.type === 'drone.hit') hits.push(e.cause);
-        if (e.type === 'weapon.fired' && e.weapon === 'weapon.flak') hits.push(`fired${e.targetShip}`);
-      }
-      (sim.world.get(gun, WeaponC) as { charge: number }).charge = 1;
-    }
-    expect(hits).toContain('flak');
-  });
-});
-
-describe('hold means hold, and the anti-drone order', () => {
-  /** Drone shots (a flak volley at a drone has no target ship) over 30 s, with the weapon and the ship in the given state. */
-  function droneShots(o: { mode: 'auto' | 'hold'; autoDrone?: boolean; holdAll?: boolean; fresh?: boolean }): number {
-    const { sim, gun, ship } = setup();
-    const m = sim.world.get(gun, ModuleC) as { def: string };
-    m.def = 'module.flakCannon';
-    // A freshly built flak cannon is made by the spawn rules; the converted laser stands in for it with the same fields.
-    const w = sim.world.get(gun, WeaponC) as { mode: string; autoDrone?: boolean };
-    w.mode = o.mode;
-    w.autoDrone = o.autoDrone ?? true;
+    (sim.world.get(gun, WeaponC) as { mode: string }).mode = o.mode;
     if (o.holdAll) (sim.world.get(ship, CombatC) as { hold: boolean }).hold = true;
     stock(sim, ship, 'item.scrap_hull', 20);
-    spawn(sim, 'faction.navy', 5, 100, 60, 8);
+    const enemy = spawn(sim, 'faction.navy', 5, 100, 60, 8);
+    (sim.world.get(ship, CombatC) as { target: unknown }).target = { ship: enemy, moduleId: 0 };
     let shots = 0;
-    for (let t = 0; t < 30 * TICK_HZ; t++) {
+    for (let t = 0; t < 20 * TICK_HZ; t++) {
       sim.step();
-      for (const e of sim.events.drain()) if (e.type === 'weapon.fired' && e.weapon === 'weapon.flak' && e.targetShip === 0) shots++;
+      for (const e of sim.events.drain()) if (e.type === 'weapon.fired' && e.weapon === 'weapon.flak') shots++;
       (sim.world.get(gun, WeaponC) as { charge: number }).charge = 1;
     }
     return shots;
   }
 
-  it('flak on auto with the order engages drones on its own', () => {
-    expect(droneShots({ mode: 'auto' })).toBeGreaterThan(0);
-  });
-  it('the weapon on HOLD fires nothing at drones, order or not', () => {
-    expect(droneShots({ mode: 'hold', autoDrone: true })).toBe(0);
-  });
-  it('hold all stops it too', () => {
-    expect(droneShots({ mode: 'auto', autoDrone: true, holdAll: true })).toBe(0);
-  });
-  it('with the order off it leaves drones alone', () => {
-    expect(droneShots({ mode: 'auto', autoDrone: false })).toBe(0);
+  it('a weapon on AUTO fires, a weapon on HOLD or under hold all fires nothing', () => {
+    expect(volleys({ mode: 'auto' })).toBeGreaterThan(0);
+    expect(volleys({ mode: 'hold' })).toBe(0);
+    expect(volleys({ mode: 'auto', holdAll: true })).toBe(0);
   });
 
-  it('a built flak cannon starts on auto with the order on, other weapons have none; the command flips it and is saved', () => {
+  it('flak never picks a drone on its own: with no ship target it fires nothing', () => {
     const { sim, gun, ship } = setup();
-    expect(sim.world.get(gun, WeaponC)?.autoDrone).toBeUndefined();
-    sim.enqueue({ type: 'combat.setAutoDrone', weaponId: gun, on: false });
-    sim.step();
-    expect(sim.world.get(gun, WeaponC)?.autoDrone).toBeUndefined(); // refused: a burst laser cannot shoot drones
+    (sim.world.get(gun, ModuleC) as { def: string }).def = 'module.flakCannon';
+    (sim.world.get(gun, WeaponC) as { mode: string }).mode = 'auto';
+    stock(sim, ship, 'item.scrap_hull', 20);
+    spawn(sim, 'faction.navy', 5, 100, 60, 8);
+    let shots = 0;
+    for (let t = 0; t < 30 * TICK_HZ; t++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'weapon.fired' && e.targetShip === 0) shots++;
+      (sim.world.get(gun, WeaponC) as { charge: number }).charge = 1;
+    }
+    expect(shots).toBe(0);
+  });
+
+  it('a built flak cannon starts on HOLD, like the other ammo weapons', () => {
+    const { sim, gun } = setup();
     const at = sim.world.get(gun, ModuleC) as { x: number; y: number };
     const flak = spawnModule(sim, 'module.flakCannon', at.x, at.y, 0);
-    const w = sim.world.get(flak, WeaponC);
-    expect(w?.mode).toBe('auto');
-    expect(w?.autoDrone).toBe(true);
-    expect(ship).toBeGreaterThan(0);
-    sim.enqueue({ type: 'combat.setAutoDrone', weaponId: flak, on: false });
-    sim.step();
-    expect(sim.world.get(flak, WeaponC)?.autoDrone).toBe(false);
-    const back = deserialize(serialize(sim), content);
-    expect(back.world.get(flak, WeaponC)?.autoDrone).toBe(false);
+    expect(sim.world.get(flak, WeaponC)?.mode).toBe('hold');
   });
 });
 
@@ -368,22 +342,20 @@ describe('sources', () => {
     expect(storageCount).toBeDefined();
   });
 });
-describe('hold all and the flak order', () => {
-  it('releasing hold all puts each weapon back on the mode it had, flak AUTO included', () => {
+describe('hold all', () => {
+  it('releasing hold all puts each weapon back on the mode it had', () => {
     const { sim, gun, ship } = setup();
     const at = sim.world.get(gun, ModuleC) as { x: number; y: number };
     const flak = spawnModule(sim, 'module.flakCannon', at.x, at.y, 0);
     const laser = sim.world.get(gun, WeaponC) as { mode: string };
-    laser.mode = 'hold';
-    const w = sim.world.get(flak, WeaponC) as { mode: string; autoDrone?: boolean };
-    expect(w.mode).toBe('auto');
+    const w = sim.world.get(flak, WeaponC) as { mode: string };
+    laser.mode = 'auto';
+    w.mode = 'auto';
     sim.enqueue({ type: 'combat.holdAll', ship, hold: true });
     sim.step();
     expect([w.mode, laser.mode]).toEqual(['hold', 'hold']);
-    expect(w.autoDrone).toBe(true);
     sim.enqueue({ type: 'combat.holdAll', ship, hold: false });
     sim.step();
-    expect([w.mode, laser.mode]).toEqual(['auto', 'hold']);
-    expect(w.autoDrone).toBe(true);
+    expect([w.mode, laser.mode]).toEqual(['auto', 'auto']);
   });
 });

@@ -218,8 +218,6 @@ export interface WeaponDef {
   ammoPerVolley?: true;
   /** Extra aim error sigma, tiles per tile of range (flak scatters at distance). */
   spreadPerTile?: number;
-  /** Shoots enemy drones in space within this many tiles of the firing ship instead of its ship target (weapon never provokes). */
-  antiDrone?: number;
   /** Point defence may shoot it down. */
   interceptable?: boolean;
   /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */

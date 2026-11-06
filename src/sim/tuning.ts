@@ -509,8 +509,6 @@ export const DRONE_QUEUE_ALLOW_SEC = 1.5;
 /** Point defence against enemy drones in space within VEHICLE_PD_RANGE of its ship: every VEHICLE_PD_INTERVAL ticks each working module rolls this to hit one for this much. */
 export const DRONE_PD_CHANCE = 0.3;
 export const DRONE_PD_DAMAGE = 8;
-/** A flak pellet hits an enemy drone when it lands within this many tiles of it. */
-export const DRONE_FLAK_RADIUS = 1.6;
 /** Staggered return: while a ship's drones are recalled, one starts its landing only this many seconds after the one before it (under DRONE_LIFT_SEC). */
 export const DRONE_LAND_GAP_SEC = 0.9;
 /** How far from its bay's hatch a recalled drone waits for its turn to land, in tiles. */

@@ -34,7 +34,7 @@
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
-    <WeaponBay {api} {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} onAutoDrone={(id, on) => api.dispatch({ type: 'combat.setAutoDrone', weaponId: id, on })} style="grid-column:2; grid-row:1" />
+    <WeaponBay {api} {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} style="grid-column:2; grid-row:1" />
     <ActionButtons canVolley={canVolley} holding={me.holdAll} onVolley={volley} onHold={hold} style="grid-column:2; grid-row:2" />
     <HeatGauge heat={me.heat} {rate} {onVent} style="grid-column:3; grid-row:1" />
     <OverchargeButtons heat={me.heat} {onOvercharge} style="grid-column:3; grid-row:2" />

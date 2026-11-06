@@ -227,8 +227,6 @@ export interface UiModule {
   droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
-  /** Anti-drone weapons (flak): the standing order to engage drones on its own (a hold still stops it); null for any other module. */
-  autoDrone: boolean | null;
   /** The upgrade slot (null for a module with none). */
   upgradeSlot: UiUpgradeSlot | null;
 }
@@ -665,8 +663,6 @@ export interface UiWeapon {
   powered: boolean;
   /** `auto` fires when charged; `hold` waits for a volley or for the player to aim it (then it fires once and stays on hold). */
   mode: 'auto' | 'hold';
-  /** Anti-drone weapons (flak): engages hostile drones on its own while not on hold; null for weapons that cannot shoot drones. */
-  autoDrone: boolean | null;
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */

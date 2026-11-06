@@ -366,7 +366,7 @@ export const modules = {
     scrap: 'weapons',
     name: 'Point defence',
     category: 'defence',
-    description: "Shoots down incoming missiles. Needs a working AI core.",
+    description: "Shoots down incoming missiles, enemy drones and shuttles. Needs a working AI core.",
     asset: 'module.point_defense', footprint: [2, 2], solid: true, power: -5, powerPriority: 3,
     flammability: 0.2, maxHp: 70, buildWork: 180, pointDefense: true, deploySec: 2,
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],

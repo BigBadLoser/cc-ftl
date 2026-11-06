@@ -11,13 +11,12 @@
    * The WEAPONS frame: four slots, a card for each weapon the ship has. With more than four weapons the cards go compact in two rows inside the
    * same frame height (Q W E R pick the first four; the rest are aimed by click).
    */
-  let { api, me, aiming, onSelect, onMode, onAutoDrone, style = '' }: {
+  let { api, me, aiming, onSelect, onMode, style = '' }: {
     api?: UiApi;
     me: Me;
     aiming: UiAiming | null;
     onSelect: (id: number) => void;
     onMode: (id: number, mode: 'auto' | 'hold') => void;
-    onAutoDrone: (id: number, on: boolean) => void;
     style?: string;
   } = $props();
   const labels = $derived(weaponLabels(me.weapons.map((w) => ({ name: w.short }))));
@@ -38,7 +37,6 @@
           selected={aiming?.weapon === w.id}
           onSelect={() => onSelect(w.id)}
           onMode={(mode) => onMode(w.id, mode)}
-          onAutoDrone={(on) => onAutoDrone(w.id, on)}
         />
       {:else}
         <span class="empty">{i === 0 ? 'No weapons' : ''}</span>

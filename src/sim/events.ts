@@ -205,7 +205,7 @@ export type SimEvent =
   | { type: 'drone.active'; drone: number }
   /** `ship`: its home ship; (x, y) its tile; `space`: it was out in space (at cruise height, nothing falls). */
   | { type: 'drone.wrecked'; drone: number; ship: number; def: string; x: number; y: number; space: boolean }
-  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' | 'flak' }
+  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' }
   /** A defence drone fired at an enemy drone or shuttle (an interceptable shot it hits is `projectile.intercepted` with `by`). (x, y): the aim point, sector tiles. */
   | { type: 'drone.fired'; drone: number; x: number; y: number; hit: boolean }
   /** A departure is held for the ship's drones out in space (DRONE_RECALL_WAIT_SEC at most). */
