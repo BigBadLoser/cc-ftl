@@ -37,21 +37,34 @@ def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
 
+def _dip():
+    """The crest's ends: at a post the lip's top, under the opening DIP under the ramp's top. (top, bottom)."""
+    return T.lip_heights(W.skirt_top())[1], W.skirt_top() - DIP
+
+
 def _sill(x, x0, x1):
-    """The ramp's crest under the opening at x: the ramp's top at a post, down DIP over DIP_RUN from it."""
+    """The ramp's crest under the opening at x: the lip's top at a post, down to its floor over DIP_RUN from it."""
     d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
-    return W.skirt_top() - DIP * min(1.0, max(0.0, d) / DIP_RUN)
+    t, f = _dip()
+    return t - (t - f) * min(1.0, max(0.0, d) / DIP_RUN)
 
 
 def _segs(x0, x1):
-    """The opening along x between the crest's bends: (u0, u1, h0, h1), past the tile where it runs on."""
+    """The opening along x between the crest's bends (and where it crosses the shelf): (u0, u1, h0, h1), past the
+    tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if xa < u < xb})
+    (t, f), zh = _dip(), T.lip_heights(W.skirt_top())[0]
+    c = DIP_RUN * (t - zh) / (t - f) if f < zh < t else None
+    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + ((x0 + c, x1 - c) if c else ()) if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
 
 def _reach(h, yf):
-    """How far out of the wall's middle the ramps' slope is at height h."""
+    """How far out of the wall's middle the cut reaches at height h: over the shelf the lip's front, under it the
+    ramps' slope."""
+    from .faction.slate import LIP_D
+    if h > T.lip_heights(W.skirt_top())[0] + 1e-9:
+        return yf + LIP_D
     return yf + (W.skirt_top() - h) / (W.GN * W.RAMP_PX / W.ZART)
 
 
@@ -89,6 +102,7 @@ def _cut(k, x0, x1, z1):
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
     zs, z1 = W.skirt_top(), T.rail_foot(W.HF)           # (the beam's underside: the rail's foot)
+    zp = _dip()[0]                                      # (the crest at a post: the lip's top)
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
     k.side = None
@@ -96,14 +110,16 @@ def hook(k, sp, own=True):
     a, b = max(x0, -0.5), min(x1, 0.5)
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
         if on:
-            _quad(k, [(u, -yr, zs), (u, yr, zs), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
+            _quad(k, [(u, -yr, zp), (u, yr, zp), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
     for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: the cut along the crest, out to the ramps
         u0, u1 = max(u0, a), min(u1, b)
         if u1 <= u0:
             continue
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
-        r0, r1 = _reach(h0, yf), _reach(h1, yf)
-        _quad(k, [(u0, -r0, h0), (u1, -r1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
+        over = max(h0, h1) > T.lip_heights(zs)[0] + 1e-9   # (over the shelf: out to the lip's front, and on the far
+        r0, r1 = (_reach(max(h0, h1), yf),) * 2 if over else (_reach(h0, yf), _reach(h1, yf))   # side, behind the
+        f0, f1 = (yf + T.style().shelf,) * 2 if over else (r0, r1)                     # glass, over its shelf)
+        _quad(k, [(u0, -f0, h0), (u1, -f1, h1), (u1, r1, h1), (u0, r0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
@@ -121,7 +137,7 @@ def hook(k, sp, own=True):
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
             v = u + sd * e
-            _quad(k, [(v, -h, zs), (v, h, zs), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+            _quad(k, [(v, -h, zp), (v, h, zp), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
     global GLASS
     GLASS = T.Relief("iwin_def_glass")
     GLASS.poly([Vector((u, 0.0, _sill(u, x0, x1))) for u in us] + [Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],

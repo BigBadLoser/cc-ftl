@@ -256,6 +256,14 @@ def _mitres(ends):
     return tuple({"out": 1.0, "in": -1.0}.get(e, 0.0) for e in ends)
 
 
+def lip_heights(zs):
+    """The default walls' ramp shelf's height against the wall and their lip's top (_lip), the ramp's top at zs."""
+    from .faction.parts import PZ
+    from .faction.slate import LIP_H
+    zh = zs - style().shelf * W.GN * W.RAMP_PX / W.ZART
+    return zh, zh + 3 * PZ + LIP_H
+
+
 def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     """Slate's lip at the face's foot (faction.slate): 2 px proud, a dark seam 2 px over it, both in three a tile
     (a seam up the lip's front, over its top and up the face to the seam over it). Returns the face's foot over it."""
