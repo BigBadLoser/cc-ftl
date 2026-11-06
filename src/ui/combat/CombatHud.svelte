@@ -62,6 +62,7 @@
   /** The enemy card's tag: the ship's relation to you, nothing else (its state shows on the card itself). */
   const pill = $derived.by((): { text: string; tone: string } => {
     if (!enemy) return { text: 'Clear', tone: 'dim' };
+    if (enemy.friendly) return { text: 'Friendly', tone: 'green' };
     return enemy.neutral ? { text: 'Neutral', tone: 'dim' } : { text: 'Hostile', tone: 'red' };
   });
   const helmManned = $derived(!!me?.consoles.some((c) => c.kind === 'helm' && c.powered && c.operator !== null));

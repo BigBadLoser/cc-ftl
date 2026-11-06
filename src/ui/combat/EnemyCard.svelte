@@ -25,6 +25,8 @@
   const sub = $derived(
     [enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '),
   );
+  /** Not at war with you (neutral or friendly): the plain frame and dim subtitle, not the red hostile ones. */
+  const calm = $derived(!!enemy.neutral || !!enemy.friendly);
   const title = $derived(cardName(enemy.name, enemy.faction, enemy.klass));
   const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
   const tone = $derived(chipTone(pill.tone));
@@ -32,7 +34,7 @@
 
 <Frame
   {title}
-  tone={enemy.neutral ? 'normal' : 'hostile'}
+  tone={calm ? 'normal' : 'hostile'}
   style="width:320px; pointer-events:auto; background: var(--panel)"
   testid="enemy-card"
   lesson={anchor('combat.enemy')}
@@ -43,7 +45,7 @@
     <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
   {/snippet}
   <div class="body">
-    {#if sub}<span class="fac" class:neutral={enemy.neutral}>{sub}</span>{/if}
+    {#if sub}<span class="fac" class:neutral={calm}>{sub}</span>{/if}
     <div class="def">
       <div class="srow">
         <Pips

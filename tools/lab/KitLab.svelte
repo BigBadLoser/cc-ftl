@@ -16,7 +16,8 @@
   } as unknown as UiShipCombat);
   const cards = [
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
-    { e: ship('Raider', 'Hostile', null, false), pill: { text: 'Hostile', tone: 'red' } },
+    { e: ship('Raider', 'Enemy', null, false), pill: { text: 'Hostile', tone: 'red' } },
+    { e: { ...ship('Kestrel', 'Free traders', 'Liner', false), friendly: true }, pill: { text: 'Friendly', tone: 'green' } },
     { e: ship('Trade station hub C3AA', 'Neutral', 'Hub', true), pill: { text: 'Neutral', tone: 'dim' } },
   ];
 

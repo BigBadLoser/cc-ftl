@@ -49,7 +49,7 @@ describe('combat snapshot', () => {
     sim.step();
     const c = buildCombat(sim);
     const raider = c.enemies[0]!;
-    expect(raider.faction).toBe('Hostile'); // a hand-built ship has no galaxy faction: its combat side names it
+    expect(raider.faction).toBe('Enemy'); // a hand-built ship has no galaxy faction: its combat side names it ('Enemy', not the tag's 'Hostile')
     expect(raider.klass).toBeNull();
     expect(c.player?.faction).toBe('Player');
     expect(c.player?.modules.filter((m) => m.kind === 'engine').every((m) => typeof m.powered === 'boolean')).toBe(true);
