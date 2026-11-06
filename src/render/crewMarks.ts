@@ -33,7 +33,7 @@ export interface CrewMarks {
  * How far above a standing figure's feet an icon's bottom (its anchor) sits: the speech bubble's tail and the thought bubble's puffs end
  * just over the head (world px; the render lab's `marks` panel uses it too).
  */
-export const MARK_HEAD = 1.7 * Z_PX - 5 * S;
+export const MARK_HEAD = 1.7 * Z_PX;
 
 /** Icon frames per second (crew_marks.FPS). */
 const FPS = 4;
