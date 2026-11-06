@@ -550,7 +550,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             fr = 0.0 if style().plain else PX           # (the raised frame's height: none on the default walls)
             if style().plain and VARIANT[1]:            # (a ramp design: its own drawing in the frame)
                 from . import wall3d_variants as V
-                V.ramp_plain(lambda q, lvl: plate(k, q, pt, nrm, 0.0, rise + 2 * PAINT, fam, lvl, base=rise),
+                V.ramp_plain(lambda q, lvl, n: plate(k, q, pt, nrm, 0.0, rise + n * PAINT, fam, lvl, base=rise),
                              fu0, fu1, fd0, iu0, iu1, id1, sb, pd, VARIANT[1])
                 continue
             if fr:

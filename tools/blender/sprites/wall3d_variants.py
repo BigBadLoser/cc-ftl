@@ -102,12 +102,15 @@ def ramp_panel(k, plate, u0, u1, run_, r):
 
 def ramp_plain(plate, fu0, fu1, fd0, iu0, iu1, id1, sb, pd, r):
     """Ramp design r on the default walls' drawn panel, inside its seam frame (fu0..fu1 from fd0 down, its bottom seam
-    at sb; iu0..iu1, ..id1: where the base design's light plate sits; pd about a px down the slope). r 1: a dark dash
-    in each top corner and a split light plate low in the middle. plate(poly, lvl) draws a flat one on the slope."""
-    def box(u0, u1, d0, d1, lvl):
-        plate([(u0, d0), (u1, d0), (u1, d1), (u0, d1)], lvl)
-    uc = (iu0 + iu1) / 2
-    for a, b in ((fu0 + LINE, fu0 + LINE + 0.12), (fu1 - LINE - 0.12, fu1 - LINE)):
-        box(a, b, fd0 + pd, fd0 + 2 * pd, 1)                                   # the dashes (seam level)
-    for a, b in ((iu0, uc - LINE / 2), (uc + LINE / 2, iu1)):
-        box(a, b, id1 - 2 * pd, sb - 2 * pd, 4)                                # the split plate
+    at sb; iu0..iu1, ..id1: where the base design's light plate sits; pd about a px down the slope). r 1: a seam
+    across the frame near its top, two light plates bolted over it, evenly spaced. plate(poly, lvl, n) draws a flat
+    one on the slope, n PAINTs proud."""
+    def box(u0, u1, d0, d1, lvl, n):
+        plate([(u0, d0), (u1, d0), (u1, d1), (u0, d1)], lvl, n)
+    dl = fd0 + 3 * pd                                                          # the seam, edge to edge
+    box(fu0, fu1, dl, dl + pd, 1, 2)
+    w, h = (iu1 - iu0 - LINE) / 2, sb - id1                                    # the plates (the old split plate's
+    gap = (fu1 - fu0 - 2 * w) / 3                                              # halves), centred on it
+    for n in range(2):
+        a = fu0 + gap + n * (w + gap)
+        box(a, a + w, dl + pd / 2 - h / 2, dl + pd / 2 + h / 2, 4, 3)
