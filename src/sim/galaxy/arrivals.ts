@@ -136,8 +136,7 @@ export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: 
   }
   c.ship = id;
   sim.galaxy.rev++;
-  sim.events.emit({ type: 'galaxy.shipArrived', node, faction: c.faction, ship: id });
-  if (ship) sim.events.emit({ type: 'ship.arrived', ship: id, name: ship.name, faction: ship.faction, owner: c.faction, reason: opts.reason ?? 'spawn', x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 });
+  if (ship) sim.events.emit({ type: 'ship.arrived', node, ship: id, name: ship.name, faction: ship.faction, owner: c.faction, reason: opts.reason ?? 'spawn', x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 });
   return true;
 }
 
@@ -207,5 +206,5 @@ export function rollArrival(sim: Sim): void {
   const c: Contact = { id: g.nextId++, faction, shipgen, seed: roll.seed, depth: node.danger, since: sim.tick };
   st.contacts.push(c);
   g.rev++;
-  if (!spawnContact(sim, node.id, c, { reason: 'jump-in' })) sim.events.emit({ type: 'galaxy.shipArrived', node: node.id, faction, ship: null });
+  if (!spawnContact(sim, node.id, c, { reason: 'jump-in' })) sim.events.emit({ type: 'ship.arrived', node: node.id, ship: null, name: '', faction: null, owner: faction, reason: 'jump-in', x: 0, y: 0 });
 }

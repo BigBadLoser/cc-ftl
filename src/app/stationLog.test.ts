@@ -14,8 +14,8 @@ function setup() {
   return { sim, station };
 }
 
-const arrival = (x: number, y: number, over: Partial<Extract<SimEvent, { type: 'ship.arrived' }>> = {}): SimEvent =>
-  ({ type: 'ship.arrived', ship: 900, name: 'Raider 9', faction: 'hostile', owner: 'raiders', reason: 'jump-in', x, y, ...over });
+const arrival = (x: number, y: number, over: Partial<Extract<SimEvent, { type: 'ship.arrived'; ship: number }>> = {}): SimEvent =>
+  ({ type: 'ship.arrived', node: 'n', ship: 900, name: 'Raider 9', faction: 'hostile', owner: 'raiders', reason: 'jump-in', x, y, ...over });
 
 describe('station traffic log', () => {
   it('stamps with the top bar clock', () => {

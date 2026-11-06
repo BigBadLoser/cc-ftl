@@ -73,7 +73,7 @@ export class StationLog {
         if (e.handover || !isStation(sim, e.ship)) continue;
         const line = dealLine(sim, e);
         if (line) this.push(e.ship, tick, line.who, line.what);
-      } else if ((e.type === 'ship.arrived' || e.type === 'ship.departed') && sim.sector.state === 'active') {
+      } else if ((e.type === 'ship.arrived' || e.type === 'ship.departed') && e.ship !== null && sim.sector.state === 'active') {
         const what = e.type === 'ship.arrived' ? (e.reason === 'jump-in' ? 'jumped in' : 'arrived') : e.reason === 'wrecked' ? 'destroyed' : e.reason === 'fleet' || e.reason === 'scene' ? 'left' : 'jumped away';
         for (const id of sim.world.query(TraderC)) {
           const st = isStation(sim, id) && id !== e.ship ? sim.world.get(id, ShipC) : undefined;

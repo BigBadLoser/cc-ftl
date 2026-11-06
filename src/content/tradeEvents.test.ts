@@ -92,7 +92,7 @@ describe('ship.arrived and ship.departed', () => {
     expect(spawnContact(sim, sim.galaxy.current, c, { reason: 'scene' })).toBe(true);
     const e = sim.events.drain().find((x): x is Of<'ship.arrived'> => x.type === 'ship.arrived')!;
     expect(e).toMatchObject({ ship: (c as { ship?: number }).ship, owner: 'zealots', reason: 'scene' });
-    expect(e.name).toBe(sim.world.get(e.ship, ShipC)!.name);
+    expect(e.name).toBe(sim.world.get(e.ship as number, ShipC)!.name);
     const arrived = (): Of<'ship.arrived'>[] => sim.events.drain().filter((x): x is Of<'ship.arrived'> => x.type === 'ship.arrived');
     const sim2 = newGame(1, content);
     spawnContact(sim2, sim2.galaxy.current, contact(9002));

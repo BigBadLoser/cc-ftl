@@ -282,7 +282,7 @@ describe('hyperspace travel', () => {
     const events = step(sim);
     expect(sim.sector).toMatchObject({ node: target, state: 'deploying' });
     expect(sim.galaxy.current).toBe(target);
-    expect(events.filter((e) => e.type === 'galaxy.shipArrived').length).toBeGreaterThan(0);
+    expect(events.filter((e) => e.type === 'ship.arrived').length).toBeGreaterThan(0);
     const spawned = others(sim);
     expect(spawned.length).toBeGreaterThan(0);
     expect(spawned.length).toBeLessThanOrEqual(descriptors);
@@ -298,7 +298,7 @@ describe('hyperspace travel', () => {
     sim.enqueue({ type: 'debug.galaxyTeleport', node: target });
     const back = step(sim);
     expect(back.find((e) => e.type === 'sector.jumped')).toMatchObject({ restored: true, to: target });
-    expect(back.filter((e) => e.type === 'galaxy.shipArrived')).toEqual([]);
+    expect(back.filter((e) => e.type === 'ship.arrived')).toEqual([]);
     expect(others(sim)).toEqual(spawned);
   }, 60000);
 

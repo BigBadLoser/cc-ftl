@@ -1,3 +1,4 @@
+import { launchVehicle } from './transitions';
 import type { Command } from '../commands';
 import { StorageC } from '../items/components';
 import { storageTake } from '../items/storage';
@@ -5,7 +6,6 @@ import { ModuleC } from '../modules/components';
 import { isTileWalkable } from '../modules/walk';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
-import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { outsideCrew } from '../eva/shuttle';
 import type { Sim } from '../sim';
@@ -27,10 +27,7 @@ export function launch(sim: Sim, id: number, v: Vehicle): string | null {
   if (v.state !== 'stowed') return 'notStowed';
   if (!v.pilot && !v.autopilot) return 'noPilot';
   if (!bayWorking(sim, v.home)) return 'bayDown';
-  v.state = 'flying';
-  v.dest = null;
-  const b = sim.world.get(id, BodyC);
-  sim.events.emit({ type: 'vehicle.launched', vehicle: id, ship: v.homeShip, x: b?.x ?? 0, y: b?.y ?? 0 });
+  launchVehicle(sim, id, v);
   return null;
 }
 

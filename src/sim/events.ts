@@ -268,7 +268,9 @@ export type SimEvent =
    */
   | { type: 'trade.phase'; deal: number; ship: number; from: DealPhase | null; to: DealPhase; vehicle: number; dock: number; trip: { n: number; of: number } | null; give: ItemQty[]; get: ItemQty[]; handover: boolean; reason?: string }
   /** A ship came into the current grid (`owner`: the faction that owns it, '' if unknown; `faction`: its combat side) at tile centre (x, y). Not for the player's own ship. */
-  | { type: 'ship.arrived'; ship: number; name: string; faction: Faction; owner: string; reason: ArriveReason; x: number; y: number }
+  | { type: 'ship.arrived'; node: string; ship: number; name: string; faction: Faction; owner: string; reason: ArriveReason; x: number; y: number }
+  /** A ship of `owner` jumped into the node but found no room to appear (`ship` null; `name`, `faction` and the position are empty); it stays a contact and is retried. */
+  | { type: 'ship.arrived'; node: string; ship: null; name: ''; faction: null; owner: string; reason: ArriveReason; x: 0; y: 0 }
   /** A ship left the current grid, lifted out of it or wrecked, from tile centre (x, y). */
   | { type: 'ship.departed'; ship: number; name: string; faction: Faction; owner: string; reason: DepartReason; x: number; y: number }
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
@@ -334,7 +336,6 @@ export type SimEvent =
   | { type: 'goal.actDone'; act: string; title: string }
   | { type: 'job.closed'; id: number; kind: StationJobKind; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
   | { type: 'galaxy.discovered'; count: number }
-  | { type: 'galaxy.shipArrived'; node: string; faction: string; ship: number | null }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
 
