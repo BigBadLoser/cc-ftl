@@ -54,6 +54,7 @@
             (items_salvage.py)
   hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
             each piece with its tint mask (hulltiles.py)
+  marks     the overhead crew icons: social cues, break symbols in their bubbles, fight marks; 2D, no render (crew_marks.py)
 Crew layers are built separately (`crew`)."""
 
 
@@ -229,4 +230,4 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper")
-ALL = RENDERED + ("sol", "damage_sol")
+ALL = RENDERED + ("sol", "damage_sol", "marks")

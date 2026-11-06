@@ -50,5 +50,5 @@
   .banner b { background: var(--red); color: #fff; border-radius: 0; padding: 0 7px; margin-right: 6px; }
   .list { margin-bottom: 4px; max-height: 55vh; overflow: auto; background: var(--panel); border: 1px solid var(--red); border-radius: 0; padding: 8px; touch-action: pan-y; -webkit-user-select: text; user-select: text; }
   .actions { display: flex; gap: 8px; margin-bottom: 8px; }
-  pre { margin: 0 0 8px; font-size: 11px; white-space: pre-wrap; word-break: break-word; color: #fca5a5; }
+  pre { margin: 0 0 8px; font-size: 11px; white-space: pre-wrap; word-break: break-word; color: var(--red); }
 </style>

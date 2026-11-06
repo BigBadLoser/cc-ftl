@@ -36,6 +36,6 @@
   .list li.t { border-bottom: 0; border-top: 1px solid var(--line-hi); font-weight: 600; }
   .list li.t b { font-weight: 600; }
   .list li.note { display: block; border: 0; color: var(--dim); font-size: 11px; min-height: 0; padding-top: 4px; }
-  .pos { color: #9fe0a8 !important; } .neg { color: #ff9a9a !important; }
+  .pos { color: var(--good-ink) !important; } .neg { color: var(--red) !important; }
   small { margin-left: 4px; font-size: 11px; color: var(--dim); }
 </style>

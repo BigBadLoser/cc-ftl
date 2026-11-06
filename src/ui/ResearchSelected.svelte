@@ -51,7 +51,7 @@
   .sub { color: #8a8a8a; font-size: 12px; }
   .stats { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 6px 0 8px; }
   .stats > span:nth-child(odd) { color: #8a8a8a; }
-  .up { color: #7fd38a; } .dn { color: var(--red); }
+  .up { color: var(--good-ink); } .dn { color: var(--red); }
   .cost { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 8px; }
   .cost span { display: inline-flex; align-items: center; gap: 3px; }
   .cost .short { color: var(--red); font-weight: 700; }

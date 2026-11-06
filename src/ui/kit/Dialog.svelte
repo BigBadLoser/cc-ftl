@@ -37,8 +37,8 @@
 </Dialog.Root>
 
 <style>
-  :global(.kit-veil) { position: fixed; inset: 0; z-index: 30; background: rgba(4, 8, 14, 0.62); touch-action: none; }
-  :global(.kit-card) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: var(--kit-dialog-radius); padding: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); outline: none; }
+  :global(.kit-veil) { position: fixed; inset: 0; z-index: 30; background: var(--veil); touch-action: none; }
+  :global(.kit-card) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: var(--kit-dialog-radius); padding: 16px; box-shadow: var(--shadow-window); outline: none; }
   :global(.kit-bare) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); outline: none; }
   :global(.kit-sr) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   :global(.kit-card-title) { margin: 0 0 6px; font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text); }

@@ -66,7 +66,7 @@ export interface ShipScene {
   /** Crew under a region-local art point, with its feet's art y (the nearest to the viewer wins across regions). */
   pickCrew(ax: number, ay: number): { id: number; y: number } | null;
   /** Where a crew member's feet are drawn in this scene's art frame (smoothed like the sprite), or null. */
-  crewPos(id: number): { x: number; y: number; h: number } | null;
+  crewPos(id: number): { x: number; y: number; h: number; bars: number } | null;
   pickModule(ax: number, ay: number): number | null;
   /** Module construction sites that are stuck, and the selected one (job ids). */
   setSites(blocked: ReadonlySet<number>, selected: number | null): void;

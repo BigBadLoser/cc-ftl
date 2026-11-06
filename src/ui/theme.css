@@ -7,6 +7,22 @@
   --amber: #f0b13a;
   --green: #47e0a0;
   --gold: #e8c56a; /* credits and rewards */
+  /* Soft ink for text on dark panels (bad text is plain --red; amber is the warning colour). */
+  --good-ink: #9fe0a8;
+  --warn-ink: #ffcf7a;
+  /* Surfaces: modal veil, window and popup shadows, pane header fill, screen (video feed) background. */
+  --veil: rgba(4, 8, 14, 0.62);
+  --shadow-window: 0 10px 40px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 6px 24px rgba(0, 0, 0, 0.65);
+  --pane-head: #0d1115;
+  --screen-bg: #05070a;
+  /* Type scale and heading letter-spacing (defined here; the shared components adopt them). */
+  --fs-label: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-title: 15px;
+  --ls-label: 0.12em;
+  --ls-title: 0.14em;
   --hp: #ff6b5a;
   --hunger: #f0b13a;
   --focus: var(--cyan);
@@ -25,18 +41,15 @@
   --gutter: var(--sp-2);
   /* Thin frames: the line colour and weight shared by every titled frame. */
   --frame-w: 1px;
-  /* Bars and tags. */
   /* Panel bands and muted text used by the combat HUD. */
   --band-hot: #6a1c25;
   --heat-low: #1b8fb3;
-  /* Steel hybrid (see combat/steel.css): neutral stand-ins for cyan where it only meant "fine", and borderless controls. */
-  /* Window header tiles, pin and role ink, and the "go" button (neutral steel, green edge: the go state, as Volley). */
   /* Health tones (hull, heat, charge). */
   --health-good: var(--green);
   --health-warn: var(--amber);
   --health-bad: var(--red);
   /* The hostile red family: the enemy card, enemy state, the hostile frame. */
-  --hostile: #ff8a8a;
+  --hostile: var(--red);
   --hostile-dim: #c98a8a;
   --hostile-line: #b8343c;
   --hostile-track: #5a2229;
@@ -102,10 +115,10 @@ button.on { background: var(--panel-3); border-color: var(--cyan); color: #fff; 
 /* An icon tile: square, icon only, cyan glyph. */
 button.tile { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; min-width: 0; min-height: 0; padding: 0; color: var(--cyan); }
 button.tile.on { color: #fff; }
-.bar { height: 6px; background: #061020; border-radius: 0; overflow: hidden; }
+.bar { height: 6px; background: var(--track); border-radius: 0; overflow: hidden; }
 .bar > i { display: block; height: 100%; background: var(--cyan); }
 .sheet { position: fixed; z-index: 5; background: var(--panel); border: 1px solid var(--line-hi); border-radius: 0; padding: 10px; pointer-events: auto; }
-/* Panel heading: condensed caps on a cyan band. */
+/* Panel heading: condensed caps on a steel band. */
 .ph { margin: -10px -10px 8px; padding: 4px 10px; background: var(--band); color: #fff; font: 600 14px/1.3 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
 @media (max-width: 600px) {
   .sheet { left: 0; right: 0; bottom: 0; border-width: 1px 0 0; padding: 10px 14px calc(10px + var(--sab)); max-height: 60vh; overflow-y: auto; }
@@ -154,6 +167,10 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
   --btn-active-edge: var(--cyan);
 }
 .legacy button:disabled { opacity: 0.4; }
+/* Text tones by meaning: good, bad (plain red), warning. */
+.t-good { color: var(--good-ink); }
+.t-bad { color: var(--red); }
+.t-warn { color: var(--amber); }
 /* Utility classes for buttons that have no styles of their own: `commit` (a gameplay change, green edge) and `interact` (opens, navigates; cyan edge). */
 button.commit { background: var(--go-fill); border-color: var(--go-edge); }
 button.interact { background: var(--act-fill); border-color: var(--act-edge); }

@@ -53,5 +53,5 @@
   .st { display: flex; justify-content: space-between; align-items: center; min-height: 22px; font-size: 12px; border-bottom: 1px solid var(--panel-3); cursor: help; }
   .l { color: var(--dim); }
   .dot { margin-left: 4px; font-style: normal; }
-  .pos { color: #9fe0a8; } .neg { color: #ff9a9a; }
+  .pos { color: var(--good-ink); } .neg { color: var(--red); }
 </style>

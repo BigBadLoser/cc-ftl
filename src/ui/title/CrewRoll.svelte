@@ -94,7 +94,7 @@
   .roster { width: 440px; }
   .ph { display: flex; align-items: center; gap: 10px; min-height: 36px; margin: 0; padding: 0 12px; font-size: 15px; letter-spacing: 0.06em; }
   .steps { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--head-font); letter-spacing: 0.08em; color: var(--dim); }
-  .steps .done { display: inline-flex; align-items: center; gap: 4px; color: #9fe0a8; }
+  .steps .done { display: inline-flex; align-items: center; gap: 4px; color: var(--good-ink); }
   .steps .cur { color: #fff; border-bottom: 2px solid var(--cyan); padding-bottom: 1px; }
   .ph, .ship { flex: none; }
   .ship { display: flex; align-items: baseline; gap: 12px; padding: 12px; border-bottom: 1px solid var(--line); }
@@ -106,7 +106,7 @@
   li { display: grid; grid-template-columns: 1fr 36px; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
   li.on { background: #0f1c24; box-shadow: inset 3px 0 0 var(--cyan); }
   .pick { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; cursor: pointer; }
-  .face { width: 56px; height: 64px; background: #061020; border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
+  .face { width: 56px; height: 64px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
   .who { min-width: 0; }
   .top { display: flex; gap: 8px; align-items: center; }
