@@ -59,7 +59,7 @@ for _stem, (_key, _r, _n) in PICKS.items():
     if ONLY and _stem not in ONLY:
         continue
     _fp = (_n, _n)
-    for _d in ((1, 3, 6) if QUICK else range(8)):
+    for _d in ((1, 2, 3, 4, 5) if QUICK and _stem.startswith("flak_") else (1, 3, 6) if QUICK else range(8)):
         SPRITES.append((f"turret.{_stem}.d{_d}", _fp, "prop", lambda k=_key, d=_d: turret(k, False, d)))
         if _key != "pd" and (not QUICK or _d == 1 or _stem.startswith("flak_")):
             SPRITES.append((f"turret.{_stem}.d{_d}.charged", _fp, "prop", lambda k=_key, d=_d: turret(k, True, d)))
