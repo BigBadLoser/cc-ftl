@@ -127,10 +127,9 @@ export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: 
   const side = isProvoked(sim, c) ? sideOf(c.faction) : opts.side ?? (isHostileFaction(sim, payer) ? sideOf(payer) : 'neutral');
   // A scene may ask for fewer crew than the generator puts aboard (the first `crew` of them).
   const template = opts.crew === undefined ? gen.template : { ...gen.template, crew: (gen.template.crew ?? []).slice(0, opts.crew) };
-  const id = spawnShip(sim, template, { faction: side, x: spot.x, y: spot.y, rest: 100 });
+  const id = spawnShip(sim, template, { faction: side, x: spot.x, y: spot.y, rest: 100, gen: { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction, ...(gen.role ? { role: gen.role } : {}) } });
   const ship = sim.world.get(id, ShipC);
   if (ship) {
-    ship.gen = { faction: c.shipgen, seed: c.seed, depth: c.depth, owner: c.faction, ...(gen.role ? { role: gen.role } : {}) };
     if (c.name) ship.name = c.name;
     if (c.bounty !== undefined) ship.bounty = c.bounty;
   }

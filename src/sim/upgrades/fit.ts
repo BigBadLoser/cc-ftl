@@ -5,12 +5,13 @@ import { shipStoreCount } from '../items/stock';
 import { spillItems } from '../items/stacks';
 import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
+import { releaseHold } from '../modules/hold';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 
 /**
  * Fitting an upgrade is a crew job (kind 'fit', repair work) at the module: a job with `fit.item` fetches that item from cargo like a build
- * job's materials and swaps it in; one with `fit.item` null takes the fitted one out. The module is offline while the work runs (`fitting`).
+ * job's materials and swaps it in; one with `fit.item` null takes the fitted one out. The module is offline while the crew work it (a work hold, modules/hold.ts; `fitting` is the UI's view of it).
  */
 
 /** The fit job of a module: [job id, job], if one is posted. */
@@ -75,6 +76,7 @@ export function finishFit(sim: Sim, job: Job): void {
   const next = job.fit?.item ?? null;
   if (next) m.upgrade = next;
   else delete m.upgrade;
+  releaseHold(sim, job.target ?? 0);
   job.delivered = [];
   sim.events.emit({ type: 'module.upgradeFitted', moduleId: job.target ?? 0, item: next, ship: shipId });
 }

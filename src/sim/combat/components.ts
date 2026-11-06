@@ -107,8 +107,6 @@ export interface Ship {
    * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
-  /** The enemy loadout system has been over this ship (upgrades/loadout.ts): it runs once. */
-  upgraded?: true;
   /** The faction this ship had before a truce breach made it hostile to the player (blackmarket/truce.ts); restored when the ban ends. */
   banned?: Faction;
 }
@@ -204,6 +202,11 @@ export interface Weapon {
   once?: boolean;
   /** 0..1, full at 1. */
   charge: number;
+  /**
+   * Anti-drone weapons (flak) only: the standing order to engage hostile drones in range on its own. Never overrides a hold (the weapon's own or hold all):
+   * a held weapon fires nothing. Absent on weapons that cannot shoot drones.
+   */
+  autoDrone?: boolean;
   /** Own target; null = use the ship-wide one. */
   target: Target | null;
   /** Shots still to launch in the running volley. */

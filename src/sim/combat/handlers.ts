@@ -1,6 +1,7 @@
 import { loseStrandedCrew } from '../boarding/stranded';
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
+import { playerShips } from '../story/world';
 import type { Sim } from '../sim';
 import { flee } from '../galaxy/hyperspace';
 import { leave } from '../galaxy/respond';
@@ -55,9 +56,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
     const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
     if (gap) return reject(sim, cmd.type, gap);
-    const shipId = spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100 });
-    const ship = shipById(sim, shipId);
-    if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
+    spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100, gen: { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role } });
   },
   'debug.spawnDerelict': (sim, cmd) => {
     if (!sim.content.factions?.[cmd.faction]) return reject(sim, cmd.type, 'badFaction');
@@ -117,6 +116,13 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     weapon.mode = cmd.mode;
     weapon.once = false;
     delete weapon.restore; // an explicit choice, so hold-all no longer owns this weapon
+  },
+  'combat.setAutoDrone': (sim, cmd) => {
+    const weapon = sim.world.get(cmd.weaponId, WeaponC);
+    const at = sim.world.get(cmd.weaponId, ModuleC);
+    if (!weapon || !at || !playerShips(sim).has(shipIdOf(sim, at))) return reject(sim, cmd.type, 'noWeapon');
+    if (weapon.autoDrone === undefined) return reject(sim, cmd.type, 'notAntiDrone');
+    weapon.autoDrone = !!cmd.on;
   },
   'combat.holdAll': (sim, cmd) => {
     if (!sim.world.get(cmd.ship, CombatC)) return reject(sim, cmd.type, 'noShip');

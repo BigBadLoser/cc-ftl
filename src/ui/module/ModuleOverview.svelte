@@ -29,6 +29,9 @@
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}
     {#if m.droneBay}<DroneBayPanel bay={m.droneBay} />{/if}
+    {#if m.autoDrone !== null}
+      <button class="prio drn" class:on={m.autoDrone} aria-pressed={m.autoDrone} data-testid="dc-autodrone" title={m.autoDrone ? 'Engages hostile drones in range on its own (never while on HOLD). Click to turn off' : 'Click to engage hostile drones in range on its own'} onclick={() => api.dispatch({ type: 'combat.setAutoDrone', weaponId: m.id, on: !m.autoDrone })}><Icon name="combat" size={16} />Auto vs drones</button>
+    {/if}
     {#if m.upgradeSlot}<UpgradePanel {api} {m} />{/if}
     {#if m.hp < m.maxHp}
       <button class="prio" class:on={m.repairFirst} data-testid="dc-priority" aria-pressed={m.repairFirst} title={m.repairFirst ? 'First in the repair queue (click to undo)' : 'Crew repair this before anything else'} onclick={() => api.dispatch({ type: 'module.priorityRepair', id: m.id, on: !m.repairFirst })}><Icon name="chevUp" size={16} />Priority repair</button>
@@ -50,6 +53,7 @@
   .resbtn { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px; color: var(--amber); border-color: var(--amber); background: #000; justify-content: center; }
   .prio { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; margin-top: 8px; min-height: 32px; }
   .prio.on { border-color: var(--amber); color: var(--amber); }
+  .prio.drn.on { border-color: var(--cyan); color: var(--cyan); }
   .pow { padding: 0 10px; min-height: 36px; }
   .warn { border-color: #7a2a2a; color: var(--red); }
 </style>

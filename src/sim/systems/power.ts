@@ -1,6 +1,6 @@
-import { fittingModules } from '../upgrades/fit';
 import { IonC } from '../combat/components';
 import { ModuleC, type Module } from '../modules/components';
+import { isHeldOffline } from '../modules/hold';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
@@ -16,7 +16,7 @@ interface Member {
  * Allocate power per network. Suppliers (power > 0) add to the pool; consumers are served in
  * priority order (1 first, ties by lower entity id). The first consumer that does not fit, and
  * everyone after it, goes unpowered, so shortages always cut the lowest priorities first.
- * Disabled or destroyed (hp 0) modules neither supply nor draw.
+ * Disabled, destroyed (hp 0), ion-struck or work-held (`Module.offlineUntil`) modules neither supply nor draw.
  */
 export function powerSystem(sim: Sim): void {
   const networks = new Map<number, Member[]>();
@@ -31,16 +31,15 @@ export function powerSystem(sim: Sim): void {
     if (list) list.push({ id, m, def });
     else networks.set(key, [{ id, m, def }]);
   }
-  const offline = fittingModules(sim);
-  for (const members of networks.values()) allocate(sim, members, offline);
+  for (const members of networks.values()) allocate(sim, members);
 }
 
-function allocate(sim: Sim, members: Member[], offline: ReadonlySet<number>): void {
+function allocate(sim: Sim, members: Member[]): void {
   let supply = 0;
   let demand = 0;
   const consumers: Member[] = [];
   for (const mem of members) {
-    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC) && !offline.has(mem.id);
+    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC) && !isHeldOffline(sim, mem.m);
     if (!live) {
       mem.m.powered = false;
     } else if (mem.def.power > 0) {

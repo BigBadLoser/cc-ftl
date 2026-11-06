@@ -11,6 +11,7 @@ import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import { stripUpgrade } from '../upgrades/loadout';
 import { finishFit } from '../upgrades/fit';
+import { holdOffline } from '../modules/hold';
 import { performSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -79,7 +80,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
     case 'sabotage': return performSabotage(sim, crew, job);
-    case 'fit': return timed(job, speed, () => { finishFit(sim, job); return 'done'; });
+    case 'fit': holdOffline(sim, job.target ?? 0); return timed(job, speed, () => { finishFit(sim, job); return 'done'; });
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff':

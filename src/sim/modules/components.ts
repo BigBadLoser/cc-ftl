@@ -26,6 +26,11 @@ export interface Module {
   repairFirst?: number;
   /** Item id of the upgrade fitted in the module's slot (ModuleDef.upgradeSlot); absent = none. */
   upgrade?: string;
+  /**
+   * Work hold: the module is offline (unpowered, so it neither fires nor runs) until this sim tick. Crew working on the module refresh it each tick they work
+   * (`holdOffline`), so it lapses by itself when they stop; the job that holds it may also clear it when done.
+   */
+  offlineUntil?: number;
 }
 export const ModuleC = defineComponent<Module>('module');
 

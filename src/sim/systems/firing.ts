@@ -47,11 +47,12 @@ export function firingSystem(sim: Sim): void {
     }
     // The player's weapons have a mode: a held one waits for a volley or for the player to aim it (`once`). Shooting down a hostile shuttle with an
     // ammo weapon stays automatic. AI ships only know `Combat.hold`.
-    // Flak is a defence too: with a hostile drone out in space in range it shoots that, held or not (it never provokes: only what is already at war).
-    const drone = def.antiDrone && ready ? flakTarget(sim, id, shipId, def.antiDrone) : null;
-    const shuttleShot = !!drone || !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
+    // Hold means hold: a held weapon (its own mode, or hold all) fires nothing. Flak on auto with its standing order (`Weapon.autoDrone`) shoots a hostile
+    // drone out in space in range on its own (it never provokes: only what is already at war).
+    const shuttleShot = !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
     const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
     const held = (combat.hold || modeHold) && !combat.volley;
+    const drone = def.antiDrone && ready && !held && w.autoDrone !== false ? flakTarget(sim, id, shipId, def.antiDrone) : null;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
     const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
     const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;

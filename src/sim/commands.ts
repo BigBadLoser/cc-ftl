@@ -159,6 +159,8 @@ export type Command =
   | { type: 'combat.setHold'; ship: number; hold: boolean }
   /** Set one weapon's fire mode: `auto` fires when charged, `hold` waits for a volley or an aim (the player's ship; AI ships use `combat.setHold`). */
   | { type: 'combat.setWeaponMode'; ship: number; weaponId: number; mode: 'auto' | 'hold' }
+  /** The standing order for an anti-drone weapon (flak) to engage hostile drones on its own; a hold still stops it. */
+  | { type: 'combat.setAutoDrone'; weaponId: number; on: boolean }
   /** Put every weapon of the ship on hold, remembering each one's mode; `hold: false` restores them. */
   | { type: 'combat.holdAll'; ship: number; hold: boolean }
   /** Fire every charged weapon of the ship now. */

@@ -227,8 +227,24 @@ export interface UiModule {
   droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
+  /** Anti-drone weapons (flak): the standing order to engage drones on its own (a hold still stops it); null for any other module. */
+  autoDrone: boolean | null;
   /** The upgrade slot (null for a module with none). */
   upgradeSlot: UiUpgradeSlot | null;
+}
+
+/** A foe's weapon module as the read-only combat inspector shows it (no controls). */
+export interface UiFoeModule {
+  id: number;
+  name: string;
+  /** The ship it is on. */
+  ship: string;
+  hp: number;
+  maxHp: number;
+  powered: boolean;
+  /** Its upgrade slot kind (null = no slot) and what is fitted in it. */
+  slot: string | null;
+  upgrade: { item: string; name: string; effects: string[] } | null;
 }
 
 /** An upgrade item as the slot panel lists it. */
@@ -649,6 +665,8 @@ export interface UiWeapon {
   powered: boolean;
   /** `auto` fires when charged; `hold` waits for a volley or for the player to aim it (then it fires once and stays on hold). */
   mode: 'auto' | 'hold';
+  /** Anti-drone weapons (flak): engages hostile drones on its own while not on hold; null for weapons that cannot shoot drones. */
+  autoDrone: boolean | null;
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
@@ -1463,6 +1481,8 @@ export interface UiApi {
   /** A module's on-screen bounds in viewport CSS px (read every frame, it follows pan and zoom), or null when it is not drawn. */
   /** Viewport CSS px of the centre of a ship or station (its ShipC entity), or null when it has no ship or the view is not ready. */
   shipScreen(ship: number): { x: number; y: number } | null;
+  /** A foe's weapon module for the read-only combat inspector (null when it is not one, or may not be shown). */
+  foeModule(id: number | null): UiFoeModule | null;
   moduleScreenRect(id: number): { x0: number; y0: number; x1: number; y1: number } | null;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;

@@ -14,6 +14,7 @@
   import IncomingReadout from './IncomingReadout.svelte';
   import PlayerStrip from './PlayerStrip.svelte';
   import ModuleQuickPanel from './ModuleQuickPanel.svelte';
+  import FoeModuleInspector from './FoeModuleInspector.svelte';
   import StationsCard from './StationsCard.svelte';
   import { isTypingTarget, modalOpen } from '../keys';
   import './steel.css';
@@ -182,6 +183,7 @@
       <InsetFrame {api} ship={insetShip} title={swapped ? (enemy?.neutral ? 'Their ship' : 'Enemy ship') : 'Your ship'} threatened={me.incoming.length > 0} onSwap={swap} />
     </div>
   {/if}
+  <FoeModuleInspector {api} />
   {#if me && swapped}
     <ModuleQuickPanel {api} ship={me.ship} />
   {/if}

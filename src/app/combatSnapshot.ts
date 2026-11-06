@@ -134,7 +134,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           weapons.push({
             id: mid, name: def.name, short: sim.content.weapons?.[def.weapon]?.shortName ?? def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
             upgrade: upgradeInfo(sim, mid), fitting: fittingModules(sim).has(mid), slot: def.upgradeSlot ?? null,
-            mode: w.mode ?? 'auto', ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
+            mode: w.mode ?? 'auto', autoDrone: w.autoDrone ?? null, ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
           });
         }
         if (def.console) {
