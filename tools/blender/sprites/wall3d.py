@@ -351,14 +351,15 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         paint(k, ax, plane, _u((nc - ns) / 2, 3 * PAINT), _u((nc + ns) / 2, 3 * PAINT), q1 - 0.27 - PZ, q1 - 0.07,
               3 * PAINT, F, 0)                           # (its foot a px further down)
         for j in range(2):                                                                       # ochre bars
-            bz = q1 - 0.09 - j * 0.085
+            bz = q1 - 0.09 - j * 0.085 - PZ              # (a px down, in the slot)
             paint(k, ax, plane, _u((nc - ns) / 2 + 1, 4 * PAINT), _u((nc + ns) / 2 - 1, 4 * PAINT), bz - 0.05, bz,
                   4 * PAINT, "ochre", 3)
         zr = b1 - 0.5
         prism(k, ax, plane, _u(n0 + 1, FR), _u(n1 - 1, FR), [(0.0, zr - 0.07), (FR, zr - 0.07), (FR, zr), (0.0, zr)],
-              F, 3, cols=[False, None, None, False], cap=False, mitre=(0.0, -1.0))   # raised bar: its front the panel's
-        gap = (zr - 0.07 - b0) / 3                       # full width between its seams, its top cut back square on
-                                                         # screen at its right end (clear of the seam, no AA blend)
+              F, 3, cols=[False, None, None, False], cap=False, mitre=(0.0, lambda d, z: d - FR))  # raised bar: its front
+        gap = (zr - 0.07 - b0) / 3                       # the panel's full width between its seams, its top's back
+                                                         # cut a px short at its right end (square on screen: clear of
+                                                         # the seam, no AA blend)
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):  # ... the two lines
             paint(k, ax, plane, _u((nc - nl) / 2, 3 * PAINT), _u((nc + nl) / 2, 3 * PAINT), zz - 0.026, zz,
                   3 * PAINT, F, 1)                                                              # evenly under it
