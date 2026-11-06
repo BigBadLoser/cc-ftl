@@ -1,3 +1,4 @@
+import { dockVehicle, stowVehicle } from '../vehicles/transitions';
 import { ALT, BodyC, type Body } from '../body';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { isIncapacitated, isSettled } from '../crew/helpers';
@@ -87,15 +88,10 @@ function fly(sim: Sim, id: number, v: Vehicle, b: Body): void {
   b.y = to.y;
   v.dest = null;
   if (dest.type === 'dock') {
-    v.state = 'docked';
-    v.dock = dest.airlock;
-    b.alt = ALT.docked;
-    sim.events.emit({ type: 'vehicle.docked', vehicle: id, ship: shipIdOf(sim, sim.world.get(dest.airlock, ModuleC)), airlock: dest.airlock });
+    dockVehicle(sim, id, v, dest.airlock);
   } else if (dest.type === 'hover') {
     v.hover = dest.ship;
   } else {
-    v.state = 'stowed';
-    b.alt = ALT.stowed;
-    sim.events.emit({ type: 'vehicle.stowed', vehicle: id, bay: v.home });
+    stowVehicle(sim, id, v);
   }
 }

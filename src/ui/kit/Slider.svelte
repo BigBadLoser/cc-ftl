@@ -14,7 +14,7 @@
 
 <style>
   :global(.kit-slider) { position: relative; display: flex; align-items: center; width: 100%; min-height: 40px; touch-action: none; -webkit-user-select: none; user-select: none; }
-  :global(.kit-slider) .track { position: relative; flex: 1; height: 6px; background: #061020; border: 1px solid var(--line); overflow: hidden; }
+  :global(.kit-slider) .track { position: relative; flex: 1; height: 6px; background: var(--track); border: 1px solid var(--line); overflow: hidden; }
   :global(.kit-slider-range) { position: absolute; height: 100%; background: var(--cyan); }
   :global(.kit-slider-thumb) { display: block; width: 14px; height: 24px; background: var(--panel-3); border: 2px solid var(--cyan); border-radius: 0; cursor: grab; }
   :global(.kit-slider-thumb:hover) { background: var(--cyan); }

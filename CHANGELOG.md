@@ -26,6 +26,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Crew show pixel-art icons over their heads in place of the old drawn bubbles: speech bubbles when they chat (a scribble when it goes badly), a red burst in a shouting match, a thought bubble for each kind of mental break (its rim neutral, amber or red by how severe it is), a red cross when downed and a white flag on surrender. ([#340](https://github.com/BigBadLoser/cc-ftl/pull/340))
 - Doors strip as tech scrap, so unticking Hull on a salvage order still takes them. ([#312](https://github.com/BigBadLoser/cc-ftl/issues/312), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Dormant pirate dens and outposts wake when you fire on them or board them, not when you only aim at them. ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309))
 - Combat shields show as a hex-lattice bubble round each ship: lit rings count the layers, and lasers ripple, ion drains turn the rim violet, mass drivers tear through, missiles pass, and layers visibly break, return, collapse on a vent and pulse when overcharged. ([#308](https://github.com/BigBadLoser/cc-ftl/pull/308))

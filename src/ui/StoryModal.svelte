@@ -105,7 +105,7 @@
   .hint { color: var(--dim); font-size: 12px; }
   .odds { color: var(--ink-accent); font-size: 12px; font-weight: 600; }
   .cost { color: var(--amber); font-size: 12px; }
-  .reason { color: #ff8d8d; font-size: 12px; }
+  .reason { color: var(--red); font-size: 12px; }
   .choice:not(.locked) { border-color: var(--act-edge); }
   .choice.locked { opacity: 1; background: var(--panel-3); border-style: dashed; color: var(--dim); }
   .choice.locked .label { color: var(--dim); }

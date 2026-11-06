@@ -6,6 +6,7 @@ import { flee } from '../galaxy/hyperspace';
 import { leave } from '../galaxy/respond';
 import { FTL_CHARGE_SEC } from '../tuning';
 import { overchargeError, startOvercharge, startVent, ventError } from './heat';
+import { reportDeparted } from './departure';
 import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError, shipGrid, shipIdOf } from '../regions';
@@ -157,6 +158,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
     if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));
     if (combat.ftl < FTL_CHARGE_SEC) return reject(sim, cmd.type, 'notCharged');
+    reportDeparted(sim, cmd.ship, 'fled');
     ship.state = 'fled';
     loseStrandedCrew(sim, cmd.ship, 'fled'); // player boarders still aboard go with it
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });

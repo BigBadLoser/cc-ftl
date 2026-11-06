@@ -29,7 +29,7 @@
 </div>
 
 <style>
-  .screen { position: relative; width: 100%; aspect-ratio: 1; border: 1px solid var(--line-hi); background: #05070a; overflow: hidden; }
+  .screen { position: relative; width: 100%; aspect-ratio: 1; border: 1px solid var(--line-hi); background: var(--screen-bg); overflow: hidden; }
   img { width: 100%; height: 100%; display: block; image-rendering: pixelated; object-fit: contain; }
   img.glitch { transform: translate(-4px, 1px); filter: brightness(1.3) saturate(0.6) contrast(1.15); }
   /* The frame holds and a bright band tears across it. */

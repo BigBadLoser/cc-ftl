@@ -49,7 +49,7 @@
   ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
   li { display: grid; grid-template-columns: 22px 1fr auto; gap: 6px; padding: 2px 6px; background: var(--panel-2); border: 1px solid transparent; }
   li.me { border-color: var(--cyan); }
-  li.dark { color: #ff9a9a; }
+  li.dark { color: var(--red); }
   li b { color: var(--ink-accent); font-weight: 600; }
   .d { color: var(--dim); }
 </style>

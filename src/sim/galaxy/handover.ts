@@ -11,7 +11,7 @@ import { cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { PLAN_INTERVAL } from '../tuning';
 import { courierDef, playerCourier, spawnCourier } from '../trade/courier';
-import { failDeal, isLive } from '../trade/deals';
+import { failDeal, isLive, setPhase } from '../trade/deals';
 import { freeAirlock, playerShip } from '../trade/player';
 import { ensureTrader, hailVerdict } from '../trade/traders';
 import type { Deal } from '../trade/types';
@@ -155,8 +155,7 @@ export function stepHandover(sim: Sim, d: Deal): void {
     d.vehicle = spawnCourier(sim, d);
     if (!d.vehicle) return call(sim, d, 'noCourier');
     (sim.world.get(d.vehicle, VehicleC) as Vehicle).outbound = true;
-    d.phase = 'back';
-    d.timer = 0;
+    setPhase(sim, d, 'back');
   }
   const v = sim.world.get(d.vehicle, VehicleC);
   if (!v) return call(sim, d, 'lost');
@@ -165,8 +164,7 @@ export function stepHandover(sim: Sim, d: Deal): void {
   if (d.phase === 'back') {
     if (d.timer > DOCK_SEC * TICK_HZ) return call(sim, d, 'noDock');
     if (v.state === 'docked' && v.dock === d.airlock) {
-      d.phase = 'load';
-      d.timer = 0;
+      setPhase(sim, d, 'load');
     } else if (due(d) && v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
     return;
   }
@@ -179,18 +177,18 @@ export function stepHandover(sim: Sim, d: Deal): void {
 function stepOwn(sim: Sim, d: Deal, v: Vehicle, job: StationJob): void {
   if (d.phase === 'dispatch') {
     if (d.timer > DOCK_SEC * TICK_HZ) return call(sim, d, 'noDock');
-    if (v.state === 'docked' && v.dock === d.airlock) go(d, 'load');
+    if (v.state === 'docked' && v.dock === d.airlock) setPhase(sim, d, 'load');
     else if (due(d)) {
       if (v.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
       else if (v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
     }
   } else if (d.phase === 'load') {
     if (d.timer > LOAD_SEC * TICK_HZ) return call(sim, d, 'loadTimeout');
-    if (cargoOf(sim, d.vehicle, CRATE) >= 1) go(d, 'out');
+    if (cargoOf(sim, d.vehicle, CRATE) >= 1) setPhase(sim, d, 'out');
     else haulCrate(sim, d, v, job);
   } else if (d.phase === 'out') {
     if (d.timer > FLIGHT_SEC * TICK_HZ) return call(sim, d, 'flightTimeout');
-    if (v.state === 'flying' && !v.dest && v.hover === d.ship) go(d, 'exchange');
+    if (v.state === 'flying' && !v.dest && v.hover === d.ship) setPhase(sim, d, 'exchange');
     else if (due(d)) {
       if (v.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
       else if (v.dest?.type !== 'hover') sim.enqueue({ type: 'vehicle.hover', vehicle: d.vehicle, ship: d.ship });
@@ -202,15 +200,10 @@ function stepOwn(sim: Sim, d: Deal, v: Vehicle, job: StationJob): void {
   }
 }
 
-function go(d: Deal, phase: Deal['phase']): void {
-  d.phase = phase;
-  d.timer = 0;
-}
-
 /** The shuttle has the crate (taken from the airlock, or dropped at the station): it leaves the hold, and the job is marked for payment. The deal is over. */
 function collect(sim: Sim, job: StationJob, d: Deal, v: Vehicle, how: 'shuttle' | 'own'): void {
   cargoTake(sim, d.vehicle, CRATE, cargoCount(v));
   v.outbound = false;
   job.collected = how;
-  go(d, 'done');
+  setPhase(sim, d, 'done');
 }

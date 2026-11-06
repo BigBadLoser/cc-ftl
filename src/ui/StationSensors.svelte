@@ -77,9 +77,7 @@
     const dist = (c: { dx: number; dy: number }) => Math.hypot(c.dx, c.dy);
     const wanted = [...ships.filter((x) => x.c.kind === 'you'), ...shuttles, ...ships.filter((x) => x.c.kind === 'ship').sort((a, b) => dist(a.c) - dist(b.c))].slice(0, MAX_LABELS);
     const raw = wanted.map(({ c, p }) => {
-      const dir = c.head ? (c.head === 'in' ? 'INBOUND' : 'OUTBOUND') : '';
-      const name = fit(c.label, 16);
-      const text = c.kind === 'ship' ? (dir && name.length <= 12 ? `${name} · ${dir}` : name) : c.label;
+      const text = c.kind === 'ship' ? fit(c.label, 16) : c.label;
       const tone = c.kind === 'you' ? 'you' : c.kind === 'shuttle' ? 'amber' : 'dim';
       const w = text.length * CW;
       const ly = c.kind === 'you' ? p.y - SPRITE.you / 2 + 2 : c.kind === 'ship' ? p.y + SPRITE.ship / 2 + 8 : p.y + 30;

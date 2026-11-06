@@ -1,5 +1,5 @@
 import { whereToSell } from './sellSnapshot';
-import { CrewC, JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim } from '../sim';
+import { CrewC, JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim, type SimEvent } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiBoarding, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -76,6 +76,8 @@ export interface InspectSnapshot extends TileRef {
 const STRUCT_NAMES: Record<number, string> = Object.fromEntries(Object.entries(Struct).map(([k, v]) => [v, k]));
 
 export interface Bridge {
+  /** The sim's drained output events, for the app's own readers of them (the station traffic log). */
+  onEvents(events: SimEvent[]): void;
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
@@ -552,13 +554,15 @@ export function createBridge(sim: Sim): Bridge {
     attachLoop(l) {
       loop = l;
     },
+    onEvents(events) {
+      stationLog.onEvents(sim, events);
+    },
     update(stats, info) {
       store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites }));
       refreshInspect();
       refreshCrew();
       refreshShip();
       refreshShuttles();
-      stationLog.observe(sim);
       refreshTrade();
       refreshYard();
       refreshPrizes();

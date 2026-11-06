@@ -22,7 +22,7 @@
 </section>
 
 <style>
-  .win { background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: 0; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); color: var(--text); }
+  .win { background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: 0; box-shadow: var(--shadow-window); color: var(--text); }
   .title { display: flex; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font: 700 13px var(--head-font); letter-spacing: 0.14em; text-transform: uppercase; }
   .title b { color: var(--cyan); font-weight: 700; }
   .title span { color: var(--dim); }

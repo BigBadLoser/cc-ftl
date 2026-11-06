@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, TraderC, newGame, type Deal } from '../sim';
+import { ShipC, TraderC, newGame, type SimEvent } from '../sim';
+import { isLive } from '../sim/trade/deals';
 import { content } from '../content';
 import { StationLog, clockAt } from './stationLog';
 
@@ -13,7 +14,8 @@ function setup() {
   return { sim, station };
 }
 
-const deal = (station: number, phase: Deal['phase']): Deal => ({ id: 77, ship: station, phase, vehicle: 0, give: [{ item: 'item.metal', count: 8 }], get: [], trip: { n: 1, of: 1 } } as unknown as Deal);
+const arrival = (x: number, y: number, over: Partial<Extract<SimEvent, { type: 'ship.arrived'; ship: number }>> = {}): SimEvent =>
+  ({ type: 'ship.arrived', node: 'n', ship: 900, name: 'Raider 9', faction: 'hostile', owner: 'raiders', reason: 'jump-in', x, y, ...over });
 
 describe('station traffic log', () => {
   it('stamps with the top bar clock', () => {
@@ -22,48 +24,64 @@ describe('station traffic log', () => {
     expect(clockAt(3 * 3600 * 20 + 20 * 65)).toBe('3:01:05');
   });
 
-  it('records a deal moving through its phases, newest first, without logging what was already going on', () => {
+  it('records a trade run from the sim events, newest first, stamped with the tick each happened in, including the launch', () => {
     const { sim, station } = setup();
-    sim.trade.deals.push(deal(station, 'out'));
     const log = new StationLog();
-    log.observe(sim);
-    expect(log.view(station).log).toEqual([]);
-    for (const phase of ['dockStation', 'exchange', 'back', 'done'] as const) {
-      sim.trade.deals[sim.trade.deals.length - 1]!.phase = phase;
-      sim.tick += 20;
-      log.observe(sim);
+    sim.enqueue({ type: 'trade.hail', ship: station });
+    sim.step();
+    sim.enqueue({ type: 'trade.offer', ship: station, give: [{ item: 'item.metal', count: 5 }], get: [{ item: 'item.metal', count: 5 }] });
+    sim.step();
+    sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
+    const phaseTicks: number[] = [];
+    for (let i = 0; i < 20000 && (i === 0 || sim.trade.deals.some(isLive)); i++) {
+      sim.step();
+      const events = sim.events.drain();
+      for (const e of events) if (e.type === 'trade.phase') phaseTicks.push(sim.events.tickOf(e, -1));
+      log.onEvents(sim, events);
     }
     const lines = log.view(station).log;
-    expect(lines.map((l) => l.what.split(' ')[0])).toEqual(['delivered', 'heading', 'swapping', 'docking']);
-    expect(lines[0]!.at).toMatch(/^\d\d:\d\d$/);
+    const what = lines.map((l) => l.what.split(' ')[0]).reverse();
+    expect(what).toEqual(expect.arrayContaining(['loading', 'launched', 'docking', 'swapping', 'delivered']));
+    expect(what.indexOf('launched')).toBeLessThan(what.indexOf('docking'));
+    expect(what[what.length - 1]).toBe('delivered');
+    expect(lines[0]!.at).toBe(clockAt(phaseTicks[phaseTicks.length - 1]!));
+    expect(lines.length).toBeLessThanOrEqual(16);
+    expect(phaseTicks.every((t) => t >= 0)).toBe(true);
   });
 
-  it('records ships already in range silently on the first look', () => {
+  it('has nothing for a calm station: no events, no lines, and no look at the sim to guess from', () => {
     const { sim, station } = setup();
-    for (const [x, y] of [[100, 50], [10, 10], [150, 120]] as const) sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
-    for (let i = 0; i < 5; i++) sim.step();
+    for (let i = 0; i < 5; i++) sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100 + i * 10, y: 50 });
+    sim.step();
     const log = new StationLog();
-    log.observe(sim);
-    log.observe(sim);
+    sim.events.drain();
+    log.onEvents(sim, []);
     expect(log.view(station).log).toEqual([]);
   });
 
-  it('notes ships entering and leaving range, and which way they head', () => {
+  it('notes ships arriving and leaving within sensor range, and skips the far ones and a node drop', () => {
+    const { sim, station } = setup();
+    const st = sim.world.get(station, ShipC)!;
+    const cx = st.x + st.width / 2;
+    const cy = st.y + st.height / 2;
+    const log = new StationLog();
+    log.onEvents(sim, [arrival(cx + 100, cy), arrival(cx + 5000, cy, { name: 'Far one' })]);
+    expect(log.view(station).log.map((l) => [l.who, l.what])).toEqual([['Raider 9', 'jumped in']]);
+    log.onEvents(sim, [{ type: 'ship.departed', ship: 900, name: 'Raider 9', faction: 'hostile', owner: 'raiders', reason: 'fled', x: cx + 100, y: cy }]);
+    expect(log.view(station).log[0]).toMatchObject({ who: 'Raider 9', what: 'jumped away' });
+    log.onEvents(sim, [{ type: 'ship.departed', ship: 901, name: 'Wreck 1', faction: 'hostile', owner: 'raiders', reason: 'wrecked', x: cx + 10, y: cy }]);
+    expect(log.view(station).log[0]!.what).toBe('destroyed');
+    const before = log.view(station).log.length;
+    sim.sector.state = 'hyperspace'; // ships placed while the player drops into a node are not news
+    log.onEvents(sim, [arrival(cx + 20, cy)]);
+    expect(log.view(station).log).toHaveLength(before);
+  });
+
+  it('leaves out handover jobs and deals of ships that are not stations', () => {
     const { sim, station } = setup();
     const log = new StationLog();
-    log.observe(sim);
-    for (const [x, y] of [[100, 50], [10, 10], [150, 120], [10, 140], [170, 10]] as const) sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x, y });
-    for (let i = 0; i < 5; i++) sim.step();
-    log.observe(sim);
-    const st = sim.world.get(station, ShipC)!;
-    const other = sim.world.query(ShipC).find((id) => id !== station && sim.world.get(id, ShipC)?.faction !== 'player');
-    if (!other) throw new Error('no ship spawned');
-    const s = sim.world.get(other, ShipC)!;
-    expect(log.view(station).log[0]?.what).toBe('entered sensor range');
-    s.x = st.x + 200; s.y = st.y; log.observe(sim);
-    s.x = st.x + 150; log.observe(sim);
-    expect(log.view(station).heading(other)).toBe('in');
-    s.x = st.x + 5000; log.observe(sim);
-    expect(log.view(station).log[0]?.what).toBe('left sensor range');
+    const base: Omit<Extract<SimEvent, { type: 'trade.phase' }>, 'ship' | 'handover'> = { type: 'trade.phase', deal: 1, from: 'load', to: 'out', vehicle: 5, dock: 0, trip: null, give: [], get: [] };
+    log.onEvents(sim, [{ ...base, ship: station, handover: true }, { ...base, ship: sim.world.query(ShipC).find((i) => i !== station)!, handover: false }]);
+    expect(log.view(station).log).toEqual([]);
   });
 });

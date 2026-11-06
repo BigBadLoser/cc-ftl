@@ -139,7 +139,7 @@
   .search { width: 180px; flex: none; height: 26px; box-sizing: border-box; background: #050505; border: 1px solid #2c2c2c; color: #c8c8c8; padding: 0 8px; font: 13px system-ui; user-select: text; -webkit-user-select: text; }
     .search:focus { outline: none; border-color: var(--amber); }
   .hint.ok { border-color: #c8c8c8; color: #fff; }
-  .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: #ff9a9a; font-size: 12px; white-space: nowrap; }
+  .hint { position: fixed; z-index: 6; transform: translate(-50%, -150%); pointer-events: none; padding: 3px 8px; background: rgba(4, 4, 4, 0.95); border: 1px solid var(--red); color: var(--red); font-size: 12px; white-space: nowrap; }
   @media (max-width: 600px) {
     .cat { left: 0; right: calc(var(--tools-w, 0px) + 16px + var(--sar)); bottom: 0; border-width: 1px 1px 0 0; padding-bottom: var(--sab); }
     .strip { height: 146px; }

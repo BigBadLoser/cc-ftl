@@ -67,7 +67,7 @@ def main():
             sys.exit(f"{mpath} holds {have} px tiles but the pipeline renders {core.TILE_W} px: wrong outdir")
     names = (["crew", "robots", "aliens", "portraits"] + list(families.ALL)) if what == "all" else what.split(",")
     for name in names:
-        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol"):
+        if opts.get("adopt") and name in ("crew", "robots", "aliens", "portraits", "sol", "damage_sol", "marks"):
             continue                                    # (their own caches and renderers: --adopt is for env_build's)
         m = pack.load_manifest(mpath, base())
         if name == "crew":
@@ -90,6 +90,11 @@ def main():
             from sprites import robot_render
             sheets, assets = robot_render.build(out)
             pack.merge(m, "robots", sheets, assets)
+        elif name == "marks":
+            # the overhead crew icons: 2D pixel art in numpy, no render (crew_marks.py)
+            from sprites import crew_marks
+            sheets, assets = crew_marks.build(out)
+            pack.merge(m, "marks", sheets, assets)
         elif name == "sol":
             from sprites import sol_pack
             sheets, assets = sol_pack.build(out)

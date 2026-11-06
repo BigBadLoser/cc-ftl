@@ -37,5 +37,5 @@
   .ic { display: inline-flex; color: var(--cyan); }
   b { font: 700 16px/1 var(--head-font); text-align: right; }
   .who { text-align: right; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .none .ic, .none b, .none .who { color: #ff9a9a; }
+  .none .ic, .none b, .none .who { color: var(--red); }
 </style>

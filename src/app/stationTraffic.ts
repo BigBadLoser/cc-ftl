@@ -29,13 +29,12 @@ function docks(sim: Sim, station: number): { all: number; free: number } {
   return { all, free };
 }
 
-/** What the app layer remembers about a station between snapshots: its log lines (newest first) and which way each ship is heading. */
+/** What the app layer remembers about a station: its log lines, newest first (stationLog.ts). */
 export interface StationLogView {
   log: UiStationTraffic['log'];
-  heading: (ship: number) => 'in' | 'out' | '';
 }
 
-/** Ships near the station (positions in tiles from it) and the player's shuttles on trade runs. Headings are filled in by the caller. */
+/** Ships near the station (positions in tiles from it) and the player's shuttles on trade runs. */
 export function contactsOf(sim: Sim, station: number): UiStationTraffic['contacts'] {
   const st = sim.world.get(station, ShipC);
   if (!st) return [];
@@ -48,19 +47,18 @@ export function contactsOf(sim: Sim, station: number): UiStationTraffic['contact
     const dx = s.x + s.width / 2 - cx;
     const dy = s.y + s.height / 2 - cy;
     if (Math.hypot(dx, dy) > RANGE) continue;
-    contacts.push({ id, kind: s.faction === 'player' ? 'you' : 'ship', dx, dy, label: s.faction === 'player' ? 'YOU' : s.name.toUpperCase(), fleet: fleetOf(s.faction, s.gen?.role), dir: dirOf(-dx, -dy), head: '' });
+    contacts.push({ id, kind: s.faction === 'player' ? 'you' : 'ship', dx, dy, label: s.faction === 'player' ? 'YOU' : s.name.toUpperCase(), fleet: fleetOf(s.faction, s.gen?.role), dir: dirOf(-dx, -dy) });
   }
   for (const d of sim.trade.deals) {
     if (d.ship !== station || d.handover) continue;
     const b = d.vehicle && d.phase !== 'done' && d.phase !== 'failed' ? sim.world.get(d.vehicle, BodyC) : undefined;
     if (!b || !sim.world.has(d.vehicle, VehicleC)) continue;
-    contacts.push({ id: d.vehicle, kind: 'shuttle', dx: b.x - cx, dy: b.y - cy, label: d.trip ? `SHUTTLE · TRIP ${d.trip.n}/${d.trip.of}` : 'SHUTTLE', fleet: 'shuttle', dir: 0, head: '' });
+    contacts.push({ id: d.vehicle, kind: 'shuttle', dx: b.x - cx, dy: b.y - cy, label: d.trip ? `SHUTTLE · TRIP ${d.trip.n}/${d.trip.of}` : 'SHUTTLE', fleet: 'shuttle', dir: 0 });
   }
   return contacts;
 }
 
 /** What a station's sensors see: contacts, free docks and the log the app layer kept (empty without one). */
 export function stationTraffic(sim: Sim, station: number, view?: StationLogView): UiStationTraffic {
-  const contacts = contactsOf(sim, station).map((c) => (c.kind === 'ship' && view ? { ...c, head: view.heading(c.id) } : c));
-  return { contacts, docksFree: docks(sim, station).free, log: view?.log.slice(0, 3) ?? [] };
+  return { contacts: contactsOf(sim, station), docksFree: docks(sim, station).free, log: view?.log.slice(0, 3) ?? [] };
 }

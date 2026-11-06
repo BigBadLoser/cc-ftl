@@ -132,7 +132,7 @@
   h3 small { color: var(--dim); font-weight: normal; flex: 1; }
   .mini { min-height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; }
   .trade { color: var(--amber); font-size: 12px; margin: 2px 0 4px; }
-  .hp > i { background: #4cd964; }
+  .hp > i { background: var(--green); }
   .crew { margin: 8px 0; display: grid; gap: 4px; }
   .slot { display: flex; align-items: center; gap: 8px; }
   .slot > span:nth-child(2) { flex: 1; }

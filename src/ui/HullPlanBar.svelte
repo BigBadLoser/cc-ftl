@@ -48,6 +48,6 @@
   .seg button.on { border-color: var(--amber); background: var(--amber); color: #1a1204; }
   .seg button:disabled { opacity: 0.4; }
   .s { white-space: nowrap; }
-  .bad { color: #ff9a9a; }
+  .bad { color: var(--red); }
   .dim { color: #8a8a8a; }
 </style>

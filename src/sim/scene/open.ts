@@ -26,7 +26,7 @@ function sideOf(sim: Sim, owner: string, stance: Stance): Faction {
 
 /** Spawn one scene ship (false: no room yet, retried by `tendScene`). Its trade stock and wallet are the scene's when it rolled them. */
 function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
-  const opts = { side: sideOf(sim, s.contact.faction, s.stance), ...(s.crew !== undefined ? { crew: s.crew } : {}) };
+  const opts = { reason: 'scene' as const, side: sideOf(sim, s.contact.faction, s.stance), ...(s.crew !== undefined ? { crew: s.crew } : {}) };
   if (!spawnContact(sim, sim.galaxy.current, s.contact, opts) || s.contact.ship === undefined) return false;
   if (s.cargo || s.credits !== undefined || s.attitude !== undefined) {
     const t = ensureTrader(sim, s.contact.ship);
@@ -105,7 +105,7 @@ export function tendScene(sim: Sim, spec: SceneSpec): boolean {
   for (const s of spec.ships) {
     const id = s.contact.ship;
     if (id !== undefined && sim.world.get(id, ShipC)?.state === 'fled') {
-      liftShip(sim, id);
+      liftShip(sim, id, { reason: 'scene' });
       sim.trade.hails = sim.trade.hails.filter((h) => h.ship !== id);
       sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== id);
       s.contact.ship = undefined;
