@@ -39,7 +39,7 @@
   .tab {
     position: relative;
     flex: none;
-    width: 60px;
+    width: 68px;
     min-height: 0;
     min-width: 0;
     padding: 0;
