@@ -178,11 +178,13 @@ def octa_vents(g, r, z, blocks, hot, faces=(90, 45, 135)):
         for ang in faces:
             j = 0 if ang == 90 else 1
             face_plate(g, ang, r, z, u0, u1, -0.072, 0.072, 0.003, 0.01, UNDER)                  # recess
-            for sc in (-0.027, 0.027):
-                face_plate(g, ang, r, z, u0 + 0.012, u1 - 0.012, sc - 0.018, sc + 0.018, 0.009, 0.004,
+            for sc in (-0.033, 0.033):                                                            # glow strips
+                face_plate(g, ang, r, z, u0 + 0.014, u1 - 0.014, sc - 0.022, sc + 0.022, 0.009, 0.004,
                            heat(hot, k - j, UNDER))
-            for sc in (-0.058, 0.0, 0.058):                                                       # slats
-                face_plate(g, ang, r, z, u0, u1, sc - 0.008, sc + 0.008, 0.013, 0.014, EDGE)
+            for sc in (-0.066, 0.0, 0.066):                                                       # slats
+                face_plate(g, ang, r, z, u0, u1, sc - 0.009, sc + 0.009, 0.013, 0.016, EDGE)
+            for uu in (u0, u1 - 0.014):                                                           # frame ends
+                face_plate(g, ang, r, z, uu, uu + 0.014, -0.075, 0.075, 0.013, 0.016, EDGE)
 
 
 def octa_hazard(g, r, z, u0, u1, lift=0.006):
@@ -288,28 +290,27 @@ def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
 DECK = 0.29        # top of the turntable's upper deck (radius 0.44): the cradle stays inside it
 
 
-def cradle(h, PU, BZ, u0, u1, vin, vout, rise=0.08, fall=0.02, c=0.05):
-    """The mount as one mass growing from the deck: a chamfered floor plate and two cheek walls (vin..vout either side)
-    whose tops slope from BZ + rise at the back down to BZ - fall at the front; the trunnions sit inside the walls,
-    shown only as capped bearing bosses flush on their outer faces. Everything stays within the deck's radius."""
+def cradle(h, PU, BZ, vin, vout, half=0.2, peak=0.15):
+    """The mount as one mass on the turntable: a plinth filling the deck (so it visibly stands on something), and two
+    side walls (vin..vout either side, PU +- half along u) peaked over the pivot so the bearing sits well inside them,
+    each with a lighter inset plate and a capped, bolted bearing boss. Everything stays within the deck's radius."""
     _g("cradle")
-    prism(h, u0, u1, csec(vout, 0.035, 0.02), csec(vout, 0.035, 0.02), DECK + 0.035, **BASE)  # floor plate
+    h.vcyl(0, 0, DECK, 0.42, 0.035, BODY, top=SIDE, sides=32)                           # plinth on the deck
+    z0 = DECK + 0.035
+    u0, u1 = PU - half, PU + half
     for sv in (-1, 1):
-        def sec(top):
-            pts = [(vout, DECK), (vout, top - c), (vout - c, top), (vin, top), (vin, DECK)]
-            return [(sv * v, z) for v, z in pts]
-        s0, s1 = sec(BZ + rise), sec(BZ - fall)
-        if sv < 0:
-            s0, s1 = s0[::-1], s1[::-1]
-        prism(h, u0, u1, s0, s1, 0.0, **BASE)
-        vo = sv * vout
-        D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.03, BZ), 0.095, BODY, 16, cap=BODY, capstart=SIDE)  # bearing boss
-        D.seg(h, (PU, vo + sv * 0.025, BZ), (PU, vo + sv * 0.05, BZ), 0.045, "brass", 10, cap="brass")
+        wall = [(u0, z0), (u1, z0), (u1, BZ - 0.06), (PU + 0.1, BZ + peak), (PU - 0.1, BZ + peak), (u0, BZ - 0.06)]
+        _uz(h, wall, sv * vin, sv * vout, SIDE, BODY)
+        inset = [(u0 + 0.04, z0 + 0.04), (u1 - 0.04, z0 + 0.04), (u1 - 0.04, BZ - 0.08),
+                 (PU + 0.08, BZ + peak - 0.04), (PU - 0.08, BZ + peak - 0.04), (u0 + 0.04, BZ - 0.08)]
+        _uz(h, inset, sv * vout, sv * (vout + 0.012), BODY, EDGE)
+        vo = sv * (vout + 0.012)
+        D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.025, BZ), 0.075, SIDE, 16, cap=BODY, capstart=SIDE)  # bearing boss
+        D.seg(h, (PU, vo + sv * 0.02, BZ), (PU, vo + sv * 0.045, BZ), 0.035, "brass", 10, cap="brass")
         for k in range(6):                                                              # its bolt ring
             a = math.tau * (k + 0.5) / 6
-            h.box(PU + 0.07 * math.cos(a), vo + sv * 0.035, BZ + 0.07 * math.sin(a), 0.022, 0.02, 0.022, EDGE,
+            h.box(PU + 0.055 * math.cos(a), vo + sv * 0.03, BZ + 0.055 * math.sin(a), 0.02, 0.016, 0.02, EDGE,
                   base=False)
-        h.box((u0 + u1) / 2, sv * (vout - 0.004), DECK + 0.06, u1 - u0 - 0.08, 0.012, 0.02, UNDER)  # seam
 
 
 # ---- A: LETTERBOX ------------------------------------------------------------------------------------------------
@@ -320,7 +321,7 @@ def letterbox(hot):
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    cradle(h, PU, BZ, -0.3, 0.18, 0.19, 0.3)
+    cradle(h, PU, BZ, 0.19, 0.29)
     g = rig.f("gun")
     _g("receiver")
     prism(g, -0.56, 0.1, csec(0.18, 0.14, 0.045), csec(0.18, 0.14, 0.045), BZ)
@@ -363,13 +364,13 @@ def finned(hot):
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
     TC.turntable(h, R, hot, None, ribs=12)
-    cradle(h, PU, BZ, -0.32, 0.14, 0.2, 0.3, rise=0.06, fall=0.0)
+    cradle(h, PU, BZ, 0.2, 0.29)
     g = rig.f("gun")
     _g("breech")
     prism(g, -0.58, 0.14, octa(0.19), octa(0.19), BZ)
     prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, **DARK)
     bolts(g, -0.635, BZ, 0.105, n=8, mat=EDGE)
-    octa_vents(g, 0.19, BZ, ((-0.43, -0.3, 3), (-0.27, -0.14, 2)), hot)                   # heat grille over the chamber
+    octa_vents(g, 0.19, BZ, ((-0.42, -0.2, 3), (-0.16, 0.06, 2)), hot)                    # heat grille, centred on the chamber
     for u in (-0.46, 0.12):
         prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, **DARK)
     _g("bore")
