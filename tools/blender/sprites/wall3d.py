@@ -431,6 +431,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                     poly = _clip(_clip([(q[0], b0), (q[1], b0), (q[1], b1), (q[0], b1)], lo), hi)
                     if len(poly) >= 3:
                         plate(k, poly, pt, nrm, 0.0, rise, bf, bl)
+            poly = _clip(_clip([(e0 + g, d0), (e1 - g, d0), (e1 - g, d0 + 0.4 / 32), (e0 + g, d0 + 0.4 / 32)],
+                               lo), hi)         # the step's edge lit (the slope's top px, at the shelf)
+            if len(poly) >= 3:
+                plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 5, base=rise)
     for u0, u1, field in segs:
         hole = next((h for h in holes if field and h[0] < u1 and h[1] > u0), None)
         for q in () if one else _minus((u0 + g, u1 - g, d0, d1), holes):      # (round a look's ramp hole)
@@ -485,7 +489,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             pd = 0.4 / 32                               # (about an art px down the slope)
             if style().plain:                           # the default walls: the panel drawn, a seam line round
                 ed = pd                                 # it (a px across, about a px down the slope), its top
-                fd0, fd1 = fd0 + 2 * pd, fd1 - pd       # 2 px down, its bottom a px up
+                fd0, fd1 = fd0 + 4 * pd, fd1 - 2 * pd   # 4 px down, its bottom 2 px up (its top under the
+                fd0 = max(fd0, d0 + pd)                 # step's lit edge, not on it)
                 for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
                           (fu1 - LINE, fu1, fd0, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,
