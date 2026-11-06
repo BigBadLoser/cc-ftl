@@ -57,7 +57,7 @@ MID_PLATE_SIDE = YS[1]              # px proud, its sides in this tone
 FRONT_PLATES = (6, 4, 14, 3)        # W2's sill front: two plates, from these px either side of the tile's centre,
                                     # this many px wide, from its top this many px down, wrapping over onto the
                                     # slope this many px up it on screen; REC proud (on the slope MID_PLATE_RISE),
-                                    # the window post's tone
+                                    # toned as the base's plates
 FRAME_BOX = (4, 2, 14)              # W2's sill front: a frame between those plates, this many px either side of the
                                     # centre (its outer edge), from this many px down from the front's top to this
                                     # many (the plates' foot); a px wide, REC proud, in the plates' tone; inside it the
@@ -203,7 +203,7 @@ def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
     d3 = fr - up / dy
     pf = [(fr, zd), (fr + R, zd), (fr + R, zs + k * R + r), (d3, zj + k * (d3 - dv) + r), (d3, zj + k * (d3 - dv)),
           (fr, zs)]
-    cols = [False, HEAD_FRONT, HEAD_FRONT, False, False, False]          # (the window post's tone)
+    cols = [False] + s.cols(pf, "plate")[1:3] + [False] * 3            # (toned as the base's plates)
     c = (s0 + s1) / 2
     for u0, u1 in ((c - T3.px(off + w), c - T3.px(off)), (c + T3.px(off), c + T3.px(off + w))):
         f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
@@ -211,7 +211,8 @@ def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
     za, zb, zc, zd = (zs - n / core.ZPX for n in (foot, foot - 1, top + 1, top))
     a, b = c - T3.px(half), c + T3.px(half)
     for u0, u1, z0, z1 in ((a, b, za, zb), (a, b, zc, zd), (a, a + T3.px(1), zb, zc), (b - T3.px(1), b, zb, zc)):
-        f.part(u0, u1, [(fr, z0), (fr + R, z0), (fr + R, z1), (fr, z1)], [False, HEAD_FRONT, HEAD_FRONT, False],
+        pf = [(fr, z0), (fr + R, z0), (fr + R, z1), (fr, z1)]
+        f.part(u0, u1, pf, [False] + s.cols(pf, "plate")[1:3] + [False],
                MID_PLATE_SIDE, end=False)
 
 
