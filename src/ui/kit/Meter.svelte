@@ -1,26 +1,41 @@
 <script lang="ts">
+  import { meterTone } from './meterTone';
+
   /**
-   * The one bar style: a dark track with a thin edge and a square fill. `value` is 0 to 1, `fill` any CSS background (a colour or
-   * gradient). Without a `height` the bar stretches to its container. `label` is drawn inside the bar; `notches` are 0 to 1 marks
-   * across it; `blink` pulses the fill.
+   * The one bar style: a dark track (`--track`) with a thin edge and a square fill.
+   * Give it `value` out of `max` (default 1) and a `tone`: `auto` colours by the 60/30 hull rule (green from 60%, amber from 30%,
+   * red below; `thresholds` overrides the two cut-offs as percentages), `good`/`warn`/`bad` are fixed health colours and `neutral`
+   * (default) is the plain HUD bar colour, for progress that is not good or bad. `height` is 4, 6 or 8; `base` is a white tick at
+   * that value; `title` is the hover text for the numbers. Cyan is not a fill colour here: it means selection.
+   * `label` is drawn inside the bar, `notches` are 0 to 1 marks across it, `blink` pulses the fill and `edge` recolours the
+   * outline (a hostile frame). Without a `height` the bar stretches to its container.
    */
-  let { value, fill = 'var(--health-good)', height, edge = 'var(--line)', edgeWidth = 1, label, notches = [], blink = false, title }: {
+  let { value, max = 1, tone = 'neutral', thresholds, height, base, edge = 'var(--line)', label, notches = [], blink = false, title, testId }: {
     value: number;
-    fill?: string;
-    height?: number;
+    max?: number;
+    tone?: 'auto' | 'good' | 'warn' | 'bad' | 'neutral';
+    thresholds?: { good: number; warn: number };
+    height?: 4 | 6 | 8 | number;
+    base?: number;
     edge?: string;
-    edgeWidth?: number;
     label?: string;
     notches?: readonly number[];
     blink?: boolean;
     title?: string;
+    testId?: string;
   } = $props();
-  const pct = $derived(Math.round(Math.max(0, Math.min(1, value)) * 100));
+  const frac = $derived(Math.max(0, Math.min(1, value / Math.max(1e-6, max))));
+  const pct = $derived(Math.round(frac * 100));
+  const resolved = $derived(tone === 'auto' ? meterTone(frac * 100, thresholds) : tone);
+  const TONE_FILL = { good: 'var(--health-good)', warn: 'var(--health-warn)', bad: 'var(--health-bad)', neutral: 'var(--hud-bar)' } as const;
+  const color = $derived(TONE_FILL[resolved]);
+  const border = $derived((height ?? 0) >= 8 ? 1 : 0);
 </script>
 
-<span class="meter" style:height={height === undefined ? undefined : `${height}px`} style:border="{edgeWidth}px solid {edge}" {title}>
-  <i class:blink style:width="{pct}%" style:background={fill}></i>
+<span class="meter" style:height={height === undefined ? undefined : `${height}px`} style:border="{border}px solid {edge}" style:box-shadow={border === 0 ? `0 0 0 1px ${edge}` : undefined} {title} role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} data-testid={testId}>
+  <i class:blink style:width="{pct}%" style:background={color}></i>
   {#each notches as at (at)}<u style:left="{Math.round(at * 100)}%"></u>{/each}
+  {#if base !== undefined && base > 0}<s style:left="{Math.round(Math.min(1, base / Math.max(1e-6, max)) * 100)}%"></s>{/if}
   {#if label}<b>{label}</b>{/if}
 </span>
 
@@ -45,6 +60,14 @@
     bottom: -2px;
     width: 1px;
     background: var(--dim);
+  }
+  s {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    margin-left: -1px;
+    background: #fff;
   }
   b {
     position: absolute;

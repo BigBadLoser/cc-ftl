@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiModule } from '../api';
   import Icon from '../Icon.svelte';
-  import { ActionButton, Frame } from '../kit';
+  import { ActionButton, Frame, Meter } from '../kit';
   import { placePanel, type Rect } from './panelPlace';
 
   /**
@@ -49,7 +49,7 @@
     <Frame title={m.name}>
       <div class="body">
         <div class="row"><span class="dim">Health</span><span>{m.hp}/{m.maxHp}</span></div>
-        <div class="bar" class:low={pct < 40}><i style:width="{pct}%"></i></div>
+        <Meter value={pct} max={100} tone="auto" height={6} title="{m.hp}/{m.maxHp}" />
         {#if m.hp < m.maxHp}
           <ActionButton
             tone={m.repairFirst ? 'amber' : 'plain'}
@@ -72,7 +72,4 @@
   .row { display: flex; justify-content: space-between; }
   .dim { color: var(--dim); }
   .ok { text-align: center; }
-  .bar { height: 6px; background: var(--panel-3); }
-  .bar > i { display: block; height: 100%; background: var(--hp); }
-  .bar.low > i { background: var(--red); }
 </style>

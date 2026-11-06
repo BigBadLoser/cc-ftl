@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import type { UiDroneBay } from './api';
 
   /** The drone bay's slots in the module inspector: each docked or flying drone, its battery, and the AI core's limit (numbers on demand). */
@@ -10,7 +11,7 @@
   {#each bay.slots as s, i (i)}
     {#if s}
       <div class="row"><span>{s.name}</span><span class="dim" class:bad={s.state === 'down'}>{s.doing}</span></div>
-      <div class="bar" class:low={s.charge < 25}><i style:width="{s.charge}%"></i></div>
+      <span class="mt"><Meter value={s.charge} max={100} tone={s.charge < 25 ? 'warn' : 'neutral'} height={4} title="Charge {Math.round(s.charge)}%" /></span>
       {#if s.supply}<div class="row sup" data-testid="drone-supply"><span class="dim">Load</span><span class:bad={s.supply.have === 0}>{s.supply.name} {s.supply.have}/{s.supply.cap}</span></div>{/if}
     {:else}
       <div class="row"><span class="dim">Empty pad</span><span class="dim">takes a drone from storage</span></div>
@@ -29,7 +30,5 @@
   .dim { color: var(--dim); }
   .bad { color: var(--red); }
   .cap { margin-top: 6px; }
-  .bar { height: 4px; background: var(--track); margin: 2px 0 6px; }
-  .bar i { display: block; height: 100%; background: var(--cyan); }
-  .bar.low i { background: var(--amber); }
+  .mt { display: block; margin: 2px 0 6px; }
 </style>

@@ -29,7 +29,8 @@
   td { padding: 3px 0; }
   .n { text-align: right; color: var(--gold); }
   .ask { color: var(--dim); }
-  small.dear { color: var(--amber); } small.cheap { color: var(--green); }
+  small.dear, small.cheap { margin-left: 6px; }
+  small.dear { color: var(--amber); } small.cheap { color: var(--good-ink); }
   .alarm { margin: 0; color: var(--amber); }
   .note { margin: 0; color: var(--dim); font-size: 12px; }
 </style>

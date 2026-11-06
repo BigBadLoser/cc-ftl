@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import Icon from '../Icon.svelte';
-  import { ActionButton, Chips, Dialog, KeyBadge } from '../kit';
+  import { ActionButton, Chips, Dialog, KeyBadge, Meter } from '../kit';
   import { holdModal } from '../keys';
   import { keyLabel, keymap } from '../keymap';
   import type { UiApi } from '../api';
@@ -91,7 +91,7 @@
             <input type="checkbox" checked={at >= 0} disabled={!!c.reason || (at < 0 && picked.length >= seats)} onchange={() => toggle(c.id)} data-testid="board-crew-{c.id}" />
             <span class="nm">{c.name}</span><small>{c.role}</small>
             <span class="role">{at >= 0 ? 'boarder' : c.reason ?? ''}</span>
-            <span class="hp" style:--w="{Math.round(c.hp * 100)}%"><i></i></span>
+            <span class="hp"><Meter value={c.hp} tone="auto" height={6} /></span>
           </label>
         </li>
       {/each}
@@ -127,8 +127,7 @@
   .crew label { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto 64px 46px; gap: 8px; align-items: center; padding: 6px 8px; font-size: 14px; cursor: pointer; }
   .crew small { color: var(--dim); font-size: 11px; }
   .role { font: 600 11px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); text-align: right; }
-  .hp { display: block; height: 6px; background: var(--track, #080a0c); }
-  .hp i { display: block; height: 100%; width: var(--w); background: var(--health-good); }
+  .hp { display: block; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; height: 38px; }
   .act { background: #11151a; border-color: var(--cyan); font: 600 13px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
   .why { margin: 0; font-size: 12px; color: var(--amber); }

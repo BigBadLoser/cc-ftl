@@ -44,7 +44,7 @@
   const tip = $derived(
     selected ? 'Click an enemy module in the world to aim this weapon (Esc cancels)' : 'Select, then click an enemy module to aim',
   );
-  const fill = $derived(held ? 'var(--amber)' : 'var(--hud-bar, var(--health-good))');
+  const tone = $derived(held ? 'warn' : 'neutral');
 </script>
 
 <!-- A div, not a button: the bottom line inside is a button of its own. -->
@@ -67,17 +67,20 @@
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
-    {#if api && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><ItemIcon {api} item={weapon.upgrade.item} size={compact ? 14 : 20} /></span>{/if}
+    {#if compact && api && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><ItemIcon {api} item={weapon.upgrade.item} size={12} /></span>{/if}
     {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
   {#if compact}
-    <span class="cm"><Meter value={weapon.charge} {fill} height={4} edge="var(--track)" /></span>
+    <span class="cm"><Meter value={weapon.charge} {tone} height={4} /></span>
   {:else}
-    <Meter value={weapon.charge} {fill} height={4} edge="var(--track)" />
+    <Meter value={weapon.charge} {tone} height={4} />
+    <span class="low">
     <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
+    {#if api && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><ItemIcon {api} item={weapon.upgrade.item} size={16} /></span>{/if}
+    </span>
   {/if}
 </div>
 
@@ -85,7 +88,7 @@
   .wc {
     min-height: 0;
     min-width: 0;
-    padding: 7px 9px;
+    padding: 7px 8px;
     display: grid;
     grid-template-rows: auto auto 1fr;
     align-content: center;
@@ -118,7 +121,7 @@
   .top {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 5px;
     min-width: 0;
   }
   .nm {
@@ -131,6 +134,8 @@
     text-overflow: ellipsis;
   }
   .up { flex: none; display: inline-flex; }
+  .low { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-width: 0; }
+  .low .sub { flex: 0 1 auto; }
   .fit { color: var(--amber); }
   .am {
     flex: none;

@@ -60,15 +60,11 @@
   });
   const shownRate = $derived(rate);
 
+  /** The enemy card's tag: the ship's relation to you, nothing else (its state shows on the card itself). */
   const pill = $derived.by((): { text: string; tone: string } => {
     if (!enemy) return { text: 'Clear', tone: 'dim' };
-    if (enemy.neutral) return { text: 'Not hostile', tone: 'dim' };
-    if (enemy.state === 'disabled') return { text: 'Disabled', tone: 'amber' };
-    if (enemy.state !== 'active') return { text: enemy.state, tone: 'dim' };
-    if (enemy.heat.lockout > 0) return { text: 'Overheated', tone: 'green' };
-    if (me?.hold || me?.holdAll) return { text: 'You hold fire', tone: 'amber' };
-    if (enemy.shield.max > 0 && enemy.shield.layers === 0) return { text: 'Shields down', tone: 'green' };
-    return { text: 'Hostile', tone: 'red' };
+    if (enemy.friendly) return { text: 'Friendly', tone: 'green' };
+    return enemy.neutral ? { text: 'Neutral', tone: 'dim' } : { text: 'Hostile', tone: 'red' };
   });
   const helmManned = $derived(!!me?.consoles.some((c) => c.kind === 'helm' && c.powered && c.operator !== null));
 
@@ -174,7 +170,7 @@
   {#if enemy || standing}
     <div class="top">
       {#if standing}<StationsCard held={!!me?.holdAll} onStandDown={standDown} />{/if}
-      {#if enemy}<EnemyCard {api} {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />{/if}
+      {#if enemy}<EnemyCard {api} {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} />{/if}
       {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
     </div>
   {/if}
@@ -192,7 +188,7 @@
   {/if}
   {#if me}
     <div class="bot">
-      <PlayerStrip {api} {me} {flee} {drive} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} />
+      <PlayerStrip {api} {me} {flee} {drive} {aiming} onSelect={select} rate={shownRate} onVent={vent} onOvercharge={overcharge} onBoard={enemy ? () => (picking = true) : null} {boardBlocker} />
     </div>
   {/if}
   {#if enemy}<BoardPicker {api} {plan} enemyName={enemy.name} open={picking} onClose={() => (picking = false)} />{/if}

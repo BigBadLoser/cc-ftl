@@ -1,82 +1,63 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
-  import { ActionButton, Frame, FrameGap, KeyBadge, Meter, Pill, Pips } from '../kit';
-  import { keyLabel, keymap } from '../keymap';
+  import { Chip, chipTone, Frame, FrameGap, Meter, Pips } from '../kit';
   import type { UiApi, UiShipCombat } from '../api';
   import ItemIcon from '../ItemIcon.svelte';
   import { enemyWeaponRow } from './enemyWeapons';
-  import { hullTone } from './hullTone';
+  import HeatBar, { heatTone } from './HeatBar.svelte';
+  import { cardName } from './enemyName';
 
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
    */
-  let { api, enemy, state: pill, onFrame, onBoard, boardBlocker }: {
+  let { api, enemy, state: pill, onFrame }: {
     api?: UiApi;
     enemy: UiShipCombat;
     state: { text: string; tone: string };
     onFrame: () => void;
-    onBoard: () => void;
-    /** Why Board is disabled (null = it opens the party picker). */
-    boardBlocker: string | null;
   } = $props();
   const hull = $derived(Math.round(enemy.integrity * 100));
   const heatPct = $derived(Math.round((enemy.heat.value / enemy.heat.max) * 100));
-  const hot = $derived(heatPct >= 90 ? 'red' : heatPct >= 70 ? 'amber' : '');
+  const hot = $derived(((t) => (t === 'cool' ? '' : t))(heatTone(enemy.heat.value / enemy.heat.max)));
   const sub = $derived(
     [enemy.faction, enemy.klass].filter((x): x is string => !!x && x.toLowerCase() !== pill.text.toLowerCase()).join(' · '),
   );
+  /** Not at war with you (neutral or friendly): the plain frame and dim subtitle, not the red hostile ones. */
+  const calm = $derived(!!enemy.neutral || !!enemy.friendly);
+  const title = $derived(cardName(enemy.name, enemy.faction, enemy.klass));
   const hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`;
-  const HULL_FILL = { green: 'var(--health-good)', amber: 'var(--health-warn)', red: 'var(--health-bad)' } as const;
-  const HEAT_FILL = {
-    '': 'linear-gradient(90deg, var(--heat-low), var(--cyan))',
-    amber: 'linear-gradient(90deg, var(--heat-low), var(--amber))',
-    red: 'linear-gradient(90deg, var(--amber), var(--red))',
-  } as const;
-  const tone = $derived(pill.tone as 'red' | 'amber' | 'green' | 'dim');
+  const tone = $derived(chipTone(pill.tone));
 </script>
 
 <Frame
-  title={enemy.name}
-  tone={enemy.neutral ? 'normal' : 'hostile'}
-  style="width:290px; pointer-events:auto; background: var(--panel)"
+  {title}
+  tone={calm ? 'normal' : 'hostile'}
+  style="width:320px; pointer-events:auto; background: var(--panel)"
   testid="enemy-card"
   lesson={anchor('combat.enemy')}
 >
   {#snippet right()}
-    <Pill {tone}>{pill.text}</Pill>
+    <Chip plate {tone}>{pill.text}</Chip>
     <FrameGap width={14} />
     <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
   {/snippet}
   <div class="body">
-    {#if sub}<span class="fac">{sub}</span>{/if}
-    <div class="def">
-      <div class="srow">
-        <Pips
-          total={enemy.shield.max}
-          on={enemy.shield.layers}
-          width={26}
-          height={7}
-          gap={2}
-          empty="no shields"
-          emptyCaps
-          title="Shield layers {enemy.shield.layers}/{enemy.shield.max}"
-        />
-        <span class="chip" title="Chance a shot misses">Evade <b>{Math.round(enemy.evasion * 100)}%</b></span>
-      </div>
-      <Meter
-        value={hull / 100}
-        fill={HULL_FILL[hullTone(hull)]}
-        height={20}
-        edge="var(--hostile-track)"
-        label="{hull}%"
-        blink={hull < 30}
-        title="Hull integrity"
-      />
-      <div class="hrow" title="Heat">
-        <span class="grow"><Meter value={heatPct / 100} fill={HEAT_FILL[hot]} height={8} edge="var(--hostile-track)" /></span>
-        <span class="hp {hot}">Heat {heatPct}%</span>
-      </div>
+    {#if sub}<span class="fac" class:neutral={calm}>{sub}</span>{/if}
+    <div class="stats">
+      <span class="lbl">Hull</span>
+      <span class="bar" title="Hull integrity. Evasion {Math.round(enemy.evasion * 100)}%: the chance a shot misses">
+        <Meter value={hull} max={100} tone="auto" height={10} edge="var(--line-hi)" blink={hull < 30} />
+      </span>
+      <b>{hull}%</b>
+      <span class="lbl">Shields</span>
+      <span class="bar" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">
+        <Pips total={enemy.shield.max} on={enemy.shield.layers} height={10} gap={4} fill empty="no shields" emptyCaps />
+      </span>
+      <b>{enemy.shield.layers}/{enemy.shield.max}</b>
+      <span class="lbl">Heat</span>
+      <span class="bar" title="Heat"><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={10} edge="var(--line-hi)" label="Enemy heat" /></span>
+      <b class={hot}>{heatPct}%</b>
     </div>
 
     {#if enemy.charges && enemy.charges.length > 0}
@@ -86,24 +67,16 @@
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
             <span class="nm"><span class="t">{w.name}</span>{#if api && w.upgrade}<span class="up" data-testid="enemy-upgrade" title="Fitted: {w.upgrade.name}"><ItemIcon {api} item={w.upgrade.item} size={14} /></span>{/if}</span>
-            <Meter
-              value={w.charge}
-              fill={shot ?? 'var(--cyan)'}
-              height={8}
-              edge={shot ?? 'var(--hostile-track)'}
-              notches={[w.commitAt]}
-            />
-            <span class="st">{row.status}</span>
+            {#if w.eta !== null}
+              <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
+            {:else}
+              <span class="st">{row.status}</span>
+            {/if}
+            <i style:width="{Math.round(w.charge * 100)}%"></i>
           </div>
         {/each}
       </div>
     {/if}
-    <div class="board">
-      <ActionButton tone="plain" disabled={!!boardBlocker} title={boardBlocker ?? `Send a boarding party in a shuttle (${keyLabel($keymap, 'combat.board')})`} testid="combat-board" onclick={onBoard}>
-        <Icon name="shuttle" size={16} />Board<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.board')}</KeyBadge>
-      </ActionButton>
-      {#if boardBlocker}<span class="why" data-testid="board-blocker">{boardBlocker}</span>{/if}
-    </div>
   </div>
 </Frame>
 
@@ -112,22 +85,19 @@
     display: grid;
     gap: 10px;
   }
-  .board { display: flex; align-items: center; gap: var(--sp-2); height: 28px; }
-  .board :global(.btn) { width: 120px; }
-  .why { font: 600 11px/1 var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
   .fr {
     min-height: 0;
     min-width: 0;
     width: 22px;
-    height: 21px;
+    height: 22px;
     padding: 0;
     display: grid;
     place-items: center;
     background: var(--panel);
-    border: 1px solid var(--hostile);
+    border: 1px solid var(--edge);
     border-radius: 0;
     margin: 0 4px;
-    color: var(--hostile);
+    color: var(--edge);
   }
   .fac {
     margin: 2px 0 -4px;
@@ -136,83 +106,82 @@
     text-transform: uppercase;
     color: var(--hostile-dim);
   }
-  .def {
+  .fac.neutral { color: var(--dim); }
+  /* The same shape as the player's STATUS block: label, bar, value. */
+  .stats {
     display: grid;
-    gap: 3px;
-  }
-  .srow {
-    display: flex;
+    grid-template-columns: 58px minmax(0, 1fr) 34px;
     align-items: center;
-    justify-content: space-between;
-    height: 20px;
+    gap: 7px var(--sp-2);
   }
-  .chip {
-    font: 600 11px/1 var(--head-font);
+  .lbl {
+    font: 600 12px var(--head-font);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--dim);
-    padding: 2px 5px;
-    border: 1px solid var(--line);
   }
-  .chip b {
+  .bar { display: block; min-width: 0; }
+  .stats b {
+    font: 600 14px var(--head-font);
     color: var(--text);
-    font-weight: 700;
-  }
-  .hrow {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    margin-top: 3px;
-  }
-  .grow {
-    flex: 1;
-    display: block;
-  }
-  .hp {
-    font: 600 11px/1 var(--head-font);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--dim);
-    min-width: 62px;
     text-align: right;
   }
-  .hp.amber { color: var(--amber); }
-  .hp.red { color: var(--red); }
-  /* Weapons: name, charge bar, status. A committed shot takes its colour: the same as its line in the world and its timeline marker. */
+  .stats b.amber { color: var(--amber); }
+  .stats b.red { color: var(--red); }
+  /* Weapons: a slim panel each. A committed shot takes its colour (the line in the world and the marker on the timeline): a left accent and the countdown. */
   .wl {
     display: grid;
-    gap: 5px;
+    gap: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
   }
   .w {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr) 68px;
-    gap: var(--sp-2);
+    position: relative;
+    display: flex;
     align-items: center;
-    height: 16px;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    height: 30px;
+    padding: 0 8px 0 10px;
+    background: var(--panel-2);
+    overflow: hidden;
   }
-  .nm { display: flex; align-items: center; gap: 3px; min-width: 0; }
-  .nm .t { overflow: hidden; text-overflow: ellipsis; }
+  .w.aim { box-shadow: inset 3px 0 0 var(--c); }
+  .w i {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--hud-bar);
+  }
+  .w.aim i { background: var(--c); }
   .up { flex: none; display: inline-flex; }
   .nm {
-    font: 600 13px/1 var(--head-font);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    font: 600 14px/1 var(--head-font);
     letter-spacing: 0.03em;
-    white-space: nowrap;
-    overflow: hidden;
-    color: var(--text);
-  }
-  .st {
-    font: 600 11px/1 var(--head-font);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    text-align: right;
     white-space: nowrap;
     color: var(--dim);
   }
-  .aim .nm,
-  .aim .st {
+  .nm .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .aim .nm { color: var(--text); }
+  .eta {
+    flex: none;
+    font: 700 20px/1 var(--head-font);
     color: var(--c);
   }
-  .off {
-    opacity: 0.4;
+  .eta small { font-size: 13px; }
+  .st {
+    flex: none;
+    font: 600 11px/1 var(--head-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--dim);
   }
+  .aim .st { color: var(--c); }
+  .off { opacity: 0.4; }
 </style>

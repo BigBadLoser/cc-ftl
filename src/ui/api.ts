@@ -750,6 +750,8 @@ export interface UiShipCombat {
   dormant?: boolean;
   /** Not hostile to the player (listed at battle stations): aiming at it does nothing, a shot fired at it turns it hostile. */
   neutral?: boolean;
+  /** Allied to the player: the card tags it Friendly and drops the red hostile frame. Nothing sets it yet (no allied ships are listed). */
+  friendly?: boolean;
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };

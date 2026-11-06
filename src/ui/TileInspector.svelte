@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import { onMount } from 'svelte';
   import { Struct } from '../sim';
   import type { UiApi, UiInspect } from './api';
@@ -60,7 +61,7 @@
         buttons={forcing
           ? [{ label: 'Stop forcing', testid: 'force-cancel', title: 'Cancel forcing the door', onclick: cancelForce }]
           : [{ label: 'Force door', testid: 'force-door-btn', title: 'Force door: crew pry it free', onclick: forceDoor }]}>
-        {#if forcing}<div class="bar" role="progressbar" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100" title="Forcing the door: {pct}%" data-testid="force-progress"><i style="width:{pct}%"></i></div>{/if}
+        {#if forcing}<Meter value={pct} max={100} height={8} title="Forcing the door: {pct}%" testId="force-progress" />{/if}
       </InspectorAction>
     {/if}
     {#if info.selected}
@@ -78,8 +79,6 @@
   dl { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.stack { display: flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--text); }
-  .bar { height: 8px; background: var(--panel); border: 1px solid var(--line); }
-  .bar i { display: block; height: 100%; background: var(--amber); }
   .dbg { color: var(--dim); font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   @media (max-width: 600px) {

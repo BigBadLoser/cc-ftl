@@ -2,6 +2,7 @@
   import { keyLabel, keymap } from '../keymap';
   import Icon from '../Icon.svelte';
   import { ActionButton, Frame, KeyBadge } from '../kit';
+  import HeatBar, { heatTone } from './HeatBar.svelte';
   import { anchor } from '../lessons/anchors';
   import { VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
   import type { UiShipCombat } from '../api';
@@ -19,7 +20,7 @@
 
   const frac = $derived(heat.value / heat.max);
   const pct = $derived(Math.round(frac * 100));
-  const tone = $derived(frac >= 0.9 ? 'red' : frac >= 0.7 ? 'amber' : 'cool');
+  const tone = $derived(heatTone(frac));
   const locked = $derived(heat.lockout > 0);
   const rateText = $derived(`${rate >= 0 ? '+' : '−'}${Math.abs(rate).toFixed(1)}%/s`);
   const canVent = $derived(!locked && heat.venting === 0 && heat.value >= VENT_MIN_HEAT);
@@ -53,11 +54,7 @@
         </ActionButton>
       </span>
     </div>
-    <div class="gauge {tone}" role="meter" aria-label="Ship heat" aria-valuenow={pct} aria-valuemin="0" aria-valuemax="100">
-      <i style="width:{pct}%"></i>
-      <u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u>
-      <s style="left:70%" title="Auto-vent line"></s>
-    </div>
+    <HeatBar value={heat.value} max={heat.max} marks autoVent={0.7} label="Ship heat" />
   </div>
 </Frame>
 
@@ -99,40 +96,5 @@
     padding: 0 5px;
     font: 600 13px var(--head-font);
     letter-spacing: 0.06em;
-  }
-  .gauge {
-    position: relative;
-    align-self: stretch;
-    min-height: 20px;
-    background: var(--track);
-    border: 1px solid var(--line-hi);
-  }
-  .gauge > i {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, var(--heat-low), var(--cyan));
-    transition: width 0.2s;
-  }
-  .gauge.amber > i { background: linear-gradient(90deg, var(--heat-low), var(--amber)); }
-  .gauge.red > i {
-    background: linear-gradient(90deg, var(--amber), var(--red));
-    animation: pulse 0.9s infinite alternate;
-  }
-  .gauge > s {
-    position: absolute;
-    top: -3px;
-    bottom: -3px;
-    width: 2px;
-    background: var(--amber);
-  }
-  .gauge > u {
-    position: absolute;
-    top: 55%;
-    bottom: 0;
-    width: 1px;
-    background: rgba(216, 240, 255, 0.22);
-  }
-  @keyframes pulse {
-    to { filter: brightness(1.35); }
   }
 </style>

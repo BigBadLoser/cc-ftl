@@ -4,7 +4,6 @@
   import FloatingWindow from '../FloatingWindow.svelte';
   import ItemIcon from '../ItemIcon.svelte';
   import { Meter } from '../kit';
-  import { hullTone } from './hullTone';
 
   /**
    * Combat: a foe's weapon module, read-only (a left click on it while not aiming). Its name, health and what its upgrade slot carries; no controls.
@@ -16,7 +15,6 @@
   let tick = $state(0);
   const m = $derived<UiFoeModule | null>((void tick, api.foeModule(sel)));
   /** The same 60 / 30 bands as the player's hull. */
-  const FILL = { green: 'var(--health-good)', amber: 'var(--health-warn)', red: 'var(--health-bad)' } as const;
   const pct = $derived(m ? Math.round((m.hp / Math.max(1, m.maxHp)) * 100) : 0);
   onMount(() => {
     const a = api.selectedModule.subscribe((s) => (sel = s));
@@ -30,7 +28,7 @@
     <div class="body">
       <div class="name"><b>{m.name}</b><small>{m.ship}</small></div>
       <div class="row"><span class="dim">Health</span><span>{m.hp}/{m.maxHp}</span></div>
-      <Meter value={pct / 100} fill={FILL[hullTone(pct)]} height={8} title="Module health" />
+      <Meter value={pct} max={100} tone="auto" height={8} title="Module health" />
       {#if !m.powered}<div class="warn">Offline</div>{/if}
       <div class="sub">Upgrade slot</div>
       <div class="slot" data-testid="foe-upgrade">

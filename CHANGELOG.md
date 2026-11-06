@@ -26,6 +26,8 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Combat HUD: the enemy card reads like your status block (hull, shields and heat in labelled rows; each weapon shows a countdown once it has aimed at you), shows a generated ship's call sign, and tags the ship Hostile, Neutral or Friendly. Board moved to a tab on the left of your strip, mirroring Flee, and the strip sits on one backplane. ([#342](https://github.com/BigBadLoser/cc-ftl/pull/342))
+- Buttons and toggles across the UI are joined button groups; the build screens keep their black-and-amber look on every button. ([#342](https://github.com/BigBadLoser/cc-ftl/pull/342))
 - The ship's log notes when a hostile ship jumps in or arrives; an alert follows only if it attacks. ([#341](https://github.com/BigBadLoser/cc-ftl/pull/341))
 - UI colours follow one meaning each: one red for danger and hostiles, one green for good, gold for credits and amber for warnings, with matching shadows and dimming across windows. ([#337](https://github.com/BigBadLoser/cc-ftl/pull/337))
 - Crew show pixel-art icons over their heads in place of the old drawn bubbles: speech bubbles when they chat (a scribble when it goes badly), a red burst in a shouting match, a thought bubble for each kind of mental break (its rim neutral, amber or red by how severe it is), a red cross when downed and a white flag on surrender. ([#340](https://github.com/BigBadLoser/cc-ftl/pull/340))
