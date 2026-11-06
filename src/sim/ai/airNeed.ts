@@ -1,7 +1,7 @@
 import { AssignmentC, JobC, PositionC } from '../crew/components';
 import { airLeft, tankSec } from '../eva/airLedger';
 import { nearestAirSource } from '../eva/sources';
-import { isSuited, isThin, needsAir } from '../eva/suit';
+import { isSuited, suitNeeded, needsAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -27,7 +27,7 @@ export function airDraining(sim: Sim, id: number): boolean {
   if (!needsAir(sim, id) || !isSuited(sim, id)) return false;
   const pos = sim.world.get(id, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
-  return !!pos && !!grid && isThin(grid, pos.x, pos.y);
+  return !!pos && !!grid && suitNeeded(grid, pos.x, pos.y);
 }
 
 /** Ticks to the nearest air source (-1: none reachable), searched at most once per AIR_EVAL_TICKS and kept on the Intent. */

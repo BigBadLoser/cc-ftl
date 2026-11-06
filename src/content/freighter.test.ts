@@ -122,7 +122,7 @@ describe('distress freighter: signal', () => {
     expect(s.ships[0]).toMatchObject({ tag: 'freighter', stance: 'helpless' });
     expect(s.ships[0]?.damage?.find((d) => d.failing)?.def).toBe('module.reactor');
     expect(s.timers[0]).toMatchObject({ id: 'reactor', ship: 'freighter', stopOn: 'repaired', due: 'wreck' });
-    expect(s.timers[0]!.afterSec).toBeGreaterThanOrEqual(110);
+    expect(s.timers[0]!.afterSec).toBeGreaterThanOrEqual(150);
   });
 
   it('offering help needs the hail first, and agrees help before dropping out', () => {
@@ -250,8 +250,9 @@ describe('distress freighter: aid by hail', () => {
     expect(fired(sim)).not.toContain('boarded');
   });
 
-  it('end to end: the party flies over, mends the reactor before the clock runs out, and comes home', () => {
-    const { sim, freighter } = inScene(3, { help: true });
+  // Seeds 5, 8 and 9 put the reactor in a room hotter than HOT_ABOVE once it runs again: the party suits up for it (eva/suit.ts `suitNeeded`).
+  it.each([3, 5, 8, 9])('end to end (seed %i): the party flies over, mends the reactor before the clock runs out, and comes home', (seed) => {
+    const { sim, freighter } = inScene(seed, { help: true });
     const s = spec(sim);
     let aboard = 0;
     for (let i = 0; i < 150 && s.aid?.state !== 'done'; i++) {

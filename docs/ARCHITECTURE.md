@@ -1544,6 +1544,9 @@ depend on when the ship is hailed and never touch `sim.rng`.
   (`aid` scene help, `yard` contractors, `visit` an ambush skiff's party, `trade` the player's side on a station while a run is docked). `guestOn` is
   the one question: `isInvader`, provocation, the observer (`uninvitedOn`), a station's alarm, bed ownership and `wreckShip` (guests survive a wreck)
   read it; a guest without `work` is off duty. A grant is void while the host is at war with the guests' side.
+- **Hostile rooms** (`eva/suit.ts` `suitNeeded`): thin air, or heat past `HOT_ABOVE` up to `SUIT_HEAT_MAX`. Every suit decision reads it (the
+  scheduler suits a walker up for non-emergency work there, `ai/scheduler.ts` `hostileWork`; tank drain; the air drive; when a suit may come off), and a suit with air
+  raises the heat hazard line to `SUIT_HEAT_MAX` (`crew/hazard.ts`). Paths still avoid thin air only.
 - **Work blocks** (`WorkBlockC`, `crew/workBlock.ts`): work categories a crew member cannot do, each with a reason; `jobFits` skips them. A scene ship's
   `lacks` blocks them for its crew (reason 'scene': the freighter's crew cannot repair).
 - **Enemy target choice** (`systems/enemyAi.ts` `TARGET_ORDER`): threat (`Combat.threat`, the last ship that fired on it, `AI_THREAT_SEC`), then

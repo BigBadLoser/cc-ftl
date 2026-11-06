@@ -43,7 +43,7 @@ export const events = {
         },
       ],
       timers: [{
-        id: 'reactor', ship: 'freighter', afterSec: [110, 130], stopOn: 'repaired', fires: { leadSec: 45, everySec: 15, max: 3 }, due: 'wreck',
+        id: 'reactor', ship: 'freighter', afterSec: [150, 165], stopOn: 'repaired', fires: { leadSec: 30, everySec: 15, max: 2 }, due: 'wreck',
         // The reactor blows: wrecked systems and hull around it, crew hurt less the further they stand (three rings), fire; then the ship goes dark.
         blast: [
           { type: 'moduleDamage', amount: 300, radius: 2 },
