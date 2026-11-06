@@ -122,8 +122,10 @@ def prism(f, u0, u1, sec0, sec1, z, top=BODY, edge=EDGE, side=SIDE, under=UNDER,
         nz /= ln
         col = top if nz > 0.85 else edge if nz > 0.25 else under if nz < -0.25 else side
         _face(f, [(u0, va, z + za), (u0, vb, z + zb), (u1, vc, z + dz1 + zc), (u1, vd, z + dz1 + zd)], ref, col)
-    _face(f, [(u0, v, z + dz) for v, dz in sec0], (u1, 0.0, z), cap0)
-    _face(f, [(u1, v, z + dz1 + dz) for v, dz in sec1], c0, cap1)
+    if cap0:                                                                            # None leaves it open
+        _face(f, [(u0, v, z + dz) for v, dz in sec0], (u1, 0.0, z), cap0)
+    if cap1:
+        _face(f, [(u1, v, z + dz1 + dz) for v, dz in sec1], c0, cap1)
     return c1
 
 
@@ -156,6 +158,39 @@ def hazard_v(g, u, z, half, step=0.06, w=0.035, h=0.012):
 def seam(g, a, b):
     """A dark panel seam drawn on a surface from a to b (both already a hair above it)."""
     D.seg(g, a, b, 0.009, "dark", 4)
+
+
+def face_plate(g, ang, r, z, u0, u1, s0, s1, lift, t, mat):
+    """A plate on the face of an octa(r) body whose normal points at ang degrees (v, z plane): u0..u1 along it, s0..s1
+    across the face, lifted off it by lift, t thick."""
+    a = math.radians(ang)
+    nv, nz, tv, tz = math.cos(a), math.sin(a), -math.sin(a), math.cos(a)
+
+    def P(u, s_):
+        return (u, (r + lift) * nv + s_ * tv, z + (r + lift) * nz + s_ * tz)
+    qslab(g, P(u0, s0), P(u1, s0), P(u0, s1), P(u1, s1), t, mat)
+
+
+def octa_vents(g, r, z, blocks, hot, faces=(90, 45, 135)):
+    """The letterbox's heat grille wrapped over the upper faces of an octa(r) body: per block (u0, u1, ramp step) a dark
+    recess on each face, glowing strips in it (hottest down the middle of the top face) and light slats over them."""
+    for u0, u1, k in blocks:
+        for ang in faces:
+            j = 0 if ang == 90 else 1
+            face_plate(g, ang, r, z, u0, u1, -0.072, 0.072, 0.003, 0.01, UNDER)                  # recess
+            for sc in (-0.027, 0.027):
+                face_plate(g, ang, r, z, u0 + 0.012, u1 - 0.012, sc - 0.018, sc + 0.018, 0.009, 0.004,
+                           heat(hot, k - j, UNDER))
+            for sc in (-0.058, 0.0, 0.058):                                                       # slats
+                face_plate(g, ang, r, z, u0, u1, sc - 0.008, sc + 0.008, 0.013, 0.014, EDGE)
+
+
+def octa_hazard(g, r, z, u0, u1, lift=0.006):
+    """A painted hazard band right round an octa(r) body: two stripes a face, yellow and black alternating."""
+    w = r * math.tan(math.pi / 8)
+    for k in range(8):
+        for i, (s0, s1) in enumerate(((-w, 0.0), (0.0, w))):
+            face_plate(g, 45 * k, r, z, u0, u1, s0, s1, lift, 0.012, "hazY" if (2 * k + i) % 2 == 0 else "hazK")
 
 
 def collar(g, u, z, r, w=0.04, mat=EDGE, sides=16):
@@ -232,6 +267,12 @@ def feed(h, a, b, r=0.07):
     conduit(h, a, b, r, 3, mat=SIDE, rib=BODY)
     for p in (a, b):
         D.seg(h, (p[0], p[1], p[2] - 0.02), (p[0], p[1], p[2] + 0.02), r * 1.45, EDGE, 12, cap=EDGE, capstart=EDGE)
+
+
+def hot_core(g, u, z, rs, hot):
+    """Glow layers sunk in a wide bore at u: (radius, ramp step) from the rim inwards, each a hair further out."""
+    for i, (r, k) in enumerate(rs):
+        g.hcyl(u + i * 0.004, u + i * 0.004 + 0.006, 0, z, r, heat(hot, k, UNDER), sides=18, cap=heat(hot, k, UNDER))
 
 
 def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
@@ -328,7 +369,7 @@ def finned(hot):
     prism(g, -0.58, 0.14, octa(0.19), octa(0.19), BZ)
     prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, **DARK)
     bolts(g, -0.635, BZ, 0.105, n=8, mat=EDGE)
-    D.panel(g, -0.22, 0, BZ + 0.19, 0.24, 0.13, mat=BODY, seam="dark", t=0.012, ring=0.025)   # access hatch
+    octa_vents(g, 0.19, BZ, ((-0.43, -0.3, 3), (-0.27, -0.14, 2)), hot)                   # heat grille over the chamber
     for u in (-0.46, 0.12):
         prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, **DARK)
     _g("bore")
@@ -355,11 +396,11 @@ def finned(hot):
         D.seg(g, at(0.21, 0.345), at(0.77, 0.29), 0.018, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
     D.annulus(g, 0.82, 0.86, 0, BZ, 0.3, 0.16, SIDE, BODY, sides=24)                   # fin clamp ring
     _g("muzzle")
-    prism(g, 0.86, 0.95, octa(0.195), octa(0.195), BZ, **DARK)
-    hazard_v(g, 0.905, BZ + 0.195, 0.075, step=0.05, w=0.07)
-    D.annulus(g, 0.95, 0.98, 0, BZ, 0.2, 0.13, EDGE, EDGE, sides=20)
-    hot_cone(g, 0.84, 0.975, 0.1, 0.135, BZ, hot, steps=(2, 1), wall=0.0)
-    g.hcyl(0.84, 0.85, 0, BZ, 0.1, heat(hot, 4, UNDER), sides=16, cap=heat(hot, 4, UNDER))
+    prism(g, 0.86, 0.97, octa(0.195), octa(0.195), BZ, **dict(DARK, cap0=None, cap1=None))  # open muzzle housing
+    octa_hazard(g, 0.195, BZ, 0.885, 0.945)                                             # hazard band right round
+    D.annulus(g, 0.97, 1.0, 0, BZ, 0.22, 0.13, EDGE, EDGE, sides=24)                   # lip
+    hot_cone(g, 0.62, 0.99, 0.128, 0.131, BZ, hot, steps=(3, 2, 2, 1), wall=0.0)        # bore liner, hot inside
+    hot_core(g, 0.9, BZ, ((0.127, 1), (0.095, 2), (0.06, 3), (0.028, 4)), hot)          # molten fill, white at the centre
     return rig
 
 
