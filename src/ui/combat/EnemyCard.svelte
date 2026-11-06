@@ -2,8 +2,8 @@
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
   import { Chip, chipTone, Frame, FrameGap, Meter, Pips } from '../kit';
-  import type { UiApi, UiShipCombat } from '../api';
-  import ItemIcon from '../ItemIcon.svelte';
+  import type { UiShipCombat } from '../api';
+  import { upgradeIconName } from '../upgradeIcon';
   import { enemyWeaponRow } from './enemyWeapons';
   import HeatBar, { heatTone } from './HeatBar.svelte';
   import { cardName } from './enemyName';
@@ -11,8 +11,7 @@
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
    */
-  let { api, enemy, state: pill, onFrame }: {
-    api?: UiApi;
+  let { enemy, state: pill, onFrame }: {
     enemy: UiShipCombat;
     state: { text: string; tone: string };
     onFrame: () => void;
@@ -66,7 +65,7 @@
           {@const row = enemyWeaponRow(w)}
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
-            <span class="nm"><span class="t">{w.name}</span>{#if api && w.upgrade}<span class="up" data-testid="enemy-upgrade" title="Fitted: {w.upgrade.name}"><ItemIcon {api} item={w.upgrade.item} size={14} /></span>{/if}</span>
+            <span class="nm"><span class="t">{w.name}</span>{#if w.upgrade}<span class="up" data-testid="enemy-upgrade" title="Fitted: {w.upgrade.name}"><Icon name={upgradeIconName(w.upgrade.item)} size={13} /></span>{/if}</span>
             {#if w.eta !== null}
               <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
             {:else}
@@ -155,7 +154,7 @@
     background: var(--hud-bar);
   }
   .w.aim i { background: var(--c); }
-  .up { flex: none; display: inline-flex; }
+  .up { flex: none; display: inline-flex; color: var(--hud-key); opacity: 0.85; }
   .nm {
     display: flex;
     align-items: center;

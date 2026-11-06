@@ -4,12 +4,8 @@
   import HeatBar from '../../src/ui/combat/HeatBar.svelte';
   import DockTab from '../../src/ui/combat/DockTab.svelte';
   import EnemyCard from '../../src/ui/combat/EnemyCard.svelte';
-  import type { UiApi, UiShipCombat } from '../../src/ui/api';
+  import type { UiShipCombat } from '../../src/ui/api';
 
-  /** A stand-in item icon (a gold square) so the upgrade icon on a weapon row shows. */
-  const sheet = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect x="4" y="4" width="24" height="24" rx="4" fill="#ffc06a"/><path d="M16 8l4 8h-8z" fill="#222"/></svg>')}`;
-  const icon = { src: sheet, x: 0, y: 0, w: 32, h: 32, sheetW: 32, sheetH: 32 };
-  const stubApi = { itemIcons: { subscribe: (f: (v: Record<string, unknown>) => void) => { f({ 'upgrade-x': icon }); return () => {}; } } } as unknown as UiApi;
   const oc = { left: 0, cooldown: 0 };
   const gun = (id: number, name: string, charge: number, committed: boolean, color: number) =>
     ({ id, name, charge, commitAt: 0.6, committed, stalled: false, destroyed: false, eta: committed ? 2.7 : null, fired: false, color });
@@ -17,7 +13,7 @@
     ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
     heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
     evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
-    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'upgrade-x', name: 'Overclocked coils' } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'upgrade-x', name: 'Rapid loader' } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
+    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor' } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket' } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
   } as unknown as UiShipCombat);
   const cards = [
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
@@ -94,7 +90,7 @@
 
   <h3>Enemy card <small>a generated name shows only its call sign; an authored one whole; a long one cut short</small></h3>
   <div class="row top">
-    {#each cards as c (c.e.name)}<EnemyCard api={stubApi} enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
+    {#each cards as c (c.e.name)}<EnemyCard enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
   </div>
 
   <h3>Dock tabs <small>Board ready, Board blocked, Flee charging (the same DockTab)</small></h3>

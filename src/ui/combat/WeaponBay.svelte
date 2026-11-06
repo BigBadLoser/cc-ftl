@@ -2,7 +2,7 @@
   import { keyLabel, keymap, WEAPON_ACTIONS } from '../keymap';
   import { Frame } from '../kit';
   import { anchor } from '../lessons/anchors';
-  import type { UiAiming, UiApi, UiCombat } from '../api';
+  import type { UiAiming, UiCombat } from '../api';
   import WeaponCard from './WeaponCard.svelte';
   import { weaponLabels } from './weaponNames';
 
@@ -11,8 +11,7 @@
    * The WEAPONS frame: four slots, a card for each weapon the ship has. With more than four weapons the cards go compact in two rows inside the
    * same frame height (Q W E R pick the first four; the rest are aimed by click).
    */
-  let { api, me, aiming, onSelect, onMode, style = '' }: {
-    api?: UiApi;
+  let { me, aiming, onSelect, onMode, style = '' }: {
     me: Me;
     aiming: UiAiming | null;
     onSelect: (id: number) => void;
@@ -29,7 +28,6 @@
       {@const w = me.weapons[i]}
       {#if w}
         <WeaponCard
-          {api}
           weapon={w}
           label={labels[i] ?? w.name}
           hotkey={i < WEAPON_ACTIONS.length ? keyLabel($keymap, WEAPON_ACTIONS[i]!) : ''}
