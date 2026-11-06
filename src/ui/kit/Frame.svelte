@@ -4,7 +4,7 @@
 
   /**
    * A titled frame: a thin border whose top edge is built from segments (line, title, line, optional right-hand items, line), so the break
-   * around the title is a real gap and works over a transparent panel. `right` renders items (a Pill, a button) into the top edge: put a
+   * around the title is a real gap and works over a transparent panel. `right` renders items (a Chip, a button) into the top edge: put a
    * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
    */
   let { title, tone = 'normal', style = '', testid, lesson, notch, children, head, right }: {

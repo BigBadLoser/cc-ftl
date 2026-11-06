@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   /**
    * The Charge FTL control: a button with the drive's live state (Idle / Pilot heading to helm / Charging x/40 s / Ready), a progress bar,
    * Cancel while an order stands, and the reason when it cannot charge. Shared by the starmap drawer, the ship panel and the helm's inspector.
@@ -20,7 +21,7 @@
         <button class="go" disabled={!!ftl.blocker} onclick={onCharge} data-testid="{testid}-charge">Charge FTL</button>
       {/if}
     </div>
-    <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={ftl.max} aria-valuenow={ftl.charge}><i style={`width: ${Math.min(100, (ftl.charge / ftl.max) * 100)}%`}></i></div>
+    <Meter value={ftl.charge} max={ftl.max} height={6} />
     {#if ftl.queued}<small class="note">Jump queued: it flies when the drive is charged.</small>{/if}
     {#if ftl.blocker && ftl.state !== 'ready'}<small class="note bad" data-testid="{testid}-why">{FTL_BLOCKERS[ftl.blocker]}</small>{/if}
   </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip } from './kit';
   import { onMount } from 'svelte';
   import { anchor } from './lessons/anchors';
   import type { UiApi, UiJobs, UiTrade } from './api';
@@ -41,17 +42,17 @@
     if (id === 'trade') return onTrade(station);
     open = id;
   }
-  const TIER = { friendly: 'green', neutral: 'dim', hostile: 'red' } as const;
+  const TIER = { friendly: 'good', neutral: 'dim', hostile: 'bad' } as const;
   const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
 </script>
 
 <FloatingWindow id="station" title="Channel open" titleFit icon="hull" min={{ w: 900, h: 420 }} defaultRect={(b) => centerTop(b, 1120)} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" titleTestId="station-title">
   {#snippet titleExtra()}
     <span class="sub" data-testid="station-name">{p?.name ?? 'Station'}{p?.role ? ` · ${p.role}` : ''}</span>
-    {#if p?.info?.owner}<span class="chip {TIER[p.info.owner.tier]}" title="Owner and how they regard you" data-testid="si-owner">{p.info.owner.name} · {p.info.owner.tier}</span>{/if}
-    {#if p?.market?.truce}<span class="chip" class:red={p.market.banned} class:green={!p.market.banned} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</span>{/if}
-    {#if p?.market}<span class="chip amber" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</span>{/if}
-    <span class="credits" title="Your credits" data-testid="station-credits">₵ {fmt(trade.credits)}</span>
+    {#if p?.info?.owner}<Chip tone={TIER[p.info.owner.tier]} title="Owner and how they regard you" testId="si-owner">{p.info.owner.name} · {p.info.owner.tier}</Chip>{/if}
+    {#if p?.market?.truce}<Chip tone={p.market.banned ? 'bad' : 'good'} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
+    {#if p?.market}<Chip tone="warn" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</Chip>{/if}
+    <span class="credits"><Chip tone="gold" size="md" caps={false} outline={false} title="Your credits" testId="station-credits">₵ {fmt(trade.credits)}</Chip></span>
   {/snippet}
   {#if !p}
     <p class="none">Out of range.</p>
@@ -83,11 +84,7 @@
 
 <style>
   .sub { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
-  .chip { font: 600 11px var(--head-font); letter-spacing: 0.1em; padding: 1px 6px; border: 1px solid var(--line-hi); color: var(--dim); white-space: nowrap; text-transform: uppercase; }
-  .chip.green { color: var(--green); border-color: var(--green); }
-  .chip.red { color: var(--red); border-color: var(--red); }
-  .chip.amber { color: var(--amber); border-color: var(--amber); }
-  .credits { margin-left: auto; color: var(--gold); font: 700 14px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .credits { margin-left: auto; }
   .cols { flex: 1 1 610px; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr) 340px; }
   .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); overflow-y: auto; }
   .pane:last-child { border-right: 0; }

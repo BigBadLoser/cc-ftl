@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip, Meter } from './kit';
   /**
    * The starmap's side drawer (right on desktop, a bottom sheet on phones). Docked: the picked node's sector info, the fuel info,
    * the route hop by hop, and Jump (which opens the confirm step in place when the jump would leave something behind). In hyperspace:
@@ -59,7 +60,7 @@
     {#if recent}<p class="note result {recent.tone}" data-testid="starmap-result"><Icon name={recent.tone === 'red' ? 'alert' : 'chevUp'} size={14} />{recent.text}</p>{/if}
     <section>
       <h4>Progress</h4>
-      <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={travel.route.length - 1} aria-valuenow={travel.at}><i style={`width: ${(travel.at / Math.max(1, travel.route.length - 1)) * 100}%`}></i></div>
+      <Meter value={travel.at} max={Math.max(1, travel.route.length - 1)} height={8} />
       <ol class="legs" data-testid="starmap-progress">
         <li class="done"><Icon name="station" size={14} /><span>{nameOf(travel.route[0] as string)}</span><small>start</small></li>
         {#each legs as l (l.id)}
@@ -82,16 +83,16 @@
       <h4>Sector</h4>
       <div class="row"><b>{sector?.known ? sector.name : 'Uncharted sector'}</b>{#if cluster?.revealed}<span class="dim">{cluster.name}, {cluster.typeLabel}</span>{/if}</div>
       <div class="row">
-        <span class="chip" style={`color: ${dangerColor(node.danger)}`}>Danger {node.danger}</span>
+        <Chip size="md" color={dangerColor(node.danger)}>Danger {node.danger}</Chip>
         {#if node.known}
-          {#if owner}<span class="chip" style={`color: ${toneColor(owner.tone)}`}>{owner.name}</span><span class="chip tier {owner.tier}">{owner.tier}</span>{:else}<span class="dim">Open space</span>{/if}
+          {#if owner}<Chip size="md" color={toneColor(owner.tone)}>{owner.name}</Chip><Chip size="md" tone={owner.tier === 'hostile' ? 'bad' : owner.tier === 'friendly' ? 'good' : 'dim'}>{owner.tier}</Chip>{:else}<span class="dim">Open space</span>{/if}
         {/if}
       </div>
       {#if node.known}
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
         {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
-        {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<span class="chip">{h}</span>{/each}</div>{/if}
+        {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<Chip size="md" tone="dim" outline>{h}</Chip>{/each}</div>{/if}
         {#if node.market}
           <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce. Cheap goods show what they sell for, wanted goods what they pay.">
             <span class="dim">Market</span>
@@ -172,8 +173,6 @@
   .result.green { color: var(--green); border-color: var(--green); } .result.amber { color: var(--amber); border-color: var(--amber); }
   .result.red { color: var(--red); border-color: var(--red); } .result.dim { color: var(--dim); }
   .note { margin: 0; font-size: 12px; display: flex; gap: 6px; align-items: center; }
-  .chip { font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor; }
-  .tier.hostile { color: var(--red); } .tier.friendly { color: var(--green); } .tier.neutral { color: var(--dim); }
   .cells { display: flex; gap: 4px; flex-wrap: wrap; }
   .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--cyan); }
   .cell b { color: var(--text); font-weight: 600; }
@@ -204,7 +203,6 @@
   .queue { border-color: var(--line); background: var(--panel-2); color: var(--text); }
   .overcharge { border-color: var(--red); background: var(--panel-2); color: var(--red); }
   .overcharge:disabled { opacity: 0.4; }
-  .bar { height: 8px; }
   @media (min-width: 601px) { .drawer { top: 0; right: 0; bottom: 0; width: 340px; border-width: 0 0 0 1px; } }
   @media (max-width: 600px) { .drawer { left: 0; right: 0; bottom: 0; } }
   .row.job { color: var(--amber); font-weight: 600; }

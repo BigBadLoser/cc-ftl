@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
-  import { ActionButton, Frame, FrameGap, KeyBadge, Meter, Pill, Pips } from '../kit';
+  import { ActionButton, Chip, chipTone, Frame, FrameGap, KeyBadge, Meter, Pips } from '../kit';
   import { keyLabel, keymap } from '../keymap';
   import type { UiShipCombat } from '../api';
   import { enemyWeaponRow } from './enemyWeapons';
@@ -31,7 +31,7 @@
     amber: 'linear-gradient(90deg, var(--heat-low), var(--amber))',
     red: 'linear-gradient(90deg, var(--amber), var(--red))',
   } as const;
-  const tone = $derived(pill.tone as 'red' | 'amber' | 'green' | 'dim');
+  const tone = $derived(chipTone(pill.tone));
 </script>
 
 <Frame
@@ -42,7 +42,7 @@
   lesson={anchor('combat.enemy')}
 >
   {#snippet right()}
-    <Pill {tone}>{pill.text}</Pill>
+    <Chip plate {tone}>{pill.text}</Chip>
     <FrameGap width={14} />
     <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
   {/snippet}

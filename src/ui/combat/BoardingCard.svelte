@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Frame, Meter, Pill } from '../kit';
+  import { Chip, Frame, Meter } from '../kit';
   import type { UiApi, UiBoarding } from '../api';
 
   /**
@@ -19,7 +19,7 @@
 
 <Frame title={named ? `Boarding party · ${b.shipName}` : 'Boarding party'} style="width:290px; margin-top:9px; pointer-events:auto; background: var(--panel)" testid="boarding-card">
   {#snippet right()}
-    <Pill tone="dim">{b.party.length} aboard</Pill>
+    <Chip plate>{b.party.length} aboard</Chip>
   {/snippet}
   <div class="body">
     {#if b.fireOn.length}
@@ -43,7 +43,7 @@
       <div class="sab" data-testid="sabotage-row" data-state={s.state}>
         <div class="line">
           <b>{s.name}</b>
-          <Pill tone={s.state === 'active' ? 'green' : 'amber'}>{s.state === 'active' ? 'Sabotage active' : 'Sabotage paused'}</Pill>
+          <Chip plate tone={s.state === 'active' ? 'good' : 'warn'}>{s.state === 'active' ? 'Sabotage active' : 'Sabotage paused'}</Chip>
         </div>
         <Meter value={s.hp / Math.max(1, s.maxHp)} fill="var(--hud-bar, var(--dim))" height={14} edge="var(--hostile-track)" label="{s.hp}/{s.maxHp}" title="Module health" />
         <div class="line">

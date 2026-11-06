@@ -7,7 +7,7 @@
    * colour), an optional baseline tick, optional whole-unit cells, and a right-aligned readout. The label and readout
    * columns take `--sb-label` and `--sb-value` so rows line up when stacked.
    */
-  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--cyan)', low = false, health = false, testId, title }: {
+  let { label, icon, value = 0, max = 100, segments, baseline, cells = false, text, color = 'var(--hud-bar)', low = false, health = false, testId, title }: {
     label?: string; icon?: IconName; value?: number; max?: number;
     segments?: { value: number; color: string; hatch?: boolean }[];
     baseline?: number; cells?: boolean; text?: string; color?: string; low?: boolean;

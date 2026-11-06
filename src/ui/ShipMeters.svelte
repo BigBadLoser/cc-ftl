@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import Icon from './Icon.svelte';
   import type { UiShipCombat } from './api';
 
@@ -18,12 +19,12 @@
         {#if layers.length === 0}<em>none</em>{/if}
       </span>
       {#if ship.shield.layers < ship.shield.max}
-        <span class="bar mini"><i style="width:{Math.round(ship.shield.progress * 100)}%"></i></span>
+        <span class="mini"><Meter value={ship.shield.progress} height={4} title="Next shield layer" /></span>
       {/if}
     </span>
     <span class="m hu" class:low={hullPct < 35} title="Hull integrity" aria-label="Hull {hullPct}%">
       <Icon name="hull" size={16} />
-      <span class="bar grow"><i style="width:{hullPct}%"></i></span>
+      <span class="grow"><Meter value={hullPct} max={100} tone="auto" height={6} /></span>
       <b>{hullPct}%</b>
     </span>
     <span class="m ev" title="Chance an incoming shot misses" aria-label="Evasion {evasionPct}%">
@@ -41,12 +42,11 @@
   .m { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-accent); }
   .m b { color: var(--text); font-weight: 600; min-width: 2.6em; text-align: right; }
   .hu { flex: 1; min-width: 110px; }
-  .hu.low { color: var(--red); } .hu.low .bar > i { background: var(--red); }
+  .hu.low { color: var(--red); }
   .pips { display: inline-flex; gap: 3px; }
   .pips i { width: 10px; height: 10px; border: 1px solid var(--dim); background: transparent; }
   .pips i.on { background: var(--hud-ok); border-color: var(--hud-ok); }
   .pips em { color: var(--dim); font-style: normal; }
-  .mini { width: 30px; height: 4px; }
-  .grow { flex: 1; min-width: 40px; }
-  .bar { height: 6px; }
+  .mini { display: block; width: 30px; }
+  .grow { display: block; flex: 1; min-width: 40px; }
 </style>
