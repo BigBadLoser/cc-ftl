@@ -288,19 +288,20 @@ def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
 DECK = 0.29        # top of the turntable's upper deck (radius 0.44): the cradle stays inside it
 
 
-def cradle(h, PU, BZ, vin, vout, half=0.2, peak=0.15):
+def cradle(h, PU, BZ, vin, vout, half=0.2, peak=0.13):
     """The mount as one mass on the turntable: a plinth filling the deck (so it visibly stands on something), and two
-    side walls (vin..vout either side, PU +- half along u) peaked over the pivot so the bearing sits well inside them,
+    side walls (vin..vout either side, PU +- half along u) standing well above the pivot so the bearing sits inside them,
     each with a lighter inset plate and a capped, bolted bearing boss. Everything stays within the deck's radius."""
     _g("cradle")
     h.vcyl(0, 0, DECK, 0.42, 0.035, BODY, top=SIDE, sides=32)                           # plinth on the deck
     z0 = DECK + 0.035
     u0, u1 = PU - half, PU + half
     for sv in (-1, 1):
-        wall = [(u0, z0), (u1, z0), (u1, BZ - 0.06), (PU + 0.1, BZ + peak), (PU - 0.1, BZ + peak), (u0, BZ - 0.06)]
+        top, c = BZ + peak, 0.06                                                        # flat top, small chamfers
+        wall = [(u0, z0), (u1, z0), (u1, top - c), (u1 - c, top), (u0 + c, top), (u0, top - c)]
         _uz(h, wall, sv * vin, sv * vout, SIDE, BODY)
-        inset = [(u0 + 0.04, z0 + 0.04), (u1 - 0.04, z0 + 0.04), (u1 - 0.04, BZ - 0.08),
-                 (PU + 0.08, BZ + peak - 0.04), (PU - 0.08, BZ + peak - 0.04), (u0 + 0.04, BZ - 0.08)]
+        inset = [(u0 + 0.04, z0 + 0.04), (u1 - 0.04, z0 + 0.04), (u1 - 0.04, top - c - 0.02), (u1 - c - 0.02, top - 0.04),
+                 (u0 + c + 0.02, top - 0.04), (u0 + 0.04, top - c - 0.02)]
         _uz(h, inset, sv * vout, sv * (vout + 0.012), BODY, EDGE)
         vo = sv * (vout + 0.012)
         D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.025, BZ), 0.075, SIDE, 16, cap=BODY, capstart=SIDE)  # bearing boss
@@ -370,7 +371,7 @@ def finned(hot):
     g.hcyl(0.14, 0.88, 0, BZ, 0.16, SIDE, sides=20)
     _g("fins")
     for a in range(8):                                                                 # radial fins, hot at the root
-        ang = math.radians(22.5 + a * 45)
+        ang = math.radians(a * 45)                                                     # on the axes: clean pixel lines
         c, s = math.cos(ang), math.sin(ang)
 
         def at(u, r):
@@ -378,9 +379,7 @@ def finned(hot):
         NU, NR = 3, 2
 
         def pt(tu, tr):
-            ur0, ur1 = 0.17 + 0.66 * tu, 0.21 + 0.56 * tu                           # root and tip edges in u
-            rt = 0.34 - 0.05 * tu                                                   # tip radius tapers forward
-            return at(ur0 + (ur1 - ur0) * tr, 0.16 + (rt - 0.16) * tr)
+            return at(0.19 + 0.62 * tu, 0.16 + (0.32 - 0.16) * tr)                  # straight fins, square ends
         for iu in range(NU):
             for ir in range(NR):
                 t0, t1, q0, q1 = iu / NU, (iu + 1) / NU, ir / NR, (ir + 1) / NR
