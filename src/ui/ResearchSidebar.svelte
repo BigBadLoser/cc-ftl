@@ -15,5 +15,5 @@
 </div>
 
 <style>
-  .side { border-right: 1px solid #2a2a2a; display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
+  .side { border-right: 1px solid var(--build-line); display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
 </style>

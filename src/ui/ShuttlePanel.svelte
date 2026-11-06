@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
   import PanelHead from './PanelHead.svelte';
@@ -35,7 +36,7 @@
         <button class="mini" title="Center the camera" onclick={() => api.focusShuttle(s.id)}>Find</button>
       </h3>
       {#if s.trade}<div class="trade" data-testid="shuttle-trade">Trade run for {s.trade.partner}: {s.trade.status}</div>{/if}
-      <div class="bar hp"><i style:width="{Math.round((s.hp / Math.max(1, s.maxHp)) * 100)}%"></i></div>
+      <Meter value={s.hp} max={Math.max(1, s.maxHp)} tone="auto" height={6} title="{s.hp}/{s.maxHp}" />
 
       <div class="crew">
         <div class="slot" class:empty={!s.pilot}>
@@ -132,7 +133,6 @@
   h3 small { color: var(--dim); font-weight: normal; flex: 1; }
   .mini { min-height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; }
   .trade { color: var(--amber); font-size: 12px; margin: 2px 0 4px; }
-  .hp > i { background: var(--green); }
   .crew { margin: 8px 0; display: grid; gap: 4px; }
   .slot { display: flex; align-items: center; gap: 8px; }
   .slot > span:nth-child(2) { flex: 1; }

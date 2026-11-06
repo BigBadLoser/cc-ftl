@@ -3,7 +3,7 @@
   import type { UiApi, UiCrew, UiShuttles } from '../api';
   import type { UiCrewDetail } from '../crewDetailApi';
   import Icon from '../Icon.svelte';
-  import { Chips, Tooltip } from '../kit';
+  import { Chip, Chips, Tooltip } from '../kit';
   import ItemCard from '../inspector/ItemCard.svelte';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
@@ -42,7 +42,7 @@
       {#if !enemy}<div class="v" title="Rest" data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
   </div>
-  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<span class="state" data-testid="crew-state">{now.chip}</span>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>
+  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>
   {#if c.weapon}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
@@ -118,7 +118,6 @@
   .wl { display: flex; gap: 6px; align-items: center; font-size: 13px; white-space: nowrap; overflow: hidden; }
   .wl b { font-weight: 400; }
   .dim { color: var(--dim); font-size: 12px; }
-  .state { flex: none; padding: 3px 6px; border: 1px solid var(--red); color: var(--red); font: 600 11px/1 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
   .orders { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px; }
   .orders button { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--cyan); }
   .orders button span { color: var(--text); font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }

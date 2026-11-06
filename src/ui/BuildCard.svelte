@@ -44,22 +44,22 @@
 </button>
 
 <style>
-  .card { position: relative; flex: 0 0 104px; height: 134px; min-width: 0; min-height: 0; padding: 0; display: grid; grid-template-rows: 76px 30px 22px; align-items: center; justify-items: center; background: #0b0b0b; border: 1px solid #242424; transition: transform 0.08s; touch-action: pan-x; }
-  .card:hover, .card:focus-visible { transform: translateY(-3px); outline: 2px solid var(--amber); outline-offset: -1px; box-shadow: 0 0 14px rgba(240, 177, 58, 0.35); background: #121212; border-color: #242424; z-index: 1; }
-  .art { width: 100%; height: 76px; display: flex; align-items: flex-end; justify-content: center; color: var(--amber); background: radial-gradient(ellipse at 50% 80%, #1c1c1c 0, transparent 70%); }
+  .card { position: relative; flex: 0 0 104px; height: 134px; min-width: 0; min-height: 0; padding: 0; display: grid; grid-template-rows: 76px 30px 22px; align-items: center; justify-items: center; background: var(--build-fill-2); border: 1px solid var(--build-line); transition: transform 0.08s; touch-action: pan-x; }
+  .card:hover, .card:focus-visible { transform: translateY(-3px); outline: 2px solid var(--amber); outline-offset: -1px; box-shadow: 0 0 14px rgba(240, 177, 58, 0.35); background: var(--build-fill-2); border-color: var(--build-line); z-index: 1; }
+  .art { width: 100%; height: 76px; display: flex; align-items: flex-end; justify-content: center; color: var(--amber); background: radial-gradient(ellipse at 50% 80%, var(--build-line) 0, transparent 70%); }
   .art :global(svg) { align-self: center; fill: none; stroke: currentColor; }
   img { max-width: 92px; max-height: 72px; image-rendering: pixelated; margin-bottom: 2px; }
   .nm { font: 600 12px/1.05 var(--head-font); text-transform: uppercase; letter-spacing: 0.03em; color: var(--amber); text-align: center; padding: 0 4px; }
-  .cost { display: flex; gap: 3px; font-size: 11px; white-space: nowrap; color: #9a9a9a; }
+  .cost { display: flex; gap: 3px; font-size: 11px; white-space: nowrap; color: var(--build-dim); }
   .cost.many { gap: 2px; font-size: 10.5px; }
   .c { display: inline-flex; align-items: center; gap: 1px; }
   .c.miss { color: var(--red); font-weight: 700; }
   .card.short { border-color: #4a2420; }
   .card.sel { background: var(--amber); border-color: var(--amber); }
-  .card.sel .nm, .card.sel .cost { color: #1a1204; }
-  .card.sel .art { color: #1a1204; background: radial-gradient(ellipse at 50% 80%, #ffd77a 0, transparent 70%); }
+  .card.sel .nm, .card.sel .cost { color: var(--build-on-amber); }
+  .card.sel .art { color: var(--build-on-amber); background: radial-gradient(ellipse at 50% 80%, #ffd77a 0, transparent 70%); }
   .card.sel .c.miss { color: #8a0e0e; }
-  .tag { position: absolute; top: 0; left: 0; right: 0; font: 700 10px var(--head-font); letter-spacing: 0.1em; text-align: center; padding: 1px 0; background: #1a1204; color: var(--amber); }
+  .tag { position: absolute; top: 0; left: 0; right: 0; font: 700 10px var(--head-font); letter-spacing: 0.1em; text-align: center; padding: 1px 0; background: var(--build-on-amber); color: var(--amber); }
   .card.lock { opacity: 0.55; }
   .card.lock img { filter: grayscale(1) brightness(0.6); }
   .lockb { position: absolute; top: 4px; right: 5px; font-size: 12px; }

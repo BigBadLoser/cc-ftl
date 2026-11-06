@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { UiStationInfo } from './api';
   import Icon from './Icon.svelte';
+  import { Chip } from './kit';
 
   let { info }: { info: UiStationInfo } = $props();
   const TIER = { friendly: 'Friendly', neutral: 'Neutral', hostile: 'Hostile' } as const;
@@ -17,7 +18,7 @@
     <span class="cell wide" class:warn={info.owner.tier === 'hostile'} title="Owner and how they regard you"><Icon name="station" size={18} /><b data-testid="si-owner">{info.owner.name}</b><small>{TIER[info.owner.tier]}</small></span>
   {/if}
   {#if offers.length}
-    <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<span class="chip">{#if o.n}<em>{o.n}</em>{/if}{o.label}</span>{/each}</span></span>
+    <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<Chip size="md" caps={false}>{#if o.n}<em>{o.n}</em>{/if}{o.label}</Chip>{/each}</span></span>
   {/if}
   {#if info.hints.length}
     <span class="cell wide" title="Notable stock"><Icon name="list" size={18} /><b data-testid="si-hints">{info.hints.join(' · ')}</b></span>
@@ -47,8 +48,7 @@
   .cell.warn small { color: var(--amber); }
   .cell.wide { grid-column: 1 / -1; }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chip { padding: 1px 7px; border: 1px solid var(--line-hi); background: var(--bg); color: var(--text); font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .chip em { font-style: normal; color: var(--amber); margin-right: 4px; }
+  .chips em { font-style: normal; color: var(--amber); }
   .prices { display: grid; gap: 1px; align-items: stretch; }
   .prices .ph, .prices .pr { display: grid; grid-template-columns: 1fr 64px 64px; align-items: center; gap: 6px; }
   .prices .ph { grid-template-columns: auto 1fr 64px 64px; color: var(--ink-accent); padding-bottom: 2px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
@@ -56,5 +56,6 @@
   .prices .pr { font-size: 12px; color: var(--rest, var(--text)); }
   .prices .pr .ask { color: var(--dim); font-weight: 500; }
   .prices .pr.dear .nm small { color: var(--amber); }
-  .prices .pr.cheap .nm small { color: var(--green); }
+  .prices .pr.cheap .nm small { color: var(--good-ink); }
+  .prices .pr .nm small { margin-left: 6px; }
 </style>

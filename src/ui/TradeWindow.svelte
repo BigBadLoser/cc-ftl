@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiTrade, UiTradePartner } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
@@ -29,9 +30,9 @@
   {#snippet titleExtra()}
     <span class="who" data-testid="trade-title">{p?.name ?? ''}</span>
     <span class="role">{p?.role ?? ''}{p && p.kind === 'ship' && p.distance ? ` · ${p.distance} tiles away` : ''}</span>
-    {#if p?.market?.truce}<span class="chip" class:bad={p.market.banned} class:good={!p.market.banned} title={truceTip} data-testid="market-truce">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</span>{/if}
-    {#if p?.market}<span class="chip warn" title={marketTip} data-testid="black-market">BLACK MARKET</span>{/if}
-    <span class="credits" title="Your credits" data-testid="trade-credits">₵ {fmt(trade.credits)}</span>
+    {#if p?.market?.truce}<Chip tone={p.market.banned ? 'bad' : 'good'} title={truceTip} testId="market-truce">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
+    {#if p?.market}<Chip tone="warn" title={marketTip} testId="black-market">BLACK MARKET</Chip>{/if}
+    <span class="credits"><Chip tone="gold" size="md" caps={false} outline={false} title="Your credits" testId="trade-credits">₵ {fmt(trade.credits)}</Chip></span>
   {/snippet}
   <div class="pane" data-testid="trade-pane">
     {#if !p}
@@ -55,11 +56,7 @@
 <style>
   .who { color: var(--text); white-space: nowrap; }
   .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
-  .chip { font: 600 11px var(--head-font); letter-spacing: 0.1em; padding: 1px 6px; border: 1px solid var(--line-hi); color: var(--dim); white-space: nowrap; cursor: help; }
-  .chip.good { color: var(--green); border-color: var(--green); }
-  .chip.bad { color: var(--red); border-color: var(--red); }
-  .chip.warn { color: var(--amber); border-color: var(--amber); }
-  .credits { margin-left: auto; color: var(--gold); font: 700 14px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
+  .credits { margin-left: auto; }
   .pane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 290px; }
   .side { display: flex; flex-direction: column; min-height: 0; }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiStory } from './api';
-  import { Dialog } from './kit';
+  import { Chip, Dialog } from './kit';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
   import SignalWindow from './SignalWindow.svelte';
@@ -50,8 +50,8 @@
         {#if it.quote}<p class="quote">"{it.quote}"</p>{/if}
         {#if it.stock?.length || it.credits !== undefined}
           <div class="stock">
-            {#each it.stock ?? [] as q (q.item)}<span class="chip" title={q.name}><ItemIcon {api} item={q.item} size={20} />{q.name}<em>×{q.count}</em></span>{/each}
-            {#if it.credits !== undefined}<span class="chip cr" title="Credits to buy with"><Icon name="credits" size={14} />{it.credits}</span>{/if}
+            {#each it.stock ?? [] as q (q.item)}<Chip size="md" caps={false} title={q.name}><ItemIcon {api} item={q.item} size={20} />{q.name}<em>×{q.count}</em></Chip>{/each}
+            {#if it.credits !== undefined}<Chip size="md" tone="gold" icon="credits" title="Credits to buy with">{it.credits}</Chip>{/if}
           </div>
         {/if}
       </section>
@@ -93,9 +93,7 @@
   dd { margin: 0; color: var(--text); }
   .quote { margin: 0; font-size: 13px; font-style: italic; color: var(--text); line-height: 1.4; }
   .stock { display: flex; flex-wrap: wrap; gap: 4px; }
-  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 2px; font-size: 12px; background: var(--panel-3); border: 1px solid var(--line); }
-  .chip em { font-style: normal; color: var(--dim); }
-  .chip.cr { padding-left: 6px; color: var(--amber); }
+  .stock em { font-style: normal; color: var(--dim); }
   .choice.done:not(.locked) { background: transparent; border-style: solid; border-color: var(--line); color: var(--dim); opacity: 1; }
   .choice.done:not(.locked) .label { color: var(--dim); }
   .did { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-size: 12px; }

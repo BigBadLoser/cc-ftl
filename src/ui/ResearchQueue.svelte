@@ -35,20 +35,20 @@
 </div>
 
 <style>
-  h3 { margin: 0 0 6px; font: 600 12px var(--head-font); letter-spacing: 0.07em; text-transform: uppercase; color: var(--amber); border-bottom: 1px solid #262626; padding-bottom: 4px; }
+  h3 { margin: 0 0 6px; font: 600 12px var(--head-font); letter-spacing: 0.07em; text-transform: uppercase; color: var(--amber); border-bottom: 1px solid var(--build-line); padding-bottom: 4px; }
   .queue { padding: 12px; overflow: auto; }
-  .none { color: #8a8a8a; margin: 4px 0; }
-  .q { border: 1px solid #242424; background: #0b0b0b; padding: 6px 8px; margin-bottom: 6px; }
-  .q.on { border-color: var(--amber); background: #000; }
+  .none { color: var(--build-dim); margin: 4px 0; }
+  .q { border: 1px solid var(--build-line); background: var(--build-fill-2); padding: 6px 8px; margin-bottom: 6px; }
+  .q.on { border-color: var(--amber); background: var(--build-bg-solid); }
   .l1 { display: flex; align-items: center; gap: 8px; }
   .n { color: var(--amber); font: 700 13px var(--head-font); width: 12px; }
-  .q b { color: #f2f2f2; font-weight: 600; }
+  .q b { color: var(--build-ink); font-weight: 600; }
   .st { margin-left: auto; color: var(--amber); white-space: nowrap; }
   .st.bad { color: var(--red); }
   .mv { display: inline-flex; gap: 3px; }
-  .mv button { min-height: 26px; min-width: 26px; width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: #000; color: var(--amber); border: 1px solid #333; }
+  .mv button { min-height: 26px; min-width: 26px; width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--build-bg-solid); color: var(--amber); border: 1px solid var(--build-line-hi); }
   .mv button:hover:not(:disabled) { border-color: var(--amber); }
   .mv .rm { color: var(--red); }
-  .bar { height: 5px; margin-top: 5px; background: #1a1a1a; border: 1px solid #2c2c2c; }
+  .bar { height: 5px; margin-top: 5px; background: var(--build-line); border: 1px solid var(--build-line); }
   .bar i { display: block; height: 100%; background: var(--amber); }
 </style>

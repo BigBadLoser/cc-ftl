@@ -5,7 +5,7 @@
    * charged drive). Set in the same thin frame as the combat cards; a ship's row frames it in the view.
    */
   import Icon from './Icon.svelte';
-  import { ActionButton, Frame, Pill } from './kit';
+  import { ActionButton, Chip, chipTone, Frame } from './kit';
   import type { UiApi } from './api';
   import type { UiEventGrid, UiEncounterResult } from './starmapApi';
 
@@ -25,7 +25,7 @@
 <aside class="card" data-testid="event-panel" data-kind={event.kind}>
   <Frame title={title} tone={event.hostiles > 0 ? 'hostile' : 'normal'} style="pointer-events:auto; background: var(--panel)">
     {#snippet right()}
-      <Pill tone="dim">Off the map</Pill>
+      <Chip plate>Off the map</Chip>
     {/snippet}
     <div class="body">
       <ul class="roster">
@@ -33,7 +33,7 @@
           <li>
             <button class="row" disabled={!r.ship} title={r.ship ? 'Show it' : undefined} onclick={() => r.ship && api.focusFight(r.ship)}>
               <span class="who"><b>{r.name}</b><small>{r.owner}</small></span>
-              <Pill tone={r.tone}>{r.status}</Pill>
+              <Chip plate tone={chipTone(r.tone)}>{r.status}</Chip>
             </button>
           </li>
         {/each}

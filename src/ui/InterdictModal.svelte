@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip } from './kit';
   /**
    * An interdiction, answered in a modal centred over the map screen (the ship is halted in hyperspace until it is settled): who stopped you,
    * how strong they are, and the three ways out with their odds or price. Hails, scans and distress calls stay in the starmap drawer.
@@ -32,7 +33,7 @@
         <small>{encounter.faction} {encounter.role.toLowerCase()}</small>
       </div>
       <div class="facts">
-        {#if !scan}<span class="chip" class:warn={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming'} title="Fleet strength">{encounter.threat}</span>{/if}
+        {#if !scan}<Chip size="md" tone={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming' ? 'bad' : 'warn'} title="Fleet strength">{encounter.threat}</Chip>{/if}
         <span class="dim">{encounter.how}{scan ? '.' : '. Your ship is halted in hyperspace.'}</span>
       </div>
       {#if scan}
@@ -64,8 +65,6 @@
   small { color: var(--dim); font-size: 12px; }
   .facts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
   .dim { color: var(--dim); }
-  .chip { font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor; color: var(--amber); }
-  .chip.warn { color: var(--red); }
   .choices { display: grid; gap: 6px; }
   .choices button { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; font: 600 16px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .choices button:not(.fight) { border-color: var(--act-edge); }
