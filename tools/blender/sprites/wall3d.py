@@ -480,9 +480,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_ + dn, 0.52 * run_ + dn
             for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX, fam,
-                      2 + LIFT(), base=rise)                                   # the raised frame ...
+                      2, base=rise)                                            # the raised frame ...
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam,
-                  3 + LIFT(), base=rise)                                       # ... and the plate sunk in it
+                  3, base=rise)                                                # ... and the plate sunk in it
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + PX + PAINT, fam, 0,
                   base=rise + PX)                                              # a dark slot on the frame
@@ -512,7 +512,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
 
 
 def LIFT():
-    """The default walls' slope a shade lighter (its plates, the panel's frame and its plate)."""
+    """The default walls' slope face a shade lighter (its plates; not the details on them)."""
     return 1 if style().plain else 0
 
 
