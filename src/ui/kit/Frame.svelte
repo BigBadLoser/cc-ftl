@@ -81,6 +81,10 @@
   .rail > :global(*) {
     pointer-events: auto;
   }
+  /* Only the title gives way: the right-hand items (a chip, a button) keep their size however long the title is. */
+  .rail > :global(:not(h3)) {
+    flex-shrink: 0;
+  }
   /* The title gives way first: a long one is cut short with an ellipsis so the right-hand items stay on the frame. Its line box is taller than
      the 13px rail (centred in it) so the clip for the ellipsis never cuts the glyphs. */
   h3 {

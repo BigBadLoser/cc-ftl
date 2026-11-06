@@ -111,7 +111,7 @@
     min-height: 0;
     min-width: 0;
     width: 22px;
-    height: 21px;
+    height: 22px;
     padding: 0;
     display: grid;
     place-items: center;

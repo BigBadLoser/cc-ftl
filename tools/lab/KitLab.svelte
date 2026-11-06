@@ -15,9 +15,9 @@
     charges: [gun(1, 'Burst laser', 0.7, true, 0xf08a9a), gun(2, 'Missile launcher', 0.4, false, 0xffc06a)],
   } as unknown as UiShipCombat);
   const cards = [
-    { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Shields down', tone: 'good' } },
-    { e: ship('Raider', 'Hostile', null, false), pill: { text: 'You hold fire', tone: 'warn' } },
-    { e: ship('Trade station hub C3AA', 'Neutral', 'Hub', true), pill: { text: 'Not hostile', tone: 'dim' } },
+    { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
+    { e: ship('Raider', 'Hostile', null, false), pill: { text: 'Hostile', tone: 'red' } },
+    { e: ship('Trade station hub C3AA', 'Neutral', 'Hub', true), pill: { text: 'Neutral', tone: 'dim' } },
   ];
 
   const tones = ['dim', 'good', 'warn', 'bad', 'gold', 'select'] as const;
