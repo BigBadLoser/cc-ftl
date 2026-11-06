@@ -21,7 +21,7 @@ PART = None                         # the piece being built: "w1" | "w2" | "w3" 
 HEAD = 21                           # the header: the lean's top this many px on screen (down its front)
 GLASS_IN = 3 / 32                   # the glass this far behind the armour's own face
 SILL = 25                           # the sill's front, px tall (as measured: the slope's top set off it)
-SILL_UP = -4                        # ours: the front this many px taller (< 0: shorter), the slope's top where it
+SILL_UP = -2                        # ours: the front this many px taller (< 0: shorter), the slope's top where it
                                     # was (its slope the steeper)
 SILL_RISE = 7.5                     # its top's slope: its rise from the front to the glass, px of height; cut off
                                     # level with the frame's front (behind it the top flat, to the glass)
