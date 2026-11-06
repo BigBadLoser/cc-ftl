@@ -173,26 +173,24 @@ def face_plate(g, ang, r, z, u0, u1, s0, s1, lift, t, mat):
 
 def octa_vents(g, r, z, blocks, hot, faces=(90, 45, 135)):
     """The letterbox's heat grille wrapped over the upper faces of an octa(r) body: per block (u0, u1, ramp step) a dark
-    recess on each face, glowing strips in it (hottest down the middle of the top face) and light slats over them."""
+    recess on each face with one glowing window (the top face hottest) in a light frame. Kept chunky: anything under a
+    couple of pixels breaks up at sprite size."""
     for u0, u1, k in blocks:
         for ang in faces:
             j = 0 if ang == 90 else 1
             face_plate(g, ang, r, z, u0, u1, -0.072, 0.072, 0.003, 0.01, UNDER)                  # recess
-            for sc in (-0.033, 0.033):                                                            # glow strips
-                face_plate(g, ang, r, z, u0 + 0.014, u1 - 0.014, sc - 0.022, sc + 0.022, 0.009, 0.004,
-                           heat(hot, k - j, UNDER))
-            for sc in (-0.066, 0.0, 0.066):                                                       # slats
-                face_plate(g, ang, r, z, u0, u1, sc - 0.009, sc + 0.009, 0.013, 0.016, EDGE)
-            for uu in (u0, u1 - 0.014):                                                           # frame ends
-                face_plate(g, ang, r, z, uu, uu + 0.014, -0.075, 0.075, 0.013, 0.016, EDGE)
+            face_plate(g, ang, r, z, u0 + 0.02, u1 - 0.02, -0.05, 0.05, 0.009, 0.004, heat(hot, k - j, UNDER))
+            for sc in (-1, 1):                                                                    # frame sides
+                face_plate(g, ang, r, z, u0, u1, sc * 0.062 - 0.013, sc * 0.062 + 0.013, 0.014, 0.018, EDGE)
+            for uu in (u0, u1 - 0.022):                                                           # frame ends
+                face_plate(g, ang, r, z, uu, uu + 0.022, -0.075, 0.075, 0.014, 0.018, EDGE)
 
 
 def octa_hazard(g, r, z, u0, u1, lift=0.006):
-    """A painted hazard band right round an octa(r) body: two stripes a face, yellow and black alternating."""
+    """A painted hazard band right round an octa(r) body: one stripe a face, yellow and black alternating."""
     w = r * math.tan(math.pi / 8)
     for k in range(8):
-        for i, (s0, s1) in enumerate(((-w, 0.0), (0.0, w))):
-            face_plate(g, 45 * k, r, z, u0, u1, s0, s1, lift, 0.012, "hazY" if (2 * k + i) % 2 == 0 else "hazK")
+        face_plate(g, 45 * k, r, z, u0, u1, -w, w, lift, 0.012, "hazY" if k % 2 == 0 else "hazK")
 
 
 def collar(g, u, z, r, w=0.04, mat=EDGE, sides=16):
@@ -307,10 +305,6 @@ def cradle(h, PU, BZ, vin, vout, half=0.2, peak=0.15):
         vo = sv * (vout + 0.012)
         D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.025, BZ), 0.075, SIDE, 16, cap=BODY, capstart=SIDE)  # bearing boss
         D.seg(h, (PU, vo + sv * 0.02, BZ), (PU, vo + sv * 0.045, BZ), 0.035, "brass", 10, cap="brass")
-        for k in range(6):                                                              # its bolt ring
-            a = math.tau * (k + 0.5) / 6
-            h.box(PU + 0.055 * math.cos(a), vo + sv * 0.03, BZ + 0.055 * math.sin(a), 0.02, 0.016, 0.02, EDGE,
-                  base=False)
 
 
 # ---- A: LETTERBOX ------------------------------------------------------------------------------------------------
@@ -359,7 +353,7 @@ def letterbox(hot):
 # ---- B: FINNED BORE ----------------------------------------------------------------------------------------------
 
 def finned(hot):
-    BZ, PU = 0.58, -0.08
+    BZ, PU = 0.7, -0.08                                                                 # fins clear the plinth
     rig = TC.Rig("flak_finned", (PU, BZ), SCALE)
     TC.coaming(rig.f("fixed"), R)
     h = rig.f("head")
@@ -369,7 +363,6 @@ def finned(hot):
     _g("breech")
     prism(g, -0.58, 0.14, octa(0.19), octa(0.19), BZ)
     prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, **DARK)
-    bolts(g, -0.635, BZ, 0.105, n=8, mat=EDGE)
     octa_vents(g, 0.19, BZ, ((-0.42, -0.2, 3), (-0.16, 0.06, 2)), hot)                    # heat grille, centred on the chamber
     for u in (-0.46, 0.12):
         prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, **DARK)
@@ -382,7 +375,7 @@ def finned(hot):
 
         def at(u, r):
             return (u, r * c, BZ + r * s)
-        NU, NR = 4, 3
+        NU, NR = 3, 2
 
         def pt(tu, tr):
             ur0, ur1 = 0.17 + 0.66 * tu, 0.21 + 0.56 * tu                           # root and tip edges in u
@@ -392,9 +385,8 @@ def finned(hot):
             for ir in range(NR):
                 t0, t1, q0, q1 = iu / NU, (iu + 1) / NU, ir / NR, (ir + 1) / NR
                 k = 4 - iu - ir
-                qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.028, BODY,
+                qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.04, BODY,
                       face=heat(hot, k, "rustD" if k >= 4 else SIDE) if k >= 1 else SIDE)
-        D.seg(g, at(0.21, 0.345), at(0.77, 0.29), 0.018, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
     D.annulus(g, 0.82, 0.86, 0, BZ, 0.3, 0.16, SIDE, BODY, sides=24)                   # fin clamp ring
     _g("muzzle")
     prism(g, 0.86, 0.97, octa(0.195), octa(0.195), BZ, **dict(DARK, cap0=None, cap1=None))  # open muzzle housing
