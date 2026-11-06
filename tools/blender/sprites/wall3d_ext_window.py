@@ -72,8 +72,9 @@ E_RIBS = (11, 15)                   # W1's sill: E, a recess in its slope under 
 E_RIB = 2                           # top edge to a px short of its front (a lip), REC deep, a step darker; two ribs
 E_IN, E_SHORT = 1, 2                # standing in it at the slope's level, E_RIB px wide from these px from the
 E_TONE = "hsL"                      # tile's edge, from E_IN px out from its back to E_SHORT px short of its front
+E_TOP = 1                           # (its top edge this many px down the slope on screen from the slope's top)
 F_U, F_Z = (8, 24), (4, 18)         # W1's sill front: F, a plain plate over these px from the tile's edge, these px
-                                    # down from the front's top; REC proud, the window post's tone, its sides darker
+                                    # down from the front's top; REC proud, toned as the base's plates
 F_FLOOR = YS[3]                     # (the body's front behind the sill's slab: unseen)
 GLASS = None                        # the pane's builder while a piece is built (its caller renders it apart)
 
@@ -258,9 +259,11 @@ def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
     body, bc = [(db, 0.0), (df, 0.0), (df, z(df)), (dv, zj), (db, zj)], [None, F_FLOOR, SILL_SLOPE, SILL_FLAT, None]
     f.part(u0, e0, body, bc, (None, SIDE), end=False)
     f.part(e1, u1, body, bc, None, end=False)
-    dr, di = fr - T3.px(E_SHORT), dv + T3.px(E_IN)                      # E
-    f.part(e0, e1, [(db, 0.0), (dv, 0.0), (dv, zj), (db, zj)], [False, YS[2], SILL_FLAT, None], None, end=False)
-    f.part(e0, e1, [(dv, 0.0), (df, 0.0), (df, z(df) - R), (dv, zj - R)], [False, F_FLOOR, E_TONE, False], None,
+    dt = dv + E_TOP / ((zj - zs) / (fr - dv) * Z + core.TILE_H / 2)     # E: its top edge E_TOP px down the slope
+    dr, di = fr - T3.px(E_SHORT), dt + T3.px(E_IN)
+    f.part(e0, e1, [(db, 0.0), (dt, 0.0), (dt, z(dt)), (dv, zj), (db, zj)], [False, YS[2], SILL_SLOPE, SILL_FLAT,
+           None], None, end=False)                                      # (the slope over it)
+    f.part(e0, e1, [(dt, 0.0), (df, 0.0), (df, z(df) - R), (dt, z(dt) - R)], [False, F_FLOOR, E_TONE, False], None,
            end=False)                                                   # its floor
     for n in E_RIBS:
         u = px(n)
@@ -269,8 +272,8 @@ def _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, front):
     f.part(u0, u1, [(df, 0.0), (fr, 0.0), (fr, zs), (df, z(df))], [False, front, SILL_SLOPE, False], None,
            end=False)                                                   # the slab
     za, zb = zs - F_Z[1] / Z, zs - F_Z[0] / Z                           # F
-    f.part(px(F_U[0]), px(F_U[1]), [(fr, za), (fr + R, za), (fr + R, zb), (fr, zb)],
-           [False, HEAD_FRONT, HEAD_FRONT, False], MID_PLATE_SIDE, end=False)
+    pf = [(fr, za), (fr + R, za), (fr + R, zb), (fr, zb)]
+    f.part(px(F_U[0]), px(F_U[1]), pf, f.sec.cols(pf, "plate"), None, end=False)     # (toned as the base's plates)
 
 
 def _opening(u0, u1, z0, z1, corner):
