@@ -28,12 +28,13 @@ PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair 
 PANE_T = 1 / 32
 PANE_OUT = 0.003
 BEAM_OUT = T.PX         # the beam's blocks: this far proud of the header, split at the header's joints (a px gap)
+POST = 11.25 / 32       # the end posts: the opening this far in from the tile's edge (as tan's POST_L)
 PART = None
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
 
 def _span(part):
-    return {"l": (-0.5 + T.STILE, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - T.STILE)}[part]
+    return {"l": (-0.5 + POST, 1.5), "m": (-1.5, 1.5), "r": (-1.5, 0.5 - POST)}[part]
 
 
 def _quad(k, pts, out, col):
