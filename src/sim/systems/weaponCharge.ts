@@ -9,6 +9,7 @@ import { isDeployed } from '../modules/deploy';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
+import { weaponDefOf } from '../upgrades/stats';
 import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/ships';
@@ -24,7 +25,7 @@ export function weaponChargeSystem(sim: Sim): void {
   for (const id of sim.world.query(WeaponC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const w = sim.world.get(id, WeaponC);
-    const def = m && sim.content.weapons?.[sim.content.modules[m.def]?.weapon ?? ''];
+    const def = m && weaponDefOf(sim, id);
     if (!m || !w || !def || w.charge >= 1) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC) || !isDeployed(sim, id)) continue;
     if (shipById(sim, shipIdOf(sim, m))?.state !== 'active') continue;

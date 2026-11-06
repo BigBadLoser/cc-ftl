@@ -100,6 +100,10 @@ export type SimEvent =
   | { type: 'projectile.intercepted'; projectile: number; weapon: string; ship: number; by?: number }
   /** A module reached 0 hp from combat damage. */
   | { type: 'module.destroyed'; moduleId: number; def: string; ship: number }
+  /** A fit or remove job finished: `item` is now in the module's slot (null = emptied). */
+  /** A module being stripped lost its upgrade (it was damaged: upgrades/loadout.ts). */
+  | { type: 'module.upgradeLost'; moduleId: number; item: string }
+  | { type: 'module.upgradeFitted'; moduleId: number; item: string | null; ship: number }
   /** A container left its ship as a free body (same entity id); x, y are its body position in sector tiles. */
   | { type: 'container.detached'; container: number; ship: number; x: number; y: number }
   /** Ship state changes. 'destroyed' = became a wreck. */
@@ -194,7 +198,7 @@ export type SimEvent =
   | { type: 'drone.active'; drone: number }
   /** `ship`: its home ship; (x, y) its tile; `space`: it was out in space (at cruise height, nothing falls). */
   | { type: 'drone.wrecked'; drone: number; ship: number; def: string; x: number; y: number; space: boolean }
-  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' }
+  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' | 'flak' }
   /** A defence drone fired at an enemy drone or shuttle (an interceptable shot it hits is `projectile.intercepted` with `by`). (x, y): the aim point, sector tiles. */
   | { type: 'drone.fired'; drone: number; x: number; y: number; hit: boolean }
   /** A departure is held for the ship's drones out in space (DRONE_RECALL_WAIT_SEC at most). */

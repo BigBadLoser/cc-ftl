@@ -9,7 +9,7 @@ import { DroneC, type Drone } from './components';
  * Drone damage (DESIGN.md "Drones"). Inside a ship: fire on its tile and crew hand weapons. In space: only point defence, flak and enemy
  * defence drones (ordinary ship guns cannot track one). At 0 hp the drone system wrecks it on its next turn (drones/bay.ts `wreckDrone`).
  */
-export type DroneHarm = 'fire' | 'gunfire' | 'pointDefence' | 'drone';
+export type DroneHarm = 'fire' | 'gunfire' | 'pointDefence' | 'drone' | 'flak';
 
 /** Take `amount` hp off a drone. */
 export function damageDrone(sim: Sim, id: number, amount: number, cause: DroneHarm): void {

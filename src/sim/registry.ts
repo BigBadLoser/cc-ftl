@@ -1,3 +1,4 @@
+import type { UpgradeDef } from './upgrades/types';
 import type { DroneBayDef, DroneDef } from './drones/types';
 import type { SceneRuleDef } from './scene/types';
 import type { Faction } from './combat/components';
@@ -211,8 +212,14 @@ export interface WeaponDef {
   speed: number;
   /** Aim error sigma in tiles at operator skill 0. */
   spread: number;
-  /** Item consumed per shot. */
+  /** Item consumed per shot (per volley with `ammoPerVolley`). */
   ammo?: string;
+  /** The ammo is spent once per volley, not per shot (flak: one scrap for the whole spread). */
+  ammoPerVolley?: true;
+  /** Extra aim error sigma, tiles per tile of range (flak scatters at distance). */
+  spreadPerTile?: number;
+  /** Shoots enemy drones in space within this many tiles of the firing ship instead of its ship target (weapon never provokes). */
+  antiDrone?: number;
   /** Point defence may shoot it down. */
   interceptable?: boolean;
   /** Can be aimed at (and hurts) shuttles. Weapons without it never fire at a shuttle. */
@@ -243,6 +250,13 @@ export interface ItemDef {
   flammability?: number;
   /** VehicleDef id: a vehicle bay can turn one of these into a shuttle (vehicle.assign). */
   vehicle?: string;
+  /** Present = an upgrade a module's slot takes (sim/upgrades). */
+  upgrade?: UpgradeDef;
+  /**
+   * PLACEHOLDER art, until the item has its own icon: the icon of item `as`, drawn with a coloured `tint` outline so it reads as a stand-in (app/itemIcons.ts).
+   * Remove it when the item's own `.m` sprite is in the manifest.
+   */
+  placeholderIcon?: { as: string; tint: string };
   /** DroneDef id: a drone bay with a free slot turns one of these from the ship's storage into a drone. */
   drone?: string;
   /** Present = crew can equip it and fight with it. */
@@ -501,6 +515,10 @@ export interface ModuleDef {
   console?: 'weapons' | 'shields' | 'helm';
   /** WeaponDef id this module fires. */
   weapon?: string;
+  /** One upgrade slot of this kind (an `UpgradeDef.slot`); fitting is a crew job (sim/upgrades). */
+  upgradeSlot?: string;
+  /** Render-only: multiplies the module art's colour (a stand-in for its own art, e.g. a weapon bay re-using another's model). */
+  artTint?: number;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };
   /**

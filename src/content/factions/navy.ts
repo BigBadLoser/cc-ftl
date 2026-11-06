@@ -87,6 +87,8 @@ export const navy = {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }],
     heavy: [{ value: 'module.missileLauncher', weight: 2 }, { value: 'module.massDriver', weight: 1 }],
   },
+  // Navy fits precise gear: capacitors and coolant.
+  upgrades: [{ item: 'item.upg_capacitor', chance: 0.4 }, { item: 'item.upg_coolant', chance: 0.3 }],
   shields: [{ value: 'module.shieldGen', weight: 1 }],
   stock: [{ item: 'item.missile', min: 2, max: 6 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,

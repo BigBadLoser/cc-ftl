@@ -37,6 +37,8 @@ export function lootStage(c: RuinCtx): void {
   }
   const guns = combat ? c.rng.int(1, 3) : c.rng.int(0, 1);
   for (const i of floor.filter(free).slice(0, guns)) drop(i, c.rng.pick(['item.sidearm', 'item.rifle', 'item.blade', 'item.ion_pistol']), 1, c.meta.items);
+  // A weapon upgrade now and then among the debris (a gun bay thrown clear), more often on a combat wreck.
+  if (c.rng.chance(combat ? 0.3 : 0.12)) for (const i of floor.filter(free).slice(0, 1)) drop(i, c.rng.pick(['item.upg_coolant', 'item.upg_capacitor', 'item.upg_housing']), 1, c.meta.items);
   caches(c, free, drop);
   debris(c, free);
 }

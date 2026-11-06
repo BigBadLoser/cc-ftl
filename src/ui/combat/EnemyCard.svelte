@@ -3,14 +3,16 @@
   import { anchor } from '../lessons/anchors';
   import { ActionButton, Frame, FrameGap, KeyBadge, Meter, Pill, Pips } from '../kit';
   import { keyLabel, keymap } from '../keymap';
-  import type { UiShipCombat } from '../api';
+  import type { UiApi, UiShipCombat } from '../api';
+  import ItemIcon from '../ItemIcon.svelte';
   import { enemyWeaponRow } from './enemyWeapons';
   import { hullTone } from './hullTone';
 
   /**
    * Compact enemy card, top left: everything on it is live from the combat snapshot. One thin red frame, the name set into its top border.
    */
-  let { enemy, state: pill, onFrame, onBoard, boardBlocker }: {
+  let { api, enemy, state: pill, onFrame, onBoard, boardBlocker }: {
+    api?: UiApi;
     enemy: UiShipCombat;
     state: { text: string; tone: string };
     onFrame: () => void;
@@ -83,7 +85,7 @@
           {@const row = enemyWeaponRow(w)}
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
-            <span class="nm">{w.name}</span>
+            <span class="nm"><span class="t">{w.name}</span>{#if api && w.upgrade}<span class="up" data-testid="enemy-upgrade" title="Fitted: {w.upgrade.name}"><ItemIcon {api} item={w.upgrade.item} size={14} /></span>{/if}</span>
             <Meter
               value={w.charge}
               fill={shot ?? 'var(--cyan)'}
@@ -188,6 +190,9 @@
     align-items: center;
     height: 16px;
   }
+  .nm { display: flex; align-items: center; gap: 3px; min-width: 0; }
+  .nm .t { overflow: hidden; text-overflow: ellipsis; }
+  .up { flex: none; display: inline-flex; }
   .nm {
     font: 600 13px/1 var(--head-font);
     letter-spacing: 0.03em;

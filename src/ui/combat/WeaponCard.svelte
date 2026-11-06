@@ -1,6 +1,7 @@
 <script lang="ts">
   import { KeyBadge, Meter } from '../kit';
-  import type { UiWeapon } from '../api';
+  import type { UiApi, UiWeapon } from '../api';
+  import ItemIcon from '../ItemIcon.svelte';
 
   /**
    * One player weapon: hotkey, name, charge bar and a bottom line that says what it aims at and what it does when charged. Click the card to
@@ -9,7 +10,8 @@
    * AUTO reads "Ship"; HOLD reads "HOLD · Ship" with the bar in amber, and "HOLD · READY" once a held weapon is charged. Compact cards
    * (five or more weapons) have no bottom line: hold is shown by the amber bar alone.
    */
-  let { weapon, label, hotkey, selected, onSelect, onMode, compact = false }: {
+  let { api, weapon, label, hotkey, selected, onSelect, onMode, compact = false }: {
+    api?: UiApi;
     weapon: UiWeapon;
     label: string;
     hotkey: string;
@@ -65,6 +67,8 @@
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
+    {#if api && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><ItemIcon {api} item={weapon.upgrade.item} size={compact ? 14 : 20} /></span>{/if}
+    {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
   {#if compact}
@@ -126,6 +130,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .up { flex: none; display: inline-flex; }
+  .fit { color: var(--amber); }
   .am {
     flex: none;
     white-space: nowrap;

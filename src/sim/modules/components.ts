@@ -24,6 +24,8 @@ export interface Module {
   o2Burn?: number;
   /** Priority repair (module.priorityRepair): crew pick this module's repair job before any other; a higher number was ordered later and goes first. Cleared at full hp. */
   repairFirst?: number;
+  /** Item id of the upgrade fitted in the module's slot (ModuleDef.upgradeSlot); absent = none. */
+  upgrade?: string;
 }
 export const ModuleC = defineComponent<Module>('module');
 

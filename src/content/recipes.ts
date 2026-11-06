@@ -1,3 +1,4 @@
+import { upgradeRecipes } from './upgrades';
 import type { RecipeDef } from '../sim';
 
 /** Work is in ticks (20 per second) at work speed 1. */
@@ -145,4 +146,5 @@ export const recipes = {
     outputs: [{ item: 'item.blade', count: 1 }],
     work: 100,
   },
+  ...upgradeRecipes,
 } satisfies Record<string, RecipeDef>;

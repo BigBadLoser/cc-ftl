@@ -57,6 +57,8 @@ export const scrapper = {
     light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.incendiaryLauncher', weight: 2 }],
     heavy: [{ value: 'module.massDriver', weight: 1 }],
   },
+  // Pirate fits are crude: bolted-on armour, a little coolant.
+  upgrades: [{ item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
   shields: [{ value: 'module.shieldGen', weight: 1 }],
   stock: [{ item: 'item.scrap_hull', min: 2, max: 8 }, { item: 'item.metal', min: 0, max: 4 }],
   living: true,

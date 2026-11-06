@@ -27,6 +27,7 @@ import { equipSystem } from './systems/equip';
 import { enemyAiSystem } from './systems/enemyAi';
 import { heatSystem } from './systems/heat';
 import { heatAiSystem } from './systems/heatAi';
+import { enemyLoadoutSystem } from './upgrades/loadout';
 import { firingSystem } from './systems/firing';
 import { helmSystem } from './systems/helm';
 import { impactSystem } from './systems/impacts';
@@ -229,6 +230,8 @@ export const pipeline: readonly System[] = [
   boardingSiteSystem,
   // The player's anti-vehicle weapons pick up a hostile shuttle coming for the ship (the AI does it by command above).
   vehicleDefenceSystem,
+  // Generated enemy ships get their faction's weapon upgrades the first tick they exist.
+  enemyLoadoutSystem,
   targetingSystem,
   // Charge, then fire: a weapon that reaches full charge fires the same tick.
   weaponChargeSystem,

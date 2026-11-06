@@ -1,3 +1,4 @@
+import { fittingModules } from '../upgrades/fit';
 import { IonC } from '../combat/components';
 import { ModuleC, type Module } from '../modules/components';
 import { networkOf } from '../modules/network';
@@ -30,15 +31,16 @@ export function powerSystem(sim: Sim): void {
     if (list) list.push({ id, m, def });
     else networks.set(key, [{ id, m, def }]);
   }
-  for (const members of networks.values()) allocate(sim, members);
+  const offline = fittingModules(sim);
+  for (const members of networks.values()) allocate(sim, members, offline);
 }
 
-function allocate(sim: Sim, members: Member[]): void {
+function allocate(sim: Sim, members: Member[], offline: ReadonlySet<number>): void {
   let supply = 0;
   let demand = 0;
   const consumers: Member[] = [];
   for (const mem of members) {
-    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC);
+    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC) && !offline.has(mem.id);
     if (!live) {
       mem.m.powered = false;
     } else if (mem.def.power > 0) {

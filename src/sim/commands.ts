@@ -27,6 +27,12 @@ export type Command =
   | { type: 'job.deconstructModule'; ship: number; x: number; y: number }
   | { type: 'module.setPowerPriority'; id: number; powerPriority: number }
   | { type: 'module.setEnabled'; id: number; enabled: boolean }
+  /** Fit an upgrade item from cargo into a module's slot (an engineer fetches it and installs it; the module is offline meanwhile). */
+  | { type: 'module.fitUpgrade'; moduleId: number; item: string }
+  /** Take the fitted upgrade out; it goes back to cargo intact. */
+  | { type: 'module.removeUpgrade'; moduleId: number }
+  /** Call off a posted fit or remove job. */
+  | { type: 'module.cancelUpgrade'; moduleId: number }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
   | { type: 'debug.setModuleHp'; id: number; hp: number }

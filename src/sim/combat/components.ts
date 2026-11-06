@@ -107,6 +107,8 @@ export interface Ship {
    * through `wake` (combat/dormant.ts), which removes the field.
    */
   dormant?: number;
+  /** The enemy loadout system has been over this ship (upgrades/loadout.ts): it runs once. */
+  upgraded?: true;
   /** The faction this ship had before a truce breach made it hostile to the player (blackmarket/truce.ts); restored when the ban ends. */
   banned?: Faction;
 }
@@ -119,6 +121,8 @@ export interface Target {
   moduleId: number;
   /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
+  /** Set (with ship 0, moduleId 0) when the target is an enemy drone in space; only a flak shot takes it (firing.ts), the pellets hit by their scatter. */
+  drone?: number;
   /** Set (with moduleId 0) for a blind aim at one tile (sector tile coordinates) of the ship: shots land near it, spread by accuracy. */
   tile?: { x: number; y: number };
 }

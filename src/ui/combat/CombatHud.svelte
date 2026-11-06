@@ -173,7 +173,7 @@
   {#if enemy || standing}
     <div class="top">
       {#if standing}<StationsCard held={!!me?.holdAll} onStandDown={standDown} />{/if}
-      {#if enemy}<EnemyCard {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />{/if}
+      {#if enemy}<EnemyCard {api} {enemy} state={pill} onFrame={() => api.focusFight(mainShip)} onBoard={() => (picking = true)} {boardBlocker} />{/if}
       {#each boarding as b (b.ship)}<BoardingCard {api} {b} named={boarding.length > 1} />{/each}
     </div>
   {/if}

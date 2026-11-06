@@ -3,6 +3,11 @@ import { addHeat } from '../combat/heat';
 import { HEAT_PER_LAYER } from '../combat/heatTuning';
 import { applyEffects } from '../combat/effects';
 import { gauss } from '../combat/geometry';
+import { firedWeapon } from '../upgrades/stats';
+import { DroneC } from '../drones/components';
+import { damageDrone } from '../drones/damage';
+import { BodyC } from '../body';
+import { DRONE_FLAK_RADIUS } from '../tuning';
 import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
@@ -25,7 +30,11 @@ export function impactSystem(sim: Sim): void {
     const p = sim.world.get(id, ProjectileC);
     if (!p || p.t < 1) continue;
     sim.world.destroyEntity(id);
-    const def = sim.content.weapons?.[p.weapon];
+    const def = firedWeapon(sim, p.fromModuleId, p.weapon);
+    if (p.target.drone) {
+      hitDrone(sim, id, p.weapon, p.target.drone, def?.effects ?? [], p);
+      continue;
+    }
     if (p.target.vehicle) {
       hitVehicle(sim, id, p.weapon, p.target.vehicle, def?.effects ?? [], p.x1, p.y1);
       continue;
@@ -86,4 +95,19 @@ function hitVehicle(sim: Sim, projectile: number, weapon: string, vehicle: numbe
   let amount = 0;
   for (const e of effects) if (e.type === 'moduleDamage') amount += e.amount;
   damageVehicle(sim, vehicle, amount, 'weapon');
+}
+
+/** A pellet aimed at a drone: it lands where its scatter puts it and hits if the drone is within DRONE_FLAK_RADIUS of that point; it deals the weapon's total moduleDamage. */
+function hitDrone(sim: Sim, projectile: number, weapon: string, drone: number, effects: readonly Effect[], p: { x1: number; y1: number; spread: number }): void {
+  const d = sim.world.get(drone, DroneC);
+  const b = sim.world.get(drone, BodyC);
+  const x = p.x1 + gauss(sim) * p.spread;
+  const y = p.y1 + gauss(sim) * p.spread;
+  if (!d || !b || d.hp <= 0 || !d.space || Math.hypot(b.x - x, b.y - y) > DRONE_FLAK_RADIUS) {
+    sim.events.emit({ type: 'projectile.miss', projectile, weapon, ship: 0, reason: 'space', x, y });
+    return;
+  }
+  let amount = 0;
+  for (const e of effects) if (e.type === 'moduleDamage') amount += e.amount;
+  damageDrone(sim, drone, amount, 'flak');
 }

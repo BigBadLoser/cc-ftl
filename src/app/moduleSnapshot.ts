@@ -5,7 +5,10 @@ import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
 import { buildHeat } from './heatSnapshot';
 import { buildStock } from './logisticsSnapshot';
-import type { UiModule, UiModuleDef, UiStats } from '../ui/api';
+import { fitJobOf, fittingChoices } from '../sim/upgrades/fit';
+import { shipStoreCount } from '../sim/items/stock';
+import { upgradeEffects } from './upgradeText';
+import type { UiUpgradeItem, UiUpgradeSlot, UiModule, UiModuleDef, UiStats } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 
@@ -30,6 +33,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
       suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
+      upgradeSlot: def.upgradeSlot ? upgradeSlotOf(sim, id) : null,
     });
   }
   return out;
@@ -110,4 +114,21 @@ export function buildStats(sim: Sim): UiStats {
   }
   const load = hullLoad(sim, GRID);
   return { supply, demand, food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2, hull: { tiles: load.tiles, capacity: load.capacity } };
+}
+
+function upgradeItem(sim: Sim, item: string, shipId: number): UiUpgradeItem {
+  const d = sim.content.items[item];
+  return { item, name: d?.name ?? item, effects: d?.upgrade ? upgradeEffects(d.upgrade) : [], count: shipStoreCount(sim, shipId, item) };
+}
+
+/** The slot panel's data for a module with an upgrade slot. */
+function upgradeSlotOf(sim: Sim, id: number): UiUpgradeSlot {
+  const m = sim.world.get(id, ModuleC);
+  const ship = shipIdOf(sim, m);
+  const job = fitJobOf(sim, id)?.[1];
+  return {
+    fitted: m?.upgrade ? upgradeItem(sim, m.upgrade, ship) : null,
+    job: job ? { item: job.fit?.item ? upgradeItem(sim, job.fit.item, ship) : null, working: job.progress > 0 } : null,
+    options: fittingChoices(sim, id).map((i) => upgradeItem(sim, i, ship)),
+  };
 }

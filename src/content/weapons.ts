@@ -41,4 +41,11 @@ export const weapons = {
     heat: 4, shield: { damage: 1, pierce: 0 },
     effects: [{ type: 'hullDamage', amount: 6 }, { type: 'moduleDamage', amount: 6 }, { type: 'ignite', radius: 1 }],
   },
+  // Scrap shot: one hull scrap item per volley throws a spread of weak pellets. Each pellet that meets a shield strips a layer (so flak opens shields for the
+  // other guns), hull damage is slight, and the spread widens with range. It also shoots enemy drones in space (antiDrone: tiles).
+  'weapon.flak': {
+    name: 'Flak cannon', shortName: 'Flak', projectileAsset: 'fx.mass_slug', shots: 8, shotDelaySec: 0.05, chargeSec: 7, speed: 28, spread: 0.8, spreadPerTile: 0.04,
+    ammo: 'item.scrap_hull', ammoPerVolley: true, antiDrone: 70, heat: 4, shield: { damage: 1, pierce: 0 },
+    effects: [{ type: 'hullDamage', amount: 4 }, { type: 'moduleDamage', amount: 4 }, { type: 'crewDamage', amount: 1 }],
+  },
 } satisfies Record<string, WeaponDef>;
