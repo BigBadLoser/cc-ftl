@@ -29,6 +29,13 @@ PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), 
          "incendiary_launcher": ("incendiary", 0.64, 2)}
 DESIGN = {"laser": ("S", "laser"), "driver": ("H", "driver"), "pd": ("R", "laser"), "missile": ("M", "missile"),
           "ion": ("M", "ion"), "incendiary": ("M", "incendiary")}
+# Flak concepts (round 1), look iteration only: FLAK_CONCEPTS=1 adds them as flak_a/b/c on the laser's bay.
+if os.environ.get("FLAK_CONCEPTS"):
+    from . import turret_flak  # noqa: F401
+    for _c in "abc":
+        PICKS[f"flak_{_c}"] = (f"flak{_c.upper()}", 0.64, 2)
+        DESIGN[f"flak{_c.upper()}"] = ("F", f"flak{_c.upper()}")
+        TB.BAYS[f"flak{_c.upper()}"] = TB.BAYS["laser"]
 # Look iteration only, never for commits: WEAPONS_ONLY=stem,stem limits the stems; WEAPONS_QUICK=1 renders just the
 # preview set (aims 1, 3, 6, aim 1 charged, stowed, bay r0).
 ONLY = [s for s in os.environ.get("WEAPONS_ONLY", "").split(",") if s]
@@ -54,7 +61,7 @@ for _stem, (_key, _r, _n) in PICKS.items():
     _fp = (_n, _n)
     for _d in ((1, 3, 6) if QUICK else range(8)):
         SPRITES.append((f"turret.{_stem}.d{_d}", _fp, "prop", lambda k=_key, d=_d: turret(k, False, d)))
-        if _key != "pd" and (not QUICK or _d == 1):
+        if _key != "pd" and (not QUICK or _d == 1 or _stem.startswith("flak_")):
             SPRITES.append((f"turret.{_stem}.d{_d}.charged", _fp, "prop", lambda k=_key, d=_d: turret(k, True, d)))
     _des, _kind = DESIGN[_key]
     SPRITES.append((f"turret.{_stem}.stowed", _fp, "prop", lambda a=_des, b=_kind, r=_r: TB.deploy(a, -1, b, r)))
