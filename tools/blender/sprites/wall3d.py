@@ -408,6 +408,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         return P(ax, plane, u, zsurf(dd), dd) + nrm * rise
     g, rise = LINE / 2, PAINT
     d0, d1 = max(0.02, style().shelf), run_ - (0.03 if ft else 0.045)   # (from a look's shelf's edge)
+    if style().plain and ft:                   # (the default walls: the plates on down to the toe's edge)
+        d1 = run_
     off = seam()                               # the plates' seams this far in from each tile edge (0: one plate)
     segs = []                                   # the face's posts and fields (posts()), run on past a face end so
     for s0, s1 in spans(a, b):                  # the mitre clips them
@@ -493,6 +495,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
             if len(poly) >= 3:                  # under it the foot line, a strip of the ramp in the plates' tone
                 plate(k, poly, pt, nrm, 0.0, rise, fam, 2)
+        return
+    if ft and style().plain:                    # (the default walls: no lit edge over the foot)
         return
     if ft:                                      # an upright foot: its top edge lit (or in a look's toe tone)
         tl = style().toe_lvl
