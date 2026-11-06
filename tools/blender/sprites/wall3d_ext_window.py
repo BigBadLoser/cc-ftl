@@ -58,6 +58,10 @@ FRONT_PLATES = (5, 4, 8, 3)         # W2's sill front: two plates, from these px
                                     # this many px wide, from its top this many px down, wrapping over onto the
                                     # slope this many px up it on screen; REC proud (on the slope MID_PLATE_RISE),
                                     # the window post's tone
+FRAME_BOX = (3, 2, 8)               # W2's sill front: a frame between those plates, this many px either side of the
+                                    # centre (its outer edge), from this many px down from the front's top to this
+                                    # many (the plates' foot); a px wide, REC proud, in the plates' tone; inside it the
+                                    # front recessed REC
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -120,6 +124,8 @@ def build(k, ax, plane, a, b, ends, H):
         cols[2], cols[3] = SILL_SLOPE, SILL_FLAT
         if PART == "w1":                                # (E's recess cut in its slope, F's in its front)
             _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, cols[1])
+        elif PART == "w2":                              # (the frame's recess cut in its front)
+            _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs)
         else:
             f.part(u0, u1, pf, cols, None, end=False)
         if PART == "w2":
@@ -160,6 +166,22 @@ def build(k, ax, plane, a, b, ends, H):
                 f.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
 
 
+def _w2_sill(f, s, s0, s1, u0, u1, pf, cols, db, fr, zs):
+    """W2's sill over [u0, u1] (its section pf, its tones cols), its front recessed REC inside FRAME_BOX's frame."""
+    R, c, (half, top, foot) = T3.REC, (s0 + s1) / 2, FRAME_BOX
+    a, b = c - T3.px(half - 1), c + T3.px(half - 1)     # (the recess: the frame's inside)
+    z0, z1 = zs - (foot - 1) / core.ZPX, zs - (top + 1) / core.ZPX
+    f.part(u0, a, pf, cols, (None, MID_PLATE_SIDE), end=False)          # either side, their ends its walls
+    f.part(b, u1, pf, cols, (MID_PLATE_SIDE, None), end=False)
+    lo = [(db, 0.0), (fr, 0.0), (fr, z0), (db, z0)]                     # under it, its floor, over it
+    f.part(a, b, lo, [cols[0], cols[1], s.cols(lo, "face")[2], False], False, end=False)
+    f.part(a, b, [(db, z0), (fr - R, z0), (fr - R, z1), (db, z1)], [False, cols[1], False, False], False,
+           end=False)
+    up = [(db, z1)] + pf[1:]
+    up[1] = (fr, z1)
+    f.part(a, b, up, [MID_PLATE_SIDE] + cols[1:], False, end=False)
+
+
 def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
     """W2's plates. One on its sill's slope: MID_PLATE[1] px down it on screen from its top, MID_PLATE[2] px on
     down it, MID_PLATE_RISE px proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot)
@@ -183,6 +205,12 @@ def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
     c = (s0 + s1) / 2
     for u0, u1 in ((c - T3.px(off + w), c - T3.px(off)), (c + T3.px(off), c + T3.px(off + w))):
         f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
+    half, top, foot = FRAME_BOX                         # the frame between them
+    za, zb, zc, zd = (zs - n / core.ZPX for n in (foot, foot - 1, top + 1, top))
+    a, b = c - T3.px(half), c + T3.px(half)
+    for u0, u1, z0, z1 in ((a, b, za, zb), (a, b, zc, zd), (a, a + T3.px(1), zb, zc), (b - T3.px(1), b, zb, zc)):
+        f.part(u0, u1, [(fr, z0), (fr + R, z0), (fr + R, z1), (fr, z1)], [False, HEAD_FRONT, HEAD_FRONT, False],
+               MID_PLATE_SIDE, end=False)
 
 
 def _w1_header(f, s, s0, s1, dv, zc, zh):
