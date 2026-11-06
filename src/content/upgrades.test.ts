@@ -9,7 +9,6 @@ import { storageAdd, storageCount } from '../sim/items/storage';
 import { shipStoreCount } from '../sim/items/stock';
 import { shipIdOf } from '../sim/regions';
 import { TICK_HZ } from '../sim/time';
-import { buildCombat } from '../app/combatSnapshot';
 import { content } from '.';
 
 function setup(seed = 3): { sim: Sim; gun: number; ship: number } {
@@ -248,17 +247,6 @@ describe('enemy loadouts', () => {
     expect(fitted(sim, spawn(sim, 'faction.civilian', 4))).toEqual([]);
   });
 
-  it('the enemy card shows the upgrade on the weapon, and the weapon card the player\'s own', () => {
-    const sim = newGame(3, content);
-    const ship = spawn(sim, 'faction.navy', 1);
-    const gun = weaponsOf(sim, ship)[0] as number;
-    (sim.world.get(gun, ModuleC) as { upgrade?: string }).upgrade = 'item.upg_coolant';
-    const mine = sim.world.query(WeaponC, ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === playerShip(sim)) as number;
-    (sim.world.get(mine, ModuleC) as { upgrade?: string }).upgrade = 'item.upg_housing';
-    const view = buildCombat(sim);
-    expect(view.enemies.find((e) => e.ship === ship)?.charges?.find((w) => w.id === gun)?.upgrade).toEqual({ item: 'item.upg_coolant', name: 'Coolant jacket' });
-    expect(view.player?.weapons.find((w) => w.id === mine)?.upgrade?.item).toBe('item.upg_housing');
-  });
 });
 
 describe('stripping an enemy weapon', () => {

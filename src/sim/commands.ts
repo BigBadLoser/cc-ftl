@@ -33,6 +33,8 @@ export type Command =
   | { type: 'module.removeUpgrade'; moduleId: number }
   /** Call off a posted fit or remove job. */
   | { type: 'module.cancelUpgrade'; moduleId: number }
+  /** Debug: put an upgrade item straight into a module's slot (null empties it), no crew job and no cargo. */
+  | { type: 'debug.setUpgrade'; moduleId: number; item: string | null }
   /** Unclamp a container module from its ship: its tiles leave the ship and it drifts off as a free body with its stock. */
   | { type: 'container.detach'; id: number }
   | { type: 'debug.setModuleHp'; id: number; hp: number }

@@ -7,6 +7,7 @@ import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
+import { upgradeScenarioCommands, enemyUpgradeCommands } from './app/upgradeScenario';
 import { loadItemIcons } from './app/itemIcons';
 import { backdropSpecOf } from './app/backdropSpec';
 import { loadStarmapArt } from './app/starmapArt';
@@ -188,7 +189,7 @@ function focusFight(ship: number | null): void {
  */
 const params = new URLSearchParams(location.search);
 const shipgenFlag = params.get('shipgen');
-const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
+const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? (params.get('scenario') === 'upgrades' ? 6 : 2))) || 0);
 /** `?genAt=dx,dy`: where a generated ship's centre goes, in tiles from the player's ship's centre (default 18,22). */
 const genAt = (params.get('genAt') ?? '18,22').split(',').map((v) => Math.round(Number(v) || 0)) as [number, number];
 
@@ -275,6 +276,7 @@ const scenario = params.get('scenario');
  * `?scenario=drones`: two drone bays, three drones, a fire, a damaged console and hurt crew (see app/droneScenario.ts); `&fight`: defence drones
  *   against a missile-armed Lancer.
  * `?scenario=ambush[&trap|&honest][&signal]`: the pirate ambush from its signal, or dropped out beside the skiff (see app/ambushScenario.ts).
+ * `?scenario=upgrades[&enemy=navy][&depth=6]`: weapon upgrades and flak (see app/upgradeScenario.ts): a flak cannon, scrap and one of each general upgrade aboard, an enemy in range.
  * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
  * `&charged` also fills the FTL drive.
  * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
@@ -319,7 +321,7 @@ function droneFightScenario(): void {
       };
       deploy(0);
       when(() => sim.sector.state === 'active' && !!homeShipC(), () => {
-        for (const cmd of droneScenarioCommands(sim, true)) bridge.dispatch(cmd);
+        for (const cmd of scenario === 'upgrades' ? upgradeScenarioCommands(sim) : droneScenarioCommands(sim, true)) bridge.dispatch(cmd);
         const mine = homeShipC();
         const t = (content.ships as Record<string, { rows: readonly string[] }>)['ship.lancer'];
         if (!mine || !t) return;
@@ -332,7 +334,7 @@ function droneFightScenario(): void {
         ];
         const hostile = (): boolean => sim.world.query(ShipC).some((id) => sim.world.get(id, ShipC)?.faction === 'hostile');
         // `&enemy=navy` or `&enemy=drones` (rogue AI): a generated ship of that faction instead, with its drone bay and defence drones (`&depth=N`, default 6).
-        const faction = params.get('enemy');
+        const faction = params.get('enemy') ?? (scenario === 'upgrades' ? 'navy' : null);
         const depth = Number(params.get('depth') ?? 6);
         const tryAt = (i: number): void => {
           const p = spots[i];
@@ -340,7 +342,13 @@ function droneFightScenario(): void {
           if (faction) bridge.dispatch({ type: 'debug.spawnGenerated', faction: `faction.${faction}`, depth, seed: 5, cx: p.x + 37, cy: p.y + 14 });
           else bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
           const sent = sim.tick;
-          when(() => sim.tick >= sent + 10, () => tryAt(i + 1));
+          when(() => sim.tick >= sent + 10, () => {
+            if (scenario === 'upgrades') {
+              const enemy = sim.world.query(ShipC).find((id) => id !== homeShip(sim));
+              if (enemy !== undefined) for (const cmd of enemyUpgradeCommands(sim, enemy)) bridge.dispatch(cmd);
+            }
+            tryAt(i + 1);
+          });
         };
         // A moment later, so the drones are in their bays before the fight starts.
         const start = sim.tick;
@@ -398,7 +406,7 @@ function startScenario(): void {
     loop.setSpeed(1);
     return;
   }
-  if (scenario === 'drones' && params.has('fight')) return droneFightScenario();
+  if ((scenario === 'drones' && params.has('fight')) || scenario === 'upgrades') return droneFightScenario();
   if (scenario === 'drones' && params.has('breach')) {
     // `?scenario=drones&breach`: repair drones with metal and a hole in the hull; they go out through the hatch and seal it (app/droneScenario.ts).
     loop.setSpeed(1);

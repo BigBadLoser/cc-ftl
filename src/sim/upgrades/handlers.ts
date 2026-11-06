@@ -9,7 +9,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { fitError, fitJobOf } from './fit';
 
-type UpgradeCommand = 'module.fitUpgrade' | 'module.removeUpgrade' | 'module.cancelUpgrade';
+type UpgradeCommand = 'module.fitUpgrade' | 'module.removeUpgrade' | 'module.cancelUpgrade' | 'debug.setUpgrade';
 
 /** Seconds of engineer work to swap an upgrade. */
 export const FIT_SEC = 8;
@@ -43,6 +43,14 @@ export const upgradeHandlers: { [T in UpgradeCommand]: (sim: Sim, cmd: Extract<C
     if (!m.upgrade) return reject(sim, cmd.type, 'noUpgrade');
     if (fitJobOf(sim, cmd.moduleId)) return reject(sim, cmd.type, 'jobExists');
     post(sim, cmd.moduleId, null);
+  },
+  'debug.setUpgrade': (sim, cmd) => {
+    const m = sim.world.get(cmd.moduleId, ModuleC);
+    if (!m) return reject(sim, cmd.type, 'noModule');
+    const err = cmd.item ? fitError(sim, cmd.moduleId, cmd.item) : null;
+    if (err) return reject(sim, cmd.type, err);
+    if (cmd.item) m.upgrade = cmd.item;
+    else delete m.upgrade;
   },
   'module.cancelUpgrade': (sim, cmd) => {
     const j = fitJobOf(sim, cmd.moduleId);
