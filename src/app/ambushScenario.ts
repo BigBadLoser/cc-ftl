@@ -39,8 +39,9 @@ export function startAmbushScenario(
           dispatch({ type: 'story.choose', choice: 'hail' });
           dispatch({ type: 'story.choose', choice: 'help' });
         } else dispatch({ type: 'story.choose', choice: 'approach' });
+        setSpeed(); // the decision paused the game; answered here, not in its window, so the speed is put back here too
         when(() => sim.sector.state === 'deploying', () => {
-          const spots = [[100, 60], [20, 50], [150, 40], [60, 120], [30, 130]] as const;
+          const spots = [[100, 60], [20, 50], [150, 40], [60, 120], [30, 130], [300, 200], [200, 20], [350, 100]] as const;
           const deploy = (i: number): void => {
             const p = spots[i];
             if (!p || sim.sector.state !== 'deploying') return;
