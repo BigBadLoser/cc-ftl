@@ -310,7 +310,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         if f1 - f0 < 0.3:
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
-        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04, zb + 0.1, zh - 0.06
+        p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
         paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
         paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if VARIANT[0]:
