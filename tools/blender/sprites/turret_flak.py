@@ -89,6 +89,10 @@ def hot_run(g, u, segs, v, z, r, hot, sides=14):
 # Values run lighter than the rest of the kit: bodies BODY, lit chamfers and rims EDGE, sides SIDE, undersides and
 # recesses UNDER; the dark tones only where light would not reach.
 BODY, EDGE, SIDE, UNDER = "steelL", "plate", "steel", "steelD"
+# Three value tiers so parts read apart: the mount darker (BASE), the gun light (BODY), and the joints between them dark
+# (DARK: bands, collars, covers, lips), with EDGE highlights on bolts, rails and lit chamfers.
+BASE = dict(top=SIDE, side=UNDER, edge=BODY, under=UNDER, cap0=UNDER, cap1=SIDE)
+DARK = dict(top=SIDE, side=UNDER, edge=BODY, under=UNDER, cap0=UNDER, cap1=UNDER)
 
 
 def _face(f, pts, ref, col):
@@ -100,7 +104,7 @@ def _face(f, pts, ref, col):
     f.poly(P, col, flip=False)
 
 
-def prism(f, u0, u1, sec0, sec1, z, top=BODY, edge=EDGE, side=BODY, under=UNDER, cap0=SIDE, cap1=SIDE, dz1=0.0):
+def prism(f, u0, u1, sec0, sec1, z, top=BODY, edge=EDGE, side=SIDE, under=UNDER, cap0=SIDE, cap1=SIDE, dz1=0.0):
     """A body swept along u from section sec0 at u0 to sec1 at u1 (same-length lists of (v, dz) round the centre line
     at height z, z + dz1 at u1). Each side face takes its colour from where it faces: top, a lit chamfer (edge), the
     sides, or underneath, so bevels catch the light the way machined parts do."""
@@ -142,6 +146,18 @@ def bolts(g, u, z, r, n=6, mat=EDGE, size=0.032):
         g.box(u, r * math.cos(a), z + r * math.sin(a), size * 0.6, size, size, mat, base=False)
 
 
+def hazard_v(g, u, z, half, step=0.06, w=0.035, h=0.012):
+    """A painted hazard band across v (yellow and black blocks) on a top face at height z, centred at u."""
+    n = int(round(2 * half / step))
+    for k in range(n):
+        g.box(u, -half + (k + 0.5) * step, z, w, step, h, "hazY" if k % 2 == 0 else "hazK")
+
+
+def seam(g, a, b):
+    """A dark panel seam drawn on a surface from a to b (both already a hair above it)."""
+    D.seg(g, a, b, 0.009, "dark", 4)
+
+
 def collar(g, u, z, r, w=0.04, mat=EDGE, sides=16):
     """A raised flange where two parts meet."""
     g.hcyl(u - w / 2, u + w / 2, 0, z, r, mat, sides=sides, cap=mat, capstart=mat)
@@ -177,7 +193,7 @@ def radiator(g, o, eu, ew, hot, pipes=4, steps=4, core=4, r=0.026):
     tip = tuple(o[i] + ew[i] for i in range(3))
     D.seg(g, tip, tuple(tip[i] + eu[i] for i in range(3)), 0.024, EDGE, 8, cap=EDGE, capstart=EDGE)  # header
     D.seg(g, tuple(o[i] - e[i] for i in range(3)), tuple(o[i] + eu[i] + e[i] for i in range(3)), 0.05,
-          heat(hot, core - 1, BODY), 12, cap=EDGE, capstart=EDGE)                      # root manifold
+          heat(hot, core - 1, BODY), 12, cap="brass", capstart="brass")                # root manifold
     nrm = _normal(eu, ew)
     for p in range(pipes):
         fr = (p + 0.5) / pipes
@@ -231,12 +247,12 @@ def hot_cone(g, u0, u1, r0, r1, z, hot, steps=(3, 2, 1, 0), wall=0.012):
 DECK = 0.29        # top of the turntable's upper deck (radius 0.44): the cradle stays inside it
 
 
-def cradle(h, PU, BZ, u0, u1, vin, vout, rise=0.08, fall=0.02, c=0.05, cheek=BODY):
+def cradle(h, PU, BZ, u0, u1, vin, vout, rise=0.08, fall=0.02, c=0.05):
     """The mount as one mass growing from the deck: a chamfered floor plate and two cheek walls (vin..vout either side)
     whose tops slope from BZ + rise at the back down to BZ - fall at the front; the trunnions sit inside the walls,
     shown only as capped bearing bosses flush on their outer faces. Everything stays within the deck's radius."""
     _g("cradle")
-    prism(h, u0, u1, csec(vout, 0.035, 0.02), csec(vout, 0.035, 0.02), DECK + 0.035)       # floor plate
+    prism(h, u0, u1, csec(vout, 0.035, 0.02), csec(vout, 0.035, 0.02), DECK + 0.035, **BASE)  # floor plate
     for sv in (-1, 1):
         def sec(top):
             pts = [(vout, DECK), (vout, top - c), (vout - c, top), (vin, top), (vin, DECK)]
@@ -244,10 +260,10 @@ def cradle(h, PU, BZ, u0, u1, vin, vout, rise=0.08, fall=0.02, c=0.05, cheek=BOD
         s0, s1 = sec(BZ + rise), sec(BZ - fall)
         if sv < 0:
             s0, s1 = s0[::-1], s1[::-1]
-        prism(h, u0, u1, s0, s1, 0.0, side=cheek, cap0=SIDE, cap1=EDGE)
+        prism(h, u0, u1, s0, s1, 0.0, **BASE)
         vo = sv * vout
-        D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.03, BZ), 0.095, SIDE, 16, cap=EDGE, capstart=SIDE)  # bearing boss
-        D.seg(h, (PU, vo + sv * 0.025, BZ), (PU, vo + sv * 0.045, BZ), 0.04, UNDER, 10, cap=BODY)
+        D.seg(h, (PU, vo, BZ), (PU, vo + sv * 0.03, BZ), 0.095, BODY, 16, cap=BODY, capstart=SIDE)  # bearing boss
+        D.seg(h, (PU, vo + sv * 0.025, BZ), (PU, vo + sv * 0.05, BZ), 0.045, "brass", 10, cap="brass")
         for k in range(6):                                                              # its bolt ring
             a = math.tau * (k + 0.5) / 6
             h.box(PU + 0.07 * math.cos(a), vo + sv * 0.035, BZ + 0.07 * math.sin(a), 0.022, 0.02, 0.022, EDGE,
@@ -267,15 +283,20 @@ def letterbox(hot):
     g = rig.f("gun")
     _g("receiver")
     prism(g, -0.56, 0.1, csec(0.18, 0.14, 0.045), csec(0.18, 0.14, 0.045), BZ)
-    prism(g, -0.6, -0.56, csec(0.15, 0.11, 0.035), csec(0.15, 0.11, 0.035), BZ, cap0=EDGE)   # breech cover
+    prism(g, -0.6, -0.56, csec(0.15, 0.11, 0.035), csec(0.15, 0.11, 0.035), BZ, **DARK)   # breech cover
     for u in (-0.44, -0.2):                                                             # bands, same chamfer
-        prism(g, u - 0.02, u + 0.02, csec(0.195, 0.155, 0.05), csec(0.195, 0.155, 0.05), BZ, side=EDGE,
-              cap0=EDGE, cap1=EDGE)
+        prism(g, u - 0.02, u + 0.02, csec(0.195, 0.155, 0.05), csec(0.195, 0.155, 0.05), BZ, **DARK)
     _g("sail")
     radiator(g, (-0.5, 0, BZ + 0.155), (0.44, 0, 0), (-0.1, 0, 0.36), hot, pipes=4, r=0.02)
     _g("nozzle")
-    prism(g, 0.1, 0.14, csec(0.205, 0.165, 0.05), csec(0.205, 0.165, 0.05), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
+    prism(g, 0.1, 0.14, csec(0.205, 0.165, 0.05), csec(0.205, 0.165, 0.05), BZ, **DARK)
     prism(g, 0.14, 0.9, csec(0.18, 0.14, 0.045), csec(0.34, 0.075, 0.03), BZ)            # widening flat nozzle
+
+    def ztop(u):
+        return BZ + 0.14 - 0.065 * (u - 0.14) / 0.76 + 0.004
+    for f in (-0.55, 0.55):                                                             # plate seams along it
+        seam(g, (0.5, f * (0.135 + 0.155 * 0.47), ztop(0.5)), (0.88, f * 0.31, ztop(0.88)))
+    seam(g, (0.5, -0.22, ztop(0.5)), (0.5, 0.22, ztop(0.5)))
     for i, (ua, ub) in enumerate(((0.2, 0.32), (0.34, 0.46))):                          # throat grille on the top
         k = 3 - i
         zt = BZ + 0.14 - 0.065 * ((ua + ub) / 2 - 0.14) / 0.76
@@ -285,7 +306,8 @@ def letterbox(hot):
                 g.box((ua + ub) / 2, sv * hv, zt, ub - ua - 0.03, 0.035, 0.006, heat(hot, k - j, UNDER))
         for vb in (-0.083, -0.028, 0.028, 0.083):
             g.box((ua + ub) / 2, vb, zt, ub - ua, 0.012, 0.014, EDGE)
-    prism(g, 0.88, 0.94, csec(0.36, 0.09, 0.03), csec(0.36, 0.09, 0.03), BZ, side=EDGE, cap1=UNDER)  # lip
+    prism(g, 0.88, 0.94, csec(0.36, 0.09, 0.03), csec(0.36, 0.09, 0.03), BZ, **DARK)  # lip
+    hazard_v(g, 0.91, BZ + 0.09, 0.3)
     for k in range(9):                                                                  # the slot, white at the middle
         v = -0.3 + k * 0.075
         g.box(0.942, v, BZ, 0.006, 0.075, 0.1, heat(hot, 4 - min(4, abs(k - 4)), UNDER), base=False)
@@ -304,10 +326,11 @@ def finned(hot):
     g = rig.f("gun")
     _g("breech")
     prism(g, -0.58, 0.14, octa(0.19), octa(0.19), BZ)
-    prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, cap0=EDGE)
-    bolts(g, -0.635, BZ, 0.105, n=8, mat=BODY)
+    prism(g, -0.63, -0.58, octa(0.155), octa(0.155), BZ, **DARK)
+    bolts(g, -0.635, BZ, 0.105, n=8, mat=EDGE)
+    D.panel(g, -0.22, 0, BZ + 0.19, 0.24, 0.13, mat=BODY, seam="dark", t=0.012, ring=0.025)   # access hatch
     for u in (-0.46, 0.12):
-        prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, side=EDGE, cap0=EDGE, cap1=EDGE)
+        prism(g, u - 0.02, u + 0.02, octa(0.205), octa(0.205), BZ, **DARK)
     _g("bore")
     g.hcyl(0.14, 0.88, 0, BZ, 0.16, SIDE, sides=20)
     _g("fins")
@@ -328,11 +351,12 @@ def finned(hot):
                 t0, t1, q0, q1 = iu / NU, (iu + 1) / NU, ir / NR, (ir + 1) / NR
                 k = 4 - iu - ir
                 qslab(g, pt(t0, q0), pt(t1, q0), pt(t0, q1), pt(t1, q1), 0.028, BODY,
-                      face=heat(hot, k, "rustD" if k >= 4 else BODY) if k >= 1 else BODY)
+                      face=heat(hot, k, "rustD" if k >= 4 else SIDE) if k >= 1 else SIDE)
         D.seg(g, at(0.21, 0.345), at(0.77, 0.29), 0.018, EDGE, 6, cap=EDGE, capstart=EDGE)  # fin tip rail
-    D.annulus(g, 0.82, 0.86, 0, BZ, 0.3, 0.16, EDGE, BODY, sides=24)                   # fin clamp ring
+    D.annulus(g, 0.82, 0.86, 0, BZ, 0.3, 0.16, SIDE, BODY, sides=24)                   # fin clamp ring
     _g("muzzle")
-    prism(g, 0.86, 0.95, octa(0.195), octa(0.195), BZ, cap1=UNDER)
+    prism(g, 0.86, 0.95, octa(0.195), octa(0.195), BZ, **DARK)
+    hazard_v(g, 0.905, BZ + 0.195, 0.075, step=0.05, w=0.07)
     D.annulus(g, 0.95, 0.98, 0, BZ, 0.2, 0.13, EDGE, EDGE, sides=20)
     hot_cone(g, 0.84, 0.975, 0.1, 0.135, BZ, hot, steps=(2, 1), wall=0.0)
     g.hcyl(0.84, 0.85, 0, BZ, 0.1, heat(hot, 4, UNDER), sides=16, cap=heat(hot, 4, UNDER))
