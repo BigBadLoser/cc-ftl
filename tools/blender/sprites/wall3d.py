@@ -471,18 +471,19 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         elif field and w >= 0.36 and sk == "panel" and not rv:          # a panel under each field
                                                             # (insets scale down on a short field)
             im = 0.2 * min(1.0, w / 0.76)
-            fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_, 0.88 * run_
+            dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
+            fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
             plate(k, [(fu0 - LINE, fd0), (fu1, fd0), (fu1, fd1), (fu0 - LINE, fd1)], pt, nrm, 0.0, rise + PAINT,
                   fam, 1, base=rise)                    # the frame's dark outline (2 px on its left, as its raised
                                                         # side shows on its right)
             fu0, fu1, fd0, fd1 = fu0 + LINE, fu1 - LINE, fd0 + 0.03, fd1 - 0.03
-            iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_, 0.52 * run_
+            iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_ + dn, 0.52 * run_ + dn
             for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
                 plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX, fam,
                       2, base=rise)                                            # the raised frame ...
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam, 3,
                   base=rise)                                                   # ... and the plate sunk in it
-            su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_, 0.74 * run_
+            su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
             plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + PX + PAINT, fam, 0,
                   base=rise + PX)                                              # a dark slot on the frame
     toe_fam, toe_at = style().toe, style().toe_at
