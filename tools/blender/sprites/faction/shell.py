@@ -175,7 +175,7 @@ class LookShell(T.Shell):
                "toe": tl[fam] if isinstance(tl, dict) else R[0 if tl is None else tl], "hole_back": R[0],    # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
-               "shelf": R[3], "shelf_edge": R[4],       # (a flat step at its top: the slope's plates' tone, its
+               "shelf": R[T.style().shelf_lvl], "shelf_edge": R[4],       # (a flat step at its top: the slope's plates' tone, its
                                                         # front edge lit, its back px in Style.shelf_back's levels)
                **{f"shelf_back{n}": R[v] for n, v in enumerate(T.style().shelf_back)},
                "foot": self.col_face(ax, *mid, 0.0) if self.foot else R[0]}

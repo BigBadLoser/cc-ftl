@@ -268,13 +268,13 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     if zg + PZ >= top - 0.03:
         return zg, zl + LIP_H
     paint(k, ax, plane, a, b, zl + LIP_H, zg + PZ, 0.0, fam, 2)                                 # (the face over it)
-    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
+    paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 2)
     for u in _thirds(a, b):
         q0, q1 = u, u + 0.7 * LINE
         dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
-        prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 1,
+        prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,
               cols=[False, None, None, False])
-        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 1)
+        paint(k, ax, plane, q0, q1, zl + LIP_H, zg, PAINT, fam, 2)
     return zg + PZ, zl + LIP_H
 
 
@@ -311,7 +311,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04, zb + 0.1, zh - 0.06
-        paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 1)                                          # panel outline
+        paint(k, ax, plane, p0, p1, q0, q1, PAINT, F, 2)                                          # panel outline
         paint(k, ax, plane, p0 + LINE, p1 - LINE, q0 + 0.026, q1 - 0.026, 2 * PAINT, F, 2)
         if VARIANT[0]:
             from . import wall3d_variants as V
@@ -326,7 +326,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
         slab(k, ax, plane, p0 + LINE, p1 - LINE, zr - 0.07, zr, FR, F, 3, ends=(False, False))   # raised bar
         gap = (zr - 0.07 - q0) / 3                       # (the two lines evenly between it and the panel's foot)
         for zz in (zr - 0.07 - gap, zr - 0.07 - 2 * gap):
-            paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 1)
+            paint(k, ax, plane, uc - 0.25 * w, uc + 0.25 * w, zz - 0.026, zz, 3 * PAINT, F, 2)
 
 
 def hull_face(k, ax, plane, a, b, ends, zs, top, full, variant):
@@ -499,11 +499,11 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 for q in ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
                     poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
                     if len(poly) >= 3:
-                        plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 0, base=rise)
+                        plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
                 for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
                           (fu1 - LINE, fu1, fd0, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,
-                          fam, 0, base=rise)            # (drone's seam level: its darkest)
+                          fam, 1, base=rise)            # (a level over drone's seams: its darkest but one)
             else:                                       # the frame's dark outline
                 plate(k, [(fu0, fd0), (fu1, fd0), (fu1, fd1), (fu0, fd1)], pt, nrm, 0.0, rise + PAINT, fam, 1,
                       base=rise)
@@ -517,7 +517,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX,
                           fam, 2, base=rise)                                   # the raised frame ...
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam,
-                  3 + LIFT(), base=rise)                # ... and the plate sunk in it (a shade over the slope)
+                  4 if style().plain else 3, base=rise)  # ... and the plate sunk in it
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
             if style().plain:                           # (the default walls: the slot a px down, clear of the
                 sd0, sd1 = sd0 + pd, min(sd1 + pd, sb - 1e-3)             # panel's bottom seam)
@@ -548,15 +548,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     k.poly(toe, fam, 1, Vector((0, 0, 1)))
 
 
-def LIFT():
-    """The default walls' slope face a shade lighter (its plates; not the details on them)."""
-    return 1 if style().plain else 0
-
-
 def _bands(d0, d1, run_, fam):
     """The ramp's plates from d0 to d1 down the run, split in the look's bands (Style.ramp_bands): (from, to, family,
     level) each; without bands one plate in the face's family, level 2."""
-    out, cur = [], (d0, fam, 2 + LIFT())
+    out, cur = [], (d0, fam, 2)
     for f, bf, bl, gap in style().ramp_bands:
         out.append((cur[0], f * run_ - gap, cur[1], cur[2]))
         cur = (f * run_, bf or fam, bl)

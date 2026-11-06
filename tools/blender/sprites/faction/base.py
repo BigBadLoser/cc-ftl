@@ -192,6 +192,6 @@ def plain_relief():
         from .shell import FreeEnds, LookShell
         from .slate import SHELF
         _PLAIN.append(Style(wall=_plain_face(False), hull=_plain_face(True), shell=LookShell, features=(FreeEnds(),),
-                            plain=True, ramp_solid=True, shelf=SHELF, shelf_back=(0, 1)))   # (slate's ramp top: a
+                            plain=True, ramp_solid=True, shelf=SHELF, shelf_lvl=2, shelf_back=(0, 1)))   # (slate's ramp top: a
                                                                                             # flat shelf at the wall)
     return _PLAIN[0]
