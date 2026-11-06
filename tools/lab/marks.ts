@@ -101,7 +101,7 @@ export const marksPanel: LabPanel = {
   help: 'crew.mark.*: every icon at 1x and 3x, a break symbol on the three tier plates, each over a crew figure on a lit and a dark floor; src=/.cache/marks-preview/',
   async cells(ctx) {
     const { get, fps } = await frames(ctx.atlas, ctx.params.get('src') ?? '/.cache/marks-preview/');
-    for (const seed of [11, 22]) for (const role of ['role.engineer', 'role.gunner']) preloadLayers(crewLoadout(ctx.atlas, { species: 'species.human', role, appearanceSeed: seed } as never));
+    for (const seed of [11, 22, 33]) for (const role of ['role.engineer', 'role.gunner', 'role.medic']) preloadLayers(crewLoadout(ctx.atlas, { species: 'species.human', role, appearanceSeed: seed } as never));
     ctx.atlas.stat('tile.floor.a');
     await ctx.atlas.whenIdle();
     const cells: LabCell[] = [];
@@ -167,6 +167,48 @@ export const marksPanel: LabPanel = {
         });
       });
     }
+    // tier options (preview only, crew_marks_tiers.py): each way to show the tier, a few symbols at 3x, then three crew at game scale
+    const OPTS = ['ring', 'thought', 'stress', 'pips'].filter((o) => get(`crew.mark.opt.${o}.mild.panic`).length);
+    const KINDS = ['panic', 'tantrum', 'isolation', 'freeze'];
+    OPTS.forEach((o) => {
+      cells.push({
+        label: `tier option: ${o}`,
+        note: '3x · mild, moderate, severe',
+        w: KINDS.length * 3 * 22 * 3 + KINDS.length * 12,
+        h: 24 * 3,
+        newRow: true,
+        loop: 1,
+        mount(root) {
+          const sets: ((t: number) => void)[] = [];
+          KINDS.forEach((k, a) => TIERS.forEach((t, b) => {
+            const ic = icon(get, fps, `crew.mark.opt.${o}.${t}.${k}`, 3);
+            ic.node.position.set(((a * 3 + b) * 22 + 11) * 3 + a * 12, 22 * 3);
+            root.addChild(ic.node);
+            sets.push(ic.set);
+          }));
+          return (t) => sets.forEach((s) => s(t));
+        },
+      });
+      for (const dark of [false, true]) {
+        cells.push({
+          label: o,
+          note: `${dark ? 'dark' : 'lit'} floor · mild, moderate, severe`,
+          w: 380,
+          h: 280,
+          loop: 1,
+          mount(root) {
+            const feet = scene(ctx, root, 190, 200, dark, [{ gx: -1, gy: 1, dir: 1, seed: 22, role: 'role.gunner' }, { gx: 0, gy: 0, dir: 1, seed: 11, role: 'role.engineer' }, { gx: 1, gy: -1, dir: 1, seed: 33, role: 'role.medic' }]);
+            const sets = feet.map((at, j) => {
+              const ic = icon(get, fps, `crew.mark.opt.${o}.${TIERS[j]}.${KINDS[j + 1]}`, S);
+              ic.node.position.set(at.x, at.y - HEAD);
+              root.addChild(ic.node);
+              return ic.set;
+            });
+            return (t) => sets.forEach((s) => s(t));
+          },
+        });
+      }
+    });
     // a shouting match: two crew facing each other, one icon mirrored
     for (const dark of [false, true]) {
       cells.push({
