@@ -224,14 +224,15 @@ export const modules = {
     flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.burstLaser', deploySec: 2,
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
   },
-  // Stand-in art until the flak bay has its own model: the burst laser's bay in an orange tint (ModuleDef.artTint).
+  // Its own roof turret; the floor bay is a stand-in until it has its own model: the burst laser's bay in an orange tint
+  // (ModuleDef.artTint).
   'module.flakCannon': {
     scrap: 'weapons',
     name: 'Flak cannon',
     category: 'defence',
     upgradeSlot: 'weapon',
     description: "Fires hull scrap in a wide spread: every pellet that hits a shield strips a layer. Shoots down enemy drones. Inaccurate at range.",
-    asset: 'module.burst_laser', artTint: 0xffb060, footprint: [2, 2], solid: true, power: -8, powerPriority: 3,
+    asset: 'module.flak_cannon', artTint: 0xffb060, footprint: [2, 2], solid: true, power: -8, powerPriority: 3,
     flammability: 0.2, maxHp: 80, buildWork: 200, weapon: 'weapon.flak', deploySec: 2,
     cost: [{ item: 'item.metal', count: 14 }, { item: 'item.electronics', count: 8 }],
     blueprint: { tier: 1, minDanger: 1, price: 350 },

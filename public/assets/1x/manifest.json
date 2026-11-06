@@ -62883,7 +62883,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1693,
+    "x": 2385,
     "y": 271,
     "w": 58,
     "h": 103
@@ -62901,7 +62901,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1752,
+    "x": 2444,
     "y": 271,
     "w": 58,
     "h": 103
@@ -62919,7 +62919,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1811,
+    "x": 2503,
     "y": 271,
     "w": 58,
     "h": 103
@@ -62937,7 +62937,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1870,
+    "x": 2562,
     "y": 271,
     "w": 58,
     "h": 103
@@ -66462,6 +66462,78 @@
    ],
    "glow": true
   },
+  "module.flak_cannon.bay.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2621,
+    "y": 271,
+    "w": 58,
+    "h": 103
+   },
+   "anchor": {
+    "x": 29,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.flak_cannon.bay.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2680,
+    "y": 271,
+    "w": 58,
+    "h": 103
+   },
+   "anchor": {
+    "x": 29,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.flak_cannon.bay.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2739,
+    "y": 271,
+    "w": 58,
+    "h": 103
+   },
+   "anchor": {
+    "x": 29,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "module.flak_cannon.bay.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2798,
+    "y": 271,
+    "w": 58,
+    "h": 103
+   },
+   "anchor": {
+    "x": 29,
+    "y": 104
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
   "module.galley": {
    "kind": "static",
    "sheet": "galley",
@@ -68134,7 +68206,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1149,
+    "x": 1409,
     "y": 271,
     "w": 70,
     "h": 106
@@ -68152,7 +68224,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1220,
+    "x": 1480,
     "y": 271,
     "w": 70,
     "h": 106
@@ -68170,7 +68242,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1291,
+    "x": 1551,
     "y": 271,
     "w": 70,
     "h": 106
@@ -68188,7 +68260,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1362,
+    "x": 1622,
     "y": 271,
     "w": 70,
     "h": 106
@@ -68206,7 +68278,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1433,
+    "x": 1693,
     "y": 271,
     "w": 64,
     "h": 106
@@ -68224,7 +68296,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1498,
+    "x": 1758,
     "y": 271,
     "w": 64,
     "h": 106
@@ -68242,7 +68314,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1563,
+    "x": 1823,
     "y": 271,
     "w": 64,
     "h": 106
@@ -68260,7 +68332,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1628,
+    "x": 1888,
     "y": 271,
     "w": 64,
     "h": 106
@@ -70535,7 +70607,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1929,
+    "x": 2857,
     "y": 271,
     "w": 58,
     "h": 103
@@ -70553,7 +70625,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1988,
+    "x": 2916,
     "y": 271,
     "w": 58,
     "h": 103
@@ -70571,7 +70643,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2047,
+    "x": 2975,
     "y": 271,
     "w": 58,
     "h": 103
@@ -70589,7 +70661,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2106,
+    "x": 3034,
     "y": 271,
     "w": 58,
     "h": 103
@@ -175960,8 +176032,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3374,
-    "y": 271,
+    "x": 413,
+    "y": 380,
     "w": 156,
     "h": 94
    },
@@ -175978,8 +176050,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3531,
-    "y": 271,
+    "x": 570,
+    "y": 380,
     "w": 156,
     "h": 94
    },
@@ -175997,8 +176069,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3153,
-    "y": 380,
+    "x": 1137,
+    "y": 479,
     "w": 104,
     "h": 84
    },
@@ -176015,8 +176087,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3258,
-    "y": 380,
+    "x": 1242,
+    "y": 479,
     "w": 104,
     "h": 84
    },
@@ -176034,8 +176106,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3688,
-    "y": 271,
+    "x": 727,
+    "y": 380,
     "w": 156,
     "h": 94
    },
@@ -176052,8 +176124,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3845,
-    "y": 271,
+    "x": 884,
+    "y": 380,
     "w": 156,
     "h": 94
    },
@@ -176071,7 +176143,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 977,
+    "x": 2557,
     "y": 380,
     "w": 142,
     "h": 89
@@ -176089,7 +176161,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1120,
+    "x": 2700,
     "y": 380,
     "w": 142,
     "h": 89
@@ -176108,8 +176180,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3792,
-    "y": 152,
+    "x": 1,
+    "y": 271,
     "w": 156,
     "h": 108
    },
@@ -176126,7 +176198,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
+    "x": 158,
     "y": 271,
     "w": 156,
     "h": 108
@@ -176145,7 +176217,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 606,
+    "x": 763,
     "y": 271,
     "w": 104,
     "h": 107
@@ -176163,7 +176235,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 711,
+    "x": 868,
     "y": 271,
     "w": 104,
     "h": 107
@@ -176182,7 +176254,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 158,
+    "x": 315,
     "y": 271,
     "w": 156,
     "h": 108
@@ -176200,7 +176272,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 315,
+    "x": 472,
     "y": 271,
     "w": 156,
     "h": 108
@@ -176219,7 +176291,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1263,
+    "x": 2843,
     "y": 380,
     "w": 142,
     "h": 89
@@ -176237,7 +176309,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1406,
+    "x": 2986,
     "y": 380,
     "w": 142,
     "h": 89
@@ -176256,8 +176328,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 130,
-    "y": 475,
+    "x": 2198,
+    "y": 479,
     "w": 104,
     "h": 56
    },
@@ -176274,8 +176346,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 235,
-    "y": 475,
+    "x": 2303,
+    "y": 479,
     "w": 104,
     "h": 56
    },
@@ -176292,7 +176364,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
+    "x": 1041,
     "y": 380,
     "w": 104,
     "h": 94
@@ -176310,7 +176382,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 472,
+    "x": 629,
     "y": 271,
     "w": 133,
     "h": 108
@@ -176328,7 +176400,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 703,
+    "x": 1743,
     "y": 380,
     "w": 156,
     "h": 93
@@ -176346,8 +176418,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 340,
-    "y": 475,
+    "x": 2408,
+    "y": 479,
     "w": 104,
     "h": 56
    },
@@ -176360,12 +176432,416 @@
     2
    ]
   },
-  "turret.incendiary_launcher.d0": {
+  "turret.flak_cannon.d0": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
     "x": 2017,
     "y": 380,
+    "w": 107,
+    "h": 92
+   },
+   "anchor": {
+    "x": 51,
+    "y": 145
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2125,
+    "y": 380,
+    "w": 107,
+    "h": 92
+   },
+   "anchor": {
+    "x": 51,
+    "y": 145
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 104,
+    "y": 380,
+    "w": 102,
+    "h": 96
+   },
+   "anchor": {
+    "x": 51,
+    "y": 149
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 207,
+    "y": 380,
+    "w": 102,
+    "h": 96
+   },
+   "anchor": {
+    "x": 51,
+    "y": 149
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2233,
+    "y": 380,
+    "w": 107,
+    "h": 92
+   },
+   "anchor": {
+    "x": 56,
+    "y": 145
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2341,
+    "y": 380,
+    "w": 107,
+    "h": 92
+   },
+   "anchor": {
+    "x": 56,
+    "y": 145
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3335,
+    "y": 380,
+    "w": 115,
+    "h": 87
+   },
+   "anchor": {
+    "x": 64,
+    "y": 140
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3451,
+    "y": 380,
+    "w": 115,
+    "h": 87
+   },
+   "anchor": {
+    "x": 64,
+    "y": 140
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1953,
+    "y": 271,
+    "w": 107,
+    "h": 104
+   },
+   "anchor": {
+    "x": 56,
+    "y": 157
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2061,
+    "y": 271,
+    "w": 107,
+    "h": 104
+   },
+   "anchor": {
+    "x": 56,
+    "y": 157
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2588,
+    "y": 152,
+    "w": 102,
+    "h": 111
+   },
+   "anchor": {
+    "x": 51,
+    "y": 164
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2691,
+    "y": 152,
+    "w": 102,
+    "h": 111
+   },
+   "anchor": {
+    "x": 51,
+    "y": 164
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2169,
+    "y": 271,
+    "w": 107,
+    "h": 104
+   },
+   "anchor": {
+    "x": 51,
+    "y": 157
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2277,
+    "y": 271,
+    "w": 107,
+    "h": 104
+   },
+   "anchor": {
+    "x": 51,
+    "y": 157
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3567,
+    "y": 380,
+    "w": 115,
+    "h": 87
+   },
+   "anchor": {
+    "x": 51,
+    "y": 140
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3683,
+    "y": 380,
+    "w": 115,
+    "h": 87
+   },
+   "anchor": {
+    "x": 51,
+    "y": 140
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.deploy.f0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2513,
+    "y": 479,
+    "w": 102,
+    "h": 56
+   },
+   "anchor": {
+    "x": 51,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.deploy.f1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2616,
+    "y": 479,
+    "w": 102,
+    "h": 56
+   },
+   "anchor": {
+    "x": 51,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.deploy.f2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1347,
+    "y": 479,
+    "w": 102,
+    "h": 79
+   },
+   "anchor": {
+    "x": 51,
+    "y": 133
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.deploy.f3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 973,
+    "y": 271,
+    "w": 102,
+    "h": 107
+   },
+   "anchor": {
+    "x": 51,
+    "y": 161
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.deploy.f4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2449,
+    "y": 380,
+    "w": 107,
+    "h": 91
+   },
+   "anchor": {
+    "x": 51,
+    "y": 145
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.flak_cannon.stowed": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2719,
+    "y": 479,
+    "w": 102,
+    "h": 56
+   },
+   "anchor": {
+    "x": 51,
+    "y": 110
+   },
+   "footprint": [
+    2,
+    2
+   ]
+  },
+  "turret.incendiary_launcher.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 479,
     "w": 102,
     "h": 86
    },
@@ -176382,8 +176858,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2120,
-    "y": 380,
+    "x": 104,
+    "y": 479,
     "w": 102,
     "h": 86
    },
@@ -176401,7 +176877,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1549,
+    "x": 3129,
     "y": 380,
     "w": 102,
     "h": 88
@@ -176419,7 +176895,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1652,
+    "x": 3232,
     "y": 380,
     "w": 102,
     "h": 88
@@ -176438,8 +176914,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2223,
-    "y": 380,
+    "x": 207,
+    "y": 479,
     "w": 102,
     "h": 86
    },
@@ -176456,8 +176932,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2326,
-    "y": 380,
+    "x": 310,
+    "y": 479,
     "w": 102,
     "h": 86
    },
@@ -176475,7 +176951,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2613,
+    "x": 3541,
     "y": 271,
     "w": 112,
     "h": 99
@@ -176493,7 +176969,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2726,
+    "x": 3654,
     "y": 271,
     "w": 112,
     "h": 99
@@ -176623,7 +177099,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2839,
+    "x": 3767,
     "y": 271,
     "w": 112,
     "h": 99
@@ -176641,7 +177117,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2952,
+    "x": 3880,
     "y": 271,
     "w": 112,
     "h": 99
@@ -176660,8 +177136,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 445,
-    "y": 475,
+    "x": 2822,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -176678,8 +177154,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 548,
-    "y": 475,
+    "x": 2925,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -176696,8 +177172,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3363,
-    "y": 380,
+    "x": 1450,
+    "y": 479,
     "w": 102,
     "h": 70
    },
@@ -176732,8 +177208,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3050,
-    "y": 380,
+    "x": 1034,
+    "y": 479,
     "w": 102,
     "h": 85
    },
@@ -176750,8 +177226,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 651,
-    "y": 475,
+    "x": 3028,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -176768,7 +177244,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 106,
+    "x": 1146,
     "y": 380,
     "w": 116,
     "h": 94
@@ -176786,7 +177262,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 223,
+    "x": 1263,
     "y": 380,
     "w": 116,
     "h": 94
@@ -176805,7 +177281,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3065,
+    "x": 3993,
     "y": 271,
     "w": 102,
     "h": 98
@@ -176823,8 +177299,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3168,
-    "y": 271,
+    "x": 1,
+    "y": 380,
     "w": 102,
     "h": 98
    },
@@ -176842,7 +177318,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 340,
+    "x": 1380,
     "y": 380,
     "w": 116,
     "h": 94
@@ -176860,7 +177336,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 457,
+    "x": 1497,
     "y": 380,
     "w": 116,
     "h": 94
@@ -176879,8 +177355,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2429,
-    "y": 380,
+    "x": 413,
+    "y": 479,
     "w": 122,
     "h": 86
    },
@@ -176897,8 +177373,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2552,
-    "y": 380,
+    "x": 536,
+    "y": 479,
     "w": 122,
     "h": 86
    },
@@ -176916,7 +177392,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3324,
+    "x": 3530,
     "y": 152,
     "w": 116,
     "h": 109
@@ -176934,7 +177410,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3441,
+    "x": 3647,
     "y": 152,
     "w": 116,
     "h": 109
@@ -176990,7 +177466,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3558,
+    "x": 3764,
     "y": 152,
     "w": 116,
     "h": 109
@@ -177008,7 +177484,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3675,
+    "x": 3881,
     "y": 152,
     "w": 116,
     "h": 109
@@ -177027,8 +177503,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2675,
-    "y": 380,
+    "x": 659,
+    "y": 479,
     "w": 122,
     "h": 86
    },
@@ -177045,8 +177521,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2798,
-    "y": 380,
+    "x": 782,
+    "y": 479,
     "w": 122,
     "h": 86
    },
@@ -177064,8 +177540,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 754,
-    "y": 475,
+    "x": 3131,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -177082,8 +177558,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 857,
-    "y": 475,
+    "x": 3234,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -177100,8 +177576,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3271,
-    "y": 271,
+    "x": 310,
+    "y": 380,
     "w": 102,
     "h": 96
    },
@@ -177136,7 +177612,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 860,
+    "x": 1900,
     "y": 380,
     "w": 116,
     "h": 93
@@ -177154,8 +177630,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 960,
-    "y": 475,
+    "x": 3337,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -177283,7 +177759,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2588,
+    "x": 2794,
     "y": 152,
     "w": 183,
     "h": 111
@@ -177301,7 +177777,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2772,
+    "x": 2978,
     "y": 152,
     "w": 183,
     "h": 111
@@ -177431,7 +177907,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2956,
+    "x": 3162,
     "y": 152,
     "w": 183,
     "h": 111
@@ -177449,7 +177925,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3140,
+    "x": 3346,
     "y": 152,
     "w": 183,
     "h": 111
@@ -177468,8 +177944,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3466,
-    "y": 380,
+    "x": 1553,
+    "y": 479,
     "w": 128,
     "h": 68
    },
@@ -177486,7 +177962,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 574,
+    "x": 1614,
     "y": 380,
     "w": 128,
     "h": 94
@@ -177558,8 +178034,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3595,
-    "y": 380,
+    "x": 1682,
+    "y": 479,
     "w": 128,
     "h": 68
    },
@@ -177872,8 +178348,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3724,
-    "y": 380,
+    "x": 1811,
+    "y": 479,
     "w": 128,
     "h": 68
    },
@@ -177890,8 +178366,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3853,
-    "y": 380,
+    "x": 1940,
+    "y": 479,
     "w": 128,
     "h": 68
    },
@@ -177908,8 +178384,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2921,
-    "y": 380,
+    "x": 905,
+    "y": 479,
     "w": 128,
     "h": 86
    },
@@ -177962,8 +178438,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
-    "y": 475,
+    "x": 2069,
+    "y": 479,
     "w": 128,
     "h": 68
    },
@@ -177980,7 +178456,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2268,
+    "x": 3196,
     "y": 271,
     "w": 114,
     "h": 101
@@ -177998,7 +178474,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 816,
+    "x": 1076,
     "y": 271,
     "w": 102,
     "h": 107
@@ -178016,7 +178492,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2383,
+    "x": 3311,
     "y": 271,
     "w": 114,
     "h": 101
@@ -178034,7 +178510,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1755,
+    "x": 3799,
     "y": 380,
     "w": 130,
     "h": 87
@@ -178052,7 +178528,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 919,
+    "x": 1179,
     "y": 271,
     "w": 114,
     "h": 107
@@ -178088,7 +178564,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1034,
+    "x": 1294,
     "y": 271,
     "w": 114,
     "h": 107
@@ -178106,7 +178582,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1886,
+    "x": 3930,
     "y": 380,
     "w": 130,
     "h": 87
@@ -178124,8 +178600,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1063,
-    "y": 475,
+    "x": 3440,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -178142,8 +178618,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1166,
-    "y": 475,
+    "x": 3543,
+    "y": 479,
     "w": 102,
     "h": 56
    },
@@ -178160,7 +178636,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2165,
+    "x": 3093,
     "y": 271,
     "w": 102,
     "h": 102
@@ -178196,7 +178672,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2498,
+    "x": 3426,
     "y": 271,
     "w": 114,
     "h": 100
@@ -178214,8 +178690,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1269,
-    "y": 475,
+    "x": 3646,
+    "y": 479,
     "w": 102,
     "h": 56
    },

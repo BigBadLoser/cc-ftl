@@ -517,7 +517,7 @@ export interface ModuleDef {
   weapon?: string;
   /** One upgrade slot of this kind (an `UpgradeDef.slot`); fitting is a crew job (sim/upgrades). */
   upgradeSlot?: string;
-  /** Render-only: multiplies the module art's colour (a stand-in for its own art, e.g. a weapon bay re-using another's model). */
+  /** Render-only: multiplies the module art's colour (a stand-in for its own art, e.g. a weapon bay re-using another's model). A weapon's roof turret is never tinted. */
   artTint?: number;
   /** Shield generator: layers = floor(|power| * layersPerPower); one layer returns every `rechargeSec`. */
   shieldGen?: { layersPerPower: number; rechargeSec: number };

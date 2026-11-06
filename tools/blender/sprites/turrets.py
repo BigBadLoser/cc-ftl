@@ -1,5 +1,5 @@
 """Production weapon art (approved picks, turret_concepts.PICKS / turret_bays.BAYS): burst laser = S Sponson laser,
-mass driver = H Halo driver, point defence = R Revolver rotary.
+mass driver = H Halo driver, point defence = R Revolver rotary, flak cannon = F finned bore (turret_flak).
 
   turret.<stem>.d<0..7>          deployed turret at aim d (clockwise from grid +x, like WeaponC.aim); accents dark
   turret.<stem>.d<n>.charged     accents lit (weapons only; point defence has no charge)
@@ -16,6 +16,7 @@ from . import core
 from . import turret_bays as TB
 from . import turret_concepts as TC
 from . import turret_mil  # noqa: F401  (registers the missile launcher, ion cannon and incendiary launcher)
+from . import turret_flak  # noqa: F401  (registers the flak cannon)
 from . import turret_bay_laser  # noqa: F401  (the burst laser bay)
 from . import turret_bay_pd  # noqa: F401  (the point defence bay)
 from . import turret_bay_ion  # noqa: F401  (the ion cannon bay)
@@ -26,16 +27,10 @@ from . import turret_bay_driver  # noqa: F401  (the mass driver bay)
 # stem -> (bay key, turret builder, race radius in rig units, footprint side)
 PICKS = {"burst_laser": ("laser", 0.62, 2), "mass_driver": ("driver", 0.92, 3), "point_defense": ("pd", 0.64, 2),
          "missile_launcher": ("missile", 0.92, 3), "ion_cannon": ("ion", 0.64, 2),
-         "incendiary_launcher": ("incendiary", 0.64, 2)}
+         "incendiary_launcher": ("incendiary", 0.64, 2), "flak_cannon": ("flak", 0.64, 2)}
 DESIGN = {"laser": ("S", "laser"), "driver": ("H", "driver"), "pd": ("R", "laser"), "missile": ("M", "missile"),
-          "ion": ("M", "ion"), "incendiary": ("M", "incendiary")}
-# Flak concepts, look iteration only: FLAK_CONCEPTS=1 adds turret_flak.CONCEPTS as flak_a, flak_b.. on the laser's bay.
-if os.environ.get("FLAK_CONCEPTS"):
-    from . import turret_flak
-    for _k in turret_flak.CONCEPTS:
-        PICKS[f"flak_{_k[-1].lower()}"] = (_k, 0.64, 2)
-        DESIGN[_k] = ("F", _k)
-        TB.BAYS[_k] = TB.BAYS["laser"]
+          "ion": ("M", "ion"), "incendiary": ("M", "incendiary"), "flak": ("F", "flak")}
+TB.BAYS["flak"] = TB.BAYS["laser"]   # stand-in until the flak bay has its own model (tinted in game: artTint)
 # Look iteration only, never for commits: WEAPONS_ONLY=stem,stem limits the stems; WEAPONS_QUICK=1 renders just the
 # preview set (aims 1, 3, 6, aim 1 charged, stowed, bay r0).
 ONLY = [s for s in os.environ.get("WEAPONS_ONLY", "").split(",") if s]
@@ -59,9 +54,9 @@ for _stem, (_key, _r, _n) in PICKS.items():
     if ONLY and _stem not in ONLY:
         continue
     _fp = (_n, _n)
-    for _d in ((1, 2, 3, 4, 5) if QUICK and _stem.startswith("flak_") else (1, 3, 6) if QUICK else range(8)):
+    for _d in ((1, 3, 6) if QUICK else range(8)):
         SPRITES.append((f"turret.{_stem}.d{_d}", _fp, "prop", lambda k=_key, d=_d: turret(k, False, d)))
-        if _key != "pd" and (not QUICK or _d == 1 or _stem.startswith("flak_")):
+        if _key != "pd" and (not QUICK or _d == 1):
             SPRITES.append((f"turret.{_stem}.d{_d}.charged", _fp, "prop", lambda k=_key, d=_d: turret(k, True, d)))
     _des, _kind = DESIGN[_key]
     SPRITES.append((f"turret.{_stem}.stowed", _fp, "prop", lambda a=_des, b=_kind, r=_r: TB.deploy(a, -1, b, r)))
