@@ -108,6 +108,12 @@ function dockRequestOf(sim: Sim): UiEventGrid['dockRequest'] {
   return { ship: id, name, text: `${name} asks to dock so its crew can come aboard and settle the debt.` };
 }
 
+/** The name of the system a scene ship's clock counts down on (its failing damage line), or null. */
+function failing0(sim: Sim, s: SceneShip): string | null {
+  const def = s.damage?.find((d) => d.failing)?.def;
+  return def ? sim.content.modules[def]?.name?.toLowerCase() ?? null : null;
+}
+
 /** The helpless scene ship's help: what can be asked of it now, where the help stands, and its clock. */
 function aidOf(sim: Sim): UiEventGrid['aid'] {
   const spec = sim.galaxy.event?.scene;
@@ -120,7 +126,8 @@ function aidOf(sim: Sim): UiEventGrid['aid'] {
   const site = sim.world.get(id, AwaySiteC);
   const a = s.aid;
   const action = !alive ? null : !a ? 'offer' : a.state === 'agreed' && a.sent && !site ? 'resend' : null;
-  const status = !a ? null : a.state === 'done' ? 'Repaired: they thank you' : a.state === 'broken' ? 'Help called off' : site ? 'Your repair party is on it' : a.sent ? 'Party recalled: the help still stands' : 'Agreed: the party goes once you are in place';
+  const lost = ship.state === 'wreck' ? `Too late: the ${failing0(sim, s) ?? 'reactor'} blew${site ? '. Get your party out' : ''}` : null;
+  const status = !a ? lost : a.state === 'done' ? 'Repaired: they thank you' : lost ?? (a.state === 'broken' ? 'Help called off' : site ? 'Your repair party is on it' : a.sent ? 'Party recalled: the help still stands' : 'Agreed: the party goes once you are in place');
   const t = spec.timers.find((x) => x.ship === s.tag && x.due === 'wreck' && x.at !== undefined);
   const clock = t && !t.stopped && !t.blown && ship.state !== 'wreck' ? Math.max(0, Math.ceil(((t.at as number) - sim.tick) / TICK_HZ)) : null;
   const def = s.damage?.find((d) => d.failing)?.def;

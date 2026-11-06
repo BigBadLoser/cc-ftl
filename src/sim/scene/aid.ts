@@ -37,7 +37,8 @@ function burning(sim: Sim, ship: number): boolean {
 function turnedOn(sim: Sim, s: SceneShip): boolean {
   const id = s.contact.ship;
   const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
-  return !!ship && (ship.provoked !== undefined || ship.state === 'prize' || sim.world.has(id as number, SalvageOrderC));
+  // (A salvage order on the wreck it became is not turning on it: the help was lost to the clock, not withdrawn.)
+  return !!ship && (ship.provoked !== undefined || ship.state === 'prize' || (ship.state !== 'wreck' && sim.world.has(id as number, SalvageOrderC)));
 }
 
 function closeSite(sim: Sim, ship: number | undefined): void {
