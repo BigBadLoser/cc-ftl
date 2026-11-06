@@ -5,7 +5,7 @@ symbol, its rim in the tier colour (neutral, amber, red), dark inside, two round
   panic              a shaky oval whose edge wobbles each frame
   freeze             an ice-crystal hexagon, point up
   hide               a box
-  refusal            a stop-sign octagon
+  refusal            a round "no" sign: the slash over the wrench runs rim to rim
   isolation          a plain circle, the figure alone in it"""
 import math
 
@@ -48,7 +48,7 @@ SHAPES = {
     "freeze": lambda c, f: regular(c, 6, 15.4, math.pi / 2, 0.78),
     "hide": lambda c, f: (abs(c.cx - CX) <= 14.2) & (abs(c.cy - CY) <= 11.8) & ~(
         (abs(c.cx - CX) > 11.2) & (abs(c.cy - CY) > 8.8) & (np.hypot(abs(c.cx - CX) - 11.2, abs(c.cy - CY) - 8.8) > 3.0)),
-    "refusal": lambda c, f: regular(c, 8, 15.0, math.pi / 8, 0.82),
+    "refusal": lambda c, f: ell(c, CX, CY, 13.6, 12.2),
     "isolation": lambda c, f: ell(c, CX, CY, 13.6, 12.2),
 }
 
@@ -68,6 +68,10 @@ def in_bubble(kind, sym, tier, f):
     c.mask(shrink(shape, RIM), fill)
     c.mask(ell(c, 6.6, 26.8, 2.0), rim)                    # two puffs, apart
     c.mask(ell(c, 2.6, 30.0, 1.1), rim)
-    s = sym.k != ""                                    # on the dark inside the symbol needs no outline of its own
+    inner = shrink(shape, RIM)
+    tier_part = (sym.k == "T") | (sym.k == "t")         # a symbol's tier-coloured parts (the refusal slash), kept inside the rim
+    s = (sym.k != "") & (~tier_part | inner)           # on the dark inside the symbol needs no outline of its own
     c.k[s] = sym.k[s]
+    c.k[c.k == "T"] = rim
+    c.k[c.k == "t"] = fill
     return c

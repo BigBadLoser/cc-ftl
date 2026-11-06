@@ -238,33 +238,25 @@ def despair(f):
     return c
 
 
-HAND = [                                                    # a raised right palm: four fingers, the thumb out to the left
-    "......WW......",
-    "...WW.WW.WW...",
-    "...WW.WW.WW...",
-    "...WW.WW.WW.WW",
-    "...WW.WW.WW.WW",
-    "...WW.WW.WW.WW",
-    "...WW.WW.WW.WW",
-    "W..WWWWWWWWWWW",
-    "WW.WWWWWWWWWWS",
-    "WWWWWWWWWWWWWS",
-    ".WWWWWWWWWWWWS",
-    "..WWWWWWWWWWWS",
-    "...WWWWWWWWWS.",
-    "....SWWWWWWS..",
-    ".....SSSSSS...",
-]
+def wrench(c, dx=0):
+    """A wrench lying corner to corner: an open jaw at the top right, a round end at the bottom left."""
+    c.seg((12.4 + dx, 18.4), (19.0 + dx, 11.8), 1.7, "W")
+    c.ell(20.0 + dx, 10.8, 3.7, "W")
+    c.ell(12.2 + dx, 18.6, 2.2, "W")
+    u = ((c.cx - 20.0 - dx) + (10.8 - c.cy)) / 2 ** 0.5       # along the handle, outward
+    v = ((c.cx - 20.0 - dx) - (10.8 - c.cy)) / 2 ** 0.5       # across it
+    c.k[(u > -0.4) & (abs(v) < 1.4) & (c.k == "W")] = ""       # the jaw
+    c.k[(v > 0.9) & (c.k == "W")] = "S"                        # the shaded lower side
 
 
 def refusal(f):
-    """A raised palm, a small stop-shake."""
+    """A wrench with a "no" slash across it (refusing work), nudged side to side. The slash is drawn in the tier colour
+    ("T") with the bubble's inside ("t") round it, so it reads as crossing over, and runs rim to rim: in_bubble swaps
+    both keys for the tier's colours and keeps them inside the rim."""
     c = Canvas()
-    dx = (0, 1, 0, -1)[f % 4]
-    for j, row in enumerate(HAND):
-        for i, ch in enumerate(row):
-            if ch != ".":
-                c.k[5 + j, 9 + i + dx] = ch
+    wrench(c, (0, 1)[f % 2])
+    c.seg((4, 1), (28, 26.2), 2.4, "t")
+    c.seg((4, 1), (28, 26.2), 1.3, "T")
     return c
 
 
@@ -306,7 +298,7 @@ def surrendered(f):
 
 SOCIAL = {"chat": (chat, 4), "chatBad": (chat_bad, 2), "shout": (shout, 2)}
 BREAKS = {"panic": (panic, 3), "freeze": (freeze, 3), "hide": (hide, 4), "tantrum": (tantrum, 2), "despair": (despair, 4),
-          "refusal": (refusal, 4), "isolation": (isolation, 2)}
+          "refusal": (refusal, 2), "isolation": (isolation, 2)}
 FIGHT = {"downed": (downed, 2), "surrendered": (surrendered, 2)}
 
 

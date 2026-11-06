@@ -40,7 +40,7 @@ for kind, (fn, n) in crew_marks.BREAKS.items():
     for f in range(n):
         sym = fn(f)
         room = crew_marks_bubbles.shrink(crew_marks_bubbles.SHAPES[kind](crew_marks.Canvas(), f), crew_marks_bubbles.RIM + 1)
-        over = int(((sym.k != "") & ~room).sum())
+        over = int(((sym.k != "") & (sym.k != "t") & (sym.k != "T") & ~room).sum())   # T/t: tier parts that reach the rim
         if over:
             problems.append(f"{kind}.{f}: {over} px over the bubble's inside margin")
 dark = np.array(crew_marks.rgb(crew_marks.COL["K"]))
