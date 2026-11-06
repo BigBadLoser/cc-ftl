@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import Segmented from './kit/Segmented.svelte';
   import type { UiApi, UiHullPlan, UiToolState } from './api';
 
   /** The Hull plan build tool's bar: the brush (rectangle or diagonal), add or erase, mirror, clear, and what the plan does to the hull count. */
@@ -16,16 +17,16 @@
   const narrow = $derived(plan?.bad.length ?? 0);
 </script>
 
-<div class="planbar legacy" data-testid="hull-plan-bar">
+<div class="planbar legacy build" data-testid="hull-plan-bar">
   <b class="t">Hull plan</b>
-  <div class="seg" role="group" aria-label="Brush">
-    <button class:on={hull.brush === 'rect'} onclick={() => set({ brush: 'rect' })} title="Drag a rectangle (at least 3 × 3)" data-testid="hull-rect">Rectangle</button>
-    <button class:on={hull.brush === 'line'} onclick={() => set({ brush: 'line' })} title="Drag a straight line (0, 45 or 90°): what it cuts off from the ship is dropped, and the line becomes the edge" data-testid="hull-line">Line cut</button>
-  </div>
-  <div class="seg" role="group" aria-label="Plan mode">
-    <button class:on={!hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: false })} data-testid="hull-add">Add</button>
-    <button class:on={hull.erase && hull.brush === 'rect'} disabled={hull.brush === 'line'} onclick={() => set({ erase: true })} title="Takes planned tiles out; real hull stays" data-testid="hull-erase">Erase</button>
-  </div>
+  <Segmented label="Brush" value={hull.brush} onChange={(v) => set({ brush: v as 'rect' | 'line' })} options={[
+    { value: 'rect', label: 'Rectangle', title: 'Drag a rectangle (at least 3 × 3)', testId: 'hull-rect' },
+    { value: 'line', label: 'Line cut', title: 'Drag a straight line (0, 45 or 90°): what it cuts off from the ship is dropped, and the line becomes the edge', testId: 'hull-line' },
+  ]} />
+  <Segmented label="Plan mode" value={hull.brush === 'line' ? '' : hull.erase ? 'erase' : 'add'} onChange={(v) => set({ erase: v === 'erase' })} options={[
+    { value: 'add', label: 'Add', disabled: hull.brush === 'line', testId: 'hull-add' },
+    { value: 'erase', label: 'Erase', disabled: hull.brush === 'line', title: 'Takes planned tiles out; real hull stays', testId: 'hull-erase' },
+  ]} />
   <div class="tools">
     <button class:on={hull.mirror} onclick={() => set({ mirror: !hull.mirror })} title="Repeat every stroke on the other side of the ship's long axis" aria-pressed={hull.mirror} data-testid="hull-mirror">Mirror</button>
     <button disabled={!plan?.tiles.length} onclick={() => plan && api.dispatch({ type: 'hull.plan', ship: plan.ship, tiles: [] })} data-testid="hull-clear">Clear</button>
@@ -41,20 +42,10 @@
 </div>
 
 <style>
-  .planbar { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 52px); display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); font-size: 13px; color: #c8c8c8; }
+  .planbar { position: fixed; z-index: 4; left: 50%; transform: translateX(-50%); bottom: calc(8px + var(--sab) + 52px); display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: var(--build-bg); border: 1px solid var(--amber); font-size: 13px; color: var(--build-ink); }
   .t { white-space: nowrap; color: var(--amber); font: 600 13px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  /* Build look (black, amber), like the build catalog. A `.seg` is one joined control: the options share the outer border and a 1px divider. */
-  .seg { display: flex; border: 1px solid #3a3a3a; }
   .tools { display: flex; gap: 6px; }
-  .seg button, .tools button { flex: none; white-space: nowrap; min-width: 0; min-height: 26px; height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; background: #050505; color: var(--amber); }
-  .seg button { border: 0; }
-  .seg button + button { border-left: 1px solid #3a3a3a; }
-  .tools button { border: 1px solid #3a3a3a; }
-  .seg button:hover:not(:disabled), .tools button:hover:not(:disabled) { background: #161106; }
-  .seg button.on, .tools button.on { background: var(--amber); color: #1a1204; }
-  .tools button.on { border-color: var(--amber); }
-  .seg button:disabled, .tools button:disabled { opacity: 0.4; }
   .s { white-space: nowrap; }
   .bad { color: var(--red); }
-  .dim { color: #8a8a8a; }
+  .dim { color: var(--build-dim); }
 </style>

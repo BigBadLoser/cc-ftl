@@ -62,6 +62,16 @@
   --shot-3: #ff9a78;
   --shot-4: #e0508f;
   --shot-5: #ffe27a;
+  /* The build look (black, amber): the build catalog, the Hull plan bar and the research overlay keep it by decision. Region class: `.build`. */
+  --build-bg: rgba(4, 4, 4, 0.97);
+  --build-bg-solid: #000;
+  --build-fill: #050505;
+  --build-fill-2: #0e0e0e;
+  --build-line: #242424;
+  --build-line-hi: #3a3a3a;
+  --build-ink: #c8c8c8;
+  --build-dim: #8a8a8a;
+  --build-on-amber: #1a1204;
   --head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
 /* The palette (steel). `.steel-tokens` re-applies it inside a `.legacy` region (dialogs and cards that sit on the old-look starmap). */
@@ -165,6 +175,12 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
   --btn-active-edge: var(--cyan);
 }
 .legacy button:disabled { opacity: 0.4; }
+/* The build look: plain buttons (and Segmented) inside get black, a dark line and amber text. Component styles still win. */
+.build { color: var(--build-ink); }
+.build button { min-height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; background: var(--build-fill); border: 1px solid var(--build-line-hi); color: var(--amber); }
+.build button:hover:not(:disabled) { border-color: var(--amber); }
+.build button.on, .build button[aria-pressed='true'] { background: var(--amber); border-color: var(--amber); color: var(--build-on-amber); }
+.build button:disabled { opacity: 0.4; }
 /* Text tones by meaning: good, bad (plain red), warning. */
 .t-good { color: var(--good-ink); }
 .t-bad { color: var(--red); }
