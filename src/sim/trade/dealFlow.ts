@@ -7,7 +7,7 @@ import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
 import { cargoAdd, cargoCount, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { undock } from '../vehicles/lifecycle';
-import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, settleDeal, touchMarket } from './deals';
+import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, setPhase, settleDeal, touchMarket } from './deals';
 import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
 import { holding } from './player';
@@ -48,8 +48,7 @@ function step(sim: Sim, d: Deal): void {
   if (d.courier === 'them' && d.phase === 'dispatch') {
     d.vehicle = spawnCourier(sim, d);
     if (!d.vehicle) return failDeal(sim, d, 'noCourier');
-    d.phase = 'back';
-    d.timer = 0;
+    setPhase(sim, d, 'back');
   }
   const v = sim.world.get(d.vehicle, VehicleC);
   if (!v) return failDeal(sim, d, 'lost', d.phase === 'back' || d.phase === 'unload' || d.phase === 'exchange');
@@ -72,16 +71,11 @@ function step(sim: Sim, d: Deal): void {
   }
 }
 
-function go(d: Deal, phase: Deal['phase']): void {
-  d.phase = phase;
-  d.timer = 0;
-}
-
 /** Step 1 (player's shuttle): get it docked at the player's airlock so crew can load it, or send it straight out if it carries nothing. */
 function dispatch(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > DISPATCH_SEC * TICK_HZ) return failDeal(sim, d, 'noDock');
-  if (d.give.length === 0) return go(d, 'out');
-  if (v.state === 'docked' && v.dock === d.airlock) return go(d, 'load');
+  if (d.give.length === 0) return setPhase(sim, d, 'out');
+  if (v.state === 'docked' && v.dock === d.airlock) return setPhase(sim, d, 'load');
   if (v.state === 'docked' && due(d)) return void sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle }); // left over from the last trip, at the trader
   if (due(d) && v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
 }
@@ -89,7 +83,7 @@ function dispatch(sim: Sim, d: Deal, v: Vehicle): void {
 /** Step 2: crew haul the goods from storage and floor stacks into the docked shuttle through the airlock's unloaders. */
 function load(sim: Sim, d: Deal, v: Vehicle): void {
   if (d.timer > LOAD_SEC * TICK_HZ) return failDeal(sim, d, 'loadTimeout');
-  if (d.give.every((l) => cargoOf(sim, d.vehicle, l.item) >= l.count)) return go(d, 'out');
+  if (d.give.every((l) => cargoOf(sim, d.vehicle, l.item) >= l.count)) return setPhase(sim, d, 'out');
   if (sim.tick % PLAN_INTERVAL !== 0 || v.state !== 'docked') return;
   const res = reservations(sim);
   for (const l of d.give) {
@@ -115,12 +109,12 @@ function out(sim: Sim, d: Deal, v: Vehicle): void {
     if (airlock) {
       d.via = 'dock';
       d.dock = { airlock, staged: [] };
-      return go(d, 'dockStation');
+      return setPhase(sim, d, 'dockStation');
     }
     if (d.crew) return; // recruits cannot be fetched from a hover: wait for an airlock (the timeout calls it off)
     d.via = 'hover';
   }
-  if (v.state === 'flying' && !v.dest && v.hover === d.ship) return go(d, 'exchange');
+  if (v.state === 'flying' && !v.dest && v.hover === d.ship) return setPhase(sim, d, 'exchange');
   if (!due(d)) return;
   if (v.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
   else if (v.dest?.type !== 'hover') sim.enqueue({ type: 'vehicle.hover', vehicle: d.vehicle, ship: d.ship });
@@ -135,7 +129,7 @@ function exchange(sim: Sim, d: Deal, v: Vehicle): void {
   v.outbound = false;
   for (const l of d.get) cargoAdd(sim, d.vehicle, l.item, l.count);
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });
-  if (d.get.length > 0) return go(d, 'back');
+  if (d.get.length > 0) return setPhase(sim, d, 'back');
   if (!settleDeal(sim, d)) sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
@@ -147,11 +141,11 @@ function dockStation(sim: Sim, d: Deal, v: Vehicle): void {
     if (d.crew) return failDeal(sim, d, 'noDock');
     d.via = 'hover';
     delete d.dock;
-    return go(d, 'out');
+    return setPhase(sim, d, 'out');
   }
   if (v.state === 'docked' && v.dock === airlock) {
     stageGoods(sim, d);
-    return go(d, 'stationWork');
+    return setPhase(sim, d, 'stationWork');
   }
   if (!due(d)) return;
   if (v.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
@@ -166,14 +160,14 @@ function work(sim: Sim, d: Deal, v: Vehicle): void {
     unwindStation(sim, d);
     d.via = 'hover';
     delete d.dock;
-    return go(d, 'out');
+    return setPhase(sim, d, 'out');
   }
   if (!stationWork(sim, d, v)) return;
   takeDelivery(sim, d);
   v.outbound = false;
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });
   sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
-  if (d.get.length > 0) return go(d, 'back');
+  if (d.get.length > 0) return setPhase(sim, d, 'back');
   if (!settleDeal(sim, d)) sim.enqueue({ type: 'vehicle.return', vehicle: d.vehicle });
 }
 
@@ -183,7 +177,7 @@ function recruitWork(sim: Sim, d: Deal, v: Vehicle): void {
   if (!boardRecruits(sim, d, due(d))) return;
   v.outbound = false;
   sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
-  go(d, 'back');
+  setPhase(sim, d, 'back');
 }
 
 /**
@@ -255,7 +249,7 @@ function back(sim: Sim, d: Deal, v: Vehicle): void {
   }
   if (v.state === 'docked' && v.dock === d.airlock) {
     sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'player' });
-    return go(d, 'unload');
+    return setPhase(sim, d, 'unload');
   }
   if (due(d) && v.dest?.type !== 'dock') sim.enqueue({ type: 'vehicle.dock', vehicle: d.vehicle, airlock: d.airlock });
 }

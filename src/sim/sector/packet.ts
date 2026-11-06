@@ -76,6 +76,10 @@ export function liftShip(sim: Sim, ship: number, opts: LiftOptions = {}): ShipPa
     const body = sim.world.get(id, BodyC);
     if (body) body.alt = ALT.cruise;
   }
+  // A ship in play (not the player's, not one that already jumped away or was wrecked, which said so) is reported leaving.
+  if (s.faction !== 'player' && (s.state === 'active' || s.state === 'disabled')) {
+    sim.events.emit({ type: 'ship.departed', ship, name: s.name, faction: s.faction, owner: s.gen?.owner ?? '', reason: opts.reason ?? 'jump-away', x: s.x + s.width / 2, y: s.y + s.height / 2 });
+  }
   const rect = shipRect(s);
   const grid = sim.sector.grid;
   const tiles: Record<string, number[]> = {};

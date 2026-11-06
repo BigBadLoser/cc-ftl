@@ -95,5 +95,6 @@ export function spawnCourier(sim: Sim, deal: Deal): number {
     dest: { type: 'dock', airlock: deal.airlock }, dock: 0, cargo: deal.get.map((l) => ({ ...l })),
   });
   sim.world.add(id, BodyC, { x: s.x + s.width / 2, y: s.y + s.height / 2, heading: 0, alt: ALT.cruise });
+  sim.events.emit({ type: 'vehicle.launched', vehicle: id, ship: deal.ship, x: s.x + s.width / 2, y: s.y + s.height / 2 }); // the trader's shuttle leaves its ship
   return id;
 }

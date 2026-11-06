@@ -160,5 +160,6 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     ship.state = 'fled';
     loseStrandedCrew(sim, cmd.ship, 'fled'); // player boarders still aboard go with it
     sim.events.emit({ type: 'ship.fled', ship: cmd.ship });
+    sim.events.emit({ type: 'ship.departed', ship: cmd.ship, name: ship.name, faction: ship.faction, owner: ship.gen?.owner ?? '', reason: 'fled', x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 });
   },
 };

@@ -44,4 +44,5 @@ export function wreckShip(sim: Sim, shipId: number): void {
     }
   }
   sim.events.emit({ type: 'ship.destroyed', ship: shipId });
+  sim.events.emit({ type: 'ship.departed', ship: shipId, name: ship.name, faction: ship.faction, owner: ship.gen?.owner ?? '', reason: 'wrecked', x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 });
 }

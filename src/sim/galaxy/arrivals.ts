@@ -4,6 +4,7 @@ import { spawnShip } from '../combat/ships';
 import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
 import type { Sim } from '../sim';
+import type { ArriveReason } from '../events';
 import { TICK_HZ } from '../time';
 import { graceHolds } from './grace';
 import { pickWeighted, trafficPool } from './sector';
@@ -107,9 +108,9 @@ export function freeSpot(sim: Sim, w: number, h: number): { x: number; y: number
 /**
  * Make a contact a real ship in the active sector through the generated-ship path and the gap rule: hostile ones on their
  * faction's combat side, the rest neutral (a scene may set the side, and cap the crew); one the player provoked always comes back hostile. Returns false (the contact stays, unspawned) when its
- * generator faction is missing, no layout comes out or nothing fits.
+ * generator faction is missing, no layout comes out or nothing fits. Reports `ship.arrived` (with `opts.reason`, default 'spawn'), so every way a ship turns up here is covered.
  */
-export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number } = {}): boolean {
+export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: Faction; crew?: number; reason?: ArriveReason } = {}): boolean {
   if (sim.galaxy.current !== node || c.ship !== undefined) return false;
   const def = sim.content.factions?.[c.shipgen];
   if (!def) return false;
@@ -136,6 +137,7 @@ export function spawnContact(sim: Sim, node: string, c: Contact, opts: { side?: 
   c.ship = id;
   sim.galaxy.rev++;
   sim.events.emit({ type: 'galaxy.shipArrived', node, faction: c.faction, ship: id });
+  if (ship) sim.events.emit({ type: 'ship.arrived', ship: id, name: ship.name, faction: ship.faction, owner: c.faction, reason: opts.reason ?? 'spawn', x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 });
   return true;
 }
 
@@ -205,5 +207,5 @@ export function rollArrival(sim: Sim): void {
   const c: Contact = { id: g.nextId++, faction, shipgen, seed: roll.seed, depth: node.danger, since: sim.tick };
   st.contacts.push(c);
   g.rev++;
-  if (!spawnContact(sim, node.id, c)) sim.events.emit({ type: 'galaxy.shipArrived', node: node.id, faction, ship: null });
+  if (!spawnContact(sim, node.id, c, { reason: 'jump-in' })) sim.events.emit({ type: 'galaxy.shipArrived', node: node.id, faction, ship: null });
 }
