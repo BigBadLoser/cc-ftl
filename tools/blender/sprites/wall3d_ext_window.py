@@ -49,6 +49,9 @@ SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, un
 JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
 RIB_PLATE = 3                       # W1's outer frame: a plate on its side, its top this many px under the jamb's
 RIB_PLATE_TONE = YS[3]              # seam, down to the sill; REC proud, its face the base's plates' tone
+MID_PLATE = (3, 7)                  # W2's sill: a plate on its slope, these px in from the tile's sides, from the
+MID_PLATE_RISE = 1                  # slope's top this many px down it on screen; this many px proud, its sides
+MID_PLATE_SIDE = YS[1]              # in this tone
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -113,6 +116,8 @@ def build(k, ax, plane, a, b, ends, H):
             _w1_sill(f, s0, u0, u1, db, fr, zs, dv, zj, cols[1])
         else:
             f.part(u0, u1, pf, cols, None, end=False)
+        if PART == "w2":
+            _w2_plate(f, s, s0, s1, fr, zs, dv, zj)
         pf = [(back, zh), (dv, zh), (dv, zc), (T3.BACK, H), (back, H)]  # the header: the lean's top, then upright
         cols = s.cols(pf, "face")                                       # down to its foot; its top back to the
                                                                         # tile's back, as the base's
@@ -147,6 +152,19 @@ def build(k, ax, plane, a, b, ends, H):
                                                         # RIB_PLATE px under that seam, down to the sill's slope
                 cols = s.cols(pf, "face")
                 f.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
+
+
+def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
+    """W2's plate on its sill's slope: from the slope's top MID_PLATE[1] px down it on screen, MID_PLATE_RISE px
+    proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot) darker."""
+    k = (zs - zj) / (fr - dv)                           # (the slope's dz per unit out)
+    dy = -k * core.ZPX + core.TILE_H / 2                # (px down on screen per unit out along it)
+    d1 = min(fr, dv + MID_PLATE[1] / dy)
+    z1, r = zj + k * (d1 - dv), MID_PLATE_RISE / core.ZPX
+    pf = [(dv, zj), (d1, z1), (d1, z1 + r), (dv, zj + r)]
+    cols = s.cols(pf, "face")
+    cols[1], cols[2] = MID_PLATE_SIDE, SILL_SLOPE      # (its foot's face a side too)
+    f.part(s0 + T3.px(MID_PLATE[0]), s1 - T3.px(MID_PLATE[0]), pf, cols, MID_PLATE_SIDE, end=False)
 
 
 def _w1_header(f, s, s0, s1, dv, zc, zh):
