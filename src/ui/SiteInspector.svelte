@@ -60,15 +60,15 @@
 <style>
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
-  dd.bad { color: #ffb347; }
+  dd.bad { color: var(--amber); }
   h4 { margin: 10px 0 4px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
-  .why { margin: 6px 0 0; padding: 4px 6px; border: 1px solid #8a5a12; background: #2a1c06; color: #ffcf7a; }
+  .why { margin: 6px 0 0; padding: 4px 6px; border: 1px solid #8a5a12; background: #2a1c06; color: var(--warn-ink); }
   ul { list-style: none; margin: 0; padding: 0; }
   li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
   li .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   li .q { font-variant-numeric: tabular-nums; }
-  li small { color: #ffcf7a; }
-  li.short .q { color: #ffcf7a; }
+  li small { color: var(--warn-ink); }
+  li.short .q { color: var(--warn-ink); }
   .free { color: var(--dim); }
   .btns { display: flex; gap: 4px; margin-top: 10px; }
   .warn { border-color: #7a2a2a; color: var(--red); display: inline-flex; align-items: center; gap: 6px; justify-content: center; }

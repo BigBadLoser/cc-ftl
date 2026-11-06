@@ -19,7 +19,7 @@
 </header>
 
 <style>
-  header { display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--line); background: #0d1115; box-sizing: border-box; }
+  header { display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--pane-head); box-sizing: border-box; }
   .label { font: 600 12px var(--head-font); letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; }
   .done { margin-left: auto; margin-right: 8px; font: 600 11px var(--head-font); letter-spacing: 0.12em; color: var(--green); }
   .act { display: flex; align-items: center; gap: 8px; padding: 3px 9px; min-height: 0; font: 700 12px var(--head-font); letter-spacing: 0.12em; color: var(--cyan); border: 1px solid var(--cyan); background: rgba(54, 212, 255, 0.1); border-radius: 0; cursor: pointer; }

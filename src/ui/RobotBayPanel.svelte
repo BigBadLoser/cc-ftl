@@ -52,5 +52,5 @@
   .opts { display: grid; gap: 4px; }
   .opts button { display: grid; grid-template-columns: 1fr auto; text-align: left; padding: 4px 10px; min-height: 48px; }
   .cost { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--dim); }
-  .short { color: #ff9a9a; }
+  .short { color: var(--red); }
 </style>

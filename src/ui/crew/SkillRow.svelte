@@ -44,7 +44,7 @@
   .n { font-size: 13px; }
   b { font: 700 17px/1 var(--head-font); text-align: right; }
   .pips { display: grid; gap: 4px; }
-  .xp { display: block; height: 3px; background: #141a20; }
+  .xp { display: block; height: 3px; background: var(--track); }
   .xp i { display: block; height: 100%; background: #7d858c; }
   .pc { align-self: end; line-height: 1; font-size: 11px; color: var(--dim); }
   .tip { display: none; position: absolute; left: 112px; top: calc(100% - 2px); z-index: 3; width: 210px; padding: 5px 8px; background: var(--panel); border: 1px solid var(--line-hi); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6); }
@@ -53,6 +53,6 @@
   .r { display: flex; justify-content: space-between; line-height: 18px; font-size: 12px; }
   .l { color: var(--dim); }
   .xpc { color: #c9ced3; }
-  .pos { color: #9fe0a8; } .neg { color: #ff9a9a; }
+  .pos { color: var(--good-ink); } .neg { color: var(--red); }
   hr { border: 0; border-top: 1px solid var(--line); margin: 3px 0; }
 </style>
