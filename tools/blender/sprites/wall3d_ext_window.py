@@ -49,9 +49,12 @@ SLOPE_TOP = "hsXS"                  # the top corner's slope (the same slope, un
 JAMB_SEAM = YS[3]                   # W1's jamb: a seam across its front (the base's front lines' tone)
 RIB_PLATE = 3                       # W1's outer frame: a plate on its side, its top this many px under the jamb's
 RIB_PLATE_TONE = YS[3]              # seam, down to the sill; REC proud, its face the base's plates' tone
-MID_PLATE = (3, 3, 4)               # W2's sill: a plate on its slope, these px in from the tile's sides, from this
+MID_PLATE = (3, 0, 5)               # W2's sill: a plate on its slope, these px in from the tile's sides, from this
 MID_PLATE_RISE = 1                  # many px down it on screen (from its top) this many px on down it; this many
 MID_PLATE_SIDE = YS[1]              # px proud, its sides in this tone
+FRONT_PLATES = (5, 3, 5, 3)         # W2's sill front: two plates, from these px either side of the tile's centre,
+                                    # this many px wide, from its top this many px down, wrapping over onto the
+                                    # slope this many px up it on screen; REC proud (on the slope MID_PLATE_RISE)
 B_SIDES = (9, 19)                   # W1's header: B, a panel outlined across its top (B_BACK px out from the
 B_BACK = 1                          # block's face, TOP_PX deep) and down both sides (px from the tile's edge) to
 C_SIDE = 22                         # its foot; C, a strip on from B's right side to C_SIDE, from the base's upper
@@ -117,7 +120,7 @@ def build(k, ax, plane, a, b, ends, H):
         else:
             f.part(u0, u1, pf, cols, None, end=False)
         if PART == "w2":
-            _w2_plate(f, s, s0, s1, fr, zs, dv, zj)
+            _w2_plate(f, s, s0, s1, fr, zs, dv, zj, cols[1])
         pf = [(back, zh), (dv, zh), (dv, zc), (T3.BACK, H), (back, H)]  # the header: the lean's top, then upright
         cols = s.cols(pf, "face")                                       # down to its foot; its top back to the
                                                                         # tile's back, as the base's
@@ -154,9 +157,10 @@ def build(k, ax, plane, a, b, ends, H):
                 f.part(s0 + FRAME, s0 + FRAME + T3.REC, pf, cols, (None, RIB_PLATE_TONE), end=False)
 
 
-def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
-    """W2's plate on its sill's slope: MID_PLATE[1] px down it on screen from its top, MID_PLATE[2] px on down it,
-    MID_PLATE_RISE px proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot) darker."""
+def _w2_plate(f, s, s0, s1, fr, zs, dv, zj, front):
+    """W2's plates. One on its sill's slope: MID_PLATE[1] px down it on screen from its top, MID_PLATE[2] px on
+    down it, MID_PLATE_RISE px proud (straight up), MID_PLATE[0] px in from the tile's sides, its sides (and foot)
+    darker. Two on its front (FRONT_PLATES), over its top onto the slope."""
     k = (zs - zj) / (fr - dv)                           # (the slope's dz per unit out)
     dy = -k * core.ZPX + core.TILE_H / 2                # (px down on screen per unit out along it)
     d0 = dv + MID_PLATE[1] / dy
@@ -167,6 +171,15 @@ def _w2_plate(f, s, s0, s1, fr, zs, dv, zj):
     cols[1], cols[2], cols[3] = MID_PLATE_SIDE, SILL_SLOPE, MID_PLATE_SIDE     # (its foot's and head's faces sides
                                                                             # too)
     f.part(s0 + T3.px(MID_PLATE[0]), s1 - T3.px(MID_PLATE[0]), pf, cols, MID_PLATE_SIDE, end=False)
+    off, w, down, up = FRONT_PLATES                     # the front's two plates, wrapping over onto the slope
+    R, zd = T3.REC, zs - down / core.ZPX
+    d3 = fr - up / dy
+    pf = [(fr, zd), (fr + R, zd), (fr + R, zs + k * R + r), (d3, zj + k * (d3 - dv) + r), (d3, zj + k * (d3 - dv)),
+          (fr, zs)]
+    cols = [False, front, SILL_SLOPE, False, False, False]
+    c = (s0 + s1) / 2
+    for u0, u1 in ((c - T3.px(off + w), c - T3.px(off)), (c + T3.px(off), c + T3.px(off + w))):
+        f.part(u0, u1, pf, cols, MID_PLATE_SIDE, end=False)
 
 
 def _w1_header(f, s, s0, s1, dv, zc, zh):
