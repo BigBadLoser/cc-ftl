@@ -14,7 +14,6 @@ from .wall3d_iwin import _clip
 
 DIP = 10 * PZ           # the sill: the ramp's crest under the opening, this far under the ramp's top (as tan's) ...
 DIP_RUN = 8 / 32        # ... reached this far along the wall from a post (a sloped crest), then level
-BEAM_DOWN = 0.15        # the beam's underside: the header's foot under the wall's top (wall3d.wall_face)
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
@@ -22,8 +21,6 @@ POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wH"         # the sill's level top (the light)
 SLOPE_TOP = "wS"        # the sill's top where it slopes down from a post (a step under)
 BEAM_UNDER = "wK"       # the beam's underside (the black)
-RAMP = "wM"             # the ramps on a window tile: plain, their art cleared
-RAMP_FOOT = "wD"        # (their upright foot)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -91,11 +88,10 @@ def _cut(k, x0, x1, z1):
 
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
-    zs, z1 = W.skirt_top(), W.HF - BEAM_DOWN
+    zs, z1 = W.skirt_top(), T.rail_foot(W.HF)           # (the beam's underside: the rail's foot)
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
     k.side = None
-    _plain(k, zs, yf)
     _cut(k, x0, x1, z1)
     a, b = max(x0, -0.5), min(x1, 0.5)
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
@@ -132,28 +128,17 @@ def hook(k, sp, own=True):
                "wall", 2, Vector((0, 1, 0)), fixed="glassL")
 
 
-def _plain(k, zs, yf):
-    """Clear the ramps' art (their plates, the shell's slope under them) over the tile and lay them again plain: the
-    slope from the wall's face down to the foot, the foot upright, both sides."""
-    ft = W.FOOT_PX / W.ZART
-    yt = yf + W.skirt_run()
-    for m in (k.m, k.ns):
-        if m is None:
-            continue
-        m.f = [f for f in m.f if not all(m.v[i][2] <= zs + 1e-6 and abs(m.v[i][1]) >= yf - 1e-6 for i in f[0])]
-    sl = Vector((0.0, (zs - ft) / W.skirt_run(), 1.0)).normalized()
-    for sd in (1, -1):
-        _quad(k, [(-0.5, sd * yf, zs), (0.5, sd * yf, zs), (0.5, sd * yt, ft), (-0.5, sd * yt, ft)],
-              (0, sd * sl.y, sl.z), RAMP)
-        _quad(k, [(-0.5, sd * yt, ft), (0.5, sd * yt, ft), (0.5, sd * yt, 0.0), (-0.5, sd * yt, 0.0)], (0, sd, 0),
-              RAMP_FOOT)
-
-
 def window(fn, part):
     """fn: the default straight piece's builder (tile.wall.full.m10, env_build "wide"). (own, wide, pane objects)."""
     calls = [0]
     seq = (part, "m" if part in "lm" else None, "m" if part in "mr" else None)  # the piece; its copies one tile on
     #   at +x, at -x (envtiles._with_runs builds them in that order): the window running on into them, else plain
+
+    pre = [0]
+
+    def bare(sp):                                       # (a window tile's ramp built bare: its panel left out)
+        T.BARE = bool(pre[0] < len(seq) and seq[pre[0]])
+        pre[0] += 1
 
     def each(k, sp):
         global PART
@@ -165,12 +150,12 @@ def window(fn, part):
 
     def build():
         global PART
-        calls[0] = 0
-        T.HOOK = each
+        calls[0] = pre[0] = 0
+        T.HOOK, T.PRE_HOOK = each, bare
         try:
             own, wide = fn()
             assert calls[0] == 3, calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK = None, None
+            PART, T.HOOK, T.PRE_HOOK, T.BARE = None, None, None, False
     return build

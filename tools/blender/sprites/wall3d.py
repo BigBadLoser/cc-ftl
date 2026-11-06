@@ -122,6 +122,8 @@ def OUT(ax):
     return Vector((0, 1, 0)) if ax == "y" else Vector((1, 0, 0))
 
 
+BARE = False            # the default walls' ramp without its panel (a window tile: wall3d_iwin_def)
+PRE_HOOK = None         # as a piece starts to build: f(sp) (wall3d_iwin_def: which tiles are a window's)
 HOOK = None             # while a piece builds: f(k, sp) on its Relief before it builds (wall3d_iwin: a window's opening)
 SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) sets this to a key colour: painted lines
                         # (seams, panel outlines, plates' shading) draw in it, everything else near black
@@ -278,14 +280,20 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     return zg + PZ, zl + LIP_H
 
 
+def rail_foot(top):
+    """The default walls' rail's foot (_rail) on a face this tall."""
+    from .faction.slate import RAIL_H
+    return min(top, W.wall_top("wall", "up")) - 0.031 - RAIL_H
+
+
 def _rail(k, ax, plane, a, b, ends, top, fam):
     """Slate's rail under the cap (faction.slate): three blocks a tile, the end ones 2 px proud, the middle one a px
     back with its top sloping down to the front, each front's top edge lit. Returns its foot."""
     from .faction.parts import PZ, prism
     from .faction.slate import MID_D, MID_DROP, RAIL_D, RAIL_H, _blocks
     mit = _mitres(ends)
-    z1 = min(top, W.wall_top("wall", "up")) - 0.031    # (under the cap's black)
-    z0 = z1 - RAIL_H
+    z0 = rail_foot(top)
+    z1 = z0 + RAIL_H                                    # (under the cap's black)
     for u0, u1, mid in _blocks(a, b):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
@@ -518,7 +526,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
                          u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
-        elif field and w >= 0.36 and sk == "panel" and not rv:          # a panel under each field
+        elif field and w >= 0.36 and sk == "panel" and not rv and not BARE:     # a panel under each field
                                                             # (insets scale down on a short field)
             im = 0.2 * min(1.0, w / 0.76)
             dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
@@ -762,6 +770,8 @@ def block(mask, fam, deco=None, name=None, level="cut", corners=0, shell=None, d
     no_cap no cap plates. above: only what stands over that height (hull_cap), its faces there a black cut."""
     global END_TOPS, SHELL
     sp = SHELL = (shell or style().shell or Shell)(mask, fam, level, 1 if deco == 1 else 0, corners)
+    if PRE_HOOK:
+        PRE_HOOK(sp)
     k = Relief(name or f"wall3d_{fam}_{mask}_{level}_{corners}")
     if above is not None:                               # (its faces over the height black, whatever the look says)
         face_col = sp.col_face
