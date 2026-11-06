@@ -33,7 +33,7 @@ describe('ship log and alerts', () => {
     const t = setup();
     t.sim.sector.state = 'active';
     const ship = homeShip(t.sim);
-    t.feed({ type: 'ship.arrived', node: 'n', ship, name: 'Raider', faction: 'pirate', owner: 'pirates', reason: 'jump-in', x: 0, y: 0 });
+    t.feed({ type: 'ship.arrived', node: 'n', ship, name: 'Raider', faction: 'hostile', owner: 'pirates', reason: 'jump-in', x: 0, y: 0 });
     t.feed({ type: 'ship.arrived', node: 'n', ship, name: 'Skiff', faction: 'neutral', owner: 'traders', reason: 'spawn', x: 0, y: 0 });
     expect(t.list().map((e) => e.text)).toEqual(['Raider jumped in: hostile']);
     let n = -1;
