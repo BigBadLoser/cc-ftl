@@ -1,20 +1,17 @@
-"""Flak cannon bay (2x2) concepts, round 2: where the hull scrap the turret fires goes in, is broken up and is lifted up
-through the roof. Each concept is ONE machine on the lift axis, its parts meeting at flanges and collars, with the
-scrap's path readable: in, processed, up the neck into the roof collar. The shape language is the turret's: octagonal
-sections with flats to the camera, dark joint bands, a hazard band, brass hubs.
+"""Flak cannon bay (2x2): the hull scrap the turret fires is tipped into a funnel round the foot of a screw lift and
+carried up through the roof to the turret.
 
-All stand on a widened version of the laser bay's lift (flange, keep-clear ring, rams, ram and roof collars) with the
-rams moved out on ears, as the incendiary bay does, so the machine between them can be wide. About 36 px a world unit:
-nothing under 0.06.
+  lift     the laser bay's lift widened: the rams stand out on ears grown from the flange and the narrow ram collar (as
+           the incendiary bay's), so the funnel fits between them; the keep-clear ring moves out with them
+  drive    an octagonal gearbox on the flange, a drive motor with a brass hub bolted to one flat
+  tube     the screw lift: an octagonal tube from the gearbox up into the ram collar, joint bands at its foot, an
+           inspection slot on the camera's flat where the brass flights show, slanting as a helix does
+  funnel   a flared octagonal intake on a collar round the tube, loose scrap heaped in it, a hazard lip on its rim, two
+           gussets under it to the tube
 
-  A  MILL     a hammer-mill housing (octagon) over a gearbox, a feed throat with a hazard lip on its front, side motors
-              bolted to it; it tapers into the lift neck
-  B  AUGER    an octagonal screw-lift tube from a gearbox to the roof, an inspection window showing the brass flights;
-              a flared intake funnel round its foot on struts, loose scrap in it
-  C  PRESS    a compaction press: a mould with an open loading door and scrap inside, four tie rods up to a crosshead,
-              a coaxial ring cylinder; the compacted charge goes up the neck through it
-
-Frame and FRONT as turret_bay_laser (u = grid +x, v = grid +y, origin = footprint centre at floor level)."""
+The shape language is the turret's (turret_flak): octagonal sections with flats to the camera, dark joint bands, hazard
+paint, brass hubs. About 36 px a world unit: nothing under 0.06. Frame and FRONT as turret_bay_laser (u = grid +x,
+v = grid +y, origin = footprint centre at floor level); built the same way round for every rotation, as the laser bay."""
 import math
 
 from . import cmbkit, core, detail as D
@@ -28,7 +25,7 @@ P, obox, FRONT, TOP = L.P, L.obox, L.FRONT, L.TOP
 ZI = TOP - 0.42                       # the ram collar's underside
 RAM_R, COLLAR_R, FL = 0.54, 0.3, 0.46
 RAMS = (FRONT + math.pi / 2, FRONT - math.pi / 2)
-SCRAP = ("rust", "steel", "rustD", "gm", "orange", "steelL", "rust", "steelD")
+SCRAP = ("rust", "steel", "rustD", "gm", "plate", "steelL", "rust", "steelD")   # none emissive: idle bays carry no glow
 T8 = math.tan(math.pi / 8)
 
 
@@ -55,11 +52,6 @@ def frustum(f, r0, z0, r1, z1, mat, top=None):
 def flat(f, k, r, z0, z1, mat, t=0.012, w=None, off=0.0):
     """A plate on flat k (facing k x 45 deg) of an octagon of inradius r."""
     obox(f, math.radians(45 * k), r - 0.004, r + t, (r * T8 - 0.004) if w is None else w, z0, z1, mat, mat, off=off)
-
-
-def hazard(f, r, z0, z1):
-    for k in range(8):
-        flat(f, k, r, z0, z1, "hazY" if k % 2 == 0 else "hazK")
 
 
 def scrap(f, pts, z, seed=7):
@@ -101,14 +93,6 @@ def lift(f, ring=(0.68, 0.76)):
         f.vcyl(u, v, zc + 0.09, 0.05, 0.03, "steelD", top="plate", sides=6)
 
 
-def neck(f, z0, r=0.15, bands=()):
-    """The lift neck: the charge goes up it into the ram collar and on through the roof."""
-    _g("neck")
-    f.vcyl(0, 0, z0, r, ZI - z0, "steelD", sides=20)
-    for z in bands:
-        f.vcyl(0, 0, z, r + 0.03, 0.06, "steel", top="steelL", sides=20)
-
-
 def motor(f, k, r, z, length=0.26, rad=0.11, ribs=(0.35, 0.65), hub=0.45):
     """A drive motor bolted radially to flat k of an octagon of inradius r: a mounting flange, a ribbed body, a
     brass-hubbed end cap."""
@@ -122,57 +106,6 @@ def motor(f, k, r, z, length=0.26, rad=0.11, ribs=(0.35, 0.65), hub=0.45):
               capstart="steelL")
     D.seg(f, (*P(a, r + length), z), (*P(a, r + length + 0.02), z), rad * hub, "brass", 12, cap="brass")
 
-
-def at(r, s_):
-    """(u, v) r out toward the camera (FRONT), s_ across it."""
-    c, d = math.cos(FRONT), math.sin(FRONT)
-    return (r * c - s_ * d, r * d + s_ * c)
-
-
-def hopper(f, r, z0, z1, lo, hi):
-    """A square feed hopper square to FRONT, centred r out: (half width, half depth) at its foot z0 and its rim z1;
-    dark inside, a hazard lip on the side toward the camera."""
-    _g("hopper")
-    c = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
-    a = [(*at(r + lo[1] * i, lo[0] * j), z0) for i, j in c]
-    b = [(*at(r + hi[1] * i, hi[0] * j), z1) for i, j in c]
-    for i in range(4):
-        j = (i + 1) % 4
-        f.poly([f.pt(*a[i]), f.pt(*a[j]), f.pt(*b[j]), f.pt(*b[i])], "gm", flip=True)
-    f.poly([f.pt(*p) for p in a], "dark", flip=True)
-    obox(f, FRONT, r + hi[1] - 0.02, r + hi[1] + 0.03, hi[0] + 0.02, z1 - 0.06, z1, "hazY", "hazY")
-    for k in (-1, 1):
-        obox(f, FRONT, r - hi[1], r + hi[1] + 0.03, 0.025, z1 - 0.05, z1, "steelL", "steelL", off=k * (hi[0] + 0.02))
-
-
-# ---- A: MILL -------------------------------------------------------------------------------------------------------
-
-def mill(rot=0):
-    m = core.Mesh("bay_flak_mill")
-    f = Frame(m, 1, square=True)
-    TB._floor(-1.0, 1.0)
-    lift(f)
-    _g("gearbox")
-    octa(f, 0.3, 0.14, 0.32, "steelD", "steel")
-    _g("housing")
-    r, z0, z1 = 0.36, 0.32, 0.96
-    octa(f, r, z0, z1, "gm", "steel")
-    octa(f, r + 0.018, z0, z0 + 0.06, "steelD")                                            # joint bands
-    octa(f, r + 0.018, z1 - 0.06, z1, "steelD", "steel")
-    hazard(f, r, 0.44, 0.5)
-    _g("throat")
-    obox(f, FRONT, 0.2, r + 0.14, 0.12, 0.56, 0.8, "gm", "steel")                          # throat into the housing
-    hopper(f, r + 0.12, 0.8, 1.04, (0.12, 0.1), (0.21, 0.18))
-    scrap(f, [at(r + 0.12 + dr, s_) for dr, s_ in ((-0.05, -0.08), (0.04, 0.0), (-0.03, 0.09))], 0.84, seed=5)
-    motor(f, 0, r, 0.66)
-    motor(f, 2, r, 0.66)
-    _g("taper")
-    frustum(f, r, z1, 0.19, z1 + 0.16, "steel", "steelL")
-    neck(f, z1 + 0.16, bands=(1.24, 1.44))
-    return [m.build()] if cmbkit.REC is None else []
-
-
-# ---- B: AUGER ------------------------------------------------------------------------------------------------------
 
 def helix_window(f, r, z0, z1, k=1, n=4, t=0.06, slope=0.05):
     """An inspection slot on flat k of an octagon tube, the screw's brass flights showing through it, each slanting
@@ -204,8 +137,8 @@ def rim_lip(f, r0, r1, z, h=0.03):
         TB.prism(f, [a[i], b[i], b[j], a[j]], z, z + h, "hazY" if i % 2 == 0 else "hazK")
 
 
-def auger(rot=0):
-    m = core.Mesh("bay_flak_auger")
+def bay_flak(rot=0):
+    m = core.Mesh("bay_flak")
     f = Frame(m, 1, square=True)
     TB._floor(-1.0, 1.0)
     lift(f)
@@ -232,41 +165,4 @@ def auger(rot=0):
     return [m.build()] if cmbkit.REC is None else []
 
 
-# ---- C: PRESS ------------------------------------------------------------------------------------------------------
-
-def press(rot=0):
-    m = core.Mesh("bay_flak_press")
-    f = Frame(m, 1, square=True)
-    TB._floor(-1.0, 1.0)
-    lift(f)
-    _g("mould")
-    r, z0, z1 = 0.34, 0.14, 0.62
-    octa(f, r, z0, z1, "gm", "steel")
-    octa(f, r + 0.02, z1 - 0.06, z1, "steelD", "steel")
-    _g("door")
-    w = r * T8
-    obox(f, FRONT, r - 0.01, r + 0.006, w - 0.02, z0 + 0.1, z1 - 0.1, "dark", "dark")        # loading door, open
-    scrap(f, [P(FRONT + d, r - 0.03) for d in (-0.2, 0.0, 0.2)], z0 + 0.12, seed=11)
-    scrap(f, [P(FRONT + d, r - 0.05) for d in (-0.1, 0.1)], z0 + 0.22, seed=4)
-    for s in (-1, 1):
-        obox(f, FRONT, r - 0.01, r + 0.03, 0.025, z0 + 0.06, z1 - 0.06, "hazY", "hazY", off=s * (w - 0.01))
-    _g("ties")
-    zc0, zc1 = 1.18, 1.32
-    for k in (1, 3, 5, 7):                                                                  # tie rods on the corners
-        u, v = P(math.radians(45 * k), r + 0.02)
-        D.seg(f, (u, v, z1), (u, v, zc0), 0.04, "steelL", 10)
-        f.vcyl(u, v, z1, 0.06, 0.05, "steel", top="steelL", sides=10)
-        f.vcyl(u, v, zc1, 0.05, 0.04, "steelD", top="plate", sides=6)                     # nuts
-    _g("platen")
-    octa(f, 0.3, 0.74, 0.84, "steel", "steelL")
-    _g("cylinder")
-    octa(f, r + 0.04, zc0, zc1, "gm", "steelL")                                              # crosshead
-    f.vcyl(0, 0, 0.84, 0.26, zc0 - 0.84, "steelD", top="steel", sides=24)                  # ring cylinder
-    f.vcyl(0, 0, 0.96, 0.27, 0.06, "steel", sides=24)
-    neck(f, zc1, bands=(1.46,))
-    return [m.build()] if cmbkit.REC is None else []
-
-
-CONCEPTS = {"flakbayA": mill, "flakbayB": auger, "flakbayC": press}
-for _k, _fn in CONCEPTS.items():
-    TB.BAYS[_k] = _fn
+TB.BAYS["flak"] = bay_flak
