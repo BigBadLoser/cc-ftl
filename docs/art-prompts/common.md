@@ -1,6 +1,6 @@
 ## Project context (shared)
 
-cc-ftl (github.com/bigbadloser/cc-ftl, a private repo) is a browser isometric ship-colony game: Space Haven building plus FTL combat. Read `CLAUDE.md`, `docs/STATUS.md` and the "Asset pipeline" section of `docs/ARCHITECTURE.md` first.
+cc-ftl (github.com/bigbadloser/cc-ftl, a public repo) is a browser isometric ship-colony game: Space Haven building plus FTL combat. Read `CLAUDE.md`, `docs/STATUS.md` and the "Asset pipeline" section of `docs/ARCHITECTURE.md` first.
 
 **How I want to work: iterate on quick previews, not beauty renders.**
 - Work through a complete first version on your own, without checking in after each step.
