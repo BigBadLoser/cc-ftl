@@ -422,9 +422,18 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             continue
         segs += [(e0, s0 + off, False), (s0 + off, s1 - off, True), (s1 - off, e1, False)]
     holes = [h[2:] for h in getattr(sp, "holes", ()) if h[0] == ax and abs(h[1] - plane) < 1e-6]
+    one = style().plain                         # (the default walls: one plate a tile, no seams beside its panel)
+    if one:
+        for s0, s1 in spans(a, b):
+            e0, e1 = s0 - (run_ if abs(s0 - a) < 1e-6 else 0.0), s1 + (run_ if abs(s1 - b) < 1e-6 else 0.0)
+            for q in _minus((e0 + g, e1 - g, d0, d1), holes):
+                for b0, b1, bf, bl in _bands(q[2], q[3], run_, fam):
+                    poly = _clip(_clip([(q[0], b0), (q[1], b0), (q[1], b1), (q[0], b1)], lo), hi)
+                    if len(poly) >= 3:
+                        plate(k, poly, pt, nrm, 0.0, rise, bf, bl)
     for u0, u1, field in segs:
         hole = next((h for h in holes if field and h[0] < u1 and h[1] > u0), None)
-        for q in _minus((u0 + g, u1 - g, d0, d1), holes):                      # (round a look's ramp hole)
+        for q in () if one else _minus((u0 + g, u1 - g, d0, d1), holes):      # (round a look's ramp hole)
             for b0, b1, bf, bl in _bands(q[2], q[3], run_, fam):                # (in a look's bands down the run)
                 poly = _clip(_clip([(q[0], b0), (q[1], b0), (q[1], b1), (q[0], b1)], lo), hi)
                 if len(poly) >= 3:
@@ -473,19 +482,27 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             im = 0.2 * min(1.0, w / 0.76)
             dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
             fu0, fu1, fd0, fd1 = u0 + 0.06, u1 - 0.06, 0.12 * run_ + dn, 0.88 * run_ + dn
-            if not style().plain:                       # the frame's dark outline (the default walls: none)
+            if style().plain:                           # the default walls: the panel drawn, a seam line round
+                ed = 0.4 / 32                           # it (a px across, about a px down the slope)
+                for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
+                          (fu1 - LINE, fu1, fd0, fd1)):
+                    plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,
+                          fam, 0, base=rise)            # (drone's seam level: its darkest)
+            else:                                       # the frame's dark outline
                 plate(k, [(fu0, fd0), (fu1, fd0), (fu1, fd1), (fu0, fd1)], pt, nrm, 0.0, rise + PAINT, fam, 1,
                       base=rise)
             fu0, fu1, fd0, fd1 = fu0 + LINE, fu1 - LINE, fd0 + 0.03, fd1 - 0.03
             iu0, iu1, id0, id1 = u0 + im, u1 - im, 0.3 * run_ + dn, 0.52 * run_ + dn
-            for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
-                plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX, fam,
-                      2, base=rise)                                            # the raised frame ...
+            fr = 0.0 if style().plain else PX           # (the raised frame's height: none on the default walls)
+            if fr:
+                for q in ((fu0, iu0, fd0, fd1), (iu1, fu1, fd0, fd1), (iu0, iu1, fd0, id0), (iu0, iu1, id1, fd1)):
+                    plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PX,
+                          fam, 2, base=rise)                                   # the raised frame ...
             plate(k, [(iu0, id0), (iu1, id0), (iu1, id1), (iu0, id1)], pt, nrm, 0.0, rise + 2 * PAINT, fam,
-                  3, base=rise)                                                # ... and the plate sunk in it
+                  3 + LIFT(), base=rise)                # ... and the plate sunk in it (a shade over the slope)
             su0, su1, sd0, sd1 = u0 + im + 0.02, u1 - im - 0.02, 0.66 * run_ + dn, 0.74 * run_ + dn
-            plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + PX + PAINT, fam, 0,
-                  base=rise + PX)                                              # a dark slot on the frame
+            plate(k, [(su0, sd0), (su1, sd0), (su1, sd1), (su0, sd1)], pt, nrm, 0.0, rise + fr + 2 * PAINT, fam,
+                  0, base=rise + fr)                                           # a dark slot on the frame
     toe_fam, toe_at = style().toe, style().toe_at
     if toe_fam and not ft:                      # a faction's colour band along the skirt's foot, mitred like the plates
         for u0, u1, _ in segs:
