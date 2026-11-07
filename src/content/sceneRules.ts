@@ -40,6 +40,6 @@ export const sceneRules = {
     log: '{crew} is up and pays their way', tone: 'good',
   },
   personDied: { on: 'died', of: 'person', log: '{crew} died aboard', tone: 'bad' },
-  personDelivered: { on: 'delivered', of: 'person', log: '{crew} is home: handed over at the port', tone: 'good' },
+  personDelivered: { on: 'delivered', of: 'person', log: '{crew} is home, handed over', tone: 'good' },
   doomed: { on: 'doomed', log: 'The {ship} drops behind you, its clock still running down', tone: 'bad' },
 } satisfies Record<string, SceneRuleDef>;

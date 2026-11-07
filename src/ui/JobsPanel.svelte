@@ -33,7 +33,7 @@
     <p class="none">No work posted here.</p>
   {/if}
   <JobCards {api} {jobs} list="offers" />
-  <p class="note">Trade stations post deliveries, military stations and depots bounties, research stations surveys. A delivery comes aboard as a sealed crate, set on deck apart from your hold; at the destination the station sends a shuttle, your crew carry the crate to the airlock and you are paid when it is taken. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). A bounty or survey you finish is paid when you hand it in at a station of the same type and faction that posted it. A passenger you took in asks for passage home: accepted, they are paid for when handed over at their port; refused, they get off at the next port.</p>
+  <p class="note">Trade stations post deliveries, military stations and depots bounties, research stations surveys. A delivery comes aboard as a sealed crate, set on deck apart from your hold; at the destination the station sends a shuttle, your crew carry the crate to the airlock and you are paid when it is taken. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). A bounty or survey you finish is paid when you hand it in at a station of the same type and faction that posted it. A passenger you took in asks for passage home: accepted, you are paid when they are handed over at their port; refused, they get off at the next port.</p>
 </FloatingWindow>
 
 <style>
