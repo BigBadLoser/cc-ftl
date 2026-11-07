@@ -20,6 +20,7 @@ import { HANDOVER_RETRY_SEC } from './tuningJobs';
 import type { StationJob } from './types';
 import { boardRecruits, landRecruits } from '../trade/recruitLand';
 import { passengerOff, postedCards } from './passage';
+import { askingToJoin } from './joinOffer';
 
 /**
  * The physical handover of a delivery (issue #178), and of a passenger (a passage job, or a refused card: galaxy/passage.ts; the recruit run reversed,
@@ -75,7 +76,7 @@ type Plan = { go: 'station' | 'own'; ship: number; vehicle: number; airlock: num
 /** What to do for a job's handover now: 'running', 'wait' (combat, a retry pause or a busy airlock or shuttle), 'instant', or the run to start. */
 function plan(sim: Sim, job: StationJob): Plan {
   if (handoverOf(sim, job.id)) return 'running';
-  if (sim.sector.inCombat) return 'wait';
+  if (sim.sector.inCombat || asking(sim, job)) return 'wait';
   const ship = stationShip(sim);
   if (!ship || !hasAirlock(sim)) return 'instant';
   const last = sim.trade.deals.filter((d) => d.handover?.job === job.id).pop();
@@ -118,6 +119,9 @@ export function startHandover(sim: Sim, job: StationJob): 'started' | 'wait' | '
 
 const due = (d: Deal): boolean => d.timer % REPEAT === 1;
 
+/** The one rule between a handover and a join ask: no run starts or goes on with a person whose ask to join waits for an answer (joinOffer.ts). */
+const asking = (sim: Sim, job: StationJob): boolean => job.crew !== undefined && askingToJoin(sim, job.crew);
+
 /** Call a run off: tries and the retry pause are noted, a crate already in the hold goes back on deck, an own shuttle flies home. */
 function call(sim: Sim, d: Deal, reason: string): void {
   const job = jobOf(sim, d);
@@ -129,7 +133,7 @@ function call(sim: Sim, d: Deal, reason: string): void {
     if (!loadCrate(sim, job.id)) return;
     cargoTake(sim, d.vehicle, CRATE, cargoOf(sim, d.vehicle, CRATE));
   }
-  if (job && reason !== 'combat') {
+  if (job && reason !== 'combat' && reason !== 'asking') {
     if (own) job.ownTries = (job.ownTries ?? 0) + 1;
     else job.handoverTries = (job.handoverTries ?? 0) + 1;
   }
@@ -169,6 +173,8 @@ export function stepHandover(sim: Sim, d: Deal): void {
   const job = jobOf(sim, d);
   if (!job) return call(sim, d, 'jobGone');
   if (sim.sector.inCombat) return call(sim, d, 'combat');
+  // No handover moves a person whose ask to join waits for an answer (joinOffer.ts): the run is called off, and tried again after the answer.
+  if (asking(sim, job)) return call(sim, d, 'asking');
   if (!sim.world.get(d.ship, ShipC)) return call(sim, d, 'stationGone');
   if (d.handover?.via === 'station' && d.phase === 'dispatch') {
     d.vehicle = spawnCourier(sim, d);

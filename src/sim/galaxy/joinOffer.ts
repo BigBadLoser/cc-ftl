@@ -1,4 +1,5 @@
-import { ConsentC, type Carry } from '../consent/components';
+import { ConsentC, type Carry, type Consent, type Grant } from '../consent/components';
+import { withPlayerAboard } from '../story/world';
 import { dropPassenger } from '../consent/passage';
 import { CrewC, MoodC, PrioritiesC } from '../crew/components';
 import type { Sim } from '../sim';
@@ -21,9 +22,16 @@ export const JOIN_CHANCE = 0.4;
 export const JOIN_WAIT_SEC = 120;
 const SALT = 0x701e;
 
-/** The carried record of a passenger on the player's ship, if any. */
+/** The grants on the player's ship, read in hyperspace too (from the ship's packet: plain data, so a change to one is kept). */
+function playerGrants(sim: Sim): Grant[] {
+  const packet = sim.sector.state === 'hyperspace' ? sim.sector.packet : null;
+  if (packet && !sim.world.has(packet.ship, ConsentC)) return (packet.entities.find((e) => e.id === packet.ship)?.c['consent'] as Consent | undefined)?.grants ?? [];
+  return sim.world.get(playerShip(sim), ConsentC)?.grants ?? [];
+}
+
+/** The carried record of a passenger on the player's ship, if any (in hyperspace too). */
 export function carryOf(sim: Sim, crew: number): Carry | undefined {
-  return sim.world.get(playerShip(sim), ConsentC)?.grants.find((g) => g.by === 'passage' && g.crew?.includes(crew))?.carry;
+  return playerGrants(sim).find((g) => g.by === 'passage' && g.crew?.includes(crew))?.carry;
 }
 
 function ask(sim: Sim, crew: number, c: Carry): void {
@@ -52,19 +60,18 @@ export function considerJoining(sim: Sim, crew: number, c: Carry): void {
   if (unit(sim.seed, SALT, crew) < JOIN_CHANCE) ask(sim, crew, c);
 }
 
-/**
- * At the passage's destination, before the handover: true while the passenger's ask holds it (asked now, the first time and only if they are happy, as
- * aboard; or still waiting for an answer).
- */
-export function holdForJoin(sim: Sim, job: StationJob): boolean {
+/** At the passage's destination: the passenger asks now, the first time, if they are happy (as aboard). The handover waits on the answer (handover.ts). */
+export function askAtDelivery(sim: Sim, job: StationJob): void {
   const c = job.crew === undefined ? undefined : carryOf(sim, job.crew);
-  if (!c || job.crew === undefined) return false;
-  if (!c.asked && happy(sim, job.crew)) ask(sim, job.crew, c);
-  return c.asking !== undefined;
+  if (c && job.crew !== undefined && !c.asked && happy(sim, job.crew)) ask(sim, job.crew, c);
 }
 
-/** `jobs.join`: answer a passenger's ask. Yes: they are crew now; no: nothing changes. False when nobody asked. */
+/** `jobs.join`: answer a passenger's ask. Yes: they are crew now; no: nothing changes. False when nobody asked. Answered in hyperspace too. */
 export function answerJoin(sim: Sim, crew: number, accept: boolean): boolean {
+  return withPlayerAboard(sim, () => answerNow(sim, crew, accept));
+}
+
+function answerNow(sim: Sim, crew: number, accept: boolean): boolean {
   const c = carryOf(sim, crew);
   if (c?.asking === undefined) {
     sim.events.emit({ type: 'command.rejected', command: 'jobs.join', reason: 'notAsking' });
@@ -89,8 +96,7 @@ export function answerJoin(sim: Sim, crew: number, accept: boolean): boolean {
 
 /** The passengers aboard the player's ship whose ask to join waits for an answer, ascending (the alerts are built from it, saved state, not the event). */
 export function pendingAsks(sim: Sim): number[] {
-  const grants = sim.world.get(playerShip(sim), ConsentC)?.grants ?? [];
-  return grants.filter((g) => g.by === 'passage' && g.carry?.asking !== undefined).flatMap((g) => g.crew ?? []).sort((a, b) => a - b);
+  return playerGrants(sim).filter((g) => g.by === 'passage' && g.carry?.asking !== undefined).flatMap((g) => g.crew ?? []).sort((a, b) => a - b);
 }
 
 /** True while the passenger's ask waits for an answer. */

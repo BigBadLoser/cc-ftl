@@ -5,6 +5,7 @@ import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
 import { pendingAsks } from '../sim/galaxy/joinOffer';
+import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
@@ -253,7 +254,7 @@ export function createAlerts(sim: Sim): Alerts {
         { label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: c, accept: true } },
         { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: c, accept: false } },
       ];
-      store.update((l) => [{ id, kind: 'crew.asksToJoin', text: `${crewName(c)} asks to join the crew`, subject: crewSubject(sim, c), actions }, ...l]);
+      store.update((l) => [{ id, kind: 'crew.asksToJoin', text: `${passengerName(sim, c)} asks to join the crew`, subject: crewSubject(sim, c), actions }, ...l]);
       for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
     }
   }

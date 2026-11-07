@@ -17,7 +17,7 @@ import { CrewC } from '../crew/components';
 import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS, RIVAL_REPUTATION } from './tuningJobs';
 import type { StationJob } from './types';
 import { addCredits } from '../trade/credits';
-import { holdForJoin } from './joinOffer';
+import { askAtDelivery } from './joinOffer';
 import { PORT_KINDS, passengerAboard, passengerOff, postedCards, strand, takeCard } from './passage';
 
 /**
@@ -200,7 +200,10 @@ export function tendJobs(sim: Sim, destroyed: readonly number[]): void {
       if (job.collected) close(sim, job, 'done', job.collected);
       else if (sim.sector.state !== 'active') continue;
       else if (job.crew === undefined || !passengerAboard(sim, job.crew)) close(sim, job, 'failed');
-      else if (!g.event && job.to === g.current && !holdForJoin(sim, job) && startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
+      else if (!g.event && job.to === g.current) {
+        askAtDelivery(sim, job);
+        if (startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
+      }
     } else if (job.collected) {
       close(sim, job, 'done', job.collected);
     } else if (!g.event && sim.sector.state === 'active' && job.to === g.current && recoverCrate(sim, job.id)) {

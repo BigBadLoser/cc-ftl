@@ -108,7 +108,10 @@ export function createDescriber(sim: Sim) {
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
       case 'trade.failed': {
         const hire = hireOf(e.deal);
-        if (handoverOf(e.deal)) return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${e.reason === 'combat' ? 'combat' : 'it could not collect the crate'})` };
+        if (handoverOf(e.deal)) {
+          const why = e.reason === 'combat' ? 'combat' : e.reason === 'asking' ? 'your passenger asked to join' : 'it could not collect the crate';
+          return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${why})` };
+        }
         return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
       }
       case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} ₵)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} ₵)` };

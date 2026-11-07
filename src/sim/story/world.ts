@@ -88,14 +88,16 @@ export function skillOf(sim: Sim, crew: number, skill: SkillName): number {
   }
 }
 
-/** The crew member with the highest skill (ties: lowest id), or null with no crew. */
+/** The crew member with the highest skill (ties: lowest id), or null with no crew. Reads the crew in hyperspace too (the packet view). */
 export function bestAt(sim: Sim, skill: SkillName): { crew: number; level: number } | null {
-  let best: { crew: number; level: number } | null = null;
-  for (const id of playerCrew(sim)) {
-    const level = skillOf(sim, id, skill);
-    if (!best || level > best.level) best = { crew: id, level };
-  }
-  return best;
+  return withPlayerAboard(sim, () => {
+    let best: { crew: number; level: number } | null = null;
+    for (const id of playerCrew(sim)) {
+      const level = skillOf(sim, id, skill);
+      if (!best || level > best.level) best = { crew: id, level };
+    }
+    return best;
+  });
 }
 
 export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => !!sim.world.get(crew, ImplantsC)?.list.includes(implant);

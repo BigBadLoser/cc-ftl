@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, MoodC, PositionC, PrioritiesC, newGame, type Sim } from '../sim';
+import { CombatC, CrewC, FTL_CHARGE_SEC, MoodC, PositionC, PrioritiesC, galaxyIndex, newGame, type Sim } from '../sim';
 import { ConsentC } from '../sim/consent/components';
 import { RolledSkillsC } from '../sim/crew/traits';
 import { AllegianceC } from '../sim/fight/components';
 import { nodesWithin } from '../sim/galaxy/graph';
-import { carryOf, JOIN_HAPPY_SEC, JOIN_WAIT_SEC } from '../sim/galaxy/joinOffer';
+import { carryOf, JOIN_HAPPY_SEC, JOIN_WAIT_SEC, pendingAsks } from '../sim/galaxy/joinOffer';
+import { DraftedC } from '../sim/crew/components';
+import { EmbarkOrderC } from '../sim/vehicles/components';
+import { giveItems } from '../sim/story/effects';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { placementGapError } from '../sim/regions';
 import { playerCrew } from '../sim/story/world';
@@ -140,5 +143,48 @@ describe('a passenger asks to join', () => {
     }
     expect(asked).toBeGreaterThan(0);
     expect(asked).toBeLessThan(6);
+  });
+
+  it('an ask raised while a handover runs calls the run off; after the answer it runs again', () => {
+    const { sim, crew, seen } = atDestination(7, false);
+    for (let i = 0; i < 20 * 120 && !sim.world.has(crew, EmbarkOrderC); i++) step(sim, seen);
+    expect(seen.sent).toBe(1); // the run is on, the passenger walking to the shuttle
+    const c = carryOf(sim, crew)!;
+    c.asked = true;
+    c.asking = sim.tick; // their mood rose: they ask now
+    let reason = '';
+    for (let i = 0; i < 40; i++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'trade.failed') reason = e.reason;
+    }
+    expect(reason).toBe('asking');
+    expect(sim.world.has(crew, CrewC)).toBe(true);
+    expect(sim.world.has(crew, DraftedC)).toBe(false);
+    step(sim, seen, 20 * 30);
+    expect(seen.sent).toBe(1); // nothing moves them while the ask waits
+    sim.enqueue({ type: 'jobs.join', crew, accept: false });
+    for (let i = 0; i < 20 * 400 && sim.world.has(crew, CrewC); i++) step(sim, seen);
+    expect(seen.sent).toBeGreaterThan(1);
+    expect(sim.world.has(crew, CrewC)).toBe(false);
+  });
+
+  it('an ask waiting in hyperspace (the ship packed) is still listed and can be answered', () => {
+    const { sim, crew } = aboard(7);
+    const c = carryOf(sim, crew)!;
+    c.rolled = true;
+    c.asked = true;
+    c.asking = sim.tick;
+    giveItems(sim, 'item.fuel', 40);
+    const combat = sim.world.get(playerShip(sim), CombatC);
+    if (combat) combat.ftl = FTL_CHARGE_SEC;
+    const next = (galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current) ?? []).map((e) => (e.a === sim.galaxy.current ? e.b : e.a)).sort()[0]!;
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    for (let i = 0; i < 2000 && sim.sector.state !== 'hyperspace'; i++) sim.step();
+    expect(sim.sector.state).toBe('hyperspace');
+    expect(pendingAsks(sim)).toEqual([crew]);
+    sim.enqueue({ type: 'jobs.join', crew, accept: true });
+    sim.step();
+    expect(sim.events.drain().some((e) => e.type === 'crew.joined')).toBe(true);
+    expect(pendingAsks(sim)).toEqual([]);
   });
 });
