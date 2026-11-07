@@ -179,7 +179,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
     T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
     T.paint(k, ax, plane, a, b, z0 - PZ, z0, 0.0, FACE, 1)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
-    gap = "fGT5" if ax == "y" else "fGT6"               # its front)
+    gap = "fGT4" if ax == "y" else "fGT5"               # its front)
     for c in range(-1, 2):                              # the gap at each tile's start a dark block flush with the
         q0, q1 = max(a, c - 0.5), min(b, c - 0.5 + 2 * LINE)    # boxes' fronts (the tile before it stops its header
         if q1 - q0 > 1e-6:                                      # short of its end, under what stands proud here)
