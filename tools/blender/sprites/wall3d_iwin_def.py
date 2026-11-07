@@ -13,8 +13,9 @@ from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
 RUN = 5 / 32            # the sill's crest: from the lip's top at a post down to the ramp's top over this far along
-                        # the wall (the lip cut down), then on at that slope into the ramp ...
-FLOOR = 3 * PZ          # ... to this far under the ramp's top (the window's floor), then level
+                        # the wall (the lip cut down), then on into the ramp ...
+FLOOR = 5 * PZ          # ... to this far under the ramp's top (the window's floor) ...
+END = 11.5 / 32         # ... reached this far along the wall from the post, then level
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
@@ -45,27 +46,21 @@ def _dip():
     return zp, zh - FLOOR
 
 
-def _run():
-    """How far along the wall from a post the crest reaches its floor (at the lip's slope: RUN per lip to ramp top)."""
-    zh, zp = T.lip_heights(W.skirt_top())
-    return RUN * (zp - _dip()[1]) / (zp - zh)
-
-
 def _sill(x, x0, x1):
-    """The ramp's crest under the opening at x: the lip's top at a post, down to its floor over _run() from it."""
-    d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
-    t, f = _dip()
-    return t - (t - f) * min(1.0, max(0.0, d) / _run())
+    """The ramp's crest under the opening at x: the lip's top at a post, down to the ramp's top over RUN from it,
+    on down to its floor at END."""
+    d = max(0.0, min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0]))
+    (t, f), zh = _dip(), T.lip_heights(W.skirt_top())[0]
+    if d < RUN:
+        return t - (t - zh) * d / RUN
+    return zh - (zh - f) * min(1.0, (d - RUN) / (END - RUN))
 
 
 def _segs(x0, x1):
     """The opening along x between the crest's bends (and where it passes the ramp's top, off the lip onto the
     ramp): (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    (t, f), r = _dip(), _run()
-    cs = [r * (t - z) / (t - f) for z in (T.lip_heights(W.skirt_top())[0],)]
-    us = sorted({xa, xb} | {u for u in (x0 + r, x1 - r) + tuple(v for c in cs for v in (x0 + c, x1 - c))
-                            if xa < u < xb})
+    us = sorted({xa, xb} | {u for c in (RUN, END) for u in (x0 + c, x1 - c) if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
 
@@ -147,7 +142,7 @@ def hook(k, sp, own=True):
     if not own:                                         # (a copy past the tile: no pane)
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
-    us = sorted({a, b} | {u for u in (x0 + _run(), x1 - _run()) if a < u < b})
+    us = sorted({a, b} | {u for c in (RUN, END) for u in (x0 + c, x1 - c) if a < u < b})
     for u0, u1 in zip(us, us[1:]):
         h0, h1 = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
         _quad(k, [(u0, -h, h0), (u1, -h, h1), (u1, h, h1), (u0, h, h0)], (0, 0, 1), PANE_EDGE)
