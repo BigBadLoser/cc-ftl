@@ -10,7 +10,8 @@ prism a glass triangle splitting red/green/blue, focus a lens squeezing a red be
 steel shards, rail two rails through copper coils with hot ends, nuke an upright warhead in
 yellow-black hazard stripes, chain a forked violet
 bolt, thermite a flame on a canister). Behaviour upgrades carry one sorting cue in the weapon's colour (laser red, mass
-driver blue, missile green, ion violet, incendiary orange): their outline (STYLE "outline") or a square frame ("frame");
+driver blue, missile green, ion violet, incendiary orange): corner brackets round the tile (STYLE "brackets"),
+a square frame ("frame") or their outline ("outline");
 the general three keep the dark outline. No bpy: plain numpy.
 
 Ids: ui.upg.capacitor .. ui.upg.thermite (the item id without `item.upg_`)."""
@@ -126,7 +127,7 @@ ICONS = {
                  "  kYYkYYkY  ",
                  "  LLLLLLLL  ",
                  " DLLLLLLLLD ",
-                 "DD        DD",
+                 " DD      DD ",
                  "            "],
     "chain":     ["     WVVVV  ",
                  "    WVVVV   ",
@@ -137,7 +138,7 @@ ICONS = {
                  "    WVVV    ",
                  "   WV  WV   ",
                  "  WV    WV  ",
-                 " WV      WV ",
+                 "  V      V  ",
                  "            ",
                  "            "],
     "thermite":  ["     O      ",
@@ -155,12 +156,14 @@ ICONS = {
 }
 
 
-STYLE = "frame"       # how a behaviour upgrade shows its weapon: "outline" (the silhouette's outline in the weapon colour) or
-                      # "frame" (a 1 px square frame round the tile in the weapon colour); the general three keep the dark outline
+STYLE = "brackets"    # how a behaviour upgrade shows its weapon: "brackets" (L-shaped corner marks round the tile, BRACKET px
+                      # arms), "frame" (a 1 px square frame) or "outline" (the silhouette's outline), all in the weapon colour;
+                      # the general three keep the dark outline
+BRACKET = 3
 LIGHTER = {"R": "r", "V": "v", "O": "h", "B": "b", "G": "g"}   # a fill in the outline's own colour is lifted a step so the edge shows
 
 
-def draw(name, style=None):
+def draw(name, style=None, arm=None):
     """One icon as an N x N RGBA array: the grid in the canvas with a 1 px outline round whatever is drawn: dark for the
     general upgrades; for a behaviour upgrade the weapon colour, as the outline itself or as a square frame (`style`)."""
     style = style or STYLE
@@ -177,6 +180,12 @@ def draw(name, style=None):
     k[grow(op) & ~op] = tag if tag and style == "outline" else "K"
     if tag and style == "frame":
         k[0, :] = k[-1, :] = k[:, 0] = k[:, -1] = tag
+    if tag and style == "brackets":
+        a = arm or BRACKET
+        for y in (0, N - 1):
+            k[y, :a] = k[y, N - a:] = tag
+        for x in (0, N - 1):
+            k[:a, x] = k[N - a:, x] = tag
     out = np.zeros((N, N, 4), np.uint8)
     for key in set(k.ravel()) - {""}:
         out[k == key] = (*rgb(COL[key]), 255)
