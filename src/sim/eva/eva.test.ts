@@ -64,7 +64,7 @@ const content: ContentRegistry = {
     'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6 },
     'species.robot': { name: 'R', moveSpeed: 2, workSpeed: 1, restDecay: 0, airless: true },
   },
-  modules: { airlock: airlockDef },
+  modules: { airlock: airlockDef, crate: { name: 'Crate', asset: 'c', footprint: [1, 1], solid: true, power: 0, flammability: 0, maxHp: 100, buildWork: 10 } },
 };
 const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, refining: 4, crafting: 4, research: 4, cooking: 4, patrol: 0 };
 
@@ -123,12 +123,21 @@ function run(sim: Sim, n: number, events: SimEvent[] = []): SimEvent[] {
 const airlockOf = (sim: Sim, shipId: number): number => sim.world.query(AirlockC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId) as number;
 /** Hold the vented patches empty and the rest of the ship at full pressure (a breach plus working life support). */
 const drain = (sim: Sim): void => {
+  const hot = heat.get(sim);
+  if (hot) for (const [x, y, t] of hot) shipGrid(sim, 1)!.set('temp', x as number, y as number, t as number);
   const patch = vacuum.get(sim);
   if (!patch) return;
   const g = shipGrid(sim, 1)!;
   for (let y = 2; y < 12; y++) for (let x = 2; x < 12; x++) g.set('o2', x, y, patch.some(([px, py]) => px === x && py === y) ? 0 : 21);
 };
 const vacuum = new WeakMap<Sim, number[][]>();
+/** Tiles held at a temperature (a room that will not cool: x, y, degrees). */
+const heat = new WeakMap<Sim, number[][]>();
+const heatRoom = (sim: Sim, x0: number, y0: number, x1: number, y1: number, t: number): void => {
+  const list = heat.get(sim) ?? [];
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) list.push([x, y, t]);
+  heat.set(sim, list);
+};
 const vent = (sim: Sim, x0: number, y0: number, x1: number, y1: number): void => {
   const list = vacuum.get(sim) ?? [];
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) list.push([x, y]);
@@ -290,6 +299,21 @@ describe('pathing', () => {
     expect(ev.filter((e) => e.type === 'suit.doffed')).toHaveLength(1);
     expect(sim.world.has(c, SuitC)).toBe(false);
     expect(airlockSuits(sim, lock)).toBe(3);
+  });
+
+  it('a repair in a 60 C room: they suit up first, stay through the heat (no stepping out to cool off), finish unhurt, and put the suit back', () => {
+    const sim = world();
+    const c = crew(sim, 1, 3, 3);
+    const box = spawnModule(sim, 'crate', 5, 10, 0);
+    sim.world.get(box, ModuleC)!.hp = 20;
+    heatRoom(sim, 2, 7, 8, 11, 60);
+    const ev = run(sim, 20 * 90);
+    expect(ev.filter((e) => e.type === 'suit.donned')).toHaveLength(1);
+    expect(sim.world.get(box, ModuleC)!.hp).toBe(100);
+    expect(sim.world.get(c, HealthC)!.hp).toBe(CREW_MAX_HP);
+    run(sim, 20 * 30, ev);
+    expect(ev.filter((e) => e.type === 'suit.doffed')).toHaveLength(1);
+    expect(sim.world.has(c, SuitC)).toBe(false);
   });
 
   it('prefer a job that needs no EVA over a nearer one that does, and skip vented jobs when no suit is free', () => {

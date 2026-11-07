@@ -320,4 +320,8 @@ describe('sector refactor equivalence', () => {
 // Repinned for the rest retune (#278): rest is part of the hashed world and now drains at a tenth of the rate (both hashes change by that alone).
 // Repinned for relationships (#239): idle crew chat, which gives a good talk or a row a mood factor, and mood is part of the hashed world (with the
 // relationship system off, both hashes are as above).
-const EXPECTED = { combat: 'a0cbadda', disaster: '62484cd5' };
+// Repinned `combat` for the distress freighter (#173): a repair job is worked from beside any tile of its module, not only its anchor corner, so the
+// crew reach and mend modules they could not (with repair jobs back on the anchor alone, the run gives a0cbadda again). The disaster run is unchanged.
+// Repinned `combat` for enemy target choice (#173): a ship fired on records who fired (`Combat.threat`, part of the hashed world). With that record
+// switched off the run gives 064a6939 again, so the AI's choices are the same here (the player is both the threat and the first foe).
+const EXPECTED = { combat: 'c50ed4d7', disaster: '62484cd5' };

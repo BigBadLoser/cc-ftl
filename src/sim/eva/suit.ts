@@ -7,7 +7,7 @@ import { SuitC } from './components';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import type { SuitDef } from '../registry';
-import { DEFAULT_SUIT, EVA_THIN_AIR_BELOW } from '../tuning';
+import { DEFAULT_SUIT, EVA_THIN_AIR_BELOW, HOT_ABOVE, SUIT_HEAT_MAX } from '../tuning';
 
 /** The suit in force: content's, else the tuning default. */
 export function suitDef(sim: Sim): SuitDef {
@@ -45,6 +45,20 @@ export function hasSuitAir(sim: Sim, crew: number): boolean {
 /** True if the tile's air is thin: nothing a bare crew member should breathe. */
 export function isThin(grid: Grid, x: number, y: number): boolean {
   return grid.has('o2') && grid.inBounds(x, y) && grid.get('o2', x, y) < EVA_THIN_AIR_BELOW;
+}
+
+/**
+ * True if the tile is hostile to a bare crew member and a suit makes it safe (DESIGN.md "Air as a need": hostile rooms): thin air, or heat past
+ * HOT_ABOVE up to the suit's SUIT_HEAT_MAX. The one test every suit decision reads: who suits up for a job, when a worn suit draws on its tank,
+ * when it may come off, the air drive. Fire is never one: a suit does not make standing in fire safe. Cold is not one either: a suit keeps it out
+ * already (crew/hazard.ts), and the only deep cold with air in it is an airlock's interior just after a cycle (around -90 C), where counting it
+ * would hold a suited crew member in the air drive on the way in.
+ */
+export function suitNeeded(grid: Grid, x: number, y: number): boolean {
+  if (isThin(grid, x, y)) return true;
+  if (!grid.has('temp') || !grid.inBounds(x, y)) return false;
+  const t = grid.get('temp', x, y);
+  return t > HOT_ABOVE && t <= SUIT_HEAT_MAX;
 }
 
 /** Suits stowed in an airlock module. */

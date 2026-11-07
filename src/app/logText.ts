@@ -129,6 +129,7 @@ export function createDescriber(sim: Sim) {
       case 'galaxy.bribed': return { kind: 'galaxy', tone: 'warn', text: `Paid ${e.cost} ₵ to pass`, ...here() };
       case 'truce.breached': return { kind: 'galaxy', tone: 'bad', text: 'Truce broken: everyone here is hostile to you for 30 turns', ...node(e.node) };
       case 'galaxy.eventEntered': return { kind: 'galaxy', tone: 'warn', text: e.kind === 'fight' ? 'Dropped into deep space: fight' : e.kind === 'rescue' ? 'Dropped into deep space to help' : 'Dropped out of the lane to look', ...here() };
+      case 'scene.aid': return { kind: 'story', tone: e.state === 'broken' ? 'bad' : 'good', text: e.state === 'agreed' ? `${shipName(e.ship)} accepts your help: a repair party can go aboard` : e.state === 'done' ? `The repairs on ${shipName(e.ship)} are done: your party comes home` : `${shipName(e.ship)} calls off your help`, ...onShip(e.ship) };
       case 'scene.observed': return e.text ? { kind: 'story', tone: e.tone, text: e.text, ...(e.ship ? onShip(e.ship) : {}) } : null;
       case 'game.lost': return { kind: 'lost', tone: 'bad', text: 'Game over' };
       default: return describeBoarding(sim, e);

@@ -1,7 +1,7 @@
 import { shipIdOf, shipGrid } from '../regions';
 import type { Job } from '../crew/components';
 import type { Sim } from '../sim';
-import { airlockUsable, donSuit, doffSuit, isSuited, isThin } from './suit';
+import { airlockUsable, donSuit, doffSuit, isSuited, suitNeeded } from './suit';
 import { PositionC } from '../crew/components';
 import { drawAir } from './airLedger';
 import { startRefillFloat } from './refillFloat';
@@ -23,7 +23,7 @@ export function performSuitJob(sim: Sim, crew: number, job: Job, speed: number):
   if (!airlockUsable(sim, airlock)) return 'done';
   const pos = sim.world.get(crew, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
-  if (job.kind === 'suitOff' && grid && pos && isThin(grid, pos.x, pos.y)) return 'wait';
+  if (job.kind === 'suitOff' && grid && pos && suitNeeded(grid, pos.x, pos.y)) return 'wait';
   job.progress = Math.min(job.work, job.progress + speed);
   if (job.progress < job.work) return 'working';
   if (job.kind === 'refill') drawAir(sim, crew, { kind: 'airlock', id: airlock });

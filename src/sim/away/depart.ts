@@ -9,7 +9,7 @@ import { planWalk } from '../eva/route';
 import { airLeft, fitsReserve, sourceSupply } from '../eva/airLedger';
 import type { AirHold } from '../eva/components';
 import { airSources, type AirSource } from '../eva/sources';
-import { isSuited, isThin, needsAir, suitDef } from '../eva/suit';
+import { isSuited, suitNeeded, needsAir, suitDef } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -59,7 +59,7 @@ function noDrain(sim: Sim, m: number): boolean {
   if (!needsAir(sim, m)) return true;
   const pos = sim.world.get(m, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
-  return !isSuited(sim, m) && !!pos && !!grid && !isThin(grid, pos.x, pos.y);
+  return !isSuited(sim, m) && !!pos && !!grid && !suitNeeded(grid, pos.x, pos.y);
 }
 
 /** (c): ticks to walk to where the shuttle takes them aboard (Infinity when it cannot be reached). */

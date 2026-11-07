@@ -6,15 +6,15 @@ import { isInvader } from '../fight/relations';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { YardCrewC } from '../yard/types';
+import { guestHere } from '../consent/guests';
 
 /** The bed-owner pass runs once per this many ticks (a second): crew joining, beds built or lost and ship changes settle within it. */
 export const BED_PASS_TICKS = 20;
 
-/** True if this crew member sleeps in a bed: a living crew member with a rest need (no robots), at home on the ship they stand on. */
+/** True if this crew member sleeps in a bed: a living crew member with a rest need (no robots), at home on the ship they stand on (no invader, no guest). */
 function wantsBed(sim: Sim, id: number): boolean {
   const crew = sim.world.get(id, CrewC);
-  if (!crew || sim.world.has(id, DeadC) || sim.world.has(id, AlienC) || sim.world.has(id, YardCrewC)) return false;
+  if (!crew || sim.world.has(id, DeadC) || sim.world.has(id, AlienC) || guestHere(sim, id)) return false;
   return !sim.content.species[crew.species]?.charge && !isInvader(sim, id);
 }
 

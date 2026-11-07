@@ -15,15 +15,30 @@ import { TICK_HZ } from '../time';
 import { AMBUSH_NO_DOCK_SEC, AMBUSH_SPRING_SEC, HONEST_STAY_SEC, VISIT_RETRY_TICKS } from '../tuning';
 import { AboardC, BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import type { Ambush, SceneShip, SceneSpec } from './types';
+import { grant, revoke } from '../consent/guests';
 
 /**
  * A boarding trigger outside combat (DESIGN.md "Pirate ambush"). A scene skiff (a trap or honest, the same request) asks to dock a while after the scene opens; the player's
  * answer is the command `galaxy.visit`. Let in, its party goes by the ordinary boarding path (`startParty`, then `boardingAiSystem` flies the shuttle, docks it
- * and lands the party), only the ship is still neutral (`Boarder.visit`). Once they stand on the player's ship they pass for guests for AMBUSH_SPRING_SEC,
+ * and lands the party), only the ship is still neutral: the dock granted is a consent grant on the player's ship (by 'visit', from the skiff, for its party:
+ * consent/), which lets the party go outside combat and makes them guests aboard, not boarders. Once they stand on the player's ship they stay guests for AMBUSH_SPRING_SEC,
  * then the ship turns on the player through `hostileAct` (reason 'ambush'), which turns its group and its people, party included, and records the group
  * as every provocation does. Refused, a trap drops the act the same way. A player shot on the skiff (or on anything of its group) turns it first, by the
- * same rule. Nothing here is a parallel hostility record.
+ * same rule. Nothing here is a parallel hostility record. The leave goes when the visit ends (sprung, refused, gone home, given up, or the player leaves).
  */
+
+/** Give the skiff's party leave aboard the player's ship (its named crew once it has one; working: no, they stand by). */
+function admit(sim: Sim, id: number, crew: number[]): void {
+  const me = playerShipInfo(sim)?.id;
+  const faction = sim.world.get(id, ShipC)?.faction;
+  if (me !== undefined && faction) grant(sim, me, { by: 'visit', faction, crew: [...crew], from: id });
+}
+
+/** The skiff's leave aboard the player's ship is over. */
+function unadmit(sim: Sim, id: number | undefined): void {
+  const me = playerShipInfo(sim)?.id;
+  if (me !== undefined && id !== undefined) revoke(sim, me, 'visit', { from: id });
+}
 
 const live = (sim: Sim, s: SceneShip): number | null => {
   const id = s.contact.ship;
@@ -41,9 +56,9 @@ function partyAboard(sim: Sim, id: number): boolean {
   });
 }
 
-/** Set the clock of the skiff's request when the scene opens (called by `openScene`). */
+/** Set the clock of the skiff's request once the player deploys (called by `openScene` and `tendScene`); set once. */
 export function startVisitClock(sim: Sim, s: SceneShip): void {
-  if (s.ambush) s.ambush.askAt = sim.tick + Math.round(s.ambush.askAfter * TICK_HZ);
+  if (s.ambush && s.ambush.askAt === undefined) s.ambush.askAt = sim.tick + Math.round(s.ambush.askAfter * TICK_HZ);
 }
 
 /** True while the skiff's visit is a live question or a thing under way: it holds station (it neither jumps away nor is idle). */
@@ -86,6 +101,7 @@ export function settleVisits(sim: Sim, spec: SceneSpec): void {
       a.visit = a.trap ? 'refused' : a.visit === 'delivered' ? 'delivered' : 'refused';
       a.home = true;
     }
+    unadmit(sim, id);
     dismiss(sim, s);
   }
 }
@@ -104,6 +120,7 @@ function settleLost(sim: Sim, s: SceneShip, a: Ambush): void {
   });
   if (id !== undefined && aboard) turnCrew(sim, id, 'neutral', sim.content.galaxy?.factions[s.contact.faction]?.combatFaction ?? 'hostile');
   a.visit = aboard ? 'sprung' : 'refused';
+  unadmit(sim, id);
   delete s.hailed;
   s.dismissed = true;
 }
@@ -178,6 +195,7 @@ function removeGuest(sim: Sim, c: number): void {
 
 /** Let the skiff move on: it is no longer held, and its business here is done now. */
 function dismiss(sim: Sim, s: SceneShip): void {
+  unadmit(sim, s.contact.ship);
   delete s.hailed;
   s.dismissed = true; // a hail answered earlier would otherwise re-hold it (`departScene`)
   s.leaveAt = sim.tick;
@@ -193,6 +211,7 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
     const a = s.ambush;
     const id = live(sim, s);
     if (!a) continue;
+    if (!inProgress(a)) unadmit(sim, s.contact.ship); // however the visit ended, its leave is gone
     if (id === null) {
       if (inProgress(a)) {
         settleLost(sim, s, a);
@@ -223,7 +242,7 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
       sim.events.emit({ type: 'scene.dockAsked', ship: id });
       changed = true;
     } else if (a.visit === 'granted') {
-      if (b?.state === 'idle') startParty(sim, id, b); // also while no airlock is free: try again
+      if (b?.state === 'idle' && startParty(sim, id, b)) admit(sim, id, b.crew); // also while no airlock is free: try again
       if (partyAboard(sim, id)) {
         a.visit = 'aboard';
         delete a.stuckSince;
@@ -259,6 +278,7 @@ export function tendVisit(sim: Sim, spec: SceneSpec): boolean {
 
 function turn(sim: Sim, a: Ambush, id: number): void {
   a.visit = 'sprung';
+  unadmit(sim, id);
   hostileAct(sim, id, 'ambush');
 }
 
@@ -270,6 +290,7 @@ export function answerVisit(sim: Sim, ship: number, grant: boolean): void {
   const a = s.ambush;
   if (!grant) {
     a.visit = 'refused';
+    unadmit(sim, ship);
     if (a.trap) hostileAct(sim, ship, 'ambush'); // the act is dropped
     else dismiss(sim, s); // an honest skiff pulls away, the debt unpaid
     sim.galaxy.rev++;
@@ -278,7 +299,7 @@ export function answerVisit(sim: Sim, ship: number, grant: boolean): void {
   const b = sim.world.get(ship, BoarderC);
   if (!b) return reject('noParty');
   a.visit = 'granted';
-  b.visit = true; // `tendVisit` sends the party (from a system, so its embark orders are in place before the boarding system next looks)
+  admit(sim, ship, []); // `tendVisit` sends the party (from a system, so its embark orders are in place before the boarding system next looks)
   sim.galaxy.rev++;
 }
 

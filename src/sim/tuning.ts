@@ -82,6 +82,11 @@ export const CO2_HARM_ABOVE = 5;
 export const CO2_HARM_PER_SEC = 0.6;
 export const HOT_ABOVE = 55;
 export const COLD_BELOW = -10;
+/**
+ * A sealed suit (with air in its tank) keeps out heat up to this (degrees C): a room past HOT_ABOVE but under it is one to suit up for, not to
+ * flee (eva/suit.ts `suitNeeded`, crew/hazard.ts). Cold it keeps out whatever the reading (space is SPACE_TEMP); fire never.
+ */
+export const SUIT_HEAT_MAX = 90;
 export const TEMP_HARM_PER_SEC = 0.15;
 export const FIRE_CREW_DAMAGE = 8;
 /** Seconds a downed, unrescued crew member lasts. */
@@ -195,6 +200,8 @@ export const FLEE_BELOW = 0.3;
 /** Ticks between ship-state and AI re-evaluations. */
 export const SHIP_STATE_INTERVAL = 10;
 export const AI_RETARGET_TICKS = 40;
+/** Seconds a ship that fired on an AI ship stays its threat (`Combat.threat`): the first in its target choice while it lasts. */
+export const AI_THREAT_SEC = 15;
 /** Fire intensity set by incendiary hits. */
 export const IGNITE_INTENSITY = 90;
 /** Crew with operating priority at or below this level (1 or 2) will man consoles on their own. */

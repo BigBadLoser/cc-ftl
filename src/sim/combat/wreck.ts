@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { WRECK_BELOW } from '../tuning';
 import { CombatC, ShipC, WeaponC, type Ship } from './components';
 import { shipIdOf } from '../regions';
+import { guestOn } from '../consent/guests';
 
 /** Was the player shooting at the ship: a player ship's ship-wide target, or a weapon of one aimed at it? */
 function playerTargets(sim: Sim, shipId: number): boolean {
@@ -18,7 +19,10 @@ function playerTargets(sim: Sim, shipId: number): boolean {
   return false;
 }
 
-/** Make a ship a derelict wreck (terminal): its crew dies, weapons and shields go dead, the grid stays. A ship the player was shooting at is marked as theirs. */
+/**
+ * Make a ship a derelict wreck (terminal): everyone aboard dies except its guests (a consent grant covers them: an aid party lives or dies by the fire
+ * and vacuum it is left in), weapons and shields go dead, the grid stays. A ship the player was shooting at is marked as theirs.
+ */
 export function wreckShip(sim: Sim, shipId: number): void {
   const ship = sim.world.get(shipId, ShipC) as Ship;
   if (ship.faction !== 'player' && playerTargets(sim, shipId)) ship.killedBy = 'player';
@@ -26,7 +30,7 @@ export function wreckShip(sim: Sim, shipId: number): void {
   ship.state = 'wreck';
   ship.integrity = Math.min(ship.integrity, WRECK_BELOW);
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId) killCrew(sim, id);
+    if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && !guestOn(sim, id, shipId)) killCrew(sim, id);
   }
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
