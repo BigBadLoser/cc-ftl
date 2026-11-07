@@ -58,7 +58,7 @@
 <style>
   .card { pointer-events: auto; }
   .head { display: flex; align-items: center; gap: 6px; margin: 0; }
-  .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
+  .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 18px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); white-space: nowrap; }
   .title :global(.icon) { margin-left: auto; color: var(--ink-accent); }
   .grp { display: flex; align-items: center; gap: 6px; margin: 4px 0 1px; font: 600 10px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
