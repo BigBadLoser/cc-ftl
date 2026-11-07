@@ -111,34 +111,14 @@ SPLIT = 0.655                                   # the ramp's blue plate from her
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
-PH = 0.0                                        # the sprites' px columns: their edges at screen x + PH
-
-
-def slate_plate(plate, u0, u1, run_, pt=None, **_):
+def slate_plate(plate, u0, u1, run_, **_):
     """The base ramp's seam panel on the blue plate: hung off the plate's lit top edge, half the tile wide and 6 px
-    deep, a seam across its foot and one down each side (fGTs: between the plate's front tone and the step under it).
-    The sides stand straight up on screen, a screen px wide on whole px columns: drawn straight down the slope they
-    lean a px over their height (the slope comes out toward the camera) and broke up on the pixel grid."""
+    deep, a px seam down each side and across its foot (fGTs: between the plate's front tone and the step under it)."""
     uc, s0 = (u0 + u1) / 2, SPLIT * run_
     w = min(0.25, (u1 - u0) / 2 - 0.06)
-    d0, d1 = s0 + EDGE, s0 + 6 * EDGE
-
-    def sx(u, d):                                       # a point's screen x (px: +x 32 a tile, +y -32: the
-                                                        # build frame is y-mirrored against the mesh)
-        p = pt(u, d, 0.0)
-        return 32 * (p.x - p.y)
-    xu, xd = sx(1.0, 0.0) - sx(0.0, 0.0), sx(0.0, 1.0) - sx(0.0, 0.0)
-
-    def at(x, d):                                       # the u at screen x, d down the run
-        return (x - sx(0.0, 0.0) - xd * d) / xu
-    lo, hi = sorted((round(sx(uc - w, d0)) + PH, round(sx(uc + w, d0)) + PH))     # (on whole px columns)
-    cols = (lo, lo + 1), (hi - 1, hi)
-    for x0, x1 in cols:
-        plate([(at(x0, d0), d0), (at(x1, d0), d0), (at(x1, d1), d1), (at(x0, d1), d1)], PAINT, 2, 0.0, "ochre",
-              fixed="fGTs")
-    b0, b1 = d1 - EDGE, d1
-    plate([(at(lo, b0), b0), (at(hi, b0), b0), (at(hi, b1), b1), (at(lo, b1), b1)], PAINT, 2, 0.0, "ochre",
-          fixed="fGTs")
+    for q in ((uc - w, uc + w, s0 + 5 * EDGE, s0 + 6 * EDGE), (uc - w, uc - w + LINE, s0 + EDGE, s0 + 6 * EDGE),
+              (uc + w - LINE, uc + w, s0 + EDGE, s0 + 6 * EDGE)):
+        plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre", fixed="fGTs")
 
 
 SLATE_RAMPS = (Design("plates", ramp=slate_plate),)
