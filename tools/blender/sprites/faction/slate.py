@@ -112,8 +112,7 @@ def slate(hull):
             inner = "fGT3" if ax == "y" else "fGT4"     # (an end block's side by the middle: a step under its front)
             cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
                                     inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
-            prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m,     # (the middle's sloped top lit as a top:
-                  cols=[None, None, "fGT1", None] if mid else None)    # steeper than 3 px it fell to the front's)
+            prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
             if cap and cap[0]:                          # (the end block past the middle: its side by the middle
                 prism(k, ax, plane, u0, u0 + LINE, [(d, z0), (d + PAINT, z0), (d + PAINT, z1 - PZ), (d, z1 - PZ)],
                       BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
