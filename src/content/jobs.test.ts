@@ -8,6 +8,7 @@ import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';
 import { stationClass, type Port } from '../sim/galaxy/ports';
 import { wreckShip } from '../sim/combat/wreck';
 import { ItemStackC } from '../sim/items/components';
+import { placementGapError } from '../sim/regions';
 import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { repKey } from '../sim/galaxy/standing';
@@ -192,6 +193,21 @@ describe('station jobs', () => {
     expect(sim.galaxy.jobs).toHaveLength(0);
     expect(crateAboard(sim, job.id)).toBe(false);
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
+    // The goods ride in the packet as stolen goods and are on deck once the ship deploys.
+    sim.enqueue({ type: 'galaxy.drop' });
+    until(sim, () => sim.sector.state === 'deploying', 6000);
+    expect(sim.sector.state).toBe('deploying');
+    const p = sim.sector.packet!;
+    const spot = (() => {
+      for (let x = 0; x + p.w <= sim.sector.width; x += 4) {
+        for (let y = 2; y + p.h <= sim.sector.height; y += 4) if (!placementGapError(sim, { x, y, w: p.w, h: p.h })) return { x, y };
+      }
+      throw new Error('no room to deploy');
+    })();
+    sim.enqueue({ type: 'sector.deploy', ...spot });
+    until(sim, () => sim.sector.state === 'active', 50);
+    expect(sim.sector.state).toBe('active');
+    expect(playerStock(sim, 'item.stolen_goods')).toBe(job.count!);
   });
 
   it('a crate in the shuttle is never lost when it cannot be put back on deck: the run waits with it', () => {
