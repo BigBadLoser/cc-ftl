@@ -187,7 +187,8 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                                                                            # the wall's top)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
     lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit)
-    zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
+    zb, d = z0 + 4 * PZ, RAIL_D                         # (the boxes' foot: 2 px over the backing's on screen, their
+                                                        # fronts standing out show 2 px lower)
     for c in range(-1, 2):
         for x0, w, mid in BOXES:
             u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
@@ -206,8 +207,9 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
                       cols=[False, lit, False, False], cap=False)
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
-            T.paint(k, ax, plane, q0, q1, z0 + 7 * PZ, z0 + 8 * PZ, d, BLUE, 2)   # a seam across, edge to edge
-            T.paint(k, ax, plane, q0, q1, zb - PZ, zb, 0.0, BLUE, 2)   # a soft shadow on the backing under it
+            sh = "fGT3" if ax == "y" else "fGT4"        # a soft shadow on the backing under it, a step under it
+            prism(k, ax, plane, q0, q1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, zb), (0.0, zb)], BLUE, 3,
+                  cols=[False, sh, False, False])
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
