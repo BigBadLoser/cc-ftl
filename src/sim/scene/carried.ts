@@ -4,6 +4,8 @@ import { dropPassenger } from '../consent/passage';
 import { CrewC, DeadC, DownedC, PositionC } from '../crew/components';
 import type { Sim } from '../sim';
 import { fireRules, rulesOf } from './rules';
+import { considerJoining } from '../galaxy/joinOffer';
+import { playerShip } from '../trade/player';
 import type { SceneFact } from './types';
 
 /**
@@ -31,6 +33,7 @@ export function tendCarried(sim: Sim): void {
         const facts = personFacts(sim, crew);
         fireRules(sim, carry, rules, { person: { crew, origin: carry.origin, purse: carry.purse } }, (r) => facts.has(r.on));
         if (facts.has('died')) dropPassenger(sim, ship, crew);
+        else if (ship === playerShip(sim)) considerJoining(sim, crew, carry);
       }
     }
   }

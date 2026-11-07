@@ -4,6 +4,7 @@ import { BreakdownC, CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, Posi
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
+import { askingToJoin } from '../sim/galaxy/joinOffer';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
@@ -21,6 +22,7 @@ const EXPIRE_MS = 45000;
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
   'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.airUnreachable': 'urgent', 'away.stranded': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
+  'crew.asksToJoin': 'urgent', // a passenger asks to join: answered on the alert (galaxy/joinOffer.ts)
   'crew.break': 'urgent', // only when the sim says the break is loud and unthrottled (`alert`); every break is in the log
 
   'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
@@ -31,7 +33,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
   'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
   'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log', 'scene.observed': 'log', 'ship.arrived': 'log',
-  'job.posted': 'log', 'job.alighted': 'log',
+  'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log',
 };
 const urgent = (type: SimEvent['type']) => ALERT_URGENCY[type] === 'urgent';
 
@@ -55,7 +57,7 @@ export interface Alerts {
   sync(): void;
 }
 
-interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice'] }
+interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice']; ask?: UiAlert['ask'] }
 
 /** Turns urgent sim events into a short, deduplicated alert queue that clears itself (UI-side only; never feeds the sim). */
 export function createAlerts(sim: Sim): Alerts {
@@ -126,6 +128,7 @@ export function createAlerts(sim: Sim): Alerts {
         if (!def || e.mode !== 'notice' || e.notice <= 0) return null;
         return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title } };
       }
+      case 'crew.asksToJoin': return { kind: e.type, key: `j${e.crew}`, text: `${e.name || crewName(e.crew)} asks to join the crew`, subject: crewSubject(sim, e.crew), resolved: () => !askingToJoin(sim, e.crew), ask: { crew: e.crew } };
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
@@ -271,7 +274,7 @@ export function createAlerts(sim: Sim): Alerts {
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}) }, ...l]);
+        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}), ...(d.ask ? { ask: d.ask } : {}) }, ...l]);
         if (d.resolved) resolvers.set(id, d.resolved);
         else setTimeout(() => remove(id), EXPIRE_MS); // nothing to watch (a story lead): it lapses on a timer
         for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);

@@ -19,6 +19,7 @@ import { offerAid } from '../scene/aid';
 import { setArrivals } from '../scene/debug';
 import { abandonJob, acceptJob, handIn, openCrate } from './jobs';
 import { refusePassage } from './passage';
+import { answerJoin } from './joinOffer';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.ambush' | 'debug.sceneArrivals' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -45,6 +46,7 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'jobs.accept': (sim, cmd) => void acceptJob(sim, cmd.key),
   'jobs.abandon': (sim, cmd) => void abandonJob(sim, cmd.id),
   'jobs.refuse': (sim, cmd) => void refusePassage(sim, cmd.key),
+  'jobs.join': (sim, cmd) => void answerJoin(sim, cmd.crew, cmd.accept),
   'jobs.handIn': (sim, cmd) => void handIn(sim, cmd.id),
   'jobs.openCrate': (sim, cmd) => void openCrate(sim, cmd.id),
   'debug.galaxyReveal': (sim, cmd) => {

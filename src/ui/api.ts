@@ -623,7 +623,7 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -1234,6 +1234,8 @@ export interface UiAlert {
   report?: boolean;
   /** A click opens the Esc menu on this page (the save-failed alert opens Save game). */
   menu?: 'save';
+  /** A passenger asks to join the crew: the alert answers it (`jobs.join`) with its own Accept and Decline buttons. */
+  ask?: { crew: number };
 }
 
 /** One module or crew member in a fight report; a click jumps to `subject` when it has one. */

@@ -100,6 +100,7 @@ export function createDescriber(sim: Sim) {
         const hire = hireOf(e.deal);
         return { kind: 'trade', tone: 'good', text: hire ? `${crewName(hire)} hired: your shuttle is on its way to pick them up` : `Deal made with ${trader(e.ship)}` };
       }
+      case 'crew.joined': return { kind: 'trade', tone: 'good', text: `${e.name || crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.hired': return { kind: 'trade', tone: 'good', text: `${crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === 'player' ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
       // A payment to the player is the credit-gain entry (see eventLog.ts); one the player made is logged here.

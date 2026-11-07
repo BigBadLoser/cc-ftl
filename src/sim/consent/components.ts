@@ -34,8 +34,21 @@ export interface Grant {
    * 'passage': what a person a scene handed on carries aboard (scene/carried.ts): the event whose rules follow them after the pocket is gone, the galaxy
    * faction they are from, the credits they carry, and the rule keys fired about them so far (each fires once, saved with the ship).
    */
-  carry?: { event: string; origin: string; purse: number; fired: string[] };
+  carry?: Carry;
   since: number;
+}
+/** What a person a scene handed on carries (`Grant.carry`; scene/carried.ts), and where their asking to join stands (galaxy/joinOffer.ts). */
+export interface Carry {
+  event: string;
+  origin: string;
+  purse: number;
+  fired: string[];
+  /** The tick their mood rose above the bar and has stayed there since (absent: it is not above it now). */
+  happySince?: number;
+  /** The one roll for asking while aboard is spent; `asked`: they asked to join (once, aboard or at delivery); `asking`: the tick an ask still waits for an answer. */
+  rolled?: true;
+  asked?: true;
+  asking?: number;
 }
 export interface Consent {
   grants: Grant[];

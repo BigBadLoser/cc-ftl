@@ -123,8 +123,9 @@ import { newYard, type YardState } from './yard/types';
  * v99 (the medical pod, #173 step 6): `SceneSpec.pods` (escape pods and their patients); vehicles with an escape def; lodging guests have moods.
  * v100 (carried rules, #173 step 6): `Grant.carry` (a passenger's event, origin, purse and fired rules); `ScenePod.purse`, `handed`.
  * v101 (passage, #173 step 6): `GalaxyState.posted` (passage cards); job kind 'passage' with `StationJob.crew`, `refused`.
+ * v102 (asking to join, #173 step 6): `Grant.carry` mood stretch, roll and ask state (`happySince`, `rolled`, `asked`, `asking`).
  */
-export const SAVE_VERSION = 101;
+export const SAVE_VERSION = 102;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

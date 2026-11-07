@@ -31,7 +31,7 @@
   const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'crew.break', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded', 'away.stranded', 'save.failed']);
   const icon: Record<UiAlertKind, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.airUnreachable': 'o2', 'away.stranded': 'downed', 'crew.downed': 'downed',
-    'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save',
+    'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save', 'crew.asksToJoin': 'person',
   };
 </script>
 
@@ -43,6 +43,15 @@
         <span class="body">{a.text}</span>
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
+    {:else if a.ask && !toast}
+      {@const crew = a.ask.crew}
+      <div class="ask">
+        <button class="go" onclick={() => jump(a)}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+        <div class="yn">
+          <button class="no" data-testid="join-decline" onclick={() => api.dispatch({ type: 'jobs.join', crew, accept: false })}>Decline</button>
+          <button class="yes" data-testid="join-accept" onclick={() => api.dispatch({ type: 'jobs.join', crew, accept: true })}>Accept</button>
+        </div>
+      </div>
     {:else}
       <button class="go" disabled={toast ? false : !a.subject && !a.report && !a.menu} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
@@ -89,6 +98,11 @@
   .go.story .tap { display: block; color: var(--cyan); margin-top: 2px; }
   .alert:has(.story) { border-color: var(--cyan); }
   .alert:has(.story:disabled) { border-color: var(--line); }
+  .ask { flex: 1; min-width: 0; display: grid; }
+  .yn { display: flex; justify-content: flex-end; gap: 4px; padding: 0 6px 6px; }
+  .alert .yn button { min-height: 26px; padding: 0 10px; border: 1px solid var(--line); font-size: 12px; }
+  .alert .yn .yes { border-color: var(--cyan); color: var(--cyan); }
+  .alert:has(.ask) { border-color: var(--cyan); }
   .x { min-width: 32px; padding: 0; color: var(--dim); display: inline-flex; align-items: center; justify-content: center; }
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); }
