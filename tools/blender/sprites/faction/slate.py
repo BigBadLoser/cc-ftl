@@ -252,7 +252,43 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
     return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
 
 
-SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel))
+def slate_door(k, ax, plane, a, b, top, foot, zf):
+    """Wall (T1-6): a double door a tile, 17 px wide, from the stripe's top (cut through it) down to the seam over the
+    lip, in the face's grey; a dark line at each side and between the leaves, each leaf's right edge lit, its top px
+    lit (the next a step under), a small handle by the middle on each leaf (the ref's proportions). The faint line
+    stops at it."""
+    lit, hi = ("fGS2", "fGS1") if ax == "y" else ("fGS3", "fGS2")
+    zt = top + 6 * PZ                                   # (the stripe's top)
+    H = round((zt - foot) / PZ)
+    h1 = zt - round(9 * H / 20) * PZ                    # (the handles: 9 / 20 of the way down, 5 / 20 tall)
+    h0 = h1 - round(5 * H / 20) * PZ
+    gaps, u = [], a
+
+    def strip(u0, u1, z0, z1, col):
+        prism(k, ax, plane, u0, u1, [(0.0, z0), (4 * PAINT, z0), (4 * PAINT, z1), (0.0, z1)], FACE, 4,
+              cols=[False, col, False, False])
+
+    for c in range(-1, 2):
+        d0, d1 = c - 8 * LINE, c + 9 * LINE
+        if not (a - 1e-6 <= d0 and d1 <= b + 1e-6):
+            continue
+        gaps.append((u, d0))
+        u = d1
+        T.paint(k, ax, plane, d0, d1, foot, zt, 2 * PAINT, FACE, 3)                       # the door, over the stripe
+        for q in (d0, c, c + 8 * LINE):                                                     # its lines
+            T.paint(k, ax, plane, q, q + LINE, foot, zt, 3 * PAINT, FACE, 1)
+        for l0, l1 in ((d0 + LINE, c), (c + LINE, c + 8 * LINE)):                           # its leaves
+            strip(l1 - LINE, l1, foot, zt - PZ, lit)                                        # (the right edge lit)
+            strip(l0, l1, zt - PZ, zt, hi)                                                  # (the top px lit, the
+            strip(l0, l1 - LINE, zt - 2 * PZ, zt - PZ, lit)                                 # next a step under)
+        for x0 in (c - 3 * LINE, c + LINE):                                                 # the handles
+            strip(x0, x0 + LINE, h0, h1, hi)
+            T.paint(k, ax, plane, x0 + LINE, x0 + 2 * LINE, h0, h1, 3 * PAINT, FACE, 1)
+    return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
+
+
+SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
+              Design("door", wall=slate_door))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
