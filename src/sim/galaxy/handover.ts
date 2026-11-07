@@ -18,9 +18,12 @@ import type { Deal } from '../trade/types';
 import { CRATE, crateOf, loadCrate, recoverCrate } from './crate';
 import { HANDOVER_RETRY_SEC } from './tuningJobs';
 import type { StationJob } from './types';
+import { boardRecruits, landRecruits } from '../trade/recruitLand';
+import { passengerOff, postedCards } from './passage';
 
 /**
- * The physical handover of a delivery (issue #178). Arriving at the destination with the crate aboard does not pay at once. A shuttle collects it, run as a
+ * The physical handover of a delivery (issue #178), and of a passenger (a passage job, or a refused card: galaxy/passage.ts; the recruit run reversed,
+ * they walk aboard as recruits do, trade/recruitLand.ts `boardRecruits`, and leave with the shuttle). Arriving at the destination with the crate aboard does not pay at once. A shuttle collects it, run as a
  * `Deal` with `Deal.handover` set (no goods, no escrow). Order of preference:
  * 1. The station's own shuttle (`via` 'station'; only a trader kind with `shuttle: true`, trade.ts). The trade courier is spawned at the station, flies to a
  *    working airlock of the player's ship and docks; crew haul the crate from the deck into its hold; when it has the crate (`StationJob.collected` 'shuttle')
@@ -100,6 +103,8 @@ export function startHandover(sim: Sim, job: StationJob): 'started' | 'wait' | '
   const deal: Deal = {
     id: sim.trade.nextId++, ship: p.ship, give: [], get: [], barter: false, balance: 0, held: 0, courier: p.go === 'own' ? 'you' : 'them', phase: 'dispatch', vehicle: p.vehicle,
     airlock: p.airlock, timer: 0, tick: sim.tick, handover: { job: job.id, via: p.go },
+    // A passage hands over a person, as a hiring run fetches one (trade/recruitLand.ts), the other way round: they walk into the shuttle.
+    ...(job.kind === 'passage' && job.crew !== undefined ? { crew: [job.crew] } : {}),
   };
   const v = p.vehicle ? sim.world.get(p.vehicle, VehicleC) : undefined;
   if (v) {
@@ -115,7 +120,9 @@ const due = (d: Deal): boolean => d.timer % REPEAT === 1;
 
 /** Call a run off: tries and the retry pause are noted, a crate already in the hold goes back on deck, an own shuttle flies home. */
 function call(sim: Sim, d: Deal, reason: string): void {
-  const job = sim.galaxy.jobs.find((j) => j.id === d.handover?.job);
+  const job = jobOf(sim, d);
+  // A passenger already aboard steps back out (at the airlock, else anywhere on deck).
+  if (d.crew && d.vehicle && !landRecruits(sim, d, true)) return;
   const own = d.handover?.via === 'own';
   // A crate in the hold goes back on deck first. With no free floor for it, the run is not called off: the crate stays in the shuttle (nothing is lost) and the restore is tried again next tick.
   if (job && d.vehicle && cargoOf(sim, d.vehicle, CRATE) > 0) {
@@ -146,8 +153,20 @@ function haulCrate(sim: Sim, d: Deal, v: Vehicle, job: StationJob): void {
 }
 
 /** One tick of a handover deal (dealFlow.ts `step`, which has counted the tick). */
+/** The job a handover runs for: one of the player's, or a refused passage card (its passenger getting off). */
+const jobOf = (sim: Sim, d: Deal): StationJob | undefined =>
+  sim.galaxy.jobs.find((j) => j.id === d.handover?.job) ?? postedCards(sim).find((j) => j.id === d.handover?.job && j.refused);
+
+/** The job's goods are in the shuttle: the crate in its hold, or the passenger aboard (sent aboard while not). */
+function loaded(sim: Sim, d: Deal, v: Vehicle, job: StationJob): boolean {
+  if (d.crew) return boardRecruits(sim, d, due(d));
+  if (cargoOf(sim, d.vehicle, CRATE) >= 1) return true;
+  haulCrate(sim, d, v, job);
+  return false;
+}
+
 export function stepHandover(sim: Sim, d: Deal): void {
-  const job = sim.galaxy.jobs.find((j) => j.id === d.handover?.job);
+  const job = jobOf(sim, d);
   if (!job) return call(sim, d, 'jobGone');
   if (sim.sector.inCombat) return call(sim, d, 'combat');
   if (!sim.world.get(d.ship, ShipC)) return call(sim, d, 'stationGone');
@@ -169,8 +188,7 @@ export function stepHandover(sim: Sim, d: Deal): void {
     return;
   }
   if (d.timer > LOAD_SEC * TICK_HZ) return call(sim, d, 'loadTimeout');
-  if (cargoOf(sim, d.vehicle, CRATE) >= 1) return collect(sim, job, d, v, 'shuttle');
-  haulCrate(sim, d, v, job);
+  if (loaded(sim, d, v, job)) collect(sim, job, d, v, 'shuttle');
 }
 
 /** The player's own shuttle: dock at the airlock, take the crate on, fly to the station, drop it, fly home. */
@@ -184,8 +202,7 @@ function stepOwn(sim: Sim, d: Deal, v: Vehicle, job: StationJob): void {
     }
   } else if (d.phase === 'load') {
     if (d.timer > LOAD_SEC * TICK_HZ) return call(sim, d, 'loadTimeout');
-    if (cargoOf(sim, d.vehicle, CRATE) >= 1) setPhase(sim, d, 'out');
-    else haulCrate(sim, d, v, job);
+    if (loaded(sim, d, v, job)) setPhase(sim, d, 'out');
   } else if (d.phase === 'out') {
     if (d.timer > FLIGHT_SEC * TICK_HZ) return call(sim, d, 'flightTimeout');
     if (v.state === 'flying' && !v.dest && v.hover === d.ship) setPhase(sim, d, 'exchange');
@@ -202,7 +219,8 @@ function stepOwn(sim: Sim, d: Deal, v: Vehicle, job: StationJob): void {
 
 /** The shuttle has the crate (taken from the airlock, or dropped at the station): it leaves the hold, and the job is marked for payment. The deal is over. */
 function collect(sim: Sim, job: StationJob, d: Deal, v: Vehicle, how: 'shuttle' | 'own'): void {
-  cargoTake(sim, d.vehicle, CRATE, cargoCount(v));
+  if (job.kind === 'passage') for (const c of d.crew ?? []) passengerOff(sim, c, !job.refused);
+  else cargoTake(sim, d.vehicle, CRATE, cargoCount(v));
   v.outbound = false;
   job.collected = how;
   setPhase(sim, d, 'done');

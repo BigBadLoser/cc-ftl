@@ -35,3 +35,14 @@ export function tendCarried(sim: Sim): void {
     }
   }
 }
+
+/** Something happened to a carried person that only its caller sees (`delivered`: handed over at their destination, galaxy/passage.ts): fire the rules on it, once. */
+export function firePersonFact(sim: Sim, crew: number, fact: SceneFact): void {
+  for (const ship of sim.world.query(ShipC)) {
+    const g = sim.world.get(ship, ConsentC)?.grants.find((x) => x.by === 'passage' && x.carry && x.crew?.includes(crew));
+    const carry = g?.carry;
+    if (!carry) continue;
+    const rules = rulesOf(sim, carry.event).filter(([, r]) => r.of === 'person');
+    fireRules(sim, carry, rules, { person: { crew, origin: carry.origin, purse: carry.purse } }, (r) => r.on === fact);
+  }
+}

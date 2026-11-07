@@ -501,7 +501,7 @@ export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
 export interface UiJob {
   key: string;
   id: number | null;
-  kind: 'delivery' | 'bounty' | 'survey';
+  kind: 'delivery' | 'bounty' | 'survey' | 'passage';
   issuer: string;
   title: string;
   detail: string;
@@ -532,6 +532,8 @@ export interface UiJobs {
   active: UiJob[];
   /** Finished bounties and surveys the station here takes in (never kept on screen anywhere else). */
   handIn: UiClaim[];
+  /** Passage cards passengers aboard have posted (galaxy/passage.ts), to accept or refuse wherever the ship is. */
+  asked: UiJob[];
   max: number;
   /** The player's own ship, for comparing with a bounty target. */
   mine: UiStrength | null;

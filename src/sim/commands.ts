@@ -269,6 +269,8 @@ export type Command =
   | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
+  /** Turn a passenger's passage card down (galaxy/passage.ts): they get off at the next port. */
+  | { type: 'jobs.refuse'; key: string }
   /** Collect a finished bounty or survey (a claim) at a station of the issuing type and faction at the player's node. */
   | { type: 'jobs.handIn'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */

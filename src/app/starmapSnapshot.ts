@@ -2,7 +2,7 @@ import {
   DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
   fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
-import { featureName } from './jobsSnapshot';
+import { featureName, passengerName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
@@ -76,10 +76,10 @@ export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'ch
 function jobMarkers(sim: Sim): Map<string, UiNodeJob[]> {
   const out = new Map<string, UiNodeJob[]>();
   for (const j of sim.galaxy.jobs) {
-    const at = j.kind === 'delivery' ? j.to : j.node;
+    const at = j.kind === 'delivery' || j.kind === 'passage' ? j.to : j.node;
     if (!at) continue;
     const label = j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'})`
-      : j.kind === 'survey' ? `Survey: ${featureName(j.feature)}` : `Bounty: ${j.target ?? 'target'}`;
+      : j.kind === 'survey' ? `Survey: ${featureName(j.feature)}` : j.kind === 'passage' ? `Passage: ${passengerName(sim, j.crew)}` : `Bounty: ${j.target ?? 'target'}`;
     out.set(at, [...(out.get(at) ?? []), { kind: j.kind, label }]);
   }
   return out;

@@ -105,7 +105,7 @@ export interface UiSellGood {
 
 /** A held station job that ends at a node: a delivery's destination or a bounty's target. */
 export interface UiNodeJob {
-  kind: 'delivery' | 'bounty' | 'survey';
+  kind: 'delivery' | 'bounty' | 'survey' | 'passage';
   /** "Deliver a sealed crate (12 Ration)", "Bounty: Bone Saint" or "Survey: nebula". */
   label: string;
 }

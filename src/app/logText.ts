@@ -1,6 +1,6 @@
 import { factionsHostile, homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, nodeOf, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { describeBoarding } from './boardingText';
@@ -110,7 +110,16 @@ export function createDescriber(sim: Sim) {
         return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
       }
       case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} ₵)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} ₵)` };
-      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes the crate over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for the crate`, ...onShip(e.station) };
+      case 'job.shuttleSent': {
+        // A passage hands a person over, not a crate.
+        const p = [...sim.galaxy.jobs, ...(sim.galaxy.posted ?? [])].find((j) => j.id === e.id && j.kind === 'passage');
+        const what = p ? crewName(p.crew ?? 0) : 'the crate';
+        return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes ${what} over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for ${what}`, ...onShip(e.station) };
+      }
+      case 'job.posted': return e.to
+        ? { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} asks for passage to ${nodeOf(sim, e.to)?.name ?? 'a port'} (${e.reward} ₵): see Jobs`, ...node(e.to) }
+        : { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} has no port of theirs in reach: they will get off at the next one` };
+      case 'job.alighted': return { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} got off at ${nodeOf(sim, e.node)?.name ?? 'the port'}`, ...node(e.node) };
       // job.handedIn and job.handedOver pay out: the credit-gain entry (eventLog.ts) carries them, named after the job.
       case 'story.started': {
         const def = sim.content.events?.[e.event];

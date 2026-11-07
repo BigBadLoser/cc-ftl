@@ -68,7 +68,7 @@ function fire(sim: Sim, mem: RuleMemory, id: string, rule: SceneRuleDef, s: Subj
   const ctx = {
     event: mem.event, actor: null,
     ...(s && 'ship' in s && s.ship.contact.ship !== undefined ? { ship: s.ship.contact.ship } : {}),
-    ...(s && 'person' in s ? { purse: s.person.purse } : {}),
+    ...(s && 'person' in s ? { purse: s.person.purse, person: { crew: s.person.crew, origin: s.person.origin } } : {}),
   };
   for (const eff of effectsFor(sim, rule, ownerOf(s))) applyEffect(sim, eff, ctx);
   const shipId = !s ? 0 : 'ship' in s ? s.ship.contact.ship ?? 0 : 'derelict' in s ? s.derelict.ship ?? 0 : 0;

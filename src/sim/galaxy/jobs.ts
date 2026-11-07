@@ -12,9 +12,11 @@ import { repKey, tierOf } from './standing';
 import { nodeState } from './state';
 import { planStarRoute } from './route';
 import { ShipC } from '../combat/components';
+import { CrewC } from '../crew/components';
 import { BREACH_NOTORIETY, JOB_FAIL_REPUTATION, JOB_LOG_MAX, JOB_REPUTATION, MAX_JOBS, RIVAL_REPUTATION } from './tuningJobs';
 import type { StationJob } from './types';
 import { addCredits } from '../trade/credits';
+import { PORT_KINDS, passengerAboard, passengerOff, postedCards, strand, takeCard } from './passage';
 
 /**
  * Taking, doing and failing station jobs (tuningJobs.ts, offers in jobOffers.ts). Commands: `jobs.accept` (an offer at the player's node), `jobs.abandon`,
@@ -66,13 +68,15 @@ function remember(sim: Sim, key: string): void {
  */
 export function acceptJob(sim: Sim, key: string): boolean {
   const g = sim.galaxy;
-  if (sim.sector.state !== 'active' || g.event) return reject(sim, 'jobs.accept', 'notHere');
+  // A passenger's card (passage.ts) is taken wherever the ship is; a station's offers only at its node.
+  const card = postedCards(sim).some((j) => j.key === key && !j.refused);
+  if (!card && (sim.sector.state !== 'active' || g.event)) return reject(sim, 'jobs.accept', 'notHere');
   if (g.jobs.length >= MAX_JOBS) return reject(sim, 'jobs.accept', 'tooMany');
-  const offer = offersHere(sim).find((o) => o.key === key);
-  if (!offer) return reject(sim, 'jobs.accept', 'noOffer');
-  const job: StationJob = { ...offer, id: g.nextJob };
+  const offer = card ? undefined : offersHere(sim).find((o) => o.key === key);
+  if (!card && !offer) return reject(sim, 'jobs.accept', 'noOffer');
+  const job: StationJob = offer ? { ...offer, id: g.nextJob } : (takeCard(sim, key) as StationJob);
   if (job.kind === 'delivery' && !loadCrate(sim, job.id)) return reject(sim, 'jobs.accept', 'noRoom');
-  g.nextJob++;
+  if (offer) g.nextJob++;
   // The bounty's target waits at its node (never entered yet, so its contacts become ships when the player first drops in).
   if (job.kind === 'bounty' && job.node && job.shipgen && job.targetFaction) {
     nodeState(sim, job.node).contacts.push({
@@ -84,7 +88,7 @@ export function acceptJob(sim: Sim, key: string): boolean {
   bumpStat(sim, 'jobsTaken');
   // The issuer says where: the destination (or the target's node) goes on the player's map, with the cheapest way there, so the
   // starmap can plot the whole trip (the planner only routes through discovered nodes) instead of showing a lone dot out of sensor range.
-  const where = job.kind === 'delivery' ? job.to : job.node; // a survey's node too
+  const where = job.kind === 'delivery' || job.kind === 'passage' ? job.to : job.node; // a survey's node too
   if (where) {
     for (const n of planStarRoute(g, g.current, where, { known: false })?.path ?? [where]) g.discovered[n] ??= sim.tick;
   }
@@ -115,11 +119,13 @@ function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandone
   // A crate handed over leaves the ship; one not delivered is broken open, its goods kept (a breach of contract).
   if (job.kind === 'delivery') unloadCrate(sim, job, outcome !== 'done');
   if (outcome === 'done') {
+    if (job.kind === 'passage' && job.crew !== undefined) passengerOff(sim, job.crew, true); // handed over (a no-op once the shuttle has them)
     pay(sim, job);
     if (job.kind === 'delivery') sim.events.emit({ type: 'job.handedOver', id: job.id, issuer: job.issuer, reward: job.reward, via });
   } else {
     standing(sim, job.issuer, -JOB_FAIL_REPUTATION);
     if (job.kind === 'delivery') addNotoriety(sim, BREACH_NOTORIETY, job.issuer);
+    if (job.kind === 'passage') strand(sim, job); // still aboard: they get off at the next port
   }
   g.rev++;
   sim.events.emit({ type: 'job.closed', id: job.id, kind: job.kind, outcome, reward: outcome === 'done' ? job.reward : 0 });
@@ -182,11 +188,38 @@ export function tendJobs(sim: Sim, destroyed: readonly number[]): void {
     } else if (job.kind === 'survey') {
       // Entering the node is enough for now; a scanner module requirement comes later (issue #178 follow-up).
       if (job.node === g.current && sim.sector.state !== 'hyperspace' && !g.event) complete(sim, job);
+    } else if (job.kind === 'passage') {
+      if (job.collected) close(sim, job, 'done', job.collected);
+      else if (sim.sector.state !== 'active') continue;
+      else if (job.crew === undefined || !passengerAboard(sim, job.crew)) close(sim, job, 'failed');
+      else if (!g.event && job.to === g.current && startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
     } else if (job.collected) {
       close(sim, job, 'done', job.collected);
     } else if (!g.event && sim.sector.state === 'active' && job.to === g.current && recoverCrate(sim, job.id)) {
       if (startHandover(sim, job) === 'instant') close(sim, job, 'done', 'instant');
     }
+  }
+  tendCards(sim);
+}
+
+/** True when the node has a port the player may put in at (a station, depot or den not hostile to them). */
+const portHere = (sim: Sim): boolean => portsAt(sim, sim.galaxy.current).some((p) => PORT_KINDS.has(p.kind) && tierOf(sim, p.owner) !== 'hostile');
+
+/** Passengers who were refused (or whose passage failed) get off at the first port the ship is at; cards whose passenger is gone are dropped. */
+function tendCards(sim: Sim): void {
+  const g = sim.galaxy;
+  if (sim.sector.state !== 'active' || !g.posted?.length) return;
+  const off = (card: StationJob, alight: boolean): void => {
+    const name = sim.world.get(card.crew ?? 0, CrewC)?.name ?? '';
+    if (alight) passengerOff(sim, card.crew ?? 0, false);
+    g.posted = (g.posted ?? []).filter((j) => j !== card);
+    g.rev++;
+    if (alight) sim.events.emit({ type: 'job.alighted', crew: card.crew ?? 0, name, node: g.current });
+  };
+  for (const card of [...g.posted]) {
+    if (card.collected) off(card, true); // the station's shuttle took them (handover.ts)
+    else if (!passengerAboard(sim, card.crew ?? 0)) off(card, false);
+    else if (card.refused && !g.event && portHere(sim) && startHandover(sim, card) === 'instant') off(card, true);
   }
 }
 

@@ -6,11 +6,16 @@
   import JobCards from './JobCards.svelte';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], asked: [], max: 0, mine: null });
   onMount(() => api.jobs.subscribe((v) => (jobs = v)));
 </script>
 
 <FloatingWindow id="jobs" title="Jobs" icon="list" min={{ w: 340, h: 160 }} defaultRect={(b) => centerTop(b, 560)} {onClose} testId="jobs-panel" closeTestId="jobs-close" padded>
+
+  {#if jobs.asked.length}
+    <h3>Asked by passengers</h3>
+    <JobCards {api} {jobs} list="asked" />
+  {/if}
 
   <h3>Your jobs <span>{jobs.active.length}/{jobs.max}</span></h3>
   {#if !jobs.active.length}<p class="none">None taken. Stations, depots and dens post work.</p>{/if}
@@ -28,7 +33,7 @@
     <p class="none">No work posted here.</p>
   {/if}
   <JobCards {api} {jobs} list="offers" />
-  <p class="note">Trade stations post deliveries, military stations and depots bounties, research stations surveys. A delivery comes aboard as a sealed crate, set on deck apart from your hold; at the destination the station sends a shuttle, your crew carry the crate to the airlock and you are paid when it is taken. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). A bounty or survey you finish is paid when you hand it in at a station of the same type and faction that posted it.</p>
+  <p class="note">Trade stations post deliveries, military stations and depots bounties, research stations surveys. A delivery comes aboard as a sealed crate, set on deck apart from your hold; at the destination the station sends a shuttle, your crew carry the crate to the airlock and you are paid when it is taken. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). A bounty or survey you finish is paid when you hand it in at a station of the same type and faction that posted it. A passenger you took in asks for passage home: accepted, they are paid for when handed over at their port; refused, they get off at the next port.</p>
 </FloatingWindow>
 
 <style>

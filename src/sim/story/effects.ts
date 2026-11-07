@@ -12,6 +12,7 @@ import { TICK_HZ } from '../time';
 import { grantXp } from '../crew/xp';
 import { addCredits } from '../trade/credits';
 import { repName } from '../galaxy/standing';
+import { postPassage } from '../galaxy/passage';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
@@ -26,6 +27,8 @@ export interface EffectCtx {
   ship?: number;
   /** The credits the effect's subject carries (an observer rule about a person), for `credits` with no amount. */
   purse?: number;
+  /** The person an observer rule is about (a passenger, scene/carried.ts) and the galaxy faction they are from, for `passage`. */
+  person?: { crew: number; origin: string };
 }
 
 /** The floor tile just inside the airlock the ship's boarding shuttle is docked at (on the ship it is docked to), or null. */
@@ -179,6 +182,10 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
       if (!n) return null;
       addCredits(sim, n);
       return null; // the ship's log already shows every credit gain ("Credits received")
+    }
+    case 'passage': {
+      if (ctx.person) postPassage(sim, ctx.person.crew, ctx.person.origin);
+      return null;
     }
     case 'gift': return gift(sim, ctx.ship, eff.lines ?? 1);
     case 'physical': {

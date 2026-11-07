@@ -343,6 +343,10 @@ export type SimEvent =
   | { type: 'goal.done'; goal: string; title: string }
   | { type: 'goal.actDone'; act: string; title: string }
   | { type: 'job.closed'; id: number; kind: StationJobKind; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
+  /** A passenger asks for passage (galaxy/passage.ts): `to` the node they want to go to ('' for nowhere in reach: they get off at the next port). */
+  | { type: 'job.posted'; id: number; crew: number; name: string; to: string; reward: number }
+  /** A passenger with no passage (refused, or it failed) got off at the port of `node`. */
+  | { type: 'job.alighted'; crew: number; name: string; node: string }
   | { type: 'galaxy.discovered'; count: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };
