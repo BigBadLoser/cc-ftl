@@ -3488,5 +3488,13 @@
  "upWhite": {
   "hex": "#ffffff",
   "set": "upgrades"
+ },
+ "upLensD": {
+  "hex": "#24508f",
+  "set": "upgrades"
+ },
+ "upLensL": {
+  "hex": "#c4ecff",
+  "set": "upgrades"
  }
 }

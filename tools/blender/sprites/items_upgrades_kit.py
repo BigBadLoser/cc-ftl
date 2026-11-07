@@ -119,19 +119,20 @@ def arch(m, c, rz, u0, u1, ro, ri, z, outer, inner, end, n=10):
 
 
 def dome(m, c, z, r, h, col, n=5, sides=14):
-    """A low glass dome (a lens) of radius r and height h on z, as stacked frustums."""
+    """A low glass dome (a lens) of radius r and height h on z, as stacked frustums; col one colour or one per tier
+    (foot first)."""
     for i in range(n):
         t0, t1 = i / n, (i + 1) / n
         r0, r1 = r * math.cos(t0 * math.pi / 2), r * math.cos(t1 * math.pi / 2)
         m.cyl((c[0], c[1], z + h * math.sin(t0 * math.pi / 2)), r0, h * (math.sin(t1 * math.pi / 2) - math.sin(t0 * math.pi / 2)),
-              col, sides=sides, rtop=max(r1, 0.0005))
+              col if isinstance(col, str) else col[i], sides=sides, rtop=max(r1, 0.0005))
 
 
-def glint(m, c, z, r, h, col, at=(-0.35, 0.55), size=0.32):
-    """A specular highlight on a dome: a small disc laid on its surface, up and towards the camera's left."""
-    th = CAMERA + at[0] * math.pi
-    rr = r * at[1]
-    zz = z + h * math.sqrt(max(0.0, 1 - (rr / r) ** 2)) + 0.001
-    cx, cy = c[0] + rr * math.cos(th), c[1] + rr * math.sin(th)
-    s = r * size
-    m.poly([core.G(cx + s * math.cos(a), cy + s * 0.7 * math.sin(a), zz) for a in (i * math.tau / 8 for i in range(8))], col, flip=True)
+def glint(m, c, z, r, h, col, spots=((-0.35, 0.55, 0.3), (-0.12, 0.25, 0.14))):
+    """Specular highlights on a dome: small discs laid on its surface, each (half-turns round from the camera's line,
+    distance out, size) as fractions of its radius; the default pair sits up and to the camera's left."""
+    for at, out, size in spots:
+        th, rr, s = CAMERA + at * math.pi, r * out, r * size
+        zz = z + h * math.sqrt(max(0.0, 1 - out ** 2)) + 0.001
+        cx, cy = c[0] + rr * math.cos(th), c[1] + rr * math.sin(th)
+        m.poly([core.G(cx + s * math.cos(a), cy + s * 0.7 * math.sin(a), zz) for a in (i * math.tau / 8 for i in range(8))], col, flip=True)

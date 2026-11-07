@@ -112,7 +112,7 @@ def focus(m, c, z, rz, k):
              lambda i: "upGun" if i % 2 else "upSteelD", "upSteelD", "upGun")
     m.cyl((c[0], c[1], z + 0.082 * k), 0.07 * k, 0.026 * k, "upSteelD", sides=16, top="upGun")       # front bezel
     m.cyl((c[0], c[1], z + 0.108 * k), 0.058 * k, 0.003 * k, "upBlack", sides=16)                    # lens seat
-    dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upLens", sides=16)                               # the lens
+    dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, ("upLensL", "upLens", "upLensD", "upLensD", "upLensD"), sides=16)    # the lens
     glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite")
 
 
@@ -153,19 +153,15 @@ def rail(m, c, z, rz, k):
 
 def nuke(m, c, z, rz, k):
     """A warhead section on crude chocks: a smooth olive nose cone, a broad yellow hazard band with the trefoil painted on, a
-    short body, the weapon band, and a striped mating flange with connector pins at the back."""
+    short body, the weapon band, and a plain mating flange and tail stub at the back."""
     R, zc = 0.06 * k, z + 0.03 * k + 0.06 * k
     for u in (-0.07, 0.06):
         x, y = rot(c, rz, u * k, 0)
         m.box((x, y, z), (0.04 * k, 0.12 * k, 0.034 * k), "upBlack", top="upGun", rz=rz, base=True)    # crude chocks
-    for i in range(4):                                                                                # mating flange,
-        u = -0.13 * k + i * 0.006 * k                                                                 # striped
-        _axis(m, c, rz, u, u + 0.006 * k, zc, R + 0.01 * k, "upYel" if i % 2 else "upBlack", cap="upGun")
-    for dv, dw in ((-0.025, 0.0), (0.02, 0.018), (0.02, -0.018)):                                     # connector pins
-        a, b = rot(c, rz, -0.13 * k, dv * k), rot(c, rz, -0.152 * k, dv * k)
-        tube(m, (a[0], a[1], zc + dw * k), (b[0], b[1], zc + dw * k), 0.006 * k, "upCu", sides=6)
-    _axis(m, c, rz, -0.106 * k, -0.094 * k, zc, R + 0.003 * k, TAG["missile"])                       # weapon tag band
-    _axis(m, c, rz, -0.106 * k, -0.045 * k, zc, R, "upOlive", cap="upGun")
+    _axis(m, c, rz, -0.145 * k, -0.128 * k, zc, R * 0.6, "upGun", cap="upBlack")                    # tail stub
+    _axis(m, c, rz, -0.128 * k, -0.106 * k, zc, R + 0.008 * k, "upSteelD", cap="upGun")              # mating flange
+    _axis(m, c, rz, -0.106 * k, -0.084 * k, zc, R + 0.003 * k, TAG["missile"])                       # weapon tag band
+    _axis(m, c, rz, -0.084 * k, -0.045 * k, zc, R, "upOlive")
     _axis(m, c, rz, -0.045 * k, 0.06 * k, zc, R + 0.002 * k, "upYel")                                # hazard band
     trefoil(m, c, rz, 0.0075 * k, zc, R + 0.002 * k, 0.047 * k, phi=0.55)
     ogive(m, c, rz, 0.06 * k, 0.2 * k, zc, R + 0.002 * k, "upOlive", "upSteel")
