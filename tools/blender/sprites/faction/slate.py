@@ -203,14 +203,14 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
 
 
 def slate_panel(k, ax, plane, a, b, top, foot):
-    """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 7 px tall, its foot 5 px over the seam over the lip
+    """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 15 px tall, its foot 5 px over the seam over the lip
     (the lip's recess left out: Design recess=False), its corners rounded as the ramp's blue panel's (each corner
     pixel left out); a lit bar along its inside top, a px under its top line; a lit tick 7 px each side of the
     middle from a px under its foot up 4 px."""
     lit = "fGS1" if ax == "y" else "fGS2"
     W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
-    zt = zb + 7 * PZ
+    zt = zb + 15 * PZ
     for c in range(-1, 2):
         if not (a - 1e-6 <= c - W and c + W <= b + 1e-6):
             continue
