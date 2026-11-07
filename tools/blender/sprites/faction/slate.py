@@ -95,12 +95,12 @@ def slate(hull):
                           cols=[False, None, "fGS4" if ax == "y" else "fGS5", False])    # front's line, darker)
                     T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top), 0.0, FACE, 1)
             wall = T.fill("wall")                                       # a top design's dressing on the face
-            if full and wall:                                           # (between the header and the seam over
-                wall(k, ax, plane, a, b, zst - 6 * PZ, zg + PZ)         # the lip)
-            elif full:                                                  # a faint line, 11 px under the stripe,
-                fl = "fGS2" if ax == "y" else "fGS3"                    # a step over the face's grey
-                prism(k, ax, plane, a, b, [(0.0, zst - 18 * PZ), (PAINT, zst - 18 * PZ), (PAINT, zst - 17 * PZ),
-                                           (0.0, zst - 17 * PZ)], FACE, 4, cols=[False, fl, False, False])
+            gaps = [(a, b)]                                             # (between the header and the seam over
+            if full and wall:                                           # the lip; it gives back the spans it
+                gaps = wall(k, ax, plane, a, b, zst - 6 * PZ, zg + PZ, zst - 18 * PZ)   # leaves the faint line)
+            if full:                                                    # a faint line, 11 px under the stripe,
+                for g0, g1 in gaps:                                     # a step over the face's grey
+                    _faint(k, ax, plane, g0, g1, zst - 18 * PZ)
         if not full:
             return
         hdr = T.fill("header")                          # a top design's header (in place of the rail and stripe)
@@ -172,11 +172,10 @@ MID_SLOPE = 4 * PZ                                      # the middle box's top: 
 
 
 def _steps(u0, u1, top):
-    """A box's front in columns rounding its corners 2 px (each corner's px and the two beside it left out): (from, to,
-    px up from its foot, px down from its top); top False: its top corners square."""
+    """A box's front in columns rounding its corners (each corner's px left out): (from, to, px up from its foot, px
+    down from its top); top False: its top corners square."""
     t = (lambda n: n) if top else (lambda n: 0)
-    return [(u0, u0 + LINE, 2, t(2)), (u0 + LINE, u0 + 2 * LINE, 1, t(1)), (u0 + 2 * LINE, u1 - 2 * LINE, 0, 0),
-            (u1 - 2 * LINE, u1 - LINE, 1, t(1)), (u1 - LINE, u1, 2, t(2))]
+    return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
@@ -207,7 +206,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
                       cols=[False, lit, False, False], cap=False)
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
-            T.paint(k, ax, plane, q0 + 2 * LINE, q1 - 2 * LINE, z0 + 5 * PZ, z0 + 6 * PZ, d, BLUE, 1)   # a seam across
+            T.paint(k, ax, plane, q0, q1, z0 + 5 * PZ, z0 + 6 * PZ, d, BLUE, 1)   # a seam across, edge to edge
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
@@ -215,7 +214,14 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
 
 
-def slate_panel(k, ax, plane, a, b, top, foot):
+def _faint(k, ax, plane, a, b, z):
+    """The face's faint line, a px tall from z, a step over the face's grey."""
+    fl = "fGS2" if ax == "y" else "fGS3"
+    prism(k, ax, plane, a, b, [(0.0, z), (PAINT, z), (PAINT, z + PZ), (0.0, z + PZ)], FACE, 4,
+          cols=[False, fl, False, False])
+
+
+def slate_panel(k, ax, plane, a, b, top, foot, zf):
     """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 15 px tall, its foot 5 px over the seam over the lip,
     its corners rounded as the ramp's blue panel's (each corner pixel left out); a lit bar 3 px tall along its inside
     top, 2 px under its top line; a lit tick 7 px each side of the middle from a px under its foot up 4 px."""
@@ -223,9 +229,13 @@ def slate_panel(k, ax, plane, a, b, top, foot):
     W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
     zt = zb + 15 * PZ
+    gaps, u = [], a                                     # (the face's faint line runs on behind it)
     for c in range(-1, 2):
         if not (a - 1e-6 <= c - W and c + W <= b + 1e-6):
             continue
+        if zb <= zf and zf + PZ <= zt:
+            gaps.append((u, c - W))
+            u = c + W
         for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
                                (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
             T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
@@ -234,6 +244,7 @@ def slate_panel(k, ax, plane, a, b, top, foot):
                                     (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ, lit)):
             prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
                   cols=[False, col, False, False])
+    return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
 
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel))
