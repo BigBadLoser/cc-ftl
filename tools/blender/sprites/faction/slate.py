@@ -142,7 +142,25 @@ def slate_plate(plate, u0, u1, run_, **_):
         plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre", fixed="fGT2")
 
 
-SLATE_RAMPS = (Design("plates", ramp=slate_plate),)
+def slate_grey_panel(plate, u0, u1, run_, **kw):
+    """B1-2: the blue plate's panel, and over it on the grey a seam down each side of the panel (in line with
+    its sides) from under the shelf's lit edge to the blue's seam, two short vents between them."""
+    slate_plate(plate, u0, u1, run_, **kw)
+    uc = (u0 + u1) / 2
+    w = min(0.25, (u1 - u0) / 2 - 0.06)
+    fu0, fu1 = (round((uc + s * w) * 32) / 32 for s in (-1, 1))
+    g0, g1 = SHELF + EDGE, SPLIT * run_
+    for q0, q1 in ((fu0, fu0 + LINE), (fu1 - LINE, fu1)):
+        plate([(q0, g0), (q1, g0), (q1, g1), (q0, g1)], PAINT, 0, 0.0)
+    vc = round(uc * 32) / 32
+    gm = (g0 + g1) / 2
+    for dv in (gm - 1.5 * EDGE, gm + 1.5 * EDGE):           # (6 px long, 2 px apart)
+        plate([(vc - 3 * LINE, dv - EDGE / 2), (vc + 3 * LINE, dv - EDGE / 2), (vc + 3 * LINE, dv + EDGE / 2),
+               (vc - 3 * LINE, dv + EDGE / 2)], PAINT, 0, 0.0)
+
+
+SLATE_TOPS = (Design("plain"),)
+SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
 class Slate(Faction):
@@ -152,6 +170,6 @@ class Slate(Faction):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell, joint=1,
                       shelf=SHELF, shelf_back=(0, 1),   # (the shelf's back: a dark crease under the lip, a dim px)
                       ramp_bands=((SPLIT, BLUE, (4, "fGT0"), EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
-                      toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
+                      toe_lvl={"wall": "fGT1", "blue": "fGT1"}, tops=SLATE_TOPS, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),
                                 SlateTones()))
