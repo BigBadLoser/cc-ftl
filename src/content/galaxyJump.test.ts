@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, jumpFuel, newGame, playerShip, routeEdges, serialize, type Sim,
+  CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, fuelStock, galaxyIndex, hopTicksOf, jumpFuel, newGame, playerShip, playerShipPackedOk, routeEdges, serialize, type Sim,
 } from '../sim';
 import { ensureAround } from '../sim/galaxy/state';
 import { giveItems, takeItems } from '../sim/story/effects';
@@ -43,7 +43,7 @@ const charge = (sim: Sim) => {
   const c = sim.world.get(playerShip(sim), CombatC);
   if (c) c.ftl = FTL_CHARGE_SEC;
 };
-const jump = (sim: Sim, route: string[], extra: { withDocked?: number[] } = {}) => sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route, ...extra });
+const jump = (sim: Sim, route: string[], extra: { withDocked?: number[] } = {}) => sim.enqueue({ type: 'galaxy.jump', ship: playerShipPackedOk(sim), route, ...extra });
 /** Run until the current hop ends. */
 function untilStops(sim: Sim, max = 90000): void {
   for (let i = 0; i < max && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) {

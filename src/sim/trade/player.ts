@@ -4,12 +4,19 @@ import { storageCount } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
 import { AirlockC } from '../modules/airlock';
+import { guardPacked } from '../packedGuard';
 import type { Sim } from '../sim';
 import { dockError } from '../vehicles/handlers';
 import { shipIdAt, shipIdOf } from '../regions';
 
 /** The player's ship (ShipC entity): the lowest-id live ship of the player faction, or 0. */
 export function playerShip(sim: Sim): number {
+  guardPacked(sim, 'playerShip');
+  return playerShipPackedOk(sim);
+}
+
+/** `playerShip` for a caller that wants 0 while the ship is packed. */
+export function playerShipPackedOk(sim: Sim): number {
   for (const id of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
     const s = sim.world.get(id, ShipC);
     if (s?.faction === 'player' && (s.state === 'active' || s.state === 'disabled')) return id;
