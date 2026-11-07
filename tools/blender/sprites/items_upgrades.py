@@ -8,12 +8,12 @@ General upgrades (fit any weapon; no weapon tag):
 Behaviour upgrades (one weapon type each; a coloured band marks the weapon: laser red, mass driver blue, missile green,
 ion violet, incendiary orange):
   upg_prism      Prism splitter    a tapered crystal (camera facets red/green/blue) in three claws      (laser)
-  upg_focus      Heavy focus       an upright optic: knurled grip, wide bezel, one big blue glass lens    (laser)
-  upg_frag       Frag slug         a stubby cartridge, its head split into fragments over a brass casing  (mass driver)
+  upg_focus      Heavy focus       an upright optic: grooved grip, wide bezel, one big blue glass lens    (laser)
+  upg_frag       Frag slug         a brass-cased slug, its steel head bursting into four splayed shards   (mass driver)
   upg_rail       Rail coil         two long rails wound with copper, a heat glow at one end                  (mass driver)
   upg_nuke       Nuclear warhead   an olive ogive warhead on chocks: hazard band, painted trefoil, pins (missile)
-  upg_chain      Chain coil        an upright tesla emitter: copper coil, three forked prongs, violet tips  (ion)
-  upg_thermite   Thermite          a squat olive canister: orange-red band, igniter, carry handle         (incendiary)
+  upg_chain      Chain coil        a tesla coil: copper winding, steel crown ring, violet lightning arcs  (ion)
+  upg_thermite   Thermite          a steel crucible, its open top a molten glowing pool throwing sparks   (incendiary)
 
 Each item also has a UI icon, item.upg_<id>.icon: ONE unit (not a stack), turned to a three-quarter view chosen per item
 (ICON_VIEW) and scaled to fill about ICON_PX of a 40 px box, outlined like every sprite; the UI shows it 1:1 (the module
@@ -26,7 +26,7 @@ from mathutils import Matrix, Vector
 
 from . import core
 from .items_kit import FLOOR, cone, jobs as item_jobs, pile, place, rot, tube
-from .items_upgrades_kit import arch, crystal, dome, glint, ogive, ring, segments, trefoil
+from .items_upgrades_kit import arch, bolt, crystal, dome, glint, ogive, ring, segments, torus, trefoil
 
 PALETTE = "only:upgrades"          # the family's palette selection
 TAG = {"laser": "upRed", "mass": "upBlu", "missile": "upGrn", "ion": "upVio", "fire": "upOr"}
@@ -103,35 +103,36 @@ def prism(m, c, z, rz, k):
 
 
 def focus(m, c, z, rz, k):
-    """A heavy optic standing on its mount: the weapon band, a knurled grip ring, a wide front bezel holding one big
-    blue glass lens with a highlight."""
-    m.cyl((c[0], c[1], z), 0.058 * k, 0.03 * k, "upGun", sides=14, top="upSteelD")                   # mount
-    m.cyl((c[0], c[1], z + 0.007 * k), 0.061 * k, 0.015 * k, TAG["laser"], sides=14)                 # weapon tag band
-    m.cyl((c[0], c[1], z + 0.03 * k), 0.05 * k, 0.03 * k, "upSteel", sides=14, top="upSteelD")       # barrel
-    segments(m, c, z + 0.06 * k, z + 0.082 * k, 0.057 * k, 0.057 * k, 14, 0.0, rz,                  # knurled grip
-             lambda i: "upGun" if i % 2 else "upSteelD", "upSteelD", "upGun")
-    m.cyl((c[0], c[1], z + 0.082 * k), 0.07 * k, 0.026 * k, "upSteelD", sides=16, top="upGun")       # front bezel
-    m.cyl((c[0], c[1], z + 0.108 * k), 0.058 * k, 0.003 * k, "upBlack", sides=16)                    # lens seat
-    dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, ("upLensL", "upLens", "upLensD", "upLensD", "upLensD"), sides=16)    # the lens
-    glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite")
+    """An upright optic: a mount with the weapon band, a barrel, a grooved grip, a wide bezel and one big glass lens."""
+    n = 20
+    m.cyl((c[0], c[1], z), 0.058 * k, 0.03 * k, "upGun", sides=n, top="upSteelD")
+    m.cyl((c[0], c[1], z + 0.007 * k), 0.061 * k, 0.015 * k, TAG["laser"], sides=n)                 # weapon tag band
+    m.cyl((c[0], c[1], z + 0.03 * k), 0.05 * k, 0.03 * k, "upSteel", sides=n, top="upSteelD")        # barrel
+    m.cyl((c[0], c[1], z + 0.06 * k), 0.057 * k, 0.022 * k, "upSteelD", sides=n)                     # grip
+    m.cyl((c[0], c[1], z + 0.069 * k), 0.0585 * k, 0.004 * k, "upGun", sides=n)                      # its groove
+    m.cyl((c[0], c[1], z + 0.082 * k), 0.07 * k, 0.026 * k, "upSteelD", sides=n, top="upGun")        # bezel
+    m.cyl((c[0], c[1], z + 0.108 * k), 0.058 * k, 0.003 * k, "upBlack", sides=n)
+    dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, ("upLensL", "upLens", "upLensD", "upLensD", "upLensD"), sides=n)
+    glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite", halo="upLensL")
 
 
 # ---- mass driver ---------------------------------------------------------------------------------------------------------
 
 def frag(m, c, z, rz, k):
-    """A stubby cartridge: brass casing on a rim, the weapon band, and a blunt head split into chunky fragments in a brick
-    pattern, the dark core showing through the splits."""
+    """A slug bursting: brass casing on a rim, the weapon band, and its blunt steel head split into four shards that splay
+    outward from a glowing core, the upper shards flung further."""
     r = 0.052 * k
-    m.cyl((c[0], c[1], z), r + 0.007 * k, 0.012 * k, "upCuD", sides=12, top="upCu")                 # rim
-    m.cyl((c[0], c[1], z + 0.012 * k), r, 0.05 * k, "upCu", sides=12, top="upCuD")                  # casing
-    m.cyl((c[0], c[1], z + 0.042 * k), r + 0.003 * k, 0.016 * k, TAG["mass"], sides=12)              # weapon tag band
+    m.cyl((c[0], c[1], z), r + 0.007 * k, 0.012 * k, "upCuD", sides=14, top="upCu")                 # rim
+    m.cyl((c[0], c[1], z + 0.012 * k), r, 0.05 * k, "upCu", sides=14, top="upCuD")                  # casing
+    m.cyl((c[0], c[1], z + 0.04 * k), r + 0.003 * k, 0.018 * k, TAG["mass"], sides=14)              # weapon tag band
     zh = z + 0.062 * k
-    m.cyl((c[0], c[1], zh), r * 0.8, 0.07 * k, "upBlack", sides=10, rtop=r * 0.25)                  # the core
-    tiers = ((0.0, 0.026, 1.0, 0.95), (0.026, 0.05, 0.95, 0.74), (0.05, 0.068, 0.74, 0.4))
-    for j, (a, b, f0, f1) in enumerate(tiers):
-        segments(m, c, zh + a * k, zh + b * k, r * f0, r * f1, 6, 0.22, rz + (j % 2) * math.pi / 6,
-                 lambda i, j=j: "upSteel" if (i + j) % 2 else "upHeavy", "upBolt", "upGun")
-    m.cyl((c[0], c[1], zh + 0.068 * k), r * 0.36, 0.012 * k, "upSteelD", sides=10, rtop=r * 0.14, top="upBolt")
+    m.cyl((c[0], c[1], zh - 0.004 * k), r * 0.66, 0.064 * k, "upHot", sides=10, rtop=r * 0.22)     # the core
+    for i in range(4):
+        mid = rz + math.pi / 4 + i * math.tau / 4
+        for j, (a, b, f0, f1, push) in enumerate(((0.0, 0.03, 1.0, 0.98, 0.012), (0.03, 0.062, 0.98, 0.5, 0.03))):
+            cc = (c[0] + push * k * math.cos(mid), c[1] + push * k * math.sin(mid))
+            segments(m, cc, zh + a * k + j * 0.006 * k, zh + b * k + j * 0.012 * k, r * f0, r * f1, 4, 0.5, rz,
+                     lambda q: "upSteel", "upSteel", "upSteelD", pick=(i,))
 
 
 def rail(m, c, z, rz, k):
@@ -170,33 +171,38 @@ def nuke(m, c, z, rz, k):
 # ---- ion cannon ----------------------------------------------------------------------------------------------------------
 
 def chain(m, c, z, rz, k):
-    m.cyl((c[0], c[1], z), 0.07 * k, 0.035 * k, "upGun", sides=10, top="upSteelD")
-    m.cyl((c[0], c[1], z + 0.006 * k), 0.075 * k, 0.016 * k, TAG["ion"], sides=10)                  # weapon tag band
-    m.cyl((c[0], c[1], z + 0.035 * k), 0.022 * k, 0.1 * k, "upSteel", sides=8, top="upBolt")
-    for i in range(3):
-        m.cyl((c[0], c[1], z + 0.045 * k + i * 0.03 * k), 0.036 * k, 0.018 * k, "upCu", sides=10, top="upCu")
-    for i in range(3):                                                                             # forked prongs
-        a = rz + i * math.tau / 3
-        tx, ty = c[0] + 0.08 * k * math.cos(a), c[1] + 0.08 * k * math.sin(a)
-        tube(m, (c[0], c[1], z + 0.125 * k), (tx, ty, z + 0.2 * k), 0.016 * k, "upSteel", sides=6)
-        m.cyl((tx, ty, z + 0.19 * k), 0.024 * k, 0.034 * k, "upVio", sides=6, top="upVioG")                      # the arc tips
+    """A tesla coil: a base with the weapon band, a copper winding, a steel crown ring and a cap, violet lightning arcing
+    off both sides."""
+    m.cyl((c[0], c[1], z), 0.066 * k, 0.028 * k, "upGun", sides=16, top="upSteelD")
+    m.cyl((c[0], c[1], z + 0.006 * k), 0.07 * k, 0.014 * k, TAG["ion"], sides=16)                   # weapon tag band
+    m.cyl((c[0], c[1], z + 0.028 * k), 0.03 * k, 0.1 * k, "upCu", sides=14, top="upCuD")            # the winding
+    for i in range(4):
+        m.cyl((c[0], c[1], z + 0.04 * k + i * 0.022 * k), 0.0315 * k, 0.004 * k, "upCuD", sides=14)
+    torus(m, c, z + 0.142 * k, 0.05 * k, 0.018 * k, "upSteel")                                       # the crown
+    m.cyl((c[0], c[1], z + 0.128 * k), 0.026 * k, 0.026 * k, "upSteelD", sides=14, top="upGun")
+    m.cyl((c[0], c[1], z + 0.158 * k), 0.012 * k, 0.012 * k, "upVio", sides=8, top="upVioG")        # spark cap
+    w = 0.014 * k
+    for sv in (-1, 1):                                                                              # the arcs
+        bolt(m, c, [(sv * 0.07 * k, z + 0.145 * k), (sv * 0.1 * k, z + 0.11 * k), (sv * 0.083 * k, z + 0.098 * k),
+                    (sv * 0.112 * k, z + 0.055 * k)], w, "upVioG")
 
 
 # ---- incendiary ------------------------------------------------------------------------------------------------------------
 
 def thermite(m, c, z, rz, k):
-    """A squat canister: orange-red band, a lid with a glowing igniter and a carry handle arching over it."""
-    r, h = 0.074 * k, 0.11 * k
-    m.cyl((c[0], c[1], z), r, h, "upOlive", sides=12, top="upGun")
-    m.cyl((c[0], c[1], z + h * 0.24), r + 0.005 * k, h * 0.4, TAG["fire"], sides=12)               # weapon tag band
-    m.cyl((c[0], c[1], z + h), r * 0.82, 0.018 * k, "upSteelD", sides=12, top="upSteel")           # lid
-    x, y = rot(c, rz, 0.02 * k, 0.02 * k)
-    m.cyl((x, y, z + h + 0.018 * k), 0.02 * k, 0.03 * k, "upOrD", sides=8, top="upOrG")             # igniter
-    hz = z + h + 0.018 * k
-    pts = [(-0.05, 0.0), (-0.042, 0.045), (0.0, 0.062), (0.042, 0.045), (0.05, 0.0)]                # handle
-    pts = [(*rot(c, rz - 0.2, u * k, 0), hz + w * k) for u, w in pts]
-    for p0, p1 in zip(pts, pts[1:]):
-        tube(m, p0, p1, 0.009 * k, "upSteel", sides=6)
+    """A crucible of burning thermite: a squat steel pot with the weapon band, its open top a molten pool
+    (orange at the rim, white-hot in the middle) throwing sparks."""
+    r, h = 0.07 * k, 0.085 * k
+    m.cyl((c[0], c[1], z), r * 0.86, 0.012 * k, "upGun", sides=16, top="upSteelD")                  # foot
+    m.cyl((c[0], c[1], z + 0.012 * k), r, h, "upSteelD", sides=16, top="upGun", rtop=r * 1.05)      # the pot
+    m.cyl((c[0], c[1], z + 0.024 * k), r * 1.02, 0.024 * k, TAG["fire"], sides=16, rtop=r * 1.03)  # weapon tag band
+    zt = z + 0.012 * k + h
+    ring(m, c, zt - 0.006 * k, r * 1.08, r * 0.9, 0.012 * k, "upSteel", "upSteel", "upGun")         # the lip
+    m.cyl((c[0], c[1], zt - 0.004 * k), r * 0.9, 0.004 * k, "upOr", sides=16)                       # the melt: rim
+    m.cyl((c[0], c[1], zt), r * 0.62, 0.002 * k, "upOrG", sides=14)                                  # white-hot middle
+    for u, v, zz, sz in ((0.0, -0.015, 0.03, 0.016), (-0.025, 0.012, 0.058, 0.013), (0.02, 0.02, 0.082, 0.011)):
+        x, y = rot(c, rz, u * k, v * k)                                                             # sparks
+        m.box((x, y, zt + zz * k), (sz * k, sz * k, sz * k), "upHot", top="upHot", rz=rz + 0.6, base=True)
 
 
 # ---- the set ---------------------------------------------------------------------------------------------------------------
@@ -221,7 +227,7 @@ def _builder(unit, layout):
 # faces; long parts laid across the view, tipped up, and rolled to a diagonal (working end up-right) so they fill the box.
 ICON_PX = 38
 ICON_VIEW = {"capacitor": (-0.55, 0.0, 0.0), "coolant": (0.4, 0.0, 0.0), "housing": (0.3, 0.0, 0.0), "prism": (0.25, 0.0, 0.0),
-             "focus": (0.3, -0.35, 0.0), "frag": (0.4, 0.0, 0.0), "rail": (-0.45, 0.3, 0.55), "nuke": (-0.45, 0.25, 0.55),
+             "focus": (0.3, -0.35, 0.0), "frag": (0.0, 0.0, 0.0), "rail": (-0.45, 0.3, 0.55), "nuke": (-0.45, 0.25, 0.55),
              "chain": (0.3, 0.0, 0.0), "thermite": (-0.6, 0.0, 0.0)}
 VIEW_AXIS = Vector((math.cos(math.radians(30)) * math.sqrt(0.5), math.cos(math.radians(30)) * math.sqrt(0.5),
                     math.sin(math.radians(30))))   # towards the camera (yaw 45, elevation 30), grid frame

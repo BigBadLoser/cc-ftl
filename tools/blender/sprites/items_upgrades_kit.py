@@ -28,10 +28,10 @@ def ring(m, c, z, ro, ri, h, side, top, inner, floor=None, sides=14):
         m.poly([P(ri, a, z + 0.002) for a in ang], floor, flip=True)
 
 
-def segments(m, c, z0, z1, r0, r1, n, gap, off, outer, top, cut):
+def segments(m, c, z0, z1, r0, r1, n, gap, off, outer, top, cut, pick=None):
     """One tier of a head split into n chunky fragments (radius r0 at z0 to r1 at z1), `gap` radians apart; outer(i) is a
-    fragment's outer colour, top its top, cut the faces of the splits."""
-    for i in range(n):
+    fragment's outer colour, top its top, cut the faces of the splits; pick: only these fragments."""
+    for i in (range(n) if pick is None else pick):
         a0, a1 = off + i * math.tau / n + gap / 2, off + (i + 1) * math.tau / n - gap / 2
 
         def P(r, a, zz):
@@ -128,11 +128,48 @@ def dome(m, c, z, r, h, col, n=5, sides=14):
               col if isinstance(col, str) else col[i], sides=sides, rtop=max(r1, 0.0005))
 
 
-def glint(m, c, z, r, h, col, spots=((-0.35, 0.55, 0.3), (-0.12, 0.25, 0.14))):
-    """Specular highlights on a dome: small discs laid on its surface, each (half-turns round from the camera's line,
-    distance out, size) as fractions of its radius; the default pair sits up and to the camera's left."""
-    for at, out, size in spots:
-        th, rr, s = CAMERA + at * math.pi, r * out, r * size
-        zz = z + h * math.sqrt(max(0.0, 1 - out ** 2)) + 0.001
-        cx, cy = c[0] + rr * math.cos(th), c[1] + rr * math.sin(th)
-        m.poly([core.G(cx + s * math.cos(a), cy + s * 0.7 * math.sin(a), zz) for a in (i * math.tau / 8 for i in range(8))], col, flip=True)
+def glint(m, c, z, r, h, col, halo=None, spots=((-0.3, 0.58, 0.2, 2.6), (-0.02, 0.28, 0.08, 1.0))):
+    """Specular highlights on a dome, each (half-turns round from the camera's line, distance out, size, stretch) as
+    fractions of its radius: an oval laid on the surface, stretched along the rim (a curved streak), with an optional
+    halo colour around it, one step larger. The default: a streak up and to the camera's left, a dot nearer the middle."""
+    def on(x, y, lift):
+        d = math.hypot(x - c[0], y - c[1])
+        return core.G(x, y, z + h * math.sqrt(max(0.0, 1 - (d / r) ** 2)) + lift)
+    for at, out, size, el in spots:
+        th, s = CAMERA + at * math.pi, r * size
+        cx, cy = c[0] + r * out * math.cos(th), c[1] + r * out * math.sin(th)
+        tx, ty, nx, ny = -math.sin(th), math.cos(th), math.cos(th), math.sin(th)
+        for sc, colr, lift in ((1.45, halo, 0.0008), (1.0, col, 0.0016)):
+            if not colr:
+                continue
+            pts = []
+            for i in range(12):
+                a = i * math.tau / 12
+                u, v = s * sc * el * math.cos(a), s * sc * 0.75 * math.sin(a)
+                pts.append(on(cx + tx * u + nx * v, cy + ty * u + ny * v, lift))
+            m.poly(pts, colr, flip=True)
+
+
+def torus(m, c, z, R, r, col, n=18, ring_n=8):
+    """A ring doughnut lying flat on centre height z (a tesla coil's crown)."""
+    bm = bmesh.new()
+    rings = [[bm.verts.new(Vector((c[0] + (R + r * math.cos(b)) * math.cos(a), c[1] + (R + r * math.cos(b)) * math.sin(a),
+                                   z + r * math.sin(b)))) for b in (j * math.tau / ring_n for j in range(ring_n))]
+             for a in (i * math.tau / n for i in range(n))]
+    for i in range(n):
+        for j in range(ring_n):
+            i1, j1 = (i + 1) % n, (j + 1) % ring_n
+            bm.faces.new((rings[i][j], rings[i1][j], rings[i1][j1], rings[i][j1]))
+    emit(m, bm, lambda nn, ctr: col)
+
+
+def bolt(m, c, pts, w, col):
+    """A lightning bolt: a zigzag ribbon through pts, (across, z) in the plane through c that faces the camera."""
+    side = Vector((math.cos(CAMERA - math.pi / 2), math.sin(CAMERA - math.pi / 2), 0.0))
+    cam = Vector((math.cos(CAMERA), math.sin(CAMERA), 0.0)) * 0.004
+
+    def P(sv, zz, dz):
+        q = Vector((c[0], c[1], 0.0)) + side * sv + cam
+        return core.G(q.x, q.y, zz + dz)
+    for (s0, z0), (s1, z1) in zip(pts, pts[1:]):
+        m.poly([P(s0, z0, -w / 2), P(s1, z1, -w / 2), P(s1, z1, w / 2), P(s0, z0, w / 2)], col, flip=True)
