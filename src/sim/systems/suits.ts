@@ -1,7 +1,7 @@
 import { shipIdOf, shipGrid } from '../regions';
 import { CrewC, DeadC, PositionC } from '../crew/components';
 import { sweepErrands } from '../ai/machines/eva';
-import { isThin, suitAir, suitDef } from '../eva/suit';
+import { suitNeeded, suitAir, suitDef } from '../eva/suit';
 import { SuitC } from '../eva/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -22,7 +22,7 @@ export function suitsSystem(sim: Sim): void {
     const suit = sim.world.get(id, SuitC)!;
     const pos = sim.world.get(id, PositionC)!;
     const grid = shipGrid(sim, shipIdOf(sim, pos));
-    if (!(grid && isThin(grid, pos.x, pos.y))) continue;
+    if (!(grid && suitNeeded(grid, pos.x, pos.y))) continue;
     const before = suitAir(sim, id);
     if (before <= 0) continue;
     const after = Math.max(0, before - 1 / (TICK_HZ * traitMult(sim, id, 'suitAirMult')));

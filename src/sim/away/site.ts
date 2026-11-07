@@ -5,7 +5,7 @@ import { isIncapacitated } from '../crew/helpers';
 import { abortTask, isCarrying } from '../ai/task';
 import { EvaFloatC, SuitC } from '../eva/components';
 import { vehicleSuits } from '../eva/shuttle';
-import { isThin, needsAir, suitDef } from '../eva/suit';
+import { suitNeeded, needsAir, suitDef } from '../eva/suit';
 import { shipGrid } from '../regions';
 import { keepZone, liveBox, loadStep, loading } from './haul';
 import type { Sim } from '../sim';
@@ -88,7 +88,7 @@ function sendOut(sim: Sim, id: number, v: Vehicle, keepRiders: boolean): void {
       sim.enqueue({ type: 'eva.out', vehicle: id, crew: c });
       continue;
     }
-    const suit = needsAir(sim, c) && ((!!grid && isThin(grid, at.x, at.y)) || !!sim.world.get(away.site, AwaySiteC)?.outside);
+    const suit = needsAir(sim, c) && ((!!grid && suitNeeded(grid, at.x, at.y)) || !!sim.world.get(away.site, AwaySiteC)?.outside);
     if (suit && vehicleSuits(sim, v) <= 0) continue;
     unboardCrew(sim, c, id, at);
     standBy(sim, c, !!sim.world.get(away.site, AwaySiteC)?.standBy);

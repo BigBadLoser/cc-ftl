@@ -3,10 +3,10 @@ import { jobGoal, origin } from '../crew/helpers';
 import type { PathGoal, Tile } from '../crew/pathfind';
 import { findSuitSource, type SuitSource } from '../eva/errands';
 import { AirlockC } from '../modules/airlock';
-import { airlockSuits, airlockUsable } from '../eva/suit';
+import { airlockSuits, airlockUsable, isSuited, needsAir, suitNeeded } from '../eva/suit';
 import { needsMaterials } from '../items/materials';
 import { siteWalkModes, type WalkMode } from '../eva/route';
-import { shipIdOf } from '../regions';
+import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { SCHED_CADENCE, SCHED_DIJKSTRA_ABOVE } from '../tuning';
 import { isEmergency } from './emergency';
@@ -80,6 +80,19 @@ class Walker {
     }
     return -1;
   }
+}
+
+/**
+ * True if a bare walker who breathes would do this work in a hostile room: the walk ends (the tile the work is done from) where a suit is needed.
+ * Not for an emergency (a fire, a breach, a rescue): the heat of a fire is what the firefighters go in against, and the trip for a suit would let it spread.
+ */
+function hostileWork(sim: Sim, w: Walker, job: number, steps: readonly Tile[]): boolean {
+  if (isSuited(sim, w.id) || !needsAir(sim, w.id)) return false;
+  const j = sim.world.get(job, JobC);
+  if (!j || isEmergency(j)) return false;
+  const at = steps.length > 0 ? steps[steps.length - 1] : w.from;
+  const grid = shipGrid(sim, w.ship);
+  return !!at && !!grid && suitNeeded(grid, at.x, at.y);
 }
 
 interface Pair {
@@ -274,9 +287,11 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
     }
     matchPairs(pairs, (pair, steps) => {
       const w = pair.w;
-      const thin = (w.modes[pair.k] as WalkMode).thin;
+      // A thin-air walk needs a suit first; so does work in a hostile room (heat or cold a suit keeps out: `suitNeeded`), when a suit can be had.
+      const hostile = !(w.modes[pair.k] as WalkMode).thin && hostileWork(sim, w, pair.job, steps);
+      const thin = (w.modes[pair.k] as WalkMode).thin || (hostile && !!w.source());
       const src = thin ? w.bookSource() : null;
-      if (thin && !src) return false;
+      if (thin && !src && !hostile) return false;
       if (!air.admits(w, pair.job, steps, thin)) return false;
       taken.add(w.id);
       assigned.add(pair.job);

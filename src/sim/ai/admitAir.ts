@@ -4,7 +4,7 @@ import { origin } from '../crew/helpers';
 import { isErrand } from '../eva/errands';
 import { airLeft, fitsReserve } from '../eva/airLedger';
 import { SourceReach } from '../eva/sources';
-import { isSuited, isThin, needsAir, suitDef } from '../eva/suit';
+import { isSuited, suitNeeded, needsAir, suitDef } from '../eva/suit';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
@@ -67,8 +67,8 @@ export class AirAdmission {
     if (!grid || (!suited && !thin)) return null;
     const work = steps.length > 0 ? (steps[steps.length - 1] as Tile) : (w.from ?? this.tileOf(w.id)); // the tile the work is done from (an adjacent job's own tile is the wall or module)
     if (!work) return null;
-    const jobThin = isThin(grid, work.x, work.y);
-    if (!jobThin && !thin && !steps.some((s) => isThin(grid, s.x, s.y))) return null; // a suit in breathable air does not drain
+    const jobThin = suitNeeded(grid, work.x, work.y);
+    if (!jobThin && !thin && !steps.some((s) => suitNeeded(grid, s.x, s.y))) return null; // a suit in breathable air does not drain
     const sec = (ticks: number): number => ticks / TICK_HZ;
     const left = airLeft(sim, w.id, !suited);
     const walk = sec(travelTicks(sim, w.id, steps, { shipId: w.ship, suited: true }));

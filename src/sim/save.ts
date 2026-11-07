@@ -116,6 +116,8 @@ import { newYard, type YardState } from './yard/types';
  * v90 (drones in space, #318 slice 2): `Drone.space`, `lift`, `cool`, states 'launch' and 'land'; `Combat.departHold`.
  * v94 (the pirate ambush, #173): `SceneShip.ambush` and `attitude`; `Trader.relation`; `Boarder.visit`; `Ship.provoked` may be 'ambush'.
  * v95 (relationships, #239): `bonds` (the opinion store, keyed by person id), `PersonC` on crew, `InteractionC` while two chat or shout, optional `Mood.grief`, `chat` and `row`.
+ * v96 (the distress freighter, #173): `SceneShip` tag, damage, arrivals, prey and `aid`; `SceneTimer` world conditions; `Combat.prey`;
+ *     `SceneShip.lacks`; `Combat.threat`; `WorkBlockC` (work a crew member cannot do); `ConsentC` (leave to come aboard) on host ships; away site owner 'aid'.
  * v97 (weapon upgrades, #338): `Module.upgrade`, `Module.offlineUntil` (work hold), job kind 'fit' with `Job.fit`.
  */
 export const SAVE_VERSION = 97;
