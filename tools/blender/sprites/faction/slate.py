@@ -82,9 +82,12 @@ def slate(hull):
                 if room:
                     T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
                     for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
-                        q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone
-                        if a - 1e-6 <= q0 and q1 <= b + 1e-6:
-                            T.paint(k, ax, plane, q0, q1, zg + PZ, zg + 4 * PZ, 0.0, FACE, 1)
+                        q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone, its top px the
+                        if a - 1e-6 <= q0 and q1 <= b + 1e-6:   # faint line's on the face over it
+                            T.paint(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ, 0.0, FACE, 1)
+                            prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
+                                                         (0.0, zg + 4 * PZ)], FACE, 4,
+                                  cols=[False, "fGS2" if ax == "y" else "fGS3", False, False])
                 for u in _thirds(a, b):                 # the lip in three a tile: a seam up its front, over its
                     q0, q1 = u, u + 0.7 * LINE         # top and up the face to the seam over it
                     dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT  # (over the lip: its top a step under the
