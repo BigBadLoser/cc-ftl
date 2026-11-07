@@ -107,7 +107,7 @@ def slate(hull):
     return face
 
 
-SPLIT = 0.55                                    # the ramp's blue plate from here down the run, a px of seam over it
+SPLIT = 0.655                                   # the ramp's blue plate from here down the run, a px of seam over it
 EDGE = 0.4 / 32                                 # (a px down the slope, about: 2.5 a cell)
 
 
