@@ -113,6 +113,9 @@ def slate(hull):
             cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
                                     inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
             prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
+            if cap and cap[0]:                          # (the end block past the middle: its side by the middle
+                prism(k, ax, plane, u0, u0 + LINE, [(d, z0), (d + PAINT, z0), (d + PAINT, z1 - PZ), (d, z1 - PZ)],
+                      BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
             zt = z1 - MID_DROP if mid else z1                                                  # its front's top
             prism(k, ax, plane, u0, u1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
                   cols=[False, "fGTw", False, False])      # edge lit (fGTw: over the ramp's light end, its own)
@@ -148,7 +151,7 @@ class Slate(Faction):
     def relief(self, sprite):
         return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
                       shelf=SHELF, shelf_back=(0, 1),   # (the shelf's back: a dark crease under the lip, a dim px)
-                      ramp_bands=((SPLIT, BLUE, 4, EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
+                      ramp_bands=((SPLIT, BLUE, (4, "fGT0"), EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
                       toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
                       features=(FreeEnds(), RampHoles(), FloorDrop(), FootTone(BLUE, 3), FaceHoles(),
                                 SlateTones()))
