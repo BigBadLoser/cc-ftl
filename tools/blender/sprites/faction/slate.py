@@ -166,32 +166,31 @@ def slate_grey_panel(plate, u0, u1, run_, **kw):
                (vc - 3 * LINE, dv + EDGE / 2)], PAINT, 0, 0.0)
 
 
-BOX_W = (14, 7, 11)                             # the header's boxes along a tile (px): the middle one proudest, it
-                                                # covers 3 px of the left one (on screen 11, 7 and its side 3, 11)
+BOXES = ((2, 9, False), (13, 6, True), (21, 9, False))   # the header's boxes a tile (px from its start, width,
+                                                        # middle?): 2 px from each end and between, the ref's widths
+MID_SLOPE = 4 * PZ                                      # the middle box's top: its front edge this far under its back
 
 
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
-    """Header (T1-2, T1-3): three blue boxes a tile from the stripe's foot to the rail's top, in place of both; the
-    middle one prouder and a px lower, its top lit; the end ones a handle slot near the top and a seam low
-    across. A dark line under them on the face."""
+    """Header (T1-2, T1-3): three blue boxes a tile from the stripe's foot to the rail's top, in place of both, on a
+    dark blue backing (2 px gaps at each end and between them); their fronts flush, the middle one's top sloping
+    4 px down to its front, lit; the end ones a handle slot near the top and a seam low across. A dark line under
+    them on the face."""
+    T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)                      # the backing
     T.paint(k, ax, plane, a, b, z0 - PZ, z0, 0.0, FACE, 1)
-    for c in range(-1, 2):
-        u = c - 0.5
-        for i, w in enumerate(BOX_W):
-            u0, u1 = u, u + w * LINE
-            u = u1
+    side = "fGT3" if ax == "y" else "fGT4"              # (a box's +u side, the one the camera sees: a step under its
+    for c in range(-1, 2):                              # front)
+        for x0, w, mid in BOXES:
+            u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 < 1e-6:
                 continue
-            mid = i == 1
-            d, zt = (2 * RAIL_D, z1 - PZ) if mid else (RAIL_D, z1)
+            d = RAIL_D
+            zt = z1 - MID_SLOPE if mid else z1           # its front's top
             m = (mit[0] if abs(q0 - a) < 1e-6 else 0.0, mit[1] if abs(q1 - b) < 1e-6 else 0.0)
-            side = "fGT3" if ax == "y" else "fGT4"      # (its +u side, the one the camera sees: a step under its
-            top = ("fGT0" if ax == "y" else "fGT1") if mid else None    # front; the middle one's top lit)
-            prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, zt)], BLUE, 3,
+            top = ("fGT0" if ax == "y" else "fGT1") if mid else None           # (the middle one's sloped top lit)
+            prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, z1)], BLUE, 3,
                   cols=[False, None, top, False], cap=(None, side), mitre=m)
-            if q0 > a + 1e-6 or abs(u0 - q0) < 1e-6:                          # a seam up its front's u0 edge
-                T.paint(k, ax, plane, q0, q0 + LINE, z0, zt, d, BLUE, 1)
             prism(k, ax, plane, q0, q1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
                   cols=[False, "fGTw", False, False], mitre=m)                 # its front's top edge lit
             if mid:
