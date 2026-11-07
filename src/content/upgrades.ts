@@ -1,4 +1,5 @@
 import type { ItemDef, RecipeDef, ResearchDef } from '../sim';
+import { behaviourItems, behaviourRecipes, behaviourResearch } from './upgradesBehaviour';
 
 /**
  * Module upgrades (DESIGN.md "Weapon upgrades and flak"): items that go in a weapon module's slot. The general ones fit any weapon; the numbers are a
@@ -21,6 +22,7 @@ export const upgradeItems = {
     upgrade: { slot: 'weapon', mods: { damageTakenMul: 0.5 } },
     placeholderIcon: { as: 'item.metal', tint: '#9fb4c8' },
   },
+  ...behaviourItems,
 } satisfies Record<string, ItemDef>;
 
 /** Fabricator recipes: each needs its blueprint (researched, or sold at a station). */
@@ -40,6 +42,7 @@ export const upgradeRecipes = {
     inputs: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 4 }],
     outputs: [{ item: 'item.upg_housing', count: 1 }], work: 300,
   },
+  ...behaviourRecipes,
 } satisfies Record<string, RecipeDef>;
 
 const cost = (e: number, parts: number) => [{ item: 'item.electronics', count: e }, { item: 'item.parts', count: parts }];
@@ -61,4 +64,5 @@ export const upgradeResearch = {
     name: 'Flak cannon', description: 'A gun that fires hull scrap: a spread of weak pellets that each strip a shield layer, and shoot down drones.', category: 'defence',
     cost: cost(14, 4), work: 1800, unlocks: ['module.flakCannon'], requires: [],
   },
+  ...behaviourResearch,
 } satisfies Record<string, ResearchDef>;

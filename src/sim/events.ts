@@ -4,7 +4,7 @@ import type { JobKind } from './crew/components';
 import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
 import type { DealPhase } from './trade/types';
-import type { ItemQty } from './registry';
+import type { ItemQty, ShotLook } from './registry';
 
 /** Why a ship turned up in the current grid (`ship.arrived`). */
 export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
@@ -96,11 +96,13 @@ export type SimEvent =
   | { type: 'combat.started' }
   | { type: 'combat.ended' }
   /** A weapon module launched one shot (`projectile` is its entity). */
-  | { type: 'weapon.fired'; ship: number; weaponId: number; weapon: string; projectile: number; targetShip: number; targetModuleId: number }
+  | { type: 'weapon.fired'; ship: number; weaponId: number; weapon: string; projectile: number; targetShip: number; targetModuleId: number; /** Ammo units this shot spent (absent: none). */ ammo?: number; /** The shot's render hints (weapon def `look`, upgrades included). */ look?: ShotLook }
   /** A shot landed on the hull at tile (x, y); `moduleId` is the module there (0 = none). */
   | { type: 'projectile.hit'; projectile: number; weapon: string; ship: number; x: number; y: number; moduleId: number }
   /** A shot missed: 'evaded' (engines), 'space' (fell outside the hull) or 'gone' (target left). */
   | { type: 'projectile.miss'; projectile: number; weapon: string; ship: number; reason: 'evaded' | 'space' | 'gone'; x: number; y: number }
+  /** Lightning from a hit module (an `arc` effect) into a crew member: tile coordinates of both ends. */
+  | { type: 'projectile.arc'; projectile: number; weapon: string; ship: number; x: number; y: number; tx: number; ty: number }
   /** A shield layer absorbed (or an ion bolt drained) a shot; `layers` remain. */
   | { type: 'projectile.shieldHit'; projectile: number; weapon: string; ship: number; layers: number }
   /** `by`: the defence drone that shot it down (absent: the ship's point defence). */

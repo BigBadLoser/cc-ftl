@@ -131,7 +131,7 @@ export function createFightReporter(sim: Sim): FightReporter {
       case 'weapon.fired': {
         if (!c.ours.has(e.ship)) c.enemy ||= e.ship;
         const item = e.ship === c.home ? sim.content.weapons?.[e.weapon]?.ammo : undefined;
-        if (item) c.ammo.set(item, (c.ammo.get(item) ?? 0) + 1);
+        if (item && e.ammo) c.ammo.set(item, (c.ammo.get(item) ?? 0) + e.ammo);
         break;
       }
       case 'crew.downed':

@@ -291,7 +291,7 @@ describe('enemy loadouts', () => {
     const found = new Set<string>();
     for (let seed = 1; seed <= 12; seed++) { const sim = newGame(3, content); for (const u of fitted(sim, spawn(sim, 'faction.navy', seed))) found.add(u); }
     expect(found.size).toBeGreaterThan(0);
-    for (const u of found) expect(['item.upg_capacitor', 'item.upg_coolant']).toContain(u);
+    for (const u of found) expect(content.factions['faction.navy'].upgrades.map((e) => e.item)).toContain(u);
     const a = newGame(3, content);
     const b = newGame(9, content);
     const ship = (s: Sim) => fitted(s, spawn(s, 'faction.navy', 7));
@@ -301,7 +301,7 @@ describe('enemy loadouts', () => {
   it('pirates fit crude gear and civilians none', () => {
     const found = new Set<string>();
     for (let seed = 1; seed <= 12; seed++) { const sim = newGame(3, content); for (const u of fitted(sim, spawn(sim, 'faction.scrapper', seed))) found.add(u); }
-    for (const u of found) expect(['item.upg_housing', 'item.upg_coolant']).toContain(u);
+    for (const u of found) expect(content.factions['faction.scrapper'].upgrades.map((e) => e.item)).toContain(u);
     expect(found.size).toBeGreaterThan(0);
     const sim = newGame(3, content);
     expect(fitted(sim, spawn(sim, 'faction.civilian', 4))).toEqual([]);

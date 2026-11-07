@@ -1,7 +1,7 @@
 import { ModuleC } from '../modules/components';
 import type { WeaponDef } from '../registry';
 import type { Sim } from '../sim';
-import type { UpgradeDef } from './types';
+import type { UpgradeDef, UpgradeMods } from './types';
 
 /**
  * The one place a fitted upgrade's modifiers are read ("effective stats"). Callers ask for the effective value of a stat and never test
@@ -16,15 +16,19 @@ export function upgradeOf(sim: Sim, moduleId: number): UpgradeDef | undefined {
   return item ? sim.content.items[item]?.upgrade : undefined;
 }
 
-/** A weapon's def as the module fires it: the base def with the fitted upgrade's behaviour patch, heat and charge applied. */
-export function effectiveWeapon(sim: Sim, moduleId: number, base: WeaponDef): WeaponDef {
-  const mods = upgradeOf(sim, moduleId)?.mods;
-  if (!mods) return base;
+/** A weapon def with an upgrade's mods applied (the behaviour patch, heat and charge). */
+export function withMods(base: WeaponDef, mods: UpgradeMods): WeaponDef {
   return {
     ...base, ...mods.weapon,
     heat: base.heat * (mods.heatMul ?? 1),
     chargeSec: base.chargeSec * (mods.chargeMul ?? 1),
   };
+}
+
+/** A weapon's def as the module fires it: the base def with the fitted upgrade's behaviour patch, heat and charge applied. */
+export function effectiveWeapon(sim: Sim, moduleId: number, base: WeaponDef): WeaponDef {
+  const mods = upgradeOf(sim, moduleId)?.mods;
+  return mods ? withMods(base, mods) : base;
 }
 
 /** The weapon def a module fires now (effective), or undefined if it is no weapon. */
