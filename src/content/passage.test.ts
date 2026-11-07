@@ -11,6 +11,8 @@ import { playerShip } from '../sim/trade/player';
 import { CombatC, FTL_CHARGE_SEC } from '../sim';
 import { giveItems } from '../sim/story/effects';
 import { planStarRoute } from '../sim/galaxy/route';
+import { DraftedC } from '../sim/crew/components';
+import { EmbarkOrderC } from '../sim/vehicles/components';
 import { content } from '.';
 
 /** Passage (#173 step 6, slice 4): a passenger back on their feet asks to be taken to a port of their own; the trip is a job, paid on the handover. */
@@ -193,5 +195,23 @@ describe('passage', () => {
     visit(sim, c.to!);
     for (let i = 0; i < 20 * 400 && !gone(sim, crew); i++) step(sim);
     expect(gone(sim, crew)).toBe(true);
+  });
+
+  it('a handover called off while the passenger walks to the shuttle lets them go: undrafted, back to life aboard', () => {
+    const { sim, crew } = aboard(7);
+    step(sim, 40);
+    const c = card(sim)!;
+    sim.enqueue({ type: 'jobs.accept', key: c.key });
+    step(sim);
+    visit(sim, c.to!);
+    for (let i = 0; i < 20 * 120 && !sim.world.has(crew, EmbarkOrderC); i++) step(sim);
+    expect(sim.world.has(crew, DraftedC)).toBe(true); // sent to the shuttle
+    const d = sim.trade.deals.find((x) => x.handover?.job === c.id)!;
+    sim.sector.inCombat = true; // a fight breaks out: the handover is called off (handover.ts `call`)
+    sim.step();
+    expect(d.reason).toBe('combat');
+    expect(sim.world.has(crew, DraftedC)).toBe(false);
+    expect(sim.world.has(crew, EmbarkOrderC)).toBe(false);
+    expect(sim.world.get(crew, CrewC)?.activity).not.toBe('drafted');
   });
 });

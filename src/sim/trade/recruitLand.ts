@@ -106,8 +106,8 @@ export function landRecruits(sim: Sim, d: Deal, force = false): boolean {
 }
 
 /**
- * A hiring run is called off: recruits still walking to the shuttle stop; those already aboard step out at the station dock (if the
- * shuttle is there) and go back to station life. Anyone aboard a shuttle already flying stays with it (it goes home regardless).
+ * A run that sends people aboard is called off (a hiring run, a passenger's handover): those still walking to the shuttle stop and are undrafted;
+ * those already aboard step out at the dock (if the shuttle is there) and go back to what they were doing (station life, life aboard). Anyone aboard a shuttle already flying stays with it (it goes home regardless).
  */
 export function releaseRecruits(sim: Sim, d: Deal): void {
   const v = sim.world.get(d.vehicle, VehicleC);
@@ -118,7 +118,8 @@ export function releaseRecruits(sim: Sim, d: Deal): void {
       if (at) unboardCrew(sim, c, d.vehicle, at);
       else continue;
     }
-    if (sim.world.has(c, ForHireC) && sim.world.has(c, PositionC)) {
+    // Whoever the run sent to the shuttle (drafted by `sendToEmbark`) is let go here, whatever they are: a recruit, or a passenger being handed over.
+    if (sim.world.has(c, PositionC) && !sim.world.has(c, AboardC)) {
       sim.world.remove(c, DraftedC);
       const crew = sim.world.get(c, CrewC);
       if (crew) crew.activity = 'idle';
