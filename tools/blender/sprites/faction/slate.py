@@ -171,34 +171,48 @@ BOXES = ((2, 9, False), (13, 6, True), (21, 9, False))   # the header's boxes a 
 MID_SLOPE = 4 * PZ                                      # the middle box's top: its front edge this far under its back
 
 
+def _steps(u0, u1, top):
+    """A box's front in columns rounding its corners 2 px (each corner's px and the two beside it left out): (from, to,
+    px up from its foot, px down from its top); top False: its top corners square."""
+    t = (lambda n: n) if top else (lambda n: 0)
+    return [(u0, u0 + LINE, 2, t(2)), (u0 + LINE, u0 + 2 * LINE, 1, t(1)), (u0 + 2 * LINE, u1 - 2 * LINE, 0, 0),
+            (u1 - 2 * LINE, u1 - LINE, 1, t(1)), (u1 - LINE, u1, 2, t(2))]
+
+
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
-    """Header (T1-2, T1-3): three blue boxes a tile from the stripe's foot to the rail's top, in place of both, on a
-    dark blue backing (2 px gaps at each end and between them); their fronts flush, the middle one's top sloping
-    4 px down to its front, lit; the end ones a handle slot near the top and a seam low across. A dark line under
-    them on the face."""
+    """Header (T1-2, T1-3): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on a
+    dark blue backing (2 px gaps at each end and between them, 2 px under them); their fronts flush, their corners
+    rounded 2 px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low across
+    each, the end ones a handle slot near the top. A dark line under the backing on the face."""
     T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
     T.paint(k, ax, plane, a, b, z0 - PZ, z0, 0.0, FACE, 1)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
-    for c in range(-1, 2):                              # its front)
+    lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit)
+    zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
+    for c in range(-1, 2):
         for x0, w, mid in BOXES:
             u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 < 1e-6:
                 continue
-            d = RAIL_D
-            zt = z1 - MID_SLOPE if mid else z1           # its front's top
-            m = (mit[0] if abs(q0 - a) < 1e-6 else 0.0, mit[1] if abs(q1 - b) < 1e-6 else 0.0)
             top = ("fGT1" if ax == "y" else "fGT2") if mid else None           # (the middle one's sloped top lit)
-            prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, z1)], BLUE, 3,
-                  cols=[False, None, top, False], cap=(None, side), mitre=m)
-            prism(k, ax, plane, q0, q1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
-                  cols=[False, "fGTw", False, False], mitre=m)                 # its front's top edge lit
+            for s0, s1, up, down in _steps(u0, u1, not mid):
+                s0, s1 = max(s0, q0), min(s1, q1)
+                if s1 - s0 < 1e-6:
+                    continue
+                zf, zk = z1 - down * PZ - (MID_SLOPE if mid else 0.0), z1 - down * PZ      # (its top: front, back)
+                zl = zb + up * PZ
+                prism(k, ax, plane, s0, s1, [(0.0, zl), (d, zl), (d, zf), (0.0, zk)], BLUE, 3,
+                      cols=[False, None, top, False], cap=(False, side))
+                prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
+                      cols=[False, lit, False, False], cap=False)
+            zt = z1 - MID_SLOPE if mid else z1           # its front's top
+            T.paint(k, ax, plane, q0 + 2 * LINE, q1 - 2 * LINE, z0 + 5 * PZ, z0 + 6 * PZ, d, BLUE, 1)   # a seam across
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
             if q0 <= cu - 2 * LINE and cu + 2 * LINE <= q1:                    # a handle slot, 4 px
                 T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
-            T.paint(k, ax, plane, q0, q1, z0 + 5 * PZ, z0 + 6 * PZ, d, BLUE, 1)   # a seam across, low
 
 
 def slate_panel(k, ax, plane, a, b, top, foot):
