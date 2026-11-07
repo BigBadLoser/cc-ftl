@@ -240,7 +240,7 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
             continue
         if zb <= zf and zf + PZ <= zt:
             gaps.append((u, c - W))
-            u = c + W
+            u = c + W + LINE                            # (on screen it met the outline a px early)
         for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
                                (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
             T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
