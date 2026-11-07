@@ -83,8 +83,10 @@ def slate(hull):
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
                           cols=[False, None, "fGS4" if ax == "y" else "fGS5", False])    # front's line, darker)
                     T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top), 0.0, FACE, 1)
-            if full:                                                    # a faint line, 7 px under the stripe
-                T.paint(k, ax, plane, a, b, zst - 14 * PZ, zst - 13 * PZ, 0.0, FACE, 4)
+            if full:                                                    # a faint line, 11 px under the stripe,
+                fl = "fGS2" if ax == "y" else "fGS3"                    # a step over the face's grey
+                prism(k, ax, plane, a, b, [(0.0, zst - 18 * PZ), (PAINT, zst - 18 * PZ), (PAINT, zst - 17 * PZ),
+                                           (0.0, zst - 17 * PZ)], FACE, 4, cols=[False, fl, False, False])
         if not full:
             return
         T.paint(k, ax, plane, a, b, zst, zst + PZ, 0.0, BLUE, 1)                               # the rail's shadow
