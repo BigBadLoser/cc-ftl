@@ -11,6 +11,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { grantXp } from '../crew/xp';
 import { addCredits } from '../trade/credits';
+import { repName } from '../galaxy/standing';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
@@ -156,7 +157,7 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     }
     case 'reputation': {
       story.reputation[eff.faction] = reputationOf(story, eff.faction) + eff.delta;
-      return `${eff.faction} standing ${sign(eff.delta)}`;
+      return `${repName(sim, eff.faction)} standing ${sign(eff.delta)}`;
     }
     case 'flag': {
       const op = eff.op ?? 'set';

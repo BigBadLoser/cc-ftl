@@ -178,15 +178,26 @@ describe('the pod patient after the pocket', () => {
     const rep = sim.story.reputation[owner] ?? 0;
     sim.world.get(crew, HealthC)!.hp = 39.9;
     let log = '';
+    const effects: string[] = [];
     for (let i = 0; i < 20 * 60 && sim.world.has(crew, DownedC); i++) {
       sim.step();
-      for (const e of sim.events.drain()) if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+      for (const e of sim.events.drain()) {
+        if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+        if (e.type === 'story.effect' && e.effect === 'reputation') effects.push(e.text);
+      }
     }
     expect(sim.world.has(crew, DownedC)).toBe(false);
-    for (let i = 0; i < 40; i++) for (const e of (sim.step(), sim.events.drain())) if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+    for (let i = 0; i < 40; i++) {
+      sim.step();
+      for (const e of sim.events.drain()) {
+        if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+        if (e.type === 'story.effect' && e.effect === 'reputation') effects.push(e.text);
+      }
+    }
     expect(log).toContain(sim.world.get(crew, CrewC)!.name);
     expect(sim.trade.credits).toBe(credits + purse);
     expect(sim.story.reputation[owner]).toBe(rep + 1);
+    expect(effects).toEqual([`${sim.content.galaxy!.factions[owner]!.name} standing +1`]);
     expect(carryOf(sim, crew)?.fired).toEqual([`helpedPerson#n${crew}`]);
     step(sim, 100);
     expect(sim.trade.credits).toBe(credits + purse);
