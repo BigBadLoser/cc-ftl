@@ -349,8 +349,8 @@ describe('thermite (incendiary)', () => {
 
 describe('behaviour upgrades rename the weapon', () => {
   const NAMES: Record<string, [string, string]> = {
-    'item.upg_prism': ['Prism laser', 'Prism'], 'item.upg_focus': ['Lance laser', 'Lance'], 'item.upg_frag': ['Frag driver', 'Frag'], 'item.upg_rail': ['Railgun', 'Rail'],
-    'item.upg_nuke': ['Nuke launcher', 'Nuke'], 'item.upg_chain': ['Arc cannon', 'Arc'], 'item.upg_thermite': ['Thermite cannon', 'Thermite'],
+    'item.upg_prism': ['Prism laser', 'Prism laser'], 'item.upg_focus': ['Lance laser', 'Lance laser'], 'item.upg_frag': ['Frag driver', 'Frag driver'], 'item.upg_rail': ['Railgun', 'Railgun'],
+    'item.upg_nuke': ['Nuke launcher', 'Nuke launcher'], 'item.upg_chain': ['Arc cannon', 'Arc cannon'], 'item.upg_thermite': ['Thermite cannon', 'Thermite cannon'],
   };
   it('the effective weapon def and the player-facing names carry the variant; removing the upgrade restores them', () => {
     for (const item of ITEMS) {

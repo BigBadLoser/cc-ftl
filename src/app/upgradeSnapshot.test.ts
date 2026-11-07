@@ -50,7 +50,7 @@ describe('renamed weapons in the UI snapshots', () => {
     const mine = sim.world.query(WeaponC, ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === 'module.burstLaser' && shipIdOf(sim, sim.world.get(id, ModuleC)) === playerShip(sim)) as number;
     (sim.world.get(mine, ModuleC) as { upgrade?: string }).upgrade = 'item.upg_prism';
     const w = buildCombat(sim)?.player?.weapons.find((x) => x.id === mine);
-    expect(w).toMatchObject({ name: 'Prism laser', short: 'Prism', upgrade: { renames: true } });
+    expect(w).toMatchObject({ name: 'Prism laser', short: 'Prism laser', upgrade: { renames: true } });
     (sim.world.get(mine, ModuleC) as { upgrade?: string }).upgrade = 'item.upg_coolant';
     expect(buildCombat(sim)?.player?.weapons.find((x) => x.id === mine)).toMatchObject({ name: 'Burst laser', upgrade: { renames: false } });
   });

@@ -40,8 +40,8 @@
     return e;
   })();
   const weaponRow = [
-    { id: 1, name: 'Burst laser', short: 'Prism', charge: 0.6, ammo: null, upgrade: prism, fitting: false, slot: 'weapon', mode: 'auto', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xf08a9a },
-    { id: 2, name: 'Mass driver', short: 'Rail', charge: 1, ammo: null, upgrade: { ...prism, item: 'item.upg_rail', name: 'Rail coil', effects: ['Passes two shield layers and flies much faster; runs very hot'] }, fitting: false, slot: 'weapon', mode: 'hold', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xffc06a },
+    { id: 1, name: 'Burst laser', short: 'Prism laser', charge: 0.6, ammo: null, upgrade: prism, fitting: false, slot: 'weapon', mode: 'auto', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xf08a9a },
+    { id: 2, name: 'Mass driver', short: 'Railgun', charge: 1, ammo: null, upgrade: { ...prism, item: 'item.upg_rail', name: 'Rail coil', effects: ['Passes two shield layers and flies much faster; runs very hot'] }, fitting: false, slot: 'weapon', mode: 'hold', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xffc06a },
     { id: 3, name: 'Ion cannon', short: 'Ion cannon', charge: 0.3, ammo: null, upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: ['Adds 30% less heat to the ship per volley'], renames: false }, fitting: false, slot: 'weapon', mode: 'auto', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0x7ad0ff },
   ] as unknown as UiWeapon[];
   const cards = [
