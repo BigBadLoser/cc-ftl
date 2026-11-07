@@ -39,12 +39,17 @@ export function heldItems(sim: Sim): Held[] {
     }
     for (const id of playerStorages(sim)) {
       for (const st of w.get(id, StorageC)?.stacks ?? []) {
-        out.push({ item: st.item, count: st.count, where: 'storage', holder: id, remove: (n) => void storageTake(sim, id, st.item, n ?? st.count) });
+        // storageTake draws from any stack of the item in this module, not this one: take this entry's count as listed, never the live stack's.
+        const { item, count } = st;
+        out.push({ item, count, where: 'storage', holder: id, remove: (n) => void storageTake(sim, id, item, n ?? count) });
       }
     }
     for (const id of w.query(ItemStackC)) {
       const s = w.get(id, ItemStackC);
-      if (s && !s.job && ships.has(shipIdAt(sim, s.x, s.y))) out.push({ item: s.item, count: s.count, where: 'stack', holder: id, remove: (n) => void takeFromStack(sim, id, n ?? s.count) });
+      if (s && !s.job && ships.has(shipIdAt(sim, s.x, s.y))) {
+        const count = s.count;
+        out.push({ item: s.item, count, where: 'stack', holder: id, remove: (n) => void takeFromStack(sim, id, n ?? count) });
+      }
     }
     for (const id of w.query(ModuleC)) {
       const m = w.get(id, ModuleC);

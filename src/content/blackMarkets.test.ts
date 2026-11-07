@@ -215,6 +215,18 @@ describe('scans', () => {
     expect(sim.world.get(mod!, ModuleC)!.upgrade).toBeUndefined();
   });
 
+  it('two stacks of the same contraband in one hold are both seized', () => {
+    const { sim } = lawStation();
+    const st = playerStorages(sim)[0] as number;
+    sim.world.get(st, StorageC)!.stacks.push({ item: STOLEN, count: 2 }, { item: STOLEN, count: 2 });
+    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }]);
+    dockScan(sim, 'navy', 'Depot');
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
+    run(sim, 1);
+    expect(contrabandAboard(sim)).toEqual([]);
+  });
+
   it('an equipped disruptor and carried stolen goods are found and seized too', () => {
     const { sim } = lawStation();
     const crew = sim.world.query(CrewC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'player')!;
