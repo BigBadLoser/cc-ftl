@@ -3444,5 +3444,37 @@
   "hex": "#ff9a3c",
   "emissive": 2.5,
   "set": "upgrades"
+ },
+ "upN0": {
+  "hex": "#ffffff",
+  "emissive": 3.0,
+  "set": "upgrades"
+ },
+ "upN1": {
+  "hex": "#aeb3b8",
+  "emissive": 2.0,
+  "set": "upgrades"
+ },
+ "upN2": {
+  "hex": "#686d73",
+  "emissive": 1.4,
+  "set": "upgrades"
+ },
+ "upN3": {
+  "hex": "#3a3e44",
+  "emissive": 1.0,
+  "set": "upgrades"
+ },
+ "upNs": {
+  "hex": "#6e6e6e",
+  "set": "upgrades"
+ },
+ "upNsd": {
+  "hex": "#454545",
+  "set": "upgrades"
+ },
+ "upYelB": {
+  "hex": "#fff27a",
+  "set": "upgrades"
  }
 }

@@ -15,11 +15,15 @@ ion violet, incendiary orange):
   upg_chain      Chain coil        an upright tesla emitter: copper coil, three forked prongs, violet tips  (ion)
   upg_thermite   Thermite          a squat olive canister with an orange-red band and a charge brick         (incendiary)
 
+Each item also has a UI icon, item.upg_<id>.icon: ONE unit (not a stack), turned to a three-quarter view chosen per item
+(ICON_VIEW) and scaled to fill about ICON_PX of a 40 px box, outlined like every sprite; the UI shows it 1:1 (the module
+inspector's upgrade slot, the upgrade hover card). The family also renders the neutral shot sprites (upgrade_shots.py).
+
 Colours are the family's own palette set (palette_extra.json "upgrades"); a sprite renders on that set alone."""
 import math
 
 import bmesh
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 from . import core
 from .items_kit import FLOOR, cone, emit, jobs as item_jobs, pile, place, rot, tube
@@ -223,8 +227,46 @@ def _builder(unit, layout):
     return lambda m, size: place(m, size, unit, layout)
 
 
+# Icons: (heading rz, tilt about the screen-right axis) per item: upright parts turned to show two faces, long parts laid
+# across the view and tipped up so their length and their working end read.
+ICON_PX = 38
+ICON_VIEW = {"capacitor": (-0.55, 0.0), "coolant": (0.4, 0.0), "housing": (0.5, 0.0), "prism": (0.25, 0.0),
+             "focus": (-0.45, 0.25), "frag": (0.4, 0.0), "rail": (-0.45, 0.3), "nuke": (-0.45, 0.25),
+             "chain": (0.3, 0.0), "thermite": (-0.6, 0.0)}
+
+
+# An icon sits on the dark UI panel and the UI draws it from the colour sheet alone (no glow sheet): its darkest steels go a
+# step up, and its glowing parts are painted in their solid colour so they stay bright.
+ICON_LIFT = {"upBlack": "upGun", "upGun": "upSteelD",
+             "upYelG": "upYelB", "upCyG": "upCy", "upHot": "upAmb", "upVioG": "upVio", "upOrG": "upAmb"}
+
+
+def _icon(name, unit):
+    import bpy
+    rz, tilt = ICON_VIEW[name.removeprefix("upg_")]
+    m = core.Mesh(f"{name}_icon")
+    core.REMAP.update(ICON_LIFT)
+    try:
+        unit(m, (0.0, 0.0), 0.0, rz, 1.0)
+    finally:
+        for key in ICON_LIFT:
+            core.REMAP.pop(key, None)
+    ob = m.build()
+    if tilt:                                    # tip the far end up, about the axis across the camera's view
+        ob.data.transform(Matrix.Rotation(tilt, 4, Vector((1.0, -1.0, 0.0)).normalized()))
+    bpy.context.view_layer.update()
+    x0, x1, y0, y1 = core.extent_px([ob])
+    k = (ICON_PX - 2) / max(x1 - x0, y1 - y0)   # (the outline adds a px each side)
+    ob.data.transform(Matrix.Scale(k, 4))       # baked into the mesh, so the render cache sees it
+    bpy.context.view_layer.update()
+    return [ob]
+
+
 def jobs():
-    return [j for name, (unit, layout) in ITEMS.items() for j in item_jobs(name, _builder(unit, layout))]
+    from .upgrade_shots import jobs as shot_jobs
+    out = [j for name, (unit, layout) in ITEMS.items() for j in item_jobs(name, _builder(unit, layout))]
+    out += [(f"item.{name}.icon", (1, 1), "prop", lambda n=name, u=unit: _icon(n, u)) for name, (unit, _) in ITEMS.items()]
+    return out + shot_jobs()
 
 
 def palette(_sid):
