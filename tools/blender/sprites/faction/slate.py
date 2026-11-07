@@ -81,9 +81,9 @@ def slate(hull):
             if room or top - zl - LIP_H > 0.01:         # no seam over it)
                 if room:
                     T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
-                    for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
-                        q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone, its top px the
-                        if a - 1e-6 <= q0 and q1 <= b + 1e-6:   # faint line's on the face over it
+                    for c in range(-1, 2) if T.fill("recess", True) else ():     # a recess on it at each tile's
+                        q0, q1 = c - 4 * LINE, c + 4 * LINE     # middle, 8 px wide, 3 px tall, in the seam's tone,
+                        if a - 1e-6 <= q0 and q1 <= b + 1e-6:   # its top px the faint line's on the face over it
                             T.paint(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ, 0.0, FACE, 1)
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
@@ -203,27 +203,27 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
 
 
 def slate_panel(k, ax, plane, a, b, top, foot):
-    """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 11 px tall, 2 px under the header, a lit bar along
-    its inside top, a lit tick up from its foot 7 px each side of the middle; a narrower part (10 px) on down from
-    its foot to the seam over the lip."""
+    """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 7 px tall, its foot 5 px over the seam over the lip
+    (the lip's recess left out: Design recess=False), its corners rounded as the ramp's blue panel's (each corner
+    pixel left out); a lit bar along its inside top, a px under its top line; a lit tick 7 px each side of the
+    middle from a px under its foot up 4 px."""
     lit = "fGS1" if ax == "y" else "fGS2"
-    W, N, K = 11 * LINE, 5 * LINE, 7 * LINE
-    zt = top - 2 * PZ
-    zb = zt - 11 * PZ
+    W, K = 11 * LINE, 7 * LINE
+    zb = foot + 5 * PZ
+    zt = zb + 7 * PZ
     for c in range(-1, 2):
         if not (a - 1e-6 <= c - W and c + W <= b + 1e-6):
             continue
-        for u0, u1, z0, z1 in ((c - W, c + W, zt - PZ, zt), (c - W, c - W + LINE, zb, zt), (c + W - LINE, c + W, zb, zt),
-                               (c - W, c - N + LINE, zb, zb + PZ), (c + N - LINE, c + W, zb, zb + PZ),
-                               (c - N, c - N + LINE, foot, zb + PZ), (c + N - LINE, c + N, foot, zb + PZ)):
+        for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
+                               (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
             T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
         for u0, u1, z0, z1 in ((c - 7 * LINE, c + 7 * LINE, zt - 4 * PZ, zt - 2 * PZ),
-                               (c - K, c - K + LINE, zb + PZ, zb + 4 * PZ), (c + K - LINE, c + K, zb + PZ, zb + 4 * PZ)):
-            prism(k, ax, plane, u0, u1, [(0.0, z0), (PAINT, z0), (PAINT, z1), (0.0, z1)], FACE, 4,
+                               (c - K, c - K + LINE, zb - PZ, zb + 3 * PZ), (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ)):
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
                   cols=[False, lit, False, False])
 
 
-SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel))
+SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel, recess=False))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
