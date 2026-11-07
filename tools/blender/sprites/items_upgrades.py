@@ -41,28 +41,33 @@ def _axis(m, c, rz, u0, u1, z, r, col, cap=None, sides=12):
 # ---- general upgrades --------------------------------------------------------------------------------------------------
 
 def capacitor(m, c, z, rz, k):
-    n, r, h, step, z0 = 3, 0.04 * k, 0.15 * k, 0.1 * k, 0.025 * k
-    m.box((c[0], c[1], z), (step * (n - 1) + 0.13 * k, 0.1 * k, z0), "upGun", top="upSteelD", rz=rz, base=True, bevel=0.006 * k)
+    n, r, h, step, z0 = 3, 0.046 * k, 0.15 * k, 0.105 * k, 0.025 * k
+    m.box((c[0], c[1], z), (step * (n - 1) + 0.14 * k, 0.11 * k, z0), "upGun", top="upSteelD", rz=rz, base=True, bevel=0.006 * k)
     for i in range(n):
         x, y = rot(c, rz, (i - (n - 1) / 2) * step, 0)
         m.cyl((x, y, z + z0), r, h, "upGun", sides=10, top="upSteel")
-        m.cyl((x, y, z + z0 + h * 0.62), r + 0.004 * k, 0.026 * k, "upYelG", sides=10)            # the glowing band
-        m.cyl((x, y, z + z0 + h), 0.019 * k, 0.034 * k, "upYel", sides=6, top="upBolt")            # terminal
+        m.cyl((x, y, z + z0 + h * 0.56), r + 0.005 * k, 0.034 * k, "upYelG", sides=10)            # the glowing band
+        m.cyl((x, y, z + z0 + h), 0.024 * k, 0.03 * k, "upYel", sides=6, top="upBolt")             # terminal
+        m.box((x, y, z + z0 + h + 0.03 * k), (0.03 * k, 0.034 * k, 0.012 * k), "upCuD", top="upCu", rz=rz, base=True)  # clamp
     x, y = rot(c, rz, 0, 0)
-    m.box((x, y, z + z0 + h + 0.034 * k), (step * (n - 1) + 0.03 * k, 0.014 * k, 0.012 * k), "upCu", top="upCu", rz=rz, base=True)
+    m.box((x, y, z + z0 + h + 0.042 * k), (step * (n - 1) + 0.03 * k, 0.018 * k, 0.014 * k), "upCu", top="upCu", rz=rz, base=True)
 
 
 def coolant(m, c, z, rz, k):
-    r, h = 0.068 * k, 0.17 * k
-    m.cyl((c[0], c[1], z), r, h, "upSteelD", sides=12, top="upSteel")
-    for t in (0.26, 0.6):                                                                          # coolant windows
-        m.cyl((c[0], c[1], z + h * t), r + 0.005 * k, 0.07 * k, "upCyG", sides=12)
-    for t in (0.0, 0.42, 0.88):                                                                    # frosted fins
-        m.cyl((c[0], c[1], z + h * t), r + 0.014 * k, 0.018 * k, "upCy", sides=12, top="upGlass")
-    x, y = rot(c, rz, 0.03 * k, 0)
-    m.cyl((x, y, z + h), 0.022 * k, 0.04 * k, "upCyD", sides=8, top="upCy")                        # valve
-    x, y = rot(c, rz, -0.035 * k, 0.01 * k)
-    m.cyl((x, y, z + h), 0.016 * k, 0.026 * k, "upSteel", sides=6, top="upBolt")
+    """A ribbed sleeve: a hollow bore on top (it slides over the barrel), frosted ribs, one glowing coolant window, two
+    hoses running down the side."""
+    r, h = 0.066 * k, 0.17 * k
+    m.cyl((c[0], c[1], z), r, h, "upSteelD", sides=14, top="upSteel")
+    m.cyl((c[0], c[1], z + h), r * 0.62, 0.004 * k, "upBlack", sides=14)                         # the bore
+    m.cyl((c[0], c[1], z + h * 0.44), r + 0.005 * k, 0.034 * k, "upCyG", sides=14)                # coolant window
+    for t in (0.06, 0.26, 0.66, 0.86):                                                             # frosted ribs
+        m.cyl((c[0], c[1], z + h * t), r + 0.013 * k, 0.016 * k, "upCy", sides=14, top="upGlass")
+    for a in (0.55, 1.35):                                                                         # coolant hoses
+        def p(rad, t, a=a):
+            return (c[0] + rad * math.cos(rz + a), c[1] + rad * math.sin(rz + a), z + h * t)
+        pts = [p(r, 0.97), p(r + 0.026 * k, 0.9), p(r + 0.028 * k, 0.2), p(r, 0.12)]
+        for p0, p1 in zip(pts, pts[1:]):
+            tube(m, p0, p1, 0.011 * k, "upCyD", sides=6)
 
 
 def housing(m, c, z, rz, k):
@@ -75,6 +80,10 @@ def housing(m, c, z, rz, k):
         for sv in (-1, 1):                                                                         # corner bolts
             x, y = rot(c, rz, su * w * 0.4, sv * d * 0.38)
             m.cyl((x, y, z + 0.055 * k), 0.022 * k, 0.018 * k, "upGun", sides=6, top="upBolt")
+        x, y = rot(c, rz, su * (w / 2 + 0.018 * k), 0)                                             # bolted side flanges
+        m.box((x, y, z), (0.036 * k, d * 0.56, 0.034 * k), "upSteelD", top="upHeavy", rz=rz, base=True, bevel=0.005 * k)
+        x, y = rot(c, rz, su * (w / 2 + 0.02 * k), 0)
+        m.cyl((x, y, z + 0.034 * k), 0.012 * k, 0.012 * k, "upGun", sides=6, top="upBolt")
 
 
 # ---- laser ---------------------------------------------------------------------------------------------------------------
@@ -108,10 +117,10 @@ def _facets(m, base, L, r, rz):
 def prism(m, c, z, rz, k):
     m.box((c[0], c[1], z), (0.17 * k, 0.08 * k, 0.034 * k), "upGun", top="upSteelD", rz=rz, base=True, bevel=0.006 * k)
     m.box((c[0], c[1], z + 0.008 * k), (0.178 * k, 0.088 * k, 0.014 * k), TAG["laser"], rz=rz, base=True)
-    for s in (-1, 1):
-        x, y = rot(c, rz, s * 0.07 * k, 0)
-        m.box((x, y, z + 0.034 * k), (0.022 * k, 0.07 * k, 0.07 * k), "upSteelD", top="upSteel", rz=rz, base=True, bevel=0.005 * k)
-    _facets(m, (c[0], c[1], z + 0.034 * k), 0.2 * k, 0.05 * k, rz)
+    for s in (-1, 1):                                                                              # low cradle arms
+        x, y = rot(c, rz, s * 0.072 * k, 0)
+        m.box((x, y, z + 0.034 * k), (0.016 * k, 0.05 * k, 0.045 * k), "upSteelD", top="upSteel", rz=rz, base=True, bevel=0.004 * k)
+    _facets(m, (c[0], c[1], z + 0.034 * k), 0.23 * k, 0.058 * k, rz)
 
 
 def focus(m, c, z, rz, k):
@@ -128,16 +137,24 @@ def focus(m, c, z, rz, k):
 
 # ---- mass driver ---------------------------------------------------------------------------------------------------------
 
+def _scored(m, c, z, r, h, rows, cols, a, b, rz=0.0):
+    """A cylinder's side scored into a grid of fragments: alternating tones, `rows` x `cols` cells."""
+    ang = [rz + math.tau * i / cols for i in range(cols + 1)]
+    for j in range(rows):
+        z0, z1 = z + h * j / rows, z + h * (j + 1) / rows
+        for i in range(cols):
+            p = [(c[0] + r * math.cos(ang[i]), c[1] + r * math.sin(ang[i])), (c[0] + r * math.cos(ang[i + 1]), c[1] + r * math.sin(ang[i + 1]))]
+            m.poly([core.G(p[0][0], p[0][1], z0), core.G(p[1][0], p[1][1], z0), core.G(p[1][0], p[1][1], z1),
+                    core.G(p[0][0], p[0][1], z1)], a if (i + j) % 2 else b, flip=False)
+
+
 def frag(m, c, z, rz, k):
-    r, h = 0.048 * k, 0.1 * k
-    m.cyl((c[0], c[1], z), r + 0.008 * k, 0.024 * k, "upCuD", sides=10, top="upCu")
-    m.cyl((c[0], c[1], z + 0.024 * k), r, h, "upSteelD", sides=10, top="upSteel")
-    m.cyl((c[0], c[1], z + 0.03 * k), r + 0.004 * k, 0.02 * k, TAG["mass"], sides=10)               # weapon tag band
-    for t in (0.3, 0.6):                                                                           # scoring grooves
-        m.cyl((c[0], c[1], z + 0.024 * k + h * t), r + 0.003 * k, 0.012 * k, "upBlack", sides=10)
-    zt = z + 0.024 * k + h
-    m.cyl((c[0], c[1], zt), r, 0.04 * k, "upSteel", sides=10, rtop=r * 0.62, top="upSteel")        # the ogive: two tapers
-    cone(m, (c[0], c[1], zt + 0.04 * k), (c[0], c[1], zt + 0.09 * k), r * 0.62, "upBolt", sides=10)
+    """A stubby slug, its casing scored into fragments, a blunt nose, a brass base and the weapon band."""
+    r, h = 0.058 * k, 0.075 * k
+    m.cyl((c[0], c[1], z), r + 0.008 * k, 0.024 * k, "upCuD", sides=12, top="upCu")
+    m.cyl((c[0], c[1], z + 0.024 * k), r + 0.004 * k, 0.018 * k, TAG["mass"], sides=12)            # weapon tag band
+    _scored(m, c, z + 0.042 * k, r, h, 3, 10, "upSteel", "upSteelD", rz)
+    m.cyl((c[0], c[1], z + 0.042 * k + h), r, 0.036 * k, "upSteel", sides=12, rtop=r * 0.55, top="upBolt")   # blunt nose
 
 
 def rail(m, c, z, rz, k):
@@ -152,7 +169,7 @@ def rail(m, c, z, rz, k):
         m.box((x, y, z + 0.012 * k), (0.024 * k, 0.038 * k, 0.074 * k), TAG["mass"], rz=rz, base=True)          # weapon tag
         for u in (-0.08, -0.03, 0.02, 0.07):                                                       # copper windings
             x, y = rot(c, rz, u * k, v * k)
-            m.box((x, y, z + 0.006 * k), (0.02 * k, 0.044 * k, 0.062 * k), "upCu", top="upCuD", rz=rz, base=True)
+            m.box((x, y, z + 0.004 * k), (0.022 * k, 0.046 * k, 0.09 * k), "upCu", top="upCu", rz=rz, base=True)   # (over the rail top)
 
 
 # ---- missiles ------------------------------------------------------------------------------------------------------------
@@ -208,14 +225,18 @@ def chain(m, c, z, rz, k):
 # ---- incendiary ------------------------------------------------------------------------------------------------------------
 
 def thermite(m, c, z, rz, k):
-    r, h = 0.072 * k, 0.1 * k
+    """A squat canister: orange-red band, a lid with a glowing igniter and a carry handle arching over it."""
+    r, h = 0.074 * k, 0.11 * k
     m.cyl((c[0], c[1], z), r, h, "upOlive", sides=12, top="upGun")
-    m.cyl((c[0], c[1], z + h * 0.28), r + 0.005 * k, h * 0.42, TAG["fire"], sides=12)               # weapon tag band
-    m.cyl((c[0], c[1], z + h), r * 0.78, 0.018 * k, "upSteelD", sides=12, top="upSteel")
-    m.cyl((c[0], c[1], z + h + 0.018 * k), 0.022 * k, 0.034 * k, "upOrD", sides=8, top="upOrG")     # igniter
-    x, y = rot(c, rz, 0.115 * k, 0.05 * k)
-    m.box((x, y, z), (0.07 * k, 0.05 * k, 0.06 * k), "upOrD", top="upOr", rz=rz, base=True, bevel=0.005 * k)    # charge brick
-    m.box((x, y, z + 0.06 * k), (0.07 * k, 0.012 * k, 0.008 * k), "upBlack", rz=rz, base=True)
+    m.cyl((c[0], c[1], z + h * 0.24), r + 0.005 * k, h * 0.4, TAG["fire"], sides=12)               # weapon tag band
+    m.cyl((c[0], c[1], z + h), r * 0.82, 0.018 * k, "upSteelD", sides=12, top="upSteel")           # lid
+    x, y = rot(c, rz, 0.02 * k, 0.02 * k)
+    m.cyl((x, y, z + h + 0.018 * k), 0.02 * k, 0.03 * k, "upOrD", sides=8, top="upOrG")             # igniter
+    hz = z + h + 0.018 * k
+    pts = [(-0.05, 0.0), (-0.042, 0.045), (0.0, 0.062), (0.042, 0.045), (0.05, 0.0)]                # handle
+    pts = [(*rot(c, rz - 0.2, u * k, 0), hz + w * k) for u, w in pts]
+    for p0, p1 in zip(pts, pts[1:]):
+        tube(m, p0, p1, 0.009 * k, "upSteel", sides=6)
 
 
 # ---- the set ---------------------------------------------------------------------------------------------------------------
