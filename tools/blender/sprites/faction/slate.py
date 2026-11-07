@@ -208,7 +208,7 @@ def slate_panel(k, ax, plane, a, b, top, foot):
     pixel left out); a lit bar 3 px tall along its inside top, 2 px under its top line; a lit tick 7 px each side of the
     middle from a px under its foot up 4 px."""
     lit = "fGS1" if ax == "y" else "fGS2"
-    bar = "fGS0" if ax == "y" else "fGS1"               # (the bar a step over the ticks)
+    bar = "fGSb" if ax == "y" else "fGSc"               # (the bar a bluer grey, the ref's)
     W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
     zt = zb + 15 * PZ
