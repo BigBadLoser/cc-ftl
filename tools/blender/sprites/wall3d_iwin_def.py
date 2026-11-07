@@ -23,7 +23,8 @@ POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wH"         # the sill's level top (the light)
 LIP_SLOPE = "wS"        # the sill's top where it slopes down from a post: off the lip (a step under) ...
 RAMP_SLOPE = "wL"       # ... and on into the ramp (between)
-EDGE = "wE"             # the sill's front edge lit (a step over its top), EDGE_W deep
+EDGE = "wE"             # the sill's front edge lit (a step over its top), EDGE_W deep; on the slope off the lip in the
+LIP_EDGE = "wL"         # lip's own lit top's colour
 EDGE_W = 1 / 32
 SEAM = "wM"             # a seam across the sill where the slope off the lip ends and the one into the ramp starts
 BEAM_UNDER = "wK"       # the beam's underside (the black)
@@ -140,7 +141,7 @@ def hook(k, sp, own=True):
               SILL_TOP if abs(h1 - h0) < 1e-9 else LIP_SLOPE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else RAMP_SLOPE)
         e = 2 * T.PAINT                                 # (its front edge lit)
         _quad(k, [(u0, w0 - EDGE_W, h0 + e), (u1, w1 - EDGE_W, h1 + e), (u1, w1, h1 + e), (u0, w0, h0 + e)], (0, 0, 1),
-              EDGE)
+              LIP_EDGE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else EDGE)
     for xs, sd in ((x0 + RUN, 1), (x1 - RUN, -1)):    # the seam where the slope into the ramp starts
         xe = xs + sd * T.LINE
         if not (a < min(xs, xe) and max(xs, xe) < b):
