@@ -6,6 +6,7 @@ import { OVERCHARGE_WEAPON_CHARGE } from './heatTuning';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
+import { weaponDefOf } from '../upgrades/stats';
 import { SKILL_STEP } from '../tuning';
 import { CombatC, ProjectileC, WeaponC } from './components';
 
@@ -23,7 +24,7 @@ export function projectileEtaSec(sim: Sim, projectileId: number): number | null 
 export function commitEtaSec(sim: Sim, weaponId: number): number | null {
   const w = sim.world.get(weaponId, WeaponC);
   const m = sim.world.get(weaponId, ModuleC);
-  const wdef = m && sim.content.weapons?.[sim.content.modules[m.def]?.weapon ?? ''];
+  const wdef = weaponDefOf(sim, weaponId); // effective: a quick capacitor charges it faster
   const c = w?.commit;
   if (!w || !m || !wdef || !c) return null;
   const ship = shipIdOf(sim, m);

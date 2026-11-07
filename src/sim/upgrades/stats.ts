@@ -6,6 +6,8 @@ import type { UpgradeDef } from './types';
 /**
  * The one place a fitted upgrade's modifiers are read ("effective stats"). Callers ask for the effective value of a stat and never test
  * for a particular upgrade; a new upgrade is an item def with `mods`.
+ * Read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons` directly: the base def
+ * misses the fitted upgrade (a countdown, a heat check or a flag would read the unupgraded weapon).
  */
 
 /** The upgrade fitted in a module's slot, if any. */

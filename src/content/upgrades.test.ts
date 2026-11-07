@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
 import { damageModule } from '../sim/combat/effects';
+import { commitEtaSec } from '../sim/combat/eta';
 import { fitJobOf } from '../sim/upgrades/fit';
 import { stripUpgrade } from '../sim/upgrades/loadout';
 import { damageTakenMul, effectiveWeapon, weaponDefOf } from '../sim/upgrades/stats';
@@ -111,6 +112,21 @@ describe('upgrade modifiers', () => {
     expect(weaponDefOf(sim, gun)?.heat).toBe(base.heat);
     delete m.upgrade;
     expect(effectiveWeapon(sim, gun, base)).toBe(base);
+  });
+
+  it('the committed-shot countdown uses the effective charge time (a quick capacitor brings it in sooner)', () => {
+    const eta = (upgrade?: string): number => {
+      const { sim, gun } = setup();
+      const m = sim.world.get(gun, ModuleC) as { upgrade?: string };
+      if (upgrade) m.upgrade = upgrade;
+      const w = sim.world.get(gun, WeaponC) as { charge: number; commit?: unknown };
+      w.charge = 0;
+      w.commit = { ship: 0, x: 0, y: 0, w: 1, h: 1 };
+      return commitEtaSec(sim, gun) as number;
+    };
+    const plain = eta();
+    expect(plain).toBeGreaterThan(0);
+    expect(eta('item.upg_capacitor')).toBeLessThan(plain);
   });
 
   it('a volley adds the effective heat', () => {
