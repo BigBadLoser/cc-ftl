@@ -69,9 +69,9 @@ def _k():
 
 
 def _width(h, m):
-    """How far out of the wall's face the wall stands over height h (either side): the lip over the ramp's top, the
-    ramp under it (the cut across the wall, out to where the ramp falls under the sill). m: a height in the same
-    stretch (h may be on its end)."""
+    """How far out of the wall's face the wall stands over height h (the near side, +y here): the lip over the ramp's
+    top, the ramp under it (the cut across the wall, out to where the ramp falls under the sill). m: a height in the
+    same stretch (h may be on its end)."""
     zs = W.skirt_top()
     return _lip_d() if m > T.lip_heights(zs)[0] else (zs - h) / _k()
 
@@ -132,7 +132,8 @@ def hook(k, sp, own=True):
             continue
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
         w0, w1 = (yf + _width(h, (h0 + h1) / 2) for h in (h0, h1))
-        _quad(k, [(u0, -w0, h0), (u1, -w1, h1), (u1, w1, h1), (u0, w0, h0)], (0, 0, 1),
+        v0, v1 = (yf + (zs - h) / _k() for h in (h0, h1))              # (the far side, -y: its plain ramp)
+        _quad(k, [(u0, -v0, h0), (u1, -v1, h1), (u1, w1, h1), (u0, w0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else LIP_SLOPE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else RAMP_SLOPE)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
