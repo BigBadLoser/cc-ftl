@@ -8,6 +8,7 @@ import { StationAlarmC, StationCrewC, WantedC, type StationAlarm } from '../stat
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { guestOn } from '../consent/guests';
+import { onStationRoll, roleOf } from '../consent/roles';
 
 /** Seconds with no intruder, attack, fire or breach before an alarm calms down. */
 const CALM_AFTER_SEC = 30;
@@ -41,7 +42,7 @@ export function stationAlarmSystem(sim: Sim): void {
     if (!ship || (ship.state !== 'active' && ship.state !== 'disabled')) continue;
     const people = (aboard.get(st) ?? []).filter((c) => isCombatReady(sim, c));
     const reasons: string[] = [];
-    const outsiders = people.filter((c) => sim.world.get(c, AllegianceC)?.faction !== ship.faction && !sim.world.has(c, StationCrewC));
+    const outsiders = people.filter((c) => sim.world.get(c, AllegianceC)?.faction !== ship.faction && !onStationRoll(roleOf(sim, c)));
     for (const c of outsiders) {
       const isInvited = guestOn(sim, c, st);
       const f = sim.world.get(c, FighterC);
