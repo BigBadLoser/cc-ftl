@@ -12,6 +12,7 @@ import { takeStock } from '../sim/combat/ammo';
 import { storageAdd } from '../sim/items/storage';
 import { Struct } from '../sim/structure';
 import { TICK_HZ } from '../sim/time';
+import { upgradeEffects } from '../app/upgradeText';
 import { content } from '.';
 
 const WEAPON_OF = {
@@ -124,6 +125,16 @@ describe('behaviour upgrades: items and fitting', () => {
     const carried = new Set((Object.values(content.factions) as { upgrades?: { item: string }[] }[]).flatMap((f) => (f.upgrades ?? []).map((u) => u.item)));
     expect(carried.has('item.upg_nuke')).toBe(false);
     for (const item of ITEMS.filter((i) => i !== 'item.upg_nuke')) expect(carried.has(item), item).toBe(true);
+  });
+});
+
+describe('behaviour upgrades: the hover card text', () => {
+  it('each has one line saying what it does', () => {
+    for (const item of ITEMS) {
+      const lines = upgradeEffects(content.items[item].upgrade);
+      expect(lines.length, item).toBe(1);
+      expect(lines[0]!.length, item).toBeGreaterThan(10);
+    }
   });
 });
 

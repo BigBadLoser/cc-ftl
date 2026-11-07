@@ -17,7 +17,7 @@ describe('weapon upgrades in the UI snapshots', () => {
     const mine = sim.world.query(WeaponC, ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === playerShip(sim)) as number;
     (sim.world.get(mine, ModuleC) as { upgrade?: string }).upgrade = 'item.upg_housing';
     const view = buildCombat(sim);
-    expect(view.enemies.find((e) => e.ship === ship)?.charges?.find((w) => w.id === gun)?.upgrade).toEqual({ item: 'item.upg_coolant', name: 'Coolant jacket' });
+    expect(view.enemies.find((e) => e.ship === ship)?.charges?.find((w) => w.id === gun)?.upgrade).toEqual({ item: 'item.upg_coolant', name: 'Coolant jacket', effects: ['-30% heat per volley'] });
     expect(view.player?.weapons.find((w) => w.id === mine)?.upgrade?.item).toBe('item.upg_housing');
   });
 

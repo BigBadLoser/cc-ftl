@@ -4,7 +4,24 @@
   import HeatBar from '../../src/ui/combat/HeatBar.svelte';
   import DockTab from '../../src/ui/combat/DockTab.svelte';
   import EnemyCard from '../../src/ui/combat/EnemyCard.svelte';
-  import type { UiShipCombat } from '../../src/ui/api';
+  import UpgradeTip from '../../src/ui/combat/UpgradeTip.svelte';
+  import { onMount } from 'svelte';
+  import { content } from '../../src/content';
+  import { loadItemIcons } from '../../src/app/itemIcons';
+  import { upgradeEffects } from '../../src/app/upgradeText';
+  import type { ItemDef } from '../../src/sim';
+  import type { UiApi, UiIcon, UiShipCombat, UiUpgradeInfo } from '../../src/ui/api';
+
+  // The upgrade hover card needs only the item icons from the api: load the real ones (placeholders included) as the game does.
+  let icons = $state<Record<string, UiIcon>>({});
+  const api = { itemIcons: { subscribe: (f: (v: Record<string, UiIcon>) => void) => { f(icons); return () => {}; } } } as unknown as UiApi;
+  const upgradeIds = Object.keys(content.items).filter((i) => i.startsWith('item.upg_'));
+  const info = (id: string): UiUpgradeInfo => {
+    const d = (content.items as Record<string, ItemDef>)[id]!;
+    return { item: id, name: d.name, effects: d.upgrade ? upgradeEffects(d.upgrade) : [] };
+  };
+  let ready = $state(false);
+  onMount(async () => { icons = await loadItemIcons(upgradeIds, content.items as Record<string, ItemDef>); ready = true; });
 
   const oc = { left: 0, cooldown: 0 };
   const gun = (id: number, name: string, charge: number, committed: boolean, color: number) =>
@@ -13,7 +30,7 @@
     ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
     heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
     evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
-    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor' } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket' } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
+    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor', effects: [] } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: [] } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
   } as unknown as UiShipCombat);
   const cards = [
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
@@ -90,8 +107,15 @@
 
   <h3>Enemy card <small>a generated name shows only its call sign; an authored one whole; a long one cut short</small></h3>
   <div class="row top">
-    {#each cards as c (c.e.name)}<EnemyCard enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
+    {#each cards as c (c.e.name)}<EnemyCard {api} enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
   </div>
+
+  <h3>Upgrade hover card <small>the card a fitted upgrade's symbol opens on a weapon row, for every upgrade (held open here)</small></h3>
+  {#if ready}
+    <div class="row top">
+      {#each upgradeIds as id (id)}<UpgradeTip {api} upgrade={info(id)} open />{/each}
+    </div>
+  {/if}
 
   <h3>Dock tabs <small>Board ready, Board blocked, Flee charging (the same DockTab)</small></h3>
   <div class="row tabs">

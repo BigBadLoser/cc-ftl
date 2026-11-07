@@ -2,7 +2,8 @@ import {
   CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
   type Combat, type Sim, type Target,
 } from '../sim';
-import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon } from '../ui/api';
+import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon, UiUpgradeInfo } from '../ui/api';
+import { upgradeEffects } from './upgradeText';
 import { HEAT_MAX } from '../sim/combat/heatTuning';
 import { shieldsDown } from '../sim/combat/heat';
 import { TICK_HZ } from '../sim/time';
@@ -180,7 +181,8 @@ function crewOnTheWay(sim: Sim, moduleId: number): string | null {
 }
 
 /** The upgrade fitted in a module's slot as the UI shows it (item id and name), or null. */
-export function upgradeInfo(sim: Sim, moduleId: number): { item: string; name: string } | null {
+export function upgradeInfo(sim: Sim, moduleId: number): UiUpgradeInfo | null {
   const item = sim.world.get(moduleId, ModuleC)?.upgrade;
-  return item ? { item, name: sim.content.items[item]?.name ?? item } : null;
+  const def = item ? sim.content.items[item] : undefined;
+  return item ? { item, name: def?.name ?? item, effects: def?.upgrade ? upgradeEffects(def.upgrade) : [] } : null;
 }

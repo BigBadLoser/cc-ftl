@@ -17,7 +17,7 @@ import type { EmitterDef, Particles } from './fx/particles';
 import { onShip } from './regionRules';
 import { animNow } from './animClock';
 import { createShieldView } from './shieldView';
-import { ARC_COLOR, drawBolt, shotLook } from './shotLook';
+import { ARC_COLOR, drawBolt, recolor, shotLook } from './shotLook';
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -62,6 +62,7 @@ interface Floater {
 const FLASH_LIFE = 0.28;
 const TEXT_LIFE = 1.1;
 const TRACER_LIFE = 0.2;
+const ARC_LIFE = 0.5;
 
 /**
  * Combat fx in sector space (one layer above all ships): projectiles in flight and their trails, muzzle flashes,
@@ -215,7 +216,8 @@ export function createSectorFx(
           const spr = new Sprite(art.s.tex);
           spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
           spr.scale.set(art.scale);
-          spr.tint = looks.get(id)?.tint ?? art.tint;
+          spr.tint = art.tint;
+          if (looks.get(id)?.tint !== undefined) recolor(spr, looks.get(id)?.tint as number);
           spr.blendMode = 'add';
           L.sorted.addChild(spr);
           shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0) }));
@@ -249,11 +251,12 @@ export function createSectorFx(
       for (let i = tracers.length - 1; i >= 0; i--) {
         const tr = tracers[i] as Tracer;
         tr.age += dt;
-        if (tr.age >= TRACER_LIFE) {
+        const life = tr.arc !== undefined ? ARC_LIFE : TRACER_LIFE;
+        if (tr.age >= life) {
           tracers.splice(i, 1);
           continue;
         }
-        const a = 1 - tr.age / TRACER_LIFE;
+        const a = 1 - tr.age / life;
         if (tr.arc !== undefined) {
           drawBolt(lines, tr.a, tr.b, tr.arc, a);
           continue;

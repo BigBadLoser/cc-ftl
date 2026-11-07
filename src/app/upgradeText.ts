@@ -4,6 +4,7 @@ import type { UpgradeDef } from '../sim';
 export function upgradeEffects(up: UpgradeDef): string[] {
   const m = up.mods;
   const pct = (mul: number): string => `${mul < 1 ? '-' : '+'}${Math.round(Math.abs(1 - mul) * 100)}%`;
+  if (up.blurb) return [up.blurb];
   const out: string[] = [];
   if (m.heatMul !== undefined) out.push(`${pct(m.heatMul)} heat per volley`);
   if (m.chargeMul !== undefined) out.push(`${pct(m.chargeMul)} charge time`);

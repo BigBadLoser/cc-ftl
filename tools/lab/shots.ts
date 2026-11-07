@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite } from 'pixi.js';
 import { content } from '../../src/content';
 import { resolveArt } from '../../src/render/assets/fallback';
 import { ART_SCALE as S } from '../../src/render/iso';
-import { ARC_COLOR, drawBolt, shotLook } from '../../src/render/shotLook';
+import { ARC_COLOR, drawBolt, recolor, shotLook } from '../../src/render/shotLook';
 import type { ItemDef, WeaponDef } from '../../src/sim/registry';
 import { withMods } from '../../src/sim/upgrades/stats';
 import type { LabCell, LabCtx, LabPanel } from './panel';
@@ -29,7 +29,8 @@ function shotCell(ctx: LabCtx, label: string, note: string, weapon: string, def:
         const spr = new Sprite(art.s.tex);
         spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
         spr.scale.set(art.scale * scale);
-        spr.tint = tint ?? art.tint;
+        spr.tint = art.tint;
+        if (tint !== undefined) recolor(spr, tint);
         if (add) spr.blendMode = 'add';
         spr.position.set(Math.round(x), Math.round(y));
         root.addChild(spr);
@@ -40,10 +41,13 @@ function shotCell(ctx: LabCtx, label: string, note: string, weapon: string, def:
       g.rect(W - 120, MID + 14, 60, 18).fill({ color: 0x1c2733 }).stroke({ color: 0x3a4a5a, width: 1 });
       g.circle(24, MID + 10, 5).fill({ color: 0x3a4a5a });
       // the trail: dots thinning behind the bolt, more of them for a denser trail
-      const bx = W / 2 - 20;
+      const bx = W / 2 - 10;
       const dots = Math.round(7 * look.trail);
       for (let i = 1; i <= dots; i++) g.circle(bx - (i * 70) / Math.max(7, dots), MID + (i % 2 ? 2 : -2), 2).fill({ color: look.tint, alpha: 0.8 * (1 - i / (dots + 1)) });
-      sprite(def.projectileAsset, bx, MID, 1, look.tint === shotLook(weapon).tint ? undefined : look.tint);
+      // the volley: every shot of it in a row, a fixed gap apart (the delay between shots, in px)
+      // (staggered along the flight and fanned in lanes so each bolt can be counted)
+      const n = def.shots;
+      for (let i = 0; i < n; i++) sprite(def.projectileAsset, bx - 40 + (i - (n - 1) / 2) * 34, MID + (i - (n - 1) / 2) * 15, n > 1 ? 0.6 : 1, def.look?.tint);
       // the impact: sparks and the explosion, sized by the blast
       const hx = W - 90, hy = MID + 10;
       for (let i = 0; i < Math.round(10 * look.blast); i++) {
@@ -57,7 +61,7 @@ function shotCell(ctx: LabCtx, label: string, note: string, weapon: string, def:
           g.circle(c.x, c.y, 5).fill({ color: 0xe8d8b0 });
           const bolt = new Graphics();
           root.addChild(bolt);
-          drawBolt(bolt, { x: hx, y: hy + 10 }, c, look.tint === shotLook(weapon).tint ? ARC_COLOR : look.tint, 0.9, 0);
+          drawBolt(bolt, { x: hx, y: hy + 10 }, c, def.look?.tint ?? ARC_COLOR, 0.95, 0);
         }
       }
       return () => {};

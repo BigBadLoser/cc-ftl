@@ -4,7 +4,7 @@ import { shipGrid, shipIdOf } from '../sim/regions';
 
 /**
  * `?scenario=upgrades` (weapon upgrades, #338): the fight setup (a generated navy ship in range, `?shipgen=` picks another faction) and, on your ship, a
- * flak cannon in a free 2x2 spot, hull scrap for it, one of each general upgrade in cargo, and a quick capacitor already in the burst laser. Fit the
+ * flak cannon in a free 2x2 spot, hull scrap for it, two of each upgrade in cargo (the black-market nuke aside), and a prism splitter already in the burst laser. Fit the
  * others from the module inspector (click a weapon); the enemy's guns carry upgrades too (the card shows them).
  */
 export function upgradeScenarioCommands(sim: Sim): Command[] {
@@ -21,14 +21,21 @@ export function upgradeScenarioCommands(sim: Sim): Command[] {
     }
   }
   out.push({ type: 'debug.giveItems', item: 'item.scrap_hull', count: 30 });
-  for (const item of ['item.upg_coolant', 'item.upg_capacitor', 'item.upg_housing']) out.push({ type: 'debug.giveItems', item, count: 2 });
+  for (const item of ['item.upg_coolant', 'item.upg_capacitor', 'item.upg_housing', 'item.upg_prism', 'item.upg_focus', 'item.upg_frag', 'item.upg_rail', 'item.upg_chain', 'item.upg_thermite']) out.push({ type: 'debug.giveItems', item, count: 2 });
   const laser = sim.world.query(WeaponC, ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === 'module.burstLaser' && shipIdOf(sim, sim.world.get(id, ModuleC)) === ship);
-  if (laser !== undefined) out.push({ type: 'debug.setUpgrade', moduleId: laser, item: 'item.upg_capacitor' });
+  if (laser !== undefined) out.push({ type: 'debug.setUpgrade', moduleId: laser, item: 'item.upg_prism' });
   return out;
 }
 
-/** Make sure the enemy's weapons carry something to scan: its first two guns get the navy's coolant and a capacitor if the roll gave them none. */
+/** The enemy's guns each get the behaviour upgrade made for their weapon type (prism on lasers, rail on drivers, chain on ion...), so a fight shows the upgraded shots and the card lists them. */
 export function enemyUpgradeCommands(sim: Sim, enemy: number): Command[] {
-  const guns = sim.world.query(WeaponC, ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === enemy);
-  return guns.slice(0, 2).flatMap((id, k): Command[] => (sim.world.get(id, ModuleC)?.upgrade ? [] : [{ type: 'debug.setUpgrade', moduleId: id, item: k === 0 ? 'item.upg_capacitor' : 'item.upg_coolant' }]));
+  const out: Command[] = [];
+  for (const id of sim.world.query(WeaponC, ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const weapon = m && sim.content.modules[m.def]?.weapon;
+    if (!m || !weapon || shipIdOf(sim, m) !== enemy) continue;
+    const item = Object.entries(sim.content.items).find(([, d]) => d.upgrade?.fits?.includes(weapon) && d.tags.every((t) => t !== 'contraband'))?.[0];
+    if (item) out.push({ type: 'debug.setUpgrade', moduleId: id, item });
+  }
+  return out;
 }
