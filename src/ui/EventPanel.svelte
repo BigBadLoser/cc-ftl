@@ -12,6 +12,7 @@
   let { api, event, result }: { api: UiApi; event: UiEventGrid; result: UiEncounterResult | null } = $props();
 
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
+  const help = () => event.aid && api.dispatch({ type: 'galaxy.aid', ship: event.aid.ship });
   const answer = (grant: boolean) => event.dockRequest && api.dispatch({ type: 'galaxy.visit', ship: event.dockRequest.ship, grant });
   const title = $derived(event.title.replace(/^Deep space: /, ''));
   const quiet = $derived(
@@ -44,6 +45,15 @@
             <ActionButton tone="plain" onclick={() => answer(true)} testid="dock-allow"><Icon name="shuttle" size={16} />Let them dock</ActionButton>
             <ActionButton tone="plain" onclick={() => answer(false)} testid="dock-refuse"><Icon name="evasion" size={16} />Refuse</ActionButton>
           </div>
+        </div>
+      {/if}
+      {#if event.aid}
+        <div class="ask" data-testid="aid">
+          {#if event.aid.clock !== null}<p class="note warn" data-testid="aid-clock"><Icon name="alert" size={14} />{event.aid.name}: {(event.aid.failing ?? 'systems').toLowerCase()} failing, {event.aid.clock} s left</p>{/if}
+          {#if event.aid.status}<p class="note ask-text">{event.aid.status}</p>{/if}
+          {#if event.aid.action}
+            <ActionButton tone="plain" onclick={help} testid="aid-offer"><Icon name="shuttle" size={16} />{event.aid.action === 'offer' ? 'Offer help' : 'Send the repair party again'}</ActionButton>
+          {/if}
         </div>
       {/if}
       <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{quiet}</p>

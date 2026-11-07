@@ -387,6 +387,11 @@ scripts. Not every scene has one.
     - **Raiders, by seed, deeper only:** some scenes have them already circling the freighter when you drop out, others have them
       jump in on a clock that the scan warns about.
     - **Survivors later,** with passengers (medical pod, step 6). The freighter is built without them.
+    - **Round 2 (2026-11-06):** its crew cannot repair (a per-crew work block, the general mechanism traits will use); the clock starts at
+      deploy and runs 150-165 s, fires in its last 30 s (a party sent at once finishes with 17-81 s to spare over 12 seeds; the slow ones
+      are reactors in hot rooms, where the party fetches suits first); the reactor blast is real (module damage,
+      breach, crew hurt by distance, fire), then the ship goes dark and wrecks, and guests aboard face fire and vacuum, not instant death;
+      enemy AI targets a recent attacker first, then its prey, then other foes, so raiders turn on a player who shoots them.
 - **Medical pod** (`medical_emergency`). Eligible: a bed aboard.
   - Signal: a pod beacon with a faint life sign.
   - Remote: scan (patient's injury, species, skills hinted), ignore.
@@ -491,6 +496,9 @@ A door that cannot open (a derelict's unpowered airlock) is never a way through,
     with an empty suit is a hazard): its escape aims for breathable air or any source. If that fails, they go down and the
     normal rescue path takes them to a bed.
   - Crew rescue can't help someone who can't reach a source: the rescuer couldn't reach them either. Only a shuttle can.
+- **Hostile rooms (user ruling 2026-11-06).** A room past a hazard line a suit keeps out (thin air; heat over 55°C up to the suit's
+  90°C rating) is suited work: crew going to a job there suit up first, as for vacuum, and stay while their tank lasts and it is
+  within the rating. Fire is never: a suit does not make standing in fire safe, and firefighting, breaches and rescues go at once.
 - **Suits belong to wherever they are.** A worn suit is the wearer's; a stowed one is part of that airlock's or shuttle's
   stock. Stowing anywhere adds to that stock (already true of `doffSuit` and the float-back). `SuitC.vehicle`, `detached` and
   `SuitC.airlock` go. The rule that no shuttle strands anyone comes from the away party (below), not from suit ownership.

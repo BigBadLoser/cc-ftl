@@ -154,6 +154,17 @@ export function createSectorFx(
           particles.burst(burst(col, 90), c.x, c.y - 10 * S, 14, 8);
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10 * S, 6, 6);
           flash('fx.explosion_small', c.x, c.y - 10 * S, 1);
+        } else if (e.type === 'ship.blast') {
+          // A blast aboard (a scene's reactor): the impact explosion, scaled up, with a ring of smaller ones around it.
+          const c = secArt(e.x, e.y);
+          particles.burst(burst(0xffb060, 140), c.x, c.y - 10 * S, 40, 14);
+          particles.burst(burst(0xffffff, 90), c.x, c.y - 10 * S, 16, 10);
+          flash('fx.explosion_small', c.x, c.y - 10 * S, 3);
+          const r = Math.max(1, e.radius);
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+            const p = secArt(e.x + (dx * r) / 2, e.y + (dy * r) / 2);
+            flash('fx.explosion_small', p.x, p.y - 10 * S, 1.4);
+          }
         } else if (e.type === 'projectile.intercepted') {
           const s = ship(e.ship);
           const last = shots.get(e.projectile);

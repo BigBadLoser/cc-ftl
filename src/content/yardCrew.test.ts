@@ -8,6 +8,10 @@ import { SuitC } from '../sim/eva/components';
 import { spillItems } from '../sim/items/stacks';
 import { suitDef } from '../sim/eva/suit';
 import { AllegianceC } from '../sim/fight/components';
+import { ConsentC } from '../sim/consent/components';
+import { guestOn } from '../sim/consent/guests';
+import { isInvader, isOffDuty } from '../sim/fight/relations';
+import { shipIdOf } from '../sim/regions';
 import { content } from './index';
 import { outline, planHull, run, yardGame } from './yardFixture';
 
@@ -92,6 +96,26 @@ describe('the yard crew', () => {
     expect(o.phase).toBe('done');
     expect(builtCount(back, o).floor).toBe(2);
     expect(back.world.get(me, ShipC)!.width).toBe(sim.world.get(me, ShipC)!.width);
+  }, 120000);
+
+  it('the contractors are aboard by a working consent grant (not invaders, on duty); the grant goes with the order', () => {
+    const { sim, station, me } = yardGame();
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    run(sim, 1);
+    const order = sim.yard.orders[0]!;
+    expect(sim.world.get(me, ConsentC)?.grants).toEqual([expect.objectContaining({ by: 'yard', faction: 'neutral', site: me, work: true, from: station })]);
+    const onMe = (c: number): boolean => sim.world.has(c, PositionC) && shipIdOf(sim, sim.world.get(c, PositionC)!) === me;
+    run(sim, 2000, () => order.crew.some(onMe));
+    const c = order.crew.find(onMe)!;
+    expect(c).toBeDefined();
+    expect(guestOn(sim, c, me)).toBe(true);
+    expect(isInvader(sim, c)).toBe(false);
+    expect(isOffDuty(sim, c)).toBe(false);
+    sim.enqueue({ type: 'yard.cancel', order: order.id });
+    run(sim, 4000, () => !isLiveOrder(order));
+    expect(isLiveOrder(order)).toBe(false);
+    expect(sim.world.has(me, ConsentC)).toBe(false);
   }, 120000);
 
   it('calling the yard crew off mid-work sends them home and refunds the part that was not built', () => {

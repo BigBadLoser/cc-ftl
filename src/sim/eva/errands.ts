@@ -5,7 +5,7 @@ import { ModuleC } from '../modules/components';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { planWalk } from './route';
-import { airlockUsable, freeSuits, isThin, suitTile } from './suit';
+import { airlockUsable, freeSuits, suitNeeded, suitTile } from './suit';
 import { shipIdOf, shipGrid } from '../regions';
 
 /** An airlock to fit or stow a suit at, with the walk to its suit tile. */
@@ -45,7 +45,7 @@ export function findSuitStow(sim: Sim, crew: number, pos: Position): SuitSource 
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, shipIdOf(sim, pos)) || isThin(grid, at.x, at.y)) continue;
+    if (!grid || !at || !airlockUsable(sim, id) || !onGrid(sim, id, shipIdOf(sim, pos)) || suitNeeded(grid, at.x, at.y)) continue;
     const plan = planWalk(sim, crew, shipIdOf(sim, pos), origin(pos), at);
     if (plan && (!best || plan.steps.length < best.steps.length)) best = { airlock: id, steps: plan.steps };
   }

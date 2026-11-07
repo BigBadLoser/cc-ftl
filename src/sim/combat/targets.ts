@@ -5,6 +5,7 @@ import { factionsHostile, rogueAlly } from './factions';
 import { VehicleC } from '../vehicles/components';
 
 import { shipIdOf } from '../regions';
+import { weaponDefOf } from '../upgrades/stats';
 import { shipById } from './ships';
 import { shipWideAim } from './shipAim';
 
@@ -22,9 +23,7 @@ export function targetableVehicle(sim: Sim, id: number): boolean {
 
 /** True if the weapon module carries a weapon that may fire at shuttles. */
 export function weaponAntiVehicle(sim: Sim, weaponId: number): boolean {
-  const m = sim.world.get(weaponId, ModuleC);
-  const w = m && sim.content.modules[m.def]?.weapon;
-  return !!w && !!sim.content.weapons?.[w]?.antiVehicle;
+  return !!weaponDefOf(sim, weaponId)?.antiVehicle;
 }
 
 /** True if a shuttle is targetable and its home ship's faction is at war with `faction` (a captured home ship makes it friendly). */

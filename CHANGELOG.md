@@ -6,6 +6,9 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### New
 
+- Weapon upgrades: each weapon has an upgrade slot, and an engineer fits or removes an upgrade at the weapon (it is offline meanwhile). Three upgrades to start: the Quick capacitor (charges faster), the Coolant jacket (less heat per volley) and Hardened housing (the weapon takes half damage). Build them at the fabricator, buy them at stations, or take them from enemy ships, which carry their own. A fitted upgrade shows as a small icon beside the weapon's name, on your bar and on the enemy card. ([#344](https://github.com/BigBadLoser/cc-ftl/pull/344))
+- Flak cannon: an ammo weapon that throws a spread of pellets, burning one hull scrap per volley. Each pellet that hits a shield strips a layer, and it scatters more at range. It starts on hold, like the other ammo weapons. ([#344](https://github.com/BigBadLoser/cc-ftl/pull/344))
+- Distress freighter: a crippled freighter hails from the lane with its reactor failing. Agree to help and your repair party boards as guests to fix the reactor before the clock runs out, with fires breaking out near the end and raiders on the way. If the clock runs out, the reactor blows: a real blast that wrecks the ship and kills its crew (your party may live if they're clear). Enemy ships now turn on whoever last shot at them, and crew suit up before working in rooms that are airless or dangerously hot. ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343))
 - Hailing a station opens a comms channel: each service has its own contact on video (dock control, quartermaster, job broker, recruiter, archivist, yard master), and a sensor screen shows the station with the ships around it, your shuttle's trip and a live traffic log. Services are buttons beside it; Trade opens the trade window. ([#335](https://github.com/BigBadLoser/cc-ftl/pull/335))
 - Trading happens in one floating trade window, for stations and trader ships alike: a market list with buy and sell pickers (Shift ±5, Ctrl ±10, Alt for the most you can afford, or type a number), a deal slip showing what you pay and earn, and the deliveries under way. You can agree several deals with the same partner: they queue and run one after another. ([#333](https://github.com/BigBadLoser/cc-ftl/pull/333))
 - The crew inspector has a Social tab: friends and rivals in collapsible groups, each a card you can expand to see how both sides feel, what the bond does and what they do together, plus a mood bar. ([#331](https://github.com/BigBadLoser/cc-ftl/pull/331))
@@ -51,6 +54,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Crew can repair, deconstruct, craft at and research at a module from any side, not only its top-left corner, so a module walled in at that corner is no longer out of reach. ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343), [#344](https://github.com/BigBadLoser/cc-ftl/pull/344))
 - A hovering shuttle comes close enough to a ragged wreck for crew to get back aboard, and "Back to shuttle" works from deep inside a wreck. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Crew no longer repair wrecks they are salvaging or exploring. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - "Transfer blocked: no free shuttle" no longer fills the log while your shuttles are busy, including on a run you fly by hand. It still shows when you have no shuttle. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#316](https://github.com/BigBadLoser/cc-ftl/pull/316))

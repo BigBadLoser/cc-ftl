@@ -6,6 +6,7 @@ import { storageAdd, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockTiles } from '../modules/airlock';
 import { BoarderC, VehicleC } from '../vehicles/components';
+import { TraderC } from '../trade/types';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { grantXp } from '../crew/xp';
@@ -96,6 +97,20 @@ export function applyEffect(sim: Sim, eff: EventEffect, ctx: EffectCtx): string 
   return text;
 }
 
+/** A ship's thanks: the first `lines` lines of its trade stock, half of each (at least 1), out of its stock and into the player's storage. */
+function gift(sim: Sim, ship: number | undefined, lines: number): string | null {
+  const t = ship === undefined ? undefined : sim.world.get(ship, TraderC);
+  const got: string[] = [];
+  for (const q of (t?.stock ?? []).filter((x) => x.count > 0).slice(0, lines)) {
+    const n = Math.max(1, Math.floor(q.count / 2));
+    q.count -= n;
+    giveItems(sim, q.item, n);
+    got.push(`+${describeQty(sim, { item: q.item, count: n })}`);
+  }
+  if (t) t.stock = t.stock.filter((x) => x.count > 0);
+  return got.length ? got.join(', ') : null;
+}
+
 function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
   const story = sim.story;
   switch (eff.type) {
@@ -149,9 +164,13 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     case 'chain':
       story.queue.push({ event: eff.event, due: sim.tick + Math.round((eff.delaySec ?? 0) * TICK_HZ), force: true });
       return null;
-    case 'scene':
+    case 'scene': {
       story.scene = ctx.event;
+      const spec = sim.galaxy.signal;
+      if (eff.aid && spec?.event === ctx.event) for (const s of spec.ships) if (s.stance === 'helpless') s.aid = { state: 'agreed' };
       return null;
+    }
+    case 'gift': return gift(sim, ctx.ship, eff.lines ?? 1);
     case 'physical': {
       story.physical.push({ id: story.nextId++, tick: sim.tick, event: ctx.event, outcome: eff.outcome });
       if (story.physical.length > PHYSICAL_LOG_MAX) story.physical.shift();

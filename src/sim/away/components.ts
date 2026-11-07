@@ -3,12 +3,13 @@ import type { WorkCategory } from '../crew/components';
 
 /**
  * An away site (docs/DESIGN.md "Away sites", #286): a grid other than the player's own where the player wants crew to work, served by one
- * shuttle. It runs until it closes. `owner` is what opened it (`debug`: the `away.open` command; salvage moves onto sites in slice 3).
+ * shuttle. It runs until it closes. `owner` is what opened it (`debug`: the `away.open` command; salvage moves onto sites in slice 3; `aid`: help
+ * agreed with a scene ship, scene/aid.ts, whose party are its guests by a consent grant, consent/).
  * `closing`: the party is called home and the site ends when the shuttle is back. `demand` (work waiting per category) is set by the owner;
  * absent, the site counts the open jobs on its grid.
  */
 export interface AwaySite {
-  owner: 'debug' | 'salvage' | 'boarding' | 'yard';
+  owner: 'debug' | 'salvage' | 'boarding' | 'yard' | 'aid';
   status: 'open' | 'closing';
   vehicle: number;
   since: number;

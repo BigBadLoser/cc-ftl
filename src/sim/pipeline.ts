@@ -69,6 +69,7 @@ import { logisticsSystem } from './logistics/system';
 import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { boardingSiteSystem } from './boarding/site';
+import { sceneSystem } from './systems/scene';
 import { sabotageResumeSystem } from './boarding/resume';
 import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
@@ -201,6 +202,8 @@ export const pipeline: readonly System[] = [
   // --- Combat (see each system's notes). Dormant hostiles wake on provocation, then the combat state is decided (it
   // decides whether consoles are needed next tick).
   dormancySystem,
+  // An open scene's timers act on the world (fires, a reactor that blows) and its aid agreements open and close their sites, before provocation reads the guests.
+  sceneSystem,
   // Boarding a ship that is not hostile turns it (and the ships with it) hostile; firing on one does as the shot leaves (firing system).
   provocationSystem,
   // Black-market truce: a breach (the player firing on or boarding anyone at a truce node) bans them; everyone turns hostile while it lasts.

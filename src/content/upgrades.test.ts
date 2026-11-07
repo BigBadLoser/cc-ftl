@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CombatC, ItemStackC, JobC, ModuleC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
 import { damageModule } from '../sim/combat/effects';
+import { commitEtaSec } from '../sim/combat/eta';
 import { fitJobOf } from '../sim/upgrades/fit';
 import { stripUpgrade } from '../sim/upgrades/loadout';
 import { damageTakenMul, effectiveWeapon, weaponDefOf } from '../sim/upgrades/stats';
 import { removeModule, spawnModule } from '../sim/modules/spawn';
+import { rotatedSize } from '../sim/modules/footprint';
 import { storageAdd, storageCount } from '../sim/items/storage';
 import { shipStoreCount } from '../sim/items/stock';
 import { shipIdOf } from '../sim/regions';
@@ -59,6 +61,20 @@ describe('fitting an upgrade (crew job)', () => {
     expect(m.powered).toBe(true);
   });
 
+  it('the fit job and the repair job span the weapon footprint, so crew may work it from any side', () => {
+    const { sim, gun, ship } = setup();
+    const m = sim.world.get(gun, ModuleC)!;
+    const size = rotatedSize(sim.content.modules[m.def]!, m.rot);
+    stock(sim, ship, 'item.upg_coolant', 1);
+    sim.enqueue({ type: 'module.fitUpgrade', moduleId: gun, item: 'item.upg_coolant' });
+    sim.step();
+    expect(fitJobOf(sim, gun)?.[1].size).toEqual(size);
+    m.hp = 1;
+    for (let t = 0; t < 2 * TICK_HZ; t++) sim.step();
+    const repair = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)!).find((j) => j.kind === 'repair' && j.target === gun);
+    expect(repair?.size).toEqual(size);
+  });
+
   it('removing it puts the item back in cargo intact, again as a crew job', () => {
     const { sim, gun, ship } = setup();
     const m = sim.world.get(gun, ModuleC) as { upgrade?: string };
@@ -111,6 +127,21 @@ describe('upgrade modifiers', () => {
     expect(weaponDefOf(sim, gun)?.heat).toBe(base.heat);
     delete m.upgrade;
     expect(effectiveWeapon(sim, gun, base)).toBe(base);
+  });
+
+  it('the committed-shot countdown uses the effective charge time (a quick capacitor brings it in sooner)', () => {
+    const eta = (upgrade?: string): number => {
+      const { sim, gun } = setup();
+      const m = sim.world.get(gun, ModuleC) as { upgrade?: string };
+      if (upgrade) m.upgrade = upgrade;
+      const w = sim.world.get(gun, WeaponC) as { charge: number; commit?: unknown };
+      w.charge = 0;
+      w.commit = { ship: 0, x: 0, y: 0, w: 1, h: 1 };
+      return commitEtaSec(sim, gun) as number;
+    };
+    const plain = eta();
+    expect(plain).toBeGreaterThan(0);
+    expect(eta('item.upg_capacitor')).toBeLessThan(plain);
   });
 
   it('a volley adds the effective heat', () => {

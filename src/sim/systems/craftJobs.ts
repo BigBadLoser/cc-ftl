@@ -7,6 +7,7 @@ import { refKey, reservations, totalStock, type Reservations } from '../items/st
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
+import { moduleSite } from '../modules/footprint';
 
 /**
  * Keeps one craft job per crafting module that has an order wanting a batch, preferring an order whose inputs are in stock (`nextOrder`). The
@@ -42,7 +43,7 @@ export function craftJobsSystem(sim: Sim): void {
     if (!order || !recipe || recipe.station !== m.def) continue;
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category: recipe.category ?? 'crafting', kind: 'craft', x: m.x, y: m.y, struct: 0, work: recipe.work, progress: 0,
+      category: recipe.category ?? 'crafting', kind: 'craft', ...moduleSite(sim.content.modules[m.def], m), struct: 0, work: recipe.work, progress: 0,
       reservedBy: 0, target: moduleId, needs: needsFrom(recipe.inputs), delivered: [], craft: { recipe: order.recipe },
     });
   }

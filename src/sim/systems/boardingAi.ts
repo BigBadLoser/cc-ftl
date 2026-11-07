@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import { BOARDING_LOAD_TICKS } from '../tuning';
 import { BoarderC, EmbarkOrderC, VehicleC, type Boarder } from '../vehicles/components';
 import { shipIdOf } from '../regions';
+import { hasLeaveFrom } from '../consent/guests';
 
 /**
  * Enemy boarding doctrine (ships whose template has `boarding`; see BoarderC). Deterministic, command-only:
@@ -15,13 +16,14 @@ import { shipIdOf } from '../regions';
  * stowed shuttle; when they are aboard (or BOARDING_LOAD_TICKS pass) the shuttle is sent to dock at the first free,
  * working airlock of the first live player ship; once docked everyone disembarks into that ship, pilot last.
  * A shuttle that is shot down ends the attempt ('done'); one whose dock failed tries another airlock.
- * A neutral ship's party that was let in (`Boarder.visit`, scene/visit.ts) is started by that and runs the same way outside combat.
+ * A neutral ship's party that was let in (a 'visit' consent grant from it on the player's ship, scene/visit.ts) is started by that and runs the same way
+ * outside combat.
  */
 export function boardingAiSystem(sim: Sim): void {
   for (const id of sim.world.query(BoarderC, ShipC)) {
     const b = sim.world.get(id, BoarderC) as Boarder;
     const ship = sim.world.get(id, ShipC)!;
-    if (b.state === 'done' || (!isAiFaction(ship.faction) && !b.visit) || ship.state !== 'active') continue;
+    if (b.state === 'done' || (!isAiFaction(ship.faction) && !hasLeaveFrom(sim, id)) || ship.state !== 'active') continue;
     const v = b.vehicle ? sim.world.get(b.vehicle, VehicleC) : undefined;
     if (b.state === 'idle') {
       if (!sim.sector.inCombat) continue;

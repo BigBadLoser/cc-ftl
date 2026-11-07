@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { StationAlarmC, StationCrewC, WantedC, type StationAlarm } from '../stations/components';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
-import { isLive } from '../trade/deals';
+import { guestOn } from '../consent/guests';
 
 /** Seconds with no intruder, attack, fire or breach before an alarm calms down. */
 const CALM_AFTER_SEC = 30;
@@ -17,8 +17,8 @@ const HAZARD_EVERY = 20;
 const BREACH_O2 = 5;
 
 /**
- * Station alarms. Each tick, per station: intruders are crew of another faction aboard who are not invited (the player's
- * crew are invited while a trade run is docked there), plus anyone it already wants; invited crew who attack station
+ * Station alarms. Each tick, per station: intruders are crew of another faction aboard who are not its guests (a consent grant: the player's
+ * crew are while a trade run is docked there, trade/deals.ts), plus anyone it already wants; invited crew who attack station
  * crew, and every player crew member aboard when the station is hit (its integrity drops: shots, the dormancy wake), become
  * wanted (WantedC, which fight/relations treats as hostile, so guards hunt them with the ordinary fight code and civilians
  * flee). Fires and breaches raise the alarm with nobody wanted. A dormant den wakes on intrusion. After CALM_AFTER_SEC
@@ -40,11 +40,10 @@ export function stationAlarmSystem(sim: Sim): void {
     const alarm = sim.world.get(st, StationAlarmC) as StationAlarm;
     if (!ship || (ship.state !== 'active' && ship.state !== 'disabled')) continue;
     const people = (aboard.get(st) ?? []).filter((c) => isCombatReady(sim, c));
-    const invited = isLiveDock(sim, st);
     const reasons: string[] = [];
     const outsiders = people.filter((c) => sim.world.get(c, AllegianceC)?.faction !== ship.faction && !sim.world.has(c, StationCrewC));
     for (const c of outsiders) {
-      const isInvited = invited && sim.world.get(c, AllegianceC)?.faction === 'player';
+      const isInvited = guestOn(sim, c, st);
       const f = sim.world.get(c, FighterC);
       const attacking = !!f && f.mode === 'engage' && sim.world.get(f.target, StationCrewC)?.station === st;
       if (sim.world.get(c, WantedC)?.station === st || !isInvited || attacking) {
@@ -77,11 +76,6 @@ export function stationAlarmSystem(sim: Sim): void {
       sim.events.emit({ type: 'station.calm', ship: st });
     }
   }
-}
-
-/** True while a player trade run is docked at (or docking with) this station. */
-function isLiveDock(sim: Sim, station: number): boolean {
-  return sim.trade.deals.some((d) => d.ship === station && isLive(d) && d.via === 'dock' && (d.phase === 'dockStation' || d.phase === 'stationWork'));
 }
 
 /** 'fire' or 'breach' if a floor tile of the station burns or has lost its air, else ''. */

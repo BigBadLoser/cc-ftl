@@ -3,15 +3,18 @@ import { hasSuitAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import {
-  CO2_HARM_ABOVE, CO2_HARM_PER_SEC, COLD_BELOW, FIRE_CREW_DAMAGE, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, TEMP_HARM_PER_SEC,
+  CO2_HARM_ABOVE, CO2_HARM_PER_SEC, COLD_BELOW, FIRE_CREW_DAMAGE, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, SUIT_HEAT_MAX, TEMP_HARM_PER_SEC,
 } from '../tuning';
 import { CrewC, PositionC, type Crew } from './components';
 
 /**
  * What harms a crew member on a tile (the vitals system deals it; the crew AI's `hazard` interrupt walks them off it,
  * docs/CREW_AI.md section 5). Thin air and CO2 do not touch a crew member breathing from a suit's tank or a body that does not
- * breathe; a suit also keeps out the cold.
+ * breathe; a suit also keeps out the cold, and heat up to SUIT_HEAT_MAX (a suited worker stays in a hot room, eva/suit.ts `suitNeeded`). Fire it never keeps out.
  */
+
+/** The heat a crew member starts to suffer above: HOT_ABOVE bare, SUIT_HEAT_MAX in a suit with air. */
+const hotAbove = (suited: boolean): number => (suited ? SUIT_HEAT_MAX : HOT_ABOVE);
 
 /** Hazard kinds, as bits: what a task can declare it tolerates. */
 export const HAZARD_AIR = 1;
@@ -27,7 +30,7 @@ export function tileHarm(grid: Grid, x: number, y: number, suited: boolean, airl
   const temp = grid.get('temp', x, y);
   if (!suited && !airless && o2 < O2_HARM_BELOW) harm += (O2_HARM_BELOW - o2) * O2_HARM_PER_SEC;
   if (!suited && !airless && co2 > CO2_HARM_ABOVE) harm += (co2 - CO2_HARM_ABOVE) * CO2_HARM_PER_SEC;
-  if (temp > HOT_ABOVE) harm += (temp - HOT_ABOVE) * TEMP_HARM_PER_SEC;
+  if (temp > hotAbove(suited)) harm += (temp - hotAbove(suited)) * TEMP_HARM_PER_SEC;
   if (!airless && !suited && temp < COLD_BELOW) harm += (COLD_BELOW - temp) * TEMP_HARM_PER_SEC;
   harm += (FIRE_CREW_DAMAGE * grid.get('fire', x, y)) / 255;
   return harm;
@@ -39,7 +42,7 @@ export function tileHazards(grid: Grid, x: number, y: number, suited: boolean, a
   let h = 0;
   if (!suited && !airless && (grid.get('o2', x, y) < O2_HARM_BELOW || grid.get('co2', x, y) > CO2_HARM_ABOVE)) h |= HAZARD_AIR;
   const temp = grid.get('temp', x, y);
-  if (temp > HOT_ABOVE) h |= HAZARD_HEAT;
+  if (temp > hotAbove(suited)) h |= HAZARD_HEAT;
   if (!airless && !suited && temp < COLD_BELOW) h |= HAZARD_COLD;
   if (grid.get('fire', x, y) > 0) h |= HAZARD_FIRE;
   return h;

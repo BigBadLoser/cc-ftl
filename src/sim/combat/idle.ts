@@ -1,6 +1,7 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
+import { weaponDefOf } from '../upgrades/stats';
 import { ammoCount } from './ammo';
 import { CombatC, IonC, WeaponC, type Target } from './components';
 import { operatorOf } from './operators';
@@ -45,7 +46,7 @@ export function weaponsIdleReason(sim: Sim, shipId: number): string | null {
   });
   if (aimed.length === 0) return 'No targets';
   const armed = aimed.filter((id) => {
-    const ammo = sim.content.weapons?.[sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.weapon ?? '']?.ammo;
+    const ammo = weaponDefOf(sim, id)?.ammo;
     return !ammo || ammoCount(sim, shipId, ammo) > 0;
   });
   if (armed.length === 0) return 'No ammo';

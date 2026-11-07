@@ -1,3 +1,4 @@
+import { guestHere, guestOn } from '../consent/guests';
 import { shipIdOf } from '../regions';
 import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
 import { factionsHostile, rogueAlly } from '../combat/factions';
@@ -9,7 +10,6 @@ import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './
 import { shipById } from '../combat/ships';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
-import { YardCrewC } from '../yard/types';
 import { AwayC } from '../away/components';
 
 /**
@@ -75,14 +75,17 @@ export function headingAboard(sim: Sim, crew: number): boolean {
   return job?.kind === 'passage' && job.holder === crew;
 }
 
-/** True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor are the shipyard's contractors. */
+/**
+ * True if the crew member is on a ship of another faction than their own (a boarder). Aliens never are, nor is anyone aboard by the ship's leave (a
+ * consent grant: an aid party, the shipyard's contractors, a skiff's party let dock, consent/).
+ */
 export function isInvader(sim: Sim, crew: number): boolean {
   if (sim.world.has(crew, AlienC)) return false; // creatures live where they hatched: they never board or take ships
-  if (sim.world.has(crew, YardCrewC)) return false; // the shipyard's contractors are invited aboard to build
   const faction = sim.world.get(crew, AllegianceC)?.faction;
   const pos = sim.world.get(crew, PositionC);
-  const ship = pos && shipById(sim, shipIdOf(sim, pos));
-  return !!faction && !!ship && ship.faction !== faction;
+  const id = pos ? shipIdOf(sim, pos) : 0;
+  const ship = pos && shipById(sim, id);
+  return !!faction && !!ship && ship.faction !== faction && !guestOn(sim, crew, id);
 }
 
 /** True if the player directs this crew member in combat: player side and drafted. */
@@ -90,9 +93,14 @@ export function isPlayerControlled(sim: Sim, crew: number): boolean {
   return sim.world.get(crew, AllegianceC)?.faction === 'player' && sim.world.has(crew, DraftedC);
 }
 
-/** True if the crew member must not pick colony jobs: fighting, fetching or stowing a weapon, surrendered or invading. */
+/**
+ * True if the crew member must not pick colony jobs: fighting, fetching or stowing a weapon, surrendered, invading, or a guest who is not aboard to work
+ * (a grant without `work`: a skiff's party let dock stands by, it does not take the host's chores).
+ */
 export function isOffDuty(sim: Sim, crew: number): boolean {
   if (isBreaking(sim, crew)) return true; // a mental break (panic, freeze, hide, tantrum, despair) holds them out of the colony loop
   const f = sim.world.get(crew, FighterC);
-  return (!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew);
+  if ((!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew)) return true;
+  const g = guestHere(sim, crew);
+  return !!g && !g.work;
 }
