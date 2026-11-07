@@ -1,6 +1,8 @@
 <script lang="ts">
   import { KeyBadge, Meter } from '../kit';
   import type { UiWeapon } from '../api';
+  import Icon from '../Icon.svelte';
+  import { upgradeIconName } from '../upgradeIcon';
 
   /**
    * One player weapon: hotkey, name, charge bar and a bottom line that says what it aims at and what it does when charged. Click the card to
@@ -65,15 +67,20 @@
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
     <span class="nm">{label}</span>
+    {#if compact && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><Icon name={upgradeIconName(weapon.upgrade.item)} size={13} /></span>{/if}
+    {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
   {#if compact}
     <span class="cm"><Meter value={weapon.charge} {tone} height={4} /></span>
   {:else}
     <Meter value={weapon.charge} {tone} height={4} />
+    <span class="low">
     <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
+    {#if weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><Icon name={upgradeIconName(weapon.upgrade.item)} size={14} /></span>{/if}
+    </span>
   {/if}
 </div>
 
@@ -81,7 +88,7 @@
   .wc {
     min-height: 0;
     min-width: 0;
-    padding: 7px 9px;
+    padding: 7px 8px;
     display: grid;
     grid-template-rows: auto auto 1fr;
     align-content: center;
@@ -114,7 +121,7 @@
   .top {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 5px;
     min-width: 0;
   }
   .nm {
@@ -126,6 +133,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .up { flex: none; display: inline-flex; color: var(--hud-key); opacity: 0.85; }
+  .low { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-width: 0; }
+  .low .sub { flex: 0 1 auto; }
+  .fit { color: var(--amber); }
   .am {
     flex: none;
     white-space: nowrap;

@@ -7,7 +7,7 @@ import { placeAt, placementGapError, shipGrid, shipIdOf, type Place } from '../r
 import { generateShip } from '../shipgen/generate';
 import { ruin } from '../shipgen/ruin';
 import type { RuinCause } from '../shipgen/ruinTypes';
-import { shipById, stampShip } from './ships';
+import { shipCreated, stampShip } from './ships';
 import { DoorJam } from '../structure';
 import { ShipC, type ShipRuin } from './components';
 import { spawnDriftingContainer } from '../containers/detach';
@@ -149,7 +149,6 @@ export function spawnDerelict(sim: Sim, spec: DerelictSpec): number | string {
   sim.sector.height = Math.max(sim.sector.height, y + plan.height + 8);
   const shipId = stampShip(sim, spec.name ? { ...template, name: spec.name } : template, { faction: 'neutral', x, y, state: 'wreck' });
   applyRuin(sim, shipId, template, meta);
-  const ship = shipById(sim, shipId);
-  if (ship) ship.gen = { faction: spec.faction, seed: spec.seed, depth: spec.depth, role: plan.role };
+  shipCreated(sim, shipId, { faction: spec.faction, seed: spec.seed, depth: spec.depth, role: plan.role });
   return shipId;
 }

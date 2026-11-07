@@ -1,4 +1,5 @@
 import type { ResearchDef } from '../sim';
+import { upgradeResearch } from './upgrades';
 
 /**
  * Research projects: the Mk II and Mk III core modules, the alternative to buying their blueprints at a station. Costs are taken from the
@@ -61,4 +62,4 @@ const DRONES: Record<string, ResearchDef> = {
   },
 };
 
-export const research: Record<string, ResearchDef> = { ...Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)])), ...DRONES };
+export const research: Record<string, ResearchDef> = { ...Object.fromEntries(FAMILIES.flatMap((f) => [project(f, 2), project(f, 3)])), ...DRONES, ...upgradeResearch };

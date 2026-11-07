@@ -1,4 +1,3 @@
-import { startBoardingScenario } from './app/boardingScenario';
 import { mount } from 'svelte';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
@@ -27,15 +26,11 @@ import { createRenderer, type Renderer } from './render/scene';
 import { createSaver, loadSlot, lostReason, reloadLastSave, openNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, CrewC, ModuleC, footprintTiles, NOOP_PROBE, PositionC, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, galaxyIndex, nodeOf, serialize, ShipC, type Probe } from './sim';
+import { BodyC, ModuleC, footprintTiles, NOOP_PROBE, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, serialize, ShipC, type Probe } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
-import { damageScenarioCommands } from './app/damageScenario';
-import { breakScenario } from './app/breakScenario';
-import { bondScenario } from './app/bondScenario';
-import { droneScenarioCommands } from './app/droneScenario';
-import { startAmbushScenario } from './app/ambushScenario';
-import { inspectorScenario } from './app/inspectorScenario';
+import { buildFoeModule } from './app/foeModule';
+import { startScenario as scenarioStart } from './app/scenarios';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
 import { isTypingTarget, modalOpen } from './ui/keys';
@@ -72,7 +67,7 @@ let starmapOpen = false;
 let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
-loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
+loadItemIcons(Object.keys(content.items), content.items).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
 const starmapArt = createStore<UiStarArt | null>(null);
 loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 
@@ -188,7 +183,7 @@ function focusFight(ship: number | null): void {
  */
 const params = new URLSearchParams(location.search);
 const shipgenFlag = params.get('shipgen');
-const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? 2)) || 0);
+const genDepth = Math.max(0, Math.floor(Number(params.get('depth') ?? (params.get('scenario') === 'upgrades' ? 6 : 2))) || 0);
 /** `?genAt=dx,dy`: where a generated ship's centre goes, in tiles from the player's ship's centre (default 18,22). */
 const genAt = (params.get('genAt') ?? '18,22').split(',').map((v) => Math.round(Number(v) || 0)) as [number, number];
 
@@ -265,188 +260,12 @@ function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameSt
   frame(30);
 }
 const stationFlag = params.get('station');
-/**
- * `?scenario=hullplan`: playtest the hull plan brushes. A trading hub (visit cap 100) beside the ship, plenty of credits and metal, the Hull plan
- * tool open with the Rectangle brush, and the game running at normal speed. The plan starts empty; the station's Shipyard tab is one click away.
- */
+/** `?scenario=<name>`: a debug start, from the registry in app/scenarios/. */
 const scenario = params.get('scenario');
-/**
- * `?scenario=damage`: a fire, a hull breach and a damaged reactor (see app/damageScenario.ts).
- * `?scenario=drones`: two drone bays, three drones, a fire, a damaged console and hurt crew (see app/droneScenario.ts); `&fight`: defence drones
- *   against a missile-armed Lancer.
- * `?scenario=ambush[&trap|&honest][&signal]`: the pirate ambush from its signal, or dropped out beside the skiff (see app/ambushScenario.ts).
- * `?scenario=fight`: a raider beside the ship and the game running at normal speed, for the combat view; add `&far` for a raider at engagement distance.
- * `&charged` also fills the FTL drive.
- * `?scenario=handover`: a trade station beside the ship and a delivery for it with its crate on deck, so the station shuttle comes for it. `?scenario=bounty` / `?scenario=survey`:
- * a finished bounty / survey to hand in, and you at the nearest military / research station (drops in by itself). See galaxy/jobsDebug.ts.
- */
-function startJobScenario(name: 'handover' | 'bounty' | 'survey'): void {
-  if (name === 'handover') spawnStation('station.trading', 'outpost'); // a fresh game has no station ship at the start node: the shuttle needs one
-  bridge.dispatch({ type: 'debug.jobScenario', name });
-  bridge.dispatch({ type: 'debug.setCredits', value: 500 });
-  loop.setSpeed(1);
-  const spots = [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const;
-  const deploy = (i: number): void => {
-    if (name === 'handover' || sim.sector.state === 'active' || i >= 60) return;
-    if (sim.sector.state === 'deploying') bridge.dispatch({ type: 'sector.deploy', x: spots[i % spots.length]![0], y: spots[i % spots.length]![1] });
-    setTimeout(() => deploy(i + 1), 150);
-  };
-  deploy(0);
-}
-/**
- * `?scenario=drones&fight` (#318 slice 2): two drone bays and two defence drones, and a missile-armed Lancer at engagement distance. The fight
- * starts at once, the drones go up through their hatches and guard the ship. Charge the drive and jump (or flee) to see them recalled
- * (`&charged`: the drive starts full). `&enemy=navy|drones[&depth=N]` fights a generated ship with defence drones instead of the Lancer (slice 2b).
- */
-function droneFightScenario(): void {
-  const g = sim.galaxy;
-  const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
-    .find((id) => !nodeOf(sim, id)?.structures.length) ?? g.current;
-  const at = homeShipC();
-  loop.setSpeed(1);
-  // Each step waits for the sim to get there, however slow the first frames are.
-  const when = (ready: () => boolean, then: () => void): void => void (ready() ? then() : setTimeout(() => when(ready, then), 150));
-  when(() => sim.tick >= 10, () => {
-    if (next !== g.current) bridge.dispatch({ type: 'debug.galaxyTeleport', node: next });
-    when(() => sim.sector.state === 'deploying' || next === g.current, () => {
-      // Where the ship was, else the first clear one of a few open spots.
-      const tries = [...(at ? [[at.x, at.y] as const] : []), [20, 50], [100, 60], [60, 90], [150, 40], [10, 10]] as const;
-      const deploy = (i: number): void => {
-        const p = tries[i];
-        if (!p || sim.sector.state !== 'deploying') return;
-        bridge.dispatch({ type: 'sector.deploy', x: p[0], y: p[1] });
-        setTimeout(() => deploy(i + 1), 250); // the deploy screen holds the clock: wait in real time
-      };
-      deploy(0);
-      when(() => sim.sector.state === 'active' && !!homeShipC(), () => {
-        for (const cmd of droneScenarioCommands(sim, true)) bridge.dispatch(cmd);
-        const mine = homeShipC();
-        const t = (content.ships as Record<string, { rows: readonly string[] }>)['ship.lancer'];
-        if (!mine || !t) return;
-        const w = Math.max(...t.rows.map((r) => r.length)), h = t.rows.length;
-        const clamp = (x: number, y: number) => ({ x: Math.max(0, Math.min(sim.sector.width - w, x)), y: Math.max(0, Math.min(sim.sector.height - h, y)) });
-        // Engagement distance off the ship, trying the sides in turn until one is clear (a rock or a ship may be in the way).
-        const spots = [
-          clamp(mine.x + mine.width + 40, mine.y - 30), clamp(mine.x - w - 40, mine.y - 30),
-          clamp(mine.x + mine.width + 40, mine.y + mine.height + 20), clamp(mine.x - w - 40, mine.y + mine.height + 20),
-        ];
-        const hostile = (): boolean => sim.world.query(ShipC).some((id) => sim.world.get(id, ShipC)?.faction === 'hostile');
-        // `&enemy=navy` or `&enemy=drones` (rogue AI): a generated ship of that faction instead, with its drone bay and defence drones (`&depth=N`, default 6).
-        const faction = params.get('enemy');
-        const depth = Number(params.get('depth') ?? 6);
-        const tryAt = (i: number): void => {
-          const p = spots[i];
-          if (!p || hostile()) return;
-          if (faction) bridge.dispatch({ type: 'debug.spawnGenerated', faction: `faction.${faction}`, depth, seed: 5, cx: p.x + 37, cy: p.y + 14 });
-          else bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.lancer', x: p.x, y: p.y });
-          const sent = sim.tick;
-          when(() => sim.tick >= sent + 10, () => tryAt(i + 1));
-        };
-        // A moment later, so the drones are in their bays before the fight starts.
-        const start = sim.tick;
-        when(() => sim.tick >= start + 30, () => {
-          tryAt(0);
-          if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' }); // `&charged`: ready to flee, to see the drones recalled
-        });
-      });
-    });
-  });
-}
 function startScenario(): void {
-  if (scenario === 'log') return logScenario();
-  if (scenario === 'ambush') return startAmbushScenario(sim, bridge.dispatch, () => loop.setSpeed(1), { trap: params.has('trap') ? true : params.has('honest') ? false : null, signal: params.has('signal'), ...(params.get('tell') === 'name' ? { tell: 'name' as const } : {}), ...(params.get('event') ? { event: `event.${params.get('event')}` } : {}) });
-  if (scenario === 'handover' || scenario === 'bounty' || scenario === 'survey') return startJobScenario(scenario);
-  if (scenario === 'fight' || scenario === 'boarding') {
-    // The start node holds a station that leaves no room for a raider: jump to an empty neighbour first, deploy where the ship was, then spawn the raider.
-    const g = sim.galaxy;
-    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a))
-      .find((id) => !nodeOf(sim, id)?.structures.length) ?? g.current;
-    const at = homeShipC();
-    if (next !== g.current) bridge.dispatch({ type: 'debug.galaxyTeleport', node: next });
-    setTimeout(() => {
-      if (at) bridge.dispatch({ type: 'sector.deploy', x: at.x, y: at.y });
-      setTimeout(() => {
-        spawnRaider();
-        if (scenario === 'boarding') startBoardingScenario(sim, bridge.dispatch, params.has('aim'));
-        if (params.has('charged')) bridge.dispatch({ type: 'debug.chargeFtl' });
-      }, 400);
-    }, 400);
-    loop.setSpeed(1);
-    return;
-  }
-  if (scenario === 'inspector') {
-    // `?scenario=inspector`: a crew member with traits, XP, a rifle and a mixed mood, selected (app/inspectorScenario.ts).
-    const set = inspectorScenario(sim);
-    for (const cmd of set.commands) bridge.dispatch(cmd);
-    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 300);
-    loop.setSpeed(1);
-    return;
-  }
-  if (scenario === 'breaks') {
-    // `?scenario=breaks`: four crew members break at once (app/breakScenario.ts); the panicking one is selected.
-    const set = breakScenario(sim);
-    setTimeout(() => { for (const cmd of set.commands) bridge.dispatch(cmd); }, 600);
-    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 900);
-    loop.setSpeed(1);
-    return;
-  }
-  if (scenario === 'bonds') {
-    // `?scenario=bonds`: the first crew member has two friends and a rival (app/bondScenario.ts); they are selected.
-    const set = bondScenario(sim);
-    setTimeout(() => { for (const cmd of set.commands) bridge.dispatch(cmd); }, 600);
-    if (set.crew !== null) setTimeout(() => controller.selectCrew(set.crew, true), 900);
-    loop.setSpeed(1);
-    return;
-  }
-  if (scenario === 'drones' && params.has('fight')) return droneFightScenario();
-  if (scenario === 'drones' && params.has('breach')) {
-    // `?scenario=drones&breach`: repair drones with metal and a hole in the hull; they go out through the hatch and seal it (app/droneScenario.ts).
-    loop.setSpeed(1);
-    const setUp = (): void => {
-      if (sim.tick < 10) return void setTimeout(setUp, 150);
-      for (const cmd of droneScenarioCommands(sim, false, true)) bridge.dispatch(cmd);
-    };
-    setUp();
-    return;
-  }
-  if (scenario === 'drones') {
-    // `?scenario=drones`: drone bays, three drones, a fire, a damaged console and hurt crew (app/droneScenario.ts).
-    loop.setSpeed(1);
-    // After a few ticks (rooms, power), however slow the first frames are.
-    const setUp = (): void => {
-      if (sim.tick < 10) return void setTimeout(setUp, 200);
-      for (const cmd of droneScenarioCommands(sim)) bridge.dispatch(cmd);
-    };
-    setUp();
-    return;
-  }
-  if (scenario === 'damage') {
-    loop.setSpeed(1);
-    // Rooms exist after the first ticks: set the scene then. Crew answer the fire and the breach on their own.
-    setTimeout(() => { for (const cmd of damageScenarioCommands(sim)) bridge.dispatch(cmd); }, 600);
-    return;
-  }
-  if (scenario !== 'hullplan') return;
-  spawnStation('station.trading', 'hub', false); // the camera stays on the ship and the open space around it
-  bridge.dispatch({ type: 'debug.setCredits', value: 100000 });
-  bridge.dispatch({ type: 'debug.giveItems', item: 'item.metal', count: 500 });
-  controller.setTool({ tool: 'build', build: 'hull', hull: { brush: 'rect', erase: false, mirror: false } });
-  loop.setSpeed(1);
-}
-
-/**
- * `?scenario=log`: look at the ship's log and alerts. A raider arrives (combat alert, jumps to it), a fire breaks out on the ship, and a few
- * seconds later 450 credits come in (the log entry pulses).
- */
-function logScenario(): void {
-  // The first free spot wins (a rejected spawn overlaps something).
-  const spots = [[110, 80], [60, 20], [20, 100], [150, 30], [100, 50], [40, 90], [130, 110]];
-  spots.forEach(([x, y], i) => setTimeout(() => { if (!sim.sector.inCombat) bridge.dispatch({ type: 'debug.spawnEnemy', template: 'ship.raider', x: x as number, y: y as number }); }, i * 400));
-  const crew = sim.world.query(CrewC)[0];
-  const p = crew === undefined ? undefined : sim.world.get(crew, PositionC);
-  if (p) bridge.dispatch({ type: 'debug.setField', ship: homeShip(sim), x: Math.round(p.x), y: Math.round(p.y), field: 'fire', value: 200 });
-  loop.setSpeed(3);
-  for (const [ms, amount] of [[6000, 80], [8000, 200], [12000, 450]] as const) setTimeout(() => bridge.dispatch({ type: 'debug.setCredits', value: sim.trade.credits + amount }), ms);
+  scenarioStart(scenario, {
+    sim, params, dispatch: bridge.dispatch, setSpeed: loop.setSpeed, selectCrew: controller.selectCrew, setTool: controller.setTool, spawnStation, spawnRaider,
+  });
 }
 
 /** The WebGL driver's renderer string, if the browser exposes it; pixi's canvas already owns a webgl context, so asking again returns it. */
@@ -566,6 +385,7 @@ const api: UiApi = {
     const s = sim.world.get(id, ShipC);
     return renderer && s ? renderer.screenOf(0, s.x + s.width / 2, s.y + s.height / 2) : null;
   },
+  foeModule: (id) => buildFoeModule(sim, id),
   moduleScreenRect: (id) => {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];

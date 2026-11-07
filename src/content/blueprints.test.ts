@@ -122,7 +122,7 @@ describe('blueprints', () => {
     expect([...offered.research].every((d) => m[d]!.category !== 'defence')).toBe(true);
     expect(offered.research.has('module.reactor.mk2') && offered.research.has('module.engine.mk2')).toBe(true);
     expect(offered.military.size).toBeGreaterThan(0);
-    expect([...offered.military].every((d) => m[d]!.category === 'defence' && d.startsWith('module.shieldGen.'))).toBe(true);
+    expect([...offered.military].every((d) => m[d]!.category === 'defence' && (d.startsWith('module.shieldGen.') || d === 'module.flakCannon'))).toBe(true);
   });
 
   it('a blueprint bought at a deep station can then be built; a second purchase and a broke player are refused', () => {

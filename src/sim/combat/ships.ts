@@ -14,6 +14,8 @@ import { TICK_HZ } from '../time';
 import { BoarderC, VehicleC } from '../vehicles/components';
 import { newHeat } from './heat';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
+import type { GenOrigin } from '../shipgen/types';
+import { rollLoadout } from '../upgrades/loadout';
 import { hullSum } from './hull';
 import type { RolledCrew } from '../crew/roll';
 
@@ -127,11 +129,22 @@ export function stampShip(
 }
 
 /**
+ * A generated ship has been created: the one step every way of making one goes through (`spawnShip` with `opts.gen`, and the derelict spawner, which
+ * ruins its hull first). It records where the ship came from and rolls what its faction fits to its weapons (upgrades/loadout.ts), from the seed alone.
+ */
+export function shipCreated(sim: Sim, shipId: number, gen: GenOrigin): void {
+  const ship = shipById(sim, shipId);
+  if (!ship) return;
+  ship.gen = gen;
+  rollLoadout(sim, shipId, gen);
+}
+
+/**
  * Create a ship from a template, stamped into the sector at (x, y): tiles, modules, ship + combat components and crew; its
  * tiles are owned by the new ShipC. Returns the ship id. Throws like `stampShip`.
  */
 export function spawnShip(
-  sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; rest?: number; rolls?: readonly RolledCrew[] },
+  sim: Sim, template: ShipTemplate, opts: { faction: Faction; x: number; y: number; rest?: number; rolls?: readonly RolledCrew[]; gen?: GenOrigin },
 ): number {
   const ship = stampShip(sim, template, opts);
   const layers = shieldCapacity(sim, ship, false);
@@ -150,6 +163,7 @@ export function spawnShip(
     });
   }
   spawnCrew(sim, ship, template.crew ?? [], opts.rest, opts.rolls);
+  if (opts.gen) shipCreated(sim, ship, opts.gen);
   sim.events.emit({ type: 'ship.spawned', ship, faction: opts.faction });
   return ship;
 }

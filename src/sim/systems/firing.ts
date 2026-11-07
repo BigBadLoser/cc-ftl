@@ -18,6 +18,7 @@ import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
 import { shipIdOf } from '../regions';
 import { shipById } from '../combat/ships';
+import { weaponDefOf } from '../upgrades/stats';
 
 /**
  * Launches shots. A charged weapon fires a volley at its resolved target when the ship is not on hold (or on
@@ -30,7 +31,7 @@ export function firingSystem(sim: Sim): void {
     const m = sim.world.get(id, ModuleC);
     const w = sim.world.get(id, WeaponC);
     const weaponId = m && sim.content.modules[m.def]?.weapon;
-    const def = weaponId ? sim.content.weapons?.[weaponId] : undefined;
+    const def = weaponDefOf(sim, id);
     const shipId = m ? shipIdOf(sim, m) : 0;
     const ship = shipById(sim, shipId);
     const combat = ship && sim.world.get(shipId, CombatC);
@@ -44,6 +45,7 @@ export function firingSystem(sim: Sim): void {
     }
     // The player's weapons have a mode: a held one waits for a volley or for the player to aim it (`once`). Shooting down a hostile shuttle with an
     // ammo weapon stays automatic. AI ships only know `Combat.hold`.
+    // Hold means hold: a held weapon (its own mode, or hold all) fires nothing.
     const shuttleShot = !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
     const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
     const held = (combat.hold || modeHold) && !combat.volley;
@@ -55,6 +57,7 @@ export function firingSystem(sim: Sim): void {
     if (!target) continue;
     // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
     if (isAiFaction(ship.faction) && heatCeilingBlocks(combat, def.heat)) continue;
+    if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
@@ -77,7 +80,7 @@ function launchNext(
   w.nextShotTick = sim.tick + Math.max(1, Math.round(def.shotDelaySec * TICK_HZ));
   const target = w.volleyTarget;
   if (!target) return void (w.shotsLeft = 0);
-  if (def.ammo && !consumeAmmo(sim, shipId, def.ammo)) return void (w.shotsLeft = 0);
+  if (def.ammo && !def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
   const targetGrid = target.ship;
   const alive = shipIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === targetGrid;
@@ -87,7 +90,7 @@ function launchNext(
   w.aim = aimDirection(to.x - from.x, to.y - from.y);
   const dist = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
   const skill = operatorSkill(sim, shipId, 'weapons');
-  const spread = def.spread * Math.max(MIN_SPREAD_FACTOR, 1 - SPREAD_PER_GUNNERY * skill);
+  const spread = (def.spread + (def.spreadPerTile ?? 0) * dist) * Math.max(MIN_SPREAD_FACTOR, 1 - SPREAD_PER_GUNNERY * skill);
   const projectile = sim.world.createEntity();
   sim.world.add(projectile, ProjectileC, {
     weapon, fromShip: shipId, fromModuleId: moduleId, target: { ...target },

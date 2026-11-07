@@ -44,7 +44,7 @@ export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: nu
   const template = name ? { ...gen.template, name } : gen.template;
   // `side` overrides the kind's side before the crew spawn (the crew take the ship's allegiance): a navy depot of a friendly owner is neutral.
   const sideOf = side ?? def.side;
-  const id = spawnShip(sim, template, { faction: sideOf, x, y, rest: 100 });
+  const id = spawnShip(sim, template, { faction: sideOf, x, y, rest: 100, gen: { faction: kind, seed: seed >>> 0, depth: 0, role: size } });
   const ship = shipById(sim, id);
   if (!ship) return 'noShip';
   if (sideOf === 'hostile') ship.dormant = ship.integrity;

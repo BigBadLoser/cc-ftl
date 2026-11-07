@@ -3,6 +3,7 @@
   import { anchor } from '../lessons/anchors';
   import { Chip, chipTone, Frame, FrameGap, Meter, Pips } from '../kit';
   import type { UiShipCombat } from '../api';
+  import { upgradeIconName } from '../upgradeIcon';
   import { enemyWeaponRow } from './enemyWeapons';
   import HeatBar, { heatTone } from './HeatBar.svelte';
   import { cardName } from './enemyName';
@@ -64,7 +65,7 @@
           {@const row = enemyWeaponRow(w)}
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
-            <span class="nm">{w.name}</span>
+            <span class="nm"><span class="t">{w.name}</span>{#if w.upgrade}<span class="up" data-testid="enemy-upgrade" title="Fitted: {w.upgrade.name}"><Icon name={upgradeIconName(w.upgrade.item)} size={13} /></span>{/if}</span>
             {#if w.eta !== null}
               <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
             {:else}
@@ -153,15 +154,18 @@
     background: var(--hud-bar);
   }
   .w.aim i { background: var(--c); }
+  .up { flex: none; display: inline-flex; color: var(--hud-key); opacity: 0.85; }
   .nm {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     min-width: 0;
     font: 600 14px/1 var(--head-font);
     letter-spacing: 0.03em;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     color: var(--dim);
   }
+  .nm .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .aim .nm { color: var(--text); }
   .eta {
     flex: none;

@@ -74,6 +74,7 @@ export const trade = {
         { item: 'item.missile', min: 4, max: 16, chance: 0.7 }, { item: 'item.sidearm', min: 1, max: 4, chance: 0.6 },
         { item: 'item.rifle', min: 1, max: 2, chance: 0.35 }, { item: 'item.shuttle', min: 1, max: 1, chance: 0.2 },
         { item: 'item.fuel', min: 40, max: 90 },
+        { item: 'item.upg_housing', min: 1, max: 2, chance: 0.3 }, { item: 'item.upg_coolant', min: 1, max: 1, chance: 0.2 },
         // Ore and life-support stores the station's industry and habitat eat (galaxyMarket.ts): small, so it pays more as they run low.
         { item: 'item.iron_ore', min: 10, max: 40 }, { item: 'item.rare_ore', min: 2, max: 8 }, { item: 'item.water', min: 5, max: 20 }, { item: 'item.oxygen', min: 5, max: 20 },
       ],
@@ -97,19 +98,22 @@ export const trade = {
         // Tech stations sell drones ready-made.
         { item: 'item.drone_repair', min: 1, max: 2, chance: 0.5 }, { item: 'item.drone_medic', min: 1, max: 2, chance: 0.4 },
         { item: 'item.drone_defence', min: 1, max: 1, chance: 0.35 },
+        { item: 'item.upg_capacitor', min: 1, max: 2, chance: 0.5 }, { item: 'item.upg_coolant', min: 1, max: 2, chance: 0.4 },
       ],
     },
     'trader.station.military': {
       // Military surplus: older, middle-grade hand weapons (tiers 1-2, never the best) at a modest markup; it still buys.
       name: 'Depot quartermaster', match: { faction: 'station.military' }, shuttle: false, credits: [1500, 4000],
       surplus: { tag: 'weapon', maxTier: 2, min: 2, max: 8, markup: 1.1 },
-      stock: [{ item: 'item.missile', min: 10, max: 30 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.metal', min: 20, max: 60 }, { item: 'item.fuel', min: 20, max: 50 }],
+      stock: [{ item: 'item.missile', min: 10, max: 30 }, { item: 'item.parts', min: 10, max: 30 }, { item: 'item.electronics', min: 10, max: 30 }, { item: 'item.metal', min: 20, max: 60 }, { item: 'item.fuel', min: 20, max: 50 },
+        { item: 'item.upg_coolant', min: 1, max: 3, chance: 0.7 }, { item: 'item.upg_capacitor', min: 1, max: 3, chance: 0.6 }, { item: 'item.upg_housing', min: 1, max: 3, chance: 0.6 }],
     },
     'trader.station.pirate': {
       name: 'Den fence', match: { faction: 'station.pirate' }, shuttle: false, tagMods: { weapon: { sell: 0.85 }, scrap: { buy: 1.2 } }, credits: [300, 1200],
       stock: [
         { item: 'item.scrap_hull', min: 30, max: 100 }, { item: 'item.parts', min: 5, max: 15 }, { item: 'item.ion_pistol', min: 1, max: 4, chance: 0.7 },
         { item: 'item.blade', min: 2, max: 6 }, { item: 'item.rifle', min: 1, max: 3, chance: 0.5 }, { item: 'item.missile', min: 2, max: 10, chance: 0.5 },
+        { item: 'item.upg_housing', min: 1, max: 2, chance: 0.35 },
       ],
     },
     'trader.station': {
@@ -132,6 +136,7 @@ export const trade = {
       stock: [
         { item: 'item.missile', min: 6, max: 20 }, { item: 'item.rifle', min: 1, max: 4 }, { item: 'item.sidearm', min: 2, max: 6 },
         { item: 'item.ration', min: 15, max: 40 }, { item: 'item.metal', min: 10, max: 30 },
+        { item: 'item.upg_capacitor', min: 1, max: 2, chance: 0.4 }, { item: 'item.upg_coolant', min: 1, max: 2, chance: 0.3 },
       ],
     },
     'trader.pirate': {

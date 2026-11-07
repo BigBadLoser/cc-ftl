@@ -55,9 +55,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const y = Math.min(sim.sector.height - gen.height, Math.max(0, cmd.cy - (gen.height >> 1)));
     const gap = placementGapError(sim, { x, y, w: gen.width, h: gen.height });
     if (gap) return reject(sim, cmd.type, gap);
-    const shipId = spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100 });
-    const ship = shipById(sim, shipId);
-    if (ship) ship.gen = { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role };
+    spawnShip(sim, gen.template, { faction: faction.side ?? 'hostile', x, y, rest: 100, gen: { faction: cmd.faction, seed, depth: cmd.depth, role: gen.role } });
   },
   'debug.spawnDerelict': (sim, cmd) => {
     if (!sim.content.factions?.[cmd.faction]) return reject(sim, cmd.type, 'badFaction');

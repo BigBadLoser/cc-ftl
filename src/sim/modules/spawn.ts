@@ -53,6 +53,7 @@ export function removeModule(sim: Sim, id: number): void {
   }
   if (def?.vehicleBay) releaseBayVehicle(sim, id, shipIdOf(sim, m), m.x, m.y);
   for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, shipIdOf(sim, m), m.x, m.y, st.item, st.count);
+  if (m.upgrade) spillItems(sim, shipIdOf(sim, m), m.x, m.y, m.upgrade, 1); // a fitted upgrade comes out with the module
   clearBedOwners(sim, id);
   sim.world.destroyEntity(id);
 }

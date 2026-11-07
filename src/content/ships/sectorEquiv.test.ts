@@ -320,4 +320,7 @@ describe('sector refactor equivalence', () => {
 // Repinned for the rest retune (#278): rest is part of the hashed world and now drains at a tenth of the rate (both hashes change by that alone).
 // Repinned for relationships (#239): idle crew chat, which gives a good talk or a row a mood factor, and mood is part of the hashed world (with the
 // relationship system off, both hashes are as above).
-const EXPECTED = { combat: 'a0cbadda', disaster: '62484cd5' };
+// Repinned `combat` for module job sites (#338): repair, fit, decon, craft and research jobs carry the module's rotated footprint (`moduleSite`), so
+// crew may work a module from any side, as construction does, and a few repair crew in the fight stand one tile differently. Without the footprint it
+// still gives a0cbadda. The disaster run is unchanged.
+const EXPECTED = { combat: '1a9f8d15', disaster: '62484cd5' };

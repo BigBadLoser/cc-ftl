@@ -18,6 +18,7 @@ import { draftedOf, moduleUnder, planOrders, type OrderPlan } from './crewOrders
 import { boxSelection, clickSelection, idsInRect, normRect, type Rect } from './selection';
 import { needsMenu, type OrderChoice, type OrderId } from './orders';
 import { shipById } from '../sim/combat/ships';
+import { buildFoeModule } from './foeModule';
 import { createAiming, type Aiming } from './aiming';
 
 const TOAST_MS = 2500;
@@ -356,6 +357,10 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
           const shuttle = renderer.pickShuttle(sx, sy);
           const sv = shuttle === null ? undefined : sim.world.get(shuttle, VehicleC);
           if (shuttle !== null && sv && shipById(sim, sv.homeShip)?.faction === 'player') return selectShuttle(shuttle);
+          // Combat, not aiming (aiming took the tap above): a foe's weapon opens the read-only inspector (app/foeModule.ts).
+          const foeAt = sim.sector.inCombat ? renderer.pickTileAny(sx, sy) : null;
+          const foeGun = foeAt && foeAt.shipId !== homeShipId() ? shipGrid(sim, foeAt.shipId)?.get('module', foeAt.x, foeAt.y) ?? 0 : 0;
+          if (foeGun && buildFoeModule(sim, foeGun)) return selectModule(foeGun);
           const tile = renderer.pickTile(sx, sy);
           const modId = moduleUnder(sim, renderer, sx, sy, tile, homeShipId());
           if (modId) return selectModule(modId);

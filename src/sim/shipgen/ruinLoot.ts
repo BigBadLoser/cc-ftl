@@ -1,3 +1,5 @@
+import { hash32 } from '../galaxy/hash';
+import { Rng } from '../rng';
 import { bfs, modTiles, moduleMap, N4, shuffle, solidMap, touchesSpace, walkable } from './ruinGrid';
 import type { RuinCache, RuinCtx, RuinItem, RuinRoom } from './ruinTypes';
 
@@ -39,6 +41,10 @@ export function lootStage(c: RuinCtx): void {
   for (const i of floor.filter(free).slice(0, guns)) drop(i, c.rng.pick(['item.sidearm', 'item.rifle', 'item.blade', 'item.ion_pistol']), 1, c.meta.items);
   caches(c, free, drop);
   debris(c, free);
+  // A weapon upgrade now and then among the debris (a gun bay thrown clear), more often on a combat wreck. Last, and on an rng of its own (seeded
+  // from the wreck's shape), so it moves nothing else in the layout.
+  const own = new Rng(hash32(c.width, c.height, c.modules.length, Math.round(c.intensity * 1000), 0x7e57));
+  if (own.chance(combat ? 0.3 : 0.12)) for (const i of floor.filter(free).slice(0, 1)) drop(i, own.pick(['item.upg_coolant', 'item.upg_capacitor', 'item.upg_housing']), 1, c.meta.items);
 }
 
 /** Walkable for a boarding party: floor or door, not under a solid module. */

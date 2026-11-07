@@ -14,6 +14,7 @@ import { IGNITE_INTENSITY, ION_STUN_RADIUS } from '../tuning';
 import { CombatC, IonC } from './components';
 import { damageStruct } from './hull';
 
+import { damageTakenMul } from '../upgrades/stats';
 import { armorOf } from '../robots/core';
 import { stunCrew } from '../robots/halt';
 import { stunDronesNear } from '../drones/bay';
@@ -100,7 +101,7 @@ function moduleDamage(sim: Sim, at: Impact, amount: number, radius: number): voi
 export function damageModule(sim: Sim, id: number, amount: number, shipId: number): boolean {
   const m = sim.world.get(id, ModuleC);
   if (!m || m.hp <= 0) return false;
-  m.hp = Math.max(0, m.hp - amount);
+  m.hp = Math.max(0, m.hp - amount * damageTakenMul(sim, id));
   const box = sim.world.get(id, ContainerC);
   if (box) box.hp = m.hp;
   if (m.hp !== 0) return false;
@@ -168,7 +169,7 @@ function ionDisable(sim: Sim, at: Impact, seconds: number): void {
 
 function ionModule(sim: Sim, id: number, seconds: number): void {
   if (!sim.world.has(id, ModuleC)) return;
-  const until = sim.tick + Math.round(seconds * TICK_HZ);
+  const until = sim.tick + Math.round(seconds * damageTakenMul(sim, id) * TICK_HZ);
   const cur = sim.world.get(id, IonC);
   sim.world.add(id, IonC, { until: Math.max(until, cur?.until ?? 0) });
 }
