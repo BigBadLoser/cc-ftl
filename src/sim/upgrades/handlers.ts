@@ -4,6 +4,7 @@ import { needsFrom } from '../items/materials';
 import { destroyJob } from '../items/stacks';
 import { shipStoreCount } from '../items/stock';
 import { ModuleC } from '../modules/components';
+import { moduleSite } from '../modules/footprint';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -21,7 +22,7 @@ function post(sim: Sim, moduleId: number, item: string | null): void {
   if (!m) return;
   const id = sim.world.createEntity();
   sim.world.add(id, JobC, {
-    category: 'repair', kind: 'fit', x: m.x, y: m.y, struct: 0, work: FIT_SEC * TICK_HZ, progress: 0, reservedBy: 0, target: moduleId, fit: { item },
+    category: 'repair', kind: 'fit', ...moduleSite(sim.content.modules[m.def], m), struct: 0, work: FIT_SEC * TICK_HZ, progress: 0, reservedBy: 0, target: moduleId, fit: { item },
     ...(item ? { needs: needsFrom([{ item, count: 1 }]), delivered: [] } : {}),
   });
 }
