@@ -176,10 +176,10 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
     dark blue backing (2 px gaps at each end and between them); their fronts flush, the middle one's top sloping
     4 px down to its front, lit; the end ones a handle slot near the top and a seam low across. A dark line under
     them on the face."""
-    T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)                      # the backing
+    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
     T.paint(k, ax, plane, a, b, z0 - PZ, z0, 0.0, FACE, 1)
-    side = "fGT3" if ax == "y" else "fGT4"              # (a box's +u side, the one the camera sees: a step under its
-    for c in range(-1, 2):                              # front)
+    side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
+    for c in range(-1, 2):                              # its front)
         for x0, w, mid in BOXES:
             u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
             q0, q1 = max(a, u0), min(b, u1)
@@ -188,7 +188,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
             d = RAIL_D
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
             m = (mit[0] if abs(q0 - a) < 1e-6 else 0.0, mit[1] if abs(q1 - b) < 1e-6 else 0.0)
-            top = ("fGT0" if ax == "y" else "fGT1") if mid else None           # (the middle one's sloped top lit)
+            top = ("fGT1" if ax == "y" else "fGT2") if mid else None           # (the middle one's sloped top lit)
             prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, z1)], BLUE, 3,
                   cols=[False, None, top, False], cap=(None, side), mitre=m)
             prism(k, ax, plane, q0, q1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
