@@ -4738,6 +4738,10 @@
    "image": "sprites/struct.png",
    "glow": "sprites/struct.glow.png"
   },
+  "upgrades": {
+   "image": "sprites/upgrades.png",
+   "glow": "sprites/upgrades.glow.png"
+  },
   "vehicle_bay": {
    "image": "sprites/vehicle_bay.png",
    "glow": "sprites/vehicle_bay.glow.png"
@@ -52049,6 +52053,101 @@
    ],
    "glow": true
   },
+  "fx.fire_shell_neutral": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1861,
+    "y": 1,
+    "w": 46,
+    "h": 12
+   },
+   "anchor": {
+    "x": 38,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell_neutral.0": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1908,
+    "y": 1,
+    "w": 46,
+    "h": 12
+   },
+   "anchor": {
+    "x": 38,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell_neutral.1": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2332,
+    "y": 1,
+    "w": 48,
+    "h": 10
+   },
+   "anchor": {
+    "x": 40,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell_neutral.2": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1955,
+    "y": 1,
+    "w": 46,
+    "h": 12
+   },
+   "anchor": {
+    "x": 38,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.fire_shell_neutral.3": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2272,
+    "y": 1,
+    "w": 48,
+    "h": 11
+   },
+   "anchor": {
+    "x": 40,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "fx.hand.hit": {
    "kind": "static",
    "sheet": "fx",
@@ -53640,6 +53739,139 @@
    ],
    "glow": true
   },
+  "fx.ion_bolt_neutral": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1489,
+    "y": 1,
+    "w": 39,
+    "h": 20
+   },
+   "anchor": {
+    "x": 28,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.0": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1529,
+    "y": 1,
+    "w": 39,
+    "h": 20
+   },
+   "anchor": {
+    "x": 28,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.1": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1275,
+    "y": 1,
+    "w": 42,
+    "h": 23
+   },
+   "anchor": {
+    "x": 29,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.2": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1354,
+    "y": 1,
+    "w": 43,
+    "h": 22
+   },
+   "anchor": {
+    "x": 30,
+    "y": 10
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.3": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1398,
+    "y": 1,
+    "w": 41,
+    "h": 22
+   },
+   "anchor": {
+    "x": 28,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.4": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1636,
+    "y": 1,
+    "w": 41,
+    "h": 17
+   },
+   "anchor": {
+    "x": 29,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.ion_bolt_neutral.5": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1569,
+    "y": 1,
+    "w": 37,
+    "h": 20
+   },
+   "anchor": {
+    "x": 30,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "fx.ion_disabled": {
    "kind": "static",
    "sheet": "fx",
@@ -53868,6 +54100,139 @@
    ],
    "glow": true
   },
+  "fx.laser_bolt_neutral": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2381,
+    "y": 1,
+    "w": 62,
+    "h": 10
+   },
+   "anchor": {
+    "x": 37,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.0": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2444,
+    "y": 1,
+    "w": 62,
+    "h": 10
+   },
+   "anchor": {
+    "x": 37,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.1": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2002,
+    "y": 1,
+    "w": 64,
+    "h": 12
+   },
+   "anchor": {
+    "x": 39,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.2": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2067,
+    "y": 1,
+    "w": 62,
+    "h": 12
+   },
+   "anchor": {
+    "x": 37,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.3": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2507,
+    "y": 1,
+    "w": 64,
+    "h": 10
+   },
+   "anchor": {
+    "x": 39,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.4": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2572,
+    "y": 1,
+    "w": 62,
+    "h": 10
+   },
+   "anchor": {
+    "x": 37,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.laser_bolt_neutral.5": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2635,
+    "y": 1,
+    "w": 64,
+    "h": 10
+   },
+   "anchor": {
+    "x": 39,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "fx.mass_slug": {
    "kind": "static",
    "sheet": "fx",
@@ -53950,6 +54315,101 @@
    "frame": {
     "x": 1431,
     "y": 108,
+    "w": 40,
+    "h": 14
+   },
+   "anchor": {
+    "x": 30,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug_neutral": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2130,
+    "y": 1,
+    "w": 42,
+    "h": 12
+   },
+   "anchor": {
+    "x": 32,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug_neutral.0": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2173,
+    "y": 1,
+    "w": 42,
+    "h": 12
+   },
+   "anchor": {
+    "x": 32,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug_neutral.1": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1729,
+    "y": 1,
+    "w": 45,
+    "h": 14
+   },
+   "anchor": {
+    "x": 35,
+    "y": 7
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug_neutral.2": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2216,
+    "y": 1,
+    "w": 42,
+    "h": 12
+   },
+   "anchor": {
+    "x": 32,
+    "y": 6
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.mass_slug_neutral.3": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1775,
+    "y": 1,
     "w": 40,
     "h": 14
    },
@@ -54451,6 +54911,101 @@
    "frame": {
     "x": 3221,
     "y": 108,
+    "w": 47,
+    "h": 10
+   },
+   "anchor": {
+    "x": 36,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile_neutral": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2700,
+    "y": 1,
+    "w": 46,
+    "h": 10
+   },
+   "anchor": {
+    "x": 35,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile_neutral.0": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2747,
+    "y": 1,
+    "w": 46,
+    "h": 10
+   },
+   "anchor": {
+    "x": 35,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile_neutral.1": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2794,
+    "y": 1,
+    "w": 50,
+    "h": 10
+   },
+   "anchor": {
+    "x": 39,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile_neutral.2": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2845,
+    "y": 1,
+    "w": 49,
+    "h": 10
+   },
+   "anchor": {
+    "x": 38,
+    "y": 5
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "fx.missile_neutral.3": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2895,
+    "y": 1,
     "w": 47,
     "h": 10
    },
@@ -59992,6 +60547,930 @@
     1,
     1
    ]
+  },
+  "item.upg_capacitor.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1318,
+    "y": 1,
+    "w": 18,
+    "h": 23
+   },
+   "anchor": {
+    "x": 9,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_capacitor.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1038,
+    "y": 1,
+    "w": 38,
+    "h": 28
+   },
+   "anchor": {
+    "x": 19,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_capacitor.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 55,
+    "h": 47
+   },
+   "anchor": {
+    "x": 29,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_capacitor.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 97,
+    "y": 1,
+    "w": 40,
+    "h": 40
+   },
+   "anchor": {
+    "x": 19,
+    "y": 26
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_capacitor.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 531,
+    "y": 1,
+    "w": 28,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_chain.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1816,
+    "y": 1,
+    "w": 10,
+    "h": 14
+   },
+   "anchor": {
+    "x": 5,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_chain.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 560,
+    "y": 1,
+    "w": 38,
+    "h": 35
+   },
+   "anchor": {
+    "x": 19,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_chain.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 599,
+    "y": 1,
+    "w": 38,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_chain.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 896,
+    "y": 1,
+    "w": 30,
+    "h": 30
+   },
+   "anchor": {
+    "x": 15,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_chain.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1337,
+    "y": 1,
+    "w": 16,
+    "h": 23
+   },
+   "anchor": {
+    "x": 8,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_coolant.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1716,
+    "y": 1,
+    "w": 12,
+    "h": 16
+   },
+   "anchor": {
+    "x": 6,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_coolant.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 181,
+    "y": 1,
+    "w": 30,
+    "h": 38
+   },
+   "anchor": {
+    "x": 16,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_coolant.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 314,
+    "y": 1,
+    "w": 40,
+    "h": 37
+   },
+   "anchor": {
+    "x": 22,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_coolant.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 730,
+    "y": 1,
+    "w": 32,
+    "h": 32
+   },
+   "anchor": {
+    "x": 17,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_coolant.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1236,
+    "y": 1,
+    "w": 19,
+    "h": 25
+   },
+   "anchor": {
+    "x": 10,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_focus.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2259,
+    "y": 1,
+    "w": 12,
+    "h": 12
+   },
+   "anchor": {
+    "x": 6,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_focus.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 212,
+    "y": 1,
+    "w": 37,
+    "h": 38
+   },
+   "anchor": {
+    "x": 13,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_focus.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 690,
+    "y": 1,
+    "w": 39,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_focus.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1104,
+    "y": 1,
+    "w": 31,
+    "h": 27
+   },
+   "anchor": {
+    "x": 16,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_focus.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1471,
+    "y": 1,
+    "w": 17,
+    "h": 21
+   },
+   "anchor": {
+    "x": 9,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_frag.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 2321,
+    "y": 1,
+    "w": 10,
+    "h": 11
+   },
+   "anchor": {
+    "x": 5,
+    "y": 8
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_frag.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 250,
+    "y": 1,
+    "w": 32,
+    "h": 38
+   },
+   "anchor": {
+    "x": 16,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_frag.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 763,
+    "y": 1,
+    "w": 37,
+    "h": 32
+   },
+   "anchor": {
+    "x": 20,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_frag.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1206,
+    "y": 1,
+    "w": 29,
+    "h": 26
+   },
+   "anchor": {
+    "x": 15,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_frag.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1607,
+    "y": 1,
+    "w": 15,
+    "h": 20
+   },
+   "anchor": {
+    "x": 8,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_housing.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1827,
+    "y": 1,
+    "w": 20,
+    "h": 14
+   },
+   "anchor": {
+    "x": 10,
+    "y": 9
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_housing.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1136,
+    "y": 1,
+    "w": 38,
+    "h": 27
+   },
+   "anchor": {
+    "x": 19,
+    "y": 18
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_housing.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 138,
+    "y": 1,
+    "w": 42,
+    "h": 40
+   },
+   "anchor": {
+    "x": 21,
+    "y": 28
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_housing.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 858,
+    "y": 1,
+    "w": 37,
+    "h": 31
+   },
+   "anchor": {
+    "x": 18,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_housing.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1440,
+    "y": 1,
+    "w": 30,
+    "h": 22
+   },
+   "anchor": {
+    "x": 16,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_nuke.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1678,
+    "y": 1,
+    "w": 16,
+    "h": 17
+   },
+   "anchor": {
+    "x": 9,
+    "y": 13
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_nuke.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 801,
+    "y": 1,
+    "w": 38,
+    "h": 32
+   },
+   "anchor": {
+    "x": 26,
+    "y": 21
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_nuke.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 444,
+    "y": 1,
+    "w": 45,
+    "h": 36
+   },
+   "anchor": {
+    "x": 26,
+    "y": 25
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_nuke.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 927,
+    "y": 1,
+    "w": 35,
+    "h": 30
+   },
+   "anchor": {
+    "x": 20,
+    "y": 22
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_nuke.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1077,
+    "y": 1,
+    "w": 26,
+    "h": 28
+   },
+   "anchor": {
+    "x": 14,
+    "y": 20
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_prism.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1623,
+    "y": 1,
+    "w": 12,
+    "h": 20
+   },
+   "anchor": {
+    "x": 6,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_prism.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 355,
+    "y": 1,
+    "w": 20,
+    "h": 37
+   },
+   "anchor": {
+    "x": 10,
+    "y": 32
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_prism.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 57,
+    "y": 1,
+    "w": 39,
+    "h": 43
+   },
+   "anchor": {
+    "x": 21,
+    "y": 29
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_prism.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 376,
+    "y": 1,
+    "w": 31,
+    "h": 37
+   },
+   "anchor": {
+    "x": 16,
+    "y": 26
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_prism.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 840,
+    "y": 1,
+    "w": 17,
+    "h": 32
+   },
+   "anchor": {
+    "x": 9,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_rail.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1695,
+    "y": 1,
+    "w": 20,
+    "h": 17
+   },
+   "anchor": {
+    "x": 10,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_rail.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 408,
+    "y": 1,
+    "w": 35,
+    "h": 37
+   },
+   "anchor": {
+    "x": 21,
+    "y": 22
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_rail.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 638,
+    "y": 1,
+    "w": 51,
+    "h": 35
+   },
+   "anchor": {
+    "x": 28,
+    "y": 22
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_rail.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 963,
+    "y": 1,
+    "w": 41,
+    "h": 30
+   },
+   "anchor": {
+    "x": 22,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_rail.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1175,
+    "y": 1,
+    "w": 30,
+    "h": 27
+   },
+   "anchor": {
+    "x": 15,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_thermite.held": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1848,
+    "y": 1,
+    "w": 12,
+    "h": 14
+   },
+   "anchor": {
+    "x": 6,
+    "y": 11
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_thermite.icon": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 283,
+    "y": 1,
+    "w": 30,
+    "h": 38
+   },
+   "anchor": {
+    "x": 15,
+    "y": 31
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "item.upg_thermite.l": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 490,
+    "y": 1,
+    "w": 40,
+    "h": 36
+   },
+   "anchor": {
+    "x": 22,
+    "y": 22
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_thermite.m": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1005,
+    "y": 1,
+    "w": 32,
+    "h": 30
+   },
+   "anchor": {
+    "x": 16,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "item.upg_thermite.s": {
+   "kind": "static",
+   "sheet": "upgrades",
+   "frame": {
+    "x": 1256,
+    "y": 1,
+    "w": 18,
+    "h": 25
+   },
+   "anchor": {
+    "x": 9,
+    "y": 17
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   },
   "item.water.held": {
    "kind": "static",

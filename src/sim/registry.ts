@@ -250,11 +250,6 @@ export interface ItemDef {
   vehicle?: string;
   /** Present = an upgrade a module's slot takes (sim/upgrades). */
   upgrade?: UpgradeDef;
-  /**
-   * PLACEHOLDER art, until the item has its own icon: the icon of item `as`, drawn with a coloured `tint` outline so it reads as a stand-in (app/itemIcons.ts).
-   * Remove it when the item's own `.m` sprite is in the manifest.
-   */
-  placeholderIcon?: { as: string; tint: string };
   /** DroneDef id: a drone bay with a free slot turns one of these from the ship's storage into a drone. */
   drone?: string;
   /** Present = crew can equip it and fight with it. */
