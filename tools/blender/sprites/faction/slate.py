@@ -53,10 +53,10 @@ def _thirds(a, b):
 
 
 def _lip_spans(a, b):
-    """The lip over [a, b] with each tile's middle section left out (from its first seam to past its second)."""
+    """The lip over [a, b] with each tile's middle section left out (between its two seams, which stay)."""
     out, u = [], a
     for c in range(-1, 2):
-        m0, m1 = c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32 + 0.7 * LINE
+        m0, m1 = c - 0.5 + 10.3 / 32 + 0.7 * LINE, c - 0.5 + 21.3 / 32
         if m1 <= u or m0 >= b:
             continue
         if m0 - u > 1e-6:
@@ -106,7 +106,7 @@ def slate(hull):
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
                                   cols=[False, "fGS2" if ax == "y" else "fGS3", False, False])
-                for u in _thirds(a, b) if mid else ():  # the lip in three a tile: a seam up its front, over its
+                for u in _thirds(a, b):                 # the lip in three a tile: a seam up its front, over its
                     q0, q1 = u, u + 0.7 * LINE         # top and up the face to the seam over it
                     dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT  # (over the lip: its top a step under the
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
