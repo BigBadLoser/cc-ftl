@@ -168,6 +168,7 @@ def window(fn, part):
 
     def bare(sp):                                       # (a window tile's ramp built bare: its panel left out)
         T.BARE = bool(pre[0] < len(seq) and seq[pre[0]])
+        T.OPEN = _span(seq[pre[0]]) if T.BARE else None
         pre[0] += 1
 
     def each(k, sp):
@@ -187,5 +188,5 @@ def window(fn, part):
             assert calls[0] == 3, calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK, T.PRE_HOOK, T.BARE = None, None, None, False
+            PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
     return build

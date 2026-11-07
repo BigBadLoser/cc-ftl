@@ -147,6 +147,8 @@ def OUT(ax):
 
 
 BARE = False            # the default walls' ramp without its panel (a window tile: wall3d_iwin_def)
+OPEN = None             # a window's opening along x on the piece (x0, x1): the faces' fields it runs into keep no panel art
+                        # (wall3d_iwin_def: its posts plain, no panel cut in half)
 PRE_HOOK = None         # as a piece starts to build: f(sp) (wall3d_iwin_def: which tiles are a window's)
 HOOK = None             # while a piece builds: f(k, sp) on its Relief before it builds (wall3d_iwin: a window's opening)
 SEAM_PASS = None        # a damage seam pass (wall3d_ext_dented, sprung plates) sets this to a key colour: painted lines
@@ -374,7 +376,7 @@ def wall_face(k, ax, plane, a, b, ends, zs, top, full):
     zh = _rail(k, ax, plane, a, b, ends, top, F)                                                 # the rail
     for f0, f1 in posts(k, ax, plane, a, b, ends, zlt, zh, F, groove=False):      # (the posts plain, on down to the
         paint(k, ax, plane, f0, f1, zb, zh, 0.0, F, 2)                            # lip's top) ... the field
-        if f1 - f0 < 0.3:
+        if f1 - f0 < 0.3 or (OPEN and ax == "y" and f0 < OPEN[1] and f1 > OPEN[0]):
             continue
         uc, w = (f0 + f1) / 2, f1 - f0
         p0, p1, q0, q1 = f0 + 0.04, f1 - 0.04 - LINE, zb + 0.1, zh - 0.06    # (its right side a px further in)
