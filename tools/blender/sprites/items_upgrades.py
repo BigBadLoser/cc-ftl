@@ -127,6 +127,12 @@ def frag(m, c, z, rz, k):
     m.cyl((c[0], c[1], z + 0.012 * k), r, 0.05 * k, "upCu", sides=14, top="upCuD")                  # casing
     m.cyl((c[0], c[1], z + 0.04 * k), r + 0.003 * k, 0.018 * k, TAG["mass"], sides=14)              # weapon tag band
     zh = z + 0.062 * k
+    if not ICON[0]:                                                       # on the floor: a plain round-nosed slug, one
+        m.cyl((c[0], c[1], zh), r, 0.024 * k, "upSteel", sides=14, rtop=r * 0.92)                   # glowing seam
+        m.cyl((c[0], c[1], zh + 0.024 * k), r * 0.93, 0.006 * k, "upHot", sides=14)
+        m.cyl((c[0], c[1], zh + 0.03 * k), r * 0.92, 0.024 * k, "upSteel", sides=14, rtop=r * 0.62)
+        m.cyl((c[0], c[1], zh + 0.054 * k), r * 0.62, 0.012 * k, "upSteel", sides=14, rtop=r * 0.2, top="upBolt")
+        return
     m.cyl((c[0], c[1], zh - 0.004 * k), r * 0.66, 0.064 * k, "upHot", sides=10, rtop=r * 0.22)     # the core
     spread = (0.012, 0.03) if ICON[0] else (0.0, 0.004)                # on the floor: closed, glowing seams
     for i in range(4):
@@ -180,7 +186,8 @@ def chain(m, c, z, rz, k):
     m.cyl((c[0], c[1], z + 0.028 * k), 0.03 * k, 0.1 * k, "upCu", sides=14, top="upCuD")            # the winding
     for i in range(4):
         m.cyl((c[0], c[1], z + 0.04 * k + i * 0.022 * k), 0.0315 * k, 0.004 * k, "upCuD", sides=14)
-    torus(m, c, z + 0.142 * k, 0.05 * k, 0.018 * k, "upSteel")                                       # the crown
+    R = (0.05, 0.018) if ICON[0] else (0.038, 0.015)                                                # the crown,
+    torus(m, c, z + 0.142 * k, R[0] * k, R[1] * k, "upSteel")                                       # smaller on the floor
     m.cyl((c[0], c[1], z + 0.128 * k), 0.026 * k, 0.026 * k, "upSteelD", sides=14, top="upGun")
     if not ICON[0]:                                                                                 # on the floor: no
         m.cyl((c[0], c[1], z + 0.152 * k), 0.022 * k, 0.022 * k, "upVioG", sides=10, top="upVioG")  # arcs, a big cap
@@ -195,18 +202,19 @@ def chain(m, c, z, rz, k):
 # ---- incendiary ------------------------------------------------------------------------------------------------------------
 
 def thermite(m, c, z, rz, k):
-    """A squat canister: orange-red band, a lid with a glowing igniter and a carry handle arching over it."""
+    """A squat canister: orange-red band, a lid with a glowing igniter and a raised carry handle."""
     r, h = 0.074 * k, 0.11 * k
     m.cyl((c[0], c[1], z), r, h, "upOlive", sides=12, top="upGun")
     m.cyl((c[0], c[1], z + h * 0.24), r + 0.005 * k, h * 0.4, TAG["fire"], sides=12)               # weapon tag band
     m.cyl((c[0], c[1], z + h), r * 0.82, 0.018 * k, "upSteelD", sides=12, top="upSteel")           # lid
-    x, y = rot(c, rz, 0.02 * k, 0.02 * k)
-    m.cyl((x, y, z + h + 0.018 * k), 0.02 * k, 0.03 * k, "upOrD", sides=8, top="upOrG")             # igniter
-    hz = z + h + 0.018 * k
-    pts = [(-0.05, 0.0), (-0.042, 0.045), (0.0, 0.062), (0.042, 0.045), (0.05, 0.0)]                # handle
-    pts = [(*rot(c, rz - 0.2, u * k, 0), hz + w * k) for u, w in pts]
-    for p0, p1 in zip(pts, pts[1:]):
-        tube(m, p0, p1, 0.009 * k, "upSteel", sides=6)
+    x, y = rot(c, rz - 0.2, 0, 0.034 * k)                                                            # igniter, in
+    m.cyl((x, y, z + h + 0.018 * k), 0.018 * k, 0.018 * k, "upOrD", sides=8, top="upOrG")           # front of the handle
+    hz, hp = z + h + 0.018 * k, (0.05 if ICON[0] else 0.026) * k                                     # carry handle (low on
+    for u in (-0.042, 0.042):                                                                        # the floor): two posts
+        x, y = rot(c, rz - 0.2, u * k, 0)                                                            # and a grip bar
+        m.box((x, y, hz), (0.012 * k, 0.012 * k, hp), "upSteel", top="upSteel", rz=rz - 0.2, base=True)
+    x, y = rot(c, rz - 0.2, 0, 0)                                                                    # standing clear of the lid
+    m.box((x, y, hz + hp), (0.096 * k, 0.016 * k, 0.014 * k), "upSteel", top="upBolt", rz=rz - 0.2, base=True)
 
 
 # ---- the set ---------------------------------------------------------------------------------------------------------------
