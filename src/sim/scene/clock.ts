@@ -126,7 +126,13 @@ export function tendClocks(sim: Sim, spec: SceneSpec): boolean {
     const s = timerShip(spec, t);
     const id = s?.contact.ship;
     const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
-    if (!s || id === undefined || !ship || ship.state === 'wreck' || ship.state === 'fled') continue;
+    if (!s || id === undefined || !ship) continue;
+    // Its ship is gone some other way (destroyed by raiders, fled): the clock can never come due, so it stops, silently.
+    if (ship.state === 'wreck' || ship.state === 'fled') {
+      t.stopped = true;
+      changed = true;
+      continue;
+    }
     if (t.stopOn === 'repaired' && s.failing?.length && mended(sim, s.failing)) {
       t.stopped = true;
       changed = true;

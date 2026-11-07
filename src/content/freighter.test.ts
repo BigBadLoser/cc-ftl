@@ -231,6 +231,16 @@ describe('distress freighter: the scene', () => {
     expect(sim.world.get(freighter, ShipC)?.state).not.toBe('wreck');
     expect(fired(sim)).not.toContain('reactorBlew');
   }, 60000);
+
+  it('a freighter wrecked some other way before the deadline stops its clock: no reactor blast reported', () => {
+    const { sim, freighter } = inScene(4);
+    sim.world.get(freighter, ShipC)!.state = 'wreck'; // raiders got it first
+    step(sim, 21);
+    expect(timer(sim).stopped).toBe(true);
+    step(sim, (timer(sim).at as number) - sim.tick + 40);
+    expect(timer(sim).blown).toBeUndefined();
+    expect(fired(sim)).not.toContain('reactorBlew');
+  }, 60000);
 });
 
 describe('distress freighter: aid by hail', () => {
