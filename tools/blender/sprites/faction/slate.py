@@ -115,14 +115,17 @@ EDGE = 0.4 / 32                                 # (a px down the slope, about: 2
 def slate_plate(plate, u0, u1, run_, **_):
     """The base ramp's seam panel on the blue plate, drawn as the default walls' (wall3d.skirt) but open at the top:
     it sits on the plate's lit edge, a px seam down each side and across its foot (a px across, a px down the
-    slope), 6 px deep, half the tile wide (fGTs: between the plate's front tone and the step under it)."""
+    slope), 5 px deep, half the tile wide, its bottom corners rounded a px (each corner pixel left out). The seam a
+    step under the plate's front tone (fGT2), fGTs between them: the leaning seams' part-covered px blend through it
+    (with no tone between the seam and the plate they broke up and the rounded corners lost half their pixels)."""
     uc = (u0 + u1) / 2
     w = min(0.25, (u1 - u0) / 2 - 0.06)
-    fu0, fu1 = uc - w, uc + w
+    fu0, fu1 = (round((uc + s * w) * 32) / 32 for s in (-1, 1))     # (on whole art px)
     fd0 = SPLIT * run_ + EDGE
-    fd1 = fd0 + 6 * EDGE
-    for q in ((fu0, fu1, fd1 - EDGE, fd1), (fu0, fu0 + LINE, fd0, fd1), (fu1 - LINE, fu1, fd0, fd1)):
-        plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre", fixed="fGTs")
+    fd1 = fd0 + 5 * EDGE
+    for q in ((fu0 + LINE, fu1 - LINE, fd1 - EDGE, fd1), (fu0, fu0 + LINE, fd0, fd1 - EDGE),
+              (fu1 - LINE, fu1, fd0, fd1 - EDGE)):
+        plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre", fixed="fGT2")
 
 
 SLATE_RAMPS = (Design("plates", ramp=slate_plate),)
