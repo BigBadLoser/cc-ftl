@@ -100,3 +100,38 @@ def trefoil(m, c, rz, u0, zc, Rb, R, phi=0.5):
         pts = [at(R * math.cos(a), R * math.sin(a)) for a in arc] + [at(R * 0.32 * math.cos(a), R * 0.32 * math.sin(a)) for a in arc[::-1]]
         m.poly(pts, "upBlack", flip=True)
     m.poly([at(R * 0.2 * math.cos(i * math.tau / 8), R * 0.2 * math.sin(i * math.tau / 8)) for i in range(8)], "upBlack", flip=True)
+
+
+def arch(m, c, rz, u0, u1, ro, ri, z, outer, inner, end, n=10):
+    """A half sleeve (an arch, open side down) lying along the heading from u0 to u1, its feet at z: outer and inner
+    skins and the two end faces."""
+    def P(u, a, r):
+        x, y = rot(c, rz, u, r * math.cos(a))
+        return core.G(x, y, z + r * math.sin(a))
+    angs = [math.pi * i / n for i in range(n + 1)]
+    for a0, a1 in zip(angs, angs[1:]):
+        m.poly([P(u0, a0, ro), P(u1, a0, ro), P(u1, a1, ro), P(u0, a1, ro)], outer, flip=True)
+        m.poly([P(u0, a0, ri), P(u1, a0, ri), P(u1, a1, ri), P(u0, a1, ri)], inner, flip=True)
+        for u in (u0, u1):
+            m.poly([P(u, a0, ri), P(u, a0, ro), P(u, a1, ro), P(u, a1, ri)], end, flip=True)
+    for a in (0.0, math.pi):                                                              # the feet
+        m.poly([P(u0, a, ri), P(u1, a, ri), P(u1, a, ro), P(u0, a, ro)], end, flip=True)
+
+
+def dome(m, c, z, r, h, col, n=5, sides=14):
+    """A low glass dome (a lens) of radius r and height h on z, as stacked frustums."""
+    for i in range(n):
+        t0, t1 = i / n, (i + 1) / n
+        r0, r1 = r * math.cos(t0 * math.pi / 2), r * math.cos(t1 * math.pi / 2)
+        m.cyl((c[0], c[1], z + h * math.sin(t0 * math.pi / 2)), r0, h * (math.sin(t1 * math.pi / 2) - math.sin(t0 * math.pi / 2)),
+              col, sides=sides, rtop=max(r1, 0.0005))
+
+
+def glint(m, c, z, r, h, col, at=(-0.35, 0.55), size=0.32):
+    """A specular highlight on a dome: a small disc laid on its surface, up and towards the camera's left."""
+    th = CAMERA + at[0] * math.pi
+    rr = r * at[1]
+    zz = z + h * math.sqrt(max(0.0, 1 - (rr / r) ** 2)) + 0.001
+    cx, cy = c[0] + rr * math.cos(th), c[1] + rr * math.sin(th)
+    s = r * size
+    m.poly([core.G(cx + s * math.cos(a), cy + s * 0.7 * math.sin(a), zz) for a in (i * math.tau / 8 for i in range(8))], col, flip=True)

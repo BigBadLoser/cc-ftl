@@ -4,11 +4,11 @@ and scale of items.py (x, y on the deck, z up, origin the tile centre at floor l
 General upgrades (fit any weapon; no weapon tag):
   upg_capacitor  Quick capacitor   a bank of three dark cells, yellow glowing bands, copper bus bar and terminals
   upg_coolant    Coolant jacket    an open ribbed sleeve: a dark bore, frosted ribs, a glowing coolant window, two hoses
-  upg_housing    Hardened housing  a squat armoured shell: steel-grey slab and plate, corner bolts (blockiest of the set)
+  upg_housing    Hardened housing  a clamshell armour shell over a barrel: thick arch, yellow ribs, bolted flanges
 Behaviour upgrades (one weapon type each; a coloured band marks the weapon: laser red, mass driver blue, missile green,
 ion violet, incendiary orange):
   upg_prism      Prism splitter    a tapered crystal (camera facets red/green/blue) in three claws      (laser)
-  upg_focus      Heavy focus       a thick lens barrel on two saddles, one big glass lens at the front        (laser)
+  upg_focus      Heavy focus       an upright optic: knurled grip, wide bezel, one big blue glass lens    (laser)
   upg_frag       Frag slug         a stubby cartridge, its head split into fragments over a brass casing  (mass driver)
   upg_rail       Rail coil         two long rails wound with copper, a heat glow at one end                  (mass driver)
   upg_nuke       Nuclear warhead   an olive ogive warhead on chocks: hazard band, painted trefoil, pins (missile)
@@ -26,7 +26,7 @@ from mathutils import Matrix, Vector
 
 from . import core
 from .items_kit import FLOOR, cone, jobs as item_jobs, pile, place, rot, tube
-from .items_upgrades_kit import crystal, ogive, ring, segments, trefoil
+from .items_upgrades_kit import arch, crystal, dome, glint, ogive, ring, segments, trefoil
 
 PALETTE = "only:upgrades"          # the family's palette selection
 TAG = {"laser": "upRed", "mass": "upBlu", "missile": "upGrn", "ion": "upVio", "fire": "upOr"}
@@ -71,19 +71,19 @@ def coolant(m, c, z, rz, k):
 
 
 def housing(m, c, z, rz, k):
-    w, d = 0.22 * k, 0.17 * k
-    m.box((c[0], c[1], z), (w, d, 0.055 * k), "upHeavy", top="upSteel", rz=rz, base=True, bevel=0.008 * k)
-    m.box((c[0], c[1], z + 0.055 * k), (w * 0.78, d * 0.76, 0.05 * k), "upSteelD", top="upHeavy", rz=rz, base=True, taper=0.86,
-          bevel=0.008 * k)
-    m.box((c[0], c[1], z + 0.105 * k), (w * 0.42, d * 0.4, 0.014 * k), "upGun", top="upSteelD", rz=rz, base=True)
-    for su in (-1, 1):
-        for sv in (-1, 1):                                                                         # corner bolts
-            x, y = rot(c, rz, su * w * 0.4, sv * d * 0.38)
-            m.cyl((x, y, z + 0.055 * k), 0.022 * k, 0.018 * k, "upGun", sides=6, top="upBolt")
-        x, y = rot(c, rz, su * (w / 2 + 0.018 * k), 0)                                             # bolted side flanges
-        m.box((x, y, z), (0.036 * k, d * 0.56, 0.034 * k), "upSteelD", top="upHeavy", rz=rz, base=True, bevel=0.005 * k)
-        x, y = rot(c, rz, su * (w / 2 + 0.02 * k), 0)
-        m.cyl((x, y, z + 0.034 * k), 0.012 * k, 0.012 * k, "upGun", sides=6, top="upBolt")
+    """A clamshell armour shell that clamps over a weapon's barrel: a thick arch with two raised ribs, bolted flanges
+    along both feet, the barrel running through it; yellow ribs. Steel grey, the heaviest of the set."""
+    L, ro, ri, fz = 0.2 * k, 0.078 * k, 0.052 * k, 0.022 * k
+    arch(m, c, rz, -L / 2, L / 2, ro, ri, z + fz, "upHeavy", "upGun", "upSteelD")
+    _axis(m, c, rz, -L / 2 - 0.012 * k, L / 2 + 0.085 * k, z + fz + 0.032 * k, 0.03 * k, "upSteel", cap="upBlack")   # the barrel
+    for u in (-0.062, 0.062):                                                                         # raised ribs
+        arch(m, c, rz, u * k - 0.012 * k, u * k + 0.012 * k, ro + 0.009 * k, ro - 0.004 * k, z + fz, "upYel", "upGun", "upSteelD")
+    for sv in (-1, 1):                                                                                # bolted flanges
+        x, y = rot(c, rz, 0, sv * (ro + 0.006 * k))
+        m.box((x, y, z), (L, 0.05 * k, fz), "upSteelD", top="upHeavy", rz=rz, base=True, bevel=0.004 * k)
+        for u in (-0.075, 0.0, 0.075):
+            x, y = rot(c, rz, u * k, sv * (ro + 0.014 * k))
+            m.cyl((x, y, z + fz), 0.011 * k, 0.012 * k, "upGun", sides=6, top="upBolt")
 
 
 # ---- laser ---------------------------------------------------------------------------------------------------------------
@@ -103,15 +103,17 @@ def prism(m, c, z, rz, k):
 
 
 def focus(m, c, z, rz, k):
-    zc, r = z + 0.075 * k, 0.056 * k
-    for u in (-0.06, 0.05):
-        x, y = rot(c, rz, u * k, 0)
-        m.box((x, y, z), (0.03 * k, 0.1 * k, 0.05 * k), "upGun", top="upSteelD", rz=rz, base=True, bevel=0.005 * k)
-    _axis(m, c, rz, -0.11 * k, 0.07 * k, zc, r, "upSteel", cap="upGun")
-    _axis(m, c, rz, -0.1 * k, -0.075 * k, zc, r + 0.006 * k, TAG["laser"], cap=TAG["laser"])       # weapon tag band
-    _axis(m, c, rz, -0.02 * k, 0.0, zc, r + 0.008 * k, "upSteelD")
-    _axis(m, c, rz, 0.05 * k, 0.09 * k, zc, r + 0.016 * k, "upGun", cap="upSteelD")              # lens collar
-    _axis(m, c, rz, 0.09 * k, 0.106 * k, zc, r + 0.006 * k, "upGlass", cap="upGlass")            # the lens
+    """A heavy optic standing on its mount: the weapon band, a knurled grip ring, a wide front bezel holding one big
+    blue glass lens with a highlight."""
+    m.cyl((c[0], c[1], z), 0.058 * k, 0.03 * k, "upGun", sides=14, top="upSteelD")                   # mount
+    m.cyl((c[0], c[1], z + 0.007 * k), 0.061 * k, 0.015 * k, TAG["laser"], sides=14)                 # weapon tag band
+    m.cyl((c[0], c[1], z + 0.03 * k), 0.05 * k, 0.03 * k, "upSteel", sides=14, top="upSteelD")       # barrel
+    segments(m, c, z + 0.06 * k, z + 0.082 * k, 0.057 * k, 0.057 * k, 14, 0.0, rz,                  # knurled grip
+             lambda i: "upGun" if i % 2 else "upSteelD", "upSteelD", "upGun")
+    m.cyl((c[0], c[1], z + 0.082 * k), 0.07 * k, 0.026 * k, "upSteelD", sides=16, top="upGun")       # front bezel
+    m.cyl((c[0], c[1], z + 0.108 * k), 0.058 * k, 0.003 * k, "upBlack", sides=16)                    # lens seat
+    dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upLens", sides=16)                               # the lens
+    glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite")
 
 
 # ---- mass driver ---------------------------------------------------------------------------------------------------------
@@ -163,10 +165,10 @@ def nuke(m, c, z, rz, k):
         a, b = rot(c, rz, -0.13 * k, dv * k), rot(c, rz, -0.152 * k, dv * k)
         tube(m, (a[0], a[1], zc + dw * k), (b[0], b[1], zc + dw * k), 0.006 * k, "upCu", sides=6)
     _axis(m, c, rz, -0.106 * k, -0.094 * k, zc, R + 0.003 * k, TAG["missile"])                       # weapon tag band
-    _axis(m, c, rz, -0.106 * k, -0.03 * k, zc, R, "upOlive", cap="upGun")
-    _axis(m, c, rz, -0.03 * k, 0.045 * k, zc, R + 0.002 * k, "upYel")                                # hazard band
-    trefoil(m, c, rz, 0.0075 * k, zc, R + 0.002 * k, 0.034 * k)
-    ogive(m, c, rz, 0.045 * k, 0.19 * k, zc, R + 0.002 * k, "upOlive", "upSteel")
+    _axis(m, c, rz, -0.106 * k, -0.045 * k, zc, R, "upOlive", cap="upGun")
+    _axis(m, c, rz, -0.045 * k, 0.06 * k, zc, R + 0.002 * k, "upYel")                                # hazard band
+    trefoil(m, c, rz, 0.0075 * k, zc, R + 0.002 * k, 0.047 * k, phi=0.55)
+    ogive(m, c, rz, 0.06 * k, 0.2 * k, zc, R + 0.002 * k, "upOlive", "upSteel")
 
 
 # ---- ion cannon ----------------------------------------------------------------------------------------------------------
@@ -211,7 +213,7 @@ LONG = {"held": [(0.0, 0.0, 0.0, 0.3)],
               (-0.05, 0.32, 0.0, 0.3), (0.04, -0.05, 0.1, 0.25)]}
 
 ITEMS = {"upg_capacitor": (capacitor, FLOOR), "upg_coolant": (coolant, FLOOR), "upg_housing": (housing, pile(0.105, 0.22)),
-         "upg_prism": (prism, FLOOR), "upg_focus": (focus, LONG), "upg_frag": (frag, FLOOR), "upg_rail": (rail, LONG),
+         "upg_prism": (prism, FLOOR), "upg_focus": (focus, FLOOR), "upg_frag": (frag, FLOOR), "upg_rail": (rail, LONG),
          "upg_nuke": (nuke, LONG), "upg_chain": (chain, FLOOR), "upg_thermite": (thermite, FLOOR)}
 
 
@@ -222,8 +224,8 @@ def _builder(unit, layout):
 # Icons: (heading rz, tilt about the screen-right axis, roll about the view axis) per item: upright parts turned to show two
 # faces; long parts laid across the view, tipped up, and rolled to a diagonal (working end up-right) so they fill the box.
 ICON_PX = 38
-ICON_VIEW = {"capacitor": (-0.55, 0.0, 0.0), "coolant": (0.4, 0.0, 0.0), "housing": (0.5, 0.0, 0.0), "prism": (0.25, 0.0, 0.0),
-             "focus": (-0.45, 0.25, 0.35), "frag": (0.4, 0.0, 0.0), "rail": (-0.45, 0.3, 0.55), "nuke": (-0.45, 0.25, 0.55),
+ICON_VIEW = {"capacitor": (-0.55, 0.0, 0.0), "coolant": (0.4, 0.0, 0.0), "housing": (0.3, 0.0, 0.0), "prism": (0.25, 0.0, 0.0),
+             "focus": (0.3, -0.35, 0.0), "frag": (0.4, 0.0, 0.0), "rail": (-0.45, 0.3, 0.55), "nuke": (-0.45, 0.25, 0.55),
              "chain": (0.3, 0.0, 0.0), "thermite": (-0.6, 0.0, 0.0)}
 VIEW_AXIS = Vector((math.cos(math.radians(30)) * math.sqrt(0.5), math.cos(math.radians(30)) * math.sqrt(0.5),
                     math.sin(math.radians(30))))   # towards the camera (yaw 45, elevation 30), grid frame

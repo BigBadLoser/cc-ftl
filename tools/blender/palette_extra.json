@@ -3480,5 +3480,13 @@
  "upVioB": {
   "hex": "#c4b4ff",
   "set": "upgrades"
+ },
+ "upLens": {
+  "hex": "#7fc4ff",
+  "set": "upgrades"
+ },
+ "upWhite": {
+  "hex": "#ffffff",
+  "set": "upgrades"
  }
 }
