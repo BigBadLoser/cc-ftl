@@ -153,7 +153,7 @@ def slate_grey_panel(plate, u0, u1, run_, **kw):
     for q0, q1 in ((fu0, fu0 + LINE), (fu1 - LINE, fu1)):
         plate([(q0, g0), (q1, g0), (q1, g1), (q0, g1)], PAINT, 0, 0.0)
     vc = round(uc * 32) / 32
-    gm = (g0 + g1) / 2
+    gm = (g0 + g1) / 2 - EDGE                             # (a px up the slope from the middle)
     for dv in (gm - 1.5 * EDGE, gm + 1.5 * EDGE):           # (6 px long, 2 px apart)
         plate([(vc - 3 * LINE, dv - EDGE / 2), (vc + 3 * LINE, dv - EDGE / 2), (vc + 3 * LINE, dv + EDGE / 2),
                (vc - 3 * LINE, dv + EDGE / 2)], PAINT, 0, 0.0)
