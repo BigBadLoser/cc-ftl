@@ -4,7 +4,7 @@ import { BreakdownC, CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, Posi
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
-import { askingToJoin } from '../sim/galaxy/joinOffer';
+import { pendingAsks } from '../sim/galaxy/joinOffer';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
@@ -22,7 +22,6 @@ const EXPIRE_MS = 45000;
 export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> = {
   'combat.started': 'urgent', 'fire.started': 'urgent', 'hull.breach': 'urgent', 'o2.low': 'urgent', 'power.shortage': 'urgent',
   'crew.downed': 'urgent', 'suit.airLow': 'urgent', 'suit.airOut': 'urgent', 'crew.airUnreachable': 'urgent', 'away.stranded': 'urgent', 'crew.starving': 'urgent', 'eggsac.hatched': 'urgent',
-  'crew.asksToJoin': 'urgent', // a passenger asks to join: answered on the alert (galaxy/joinOffer.ts)
   'crew.break': 'urgent', // only when the sim says the break is loud and unthrottled (`alert`); every break is in the log
 
   'crew.recallStarted': 'urgent', 'crew.recallFailed': 'urgent', // a party member left on the enemy ship (the rest of the boarding events are log-only)
@@ -33,7 +32,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
   'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
   'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log', 'scene.observed': 'log', 'ship.arrived': 'log',
-  'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log',
+  'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log', 'crew.asksToJoin': 'log',
 };
 const urgent = (type: SimEvent['type']) => ALERT_URGENCY[type] === 'urgent';
 
@@ -53,7 +52,10 @@ export interface Alerts {
   saveResult(ok: boolean, text: string): boolean;
   /** Remove the alerts raised under a key. */
   clear(key: string): void;
-  /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
+  /**
+   * Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...), and bring the join asks in line with the sim (one
+   * alert per passenger whose ask waits, from saved state, so a reload brings them back). Cheap; call it every few frames.
+   */
   sync(): void;
 }
 
@@ -128,9 +130,6 @@ export function createAlerts(sim: Sim): Alerts {
         if (!def || e.mode !== 'notice' || e.notice <= 0) return null;
         return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title } };
       }
-      case 'crew.asksToJoin': return { kind: e.type, key: `j${e.crew}`, text: `${e.name || crewName(e.crew)} asks to join the crew`, subject: crewSubject(sim, e.crew), resolved: () => !askingToJoin(sim, e.crew),
-        actions: [{ label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: e.crew, accept: true } }, { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: e.crew, accept: false } }],
-      };
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
@@ -234,6 +233,31 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
 
+  /** Join-ask alerts by passenger, and those the player dismissed (quiet until that ask is answered or lapses). */
+  const asks = new Map<number, number>();
+  const askMuted = new Set<number>();
+  function syncAsks(): void {
+    const want = new Set(pendingAsks(sim));
+    for (const c of askMuted) if (!want.has(c)) askMuted.delete(c);
+    for (const [c, id] of asks) {
+      if (want.has(c) && store.get().some((a) => a.id === id)) continue;
+      if (want.has(c)) askMuted.add(c); // dismissed with the X
+      asks.delete(c);
+      remove(id);
+    }
+    for (const c of want) {
+      if (asks.has(c) || askMuted.has(c)) continue;
+      const id = nextId++;
+      asks.set(c, id);
+      const actions: UiAlert['actions'] = [
+        { label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: c, accept: true } },
+        { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: c, accept: false } },
+      ];
+      store.update((l) => [{ id, kind: 'crew.asksToJoin', text: `${crewName(c)} asks to join the crew`, subject: crewSubject(sim, c), actions }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    }
+  }
+
   return {
     list: store,
     syncIncoming,
@@ -267,6 +291,7 @@ export function createAlerts(sim: Sim): Alerts {
       remove(id);
     },
     sync() {
+      syncAsks(); // state, not events: a reload or a paused game still shows a waiting ask
       for (const [id, done] of resolvers) if (done()) remove(id);
     },
     onEvents(events) {

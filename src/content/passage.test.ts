@@ -8,6 +8,9 @@ import { placementGapError } from '../sim/regions';
 import { deserialize, serialize } from '../sim/save';
 import { playerCrew } from '../sim/story/world';
 import { playerShip } from '../sim/trade/player';
+import { CombatC, FTL_CHARGE_SEC } from '../sim';
+import { giveItems } from '../sim/story/effects';
+import { planStarRoute } from '../sim/galaxy/route';
 import { content } from '.';
 
 /** Passage (#173 step 6, slice 4): a passenger back on their feet asks to be taken to a port of their own; the trip is a job, paid on the handover. */
@@ -158,5 +161,37 @@ describe('passage', () => {
     step(sim, 40);
     expect(sim.galaxy.jobs.some((j) => j.id === c.id)).toBe(false);
     expect(sim.story.reputation[faction]).toBe(rep - 1);
+  });
+
+  it('runs out on a hop (the ship packed in hyperspace): the passenger still gets a refused card and gets off at the next port', () => {
+    const { sim, crew, faction } = aboard(7);
+    step(sim, 40);
+    const c = card(sim)!;
+    sim.enqueue({ type: 'jobs.accept', key: c.key });
+    step(sim);
+    const job = sim.galaxy.jobs.find((j) => j.id === c.id)!;
+    job.due = sim.galaxy.turn; // the hop's turn takes it past due
+    const rep = sim.story.reputation[faction] ?? 0;
+    giveItems(sim, 'item.fuel', 40);
+    const combat = sim.world.get(playerShip(sim), CombatC);
+    if (combat) combat.ftl = FTL_CHARGE_SEC;
+    const route = planStarRoute(sim.galaxy, sim.galaxy.current, c.to!, { known: false })!.path.slice(1);
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route });
+    let packed = false;
+    for (let i = 0; i < 20 * 600 && sim.sector.state !== 'deploying'; i++) {
+      step(sim);
+      if (sim.sector.state === 'hyperspace' && !sim.galaxy.jobs.some((j) => j.id === c.id)) packed = true;
+      if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' });
+      // Pass up any signal on the way.
+      const active = sim.story.active ? sim.content.events?.[sim.story.active.event] : undefined;
+      const pass = active?.choices?.find((x) => !x.outcome?.effects?.some((e) => e.type === 'scene') && !x.remote && !x.cost && !x.requires && !x.check);
+      if (pass) sim.enqueue({ type: 'story.choose', choice: pass.id });
+    }
+    expect(packed).toBe(true); // it failed while the ship was a packet
+    expect(sim.story.reputation[faction]).toBe(rep - 1);
+    expect(card(sim)).toMatchObject({ crew, refused: true, reward: 0 });
+    visit(sim, c.to!);
+    for (let i = 0; i < 20 * 400 && !gone(sim, crew); i++) step(sim);
+    expect(gone(sim, crew)).toBe(true);
   });
 });

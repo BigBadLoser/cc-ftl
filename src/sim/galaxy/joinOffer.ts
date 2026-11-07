@@ -87,5 +87,11 @@ export function answerJoin(sim: Sim, crew: number, accept: boolean): boolean {
   return true;
 }
 
-/** True while the passenger's ask waits for an answer (the alert reads it). */
+/** The passengers aboard the player's ship whose ask to join waits for an answer, ascending (the alerts are built from it, saved state, not the event). */
+export function pendingAsks(sim: Sim): number[] {
+  const grants = sim.world.get(playerShip(sim), ConsentC)?.grants ?? [];
+  return grants.filter((g) => g.by === 'passage' && g.carry?.asking !== undefined).flatMap((g) => g.crew ?? []).sort((a, b) => a - b);
+}
+
+/** True while the passenger's ask waits for an answer. */
 export const askingToJoin = (sim: Sim, crew: number): boolean => carryOf(sim, crew)?.asking !== undefined;

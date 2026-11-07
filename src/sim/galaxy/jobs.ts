@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { applyEffect } from '../story/effects';
+import { withPlayerAboard } from '../story/world';
 import { bumpStat } from '../story/goals';
 import { CRATE, crateOf, loadCrate, recoverCrate, unloadCrate } from './crate';
 import { addNotoriety, tallyLosses } from './heat';
@@ -114,6 +115,12 @@ function pay(sim: Sim, job: StationJob): void {
  * `via`: how a delivery's crate changed hands (handover.ts).
  */
 function close(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned', via: 'shuttle' | 'own' | 'instant' = 'instant'): void {
+  // A job can end in hyperspace (it ran out on a hop, or was abandoned there): the ship is a packet then, so what it reads aboard (the crate, the
+  // passenger) is read in the packet view, as story effects are.
+  withPlayerAboard(sim, () => closeNow(sim, job, outcome, via));
+}
+
+function closeNow(sim: Sim, job: StationJob, outcome: 'done' | 'failed' | 'abandoned', via: 'shuttle' | 'own' | 'instant'): void {
   const g = sim.galaxy;
   g.jobs = g.jobs.filter((j) => j.id !== job.id);
   g.claims = g.claims.filter((j) => j.id !== job.id);
