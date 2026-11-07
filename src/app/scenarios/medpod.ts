@@ -1,4 +1,4 @@
-import { CrewC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
+import { CrewC, MoodC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
 import { playerCrew } from '../../sim/story/world';
 import { nodesWithin } from '../../sim/galaxy/graph';
 import { portsAt } from '../../sim/galaxy/portIndex';
@@ -51,7 +51,7 @@ export function spareBedCommands(sim: Sim): Command[] {
  * `?scenario=medpod[&signal][&guest][&role=<role id>]` (#173 step 6): the medical pod. A spare bed is set, then the pod beacon signals on the first hop of a
  * trip and the ship drops out beside the pod (`&signal`: stop at the signal, to scan it). `&guest` instead puts a passenger aboard at once (a lodging guest,
  * consent/passage.ts) and selects them. `&passage`: that passenger is the pod's patient, on their feet: they pay and post a passage card (galaxy/passage.ts);
- * `&deliver` also accepts it and puts the ship at the destination, where they ask to join before the handover.
+ * `&deliver` also accepts it and puts the ship at the destination, where they ask to join before the handover (made cheerful, so in the mood to).
  */
 export const medpod: Scenario = ({ sim, params, dispatch, setSpeed, selectCrew }) => {
   setSpeed(1);
@@ -68,7 +68,15 @@ export const medpod: Scenario = ({ sim, params, dispatch, setSpeed, selectCrew }
     setTimeout(() => {
       const guest = sim.world.query(CrewC).find((id) => !before.has(id));
       if (guest !== undefined && !params.has('deliver')) selectCrew(guest, true);
-      if (params.has('deliver')) setTimeout(() => deliver(sim, dispatch), 2500);
+      // A cheerful, sociable passenger is in a good enough mood to ask to join at the destination.
+      if (params.has('deliver') && guest !== undefined) dispatch({ type: 'debug.setCrew', id: guest, traits: ['trait.cheerful', 'trait.social'] });
+      // Fly once they are in the mood (or after a minute anyway).
+      let waited = 0;
+      const go = (): void => {
+        if (waited++ < 60 && (sim.world.get(guest ?? 0, MoodC)?.value ?? 0) <= 60) return void setTimeout(go, 1000);
+        deliver(sim, dispatch);
+      };
+      if (params.has('deliver')) setTimeout(go, 2500);
     }, 300);
   }, 600);
 };
