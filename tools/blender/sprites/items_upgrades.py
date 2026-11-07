@@ -91,8 +91,8 @@ def housing(m, c, z, rz, k):
 
 def prism(m, c, z, rz, k):
     """A tapered crystal (the camera-facing facets red, green, blue) gripped by three claws over a round emitter base."""
-    m.cyl((c[0], c[1], z), 0.07 * k, 0.03 * k, "upGun", sides=12, top="upSteelD")
-    m.cyl((c[0], c[1], z + 0.008 * k), 0.074 * k, 0.014 * k, TAG["laser"], sides=12)                # weapon tag band
+    m.cyl((c[0], c[1], z), 0.072 * k, 0.012 * k, TAG["laser"], sides=16)                             # weapon tag foot
+    m.cyl((c[0], c[1], z + 0.012 * k), 0.07 * k, 0.018 * k, "upGun", sides=16, rtop=0.064 * k, top="upSteelD")
     crystal(m, (c[0], c[1], z + 0.03 * k), 0.27 * k, 0.05 * k, rz)
     m.cyl((c[0], c[1], z + 0.03 * k), 0.046 * k, 0.018 * k, "upSteelD", sides=12, top="upSteel")       # collar at its foot
     for i in range(3):                                                                                # claws
@@ -106,8 +106,8 @@ def prism(m, c, z, rz, k):
 def focus(m, c, z, rz, k):
     """An upright optic: a mount with the weapon band, a barrel, a grooved grip, a wide bezel and one big glass lens."""
     n = 20
-    m.cyl((c[0], c[1], z), 0.058 * k, 0.03 * k, "upGun", sides=n, top="upSteelD")
-    m.cyl((c[0], c[1], z + 0.007 * k), 0.061 * k, 0.015 * k, TAG["laser"], sides=n)                 # weapon tag band
+    m.cyl((c[0], c[1], z), 0.06 * k, 0.013 * k, TAG["laser"], sides=n)                               # weapon tag foot
+    m.cyl((c[0], c[1], z + 0.013 * k), 0.058 * k, 0.017 * k, "upGun", sides=n, top="upSteelD")
     m.cyl((c[0], c[1], z + 0.03 * k), 0.05 * k, 0.03 * k, "upSteel", sides=n, top="upSteelD")        # barrel
     m.cyl((c[0], c[1], z + 0.06 * k), 0.057 * k, 0.022 * k, "upSteelD", sides=n)                     # grip
     m.cyl((c[0], c[1], z + 0.069 * k), 0.0585 * k, 0.004 * k, "upGun", sides=n)                      # its groove
@@ -181,8 +181,8 @@ def nuke(m, c, z, rz, k):
 def chain(m, c, z, rz, k):
     """A tesla coil: a base with the weapon band, a copper winding, a steel crown ring and a cap, violet lightning arcing
     off both sides."""
-    m.cyl((c[0], c[1], z), 0.066 * k, 0.028 * k, "upGun", sides=16, top="upSteelD")
-    m.cyl((c[0], c[1], z + 0.006 * k), 0.07 * k, 0.014 * k, TAG["ion"], sides=16)                   # weapon tag band
+    m.cyl((c[0], c[1], z), 0.068 * k, 0.013 * k, TAG["ion"], sides=20)                               # weapon tag foot
+    m.cyl((c[0], c[1], z + 0.013 * k), 0.066 * k, 0.015 * k, "upGun", sides=20, rtop=0.06 * k, top="upSteelD")
     m.cyl((c[0], c[1], z + 0.028 * k), 0.03 * k, 0.1 * k, "upCu", sides=14, top="upCuD")            # the winding
     for i in range(4):
         m.cyl((c[0], c[1], z + 0.04 * k + i * 0.022 * k), 0.0315 * k, 0.004 * k, "upCuD", sides=14)
