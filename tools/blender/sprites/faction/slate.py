@@ -166,8 +166,9 @@ def slate_grey_panel(plate, u0, u1, run_, **kw):
                (vc - 3 * LINE, dv + EDGE / 2)], PAINT, 0, 0.0)
 
 
-BOXES = ((2, 9, 0, True), (13, 6, 4, False), (21, 9, 0, True))   # T1-2's boxes a tile (_box_header): 2 px from each
-                                                        # end and between, the ref's widths; the middle one's top sloping
+BOXES = ((2, 9, False), (13, 6, True), (21, 9, False))   # the header's boxes a tile (px from its start, width,
+                                                        # middle?): 2 px from each end and between, the ref's widths
+MID_SLOPE = 4 * PZ                                      # the middle box's top: its front edge this far under its back
 
 
 def _steps(u0, u1, top):
@@ -177,56 +178,45 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def _box_header(boxes, seam, slot):
-    """A header of blue boxes a tile over the stripe's foot to the rail's top, in place of both, on a backing in the
-    stripe's blue. boxes: (px from the tile's start, width (its +u side's 2 px in it), its top's slope in px (0: flat,
-    its top corners rounded a px), a handle slot); their bottom corners rounded a px, their fronts flush, a sloped top
-    lit; each front's top edge lit, its bottom px in the side's tone. seam: a seam across each, 7 px over the foot, in
-    the side's tone. slot: the handle slot's (width, px under the front's top, px from the box's start; None: about
-    its middle)."""
-    sw, sz, sx = slot
-
-    def header(k, ax, plane, a, b, z0, z1, mit):
-        T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 3)          # the backing, the stripe's blue (up to
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
+    """Header (T1-2, T1-3): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on a
+    backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their corners
+    rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low across
+    each, the end ones a handle slot near the top."""
+    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 3)              # the backing, the stripe's blue (up to
                                                                            # the wall's top)
-        side = "fGT4" if ax == "y" else "fGT5"          # (a box's +u side, the one the camera sees: two steps under
-        lit = "fGT0" if ax == "y" else "fGT1"           # its front; its front's top edge lit, its foot's edge in the
-        dark = side                                     # side's tone)
-        zb, d = z0 + 2 * PZ, RAIL_D                     # (the boxes' foot)
-        for c in range(-1, 2):
-            for x0, w, slope, handle in boxes:
-                u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
-                q0, q1 = max(a, u0), min(b, u1)
-                if q1 - q0 < 1e-6:
+    side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
+    lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
+    dark = side                                         # side's tone)
+    zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
+    for c in range(-1, 2):
+        for x0, w, mid in BOXES:
+            u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
+            q0, q1 = max(a, u0), min(b, u1)
+            if q1 - q0 < 1e-6:
+                continue
+            top = ("fGT1" if ax == "y" else "fGT2") if mid else None           # (the middle one's sloped top lit)
+            for s0, s1, up, down in _steps(u0, u1, not mid):
+                s0, s1 = max(s0, q0), min(s1, q1)
+                if s1 - s0 < 1e-6:
                     continue
-                top = ("fGT1" if ax == "y" else "fGT2") if slope else None     # (a sloped top lit)
-                for s0, s1, up, down in _steps(u0, u1, not slope):
-                    s0, s1 = max(s0, q0), min(s1, q1)
-                    if s1 - s0 < 1e-6:
-                        continue
-                    zf, zk = z1 - down * PZ - slope * PZ, z1 - down * PZ               # (its top: front, back)
-                    zl = zb + up * PZ
-                    prism(k, ax, plane, s0, s1, [(0.0, zl), (d, zl), (d, zf), (0.0, zk)], BLUE, 3,
-                          cols=[False, None, top, False], cap=(False, side))
-                    prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE,
-                          4, cols=[False, lit, False, False], cap=False)
-                    prism(k, ax, plane, s0, s1, [(0.0, zl), (d + PAINT, zl), (d + PAINT, zl + PZ), (0.0, zl + PZ)], BLUE,
-                          4, cols=[False, dark, False, False], cap=False)             # its foot's edge, the side's tone
-                zt = z1 - slope * PZ                        # its front's top
-                if seam:                                    # a seam across, edge to edge, in the side's tone
-                    prism(k, ax, plane, q0, q1, [(0.0, z0 + 7 * PZ), (d + PAINT, z0 + 7 * PZ), (d + PAINT, z0 + 8 * PZ),
-                                                 (0.0, z0 + 8 * PZ)], BLUE, 4, cols=[False, side, False, False], cap=False)
-                if not handle:
-                    continue
-                h0 = u0 + sx * LINE if sx is not None else round((u0 + u1) / 2 * 32) / 32 - sw / 2 * LINE
-                if q0 <= h0 and h0 + sw * LINE <= q1:                              # a handle slot
-                    T.paint(k, ax, plane, h0, h0 + sw * LINE, zt - (sz + 1) * PZ, zt - sz * PZ, d, BLUE, 1)
-    return header
-
-
-slate_boxes = _box_header(BOXES, True, (4, 3, None))   # Header (T1-2, T1-3): three boxes, the end ones a handle slot
-LOCKERS = ((0, 11, 2, True), (12, 7, 4, False), (20, 11, 2, True))   # T1-5: two tall lockers (a handle slot just under
-slate_lockers = _box_header(LOCKERS, False, (2, 2, 3))                # their sloped tops) and a box between, the ref's
+                zf, zk = z1 - down * PZ - (MID_SLOPE if mid else 0.0), z1 - down * PZ      # (its top: front, back)
+                zl = zb + up * PZ
+                prism(k, ax, plane, s0, s1, [(0.0, zl), (d, zl), (d, zf), (0.0, zk)], BLUE, 3,
+                      cols=[False, None, top, False], cap=(False, side))
+                prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
+                      cols=[False, lit, False, False], cap=False)
+                prism(k, ax, plane, s0, s1, [(0.0, zl), (d + PAINT, zl), (d + PAINT, zl + PZ), (0.0, zl + PZ)], BLUE, 4,
+                      cols=[False, dark, False, False], cap=False)                 # its foot's edge, the side's tone
+            zt = z1 - MID_SLOPE if mid else z1           # its front's top
+            prism(k, ax, plane, q0, q1, [(0.0, z0 + 7 * PZ), (d + PAINT, z0 + 7 * PZ), (d + PAINT, z0 + 8 * PZ),
+                                         (0.0, z0 + 8 * PZ)], BLUE, 4, cols=[False, side, False, False], cap=False)
+                                                        # a seam across, edge to edge, in the side's tone
+            if mid:
+                continue
+            cu = round((u0 + u1) / 2 * 32) / 32
+            if q0 <= cu - 2 * LINE and cu + 2 * LINE <= q1:                    # a handle slot, 4 px
+                T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
 
 
 def _faint(k, ax, plane, a, b, z):
@@ -262,8 +252,7 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
     return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
 
 
-SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
-              Design("lockers", header=slate_lockers))
+SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
