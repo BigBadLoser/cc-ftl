@@ -186,8 +186,8 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
     T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 3)              # the backing, the stripe's blue (up to
                                                                            # the wall's top)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
-    lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge a step
-    dark = "fGT3" if ax == "y" else "fGT4"              # under its front)
+    lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
+    dark = side                                         # side's tone)
     zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
     for c in range(-1, 2):
         for x0, w, mid in BOXES:
@@ -207,7 +207,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
                       cols=[False, lit, False, False], cap=False)
                 prism(k, ax, plane, s0, s1, [(0.0, zl), (d + PAINT, zl), (d + PAINT, zl + PZ), (0.0, zl + PZ)], BLUE, 4,
-                      cols=[False, dark, False, False], cap=False)                 # its foot's edge a step darker
+                      cols=[False, dark, False, False], cap=False)                 # its foot's edge, the side's tone
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
             if mid:
                 continue
