@@ -107,14 +107,19 @@ for _ax in ("x", "y"):
 
 
 STEPS = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}    # a mask bit's neighbour (N1 E2 S4 W8)
+BEFORE = (1, 8)                                          # the neighbours the renderer draws first (lower x + y)
 _WALL = re.compile(r"^tile\.wall\.(full\.|low\.)?m(\d+)")
 
 
 def _with_runs(fn, mask, level):
-    """A wall piece as env_build "wide" (own, wide): the piece, and on each connected side the wall's straight run one
-    tile on, so a px on a tile edge (anti-aliased: env_build.AA) resolves against the wall running on there, not the
-    empty canvas, and the tiles meet without specks. The runs are built plain (no straight-run variant) and in the
-    look's style (a faction look wraps the whole build)."""
+    """A wall piece as env_build "wide" (own, wide): the piece, and on each connected side drawn before it (north,
+    west: the renderer draws by x + y, back to front) the wall's straight run one tile on, so a px on that edge
+    (anti-aliased: env_build.AA) resolves against the wall running on there, not the empty canvas. The sides drawn
+    after it (east, south) get no run: the tile there is always the one in front where the two overlap and paints over
+    this one, so cutting this one by a stand-in for it (the plain run) only leaves a hole wherever the real tile's
+    design (a straight-run variant) stands less proud than the plain run's; and the two tiles' coverage of a px on
+    their shared edge adds up to the whole px, so one of them always takes it (no specks). The runs are built plain (no
+    straight-run variant) and in the look's style (a faction look wraps the whole build)."""
     def build():
         from mathutils import Matrix
         from . import core, wall3d
@@ -123,7 +128,7 @@ def _with_runs(fn, mask, level):
         wall3d.VARIANT = (0, 0)
         try:
             for bit, (dx, dy) in STEPS.items():
-                if mask & bit:
+                if mask & bit and bit in BEFORE:
                     for o in block(10 if bit in (2, 8) else 5, "wall", level=level):
                         o.data.transform(Matrix.Translation(core.G(dx, dy, 0.0)))
                         o.data.update()
