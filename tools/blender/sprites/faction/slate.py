@@ -205,9 +205,10 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
 def slate_panel(k, ax, plane, a, b, top, foot):
     """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 15 px tall, its foot 5 px over the seam over the lip
     (the lip's recess left out: Design recess=False), its corners rounded as the ramp's blue panel's (each corner
-    pixel left out); a lit bar along its inside top, a px under its top line; a lit tick 7 px each side of the
+    pixel left out); a lit bar 3 px tall along its inside top, 2 px under its top line; a lit tick 7 px each side of the
     middle from a px under its foot up 4 px."""
     lit = "fGS1" if ax == "y" else "fGS2"
+    bar = "fGS0" if ax == "y" else "fGS1"               # (the bar a step over the ticks)
     W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
     zt = zb + 15 * PZ
@@ -217,10 +218,11 @@ def slate_panel(k, ax, plane, a, b, top, foot):
         for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
                                (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
             T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
-        for u0, u1, z0, z1 in ((c - 7 * LINE, c + 7 * LINE, zt - 4 * PZ, zt - 2 * PZ),
-                               (c - K, c - K + LINE, zb - PZ, zb + 3 * PZ), (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ)):
+        for u0, u1, z0, z1, col in ((c - 7 * LINE, c + 7 * LINE, zt - 6 * PZ, zt - 3 * PZ, bar),
+                                    (c - K, c - K + LINE, zb - PZ, zb + 3 * PZ, lit),
+                                    (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ, lit)):
             prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
-                  cols=[False, lit, False, False])
+                  cols=[False, col, False, False])
 
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel, recess=False))
