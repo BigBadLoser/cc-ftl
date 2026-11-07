@@ -23,8 +23,8 @@ POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wL"         # the sill's level top (a step under the light: its lit edge reads)
 LIP_SLOPE = "wS"        # the sill's top where it slopes down from a post: off the lip (a step under) ...
 RAMP_SLOPE = "wS"       # ... and on into the ramp (the seam between them)
-EDGE = "wH"             # the sill's front edge lit (the ramp's own lit edge), EDGE_W deep; on the slope off the lip in the
-LIP_EDGE = "wL"         # lip's own lit top's colour
+EDGE = "wH"             # the sill's front edge lit, on the ramp just past it (the ramp's own lit edge), EDGE_W out; by
+LIP_EDGE = "wL"         # the slope off the lip on the lip's front, a px down, in the lip's own lit top's colour
 EDGE_W = 1 / 32
 SEAM = "wM"             # a seam across the sill where the slope off the lip ends and the one into the ramp starts
 BEAM_UNDER = "wK"       # the beam's underside (the black)
@@ -139,17 +139,22 @@ def hook(k, sp, own=True):
         v0, v1 = (yf + (zs - h) / _k() for h in (h0, h1))              # (the far side, -y: its plain ramp)
         _quad(k, [(u0, -v0, h0), (u1, -v1, h1), (u1, w1, h1), (u0, w0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else LIP_SLOPE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else RAMP_SLOPE)
-        e = 2 * T.PAINT                                 # (its front edge lit)
-        _quad(k, [(u0, w0 - EDGE_W, h0 + e), (u1, w1 - EDGE_W, h1 + e), (u1, w1, h1 + e), (u0, w0, h0 + e)], (0, 0, 1),
-              LIP_EDGE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else EDGE)
+        e = 2 * T.PAINT                                 # (its front edge lit, on the wall's side of it)
+        if (h0 + h1) / 2 > T.lip_heights(zs)[0]:       # (the lip's front, under the edge)
+            _quad(k, [(u0, w0 + e, h0), (u1, w1 + e, h1), (u1, w1 + e, h1 - PZ), (u0, w0 + e, h0 - PZ)], (0, 1, 0),
+                  LIP_EDGE)
+        else:                                           # (the ramp, on down from the edge)
+            n, dz = Vector((0, _k(), 1)).normalized() * e, EDGE_W * _k()
+            _quad(k, [(u0, w0 + n.y, h0 + n.z), (u1, w1 + n.y, h1 + n.z), (u1, w1 + EDGE_W + n.y, h1 - dz + n.z),
+                      (u0, w0 + EDGE_W + n.y, h0 - dz + n.z)], (0, 1, 1), EDGE)
     for xs, sd in ((x0 + RUN, 1), (x1 - RUN, -1)):    # the seam where the slope into the ramp starts
         xe = xs + sd * T.LINE
         if not (a < min(xs, xe) and max(xs, xe) < b):
             continue
         hs, he = _sill(xs, x0, x1), _sill(xe, x0, x1)
         ds, de = (yf + (zs - h) / _k() for h in (hs, he))
-        _quad(k, [(xs, -ds, hs + T.PAINT), (xe, -de, he + T.PAINT), (xe, de - EDGE_W, he + T.PAINT),
-                  (xs, ds - EDGE_W, hs + T.PAINT)], (0, 0, 1), SEAM)
+        _quad(k, [(xs, -ds, hs + T.PAINT), (xe, -de, he + T.PAINT), (xe, de, he + T.PAINT), (xs, ds, hs + T.PAINT)],
+              (0, 0, 1), SEAM)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
