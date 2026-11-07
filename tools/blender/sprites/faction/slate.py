@@ -112,12 +112,12 @@ EDGE = 0.4 / 32                                 # (a px down the slope, about: 2
 
 
 def slate_plate(plate, u0, u1, run_, **_):
-    """The base ramp's groove across the blue plate: a px line 4 px into it, half the tile wide, a 2 px tick down at
-    each end (in the plate's front tone)."""
-    uc, dg = (u0 + u1) / 2, SPLIT * run_ + 4 * EDGE
+    """The base ramp's seam panel on the blue plate: hung off the plate's lit top edge, half the tile wide and 3 px
+    deep, a px seam down each side and across its foot (in the plate's front tone)."""
+    uc, s0 = (u0 + u1) / 2, SPLIT * run_
     w = min(0.25, (u1 - u0) / 2 - 0.06)
-    for q in ((uc - w, uc + w, dg, dg + EDGE), (uc - w, uc - w + LINE, dg, dg + 3 * EDGE),
-              (uc + w - LINE, uc + w, dg, dg + 3 * EDGE)):
+    for q in ((uc - w, uc + w, s0 + 2 * EDGE, s0 + 3 * EDGE), (uc - w, uc - w + LINE, s0 + EDGE, s0 + 3 * EDGE),
+              (uc + w - LINE, uc + w, s0 + EDGE, s0 + 3 * EDGE)):
         plate([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], PAINT, 2, 0.0, "ochre")
 
 
