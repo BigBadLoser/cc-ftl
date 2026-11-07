@@ -5,6 +5,7 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_cup from '@tabler/icons/outline/cup.svg?raw';
+import t_snowflake from '@tabler/icons/outline/snowflake.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_settings from '@tabler/icons/outline/settings.svg?raw';
 import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
@@ -147,6 +148,7 @@ export const FILES = {
   derelict: 'ghost',
   alert: 'alert-triangle',
   shield: 'shield',
+  snowflake: 'snowflake',
   evasion: 'arrow-curve-right',
   hail: 'broadcast',
   frame: 'focus-centered',
@@ -186,6 +188,7 @@ const RAW: Record<string, string> = {
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,
   'bolt': t_bolt,
+  'snowflake': t_snowflake,
   'broadcast': t_broadcast,
   'bug': t_bug,
   'download': t_download,

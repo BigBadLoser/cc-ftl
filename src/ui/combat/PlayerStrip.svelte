@@ -36,6 +36,7 @@
 
 <div class="dock steel">
   {#if onBoard}<BoardButton {onBoard} blocker={boardBlocker} />{/if}
+  <div class="plane">
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
@@ -52,6 +53,7 @@
     {/if}
   </div>
   {#if drive}<FleeButton {drive} onFlee={flee} />{/if}
+  </div>
 </div>
 
 <style>
@@ -67,18 +69,25 @@
     min-width: 0;
     pointer-events: auto;
   }
-  /* The Board tab, the strip and its Flee tab side by side, with a gap between, on one shared backplane: a plain fill behind the sections, the tabs
-     and the gaps between them, flush with their outer edges (no padding or border of its own). */
+  /* The Board tab stands on its own at the left; the strip and its Flee tab sit side by side on one shared backplane (`.plane`): a plain fill
+     behind the sections, the Flee tab and the gaps between them, flush with their outer edges (no padding or border of its own). */
   .dock {
-    position: relative;
-    isolation: isolate;
     display: flex;
     align-items: stretch;
     gap: 10px;
     width: min(1320px, calc(100vw - 24px));
     pointer-events: auto;
   }
-  .dock::before {
+  .plane {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .plane::before {
     content: '';
     position: absolute;
     inset: 0;

@@ -6,6 +6,7 @@ export { newSectorGrid, stampGrid } from './stamp';
 export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
+export type { UpgradeDef, UpgradeMods } from './upgrades/types';
 export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ScrapType, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef, ResearchDef } from './registry';
 export type { DroneDef, DroneJobDef, DroneBayDef } from './drones/types';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';

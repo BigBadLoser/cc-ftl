@@ -1,9 +1,10 @@
+import type { ItemDef } from '../sim';
 import { assetBase, loadComposed } from '../render/assets/loader';
 import type { StaticAsset } from '../render/assets/manifest';
 import type { UiIcon } from '../ui/api';
 
 /** CSS icon frames for items, cut from the medium floor-stack sprite of each (falls back to the small one, the stack unit or the held one). */
-export async function loadItemIcons(ids: readonly string[]): Promise<Record<string, UiIcon>> {
+export async function loadItemIcons(ids: readonly string[], content?: Record<string, ItemDef>): Promise<Record<string, UiIcon>> {
   const base = assetBase();
   const manifest = await loadComposed(base);
   const sizes = new Map<string, { w: number; h: number }>();
@@ -19,14 +20,15 @@ export async function loadItemIcons(ids: readonly string[]): Promise<Record<stri
   };
   const out: Record<string, UiIcon> = {};
   for (const id of ids) {
-    const a = [`${id}.m`, `${id}.s`, `${id}.unit`, `${id}.held`].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
+    const stand = content?.[id]?.placeholderIcon;
+    const a = [`${stand?.as ?? id}.m`, `${stand?.as ?? id}.s`, `${stand?.as ?? id}.unit`, `${stand?.as ?? id}.held`].map((k) => manifest.assets[k]).find((x): x is StaticAsset => x?.kind === 'static');
     const sheet = a && manifest.sheets[a.sheet];
     if (!a || !sheet) continue;
     const src = base + sheet.image;
     const { w, h } = await size(src);
     // The composed frame is in world px; the CSS icon cuts the image itself, in its own pixels (a 1x sheet: resolution 0.5).
     const r = sheet.resolution ?? 1;
-    out[id] = { src, x: a.frame.x * r, y: a.frame.y * r, w: a.frame.w * r, h: a.frame.h * r, sheetW: w, sheetH: h };
+    out[id] = { ...(stand ? { placeholder: stand.tint } : {}), src, x: a.frame.x * r, y: a.frame.y * r, w: a.frame.w * r, h: a.frame.h * r, sheetW: w, sheetH: h };
   }
   return out;
 }

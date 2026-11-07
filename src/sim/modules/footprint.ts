@@ -5,6 +5,14 @@ export interface Tile {
   y: number;
 }
 
+/**
+ * Where a job on a placed module is worked: its top-left tile and its rotated footprint, so crew may stand beside any side of it (crew/helpers.ts
+ * `atJob`). Every job aimed at a module posts this, as construction does; the top-left tile alone would need that one corner reachable.
+ */
+export function moduleSite(def: ModuleDef | undefined, m: { x: number; y: number; rot: number }): { x: number; y: number; size?: [number, number] } {
+  return def ? { x: m.x, y: m.y, size: rotatedSize(def, m.rot) } : { x: m.x, y: m.y };
+}
+
 /** Footprint [w, h] after `rot` quarter turns. */
 export function rotatedSize(def: ModuleDef, rot: number): [number, number] {
   const [w, h] = def.footprint;

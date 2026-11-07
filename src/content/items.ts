@@ -1,3 +1,4 @@
+import { upgradeItems } from './upgrades';
 import type { ItemDef } from '../sim';
 
 /** Raw and refined resources. Stack sizes are units per floor stack or storage slot. */
@@ -56,4 +57,5 @@ export const items = {
   'item.ai_core': { name: 'AI core', tags: ['machine'], stackSize: 5, price: 420 },
   'item.robot_parts': { name: 'Robot parts', tags: ['machine', 'components'], stackSize: 50, price: 30 },
   'item.drone_tech': { name: 'Drone tech', tags: ['machine', 'components'], stackSize: 10, price: 140 },
+  ...upgradeItems,
 } satisfies Record<string, ItemDef>;

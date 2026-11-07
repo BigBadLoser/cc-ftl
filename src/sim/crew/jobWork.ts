@@ -9,6 +9,9 @@ import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/sp
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
+import { stripUpgrade } from '../upgrades/loadout';
+import { finishFit } from '../upgrades/fit';
+import { holdOffline } from '../modules/hold';
 import { performSabotage } from '../boarding/sabotage';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -44,11 +47,11 @@ export function performJob(sim: Sim, crew: number, job: Job, speed: number): Wor
 /** The skill a job kind trains while it progresses (crafting, hauling and the rest train none). */
 const XP_SKILL: Partial<Record<Job['kind'], SkillName>> = {
   build: 'repair', module: 'repair', deconstruct: 'repair', moduleDecon: 'repair', repair: 'repair', extinguish: 'repair',
-  forceDoor: 'repair', mend: 'repair', salvage: 'repair', assemble: 'repair', research: 'science', hack: 'hacking',
+  forceDoor: 'repair', fit: 'repair', mend: 'repair', salvage: 'repair', assemble: 'repair', research: 'science', hack: 'hacking',
 };
 
 function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
-  if ((job.kind === 'build' || job.kind === 'module' || job.kind === 'assemble') && needsMaterials(job)) return 'wait';
+  if ((job.kind === 'build' || job.kind === 'module' || job.kind === 'assemble' || job.kind === 'fit') && needsMaterials(job)) return 'wait';
   switch (job.kind) {
     case 'haul': return performHaul(sim, crew, job);
     case 'craft': return performCraft(sim, job, speed);
@@ -59,6 +62,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'moduleDecon': return timed(job, speed, () => {
       const m = sim.world.get(job.target ?? 0, ModuleC);
       const cost = m && sim.content.modules[m.def]?.cost;
+      stripUpgrade(sim, job.target ?? 0); // another ship's weapon: a damaged one may lose its upgrade (the player's own comes out whole)
       removeModule(sim, job.target ?? 0);
       if (m && job.scrap) spillScrap(sim, shipIdOf(sim, job), m.x, m.y, job.scrap, cost); // salvage: scrap, not the refund
       else if (m) refundCost(sim, shipIdOf(sim, job), m.x, m.y, cost); // after the tiles are free
@@ -76,6 +80,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
     case 'sabotage': return performSabotage(sim, crew, job);
+    case 'fit': holdOffline(sim, job.target ?? 0); return timed(job, speed, () => { finishFit(sim, job); return 'done'; });
     case 'assemble': return performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff':

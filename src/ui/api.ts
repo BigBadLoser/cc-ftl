@@ -227,6 +227,41 @@ export interface UiModule {
   droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
+  /** The upgrade slot (null for a module with none). */
+  upgradeSlot: UiUpgradeSlot | null;
+}
+
+/** A foe's weapon module as the read-only combat inspector shows it (no controls). */
+export interface UiFoeModule {
+  id: number;
+  name: string;
+  /** The ship it is on. */
+  ship: string;
+  hp: number;
+  maxHp: number;
+  powered: boolean;
+  /** Its upgrade slot kind (null = no slot) and what is fitted in it. */
+  slot: string | null;
+  upgrade: { item: string; name: string; effects: string[] } | null;
+}
+
+/** An upgrade item as the slot panel lists it. */
+export interface UiUpgradeItem {
+  item: string;
+  name: string;
+  /** What it does, one line each. */
+  effects: string[];
+  /** Units in cargo (a fitted one counts none). */
+  count: number;
+}
+
+/** A module's upgrade slot: what is fitted, what the crew are doing about it, and what cargo could go in. */
+export interface UiUpgradeSlot {
+  fitted: UiUpgradeItem | null;
+  /** A fit or remove job is posted: the item going in (null = a removal), `working` once an engineer is at it (the module is offline). */
+  job: { item: UiUpgradeItem | null; working: boolean } | null;
+  /** Upgrades in cargo that fit this module. */
+  options: UiUpgradeItem[];
 }
 
 /** A stat line of a module in the research panel; `delta` is against the tier below ("+2", "-2 s"), `good` when that is an improvement. */
@@ -353,6 +388,8 @@ export interface UiIcon {
   h: number;
   sheetW: number;
   sheetH: number;
+  /** PLACEHOLDER icon (a stand-in item's art): the outline colour that marks it as one. */
+  placeholder?: string;
 }
 
 /** Ship-wide totals of one item. */
@@ -632,6 +669,12 @@ export interface UiWeapon {
   targetModuleId: number;
   /** A blind tile aim (sector tile), or null. */
   targetTile: { x: number; y: number } | null;
+  /** The upgrade fitted in its slot (item id, name), or null. */
+  upgrade: { item: string; name: string } | null;
+  /** An engineer is fitting or removing its upgrade: it is offline. */
+  fitting: boolean;
+  /** Its upgrade slot kind (null = no slot). */
+  slot: string | null;
 }
 
 /** A console of the player's ship and who runs it. */
@@ -688,6 +731,8 @@ export interface UiEnemyWeapon {
   fired: boolean;
   /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
   color: number;
+  /** The upgrade fitted in the weapon (a scan reads it off the card), or null. */
+  upgrade: { item: string; name: string } | null;
 }
 
 export interface UiShipCombat {
@@ -1434,6 +1479,8 @@ export interface UiApi {
   /** A module's on-screen bounds in viewport CSS px (read every frame, it follows pan and zoom), or null when it is not drawn. */
   /** Viewport CSS px of the centre of a ship or station (its ShipC entity), or null when it has no ship or the view is not ready. */
   shipScreen(ship: number): { x: number; y: number } | null;
+  /** A foe's weapon module for the read-only combat inspector (null when it is not one, or may not be shown). */
+  foeModule(id: number | null): UiFoeModule | null;
   moduleScreenRect(id: number): { x0: number; y0: number; x1: number; y1: number } | null;
   /** Spawn a raider about 30 tiles from the player's ship. */
   spawnRaider(boarders?: boolean): void;

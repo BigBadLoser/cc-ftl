@@ -324,4 +324,6 @@ describe('sector refactor equivalence', () => {
 // crew reach and mend modules they could not (with repair jobs back on the anchor alone, the run gives a0cbadda again). The disaster run is unchanged.
 // Repinned `combat` for enemy target choice (#173): a ship fired on records who fired (`Combat.threat`, part of the hashed world). With that record
 // switched off the run gives 064a6939 again, so the AI's choices are the same here (the player is both the threat and the first foe).
+// Module job sites (#338): fit, decon, craft and research jobs carry the rotated footprint too (`moduleSite`); both hashes are unchanged by it (the
+// repair job keeps its key order, which the hash sees).
 const EXPECTED = { combat: 'c50ed4d7', disaster: '62484cd5' };

@@ -187,6 +187,8 @@ export interface FactionDef {
   salvage?: Partial<Record<'navy' | 'drone', { faction: FactionDef; families: readonly string[] }>>;
   metrics?: MetricBands;
   weapons: { light: readonly Weighted<string>[]; heavy: readonly Weighted<string>[] };
+  /** Module upgrades (item ids) its weapons may carry, each with its chance per weapon (upgrades/loadout.ts): navy precise, pirates crude, zealots fire-based. */
+  upgrades?: readonly { item: string; chance: number }[];
   shields: readonly Weighted<string>[];
   /** Crate stock: each crate rolls each entry in [min, max]. */
   stock: readonly { item: string; min: number; max: number }[];

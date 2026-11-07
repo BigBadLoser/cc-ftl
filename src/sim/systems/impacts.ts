@@ -3,6 +3,7 @@ import { addHeat } from '../combat/heat';
 import { HEAT_PER_LAYER } from '../combat/heatTuning';
 import { applyEffects } from '../combat/effects';
 import { gauss } from '../combat/geometry';
+import { firedWeapon } from '../upgrades/stats';
 import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
@@ -25,7 +26,7 @@ export function impactSystem(sim: Sim): void {
     const p = sim.world.get(id, ProjectileC);
     if (!p || p.t < 1) continue;
     sim.world.destroyEntity(id);
-    const def = sim.content.weapons?.[p.weapon];
+    const def = firedWeapon(sim, p.fromModuleId, p.weapon);
     if (p.target.vehicle) {
       hitVehicle(sim, id, p.weapon, p.target.vehicle, def?.effects ?? [], p.x1, p.y1);
       continue;
@@ -87,3 +88,4 @@ function hitVehicle(sim: Sim, projectile: number, weapon: string, vehicle: numbe
   for (const e of effects) if (e.type === 'moduleDamage') amount += e.amount;
   damageVehicle(sim, vehicle, amount, 'weapon');
 }
+

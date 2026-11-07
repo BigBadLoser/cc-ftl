@@ -13,7 +13,7 @@
     ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
     heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
     evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
-    charges: [gun(1, 'Burst laser', 0.7, true, 0xf08a9a), gun(2, 'Missile launcher', 0.4, false, 0xffc06a), { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
+    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor' } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket' } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
   } as unknown as UiShipCombat);
   const cards = [
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },

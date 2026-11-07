@@ -400,7 +400,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         // A wreck without its own damaged / destroyed art is darkened instead.
         const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
         for (const p of e.parts) {
-          p.spr.tint = mulColor(p.wallAt ? wallTint(grid, { x: p.wallAt.x + grid.x0, y: p.wallAt.y + grid.y0 }, pulse) : tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : p.art);
+          p.spr.tint = mulColor(p.wallAt ? wallTint(grid, { x: p.wallAt.x + grid.x0, y: p.wallAt.y + grid.y0 }, pulse) : tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : def.artTint ? mulColor(p.art, def.artTint) : p.art);
           for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
           if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
         }

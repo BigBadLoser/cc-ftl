@@ -11,6 +11,18 @@ Last updated: 2026-11-03.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
+## Branch `combat/weapon-upgrades` (#338, slice 1; not merged)
+
+Module upgrade slots with the three general weapon upgrades and the flak cannon. Mechanism: `ModuleDef.upgradeSlot`, `ItemDef.upgrade`
+(`slot`, `fits`, `mods`), `Module.upgrade`; read through `sim/upgrades/stats.ts` (effective weapon def, damage-taken multiplier). Fitting is the
+`fit` crew job (commands `module.fitUpgrade/removeUpgrade/cancelUpgrade`); the module is offline while the crew work it (`Module.offlineUntil`, a
+general work hold, `sim/modules/hold.ts`; power reads that, not fits). Enemy loadouts by faction (`FactionDef.upgrades`) are rolled once when a
+generated ship is created (`shipCreated`, `combat/ships.ts`, fed by `spawnShip` `opts.gen` and the derelict spawner; `sim/upgrades/loadout.ts`), strip drops and losses, station stock, ruin loot. Slice 2 (behaviour
+upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item icons are placeholders
+(`ItemDef.placeholderIcon`). Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Drones are covered by point defence and defence drones, not flak.
+Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
+scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
+
 ## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and

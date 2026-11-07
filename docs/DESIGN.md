@@ -820,11 +820,11 @@ extinguish and stabilise code, flying navigation, charging, the AI core link) an
 - **Jumping and leaving.** Charging a jump, or leaving a scene, recalls every drone. The departure waits a few seconds for
   them (longer the more there are: they dock one after another), the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
 - **Weaknesses.** Ion or EMP near a drone or on its bay knocks it out for a while; a flying drone drops. Losing the core
-  stops them all. In space, only flak, point defence and enemy defence drones can hit a drone; ordinary ship guns can't
+  stops them all. In space, only point defence and enemy defence drones can hit a drone; ship guns (flak included) can't
   track one.
   - **Range in practice.** Fights are 40 to 100 tiles apart, and the first batch of drones stays near your own ship. At that
-    range enemy flak is inaccurate by design and enemy point defence only covers its own ship, so in practice drones mostly
-    fight drones. A combat drone that flies to the enemy (later) would be exposed to its flak and point defence, so tune it then.
+    range enemy point defence only covers its own ship, so in practice drones mostly
+    fight drones. A combat drone that flies to the enemy (later) would be exposed to its point defence, so tune it then.
 - **Enemies have drones too,** on the same system: rogue AI and navy ships.
 
 **First batch.**

@@ -5,7 +5,7 @@ import { isWreck } from '../salvage/guard';
 import { findJobAt } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AUTO_LEVEL_TICKS } from '../rock/dig';
-import { footprintTiles, rotatedSize } from './footprint';
+import { footprintTiles, moduleSite, rotatedSize } from './footprint';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { AirlockC, requestAirlock } from './airlock';
@@ -30,7 +30,7 @@ export function postModuleDecon(sim: Sim, target: number, extra: Partial<Job> = 
   if (!m) return;
   const work = Math.round((sim.content.modules[m.def]?.buildWork ?? TICK_HZ) * DECON_FRACTION);
   const id = sim.world.createEntity();
-  sim.world.add(id, JobC, { category: 'construction', kind: 'moduleDecon', x: m.x, y: m.y, struct: 0, work, progress: 0, reservedBy: 0, target, ...extra });
+  sim.world.add(id, JobC, { category: 'construction', kind: 'moduleDecon', ...moduleSite(sim.content.modules[m.def], m), struct: 0, work, progress: 0, reservedBy: 0, target, ...extra });
 }
 
 export const moduleHandlers: { [T in ModuleCommandType]: Handler<T> } = {

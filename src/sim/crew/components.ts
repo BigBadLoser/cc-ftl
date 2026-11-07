@@ -149,6 +149,8 @@ export interface Job {
   warnedAt?: number;
   /** For 'haul' jobs: what moves where. */
   haul?: HaulData;
+  /** For 'fit' jobs: the upgrade item to install (null = take the fitted one out). */
+  fit?: { item: string | null };
   /** For 'assemble' jobs: the robot role being built. */
   assemble?: { role: string };
   /** For 'craft' jobs: the recipe being made. */
@@ -188,6 +190,8 @@ export type JobKind =
   | 'sabotage'
   /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
   | 'assemble'
+  /** fit: install (or remove) a module upgrade; `target` is the module, `fit` says what (upgrades/fit.ts). */
+  | 'fit'
   /** suitUp / suitOff: put on or take off an EVA suit at the airlock `target`; the crew member stands ON the airlock's inside tile. */
   | 'suitUp' | 'suitOff'
   /** refill: fill the suit's tank at the airlock `target`'s suit tile, or (target a shuttle) at the hull tile its hatch reaches, then drift out and back. */
