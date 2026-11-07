@@ -3,17 +3,17 @@ and scale of items.py (x, y on the deck, z up, origin the tile centre at floor l
 
 General upgrades (fit any weapon; no weapon tag):
   upg_capacitor  Quick capacitor   a bank of three dark cells, yellow glowing bands, copper bus bar and terminals
-  upg_coolant    Coolant jacket    a ribbed sleeve: frosted cyan fins, glowing coolant windows between, a valve on top
+  upg_coolant    Coolant jacket    an open ribbed sleeve: a dark bore, frosted ribs, a glowing coolant window, two hoses
   upg_housing    Hardened housing  a squat armoured shell: steel-grey slab and plate, corner bolts (blockiest of the set)
 Behaviour upgrades (one weapon type each; a coloured band marks the weapon: laser red, mass driver blue, missile green,
 ion violet, incendiary orange):
-  upg_prism      Prism splitter    a faceted crystal in a cradle, laser colours split across the facets      (laser)
+  upg_prism      Prism splitter    a tapered crystal (camera facets red/green/blue) in three claws      (laser)
   upg_focus      Heavy focus       a thick lens barrel on two saddles, one big glass lens at the front        (laser)
-  upg_frag       Frag slug         a stubby scored slug cartridge with a blunt nose                          (mass driver)
+  upg_frag       Frag slug         a stubby cartridge, its head split into fragments over a brass casing  (mass driver)
   upg_rail       Rail coil         two long rails wound with copper, a heat glow at one end                  (mass driver)
-  upg_nuke       Nuclear warhead   an olive warhead nose cone on chocks, hazard bands and a trefoil badge    (missile)
+  upg_nuke       Nuclear warhead   an olive ogive warhead on chocks: hazard band, painted trefoil, pins (missile)
   upg_chain      Chain coil        an upright tesla emitter: copper coil, three forked prongs, violet tips  (ion)
-  upg_thermite   Thermite          a squat olive canister with an orange-red band and a charge brick         (incendiary)
+  upg_thermite   Thermite          a squat olive canister: orange-red band, igniter, carry handle         (incendiary)
 
 Each item also has a UI icon, item.upg_<id>.icon: ONE unit (not a stack), turned to a three-quarter view chosen per item
 (ICON_VIEW) and scaled to fill about ICON_PX of a 40 px box, outlined like every sprite; the UI shows it 1:1 (the module
@@ -22,11 +22,11 @@ inspector's upgrade slot, the upgrade hover card). The family also renders the n
 Colours are the family's own palette set (palette_extra.json "upgrades"); a sprite renders on that set alone."""
 import math
 
-import bmesh
 from mathutils import Matrix, Vector
 
 from . import core
-from .items_kit import FLOOR, cone, emit, jobs as item_jobs, pile, place, rot, tube
+from .items_kit import FLOOR, cone, jobs as item_jobs, pile, place, rot, tube
+from .items_upgrades_kit import crystal, ogive, ring, segments, trefoil
 
 PALETTE = "only:upgrades"          # the family's palette selection
 TAG = {"laser": "upRed", "mass": "upBlu", "missile": "upGrn", "ion": "upVio", "fire": "upOr"}
@@ -54,18 +54,18 @@ def capacitor(m, c, z, rz, k):
 
 
 def coolant(m, c, z, rz, k):
-    """A ribbed sleeve: a hollow bore on top (it slides over the barrel), frosted ribs, one glowing coolant window, two
-    hoses running down the side."""
-    r, h = 0.066 * k, 0.17 * k
-    m.cyl((c[0], c[1], z), r, h, "upSteelD", sides=14, top="upSteel")
-    m.cyl((c[0], c[1], z + h), r * 0.62, 0.004 * k, "upBlack", sides=14)                         # the bore
-    m.cyl((c[0], c[1], z + h * 0.44), r + 0.005 * k, 0.034 * k, "upCyG", sides=14)                # coolant window
-    for t in (0.06, 0.26, 0.66, 0.86):                                                             # frosted ribs
-        m.cyl((c[0], c[1], z + h * t), r + 0.013 * k, 0.016 * k, "upCy", sides=14, top="upGlass")
-    for a in (0.55, 1.35):                                                                         # coolant hoses
+    """An open ribbed sleeve (it slides over the barrel): a dark bore down the middle, frosted ribs, one glowing coolant
+    window, two hoses running down the side."""
+    ro, ri, h = 0.066 * k, 0.04 * k, 0.17 * k
+    ring(m, c, z, ro, ri, h, "upSteelD", "upSteel", "upGun", floor="upBlack")
+    ring(m, c, z + h * 0.44, ro + 0.005 * k, ri + 0.004 * k, 0.034 * k, "upCyG", "upCyG", "upCyG")      # coolant window
+    for t in (0.06, 0.26, 0.66):                                                                      # frosted ribs
+        ring(m, c, z + h * t, ro + 0.013 * k, ri + 0.004 * k, 0.016 * k, "upCy", "upGlass", "upCy")
+    ring(m, c, z + h - 0.016 * k, ro + 0.013 * k, ri, 0.016 * k, "upCy", "upGlass", "upGun")        # the lip rib
+    for a in (0.55, 1.35):                                                                            # coolant hoses
         def p(rad, t, a=a):
             return (c[0] + rad * math.cos(rz + a), c[1] + rad * math.sin(rz + a), z + h * t)
-        pts = [p(r, 0.97), p(r + 0.026 * k, 0.9), p(r + 0.028 * k, 0.2), p(r, 0.12)]
+        pts = [p(ro, 0.97), p(ro + 0.026 * k, 0.9), p(ro + 0.028 * k, 0.2), p(ro, 0.12)]
         for p0, p1 in zip(pts, pts[1:]):
             tube(m, p0, p1, 0.011 * k, "upCyD", sides=6)
 
@@ -88,39 +88,18 @@ def housing(m, c, z, rz, k):
 
 # ---- laser ---------------------------------------------------------------------------------------------------------------
 
-FACET = ("upRed", "upGrn", "upBlu", "upGlass", "upRed", "upBlu")
-
-
-def _facets(m, base, L, r, rz):
-    """A six-sided crystal standing on `base`: each facet a laser colour, the point glass-white."""
-    bm = bmesh.new()
-    b = Vector(base)
-    ring0 = [bm.verts.new(b + Vector((r * math.cos(t), r * math.sin(t), 0))) for t in (k * math.tau / 6 + rz for k in range(6))]
-    ring1 = [bm.verts.new(p.co + Vector((0, 0, L * 0.62))) for p in ring0]
-    tip = bm.verts.new(b + Vector((0, 0, L)))
-    for i in range(6):
-        j = (i + 1) % 6
-        bm.faces.new((ring0[i], ring0[j], ring1[j], ring1[i]))
-        bm.faces.new((ring1[i], ring1[j], tip))
-    bm.faces.new(ring0[::-1])
-
-    def colour(n, ctr):
-        if n.z < -0.5:
-            return None
-        if ctr.z > b.z + L * 0.62 + 1e-6:
-            return "upGlass"
-        a = (math.atan2(ctr.y - b.y, ctr.x - b.x) - rz) % math.tau
-        return FACET[int(a / math.tau * 6) % 6]
-    emit(m, bm, colour)
-
-
 def prism(m, c, z, rz, k):
-    m.box((c[0], c[1], z), (0.17 * k, 0.08 * k, 0.034 * k), "upGun", top="upSteelD", rz=rz, base=True, bevel=0.006 * k)
-    m.box((c[0], c[1], z + 0.008 * k), (0.178 * k, 0.088 * k, 0.014 * k), TAG["laser"], rz=rz, base=True)
-    for s in (-1, 1):                                                                              # low cradle arms
-        x, y = rot(c, rz, s * 0.072 * k, 0)
-        m.box((x, y, z + 0.034 * k), (0.016 * k, 0.05 * k, 0.045 * k), "upSteelD", top="upSteel", rz=rz, base=True, bevel=0.004 * k)
-    _facets(m, (c[0], c[1], z + 0.034 * k), 0.23 * k, 0.058 * k, rz)
+    """A tapered crystal (the camera-facing facets red, green, blue) gripped by three claws over a round emitter base."""
+    m.cyl((c[0], c[1], z), 0.07 * k, 0.03 * k, "upGun", sides=12, top="upSteelD")
+    m.cyl((c[0], c[1], z + 0.008 * k), 0.074 * k, 0.014 * k, TAG["laser"], sides=12)                # weapon tag band
+    crystal(m, (c[0], c[1], z + 0.03 * k), 0.27 * k, 0.05 * k, rz)
+    m.cyl((c[0], c[1], z + 0.03 * k), 0.046 * k, 0.018 * k, "upSteelD", sides=12, top="upSteel")       # collar at its foot
+    for i in range(3):                                                                                # claws
+        a = rz + math.pi / 6 + i * math.tau / 3
+        def p(rad, zz, a=a):
+            return (c[0] + rad * math.cos(a), c[1] + rad * math.sin(a), z + zz * k)
+        for p0, p1 in ((p(0.062 * k, 0.03), p(0.062 * k, 0.066)), (p(0.062 * k, 0.066), p(0.05 * k, 0.084))):
+            tube(m, p0, p1, 0.011 * k, "upSteel", sides=6)
 
 
 def focus(m, c, z, rz, k):
@@ -137,24 +116,20 @@ def focus(m, c, z, rz, k):
 
 # ---- mass driver ---------------------------------------------------------------------------------------------------------
 
-def _scored(m, c, z, r, h, rows, cols, a, b, rz=0.0):
-    """A cylinder's side scored into a grid of fragments: alternating tones, `rows` x `cols` cells."""
-    ang = [rz + math.tau * i / cols for i in range(cols + 1)]
-    for j in range(rows):
-        z0, z1 = z + h * j / rows, z + h * (j + 1) / rows
-        for i in range(cols):
-            p = [(c[0] + r * math.cos(ang[i]), c[1] + r * math.sin(ang[i])), (c[0] + r * math.cos(ang[i + 1]), c[1] + r * math.sin(ang[i + 1]))]
-            m.poly([core.G(p[0][0], p[0][1], z0), core.G(p[1][0], p[1][1], z0), core.G(p[1][0], p[1][1], z1),
-                    core.G(p[0][0], p[0][1], z1)], a if (i + j) % 2 else b, flip=False)
-
-
 def frag(m, c, z, rz, k):
-    """A stubby slug, its casing scored into fragments, a blunt nose, a brass base and the weapon band."""
-    r, h = 0.058 * k, 0.075 * k
-    m.cyl((c[0], c[1], z), r + 0.008 * k, 0.024 * k, "upCuD", sides=12, top="upCu")
-    m.cyl((c[0], c[1], z + 0.024 * k), r + 0.004 * k, 0.018 * k, TAG["mass"], sides=12)            # weapon tag band
-    _scored(m, c, z + 0.042 * k, r, h, 3, 10, "upSteel", "upSteelD", rz)
-    m.cyl((c[0], c[1], z + 0.042 * k + h), r, 0.036 * k, "upSteel", sides=12, rtop=r * 0.55, top="upBolt")   # blunt nose
+    """A stubby cartridge: brass casing on a rim, the weapon band, and a blunt head split into chunky fragments in a brick
+    pattern, the dark core showing through the splits."""
+    r = 0.052 * k
+    m.cyl((c[0], c[1], z), r + 0.007 * k, 0.012 * k, "upCuD", sides=12, top="upCu")                 # rim
+    m.cyl((c[0], c[1], z + 0.012 * k), r, 0.05 * k, "upCu", sides=12, top="upCuD")                  # casing
+    m.cyl((c[0], c[1], z + 0.042 * k), r + 0.003 * k, 0.016 * k, TAG["mass"], sides=12)              # weapon tag band
+    zh = z + 0.062 * k
+    m.cyl((c[0], c[1], zh), r * 0.8, 0.07 * k, "upBlack", sides=10, rtop=r * 0.25)                  # the core
+    tiers = ((0.0, 0.026, 1.0, 0.95), (0.026, 0.05, 0.95, 0.74), (0.05, 0.068, 0.74, 0.4))
+    for j, (a, b, f0, f1) in enumerate(tiers):
+        segments(m, c, zh + a * k, zh + b * k, r * f0, r * f1, 6, 0.22, rz + (j % 2) * math.pi / 6,
+                 lambda i, j=j: "upSteel" if (i + j) % 2 else "upHeavy", "upBolt", "upGun")
+    m.cyl((c[0], c[1], zh + 0.068 * k), r * 0.36, 0.012 * k, "upSteelD", sides=10, rtop=r * 0.14, top="upBolt")
 
 
 def rail(m, c, z, rz, k):
@@ -174,37 +149,24 @@ def rail(m, c, z, rz, k):
 
 # ---- missiles ------------------------------------------------------------------------------------------------------------
 
-def _trefoil(m, c, rz, u0, v, zc, R):
-    """A radiation trefoil, black on the plate face at v (box-local) facing out along +v: three blades and a hub."""
-    def at(u, w):
-        x, y = rot(c, rz, u0 + u, v)
-        return core.G(x, y, zc + w)
-    for th in (90, 210, 330):
-        a0, a1 = math.radians(th - 30), math.radians(th + 30)
-        arc = [a0 + (a1 - a0) * i / 4 for i in range(5)]
-        pts = [at(R * math.cos(a), R * math.sin(a)) for a in arc] + [at(R * 0.32 * math.cos(a), R * 0.32 * math.sin(a)) for a in arc[::-1]]
-        m.poly(pts, "upBlack", flip=True)
-    m.poly([at(R * 0.2 * math.cos(i * math.tau / 8), R * 0.2 * math.sin(i * math.tau / 8)) for i in range(8)], "upBlack", flip=True)
-
-
 def nuke(m, c, z, rz, k):
-    r, zc = 0.058 * k, z + 0.024 * k + 0.058 * k
-    for u in (-0.065, 0.045):
+    """A warhead section on crude chocks: a smooth olive nose cone, a broad yellow hazard band with the trefoil painted on, a
+    short body, the weapon band, and a striped mating flange with connector pins at the back."""
+    R, zc = 0.06 * k, z + 0.03 * k + 0.06 * k
+    for u in (-0.07, 0.06):
         x, y = rot(c, rz, u * k, 0)
-        m.box((x, y, z), (0.036 * k, 0.11 * k, 0.03 * k), "upBlack", top="upGun", rz=rz, base=True)  # crude chocks
-    _axis(m, c, rz, -0.13 * k, 0.05 * k, zc, r, "upOlive", cap="upGun")
-    _axis(m, c, rz, -0.118 * k, -0.098 * k, zc, r + 0.004 * k, TAG["missile"])                      # weapon tag band
-    for i, col in enumerate(("upYel", "upBlack")):                                                 # hazard band
-        u = 0.022 * k + i * 0.014 * k
-        _axis(m, c, rz, u, u + 0.014 * k, zc, r + 0.004 * k, col)
-    p0, p1 = rot(c, rz, 0.05 * k, 0), rot(c, rz, 0.17 * k, 0)
-    cone(m, (p0[0], p0[1], zc), (p1[0], p1[1], zc), r, "upSteel", sides=12)
-    for s_ in (-1, 1):                                                                             # tail fins
-        x, y = rot(c, rz, -0.115 * k, s_ * (r + 0.012 * k))
-        m.box((x, y, zc - 0.025 * k), (0.05 * k, 0.012 * k, 0.05 * k), "upSteelD", rz=rz, base=True)
-    x, y = rot(c, rz, -0.04 * k, r - 0.002 * k)                                                    # the trefoil plate, bolted
-    m.box((x, y, zc - 0.05 * k), (0.1 * k, 0.016 * k, 0.1 * k), "upYel", rz=rz, base=True)         # on the camera-side flank
-    _trefoil(m, c, rz, -0.04 * k, r + 0.0065 * k, zc, 0.044 * k)
+        m.box((x, y, z), (0.04 * k, 0.12 * k, 0.034 * k), "upBlack", top="upGun", rz=rz, base=True)    # crude chocks
+    for i in range(4):                                                                                # mating flange,
+        u = -0.13 * k + i * 0.006 * k                                                                 # striped
+        _axis(m, c, rz, u, u + 0.006 * k, zc, R + 0.01 * k, "upYel" if i % 2 else "upBlack", cap="upGun")
+    for dv, dw in ((-0.025, 0.0), (0.02, 0.018), (0.02, -0.018)):                                     # connector pins
+        a, b = rot(c, rz, -0.13 * k, dv * k), rot(c, rz, -0.152 * k, dv * k)
+        tube(m, (a[0], a[1], zc + dw * k), (b[0], b[1], zc + dw * k), 0.006 * k, "upCu", sides=6)
+    _axis(m, c, rz, -0.106 * k, -0.094 * k, zc, R + 0.003 * k, TAG["missile"])                       # weapon tag band
+    _axis(m, c, rz, -0.106 * k, -0.03 * k, zc, R, "upOlive", cap="upGun")
+    _axis(m, c, rz, -0.03 * k, 0.045 * k, zc, R + 0.002 * k, "upYel")                                # hazard band
+    trefoil(m, c, rz, 0.0075 * k, zc, R + 0.002 * k, 0.034 * k)
+    ogive(m, c, rz, 0.045 * k, 0.19 * k, zc, R + 0.002 * k, "upOlive", "upSteel")
 
 
 # ---- ion cannon ----------------------------------------------------------------------------------------------------------
