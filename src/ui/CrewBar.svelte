@@ -9,6 +9,8 @@
     api: UiApi; compact?: boolean; stations?: boolean; canStation?: boolean; onStations?: () => void;
   } = $props();
   let crew = $state<UiCrew[]>([]);
+  /** Passengers living aboard (lodging guests): shown after the crew as a small group of their own, never drafted. */
+  let guests = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
   const ready = (c: UiCrew) => !c.dead && !c.downed && c.ship !== 0;
   const allDrafted = $derived(crew.filter(ready).every((c) => c.drafted));
@@ -21,12 +23,13 @@
     // Re-render the cards when a portrait appears (or changes) since the last poll, and keep polling while some are missing.
     let seen = '';
     const poll = setInterval(() => {
-      const have = crew.map((c) => (api.portrait(c.id) ? c.id : -1)).join(',');
+      const have = [...crew, ...guests].map((c) => (api.portrait(c.id) ? c.id : -1)).join(',');
       if (have !== seen) { seen = have; rev++; }
     }, 500);
     const a = api.crew.subscribe((c) => (crew = c.filter((m) => !m.mechanical)));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
-    return () => (a(), b(), clearInterval(poll));
+    const g = api.guests.subscribe((v) => (guests = v));
+    return () => (a(), b(), g(), clearInterval(poll));
   });
 
   const draftAll = () => {
@@ -56,11 +59,10 @@
   const trouble = (c: UiCrew) => !c.dead && (c.downed !== null || (c.hunger !== null && c.hunger < 35) || c.hp < c.maxHp * 0.5);
 </script>
 
-<nav data-testid="crewbar" class:compact>
-  {#each crew as c (c.id)}
+{#snippet chip(c: UiCrew, testId: string)}
     {@const s = status(c)}
     {@const pic = portrait(c)}
-    <button class="card" class:on={sel === c.id} class:warn={trouble(c)} class:bad={c.downed || c.dead} title="{c.name} · {s.label}" data-testid="crew-chip" onclick={() => api.selectCrew(c.id, true)}>
+    <button class="card" class:on={sel === c.id} class:warn={trouble(c)} class:bad={c.downed || c.dead} title="{c.name} · {s.label}" data-testid={testId} onclick={() => api.selectCrew(c.id, true)}>
       <span class="face" class:dead={c.dead} class:down={!!c.downed && !c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
       <span class="st {s.tone}"><Icon name={s.icon} size={12} /></span>
       <span class="name">{c.name}</span>
@@ -72,9 +74,15 @@
       </span>
       <span class="sr" data-testid="crew-line">{s.label}</span>
     </button>
-  {/each}
+{/snippet}
+
+<nav data-testid="crewbar" class:compact>
+  {#each crew as c (c.id)}{@render chip(c, 'crew-chip')}{/each}
   <button class="tile all" class:on={allDrafted && crew.length > 0} title={allDrafted ? 'Stand down' : 'Draft all'} aria-label={allDrafted ? 'Stand down' : 'Draft all'} data-testid="draft-all" onclick={draftAll}><Icon name="draft" size={20} /></button>
   {#if onStations}<button class="tile all" class:on={stations} disabled={!canStation} title="{stations ? 'Stand down from battle stations' : 'Battle stations: crew to the consoles, weapons held'} ({keyLabel($keymap, 'combat.stations')})" aria-label={stations ? 'Stand down' : 'Battle stations'} data-testid="battle-stations" onclick={onStations}><Icon name="combat" size={20} /></button>{/if}
+  {#if guests.length}
+    <span class="group" data-testid="guest-group"><span class="label">Guests</span>{#each guests as c (c.id)}{@render chip(c, 'guest-chip')}{/each}</span>
+  {/if}
 </nav>
 
 <style>
@@ -106,5 +114,10 @@
   nav.compact .card .st { left: calc(var(--face) - 4px); top: calc(var(--face) * 1.0689 - 6px); }
   nav.compact .all { width: 30px; }
   .all { height: auto; align-self: stretch; }
+  /* Passengers: after the crew and their buttons, under a small label, the cards a little dimmer (not yours to command). */
+  .group { display: flex; gap: 3px; align-items: stretch; margin-left: 9px; padding-left: 9px; border-left: 1px solid var(--line, var(--track)); }
+  .group .label { writing-mode: vertical-rl; transform: rotate(180deg); align-self: center; font: 10px/1 var(--head-font); color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .group .card:not(.on) { opacity: 0.85; }
+  nav.compact .group .label { display: none; }
   @media (max-width: 600px) { .card { width: calc(var(--face) + 56px); padding: 4px; } .name { font-size: 12px; } .role { display: none; } }
 </style>

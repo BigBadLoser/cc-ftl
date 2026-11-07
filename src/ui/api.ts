@@ -134,8 +134,8 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
-  /** Which side: the player's crew, or hostile crew standing on a grid the player's crew is on. */
-  side: 'player' | 'enemy';
+  /** Which side: the player's crew, a passenger living aboard (a lodging guest), or another side's crew standing on a grid the player's crew is on. */
+  side: 'player' | 'guest' | 'enemy';
   /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
   ship: number;
   where: string;
@@ -1370,6 +1370,8 @@ export interface UiApi {
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;
   crew: Subscribable<UiCrew[]>;
+  /** Passengers living aboard the player's ship (lodging guests: they are not crew, and cannot be drafted). */
+  guests: Subscribable<UiCrew[]>;
   /** Hostile crew on grids the player's crew stand on. */
   hostiles: Subscribable<UiCrew[]>;
   /** The inspector's Status, Skills and Gear tabs for the selected crew member of the player's (null otherwise). */

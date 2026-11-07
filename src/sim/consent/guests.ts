@@ -61,6 +61,13 @@ export function guestHere(sim: Sim, crew: number): Grant | undefined {
   return pos ? guestGrant(sim, crew, shipIdOf(sim, pos)) : undefined;
 }
 
+/** The lodging grant the crew member lives where they stand by (a passenger: consent/components.ts `lodge`), if any. */
+export function lodgingHere(sim: Sim, crew: number): Grant | undefined {
+  if (sim.world.get(crew, AllegianceC)?.faction === 'player') return undefined; // the common case, without the ship lookup
+  const g = guestHere(sim, crew);
+  return g?.lodge ? g : undefined;
+}
+
 /** True while some ship has given leave to the people of `from` (a skiff's party let dock): the party may go outside combat. */
 export function hasLeaveFrom(sim: Sim, from: number): boolean {
   // (Ships, not the consent store: querying that would create it, and an empty store changes the save bytes of games that never used it.)

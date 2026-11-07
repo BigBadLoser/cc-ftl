@@ -1,3 +1,4 @@
+import { lodgingHere } from '../consent/guests';
 import { wakeUp } from '../ai/machines/sleep';
 import { dropMeal, finishMeal } from '../ai/machines/eat';
 import { CrewC, DraftedC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
@@ -73,7 +74,7 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   const def = sim.content.species[crew.species]?.hunger;
   // Station crew get hungry and eat too, but never starve: the station is resupplied off-screen (STATION_HUNGER_FLOOR).
   const station = sim.world.has(id, StationCrewC);
-  if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player')) return;
+  if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player' && !lodgingHere(sim, id))) return; // a lodging guest (passenger) eats aboard
   needs.hunger ??= 70 + (crew.appearanceSeed % 31);
   const meal = mealOf(sim, id)?.bb;
   const left = meal?.n ?? -1;

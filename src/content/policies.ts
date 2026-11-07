@@ -66,6 +66,8 @@ export const policies = {
   'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, willingWork, leisure] },
   // Station crew get hungry and eat too; the hunger floor that keeps them from starving is the needs system's.
   'policy.station': { id: 'policy.station', crew: ['station'], escapeHazards: true, drives: [air, sleep, eat, work] },
+  // A lodging guest (a passenger, consent/components.ts `lodge`) sleeps and eats aboard, and works as their grant and priorities say (a passenger's chores).
+  'policy.guest': { id: 'policy.guest', crew: ['guest'], escapeHazards: true, drives: [air, sleep, eat, willingWork] },
   // Enemy ship crew tire but have no hunger.
   'policy.npc': { id: 'policy.npc', crew: ['npc'], escapeHazards: true, drives: [air, sleep, work] },
 } satisfies Record<string, PolicyDef>;

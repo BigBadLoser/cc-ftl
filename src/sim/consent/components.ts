@@ -13,17 +13,23 @@ import { defineComponent } from '../ecs';
  *   - 'yard' (yard/crew.ts): the shipyard's contractors, on the player's ship, for the yard site's party and its named crew. Works aboard.
  *   - 'visit' (scene/visit.ts): a scene skiff's party let dock with the player's ship, its named crew, `from` the skiff. Does not work aboard.
  *   - 'trade' (trade/deals.ts): the player's side, on a station, while a trade run is docked there, `from` the shuttle. Does not work aboard.
+ *   - 'passage' (consent/passage.ts): a person carried as a passenger (a rescued patient, a survivor, a fare), on the player's ship, its named
+ *     crew. Lodges, and works aboard: they pitch in with a few chores at the lowest priority (`PASSENGER_CHORES`), never drafted, armed or sent out.
  * - Works aboard (`work`): the guests take the host ship's jobs. A guest without it is off duty there: no jobs, no boarding drive (they stand by).
+ * - Lodges (`lodge`): the guests live aboard as the crew do: each owns a bed, sleeps, gets hungry and eats from the host's stock (the `guest` crew
+ *   kind, `policy.guest`). A lodging guest is never off duty (`isOffDuty`); without `work` they take no jobs (`refusesWork`), with it their own
+ *   priorities say which.
  * - Revoked by: its owner dropping it (`revoke`), or, whatever the owner does, the host being at war with the guests' side (a provoked ship's leave is void
  *   at once). A grant whose site is gone covers nobody by that site.
  */
 export interface Grant {
-  by: 'aid' | 'visit' | 'yard' | 'trade';
+  by: 'aid' | 'visit' | 'yard' | 'trade' | 'passage';
   faction: Faction;
   site?: number;
   crew?: number[];
   from?: number;
   work?: true;
+  lodge?: true;
   since: number;
 }
 export interface Consent {

@@ -195,7 +195,8 @@ export type Command =
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */
   | { type: 'module.cancelAssembly'; moduleId: number }
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
-  | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
+  /** `lodge`: they live aboard as a passenger (consent/passage.ts `takePassenger`). */
+  | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction; lodge?: true }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
   | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */

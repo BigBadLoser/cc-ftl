@@ -1,3 +1,4 @@
+import { lodgingHere } from '../consent/guests';
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { refusesWork } from '../crew/helpers';
 import { foodOn, hungerDrainPerSec } from '../crew/eating';
@@ -94,6 +95,7 @@ export function curveAt(curve: readonly (readonly [number, number])[], x: number
 export function crewKind(sim: Sim, id: number): CrewKind {
   if (speciesOf(sim, id)?.charge) return 'robot';
   if (sim.world.has(id, StationCrewC)) return 'station';
+  if (lodgingHere(sim, id)) return 'guest';
   return sim.world.get(id, AllegianceC)?.faction === 'player' ? 'colonist' : 'npc';
 }
 

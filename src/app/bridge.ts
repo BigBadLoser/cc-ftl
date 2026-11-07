@@ -81,6 +81,7 @@ export interface Bridge {
   snapshot: Readable<Snapshot>;
   inspect: Readable<InspectSnapshot | null>;
   crew: Readable<UiCrew[]>;
+  guests: Readable<UiCrew[]>;
   hostiles: Readable<UiCrew[]>;
   /** The inspector's detail tabs for the one selected crew member of the player's (null otherwise). */
   crewDetail: Readable<UiCrewDetail | null>;
@@ -151,6 +152,8 @@ export function createBridge(sim: Sim): Bridge {
   });
   const inspect = createStore<InspectSnapshot | null>(null);
   const crew = createStore<UiCrew[]>([]);
+  const guests = createStore<UiCrew[]>([]);
+  let lastGuests = '';
   const hostiles = createStore<UiCrew[]>([]);
   let lastHostiles = '';
   const crewDetail = createStore<UiCrewDetail | null>(null);
@@ -263,12 +266,17 @@ export function createBridge(sim: Sim): Bridge {
       lastCrew = key;
       crew.set(lists.crew);
     }
+    const gk = JSON.stringify(lists.guests);
+    if (gk !== lastGuests) {
+      lastGuests = gk;
+      guests.set(lists.guests);
+    }
     const hk = JSON.stringify(lists.hostiles);
     if (hk !== lastHostiles) {
       lastHostiles = hk;
       hostiles.set(lists.hostiles);
     }
-    const detail = watched !== null && (lists.crew.some((c) => c.id === watched) || lists.hostiles.some((c) => c.id === watched)) ? buildCrewDetail(sim, watched) : null;
+    const detail = watched !== null && (lists.crew.some((c) => c.id === watched) || lists.guests.some((c) => c.id === watched) || lists.hostiles.some((c) => c.id === watched)) ? buildCrewDetail(sim, watched) : null;
     const dk = JSON.stringify(detail);
     if (dk !== lastDetail) {
       lastDetail = dk;
@@ -472,6 +480,7 @@ export function createBridge(sim: Sim): Bridge {
     snapshot: store,
     inspect,
     crew,
+    guests,
     hostiles,
     crewDetail,
     opinionHover,
