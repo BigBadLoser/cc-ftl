@@ -26,6 +26,7 @@ RAMP_SLOPE = "wS"       # ... and on into the ramp (the seam between them)
 EDGE = "wH"             # the sill's front edge lit, on the ramp just past it (the ramp's own lit edge), EDGE_W out; by
 LIP_EDGE = "wL"         # the slope off the lip on the lip's front, a px down, in the lip's own lit top's colour
 EDGE_W = 0.5 / 32
+EDGE_W_SLOPE = 0.4 / 32   # (by the slope into the ramp: a px on screen, as the lip's, PZ tall)
 SEAM = "wM"             # a seam across the sill where the slope off the lip ends and the one into the ramp starts
 BEAM_UNDER = "wK"       # the beam's underside (the black)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
@@ -144,9 +145,10 @@ def hook(k, sp, own=True):
             _quad(k, [(u0, w0 + e, h0), (u1, w1 + e, h1), (u1, w1 + e, h1 - PZ), (u0, w0 + e, h0 - PZ)], (0, 1, 0),
                   LIP_EDGE)
         else:                                           # (the ramp, on down from the edge)
-            n, dz = Vector((0, _k(), 1)).normalized() * e, EDGE_W * _k()
-            _quad(k, [(u0, w0 + n.y, h0 + n.z), (u1, w1 + n.y, h1 + n.z), (u1, w1 + EDGE_W + n.y, h1 - dz + n.z),
-                      (u0, w0 + EDGE_W + n.y, h0 - dz + n.z)], (0, 1, 1), EDGE)
+            ew = EDGE_W if abs(h1 - h0) < 1e-9 else EDGE_W_SLOPE
+            n, dz = Vector((0, _k(), 1)).normalized() * e, ew * _k()
+            _quad(k, [(u0, w0 + n.y, h0 + n.z), (u1, w1 + n.y, h1 + n.z), (u1, w1 + ew + n.y, h1 - dz + n.z),
+                      (u0, w0 + ew + n.y, h0 - dz + n.z)], (0, 1, 1), EDGE)
     for xs, sd in ((x0 + RUN, 1), (x1 - RUN, -1)):    # the seam where the slope into the ramp starts
         xe = xs + sd * T.LINE
         if not (a < min(xs, xe) and max(xs, xe) < b):
