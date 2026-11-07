@@ -207,8 +207,7 @@ def slate_panel(k, ax, plane, a, b, top, foot):
     (the lip's recess left out: Design recess=False), its corners rounded as the ramp's blue panel's (each corner
     pixel left out); a lit bar 3 px tall along its inside top, 2 px under its top line; a lit tick 7 px each side of the
     middle from a px under its foot up 4 px."""
-    lit = "fGS1" if ax == "y" else "fGS2"
-    bar = "fGSb" if ax == "y" else "fGSc"               # (the bar a bluer grey, the ref's)
+    lit = "fGSb" if ax == "y" else "fGSc"               # (the bar and ticks a bluer grey, the ref's)
     W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
     zt = zb + 15 * PZ
@@ -218,7 +217,7 @@ def slate_panel(k, ax, plane, a, b, top, foot):
         for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
                                (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
             T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
-        for u0, u1, z0, z1, col in ((c - 7 * LINE, c + 7 * LINE, zt - 6 * PZ, zt - 3 * PZ, bar),
+        for u0, u1, z0, z1, col in ((c - 7 * LINE, c + 7 * LINE, zt - 6 * PZ, zt - 3 * PZ, lit),
                                     (c - K, c - K + LINE, zb - PZ, zb + 3 * PZ, lit),
                                     (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ, lit)):
             prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
