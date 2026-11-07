@@ -275,7 +275,7 @@ export type Command =
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
   /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
-  | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' }
+  | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' | 'tracker' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
   | { type: 'galaxy.leaveEvent' }
   /** Answer a scene skiff's request to dock (`grant`: let its shuttle dock and its party come aboard; else refuse). See scene/visit.ts. */
