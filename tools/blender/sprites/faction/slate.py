@@ -103,7 +103,7 @@ def slate(hull):
                                     inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
             prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
             zt = z1 - MID_DROP if mid else z1                                                  # its front's top
-            T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, BLUE, 5)                             # edge lit
+            T.paint(k, ax, plane, u0, u1, zt - PZ, zt, d, BLUE, 4)                 # edge lit (as the stripe's top)
     return face
 
 

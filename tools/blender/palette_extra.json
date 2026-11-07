@@ -3419,7 +3419,8 @@
  },
  "fGTs": {
   "hex": "#4874c8",
-  "set": "slate"
+  "set": "slate",
+  "aa": "slate.blue"
  },
  "fGT3": {
   "hex": "#2c54a4",
