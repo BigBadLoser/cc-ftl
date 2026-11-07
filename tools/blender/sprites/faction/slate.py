@@ -209,6 +209,9 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 prism(k, ax, plane, s0, s1, [(0.0, zl), (d + PAINT, zl), (d + PAINT, zl + PZ), (0.0, zl + PZ)], BLUE, 4,
                       cols=[False, dark, False, False], cap=False)                 # its foot's edge, the side's tone
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
+            prism(k, ax, plane, q0, q1, [(0.0, z0 + 7 * PZ), (d + PAINT, z0 + 7 * PZ), (d + PAINT, z0 + 8 * PZ),
+                                         (0.0, z0 + 8 * PZ)], BLUE, 4, cols=[False, side, False, False], cap=False)
+                                                        # a seam across, edge to edge, in the side's tone
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
