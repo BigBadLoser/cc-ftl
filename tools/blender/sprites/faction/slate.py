@@ -206,7 +206,8 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 prism(k, ax, plane, s0, s1, [(0.0, zf - PZ), (d + PAINT, zf - PZ), (d + PAINT, zf), (0.0, zf)], BLUE, 4,
                       cols=[False, lit, False, False], cap=False)
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
-            T.paint(k, ax, plane, q0, q1, z0 + 5 * PZ, z0 + 6 * PZ, d, BLUE, 1)   # a seam across, edge to edge
+            T.paint(k, ax, plane, q0, q1, z0 + 7 * PZ, z0 + 8 * PZ, d, BLUE, 2)   # a seam across, edge to edge
+            T.paint(k, ax, plane, q0, q1, zb - PZ, zb, 0.0, BLUE, 2)   # a soft shadow on the backing under it
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
