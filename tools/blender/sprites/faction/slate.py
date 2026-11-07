@@ -118,7 +118,7 @@ def slate(hull):
                       BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
             zt = z1 - MID_DROP if mid else z1                                                  # its front's top
             prism(k, ax, plane, u0, u1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
-                  cols=[False, "fGTw", False, False])      # edge lit (fGTw: over the ramp's light end, its own)
+                  cols=[False, "fGTw", False, False], mitre=m)     # edge lit (fGTw: over the ramp's light end, its own)
     return face
 
 
