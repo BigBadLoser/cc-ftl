@@ -120,8 +120,9 @@ import { newYard, type YardState } from './yard/types';
  *     `SceneShip.lacks`; `Combat.threat`; `WorkBlockC` (work a crew member cannot do); `ConsentC` (leave to come aboard) on host ships; away site owner 'aid'.
  * v97 (weapon upgrades, #338): `Module.upgrade`, `Module.offlineUntil` (work hold), job kind 'fit' with `Job.fit`.
  * v98 (passengers, #173 step 6): consent grants by 'passage' and `Grant.lodge` (a lodging guest: bed, meals, no jobs; crew kind 'guest').
+ * v99 (the medical pod, #173 step 6): `SceneSpec.pods` (escape pods and their patients); vehicles with an escape def; lodging guests have moods.
  */
-export const SAVE_VERSION = 98;
+export const SAVE_VERSION = 99;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

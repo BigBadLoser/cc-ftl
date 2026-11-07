@@ -2,6 +2,7 @@ import type { Effect, ItemQty } from '../registry';
 import type { EventEffect } from '../story/defs';
 import type { Contact } from '../galaxy/types';
 import type { WorkCategory } from '../crew/components';
+import type { RolledCrew } from '../crew/roll';
 
 /**
  * Physical encounters (DESIGN.md "Physical encounters"; #173). A scene says what exists in a deep-space pocket and under what conditions, never how
@@ -156,11 +157,38 @@ export interface SceneDerelictRecipe {
 /** What killed a derelict (shipgen/ruinTypes `RuinCause`, repeated here so content needs no shipgen import). */
 export type RuinCauseName = 'combat' | 'decay';
 
+/**
+ * An escape pod drifting in the pocket with one hurt person aboard (DESIGN.md "Medical pod"; vehicles/escape.ts). The patient is rolled from the scene
+ * seed: one of `roles` (their species and skills come from the role, crew/roll.ts), from one of `owners` (the galaxy faction they are from), downed and
+ * bleeding out `bleed` seconds (rolled) after the player deploys. The pod comes in when called (`galaxy.recoverPod`).
+ */
+export interface ScenePodRecipe {
+  roles: string[];
+  owners: string[];
+  bleed: Range;
+}
+
+/** One escape pod of a built scene: who is aboard (the roll that makes them), and once real its vehicle and the person's entity. */
+export interface ScenePod {
+  /** Descriptor id (from `galaxy.nextFleet`): the observer keys its rules per pod with it. */
+  id: number;
+  owner: string;
+  /** The person aboard, as the crew roll made them (name, role, looks, skills, traits). */
+  patient: RolledCrew;
+  /** Seconds they bleed out in, from the player's deploy. */
+  bleed: number;
+  vehicle?: number;
+  crew?: number;
+  /** The player called it in (`galaxy.recoverPod`). */
+  called?: true;
+}
+
 /** What a story encounter puts in its pocket (content: `EventDef.scene`). */
 export interface SceneRecipe {
   persistence: Persistence;
   ships?: SceneShipRecipe[];
   derelicts?: SceneDerelictRecipe[];
+  pods?: ScenePodRecipe[];
   timers?: SceneTimerRecipe[];
   /** Observer rules this encounter adds (a new id) or overrides (a shared id; null switches a shared rule off here). */
   rules?: Record<string, SceneRuleDef | null>;
@@ -274,6 +302,8 @@ export interface SceneSpec {
   ships: SceneShip[];
   derelicts: SceneDerelict[];
   timers: SceneTimer[];
+  /** Escape pods adrift (absent: none). */
+  pods?: ScenePod[];
 }
 
 /**
@@ -286,7 +316,9 @@ export interface SceneSpec {
  */
 export type SceneFact =
   | 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown'
-  | 'delivered' | 'declined' | 'repaired' | 'abandoned' | 'doomed';
+  | 'delivered' | 'declined' | 'repaired' | 'abandoned' | 'doomed'
+  /** Of an escape pod's patient: taken aboard the player's ship (`rescued`), or dead (`died`). At leave, a pod still adrift with them alive is `left`. */
+  | 'rescued' | 'died';
 
 /**
  * An observer rule (content: the shared `sceneRules`, plus an encounter's own in `SceneRecipe.rules`). The first time `on` is seen for a ship whose
@@ -296,8 +328,11 @@ export type SceneFact =
 export interface SceneRuleDef {
   on: SceneFact;
   stance?: Stance[];
-  /** Only for scene ships (`ship`) or only for derelicts (`derelict`); absent: both. A derelict has no stance: a `stance` rule never matches one. */
-  of?: 'ship' | 'derelict';
+  /**
+   * Only for scene ships (`ship`), derelicts (`derelict`) or escape pods (`pod`); absent: ships and derelicts (never pods: a pod's rules say `pod`). A
+   * derelict has no stance: a `stance` rule never matches one.
+   */
+  of?: 'ship' | 'derelict' | 'pod';
   /** Only for an ambush skiff that is a trap (true) or honest (false). */
   trap?: boolean;
   /** For `on: 'timer'`: the timer id. */

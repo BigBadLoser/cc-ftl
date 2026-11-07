@@ -240,16 +240,31 @@ export const events = {
       { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.metal', count: -5 }] } },
     ],
   },
-  /** Module requirement; heal effect. */
+  /**
+   * A physical encounter (DESIGN.md "Physical encounters", the medical pod; #173 step 6): an escape pod adrift with one hurt person aboard, bleeding out from
+   * the moment the ship drops out. Called in, the pod docks at an airlock and lets them out; the crew carry them to a bed (the rescue job) and they stay on as
+   * a passenger (consent/passage.ts). What they are worth to anyone, and where they want to go, comes later (#173).
+   */
   'event.medical_emergency': {
-    title: 'Medical emergency',
-    text: 'A stranded prospector floats in a leaking escape pod, barely conscious. Your crew could patch them up if you have somewhere to lay them.',
+    title: 'Pod beacon',
+    text: 'An escape pod beacon repeats on the distress band. Under it, faint and uneven, a life sign.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 3 }],
+    triggers: [{ kind: 'transit', weight: 4 }],
     cooldownSec: 900,
+    eligible: [{ kind: 'module', def: 'module.bed' }],
+    scene: {
+      persistence: 'transient',
+      pods: [{ roles: ['role.engineer', 'role.pilot', 'role.medic', 'role.gunner'], owners: ['traders', 'meridian', 'helix', 'vantor'], bleed: [150, 210] }],
+      rules: {
+        podRescued: { on: 'rescued', of: 'pod', log: '{crew} is aboard, out of the pod', tone: 'good' },
+        podDied: { on: 'died', of: 'pod', log: '{crew}, the pod survivor, is dead', tone: 'bad' },
+        podLeft: { on: 'left', of: 'pod', effects: [{ type: 'flag', flag: 'pod_left' }], log: "The pod's beacon fades behind you", tone: 'info' },
+      },
+    },
     choices: [
-      { id: 'treat', label: 'Take them aboard', requires: [{ kind: 'module', def: 'module.bed' }], outcome: { text: 'Rested and fed, the prospector rewards you and your crew feel the better for the good deed.', effects: [{ type: 'items', item: 'item.metal', count: 15 }, { type: 'crewHeal', amount: 20, who: 'all' }, { type: 'reputation', faction: 'traders', delta: 1 }] } },
-      { id: 'beacon', label: 'Drop a rescue beacon', outcome: { text: 'Someone will find them.' } },
+      { id: 'scan', label: 'Scan it', hint: 'Who is aboard, and how bad it is', remote: 'scan' },
+      { id: 'approach', label: 'Drop out', hint: 'Bring the pod in once there', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
     ],
   },
   // --- Notices (in-world, non-pausing) ---

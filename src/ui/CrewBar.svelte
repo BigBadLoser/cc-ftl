@@ -66,7 +66,7 @@
       <span class="face" class:dead={c.dead} class:down={!!c.downed && !c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
       <span class="st {s.tone}"><Icon name={s.icon} size={12} /></span>
       <span class="name">{c.name}</span>
-      <span class="role">{c.role}</span>
+      <span class="role">{c.side === 'guest' ? 'Passenger' : c.role}</span>
       <span class="bars">
         <i class="hp"><b style:width={pct((c.hp / c.maxHp) * 100)}></b></i>
         <i class="rest"><b style:width={pct(c.rest)}></b></i>

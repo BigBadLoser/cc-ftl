@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AssignmentC, BedOwnerC, CrewC, DraftedC, JobC, NeedsC, PositionC, newGame, type Sim } from '../sim';
 import { PASSENGER_CHORES } from '../sim/consent/passage';
+import { hasMood } from '../sim/crew/mood';
 import { playerShip } from '../sim/trade/player';
 import { playerCrew } from '../sim/story/world';
 import { grant } from '../sim/consent/guests';
@@ -42,6 +43,7 @@ describe('lodging guests (passengers)', () => {
     let jobs = 0;
     run(sim, 3, () => { if (strayJob(sim, id)) jobs++; });
     expect(sim.world.get(id, BedOwnerC)?.bed).toBeGreaterThan(0);
+    expect(hasMood(sim, id)).toBe(true); // a person living aboard has the ordinary crew mood
     const needs = sim.world.get(id, NeedsC)!;
     expect(needs.hunger).toBeDefined();
     needs.hunger = 20; // hungry: they go and eat

@@ -63,6 +63,7 @@ import { fabricatorSystem } from './systems/fabricators';
 import { robotBaySystem } from './systems/robotBays';
 import { workSystem } from './ai/work';
 import { vehicleSystem } from './systems/vehicles';
+import { escapePodSystem } from './vehicles/escape';
 import { miningSystem } from './systems/mining';
 import { ferrySystem } from './ferry/flow';
 import { logisticsSystem } from './logistics/system';
@@ -183,6 +184,8 @@ export const pipeline: readonly System[] = [
   miningSystem,
   // Vehicles after crew movement: embarking crew board on arrival, shuttles fly before this tick's shots are aimed.
   vehicleSystem,
+  // Escape pods that docked this tick let their people out, then cast off (vehicles/escape.ts).
+  escapePodSystem,
   // Detached containers drift on their own velocity (inert bodies; nothing else moves them).
   containerDriftSystem,
   // Trade deliveries read this tick's arrivals and issue next tick's flight orders; crew then haul the cargo.

@@ -1,5 +1,6 @@
 import { CrewC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
 import { playerCrew } from '../../sim/story/world';
+import { startAmbushScenario } from '../ambushScenario';
 import type { Scenario } from './types';
 
 /** A free spot for one more bed on the player's ship, nearest the middle (the starter ships have one bed per crew member). */
@@ -27,12 +28,25 @@ export function medpodCommands(sim: Sim, role = 'role.engineer'): Command[] {
   ];
 }
 
+/** The spare bed alone (the starter ships have one bed per crew member: a passenger needs one of their own). */
+export function spareBedCommands(sim: Sim): Command[] {
+  return medpodCommands(sim).filter((c) => c.type === 'debug.spawnModule');
+}
+
 /**
- * `?scenario=medpod[&role=<role id>]`: the medical pod encounter (#173 step 6), slice 1: a passenger lives aboard (a lodging guest, consent/passage.ts),
- * with a spare bed for them. They sleep, eat and pitch in with hauling and the galley, show in the crew bar's Guests group, and cannot be drafted.
+ * `?scenario=medpod[&signal][&guest][&role=<role id>]` (#173 step 6): the medical pod. A spare bed is set, then the pod beacon signals on the first hop of a
+ * trip and the ship drops out beside the pod (`&signal`: stop at the signal, to scan it). `&guest` instead puts a passenger aboard at once (a lodging guest,
+ * consent/passage.ts) and selects them.
  */
 export const medpod: Scenario = ({ sim, params, dispatch, setSpeed, selectCrew }) => {
   setSpeed(1);
+  if (!params.has('guest')) {
+    setTimeout(() => {
+      for (const cmd of spareBedCommands(sim)) dispatch(cmd);
+      startAmbushScenario(sim, dispatch, () => setSpeed(1), { trap: null, signal: params.has('signal'), event: 'event.medical_emergency' });
+    }, 600);
+    return;
+  }
   const before = new Set(sim.world.query(CrewC));
   setTimeout(() => {
     for (const cmd of medpodCommands(sim, params.get('role') ?? undefined)) dispatch(cmd);

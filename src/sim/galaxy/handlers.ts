@@ -1,3 +1,4 @@
+import { callPod } from '../vehicles/escape';
 import { CombatC } from '../combat/components';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
@@ -28,6 +29,12 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.leaveEvent': (sim) => void leave(sim),
   'galaxy.visit': (sim, cmd) => void answerVisit(sim, cmd.ship, cmd.grant),
   'galaxy.aid': (sim, cmd) => offerAid(sim, cmd.ship),
+  'galaxy.recoverPod': (sim, cmd) => {
+    const pod = sim.galaxy.event?.scene.pods?.find((p) => p.id === cmd.pod);
+    const why = !pod || pod.vehicle === undefined ? 'noPod' : callPod(sim, pod.vehicle);
+    if (why) return void sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: why });
+    (pod as NonNullable<typeof pod>).called = true;
+  },
   'debug.ambush': (sim, cmd) => void setAmbush(sim, cmd.trap, cmd.tell),
   'debug.sceneArrivals': (sim, cmd) => setArrivals(sim, cmd.mode),
   'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),

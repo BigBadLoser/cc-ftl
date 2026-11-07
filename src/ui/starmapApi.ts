@@ -324,6 +324,11 @@ export interface UiEventGrid {
    * neither (null: under way, done or off). `status` says where the help stands; `clock` the seconds its `failing` system (its name) has left (null: none running).
    */
   aid: { ship: number; name: string; action: 'offer' | 'resend' | null; status: string | null; clock: number | null; failing: string | null } | null;
+  /**
+   * An escape pod with a hurt person aboard (the medical pod): where they stand, the seconds they have while bleeding (null: not bleeding), and whether
+   * it can be called in (`galaxy.recoverPod` with `pod`; 'call').
+   */
+  pod: { pod: number; name: string; status: string; clock: number | null; action: 'call' | null } | null;
   /** The ship is still being placed (the deploy picker is up). */
   deploying: boolean;
   /** Leaving is allowed now; `why` says what is missing when it is not. Under fire leaving is a flee that spends the charged drive. */

@@ -283,6 +283,8 @@ export type Command =
   | { type: 'galaxy.visit'; ship: number; grant: boolean }
   /** Offer help to a helpless scene ship in the pocket (or send the aid party again after a recall): scene/aid.ts. */
   | { type: 'galaxy.aid'; ship: number }
+  /** Call an escape pod of the open scene (its descriptor id, `ScenePod.id`) in to a free airlock of the player's ship (vehicles/escape.ts). */
+  | { type: 'galaxy.recoverPod'; pod: number }
   /** Debug: make the open signal's ambush skiff a trap (or honest), whatever its seed rolled. */
   | { type: 'debug.ambush'; trap: boolean; tell?: 'name' | 'lag' }
   /** Fix whether the open signal's late-or-not ships (a freighter's raiders) are left out, there from the start or coming (scene/debug.ts). */
