@@ -531,7 +531,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         sk = style().skirt
         rv = fill("ramp")                                  # a look's ramp design (in place of its
         if field and w >= 0.36 and rv:                                  # panel, whatever its style)
-            rv(lambda q, rr, lvl, bb, f=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl, base=rise + bb),
+            rv(lambda q, rr, lvl, bb, f=None, fixed=None: plate(k, q, pt, nrm, 0.0, rise + rr, f or fam, lvl,
+                                                                       base=rise + bb, fixed=fixed),
                max(u0, a), min(u1, ub), run_, k=k, pt=lambda u, dd, h: pt(u, dd, rise + h),
                P=lambda u, z, dd: P(ax, plane, u, z, dd), zs=zs, hole=hole, ax=ax, plane=plane, fam=fam)
         elif field and w >= 0.36 and sk == "outline":                   # a faction's plain outlined panel
