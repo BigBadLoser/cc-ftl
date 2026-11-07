@@ -149,7 +149,7 @@ class Slate(Faction):
     pre = "fG"
 
     def relief(self, sprite):
-        return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell,
+        return _style(slate, skirt=None, seam=0, ramp_solid=True, shell=LookShell, joint=1,
                       shelf=SHELF, shelf_back=(0, 1),   # (the shelf's back: a dark crease under the lip, a dim px)
                       ramp_bands=((SPLIT, BLUE, (4, "fGT0"), EDGE), (SPLIT + EDGE / T.W.skirt_run(), BLUE, 3, 0.0)),   # (a
                       toe_lvl={"wall": "fGT1", "blue": "fGT1"}, ramps=SLATE_RAMPS,   # seam, the blue plate's lit edge)
