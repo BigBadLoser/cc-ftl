@@ -13,7 +13,7 @@ ion violet, incendiary orange):
   upg_rail       Rail coil         two long rails wound with copper, a heat glow at one end                  (mass driver)
   upg_nuke       Nuclear warhead   an olive ogive warhead on chocks: hazard band, painted trefoil, pins (missile)
   upg_chain      Chain coil        a tesla coil: copper winding, steel crown ring, violet lightning arcs  (ion)
-  upg_thermite   Thermite          a steel crucible, its open top a molten glowing pool throwing sparks   (incendiary)
+  upg_thermite   Thermite          a squat olive canister: orange-red band, igniter, carry handle         (incendiary)
 
 Each item also has a UI icon, item.upg_<id>.icon: ONE unit (not a stack), turned to a three-quarter view chosen per item
 (ICON_VIEW) and scaled to fill about ICON_PX of a 40 px box, outlined like every sprite; the UI shows it 1:1 (the module
@@ -30,6 +30,7 @@ from .items_upgrades_kit import arch, bolt, crystal, dome, glint, ogive, ring, s
 
 PALETTE = "only:upgrades"          # the family's palette selection
 TAG = {"laser": "upRed", "mass": "upBlu", "missile": "upGrn", "ion": "upVio", "fire": "upOr"}
+ICON = [False]                     # building an icon: units add detail the floor sprites' few px would turn to noise
 
 
 def _axis(m, c, rz, u0, u1, z, r, col, cap=None, sides=12):
@@ -113,7 +114,7 @@ def focus(m, c, z, rz, k):
     m.cyl((c[0], c[1], z + 0.082 * k), 0.07 * k, 0.026 * k, "upSteelD", sides=n, top="upGun")        # bezel
     m.cyl((c[0], c[1], z + 0.108 * k), 0.058 * k, 0.003 * k, "upBlack", sides=n)
     dome(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, ("upLensL", "upLens", "upLensD", "upLensD", "upLensD"), sides=n)
-    glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite", halo="upLensL")
+    glint(m, c, z + 0.108 * k, 0.056 * k, 0.026 * k, "upWhite")
 
 
 # ---- mass driver ---------------------------------------------------------------------------------------------------------
@@ -127,9 +128,10 @@ def frag(m, c, z, rz, k):
     m.cyl((c[0], c[1], z + 0.04 * k), r + 0.003 * k, 0.018 * k, TAG["mass"], sides=14)              # weapon tag band
     zh = z + 0.062 * k
     m.cyl((c[0], c[1], zh - 0.004 * k), r * 0.66, 0.064 * k, "upHot", sides=10, rtop=r * 0.22)     # the core
+    spread = (0.012, 0.03) if ICON[0] else (0.0, 0.004)                # on the floor: closed, glowing seams
     for i in range(4):
         mid = rz + math.pi / 4 + i * math.tau / 4
-        for j, (a, b, f0, f1, push) in enumerate(((0.0, 0.03, 1.0, 0.98, 0.012), (0.03, 0.062, 0.98, 0.5, 0.03))):
+        for j, (a, b, f0, f1, push) in enumerate(((0.0, 0.03, 1.0, 0.98, spread[0]), (0.03, 0.062, 0.98, 0.5, spread[1]))):
             cc = (c[0] + push * k * math.cos(mid), c[1] + push * k * math.sin(mid))
             segments(m, cc, zh + a * k + j * 0.006 * k, zh + b * k + j * 0.012 * k, r * f0, r * f1, 4, 0.5, rz,
                      lambda q: "upSteel", "upSteel", "upSteelD", pick=(i,))
@@ -180,6 +182,9 @@ def chain(m, c, z, rz, k):
         m.cyl((c[0], c[1], z + 0.04 * k + i * 0.022 * k), 0.0315 * k, 0.004 * k, "upCuD", sides=14)
     torus(m, c, z + 0.142 * k, 0.05 * k, 0.018 * k, "upSteel")                                       # the crown
     m.cyl((c[0], c[1], z + 0.128 * k), 0.026 * k, 0.026 * k, "upSteelD", sides=14, top="upGun")
+    if not ICON[0]:                                                                                 # on the floor: no
+        m.cyl((c[0], c[1], z + 0.152 * k), 0.022 * k, 0.022 * k, "upVioG", sides=10, top="upVioG")  # arcs, a big cap
+        return
     m.cyl((c[0], c[1], z + 0.158 * k), 0.012 * k, 0.012 * k, "upVio", sides=8, top="upVioG")        # spark cap
     w = 0.014 * k
     for sv in (-1, 1):                                                                              # the arcs
@@ -190,19 +195,18 @@ def chain(m, c, z, rz, k):
 # ---- incendiary ------------------------------------------------------------------------------------------------------------
 
 def thermite(m, c, z, rz, k):
-    """A crucible of burning thermite: a squat steel pot with the weapon band, its open top a molten pool
-    (orange at the rim, white-hot in the middle) throwing sparks."""
-    r, h = 0.07 * k, 0.085 * k
-    m.cyl((c[0], c[1], z), r * 0.86, 0.012 * k, "upGun", sides=16, top="upSteelD")                  # foot
-    m.cyl((c[0], c[1], z + 0.012 * k), r, h, "upSteelD", sides=16, top="upGun", rtop=r * 1.05)      # the pot
-    m.cyl((c[0], c[1], z + 0.024 * k), r * 1.02, 0.024 * k, TAG["fire"], sides=16, rtop=r * 1.03)  # weapon tag band
-    zt = z + 0.012 * k + h
-    ring(m, c, zt - 0.006 * k, r * 1.08, r * 0.9, 0.012 * k, "upSteel", "upSteel", "upGun")         # the lip
-    m.cyl((c[0], c[1], zt - 0.004 * k), r * 0.9, 0.004 * k, "upOr", sides=16)                       # the melt: rim
-    m.cyl((c[0], c[1], zt), r * 0.62, 0.002 * k, "upOrG", sides=14)                                  # white-hot middle
-    for u, v, zz, sz in ((0.0, -0.015, 0.03, 0.016), (-0.025, 0.012, 0.058, 0.013), (0.02, 0.02, 0.082, 0.011)):
-        x, y = rot(c, rz, u * k, v * k)                                                             # sparks
-        m.box((x, y, zt + zz * k), (sz * k, sz * k, sz * k), "upHot", top="upHot", rz=rz + 0.6, base=True)
+    """A squat canister: orange-red band, a lid with a glowing igniter and a carry handle arching over it."""
+    r, h = 0.074 * k, 0.11 * k
+    m.cyl((c[0], c[1], z), r, h, "upOlive", sides=12, top="upGun")
+    m.cyl((c[0], c[1], z + h * 0.24), r + 0.005 * k, h * 0.4, TAG["fire"], sides=12)               # weapon tag band
+    m.cyl((c[0], c[1], z + h), r * 0.82, 0.018 * k, "upSteelD", sides=12, top="upSteel")           # lid
+    x, y = rot(c, rz, 0.02 * k, 0.02 * k)
+    m.cyl((x, y, z + h + 0.018 * k), 0.02 * k, 0.03 * k, "upOrD", sides=8, top="upOrG")             # igniter
+    hz = z + h + 0.018 * k
+    pts = [(-0.05, 0.0), (-0.042, 0.045), (0.0, 0.062), (0.042, 0.045), (0.05, 0.0)]                # handle
+    pts = [(*rot(c, rz - 0.2, u * k, 0), hz + w * k) for u, w in pts]
+    for p0, p1 in zip(pts, pts[1:]):
+        tube(m, p0, p1, 0.009 * k, "upSteel", sides=6)
 
 
 # ---- the set ---------------------------------------------------------------------------------------------------------------
@@ -246,9 +250,11 @@ def _icon(name, unit):
     solid = m.poly
     m.poly = lambda pts, color, flip=False: lit.poly(pts, ICON_GLOW[color], flip) if color in ICON_GLOW else solid(pts, color, flip)
     core.REMAP.update(ICON_LIFT)
+    ICON[0] = True
     try:
         unit(m, (0.0, 0.0), 0.0, rz, 1.0)
     finally:
+        ICON[0] = False
         for key in ICON_LIFT:
             core.REMAP.pop(key, None)
     obs = [m.build()] + ([lit.build()] if lit.f else [])

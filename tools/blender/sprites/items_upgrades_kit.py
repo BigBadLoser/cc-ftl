@@ -128,26 +128,14 @@ def dome(m, c, z, r, h, col, n=5, sides=14):
               col if isinstance(col, str) else col[i], sides=sides, rtop=max(r1, 0.0005))
 
 
-def glint(m, c, z, r, h, col, halo=None, spots=((-0.3, 0.58, 0.2, 2.6), (-0.02, 0.28, 0.08, 1.0))):
-    """Specular highlights on a dome, each (half-turns round from the camera's line, distance out, size, stretch) as
-    fractions of its radius: an oval laid on the surface, stretched along the rim (a curved streak), with an optional
-    halo colour around it, one step larger. The default: a streak up and to the camera's left, a dot nearer the middle."""
-    def on(x, y, lift):
-        d = math.hypot(x - c[0], y - c[1])
-        return core.G(x, y, z + h * math.sqrt(max(0.0, 1 - (d / r) ** 2)) + lift)
-    for at, out, size, el in spots:
-        th, s = CAMERA + at * math.pi, r * size
-        cx, cy = c[0] + r * out * math.cos(th), c[1] + r * out * math.sin(th)
-        tx, ty, nx, ny = -math.sin(th), math.cos(th), math.cos(th), math.sin(th)
-        for sc, colr, lift in ((1.45, halo, 0.0008), (1.0, col, 0.0016)):
-            if not colr:
-                continue
-            pts = []
-            for i in range(12):
-                a = i * math.tau / 12
-                u, v = s * sc * el * math.cos(a), s * sc * 0.75 * math.sin(a)
-                pts.append(on(cx + tx * u + nx * v, cy + ty * u + ny * v, lift))
-            m.poly(pts, colr, flip=True)
+def glint(m, c, z, r, h, col, spots=((-0.35, 0.55, 0.3), (-0.12, 0.25, 0.14))):
+    """Specular highlights on a dome: small discs laid on its surface, each (half-turns round from the camera's line,
+    distance out, size) as fractions of its radius; the default pair sits up and to the camera's left."""
+    for at, out, size in spots:
+        th, rr, s = CAMERA + at * math.pi, r * out, r * size
+        zz = z + h * math.sqrt(max(0.0, 1 - out ** 2)) + 0.001
+        cx, cy = c[0] + rr * math.cos(th), c[1] + rr * math.sin(th)
+        m.poly([core.G(cx + s * math.cos(a), cy + s * 0.7 * math.sin(a), zz) for a in (i * math.tau / 8 for i in range(8))], col, flip=True)
 
 
 def torus(m, c, z, R, r, col, n=18, ring_n=8):
