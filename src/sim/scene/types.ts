@@ -73,7 +73,7 @@ export interface SceneDamageRecipe {
 
 /**
  * A skiff that says it means well and may not (DESIGN.md "Pirate ambush"). `chance` of the seeds roll a trap: it has `crew` aboard, a boarding party of
- * `party` and its shuttle ready, and asks to dock `askAfterSec` after the scene opens. An honest one only talks and trades. Its story (`honest`, `trap`,
+ * `party` and its shuttle ready, and asks to dock `askAfterSec` after the player deploys. An honest one only talks and trades. Its story (`honest`, `trap`,
  * and for a trap sometimes a `tell`: the lie that does not add up) is the hail's talk and the player's to weigh.
  */
 export interface AmbushRecipe {
@@ -178,7 +178,7 @@ export interface SceneShip {
   attitude?: number;
   /** A trap or an honest skiff (the pirate ambush). */
   ambush?: Ambush;
-  /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set when the scene opens. */
+  /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set once the player deploys. */
   stay?: number;
   leaveAt?: number;
   /** Its business here is finished (an ambush skiff's visit ended, delivered or refused): it moves on whatever hold a hail put on it. */
@@ -188,7 +188,7 @@ export interface SceneShip {
   /** It jumped away: its entity is gone from the pocket and it is not respawned. */
   gone?: 'fled';
   tag?: string;
-  /** Seconds after the scene opens that it jumps in (rolled from `arrive`), and the tick that is; until then it is not in the pocket. */
+  /** Seconds after the player deploys that it jumps in (rolled from `arrive`), and the tick that is (set at deploy); until then it is not in the pocket. */
   arriveAfter?: number;
   arriveAt?: number;
   /** The tag of the ship it preys on. */

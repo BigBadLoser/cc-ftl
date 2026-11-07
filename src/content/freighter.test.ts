@@ -397,4 +397,17 @@ describe('distress freighter: raiders', () => {
     expect(r.contact.ship).toBeDefined();
     expect(sim.world.get(r.contact.ship!, CombatC)?.prey).toBe(freighter);
   }, 60000);
+
+  it('the arrival clock starts at deploy: time spent picking the deploy spot does not bring the raiders in sooner', () => {
+    const sim = signalled(3, withRaiders('coming'));
+    choose(sim, 'approach');
+    const r = sim.galaxy.event!.scene.ships.find((x) => x.tag === 'raider')!;
+    step(sim, 120 * 20); // two minutes on the deploy screen, longer than any arrival delay
+    expect(sim.sector.state).not.toBe('active');
+    expect(r.arriveAt).toBeUndefined();
+    deploy(sim);
+    for (let i = 0; i < 40 && r.arriveAt === undefined; i++) step(sim);
+    expect(r.arriveAt).toBeGreaterThanOrEqual(sim.tick + (r.arriveAfter as number) * 20 - 40);
+    expect(r.contact.ship).toBeUndefined();
+  }, 60000);
 });

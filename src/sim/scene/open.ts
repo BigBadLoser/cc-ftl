@@ -89,20 +89,28 @@ function aimAtPrey(sim: Sim, spec: SceneSpec, s: SceneShip): void {
   if (combat && prey !== undefined && combat.prey === undefined && (state === 'active' || state === 'disabled')) combat.prey = prey;
 }
 
-/** A ship that comes in late is not in the pocket until its tick. */
-const due = (sim: Sim, s: SceneShip): boolean => s.arriveAt === undefined || sim.tick >= s.arriveAt;
+/** A ship that comes in late is not in the pocket until its tick (and has none until the player deploys). */
+const due = (sim: Sim, s: SceneShip): boolean => s.arriveAfter === undefined || (s.arriveAt !== undefined && sim.tick >= s.arriveAt);
 
-/** Open a scene in the (fresh) event grid: spawn its derelicts and ships (its timers start at deploy). */
+/**
+ * Start each ship's own clocks (its late arrival, its stay, its visit's ask) once the player's ship is deployed in the pocket, as the scene's timers
+ * do (scene/clock.ts): choosing where to deploy costs no time on any of them. Each is set once.
+ */
+function startShipClocks(sim: Sim, spec: SceneSpec): void {
+  if (sim.sector.state !== 'active') return;
+  for (const s of spec.ships) {
+    if (s.stay !== undefined && s.leaveAt === undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
+    if (s.arriveAfter !== undefined && s.arriveAt === undefined) s.arriveAt = sim.tick + Math.round(s.arriveAfter * TICK_HZ);
+    startVisitClock(sim, s);
+  }
+}
+
+/** Open a scene in the (fresh) event grid: spawn its derelicts and the ships there from the start (its clocks start at deploy). */
 export function openScene(sim: Sim, spec: SceneSpec): void {
   for (const d of spec.derelicts) if (d.ship === undefined) spawnSceneDerelict(sim, d);
-  for (const s of spec.ships) {
-    if (s.stay !== undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
-    if (s.arriveAfter !== undefined) s.arriveAt = sim.tick + Math.round(s.arriveAfter * TICK_HZ);
-    startVisitClock(sim, s);
-    if (s.contact.ship === undefined && due(sim, s)) spawnSceneShip(sim, s);
-  }
+  startShipClocks(sim, spec);
+  for (const s of spec.ships) if (s.contact.ship === undefined && due(sim, s)) spawnSceneShip(sim, s);
   for (const s of spec.ships) aimAtPrey(sim, spec, s);
-  // The timers start once the player's ship is deployed (scene/clock.ts `tendClocks`): choosing where to deploy costs no time on them.
 }
 
 /**
@@ -110,6 +118,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
  * derelicts that found no room. True when something changed.
  */
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
+  startShipClocks(sim, spec);
   let changed = tendVisit(sim, spec);
   for (const d of spec.derelicts) if (d.ship === undefined && spawnSceneDerelict(sim, d)) changed = true;
   for (const s of spec.ships) {

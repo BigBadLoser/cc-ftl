@@ -56,9 +56,9 @@ function partyAboard(sim: Sim, id: number): boolean {
   });
 }
 
-/** Set the clock of the skiff's request when the scene opens (called by `openScene`). */
+/** Set the clock of the skiff's request once the player deploys (called by `openScene` and `tendScene`); set once. */
 export function startVisitClock(sim: Sim, s: SceneShip): void {
-  if (s.ambush) s.ambush.askAt = sim.tick + Math.round(s.ambush.askAfter * TICK_HZ);
+  if (s.ambush && s.ambush.askAt === undefined) s.ambush.askAt = sim.tick + Math.round(s.ambush.askAfter * TICK_HZ);
 }
 
 /** True while the skiff's visit is a live question or a thing under way: it holds station (it neither jumps away nor is idle). */
