@@ -2,6 +2,7 @@ import { abortTask } from '../ai/task';
 import { DraftedC, PrioritiesC, WORK_CATEGORIES, type Priorities, type WorkCategory } from '../crew/components';
 import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
+import { ConsentC } from './components';
 import { grant } from './guests';
 
 /**
@@ -30,4 +31,12 @@ export function takePassenger(sim: Sim, ship: number, crew: number): void {
   }
   sim.world.add(crew, PrioritiesC, chores());
   grant(sim, ship, { by: 'passage', faction, crew: [crew], lodge: true, work: true });
+}
+
+/** The passenger is no longer aboard as one (dead, or gone): their own passage grant on `ship` goes. */
+export function dropPassenger(sim: Sim, ship: number, crew: number): void {
+  const c = sim.world.get(ship, ConsentC);
+  if (!c) return;
+  c.grants = c.grants.filter((g) => !(g.by === 'passage' && g.crew?.includes(crew)));
+  if (!c.grants.length) sim.world.remove(ship, ConsentC);
 }

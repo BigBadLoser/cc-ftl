@@ -3,9 +3,11 @@ import { CombatC, FTL_CHARGE_SEC, START_NODE, galaxyIndex, newGame, playerShip, 
 import { CrewC, DeadC, DownedC, HealthC, NeedsC, PositionC } from '../sim/crew/components';
 import { boardCrew } from '../sim/vehicles/lifecycle';
 import { lodgingHere } from '../sim/consent/guests';
-import { shipIdOf } from '../sim/regions';
+import { placementGapError, shipIdOf } from '../sim/regions';
 import { giveItems } from '../sim/story/effects';
 import { AboardC, VehicleC } from '../sim/vehicles/components';
+import { deserialize, serialize } from '../sim/save';
+import { ConsentC } from '../sim/consent/components';
 import { content } from '.';
 
 /** The medical pod (#173 step 6): an escape pod adrift with a bleeding patient; called in, it docks and lets them out, and the crew carry them to a bed. */
@@ -27,7 +29,7 @@ function routeOf(sim: Sim, hops: number): string[] {
 }
 
 /** A two-hop trip whose first hop signals the pod; stops with the decision open. */
-function signalled(seed: number): Sim {
+function signalled(seed: number, hops = 2): Sim {
   const sim = newGame(seed, content);
   sim.story.goals.skipped = true;
   sim.galaxy.fleets = [];
@@ -35,15 +37,15 @@ function signalled(seed: number): Sim {
   const combat = sim.world.get(playerShip(sim), CombatC);
   if (combat) combat.ftl = FTL_CHARGE_SEC;
   sim.story.queue.push({ event: EVENT, due: 0, force: true });
-  sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: routeOf(sim, 2) });
+  sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: routeOf(sim, hops) });
   for (let i = 0; i < 90000 && sim.galaxy.travel?.phase !== 'story'; i++) sim.step();
   sim.events.drain();
   return sim;
 }
 
 /** Dropped out beside the pod and deployed; the pod is real once the scene's next second has passed. */
-function inScene(seed: number): Sim {
-  const sim = signalled(seed);
+function inScene(seed: number, hops = 2): Sim {
+  const sim = signalled(seed, hops);
   sim.enqueue({ type: 'story.choose', choice: 'approach' });
   step(sim, 2);
   for (const [x, y] of [[100, 60], [20, 50], [300, 200], [40, 150], [200, 20], [350, 100]] as const) {
@@ -122,6 +124,105 @@ describe('the medical pod', () => {
     step(sim, 3);
     expect(sim.galaxy.event).toBeNull();
     expect(sim.story.flags['pod_left']).toBe(1);
+  });
+});
+
+/** Called in and out of the pod, aboard as a passenger (the observer has handed them on). */
+function rescued(seed: number): { sim: Sim; crew: number; purse: number; owner: string } {
+  const sim = inScene(seed, 1);
+  const p = pod(sim);
+  sim.enqueue({ type: 'galaxy.recoverPod', pod: p.id });
+  for (let i = 0; i < 20 * 60 && !p.handed; i++) step(sim);
+  expect(p.handed).toBe(true);
+  return { sim, crew: p.crew!, purse: p.purse, owner: p.owner };
+}
+const carryOf = (sim: Sim, crew: number) => sim.world.get(playerShip(sim), ConsentC)?.grants.find((g) => g.crew?.includes(crew))?.carry;
+/** Leave the pocket and fly on until the ship is in the next node. */
+function flyOn(sim: Sim): void {
+  sim.enqueue({ type: 'galaxy.leaveEvent' });
+  step(sim, 3);
+  expect(sim.galaxy.event).toBeNull();
+  // Fly on, passing up any other signal on the way (no second pocket).
+  for (let i = 0; i < 90000 && sim.sector.state !== 'deploying'; i++) {
+    sim.step();
+    const active = sim.story.active ? sim.content.events?.[sim.story.active.event] : undefined;
+    const pass = active?.choices?.find((c) => !c.outcome?.effects?.some((e) => e.type === 'scene') && !c.remote && !c.cost && !c.requires && !c.check);
+    if (pass) sim.enqueue({ type: 'story.choose', choice: pass.id });
+    if (sim.galaxy.travel?.phase === 'arrived') sim.enqueue({ type: 'galaxy.drop' });
+  }
+  const p = sim.sector.packet!;
+  for (let x = 0; x + p.w <= sim.sector.width && sim.sector.state !== 'active'; x += 4) {
+    for (let y = 2; y + p.h <= sim.sector.height; y += 4) {
+      if (placementGapError(sim, { x, y, w: p.w, h: p.h })) continue;
+      sim.enqueue({ type: 'sector.deploy', x, y });
+      step(sim);
+      break;
+    }
+  }
+  expect(sim.sector.state).toBe('active');
+}
+
+describe('the pod patient after the pocket', () => {
+  it('carries the event on their passage grant: origin, a rolled purse, nothing fired yet', () => {
+    const { sim, crew, purse, owner } = rescued(5);
+    expect(purse).toBeGreaterThanOrEqual(60);
+    expect(purse).toBeLessThanOrEqual(150);
+    expect(carryOf(sim, crew)).toEqual({ event: EVENT, origin: owner, purse, fired: [] });
+  });
+
+  it('back on their feet in the next node: they pay what they carry and their faction gains standing, once, and not again on reload', () => {
+    const { sim, crew, purse, owner } = rescued(5);
+    flyOn(sim);
+    expect(sim.world.has(crew, DownedC)).toBe(true);
+    const credits = sim.trade.credits;
+    const rep = sim.story.reputation[owner] ?? 0;
+    sim.world.get(crew, HealthC)!.hp = 39.9;
+    let log = '';
+    for (let i = 0; i < 20 * 60 && sim.world.has(crew, DownedC); i++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+    }
+    expect(sim.world.has(crew, DownedC)).toBe(false);
+    for (let i = 0; i < 40; i++) for (const e of (sim.step(), sim.events.drain())) if (e.type === 'scene.observed' && e.rule === 'helpedPerson') log = e.text;
+    expect(log).toContain(sim.world.get(crew, CrewC)!.name);
+    expect(sim.trade.credits).toBe(credits + purse);
+    expect(sim.story.reputation[owner]).toBe(rep + 1);
+    expect(carryOf(sim, crew)?.fired).toEqual([`helpedPerson#n${crew}`]);
+    step(sim, 100);
+    expect(sim.trade.credits).toBe(credits + purse);
+    const back = deserialize(serialize(sim), content);
+    step(back, 100);
+    expect(back.trade.credits).toBe(credits + purse);
+    expect(back.story.reputation[owner]).toBe(rep + 1);
+  });
+
+  it('saved and loaded mid-stay, still downed: the carry survives and the reward lands after the load', () => {
+    const { sim, crew, purse } = rescued(5);
+    flyOn(sim);
+    const back = deserialize(serialize(sim), content);
+    expect(carryOf(back, crew)?.purse).toBe(purse);
+    const credits = back.trade.credits;
+    back.world.get(crew, HealthC)!.hp = 39.9;
+    step(back, 20 * 30);
+    expect(back.world.has(crew, DownedC)).toBe(false);
+    expect(back.trade.credits).toBe(credits + purse);
+  });
+
+  it('dies aboard after the pocket: the death rule fires once and their passage grant goes', () => {
+    const { sim, crew } = rescued(5);
+    flyOn(sim);
+    const texts: string[] = [];
+    sim.world.get(crew, DownedC)!.stabilized = false;
+    sim.world.get(crew, DownedC)!.bleed = 1;
+    for (let i = 0; i < 20 * 5; i++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'scene.observed') texts.push(e.rule);
+    }
+    expect(sim.world.has(crew, DeadC)).toBe(true);
+    expect(texts.filter((r) => r === 'personDied')).toHaveLength(1);
+    expect(texts).not.toContain('podDied');
+    expect(texts).not.toContain('helpedPerson');
+    expect(carryOf(sim, crew)).toBeUndefined();
   });
 });
 

@@ -121,8 +121,9 @@ import { newYard, type YardState } from './yard/types';
  * v97 (weapon upgrades, #338): `Module.upgrade`, `Module.offlineUntil` (work hold), job kind 'fit' with `Job.fit`.
  * v98 (passengers, #173 step 6): consent grants by 'passage' and `Grant.lodge` (a lodging guest: bed, meals, no jobs; crew kind 'guest').
  * v99 (the medical pod, #173 step 6): `SceneSpec.pods` (escape pods and their patients); vehicles with an escape def; lodging guests have moods.
+ * v100 (carried rules, #173 step 6): `Grant.carry` (a passenger's event, origin, purse and fired rules); `ScenePod.purse`, `handed`.
  */
-export const SAVE_VERSION = 99;
+export const SAVE_VERSION = 100;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

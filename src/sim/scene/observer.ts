@@ -8,28 +8,17 @@ import { isSubdued } from '../fight/relations';
 import { playerCrew } from '../story/world';
 import { BoarderC } from '../vehicles/components';
 import type { Sim } from '../sim';
-import { applyEffect } from '../story/effects';
-import type { EventEffect } from '../story/defs';
-import { repKey } from '../galaxy/standing';
-import type { Contact, EventGrid } from '../galaxy/types';
-import type { Ambush, SceneDerelict, SceneFact, ScenePod, SceneRuleDef, SceneShip, Stance } from './types';
-import { podAdrift, podFacts } from './pods';
+import type { EventGrid } from '../galaxy/types';
+import type { SceneDerelict, SceneFact, SceneRuleDef } from './types';
+import { fireRules, rulesOf, type RuleMemory, type Watched } from './rules';
+import { handOn, podAdrift, podFacts } from './pods';
 
 /**
  * The outcome observer (DESIGN.md "Physical encounters", part c). Once a second in an event grid it reads facts about the scene's ships from sim
  * state (never from the event stream, which is output only): a finished deal with it, a shot the player fired on it, player crew aboard,
- * taken, wrecked, fled; at leave, still there. Each rule (shared `sceneRules`, overridden per encounter) fires once per ship: its effects apply and its
- * log line goes out as `scene.observed`. No rule says how a scene ends; it only says what the world makes of what happened.
+ * taken, wrecked, fled; at leave, still there. Each rule (shared `sceneRules`, overridden per encounter) fires once per ship (scene/rules.ts `fireRules`):
+ * its effects apply and its log line goes out as `scene.observed`. No rule says how a scene ends; it only says what the world makes of what happened.
  */
-
-/** A scene ship the observer watches: its descriptor and its stance (a fleet's ships all take the fleet's). */
-interface Watched {
-  contact: Contact;
-  stance: Stance;
-  ambush?: Ambush;
-  /** The scene ship itself (a fleet's ships have none). */
-  scene?: SceneShip;
-}
 
 function watched(ev: EventGrid): Watched[] {
   const out: Watched[] = ev.scene.ships.map((s) => ({ contact: s.contact, stance: s.stance, scene: s, ...(s.ambush ? { ambush: s.ambush } : {}) }));
@@ -44,12 +33,8 @@ function noteCrew(sim: Sim, ev: EventGrid): void {
   for (const c of playerCrew(sim)) if (!seen.includes(c)) seen.push(c);
 }
 
-/** The rules in force for a scene: the shared ones, with the encounter's own added or overriding them (null switches one off). Sorted by id. */
-export function rulesFor(sim: Sim, ev: EventGrid): [string, SceneRuleDef][] {
-  const own = ev.scene.event ? sim.content.events?.[ev.scene.event]?.scene?.rules : undefined;
-  const all: Record<string, SceneRuleDef | null> = { ...(sim.content.sceneRules ?? {}), ...(own ?? {}) };
-  return Object.entries(all).filter((e): e is [string, SceneRuleDef] => e[1] !== null).sort(([a], [b]) => (a < b ? -1 : 1));
-}
+const rulesFor = (sim: Sim, ev: EventGrid): [string, SceneRuleDef][] => rulesOf(sim, ev.scene.event);
+const memOf = (ev: EventGrid): RuleMemory => ({ event: ev.scene.event ?? ev.scene.key, fired: ev.watch.fired });
 
 /** The facts true of one ship right now. */
 function factsOf(sim: Sim, ev: EventGrid, w: Watched): Set<SceneFact> {
@@ -91,30 +76,9 @@ function derelictFacts(sim: Sim, d: SceneDerelict): Set<SceneFact> {
   return out;
 }
 
-/** A rule's effects with 'owner' standing resolved to the ship owner's reputation key. */
-const effectsFor = (sim: Sim, rule: SceneRuleDef, owner: string): EventEffect[] =>
-  (rule.effects ?? []).map((e) => (e.type === 'reputation' && e.faction === 'owner' ? { ...e, faction: repKey(sim, owner) } : e));
-
-/** What a rule fires about: a scene ship, a derelict, a crew member lost, an escape pod's patient, or nothing (a timer). */
-type Subject = { ship: Watched } | { derelict: SceneDerelict } | { crew: number } | { pod: ScenePod } | null;
-
-function fire(sim: Sim, ev: EventGrid, id: string, rule: SceneRuleDef, w: Subject): void {
-  const key = !w ? id : 'ship' in w ? `${id}#${w.ship.contact.id}` : 'derelict' in w ? `${id}#d${w.derelict.id}` : 'pod' in w ? `${id}#p${w.pod.id}` : `${id}#c${w.crew}`;
-  if (ev.watch.fired.includes(key)) return;
-  ev.watch.fired.push(key);
-  const ctx = { event: ev.scene.event ?? ev.scene.key, actor: null };
-  for (const eff of effectsFor(sim, rule, w && 'ship' in w ? w.ship.contact.faction : w && 'pod' in w ? w.pod.owner : '')) applyEffect(sim, eff, { ...ctx, ...(w && 'ship' in w && w.ship.contact.ship !== undefined ? { ship: w.ship.contact.ship } : {}) });
-  const shipId = !w ? 0 : 'ship' in w ? w.ship.contact.ship ?? 0 : 'derelict' in w ? w.derelict.ship ?? 0 : 0;
-  const live = shipId && sim.world.has(shipId, ShipC) ? sim.world.get(shipId, ShipC)?.name : undefined;
-  const name = !w ? '' : 'ship' in w ? live ?? w.ship.contact.name ?? 'the ship' : 'derelict' in w ? live ?? w.derelict.name : '';
-  const crew = w && 'crew' in w ? sim.world.get(w.crew, CrewC)?.name ?? 'A crew member' : w && 'pod' in w ? w.pod.patient.name : '';
-  const text = (rule.log ?? '').replace('{ship}', name).replace('{crew}', crew);
-  sim.events.emit({ type: 'scene.observed', rule: id, ship: shipId && sim.world.has(shipId, ShipC) ? shipId : 0, text, tone: rule.tone ?? 'info' });
-}
-
 const stanceOk = (rule: SceneRuleDef, w: Watched): boolean =>
-  rule.of !== 'derelict' && rule.of !== 'pod' && (!rule.stance || rule.stance.includes(w.stance)) && (rule.trap === undefined || (!!w.ambush && w.ambush.trap === rule.trap));
-const derelictOk = (rule: SceneRuleDef): boolean => rule.of !== 'ship' && rule.of !== 'pod' && !rule.stance && rule.trap === undefined;
+  (rule.of === undefined || rule.of === 'ship') && (!rule.stance || rule.stance.includes(w.stance)) && (rule.trap === undefined || (!!w.ambush && w.ambush.trap === rule.trap));
+const derelictOk = (rule: SceneRuleDef): boolean => (rule.of === undefined || rule.of === 'derelict') && !rule.stance && rule.trap === undefined;
 const podOk = (rule: SceneRuleDef): boolean => rule.of === 'pod';
 const SCENE_WIDE = new Set<SceneFact>(['timer', 'left', 'crewLost', 'abandoned', 'doomed']);
 
@@ -128,23 +92,25 @@ export function observeScene(sim: Sim, ev: EventGrid): void {
   noteCrew(sim, ev);
   for (const w of watched(ev)) {
     const facts = factsOf(sim, ev, w);
-    for (const [id, rule] of rules) if (!SCENE_WIDE.has(rule.on) && facts.has(rule.on) && stanceOk(rule, w)) fire(sim, ev, id, rule, { ship: w });
+    fireRules(sim, memOf(ev), rules, { ship: w }, (rule) => !SCENE_WIDE.has(rule.on) && facts.has(rule.on) && stanceOk(rule, w));
   }
   for (const d of ev.scene.derelicts) {
     const facts = derelictFacts(sim, d);
-    for (const [id, rule] of rules) if (!SCENE_WIDE.has(rule.on) && facts.has(rule.on) && derelictOk(rule)) fire(sim, ev, id, rule, { derelict: d });
+    fireRules(sim, memOf(ev), rules, { derelict: d }, (rule) => !SCENE_WIDE.has(rule.on) && facts.has(rule.on) && derelictOk(rule));
   }
   for (const p of ev.scene.pods ?? []) {
     const facts = podFacts(sim, p);
-    for (const [id, rule] of rules) if (facts.has(rule.on) && podOk(rule)) fire(sim, ev, id, rule, { pod: p });
+    fireRules(sim, memOf(ev), rules, { pod: p }, (rule) => facts.has(rule.on) && podOk(rule));
+    // Taken in: from here on what happens to them is the passenger's to carry (scene/carried.ts), not the pocket's.
+    if (facts.has('rescued')) handOn(sim, p, memOf(ev).event);
   }
-  for (const c of lostCrew(sim, ev)) for (const [id, rule] of rules) if (rule.on === 'crewLost') fire(sim, ev, id, rule, { crew: c });
+  for (const c of lostCrew(sim, ev)) fireRules(sim, memOf(ev), rules, { crew: c }, (rule) => rule.on === 'crewLost');
   for (const t of ev.scene.timers) {
     if (t.at === undefined || t.stopped || sim.tick < t.at) continue;
     // A timer about a ship fires about it (its name in the log, its owner's standing).
     const about = timerShip(ev.scene, t);
     const w = about ? watched(ev).find((x) => x.scene === about) : undefined;
-    for (const [id, rule] of rules) if (rule.on === 'timer' && rule.timer === t.id) fire(sim, ev, id, rule, w ? { ship: w } : null);
+    fireRules(sim, memOf(ev), rules, w ? { ship: w } : null, (rule) => rule.on === 'timer' && rule.timer === t.id);
   }
 }
 
@@ -164,13 +130,13 @@ export function observeLeave(sim: Sim, ev: EventGrid): void {
   for (const w of watched(ev)) {
     const s = w.contact.ship === undefined ? undefined : sim.world.get(w.contact.ship, ShipC);
     if (!s || (s.state !== 'active' && s.state !== 'disabled')) continue;
-    for (const [id, rule] of rules) if (stanceOk(rule, w)) fire(sim, ev, id, rule, { ship: w });
+    fireRules(sim, memOf(ev), rules, { ship: w }, (rule) => stanceOk(rule, w));
     const facts = leaveFacts(ev, w);
-    for (const [id, rule] of atLeave) if (facts.has(rule.on) && stanceOk(rule, w)) fire(sim, ev, id, rule, { ship: w });
+    fireRules(sim, memOf(ev), atLeave, { ship: w }, (rule) => facts.has(rule.on) && stanceOk(rule, w));
   }
   for (const d of ev.scene.derelicts) {
     if (d.ship === undefined || !sim.world.has(d.ship, ShipC)) continue;
-    for (const [id, rule] of rules) if (derelictOk(rule)) fire(sim, ev, id, rule, { derelict: d });
+    fireRules(sim, memOf(ev), rules, { derelict: d }, (rule) => derelictOk(rule));
   }
-  for (const p of ev.scene.pods ?? []) if (podAdrift(sim, p)) for (const [id, rule] of rules) if (podOk(rule)) fire(sim, ev, id, rule, { pod: p });
+  for (const p of ev.scene.pods ?? []) if (podAdrift(sim, p)) fireRules(sim, memOf(ev), rules, { pod: p }, (rule) => podOk(rule));
 }

@@ -4,7 +4,7 @@ import { PASSENGER_CHORES } from '../sim/consent/passage';
 import { hasMood } from '../sim/crew/mood';
 import { playerShip } from '../sim/trade/player';
 import { playerCrew } from '../sim/story/world';
-import { grant } from '../sim/consent/guests';
+import { grant, lodgingHere } from '../sim/consent/guests';
 import { content } from '.';
 
 /** A neutral person spawned on the tile of the first crew member, as a lodging guest (a passenger) or a plain visitor. */
@@ -36,6 +36,14 @@ function strayJob(sim: Sim, id: number): boolean {
 }
 
 describe('lodging guests (passengers)', () => {
+  it('two passengers are two grants: taking in the second keeps the first', () => {
+    const sim = newGame(3, content);
+    const a = guestAboard(sim, true);
+    const b = guestAboard(sim, true);
+    expect(lodgingHere(sim, a)?.crew).toEqual([a]);
+    expect(lodgingHere(sim, b)?.crew).toEqual([b]);
+  });
+
   it('own a bed, get hungry and eat from stock, sleep, and take only their chores', () => {
     const sim = newGame(3, content);
     spareBed(sim);

@@ -30,6 +30,11 @@ export interface Grant {
   from?: number;
   work?: true;
   lodge?: true;
+  /**
+   * 'passage': what a person a scene handed on carries aboard (scene/carried.ts): the event whose rules follow them after the pocket is gone, the galaxy
+   * faction they are from, the credits they carry, and the rule keys fired about them so far (each fires once, saved with the ship).
+   */
+  carry?: { event: string; origin: string; purse: number; fired: string[] };
   since: number;
 }
 export interface Consent {

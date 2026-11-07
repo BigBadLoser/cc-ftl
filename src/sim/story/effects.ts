@@ -10,6 +10,7 @@ import { TraderC } from '../trade/types';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { grantXp } from '../crew/xp';
+import { addCredits } from '../trade/credits';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
@@ -22,6 +23,8 @@ export interface EffectCtx {
   actor: number | null;
   /** The scene ship the effect is about (an observer rule's subject), for effects that act at a place. */
   ship?: number;
+  /** The credits the effect's subject carries (an observer rule about a person), for `credits` with no amount. */
+  purse?: number;
 }
 
 /** The floor tile just inside the airlock the ship's boarding shuttle is docked at (on the ship it is docked to), or null. */
@@ -169,6 +172,12 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
       const spec = sim.galaxy.signal;
       if (eff.aid && spec?.event === ctx.event) for (const s of spec.ships) if (s.stance === 'helpless') s.aid = { state: 'agreed' };
       return null;
+    }
+    case 'credits': {
+      const n = Math.max(0, Math.round(eff.amount ?? ctx.purse ?? 0));
+      if (!n) return null;
+      addCredits(sim, n);
+      return null; // the ship's log already shows every credit gain ("Credits received")
     }
     case 'gift': return gift(sim, ctx.ship, eff.lines ?? 1);
     case 'physical': {

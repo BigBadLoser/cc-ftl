@@ -254,7 +254,7 @@ export const events = {
     eligible: [{ kind: 'module', def: 'module.bed' }],
     scene: {
       persistence: 'transient',
-      pods: [{ roles: ['role.engineer', 'role.pilot', 'role.medic', 'role.gunner'], owners: ['traders', 'meridian', 'helix', 'vantor'], bleed: [150, 210] }],
+      pods: [{ roles: ['role.engineer', 'role.pilot', 'role.medic', 'role.gunner'], owners: ['traders', 'meridian', 'helix', 'vantor'], bleed: [150, 210], purse: [60, 150] }],
       rules: {
         podRescued: { on: 'rescued', of: 'pod', log: '{crew} is aboard, out of the pod', tone: 'good' },
         podDied: { on: 'died', of: 'pod', log: '{crew}, the pod survivor, is dead', tone: 'bad' },

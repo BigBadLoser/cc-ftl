@@ -166,6 +166,8 @@ export interface ScenePodRecipe {
   roles: string[];
   owners: string[];
   bleed: Range;
+  /** The credits they carry, rolled: what they pay once treated (the shared `helpedPerson` rule). */
+  purse: Range;
 }
 
 /** One escape pod of a built scene: who is aboard (the roll that makes them), and once real its vehicle and the person's entity. */
@@ -177,10 +179,14 @@ export interface ScenePod {
   patient: RolledCrew;
   /** Seconds they bleed out in, from the player's deploy. */
   bleed: number;
+  /** The credits they carry. */
+  purse: number;
   vehicle?: number;
   crew?: number;
   /** The player called it in (`galaxy.recoverPod`). */
   called?: true;
+  /** Taken in as a passenger: the event's rules about them are their grant's now (scene/carried.ts), and the pod's facts end. */
+  handed?: true;
 }
 
 /** What a story encounter puts in its pocket (content: `EventDef.scene`). */
@@ -318,7 +324,9 @@ export type SceneFact =
   | 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown'
   | 'delivered' | 'declined' | 'repaired' | 'abandoned' | 'doomed'
   /** Of an escape pod's patient: taken aboard the player's ship (`rescued`), or dead (`died`). At leave, a pod still adrift with them alive is `left`. */
-  | 'rescued' | 'died';
+  | 'rescued' | 'died'
+  /** Of a person the scene handed on (a passenger, scene/carried.ts), wherever the ship is: back on their feet aboard (`treated`), or dead (`died`). */
+  | 'treated';
 
 /**
  * An observer rule (content: the shared `sceneRules`, plus an encounter's own in `SceneRecipe.rules`). The first time `on` is seen for a ship whose
@@ -329,10 +337,11 @@ export interface SceneRuleDef {
   on: SceneFact;
   stance?: Stance[];
   /**
-   * Only for scene ships (`ship`), derelicts (`derelict`) or escape pods (`pod`); absent: ships and derelicts (never pods: a pod's rules say `pod`). A
+   * Only for scene ships (`ship`), derelicts (`derelict`), escape pods (`pod`) or a person the scene handed on (`person`: a passenger, after the pocket
+   * too; scene/carried.ts); absent: ships and derelicts (never pods or people: their rules say so). A
    * derelict has no stance: a `stance` rule never matches one.
    */
-  of?: 'ship' | 'derelict' | 'pod';
+  of?: 'ship' | 'derelict' | 'pod' | 'person';
   /** Only for an ambush skiff that is a trap (true) or honest (false). */
   trap?: boolean;
   /** For `on: 'timer'`: the timer id. */

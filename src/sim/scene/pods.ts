@@ -24,7 +24,8 @@ export function buildPod(sim: Sim, r: ScenePodRecipe, rng: Rng): ScenePod {
   const role = r.roles[rng.int(0, r.roles.length - 1)] ?? 'role.engineer';
   const owner = r.owners[rng.int(0, r.owners.length - 1)] ?? 'traders';
   const bleed = rng.int(r.bleed[0], r.bleed[1]);
-  return { id: sim.galaxy.nextFleet++, owner, patient: rollCrewWith(rng, role, sim.content), bleed };
+  const patient = rollCrewWith(rng, role, sim.content);
+  return { id: sim.galaxy.nextFleet++, owner, patient, bleed, purse: rng.int(r.purse[0], r.purse[1]) };
 }
 
 /** Make a pod real beside where the player's ship is: the vehicle adrift, its person aboard, downed and bleeding. False until the player has deployed. */
@@ -61,7 +62,7 @@ export function tendPods(sim: Sim, spec: SceneSpec): boolean {
 /** The facts true of a pod's patient now: taken aboard as a passenger (`rescued`), or dead (`died`). */
 export function podFacts(sim: Sim, p: ScenePod): Set<SceneFact> {
   const out = new Set<SceneFact>();
-  if (p.crew === undefined) return out;
+  if (p.crew === undefined || p.handed) return out;
   if (!sim.world.has(p.crew, CrewC) || sim.world.has(p.crew, DeadC)) return out.add('died');
   if (lodgingHere(sim, p.crew)) out.add('rescued');
   return out;
@@ -71,4 +72,16 @@ export function podFacts(sim: Sim, p: ScenePod): Set<SceneFact> {
 export function podAdrift(sim: Sim, p: ScenePod): boolean {
   const v = p.vehicle === undefined ? undefined : sim.world.get(p.vehicle, VehicleC);
   return !!v && p.crew !== undefined && v.passengers.includes(p.crew) && !sim.world.has(p.crew, DeadC);
+}
+
+/**
+ * The pod's patient was taken in as a passenger: the event's rules about them go with their grant (scene/carried.ts fires them from there, after the
+ * pocket is gone too: back on their feet, or dead aboard), and the pod has nothing more to say about them. Once.
+ */
+export function handOn(sim: Sim, p: ScenePod, event: string): void {
+  if (p.handed || p.crew === undefined) return;
+  const g = lodgingHere(sim, p.crew);
+  if (g?.by !== 'passage') return;
+  g.carry = { event, origin: p.owner, purse: p.purse, fired: [] };
+  p.handed = true;
 }

@@ -68,6 +68,8 @@ export type EventEffect =
   /** Skill experience: every 100 xp is one level. */
   | { type: 'skillXp'; skill: SkillName; amount: number; who?: CrewTarget }
   | { type: 'reputation'; faction: string; delta: number }
+  /** Credits to the player: `amount`, or absent, what the rule's subject carries (a person the player helped pays their purse). */
+  | { type: 'credits'; amount?: number }
   /** `set` (default) writes `value` (default 1); `add` adds `value` (a counter); `clear` removes it. */
   | { type: 'flag'; flag: string; op?: 'set' | 'add' | 'clear'; value?: number }
   /** Start another event, `delaySec` later (default at once). It queues behind a decision already open. */

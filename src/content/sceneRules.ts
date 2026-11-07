@@ -32,5 +32,13 @@ export const sceneRules = {
     on: 'abandoned', effects: [{ type: 'reputation', faction: 'owner', delta: -1 }, { type: 'flag', flag: 'aid_abandoned', op: 'add' }],
     log: 'You left the {ship} with the repairs half done', tone: 'warn',
   },
+  // Helping a person (DESIGN.md "Medical pod"; scene/carried.ts): one rule for anyone a scene hands on as a passenger. Back on their feet aboard, they pay
+  // what they carry and their own people think better of you. Fires after the pocket is gone too.
+  helpedPerson: {
+    on: 'treated', of: 'person',
+    effects: [{ type: 'credits' }, { type: 'reputation', faction: 'owner', delta: 1 }, { type: 'flag', flag: 'people_helped', op: 'add' }],
+    log: '{crew} is up and pays their way', tone: 'good',
+  },
+  personDied: { on: 'died', of: 'person', log: '{crew} died aboard', tone: 'bad' },
   doomed: { on: 'doomed', log: 'The {ship} drops behind you, its clock still running down', tone: 'bad' },
 } satisfies Record<string, SceneRuleDef>;

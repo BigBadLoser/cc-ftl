@@ -71,6 +71,7 @@ import { containerDriftSystem } from './systems/containers';
 import { boardingAiSystem } from './systems/boardingAi';
 import { boardingSiteSystem } from './boarding/site';
 import { sceneSystem } from './systems/scene';
+import { passengerSystem } from './systems/passengers';
 import { sabotageResumeSystem } from './boarding/resume';
 import { coreRaidSystem } from './capture/coreRaid';
 import { captureSystem } from './systems/capture';
@@ -207,6 +208,8 @@ export const pipeline: readonly System[] = [
   dormancySystem,
   // An open scene's timers act on the world (fires, a reactor that blows) and its aid agreements open and close their sites, before provocation reads the guests.
   sceneSystem,
+  // Passengers a scene handed on carry its rules (paid once treated, logged if they die aboard), in any grid, the pocket gone or not.
+  passengerSystem,
   // Boarding a ship that is not hostile turns it (and the ships with it) hostile; firing on one does as the shot leaves (firing system).
   provocationSystem,
   // Black-market truce: a breach (the player firing on or boarding anyone at a truce node) bans them; everyone turns hostile while it lasts.
