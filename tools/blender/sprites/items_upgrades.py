@@ -74,7 +74,7 @@ def housing(m, c, z, rz, k):
     for su in (-1, 1):
         for sv in (-1, 1):                                                                         # corner bolts
             x, y = rot(c, rz, su * w * 0.4, sv * d * 0.38)
-            m.cyl((x, y, z + 0.055 * k), 0.016 * k, 0.014 * k, "upGun", sides=6, top="upBolt")
+            m.cyl((x, y, z + 0.055 * k), 0.022 * k, 0.018 * k, "upGun", sides=6, top="upBolt")
 
 
 # ---- laser ---------------------------------------------------------------------------------------------------------------
@@ -157,28 +157,37 @@ def rail(m, c, z, rz, k):
 
 # ---- missiles ------------------------------------------------------------------------------------------------------------
 
+def _trefoil(m, c, rz, u0, v, zc, R):
+    """A radiation trefoil, black on the plate face at v (box-local) facing out along +v: three blades and a hub."""
+    def at(u, w):
+        x, y = rot(c, rz, u0 + u, v)
+        return core.G(x, y, zc + w)
+    for th in (90, 210, 330):
+        a0, a1 = math.radians(th - 30), math.radians(th + 30)
+        arc = [a0 + (a1 - a0) * i / 4 for i in range(5)]
+        pts = [at(R * math.cos(a), R * math.sin(a)) for a in arc] + [at(R * 0.32 * math.cos(a), R * 0.32 * math.sin(a)) for a in arc[::-1]]
+        m.poly(pts, "upBlack", flip=True)
+    m.poly([at(R * 0.2 * math.cos(i * math.tau / 8), R * 0.2 * math.sin(i * math.tau / 8)) for i in range(8)], "upBlack", flip=True)
+
+
 def nuke(m, c, z, rz, k):
     r, zc = 0.058 * k, z + 0.024 * k + 0.058 * k
     for u in (-0.065, 0.045):
         x, y = rot(c, rz, u * k, 0)
         m.box((x, y, z), (0.036 * k, 0.11 * k, 0.03 * k), "upBlack", top="upGun", rz=rz, base=True)  # crude chocks
     _axis(m, c, rz, -0.13 * k, 0.05 * k, zc, r, "upOlive", cap="upGun")
-    _axis(m, c, rz, -0.115 * k, -0.095 * k, zc, r + 0.004 * k, TAG["missile"])                      # weapon tag band
-    for i in range(4):                                                                             # hazard bands
-        u = -0.04 * k + i * 0.02 * k
-        _axis(m, c, rz, u, u + 0.02 * k, zc, r + 0.004 * k, "upYel" if i % 2 == 0 else "upBlack")
+    _axis(m, c, rz, -0.118 * k, -0.098 * k, zc, r + 0.004 * k, TAG["missile"])                      # weapon tag band
+    for i, col in enumerate(("upYel", "upBlack")):                                                 # hazard band
+        u = 0.022 * k + i * 0.014 * k
+        _axis(m, c, rz, u, u + 0.014 * k, zc, r + 0.004 * k, col)
     p0, p1 = rot(c, rz, 0.05 * k, 0), rot(c, rz, 0.17 * k, 0)
     cone(m, (p0[0], p0[1], zc), (p1[0], p1[1], zc), r, "upSteel", sides=12)
-    for s in (-1, 1):                                                                              # tail fins
-        x, y = rot(c, rz, -0.115 * k, s * (r + 0.012 * k))
+    for s_ in (-1, 1):                                                                             # tail fins
+        x, y = rot(c, rz, -0.115 * k, s_ * (r + 0.012 * k))
         m.box((x, y, zc - 0.025 * k), (0.05 * k, 0.012 * k, 0.05 * k), "upSteelD", rz=rz, base=True)
-    x, y = rot(c, rz, -0.02 * k, r + 0.002 * k)                                                    # trefoil badge on the
-    m.box((x, y, zc - 0.03 * k), (0.06 * k, 0.008 * k, 0.06 * k), "upYel", rz=rz, base=True)       # camera-side flank
-    m.box((x, y, zc - 0.006 * k), (0.016 * k, 0.01 * k, 0.016 * k), "upBlack", rz=rz, base=True)
-    for a in (0.0, 2.1, 4.2):
-        bx, by = rot((0, 0), rz, 0.02 * k * math.cos(a), 0)
-        m.box((x + bx, y + by, zc - 0.002 * k + 0.02 * k * math.sin(a) - 0.008 * k), (0.012 * k, 0.01 * k, 0.012 * k), "upBlack",
-              rz=rz, base=True)
+    x, y = rot(c, rz, -0.04 * k, r - 0.002 * k)                                                    # the trefoil plate, bolted
+    m.box((x, y, zc - 0.05 * k), (0.1 * k, 0.016 * k, 0.1 * k), "upYel", rz=rz, base=True)         # on the camera-side flank
+    _trefoil(m, c, rz, -0.04 * k, r + 0.0065 * k, zc, 0.044 * k)
 
 
 # ---- ion cannon ----------------------------------------------------------------------------------------------------------
@@ -192,8 +201,8 @@ def chain(m, c, z, rz, k):
     for i in range(3):                                                                             # forked prongs
         a = rz + i * math.tau / 3
         tx, ty = c[0] + 0.08 * k * math.cos(a), c[1] + 0.08 * k * math.sin(a)
-        tube(m, (c[0], c[1], z + 0.125 * k), (tx, ty, z + 0.2 * k), 0.011 * k, "upSteel", sides=6)
-        m.cyl((tx, ty, z + 0.195 * k), 0.016 * k, 0.026 * k, "upVio", sides=6, top="upVioG")                      # the arc tips
+        tube(m, (c[0], c[1], z + 0.125 * k), (tx, ty, z + 0.2 * k), 0.016 * k, "upSteel", sides=6)
+        m.cyl((tx, ty, z + 0.19 * k), 0.024 * k, 0.034 * k, "upVio", sides=6, top="upVioG")                      # the arc tips
 
 
 # ---- incendiary ------------------------------------------------------------------------------------------------------------
@@ -227,39 +236,47 @@ def _builder(unit, layout):
     return lambda m, size: place(m, size, unit, layout)
 
 
-# Icons: (heading rz, tilt about the screen-right axis) per item: upright parts turned to show two faces, long parts laid
-# across the view and tipped up so their length and their working end read.
+# Icons: (heading rz, tilt about the screen-right axis, roll about the view axis) per item: upright parts turned to show two
+# faces; long parts laid across the view, tipped up, and rolled to a diagonal (working end up-right) so they fill the box.
 ICON_PX = 38
-ICON_VIEW = {"capacitor": (-0.55, 0.0), "coolant": (0.4, 0.0), "housing": (0.5, 0.0), "prism": (0.25, 0.0),
-             "focus": (-0.45, 0.25), "frag": (0.4, 0.0), "rail": (-0.45, 0.3), "nuke": (-0.45, 0.25),
-             "chain": (0.3, 0.0), "thermite": (-0.6, 0.0)}
+ICON_VIEW = {"capacitor": (-0.55, 0.0, 0.0), "coolant": (0.4, 0.0, 0.0), "housing": (0.5, 0.0, 0.0), "prism": (0.25, 0.0, 0.0),
+             "focus": (-0.45, 0.25, 0.35), "frag": (0.4, 0.0, 0.0), "rail": (-0.45, 0.3, 0.55), "nuke": (-0.45, 0.25, 0.55),
+             "chain": (0.3, 0.0, 0.0), "thermite": (-0.6, 0.0, 0.0)}
+VIEW_AXIS = Vector((math.cos(math.radians(30)) * math.sqrt(0.5), math.cos(math.radians(30)) * math.sqrt(0.5),
+                    math.sin(math.radians(30))))   # towards the camera (yaw 45, elevation 30), grid frame
 
 
 # An icon sits on the dark UI panel and the UI draws it from the colour sheet alone (no glow sheet): its darkest steels go a
-# step up, and its glowing parts are painted in their solid colour so they stay bright.
-ICON_LIFT = {"upBlack": "upGun", "upGun": "upSteelD",
-             "upYelG": "upYelB", "upCyG": "upCy", "upHot": "upAmb", "upVioG": "upVio", "upOrG": "upAmb"}
+# step up, and its glowing parts go into a second, unlit mesh in a bright solid colour, so every face of them stays bright.
+ICON_LIFT = {"upBlack": "upGun", "upGun": "upSteelD"}
+ICON_GLOW = {"upYelG": "upYelB", "upCyG": "upCy", "upHot": "upAmb", "upVioG": "upVioB", "upOrG": "upAmb"}   # drawn unlit
 
 
 def _icon(name, unit):
     import bpy
-    rz, tilt = ICON_VIEW[name.removeprefix("upg_")]
-    m = core.Mesh(f"{name}_icon")
+    rz, tilt, roll = ICON_VIEW[name.removeprefix("upg_")]
+    m, lit = core.Mesh(f"{name}_icon"), core.Mesh(f"{name}_icon_lit", flat=True)
+    solid = m.poly
+    m.poly = lambda pts, color, flip=False: lit.poly(pts, ICON_GLOW[color], flip) if color in ICON_GLOW else solid(pts, color, flip)
     core.REMAP.update(ICON_LIFT)
     try:
         unit(m, (0.0, 0.0), 0.0, rz, 1.0)
     finally:
         for key in ICON_LIFT:
             core.REMAP.pop(key, None)
-    ob = m.build()
-    if tilt:                                    # tip the far end up, about the axis across the camera's view
-        ob.data.transform(Matrix.Rotation(tilt, 4, Vector((1.0, -1.0, 0.0)).normalized()))
+    obs = [m.build()] + ([lit.build()] if lit.f else [])
+    for ob in obs:
+        if tilt:                                # tip the far end up, about the axis across the camera's view
+            ob.data.transform(Matrix.Rotation(tilt, 4, Vector((1.0, -1.0, 0.0)).normalized()))
+        if roll:                                # turn it on the screen, working end up
+            ob.data.transform(Matrix.Rotation(roll, 4, core.G(*VIEW_AXIS) - core.G(0, 0, 0)))
     bpy.context.view_layer.update()
-    x0, x1, y0, y1 = core.extent_px([ob])
+    x0, x1, y0, y1 = core.extent_px(obs)
     k = (ICON_PX - 2) / max(x1 - x0, y1 - y0)   # (the outline adds a px each side)
-    ob.data.transform(Matrix.Scale(k, 4))       # baked into the mesh, so the render cache sees it
+    for ob in obs:
+        ob.data.transform(Matrix.Scale(k, 4))   # baked into the mesh, so the render cache sees it
     bpy.context.view_layer.update()
-    return [ob]
+    return obs
 
 
 def jobs():

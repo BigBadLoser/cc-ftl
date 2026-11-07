@@ -3476,5 +3476,9 @@
  "upYelB": {
   "hex": "#fff27a",
   "set": "upgrades"
+ },
+ "upVioB": {
+  "hex": "#c4b4ff",
+  "set": "upgrades"
  }
 }
