@@ -14,13 +14,14 @@ from .wall3d_iwin import _clip
 
 RUN = 5 / 32            # the sill's crest: from the lip's top at a post down to the ramp's top over this far along
                         # the wall (the lip cut down), then on at that slope into the ramp ...
-FLOOR = 7 * PZ          # ... to this far under the ramp's top (the window's floor), then level
+FLOOR = 3 * PZ          # ... to this far under the ramp's top (the window's floor), then level
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
 POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wH"         # the sill's level top (the light)
-SLOPE_TOP = "wS"        # the sill's top where it slopes down from a post (a step under)
+LIP_SLOPE = "wS"        # the sill's top where it slopes down from a post: off the lip (a step under) ...
+RAMP_SLOPE = "wL"       # ... and on into the ramp (between)
 BEAM_UNDER = "wK"       # the beam's underside (the black)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
@@ -137,7 +138,7 @@ def hook(k, sp, own=True):
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
         w0, w1 = (yf + _width(h, (h0 + h1) / 2) for h in (h0, h1))
         _quad(k, [(u0, -w0, h0), (u1, -w1, h1), (u1, w1, h1), (u0, w0, h0)], (0, 0, 1),
-              SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
+              SILL_TOP if abs(h1 - h0) < 1e-9 else LIP_SLOPE if (h0 + h1) / 2 > T.lip_heights(zs)[0] else RAMP_SLOPE)
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
