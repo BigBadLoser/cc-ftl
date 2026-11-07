@@ -43,13 +43,14 @@
         <span class="body">{a.text}</span>
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
-    {:else if a.ask && !toast}
-      {@const crew = a.ask.crew}
-      <div class="ask">
+    {:else if a.actions?.length && !toast}
+      <!-- An alert that answers itself: the message, then its actions (primary first) under it; the close X stays top right. -->
+      <div class="acts">
         <button class="go" onclick={() => jump(a)}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
-        <div class="yn">
-          <button class="no" data-testid="join-decline" onclick={() => api.dispatch({ type: 'jobs.join', crew, accept: false })}>Decline</button>
-          <button class="yes" data-testid="join-accept" onclick={() => api.dispatch({ type: 'jobs.join', crew, accept: true })}>Accept</button>
+        <div class="row">
+          {#each a.actions as act (act.label)}
+            <button class="act {act.tone}" data-testid="alert-action" data-tone={act.tone} onclick={() => api.dispatch(act.command)}>{act.label}</button>
+          {/each}
         </div>
       </div>
     {:else}
@@ -98,11 +99,13 @@
   .go.story .tap { display: block; color: var(--cyan); margin-top: 2px; }
   .alert:has(.story) { border-color: var(--cyan); }
   .alert:has(.story:disabled) { border-color: var(--line); }
-  .ask { flex: 1; min-width: 0; display: grid; }
-  .yn { display: flex; justify-content: flex-end; gap: 4px; padding: 0 6px 6px; }
-  .alert .yn button { min-height: 26px; padding: 0 10px; border: 1px solid var(--line); font-size: 12px; }
-  .alert .yn .yes { border-color: var(--cyan); color: var(--cyan); }
-  .alert:has(.ask) { border-color: var(--cyan); }
+  /* Alerts with actions: the X sits top right (not centred on the taller card); the actions line up under the text, after the icon. */
+  .alert:has(.acts) { align-items: flex-start; border-color: var(--cyan); }
+  .acts { flex: 1; min-width: 0; display: grid; }
+  .acts .row { display: flex; gap: 6px; padding: 0 8px 8px 32px; }
+  .alert .act { min-height: 26px; padding: 0 12px; border: 1px solid currentColor; font-size: 12px; font-weight: 600; }
+  .alert .act.good { color: var(--green); }
+  .alert .act.bad { color: var(--red); }
   .x { min-width: 32px; padding: 0; color: var(--dim); display: inline-flex; align-items: center; justify-content: center; }
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); }

@@ -57,7 +57,7 @@ export interface Alerts {
   sync(): void;
 }
 
-interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice']; ask?: UiAlert['ask'] }
+interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice']; actions?: UiAlert['actions'] }
 
 /** Turns urgent sim events into a short, deduplicated alert queue that clears itself (UI-side only; never feeds the sim). */
 export function createAlerts(sim: Sim): Alerts {
@@ -128,7 +128,9 @@ export function createAlerts(sim: Sim): Alerts {
         if (!def || e.mode !== 'notice' || e.notice <= 0) return null;
         return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title } };
       }
-      case 'crew.asksToJoin': return { kind: e.type, key: `j${e.crew}`, text: `${e.name || crewName(e.crew)} asks to join the crew`, subject: crewSubject(sim, e.crew), resolved: () => !askingToJoin(sim, e.crew), ask: { crew: e.crew } };
+      case 'crew.asksToJoin': return { kind: e.type, key: `j${e.crew}`, text: `${e.name || crewName(e.crew)} asks to join the crew`, subject: crewSubject(sim, e.crew), resolved: () => !askingToJoin(sim, e.crew),
+        actions: [{ label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: e.crew, accept: true } }, { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: e.crew, accept: false } }],
+      };
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
       case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
@@ -274,7 +276,7 @@ export function createAlerts(sim: Sim): Alerts {
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}), ...(d.ask ? { ask: d.ask } : {}) }, ...l]);
+        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}), ...(d.actions ? { actions: d.actions } : {}) }, ...l]);
         if (d.resolved) resolvers.set(id, d.resolved);
         else setTimeout(() => remove(id), EXPIRE_MS); // nothing to watch (a story lead): it lapses on a timer
         for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);

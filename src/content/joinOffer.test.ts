@@ -13,9 +13,12 @@ import { content } from '.';
 
 /** A passenger asks to join (#173 step 6, slice 5): on delivery, or while aboard after a good stretch; once per person. */
 
-type Seen = { asks: number[]; sent: number; joined: number[] };
+type Seen = { asks: number[]; sent: number; joined: number[]; mood?: { crew: number; value: number } };
 const step = (sim: Sim, seen: Seen, n = 1): void => {
   for (let i = 0; i < n; i++) {
+    // A passenger's mood held where the test wants it (the mood system recomputes it now and then).
+    const m = seen.mood && sim.world.get(seen.mood.crew, MoodC);
+    if (m && seen.mood) m.value = seen.mood.value;
     sim.step();
     for (const e of sim.events.drain()) {
       if (e.type === 'crew.asksToJoin') seen.asks.push(e.crew);
@@ -62,9 +65,10 @@ function visit(sim: Sim, seen: Seen, node: string): void {
   }
 }
 
-/** Accepted passage, flown to the destination: they ask there. */
-function atDestination(seed: number): { sim: Sim; crew: number; seen: Seen; job: number } {
+/** Accepted passage, flown to the destination (`glad`: in a good mood, so they ask there). */
+function atDestination(seed: number, glad = true): { sim: Sim; crew: number; seen: Seen; job: number } {
   const { sim, crew, seen } = aboard(seed);
+  seen.mood = { crew, value: glad ? 90 : 40 };
   const c = sim.galaxy.posted![0]!;
   sim.enqueue({ type: 'jobs.accept', key: c.key });
   step(sim, seen);
@@ -100,6 +104,13 @@ describe('a passenger asks to join', () => {
     expect(sim.world.has(crew, CrewC)).toBe(false);
     expect(seen.sent).toBeGreaterThan(0);
     expect(seen.asks).toEqual([crew]);
+  });
+
+  it('on delivery in a poor mood: no ask, the handover goes ahead', () => {
+    const { sim, crew, seen } = atDestination(7, false);
+    for (let i = 0; i < 20 * 400 && sim.world.has(crew, CrewC); i++) step(sim, seen);
+    expect(seen.asks).toEqual([]);
+    expect(sim.world.has(crew, CrewC)).toBe(false);
   });
 
   it('left unanswered, the ask lapses as a no', () => {

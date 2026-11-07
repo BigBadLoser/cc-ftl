@@ -10,7 +10,7 @@ import type { StationJob } from './types';
 
 /**
  * A passenger asks to join the crew (DESIGN.md "Medical pod", decision 8; #173). Once per person, at one of two moments: while aboard, once their mood has
- * stayed above JOIN_MOOD for JOIN_HAPPY_SEC (one seeded roll, JOIN_CHANCE), or on delivery, before the handover at their port. The ask waits for the player
+ * stayed above JOIN_MOOD for JOIN_HAPPY_SEC (one seeded roll, JOIN_CHANCE), or on delivery, before the handover at their port, if their mood is above it then. The ask waits for the player
  * (an urgent alert: `jobs.join`), at most JOIN_WAIT_SEC (then it is a no). Yes makes them crew with their own skills (the recruit run's `becomeCrew`), their
  * passage closed with neither fare nor penalty. No keeps the passage as it was. The state of it is on their passage grant (`Grant.carry`).
  */
@@ -32,6 +32,9 @@ function ask(sim: Sim, crew: number, c: Carry): void {
   sim.events.emit({ type: 'crew.asksToJoin', crew, name: sim.world.get(crew, CrewC)?.name ?? '' });
 }
 
+/** The one condition for asking, aboard or at delivery: their mood is above JOIN_MOOD now. */
+const happy = (sim: Sim, crew: number): boolean => (sim.world.get(crew, MoodC)?.value ?? 0) > JOIN_MOOD;
+
 /** Once a second for each carried person aboard (scene/carried.ts): their mood, the roll, and an ask left unanswered too long (a no). */
 export function considerJoining(sim: Sim, crew: number, c: Carry): void {
   if (c.asking !== undefined) {
@@ -39,8 +42,7 @@ export function considerJoining(sim: Sim, crew: number, c: Carry): void {
     return;
   }
   if (c.asked || c.rolled) return;
-  const mood = sim.world.get(crew, MoodC)?.value ?? 0;
-  if (mood <= JOIN_MOOD) {
+  if (!happy(sim, crew)) {
     delete c.happySince;
     return;
   }
@@ -50,11 +52,14 @@ export function considerJoining(sim: Sim, crew: number, c: Carry): void {
   if (unit(sim.seed, SALT, crew) < JOIN_CHANCE) ask(sim, crew, c);
 }
 
-/** At the passage's destination, before the handover: true while the passenger's ask holds it (asked now, the first time, or still waiting for an answer). */
+/**
+ * At the passage's destination, before the handover: true while the passenger's ask holds it (asked now, the first time and only if they are happy, as
+ * aboard; or still waiting for an answer).
+ */
 export function holdForJoin(sim: Sim, job: StationJob): boolean {
   const c = job.crew === undefined ? undefined : carryOf(sim, job.crew);
   if (!c || job.crew === undefined) return false;
-  if (!c.asked) ask(sim, job.crew, c);
+  if (!c.asked && happy(sim, job.crew)) ask(sim, job.crew, c);
   return c.asking !== undefined;
 }
 

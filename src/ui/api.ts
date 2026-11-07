@@ -1234,8 +1234,15 @@ export interface UiAlert {
   report?: boolean;
   /** A click opens the Esc menu on this page (the save-failed alert opens Save game). */
   menu?: 'save';
-  /** A passenger asks to join the crew: the alert answers it (`jobs.join`) with its own Accept and Decline buttons. */
-  ask?: { crew: number };
+  /** Answers the alert takes itself (a passenger asking to join: Accept, Decline), primary first; each sends its command. */
+  actions?: UiAlertAction[];
+}
+
+/** One answer on an alert: its label, good (the yes) or bad (the no), and the command it sends. */
+export interface UiAlertAction {
+  label: string;
+  tone: 'good' | 'bad';
+  command: Command;
 }
 
 /** One module or crew member in a fight report; a click jumps to `subject` when it has one. */

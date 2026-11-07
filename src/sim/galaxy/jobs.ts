@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { reputationOf } from '../story/state';
+import { applyEffect } from '../story/effects';
 import { bumpStat } from '../story/goals';
 import { CRATE, crateOf, loadCrate, recoverCrate, unloadCrate } from './crate';
 import { addNotoriety, tallyLosses } from './heat';
@@ -43,9 +43,9 @@ export function crateAboard(sim: Sim, jobId: number): boolean {
 
 const reject = (sim: Sim, command: string, reason: string): false => (sim.events.emit({ type: 'command.rejected', command, reason }), false);
 
+/** A job moves standing with a faction: through the shared `reputation` effect, so the log names the faction ("Free Traders standing +1"). */
 function standing(sim: Sim, faction: string, delta: number): void {
-  const key = repKey(sim, faction);
-  sim.story.reputation[key] = reputationOf(sim.story, key) + delta;
+  applyEffect(sim, { type: 'reputation', faction: repKey(sim, faction), delta }, { event: 'job', actor: null });
 }
 
 /** Pirate factions at war with `target` (other than `issuer`) think better of the player: they took a rival down. */
