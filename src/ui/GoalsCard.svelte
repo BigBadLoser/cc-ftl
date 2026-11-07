@@ -58,12 +58,12 @@
 </script>
 
 {#if finished}
-  <section class="card done-act" data-testid="goals-finished">
+  <section class="card hud-fade done-act" data-testid="goals-finished">
     <p class="head"><Icon name="check" size={16} />{finished.title}: complete</p>
     {#if finished.reward}<p class="reward">{finished.reward}</p>{/if}
   </section>
 {:else if goals}
-  <section class="card" class:chip={narrow && collapsed} data-testid="goals">
+  <section class="card hud-fade" class:chip={narrow && collapsed} data-testid="goals">
     <div class="head">
       <button class="title" onclick={toggle} aria-expanded={!collapsed} data-testid="goals-toggle">
         <span class="act">Act {goals.act}/{goals.acts} · {doneCount}/{goals.goals.length} done</span>
@@ -97,11 +97,11 @@
 {/if}
 
 <style>
-  .card { box-sizing: border-box; width: 100%; padding: 6px 8px; background: var(--panel); border: 1px solid var(--line-hi); pointer-events: auto; }
-  .done-act { border-color: var(--green); }
+  .card { pointer-events: auto; }
+  .done-act { box-shadow: inset -2px 0 0 var(--green); }
   .head { display: flex; align-items: center; gap: 6px; margin: 0; }
   .done-act .head { color: var(--green); font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
-  .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
+  .title { flex: 1; display: flex; align-items: center; gap: 6px; min-height: 18px; padding: 0; border: 0; background: none; text-align: left; color: var(--text); }
   .act { font: 600 11px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); white-space: nowrap; }
   .name { font: 600 13px var(--head-font); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .x { min-width: 28px; min-height: 28px; padding: 0; border: 0; background: none; color: var(--dim); }
