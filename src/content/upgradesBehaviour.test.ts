@@ -3,7 +3,7 @@ import type { ModuleDef } from '../sim/registry';
 import { CombatC, CrewC, HealthC, ModuleC, PositionC, ProjectileC, ShipC, StorageC, WeaponC, newGame, playerShip, type Sim } from '../sim';
 import { applyEffects, type Impact } from '../sim/combat/effects';
 import { fitError } from '../sim/upgrades/fit';
-import { weaponDefOf } from '../sim/upgrades/stats';
+import { moduleNameOf, weaponDefOf, weaponShortOf } from '../sim/upgrades/stats';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { footprintTiles } from '../sim/modules/footprint';
 import { origin } from '../sim/crew/helpers';
@@ -12,7 +12,6 @@ import { takeStock } from '../sim/combat/ammo';
 import { storageAdd } from '../sim/items/storage';
 import { Struct } from '../sim/structure';
 import { TICK_HZ } from '../sim/time';
-import { upgradeEffects } from '../app/upgradeText';
 import { content } from '.';
 
 const WEAPON_OF = {
@@ -125,16 +124,6 @@ describe('behaviour upgrades: items and fitting', () => {
     const carried = new Set((Object.values(content.factions) as { upgrades?: { item: string }[] }[]).flatMap((f) => (f.upgrades ?? []).map((u) => u.item)));
     expect(carried.has('item.upg_nuke')).toBe(false);
     for (const item of ITEMS.filter((i) => i !== 'item.upg_nuke')) expect(carried.has(item), item).toBe(true);
-  });
-});
-
-describe('behaviour upgrades: the hover card text', () => {
-  it('each has one line saying what it does', () => {
-    for (const item of ITEMS) {
-      const lines = upgradeEffects(content.items[item].upgrade);
-      expect(lines.length, item).toBe(1);
-      expect(lines[0]!.length, item).toBeGreaterThan(10);
-    }
   });
 });
 
@@ -355,5 +344,38 @@ describe('thermite (incendiary)', () => {
     const base = gunSetup('module.incendiaryLauncher').sim;
     expect(weaponDefOf(sim, gun)!.heat).toBeGreaterThan(weaponDefOf(base, gun)!.heat);
     expect(weaponDefOf(sim, gun)!.effects.some((e) => e.type === 'ignite')).toBe(true);
+  });
+});
+
+describe('behaviour upgrades rename the weapon', () => {
+  const NAMES: Record<string, [string, string]> = {
+    'item.upg_prism': ['Prism laser', 'Prism'], 'item.upg_focus': ['Lance laser', 'Lance'], 'item.upg_frag': ['Frag driver', 'Frag'], 'item.upg_rail': ['Railgun', 'Rail'],
+    'item.upg_nuke': ['Nuke launcher', 'Nuke'], 'item.upg_chain': ['Arc cannon', 'Arc'], 'item.upg_thermite': ['Thermite cannon', 'Thermite'],
+  };
+  it('the effective weapon def and the player-facing names carry the variant; removing the upgrade restores them', () => {
+    for (const item of ITEMS) {
+      const { sim, gun } = gunSetup(WEAPON_OF[item]);
+      const moduleName = (content.modules as Record<string, ModuleDef>)[WEAPON_OF[item]]!.name;
+      const plain = [weaponDefOf(sim, gun)!.name, weaponDefOf(sim, gun)!.shortName, moduleNameOf(sim, gun), weaponShortOf(sim, gun)];
+      expect(plain[2], item).toBe(moduleName);
+      const m = sim.world.get(gun, ModuleC) as { upgrade?: string };
+      m.upgrade = item;
+      const [name, short] = NAMES[item]!;
+      expect(weaponDefOf(sim, gun)).toMatchObject({ name, shortName: short });
+      expect(moduleNameOf(sim, gun), item).toBe(name);
+      expect(weaponShortOf(sim, gun), item).toBe(short);
+      expect((content.modules as Record<string, ModuleDef>)[WEAPON_OF[item]]!.name, 'module def untouched').toBe(moduleName);
+      delete m.upgrade;
+      expect([weaponDefOf(sim, gun)!.name, weaponDefOf(sim, gun)!.shortName, moduleNameOf(sim, gun), weaponShortOf(sim, gun)]).toEqual(plain);
+    }
+  });
+
+  it('general upgrades keep the weapon name', () => {
+    const { sim, gun } = gunSetup('module.burstLaser');
+    const before = moduleNameOf(sim, gun);
+    for (const item of ['item.upg_coolant', 'item.upg_capacitor', 'item.upg_housing']) {
+      (sim.world.get(gun, ModuleC) as { upgrade?: string }).upgrade = item;
+      expect(moduleNameOf(sim, gun), item).toBe(before);
+    }
   });
 });

@@ -66,7 +66,7 @@
           {@const row = enemyWeaponRow(w)}
           {@const shot = row.shotColor ? hex(w.color) : null}
           <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
-            <span class="nm"><span class="t">{w.name}</span>{#if w.upgrade}<UpgradeTip {api} upgrade={w.upgrade} size={13} testid="enemy-upgrade" />{/if}</span>
+            <span class="nm"><span class="t">{#if w.upgrade?.renames}<UpgradeTip {api} upgrade={w.upgrade} label={w.name} testid="enemy-upgrade" />{:else}{w.name}{/if}</span>{#if w.upgrade && !w.upgrade.renames}<UpgradeTip {api} upgrade={w.upgrade} size={13} testid="enemy-upgrade" />{/if}</span>
             {#if w.eta !== null}
               <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
             {:else}

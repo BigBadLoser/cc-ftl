@@ -49,3 +49,17 @@ export function firedWeapon(sim: Sim, moduleId: number, weapon: string): WeaponD
 export function damageTakenMul(sim: Sim, moduleId: number): number {
   return upgradeOf(sim, moduleId)?.mods.damageTakenMul ?? 1;
 }
+
+/**
+ * The name the player sees for a module: for a weapon whose fitted upgrade renames it (a behaviour upgrade's variant, `mods.weapon.name`) that name, else the
+ * module def's own. The module def itself is never renamed.
+ */
+export function moduleNameOf(sim: Sim, moduleId: number): string {
+  const m = sim.world.get(moduleId, ModuleC);
+  return upgradeOf(sim, moduleId)?.mods.weapon?.name ?? (m && sim.content.modules[m.def]?.name) ?? 'Module';
+}
+
+/** The one-line name of a weapon module for its card: the effective weapon def's `shortName` (an upgrade may patch it), else its display name. */
+export function weaponShortOf(sim: Sim, moduleId: number): string {
+  return weaponDefOf(sim, moduleId)?.shortName ?? moduleNameOf(sim, moduleId);
+}

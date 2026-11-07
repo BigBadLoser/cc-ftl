@@ -104,12 +104,13 @@ export function createSectorFx(
     return { x: p.x, y: p.y - b.alt * Z_PX + 10 * S };
   };
 
-  function flash(assetId: string, x: number, y: number, scale: number, peak = 1): void {
+  function flash(assetId: string, x: number, y: number, scale: number, peak = 1, recolour?: number): void {
     const art = resolveArt(atlas, [assetId]);
     if (!art) return;
     const spr = new Sprite(art.s.tex);
     spr.blendMode = 'add';
     spr.tint = art.tint;
+    if (recolour !== undefined) recolor(spr, recolour); // an upgraded shot's blast, through the bolt's own recolour
     spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
     spr.position.set(Math.round(x), Math.round(y));
     spr.scale.set(art.scale * scale);
@@ -155,7 +156,7 @@ export function createSectorFx(
           if (w && !w.shield.bypass && (world.get(e.ship, CombatC)?.shield.layers ?? 0) > 0) shields.hit(e.ship, 'pierce', shots.get(e.projectile)?.from);
           particles.burst(burst(col, 90 * Math.sqrt(k)), c.x, c.y - 10 * S, Math.round(14 * k), 8 * k);
           particles.burst(burst(0xffffff, 60), c.x, c.y - 10 * S, Math.round(6 * k), 6 * k);
-          flash('fx.explosion_small', c.x, c.y - 10 * S, k);
+          flash('fx.explosion_small', c.x, c.y - 10 * S, k, 1, looks.get(e.projectile)?.tint);
         } else if (e.type === 'projectile.arc') {
           tracers.push({ a: tileArt(e.x, e.y), b: tileArt(e.tx, e.ty), age: 0, arc: looks.get(e.projectile)?.tint ?? ARC_COLOR });
         } else if (e.type === 'ship.blast') {

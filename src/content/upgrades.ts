@@ -9,17 +9,17 @@ import { behaviourItems, behaviourRecipes, behaviourResearch } from './upgradesB
 export const upgradeItems = {
   'item.upg_coolant': {
     name: 'Coolant jacket', tags: ['upgrade'], stackSize: 4, price: 120, tier: 2,
-    upgrade: { slot: 'weapon', mods: { heatMul: 0.7 } },
+    upgrade: { slot: 'weapon', blurb: 'Adds 30% less heat to the ship per volley', mods: { heatMul: 0.7 } },
     placeholderIcon: { as: 'item.parts', tint: '#4fc3ff' },
   },
   'item.upg_capacitor': {
     name: 'Quick capacitor', tags: ['upgrade'], stackSize: 4, price: 140, tier: 2,
-    upgrade: { slot: 'weapon', mods: { chargeMul: 0.85 } },
+    upgrade: { slot: 'weapon', blurb: 'Charges 15% faster', mods: { chargeMul: 0.85 } },
     placeholderIcon: { as: 'item.electronics', tint: '#ffd23f' },
   },
   'item.upg_housing': {
     name: 'Hardened housing', tags: ['upgrade'], stackSize: 4, price: 130, tier: 2,
-    upgrade: { slot: 'weapon', mods: { damageTakenMul: 0.5 } },
+    upgrade: { slot: 'weapon', blurb: 'Takes half damage from hits and ion', mods: { damageTakenMul: 0.5 } },
     placeholderIcon: { as: 'item.metal', tint: '#9fb4c8' },
   },
   ...behaviourItems,

@@ -22,7 +22,7 @@ export const behaviourItems = {
     // Five shots instead of three, each 40% weaker, at +50% heat.
     upgrade: {
       slot: 'weapon', blurb: 'Five shots instead of three, each 40% weaker; +50% heat', fits: ['weapon.burstLaser'],
-      mods: { heatMul: 1.5, weapon: { shots: 5, shotDelaySec: 0.2, effects: scaled(laser.effects, 0.6), look: { tint: 0xd49cff, trail: 1.5 } } },
+      mods: { heatMul: 1.5, weapon: { name: 'Prism laser', shortName: 'Prism', shots: 5, shotDelaySec: 0.2, effects: scaled(laser.effects, 0.6), look: { tint: 0xd49cff, trail: 1.5 } } },
     },
     placeholderIcon: { as: 'item.electronics', tint: '#d49cff' },
   },
@@ -31,7 +31,7 @@ export const behaviourItems = {
     // Two shots, each passing one shield layer, 25% harder (a call: two bolts at the base damage would be a downgrade off-shield), charging 40% slower.
     upgrade: {
       slot: 'weapon', blurb: 'Two heavier shots, each passes one shield layer; slower charge', fits: ['weapon.burstLaser'],
-      mods: { chargeMul: 1.4, weapon: { shots: 2, shotDelaySec: 0.4, shield: { damage: 1, pierce: 1 }, effects: scaled(laser.effects, 1.25), look: { tint: 0xfff2c0, blast: 1.3 } } },
+      mods: { chargeMul: 1.4, weapon: { name: 'Lance laser', shortName: 'Lance', shots: 2, shotDelaySec: 0.4, shield: { damage: 1, pierce: 1 }, effects: scaled(laser.effects, 1.25), look: { tint: 0xfff2c0, blast: 1.3 } } },
     },
     placeholderIcon: { as: 'item.electronics', tint: '#fff2c0' },
   },
@@ -42,6 +42,7 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'Bigger blast, harder on crew and modules; no longer passes a shield layer', fits: ['weapon.massDriver'],
       mods: {
         weapon: {
+          name: 'Frag driver', shortName: 'Frag',
           shield: { damage: 1, pierce: 0 },
           effects: [
             { type: 'hullDamage', amount: 260, radius: 2, falloff: 0.6 },
@@ -58,7 +59,7 @@ export const behaviourItems = {
     // Passes two shield layers and flies two and a half times faster; runs very hot (2.2x heat).
     upgrade: {
       slot: 'weapon', blurb: 'Passes two shield layers and flies much faster; runs very hot', fits: ['weapon.massDriver'],
-      mods: { heatMul: 2.2, weapon: { speed: driver.speed * 2.5, shield: { damage: 1, pierce: 2 }, look: { tint: 0x9fe8ff, trail: 2 } } },
+      mods: { heatMul: 2.2, weapon: { name: 'Railgun', shortName: 'Rail', speed: driver.speed * 2.5, shield: { damage: 1, pierce: 2 }, look: { tint: 0x9fe8ff, trail: 2 } } },
     },
     placeholderIcon: { as: 'item.electronics', tint: '#9fe8ff' },
   },
@@ -70,6 +71,7 @@ export const behaviourItems = {
       mods: {
         heatMul: 1.5,
         weapon: {
+          name: 'Nuke launcher', shortName: 'Nuke',
           ammoPerShot: 2,
           effects: [
             { type: 'hullDamage', amount: 260, radius: 3, falloff: 0.5 },
@@ -86,7 +88,7 @@ export const behaviourItems = {
     // The ion bolt arcs from the module it hits into the three nearest crew within 4 tiles (not when a shield took the hit); +40% heat.
     upgrade: {
       slot: 'weapon', blurb: 'The ion arcs from the hit module into nearby crew; +40% heat', fits: ['weapon.ion'],
-      mods: { heatMul: 1.4, weapon: { effects: [...ion.effects, { type: 'arc', amount: 14, radius: 4, targets: 3, ifNoDrain: true }], look: { tint: 0xb48aff, blast: 1.2 } } },
+      mods: { heatMul: 1.4, weapon: { name: 'Arc cannon', shortName: 'Arc', effects: [...ion.effects, { type: 'arc', amount: 14, radius: 4, targets: 3, ifNoDrain: true }], look: { tint: 0xb48aff, blast: 1.2 } } },
     },
     placeholderIcon: { as: 'item.electronics', tint: '#b48aff' },
   },
@@ -97,7 +99,7 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'Real hull damage on top of the fire, so it breaches as well as burns; more heat', fits: ['weapon.incendiary'],
       mods: {
         heatMul: 1.5,
-        weapon: { effects: [{ type: 'hullDamage', amount: 200, radius: 1, falloff: 0.4 }, ...fire.effects.filter((e) => e.type !== 'hullDamage')], look: { tint: 0xff2a00, blast: 1.4, trail: 1.8 } },
+        weapon: { name: 'Thermite cannon', shortName: 'Thermite', effects: [{ type: 'hullDamage', amount: 200, radius: 1, falloff: 0.4 }, ...fire.effects.filter((e) => e.type !== 'hullDamage')], look: { tint: 0xff2a00, blast: 1.4, trail: 1.8 } },
       },
     },
     placeholderIcon: { as: 'item.parts', tint: '#ff5a1a' },

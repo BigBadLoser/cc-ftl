@@ -66,8 +66,8 @@
 >
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
-    <span class="nm">{label}</span>
-    {#if compact && weapon.upgrade}<UpgradeTip {api} upgrade={weapon.upgrade} size={13} />{/if}
+    <span class="nm">{#if weapon.upgrade?.renames}<UpgradeTip {api} upgrade={weapon.upgrade} label={label} />{:else}{label}{/if}</span>
+    {#if compact && weapon.upgrade && !weapon.upgrade.renames}<UpgradeTip {api} upgrade={weapon.upgrade} size={13} />{/if}
     {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
@@ -79,7 +79,7 @@
     <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
-    {#if weapon.upgrade}<UpgradeTip {api} upgrade={weapon.upgrade} size={14} />{/if}
+    {#if weapon.upgrade && !weapon.upgrade.renames}<UpgradeTip {api} upgrade={weapon.upgrade} size={14} />{/if}
     </span>
   {/if}
 </div>

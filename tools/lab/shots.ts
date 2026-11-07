@@ -54,7 +54,7 @@ function shotCell(ctx: LabCtx, label: string, note: string, weapon: string, def:
         const a = (i / Math.round(10 * look.blast)) * Math.PI * 2;
         g.circle(hx + Math.cos(a) * 18 * look.blast * S, hy + Math.sin(a) * 10 * look.blast * S, 2).fill({ color: i % 3 ? look.tint : 0xffffff, alpha: 0.9 });
       }
-      sprite('fx.explosion_small', hx, hy, look.blast);
+      sprite('fx.explosion_small', hx, hy, look.blast, def.look?.tint);
       if (arc) {
         const crew = [{ x: hx - 40, y: hy + 40 }, { x: hx + 10, y: hy + 50 }];
         for (const c of crew) {

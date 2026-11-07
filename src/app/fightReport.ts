@@ -1,6 +1,7 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, ShipC, factionsHostile, type Sim, type SimEvent } from '../sim';
+import { moduleNameOf } from '../sim/upgrades/stats';
 import type { Ship } from '../sim/combat/components';
 import { isDormant } from '../sim/combat/dormant';
 import { TICK_HZ } from '../sim/time';
@@ -76,6 +77,8 @@ export function createFightReporter(sim: Sim): FightReporter {
     for (const id of sim.world.query(CrewC, AllegianceC)) if (sim.world.get(id, AllegianceC)?.faction === 'player') c.crew.set(id, sim.world.get(id, CrewC)?.name ?? 'Crew');
   };
   const modName = (def: string) => sim.content.modules[def]?.name ?? 'Module';
+  /** A module's name as the player sees it (a weapon renamed by its upgrade), else its def's. */
+  const nameOf = (id: number, def: string) => (sim.world.has(id, ModuleC) ? moduleNameOf(sim, id) : modName(def));
   const hull = () => sim.world.get(home(), ShipC)?.integrity ?? 0;
   /** The enemy at the start: a hostile still in the fight by the rule combatStateSystem uses (no wreck, fled ship or dormant den), else 0. */
   const enemyOf = (): number => {
@@ -117,15 +120,15 @@ export function createFightReporter(sim: Sim): FightReporter {
     switch (e.type) {
       case 'module.destroyed': {
         const m = sim.world.get(e.moduleId, ModuleC);
-        if (c.ours.has(e.ship)) c.lost.push({ name: modName(e.def), subject: m ? tileAt(m.x, m.y) : shipSubject(sim, e.ship) });
-        else { c.enemy ||= e.ship; c.enemyLost.push({ name: modName(e.def), subject: shipSubject(sim, e.ship) }); }
+        if (c.ours.has(e.ship)) c.lost.push({ name: nameOf(e.moduleId, e.def), subject: m ? tileAt(m.x, m.y) : shipSubject(sim, e.ship) });
+        else { c.enemy ||= e.ship; c.enemyLost.push({ name: nameOf(e.moduleId, e.def), subject: shipSubject(sim, e.ship) }); }
         break;
       }
       case 'projectile.hit':
         if (!c.ours.has(e.ship)) c.enemy ||= e.ship;
         if (e.moduleId > 0 && e.ship === c.home) {
           const m = sim.world.get(e.moduleId, ModuleC);
-          if (m) c.damaged.set(e.moduleId, { name: modName(m.def), x: m.x, y: m.y });
+          if (m) c.damaged.set(e.moduleId, { name: nameOf(e.moduleId, m.def), x: m.x, y: m.y });
         }
         break;
       case 'weapon.fired': {

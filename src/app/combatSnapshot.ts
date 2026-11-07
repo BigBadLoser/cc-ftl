@@ -12,7 +12,7 @@ import { factionsHostile } from '../sim/combat/factions';
 import { commitCharge } from '../sim/combat/commit';
 import { homeShip } from '../sim/index';
 import { ROLE_LABEL } from './encounterSnapshot';
-import { weaponDefOf } from '../sim/upgrades/stats';
+import { moduleNameOf, weaponDefOf, weaponShortOf } from '../sim/upgrades/stats';
 import { fittingModules } from '../sim/upgrades/fit';
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
@@ -33,7 +33,7 @@ function modulesOf(sim: Sim, shipId: number): UiShipModule[] {
     if (!m || !def || shipIdOf(sim, m) !== shipId) continue;
     const kind = def.weapon ? 'weapon' : def.shieldGen ? 'shield' : def.engine ? 'engine' : 'other';
     if (kind === 'other' && !def.console) continue;
-    out.push({ id, name: def.name, kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC), powered: m.powered });
+    out.push({ id, name: moduleNameOf(sim, id), kind, hp: Math.round(m.hp), maxHp: def.maxHp, ion: sim.world.has(id, IonC), powered: m.powered });
   }
   return out;
 }
@@ -69,7 +69,7 @@ function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
     const wd = weaponDefOf(sim, id);
     if (!m || !w || !def || !wd || shipIdOf(sim, m) !== shipId) continue;
     out.push({
-      id, name: def.name, charge: round(w.charge), commitAt: round(commitCharge(wd.chargeSec)), committed: !!w.commit,
+      id, name: moduleNameOf(sim, id), charge: round(w.charge), commitAt: round(commitCharge(wd.chargeSec)), committed: !!w.commit,
       stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC), destroyed: m.hp <= 0,
       eta: w.commit ? (() => { const e = commitEtaSec(sim, id); return e === null ? null : round(e, 1); })() : null,
       fired: !w.commit && flying.has(id), color: shotColor(shotSlot(sim, id)), upgrade: upgradeInfo(sim, id),
@@ -135,7 +135,7 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
           const wd = weaponDefOf(sim, mid);
           const ammo = wd?.ammo;
           weapons.push({
-            id: mid, name: def.name, short: wd?.shortName ?? def.name, charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
+            id: mid, name: moduleNameOf(sim, mid), short: weaponShortOf(sim, mid), charge: round(w.charge), ammo: ammo ? ammoCount(sim, playerGrid, ammo) : null,
             upgrade: upgradeInfo(sim, mid), fitting: fittingModules(sim).has(mid), slot: def.upgradeSlot ?? null,
             mode: w.mode ?? 'auto', ion: sim.world.has(mid, IonC), powered: m.powered && m.enabled && m.hp > 0, target: label(sim, w.target), targetModuleId: w.target?.moduleId ?? 0, targetTile: w.target?.tile ?? null,
           });
@@ -184,5 +184,5 @@ function crewOnTheWay(sim: Sim, moduleId: number): string | null {
 export function upgradeInfo(sim: Sim, moduleId: number): UiUpgradeInfo | null {
   const item = sim.world.get(moduleId, ModuleC)?.upgrade;
   const def = item ? sim.content.items[item] : undefined;
-  return item ? { item, name: def?.name ?? item, effects: def?.upgrade ? upgradeEffects(def.upgrade) : [] } : null;
+  return item ? { item, name: def?.name ?? item, effects: def?.upgrade ? upgradeEffects(def.upgrade) : [], renames: !!def?.upgrade?.mods.weapon?.name } : null;
 }

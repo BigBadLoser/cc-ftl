@@ -24,7 +24,7 @@ const recolors = new Map<number, ColorMatrixFilter>();
 export function recolor(spr: Sprite, tint: number): void {
   let f = recolors.get(tint);
   if (!f) {
-    const k = 1.9; // brightness gain: additive bolts should glow
+    const k = 1.4; // brightness gain: additive bolts should glow
     const [r, g, b] = [(tint >> 16) & 255, (tint >> 8) & 255, tint & 255].map((c) => (c / 255) * k);
     const lum = [0.3, 0.59, 0.11];
     f = new ColorMatrixFilter();

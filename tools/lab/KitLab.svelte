@@ -10,7 +10,8 @@
   import { loadItemIcons } from '../../src/app/itemIcons';
   import { upgradeEffects } from '../../src/app/upgradeText';
   import type { ItemDef } from '../../src/sim';
-  import type { UiApi, UiIcon, UiShipCombat, UiUpgradeInfo } from '../../src/ui/api';
+  import WeaponCard from '../../src/ui/combat/WeaponCard.svelte';
+  import type { UiApi, UiIcon, UiShipCombat, UiUpgradeInfo, UiWeapon } from '../../src/ui/api';
 
   // The upgrade hover card needs only the item icons from the api: load the real ones (placeholders included) as the game does.
   let icons = $state<Record<string, UiIcon>>({});
@@ -18,7 +19,7 @@
   const upgradeIds = Object.keys(content.items).filter((i) => i.startsWith('item.upg_'));
   const info = (id: string): UiUpgradeInfo => {
     const d = (content.items as Record<string, ItemDef>)[id]!;
-    return { item: id, name: d.name, effects: d.upgrade ? upgradeEffects(d.upgrade) : [] };
+    return { item: id, name: d.name, effects: d.upgrade ? upgradeEffects(d.upgrade) : [], renames: !!d.upgrade?.mods.weapon?.name };
   };
   let ready = $state(false);
   onMount(async () => { icons = await loadItemIcons(upgradeIds, content.items as Record<string, ItemDef>); ready = true; });
@@ -30,9 +31,21 @@
     ship: 1, name, faction, klass, x: 0, y: 0, state: 'active', neutral, integrity: 0.82, shield: { layers: 0, max: 2, progress: 0.4 },
     heat: { value: 30, max: 100, lockout: 0, venting: 0, cooling: true, overcharge: { weapons: oc, shields: oc, engines: oc } },
     evasion: 0.16, hold: false, ftl: 0, ftlNeed: 0, target: null, modules: [],
-    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor', effects: [] } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: [] } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
+    charges: [{ ...gun(1, 'Burst laser', 0.7, true, 0xf08a9a), upgrade: { item: 'item.upg_capacitor', name: 'Quick capacitor', effects: ['Charges 15% faster'], renames: false } }, { ...gun(2, 'Missile launcher', 0.4, false, 0xffc06a), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: ['Adds 30% less heat to the ship per volley'], renames: false } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), stalled: true }],
   } as unknown as UiShipCombat);
+  const prism = { item: 'item.upg_prism', name: 'Prism splitter', effects: ['Five shots instead of three, each 40% weaker; +50% heat'], renames: true };
+  const renamedEnemy = ((): UiShipCombat => {
+    const e = ship('Navy frigate NA-0007', 'Navy', 'Frigate', false);
+    e.charges = [{ ...gun(1, 'Prism laser', 0.7, true, 0xf08a9a), upgrade: prism }, { ...gun(2, 'Railgun', 0.4, false, 0xffc06a), upgrade: { ...prism, item: 'item.upg_rail', name: 'Rail coil', effects: ['Passes two shield layers and flies much faster; runs very hot'] } }, { ...gun(3, 'Ion cannon', 0.2, false, 0x7ad0ff), upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: ['Adds 30% less heat to the ship per volley'], renames: false } }] as typeof e.charges;
+    return e;
+  })();
+  const weaponRow = [
+    { id: 1, name: 'Burst laser', short: 'Prism', charge: 0.6, ammo: null, upgrade: prism, fitting: false, slot: 'weapon', mode: 'auto', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xf08a9a },
+    { id: 2, name: 'Mass driver', short: 'Rail', charge: 1, ammo: null, upgrade: { ...prism, item: 'item.upg_rail', name: 'Rail coil', effects: ['Passes two shield layers and flies much faster; runs very hot'] }, fitting: false, slot: 'weapon', mode: 'hold', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0xffc06a },
+    { id: 3, name: 'Ion cannon', short: 'Ion cannon', charge: 0.3, ammo: null, upgrade: { item: 'item.upg_coolant', name: 'Coolant jacket', effects: ['Adds 30% less heat to the ship per volley'], renames: false }, fitting: false, slot: 'weapon', mode: 'auto', ion: false, powered: true, target: null, targetModuleId: 0, targetTile: null, fired: false, color: 0x7ad0ff },
+  ] as unknown as UiWeapon[];
   const cards = [
+    { e: renamedEnemy, pill: { text: 'Hostile', tone: 'red' } },
     { e: ship('Navy frigate NA-0005', 'Navy', 'Frigate', false), pill: { text: 'Hostile', tone: 'red' } },
     { e: ship('Raider', 'Enemy', null, false), pill: { text: 'Hostile', tone: 'red' } },
     { e: { ...ship('Kestrel', 'Free traders', 'Liner', false), friendly: true }, pill: { text: 'Friendly', tone: 'green' } },
@@ -109,6 +122,13 @@
   <div class="row top">
     {#each cards as c (c.e.name)}<EnemyCard {api} enemy={c.e} state={c.pill} onFrame={() => {}} />{/each}
   </div>
+
+  <h3>Weapon bar <small>a renamed weapon (Prism, Rail) shows its name as the marker and opens the card on hover; a general upgrade keeps its name and line symbol</small></h3>
+  {#if ready}
+    <div class="row top">
+      {#each weaponRow as w, i (w.id)}<div style="width:200px"><WeaponCard {api} weapon={w} label={w.short} hotkey={['Q','W','E'][i] ?? ''} selected={false} onSelect={() => {}} onMode={() => {}} /></div>{/each}
+    </div>
+  {/if}
 
   <h3>Upgrade hover card <small>the card a fitted upgrade's symbol opens on a weapon row, for every upgrade (held open here)</small></h3>
   {#if ready}

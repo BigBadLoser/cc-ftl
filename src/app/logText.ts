@@ -1,6 +1,7 @@
 import { factionsHostile, homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
+import { moduleNameOf } from '../sim/upgrades/stats';
 import type { UiLogEntry, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { describeBoarding } from './boardingText';
@@ -56,7 +57,7 @@ export function createDescriber(sim: Sim) {
       case 'away.stranded': return { kind: 'warning', tone: 'bad', text: e.noHome ? `The shuttle from ${sim.world.get(e.ship, ShipC)?.name ?? 'an away site'} cannot get home: the bay is down and no airlock is free` : `Crew stranded on ${sim.world.get(e.ship, ShipC)?.name ?? 'an away site'}: no shuttle can come`, ...sub(e.crew[0] ? crewSubject(sim, e.crew[0]) : null) };
       case 'suit.airOut': return player(e.crew) ? { kind: 'warning', tone: 'bad', text: `${crewName(e.crew)}: suit out of air`, ...sub(crewSubject(sim, e.crew)) } : null;
       case 'module.destroyed': {
-        const name = sim.content.modules[e.def]?.name ?? 'Module';
+        const name = sim.world.has(e.moduleId, ModuleC) ? moduleNameOf(sim, e.moduleId) : (sim.content.modules[e.def]?.name ?? 'Module');
         const m = sim.world.get(e.moduleId, ModuleC);
         const at = m ? sub(tileAt(m.x, m.y)) : onShip(e.ship); // an own module jumps to its tile; folded lines keep the first one
         return mine(e.ship)

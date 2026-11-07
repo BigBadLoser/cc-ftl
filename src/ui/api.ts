@@ -242,7 +242,7 @@ export interface UiFoeModule {
   powered: boolean;
   /** Its upgrade slot kind (null = no slot) and what is fitted in it. */
   slot: string | null;
-  upgrade: { item: string; name: string; effects: string[] } | null;
+  upgrade: { item: string; name: string; effects: string[]; renames: boolean } | null;
 }
 
 /** An upgrade item as the slot panel lists it. */
@@ -1545,4 +1545,6 @@ export interface UiUpgradeInfo {
   item: string;
   name: string;
   effects: string[];
+  /** The upgrade renames its weapon (a behaviour upgrade): the name marks it, so the row shows no symbol and the name opens the card. */
+  renames: boolean;
 }
