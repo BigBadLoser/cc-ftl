@@ -12,16 +12,15 @@ from . import walls as W
 from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
-DIP = 10 * PZ           # the sill: the ramp's crest under the opening, this far under the ramp's top (as tan's) ...
-DIP_RUN = 13 / 32       # ... reached this far along the wall from a post (a sloped crest), then level
+RUN = 5 / 32            # the sill's crest: from the lip's top at a post down to the ramp's top over this far along
+                        # the wall (the lip cut down), then on at that slope into the ramp ...
+FLOOR = 7 * PZ          # ... to this far under the ramp's top (the window's floor), then level
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
 POST_IN = "wD"          # the posts' sides into the opening (dark)
 SILL_TOP = "wH"         # the sill's level top (the light)
 SLOPE_TOP = "wS"        # the sill's top where it slopes down from a post (a step under)
-REACH = 6 / 32          # the cut's near side: this far out of the wall's face (a quarter into the ramp), straight;
-                        # the sill's top level across it, a step down to the ramp where it stands over it
 BEAM_UNDER = "wK"       # the beam's underside (the black)
 PANE_EDGE = "fTX6"      # the pane's edges: a pane PANE_T thick, opaque, a hair proud of the frame (PANE_OUT)
 PANE_T = 1 / 32
@@ -40,24 +39,31 @@ def _quad(k, pts, out, col):
 
 
 def _dip():
-    """The crest's ends: at a post the lip's top, under the opening DIP under the ramp's top. (top, bottom)."""
-    return T.lip_heights(W.skirt_top())[1], W.skirt_top() - DIP
+    """The crest's ends: at a post the lip's top, under the opening FLOOR under the ramp's top. (top, bottom)."""
+    zh, zp = T.lip_heights(W.skirt_top())
+    return zp, zh - FLOOR
+
+
+def _run():
+    """How far along the wall from a post the crest reaches its floor (at the lip's slope: RUN per lip to ramp top)."""
+    zh, zp = T.lip_heights(W.skirt_top())
+    return RUN * (zp - _dip()[1]) / (zp - zh)
 
 
 def _sill(x, x0, x1):
-    """The ramp's crest under the opening at x: the lip's top at a post, down to its floor over DIP_RUN from it."""
+    """The ramp's crest under the opening at x: the lip's top at a post, down to its floor over _run() from it."""
     d = min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0])
     t, f = _dip()
-    return t - (t - f) * min(1.0, max(0.0, d) / DIP_RUN)
+    return t - (t - f) * min(1.0, max(0.0, d) / _run())
 
 
 def _segs(x0, x1):
-    """The opening along x between the crest's bends (and where it crosses the ramp's height at the cut's near side):
-    (u0, u1, h0, h1), past the tile where it runs on."""
+    """The opening along x between the crest's bends (and where it passes the ramp's top, off the lip onto the
+    ramp): (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    (t, f), zs = _dip(), W.skirt_top()
-    cs = [DIP_RUN * (t - z) / (t - f) for z in _bends(zs) if f < z < t]
-    us = sorted({xa, xb} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) + tuple(v for c in cs for v in (x0 + c, x1 - c))
+    (t, f), r = _dip(), _run()
+    cs = [r * (t - z) / (t - f) for z in (T.lip_heights(W.skirt_top())[0],)]
+    us = sorted({xa, xb} | {u for u in (x0 + r, x1 - r) + tuple(v for c in cs for v in (x0 + c, x1 - c))
                             if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
@@ -66,16 +72,12 @@ def _k():
     return W.GN * W.RAMP_PX / W.ZART
 
 
-def _bends(zs):
-    """The ramp's height at the cut's near side (where the crest crosses it, the step there flips)."""
-    return (zs - REACH * _k(),)
-
-
-def _ys(yf):
-    """The cut across the wall: (far edge, near edge, the ramp's height at the near edge). Far: where the far ramp
-    falls under the level sill (no far ramp face over the sill); near: REACH out of the face."""
+def _width(h, m):
+    """How far out of the wall's face the wall stands over height h (either side): the lip over the ramp's top, the
+    ramp under it (the cut across the wall, out to where the ramp falls under the sill). m: a height in the same
+    stretch (h may be on its end)."""
     zs = W.skirt_top()
-    return -(yf + DIP / _k()), yf + REACH, zs - REACH * _k()
+    return _lip_d() if m > T.lip_heights(zs)[0] else (zs - h) / _k()
 
 
 def _lip_d():
@@ -84,8 +86,7 @@ def _lip_d():
 
 
 def _cut(k, x0, x1, z1, yF, yb):
-    """Take everything over the crest and under the beam (z1) out over the opening, from the far edge (yF) to the
-    near one (yb): a straight channel, the near ramp past it left whole."""
+    """Take everything over the crest and under the beam (z1) out over the opening, across the wall (yF to yb)."""
     sg = _segs(x0, x1)
     xa, xb, hmin = sg[0][0], sg[-1][1], min(min(h0, h1) for _, _, h0, h1 in sg)
     inx = [(0, xa, 1), (0, xb, -1)]
@@ -123,29 +124,20 @@ def hook(k, sp, own=True):
     zp = _dip()[0]                                      # (the crest at a post: the lip's top)
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)
-    yF, yb, zq = _ys(yf)
     k.side = None
-    _cut(k, x0, x1, z1, yF, yb)
+    _cut(k, x0, x1, z1, -1.0, 1.0)
     a, b = max(x0, -0.5), min(x1, 0.5)
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):     # the posts' sides into the opening
         if on:
             _quad(k, [(u, -yr, zp), (u, yr, zp), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), POST_IN)
-    for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: level across the cut, along the crest
-        u0, u1 = max(u0, a), min(u1, b)
+    for u0, u1, h0, h1 in _segs(x0, x1):                # the sill's top: along the crest, across the wall as wide
+        u0, u1 = max(u0, a), min(u1, b)                 # as it stood there (the lip, then the ramp)
         if u1 <= u0:
             continue
         h0, h1 = _sill(u0, x0, x1), _sill(u1, x0, x1)
-        _quad(k, [(u0, yF, h0), (u1, yF, h1), (u1, yb, h1), (u0, yb, h0)], (0, 0, 1),
+        w0, w1 = (yf + _width(h, (h0 + h1) / 2) for h in (h0, h1))
+        _quad(k, [(u0, -w0, h0), (u1, -w1, h1), (u1, w1, h1), (u0, w0, h0)], (0, 0, 1),
               SILL_TOP if abs(h1 - h0) < 1e-9 else SLOPE_TOP)
-        if max(abs(h0 - zq), abs(h1 - zq)) > 1e-9:     # the step at the near side, the crest to the ramp (facing out
-            up = min(h0, h1) > zq - 1e-9                # where the sill stands over the ramp)
-            k.poly([Vector(q) for q in ((u0, yb, h0), (u1, yb, h1), (u1, yb, zq), (u0, yb, zq))], "wall", 2,
-                   Vector((0, 1 if up else -1, 0)))
-    dl, sh, zh = _lip_d(), T.style().shelf, T.lip_heights(zs)[0]
-    for u, sd, on in ((x0, -1, x0 > -0.5), (x1, 1, x1 < 0.5)):     # at a post, the sill over the ramp: its end
-        if on and zp > zq:                                          # closed down to the ramp (lip, shelf, slope)
-            for poly in (((dl, zp), (REACH, zp), (REACH, zq), (sh, zh)), ((dl, zp), (sh, zh), (dl, zh))):
-                k.poly([Vector((u, yf + d, z)) for d, z in poly], "wall", 2, Vector((sd, 0, 0)))
     _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
@@ -154,7 +146,7 @@ def hook(k, sp, own=True):
     if not own:                                         # (a copy past the tile: no pane)
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
-    us = sorted({a, b} | {u for u in (x0 + DIP_RUN, x1 - DIP_RUN) if a < u < b})
+    us = sorted({a, b} | {u for u in (x0 + _run(), x1 - _run()) if a < u < b})
     for u0, u1 in zip(us, us[1:]):
         h0, h1 = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
         _quad(k, [(u0, -h, h0), (u1, -h, h1), (u1, h, h1), (u0, h, h0)], (0, 0, 1), PANE_EDGE)
