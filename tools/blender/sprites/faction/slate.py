@@ -52,6 +52,21 @@ def _thirds(a, b):
     return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32) if a + LINE < u < b - LINE]
 
 
+def _lip_spans(a, b):
+    """The lip over [a, b] with each tile's middle section left out (from its first seam to past its second)."""
+    out, u = [], a
+    for c in range(-1, 2):
+        m0, m1 = c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32 + 0.7 * LINE
+        if m1 <= u or m0 >= b:
+            continue
+        if m0 - u > 1e-6:
+            out.append((u, m0))
+        u = max(u, m1)
+    if b - u > 1e-6:
+        out.append((u, b))
+    return out
+
+
 def slate(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -70,12 +85,15 @@ def slate(hull):
                                                                                                 # to the shelf
             zl = _shelf_z(zs) + 3 * PZ                  # the lip (its foot meets the shelf's dark back on screen)
             top_ = "fGS2" if ax == "y" else "fGS3"      # (its top a step under a lit top's: a soft edge)
-            prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
-                  FACE, 3, cols=[False, None, top_, False], mitre=mit)
             hl = "fGS1" if ax == "y" else "fGS2"        # its front's top px lit (under the seams over it)
-            prism(k, ax, plane, a, b, [(LIP_D, zl + LIP_H - PZ), (LIP_D + PAINT / 2, zl + LIP_H - PZ),
-                                       (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
-                  cols=[False, hl, False, False], mitre=mit)
+            mid = T.fill("lip_mid", True)               # (a top design may leave out its middle section a tile)
+            for s0, s1 in ([(a, b)] if mid else _lip_spans(a, b)):
+                m = (mit[0] if abs(s0 - a) < 1e-6 else 0.0, mit[1] if abs(s1 - b) < 1e-6 else 0.0)
+                prism(k, ax, plane, s0, s1, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H),
+                                             (0.0, zl + LIP_H)], FACE, 3, cols=[False, None, top_, False], mitre=m)
+                prism(k, ax, plane, s0, s1, [(LIP_D, zl + LIP_H - PZ), (LIP_D + PAINT / 2, zl + LIP_H - PZ),
+                                             (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
+                      cols=[False, hl, False, False], mitre=m)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
             room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
             if room or top - zl - LIP_H > 0.01:         # no seam over it)
@@ -88,7 +106,7 @@ def slate(hull):
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
                                   cols=[False, "fGS2" if ax == "y" else "fGS3", False, False])
-                for u in _thirds(a, b):                 # the lip in three a tile: a seam up its front, over its
+                for u in _thirds(a, b) if mid else ():  # the lip in three a tile: a seam up its front, over its
                     q0, q1 = u, u + 0.7 * LINE         # top and up the face to the seam over it
                     dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT  # (over the lip: its top a step under the
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
@@ -204,7 +222,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
 
 def slate_panel(k, ax, plane, a, b, top, foot):
     """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 15 px tall, its foot 5 px over the seam over the lip
-    (the lip's recess left out: Design recess=False), its corners rounded as the ramp's blue panel's (each corner
+    (the lip's middle section left out: Design lip_mid=False), its corners rounded as the ramp's blue panel's (each corner
     pixel left out); a lit bar 3 px tall along its inside top, 2 px under its top line; a lit tick 7 px each side of the
     middle from a px under its foot up 4 px."""
     lit = "fGSb" if ax == "y" else "fGSc"               # (the bar and ticks a bluer grey, the ref's)
@@ -224,7 +242,7 @@ def slate_panel(k, ax, plane, a, b, top, foot):
                   cols=[False, col, False, False])
 
 
-SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel, recess=False))
+SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel, lip_mid=False))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
