@@ -180,11 +180,11 @@ def _steps(u0, u1, top):
 
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
     """Header (T1-2, T1-3): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on a
-    dark blue backing (2 px gaps at each end and between them, 2 px under them); their fronts flush, their corners
-    rounded 2 px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low across
-    each, the end ones a handle slot near the top. A dark line under the backing on the face."""
-    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
-    T.paint(k, ax, plane, a, b, z0 - PZ, z0, 0.0, FACE, 1)
+    backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their corners
+    rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low across
+    each, the end ones a handle slot near the top."""
+    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 3)              # the backing, the stripe's blue (up to
+                                                                           # the wall's top)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
     lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit)
     zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
