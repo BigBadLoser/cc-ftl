@@ -7,7 +7,7 @@ export interface TrackerRow {
   /** The tracker's short title (a delivery's goods left out); `full` is the whole title, for the hover. */
   title: string;
   full: string;
-  /** Under the title: for a job in this node what to do ("Deliver here", "Target in this node"), else where it is ("Kord Beta · 2 jumps"), or what is wrong ("Crate missing"). */
+  /** Under the title: for a job in this node what to do ("Deliver here", "Target in this node"), else where it is ("Kord Beta · 2 jumps"), or what is wrong ("Crate missing · 2 jumps"). */
   line: string;
   turnsLeft: number;
   reward: number;
@@ -31,7 +31,7 @@ const todo = (j: UiJob): string => (j.kind === 'delivery' ? 'Deliver here' : j.k
 
 function row(j: UiJob): TrackerRow {
   const problem = j.kind === 'delivery' && !j.ready;
-  const line = problem ? 'Crate missing' : j.here ? todo(j) : `${j.where} · ${far(j)}`;
+  const line = problem ? (j.here ? 'Crate missing' : `Crate missing · ${far(j)}`) : j.here ? todo(j) : `${j.where} · ${far(j)}`;
   const title = j.kind === 'delivery' ? 'Deliver a sealed crate' : j.title;
   return { key: j.key, kind: j.kind, title, full: j.title, line, turnsLeft: j.turnsLeft, reward: j.reward, urgent: j.turnsLeft <= URGENT_TURNS, problem };
 }

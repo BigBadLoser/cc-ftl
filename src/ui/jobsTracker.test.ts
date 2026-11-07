@@ -20,7 +20,7 @@ describe('trackerGroups', () => {
   });
   it('flags a missing crate as a problem, here or away, but only time makes a job urgent', () => {
     const g = trackerGroups({ active: [job({ ready: false }), job({ key: 'h', ready: false, here: true, hops: 0 })] });
-    expect(g.away[0]).toMatchObject({ line: 'Crate missing', urgent: false, problem: true });
+    expect(g.away[0]).toMatchObject({ line: 'Crate missing · 2 jumps', urgent: false, problem: true });
     expect(g.here[0]).toMatchObject({ line: 'Crate missing', problem: true });
   });
 });
