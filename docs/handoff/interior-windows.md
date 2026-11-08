@@ -94,6 +94,9 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
   tiles, fGT0 on the middle), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
   (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
+- Pocket depth `POCKET_IN` 6/32 (was 3/32: the back sits just inside the wall core's face, in the sill). Floor slopes
+  up `FLOOR_RISE` = 4 px from the ramp's front to the back. With both, the floor fills the view and the dark back is
+  hidden behind the lintel (sw6).
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -105,3 +108,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
 - 2026-11-08: slate window blockout v1 (sw4): grey ramp front under the opening, pockets 1 / 2 / 1. Shown.
 - 2026-11-08: sw5: window floor up 3 px, pockets up 3 and 3 px deeper; header recolour bug fixed. Shown.
+- 2026-11-08: sw6: pockets' backs deeper (POCKET_IN 6/32), floors slope up 4 px. Shown; the dark back no longer shows.

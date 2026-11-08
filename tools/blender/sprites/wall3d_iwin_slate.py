@@ -17,7 +17,8 @@ L = 1 / 32                              # an art px along the wall
 POCKETS = {"l": ((15, 27),), "m": ((3, 14), (17, 28)), "r": ((4, 16),)}   # px from the tile's start: each pocket
 POCKET_TOP = 2                          # its top this many px under the sill's level top
 POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
-POCKET_IN = 3 / 32                      # how far it runs back into the ramp, from the slope at its top
+POCKET_IN = 6 / 32                      # how far it runs back into the ramp, from the slope at its top
+FLOOR_RISE = 4                          # px its floor climbs from the ramp's front to its back
 FLOOR_LIT = {"l": "fGS0", "m": "fGT0", "r": "fGS0"}   # its floor: lit grey on an end tile, lit blue in the middle
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
@@ -107,10 +108,11 @@ def detail(k, part):
         yb = _slope_y(z1, yf) - POCKET_IN               # (its back, grid y)
         y0, y1 = _slope_y(z0, yf), _slope_y(z1, yf)
         _carve(m, u0, u1, -(y0 + 0.05), -yb, z0, z1)
-        _quad(k, [(u0, yb, z0), (u1, yb, z0), (u1, y0, z0), (u0, y0, z0)], (0, 0, 1), FLOOR_LIT[part])
-        _quad(k, [(u0, yb, z0), (u1, yb, z0), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
+        zb = z0 + FLOOR_RISE * PZ                       # (the floor's back edge: it slopes up into the ramp)
+        _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
+        _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
         for u, sd in ((u0, 1), (u1, -1)):
-            _quad(k, [(u, yb, z0), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
+            _quad(k, [(u, yb, zb), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
         _quad(k, [(u0, yb, z1), (u1, yb, z1), (u1, y1, z1), (u0, y1, z1)], (0, 0, -1), SIDE)
 
 
