@@ -698,3 +698,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: recessed toward ref 12: its band in ref 12's dark maroon (new fNM0 #4f2732, set hull; ochre 0 read near
   black), a lit row (F 1) on the panel under it, the panel 2 px off the recess's floor (its dark navy shows under it,
   the ref's). nq3.
+- 2026-11-08: recessed: the line under its band dark (fNS3 24344a), not lit (the user). nq4.

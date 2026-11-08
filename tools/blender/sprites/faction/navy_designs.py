@@ -174,10 +174,10 @@ def navy_recessed(k, ax, plane, a, b, c, e, F, zh=None, H=None, back=None, **_):
         sheet = lambda z0, z1_, dd, fam, lvl, fx=None: k.poly([T.P(ax, pl, u, z, dd) for u, z in (  # noqa: E731
             (u0, z0), (u1, z0), (u1, z1_), (u0, z1_))], fam, lvl, T.OUT(ax), fixed=fx)
         sheet(zf + 2 * dz, z1, d, F, 0)                 # (the panel 2 px off the recess's floor: its dark under it)
-        if zh is not None:                              # (ref 12: the band its dark maroon, a lit row under it)
+        if zh is not None:                              # (ref 12: the band its dark maroon, a dark line under it)
             zb = zh - 0.33 * H
             sheet(zb, z1, d + 0.25 * PAINT, "ochre", 1, "fNM0")
-            sheet(zb - dz, zb, d + 0.25 * PAINT, F, 1)
+            sheet(zb - dz, zb, d + 0.25 * PAINT, "rose", 2, "fNS3")    # (a dark line under it: the user)
         return
     du, dz = RECESS / 32, RECESS / 39.19
     u0, u1 = (a + du, b) if ax == "y" else (a, b - du)
