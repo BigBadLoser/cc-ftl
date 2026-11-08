@@ -56,8 +56,7 @@ function shipFor(sim: Sim, c: Contact, def: NonNullable<Sim['content']['factions
   } catch {
     gen = null;
   }
-  remember(sim, key, gen);
-  return gen;
+  return remember(sim, key, gen); // a ship with problems is refused, as when it was warmed first
 }
 
 /** Put a generated ship (or null: it cannot be generated) in the memo, forgetting the least recently used one over the cap. A ship with problems counts as null. */
