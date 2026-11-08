@@ -24,6 +24,7 @@ NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up
                                     # grid: a px wide, they fill whole px on both faces)
 
 
+RED_AT = 8 / 11                     # the ramp's red band: from 8 px out (of its 11) down to the toe (its last px)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
 
 
@@ -93,7 +94,8 @@ def navy(hull):
                     u0 = u if u == a else u - LINE
                     T.paint(k, ax, plane, u0, u0 + LINE, zf - 0.03, zh, PAINT, F, 1)
         if endf:
-            _end_section(k, ax, plane, a, b, zs, zh - 0.33 * H if full else top, F)
+            _end_section(k, ax, plane, a, b, zs, zh - 0.33 * H if full else top, F, foot=F)   # (its feet the
+            #   section's: the red is the slope's band now, not the foot)
         if not full:
             return
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
@@ -139,9 +141,13 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", seam=NAVY_SEAM, joint=4, chamfer=NAVY_C, ramp_solid=True,
+        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=1, chamfer=NAVY_C,
+                      ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
+                      #   ramp, as on the ramp)
+                      toe_lvl={"wall": ("fNW2", "fNW3"), "blue": ("fNH2", "fNH3")},  # (the toe in the slope's tone)
+                      ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
                       shelf=SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
                       #   shelf at the wall, all shelf: no lip on it)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
-                      features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("ochre", 2),
+                      features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("wall", 2),
                                 FaceHoles(), PlateTones()))

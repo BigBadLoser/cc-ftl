@@ -466,3 +466,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: turn AA on (navy). Coverage AA (post._aa) already covered navy's cool greys; its red (fNT*) and
   navy tones (fNS*, fNX*) now join opt-in groups "navy.red" / "navy.blue" in palette_extra.json (as teal's and
   slate.blue). ns3: the red band's edges and the navy faces' blend. Every navy sprite (walls, hull) changes on re-render.
+- 2026-11-08: the user, navy's ramp: seams dark (joint 4 -> 1), the toe in the slope's tone (toe_lvl pairs per face:
+  fNW2 / fNW3; wall3d skirt and shell ramp now take a (y, x) pair), the red moved off the foot onto the slope just over
+  the toe (ramp_bands from 8 px of 11; the foot FootTone("wall", 2); toe_at 8/11 so a corner's chamfer and an end's ramp
+  band match; _end_section foot= param: navy's feet the section's). Renders ns5.

@@ -643,7 +643,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         for u0, u1, _ in segs:
             poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
             if len(poly) >= 3:
-                plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=tl.get(fam) if isinstance(tl, dict) else None)
+                fx = tl.get(fam) if isinstance(tl, dict) else None
+                fx = fx[0 if ax == "y" else 1] if isinstance(fx, tuple) else fx    # (a pair: y face, x face)
+                plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=fx)
         return
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]

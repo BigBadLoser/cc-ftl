@@ -172,7 +172,8 @@ class LookShell(T.Shell):
         flr = (o * (self._zsurf(0) - self._zsurf(1)) + Vector((0, 0, 1))).normalized()
         tl = T.style().toe_lvl
         col = {"bottom": False, "back": False,          # (on the floor / against the wall: no camera sees them)
-               "toe": tl[fam] if isinstance(tl, dict) else R[0 if tl is None else tl], "hole_back": R[0],    # (a hole's walls and floor as
+               "toe": ((tl[fam][0 if ax == "y" else 1] if isinstance(tl[fam], tuple) else tl[fam]) if isinstance(tl, dict)
+                       else R[0 if tl is None else tl]), "hole_back": R[0],    # (a hole's walls and floor as
                "hole_front": T.tone(fam, 1, -o, ax), "floor": T.tone(fam, 0, flr, ax),   # its look shades them)
                "slope": R[1 if jt is None else jt] if (ax != "x" or jt is not None) else R[0],
                "shelf": R[T.style().shelf_lvl], "shelf_edge": R[4],       # (a flat step at its top: the slope's plates' tone, its
@@ -478,11 +479,11 @@ def _ramp_chamfer(k, X, Y, C, zs, F):
         k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
 
 
-def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None):
+def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None, foot=None):
     """A wall's end face, under its face parts: the section of its foot and its two ramps down to the floor (each
     ending in an upright foot where the shell's ramps do), with edge highlights up its front edge (to zt) and down the
     front ramp's slope (b: the face's side; a, the wall's back, none); col, edge: the section's and the highlights'
-    fixed colours."""
+    fixed colours; foot: the feet's family (else the toe band's)."""
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     sec = [(a - run, 0.0035), (b + run, 0.0035), (b + run, ft), (b, zs), (a, zs), (a - run, ft)]
@@ -494,7 +495,7 @@ def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None):
     if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
-               T.style().toe or F, 2, T.OUT(ax))
+               foot or T.style().toe or F, 2, T.OUT(ax))
     hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                   # (the front's: the back, the wall's
           [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)]]      # far side, takes none)
     for q in hl:
