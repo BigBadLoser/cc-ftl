@@ -67,8 +67,9 @@ def _recess(k, ax, plane, u0, u1, z0, z1, d0, d1):
         k.poly([Q(u, z0, d0), Q(u, z1, d0), Q(u, z1, d1), Q(u, z0, d1)], "rose", 1, al * sg)
 
 
-def cage_holes(a, b, zs, top, ends=None, span=None, ax=None, plane=None, sh=None, **_):
-    """Where the cage opens the face (its "face_holes"): each cover's rect, on the shell's cells (inside it)."""
+def cover_holes(a, b, zs, top, ends=None, span=None, ax=None, plane=None, sh=None, **_):
+    """Where a top design opens the face (its "face_holes": the cage, the boxes): each cover's rect, on the shell's
+    cells (inside it)."""
     from .navy import cover_rects
     if ends is None or top <= T.W.skirt_top() + T.W.CUT + 0.05:
         return []
@@ -125,6 +126,9 @@ def navy_cage(k, ax, plane, a, b, c, e, F, hole=None, **_):
             k.poly([T.P(ax, plane, ub - du, za, d0 + da), T.P(ax, plane, ub + du, za, d0 + da),   # the top,
                     T.P(ax, plane, ub + du, zb_, d0 + db), T.P(ax, plane, ub - du, zb_, d0 + db)],  # shaded in
                    "wall", 0, T.OUT(ax), fixed=col)                                                  # at the foot)
+
+
+navy_cage.own_hole = True          # (it builds its own frame and recess in its opening)
 
 
 RECESS = 2                          # the recessed cover: pushed back this many px (the user)
@@ -236,8 +240,8 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
         plate([(p0, d0), (p1, d0), (p1, d1), (p0, d1)], PAINT, 1, 0.0, fixed=fx)
 
 
-NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
-             # Design("cage", middle=navy_cage, face_holes=cage_holes),   # (refs 10-11: off for now, not working
+NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=cover_holes), Design("lockers", middle=navy_lockers),
+             # Design("cage", middle=navy_cage, face_holes=cover_holes),   # (refs 10-11: off for now, not working
              #   yet: the user; its code kept)
              Design("recessed", middle=navy_recessed), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),

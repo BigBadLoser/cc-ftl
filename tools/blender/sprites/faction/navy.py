@@ -113,6 +113,21 @@ def _lit(k, ax, plane, u, z0, z1, F, reds):
         z = max(z, r1)
 
 
+RECESS_D = 2 / 32                   # a top design's recess under its cover (when it opens the face): its side 2 px
+
+
+def _recess_in(k, ax, plane, hole):
+    """The recess a top design sits in (its face hole, RECESS_D deep): its back in the frame's dark, its walls."""
+    from .navy_designs import _recess
+    u0, u1, z0, z1 = hole
+    k.poly([T.P(ax, plane, u, z, -RECESS_D) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "rose", 2,
+           T.OUT(ax))
+    _recess(k, ax, plane, u0, u1, z0, z1, 0.0, -RECESS_D)
+    k.poly([T.P(ax, plane, u, z, PAINT - RECESS_D) for u, z in ((u0, z1 - 2 / 39.19), (u1, z1 - 2 / 39.19), (u1, z1),
+                                                                (u0, z1))], "rose", 1, T.OUT(ax))   # (the lip's
+    #   shadow on its back: 2 px darker under the top)
+
+
 def _plates(a, b, ends):
     """A navy face's plates (u0, u1, "cover" or "strip") and its panel lines: each tile its cover, then its strip with
     the line between; a corner's, an end's or a narrow tile one cover."""
@@ -175,6 +190,11 @@ def navy(hull):
                              < 1e-6 and p0 - 1e-6 <= h[2] < p1), None)      # (unless the design opens the face there:
                 if hole is None:                                            # it builds its own frame in the opening)
                     _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
+                elif not getattr(mid, "own_hole", False):   # (or a recess RECESS_D deep, the design inside it: a
+                    _recess_in(k, ax, plane, hole)          # recess under the cover, its walls showing: the user)
+                    mid(k, ax, plane - RECESS_D, p0 + 0.04 - RECESS_D, p1 - 0.04 - RECESS_D, zf + 0.04, zh - 0.04, F,
+                        zh=zh, H=H)                 # (as far left as seen as before: a depth shifts it a px a LINE)
+                    continue
                 mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F, zh=zh, H=H, hole=hole)   # (the design in
                 #   the opening; zh, H: the header's foot and the wall's height, for a band in it)
                 continue

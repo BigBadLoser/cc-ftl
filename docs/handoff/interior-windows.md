@@ -633,3 +633,10 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: shrink both boxes 3 px in width and each 2 px in height. Their sides now set in screen px
   (T._px / T._u at the bezel's depth): a px off the left, 2 off the right (measured: 12-32 to 13-30); each box a px
   lower at its top and higher at its foot (z 1/39.19 each). A gap shows between the two now. nb4.
+- 2026-11-08: the user: revert the flat boxes (reverted, 6472e574); the problem is the left and top edges of the
+  recess: no recess under a panel, just navy. The boxes' design now opens the face (face_holes=cover_holes, renamed
+  from cage_holes): navy.py's face cuts a real recess RECESS_D = 2/32 deep in the cover's rect (_recess_in: its back
+  rose 2, its walls by navy_designs._recess: floor lit, sides and ceiling in shade, a 2 px rose 1 shadow under its top
+  on the back) and draws the design inside it (plane - RECESS_D, its u shifted back by RECESS_D so the boxes stay where
+  they were on screen). A design that builds its own opening (navy_cage.own_hole) is left to it. Plain m10 identical
+  to nv9. nb7.
