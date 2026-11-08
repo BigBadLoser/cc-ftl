@@ -94,10 +94,14 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
   tiles, fGT0 on the middle), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
   (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
-- Under the opening the default's sill cuts the ramp down to ~13 px (its FLOOR), so the pockets are small (~6 px);
-  the ref's ramp stays taller there. Likely next: raise the sill to the ref's.
+- `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
+  (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
+  it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
+- The grey recolour only touches faces with max z <= `W.skirt_top()`: without that it also caught the header's blue
+  rail over the opening (sw4 showed the header grey there).
 
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
 - 2026-11-08: slate window blockout v1 (sw4): grey ramp front under the opening, pockets 1 / 2 / 1. Shown.
+- 2026-11-08: sw5: window floor up 3 px, pockets up 3 and 3 px deeper; header recolour bug fixed. Shown.

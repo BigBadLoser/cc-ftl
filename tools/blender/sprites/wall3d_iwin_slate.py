@@ -16,12 +16,13 @@ from .wall3d_iwin import _clip
 L = 1 / 32                              # an art px along the wall
 POCKETS = {"l": ((15, 27),), "m": ((3, 14), (17, 28)), "r": ((4, 16),)}   # px from the tile's start: each pocket
 POCKET_TOP = 2                          # its top this many px under the sill's level top
-POCKET_FOOT = 1                         # its floor this many px over the ramp's foot
+POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
 POCKET_IN = 3 / 32                      # how far it runs back into the ramp, from the slope at its top
 FLOOR_LIT = {"l": "fGS0", "m": "fGT0", "r": "fGS0"}   # its floor: lit grey on an end tile, lit blue in the middle
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
 GREY = "fGS2"                           # the ramp's front under the opening, in place of the blue plate (fallback)
+RAISE = 3                               # px the window's floor (the sill's level top) stands over the default's
 
 
 def _k():
@@ -97,7 +98,8 @@ def detail(k, part):
         pts = [m.v[j] for j in f[0]]
         cx = sum(p[0] for p in pts) / len(pts)
         c = tuple(round(v, 5) for v in f[2])
-        if a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and c in blues:
+        if (a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and c in blues and
+                max(p[2] for p in pts) <= W.skirt_top() + 1e-6):     # (the ramp's only: not the header's rail)
             m.f[i] = (f[0],) + grey
     for p0, p1 in POCKETS[part]:                        # the pockets
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
@@ -134,10 +136,13 @@ def window(fn, part):
     def build():
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
+        floor = D.FLOOR
+        D.FLOOR = floor - RAISE * PZ
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, D.GLASS.build()
         finally:
+            D.FLOOR = floor
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
     return build
