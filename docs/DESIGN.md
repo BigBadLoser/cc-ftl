@@ -930,7 +930,7 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
   come later.
 
-### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, not built yet)
+### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, step 1 built)
 
 Replaces the contraband scan pop-up (`InterdictModal`, #136) with inspectors who come aboard. Built in three steps: the
 station dock inspection, then the patrol version, then refusing and fighting.
@@ -952,6 +952,17 @@ station dock inspection, then the patrol version, then refusing and fighting.
   breach, like boarders, and then search as usual. If there is no way in at all, they wait with an alert ("Inspectors
   can't board") until there is.
 - **The pop-up goes:** `InterdictModal` is removed once both triggers play out in the world.
+
+**As built (step 1, the station dock):**
+- Opening trade with a navy or corporation station sends two inspectors (once per scan cooldown per node). Trade waits only while they search or wait
+  for an answer; a clean search opens it at once.
+- They search every storage module (sealed containers too) and every module with an upgrade fitted, about 5 seconds each, and take contraband off crew and
+  floors within 2 tiles of them.
+- The answers sit on the alert ("Inspector waiting: fine or bribe"); clicking its text jumps to the lead. The fine costs standing and the goods. A bribe is
+  taken 60% of the time: the goods are handed back by the shuttle door; turned down, it costs standing and is not offered again. Refusing costs standing and
+  the station's service for 10 turns (they keep what they took). Leaving the node while they search or wait counts as refusing.
+- With no airlock free they cross in suits and land on the hull; with no way in they wait there under an "Inspectors can't board" alert.
+- Inspectors show as visitors ("Inspector"), not hostiles, and offer no Attack yet (step 3).
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 

@@ -1,6 +1,7 @@
 import { hullLoad } from '../ftl/capacity';
 import { applyOvercharge } from '../ftl/overcharge';
 import { abortYards } from '../yard/flow';
+import { abortInspections } from '../inspect/flow';
 import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
@@ -89,6 +90,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   spendCharge(sim, charge, ship);
   if (overcharged) applyOvercharge(sim, ship);
   abortYards(sim, 'left');
+  abortInspections(sim);
   burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
   settleLosses(sim);
   unbindMarkets(sim);
@@ -214,6 +216,7 @@ export function flee(sim: Sim, ship: number): boolean {
   spendCharge(sim, FTL_CHARGE_SEC, ship);
   if (hullLoad(sim, ship).over > 0) applyOvercharge(sim, ship);
   abortYards(sim, 'left');
+  abortInspections(sim);
   settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);

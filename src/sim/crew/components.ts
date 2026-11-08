@@ -169,6 +169,8 @@ export interface Job {
   yardOnly?: true;
   /** Derelict salvage: a deconstruct or moduleDecon job of the salvage order; finishing it spills scrap of this type instead of the refund. */
   scrap?: ScrapType;
+  /** Only the party of this shuttle (`AwayC.vehicle`) take the job, and they take no other (a contraband inspection's search and seizure, inspect/). */
+  party?: number;
   /** For 'passage' jobs: the away site (ShipC entity) the seat goes to. */
   site?: number;
   /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
@@ -201,7 +203,9 @@ export type JobKind =
   /** forceDoor: free a jammed door at (x, y) (player-ordered, worked from beside it). */
   | 'forceDoor'
   /** passage: a seat on the shuttle `target` serving the away site `site`, taken at its boarding tile (x, y) (away/passage.ts). */
-  | 'passage';
+  | 'passage'
+  /** search: an inspector searches the module `target` for contraband from beside it (inspect/search.ts). */
+  | 'search';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

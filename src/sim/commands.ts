@@ -258,6 +258,8 @@ export type Command =
   | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
+  /** Answer a contraband inspection whose lead inspector waits aboard (inspect/settle.ts): pay the fine, offer a bribe (it may be turned down), or refuse. */
+  | { type: 'inspect.settle'; inspection: number; choice: 'fine' | 'bribe' | 'refuse' }
   /** Stranded with no fuel on sale here: call a tug (galaxy/stranded.ts). It arrives after a few turns with emergency fuel. */
   | { type: 'galaxy.distress' }
   /** Take a job offered at the player's node (galaxy/jobs.ts), by its offer key; give one up. */
@@ -320,7 +322,7 @@ export type Command =
    * everything in the node, with a trader aboard. The old grid-less form `{profile: 'trader.station'}` still works: it
    * spawns a trading outpost.
    */
-  | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string }
+  | { type: 'debug.spawnStation'; kind?: string; size?: 'outpost' | 'station' | 'hub'; seed?: number; x?: number; y?: number; profile?: string; name?: string; owner?: string }
   /** Set the player's credits. */
   | { type: 'debug.setCredits'; value: number }
   /** Put `count` of an item into the player's storage (as a reward would). */

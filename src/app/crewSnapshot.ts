@@ -6,7 +6,7 @@ import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 import { StunC } from '../sim/robots/components';
-import { lodgingHere } from '../sim/consent/guests';
+import { guestHere, lodgingHere } from '../sim/consent/guests';
 
 /**
  * The activity the UI shows. A stunned organic body (a brute's knockdown) is 'knocked down'; robots keep 'inert' (shut
@@ -224,6 +224,9 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
  * Plain-data lists for the UI: all of the player's crew wherever they are, the passengers living aboard (lodging guests, consent/passage.ts), and the
  * other sides' crew on the grids they stand on (plus the one being inspected, `watch`). Reads the sim only.
  */
+/** What a visitor aboard by a grant of this owner is called (consent/components.ts). */
+const VISIT_LABEL: Partial<Record<string, string>> = { inspect: 'Inspector', yard: 'Contractor', aid: 'Repair party' };
+
 export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: UiCrew[]; guests: UiCrew[]; hostiles: UiCrew[] } {
   const ctx = makeCtx(sim);
   const crew: UiCrew[] = [];
@@ -247,7 +250,9 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
     const g = shipIdOf(sim, sim.world.get(id, PositionC));
     if ((!g || !occupied.has(g)) && id !== watch) continue;
     if (sim.world.has(id, DeadC)) continue;
-    const c = card(sim, ctx, id, 'enemy');
+    const leave = guestHere(sim, id);
+    const c = card(sim, ctx, id, leave ? 'visitor' : 'enemy');
+    if (c && leave) c.visit = VISIT_LABEL[leave.by] ?? 'Visitor';
     if (c) hostiles.push(c);
   }
   return { crew, guests, hostiles };

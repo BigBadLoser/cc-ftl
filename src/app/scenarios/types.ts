@@ -12,8 +12,8 @@ export interface ScenarioCtx {
   setSpeed(speed: Speed): void;
   selectCrew(id: number | null, focus?: boolean): void;
   setTool(tool: { tool: 'build'; build: 'hull'; hull: { brush: 'rect'; erase: boolean; mirror: boolean } }): void;
-  /** Debug: a station east of everything in the node (`frame`: the camera frames it with the ship). */
-  spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frame?: boolean): void;
+  /** Debug: a station east of everything in the node (`frame`: the camera frames it with the ship; `owner`: the galaxy faction that runs it). */
+  spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frame?: boolean, owner?: string): void;
   /** Debug: a raider (or the `?shipgen` ship) a fair distance from the player's ship. */
   spawnRaider(): void;
 }

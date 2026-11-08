@@ -81,6 +81,7 @@ import { storySystem } from './systems/story';
 import { recruitsSystem } from './systems/recruits';
 import { tradeSystem } from './systems/trade';
 import { yardSystem } from './yard/flow';
+import { inspectSystem } from './inspect/flow';
 import { eggSacSystem } from './systems/eggSacs';
 import { alienSystem } from './systems/aliens';
 import { salvageSystem } from './salvage/system';
@@ -193,6 +194,8 @@ export const pipeline: readonly System[] = [
   tradeSystem,
   // Shipyard orders: the station's shuttle brings its crew to build the paid-for hull (ordinary jobs, done next to the work system below).
   yardSystem,
+  // Contraband inspections: a station's inspectors come aboard by the away site's run, search, carry off what they find and wait for an answer.
+  inspectSystem,
   // Base-logistics runs: shuttles carry cargo and crew between the home ship and claimed bases (ordinary vehicle commands, next tick).
   ferrySystem,
   // Away sites: each site's shuttle offers passages at home, carries its party out and home, and never leaves anyone stranded.

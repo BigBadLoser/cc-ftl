@@ -122,6 +122,7 @@ export function hailVerdict(sim: Sim, id: number): HailVerdict {
   const augmented = fac?.augmentBonus ? fac.augmentBonus * augmentedCrew(sim) : 0;
   const score = (fac?.relation ?? 0) + (cfg.traders[t.profile]?.relation ?? 0) + (t.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0) + augmented;
   if (ship && aimingAtPlayer(sim, id)) return { answers: false, reason: 'weaponsHot', score };
+  if (t.barredUntil !== undefined && sim.galaxy.turn < t.barredUntil) return { answers: false, reason: 'barred', score };
   return { answers: score >= 0, reason: score >= 0 ? '' : 'hostile', score };
 }
 
