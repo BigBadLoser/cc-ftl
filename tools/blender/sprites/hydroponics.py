@@ -303,7 +303,7 @@ def _beans(k, u, v, z, st, seed, hmax):
     """Protein beans: a row of upright canes the full height (set at sowing), a dark green vine climbing each in a
     column, pale pods hanging when ripe."""
     r = random.Random(seed * 13 + 3)
-    canes = [(u + du, v + r.uniform(-0.04, 0.04)) for du in (-0.26, 0.0, 0.26)]
+    canes = [(u + du, v + 0.1 + r.uniform(-0.03, 0.03)) for du in (-0.26, 0.0, 0.26)]     # towards the front
     for cu, cv in canes:
         _tube(k, [(cu, cv, z), (cu, cv, z + hmax - 0.02)], 0.022, "cane", n=4, phase=math.pi / 4)
     reach, n = {"sprout": (0.22, 3), "grow": (0.6, 7), "ripe": (0.95, 11)}[st]
@@ -315,6 +315,11 @@ def _beans(k, u, v, z, st, seed, hmax):
             a = j * 2.4 + i                                                      # spiralling up the cane
             _leaf(k, cu + 0.02 * math.cos(a), cv + 0.02 * math.sin(a), zz, a, 0.15 * s, 0.12 * s, r.uniform(-0.1, 0.3),
                   cols[(i + j) % 4])
+        if st != "sprout":                                                       # low leaves spilling to the front
+            for j in range(2):
+                a = math.pi / 2 + r.uniform(-0.7, 0.7)
+                _leaf(k, cu + r.uniform(-0.06, 0.06), cv + 0.03, z + r.uniform(0.01, 0.05), a, 0.17, 0.13,
+                      r.uniform(0.1, 0.35), cols[(i + j + 1) % 4])
         if st == "ripe":
             for j in range(3):
                 zz = z + r.uniform(0.35, 0.62) * hmax                            # below the lamp, which hides the tops
