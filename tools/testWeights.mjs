@@ -49,11 +49,10 @@ const add = (path, s) => {
 let inputs = args.filter((a) => a !== '--ci');
 if (args.includes('--ci')) {
   const dir = mkdtempSync(join(tmpdir(), 'ci-times-'));
-  let run = inputs[0];
+  // Only a numeric first argument is a run id; anything else is a report to merge alongside the download.
+  let run = /^\d+$/.test(inputs[0] ?? '') ? inputs[0] : undefined;
   if (run) inputs = inputs.slice(1);
-  else {
-    run = latestRunWithTimes();
-  }
+  else run = latestRunWithTimes();
   execFileSync('gh', ['run', 'download', run, '--pattern', 'vitest-times-*', '--dir', dir], { stdio: 'inherit' });
   inputs.push(dir);
   console.log(`weights from CI run ${run}`);
