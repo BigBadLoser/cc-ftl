@@ -570,3 +570,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the little bands between the pipes come towards the camera, above the silver pipe. The bars
   between the collars now sit out of the slope (0.02 deep instead of on the pipes' centre line), in front of the
   silver pipe, which no longer cuts them. Pipes and collars unchanged. nv18.
+- 2026-11-08: the user: the bands look jagged. The bars (a lit top and a dark side, ~1.3 px wide) are now flat steel
+  straps lying out of the slope, 2 px wide (u ± 1/32, centred on the px grid) in one tone (fSH0). Still over the
+  silver pipe. Unused _bar removed. nv19.
