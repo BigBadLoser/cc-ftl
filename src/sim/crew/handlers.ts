@@ -1,4 +1,4 @@
-import { lodgingHere } from '../consent/guests';
+import { canDraft, roleOf } from '../consent/roles';
 import { shipIdOf, shipGrid } from '../regions';
 import { abortTask } from '../ai/task';
 
@@ -136,7 +136,7 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
         return;
       }
       if (isIncapacitated(sim, cmd.id)) return reject(sim, cmd.type, 'incapacitated');
-      if (lodgingHere(sim, cmd.id)) return reject(sim, cmd.type, 'passenger'); // a passenger is never drafted (consent/passage.ts)
+      if (!canDraft(roleOf(sim, cmd.id))) return reject(sim, cmd.type, 'passenger'); // a passenger is never drafted (consent/passage.ts)
       abortTask(sim, cmd.id, 'drafted');
       sim.world.add(cmd.id, DraftedC, { target: null });
       crew.activity = 'drafted'; // also wakes a sleeper
