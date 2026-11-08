@@ -102,10 +102,10 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   has the same open end and needs the same strip when the ramp is ported); `_chamfers`: the opening's top corners cut
   at 45 degrees (in the wall's plane: px along = px up) from where the blue under the header ends on a post up to the
   beam (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands as they show beside
-  it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 its lowest px only, the rail's blue over it:
-  sw32, all 3 px of shadow read as a dark block), its underside `POST_IN`, the posts' sides clipped at its foot
-  (sw31); on l the rail's seam by its left end block (fGT3, a px, the rail's height) as `slate._rail` draws by the right
-  one (there the end block's side faces away; on the left it faces the camera, so no line was drawn) (sw32); pockets
+  it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 all 3 px: the user prefers that dark block to
+  sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
+  at its foot (sw31); on l a seam (fGT3, a px) down the blue at the left post's edge, as the right post shows one (its
+  face's cut end against the chamfer) (sw33); pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
   px in from the floor's two outer ends (one block across the pockets and the floor in front of the rib, not one per
@@ -198,4 +198,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   piece's glass). The dots are gone. Shown.
 - 2026-11-08: sw31: the opening's top corners chamfered at 45 degrees (the user), 9 px, the blue under the header. Shown.
 - 2026-11-08: sw32: the chamfer's dark top block (the rail's whole shadow band) down to its lowest px; the rail's seam
-  mirrored on the left of the opening (the user). Shown.
+  mirrored on the left of the opening. Shown: the user preferred the block (back in sw33) and meant another seam.
+- 2026-11-08: sw33: the seam they meant: down the blue at the post's edge (marked image sent), added on the left. Shown.
