@@ -55,7 +55,7 @@ icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
 
 - **Encounters (#173):** steps 1-4 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314; the pirate
   ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
-  threat-first targeting, suits for hot rooms, scene clocks start at deploy). Next: medical pod, checked in play first. The ambush can grow slightly once relationships and interactions exist.
+  threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.
