@@ -102,9 +102,11 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - TEAL colours: floors wH (lit over the ramp's front, wL), shade wS, lit edge `wHW` #80bcae (a step over wH, in a
   new palette set "window": a new walls colour would re-quantise every wall; `preview/render.py` selects
   "walls+hull+window" for default `.win.` pieces, and the pipeline needs the same when windows ship, #49), back wXD,
-  sides wD, rib wL, toe wM (`toe_drop` 1: its top a px under the pockets' floors), plates wS / wM. End blocks under the
-  posts (`blocks` "ochre": the near ramp from the run's ends BLOCK px in, foot to top, each teal ramp colour to the
-  same level of wall3d.RAMPS["ochre"]). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+  sides wD, rib wL, toe wM (`toe_drop` 1: its top a px under the pockets' floors), plates wM / wD (dp4: wS blended
+  with the sill's slope, wS). End blocks under the posts (`blocks` "ochre": the near ramp's slope from the run's ends
+  BLOCK px in, foot up to the shelf (faces facing out and up: not the shelf, not the lip's front), each teal ramp colour
+  to the same level of wall3d.RAMPS["ochre"]); on each a dark slot `block_slot` oK, SLOT_W 7 x SLOT_H 2 px, SLOT_TOP 2
+  under the slope's top. dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
 - wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
   tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
   the base tiles pixel-identical (sw48, dp3 checked).
@@ -256,3 +258,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   `wall3d_iwin_ramp.py`; slate pixel-identical (sw47); teal dp1 (flat), dp2 (floors wH, lip fC4T0). Shown, waiting.
 - 2026-11-08: dp3 (the user on dp2): toe a px shorter (`toe_drop`), lip `wHW`, ochre end blocks, the ramp's seam
   carried across the window tiles to the pockets. Upper layer next. Shown.
+- 2026-11-08: dp4/dp5 (the user on dp3): the ochre stops at the shelf (dp4 still took the lip's front; dp5
+  slope faces only), plates wM / wD off the slope's wS, a dark slot on each block. Shown.

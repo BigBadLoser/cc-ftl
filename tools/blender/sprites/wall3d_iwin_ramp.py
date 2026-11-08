@@ -34,6 +34,7 @@ PLATES = {"l": ((21, 28),), "m": ((10, 22),), "r": ((4, 14),)}   # px: dark meta
 PLATE_D = 6                             # px back over the sill's top from its front edge ...
 PLATE_DN = 2                            # ... and PZ down the face over the pockets past it
 BLOCK = 13                              # px: the end blocks under the posts run this far in from the run's ends
+SLOT_W, SLOT_H, SLOT_TOP = 7, 2, 2      # px: a look's dark slot on an end block (wide, tall, under the slope's top)
 END_STRIP = 3                           # px: the strip closing the joined end under the floor's edge
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
@@ -61,12 +62,13 @@ class Look:
                                         # between)
     blocks: str = ""                    # a wall3d.RAMPS family: the end blocks under the posts (the near ramp from the
                                         # run's ends BLOCK px in) recoloured from the default walls' ramp into it
+    block_slot: str = ""                # a dark slot on each end block's slope
     pre: Optional[Callable] = None      # f(k, part, a, b, yf): before the ramp (a, b: between the end blocks)
     post: Optional[Callable] = None     # f(k, part): after it
 
 
 TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="wHW", back="wXD", side="wD", rib="wL", toe="wM",
-            plate="wS", plate_front="wM", toe_drop=1, blocks="ochre")   # (the floors lit over the ramp's front, wL;
+            plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot="oK")   # (the floors lit over the ramp's front, wL;
 #   their lit edge a step over wH, the "window" palette set's)
 
 
@@ -166,7 +168,9 @@ def _toe(k, look, a, b, yf):
 
 def _blocks(k, look, a, b, yf):
     """The end blocks: the near ramp outside a..b (on the tile), from the foot up to its top, in the look's blocks
-    family (each of the default walls' ramp colours to the same level of it, lit and shaded faces)."""
+    family (each of the default walls' ramp colours to the same level of it, lit and shaded faces): the slope only,
+    the shelf and lip over it left as they are; on it a dark slot (SLOT_W px wide, SLOT_H tall, SLOT_TOP under the
+    slope's top)."""
     if not look.blocks:
         return
     m = k.m
@@ -174,13 +178,30 @@ def _blocks(k, look, a, b, yf):
     for src, dst in zip(T.RAMPS["wall"], T.RAMPS[look.blocks]):
         for s_, d_ in zip(src, dst):
             key.setdefault(tuple(round(c, 5) for c in core.lin(s_)), d_)
+    top = None
     for i, f in enumerate(m.f):
         pts = [m.v[j] for j in f[0]]
         cx = sum(p[0] for p in pts) / len(pts)
         c = tuple(round(v, 5) for v in f[2])
         if (c in key and -0.5 < cx < 0.5 and not a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and
                 max(p[2] for p in pts) <= W.skirt_top() + 1e-6 and min(p[2] for p in pts) >= W.foot() - 1e-6):
-            m.f[i] = (f[0],) + m._cols(key[c])
+            n = (Vector(pts[1]) - Vector(pts[0])).cross(Vector(pts[2]) - Vector(pts[0]))
+            if 0.3 * n.length < abs(n.y) < 0.95 * n.length:   # (the slope's: it faces out and up, the shelf
+                m.f[i] = (f[0],) + m._cols(key[c])          # up, the lip's front out)
+                top = max(top or -9.0, max(p[2] for p in pts))
+    if not look.block_slot or top is None:
+        return
+    z1 = top - SLOT_TOP * PZ
+    z0 = z1 - SLOT_H * PZ
+    e = Vector((0, _k(), 1)).normalized() * 2 * T.PAINT
+    for u0, u1 in ((-0.5, a), (b, 0.5)):
+        if u1 - u0 < SLOT_W * L or not (-0.5 <= u0 and u1 <= 0.5):
+            continue
+        c = (u0 + u1) / 2
+        v0, v1 = c - SLOT_W * L / 2, c + SLOT_W * L / 2
+        _quad(k, [(v0, _slope_y(z1, yf) + e.y, z1 + e.z), (v1, _slope_y(z1, yf) + e.y, z1 + e.z),
+                  (v1, _slope_y(z0, yf) + e.y, z0 + e.z), (v0, _slope_y(z0, yf) + e.y, z0 + e.z)], (0, _k(), 1),
+              look.block_slot)
 
 
 def _plates(k, look, part, yf, zf):
