@@ -395,8 +395,8 @@ class RampHoles(Feature):
                         sh = off - rs                                                   # moved with the ramp's seam)
                         sp.holes.append((ax, T.snap(plane), s0 + sh + LINE / 2, s1 - rs - LINE / 2,
                                          max(0.02, T.style().shelf - hd[0]),                    # with it: from hd[0]
-                                         min(hd[1] * sp.run, sp.run - 0.03)))                   # back in the shelf
-                    #   to the toe)
+                                         min(hd[1] * sp.run, sp.run - 0.002)))                  # back in the shelf
+                    #   through the toe: the foot stays, a sliver of the ramp in front of it)
                     elif s1 - s0 > 2 * off + 0.3:
                         sp.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * sp.run,
                                          hd[1] * sp.run))

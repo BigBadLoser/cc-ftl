@@ -551,3 +551,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: add 2 px back to the top strip: the pipes slot 2 px back into the shelf (ramp_hole 2/32, a
   4 px ledge over it). nv10. Open: the ref's seam and slot run on down to the floor (through the toe and foot); the
   user is unsure whether to follow it.
+- 2026-11-08: the user: open the slot to the toe, not to the floor. RampHoles (one_seam): the hole on through the
+  toe px (navy's toe is red: it read as a band under the slot) to run - 0.002, the foot kept (a sliver of ramp in
+  front of the hole carries it); the pipe rows still spaced over the slope to the toe's edge. nv12.

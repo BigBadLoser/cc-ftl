@@ -127,7 +127,8 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
             k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
         dp, sn = rp + 0.015, math.sin(math.atan(fall))              # sunk a radius and a bit into the slope,
         s0 = max(d0, T.style().shelf)                               # (on the slope: the opening cut back into
-        feet = [s0 + fr * (d1 - s0) for fr in (0.3, 0.8)]            # the shelf is flat) square to it (straight
+        dt = min(d1, run_ - 0.03)                                   # (over the slope, not the toe the slot opens)
+        feet = [s0 + fr * (dt - s0) for fr in (0.3, 0.8)]            # the shelf is flat) square to it (straight
         #   down slid them on
         rows = [dd - sn * dp for dd in feet]                         # towards the toe, the lower one under it)
         zp = [zat(dd) - cs * dp for dd in feet]                      # (two rows down the opened cover)
