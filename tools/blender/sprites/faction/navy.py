@@ -284,8 +284,8 @@ class Navy(Faction):
         """A partition's +x faces in the shade tones (NAVY_SHADE) of what its lit faces take: a ramp tone at the lit
         face's level (the shade ramps sat a step down, the red none), a fixed tone as it is."""
         name = super().paint(P)
-        if P.kind not in ("x", "slope_x") or not P.sprite.startswith("tile.wall."):
-            return name
+        if P.kind not in ("x", "slope_x") or P.n[0] >= 0 or not P.sprite.startswith("tile.wall."):
+            return name                 # (P.n's x < 0: the +x side, seen; the -x one's slivers at a tile's edge kept)
         if P.role is not None and name == self.tone(P.fam, P.face, P.role):
             ys, xs = T.RAMPS.get({"hull": "blue", "trim": "ochre"}.get(P.fam, P.fam), ((), ()))
             lit = ys[xs.index(P.name)] if P.name in xs else P.name

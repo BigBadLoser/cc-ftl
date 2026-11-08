@@ -68,7 +68,7 @@ def sync_palette(entries):
 
 class Poly:
     """What a look sees of one polygon."""
-    __slots__ = ("name", "fam", "face", "role", "kind", "s", "z", "x", "y", "sprite")
+    __slots__ = ("name", "fam", "face", "role", "kind", "s", "z", "x", "y", "sprite", "n")
 
     def __init__(self, name, pts, sprite):
         self.name, self.sprite = name, sprite
@@ -80,6 +80,7 @@ class Poly:
         nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
         ax, ay, az = abs(nx), abs(ny), abs(nz)
         m = max(ax, ay, az) or 1.0
+        self.n = (nx / m, ny / m, nz / m)                # (its normal, its largest component 1)
         if az >= 0.95 * m and ax < 0.2 * m and ay < 0.2 * m:
             self.kind = "top"
         elif az > 0.25 * m:                             # (a 45-degree face is lit: its triangles' normals
