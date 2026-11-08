@@ -275,7 +275,7 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True):
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True, lid=True):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
@@ -288,6 +288,9 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True):
     lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
     dark = side                                         # side's tone)
     zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
+    if lid:                                             # (their top, the rail's 2 px in its top tone, whole: over the
+        prism(k, ax, plane, a, b, [(0.0, z1 - PZ), (d, z1 - PZ), (d, z1), (0.0, z1)], BLUE, 3,   # gaps and corners)
+              cols=[False, False, "fGT1", False], cap=False, mitre=mit)
     for c in range(-1, 2):
         for x0, w, mid in BOXES:
             u0, u1 = c - 0.5 + x0 * LINE, c - 0.5 + (x0 + w) * LINE
@@ -443,7 +446,7 @@ def slate_foot_boxes(k, ax, plane, a, b, zh, mit):
     """T1-4's foot: the boxes header (slate_boxes) again, on the shelf in place of the lip (its backing from the shelf
     up HEADER_H, not on up the wall), a px down, on the face's grey (no backing); the seam over a plain wall's lip on
     along the 2 px at each tile's end to the cabinet's side."""
-    slate_boxes(k, ax, plane, a, b, zh - PZ, zh - PZ + HEADER_H, mit, back=0.0, backing=False)
+    slate_boxes(k, ax, plane, a, b, zh - PZ, zh - PZ + HEADER_H, mit, back=0.0, backing=False, lid=False)
     zg, g = zh + 9 * PZ, BOXES[0][0] * LINE              # (the face's zg: the lip's top 3 px over the shelf, 6 more)
     for c in range(-1, 2):
         for q0, q1 in ((c - 0.5, c - 0.5 + g), (c + 0.5 - g, c + 0.5)):
