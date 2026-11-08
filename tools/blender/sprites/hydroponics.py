@@ -8,6 +8,10 @@ Look exploration: three art directions for the small 1x2 bed, ids `module.hydrop
             tray, two light tubes hung from the top rails
   tub       a rounded cream polymer tub on a dark cradle, a nutrient cartridge at one end, two hoops over it carrying
             the light rail (a small polytunnel)
+Round two, one big plant per tile (PLANTS):
+  pipe      a split steel pipe trough on cast saddles, domed valve ends, a gooseneck lamp head over each plant
+  bowls     two round flared planter pots on a cast base, a ring lamp over each from one central stem
+  vat       a flared faceted vat on a sculpted plinth, a bent-tube canopy carrying a lamp pad per plant
 States: `off` (unlit, empty), `on` (lit, water glint, empty), `on.crop` (lit with a placeholder leafy crop in the raft,
 to judge the lamp over the plants). HYDRO_VARIANTS=bench,tub narrows the build."""
 import math
@@ -146,7 +150,160 @@ def tub(k, on, crop):
     k.box(0.7, 0, 1.44, 0.14, 0.12, 0.05, "gmD")                                        # its driver box
 
 
-VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub}
+PLANTS = ((-0.5, 0.0), (0.5, 0.0))                                           # one plant per tile
+
+
+def _plant(k, u, v, z, seed=0):
+    """Placeholder crop, one big leafy head per tile: two tiers of radiating leaves and a crown."""
+    r = random.Random(seed * 11 + 5)
+    for tier, (n, L, w, lift, zz) in enumerate(((8, 0.3, 0.1, 0.25, 0.0), (6, 0.22, 0.09, 0.6, 0.08))):
+        for j in range(n):
+            a = j * math.tau / n + r.uniform(-0.2, 0.2) + tier * 0.4
+            d = L * 0.42
+            k.box(u + d * math.cos(a), v + d * math.sin(a), z + zz, L, w, 0.035, LEAF[(j + tier) % 3], rz=a,
+                  rx=-lift * (1 if math.sin(a) >= 0 else -1) * 0.0 + 0.0)
+            k.box(u + d * 1.7 * math.cos(a), v + d * 1.7 * math.sin(a), z + zz + L * lift * 0.5, L * 0.5, w * 0.8, 0.03,
+                  LEAF[(j + tier + 1) % 3], rz=a)
+    k.box(u, v, z + 0.05, 0.16, 0.16, 0.22, "alG", top="xnFL", rz=r.uniform(0, 1.5), taper=0.5)
+
+
+def _poly(k, pts, col, flip=True):
+    """A polygon from local (u, v, z) points."""
+    from . import core
+    k.m.poly([core.G(*k.p(u, v), z) for u, v, z in pts], col, flip=flip)
+
+
+def _halfpipe(k, u0, v0, z0, r, t, L, col, inner, sides=8):
+    """A split pipe lying along u: the lower half of a tube of radius r, open on top (its rim at z0), built from long
+    boxes around the axis (lit like every other part), closed ends, a flat rim strip along each top edge."""
+    seg = math.pi * r / sides
+    for i in range(sides):
+        x = math.pi + math.pi * (i + 0.5) / sides
+        k.box(u0, v0 + (r - t / 2) * math.cos(x), z0 + (r - t / 2) * math.sin(x) - t / 2, L, seg + 0.02, t, col,
+              rx=x + math.pi / 2)
+    for e in (-1, 1):                                                          # end walls
+        for i in range(sides):
+            x = math.pi + math.pi * (i + 0.5) / sides
+            k.box(u0 + e * L / 2, v0 + (r / 2) * math.cos(x), z0 + (r / 2) * math.sin(x) - 0.025, t, seg + 0.02, r,
+                  col, rx=x + math.pi / 2)
+    for sv in (-1, 1):                                                         # rim strips
+        k.box(u0, v0 + sv * (r - t / 2), z0 - 0.02, L + 0.04, t + 0.04, 0.04, inner, top=col)
+
+
+def _ring(k, u, v, z, r, col, n=12, w=0.1, h=0.05):
+    """A ring of n blocks: a ring lamp or a hoop seen flat."""
+    for i in range(n):
+        a = i * math.tau / n
+        k.box(u + r * math.cos(a), v + r * math.sin(a), z, 2 * math.pi * r / n + 0.01, w, h, col, rz=a + math.pi / 2)
+
+
+def pipe(k, on, crop):
+    """A split steel pipe trough on two cast saddles, domed valve ends, a gooseneck lamp head over each plant."""
+    lit = "growPink" if on else "blueGrey"
+    for u in (-0.55, 0.55):                                                   # cast saddles
+        k.box(u, 0, 0.0, 0.3, 0.78, 0.1, "gmD", top="gm", bevel=0.02)
+        k.box(u, 0, 0.1, 0.22, 0.7, 0.12, "steelD", top="steel", taper=1.25, bevel=0.015)
+    _halfpipe(k, 0, 0, 0.62, 0.4, 0.05, 1.9, "steelL", "steel")
+    for e in (-1, 1):                                                         # domed end caps with a valve
+        k.cyl(e * 0.98, 0, 0.25, 0.3, 0.38, "steel", top="steelL", sides=10, rtop=0.225)
+        k.cyl(e * 1.0, 0, 0.63, 0.12, 0.05, "gmD", sides=8)
+        k.cyl(e * 1.0, 0, 0.68, 0.06, 0.08, "medRed" if e > 0 else "polyB", sides=6)
+    k.box(0, 0, 0.55, 1.78, 0.62, 0.07, "gmD", top="waterD")                   # the water, with its glint
+    if on:
+        for u, v, l in ((-0.6, 0.12, 0.2), (0.2, -0.14, 0.16), (0.75, 0.05, 0.12)):
+            k.box(u, v, 0.62, l, 0.025, 0.006, "waterL")
+    for u, _ in PLANTS:                                                       # a net basket per tile
+        k.cyl(u, 0, 0.6, 0.17, 0.04, "lvWS", top="lvW2", sides=10)
+        k.cyl(u, 0, 0.64, 0.12, 0.01, "waterD", sides=8)
+    k.box(0, -0.3, 0.1, 1.2, 0.05, 0.05, "polyB")                              # feed line along the back
+    for e in (-1, 1):                                                         # gooseneck lamps from the back
+        u = e * 0.5
+        k.cyl(u, -0.42, 0.0, 0.05, 1.3, "steelD", top="steel", sides=8)       # the stem
+        for i in range(5):                                                    # the bend forward
+            t = i / 4
+            k.box(u, -0.42 + 0.42 * math.sin(t * math.pi / 2), 1.3 + 0.3 * math.sin(t * math.pi), 0.07, 0.12, 0.07,
+                  "steelD")
+        k.cyl(u, 0, 1.16, 0.2, 0.07, lit, sides=10)                           # the lamp head: a lit puck
+        k.cyl(u, 0, 1.23, 0.23, 0.05, "gm", top="steelL", sides=10)           # under its cap
+    k.box(0, -0.42, 0.0, 0.4, 0.14, 0.3, "gmD", top="gm", bevel=0.01)          # ballast box between the stems
+    k.box(0, -0.35, 0.18, 0.1, 0.012, 0.05, "green" if on else "dark")
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.66, i)
+
+
+def bowls(k, on, crop):
+    """Two round planter pots on a cast base, a ring lamp over each from one central stem."""
+    lit = "growViolet" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.6, 0.5, 0.08, "gmD", top="gm", bevel=0.03)               # base rail
+    k.cyl(0, 0, 0.08, 0.14, 0.36, "steelD", top="steel", sides=10)             # the hub
+    for e in (-1, 1):
+        u = e * 0.5
+        k.cyl(u, 0, 0.0, 0.26, 0.1, "gmD", top="gm", sides=12)                 # foot
+        k.cyl(u, 0, 0.1, 0.28, 0.42, "steel", top="steelL", sides=12, rtop=0.392)   # the pot: flared
+        k.cyl(u, 0, 0.52, 0.4, 0.06, "steelL", top="plate", sides=12)          # its rim
+        k.cyl(u, 0, 0.52, 0.36, 0.08, "gmD", top="waterD", sides=12)           # the water
+        if on:
+            k.box(u - 0.1, 0.08, 0.6, 0.18, 0.025, 0.006, "waterL")
+        k.cyl(u, 0, 0.58, 0.19, 0.05, "lvWS", top="lvW2", sides=10)           # net basket
+        k.cyl(u, 0, 0.63, 0.13, 0.01, "waterD", sides=8)
+        k.box(u, 0.38, 0.2, 0.1, 0.03, 0.1, "polyB")                           # feed valve on the front
+        k.box(u * 0.5, 0, 0.12, 0.5, 0.05, 0.05, "polyB")                      # pipes to the hub
+    k.box(0, 0.22, 0.08, 0.18, 0.04, 0.26, "gm")                                # the hub's panel
+    k.box(0, 0.245, 0.26, 0.08, 0.012, 0.05, "green" if on else "dark")
+    k.cyl(0, -0.3, 0.0, 0.055, 1.42, "steelD", top="steel", sides=8)            # the lamp stem, at the back
+    k.box(0, -0.15, 1.36, 0.08, 0.36, 0.06, "steelD")                           # arm forward
+    k.box(0, 0, 1.36, 1.3, 0.08, 0.06, "steelD", top="steel")                   # the cross arm
+    for e in (-1, 1):
+        u = e * 0.5
+        k.cyl(u, 0, 1.3, 0.08, 0.1, "gmD", sides=8)
+        _ring(k, u, 0, 1.22, 0.3, "gm", n=12, w=0.1, h=0.05)                   # ring housing
+        _ring(k, u, 0, 1.2, 0.3, lit, n=12, w=0.12, h=0.03)                     # its lit underside, seen at the rim
+        _ring(k, u, 0, 1.27, 0.25, lit, n=12, w=0.04, h=0.03)                   # and a lit inner lip
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.65, i)
+
+
+def vat(k, on, crop):
+    """A flared vat with soft faceted sides on a sculpted plinth, a bent-tube canopy with a lamp pad per plant."""
+    lit = "growPink" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.3, 0.4, 0.14, "gmD", top="gm", bevel=0.04, taper=0.8)    # plinth, narrowing up
+    for e in (-1, 1):
+        k.box(e * 0.72, 0, 0.0, 0.2, 0.5, 0.1, "gmD", top="gm", bevel=0.03)     # outriggers
+    k.box(0, 0, 0.12, 1.5, 0.56, 0.3, "steelD", top="steel", bevel=0.05, taper=1.28)   # the vat: flares out
+    k.box(0, 0, 0.4, 1.86, 0.72, 0.22, "steelL", top="plate", bevel=0.06, taper=1.04)
+    k.box(0, 0, 0.6, 1.98, 0.84, 0.07, "plate", top="steelL", bevel=0.035)      # rolled lip
+    k.box(0, 0.4, 0.42, 1.4, 0.012, 0.035, "hazY")                              # a band on the front
+    k.box(0, 0, 0.58, 1.76, 0.62, 0.08, "gmD", top="waterD")                    # the water
+    if on:
+        for u, v, l in ((-0.5, 0.1, 0.22), (0.3, -0.12, 0.16), (0.7, 0.08, 0.1)):
+            k.box(u, v, 0.66, l, 0.025, 0.006, "waterL")
+    for u, _ in PLANTS:
+        k.box(u, 0, 0.64, 0.4, 0.4, 0.05, "lvWS", top="lvW2", bevel=0.02, rz=math.pi / 4)   # a diamond raft
+        k.cyl(u, 0, 0.69, 0.11, 0.01, "waterD", sides=8)
+    k.box(0.0, 0.43, 0.2, 0.3, 0.03, 0.16, "gm")                                # control pad
+    k.box(0.0, 0.45, 0.28, 0.12, 0.012, 0.05, "cyan" if on else "dark")
+    k.cyl(-0.98, -0.3, 0.6, 0.06, 0.9, "steelD", top="steel", sides=8)          # canopy: a tube up from the lip
+    pts = [(-0.98, -0.3, 1.5), (-0.75, 0.0, 1.62), (-0.5, 0.0, 1.62), (0.5, 0.0, 1.62), (0.75, 0.0, 1.62),
+           (0.98, -0.3, 1.5)]
+    for (u0, v0, z0), (u1, v1, z1) in zip(pts, pts[1:]):                        # a bent tube over both plants
+        n = max(1, int(math.hypot(u1 - u0, v1 - v0, z1 - z0) / 0.1))
+        for i in range(n + 1):
+            t = i / n
+            k.box(u0 + (u1 - u0) * t, v0 + (v1 - v0) * t, z0 + (z1 - z0) * t - 0.035, 0.08, 0.08, 0.07, "steelD")
+    k.cyl(0.98, -0.3, 0.6, 0.06, 0.9, "steelD", top="steel", sides=8)
+    for u, _ in PLANTS:                                                        # lamp pads under the tube
+        k.box(u, 0, 1.5, 0.44, 0.36, 0.08, "gm", top="steelL", bevel=0.03)
+        k.box(u, 0.185, 1.51, 0.36, 0.012, 0.045, lit)
+        for e in (-1, 1):
+            k.box(u + e * 0.225, 0, 1.51, 0.012, 0.3, 0.045, lit)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.7, i)
+
+
+VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat}
 STATES = ("off", "on", "on.crop")
 
 
