@@ -1,12 +1,13 @@
 """Hydroponics grow beds (family `hydroponics`). Local frame and placement: modkit.K (front = +v, where the crew
 stand to work the bed).
 
-The bed (terra, chosen from a long look exploration; the other directions are in git history): an angular navy base
-with a slatted panel and a control screen, a soil tray under a glass canopy in grey frames. The canopy rises upright a
-short way, then slopes on its long sides to a glass roof; its ends are upright. A strut across the roof carries a
-white ring lamp, open in the middle so the plants show through it, one plant per tile.
-Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
-a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
+The bed (chosen from a long look exploration; the other directions are in git history): two standing white tanks,
+one under each plant, and a pump between them, inside grey corner legs; a copper manifold along the front with a red
+valve on each tank. Above, a soil tray under a glass canopy in grey frames: it rises upright a short way, then slopes
+on its long sides to a glass roof; its ends are upright. A strut across the roof carries a white ring lamp, open in
+the middle so the plants show through it, one plant per tile.
+Layers: `.off` / `.on` are the bed; `.crop.<crop>.<stage>` is the crop drawn on top of the bed, rendered with the bed
+as a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
 import math
 import os
@@ -121,8 +122,7 @@ def _on(on, lit="cyan"):
     return lit if on else "steelD"
 
 
-# ---- the directions --------------------------------------------------------------------------------------------------
-# ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
+# ---- see-through parts ---------------------------------------------------------------------------------------------------
 GLASS_ALPHA, GLINT_ALPHA, GLASS_RIM = 0.1, 0.5, 0.0
 
 
@@ -195,61 +195,18 @@ def _tray(k, cu, L, D, z0, zs, seed):
     _soil(k, cu, 0, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
 
 
-BODY = _cham(0, 0, 1.9375, 0.875, 0.02)    # the base body: front face on v = 14/32, ends on u = +-31/32 (whole px)
-FV, EU = 0.4375, 0.96875
+# ---- the base: a tank under each plant, a pump between them, a copper manifold, in grey corner legs -------------------
+VQ = 0.46875                                     # the manifold's line, its front face on the tile's edge (whole px)
 
 
-def _screen(k, u, z, on):
-    """The control screen: a dark bezel with a lit readout and a status light."""
-    k.box(u, FV + 0.006, z, 0.25, 0.01, 0.12, "dark")
-    k.box(u - 0.0625, FV + 0.012, z + 0.04, 0.125, 0.01, 0.05, _on(on))
-    k.box(u + 0.09375, FV + 0.012, z + 0.04, 0.0625, 0.01, 0.05, _on(on, "orange"))
-
-
-def _slats(k, u, z, h, n, col, back="dark"):
-    """A vent: n 2 px slats at a 4 px pitch, centred on u, over a dark recess."""
-    w = n * 0.125 - 0.0625
-    k.box(u, FV, z - 0.02, w + 0.125, 0.01, h + 0.04, back)
-    for j in range(n):
-        k.box(u - w / 2 + 0.03125 + j * 0.125, FV + 0.006, z, 0.0625, 0.01, h, col)
-
-
-def _base_orig(k, on):
-    _prism(k, BODY, 0.1, 0.5, "tNavy", top="tNavyL")
-    _slats(k, -0.40625, 0.22, 0.22, 6, "tNavyL")
-    k.box(0.5, FV, 0.26, 0.3125, 0.01, 0.2, "tFrame")
-    _screen(k, 0.5, 0.3, on)
-
-
-def _frame_legs(k, us=(-1, 1)):
+def _frame_legs(k):
     """Grey corner legs that carry the canopy frame down to the floor."""
-    for su in us:
+    for su in (-1, 1):
         for sv in (-1, 1):
             k.box(su * 0.921875, sv * 0.390625, 0.0, 0.09375, 0.09375, 0.56, "tFrame", top="tFrameL")
 
 
-# ---- plumbing: pipes, valves, tanks, pumps -----------------------------------------------------------------------------
-PIPE, PIPE_R = "sole", 0.035
-
-
-def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
-    """A pipe through the local points: straight runs with a coupling at each bend, or (joint None) runs that carry
-    on r past each bend so they meet in a clean square elbow."""
-    n = len(pts)
-    for i, (a, b) in enumerate(zip(pts, pts[1:])):
-        if joint is None:
-            d = [b[j] - a[j] for j in range(3)]
-            m = math.sqrt(sum(x * x for x in d))
-            e = [x / m * r for x in d]
-            a = tuple(a[j] - e[j] for j in range(3)) if i > 0 else a
-            b = tuple(b[j] + e[j] for j in range(3)) if i + 2 < n else b
-        _tube(k, [a, b], r, col, n=8)
-    if joint is not None:
-        for u, v, z in pts[1:-1]:
-            k.box(u, v, z - r * 1.15, r * 2.3, r * 2.3, r * 2.3, joint)
-
-
-def _sq_pipe(k, pts, w=0.0625, col=PIPE):
+def _sq_pipe(k, pts, w=0.0625, col="pipeCu"):
     """A square-section pipe through the local points (faces square to the axes, like the frame bars, so it stays
     crisp at pixel scale); each run carries on w / 2 past a bend so the runs meet in a solid square elbow."""
     n = len(pts)
@@ -262,38 +219,21 @@ def _sq_pipe(k, pts, w=0.0625, col=PIPE):
         _bar(k, a, b, w, col)
 
 
-def _valve(k, u, v, z, face="v", body="brass", wheel="hivis"):
-    """A valve body on a pipe with a handwheel (brass and orange by default), facing front (+v) or up."""
-    k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, body)
-    if face == "v":
-        _tube(k, [(u, v + 0.045, z), (u, v + 0.075, z)], 0.012, "steel", n=6)
-        _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, wheel, n=10)
-    else:
-        k.cyl(u, v, z + 0.045, 0.012, 0.04, "steel", sides=6)
-        k.cyl(u, v, z + 0.085, 0.06, 0.02, wheel, sides=10)
+def _valve(k, u, v, z):
+    """A steel valve body on the manifold with a red handwheel facing front."""
+    k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, "steel")
+    _tube(k, [(u, v + 0.045, z), (u, v + 0.075, z)], 0.012, "steel", n=6)
+    _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, "medRed", n=10)
 
 
-def _vtank(k, u, v, z, r, h, on, glass_v=None):
+def _vtank(k, u, v, z, r, h, on):
     """A standing white tank with navy bands and a sight glass on its front showing the water (cyan when on)."""
     k.cyl(u, v, z, r, h, "tWhite", top="tWhiteL", sides=20)
     for zb in (z + 0.06, z + h - 0.1):
         k.cyl(u, v, zb, r + 0.008, 0.035, "tNavy", top="tNavyL", sides=20)
-    gv = v + r + 0.002 if glass_v is None else glass_v
+    gv = v + r + 0.002
     k.box(u, gv, z + 0.12, 0.0625, 0.02, h - 0.26, "dark")
     k.box(u, gv + 0.008, z + 0.13, 0.03125, 0.02, (h - 0.28) * 0.6, _on(on, "cyan") if on else "lens")
-
-
-def _htank(k, u0, u1, v, z, r, on):
-    """A white capsule tank lying along u: domed ends, navy straps, a sight glass on its front."""
-    _tube(k, [(u0, v, z), (u1, v, z)], r, "tWhite", n=16)
-    for sg, ue in ((-1, u0), (1, u1)):
-        _tube(k, [(ue, v, z), (ue + sg * 0.04, v, z)], r * 0.86, "tWhite", n=16)
-        _tube(k, [(ue + sg * 0.04, v, z), (ue + sg * 0.065, v, z)], r * 0.55, "tWhite", n=16)
-    for us in (u0 + 0.14, u1 - 0.14):
-        _tube(k, [(us - 0.02, v, z), (us + 0.02, v, z)], r + 0.01, "tNavy", n=16)
-    uc = (u0 + u1) / 2
-    k.box(uc, v + r - 0.01, z - r * 0.55, 0.0625 * 4, 0.03, r * 1.1, "dark")
-    k.box(uc - 0.03, v + r + 0.006, z - r * 0.45, 0.0625 * 3, 0.02, r * 0.5, _on(on, "cyan") if on else "lens")
 
 
 def _pump(k, u, v, z, on, s=1.0):
@@ -303,85 +243,26 @@ def _pump(k, u, v, z, on, s=1.0):
     k.box(u, v + 0.075 * s, z + 0.17 * s, 0.03125, 0.01, 0.03, _on(on))
 
 
-# Under the bed only a shallow strip at the front shows (the tray and sill hide the rest from this angle), so the
-# plumbing sits in front of a recessed body, v 0.15..0.45. These bases draw their own footing (no black kick).
-def _base_rack(k, on):
-    """A low navy deck, a navy body set back under the bed, front corner legs, and in the open front bay a white
-    capsule tank in saddles; a pump on the deck draws from it through a valve and feeds a riser up into the tray."""
-    _prism(k, _cham(0, 0, 1.875, 0.8125, 0.02), 0.0, 0.08, "tNavy", top="tNavyL")            # deck
-    _prism(k, _cham(0, -0.15, 1.875, 0.5625, 0.02), 0.08, 0.48, "tNavy", top="tNavyL")       # the body, set back
-    for su in (-1, 1):
-        k.box(su * 0.90625, 0.375, 0.0, 0.125, 0.125, 0.56, "tNavy", top="tNavyL")
-    for us in (-0.5, 0.0):
-        k.box(us, 0.25, 0.08, 0.08, 0.3, 0.06, "tFrame", top="tFrameL")                        # saddles
-    _htank(k, -0.66, 0.16, 0.25, 0.29, 0.17, on)
-    _pump(k, 0.58, 0.27, 0.08, on, s=1.15)
-    _pipe(k, [(0.23, 0.25, 0.2), (0.47, 0.25, 0.2)])                                         # suction, tank to pump
-    _valve(k, 0.35, 0.25, 0.2)
-    _pipe(k, [(0.58, 0.27, 0.43), (0.58, 0.27, 0.56)])                                       # riser into the tray
-    _pipe(k, [(-0.25, 0.25, 0.46), (-0.25, 0.25, 0.56)])                                      # fill line, tank top
-    k.box(-0.82, 0.25, 0.18, 0.0625, 0.2, 0.3, "tWhite", top="tWhiteL")                      # control box on the leg
-    k.box(-0.785, 0.2, 0.36, 0.01, 0.0625, 0.04, _on(on))
-
-
-def _base_tower(k, on):
-    """A short navy body on a recessed dark kick and a standing white tank at the end on its own foot; a manifold
-    pipe runs out of the tank along the front with a valve, to a pump lying along the body."""
-    _prism(k, _cham(-0.3125, 0, 1.25, 0.8125, 0.03), 0.0, 0.08, "dark")
-    _prism(k, _cham(-0.3125, 0, 1.3125, 0.875, 0.02), 0.08, 0.52, "tNavy", top="tNavyL")
-    _frame_legs(k, us=(1,))
-    k.cyl(0.64, 0.08, 0.0, 0.25, 0.04, "dark", sides=20)
-    _vtank(k, 0.64, 0.08, 0.04, 0.28, 0.52, on)
-    zm, vm = 0.4, FV + 0.05
-    _pipe(k, [(0.66, 0.35, zm), (0.66, vm, zm), (-0.84, vm, zm), (-0.84, vm, 0.28)], r=0.035)
-    _valve(k, 0.25, vm, zm)
-    _tube(k, [(-0.86, vm + 0.03, 0.2), (-0.52, vm + 0.03, 0.2)], 0.1, "steel", n=12)        # pump, along the front
-    _tube(k, [(-0.52, vm + 0.03, 0.2), (-0.26, vm + 0.03, 0.2)], 0.11, "tWhite", n=12)       # its motor
-    for uf in (-0.46, -0.39, -0.32):
-        _tube(k, [(uf, vm + 0.03, 0.2), (uf + 0.025, vm + 0.03, 0.2)], 0.12, "tNavy", n=12)  # cooling fins
-    k.box(-0.8, vm + 0.03, 0.0, 0.1, 0.1, 0.1, "tFrame")                                     # pump feet
-    k.box(-0.3, vm + 0.03, 0.0, 0.1, 0.1, 0.09, "tFrame")
-    _screen(k, 0.0, 0.2, on)
-
-
-def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis", jc="steel"):
-    """A tank under each plant: two standing white tanks on dark feet inside grey corner legs. A pump between them
-    draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
+def _base(k, on):
+    """Two standing white tanks on dark feet, one under each plant, inside grey corner legs. The pump between them
+    lifts through one pipe out of its base into a copper manifold along the front, a valve on each tank's centre, a
+    riser at each end into the tray."""
     _frame_legs(k)
     for su in (-1, 1):
         k.cyl(su * 0.48, 0.0, 0.0, 0.34, 0.04, "dark", sides=24)
         _vtank(k, su * 0.48, 0.0, 0.04, 0.37, 0.52, on)
     _pump(k, 0.0, 0.26, 0.0, on, s=1.2)
-    if jc is not None:
-        for su in (-1, 1):
-            _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col=pc)   # suction
-    vm = FV + 0.05
-    up = [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)]
-    run = [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)]          # manifold and risers
-    if jc is None:     # square copper: one pipe out of the middle of the pump's base, up into the manifold
-        vq, zb = 0.46875, 0.084
-        _sq_pipe(k, [(0.0, 0.3, zb), (0.0, vq, zb), (0.0, vq, zm)], col=pc)
-        _sq_pipe(k, [(-0.71875, vq, 0.56), (-0.71875, vq, zm), (0.71875, vq, zm), (0.71875, vq, 0.56)], col=pc)
-        vm = vq
-    else:
-        _pipe(k, up, r=0.035, col=pc, joint=jc)
-        _pipe(k, run, r=0.035, col=pc, joint=jc)
+    zm, zb = 0.48, 0.084
+    _sq_pipe(k, [(0.0, 0.3, zb), (0.0, VQ, zb), (0.0, VQ, zm)])
+    _sq_pipe(k, [(-0.71875, VQ, 0.56), (-0.71875, VQ, zm), (0.71875, VQ, zm), (0.71875, VQ, 0.56)])
     for su in (-1, 1):
-        _valve(k, su * 0.48, vm, zm, body=vb, wheel=vw)                                     # on the tank's centre
+        _valve(k, su * 0.48, VQ, zm)
 
 
-BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin,
-         "twinhi": lambda k, on: _base_twin(k, on, 0.48), "twinlo": lambda k, on: _base_twin(k, on, 0.06),
-         "twincu": lambda k, on: _base_twin(k, on, 0.48, "pipeCu"), "twinblu": lambda k, on: _base_twin(k, on, 0.48, "pipeB"),
-         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed", None),
-         "twincuw": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "tWhite")}
-
-
-def terra(k, on, base="orig"):
-    """One long glass canopy on an angular base (the BASES), grey frames."""
-    if base == "orig":
-        _prism(k, _cham(0, 0, 1.9, 0.84, 0.03), 0.0, 0.1, "dark")                             # kick
-    BASES[base](k, on)
+def bed(k, on):
+    """The small bed: the base, a grey sill, the soil tray, the glass canopy. Returns the plant spots, the soil
+    height and the ceiling (the lamp's underside) the crops must stay under."""
+    _base(k, on)
     _ring(k, _cham(0, 0, 2.0, 0.9375, 0.02), _cham(0, 0, 1.86, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
     zs = 0.69
     _tray(k, 0, 1.84, 0.8, 0.6, zs, 3)
@@ -389,35 +270,117 @@ def terra(k, on, base="orig"):
     return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
 
 
-# ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
-def _greens(k, u, v, z, seed=0, hmax=None):
-    """A broad leafy head: two tiers of leaves round a crown."""
+# ---- the crops: one plant per tile, in three stages, under the lamp (hmax over the soil) ------------------------------
+STAGES = ("sprout", "grow", "ripe")
+
+
+def _leaf(k, u, v, z, a, L, w, tilt, col):
+    """A flat leaf from (u, v, z) out along the angle a, L long and w wide, its tip tilted up by tilt."""
+    d = L * 0.48
+    k.box(u + d * math.cos(a), v + d * math.sin(a), z, L, w, 0.035, col, top=col, rz=a, ry=-tilt)
+
+
+def _greens(k, u, v, z, st, seed, hmax):
+    """Greens: a low, broad leafy head in bright fresh green. A sprout is a small upright rosette; half grown, one
+    open tier; ripe, two tiers of broad leaves round a tight crown."""
     r = random.Random(seed * 11 + 5)
     cols = ("leaf", "leafL", "leafD")
-    for tier, (n, L, w, zz, tilt) in enumerate(((9, 0.32, 0.13, 0.0, 0.25), (7, 0.24, 0.12, 0.07, 0.55))):
+    if st == "sprout":
+        for j in range(5):
+            _leaf(k, u, v, z, j * math.tau / 5 + r.uniform(-0.2, 0.2), 0.12, 0.07, 0.8, cols[j % 2])
+        return
+    g = 0.68 if st == "grow" else 1.0
+    tiers = ((9, 0.32, 0.13, 0.0, 0.25), (7, 0.24, 0.12, 0.07, 0.55))
+    for tier, (n, L, w, zz, tilt) in enumerate(tiers):
         for j in range(n):
             a = j * math.tau / n + r.uniform(-0.15, 0.15) + tier * 0.4
-            d = L * 0.48
-            k.box(u + d * math.cos(a), v + d * math.sin(a), z + zz, L, w, 0.04, cols[(j + tier) % 3], top=cols[(j + tier) % 3],
-                  rz=a, ry=-tilt)
-    k.box(u, v, z + 0.05, 0.16, 0.16, 0.18, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
+            _leaf(k, u, v, z + zz * g, a, L * g, w * g, tilt + (0.15 if st == "grow" else 0), cols[(j + tier) % 3])
+    k.box(u, v, z + 0.05 * g, 0.16 * g, 0.16 * g, 0.18 * g, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
 
 
-def _grain(k, u, v, z, seed=0, hmax=0.85):
-    """Upright stalks with heavy gold heads, the tallest crop, as tall as the bed lets it be (hmax over the soil)."""
+def _beans(k, u, v, z, st, seed, hmax):
+    """Protein beans: a tepee of three canes the full height (set at sowing), a dark green vine climbing them, pale
+    pods hanging when ripe."""
+    r = random.Random(seed * 13 + 3)
+    top = (u, v, z + hmax - 0.02)
+    feet = [(u + 0.2 * math.cos(a), v + 0.2 * math.sin(a), z) for a in (math.pi / 2 + i * math.tau / 3 for i in range(3))]
+    for f in feet:
+        _tube(k, [f, top], 0.022, "cane", n=4, phase=math.pi / 4)
+    reach, n = {"sprout": (0.2, 2), "grow": (0.6, 6), "ripe": (0.95, 10)}[st]
+    cols = ("beanL", "bean", "beanL", "beanD")
+    for i, f in enumerate(feet):
+        for j in range(n):
+            t = (j + r.uniform(0.2, 0.8)) / n * reach
+            p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
+            s = 1.0 if st != "sprout" else 0.7
+            a = r.uniform(0, math.tau)
+            _leaf(k, p[0], p[1], p[2], a, 0.16 * s, 0.12 * s, r.uniform(-0.2, 0.4), cols[(i + j) % 4])
+        if st == "ripe":
+            for j in range(4):
+                t = r.uniform(0.3, 0.6)                       # below the lamp, which hides the tops
+                p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
+                a = r.uniform(0, math.tau)
+                k.box(p[0] + 0.05 * math.cos(a), p[1] + 0.05 * math.sin(a), p[2] - 0.16, 0.045, 0.045, 0.16, "pod",
+                      top="pod", rx=r.uniform(-0.2, 0.2))
+
+
+def _herbs(k, u, v, z, st, seed, hmax):
+    """Medicinal herbs: small bushy clumps in a grey-green; ripe, lavender spikes and pale flowers over them."""
+    r = random.Random(seed * 17 + 7)
+    h = {"sprout": 0.08, "grow": 0.17, "ripe": 0.22}[st]
+    spots = [(0.0, 0.0)] + [(0.17 * math.cos(a), 0.17 * math.sin(a)) for a in (i * math.tau / 5 + 0.3 for i in range(5))]
+    if st == "sprout":
+        spots = spots[1::2]
+    cols = ("herb", "herbD", "herbL", "herb")
+    for i, (du, dv) in enumerate(spots):                   # each clump: small leaves over a dome
+        s = r.uniform(0.85, 1.1) * (1.15 if i == 0 else 1.0)
+        rad = (0.1 if st != "sprout" else 0.05) * s
+        for j in range(9 if st != "sprout" else 4):
+            a, e = r.uniform(0, math.tau), r.uniform(0.15, 1.2)
+            lu, lv = u + du + rad * math.cos(a) * math.cos(e), v + dv + rad * math.sin(a) * math.cos(e)
+            lz = z + h * s * (0.25 + 0.7 * math.sin(e) / math.sin(1.2))
+            k.box(lu, lv, lz, 0.08 * s, 0.05 * s, 0.03, cols[j % 4], top=cols[(j + 1) % 4], rz=a, ry=-0.5)
+        k.box(u + du, v + dv, z, rad * 1.2, rad * 1.2, h * s * 0.6, "herbD", taper=0.6)
+    if st == "ripe":
+        for j in range(9):
+            a, d = r.uniform(0, math.tau), r.uniform(0.04, 0.22)
+            cu, cv = u + d * math.cos(a), v + d * math.sin(a)
+            hs = r.uniform(0.28, min(0.37, hmax - 0.02))
+            k.box(cu, cv, z + 0.1, 0.025, 0.025, hs - 0.1, "herbD")
+            k.box(cu, cv, z + hs - 0.1, 0.065, 0.065, 0.12, "flowerL", top="flowerL", taper=0.55)
+        for j in range(12):
+            a, d = r.uniform(0, math.tau), r.uniform(0.02, 0.24)
+            k.box(u + d * math.cos(a), v + d * math.sin(a), z + h * 0.92, 0.055, 0.055, 0.04, "flowerW", top="flowerW")
+
+
+def _grain(k, u, v, z, st, seed, hmax):
+    """Grain: upright stalks. A sprout is a tuft of green blades; half grown, green stalks with small green heads;
+    ripe, gold straw as tall as the bed lets it be with heavy heads that droop."""
     r = random.Random(seed * 7 + 2)
+    if st == "sprout":
+        for i in range(9):
+            a, d = r.uniform(0, math.tau), 0.16 * math.sqrt(r.uniform(0.05, 1.0))
+            k.box(u + d * math.cos(a), v + d * math.sin(a), z, 0.025, 0.025, r.uniform(0.07, 0.12), "leaf",
+                  rx=r.uniform(-0.3, 0.3), ry=r.uniform(-0.3, 0.3))
+        return
+    ripe = st == "ripe"
+    stalk, head = ("straw", "grain") if ripe else ("stalk", "stalk")
     for i in range(13):
         a, d = r.uniform(0, math.tau), 0.22 * math.sqrt(r.uniform(0.05, 1.0))
         cu, cv = u + d * math.cos(a), v + d * math.sin(a)
-        h = r.uniform(0.66, 1.0) * (hmax - 0.17)
-        k.box(cu, cv, z, 0.045, 0.045, h, "stalk")
-        k.box(cu, cv, z + h - 0.03, 0.08, 0.08, 0.2, "grain", top="grain", taper=0.6, rz=a)
-        k.box(cu + 0.03, cv, z + h * 0.4, 0.16, 0.05, 0.03, "leafD", rz=a, ry=-0.5)
+        h = r.uniform(0.66, 1.0) * (hmax - 0.17) * (1.0 if ripe else 0.62)
+        k.box(cu, cv, z, 0.045, 0.045, h, stalk)
+        if ripe:
+            k.box(cu, cv, z + h - 0.03, 0.09, 0.09, 0.2, ("grain", "grainD")[i % 2], top="grain", taper=0.6, rz=a,
+                  ry=0.35 * math.cos(a), rx=0.35 * math.sin(a))
+        else:
+            k.box(cu, cv, z + h - 0.02, 0.045, 0.045, 0.1, head, top="leafL", taper=0.7, rz=a)
+        k.box(cu + 0.03, cv, z + h * 0.4, 0.16, 0.05, 0.03, "straw" if ripe else "leafD", rz=a, ry=-0.5)
 
 
-CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin", "twinhi", "twinlo", "twincu", "twinblu", "twincur", "twincuw")}}
-LAYERS = ("off", "on", "crop.greens", "crop.grain")
+CROPS = {"greens": _greens, "beans": _beans, "herbs": _herbs, "grain": _grain}
+VARIANTS = {"bed": bed}
+LAYERS = ("off", "on") + tuple(f"crop.{c}.{s}" for c in CROPS for s in STAGES)
 
 
 def build(variant, layer, rot=0):
@@ -435,8 +398,9 @@ def build(variant, layer, rot=0):
     for o in sum(parts.values(), []):                                       # the plants show through the glass
         o.hide_render = True
     kc = K(name + "_crop", (2, 1), rot)
+    _, crop_id, stage = layer.split(".")
     for i, (u, v) in enumerate(plants):
-        CROPS[layer.split(".")[1]](kc, u, v, zs, i, hmax=ceil - zs - 0.06)
+        CROPS[crop_id](kc, u, v, zs, stage, i, ceil - zs - 0.06)
     crop = kc.build()
     return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
