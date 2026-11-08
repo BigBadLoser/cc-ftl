@@ -16,6 +16,10 @@ Round three, soil beds (_soil) in place of water:
   skiff     a boat-shaped planter on curved skids, a crane mast with a pendant bell lamp over each plant
   hexes     two hexagonal planters at two heights on a stepped base, a mast with angled light panels
   bags      two canvas grow bags in a drip tray, a drip line, a bent pipe gantry with one long tube lamp
+Round four, one connected body each:
+  capsule   a pill-shaped monocoque with a cowl curling up from its back edge over the bed, the lamp in its lip
+  tunnel    a bellied hull with round ends, three ribs rising from it into a lit spine (a tunnel house)
+  visor     a chamfered body, a backboard carrying the plumbing, a visor hood tilted up over the bed
 States: `off` (unlit, empty), `on` (lit, water glint, empty), `on.crop` (lit with a placeholder leafy crop in the raft,
 to judge the lamp over the plants). HYDRO_VARIANTS=bench,tub narrows the build."""
 import math
@@ -121,12 +125,12 @@ def scaffold(k, on, crop):
     k.box(0.85, -0.3, 1.47, 0.06, 0.06, 0.04, "dark")
 
 
-def _hoop(k, u, z0, h, half, col, n=7):
+def _hoop(k, u, z0, h, half, col, n=7, s=0.06, top=None):
     """A semi-elliptic hoop across the bed (the v-z plane) at u: span +-half at height z0, apex z0 + h."""
     pts = [(half * math.cos(t), z0 + h * math.sin(t)) for t in (math.pi * i / n for i in range(n + 1))]
     for (v0, za), (v1, zb) in zip(pts, pts[1:]):
-        L = math.hypot(v1 - v0, zb - za) + 0.03
-        k.box(u, (v0 + v1) / 2, (za + zb) / 2 - 0.03, 0.06, L, 0.06, col, rx=math.atan2(zb - za, v1 - v0))
+        L = math.hypot(v1 - v0, zb - za) + s / 2
+        k.box(u, (v0 + v1) / 2, (za + zb) / 2 - s / 2, s, L, s, col, top=top, rx=math.atan2(zb - za, v1 - v0))
 
 
 def tub(k, on, crop):
@@ -432,8 +436,104 @@ def bags(k, on, crop):
             _plant(k, u, v, 0.62, i)
 
 
+def _pill(k, z, L, w, h, col, top=None, sides=12):
+    """A pill from above along u: a box with a half-cylinder at each end, L long over all, w wide."""
+    k.box(0, 0, z, L - w, w, h, col, top=top)
+    for e in (-1, 1):
+        k.cyl(e * (L - w) / 2, 0, z, w / 2, h, col, top=top, sides=sides)
+
+
+def capsule(k, on, crop):
+    """One pill-shaped monocoque body on a moulded base, the soil in a well along it, a cowl curling up from the
+    back edge and over the bed with the lamp in its lip: body and light are one shape."""
+    lit = "growPink" if on else "blueGrey"
+    _pill(k, 0.0, 1.7, 0.6, 0.12, "gmD", top="gm")                                   # base
+    _pill(k, 0.12, 1.96, 0.84, 0.5, "steel", top="steelL")                            # body
+    _pill(k, 0.34, 1.98, 0.86, 0.06, "navy")                                          # band around it
+    _pill(k, 0.62, 1.78, 0.66, 0.05, "soilD", top="soilD")                            # the well
+    _soil(k, 0, 0, 0.66, 1.58, 0.5, 7)
+    n = 6                                                                            # the cowl: a quarter arc
+    pts = [(-0.06 - 0.36 * math.cos(a), 0.62 + 0.7 * math.sin(a)) for a in (math.pi / 2 * i / n for i in range(n + 1))]
+    for (v0, za), (v1, zb) in zip(pts, pts[1:]):
+        L = math.hypot(v1 - v0, zb - za) + 0.06
+        k.box(0, (v0 + v1) / 2, (za + zb) / 2 - 0.07, 1.6, L, 0.14, "steel", top="steelL",
+              rx=math.atan2(zb - za, v1 - v0))
+    for e in (-1, 1):                                                                # rounded cheeks at its ends
+        k.cyl(e * 0.8, -0.3, 0.62, 0.12, 0.5, "steel", top="steelL", sides=10)
+    k.box(0, 0.1, 1.26, 1.62, 0.34, 0.1, "steel", top="steelL", bevel=0.03)          # the lip, forward over the bed
+    k.box(0, 0.275, 1.27, 1.5, 0.012, 0.06, lit)                                      # the lamp along its edge
+    for e in (-1, 1):
+        k.box(e * 0.81, 0.1, 1.27, 0.012, 0.3, 0.06, lit)
+    k.box(0.5, 0.42, 0.4, 0.34, 0.012, 0.14, "dark")                                  # display on the front
+    k.box(0.5, 0.428, 0.44, 0.24, 0.012, 0.06, "cyan" if on else "steelD")
+    k.box(-0.5, 0.42, 0.22, 0.24, 0.012, 0.06, "hazY")                                # label plate
+    k.cyl(-0.98, 0.0, 0.46, 0.05, 0.1, "polyB", sides=6)                              # water inlet on the nose
+    k.cyl(0.98, 0.0, 0.46, 0.06, 0.06, "gmD", sides=6)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.74, i)
+
+
+def tunnel(k, on, crop):
+    """A rounded hull with a bellied underside and round ends, soil along its top, three ribs rising from the hull
+    into a spine that carries the lamp: a small tunnel house in one piece."""
+    lit = "growPink" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.1, 0.3, 0.2, "gmD", top="gm", bevel=0.02)                      # keel
+    _halfpipe(k, 0, 0, 0.6, 0.42, 0.1, 1.5, "steel", "steelL")                        # the belly
+    for e in (-1, 1):                                                                # round ends
+        k.cyl(e * 0.75, 0, 0.18, 0.42, 0.42, "steel", top="steelL", sides=12)
+        k.cyl(e * 0.75, 0, 0.6, 0.44, 0.04, "steelL", top="plate", sides=12)         # rim
+    k.box(0, 0, 0.6, 1.5, 0.88, 0.04, "steelL", top="plate")
+    k.box(0, 0, 0.6, 1.5, 0.66, 0.08, "soilD", top="soilD")                           # the well
+    for e in (-1, 1):
+        k.cyl(e * 0.75, 0, 0.6, 0.33, 0.08, "soilD", top="soilD", sides=12)
+    _soil(k, 0, 0, 0.68, 1.9, 0.5, 9, n=34)
+    for u, sz in ((-0.95, 0.1), (0, 0.08), (0.95, 0.1)):                              # ribs
+        _hoop(k, u, 0.62, 0.74, 0.44, "steel", n=8, s=sz, top="steelL")
+    k.box(0, 0, 1.32, 2.0, 0.12, 0.1, "steel", top="steelL", bevel=0.02)              # the spine
+    for sv in (-1, 1):
+        k.box(0, sv * 0.065, 1.33, 1.9, 0.012, 0.06, lit)                             # lamps along both sides
+    k.box(0.45, 0.44, 0.3, 0.3, 0.012, 0.14, "dark")                                  # front display
+    k.box(0.45, 0.448, 0.34, 0.2, 0.012, 0.06, "cyan" if on else "steelD")
+    k.cyl(-1.17, 0.0, 0.3, 0.05, 0.12, "polyB", sides=6)                              # inlet on the nose
+    k.cyl(1.17, 0.0, 0.3, 0.06, 0.08, "medRed", sides=6)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.76, i)
+
+
+def visor(k, on, crop):
+    """A chamfered one-piece unit: an octagonal body, a backboard rising from it that carries the plumbing, and a
+    visor hood tilted up over the bed, lit along its edges."""
+    lit = "growPink" if on else "blueGrey"
+    _octo(k, 0, 0, 0.0, 1.7, 0.6, 0.1, "gmD", top="gm", cut=0.18)                       # base
+    _octo(k, 0, 0, 0.1, 1.96, 0.84, 0.52, "steel", top="steelL", cut=0.24, bevel=0.02)   # body
+    _octo(k, 0, 0, 0.6, 1.76, 0.64, 0.06, "soilD", top="soilD", cut=0.2)                 # the well
+    _soil(k, 0, 0, 0.65, 1.58, 0.5, 8)
+    k.box(0, 0.42, 0.3, 1.2, 0.012, 0.03, "navy")                                        # trim line on the front
+    k.box(0.55, 0.43, 0.38, 0.3, 0.012, 0.14, "dark")                                    # display
+    k.box(0.55, 0.438, 0.42, 0.2, 0.012, 0.06, "cyan" if on else "steelD")
+    k.box(0, -0.35, 0.62, 1.7, 0.14, 0.5, "steel", top="steelL", bevel=0.02)             # backboard
+    for e in (-1, 1):                                                                    # its chamfered ends
+        k.box(e * 0.87, -0.3, 0.62, 0.14, 0.2, 0.5, "steel", top="steelL", rz=e * 0.6, bevel=0.02)
+    k.box(-0.45, -0.27, 0.72, 0.4, 0.012, 0.22, "glassD")                                # nutrient window
+    k.box(-0.45, -0.262, 0.72, 0.4, 0.012, 0.1, "polyB")
+    k.box(0.3, -0.27, 0.78, 0.18, 0.03, 0.18, "plate")                                   # gauge
+    k.box(0.3, -0.25, 0.81, 0.12, 0.012, 0.12, "dark")
+    k.box(0.3, -0.242, 0.86, 0.04, 0.012, 0.05, "hazY")
+    k.cyl(0.65, -0.26, 0.62, 0.035, 0.48, "steelL", sides=8)                             # pipes up the board
+    k.cyl(0.75, -0.26, 0.62, 0.035, 0.48, "steelL", sides=8)
+    k.box(0, -0.1, 1.1, 1.8, 0.62, 0.1, lit, top="steelL", rx=0.3, bevel=0.015)           # the visor, tilted up
+    k.box(0, -0.34, 1.12, 1.6, 0.1, 0.12, "steel", top="steelL")                          # its hinge rail
+    k.box(0, -0.1, 1.17, 1.3, 0.4, 0.05, "steelL", top="plate", rx=0.3)                   # a raised panel on top
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.73, i)
+
+
 VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat,
-            "skiff": skiff, "hexes": hexes, "bags": bags}
+            "skiff": skiff, "hexes": hexes, "bags": bags,
+            "capsule": capsule, "tunnel": tunnel, "visor": visor}
 STATES = ("off", "on", "on.crop")
 
 
