@@ -34,6 +34,8 @@ const MINE_FRAME_MS = 420;
 export interface PodHost {
   /** The pod's size across in tiles, or undefined for a vehicle that is not a pod. */
   size(def: string): number | undefined;
+  /** The sprite family a pod def is drawn with (`VehicleDef.asset`: an escape pod borrows the mining pod's until its own art exists). */
+  art(def: string): string;
   /** Air layer (flight) and the shared depth layer (in the bay); both sort by zIndex = sector depth. */
   air: Container;
   low: Container;
@@ -76,17 +78,18 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
         const size = v && host.size(v.def);
         if (!v || !b || size === undefined || v.state === 'docked') continue;
         const low = v.state === 'stowed';
+        const art = host.art(v.def);
         // A stowed pod is the bay layer's `parked` sprite once that art exists.
-        if (low && atlas.ids(`${v.def}.parked`).length > 0) continue;
+        if (low && atlas.ids(`${art}.parked`).length > 0) continue;
         const d = headingIndex(b.heading);
         const frame = Math.floor((clock * 1000) / MINE_FRAME_MS) % 2;
         const m = world.get(id, MiningPodC);
         const mining = !low && m?.phase === 'mining' && !!m.target;
         const sprite = low
-          ? atlas.firstOf([`${v.def}.docked.d${d & 6}`, `${v.def}.fly.d${d}`])
+          ? atlas.firstOf([`${art}.docked.d${d & 6}`, `${art}.fly.d${d}`])
           : mining
-            ? atlas.firstOf([`${v.def}.mine.d${d}.f${frame}`, `${v.def}.fly.d${d}`])
-            : atlas.stat(`${v.def}.fly.d${d}`);
+            ? atlas.firstOf([`${art}.mine.d${d}.f${frame}`, `${art}.fly.d${d}`])
+            : atlas.stat(`${art}.fly.d${d}`);
         if (!sprite) continue;
         seen.add(id);
         let t = tracks.get(id);

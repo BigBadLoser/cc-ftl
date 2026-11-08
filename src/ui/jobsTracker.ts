@@ -27,7 +27,8 @@ export interface TrackerGroups {
 export const URGENT_TURNS = 3;
 
 const far = (j: UiJob): string => (j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
-const todo = (j: UiJob): string => (j.kind === 'delivery' ? 'Deliver here' : j.kind === 'survey' ? 'Survey here' : 'Target in this node');
+const TODO: Record<UiJob['kind'], string> = { delivery: 'Deliver here', survey: 'Survey here', bounty: 'Target in this node', passage: 'Drop off here' };
+const todo = (j: UiJob): string => TODO[j.kind];
 
 function row(j: UiJob): TrackerRow {
   const problem = j.kind === 'delivery' && !j.ready;

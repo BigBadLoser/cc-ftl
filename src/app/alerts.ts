@@ -4,6 +4,8 @@ import { BreakdownC, CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, Posi
 import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
+import { pendingAsks } from '../sim/galaxy/joinOffer';
+import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
@@ -31,6 +33,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
   'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
   'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log', 'scene.observed': 'log', 'ship.arrived': 'log',
+  'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log', 'crew.asksToJoin': 'log',
 };
 const urgent = (type: SimEvent['type']) => ALERT_URGENCY[type] === 'urgent';
 
@@ -50,11 +53,14 @@ export interface Alerts {
   saveResult(ok: boolean, text: string): boolean;
   /** Remove the alerts raised under a key. */
   clear(key: string): void;
-  /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
+  /**
+   * Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...), and bring the join asks in line with the sim (one
+   * alert per passenger whose ask waits, from saved state, so a reload brings them back). Cheap; call it every few frames.
+   */
   sync(): void;
 }
 
-interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice'] }
+interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice']; actions?: UiAlert['actions'] }
 
 /** Turns urgent sim events into a short, deduplicated alert queue that clears itself (UI-side only; never feeds the sim). */
 export function createAlerts(sim: Sim): Alerts {
@@ -228,6 +234,31 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
 
+  /** Join-ask alerts by passenger, and those the player dismissed (quiet until that ask is answered or lapses). */
+  const asks = new Map<number, number>();
+  const askMuted = new Set<number>();
+  function syncAsks(): void {
+    const want = new Set(pendingAsks(sim));
+    for (const c of askMuted) if (!want.has(c)) askMuted.delete(c);
+    for (const [c, id] of asks) {
+      if (want.has(c) && store.get().some((a) => a.id === id)) continue;
+      if (want.has(c)) askMuted.add(c); // dismissed with the X
+      asks.delete(c);
+      remove(id);
+    }
+    for (const c of want) {
+      if (asks.has(c) || askMuted.has(c)) continue;
+      const id = nextId++;
+      asks.set(c, id);
+      const actions: UiAlert['actions'] = [
+        { label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: c, accept: true } },
+        { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: c, accept: false } },
+      ];
+      store.update((l) => [{ id, kind: 'crew.asksToJoin', text: `${passengerName(sim, c)} asks to join the crew`, subject: crewSubject(sim, c), actions }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    }
+  }
+
   return {
     list: store,
     syncIncoming,
@@ -261,6 +292,7 @@ export function createAlerts(sim: Sim): Alerts {
       remove(id);
     },
     sync() {
+      syncAsks(); // state, not events: a reload or a paused game still shows a waiting ask
       for (const [id, done] of resolvers) if (done()) remove(id);
     },
     onEvents(events) {
@@ -270,7 +302,7 @@ export function createAlerts(sim: Sim): Alerts {
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}) }, ...l]);
+        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}), ...(d.actions ? { actions: d.actions } : {}) }, ...l]);
         if (d.resolved) resolvers.set(id, d.resolved);
         else setTimeout(() => remove(id), EXPIRE_MS); // nothing to watch (a story lead): it lapses on a timer
         for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);

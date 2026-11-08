@@ -195,7 +195,11 @@ export type Command =
   /** Cancel the assembly running in a robot bay (delivered materials drop to the floor). */
   | { type: 'module.cancelAssembly'; moduleId: number }
   /** Spawn one crew member of `role` (robot variants included) on a walkable tile; faction defaults to the grid's ship. */
-  | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction }
+  /**
+   * `lodge`: they live aboard as a passenger (consent/passage.ts `takePassenger`); `carry`: as one a scene handed on (`Grant.carry`: the event's person rules
+   * follow them, a passage card once up), from the galaxy faction `origin`.
+   */
+  | { type: 'debug.spawnCrew'; ship: number; x: number; y: number; role: string; faction?: Faction; lodge?: true; carry?: { event: string; origin: string; purse: number } }
   /** Debug (the inspector scenario): set a crew member's traits, skill XP, wielded hand weapon (no storage needed), hunger and rest. Fields left out stay. */
   | { type: 'debug.setCrew'; id: number; traits?: string[]; xp?: Partial<Record<SkillName, number>>; weapon?: string | null; hunger?: number; rest?: number; /** Set hp (0 downs them on the next vitals pass). */ hp?: number }
   /** Debug (the breaks scenario): start a mental break of `kind` on a crew member now, from `context` (default low mood), for `sec` seconds (default the kind's own). Rejected without a mood. */
@@ -268,6 +272,10 @@ export type Command =
   | { type: 'research.move'; ship: number; project: string; to: number }
   | { type: 'jobs.accept'; key: string }
   | { type: 'jobs.abandon'; id: number }
+  /** Turn a passenger's passage card down (galaxy/passage.ts): they get off at the next port. */
+  | { type: 'jobs.refuse'; key: string }
+  /** Answer a passenger who asked to join the crew (galaxy/joinOffer.ts): yes makes them crew. */
+  | { type: 'jobs.join'; crew: number; accept: boolean }
   /** Collect a finished bounty or survey (a claim) at a station of the issuing type and faction at the player's node. */
   | { type: 'jobs.handIn'; id: number }
   /** Break a delivery's crate open on deck: its goods spill out, kept, and the delivery fails. */
@@ -282,6 +290,8 @@ export type Command =
   | { type: 'galaxy.visit'; ship: number; grant: boolean }
   /** Offer help to a helpless scene ship in the pocket (or send the aid party again after a recall): scene/aid.ts. */
   | { type: 'galaxy.aid'; ship: number }
+  /** Call an escape pod of the open scene (its descriptor id, `ScenePod.id`) in to a free airlock of the player's ship (vehicles/escape.ts). */
+  | { type: 'galaxy.recoverPod'; pod: number }
   /** Debug: make the open signal's ambush skiff a trap (or honest), whatever its seed rolled. */
   | { type: 'debug.ambush'; trap: boolean; tell?: 'name' | 'lag' }
   /** Fix whether the open signal's late-or-not ships (a freighter's raiders) are left out, there from the start or coming (scene/debug.ts). */

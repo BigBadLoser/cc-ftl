@@ -12,6 +12,10 @@ describe('trackerGroups', () => {
     expect(g.here[0]).toMatchObject({ line: 'Target in this node', urgent: true, problem: false, turnsLeft: 1 });
     expect(g.away[0]).toMatchObject({ key: 'a', title: 'Deliver a sealed crate', full: 'Deliver a sealed crate (3 Metal)', line: 'Kord Beta · 2 jumps', urgent: false, reward: 100 });
   });
+  it('says what to do for a passage here', () => {
+    const g = trackerGroups({ active: [job({ kind: 'passage', title: 'Take Pike home', here: true, hops: 0 })] });
+    expect(g.here[0]).toMatchObject({ title: 'Take Pike home', line: 'Drop off here' });
+  });
   it('orders the rest by distance, unreachable last', () => {
     const g = trackerGroups({ active: [job({ key: 'far', hops: 4 }), job({ key: 'none', hops: null }), job({ key: 'near', hops: 1 })] });
     expect(g.away.map((r) => r.key)).toEqual(['near', 'far', 'none']);

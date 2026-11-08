@@ -176,6 +176,11 @@ export interface VehicleDef {
   size?: number;
   /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
   mining?: { unitsPerSec: number };
+  /**
+   * An escape pod (vehicles/escape.ts): no pilot (everyone aboard rides as a passenger) and it flies itself; called in, it docks at a ship's airlock and lets
+   * its people out there, then casts off empty.
+   */
+  escape?: true;
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */

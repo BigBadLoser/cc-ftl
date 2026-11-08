@@ -8,6 +8,14 @@ import { LAW_KINDS, WANTED_AT } from './tuningHeat';
 /** The `sim.story.reputation` key of a galaxy faction (one per faction); an id without a def is its own key. */
 export const repKey = (sim: Sim, faction: string): string => sim.content.galaxy?.factions[faction]?.reputation ?? faction;
 
+/** The display name of the faction a reputation key belongs to ("traders" is the Free Traders); a key no faction has is its own name. */
+export function repName(sim: Sim, key: string): string {
+  const fs = sim.content.galaxy?.factions ?? {};
+  const own = fs[key];
+  if (own && (own.reputation ?? key) === key) return own.name;
+  return Object.values(fs).find((f) => f.reputation === key)?.name ?? key;
+}
+
 /**
  * Faction standings on top of `sim.story.reputation`, the single reputation store. Every faction has its own key, so fighting one
  * faction or doing a job for it moves only its own number (and, through the relations table, a share of its friends' and rivals').

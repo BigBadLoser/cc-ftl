@@ -6,6 +6,7 @@ import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 import { StunC } from '../sim/robots/components';
+import { lodgingHere } from '../sim/consent/guests';
 
 /**
  * The activity the UI shows. A stunned organic body (a brute's knockdown) is 'knocked down'; robots keep 'inert' (shut
@@ -219,10 +220,14 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   };
 }
 
-/** Plain-data lists for the UI: all of the player's crew wherever they are, and the hostile crew on the grids they stand on (plus the one being inspected, `watch`). Reads the sim only. */
-export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: UiCrew[]; hostiles: UiCrew[] } {
+/**
+ * Plain-data lists for the UI: all of the player's crew wherever they are, the passengers living aboard (lodging guests, consent/passage.ts), and the
+ * other sides' crew on the grids they stand on (plus the one being inspected, `watch`). Reads the sim only.
+ */
+export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: UiCrew[]; guests: UiCrew[]; hostiles: UiCrew[] } {
   const ctx = makeCtx(sim);
   const crew: UiCrew[] = [];
+  const guests: UiCrew[] = [];
   const hostiles: UiCrew[] = [];
   const occupied = new Set<number>();
   const enemies: number[] = [];
@@ -233,6 +238,9 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
       if (!c) continue;
       crew.push(c);
       if (c.ship) occupied.add(c.ship);
+    } else if (!sim.world.has(id, DeadC) && lodgingHere(sim, id)) {
+      const c = card(sim, ctx, id, 'guest');
+      if (c) guests.push(c);
     } else enemies.push(id);
   }
   for (const id of enemies) {
@@ -242,5 +250,5 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
     const c = card(sim, ctx, id, 'enemy');
     if (c) hostiles.push(c);
   }
-  return { crew, hostiles };
+  return { crew, guests, hostiles };
 }

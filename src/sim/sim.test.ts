@@ -53,7 +53,7 @@ describe('save', () => {
 
   it('rejects newer and older versions (saves are not migrated)', () => {
     const empty = { ships: {}, roles: {}, species: {}, modules: {}, crewNames: [], items: {}, recipes: {}, structCosts: {} };
-    for (const version of [99, SAVE_VERSION - 1, 1]) {
+    for (const version of [SAVE_VERSION + 1, SAVE_VERSION - 1, 1]) {
       const data = JSON.parse(serialize(new Sim(1)));
       data.version = version;
       expect(() => deserialize(JSON.stringify(data), empty)).toThrow(/not migrated/);

@@ -13,6 +13,7 @@ import { CREW_MAX_HP, SURRENDER_HP_FRAC } from '../tuning';
 import { startBreak } from '../systems/breakdown';
 import { tierOf } from '../crew/breakTable';
 import { AllegianceC, EquipC, EquipOrderC, FighterC, SurrenderedC } from './components';
+import { takePassenger } from '../consent/passage';
 import { sightLine } from './los';
 import { isSubdued } from './relations';
 import { hitChance, wielded } from './weapons';
@@ -256,6 +257,21 @@ describe('crew combat', () => {
     expect(sim.world.get(civ, FighterC)?.mode).toBe('flee');
     const p = sim.world.get(civ, PositionC)!;
     expect(Math.hypot(p.x - sim.world.get(raider, PositionC)!.x, p.y - sim.world.get(raider, PositionC)!.y)).toBeGreaterThan(d0);
+  });
+
+  it('a lodging passenger never fights bare-handed: they flee a rogue boarder like any non-combatant', () => {
+    const sim = make();
+    const pax = person(sim, 8, 2, 'player', 'role.civ');
+    sim.world.get(pax, AllegianceC)!.faction = 'neutral';
+    takePassenger(sim, shipIds(sim)[0] as number, pax);
+    const raider = person(sim, 5, 2, 'hostile', 'role.civ', 'item.blade');
+    sim.world.get(raider, AllegianceC)!.faction = 'rogue';
+    sim.world.get(raider, HealthC)!.hp = 1e9;
+    const modes = new Set<string | undefined>();
+    const ev = run(sim, 20 * 6, () => (modes.add(sim.world.get(pax, FighterC)?.mode), false));
+    expect(modes.has('engage')).toBe(false);
+    expect(of(ev, 'crew.attacked').some((e) => e.crew === pax)).toBe(false);
+    expect(sim.world.get(pax, FighterC)?.mode).toBe('flee');
   });
 
   it('boarders hunt the defenders, then walk to a bridge console when nobody is left', () => {

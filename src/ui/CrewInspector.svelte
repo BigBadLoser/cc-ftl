@@ -14,24 +14,28 @@
   let { api, onPriorities }: { api: UiApi; onPriorities: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
+  let guests = $state<UiCrew[]>([]);
   let sel = $state<number | null>(null);
   let detail = $state<UiCrewDetail | null>(null);
-  const c = $derived(crew.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
+  const c = $derived(crew.find((x) => x.id === sel) ?? guests.find((x) => x.id === sel) ?? foes.find((x) => x.id === sel));
   const enemy = $derived(c?.side === 'enemy');
+  /** A passenger (a lodging guest): shown like a crew member's overview, without the tabs that only crew have. */
+  const guest = $derived(c?.side === 'guest');
   const tabProps = $derived<CrewTabProps | null>(c ? { api, c, d: detail?.id === c.id ? detail : null, onPriorities } : null);
 
   onMount(() => {
     const a = api.crew.subscribe((v) => (crew = v));
     const b = api.selectedCrew.subscribe((s) => (sel = s));
     const d = api.hostiles.subscribe((v) => (foes = v));
+    const g = api.guests.subscribe((v) => (guests = v));
     const e = api.crewDetail.subscribe((v) => (detail = v));
-    return () => (a(), b(), d(), e());
+    return () => (a(), b(), d(), e(), g());
   });
 </script>
 
 {#if c && tabProps}
   <div data-testid="crew-inspector">
-    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub="{c.role}{enemy ? ' · hostile' : ''}" foe={enemy} />{/snippet}
-    {#if enemy}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
+    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub={guest ? 'Passenger' : `${c.role}${enemy ? ' · hostile' : ''}`} foe={enemy} />{/snippet}
+    {#if enemy || guest}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
   </div>
 {/if}

@@ -1,3 +1,4 @@
+import { lodgingHere } from '../consent/guests';
 import { shipIdOf, shipGrid } from '../regions';
 import { hasSuitAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
@@ -24,10 +25,10 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
   ...BOND_MOOD_LABELS,
 };
 
-/** True for crew who have moods: their species says so, and they fight for the player (enemy crews do not mope). */
+/** True for crew who have moods: their species says so, and they live aboard as the player's crew or as a passenger (enemy crews do not mope). */
 export function hasMood(sim: Sim, id: number): boolean {
   const crew = sim.world.get(id, CrewC);
-  return !!crew && !!sim.content.species[crew.species]?.mood && sim.world.get(id, AllegianceC)?.faction === 'player';
+  return !!crew && !!sim.content.species[crew.species]?.mood && (sim.world.get(id, AllegianceC)?.faction === 'player' || !!lodgingHere(sim, id));
 }
 
 /** The crew member's Mood, created neutral on first use (old saves, new crew). */

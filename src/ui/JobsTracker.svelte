@@ -11,14 +11,14 @@
    * edge when time is short. Hidden with no jobs. A row opens the Jobs window.
    */
   let { api, onOpen }: { api: UiApi; onOpen: () => void } = $props();
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], asked: [], max: 0, mine: null });
   let collapsed = $state(readCollapsed('jobs'));
   function toggle() {
     collapsed = !collapsed;
     writeCollapsed('jobs', collapsed);
   }
   const groups = $derived(trackerGroups(jobs));
-  const KIND_ICON: Record<TrackerRow['kind'], IconName> = { delivery: 'stock', bounty: 'target', survey: 'map' };
+  const KIND_ICON: Record<TrackerRow['kind'], IconName> = { delivery: 'stock', bounty: 'target', survey: 'map', passage: 'person' };
   onMount(() => api.jobs.subscribe((v) => (jobs = v)));
 </script>
 

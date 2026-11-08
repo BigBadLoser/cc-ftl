@@ -61,6 +61,19 @@ function anyFloorTile(sim: Sim): { shipId: number; x: number; y: number } | null
 const dockedAt = (sim: Sim, v: Vehicle, ship: number): boolean => v.state === 'docked' && shipIdOf(sim, sim.world.get(v.dock, ModuleC)) === ship;
 
 /**
+ * Someone becomes one of the player's crew: off any station roll, undrafted, on the player's side. Shared by every way in (a hire landing here, a
+ * passenger who asks to join, galaxy/joinOffer.ts); each caller does its own bookkeeping on top.
+ */
+export function becomeCrew(sim: Sim, c: number): void {
+  sim.world.remove(c, StationCrewC);
+  sim.world.remove(c, DraftedC);
+  const a = sim.world.get(c, AllegianceC);
+  if (a) a.faction = 'player';
+  sim.galaxy.rev++;
+  bumpStat(sim, 'hired');
+}
+
+/**
  * Docked at home: the recruits step out and become the player's crew (allegiance, off the station roll, out of the for-hire list); their
  * keys go into the log so the candidate does not come back. True when everyone is out (or gone). `force` lands them even where the
  * shuttle is not docked, so nobody is left aboard without a tile.
@@ -85,21 +98,16 @@ export function landRecruits(sim: Sim, d: Deal, force = false): boolean {
     if (!hire || !sim.world.has(c, CrewC)) continue;
     const crew = sim.world.get(c, CrewC);
     sim.world.remove(c, ForHireC);
-    sim.world.remove(c, StationCrewC);
-    sim.world.remove(c, DraftedC);
-    const a = sim.world.get(c, AllegianceC);
-    if (a) a.faction = 'player';
+    becomeCrew(sim, c);
     logRecruit(sim, hire.key);
-    sim.galaxy.rev++;
-    bumpStat(sim, 'hired');
     sim.events.emit({ type: 'crew.hired', crew: c, role: crew?.role ?? '', cost: hire.cost });
   }
   return done;
 }
 
 /**
- * A hiring run is called off: recruits still walking to the shuttle stop; those already aboard step out at the station dock (if the
- * shuttle is there) and go back to station life. Anyone aboard a shuttle already flying stays with it (it goes home regardless).
+ * A run that sends people aboard is called off (a hiring run, a passenger's handover): those still walking to the shuttle stop and are undrafted;
+ * those already aboard step out at the dock (if the shuttle is there) and go back to what they were doing (station life, life aboard). Anyone aboard a shuttle already flying stays with it (it goes home regardless).
  */
 export function releaseRecruits(sim: Sim, d: Deal): void {
   const v = sim.world.get(d.vehicle, VehicleC);
@@ -110,7 +118,8 @@ export function releaseRecruits(sim: Sim, d: Deal): void {
       if (at) unboardCrew(sim, c, d.vehicle, at);
       else continue;
     }
-    if (sim.world.has(c, ForHireC) && sim.world.has(c, PositionC)) {
+    // Whoever the run sent to the shuttle (drafted by `sendToEmbark`) is let go here, whatever they are: a recruit, or a passenger being handed over.
+    if (sim.world.has(c, PositionC) && !sim.world.has(c, AboardC)) {
       sim.world.remove(c, DraftedC);
       const crew = sim.world.get(c, CrewC);
       if (crew) crew.activity = 'idle';

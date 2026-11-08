@@ -1,4 +1,4 @@
-import { nodeOf, type Sim } from '../sim';
+import { CrewC, nodeOf, type Sim } from '../sim';
 import { reachFrom } from '../sim/galaxy/graph';
 import { offersHere, type JobOffer } from '../sim/galaxy/jobOffers';
 import { crateAboard, handInPort } from '../sim/galaxy/jobs';
@@ -20,6 +20,13 @@ export function crateInfo(sim: Sim, jobId: number | undefined): { job: number; t
   return { job: j.id, title: `${j.count ?? 0}× ${item}`, to: j.to ? nodeOf(sim, j.to)?.name ?? 'uncharted space' : '' };
 }
 
+/** A passenger's name, by their crew entity (in hyperspace too: they are packed in the ship's packet then). */
+export function passengerName(sim: Sim, crew: number | undefined): string {
+  const live = crew === undefined ? undefined : sim.world.get(crew, CrewC)?.name;
+  const packed = sim.sector.packet?.entities.find((e) => e.id === crew)?.c['crew'] as { name?: string } | undefined;
+  return live ?? packed?.name ?? 'A passenger';
+}
+
 /** The job board as the jobs panel shows it: the offers at the player's node and the jobs they hold. */
 export function buildJobs(sim: Sim): UiJobs {
   const g = sim.galaxy;
@@ -29,13 +36,15 @@ export function buildJobs(sim: Sim): UiJobs {
   const hops = (node: string | undefined) => (node ? reach.dist.get(node) ?? null : null);
   const mine = playerStrength(sim);
   const view = (j: JobOffer | StationJob): UiJob => {
-    const where = j.kind === 'delivery' ? j.to : j.node;
+    const where = j.kind === 'delivery' || j.kind === 'passage' ? j.to : j.node;
     const itemName = j.item ? sim.content.items[j.item]?.name ?? j.item : '';
     return {
       key: j.key, id: 'id' in j ? j.id : null, kind: j.kind, issuer: content?.factions[j.issuer]?.name ?? j.issuer, reward: j.reward,
       turnsLeft: Math.max(0, j.due - g.turn), where: place(where), hops: hops(where), here: where === g.current,
-      title: j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${itemName})` : j.kind === 'survey' ? `Survey ${featureName(j.feature)}` : `Destroy the ${j.target ?? 'target'}`,
-      detail: j.kind === 'delivery' ? '' : j.kind === 'survey' ? 'Enter the node. Hand it in at a research station of the client.' : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship`,
+      title: j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${itemName})` : j.kind === 'survey' ? `Survey ${featureName(j.feature)}`
+        : j.kind === 'passage' ? `Take ${passengerName(sim, j.crew)} home` : `Destroy the ${j.target ?? 'target'}`,
+      detail: j.kind === 'delivery' ? '' : j.kind === 'survey' ? 'Enter the node. Hand it in at a research station of the client.'
+        : j.kind === 'passage' ? 'Your passenger asks for passage. Paid when they are handed over at the port.' : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship`,
       ready: j.kind === 'delivery' && 'id' in j && crateAboard(sim, j.id),
       target: bountyTarget(j),
     };
@@ -55,6 +64,7 @@ export function buildJobs(sim: Sim): UiJobs {
     active: g.jobs.map(view),
     // Finished work is not a task: it shows only where it can be handed in.
     handIn: g.claims.map(claim).filter((c) => c.here),
+    asked: (g.posted ?? []).filter((j) => !j.refused).map(view),
     max: MAX_JOBS,
     mine,
   };

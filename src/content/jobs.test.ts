@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as itemStacks from '../sim/items/stacks';
 import { cargoOf } from '../sim/vehicles/cargo';
-import { AirlockC, CombatC, ModuleC, ShipC, VehicleC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim, type SimEvent } from '../sim';
+import { AirlockC, CombatC, FTL_CHARGE_SEC, ModuleC, ShipC, VehicleC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim, type SimEvent } from '../sim';
 import { spawnContact } from '../sim/galaxy/arrivals';
 import { featureOf, offersHere, portOffers } from '../sim/galaxy/jobOffers';
 import { CRATE, crateAboard, expireJobs } from '../sim/galaxy/jobs';
 import { stationClass, type Port } from '../sim/galaxy/ports';
 import { wreckShip } from '../sim/combat/wreck';
 import { ItemStackC } from '../sim/items/components';
+import { placementGapError } from '../sim/regions';
 import { planStarRoute } from '../sim/galaxy/route';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { repKey } from '../sim/galaxy/standing';
@@ -15,6 +16,7 @@ import { ensureAround } from '../sim/galaxy/state';
 import { BREACH_NOTORIETY, MAX_JOBS } from '../sim/galaxy/tuningJobs';
 import type { StationJob } from '../sim/galaxy/types';
 import { playerStock } from '../sim/story/world';
+import { giveItems } from '../sim/story/effects';
 import { content } from '.';
 
 const rep = (sim: Sim, faction: string): number => sim.story.reputation[repKey(sim, faction)] ?? 0;
@@ -175,6 +177,37 @@ describe('station jobs', () => {
     expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
     until(sim, () => d.vehicle === 0, 3000);
     expect(playerStock(sim, CRATE)).toBe(0);
+  });
+
+  it('a delivery that runs out in hyperspace breaks its crate open in the packed ship (it is not left on deck with no job)', () => {
+    const { sim, job } = takeOffer('delivery', 'trade');
+    expect(crateAboard(sim, job.id)).toBe(true);
+    giveItems(sim, 'item.fuel', 40);
+    const combat = sim.world.get(playerShip(sim), CombatC);
+    if (combat) combat.ftl = FTL_CHARGE_SEC;
+    const next = (galaxyIndex(sim.galaxy).adjacent.get(sim.galaxy.current) ?? []).map((e) => (e.a === sim.galaxy.current ? e.b : e.a)).sort()[0]!;
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    until(sim, () => sim.sector.state === 'hyperspace', 2000);
+    expect(sim.sector.state).toBe('hyperspace');
+    expireJobs(sim, job.due + 1);
+    expect(sim.galaxy.jobs).toHaveLength(0);
+    expect(crateAboard(sim, job.id)).toBe(false);
+    expect(sim.galaxy.heat.notoriety).toBe(BREACH_NOTORIETY);
+    // The goods ride in the packet as stolen goods and are on deck once the ship deploys.
+    sim.enqueue({ type: 'galaxy.drop' });
+    until(sim, () => sim.sector.state === 'deploying', 6000);
+    expect(sim.sector.state).toBe('deploying');
+    const p = sim.sector.packet!;
+    const spot = (() => {
+      for (let x = 0; x + p.w <= sim.sector.width; x += 4) {
+        for (let y = 2; y + p.h <= sim.sector.height; y += 4) if (!placementGapError(sim, { x, y, w: p.w, h: p.h })) return { x, y };
+      }
+      throw new Error('no room to deploy');
+    })();
+    sim.enqueue({ type: 'sector.deploy', ...spot });
+    until(sim, () => sim.sector.state === 'active', 50);
+    expect(sim.sector.state).toBe('active');
+    expect(playerStock(sim, 'item.stolen_goods')).toBe(job.count!);
   });
 
   it('a crate in the shuttle is never lost when it cannot be put back on deck: the run waits with it', () => {
