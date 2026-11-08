@@ -469,16 +469,17 @@ def _ends(ax, plane, b, ends):
     return endf, end1, ends[1] == "out" and not (endf or end1), ends[0] == "out"
 
 
-def _ramp_chamfer(k, X, Y, C, zs, F):
+def _ramp_chamfer(k, X, Y, C, zs, F, lvl=3):
     """Plates on the ramp's chamfer at a corner (X, Y), C along each axis: one step lighter than the ramp (a
-    highlight), with the toe band and the foot line across it."""
+    highlight; lvl: its level), with the toe band and the foot line across it."""
     run, ta = T.W.skirt_run(), T.style().toe_at
     nrm = Vector((zs / (2 * run), zs / (2 * run), 1.0)).normalized()
 
     def cq(t):                                          # the chamfer t down its slope: its two edges
         z = zs * (1 - t / run)
         return Vector((X - C + t, Y + t, z)), Vector((X + t, Y - C + t, z))
-    for t0, t1, fam, lvl in ((0.02, ta * run, F, 3), (ta * run, run - 0.03, "ochre", 3), (run - 0.03, run, F, 2)):
+    for t0, t1, fam, lvl in ((0.02, ta * run, F, lvl), (ta * run, run - 0.03, "ochre", 3),
+                             (run - 0.03, run, F, lvl - 1)):
         (a0, b0), (a1, b1) = cq(t0), cq(t1)
         k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
 

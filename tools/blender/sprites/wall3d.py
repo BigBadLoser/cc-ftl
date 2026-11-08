@@ -670,7 +670,9 @@ def _bands(d0, d1, run_, fam, ax="y"):
     """The ramp's plates from d0 to d1 down the run, split in the look's bands (Style.ramp_bands): (from, to, family,
     level) each (a band's level may be a pair: on the y face, on the x face; or a palette name, its fixed colour);
     without bands one plate in the face's family, level 2."""
-    out, cur = [], (d0, fam, 3 if style().plain else 2)     # (the default walls' slope a shade lighter)
+    lv = style().ramp_lvl
+    out, cur = [], (d0, fam, lv if lv is not None else 3 if style().plain else 2)   # (the default walls' slope a
+                                                                                    # shade lighter)
     for f, bf, bl, gap in style().ramp_bands:
         out.append((cur[0], f * run_ - gap, cur[1], cur[2]))
         cur = (f * run_, bf or fam, bl[0 if ax == "y" else 1] if isinstance(bl, tuple) else bl)

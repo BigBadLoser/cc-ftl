@@ -51,6 +51,7 @@ class Style:
                                           # a shelf: the shelf then sits where it meets it); 0: the walls' (RAMP_PX,
                                           # down from the ramp's top)
     shelf_back: tuple = ()                # ... its back px in these ramp levels, out from the wall (the rest: its own)
+    ramp_lvl: Optional[int] = None        # the ramp's plates' level (the first band's); None: 2 (the default walls 3)
     ramp_bands: tuple = ()                # the ramp's plates split in bands down the run, after the first (the
                                           # face's family, level 2): (from (a fraction of the run), family (None:
                                           # the face's), level, the joint left open before it (down the run)) each

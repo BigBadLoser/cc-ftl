@@ -488,3 +488,7 @@ Marked ref (both layers, numbered): scratchpad
   (on screen 131c2d -> 24344a, fNS4 -> fNS3 look). Ramp seams: joint 1 -> 0 (9fa7b9 -> 7687a1; the wrap and the
   chamfer's joint line with them). Face seams: navy._seam, level 0 on the x face (7b8ba1 -> 5b718a); on the lit y face
   level 0 read two shades down, so fixed fNW6, which reads one (8797aa -> 7687a1). ns12.
+- 2026-11-08: the user: the wall and slope colour swapped with the shelf top's. navy.NAVY_FACE 2 (was 3): the face, the
+  chamfer cells and the corner's lit strip a level down; the slope's plates Style.ramp_lvl (new; the first band's level)
+  1 (was 2); the shelf's top shelf_lvl 3 (was 2). On screen: y face and slope c1c9d5 -> a9b4c4, shelf a9b4c4 -> c1c9d5;
+  x face a9b4c4 -> 8e9cb1, shelf 8e9cb1 -> a9b4c4. shell._ramp_chamfer takes a level (civil keeps 3). ns13.
