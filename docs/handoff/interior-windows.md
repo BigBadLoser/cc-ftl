@@ -101,7 +101,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   into dotted marks across the floor's back at each join, which the next piece doesn't paint; the default window
   has the same open end and needs the same strip when the ramp is ported); `_chamfers`: the opening's top corners cut
   at 45 degrees (in the wall's plane: px along = px up) from where the blue under the header ends on a post up to the
-  beam (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands as they show beside
+  beam (since sw38 the lowered beam, `D.BEAM_DROP` under the rail's foot: 5 px; the bands over it are the wall's own) (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands as they show beside
   it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 all 3 px: the user prefers that dark block to
   sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
   at its foot (sw31); on l a seam (`SEAM` fGW5, a px: the post's corner line's grey, an AA blend of fGS3 and fGW5
@@ -215,3 +215,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   bottom edge straight. Shown: still harsher than the wall's.
 - 2026-11-08: sw37: a px more (4): the stripe's lit top px under the dark one, as on the wall (columns now match the
   wall's to that px). Shown.
+- 2026-11-08: sw38: the line carried through the corners (the user): the chamfers end at the beam (BEAM_DROP), 5 px
+  instead of 9, the wall's own header foot over them; their dark top block gone with it. Shown.

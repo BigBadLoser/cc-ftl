@@ -205,10 +205,11 @@ def detail(k, part):
 
 def _chamfers(k, x0, x1, yf):
     """The opening's top corners cut at 45 degrees: from where the blue under the header (the rail's shadow and the
-    stripe, CHAMFER px) ends on a post up to the beam, as far along. The wedge's front in the blue's bands beside it,
-    its underside the posts' dark; the posts' sides end at its foot."""
-    z1 = T.rail_foot(W.HF)                              # (the beam's underside: the rail's foot)
-    zc = z1 - CHAMFER * PZ
+    stripe, CHAMFER px under the rail's foot) ends on a post up to the beam (D.BEAM_DROP under the rail's foot: over it
+    the wall as beside the window, its line under the header running on through), as far along. The wedge's front the
+    stripe's blue, its underside the posts' dark; the posts' sides end at its foot."""
+    z1 = T.rail_foot(W.HF) - D.BEAM_DROP                # (the beam's underside)
+    zc = T.rail_foot(W.HF) - CHAMFER * PZ
     yr = yf + T.FR                                      # (the posts' front)
     m = k.m
     if x0 > -0.5:                                       # a seam down the blue at the left post's edge, as the right
@@ -234,8 +235,11 @@ def _chamfers(k, x0, x1, yf):
         def at(z):                                      # the chamfer's edge along the wall at height z
             return u + sd * (z - zc) / PZ * L
         _quad(k, [(u, -yr, zc), (u, yr, zc), (at(z1), yr, z1), (at(z1), -yr, z1)], (sd, 0, -1), D.POST_IN)
-        zs = z1 - SHADOW * PZ                           # (the stripe's top: the rail's shadow over it)
-        for za, zb, lvl in ((zc, zs - PZ, 3), (zs - PZ, zs, 4), (zs, z1, 1)):   # the front, in the bands
+        zs = T.rail_foot(W.HF) - SHADOW * PZ            # (the stripe's top: the rail's shadow over it)
+        for za, zb, lvl in ((zc, zs - PZ, 3), (zs - PZ, zs, 4), (zs, z1, 1)):   # the front, in the bands under the
+            zb = min(zb, z1)                            # beam (the wall's own over it)
+            if zb <= za + 1e-9:
+                continue
             pts = [(u, yr, za), (at(za), yr, za), (at(zb), yr, zb), (u, yr, zb)] if za > zc else \
                   [(u, yr, za), (at(zb), yr, zb), (u, yr, zb)]
             k.poly([Vector(p) for p in pts], BLUE, lvl, Vector((0, 1, 0)))
