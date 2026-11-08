@@ -585,3 +585,5 @@ Marked ref (both layers, numbered): scratchpad
   "navy.cav". The lip and sides now blend; the cavity's inner corners blend too (one dark step, no grey speckle).
   Plain m10 identical to nv9. No RENDER_VERSION bump: the palette key (post.palette_digest) changes with the entries,
   which re-keys every sprite whose palette takes the hull set. nv22.
+- 2026-11-08: the user: the straps cross over the pipes. Each strap now runs on past both pipes along the slope (its
+  ends a pipe radius + 0.005 beyond the pipe centres), over them; it splits each pipe and ends inside the slot. nv23.

@@ -119,7 +119,8 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         #   between them, over the silver pipe, no collars: the user)
         for u in (o0 + w / 3, o0 + 2 * w / 3):
             ub = round(u * 32) / 32                    # flat steel straps, 2 px wide and one tone (a bar's lit top and
-            e = [(rows[i_] + sn * lift, zp[i_] + cs * lift) for i_ in (0, 1)]  # dark side made them jagged: the user)
+            e = [(rows[i_] + sn * lift + g * cs * (rp + 0.005), zp[i_] + cs * lift - g * sn * (rp + 0.005))
+                 for i_, g in ((0, -1), (1, 1))]       # dark side made them jagged; across the pipes, past them: the user)
             k.poly([P(ub - 1 / 32, e[0][1], e[0][0]), P(ub + 1 / 32, e[0][1], e[0][0]),
                     P(ub + 1 / 32, e[1][1], e[1][0]), P(ub - 1 / 32, e[1][1], e[1][0])], "wall", 0,
                    P(0, cs, sn) - P(0, 0, 0), fixed="fSH0")
