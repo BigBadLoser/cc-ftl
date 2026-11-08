@@ -677,3 +677,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: fNL0-4 a step off the shared reds (e0787e, b94f58, a34239, 963b33, 7d303a): at the same hex, the boxes'
   lvR/drM/lvR2 quantized into navy.locker and anti-aliased into their dark windows (a3 changed: caught in the full
   variant render nall1). Re-render nall2 to verify.
+- 2026-11-08: all 15 navy m10 variants rendered once (nall2), runs of base, variant x3, base in a 5x3 grid. Plain,
+  boxes (a3) and recessed (a9) identical to the last shown; the lockers 1 step off in colour (the offset reds).
