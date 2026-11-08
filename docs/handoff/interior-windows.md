@@ -709,3 +709,6 @@ Marked ref (both layers, numbered): scratchpad
   top (SPLIT_BACK 0.1) and on through the toe (ramp_hole (SPLIT_BACK, 1, 0); RampHoles' toe-margin field reverted,
   unused): the shelf's top and the whole red band sunk and darkened with the plates; the red part without walls (its
   front one read as a dark line along the foot). nq9.
+- 2026-11-08: split ramp (the user: it must follow the ramp's profile, a px down, not a slope of its own): rebuilt in
+  48 thin strips along d on the shell's own zsurf, SPLIT_D under it (the shelf's flat top fNW4, the slope fNW5, the
+  red ochre 1 lit by each strip's normal), the seam fNW7 between, side and back walls up to the ramp. nq10.

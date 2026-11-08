@@ -277,10 +277,11 @@ SPLIT_BACK = 0.1                     # their hole back over the shelf's top and 
                                      # whole red band sunk with them: the user)
 
 
-def navy_split(plate, u0, u1, run_, ax="y", fam="wall", hole=None, **_):
-    """B1-3 (ref 03): two darker plates split down the middle, sunk a px into the slope over the hole the shell leaves
-    (its "ramp_hole": the field from over the shelf down through the toe), the cut's walls round them; the red band on them
-    a level darker. Without the hole (a plain slope): two plates on it, 0.04 .. 0.66 of the run, a level under it."""
+def navy_split(plate, u0, u1, run_, k=None, P=None, zs=0.0, ax="y", fam="wall", hole=None, **_):
+    """B1-3 (ref 03): two darker plates split down the middle, sunk a px into the ramp over the hole the shell leaves
+    (its "ramp_hole": the field from over the shelf down through the toe): the ramp's own profile a px lower, in thin
+    strips (the shelf's flat top a shade lighter than the slope, the red band on them a level darker), walls round
+    the cut up to the ramp. Without the hole (a plain slope): two plates on it, 0.04 .. 0.66 of the run."""
     g = LINE / 2
     if not hole:
         uc = (u0 + u1) / 2
@@ -288,14 +289,29 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", hole=None, **_):
             plate([(p0, 0.04), (p1, 0.04), (p1, 0.66 * run_), (p0, 0.66 * run_)], PAINT, 1, 0.0)
         return
     o0, o1, d0, d1 = hole
-    uc, db = (o0 + o1) / 2, T.style().toe_at * run_
-    fx = ("fNW5" if ax == "y" else "fNW6") if fam == "wall" else None    # (a shade darker again: the user)
-    q = lambda a, b, c, e: [(a, c), (b, c), (b, e), (a, e)]             # noqa: E731
-    for p0, p1 in ((o0, uc - g), (uc + g, o1)):
-        plate(q(p0, p1, d0, db), -SPLIT_D, 1, PAINT, fixed=fx)          # (its sides the cut's walls, up to the slope)
-        plate(q(p0, p1, db, d1), -SPLIT_D, 1, -SPLIT_D, f="ochre")         # (no walls: at the foot its front one
-        #   read as a dark line along the band's foot)
-    plate(q(uc - g, uc + g, d0, d1), -SPLIT_D + 0.002, 0, -SPLIT_D + 0.002, fixed="fNW7")   # the seam between them
+    uc, db, sh = (o0 + o1) / 2, T.style().toe_at * run_, T.style().shelf
+    zat = (getattr(T.SHELL, "_zsurf", None) if T.ramp_fall() else None) or (lambda d: zs * (1 - d / run_))  # noqa
+    up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
+    n = 48
+    ds = sorted({d0, d1, sh, db} | {d0 + (d1 - d0) * i / n for i in range(n + 1)})
+    ds = [d for d in ds if d0 - 1e-9 <= d <= d1 + 1e-9]
+    zf = lambda d: zat(d) - SPLIT_D                    # noqa: E731   the sunk floor: the ramp's profile a px down
+    grey = ("fNW4", "fNW5") if ax == "y" else ("fNW5", "fNW6")         # (shelf top, slope: a shade darker: the user)
+    for da, dbb in zip(ds, ds[1:]):
+        za, zb = zf(da), zf(dbb)
+        nrm = up * (dbb - da) + out_ * (za - zb)
+        dm = (da + dbb) / 2
+        for p0, p1 in ((o0, uc - g), (uc + g, o1)):
+            quad = [P(p0, za, da), P(p1, za, da), P(p1, zb, dbb), P(p0, zb, dbb)]
+            if dm >= db:
+                k.poly(quad, "ochre", 1, nrm)
+            else:
+                k.poly(quad, fam, 0, nrm, fixed=grey[0] if dm < sh else grey[1])
+        k.poly([P(uc - g, za, da), P(uc + g, za, da), P(uc + g, zb, dbb), P(uc - g, zb, dbb)], fam, 0, nrm,
+               fixed="fNW7")                           # (the seam between them)
+        for u, sg in ((o0, 1), (o1, -1)):              # the cut's side walls, up to the ramp
+            k.poly([P(u, zat(da), da), P(u, zat(dbb), dbb), P(u, zb, dbb), P(u, za, da)], fam, 0, along * sg)
+    k.poly([P(o0, zat(d0), d0), P(o1, zat(d0), d0), P(o1, zf(d0), d0), P(o0, zf(d0), d0)], fam, 0, out_)  # back
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=lipped_holes), Design("lockers", middle=navy_lockers, face_holes=lipped_holes),
