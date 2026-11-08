@@ -225,7 +225,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
 
 
 def _seam_col(ax):
-    """The lip's seams (and the recess on the one over it): the ref's dark blue grey (fGSs; the shade side fGS5)."""
+    """The lip's seams (and the recess on the one over it): a dark grey a step under the face's seams' old tone, barely blue (fGSs; the shade side fGS5)."""
     return "fGSs" if ax == "y" else "fGS5"
 
 
