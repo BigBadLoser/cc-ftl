@@ -1,11 +1,10 @@
 """Hydroponics grow beds (family `hydroponics`). Local frame and placement: modkit.K (front = +v, where the crew
 stand to work the bed).
 
-Look exploration (earlier rounds are in git history). One plant per tile, a lamp over the bed as the only pink glow:
-  cab    a navy base with slatted panels, a glass cabin per plant in grey frames, a machinery block between them
-  terra  the same base under one long glass canopy
-Both canopies rise upright a short way, then slope on their long sides to a flat roof carrying the lamp; ends upright.
-  lab    a shallow pearl tray on a navy pedestal nearly its size, a tapered blade spine with a mint stripe, a slim ring lamp
+The bed (terra, chosen from a long look exploration; the other directions are in git history): an angular navy base
+with a slatted panel and a control screen, a soil tray under a glass canopy in grey frames. The canopy rises upright a
+short way, then slopes on its long sides to a glass roof; its ends are upright. A strut across the roof carries a
+navy ring lamp, open in the middle so the plants show through it, one plant per tile.
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -31,10 +30,6 @@ def _pill_ol(cu, cv, L, w, n=8):
     pts = [(s + r * math.cos(-math.pi / 2 + math.pi * i / n), r * math.sin(-math.pi / 2 + math.pi * i / n)) for i in range(n + 1)]
     pts += [(-s + r * math.cos(math.pi / 2 + math.pi * i / n), r * math.sin(math.pi / 2 + math.pi * i / n)) for i in range(n + 1)]
     return [(cu + x, cv + y) for x, y in pts]
-
-
-def _circle(cu, cv, r, n=16):
-    return [(cu + r * math.cos(math.tau * i / n), cv + r * math.sin(math.tau * i / n)) for i in range(n)]
 
 
 def _scaled(ol, t):
@@ -96,13 +91,6 @@ def _tube(k, pts, r, col, n=8, caps=True):
         k.m.poly(rings[-1], col, flip=True)
 
 
-def _well(k, inner, outer, z_rim, rim_h, rim, rim_top, wall, z_soil, soil_w, soil_d, seed=3, cu=0.0):
-    """The rim lip round the soil well (inner and outer outlines) and the soil in it, its surface at z_soil."""
-    _ring(k, outer, inner, z_rim - rim_h, rim_h, rim, top=rim_top, inner_col=wall)
-    _prism(k, inner, z_rim - rim_h - 0.06, z_soil - (z_rim - rim_h - 0.06), "soilD", top="soilD")
-    _soil(k, cu, 0, z_soil - 0.05, soil_w, soil_d, seed, n=int(soil_w * 16))
-
-
 def _soil(k, u, v, z, w, d, seed=0, n=26):
     """A soil bed: dark loam with soft humps and scattered clods."""
     r = random.Random(seed * 13 + 1)
@@ -118,7 +106,7 @@ def _soil(k, u, v, z, w, d, seed=0, n=26):
               r.choice(("soilL", "soilD", "soil", "soilL")), rz=r.uniform(0, 3))
 
 
-def _lamp_ring(k, cu, cv, z, L, w, bar, on, col="labPearl", top="labPearlL", outline=None):
+def _lamp_ring(k, cu, cv, z, L, w, bar, on, col, top, outline=None):
     """A ring lamp, open in the middle so the plants show through it: a housing over a lit lens band. outline(L, w)
     gives its shape (a pill by default)."""
     ol = outline or (lambda l, d: _pill_ol(cu, cv, l, d))
@@ -133,28 +121,6 @@ def _on(on, lit="cyan"):
 
 
 # ---- the directions --------------------------------------------------------------------------------------------------
-def lab(k, on):
-    """Lab: a shallow pearl tray floating on a narrow navy pedestal, a blade spine with a mint stripe."""
-    _prism(k, _pill_ol(0, 0, 1.94, 0.86), 0.0, 0.07, "labNavy", top="labNavyL")              # foot
-    _prism(k, _pill_ol(0, 0, 1.84, 0.76), 0.07, 0.35, "labNavy", top="labNavyL", tl=_pill_ol(0, 0, 1.78, 0.7))
-    for i in range(5):                                                                      # vent slots
-        k.box(-0.18 + i * 0.09, 0.378, 0.14, 0.05, 0.012, 0.16, "dark", rx=-0.17)
-    _prism(k, _pill_ol(0, 0, 1.7, 0.66), 0.42, 0.2, "labPearl", top="labPearlL", tl=_pill_ol(0, 0, 2.0, 0.92))
-    _prism(k, _pill_ol(0, 0, 2.0, 0.92), 0.565, 0.045, "labMint", tl=_pill_ol(0, 0, 2.03, 0.95))  # detail ring
-    zs = 0.66
-    _well(k, _pill_ol(0, 0, 1.8, 0.72), _pill_ol(0, 0, 2.0, 0.92), 0.71, 0.07, "labPearl", "labPearlL", "labNavy",
-          zs, 1.36, 0.6)
-    a = math.atan2(0.13, 0.2)                                                               # display on the flare
-    k.box(0.5, 0.405, 0.5, 0.3, 0.012, 0.09, "dark", rx=-a)
-    k.box(0.46, 0.41, 0.52, 0.14, 0.012, 0.03, _on(on, "labMint"), rx=-a)
-    k.box(0.6, 0.41, 0.52, 0.04, 0.012, 0.04, _on(on), rx=-a)
-    blade = _cham(0, -0.38, 0.16, 0.3, 0.04)                                                # the blade
-    _prism(k, blade, 0.62, 1.0, "labPearl", top="labPearlL", tl=_cham(0, -0.36, 0.13, 0.18, 0.03))
-    k.box(0, -0.3, 0.72, 0.13, 0.03, 0.8, "labMint")                                       # stripe up its front
-    _prism(k, _cham(0, -0.3, 0.16, 0.3, 0.05), 1.6, 0.16, "labNavy", top="labNavyL")         # head
-    _lamp_ring(k, 0, 0.0, 1.58, 1.82, 0.68, 0.09, on, col="labPearl", top="labPearlL")
-    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.58
-
 # ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
 GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
 
@@ -174,10 +140,10 @@ def _bar(k, a, b, s, col):
     _tube(k, [a, b], s * 0.7, col, n=4)
 
 
-def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof, mid=True):
-    """A glass canopy: a short upright wall from the sill to zv, then the long sides slope up to the roof (inset iv
-    each side), the short ends upright; a solid roof carrying the grow lamp, square frame bars on every edge, a post
-    mid-length."""
+def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t):
+    """A glass canopy: a short upright wall from the sill to zv, then the long sides slope up to a glass roof (inset
+    iv each side), the short ends upright; square frame bars on every edge, a post and rafter mid-length that a strut
+    across the roof joins into one hoop, and a ring lamp (colours ring, ring_t) hung from that strut."""
     g = _part(k, "glass")
     a, b, b2 = L / 2, D / 2, D / 2 - iv
     lo = [(cu - a, -b), (cu + a, -b), (cu + a, b), (cu - a, b)]
@@ -193,11 +159,15 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof, mid=Tru
         _bar(k, (*hi[j], zr), (*hi[q], zr), s, frame_l)
         _bar(k, (*lo[j], z0), (*lo[j], zv), s, frame)
         _bar(k, (*lo[j], zv), (*hi[j], zr), s, frame_l)
-    for sv in (-1, 1) if mid else ():                                       # a post and rafter between the plants
+    for sv in (-1, 1):                                                      # a post and rafter between the plants
         _bar(k, (cu, sv * b, z0), (cu, sv * b, zv), s, frame)
         _bar(k, (cu, sv * b, zv), (cu, sv * b2, zr), s, frame_l)
-    _prism(k, _cham(cu, 0, L + 0.08, 2 * b2 + 0.1, 0.03), zr - 0.01, 0.08, roof, top=frame_l)        # roof
-    _prism(k, _cham(cu, 0, L - 0.08, 2 * b2 - 0.02, 0.02), zr - 0.08, 0.07, "growPink" if on else "lampOff")  # lamp
+    g.m.poly([_G(g, *p, zr) for p in hi], "glassT", flip=True)              # the glass roof
+    _bar(k, (cu, -b2, zr), (cu, b2, zr), s, frame_l)                          # the strut across it
+    Lr, zl = L - 0.22, zr - 0.17
+    _lamp_ring(k, cu, 0, zl, Lr, 2 * b2, 0.09, on, col=ring, top=ring_t)
+    for sv in (-1, 1):                                                      # hung from the strut
+        _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
     t = lambda z: b - max(0.0, z - zv) / (zr - zv) * iv + 0.004             # the front glass's v at height z
     for du, z1, ln in ((-0.25, 0.9, 0.14), (-0.16, 1.0, 0.09)):            # two glints on the front slope
         u0 = cu + a * 0.55 + du
@@ -225,34 +195,8 @@ def terra(k, on):
     k.box(0.6, 0.486, 0.33, 0.04, 0.012, 0.05, _on(on, "orange"))
     zs = 0.69
     _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
-    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.82, 1.36, 0.13, on, "tFrame", "tFrameL", "tFrame")
-    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.28
-
-
-def cab(k, on):
-    """terra's navy base and grey frames under a glass cabin per plant, a machinery block between the cabins."""
-    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
-    body = _cham(0, 0, 1.98, 0.94, 0.06)
-    _prism(k, body, 0.1, 0.5, "tNavy", top="tNavyL")
-    _prism(k, _scaled(body, 1.01), 0.52, 0.05, "tFrame", top="tFrameL")                       # top band
-    zs = 0.66
-    for e in (-1, 1):
-        cu = e * 0.55
-        k.box(cu - e * 0.06, 0.474, 0.18, 0.5, 0.012, 0.24, "dark")                          # slatted panel per bay
-        for j in range(5):
-            k.box(cu - e * 0.06 - 0.2 + j * 0.1, 0.48, 0.2, 0.04, 0.012, 0.2, "tNavyL")
-        _tray(k, cu, 0.8, 0.84, 0.58, zs, 5 + e)
-        _canopy_slope(k, cu, 0.84, 0.86, 0.58, 0.79, 1.33, 0.13, on, "tFrame", "tFrameL", "tFrame", mid=False)
-    blk = _cham(0, 0, 0.26, 0.76, 0.04)                                                      # machinery block
-    _prism(k, blk, 0.56, 0.6, "tNavy", top="tNavyL")
-    _prism(k, _scaled(blk, 1.04), 1.08, 0.05, "tFrame", top="tFrameL")
-    for sv in (-0.2, 0.14):                                                                 # pipes into each cabin
-        _tube(k, [(-0.42, sv, 1.0), (0.42, sv, 1.0)], 0.03, "steelL")
-    k.box(0, 0.385, 0.66, 0.16, 0.012, 0.3, "tFrame")                                       # control panel
-    k.box(0, 0.391, 0.7, 0.11, 0.012, 0.13, "dark")
-    k.box(0, 0.397, 0.74, 0.07, 0.012, 0.05, _on(on))
-    k.box(0, 0.397, 0.9, 0.05, 0.012, 0.04, _on(on, "orange"))
-    return ((-0.55, 0.0), (0.55, 0.0)), zs, 1.25
+    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "tNavy", "tNavyL")
+    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.19
 
 
 # ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
@@ -282,7 +226,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"cab": cab, "terra": terra, "lab": lab}
+VARIANTS = {"terra": terra}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
