@@ -1,4 +1,4 @@
-import { lodgingHere } from '../consent/guests';
+import { isLodger, onStationRoll, roleOf } from '../consent/roles';
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { refusesWork } from '../crew/helpers';
 import { foodOn, hungerDrainPerSec } from '../crew/eating';
@@ -11,7 +11,6 @@ import { shipIdOf } from '../regions';
 import { wantsBay } from '../robots/bay';
 import { speciesOf } from '../robots/core';
 import type { Sim } from '../sim';
-import { StationCrewC } from '../stations/components';
 import { airMargin, airSourceInput } from './airNeed';
 import { awayReturn } from '../away/crew';
 import { IntentC } from './components';
@@ -94,8 +93,9 @@ export function curveAt(curve: readonly (readonly [number, number])[], x: number
 /** Which kind of crew member this is, for picking a policy. */
 export function crewKind(sim: Sim, id: number): CrewKind {
   if (speciesOf(sim, id)?.charge) return 'robot';
-  if (sim.world.has(id, StationCrewC)) return 'station';
-  if (lodgingHere(sim, id)) return 'guest';
+  const role = roleOf(sim, id);
+  if (onStationRoll(role)) return 'station';
+  if (isLodger(role)) return 'guest';
   return sim.world.get(id, AllegianceC)?.faction === 'player' ? 'colonist' : 'npc';
 }
 
