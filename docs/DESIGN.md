@@ -820,8 +820,11 @@ Each point below gets its own design discussion before it is built.
   - **No hard walls:** deep space doesn't demand set gear to enter, but a better ship clearly helps (harder fights,
     longer hops, nastier hazards).
   - **No "home":** deep space has ordinary stations too (repair, trade, fuel). The start zone is just where you began.
-- **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
-  (#171).
+- **No empty nodes (discussion 3, user decisions, 2026-11-08; #171).** Every quiet node has at least a mineable asteroid
+  field, often a small wreck to salvage, and now and then a quick point of interest (a probe, cargo pod, beacon or anomaly a
+  shuttle can reach), plus passing traffic. What's there follows the band: common ore and small wrecks in the core, better
+  ore and more wrecks on the frontier, rare ore and big derelicts or ruins in deep space. Mined fields and stripped wrecks
+  stay gone (no refill for now). Route queueing and charging the drive while working already exist.
 - **Losing the ship:** plan for escape pods (survivors reach a station with a worn starter hull, and the wreck can be
   salvaged back). Not urgent.
 
