@@ -1,3 +1,4 @@
+import { factionsHostile } from '../sim/combat/factions';
 import type { Ship } from '../sim/combat/components';
 import { CombatC, ShipC, WeaponC } from '../sim/combat/components';
 import { CrewC, PositionC } from '../sim/crew/components';
@@ -27,13 +28,14 @@ export function boarded(world: World, shipId: number): boolean {
 }
 
 /**
- * Every region but the player's own is roofed (when foreign roofs are on: `roofOthers`, the debug panel's enemy-roof toggle) unless player crew are
- * aboard it, or it is a wreck: enemies, stations, traders and neutral passers-by alike, whatever their stance (#390). Their roofs can't be lifted
- * without a scanning upgrade (planned research, DESIGN "Roofed view"). The player's own ship is roofed only when the player asks to see it from
- * outside (`roofPlayer`).
+ * Every ship but the player's is roofed (when foreign roofs are on: `roofOthers`, the debug panel's enemy-roof toggle) unless player crew are aboard
+ * it, or it is a wreck: traders and neutral passers-by as well as enemies (#390). Stations (immobile structures) stay open unless they are at war
+ * with the player, as before. Enemy roofs can't be lifted without a scanning upgrade (planned research, DESIGN "Roofed view"). The player's own
+ * ship is roofed only when the player asks to see it from outside (`roofPlayer`).
  */
 export const wantsRoof = (world: World, shipId: number, s: Ship, roofOthers: boolean, roofPlayer = false): boolean =>
-  (roofPlayer && s.faction === 'player' && s.state !== 'wreck') || (roofOthers && s.faction !== 'player' && s.state !== 'wreck' && !boarded(world, shipId));
+  (roofPlayer && s.faction === 'player' && s.state !== 'wreck')
+  || (roofOthers && s.faction !== 'player' && s.state !== 'wreck' && (!s.immobile || factionsHostile(s.faction, 'player')) && !boarded(world, shipId));
 
 /** An interior tile: floor, door, or under a module. Crew on one of a roofed region are hidden under its roof. */
 export function isInterior(grid: Grid, x: number, y: number): boolean {

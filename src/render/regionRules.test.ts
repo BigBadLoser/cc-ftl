@@ -73,13 +73,17 @@ describe('wantsRoof', () => {
     expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
   });
 
-  it('roofs every ship but the player\'s, neutral stations and traders too, until player crew step aboard (#390)', () => {
+  it('roofs every ship but the player\'s, traders and neutrals too, until player crew step aboard; stations stay open (#390)', () => {
     const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    sim.step();
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
     sim.step();
-    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.immobile) as number;
+    const station = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.immobile) as number;
+    expect(wantsRoof(sim.world, station, sim.world.get(station, ShipC)!, true)).toBe(false);
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.faction === 'hostile') as number;
     const ship = sim.world.get(id, ShipC)!;
-    expect(ship.faction).not.toBe('player');
+    ship.faction = 'neutral'; // a ship nobody is at war with: a trader passing by
     expect(wantsRoof(sim.world, id, ship, true)).toBe(true);
     const crew = sim.world.query(CrewC, PositionC).find((c) => sim.world.get(c, AllegianceC)?.faction === 'player') as number;
     const grid = sim.sector.grid;

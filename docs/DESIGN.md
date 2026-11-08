@@ -262,7 +262,7 @@ FTL's decision-making with physical consequences, in a shared sector.
   the interior. Modules that should be visible from outside (weapons, shield generators, engines and
   similar) show a unique roof tile above them instead of the generic one, so they can still be
   identified and targeted. Enemy roofs can't be hidden without a scanning upgrade (planned research).
-  Every ship but the player's is roofed this way, stations, traders and neutrals too, until player crew are aboard (#390).
+  Every ship but the player's is roofed this way, traders and neutrals too, until player crew are aboard (#390). Stations stay open unless at war with the player.
 - **Aiming from the main view:** while a fight is on, selecting a weapon card (Q W E R) arms a
   left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A weapon with no aim of its own follows the ship target, shown as "Auto". A roof-visible
   module (weapons, shields, engines, AI core) is aimed at as that module; any other roof tile is a **blind tile aim**, and shots land near it
