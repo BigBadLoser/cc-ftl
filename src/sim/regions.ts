@@ -65,7 +65,8 @@ export function shipFrame(ship: Ship): Rect {
  */
 export function regions(sim: Sim): Region[] {
   const out: Region[] = [];
-  for (const ship of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
+  // World queries return ids ascending already: no copy and sort.
+  for (const ship of sim.world.query(ShipC)) {
     const s = sim.world.get(ship, ShipC) as Ship;
     const bbox = shipRect(s);
     out.push({ ship, grid: shipGridOf(sim.sector.grid, sim.world, ship) as ShipGrid, bbox, frame: padded(bbox, REGION_PAD) });

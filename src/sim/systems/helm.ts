@@ -10,6 +10,7 @@ import { TICK_HZ } from '../time';
 import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
+import { modulesOn, type DefTest } from '../modules/byShip';
 import { settleDeparture, settleOrder } from '../ftl/order';
 
 /**
@@ -25,10 +26,10 @@ export function helmSystem(sim: Sim): void {
     const pilot = ship.state === 'active' ? mannedConsole(sim, id, 'helm') : null;
     let engines = 0;
     if (pilot) {
-      for (const mid of sim.world.query(ModuleC)) {
+      for (const mid of modulesOn(sim, id, isEngine)) {
         const m = sim.world.get(mid, ModuleC);
         const eng = m && sim.content.modules[m.def]?.engine;
-        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
+        if (!m || !eng || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
         engines += Math.abs(sim.content.modules[m.def]?.power ?? 0) * eng.evasionPerPower;
       }
     }
@@ -45,6 +46,9 @@ export function helmSystem(sim: Sim): void {
   }
 }
 
+const isEngine: DefTest = (d) => !!d.engine;
+const isHelmOrEngine: DefTest = (d) => d.console === 'helm' || !!d.engine;
+
 /** How often (ticks) a player ship's cruise figures are refreshed. */
 const CRUISE_EVERY = 10;
 
@@ -58,10 +62,10 @@ function cruise(sim: Sim, id: number, combat: { cruisePilot: number; cruiseEvasi
   if (sim.world.get(id, ShipC)?.state !== 'active') return;
   let helm = false;
   let engines = 0;
-  for (const mid of sim.world.query(ModuleC)) {
+  for (const mid of modulesOn(sim, id, isHelmOrEngine)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || (def.console !== 'helm' && !def.engine) || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC) || shipIdOf(sim, m) !== id) continue;
+    if (!m || !def || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
     if (def.console === 'helm') helm = true;
     if (def.engine) engines += Math.abs(def.power ?? 0) * def.engine.evasionPerPower;
   }

@@ -21,6 +21,7 @@ import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 import { shipIdOf } from '../regions';
+import { modulesOn, type DefTest } from '../modules/byShip';
 import { fightsBareHanded, roleOf } from '../consent/roles';
 import { EggSacC } from '../aliens/components';
 import { sacInReach, sacTile } from '../aliens/target';
@@ -82,14 +83,16 @@ function walkTo(sim: Sim, id: number, f: Fighter, pos: Position, goal: { x: numb
   } else clearPath(sim, id);
 }
 
+const isConsole: DefTest = (d) => !!d.console;
+
 /** The grid's bridge if it has one (so boarders go hold it, which captures the ship), else its nearest console: a boarder's objective, as an access tile. */
 function consoleObjective(sim: Sim, shipId: number, from: Position): { x: number; y: number } | null {
   let best: { x: number; y: number } | null = null;
   let bestD = Infinity;
-  for (const mid of sim.world.query(ModuleC)) {
+  for (const mid of modulesOn(sim, shipId, isConsole)) {
     const m = sim.world.get(mid, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def?.console || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
+    if (!m || !def?.console || m.hp <= 0) continue;
     const at = accessTile(def, m.x, m.y, m.rot);
     const d = (at ? Math.hypot(at.x - from.x, at.y - from.y) : Infinity) + (def.bridge || def.console === 'helm' ? 0 : 1000);
     if (at && d < bestD) {
@@ -100,8 +103,11 @@ function consoleObjective(sim: Sim, shipId: number, from: Position): { x: number
   return best;
 }
 
-/** One crew member's combat turn. `units` are the combat-ready crew of the grid (ascending ids). */
-export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly number[]): void {
+/**
+ * One crew member's combat turn. `units` are the combat-ready crew of the grid (ascending ids). `peaceful`: the caller proved no
+ * two of `units` are hostile (`mayHaveHostilePair`), so the foe search is skipped (it would find nobody).
+ */
+export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly number[], peaceful = false): void {
   if (!isCombatReady(sim, id)) return; // downed or killed earlier this tick
   const pos = sim.world.get(id, PositionC) as Position;
   const f = fighterOf(sim, id);
@@ -118,7 +124,7 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const invader = isInvader(sim, id);
   // A player order to attack an egg sac (not crew, so not among the foes): its footprint tile nearest to us.
   const sac = controlled && f.ordered ? sacTile(sim, f.ordered, shipIdOf(sim, pos), pos) : null;
-  const foes = units
+  const foes = peaceful ? [] : units
     .filter((o) => o !== id && isHostile(sim, id, o) && isCombatReady(sim, o))
     .map((o) => ({ id: o, pos: sim.world.get(o, PositionC) as Position }))
     .sort((a, b) => dist(pos, a.pos) - dist(pos, b.pos) || a.id - b.id);

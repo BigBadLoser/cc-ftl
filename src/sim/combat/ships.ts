@@ -18,6 +18,7 @@ import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './co
 import type { GenOrigin } from '../shipgen/types';
 import { rollLoadout } from '../upgrades/loadout';
 import { hullSum } from './hull';
+import { modulesOn, type DefTest } from '../modules/byShip';
 import type { RolledCrew } from '../crew/roll';
 
 /** The ship with this ShipC entity id (the ship id), or undefined. */
@@ -33,14 +34,15 @@ export function homeShip(sim: Sim): number {
   return best;
 }
 
+const isShieldGen: DefTest = (d) => !!d.shieldGen;
+
 /** Shield layers the generators on a grid give. `powered` counts only running generators; otherwise all intact ones. */
 export function shieldCapacity(sim: Sim, shipId: number, powered: boolean): number {
   let layers = 0;
-  for (const id of sim.world.query(ModuleC)) {
+  for (const id of modulesOn(sim, shipId, isShieldGen)) {
     const m = sim.world.get(id, ModuleC);
-    // Cheap content and state checks before the ship lookup (all pure, so the order changes nothing).
     const gen = m && sim.content.modules[m.def]?.shieldGen;
-    if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered) || shipIdOf(sim, m) !== shipId) continue;
+    if (!m || !gen || m.hp <= 0 || !m.enabled || (powered && !m.powered)) continue;
     if (powered && (sim.world.has(id, IonC) || !isDeployed(sim, id))) continue;
     layers += Math.floor(Math.abs(sim.content.modules[m.def]?.power ?? 0) * gen.layersPerPower);
   }

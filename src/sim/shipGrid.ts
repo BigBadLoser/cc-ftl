@@ -70,6 +70,11 @@ export class ShipGrid implements GridLike {
     return this.sector.load(field, rect);
   }
 
+  /** `SectorGrid.writeDelta` over the ship's rectangle (`vals` and `before` row-major over it): the writes of a `set` per changed tile. */
+  writeDelta(field: string, vals: Float64Array, before: Float64Array, eps: number, round = false): number {
+    return this.sector.writeDelta(field, this.rect, vals, before, eps, round);
+  }
+
   private sumRevisions(field: string, x0: number, y0: number, w: number, h: number): number {
     if (!this.sector.has(field)) throw new Error(`ShipGrid: unknown field "${field}"`);
     if (w <= 0 || h <= 0) return 0;
