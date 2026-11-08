@@ -38,7 +38,8 @@ env:
   SHARDS: '8'
 
 concurrency:
-  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
+  # A label event gets its own group, so it never cancels the PR's normal run (and a non-soak label starts nothing).
+  group: ci-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}${{ github.event.action == 'labeled' && '-label' || '' }}
   cancel-in-progress: true
 
 jobs:
