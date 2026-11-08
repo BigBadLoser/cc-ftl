@@ -171,13 +171,14 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
     # They mask the crop, so a plant behind one shows the band across it.
     up = zr - zv                                                            # the front slope: v and z at fraction f
     fs = lambda f: (b - f * iv + 0.006, zv + f * up)
-    for u0, w in ((cu - 0.78, 0.08), (cu - 0.64, 0.04), (cu + 0.5, 0.08), (cu + 0.64, 0.04)):
-        (v0, z0_), (v1, z1_) = fs(0.12), fs(0.88)
-        _streak(k, (u0, v0, z0_), (u0 + 0.14, v1, z1_), (w, 0, 0))
-    for u0, w in ((cu - 0.55, 0.09), (cu - 0.4, 0.045), (cu + 0.25, 0.09), (cu + 0.4, 0.045)):   # the roof
-        _streak(k, (u0, b2 - 0.04, zr + 0.006), (u0 + 0.16, -b2 + 0.04, zr + 0.006), (w, 0, 0))
-    for v0, w in ((0.26, 0.08), (0.12, 0.04)):                             # the end pane
-        _streak(k, (cu + a + 0.006, v0, z0 + 0.06), (cu + a + 0.006, v0 - 0.12, zv + 0.2), (0, -w, 0))
+    (v0, za), (v1, zb) = fs(0.08), fs(1.0)
+    for bay in (-1, 1):                                                     # the same pair in each bay: up the front
+        for du, w in ((-0.2, 0.08), (-0.07, 0.04)):                         # slope, then on across the roof
+            u0 = cu + bay * L / 4 + du
+            _streak(k, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0))
+            _streak(k, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0))
+    for dv, w in ((0.1, 0.08), (-0.03, 0.04)):                              # the end pane, centred
+        _streak(k, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0))
 
 
 def _streak(k, p0, p1, e):
@@ -194,10 +195,10 @@ def _tray(k, cu, L, D, z0, zs, seed):
 
 def terra(k, on):
     """One long glass canopy on an angular navy base, grey frames, slatted front panel, a control screen."""
-    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
-    body = _cham(0, 0, 1.98, 0.9375, 0.06)                  # (front face on v = 15/32: whole px, as every u below)
+    _prism(k, _cham(0, 0, 1.9, 0.84, 0.03), 0.0, 0.1, "dark")                                 # kick
+    body = _cham(0, 0, 2.0, 0.9375, 0.02)                   # (front face on v = 15/32: whole px, as every u below)
     _prism(k, body, 0.1, 0.54, "tNavy", top="tNavyL")
-    _ring(k, _cham(0, 0, 2.0, 0.96, 0.02), _cham(0, 0, 1.84, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
+    _ring(k, body, _cham(0, 0, 1.86, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")          # sill, flush with it
     f = 0.46875
     k.box(-0.40625, f, 0.2, 0.75, 0.01, 0.26, "dark")                                       # slatted panel
     for j in range(6):                                                                     # 2 px slats, 2 px gaps
