@@ -13,7 +13,7 @@ These aren't features. They're the aims we use to choose which features to build
 ## Now
 
 - **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). Next: the distress freighter, then the medical pod with passengers. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
-- **UI consistency pass.** Shared colour, size and shadow tokens, then shared chips, meters, tooltips, headers and tabs, then one window frame. Art for station holograms (#332) and overhead crew icons is with art sessions.
+- **UI consistency pass.** Shared colour, size and shadow tokens, then shared chips, meters, tooltips, headers and tabs, then one window frame. Art for overhead crew icons is with art sessions.
 
 ## Next
 

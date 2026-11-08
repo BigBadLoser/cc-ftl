@@ -67,7 +67,7 @@ icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
 - **Relationships (#239) built on `crew/relationships-239`, not yet a PR** (waits on the user's review of the crew card and the placeholder bubbles); see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
 - **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
-- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3, a station hologram sprite per type, waits on an art session (`docs/art-prompts/station_holograms.md`).
+- **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.
   Addictions are parked.
 - **Open issues from 2026-11-03:** #300 in-node events; #303 augments as stat modifiers on the base species; #305 a shuttle
   landing in a bay that breaks on approach.
