@@ -36,6 +36,8 @@ class Style:
                                           # None: wall3d.STILE
     joint: Optional[int] = None           # the ramp level of the plates' joints, lit on the shade side too; None: the
                                           # default's dark joints (level 1, the shade side black)
+    one_seam: bool = False                # a single seam a tile, seam in from its high edge (navy's panel line): the
+                                          # cover plate on its low side, a narrow strip on its high
     seam_wrap: bool = False               # the slope's seams on down over the toe and back across the shelf to the
                                           # wall (a solid ramp under a shelf)
     toe: Optional[str] = None             # a family for a band along the ramp's toe

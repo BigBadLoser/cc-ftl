@@ -66,6 +66,10 @@ def navy_thin_band(k, ax, plane, a, b, ends, zh, H):
     T.run(k, ax, plane, a, b, ends, zh - 0.28 * H, zh - 0.25 * H, PAINT, "ochre", 3, 0)
 
 
+navy_band.reds = ((0.33, 0.0),)             # (its red, as fractions of H under the header: the panel line's lit px
+navy_thin_band.reds = ((0.18, 0.0), (0.28, 0.25))   # in its tone over them, navy.py)
+
+
 def _steel(k, q, n, up):
     k.poly(q, "wall", 0, n, fixed="fSH0" if n.normalized().dot(up) > 0.5 else "fSH2")      # neutral steel
 

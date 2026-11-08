@@ -521,7 +521,10 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             segs.append((e0, e1, s1 - s0 > 0.3))
             continue
         if cr and abs(s1 - b) < 1e-6:           # no seam beside a chamfered corner (it doubled the chamfer's edge)
-            segs += [(e0, s0 + off, False), (s0 + off, e1, True)]
+            segs += [(e0, e1, True)] if style().one_seam else [(e0, s0 + off, False), (s0 + off, e1, True)]
+            continue
+        if style().one_seam:                    # (one seam: the cover, then the strip)
+            segs += [(e0, s1 - off, True), (s1 - off, e1, False)]
             continue
         segs += [(e0, s0 + off, False), (s0 + off, s1 - off, True), (s1 - off, e1, False)]
     holes = [h[2:] for h in getattr(sp, "holes", ()) if h[0] == ax and abs(h[1] - plane) < 1e-6]

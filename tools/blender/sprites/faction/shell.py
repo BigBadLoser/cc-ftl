@@ -386,9 +386,9 @@ class RampHoles(Feature):
             off = T.seam()
             for ax, plane, a, b, _ in T.faces(sp):
                 for s0, s1 in T.spans(a, b):
-                    if s1 - s0 > 2 * off + 0.3:
-                        sp.holes.append((ax, T.snap(plane), s0 + off - hd[2], s1 - off + hd[2], hd[0] * sp.run,
-                                         hd[1] * sp.run))
+                    if s1 - s0 > 2 * off + 0.3:     # (one seam a tile: in the cover, clear of its seam)
+                        hi = s1 - off - T.LINE / 2 if T.style().one_seam else s1 - off + hd[2]
+                        sp.holes.append((ax, T.snap(plane), s0 + off - hd[2], hi, hd[0] * sp.run, hd[1] * sp.run))
 
 
 class SlotHoles(Feature):

@@ -20,8 +20,9 @@ from .shell import (
     _ramp_chamfer,
 )
 
-NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up the face and down the ramp (on the px
-                                    # grid: a px wide, they fill whole px on both faces)
+NAVY_SEAM = 7.5 / 32               # the panel line, in from each tile's high edge, up the face and down the ramp: one
+                                    # a tile, the cover on its low side, a narrow strip on its high (the ref's; on the
+                                    # px grid: a px wide, it fills whole px on both faces)
 
 
 NAVY_SHELF = SHELF + LIP_D          # the ramp's shelf: slate's and the lip's depth, all of it shelf (the user)
@@ -85,6 +86,18 @@ def _seam(k, ax, plane, u0, u1, z0, z1, F):
            fixed="fNW6")
 
 
+def _lit(k, ax, plane, u, z0, z1, F, reds):
+    """The panel line's lit px on its high side (the strip's edge, the ref's): a level over the face, and over the
+    band's red (reds: (bottom, top)) a level over the red."""
+    z = z0
+    for r0, r1 in reds + [(z1, z1)]:
+        for lo, hi, fam, lvl in ((z, min(r0, z1), F, NAVY_FACE + 1), (max(r0, z0), min(r1, z1), "ochre", 4)):
+            if hi - lo > 1e-6:
+                k.poly([T.P(ax, plane, uu, zz, 2 * PAINT) for uu, zz in ((u, lo), (u + LINE, lo), (u + LINE, hi),
+                                                                          (u, hi))], fam, lvl, T.OUT(ax))
+        z = max(z, r1)
+
+
 def navy(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -104,12 +117,15 @@ def navy(hull):
         rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
         H = rt - zs                                                     # wall, so the far hull's parts line up
         zh = rt - 0.25 * H if full else top                             # the header's foot
-        for s0, s1 in T.spans(a, b):                                    # plate seams (none on a corner's tile)
+        bf = T.fill("band", navy_band) if full else None
+        reds = sorted((zh - f0 * H, zh - f1 * H) for f0, f1 in getattr(bf, "reds", ()))
+        for s0, s1 in T.spans(a, b):                                    # the panel line (none on a corner's tile)
             if (abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont"):
                 continue
             if s1 - s0 > 2 * NAVY_SEAM + 1e-3:
-                for u in (s0 + NAVY_SEAM, s1 - NAVY_SEAM):
-                    _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
+                u = s1 - NAVY_SEAM
+                _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
+                _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)
         if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
             for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
                 if e == "in":
@@ -123,7 +139,7 @@ def navy(hull):
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 2, 0)          # the dark header, up to the cap (a step under
                                                                          # it showed as a dotted line on the black top)
-        T.fill("band", navy_band)(k, ax, plane, a, b, pe, zh, H)                              # the maroon band
+        bf(k, ax, plane, a, b, pe, zh, H)                                                     # the maroon band
         mid = T.fill("middle")                          # (a top design's: in a dark recess between band and foot)
         if mid:
             for s0, s1 in T.spans(a, b):
@@ -163,7 +179,7 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=0, chamfer=NAVY_C,
+        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, joint=0, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT2"), "blue": ("fNT2", "fNT2")},  # (the toe in the red band's tones)
