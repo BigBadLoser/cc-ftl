@@ -1,4 +1,5 @@
 import { Sprite, type Container } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { resolveArt } from './assets/fallback';
 import type { Atlas } from './assets/loader';
 import { depthKey, iso } from './iso';
@@ -88,7 +89,7 @@ export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: At
         const tinted = [...objs];
         if (art.add !== undefined) {
           const extra = place(mk(), z + 0.91);
-          extra.blendMode = 'add';
+          batchAdditive(extra);
           extra.tint = art.add;
           objs.push(extra);
         }

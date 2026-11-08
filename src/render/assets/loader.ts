@@ -214,7 +214,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     // Each atlas builds its own textures from the plain URL (the browser's HTTP cache dedupes the download), not through pixi's
     // URL-keyed Assets cache: that would hand one texture to two atlases, and disposing one would destroy it under the other.
     const bitmap = await decode(base + path);
-    const t = new Texture({ source: new ImageSource({ resource: bitmap, alphaMode: 'premultiply-alpha-on-upload', scaleMode: mode, resolution }) });
+    const t = new Texture({ source: new ImageSource({ resource: bitmap, alphaMode: 'premultiply-alpha-on-upload', scaleMode: mode, resolution, label: path }) });
     if (disposed) {
       // The atlas was disposed while this sheet was in flight (a stage replaced before its renderer finished): free it, use nothing.
       t.destroy(true);

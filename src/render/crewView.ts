@@ -1,4 +1,5 @@
 import { shipIdAtTile } from './regionRules';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
@@ -169,13 +170,13 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       .filter((l) => l.def.glow)
       .map((layer) => {
         const sprite = new Sprite();
-        sprite.blendMode = 'add';
+        batchAdditive(sprite);
         sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
         root.addChild(sprite);
         let halo: Sprite | null = null;
         if (L.halos && !layer.def.slot.startsWith('arm')) {
           halo = new Sprite(); // cyber arm: no halo
-          halo.blendMode = 'add';
+          batchAdditive(halo);
           root.addChild(halo); // in the crew's own depth slot, drawn just over its glow
         }
         return { layer, sprite, halo };

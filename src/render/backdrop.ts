@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite, Texture, TilingSprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import type { Atlas } from './assets/loader';
 import { backdropBodySprite, bodySpot, HAS_PROMINENCES } from './backdropPlan';
 
@@ -186,7 +187,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
       const glow = new Sprite(Texture.EMPTY);
       glow.anchor.set(0.5);
       glow.alpha = 0.2;
-      glow.blendMode = 'add';
+      batchAdditive(glow);
       glow.visible = false;
       glow.eventMode = 'none';
       const mask = new Graphics();

@@ -1,4 +1,5 @@
 import { ART_SCALE } from './iso';
+import { batchAdditive } from './batch';
 import { BlurFilter, Container, Rectangle, Sprite, type Renderer, type Texture } from 'pixi.js';
 
 /** Art px of blur (sigma) baked into a halo texture; matches the old live filter at zoom 1. */
@@ -51,7 +52,7 @@ export function dropHalo(glow: Texture): void {
 /** A glow's halo as an additive sprite for position (x, y) of the glow (x is the sprite origin; `flip` mirrors it). */
 export function makeHalo(glow: Texture, x: number, y: number, flip = false): Sprite {
   const h = new Sprite(haloTex(glow));
-  h.blendMode = 'add';
+  batchAdditive(h);
   h.position.set(flip ? x + HALO_PAD : x - HALO_PAD, y - HALO_PAD);
   if (flip) h.scale.x = -1;
   return h;

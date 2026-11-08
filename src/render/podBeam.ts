@@ -1,4 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { TILE_W } from './iso';
 import { barrel, beamEnd, HIDDEN } from './podMuzzle';
@@ -40,7 +41,7 @@ function pool(parent: Container): { put(s: StaticSprite, x: number, y: number, r
       if (!p) {
         const body = new Sprite();
         const glow = new Sprite();
-        glow.blendMode = 'add';
+        batchAdditive(glow);
         parent.addChild(body, glow);
         p = { body, glow };
         parts.push(p);

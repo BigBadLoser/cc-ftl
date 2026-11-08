@@ -1,4 +1,5 @@
 import { Sprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { Grid } from '../sim/grid';
 import { Struct } from '../sim/structure';
@@ -38,7 +39,7 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
     if (!f) {
       const spr = new Sprite();
       const glow = new Sprite();
-      glow.blendMode = 'add';
+      batchAdditive(glow);
       L.sorted.addChild(spr, glow);
       fires[nf] = f = { spr, glow };
     }

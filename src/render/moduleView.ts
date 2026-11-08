@@ -1,4 +1,5 @@
 import { haloTex, makeHalo } from './haloTex';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import { Sprite, type Container, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
@@ -172,7 +173,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     let halo: Sprite | null = null;
     if (s.glow) {
       glow = mk(s.glow);
-      glow.blendMode = 'add';
+      batchAdditive(glow);
       glow.zIndex = glowKey;
       L.sorted.addChild(glow);
       if (L.halos) {

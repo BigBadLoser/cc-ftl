@@ -1,4 +1,5 @@
 import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
+import { setAdditiveMerge } from '../render/batch';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { CarryingC, ItemStackC } from '../sim/items/components';
@@ -25,6 +26,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
   (window as unknown as { __cc: unknown }).__cc = {
     /** Freeze (0) or run the sim at speed 1..3 (screenshot and debug sessions); the renderer goes on. */
     setSpeed: (s: 0 | 1 | 2 | 3) => loop?.setSpeed(s),
+    /** Merge flagged additive glow into the normal batches (true, the default) or draw it in its own `add` batches (render diffs). */
+    additiveMerge: (on: boolean) => setAdditiveMerge(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
     stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),

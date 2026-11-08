@@ -1,4 +1,5 @@
 import { Graphics, Sprite, Text } from 'pixi.js';
+import { batchAdditive } from './batch';
 import type { World } from '../sim/ecs';
 import type { GridLike } from '../sim/grid';
 import type { SimEvent } from '../sim/events';
@@ -111,7 +112,7 @@ export function createSectorFx(
     const art = resolveArt(atlas, [assetId]);
     if (!art) return;
     const spr = new Sprite(art.s.tex);
-    spr.blendMode = 'add';
+    batchAdditive(spr);
     spr.tint = art.tint;
     if (recolour !== undefined) recolor(spr, recolour); // an upgraded shot's blast, through the bolt's own recolour
     spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
@@ -224,7 +225,7 @@ export function createSectorFx(
           spr.scale.set(art.scale);
           spr.tint = art.tint;
           if (tint !== undefined) recolor(spr, tint); // an upgraded shot: its neutral bolt (or its own, lacking one) recoloured
-          spr.blendMode = 'add';
+          batchAdditive(spr);
           L.sorted.addChild(spr);
           shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0), art: bolt }));
         }

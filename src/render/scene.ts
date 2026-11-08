@@ -1,4 +1,5 @@
 import { autoDetectRenderer, Container, RenderTexture, Sprite } from 'pixi.js';
+import './batch'; // the renderer's batcher (installed before the renderer is built)
 import { animNow } from './animClock';
 import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
