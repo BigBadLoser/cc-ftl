@@ -4,13 +4,13 @@ smaller than the mining pod (content size 2.2 against 2.6).
 A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and the HATCH COLLAR
 stepped in at its narrow top: the crew-sized round hatch in a hazard ring, the only way in or out. It docks nose first,
 like the old crew capsules: turned on its side, the hatch to an airlock's collar. A hi-vis orange safety band round the
-base, two windows looking forward (the heading), an emergency BEACON on the back of the shoulder, RCS quads round the
+base, a porthole looking forward (the heading), access plates and a vent, an emergency BEACON on the back of the shoulder, RCS quads round the
 shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then turned by
 `tilt` (Tilted: 0 = on its side, the hatch forward; 90 = upright, heat shield down; more leans the collar back so the
 shield leads) and to the heading (Spin; u = the heading). Round the axis, theta 270 faces forward when upright (the
-windows), 90 aft (the drive pack, the beacon). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 =
+porthole), 90 aft (the drive pack, the beacon). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 =
 straight sides, more = a rounded gumdrop shoulder) and the flying tilt.
 
 States: fly (drive lit, leaning by the variant's tilt), drift (upright, no drive; `beacon_on` lights the lamp: the blink's
@@ -35,8 +35,9 @@ SIDES = 48
 COLLAR = 0.91                 # the hatch collar's radius, x the cone's top: it steps in, a ledge round it
 HATCH = 0.8                   # the hatch's radius, x the collar's (0.42: crew-sized); the hazard ring round it is the rest
 WHEEL, WHEEL_D = "plate", "steelL"   # the hatch's hand wheel: light steel on the darker hatch
-GLASS = "bK"                  # window glass: a deep blue
-WINDOWS = 26                  # the two front windows, this far either side of straight ahead (degrees)
+GLASS = "bK"                  # porthole glass: a deep blue
+PANEL = "sole"                # the access plates' light grey
+PORTHOLE = (0.68, 0.18)       # the front porthole: its height (x the cone's length), bezel radius
 HOVER = 0.25                  # the lowest point's height in flight
 
 
@@ -153,7 +154,7 @@ def body(k):
     """The cone, a few seams, and the safety band round its base."""
     _g("hull")
     ln = k.v["length"]
-    marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
+    marks = [0.0, 0.06, 0.3, ln * 0.84, ln * 0.84 + 0.035, ln]          # (the seam runs above the porthole)
     mats = [HULL_D, HULL, HULL, HULL_D, HULL]
     for (a, b), m in zip(zip(marks, marks[1:]), mats):
         n = max(1, int((b - a) / 0.06))
@@ -248,58 +249,43 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None, dt=4.0)
 
 
 def viewport(k):
-    """The front: a pair of windows looking forward, up by the shoulder, so the pod has a face (the heading). Each is a
-    pane tapering with the cone in a thin dark frame: deep blue glass with two pale streaks of reflection across it."""
-    _g("windows")
-    ln = k.v["length"]
-    s0, s1, h = ln * 0.52, ln * 0.78, 10
-    for cc in (270 - WINDOWS, 270 + WINDOWS):
-        sector(k, s0 - 0.03, s1 + 0.03, cc - h - 2.5, cc + h + 2.5, 1.02, "steelD", "steelD")   # the frame
-        sector(k, s0, s1, cc - h, cc + h, 1.026, GLASS, "steelD")                           # the glass
-        for a0, w in ((0.42, 0.2), (0.74, 0.11)):                         # reflections: streaks across it, slanted
-            def pt(fs, ft):                                                # fs up the pane, ft across it (-1..1)
-                ss = s0 + (s1 - s0) * min(1.0, max(0.0, fs))
-                th = math.radians(cc + ft * h * 0.98)
-                r = k.r(ss) * 1.029
-                return k.f.pt(k.u(ss), r * math.cos(th), k.zc + r * math.sin(th))
-            n = 8                                                          # in pieces, so it follows the curve
-            for i in range(n):
-                fa, fb = -1 + 2 * i / n, -1 + 2 * (i + 1) / n
-                la, lb = a0 + 0.25 * fa, a0 + 0.25 * fb
-                k.f.poly([pt(la, fa), pt(la + w, fa), pt(lb + w, fb), pt(lb, fb)], "glassL")
+    """The front: one round PORTHOLE looking forward, up by the shoulder (the heading): a raised steel bezel, the deep
+    blue glass set in it, a small glint."""
+    _g("porthole")
+    p, n = k.on(k.v["length"] * PORTHOLE[0], 270)
+    rb_, rg = PORTHOLE[1], PORTHOLE[1] - 0.05
+    stud(k.f, p, n, rb_, 0.04, "steelL", "steelL", sides=28)               # the bezel
+    q = tuple(p[i] + n[i] * 0.03 for i in range(3))
+    stud(k.f, q, n, rg, 0.02, GLASS, GLASS, sides=28)                      # the glass, a little below its rim
+    up = (1.0, 0.0, 0.0)
+    g = tuple(q[i] + n[i] * 0.02 + up[i] * rg * 0.4 + (0.0, 1.0, 0.0)[i] * rg * 0.35 for i in range(3))
+    stud(k.f, g, n, 0.04, 0.004, "glassL", "glassL", sides=10)             # a glint
 
 
-def seam_box(k, s0, s1, t0, t1, mat="steelL", w=0.022):
-    """A panel's seam: a thin outline on the hull round s0..s1, t0..t1 (degrees)."""
-    r = k.r((s0 + s1) / 2)
-    dt = math.degrees(w / r)
-    sector(k, s0, s0 + w, t0, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
-    sector(k, s1 - w, s1, t0, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
-    sector(k, s0, s1, t0, t0 + dt, 1.004, mat, mat, ds=0.02, dt=1.0)
-    sector(k, s0, s1, t1 - dt, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
+def plate(k, s0, s1, t0, t1, mat=None, wall="steel"):
+    """A raised access plate on the hull, its own lighter grey, so its edge reads by colour (no thin seams)."""
+    sector(k, s0, s1, t0, t1, 1.012, mat or PANEL, wall, ds=0.03, dt=2.0)
 
 
 def panels(k):
-    """Detail on the plain hull: a big ACCESS PANEL on each side (seam, corner fasteners, two latches), a small one either
-    side of the drive pack, and a vent grille on the front below the windows."""
+    """Detail on the plain hull: a big ACCESS PLATE on each side with two latches on its forward edge, a narrow one either
+    side of the drive pack, and a louvred VENT on the front below the porthole."""
     _g("panels")
     ln = k.v["length"]
-    for c in (0, 180):                                                     # the sides' access panels
-        s0, s1, t0, t1 = 0.38, ln * 0.6, c - 17, c + 17
-        seam_box(k, s0, s1, t0, t1)
-        for ss in (s0 + 0.05, s1 - 0.05):                                  # its corner fasteners
-            for tt in (t0 + 3.5, t1 - 3.5):
-                p, n = k.on(ss, tt)
-                stud(k.f, p, n, 0.022, 0.02, "steelL", "steelL", sides=6)
-        for ss in (s0 + (s1 - s0) * 0.33, s0 + (s1 - s0) * 0.67):           # two latches on its forward edge
-            tl = t0 + 5 if c == 180 else t1 - 5                              # (the edge toward the front, theta 270)
-            sector(k, ss - 0.025, ss + 0.025, tl - 3, tl + 3, 1.02, "steelD", "steelD", ds=0.02, dt=1.0)
-    for c in (90 - 52, 90 + 52):                                           # small panels by the drive pack
-        seam_box(k, 0.42, ln * 0.62, c - 8, c + 8)
-    _g("vent")                                                             # a vent grille below the windows
-    seam_box(k, 0.36, 0.56, 270 - 14, 270 + 14, "steelL")
-    for sa in (0.4, 0.475):                                                # two wide slots
-        sector(k, sa, sa + 0.045, 270 - 10, 270 + 10, 1.006, "dark", "steelD", ds=0.02, dt=1.0)
+    for c in (0, 180):                                                     # the sides' access plates
+        s0, s1, t0, t1 = 0.38, ln * 0.62, c - 16, c + 16
+        plate(k, s0, s1, t0, t1)
+        tl = t0 + 4 if c == 0 else t1 - 4                                  # latches on the edge toward the front (270)
+        for ss in (s0 + (s1 - s0) * 0.28, s0 + (s1 - s0) * 0.72):
+            sector(k, ss - 0.035, ss + 0.035, tl - 3.5, tl + 3.5, 1.028, "steelD", "steelD", ds=0.02, dt=1.0)
+    for c in (90 - 50, 90 + 50):                                           # narrow plates by the drive pack
+        plate(k, 0.42, ln * 0.6, c - 7, c + 7)
+    _g("vent")                                                             # a louvred vent below the porthole:
+    v0, v1, h = 0.34, 0.6, 15                                              # a raised frame, dark inside, three slats
+    sector(k, v0, v1, 270 - h, 270 + h, 1.016, "steelD", "steel", ds=0.02, dt=1.0)
+    for i in range(3):
+        sa = v0 + 0.045 + i * 0.065
+        sector(k, sa, sa + 0.045, 270 - h + 3, 270 + h - 3, 1.03, "steelL", "steel", ds=0.015, dt=1.0)
 
 
 def rcs(k):
