@@ -275,9 +275,6 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-SEAM_Z = 8 * PZ                     # the boxes header's seam (its dark px) over the header's foot
-
-
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True, lid=True):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
@@ -314,14 +311,9 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True, lid=Tru
                 prism(k, ax, plane, s0, s1, [(0.0, zl), (d + PAINT, zl), (d + PAINT, zl + PZ), (0.0, zl + PZ)], BLUE, 4,
                       cols=[False, dark, False, False], cap=False)                 # its foot's edge, the side's tone
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
-            if lid:                                     # a seam across, edge to edge: as the plain wall's line under
-                for zs, tone in ((SEAM_Z, "fGT4" if ax == "y" else "fGT3"), (SEAM_Z - PZ, "fGT1")):   # its rail (its
-                    prism(k, ax, plane, q0, q1, [(0.0, z0 + zs), (d + PAINT, z0 + zs), (d + PAINT, z0 + zs + PZ),   # shadow's
-                                                 (0.0, z0 + zs + PZ)], BLUE, 4, cols=[False, tone, False, False],  # dark,
-                          cap=False)                                                           # the stripe's lit top)
-            else:                                       # (T1-4's foot: in the side's tone)
-                prism(k, ax, plane, q0, q1, [(0.0, z0 + 7 * PZ), (d + PAINT, z0 + 7 * PZ), (d + PAINT, z0 + 8 * PZ),
-                                             (0.0, z0 + 8 * PZ)], BLUE, 4, cols=[False, side, False, False], cap=False)
+            prism(k, ax, plane, q0, q1, [(0.0, z0 + 7 * PZ), (d + PAINT, z0 + 7 * PZ), (d + PAINT, z0 + 8 * PZ),
+                                         (0.0, z0 + 8 * PZ)], BLUE, 4, cols=[False, side, False, False], cap=False)
+                                                        # a seam across, edge to edge, in the side's tone
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
