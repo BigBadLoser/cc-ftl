@@ -275,7 +275,7 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True):
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
