@@ -145,10 +145,12 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
         zf = lambda d: zp[0] + (zp[1] - zp[0]) * (d - rows[0]) / (rows[1] - rows[0])   # noqa: E731
         w = o1 - o0
+        lift = dp - 0.02                               # the bars out of the slope, over the silver pipe: the user
         for u in (o0 + w / 3, o0 + 2 * w / 3):         # steel brackets: a collar round each pipe, a bar between them
             for dd, zc in zip(rows, zp):
                 _collar(k, P, u, dd, zc, rp + 0.015, 0.03, up)
-            _bar(k, P, u, rows[0], rows[1], zf, 0.02, 0.015, up)
+            _bar(k, P, u, rows[0] + sn * lift, rows[1] + sn * lift, lambda d: zf(d - sn * lift) + cs * lift,
+                 0.02, 0.015, up)
 
 
 SILVER = {"fxO": "fNW3", "orL": "fNW4", "orM": "fNW6"}  # the tube's tones in navy's steel greys

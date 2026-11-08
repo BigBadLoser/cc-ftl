@@ -567,3 +567,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: top pipe up 1, silver pipe down 1. Moved along the slope by one screen px each
   (1 / (16 + 39.19·fall) in d); checked in the pixels: top row and its collars up 1 px, silver down 1 px, lower row
   unchanged. nv17.
+- 2026-11-08: the user: the little bands between the pipes come towards the camera, above the silver pipe. The bars
+  between the collars now sit out of the slope (0.02 deep instead of on the pipes' centre line), in front of the
+  silver pipe, which no longer cuts them. Pipes and collars unchanged. nv18.
