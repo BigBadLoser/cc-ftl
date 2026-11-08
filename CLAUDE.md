@@ -14,7 +14,12 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
 - `npm run typecheck`: `tsc` and `svelte-check`
 - `npm run check:fast`: lint, typecheck, and only the tests affected by uncommitted changes (Vitest's import graph),
   skipping `*.slow.test.ts` (`VITEST_FAST=1`). Run it before every commit and before pushing a work branch.
-- `npm run check`: lint, typecheck and every test, slow tier included (about 6 minutes on the 4-core dev box). Optional: CI
+- Three test tiers by file name: `*.test.ts` (fast), `*.slow.test.ts` (slow: sweeps and long runs, plus a cheap guard of each soak
+  test) and `*.soak.test.ts` (soak: design-number runs over game hours or many seeds). `npm test`, `check:fast` and PR CI never run
+  soak. `npm run test:soak` runs it (`VITEST_SOAK=1`; about 4.5 minutes on the 4-core dev box). CI runs it in the nightly run on `main`,
+  on a manual run, and on a PR with the `soak` label; a failure fails that run. When a soak test moves there, keep a one-seed or
+  short-horizon guard asserting the same claim in a `.slow.test.ts`.
+- `npm run check`: lint, typecheck and every test, slow tier included, soak excluded (about 6 minutes on the 4-core dev box). Optional: CI
   runs the same full suite on every ready PR, and that run is the record. Use it locally to chase a failure CI found.
 - CI: the repo is public, so CI minutes are free; CI time is what counts. On ready PRs CI runs lint, typecheck, the
   build and the full test suite, slow tier included, in 8 parallel shards (about 3 minutes; `PR_TESTS: affected` in

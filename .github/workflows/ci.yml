@@ -12,11 +12,14 @@ name: CI
 # - Daily on main (only if main changed in the last day) and on a manual run (workflow_dispatch): every test, slow
 #   tier (*.slow.test.ts) included. This catches what slips through, such as two PRs that only break together.
 #   A manual run can pick `affected` too (it then compares the branch's last commit with its parent) and the shard count.
+# - Soak tier (*.soak.test.ts, design-number runs over game hours or many seeds; `npm run test:soak`): the daily run on main, a manual
+#   run, and a PR carrying the `soak` label (add the label, then push or re-run; the label adds the job to the PR's checks). Never
+#   on an unlabelled PR. The `soak` job below shards it (3 shards) and fails the run when a soak test fails.
 # Markdown-only and wiki-only changes don't run this CI (the wiki has .github/workflows/wiki-ci.yml).
 # Shared src/content edits still run both.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths-ignore: ['**/*.md', 'wiki/**', 'wiki-preview/**', '.github/workflows/wiki-ci.yml', '.github/workflows/wiki-preview.yml', '.github/workflows/pages.yml']
   schedule:
     - cron: '17 6 * * *'
@@ -40,7 +43,8 @@ concurrency:
 
 jobs:
   gate:
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    # A `labeled` event only matters for the soak label (the soak job); every other job skips it.
+    if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && (github.event.action != 'labeled' || github.event.label.name == 'soak'))
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.fresh.outputs.run }}
@@ -69,7 +73,7 @@ jobs:
 
   lint:
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -81,7 +85,7 @@ jobs:
 
   typecheck:
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -93,7 +97,7 @@ jobs:
 
   build:
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -105,7 +109,7 @@ jobs:
 
   test:
     needs: gate
-    if: needs.gate.outputs.run == 'true'
+    if: needs.gate.outputs.run == 'true' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -132,3 +136,23 @@ jobs:
           path: vitest-times.json
           if-no-files-found: ignore
           retention-days: 30
+
+  # The soak tier: nightly, on a manual run, and on a PR labelled `soak`. Own matrix, so the main shards stay as fast as ever.
+  soak:
+    needs: gate
+    if: >-
+      needs.gate.outputs.run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'soak'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # VITEST_SOAK=1 includes *.soak.test.ts; the filter keeps it to them. The shard job fails when a test does, so a red nightly is visible.
+      - name: Soak (shard ${{ matrix.shard }}/3)
+        run: VITEST_SOAK=1 npx vitest run .soak.test --shard=${{ matrix.shard }}/3

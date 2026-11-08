@@ -318,11 +318,16 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   test files that import an uncommitted file, directly or transitively. A render or UI change runs its own tests in seconds.
   A `src/sim` change still selects most content tests, because they build a full game through `newGame` and so depend on every
   system. That is correct, not noise.
-- **Slow tier** (`*.slow.test.ts`): soak tests over many seeds or long runs. The fast tier skips them; `npm run check` and CI
-  always run them. Today: the shipgen seed and depth sweeps, the balance fights (`ships/balance`) and the end-to-end trade
-  runs (`content/trade`, `ships/trade`). Name a test `.slow.test.ts` only when it is a soak or sweep whose failures a normal test would also hint
-  at, never to hide a flaky test.
-- **Full** (in CI on every ready PR push, in 8 time-balanced shards, and the nightly run on `main`; `npm run check` runs it locally): everything.
+- **Slow tier** (`*.slow.test.ts`): sweeps and long runs. The fast tier skips them; `npm run check` and CI
+  always run them. Today: the shipgen seed and depth sweeps, the end-to-end trade runs (`content/trade`, `ships/trade`), and the cheap
+  guards of the soak tests (one seed or a short horizon asserting the same claim, e.g. `ships/pace`, `ships/balance`, `galaxyGrace`).
+  Name a test `.slow.test.ts` only when it is a sweep whose failures a normal test would also hint at, never to hide a flaky test.
+- **Soak tier** (`*.soak.test.ts`): design-number runs over game hours or many seeds (`ships/pace` 16 seeds, `crewBonds`, `galaxyGrace`,
+  `galaxyTraffic`, `ships/balance`, `stationLife`, `ships/salvageBench`, `fuelEconomy`, the half-hour test of `ships/crewBreakdown`; #371).
+  Excluded unless `VITEST_SOAK=1` (`vite.config.ts`); `npm run test:soak` runs it. In CI: the nightly run on `main`, a manual run and
+  PRs labelled `soak` (job `soak`, 3 shards, weights in `tools/soakWeights.ts`). Each soak file keeps a guard in the slow tier; a soak copy
+  is the full, unchanged version of the claim.
+- **Full** (in CI on every ready PR push, in 8 time-balanced shards, and the nightly run on `main`; `npm run check` runs it locally): everything except soak.
   Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.ts`, refreshed by `npm run test:weights:ci` from CI timings).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.

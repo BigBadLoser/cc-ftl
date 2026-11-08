@@ -22,12 +22,10 @@ function firstHostileAt(sim: Sim, sec: number): number {
   return -1;
 }
 
-describe('opening grace period', () => {
-  it('keeps hostiles out of the danger-0 start node for the first 20 minutes (seed 1 used to be raided at ~9 minutes), then behaves as before', { timeout: 600000 }, () => {
+describe('opening grace period (guard; galaxyGrace.soak.test.ts runs the full 20 minutes and the raid after it)', () => {
+  it('keeps hostiles out of the danger-0 start node for the first 8 minutes (seed 1 used to be raided at ~9 minutes)', { timeout: 600000 }, () => {
     const sim = newGame(1, content, 'ship.starter', true);
-    expect(firstHostileAt(sim, GRACE_SEC - 5)).toBe(-1);
-    // Past the window the same world raids this node.
-    expect(firstHostileAt(sim, 15 * 60)).toBeGreaterThan(-1);
+    expect(firstHostileAt(sim, 8 * 60)).toBe(-1);
   });
 
   it('ends early when the goal chain is skipped', { timeout: 600000 }, () => {

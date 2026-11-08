@@ -1,5 +1,8 @@
 import { BaseSequencer, type TestSpecification } from 'vitest/node';
-import weights from './tools/testWeights.ts';
+import testWeights from './tools/testWeights.ts';
+import soakWeights from './tools/soakWeights.ts';
+
+const weights: Record<string, number> = { ...testWeights, ...soakWeights };
 
 /**
  * Longest files first, and shards balanced by time.
@@ -11,7 +14,7 @@ import weights from './tools/testWeights.ts';
  * `--shard=i/N` deals the files out largest first to the lightest shard, so the shards finish together. The default
  * sequencer hashes paths, which can pile the heavy files into one shard. Every shard job computes the same split.
  */
-const known = Object.values(weights as Record<string, number>).sort((a, b) => a - b);
+const known = Object.values(testWeights as Record<string, number>).sort((a, b) => a - b);
 const DEFAULT = known.length ? (known[Math.floor(known.length / 2)] as number) : 2;
 const missing = new Set<string>();
 

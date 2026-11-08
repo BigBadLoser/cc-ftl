@@ -32,11 +32,11 @@ function check(sim: Sim): void {
   }
 }
 
-/** Rounds of one turn each (jumps in rounds 2 and 5, a save taken in round 5), then the save's continuation for TAIL_TURNS more turns. */
-const ROUNDS = 6;
+/** Rounds of one turn each (a jump in round 0, a save taken in round 1), then the save's continuation for TAIL_TURNS more turns. */
+const ROUNDS = 2; // the soak copy (galaxyTraffic.soak.test.ts) runs 6 rounds, a jump in rounds 2 and 5
 const TAIL_TURNS = 2;
 
-describe('NPC traffic over a long run', () => {
+describe('NPC traffic over a shorter run (guard)', () => {
   // One seed: the second seed (32) walked the same invariants through a different world and cost as much again.
   it.each([31])('seed %i: game-time turns and trips keep the invariants, and a save continues identically', (seed) => {
     const sim = newGame(seed, content);
@@ -49,8 +49,8 @@ describe('NPC traffic over a long run', () => {
         sim.events.drain();
         check(sim);
       }
-      if (round === 5) copy = deserialize(serialize(sim), content);
-      if (round % 3 === 2 && sim.sector.state === 'active') {
+      if (round === 1) copy = deserialize(serialize(sim), content);
+      if (round === 0 && sim.sector.state === 'active') {
         const c = sim.world.get(playerShip(sim), CombatC);
         if (c) c.ftl = FTL_CHARGE_SEC;
         const here = sim.galaxy.current;
@@ -71,7 +71,7 @@ describe('NPC traffic over a long run', () => {
         check(sim);
       }
     }
-    expect(sim.galaxy.turn).toBeGreaterThan(5);
+    expect(sim.galaxy.turn).toBeGreaterThan(1);
     expect(copy).not.toBeNull();
     // Continue the copy through the same remaining rounds' worth of idle time and compare the fleets with a fresh run of the original.
     const a = deserialize(serialize(copy as Sim), content);
