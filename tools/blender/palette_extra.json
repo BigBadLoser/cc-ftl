@@ -3505,5 +3505,19 @@
   "soil": {"hex": "#3a2a1b", "set": "hydro"},
   "soilL": {"hex": "#5a4530", "set": "hydro"},
   "canvas": {"hex": "#6b6a4e", "set": "hydro"},
-  "canvasD": {"hex": "#4e4d38", "set": "hydro"}
+  "canvasD": {"hex": "#4e4d38", "set": "hydro"},
+  "hyPale": {"hex": "#98a5aa", "set": "hydro"},
+  "hyPaleL": {"hex": "#b4bfc2", "set": "hydro"},
+  "hyPaleD": {"hex": "#8e9ca1", "set": "hydro"},
+  "hyFrame": {"hex": "#303e49", "set": "hydro"},
+  "hyFrameL": {"hex": "#45535e", "set": "hydro"},
+  "hyTeal": {"hex": "#46787c", "set": "hydro"},
+  "hyDark": {"hex": "#1c252c", "set": "hydro"},
+  "lampOff": {"hex": "#4b4558", "set": "hydro"},
+  "leafL": {"hex": "#9be06a", "set": "hydro"},
+  "leaf": {"hex": "#5cb444", "set": "hydro"},
+  "leafD": {"hex": "#2f7a32", "set": "hydro"},
+  "stalk": {"hex": "#7d9a3c", "set": "hydro"},
+  "grain": {"hex": "#e0b84e", "set": "hydro"},
+  "grainD": {"hex": "#a98330", "set": "hydro"}
 }
