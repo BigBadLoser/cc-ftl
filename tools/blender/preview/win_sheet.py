@@ -1,4 +1,4 @@
-"""Our window run (base | l | m | r | base) per look beside the ref's two layers. argv: out k then triples
+"""Our window run (l | m | r) per look beside the ref's two layers. argv: out k then triples
 'dir:prefix:refstyle' (prefix e.g. tile.wall.slate.full.m10)."""
 import sys, glob
 import numpy as np
@@ -10,7 +10,7 @@ def crop(im):
     return im.crop(im.getbbox())
 def run(D, pre):
     a = Image.new("RGBA", (260, 220), (0, 0, 0, 0))
-    for i, n in enumerate(["", ".win.l", ".win.m", ".win.r", ""]):
+    for i, n in enumerate([".win.l", ".win.m", ".win.r"], 1):          # (the window alone: no base tiles, the user)
         z = np.load(f"{D}/{pre}{n}.npz"); im = Image.fromarray(z["rgba"].astype("uint8"))
         a.alpha_composite(im, (40 + 32 * i - int(z["a"][0]), 110 + 16 * i - int(z["a"][1])))
     return crop(a)
@@ -23,7 +23,7 @@ for t in sys.argv[3:]:
 cw = [max(r[1][i].width for r in rows) + 30 for i in range(3)]
 rh = [max(i.height for i in r[1]) + 40 for r in rows]
 W = Image.new("RGBA", (sum(cw) + 20, 40 + sum(rh)), BG); dr = ImageDraw.Draw(W)
-dr.text((10, 10), "Ours: Blender renders put together as 2D composites (base | win.l | win.m | win.r | base). Then the ref.", fill="white")
+dr.text((10, 10), "Ours: Blender renders put together as 2D composites (win.l | win.m | win.r). Then the ref.", fill="white")
 y = 40
 for lab, ims in rows:
     dr.text((10, y), lab, fill="white"); x = 10
