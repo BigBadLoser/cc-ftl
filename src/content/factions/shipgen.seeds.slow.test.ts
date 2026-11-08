@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateShip, type FactionDef, type GenResult, type ModuleDef } from '../../sim';
+import { generateShip, structureParts, type FactionDef, type GenResult, type ModuleDef } from '../../sim';
 import { content } from '../index';
 import { factions } from './index';
 
@@ -22,4 +22,21 @@ describe('ship generator, many seeds', () => {
       expect(bad).toEqual([]);
     }, 90000);
   }
+
+  it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly (seeds 1 to 12 at depths 1, 4 and 9)', () => {
+    for (const id of ids) {
+      let reseeded = 0;
+      for (const depth of [1, 4, 9]) {
+        for (let seed = 1; seed <= 12; seed++) {
+          const g = gen(id, seed, depth);
+          const w = Math.max(...g.template.rows.map((r) => r.length));
+          const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));
+          expect(structureParts(cells, w, g.template.rows.length), `${id} seed ${seed} depth ${depth}`).toBe(1);
+          if (g.failures.some((f) => f.includes('disconnected'))) reseeded++;
+        }
+      }
+      // Gaps are fixed at the source, not by reseeding.
+      expect(reseeded, `${id} reseeds for disconnection`).toBeLessThanOrEqual(1);
+    }
+  }, 240000);
 });

@@ -11,11 +11,11 @@ const count = (g: GenResult, pred: (d: ModuleDef) => boolean): number =>
   (g.template.modules ?? []).filter((m) => defs[m.def] && pred(defs[m.def] as ModuleDef)).length;
 
 describe('ship generator', () => {
-  it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly', () => {
+  it('every ship is one connected structure (hull, walls, floors, beams 4-connected), first attempt mostly (seeds 1 to 4; 1 to 12 in shipgen.seeds.slow.test.ts)', () => {
     for (const id of ids) {
       let reseeded = 0;
       for (const depth of [1, 4, 9]) {
-        for (let seed = 1; seed <= 12; seed++) {
+        for (let seed = 1; seed <= 4; seed++) {
           const g = gen(id, seed, depth);
           const w = Math.max(...g.template.rows.map((r) => r.length));
           const cells = g.template.rows.flatMap((r) => Array.from({ length: w }, (_, x) => r[x] ?? '.'));

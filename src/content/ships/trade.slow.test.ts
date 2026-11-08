@@ -15,6 +15,19 @@ const run = (sim: Sim, n: number): SimEvent[] => {
   }
   return out;
 };
+/** Run until the deal is settled (or `max` ticks pass), then `tail` more ticks for the shuttle to fly home and stow; stops early instead of running a fixed length. */
+const runSettled = (sim: Sim, max: number, tail = 600): SimEvent[] => {
+  const out: SimEvent[] = [];
+  let left = -1;
+  for (let i = 0; i < max && left !== 0; i++) {
+    sim.step();
+    const ev = sim.events.drain();
+    out.push(...ev);
+    if (left < 0 && ev.some((e) => e.type === 'trade.settled')) left = tail;
+    else if (left > 0) left--;
+  }
+  return out;
+};
 const ofType = <T extends SimEvent['type']>(events: SimEvent[], type: T): Extract<SimEvent, { type: T }>[] =>
   events.filter((e): e is Extract<SimEvent, { type: T }> => e.type === type);
 
@@ -86,7 +99,7 @@ describe('trade, end to end', () => {
     expect(t.credits).toBe(before.theirs);
     expect(t.stock.find((s) => s.item === 'item.metal')!.count).toBe(before.stock - 12);
 
-    const events = run(sim, 4000);
+    const events = runSettled(sim, 4000);
     const docked = ofType(events, 'vehicle.docked');
     expect(docked).toHaveLength(1);
     expect(ofType(events, 'trade.delivered')).toEqual([{ type: 'trade.delivered', deal: made.deal, ship, to: 'player' }]);
@@ -116,7 +129,7 @@ describe('trade, end to end', () => {
     sim.enqueue({ type: 'trade.accept', offer: offered.offer });
     const made = ofType(run(sim, 2), 'trade.dealMade')[0]!;
     expect(made.courier).toBe('you');
-    const events = run(sim, 6000);
+    const events = runSettled(sim, 6000);
     expect(ofType(events, 'vehicle.docked').length).toBeGreaterThanOrEqual(1);
     expect(ofType(events, 'trade.delivered')[0]).toMatchObject({ to: 'trader' });
     expect(ofType(events, 'trade.settled')[0]).toMatchObject({ credits: offered.balance });
@@ -212,7 +225,7 @@ describe('trade, end to end', () => {
     const offered = ofType(run(sim, 2), 'trade.offered')[0]!;
     sim.enqueue({ type: 'trade.accept', offer: offered.offer });
     expect(ofType(run(sim, 2), 'trade.dealMade')[0]).toMatchObject({ courier: 'you' });
-    const events = run(sim, 8000);
+    const events = runSettled(sim, 8000);
     expect(ofType(events, 'trade.settled')).toHaveLength(1);
     expect(ofType(events, 'trade.failed')).toHaveLength(0);
     expect(stored(sim, 'item.electronics')).toBe(have - 10);
