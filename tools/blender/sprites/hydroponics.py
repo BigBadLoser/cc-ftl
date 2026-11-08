@@ -322,7 +322,7 @@ def _base_tower(k, on):
     _screen(k, 0.0, 0.2, on)
 
 
-def _base_twin(k, on):
+def _base_twin(k, on, zm=0.4):
     """A tank under each plant: two standing white tanks on dark feet inside grey corner legs. A pump between them
     draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
     _frame_legs(k)
@@ -332,15 +332,16 @@ def _base_twin(k, on):
     _pump(k, 0.0, 0.26, 0.0, on, s=1.2)
     for su in (-1, 1):
         _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col="tFrame")       # suction
-    zm, vm = 0.4, FV + 0.05
-    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col="tFrame", joint="steel")  # pump up
+    vm = FV + 0.05
+    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col="tFrame", joint="steel")  # pump up
     _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col="tFrame", joint="steel")
     # (above: the manifold along the front and a riser at each end)
     for su in (-1, 1):
         _valve(k, su * 0.36, vm, zm)
 
 
-BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin}
+BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin,
+         "twinhi": lambda k, on: _base_twin(k, on, 0.48), "twinlo": lambda k, on: _base_twin(k, on, 0.06)}
 
 
 def terra(k, on, base="orig"):
@@ -382,7 +383,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin")}}
+VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin", "twinhi", "twinlo")}}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
