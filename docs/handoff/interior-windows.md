@@ -576,3 +576,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the straps should be flat on top, not dip between the pipes. They sat 0.02 into the slope, under
   the collars' tops, so each sank between its two collars; now they lie on the collars' tops (lift dp + 0.003), one flat
   strap from collar to collar. nv20.
+- 2026-11-08: the user: no collars. The collars round the pipes are gone (and the unused _collar / _steel helpers);
+  the straps stay as they were. The pipes now run unbroken and cover the straps' ends, so a strap shows only between
+  the pipes. nv21.

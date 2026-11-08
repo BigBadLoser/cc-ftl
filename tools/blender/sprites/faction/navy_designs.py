@@ -65,28 +65,10 @@ navy_band.reds = ((0.33, 0.0),)             # (its red, as fractions of H under 
 navy_thin_band.reds = ((0.18, 0.0), (0.28, 0.25))   # in its tone over them, navy.py)
 
 
-def _steel(k, q, n, up):
-    k.poly(q, "wall", 0, n, fixed="fSH0" if n.normalized().dot(up) > 0.5 else "fSH2")      # neutral steel
-
-
-def _collar(k, P, u, d, z, r, hw, up, n=8):
-    """A steel collar round a pipe (centre (d, z), radius r) from u - hw to u + hw."""
-    ring = [(d + r * math.cos(2 * math.pi * i / n + math.pi / n), z + r * math.sin(2 * math.pi * i / n + math.pi / n))
-            for i in range(n)]
-    c = P(u, z, d)
-    for i in range(n):
-        (da, za), (db, zb_) = ring[i], ring[(i + 1) % n]
-        q = [P(u - hw, za, da), P(u + hw, za, da), P(u + hw, zb_, db), P(u - hw, zb_, db)]
-        _steel(k, q, sum(q, Vector()) / 4 - c, up)
-    for s_ in (-1, 1):
-        q = [P(u + s_ * hw, zz, dd) for dd, zz in ring]
-        _steel(k, q, P(1, 0, 0) - P(0, 0, 0) if s_ > 0 else P(0, 0, 0) - P(1, 0, 0), up)
-
-
 def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, ax=0, plane=0.0, **_):
     """B1-2: the ramp's cover off over the hole the shell leaves (its "ramp_hole"): a dark navy recess, its bottom
     parallel to the ramp, two pipes across it in the header tube's orange (a quarter and three down it), a thin
-    silver one behind and above the lower, steel brackets tying them. (A ramp fill's arguments, wall3d.skirt:
+    silver one between them, flat steel straps over them. (A ramp fill's arguments, wall3d.skirt:
     plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d out from the wall.)"""
     if hole:
         o0, o1, d0, d1 = hole
@@ -133,11 +115,9 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
         w = o1 - o0
-        lift = dp + 0.003                              # the straps on the collars' tops, flat across (not dipping
-        #   between the pipes, over the silver pipe: the user)
-        for u in (o0 + w / 3, o0 + 2 * w / 3):         # steel brackets: a collar round each pipe, a strap between
-            for dd, zc in zip(rows, zp):
-                _collar(k, P, u, dd, zc, rp + 0.015, 0.03, up)
+        lift = dp + 0.003                              # steel straps over the pipes, flat across (not dipping
+        #   between them, over the silver pipe, no collars: the user)
+        for u in (o0 + w / 3, o0 + 2 * w / 3):
             ub = round(u * 32) / 32                    # flat steel straps, 2 px wide and one tone (a bar's lit top and
             e = [(rows[i_] + sn * lift, zp[i_] + cs * lift) for i_ in (0, 1)]  # dark side made them jagged: the user)
             k.poly([P(ub - 1 / 32, e[0][1], e[0][0]), P(ub + 1 / 32, e[0][1], e[0][0]),
