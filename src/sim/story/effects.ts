@@ -1,8 +1,8 @@
-import { shipIdAt , shipIdOf } from '../regions';
+import { shipIdOf } from '../regions';
 import { CrewC, HealthC } from '../crew/components';
-import { ItemStackC } from '../items/components';
-import { spillItems, takeFromStack } from '../items/stacks';
-import { storageAdd, storageTake } from '../items/storage';
+import { heldItems } from '../items/held';
+import { spillItems } from '../items/stacks';
+import { storageAdd } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { airlockTiles } from '../modules/airlock';
 import { BoarderC, VehicleC } from '../vehicles/components';
@@ -16,7 +16,7 @@ import { postPassage } from '../galaxy/passage';
 import type { CrewTarget, EventEffect } from './defs';
 import { describeQty } from './requirements';
 import { PHYSICAL_LOG_MAX, flagValue, reputationOf, withRng } from './state';
-import { inPacketView, playerCrew, playerShips, playerStorages, withPlayerAboard } from './world';
+import { inPacketView, playerCrew, playerStorages, withPlayerAboard } from './world';
 
 /** Who an effect applies to and the event it belongs to. */
 export interface EffectCtx {
@@ -70,12 +70,13 @@ function giveNow(sim: Sim, item: string, count: number): number {
 export const takeItems = (sim: Sim, item: string, count: number): number => withPlayerAboard(sim, () => takeNow(sim, item, count));
 function takeNow(sim: Sim, item: string, count: number): number {
   let left = count;
-  for (const id of playerStorages(sim)) left -= storageTake(sim, id, item, left);
-  const grids = playerShips(sim);
-  for (const id of sim.world.query(ItemStackC)) {
+  // Storage first, then loose stacks (heldItems lists them in that order); carried, wielded and fitted items are not cargo.
+  for (const h of heldItems(sim, { reserved: true })) {
     if (left <= 0) break;
-    const s = sim.world.get(id, ItemStackC);
-    if (s?.item === item && grids.has(shipIdAt(sim, s.x, s.y))) left -= takeFromStack(sim, id, left);
+    if (h.item !== item || (h.where !== 'storage' && h.where !== 'stack')) continue;
+    const n = Math.min(left, h.count);
+    h.remove(n);
+    left -= n;
   }
   return count - left;
 }
