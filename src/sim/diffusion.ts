@@ -1,5 +1,6 @@
 import { CHUNK_SIZE, type GridLike } from './grid';
 import { ShipGrid } from './shipGrid';
+import { loadChunkInto } from './sectorGridBulk';
 import { Struct, gasConductance, isAirless } from './structure';
 
 /**
@@ -144,7 +145,7 @@ export function fieldMirror(grid: GridLike, field: string): Float64Array {
     const cx = m.cx0 + (k % m.ncx), cy = m.cy0 + Math.floor(k / m.ncx);
     const rev = grid.sector.chunkRevision(field, cx, cy);
     if (rev === m.revs[k]) continue;
-    grid.sector.loadChunkInto(field, rect, m.vals, cx, cy);
+    loadChunkInto(grid.sector, field, rect, m.vals, cx, cy);
     m.revs[k] = rev;
   }
   return m.vals;

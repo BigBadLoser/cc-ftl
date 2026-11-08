@@ -9,6 +9,7 @@ import {
   type GridLike,
   type Rect,
 } from './grid';
+import { writeDelta } from './sectorGridBulk';
 
 /** Field name -> value a tile has when no chunk holds it (vacuum). */
 export type EmptySpec = Record<string, number>;
@@ -231,85 +232,29 @@ export class SectorGrid implements GridLike {
     return out;
   }
 
-  /** Chunk (cx, cy)'s part of `load(field, rect)`, into `out` (row-major over `rect`): empty values where it is not allocated. */
-  loadChunkInto(field: string, rect: Rect, out: Float64Array, cx: number, cy: number): void {
-    const f = this.field(field);
-    const { x, y, w, h } = rect;
-    const tx0 = Math.max(x, cx * CHUNK_SIZE), tx1 = Math.min(x + w, cx * CHUNK_SIZE + CHUNK_SIZE);
-    const ty0 = Math.max(y, cy * CHUNK_SIZE), ty1 = Math.min(y + h, cy * CHUNK_SIZE + CHUNK_SIZE);
-    if (tx0 >= tx1 || ty0 >= ty1) return;
-    const arr = this.dir.get(chunkKey(cx, cy))?.arrays[f];
-    const lx = tx0 & CHUNK_MASK, n = tx1 - tx0;
-    for (let ty = ty0; ty < ty1; ty++) {
-      const at = (ty - y) * w + (tx0 - x);
-      if (!arr) {
-        out.fill(this.empties[f] as number, at, at + n);
-        continue;
-      }
-      const src = ((ty & CHUNK_MASK) << CHUNK_SHIFT) + lx;
-      for (let k = 0; k < n; k++) out[at + k] = arr[src + k] as number;
-    }
+  /** `writeDelta` in sectorGridBulk.ts: the writes of a `set` per tile of `rect` that changed by more than `eps`. */
+  writeDelta(field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round = false, sync = false): number {
+    return writeDelta(this, field, rect, vals, before, eps, round, sync);
+  }
+
+  /** The watched field and threshold, or null. */
+  watch(): { field: string; below: number } | null {
+    return this.watchF < 0 ? null : { field: this.names[this.watchF] as string, below: this.watchBelow };
   }
 
   /**
-   * Write `vals` (row-major over `rect`) where a value differs from `before` by more than `eps` (`round`: rounded and clamped to
-   * 0..255 first), exactly as a `set` per such tile would: same stored values, revisions, watch count and chunk allocation.
-   * Returns how many tiles it wrote. Chunk by chunk, so a field solve writes back without a directory lookup per tile. `sync`: also
-   * store each written tile's new value (as the field holds it) in `before`, which then mirrors the field over `rect`.
+   * For sectorGridBulk.ts only: chunk (cx, cy)'s writable array of `field` when a bulk write may go straight into it (allocated,
+   * and not the occupancy field, whose writes keep the solid count), else undefined. Each write must be reported with `bulkWrote`.
    */
-  writeDelta(field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round = false, sync = false): number {
+  bulkChunk(field: string, cx: number, cy: number): FieldArray | undefined {
     const f = this.field(field);
-    const { x, y, w, h } = rect;
-    if (w <= 0 || h <= 0) return 0;
-    this.check(x, y);
-    this.check(x + w - 1, y + h - 1);
-    let wrote = 0;
-    for (let cy = y >> CHUNK_SHIFT; cy <= (y + h - 1) >> CHUNK_SHIFT; cy++) {
-      for (let cx = x >> CHUNK_SHIFT; cx <= (x + w - 1) >> CHUNK_SHIFT; cx++) {
-        const key = chunkKey(cx, cy);
-        const chunk = this.dir.get(key);
-        const tx0 = Math.max(x, cx * CHUNK_SIZE), tx1 = Math.min(x + w, cx * CHUNK_SIZE + CHUNK_SIZE);
-        const ty0 = Math.max(y, cy * CHUNK_SIZE), ty1 = Math.min(y + h, cy * CHUNK_SIZE + CHUNK_SIZE);
-        if (!chunk || f === this.occ) {
-          // Allocation or occupancy bookkeeping: the plain per-tile write.
-          for (let ty = ty0; ty < ty1; ty++) {
-            for (let tx = tx0; tx < tx1; tx++) {
-              const i = (ty - y) * w + (tx - x);
-              const v = round ? Math.min(255, Math.max(0, Math.round(vals[i] as number))) : (vals[i] as number);
-              if (Math.abs(v - (before[i] as number)) > eps) {
-                this.set(field, tx, ty, v);
-                if (sync) before[i] = this.get(field, tx, ty);
-                wrote++;
-              }
-            }
-          }
-          continue;
-        }
-        const arr = chunk.arrays[f] as FieldArray;
-        const watch = f === this.watchF, below = this.watchBelow;
-        let n = 0;
-        for (let ty = ty0; ty < ty1; ty++) {
-          const row = (ty - y) * w - x, crow = (ty & CHUNK_MASK) << CHUNK_SHIFT;
-          for (let tx = tx0; tx < tx1; tx++) {
-            const i = row + tx;
-            const v = round ? Math.min(255, Math.max(0, Math.round(vals[i] as number))) : (vals[i] as number);
-            const d = v - (before[i] as number);
-            // |d| > eps, without the call (NaN fails both, as it fails Math.abs(d) > eps).
-            if (d > eps || -d > eps) {
-              const j = crow + (tx & CHUNK_MASK);
-              const was = arr[j] as number;
-              arr[j] = v;
-              if (sync) before[i] = arr[j] as number;
-              if (watch && was < below !== (arr[j] as number) < below) this.crossed++;
-              n++;
-            }
-          }
-        }
-        if (n > 0) this.bump(key, f, n);
-        wrote += n;
-      }
-    }
-    return wrote;
+    return f === this.occ ? undefined : this.dir.get(chunkKey(cx, cy))?.arrays[f];
+  }
+
+  /** For sectorGridBulk.ts only: count `n` writes into chunk (cx, cy) of `field`, `crossed` of them across the watch threshold. */
+  bulkWrote(field: string, cx: number, cy: number, n: number, crossed: number): void {
+    this.bump(chunkKey(cx, cy), this.field(field), n);
+    this.crossed += crossed;
   }
 
   /** Allocated chunks, sorted by key (rows of cy, then cx). A snapshot: safe to mutate the grid while iterating. */

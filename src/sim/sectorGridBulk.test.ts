@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SectorGrid } from './sectorGrid';
+import { loadChunkInto } from './sectorGridBulk';
 import { SHIP_EMPTY, SHIP_FIELDS, Struct } from './structure';
 import { Rng } from './rng';
 
@@ -20,7 +21,7 @@ describe('SectorGrid bulk access', () => {
   it('loadChunkInto over every chunk matches the per-tile values', () => {
     const [g] = pair();
     const out = new Float64Array(rect.w * rect.h).fill(-1);
-    for (let cy = -1; cy <= 2; cy++) for (let cx = -2; cx <= 1; cx++) g.loadChunkInto('temp', rect, out, cx, cy);
+    for (let cy = -1; cy <= 2; cy++) for (let cx = -2; cx <= 1; cx++) loadChunkInto(g, 'temp', rect, out, cx, cy);
     for (let y = 0; y < rect.h; y++) for (let x = 0; x < rect.w; x++) expect(out[y * rect.w + x]).toBe(g.get('temp', rect.x + x, rect.y + y));
   });
 
