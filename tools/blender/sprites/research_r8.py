@@ -36,8 +36,11 @@ def _fragment(k, u, v, z, s, rz):
 
 # ---- r1: the desk extension -----------------------------------------------------------------------------------------
 
-def _return(k):
-    v0, v1, H = -0.18, 0.86, 0.66
+RV0, RV1, RH = -0.18, 0.86, 0.66  # the return's v span and height
+
+
+def _return(k, items=True):
+    v0, v1, H = RV0, RV1, RH
     sv, cv = v1 - v0, (v0 + v1) / 2
     k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
     k.box(FU, cv, 0.08, 0.98, sv, H - 0.12, "lvW2", top="lvW", bevel=0.02)
@@ -45,6 +48,8 @@ def _return(k):
     for i in range(3):                                                                # drawers toward the chair
         _drawer_front(k, FU + 0.5, cv + 0.05, 0.12 + i * 0.16, 0.6, 0.13, face="u")
     k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvW2")                           # a panel on its end
+    if not items:
+        return
     for i, (col, top) in enumerate((("rust", "ochL"), ("pcb", "ochL"), ("navy", "ochL"))):   # field journals
         k.box(FU - 0.22, 0.1, H + i * 0.045, 0.24, 0.3, 0.04, col, top=top, rz=0.1 * (i - 1))
     k.cyl(FU - 0.25, 0.55, H, 0.05, 0.12, "gm", top="dark", sides=10)                  # pen cup
@@ -67,6 +72,23 @@ def r1_holo():
 VZ = 0.6
 
 
+def case(k, cu, cv, z, su, sv, hz=0.42):
+    """The display case: a red velvet bed, tablet fragments on it, brass corner posts, a lid frame with a gold light
+    along its front, glass all round and over the top."""
+    k.box(cu, cv, z, su - 0.08, sv - 0.08, 0.04, "lvR", top="lvR")
+    for (du, dv, s, rz) in ((-0.2, -0.12, 0.24, 0.3), (0.16, -0.12, 0.2, -0.5), (-0.04, 0.14, 0.26, 0.9),
+                            (0.24, 0.16, 0.14, 0.2)):
+        _fragment(k, cu + du, cv + dv, z + 0.04, s, rz)
+    for a in (-1, 1):
+        for b in (-1, 1):
+            k.box(cu + a * (su / 2 - 0.03), cv + b * (sv / 2 - 0.03), z, 0.04, 0.04, hz, "brass")
+    for b in (-1, 1):
+        k.box(cu, cv + b * (sv / 2 - 0.035), z + hz, su, 0.07, 0.05, "lvW2", top="lvW")
+        k.box(cu + b * (su / 2 - 0.035), cv, z + hz, 0.07, sv, 0.05, "lvW2", top="lvW")
+    k.box(cu, cv + sv / 2 - 0.05, z + hz - 0.02, su - 0.16, 0.03, 0.02, G)
+    k.part("glass").box(cu, cv, z + 0.02, su - 0.06, sv - 0.06, hz + 0.02, "glassL")
+
+
 def _vitrine(k):
     su, sv = 0.84, 0.7
     k.box(FU, FV, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
@@ -74,19 +96,7 @@ def _vitrine(k):
     k.box(FU, FV, VZ - 0.04, su + 0.03, sv + 0.03, 0.04, "gm", top="lvW", bevel=0.012)
     for i in range(2):
         _drawer_front(k, FU, FV + sv / 2, 0.14 + i * 0.2, su - 0.12, 0.16)
-    k.box(FU, FV, VZ, su - 0.08, sv - 0.08, 0.04, "lvR", top="lvR")                    # the velvet bed
-    for (du, dv, s, rz) in ((-0.2, -0.12, 0.24, 0.3), (0.16, -0.12, 0.2, -0.5), (-0.04, 0.14, 0.26, 0.9),
-                            (0.24, 0.16, 0.14, 0.2)):
-        _fragment(k, FU + du, FV + dv, VZ + 0.04, s, rz)
-    hz = 0.42
-    for a in (-1, 1):
-        for b in (-1, 1):
-            k.box(FU + a * (su / 2 - 0.03), FV + b * (sv / 2 - 0.03), VZ, 0.04, 0.04, hz, "brass")
-    for b in (-1, 1):                                                                 # the lid frame,
-        k.box(FU, FV + b * (sv / 2 - 0.035), VZ + hz, su, 0.07, 0.05, "lvW2", top="lvW")
-        k.box(FU + b * (su / 2 - 0.035), FV, VZ + hz, 0.07, sv, 0.05, "lvW2", top="lvW")
-    k.box(FU, FV + sv / 2 - 0.05, VZ + hz - 0.02, su - 0.16, 0.03, 0.02, G)             # its light along the front
-    k.part("glass").box(FU, FV, VZ + 0.02, su - 0.06, sv - 0.06, hz + 0.02, "glassL")
+    case(k, FU, FV, VZ, su, sv)
 
 
 def r2_holo():
