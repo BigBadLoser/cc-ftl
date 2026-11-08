@@ -73,11 +73,13 @@ export const lancerShip = {
     { def: 'module.light', x: 11, y: 14, rot: 0 },
     // Galley: galley, life support
     { def: 'module.galley', x: 13, y: 13, rot: 0, orders: [{ recipe: 'recipe.ration', mode: 'keep', target: 12 }] },
+    // A hydroponics bed, set to its crop (the first one part grown).
+    { def: 'module.hydroponics', x: 21, y: 14, rot: 0, crop: 'crop.greens', grown: 90 },
     { def: 'module.lifeSupport', x: 16, y: 13, rot: 0 },
     { def: 'module.light', x: 14, y: 15, rot: 0 },
     // Magazine: stores
     { def: 'module.storage', x: 18, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
-    { def: 'module.storage', x: 19, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }] },
+    { def: 'module.storage', x: 19, y: 13, rot: 0, stock: [{ item: 'item.metal', count: 15 }, { item: 'item.electronics', count: 8 }, { item: 'item.polymer', count: 8 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 16 }, { item: 'item.ration', count: 12 }, { item: 'item.meal_good', count: 16 }, { item: 'item.greens', count: 6 }] },
     { def: 'module.storage', x: 20, y: 13, rot: 0, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
     { def: 'module.light', x: 22, y: 15, rot: 0 },
     // Reactor room: two reactors, life support

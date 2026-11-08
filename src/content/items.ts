@@ -25,7 +25,17 @@ export const items = {
   'item.water': { name: 'Water', tags: ['refined', 'life'], stackSize: 50, price: 4 },
   'item.oxygen': { name: 'Oxygen', tags: ['refined', 'life'], stackSize: 50, price: 5 },
   // Food: hungry crew eat one from storage (+50 hunger). Printed at a galley. Flammable packaging.
-  'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, price: 5, flammability: 0.2, food: { nutrition: 50 } },
+  // A ration eaten at a galley is a small comfort (+3); a cooked meal is more (below). Eating from a crate gives nothing.
+  'item.ration': { name: 'Ration', tags: ['food'], stackSize: 50, price: 5, flammability: 0.2, food: { nutrition: 50, mood: { key: 'hotMeal', points: 3 } } },
+  // Hydroponics crops (content/crops.ts). NEEDS ART: greens and grain borrow the produce crate, beans the cans, herbs the medicine box.
+  'item.greens': { name: 'Greens', tags: ['crop'], stackSize: 50, price: 4, flammability: 0.3, art: 'item.crop' },
+  'item.beans': { name: 'Protein beans', tags: ['crop'], stackSize: 50, price: 6, flammability: 0.2, art: 'item.protein' },
+  'item.herbs': { name: 'Medicinal herbs', tags: ['crop', 'medical'], stackSize: 50, price: 12, flammability: 0.4, art: 'item.medicine', medicine: { healMult: 2 } },
+  'item.grain': { name: 'Grain', tags: ['crop'], stackSize: 50, price: 5, flammability: 0.4, art: 'item.crop' },
+  // Galley meals: the cook's skill sets which one a batch turns out (recipe.quality). Better meals feed more and lift mood more. NEEDS ART: all three borrow the meal tray.
+  'item.meal_bland': { name: 'Bland meal', tags: ['food', 'meal'], stackSize: 20, price: 8, flammability: 0.2, art: 'item.meal', food: { nutrition: 60, mood: { key: 'mealBland', points: 5 } } },
+  'item.meal_good': { name: 'Good meal', tags: ['food', 'meal'], stackSize: 20, price: 12, flammability: 0.2, art: 'item.meal', food: { nutrition: 70, mood: { key: 'mealGood', points: 9 } } },
+  'item.meal_fine': { name: 'Fine meal', tags: ['food', 'meal'], stackSize: 20, price: 18, flammability: 0.2, art: 'item.meal', food: { nutrition: 80, mood: { key: 'mealFine', points: 13 } } },
   // Ammo for missile launchers. Explosive: loose missiles fuel fires.
   // Starship fuel: every jump on the starmap burns some (more for long routes; hyperlanes are cheaper per distance).
   // Volatile: a loose stack on a burning tile feeds the fire.

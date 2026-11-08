@@ -21,6 +21,7 @@ import { TICK_HZ } from '../time';
 import {
   BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, SKILL_STEP, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
+import { treatmentMult } from '../crew/treatment';
 import { grantXp } from '../crew/xp';
 
 /**
@@ -82,7 +83,7 @@ export function vitalsSystem(sim: Sim): void {
       const ship = shipIdOf(sim, pos);
       const side = guestHere(sim, id) ? sim.world.get(ship, ShipC)?.faction : sim.world.get(id, AllegianceC)?.faction;
       const medic = medicine(ship, side ?? '');
-      const care = 1 + SKILL_STEP * Math.max(0, medic.skill);
+      const care = (1 + SKILL_STEP * Math.max(0, medic.skill)) * treatmentMult(sim, ship, downed);
       const before = health.hp;
       health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
       if (medic.id && health.hp > before) grantXp(sim, medic.id, 'medicine', (health.hp - before) * XP_PER_HP_HEALED); // the medic whose skill sped the healing

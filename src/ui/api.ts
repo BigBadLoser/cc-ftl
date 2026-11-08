@@ -226,6 +226,8 @@ export interface UiModule {
   crafting: boolean;
   /** A research module (the inspector opens the research panel). */
   research: boolean;
+  /** A hydroponics bed's crop and growth (null for other modules). */
+  plot: UiPlot | null;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
   /** Drone bay state (null for other modules). */
@@ -382,6 +384,8 @@ export interface UiRecipe {
   outputs: UiCost[];
   /** Seconds of work at work speed 1. */
   seconds: number;
+  /** The cook's skill sets the output's quality: the tiers (item names, worst first) and the skill level each needs (meals). */
+  quality?: { skill: string; tiers: { minSkill: number; name: string }[] };
 }
 
 /** Where an item sprite sits in a sheet, for CSS icons. */
@@ -428,6 +432,36 @@ export interface UiOrder {
   missing: string[];
   /** The order the station is working on now. */
   active: boolean;
+}
+
+/** A crop a hydroponics bed can be set to. */
+export interface UiCrop {
+  id: string;
+  name: string;
+  /** The item a harvest yields, and its name. */
+  item: string;
+  itemName: string;
+  yield: number;
+  growSec: number;
+  water: number;
+  blurb: string;
+}
+
+/** A hydroponics bed: what it is set to sow, what is in the soil and how far it has grown. */
+export interface UiPlot {
+  /** The crop id the bed sows next, or null. */
+  crop: string | null;
+  /** The crop id in the soil, or null. */
+  planted: string | null;
+  plantedName: string | null;
+  state: 'fallow' | 'growing' | 'ready';
+  /** 0..1, 1 once ready. */
+  progress: number;
+  /** One line on what the bed is waiting for. */
+  note: string;
+  /** Ship stock of the sown crop's item. */
+  stock: number;
+  crops: UiCrop[];
 }
 
 export interface UiFab {

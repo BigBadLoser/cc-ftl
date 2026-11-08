@@ -17,6 +17,7 @@ export function buildItemDefs(sim: Sim): UiItemDef[] {
 export function buildRecipes(sim: Sim): UiRecipe[] {
   return Object.entries(sim.content.recipes).map(([id, r]) => ({
     id, name: r.name, station: r.station, inputs: costsOf(sim, r.inputs), outputs: costsOf(sim, r.outputs), seconds: r.work / TICK_HZ,
+    ...(r.quality ? { quality: { skill: r.quality.skill, tiers: r.quality.tiers.map((t) => ({ minSkill: t.minSkill, name: sim.content.items[t.item]?.name ?? t.item })) } } : {}),
   }));
 }
 
@@ -86,7 +87,7 @@ export function buildFabs(sim: Sim): UiFab[] {
       if (active) marked = true;
       return {
         recipe: o.recipe, name: recipe?.name ?? o.recipe, mode: o.mode, target: o.target, done: o.done,
-        have: first ? have(first.item) : 0, active,
+        have: recipe?.quality ? recipe.quality.tiers.reduce((n, t) => n + have(t.item), 0) : first ? have(first.item) : 0, active,
         // the batch in progress already holds what was hauled to it
         missing: (recipe?.inputs ?? [])
           .filter((q) => have(q.item) + (active ? (job?.delivered?.find((d) => d.item === q.item)?.count ?? 0) : 0) < q.count)

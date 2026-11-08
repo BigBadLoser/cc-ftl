@@ -38,7 +38,7 @@ function make(mods: { def: string; x: number; y: number }[] = [], c: ContentRegi
 }
 /** Damage control at 1 (the role default), everything else off: only the emergency can send this crew member anywhere. */
 const dc = (extra: Partial<Priorities> = {}): Priorities => ({
-  firefighting: 1, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, patrol: 0, ...extra,
+  firefighting: 1, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, farming: 0, patrol: 0, ...extra,
 });
 function crew(sim: Sim, x: number, y: number, p: Priorities = dc()): number {
   const id = sim.world.createEntity();

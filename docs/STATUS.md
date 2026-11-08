@@ -31,6 +31,14 @@ Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehav
 only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
 Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites tinted by `shotLook`), so #338 is complete.
 
+## Food and farming (#59, branch `feature/food-59`, not merged)
+
+Hydroponics beds with a crop picker (greens, protein beans, medicinal herbs, grain; `content/crops.ts`), plant and harvest jobs (new "Farm" priority column), galley meals
+by the cook's new `cooking` skill (bland, good, fine; `recipe.meal_greens`, `recipe.meal_beans`), meals eaten before rations with their own mood factor, herbs speeding a medical
+bed (`module.med_bed` is now a patients-only bed), grain as a trade item. The three shipped starters carry a planted bed, 16 good meals and 6 greens (food indicator green).
+Debug start `?scenario=farm`. Placeholder art (list in the PR): greens, grain, beans, herbs and the three meals borrow other items' sprites (`ItemDef.art`); no new sprites.
+Starter `.ts` files were edited by hand (the python generators under `tools/shipgen/starters` are stale against them). Save version 104.
+
 ## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and

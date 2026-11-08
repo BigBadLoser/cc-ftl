@@ -7,7 +7,7 @@ export { CommandQueue, type Command, type QueuedCommand } from './commands';
 export { EventBuffer, type SimEvent } from './events';
 export { Sim, TICK_HZ } from './sim';
 export type { UpgradeDef, UpgradeMods } from './upgrades/types';
-export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ScrapType, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef, ResearchDef } from './registry';
+export type { CreatureDefs, SuitDef, VehicleDef, WeaponDef, Effect, SkillName, ContentRegistry, ShipTemplate, RoleDef, SpeciesDef, ModuleDef, ModuleCategory, ScrapType, ItemDef, HandWeaponDef, HandWeaponArt, WeaponFamily, ItemQty, RecipeDef, CropDef, ResearchDef } from './registry';
 export type { DroneDef, DroneJobDef, DroneBayDef } from './drones/types';
 export { gridFromTemplate, spawnTemplateModules, placeTemplateModules } from './ship';
 export { ModuleC, DeployC, type Module, type Deploy } from './modules/components';
@@ -34,6 +34,8 @@ export { stat, statBase, statBreakdown, modifierSources, type Modifier, type Mod
 export * from './items/components';
 export { storageSpace, storageCount, storageAdd, storageTake } from './items/storage';
 export { stackAt, stackSizeOf } from './items/stacks';
+export { PlotC } from './farm/components';
+export { growth, growTicks, wantsSowing } from './farm/crops';
 export { totalStock } from './items/stock';
 export { missingMaterials, needsMaterials } from './items/materials';
 export { activeOrder } from './items/production';
@@ -84,7 +86,7 @@ export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets
 export { poolFor, startEvent } from './story/engine';
 export type * from './scene/types';
 export { createCrew } from './crew/spawn';
-export { MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
+export { FOOD_MOOD_KEYS, MOOD_LABELS, breakdownRisk, hasMood } from './crew/mood';
 export { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory, type BreakContext, type BreakKind, type BreakTier } from './crew/breakTypes';
 export { foodOn } from './crew/eating';
 export { InteractionC, type Interaction, type InteractionDef, type InteractionOutcome, type InteractionWhere } from './crew/interactionTypes';

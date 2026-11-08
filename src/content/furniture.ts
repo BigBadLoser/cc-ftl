@@ -99,13 +99,13 @@ export const furniture = {
     asset: 'module.cargo_container', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
     flammability: 0.2, maxHp: 160, buildWork: 120, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 },
   },
-  // A sickbay cot (walkable, like a bed). No healing mechanic yet.
+  // A sickbay cot (walkable, like a bed): patients lie in it before any ordinary bed, and heal faster with medicinal herbs in stock. Sleepers never use it.
   'module.med_bed': {
     scrap: 'tech',
     name: 'Medical bed',
     category: 'life',
-    description: "A sickbay cot. Walkable, like a bed. No healing yet.",
-    asset: 'module.med_bed', footprint: [1, 2], solid: false, power: 0, flammability: 0.4,
+    description: "A sickbay cot for patients. Heals like a bed, and faster while medicinal herbs are in stock (one is used per treatment).",
+    asset: 'module.med_bed', footprint: [1, 2], solid: false, power: 0, flammability: 0.4, bed: true, medical: true,
     maxHp: 60, buildWork: 100, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   // A power cell bank. No storage-of-power mechanic yet: dressing for engineering.
@@ -117,13 +117,13 @@ export const furniture = {
     asset: 'module.battery', footprint: [1, 1], solid: true, power: 0, flammability: 0.2,
     maxHp: 80, buildWork: 80, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 6 }],
   },
-  // A grow bed. No food growth yet.
+  // A grow bed: pick a crop, a crew member sows it (the water comes from stock), it grows while powered and is harvested as an item.
   'module.hydroponics': {
     scrap: 'comfort',
     name: 'Hydroponics bed',
     category: 'life',
-    description: "A grow bed for fresh food. No growth mechanic yet.",
-    asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
+    description: "A grow bed. Pick a crop; crew sow it with water, it grows while the bed is powered, and they harvest it.",
+    asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: -2, powerPriority: 5, plot: true,
     flammability: 0.4, maxHp: 60, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 4 }],
   },
   // Ore refinery 3x4: crew refine raw ore at the access tile (east of the last row, beside the console, at rotation 0). Player-buildable

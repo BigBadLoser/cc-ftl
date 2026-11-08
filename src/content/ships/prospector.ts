@@ -44,7 +44,7 @@ export const prospectorShip = {
     { def: 'module.storage_ore_large', x: 5, y: 2, rot: 0 },
     { def: 'module.storage_ore', x: 9, y: 2, rot: 0 },
     { def: 'module.refinery', x: 12, y: 2, rot: 0 },
-    { def: 'module.storage_rack', x: 7, y: 6, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.fuel', count: 16 }] },
+    { def: 'module.storage_rack', x: 7, y: 6, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.meal_good', count: 16 }, { item: 'item.greens', count: 6 }, { item: 'item.fuel', count: 16 }] },
     { def: 'module.storage_rack', x: 9, y: 6, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
     { def: 'module.light', x: 6, y: 5, rot: 0 },
     { def: 'module.light', x: 11, y: 6, rot: 0 },
@@ -81,6 +81,8 @@ export const prospectorShip = {
     { def: 'module.light', x: 17, y: 18, rot: 0 },
     // Galley: galley, mess table
     { def: 'module.galley', x: 20, y: 15, rot: 0, orders: [{ recipe: 'recipe.ration', mode: 'keep', target: 12 }] },
+    // A hydroponics bed, set to its crop (the first one part grown).
+    { def: 'module.hydroponics', x: 17, y: 17, rot: 0, crop: 'crop.greens', grown: 90 },
     { def: 'module.mess_table', x: 20, y: 18, rot: 0 },
     { def: 'module.light', x: 22, y: 16, rot: 0 },
     // Engine room: two engines, two reactors

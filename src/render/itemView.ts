@@ -88,9 +88,10 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
         const st = world.get(id, ItemStackC);
         if (!st || !grid.inBounds(st.x, st.y)) continue;
         const size = items[st.item]?.stackSize ?? 50;
-        const unit = atlas.firstOf([unitAsset(st.item), ...stackAssets(st.item, st.count, size)]);
+        const art = items[st.item]?.art ?? st.item; // an item still waiting for its own art borrows another's
+        const unit = atlas.firstOf([unitAsset(art), ...stackAssets(art, st.count, size)]);
         if (!unit) continue;
-        const isUnit = unit === atlas.stat(unitAsset(st.item));
+        const isUnit = unit === atlas.stat(unitAsset(art));
         const units = isUnit ? unitCount(st.count, size) : 0;
         live.add(id);
         let e = entries.get(id);

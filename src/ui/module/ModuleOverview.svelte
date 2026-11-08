@@ -7,6 +7,7 @@
   import RobotBayPanel from '../RobotBayPanel.svelte';
   import DroneBayPanel from '../DroneBayPanel.svelte';
   import StoragePanel from '../StoragePanel.svelte';
+  import PlotPanel from './PlotPanel.svelte';
   import UpgradePanel from './UpgradePanel.svelte';
   import { moduleState } from './state';
 
@@ -26,6 +27,7 @@
     <Meter value={hpPct(m)} max={100} tone="auto" height={6} title="{m.hp}/{m.maxHp}" />
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
+    {#if m.plot}<PlotPanel {api} {m} />{/if}
     {#if m.research}<button class="resbtn" data-testid="open-research" onclick={onResearch}><Icon name="research" size={18} /> Research projects</button>{/if}
     {#if m.storage}<StoragePanel {api} id={m.id} />{/if}
     {#if m.bay}<RobotBayPanel {api} id={m.id} bay={m.bay} />{/if}

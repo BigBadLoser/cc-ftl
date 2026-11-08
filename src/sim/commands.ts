@@ -97,6 +97,10 @@ export type Command =
   | { type: 'production.edit'; moduleId: number; index: number; mode?: 'count' | 'keep'; target?: number }
   /** Move the order at index `from` to index `to`. */
   | { type: 'production.reorder'; moduleId: number; from: number; to: number }
+  /** Set the crop a hydroponics bed sows next (null: none). A crop already growing is left alone. */
+  | { type: 'plot.setCrop'; moduleId: number; crop: string | null }
+  /** Debug: put `crop` in a bed's soil `grown` seconds along (`ready`: already grown), whatever the bed is set to sow next. */
+  | { type: 'debug.setPlot'; moduleId: number; crop: string; grown?: number; ready?: boolean }
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */

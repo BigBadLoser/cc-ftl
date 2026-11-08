@@ -20,7 +20,7 @@ export function rescueSpot(sim: Sim, patient: number): { x: number; y: number; v
   const pos = sim.world.get(patient, PositionC);
   const away = sim.world.get(patient, AwayC);
   const site = siteUnderFoot(sim, patient);
-  if (!pos || !away || !site || findFreeBed(sim, site, origin(pos))) return null;
+  if (!pos || !away || !site || findFreeBed(sim, site, origin(pos), false, undefined, true)) return null;
   const spot = siteSpot(sim, away.vehicle, site);
   return spot && { x: spot.x, y: spot.y, vehicle: away.vehicle };
 }

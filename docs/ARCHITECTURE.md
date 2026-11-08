@@ -29,6 +29,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Drones, `src/sim/drones/`](#drones-srcsimdrones): Own entities (DroneC on a BodyC), one drone system, a job table per kind; core cap, bays, fly pathing, ion, placeholders.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
+- [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
 - [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
 - [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
@@ -1523,6 +1524,20 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
   out). Refused, an honest skiff is dismissed at once (fact `declined`, rule `honestRefused`). A player shot first (`provoked` set) makes it `sprung` already. Observer facts `ambushed` (`provoked === 'ambush'`) and
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
   hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
+
+## Food and farming, `src/sim/farm/`
+
+- **Beds.** `ModuleDef.plot` gives a module `PlotC` (`farm/components.ts`): `crop` (what it sows next, set by `plot.setCrop`), `planted` (what is in the soil),
+  `grown` (powered ticks) and `ready`. Crops are content (`content/crops.ts`, `CropDef`: item, yield, growSec, water, stockCap). `farmSystem` (pipeline,
+  after `researchJobsSystem`, before supply) grows a planted crop one tick while its bed is whole, enabled and powered, and every `PLAN_INTERVAL` keeps one job
+  per bed: `plant` (category `farming`; `needs` the crop's water, delivered by the ordinary supply planner, which hauls it under `farming`) while the bed is
+  empty and set to a crop whose stock is under its cap, `harvest` once ready. `farm/work.ts` finishes them (the yield spills on the access tile and hauling stores it).
+- **Cooking.** A recipe with `quality` (`RecipeDef.quality`: a skill and tiers worst first) makes its output from the cook's skill (`items/craft.ts` `qualityItem`);
+  `keep` orders count every tier. Galley recipes (rations too) carry `category: 'cooking'`; the crafting job posts under it. Crafting a quality recipe trains its skill.
+- **Eating.** `foodOn` takes the most nutritious food in storage, so meals go before rations. `ItemDef.food.mood` sets the galley mood factor (`Mood.mealItem`, `crew/mood.ts`).
+- **Herbs.** `ItemDef.medicine.healMult`; `crew/treatment.ts` uses one in-stock item per stay in a `ModuleDef.medical` bed (first healing tick, `Downed.treated`) and
+  vitals heals that much faster. `findFreeBed(..., patient)` offers medical beds to patients first; sleepers and bed owners never get one.
+- `ItemDef.art` borrows another item's sprites (floor stacks, UI icons) for items waiting for their own art.
 
 ## Trade, `src/sim/trade/`
 

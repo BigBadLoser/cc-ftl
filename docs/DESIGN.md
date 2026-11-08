@@ -99,12 +99,13 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     is also a food printer), else to a crate that holds food, take one **ration** from storage and eat for 4 s (+50).
     Operators of a console hold their post until hunger is under 10. No food or no way there: they carry on and look
     again every second. At zero hunger they lose 0.05 hp per second (no regeneration) and an alert fires.
-  - **Food** is data: an item with `food: { nutrition }`. `item.ration` is printed at the galley from scrap
-    (`recipe.ration`, 2 scrap makes 3 rations); use the usual make-N / keep-N orders. The starter ship has 12 rations and
-    a galley that keeps 12 in stock.
+  - **Food** is data: an item with `food: { nutrition, mood? }`. The best food in storage is eaten first, so cooked meals (60 / 70 / 80
+    nutrition) go before `item.ration` (50), which is the emergency fallback printed at the galley from water (`recipe.ration`, 2 water makes
+    3 rations); use the usual make-N / keep-N orders. Meals and crops: "Hydroponics and the galley" under New modules. The starter ships
+    start with 12 rations, 16 good meals, 6 greens and a planted bed (the food indicator starts green: about an hour for four crew).
   - **Mood** (0..100) is 50 plus named factors, shown on the crew card as "Hungry -10, Company +3". Factors: hunger
     (starving -25, hungry -10, peckish -3, well fed +4), rest (exhausted -15, tired -8, rested +4), a hot galley meal
-    +6 for 5 minutes, the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
+    +6 for 5 minutes (a ration at the galley +3; a cooked meal +5 bland, +9 good, +13 fine, set by `food.mood` on the item), the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
     air -20, smoke -6, too hot or cold -6) and a light social term (company within 7 tiles +3, alone for 2 minutes
     -4). Under 35 work speed is x0.85, under 20 it is x0.7 and a "very unhappy" alert fires once.
   - **Robots** (any species without `hunger` / `mood`) neither eat nor have moods; enemy crews are exempt too.
@@ -718,19 +719,23 @@ Every new module feeds a system that already exists and changes play. None is de
 - **Workbench** (art already in the sheets: `module.workbench`). Crew make and repair personal gear here: suits, sidearms,
   tools, armour. The fabricator keeps ship-scale things (missiles, parts).
 - **Water purifier.** Turns ice into water, a small dedicated alternative to the refinery's split-ice recipe.
-- **Hydroponics, wired up (#59).** You pick a crop per bed. A crew member plants it (a farming job), the bed uses water and
-  power, and the crop grows over time and is harvested as an item.
+- **Hydroponics, wired up (#59; built).** You pick a crop per bed. A crew member plants it (a farming job, own "Farm" priority column), the bed
+  uses water and power, and the crop grows over time and is harvested as an item. Built numbers (content/crops.ts, first pass): greens 6 per 4:00,
+  1 water; protein beans 18 per 10:00, 2 water; medicinal herbs 4 per 6:00, 1 water; grain 10 per 6:00, 1 water (price 5). The water is delivered
+  to the bed for the planting job; growth runs only while the bed is powered (hydroponics draw 2 power, always); after a harvest the bed is sown
+  again with the same crop unless the ship already holds that crop's stock cap. A crop in the soil is not disturbed by changing the pick.
 
   | Crop | Grows | Used for |
   |---|---|---|
   | Greens | Fast, small yield | Meals |
   | Protein beans | Slow, big yield | Meals |
-  | Medicinal herbs | Medium | In stock, the med bed and recovery pod heal faster (a herb is used per treatment) |
+  | Medicinal herbs | Medium | In stock, the med bed (built: x2 heal for the stay, one herb per treatment) and later the recovery pod heal faster |
   | Grain | Medium | A trade good for now; brewed into drinks later (bar, Drinker habit) |
 
-- **Galley: meals by cook quality (#59).** Cooking produce with water into a meal is a cooking job, which makes the Cooking
-  priority column work. The cook's skill sets the quality (bland, good, fine), and quality sets the mood boost. Water-only
-  rations stay as the emergency fallback.
+- **Galley: meals by cook quality (#59; built).** Cooking produce with water into a meal is a cooking job (`recipe.meal_greens`, `recipe.meal_beans`:
+  6 produce and 2 water make 2 meals), which makes the Cooking priority column work; so does printing rations. The cook's new `cooking` skill
+  sets the quality (0 bland, 1-2 good, 3+ fine; medics start at 1) and the quality sets nutrition and the mood boost. Water-only rations stay
+  as the emergency fallback. A medical bed (`medical`) is for patients only: they take it before an ordinary bed and sleepers never do.
 
 ### Trade
 
