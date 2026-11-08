@@ -10,7 +10,7 @@ import type { Renderer } from '../render/scene';
 import { planOrders } from './crewOrders';
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
-const p = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 1, hauling: 4, refining: 4, crafting: 4, research: 4, cooking: 4, patrol: 4 };
+const p = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 1, hauling: 4, refining: 4, crafting: 4, research: 4, cooking: 4, farming: 4, patrol: 4 };
 const content: ContentRegistry = {
   ships: { 'ship.t': { name: 't', rows } },
   roles: { 'role.engineer': { name: 'E', priorities: p } },

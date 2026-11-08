@@ -1,3 +1,4 @@
+import { isIdle } from '../sim/modules/draw';
 import { homeShip } from '../sim/index';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AllegianceC, BreakdownC, CrewC, DeadC, DownedC, IonC, ModuleC, NeedsC, PickupC, PositionC, ShipC, roomTiles, type Sim } from '../sim';
@@ -28,7 +29,8 @@ export function shortOnPower(sim: Sim, ship: number): boolean {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     if (!m || !m.enabled || m.hp <= 0 || m.powered || sim.world.has(id, IonC) || isHeldOffline(sim, m) || shipIdOf(sim, m) !== ship) continue;
-    if ((sim.content.modules[m.def]?.power ?? 0) < 0) return true;
+    const def = sim.content.modules[m.def];
+    if (def && def.power < 0 && !isIdle(sim, id, def)) return true; // an idle bed (nothing planted) is unpowered by design
   }
   return false;
 }
@@ -44,13 +46,15 @@ export function powerSubject(sim: Sim): UiSubject | null {
 }
 
 /** Supply and demand of the live parts on a ship, as the power system counts them (for the alert's text). */
-function powerBalance(sim: Sim, ship: number): { supply: number; demand: number } {
+export function powerBalance(sim: Sim, ship: number): { supply: number; demand: number } {
   let supply = 0;
   let demand = 0;
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     if (!m || !m.enabled || m.hp <= 0 || sim.world.has(id, IonC) || isHeldOffline(sim, m) || shipIdOf(sim, m) !== ship) continue;
-    const p = sim.content.modules[m.def]?.power ?? 0;
+    const def = sim.content.modules[m.def];
+    const p = def?.power ?? 0;
+    if (def && isIdle(sim, id, def)) continue;
     if (p > 0) supply += p;
     else demand -= p;
   }

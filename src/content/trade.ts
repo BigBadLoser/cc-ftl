@@ -46,6 +46,7 @@ export const trade = {
       stock: [
         { item: 'item.metal', min: 20, max: 60 }, { item: 'item.scrap_hull', min: 10, max: 40 }, { item: 'item.polymer', min: 8, max: 30 },
         { item: 'item.electronics', min: 4, max: 14 }, { item: 'item.ration', min: 6, max: 24, chance: 0.8 }, { item: 'item.parts', min: 2, max: 10, chance: 0.5 },
+        { item: 'item.grain', min: 4, max: 20, chance: 0.5 },
       ],
     },
     'trader.liner': {
@@ -71,6 +72,7 @@ export const trade = {
       stock: [
         { item: 'item.metal', min: 40, max: 120 }, { item: 'item.electronics', min: 15, max: 40 }, { item: 'item.polymer', min: 15, max: 50 },
         { item: 'item.parts', min: 8, max: 25 }, { item: 'item.ration', min: 30, max: 80 }, { item: 'item.ice', min: 10, max: 40 },
+        { item: 'item.grain', min: 10, max: 40, chance: 0.7 },
         { item: 'item.missile', min: 4, max: 16, chance: 0.7 }, { item: 'item.sidearm', min: 1, max: 4, chance: 0.6 },
         { item: 'item.rifle', min: 1, max: 2, chance: 0.35 }, { item: 'item.shuttle', min: 1, max: 1, chance: 0.2 },
         { item: 'item.fuel', min: 40, max: 90 },
@@ -89,7 +91,7 @@ export const trade = {
     },
     'trader.station.farming': {
       name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
-      stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }, { item: 'item.water', min: 20, max: 60 }],
+      stock: [{ item: 'item.ration', min: 60, max: 180 }, { item: 'item.grain', min: 30, max: 100 }, { item: 'item.polymer', min: 10, max: 40 }, { item: 'item.ice', min: 10, max: 30 }, { item: 'item.fuel', min: 15, max: 40 }, { item: 'item.water', min: 20, max: 60 }],
     },
     'trader.station.research': {
       name: 'Research station', match: { faction: 'station.research' }, shuttle: false, credits: [1500, 4000],

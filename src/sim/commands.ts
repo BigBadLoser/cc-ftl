@@ -97,6 +97,10 @@ export type Command =
   | { type: 'production.edit'; moduleId: number; index: number; mode?: 'count' | 'keep'; target?: number }
   /** Move the order at index `from` to index `to`. */
   | { type: 'production.reorder'; moduleId: number; from: number; to: number }
+  /** Set the crop a hydroponics bed sows next (null: none). A crop already growing is left alone. */
+  | { type: 'plot.setCrop'; moduleId: number; crop: string | null }
+  /** Debug: put `crop` in a bed's soil `grown` seconds along (`ready`: already grown), whatever the bed is set to sow next. */
+  | { type: 'debug.setPlot'; moduleId: number; crop: string; grown?: number; ready?: boolean }
   /** Restrict a storage module to `items` (item ids), or null to accept everything. */
   | { type: 'storage.setFilter'; moduleId: number; items: string[] | null }
   /** Spawn a hostile ship from a template; (x, y) is its top-left tile in sector coordinates. */
@@ -255,7 +259,7 @@ export type Command =
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.
    */
-  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender' }
+  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'comply' | 'run' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
   /** Answer a contraband inspection whose lead inspector waits aboard (inspect/settle.ts): pay the fine, offer a bribe (it may be turned down), or refuse. */
@@ -284,6 +288,10 @@ export type Command =
   | { type: 'jobs.openCrate'; id: number }
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
+  /** Debug: a patrol (of `faction`, default the navy) at `node` that chases the player, so it hails them on their next hop there (inspect/patrolDebug.ts). */
+  | { type: 'debug.patrol'; node: string; faction?: string }
+  /** Debug: a fleet of `faction` (default the Scrapper Clans) waiting at `node`, or hunters after the player with `hunt` (galaxy/pirateDebug.ts). */
+  | { type: 'debug.pirates'; node: string; faction?: string; hunt?: boolean }
   /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
   | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' | 'tracker' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */

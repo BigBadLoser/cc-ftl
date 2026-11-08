@@ -3,6 +3,8 @@ import type { ShipTemplate } from './registry';
 import { DenseGrid, type GridLike } from './grid';
 import { ContainerC } from './containers/components';
 import { ProductionC } from './items/components';
+import { PlotC } from './farm/components';
+import { TICK_HZ } from './time';
 import { storageAdd } from './items/storage';
 import { spawnModule } from './modules/spawn';
 import type { Sim } from './sim';
@@ -61,6 +63,12 @@ export function placeTemplateModules(sim: Sim, t: ShipTemplate, ox: number, oy: 
     (m.drones ?? []).forEach((def, slot) => spawnDrone(sim, def, id, slot));
     const box = sim.world.get(id, ContainerC);
     if (box && m.clamp) box.clamp = m.clamp;
+    const plot = sim.world.get(id, PlotC);
+    if (plot && m.crop) {
+      plot.crop = m.crop;
+      const crop = sim.content.crops?.[m.crop];
+      if (crop && (m.ready || m.grown)) [plot.planted, plot.ready, plot.need, plot.grown] = [m.crop, !!m.ready, Math.round(crop.growSec * TICK_HZ), m.ready ? Math.round(crop.growSec * TICK_HZ) : Math.round((m.grown ?? 0) * TICK_HZ)];
+    }
     const production = sim.world.get(id, ProductionC);
     for (const o of m.orders ?? []) production?.orders.push({ ...o, done: 0 });
   }

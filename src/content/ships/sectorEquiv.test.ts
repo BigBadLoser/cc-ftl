@@ -326,4 +326,6 @@ describe('sector refactor equivalence', () => {
 // switched off the run gives 064a6939 again, so the AI's choices are the same here (the player is both the threat and the first foe).
 // Module job sites (#338): fit, decon, craft and research jobs carry the rotated footprint too (`moduleSite`); both hashes are unchanged by it (the
 // repair job keeps its key order, which the hash sees).
-const EXPECTED = { combat: 'c50ed4d7', disaster: '62484cd5' };
+// Repinned for food (#59). The only differences in the hashed world are the empty `plot` component store and the new `farming` key in every crew member's priorities;
+// with those two stripped from the dump, the world and the event log equal main's byte for byte (the old hashes c50ed4d7 / 62484cd5).
+const EXPECTED = { combat: '5152b06b', disaster: 'be9dcfa7' };

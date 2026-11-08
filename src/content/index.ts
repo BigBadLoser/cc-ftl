@@ -6,6 +6,7 @@ import { modules as baseModules } from './modules';
 import { tierModules } from './tiers';
 import { research, researchBands } from './research';
 import { recipes } from './recipes';
+import { crops } from './crops';
 import { roles } from './roles';
 import { traits } from './traits';
 import { policies } from './policies';
@@ -44,6 +45,7 @@ export const content = {
   interactions,
   items,
   recipes,
+  crops,
   structCosts,
   weapons,
   vehicles,

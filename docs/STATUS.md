@@ -31,6 +31,18 @@ Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehav
 only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
 Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites tinted by `shotLook`), so #338 is complete.
 
+## Food and farming (#59, merged in #366)
+
+Hydroponics beds with a crop picker (greens, protein beans, medicinal herbs, grain; `content/crops.ts`), plant and harvest jobs (new "Farm" priority column), galley meals
+by the cook's new `cooking` skill (bland, good, fine; `recipe.meal_greens`, `recipe.meal_beans`), meals eaten before rations with their own mood factor, herbs speeding a medical
+bed (`module.med_bed` is now a patients-only bed), grain as a trade item. The three shipped starters carry a planted bed, 16 good meals and 6 greens (food indicator green).
+Debug start `?scenario=farm`. Placeholder art (list in the PR): greens, grain, beans, herbs and the three meals borrow other items' sprites (`ItemDef.art`); no new sprites.
+Save version 105. Bed and crop sprites are pending from the art session (`docs/art-prompts/hydroponics.md`). Two bed sizes: `module.hydroponics` (small, draws 2 only while a crop is in) and `module.hydroponics_large` (2x3, 3x the yield for 2x the water and power (4 power); art id `module.hydroponics_large`).
+Any module can now draw power by a state rule (`ModuleDef.drawsWhen`, `sim/modules/draw.ts`); an idle bed shows "Idle", not "No power". The renderer picks the art ids of
+`docs/art-prompts/hydroponics.md` when present (`<asset>.r<n>.on|off` or `<asset>.on|off.r<n>`, crop layer `<asset>.crop.<crop>.<stage>.r<n>`) and draws a code stand-in crop layer (`render/cropOverlay.ts`) until then.
+**For the shipgen session:** the beds, meals and greens in the shipped starters (`src/content/ships/{wayfarer,prospector,lancer}.ts`) are hand-edited, and the python generators
+under `tools/shipgen/starters` are stale against them (they were already behind the shipped stock lists). Regenerating with `ship.py` would erase them: port the edits first.
+
 ## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and
@@ -61,7 +73,7 @@ Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites
   ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
   threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
 - **Shared-cause fixes (2026-11-08):** alerts built from state (#349, merged in #352: `src/app/alertsDerived.ts`, dismissals mute per kind until the condition clears); `heldItems` for item enumeration (`src/sim/items/held.ts`, merged in #351; story stock counts and takes, fit-job seizure (`where: 'fitting'`) and `playerShipId` for the adrift jump in #355); a dev/test guard for reads of the packed player ship (#350, merged in #353: `src/sim/packedGuard.ts`, 'throw' in tests, 'warn' in dev for tick code only).
-- **Contraband inspections (#138):** step 1 (station dock inspection) merged in #359: `src/sim/inspect/`, inspectors as visitor crew from the station's shuttle (dock or EVA), haul up to the hold and impound the rest, sticky settle alert (fine / bribe / refuse), `Trader.barredUntil` (10 turns), `?scenario=inspect[&clean][&eva]`. Next: step 2, a patrol hail mid-jump in the world that replaces InterdictModal; then step 3, the refuse and fight consequences.
+- **Contraband inspections (#138):** step 1 (station dock inspection) merged in #359: `src/sim/inspect/`, inspectors as visitor crew from the station's shuttle (dock or EVA), haul up to the hold and impound the rest, sticky settle alert (fine / bribe / refuse), `Trader.barredUntil` (10 turns), `?scenario=inspect[&clean][&eva]`. Step 2 (patrol hails mid-jump in the comms window, comply or run, chase, the patrol held and kept peaceful until its inspection ends) merged in #364. Step 3 (refusing and fighting: refusing costs standing, never hostility; attacking the inspectors or jumping with any aboard is a fight, `?scenario=inspect&fight`, `patrol&fight`, `inspect&select`) merged in #370; #138 is done. Pirate interdictions moved to the same window in #368 (#363); evade odds in #367.
 - **UI consistency (#336):** steps 1-3 merged (tokens; chips and meters; the `tip` action with `TipHost`, `PaneHead` and `Tabs` in #358). Step 4, one window frame and the decision bar, needs a mock sheet first.
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).
@@ -100,7 +112,7 @@ The planned feature order lives in [ROADMAP.md](ROADMAP.md); the list below is t
 4. Station intruder bug (#107); prisoners and prizes (#116).
 5. Shipgen session (separate): generator backlog (#119), room layout audit (#122), hull glitches (#103), NPC engine capacity (#129).
 
-Other open issues: #65 sim performance, #60, #59, #54, #53, #52, #51, #50, #49, #48, #47.
+Other open issues: #65 sim performance, #60, #54, #53, #52, #51, #50, #49, #48, #47.
 
 ## Where things are
 

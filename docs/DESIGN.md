@@ -25,7 +25,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
-  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, not built yet)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-not-built-yet): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert.
+  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them; refusing turns a patrol hostile, and fighting them turns their side on you.
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
@@ -99,12 +99,13 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     is also a food printer), else to a crate that holds food, take one **ration** from storage and eat for 4 s (+50).
     Operators of a console hold their post until hunger is under 10. No food or no way there: they carry on and look
     again every second. At zero hunger they lose 0.05 hp per second (no regeneration) and an alert fires.
-  - **Food** is data: an item with `food: { nutrition }`. `item.ration` is printed at the galley from scrap
-    (`recipe.ration`, 2 scrap makes 3 rations); use the usual make-N / keep-N orders. The starter ship has 12 rations and
-    a galley that keeps 12 in stock.
+  - **Food** is data: an item with `food: { nutrition, mood? }`. The best food in storage is eaten first, so cooked meals (60 / 70 / 80
+    nutrition) go before `item.ration` (50), which is the emergency fallback printed at the galley from water (`recipe.ration`, 2 water makes
+    3 rations); use the usual make-N / keep-N orders. Meals and crops: "Hydroponics and the galley" under New modules. The starter ships
+    start with 12 rations, 16 good meals, 6 greens and a planted bed (the food indicator starts green: about an hour for four crew).
   - **Mood** (0..100) is 50 plus named factors, shown on the crew card as "Hungry -10, Company +3". Factors: hunger
     (starving -25, hungry -10, peckish -3, well fed +4), rest (exhausted -15, tired -8, rested +4), a hot galley meal
-    +6 for 5 minutes, the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
+    +6 for 5 minutes (a ration at the galley +3; a cooked meal +5 bland, +9 good, +13 fine, set by `food.mood` on the item), the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
     air -20, smoke -6, too hot or cold -6) and a light social term (company within 7 tiles +3, alone for 2 minutes
     -4). Under 35 work speed is x0.85, under 20 it is x0.7 and a "very unhappy" alert fires once.
   - **Robots** (any species without `hunger` / `mood`) neither eat nor have moods; enemy crews are exempt too.
@@ -718,19 +719,23 @@ Every new module feeds a system that already exists and changes play. None is de
 - **Workbench** (art already in the sheets: `module.workbench`). Crew make and repair personal gear here: suits, sidearms,
   tools, armour. The fabricator keeps ship-scale things (missiles, parts).
 - **Water purifier.** Turns ice into water, a small dedicated alternative to the refinery's split-ice recipe.
-- **Hydroponics, wired up (#59).** You pick a crop per bed. A crew member plants it (a farming job), the bed uses water and
-  power, and the crop grows over time and is harvested as an item.
+- **Hydroponics, wired up (#59; built).** You pick a crop per bed. A crew member plants it (a farming job, own "Farm" priority column), the bed
+  uses water and power, and the crop grows over time and is harvested as an item. Built numbers (content/crops.ts, first pass): greens 6 per 4:00,
+  1 water; protein beans 18 per 10:00, 2 water; medicinal herbs 4 per 6:00, 1 water; grain 10 per 6:00, 1 water (price 5). The water is delivered
+  to the bed for the planting job; growth runs only while the bed is powered. An empty bed draws no power (`ModuleDef.drawsWhen: 'planted'`; shown as Idle), a planted one draws 2. Two sizes: the 2x1 bed, and the buildable large bed (2x3, 3x the yield for 2x the water and power: 4 power, so the big bed is the efficient one); after a harvest the bed is sown
+  again with the same crop unless the ship already holds that crop's stock cap. A crop in the soil is not disturbed by changing the pick.
 
   | Crop | Grows | Used for |
   |---|---|---|
   | Greens | Fast, small yield | Meals |
   | Protein beans | Slow, big yield | Meals |
-  | Medicinal herbs | Medium | In stock, the med bed and recovery pod heal faster (a herb is used per treatment) |
+  | Medicinal herbs | Medium | In stock, the med bed (built: x2 heal for the stay, one herb per treatment) and later the recovery pod heal faster |
   | Grain | Medium | A trade good for now; brewed into drinks later (bar, Drinker habit) |
 
-- **Galley: meals by cook quality (#59).** Cooking produce with water into a meal is a cooking job, which makes the Cooking
-  priority column work. The cook's skill sets the quality (bland, good, fine), and quality sets the mood boost. Water-only
-  rations stay as the emergency fallback.
+- **Galley: meals by cook quality (#59; built).** Cooking produce with water into a meal is a cooking job (`recipe.meal_greens`, `recipe.meal_beans`:
+  6 produce and 2 water make 2 meals), which makes the Cooking priority column work; so does printing rations. The cook's new `cooking` skill
+  sets the quality (0 bland, 1-2 good, 3+ fine; medics start at 1) and the quality sets nutrition and the mood boost. Water-only rations stay
+  as the emergency fallback. A medical bed (`medical`) is for patients only: they take it before an ordinary bed and sleepers never do.
 
 ### Trade
 
@@ -930,7 +935,7 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
   come later.
 
-### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, step 1 built)
+### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)
 
 Replaces the contraband scan pop-up (`InterdictModal`, #136) with inspectors who come aboard. Built in three steps: the
 station dock inspection, then the patrol version, then refusing and fighting.
@@ -945,7 +950,9 @@ station dock inspection, then the patrol version, then refusing and fighting.
 - **Settling:** when the search is done, the lead inspector waits aboard and an urgent alert says so ("Inspector
   waiting: fine or bribe"). Clicking it jumps to the inspector and opens the options: pay the fine (with the standing
   hit), offer a bribe (it may fail), or refuse. No pop-up.
-- **Refusing:** at a station, refusing the inspectors means no service there and a standing hit; a patrol turns hostile.
+- **Refusing:** refusing the inspectors sends them home with what they seized, never turns anyone hostile (losing the goods is punishment enough):
+  at a station, no service there and a standing hit; at a patrol, a bigger standing hit (user ruling 2026-11-08, replacing "a patrol turns hostile").
+  Jumping away while any inspector is still aboard your ship carries them off: that counts as fighting them.
 - **Fighting:** attacking the inspectors turns that faction hostile with a big standing hit; the patrol or the station's
   defences engage, and the inspectors fight back as boarders.
 - **No way to dock** (no working or free airlock): the inspectors board by EVA, in suits, through any working door or
@@ -962,7 +969,38 @@ station dock inspection, then the patrol version, then refusing and fighting.
   taken 60% of the time: the goods are handed back by the shuttle door; turned down, it costs standing and is not offered again. Refusing costs standing and
   the station's service for 10 turns (they keep what they took). Leaving the node while they search or wait counts as refusing.
 - With no airlock free they cross in suits and land on the hull; with no way in they wait there under an "Inspectors can't board" alert.
-- Inspectors show as visitors ("Inspector"), not hostiles, and offer no Attack yet (step 3).
+- Inspectors show as visitors ("Inspector"), not hostiles (step 3 adds the Attack button).
+
+**As built (step 2, the patrol hail):**
+- A navy or corporation patrol hails only a ship its scan flags (contraband aboard); a clean ship gets the old passing scan. The hail stops the trip in
+  hyperspace and opens a comms window: the captain on video, their demand, the patrol ship on the sensors. Their scan reads "Suspicious" and names
+  nothing, so the hail does not tell you what they know.
+- Comply: you drop out at the node you reached, the patrol stays there, and once you deploy its ship sends two inspectors by shuttle from where it
+  arrived (about 100 tiles out, user decision: the flight gives you a little time). The search and the answers are step 1's.
+- Run: a standing hit (3), and the trip goes on. Half the time the patrol chases you for 4 turns and hails again if it catches you; the chase is light on
+  purpose (it follows like a hunter, one hop behind). Leaving before its inspectors come over counts as running, without the chase.
+- Refusing a patrol's inspectors costs standing only (step 3 raised it to 8; no hostility, user ruling).
+- The scan pop-up is gone.
+
+**As built (#363, pirate interdictions in the comms window):** every hail that stops you mid-jump uses the same comms window. An interdiction shows the
+pirate captain on video (a machine faction has no face: static), their demand (varied by faction, and by hunters, a route guard's toll or a plain raid),
+their lead ship on the sensors with the ship count and strength, and Evade (odds), Bribe (price, disabled with the reason when short) and Fight. The numbers
+are unchanged. After the answer the window stays open with how it ended and the caller's reply, and closes on Close channel. `InterdictModal` is removed.
+
+**As built (step 3, refusing and fighting):**
+- Refusing (the answer on the alert) sends the inspectors back to their shuttle with what they took, and nobody turns hostile. At a station it costs
+  4 standing and the station's service for 10 turns; at a patrol, which has no service to bar, 8 standing.
+- Leaving the node is keyed on whether an inspector is aboard your ship at the jump, whatever the phase (searching, waiting for the answer, or
+  walking back after a fine, a bribe or a refusal). With one aboard it is an attack: everything under Fighting, and they come along as boarders. With
+  none aboard before the answer (still on the way, or back on their shuttle) it is a refusal as above; after the answer it costs nothing more.
+- Fighting: an inspector's panel has an Attack button for your drafted crew (the panel only, never a right-click order, so it is a choice). Attacking
+  them, or firing on the ship that sent them while they are at work, costs 10 standing; the inspectors go over to their faction's side and fight as
+  boarders; the ship that sent them turns on you with its group: a patrol and its fleet engage, and a station's own guns do (stations carry weapons).
+  A station also refuses service for 30 turns.
+- The fight ends when none of them still stands on your ship; the downed stay as ordinary hostile crew (to be taken prisoner). Jumping away mid-fight
+  takes the ones aboard with you, still hostile, and they fight on. Leaving after the fight follows the usual rules (hostile faction, chases).
+- There is no "refuse" answer at the hail itself: running is the way to refuse a patrol before it boards (step 2).
+
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 

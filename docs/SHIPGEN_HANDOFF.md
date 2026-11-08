@@ -187,6 +187,11 @@ the structure and silhouette sheets.
 
 ## Backlog (in priority order)
 
+**Before regenerating a starter:** since #366 (food), the hydroponics beds, meals and greens in the shipped starters
+(`src/content/ships/{wayfarer,prospector,lancer}.ts`) are hand-edited. The python generators under `tools/shipgen/starters`
+are stale against them (and were already behind the shipped stock lists), so running `ship.py` would erase the edits: port
+them into the generators first.
+
 1. **Navy drive-bank notch.**
    - Symptom: a one-tile vertical slot between the last spine section and the drive bank (and between twin hulls
      and their drives).

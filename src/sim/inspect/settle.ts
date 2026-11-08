@@ -1,4 +1,4 @@
-import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
+import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_PATROL_REFUSE_HIT, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
 import type { Command } from '../commands';
 import { repKey } from '../galaxy/standing';
 import { CrewC, PositionC } from '../crew/components';
@@ -20,18 +20,21 @@ import { leave } from './start';
  * - 'fine': the fine is paid (all the credits there are, if short), standing with the faction falls by SCAN_STANDING_HIT, and they keep the goods.
  * - 'bribe': refused without the credits, or with no floor aboard to set the goods down on (`noRoom`). Taken with INSPECT_BRIBE_CHANCE (a seeded roll): it is paid and the goods are handed back (set down by
  *   the shuttle's door for the crew to stow). Turned down: nothing is paid, standing falls by SCAN_STANDING_HIT, and no bribe is offered again.
- * - 'refuse': nothing is paid; they leave with what they took, standing falls by INSPECT_REFUSE_HIT and the station refuses service for INSPECT_BAN_TURNS galaxy turns (`Trader.barredUntil`).
+ * - 'refuse': nothing is paid; they leave with what they took, standing falls by INSPECT_REFUSE_HIT and the station refuses service for INSPECT_BAN_TURNS galaxy turns (`Trader.barredUntil`); at a patrol, INSPECT_PATROL_REFUSE_HIT and nothing else.
  *   (Fighting them is a later step: #138 step 3.)
  */
 
-const hit = (sim: Sim, faction: string, n: number): void => {
+export const hit = (sim: Sim, faction: string, n: number): void => {
   const key = repKey(sim, faction);
   sim.story.reputation[key] = reputationOf(sim.story, key) - n;
 };
 
-/** What refusing (or running from) an inspection costs: a standing hit, and the station's service. */
+/**
+ * What refusing (or leaving during) an inspection costs: a standing hit (INSPECT_PATROL_REFUSE_HIT at a patrol, which has no service to bar), and a
+ * station's service. Nobody turns hostile: they keep what they seized (user ruling, #138 step 3).
+ */
 export function refuseConsequences(sim: Sim, insp: Inspection): void {
-  hit(sim, insp.faction, INSPECT_REFUSE_HIT);
+  hit(sim, insp.faction, insp.patrol !== undefined ? INSPECT_PATROL_REFUSE_HIT : INSPECT_REFUSE_HIT);
   const t = sim.world.get(insp.station, TraderC);
   if (t) t.barredUntil = sim.galaxy.turn + INSPECT_BAN_TURNS;
 }
@@ -111,7 +114,7 @@ export const inspectHandlers: { 'inspect.settle': (sim: Sim, cmd: Extract<Comman
     const insp = sim.world.get(cmd.inspection, InspectionC);
     if (!insp || insp.phase !== 'settle') return reject(sim, cmd.type, 'noInspection');
     const done = (outcome: 'fined' | 'bribed' | 'refused', cost: number): void => {
-      sim.events.emit({ type: 'inspect.settled', inspection: cmd.inspection, faction: insp.faction, outcome, cost });
+      sim.events.emit({ type: 'inspect.settled', inspection: cmd.inspection, faction: insp.faction, outcome, cost, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
       leave(sim, cmd.inspection, insp, outcome);
     };
     if (cmd.choice === 'fine') {

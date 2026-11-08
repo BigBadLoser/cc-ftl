@@ -1,5 +1,6 @@
 /** Starmap view data (published by app/starmapSnapshot.ts). Plain data; map units, y down. */
-import type { UiHeat } from './api';
+import type { UiHeat, UiLook } from './api';
+import type { CallerInfo, CommsLine, ReadoutRow, UiHoloRequest } from './comms/types';
 
 /** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
 export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
@@ -267,7 +268,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'comply' | 'run';
   label: string;
   detail: string;
   enabled: boolean;
@@ -292,12 +293,38 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
-  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
-  contraband?: { found: string; value: number; fine: number; bribe: number };
+  /** A patrol's hail to stop (its scan read contraband aboard): what was found (a line of text) and what it is worth; the choices are comply / run. */
+  contraband?: { found: string; value: number };
+  /** The hail to stop as the comms window shows it (a patrol's, with `contraband`, or an interdiction's); null when its fleet is gone. */
+  hail?: UiHail | null;
+}
+
+/**
+ * A hail to stop mid-jump, for the comms window: a patrol's (app/comms/patrolComms.ts) or an interdiction's (app/comms/pirateComms.ts). The caller, the
+ * transcript, their ship's picture and the readout; `look` null for a caller with no face (the machines), which shows static.
+ */
+export interface UiHail {
+  caller: CallerInfo;
+  look: UiLook | null;
+  /** The window's title bar (default "Incoming hail" and "<faction> patrol"); the window adds where things stand (`HailWindow`). */
+  title?: string;
+  subtitle?: string;
+  /** A hostile caller: the window is edged in red. */
+  hostile?: boolean;
+  transcript: CommsLine[];
+  /** Their ship for the hologram; null when it has gone (the sensors show static). */
+  holo: UiHoloRequest | null;
+  hullTitle: string;
+  readout: ReadoutRow[];
+  /** What the caller says once answered, by outcome (`UiEncounterResult.outcome`: 'bribed', 'evaded', 'complied', ...). */
+  replies: Record<string, string>;
 }
 
 /** How the last encounter ended, as a line with a tone. */
 export interface UiEncounterResult {
+  /** The encounter it ended and how ('evaded', 'bribed', 'fought', ...). */
+  id: number;
+  outcome: string;
   text: string;
   /** The starmap turn it happened. */
   turn: number;

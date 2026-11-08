@@ -49,6 +49,9 @@ export type SimEvent =
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; ship: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */
+  | { type: 'crew.treated'; bed: number; item: string; ship: number }
+  | { type: 'crop.planted'; module: number; crop: string; ship: number }
+  | { type: 'crop.harvested'; module: number; crop: string; count: number; ship: number; x: number; y: number }
   | { type: 'production.done'; module: number; recipe: string; ship: number; x: number; y: number }
   /** A loose stack has no storage to go to (debounced per stack). */
   | { type: 'storage.full'; ship: number; x: number; y: number; item: string }
@@ -147,7 +150,7 @@ export type SimEvent =
   /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
   /** Battle stations called or stood down (`combat.battleStations`). */
   | { type: 'combat.stations'; on: boolean }
-  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' | 'ambush' }
+  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' | 'ambush' | 'inspection' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
   | { type: 'station.alarm'; ship: number; reason: string }
   /** A station's alarm calmed after a quiet spell; it forgets its grudges. */
@@ -306,12 +309,14 @@ export type SimEvent =
   | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
   | { type: 'scan.found'; id: number; faction: string; value: number }
-  | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
+  | { type: 'patrol.complied'; fleet: number; faction: string; node: string }
+  | { type: 'patrol.ran'; fleet: number; faction: string; chased: boolean }
   /** Contraband inspections (inspect/): a station's inspectors set off; the search found contraband and the lead waits; a bribe turned down; how it ended. */
   | { type: 'inspect.started'; inspection: number; faction: string; name: string; crew: number[] }
   | { type: 'inspect.waiting'; inspection: number; faction: string; value: number; fine: number; bribe: number }
   | { type: 'inspect.bribeRefused'; inspection: number; faction: string }
-  | { type: 'inspect.settled'; inspection: number; faction: string; outcome: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled'; cost: number }
+  | { type: 'inspect.fought'; inspection: number; faction: string; ship: number; patrol?: true }
+  | { type: 'inspect.settled'; inspection: number; faction: string; outcome: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled'; cost: number; patrol?: true }
   | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */

@@ -10,6 +10,9 @@ import { AssignmentC, CrewC, DeadC, PositionC, type Mood, type MoodFactor } from
 import { traitDefs, traitEffect, traitFlag, traitMult } from './traits';
 
 /** Mood factor labels added by traits (merged into MOOD_LABELS). */
+/** Mood factor keys that are about food: a trait's food multiplier applies to them. */
+export const FOOD_MOOD_KEYS: readonly string[] = ['wellFed', 'hotMeal', 'mealBland', 'mealGood', 'mealFine'];
+
 export const TRAIT_MOOD_LABELS: Readonly<Record<string, string>> = {
   alone: 'Alone (loner)', crowded: 'Crowded', cheeredUp: 'Cheered up', draggedDown: 'Dragged down',
   thrill: 'Thrill of danger', bored: 'Bored', cooped: 'Cooped up', underFire: 'Under fire', fireNearby: 'Fire nearby', spacewalk: 'Spacewalk', glare: 'Glare', idle: 'Nothing to do', restless: 'Restless',
@@ -70,7 +73,7 @@ export function applyTraitMood(sim: Sim, id: number, m: Mood, base: MoodFactor[]
   if (defs.length === 0 && !auras) return base;
   let out = base;
   const food = traitMult(sim, id, 'foodMoodMult');
-  if (food !== 1) out = out.map((f) => (f.key === 'wellFed' || f.key === 'hotMeal' ? { key: f.key, value: f.value * food } : f));
+  if (food !== 1) out = out.map((f) => (FOOD_MOOD_KEYS.includes(f.key) ? { key: f.key, value: f.value * food } : f));
   if (traitFlag(sim, id, 'darkAdapted')) out = out.filter((f) => f.key !== 'dark');
   const company = traitEffect(sim, id, 'company');
   const near = company === 'loner' || auras ? nearbyCrew(sim, id, hasMood) : [];

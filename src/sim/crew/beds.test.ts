@@ -36,7 +36,7 @@ const content: ContentRegistry = {
   structCosts: {},
 };
 const none: Priorities = {
-  firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, patrol: 0,
+  firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, farming: 0, patrol: 0,
 };
 const ROOM = ['__________', '__________', '__________', '__________', '__________'];
 

@@ -9,7 +9,7 @@ const FLOOR = ['m', 's', 'unit', 'held'];
  * CSS icon frames for items: the item's own UI icon (`<item>.icon`, drawn 1:1) when it has one, its floor-stack sprite otherwise. An item with
  * a UI icon keeps the floor frame too (`floor`), for boxes too small to show the icon at 1x.
  */
-export async function loadItemIcons(ids: readonly string[]): Promise<Record<string, UiIcon>> {
+export async function loadItemIcons(ids: readonly string[], artOf: (id: string) => string = (id) => id): Promise<Record<string, UiIcon>> {
   const base = assetBase();
   const manifest = await loadComposed(base);
   const sizes = new Map<string, { w: number; h: number }>();
@@ -35,8 +35,9 @@ export async function loadItemIcons(ids: readonly string[]): Promise<Record<stri
   };
   const out: Record<string, UiIcon> = {};
   for (const id of ids) {
-    const floor = await frame(FLOOR.map((s) => `${id}.${s}`));
-    const ui = await frame([`${id}.icon`]);
+    const art = artOf(id); // an item without art of its own borrows another item's (ItemDef.art)
+    const floor = await frame(FLOOR.map((s) => `${art}.${s}`));
+    const ui = await frame([`${art}.icon`]);
     const icon = ui ? { ...ui, ui: true, ...(floor ? { floor } : {}) } : floor;
     if (icon) out[id] = icon;
   }

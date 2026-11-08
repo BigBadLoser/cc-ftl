@@ -29,6 +29,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Drones, `src/sim/drones/`](#drones-srcsimdrones): Own entities (DroneC on a BodyC), one drone system, a job table per kind; core cap, bays, fly pathing, ion, placeholders.
 - [Vehicles (shuttles), `src/sim/vehicles/`](#vehicles-shuttles-srcsimvehicles): A shuttle is an entity (VehicleC), never a grid. States: stowed (in its home bay), flying (sector x, y),...
 - [Events (story), `src/sim/story/`](#events-story-srcsimstory): Events are data (EventDef, src/sim/story/defs.ts; content in src/content/events.ts, satisfies EventDef,...
+- [Food and farming, `src/sim/farm/`](#food-and-farming-srcsimfarm): `PlotC` on hydroponics beds, `farmSystem`, plant and harvest jobs, meal quality from the cook's skill, herbs in medical beds.
 - [Trade, `src/sim/trade/`](#trade-srcsimtrade): Terminology (user decision, 2026-10-19): a node is one playable grid or location (what older text and code...
 - [Asteroids (slices 1-3 on branch `asteroids`), `src/sim/asteroids/`, `mining/`, `rock/`, `outposts/`](#asteroids-slices-1-3-on-branch-asteroids-srcsimasteroids-mining-rock-outposts): Region model: its own AsteroidC entity plus the owner layer (not a ShipC kind). An asteroid (one big body,...
 - [Starmap (galaxy), `src/sim/galaxy/`](#starmap-galaxy-srcsimgalaxy): Sim only so far (branch galaxy): no UI, no snapshot, no tools. The starmap view, its zoom levels and the...
@@ -1524,6 +1525,20 @@ DESIGN.md "Physical encounters". Three parts kept apart: triggers (the transit d
   `boardersDown` (party all dead or down), rule filter `trap: true|false`. Scan rows are skill-sharpened (`app/ambushIntel.ts`: gunnery, piloting,
   hacking). Debug: `?scenario=ambush[&trap|&honest][&signal]` (`app/ambushScenario.ts`, `debug.ambush`).
 
+## Food and farming, `src/sim/farm/`
+
+- **Beds.** `ModuleDef.plot` gives a module `PlotC` (`farm/components.ts`): `crop` (what it sows next, set by `plot.setCrop`), `planted` (what is in the soil),
+  `grown` (powered ticks) and `ready`. Crops are content (`content/crops.ts`, `CropDef`: item, yield, growSec, water, stockCap). `farmSystem` (pipeline,
+  after `researchJobsSystem`, before supply) grows a planted crop one tick while its bed is whole, enabled and powered, and every `PLAN_INTERVAL` keeps one job
+  per bed: `plant` (category `farming`; `needs` the crop's water, delivered by the ordinary supply planner, which hauls it under `farming`) while the bed is
+  empty and set to a crop whose stock is under its cap, `harvest` once ready. `farm/work.ts` finishes them (the yield spills on the access tile and hauling stores it).
+- **Cooking.** A recipe with `quality` (`RecipeDef.quality`: a skill and tiers worst first) makes its output from the cook's skill (`items/craft.ts` `qualityItem`);
+  `keep` orders count every tier. Galley recipes (rations too) carry `category: 'cooking'`; the crafting job posts under it. Crafting a quality recipe trains its skill.
+- **Eating.** `foodOn` takes the most nutritious food in storage, so meals go before rations. `ItemDef.food.mood` sets the galley mood factor (`Mood.mealItem`, `crew/mood.ts`).
+- **Herbs.** `ItemDef.medicine.healMult`; `crew/treatment.ts` uses one in-stock item per stay in a `ModuleDef.medical` bed (first healing tick, `Downed.treated`) and
+  vitals heals that much faster. `findFreeBed(..., patient)` offers medical beds to patients first; sleepers and bed owners never get one.
+- `ItemDef.art` borrows another item's sprites (floor stacks, UI icons) for items waiting for their own art.
+
 ## Trade, `src/sim/trade/`
 
 **Terminology (user decision, 2026-10-19):** a **node** is one playable grid or location (what older text and code call a "sector"); a
@@ -1886,7 +1901,7 @@ and a Traffic list in the node drawer (ship name, faction and role, what it is d
 `galaxy.dismissEncounter` is gone). Interdiction: `evade` (roll `unit(seed, encounter id, salt)` against `evadeOdds`: mainly the pilot, `(0.32 + 0.57 x pilot) x (0.6 + 0.4 x engine) - 0.06 x fleet strength`, clamped to [0.05, 0.9], from `Combat.pilot` / `Combat.evasion` read from
 the packet; formula and examples in `tuning.ts`; failure fights), `bribe` (`bribeCost`: 12 x strength x (1 + 0.4 x danger) x a standing factor, at least 10 credits; refused as
 `cantAfford`; starts the fleet's cooldown) or `fight`. Fleet strength is the sum over its ships of 1 + 0.5 x depth. Distress: `respond` (an event grid with the damaged ships as
-neutrals; leaving it earns reputation and the fleet moves on) or `ignore`. Hail and scan: `acknowledge`; a non-hostile crossing only makes one with chance `PASSING_ENCOUNTER_CHANCE` (`passingMeets`). The interdiction is answered in `ui/InterdictModal.svelte` (a modal over the map); the other kinds stay in the drawer. `incomingFleets(sim)` (`incoming.ts`) is the pure query behind the arrival-warning alerts (`alerts.syncIncoming`). Success lets the held trip go on (`resumeAfterHop`).
+neutrals; leaving it earns reputation and the fleet moves on) or `ignore`. Hail and scan: `acknowledge`; a non-hostile crossing only makes one with chance `PASSING_ENCOUNTER_CHANCE` (`passingMeets`). The interdiction is answered in the comms window (`ui/HailWindow.svelte`, see Mid-jump hails below); the other kinds stay in the drawer. `incomingFleets(sim)` (`incoming.ts`) is the pure query behind the arrival-warning alerts (`alerts.syncIncoming`). Success lets the held trip go on (`resumeAfterHop`).
 An **event grid** (`GalaxyState.event`, node id `event:<encounter id>`) is a pocket that is not a node: it is not in the galaxy index, has no chunk contents or contacts, is never
 archived, and runs no turns, arrivals or story draws. `enterEvent` takes the fleet out of `GalaxyState.fleets`, swaps in an empty sector, makes the fleet's ships real
 (`materialiseFleet` with the real node as `node`) and sets the packet waiting to deploy (the deploy picker). `GalaxyState.current` stays the real node; `sim.sector.node` is the event id and the
@@ -2572,8 +2587,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   only) pays its 50-60% for anything.
 - **Scans** (`scan.ts`). A navy or corporation station inspects the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node: `dockScan` starts an
   inspection, below), and a patrol that crosses
-  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
-  `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (`value`): the patrol hails the
+  player to stop (Patrol hails, below); trade offers are refused meanwhile (`scanPending`).
 - **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
   - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
     airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free
@@ -2592,6 +2607,22 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   - Read inspections through `inspections(sim)` (a query of `InspectionC` itself would make its store and change save bytes). The alerts (`app/alertsDerived.ts`):
     `inspect.waiting` (subject the lead, the three answers as alert actions) and `inspect.blocked`. Visitors aboard by a non-lodging grant are `side: 'visitor'` in
     the crew lists (`UiCrew.visit`: Inspector, Contractor). Debug start `?scenario=inspect[&clean][&eva]`.
+- **Mid-jump hails** (#138 step 2, #363). An encounter that halts the trip and asks for an answer opens `ui/HailWindow.svelte`, the `src/ui/comms` pieces over
+  `UiEncounter.hail` (`UiHail`: caller, look, transcript, holo request, readout, `replies` by outcome). Adapters: `app/comms/patrolComms.ts` (a patrol's hail to
+  stop, comply / run) and `app/comms/pirateComms.ts` (an interdiction, evade / bribe / fight: the demand by faction and motive, `motiveOf`: hunter, toll for a
+  route guard, else raid; a machine faction has no face; a fleet that has gone still gets a static window). `App.svelte` keeps the answered encounter's
+  snapshot so the window stays open after `galaxy.respond`, with `UiEncounterResult` (`id`, `outcome`, text) as narration and the caller's reply, until
+  Close (over the deploy picker when the answer dropped out). Debug starts `?scenario=patrol[&clean]` and `?scenario=pirates[&faction=][&hunt][&broke]`
+  (`debug.pirates`, `galaxy/pirateDebug.ts`).
+- **Refusing and fighting inspectors** (#138 step 3, `inspect/fight.ts`). `crew.attack` on an inspector (`attackableInspector`, checked in `fight/handlers.ts` before the
+  hostility check) calls `fightInspection`: INSPECT_FIGHT_HIT, the inspectors' `AllegianceC` set to their faction's combat side, the 'inspect' grant revoked, phase
+  'fight', a station's `Trader.barredUntil` pushed out by INSPECT_FIGHT_BAN_TURNS, and `hostileAct(source, 'inspection')` provokes the ship that sent them with its group
+  (combat/provoke.ts). `flow.ts` also starts the fight when the source turns hostile some other way (the player fired on it), ends it once no inspector stands aboard,
+  and `release`s the ones on the player's ship as ordinary hostile crew (also when the player leaves mid-fight). The fight takes the inspectors on the player's ship
+  off the away run (`AwayC` removed), so the site's recall cannot lift them. `abortInspections` (on a jump or flee) starts a fight when any inspector is aboard, in any
+  phase, else counts a refusal before the answer. Refusing turns nobody hostile: `refuseConsequences`
+  costs INSPECT_PATROL_REFUSE_HIT at a patrol (INSPECT_REFUSE_HIT and the bar at a station).
+  Debug: `?scenario=inspect&fight`, `?scenario=patrol&fight`.
 - **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
   there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
   every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.

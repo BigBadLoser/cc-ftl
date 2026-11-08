@@ -40,6 +40,13 @@
 
   const phaseText = { materials: 'Waiting for materials', power: 'No power', crafting: 'Crafting', ready: 'Ready, waiting for crew' };
   const flow = (list: UiCost[]) => list.map((c) => `${c.count} ${c.name}`).join(' + ');
+  /** What a recipe makes: a quality recipe (meals) says which quality the cook's skill reaches, e.g. "2 meals (bland, good at cooking 1, fine at 3)". */
+  const made = (r: UiRecipe): string => {
+    const q = r.quality;
+    const first = r.outputs[0];
+    if (!q || !first) return flow(r.outputs);
+    return `${first.count} meals (${q.tiers.map((t, i) => `${t.name.replace(/ meal$/i, '').toLowerCase()}${i ? ` at ${q.skill} ${t.minSkill}` : ''}`).join(', ')})`;
+  };
   const progress = (o: UiOrder) => (o.mode === 'count' ? `${o.done}/${o.target} batches` : `stock ${o.have}/${o.target}`);
   const finished = (o: UiOrder) => (o.mode === 'count' ? o.done >= o.target : o.have >= o.target);
 </script>
@@ -66,7 +73,7 @@
             <span class="pr">{o.active ? 'working: ' : finished(o) ? 'met: ' : ''}{progress(o)}</span>
           </div>
           {#if r}
-            <div class="rf" data-testid="order-recipe-{i}">{flow(r.inputs)} → {flow(r.outputs)}
+            <div class="rf" data-testid="order-recipe-{i}">{flow(r.inputs)} → {made(r)}
               {#if o.missing.length}<b class="bad" data-testid="order-missing-{i}">missing {o.missing.join(', ')}</b>{:else}<span class="ok">inputs in stock</span>{/if}
             </div>
           {/if}
@@ -92,7 +99,7 @@
             <ItemIcon {api} item={r.outputs[0]?.item ?? ''} size={30} />
             <span class="rt">
               <span class="rn">{r.name}</span>
-              {#if isLocked(r)}<span class="rf need" data-testid="recipe-locked-{r.id}">Needs research</span>{:else}<span class="rf">{flow(r.inputs)} → {flow(r.outputs)}</span>{/if}
+              {#if isLocked(r)}<span class="rf need" data-testid="recipe-locked-{r.id}">Needs research</span>{:else}<span class="rf">{flow(r.inputs)} → {made(r)}</span>{/if}
             </span>
             <span class="sec">{r.seconds.toFixed(1)}s</span>
           </button>

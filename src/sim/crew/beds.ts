@@ -27,11 +27,19 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
  * less when ending beside the bed) and the search stops once the best path found beats every remaining bound, so the answer
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
  */
-export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip): BedPlan | null {
+export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, patient = false): BedPlan | null {
+  // Medical beds are for patients (who take one first when it is free); sleepers never lie in one.
+  if (patient) return searchBeds(sim, shipId, from, adjacent, skip, true) ?? searchBeds(sim, shipId, from, adjacent, skip, false);
+  return searchBeds(sim, shipId, from, adjacent, skip, false);
+}
+
+/** `medical` true: only medical beds; false: only ordinary ones. */
+function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, medical: boolean): BedPlan | null {
   const cands: { id: number; lb: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || m.reservedBy !== 0 || m.hp <= 0 || !sim.content.modules[m.def]?.bed || shipIdOf(sim, m) !== shipId) continue;
+    const def = m && sim.content.modules[m.def];
+    if (!m || m.reservedBy !== 0 || m.hp <= 0 || !def?.bed || !!def.medical !== medical || shipIdOf(sim, m) !== shipId) continue;
     if (skip?.(m.x, m.y)) continue;
     const cheb = Math.max(Math.abs(m.x - from.x), Math.abs(m.y - from.y));
     cands.push({ id, lb: adjacent ? Math.max(0, cheb - 1) : cheb });

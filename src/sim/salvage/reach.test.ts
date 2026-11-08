@@ -16,7 +16,7 @@ const content: ContentRegistry = {
   items: { 'item.metal': { name: 'Metal', tags: [], stackSize: 100 }, 'item.scrap_tech': { name: 't', tags: ['scrap'], stackSize: 100 }, 'item.scrap_hull': { name: 'h', tags: ['scrap'], stackSize: 100 } },
   structCosts: { floor: [{ item: 'item.metal', count: 1 }], wall: [{ item: 'item.metal', count: 2 }] },
 };
-const prio = (v: number): Priorities => ({ firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v });
+const prio = (v: number): Priorities => ({ firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v });
 // Two sealed halls side by side: crew in the west one, the console in the east one.
 const rows = ['#########', '#___#___#', '#___#___#', '#########'];
 

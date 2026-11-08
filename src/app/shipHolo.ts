@@ -97,6 +97,8 @@ async function draw(req: UiHoloRequest): Promise<UiHolo | null> {
     r = await createRenderer(canvas, 'high', sim.world, content);
     r.setSector(sim.sector.grid);
     r.showBackdrop(false);
+    // Sensors read the hull, not the deck plan: a hailing ship is roofed whatever its faction, as an enemy is in battle.
+    r.setRoofAll(true);
     r.setGrid(grid);
     r.resize();
     r.frameShips([id]);

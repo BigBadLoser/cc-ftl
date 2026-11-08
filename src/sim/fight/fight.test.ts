@@ -73,7 +73,7 @@ const split = (extra: Partial<ShipTemplate> = {}): ShipTemplate => ({
   ...extra,
 });
 const flat = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v,
 });
 
 function make(template: ShipTemplate = hall(), seed = 5): Sim {

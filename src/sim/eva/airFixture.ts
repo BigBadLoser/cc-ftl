@@ -33,7 +33,7 @@ export const content: ContentRegistry = {
   modules: { airlock: airlockDef, lifeSupport: lifeSupportDef },
   vehicles: { 'vehicle.shuttle': shuttleDef },
 };
-export const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, refining: 4, crafting: 4, research: 4, cooking: 4, patrol: 0 };
+export const all4: Priorities = { firefighting: 4, medical: 4, operating: 4, repair: 4, construction: 4, hauling: 4, refining: 4, crafting: 4, research: 4, cooking: 4, farming: 4, patrol: 0 };
 
 /** A 14x14 ship: hull ring, 10x10 floor. */
 export const ring = (): string[] => {

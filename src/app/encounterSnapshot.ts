@@ -4,13 +4,15 @@ import {
 } from '../sim';
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
+import { patrolHailOf } from './comms/patrolComms';
+import { pirateHailOf } from './comms/pirateComms';
 import { ShipC, TICK_HZ, factionsHostile, type Contact, type SceneShip } from '../sim';
 import { AwaySiteC } from '../sim/away/components';
 
 
 export const ROLE_LABEL: Record<string, string> = { trader: 'Trader', miner: 'Miner', patrol: 'Patrol', pirate: 'Pirate', raider: 'Raider' };
 const TITLE = { interdict: 'Interdiction', hail: 'Hail', scan: 'Patrol scan', distress: 'Distress call' } as const;
-const titleOf = (e: Encounter): string => (e.kind === 'scan' && e.fleet === 0 ? 'Dock scan' : TITLE[e.kind]);
+const titleOf = (e: Encounter): string => (e.kind === 'scan' && e.fleet === 0 ? 'Dock scan' : e.scan ? 'Patrol hail' : TITLE[e.kind]);
 const HOW = { pass: 'Met you on the lane', overlap: 'Caught up with you on the lane', node: 'Waiting where you came out' } as const;
 
 const threatOf = (strength: number): string => (strength < 2.5 ? 'Light' : strength < 5 ? 'Moderate' : strength < 9 ? 'Heavy' : 'Overwhelming');
@@ -18,25 +20,22 @@ const nodeName = (sim: Sim, id: string): string => (sim.galaxy.discovered[id] !=
 const factionName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
 
 const LABEL: Record<UiEncounterChoice['choice'], string> = {
-  evade: 'Evade', bribe: 'Bribe', fight: 'Fight', respond: 'Respond', ignore: 'Ignore', acknowledge: 'Acknowledge', surrender: 'Surrender goods',
+  evade: 'Evade', bribe: 'Bribe', fight: 'Fight', respond: 'Respond', ignore: 'Ignore', acknowledge: 'Acknowledge', comply: 'Comply', run: 'Run',
 };
 
 function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
   const waiting = sim.sector.state === 'hyperspace' && !!sim.galaxy.travel;
   return choicesOf(e).map((choice) => {
     const base = { choice, label: LABEL[choice], detail: '', enabled: true, why: null as string | null };
-    if (choice === 'evade') return { ...base, detail: `${Math.round(evadeOdds(sim, e) * 100)}%` };
-    if (choice === 'surrender' && e.scan) return { ...base, detail: `lose goods, ${e.scan.fine} cr fine, standing lost` };
-    if (choice === 'bribe' && e.scan) {
-      const short = sim.trade.credits < e.scan.bribe;
-      return { ...base, detail: `${e.scan.bribe} cr`, enabled: !short, why: short ? `Need ${e.scan.bribe} credits` : null };
-    }
+    if (choice === 'evade') return { ...base, detail: `${Math.round(evadeOdds(sim, e) * 100)}% chance` };
+    if (choice === 'comply') return { ...base, detail: 'Drop out and be searched' };
+    if (choice === 'run') return { ...base, detail: 'Standing lost, they may give chase' };
     if (choice === 'bribe') {
       const cost = bribeCost(sim, e);
       const short = sim.trade.credits < cost;
       return { ...base, detail: `${cost} cr`, enabled: !short, why: short ? `Need ${cost} credits` : null };
     }
-    if (choice === 'fight') return { ...base, detail: 'Combat' };
+    if (choice === 'fight') return { ...base, detail: 'Drop out and fight' };
     if (choice === 'respond') {
       const here = sim.galaxy.fleets.some((f) => f.id === e.fleet);
       return { ...base, detail: 'Help them', enabled: waiting && here, why: !here ? 'They are gone' : waiting ? null : 'Only in hyperspace' };
@@ -45,13 +44,20 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
   });
 }
 
+/** A patrol's hail to stop: what its scan read aboard, and the comms window's data. */
+function scanned(sim: Sim, e: Encounter): Pick<UiEncounter, 'contraband' | 'hail'> {
+  const found = contrabandAboard(sim).map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ') || 'contraband';
+  return { contraband: { found, value: e.scan?.value ?? 0 }, hail: patrolHailOf(sim, e, nodeName(sim, e.node)) };
+}
+
 /** The pending encounters as cards. */
 export function encountersOf(sim: Sim): UiEncounter[] {
   return sim.galaxy.encounters.map((e) => ({
     id: e.id, kind: e.kind, title: titleOf(e), name: e.name, faction: factionName(sim, e.faction), role: e.fleet === 0 ? 'Station' : ROLE_LABEL[e.role] ?? e.role,
     tone: toneOf(sim.content.galaxy?.factions[e.faction]?.kind), hostile: isHostileFaction(sim, e.faction), ships: e.ships, threat: threatOf(e.strength),
     how: e.fleet === 0 ? 'Scanned as you open trade' : HOW[e.how], node: nodeName(sim, e.node), choices: choicesFor(sim, e),
-    ...(e.scan ? { contraband: { found: contrabandAboard(sim).map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ') || 'contraband', value: e.scan.value, fine: e.scan.fine, bribe: e.scan.bribe } } : {}),
+    ...(e.scan ? scanned(sim, e) : {}),
+    ...(e.kind === 'interdict' ? { hail: pirateHailOf(sim, e, threatOf(e.strength)) } : {}),
   }));
 }
 
@@ -63,17 +69,19 @@ export function resultOf(sim: Sim): UiEncounterResult | null {
   if (!r) return null;
   const who = `${factionName(sim, r.faction)} ${(ROLE_LABEL[r.role] ?? r.role).toLowerCase()}`;
   switch (r.outcome) {
-    case 'evaded': return { text: `Evaded the ${who}: rolled ${pct(r.roll)} against ${pct(r.odds)}`, tone: 'green', turn: r.turn };
-    case 'evadeFailed': return { text: `Evade failed against the ${who}: rolled ${pct(r.roll)} against ${pct(r.odds)}`, tone: 'red', turn: r.turn };
-    case 'bribed': return { text: `Paid the ${who} ${r.cost ?? 0} credits to let you pass`, tone: 'amber', turn: r.turn };
-    case 'fought': return { text: `Fighting the ${who}`, tone: 'red', turn: r.turn };
-    case 'confiscated': return { text: `The ${who} confiscated your contraband and fined you ${r.cost ?? 0} credits`, tone: 'red', turn: r.turn };
-    case 'cleared': return { text: `Cleared the ${who}`, tone: 'green', turn: r.turn };
-    case 'escaped': return { text: `Escaped the ${who}`, tone: 'amber', turn: r.turn };
-    case 'left': return { text: `Left the ${who} behind`, tone: 'dim', turn: r.turn };
-    case 'helped': return { text: `Helped the ${who}`, tone: 'green', turn: r.turn };
-    case 'responded': return { text: `Answering the ${who}'s distress call`, tone: 'green', turn: r.turn };
-    case 'gone': return { text: `The ${who} is gone`, tone: 'dim', turn: r.turn };
+    case 'evaded': return { id: r.id, outcome: r.outcome, text: `Evaded the ${who}: rolled ${pct(r.roll)} against ${pct(r.odds)}`, tone: 'green', turn: r.turn };
+    case 'evadeFailed': return { id: r.id, outcome: r.outcome, text: `Evade failed against the ${who}: rolled ${pct(r.roll)} against ${pct(r.odds)}`, tone: 'red', turn: r.turn };
+    case 'bribed': return { id: r.id, outcome: r.outcome, text: `Paid the ${who} ${r.cost ?? 0} credits to let you pass`, tone: 'amber', turn: r.turn };
+    case 'fought': return { id: r.id, outcome: r.outcome, text: `Fighting the ${who}`, tone: 'red', turn: r.turn };
+    case 'complied': return { id: r.id, outcome: r.outcome, text: `Stopped for the ${who}`, tone: 'amber', turn: r.turn };
+    case 'ran': return { id: r.id, outcome: r.outcome, text: `Ran from the ${who}`, tone: 'red', turn: r.turn };
+    case 'ranChased': return { id: r.id, outcome: r.outcome, text: `Ran from the ${who}: it gives chase`, tone: 'red', turn: r.turn };
+    case 'cleared': return { id: r.id, outcome: r.outcome, text: `Cleared the ${who}`, tone: 'green', turn: r.turn };
+    case 'escaped': return { id: r.id, outcome: r.outcome, text: `Escaped the ${who}`, tone: 'amber', turn: r.turn };
+    case 'left': return { id: r.id, outcome: r.outcome, text: `Left the ${who} behind`, tone: 'dim', turn: r.turn };
+    case 'helped': return { id: r.id, outcome: r.outcome, text: `Helped the ${who}`, tone: 'green', turn: r.turn };
+    case 'responded': return { id: r.id, outcome: r.outcome, text: `Answering the ${who}'s distress call`, tone: 'green', turn: r.turn };
+    case 'gone': return { id: r.id, outcome: r.outcome, text: `The ${who} is gone`, tone: 'dim', turn: r.turn };
     default: return null;
   }
 }

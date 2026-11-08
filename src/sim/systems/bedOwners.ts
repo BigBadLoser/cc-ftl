@@ -40,7 +40,8 @@ export function bedOwnersSystem(sim: Sim): void {
       free = new Map();
       for (const bedId of sim.world.query(ModuleC)) {
         const m = sim.world.get(bedId, ModuleC) as { x: number; y: number; hp: number; def: string };
-        if (owned.has(bedId) || m.hp <= 0 || !sim.content.modules[m.def]?.bed) continue;
+        const bd = sim.content.modules[m.def];
+        if (owned.has(bedId) || m.hp <= 0 || !bd?.bed || bd.medical) continue;
         const ship = shipIdOf(sim, m);
         const list = free.get(ship);
         if (list) list.push({ id: bedId, x: m.x, y: m.y });

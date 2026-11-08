@@ -86,7 +86,7 @@ export function autoJobsSystem(sim: Sim): void {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
-    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos)) && !rescueSpot(sim, id)) continue; // nowhere to take them
+    if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos), false, undefined, true) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));

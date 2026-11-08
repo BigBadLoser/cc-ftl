@@ -11,7 +11,7 @@ import type { TraitDef } from './traitDef';
  */
 export const CREW_ROLL_SALT = 0x7c3e9a11;
 
-export const SKILLS: readonly SkillName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'repair', 'hacking', 'medicine', 'science'];
+export const SKILLS: readonly SkillName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'repair', 'hacking', 'medicine', 'science', 'cooking'];
 /** No rolled skill goes above this. */
 export const SKILL_ROLL_CAP = 5;
 

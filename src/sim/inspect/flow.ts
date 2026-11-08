@@ -1,30 +1,60 @@
-import { SiteRunC } from '../away/components';
+import { AwayC, SiteRunC } from '../away/components';
 import { scanPrices } from '../blackmarket/scan';
 import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC } from '../blackmarket/tuning';
+import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
-import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
-import { shipIdOf } from '../regions';
+import { CrewC, DeadC, DownedC, JobC } from '../crew/components';
+import { SurrenderedC } from '../fight/components';
+import { fightInspection, onInspectedShip } from './fight';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
 import { partyJobs, postSearches, spotCheck, tally } from './search';
+import { patrolBoards } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
 
 const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
 
-/** True while an inspector stands on the inspected ship. */
-const aboard = (sim: Sim, insp: Inspection): boolean =>
-  insp.crew.some((id) => alive(sim, id) && sim.world.has(id, PositionC) && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
+/** True while an inspector is on the inspected ship (not drifting back to the shuttle: `onInspectedShip`). */
+const aboard = (sim: Sim, insp: Inspection): boolean => insp.crew.some((id) => onInspectedShip(sim, id, insp));
 
-/** The player's ship is leaving the node: an inspection under way ends now; leaving while the inspectors are aboard counts as refusing them. */
+/** True while an inspector still stands and fights on the inspected ship (not downed, surrendered or dead). */
+const standing = (sim: Sim, insp: Inspection): boolean =>
+  insp.crew.some((id) => onInspectedShip(sim, id, insp) && !sim.world.has(id, DownedC) && !sim.world.has(id, SurrenderedC));
+
+/**
+ * A fight is over for the inspection, or the player left mid-fight: the inspectors on the player's ship stay there as ordinary hostile crew (to be taken
+ * prisoner, or fought on after a jump), the rest go with the shuttle.
+ */
+function release(sim: Sim, vehicle: number, insp: Inspection): void {
+  insp.crew = insp.crew.filter((id) => {
+    const kept = onInspectedShip(sim, id, insp);
+    if (kept) sim.world.remove(id, AwayC);
+    return !kept;
+  });
+  endInspection(sim, vehicle);
+}
+
+/**
+ * The player's ship is leaving the node (user rulings, #138 step 3). An inspection under way ends now:
+ * - with any inspector on the player's ship, whatever the phase (searching, waiting for the answer, or walking back after it), leaving carries them off:
+ *   that is a fight (`fightInspection`), and they stay aboard as hostile boarders;
+ * - with none aboard before the answer (still on the way, or back on their shuttle) it is refusing them (`refuseConsequences`);
+ * - with none aboard after the answer it costs nothing more.
+ */
 export function abortInspections(sim: Sim): void {
   for (const id of inspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
-    if (insp.phase === 'search' || insp.phase === 'settle') {
+    if (insp.phase !== 'fight' && aboard(sim, insp)) fightInspection(sim, id, insp);
+    else if (insp.phase === 'fly' || insp.phase === 'search' || insp.phase === 'settle') {
       refuseConsequences(sim, insp);
-      sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0 });
+      sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
+    }
+    if (insp.phase === 'fight') {
+      release(sim, id, insp);
+      continue;
     }
     endInspection(sim, id);
   }
@@ -34,6 +64,13 @@ function step(sim: Sim, id: number, insp: Inspection): void {
   insp.timer++;
   const station = shipById(sim, insp.station);
   const ship = shipById(sim, insp.ship);
+  if (insp.phase === 'fight') {
+    // Over once nobody of theirs stands aboard (the player's ship lost or left is abortInspections / the checks below).
+    if (!ship || ship.faction !== 'player' || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
+    return;
+  }
+  // The player turned on the ship that sent them (fired on it): its inspectors aboard fight too.
+  if (station && insp.phase !== 'leave' && factionsHostile(station.faction, 'player')) return fightInspection(sim, id, insp);
   if (!station || station.state !== 'active' || !ship || ship.faction !== 'player' || sim.sector.state !== 'active') return endInspection(sim, id);
   if (!insp.crew.some((c) => alive(sim, c))) return endInspection(sim, id);
   if (insp.phase !== 'leave' && sim.sector.inCombat) return leave(sim, id, insp, 'off');
@@ -57,7 +94,7 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       if (open.length === 0) {
         tally(sim, id, insp);
         if (!insp.found.length) {
-          sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0 });
+          sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
           return leave(sim, id, insp, 'clean');
         }
         Object.assign(insp, scanPrices(insp.value));
@@ -88,5 +125,6 @@ function step(sim: Sim, id: number, insp: Inspection): void {
  * inspection along its phases: aboard, search, the wait for an answer (`inspect.settle`), and home.
  */
 export function inspectSystem(sim: Sim): void {
+  patrolBoards(sim);
   for (const id of inspections(sim)) step(sim, id, sim.world.get(id, InspectionC)!);
 }
