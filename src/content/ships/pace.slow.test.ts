@@ -54,19 +54,15 @@ function paceFight(seed: number, maxMinutes = 12): Pace {
   };
 }
 
-describe('starter vs raider pace (a basic player: auto-fire at the whole ship, vents at 70% heat when safe, never overcharges)', { timeout: 300000 }, () => {
-  // Seeds 1 to 8 as first measured; seeds 9 to 16 were run once as a holdout when the charge times were set (see #168).
-  const seeds = Array.from({ length: 16 }, (_, i) => i + 1);
-
-  // The user's decision: this test plays a basic player (it used to give no orders at all), so an occasional loss is acceptable ("bad play should result in a loss").
-  // So the bar is aggregate over 16 seeds instead of every seed winning.
-  it('mostly wins, a typical fight inside 3.5 minutes (the design asks for about 3; venting adds downtime), and costs little crew', () => {
-    const results = seeds.map((s) => paceFight(s));
-    const wins = results.filter((r) => r.winner === 'player');
-    expect(wins.length).toBeGreaterThanOrEqual(14);
-    expect(wins.reduce((n, r) => n + r.dead, 0)).toBeLessThanOrEqual(2); // was 1 to 3 crew dead on most seeds
-    const sorted = results.map((r) => r.seconds).sort((x, y) => x - y);
-    expect(((sorted[7] as number) + (sorted[8] as number)) / 2).toBeLessThan(3.5 * 60); // the user accepted 3.5 min (was 3) on 2026-10-29 because venting adds downtime
+describe('starter vs raider pace, guard (seeds 1 and 2 of the soak test pace.soak.test.ts, which has all 16)', { timeout: 120000 }, () => {
+  // The soak test judges the aggregate over 16 seeds; here a gross regression must show on two: both win, nobody dies, each inside 5 minutes.
+  it('wins, inside 5 minutes, and costs no crew', () => {
+    for (const s of [1, 2]) {
+      const r = paceFight(s);
+      expect(r.winner).toBe('player');
+      expect(r.dead).toBeLessThanOrEqual(1);
+      expect(r.seconds).toBeLessThan(5 * 60);
+    }
   });
 
   it('is deterministic', () => {

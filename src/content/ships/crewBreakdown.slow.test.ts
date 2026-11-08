@@ -32,11 +32,11 @@ describe('break balance', () => {
     expect(hits(40)).toBe(0);
   });
 
-  // One continuous 30-minute run: 66-68 s on CI, near the 60 s default. Explicit bound until it moves to the soak tier (#371, step 3).
-  it('a content crew breaks never in half an hour of ordinary play', { timeout: 120_000 }, () => {
+  // The guard of the soak test (crewBreakdown.soak.test.ts, half an hour): the first 5 minutes.
+  it('a content crew breaks never in five minutes of ordinary play', () => {
     const sim = newGame(7, content, 'ship.starter', false);
     const events: SimEvent[] = [];
-    for (let i = 0; i < 1800 * TICK_HZ; i++) {
+    for (let i = 0; i < 300 * TICK_HZ; i++) {
       sim.step();
       if (i % 50 === 0) events.push(...sim.events.drain());
     }

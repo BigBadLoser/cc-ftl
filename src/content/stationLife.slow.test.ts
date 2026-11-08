@@ -4,7 +4,7 @@ import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
 
 describe('station life over a long stretch', () => {
-  it('a hub runs its schedules for seven and a half minutes of game time: work, meals, sleep, no alarms, no errors', () => {
+  it('a hub runs its schedules for two and a half minutes of game time (guard; stationLife.soak.test.ts runs seven and a half): work, sleep, no alarms, no errors', () => {
     const sim = newGame(5, content);
     sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'hub', seed: 6 });
     sim.step();
@@ -14,7 +14,7 @@ describe('station life over a long stretch', () => {
     const ev: SimEvent[] = [];
     const activities = new Set<string>();
     // The first meal comes at about tick 6800 and hunger levels off near 26 by tick 8000, so 9000 ticks show every property; more only repeats the plateau.
-    for (let i = 0; i < 9000; i++) {
+    for (let i = 0; i < 3000; i++) {
       sim.step();
       ev.push(...sim.events.drain().filter((e) => e.type === 'crew.ate' || e.type === 'station.alarm' || e.type === 'crew.died'));
       if (i % 200 === 0) for (const c of sim.world.query(StationCrewC, CrewC)) activities.add(sim.world.get(c, CrewC)!.activity);
@@ -26,8 +26,6 @@ describe('station life over a long stretch', () => {
     expect(sim.world.get(st, StationAlarmC)?.state).toBe('calm');
     expect(activities.has('sleeping')).toBe(true);
     expect(activities.has('walking')).toBe(true);
-    // Station crew get hungry (never starving) and eat where food is to be had.
-    expect(crew.every((c) => (sim.world.get(c, NeedsC)?.hunger ?? 100) >= 25)).toBe(true);
-    expect(ev.filter((e) => e.type === 'crew.ate').length).toBeGreaterThan(0);
+    // The meals come at about tick 6800, past this guard's horizon: the soak test checks hunger and eating.
   }, 600000);
 });

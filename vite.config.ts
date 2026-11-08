@@ -36,11 +36,18 @@ const ISOLATED = [
 ];
 
 /**
- * The fast tier skips `*.slow.test.ts` (`VITEST_FAST=1`, set by `test:quick` / `test:fast` and by PR CI). A CLI `--exclude`
+ * Three tiers: fast (`*.test.ts`), slow (`*.slow.test.ts`) and soak (`*.soak.test.ts`, off unless `VITEST_SOAK=1`). The fast tier skips `*.slow.test.ts` (`VITEST_FAST=1`, set by `test:quick` / `test:fast` and by PR CI). A CLI `--exclude`
  * does not reach per-project settings, so the tier is chosen here.
  */
 const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env; // no @types/node here
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
+/** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
+const SOAK =
+  env.VITEST_SOAK === '1'
+    ? []
+    : env.SALVAGE_BENCH || env.SALVAGE_BENCH_ONLY
+      ? ['**/!(salvageBench).soak.test.ts'] // the salvage bench env vars opt in to its own soak file only
+      : ['**/*.soak.test.ts'];
 
 export default defineConfig({
   define: { __COMMIT__: JSON.stringify(commit()) },
@@ -50,8 +57,8 @@ export default defineConfig({
     maxWorkers: 4, // the whole box: the default leaves a core idle
     sequence: { sequencer: WeightedSequencer },
     projects: [
-      { extends: true, test: { name: 'shared', setupFiles: ['src/sim/testSetup.ts'], include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW], isolate: false } },
-      { extends: true, test: { name: 'isolated', setupFiles: ['src/sim/testSetup.ts'], include: ISOLATED, exclude: SLOW, isolate: true } },
+      { extends: true, test: { name: 'shared', setupFiles: ['src/sim/testSetup.ts'], include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW, ...SOAK], isolate: false } },
+      { extends: true, test: { name: 'isolated', setupFiles: ['src/sim/testSetup.ts'], include: ISOLATED, exclude: [...SLOW, ...SOAK], isolate: true } },
     ],
   },
 });

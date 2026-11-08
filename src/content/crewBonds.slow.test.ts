@@ -36,13 +36,10 @@ function minutesToFirstBond(seed: number, cap: number): { minutes: number; kind:
 }
 
 describe('bond pace', () => {
-  // At the designed numbers these seeds first bond at about minute 61 and 94 (the quick end and the slow end of the idle-heavy ship).
-  for (const seed of [12, 3]) {
-    it(`seed ${seed}: the first friend or rival forms between half an hour and three and a half hours in`, () => {
-      const r = minutesToFirstBond(seed, 210);
-      expect(r.kind).not.toBe('none');
-      expect(r.minutes).toBeGreaterThanOrEqual(30);
-      expect(r.minutes).toBeLessThanOrEqual(210);
-    }, 600000);
-  }
+  // Guard for crewBonds.soak.test.ts, which runs seeds 12 and 3 until they bond (minute 61 and 94). Here the quick seed runs only the
+  // first half hour: nobody bonds earlier than the design's "half an hour" floor.
+  it('seed 12: no friend or rival forms in the first 29 minutes', () => {
+    const r = minutesToFirstBond(12, 29);
+    expect(r.kind).toBe('none');
+  }, 600000);
 });
