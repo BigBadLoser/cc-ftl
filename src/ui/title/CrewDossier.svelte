@@ -41,7 +41,7 @@
         <label class="name"><input value={c.name} maxlength="24" aria-label="Name" data-testid="crew-name" onchange={(e) => onRename(e.currentTarget.value)} /><Icon name="pencil" size={14} /></label>
         <div class="line">
           <span class="role">{c.roleName}</span>
-          {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c) }}>{labelText(c.label)}</span>{/if}
+          {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c), focus: true }}>{labelText(c.label)}</span>{/if}
           <span class="roll">
             <button aria-label="Previous roll" disabled={c.rerolls === 0} data-testid="crew-roll-prev" onclick={() => onRoll(c.rerolls - 1)}><Icon name="back" size={16} /></button>
             <span data-testid="crew-roll">Roll {c.rerolls + 1}</span>

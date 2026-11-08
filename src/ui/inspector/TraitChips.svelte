@@ -32,16 +32,16 @@
 {#if list}
   <ul data-testid={testId}>
     {#each traits as t (t.id)}
-      <li use:tip={{ text: `${t.effect} ${t.flavour}` }} data-testid="trait-line-{t.id}"><span class="tq {t.kind}">{t.name}</span><span class="short">{t.short ?? t.effect}</span></li>
+      <li use:tip={{ text: `${t.effect} ${t.flavour}`, focus: true }} data-testid="trait-line-{t.id}"><span class="tq {t.kind}">{t.name}</span><span class="short">{t.short ?? t.effect}</span></li>
     {/each}
   </ul>
 {:else}
   <div class="row" class:small data-testid={testId}>
     {#each shown as t (t.id)}
-      <span class="trait {t.kind}" use:tip={{ text: `${t.effect} ${t.flavour}`, side: 'top' }} data-testid="trait-{t.id}">{t.name}</span>
+      <span class="trait {t.kind}" use:tip={{ text: `${t.effect} ${t.flavour}`, side: 'top', focus: true }} data-testid="trait-{t.id}">{t.name}</span>
     {/each}
     {#if rest.length}
-      <span class="trait more" use:tip={{ text: rest.map((t) => `${t.name}: ${t.effect}`).join('\n'), side: 'top' }} data-testid="trait-more">+{rest.length}</span>
+      <span class="trait more" use:tip={{ text: rest.map((t) => `${t.name}: ${t.effect}`).join('\n'), side: 'top', focus: true }} data-testid="trait-more">+{rest.length}</span>
     {/if}
   </div>
 {/if}

@@ -46,7 +46,7 @@
   {#if c.weapon}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
-      <span class="wl" use:tip={{ text: `${c.weapon.name}: ${c.weapon.damage} damage, ${c.weapon.ranged ? `range ${c.weapon.range}` : 'melee'}`, rich: wcard ? card : undefined, side: 'right' }}><span class="ic"><Icon name={c.weapon.ranged ? 'target' : 'sword'} size={14} /></span><b>{c.weapon.name}</b><span class="dim">{c.weapon.ranged ? 'ranged' : 'melee'} · {c.weapon.damage} dmg{c.weapon.ranged ? ` · ${c.weapon.range} tiles` : ''}</span></span>
+      <span class="wl" use:tip={{ text: `${c.weapon.name}: ${c.weapon.damage} damage, ${c.weapon.ranged ? `range ${c.weapon.range}` : 'melee'}`, rich: wcard ? card : undefined, side: 'right', focus: true }}><span class="ic"><Icon name={c.weapon.ranged ? 'target' : 'sword'} size={14} /></span><b>{c.weapon.name}</b><span class="dim">{c.weapon.ranged ? 'ranged' : 'melee'} · {c.weapon.damage} dmg{c.weapon.ranged ? ` · ${c.weapon.range} tiles` : ''}</span></span>
     </div>
   {/if}
   {#if !enemy && d && (d.bonds.friends.length || d.bonds.rivals.length)}
@@ -54,7 +54,7 @@
       {#each [['Friends', d.bonds.friends, 'friend'], ['Rivals', d.bonds.rivals, 'rival']] as const as [label, list, kind] (kind)}
         {#if list.length}
           <p class={kind} data-testid="crew-{kind}s"><span class="k">{label}</span>
-            {#each list as b, i (b.id || b.name)}<span class="who" use:tip={{ text: `${b.name}: ${b.line}`, side: 'bottom' }} data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span>{/each}</p>
+            {#each list as b, i (b.id || b.name)}<span class="who" use:tip={{ text: `${b.name}: ${b.line}`, side: 'bottom', focus: true }} data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span>{/each}</p>
         {/if}
       {/each}
     </div>

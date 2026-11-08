@@ -32,7 +32,7 @@
   {/snippet}
   {#if card}
     {#snippet rich()}<ItemCard {card} />{/snippet}
-    <div class="tipbox" use:tip={{ rich, side: SIDE[cardAt] }}>{@render box()}</div>
+    <div class="tipbox" use:tip={{ rich, side: SIDE[cardAt], focus: true }}>{@render box()}</div>
   {:else}
     {@render box()}
   {/if}

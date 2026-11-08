@@ -7,6 +7,8 @@ import { settings } from '../settings/settings';
 export interface TipSpec { text?: string | null; key?: ActionId | string; side?: 'top' | 'bottom' | 'left' | 'right';
   /** Rich content (an item's stats card) in place of the text; it brings its own frame. */
   rich?: Snippet;
+  /** Make a non-interactive element (a span or chip) a tab stop, so a tip that holds information found nowhere else is reachable from the keyboard. */
+  focus?: boolean;
 }
 export interface TipState { spec: TipSpec; rect: DOMRect }
 
@@ -29,6 +31,8 @@ export function cleanTip(spec: TipSpec): TipSpec {
 
 export function tip(node: Element, spec: TipSpec | null | undefined) {
   let cur = spec;
+  const tabStop = () => { if (cur?.focus && !node.hasAttribute('tabindex')) node.setAttribute('tabindex', '0'); };
+  tabStop();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let mine: TipState | null = null;
   /** The pointer is over the element, or it has keyboard focus: a changed spec then updates in place instead of hiding. */
@@ -55,6 +59,7 @@ export function tip(node: Element, spec: TipSpec | null | undefined) {
   return {
     update(next: TipSpec | null | undefined) {
       cur = next;
+      tabStop();
       // Hovered or focused and past the delay: swap the content in place (or drop it if the new spec has nothing to say). A pending show reads `cur` when it fires.
       if (mine || ((over || focused) && !pending)) show();
     },

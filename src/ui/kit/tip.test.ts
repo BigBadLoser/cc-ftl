@@ -77,3 +77,17 @@ describe('cleanTip', () => {
     expect(cleanTip({ text: 'Ship (M)' }).text).toBe('Ship (M)');
   });
 });
+
+describe('tip focus', () => {
+  it('makes a non-interactive trigger a tab stop when asked, and leaves one with its own tabindex alone', () => {
+    const attrs = new Map<string, string>();
+    const node = { addEventListener: () => {}, removeEventListener: () => {}, hasAttribute: (k: string) => attrs.has(k), setAttribute: (k: string, v: string) => attrs.set(k, v) } as unknown as Element;
+    tip(node, { text: 'Hidden traits' });
+    expect(attrs.has('tabindex')).toBe(false);
+    tip(node, { text: 'Hidden traits', focus: true });
+    expect(attrs.get('tabindex')).toBe('0');
+    attrs.set('tabindex', '-1');
+    tip(node, { text: 'x', focus: true });
+    expect(attrs.get('tabindex')).toBe('-1');
+  });
+});

@@ -62,7 +62,7 @@
             <span class="face">{#if pic}<img src={pic} alt="" />{/if}</span>
             <span class="who">
               <span class="top"><span class="nm">{c.name}</span><span class="role">{c.roleName}</span>
-                {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c) }}>{labelText(c.label)}</span>{/if}
+                {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c), focus: true }}>{labelText(c.label)}</span>{/if}
               </span>
               <span class="tr">{#each c.traits as t (t.id)}<span><i style:background={traitColor(t.kind)}></i>{t.name}</span>{:else}<span class="none">No traits</span>{/each}</span>
             </span>
