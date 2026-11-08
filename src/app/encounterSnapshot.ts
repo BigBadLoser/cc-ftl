@@ -5,6 +5,7 @@ import {
 import type { UiEncounter, UiEncounterChoice, UiEncounterResult, UiEventGrid } from '../ui/starmapApi';
 import { toneOf } from './starmapTone';
 import { patrolHailOf } from './comms/patrolComms';
+import { pirateHailOf } from './comms/pirateComms';
 import { ShipC, TICK_HZ, factionsHostile, type Contact, type SceneShip } from '../sim';
 import { AwaySiteC } from '../sim/away/components';
 
@@ -26,7 +27,7 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
   const waiting = sim.sector.state === 'hyperspace' && !!sim.galaxy.travel;
   return choicesOf(e).map((choice) => {
     const base = { choice, label: LABEL[choice], detail: '', enabled: true, why: null as string | null };
-    if (choice === 'evade') return { ...base, detail: `${Math.round(evadeOdds(sim, e) * 100)}%` };
+    if (choice === 'evade') return { ...base, detail: `${Math.round(evadeOdds(sim, e) * 100)}% chance` };
     if (choice === 'comply') return { ...base, detail: 'Drop out and be searched' };
     if (choice === 'run') return { ...base, detail: 'Standing lost, they may give chase' };
     if (choice === 'bribe') {
@@ -34,7 +35,7 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
       const short = sim.trade.credits < cost;
       return { ...base, detail: `${cost} cr`, enabled: !short, why: short ? `Need ${cost} credits` : null };
     }
-    if (choice === 'fight') return { ...base, detail: 'Combat' };
+    if (choice === 'fight') return { ...base, detail: 'Drop out and fight' };
     if (choice === 'respond') {
       const here = sim.galaxy.fleets.some((f) => f.id === e.fleet);
       return { ...base, detail: 'Help them', enabled: waiting && here, why: !here ? 'They are gone' : waiting ? null : 'Only in hyperspace' };
@@ -56,6 +57,7 @@ export function encountersOf(sim: Sim): UiEncounter[] {
     tone: toneOf(sim.content.galaxy?.factions[e.faction]?.kind), hostile: isHostileFaction(sim, e.faction), ships: e.ships, threat: threatOf(e.strength),
     how: e.fleet === 0 ? 'Scanned as you open trade' : HOW[e.how], node: nodeName(sim, e.node), choices: choicesFor(sim, e),
     ...(e.scan ? scanned(sim, e) : {}),
+    ...(e.kind === 'interdict' ? { hail: pirateHailOf(sim, e, threatOf(e.strength)) } : {}),
   }));
 }
 

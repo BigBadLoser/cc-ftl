@@ -295,16 +295,25 @@ export interface UiEncounter {
   choices: UiEncounterChoice[];
   /** A patrol's hail to stop (its scan read contraband aboard): what was found (a line of text) and what it is worth; the choices are comply / run. */
   contraband?: { found: string; value: number };
-  /** The patrol's hail to stop as the comms window shows it (with `contraband`); null when its fleet is gone. */
+  /** The hail to stop as the comms window shows it (a patrol's, with `contraband`, or an interdiction's); null when its fleet is gone. */
   hail?: UiPatrolHail | null;
 }
 
-/** A patrol's hail to stop, for the comms window (app/comms/patrolComms.ts): the captain, the transcript, the patrol ship's picture and the readout. */
+/**
+ * A hail to stop mid-jump, for the comms window: a patrol's (app/comms/patrolComms.ts) or an interdiction's (app/comms/pirateComms.ts). The caller, the
+ * transcript, their ship's picture and the readout; `look` null for a caller with no face (the machines), which shows static.
+ */
 export interface UiPatrolHail {
   caller: CallerInfo;
-  look: UiLook;
+  look: UiLook | null;
+  /** The window's title bar (default "Incoming hail" and "<faction> patrol · <node>"). */
+  title?: string;
+  subtitle?: string;
+  /** A hostile caller: the window is edged in red. */
+  hostile?: boolean;
   transcript: CommsLine[];
-  holo: UiHoloRequest;
+  /** Their ship for the hologram; null when it has gone (the sensors show static). */
+  holo: UiHoloRequest | null;
   hullTitle: string;
   readout: ReadoutRow[];
 }

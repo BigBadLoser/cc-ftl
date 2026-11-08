@@ -118,7 +118,7 @@
   });
   const mapLocked = $derived(star?.state === 'hyperspace' && !adrift);
   /** A patrol's hail to stop waits for the player's answer (the trip is halted): shown over the map or the game. */
-  const hailing = $derived(star?.encounters.find((e) => !!e.contraband && !!e.hail) ?? null);
+  const hailing = $derived(star?.encounters.find((e) => (!!e.contraband || e.kind === 'interdict') && !!e.hail) ?? null);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);

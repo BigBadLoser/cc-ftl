@@ -21,8 +21,9 @@ import { abandonJob, acceptJob, handIn, openCrate } from './jobs';
 import { refusePassage } from './passage';
 import { answerJoin } from './joinOffer';
 import { debugPatrol } from '../inspect/patrolDebug';
+import { debugPirates } from './pirateDebug';
 
-type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.ambush' | 'debug.sceneArrivals' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario' | 'debug.patrol'>;
+type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.ambush' | 'debug.sceneArrivals' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario' | 'debug.patrol' | 'debug.pirates'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
 export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
@@ -68,6 +69,9 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'debug.jobScenario': (sim, cmd) => void jobScenario(sim, cmd.name),
   'debug.patrol': (sim, cmd) => {
     if (!debugPatrol(sim, cmd.node, cmd.faction ?? 'navy')) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noPatrol' });
+  },
+  'debug.pirates': (sim, cmd) => {
+    if (!debugPirates(sim, cmd.node, cmd.faction ?? 'pirates', !!cmd.hunt)) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: 'noFleet' });
   },
   'debug.chargeFtl': (sim) => {
     const me = playerShipInfo(sim);

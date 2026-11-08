@@ -4,7 +4,6 @@
   import type { UiEncounterChoice, UiJumpWarnings, UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
   import PanelHead from './PanelHead.svelte';
-  import InterdictModal from './InterdictModal.svelte';
   import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
   import StarmapInfo from './StarmapInfo.svelte';
@@ -150,7 +149,6 @@
   const unread = $derived(newsOpen ? 0 : (map?.news.filter((n) => n.id > newsSeen).length ?? 0));
   $effect(() => { if (newsOpen) newsSeen = newestNews; });
   const drawerOpen = $derived(!!map && level < 3 && (!!map.travel || !!sel));
-  const interdiction = $derived(map?.encounters.find((e) => e.kind === 'interdict') ?? null);
   const cardOpen = $derived(drawerOpen || (!!pickedInfo && level === 3));
   const seenFactions = $derived(map ? map.factions.filter((f) => map!.sectors.some((x) => x.known && x.faction === f.id)) : []);
 
@@ -497,7 +495,6 @@
     {/if}
   {#if map && sellOpen}<StarmapSell goods={sellGoods} current={map.current} onPick={pickNode} onClose={() => (sellOpen = false)} />{/if}
   {#if map && newsOpen && !drawerOpen}<StarmapNews news={map.news} turn={map.turn} onClose={() => (newsOpen = false)} />{/if}
-  {#if interdiction}<InterdictModal encounter={interdiction} onChoose={respond} />{/if}
   {#if map && drawerOpen}
       <StarmapDrawer {map} node={sel} sector={sel ? sectorById.get(sel.sector) ?? null : null} cluster={sel ? map.clusters.find((c) => c.id === sectorById.get(sel.sector)?.cluster) ?? null : null}
         factions={map.factions} {route} nodes={nodeById} warnings={confirming} taking={new Set(taking)}
