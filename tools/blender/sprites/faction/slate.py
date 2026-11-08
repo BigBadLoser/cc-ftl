@@ -169,10 +169,11 @@ def _edge(u):
     return abs((u + 0.5) % 1.0) < 1e-6 or abs((u + 0.5) % 1.0 - 1.0) < 1e-6
 
 
-def _rail(k, ax, plane, a, b, z0, z1, mit, outer=None, seen=None):
+def _rail(k, ax, plane, a, b, z0, z1, mit, outer=None, seen=None, cut=False):
     """The base header's rail over [a, b]: its blocks from z0 (their foot; the set-back middle's a px lower) to z1;
     outer: a fixed tone for an end block's side at the tile's edge (None: shaded as it falls); seen (zs, w): the end
-    block at b (the end the camera sees), at a tile's edge, from zs down w short of it."""
+    block at b (the end the camera sees), at a tile's edge, from zs down w short of it; cut: an end block's seam by
+    the middle (the side the camera can't see) on up through its lit top edge (as the side by the middle shows at the other end)."""
     for u0, u1, mid in _blocks(a, b):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
@@ -193,6 +194,10 @@ def _rail(k, ax, plane, a, b, z0, z1, mit, outer=None, seen=None):
         if cap and cap[0]:                          # (the end block past the middle: its side by the middle
             prism(k, ax, plane, u0, u0 + LINE, [(d, z0), (d + PAINT, z0), (d + PAINT, z1 - PZ), (d, z1 - PZ)],
                   BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
+            if cut and abs(u0 % 1.0 - END_W) < 1e-6:   # (on up through the lit edge: further out, over it)
+                prism(k, ax, plane, u0, u0 + LINE, [(d, z1 - 2 * PZ), (d + 2 * PAINT, z1 - 2 * PZ),
+                                                    (d + 2 * PAINT, z1), (d, z1)], BLUE, 3,
+                      cols=[False, inner, False, False], cap=False)
         zt = z1 - MID_DROP if mid else z1                                                  # its front's top
         prism(k, ax, plane, u0, u1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
               cols=[False, "fGTw", False, False], mitre=m)     # edge lit (fGTw: over the ramp's light end, its own)
@@ -203,14 +208,17 @@ def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
     shadow paint behind it from the rail's foot down (where a block ends, its front standing out shows the face behind
     it); each block's foot edge dark, in a box's side tone (as T1-2's boxes')."""
     T.paint(k, ax, plane, a, b, z0, z1 - RAIL_H, 0.0, BLUE, 1)    # (to the base rail's foot, as its: on up it
-    outer, zs = ("fGT3" if ax == "y" else "fGT4"), z1 - RAIL_H     # tinted the top edge's AA; its side at the
-    _rail(k, ax, plane, a, b, z0, z1, mit, outer=outer, seen=(zs, LINE))     # tile's edge a shade under its front:
-    if _edge(b):                                # tall, it shows. At the end the camera sees a plain rail by it hides
+    outer, zs = ("fGT3" if ax == "y" else "fGT4"), z1 - RAIL_H     # tinted the top edge's AA)
+    _rail(k, ax, plane, a, b, z0, z1, mit, outer=outer, seen=(zs, LINE), cut=True)
+    # Its side at the tile's edge a shade under its front: tall, it shows. At the end the camera sees, a plain rail by
+    # it hides that side over its own height: a seam on its front there instead, the end block under it a px short so
+    # its side lines up with it (else that end block and the plain one read as one L).
+    if _edge(b):
         prism(k, ax, plane, b - LINE, b, [(RAIL_D, zs), (RAIL_D + 2 * PAINT, zs), (RAIL_D + 2 * PAINT, z1 - PZ),
                                           (RAIL_D, z1 - PZ)], BLUE, 3, cols=[False, outer, False, False], cap=False)
-    side = "fGT4" if ax == "y" else "fGT5"      # that side over its own height: a seam on its front there instead,
-    for u0, u1, mid in _blocks(a, b):           # the end block under it a px short, so its side lines up with it
-        d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)  # (else that end block and the plain one read as one L)
+    side = "fGT4" if ax == "y" else "fGT5"
+    for u0, u1, mid in _blocks(a, b):
+        d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
         m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
         if not mid and abs(u1 - b) < 1e-6 and _edge(b):
             u1 -= LINE
