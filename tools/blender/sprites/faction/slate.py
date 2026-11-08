@@ -315,7 +315,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True, lid=Tru
                       cols=[False, dark, False, False], cap=False)                 # its foot's edge, the side's tone
             zt = z1 - MID_SLOPE if mid else z1           # its front's top
             if lid:                                     # a seam across, edge to edge: as the plain wall's line under
-                for zs, tone in ((SEAM_Z, "fGT4" if ax == "y" else "fGT3"), (SEAM_Z - PZ, "fGT1")):   # its rail (its
+                for zs, tone in ((SEAM_Z, "fGT5" if ax == "y" else "fGT4"), (SEAM_Z - PZ, "fGT0")):   # its rail (its
                     prism(k, ax, plane, q0, q1, [(0.0, z0 + zs), (d + PAINT, z0 + zs), (d + PAINT, z0 + zs + PZ),   # shadow's
                                                  (0.0, z0 + zs + PZ)], BLUE, 4, cols=[False, tone, False, False],  # dark,
                           cap=False)                                                           # the stripe's lit top)
