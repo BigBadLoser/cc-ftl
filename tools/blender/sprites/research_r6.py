@@ -35,16 +35,19 @@ class Table:
         """The frame, the lit glass, a pen ledge along its lip, the stand under it."""
         k, (u, v, z) = self.k, self.c
         k.box(u, v, 0.0, 0.5, 0.3, 0.06, "dark")
-        k.box(u, v, 0.06, 0.16, 0.16, z - 0.3, "steelD")
+        k.box(u, v, 0.06, 0.16, 0.16, z - 0.16, "steelD")
         self.put(0.0, 0.0, -0.08, w, d, 0.08, "lvW2", top="lvW")
         self.put(0.0, 0.0, 0.0, w - 0.14, d - 0.14, 0.02, light)
-        self.put(0.0, -d / 2 + 0.03, -0.04, w - 0.06, 0.06, 0.08, "steel", top="steelL")
+        self.put(0.0, -d / 2 + 0.03, -0.04, w - 0.06, 0.06, 0.08, "lvW2", top="lvW")
 
 
-def drawers(k, u, n=4, top=0.66):
-    """A drawer bank: the cabinet section, n drawers with label plates and pulls on its front."""
-    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvW2", faces=(0, 1))
+def drawers(k, u, n=4, top=0.66, skip=()):
+    """A drawer bank: the cabinet section, n drawers with label plates and pulls on its front (none for the drawers in
+    skip, numbered from the bottom: they are drawn open elsewhere)."""
+    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvW2", faces=(0, 1), lip="lvW2")
     for i in range(n):
+        if i in skip:
+            continue
         z = 0.1 + i * (top - 0.14) / n
         h = (top - 0.14) / n - 0.02
         k.box(u, -0.155, z, 0.86, 0.02, h, "lvWS")
@@ -68,7 +71,7 @@ def tool_tray(k, u, v, z):
 
 
 def middle_bay(k):
-    k.box(0.0, -0.75, 0.0, 1.0, 0.4, 0.66, "lvW2", top="lvW", bevel=0.02)
+    k.box(0.0, -0.75, 0.0, 0.94, 0.4, 0.655, "lvW2", top="lvW", bevel=0.02)
 
 
 # ---- l1: the entomologist -------------------------------------------------------------------------------------------
@@ -132,7 +135,7 @@ def l1_holo():
 
 # ---- l2: the archivist ----------------------------------------------------------------------------------------------
 
-T2 = ((0.0, -0.4, 0.8), 0.45)
+T2 = ((0.0, -0.3, 0.82), 0.45)
 
 
 def _tablet(T, glow):
@@ -144,16 +147,15 @@ def _tablet(T, glow):
         for j, w in enumerate((0.08, 0.05, 0.1, 0.06)[: 4 - i % 2]):
             T.put(-0.3 + j * 0.11 + w / 2 + 0.02 * (i % 2), 0.17 - i * 0.1, 0.08, w, 0.03, 0.01,
                   glow if (i + j) % 3 else "resGoldF")
-    T.put(0.4, -0.12, 0.02, 0.08, 0.06, 0.04, "resRelicD", top="resRelic", rz=0.7)       # a loose chip
 
 
-def l2(layer, finish=True, name="l2", right=True):
+def l2(layer, finish=True, name="l2", right=True, open_top=False):
     """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it); right=False leaves the
-    lamp and slate off the right cabinet."""
+    lamp and slate off the right cabinet, open_top=True leaves the right bank's top drawer front for an open one."""
     k = Bench(f"research_{name}_{layer}")
     G = "resGold"
     drawers(k, -0.98, n=3)
-    drawers(k, 0.98, n=3)
+    drawers(k, 0.98, n=3, skip=(2,) if open_top else ())
     middle_bay(k)
     # the hutch: three uprights, two shelves along the back over the cabinet
     for u in (-1.44, -0.52, 0.52, 1.44):

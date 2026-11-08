@@ -39,12 +39,15 @@ def _fragment(k, u, v, z, s, rz):
 RV0, RV1, RH = -0.18, 0.86, 0.66  # the return's v span and height
 
 
-def _return(k, items=True):
-    v0, v1, H = RV0, RV1, RH
+def _return(k, items=True, joined=False):
+    """The L return; joined=True butts it against the drawer bank's front (and its top skin against the bank's skin)
+    instead of running into them."""
+    v0, v1, H = (-0.16 if joined else RV0), RV1, RH
     sv, cv = v1 - v0, (v0 + v1) / 2
     k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
     k.box(FU, cv, 0.08, 0.98, sv, H - 0.12, "lvW2", top="lvW", bevel=0.02)
-    k.box(FU, cv, H - 0.04, 1.01, sv + 0.03, 0.04, "gm", top="lvW", bevel=0.012)
+    s0 = v0 + 0.015 if joined else v0 - 0.015                                         # the top skin
+    k.box(FU, (s0 + v1 + 0.015) / 2, H - 0.04, 1.01, v1 + 0.015 - s0, 0.04, "lvW2", top="lvW", bevel=0.012)
     for i in range(3):                                                                # drawers toward the chair
         _drawer_front(k, FU + 0.5, cv + 0.05, 0.12 + i * 0.16, 0.6, 0.13, face="u")
     k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvW2")                           # a panel on its end
@@ -86,14 +89,14 @@ def case(k, cu, cv, z, su, sv, hz=0.42):
         k.box(cu, cv + b * (sv / 2 - 0.035), z + hz, su, 0.07, 0.05, "lvW2", top="lvW")
         k.box(cu + b * (su / 2 - 0.035), cv, z + hz, 0.07, sv, 0.05, "lvW2", top="lvW")
     k.box(cu, cv + sv / 2 - 0.05, z + hz - 0.02, su - 0.16, 0.03, 0.02, G)
-    k.part("glass").box(cu, cv, z + 0.02, su - 0.06, sv - 0.06, hz + 0.02, "glassL")
+    k.part("glass").box(cu, cv, z + 0.04, su - 0.16, sv - 0.16, hz, "glassL")
 
 
 def _vitrine(k):
     su, sv = 0.84, 0.7
     k.box(FU, FV, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
     k.box(FU, FV, 0.08, su, sv, VZ - 0.12, "lvW2", top="lvW", bevel=0.02)
-    k.box(FU, FV, VZ - 0.04, su + 0.03, sv + 0.03, 0.04, "gm", top="lvW", bevel=0.012)
+    k.box(FU, FV, VZ - 0.04, su + 0.03, sv + 0.03, 0.04, "lvW2", top="lvW", bevel=0.012)
     for i in range(2):
         _drawer_front(k, FU, FV + sv / 2, 0.14 + i * 0.2, su - 0.12, 0.16)
     case(k, FU, FV, VZ, su, sv)
@@ -118,7 +121,7 @@ def _archive(k):
     su, sv = 0.86, 0.72
     k.box(FU, FV, 0.0, su - 0.08, sv - 0.08, 0.06, "dark")
     k.box(FU, FV, 0.06, su, sv, AZ - 0.1, "lvW2", top="lvW", bevel=0.02)
-    k.box(FU, FV, AZ - 0.04, su + 0.03, sv + 0.03, 0.04, "gm", top="lvW", bevel=0.012)
+    k.box(FU, FV, AZ - 0.04, su + 0.03, sv + 0.03, 0.04, "lvW2", top="lvW", bevel=0.012)
     for i in range(5):                                                                # thin drawers
         _drawer_front(k, FU, FV + sv / 2, 0.1 + i * 0.1, su - 0.1, 0.08)
     dz, out = 0.62, 0.28                                                              # the top one, pulled out

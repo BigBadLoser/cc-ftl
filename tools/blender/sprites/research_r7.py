@@ -16,17 +16,17 @@ from .research_r3 import _pane
 from .research_r6 import T2, Table, l2
 
 
-def bench(name, pucks=(), extra=None, right=True):
+def bench(name, pucks=(), extra=None, **kw):
     """l2's bench with the light strip under the hutch shelves, pucks [(a, b)] on the table, and extra(k) for more
-    (right=False: no lamp or slate on the right cabinet)."""
+    (kw goes to l2)."""
     def build(layer):
-        k = l2(layer, finish=False, name=name, right=right)
+        k = l2(layer, finish=False, name=name, **kw)
         for su in (-1, 1):
             k.box(su * 0.98, -0.8, 1.085, 0.8, 0.03, 0.015, "resGold")
         T = Table(k, *T2)
         for a, b in pucks:
-            T.put(a, b, 0.0, 0.1, 0.1, 0.03, "gm", top="steelD")
-            T.put(a, b, 0.03, 0.05, 0.05, 0.012, "resGold")
+            T.put(a, b, 0.0, 0.15, 0.15, 0.03, "lvW2", top="lvW", bevel=0.01)
+            T.put(a, b, 0.03, 0.09, 0.09, 0.012, "resGold")
         if extra:
             extra(k)
         return k.build()

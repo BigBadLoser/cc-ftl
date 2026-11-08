@@ -17,14 +17,15 @@ BED = 0.08                        # the velvet bed in it, raised so it shows ove
 
 
 def _combo(k):
-    _return(k, items=False)
+    _return(k, items=False, joined=True)
     case(k, FU, CV, RH, *CS)
     rubbing(k, 1.0, -0.44, 0.66)
-    k.box(DU, -0.14, DZ, 0.86, 0.02, DH, "dark")                                     # the opening it left
-    fv = -0.16 + DOUT                                                                # the drawer, out
-    k.box(DU, -0.16 + DOUT / 2, DZ, 0.84, DOUT + 0.04, BED, "lvW2", top="lvR")       # a raised velvet bed
-    for su in (-1, 1):
-        k.box(DU + su * 0.41, -0.16 + DOUT / 2, DZ, 0.02, DOUT, DH - 0.03, "lvW2", top="lvW")
+    k.box(DU, -0.2, DZ, 0.86, 0.09, DH, "dark")                                      # the opening it left
+    fv = -0.16 + DOUT                                                                # the drawer, out: its front,
+    tv, td = (-0.2 + fv - 0.01) / 2, fv - 0.01 + 0.2                                 # its tray from inside to it,
+    k.box(DU, tv, DZ, 0.79, td, BED, "lvW2", top="lvR")                              # a raised velvet bed,
+    for su in (-1, 1):                                                               # the sides
+        k.box(DU + su * 0.41, tv, DZ, 0.02, td, DH - 0.03, "lvW2", top="lvW")
     _drawer_front(k, DU, fv, DZ, 0.86, DH)
     for (du, dv, s, rz) in ((-0.22, -0.04, 0.15, 0.4), (0.0, 0.03, 0.17, -0.3), (0.22, -0.05, 0.13, 0.9)):
         _fragment(k, DU + du, -0.16 + DOUT / 2 + dv, DZ + BED, s, rz)
@@ -45,4 +46,4 @@ def c1_holo():
     return k
 
 
-BUILD = {"c1": (bench("c1", ((-0.5, 0.3), (0.5, 0.3)), _combo, right=False), c1_holo)}
+BUILD = {"c1": (bench("c1", ((-0.5, 0.3), (0.5, 0.3)), _combo, right=False, open_top=True), c1_holo)}
