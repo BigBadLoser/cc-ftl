@@ -304,13 +304,13 @@ def _base_large(k, on, back=True):
     manifold along the front with a valve on each tank, in grey corner legs."""
     _frame_legs(k, 1.421875, 0.890625)
     for su in (-1, 1):
-        _otank(k, su * 0.66, -0.02 if back else 0.4, 0.9, 1.7 if back else 0.86, 0.04, 0.52, on)
+        _otank(k, su * 0.72, 0.05 if back else 0.47, 1.1, 1.7 if back else 0.86, 0.04, 0.52, on)
     zm, zb = 0.48, 0.084
     _pump(k, 0.0, 0.66, 0.0, on, s=1.2)
     _sq_pipe(k, [(0.0, 0.7, zb), (0.0, VQL, zb), (0.0, VQL, zm)])
     _sq_pipe(k, [(-1.21875, VQL, 0.56), (-1.21875, VQL, zm), (1.21875, VQL, zm), (1.21875, VQL, 0.56)])
     for su in (-1, 1):
-        _valve(k, su * 0.66, VQL, zm)
+        _valve(k, su * 0.72, VQL, zm)
 
 
 def _unit(k, cv, on, dz=0.0, seed=3):
