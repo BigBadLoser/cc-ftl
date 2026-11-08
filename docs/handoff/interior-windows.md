@@ -589,3 +589,6 @@ Marked ref (both layers, numbered): scratchpad
   ends a pipe radius + 0.005 beyond the pipe centres), over them; it splits each pipe and ends inside the slot. nv23.
 - 2026-11-08: the user: ditch the struts. The steel straps are gone; the slot holds the two orange pipes and the silver
   one between, unbroken. nv24.
+- 2026-11-08: the user: without them it is worse; bring the straps back, wrapped round the top of the top pipe. The
+  straps are back (flat, 2 px, fSH0), rp + 0.006 off the pipes' centres: from past the lower pipe up over the silver
+  one, then round the upper pipe from its front over its top (an arc, 0..150° from the slope's normal). nv25.

@@ -114,6 +114,18 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         ds, zs_ = fs - sn * (rs + 0.04), zat(fs) - cs * (rs + 0.04)         # a little deeper
         prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
+        w, rw = o1 - o0, rp + 0.006                    # steel straps, flat 2 px and one tone (jagged as lit bars),
+        nd, nz, td, tz = sn, cs, cs, -sn               # over the pipes and the silver one, from past the lower pipe up
+        for u in (o0 + w / 3, o0 + 2 * w / 3):         # and round the top of the upper one (wrapped: the user)
+            ub = round(u * 32) / 32
+            pts = [(rows[1] + nd * rw + td * (rp + 0.005), zp[1] + nz * rw + tz * (rp + 0.005))]
+            for i_ in range(7):                         # from the front of the upper pipe round over its top (0..150°)
+                a = math.radians(150 * i_ / 6)
+                pts.append((rows[0] + rw * (nd * math.cos(a) - td * math.sin(a)),
+                            zp[0] + rw * (nz * math.cos(a) - tz * math.sin(a))))
+            for (da, za), (db_, zb_) in zip(pts, pts[1:]):
+                k.poly([P(ub - 1 / 32, za, da), P(ub + 1 / 32, za, da), P(ub + 1 / 32, zb_, db_),
+                        P(ub - 1 / 32, zb_, db_)], "wall", 0, P(0, cs, sn) - P(0, 0, 0), fixed="fSH0")
 
 
 SILVER = {"fxO": "fNW3", "orL": "fNW4", "orM": "fNW6"}  # the tube's tones in navy's steel greys
