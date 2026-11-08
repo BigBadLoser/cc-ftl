@@ -99,16 +99,9 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   and m (the run goes on at +x) a strip `END_STRIP` 3 px tall in the floor's tone (`D.SILL_TOP`) closes the wall's
   end under the floor's +x edge (sw30: open there, the inside showed dark, and the floor's edge px blended with it
   into dotted marks across the floor's back at each join, which the next piece doesn't paint; the default window
-  has the same open end and needs the same strip when the ramp is ported); `_chamfers`: the opening's top corners cut
-  at 45 degrees (in the wall's plane: px along = px up) from where the blue under the header ends on a post up to the
-  beam (since sw38 the lowered beam, `D.BEAM_DROP` under the rail's foot; the bands over it are the wall's own; since
-  sw39 `CHAMFER` 10 px up the post from the beam, past the blue's foot: the front the stripe's blue level with the blue
-  beside it, the wall's face `FACE` fGS3 under it) (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands as they show beside
-  it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 all 3 px: the user prefers that dark block to
-  sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
-  at its foot (sw31); on l a seam (`SEAM` fGW5, a px: the post's corner line's grey, an AA blend of fGS3 and fGW5
-  there; fGT3 blue in sw33-34) down the blue at the left post's edge, in line with the post's corner line under it, as
-  the right post shows one; the opening's top `D.BEAM_DROP` = `SHADOW` + 1 (4 px) under the rail's foot (sw37; 3 px
+  has the same open end and needs the same strip when the ramp is ported); the opening's top corners square (sw31-42 tried 45-degree chamfers, `_chamfers`, 9 then 10 px, with a left
+  post seam and dark bottom edges; the user dropped them in sw43); `_rail_seam`: no rail seam by the right post (the
+  fGT3 line slate._rail draws on its end block's front, 3 px past the post; sw42); the opening's top `D.BEAM_DROP` = `SHADOW` + `LIT_UNDER` (3 + 1 = 4 px) under the rail's foot (sw37; 3 px
   in sw36, where the dark px sat on the glass and read harsh: now on the stripe's lit top px as on the wall) (the cut
   stops there, so over the window the header keeps the wall's own foot, the rail's shadow band and the set-back middle
   blocks' lower px, and the band's lowest px reads as the header's dark bottom edge in one straight line, as on the
@@ -230,3 +223,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   under it); the rail's seam by the right post (slate._rail's fGT3 front line on the end block, 3 px past the post)
   dropped on r. sw42b: the same with LIT_UNDER 0 (no lit px under the header's dark edge over the window), to
   compare. Shown both; LIT_UNDER stays 1 until the user picks.
+- 2026-11-08: sw43: the user kept the lit line (LIT_UNDER 1) and dropped the corners: `_chamfers` gone (with the left
+  post's seam and the corners' edges); `_rail_seam` keeps the right post's rail seam off. The opening's corners square
+  again under the lowered beam. Shown.
