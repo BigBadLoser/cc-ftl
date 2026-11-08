@@ -12,6 +12,7 @@ import { PANELS } from './panels';
  *   &cols=N       cells per row at most (default: as many as fit the window)
  *   &play         animate: each cell loops through its own time instead of holding its pinned moment
  *   &bg=0a0d12    cell background (hex)
+ *   &assets=/.cache/x/   read the art from another assets dir (<dir>/1x/manifest.json: a scratch `npm run sprites -- -- <dir> <family>` preview build)
  * Panels read their own options too; the index lists them.
  */
 const LABEL_H = 30;
@@ -75,7 +76,7 @@ async function run(): Promise<void> {
     width: 1, height: 1, resolution: devicePixelRatio, autoDensity: true, antialias: false, roundPixels: true,
     background: 0x07090d, preference: 'webgl',
   });
-  const atlas = await loadAtlas(undefined, { upload: (src) => renderer.texture.initSource(src) });
+  const atlas = await loadAtlas(params.get('assets') ?? undefined, { upload: (src) => renderer.texture.initSource(src) });
   atlas.setSmooth(false);
   const ctx: LabCtx = { atlas, renderer, params };
   const cells = await panel.cells(ctx);

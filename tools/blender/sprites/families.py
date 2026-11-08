@@ -187,6 +187,9 @@ def jobs(name):
     if name == "mining_pod":
         from . import pod_family
         return pod_family.craft_jobs(), True
+    if name == "escape_pod_variants":
+        from . import escape_pod_family
+        return escape_pod_family.variant_jobs(), True
     if name == "fx_mining":
         from . import fx_mining
         return fx_mining.SPRITES, True
