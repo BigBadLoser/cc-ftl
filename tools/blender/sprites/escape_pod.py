@@ -138,8 +138,8 @@ def disc(f, c, n, r0, r1, mat, sides=16):
 
 
 def heat_shield(k):
-    """The broad HEAT SHIELD at the base: a steel lip ring, the ablative face a shallow dish inside it, scorched dark
-    toward the rim with a lighter tile ring round it, a steel boss at its middle and six bolt heads on a ring."""
+    """The broad HEAT SHIELD at the base: a steel lip ring, the ablative face a shallow dish inside it, dark at the rim,
+    scorch streaks running out across it, a steel boss at its middle and six bolt heads on a ring."""
     _g("heat_shield")
     v = k.v
     rb, d = v["rb"] * 1.04, v["dish"]
@@ -154,12 +154,20 @@ def heat_shield(k):
         c, t = math.cos(th), math.sin(th)
         return (k.u(ss) + ns * out, r * c + nr * c * out, k.zc + r * t + nr * t * out), (ns, nr * c, nr * t)
 
-    n = 12
-    st = [(-0.04 - d * (1 - math.cos(math.pi / 2 * i / n)), R * math.sin(math.pi / 2 * i / n)) for i in range(n + 1)]
-    for (s_a, r_a), (s_b, r_b) in zip(st, st[1:]):                         # middle outward, so the faces face out
-        x = (r_a + r_b) / 2 / R
-        mat = SHIELD_D if x > 0.8 else "rust" if 0.42 < x < 0.56 else SHIELD
-        k.cyl(s_a, s_b, max(r_a, 0.001), r_b, mat)
+    def scorch(x, th):                                                     # streaks out from the middle, worse
+        w = math.sin(3 * th + 1.3) + 0.7 * math.sin(7 * th + 0.4 + 2.5 * x) + 0.5 * math.sin(13 * th + 2.0)
+        return w + 2.2 * x > 2.1                                           # toward the rim
+
+    n, m = 12, 48                                                          # in cells, so it can be patchy
+    A = [math.pi / 2 * i / n for i in range(n + 1)]
+    T = [math.tau * j / m for j in range(m + 1)]
+    for a0, a1 in zip(A, A[1:]):
+        x = math.sin((a0 + a1) / 2)                                        # (r over R)
+        for t0, t1 in zip(T, T[1:]):
+            base = SHIELD_D if x > 0.8 else SHIELD
+            mat = SHIELD_D if base == SHIELD and scorch(x, (t0 + t1) / 2) else base
+            pts = [on(a, t)[0] for a, t in ((a0, t0), (a1, t0), (a1, t1), (a0, t1))]
+            k.f.poly([k.f.pt(*q) for q in pts], mat)
     p, nn = on(0.0, 0.0)
     stud(k.f, p, nn, 0.16, 0.03, "steelD", "steel", sides=20)              # the middle boss
     a6 = math.asin(0.7)
