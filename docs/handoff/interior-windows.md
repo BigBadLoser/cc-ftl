@@ -562,3 +562,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: there should be no red left under the slot. The red under it was the foot's lit top edge
   (wall3d.skirt, upright foot: the toe strip in Style.toe_lvl, navy's red), drawn the tile's full width over holes;
   it now leaves out a hole opened through the toe. Plain m10 unchanged (as nv9). nv15.
+- 2026-11-08: the user: move the bottom pipe down and make room for the silver pipe. The lower pipe row now sits by
+  the foot (d1 − 0.015), and the silver pipe is back between the two rows, rs + 0.04 into the slope. nv16.
