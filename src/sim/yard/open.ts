@@ -3,6 +3,7 @@ import { findJobAt } from '../crew/helpers';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
+import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP } from '../tuning';
 import type { YardOrder } from './types';
 
 type Tile = { x: number; y: number };
@@ -38,14 +39,57 @@ export function innerWalls(sim: Sim, o: YardOrder): Tile[] {
   return [...cand.values()].sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
-/** The last pass ('open'), once the new section is shut: floor where the walls it turned inward stand. Returns the jobs posted. */
+/** The air of the room a section joins: the mean of the ship's floor tiles across the walls it opens (normal air when it joins none). */
+function joinedAir(sim: Sim, o: YardOrder, walls: readonly Tile[]): NonNullable<YardOrder['air']> {
+  const grid = sim.sector.grid;
+  const order = new Set([...o.floor, ...o.walls].map(key));
+  let n = 0, o2 = 0, co2 = 0, temp = 0;
+  for (const w of walls) {
+    for (const [dx, dy] of N4) {
+      const x = w.x + dx, y = w.y + dy;
+      if (order.has(`${x},${y}`) || grid.get('struct', x, y) !== Struct.Floor || grid.get('ship', x, y) !== o.ship) continue;
+      n++;
+      o2 += grid.get('o2', x, y);
+      co2 += grid.get('co2', x, y);
+      temp += grid.get('temp', x, y);
+    }
+  }
+  return n ? { o2: o2 / n, co2: co2 / n, temp: temp / n } : { o2: NORMAL_O2, co2: NORMAL_CO2, temp: NORMAL_TEMP };
+}
+
+/** Give tiles the order's air (o2, co2, temperature), through the grid. */
+function fill(sim: Sim, tiles: readonly Tile[], air: NonNullable<YardOrder['air']>): void {
+  const grid = sim.sector.grid;
+  for (const t of tiles) {
+    grid.set('o2', t.x, t.y, air.o2);
+    grid.set('co2', t.x, t.y, air.co2);
+    grid.set('temp', t.x, t.y, air.temp);
+  }
+}
+
+/**
+ * The last pass ('open'), once the new section is shut: the section is delivered pressurised (its floor takes the air of the room it joins), and
+ * floor goes where the walls it turned inward stand. Returns the jobs posted.
+ */
 export function postOpenJobs(sim: Sim, o: YardOrder): number {
   o.stage = 'open';
-  let n = 0;
-  for (const t of innerWalls(sim, o)) {
+  const walls = innerWalls(sim, o);
+  o.air = joinedAir(sim, o, walls);
+  fill(sim, o.floor.filter((t) => sim.sector.grid.get('struct', t.x, t.y) === Struct.Floor), o.air);
+  o.opens = [];
+  for (const t of walls) {
     if (findJobAt(sim, o.ship, t.x, t.y)) continue;
     createJob(sim, 'build', o.ship, t.x, t.y, Struct.Floor, BUILD_TICKS[Struct.Floor] as number, true, { yard: o.id });
-    n++;
+    o.opens.push({ x: t.x, y: t.y });
   }
-  return n;
+  return o.opens.length;
+}
+
+/** Each wall of the open pass that has turned to floor takes the order's air (a wall holds none), and leaves the list. */
+export function fillOpened(sim: Sim, o: YardOrder): void {
+  if (!o.opens?.length || !o.air) return;
+  const done = o.opens.filter((t) => sim.sector.grid.get('struct', t.x, t.y) === Struct.Floor);
+  if (!done.length) return;
+  fill(sim, done, o.air);
+  o.opens = o.opens.filter((t) => !done.includes(t));
 }

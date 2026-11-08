@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ShipC, Struct, YardCrewC, builtCount, deserialize, hullLoad, isLiveOrder, plannedTiles, quoteYard, serialize, shipGrid, totalTiles, yardPrice, yardService } from '../sim';
+import { NORMAL_O2, ShipC, Struct, YardCrewC, builtCount, deserialize, hullLoad, isLiveOrder, plannedTiles, quoteYard, serialize, shipGrid, totalTiles, yardPrice, yardService } from '../sim';
 import { content } from './index';
 import { giveItems } from '../sim/story/effects';
 import { outline, planHull, run, yardGame } from './yardFixture';
@@ -105,5 +105,15 @@ describe('shipyard: bigger jobs', () => {
     // the ring stays shut: the new section's side walls where they meet the old hull, and the old hull beyond it
     expect([at(8, 1), at(11, 1), at(19, 0), at(22, 0), at(12, 1)]).toEqual([Struct.Wall, Struct.Wall, Struct.Wall, Struct.Wall, Struct.Wall]);
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
+    // Delivered pressurised: the new section and the opened walls took the air of the room they join, so that room keeps normal air, now and a
+    // few minutes on (it used to drop to about 18 kPa, and to about 16 kPa for a bigger section).
+    const joined = (): number => {
+      const tiles: { x: number; y: number }[] = [];
+      for (let y = s.y - 2; y < s.y + 5; y++) for (let x = s.x + 7; x < s.x + 24; x++) if (grid.get('struct', x, y) === Struct.Floor && grid.get('ship', x, y) === me) tiles.push({ x, y });
+      return Math.min(...tiles.map((t) => grid.get('o2', t.x, t.y)));
+    };
+    expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
+    run(sim, 20 * 180);
+    expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
   }, 300000);
 });
