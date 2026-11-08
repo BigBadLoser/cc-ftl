@@ -969,7 +969,7 @@ station dock inspection, then the patrol version, then refusing and fighting.
   taken 60% of the time: the goods are handed back by the shuttle door; turned down, it costs standing and is not offered again. Refusing costs standing and
   the station's service for 10 turns (they keep what they took). Leaving the node while they search or wait counts as refusing.
 - With no airlock free they cross in suits and land on the hull; with no way in they wait there under an "Inspectors can't board" alert.
-- Inspectors show as visitors ("Inspector"), not hostiles, and offer no Attack yet (step 3).
+- Inspectors show as visitors ("Inspector"), not hostiles (step 3 adds the Attack button).
 
 **As built (step 2, the patrol hail):**
 - A navy or corporation patrol hails only a ship its scan flags (contraband aboard); a clean ship gets the old passing scan. The hail stops the trip in
@@ -979,7 +979,7 @@ station dock inspection, then the patrol version, then refusing and fighting.
   arrived (about 100 tiles out, user decision: the flight gives you a little time). The search and the answers are step 1's.
 - Run: a standing hit (3), and the trip goes on. Half the time the patrol chases you for 4 turns and hails again if it catches you; the chase is light on
   purpose (it follows like a hunter, one hop behind). Leaving before its inspectors come over counts as running, without the chase.
-- Refusing a patrol's inspectors costs standing only for now; the patrol turning hostile is step 3.
+- Refusing a patrol's inspectors costs standing only (step 3 raised it to 8; no hostility, user ruling).
 - The scan pop-up is gone.
 
 **As built (#363, pirate interdictions in the comms window):** every hail that stops you mid-jump uses the same comms window. An interdiction shows the
