@@ -119,5 +119,24 @@ describe('?scenario=patrol', () => {
     for (let i = 0; i < 20; i++) sim.step();
     expect(sim.world.has(id!, InspectionC)).toBe(true);
   });
+
+  it('a chasing patrol whose faction running made hostile still hails to stop, inside its encounter cooldown', () => {
+    const sim = newGame(3, content);
+    for (let i = 0; i < 20; i++) sim.step();
+    for (const cmd of patrolCommands(sim, patrolNode(sim)!)) sim.enqueue(cmd);
+    sim.step();
+    const f = sim.galaxy.fleets.find((x) => x.chase)!;
+    expect(f).toBeDefined();
+    sim.story.reputation[repKey(sim, f.faction)] = -100; // running from it again and again
+    f.met = sim.galaxy.turn - 1; // it hailed the player a turn ago (the run that started the chase)
+    for (let i = 0; i < 400 && sim.galaxy.travel?.phase === 'hop'; i++) {
+      sim.step();
+      sim.story.active = null;
+    }
+    expect(sim.galaxy.travel?.phase).toBe('interdicted');
+    const e = sim.galaxy.encounters.find((x) => x.fleet === f.id);
+    expect(e?.kind).toBe('scan');
+    expect(e?.scan).toBeDefined();
+  });
 });
 
