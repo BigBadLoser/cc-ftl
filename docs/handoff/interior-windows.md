@@ -665,3 +665,5 @@ Marked ref (both layers, numbered): scratchpad
   the mouth each side; a dark (drD) handle notch 4 px wide under its top; a seam 0.55 up (drD line, drM lit row under)
   (ref 07). Recessed: the cover panel (F 0) and its band (ochre 1) on the recess's back, the header's 2 px shadow over
   it. Plain m10 and boxes a3 identical. nl1 (recessed), nl2 (lockers).
+- 2026-11-08: the locker (the user): its top 4 px down, then a 4 px slope (drM) back to the recess's back (_box takes a
+  top chamfer ct); the seam halfway up its front, full width (drD line, drM lit row under). nl3.

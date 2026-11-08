@@ -13,10 +13,11 @@ from .parts import LINE, PAINT, PX, flat, prism, tube, tube_prof
 BAND = 1.5 * PAINT                  # a band design's red: on the face's covers (navy.COVER, PAINT)
 
 
-def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
-    """A box standing d proud, its top and foot chamfered ch, its faces in fixed colours (cols: foot, front, top;
-    its ends the foot's)."""
-    prism(k, ax, plane, u0, u1, [(0.0, z0), (d, z0 + ch), (d, z1 - ch), (0.0, z1)], "wall", 0,
+def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0, ct=None):
+    """A box standing d proud, its top and foot chamfered ch (its top ct, if given), its faces in fixed colours
+    (cols: foot, front, top; its ends the foot's)."""
+    ct = ch if ct is None else ct
+    prism(k, ax, plane, u0, u1, [(0.0, z0), (d, z0 + ch), (d, z1 - ct), (0.0, z1)], "wall", 0,
           cols=[cols[0], cols[1], cols[2], cols[0]], cap=cols[0])
 
 
@@ -54,18 +55,21 @@ def navy_boxes(k, ax, plane, a, b, c, e, F, mouth=None, **_):
 def navy_lockers(k, ax, plane, a, b, c, e, F, mouth=None, **_):
     """T1-3 (ref 07): one tall red locker in its recess, its front flush with the wall, a px clear of the recess's
     sides; a dark handle notch under its top, a seam across it (a dark line, a lit one under it)."""
+    du, dz = 1 / 32, 1 / 39.19
+    ct = None
     if mouth:                                           # (in its recess, a px clear each side: the user)
         a, b = T._u(mouth[0] + 1, PX), T._u(mouth[1] - 1, PX)
-        d, ch = PX, 1 / 39.19
+        d, ch, ct = PX, dz, 4 * dz                      # (its top 4 px down, a 4 px slope back to it: the user)
+        e -= 4 * dz
     else:
         d, ch = 2 * PX, PX
-    _box(k, ax, plane, a, b, c, e, d, ("lvR2", "lvR", "drM"), ch=ch)
-    du, dz = 1 / 32, 1 / 39.19
+    _box(k, ax, plane, a, b, c, e, d, ("lvR2", "lvR", "drM"), ch=ch, ct=ct)
+    ft = e - (ch if ct is None else ct)                 # (its front's top)
     uc = T._u(round(T._px((a + b) / 2, d)), d)          # (on the px grid at its front)
-    flat(k, ax, plane, uc - 2 * du, uc + 2 * du, e - ch - 3 * dz, e - ch - dz, d + PAINT, "drD")    # handle
-    zs = c + 0.55 * (e - c)                                                                             # seam
-    flat(k, ax, plane, a + du, b - du, zs, zs + dz, d + PAINT, "drD")
-    flat(k, ax, plane, a + du, b - du, zs - dz, zs, d + PAINT, "drM")
+    flat(k, ax, plane, uc - 2 * du, uc + 2 * du, ft - 3 * dz, ft - dz, d + PAINT, "drD")                # handle
+    zs = c + 0.5 * (ft - c)                             # the seam: halfway, full width (the user)
+    flat(k, ax, plane, a, b, zs, zs + dz, d + PAINT, "drD")
+    flat(k, ax, plane, a, b, zs - dz, zs, d + PAINT, "drM")
 
 
 CAGE_D = (1 / 32, 3 / 32)            # the cage's frame 1 px behind the wall, the cage 3 px in (its back) (the user)
