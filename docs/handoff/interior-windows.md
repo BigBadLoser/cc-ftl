@@ -101,6 +101,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   painted `TOE`. sw8 tried fGT6 (dark navy): the user: "looks like poop". sw9: the toe fGS2 (the face's old tone) and
   the face (`GREY`) fGW2, the tone of the slope over it (the ramp's front under the opening: fGS2 face z 5-11.6 px,
   fGW2 slope z 12.4-16, fGW0 its lit top edge; found by dumping the faces' palette names).
+- `RIBS` px per part (now only m's middle rib, (15, 16)): cut upright, its face (`GREY`) at y1 (the slope at the
+  pockets' top edge), the pockets' sloped floor run on under it in front; the pockets' sides on a rib only behind y1.
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -118,3 +120,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw9: toe fGS2, face fGW2 (the slope's tone). Shown.
 - 2026-11-08: sw10: pockets' backs pulled in 3 px (POCKET_IN 3/32): the dark back shows again as a line over the floor. Shown.
 - 2026-11-08: sw11: pocket backs 2 px in from sw9 instead (POCKET_IN 4/32). Shown.
+- 2026-11-08: sw12: the middle tile's rib between its pockets upright at the pockets' top edge. Shown. The ribs across
+  the tile seams are still sloped.

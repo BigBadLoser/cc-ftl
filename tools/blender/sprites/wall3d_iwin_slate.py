@@ -15,6 +15,7 @@ from .wall3d_iwin import _clip
 
 L = 1 / 32                              # an art px along the wall
 POCKETS = {"l": ((15, 27),), "m": ((3, 14), (17, 28)), "r": ((4, 16),)}   # px from the tile's start: each pocket
+RIBS = {"m": ((15, 16),)}               # px: a rib between pockets cut upright, its face under the pockets' top edge
 POCKET_TOP = 3                          # its top this many px under the sill's level top
 POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
 POCKET_IN = 4 / 32                      # how far it runs back into the ramp, from the slope at its top
@@ -121,17 +122,30 @@ def detail(k, part):
             m.v += [tuple(p) for p in q]
             out.append((list(range(base, base + len(q))),) + col)
     m.f = out
+    z0, z1 = W.foot() + POCKET_FOOT * PZ, zf - POCKET_TOP * PZ   # (a pocket's floor at the front, its top)
+    yb = _slope_y(z1, yf) - POCKET_IN                   # (its back, grid y)
+    y0, y1 = _slope_y(z0, yf), _slope_y(z1, yf)         # (the slope at its floor, at its top)
+    zb = z0 + FLOOR_RISE * PZ                           # (the floor's back edge: it slopes up into the ramp)
+
+    def fl(y):                                          # the floor's height at y
+        return z0 + (zb - z0) * (y0 - y) / (y0 - yb)
+    ribs = [(-0.5 + r0 * L, -0.5 + (r1 + 1) * L) for r0, r1 in RIBS.get(part, ())]
+    edges = {u for r in ribs for u in r}
+    for u0, u1 in ribs:                                 # a rib: upright at y1 over the floor run on under it
+        _carve(m, u0, u1, -(y0 + 0.05), -y1, z0, z1)
+        _quad(k, [(u0, y1, fl(y1)), (u1, y1, fl(y1)), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb),
+              FLOOR_LIT[part])
+        _quad(k, [(u0, y1, fl(y1)), (u1, y1, fl(y1)), (u1, y1, z1), (u0, y1, z1)], (0, 1, 0), GREY)
     for p0, p1 in POCKETS[part]:                        # the pockets
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
-        z0, z1 = W.foot() + POCKET_FOOT * PZ, zf - POCKET_TOP * PZ
-        yb = _slope_y(z1, yf) - POCKET_IN               # (its back, grid y)
-        y0, y1 = _slope_y(z0, yf), _slope_y(z1, yf)
         _carve(m, u0, u1, -(y0 + 0.05), -yb, z0, z1)
-        zb = z0 + FLOOR_RISE * PZ                       # (the floor's back edge: it slopes up into the ramp)
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
         for u, sd in ((u0, 1), (u1, -1)):
-            _quad(k, [(u, yb, zb), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
+            if any(abs(u - e) < 1e-9 for e in edges):   # (on a rib: its side only behind the rib's face)
+                _quad(k, [(u, yb, zb), (u, y1, fl(y1)), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
+            else:
+                _quad(k, [(u, yb, zb), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
         _quad(k, [(u0, yb, z1), (u1, yb, z1), (u1, y1, z1), (u0, y1, z1)], (0, 0, -1), SIDE)
 
 
