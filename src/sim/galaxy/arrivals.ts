@@ -56,10 +56,48 @@ function shipFor(sim: Sim, c: Contact, def: NonNullable<Sim['content']['factions
   } catch {
     gen = null;
   }
-  if (gen && gen.problems.length > 0) gen = null;
-  memo.set(key, gen);
+  return remember(sim, key, gen); // a ship with problems is refused, as when it was warmed first
+}
+
+/** Put a generated ship (or null: it cannot be generated) in the memo, forgetting the least recently used one over the cap. A ship with problems counts as null. */
+function remember(sim: Sim, key: string, gen: ReturnType<typeof generateShip> | null): ReturnType<typeof generateShip> | null {
+  const memo = generated(sim);
+  const ok = gen && gen.problems.length === 0 ? gen : null;
+  memo.set(key, ok);
   if (memo.size > GENERATED_MAX) memo.delete(memo.keys().next().value as string);
-  return gen;
+  return ok;
+}
+
+/** Contact keys whose ship is being generated off the sim thread (see `claimGeneration`), per content registry. */
+const claimed = new WeakMap<object, Set<string>>();
+const claims = (sim: Sim): Set<string> => {
+  let s = claimed.get(sim.content);
+  if (!s) claimed.set(sim.content, (s = new Set()));
+  return s;
+};
+
+/**
+ * Take on generating a contact's ship somewhere else (a worker: `generateShip` takes tens of ms, a stall when it runs between frames). While
+ * claimed, `warmContact` leaves the ship alone; the claimer hands the result in with `provideGenerated`, or gives up with `releaseGeneration`.
+ * A ship needed before it is provided is generated on the spot as ever (`spawnContact`). False when the ship is already in the memo or claimed.
+ */
+export function claimGeneration(sim: Sim, c: Contact): boolean {
+  const key = contactKey(c);
+  if (!sim.content.factions?.[c.shipgen] || generated(sim).has(key) || claims(sim).has(key)) return false;
+  claims(sim).add(key);
+  return true;
+}
+
+/** Hand in the ship of a claimed contact: exactly what `generateShip` gives for it (generation is a pure function of the contact's key). */
+export function provideGenerated(sim: Sim, c: Contact, gen: ReturnType<typeof generateShip> | null): void {
+  const key = contactKey(c);
+  claims(sim).delete(key);
+  if (c.ship === undefined && !generated(sim).has(key)) remember(sim, key, gen); // a ship that has already turned up needs nothing
+}
+
+/** Give up a claim (the generator failed): `warmContact` may generate the ship itself again. */
+export function releaseGeneration(sim: Sim, c: Contact): void {
+  claims(sim).delete(contactKey(c));
 }
 
 /**
@@ -68,7 +106,7 @@ function shipFor(sim: Sim, c: Contact, def: NonNullable<Sim['content']['factions
  */
 export function warmContact(sim: Sim, c: Contact): boolean {
   const def = sim.content.factions?.[c.shipgen];
-  if (!def || isGenerated(sim, c)) return false;
+  if (!def || isGenerated(sim, c) || claims(sim).has(contactKey(c))) return false;
   shipFor(sim, c, def);
   return true;
 }

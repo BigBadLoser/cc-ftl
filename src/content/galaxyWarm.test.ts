@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deserialize, newGame, serialize, type Sim } from '../sim';
-import { GENERATED_CAP, isGenerated, peekGenerated, warmContact } from '../sim/galaxy/arrivals';
+import { GENERATED_CAP, isGenerated, peekGenerated, spawnContact, warmContact } from '../sim/galaxy/arrivals';
 import { warmFleets, tendFleets } from '../sim/galaxy/fleetShips';
 import { nodesWithin } from '../sim/galaxy/graph';
 import { WARM_HOPS } from '../sim/galaxy/tuning';
@@ -25,6 +25,30 @@ describe('galaxy ship warming', () => {
     expect(warmContact(sim, c)).toBe(true);
     expect(peekGenerated(sim, c)).toEqual(cold(sim, c));
     expect(warmContact(sim, c)).toBe(false); // already there
+  });
+
+  it('a ship that fails validation is refused on a cold miss, as when it was warmed first', () => {
+    const base = fresh(2);
+    const c = candidates(base)[0]!;
+    const layout = cold(base, c);
+    expect(layout.problems).toEqual([]);
+    // Drop one module the ship uses from the registry: the layout now fails validation ("unknown module").
+    const missing = layout.template.modules![0]!.def;
+    const modules = Object.fromEntries(Object.entries(shared.modules).filter(([id]) => id !== missing));
+    // The game starts on the full registry; the module goes missing afterwards, before the contact's ship is generated.
+    const broken = (): Sim => {
+      const own = { ...shared };
+      const sim = newGame(2, own);
+      (own as { modules: object }).modules = modules;
+      return sim;
+    };
+    const warmed = broken();
+    expect(warmContact(warmed, c)).toBe(true);
+    expect(peekGenerated(warmed, c)).toBeNull();
+    expect(spawnContact(warmed, warmed.galaxy.current, { ...c })).toBe(false);
+    const coldSim = broken();
+    expect(spawnContact(coldSim, coldSim.galaxy.current, { ...c })).toBe(false);
+    expect(peekGenerated(coldSim, c)).toBeNull();
   });
 
   it('generates at most one ship per second (per tendFleets call)', () => {

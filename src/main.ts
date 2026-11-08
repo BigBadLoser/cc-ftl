@@ -5,6 +5,8 @@ import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSaveSlot, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
+import { workerGenerator } from './app/genRunner';
+import { createPrewarm } from './app/prewarm';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
@@ -84,6 +86,9 @@ const setProbe = (p: Probe | null): void => {
 /** Sim events and issued commands for the lessons engine (ui/lessons). */
 const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
+// Ships of fleets about to arrive are generated on a worker, so the arrival does not stall a frame (#388).
+const shipGen = workerGenerator();
+const prewarm = shipGen ? createPrewarm(sim, shipGen, () => performance.now()) : null;
 const loop = createLoop({
   sim,
   probe: () => probe,
@@ -131,6 +136,7 @@ const loop = createLoop({
     if (info) probe.count('render/sprites', info.sprites);
     bridge.update(stats, info);
     signals.poll();
+    prewarm?.update();
     probe.end('ui/bridge');
   },
 });

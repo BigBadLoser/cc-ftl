@@ -373,6 +373,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // a hidden outpost stays under its rock roof whatever the roof toggle says
   const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || (roofAll && s.state !== 'wreck') || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
+  /** The key under which the asteroid views' art requests are filed (scene ids are positive). */
+  const ASTEROID_ART = -1;
+
   function addScene(s: Ship, grid: Grid): ShipScene {
     const livery = shipLivery(s, grid);
     const hullPaint = hullPaintOverride ?? hullPaintFor(livery.scheme);
@@ -398,17 +401,21 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       const grid = s && sector && shipGridOf(sector, world, id);
       if (!s || !grid || s.state === 'fled') continue;
       live.add(id);
+      atlas.attribute(id);
       const sc = scenes.get(id) ?? addScene(s, grid);
       if (sc.grid !== grid) {
         sc.dispose();
         scenes.delete(id);
+        atlas.forget(id);
         addScene(s, grid);
       } else if (sc.isRoofed() !== roofFor(id, s)) sc.setRoofed(roofFor(id, s));
     }
+    atlas.attribute(null);
     for (const [id, sc] of scenes) {
       if (live.has(id)) continue;
       sc.dispose();
       scenes.delete(id);
+      atlas.forget(id);
     }
   }
 
@@ -416,10 +423,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const art = createArtStream(
     atlas,
     {
-      rebuild() {
-        for (const sc of scenes.values()) sc.dispose();
-        scenes.clear();
-        asteroids.rebuild();
+      rebuild(only) {
+        for (const [id, sc] of scenes) {
+          if (only && !only.has(id)) continue;
+          sc.dispose();
+          scenes.delete(id);
+          atlas.forget(id);
+        }
+        if (!only || only.has(ASTEROID_ART)) {
+          asteroids.rebuild();
+          atlas.forget(ASTEROID_ART);
+        }
       },
       sync,
     },
@@ -558,11 +572,15 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         const o = origin(id);
         const p = iso(o.x, o.y);
         sc.layers.setOrigin(p.x, p.y, o.x + o.y);
+        atlas.attribute(id);
         sc.update(dt);
       }
+      atlas.attribute(null);
       probe.end('render/scenes');
       probe.begin('render/views');
+      atlas.attribute(ASTEROID_ART);
       asteroids.update(sector);
+      atlas.attribute(null);
       pods.update(dt);
       drones.update(dt);
       hatches.update(dt);

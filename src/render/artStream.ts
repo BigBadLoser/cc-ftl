@@ -10,8 +10,11 @@ export const CENSUS_MS = 8000;
 export const CENSUS_MAX_MS = 64000;
 
 export interface ArtStreamHost {
-  /** Drop every built scene so the next sync builds them again from the atlas (they re-ask for the art they use). */
-  rebuild(): void;
+  /**
+   * Drop the built scenes so the next sync builds them again from the atlas (they re-ask for the art they use): every one,
+   * or only those asked for in `only` (ids as the atlas was told them by `attribute`).
+   */
+  rebuild(only?: ReadonlySet<number>): void;
   /** Build the scenes that are missing (after `rebuild`). */
   sync(): void;
 }
@@ -48,16 +51,30 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
   /** True while our own rebuild re-creates scenes: those were already on screen, so they are never hidden again. */
   let rebuilding = false;
 
-  const rebuild = (t: number): void => {
+  const rebuild = (t: number, only?: ReadonlySet<number>): void => {
     rebuilding = true;
     try {
-      host.rebuild();
+      host.rebuild(only);
       host.sync();
     } finally {
       rebuilding = false;
     }
     lastRebuild = t;
     count++;
+  };
+
+  /**
+   * Who needs building again for the sheets that arrived since `since`: the scenes that asked for one of them while it was
+   * not there. Undefined (everyone) when a sheet was evicted, the change log is too short, or something unattributed asked.
+   */
+  const arrivedFor = (since: number): Set<number> | undefined => {
+    const ch = atlas.changesSince(since);
+    if (!ch || ch.evicted) return undefined;
+    const who = atlas.askedFor(ch.arrived);
+    if (who.has(null)) return undefined;
+    const ids = new Set<number>();
+    for (const w of who) if (w !== null) ids.add(w);
+    return ids;
   };
 
   return {
@@ -67,8 +84,9 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
       const busy = atlas.busy();
       const stale = atlas.generation !== builtGen;
       if (stale && (busy === 0 || t - lastRebuild >= REBUILD_MIN_MS)) {
+        const only = arrivedFor(builtGen);
         builtGen = atlas.generation;
-        rebuild(t);
+        if (!only || only.size > 0) rebuild(t, only);
       } else if (!stale && busy === 0) {
         fresh.clear();
         if (t - lastCensus >= gap && atlas.envOver()) {
