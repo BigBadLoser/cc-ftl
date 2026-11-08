@@ -27,6 +27,7 @@ import { tierBase, tierMark } from './tierArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
+import { bedBox } from './bedBox';
 import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -375,6 +376,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
             return [{ layer, art: { s: box, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
           }
           const art = resolveArt(atlas, layer.chain, layer.key);
+          if (!art && layer.bed && !atlas.loading(layer.chain)) {
+            const [bw, bh] = rotatedSize(def, m.rot);
+            return [{ layer, art: { s: bedBox(bw, bh, layer.bed.lit), tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
+          }
           return art ? [{ layer, art }] : [];
         });
         if (!layers.length) continue;

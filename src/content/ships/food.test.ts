@@ -103,6 +103,23 @@ describe('hydroponics', () => {
     expect(plotOf(sim, bed).planted).toBe('crop.greens');
   });
 
+  it.each([null, 'crop.herbs'])('changing the pick to %s just before the planting finishes cancels the planting of the old crop', (pick) => {
+    const { sim, bed } = farmGame();
+    sim.enqueue({ type: 'plot.setCrop', moduleId: bed, crop: 'crop.greens' });
+    let changed = false;
+    for (let i = 0; i < secs(60) && !changed; i++) {
+      run(sim, 1);
+      const job = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'plant');
+      // Just before the planting finishes: the planning pass (every few ticks) has had no chance to drop the job yet.
+      if (job && job.progress >= job.work - 1) { sim.enqueue({ type: 'plot.setCrop', moduleId: bed, crop: pick }); changed = true; }
+    }
+    expect(changed).toBe(true);
+    run(sim, 3);
+    expect(plotOf(sim, bed).planted).not.toBe('crop.greens');
+    run(sim, secs(40));
+    expect(plotOf(sim, bed).planted).not.toBe('crop.greens');
+  });
+
   it('a change of crop leaves the crop in the soil alone and is sown after the harvest', () => {
     const { sim, bed } = farmGame();
     sim.enqueue({ type: 'plot.setCrop', moduleId: bed, crop: 'crop.greens' });

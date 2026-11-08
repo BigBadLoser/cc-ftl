@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CrewC, ModuleC, homeShip, newGame, shipGrid, type Sim } from '../../../src/sim';
+import { isIdle } from '../../../src/sim/modules/draw';
 import { SHIPS, withShip } from './kits';
 
 /**
@@ -14,7 +15,8 @@ for (const { ship, variants } of SHIPS) {
       const sim = newGame(1, withShip(v.template), 'ship.variant');
       run(sim, 20 * 60);
       expect(sim.world.query(CrewC)).toHaveLength(v.template.crew!.length);
-      const mods = sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!);
+      // An idle bed (nothing planted) draws nothing and is unpowered by design: not short of power.
+      const mods = sim.world.query(ModuleC).filter((i) => !isIdle(sim, i, sim.content.modules[sim.world.get(i, ModuleC)!.def]!)).map((i) => sim.world.get(i, ModuleC)!);
       expect(mods.filter((m) => !m.powered).map((m) => m.def)).toEqual([]);
       const g = shipGrid(sim, homeShip(sim))!;
       const room = g.load('room');

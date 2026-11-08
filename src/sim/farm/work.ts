@@ -26,6 +26,7 @@ export function performFarm(sim: Sim, job: Job, speed: number): WorkResult {
   if (job.kind === 'plant') {
     const crop = job.crop ? sim.content.crops?.[job.crop] : undefined;
     if (!crop || plot.planted) return 'done';
+    if (plot.crop !== job.crop) return 'done'; // the pick changed since the job was posted: cancel it here, not at the next planning pass
     if (needsMaterials(job) || m.hp <= 0) return 'wait';
     job.progress = Math.min(job.work, job.progress + speed);
     if (job.progress < job.work) return 'working';

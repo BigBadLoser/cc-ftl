@@ -2,13 +2,13 @@ import { Texture } from 'pixi.js';
 import type { StaticSprite } from './assets/loader';
 import { ART_SCALE as K, TILE_H, TILE_W } from './iso';
 import { Z_PX } from './heights';
+import type { CropStage } from './cropStage';
 
 /**
  * PLACEHOLDER crop layer for hydroponics beds until `module.hydroponics[_large].crop.<crop>.<stage>.r<n>` lands (docs/art-prompts/hydroponics.md):
  * small plant marks on a footprint's troughs, by crop (colour and shape) and stage (sprout, grow, ripe). Anchored like a module sprite, at the
  * footprint's front tile, so it replaces the real layer one for one.
  */
-export type CropStage = 'sprout' | 'grow' | 'ripe';
 
 const HW = TILE_W / 2;
 const HH = TILE_H / 2;
@@ -67,6 +67,3 @@ export function cropOverlay(w: number, h: number, crop: string, stage: CropStage
   cache.set(key, s);
   return s;
 }
-
-/** The stage a crop shows: ripe once ready, sprout in the first part of its growing, grown after. */
-export const cropStage = (growth: number, ready: boolean): CropStage => (ready ? 'ripe' : growth < 0.4 ? 'sprout' : 'grow');
