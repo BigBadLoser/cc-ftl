@@ -669,3 +669,6 @@ Marked ref (both layers, numbered): scratchpad
   top chamfer ct); the seam halfway up its front, full width (drD line, drM lit row under). nl3.
 - 2026-11-08: the locker (the user): its top 2 px further down (6 in all, the 4 px slope kept), the handle 3 px further
   down, its top front edge lit (a drL row), its foot's edge dark (a drD row). nl4.
+- 2026-11-08: the locker anti-aliased (the user): its reds as their own flat extras fNL0-4 (e0787f, b94f59, a3423a,
+  963b34, 7d303b; set hull) in an AA group "navy.locker" (the shared drL/drM/drD/lvR/lvR2 untouched: other families
+  use them). Plain m10 identical. Its 1-row lines (the lit top edge, the seam) dash on the 2:1 stairs under AA. nl5.

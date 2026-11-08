@@ -55,7 +55,7 @@ def navy_boxes(k, ax, plane, a, b, c, e, F, mouth=None, **_):
 def navy_lockers(k, ax, plane, a, b, c, e, F, mouth=None, **_):
     """T1-3 (ref 07): one tall red locker in its recess, its front flush with the wall, a px clear of the recess's
     sides; a 4 px slope down to its front, its top edge lit and its foot's dark; a dark handle notch under its top, a
-    seam across it (a dark line, a lit one under it)."""
+    seam across it (a dark line, a lit one under it). Its own flat reds, anti-aliased (fNL*: navy.locker)."""
     du, dz = 1 / 32, 1 / 39.19
     ct = None
     if mouth:                                           # (in its recess, a px clear each side: the user)
@@ -64,15 +64,15 @@ def navy_lockers(k, ax, plane, a, b, c, e, F, mouth=None, **_):
         e -= 6 * dz
     else:
         d, ch = 2 * PX, PX
-    _box(k, ax, plane, a, b, c, e, d, ("lvR2", "lvR", "drM"), ch=ch, ct=ct)
+    _box(k, ax, plane, a, b, c, e, d, ("fNL3", "fNL2", "fNL1"), ch=ch, ct=ct)
     ft = e - (ch if ct is None else ct)                 # (its front's top)
     uc = T._u(round(T._px((a + b) / 2, d)), d)          # (on the px grid at its front)
-    flat(k, ax, plane, uc - 2 * du, uc + 2 * du, ft - 6 * dz, ft - 4 * dz, d + PAINT, "drD")            # handle
-    flat(k, ax, plane, a, b, ft - dz, ft, d + PAINT, "drL")                     # its top front edge lit (the user)
-    flat(k, ax, plane, a, b, c + ch, c + ch + dz, d + PAINT, "drD")             # its foot's edge in shadow (the user)
+    flat(k, ax, plane, uc - 2 * du, uc + 2 * du, ft - 6 * dz, ft - 4 * dz, d + PAINT, "fNL4")            # handle
+    flat(k, ax, plane, a, b, ft - dz, ft, d + PAINT, "fNL0")                     # its top front edge lit (the user)
+    flat(k, ax, plane, a, b, c + ch, c + ch + dz, d + PAINT, "fNL4")             # its foot's edge in shadow (the user)
     zs = c + 0.5 * (ft - c)                             # the seam: halfway, full width (the user)
-    flat(k, ax, plane, a, b, zs, zs + dz, d + PAINT, "drD")
-    flat(k, ax, plane, a, b, zs - dz, zs, d + PAINT, "drM")
+    flat(k, ax, plane, a, b, zs, zs + dz, d + PAINT, "fNL4")
+    flat(k, ax, plane, a, b, zs - dz, zs, d + PAINT, "fNL1")
 
 
 CAGE_D = (1 / 32, 3 / 32)            # the cage's frame 1 px behind the wall, the cage 3 px in (its back) (the user)
