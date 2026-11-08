@@ -26,6 +26,7 @@ export const farmHandlers: { [T in FarmCommandType]: Handler<T> } = {
     if (!plot || !crop) return reject(sim, cmd.type, plot ? 'badCrop' : 'noPlot');
     plot.planted = cmd.crop;
     plot.ready = !!cmd.ready;
+    plot.need = growTicks(crop);
     plot.grown = cmd.ready ? growTicks(crop) : Math.round((cmd.grown ?? 0) * TICK_HZ);
   },
 };

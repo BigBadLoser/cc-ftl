@@ -7,6 +7,8 @@ import type { ModuleDef } from '../sim/registry';
 import { depthKey } from './iso';
 import { hullOutward, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
 import { ContainerC } from '../sim/containers/components';
+import { PlotC } from '../sim/farm/components';
+import { cropStage } from './cropOverlay';
 
 /** Storage reads 'full' from this share of its slots upward. */
 const FULL_SHARE = 0.75;
@@ -198,6 +200,8 @@ export interface ModuleLayer {
   flat?: boolean;
   /** A livery overlay of a container shell (`<shell>.paint`, `<shell>.lv`): recoloured by the ship's livery; drawn only if the art has it. */
   overlay?: 'paint' | 'lv';
+  /** A hydroponics bed's crop layer: drawn from the art when it has the id, else from a code-drawn stand-in (render/cropOverlay.ts). */
+  crop?: { crop: string; stage: 'sprout' | 'grow' | 'ripe' };
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
   optional?: boolean;
   /** The chain's head is a frame of this looping animation (an `.active` base id): the view swaps the texture as frames advance instead of rebuilding. */
@@ -282,6 +286,17 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
       ...block,
       { chain: variant('bell'), key: `${a}.bell`, tiles: 'rest', out: true },
     ];
+  }
+  if (def.plot) {
+    // A bed: the base `.on` (a crop in the soil and the bed running) or `.off`, and over it the crop at its stage when one is planted.
+    const plot = world.get(id, PlotC);
+    const lit = !!plot?.planted && m.powered && m.enabled && m.hp > 0;
+    const s = lit ? 'on' : 'off';
+    const base: ModuleLayer = { chain: [`${a}${r}.${s}`, `${a}.${s}${r}`, ...moduleAssets(world, id, m, def, active, look)], key: a, tiles: 'all' };
+    if (!plot || !plot.planted) return [base];
+    const crop = plot.planted.replace(/^crop\./, '');
+    const stage = cropStage(plot.need ? plot.grown / plot.need : 0, plot.ready);
+    return [base, { chain: [`${a}.crop.${crop}.${stage}${r}`], key: `${a}.crop`, tiles: 'all', dz: 0.01, crop: { crop, stage } }];
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };

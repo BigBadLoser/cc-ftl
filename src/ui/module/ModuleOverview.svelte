@@ -13,13 +13,13 @@
 
   /** The module Overview tab: state, power and health, the module's own panel (production, storage, bay, drive) and the orders. */
   let { api, m, ftl, onResearch, onPower }: { api: UiApi; m: UiModule; ftl: UiFtl | null; onResearch?: () => void; onPower: () => void } = $props();
-  const power = (x: UiModule) => (x.power > 0 ? `+${x.power} supply` : x.power < 0 ? `${-x.power} draw` : 'none');
+  const power = (x: UiModule) => (x.power > 0 ? `+${x.power} supply` : x.power < 0 ? (x.idle ? `0 (${-x.power} while growing)` : `${-x.power} draw`) : 'none');
   const hpPct = (x: UiModule) => Math.round((x.hp / x.maxHp) * 100);
 </script>
 
 <div data-testid="module-overview">
     <dl>
-      <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && m.power !== 0}>{moduleState(m)}</dd>
+      <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && !m.idle && m.power !== 0}>{moduleState(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
       <dt>Health</dt><dd>{m.hp}/{m.maxHp}</dd>
       {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}

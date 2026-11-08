@@ -123,8 +123,17 @@ export const furniture = {
     name: 'Hydroponics bed',
     category: 'life',
     description: "A grow bed. Pick a crop; crew sow it with water, it grows while the bed is powered, and they harvest it.",
-    asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: -2, powerPriority: 5, plot: true,
+    asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: -2, powerPriority: 5, plot: { scale: 1 }, drawsWhen: 'planted',
     flammability: 0.4, maxHp: 60, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 4 }],
+  },
+  // The large grow bed: three times the small one (yield, water, power, cost). Art: `module.hydroponics_large` (docs/art-prompts/hydroponics.md); a stand-in until it lands.
+  'module.hydroponics_large': {
+    scrap: 'comfort',
+    name: 'Large hydroponics bed',
+    category: 'life',
+    description: "A wide grow bed with three times the yield of the small one. Pick a crop; crew sow it with water, it grows while the bed is powered, and they harvest it.",
+    asset: 'module.hydroponics_large', footprint: [2, 3], solid: true, access: [0, 3], power: -6, powerPriority: 5, plot: { scale: 3 }, drawsWhen: 'planted',
+    flammability: 0.4, maxHp: 150, buildWork: 300, cost: [{ item: 'item.metal', count: 18 }, { item: 'item.polymer', count: 12 }],
   },
   // Ore refinery 3x4: crew refine raw ore at the access tile (east of the last row, beside the console, at rotation 0). Player-buildable
   // and laid out on mining stations' processing floors.

@@ -3,6 +3,7 @@ import {
   CrewC, DownedC, HealthC, JobC, ModuleC, MoodC, NeedsC, PlotC, PositionC, PrioritiesC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule, stat, totalStock,
   type Sim, type SimEvent,
 } from '../../sim';
+import { isIdle } from '../../sim/modules/draw';
 import { findFreeBed } from '../../sim/crew/beds';
 import { storageAdd } from '../../sim/items/storage';
 import { moodFactors } from '../../sim/crew/mood';
@@ -259,4 +260,47 @@ describe('the starter ships', () => {
       expect(findPath(sim, homeShip(sim), { x: from.x, y: from.y }, gAt), 'galley reachable').not.toBeNull();
     });
   }
+});
+
+describe('bed power and the large bed', () => {
+  const draw = (sim: Sim, bed: number): { powered: boolean } => ({ powered: sim.world.get(bed, ModuleC)!.powered });
+
+  it('an empty bed draws no power and is unpowered; with a crop in the soil it draws and grows', () => {
+    const { sim, bed } = farmGame();
+    run(sim, 3);
+    expect(draw(sim, bed).powered).toBe(false);
+    expect(isIdle(sim, bed, content.modules['module.hydroponics'])).toBe(true);
+    sim.enqueue({ type: 'debug.setPlot', moduleId: bed, crop: 'crop.greens', grown: 5 });
+    run(sim, 3);
+    expect(draw(sim, bed).powered).toBe(true);
+    expect(isIdle(sim, bed, content.modules['module.hydroponics'])).toBe(false);
+    run(sim, secs(5));
+    expect(plotOf(sim, bed).grown).toBeGreaterThan(secs(5));
+  });
+
+  it('an idle bed leaves power for the rest: demand ignores it', () => {
+    const { sim } = farmGame();
+    const ship = playerShip(sim) as number;
+    const events: SimEvent[] = [];
+    for (let i = 0; i < 4; i++) bedAt(sim);
+    events.push(...run(sim, 10));
+    expect(events.some((e) => e.type === 'power.shortage' && e.ship === ship)).toBe(false);
+  });
+
+  it('the large bed is three times the small one: yield, water and power', () => {
+    const { sim } = farmGame();
+    const large = bedAt(sim, 'module.hydroponics_large');
+    const small = content.modules['module.hydroponics'];
+    const big = content.modules['module.hydroponics_large'];
+    expect(big.power).toBe(small.power * 3);
+    expect(big.plot.scale).toBe(3);
+    const greens = content.crops['crop.greens'];
+    const water = totalStock(sim, 'item.water');
+    sim.enqueue({ type: 'plot.setCrop', moduleId: large, crop: 'crop.greens' });
+    const events = run(sim, secs(40));
+    expect(events.some((e) => e.type === 'crop.planted')).toBe(true);
+    expect(totalStock(sim, 'item.water')).toBe(water - greens.water * 3);
+    const grown = run(sim, secs(greens.growSec));
+    expect(grown.some((e) => e.type === 'crop.harvested' && e.count === greens.yield * 3)).toBe(true);
+  });
 });

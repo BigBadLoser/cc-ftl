@@ -67,7 +67,7 @@ export function placeTemplateModules(sim: Sim, t: ShipTemplate, ox: number, oy: 
     if (plot && m.crop) {
       plot.crop = m.crop;
       const crop = sim.content.crops?.[m.crop];
-      if (crop && (m.ready || m.grown)) [plot.planted, plot.ready, plot.grown] = [m.crop, !!m.ready, m.ready ? Math.round(crop.growSec * TICK_HZ) : Math.round((m.grown ?? 0) * TICK_HZ)];
+      if (crop && (m.ready || m.grown)) [plot.planted, plot.ready, plot.need, plot.grown] = [m.crop, !!m.ready, Math.round(crop.growSec * TICK_HZ), m.ready ? Math.round(crop.growSec * TICK_HZ) : Math.round((m.grown ?? 0) * TICK_HZ)];
     }
     const production = sim.world.get(id, ProductionC);
     for (const o of m.orders ?? []) production?.orders.push({ ...o, done: 0 });

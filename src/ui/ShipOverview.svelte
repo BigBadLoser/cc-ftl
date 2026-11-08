@@ -36,7 +36,7 @@
   const short = $derived(st.demand > st.supply);
   const heavy = $derived(st.hull.capacity > 0 && st.hull.tiles > st.hull.capacity);
   const o2Low = $derived(st.o2 !== null && st.o2 < 16);
-  const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && m.power < 0)));
+  const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && !m.idle && m.power < 0)));
 </script>
 
 <FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} testId="ship-overview" bare pinRight={32} padded>

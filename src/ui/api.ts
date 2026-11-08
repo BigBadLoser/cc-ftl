@@ -228,6 +228,8 @@ export interface UiModule {
   research: boolean;
   /** A hydroponics bed's crop and growth (null for other modules). */
   plot: UiPlot | null;
+  /** Draws no power right now by its own rule (a bed with nothing growing): shown as idle, not as unpowered. */
+  idle: boolean;
   /** Robot bay state (null for other modules). */
   bay: UiRobotBay | null;
   /** Drone bay state (null for other modules). */

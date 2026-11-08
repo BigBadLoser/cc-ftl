@@ -10,6 +10,8 @@ export interface Plot {
   crop: string | null;
   planted: string | null;
   grown: number;
+  /** Ticks the planted crop needs (written when it is sown, so the renderer reads the stage without the content). */
+  need: number;
   ready: boolean;
 }
 export const PlotC = defineComponent<Plot>('plot');
