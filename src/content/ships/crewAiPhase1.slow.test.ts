@@ -165,7 +165,7 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
  */
 const INSTANT = ['haul/Take'];
 /** Ticks after a snapshot at which the replay is compared with the uninterrupted run (hashing the whole world every tick was the cost). */
-const CHECKPOINTS = [33, 67, 100, 133, 167, 200];
+const CHECKPOINTS = Array.from({ length: 20 }, (_, i) => (i + 1) * 10);
 
 interface Snap {
   state: string;
@@ -220,7 +220,7 @@ describe('crew AI phase 1: every executor state', () => {
     expect(missing).toEqual([]);
   });
 
-  // One test per machine state. A divergence is located to a checkpoint (about every 33 ticks), not to the exact tick.
+  // One test per machine state. A divergence is located to a checkpoint (every 10 ticks), not to the exact tick.
   describe('saves and loads mid-state: the next 200 ticks hash as the uninterrupted run', () => {
     const states = machineStates().map(([m, st]) => `${m}/${st}`).filter((k) => !INSTANT.includes(k));
     it.each(states)('%s', (state) => {
