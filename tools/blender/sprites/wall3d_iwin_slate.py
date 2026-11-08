@@ -26,6 +26,7 @@ FLOOR_PAINT = {"m": "fGT1"}             # ... on the middle tile a block of the 
 PAINT_SIDE, PAINT_BACK = 4, 3           # ... this many px in from each side and from its back (top) edge
 FLOOR_SHADE = "fGS2"                    # its floor under the pocket's roof (from its back to the roof's edge): shade
 PAINT_SHADE = "fGT3"                    # ... and the paint block there
+LIP, LIP_LIT, LIP_PAINT = 1, "fGW0", "fGT0"   # px: the floor's front edge lit (grey; on the paint, blue)
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
 GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
@@ -208,6 +209,17 @@ def detail(k, part):
                         _quad(k, [(v0, ys + nf.y, fl(ys) + nf.z), (v1, ys + nf.y, fl(ys) + nf.z),
                                   (v1, ye2 + nf.y, fl(ye2) + nf.z), (v0, ye2 + nf.y, fl(ye2) + nf.z)],
                               (0, zb - z0, y0 - yb), col)
+    nh = Vector((0, zb - z0, y0 - yb)).normalized() * 3 * T.PAINT   # the floors' front edge lit: LIP px back from
+    ps = POCKETS[part]                                  # it on the pockets' and ribs' floors, over the paint block
+    g0, g1 = -0.5 + ps[0][0] * L + PAINT_SIDE * L, -0.5 + (ps[-1][1] + 1) * L - PAINT_SIDE * L
+    cuts = [g0, g1] if part in FLOOR_PAINT else []
+    yl = y0 - LIP * L
+    for v0, v1 in [(-0.5 + p0 * L, -0.5 + (p1 + 1) * L) for p0, p1 in ps] + ribs:
+        xs = sorted({v0, v1} | {c for c in cuts if v0 < c < v1})
+        for w0, w1 in zip(xs, xs[1:]):
+            col = LIP_PAINT if cuts and g0 - 1e-9 <= w0 and w1 <= g1 + 1e-9 else LIP_LIT
+            _quad(k, [(w0, yl + nh.y, fl(yl) + nh.z), (w1, yl + nh.y, fl(yl) + nh.z), (w1, y0 + nh.y, z0 + nh.z),
+                      (w0, y0 + nh.y, z0 + nh.z)], (0, zb - z0, y0 - yb), col)
     _rail_seam(k, x1)
 
 

@@ -230,3 +230,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw44: the sill's plates mirrored to its far edge, at the same x (the user). Shown.
 - 2026-11-08: sw45: the pockets' floors shaded under their roofs (from the back to the roof's edge): `FLOOR_SHADE`
   fGS2, and `PAINT_SHADE` fGT3 on the middle tile's paint block there (the user). Shown.
+- 2026-11-08: sw46: the pockets' (and the rib's) floors lit along their front edge: `LIP` 1 px back, `LIP_LIT` fGW0,
+  `LIP_PAINT` fGT0 over the paint block (the user). Shown.
