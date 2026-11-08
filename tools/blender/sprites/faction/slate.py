@@ -5,7 +5,7 @@ from .. import wall3d as T
 from ..relief_style import Design
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, body, prism
-from .shell import NO, FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends
+from .shell import NO, FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _ends
 
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's light grey)
 BLUE = "ochre"                      # the trim's
@@ -47,6 +47,32 @@ def _blocks(a, b):
     return out
 
 
+def _end_cap(k, ax, plane, a, b, zs, zt, F):
+    """A run's end face under its face parts: shell._end_section's, its front's top (b: the face's side) the look's own
+    section, the lip standing out at the wall's foot, the shelf flat out to its edge, then the slope (in pieces, each
+    convex)."""
+    sh = T.SHELL
+    run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
+    zh = _shelf_z(zs)
+    zl = zh + 3 * PZ
+    low = [(a - run, 0.0035), (b + run, 0.0035)]
+    if ft > 0.0035:                                     # (over a foot the slope ends on a ledge, as the ramps')
+        dl = min(run, (zs - ft) / (T.W.GN * T.W.RAMP_PX / T.W.ZART))
+        low += [(b + run, ft), (b + dl, ft), (b + SHELF, zh), (a - SHELF, zh), (a - dl, ft), (a - run, ft)]
+    else:
+        low += [(b + SHELF, zh), (a - SHELF, zh)]
+    for q in (low, [(a - SHELF, zh), (b, zh), (b, zs), (a, zs)],
+              [(b, zh), (b + LIP_D, zh), (b + LIP_D, zl + LIP_H), (b, zl + LIP_H)]):
+        k.poly([T.P(ax, plane, u, z, 0.0) for u, z in q], F, 2, T.OUT(ax))
+    if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
+        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
+                                                           (a - run, ft))],
+               T.style().toe or F, 2, T.OUT(ax))
+    for q in ([(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                # (its front edge lit up the face,
+              [(b + SHELF, zh), (b + run, ft), (b + run - 0.06, ft), (b + SHELF, zh - 0.035)]):   # and down the slope
+        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))         # from the shelf's edge)
+
+
 def _thirds(a, b):
     """The lip's seams over [a, b] (each a px from u): a tile in three 10 px sections."""
     return [u for c in range(-1, 2) for u in (c - 0.5 + 10.3 / 32, c - 0.5 + 21.3 / 32) if a + LINE < u < b - LINE]
@@ -68,7 +94,7 @@ def slate(hull):
         lipf = T.fill("lip") if full else None          # a top design's openings through the lip (a box in it from
         lips = lipf(a, b) if lipf and not endf else []  # the shelf up to the seam over it; no recess there)
         if endf:
-            _end_section(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
+            _end_cap(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
         if not endf:
             T.run(k, ax, plane, a, b, pe, _shelf_z(zs) - 0.01, zs + 0.02, PAINT, FACE, 3, 0)   # the face on down
                                                                                                 # to the shelf
@@ -77,11 +103,12 @@ def slate(hull):
             hl = "fGS1" if ax == "y" else "fGS2"        # its front's top px lit (under the seams over it)
             for s0, s1 in _minus(a, b, lips):
                 m = (mit[0] if abs(s0 - a) < 1e-6 else 0.0, mit[1] if abs(s1 - b) < 1e-6 else 0.0)
+                cp = (None, False if end1 and abs(s1 - b) < 1e-6 else None)    # (at the run's end: the end face's
                 prism(k, ax, plane, s0, s1, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
-                      FACE, 3, cols=[False, None, top_, False], mitre=m)
+                      FACE, 3, cols=[False, None, top_, False], cap=cp, mitre=m)              # section, _end_cap)
                 prism(k, ax, plane, s0, s1, [(LIP_D, zl + LIP_H - PZ), (LIP_D + PAINT / 2, zl + LIP_H - PZ),
                                              (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
-                      cols=[False, hl, False, False], mitre=m)
+                      cols=[False, hl, False, False], cap=cp, mitre=m)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
             for q0, q1 in lips:                         # (a box in the lip: a dark line up each side to the seam,
                 for u0 in (q0, q1 - LINE):              # its floor flat at the lip's foot (not the ramp's slope
@@ -307,8 +334,8 @@ def _minus(a, b, cuts):
 
 
 def box_cuts(a, b):
-    """T1-8's box in the lip: one a tile, 8 px wide (u c-4..c+4 px, over the recess it takes the place of)."""
-    return [(c - 4 * LINE, c + 4 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 4 * LINE and c + 4 * LINE <= b + 1e-6]
+    """T1-8's box in the lip: one a tile, 10 px wide (u c-5..c+5 px, over the recess it takes the place of)."""
+    return [(c - 5 * LINE, c + 5 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 5 * LINE and c + 5 * LINE <= b + 1e-6]
 
 
 def door_cuts(a, b):
