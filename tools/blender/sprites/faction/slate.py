@@ -249,13 +249,16 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031):
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, ends=True):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
     across each, the end ones a handle slot near the top. back: the backing's reach over z1."""
-    T.paint(k, ax, plane, a, b, z0, z1 + back, 0.0, BLUE, 3)               # the backing, the stripe's blue (up to
-                                                                           # the wall's top)
+    g = 0 if ends else BOXES[0][0] * LINE               # the backing, the stripe's blue (up to the wall's top); ends
+    for c in range(-1, 2):                              # False: not the 2 px at each tile's end (the boxes' sides end it)
+        q0, q1 = max(a, c - 0.5 + g), min(b, c + 0.5 - g)
+        if q1 - q0 > 1e-6:
+            T.paint(k, ax, plane, q0, q1, z0, z1 + back, 0.0, BLUE, 3)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
     lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
     dark = side                                         # side's tone)
@@ -414,7 +417,7 @@ HEADER_H = RAIL_H + 9 * PZ          # the header from the stripe's foot to the r
 def slate_foot_boxes(k, ax, plane, a, b, zh, mit):
     """T1-4's foot: the boxes header (slate_boxes) again, on the shelf in place of the lip (its backing from the shelf
     up HEADER_H, not on up the wall)."""
-    slate_boxes(k, ax, plane, a, b, zh, zh + HEADER_H, mit, back=0.0)
+    slate_boxes(k, ax, plane, a, b, zh, zh + HEADER_H, mit, back=0.0, ends=False)
 
 
 def box_cuts(a, b):
