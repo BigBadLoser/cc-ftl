@@ -16,7 +16,7 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
-CUT_Z = 13                  # art px: the sill under the wall's top (26), 6 under navy's shelf (19); 8, then 5 deeper (the user)
+CUT_Z = 10                  # art px: the sill under the wall's top (26), 3 under navy's shelf (19); 8, 13, then 10 (the user)
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
