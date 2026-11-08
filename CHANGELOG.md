@@ -68,6 +68,11 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Evade odds when pirates or a patrol interdict a jump read from the ship's real pilot and engines (they could show 5% right after a jump). [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
+- A shuttle flying home to a hangar bay that breaks on its approach hovers and finds another way in instead of being lost with the bay. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
+- Choosing an option in a story event while paused no longer unpauses the game before the event closes. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
+- A trade offering the same item on both sides is refused. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
+- Station guards patrol posts they can reach, so an intruder is always noticed (some stations had a post under furniture). [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
 - The comms window's sensor hologram no longer shows the inside of the other ship: it always draws the roofed hull, so a hail gives away no more than a battle would. ([#369](https://github.com/BigBadLoser/cc-ftl/pull/369))
 - A black-market inspection now also finds a contraband upgrade on its way into a weapon (in storage, carried, or half fitted): it is seized and the fit job is cancelled, so the weapon comes back online. ([#355](https://github.com/BigBadLoser/cc-ftl/pull/355))
 - Crew can repair, deconstruct, craft at and research at a module from any side, not only its top-left corner, so a module walled in at that corner is no longer out of reach. ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343), [#344](https://github.com/BigBadLoser/cc-ftl/pull/344))
