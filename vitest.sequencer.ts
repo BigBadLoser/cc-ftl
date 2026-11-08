@@ -22,7 +22,7 @@ export default class WeightedSequencer extends BaseSequencer {
     if (w !== undefined) return w;
     if (!missing.has(path)) {
       missing.add(path);
-      console.warn(`testWeights: no weight for ${path}, using the median (${DEFAULT}s); run npm run test:weights -- --ci`);
+      console.warn(`testWeights: no weight for ${path}, using the median (${DEFAULT}s); run npm run test:weights:ci`);
     }
     return DEFAULT;
   }

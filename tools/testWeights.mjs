@@ -3,7 +3,7 @@
 // Rewrites tools/testWeights.ts (seconds per test file) so the sequencer in vitest.sequencer.ts can start the longest files
 // first and balance the CI shards. Weights should come from CI, whose runners are what the split is for; a local run is
 // slower or faster by a different factor per file.
-//   node tools/testWeights.mjs --ci [run-id]   download the per-shard JSON reports (artifact "vitest-times-*") of a CI run
+//   npm run test:weights:ci [-- run-id]        (node tools/testWeights.mjs --ci [run-id]) download the per-shard JSON reports (artifact "vitest-times-*") of a CI run
 //                                              (default: the latest successful ci.yml run on main) and merge them
 //   node tools/testWeights.mjs a.json b.json   merge Vitest JSON reports (a directory means every .json inside it)
 //   node tools/testWeights.mjs a.txt           lines of "<ms> <tests> <path>" (a parsed job log)
@@ -15,6 +15,13 @@ import { join, relative, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const secs = {};
+// Report paths are absolute on the machine that ran them (a CI runner's /home/runner/work/x/x/src/...): make them repo-relative.
+const repoPath = (name) => {
+  const rel = relative(process.cwd(), name);
+  if (!rel.startsWith('..')) return rel;
+  const m = /\/((?:src|tools)\/.*)$/.exec(name.replaceAll('\\', '/'));
+  return m ? m[1] : rel;
+};
 const add = (path, s) => {
   secs[path] = Math.round(Math.max(0.1, s) * 10) / 10;
 };
@@ -46,7 +53,7 @@ inputs.forEach(walk);
 for (const p of files) {
   const text = readFileSync(p, 'utf8');
   if (p.endsWith('.json')) {
-    for (const f of JSON.parse(text).testResults) add(relative(process.cwd(), f.name), (f.endTime - f.startTime) / 1000);
+    for (const f of JSON.parse(text).testResults) add(repoPath(f.name), (f.endTime - f.startTime) / 1000);
   } else {
     for (const line of text.split('\n')) {
       const m = /^(\d+)\s+\d+\s+(\S+)/.exec(line);
