@@ -3882,5 +3882,181 @@
  "fGKc": {
   "hex": "#004947",
   "set": "slate"
+ },
+ "fNW0x": {
+  "hex": "#c1c9d1",
+  "set": "hull"
+ },
+ "fNW1x": {
+  "hex": "#afbac8",
+  "set": "hull"
+ },
+ "fNW2x": {
+  "hex": "#98a5b9",
+  "set": "hull"
+ },
+ "fNW3x": {
+  "hex": "#8494ab",
+  "set": "hull"
+ },
+ "fNW4x": {
+  "hex": "#6e809b",
+  "set": "hull"
+ },
+ "fNW5x": {
+  "hex": "#5e6f89",
+  "set": "hull"
+ },
+ "fNW6x": {
+  "hex": "#4f5d73",
+  "set": "hull"
+ },
+ "fNW7x": {
+  "hex": "#3d4b5f",
+  "set": "hull"
+ },
+ "fNM0x": {
+  "hex": "#422029",
+  "set": "hull"
+ },
+ "fNH0x": {
+  "hex": "#babfcb",
+  "set": "hull"
+ },
+ "fNH1x": {
+  "hex": "#a0aaba",
+  "set": "hull"
+ },
+ "fNH2x": {
+  "hex": "#8b98a9",
+  "set": "hull"
+ },
+ "fNH3x": {
+  "hex": "#77869b",
+  "set": "hull"
+ },
+ "fNH4x": {
+  "hex": "#637489",
+  "set": "hull"
+ },
+ "fNH5x": {
+  "hex": "#556375",
+  "set": "hull"
+ },
+ "fNH6x": {
+  "hex": "#45515f",
+  "set": "hull"
+ },
+ "fNT0x": {
+  "hex": "#b5626e",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT1x": {
+  "hex": "#a74553",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT2x": {
+  "hex": "#8c3a47",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT3x": {
+  "hex": "#74303a",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT4x": {
+  "hex": "#5a252d",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT5x": {
+  "hex": "#421b20",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNT6x": {
+  "hex": "#261013",
+  "aa": "navy.red",
+  "set": "hull"
+ },
+ "fNS0x": {
+  "hex": "#486285",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS1x": {
+  "hex": "#354d6e",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS2x": {
+  "hex": "#293b54",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS3x": {
+  "hex": "#1e2b3d",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS4x": {
+  "hex": "#111924",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS5x": {
+  "hex": "#07090d",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNS6x": {
+  "hex": "#020406",
+  "aa": "navy.blue",
+  "set": "hull"
+ },
+ "fNC0x": {
+  "hex": "#172538",
+  "flat": true,
+  "aa": "navy.cav",
+  "set": "hull"
+ },
+ "fNC1x": {
+  "hex": "#111725",
+  "flat": true,
+  "aa": "navy.cav",
+  "set": "hull"
+ },
+ "fNL0x": {
+  "hex": "#d54851",
+  "flat": true,
+  "aa": "navy.locker",
+  "set": "hull"
+ },
+ "fNL1x": {
+  "hex": "#9d3e46",
+  "flat": true,
+  "aa": "navy.locker",
+  "set": "hull"
+ },
+ "fNL2x": {
+  "hex": "#87372f",
+  "flat": true,
+  "aa": "navy.locker",
+  "set": "hull"
+ },
+ "fNL3x": {
+  "hex": "#7d312a",
+  "flat": true,
+  "aa": "navy.locker",
+  "set": "hull"
+ },
+ "fNL4x": {
+  "hex": "#682830",
+  "flat": true,
+  "aa": "navy.locker",
+  "set": "hull"
  }
 }

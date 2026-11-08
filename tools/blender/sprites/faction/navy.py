@@ -1,6 +1,11 @@
 """Navy (set 4): light plates, a maroon band, a dark header with a lit tube on brackets and white caps; its shell (also
 civil's) and its straight-run designs."""
+import json
+import os
+import sys
+
 from .. import wall3d as T
+from ..restyle import PALETTE, ROLE
 from .base import Faction, _style
 from .navy_designs import NAVY_RAMPS, NAVY_TOPS, navy_band
 from .parts import LINE, PAINT, PX, _slab, body, bracket, corner_piece, tube, tube_prof
@@ -262,8 +267,33 @@ def navy_hole_tone(part, fam, ax, n):
     return CAV[1] if part == "back" else CAV[2]
 
 
+def _shade_tones():
+    """{name: its shade-side tone}: each palette name with a "<name>x" entry (its lightness x0.83: the +x faces about
+    as far under the lit ones as the default walls', the red, the lockers and the seams with them: the user)."""
+    p = json.loads(PALETTE.read_text())
+    return {k[:-1]: k for k in p if k.endswith("x") and k[:-1] in p}
+
+
+NAVY_SHADE = _shade_tones()
+
+
 class Navy(Faction):
     pre = "fN"
+
+    def paint(self, P):
+        """A partition's +x faces in the shade tones (NAVY_SHADE) of what its lit faces take: a ramp tone at the lit
+        face's level (the shade ramps sat a step down, the red none), a fixed tone as it is."""
+        name = super().paint(P)
+        if P.kind not in ("x", "slope_x") or not P.sprite.startswith("tile.wall."):
+            return name
+        if P.role is not None and name == self.tone(P.fam, P.face, P.role):
+            ys, xs = T.RAMPS.get({"hull": "blue", "trim": "ochre"}.get(P.fam, P.fam), ((), ()))
+            lit = ys[xs.index(P.name)] if P.name in xs else P.name
+            if lit in ROLE:
+                name = self.tone(ROLE[lit][0], "y", ROLE[lit][2]) or name
+        if os.environ.get("NAVY_SHADE_LOG") and name not in NAVY_SHADE:
+            print("NOSHADE", name, P.name, P.sprite, file=sys.stderr)
+        return NAVY_SHADE.get(name, name)
 
     def relief(self, sprite):
         return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, ramp_seam=NAVY_RAMP_SEAM, joint=0, chamfer=NAVY_C,
