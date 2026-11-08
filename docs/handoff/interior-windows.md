@@ -29,7 +29,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | Ref style (set) | Our look | Window ids (2/3/4 tiles) | Status |
 |---|---|---|---|
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
-| 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py` |
+| 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py`; slate's ramp ported (dp2), awaiting the user |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
@@ -91,6 +91,17 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 2. Then port that ramp geometry back to the default window.
 3. Then slate's upper layer, and the other looks. (2026-11-08: the user keeps slate's upper layer as it renders now;
    slate is done. Next: step 2.)
+
+## The ramp (`sprites/wall3d_iwin_ramp.py`, shared)
+- Slate's ramp moved here (2026-11-08) so the default window gets it too: the raised floor and steeper crest
+  (`RAISE`, `DIP`, `SLOPE`), the pockets and rib (shaded under their roofs, lit front edge), the plates (near and far),
+  the toe, `END_STRIP`. A look's colours and own touches come in a `Look` (`pre` / `post` hooks, `floor_paint`,
+  `beam_drop`); `ramp.window(fn, part, look)` builds a piece. Slate: `wall3d_iwin_slate.LOOK` (its grey recolour,
+  seam panel and rail seam as hooks, its blue paint block, the lowered beam), pixel-identical to sw46 (sw47 checked).
+  Default: `ramp.TEAL`, used by `wall3d_iwin_def.window`; beam not lowered (`beam_drop` 0), no paint block.
+- TEAL colours: floors wH (lit over the ramp's front, wL), shade wS, lit edge fC4T0 (the hull set's lightest teal;
+  the walls' own stop at wH, and a new walls colour would re-quantise every wall), back wXD, sides wD, rib wL, toe wM,
+  plates wS / wM. dp1 tried floors wL / lip wH: the pockets read flat.
 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
 - Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
@@ -235,3 +246,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   `LIP_PAINT` fGT0 over the paint block (the user). Shown.
 - 2026-11-08: the user: sw46 "good enough"; slate's upper layer stays as it renders now. Slate done; next the port
   of the ramp to the default window (step 2).
+- 2026-11-08: the user: port everything (shape, pockets, plates) to the default window. Ramp moved to
+  `wall3d_iwin_ramp.py`; slate pixel-identical (sw47); teal dp1 (flat), dp2 (floors wH, lip fC4T0). Shown, waiting.

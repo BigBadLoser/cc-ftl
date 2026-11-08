@@ -191,34 +191,7 @@ def hook(k, sp, own=True):
 
 
 def window(fn, part):
-    """fn: the default straight piece's builder (tile.wall.full.m10, env_build "wide"). (own, wide, pane objects)."""
-    calls = [0]
-    seq = (part, "m" if part in "mr" else None)        # the piece; its copy one tile on at -x (envtiles._with_runs
-    #   builds only the runs drawn before it): the window running on into it, else plain
-
-    pre = [0]
-
-    def bare(sp):                                       # (a window tile's ramp built bare: its panel left out)
-        T.BARE = bool(pre[0] < len(seq) and seq[pre[0]])
-        T.OPEN = _span(seq[pre[0]]) if T.BARE else None
-        pre[0] += 1
-
-    def each(k, sp):
-        global PART
-        i = calls[0]
-        calls[0] += 1
-        if i < len(seq) and seq[i]:
-            PART = seq[i]
-            hook(k, sp, own=i == 0)
-
-    def build():
-        global PART
-        calls[0] = pre[0] = 0
-        T.HOOK, T.PRE_HOOK = each, bare
-        try:
-            own, wide = fn()
-            assert calls[0] == len(seq), calls[0]
-            return own, wide, GLASS.build()
-        finally:
-            PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
-    return build
+    """fn: the default straight piece's builder (tile.wall.full.m10, env_build "wide"). (own, wide, pane objects): this
+    window with the ramp of wall3d_iwin_ramp in the default's colours."""
+    from . import wall3d_iwin_ramp as R
+    return R.window(fn, part, R.TEAL)
