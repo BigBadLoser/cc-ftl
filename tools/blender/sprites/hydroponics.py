@@ -356,7 +356,8 @@ def _herbs(k, u, v, z, st, seed, hmax):
 
 def _grain(k, u, v, z, st, seed, hmax):
     """Grain: upright stalks in rows. A sprout is rows of green blades; half grown, green stalks with slim green
-    heads; ripe, thin gold straw as tall as the bed lets it be, each with a slim heavy head that nods."""
+    heads; ripe, gold straw as tall as the bed lets it be, each with a slim heavy head that nods. Each stalk is
+    thicker at its foot, where its blades flare out."""
     r = random.Random(seed * 7 + 2)
     rows = [(u + du + r.uniform(-0.03, 0.03), v + dv + r.uniform(-0.03, 0.03))
             for du in (-0.3, -0.15, 0.0, 0.15, 0.3) for dv in (-0.18, 0.0, 0.18)]
@@ -369,14 +370,19 @@ def _grain(k, u, v, z, st, seed, hmax):
     ripe = st == "ripe"
     for i, (cu, cv) in enumerate(rows):
         h = r.uniform(0.8, 1.0) * (hmax - 0.14) * (1.0 if ripe else 0.62)
-        k.box(cu, cv, z, 0.03, 0.03, h, "straw" if ripe else "stalk")
+        stem = "straw" if ripe else "stalk"
+        k.box(cu, cv, z, 0.03, 0.03, h, stem)
+        k.box(cu, cv, z, 0.05, 0.05, h * 0.35, stem, taper=0.6)                     # thicker at the foot
+        for q in range(3):                                                         # blades flaring from the foot
+            b = r.uniform(0, math.tau)
+            _leaf(k, cu, cv, z + r.uniform(0.0, 0.06), b, r.uniform(0.13, 0.19), 0.04, r.uniform(0.75, 1.05),
+                  ("grainD", "straw", "stalk")[q] if ripe else ("leafD", "stalk", "leaf")[q])
         a = r.uniform(0, math.tau)
         if ripe:
             k.box(cu, cv, z + h - 0.02, 0.055, 0.055, 0.15, ("grain", "grainD")[i % 2], top="grain", taper=0.55,
                   rz=a, ry=0.3 * math.cos(a), rx=0.3 * math.sin(a))
         else:
             k.box(cu, cv, z + h - 0.02, 0.04, 0.04, 0.09, "stalk", top="leafL", taper=0.7, rz=a)
-            k.box(cu + 0.03, cv, z + h * 0.35, 0.12, 0.04, 0.025, "leafD", rz=a, ry=-0.5)
 
 
 CROPS = {"greens": _greens, "beans": _beans, "herbs": _herbs, "grain": _grain}
