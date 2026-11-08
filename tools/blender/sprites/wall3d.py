@@ -653,12 +653,14 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
         return
     if ft:                                      # an upright foot: its top edge lit (or in a look's toe tone)
         tl = style().toe_lvl
-        for u0, u1, _ in segs:
-            poly = _clip(_clip([(u0, run_ - 0.03), (u1, run_ - 0.03), (u1, run_), (u0, run_)], lo), hi)
-            if len(poly) >= 3:
-                fx = tl.get(fam) if isinstance(tl, dict) else None
-                fx = fx[0 if ax == "y" else 1] if isinstance(fx, tuple) else fx    # (a pair: y face, x face)
-                plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=fx)
+        th = [(h[0], h[1], h[2], run_ + 1.0) for h in holes if h[3] > run_ - 0.03]   # (not over a hole opened
+        for u0, u1, _ in segs:                                                       # through the toe)
+            for q in _minus((u0, u1, run_ - 0.03, run_), th):
+                poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
+                if len(poly) >= 3:
+                    fx = tl.get(fam) if isinstance(tl, dict) else None
+                    fx = fx[0 if ax == "y" else 1] if isinstance(fx, tuple) else fx    # (a pair: y face, x face)
+                    plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=fx)
         if style().seam_wrap:
             _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise, holes)
         return

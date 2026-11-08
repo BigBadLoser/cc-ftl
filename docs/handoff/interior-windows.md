@@ -559,3 +559,6 @@ Marked ref (both layers, numbered): scratchpad
   the line behind the foot's bottom edge on screen (none of it shows under the foot), all in the dark back's tone
   (CAV[1] 141c2c, was the floor's 1c2c44); the thin silver pipe between the rows gone (at this size it read as a lit
   back wall). nv14.
+- 2026-11-08: the user: there should be no red left under the slot. The red under it was the foot's lit top edge
+  (wall3d.skirt, upright foot: the toe strip in Style.toe_lvl, navy's red), drawn the tile's full width over holes;
+  it now leaves out a hole opened through the toe. Plain m10 unchanged (as nv9). nv15.
