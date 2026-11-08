@@ -1886,7 +1886,7 @@ and a Traffic list in the node drawer (ship name, faction and role, what it is d
 `galaxy.dismissEncounter` is gone). Interdiction: `evade` (roll `unit(seed, encounter id, salt)` against `evadeOdds`: mainly the pilot, `(0.32 + 0.57 x pilot) x (0.6 + 0.4 x engine) - 0.06 x fleet strength`, clamped to [0.05, 0.9], from `Combat.pilot` / `Combat.evasion` read from
 the packet; formula and examples in `tuning.ts`; failure fights), `bribe` (`bribeCost`: 12 x strength x (1 + 0.4 x danger) x a standing factor, at least 10 credits; refused as
 `cantAfford`; starts the fleet's cooldown) or `fight`. Fleet strength is the sum over its ships of 1 + 0.5 x depth. Distress: `respond` (an event grid with the damaged ships as
-neutrals; leaving it earns reputation and the fleet moves on) or `ignore`. Hail and scan: `acknowledge`; a non-hostile crossing only makes one with chance `PASSING_ENCOUNTER_CHANCE` (`passingMeets`). The interdiction is answered in `ui/InterdictModal.svelte` (a modal over the map); the other kinds stay in the drawer. `incomingFleets(sim)` (`incoming.ts`) is the pure query behind the arrival-warning alerts (`alerts.syncIncoming`). Success lets the held trip go on (`resumeAfterHop`).
+neutrals; leaving it earns reputation and the fleet moves on) or `ignore`. Hail and scan: `acknowledge`; a non-hostile crossing only makes one with chance `PASSING_ENCOUNTER_CHANCE` (`passingMeets`). The interdiction is answered in the comms window (`ui/HailWindow.svelte`, see Mid-jump hails below); the other kinds stay in the drawer. `incomingFleets(sim)` (`incoming.ts`) is the pure query behind the arrival-warning alerts (`alerts.syncIncoming`). Success lets the held trip go on (`resumeAfterHop`).
 An **event grid** (`GalaxyState.event`, node id `event:<encounter id>`) is a pocket that is not a node: it is not in the galaxy index, has no chunk contents or contacts, is never
 archived, and runs no turns, arrivals or story draws. `enterEvent` takes the fleet out of `GalaxyState.fleets`, swaps in an empty sector, makes the fleet's ships real
 (`materialiseFleet` with the real node as `node`) and sets the packet waiting to deploy (the deploy picker). `GalaxyState.current` stays the real node; `sim.sector.node` is the event id and the
@@ -2592,6 +2592,13 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   - Read inspections through `inspections(sim)` (a query of `InspectionC` itself would make its store and change save bytes). The alerts (`app/alertsDerived.ts`):
     `inspect.waiting` (subject the lead, the three answers as alert actions) and `inspect.blocked`. Visitors aboard by a non-lodging grant are `side: 'visitor'` in
     the crew lists (`UiCrew.visit`: Inspector, Contractor). Debug start `?scenario=inspect[&clean][&eva]`.
+- **Mid-jump hails** (#138 step 2, #363). An encounter that halts the trip and asks for an answer opens `ui/HailWindow.svelte`, the `src/ui/comms` pieces over
+  `UiEncounter.hail` (`UiHail`: caller, look, transcript, holo request, readout, `replies` by outcome). Adapters: `app/comms/patrolComms.ts` (a patrol's hail to
+  stop, comply / run) and `app/comms/pirateComms.ts` (an interdiction, evade / bribe / fight: the demand by faction and motive, `motiveOf`: hunter, toll for a
+  route guard, else raid; a machine faction has no face; a fleet that has gone still gets a static window). `App.svelte` keeps the answered encounter's
+  snapshot so the window stays open after `galaxy.respond`, with `UiEncounterResult` (`id`, `outcome`, text) as narration and the caller's reply, until
+  Close (over the deploy picker when the answer dropped out). Debug starts `?scenario=patrol[&clean]` and `?scenario=pirates[&faction=][&hunt][&broke]`
+  (`debug.pirates`, `galaxy/pirateDebug.ts`).
 - **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
   there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
   every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.

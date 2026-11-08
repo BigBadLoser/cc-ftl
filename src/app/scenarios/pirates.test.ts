@@ -32,6 +32,8 @@ describe('?scenario=pirates', () => {
     expect(h.transcript.filter((l) => l.kind === 'speech')).toHaveLength(2);
     expect(h.readout.find((r) => r.label === 'Strength')?.value).toBe(card.threat);
     expect(h.readout.find((r) => r.label === 'Ships')?.value).toBe(String(card.ships));
+    // A reply for every way it can end, shown once answered.
+    expect(Object.keys(h.replies).sort()).toEqual(['bribed', 'evadeFailed', 'evaded', 'fought']);
   });
 
   it('hunters say so; a bribe the ship cannot afford is disabled with the reason', () => {
@@ -51,7 +53,7 @@ describe('?scenario=pirates', () => {
     sim.step();
     expect(sim.trade.credits).toBeLessThan(credits);
     expect(sim.galaxy.travel?.phase).not.toBe('interdicted');
-    expect(resultOf(sim)?.text).toMatch(/^Paid the /);
+    expect(resultOf(sim)).toMatchObject({ id: e.id, outcome: 'bribed', text: expect.stringMatching(/^Paid the /) });
 
     const fight = interdicted();
     const f = fight.galaxy.encounters.find((x) => x.kind === 'interdict')!;

@@ -296,14 +296,14 @@ export interface UiEncounter {
   /** A patrol's hail to stop (its scan read contraband aboard): what was found (a line of text) and what it is worth; the choices are comply / run. */
   contraband?: { found: string; value: number };
   /** The hail to stop as the comms window shows it (a patrol's, with `contraband`, or an interdiction's); null when its fleet is gone. */
-  hail?: UiPatrolHail | null;
+  hail?: UiHail | null;
 }
 
 /**
  * A hail to stop mid-jump, for the comms window: a patrol's (app/comms/patrolComms.ts) or an interdiction's (app/comms/pirateComms.ts). The caller, the
  * transcript, their ship's picture and the readout; `look` null for a caller with no face (the machines), which shows static.
  */
-export interface UiPatrolHail {
+export interface UiHail {
   caller: CallerInfo;
   look: UiLook | null;
   /** The window's title bar (default "Incoming hail" and "<faction> patrol · <node>"). */
@@ -316,10 +316,15 @@ export interface UiPatrolHail {
   holo: UiHoloRequest | null;
   hullTitle: string;
   readout: ReadoutRow[];
+  /** What the caller says once answered, by outcome (`UiEncounterResult.outcome`: 'bribed', 'evaded', 'complied', ...). */
+  replies: Record<string, string>;
 }
 
 /** How the last encounter ended, as a line with a tone. */
 export interface UiEncounterResult {
+  /** The encounter it ended and how ('evaded', 'bribed', 'fought', ...). */
+  id: number;
+  outcome: string;
   text: string;
   /** The starmap turn it happened. */
   turn: number;

@@ -1,7 +1,7 @@
 import type { Encounter, Fleet, Sim } from '../../sim';
 import { peekGenerated, warmContact } from '../../sim/galaxy/arrivals';
 import { Rng } from '../../sim/rng';
-import type { UiPatrolHail } from '../../ui/starmapApi';
+import type { UiHail } from '../../ui/starmapApi';
 import { speakerOf } from './speaker';
 
 /**
@@ -60,10 +60,38 @@ const HUNTER: Lines = [
 ];
 const ANY: Lines = [['Cut your drive, {you}, and stand by.', 'Pay, or we take what we want.']];
 
+/** What they say once answered, by outcome (`EncounterResult.outcome`). */
+const REPLIES: Record<InterdictMotive, Record<string, string>> = {
+  raid: {
+    bribed: 'Pleasure doing business. Fly safe, now.',
+    evaded: 'Slippery. Next time, Captain.',
+    evadeFailed: 'Nice try. Now we do this the hard way.',
+    fought: 'Your funeral. Weapons free!',
+  },
+  toll: {
+    bribed: 'Toll received. The route is yours. Mind you keep paying.',
+    evaded: 'You will be back on our routes. They all come back.',
+    evadeFailed: 'You had your chance to pay. Now you pay in hull plating.',
+    fought: 'Bad for business, Captain. Yours, not ours.',
+  },
+  hunter: {
+    bribed: 'Lost you in the nebula. Shame. Do not let us find you twice.',
+    evaded: 'Run, then. The contract does not expire.',
+    evadeFailed: 'Got you. Bring them down, alive if it is easy.',
+    fought: 'Dead or alive pays the same. Open fire.',
+  },
+};
+const MACHINE_REPLIES: Record<string, string> = {
+  bribed: 'RESOURCES ACCEPTED. PASSAGE GRANTED.',
+  evaded: 'TARGET LOST. RECALCULATING.',
+  evadeFailed: 'EVASION FAILED. ENGAGING.',
+  fought: 'HOSTILE INTENT CONFIRMED. ENGAGING.',
+};
+
 /** What the strength word means in the readout's tone. */
 const STATUS: Record<InterdictMotive, string> = { hunter: 'Hunting you', toll: 'Route toll', raid: 'Hostile' };
 
-export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiPatrolHail {
+export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiHail {
   const f = sim.galaxy.fleets.find((x) => x.id === e.fleet);
   const c = f?.ships[0];
   const faction = sim.content.galaxy?.factions[e.faction];
@@ -88,7 +116,7 @@ export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiPatrolHa
     },
     look: machine ? null : sp.look,
     transcript: [
-      { kind: 'narration', text: `The ${ship} drags you out of the jump${more} and opens a channel.` },
+      { kind: 'narration', text: `${machine ? ship : `The ${ship}`} drags you out of the jump${more} and opens a channel.` },
       { kind: 'speech', speaker: caller, text: fill(demand) },
       { kind: 'speech', speaker: caller, text: fill(warning) },
     ],
@@ -99,6 +127,7 @@ export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiPatrolHa
       { label: 'Ships', value: String(e.ships) },
       { label: 'Strength', value: threat },
     ],
+    replies: machine ? MACHINE_REPLIES : REPLIES[motive],
     title: 'Interdiction',
     subtitle: `${fname} ${motive === 'hunter' ? 'hunters' : e.role} · halted in hyperspace`,
     hostile: true,
@@ -106,12 +135,13 @@ export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiPatrolHa
 }
 
 /** The fleet left before the answer: the channel is dead, so the window still opens (the trip is halted until it is answered) with static. */
-function goneHail(e: Encounter, fname: string): UiPatrolHail {
+function goneHail(e: Encounter, fname: string): UiHail {
   return {
     caller: { name: e.name, faction: `${fname} · ${e.role}`, swatch: 'var(--red)', status: { label: 'Signal lost', tone: 'dim' } },
     look: null, holo: null, hullTitle: fname.toUpperCase(),
     transcript: [{ kind: 'narration', text: 'The channel is dead. Whoever stopped you is gone.' }],
     readout: [{ label: 'Ships', value: String(e.ships) }],
+    replies: {},
     title: 'Interdiction', subtitle: `${fname} · halted in hyperspace`, hostile: true,
   };
 }

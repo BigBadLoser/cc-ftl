@@ -7,7 +7,7 @@
   import { TipHost, tip } from './kit';
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
-  import type { UiStarmap, UiDeploy } from './starmapApi';
+  import type { UiStarmap, UiDeploy, UiEncounter } from './starmapApi';
   import type { UiApi, UiCombat, UiCutaway, UiFightReport, UiPrize, UiSnapshot, UiToolState } from './api';
   import CombatHud from './combat/CombatHud.svelte';
   import NavStrip from './NavStrip.svelte';
@@ -35,7 +35,7 @@
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
-  import PatrolHail from './PatrolHail.svelte';
+  import HailWindow from './HailWindow.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import LessonHost from './lessons/LessonHost.svelte';
@@ -120,6 +120,10 @@
   const mapLocked = $derived(star?.state === 'hyperspace' && !adrift);
   /** A patrol's hail to stop waits for the player's answer (the trip is halted): shown over the map or the game. */
   const hailing = $derived(star?.encounters.find((e) => (!!e.contraband || e.kind === 'interdict') && !!e.hail) ?? null);
+  /** The hail the player just answered: its window stays open with the reply until closed (over the deploy picker when it led to a drop). */
+  let answeredHail = $state<UiEncounter | null>(null);
+  const hailShown = $derived(hailing ?? answeredHail);
+  const hailAnswered = $derived(!hailing && !!answeredHail);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -348,8 +352,10 @@
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
-{#if hailing && !deploy}<PatrolHail {api} encounter={hailing} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
+{#if hailShown && (!deploy || hailAnswered)}
+  <HailWindow {api} encounter={hailShown} answered={hailAnswered} result={star?.result ?? null} onAnswer={(e) => (answeredHail = e)} onClose={() => (answeredHail = null)} />
+{/if}
 <StoryModal {api} hold={sliding} />
 <LessonHost {api} busy={reporting || menuOpen} />
 {#if menuOpen}<EscMenu {api} start={menuStart} onClose={closeMenu} />{/if}
