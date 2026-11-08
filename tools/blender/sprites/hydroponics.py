@@ -210,11 +210,14 @@ def lab(k, on):
 GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
 
 
-def _glass(k):
-    """The see-through panes go in their own mesh (a holdout-free, hidden part of the crop layers)."""
-    if not hasattr(k, "glass"):
-        k.glass = K(k.m.name + "_glass", (2, 1), k.rot)
-    return k.glass
+def _part(k, name):
+    """A part in its own mesh: "glass" (the see-through panes) or "glint" (their highlights). Neither masks the crop:
+    the plants show through the glass."""
+    if not hasattr(k, "parts"):
+        k.parts = {}
+    if name not in k.parts:
+        k.parts[name] = K(f"{k.m.name}_{name}", (2, 1), k.rot)
+    return k.parts[name]
 
 
 def _bar(k, a, b, s, col):
@@ -225,7 +228,7 @@ def _bar(k, a, b, s, col):
 def _canopy(k, cu, L, D, z0, zw, zr, i, on, frame, frame_l, roof, mid=True):
     """A cab-shaped glass canopy over the bed: vertical glass walls from z0 to zw, sloped glass inset i up to the roof
     at zr, a solid roof carrying the grow lamp under it, square frame bars on every edge."""
-    g = _glass(k)
+    g = _part(k, "glass")
     a, b, a2, b2 = L / 2, D / 2, L / 2 - i, D / 2 - i
     lo = [(cu - a, -b), (cu + a, -b), (cu + a, b), (cu - a, b)]
     hi = [(cu - a2, -b2), (cu + a2, -b2), (cu + a2, b2), (cu - a2, b2)]
@@ -248,7 +251,8 @@ def _canopy(k, cu, L, D, z0, zw, zr, i, on, frame, frame_l, roof, mid=True):
     _prism(k, _cham(cu, 0, 2 * a2 + 0.08, 2 * b2 + 0.08, 0.03), zr - 0.01, 0.08, roof, top=frame_l)   # roof
     _prism(k, _cham(cu, 0, 2 * a2 - 0.02, 2 * b2 - 0.02, 0.02), zr - 0.08, 0.07, "growPink" if on else "lampOff")  # lamp
     for du, dz, ln in ((-0.25, 0.1, 0.16), (-0.16, 0.2, 0.1)):              # two glints on the front glass
-        _bar(k, (cu + a * 0.55 + du, b + 0.004, zw - 0.32 + dz), (cu + a * 0.55 + du + ln * 0.6, b + 0.004, zw - 0.32 + dz + ln), 0.03, "glassG")
+        _bar(_part(k, "glint"), (cu + a * 0.55 + du, b + 0.004, zw - 0.32 + dz),
+             (cu + a * 0.55 + du + ln * 0.6, b + 0.004, zw - 0.32 + dz + ln), 0.03, "glassG")
 
 
 def _tray(k, cu, L, D, z0, zs, seed):
@@ -274,6 +278,32 @@ def terra(k, on):
     _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
     _canopy(k, 0, 1.92, 0.88, 0.61, 1.2, 1.46, 0.2, on, "tFrame", "tFrameL", "tFrame")
     return ((-0.47, 0.0), (0.47, 0.0)), zs
+
+
+def cab(k, on):
+    """terra's navy base and grey frames under a glass cabin per plant, a machinery block between the cabins."""
+    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
+    body = _cham(0, 0, 1.98, 0.94, 0.06)
+    _prism(k, body, 0.1, 0.5, "tNavy", top="tNavyL")
+    _prism(k, _scaled(body, 1.01), 0.52, 0.05, "tFrame", top="tFrameL")                       # top band
+    zs = 0.66
+    for e in (-1, 1):
+        cu = e * 0.55
+        k.box(cu - e * 0.06, 0.474, 0.18, 0.5, 0.012, 0.24, "dark")                          # slatted panel per bay
+        for j in range(5):
+            k.box(cu - e * 0.06 - 0.2 + j * 0.1, 0.48, 0.2, 0.04, 0.012, 0.2, "tNavyL")
+        _tray(k, cu, 0.8, 0.84, 0.58, zs, 5 + e)
+        _canopy(k, cu, 0.84, 0.86, 0.58, 1.2, 1.5, 0.18, on, "tFrame", "tFrameL", "tFrame", mid=False)
+    blk = _cham(0, 0, 0.26, 0.76, 0.04)                                                      # machinery block
+    _prism(k, blk, 0.56, 0.6, "tNavy", top="tNavyL")
+    _prism(k, _scaled(blk, 1.04), 1.08, 0.05, "tFrame", top="tFrameL")
+    for sv in (-0.2, 0.14):                                                                 # pipes into each cabin
+        _tube(k, [(-0.42, sv, 1.0), (0.42, sv, 1.0)], 0.03, "steelL")
+    k.box(0, 0.385, 0.66, 0.16, 0.012, 0.3, "tFrame")                                       # control panel
+    k.box(0, 0.391, 0.7, 0.11, 0.012, 0.13, "dark")
+    k.box(0, 0.397, 0.74, 0.07, 0.012, 0.05, _on(on))
+    k.box(0, 0.397, 0.9, 0.05, 0.012, 0.04, _on(on, "orange"))
+    return ((-0.55, 0.0), (0.55, 0.0)), zs
 
 
 def cabins(k, on):
@@ -329,7 +359,7 @@ def _grain(k, u, v, z, seed=0):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, "cabins": cabins, "arch": arch, "twin": twin, "lab": lab}
+VARIANTS = {"cab": cab, "terra": terra, "cabins": cabins, "arch": arch, "twin": twin, "lab": lab}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
@@ -338,21 +368,21 @@ def build(variant, layer, rot=0):
     kb = K(name, (2, 1), rot)
     plants, zs = VARIANTS[variant](kb, layer == "on")
     bed = kb.build()
-    glass = kb.glass.build() if hasattr(kb, "glass") else []
-    for o in glass:
+    parts = {n: p.build() for n, p in getattr(kb, "parts", {}).items()}
+    for o in parts.get("glass", []):
         o["alpha"], o["rim"] = GLASS_ALPHA, GLASS_RIM
     if not layer.startswith("crop."):
-        return bed + glass
-    for o in bed:                                                           # the bed masks the crop where it is in front
-        o.is_holdout = True
-    for o in glass:                                                         # the plants show through the panes
+        return bed + sum(parts.values(), [])
+    for o in sum(parts.values(), []):                                       # the plants show through the glass
         o.hide_render = True
     kc = K(name + "_crop", (2, 1), rot)
     for i, (u, v) in enumerate(plants):
         CROPS[layer.split(".")[1]](kc, u, v, zs, i)
-    return bed + glass + kc.build()
+    crop = kc.build()
+    return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
 
 def jobs(rots=range(4)):
     names = os.environ.get("HYDRO_VARIANTS", ",".join(VARIANTS)).split(",")
-    return [(f"module.hydroponics.{v}.{s}", (2, 1), "prop", lambda v=v, s=s: build(v, s)) for v in names for s in LAYERS]
+    return [(f"module.hydroponics.{v}.{s}", (2, 1), "over" if s.startswith("crop.") else "prop", lambda v=v, s=s: build(v, s))
+            for v in names for s in LAYERS]
