@@ -29,7 +29,7 @@ describe('station traffic log', () => {
     const log = new StationLog();
     sim.enqueue({ type: 'trade.hail', ship: station });
     sim.step();
-    sim.enqueue({ type: 'trade.offer', ship: station, give: [{ item: 'item.metal', count: 5 }], get: [{ item: 'item.metal', count: 5 }] });
+    sim.enqueue({ type: 'trade.offer', ship: station, give: [{ item: 'item.metal', count: 5 }], get: [{ item: 'item.polymer', count: 5 }] });
     sim.step();
     sim.enqueue({ type: 'trade.accept', offer: sim.trade.offers[0]!.id });
     const phaseTicks: number[] = [];

@@ -38,7 +38,7 @@ const phases = (events: SimEvent[]) => events.filter((e): e is Of<'trade.phase'>
 describe('trade.phase', () => {
   it('reports every phase of a run to a station, each starting where the last ended, with the shuttle launched', () => {
     const { sim, st, events } = setup();
-    trade(sim, events, st, [{ item: 'item.metal', count: 5 }], [{ item: 'item.metal', count: 5 }]);
+    trade(sim, events, st, [{ item: 'item.metal', count: 5 }], [{ item: 'item.polymer', count: 5 }]);
     const ph = phases(events);
     expect(ph[0]).toMatchObject({ from: null, to: 'dispatch', ship: st });
     ph.slice(1).forEach((e, i) => expect(e.from).toBe(ph[i]!.to));
