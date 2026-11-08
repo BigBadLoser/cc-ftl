@@ -3553,5 +3553,10 @@
   "resVioL": {"hex": "#c3b4ff", "set": "research"},
   "resRelicD": {"hex": "#2c3034", "set": "research"},
   "resRelic": {"hex": "#4e575c", "set": "research"},
-  "resRelicL": {"hex": "#7d878a", "set": "research"}
+  "resRelicL": {"hex": "#7d878a", "set": "research"},
+  "resWater": {"hex": "#6fd8b0", "emissive": 0.6, "set": "research"},
+  "resSand": {"hex": "#8a7a5c", "set": "research"},
+  "resFrond": {"hex": "#2f7f62", "set": "research"},
+  "resFrondL": {"hex": "#5cbf8c", "set": "research"},
+  "resWing": {"hex": "#6e5a86", "set": "research"}
 }

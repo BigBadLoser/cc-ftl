@@ -2,7 +2,7 @@
 on its own, with its translucent `.holo` layer drawn over it (alpha-over, then its glow added).
 
   python3 -I tools/blender/review/research_preview.py <research assets dir> <out dir>
-  python3 -I tools/blender/review/research_preview.py <assets> <out> [designs, default ghi]
+  python3 -I tools/blender/review/research_preview.py <assets> <out> [designs, default jkl]
     -> research-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -11,12 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import Assets, Canvas, iso  # noqa: E402
 
 ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet",
-       "g": "G  electron microscope", "h": "H  gantry rig", "i": "I  containment field"}
+       "g": "G  electron microscope", "h": "H  gantry rig", "i": "I  containment field",
+       "j": "J  specimen tank", "k": "K  prototype test bay", "l": "L  light table"}
 
 
 def main():
     G, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    NAMES = {v: ALL[v] for v in (sys.argv[3] if len(sys.argv) > 3 else "ghi")}
+    NAMES = {v: ALL[v] for v in (sys.argv[3] if len(sys.argv) > 3 else "jkl")}
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(230 * len(NAMES), 190)
     for i, v in enumerate(NAMES):
