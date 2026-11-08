@@ -323,7 +323,7 @@ anchor at their front-most footprint tile. Crew sort by their interpolated sub-t
   runs (`content/trade`, `ships/trade`). Name a test `.slow.test.ts` only when it is a soak or sweep whose failures a normal test would also hint
   at, never to hide a flaky test.
 - **Full** (in CI on every ready PR push, in 8 time-balanced shards, and the nightly run on `main`; `npm run check` runs it locally): everything.
-  Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.json`, refreshed by `npm run test:weights`).
+  Files run longest first (`vitest.sequencer.ts`, weights in `tools/testWeights.ts`, refreshed by `npm run test:weights:ci` from CI timings).
 - Vitest runs files in parallel, so one huge file sets the wall time. Split sweeps across files rather than growing one.
 - Test files never import other test files: an imported `*.test.ts` runs its tests again in the importer.
 

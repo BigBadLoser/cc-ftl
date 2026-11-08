@@ -6,16 +6,25 @@ import weights from './tools/testWeights.ts';
  *
  * Wall time of a parallel run is set by how late the long files start, so the heavy ones go first. `tools/testWeights.ts`
  * holds seconds per test file from a past full run (`npm run test:weights` rewrites it); a file it does not list counts as
- * DEFAULT. A stale weight only makes the order a little worse, never wrong.
+ * the median weight, with a warning. A stale weight only makes the order a little worse, never wrong.
  *
  * `--shard=i/N` deals the files out largest first to the lightest shard, so the shards finish together. The default
  * sequencer hashes paths, which can pile the heavy files into one shard. Every shard job computes the same split.
  */
-const DEFAULT = 2;
+const known = Object.values(weights as Record<string, number>).sort((a, b) => a - b);
+const DEFAULT = known.length ? (known[Math.floor(known.length / 2)] as number) : 2;
+const missing = new Set<string>();
 
 export default class WeightedSequencer extends BaseSequencer {
   private weight(spec: TestSpecification): number {
-    return (weights as Record<string, number>)[spec.moduleId.slice(this.ctx.config.root.length + 1)] ?? DEFAULT;
+    const path = spec.moduleId.slice(this.ctx.config.root.length + 1);
+    const w = (weights as Record<string, number>)[path];
+    if (w !== undefined) return w;
+    if (!missing.has(path)) {
+      missing.add(path);
+      console.warn(`testWeights: no weight for ${path}, using the median (${DEFAULT}s); run npm run test:weights:ci`);
+    }
+    return DEFAULT;
   }
 
   private ordered(files: TestSpecification[]): TestSpecification[] {

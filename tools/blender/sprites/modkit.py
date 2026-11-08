@@ -23,11 +23,12 @@ class K:
         x, y = ((u, v), (-v, u), (-u, -v), (v, -u))[self.rot]
         return x + self.off[0], y + self.off[1]
 
-    def box(self, u, v, z, su, sv, sz, col, top=None, bevel=0.0, rz=0.0, rx=0.0, taper=1.0):
-        """Bottom-centred box at local (u, v, z), sizes along u, v, z; rz turns it about its own centre."""
+    def box(self, u, v, z, su, sv, sz, col, top=None, bevel=0.0, rz=0.0, rx=0.0, ry=0.0, taper=1.0):
+        """Bottom-centred box at local (u, v, z), sizes along u, v, z; rz turns it about its own centre, rx and ry tilt
+        it about its local u and v axes."""
         x, y = self.p(u, v)
         self.m.box((x, y, z), (su, sv, sz), col, top=top, base=True, bevel=bevel, rz=rz + self.rot * HALF_PI,
-                   rx=rx, taper=taper)
+                   rx=rx, ry=ry, taper=taper)
 
     def cyl(self, u, v, z, r, h, col, top=None, sides=12, rtop=None):
         x, y = self.p(u, v)

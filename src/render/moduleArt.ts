@@ -291,11 +291,15 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   }
   if (def.plot) {
     // A bed: the base `.on` (a crop in the soil and the bed running) or `.off`, and over it the crop at its stage when one is planted.
+    // Its damage art (`.damaged` / flicker, `.destroyed`) comes first; a destroyed bed shows no crop.
     const plot = world.get(id, PlotC);
     const lit = !!plot?.planted && m.powered && m.enabled && m.hp > 0;
     const s = lit ? 'on' : 'off';
-    const base: ModuleLayer = { chain: [`${a}${r}.${s}`, `${a}.${s}${r}`, ...moduleAssets(world, id, m, def, active, look)], key: a, tiles: 'all', bed: { lit } };
-    if (!plot || !plot.planted) return [base];
+    const st = stateArt(def, m.rot, active, look);
+    const hurt = st.head.filter((h) => /\.(damaged(\.flicker)?|destroyed)$/.test(h));
+    const chain = [...hurt, `${a}${r}.${s}`, `${a}.${s}${r}`, ...moduleAssets(world, id, m, def, active, look)];
+    const base: ModuleLayer = { chain, key: a, tiles: 'all', bed: { lit }, ...(hurt.length && st.anim ? { anim: st.anim } : {}) };
+    if (!plot || !plot.planted || m.hp <= 0) return [base];
     const crop = plot.planted.replace(/^crop\./, '');
     const stage = cropStage(plot.need ? plot.grown / plot.need : 0, plot.ready);
     return [base, { chain: [`${a}.crop.${crop}.${stage}${r}`], key: `${a}.crop`, tiles: 'all', dz: 0.01, crop: { crop, stage } }];

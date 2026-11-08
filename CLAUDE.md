@@ -21,7 +21,9 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   `ci.yml` switches PRs back to affected fast tests). Drafts, pushes to `main` and markdown-only changes don't run it;
   the full suite also runs once a day on `main` when it changed. Batch fixes into one push rather than pushing every
   commit to an open PR.
-- `npm run test:weights`: refresh `tools/testWeights.json` (per-file times that order the run and balance the CI shards)
+- `npm run test:weights:ci [-- <run-id>]`: refresh `tools/testWeights.ts` from the per-shard timing artifacts of a CI run (latest green
+  one on `main` by default). `npm run test:weights` does the same from a local full run; prefer the CI one. The weights are per-file
+  times that order the run and balance the CI shards
   after adding or reshaping heavy tests.
 - Tests share one module graph (`isolate: false`) except the files listed as isolated in `vite.config.ts`. A test that
   mocks or spies, or changes shared or cached data (the component registry, generated nodes cached per seed), goes on that list.
