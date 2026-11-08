@@ -11,10 +11,10 @@
   const ready = $derived(drive.charge >= drive.max && drive.active);
   const tip = $derived(
     ready
-      ? `Flee: jump out of the fight, then pick where to go on the starmap (${keyLabel($keymap, 'combat.flee')})`
+      ? `Flee: jump out of the fight, then pick where to go on the starmap`
       : drive.helmManned
-        ? `Flee: drive charging ${Math.floor(drive.charge)}/${drive.max} s (${keyLabel($keymap, 'combat.flee')})`
-        : `Helm unmanned: the drive is not charging (${keyLabel($keymap, 'combat.flee')})`,
+        ? `Flee: drive charging ${Math.floor(drive.charge)}/${drive.max} s`
+        : `Helm unmanned: the drive is not charging`,
   );
 </script>
 

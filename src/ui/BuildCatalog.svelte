@@ -108,7 +108,7 @@
         {/each}
       </div>
       {#if selectedEntry?.kind === 'module'}
-        <button class="rotb" use:tip={{ text: 'Rotate (R, Shift+R back)' }} aria-label="Rotate" data-testid="rotate" onclick={() => api.setTool({ rot: (st.rot + 1) % 4 })}><Icon name="rotate" size={16} /> {st.rot * 90}°</button>
+        <button class="rotb" use:tip={{ text: 'Rotate (Shift+R turns back)', key: 'build.rotate' }} aria-label="Rotate" data-testid="rotate" onclick={() => api.setTool({ rot: (st.rot + 1) % 4 })}><Icon name="rotate" size={16} /> {st.rot * 90}°</button>
       {/if}
       <input class="search" placeholder="Search modules…" aria-label="Search modules" bind:value={query} onkeydown={(e) => { if (e.key === 'Escape') { query = ''; (e.target as HTMLElement).blur(); } }} />
     </div>
