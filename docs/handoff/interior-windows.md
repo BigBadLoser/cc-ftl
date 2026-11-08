@@ -682,3 +682,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: thin band to ref 15 (the user: it needed work): on the cover 2 rows of red under the header (drawn 4: the
   header's overhang hides 2), 6 rows of grey, a 2-row stripe (measured: header foot, red 3 with its AA, grey 6,
   stripe 3). The strip keeps its full band (the ref's), which in a run reads as a red tab at each tile. nt3.
+- 2026-11-08: the user: that (nt3) is worse; the band back to 0.18 H, its stripe's foot on the normal band's (0.30-0.33 H
+  under the header: the strip's red ends with it; measured, same row). nt4.
