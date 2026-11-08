@@ -658,3 +658,5 @@ Marked ref (both layers, numbered): scratchpad
   normal; the user). Plain m10 identical to nv9. nb15.
 - 2026-11-08: the boxes' recess lip back to the cover's grey with its red band (the user); its side wall stays 314765.
   Plain m10 identical to nv9. nb16.
+- 2026-11-08: the control boxes a px down (c, e less 1/39.19; measured: contents a row lower, the top bezel's AA edge a
+  touch fuller). nb17.

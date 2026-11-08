@@ -22,6 +22,7 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
 
 def navy_boxes(k, ax, plane, a, b, c, e, F, mouth=None, **_):
     """Two control boxes (T1-2): light bezels, dark windows packed with red and cream parts and small lights."""
+    c, e = c - 1 / 39.19, e - 1 / 39.19                # (a px down: the user)
     zm = (c + e) / 2
     a = T._u(round(T._px(a + 0.06, PX)) + 1, PX)        # (each 3 px narrower, on the px grid: a px off its left, 2
     b = T._u(round(T._px(b - 0.06, PX)) - 2, PX)        # off its right; 2 px shorter, a px off its top and foot: the
