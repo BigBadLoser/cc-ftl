@@ -12,14 +12,24 @@ export function shotLook(weapon: string, look?: ShotLook): { tint: number; blast
   return { tint: look?.tint ?? WEAPON_COLOR[weapon] ?? 0xffffff, blast: look?.blast ?? 1, trail: look?.trail ?? 1 };
 }
 
+/**
+ * The bolt sprite a shot draws: an upgraded (tinted) shot takes its weapon's neutral grey sprite (`<asset>_neutral`, the `upgrades` sheet) when the art has
+ * one, so `recolor` gives every tint the same even brightness (a coloured bolt carries its hue's own, a blue one dark); otherwise, and for plain shots, the
+ * weapon's own coloured one.
+ */
+export function boltAsset(asset: string, tinted: boolean, has: (id: string) => boolean): string {
+  const n = `${asset}_neutral`;
+  return tinted && has(n) ? n : asset;
+}
+
 /** The colour of a lightning arc: its shot's tint, or the ion blue-violet. */
 export const ARC_COLOR = 0xb48aff;
 
 const recolors = new Map<number, ColorMatrixFilter>();
 
 /**
- * Recolour a bolt sprite to `tint` for real: its brightness is kept and its own hues are replaced (a plain `tint` only multiplies, which turns a coloured
- * sprite muddy). The filter is shared per colour. Placeholder until the art session brings white bolt sprites to tint.
+ * Recolour a sprite to `tint` for real: its brightness is kept and its own hues are replaced (a plain `tint` only multiplies, which turns a coloured
+ * sprite muddy). The filter is shared per colour. For an upgraded shot's bolt (its neutral sprite: `boltAsset`) and impact blast.
  */
 export function recolor(spr: Sprite, tint: number): void {
   let f = recolors.get(tint);

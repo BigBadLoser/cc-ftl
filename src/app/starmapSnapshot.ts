@@ -1,5 +1,5 @@
 import {
-  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipPackedOk,
+  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipId, playerShipPackedOk,
   fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
 import { featureName, passengerName } from './jobsSnapshot';
@@ -66,7 +66,7 @@ function travelOf(sim: Sim): UiTravel | null {
 /** The fuel, charge and progress figures (cheap; refreshed often). */
 export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'heat' | 'encounters' | 'event' | 'result'> {
   return {
-    ship: playerShipPackedOk(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
+    ship: playerShipId(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
     jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
     credits: Math.floor(sim.trade.credits), heat: buildHeat(sim), encounters: encountersOf(sim), event: eventOf(sim), result: resultOf(sim),
   };

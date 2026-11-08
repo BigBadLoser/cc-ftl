@@ -33,7 +33,7 @@
       <div class="sub">Upgrade slot</div>
       <div class="slot" data-testid="foe-upgrade">
         {#if m.upgrade}
-          <ItemIcon {api} item={m.upgrade.item} size={30} />
+          <ItemIcon {api} item={m.upgrade.item} size={40} />
           <span class="txt"><b>{m.upgrade.name}</b><small>{m.upgrade.effects.join(' · ')}</small></span>
         {:else}
           <span class="dim">{m.slot ? 'Empty' : 'No slot'}</span>
@@ -51,6 +51,6 @@
   .dim { color: var(--dim); }
   .warn { color: var(--amber); font-size: 12px; }
   .sub { color: var(--dim); font-size: 12px; margin-top: 6px; }
-  .slot { display: flex; align-items: center; gap: 8px; min-height: 34px; }
+  .slot { display: flex; align-items: center; gap: 8px; min-height: 44px; }
   .txt { display: flex; flex-direction: column; min-width: 0; }
 </style>

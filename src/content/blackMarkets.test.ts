@@ -4,14 +4,18 @@ import {
   storageAdd, storageCount, truceBanned, truceHolds, unitPrice, SAVE_VERSION, type Sim,
 } from '../sim';
 import { stat } from '../sim/stats';
-import { dockScan, scanPending } from '../sim/blackmarket/scan';
+import { dockScan, scanPending, seizeContraband } from '../sim/blackmarket/scan';
 import { syncRecruits } from '../sim/galaxy/recruit';
 import { PrizeC, WeaponC } from '../sim/combat/components';
 import { capturePrize } from '../sim/capture/prize';
 import { CarryingC, StorageC } from '../sim/items/components';
 import { AllegianceC, EquipC } from '../sim/fight/components';
 import { spillItems } from '../sim/items/stacks';
+import { storageTake } from '../sim/items/storage';
 import { ModuleC } from '../sim/modules/components';
+import { AssignmentC, JobC, type Job } from '../sim/crew/components';
+import { fitError, fitJobOf } from '../sim/upgrades/fit';
+import { isHeldOffline } from '../sim/modules/hold';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
 import { content } from './index';
@@ -213,6 +217,59 @@ describe('scans', () => {
     run(sim, 1);
     expect(contrabandAboard(sim)).toEqual([]);
     expect(sim.world.get(mod!, ModuleC)!.upgrade).toBeUndefined();
+  });
+
+  describe('seizure during a fit job', () => {
+    /** A hold with the nuke upgrade in it and a posted fit job for it at the first weapon module. */
+    function fitPosted() {
+      const { sim } = lawStation();
+      const mod = sim.world.query(ModuleC).find((id) => fitError(sim, id, 'item.upg_nuke') === null) as number;
+      expect(mod).toBeDefined();
+      giveItems(sim, 'item.upg_nuke', 1);
+      sim.enqueue({ type: 'module.fitUpgrade', moduleId: mod, item: 'item.upg_nuke' });
+      const log = run(sim, 1);
+      expect(log.filter((l) => l.startsWith('command.rejected'))).toEqual([]);
+      expect(fitJobOf(sim, mod)).toBeDefined();
+      return { sim, mod };
+    }
+
+    it('an upgrade delivered to a fit job is seized, the job cancelled and the module released', () => {
+      const { sim, mod } = fitPosted();
+      storageTake(sim, playerStorages(sim)[0] as number, 'item.upg_nuke', 1);
+      const [jobId, job] = fitJobOf(sim, mod) as [number, Job];
+      job!.delivered = [{ item: 'item.upg_nuke', count: 1 }];
+      job!.progress = 5;
+      sim.world.get(mod, ModuleC)!.offlineUntil = sim.tick + 2;
+      expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
+      expect(seizeContraband(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
+      expect(sim.world.has(jobId, JobC)).toBe(false);
+      expect(sim.world.get(mod, ModuleC)!.offlineUntil).toBeUndefined();
+      expect(isHeldOffline(sim, sim.world.get(mod, ModuleC)!)).toBe(false);
+      expect(contrabandAboard(sim)).toEqual([]);
+      expect(sim.world.query(ItemStackC).some((i) => sim.world.get(i, ItemStackC)!.item === 'item.upg_nuke')).toBe(false);
+    });
+
+    it('an upgrade a crew member is carrying to the fit job is seized and the job cancelled', () => {
+      const { sim, mod } = fitPosted();
+      storageTake(sim, playerStorages(sim)[0] as number, 'item.upg_nuke', 1);
+      const [fitId, fit] = fitJobOf(sim, mod) as [number, Job];
+      const crew = sim.world.query(CrewC).find((i) => sim.world.get(i, AllegianceC)?.faction === 'player') as number;
+      const haul = sim.world.createEntity();
+      sim.world.add(haul, JobC, { ...fit!, category: 'hauling', kind: 'haul', reservedBy: crew, target: undefined, fit: undefined, needs: undefined, delivered: undefined,
+        haul: { item: 'item.upg_nuke', count: 1, phase: 'deliver', src: { kind: 'storage', id: 0 }, dst: { kind: 'job', id: fitId } } } as never);
+      sim.world.add(crew, AssignmentC, { jobId: haul });
+      sim.world.add(crew, CarryingC, { item: 'item.upg_nuke', count: 1 });
+      seizeContraband(sim);
+      expect(sim.world.has(crew, CarryingC)).toBe(false);
+      expect(sim.world.has(fitId, JobC)).toBe(false);
+    });
+
+    it('an upgrade still in the hold when the fit job is posted is seized and the waiting job cancelled', () => {
+      const { sim, mod } = fitPosted();
+      seizeContraband(sim);
+      expect(fitJobOf(sim, mod)).toBeUndefined();
+      expect(contrabandAboard(sim)).toEqual([]);
+    });
   });
 
   it('two stacks of the same contraband in one hold are both seized', () => {

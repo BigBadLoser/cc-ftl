@@ -388,8 +388,10 @@ export interface UiIcon {
   h: number;
   sheetW: number;
   sheetH: number;
-  /** PLACEHOLDER icon (a stand-in item's art): the outline colour that marks it as one. */
-  placeholder?: string;
+  /** A UI icon (`<item>.icon`): pixel art drawn at a whole-number scale only, 1x in its 40 px box. */
+  ui?: boolean;
+  /** For a UI icon: the item's floor-stack frame, shown instead in a box too small for the icon at 1x. */
+  floor?: UiIcon;
 }
 
 /** Ship-wide totals of one item. */
