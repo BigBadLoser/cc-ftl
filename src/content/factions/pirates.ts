@@ -32,7 +32,7 @@ export const raider = {
   hullFamilies: [{ ...family('raider'), weight: { base: 5, perDepth: 0, max: 5 } }, { ...family('gunrunner'), weight: { base: 0, perDepth: 0.3, max: 2 } }],
   weapons: { light: [{ value: 'module.ionCannon', weight: 3 }, { value: 'module.burstLaser', weight: 2 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
   // Pirate fits are crude: bolted-on armour, a little coolant.
-  upgrades: [{ item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
+  upgrades: [{ item: 'item.upg_frag', chance: 0.2 }, { item: 'item.upg_chain', chance: 0.1 }, { item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
   stock: [{ item: 'item.scrap_hull', min: 1, max: 4 }, { item: 'item.metal', min: 0, max: 3 }],
   crew: {
     required: ['role.pilot', 'role.gunner', 'role.security', 'role.security', 'role.security'],
@@ -65,7 +65,7 @@ export const cartel = {
   hullFamilies: [{ ...family('hauler'), weight: { base: 5, perDepth: 0, max: 5 }, bonus: { crates: 8, weapons: -1 } }, { ...family('gunrunner'), weight: { base: 0, perDepth: 0.35, max: 2 } }],
   weapons: { light: [{ value: 'module.burstLaser', weight: 2 }, { value: 'module.missileLauncher', weight: 2 }], heavy: [{ value: 'module.missileLauncher', weight: 3 }, { value: 'module.massDriver', weight: 1 }] },
   // Pirate fits are crude: bolted-on armour, a little coolant.
-  upgrades: [{ item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
+  upgrades: [{ item: 'item.upg_frag', chance: 0.15 }, { item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
   stock: [{ item: 'item.missile', min: 3, max: 9 }, { item: 'item.metal', min: 1, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }, { item: 'item.parts', min: 0, max: 3 }],
   crew: {
     required: ['role.pilot', 'role.gunner', 'role.security'],
@@ -95,7 +95,7 @@ export const mercenary = {
   hullFamilies: [{ ...family('raider'), weight: { base: 3, perDepth: 0, max: 3 } }, { ...family('gunrunner'), weight: { base: 1, perDepth: 0.3, max: 3 } }],
   weapons: { light: [{ value: 'module.burstLaser', weight: 3 }, { value: 'module.ionCannon', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 2 }, { value: 'module.missileLauncher', weight: 1 }] },
   // Pirate fits are crude: bolted-on armour, a little coolant.
-  upgrades: [{ item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
+  upgrades: [{ item: 'item.upg_prism', chance: 0.15 }, { item: 'item.upg_rail', chance: 0.1 }, { item: 'item.upg_chain', chance: 0.1 }, { item: 'item.upg_housing', chance: 0.3 }, { item: 'item.upg_coolant', chance: 0.15 }],
   stock: [{ item: 'item.missile', min: 0, max: 4 }, { item: 'item.metal', min: 0, max: 4 }, { item: 'item.electronics', min: 0, max: 2 }],
   crew: {
     required: ['role.pilot', 'role.gunner', 'role.security', 'role.engineer'],
@@ -128,8 +128,8 @@ export const zealot = {
   architecture: architecture([{ ...role('raider'), weight: { base: 3, perDepth: 0, max: 3 } }, { ...role('gunrunner'), weight: { base: 1, perDepth: 0.3, max: 3 } }]),
   hullFamilies: [{ ...family('raider'), weight: { base: 3, perDepth: 0, max: 3 } }, { ...family('gunrunner'), weight: { base: 1, perDepth: 0.3, max: 3 } }],
   weapons: { light: [{ value: 'module.incendiaryLauncher', weight: 4 }, { value: 'module.burstLaser', weight: 1 }], heavy: [{ value: 'module.incendiaryLauncher', weight: 2 }, { value: 'module.massDriver', weight: 1 }] },
-  // Zealots run their guns hot: coolant first (their fire-based upgrades come with the weapon-specific ones).
-  upgrades: [{ item: 'item.upg_coolant', chance: 0.4 }, { item: 'item.upg_housing', chance: 0.1 }],
+  // Zealots run their guns hot: coolant first (thermite first on their incendiary launchers).
+  upgrades: [{ item: 'item.upg_thermite', chance: 0.4 }, { item: 'item.upg_coolant', chance: 0.4 }, { item: 'item.upg_housing', chance: 0.1 }],
   stock: [{ item: 'item.electronics', min: 0, max: 3 }, { item: 'item.parts', min: 0, max: 3 }],
   neverSurrender: true,
   crew: {

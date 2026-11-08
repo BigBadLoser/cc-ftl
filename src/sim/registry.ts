@@ -198,7 +198,22 @@ export type Effect =
    * EMP burst: ion-disables every module and stuns every ion-vulnerable crew member (SpeciesDef.ionStunSec) within
    * `radius` tiles. No weapon uses it yet; it is the hook for EMP warheads and, later, combat drones.
    */
-  | { type: 'emp'; seconds: number; radius: number };
+  | { type: 'emp'; seconds: number; radius: number }
+  /**
+   * Lightning from the module on the impact tile into the crew near it: the `targets` nearest (default 3) living crew within `radius` tiles take
+   * `amount` hp (armour counts) and ion-vulnerable ones are stunned. No module on the tile, no arc. `ifNoDrain`: only when no shield layer was drained.
+   */
+  | { type: 'arc'; amount: number; radius: number; targets?: number; ifNoDrain?: boolean };
+
+/** How a shot looks (render only; the sim never reads it). Any weapon may carry it; an upgrade's weapon patch overlays it. */
+export interface ShotLook {
+  /** Tint of the bolt sprite, trail and muzzle burst (0xRRGGBB). Absent = the weapon's own colour. */
+  tint?: number;
+  /** Scale of the impact explosion and its sparks (1 = a plain hit). */
+  blast?: number;
+  /** Trail density multiplier (1 = plain). */
+  trail?: number;
+}
 
 /** A weapon: how it charges, flies and what it does. Power draw is on the carrying ModuleDef. */
 export interface WeaponDef {
@@ -219,6 +234,8 @@ export interface WeaponDef {
   spread: number;
   /** Item consumed per shot (per volley with `ammoPerVolley`). */
   ammo?: string;
+  /** Units of `ammo` one shot (or one volley with `ammoPerVolley`) spends. Default 1 (a nuclear warhead spends 2 missiles). */
+  ammoPerShot?: number;
   /** The ammo is spent once per volley, not per shot (flak: one scrap for the whole spread). */
   ammoPerVolley?: true;
   /** Extra aim error sigma, tiles per tile of range (flak scatters at distance). */
@@ -234,6 +251,8 @@ export interface WeaponDef {
   shield: { damage: number; pierce: number; bypass?: boolean };
   /** Heat the firing ship gains per volley (combat/heat.ts). */
   heat: number;
+  /** Render hints for the shot (see `ShotLook`). */
+  look?: ShotLook;
   /** Applied (in order) when the shot lands on the hull. */
   effects: Effect[];
 }

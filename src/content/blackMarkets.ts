@@ -14,6 +14,7 @@ export const blackMarkets = {
     name: 'Back-room dealer', tier: 'lesser', sell: 1.15, buy: 0.9, contrabandBuy: 0.7, truce: true,
     stock: [
       { item: 'item.stolen_goods', min: 2, max: 8, chance: 0.7 }, { item: 'item.looted_goods', min: 2, max: 6, chance: 0.5 }, { item: 'item.disruptor', min: 1, max: 2, chance: 0.35 },
+      { item: 'item.upg_nuke', min: 1, max: 1, chance: 0.12 },
     ],
     shadyCrew: { slots: 1, roles: ['role.gunner', 'role.security'], bonus: 1, costMult: 1.5, extra: 60 },
   },
@@ -22,6 +23,7 @@ export const blackMarkets = {
     stock: [
       { item: 'item.stolen_goods', min: 10, max: 30 }, { item: 'item.looted_goods', min: 8, max: 24 }, { item: 'item.disruptor', min: 2, max: 6 },
       { item: 'item.missile', min: 6, max: 14, chance: 0.6 }, { item: 'item.parts', min: 4, max: 12, chance: 0.6 },
+      { item: 'item.upg_nuke', min: 1, max: 2, chance: 0.5 },
     ],
   },
   'bm.zealot': {
@@ -34,6 +36,7 @@ export const blackMarkets = {
     name: 'Hiring hall', tier: 'named', owner: 'mercenaries', sell: 1.1, contrabandBuy: 0.65, truce: true,
     stock: [
       { item: 'item.rifle', min: 1, max: 3 }, { item: 'item.sidearm', min: 2, max: 5 }, { item: 'item.missile', min: 4, max: 10, chance: 0.7 }, { item: 'item.disruptor', min: 1, max: 2, chance: 0.4 },
+      { item: 'item.upg_nuke', min: 1, max: 1, chance: 0.25 },
     ],
     shadyCrew: { slots: 4, roles: SHADY_ROLES, bonus: 2, costMult: 2.2, extra: 120 },
   },

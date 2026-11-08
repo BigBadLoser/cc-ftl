@@ -1,6 +1,7 @@
 import { StorageC } from '../items/components';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
+import type { WeaponDef } from '../registry';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 
@@ -23,7 +24,18 @@ export function takeStock(sim: Sim, shipId: number, item: string, count: number)
   return got;
 }
 
-/** Take one unit from the first storage module of the grid holding it. Returns false if none. */
-export function consumeAmmo(sim: Sim, shipId: number, item: string): boolean {
-  return takeStock(sim, shipId, item, 1) === 1;
+/** Units of ammo one shot (or volley) of the weapon spends. */
+export function ammoNeed(def: Pick<WeaponDef, 'ammoPerShot'>): number {
+  return def.ammoPerShot ?? 1;
+}
+
+/** True if the ship holds enough ammo for one shot of the weapon (always true for a weapon with no ammo). */
+export function hasAmmo(sim: Sim, shipId: number, def: Pick<WeaponDef, 'ammo' | 'ammoPerShot'>): boolean {
+  return !def.ammo || ammoCount(sim, shipId, def.ammo) >= ammoNeed(def);
+}
+
+/** Take `count` units (default 1) from the grid's storage, all or nothing. Returns false if the ship holds fewer. */
+export function consumeAmmo(sim: Sim, shipId: number, item: string, count = 1): boolean {
+  if (ammoCount(sim, shipId, item) < count) return false;
+  return takeStock(sim, shipId, item, count) === count;
 }

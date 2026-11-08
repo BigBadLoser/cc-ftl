@@ -6,6 +6,11 @@ import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_cup from '@tabler/icons/outline/cup.svg?raw';
 import t_snowflake from '@tabler/icons/outline/snowflake.svg?raw';
+import t_diamond from '@tabler/icons/outline/diamond.svg?raw';
+import t_bomb from '@tabler/icons/outline/bomb.svg?raw';
+import t_radioactive from '@tabler/icons/outline/radioactive.svg?raw';
+import t_arrow_big_right_lines from '@tabler/icons/outline/arrow-big-right-lines.svg?raw';
+import t_sparkles from '@tabler/icons/outline/sparkles.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_settings from '@tabler/icons/outline/settings.svg?raw';
 import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
@@ -92,6 +97,11 @@ const inner = (raw: string): string => raw.replace(/^[\s\S]*?<svg[^>]*>/, '').re
 
 /** Icon.svelte name -> Tabler outline file. */
 export const FILES = {
+  'sparkles': 'sparkles',
+  'diamond': 'diamond',
+  'bomb': 'bomb',
+  'radioactive': 'radioactive',
+  'arrow-big-right-lines': 'arrow-big-right-lines',
   power: 'bolt',
   o2: 'droplet',
   credits: 'coin',
@@ -181,6 +191,11 @@ export const FILES = {
 } as const;
 
 const RAW: Record<string, string> = {
+  'sparkles': t_sparkles,
+  'diamond': t_diamond,
+  'bomb': t_bomb,
+  'radioactive': t_radioactive,
+  'arrow-big-right-lines': t_arrow_big_right_lines,
   'settings': t_settings,
   'keyboard': t_keyboard,
   'device-floppy': t_device_floppy,
