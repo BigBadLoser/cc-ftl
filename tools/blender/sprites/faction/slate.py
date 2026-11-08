@@ -192,11 +192,6 @@ def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
     T.paint(k, ax, plane, a, b, z0, z1 - RAIL_H, 0.0, BLUE, 1)    # (to the base rail's foot, as its: on up it
     _rail(k, ax, plane, a, b, z0, z1, mit, outer="fGT3" if ax == "y" else "fGT4")   # tinted the top edge's AA;
                                                 # its side at the tile's edge a shade under its front: tall, it shows)
-    if abs((b + 0.5) % 1.0) < 1e-6 or abs((b + 0.5) % 1.0 - 1.0) < 1e-6:   # that side by a plain rail: hid by it
-        prism(k, ax, plane, b - LINE, b, [(RAIL_D, z1 - RAIL_H), (RAIL_D + 2 * PAINT, z1 - RAIL_H),    # over the
-                                          (RAIL_D + 2 * PAINT, z1 - PZ), (RAIL_D, z1 - PZ)], BLUE, 3,  # plain rail's
-              cols=[False, "fGT3" if ax == "y" else "fGT4", False, False], cap=False)  # foot, a seam on its front
-                                                # there (else its end block and the plain one's read as one L)
     side = "fGT4" if ax == "y" else "fGT5"
     for u0, u1, mid in _blocks(a, b):
         d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
