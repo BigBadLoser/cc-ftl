@@ -7,6 +7,10 @@ A straight partition (mask 10, along x) opened between its end posts, with a bea
 pane. Pieces per look: `tile.wall.<look>.full.m10.win.l` (post at -x), `.win.m` (open across), `.win.r` (post at +x).
 A 2-tile window is l + r, a 3-tile one l + m + r, a 4-tile one l + m + m + r.
 
+## Showing work
+- Show the user the normal render (our run beside both ref layers, or a before / after zoom). The deskewed views are
+  for measuring only: don't send them (the user: "idc about that").
+
 ## Refs (user uploads; unzip into the scratchpad before use)
 Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 - `fe3a3595-Space_Haven_Interior_Windows_Tiles_v2.zip` (same as `b4deef86-...`): the main set.
