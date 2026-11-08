@@ -138,16 +138,36 @@ def disc(f, c, n, r0, r1, mat, sides=16):
 
 
 def heat_shield(k):
-    """The broad shallow dish at the base: a steel lip ring, the ablative face bulging out to a low dome."""
+    """The broad HEAT SHIELD at the base: a steel lip ring, the ablative face bulging out to a low dome (so it shades
+    from its crown to its rim), scorched dark toward the rim with a lighter tile ring round it, a steel boss at its
+    crown and six bolt heads on a ring."""
     _g("heat_shield")
     v = k.v
     rb, d = v["rb"] * 1.04, v["dish"]
+    R = rb * 0.98
     k.cyl(-0.04, 0.03, rb, rb, HULL_K)                                     # the lip
-    n = 6
-    st = [(-0.04 - d * (1 - math.cos(math.pi / 2 * i / n)), rb * 0.98 * math.sin(math.pi / 2 * i / n)) for i in range(n + 1)]
-    st[0] = (st[0][0], 0.0)
-    for (s_a, r_a), (s_b, r_b) in zip(st, st[1:]):                         # apex outward, so the faces face out
-        k.cyl(s_a, s_b, max(r_a, 0.001), r_b, SHIELD if r_b < rb * 0.8 else SHIELD_D)
+
+    def on(a, th, out=0.0):                                                # the dome at a (0 crown, pi/2 rim), angle th
+        sn, cs = math.sin(a), math.cos(a)
+        nl = math.hypot(R * cs, d * sn) or 1.0
+        ns, nr = -R * cs / nl, d * sn / nl                                 # outward: -s at the crown, out at the rim
+        r, ss = R * sn, -0.04 - d * cs
+        c, t = math.cos(th), math.sin(th)
+        return (k.u(ss) + ns * out, r * c + nr * c * out, k.zc + r * t + nr * t * out), (ns, nr * c, nr * t)
+
+    n = 12
+    st = [(-0.04 - d * math.cos(math.pi / 2 * i / n), R * math.sin(math.pi / 2 * i / n)) for i in range(n + 1)]
+    st[-1] = (-0.04, rb)
+    for (s_a, r_a), (s_b, r_b) in zip(st, st[1:]):                         # crown outward, so the faces face out
+        x = (r_a + r_b) / 2 / R
+        mat = SHIELD_D if x > 0.8 else "rust" if 0.42 < x < 0.56 else SHIELD
+        k.cyl(s_b, s_a, r_b, max(r_a, 0.001), mat)
+    p, nn = on(0.0, 0.0)
+    stud(k.f, p, nn, 0.16, 0.03, "steelD", "steel", sides=20)              # the crown boss
+    a6 = math.asin(0.7)
+    for i in range(6):                                                     # bolt heads
+        p, nn = on(a6, math.radians(30 + 60 * i))
+        stud(k.f, p, nn, 0.05, 0.025, "steelD", "steelL", sides=8)
 
 
 def body(k):
