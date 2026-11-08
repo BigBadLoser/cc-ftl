@@ -2,7 +2,7 @@
 on its own, with its translucent `.holo` layer drawn over it (alpha-over, then its glow added).
 
   python3 -I tools/blender/review/research_preview.py <research assets dir> <out dir>
-  python3 -I tools/blender/review/research_preview.py <assets> <out> [designs, comma separated, default l2a,l2b,l2c]
+  python3 -I tools/blender/review/research_preview.py <assets> <out> [designs, comma separated, default r1,r2,r3]
     -> research-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -14,12 +14,13 @@ ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet"
        "g": "G  electron microscope", "h": "H  gantry rig", "i": "I  containment field",
        "j": "J  specimen tank", "k": "K  prototype test bay", "l": "L  light table",
        "l1": "L1  entomologist", "l2": "L2  archivist", "l3": "L3  dissection",
-       "l2a": "L2a  reconstruction", "l2b": "L2b  translation", "l2c": "L2c  star chart"}
+       "l2a": "L2a  reconstruction", "l2b": "L2b  translation", "l2c": "L2c  star chart",
+       "r1": "R1  desk extension", "r2": "R2  fragment vitrine", "r3": "R3  flat-file archive"}
 
 
 def main():
     G, out = Assets(sys.argv[1]), Path(sys.argv[2])
-    NAMES = {v: ALL[v] for v in (sys.argv[3] if len(sys.argv) > 3 else "l2a,l2b,l2c").split(",")}
+    NAMES = {v: ALL[v] for v in (sys.argv[3] if len(sys.argv) > 3 else "r1,r2,r3").split(",")}
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(230 * len(NAMES), 190)
     for i, v in enumerate(NAMES):

@@ -16,8 +16,8 @@ from .research_r3 import _pane
 from .research_r6 import T2, Table, l2
 
 
-def bench(name, pucks=()):
-    """l2's bench with the light strip under the hutch shelves, and pucks [(a, b)] on the table."""
+def bench(name, pucks=(), extra=None):
+    """l2's bench with the light strip under the hutch shelves, pucks [(a, b)] on the table, and extra(k) for more."""
     def build(layer):
         k = l2(layer, finish=False, name=name)
         for su in (-1, 1):
@@ -26,6 +26,8 @@ def bench(name, pucks=()):
         for a, b in pucks:
             T.put(a, b, 0.0, 0.1, 0.1, 0.03, "gm", top="steelD")
             T.put(a, b, 0.03, 0.05, 0.05, 0.012, "resGold")
+        if extra:
+            extra(k)
         return k.build()
     build.__name__ = name
     return build
