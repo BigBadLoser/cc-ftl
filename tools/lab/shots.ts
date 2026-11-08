@@ -2,7 +2,7 @@ import { Container, Graphics, Sprite } from 'pixi.js';
 import { content } from '../../src/content';
 import { resolveArt } from '../../src/render/assets/fallback';
 import { ART_SCALE as S } from '../../src/render/iso';
-import { ARC_COLOR, drawBolt, recolor, shotLook } from '../../src/render/shotLook';
+import { ARC_COLOR, boltAsset, drawBolt, recolor, shotLook } from '../../src/render/shotLook';
 import type { ItemDef, WeaponDef } from '../../src/sim/registry';
 import { withMods } from '../../src/sim/upgrades/stats';
 import type { LabCell, LabCtx, LabPanel } from './panel';
@@ -24,7 +24,8 @@ function shotCell(ctx: LabCtx, label: string, note: string, weapon: string, def:
       const look = shotLook(weapon, def.look);
       const arc = def.effects.some((e) => e.type === 'arc');
       const sprite = (id: string, x: number, y: number, scale: number, tint?: number, add = true): void => {
-        const art = resolveArt(ctx.atlas, [id]);
+        const bolt = boltAsset(id, tint !== undefined, (n) => ctx.atlas.manifest.assets[n]?.kind === 'static'); // as the game draws it
+        const art = resolveArt(ctx.atlas, [bolt]);
         if (!art) return;
         const spr = new Sprite(art.s.tex);
         spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
@@ -74,7 +75,7 @@ export const shotsPanel: LabPanel = {
   title: 'Behaviour upgrade shots',
   help: 'each behaviour upgrade\'s shot (tint, trail, blast, arcs) beside the plain weapon\'s: only=prism,focus,frag,rail,nuke,chain,thermite',
   async cells(ctx) {
-    for (const id of ['fx.explosion_small', ...Object.values(content.weapons).map((w) => w.projectileAsset)]) ctx.atlas.stat(id);
+    for (const id of ['fx.explosion_small', ...Object.values(content.weapons).flatMap((w) => [w.projectileAsset, `${w.projectileAsset}_neutral`])]) ctx.atlas.stat(id);
     await ctx.atlas.whenIdle();
     const only = (ctx.params.get('only') ?? '').split(',').filter(Boolean);
     const cells: LabCell[] = [];

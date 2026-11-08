@@ -17,7 +17,7 @@ import type { EmitterDef, Particles } from './fx/particles';
 import { onShip } from './regionRules';
 import { animNow } from './animClock';
 import { createShieldView } from './shieldView';
-import { ARC_COLOR, drawBolt, recolor, shotLook } from './shotLook';
+import { ARC_COLOR, boltAsset, drawBolt, recolor, shotLook } from './shotLook';
 
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
@@ -74,7 +74,8 @@ export function createSectorFx(
   content: { weapons: Readonly<Record<string, WeaponDef>>; modules: Readonly<Record<string, ModuleDef>> },
   hull: (ship: number) => GridLike | undefined = () => undefined,
 ): SectorFx {
-  const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number } }>();
+  /** In-flight shots: their sprite, position, muzzle point and bolt asset (`art`, asked for again each frame: see `update`). */
+  const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number }; art: string }>();
   const shields = createShieldView(world, atlas, { dome: L.fx, add: L.fxAdd }, hull);
   /** Render hints of the shots in flight (a fitted upgrade's tint, blast and trail), from the firing event. */
   const looks = new Map<number, ShotLook>();
@@ -94,6 +95,8 @@ export function createSectorFx(
   const ship = (id: number): Ship | undefined => world.get(id, ShipC);
   /** Sector point (tile units, a tile's centre is at +0.5) -> art px in the sector frame. */
   const secArt = sectorArt;
+  /** Whether the manifest lists a static asset (an upgraded shot's neutral bolt). */
+  const hasArt = (id: string): boolean => atlas.manifest.assets[id]?.kind === 'static';
   /** Centre of sector tile (x, y). */
   const tileArt = (x: number, y: number) => secArt(x + 0.5, y + 0.5);
   /** Where a drone's gun is (its body, lifted by its altitude), in art px; null when it is gone. Tracers end 6 S px under their point. */
@@ -212,19 +215,23 @@ export function createSectorFx(
         const a = secArt(p.x0 + (p.x1 - p.x0) * t, p.y0 + (p.y1 - p.y0) * t);
         let sh = shots.get(id);
         if (!sh) {
-          const art = resolveArt(atlas, [content.weapons[p.weapon]?.projectileAsset ?? 'fx.laser_bolt']);
+          const tint = looks.get(id)?.tint;
+          const bolt = boltAsset(content.weapons[p.weapon]?.projectileAsset ?? 'fx.laser_bolt', tint !== undefined, hasArt);
+          const art = resolveArt(atlas, [bolt]);
           if (!art) continue;
           const spr = new Sprite(art.s.tex);
           spr.anchor.set(art.s.ax / art.s.tex.width, art.s.ay / art.s.tex.height);
           spr.scale.set(art.scale);
           spr.tint = art.tint;
-          if (looks.get(id)?.tint !== undefined) recolor(spr, looks.get(id)?.tint as number);
+          if (tint !== undefined) recolor(spr, tint); // an upgraded shot: its neutral bolt (or its own, lacking one) recoloured
           spr.blendMode = 'add';
           L.sorted.addChild(spr);
-          shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0) }));
+          shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0), art: bolt }));
         }
         sh.x = a.x;
         sh.y = a.y;
+        // A neutral bolt's sheet (upgrades) is not pinned like fx: asking for it each frame marks it in use, so an env sweep can't evict it mid-flight.
+        atlas.stat(sh.art);
         // From the roof turret down to the target's floor level.
         const h = MUZZLE_H + (IMPACT_H - MUZZLE_H) * t;
         sh.spr.position.set(Math.round(a.x), Math.round(a.y - h));

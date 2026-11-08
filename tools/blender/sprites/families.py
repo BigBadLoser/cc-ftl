@@ -52,6 +52,7 @@
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
   salvage   the scrap crates of derelict salvage and cloth: .unit (the game stacks units on a slot grid) and .held
             (items_salvage.py)
+  upgrades  the weapon upgrade parts: ten item.upg_* with .s/.m/.l floor stacks and .held (items_upgrades.py)
   hull      the hull from outside by hull key (run set, generic pieces, their roofs) and its belly in six bay looks,
             each piece with its tint mask (hulltiles.py)
   marks     the overhead crew icons: social cues, break symbols in their bubbles, fight marks; 2D, no render (crew_marks.py)
@@ -209,6 +210,9 @@ def jobs(name):
     if name == "salvage":
         from . import items_salvage
         return items_salvage.jobs(), items_salvage.palette
+    if name == "upgrades":
+        from . import items_upgrades
+        return items_upgrades.jobs(), items_upgrades.PALETTE
     if name == "storage_ore":
         from . import tip_bin
         return tip_bin.jobs(), True
@@ -229,5 +233,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper")
+            "hull", "scrapper", "upgrades")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

@@ -22,7 +22,7 @@
     return { item: id, name: d.name, effects: d.upgrade ? upgradeEffects(d.upgrade) : [], renames: !!d.upgrade?.mods.weapon?.name };
   };
   let ready = $state(false);
-  onMount(async () => { icons = await loadItemIcons(upgradeIds, content.items as Record<string, ItemDef>); ready = true; });
+  onMount(async () => { icons = await loadItemIcons(upgradeIds); ready = true; });
 
   const oc = { left: 0, cooldown: 0 };
   const gun = (id: number, name: string, charge: number, committed: boolean, color: number) =>
