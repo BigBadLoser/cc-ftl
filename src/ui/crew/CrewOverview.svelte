@@ -64,7 +64,8 @@
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
   {#if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} title={blocked ?? 'Order the selected drafted crew to attack'} onclick={() => api.attack(c.id)}>Attack</button></div>
-  {:else}
+  {:else if c.side === 'player'}
+    <!-- (A passenger takes no orders: no draft, no priorities, no trips.) -->
     <div class="orders">
       <button class:on={c.drafted} title="{c.drafted ? 'Undraft' : 'Draft'} (R)" data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}><Icon name="draft" size={18} /><span>{c.drafted ? 'Undraft' : 'Draft'}</span></button>
       <button title="Work priorities" data-testid="open-priorities" onclick={onPriorities}><Icon name="list" size={18} /><span>Priorities</span></button>

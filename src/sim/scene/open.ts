@@ -7,6 +7,7 @@ import { TICK_HZ } from '../time';
 import { ensureTrader } from '../trade/traders';
 import { spawnContact } from '../galaxy/arrivals';
 import { spawnSceneDerelict } from './derelicts';
+import { tendPods } from './pods';
 import { startVisitClock, tendVisit, visiting } from './visit';
 import { BoarderC } from '../vehicles/components';
 import { ModuleC } from '../modules/components';
@@ -111,6 +112,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
   startShipClocks(sim, spec);
   for (const s of spec.ships) if (s.contact.ship === undefined && due(sim, s)) spawnSceneShip(sim, s);
   for (const s of spec.ships) aimAtPrey(sim, spec, s);
+  tendPods(sim, spec);
 }
 
 /**
@@ -120,6 +122,7 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
   startShipClocks(sim, spec);
   let changed = tendVisit(sim, spec);
+  if (tendPods(sim, spec)) changed = true;
   for (const d of spec.derelicts) if (d.ship === undefined && spawnSceneDerelict(sim, d)) changed = true;
   for (const s of spec.ships) {
     const id = s.contact.ship;

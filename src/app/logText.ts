@@ -1,6 +1,6 @@
 import { factionsHostile, homeShip } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, nodeOf, type Sim, type SimEvent } from '../sim';
 import { moduleNameOf } from '../sim/upgrades/stats';
 import type { UiLogEntry, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
@@ -101,17 +101,31 @@ export function createDescriber(sim: Sim) {
         const hire = hireOf(e.deal);
         return { kind: 'trade', tone: 'good', text: hire ? `${crewName(hire)} hired: your shuttle is on its way to pick them up` : `Deal made with ${trader(e.ship)}` };
       }
+      case 'crew.asksToJoin': return { kind: 'trade', tone: 'info', text: `${e.name || crewName(e.crew)} asks to join the crew`, ...sub(crewSubject(sim, e.crew)) };
+      case 'crew.joined': return { kind: 'trade', tone: 'good', text: `${e.name || crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'crew.hired': return { kind: 'trade', tone: 'good', text: `${crewName(e.crew)} joins the crew`, ...sub(crewSubject(sim, e.crew)) };
       case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === 'player' ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
       // A payment to the player is the credit-gain entry (see eventLog.ts); one the player made is logged here.
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
       case 'trade.failed': {
         const hire = hireOf(e.deal);
-        if (handoverOf(e.deal)) return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${e.reason === 'combat' ? 'combat' : 'it could not collect the crate'})` };
+        if (handoverOf(e.deal)) {
+          const why = e.reason === 'combat' ? 'combat' : e.reason === 'asking' ? 'your passenger asked to join' : 'it could not collect the crate';
+          return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${why})` };
+        }
         return { kind: 'trade', tone: 'warn', text: hire ? `The hire of ${crewName(hire)} fell through: fee refunded` : `Deal with ${trader(e.ship)} called off` };
       }
       case 'job.completed': return { kind: 'trade', tone: 'good', text: e.kind === 'bounty' ? `Bounty done: hand it in at a ${factionName(e.issuer)} military station (${e.reward} ₵)` : `Survey done: hand it in at a ${factionName(e.issuer)} research station (${e.reward} ₵)` };
-      case 'job.shuttleSent': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes the crate over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for the crate`, ...onShip(e.station) };
+      case 'job.shuttleSent': {
+        // A passage hands a person over, not a crate.
+        const p = [...sim.galaxy.jobs, ...(sim.galaxy.posted ?? [])].find((j) => j.id === e.id && j.kind === 'passage');
+        const what = p ? crewName(p.crew ?? 0) : 'the crate';
+        return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes ${what} over to ${trader(e.station)}` : `${trader(e.station)} sends a shuttle for ${what}`, ...onShip(e.station) };
+      }
+      case 'job.posted': return e.to
+        ? { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} asks for passage to ${nodeOf(sim, e.to)?.name ?? 'a port'} (${e.reward} ₵): see Jobs`, ...node(e.to) }
+        : { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} has no port of theirs in reach: they will get off at the next one` };
+      case 'job.alighted': return { kind: 'trade', tone: 'info', text: `${e.name || 'Your passenger'} got off at ${nodeOf(sim, e.node)?.name ?? 'the port'}`, ...node(e.node) };
       // job.handedIn and job.handedOver pay out: the credit-gain entry (eventLog.ts) carries them, named after the job.
       case 'story.started': {
         const def = sim.content.events?.[e.event];

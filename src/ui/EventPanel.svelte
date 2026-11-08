@@ -13,6 +13,7 @@
 
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
   const help = () => event.aid && api.dispatch({ type: 'galaxy.aid', ship: event.aid.ship });
+  const callPod = () => event.pod && api.dispatch({ type: 'galaxy.recoverPod', pod: event.pod.pod });
   const answer = (grant: boolean) => event.dockRequest && api.dispatch({ type: 'galaxy.visit', ship: event.dockRequest.ship, grant });
   const title = $derived(event.title.replace(/^Deep space: /, ''));
   const quiet = $derived(
@@ -53,6 +54,15 @@
           {#if event.aid.status}<p class="note ask-text">{event.aid.status}</p>{/if}
           {#if event.aid.action}
             <ActionButton tone="plain" onclick={help} testid="aid-offer"><Icon name="shuttle" size={16} />{event.aid.action === 'offer' ? 'Offer help' : 'Send the repair party again'}</ActionButton>
+          {/if}
+        </div>
+      {/if}
+      {#if event.pod}
+        <div class="ask" data-testid="pod">
+          {#if event.pod.clock !== null}<p class="note warn" data-testid="pod-clock"><Icon name="alert" size={14} />{event.pod.name}: bleeding out, {event.pod.clock} s left</p>{/if}
+          <p class="note ask-text">{event.pod.status}</p>
+          {#if event.pod.action === 'call'}
+            <ActionButton tone="plain" onclick={callPod} testid="pod-call"><Icon name="shuttle" size={16} />Bring the pod in</ActionButton>
           {/if}
         </div>
       {/if}

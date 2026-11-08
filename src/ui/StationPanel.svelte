@@ -24,7 +24,7 @@
   let { api, station, onClose, onTrade }: { api: UiApi; station: number; onClose: () => void; onTrade: (station: number) => void } = $props();
   let open = $state<ServiceId>('station');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
-  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], max: 0, mine: null });
+  let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], asked: [], max: 0, mine: null });
   let metal = $state(0);
   onMount(() => {
     const u = [api.trade.subscribe((t) => (trade = t)), api.jobs.subscribe((j) => (jobs = j)), api.stock.subscribe((s) => (metal = s.filter((x) => x.item === 'item.metal').reduce((n, x) => n + x.stored, 0)))];

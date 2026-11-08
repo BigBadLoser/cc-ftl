@@ -6,6 +6,10 @@ import { AwaySiteC } from '../sim/away/components';
 import { Struct } from '../sim/structure';
 import type { UiAlert } from '../ui/api';
 import { createAlerts } from './alerts';
+import { ConsentC, type Carry } from '../sim/consent/components';
+import { deserialize, serialize } from '../sim/save';
+import { playerShip } from '../sim/trade/player';
+import { playerCrew } from '../sim/story/world';
 
 function current(a: ReturnType<typeof createAlerts>): UiAlert[] {
   let out: UiAlert[] = [];
@@ -30,6 +34,32 @@ function awayTeam(): { sim: Sim; crew: number } {
 }
 
 describe('alerts', () => {
+  it('a passenger asking to join has an alert built from saved state: it comes back after a reload, and goes once answered', () => {
+    const sim = newGame(1, content);
+    const ship = playerShip(sim);
+    const at = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
+    const before = new Set(sim.world.query(CrewC));
+    sim.enqueue({ type: 'debug.spawnCrew', ship, x: at.x, y: at.y, role: 'role.pilot', faction: 'neutral', lodge: true });
+    sim.step();
+    const crew = sim.world.query(CrewC).find((c) => !before.has(c))!;
+    // Carried, already helped (no card posted here: the test is the ask alone).
+    const carry = { event: 'event.medical_emergency', origin: 'traders', purse: 0, fired: [`helpedPerson#n${crew}`] } as Carry;
+    sim.world.get(ship, ConsentC)!.grants.find((g) => g.crew?.includes(crew))!.carry = carry;
+    carry.asked = true;
+    carry.asking = sim.tick; // an ask waiting for an answer, as the save holds it
+    const back = deserialize(serialize(sim), content);
+    const al = createAlerts(back);
+    al.sync();
+    const ask = current(al).find((a) => a.kind === 'crew.asksToJoin');
+    expect(ask?.actions?.map((x) => [x.label, x.tone])).toEqual([['Accept', 'good'], ['Decline', 'bad']]);
+    al.sync();
+    expect(current(al).filter((a) => a.kind === 'crew.asksToJoin')).toHaveLength(1);
+    back.enqueue({ type: 'jobs.join', crew, accept: false });
+    back.step();
+    al.sync();
+    expect(current(al).some((a) => a.kind === 'crew.asksToJoin')).toBe(false);
+  });
+
   it('a dismissed save-failed alert stays muted until a write succeeds, then a new failure raises it again', () => {
     const al = createAlerts(newGame(1, content));
     expect(al.saveResult(false, 'x')).toBe(true);

@@ -9,6 +9,7 @@ import { SEED_TRIES } from '../galaxy/tuning';
 import type { Encounter } from '../galaxy/types';
 import type { ItemQty } from '../registry';
 import { buildDerelict } from './derelicts';
+import { buildPod } from './pods';
 import type { Ambush, AmbushRecipe, Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, SceneTimer, SceneTimerRecipe, Stance } from './types';
 
 /**
@@ -129,6 +130,7 @@ export function storySpec(sim: Sim, event: string, recipe: SceneRecipe): SceneSp
     ships: buildShips(sim, recipe.ships ?? [], rng, depth, h, used),
     derelicts: (recipe.derelicts ?? []).map((r, i) => buildDerelict(sim, r, rng, [h, 0x100 + i])).filter((d): d is SceneDerelict => d !== null),
     timers: (recipe.timers ?? []).map((t) => buildTimer(rng, t)),
+    ...(recipe.pods?.length ? { pods: recipe.pods.map((r) => buildPod(sim, r, rng)) } : {}),
   };
 }
 

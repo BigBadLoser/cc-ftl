@@ -212,7 +212,7 @@ describe('utility drives', () => {
 describe('content policies', () => {
   it('every crew kind has a policy, and drive ids are unique within each', () => {
     const kinds = new Set(Object.values(content.policies).flatMap((p) => p.crew));
-    expect([...kinds].sort()).toEqual(['colonist', 'npc', 'robot', 'station']);
+    expect([...kinds].sort()).toEqual(['colonist', 'guest', 'npc', 'robot', 'station']);
     for (const p of Object.values(content.policies)) {
       const ids = p.drives.map((d) => d.id);
       expect(new Set(ids).size).toBe(ids.length);

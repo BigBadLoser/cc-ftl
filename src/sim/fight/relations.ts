@@ -102,5 +102,5 @@ export function isOffDuty(sim: Sim, crew: number): boolean {
   const f = sim.world.get(crew, FighterC);
   if ((!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew)) return true;
   const g = guestHere(sim, crew);
-  return !!g && !g.work;
+  return !!g && !g.work && !g.lodge; // a lodging guest lives aboard (sleeps, eats) and only takes no jobs (`refusesWork`)
 }

@@ -31,7 +31,7 @@
   const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'crew.break', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded', 'away.stranded', 'save.failed']);
   const icon: Record<UiAlertKind, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.airUnreachable': 'o2', 'away.stranded': 'downed', 'crew.downed': 'downed',
-    'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save',
+    'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save', 'crew.asksToJoin': 'person',
   };
 </script>
 
@@ -43,6 +43,16 @@
         <span class="body">{a.text}</span>
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
+    {:else if a.actions?.length && !toast}
+      <!-- An alert that answers itself: the message, then its actions (primary first) under it; the close X stays top right. -->
+      <div class="acts">
+        <button class="go" onclick={() => jump(a)}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
+        <div class="row">
+          {#each a.actions as act (act.label)}
+            <button class="act {act.tone}" data-testid="alert-action" data-tone={act.tone} onclick={() => api.dispatch(act.command)}>{act.label}</button>
+          {/each}
+        </div>
+      </div>
     {:else}
       <button class="go" disabled={toast ? false : !a.subject && !a.report && !a.menu} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
@@ -89,6 +99,13 @@
   .go.story .tap { display: block; color: var(--cyan); margin-top: 2px; }
   .alert:has(.story) { border-color: var(--cyan); }
   .alert:has(.story:disabled) { border-color: var(--line); }
+  /* Alerts with actions: the X sits top right (not centred on the taller card); the actions line up under the text, after the icon. */
+  .alert:has(.acts) { align-items: flex-start; border-color: var(--cyan); }
+  .acts { flex: 1; min-width: 0; display: grid; }
+  .acts .row { display: flex; gap: 6px; padding: 0 8px 8px 32px; }
+  .alert .act { min-height: 26px; padding: 0 12px; border: 1px solid currentColor; font-size: 12px; font-weight: 600; }
+  .alert .act.good { color: var(--green); }
+  .alert .act.bad { color: var(--red); }
   .x { min-width: 32px; padding: 0; color: var(--dim); display: inline-flex; align-items: center; justify-content: center; }
   .ic { display: inline-flex; color: var(--amber); }
   .danger .ic { color: var(--red); }

@@ -65,6 +65,7 @@ export function createEventLog(sim: Sim): EventLog {
     for (const e of events) {
       if (e.type === 'job.handedIn') return { text: `${e.kind === 'bounty' ? 'Bounty' : 'Survey'} handed in to ${faction(e.issuer)}` };
       if (e.type === 'job.handedOver') return { text: e.via === 'own' ? 'Crate dropped at the station' : e.via === 'shuttle' ? `Crate taken by the ${faction(e.issuer)} shuttle` : 'Crate handed across' };
+      if (e.type === 'job.closed' && e.kind === 'passage' && e.outcome === 'done') return { text: 'Passage fare paid' };
       if (e.type !== 'trade.settled' || e.credits >= 0) continue;
       const name = sim.world.get(e.ship, TraderC)?.name ?? 'trader';
       const s = shipSubject(sim, e.ship);

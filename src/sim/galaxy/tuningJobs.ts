@@ -51,3 +51,12 @@ export const SURVEY_FEATURES = ['nebula', 'black_hole', 'blue_giant', 'asteroids
 export const SURVEY_FEATURE_BONUS: Record<(typeof SURVEY_FEATURES)[number], number> = { nebula: 0, black_hole: 60, blue_giant: 30, asteroids: 0 };
 /** Seconds the station shuttle waits before the next try after a handover was called off (combat, no dock; trade/handover.ts). */
 export const HANDOVER_RETRY_SEC = 20;
+/**
+ * Passage (DESIGN.md "Medical pod", decision 7; galaxy/passage.ts): a passenger back on their feet asks to be taken to a port of their own faction within
+ * PASSAGE_HOPS jumps. Fare = PASSAGE_BASE + PASSAGE_PER_HOP x hops; due PASSAGE_TURNS_BASE + PASSAGE_TURNS_PER_HOP x hops turns on.
+ */
+export const PASSAGE_HOPS = 3;
+export const PASSAGE_BASE = 50;
+export const PASSAGE_PER_HOP = 45;
+export const PASSAGE_TURNS_BASE = 6;
+export const PASSAGE_TURNS_PER_HOP = 3;

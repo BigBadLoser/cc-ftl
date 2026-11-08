@@ -1,3 +1,4 @@
+import { lodgingHere } from '../consent/guests';
 import type { Sim } from '../sim';
 import {
   CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
@@ -54,9 +55,14 @@ export function isBreaking(sim: Sim, crew: number): boolean {
   return !!b && b.tier !== 'mild' && !b.suspended;
 }
 
-/** A mild break (work refusal, isolation) is on: the work drive scores 0, so no job is taken or called to. */
+/**
+ * Takes no jobs: a mild break (work refusal, isolation) is on, or they lodge aboard as a guest not asked to work (consent/components.ts). The work
+ * drive scores 0, so no job is taken or called to; sleep, meals and the rest still apply.
+ */
 export function refusesWork(sim: Sim, crew: number): boolean {
-  return sim.world.get(crew, BreakdownC)?.tier === 'mild';
+  if (sim.world.get(crew, BreakdownC)?.tier === 'mild') return true;
+  const g = lodgingHere(sim, crew);
+  return !!g && !g.work;
 }
 
 export function isIncapacitated(sim: Sim, crew: number): boolean {

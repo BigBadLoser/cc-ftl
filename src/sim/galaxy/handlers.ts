@@ -1,3 +1,4 @@
+import { callPod } from '../vehicles/escape';
 import { CombatC } from '../combat/components';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
@@ -17,6 +18,8 @@ import { answerVisit, setAmbush } from '../scene/visit';
 import { offerAid } from '../scene/aid';
 import { setArrivals } from '../scene/debug';
 import { abandonJob, acceptJob, handIn, openCrate } from './jobs';
+import { refusePassage } from './passage';
+import { answerJoin } from './joinOffer';
 
 type GalaxyCommandType = Extract<Command['type'], `galaxy.${string}` | `jobs.${string}` | 'crew.hire' | 'blueprint.buy' | 'debug.ambush' | 'debug.sceneArrivals' | 'debug.galaxyReveal' | 'debug.galaxyTeleport' | 'debug.chargeFtl' | 'debug.notoriety' | 'debug.jobScenario'>;
 type Handler<T extends GalaxyCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -28,6 +31,12 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'galaxy.leaveEvent': (sim) => void leave(sim),
   'galaxy.visit': (sim, cmd) => void answerVisit(sim, cmd.ship, cmd.grant),
   'galaxy.aid': (sim, cmd) => offerAid(sim, cmd.ship),
+  'galaxy.recoverPod': (sim, cmd) => {
+    const pod = sim.galaxy.event?.scene.pods?.find((p) => p.id === cmd.pod);
+    const why = !pod || pod.vehicle === undefined ? 'noPod' : callPod(sim, pod.vehicle);
+    if (why) return void sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: why });
+    (pod as NonNullable<typeof pod>).called = true;
+  },
   'debug.ambush': (sim, cmd) => void setAmbush(sim, cmd.trap, cmd.tell),
   'debug.sceneArrivals': (sim, cmd) => setArrivals(sim, cmd.mode),
   'galaxy.clearNotoriety': (sim) => void clearNotoriety(sim),
@@ -36,6 +45,8 @@ export const galaxyHandlers: { [T in GalaxyCommandType]: Handler<T> } = {
   'blueprint.buy': (sim, cmd) => buyBlueprint(sim, cmd.port, cmd.def),
   'jobs.accept': (sim, cmd) => void acceptJob(sim, cmd.key),
   'jobs.abandon': (sim, cmd) => void abandonJob(sim, cmd.id),
+  'jobs.refuse': (sim, cmd) => void refusePassage(sim, cmd.key),
+  'jobs.join': (sim, cmd) => void answerJoin(sim, cmd.crew, cmd.accept),
   'jobs.handIn': (sim, cmd) => void handIn(sim, cmd.id),
   'jobs.openCrate': (sim, cmd) => void openCrate(sim, cmd.id),
   'debug.galaxyReveal': (sim, cmd) => {

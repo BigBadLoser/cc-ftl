@@ -15,13 +15,14 @@ export interface GrantKey {
 const matches = (g: Grant, by: Grant['by'], k: GrantKey): boolean =>
   g.by === by && (k.site === undefined || g.site === k.site) && (k.from === undefined || g.from === k.from);
 
-/** Give leave to come aboard `ship` (consent/components.ts). A grant by the same owner for the same site and `from` replaces the old one. */
+/** Give leave to come aboard `ship` (consent/components.ts). A grant by the same owner for the same site and `from` (a passage: the same person) replaces the old one. */
 export function grant(sim: Sim, ship: number, g: Omit<Grant, 'since'>): void {
   if (!sim.world.has(ship, ShipC)) return;
   const c = sim.world.get(ship, ConsentC) ?? (sim.world.add(ship, ConsentC, { grants: [] }), sim.world.get(ship, ConsentC)!);
-  const same = c.grants.find((x) => x.by === g.by && x.site === g.site && x.from === g.from);
+  // Passengers are one grant each (each carries their own story, `carry`): a passage grant replaces only the one naming the same person.
+  const same = c.grants.find((x) => x.by === g.by && x.site === g.site && x.from === g.from && (g.by !== 'passage' || x.crew?.[0] === g.crew?.[0]));
   c.grants = c.grants.filter((x) => x !== same);
-  c.grants.push({ ...g, since: same?.since ?? sim.tick });
+  c.grants.push({ ...g, ...(same?.carry && !g.carry ? { carry: same.carry } : {}), since: same?.since ?? sim.tick });
 }
 
 /** Drop the owner's grants on `ship` (only those matching `key`, when given); the record goes with the last one. */
@@ -59,6 +60,13 @@ export function guestOn(sim: Sim, crew: number, ship: number): boolean {
 export function guestHere(sim: Sim, crew: number): Grant | undefined {
   const pos = sim.world.get(crew, PositionC);
   return pos ? guestGrant(sim, crew, shipIdOf(sim, pos)) : undefined;
+}
+
+/** The lodging grant the crew member lives where they stand by (a passenger: consent/components.ts `lodge`), if any. */
+export function lodgingHere(sim: Sim, crew: number): Grant | undefined {
+  if (sim.world.get(crew, AllegianceC)?.faction === 'player') return undefined; // the common case, without the ship lookup
+  const g = guestHere(sim, crew);
+  return g?.lodge ? g : undefined;
 }
 
 /** True while some ship has given leave to the people of `from` (a skiff's party let dock): the party may go outside combat. */
