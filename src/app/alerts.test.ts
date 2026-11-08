@@ -196,6 +196,53 @@ describe('alerts', () => {
       expect(current(al).filter((a) => a.kind === 'crew.downed')).toHaveLength(1);
     });
 
+    it('a consumer held offline by fitting work is no power shortage', () => {
+      const sim = newGame(1, content);
+      sim.step();
+      const id = sim.world.query(ModuleC).find((i) => { const m = sim.world.get(i, ModuleC)!; return (sim.content.modules[m.def]?.power ?? 0) < 0 && shipIdOf(sim, m) === homeShip(sim); }) as number;
+      const m = sim.world.get(id, ModuleC)!;
+      Object.assign(m, { enabled: true, powered: false, hp: Math.max(1, m.hp), offlineUntil: sim.tick + 1000 });
+      const al = createAlerts(sim);
+      al.sync();
+      expect(current(al).filter((a) => a.kind === 'power.shortage')).toHaveLength(0);
+    });
+
+    it('a dismissed low-oxygen alert stays quiet through the hysteresis band and a dip back under the raise line', () => {
+      const sim = newGame(1, content);
+      sim.step();
+      const { tiles, put } = room(sim);
+      const o2 = (v: number) => { for (const i of tiles) put('o2', i, v); };
+      const of = () => current(al).filter((a) => a.kind === 'o2.low');
+      o2(3);
+      const al = createAlerts(sim);
+      al.sync();
+      al.dismiss(of()[0]!.id);
+      for (const v of [17, 3]) {
+        o2(v);
+        sim.tick += ALERT_INTERVAL_TICKS;
+        al.sync();
+        expect(of()).toHaveLength(0);
+      }
+      o2(21);
+      sim.tick += ALERT_INTERVAL_TICKS;
+      al.sync();
+      o2(3);
+      sim.tick += ALERT_INTERVAL_TICKS;
+      al.sync();
+      expect(of()).toHaveLength(1);
+    });
+
+    it('a dismissed state alert is not raised again by its event while the condition holds', () => {
+      const sim = newGame(1, content);
+      const crew = playerCrew(sim)[0] as number;
+      sim.world.add(crew, DownedC, { bleed: 60, stabilized: false, bed: 0 });
+      const al = createAlerts(sim);
+      al.sync();
+      al.dismiss(current(al).find((a) => a.kind === 'crew.downed')!.id);
+      al.onEvents([{ type: 'crew.downed', crew }]);
+      expect(current(al).filter((a) => a.kind === 'crew.downed')).toHaveLength(0);
+    });
+
     it('a story lead notice comes back after a reload and goes when the notice is dismissed', () => {
       const sim = newGame(1, content);
       const defs = sim.content.events ?? {};

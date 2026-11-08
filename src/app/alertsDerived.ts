@@ -22,11 +22,11 @@ export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead',
 ]);
 
-/** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network, ion-disabled parts excluded). */
+/** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network; ion-disabled parts and parts held offline by work excluded). */
 export function shortOnPower(sim: Sim, ship: number): boolean {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || !m.enabled || m.hp <= 0 || m.powered || sim.world.has(id, IonC) || shipIdOf(sim, m) !== ship) continue;
+    if (!m || !m.enabled || m.hp <= 0 || m.powered || sim.world.has(id, IonC) || isHeldOffline(sim, m) || shipIdOf(sim, m) !== ship) continue;
     if ((sim.content.modules[m.def]?.power ?? 0) < 0) return true;
   }
   return false;

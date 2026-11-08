@@ -250,7 +250,7 @@ export function createAlerts(sim: Sim): Alerts {
     // The scan walks the home grid: once per alert interval of sim time (and at once after a load, when the tick differs).
     if (sim.tick === scannedAt || (sim.tick > scannedAt && sim.tick - scannedAt < ALERT_INTERVAL_TICKS)) return;
     scannedAt = sim.tick;
-    const want = deriveAlerts(sim, hasKey);
+    const want = deriveAlerts(sim, (k) => hasKey(k) || derivedMuted.has(k)); // a dismissed alert keeps its hysteresis too
     for (const k of derivedMuted) if (!want.has(k)) derivedMuted.delete(k);
     for (const [k, id] of derived) {
       if (want.has(k) && keys.get(id) === k) continue;
@@ -314,6 +314,7 @@ export function createAlerts(sim: Sim): Alerts {
       for (const e of events) {
         const d = describe(e);
         if (!d) continue;
+        if (DERIVED_KINDS.has(d.kind) && derivedMuted.has(d.key)) continue; // dismissed: the event of a condition already muted stays quiet
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
