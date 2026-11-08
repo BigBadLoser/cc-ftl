@@ -52,10 +52,10 @@ def _blocks(a, b):
     return out
 
 
-def _end_cap(k, ax, plane, a, b, zs, zt, F):
+def _end_cap(k, ax, plane, a, b, zs, F):
     """A run's end face under its face parts: shell._end_section's, its front's top (b: the face's side) the look's own
     section, the lip standing out at the wall's foot, the shelf flat out to its edge, then the slope (in pieces, each
-    convex); all of it the wall's end's grey (END_COL), no lit edge down the slope."""
+    convex); all of it the wall's end's grey (END_COL), no lit edges (up its front edge, down the slope)."""
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     zh = _shelf_z(zs)
@@ -73,8 +73,6 @@ def _end_cap(k, ax, plane, a, b, zs, zt, F):
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
                T.style().toe or F, 2, T.OUT(ax), fixed=END_COL)
-    k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt))], F, 5,
-           T.OUT(ax))                                   # (its front edge lit up the face; none down the slope)
 
 
 def _thirds(a, b):
@@ -98,7 +96,7 @@ def slate(hull):
         lipf = T.fill("lip") if full else None          # a top design's openings through the lip (a box in it from
         lips = lipf(a, b) if lipf and not endf else []  # the shelf up to the seam over it; no recess there)
         if endf:
-            _end_cap(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
+            _end_cap(k, ax, plane, a, b, zs, F)
         if not endf:
             T.run(k, ax, plane, a, b, pe, _shelf_z(zs) - 0.01, zs + 0.02, PAINT, FACE, 3, 0)   # the face on down
                                                                                                 # to the shelf
