@@ -589,8 +589,8 @@ def window(fn, part):
     """fn: the look's straight piece builder (tile.wall.<look>.full.m10). (own, wide, pane objects); (own, wide)
     ramp only."""
     calls = [0]
-    seq = (part, "m" if part in "lm" else None, "m" if part in "mr" else None)  # the piece; its copies one tile on
-    #   at +x, at -x (envtiles._with_runs builds them in that order): the window running on into them, else plain
+    seq = (part, "m" if part in "mr" else None)        # the piece; its copy one tile on at -x (envtiles._with_runs
+    #   builds only the runs drawn before it): the window running on into it, else plain
 
     def each(k, sp):
         global PART
@@ -606,7 +606,7 @@ def window(fn, part):
         T.HOOK = each
         try:
             r = fn()
-            assert calls[0] == 3, calls[0]
+            assert calls[0] == len(seq), calls[0]
             own, wide = r if isinstance(r, tuple) else (r, None)
             if RAMP_ONLY:
                 return r

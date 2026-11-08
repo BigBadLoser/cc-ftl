@@ -183,8 +183,8 @@ def hook(k, sp, own=True):
 def window(fn, part):
     """fn: the default straight piece's builder (tile.wall.full.m10, env_build "wide"). (own, wide, pane objects)."""
     calls = [0]
-    seq = (part, "m" if part in "lm" else None, "m" if part in "mr" else None)  # the piece; its copies one tile on
-    #   at +x, at -x (envtiles._with_runs builds them in that order): the window running on into them, else plain
+    seq = (part, "m" if part in "mr" else None)        # the piece; its copy one tile on at -x (envtiles._with_runs
+    #   builds only the runs drawn before it): the window running on into it, else plain
 
     pre = [0]
 
@@ -207,7 +207,7 @@ def window(fn, part):
         T.HOOK, T.PRE_HOOK = each, bare
         try:
             own, wide = fn()
-            assert calls[0] == 3, calls[0]
+            assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
             PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None

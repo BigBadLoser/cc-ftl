@@ -51,13 +51,13 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Render: `cd tools/blender/preview && SPRITE_SS=4 blender -b --factory-startup --python render.py -- <repo> <out>
   <jobs.py> [ids]`.
 
-## Known breakage (fix not committed yet)
+## Known breakage (fixed)
 - Commit b30dfa9d (join rule: `envtiles._with_runs` builds only the north/west runs) cut the copies a piece build
   makes from 3 (own, +x, -x) to 2 (own, -x). Both `window()` wrappers asserted 3 calls, so **tan and default windows
   no longer render on this branch** (AssertionError(2)).
-- Fix in the working tree, uncommitted (the user stopped the run): in both `wall3d_iwin.py` and
+- Fixed (committed; default windows render again, SS=1 check): in both `wall3d_iwin.py` and
   `wall3d_iwin_def.py`, `seq = (part, "m" if part in "mr" else None)` (the piece, then its -x copy) and
-  `assert calls[0] == len(seq)`. Not yet rendered to check.
+  `assert calls[0] == len(seq)`. Tan not re-rendered yet.
 
 ## Next
 1. Ask the user before starting a look. Show both ref layers (full + small) next to our render.
