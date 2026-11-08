@@ -98,7 +98,7 @@ export interface Ship {
   /** The tick the last severe mental break began aboard (crew/breakdown): a second one within BREAK_ALERT_SHIP_SEC goes to the log, not the alerts. */
   lastSevereBreak?: number;
   /** The player fired on it or boarded it while it was not hostile (combat/provoke.ts): it turned hostile then. */
-  provoked?: 'fired' | 'boarded' | 'ambush';
+  provoked?: 'fired' | 'boarded' | 'ambush' | 'inspection';
   /** Stations: no FTL, no engines, never flees or jumps; it stays in its node (archived with it). */
   immobile?: true;
   /**

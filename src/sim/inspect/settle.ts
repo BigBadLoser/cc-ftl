@@ -24,14 +24,15 @@ import { leave } from './start';
  *   (Fighting them is a later step: #138 step 3.)
  */
 
-const hit = (sim: Sim, faction: string, n: number): void => {
+export const hit = (sim: Sim, faction: string, n: number): void => {
   const key = repKey(sim, faction);
   sim.story.reputation[key] = reputationOf(sim.story, key) - n;
 };
 
-/** What refusing (or running from) an inspection costs: a standing hit, and the station's service. */
+/** What refusing (or running from) an inspection costs: a standing hit, and the station's service; a patrol turns hostile once its people are off (flow.ts). */
 export function refuseConsequences(sim: Sim, insp: Inspection): void {
   hit(sim, insp.faction, INSPECT_REFUSE_HIT);
+  if (insp.patrol !== undefined) insp.turnOnLeave = true;
   const t = sim.world.get(insp.station, TraderC);
   if (t) t.barredUntil = sim.galaxy.turn + INSPECT_BAN_TURNS;
 }

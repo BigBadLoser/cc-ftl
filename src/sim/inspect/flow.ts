@@ -1,8 +1,11 @@
-import { SiteRunC } from '../away/components';
+import { AwayC, SiteRunC } from '../away/components';
 import { scanPrices } from '../blackmarket/scan';
-import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC } from '../blackmarket/tuning';
+import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC, INSPECT_TURN_SEC } from '../blackmarket/tuning';
+import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
-import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
+import { CrewC, DeadC, DownedC, JobC, PositionC } from '../crew/components';
+import { SurrenderedC } from '../fight/components';
+import { fightInspection, turnPatrol } from './fight';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -19,6 +22,25 @@ const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !si
 const aboard = (sim: Sim, insp: Inspection): boolean =>
   insp.crew.some((id) => alive(sim, id) && sim.world.has(id, PositionC) && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
 
+/** True while an inspector still stands and fights on the inspected ship (not downed, surrendered or dead). */
+const standing = (sim: Sim, insp: Inspection): boolean =>
+  insp.crew.some((id) => alive(sim, id) && !sim.world.has(id, DownedC) && !sim.world.has(id, SurrenderedC) && sim.world.has(id, PositionC)
+    && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
+
+/**
+ * A fight is over for the inspection, or the player left mid-fight: the inspectors on the player's ship stay there as ordinary hostile crew (to be taken
+ * prisoner, or fought on after a jump), the rest go with the shuttle.
+ */
+function release(sim: Sim, vehicle: number, insp: Inspection): void {
+  insp.crew = insp.crew.filter((id) => {
+    const pos = sim.world.get(id, PositionC);
+    const kept = alive(sim, id) && !!pos && shipIdOf(sim, pos) === insp.ship;
+    if (kept) sim.world.remove(id, AwayC);
+    return !kept;
+  });
+  endInspection(sim, vehicle);
+}
+
 /**
  * The player's ship is leaving the node: an inspection under way ends now; leaving while the inspectors are aboard counts as refusing them, and leaving a
  * patrol whose inspectors are still on the way counts as running from it.
@@ -30,6 +52,11 @@ export function abortInspections(sim: Sim): void {
       refuseConsequences(sim, insp);
       sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
     } else if (insp.phase === 'fly' && insp.patrol !== undefined) ranFromInspection(sim, insp.faction, insp.patrol);
+    if (insp.phase === 'fight') {
+      release(sim, id, insp);
+      continue;
+    }
+    if (insp.turnOnLeave) turnPatrol(sim, id, insp); // a refused (or fled) patrol turns on the player before they get away
     endInspection(sim, id);
   }
 }
@@ -38,6 +65,13 @@ function step(sim: Sim, id: number, insp: Inspection): void {
   insp.timer++;
   const station = shipById(sim, insp.station);
   const ship = shipById(sim, insp.ship);
+  if (insp.phase === 'fight') {
+    // Over once nobody of theirs stands aboard (the player's ship lost or left is abortInspections / the checks below).
+    if (!ship || ship.faction !== 'player' || sim.sector.state !== 'active' || !standing(sim, insp)) release(sim, id, insp);
+    return;
+  }
+  // The player turned on the ship that sent them (fired on it): its inspectors aboard fight too.
+  if (station && insp.phase !== 'leave' && factionsHostile(station.faction, 'player')) return fightInspection(sim, id, insp);
   if (!station || station.state !== 'active' || !ship || ship.faction !== 'player' || sim.sector.state !== 'active') return endInspection(sim, id);
   if (!insp.crew.some((c) => alive(sim, c))) return endInspection(sim, id);
   if (insp.phase !== 'leave' && sim.sector.inCombat) return leave(sim, id, insp, 'off');
@@ -81,9 +115,13 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       if (lead !== undefined && insp.crew[0] !== lead) insp.crew = [lead, ...insp.crew.filter((c) => c !== lead)];
       return;
     }
-    case 'leave':
-      if (!sim.world.has(id, SiteRunC) || insp.timer > INSPECT_HOME_SEC * TICK_HZ) endInspection(sim, id);
+    case 'leave': {
+      const home = !sim.world.has(id, SiteRunC) || insp.timer > INSPECT_HOME_SEC * TICK_HZ;
+      // A refused patrol turns hostile once its people are off the player's ship, or a beat after they set off.
+      if (insp.turnOnLeave && (home || !aboard(sim, insp) || insp.timer > INSPECT_TURN_SEC * TICK_HZ)) turnPatrol(sim, id, insp);
+      if (home) endInspection(sim, id);
       return;
+    }
   }
 }
 

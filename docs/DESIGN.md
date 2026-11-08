@@ -25,7 +25,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
-  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, steps 1-2 built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-steps-1-2-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them.
+  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them; refusing turns a patrol hostile, and fighting them turns their side on you.
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
@@ -935,7 +935,7 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
   come later.
 
-### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, steps 1-2 built)
+### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)
 
 Replaces the contraband scan pop-up (`InterdictModal`, #136) with inspectors who come aboard. Built in three steps: the
 station dock inspection, then the patrol version, then refusing and fighting.
@@ -984,6 +984,18 @@ station dock inspection, then the patrol version, then refusing and fighting.
 pirate captain on video (a machine faction has no face: static), their demand (varied by faction, and by hunters, a route guard's toll or a plain raid),
 their lead ship on the sensors with the ship count and strength, and Evade (odds), Bribe (price, disabled with the reason when short) and Fight. The numbers
 are unchanged. After the answer the window stays open with how it ended and the caller's reply, and closes on Close channel. `InterdictModal` is removed.
+
+**As built (step 3, refusing and fighting):**
+- Refusing a patrol's inspectors (or leaving while they search or wait) costs the same standing as at a station (4). They walk back to their shuttle
+  with what they took, and the patrol turns hostile once they are off your ship, or 10 seconds after they set off ("The patrol you refused turns
+  hostile", an urgent alert): a beat to jump or arm. A station refusal is unchanged (no service for 10 turns, the hit).
+- Fighting: an inspector's panel has an Attack button for your drafted crew (the panel only, never a right-click order, so it is a choice). Attacking
+  them, or firing on the ship that sent them while they are at work, costs 10 standing; the inspectors go over to their faction's side and fight as
+  boarders; the ship that sent them turns on you with its group: a patrol and its fleet engage, and a station's own guns do (stations carry weapons).
+  A station also refuses service for 30 turns.
+- The fight ends when none of them still stands on your ship; the downed stay as ordinary hostile crew (to be taken prisoner). Jumping away mid-fight
+  takes the ones aboard with you, still hostile. Leaving after the fight follows the usual rules (hostile faction, chases).
+
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 

@@ -2614,6 +2614,13 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   snapshot so the window stays open after `galaxy.respond`, with `UiEncounterResult` (`id`, `outcome`, text) as narration and the caller's reply, until
   Close (over the deploy picker when the answer dropped out). Debug starts `?scenario=patrol[&clean]` and `?scenario=pirates[&faction=][&hunt][&broke]`
   (`debug.pirates`, `galaxy/pirateDebug.ts`).
+- **Refusing and fighting inspectors** (#138 step 3, `inspect/fight.ts`). `crew.attack` on an inspector (`attackableInspector`, checked in `fight/handlers.ts` before the
+  hostility check) calls `fightInspection`: INSPECT_FIGHT_HIT, the inspectors' `AllegianceC` set to their faction's combat side, the 'inspect' grant revoked, phase
+  'fight', a station's `Trader.barredUntil` pushed out by INSPECT_FIGHT_BAN_TURNS, and `hostileAct(source, 'inspection')` provokes the ship that sent them with its group
+  (combat/provoke.ts). `flow.ts` also starts the fight when the source turns hostile some other way (the player fired on it), ends it once no inspector stands aboard,
+  and `release`s the ones on the player's ship as ordinary hostile crew (also when the player leaves mid-fight). A refused patrol (`Inspection.turnOnLeave`, set by
+  `refuseConsequences`) is turned by `turnPatrol` once its party is off the ship, INSPECT_TURN_SEC into the leave, or when the player leaves first.
+  Debug: `?scenario=inspect&fight`, `?scenario=patrol&fight`.
 - **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
   there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
   every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.

@@ -11,6 +11,7 @@ import { dropWeapon, orderEquip } from './equip';
 import { isCombatReady, isHostile } from './relations';
 import { EggSacC } from '../aliens/components';
 import { sacAlive } from '../aliens/target';
+import { attackInspector, attackableInspector } from '../inspect/fight';
 
 type FightCommand = 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip';
 type Handler<T extends FightCommand> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
@@ -38,12 +39,15 @@ export const fightHandlers: { [T in FightCommand]: Handler<T> } = {
     const drafted = sim.world.get(cmd.id, DraftedC);
     if (!drafted) return reject(sim, cmd.type, 'notDrafted');
     const sac = sim.world.get(cmd.target, EggSacC);
-    if (sac ? !sacAlive(sac) : !isCombatReady(sim, cmd.target) || !isHostile(sim, cmd.id, cmd.target)) return reject(sim, cmd.type, 'badTarget');
+    // An inspector is neutral until attacked: the order is what starts the fight (inspect/fight.ts), once it is otherwise a good one.
+    const inspector = !sac && isCombatReady(sim, cmd.target) && attackableInspector(sim, cmd.target);
+    if (sac ? !sacAlive(sac) : !isCombatReady(sim, cmd.target) || (!inspector && !isHostile(sim, cmd.id, cmd.target))) return reject(sim, cmd.type, 'badTarget');
     // The fight runs per grid: a target on another ship can't be reached, and the order would only wipe the walk the crew member was on.
     const here = sim.world.get(cmd.id, PositionC);
     const tp = sim.world.get(cmd.target, PositionC);
     const there = sac ? sac.ship : tp ? shipIdOf(sim, tp) : 0;
     if (!here || shipIdOf(sim, here) !== there) return reject(sim, cmd.type, 'otherShip');
+    if (inspector) attackInspector(sim, cmd.target);
     endSabotage(sim, cmd.id, 'interrupted'); // an explicit attack order replaces a sabotage order (automatic defence only pauses it)
     fighter(sim, cmd.id).ordered = cmd.target;
     sim.world.remove(cmd.id, EmbarkOrderC);

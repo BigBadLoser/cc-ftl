@@ -62,6 +62,9 @@
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
   {#if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack' }} onclick={() => api.attack(c.id)}>Attack</button></div>
+  {:else if c.side === 'visitor' && c.visit === 'Inspector'}
+    <!-- Attacking an inspector is a choice with a price: their faction turns hostile and the ship that sent them fights (#138 step 3). -->
+    <div class="btns one"><button class="warn" data-testid="attack-inspector" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack. Their faction turns hostile (a big standing loss), and the ship that sent them fights back.' }} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else if c.side === 'player'}
     <!-- (A passenger takes no orders: no draft, no priorities, no trips.) -->
     <div class="orders">

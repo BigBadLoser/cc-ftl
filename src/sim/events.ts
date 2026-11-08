@@ -150,7 +150,7 @@ export type SimEvent =
   /** A dormant ship (pirate den, outpost) was provoked: aimed at, damaged, boarded, dug into or breached. */
   /** Battle stations called or stood down (`combat.battleStations`). */
   | { type: 'combat.stations'; on: boolean }
-  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' | 'ambush' }
+  | { type: 'ship.provoked'; ship: number; reason: 'fired' | 'damaged' | 'boarded' | 'ban' | 'dug' | 'breach' | 'ambush' | 'inspection' }
   /** A station raised its alarm (intruders, attacked, fire, breach): guards converge, civilians take cover. */
   | { type: 'station.alarm'; ship: number; reason: string }
   /** A station's alarm calmed after a quiet spell; it forgets its grudges. */
@@ -315,6 +315,8 @@ export type SimEvent =
   | { type: 'inspect.started'; inspection: number; faction: string; name: string; crew: number[] }
   | { type: 'inspect.waiting'; inspection: number; faction: string; value: number; fine: number; bribe: number }
   | { type: 'inspect.bribeRefused'; inspection: number; faction: string }
+  | { type: 'inspect.fought'; inspection: number; faction: string; ship: number; patrol?: true }
+  | { type: 'inspect.turned'; inspection: number; faction: string; ship: number }
   | { type: 'inspect.settled'; inspection: number; faction: string; outcome: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled'; cost: number; patrol?: true }
   | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
