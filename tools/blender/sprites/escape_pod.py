@@ -1,15 +1,15 @@
 """The ESCAPE POD (vehicle.escape_pod): a sealed one-seat lifeboat that flies itself. Pod family (pod_family.py), a little
 smaller than the mining pod (content size 2.2 against 2.6).
 
-A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and the DOCKING COLLAR
-(a hatch in a ring) at its narrow top. A hi-vis orange safety band round the base, a hazard ring round the collar, a side
-hatch and a viewport on the flank, an emergency BEACON on the collar, four RCS quads round the shoulder, small drive
-nozzles.
+A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and a GRAPPLE COLLAR
+(a tow fixture in a hazard ring) stepped in at its narrow top. A hi-vis orange safety band round the base, broken by the
+crew-sized side DOOR (the only way in or out: it mates with an airlock), two windows, an emergency BEACON by the
+collar, RCS quads round the shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then stood up
 by the variant's `tilt` (Tilted: 90 = upright, heat shield down, collar up; more leans the collar back so the shield
 leads) and turned to the heading (Spin; u = the heading). Round the axis, theta 270 faces forward when upright (the side
-hatch), 90 aft (the drive). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 = straight sides, more =
+door), 90 aft (the drive). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 = straight sides, more =
 a rounded gumdrop shoulder) and the tilt; `drive` "flank" puts the nozzles on the aft flank, "collar" round the collar
 (the sideways variant b, flying shield first).
 
@@ -35,8 +35,8 @@ VARIANTS = {
     "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", door="steel", label="H steel door"),
 }
 SIDES = 48
-COLLAR = 0.76                 # the docking collar's radius, x the cone's top: it steps in, a ledge round it
-HATCH = 0.6                   # the collar hatch's radius, x the collar's: the hazard ring round it is the rest
+COLLAR = 0.76                 # the grapple collar's radius, x the cone's top: it steps in, a ledge round it
+HATCH = 0.6                   # the grapple plate's radius, x the collar's: the hazard ring round it is the rest
 HOVER = 0.25                  # the lowest point's height in flight
 
 
@@ -166,9 +166,10 @@ def body(k):
 
 
 def collar(k, beacon_on, thrust=False):
-    """The docking collar, stepped in from the cone's top: a steel ledge round it, then a narrower barrel rising to a
-    mating ring flush with it, black-and-yellow hazard sectors on its face, the red hatch with a hand wheel. The beacon
-    stands on the ledge, aft."""
+    """The GRAPPLE COLLAR, stepped in from the cone's top: a steel ledge round it, then a narrower barrel rising to a ring
+    flush with it, black-and-yellow hazard sectors on its face (the target), and at its centre the grapple fixture a
+    ship's arm takes hold of to tow the pod in: a steel plate and a mushroom-headed pin. No crew hatch: crew use the side
+    door. The beacon stands on the ledge, aft."""
     _g("collar")
     t = k.top
     f = k.f
@@ -183,11 +184,13 @@ def collar(k, beacon_on, thrust=False):
         ri, ro = r * HATCH, r
         pts = [f.pt(u + 0.002, rr * math.cos(a), k.zc + rr * math.sin(a)) for rr, a in ((ri, a0), (ri, a1), (ro, a1), (ro, a0))]
         f.poly(pts[::-1], "hazY" if i % 2 else "hazK")
-    k.f.hcyl(u, u + 0.03, 0, k.zc, r * HATCH, "drK", sides=32, cap="drD")   # the hatch
-    k.f.hcyl(u + 0.03, u + 0.06, 0, k.zc, r * 0.22, "steelD", sides=16, cap="steelL")   # its hand wheel's hub
-    for ang in (0, 90):
-        c = math.cos(math.radians(ang)), math.sin(math.radians(ang))
-        k.f.box(u + 0.045, 0, k.zc, 0.02, 0.05 + abs(c[0]) * r * 0.9, 0.05 + abs(c[1]) * r * 0.9, "steelL", base=False)
+    k.f.hcyl(u, u + 0.025, 0, k.zc, r * HATCH, "steel", sides=32, cap="steel")   # the grapple plate
+    for i in range(3):                                                     # three alignment lugs round it
+        a = math.radians(90 + i * 120)
+        k.f.box(u + 0.025, r * HATCH * 0.7 * math.cos(a), k.zc + r * HATCH * 0.7 * math.sin(a), 0.05, 0.07, 0.07, "steelD",
+                base=False)
+    k.f.hcyl(u + 0.025, u + 0.13, 0, k.zc, 0.05, "steelL", sides=16)        # the pin
+    k.f.hcyl(u + 0.13, u + 0.17, 0, k.zc, 0.1, "steelL", r1=0.07, sides=16, cap="steelL", capstart="steelD")   # its head
     _g("beacon")
     p, nn = (k.u(t), 0.0, k.zc + (r + k.r(t)) / 2), (1.0, 0.0, 0.0)       # on the ledge, aft when upright
     stud(f, p, nn, 0.065, 0.04, "steelD", "steelD")                        # its base
