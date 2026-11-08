@@ -464,7 +464,7 @@
 <div class="starmap legacy" data-testid="starmap" data-mode="browse">
   <div class="head">
     <PaneHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
-      onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
+      onBack={locked ? undefined : onClose} backTestId="starmap-close" />
   </div>
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}
