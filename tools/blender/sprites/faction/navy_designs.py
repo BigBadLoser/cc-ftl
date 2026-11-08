@@ -1,5 +1,6 @@
-"""Navy's straight-run designs (set 4): its tops fill the face's middle (each in a dark recess) or its band, its ramps
-the ramp's panel. The face (navy.py) asks for its slots: "middle" (k, ax, plane, u0, u1, z0, z1, F: inside the recess),
+"""Navy's straight-run designs (set 4): its tops take the face's cover off (the dark frame shows) and fill the opening,
+or change its band; its ramps the ramp's cover. The face (navy.py) asks for its slots: "middle" (k, ax, plane, u0, u1,
+z0, z1, F: inside the opening),
 "band" (k, ax, plane, a, b, ends, zh, H) and the shared "ramp" and "ramp_hole" (relief_style.Style.fill)."""
 import math
 
@@ -17,13 +18,6 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
     its ends the foot's)."""
     prism(k, ax, plane, u0, u1, [(0.0, z0), (d, z0 + ch), (d, z1 - ch), (0.0, z1)], "wall", 0,
           cols=[cols[0], cols[1], cols[2], cols[0]], cap=cols[0])
-
-
-def navy_recess(k, ax, plane, u0, u1, z0, z1, F, fill):
-    """A navy face's middle (u0..u1 x z0..z1, from over its foot strip to under its header): a dark recess, a top
-    design's fill inside it."""
-    T.paint(k, ax, plane, u0, u1, z0, z1, 3 * PAINT, "rose", 1)                                      # the recess
-    fill(k, ax, plane, u0 + 0.04, u1 - 0.04, z0 + 0.04, z1 - 0.04, F)                                # inside it
 
 
 def navy_boxes(k, ax, plane, a, b, c, e, F):
@@ -50,10 +44,9 @@ def navy_boxes(k, ax, plane, a, b, c, e, F):
 
 
 def navy_lockers(k, ax, plane, a, b, c, e, F):
-    """Two red lockers (T1-3), chamfered, a lid notch on the upper."""
-    uc, zm = (a + b) / 2, (c + e) / 2
-    for q0, q1 in ((c, zm - 0.015), (zm + 0.015, e)):
-        _box(k, ax, plane, a, b, q0, q1, 2 * PX, ("lvR2", "lvR", "drM"), ch=PX)
+    """T1-3: one tall red locker in the opening (the ref's), chamfered, a lid notch at its top."""
+    uc = (a + b) / 2
+    _box(k, ax, plane, a, b, c, e, 2 * PX, ("lvR2", "lvR", "drM"), ch=PX)
     flat(k, ax, plane, a + 0.04, uc - 0.04, e - 0.08, e - 0.055, 2 * PX + PAINT, "lvR2")
 
 
@@ -103,7 +96,7 @@ def _bar(k, P, u, d0, d1, zf, hw, ht, up):
 
 def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, ax=0, plane=0.0, **_):
     """B1-2: the ramp's cover off over the hole the shell leaves (its "ramp_hole"): a dark navy recess, its bottom
-    parallel to the ramp, two pipes across it in the header tube's orange (the top one up under the lip), a thin
+    parallel to the ramp, two pipes across it in the header tube's orange (a quarter and three down it), a thin
     silver one behind and above the lower, steel brackets tying them. (A ramp fill's arguments, wall3d.skirt:
     plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d out from the wall.)"""
     if hole:
@@ -113,10 +106,13 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         fall = T.ramp_fall() or zs / run_               # the shell's, over the shelf flat) and its slope's fall
         f = 0.02
         up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
-        db = d0 + 0.012                                 # (a hair in front of the shell's own hole back: on it they
+        db = d0 + 0.006                                 # (a hair in front of the shell's own hole back: on it they
                                                         # fought, specks of its tone through ours)
-        h = 0.17                                        # its bottom parallel to the ramp, h under it (on the floor
-        zb = lambda d: max(f, zat(d) - h)               # noqa: E731   where that would go under it)
+        rp, rs = 0.06, 0.03
+        cs = math.cos(math.atan(fall))                  # (depths into the slope: square to it, so straight down
+        h = (2 * rp + 0.035) / cs                       # they're / cs; on a steep one a plain h buried the pipes)
+        zb = lambda d: max(f, zat(d) - h)               # noqa: E731   its bottom parallel to the ramp, h under it
+        #   (on the floor where that would go under it)
         dk = next((db + (d1 - db) * i / 200 for i in range(201) if zat(db + (d1 - db) * i / 200) - h <= f), d1)
         #   (where the bottom meets the floor)
         prof = [(db, zat(db)), (db, zb(db)), (dk, zb(dk)), (d1, zb(d1))]   # its section: a short back, the bottom
@@ -129,14 +125,15 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
             side = [P(u, z_, d_) for d_, z_ in prof] + [P(u, zat(d1), d1)] + [P(u, zat(dd_), dd_) for dd_ in (dk, db)]
             k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
-        rp, rs = 0.06, 0.03
-        dz = (rp + 0.025) / math.cos(math.atan(fall))                # sunk a radius and a bit under the slope
-        rows = [d0 + fr * (d1 - d0) for fr in (0.12, 0.6)]
-        zp = [zat(rows[0]) - rp - 0.005, zat(rows[1]) - dz]          # (the top one up under the lip)
+        dp, sn = rp + 0.015, math.sin(math.atan(fall))              # sunk a radius and a bit into the slope,
+        feet = [d0 + fr * (d1 - d0) for fr in (0.3, 0.8)]            # square to it (straight down slid them on
+        rows = [dd - sn * dp for dd in feet]                         # towards the toe, the lower one under it)
+        zp = [zat(dd) - cs * dp for dd in feet]                      # (two rows down the opened cover)
         for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
             tube(k, ax, plane, o0 - 0.005, o1 + 0.005, dd, zc, rp)           # (ends in the side walls)
-        ds = rows[1] - 0.06                                                 # a thin silver pipe behind and above
-        prof, cols = tube_prof(ds, zp[1] + rp + 0.055, rs)                 # the lower one, clear of it
+        fs = (feet[0] + feet[1]) / 2                                        # a thin silver pipe between them,
+        ds, zs_ = fs - sn * (rs + 0.05), zat(fs) - cs * (rs + 0.05)         # deeper
+        prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
         zf = lambda d: zp[0] + (zp[1] - zp[0]) * (d - rows[0]) / (rows[1] - rows[0])   # noqa: E731
         w = o1 - o0
@@ -165,5 +162,5 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
              Design("thin band", band=navy_thin_band))
-NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(0.06, 0.9, 0.12)),
+NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(0.0, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))

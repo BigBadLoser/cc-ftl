@@ -532,3 +532,12 @@ Marked ref (both layers, numbered): scratchpad
   shade darker there (95a4b4; the old run's side gave a fainter a4b1c1): the covers now run on by their depth at a
   "cont" end, and the band with them (else the edge px went a lighter red). The edge column is the face's tone now,
   over the face and the band. ns24.
+- 2026-11-08: navy cover rebuild step 3, the variants on the covers (m10 only rendered, nv6). Top designs with a
+  "middle" (boxes, lockers) take the wall cover off: the dark frame (rose 2) in its place, the design in the opening
+  (zf .. zh, inset 0.04); the strip keeps its band, line and lit px (navy_recess gone). Lockers: one tall locker (the
+  ref's). Thin band: on the cover only, the strip keeps navy_band. Pipes: the ramp cover off, its band with it
+  (RampHoles, one_seam: from the shelf's edge to the toe strip, clear of the line); shell._prof keeps the shelf's
+  tones and lit edge when a hole starts at the shelf's edge (it painted the shelf in the slope's tone); the recess
+  floor and the pipes sunk square to the steep slope (straight down buried them / slid them under the toe), rows
+  at 0.3 and 0.8 of the opening, the silver pipe between them. Split plates: in the cover, unchanged. Plain m10
+  pixel-identical to ns24.

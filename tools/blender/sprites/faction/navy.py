@@ -2,7 +2,7 @@
 civil's) and its straight-run designs."""
 from .. import wall3d as T
 from .base import Faction, _style
-from .navy_designs import NAVY_RAMPS, NAVY_TOPS, navy_band, navy_recess
+from .navy_designs import NAVY_RAMPS, NAVY_TOPS, navy_band
 from .parts import LINE, PAINT, PX, _slab, body, bracket, corner_piece, tube, tube_prof
 from .slate import LIP_D, SHELF
 from .shell import (
@@ -131,7 +131,9 @@ def navy(hull):
         H = rt - zs                                                     # wall, so the far hull's parts line up
         zh = rt - 0.25 * H if full else top                             # the header's foot
         bf = T.fill("band", navy_band) if full else None
-        reds = sorted((zh - f0 * H, zh - f1 * H) for f0, f1 in getattr(bf, "reds", ()))
+        reds = sorted((zh - f0 * H, zh - f1 * H) for f0, f1 in navy_band.reds) if full else []   # (the line's lit
+        #   px is the strip's edge: in its band's red)
+        mid = T.fill("middle") if full else None        # a top design's: in place of the cover (off), in the frame
         zc = zh if full else top - 0.03                 # the covers' top: under the header (a low wall's top)
         lines, plates = [], []                          # the panel line (none on a corner's tile) and the plates it
         for s0, s1 in T.spans(a, b):                    # splits each tile into: its cover, then its strip
@@ -141,17 +143,19 @@ def navy(hull):
                 continue
             lines.append(s1 - NAVY_SEAM)
             plates += [(s0, s1 - NAVY_SEAM, "cover"), (s1 - NAVY_SEAM, s1, "strip")]
-        off = ()                                        # (the plates a variant takes off: none yet)
+        off = ("cover",) if mid else ()                 # (the plates a variant takes off)
         for p0, p1, kind in plates:                     # the covers (and strips), each with its part of the band; one
             pq = (pe[0] if abs(p0 - a) < 1e-6 else "cont", pe[1] if abs(p1 - b) < 1e-6 else "cont")   # off shows the
             if kind in off:                                                                  # dark frame behind it
                 _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
+                mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F)    # (the design in the opening)
                 continue
             _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, COVER, F, NAVY_FACE)
-            if bf:                                      # (on into the next tile with the cover: stopped at the
+            band = navy_band if kind == "strip" else bf   # (a band design's on the cover: the strip keeps the red)
+            if band:                                    # (on into the next tile with the cover: stopped at the
                 ext = 1.5 * PAINT                       # edge, the cover past it lit the edge px a red line)
-                bf(k, ax, plane, p0 - (ext if pq[0] == "cont" else 0.0), p1 + (ext if pq[1] == "cont" else 0.0),
-                   pq, zh, H)
+                band(k, ax, plane, p0 - (ext if pq[0] == "cont" else 0.0), p1 + (ext if pq[1] == "cont" else 0.0),
+                     pq, zh, H)
         for u in lines:
             _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
             _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)
@@ -168,10 +172,6 @@ def navy(hull):
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 2, 0)          # the dark header, up to the cap (a step under
                                                                          # it showed as a dotted line on the black top)
-        mid = T.fill("middle")                          # (a top design's: in a dark recess between band and foot)
-        if mid:
-            for s0, s1 in T.spans(a, b):
-                navy_recess(k, ax, plane, s0 + 0.06, s1 - 0.06, zs + 0.1, zh - 0.02, F, mid)
         zc, r, dc = rt - 0.1, 0.055, PX + 0.055                                                  # the tube, high up
         if not endf:                                    # (none on a wall's end face; it stops in the end bracket)
             tube(k, ax, plane, a + (0.02 if back else 0.0), b - (0.02 if end1 else 0.0), dc, zc, r,
