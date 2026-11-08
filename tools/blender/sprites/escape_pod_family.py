@@ -43,14 +43,16 @@ def dock_item(rot, variant="h"):
 
 
 def bay_item(rot, variant="h"):
-    """Preview: the pod parked upright in a pod bay of rotation rot, standing on the pit floor, porthole to the gate:
-    <CRAFT>.<v>.inbay.r<rot>."""
-    from . import pod_bay as B, pod_family as PF
+    """Preview: the pod parked in a pod bay of rotation rot in its docked pose (on its side, the hatch to the bay's
+    gate, as at an airlock), resting on the pit floor: <CRAFT>.<v>.inbay.r<rot>."""
+    from . import pod_bay as B
     core.clear_scene_meshes()
     post.select(True)
     hold = B.bay(rot)
-    obs = E.pod(PF.parked_heading(rot), variant, "parked", foot=-B.PIT)
-    c = B.BayFrame(None, rot, B.FOOT).pt(0.0, 0.0, 0.0)
+    bf = B.BayFrame(None, rot, B.FOOT)
+    (x0, y0), (x1, y1) = bf.xy(0.0, 0.0), bf.xy(1.0, 0.0)                  # the gate is on the bay's +u side
+    obs = E.pod(math.atan2(y1 - y0, x1 - x0), variant, "docked", foot=-B.PIT)
+    c = bf.pt(0.0, 0.0, 0.0)
     for ob in obs:
         ob.location = (ob.location.x + c.x, ob.location.y + c.y, ob.location.z)
     return [VB._render(f"{CRAFT}.{variant}.inbay.r{rot}", "block", hold + obs, hold[1:], B.FOOT)]
