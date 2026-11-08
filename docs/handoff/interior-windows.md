@@ -616,3 +616,10 @@ Marked ref (both layers, numbered): scratchpad
   4 px stay); the guard bars are placed in screen px (T._px / T._u at their stand-off): 2 px each, equal gaps across
   the opening as seen, the spare px to the middle gaps (measured: 3, 4, 4, 3 px). (Rounding u to 1/32 had put them
   off the px grid: the camera's px boundaries sit 0.875 px off u's grid, wall3d.PX0.) nc6.
+- 2026-11-08: the user: the cage's outer frame only 1 px behind the wall, the cage recessed into it. The cage now
+  opens the face (its "face_holes" slot, cage_holes: each cover's rect on the shell's cells; FaceHoles now hands a
+  design the face's ends and snapped span, civil's holes take them as **_): in the opening the frame at 1/32 back
+  (a 1 px dark side at the tile edge), the cage 3/32 back inside it (its own walls), the rungs just behind the
+  frame, the guard bars standing off the frame (spaced over the cage's mouth: 3, 3, 4, 3 px). navy.py's plate layout
+  and heights are shared functions now (_plates, _heights, cover_rects), the face skips the flush frame sheet where
+  a design opens it; _ends takes a shell. Plain m10 identical to nv9. nc9.

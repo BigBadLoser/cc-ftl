@@ -86,7 +86,7 @@ def _shelves(f0, f1, g0, g1, layout):
 
 def shelf_holes(layout):
     """Where a civil face is open for a layout's shelves (the "face_holes" slot), as the face lays out its fields."""
-    def holes(a, b, zs, top):
+    def holes(a, b, zs, top, **_):
         if top <= T.W.skirt_top() + T.W.CUT + 0.05:
             return []
         return [h for s0, s1 in T.spans(a, b) if s1 - s0 >= 0.45

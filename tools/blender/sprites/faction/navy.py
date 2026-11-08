@@ -113,6 +113,36 @@ def _lit(k, ax, plane, u, z0, z1, F, reds):
         z = max(z, r1)
 
 
+def _plates(a, b, ends):
+    """A navy face's plates (u0, u1, "cover" or "strip") and its panel lines: each tile its cover, then its strip with
+    the line between; a corner's, an end's or a narrow tile one cover."""
+    lines, plates = [], []
+    for s0, s1 in T.spans(a, b):
+        if ((abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont")
+                or s1 - s0 <= 2 * NAVY_SEAM + 1e-3):
+            plates.append((s0, s1, "cover"))
+            continue
+        lines.append(s1 - NAVY_SEAM)
+        plates += [(s0, s1 - NAVY_SEAM, "cover"), (s1 - NAVY_SEAM, s1, "strip")]
+    return lines, plates
+
+
+def _heights(zs, top):
+    """A full navy face's heights: its foot (the ramp's shelf), the header's foot, its height and top."""
+    rt = min(top, T.W.wall_top("wall", "up"))          # laid out on a partition's height on every wall, so the far
+    H = rt - zs                                         # hull's parts line up
+    return T.lip_heights(zs)[0], rt - 0.25 * H, H, rt
+
+
+def cover_rects(sh, ax, plane, a, b, ends, zs, top):
+    """The covers a full navy face lays out, (u0, u1, z0, z1) each, as face() does (a design that opens the face
+    where its cover is off: navy_designs.cage_holes)."""
+    if _ends(ax, plane, b, ends, sh)[2]:
+        b -= NAVY_C
+    zf, zh = _heights(zs, top)[:2]
+    return [(p0, p1, zf, zh) for p0, p1, kind in _plates(a, b, ends)[1] if kind == "cover"]
+
+
 def navy(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -128,28 +158,24 @@ def navy(hull):
             corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE + 1,   # (as the chamfer's
                          cols=[NAVY_MID] * 4 if F == "wall" else None)      # strip over it)
             _ramp_chamfer(k, X, plane, C, zs, F, NAVY_FACE, NAVY_MID if F == "wall" else None)
-        rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
-        H = rt - zs                                                     # wall, so the far hull's parts line up
-        zh = rt - 0.25 * H if full else top                             # the header's foot
+        rt = _heights(zs, top)[3] if full else top      # (laid out on a partition's height on every wall)
+        H = rt - zs
+        zh = _heights(zs, top)[1] if full else top      # the header's foot
         bf = T.fill("band", navy_band) if full else None
         reds = sorted((zh - f0 * H, zh - f1 * H) for f0, f1 in navy_band.reds) if full else []   # (the line's lit
         #   px is the strip's edge: in its band's red)
         mid = T.fill("middle") if full else None        # a top design's: in place of the cover (off), in the frame
         zc = zh if full else top - 0.03                 # the covers' top: under the header (a low wall's top)
-        lines, plates = [], []                          # the panel line (none on a corner's tile) and the plates it
-        for s0, s1 in T.spans(a, b):                    # splits each tile into: its cover, then its strip
-            if ((abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont")
-                    or s1 - s0 <= 2 * NAVY_SEAM + 1e-3):
-                plates.append((s0, s1, "cover"))
-                continue
-            lines.append(s1 - NAVY_SEAM)
-            plates += [(s0, s1 - NAVY_SEAM, "cover"), (s1 - NAVY_SEAM, s1, "strip")]
+        lines, plates = _plates(a, b, ends)             # the panel lines and the plates they split the tiles into
         off = ("cover",) if mid else ()                 # (the plates a variant takes off)
         for p0, p1, kind in plates:                     # the covers (and strips), each with its part of the band; one
             pq = (pe[0] if abs(p0 - a) < 1e-6 else "cont", pe[1] if abs(p1 - b) < 1e-6 else "cont")   # off shows the
             if kind in off:                                                                  # dark frame behind it
-                _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
-                mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F, zh=zh, H=H)   # (the design in
+                hole = next((h[2:] for h in getattr(T.SHELL, "face_holes", ()) if h[0] == ax and abs(h[1] - plane)
+                             < 1e-6 and p0 - 1e-6 <= h[2] < p1), None)      # (unless the design opens the face there:
+                if hole is None:                                            # it builds its own frame in the opening)
+                    _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
+                mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F, zh=zh, H=H, hole=hole)   # (the design in
                 #   the opening; zh, H: the header's foot and the wall's height, for a band in it)
                 continue
             _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, COVER, F, NAVY_FACE)

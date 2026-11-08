@@ -50,30 +50,67 @@ def navy_lockers(k, ax, plane, a, b, c, e, F, **_):
     flat(k, ax, plane, a + 0.04, uc - 0.04, e - 0.08, e - 0.055, 2 * PX + PAINT, "lvR2")
 
 
-def navy_cage(k, ax, plane, a, b, c, e, F, **_):
-    """T1-4 (refs 10-11): a cage with a light behind it: a dark back, a light (cream, dim at its edges) over its middle,
-    and in front navy rungs across every 4 px, three guard bars over them the only uprights."""
+CAGE_D = (1 / 32, 3 / 32)            # the cage's frame 1 px behind the wall, the cage 3 px in (its back) (the user)
+
+
+def _recess(k, ax, plane, u0, u1, z0, z1, d0, d1):
+    """The walls of a recess from d0 back to d1 (< d0, depths off the face) round u0..u1 x z0..z1: its floor lit,
+    its ceiling and sides in shade (the frame's dark navy)."""
+    Q = lambda u, z, d: T.P(ax, plane, u, z, d)        # noqa: E731
+    al, up = T.P(ax, 0, 1, 0, 0) - T.P(ax, 0, 0, 0, 0), Vector((0, 0, 1))
+    k.poly([Q(u0, z0, d0), Q(u1, z0, d0), Q(u1, z0, d1), Q(u0, z0, d1)], "rose", 3, up)                 # floor
+    k.poly([Q(u0, z1, d0), Q(u1, z1, d0), Q(u1, z1, d1), Q(u0, z1, d1)], "rose", 1, -up)                # ceiling
+    for u, sg in ((u0, 1), (u1, -1)):                                                                    # sides
+        k.poly([Q(u, z0, d0), Q(u, z1, d0), Q(u, z1, d1), Q(u, z0, d1)], "rose", 1, al * sg)
+
+
+def cage_holes(a, b, zs, top, ends=None, span=None, ax=None, plane=None, sh=None, **_):
+    """Where the cage opens the face (its "face_holes"): each cover's rect, on the shell's cells (inside it)."""
+    from .navy import cover_rects
+    if ends is None or top <= T.W.skirt_top() + T.W.CUT + 0.05:
+        return []
+    return [(math.ceil(u0 * 32 - 1e-6) / 32, math.floor(u1 * 32 + 1e-6) / 32, math.ceil(z0 * 32 - 1e-6) / 32,
+             math.floor(z1 * 32 + 1e-6) / 32) for u0, u1, z0, z1 in cover_rects(sh, ax, plane, *span, ends, zs, top)]
+
+
+def navy_cage(k, ax, plane, a, b, c, e, F, hole=None, **_):
+    """T1-4 (refs 10-11): a cage with a light behind it, in the cover's opening (cage_holes): the frame round it 1 px
+    behind the wall, the cage recessed into it, a dark back, a light (cream, dim at its edges) over its middle, navy
+    rungs across every 4 px, three guard bars over them the only uprights."""
     du, dz = 1 / 32, 1 / 39.19
-    a, c, e = a - 0.04 + 3 * du, c - 0.04 + 4 * dz, e + 0.04 - 4 * dz    # the frame round it: 3 px in from the tile's
-    #   edge, 4 px under the header and over the foot (the ref's: the user)
-    flat(k, ax, plane, a, b, c, e, 0.6 * PAINT, "fNS5")                                               # the back
+    f = 0.0
+    if hole:                                            # the frame 1 px back, the cage in it (3 px in from the tile's
+        h0, h1, v0, v1 = hole                           # edge, 1 px from the line, 4 px under the header and over the
+        a, b, c, e = h0 + 3 * du, h1 - du, v0 + 4 * dz, v1 - 4 * dz      # foot: the ref's)
+        f, bk = -CAGE_D[0], -CAGE_D[1]
+        _recess(k, ax, plane, h0, h1, v0, v1, 0.0, f)
+        for q in ((h0, a, v0, v1), (b, h1, v0, v1), (a, b, v0, c), (a, b, e, v1)):
+            k.poly([T.P(ax, plane, u, z, f) for u, z in ((q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3]))],
+                   "rose", 2, T.OUT(ax))
+        _recess(k, ax, plane, a, b, c, e, f, bk)
+    else:
+        a, c, e = a - 0.04 + 3 * du, c - 0.04 + 4 * dz, e + 0.04 - 4 * dz
+        bk = 0.6 * PAINT
+    flat(k, ax, plane, a, b, c, e, bk, "fNS5")                                                         # the back
     uc = round((a + b) / 2 * 32) / 32
     l0, l1 = c + 0.2 * (e - c), c + 0.85 * (e - c)
-    flat(k, ax, plane, uc - 5 * du, uc + 5 * du, l0 - 2 * dz, l1 + 2 * dz, 0.7 * PAINT, "fSH1")       # the light's
-    flat(k, ax, plane, uc - 3 * du, uc + 3 * du, l0, l1, 0.8 * PAINT, "c2T1")                          # glow, its core
+    flat(k, ax, plane, uc - 5 * du, uc + 5 * du, l0 - 2 * dz, l1 + 2 * dz, bk + 0.1 * PAINT, "fSH1")   # the light's
+    flat(k, ax, plane, uc - 3 * du, uc + 3 * du, l0, l1, bk + 0.2 * PAINT, "c2T1")                      # glow, its core
     z = math.ceil(c / dz) * dz                                                       # the cage: its rungs (the guard
-    #   bars below its only uprights: the user)
+    #   bars below its only uprights: the user), just behind the frame
     while z < e - 1e-6:
-        flat(k, ax, plane, a, b, z, min(e, z + dz), 0.9 * PAINT, "fNX3")
+        flat(k, ax, plane, a, b, z, min(e, z + dz), f - PAINT if hole else 0.9 * PAINT, "fNX3")
         z += 4 * dz
     so, r = 0.08, 0.06                                  # three guard bars over it: out of the top frame, curving out
     zt, zb = e + 2 * dz, c - 2 * dz                     # so far, down, and back into the foot's (the ref's: the user)
     prof = [(zt, 0.0)] + [(zt - r * math.sin(t), so * (1 - math.cos(t))) for t in
                           (math.pi / 2 * i / 4 for i in range(1, 5))]
     prof += [(zb + (zt - z_), d_) for z_, d_ in reversed(prof)]
-    ds = PAINT + so                                     # (evenly spaced as seen: the opening's px edges, the bars
-    L, R = round(T._px(a, 0.6 * PAINT)), round(T._px(b, 0.6 * PAINT))   # 2 px each, the gaps equal, the spare px to
-    g, x = divmod(R - L - 6, 4)                                          # the middle ones; then where they stand out)
+    d0 = f + PAINT                                      # (on the frame)
+    ds = d0 + so                                        # (evenly spaced as seen: the opening's px edges, the bars
+    L, R = round(T._px(a, f)), round(T._px(b, f)) - (1 if hole else 0)   # 2 px each, the gaps equal, the spare px to
+    #   the middle ones (the mouth's far side hides its last px);
+    g, x = divmod(R - L - 6, 4)                         # then where they stand out)
     gaps = [g, g + (x > 1), g + (x > 0), g + (x > 2)]
     n = L
     for gi in gaps[:3]:
@@ -82,9 +119,9 @@ def navy_cage(k, ax, plane, a, b, c, e, F, **_):
         n += 2
         for (za, da), (zb_, db) in zip(prof, prof[1:]):
             col = "fNX1" if db > da + 1e-6 else "fNX4" if db < da - 1e-6 else "fNX2"   # (lit curving out at
-            k.poly([T.P(ax, plane, ub - du, za, PAINT + da), T.P(ax, plane, ub + du, za, PAINT + da),   # the top,
-                    T.P(ax, plane, ub + du, zb_, PAINT + db), T.P(ax, plane, ub - du, zb_, PAINT + db)],  # shaded in
-                   "wall", 0, T.OUT(ax), fixed=col)                                                      # at the foot)
+            k.poly([T.P(ax, plane, ub - du, za, d0 + da), T.P(ax, plane, ub + du, za, d0 + da),   # the top,
+                    T.P(ax, plane, ub + du, zb_, d0 + db), T.P(ax, plane, ub - du, zb_, d0 + db)],  # shaded in
+                   "wall", 0, T.OUT(ax), fixed=col)                                                  # at the foot)
 
 
 RECESS = 2                          # the recessed cover: pushed back this many px (the user)
@@ -197,7 +234,7 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
-             Design("cage", middle=navy_cage),
+             Design("cage", middle=navy_cage, face_holes=cage_holes),
              Design("recessed", middle=navy_recessed), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))

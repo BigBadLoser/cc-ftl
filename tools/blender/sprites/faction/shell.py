@@ -427,7 +427,11 @@ class FaceHoles(Feature):
         fh = T.fill("face_holes")
         if fh:
             for ax, plane, a, b, top in T.faces(sp):
-                sp.face_holes += [(ax, T.snap(plane)) + h for h in fh(a, b, sp.zs, top)]
+                pl = T.snap(plane)                      # (as wall3d.block hands the face: its ends, its span snapped
+                ends = (T._end(sp, ax, pl, a, -1), T._end(sp, ax, pl, b, 1))     # where it does not run on)
+                span = tuple(T.snap(u) if t != "cont" else u for u, t in ((a, ends[0]), (b, ends[1])))
+                sp.face_holes += [(ax, pl) + h for h in fh(a, b, sp.zs, top, ends=ends, span=span, ax=ax, plane=pl,
+                                                            sh=sp)]
 
     def col_face(self, sp, face, x, y, z):
         for ax, plane, u0, u1, z0, z1 in sp.face_holes:
@@ -479,10 +483,11 @@ class FootTone(Feature):
 
 # ---- the end face's section and a chamfered corner's ramp, for the looks that stop their ends square -------------
 
-def _ends(ax, plane, b, ends):
+def _ends(ax, plane, b, ends, sh=None):
     """How a face of a chamfering look (NavyShell) ends: (endf: it is a wall's end face; end1: it runs to one at b;
-    corner: its b end is a chamfered corner; back: its low end is a free end turning onto a hidden face)."""
-    sh = T.SHELL
+    corner: its b end is a chamfered corner; back: its low end is a free end turning onto a hidden face). sh: the
+    shell (T.SHELL, the one being dressed, by default)."""
+    sh = sh or T.SHELL
     endf = bool(getattr(sh, "end_face", None) and sh.end_face(ax, plane))
     end1 = bool(getattr(sh, "is_end", None) and sh.is_end(ax, b, 1))
     return endf, end1, ends[1] == "out" and not (endf or end1), ends[0] == "out"
