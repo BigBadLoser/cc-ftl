@@ -89,11 +89,11 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
 - Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
-- `detail()`: splits the piece at the opening's ends; under the opening the near ramp's blue-plate polygons recoloured
-  `GREY` (fGS2; matched by their linear colour, Mesh faces store colours, not names); pockets carved into the ramp's
-  front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
-  tiles, fGT1 on the middle since sw22: the slope's blue, as the end blocks'), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
-  (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
+- `detail()`: splits the piece at the end blocks' inner edges (`BLOCK`); between them the near ramp's blue-plate
+  polygons recoloured `GREY` (fGW2; matched by their linear colour, Mesh faces store colours, not names); pockets
+  carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
+  (`FLOOR_LIT`: fGS0 on the end tiles, fGT1 on the middle: the slope's blue, since sw22), back (fGT6), sides and lintel
+  (fGS4). Current `POCKETS` / `RIBS` / plates: see the sw13 and plates notes below.
 - Pocket depth `POCKET_IN` 4/32 since sw11 (sw10 3/32, sw6-sw9 6/32: the back sits just inside the wall core's face, in the sill). Floor slopes
   up `FLOOR_RISE` (now 2 px; sw6 had 4) from the ramp's front to the back. With both, the floor fills the view and the dark back is
   hidden behind the lintel (sw6). sw7: `POCKET_TOP` 3 (top 1 px lower), `FLOOR_RISE` 2.
