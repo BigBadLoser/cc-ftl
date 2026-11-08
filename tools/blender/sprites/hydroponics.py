@@ -731,11 +731,79 @@ def horns(k, on, crop):
             _plant(k, u, v, 0.76, i)
 
 
+def _band(k, u, z0, r, t, w, col, sides=8):
+    """A band around the belly at u (the lower half of a ring of radius r), a frame of the hull."""
+    seg = math.pi * r / sides
+    for i in range(sides):
+        x = math.pi + math.pi * (i + 0.5) / sides
+        k.box(u, (r - t / 2) * math.cos(x), z0 + (r - t / 2) * math.sin(x) - t / 2, w, seg + 0.02, t, col,
+              rx=x + math.pi / 2)
+
+
+def tunnel3(k, on, crop):
+    """The tunnel: each rib is a frame that runs right round the hull, under the belly and up over the bed into
+    the spine, so hull and ribs are one structure. Lamps between the ribs."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    RIBS = ((-0.95, 0.12), (0.0, 0.1), (0.95, 0.12))
+    for u, sz in RIBS:
+        _band(k, u, 0.6, 0.46, 0.08, sz, "steel")                                    # round the belly
+        for sv in (-1, 1):                                                           # through the rim
+            k.box(u, sv * 0.43, 0.56, sz, 0.1, 0.1, "steel", top="steelL")
+        _hoop(k, u, 0.62, 0.74, 0.46, "steel", n=8, s=sz, top="steelL")              # over the bed
+        k.box(u, 0, 1.3, sz + 0.04, 0.2, 0.11, "steel", top="steelL", bevel=0.02)    # capping the spine
+    k.box(0, 0, 1.3, 1.9, 0.12, 0.09, "steel", top="steelL", bevel=0.02)             # the spine
+    for sv in (-1, 1):
+        for u in (-0.5, 0.5):
+            k.box(u, sv * 0.066, 1.31, 0.72, 0.012, 0.055, lit)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
+def halo2(k, on, crop):
+    """The halo: an arm rises out of each round end of the hull, inside its edge, and curves in to carry the pill
+    ring lamp, whose round ends sit right on the arms."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    n = 6
+    for e in (-1, 1):
+        k.cyl(e * 0.95, 0, 0.6, 0.2, 0.08, "steel", top="steelL", sides=10)          # the root on the end cap
+        pts = [(e * (0.95 - 0.25 * math.sin(a)), 0.64 + 0.66 * (1 - math.cos(a)))
+               for a in (math.pi / 2 * i / n for i in range(n + 1))]
+        for (u0, za), (u1, zb) in zip(pts, pts[1:]):
+            L = math.hypot(u1 - u0, zb - za) + 0.06
+            k.box((u0 + u1) / 2, 0, (za + zb) / 2 - 0.08, L, 0.26, 0.16, "steel", top="steelL",
+                  ry=-math.atan2(zb - za, u1 - u0))
+        k.cyl(e * 0.7, 0, 1.24, 0.14, 0.06, "steel", top="steelL", sides=10)          # the arm's head under the ring
+    _ring_pill(k, 1.3, 2.0, 0.6, 0.13, 0.08, "steel", "steelL", lit)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
+def stem2(k, on, crop):
+    """The hull with one stem swelling out of its back and spreading under the pill ring lamp."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    k.box(0, -0.34, 0.46, 0.56, 0.3, 0.3, "steel", top="steelL", bevel=0.04, taper=0.7)   # swelling from the back
+    k.box(0, -0.33, 0.74, 0.4, 0.22, 0.4, "steel", top="steelL", bevel=0.03, taper=0.8)
+    k.box(0, -0.32, 1.12, 0.32, 0.18, 0.12, "steel", top="steelL", bevel=0.02)
+    k.box(0, -0.3, 1.22, 0.36, 0.2, 0.08, "steel", top="steelL", bevel=0.02, taper=1.6)   # spreading into the ring
+    k.box(-0.21, -0.32, 0.8, 0.012, 0.1, 0.22, "glassD")                                  # window in its side
+    k.box(0.21, -0.32, 0.82, 0.012, 0.08, 0.06, "green" if on else "dark")
+    _ring_pill(k, 1.3, 1.9, 0.6, 0.12, 0.08, "steel", "steelL", lit)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
 VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat,
             "skiff": skiff, "hexes": hexes, "bags": bags,
             "capsule": capsule, "tunnel": tunnel, "visor": visor,
             "tunnel2": tunnel2, "hut": hut, "halo": halo,
-            "shell": shell, "stem": stem, "horns": horns}
+            "shell": shell, "stem": stem, "horns": horns,
+            "tunnel3": tunnel3, "halo2": halo2, "stem2": stem2}
 STATES = ("off", "on", "on.crop")
 
 
