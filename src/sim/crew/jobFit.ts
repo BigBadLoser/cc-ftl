@@ -1,4 +1,6 @@
 import { YardCrewC } from '../yard/types';
+import { AwayC } from '../away/components';
+import { InspectionC } from '../inspect/types';
 import { passageFits } from '../away/crew';
 import { isErrand, findSuitSource } from '../eva/errands';
 import { planSiteWalk } from '../eva/route';
@@ -15,9 +17,17 @@ import { isIncapacitated, jobGoal, origin, refusesWork } from './helpers';
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them (a yard job, a blocked work category). */
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
+  if (!partyFits(sim, crewId, job)) return false;
   if (workBlocked(sim, crewId, job.category)) return false;
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job) && passageFits(sim, crewId, job);
+}
+
+/** A party job (`Job.party`) is its party's alone; an inspector (of a shuttle with an inspection) takes nothing else. */
+function partyFits(sim: Sim, crewId: number, job: Job): boolean {
+  const party = sim.world.get(crewId, AwayC)?.vehicle;
+  if (job.party !== undefined) return party === job.party;
+  return party === undefined || !sim.world.has(party, InspectionC);
 }
 
 /** True if `crewId` could actually take the job now: it fits, they can walk to it, and a suit can be had when the way is thin air. */

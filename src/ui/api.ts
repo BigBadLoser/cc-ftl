@@ -134,8 +134,13 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
-  /** Which side: the player's crew, a passenger living aboard (a lodging guest), or another side's crew standing on a grid the player's crew is on. */
-  side: 'player' | 'guest' | 'enemy';
+  /**
+   * Which side: the player's crew, a passenger living aboard (a lodging guest), a visitor aboard by the ship's leave who does not live there (an
+   * inspector, a yard contractor: `visit` names them), or another side's crew standing on a grid the player's crew is on.
+   */
+  side: 'player' | 'guest' | 'visitor' | 'enemy';
+  /** For a visitor: what they are aboard as ('Inspector', 'Contractor', 'Visitor'). */
+  visit?: string;
   /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
   ship: number;
   where: string;
@@ -625,7 +630,8 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
+  | 'inspect.waiting' | 'inspect.blocked';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -1238,6 +1244,8 @@ export interface UiAlert {
   menu?: 'save';
   /** Answers the alert takes itself (a passenger asking to join: Accept, Decline), primary first; each sends its command. */
   actions?: UiAlertAction[];
+  /** A decision the game waits on (an inspector waiting for an answer): no close X, and a dismissal is ignored; it goes once answered. */
+  sticky?: true;
 }
 
 /** One answer on an alert: its label, good (the yes) or bad (the no), and the command it sends. */

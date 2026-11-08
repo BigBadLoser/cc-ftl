@@ -54,6 +54,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   alien: keys(['homeX', 'homeY']),
   marker: xy,
   yardCrew: null,
+  inspection: null,
   consent: null,
   hullPlan: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),
   staging: (c, dx, dy) => (c.tiles as Xy[]).forEach((t) => point(t, dx, dy)),

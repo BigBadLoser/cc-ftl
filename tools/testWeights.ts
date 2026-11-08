@@ -7,6 +7,7 @@ export default {
  "src/content/stationLife.slow.test.ts": 41.1,
  "src/content/recruit.test.ts": 33.6,
  "src/content/ships/balance.slow.test.ts": 31.7,
+ "src/content/inspections.slow.test.ts": 31.5,
  "src/content/yardCrew.test.ts": 30.1,
  "src/content/stationLife.test.ts": 25.2,
  "src/content/jobs.test.ts": 25.1,

@@ -1,8 +1,8 @@
 import { JobC } from '../crew/components';
 import { cancelFit, heldItems, withHeld } from '../items/held';
 import { repKey } from '../galaxy/standing';
-import { nodeOf, nodeState } from '../galaxy/state';
-import { ENCOUNTER_TTL } from '../galaxy/tuning';
+import { nodeState } from '../galaxy/state';
+import { liveInspection, startInspection } from '../inspect/start';
 import type { Encounter } from '../galaxy/types';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
@@ -11,8 +11,8 @@ import { contrabandItems } from './services';
 import { SCAN_BRIBE_MIN, SCAN_BRIBE_SHARE, SCAN_COOLDOWN, SCAN_FINE_MIN, SCAN_FINE_SHARE, SCAN_STANDING_HIT } from './tuning';
 
 /**
- * Scans for contraband. Navy and corporation stations scan the player when they open trade with a station (`dockScan`, from `trade.hail`); their patrols
- * sometimes scan one they cross (encounters.ts calls `scanFor`). Both make a `scan` Encounter. One that finds contraband aboard carries `Encounter.scan`
+ * Scans for contraband. Navy and corporation stations inspect the player when they open trade with a station (`dockScan`, from `trade.hail`: inspectors come
+ * aboard, inspect/); their patrols sometimes scan one they cross (encounters.ts calls `scanFor`), which makes a `scan` Encounter. One that finds contraband aboard carries `Encounter.scan`
  * (what the goods are worth, the fine and the bribe) and waits for `galaxy.respond`: 'surrender' (the goods are taken, the fine is paid and the faction
  * thinks less of the player) or 'bribe' (the bribe is paid and nothing else happens). A scan that finds nothing is an ordinary 'acknowledge' scan.
  * Contraband is whatever `heldItems` lists (storage, loose stacks, wielded and carried items, fitted upgrades), in a node or in the ship's packet.
@@ -68,30 +68,24 @@ export function scanFor(sim: Sim, e: Encounter): void {
 }
 
 /**
- * A station of an enforcing faction scans the player as they open trade with it (once per SCAN_COOLDOWN turns per node). Returns true when it found
- * contraband (an encounter now waits for the player's answer).
+ * A station of an enforcing faction inspects the player as they open trade with it (once per SCAN_COOLDOWN turns per node): it sends its inspectors
+ * over (inspect/start.ts), who search the ship whatever it carries. Returns true when an inspection set off.
  */
-export function dockScan(sim: Sim, owner: string | undefined, name: string): boolean {
+export function dockScan(sim: Sim, station: number, owner: string | undefined, name: string): boolean {
   const g = sim.galaxy;
-  if (!owner || !enforces(sim, owner) || sim.sector.state !== 'active' || g.event) return false;
+  if (!owner || !enforces(sim, owner) || sim.sector.state !== 'active' || g.event || liveInspection(sim)) return false;
   const ns = nodeState(sim, g.current);
   if (ns.scanned !== undefined && g.turn - ns.scanned < SCAN_COOLDOWN) return false;
-  if (g.encounters.some((x) => x.kind === 'scan' && x.scan)) return true;
+  if (!startInspection(sim, station, owner, name)) return false;
   ns.scanned = g.turn;
-  const e: Encounter = {
-    id: g.nextFleet++, kind: 'scan', fleet: 0, faction: owner, role: 'patrol', name, ships: 1, strength: 0, danger: nodeOf(sim, g.current)?.danger ?? 0, how: 'node',
-    node: g.current, turn: g.turn, expires: g.turn + ENCOUNTER_TTL.alert,
-  };
-  scanFor(sim, e);
-  if (!e.scan) return false;
-  g.encounters.push(e);
-  g.rev++;
-  sim.events.emit({ type: 'galaxy.encounter', id: e.id, kind: 'scan', fleet: 0, faction: owner, role: 'patrol', node: g.current });
   return true;
 }
 
-/** A scan with contraband found is waiting for an answer at the player's node. */
-export const scanPending = (sim: Sim): boolean => sim.galaxy.encounters.some((e) => e.kind === 'scan' && !!e.scan);
+/** Trade waits on a scan: a patrol's scan that found contraband waits for an answer, or inspectors are searching or waiting for one. */
+export function scanPending(sim: Sim): boolean {
+  const phase = liveInspection(sim)?.[1].phase;
+  return sim.galaxy.encounters.some((e) => e.kind === 'scan' && !!e.scan) || phase === 'search' || phase === 'settle';
+}
 
 const hit = (sim: Sim, faction: string): void => {
   const key = repKey(sim, faction);

@@ -15,6 +15,8 @@ import { defineComponent } from '../ecs';
  *   - 'trade' (trade/deals.ts): the player's side, on a station, while a trade run is docked there, `from` the shuttle. Does not work aboard.
  *   - 'passage' (consent/passage.ts): a person carried as a passenger (a rescued patient, a survivor, a fare), on the player's ship, its named
  *     crew. Lodges, and works aboard: they pitch in with a few chores at the lowest priority (`PASSENGER_CHORES`), never drafted, armed or sent out.
+ *   - 'inspect' (inspect/start.ts): a station's contraband inspectors, on the player's ship, for the inspection site's party and its named crew,
+ *     `from` the station. Works aboard (only the inspection's own jobs: `Job.party`).
  * - Works aboard (`work`): the guests take the host ship's jobs. A guest without it is off duty there: no jobs, no boarding drive (they stand by).
  * - Lodges (`lodge`): the guests live aboard as the crew do: each owns a bed, sleeps, gets hungry and eats from the host's stock (the `guest` crew
  *   kind, `policy.guest`). A lodging guest is never off duty (`isOffDuty`); without `work` they take no jobs (`refusesWork`), with it their own
@@ -23,7 +25,7 @@ import { defineComponent } from '../ecs';
  *   at once). A grant whose site is gone covers nobody by that site.
  */
 export interface Grant {
-  by: 'aid' | 'visit' | 'yard' | 'trade' | 'passage';
+  by: 'aid' | 'visit' | 'yard' | 'trade' | 'passage' | 'inspect';
   faction: Faction;
   site?: number;
   crew?: number[];

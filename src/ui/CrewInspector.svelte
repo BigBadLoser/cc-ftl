@@ -35,7 +35,7 @@
 
 {#if c && tabProps}
   <div data-testid="crew-inspector">
-    {#snippet head()}<PaneHead icon={enemy ? 'skull' : 'person'} title={c.name} sub={guest ? 'Passenger' : `${c.role}${enemy ? ' · hostile' : ''}`} foe={enemy} />{/snippet}
-    {#if enemy || guest}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
+    {#snippet head()}<PaneHead icon={enemy ? 'skull' : 'person'} title={c.name} sub={guest ? 'Passenger' : c.side === 'visitor' ? (c.visit ?? 'Visitor') : `${c.role}${enemy ? ' · hostile' : ''}`} foe={enemy} />{/snippet}
+    {#if enemy || guest || c.side === 'visitor'}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
   </div>
 {/if}

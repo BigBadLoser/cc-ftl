@@ -8,18 +8,19 @@ import { airLeft } from '../sim/eva/airLedger';
 import { suitAir, suitDef } from '../sim/eva/suit';
 import { isHeldOffline } from '../sim/modules/hold';
 import { AwayC, AwaySiteC, SiteRunC } from '../sim/away/components';
+import { InspectionC, inspections } from '../sim/inspect/types';
 import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 
 /** An alert whose condition holds in the sim right now, keyed as the event-born one is (so the two never double up). */
-export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice'] }
+export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions']; sticky?: true }
 
 /** The kinds `deriveAlerts` covers: a dismissal of one of these stays quiet until its condition clears. */
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
-  'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead',
+  'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked',
 ]);
 
 /** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network; ion-disabled parts and parts held offline by work excluded). */
@@ -133,6 +134,20 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   for (const n of sim.story.notices) {
     const def = sim.content.events?.[n.event];
     if (def?.lead && n.id > 0) add({ kind: 'story.lead', key: `ev${n.event}`, text: def.text, subject: null, notice: { id: n.id, lead: true, title: def.title } });
+  }
+  for (const id of inspections(sim)) {
+    const insp = sim.world.get(id, InspectionC)!;
+    const lead = insp.crew.find(alive);
+    if (insp.phase === 'settle' && lead !== undefined) {
+      const actions: UiAlert['actions'] = [
+        { label: `Fine ${insp.fine ?? 0} ₵`, tone: 'good', command: { type: 'inspect.settle', inspection: id, choice: 'fine' } },
+        ...(insp.bribeFailed ? [] : [{ label: `Bribe ${insp.bribe ?? 0} ₵`, tone: 'good' as const, command: { type: 'inspect.settle' as const, inspection: id, choice: 'bribe' as const } }]),
+        { label: 'Refuse', tone: 'bad', command: { type: 'inspect.settle', inspection: id, choice: 'refuse' } },
+      ];
+      add({ kind: 'inspect.waiting', key: `iw${id}${insp.bribeFailed ? "b" : ""}`, text: 'Inspector waiting: fine or bribe', subject: crewSubject(sim, lead), actions, sticky: true });
+    } else if (insp.blocked && insp.phase !== 'leave') {
+      add({ kind: 'inspect.blocked', key: `ib${id}`, text: `Inspectors can't board: ${insp.name}`, subject: lead !== undefined ? crewSubject(sim, lead) : null });
+    }
   }
   return out;
 }
