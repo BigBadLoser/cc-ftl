@@ -1,4 +1,5 @@
 import { mount } from 'svelte';
+import { setPackedGuard } from './sim/packedGuard';
 import { setAnimPaused } from './render/animClock';
 import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSaveSlot, UiSession } from './ui/api';
@@ -36,6 +37,8 @@ import { keymap } from './ui/keymap';
 import { isTypingTarget, modalOpen } from './ui/keys';
 import { settings } from './ui/settings/settings';
 import { MIN_SHIP_GAP, REGION_PAD } from './sim/tuning';
+
+if (import.meta.env.DEV) setPackedGuard('warn', { ticksOnly: true }); // dev build: a tick's read missing withPlayerAboard shows in the console (#350); view code between ticks may read the packed ship as absent
 
 // The drafted-crew colour is defined once (render/draftColor.ts) and shared with the UI as a CSS token.
 document.documentElement.style.setProperty('--draft', DRAFT_CSS);

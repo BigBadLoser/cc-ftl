@@ -1,3 +1,4 @@
+import { guardPacked } from '../packedGuard';
 import { CombatC, ShipC, type Faction, type Ship } from '../combat/components';
 import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
@@ -74,6 +75,7 @@ export function warmContact(sim: Sim, c: Contact): boolean {
 
 /** The player's flown ship (lowest id) with its components: active, player faction, with combat state. Trade's `playerShip` returns just the id. */
 export function playerShipInfo(sim: Sim): { id: number; ship: Ship } | null {
+  guardPacked(sim, 'playerShipInfo');
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC) as Ship;
     if (ship.faction === 'player' && ship.state === 'active') return { id, ship };

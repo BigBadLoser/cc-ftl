@@ -50,8 +50,8 @@ export default defineConfig({
     maxWorkers: 4, // the whole box: the default leaves a core idle
     sequence: { sequencer: WeightedSequencer },
     projects: [
-      { extends: true, test: { name: 'shared', include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW], isolate: false } },
-      { extends: true, test: { name: 'isolated', include: ISOLATED, exclude: SLOW, isolate: true } },
+      { extends: true, test: { name: 'shared', setupFiles: ['src/sim/testSetup.ts'], include: ['src/**/*.test.ts', 'tools/**/*.test.ts'], exclude: [...ISOLATED, ...SLOW], isolate: false } },
+      { extends: true, test: { name: 'isolated', setupFiles: ['src/sim/testSetup.ts'], include: ISOLATED, exclude: SLOW, isolate: true } },
     ],
   },
 });
