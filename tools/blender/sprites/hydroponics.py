@@ -4,7 +4,7 @@ stand to work the bed).
 The bed (terra, chosen from a long look exploration; the other directions are in git history): an angular navy base
 with a slatted panel and a control screen, a soil tray under a glass canopy in grey frames. The canopy rises upright a
 short way, then slopes on its long sides to a glass roof; its ends are upright. A strut across the roof carries a
-navy ring lamp, open in the middle so the plants show through it, one plant per tile.
+white ring lamp, open in the middle so the plants show through it, one plant per tile.
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -164,7 +164,7 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
         _bar(k, (cu, sv * b, zv), (cu, sv * b2, zr), s, frame_l)
     g.m.poly([_G(g, *p, zr) for p in hi], "glassT", flip=True)              # the glass roof
     _bar(k, (cu, -b2, zr), (cu, b2, zr), s, frame_l)                          # the strut across it
-    Lr, zl = L - 0.22, zr - 0.17
+    Lr, zl = L - 0.22, zr - 0.22
     _lamp_ring(k, cu, 0, zl, Lr, 2 * b2, 0.09, on, col=ring, top=ring_t)
     for sv in (-1, 1):                                                      # hung from the strut
         _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
@@ -195,8 +195,8 @@ def terra(k, on):
     k.box(0.6, 0.486, 0.33, 0.04, 0.012, 0.05, _on(on, "orange"))
     zs = 0.69
     _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
-    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "tNavy", "tNavyL")
-    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.19
+    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
+    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
 
 
 # ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
