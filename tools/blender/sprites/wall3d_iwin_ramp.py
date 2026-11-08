@@ -18,6 +18,7 @@ from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
 L = 1 / 32                              # an art px along the wall
+POST0 = D.POST                          # the default walls' end posts (a look's post_in from it)
 POCKETS = {"l": ((18, 28),), "m": ((2, 14), (17, 29)), "r": ((3, 13),)}   # px from the tile's start: each pocket
 RIBS = {"m": ((15, 16),)}               # px: a rib between pockets cut upright, its face under the pockets' top edge
 POCKET_TOP = 3                          # its top this many px under the sill's level top
@@ -63,12 +64,14 @@ class Look:
     blocks: str = ""                    # a wall3d.RAMPS family: the end blocks under the posts (the near ramp from the
                                         # run's ends BLOCK px in) recoloured from the default walls' ramp into it
     block_slot: str = ""                # a dark slot on each end block's slope
+    post_in: int = 0                    # px: the opening's ends (the side slopes, the end blocks' inner edges) this far
+                                        # further out, the posts that much thinner
     pre: Optional[Callable] = None      # f(k, part, a, b, yf): before the ramp (a, b: between the end blocks)
     post: Optional[Callable] = None     # f(k, part): after it
 
 
 TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="wHW", back="wXD", side="wD", rib="wL", toe="wM",
-            plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot="oK")   # (the floors lit over the ramp's front, wL;
+            plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot="oK", post_in=2)   # (the floors lit over the ramp's front, wL;
 #   their lit edge a step over wH, the "window" palette set's)
 
 
@@ -276,7 +279,8 @@ def _pockets(k, look, part, yf, zf):
 
 def detail(k, part, look):
     x0, x1 = D._span(part)
-    a, b = max(x0 + BLOCK * L - D.POST, -0.5), min(x1 - BLOCK * L + D.POST, 0.5)   # (between the end blocks)
+    a, b = max(x0 + BLOCK * L - POST0, -0.5), min(x1 - BLOCK * L + POST0, 0.5)   # (between the end blocks: they
+    #   move with the opening's ends)
     yf = W.wall_back() - 0.5 + W.TW
     zf = D._dip()[1]                                    # (the sill's level top: its floor)
     _split_x(k.m, [u for u in (a, b) if -0.5 < u < 0.5])
@@ -314,8 +318,9 @@ def window(fn, part, look):
     def build():
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
-        keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP
+        keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP, D.POST
         D.BEAM_DROP = look.beam_drop
+        D.POST = POST0 - look.post_in * L
         D.FLOOR = D.FLOOR - RAISE * PZ
         D.SILL_OFF = DIP * L
         D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
@@ -324,6 +329,6 @@ def window(fn, part, look):
             assert calls[0] == len(seq), calls[0]
             return own, wide, D.GLASS.build()
         finally:
-            D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP = keep
+            D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP, D.POST = keep
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
     return build

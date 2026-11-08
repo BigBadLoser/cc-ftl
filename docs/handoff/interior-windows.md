@@ -106,7 +106,10 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   with the sill's slope, wS). End blocks under the posts (`blocks` "ochre": the near ramp's slope from the run's ends
   BLOCK px in, foot up to the shelf (faces facing out and up: not the shelf, not the lip's front), each teal ramp colour
   to the same level of wall3d.RAMPS["ochre"]); on each a dark slot `block_slot` oK, SLOT_W 7 x SLOT_H 2 px, SLOT_TOP 2
-  under the slope's top. dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+  under the slope's top.
+- `post_in` (TEAL 2): the opening's ends 2 px further out each side (`D.POST` = POST0 - 2 px while a piece builds: the
+  posts 2 px thinner, the side slopes moved out); the end blocks' inner edges move with them (`a`, `b` from POST0), so
+  teal's blocks are 11 px wide from the tile's edge. dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
 - wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
   tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
   the base tiles pixel-identical (sw48, dp3 checked).
@@ -260,3 +263,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   carried across the window tiles to the pockets. Upper layer next. Shown.
 - 2026-11-08: dp4/dp5 (the user on dp3): the ochre stops at the shelf (dp4 still took the lip's front; dp5
   slope faces only), plates wM / wD off the slope's wS, a dark slot on each block. Shown.
+- 2026-11-08: dp6 (the user): teal's side slopes 2 px out each side, posts 2 px thinner, the blocks' inner edges
+  2 px out with them (`post_in`). Shown.
