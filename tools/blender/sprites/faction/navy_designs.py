@@ -133,7 +133,8 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
         w = o1 - o0
-        lift = dp - 0.02                               # the bars out of the slope, over the silver pipe: the user
+        lift = dp + 0.003                              # the straps on the collars' tops, flat across (not dipping
+        #   between the pipes, over the silver pipe: the user)
         for u in (o0 + w / 3, o0 + 2 * w / 3):         # steel brackets: a collar round each pipe, a strap between
             for dd, zc in zip(rows, zp):
                 _collar(k, P, u, dd, zc, rp + 0.015, 0.03, up)

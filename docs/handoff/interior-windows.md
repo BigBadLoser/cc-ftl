@@ -573,3 +573,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the bands look jagged. The bars (a lit top and a dark side, ~1.3 px wide) are now flat steel
   straps lying out of the slope, 2 px wide (u ± 1/32, centred on the px grid) in one tone (fSH0). Still over the
   silver pipe. Unused _bar removed. nv19.
+- 2026-11-08: the user: the straps should be flat on top, not dip between the pipes. They sat 0.02 into the slope, under
+  the collars' tops, so each sank between its two collars; now they lie on the collars' tops (lift dp + 0.003), one flat
+  strap from collar to collar. nv20.
