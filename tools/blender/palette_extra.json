@@ -3515,5 +3515,7 @@
   "tFrame": {"hex": "#6d7885", "set": "hydro"},
   "tFrameL": {"hex": "#8f9aa6", "set": "hydro"},
   "ringW": {"hex": "#c4cbd1", "set": "hydro"},
-  "ringWL": {"hex": "#e3e8eb", "set": "hydro"}
+  "ringWL": {"hex": "#e3e8eb", "set": "hydro"},
+  "tWhite": {"hex": "#dde2e6", "set": "hydro"},
+  "tWhiteL": {"hex": "#f1f3f5", "set": "hydro"}
 }

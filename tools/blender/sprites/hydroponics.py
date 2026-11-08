@@ -170,18 +170,17 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
         _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
     up = zr - zv                                                            # the front slope: v and z at fraction f
     fs = lambda f: (b - f * iv + 0.006, zv + f * up)
-    # Reflections: pale bands in pairs at half opacity (see-through, so they never mask the crop), in the upper left
-    # of each pane: each bay's pair rises from halfway up the front slope by its left post and runs onto the front of
-    # the roof; the end pane has its pair in its upper left (its front edge).
+    # Reflections: pale bands in pairs at half opacity (see-through, so they never mask the crop). Each bay: up the
+    # front slope, then on across the roof; the end pane has its pair centred.
     kg = _part(k, "glint")
-    (v0, za), (v1, zb) = fs(0.4), fs(1.0)
-    for ul in (cu - a, cu):                                                 # each bay's left edge
-        for du, w in ((0.1, 0.08), (0.22, 0.04)):
-            u0 = ul + du
-            _streak(kg, (u0, v0, za), (u0 + 0.08, v1, zb), (w, 0, 0), "glassG")
-            _streak(kg, (u0 + 0.08, b2, zr + 0.006), (u0 + 0.14, b2 - 0.22, zr + 0.006), (w, 0, 0), "glassG")
-    for dv, w in ((b - 0.1, 0.08), (b - 0.22, 0.04)):
-        _streak(kg, (cu + a + 0.006, dv, zv - 0.02), (cu + a + 0.006, dv - 0.1, zr - 0.06), (0, -w, 0), "glassG")
+    (v0, za), (v1, zb) = fs(0.08), fs(1.0)
+    for bay in (-1, 1):
+        for du, w in ((-0.2, 0.08), (-0.07, 0.04)):
+            u0 = cu + bay * L / 4 + du
+            _streak(kg, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0), "glassG")
+            _streak(kg, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0), "glassG")
+    for dv, w in ((0.1, 0.08), (-0.03, 0.04)):
+        _streak(kg, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0), "glassG")
 
 
 def _streak(k, p0, p1, e, col):
@@ -196,20 +195,87 @@ def _tray(k, cu, L, D, z0, zs, seed):
     _soil(k, cu, 0, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
 
 
-def terra(k, on):
-    """One long glass canopy on an angular navy base, grey frames, slatted front panel, a control screen."""
+BODY = _cham(0, 0, 1.9375, 0.875, 0.02)    # the base body: front face on v = 14/32, ends on u = +-31/32 (whole px)
+FV, EU = 0.4375, 0.96875
+
+
+def _screen(k, u, z, on):
+    """The control screen: a dark bezel with a lit readout and a status light."""
+    k.box(u, FV + 0.006, z, 0.25, 0.01, 0.12, "dark")
+    k.box(u - 0.0625, FV + 0.012, z + 0.04, 0.125, 0.01, 0.05, _on(on))
+    k.box(u + 0.09375, FV + 0.012, z + 0.04, 0.0625, 0.01, 0.05, _on(on, "orange"))
+
+
+def _slats(k, u, z, h, n, col, back="dark"):
+    """A vent: n 2 px slats at a 4 px pitch, centred on u, over a dark recess."""
+    w = n * 0.125 - 0.0625
+    k.box(u, FV, z - 0.02, w + 0.125, 0.01, h + 0.04, back)
+    for j in range(n):
+        k.box(u - w / 2 + 0.03125 + j * 0.125, FV + 0.006, z, 0.0625, 0.01, h, col)
+
+
+def _base_orig(k, on):
+    _prism(k, BODY, 0.1, 0.5, "tNavy", top="tNavyL")
+    _slats(k, -0.40625, 0.22, 0.22, 6, "tNavyL")
+    k.box(0.5, FV, 0.26, 0.3125, 0.01, 0.2, "tFrame")
+    _screen(k, 0.5, 0.3, on)
+
+
+def _base_band(k, on):
+    """Two-tone, like an appliance: a navy lower half, a white upper half under the sill, a dark seam between that
+    wraps round all four sides. Vent and screen sit in the white."""
+    _prism(k, BODY, 0.1, 0.2, "tNavy")
+    _prism(k, _cham(0, 0, 1.875, 0.8125, 0.02), 0.3, 0.04, "dark")                          # the seam, 1 px in
+    _prism(k, BODY, 0.34, 0.26, "tWhite", top="tWhiteL")
+    _vent_slots(k, -0.484375, 0.39, 0.12, 5)
+    _screen(k, 0.484375, 0.39, on)
+
+
+def _vent_slots(k, u, z, h, n):
+    """Dark 2 px slots at a 4 px pitch, centred on u, cut into a panel."""
+    for j in range(n):
+        k.box(u + (j - (n - 1) / 2) * 0.125, FV + 0.012, z, 0.0625, 0.01, h, "dark")
+
+
+def _base_bays(k, on):
+    """Navy body with a white panel under each canopy bay, framed dark, a navy pilaster between them under the
+    canopy's middle post; a white panel on each end. The vent is in the left panel, the screen in the right."""
+    _prism(k, BODY, 0.1, 0.5, "tNavy", top="tNavyL")
+    w, z0, h = 0.78125, 0.18, 0.3
+    for cu in (-0.484375, 0.484375):
+        k.box(cu, FV, z0 - 0.025, w + 0.0625, 0.01, h + 0.05, "dark")
+        k.box(cu, FV + 0.006, z0, w, 0.01, h, "tWhite")
+    for sg in (-1, 1):
+        k.box(sg * EU, 0, z0 - 0.025, 0.01, 0.6875 + 0.0625, h + 0.05, "dark")
+        k.box(sg * (EU + 0.006), 0, z0, 0.01, 0.6875, h, "tWhite")
+    _vent_slots(k, -0.484375, z0 + 0.05, h - 0.1, 5)
+    _screen(k, 0.484375, z0 + 0.09, on)
+
+
+def _base_posts(k, on):
+    """White body on a navy plinth, carried by navy posts at the corners and under the canopy's middle post, so the
+    white reads as panels set in a navy frame. A thin lit strip under the sill; vent left, screen right."""
+    _prism(k, BODY, 0.1, 0.1, "tNavy")
+    _prism(k, BODY, 0.2, 0.4, "tWhite", top="tWhiteL")
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * 0.90625, sv * 0.375, 0.1, 0.15625, 0.15625, 0.46, "tNavy", top="tNavyL")
+    for sv in (-1, 1):
+        k.box(0, sv * 0.39, 0.1, 0.125, 0.11, 0.46, "tNavy", top="tNavyL")
+    for cu in (-0.453125, 0.453125):                                                       # a lit strip per bay, top
+        k.box(cu, FV + 0.004, 0.5, 0.65625, 0.01, 0.03, _on(on, "growPink"))
+    _vent_slots(k, -0.453125, 0.26, 0.18, 5)
+    _screen(k, 0.453125, 0.3, on)
+
+
+BASES = {"orig": _base_orig, "band": _base_band, "bays": _base_bays, "posts": _base_posts}
+
+
+def terra(k, on, base="orig"):
+    """One long glass canopy on an angular base (the BASES), grey frames."""
     _prism(k, _cham(0, 0, 1.9, 0.84, 0.03), 0.0, 0.1, "dark")                                 # kick
-    body = _cham(0, 0, 1.9375, 0.875, 0.02)                 # (front face on v = 14/32: whole px, as every u below)
-    _prism(k, body, 0.1, 0.5, "tNavy", top="tNavyL")
+    BASES[base](k, on)
     _ring(k, _cham(0, 0, 2.0, 0.9375, 0.02), _cham(0, 0, 1.86, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
-    f = 0.4375
-    k.box(-0.40625, f, 0.2, 0.75, 0.01, 0.26, "dark")                                       # slatted panel
-    for j in range(6):                                                                     # 2 px slats, 2 px gaps
-        k.box(-0.71875 + j * 0.125, f + 0.006, 0.22, 0.0625, 0.01, 0.22, "tNavyL")
-    k.box(0.5, f, 0.26, 0.3125, 0.01, 0.2, "tFrame")                                       # control panel
-    k.box(0.5, f + 0.006, 0.3, 0.25, 0.01, 0.12, "dark")
-    k.box(0.4375, f + 0.012, 0.33, 0.125, 0.01, 0.05, _on(on))
-    k.box(0.59375, f + 0.012, 0.33, 0.0625, 0.01, 0.05, _on(on, "orange"))
     zs = 0.69
     _tray(k, 0, 1.84, 0.8, 0.6, zs, 3)
     _canopy_slope(k, 0, 1.92, 0.88, 0.66, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
@@ -243,7 +309,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra}
+VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("band", "bays", "posts")}}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
