@@ -8,7 +8,7 @@ on its long sides to a glass roof; its ends are upright. A strut across the roof
 the middle so the plants show through it, one plant per tile.
 Layers: `.off` / `.on` are the bed; `.crop.<crop>.<stage>` is the crop drawn on top of the bed, rendered with the bed
 as a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
-narrows the build."""
+and HYDRO_LAYERS narrow the build."""
 import math
 import os
 import random
@@ -132,7 +132,7 @@ def _part(k, name):
     if not hasattr(k, "parts"):
         k.parts = {}
     if name not in k.parts:
-        k.parts[name] = K(f"{k.m.name}_{name}", (2, 1), k.rot)
+        k.parts[name] = K(f"{k.m.name}_{name}", getattr(k, "fp", (2, 1)), k.rot)
     return k.parts[name]
 
 
@@ -141,14 +141,18 @@ def _bar(k, a, b, s, col):
     _tube(k, [a, b], s / math.sqrt(2), col, n=4, phase=math.pi / 4)
 
 
-def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t):
+def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t, cv=0.0, mids=None, rings=None):
     """A glass canopy: a short upright wall from the sill to zv, then the long sides slope up to a glass roof (inset
     iv each side), the short ends upright; square frame bars on every edge, a post and rafter mid-length that a strut
-    across the roof joins into one hoop, and a ring lamp (colours ring, ring_t) hung from that strut."""
+    across the roof joins into one hoop, and a ring lamp (colours ring, ring_t) hung from that strut. Centred on
+    (cu, cv); mids: the posts and struts along it (default its middle); rings: (v, width) of each lamp (default one
+    as wide as the roof)."""
     g = _part(k, "glass")
     a, b, b2 = L / 2, D / 2, D / 2 - iv
-    lo = [(cu - a, -b), (cu + a, -b), (cu + a, b), (cu - a, b)]
-    hi = [(cu - a, -b2), (cu + a, -b2), (cu + a, b2), (cu - a, b2)]
+    lo = [(cu - a, cv - b), (cu + a, cv - b), (cu + a, cv + b), (cu - a, cv + b)]
+    hi = [(cu - a, cv - b2), (cu + a, cv - b2), (cu + a, cv + b2), (cu - a, cv + b2)]
+    mids = [cu] if mids is None else mids
+    rings = [(cv, 2 * b2)] if rings is None else rings
     for j in range(4):                                                      # panes: two slopes, two upright ends
         q = (j + 1) % 4
         g.m.poly([_G(g, *lo[j], z0), _G(g, *lo[q], z0), _G(g, *lo[q], zv), _G(g, *lo[j], zv)], "glassT", flip=True)
@@ -159,28 +163,36 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
         _bar(k, (*hi[j], zr), (*hi[q], zr), s, frame_l)
         _bar(k, (*lo[j], z0), (*lo[j], zv), s, frame)
         _bar(k, (*lo[j], zv), (*hi[j], zr), s, frame_l)
-    for sv in (-1, 1):                                                      # a post and rafter between the plants
-        _bar(k, (cu, sv * b, z0), (cu, sv * b, zv), s, frame)
-        _bar(k, (cu, sv * b, zv), (cu, sv * b2, zr), s, frame_l)
+    for m in mids:
+        for sv in (-1, 1):                                                  # a post and rafter between the plants
+            _bar(k, (m, cv + sv * b, z0), (m, cv + sv * b, zv), s, frame)
+            _bar(k, (m, cv + sv * b, zv), (m, cv + sv * b2, zr), s, frame_l)
     g.m.poly([_G(g, *p, zr) for p in hi], "glassT", flip=True)              # the glass roof
-    _bar(k, (cu, -b2, zr), (cu, b2, zr), s, frame_l)                          # the strut across it
+    for m in mids:
+        _bar(k, (m, cv - b2, zr), (m, cv + b2, zr), s, frame_l)               # the strut across it
     Lr, zl = L - 0.1, zr - 0.22
-    _lamp_ring(k, cu, 0, zl, Lr, 2 * b2, 0.09, on, col=ring, top=ring_t)
-    for sv in (-1, 1):                                                      # hung from the strut
-        _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
+    for rv, rw in rings:
+        _lamp_ring(k, cu, rv, zl, Lr, rw, 0.09, on, col=ring, top=ring_t)
+        for m in mids:
+            for sv in (-1, 1):                                              # hung from the strut
+                hv = rv + sv * (rw / 2 - 0.045)
+                _bar(k, (m, hv, zl + 0.1), (m, hv, zr), 0.045, frame)
     up = zr - zv                                                            # the front slope: v and z at fraction f
-    fs = lambda f: (b - f * iv + 0.006, zv + f * up)
+    fs = lambda f: (cv + b - f * iv + 0.006, zv + f * up)
+    edges = [cu - a] + sorted(mids) + [cu + a]
+    bays = [(l + r) / 2 for l, r in zip(edges, edges[1:])]
     # Reflections: pale bands in pairs at half opacity (see-through, so they never mask the crop). Each bay: up the
     # front slope, then on across the roof; the end pane has its pair centred.
     kg = _part(k, "glint")
     (v0, za), (v1, zb) = fs(0.08), fs(1.0)
-    for bay in (-1, 1):
+    for bc in bays:
         for du, w in ((-0.2, 0.08), (-0.07, 0.04)):
-            u0 = cu + bay * L / 4 + du
+            u0 = bc + du
             _streak(kg, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0), "glassG")
-            _streak(kg, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0), "glassG")
+            _streak(kg, (u0 + 0.12, cv + b2, zr + 0.006), (u0 + 0.24, cv - b2 + 0.04, zr + 0.006), (w, 0, 0), "glassG")
     for dv, w in ((0.1, 0.08), (-0.03, 0.04)):
-        _streak(kg, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0), "glassG")
+        _streak(kg, (cu + a + 0.006, cv + dv, z0 + 0.06), (cu + a + 0.006, cv + dv - 0.12, zv + 0.2), (0, -w, 0),
+                "glassG")
 
 
 def _streak(k, p0, p1, e, col):
@@ -189,21 +201,21 @@ def _streak(k, p0, p1, e, col):
     k.m.poly([_G(k, *p) for p in q], col, flip=True)
 
 
-def _tray(k, cu, L, D, z0, zs, seed):
+def _tray(k, cu, L, D, z0, zs, seed, cv=0.0):
     """The bed's soil tray inside a canopy (its edge hidden by the sill)."""
-    _prism(k, _cham(cu, 0, L, D, 0.02), z0, zs - 0.05 - z0, "soilD", top="soilD")
-    _soil(k, cu, 0, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
+    _prism(k, _cham(cu, cv, L, D, 0.02), z0, zs - 0.05 - z0, "soilD", top="soilD")
+    _soil(k, cu, cv, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
 
 
 # ---- the base: a tank under each plant, a pump between them, a copper manifold, in grey corner legs -------------------
 VQ = 0.46875                                     # the manifold's line, its front face on the tile's edge (whole px)
 
 
-def _frame_legs(k):
-    """Grey corner legs that carry the canopy frame down to the floor."""
+def _frame_legs(k, hu=0.921875, hv=0.390625, cv=0.0, h=0.56):
+    """Grey corner legs that carry the canopy frame down to the floor (at u = +-hu, v = cv +- hv)."""
     for su in (-1, 1):
         for sv in (-1, 1):
-            k.box(su * 0.921875, sv * 0.390625, 0.0, 0.09375, 0.09375, 0.56, "tFrame", top="tFrameL")
+            k.box(su * hu, cv + sv * hv, 0.0, 0.09375, 0.09375, h, "tFrame", top="tFrameL")
 
 
 def _sq_pipe(k, pts, w=0.0625, col="pipeCu"):
@@ -268,6 +280,64 @@ def bed(k, on):
     _tray(k, 0, 1.84, 0.8, 0.6, zs, 3)
     _canopy_slope(k, 0, 1.92, 0.88, 0.66, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
     return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
+
+
+# ---- the large bed (3 x 2 tiles): options ---------------------------------------------------------------------------
+VQL = 0.96875                                    # the large bed's manifold line, its front face on the tile's edge
+
+
+def _base_large(k, on, back=True):
+    """Two rows of three tanks (one under each plant), a pump between each pair of front tanks lifting into one copper
+    manifold along the front with a valve on each front tank, in grey corner legs."""
+    _frame_legs(k, 1.421875, 0.890625)
+    for row in ((0.5, -0.5) if back else (0.5,)):
+        for u in (-1.0, 0.0, 1.0):
+            k.cyl(u, row, 0.0, 0.34, 0.04, "dark", sides=24)
+            _vtank(k, u, row, 0.04, 0.37, 0.52, on)
+    zm, zb = 0.48, 0.084
+    for pu in (-0.5, 0.5):
+        _pump(k, pu, 0.76, 0.0, on, s=1.2)
+        _sq_pipe(k, [(pu, 0.8, zb), (pu, VQL, zb), (pu, VQL, zm)])
+    _sq_pipe(k, [(-1.21875, VQL, 0.56), (-1.21875, VQL, zm), (1.21875, VQL, zm), (1.21875, VQL, 0.56)])
+    for u in (-1.0, 0.0, 1.0):
+        _valve(k, u, VQL, zm)
+
+
+def _unit(k, cv, on, dz=0.0, seed=3):
+    """One row of the large bed: a 3-tile sill, tray and canopy (posts between the plants), centred on v = cv,
+    lifted dz. Returns its plant spots with their soil height and ceiling."""
+    _ring(k, _cham(0, cv, 3.0, 0.9375, 0.02), _cham(0, cv, 2.86, 0.8, 0.02), 0.56 + dz, 0.1, "tFrame", top="tFrameL")
+    zs = 0.69 + dz
+    _tray(k, 0, 2.84, 0.8, 0.6 + dz, zs, seed, cv=cv)
+    _canopy_slope(k, 0, 2.92, 0.88, 0.66 + dz, 0.87 + dz, 1.36 + dz, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL",
+                  cv=cv, mids=[-0.5, 0.5])
+    return [(u, cv, zs, 1.14 + dz) for u in (-0.98, 0.0, 0.98)]
+
+
+def large_wide(k, on):
+    """One wide greenhouse over one tray: six plants in two rows, a lamp ring over each row."""
+    _base_large(k, on)
+    _ring(k, _cham(0, 0, 3.0, 1.9375, 0.02), _cham(0, 0, 2.86, 1.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")
+    zs = 0.69
+    _tray(k, 0, 2.84, 1.8, 0.6, zs, 5)
+    _canopy_slope(k, 0, 2.92, 1.88, 0.66, 0.87, 1.36, 0.2, on, "tFrame", "tFrameL", "ringW", "ringWL",
+                  mids=[-0.5, 0.5], rings=[(0.42, 0.66), (-0.42, 0.66)])
+    return [(u, v, zs, 1.14) for v in (0.45, -0.45) for u in (-0.98, 0.0, 0.98)], zs, 1.14
+
+
+def large_twin(k, on):
+    """Two long greenhouses side by side, a front row and a back row of three plants."""
+    _base_large(k, on)
+    return _unit(k, 0.5, on) + _unit(k, -0.5, on, seed=5), 0.69, 1.14
+
+
+def large_tiered(k, on):
+    """The twin rows with the back row raised on a white riser, so its plants show over the front ones."""
+    dz = 0.3
+    _base_large(k, on, back=False)
+    _frame_legs(k, 1.421875, 0.390625, cv=-0.5, h=0.56 + dz)
+    k.box(0, -0.5, 0.0, 2.75, 0.75, 0.56 + dz, "tWhite", top="tWhiteL")                          # the riser
+    return _unit(k, 0.5, on) + _unit(k, -0.5, on, dz=dz, seed=5), 0.69, 1.14
 
 
 # ---- the crops: one plant per tile, in three stages, under the lamp (hmax over the soil) ------------------------------
@@ -391,14 +461,17 @@ def _grain(k, u, v, z, st, seed, hmax):
 
 
 CROPS = {"greens": _greens, "beans": _beans, "herbs": _herbs, "grain": _grain}
-VARIANTS = {"bed": bed}
+VARIANTS = {"bed": (bed, (2, 1)), "large.wide": (large_wide, (3, 2)), "large.twin": (large_twin, (3, 2)),
+            "large.tiered": (large_tiered, (3, 2))}
 LAYERS = ("off", "on") + tuple(f"crop.{c}.{s}" for c in CROPS for s in STAGES)
 
 
 def build(variant, layer, rot=0):
     name = f"hydro_{variant.replace('.', '_')}_{layer.replace('.', '_')}_{rot}"
-    kb = K(name, (2, 1), rot)
-    plants, zs, ceil = VARIANTS[variant](kb, layer == "on")      # ceil: the underside of the lamp over the plants
+    fn, fp = VARIANTS[variant]
+    kb = K(name, fp, rot)
+    kb.fp = fp
+    plants, zs, ceil = fn(kb, layer == "on")                      # ceil: the underside of the lamp over the plants
     bed = kb.build()
     parts = {n: p.build() for n, p in getattr(kb, "parts", {}).items()}
     for o in parts.get("glass", []):
@@ -409,15 +482,17 @@ def build(variant, layer, rot=0):
         return bed + sum(parts.values(), [])
     for o in sum(parts.values(), []):                                       # the plants show through the glass
         o.hide_render = True
-    kc = K(name + "_crop", (2, 1), rot)
+    kc = K(name + "_crop", fp, rot)
     _, crop_id, stage = layer.split(".")
-    for i, (u, v) in enumerate(plants):
-        CROPS[crop_id](kc, u, v, zs, stage, i, ceil - zs - 0.06)
+    for i, p in enumerate(plants):
+        u, v, pz, pc = p if len(p) == 4 else (*p, zs, ceil)              # a spot may carry its own soil and ceiling
+        CROPS[crop_id](kc, u, v, pz, stage, i, pc - pz - 0.06)
     crop = kc.build()
     return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
 
 def jobs(rots=range(4)):
     names = os.environ.get("HYDRO_VARIANTS", ",".join(VARIANTS)).split(",")
-    return [(f"module.hydroponics.{v}.{s}", (2, 1), "over" if s.startswith("crop.") else "prop", lambda v=v, s=s: build(v, s))
-            for v in names for s in LAYERS]
+    layers = os.environ.get("HYDRO_LAYERS", ",".join(LAYERS)).split(",")
+    return [(f"module.hydroponics.{v}.{s}", VARIANTS[v][1], "over" if s.startswith("crop.") else "prop",
+             lambda v=v, s=s: build(v, s)) for v in names for s in layers]
