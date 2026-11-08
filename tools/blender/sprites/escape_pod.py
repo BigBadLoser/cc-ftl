@@ -26,11 +26,11 @@ GLOW = "cyan"                 # drive nozzles (the ship's drives glow cyan too)
 BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
+# (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the door is crew-sized)
 VARIANTS = {
-    "b": dict(rb=0.84, rt=0.42, length=0.92, bulge=1.0, dish=0.14, tilt=0, drive="collar", label="B (last sheet)"),
-    "d": dict(rb=0.84, rt=0.42, length=0.92, bulge=1.0, dish=0.14, tilt=90, drive="flank", label="D upright"),
-    "e": dict(rb=0.84, rt=0.42, length=0.92, bulge=1.0, dish=0.14, tilt=125, drive="flank", label="E leaning, shield first"),
-    "f": dict(rb=0.84, rt=0.36, length=1.0, bulge=1.9, dish=0.12, tilt=90, drive="flank", label="F gumdrop, upright"),
+    "g": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=90, drive="pack", label="G upright, drive pack"),
+    "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H leaning 15"),
+    "i": dict(rb=1.0, rt=0.44, length=1.3, bulge=1.7, dish=0.14, tilt=105, drive="pack", label="I gumdrop, leaning 15"),
 }
 SIDES = 48
 HOVER = 0.25                  # the lowest point's height in flight
@@ -124,7 +124,7 @@ def body(k):
     """The cone, the safety band round its base, a few seams."""
     _g("hull")
     ln = k.v["length"]
-    marks = [0.0, 0.06, 0.26, ln * 0.62, ln * 0.62 + 0.035, ln]
+    marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
     mats = [HULL_D, BAND, HULL, HULL_D, HULL]
     for (a, b), m in zip(zip(marks, marks[1:]), mats):
         n = max(1, int((b - a) / 0.06))                                    # fine steps, so a bulge reads round
@@ -162,26 +162,45 @@ def collar(k, beacon_on, thrust=False):
     stud(f, q, nn, 0.07, 0.09, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.05)
 
 
+def sector(k, s0, s1, t0, t1, g, mat, wall="steelD"):
+    """A panel lying on the hull over s0..s1 and the arc t0..t1 (degrees), raised to g times the radius, walled round."""
+    ns, nt = max(2, int((s1 - s0) / 0.05)), max(2, int(abs(t1 - t0) / 4))
+    S = [s0 + (s1 - s0) * i / ns for i in range(ns + 1)]
+    T = [math.radians(t0 + (t1 - t0) * j / nt) for j in range(nt + 1)]
+
+    def P(s, t, gg):
+        r = k.r(s) * gg
+        return k.f.pt(k.u(s), r * math.cos(t), k.zc + r * math.sin(t))
+    for i in range(ns):
+        for j in range(nt):
+            k.f.poly([P(S[i], T[j], g), P(S[i + 1], T[j], g), P(S[i + 1], T[j + 1], g), P(S[i], T[j + 1], g)], mat)
+    edge = [(S[i], T[0]) for i in range(ns + 1)] + [(S[-1], T[j]) for j in range(1, nt + 1)] + \
+        [(S[i], T[-1]) for i in range(ns - 1, -1, -1)] + [(S[0], T[j]) for j in range(nt - 1, 0, -1)]
+    for (sa, ta), (sb, tb) in zip(edge, edge[1:] + edge[:1]):
+        k.f.poly([P(sa, ta, 0.99), P(sb, tb, 0.99), P(sb, tb, g), P(sa, ta, g)], wall)
+
+
 def viewport(k):
-    """A small window up the flank, forward and to the side, in a thick frame; below it, facing forward, the side hatch:
-    a square door in a frame, red with a hazard sill."""
-    _g("viewport")
-    p, n = k.on(k.v["length"] * 0.62, 325)
-    stud(k.f, p, n, 0.14, 0.03, "steelD", "steelD")
-    q = tuple(p[i] + n[i] * 0.03 for i in range(3))
-    stud(k.f, q, n, 0.1, 0.01, "glassD", "glassD")
-    _g("side_hatch")
-    p, n = k.on(k.v["length"] * 0.36, 270)
-    stud(k.f, p, n, 0.27, 0.03, "steelD", "steelD", sides=4, phase=45)
-    q = tuple(p[i] + n[i] * 0.03 for i in range(3))
-    stud(k.f, q, n, 0.2, 0.012, "drK", "drM", sides=4, phase=45)
+    """The front: a crew-sized DOOR facing forward (a heavy frame, the red door, a porthole in it, a hazard sill below)
+    and two windows either side of it, up by the shoulder, so the pod has a face."""
+    _g("door")
+    ln = k.v["length"]
+    s0, s1, h = 0.32, ln * 0.9, 21
+    sector(k, s0 - 0.05, s1 + 0.05, 270 - h - 5, 270 + h + 5, 1.025, "steelD")             # the frame
+    sector(k, s0, s1, 270 - h, 270 + h, 1.045, "drK", "drD")                               # the door
+    sector(k, s0 + (s1 - s0) * 0.62, s0 + (s1 - s0) * 0.86, 270 - 7, 270 + 7, 1.055, "glassD", "steelD")   # its porthole
+    sector(k, s0 - 0.05, s0 + 0.03, 270 - h - 5, 270 + h + 5, 1.04, "hazY", "hazK")         # the hazard sill
+    _g("windows")
+    for c in (270 - 50, 270 + 50):
+        sector(k, ln * 0.6, ln * 0.82, c - 13, c + 13, 1.02, "steelD")
+        sector(k, ln * 0.62, ln * 0.8, c - 10, c + 10, 1.03, "glassD", "steelD")
 
 
 def rcs(k):
     """Four RCS quads round the shoulder: a block with two nozzle stubs."""
     _g("rcs")
-    s = k.v["length"] * 0.82
-    for th in (0, 90, 180, 270):
+    s = k.v["length"] * 0.9
+    for th in (0, 180):
         p, n = k.on(s, th)
         stud(k.f, p, n, 0.08, 0.06, HULL_D, "steelD", sides=4)
         q = tuple(p[i] + n[i] * 0.06 for i in range(3))
@@ -189,25 +208,28 @@ def rcs(k):
 
 
 def drive(k, lit):
-    """Small drive nozzles pointing aft: a pair low on the aft flank (upright), or a ring round the collar (variant b)."""
+    """The DRIVE PACK on the back (theta 90): a steel box lying on the flank with a yellow stripe, two thruster bells out
+    of its back pointing straight aft (level when upright), so the pod has a back from any heading."""
     _g("drive")
-    f = k.f
-    if k.v["drive"] == "flank":
-        for th in (68, 112):
-            p, n = k.on(0.16, th)
-            stud(f, p, n, 0.1, 0.05, "steelD", "steelD", sides=12)
-            q = tuple(p[i] + n[i] * 0.05 for i in range(3))
-            stud(f, q, n, 0.06, 0.08, "steelD", GLOW if lit else "dark", sides=12, r1=0.085)
-        return
-    t = k.top
-    ring = k.r(t) * 0.92 + 0.07
-    for i in range(4):
-        a = math.radians(45 + i * 90)
-        v, z = ring * math.cos(a), k.zc + ring * math.sin(a)
-        f.hcyl(k.u(t - 0.05), k.u(t + 0.08), v, z, 0.06, "steelD", r1=0.09, sides=12, cap=GLOW if lit else "dark")
+    f, v = k.f, k.v
+    ln = v["length"]
+    sa, sb, w, dep = 0.12, ln * 0.62, 0.62, 0.34
+    sm = (sa + sb) / 2
+    slope = (k.r(sa) - k.r(sb)) / (sb - sa)
+    pitch = -math.atan(slope)
+    cz = k.r(sm) + dep / 2 - 0.08
+    f.box(k.u(sm), 0, cz, (sb - sa) * math.hypot(1, slope), w, dep, "steelL", top="steelL", pitch=pitch, pu=k.u(sm), pz=cz,
+          base=False)
+    f.box(k.u(sm), 0, cz + dep / 2, (sb - sa) * math.hypot(1, slope) * 0.96, 0.12, 0.012, "hazY", pitch=pitch, pu=k.u(sm),
+          pz=cz, base=False)
+    for sv in (-1, 1):                                                     # the bells
+        c = (k.u(sm - 0.08), sv * 0.15, k.r(sm - 0.08) + dep - 0.08)
+        stud(f, c, (0.0, 0.0, 1.0), 0.07, 0.04, "steelD", "steelD", sides=12)
+        q = (c[0], c[1], c[2] + 0.04)
+        stud(f, q, (0.0, 0.0, 1.0), 0.07, 0.16, HULL_K, GLOW if lit else "dark", sides=12, r1=0.12)
 
 
-def pod(heading, variant="d", state="fly", beacon=False):
+def pod(heading, variant="g", state="fly", beacon=False):
     """The escape pod at a heading (grid radians, 0 = +x); state fly / drift / docked / parked."""
     v = VARIANTS[variant]
     t = math.radians(v["tilt"])
