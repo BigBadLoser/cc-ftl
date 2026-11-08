@@ -359,21 +359,30 @@ CONSOLE_INK = {".": "fGK0", "C": "fGK1", "b": "fGK2", "R": "fGK3", "r": "fGK4", 
 
 
 def console_cuts(a, b):
-    """T1-3's screen: one a tile, 28 px wide (u c-14..c+14 px)."""
-    return [(c - 14 * LINE, c + 14 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 14 * LINE and c + 14 * LINE <= b + 1e-6]
+    """T1-3's screen and its bezel: one a tile, 30 px wide (u c-15..c+15 px)."""
+    return [(c - 15 * LINE, c + 15 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 15 * LINE and c + 15 * LINE <= b + 1e-6]
 
 
 def slate_console(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-3): a screen a tile from the header down (CONSOLE, its colours CONSOLE_INK: the slate set's fGK*,
-    unlit), each px a square on the sprite's grid (tan_tops._px: the face's rows step down a px every 2 across), a
-    dark px row under it. Read left to right on either face. The faint line stops at it."""
+    """Wall (T1-3): a screen a tile, its top 3 px under the header (CONSOLE, its colours CONSOLE_INK: the slate set's
+    fGK*, unlit), each px a square on the sprite's grid (tan_tops._px: the face's rows step down a px every 2 across),
+    in a bezel a px wide round it, flat (painted 2*PAINT out: a part standing further out lands off the px rows and
+    over the screen's edge), bevelled by tone: its top and left lit, its foot and right dark. Read left to right on
+    either face. The faint line stops at it."""
+    hi, dark = ("fGS1", "fGS5") if ax == "y" else ("fGS2", "fGS6")
+    left, right = (hi, dark) if ax == "y" else (dark, hi)          # (as seen: an x face's u runs the other way)
     cuts = console_cuts(a, b)
-    for c0, c1 in cuts:
+    for d0, d1 in cuts:
+        s0, s1 = d0 + LINE, d1 - LINE                   # (the screen)
+        zt = top - 3 * PZ                               # (its top)
+        zb = zt - len(CONSOLE) * PZ
         for r, row in enumerate(CONSOLE):
             for x, ch in enumerate(row if ax == "y" else row[::-1]):
-                _px(k, ax, plane, c0, x, r, top, 2 * PAINT, CONSOLE_INK[ch])
-        zb = top - len(CONSOLE) * PZ
-        T.paint(k, ax, plane, c0, c1, zb - PZ, zb, 0.0, FACE, 1)
+                _px(k, ax, plane, s0, x, r, zt, 2 * PAINT, CONSOLE_INK[ch])
+        for u0, u1, z0, z1, col in ((d0, d1, zt, zt + PZ, hi), (d0, d1, zb - PZ, zb, dark),
+                                    (d0, s0, zb, zt, left), (s1, d1, zb, zt, right)):
+            prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
+                  cols=[False, col, False, False])
     return _minus(a, b, cuts)
 
 
