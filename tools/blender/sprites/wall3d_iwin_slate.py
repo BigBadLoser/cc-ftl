@@ -10,6 +10,7 @@ from . import core
 from . import wall3d as T
 from . import walls as W
 from . import wall3d_iwin_def as D
+from .faction import slate as S
 from .faction.parts import PAINT, PZ
 from .wall3d_iwin import _clip
 
@@ -40,6 +41,8 @@ BLOCK = 13                              # px: the blue end blocks under the post
 END_STRIP = 3                           # px: the strip closing the joined end under the floor's edge
 SEAM = "fGW5"                           # the seam down the blue at the left post (the post's corner line's grey)
 SHADOW = 3                              # px: the rail's shadow band under the header (its lowest px shows)
+LIT_UNDER = 1                           # px: the stripe's lit top kept under the header's dark edge over the window
+EDGE_BLUE, EDGE_FACE = "fGT4", "fGS4"    # the chamfers' bottom edge: dark blue level with the blue, dark grey under
 CHAMFER = 10                            # px: the opening's top corners cut this far up the posts from the beam
 BLUE_H = 9                              # px: the blue under the header (the rail's shadow and the stripe)
 FACE = "fGS3"                           # the wall's face (a chamfer's front under the blue)
@@ -246,6 +249,18 @@ def _chamfers(k, x0, x1, yf):
             pts = [(u, yr, za), (at(za), yr, za), (at(zb), yr, zb), (u, yr, zb)] if za > zc else \
                   [(u, yr, za), (at(zb), yr, zb), (u, yr, zb)]
             k.poly([Vector(p) for p in pts], BLUE, 3, Vector((0, 1, 0)), fixed=col)
+        ye = yr + 2 * PAINT                             # its bottom edge a dark line (a px up from the slant), the
+        for za, zb, col in ((zc, zbl, EDGE_FACE), (zbl, z1 - PZ, EDGE_BLUE)):   # face's or the blue's
+            za, zb = max(za, zc), min(zb, z1 - PZ)
+            if zb > za + 1e-9:
+                k.poly([Vector(p) for p in ((at(za), ye, za), (at(zb), ye, zb), (at(zb), ye, zb + PZ),
+                                            (at(za), ye, za + PZ))], BLUE, 3, Vector((0, 1, 0)), fixed=col)
+    if x1 < 0.5:                                        # no rail seam by the right post (slate._rail's on its end
+        g3 = tuple(round(c, 5) for c in core.lin("fGT3"))   # block's front, a px wide, 3 px past the post)
+        e = 0.5 - S.END_W
+        m.f = [f for f in m.f if not (tuple(round(c, 5) for c in f[2]) == g3 and
+                                      abs(min(m.v[j][0] for j in f[0]) - e) < 1e-6 and
+                                      abs(max(m.v[j][0] for j in f[0]) - e - L) < 1e-6)]
 
 
 def window(fn, part):
@@ -271,7 +286,7 @@ def window(fn, part):
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
         keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP
-        D.BEAM_DROP = (SHADOW + 1) * PZ                 # the opening's top under the rail's shadow band and the
+        D.BEAM_DROP = (SHADOW + LIT_UNDER) * PZ         # the opening's top under the rail's shadow band and the
         #   stripe's lit top px: the header's foot as on the wall over it (the band's lowest px under every block, its
         #   dark bottom edge, over the lit px as on the wall)
         D.FLOOR = D.FLOOR - RAISE * PZ

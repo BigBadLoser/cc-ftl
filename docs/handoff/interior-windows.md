@@ -226,3 +226,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   posts' relief (yf + T.FR), a px proud of the face it now sits under, and showed; with BEAM_DROP it stops at the face
   (yf) (wall3d_iwin_def; the default window, BEAM_DROP 0, unchanged). The chamfers' fronts on the face too (out at the
   relief their top edge showed their dark underside as specks on the line). Shown.
+- 2026-11-08: sw42: the chamfers' bottom edge a dark px line (EDGE_BLUE fGT4 level with the blue, EDGE_FACE fGS4
+  under it); the rail's seam by the right post (slate._rail's fGT3 front line on the end block, 3 px past the post)
+  dropped on r. sw42b: the same with LIT_UNDER 0 (no lit px under the header's dark edge over the window), to
+  compare. Shown both; LIT_UNDER stays 1 until the user picks.
