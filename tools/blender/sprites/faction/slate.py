@@ -275,17 +275,18 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True):
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True, edge="fGTw"):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
     across each, the end ones a handle slot near the top. back: the backing's reach over z1 (backing False: none,
-    the face's grey between and under them)."""
+    the face's grey between and under them); edge: their fronts' lit top edge (fGTw: the rail's; None: a step
+    under it, fGT0, x: fGT1)."""
     if backing:
         T.paint(k, ax, plane, a, b, z0, z1 + back, 0.0, BLUE, 3)           # the backing, the stripe's blue (up to
                                                                            # the wall's top)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
-    lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
+    lit = edge or ("fGT0" if ax == "y" else "fGT1")     # its front; its front's top edge lit, its foot's edge in the
     dark = side                                         # side's tone)
     zb, d = z0 + 2 * PZ, RAIL_D                         # (the boxes' foot)
     for c in range(-1, 2):
@@ -443,7 +444,7 @@ def slate_foot_boxes(k, ax, plane, a, b, zh, mit):
     """T1-4's foot: the boxes header (slate_boxes) again, on the shelf in place of the lip (its backing from the shelf
     up HEADER_H, not on up the wall), a px down, on the face's grey (no backing); the seam over a plain wall's lip on
     along the 2 px at each tile's end to the cabinet's side."""
-    slate_boxes(k, ax, plane, a, b, zh - PZ, zh - PZ + HEADER_H, mit, back=0.0, backing=False)
+    slate_boxes(k, ax, plane, a, b, zh - PZ, zh - PZ + HEADER_H, mit, back=0.0, backing=False, edge=None)
     zg, g = zh + 9 * PZ, BOXES[0][0] * LINE              # (the face's zg: the lip's top 3 px over the shelf, 6 more)
     for c in range(-1, 2):
         for q0, q1 in ((c - 0.5, c - 0.5 + g), (c + 0.5 - g, c + 0.5)):
