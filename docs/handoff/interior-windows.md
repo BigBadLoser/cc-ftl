@@ -660,3 +660,8 @@ Marked ref (both layers, numbered): scratchpad
   Plain m10 identical to nv9. nb16.
 - 2026-11-08: the control boxes a px down (c, e less 1/39.19; measured: contents a row lower, the top bezel's AA edge a
   touch fuller). nb17.
+- 2026-11-08: lockers and recessed in the real recess (face_holes=lipped_holes, as the boxes; navy.py passes the design
+  back=(plane, hole, zf)). Locker: front flush with the wall (PX out of the 2 px recess, a 1-row chamfer), a px in from
+  the mouth each side; a dark (drD) handle notch 4 px wide under its top; a seam 0.55 up (drD line, drM lit row under)
+  (ref 07). Recessed: the cover panel (F 0) and its band (ochre 1) on the recess's back, the header's 2 px shadow over
+  it. Plain m10 and boxes a3 identical. nl1 (recessed), nl2 (lockers).

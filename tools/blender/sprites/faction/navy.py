@@ -201,7 +201,8 @@ def navy(hull):
                             bf(k, ax, plane, p0 - (1.5 * PAINT if pq[0] == "cont" else 0.0), hole[0], (pq[0], "cont"),
                                zh, H)
                     mid(k, ax, plane - RECESS_D, p0 + 0.04 - RECESS_D, p1 - 0.04 - RECESS_D, zf + 0.04, zh - 0.04, F,
-                        zh=zh, H=H, mouth=(round(T._px(hole[0], -RECESS_D)) - 3, round(T._px(hole[1], 0.0)) - 3))
+                        zh=zh, H=H, mouth=(round(T._px(hole[0], -RECESS_D)) - 3, round(T._px(hole[1], 0.0)) - 3),
+                        back=(plane, hole, zf))         # (the recess's back, in the face's frame: a design on it)
                     #   (mouth: the back's px seen between the recess's walls, in the design's frame: a depth shifts
                     #   it a px a LINE)
                     continue
