@@ -109,7 +109,9 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   under the slope's top.
 - `post_in` (TEAL 2): the opening's ends 2 px further out each side (`D.POST` = POST0 - 2 px while a piece builds: the
   posts 2 px thinner, the side slopes moved out); the end blocks' inner edges move with them (`a`, `b` from POST0), so
-  teal's blocks are 11 px wide from the tile's edge. dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+  teal's blocks are 11 px wide from the tile's edge. The lip's seams by the posts (`_thirds`: 10.3 / 21.3 px, a px outside the default
+  opening's ends) move out with it (`wall3d.LIP_OUT` = post_in while a piece builds): cut by the widened opening,
+  the lip's end lost its dark line and the slope seemed to clip it (dp6, the user). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
 - wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
   tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
   the base tiles pixel-identical (sw48, dp3 checked).
@@ -265,3 +267,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   slope faces only), plates wM / wD off the slope's wS, a dark slot on each block. Shown.
 - 2026-11-08: dp6 (the user): teal's side slopes 2 px out each side, posts 2 px thinner, the blocks' inner edges
   2 px out with them (`post_in`). Shown.
+- 2026-11-08: dp7 (the user: the slope clips the lip oddly): the lip's seams by the posts move out with the
+  widened opening (`wall3d.LIP_OUT`). Base tile pixel-identical. Shown.

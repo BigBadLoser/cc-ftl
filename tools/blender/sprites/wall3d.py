@@ -148,6 +148,8 @@ def OUT(ax):
 
 BARE = False            # the default walls' ramp without its panel (a window tile: wall3d_iwin_def)
 OPEN = None             # a window's opening along x on the piece (x0, x1): the faces' fields it runs into keep no panel art
+LIP_OUT = 0             # px: a window's opening widened this far past the default post (wall3d_iwin_ramp post_in): the lip's
+                        # seams by its ends move out with it
                         # (wall3d_iwin_def: its posts plain, no panel cut in half)
 PRE_HOOK = None         # as a piece starts to build: f(sp) (wall3d_iwin_def: which tiles are a window's)
 HOOK = None             # while a piece builds: f(k, sp) on its Relief before it builds (wall3d_iwin: a window's opening)
@@ -309,6 +311,9 @@ def _lip(k, ax, plane, a, b, ends, zs, top, fam):
     if room:
         paint(k, ax, plane, a, b, zg, zg + PZ, PAINT, fam, 1)
     for u in _thirds(a, b):
+        if OPEN and LIP_OUT and (OPEN[0] < u < OPEN[0] + LIP_OUT * LINE or OPEN[1] - LIP_OUT * LINE < u < OPEN[1]):
+            u += LIP_OUT * LINE * (-1 if u < (OPEN[0] + OPEN[1]) / 2 else 1)   # (a window's seam by its post, the
+            #   opening widened past it: moved out with the opening's end)
         q0, q1 = u, u + 0.7 * LINE
         dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT
         prism(k, ax, plane, q0, q1, [(0.0, zh), (dq, zh), (dq, zq), (0.0, zq)], fam, 2,

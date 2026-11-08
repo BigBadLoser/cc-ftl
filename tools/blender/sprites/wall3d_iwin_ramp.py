@@ -321,6 +321,7 @@ def window(fn, part, look):
         keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP, D.POST
         D.BEAM_DROP = look.beam_drop
         D.POST = POST0 - look.post_in * L
+        T.LIP_OUT = look.post_in
         D.FLOOR = D.FLOOR - RAISE * PZ
         D.SILL_OFF = DIP * L
         D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
@@ -331,4 +332,5 @@ def window(fn, part, look):
         finally:
             D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP, D.POST = keep
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
+            T.LIP_OUT = 0
     return build
