@@ -12,7 +12,7 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). Next: the distress freighter, then the medical pod with passengers. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173))
+- **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). The distress freighter ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343)) and the medical pod with passengers ([#345](https://github.com/BigBadLoser/cc-ftl/pull/345)) followed. Left in [#173](https://github.com/BigBadLoser/cc-ftl/issues/173): events that happen outside transit (see "Events in the world" below).
 - **UI consistency pass.** Shared colour, size and shadow tokens, then shared chips, meters, tooltips, headers and tabs, then one window frame. Art for overhead crew icons is with art sessions.
 
 ## Next
@@ -20,10 +20,9 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Later: major features
 
-Not in order, except that the two weapon items come first.
+Not in order. Ship weapon upgrades and the flak cannon shipped ([#344](https://github.com/BigBadLoser/cc-ftl/pull/344), [#351](https://github.com/BigBadLoser/cc-ftl/pull/351), [#346](https://github.com/BigBadLoser/cc-ftl/pull/346)).
 
-- **Ship weapon upgrades.** Slot upgrades into ship weapons.
-- **More ship weapon types.** Flak and other new weapon families.
+- **More ship weapon types.** Further weapon families beyond flak.
 - **Robots you research and build.** Research robot designs and build your own robots.
 - **Construction pods.** Build pods that do hull work away from the ship.
 - **New species.**
