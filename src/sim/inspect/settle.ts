@@ -1,7 +1,11 @@
 import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
 import type { Command } from '../commands';
 import { repKey } from '../galaxy/standing';
+import { CrewC, PositionC } from '../crew/components';
+import { AllegianceC } from '../fight/components';
 import { spillItems } from '../items/stacks';
+import { ModuleC } from '../modules/components';
+import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { TraderC } from '../trade/types';
@@ -31,13 +35,38 @@ export function refuseConsequences(sim: Sim, insp: Inspection): void {
   if (t) t.barredUntil = sim.galaxy.turn + INSPECT_BAN_TURNS;
 }
 
-/** Set the seized goods down on the player's ship by the shuttle's door (a bribe taken). */
+/**
+ * Where handed-back goods can be set down on the inspected ship, best first: by the shuttle's door, where an inspector or one of the player's crew stands
+ * (the shuttle may hover with no tile by its hatch: the EVA path), by each of the ship's modules.
+ */
+function dropSpots(sim: Sim, vehicle: number, insp: Inspection): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  const at = cargoTile(sim, vehicle);
+  if (at?.shipId === insp.ship) out.push(at);
+  const people = [...insp.crew, ...sim.world.query(CrewC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player')];
+  for (const c of people) {
+    const p = sim.world.get(c, PositionC);
+    if (p && shipIdOf(sim, p) === insp.ship) out.push({ x: Math.round(p.x), y: Math.round(p.y) });
+  }
+  for (const m of sim.world.query(ModuleC)) {
+    const mod = sim.world.get(m, ModuleC)!;
+    if (shipIdOf(sim, mod) === insp.ship) out.push({ x: mod.x, y: mod.y });
+  }
+  return out;
+}
+
+/** Set the seized goods down on the player's ship (a bribe taken): by the shuttle's door, or wherever else on the ship there is floor for them. */
 function handBack(sim: Sim, vehicle: number, insp: Inspection): void {
   const v = sim.world.get(vehicle, VehicleC);
-  const at = cargoTile(sim, vehicle);
-  if (!v || !at || at.shipId !== insp.ship) return;
-  for (const q of [...v.cargo, ...(insp.impounded ?? [])]) spillItems(sim, insp.ship, at.x, at.y, q.item, q.count);
-  v.cargo = [];
+  const spots = dropSpots(sim, vehicle, insp);
+  for (const q of [...(v?.cargo ?? []), ...(insp.impounded ?? [])]) {
+    let left = q.count;
+    for (const at of spots) {
+      if (left <= 0) break;
+      left = spillItems(sim, insp.ship, at.x, at.y, q.item, left);
+    }
+  }
+  if (v) v.cargo = [];
   insp.impounded = [];
 }
 

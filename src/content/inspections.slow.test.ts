@@ -168,6 +168,14 @@ describe('station inspections', () => {
     expect(insp.phase).toBe('settle');
     expect(insp.blocked).toBeUndefined();
     expect(insp.found).toEqual([{ item: STOLEN, count: 10 }]);
+    // A bribe taken with the shuttle still hovering hands the goods back all the same.
+    expect(sim.world.get(id, VehicleC)!.state).toBe('flying');
+    sim.trade.credits = insp.bribe! + 5;
+    rollBribe(sim, true);
+    sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'bribe' });
+    run(sim, 1);
+    expect(sim.world.get(id, VehicleC)!.cargo).toEqual([]);
+    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 10 }]);
   });
 
   it('a fitted contraband upgrade and goods a crew member carries are found and carried off too', () => {
