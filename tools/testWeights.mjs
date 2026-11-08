@@ -72,7 +72,14 @@ inputs.forEach(walk);
 for (const p of files) {
   const text = readFileSync(p, 'utf8');
   if (p.endsWith('.json')) {
-    for (const f of JSON.parse(text).testResults) add(repoPath(f.name), typeof f.startTime === 'number' && typeof f.endTime === 'number' ? (f.endTime - f.startTime) / 1000 : NaN);
+    let report;
+    try {
+      report = JSON.parse(text);
+    } catch {
+      console.warn(`skipping ${p}: not valid JSON`);
+      continue;
+    }
+    for (const f of Array.isArray(report?.testResults) ? report.testResults : []) add(repoPath(f.name), typeof f.startTime === 'number' && typeof f.endTime === 'number' ? (f.endTime - f.startTime) / 1000 : NaN);
   } else {
     for (const line of text.split('\n')) {
       const m = /^(\d+)\s+\d+\s+(\S+)/.exec(line);
