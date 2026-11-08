@@ -511,7 +511,7 @@ Marked ref (both layers, numbered): scratchpad
   the shelf's edge to a px over the red band, fixed a shade under the slope (fNW4 y / fNW5 x; after the face/slope swap
   level 1 matched the plates). wall3d.skirt's slope point no higher than the shelf (a design's parts on it lie flat).
   The plain walls and the top-only variants pixel-identical. nv1.
-- Navy cover rebuild, steps 1-2 (plain wall): one panel line a tile, NAVY_SEAM (7.5/32) in from its high edge (the
+- 2026-11-08: navy cover rebuild, steps 1-2 (plain wall): one panel line a tile, NAVY_SEAM (7.5/32) in from its high edge (the
   ref's), in line on the wall and the ramp, in place of the two seams; the cover plate on its low side, a narrow strip
   on its high (Style.one_seam: wall3d.skirt's fields (cover, strip); RampHoles keeps a design's hole in the cover,
   clear of the line). The line's lit px on the strip side (the ref's b2bbcc): a level over the face, over the band's
