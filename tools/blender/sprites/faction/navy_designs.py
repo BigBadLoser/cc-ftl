@@ -69,12 +69,20 @@ def _recess(k, ax, plane, u0, u1, z0, z1, d0, d1):
 
 def cover_holes(a, b, zs, top, ends=None, span=None, ax=None, plane=None, sh=None, **_):
     """Where a top design opens the face (its "face_holes": the cage, the boxes): each cover's rect, on the shell's
-    cells (inside it)."""
+    cells (inside it; down to the cell under the shelf, the recess's floor flush with the shelf: the user)."""
     from .navy import cover_rects
     if ends is None or top <= T.W.skirt_top() + T.W.CUT + 0.05:
         return []
-    return [(math.ceil(u0 * 32 - 1e-6) / 32, math.floor(u1 * 32 + 1e-6) / 32, math.ceil(z0 * 32 - 1e-6) / 32,
+    return [(math.ceil(u0 * 32 - 1e-6) / 32, math.floor(u1 * 32 + 1e-6) / 32, math.floor(z0 * 32 + 1e-6) / 32,
              math.floor(z1 * 32 + 1e-6) / 32) for u0, u1, z0, z1 in cover_rects(sh, ax, plane, *span, ends, zs, top)]
+
+
+LIP = 2 / 32                        # a recess's wall on its tile-edge side (else paper thin there: the user)
+
+
+def lipped_holes(*args, **kw):
+    """cover_holes, LIP in from the tile's edge (the cover keeps that much: the recess's left wall)."""
+    return [(u0 + LIP, u1, z0, z1) for u0, u1, z0, z1 in cover_holes(*args, **kw)]
 
 
 def navy_cage(k, ax, plane, a, b, c, e, F, hole=None, **_):
@@ -240,7 +248,7 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
         plate([(p0, d0), (p1, d0), (p1, d1), (p0, d1)], PAINT, 1, 0.0, fixed=fx)
 
 
-NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=cover_holes), Design("lockers", middle=navy_lockers),
+NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=lipped_holes), Design("lockers", middle=navy_lockers),
              # Design("cage", middle=navy_cage, face_holes=cover_holes),   # (refs 10-11: off for now, not working
              #   yet: the user; its code kept)
              Design("recessed", middle=navy_recessed), Design("thin band", band=navy_thin_band))

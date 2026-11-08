@@ -640,3 +640,8 @@ Marked ref (both layers, numbered): scratchpad
   on the back) and draws the design inside it (plane - RECESS_D, its u shifted back by RECESS_D so the boxes stay where
   they were on screen). A design that builds its own opening (navy_cage.own_hole) is left to it. Plain m10 identical
   to nv9. nb7.
+- 2026-11-08: the user (on a model view: tools/blender scratch model_view2.py, workbench grey from the game camera
+  swung -30/0/+12 degrees): the recess's left wall is paper thin, and it steps up from the shelf. The boxes' hole now
+  starts LIP = 2/32 in from the tile edge (lipped_holes): the cover and its band stay on that lip (the recess's left
+  wall); cover_holes opens down to the cell under the shelf and _recess_in puts the recess's floor and back's foot at
+  the shelf's height (zf): flush, no step. Plain m10 identical to nv9. nb9.

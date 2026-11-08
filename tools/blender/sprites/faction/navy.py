@@ -116,10 +116,12 @@ def _lit(k, ax, plane, u, z0, z1, F, reds):
 RECESS_D = 2 / 32                   # a top design's recess under its cover (when it opens the face): its side 2 px
 
 
-def _recess_in(k, ax, plane, hole):
-    """The recess a top design sits in (its face hole, RECESS_D deep): its back in the frame's dark, its walls."""
+def _recess_in(k, ax, plane, hole, zf):
+    """The recess a top design sits in (its face hole, RECESS_D deep): its back in the frame's dark, its walls, its
+    floor flush with the shelf (zf: no step up from it)."""
     from .navy_designs import _recess
-    u0, u1, z0, z1 = hole
+    u0, u1, _, z1 = hole
+    z0 = zf
     k.poly([T.P(ax, plane, u, z, -RECESS_D) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], "rose", 2,
            T.OUT(ax))
     _recess(k, ax, plane, u0, u1, z0, z1, 0.0, -RECESS_D)
@@ -191,7 +193,12 @@ def navy(hull):
                 if hole is None:                                            # it builds its own frame in the opening)
                     _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
                 elif not getattr(mid, "own_hole", False):   # (or a recess RECESS_D deep, the design inside it: a
-                    _recess_in(k, ax, plane, hole)          # recess under the cover, its walls showing: the user)
+                    _recess_in(k, ax, plane, hole, zf)          # recess under the cover, its walls showing: the user)
+                    if hole[0] > p0 + 1e-6:                 # (the cover left of it: its wall there, with its band)
+                        lq = (pq[0], "cont")
+                        _sheet(k, ax, plane, p0, hole[0], lq, zf - 0.03, zc, COVER, F, NAVY_FACE)
+                        if bf:
+                            bf(k, ax, plane, p0 - (1.5 * PAINT if lq[0] == "cont" else 0.0), hole[0], lq, zh, H)
                     mid(k, ax, plane - RECESS_D, p0 + 0.04 - RECESS_D, p1 - 0.04 - RECESS_D, zf + 0.04, zh - 0.04, F,
                         zh=zh, H=H)                 # (as far left as seen as before: a depth shifts it a px a LINE)
                     continue
