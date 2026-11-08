@@ -3,6 +3,7 @@
   import type { UiApi, UiCrew, UiInspect, UiModule, UiShuttles, UiSite } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
   import { isPinned } from './floatingWindow';
+  import { PaneHead } from './kit';
   import { inspectorWidth } from './inspector/width';
   import GridPanel from './GridPanel.svelte';
   import AsteroidPanel from './AsteroidPanel.svelte';
@@ -81,7 +82,7 @@
   {:else if tile}
     <TileInspector {api} onBack={back} />
   {:else}
-    <div class="ph">Inspector</div>
+    <PaneHead title="Inspector" />
     <p class="empty">Nothing selected. Pick a crew member, module, tile or ship.</p>
   {/if}
 </FloatingWindow>

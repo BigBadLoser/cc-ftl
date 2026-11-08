@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiLogEntry, UiLogKind } from './api';
   const PULSE_MS = 2500;
@@ -38,13 +39,13 @@
 
 {#if list.length}
   <div class="log sec" class:open data-testid="event-log" role="log" aria-label="Ship's log">
-    <button class="bar" title={open ? 'Collapse the log' : 'Expand the log'} aria-label={open ? 'Collapse the log' : 'Expand the log'} aria-expanded={open} data-testid="log-toggle" onclick={toggle}>
+    <button class="bar" use:tip={{ text: open ? 'Collapse the log' : 'Expand the log' }} aria-label={open ? 'Collapse the log' : 'Expand the log'} aria-expanded={open} data-testid="log-toggle" onclick={toggle}>
       <span class="cap">Ship's log</span><Icon name={open ? 'chevUp' : 'chevDown'} size={14} />
     </button>
     <ul>
       {#each shown as e (e.id)}
         <li class={e.tone} class:pulse={fresh(e)} data-testid="log-entry" data-kind={e.kind}>
-          <button class="row" disabled={!e.subject} title={e.subject ? 'Go there' : undefined} onclick={() => go(e)}>
+          <button class="row" disabled={!e.subject} use:tip={{ text: e.subject ? 'Go there' : undefined }} onclick={() => go(e)}>
             <span class="ic"><Icon name={icon[e.kind]} size={14} /></span>
             <span class="tx" title={e.text}>{e.text}</span>{#if e.amount}<span class="amt" data-testid="log-amount">+{e.amount} ₵</span>{/if}{#if e.count > 1}<span class="n">×{e.count}</span>{/if}
             <span class="tk">T{e.tick}</span>

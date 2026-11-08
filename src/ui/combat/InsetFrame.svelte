@@ -1,7 +1,7 @@
 <script lang="ts">
   import { keyLabel, keymap } from '../keymap';
   import type { UiApi } from '../api';
-  import { KeyBadge } from '../kit';
+  import { KeyBadge, tip } from '../kit';
 
   /**
    * The combat inset: a docked window showing the other ship (yours by default, the enemy's once swapped). The renderer draws a second
@@ -58,7 +58,7 @@
   class="inset"
   class:hot={threatened}
   style:width="{size.w + 2}px"
-  title="Swap the main view and the inset ({keyLabel($keymap, 'combat.swap')})"
+  use:tip={{ text: 'Swap the main view and the inset', key: 'combat.swap' }}
   aria-label="Swap views"
   data-testid="combat-inset"
   onclick={onSwap}

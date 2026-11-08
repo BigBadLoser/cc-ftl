@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiCombat, UiMining, UiPrize, UiShuttles, UiTrade } from './api';
-  import { TipButton } from './kit';
+  import { tip } from './kit';
   import Icon from './Icon.svelte';
   import { nodeEntries, NODE_ICONS as icons } from './nodeList';
 
@@ -31,10 +31,10 @@
 {#if nodes.length || mining.asteroids.length}
   <span class="nodes" data-testid="nodes">
     {#each nodes as n (n.ship)}
-      <TipButton text={n.kind === 'station' ? n.name : `${n.name} (${n.kind})`} label={n.name} class="tile{selected === n.ship ? ' on' : ''}{n.kind === 'hostile' ? ' foe' : ''}" data-testid="node-{n.ship}" data-kind={n.kind} onclick={() => api.selectShip(n.ship)}><Icon name={icons[n.kind]} size={20} /></TipButton>
+      <button type="button" use:tip={{ text: n.kind === 'station' ? n.name : `${n.name} (${n.kind})`, side: 'bottom' }} aria-label={n.name} class="tile{selected === n.ship ? ' on' : ''}{n.kind === 'hostile' ? ' foe' : ''}" data-testid="node-{n.ship}" data-kind={n.kind} onclick={() => api.selectShip(n.ship)}><Icon name={icons[n.kind]} size={20} /></button>
     {/each}
     {#each mining.asteroids as a (a.id)}
-      <button class="tile rock" class:on={selAst === a.id} title="{a.name} ({a.ore.reduce((n, o) => n + o.units, 0)} ore)" aria-label={a.name} data-testid="node-asteroid-{a.id}" onclick={() => api.selectAsteroid(a.id)}><Icon name="grid" size={20} /></button>
+      <button class="tile rock" class:on={selAst === a.id} use:tip={{ text: `${a.name} (${a.ore.reduce((n, o) => n + o.units, 0)} ore)` }} aria-label={a.name} data-testid="node-asteroid-{a.id}" onclick={() => api.selectAsteroid(a.id)}><Icon name="grid" size={20} /></button>
     {/each}
   </span>
 {/if}

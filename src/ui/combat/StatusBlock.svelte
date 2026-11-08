@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Frame, Meter, Pips } from '../kit';
+  import { Frame, Meter, Pips, tip } from '../kit';
   import { anchor } from '../lessons/anchors';
   import type { UiCombat } from '../api';
 
@@ -11,19 +11,19 @@
 
 <Frame title="Status" {style} lesson={anchor('combat.status')}>
   <div class="rows">
-    <div class="line" title="Hull integrity">
+    <div class="line" use:tip={{ text: 'Hull integrity' }}>
       <span class="lbl">Hull</span>
       <span class="grow">
         <Meter value={hull} max={100} tone="auto" height={12} />
       </span>
       <b>{hull}%</b>
     </div>
-    <div class="line" title="Shield layers">
+    <div class="line" use:tip={{ text: 'Shield layers' }}>
       <span class="lbl">Shields</span>
       <span class="grow"><Pips total={me.shield.max} on={me.shield.layers} height={12} fill /></span>
       <b>{me.shield.layers}/{me.shield.max}</b>
     </div>
-    <div class="line" title="Chance an incoming shot misses">
+    <div class="line" use:tip={{ text: 'Chance an incoming shot misses' }}>
       <span class="lbl">Evasion</span>
       <b>{Math.round(me.evasion * 100)}%</b>
     </div>

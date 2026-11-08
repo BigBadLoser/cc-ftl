@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Chip, Frame, Meter } from '../kit';
+  import { Chip, Frame, Meter, tip } from '../kit';
   import type { UiApi, UiBoarding } from '../api';
 
   /**
@@ -32,7 +32,7 @@
     <ul class="party">
       {#each b.party as p (p.id)}
         <li data-state={p.state}>
-          <button class="nm" title="Select {p.name}" onclick={() => api.selectCrew(p.id)}>{p.name}</button>
+          <button class="nm" use:tip={{ text: `Select ${p.name}` }} onclick={() => api.selectCrew(p.id)}>{p.name}</button>
           <Meter value={p.hp} tone="auto" height={6} />
           <span class="st {TONE[p.state]}">{STATE[p.state]}</span>
         </li>
@@ -53,7 +53,7 @@
     {:else}
       {#if mobileIds.length}<p class="hint">Select boarders and right-click an enemy module to sabotage it.</p>{/if}
     {/each}
-    <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || mobileIds.length === 0} title={b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here'} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
+    <button class="go" data-testid="boarding-recall" disabled={!b.canRecall || mobileIds.length === 0} use:tip={{ text: b.canRecall ? 'Walk the party back to the shuttle and fly home' : 'No shuttle is docked here' }} onclick={() => api.dispatch({ type: 'crew.recall', ids: recallIds })}>Recall party</button>
   </div>
 </Frame>
 

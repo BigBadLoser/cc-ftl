@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   /** A full-width section header that folds on click. `cap` shows pips (filled for the slots used); without it, `count` is shown. */
   let { title, open, onToggle, used = 0, cap = 0, count = 0, tone = 'friend', testId }: {
     title: string; open: boolean; onToggle: () => void; used?: number; cap?: number; count?: number; tone?: 'friend' | 'rival' | 'plain'; testId: string;
@@ -8,7 +9,7 @@
 <button class="band" aria-expanded={open} data-testid={testId} onclick={onToggle}>
   <span class="car">{open ? '▾' : '▸'}</span><span class="t">{title}</span>
   {#if cap > 0}
-    <span class="pips" title="{used} of {cap}">{#each Array.from({ length: cap }, (_, i) => i) as i (i)}<i class="{tone}" class:on={i < used}></i>{/each}</span>
+    <span class="pips" use:tip={{ text: `${used} of ${cap}` }}>{#each Array.from({ length: cap }, (_, i) => i) as i (i)}<i class="{tone}" class:on={i < used}></i>{/each}</span>
   {:else}<span class="n">{count}</span>{/if}
 </button>
 
