@@ -229,7 +229,7 @@ def _steps(u0, u1, top):
 
 
 def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031):
-    """Header (T1-2, T1-3, T1-4): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
+    """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
     across each, the end ones a handle slot near the top. back: the backing's reach over z1."""
@@ -267,6 +267,33 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031):
             cu = round((u0 + u1) / 2 * 32) / 32
             if q0 <= cu - 2 * LINE and cu + 2 * LINE <= q1:                    # a handle slot, 4 px
                 T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
+
+
+BIG_BOXES = ((0, 8, False), (9, 14, True), (24, 8, False))   # T1-4's header boxes a tile (px from its start, width,
+                                                        # middle?): flush but for a dark px between (the ref's widths)
+BIG_D = 2 * PX                                          # their depth (their tops show 2 rows: the ref's)
+
+
+def slate_big_boxes(k, ax, plane, a, b, z0, z1, mit):
+    """Header (T1-4): three tall boxes a tile, the whole header (the stripe's foot to the rail's top, in place of
+    both), BIG_D out, square, a dark px between them (the backing, the stripe's blue at its darkest); the middle one's
+    top a px lower; each front's top edge lit, its foot's edge in its side's tone; plain fronts."""
+    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
+    side = "fGT4" if ax == "y" else "fGT5"
+    lit = "fGT0" if ax == "y" else "fGT1"
+    d = BIG_D
+    for c in range(-1, 2):
+        for x0, w, mid in BIG_BOXES:
+            q0, q1 = max(a, c - 0.5 + x0 * LINE), min(b, c - 0.5 + (x0 + w) * LINE)
+            if q1 - q0 < 1e-6:
+                continue
+            zt = z1 - PZ if mid else z1
+            prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, zt)], BLUE, 3,
+                  cols=[False, None, None, False], cap=(False, side))
+            prism(k, ax, plane, q0, q1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
+                  cols=[False, lit, False, False], cap=False)
+            prism(k, ax, plane, q0, q1, [(0.0, z0), (d + PAINT, z0), (d + PAINT, z0 + PZ), (0.0, z0 + PZ)], BLUE, 4,
+                  cols=[False, side, False, False], cap=False)
 
 
 def _seam_col(ax):
@@ -439,7 +466,8 @@ SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=s
               Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
               Design("panel, box", wall=slate_panel_box, lip=box_cuts),
               Design("boxes, console", header=slate_boxes, wall=slate_console),
-              Design("boxes, console, boxes", header=slate_boxes, wall=slate_console, foot=slate_foot_boxes))
+              Design("big boxes, console, boxes", header=slate_big_boxes, wall=slate_console,
+                     foot=slate_foot_boxes))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
