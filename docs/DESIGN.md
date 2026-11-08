@@ -21,6 +21,7 @@ One line per section; read the index, then only the sections your task touches.
   - [New modules: comfort, medical, gear, food (user decisions, 2026-11-04; not built yet)](#new-modules-comfort-medical-gear-food-user-decisions-2026-11-04-not-built-yet): Arcade, recovery pod, workbench, water purifier, hydroponics crops and meals...
   - [Trade](#trade): Credits are a separate currency, shown in the top bar. You can also barter: items for items, no credits.
 - [Progression (user decisions, 2026-10-26; not built yet)](#progression-user-decisions-2026-10-26-not-built-yet): Depth should pay off: better gear, a bigger ship and new stories come from going further out, so credits...
+  - [Core loop direction (user decisions, 2026-11-08; issue #52)](#core-loop-direction-user-decisions-2026-11-08-issue-52): Emergent goals, research over buying plus drop-only loot, danger is distance, no empty nodes, escape pods later. Each gets its own design discussion.
   - [Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)](#weapon-upgrades-and-flak-user-decisions-2026-11-04-not-built-yet): Upgrades are items slotted into ship weapons, one slot each...
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
@@ -777,6 +778,33 @@ and risk is worth taking.
   station. Each research project has its own materials cost (data cores, samples, alien tissue, artifacts, components,
   depending on the project) and takes time. Projects unlock blueprints: module tiers, upgrades, implants,
   construction pods and drones. Build plan: `docs/PROGRESSION_PLAN.md`.
+
+### Core loop direction (user decisions, 2026-11-08; issue #52)
+
+Each point below gets its own design discussion before it is built.
+
+- **What next after the tutorial: emergent goals.** No captain's log or goal list (#172 is dropped). The world gives the
+  player reasons to want things: better gear, bigger hulls and better jobs further out. Story missions as self-contained
+  arcs (see "After the tutorial: story missions") are welcome alongside.
+- **Research is the main path to better gear,** ahead of buying. Blueprints sold at stations were a stopgap from before
+  research and can stay, but research gets fleshed out, together with **drop-only loot** (gear you can only find).
+  Recurring money sinks are not the answer.
+- **Research (discussion 1, user decisions, 2026-11-08):**
+  - **Materials gate research, not credits.** New research materials that come from going out: data cores (derelicts,
+    wrecked enemy computers), samples and alien tissue (anomalies, alien ships), artifacts (rare, deep space only, for the
+    top tiers). They replace today's stand-ins (spare parts, rare ore).
+  - **What the tree holds:** scanners and cloaking join it. No hull or armour research. Drones are research only, never
+    known from the start.
+  - **Drop-only loot:** unique named items with special effects, and prototype or alien versions of normal gear that
+    research can't reach.
+  - **The tree grows with discovery:** a solid baseline tree, plus projects added by finds (an alien artifact opens new
+    projects).
+- **Danger is distance.** No global threat clock. Deeper space is harder; the design work is giving players reasons to
+  go there (research materials, drops, jobs and gear found only deeper).
+- **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
+  (#171).
+- **Losing the ship:** plan for escape pods (survivors reach a station with a worn starter hull, and the wreck can be
+  salvaged back). Not urgent.
 
 ### Weapon upgrades and flak (user decisions, 2026-11-04; not built yet)
 
