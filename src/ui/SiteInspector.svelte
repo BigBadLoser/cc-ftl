@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiSite } from './api';
   import Icon from './Icon.svelte';
@@ -53,7 +53,7 @@
       <dt>Hauling</dt><dd>{names(s.haulers)}</dd>
     </dl>
     <div class="btns">
-      <button class="warn wide" data-testid="site-cancel" title="Cancel the build; delivered materials drop back on the floor" onclick={() => { api.dispatch({ type: 'job.cancel', ship: s.ship, x: s.x, y: s.y }); api.selectSite(null); }}><Icon name="close" size={16} /> Cancel build</button>
+      <button class="warn wide" data-testid="site-cancel" use:tip={{ text: 'Cancel the build; delivered materials drop back on the floor' }} onclick={() => { api.dispatch({ type: 'job.cancel', ship: s.ship, x: s.x, y: s.y }); api.selectSite(null); }}><Icon name="close" size={16} /> Cancel build</button>
     </div>
   </div>
 {/if}

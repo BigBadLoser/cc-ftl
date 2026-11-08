@@ -21,11 +21,12 @@
 </script>
 
 {#if s}
-  <div class="kit-tip tip-host" role="tooltip" bind:this={box} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box ? 'visible' : 'hidden'}>
-    <span>{s.spec.text}</span>{#if key}<KeyBadge size="sm">{key}</KeyBadge>{/if}
+  <div class="kit-tip tip-host" class:rich={!!s.spec.rich} role="tooltip" bind:this={box} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box ? 'visible' : 'hidden'}>
+    {#if s.spec.rich}{@render s.spec.rich()}{:else}<span>{s.spec.text}</span>{/if}{#if key}<KeyBadge size="sm">{key}</KeyBadge>{/if}
   </div>
 {/if}
 
 <style>
-  .tip-host { position: fixed; display: flex; align-items: center; gap: 8px; width: max-content; }
+  .tip-host { position: fixed; display: flex; align-items: center; gap: 8px; width: max-content; z-index: 60; max-width: min(260px, calc(100vw - 16px)); padding: 4px 8px; background: var(--panel-2); border: 1px solid var(--line-hi); color: var(--text); font-size: 12px; line-height: 1.35; white-space: pre-line; pointer-events: none; }
+  .tip-host.rich { max-width: none; padding: 0; background: none; border: 0; white-space: normal; }
 </style>

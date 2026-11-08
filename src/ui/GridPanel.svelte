@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { anchor } from './lessons/anchors';
   import type { UiApi, UiCombat, UiPrize, UiShuttles, UiTrade } from './api';
-  import { PaneHead } from './kit';
+  import { PaneHead, tip } from './kit';
   import PrizePanel from './PrizePanel.svelte';
   import ShipMeters from './ShipMeters.svelte';
   import StationInfo from './StationInfo.svelte';
@@ -37,11 +37,11 @@
   <PaneHead {icon} title={name} {sub} foe={!!foe && !prize} {onBack} />
   {#if derelict}
     <div class="der" data-testid="derelict-panel">
-      <span class="cell" title="Where it came from"><Icon name="ship" size={18} /><b>{derelict.kind || 'unknown'}</b><small>{derelict.cause === 'combat' ? 'combat wreck' : 'old wreck'}</small></span>
-      <span class="cell" class:warn={derelict.hull < 0.4} title="Hull integrity"><Icon name="hull" size={18} /><b data-testid="der-hull">{Math.round(derelict.hull * 100)}%</b></span>
-      <span class="cell" class:warn={derelict.air !== 'breathable'} title="Air on its decks"><Icon name="o2" size={18} /><b data-testid="der-air">{derelict.air}</b></span>
-      <span class="cell" class:warn={derelict.power === 'off'} title="Power"><Icon name="power" size={18} /><b data-testid="der-power">{derelict.power === 'off' ? 'No power' : 'Emergency'}</b></span>
-      {#if derelict.jammed}<span class="cell warn wide" title="Jammed doors: select one to force it"><Icon name="door" size={18} /><b>{derelict.jammed} jammed {derelict.jammed === 1 ? 'door' : 'doors'}</b></span>{/if}
+      <span class="cell" use:tip={{ text: 'Where it came from' }}><Icon name="ship" size={18} /><b>{derelict.kind || 'unknown'}</b><small>{derelict.cause === 'combat' ? 'combat wreck' : 'old wreck'}</small></span>
+      <span class="cell" class:warn={derelict.hull < 0.4} use:tip={{ text: 'Hull integrity' }}><Icon name="hull" size={18} /><b data-testid="der-hull">{Math.round(derelict.hull * 100)}%</b></span>
+      <span class="cell" class:warn={derelict.air !== 'breathable'} use:tip={{ text: 'Air on its decks' }}><Icon name="o2" size={18} /><b data-testid="der-air">{derelict.air}</b></span>
+      <span class="cell" class:warn={derelict.power === 'off'} use:tip={{ text: 'Power' }}><Icon name="power" size={18} /><b data-testid="der-power">{derelict.power === 'off' ? 'No power' : 'Emergency'}</b></span>
+      {#if derelict.jammed}<span class="cell warn wide" use:tip={{ text: 'Jammed doors: select one to force it' }}><Icon name="door" size={18} /><b>{derelict.jammed} jammed {derelict.jammed === 1 ? 'door' : 'doors'}</b></span>{/if}
     </div>
     <dl data-testid="derelict-rows">
       <dt>Status</dt><dd>{derelict.air === 'vacuum' ? 'Derelict, breached' : 'Derelict'}</dd>

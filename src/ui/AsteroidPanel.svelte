@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiMining } from './api';
-  import { PaneHead } from './kit';
+  import { PaneHead, tip } from './kit';
   import PodList from './PodList.svelte';
   import { Chips } from './kit';
 
@@ -34,10 +34,10 @@
         <Chips multiple label="Pods to paint for" value={picked.map(String)} onChange={(v: string[]) => (off = mining.pods.map((p) => p.id).filter((id) => !v.includes(String(id))))}
           options={mining.pods.map((p) => ({ value: String(p.id), label: p.name, testId: `mine-pod-${p.id}` }))} />
       </div>
-      <button class="full" disabled={picked.length === 0} data-testid="asteroid-paint" title="Drag a rectangle over ore: the pods cut just those tiles" onclick={() => api.setTool({ tool: 'build', build: 'mine', pods: picked })}>Paint ore to mine…</button>
+      <button class="full" disabled={picked.length === 0} data-testid="asteroid-paint" use:tip={{ text: 'Drag a rectangle over ore: the pods cut just those tiles' }} onclick={() => api.setTool({ tool: 'build', build: 'mine', pods: picked })}>Paint ore to mine…</button>
     {/if}
     {#if a.kind === 'big'}
-      <button class="full" data-testid="asteroid-claim" title="Drag a rectangle on the asteroid to start a base there" onclick={() => api.setTool({ tool: 'build', build: 'claim' })}>Claim for a base…</button>
+      <button class="full" data-testid="asteroid-claim" use:tip={{ text: 'Drag a rectangle on the asteroid to start a base there' }} onclick={() => api.setTool({ tool: 'build', build: 'claim' })}>Claim for a base…</button>
     {/if}
   {/if}
 </div>

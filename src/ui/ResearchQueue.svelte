@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiResearchNode } from './api';
   import Icon from './Icon.svelte';
 
@@ -25,7 +26,7 @@
           <span class="mv">
             <button aria-label="Move up" disabled={!canUp(n, i)} data-testid="up-{n.id}" onclick={() => onMove(n.id, i - 1)}><Icon name="chevUp" size={14} /></button>
             <button aria-label="Move down" disabled={!canDown(n, i)} data-testid="down-{n.id}" onclick={() => onMove(n.id, i + 1)}><Icon name="chevDown" size={14} /></button>
-            <button class="rm" aria-label="Cancel" title={n.status === 'active' ? 'Cancel (materials come back)' : 'Remove'} data-testid="cancel-{n.id}" onclick={() => onCancel(n.id)}><Icon name="close" size={14} /></button>
+            <button class="rm" aria-label="Cancel" use:tip={{ text: n.status === 'active' ? 'Cancel (materials come back)' : 'Remove' }} data-testid="cancel-{n.id}" onclick={() => onCancel(n.id)}><Icon name="close" size={14} /></button>
           </span>
         </div>
         {#if n.status === 'active'}<div class="bar"><i style:width="{Math.round(n.progress * 100)}%"></i></div>{/if}

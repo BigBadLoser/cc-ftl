@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
-  import { KeyBadge } from '../kit';
+  import { KeyBadge, tip as tooltip } from '../kit';
   import type { IconName } from '../Icon.svelte';
 
   /**
@@ -25,7 +25,7 @@
   const pct = $derived(fill === undefined ? 0 : Math.min(100, Math.max(0, Math.round(fill * 100))));
 </script>
 
-<button class="tab" class:ready class:dim {disabled} title={tip} aria-label={label} data-testid={testid} data-lesson={lesson} {onclick}>
+<button class="tab" class:ready class:dim {disabled} use:tooltip={{ text: tip }} aria-label={label} data-testid={testid} data-lesson={lesson} {onclick}>
   {#if fill !== undefined}<span class="fill" style="height:{pct}%"></span>{/if}
   <span class="lab">
     <Icon name={icon} size={22} />

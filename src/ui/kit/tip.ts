@@ -1,8 +1,13 @@
 import { writable } from 'svelte/store';
+import type { Snippet } from 'svelte';
 import type { ActionId } from '../keymap';
+import { settings } from '../settings/settings';
 
 /** What a game tooltip shows: the hint, and the hotkey as a badge. `key` is an action id (resolved against the player's bindings) or literal key text. */
-export interface TipSpec { text: string; key?: ActionId | string; side?: 'top' | 'bottom' | 'left' | 'right' }
+export interface TipSpec { text?: string | null; key?: ActionId | string; side?: 'top' | 'bottom' | 'left' | 'right';
+  /** Rich content (an item's stats card) in place of the text; it brings its own frame. */
+  rich?: Snippet;
+}
 export interface TipState { spec: TipSpec; rect: DOMRect }
 
 /** The one tooltip on screen (drawn by `TipHost`, mounted once in the app). */
@@ -14,10 +19,10 @@ const DELAY = 250;
  * Svelte action: `use:tip={{ text: 'Starmap', key: 'view.starmap' }}` gives any element the game tooltip on hover and keyboard focus.
  * A falsy `text` shows nothing. Use a native `title` only where a tooltip is wrong (text inputs, truncated text that must be selectable).
  */
-export function tip(node: HTMLElement, spec: TipSpec | null | undefined) {
+export function tip(node: Element, spec: TipSpec | null | undefined) {
   let cur = spec;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const show = () => { if (cur?.text) tipState.set({ spec: cur, rect: node.getBoundingClientRect() }); };
+  const show = () => { if ((cur?.text || cur?.rich) && settings.get().tooltips) tipState.set({ spec: cur, rect: node.getBoundingClientRect() }); };
   const hide = () => { clearTimeout(timer); tipState.update((s) => (s && s.rect && cur && s.spec === cur ? null : s)); };
   const enter = () => { clearTimeout(timer); timer = setTimeout(show, DELAY); };
   const focus = () => { if (node.matches(':focus-visible')) show(); };

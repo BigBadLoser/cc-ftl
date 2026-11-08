@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   import { signed } from './socialFormat';
 
   /** A bar that grows from the middle: right (green) for liking, left (red) for dislike. The number is on hover only. */
@@ -6,7 +7,7 @@
   const w = $derived(Math.min(50, (Math.abs(value) / 100) * 50));
 </script>
 
-<span class="bar" class:thin title="{label}: {signed(value)}" role="img" aria-label="{label}: {signed(value)}">
+<span class="bar" class:thin use:tip={{ text: `${label}: ${signed(value)}` }} role="img" aria-label="{label}: {signed(value)}">
   <i class="mid"></i>
   <i class="fill" class:neg={value < 0} style="width:{w}%; {value < 0 ? `right:50%` : `left:50%`}"></i>
 </span>

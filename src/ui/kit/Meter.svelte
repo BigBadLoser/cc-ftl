@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './tip';
   import { meterTone } from './meterTone';
 
   /**
@@ -32,7 +33,7 @@
   const border = $derived((height ?? 0) >= 8 ? 1 : 0);
 </script>
 
-<span class="meter" style:height={height === undefined ? undefined : `${height}px`} style:border="{border}px solid {edge}" style:box-shadow={border === 0 ? `0 0 0 1px ${edge}` : undefined} {title} role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} data-testid={testId}>
+<span class="meter" style:height={height === undefined ? undefined : `${height}px`} style:border="{border}px solid {edge}" style:box-shadow={border === 0 ? `0 0 0 1px ${edge}` : undefined} use:tip={{ text: title }} role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} data-testid={testId}>
   <i class:blink style:width="{pct}%" style:background={color}></i>
   {#each notches as at (at)}<u style:left="{Math.round(at * 100)}%"></u>{/each}
   {#if base !== undefined && base > 0}<s style:left="{Math.round(Math.min(1, base / Math.max(1e-6, max)) * 100)}%"></s>{/if}

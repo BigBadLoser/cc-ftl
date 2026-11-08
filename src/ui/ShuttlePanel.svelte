@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
   import { PaneHead } from './kit';
@@ -33,7 +33,7 @@
     <section data-testid="shuttle-{s.id}">
       <h3>
         {s.name} <small data-testid="shuttle-state">{where(s)}</small>
-        <button class="mini" title="Center the camera" onclick={() => api.focusShuttle(s.id)}>Find</button>
+        <button class="mini" use:tip={{ text: 'Center the camera' }} onclick={() => api.focusShuttle(s.id)}>Find</button>
       </h3>
       {#if s.trade}<div class="trade" data-testid="shuttle-trade">Trade run for {s.trade.partner}: {s.trade.status}</div>{/if}
       <Meter value={s.hp} max={Math.max(1, s.maxHp)} tone="auto" height={6} title="{s.hp}/{s.maxHp}" />

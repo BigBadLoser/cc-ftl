@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon, { type IconName } from '../Icon.svelte';
-  import { Tooltip } from '../kit';
+  import { tip } from '../kit';
   import { SKILL_ICON } from '../crew/format';
   import Pips, { pipsOf, type PipKind } from '../inspector/Pips.svelte';
   import Section from '../inspector/Section.svelte';
@@ -41,7 +41,7 @@
         <label class="name"><input value={c.name} maxlength="24" aria-label="Name" data-testid="crew-name" onchange={(e) => onRename(e.currentTarget.value)} /><Icon name="pencil" size={14} /></label>
         <div class="line">
           <span class="role">{c.roleName}</span>
-          {#if c.label}<Tooltip text={labelTip(c)} label={labelTip(c)}><span class="lbl {c.label}">{labelText(c.label)}</span></Tooltip>{/if}
+          {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c) }}>{labelText(c.label)}</span>{/if}
           <span class="roll">
             <button aria-label="Previous roll" disabled={c.rerolls === 0} data-testid="crew-roll-prev" onclick={() => onRoll(c.rerolls - 1)}><Icon name="back" size={16} /></button>
             <span data-testid="crew-roll">Roll {c.rerolls + 1}</span>

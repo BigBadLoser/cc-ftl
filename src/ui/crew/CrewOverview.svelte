@@ -3,7 +3,7 @@
   import type { UiApi, UiCrew, UiShuttles } from '../api';
   import type { UiCrewDetail } from '../crewDetailApi';
   import Icon from '../Icon.svelte';
-  import { Chip, Chips, Tooltip } from '../kit';
+  import { Chip, Chips, tip } from '../kit';
   import ItemCard from '../inspector/ItemCard.svelte';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
@@ -36,19 +36,17 @@
   <div class="top">
     <span class="face" class:dead={c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
     <div class="vitals">
-      <div class="v" title="Health" data-testid="crew-health"><span class="ic"><Icon name="heart" size={16} /></span><StatBar value={(c.hp / c.maxHp) * 100} health /><span class="n {healthTone(c.hp / c.maxHp)}">{c.dead ? 'dead' : `${c.hp}/${c.maxHp}`}</span></div>
-      {#if c.mood && !enemy}<div class="v" title="Mood" data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}</span></div>{/if}
-      {#if c.hunger !== null && !enemy}<div class="v" title="Hunger" data-testid="crew-hunger"><span class="ic"><Icon name="food" size={16} /></span><StatBar value={c.hunger} color="var(--hunger)" low={c.hunger < 35} /><span class="n" class:bad={c.hunger < 35}>{c.hunger <= 0 ? 'starving' : `${c.hunger}% fed`}</span></div>{/if}
-      {#if !enemy}<div class="v" title="Rest" data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
+      <div class="v" use:tip={{ text: 'Health' }} data-testid="crew-health"><span class="ic"><Icon name="heart" size={16} /></span><StatBar value={(c.hp / c.maxHp) * 100} health /><span class="n {healthTone(c.hp / c.maxHp)}">{c.dead ? 'dead' : `${c.hp}/${c.maxHp}`}</span></div>
+      {#if c.mood && !enemy}<div class="v" use:tip={{ text: 'Mood' }} data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}</span></div>{/if}
+      {#if c.hunger !== null && !enemy}<div class="v" use:tip={{ text: 'Hunger' }} data-testid="crew-hunger"><span class="ic"><Icon name="food" size={16} /></span><StatBar value={c.hunger} color="var(--hunger)" low={c.hunger < 35} /><span class="n" class:bad={c.hunger < 35}>{c.hunger <= 0 ? 'starving' : `${c.hunger}% fed`}</span></div>{/if}
+      {#if !enemy}<div class="v" use:tip={{ text: 'Rest' }} data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
   </div>
   <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>
   {#if c.weapon}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
-      <Tooltip text="{c.weapon.name}: {c.weapon.damage} damage, {c.weapon.ranged ? `range ${c.weapon.range}` : 'melee'}" rich={wcard ? card : undefined} side="right" label="{c.weapon.name} stats">
-        <span class="wl"><span class="ic"><Icon name={c.weapon.ranged ? 'target' : 'sword'} size={14} /></span><b>{c.weapon.name}</b><span class="dim">{c.weapon.ranged ? 'ranged' : 'melee'} · {c.weapon.damage} dmg{c.weapon.ranged ? ` · ${c.weapon.range} tiles` : ''}</span></span>
-      </Tooltip>
+      <span class="wl" use:tip={{ text: `${c.weapon.name}: ${c.weapon.damage} damage, ${c.weapon.ranged ? `range ${c.weapon.range}` : 'melee'}`, rich: wcard ? card : undefined, side: 'right' }}><span class="ic"><Icon name={c.weapon.ranged ? 'target' : 'sword'} size={14} /></span><b>{c.weapon.name}</b><span class="dim">{c.weapon.ranged ? 'ranged' : 'melee'} · {c.weapon.damage} dmg{c.weapon.ranged ? ` · ${c.weapon.range} tiles` : ''}</span></span>
     </div>
   {/if}
   {#if !enemy && d && (d.bonds.friends.length || d.bonds.rivals.length)}
@@ -56,19 +54,19 @@
       {#each [['Friends', d.bonds.friends, 'friend'], ['Rivals', d.bonds.rivals, 'rival']] as const as [label, list, kind] (kind)}
         {#if list.length}
           <p class={kind} data-testid="crew-{kind}s"><span class="k">{label}</span>
-            {#each list as b, i (b.id || b.name)}<Tooltip text="{b.name}: {b.line}" side="bottom" label="{b.name}, {kind}"><span class="who" data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span></Tooltip>{/each}</p>
+            {#each list as b, i (b.id || b.name)}<span class="who" use:tip={{ text: `${b.name}: ${b.line}`, side: 'bottom' }} data-testid="bond-{kind}">{b.name}{i < list.length - 1 ? ',' : ''}</span>{/each}</p>
         {/if}
       {/each}
     </div>
   {/if}
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
   {#if enemy}
-    <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} title={blocked ?? 'Order the selected drafted crew to attack'} onclick={() => api.attack(c.id)}>Attack</button></div>
+    <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack' }} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else if c.side === 'player'}
     <!-- (A passenger takes no orders: no draft, no priorities, no trips.) -->
     <div class="orders">
-      <button class:on={c.drafted} title="{c.drafted ? 'Undraft' : 'Draft'} (R)" data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}><Icon name="draft" size={18} /><span>{c.drafted ? 'Undraft' : 'Draft'}</span></button>
-      <button title="Work priorities" data-testid="open-priorities" onclick={onPriorities}><Icon name="list" size={18} /><span>Priorities</span></button>
+      <button class:on={c.drafted} use:tip={{ text: `${c.drafted ? 'Undraft' : 'Draft'}`, key: 'crew.draft' }} data-testid="draft" onclick={() => api.dispatch({ type: 'crew.draft', id: c.id, drafted: !c.drafted })}><Icon name="draft" size={18} /><span>{c.drafted ? 'Undraft' : 'Draft'}</span></button>
+      <button use:tip={{ text: 'Work priorities' }} data-testid="open-priorities" onclick={onPriorities}><Icon name="list" size={18} /><span>Priorities</span></button>
     </div>
     {#if shuttles.regions.length > 1 && shuttles.regions.some((r) => r.id === c.ship) && !c.dead && !c.downed}
       <div class="chips" data-testid="ferry-crew">

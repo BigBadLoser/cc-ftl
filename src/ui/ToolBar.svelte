@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount, type Snippet } from 'svelte';
   import type { UiApi, UiTool, UiToolState } from './api';
   import Icon, { type IconName } from './Icon.svelte';
@@ -22,7 +23,7 @@
 <div class="tools" data-testid="toolbar">
   <div class="dock" bind:offsetWidth={dockW}>
     {#each tools as t (t.id)}
-      <button class="tile tool" class:on={st.tool === t.id} title={t.label} aria-label={t.label} data-testid="tool-{t.id}" onclick={() => api.setTool({ tool: t.id })}><Icon name={t.icon} size={18} /></button>
+      <button class="tile tool" class:on={st.tool === t.id} use:tip={{ text: t.label }} aria-label={t.label} data-testid="tool-{t.id}" onclick={() => api.setTool({ tool: t.id })}><Icon name={t.icon} size={18} /></button>
     {/each}
     {#if children}<span class="sep"></span>{@render children()}{/if}
   </div>

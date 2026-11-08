@@ -17,14 +17,15 @@
 <Frame title="Actions" {style} lesson={anchor('combat.actions')}>
   <div class="acts">
     <span class="wide">
-      <ActionButton tone="go" disabled={!canVolley} title="Fire every charged weapon now ({keyLabel($keymap, 'combat.volley')})" testid="combat-volley" onclick={onVolley}>
+      <ActionButton tone="go" disabled={!canVolley} title="Fire every charged weapon now" key="combat.volley" testid="combat-volley" onclick={onVolley}>
         <Icon name="volley" size={18} />Volley<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'combat.volley')}</KeyBadge>
       </ActionButton>
     </span>
     <span class="wide">
       <ActionButton
         tone={holding ? 'active' : 'plain'}
-        title={`${holding ? 'Restore every weapon to the mode it had' : 'Put every weapon on hold: they charge but wait for a volley or an aim'} (${keyLabel($keymap, 'combat.holdAll')})`}
+        title={holding ? 'Restore every weapon to the mode it had' : 'Put every weapon on hold: they charge but wait for a volley or an aim'}
+        key="combat.holdAll"
         testid="combat-hold"
         onclick={onHold}
       >

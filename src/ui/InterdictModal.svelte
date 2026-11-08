@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Chip } from './kit';
+  import { Chip, tip } from './kit';
   /**
    * An interdiction, answered in a modal centred over the map screen (the ship is halted in hyperspace until it is settled): who stopped you,
    * how strong they are, and the three ways out with their odds or price. Hails, scans and distress calls stay in the starmap drawer.
@@ -41,7 +41,7 @@
       {/if}
       <div class="choices">
         {#each encounter.choices as c (c.choice)}
-          <button class:fight={c.choice === 'fight'} disabled={!c.enabled || busy} title={c.why ?? ''} onclick={() => pick(c.choice)} data-testid="starmap-choice-{c.choice}">
+          <button class:fight={c.choice === 'fight'} disabled={!c.enabled || busy} use:tip={{ text: c.why ?? '' }} onclick={() => pick(c.choice)} data-testid="starmap-choice-{c.choice}">
             <span class="lbl"><Icon name={c.choice === 'evade' ? 'fast' : c.choice === 'bribe' ? 'credits' : c.choice === 'surrender' ? 'trash' : 'combat'} size={18} />{c.label}</span>
             <small>{c.why ?? c.detail}</small>
           </button>

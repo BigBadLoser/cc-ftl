@@ -4,12 +4,12 @@
   import Icon, { type IconName } from '../Icon.svelte';
   import ItemIcon from '../ItemIcon.svelte';
   import ItemCard from './ItemCard.svelte';
-  import Tooltip from '../kit/Tooltip.svelte';
+  import { tip } from '../kit';
 
   /**
    * One equipment slot: optional caption above, a square box with the item's sprite (count in the corner) or the slot's faint
    * glyph when empty, the name under it, an optional action; hovering a filled slot opens the item's stats card on `cardAt`
-   * (the kit Tooltip, so the card is portalled out of the inspector and kept on screen).
+   * (a `tip` with rich content, so the card is portalled out of the inspector and kept on screen).
    */
   let { api, slot, size = 56, caption = true, sub, cardAt = 'right' }: {
     api: UiApi; slot: Slot; size?: number; caption?: boolean; sub?: string; cardAt?: 'right' | 'left' | 'above';
@@ -32,7 +32,7 @@
   {/snippet}
   {#if card}
     {#snippet rich()}<ItemCard {card} />{/snippet}
-    <Tooltip {rich} side={SIDE[cardAt]} label="{slot.item?.name ?? slot.label} stats">{@render box()}</Tooltip>
+    <div class="tipbox" use:tip={{ rich, side: SIDE[cardAt] }}>{@render box()}</div>
   {:else}
     {@render box()}
   {/if}
