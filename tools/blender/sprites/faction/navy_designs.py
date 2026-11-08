@@ -54,6 +54,8 @@ def navy_cage(k, ax, plane, a, b, c, e, F, **_):
     """T1-4 (refs 10-11): a cage with a light behind it: a dark back, a light (cream, dim at its edges) over its middle,
     and in front a lattice of navy bars on the px grid: upright every 2 px (1 px slits), across every 4."""
     du, dz = 1 / 32, 1 / 39.19
+    a, c, e = a - 0.04 + 3 * du, c - 0.04 + 4 * dz, e + 0.04 - 4 * dz    # the frame round it: 3 px in from the tile's
+    #   edge, 4 px under the header and over the foot (the ref's: the user)
     flat(k, ax, plane, a, b, c, e, 0.6 * PAINT, "fNS5")                                               # the back
     uc = round((a + b) / 2 * 32) / 32
     l0, l1 = c + 0.2 * (e - c), c + 0.85 * (e - c)

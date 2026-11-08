@@ -605,3 +605,6 @@ Marked ref (both layers, numbered): scratchpad
   (c2T1 core 6 px wide, fSH1 glow 2 px round it), and a lattice of fNX3 bars in front on the px grid: upright every
   2 px (1 px slits), across every 4 (a first try with 2 x 1 holes broke up: the across bars step every 2 px on the
   face, and every 3 px uprights never met them). Recessed unchanged at its new id. nc2.
+- 2026-11-08: the user: the cage's ref has a 4 px frame at the foot matching the top, and a side frame 3 px in from
+  the tile's edge. navy_cage now stops 3 px in from the tile edge, 4 px under the header and 4 px over the face's foot
+  (measured: 3 px at the side, 4 at the foot, 4-5 under the header where the tube's shadow meets it). nc3.
