@@ -309,12 +309,11 @@ def _base_large(k, on, back=True):
     zm, zb = 0.48, 0.084
     _pump(k, 0.0, 0.66, 0.0, on, s=1.2)
     _sq_pipe(k, [(0.0, 0.7, zb), (0.0, VQL, zb), (0.0, VQL, zm)])
-    _sq_pipe(k, [(-1.21875, VQL, 0.56), (-1.21875, VQL, zm), (1.21875, VQL, zm), (1.21875, VQL, 0.56)])
+    eu, ze = 1.46875, 0.3              # one pipe: along the front, round each corner, back along the 2-tile end past
+    _sq_pipe(k, [(-eu, -0.75, 0.56), (-eu, -0.75, ze), (-eu, VQL, ze), (-eu, VQL, zm),     # a valve, up into the sill
+                 (eu, VQL, zm), (eu, VQL, ze), (eu, -0.75, ze), (eu, -0.75, 0.56)])
     for su in (-1, 1):
         _valve(k, su * 0.76, VQL, zm)
-    eu, ze = 1.4375, 0.3                                   # each 2-tile end: a run between its legs, a valve, a riser
-    for su in (-1, 1):
-        _sq_pipe(k, [(su * eu, 0.890625, ze), (su * eu, -0.75, ze), (su * eu, -0.75, 0.56)])
         _valve(k, su * eu, 0.05, ze, face=(su, 0))
 
 
