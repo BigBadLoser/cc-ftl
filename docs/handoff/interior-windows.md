@@ -481,3 +481,6 @@ Marked ref (both layers, numbered): scratchpad
   (was 10). The ramp's top at the wall (skirt_top, 26 px) and its foot unchanged, so doors, breaches, the airlock, wall
   props and the cutaway still line up. The solid ramp capped at the shelf's height (its unseen sides too) and the end
   section follows the shelf. Other looks unchanged (ramp_px 0). ns10.
+- 2026-11-08: the user: the ramp's seams down to the toe and up over the shelf to the back wall. Style.seam_wrap
+  (wall3d._seam_wrap): each seam between the slope's plates carried over the toe strip to the foot and across the
+  shelf's flat top to the wall, the gap's width, in the joint's tone (RAMPS[fam][face][joint]). Navy only. ns11.

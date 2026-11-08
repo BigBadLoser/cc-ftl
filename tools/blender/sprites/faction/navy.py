@@ -151,7 +151,7 @@ class Navy(Faction):
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
                       shelf=NAVY_SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
                       #   shelf at the wall, all shelf: no lip on it)
-                      ramp_px=NAVY_FALL,                          # (the slope steeper under it: the shelf up at 19 px)
+                      ramp_px=NAVY_FALL, seam_wrap=True,                          # (the slope steeper under it: the shelf up at 19 px)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("wall", 2),
                                 FaceHoles(), PlateTones()))
