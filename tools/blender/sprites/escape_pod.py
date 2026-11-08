@@ -313,24 +313,18 @@ BORE = (0.13, 0.2, 0.09)      # the thrusters' bores: radius, depth into the pac
 
 
 def drive(k, lit):
-    """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness with its edges rolled
-    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
-    slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to the
-    slab (the hull is open under the pack, so it runs deep), a round cowl standing out of the cut, a short flared bell inside running
-    up to the mouth, its inner wall and throat lit."""
+    """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness, square edged with
+    a darker side (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
+    slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to
+    the slab (the hull is open under the pack, so it runs deep), a sloped round cowl standing out of the cut, a short
+    flared bell inside running up to the mouth, its inner wall and throat lit."""
     _g("drive")
     f, ln = k.f, k.v["length"]
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
     br, depth, out = BORE
 
-    def ease(d, w):                                                         # 0 at an edge, 1 once w in from it
-        x = min(1.0, max(0.0, d / w))
-        return x * x * (3 - 2 * x)
-
-    def g(s, t, extra=0.0):                                                 # an even slab on the cone, edges rolled
-        along = ease(s - sa, 0.06) * ease(sb - s, 0.06)
-        across = ease(half - abs(t - 90), 6.0)
-        return 1.02 + extra + bump * along * across
+    def g(s, t, extra=0.0):                                 # even, square edged: a rolled edge ran through every grey
+        return 1.02 + extra + bump                          # in a pixel or two, ragged
     sb_ = sa + 0.27
     mouths = []                                                             # (centre on the slab, its normal)
     for t in (90 - 16, 90 + 16):
@@ -345,7 +339,7 @@ def drive(k, lit):
             if math.sqrt(max(0.0, sum(x * x for x in d) - along * along)) < br + 0.03:
                 return True
         return False
-    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelL", ds=0.025, skip=hole)   # (rim its own colour: clean)
+    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steel", ds=0.025, skip=hole)   # its side a solid darker steel
     sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
     for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
         for s0 in (0.6, 0.67):
