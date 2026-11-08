@@ -6,7 +6,7 @@ import { ModuleC } from '../modules/components';
 import { airlockWorking } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { EmbarkOrderC, VehicleC, type Vehicle } from '../vehicles/components';
-import { bayCenter, boardingTile, dockPoint } from '../vehicles/geometry';
+import { bayCenter, bayWorking, boardingTile, dockPoint } from '../vehicles/geometry';
 import { boardCrew, destPoint, occupants, undock, vehicleDefOf, vehicleLostWithBay, vehicleSpeedPerTick } from '../vehicles/lifecycle';
 import { shipIdOf } from '../regions';
 import { boardHovering } from '../eva/board';
@@ -70,8 +70,10 @@ export function vehicleSystem(sim: Sim): void {
 function fly(sim: Sim, id: number, v: Vehicle, b: Body): void {
   const dest = v.dest;
   const to = destPoint(sim, v, b);
-  if (!dest || !to || (dest.type === 'dock' && !airlockWorking(sim, dest.airlock))) {
-    v.dest = null; // target gone or its airlock failed: hover
+  if (!dest || !to || (dest.type === 'dock' && !airlockWorking(sim, dest.airlock)) || (dest.type === 'bay' && !bayWorking(sim, v.home))) {
+    // Target gone, or its airlock or bay failed on the way in: abort and hover. Landing in a broken bay would lose the shuttle with it
+    // (#305); the shuttle's owner (the away run, a trade run) then picks a free airlock of the home ship or waits (`wayHome`).
+    v.dest = null;
     return;
   }
   const dx = to.x - b.x;
