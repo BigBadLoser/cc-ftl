@@ -228,3 +228,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   post's seam and the corners' edges); `_rail_seam` keeps the right post's rail seam off. The opening's corners square
   again under the lowered beam. Shown.
 - 2026-11-08: sw44: the sill's plates mirrored to its far edge, at the same x (the user). Shown.
+- 2026-11-08: sw45: the pockets' floors shaded under their roofs (from the back to the roof's edge): `FLOOR_SHADE`
+  fGS2, and `PAINT_SHADE` fGT3 on the middle tile's paint block there (the user). Shown.

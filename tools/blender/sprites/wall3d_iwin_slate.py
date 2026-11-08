@@ -24,6 +24,8 @@ FLOOR_RISE = 2                          # px its floor climbs from the ramp's fr
 FLOOR_LIT = {"l": "fGS0", "m": "fGS0", "r": "fGS0"}   # its floor: lit grey ...
 FLOOR_PAINT = {"m": "fGT1"}             # ... on the middle tile a block of the slope's blue painted on it, ...
 PAINT_SIDE, PAINT_BACK = 4, 3           # ... this many px in from each side and from its back (top) edge
+FLOOR_SHADE = "fGS2"                    # its floor under the pocket's roof (from its back to the roof's edge): shade
+PAINT_SHADE = "fGT3"                    # ... and the paint block there
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
 GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
@@ -182,7 +184,8 @@ def detail(k, part):
     for p0, p1 in POCKETS[part]:                        # the pockets
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
         _carve(m, u0, u1, -(y0 + 0.05), -yb, z0, z1)
-        _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
+        _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y1, fl(y1)), (u0, y1, fl(y1))], (0, zb - z0, y0 - yb), FLOOR_SHADE)
+        _quad(k, [(u0, y1, fl(y1)), (u1, y1, fl(y1)), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
         for u, sd in ((u0, 1), (u1, -1)):
             if any(abs(u - e) < 1e-9 for e in edges):   # (on a rib: its side only behind the rib's face)
@@ -199,9 +202,12 @@ def detail(k, part):
         spans = [(-0.5 + p0 * L, -0.5 + (p1 + 1) * L, yp) for p0, p1 in ps] + [(u0, u1, y1) for u0, u1 in ribs]
         for v0, v1, ya in spans:
             v0, v1 = max(v0, g0), min(v1, g1)
-            if v1 > v0:
-                _quad(k, [(v0, ya + nf.y, fl(ya) + nf.z), (v1, ya + nf.y, fl(ya) + nf.z), (v1, y0 + nf.y, z0 + nf.z),
-                          (v0, y0 + nf.y, z0 + nf.z)], (0, zb - z0, y0 - yb), FLOOR_PAINT[part])
+            if v1 > v0:                                 # (under the pocket's roof in the shade's blue)
+                for ys, ye2, col in ((ya, min(y1, y0), PAINT_SHADE), (max(ya, y1), y0, FLOOR_PAINT[part])):
+                    if ye2 > ys:
+                        _quad(k, [(v0, ys + nf.y, fl(ys) + nf.z), (v1, ys + nf.y, fl(ys) + nf.z),
+                                  (v1, ye2 + nf.y, fl(ye2) + nf.z), (v0, ye2 + nf.y, fl(ye2) + nf.z)],
+                              (0, zb - z0, y0 - yb), col)
     _rail_seam(k, x1)
 
 
