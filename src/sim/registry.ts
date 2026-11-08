@@ -7,13 +7,13 @@ import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science' | 'cooking';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
   name: string;
   /** Modules to place at game start; `rot` is quarter turns clockwise (0..3). */
-  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w' }[];
+  modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
@@ -69,6 +69,8 @@ export interface ContentRegistry {
   items: Record<string, ItemDef>;
   /** Recipe content id to definition. */
   recipes: Record<string, RecipeDef>;
+  /** Crops a hydroponics bed can grow (content/crops.ts) by id. Absent = beds grow nothing. */
+  crops?: Record<string, CropDef>;
   /** Build cost per struct kind: keys 'floor', 'wall', 'door'. Deconstructing refunds DECON_REFUND of it. */
   structCosts: Record<string, ItemQty[]>;
   /** Weapon content id (e.g. 'weapon.burstLaser') to definition. Absent = no weapons. */
@@ -279,7 +281,11 @@ export interface ItemDef {
   /** Present = crew can equip it and fight with it. */
   hand?: HandWeaponDef;
   /** Present = hungry crew eat it from storage: eating one restores `nutrition` hunger points (0..100 scale). */
-  food?: { nutrition: number };
+  food?: { nutrition: number; /** The mood factor eating it at a galley gives for MOOD_MEAL_SEC (default: 'hotMeal' +6). `key` is a MOOD_LABELS key. */ mood?: { key: string; points: number } };
+  /** Present = a medical bed uses one per treatment while it is in stock, and the patient heals `healMult` times as fast for that stay (crew/treatment.ts). */
+  medicine?: { healMult: number };
+  /** Draw this item's sprites (floor stacks, icons) from another item's art (`art` is that item id), for items still waiting for their own. */
+  art?: string;
   /** Base price in credits. Absent = not for sale. Traders add a spread and modifiers on top (see trade/pricing.ts). */
   price?: number;
   /** Quality tier of gear (1 basic, 2 middle grade, 3 the best). Traders' surplus rules sell only up to a tier. */
@@ -331,6 +337,28 @@ export interface RecipeDef {
   category?: WorkCategory;
   /** A blueprint id (`blueprint.*`, learned by research or purchase) the recipe needs before it can be ordered. Absent = always known. */
   blueprint?: string;
+  /**
+   * The output's quality comes from the cook: the best tier whose `minSkill` the cook's `skill` reaches decides which item the batch's
+   * outputs[0] count is made of (tiers are listed worst first). `outputs[0].item` is the middle tier and names the recipe's product.
+   */
+  quality?: { skill: SkillName; tiers: { minSkill: number; item: string }[] };
+}
+
+/** A crop a hydroponics bed grows (content/crops.ts): planted by a crew member (water delivered), grows while the bed is powered, harvested as `item`. */
+export interface CropDef {
+  name: string;
+  /** The item a harvest yields. */
+  item: string;
+  /** Units per harvest. */
+  yield: number;
+  /** Seconds of powered growing. */
+  growSec: number;
+  /** Water the planting job takes from stock. */
+  water: number;
+  /** Beds stop sowing it while the ship's stock of `item` is at or over this (no point filling the hold with it). */
+  stockCap: number;
+  /** One line for the picker. */
+  blurb: string;
 }
 
 /** A crew role: default priorities for each work category (0 = off, 1 = highest .. 4). */
@@ -485,6 +513,12 @@ export interface ModuleDef {
   /** Construction work in ticks at workSpeed 1. */
   buildWork: number;
   bed?: true;
+  /** A medical bed: only patients lie in it (never sleepers), and it heals the way a bed does, faster with medicinal herbs in stock. */
+  medical?: true;
+  /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
+  plot?: { scale: number; waterScale?: number };
+  /** Draws its power (and shows as running) only while the rule holds, else it is idle: no draw, `powered` false (modules/draw.ts). 'planted': a bed with a crop in the soil. */
+  drawsWhen?: 'planted';
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   workstation?: true;

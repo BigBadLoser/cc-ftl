@@ -17,7 +17,7 @@ import { abortTask, attachJob, claimBed, claimedBed, mealOf, reserveJob, startMe
 
 const rows = ['#########', '#___#___#', '#___D___#', '#___#___#', '#########'];
 const all = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v,
 });
 const content: ContentRegistry = {
   ships: { 'ship.t': { name: 't', rows } },

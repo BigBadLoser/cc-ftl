@@ -14,7 +14,7 @@
       g.n++;
       g.draw += -x.power;
       g.me ||= x.id === m.id;
-      g.dark ||= !x.powered && x.enabled;
+      g.dark ||= !x.powered && !x.idle && x.enabled;
       groups.set(key, g);
     }
     return [...groups.values()];

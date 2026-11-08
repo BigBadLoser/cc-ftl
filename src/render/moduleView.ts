@@ -26,6 +26,8 @@ import { layersOf } from './layerPick';
 import { tierBase, tierMark } from './tierArt';
 import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
+import { cropOverlay } from './cropOverlay';
+import { bedBox } from './bedBox';
 import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
@@ -353,7 +355,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           // Roofed, the airlock's door tile takes the new hull's piece; its own hull block only where that has no art.
           if (roofed && layer.hullFallback && host.hullDrawn?.(layer.hullFallback.x + grid.x0, layer.hullFallback.y + grid.y0)) return [];  // (sector tiles)
           // firstOf queues the sheet; while it loads the container draws nothing (not the stand-in box).
-          const first = def.container || layer.optional ? atlas.firstOf(layer.chain) : undefined;
+          const first = def.container || layer.optional || layer.crop ? atlas.firstOf(layer.chain) : undefined;
+          // A bed's crop layer: the art when it has it, else the code-drawn stand-in (not while the sheet is still loading: no flash of it).
+          if (layer.crop) {
+            if (!first && atlas.loading(layer.chain)) return [];
+            const [cw, ch] = rotatedSize(def, m.rot);
+            const s = first ?? cropOverlay(cw, ch, layer.crop.crop, layer.crop.stage);
+            return [{ layer, art: { s, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
+          }
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
             const o = first;
@@ -367,6 +376,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
             return [{ layer, art: { s: box, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
           }
           const art = resolveArt(atlas, layer.chain, layer.key);
+          if (!art && layer.bed && !atlas.loading(layer.chain)) {
+            const [bw, bh] = rotatedSize(def, m.rot);
+            return [{ layer, art: { s: bedBox(bw, bh, layer.bed.lit), tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
+          }
           return art ? [{ layer, art }] : [];
         });
         if (!layers.length) continue;

@@ -55,7 +55,7 @@ const parts = [
 ];
 const RUIN = { cause: 'decay' as const, impacts: [], breaches: [], decals: [], hooks: [], modules: [] };
 const all: ScrapType[] = ['hull', 'tech', 'energy', 'weapons', 'comfort'];
-const prio = (v: number): Priorities => ({ firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v });
+const prio = (v: number): Priorities => ({ firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v });
 
 /** Air in the hall at (x0, y0), so crew work there without suits (the vacuum rules belong to the EVA slice). */
 function breathable(sim: Sim, x0: number, y0: number): void {

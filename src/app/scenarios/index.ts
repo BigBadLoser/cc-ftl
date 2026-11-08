@@ -3,6 +3,7 @@ import { boarding, fight } from './fight';
 import { bonds, breaks, inspector } from './crew';
 import { damage } from './damage';
 import { drones } from './drones';
+import { farm } from './farm';
 import { hullplan } from './hullplan';
 import { inspect } from './inspect';
 import { bounty, handover, survey, tracker } from './jobs';
@@ -15,7 +16,7 @@ import { upgrades } from './upgrades';
 
 /** Debug starts by their `?scenario=` name. A new one is a file in this folder and a line here. */
 export const scenarios: Readonly<Record<string, Scenario>> = {
-  log: logScenario, ambush, freighter, handover, bounty, survey, tracker, fight, boarding, inspector, breaks, bonds, drones, upgrades, damage, hullplan, medpod, inspect, patrol, pirates,
+  log: logScenario, ambush, freighter, handover, bounty, survey, tracker, fight, boarding, inspector, breaks, bonds, drones, upgrades, damage, hullplan, medpod, inspect, patrol, pirates, farm,
 };
 
 /** Start the scenario `name` (none, or an unknown name, starts nothing). */

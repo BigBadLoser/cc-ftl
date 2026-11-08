@@ -82,7 +82,7 @@ function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
     const item = meal.item ?? '', galley = !!meal.hot;
     needs.hunger = Math.min(100, needs.hunger + (sim.content.items[item]?.food?.nutrition ?? 0));
     finishMeal(sim, id);
-    noteMeal(sim, id, galley);
+    noteMeal(sim, id, galley, item);
     sim.events.emit({ type: 'crew.ate', crew: id, item, galley });
   }
   const before = needs.hunger;

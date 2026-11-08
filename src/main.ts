@@ -70,7 +70,7 @@ let starmapOpen = false;
 let hook: { onEvents(types: readonly string[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
-loadItemIcons(Object.keys(content.items)).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
+loadItemIcons(Object.keys(content.items), (id) => (content.items as Record<string, { art?: string }>)[id]?.art ?? id).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
 const starmapArt = createStore<UiStarArt | null>(null);
 loadStarmapArt().then((v) => starmapArt.set(v)).catch((e: unknown) => errorLog.push(e));
 

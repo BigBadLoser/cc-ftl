@@ -17,6 +17,7 @@ import { stationAlarmSystem } from './systems/stationAlarm';
 import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { researchJobsSystem } from './systems/researchJobs';
+import { farmSystem } from './farm/system';
 import { scheduleSystem } from './ai/schedule';
 import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
@@ -149,6 +150,8 @@ export const pipeline: readonly System[] = [
   craftJobsSystem,
   // Research jobs next to the craft jobs: the active project is paid from stock, which must happen before supply claims it for builds.
   researchJobsSystem,
+  // Hydroponics beds grow on this tick's power, and post their plant and harvest jobs (the planting water is supplied just below).
+  farmSystem,
   supplyJobsSystem,
   // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
   cargoJobsSystem,

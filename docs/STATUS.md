@@ -31,6 +31,18 @@ Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehav
 only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
 Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites tinted by `shotLook`), so #338 is complete.
 
+## Food and farming (#59, branch `feature/food-59`, not merged)
+
+Hydroponics beds with a crop picker (greens, protein beans, medicinal herbs, grain; `content/crops.ts`), plant and harvest jobs (new "Farm" priority column), galley meals
+by the cook's new `cooking` skill (bland, good, fine; `recipe.meal_greens`, `recipe.meal_beans`), meals eaten before rations with their own mood factor, herbs speeding a medical
+bed (`module.med_bed` is now a patients-only bed), grain as a trade item. The three shipped starters carry a planted bed, 16 good meals and 6 greens (food indicator green).
+Debug start `?scenario=farm`. Placeholder art (list in the PR): greens, grain, beans, herbs and the three meals borrow other items' sprites (`ItemDef.art`); no new sprites.
+Save version 104. Two bed sizes: `module.hydroponics` (small, draws 2 only while a crop is in) and `module.hydroponics_large` (2x3, 3x the yield for 2x the water and power (4 power); art id `module.hydroponics_large`).
+Any module can now draw power by a state rule (`ModuleDef.drawsWhen`, `sim/modules/draw.ts`); an idle bed shows "Idle", not "No power". The renderer picks the art ids of
+`docs/art-prompts/hydroponics.md` when present (`<asset>.r<n>.on|off` or `<asset>.on|off.r<n>`, crop layer `<asset>.crop.<crop>.<stage>.r<n>`) and draws a code stand-in crop layer (`render/cropOverlay.ts`) until then.
+**For the shipgen session:** the beds, meals and greens in the shipped starters (`src/content/ships/{wayfarer,prospector,lancer}.ts`) are hand-edited, and the python generators
+under `tools/shipgen/starters` are stale against them (they were already behind the shipped stock lists). Regenerating with `ship.py` would erase them: port the edits first.
+
 ## On `main` now (merged PRs through #308)
 
 - **Progression:** blueprints, tiers, research stations (#97); per-faction standing and relations (#128); pirate factions (#137); contraband, scans, fence and

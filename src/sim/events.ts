@@ -49,6 +49,9 @@ export type SimEvent =
   /** A job lacks materials and no stock exists to fetch (debounced per job). */
   | { type: 'job.missingMaterials'; job: number; ship: number; x: number; y: number; item: string }
   /** A crafting module finished a batch; outputs lie at (x, y). */
+  | { type: 'crew.treated'; bed: number; item: string; ship: number }
+  | { type: 'crop.planted'; module: number; crop: string; ship: number }
+  | { type: 'crop.harvested'; module: number; crop: string; count: number; ship: number; x: number; y: number }
   | { type: 'production.done'; module: number; recipe: string; ship: number; x: number; y: number }
   /** A loose stack has no storage to go to (debounced per stack). */
   | { type: 'storage.full'; ship: number; x: number; y: number; item: string }

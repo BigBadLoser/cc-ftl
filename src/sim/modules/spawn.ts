@@ -2,6 +2,7 @@ import { PointDefenseC, WeaponC } from '../combat/components';
 import { clearBedOwners } from '../crew/beds';
 import { CrewC, JobC, PositionC } from '../crew/components';
 import { ProductionC, StorageC } from '../items/components';
+import { PlotC } from '../farm/components';
 import { spillItems } from '../items/stacks';
 import type { Sim } from '../sim';
 import { DEFAULT_POWER_PRIORITY } from '../tuning';
@@ -30,6 +31,7 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
   if (def.weapon) sim.world.add(id, WeaponC, { mode: sim.content.weapons?.[def.weapon]?.ammo ? 'hold' : 'auto', charge: 0, target: null, shotsLeft: 0, nextShotTick: 0, volleyTarget: null, aim: 0 });
   if (def.pointDefense) sim.world.add(id, PointDefenseC, { aim: 0 });
   if (def.crafting) sim.world.add(id, ProductionC, { orders: [] });
+  if (def.plot) sim.world.add(id, PlotC, { crop: null, planted: null, grown: 0, need: 0, ready: false });
   if (def.vehicleBay) sim.world.add(id, VehicleBayC, { vehicle: 0 });
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   if (def.airlock) initAirlock(sim, grid, id);

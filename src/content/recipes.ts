@@ -1,6 +1,12 @@
 import { upgradeRecipes } from './upgrades';
 import type { RecipeDef } from '../sim';
 
+/** The quality tiers of a cooked meal, worst first (RecipeDef.quality). */
+const MEAL_QUALITY: NonNullable<RecipeDef['quality']> = {
+  skill: 'cooking',
+  tiers: [{ minSkill: 0, item: 'item.meal_bland' }, { minSkill: 1, item: 'item.meal_good' }, { minSkill: 3, item: 'item.meal_fine' }],
+};
+
 /** Work is in ticks (20 per second) at work speed 1. */
 export const recipes = {
   'recipe.parts': {
@@ -79,12 +85,33 @@ export const recipes = {
   },
   // The galley's recipe: water becomes nutrient paste bars (water: issue #222; the starter ship carries 30, for 90 rations).
   // Interim input: rations will use hydroponics output once hydroponics exists (DESIGN.md "Salvaging derelicts").
+  // The emergency fallback: cooked meals (below) feed more and lift mood; rations only need water.
   'recipe.ration': {
+    category: 'cooking',
     name: 'Print rations',
     station: 'module.galley',
     inputs: [{ item: 'item.water', count: 2 }],
     outputs: [{ item: 'item.ration', count: 3 }],
     work: 40,
+  },
+  // Meals: produce and water, cooked at the galley. The cook's cooking skill picks the quality of the batch (bland, good from level 1, fine from 3).
+  'recipe.meal_greens': {
+    category: 'cooking',
+    name: 'Cook greens',
+    station: 'module.galley',
+    inputs: [{ item: 'item.greens', count: 6 }, { item: 'item.water', count: 2 }],
+    outputs: [{ item: 'item.meal_good', count: 2 }],
+    quality: MEAL_QUALITY,
+    work: 100,
+  },
+  'recipe.meal_beans': {
+    category: 'cooking',
+    name: 'Cook protein beans',
+    station: 'module.galley',
+    inputs: [{ item: 'item.beans', count: 6 }, { item: 'item.water', count: 2 }],
+    outputs: [{ item: 'item.meal_good', count: 2 }],
+    quality: MEAL_QUALITY,
+    work: 100,
   },
   'recipe.missile': {
     name: 'Assemble missiles',

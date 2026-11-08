@@ -1,5 +1,5 @@
 import {
-  BreakdownC, CrewC, DownedC, HealthC, ImplantsC, MoodC, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
+  BreakdownC, CrewC, DownedC, HealthC, ImplantsC, MoodC, FOOD_MOOD_KEYS, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
   NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC,
   statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
@@ -109,7 +109,7 @@ function factorSource(sim: Sim, id: number, key: string): string | undefined {
     const e = d.effects ?? {};
     if (key.startsWith('trait:') && MOOD_LABELS[key] !== undefined) return d.name;
     if ((key === 'company' || key === 'lonely' || key === 'alone' || key === 'crowded') && e.company) return d.name;
-    if ((key === 'wellFed' || key === 'hotMeal') && e.foodMoodMult) return d.name;
+    if (FOOD_MOOD_KEYS.includes(key) && e.foodMoodMult) return d.name;
     if ((key === 'thrill' || key === 'bored') && e.thrill) return d.name;
     if (key === 'cooped' && e.voidHome) return d.name;
     if (key === 'glare' && e.darkAdapted) return d.name;

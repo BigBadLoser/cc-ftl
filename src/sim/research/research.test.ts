@@ -17,7 +17,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
 });
 const tier = { tier: 2, minDanger: 3, price: 100 };
 const prio = (v: number): Priorities => ({
-  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, patrol: v,
+  firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v,
 });
 const project = (o: Partial<ResearchDef> = {}): ResearchDef => ({ name: 'P', category: 'x', cost: [{ item: 'chip', count: 4 }], work: 200, unlocks: ['a.mk2'], ...o });
 const content: ContentRegistry = {

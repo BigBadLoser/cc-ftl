@@ -192,3 +192,20 @@ describe('scrap cage art', () => {
     expect(head(20)).toBe('module.storage_scrap.r2.full');
   });
 });
+
+describe('hydroponics layers', () => {
+  const bed = content.modules['module.hydroponics'];
+  const mb = { def: 'module.hydroponics', x: 3, y: 4, rot: 1, hp: 60, powered: true, enabled: true } as unknown as Module;
+  const plotWorld = (plot: object | undefined): never => ({ get: () => plot }) as never;
+
+  it('an empty bed is its `.off` art alone, a planted powered one is `.on` with a crop layer at its stage', () => {
+    const empty = moduleLayers(plotWorld({ crop: 'crop.greens', planted: null, grown: 0, need: 0, ready: false }), 1, mb, bed, false);
+    expect(empty).toHaveLength(1);
+    expect(empty[0]!.chain.slice(0, 2)).toEqual(['module.hydroponics.r1.off', 'module.hydroponics.off.r1']);
+    const sown = (grown: number, ready: boolean) => moduleLayers(plotWorld({ crop: 'crop.beans', planted: 'crop.beans', grown, need: 100, ready }), 1, mb, bed, false);
+    expect(sown(10, false)[0]!.chain[0]).toBe('module.hydroponics.r1.on');
+    expect(sown(10, false)[1]).toMatchObject({ chain: ['module.hydroponics.crop.beans.sprout.r1'], crop: { crop: 'beans', stage: 'sprout' } });
+    expect(sown(70, false)[1]!.crop?.stage).toBe('grow');
+    expect(sown(100, true)[1]!.crop?.stage).toBe('ripe');
+  });
+});

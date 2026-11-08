@@ -10,7 +10,9 @@ import {
 } from '../tuning';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
 import { BOND_MOOD_LABELS, bondFactors } from './bondMood';
-import { applyTraitMood, TRAIT_MOOD_LABELS } from './traitMood';
+import { applyTraitMood, FOOD_MOOD_KEYS, TRAIT_MOOD_LABELS } from './traitMood';
+
+export { FOOD_MOOD_KEYS };
 
 const NONE: readonly Modifier[] = [];
 
@@ -18,7 +20,7 @@ const NONE: readonly Modifier[] = [];
 export const MOOD_LABELS: Readonly<Record<string, string>> = {
   starving: 'Starving', hungry: 'Hungry', peckish: 'Peckish', wellFed: 'Well fed',
   exhausted: 'Exhausted', tired: 'Tired', rested: 'Rested',
-  hotMeal: 'Hot meal at the galley', bed: 'Slept in a bed', floor: 'Slept on the floor',
+  hotMeal: 'Hot ration at the galley', mealBland: 'Bland meal', mealGood: 'Good meal', mealFine: 'Fine meal', bed: 'Slept in a bed', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
   company: 'Company', lonely: 'Lonely', relaxed: 'Took a break', letOut: 'Let it out', scene: 'Made a scene',
   ...TRAIT_MOOD_LABELS,
@@ -39,8 +41,11 @@ export function ensureMood(sim: Sim, id: number): Mood {
 }
 
 /** A meal just ended; a galley meal is a hot one and lifts mood for a while. */
-export function noteMeal(sim: Sim, id: number, galley: boolean): void {
-  if (hasMood(sim, id)) ensureMood(sim, id).meal = galley ? MOOD_MEAL_SEC : 0;
+export function noteMeal(sim: Sim, id: number, galley: boolean, item = ''): void {
+  if (!hasMood(sim, id)) return;
+  const m = ensureMood(sim, id);
+  m.meal = galley ? MOOD_MEAL_SEC : 0;
+  if (galley) m.mealItem = item; // which meal it was sets the factor (ItemDef.food.mood)
 }
 
 /** A break (the leisure drive's walk and rest, ai/machines/leisure.ts) just ended: mood lifts for a while. */
@@ -72,7 +77,10 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
   if (rest < 10) add('exhausted', -15);
   else if (rest < 30) add('tired', -8);
   else if (rest >= 85) add('rested', 4);
-  if (m.meal > 0) add('hotMeal', 6);
+  if (m.meal > 0) {
+    const lift = sim.content.items[m.mealItem ?? '']?.food?.mood ?? { key: 'hotMeal', points: 6 };
+    add(lift.key, lift.points);
+  }
   if ((m.relax ?? 0) > 0) add('relaxed', MOOD_RELAX_POINTS);
   if ((m.letOut ?? 0) > 0) add('letOut', BREAK_LET_OUT_POINTS);
   if ((m.scene ?? 0) > 0) add('scene', BREAK_SCENE_MOOD);

@@ -37,11 +37,13 @@ export const WORK_CATEGORIES = [
   'hauling',
   /** Raw materials into materials (the refinery). */
   'refining',
-  /** Materials into items (fabricator, workbench, galley; a recipe's `category` can override). */
+  /** Materials into items (fabricator, workbench; a recipe's `category` can override: refining, cooking). */
   'crafting',
   /** Working the ship's active research project at a research module (sim/research). */
   'research',
   'cooking',
+  /** Planting and harvesting hydroponics beds (sim/farm). */
+  'farming',
   /** Walking a patrol (station guards; patrol jobs come from a ship's director, see stations/director). */
   'patrol',
 ] as const;
@@ -155,6 +157,8 @@ export interface Job {
   assemble?: { role: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
+  /** For 'plant' jobs: the crop (CropDef id) going into the bed `target`. */
+  crop?: string;
   /** For suitUp: the job the crew member reserved first and picks up again once the suit is on. */
   resume?: number;
   /** For a refill that parked a job (`resume`): the tick it did; after NEST_HOLD_SEC the parked job is let go. */
@@ -186,6 +190,8 @@ export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
   | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
+  /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
+  | 'plant' | 'harvest'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
   /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */
@@ -223,6 +229,8 @@ export interface Downed {
   bed: number;
   /** First aid on the floor (a medic drone): the bleeding has stopped, so the bleed-out timer is paused. No bed healing; rescue still applies. */
   patched?: true;
+  /** A medicinal item was used on this stay in a medical bed (crew/treatment.ts): it heals faster until they get up. Its multiplier. */
+  treated?: number;
 }
 export const DownedC = defineComponent<Downed>('downed');
 
@@ -264,6 +272,8 @@ export interface Mood {
   factors: MoodFactor[];
   /** Seconds left of the hot-meal bonus. */
   meal: number;
+  /** The item of that meal (its `food.mood` sets the factor); absent = a plain hot meal. */
+  mealItem?: string;
   /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
   relax?: number;
   /** Seconds left of the sleep memory, and whether it was in a bed (1) or on the floor (-1). */

@@ -127,8 +127,9 @@ import { newYard, type YardState } from './yard/types';
  * v103 (inspections, #138): `InspectionC` on an inspection's shuttle, consent grants and away sites by 'inspect', job kind 'search' and `Job.party`,
  *     `Trader.barredUntil`.
  * v104 (patrol hails, #138 step 2): `Encounter.scan` is `{ value }` (a hail to stop), `GalaxyState.patrolStop`, `Fleet.chase`, `Inspection.patrol`.
+ * v105 (food and farming, #59): `PlotC` on hydroponics beds, the `cooking` skill and `farming` work priority on crew, meal items.
  */
-export const SAVE_VERSION = 104;
+export const SAVE_VERSION = 105;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

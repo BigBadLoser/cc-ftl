@@ -8,7 +8,8 @@ export function orderWantsMore(sim: Sim, o: ProductionOrder): boolean {
   if (!recipe) return false;
   if (o.mode === 'count') return o.done < o.target;
   const out = recipe.outputs[0];
-  return !!out && totalStock(sim, out.item) < o.target;
+  // A quality recipe (meals) counts every quality of its product toward the stock it keeps.
+  return !!out && (recipe.quality ? recipe.quality.tiers.reduce((n, t) => n + totalStock(sim, t.item), 0) : totalStock(sim, out.item)) < o.target;
 }
 
 /** The first order on a crafting module that still wants a batch, or null. */
