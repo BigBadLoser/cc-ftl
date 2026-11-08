@@ -951,7 +951,7 @@ station dock inspection, then the patrol version, then refusing and fighting.
 - **No way to dock** (no working or free airlock): the inspectors board by EVA, in suits, through any working door or
   breach, like boarders, and then search as usual. If there is no way in at all, they wait with an alert ("Inspectors
   can't board") until there is.
-- **Fallback:** the pop-up stays only where an inspection can't happen in the world at all.
+- **The pop-up goes:** `InterdictModal` is removed once both triggers play out in the world.
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 
