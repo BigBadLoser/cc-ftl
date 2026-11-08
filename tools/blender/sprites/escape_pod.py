@@ -313,8 +313,8 @@ BORE = (0.13, 0.2, 0.09)      # the thrusters' bores: radius, depth into the pac
 
 
 def drive(k, lit):
-    """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness, square edged with
-    a darker side (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
+    """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness, its edges bevelled
+    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
     slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to
     the slab (the hull is open under the pack, so it runs deep), a sloped round cowl standing out of the cut, a short
     flared bell inside running up to the mouth, its inner wall and throat lit."""
@@ -323,8 +323,9 @@ def drive(k, lit):
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
     br, depth, out = BORE
 
-    def g(s, t, extra=0.0):                                 # even, square edged: a rolled edge ran through every grey
-        return 1.02 + extra + bump                          # in a pixel or two, ragged
+    def g(s, t, extra=0.0):     # even, its edges one flat bevel each: a rolled edge ran through every grey in a pixel
+        e = max(0.0, min(1.0, (s - sa) / 0.06, (sb - s) / 0.06, (half - abs(t - 90)) / 4.0))   # or two (ragged), a
+        return 1.01 + extra + bump * e                      # square one left its side in black shadow
     sb_ = sa + 0.27
     mouths = []                                                             # (centre on the slab, its normal)
     for t in (90 - 16, 90 + 16):
@@ -339,7 +340,7 @@ def drive(k, lit):
             if math.sqrt(max(0.0, sum(x * x for x in d) - along * along)) < br + 0.03:
                 return True
         return False
-    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steel", ds=0.025, skip=hole)   # its side a solid darker steel
+    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelL", ds=0.02, dt=2.0, skip=hole)
     sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
     for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
         for s0 in (0.6, 0.67):
