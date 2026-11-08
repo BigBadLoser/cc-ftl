@@ -1,15 +1,14 @@
 """Hydroponics grow beds (family `hydroponics`). Local frame and placement: modkit.K (front = +v, where the crew
 stand to work the bed).
 
-Look exploration, round 9: the spine layout (a planter, one spine rising from the middle of its back, a ring lamp
-over the bed, one plant per tile) in three bodies, each with its own colours, spine structure and detail:
-  pot    a flared ceramic planter in cream with a thick lip, a sage swan-neck spine hooked over the ring, a terracotta
-         porthole gauge; smooth, little detail
-  rig    a squared gunmetal tub with vertical ribs and a hazard-yellow bumper on rubber skids, a lattice truss spine
-         with a blue water line, a chamfered ring with yellow clamps; the most detail
-  lab    a shallow pearl tray floating on a narrow navy pedestal, a tapered blade spine with a mint stripe, a slim ring;
-         vent slots and a small display
-  spine  round 8's life support look, kept as the reference
+Look exploration, round 10 (earlier rounds are in git history). One plant per tile, a lamp over the bed as the only
+pink glow, each body with its own colours, structure and detail:
+  arch   a sand-white tub with an orange band, one orange arch from end to end over the bed, a lamp tube along its
+         underside
+  twin   two round graphite pots joined by a central block, a mast from the block between the plants carrying a
+         brass bar with a round lamp over each pot (a dumbbell below and above)
+  lab    a shallow pearl tray floating on a navy pedestal on a wide foot, a tapered blade spine with a mint stripe and a
+         slim ring lamp
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -19,9 +18,6 @@ import random
 
 from . import core
 from .modkit import K
-
-PALE, PALE_T, FRAME, TEAL = "hyPale", "hyPaleL", "hyFrame", "hyTeal"
-Z_KICK, Z_RIM, Z_SOIL = 0.12, 0.68, 0.63                    # kick base top, rim top, soil surface
 
 
 # ---- geometry: prisms from (u, v) outlines -------------------------------------------------------------------------
@@ -103,14 +99,13 @@ def _tube(k, pts, r, col, n=8, caps=True):
         k.m.poly(rings[-1], col, flip=True)
 
 
-def _well(k, inner, outer, z_rim, rim_h, rim, rim_top, wall, z_soil, soil_w, soil_d, seed=3):
+def _well(k, inner, outer, z_rim, rim_h, rim, rim_top, wall, z_soil, soil_w, soil_d, seed=3, cu=0.0):
     """The rim lip round the soil well (inner and outer outlines) and the soil in it, its surface at z_soil."""
     _ring(k, outer, inner, z_rim - rim_h, rim_h, rim, top=rim_top, inner_col=wall)
     _prism(k, inner, z_rim - rim_h - 0.06, z_soil - (z_rim - rim_h - 0.06), "soilD", top="soilD")
-    _soil(k, 0, 0, z_soil - 0.05, soil_w, soil_d, seed, n=int(soil_w * 16))
+    _soil(k, cu, 0, z_soil - 0.05, soil_w, soil_d, seed, n=int(soil_w * 16))
 
 
-# ---- the planter -----------------------------------------------------------------------------------------------------
 def _soil(k, u, v, z, w, d, seed=0, n=26):
     """A soil bed: dark loam with soft humps and scattered clods."""
     r = random.Random(seed * 13 + 1)
@@ -126,44 +121,7 @@ def _soil(k, u, v, z, w, d, seed=0, n=26):
               r.choice(("soilL", "soilD", "soil", "soilL")), rz=r.uniform(0, 3))
 
 
-def _planter(k, on, u0, u1, D=0.9, well=(None, None), seed=3, shape="cham"):
-    """The planter body from u0 to u1, D deep: kick base, casing, trim band, rim round a soil well, front panel with a
-    water gauge and a status light. well = (wu0, wu1) narrows the soil well along u. shape: "cham" (cut corners),
-    "pill" (round ends) or "lean" (cut corners, the front face leaning back like a console)."""
-    cu, L = (u0 + u1) / 2, u1 - u0
-    ol = (lambda c, v, l, d, cut: _pill_ol(c, v, l, d)) if shape == "pill" else _cham
-    lean = (-D / 2, 0.84) if shape == "lean" else None
-    _prism(k, ol(cu, 0, L - 0.1, D - 0.1, 0.1), 0.0, Z_KICK, FRAME, top=FRAME)                 # kick base
-    body = ol(cu, 0, L, D, 0.14)
-    zb = Z_RIM - 0.08 - Z_KICK
-    _prism(k, body, Z_KICK, zb, PALE, top=PALE_T, lean=lean)
-    tb = 0.46
-    band = body if lean is None else [(u, lean[0] + (v - lean[0]) * (1 - (1 - lean[1]) * (tb - Z_KICK) / zb)) for u, v in body]
-    _prism(k, _scaled(band, 1.012), tb, 0.045, TEAL)                                        # trim band
-    wu0, wu1 = well[0] if well[0] is not None else u0 + 0.09, well[1] if well[1] is not None else u1 - 0.09
-    wc, wl, wd = (wu0 + wu1) / 2, wu1 - wu0, D - 0.18
-    vc = 0.0
-    if lean is not None:
-        wd = D * lean[1] - 0.18
-        vc = -D / 2 + D * lean[1] / 2
-    inner = ol(wc, vc, wl, wd, 0.08)
-    outer = ol(wc, vc, wl + 0.2, wd + 0.18, 0.14)
-    _ring(k, outer, inner, Z_RIM - 0.08, 0.08, PALE, top=PALE_T, inner_col=FRAME)           # rim lip
-    _prism(k, inner, Z_RIM - 0.14, Z_SOIL - (Z_RIM - 0.14), "soilD", top="soilD")
-    _soil(k, wc, vc, Z_SOIL - 0.05, wl - (0.36 if shape == "pill" else 0.16), wd - 0.12, seed, n=int(wl * 16))
-    a = 0.0 if lean is None else math.atan2(D * (1 - lean[1]), zb)                      # the front face's lean
-    def front(u, z, w, h, col, out=0.0):                                                   # a plate on the front face
-        f = D / 2 - (z + h / 2 - Z_KICK) * math.tan(a) + 0.004 + out
-        k.box(u, f, z, w, 0.012, h, col, rx=-a)
-    front(cu - L * 0.2, 0.2, 0.42, 0.18, "hyDark")                                         # gauge recess
-    front(cu - L * 0.2, 0.23, 0.34, 0.05, "waterD", 0.006)                                  # gauge tube
-    if on:
-        front(cu - L * 0.2 - 0.04, 0.24, 0.24, 0.03, "waterL", 0.012)
-    front(cu + L * 0.22, 0.22, 0.2, 0.14, "hyDark")                                         # status plate
-    front(cu + L * 0.22, 0.27, 0.07, 0.05, "cyan" if on else "steelD", 0.008)
-
-
-def _lamp_ring(k, cu, cv, z, L, w, bar, on, col=PALE, top=PALE_T, outline=None):
+def _lamp_ring(k, cu, cv, z, L, w, bar, on, col="labPearl", top="labPearlL", outline=None):
     """A ring lamp, open in the middle so the plants show through it: a housing over a lit lens band. outline(L, w)
     gives its shape (a pill by default)."""
     ol = outline or (lambda l, d: _pill_ol(cu, cv, l, d))
@@ -178,78 +136,60 @@ def _on(on, lit="cyan"):
 
 
 # ---- the directions --------------------------------------------------------------------------------------------------
-def spine(k, on):
-    _planter(k, on, -1.0, 1.0, well=(-0.9, 0.9), D=0.92, shape="pill")
-    _prism(k, _cham(0, -0.38, 0.5, 0.22, 0.06), Z_RIM - 0.1, 0.18, PALE, top=PALE_T, taper=0.8)   # root in the wall
-    sp = _cham(0, -0.39, 0.26, 0.18, 0.06)
-    _prism(k, sp, Z_RIM, 1.0, PALE, top=PALE_T, taper=0.92)
-    _prism(k, _scaled(sp, 1.04), 1.1, 0.04, TEAL)
-    _prism(k, _cham(0, -0.27, 0.3, 0.38, 0.07), 1.6, 0.17, PALE, top=PALE_T)                # the head over the ring
-    _lamp_ring(k, 0, 0.0, 1.58, 1.84, 0.7, 0.12, on)
-    return ((-0.48, 0.0), (0.48, 0.0)), Z_SOIL
+def arch(k, on):
+    """A flared sand tub, one orange arch over it from end to end, its underside the lamp."""
+    _prism(k, _pill_ol(0, 0, 1.8, 0.7), 0.0, 0.08, "dark")                                      # kick
+    _prism(k, _pill_ol(0, 0, 1.88, 0.8), 0.08, 0.54, "sand", top="sandL", tl=_pill_ol(0, 0, 2.0, 0.92))
+    _prism(k, _pill_ol(0, 0, 1.97, 0.89), 0.3, 0.07, "arcOr", tl=_pill_ol(0, 0, 1.99, 0.91))  # orange band
+    zs = 0.67
+    _well(k, _pill_ol(0, 0, 1.8, 0.72), _pill_ol(0, 0, 2.02, 0.94), 0.71, 0.09, "sand", "sandL", "dark", zs, 1.34, 0.6)
+    hw, h, z0 = 0.95, 1.16, 0.62
+    pts = [(-hw * math.cos(t), 0.0, z0 + h * math.sin(t)) for t in (math.pi * i / 20 for i in range(21))]
+    _tube(k, pts, 0.07, "arcOr")                                                            # the arch
+    lit = [(-(hw - 0.06) * math.cos(t), 0.0, z0 + (h - 0.07) * math.sin(t)) for t in (math.pi * (0.22 + 0.56 * i / 14) for i in range(15))]
+    _tube(k, lit, 0.045, "growPink" if on else "lampOff")                                   # lamp along its underside
+    for e in (-1, 1):                                                                       # feet in the rim
+        k.cyl(e * hw, 0, 0.66, 0.11, 0.08, "arcOr", top="arcOrL", sides=12)
+    v = 0.44                                                                                # gauge and status
+    k.box(-0.45, v, 0.4, 0.3, 0.012, 0.14, "dark", rx=-0.2)
+    k.box(-0.45, v + 0.006, 0.44, 0.22 if on else 0.08, 0.012, 0.04, "waterL" if on else "waterD", rx=-0.2)
+    k.box(0.45, v, 0.44, 0.07, 0.012, 0.06, _on(on), rx=-0.2)
+    return ((-0.47, 0.0), (0.47, 0.0)), zs
 
 
-def pot(k, on):
-    """Ceramic: flares from a small foot to a thick lip, a swan neck hooked over the ring."""
-    _prism(k, _pill_ol(0, 0, 1.56, 0.56), 0.0, 0.08, "potFoot")                                  # foot
-    _prism(k, _pill_ol(0, 0, 1.66, 0.66), 0.08, 0.5, "potCream", top="potCreamL", tl=_pill_ol(0, 0, 1.96, 0.88))
-    _prism(k, _pill_ol(0, 0, 1.92, 0.86), 0.5, 0.035, "potTerra", tl=_pill_ol(0, 0, 1.94, 0.87))  # glaze line
+def twin(k, on):
+    """Two round pots joined by a central block; a mast between the plants carries a bar with a lamp over each pot."""
     zs = 0.66
-    _well(k, _pill_ol(0, 0, 1.74, 0.66), _pill_ol(0, 0, 2.02, 0.94), 0.72, 0.14, "potCream", "potCreamL", "potFoot",
-          zs, 1.3, 0.54)
-    v = 0.4                                                                                 # porthole gauge
-    _tube(k, [(-0.5, v - 0.03, 0.3), (-0.5, v + 0.03, 0.3)], 0.1, "potTerra")
-    _tube(k, [(-0.5, v + 0.03, 0.3), (-0.5, v + 0.045, 0.3)], 0.065, "waterL" if on else "waterD")
-    _tube(k, [(0.5, v - 0.02, 0.3), (0.5, v + 0.04, 0.3)], 0.035, _on(on))
-    _tube(k, [(0, -0.42, 0.5), (0, -0.42, 1.62), (0, -0.41, 1.76), (0, -0.38, 1.84), (0, -0.33, 1.87),
-              (0, -0.29, 1.84), (0, -0.29, 1.68)], 0.07, "sage")                                              # swan neck
-    k.cyl(0, -0.4, 0.66, 0.11, 0.1, "sage", top="sageL", sides=12)                          # its collar in the lip
-    _lamp_ring(k, 0, 0.0, 1.56, 1.84, 0.7, 0.11, on, col="sage", top="sageL")
-    return ((-0.46, 0.0), (0.46, 0.0)), zs
-
-
-def rig(k, on):
-    """Industrial: a ribbed gunmetal tub on skids, a yellow bumper, a truss spine with a water line."""
-    for sv in (-1, 1):                                                                      # rubber skids
-        k.box(0, sv * 0.3, 0.0, 1.8, 0.14, 0.1, "indRub", bevel=0.02)
-    body = _cham(0, 0, 1.96, 0.9, 0.1)
-    _prism(k, body, 0.1, 0.5, "indGun", top="indGunL")
-    for i in range(7):                                                                      # vertical ribs
-        u = -0.75 + i * 0.25
-        for sv in (-1, 1):
-            k.box(u, sv * 0.46, 0.12, 0.06, 0.04, 0.44, "indGunL")
-    _prism(k, _cham(0, 0, 2.06, 1.0, 0.13), 0.4, 0.07, "hazY", top="hazY")                           # bumper
-    zs = 0.64
-    _well(k, _cham(0, 0, 1.76, 0.7, 0.06), _cham(0, 0, 2.0, 0.94, 0.12), 0.7, 0.1, "indGunL", "indGunL", "indGunD",
-          zs, 1.6, 0.58)
-    for u, sv in ((-0.9, 1), (0.9, 1), (-0.9, -1), (0.9, -1), (0, 1)):                       # rim bolts
-        k.box(u, sv * 0.41, 0.7, 0.06, 0.06, 0.03, "indGunD")
-    k.box(-0.5, 0.47, 0.18, 0.36, 0.012, 0.16, "hazY")                                      # gauge, yellow bezel
-    k.box(-0.5, 0.48, 0.2, 0.28, 0.012, 0.12, "dark")
-    k.box(-0.5, 0.486, 0.24, 0.22 if on else 0.1, 0.012, 0.04, "waterL" if on else "waterD")
-    k.box(0.5, 0.47, 0.2, 0.16, 0.012, 0.12, "dark")
-    k.box(0.5, 0.48, 0.23, 0.06, 0.012, 0.05, _on(on))
-    for su in (-1, 1):                                                                      # truss posts
-        k.box(su * 0.11, -0.4, 0.6, 0.08, 0.08, 1.06, "indGunL", top="indGunL")
-    for j in range(4):                                                                      # cross braces
-        z0 = 0.72 + j * 0.24
-        L = math.hypot(0.22, 0.2)
-        k.box(0, -0.4, z0, L, 0.04, 0.045, "indGun", ry=(1 if j % 2 else -1) * math.atan2(0.2, 0.22))
-    k.box(0, -0.4, 0.6, 0.36, 0.14, 0.1, "hazY", top="hazY")                                # foot plate
-    _tube(k, [(0.2, -0.42, 0.6), (0.2, -0.42, 1.5), (0.18, -0.4, 1.6), (0.13, -0.38, 1.66)], 0.035, "polyB")  # water line
-    k.box(0, -0.33, 1.6, 0.34, 0.24, 0.16, "indGun", top="indGunL", bevel=0.02)            # head
-    _lamp_ring(k, 0, 0.0, 1.56, 1.86, 0.72, 0.12, on, col="indGun", top="indGunL",
-               outline=lambda l, d: _cham(0, 0, l, d, min(0.16, d / 3)))
-    for su, sv in ((-1, -1), (1, -1), (-1, 1), (1, 1)):                                     # clamps
-        k.box(su * 0.62, sv * 0.3, 1.58, 0.1, 0.16, 0.15, "hazY", top="hazY")
-    return ((-0.48, 0.0), (0.48, 0.0)), zs
+    for e in (-1, 1):
+        cu = e * 0.52
+        k.cyl(cu, 0, 0.0, 0.36, 0.08, "dark", sides=16)                                     # kick
+        k.cyl(cu, 0, 0.08, 0.4, 0.54, "graph", top="graphL", sides=16, rtop=0.46)           # pot
+        k.cyl(cu, 0, 0.44, 0.45, 0.05, "hyBrass", top="hyBrass", sides=16, rtop=0.452)          # brass band
+        _well(k, _circle(cu, 0, 0.38), _circle(cu, 0, 0.48), 0.71, 0.09, "graph", "graphL", "dark", zs, 0.5, 0.5,
+              seed=4 + e, cu=cu)
+    _prism(k, _cham(0, 0, 0.34, 0.56, 0.06), 0.0, 0.7, "graph", top="graphL")               # central block
+    k.box(0, 0.285, 0.36, 0.2, 0.012, 0.2, "dark")                                          # its dial and light
+    _tube(k, [(0, 0.29, 0.46), (0, 0.31, 0.46)], 0.07, "hyBrass")
+    _tube(k, [(0, 0.31, 0.46), (0, 0.318, 0.46)], 0.05, "waterL" if on else "waterD")
+    k.box(0, 0.29, 0.2, 0.06, 0.012, 0.05, _on(on))
+    k.cyl(0, 0, 0.7, 0.1, 0.06, "hyBrass", top="hyBrassL", sides=12)                            # mast collar
+    k.cyl(0, 0, 0.76, 0.075, 0.82, "graphL", top="graphL", sides=12, rtop=0.06)              # mast
+    k.cyl(0, 0, 1.56, 0.1, 0.14, "hyBrass", top="hyBrassL", sides=12)                           # hub
+    _prism(k, _cham(0, 0, 0.9, 0.12, 0.03), 1.62, 0.07, "hyBrass", top="hyBrassL")              # the bar
+    for e in (-1, 1):                                                                       # a round lamp per pot
+        c = _circle(e * 0.52, 0, 0.27, 20)
+        _prism(k, _scaled(c, 0.93), 1.55, 0.045, "growPink" if on else "lampOff")
+        _prism(k, c, 1.595, 0.1, "graph", top="graphL", taper=0.85)
+        k.cyl(e * 0.52, 0, 1.69, 0.07, 0.04, "hyBrass", top="hyBrassL", sides=10)
+    return ((-0.52, 0.0), (0.52, 0.0)), zs
 
 
 def lab(k, on):
     """Lab: a shallow pearl tray floating on a narrow navy pedestal, a blade spine with a mint stripe."""
-    _prism(k, _pill_ol(0, 0, 1.44, 0.48), 0.0, 0.42, "labNavy", top="labNavyL")              # pedestal
+    _prism(k, _pill_ol(0, 0, 1.8, 0.76), 0.0, 0.07, "labNavy", top="labNavyL")               # foot
+    _prism(k, _pill_ol(0, 0, 1.6, 0.6), 0.07, 0.35, "labNavy", top="labNavyL")              # pedestal
     for i in range(5):                                                                      # vent slots
-        k.box(-0.1 + i * 0.09, 0.244, 0.12, 0.05, 0.012, 0.16, "dark")
+        k.box(-0.18 + i * 0.09, 0.304, 0.14, 0.05, 0.012, 0.16, "dark")
     _prism(k, _pill_ol(0, 0, 1.7, 0.66), 0.42, 0.2, "labPearl", top="labPearlL", tl=_pill_ol(0, 0, 2.0, 0.92))
     _prism(k, _pill_ol(0, 0, 1.99, 0.915), 0.62, 0.02, "labMint")                           # mint line
     zs = 0.66
@@ -265,6 +205,101 @@ def lab(k, on):
     _prism(k, _cham(0, -0.3, 0.16, 0.3, 0.05), 1.6, 0.16, "labNavy", top="labNavyL")         # head
     _lamp_ring(k, 0, 0.0, 1.58, 1.82, 0.68, 0.09, on, col="labPearl", top="labPearlL")
     return ((-0.47, 0.0), (0.47, 0.0)), zs
+
+# ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
+GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
+
+
+def _glass(k):
+    """The see-through panes go in their own mesh (a holdout-free, hidden part of the crop layers)."""
+    if not hasattr(k, "glass"):
+        k.glass = K(k.m.name + "_glass", (2, 1), k.rot)
+    return k.glass
+
+
+def _bar(k, a, b, s, col):
+    """A square frame bar from local point a to b (a 4-sided tube)."""
+    _tube(k, [a, b], s * 0.7, col, n=4)
+
+
+def _canopy(k, cu, L, D, z0, zw, zr, i, on, frame, frame_l, roof, mid=True):
+    """A cab-shaped glass canopy over the bed: vertical glass walls from z0 to zw, sloped glass inset i up to the roof
+    at zr, a solid roof carrying the grow lamp under it, square frame bars on every edge."""
+    g = _glass(k)
+    a, b, a2, b2 = L / 2, D / 2, L / 2 - i, D / 2 - i
+    lo = [(cu - a, -b), (cu + a, -b), (cu + a, b), (cu - a, b)]
+    hi = [(cu - a2, -b2), (cu + a2, -b2), (cu + a2, b2), (cu - a2, b2)]
+    for j in range(4):                                                      # panes: walls, then the slopes
+        q = (j + 1) % 4
+        g.m.poly([_G(g, *lo[j], z0), _G(g, *lo[q], z0), _G(g, *lo[q], zw), _G(g, *lo[j], zw)], "glassT", flip=True)
+        g.m.poly([_G(g, *lo[j], zw), _G(g, *lo[q], zw), _G(g, *hi[q], zr), _G(g, *hi[j], zr)], "glassT", flip=True)
+    s = 0.06
+    for j in range(4):                                                      # frame: sill, eaves, hips, posts, ridge
+        q = (j + 1) % 4
+        (u0, v0), (u1, v1) = lo[j], lo[q]
+        _bar(k, (u0, v0, z0 + s / 2), (u1, v1, z0 + s / 2), s, frame)
+        _bar(k, (u0, v0, zw), (u1, v1, zw), s, frame_l)
+        _bar(k, (u0, v0, z0), (u0, v0, zw), s, frame)
+        _bar(k, (u0, v0, zw), (hi[j][0], hi[j][1], zr), s, frame_l)
+    if mid:                                                                 # a post between the two plants
+        for sv in (-1, 1):
+            _bar(k, (cu, sv * b, z0), (cu, sv * b, zw), s, frame)
+            _bar(k, (cu, sv * b, zw), (cu, sv * b2, zr), s, frame_l)
+    _prism(k, _cham(cu, 0, 2 * a2 + 0.08, 2 * b2 + 0.08, 0.03), zr - 0.01, 0.08, roof, top=frame_l)   # roof
+    _prism(k, _cham(cu, 0, 2 * a2 - 0.02, 2 * b2 - 0.02, 0.02), zr - 0.08, 0.07, "growPink" if on else "lampOff")  # lamp
+    for du, dz, ln in ((-0.25, 0.1, 0.16), (-0.16, 0.2, 0.1)):              # two glints on the front glass
+        _bar(k, (cu + a * 0.55 + du, b + 0.004, zw - 0.32 + dz), (cu + a * 0.55 + du + ln * 0.6, b + 0.004, zw - 0.32 + dz + ln), 0.03, "glassG")
+
+
+def _tray(k, cu, L, D, z0, zs, seed):
+    """The bed's soil tray inside a canopy (its edge hidden by the sill)."""
+    _prism(k, _cham(cu, 0, L, D, 0.02), z0, zs - 0.05 - z0, "soilD", top="soilD")
+    _soil(k, cu, 0, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
+
+
+def terra(k, on):
+    """One long glass canopy on an angular navy base, grey frames, slatted front panel, a control screen."""
+    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
+    body = _cham(0, 0, 1.98, 0.94, 0.06)
+    _prism(k, body, 0.1, 0.54, "tNavy", top="tNavyL")
+    _prism(k, _scaled(body, 1.01), 0.56, 0.05, "tFrame", top="tFrameL")                       # top band
+    k.box(-0.35, 0.474, 0.2, 0.8, 0.012, 0.26, "dark")                                       # slatted panel
+    for j in range(8):
+        k.box(-0.70 + j * 0.1, 0.48, 0.22, 0.04, 0.012, 0.22, "tNavyL")
+    k.box(0.5, 0.474, 0.26, 0.34, 0.012, 0.2, "tFrame")                                      # control panel
+    k.box(0.5, 0.48, 0.3, 0.26, 0.012, 0.12, "dark")
+    k.box(0.45, 0.486, 0.33, 0.12, 0.012, 0.05, _on(on))
+    k.box(0.6, 0.486, 0.33, 0.04, 0.012, 0.05, _on(on, "orange"))
+    zs = 0.69
+    _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
+    _canopy(k, 0, 1.92, 0.88, 0.61, 1.2, 1.46, 0.2, on, "tFrame", "tFrameL", "tFrame")
+    return ((-0.47, 0.0), (0.47, 0.0)), zs
+
+
+def cabins(k, on):
+    """A glass cabin per plant on a shared dark base, a machinery block between them; teal frames, orange lights."""
+    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
+    body = _cham(0, 0, 1.98, 0.94, 0.06)
+    _prism(k, body, 0.1, 0.5, "cbBody", top="cbBodyL")
+    _prism(k, _scaled(body, 1.01), 0.48, 0.05, "cbTeal", top="cbTealL")                       # teal band
+    zs = 0.66
+    for e in (-1, 1):
+        cu = e * 0.55
+        k.box(cu, 0.474, 0.18, 0.5, 0.012, 0.2, "dark")                                     # slatted panel per bay
+        for j in range(4):
+            k.box(cu - 0.15 + j * 0.1, 0.48, 0.2, 0.04, 0.012, 0.16, "cbBodyL")
+        _tray(k, cu, 0.8, 0.84, 0.58, zs, 5 + e)
+        _canopy(k, cu, 0.84, 0.86, 0.58, 1.12, 1.38, 0.17, on, "cbTeal", "cbTealL", "cbBody", mid=False)
+    blk = _cham(0, 0, 0.24, 0.7, 0.04)                                                       # machinery block
+    _prism(k, blk, 0.58, 0.5, "cbBody", top="cbBodyL")
+    _prism(k, _scaled(blk, 1.04), 1.0, 0.04, "cbTeal")
+    for sv in (-0.18, 0.12):                                                                # pipes into each cabin
+        _tube(k, [(-0.42, sv, 0.92), (0.42, sv, 0.92)], 0.03, "steelL")
+    k.box(0, 0.355, 0.66, 0.14, 0.012, 0.22, "dark")                                       # gauge, lights
+    k.box(0, 0.361, 0.7, 0.07, 0.012, 0.14 if on else 0.05, "waterL" if on else "waterD")
+    for dz in (0.92, 0.84):
+        k.box(0, 0.358, dz, 0.05, 0.012, 0.04, _on(on, "orange"))
+    return ((-0.55, 0.0), (0.55, 0.0)), zs
 
 
 # ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
@@ -287,14 +322,14 @@ def _grain(k, u, v, z, seed=0):
     for i in range(13):
         a, d = r.uniform(0, math.tau), 0.22 * math.sqrt(r.uniform(0.05, 1.0))
         cu, cv = u + d * math.cos(a), v + d * math.sin(a)
-        h = r.uniform(0.5, 0.8)
+        h = r.uniform(0.45, 0.68)
         k.box(cu, cv, z, 0.045, 0.045, h, "stalk")
         k.box(cu, cv, z + h - 0.03, 0.08, 0.08, 0.2, "grain", top="grain", taper=0.6, rz=a)
         k.box(cu + 0.03, cv, z + h * 0.4, 0.16, 0.05, 0.03, "leafD", rz=a, ry=-0.5)
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"pot": pot, "rig": rig, "lab": lab, "spine": spine}
+VARIANTS = {"terra": terra, "cabins": cabins, "arch": arch, "twin": twin, "lab": lab}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
@@ -303,14 +338,19 @@ def build(variant, layer, rot=0):
     kb = K(name, (2, 1), rot)
     plants, zs = VARIANTS[variant](kb, layer == "on")
     bed = kb.build()
+    glass = kb.glass.build() if hasattr(kb, "glass") else []
+    for o in glass:
+        o["alpha"], o["rim"] = GLASS_ALPHA, GLASS_RIM
     if not layer.startswith("crop."):
-        return bed
+        return bed + glass
     for o in bed:                                                           # the bed masks the crop where it is in front
         o.is_holdout = True
+    for o in glass:                                                         # the plants show through the panes
+        o.hide_render = True
     kc = K(name + "_crop", (2, 1), rot)
     for i, (u, v) in enumerate(plants):
         CROPS[layer.split(".")[1]](kc, u, v, zs, i)
-    return bed + kc.build()
+    return bed + glass + kc.build()
 
 
 def jobs(rots=range(4)):
