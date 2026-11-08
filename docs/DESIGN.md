@@ -789,6 +789,16 @@ Each point below gets its own design discussion before it is built.
 - **Research is the main path to better gear,** ahead of buying. Blueprints sold at stations were a stopgap from before
   research and can stay, but research gets fleshed out, together with **drop-only loot** (gear you can only find).
   Recurring money sinks are not the answer.
+- **Research (discussion 1, user decisions, 2026-11-08):**
+  - **Materials gate research, not credits.** New research materials that come from going out: data cores (derelicts,
+    wrecked enemy computers), samples and alien tissue (anomalies, alien ships), artifacts (rare, deep space only, for the
+    top tiers). They replace today's stand-ins (spare parts, rare ore).
+  - **What the tree holds:** scanners and cloaking join it. No hull or armour research. Drones are research only, never
+    known from the start.
+  - **Drop-only loot:** unique named items with special effects, and prototype or alien versions of normal gear that
+    research can't reach.
+  - **The tree grows with discovery:** a solid baseline tree, plus projects added by finds (an alien artifact opens new
+    projects).
 - **Danger is distance.** No global threat clock. Deeper space is harder; the design work is giving players reasons to
   go there (research materials, drops, jobs and gear found only deeper).
 - **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
