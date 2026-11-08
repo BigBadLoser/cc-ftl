@@ -5,6 +5,8 @@ import { InspectionC } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';
 import { reputationOf } from '../../sim/story/state';
 import { encountersOf } from '../encounterSnapshot';
+import { galaxyIndex, playerShip } from '../../sim';
+import { onTurn } from '../../sim/galaxy/turn';
 import { patrolCommands, patrolNode } from './patrol';
 
 /** The scenario's start, stepped until the patrol's hail halts the trip. */
@@ -17,6 +19,17 @@ function hailed(clean = false): Sim {
     sim.story.active = null;
   }
   return sim;
+}
+
+/** Hailed, complied and deployed: stepped until the patrol's inspection is under way (its shuttle on the way). */
+function boarding(): { sim: Sim; fleet: number; faction: string } {
+  const sim = hailed();
+  const e = sim.galaxy.encounters.find((x) => x.scan)!;
+  sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'comply' });
+  sim.step();
+  sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
+  for (let i = 0; i < 30 && !sim.world.query(InspectionC).length; i++) sim.step();
+  return { sim, fleet: e.fleet, faction: e.faction };
 }
 
 describe('?scenario=patrol', () => {
@@ -68,4 +81,43 @@ describe('?scenario=patrol', () => {
     expect(clean.galaxy.travel?.phase).not.toBe('interdicted');
     expect(clean.galaxy.encounters.find((x) => x.kind === 'scan')?.scan).toBeUndefined();
   });
+
+  it('jumping away while the patrol\'s inspectors are still on the way counts as running', () => {
+    const { sim, faction } = boarding();
+    const [id] = sim.world.query(InspectionC);
+    expect(sim.world.get(id!, InspectionC)!.phase).toBe('fly');
+    const key = repKey(sim, faction);
+    const before = reputationOf(sim.story, key);
+    const g = sim.galaxy;
+    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((x) => (x.a === g.current ? x.b : x.a)).sort()[0]!;
+    sim.enqueue({ type: 'debug.chargeFtl' });
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    sim.step();
+    expect(sim.sector.state).toBe('hyperspace');
+    expect(sim.world.query(InspectionC)).toEqual([]);
+    expect(reputationOf(sim.story, key)).toBeLessThan(before);
+  });
+
+  it('the patrol stays put through galaxy turns while its stop or its inspection is pending', () => {
+    const sim = hailed();
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'comply' });
+    sim.step();
+    const f = sim.galaxy.fleets.find((x) => x.id === e.fleet)!;
+    const node = f.node;
+    sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
+    for (let i = 0; i < 30 && !sim.world.query(InspectionC).length; i++) sim.step();
+    for (let i = 0; i < 8; i++) {
+      f.dwell = 0; // it would leave at once if nothing held it
+      onTurn(sim, ++sim.galaxy.turn, 'time');
+    }
+    expect(f.node).toBe(node);
+    const [id] = sim.world.query(InspectionC);
+    expect(id).toBeDefined();
+    const insp = sim.world.get(id!, InspectionC)!;
+    expect(f.ships.some((c) => c.ship === insp.station)).toBe(true);
+    for (let i = 0; i < 20; i++) sim.step();
+    expect(sim.world.has(id!, InspectionC)).toBe(true);
+  });
 });
+
