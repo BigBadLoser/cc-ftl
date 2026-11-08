@@ -91,11 +91,12 @@ def _seam(k, ax, plane, u0, u1, z0, z1, F):
 
 
 def _sheet(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl):
-    """A flat sheet d proud of the face (the frame, a cover): its front only, run on by d at an outer end as T.run
-    (a slab's sides darkened a tile's edge column; under a breach's tear, T.run's torn slab)."""
+    """A flat sheet d proud of the face (the frame, a cover): its front only, run on by d at an outer end as T.run and
+    at a tile edge into the next tile (a slab's sides darkened a tile's edge column; stopped at the edge, the face
+    behind showed a shade darker there: a line between tiles; under a breach's tear, T.run's torn slab)."""
     if T.CLIP is not None:
         return T.run(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl, 0)
-    u0, u1 = u0 - (d if ends[0] == "out" else 0.0), u1 + (d if ends[1] == "out" else 0.0)
+    u0, u1 = u0 - (d if ends[0] in ("out", "cont") else 0.0), u1 + (d if ends[1] in ("out", "cont") else 0.0)
     k.poly([T.P(ax, plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], fam, lvl, T.OUT(ax))
 
 
@@ -147,8 +148,10 @@ def navy(hull):
                 _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
                 continue
             _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, COVER, F, NAVY_FACE)
-            if bf:
-                bf(k, ax, plane, p0, p1, pq, zh, H)
+            if bf:                                      # (on into the next tile with the cover: stopped at the
+                ext = 1.5 * PAINT                       # edge, the cover past it lit the edge px a red line)
+                bf(k, ax, plane, p0 - (ext if pq[0] == "cont" else 0.0), p1 + (ext if pq[1] == "cont" else 0.0),
+                   pq, zh, H)
         for u in lines:
             _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
             _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)

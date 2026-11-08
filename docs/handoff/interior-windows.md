@@ -528,3 +528,7 @@ Marked ref (both layers, numbered): scratchpad
   and slab sides darkened the edge column, so the covers are front-only sheets (T.run under a breach's CLIP). The
   old face run's faint lit line at zs is gone; else m10 matches ns18 bar a few px at a run's open end. The ramp's
   covers were already plates (wall3d.skirt's fields, each with its band). ns22.
+- 2026-11-08: the user: a slight line between tiles. The covers stopped at the tile edge and the face behind showed a
+  shade darker there (95a4b4; the old run's side gave a fainter a4b1c1): the covers now run on by their depth at a
+  "cont" end, and the band with them (else the edge px went a lighter red). The edge column is the face's tone now,
+  over the face and the band. ns24.
