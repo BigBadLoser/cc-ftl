@@ -123,11 +123,12 @@ def _on(on, lit="cyan"):
 
 # ---- the directions --------------------------------------------------------------------------------------------------
 # ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
-GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
+GLASS_ALPHA, GLINT_ALPHA, GLASS_RIM = 0.1, 0.5, 0.0
 
 
 def _part(k, name):
-    """A part in its own mesh: "glass", the see-through panes. It never masks the crop: the plants show through."""
+    """A part in its own mesh: "glass" (the see-through panes) or "glint" (see-through reflections). Neither masks the
+    crop: the plants show through."""
     if not hasattr(k, "parts"):
         k.parts = {}
     if name not in k.parts:
@@ -169,17 +170,18 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t,
         _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
     up = zr - zv                                                            # the front slope: v and z at fraction f
     fs = lambda f: (b - f * iv + 0.006, zv + f * up)
-    if glint == "dim":
+    if glint in ("dim", "semi"):
+        kg, col = (_part(k, "glint"), "glassG") if glint == "semi" else (k, "glassD")   # semi: see-through bands
         # Reflections: muted bands in pairs (a see-through sheen speckles when it is downsampled). They mask the crop,
         # so a plant behind one shows the band across it. Each bay: up the front slope, then on across the roof.
         (v0, za), (v1, zb) = fs(0.08), fs(1.0)
         for bay in (-1, 1):
             for du, w in ((-0.2, 0.08), (-0.07, 0.04)):
                 u0 = cu + bay * L / 4 + du
-                _streak(k, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0), "glassD")
-                _streak(k, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0), "glassD")
+                _streak(kg, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0), col)
+                _streak(kg, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0), col)
         for dv, w in ((0.1, 0.08), (-0.03, 0.04)):                          # the end pane, centred
-            _streak(k, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0), "glassD")
+            _streak(kg, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0), col)
     else:
         # Catch-lights: a thin pale line just inside the frame along the top of each pane, the glass edge in the light.
         e = 0.035
@@ -250,7 +252,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, "terra.edge": lambda k, on: terra(k, on, "edge")}
+VARIANTS = {"terra": terra, "terra.semi": lambda k, on: terra(k, on, "semi"), "terra.edge": lambda k, on: terra(k, on, "edge")}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
@@ -262,6 +264,8 @@ def build(variant, layer, rot=0):
     parts = {n: p.build() for n, p in getattr(kb, "parts", {}).items()}
     for o in parts.get("glass", []):
         o["alpha"], o["rim"] = GLASS_ALPHA, GLASS_RIM
+    for o in parts.get("glint", []):
+        o["alpha"], o["rim"] = GLINT_ALPHA, GLASS_RIM
     if not layer.startswith("crop."):
         return bed + sum(parts.values(), [])
     for o in sum(parts.values(), []):                                       # the plants show through the glass
