@@ -360,11 +360,6 @@ def build(asset, layer, rot=0):
     return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
 
-def hydroponics(state="on", rot=0):
-    """The small bed lit, for the damage pack's `.damaged` / `.destroyed` (damage.py)."""
-    return build("module.hydroponics", "on", rot)
-
-
 def sprite_id(asset, layer, rot):
     """`<asset>` (r0) or `<asset>.rN` lit, `<asset>.rN.unpowered` dark (the game's module art chain), and
     `<asset>.crop.<crop>.<stage>.rN` for a crop layer."""

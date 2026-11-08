@@ -357,9 +357,12 @@ def bases(rots=range(4)):
             f = fp if r % 2 == 0 else (fp[1], fp[0])
             out.append((f"module.storage_{name}.r{r}", f, lambda fn=fn, r=r: fn("partial", r), True,
                         name in ("cold", "armory")))
+    for aid, fp in (("module.hydroponics", (2, 1)), ("module.hydroponics_large", (3, 2))):   # lit bed, own colours
+        for r in rots:
+            f = fp if r % 2 == 0 else (fp[1], fp[0])
+            out.append((f"{aid}.r{r}", f, lambda aid=aid, r=r: hydroponics.build(aid, "on", r), "hydro", True))
     for name, fp, fn, st in (("med_bed", (1, 2), medbay.med_bed, "idle"), ("med_console", (1, 1), medbay.med_console,
                               "idle"), ("battery", (1, 2), battery.battery, "charge2"),
-                             ("hydroponics", (2, 1), hydroponics.hydroponics, "grow2"),
                              ("workbench", (2, 1), workbench.workbench, "idle"),
                              ("cryo_pod", (1, 2), cryo.cryo, "idle")):
         for r in rots:
