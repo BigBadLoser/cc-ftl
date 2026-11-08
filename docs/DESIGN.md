@@ -812,6 +812,14 @@ Each point below gets its own design discussion before it is built.
     hours, studying a find 20-40 minutes; science skill and a second lab speed it up. The baseline tree takes several hours.
 - **Danger is distance.** No global threat clock. Deeper space is harder; the design work is giving players reasons to
   go there (research materials, drops, jobs and gear found only deeper).
+- **Going deeper (discussion 2, user decisions, 2026-11-08):**
+  - **Bands, not a smooth slope:** clear zones, each with things that only exist there. Proposed split of the danger tiers
+    (0 to 9): core 0-2, frontier 3-5, deep space 6-9.
+  - **Only out there:** artifacts; alien ships and their tech; rare ores; big derelicts and ruins worth a full salvage run;
+    unique stations (a hidden shipyard, a research outpost selling prototypes); story-arc hooks.
+  - **No hard walls:** deep space doesn't demand set gear to enter, but a better ship clearly helps (harder fights,
+    longer hops, nastier hazards).
+  - **No "home":** deep space has ordinary stations too (repair, trade, fuel). The start zone is just where you began.
 - **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
   (#171).
 - **Losing the ship:** plan for escape pods (survivors reach a station with a worn starter hull, and the wreck can be
