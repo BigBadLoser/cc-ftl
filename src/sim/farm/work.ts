@@ -22,6 +22,7 @@ export function performFarm(sim: Sim, job: Job, speed: number): WorkResult {
   const plot = sim.world.get(job.target ?? 0, PlotC);
   const def = m && sim.content.modules[m.def];
   if (!m || !plot || !def) return 'done';
+  if (!m.enabled) return 'wait'; // a bed switched off pauses its planting and harvesting
   if (job.kind === 'plant') {
     const crop = job.crop ? sim.content.crops?.[job.crop] : undefined;
     if (!crop || plot.planted) return 'done';

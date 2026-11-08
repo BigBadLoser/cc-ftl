@@ -86,6 +86,23 @@ describe('hydroponics', () => {
     expect(plotOf(sim, bed).grown).toBeGreaterThan(secs(10));
   });
 
+  it('a bed switched off pauses its planting, even after the water is delivered, and plants once it is switched back on', () => {
+    const { sim, bed } = farmGame();
+    sim.enqueue({ type: 'plot.setCrop', moduleId: bed, crop: 'crop.greens' });
+    let off = false;
+    for (let i = 0; i < secs(60) && !off; i++) {
+      run(sim, 1);
+      const job = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'plant');
+      if (job && (job.delivered?.length ?? 0) > 0) { sim.enqueue({ type: 'module.setEnabled', id: bed, enabled: false }); off = true; }
+    }
+    expect(off).toBe(true);
+    run(sim, secs(30));
+    expect(plotOf(sim, bed).planted).toBeNull();
+    sim.enqueue({ type: 'module.setEnabled', id: bed, enabled: true });
+    run(sim, secs(40));
+    expect(plotOf(sim, bed).planted).toBe('crop.greens');
+  });
+
   it('a change of crop leaves the crop in the soil alone and is sown after the harvest', () => {
     const { sim, bed } = farmGame();
     sim.enqueue({ type: 'plot.setCrop', moduleId: bed, crop: 'crop.greens' });
@@ -287,19 +304,20 @@ describe('bed power and the large bed', () => {
     expect(events.some((e) => e.type === 'power.shortage' && e.ship === ship)).toBe(false);
   });
 
-  it('the large bed is three times the small one: yield, water and power', () => {
+  it('the large bed is three times the small one yield for twice the water and power', () => {
     const { sim } = farmGame();
     const large = bedAt(sim, 'module.hydroponics_large');
     const small = content.modules['module.hydroponics'];
     const big = content.modules['module.hydroponics_large'];
-    expect(big.power).toBe(small.power * 3);
+    expect(big.power).toBe(small.power * 2);
     expect(big.plot.scale).toBe(3);
+    expect(big.plot.waterScale).toBe(2);
     const greens = content.crops['crop.greens'];
     const water = totalStock(sim, 'item.water');
     sim.enqueue({ type: 'plot.setCrop', moduleId: large, crop: 'crop.greens' });
     const events = run(sim, secs(40));
     expect(events.some((e) => e.type === 'crop.planted')).toBe(true);
-    expect(totalStock(sim, 'item.water')).toBe(water - greens.water * 3);
+    expect(totalStock(sim, 'item.water')).toBe(water - greens.water * 2);
     const grown = run(sim, secs(greens.growSec));
     expect(grown.some((e) => e.type === 'crop.harvested' && e.count === greens.yield * 3)).toBe(true);
   });

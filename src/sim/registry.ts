@@ -516,7 +516,7 @@ export interface ModuleDef {
   /** A medical bed: only patients lie in it (never sleepers), and it heals the way a bed does, faster with medicinal herbs in stock. */
   medical?: true;
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
-  plot?: { scale: number };
+  plot?: { scale: number; waterScale?: number };
   /** Draws its power (and shows as running) only while the rule holds, else it is idle: no draw, `powered` false (modules/draw.ts). 'planted': a bed with a crop in the soil. */
   drawsWhen?: 'planted';
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */

@@ -35,7 +35,7 @@ export * from './items/components';
 export { storageSpace, storageCount, storageAdd, storageTake } from './items/storage';
 export { stackAt, stackSizeOf } from './items/stacks';
 export { PlotC } from './farm/components';
-export { growth, growTicks, plotScale, wantsSowing } from './farm/crops';
+export { growth, growTicks, plotScale, plotWaterScale, wantsSowing } from './farm/crops';
 export { totalStock } from './items/stock';
 export { missingMaterials, needsMaterials } from './items/materials';
 export { activeOrder } from './items/production';

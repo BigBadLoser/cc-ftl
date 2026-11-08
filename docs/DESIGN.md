@@ -722,7 +722,7 @@ Every new module feeds a system that already exists and changes play. None is de
 - **Hydroponics, wired up (#59; built).** You pick a crop per bed. A crew member plants it (a farming job, own "Farm" priority column), the bed
   uses water and power, and the crop grows over time and is harvested as an item. Built numbers (content/crops.ts, first pass): greens 6 per 4:00,
   1 water; protein beans 18 per 10:00, 2 water; medicinal herbs 4 per 6:00, 1 water; grain 10 per 6:00, 1 water (price 5). The water is delivered
-  to the bed for the planting job; growth runs only while the bed is powered. An empty bed draws no power (`ModuleDef.drawsWhen: 'planted'`; shown as Idle), a planted one draws 2. Two sizes: the 2x1 bed, and the buildable large bed (2x3, about 3x yield, water and power, 6 power); after a harvest the bed is sown
+  to the bed for the planting job; growth runs only while the bed is powered. An empty bed draws no power (`ModuleDef.drawsWhen: 'planted'`; shown as Idle), a planted one draws 2. Two sizes: the 2x1 bed, and the buildable large bed (2x3, 3x the yield for 2x the water and power: 4 power, so the big bed is the efficient one); after a harvest the bed is sown
   again with the same crop unless the ship already holds that crop's stock cap. A crop in the soil is not disturbed by changing the pick.
 
   | Crop | Grows | Used for |

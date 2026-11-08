@@ -11,6 +11,13 @@ export function plotScale(sim: Sim, moduleId: number): number {
   return (m && sim.content.modules[m.def]?.plot?.scale) || 1;
 }
 
+/** How many times a small bed's water a sowing takes (`plot.waterScale`, else the yield scale). */
+export function plotWaterScale(sim: Sim, moduleId: number): number {
+  const m = sim.world.get(moduleId, ModuleC);
+  const p = m && sim.content.modules[m.def]?.plot;
+  return p?.waterScale ?? p?.scale ?? 1;
+}
+
 /** Ticks of powered growing a crop needs. */
 export const growTicks = (crop: CropDef): number => Math.round(crop.growSec * TICK_HZ);
 

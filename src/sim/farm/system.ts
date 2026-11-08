@@ -6,7 +6,7 @@ import { moduleSite } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
 import { PlotC } from './components';
-import { growTicks, plotScale, wantsSowing } from './crops';
+import { growTicks, plotWaterScale, wantsSowing } from './crops';
 import { HARVEST_WORK, PLANT_WORK } from './work';
 
 /**
@@ -51,7 +51,7 @@ export function farmSystem(sim: Sim): void {
     if (plot.ready) sim.world.add(sim.world.createEntity(), JobC, { ...base, kind: 'harvest', work: HARVEST_WORK });
     else if (sow && plot.crop) {
       sim.world.add(sim.world.createEntity(), JobC, {
-        ...base, kind: 'plant', work: PLANT_WORK, crop: plot.crop, needs: needsFrom([{ item: 'item.water', count: sow.water * plotScale(sim, id) }]), delivered: [],
+        ...base, kind: 'plant', work: PLANT_WORK, crop: plot.crop, needs: needsFrom([{ item: 'item.water', count: sow.water * plotWaterScale(sim, id) }]), delivered: [],
       });
     }
   }

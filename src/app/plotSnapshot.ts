@@ -1,11 +1,11 @@
-import { growth, growTicks, JobC, ModuleC, needsMaterials, PlotC, plotScale, TICK_HZ, totalStock, wantsSowing, type Sim } from '../sim';
+import { growth, growTicks, JobC, ModuleC, needsMaterials, PlotC, plotScale, plotWaterScale, TICK_HZ, totalStock, wantsSowing, type Sim } from '../sim';
 
 import type { UiCrop, UiPlot } from '../ui/api';
 
 /** The crops a bed can be set to (the picker's rows), in content order. */
-function cropRows(sim: Sim, scale: number): UiCrop[] {
+function cropRows(sim: Sim, scale: number, waterScale: number): UiCrop[] {
   return Object.entries(sim.content.crops ?? {}).map(([id, c]) => ({
-    id, name: c.name, item: c.item, itemName: sim.content.items[c.item]?.name ?? c.item, yield: c.yield * scale, growSec: c.growSec, water: c.water * scale, blurb: c.blurb,
+    id, name: c.name, item: c.item, itemName: sim.content.items[c.item]?.name ?? c.item, yield: c.yield * scale, growSec: c.growSec, water: c.water * waterScale, blurb: c.blurb,
   }));
 }
 
@@ -35,6 +35,6 @@ export function buildPlot(sim: Sim, id: number): UiPlot | null {
   const next = plot.crop ? sim.content.crops?.[plot.crop] : undefined;
   return {
     crop: plot.crop, planted: plot.planted, plantedName: planted?.name ?? null, state, progress: growth(sim, plot), note,
-    stock: next ? totalStock(sim, next.item) : 0, crops: cropRows(sim, plotScale(sim, id)),
+    stock: next ? totalStock(sim, next.item) : 0, crops: cropRows(sim, plotScale(sim, id), plotWaterScale(sim, id)),
   };
 }
