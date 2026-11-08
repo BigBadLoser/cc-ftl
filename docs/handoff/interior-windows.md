@@ -517,3 +517,6 @@ Marked ref (both layers, numbered): scratchpad
   clear of the line). The line's lit px on the strip side (the ref's b2bbcc): a level over the face, over the band's
   red a level over the red (band designs list their red as .reds). Variants: pipes and split plates now in the
   wider cover (step 3 reworks them). ns18.
+- 2026-11-08: the user: leave the line's red over the band and the strip's longer red band for now. Render less: work
+  out the base geometry on the plain pieces only (a handful of ids: full.m10, full.m5, an outer corner, an inner
+  corner, an end), then render and adjust all the variants once.
