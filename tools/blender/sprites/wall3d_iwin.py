@@ -58,6 +58,7 @@ MID_LINES = (10, 21)    # the middle piece's sill: a seam across it at these px 
                         # middle; level with the face's grooves), on down the block BEND_DROP px
 PLATE_LEG = 3           # the ramp front's plates: a seam down from each, this many px in from its ends
 SILL_TOP = "fTW1"       # the sill's top: the cushions' lit tan
+END_STRIP = 3           # px: the strip closing a piece's joined +x end under the floor's edge (as wall3d_iwin_ramp's)
 FB.TOP_KEEP.update((LINE_COL, SILL_COL, SILL_TOP, SLOPE_TOP, SEAM, SLOPE_LIT, LIP_END, PANE_EDGE) + RAMP_FACE)
 GLASS = None            # the pane's Relief, built by the piece (the glass render kind's second list)
 
@@ -327,6 +328,11 @@ def hook(k, sp, own=True):
             zp = _top(u, x0, x1)
             _quad(k, [(u, yb, z0), (u, yf, z0), (u, yf, zp), (u, yb, zp)], (sd, 0, 0), POST_IN)
     _posts(k, x0, x1, yb, yf, z0)
+    if PART in "lm" and not CLOSE:                      # the run goes on at +x: the wall's end there open under the
+        h = _sill(0.5, x0, x1)                          # sill (it shows inside, dark: dots across the floor's far
+        v, u = _reach(h, yf), 0.5 - 1e-4                # edge at each join) closed by a strip in the floor's tone,
+        _quad(k, [(u, -v, h - END_STRIP * PZ), (u, v, h - END_STRIP * PZ), (u, v, h), (u, -v, h)], (1, 0, 0),
+              SILL_TOP)                                 # END_STRIP px down; the next piece paints over the rest
     us = sorted({a, b} | set(bends) | {u for u in (_strip() or ()) if a < u < b})   # the sill's top (the cut along
     for u0, u1 in zip(us, us[1:]):                      # the crest, out to the ramps' slopes: wider as it drops)
         h0, h1 = _seg(u0, u1, x0, x1)
