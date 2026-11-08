@@ -3515,6 +3515,7 @@
   "labMint": {"hex": "#3fbf95", "set": "hydro"},
   "sand": {"hex": "#bdb4a2", "set": "hydro"},
   "sandL": {"hex": "#d3cbb9", "set": "hydro"},
+  "sandD": {"hex": "#9c9482", "set": "hydro"},
   "arcOr": {"hex": "#d46a2c", "set": "hydro"},
   "arcOrL": {"hex": "#e88a4c", "set": "hydro"},
   "glassT": {"hex": "#8fbccc", "set": "hydro"},

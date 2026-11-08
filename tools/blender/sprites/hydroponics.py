@@ -5,7 +5,7 @@ Look exploration (earlier rounds are in git history). One plant per tile, a lamp
   cab    a navy base with slatted panels, a glass cabin per plant in grey frames, a machinery block between them
   terra  the same base under one long cab-shaped glass canopy
   lab    a shallow pearl tray floating on a navy pedestal, a tapered blade spine with a mint stripe, a slim ring lamp
-  <variant>.sand  the same in the sand and orange of round 10's arch (REMAP swaps the colours)
+  lab.sand  lab in cream with an orange detail ring (REMAP swaps the colours)
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -140,7 +140,7 @@ def lab(k, on):
     for i in range(5):                                                                      # vent slots
         k.box(-0.18 + i * 0.09, 0.304, 0.14, 0.05, 0.012, 0.16, "dark")
     _prism(k, _pill_ol(0, 0, 1.7, 0.66), 0.42, 0.2, "labPearl", top="labPearlL", tl=_pill_ol(0, 0, 2.0, 0.92))
-    _prism(k, _pill_ol(0, 0, 1.99, 0.915), 0.62, 0.02, "labMint")                           # mint line
+    _prism(k, _pill_ol(0, 0, 2.0, 0.92), 0.565, 0.045, "labMint", tl=_pill_ol(0, 0, 2.03, 0.95))  # detail ring
     zs = 0.66
     _well(k, _pill_ol(0, 0, 1.8, 0.72), _pill_ol(0, 0, 2.0, 0.92), 0.71, 0.07, "labPearl", "labPearlL", "labNavy",
           zs, 1.36, 0.6)
@@ -289,10 +289,8 @@ def _grain(k, u, v, z, seed=0):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-SAND_T = {"tNavy": "sand", "tNavyL": "sandL", "tFrame": "arcOr", "tFrameL": "arcOrL"}     # arch's colours
-SAND_L = {"labNavy": "arcOr", "labNavyL": "arcOrL", "labPearl": "sand", "labPearlL": "sandL", "labMint": "arcOr"}
-VARIANTS = {"cab": (cab, {}), "terra": (terra, {}), "lab": (lab, {}),
-            "cab.sand": (cab, SAND_T), "terra.sand": (terra, SAND_T), "lab.sand": (lab, SAND_L)}
+SAND_L = {"labNavy": "sandD", "labNavyL": "sand", "labPearl": "sand", "labPearlL": "sandL", "labMint": "arcOr"}  # cream, orange ring
+VARIANTS = {"cab": (cab, {}), "terra": (terra, {}), "lab": (lab, {}), "lab.sand": (lab, SAND_L)}
 REMAP = {}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
