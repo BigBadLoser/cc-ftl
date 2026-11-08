@@ -520,3 +520,11 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: leave the line's red over the band and the strip's longer red band for now. Render less: work
   out the base geometry on the plain pieces only (a handful of ids: full.m10, full.m5, an outer corner, an inner
   corner, an end), then render and adjust all the variants once.
+- 2026-11-08: the user: build the covers as real plates; test renders of full.m10 only. The wall's face is now plates
+  (navy.face): per tile a cover, then (with the panel line) a strip, flat fronts at COVER (PAINT) from the shelf to
+  under the header, each carrying its part of the band (band designs at navy_designs.BAND, 1.5 PAINT); the line and
+  its lit px stay at 2 PAINT (further out they slip off the px grid and blur). A plate a variant takes off (`off`, empty
+  for now) shows the dark frame (FRAME, rose 2) in its place; a frame behind the covers peeked out at the tile edge,
+  and slab sides darkened the edge column, so the covers are front-only sheets (T.run under a breach's CLIP). The
+  old face run's faint lit line at zs is gone; else m10 matches ns18 bar a few px at a run's open end. The ramp's
+  covers were already plates (wall3d.skirt's fields, each with its band). ns22.

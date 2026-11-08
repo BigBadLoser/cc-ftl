@@ -33,6 +33,10 @@ NAVY_MID = "fBT1"                   # an outer corner's chamfer (wall and slope)
                                     # tones (a9b4c4, 8e9cb1): 9cacbc; its shelf likewise (NAVY_MID_SHELF) (the user;
                                     # existing palette tones: new ones that close snap to these)
 NAVY_MID_SHELF = ("fBW0", "fBT8", "fBT0", "fNH1")   # back px 74849c, 8494ac; top b4bccc; lit edge c9cfd8
+FRAME, COVER = PAINT / 2, PAINT     # the face's dark frame, and its covers standing proud of it (a design's band on
+                                    # them, navy_designs.BAND)
+LINES = 2 * PAINT                   # the panel line and its lit px, over the band (on the px grid at this depth: further
+                                    # out they shift off it and blur)
 RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
                                     # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -81,9 +85,18 @@ def _seam(k, ax, plane, u0, u1, z0, z1, F):
     face (AA): on the x face level 0 reads a shade down; on the lit y face level 0 read two, so it takes fNW6, which
     reads one (fNW5 on the light plates)."""
     if ax == "x" or F != "wall" or T.CLIP is not None:  # (under a breach's tear: the slab, cut off along it)
-        return T.paint(k, ax, plane, u0, u1, z0, z1, PAINT, F, 0)
-    k.poly([T.P(ax, plane, u, z, 2 * PAINT) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], F, 0, T.OUT(ax),
+        return T.paint(k, ax, plane, u0, u1, z0, z1, LINES - PAINT, F, 0)
+    k.poly([T.P(ax, plane, u, z, LINES) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], F, 0, T.OUT(ax),
            fixed="fNW6")
+
+
+def _sheet(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl):
+    """A flat sheet d proud of the face (the frame, a cover): its front only, run on by d at an outer end as T.run
+    (a slab's sides darkened a tile's edge column; under a breach's tear, T.run's torn slab)."""
+    if T.CLIP is not None:
+        return T.run(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl, 0)
+    u0, u1 = u0 - (d if ends[0] == "out" else 0.0), u1 + (d if ends[1] == "out" else 0.0)
+    k.poly([T.P(ax, plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], fam, lvl, T.OUT(ax))
 
 
 def _lit(k, ax, plane, u, z0, z1, F, reds):
@@ -93,7 +106,7 @@ def _lit(k, ax, plane, u, z0, z1, F, reds):
     for r0, r1 in reds + [(z1, z1)]:
         for lo, hi, fam, lvl in ((z, min(r0, z1), F, NAVY_FACE + 1), (max(r0, z0), min(r1, z1), "ochre", 4)):
             if hi - lo > 1e-6:
-                k.poly([T.P(ax, plane, uu, zz, 2 * PAINT) for uu, zz in ((u, lo), (u + LINE, lo), (u + LINE, hi),
+                k.poly([T.P(ax, plane, uu, zz, LINES) for uu, zz in ((u, lo), (u + LINE, lo), (u + LINE, hi),
                                                                           (u, hi))], fam, lvl, T.OUT(ax))
         z = max(z, r1)
 
@@ -109,7 +122,6 @@ def navy(hull):
         pe = ("in" if back else ends[0], ends[1])       # (at a hidden free end the parts stop square: run on, they
                                                         # stuck out past the end)
         zf = T.lip_heights(zs)[0]                      # the face's foot: down to the ramp's shelf
-        T.run(k, ax, plane, a, b, pe, zf - 0.03, zs + 0.06, PAINT, F, NAVY_FACE, 0)     # (from the shelf up)
         if cp:
             corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE + 1,   # (as the chamfer's
                          cols=[NAVY_MID] * 4 if F == "wall" else None)      # strip over it)
@@ -119,13 +131,27 @@ def navy(hull):
         zh = rt - 0.25 * H if full else top                             # the header's foot
         bf = T.fill("band", navy_band) if full else None
         reds = sorted((zh - f0 * H, zh - f1 * H) for f0, f1 in getattr(bf, "reds", ()))
-        for s0, s1 in T.spans(a, b):                                    # the panel line (none on a corner's tile)
-            if (abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont"):
+        zc = zh if full else top - 0.03                 # the covers' top: under the header (a low wall's top)
+        lines, plates = [], []                          # the panel line (none on a corner's tile) and the plates it
+        for s0, s1 in T.spans(a, b):                    # splits each tile into: its cover, then its strip
+            if ((abs(s0 - a) < 1e-6 and ends[0] != "cont") or (abs(s1 - b) < 1e-6 and ends[1] != "cont")
+                    or s1 - s0 <= 2 * NAVY_SEAM + 1e-3):
+                plates.append((s0, s1, "cover"))
                 continue
-            if s1 - s0 > 2 * NAVY_SEAM + 1e-3:
-                u = s1 - NAVY_SEAM
-                _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
-                _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)
+            lines.append(s1 - NAVY_SEAM)
+            plates += [(s0, s1 - NAVY_SEAM, "cover"), (s1 - NAVY_SEAM, s1, "strip")]
+        off = ()                                        # (the plates a variant takes off: none yet)
+        for p0, p1, kind in plates:                     # the covers (and strips), each with its part of the band; one
+            pq = (pe[0] if abs(p0 - a) < 1e-6 else "cont", pe[1] if abs(p1 - b) < 1e-6 else "cont")   # off shows the
+            if kind in off:                                                                  # dark frame behind it
+                _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
+                continue
+            _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, COVER, F, NAVY_FACE)
+            if bf:
+                bf(k, ax, plane, p0, p1, pq, zh, H)
+        for u in lines:
+            _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
+            _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)
         if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
             for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
                 if e == "in":
@@ -139,7 +165,6 @@ def navy(hull):
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
         T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 2, 0)          # the dark header, up to the cap (a step under
                                                                          # it showed as a dotted line on the black top)
-        bf(k, ax, plane, a, b, pe, zh, H)                                                     # the maroon band
         mid = T.fill("middle")                          # (a top design's: in a dark recess between band and foot)
         if mid:
             for s0, s1 in T.spans(a, b):
@@ -165,7 +190,7 @@ def navy(hull):
             for s0, s1 in T.spans(a, b):
                 if s1 - s0 > 0.6:
                     uc = (s0 + s1) / 2
-                    T.paint(k, ax, plane, uc - 0.1, uc + 0.1, zh - 0.3, zh - 0.06, 2 * PAINT, F, 4)
+                    T.paint(k, ax, plane, uc - 0.1, uc + 0.1, zh - 0.3, zh - 0.06, LINES, F, 4)
     return face
 
 

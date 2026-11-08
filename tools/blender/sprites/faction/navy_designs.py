@@ -9,6 +9,8 @@ from .. import wall3d as T
 from ..relief_style import Design
 from .parts import LINE, PAINT, PX, flat, prism, tube, tube_prof
 
+BAND = 1.5 * PAINT                  # a band design's red: on the face's covers (navy.COVER, PAINT)
+
 
 def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
     """A box standing d proud, its top and foot chamfered ch, its faces in fixed colours (cols: foot, front, top;
@@ -56,14 +58,14 @@ def navy_lockers(k, ax, plane, a, b, c, e, F):
 
 
 def navy_band(k, ax, plane, a, b, ends, zh, H):
-    """The maroon band under the header."""
-    T.run(k, ax, plane, a, b, ends, zh - 0.33 * H, zh, PAINT, "ochre", 3, 0)
+    """The maroon band under the header (on a cover or strip: navy.py calls it for each)."""
+    T.run(k, ax, plane, a, b, ends, zh - 0.33 * H, zh, BAND, "ochre", 3, 0)
 
 
 def navy_thin_band(k, ax, plane, a, b, ends, zh, H):
     """T1-6: no recess; the maroon band thinner, a thin stripe under it."""
-    T.run(k, ax, plane, a, b, ends, zh - 0.18 * H, zh, PAINT, "ochre", 3, 0)
-    T.run(k, ax, plane, a, b, ends, zh - 0.28 * H, zh - 0.25 * H, PAINT, "ochre", 3, 0)
+    T.run(k, ax, plane, a, b, ends, zh - 0.18 * H, zh, BAND, "ochre", 3, 0)
+    T.run(k, ax, plane, a, b, ends, zh - 0.28 * H, zh - 0.25 * H, BAND, "ochre", 3, 0)
 
 
 navy_band.reds = ((0.33, 0.0),)             # (its red, as fractions of H under the header: the panel line's lit px
