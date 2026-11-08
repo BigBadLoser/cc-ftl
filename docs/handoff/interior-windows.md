@@ -652,3 +652,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: control boxes' recess: its side walls a lighter navy (rose 4, 314765; were rose 1, near black 0c0c14:
   the user), and the 2px lip left of it the recess back's navy (rose 2, 24344a; was the cover's grey a9b4c4). Plain
   m10 identical to nv9. nb13.
+- 2026-11-08: control boxes' lip (the recess wall's front, 2px) in the side wall's level (rose 4, lit front 405d84 by the
+  side's 314765; was the back's 24344a, odd in a run: the user). Run base, base, boxes, base, base. nb14.
