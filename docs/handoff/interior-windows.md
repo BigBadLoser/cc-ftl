@@ -96,7 +96,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - `detail()`: splits the piece at the end blocks' inner edges (`BLOCK`); between them the near ramp's blue-plate
   polygons recoloured `GREY` (fGW2; matched by their linear colour, Mesh faces store colours, not names); pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
-  (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 2
+  (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
   px in from the floor's two outer ends (one block across the pockets and the floor in front of the rib, not one per
   pocket) and PAINT_BACK 3 px from its back (top) edge, to its front edge; drawn after the carving or the carve cuts it;
   sw24), back (fGT6), sides and lintel
@@ -174,3 +174,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   each side, 3 px from the back edge. Shown.
 - 2026-11-08: sw24: one paint block across the middle floor (sw23 broke it at the rib: inset at each pocket's side and
   none under the rib). Shown.
+- 2026-11-08: sw25: paint block 2 px more off either side (PAINT_SIDE 4). Shown.
