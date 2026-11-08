@@ -39,7 +39,7 @@ describe('galaxy ship warming', () => {
     const broken = (): Sim => {
       const own = { ...shared };
       const sim = newGame(2, own);
-      own.modules = modules;
+      (own as { modules: object }).modules = modules;
       return sim;
     };
     const warmed = broken();
