@@ -8,7 +8,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
 import { partyJobs, postSearches, spotCheck, tally } from './search';
-import { patrolBoards } from './patrol';
+import { patrolBoards, ranFromInspection } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
@@ -19,14 +19,17 @@ const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !si
 const aboard = (sim: Sim, insp: Inspection): boolean =>
   insp.crew.some((id) => alive(sim, id) && sim.world.has(id, PositionC) && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
 
-/** The player's ship is leaving the node: an inspection under way ends now; leaving while the inspectors are aboard counts as refusing them. */
+/**
+ * The player's ship is leaving the node: an inspection under way ends now; leaving while the inspectors are aboard counts as refusing them, and leaving a
+ * patrol whose inspectors are still on the way counts as running from it.
+ */
 export function abortInspections(sim: Sim): void {
   for (const id of inspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
     if (insp.phase === 'search' || insp.phase === 'settle') {
       refuseConsequences(sim, insp);
       sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
-    }
+    } else if (insp.phase === 'fly' && insp.patrol !== undefined) ranFromInspection(sim, insp.faction, insp.patrol);
     endInspection(sim, id);
   }
 }

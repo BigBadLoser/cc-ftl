@@ -8,7 +8,7 @@ import type { Encounter, Fleet } from '../galaxy/types';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
 import { liveInspection, startInspection } from './start';
-import { InspectionC } from './types';
+import { InspectionC, inspections } from './types';
 
 /**
  * Patrol hails (#138 step 2, docs/DESIGN.md "Contraband inspections in the world"). A navy or corporation patrol whose scan reads contraband aboard
@@ -110,6 +110,22 @@ export function abortPatrolStop(sim: Sim): void {
   const stop = sim.galaxy.patrolStop;
   if (!stop) return;
   delete sim.galaxy.patrolStop;
-  hit(sim, stop.faction, PATROL_RUN_HIT);
-  sim.events.emit({ type: 'patrol.ran', fleet: stop.fleet, faction: stop.faction, chased: false });
+  ranFromInspection(sim, stop.faction, stop.fleet);
+}
+
+/** The patrol fleets held where they are (galaxy/fleets.ts): the one the player stopped for, and each one whose inspectors are out, until it ends. */
+export function inspectingFleets(sim: Sim): Set<number> {
+  const out = new Set<number>();
+  if (sim.galaxy.patrolStop) out.add(sim.galaxy.patrolStop.fleet);
+  for (const id of inspections(sim)) {
+    const fleet = sim.world.get(id, InspectionC)?.patrol;
+    if (fleet !== undefined) out.add(fleet);
+  }
+  return out;
+}
+
+/** Leaving a patrol before its inspectors are aboard (they are still on the way) is running from it: the hit, no chase. */
+export function ranFromInspection(sim: Sim, faction: string, fleet: number): void {
+  hit(sim, faction, PATROL_RUN_HIT);
+  sim.events.emit({ type: 'patrol.ran', fleet, faction, chased: false });
 }
