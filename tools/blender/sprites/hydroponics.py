@@ -327,8 +327,8 @@ def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis", jc="steel"):
     draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
     _frame_legs(k)
     for su in (-1, 1):
-        k.cyl(su * 0.48, 0.1, 0.0, 0.28, 0.04, "dark", sides=20)
-        _vtank(k, su * 0.48, 0.1, 0.04, 0.31, 0.52, on)
+        k.cyl(su * 0.48, 0.0, 0.0, 0.34, 0.04, "dark", sides=24)
+        _vtank(k, su * 0.48, 0.0, 0.04, 0.37, 0.52, on)
     _pump(k, 0.0, 0.26, 0.0, on, s=1.2)
     for su in (-1, 1):
         _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col=pc)       # suction
