@@ -10,7 +10,8 @@ from . import core
 from . import wall3d as T
 from . import walls as W
 from . import wall3d_iwin_def as D
-from .faction.parts import PZ
+from .faction import slate as S
+from .faction.parts import PAINT, PZ
 from .wall3d_iwin import _clip
 
 L = 1 / 32                              # an art px along the wall
@@ -209,6 +210,11 @@ def _chamfers(k, x0, x1, yf):
     zc = z1 - CHAMFER * PZ
     yr = yf + T.FR                                      # (the posts' front)
     m = k.m
+    if x0 > -0.5:                                       # the rail's seam by its left end block, as by the right one
+        ys = yr + S.RAIL_D + PAINT                      # (slate._rail draws that one: its end block's side faces
+        e = -0.5 + S.END_W                              # away there; here it faces the camera, so no line)
+        k.poly([Vector(p) for p in ((e - L, ys, z1), (e, ys, z1), (e, ys, z1 + S.RAIL_H - PZ),
+                                    (e - L, ys, z1 + S.RAIL_H - PZ))], BLUE, 3, Vector((0, 1, 0)), fixed="fGT3")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if not on:
             continue
@@ -229,7 +235,8 @@ def _chamfers(k, x0, x1, yf):
             return u + sd * (z - zc) / PZ * L
         _quad(k, [(u, -yr, zc), (u, yr, zc), (at(z1), yr, z1), (at(z1), -yr, z1)], (sd, 0, -1), D.POST_IN)
         zs = z1 - 3 * PZ                                # (the stripe's top: the rail's shadow over it)
-        for za, zb, lvl in ((zc, zs - PZ, 3), (zs - PZ, zs, 4), (zs, z1, 1)):   # the front, in the bands
+        for za, zb, lvl in ((zc, zs - PZ, 3), (zs - PZ, zs, 4), (zs, zs + PZ, 1), (zs + PZ, z1, 3)):  # the front, in
+            #   the bands as they show beside it: the rail's shadow its lowest px only (the rail over the rest)
             pts = [(u, yr, za), (at(za), yr, za), (at(zb), yr, zb), (u, yr, zb)] if za > zc else \
                   [(u, yr, za), (at(zb), yr, zb), (u, yr, zb)]
             k.poly([Vector(p) for p in pts], BLUE, lvl, Vector((0, 1, 0)))
