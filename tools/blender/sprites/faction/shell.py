@@ -267,9 +267,10 @@ class LookShell(T.Shell):
         if sh:                                          # flat from the wall to its edge in its own tone)
             up = lambda lv: R[min(5, lv + 1)]                                       # noqa: E731
             sb = T.style().shelf_back                   # (as the faces' (_prof): its back px against the wall, its
-            tones = ([((n + 1) / 32, up(v)) for n, v in enumerate(sb)] +           # top, its lit front edge; each a
-                     [(sh - 1 / 32, up(T.style().shelf_lvl)), (sh, up(4))] +      # step lighter than the y face's,
-                     [(d, c) for d, c in tones if d > sh + 1e-9])                  # as the chamfer's plates are)
+            cs = T.style().chamfer_shelf if fam == "wall" else None              # top, its lit front edge; a look's
+            cs = cs or [up(v) for v in sb] + [up(T.style().shelf_lvl), up(4)]     # own names, else each a step
+            tones = ([((n + 1) / 32, cs[n]) for n in range(len(sb))] +             # lighter than the y face's)
+                     [(sh - 1 / 32, cs[-2]), (sh, cs[-1])] + [(d, c) for d, c in tones if d > sh + 1e-9])
         run, ft = self.run, self.foot
         pts, cols = [(0.0, 0.0), (run, 0.0)], [R[0]]
         if ft:
@@ -476,9 +477,9 @@ def _ends(ax, plane, b, ends):
     return endf, end1, ends[1] == "out" and not (endf or end1), ends[0] == "out"
 
 
-def _ramp_chamfer(k, X, Y, C, zs, F, lvl=3):
+def _ramp_chamfer(k, X, Y, C, zs, F, lvl=3, tone=None):
     """Plates on the ramp's chamfer at a corner (X, Y), C along each axis: one step lighter than the ramp (a
-    highlight; lvl: its level), with the toe band and the foot line across it."""
+    highlight; lvl: its level, tone: a palette name instead), with the toe band and the foot line across it."""
     run, ta, f = T.W.skirt_run(), T.style().toe_at, T.ramp_fall()
     zf, nrm, t_0, toe = (lambda t: zs * (1 - t / run)), Vector((zs / (2 * run), zs / (2 * run), 1.0)), 0.02, None
     if f:                                               # a look's own fall under a shelf: the chamfer as its ramps'
@@ -492,7 +493,7 @@ def _ramp_chamfer(k, X, Y, C, zs, F, lvl=3):
     def cq(t):                                          # the chamfer t down its slope: its two edges
         z = zf(t)
         return Vector((X - C + t, Y + t, z)), Vector((X + t, Y - C + t, z))
-    for t0, t1, fam, lv, fx in ((t_0, ta * run, F, lvl, None), (ta * run, run - 0.03, "ochre", 3, toe),
+    for t0, t1, fam, lv, fx in ((t_0, ta * run, F, lvl, tone), (ta * run, run - 0.03, "ochre", 3, toe),
                                 (run - 0.03, run, F, lvl - 1, toe)):
         (a0, b0), (a1, b1) = cq(t0), cq(t1)
         k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lv, nrm, fixed=fx)

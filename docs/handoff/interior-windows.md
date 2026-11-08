@@ -501,3 +501,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the shelf's seam line (its dark back crease) and its lit edge on round the chamfer.
   LookShell._band's shelf: its back px, top and lit edge as the faces' (_prof), each a step lighter than the y face's.
   The chamfer's own wall/slope colour (a shade over the lit face) the user finds off; options A-D shown, waiting. ns15.
+- 2026-11-08: the user picked option C: the chamfer between the lit and shade faces' tones, and its crease and lit edge
+  likewise. navy.NAVY_MID fBT1 (9cacbc) on the chamfer's wall strip (PlateTones "d" cells, the face's corner piece),
+  slope (_ramp_chamfer tone=) and band; Style.chamfer_shelf (new) NAVY_MID_SHELF fBW0, fBT8 (crease), fBT0 (top),
+  fNH1 (lit edge). Existing palette tones: new ones (9ca8bb ..) snapped to these in quantisation, so none added. ns16.

@@ -50,6 +50,8 @@ class Style:
     ramp_px: int = 0                      # the slope's fall a cell in art px, up from the toe (a solid ramp under
                                           # a shelf: the shelf then sits where it meets it); 0: the walls' (RAMP_PX,
                                           # down from the ramp's top)
+    chamfer_shelf: Optional[tuple] = None  # an outer corner's chamfer: its shelf's palette names (its back px
+                                          # as shelf_back, its top, its lit edge); None: each a level over the y face's
     shelf_back: tuple = ()                # ... its back px in these ramp levels, out from the wall (the rest: its own)
     ramp_lvl: Optional[int] = None        # the ramp's plates' level (the first band's); None: 2 (the default walls 3)
     ramp_bands: tuple = ()                # the ramp's plates split in bands down the run, after the first (the

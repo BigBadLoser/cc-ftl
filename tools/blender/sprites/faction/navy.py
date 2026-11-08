@@ -28,6 +28,10 @@ NAVY_SHELF = SHELF + LIP_D          # the ramp's shelf: slate's and the lip's de
 NAVY_FALL = 3                       # the slope's fall a cell (art px): the shelf up at 19 px, a taller slope (the user)
 NAVY_FACE = 2                       # the face's level (the slope's plates a level under, the shelf's top one over):
                                     # the face and slope swapped with the shelf's top (the user; were 3, 2, 2)
+NAVY_MID = "fBT1"                   # an outer corner's chamfer (wall and slope): between the lit and the shade faces'
+                                    # tones (a9b4c4, 8e9cb1): 9cacbc; its shelf likewise (NAVY_MID_SHELF) (the user;
+                                    # existing palette tones: new ones that close snap to these)
+NAVY_MID_SHELF = ("fBW0", "fBT8", "fBT0", "fNH1")   # back px 74849c, 8494ac; top b4bccc; lit edge c9cfd8
 RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
                                     # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -50,14 +54,14 @@ class PlateTones(Feature):
             return T.RAMPS[fam][0][1 if T.style().joint is None else T.style().joint]
         if sp.run - 0.03 > d >= T.style().toe_at * sp.run and not sp.foot:
             return T.RAMPS["ochre"][0][4]
-        return T.RAMPS[fam][0][NAVY_FACE]
+        return NAVY_MID if fam == "wall" else T.RAMPS[fam][0][NAVY_FACE]
 
     def band(self, sp, fam):                            # (a solid ramp's chamfer: as col_skirt colours its cells)
         R, jt, ta = T.RAMPS[fam][0], T.style().joint, T.style().toe_at * sp.run
-        joint = R[1 if jt is None else jt]
+        joint, mid = R[1 if jt is None else jt], NAVY_MID if fam == "wall" else R[NAVY_FACE]
         if sp.foot:
-            return [(0.02, joint), (sp.run, R[NAVY_FACE])]
-        return [(0.02, joint), (ta, R[NAVY_FACE]), (sp.run - 0.03, T.RAMPS["ochre"][0][4]), (sp.run, R[NAVY_FACE])]
+            return [(0.02, joint), (sp.run, mid)]
+        return [(0.02, joint), (ta, mid), (sp.run - 0.03, T.RAMPS["ochre"][0][4]), (sp.run, R[NAVY_FACE])]
 
     def col_face(self, sp, face, x, y, z):
         c = T.Shell.col_face(sp, face, x, y, z)
@@ -66,6 +70,8 @@ class PlateTones(Feature):
         top = r[3] if r else sp.top
         if z < T.lip_heights(sp.zs)[0] + 0.02 or z > top - 0.03:      # (the outline at the shelf's height)
             return c
+        if face == "d" and not (r and r[1] == "hull"):
+            return NAVY_MID
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][NAVY_FACE + (face == "d")]
 
 
@@ -92,9 +98,9 @@ def navy(hull):
         zf = T.lip_heights(zs)[0]                      # the face's foot: down to the ramp's shelf
         T.run(k, ax, plane, a, b, pe, zf - 0.03, zs + 0.06, PAINT, F, NAVY_FACE, 0)     # (from the shelf up)
         if cp:
-            corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE + 1)   # (as the chamfer's
-            #   strip over it: a step lighter than the faces)
-            _ramp_chamfer(k, X, plane, C, zs, F, NAVY_FACE)
+            corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE + 1,   # (as the chamfer's
+                         cols=[NAVY_MID] * 4 if F == "wall" else None)      # strip over it)
+            _ramp_chamfer(k, X, plane, C, zs, F, NAVY_FACE, NAVY_MID if F == "wall" else None)
         rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
         H = rt - zs                                                     # wall, so the far hull's parts line up
         zh = rt - 0.25 * H if full else top                             # the header's foot
@@ -162,7 +168,8 @@ class Navy(Faction):
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT2"), "blue": ("fNT2", "fNT2")},  # (the toe in the red band's tones)
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
-                      shelf=NAVY_SHELF, shelf_lvl=NAVY_FACE + 1, shelf_back=(0, 1),   # (the default's and slate's ramp:
+                      shelf=NAVY_SHELF, shelf_lvl=NAVY_FACE + 1, shelf_back=(0, 1),
+                      chamfer_shelf=NAVY_MID_SHELF,   # (the default's and slate's ramp:
                       #   a flat shelf at the wall, all shelf: no lip on it)
                       ramp_px=NAVY_FALL, seam_wrap=True, ramp_lvl=NAVY_FACE - 1,   # (the slope steeper under the shelf)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
