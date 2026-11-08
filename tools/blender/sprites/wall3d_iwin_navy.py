@@ -16,6 +16,8 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
+SLOT_BACK = 4               # art px: a slot's floor at its back over the foot's top, sloping down to it at the front
+                            # (the user)
 BLOCK_UP = 5                # art px: an end block's top over the wall's top against its post, falling along the wall
                             # to the sill where the sill starts (the user)
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
@@ -151,13 +153,22 @@ def _pockets_x(part):
     return [(o + a * PX, o + b * PX) for a, b in POCKETS]
 
 
+def _slot_z(y):
+    """A slot's floor |y| from the pane (grid): SLOT_BACK over the foot's top at the wall's line, down to it at the
+    tile's edge."""
+    yl, zf = _line(), W.foot()
+    return zf + SLOT_BACK / W.ZART * (0.5 - abs(y)) / (0.5 - yl)
+
+
 def _pocket_cut(k, pa, pb):
     """Take the ramp's front out between pa and pb: everything out past the wall's line (the near side: mesh -y; the
     slot's back in line with the slope's top end, the user) over the slot's floor (the foot's top) and under the sill
     (not the header's tube, out past it high up)."""
     ye, zf, zs = -_line(), W.foot(), _zt()
     inx = [(0, pa, 1), (0, pb, -1)]
-    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zf, -1)],
+    s = (_slot_z(_line()) - zf) / (0.5 - _line())                  # (the floor in mesh y: zf at -0.5, rising inward)
+    floor = ((0.0, s, -1.0), -(zf + 0.5 * s))                       # (kept: under it)
+    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), floor],
                inx + [(1, ye, -1), (2, zs, 1)]]
     for m in (k.m, k.ns):
         if m is None:
@@ -184,7 +195,7 @@ def _pocket_cut(k, pa, pb):
 
 
 def _pocket(k, pa, pb):
-    """A slot's faces: its floor out to the ramp's foot, its back at the wall's line up to the cut over it (the sill,
+    """A slot's faces: its floor (_slot_z: sloped) out to the ramp's foot, its back at the wall's line up to the cut over it (the sill,
     or the ramp's top under an end block: the slot takes the slope there whole), its sides (the section over the
     floor). The near side: grid +y (mesh -y, as _pocket_cut works)."""
     yl, ye, zf, zs, zt, yf = _line(), _front(), W.foot(), _zs(), _zt(), 0.5
@@ -192,18 +203,19 @@ def _pocket(k, pa, pb):
     a, b = max(pa, -0.5), min(pb, 0.5)
     if b - a < 1e-9:
         return
-    _quad(k, [(a, yl, zf), (b, yl, zf), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
+    zk, zx = _slot_z(yl), _slot_z(ye)                   # (the floor at the back, and under the sill's front edge)
+    _quad(k, [(a, yl, zk), (b, yl, zk), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
     for u0, u1, z in ((a, min(b, c0), zt), (max(a, c0), min(b, c1), zs), (max(a, c1), b, zt)):
         if u1 - u0 > 1e-9:
-            _quad(k, [(u0, yl, zf), (u1, yl, zf), (u1, yl, z), (u0, yl, z)], (0, 1, 0), COL["p_back"])
+            _quad(k, [(u0, yl, zk), (u1, yl, zk), (u1, yl, z), (u0, yl, z)], (0, 1, 0), COL["p_back"])
     for u, sd in ((pa, 1), (pb, -1)):
         if not -0.5 < u < 0.5:
             continue
         if c0 - 1e-9 <= u <= c1 + 1e-9:                 # (by the sill: its height, then the slope)
-            _quad(k, [(u, yl, zf), (u, ye, zf), (u, ye, zs), (u, yl, zs)], (sd, 0, 0), COL["p_side"])
-            _quad(k, [(u, ye, zf), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
+            _quad(k, [(u, yl, zk), (u, ye, zx), (u, ye, zs), (u, yl, zs)], (sd, 0, 0), COL["p_side"])
+            _quad(k, [(u, ye, zx), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
         else:                                           # (under an end block: the ramp's section, shelf and slope)
-            _quad(k, [(u, yl, zf), (u, yf, zf), (u, _shelf_end(), _zh()), (u, yl, _zh())], (sd, 0, 0), COL["p_side"])
+            _quad(k, [(u, yl, zk), (u, yf, zf), (u, _shelf_end(), _zh()), (u, yl, _zh())], (sd, 0, 0), COL["p_side"])
 
 
 def _quad(k, pts, out, col):
