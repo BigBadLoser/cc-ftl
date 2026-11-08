@@ -184,12 +184,29 @@ def collar(k):
     ax = (1.0, 0.0, 0.0)
     tube(f, (u - 0.03, 0.0, k.zc), ax, rh, rh, 0.032, "dark", sides=40)     # the step down to the hatch
     disc(f, (u - 0.03, 0.0, k.zc), ax, 0.0, rh, "plate", sides=40)          # the hatch
-    wz = k.zc - rh * 0.12                                                  # its hand wheel: a rim, four spokes, a hub
-    tube(f, (u - 0.03, 0.0, wz), ax, 0.15, 0.15, 0.05, "steelL", sides=20)
-    disc(f, (u + 0.02, 0.0, wz), ax, 0.12, 0.15, "steelL", sides=20)
-    for dv, dz in ((0.13, 0.0), (0.0, 0.13)):
-        k.f.box(u - 0.005, 0.0, wz, 0.04, 0.03 + 2 * dv, 0.03 + 2 * dz, "steelD", base=False)
-    stud(f, (u - 0.03, 0.0, wz), ax, 0.05, 0.06, "steelD", "steelL", sides=12)
+    wz, wr, ww = k.zc - 0.1, 0.24, 0.06                                   # its HAND WHEEL, standing off the hatch:
+    w0, w1 = u - 0.03 + 0.05, u - 0.03 + 0.09                              # a yellow rim (outer and inner walls, a face),
+    tube(f, (w0, 0.0, wz), ax, wr, wr, w1 - w0, "hazY", sides=28)
+    tube(f, (w0, 0.0, wz), ax, wr - ww, wr - ww, w1 - w0, "ochD", sides=28)
+    disc(f, (w1, 0.0, wz), ax, wr - ww, wr, "hazY", sides=28)
+    for i in range(3):                                                     # three spokes to a hub, on posts off the hatch
+        a = math.radians(90 + i * 120)
+        cv, cz = math.cos(a), math.sin(a)
+        spoke = [(w0 + 0.005, 0.0, wz), (w0 + 0.005, (wr - ww / 2) * cv, wz + (wr - ww / 2) * cz)]
+        stud(f, (u - 0.03, (wr - ww / 2) * cv, wz + (wr - ww / 2) * cz), ax, 0.022, 0.05, "steelD", "steelD", sides=6)   # post
+        d = (0.0, spoke[1][1] - spoke[0][1], spoke[1][2] - spoke[0][2])
+        dl = math.hypot(d[1], d[2])
+        side = (0.0, -d[2] / dl * 0.02, d[1] / dl * 0.02)
+        p0, p1 = spoke
+        for du in (0.0, 0.035):
+            f.poly([f.pt(p0[0] + du, p0[1] - side[1], p0[2] - side[2]), f.pt(p1[0] + du, p1[1] - side[1], p1[2] - side[2]),
+                    f.pt(p1[0] + du, p1[1] + side[1], p1[2] + side[2]), f.pt(p0[0] + du, p0[1] + side[1], p0[2] + side[2])],
+                   "steelL" if du else "steelD")
+        for sg in (-1, 1):
+            f.poly([f.pt(p0[0], p0[1] + sg * side[1], p0[2] + sg * side[2]), f.pt(p1[0], p1[1] + sg * side[1], p1[2] + sg * side[2]),
+                    f.pt(p1[0] + 0.035, p1[1] + sg * side[1], p1[2] + sg * side[2]),
+                    f.pt(p0[0] + 0.035, p0[1] + sg * side[1], p0[2] + sg * side[2])], "steelD")
+    stud(f, (u - 0.03, 0.0, wz), ax, 0.065, 0.1, "steelD", "steelL", sides=14)   # the hub
     stud(f, (u - 0.03, 0.0, k.zc + rh * 0.62), ax, 0.09, 0.02, "steelD", "steelD", sides=16)   # a porthole, aft
     stud(f, (u - 0.01, 0.0, k.zc + rh * 0.62), ax, 0.06, 0.006, "glassD", "glassD", sides=16)
 
