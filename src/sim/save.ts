@@ -129,8 +129,9 @@ import { newYard, type YardState } from './yard/types';
  * v104 (patrol hails, #138 step 2): `Encounter.scan` is `{ value }` (a hail to stop), `GalaxyState.patrolStop`, `Fleet.chase`, `Inspection.patrol`.
  * v105 (food and farming, #59): `PlotC` on hydroponics beds, the `cooking` skill and `farming` work priority on crew, meal items.
  * v106 (fighting inspectors, #138 step 3): inspection phase 'fight', outcome 'fought'; `Ship.provoked` 'inspection'.
+ * v107 (hydroponics art, #59): the large bed is 3x2 (was 2x3), so a saved grid's occupancy for it no longer matches.
  */
-export const SAVE_VERSION = 106;
+export const SAVE_VERSION = 107;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
