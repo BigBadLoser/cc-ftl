@@ -1244,6 +1244,8 @@ export interface UiAlert {
   menu?: 'save';
   /** Answers the alert takes itself (a passenger asking to join: Accept, Decline), primary first; each sends its command. */
   actions?: UiAlertAction[];
+  /** A decision the game waits on (an inspector waiting for an answer): no close X, and a dismissal is ignored; it goes once answered. */
+  sticky?: true;
 }
 
 /** One answer on an alert: its label, good (the yes) or bad (the no), and the command it sends. */

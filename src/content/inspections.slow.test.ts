@@ -8,11 +8,11 @@ import { InspectionC, type Inspection } from '../sim/inspect/types';
 import { liveInspection } from '../sim/inspect/start';
 import { abortInspections } from '../sim/inspect/flow';
 import { CarryingC } from '../sim/items/components';
-import { heldItems } from '../sim/items/held';
+import { holdsGoods, spillItems, stackSizeOf } from '../sim/items/stacks';
+import { shipGrid, shipIdOf } from '../sim/regions';
 import { AllegianceC } from '../sim/fight/components';
 import { JobC, PositionC } from '../sim/crew/components';
 import { VehicleC } from '../sim/vehicles/components';
-import { shipIdOf } from '../sim/regions';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
 import { content } from './index';
@@ -181,7 +181,7 @@ describe('station inspections', () => {
   it('a fitted contraband upgrade and goods a crew member carries are found and carried off too', () => {
     let mod = 0;
     let crew = 0;
-    const { sim, id, insp } = inspected(0, (s) => {
+    const { sim, insp } = inspected(0, (s) => {
       mod = s.world.query(ModuleC).find((m) => !!s.content.modules[s.world.get(m, ModuleC)!.def]?.upgradeSlot) as number;
       s.world.get(mod, ModuleC)!.upgrade = 'item.upg_nuke';
     });
@@ -194,7 +194,6 @@ describe('station inspections', () => {
       return insp.phase === 'settle';
     });
     expect(insp.phase).toBe('settle');
-    console.log(JSON.stringify(insp.found), JSON.stringify(sim.world.get(id, VehicleC)!.cargo), JSON.stringify(heldItems(sim).filter((h) => h.item !== 'item.metal').map((h) => [h.item, h.where, h.count])));
     expect(sim.world.get(mod, ModuleC)!.upgrade).toBeUndefined();
     expect(insp.found.find((f) => f.item === 'item.upg_nuke')?.count).toBe(1);
     expect(insp.value).toBeGreaterThanOrEqual(content.items['item.upg_nuke'].price);
@@ -236,5 +235,23 @@ describe('station inspections', () => {
     sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'bribe' });
     run(sim, 1);
     expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 60 }]);
+  });
+
+  it('a bribe is refused with no floor aboard to set the goods down on, and nothing is paid or lost', () => {
+    const { sim, id, insp } = inspected();
+    run(sim, 6000, phaseIs(sim, id, 'settle'));
+    const grid = shipGrid(sim, insp.ship)!;
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+      for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+        if (grid.get('ship', x, y) === insp.ship && holdsGoods(grid, x, y) && !grid.get('item', x, y)) spillItems(sim, insp.ship, x, y, 'item.ice', stackSizeOf(sim, 'item.ice'));
+      }
+    }
+    sim.trade.credits = insp.bribe! + 5;
+    rollBribe(sim, true);
+    sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'bribe' });
+    expect(run(sim, 1)).toContain('command.rejected:inspect.settle:noRoom');
+    expect(sim.trade.credits).toBe(insp.bribe! + 5);
+    expect(sim.world.get(id, VehicleC)!.cargo).toEqual([{ item: STOLEN, count: 10 }]);
+    expect(insp.phase).toBe('settle');
   });
 });

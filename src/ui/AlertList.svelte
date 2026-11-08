@@ -52,7 +52,7 @@
     {:else}
       <button class="go" disabled={toast ? false : !a.subject && !a.report && !a.menu} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
-    <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
+    {#if !a.sticky}<button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>{/if}
     {#if a.actions?.length && !toast && !a.notice}
       <div class="row">
         {#each a.actions as act (act.label)}

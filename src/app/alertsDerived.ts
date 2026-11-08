@@ -15,7 +15,7 @@ import { breakWhat } from './breakText';
 import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 
 /** An alert whose condition holds in the sim right now, keyed as the event-born one is (so the two never double up). */
-export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions'] }
+export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions']; sticky?: true }
 
 /** The kinds `deriveAlerts` covers: a dismissal of one of these stays quiet until its condition clears. */
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
@@ -144,7 +144,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
         ...(insp.bribeFailed ? [] : [{ label: `Bribe ${insp.bribe ?? 0} ₵`, tone: 'good' as const, command: { type: 'inspect.settle' as const, inspection: id, choice: 'bribe' as const } }]),
         { label: 'Refuse', tone: 'bad', command: { type: 'inspect.settle', inspection: id, choice: 'refuse' } },
       ];
-      add({ kind: 'inspect.waiting', key: `iw${id}${insp.bribeFailed ? "b" : ""}`, text: 'Inspector waiting: fine or bribe', subject: crewSubject(sim, lead), actions });
+      add({ kind: 'inspect.waiting', key: `iw${id}${insp.bribeFailed ? "b" : ""}`, text: 'Inspector waiting: fine or bribe', subject: crewSubject(sim, lead), actions, sticky: true });
     } else if (insp.blocked && insp.phase !== 'leave') {
       add({ kind: 'inspect.blocked', key: `ib${id}`, text: `Inspectors can't board: ${insp.name}`, subject: lead !== undefined ? crewSubject(sim, lead) : null });
     }

@@ -266,7 +266,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
   const raise = (id: number, w: Wanted) => {
-    store.update((l) => [{ id, kind: w.kind, text: w.text, subject: w.subject, ...(w.notice ? { notice: w.notice } : {}), ...(w.actions ? { actions: w.actions } : {}) }, ...l]);
+    store.update((l) => [{ id, kind: w.kind, text: w.text, subject: w.subject, ...(w.notice ? { notice: w.notice } : {}), ...(w.actions ? { actions: w.actions } : {}), ...(w.sticky ? { sticky: true as const } : {}) }, ...l]);
     for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
   };
 
@@ -297,6 +297,7 @@ export function createAlerts(sim: Sim): Alerts {
     },
     get: (id) => store.get().find((a) => a.id === id),
     dismiss(id) {
+      if (store.get().find((a) => a.id === id)?.sticky) return; // a decision the game waits on: it goes once answered
       if (keys.get(id) === 'save') saveMuted = true; // dismissed: quiet until a write succeeds
       const shown = store.get().find((a) => a.id === id);
       const key = keys.get(id);

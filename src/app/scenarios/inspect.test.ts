@@ -3,6 +3,8 @@ import { newGame, type Sim } from '../../sim';
 import { content } from '../../content';
 import { InspectionC } from '../../sim/inspect/types';
 import { deriveAlerts } from '../alertsDerived';
+import { createAlerts } from '../alerts';
+import type { UiAlert } from '../../ui/api';
 import { buildCrewLists } from '../crewSnapshot';
 import { inspectCommands, inspectStation } from './inspect';
 
@@ -38,6 +40,18 @@ describe('?scenario=inspect', () => {
       { type: 'inspect.settle', inspection: id, choice: 'bribe' },
       { type: 'inspect.settle', inspection: id, choice: 'refuse' },
     ]);
+    // A decision the game waits on: the alert has no close X, and a dismissal leaves it up.
+    const al = createAlerts(sim);
+    al.sync();
+    let shown: UiAlert[] = [];
+    al.list.subscribe((v) => (shown = v))();
+    const waiting = shown.find((a) => a.kind === 'inspect.waiting');
+    expect(waiting?.sticky).toBe(true);
+    al.dismiss(waiting!.id);
+    for (let i = 0; i < 100; i++) sim.step();
+    al.sync();
+    al.list.subscribe((v) => (shown = v))();
+    expect(shown.some((a) => a.kind === 'inspect.waiting')).toBe(true);
     sim.enqueue(alert!.actions![0]!.command);
     sim.step();
     expect([...deriveAlerts(sim, () => false).values()].some((a) => a.kind.startsWith('inspect.'))).toBe(false);
