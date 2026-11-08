@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, TICK_HZ, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
 import { CrewC, DeadC, DownedC, HealthC, NeedsC, PositionC } from '../sim/crew/components';
 import { boardCrew } from '../sim/vehicles/lifecycle';
+import { POD_HOLD_SEC } from '../sim/vehicles/escape';
 import { lodgingHere } from '../sim/consent/guests';
 import { placementGapError, shipIdOf } from '../sim/regions';
 import { giveItems } from '../sim/story/effects';
@@ -99,6 +100,10 @@ describe('the medical pod', () => {
     expect(shipIdOf(sim, sim.world.get(p.crew!, PositionC)!)).toBe(playerShip(sim));
     expect(lodgingHere(sim, p.crew!)?.by).toBe('passage');
     expect(sim.world.get(p.vehicle!, VehicleC)?.passengers).toEqual([]);
+    // emptied, it holds at the airlock a moment (to be seen docked), then casts off
+    expect(sim.world.get(p.vehicle!, VehicleC)?.state).toBe('docked');
+    step(sim, POD_HOLD_SEC * TICK_HZ + 2);
+    expect(sim.world.get(p.vehicle!, VehicleC)?.state).toBe('flying');
     let stable = false;
     for (let i = 0; i < 20 * 90 && !stable; i++) {
       step(sim);
