@@ -7,7 +7,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
-import { partyJobs, postSearches, spotCheck } from './search';
+import { partyJobs, postSearches, spotCheck, tally } from './search';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
@@ -55,6 +55,7 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       if (sim.tick % PLAN_INTERVAL === 0) spotCheck(sim, id, insp);
       const open = partyJobs(sim, id);
       if (open.length === 0) {
+        tally(sim, id, insp);
         if (!insp.found.length) {
           sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0 });
           return leave(sim, id, insp, 'clean');

@@ -36,8 +36,9 @@ function handBack(sim: Sim, vehicle: number, insp: Inspection): void {
   const v = sim.world.get(vehicle, VehicleC);
   const at = cargoTile(sim, vehicle);
   if (!v || !at || at.shipId !== insp.ship) return;
-  for (const q of v.cargo) spillItems(sim, insp.ship, at.x, at.y, q.item, q.count);
+  for (const q of [...v.cargo, ...(insp.impounded ?? [])]) spillItems(sim, insp.ship, at.x, at.y, q.item, q.count);
   v.cargo = [];
+  insp.impounded = [];
 }
 
 const reject = (sim: Sim, command: string, reason: string): void => sim.events.emit({ type: 'command.rejected', command, reason });

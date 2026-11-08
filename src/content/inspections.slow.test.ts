@@ -212,4 +212,21 @@ describe('station inspections', () => {
     run(back, 6000, phaseIs(back, id, 'settle'));
     expect(back.world.get(id, InspectionC)!.found).toEqual([{ item: STOLEN, count: 10 }]);
   });
+
+  it('more contraband than their hold takes: the hold is filled, the rest impounded where it lies, each unit counted once; a bribe hands it all back', () => {
+    const { sim, id, insp } = inspected(60);
+    run(sim, 8000, phaseIs(sim, id, 'settle'));
+    expect(insp.phase).toBe('settle');
+    const hold = content.vehicles['vehicle.shuttle']!.cargo!;
+    expect(sim.world.get(id, VehicleC)!.cargo).toEqual([{ item: STOLEN, count: hold }]);
+    expect(insp.impounded).toEqual([{ item: STOLEN, count: 60 - hold }]);
+    expect(insp.found).toEqual([{ item: STOLEN, count: 60 }]);
+    expect(insp.value).toBe(60 * content.items[STOLEN].price);
+    expect(contrabandAboard(sim)).toEqual([]);
+    sim.trade.credits = insp.bribe! + 5;
+    rollBribe(sim, true);
+    sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'bribe' });
+    run(sim, 1);
+    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 60 }]);
+  });
 });

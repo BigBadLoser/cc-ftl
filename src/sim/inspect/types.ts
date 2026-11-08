@@ -27,8 +27,10 @@ export interface Inspection {
   crew: number[];
   /** Search jobs still posted (job entities). */
   jobs: number[];
-  /** What they found and took (by item id), and its worth at base prices. */
+  /** What they found and took (by item id), and its worth at base prices: tallied when the search ends (the hold and `impounded`). */
   found: ItemQty[];
+  /** Contraband found beyond the room in the shuttle's hold: taken where it was found, without being carried (handed back with a bribe). */
+  impounded?: ItemQty[];
   value: number;
   /** The fine and the bribe, set when the search ends with something found. */
   fine?: number;
