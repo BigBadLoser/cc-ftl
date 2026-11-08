@@ -1,6 +1,7 @@
 import { galaxyIndex, nodeOf, playerShip, type Command, type Sim } from '../../sim';
 import type { Scenario } from './types';
 import { fightWhenAboard } from './inspect';
+import { afterTicks } from './wait';
 
 /** The node the scenario's hop goes to: the first neighbour with no structures (room for the patrol beside the ship), else the first. */
 export function patrolNode(sim: Sim): string | undefined {
@@ -30,8 +31,8 @@ export const patrol: Scenario = ({ sim, params, dispatch, setSpeed }) => {
   const node = patrolNode(sim);
   if (!node) return;
   setSpeed(1);
-  setTimeout(() => {
+  afterTicks(sim, 10, () => {
     for (const cmd of patrolCommands(sim, node, { clean: params.has('clean') })) dispatch(cmd);
     if (params.has('fight')) fightWhenAboard(sim, dispatch);
-  }, 300);
+  });
 };

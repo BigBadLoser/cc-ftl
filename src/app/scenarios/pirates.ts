@@ -1,6 +1,7 @@
 import { playerShip, type Command, type Sim } from '../../sim';
 import { patrolNode } from './patrol';
 import type { Scenario } from './types';
+import { afterTicks } from './wait';
 
 /** Credits, fuel and a full drive, a pirate fleet waiting at `node` (hunters with `hunt`), and the jump there. */
 export function piratesCommands(sim: Sim, node: string, opts: { faction?: string; hunt?: boolean; broke?: boolean } = {}): Command[] {
@@ -24,7 +25,7 @@ export const pirates: Scenario = ({ sim, params, dispatch, setSpeed }) => {
   if (!node) return;
   setSpeed(1);
   const opts = { faction: params.get('faction') ?? 'pirates', hunt: params.has('hunt'), broke: params.has('broke') };
-  setTimeout(() => {
+  afterTicks(sim, 10, () => {
     for (const cmd of piratesCommands(sim, node, opts)) dispatch(cmd);
-  }, 300);
+  });
 };

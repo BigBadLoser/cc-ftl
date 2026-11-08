@@ -1,6 +1,7 @@
 import { holdDeparture, loseStrandedDrones } from '../drones/recall';
 import { settleLosses } from './jobs';
-import { ShipC } from '../combat/components';
+import { CombatC, ShipC } from '../combat/components';
+import { refreshCruise } from '../combat/cruise';
 import { factionsHostile } from '../combat/factions';
 import { liftShip } from '../sector/packet';
 import { newSectorGrid } from '../stamp';
@@ -163,6 +164,8 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim, held: 'interdicted' | 'h
   if (sim.sector.state === 'active') {
     const me = playerShipInfo(sim) as NonNullable<ReturnType<typeof playerShipInfo>>;
     if (hostilesPresent(sim) > 0) spendCharge(sim, FTL_CHARGE_SEC, me.id);
+    const combat = sim.world.get(me.id, CombatC);
+    if (combat) refreshCruise(sim, me.id, combat); // fresh evade figures for the trip on (#367)
     packet = liftShip(sim, me.id, { withDocked: false });
   }
   const hostile = hostilesPresent(sim) > 0;

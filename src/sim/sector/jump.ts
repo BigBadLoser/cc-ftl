@@ -2,6 +2,8 @@ import { SECTOR_HEIGHT, SECTOR_WIDTH } from '../tuning';
 import type { Sim } from '../sim';
 import { archiveSector, restoreArchive } from './archive';
 import { liftShip } from './packet';
+import { CombatC } from '../combat/components';
+import { refreshCruise } from '../combat/cruise';
 import type { WithDocked } from './members';
 
 /**
@@ -11,6 +13,9 @@ import type { WithDocked } from './members';
  * teleport) validate and pay first.
  */
 export function enterHyperspace(sim: Sim, ship: number, withDocked: WithDocked = false): void {
+  // The trip's evade odds read the cruise figures from the packet: take them fresh, not from the helm's last refresh (#367).
+  const combat = sim.world.get(ship, CombatC);
+  if (combat) refreshCruise(sim, ship, combat);
   const packet = liftShip(sim, ship, { withDocked });
   // Leaving ends any fight here (the combat system does not run in hyperspace to say so).
   if (sim.sector.inCombat) sim.events.emit({ type: 'combat.ended' });

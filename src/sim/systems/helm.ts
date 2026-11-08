@@ -1,6 +1,4 @@
 import { CombatC, IonC, ShipC } from '../combat/components';
-import { CrewC, PositionC } from '../crew/components';
-import { isIncapacitated } from '../crew/helpers';
 import { overchargeActive } from '../combat/heat';
 import { OVERCHARGE_ENGINE_EVASION } from '../combat/heatTuning';
 import { mannedConsole, skillOf } from '../combat/operators';
@@ -9,9 +7,9 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EVASION_CAP, FTL_CHARGE_SEC, SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from '../crew/xp';
-import { shipIdOf } from '../regions';
 import { modulesOn, type DefTest } from '../modules/byShip';
 import { settleDeparture, settleOrder } from '../ftl/order';
+import { refreshCruise } from '../combat/cruise';
 
 /**
  * Evasion and the FTL drive. Both need a pilot at a powered helm. Evasion is the sum of powered engines'
@@ -37,7 +35,7 @@ export function helmSystem(sim: Sim): void {
     const boost = pilot ? 1 + SKILL_STEP * skill : 0;
     combat.pilot = skill;
     combat.evasion = Math.min(EVASION_CAP, engines * boost + (pilot && engines > 0 && overchargeActive(combat, 'engines') ? OVERCHARGE_ENGINE_EVASION : 0));
-    if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) cruise(sim, id, combat);
+    if (ship.faction === 'player' && sim.tick % CRUISE_EVERY === 0) refreshCruise(sim, id, combat);
     // Piloting XP only while the helm matters: evading in a fight, or the drive actually charging. A seated pilot with a full drive in peacetime learns nothing.
     if (pilot && engines > 0 && (sim.sector.inCombat || combat.ftl < FTL_CHARGE_SEC)) grantXp(sim, pilot.crew, 'piloting', XP_PER_WORK_SEC / TICK_HZ);
     if (pilot && engines > 0) combat.ftl = Math.min(FTL_CHARGE_SEC, combat.ftl + boost / TICK_HZ);
@@ -47,36 +45,6 @@ export function helmSystem(sim: Sim): void {
 }
 
 const isEngine: DefTest = (d) => !!d.engine;
-const isHelmOrEngine: DefTest = (d) => d.console === 'helm' || !!d.engine;
 
 /** How often (ticks) a player ship's cruise figures are refreshed. */
 const CRUISE_EVERY = 10;
-
-/**
- * The evade figures of a ship under way (see `Combat.cruisePilot`): the best piloting skill among the crew on their feet aboard, and the powered engines
- * of an intact, powered helm's ship boosted by it. With a manned helm the combat figures are used instead.
- */
-function cruise(sim: Sim, id: number, combat: { cruisePilot: number; cruiseEvasion: number }): void {
-  combat.cruisePilot = 0;
-  combat.cruiseEvasion = 0;
-  if (sim.world.get(id, ShipC)?.state !== 'active') return;
-  let helm = false;
-  let engines = 0;
-  for (const mid of modulesOn(sim, id, isHelmOrEngine)) {
-    const m = sim.world.get(mid, ModuleC);
-    const def = m && sim.content.modules[m.def];
-    if (!m || !def || !m.powered || m.hp <= 0 || sim.world.has(mid, IonC)) continue;
-    if (def.console === 'helm') helm = true;
-    if (def.engine) engines += Math.abs(def.power ?? 0) * def.engine.evasionPerPower;
-  }
-  if (!helm || engines <= 0) return;
-  let best = 0;
-  for (const cid of sim.world.query(CrewC)) {
-    const pos = sim.world.get(cid, PositionC);
-    if (!pos || shipIdOf(sim, pos) !== id || isIncapacitated(sim, cid)) continue;
-    if (sim.world.get(cid, CrewC)?.activity === 'sleeping') continue;
-    best = Math.max(best, skillOf(sim, cid, 'piloting'));
-  }
-  combat.cruisePilot = best;
-  combat.cruiseEvasion = Math.min(EVASION_CAP, engines * (1 + SKILL_STEP * best));
-}
