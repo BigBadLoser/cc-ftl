@@ -273,11 +273,13 @@ CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor,
 
 
 SPLIT_D = 1.2 / 39.19                # the split plates sunk a px into the slope (the user)
+SPLIT_BACK = 0.1                     # their hole back over the shelf's top and on through the toe (the shelf's top and the
+                                     # whole red band sunk with them: the user)
 
 
 def navy_split(plate, u0, u1, run_, ax="y", fam="wall", hole=None, **_):
     """B1-3 (ref 03): two darker plates split down the middle, sunk a px into the slope over the hole the shell leaves
-    (its "ramp_hole": the field from the shelf's edge to the toe), the cut's walls round them; the red band on them
+    (its "ramp_hole": the field from over the shelf down through the toe), the cut's walls round them; the red band on them
     a level darker. Without the hole (a plain slope): two plates on it, 0.04 .. 0.66 of the run, a level under it."""
     g = LINE / 2
     if not hole:
@@ -291,7 +293,8 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", hole=None, **_):
     q = lambda a, b, c, e: [(a, c), (b, c), (b, e), (a, e)]             # noqa: E731
     for p0, p1 in ((o0, uc - g), (uc + g, o1)):
         plate(q(p0, p1, d0, db), -SPLIT_D, 1, PAINT, fixed=fx)          # (its sides the cut's walls, up to the slope)
-        plate(q(p0, p1, db, d1), -SPLIT_D, 1, PAINT, f="ochre")
+        plate(q(p0, p1, db, d1), -SPLIT_D, 1, -SPLIT_D, f="ochre")         # (no walls: at the foot its front one
+        #   read as a dark line along the band's foot)
     plate(q(uc - g, uc + g, d0, d1), -SPLIT_D + 0.002, 0, -SPLIT_D + 0.002, fixed="fNW7")   # the seam between them
 
 
@@ -300,4 +303,4 @@ NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_ho
              #   yet: the user; its code kept)
              Design("recessed", middle=navy_recessed, face_holes=lipped_holes), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
-              Design("split plates", ramp=navy_split, ramp_hole=(0.0, 1.0, 0.0, 0.03)))
+              Design("split plates", ramp=navy_split, ramp_hole=(SPLIT_BACK, 1.0, 0.0)))

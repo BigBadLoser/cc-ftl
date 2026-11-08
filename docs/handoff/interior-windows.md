@@ -705,3 +705,7 @@ Marked ref (both layers, numbered): scratchpad
   RampHoles takes a 4th, the hole that far short of the foot, the toe kept), the plates SPLIT_D under it with their
   sides as the cut's walls; grey a shade darker (fNW5 y / fNW6 x), the red a shade darker (ochre 1); the middle seam
   fNW7 (reads faint: 1 px under AA). Plain m10 identical. nq7.
+- 2026-11-08: split ramp (the user: the top face not darker or sunk, the red only half): its hole back over the shelf's
+  top (SPLIT_BACK 0.1) and on through the toe (ramp_hole (SPLIT_BACK, 1, 0); RampHoles' toe-margin field reverted,
+  unused): the shelf's top and the whole red band sunk and darkened with the plates; the red part without walls (its
+  front one read as a dark line along the foot). nq9.
