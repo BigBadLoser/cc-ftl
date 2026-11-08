@@ -11,6 +11,7 @@ from .modkit import K
 from .research_kit import bar, ring
 from .research_r3 import _pane
 from .research_r4 import slate
+from .research_r6 import stack
 from .research_r7 import bench, l2a_holo
 
 FU, FV = -0.98, 0.36              # the front-left tile's unit: centre u, v
@@ -18,15 +19,11 @@ G, F = "resGold", "resGoldF"
 
 
 def _drawer_front(k, u, v, z, w, h, face="v"):
-    """A drawer front with a label plate and a pull, on the +v face (face 'v') or the +u face (face 'u')."""
+    """One drawer front on the +v face at v (face 'v') or the +u face at u (face 'u'); see stack."""
     if face == "v":
-        k.box(u, v, z, w, 0.02, h, "lvWS")
-        k.box(u - w * 0.25, v + 0.015, z + h * 0.35, w * 0.2, 0.02, 0.04, "plate")
-        k.box(u + w * 0.25, v + 0.02, z + h * 0.3, w * 0.16, 0.025, 0.03, "steelD")
+        stack(k, "v", u, v, w, z, z + h, 1)
     else:
-        k.box(u, v, z, 0.02, w, h, "lvWS")
-        k.box(u + 0.015, v + w * 0.25, z + h * 0.35, 0.02, w * 0.2, 0.04, "plate")
-        k.box(u + 0.02, v - w * 0.25, z + h * 0.3, 0.025, w * 0.16, 0.03, "steelD")
+        stack(k, "u", v, u, w, z, z + h, 1)
 
 
 def _fragment(k, u, v, z, s, rz):
@@ -45,8 +42,7 @@ def _return(k, items=True, joined=False):
     sv, cv = v1 - v0, (v0 + v1) / 2
     k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
     k.box(FU, cv, 0.08, 0.98, sv, H - 0.08, "lvW2", top="lvW")
-    for i in range(3):                                                                # drawers toward the chair
-        _drawer_front(k, FU + 0.5, cv + 0.05, 0.12 + i * 0.16, 0.6, 0.13, face="u")
+    stack(k, "u", cv + 0.05, FU + 0.49, 0.6, 0.14, H - 0.1, 3)                        # drawers toward the chair
     k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvWS")                           # a panel on its end
     if not items:
         return

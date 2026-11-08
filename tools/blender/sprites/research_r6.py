@@ -41,18 +41,40 @@ class Table:
         self.put(0.0, -d / 2 + 0.03, -0.04, w - 0.06, 0.06, 0.08, "lvW2", top="lvW")
 
 
-def drawers(k, u, n=4, top=0.66, skip=()):
-    """A drawer bank: the cabinet section, n drawers with label plates and pulls on its front (none for the drawers in
-    skip, numbered from the bottom: they are drawn open elsewhere)."""
-    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
-    for i in range(n):
+GAP = 0.035                       # between drawer fronts: wide enough to draw as a clean line
+
+
+def slots(n, z0, z1, g=GAP):
+    """n drawers stacked from z0 to z1: [(z, h)] from the bottom."""
+    h = (z1 - z0 - (n - 1) * g) / n
+    return [(z0 + i * (h + g), h) for i in range(n)]
+
+
+def stack(k, face, c, p, w, z0, z1, n, skip=()):
+    """Drawer fronts on a cabinet face, drawn as colour (any step out of the face under a px dots its edges): a shaded
+    backing whose gaps between the fronts read as lines, the fronts in the cabinet's cream, a dark pull on each. face
+    'v': the face is the plane v = p facing +v, centred on u = c; 'u': the plane u = p facing +u, centred on v = c.
+    No front for the drawers in skip (from the bottom: drawn open elsewhere)."""
+    def put(d, z, a, h, col):                       # d out from the face, a wide, h tall
+        if face == "v":
+            k.box(c, p + d, z, a, 0.006, h, col)
+        else:
+            k.box(p + d, c, z, 0.006, a, h, col)
+    put(0.0, z0 - GAP, w + 2 * GAP, z1 - z0 + 2 * GAP, "lvWS")
+    for i, (z, h) in enumerate(slots(n, z0, z1)):
         if i in skip:
             continue
-        z = 0.1 + i * (top - 0.14) / n
-        h = (top - 0.14) / n - 0.02
-        k.box(u, -0.155, z, 0.86, 0.02, h, "lvWS")
-        k.box(u - 0.2, -0.14, z + h * 0.35, 0.16, 0.02, 0.04, "plate")
-        k.box(u + 0.2, -0.14, z + h * 0.3, 0.12, 0.025, 0.03, "steelD")
+        put(0.003, z, w, h, "lvW2")
+        put(0.006, z + h * 0.55, min(0.26, w * 0.4), 0.04, "gm")
+
+
+BANK = (0.14, 0.58)               # a drawer bank's drawers: bottom and top
+
+
+def drawers(k, u, n=4, top=0.66, skip=()):
+    """A drawer bank: the cabinet section and n drawers on its front (see stack)."""
+    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
+    stack(k, "v", u, -0.16, 0.8, BANK[0], BANK[1] if top == 0.66 else top - 0.08, n, skip)
 
 
 def jar(k, u, v, z, inner, r=0.085, h=0.22):
