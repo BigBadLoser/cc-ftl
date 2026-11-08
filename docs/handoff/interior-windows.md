@@ -667,3 +667,5 @@ Marked ref (both layers, numbered): scratchpad
   it. Plain m10 and boxes a3 identical. nl1 (recessed), nl2 (lockers).
 - 2026-11-08: the locker (the user): its top 4 px down, then a 4 px slope (drM) back to the recess's back (_box takes a
   top chamfer ct); the seam halfway up its front, full width (drD line, drM lit row under). nl3.
+- 2026-11-08: the locker (the user): its top 2 px further down (6 in all, the 4 px slope kept), the handle 3 px further
+  down, its top front edge lit (a drL row), its foot's edge dark (a drD row). nl4.
