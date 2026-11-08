@@ -27,7 +27,7 @@ import { warmNebula } from './starmapNebula';
 import { buildStarmap, emptyStarmap, planStarmapRoute, starmapStatus } from './starmapSnapshot';
 import { PREFETCH_BOOST_BUDGET_MS, PREFETCH_BOOST_MS, PREFETCH_EVERY, prefetchGalaxy } from './galaxyPrefetch';
 import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute, UiSellGood } from '../ui/starmapApi';
-import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
+import { buildDeploy, buildJumpWarnings, deployError, deployKey as deployKeyOf } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
@@ -457,13 +457,12 @@ export function createBridge(sim: Sim): Bridge {
       starmap.set({ ...cur, ...st });
     }
   };
-  /** The deploy picker's data, built once when a ship starts waiting (the sector is frozen meanwhile). */
+  /** The deploy picker's data, rebuilt only when what it reads changes (the sector is frozen while a ship waits). */
   const refreshDeploy = () => {
-    const waiting = sim.sector.state === 'deploying' && !!sim.sector.packet;
-    const key = waiting ? `${sim.sector.node}:${sim.tick}` : '';
+    const key = deployKeyOf(sim);
     if (key === deployKey) return;
     deployKey = key;
-    deploy.set(waiting ? buildDeploy(sim) : null);
+    deploy.set(key ? buildDeploy(sim) : null);
   };
   const applySpeed = (speed: Speed) => {
     loop?.setSpeed(speed);

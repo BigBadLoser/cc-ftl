@@ -1,5 +1,5 @@
 import { CrewC, ShipC, VehicleC, isEventNode, jumpWarnings, nodeOf, type Sim } from '../sim';
-import { placementGapError, regions } from '../sim/regions';
+import { asteroidParts, placementGapError, regions } from '../sim/regions';
 import { PLAYER_START } from '../sim/tuning';
 import type { UiDeploy, UiJumpWarnings } from '../ui/starmapApi';
 
@@ -24,6 +24,23 @@ function suggest(sim: Sim): { x: number; y: number } | null {
     }
   }
   return best ? { x: best.x, y: best.y } : null;
+}
+
+/**
+ * Everything `buildDeploy` reads, as one string ('' when no ship is waiting): the node, the sector's size, the waiting packet, every
+ * ship's rectangle, name and faction, and the asteroid rock (the gap rule's obstacles). The bridge rebuilds the picker only when
+ * it changes, not every tick (#154): the sector is frozen while a ship waits, but `sim.tick` still counts.
+ */
+export function deployKey(sim: Sim): string {
+  const p = sim.sector.packet;
+  if (sim.sector.state !== 'deploying' || !p) return '';
+  const parts = [sim.sector.node, sim.sector.width, sim.sector.height, p.w, p.h];
+  for (const r of regions(sim)) {
+    const s = sim.world.get(r.ship, ShipC);
+    parts.push(r.ship, r.bbox.x, r.bbox.y, r.bbox.w, r.bbox.h, s?.name ?? '', s?.faction ?? '');
+  }
+  for (const a of asteroidParts(sim)) parts.push(a.x, a.y, a.w, a.h);
+  return JSON.stringify(parts);
 }
 
 /** The deploy picker's data: the sector, the waiting ship's size, a suggested spot and the ships already there. Null unless a ship is waiting. */
