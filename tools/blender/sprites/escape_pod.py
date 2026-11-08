@@ -156,20 +156,13 @@ def body(k):
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.84, ln * 0.84 + 0.035, ln]          # (the seam runs above the porthole)
     mats = [HULL_D, HULL, HULL, HULL_D, HULL]
-    sa, sb, half = PACK[0], PACK[1] * ln, PACK[2]
-
-    def ring(s0, s1, g, m):                                                 # open under the drive pack, so its
-        if s0 >= sa and s1 <= sb:                                           # thrusters' bores run deep (the pack
-            sector(k, s0, s1, 90 + half, 450 - half, g, m, m, ds=s1 - s0)   # covers the gap)
-        else:
-            k.cyl(s0, s1, k.r(s0) * g, k.r(s1) * g, m)
     for (a, b), m in zip(zip(marks, marks[1:]), mats):
         n = max(1, int((b - a) / 0.06))
         for i in range(n):
-            ring(a + (b - a) * i / n, a + (b - a) * (i + 1) / n, 1.0, m)
+            s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
+            k.cyl(s0, s1, k.r(s0), k.r(s1), m)
     _g("band")
-    for i in range(4):
-        ring(0.06 + 0.06 * i, 0.12 + 0.06 * i, 1.008, BAND)
+    k.cyl(0.06, 0.3, k.r(0.06) * 1.008, k.r(0.3) * 1.008, BAND)
 
 
 def collar(k):
@@ -307,19 +300,18 @@ def rcs(k):
 
 
 PACK = (0.06, 0.8, 32, 0.08)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
-BORE = (0.13, 0.2, 0.09)      # the thrusters' bores: radius, depth into the pack, how far the cowl stands out of it
+NOZZLE = (0.06, 0.15, 0.17)   # the thrusters' bells: throat radius, mouth radius, length out of the pack
+CANT = 0                      # the bells point aft, canted this far (degrees) down toward the heat shield
 
 
 def drive(k, lit):
     """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness with its edges rolled
-    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
-    slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to the
-    slab (the hull is open under the pack, so it runs deep), a round cowl standing out of the cut, a short flared bell inside running
-    up to the mouth, its inner wall and throat lit."""
+    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent slots. Two thruster
+    BELLS stand square out of it on steel collars, flaring from the throat to a light lip, their inner skin and throat
+    lit while it flies."""
     _g("drive")
     f, ln = k.f, k.v["length"]
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
-    br, depth, out = BORE
 
     def ease(d, w):                                                         # 0 at an edge, 1 once w in from it
         x = min(1.0, max(0.0, d / w))
@@ -329,35 +321,29 @@ def drive(k, lit):
         along = ease(s - sa, 0.06) * ease(sb - s, 0.06)
         across = ease(half - abs(t - 90), 6.0)
         return 1.02 + extra + bump * along * across
-    sb_ = sa + 0.27
-    mouths = []                                                             # (centre on the slab, its normal)
+    sb_ = sa + 0.34
+    mouths = []                                                             # the bells' feet: (centre on the slab, normal)
     for t in (90 - 16, 90 + 16):
-        _, n = k.on(sb_, t)
         r, th = k.r(sb_) * g(sb_, t), math.radians(t)
+        cant = math.radians(CANT)                                           # aft, canted down toward the heat shield
+        n = (-math.sin(cant), math.cos(th) * math.cos(cant), math.sin(th) * math.cos(cant))
         mouths.append(((k.u(sb_), r * math.cos(th), k.zc + r * math.sin(th)), n))
-
-    def hole(u, v, z):                                                      # a cell near a mouth, measured across the slab
-        for c, n in mouths:
-            d = (u - c[0], v - c[1], z - c[2])
-            along = sum(d[i] * n[i] for i in range(3))
-            if math.sqrt(max(0.0, sum(x * x for x in d) - along * along)) < br + 0.03:
-                return True
-        return False
-    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.025, skip=hole)
+    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.025)
     sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
     for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
         for s0 in (0.6, 0.67):
             sector(k, s0 * ln, s0 * ln + 0.04, t - 5, t + 5, lambda s, tt: g(s, tt, 0.006), "dark", "dark", ds=0.02)
-    for c, n in mouths:                                                     # each bore runs in square to the slab
+    rt, rm, ln_ = NOZZLE
+    prof = [(ln_ * i / 6, rt + (rm - rt) * (i / 6) ** 1.8) for i in range(7)]   # the bell's flare, throat to mouth
+    for c, n in mouths:                                                     # each bell stands square out of the slab
         def at(d):
             return tuple(c[i] + n[i] * d for i in range(3))
-        tube(f, at(-depth), n, br, br, depth + out, "steelD", sides=20)      # its wall
-        disc(f, at(-depth), n, 0.0, br, "dark", sides=20)                   # its floor
-        tube(f, at(-0.03), n, br + 0.07, br + 0.06, out + 0.03, "dark", sides=24)   # a round cowl standing out of the cut
-        disc(f, at(out), n, br, br + 0.06, "steelD", sides=24)              # its lip
-        tube(f, at(-depth), n, 0.05, br - 0.02, depth + out - 0.02, HULL_K)  # the bell, throat to mouth
-        tube(f, at(-depth + 0.005), n, 0.04, br - 0.035, depth + out - 0.03, GLOW if lit else "dark")   # its inner wall
-        disc(f, at(-depth + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
+        stud(f, at(-0.06), n, rt + 0.06, 0.09, "steel", "steelL", sides=20)  # its mount, a collar sunk in the slab
+        for (x0, r0), (x1, r1) in zip(prof, prof[1:]):
+            tube(f, at(0.03 + x0), n, r0, r1, x1 - x0, "plate", sides=20)  # the bell's outer skin
+            tube(f, at(0.03 + x0 + 0.004), n, r0 - 0.018, r1 - 0.018, x1 - x0, GLOW if lit else "steelD", sides=20)
+        disc(f, at(0.03 + ln_), n, rm - 0.02, rm, "plate", sides=20)       # the lip
+        disc(f, at(0.034), n, 0.0, rt, "arc" if lit else "dark", sides=12)  # the throat
 
 
 def pod(heading, variant="h", state="fly", beacon_on=False):
