@@ -221,6 +221,17 @@ def _base_orig(k, on):
     _screen(k, 0.5, 0.3, on)
 
 
+def _frame_legs(k, us=(-1, 1), plate=True):
+    """Grey corner legs that carry the canopy frame down to the floor, a navy apron under the sill between them, and
+    a low navy floor plate: the structure that holds the bed up."""
+    if plate:
+        _prism(k, _cham(0, 0, 1.875, 0.8125, 0.02), 0.0, 0.04, "tNavy", top="tNavyL")
+    _ring(k, BODY, _cham(0, 0, 1.8125, 0.75, 0.02), 0.48, 0.08, "tNavy", top="tNavyL")
+    for su in us:
+        for sv in (-1, 1):
+            k.box(su * 0.921875, sv * 0.390625, 0.0, 0.09375, 0.09375, 0.56, "tFrame", top="tFrameL")
+
+
 # ---- plumbing: pipes, valves, tanks, pumps -----------------------------------------------------------------------------
 PIPE, PIPE_R = "sole", 0.035
 
@@ -300,8 +311,9 @@ def _base_tower(k, on):
     pipe runs out of the tank along the front with a valve, to a pump lying along the body."""
     _prism(k, _cham(-0.3125, 0, 1.25, 0.8125, 0.03), 0.0, 0.08, "dark")
     _prism(k, _cham(-0.3125, 0, 1.3125, 0.875, 0.02), 0.08, 0.52, "tNavy", top="tNavyL")
-    k.cyl(0.66, 0.1, 0.0, 0.27, 0.04, "dark", sides=20)
-    _vtank(k, 0.66, 0.1, 0.04, 0.3, 0.52, on)
+    _frame_legs(k, us=(1,), plate=False)
+    _prism(k, _cham(0.66, 0, 0.5, 0.8125, 0.02), 0.0, 0.04, "tNavy", top="tNavyL")         # the tank's plate
+    _vtank(k, 0.64, 0.08, 0.04, 0.28, 0.44, on)
     zm, vm = 0.4, FV + 0.05
     _pipe(k, [(0.66, 0.35, zm), (0.66, vm, zm), (-0.84, vm, zm), (-0.84, vm, 0.28)], r=0.035)
     _valve(k, 0.25, vm, zm)
@@ -317,15 +329,15 @@ def _base_tower(k, on):
 def _base_twin(k, on):
     """A tank under each plant: two standing white tanks on dark feet in front of a navy back, a pump between them
     on the floor drawing from both and feeding a riser with a valve up into the tray."""
-    _prism(k, _cham(0, -0.25, 1.875, 0.375, 0.02), 0.0, 0.56, "tNavy", top="tNavyL")         # the back
+    _prism(k, _cham(0, -0.25, 1.875, 0.375, 0.02), 0.04, 0.44, "tNavy", top="tNavyL")        # the back
+    _frame_legs(k)
     for su in (-1, 1):
-        k.cyl(su * 0.5, 0.1, 0.0, 0.29, 0.04, "dark", sides=20)
-        _vtank(k, su * 0.5, 0.1, 0.04, 0.32, 0.52, on)
-    _pump(k, 0.0, 0.28, 0.0, on, s=1.2)
+        _vtank(k, su * 0.47, 0.08, 0.04, 0.3, 0.44, on)
+    _pump(k, 0.0, 0.28, 0.04, on, s=1.1)
     for su in (-1, 1):
-        _pipe(k, [(0.0, 0.28, 0.1), (su * 0.3, 0.28, 0.1)])
-    _pipe(k, [(0.0, 0.28, 0.29), (0.0, 0.28, 0.56)])
-    _valve(k, 0.0, 0.28, 0.44)
+        _pipe(k, [(0.0, 0.28, 0.12), (su * 0.27, 0.28, 0.12)])
+    _pipe(k, [(0.0, 0.28, 0.3), (0.0, 0.28, 0.48)])
+    _valve(k, 0.0, 0.28, 0.4)
 
 
 BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin}
