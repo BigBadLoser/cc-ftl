@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AirlockC, CrewC, ShipC, TraderC, contrabandAboard, deserialize, newGame, serialize, storageAdd, type Sim } from '../sim';
 import { ModuleC } from '../sim/modules/components';
 import { SuitC } from '../sim/eva/components';
-import { INSPECT_BRIBE_CHANCE } from '../sim/blackmarket/tuning';
+import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE } from '../sim/blackmarket/tuning';
 import { scanPending } from '../sim/blackmarket/scan';
 import { InspectionC, type Inspection } from '../sim/inspect/types';
 import { liveInspection } from '../sim/inspect/start';
@@ -51,10 +51,11 @@ const phaseIs = (sim: Sim, id: number, p: Inspection['phase']) => () => sim.worl
 describe('station inspections', () => {
   it('inspectors come aboard, search, carry the contraband to their shuttle and wait; the fine settles it', () => {
     const { sim, id, insp } = inspected();
-    expect(scanPending(sim)).toBe(true);
+    expect(scanPending(sim)).toBe(false); // on their way: trade waits only while they search or wait for an answer
     const phases = new Set<string>();
     run(sim, 6000, () => (phases.add(insp.phase), insp.phase === 'settle'));
     expect([...phases]).toEqual(['fly', 'search', 'settle']);
+    expect(scanPending(sim)).toBe(true);
     expect(insp.found).toEqual([{ item: STOLEN, count: 10 }]);
     expect(sim.world.get(id, VehicleC)!.cargo).toEqual([{ item: STOLEN, count: 10 }]);
     expect(contrabandAboard(sim)).toEqual([]);
@@ -132,6 +133,10 @@ describe('station inspections', () => {
     sim.enqueue({ type: 'trade.hail', ship: station });
     expect(run(sim, 1)).toContain('trade.hailRefused');
     expect(sim.trade.hails.find((h) => h.ship === station)?.reason).toBe('barred');
+    sim.galaxy.turn += INSPECT_BAN_TURNS; // the ban lapses (whether they talk now is the standing's say)
+    sim.enqueue({ type: 'trade.hail', ship: station });
+    run(sim, 1);
+    expect(sim.trade.hails.find((h) => h.ship === station)?.reason).not.toBe('barred');
   });
 
   it('with nothing to find they search every hold and leave clean, and trade opens', () => {
@@ -196,7 +201,7 @@ describe('station inspections', () => {
     expect(sim.world.has(id, InspectionC)).toBe(false);
     expect(insp.crew.some((c) => sim.world.has(c, PositionC))).toBe(false);
     expect(reputationOf(sim.story, 'navy')).toBeLessThan(navy);
-    expect(sim.world.get(station, TraderC)!.barred).toBe(true);
+    expect(sim.world.get(station, TraderC)!.barredUntil).toBe(sim.galaxy.turn + INSPECT_BAN_TURNS);
   });
 
   it('a save in the middle of the search loads and carries on', () => {

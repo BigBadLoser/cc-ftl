@@ -3,6 +3,7 @@ import { newGame, type Sim } from '../../sim';
 import { content } from '../../content';
 import { InspectionC } from '../../sim/inspect/types';
 import { deriveAlerts } from '../alertsDerived';
+import { buildCrewLists } from '../crewSnapshot';
 import { inspectCommands, inspectStation } from './inspect';
 
 function start(opts: { clean?: boolean; eva?: boolean } = {}): Sim {
@@ -27,6 +28,10 @@ describe('?scenario=inspect', () => {
     expect(insp.phase).toBe('settle');
     const alert = [...deriveAlerts(sim, () => false).values()].find((a) => a.kind === 'inspect.waiting');
     expect(alert?.text).toBe('Inspector waiting: fine or bribe');
+    // The lead is a visitor aboard by the station's leave, shown as an inspector (not a hostile).
+    const card = buildCrewLists(sim, insp.crew[0]).hostiles.find((c) => c.id === insp.crew[0]);
+    expect(card?.side).toBe('visitor');
+    expect(card?.visit).toBe('Inspector');
     expect(alert?.subject).toEqual({ kind: 'crew', id: insp.crew[0] });
     expect(alert?.actions?.map((a) => a.command)).toEqual([
       { type: 'inspect.settle', inspection: id, choice: 'fine' },

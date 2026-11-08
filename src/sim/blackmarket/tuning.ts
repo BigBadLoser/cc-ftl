@@ -28,7 +28,7 @@ export const LESSER_SHARE = 0.25;
 /**
  * Inspections (#138): a station sends INSPECTORS of INSPECTOR_ROLE by shuttle; each search takes INSPECT_SEARCH_SEC at work speed 1. They take contraband
  * off player crew and floors within INSPECT_SPOT_TILES of them. A bribe is taken with INSPECT_BRIBE_CHANCE; turned down, it costs SCAN_STANDING_HIT and
- * is not offered again. Refusing costs INSPECT_REFUSE_HIT and the station's service. A party that has not boarded after INSPECT_BOARD_SEC, or whose
+ * is not offered again. Refusing costs INSPECT_REFUSE_HIT and the station's service for INSPECT_BAN_TURNS turns. A party that has not boarded after INSPECT_BOARD_SEC, or whose
  * searches nobody has taken for INSPECT_STALL_SEC, is blocked (the alert); one not home INSPECT_HOME_SEC after leaving is ended.
  */
 export const INSPECTORS = 2;
@@ -37,6 +37,8 @@ export const INSPECT_SEARCH_SEC = 5;
 export const INSPECT_SPOT_TILES = 2;
 export const INSPECT_BRIBE_CHANCE = 0.6;
 export const INSPECT_REFUSE_HIT = 4;
+/** Galaxy turns a station that was refused (or run from) will not deal with the player. */
+export const INSPECT_BAN_TURNS = 10;
 export const INSPECT_BOARD_SEC = 90;
 export const INSPECT_STALL_SEC = 45;
 export const INSPECT_HOME_SEC = 300;

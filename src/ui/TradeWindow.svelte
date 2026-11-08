@@ -20,7 +20,7 @@
   const refusal: Record<string, string> = {
     hostile: 'They have no interest in talking to you.', weaponsHot: 'Their guns are on you: they will not talk.',
     silent: 'No answer. Nobody is aboard to hear.', noTrade: 'They have nothing to trade.',
-    barred: 'You refused their inspectors: they will not deal with you.',
+    barred: 'You refused their inspectors: they will not deal with you for a while.',
   };
   const truceTip = $derived(p?.market?.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Nobody starts a fight here. Firing on or boarding anyone breaks the truce.');
   const marketTip = $derived(p?.market ? `${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.${p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}` : '');

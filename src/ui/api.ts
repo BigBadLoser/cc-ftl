@@ -134,8 +134,13 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
-  /** Which side: the player's crew, a passenger living aboard (a lodging guest), or another side's crew standing on a grid the player's crew is on. */
-  side: 'player' | 'guest' | 'enemy';
+  /**
+   * Which side: the player's crew, a passenger living aboard (a lodging guest), a visitor aboard by the ship's leave who does not live there (an
+   * inspector, a yard contractor: `visit` names them), or another side's crew standing on a grid the player's crew is on.
+   */
+  side: 'player' | 'guest' | 'visitor' | 'enemy';
+  /** For a visitor: what they are aboard as ('Inspector', 'Contractor', 'Visitor'). */
+  visit?: string;
   /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
   ship: number;
   where: string;

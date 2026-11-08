@@ -88,8 +88,8 @@ export interface Trader {
   base?: ItemQty[];
   /** Black-market service sets this station carries (`ContentRegistry.blackMarkets` ids; blackmarket/services.ts). */
   services?: string[];
-  /** The player refused this station's inspectors (inspect/settle.ts): it no longer answers their hails. */
-  barred?: true;
+  /** The player refused this station's inspectors (inspect/settle.ts): it does not answer their hails before this galaxy turn. */
+  barredUntil?: number;
   /** The fence's rate (its share of an item's value) when a set gives the station a fence. */
   fence?: number;
 }

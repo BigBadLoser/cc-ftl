@@ -2570,9 +2570,28 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   goods instead of the delivery (`galaxy/jobs.ts`); a captured ship's hold gets looted goods (`capture/prize.ts`, LOOT_*); the disruptor is sold only at black markets.
   A legitimate trader does not buy contraband (`unitPrice` is null, `checkOffer` says `contraband`); a black market pays `contrabandBuy` of the base value; the fence (cartel
   only) pays its 50-60% for anything.
-- **Scans** (`scan.ts`). A navy or corporation station scans the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node), and a patrol that crosses
+- **Scans** (`scan.ts`). A navy or corporation station inspects the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node: `dockScan` starts an
+  inspection, below), and a patrol that crosses
   them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
   `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+- **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
+  - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
+    airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free
+    airlock or hovers, and the party goes out of the hatch in suits (EVA boarding). The inspectors (INSPECTORS of INSPECTOR_ROLE, neutral) are the party, aboard
+    by an `inspect` consent grant; their only priority is `patrol`.
+  - Party jobs: `Job.party` (the shuttle) makes a job its party's alone, and an inspector takes no other (`crew/jobFit.ts`). `search.ts` posts a `search` job
+    (worked from beside the module) at every storage module and every module with an upgrade fitted; `finishSearch` (from `crew/jobWork.ts`) turns the module's
+    contraband (`heldItems`) into ordinary hauls into the shuttle (a fitted upgrade comes off and is hauled from the floor). `spotCheck` takes contraband off player
+    crew and floors near an inspector. What is claimed is `Inspection.found` and `value`.
+  - `flow.ts` (`inspectSystem`, after the yard): fly, search, settle (the lead waits; `blocked` while nobody is aboard or the searches stall), leave (the site
+    closes, the run takes them home, `endInspection` removes them with the shuttle). A fight or a lost station ends it; leaving the node (`abortInspections`,
+    `galaxy/hyperspace.ts`) during search or settle counts as refusing.
+  - `settle.ts`: `inspect.settle` with `fine` (paid, standing hit, they keep the goods), `bribe` (INSPECT_BRIBE_CHANCE seeded roll; taken: paid and the goods
+    set down by the shuttle door; turned down: standing hit, no second bribe) or `refuse` (INSPECT_REFUSE_HIT and `Trader.barredUntil`: the station answers no hail
+    for INSPECT_BAN_TURNS turns, hail reason `barred`). `scanPending` holds trade only while the inspectors search or wait.
+  - Read inspections through `inspections(sim)` (a query of `InspectionC` itself would make its store and change save bytes). The alerts (`app/alertsDerived.ts`):
+    `inspect.waiting` (subject the lead, the three answers as alert actions) and `inspect.blocked`. Visitors aboard by a non-lodging grant are `side: 'visitor'` in
+    the crew lists (`UiCrew.visit`: Inspector, Contractor). Debug start `?scenario=inspect[&clean][&eva]`.
 - **Truce** (`truce.ts`, `systems/truce.ts`). `NodeState.truce` is the flag; while it holds, the enemy AI holds fire, the node is not in combat and no interdiction is made
   there. The system breaks it when a player ship or weapon aims at a live ship there or player crew stand aboard one. A breach sets `banUntil` (BAN_TURNS), costs standing with
   every faction of kind `pirates`, and turns every ship there (`Ship.banned` remembers the old side) hostile until the ban lapses. Travel is never blocked.

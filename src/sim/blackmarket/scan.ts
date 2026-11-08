@@ -81,8 +81,11 @@ export function dockScan(sim: Sim, station: number, owner: string | undefined, n
   return true;
 }
 
-/** Trade waits on a scan: a patrol's scan that found contraband waits for an answer, or an inspection is coming aboard, searching or waiting. */
-export const scanPending = (sim: Sim): boolean => sim.galaxy.encounters.some((e) => e.kind === 'scan' && !!e.scan) || (liveInspection(sim)?.[1].phase ?? 'leave') !== 'leave';
+/** Trade waits on a scan: a patrol's scan that found contraband waits for an answer, or inspectors are searching or waiting for one. */
+export function scanPending(sim: Sim): boolean {
+  const phase = liveInspection(sim)?.[1].phase;
+  return sim.galaxy.encounters.some((e) => e.kind === 'scan' && !!e.scan) || phase === 'search' || phase === 'settle';
+}
 
 const hit = (sim: Sim, faction: string): void => {
   const key = repKey(sim, faction);

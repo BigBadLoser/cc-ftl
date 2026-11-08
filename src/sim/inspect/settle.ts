@@ -1,4 +1,4 @@
-import { INSPECT_BRIBE_CHANCE, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
+import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_REFUSE_HIT, SCAN_STANDING_HIT } from '../blackmarket/tuning';
 import type { Command } from '../commands';
 import { repKey } from '../galaxy/standing';
 import { spillItems } from '../items/stacks';
@@ -15,7 +15,7 @@ import { leave } from './start';
  * - 'fine': the fine is paid (all the credits there are, if short), standing with the faction falls by SCAN_STANDING_HIT, and they keep the goods.
  * - 'bribe': refused without the credits. Taken with INSPECT_BRIBE_CHANCE (a seeded roll): it is paid and the goods are handed back (set down by
  *   the shuttle's door for the crew to stow). Turned down: nothing is paid, standing falls by SCAN_STANDING_HIT, and no bribe is offered again.
- * - 'refuse': nothing is paid; they leave with what they took, standing falls by INSPECT_REFUSE_HIT and the station refuses service (`Trader.barred`).
+ * - 'refuse': nothing is paid; they leave with what they took, standing falls by INSPECT_REFUSE_HIT and the station refuses service for INSPECT_BAN_TURNS galaxy turns (`Trader.barredUntil`).
  *   (Fighting them is a later step: #138 step 3.)
  */
 
@@ -28,7 +28,7 @@ const hit = (sim: Sim, faction: string, n: number): void => {
 export function refuseConsequences(sim: Sim, insp: Inspection): void {
   hit(sim, insp.faction, INSPECT_REFUSE_HIT);
   const t = sim.world.get(insp.station, TraderC);
-  if (t) t.barred = true;
+  if (t) t.barredUntil = sim.galaxy.turn + INSPECT_BAN_TURNS;
 }
 
 /** Set the seized goods down on the player's ship by the shuttle's door (a bribe taken). */

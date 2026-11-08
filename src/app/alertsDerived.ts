@@ -140,8 +140,8 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     const lead = insp.crew.find(alive);
     if (insp.phase === 'settle' && lead !== undefined) {
       const actions: UiAlert['actions'] = [
-        { label: `Pay fine (${insp.fine} ₵)`, tone: 'good', command: { type: 'inspect.settle', inspection: id, choice: 'fine' } },
-        ...(insp.bribeFailed ? [] : [{ label: `Bribe (${insp.bribe} ₵)`, tone: 'good' as const, command: { type: 'inspect.settle' as const, inspection: id, choice: 'bribe' as const } }]),
+        { label: `Fine ${insp.fine} ₵`, tone: 'good', command: { type: 'inspect.settle', inspection: id, choice: 'fine' } },
+        ...(insp.bribeFailed ? [] : [{ label: `Bribe ${insp.bribe} ₵`, tone: 'good' as const, command: { type: 'inspect.settle' as const, inspection: id, choice: 'bribe' as const } }]),
         { label: 'Refuse', tone: 'bad', command: { type: 'inspect.settle', inspection: id, choice: 'refuse' } },
       ];
       add({ kind: 'inspect.waiting', key: `iw${id}${insp.bribeFailed ? "b" : ""}`, text: 'Inspector waiting: fine or bribe', subject: crewSubject(sim, lead), actions });
