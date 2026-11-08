@@ -418,7 +418,10 @@ export function createBridge(sim: Sim): Bridge {
   let loop: Loop | undefined;
   let lastSpeed: Speed = 1;
 
-  /** An open event decision pauses the game; answering it restores the speed. */
+  /**
+   * An open event decision pauses the game; play resumes (at the speed it interrupted) only once the sim has closed it. A rejected
+   * choice leaves it open, so the game stays paused (#152).
+   */
   const refreshStory = () => {
     const snap = buildStory(sim);
     const key = JSON.stringify(snap);
@@ -428,6 +431,10 @@ export function createBridge(sim: Sim): Bridge {
     if (snap.active && heldSpeed === null) {
       heldSpeed = loop?.getSpeed() ?? 1;
       applySpeed(0);
+    } else if (!snap.active && heldSpeed !== null) {
+      const back = heldSpeed;
+      heldSpeed = null;
+      applySpeed(back === 0 ? lastSpeed : back);
     }
   };
   let prefetchFrame = 0;
@@ -528,9 +535,10 @@ export function createBridge(sim: Sim): Bridge {
     },
     chooseStory(choice) {
       sim.enqueue({ type: 'story.choose', choice });
-      const back = heldSpeed;
-      heldSpeed = null;
-      if (back !== null) applySpeed(back === 0 ? lastSpeed : back);
+      // Answer it now, paused as the game is: the sim either closes the decision (refreshStory then resumes play) or rejects the
+      // choice (the toast says why, and the decision and the pause stay).
+      if (store.get().paused) loop?.flush();
+      refreshStory();
     },
     watchCrew(id) {
       if (id === watched) return;
