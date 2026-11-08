@@ -3533,8 +3533,14 @@
   "straw": {"hex": "#c9a24a", "set": "hydro"},
   "grainD": {"hex": "#b0832c", "set": "hydro"},
   "resAmb": {"hex": "#ffb04a", "emissive": 2.4, "set": "research"},
-  "resAmbD": {"hex": "#6a4a24", "set": "research"},
-  "resMint": {"hex": "#c4ffe2", "emissive": 2.2, "set": "research"},
+  "resBio": {"hex": "#7dffb4", "emissive": 2.2, "set": "research"},
+  "resFluid": {"hex": "#3fb889", "emissive": 0.8, "set": "research"},
+  "resBioF": {"hex": "#5fcf9c", "set": "research"},
+  "resSpec": {"hex": "#3a2a46", "set": "research"},
+  "resSpecL": {"hex": "#8a6f9e", "set": "research"},
+  "resEye": {"hex": "#ff9a3c", "emissive": 1.5, "set": "research"},
+  "resAmbF": {"hex": "#d29440", "set": "research"},
   "resLime": {"hex": "#dcff7a", "emissive": 2.2, "set": "research"},
-  "resWin": {"hex": "#9fbf62", "emissive": 0.7, "set": "research"}
+  "resLimeF": {"hex": "#a9c95e", "set": "research"},
+  "resLamp": {"hex": "#f4fbe6", "emissive": 1.6, "set": "research"}
 }
