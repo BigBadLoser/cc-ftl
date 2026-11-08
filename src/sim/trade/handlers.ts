@@ -31,8 +31,8 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     sim.trade.hails.push({ ship: cmd.ship, answered: v.answers, reason: v.reason, tick: sim.tick });
     if (!v.answers) sim.trade.offers = sim.trade.offers.filter((o) => o.ship !== cmd.ship);
     sim.events.emit(v.answers ? { type: 'trade.hailAnswered', ship: cmd.ship, name: trader.name } : { type: 'trade.hailRefused', ship: cmd.ship, name: trader.name, reason: v.reason });
-    // A navy or corporation station scans a visitor as they open trade with it.
-    if (v.answers && trader.station) dockScan(sim, trader.owner, trader.name);
+    // A navy or corporation station inspects a visitor as they open trade with it.
+    if (v.answers && trader.station) dockScan(sim, cmd.ship, trader.owner, trader.name);
   },
   'trade.offer': (sim, cmd) => {
     if (scanPending(sim)) return reject(sim, cmd.type, 'scanPending');
@@ -98,6 +98,8 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     const at = cmd.x !== undefined && cmd.y !== undefined ? { x: cmd.x, y: cmd.y } : undefined;
     const r = spawnStation(sim, kind, cmd.size ?? 'outpost', seed, at, cmd.name);
     if (typeof r === 'string') return reject(sim, cmd.type, r);
+    const t = cmd.owner ? ensureTrader(sim, r) : undefined;
+    if (t) t.owner = cmd.owner; // the galaxy faction that runs it (its standing, its law: a navy port inspects)
   },
   'debug.setCredits': (sim, cmd) => {
     if (!Number.isFinite(cmd.value)) return reject(sim, cmd.type, 'badValue');

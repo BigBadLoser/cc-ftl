@@ -88,6 +88,8 @@ export interface Trader {
   base?: ItemQty[];
   /** Black-market service sets this station carries (`ContentRegistry.blackMarkets` ids; blackmarket/services.ts). */
   services?: string[];
+  /** The player refused this station's inspectors (inspect/settle.ts): it no longer answers their hails. */
+  barred?: true;
   /** The fence's rate (its share of an item's value) when a set gives the station a fence. */
   fence?: number;
 }
@@ -96,7 +98,7 @@ export const TraderC = defineComponent<Trader>('trader');
 export interface Hail {
   ship: number;
   answered: boolean;
-  /** Refusal code ('hostile', 'weaponsHot', 'silent', 'noTrade') or ''. */
+  /** Refusal code ('hostile', 'weaponsHot', 'silent', 'noTrade', 'barred') or ''. */
   reason: string;
   tick: number;
 }

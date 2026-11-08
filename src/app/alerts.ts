@@ -266,7 +266,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
   const raise = (id: number, w: Wanted) => {
-    store.update((l) => [{ id, kind: w.kind, text: w.text, subject: w.subject, ...(w.notice ? { notice: w.notice } : {}) }, ...l]);
+    store.update((l) => [{ id, kind: w.kind, text: w.text, subject: w.subject, ...(w.notice ? { notice: w.notice } : {}), ...(w.actions ? { actions: w.actions } : {}) }, ...l]);
     for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
   };
 

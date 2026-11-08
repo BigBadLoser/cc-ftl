@@ -9,7 +9,7 @@ import type { WorkCategory } from '../crew/components';
  * absent, the site counts the open jobs on its grid.
  */
 export interface AwaySite {
-  owner: 'debug' | 'salvage' | 'boarding' | 'yard' | 'aid';
+  owner: 'debug' | 'salvage' | 'boarding' | 'yard' | 'aid' | 'inspect';
   status: 'open' | 'closing';
   vehicle: number;
   since: number;

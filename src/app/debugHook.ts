@@ -1,7 +1,8 @@
 import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
-import { ItemStackC } from '../sim/items/components';
+import { CarryingC, ItemStackC } from '../sim/items/components';
+import { InspectionC, inspections } from '../sim/inspect/types';
 import { AlienC, EggSacC } from '../sim/aliens/components';
 import { DeadC } from '../sim/crew/components';
 import { StationAlarmC, StationC } from '../sim/stations/components';
@@ -35,6 +36,11 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       const b = sim.world.get(id, BodyC)!;
       return { id, def: d.def, ship: d.ship, space: d.space, load: d.load ?? 0, x: b.x, y: b.y, state: d.state, target: d.target?.kind ?? null, working: !!d.target && d.steps.length === 0, bay: d.bay, tick: sim.tick };
     }),
+    /** The contraband inspection under way (#138): its phase and where its inspectors stand, lead first (screenshot scripts). */
+    inspection: () => inspections(sim).map((id) => {
+      const i = sim.world.get(id, InspectionC)!;
+      return { id, phase: i.phase, blocked: !!i.blocked, found: i.found, crew: i.crew.map((c) => ({ id: c, pos: sim.world.get(c, PositionC) ?? null, carrying: sim.world.get(c, CarryingC)?.item ?? null })) };
+    })[0] ?? null,
     /** Centre the camera on a sector position in tiles (screenshot scripts). */
     focus: (x: number, y: number) => r.focusSector(x, y),
     /** Step the camera to the zoom level nearest `z` (screenshot scripts); returns the zoom reached. */
