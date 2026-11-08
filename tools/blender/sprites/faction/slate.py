@@ -82,12 +82,12 @@ def slate(hull):
             room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
             if room or top - zl - LIP_H > 0.01:         # no seam over it)
                 if room:
-                    T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
+                    _seam(k, ax, plane, a, b, zg, zg + PZ)
                     for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
                         q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone, its top px the
                                                                 # faint line's on the face over it
                         if a - 1e-6 <= q0 and q1 <= b + 1e-6 and not any(x0 <= q0 and q1 <= x1 for x0, x1 in cuts):
-                            T.paint(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ, 0.0, FACE, 1)
+                            _seam(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ)
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
                                   cols=[False, "fGS2" if ax == "y" else "fGS3", False, False])
@@ -95,8 +95,8 @@ def slate(hull):
                     q0, q1 = u, u + 0.7 * LINE         # top and up the face to the seam over it
                     dq, zq = LIP_D + PAINT, zl + LIP_H + PAINT  # (over the lip: its top a step under the
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
-                          cols=[False, None, "fGS4" if ax == "y" else "fGS5", False])    # front's line, darker)
-                    T.paint(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top), 0.0, FACE, 1)
+                          cols=[False, _seam_col(ax), "fGS5" if ax == "y" else "fGS6", False])   # front's line,
+                    _seam(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top))        # darker)
             wall = T.fill("wall")                                       # a top design's dressing on the face
             gaps = [(a, b)]                                             # (between the header and the seam over
             if full and wall:                                           # the lip; it gives back the spans it
@@ -224,6 +224,16 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
                 T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
 
 
+def _seam_col(ax):
+    """The lip's seams (and the recess on the one over it): the ref's dark blue grey (fGSs; the shade side fGS5)."""
+    return "fGSs" if ax == "y" else "fGS5"
+
+
+def _seam(k, ax, plane, u0, u1, z0, z1):
+    prism(k, ax, plane, u0, u1, [(0.0, z0), (PAINT, z0), (PAINT, z1), (0.0, z1)], FACE, 1,
+          cols=[False, _seam_col(ax), False, False])
+
+
 def _faint(k, ax, plane, a, b, z):
     """The face's faint line, a px tall from z, a step over the face's grey."""
     fl = "fGS2" if ax == "y" else "fGS3"
@@ -274,7 +284,7 @@ def door_cuts(a, b):
 def slate_door(k, ax, plane, a, b, top, foot, zf):
     """Wall (T1-6): a double door a tile (door_cuts: the stripe and the lip's middle recess left out there) from the
     stripe's top down to the seam over the lip, the face's grey; a dark line at each side and between the leaves,
-    each leaf's right edge lit, its top px lit (the next a step under), a small handle on each leaf 2 px off the
+    each leaf's right edge lit, its top px lit, a small handle on each leaf 2 px off the
     middle (the ref's proportions). The faint line stops at it."""
     lit, hi = ("fGS2", "fGS1") if ax == "y" else ("fGS3", "fGS2")
     zt = top + 6 * PZ                                   # (the stripe's top)
@@ -293,8 +303,7 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
             T.paint(k, ax, plane, q, q + LINE, foot, zt, 0.0, FACE, 1)
         for l0, l1 in ((d0 + LINE, c), (c + LINE, c + 8 * LINE)):                           # its leaves
             strip(l1 - LINE, l1, foot, zt - PZ, lit)                                        # (the right edge lit)
-            strip(l0, l1, zt - PZ, zt, hi)                                                  # (the top px lit, the
-            strip(l0, l1 - LINE, zt - 2 * PZ, zt - PZ, lit)                                 # next a step under)
+            strip(l0, l1, zt - PZ, zt, hi)                                                  # (the top px lit)
         for x0 in (c - 4 * LINE, c + 2 * LINE):                                             # the handles
             strip(x0, x0 + LINE, h0, h1, hi)
             T.paint(k, ax, plane, x0 + LINE, x0 + 2 * LINE, h0, h1, 0.0, FACE, 1)
