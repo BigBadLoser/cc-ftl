@@ -1,14 +1,11 @@
 """Hydroponics grow beds (family `hydroponics`). Local frame and placement: modkit.K (front = +v, where the crew
 stand to work the bed).
 
-Look exploration, round 10 (earlier rounds are in git history). One plant per tile, a lamp over the bed as the only
-pink glow, each body with its own colours, structure and detail:
-  arch   a sand-white tub with an orange band, one orange arch from end to end over the bed, a lamp tube along its
-         underside
-  twin   two round graphite pots joined by a central block, a mast from the block between the plants carrying a
-         brass bar with a round lamp over each pot (a dumbbell below and above)
-  lab    a shallow pearl tray floating on a navy pedestal on a wide foot, a tapered blade spine with a mint stripe and a
-         slim ring lamp
+Look exploration (earlier rounds are in git history). One plant per tile, a lamp over the bed as the only pink glow:
+  cab    a navy base with slatted panels, a glass cabin per plant in grey frames, a machinery block between them
+  terra  the same base under one long cab-shaped glass canopy
+  lab    a shallow pearl tray floating on a navy pedestal, a tapered blade spine with a mint stripe, a slim ring lamp
+  <variant>.sand  the same in the sand and orange of round 10's arch (REMAP swaps the colours)
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -136,54 +133,6 @@ def _on(on, lit="cyan"):
 
 
 # ---- the directions --------------------------------------------------------------------------------------------------
-def arch(k, on):
-    """A flared sand tub, one orange arch over it from end to end, its underside the lamp."""
-    _prism(k, _pill_ol(0, 0, 1.8, 0.7), 0.0, 0.08, "dark")                                      # kick
-    _prism(k, _pill_ol(0, 0, 1.88, 0.8), 0.08, 0.54, "sand", top="sandL", tl=_pill_ol(0, 0, 2.0, 0.92))
-    _prism(k, _pill_ol(0, 0, 1.97, 0.89), 0.3, 0.07, "arcOr", tl=_pill_ol(0, 0, 1.99, 0.91))  # orange band
-    zs = 0.67
-    _well(k, _pill_ol(0, 0, 1.8, 0.72), _pill_ol(0, 0, 2.02, 0.94), 0.71, 0.09, "sand", "sandL", "dark", zs, 1.34, 0.6)
-    hw, h, z0 = 0.95, 1.16, 0.62
-    pts = [(-hw * math.cos(t), 0.0, z0 + h * math.sin(t)) for t in (math.pi * i / 20 for i in range(21))]
-    _tube(k, pts, 0.07, "arcOr")                                                            # the arch
-    lit = [(-(hw - 0.06) * math.cos(t), 0.0, z0 + (h - 0.07) * math.sin(t)) for t in (math.pi * (0.22 + 0.56 * i / 14) for i in range(15))]
-    _tube(k, lit, 0.045, "growPink" if on else "lampOff")                                   # lamp along its underside
-    for e in (-1, 1):                                                                       # feet in the rim
-        k.cyl(e * hw, 0, 0.66, 0.11, 0.08, "arcOr", top="arcOrL", sides=12)
-    v = 0.44                                                                                # gauge and status
-    k.box(-0.45, v, 0.4, 0.3, 0.012, 0.14, "dark", rx=-0.2)
-    k.box(-0.45, v + 0.006, 0.44, 0.22 if on else 0.08, 0.012, 0.04, "waterL" if on else "waterD", rx=-0.2)
-    k.box(0.45, v, 0.44, 0.07, 0.012, 0.06, _on(on), rx=-0.2)
-    return ((-0.47, 0.0), (0.47, 0.0)), zs
-
-
-def twin(k, on):
-    """Two round pots joined by a central block; a mast between the plants carries a bar with a lamp over each pot."""
-    zs = 0.66
-    for e in (-1, 1):
-        cu = e * 0.52
-        k.cyl(cu, 0, 0.0, 0.36, 0.08, "dark", sides=16)                                     # kick
-        k.cyl(cu, 0, 0.08, 0.4, 0.54, "graph", top="graphL", sides=16, rtop=0.46)           # pot
-        k.cyl(cu, 0, 0.44, 0.45, 0.05, "hyBrass", top="hyBrass", sides=16, rtop=0.452)          # brass band
-        _well(k, _circle(cu, 0, 0.38), _circle(cu, 0, 0.48), 0.71, 0.09, "graph", "graphL", "dark", zs, 0.5, 0.5,
-              seed=4 + e, cu=cu)
-    _prism(k, _cham(0, 0, 0.34, 0.56, 0.06), 0.0, 0.7, "graph", top="graphL")               # central block
-    k.box(0, 0.285, 0.36, 0.2, 0.012, 0.2, "dark")                                          # its dial and light
-    _tube(k, [(0, 0.29, 0.46), (0, 0.31, 0.46)], 0.07, "hyBrass")
-    _tube(k, [(0, 0.31, 0.46), (0, 0.318, 0.46)], 0.05, "waterL" if on else "waterD")
-    k.box(0, 0.29, 0.2, 0.06, 0.012, 0.05, _on(on))
-    k.cyl(0, 0, 0.7, 0.1, 0.06, "hyBrass", top="hyBrassL", sides=12)                            # mast collar
-    k.cyl(0, 0, 0.76, 0.075, 0.82, "graphL", top="graphL", sides=12, rtop=0.06)              # mast
-    k.cyl(0, 0, 1.56, 0.1, 0.14, "hyBrass", top="hyBrassL", sides=12)                           # hub
-    _prism(k, _cham(0, 0, 0.9, 0.12, 0.03), 1.62, 0.07, "hyBrass", top="hyBrassL")              # the bar
-    for e in (-1, 1):                                                                       # a round lamp per pot
-        c = _circle(e * 0.52, 0, 0.27, 20)
-        _prism(k, _scaled(c, 0.93), 1.55, 0.045, "growPink" if on else "lampOff")
-        _prism(k, c, 1.595, 0.1, "graph", top="graphL", taper=0.85)
-        k.cyl(e * 0.52, 0, 1.69, 0.07, 0.04, "hyBrass", top="hyBrassL", sides=10)
-    return ((-0.52, 0.0), (0.52, 0.0)), zs
-
-
 def lab(k, on):
     """Lab: a shallow pearl tray floating on a narrow navy pedestal, a blade spine with a mint stripe."""
     _prism(k, _pill_ol(0, 0, 1.8, 0.76), 0.0, 0.07, "labNavy", top="labNavyL")               # foot
@@ -206,6 +155,13 @@ def lab(k, on):
     _lamp_ring(k, 0, 0.0, 1.58, 1.82, 0.68, 0.09, on, col="labPearl", top="labPearlL")
     return ((-0.47, 0.0), (0.47, 0.0)), zs
 
+def _remapped(k):
+    """k with REMAP applied to every colour it draws (a colour scheme swap)."""
+    poly = k.m.poly
+    k.m.poly = lambda pts, color, flip=False: poly(pts, REMAP.get(color, color), flip)
+    return k
+
+
 # ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
 GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
 
@@ -216,7 +172,7 @@ def _part(k, name):
     if not hasattr(k, "parts"):
         k.parts = {}
     if name not in k.parts:
-        k.parts[name] = K(f"{k.m.name}_{name}", (2, 1), k.rot)
+        k.parts[name] = _remapped(K(f"{k.m.name}_{name}", (2, 1), k.rot))
     return k.parts[name]
 
 
@@ -306,32 +262,6 @@ def cab(k, on):
     return ((-0.55, 0.0), (0.55, 0.0)), zs
 
 
-def cabins(k, on):
-    """A glass cabin per plant on a shared dark base, a machinery block between them; teal frames, orange lights."""
-    _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
-    body = _cham(0, 0, 1.98, 0.94, 0.06)
-    _prism(k, body, 0.1, 0.5, "cbBody", top="cbBodyL")
-    _prism(k, _scaled(body, 1.01), 0.48, 0.05, "cbTeal", top="cbTealL")                       # teal band
-    zs = 0.66
-    for e in (-1, 1):
-        cu = e * 0.55
-        k.box(cu, 0.474, 0.18, 0.5, 0.012, 0.2, "dark")                                     # slatted panel per bay
-        for j in range(4):
-            k.box(cu - 0.15 + j * 0.1, 0.48, 0.2, 0.04, 0.012, 0.16, "cbBodyL")
-        _tray(k, cu, 0.8, 0.84, 0.58, zs, 5 + e)
-        _canopy(k, cu, 0.84, 0.86, 0.58, 1.12, 1.38, 0.17, on, "cbTeal", "cbTealL", "cbBody", mid=False)
-    blk = _cham(0, 0, 0.24, 0.7, 0.04)                                                       # machinery block
-    _prism(k, blk, 0.58, 0.5, "cbBody", top="cbBodyL")
-    _prism(k, _scaled(blk, 1.04), 1.0, 0.04, "cbTeal")
-    for sv in (-0.18, 0.12):                                                                # pipes into each cabin
-        _tube(k, [(-0.42, sv, 0.92), (0.42, sv, 0.92)], 0.03, "steelL")
-    k.box(0, 0.355, 0.66, 0.14, 0.012, 0.22, "dark")                                       # gauge, lights
-    k.box(0, 0.361, 0.7, 0.07, 0.012, 0.14 if on else 0.05, "waterL" if on else "waterD")
-    for dz in (0.92, 0.84):
-        k.box(0, 0.358, dz, 0.05, 0.012, 0.04, _on(on, "orange"))
-    return ((-0.55, 0.0), (0.55, 0.0)), zs
-
-
 # ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
 def _greens(k, u, v, z, seed=0):
     """A broad leafy head: two tiers of leaves round a crown."""
@@ -359,14 +289,21 @@ def _grain(k, u, v, z, seed=0):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"cab": cab, "terra": terra, "cabins": cabins, "arch": arch, "twin": twin, "lab": lab}
+SAND_T = {"tNavy": "sand", "tNavyL": "sandL", "tFrame": "arcOr", "tFrameL": "arcOrL"}     # arch's colours
+SAND_L = {"labNavy": "arcOr", "labNavyL": "arcOrL", "labPearl": "sand", "labPearlL": "sandL", "labMint": "arcOr"}
+VARIANTS = {"cab": (cab, {}), "terra": (terra, {}), "lab": (lab, {}),
+            "cab.sand": (cab, SAND_T), "terra.sand": (terra, SAND_T), "lab.sand": (lab, SAND_L)}
+REMAP = {}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
 def build(variant, layer, rot=0):
-    name = f"hydro_{variant}_{layer.replace('.', '_')}_{rot}"
-    kb = K(name, (2, 1), rot)
-    plants, zs = VARIANTS[variant](kb, layer == "on")
+    name = f"hydro_{variant.replace('.', '_')}_{layer.replace('.', '_')}_{rot}"
+    fn, remap = VARIANTS[variant]
+    REMAP.clear()
+    REMAP.update(remap)
+    kb = _remapped(K(name, (2, 1), rot))
+    plants, zs = fn(kb, layer == "on")
     bed = kb.build()
     parts = {n: p.build() for n, p in getattr(kb, "parts", {}).items()}
     for o in parts.get("glass", []):
