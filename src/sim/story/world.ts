@@ -8,11 +8,11 @@ import { ModuleC } from '../modules/components';
 import type { SkillName } from '../registry';
 import type { Sim } from '../sim';
 import { stat } from '../stats';
+import { aboard, guardPacked } from '../packedGuard';
 import { ImplantsC } from './components';
 import { VehicleC } from '../vehicles/components';
 import { vehicleDefOf, vehicleFaction } from '../vehicles/lifecycle';
 
-const aboard = new WeakSet<Sim>();
 
 /** True inside `withPlayerAboard` while the player's ship is a hyperspace packet: its entities are in the world for the moment. */
 export const inPacketView = (sim: Sim): boolean => aboard.has(sim);
@@ -42,6 +42,12 @@ export function withPlayerAboard<T>(sim: Sim, fn: () => T): T {
 
 /** Living, free crew on the player's side (anywhere: ships, shuttles). Ascending id. */
 export function playerCrew(sim: Sim): number[] {
+  guardPacked(sim, 'playerCrew');
+  return playerCrewPackedOk(sim);
+}
+
+/** `playerCrew` for a caller that wants "nobody" while the ship is packed. */
+export function playerCrewPackedOk(sim: Sim): number[] {
   return sim.world.query(CrewC, AllegianceC).filter(
     (id) => sim.world.get(id, AllegianceC)?.faction === 'player' && !sim.world.has(id, DeadC) && !sim.world.has(id, SurrenderedC),
   );
@@ -49,6 +55,12 @@ export function playerCrew(sim: Sim): number[] {
 
 /** Ship ids of ships the player owns (active, disabled or prize; not wrecks). */
 export function playerShips(sim: Sim): Set<number> {
+  guardPacked(sim, 'playerShips');
+  return playerShipsPackedOk(sim);
+}
+
+/** `playerShips` for a caller that wants "none" while the ship is packed. */
+export function playerShipsPackedOk(sim: Sim): Set<number> {
   const out = new Set<number>();
   for (const id of sim.world.query(ShipC)) {
     const s = sim.world.get(id, ShipC);
@@ -68,6 +80,7 @@ export function playerModules(sim: Sim, def?: string): number[] {
 
 /** Player shuttles stowed in a bay (`eva`: only those fit for EVA work). */
 export function stowedShuttles(sim: Sim, eva: boolean): number {
+  guardPacked(sim, 'stowedShuttles');
   return sim.world.query(VehicleC).filter((id) => {
     const v = sim.world.get(id, VehicleC);
     return !!v && v.state === 'stowed' && vehicleFaction(sim, v) === 'player' && (!eva || !!vehicleDefOf(sim, v)?.eva);
@@ -88,14 +101,16 @@ export function skillOf(sim: Sim, crew: number, skill: SkillName): number {
   }
 }
 
-/** The crew member with the highest skill (ties: lowest id), or null with no crew. */
+/** The crew member with the highest skill (ties: lowest id), or null with no crew. Reads the crew in hyperspace too (the packet view). */
 export function bestAt(sim: Sim, skill: SkillName): { crew: number; level: number } | null {
-  let best: { crew: number; level: number } | null = null;
-  for (const id of playerCrew(sim)) {
-    const level = skillOf(sim, id, skill);
-    if (!best || level > best.level) best = { crew: id, level };
-  }
-  return best;
+  return withPlayerAboard(sim, () => {
+    let best: { crew: number; level: number } | null = null;
+    for (const id of playerCrew(sim)) {
+      const level = skillOf(sim, id, skill);
+      if (!best || level > best.level) best = { crew: id, level };
+    }
+    return best;
+  });
 }
 
 export const hasImplant = (sim: Sim, crew: number, implant: string): boolean => !!sim.world.get(crew, ImplantsC)?.list.includes(implant);

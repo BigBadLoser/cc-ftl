@@ -4,7 +4,7 @@ import type { JobKind } from './crew/components';
 import type { EventEffect, RemoteAction } from './story/defs';
 import type { StationJobKind } from './galaxy/types';
 import type { DealPhase } from './trade/types';
-import type { ItemQty } from './registry';
+import type { ItemQty, ShotLook } from './registry';
 
 /** Why a ship turned up in the current grid (`ship.arrived`). */
 export type ArriveReason = 'spawn' | 'scene' | 'fleet' | 'jump-in';
@@ -96,11 +96,13 @@ export type SimEvent =
   | { type: 'combat.started' }
   | { type: 'combat.ended' }
   /** A weapon module launched one shot (`projectile` is its entity). */
-  | { type: 'weapon.fired'; ship: number; weaponId: number; weapon: string; projectile: number; targetShip: number; targetModuleId: number }
+  | { type: 'weapon.fired'; ship: number; weaponId: number; weapon: string; projectile: number; targetShip: number; targetModuleId: number; /** Ammo units this shot spent (absent: none). */ ammo?: number; /** The shot's render hints (weapon def `look`, upgrades included). */ look?: ShotLook }
   /** A shot landed on the hull at tile (x, y); `moduleId` is the module there (0 = none). */
   | { type: 'projectile.hit'; projectile: number; weapon: string; ship: number; x: number; y: number; moduleId: number }
   /** A shot missed: 'evaded' (engines), 'space' (fell outside the hull) or 'gone' (target left). */
   | { type: 'projectile.miss'; projectile: number; weapon: string; ship: number; reason: 'evaded' | 'space' | 'gone'; x: number; y: number }
+  /** Lightning from a hit module (an `arc` effect) into a crew member: tile coordinates of both ends. */
+  | { type: 'projectile.arc'; projectile: number; weapon: string; ship: number; x: number; y: number; tx: number; ty: number }
   /** A shield layer absorbed (or an ion bolt drained) a shot; `layers` remain. */
   | { type: 'projectile.shieldHit'; projectile: number; weapon: string; ship: number; layers: number }
   /** `by`: the defence drone that shot it down (absent: the ship's point defence). */
@@ -205,7 +207,7 @@ export type SimEvent =
   | { type: 'drone.active'; drone: number }
   /** `ship`: its home ship; (x, y) its tile; `space`: it was out in space (at cruise height, nothing falls). */
   | { type: 'drone.wrecked'; drone: number; ship: number; def: string; x: number; y: number; space: boolean }
-  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' | 'flak' }
+  | { type: 'drone.hit'; drone: number; damage: number; hp: number; cause: 'fire' | 'gunfire' | 'pointDefence' | 'drone' }
   /** A defence drone fired at an enemy drone or shuttle (an interceptable shot it hits is `projectile.intercepted` with `by`). (x, y): the aim point, sector tiles. */
   | { type: 'drone.fired'; drone: number; x: number; y: number; hit: boolean }
   /** A departure is held for the ship's drones out in space (DRONE_RECALL_WAIT_SEC at most). */
@@ -276,6 +278,8 @@ export type SimEvent =
   /** A ship of `owner` jumped into the node but found no room to appear (`ship` null; `name`, `faction` and the position are empty); it stays a contact and is retried. */
   | { type: 'ship.arrived'; node: string; ship: null; name: ''; faction: null; owner: string; reason: ArriveReason; x: 0; y: 0 }
   /** A ship left the current grid, lifted out of it or wrecked, from tile centre (x, y). */
+  /** A blast aboard a ship (a scene's failing reactor, scene/clock.ts) at a tile, reaching `radius` tiles: what the renderer shows as an explosion. */
+  | { type: 'ship.blast'; ship: number; x: number; y: number; radius: number }
   | { type: 'ship.departed'; ship: number; name: string; faction: Faction; owner: string; reason: DepartReason; x: number; y: number }
   /** Starmap: a chunk was generated; the player jumped (fuel and FTL charge spent); sensors revealed nodes; a ship turned up (hostile or not). */
   | { type: 'galaxy.chunk'; key: string }
@@ -308,6 +312,8 @@ export type SimEvent =
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
   /** A scene skiff asks to dock with the player's ship (answer with `galaxy.visit`). */
   | { type: 'scene.dockAsked'; ship: number }
+  /** Help agreed with a scene ship ('agreed'), finished ('done') or called off because the player turned on it ('broken'). */
+  | { type: 'scene.aid'; ship: number; state: 'agreed' | 'done' | 'broken' }
   | { type: 'scene.observed'; rule: string; ship: number; text: string; tone: 'good' | 'warn' | 'bad' | 'info' }
   | { type: 'galaxy.eventLeft'; id: number; node: string }
   | { type: 'galaxy.rescued'; id: number; faction: string }
@@ -339,6 +345,14 @@ export type SimEvent =
   | { type: 'goal.done'; goal: string; title: string }
   | { type: 'goal.actDone'; act: string; title: string }
   | { type: 'job.closed'; id: number; kind: StationJobKind; outcome: 'done' | 'failed' | 'abandoned'; reward: number }
+  /** A passenger asks for passage (galaxy/passage.ts): `to` the node they want to go to ('' for nowhere in reach: they get off at the next port). */
+  | { type: 'job.posted'; id: number; crew: number; name: string; to: string; reward: number }
+  /** A passenger with no passage (refused, or it failed) got off at the port of `node`. */
+  | { type: 'job.alighted'; crew: number; name: string; node: string }
+  /** A passenger asks to join the crew (galaxy/joinOffer.ts): the player answers with `jobs.join`. */
+  | { type: 'crew.asksToJoin'; crew: number; name: string }
+  | { type: 'crew.joinDeclined'; crew: number }
+  | { type: 'crew.joined'; crew: number; name: string }
   | { type: 'galaxy.discovered'; count: number }
   /** A command failed validation and was ignored. `reason` is a short machine-readable code. */
   | { type: 'command.rejected'; command: string; reason: string };

@@ -119,8 +119,6 @@ export interface Target {
   moduleId: number;
   /** Set (with ship 0, moduleId 0) when the target is a shuttle in flight or docked. */
   vehicle?: number;
-  /** Set (with ship 0, moduleId 0) when the target is an enemy drone in space; only a flak shot takes it (firing.ts), the pellets hit by their scatter. */
-  drone?: number;
   /** Set (with moduleId 0) for a blind aim at one tile (sector tile coordinates) of the ship: shots land near it, spread by accuracy. */
   tile?: { x: number; y: number };
 }
@@ -160,6 +158,10 @@ export interface Combat {
    * shooting `target`. Set by `combat.setTarget` with a vehicle and no weapon, or by the vehicle defence system. Cleared once it is gone.
    */
   vehicleTarget?: number;
+  /** A ship the AI goes for ahead of other foes while it is in play (a scene's raiders on the crippled ship they circle: scene/open.ts); a threat comes first. */
+  prey?: number;
+  /** The last ship that fired on this one, and the tick (firing.ts): the AI's target choice ranks a recent attacker first (systems/enemyAi.ts). */
+  threat?: { ship: number; at: number };
   doctrine: Doctrine;
   /** Seconds of FTL charge (flee needs FTL_CHARGE_SEC). */
   ftl: number;
@@ -202,11 +204,6 @@ export interface Weapon {
   once?: boolean;
   /** 0..1, full at 1. */
   charge: number;
-  /**
-   * Anti-drone weapons (flak) only: the standing order to engage hostile drones in range on its own. Never overrides a hold (the weapon's own or hold all):
-   * a held weapon fires nothing. Absent on weapons that cannot shoot drones.
-   */
-  autoDrone?: boolean;
   /** Own target; null = use the ship-wide one. */
   target: Target | null;
   /** Shots still to launch in the running volley. */

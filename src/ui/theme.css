@@ -62,6 +62,16 @@
   --shot-3: #ff9a78;
   --shot-4: #e0508f;
   --shot-5: #ffe27a;
+  /* The build look (black, amber): the build catalog, the Hull plan bar and the research overlay keep it by decision. Region class: `.build`. */
+  --build-bg: rgba(4, 4, 4, 0.97);
+  --build-bg-solid: #000;
+  --build-fill: #050505;
+  --build-fill-2: #0e0e0e;
+  --build-line: #242424;
+  --build-line-hi: #3a3a3a;
+  --build-ink: #c8c8c8;
+  --build-dim: #8a8a8a;
+  --build-on-amber: #1a1204;
   --head-font: 'Rajdhani', 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow', system-ui, sans-serif;
 }
 /* The palette (steel). `.steel-tokens` re-applies it inside a `.legacy` region (dialogs and cards that sit on the old-look starmap). */
@@ -115,8 +125,8 @@ button.on { background: var(--panel-3); border-color: var(--cyan); color: #fff; 
 /* An icon tile: square, icon only, cyan glyph. */
 button.tile { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; min-width: 0; min-height: 0; padding: 0; color: var(--cyan); }
 button.tile.on { color: #fff; }
-.bar { height: 6px; background: var(--track); border-radius: 0; overflow: hidden; }
-.bar > i { display: block; height: 100%; background: var(--cyan); }
+/* HUD trackers on the right (goals, jobs): no box, a dark fade in from the screen edge, text shadowed to read over the scene. */
+.hud-fade { box-sizing: border-box; width: calc(100% + 14px); margin-left: -14px; padding: 2px 8px 6px 22px; background: linear-gradient(to left, rgba(11, 14, 17, 0.88) 55%, rgba(11, 14, 17, 0)); text-shadow: 0 1px 2px #000; }
 .sheet { position: fixed; z-index: 5; background: var(--panel); border: 1px solid var(--line-hi); border-radius: 0; padding: 10px; pointer-events: auto; }
 /* Panel heading: condensed caps on a steel band. */
 .ph { margin: -10px -10px 8px; padding: 4px 10px; background: var(--band); color: #fff; font: 600 14px/1.3 var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; }
@@ -167,6 +177,12 @@ html[data-fw-cursor] * { cursor: var(--fw-cursor) !important; }
   --btn-active-edge: var(--cyan);
 }
 .legacy button:disabled { opacity: 0.4; }
+/* The build look: plain buttons (and Segmented) inside get black, a dark line and amber text. Component styles still win. */
+.build { color: var(--build-ink); }
+.build button { min-height: 26px; padding: 0 10px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; background: var(--build-fill); border: 1px solid var(--build-line-hi); color: var(--amber); }
+.build button:hover:not(:disabled) { border-color: var(--amber); }
+.build button.on, .build button[aria-pressed='true'] { background: var(--amber); border-color: var(--amber); color: var(--build-on-amber); }
+.build button:disabled { opacity: 0.4; }
 /* Text tones by meaning: good, bad (plain red), warning. */
 .t-good { color: var(--good-ink); }
 .t-bad { color: var(--red); }

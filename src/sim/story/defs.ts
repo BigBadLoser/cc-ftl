@@ -41,7 +41,9 @@ export type Requirement =
   /** At least this many living crew. */
   | { kind: 'crew'; count: number }
   /** A player shuttle stowed in its bay; `eva`: one fit for EVA work (it can hover beside a wreck and suit its crew out). */
-  | { kind: 'shuttle'; eva?: boolean };
+  | { kind: 'shuttle'; eva?: boolean }
+  /** The open decision's remote action of this kind is done (a scene's offer of help is made over the hail). */
+  | { kind: 'remote'; action: RemoteAction };
 
 /** Whom a crew effect lands on. 'actor' = whoever made the skill check (else a random crew member). */
 export type CrewTarget = 'random' | 'all' | 'actor';
@@ -66,13 +68,19 @@ export type EventEffect =
   /** Skill experience: every 100 xp is one level. */
   | { type: 'skillXp'; skill: SkillName; amount: number; who?: CrewTarget }
   | { type: 'reputation'; faction: string; delta: number }
+  /** Credits to the player: `amount`, or absent, what the rule's subject carries (a person the player helped pays their purse). */
+  | { type: 'credits'; amount?: number }
+  /** The rule's subject (a passenger) asks to be taken home: a passage card is posted for the player to accept or refuse (galaxy/passage.ts). */
+  | { type: 'passage' }
   /** `set` (default) writes `value` (default 1); `add` adds `value` (a counter); `clear` removes it. */
   | { type: 'flag'; flag: string; op?: 'set' | 'add' | 'clear'; value?: number }
   /** Start another event, `delaySec` later (default at once). It queues behind a decision already open. */
   | { type: 'chain'; event: string; delaySec?: number }
   | { type: 'physical'; outcome: PhysicalOutcome }
-  /** Investigate: the trip drops out into the event's scene (its `EventDef.scene`) once the decision closes. */
-  | { type: 'scene' };
+  /** Investigate: the trip drops out into the event's scene (its `EventDef.scene`) once the decision closes. `aid`: help is agreed with its helpless ships first. */
+  | { type: 'scene'; aid?: true }
+  /** A scene ship's thanks (`ctx.ship`, an observer rule): `lines` lines of its trade stock (default 1), half of each (at least 1), into the player's storage. */
+  | { type: 'gift'; lines?: number };
 
 /** What a choice does: text shown afterwards and the effects. */
 export interface Outcome {

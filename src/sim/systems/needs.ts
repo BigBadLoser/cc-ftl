@@ -1,9 +1,9 @@
+import { isLodger, onStationRoll, roleOf } from '../consent/roles';
 import { wakeUp } from '../ai/machines/sleep';
 import { dropMeal, finishMeal } from '../ai/machines/eat';
 import { CrewC, DraftedC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
 import { claimedBed, mealOf } from '../ai/task';
 import { noteMeal, noteSleep } from '../crew/mood';
-import { AllegianceC } from '../fight/components';
 import { isIncapacitated } from '../crew/helpers';
 import { FighterC } from '../fight/components';
 import { ModuleC } from '../modules/components';
@@ -12,7 +12,6 @@ import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 import { hungerDrainPerSec } from '../crew/eating';
 import { BED_REST_MULT } from '../tuning';
-import { StationCrewC } from '../stations/components';
 
 /** Sleeping recovers this many times faster than awake decay. */
 const SLEEP_RECOVERY_MULT = 2;
@@ -72,8 +71,9 @@ const STATION_HUNGER_FLOOR = 25;
 function hunger(sim: Sim, id: number, crew: Crew, needs: Needs): void {
   const def = sim.content.species[crew.species]?.hunger;
   // Station crew get hungry and eat too, but never starve: the station is resupplied off-screen (STATION_HUNGER_FLOOR).
-  const station = sim.world.has(id, StationCrewC);
-  if (!def || (!station && sim.world.get(id, AllegianceC)?.faction !== 'player')) return;
+  const role = roleOf(sim, id);
+  const station = onStationRoll(role);
+  if (!def || (!station && role !== 'crew' && !isLodger(role))) return; // a lodging guest (passenger) eats aboard
   needs.hunger ??= 70 + (crew.appearanceSeed % 31);
   const meal = mealOf(sim, id)?.bb;
   const left = meal?.n ?? -1;

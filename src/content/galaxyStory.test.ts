@@ -45,7 +45,9 @@ function trip(seed: number, hops: number): { sim: Sim; route: string[] } {
 /** Answer the open decision with the first choice that is accepted. */
 function answer(sim: Sim): void {
   const ev = sim.story.active?.event as string;
-  for (const c of sim.content.events?.[ev]?.choices ?? []) {
+  // A choice that drops out into the event's scene would hold the trip in a pocket: these tests answer on the lane.
+  const drops = (c: NonNullable<EventDef['choices']>[number]) => [c.outcome, c.success, c.failure].some((o) => o?.effects?.some((e) => e.type === 'scene'));
+  for (const c of (sim.content.events?.[ev]?.choices ?? []).filter((x) => !drops(x))) {
     sim.enqueue({ type: 'story.choose', choice: c.id });
     step(sim);
     if (sim.story.active?.event !== ev) return;

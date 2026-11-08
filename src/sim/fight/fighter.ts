@@ -21,12 +21,12 @@ import { stunCrew } from '../robots/halt';
 import { surrender, wantsToSurrender } from './surrender';
 import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 import { shipIdOf } from '../regions';
+import { fightsBareHanded, roleOf } from '../consent/roles';
 import { EggSacC } from '../aliens/components';
 import { sacInReach, sacTile } from '../aliens/target';
 import { StunC } from '../robots/components';
 import { haltCrew } from '../robots/halt';
 import { TICK_HZ } from '../time';
-import { StationCrewC } from '../stations/components';
 import { DroneC } from '../drones/components';
 import { damageDrone } from '../drones/damage';
 import { droneInReach } from '../drones/target';
@@ -150,8 +150,8 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const role = sim.content.roles[crew.role];
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
-  // Station civilians (crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
-  const canFight = isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && !sim.world.has(id, StationCrewC));
+  // Non-combatants (station civilians, lodging passengers: crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
+  const canFight = isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && fightsBareHanded(roleOf(sim, id)));
   // Armed undrafted crew of the player's own ship hunt intruders they have not seen yet (onboarding: no draft needed).
   const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id);
   const hunter = invader || !!role?.fighter || defender;

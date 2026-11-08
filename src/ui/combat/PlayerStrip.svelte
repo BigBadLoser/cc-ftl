@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { UiAiming, UiApi, UiCombat } from '../api';
   import ActionButtons from './ActionButtons.svelte';
+  import BoardButton from './BoardButton.svelte';
   import FleeButton from './FleeButton.svelte';
   import HeatGauge from './HeatGauge.svelte';
   import OverchargeButtons from './OverchargeButtons.svelte';
@@ -12,7 +13,7 @@
   type Me = NonNullable<UiCombat['player']>;
   type Drive = { charge: number; max: number; helmManned: boolean; active: boolean };
   /** The player's strip along the bottom: it only lays out its sections (see the components it uses) and the thermal-overload cover. */
-  let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge }: {
+  let { api, me, flee, drive, aiming, rate, onSelect, onVent, onOvercharge, onBoard, boardBlocker }: {
     api: UiApi;
     me: Me;
     flee: () => void;
@@ -22,6 +23,9 @@
     onSelect: (id: number) => void;
     onVent: () => void;
     onOvercharge: (k: 'weapons' | 'shields' | 'engines') => void;
+    /** Opens the boarding party picker; null while there is no enemy (no Board tab). */
+    onBoard: (() => void) | null;
+    boardBlocker: string | null;
   } = $props();
 
   const canVolley = $derived(me.weapons.some((w) => w.charge >= 1 && w.powered && !w.ion));
@@ -31,10 +35,12 @@
 </script>
 
 <div class="dock steel">
+  {#if onBoard}<BoardButton {onBoard} blocker={boardBlocker} />{/if}
+  <div class="plane">
   <div class="strip" data-testid="combat-strip">
     <StatusBlock {me} style="grid-column:1; grid-row:1" />
     <StationTags {me} style="grid-column:1; grid-row:2" />
-    <WeaponBay {api} {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} onAutoDrone={(id, on) => api.dispatch({ type: 'combat.setAutoDrone', weaponId: id, on })} style="grid-column:2; grid-row:1" />
+    <WeaponBay {api} {me} {aiming} {onSelect} onMode={(id, mode) => api.dispatch({ type: 'combat.setWeaponMode', ship: me.ship, weaponId: id, mode })} style="grid-column:2; grid-row:1" />
     <ActionButtons canVolley={canVolley} holding={me.holdAll} onVolley={volley} onHold={hold} style="grid-column:2; grid-row:2" />
     <HeatGauge heat={me.heat} {rate} {onVent} style="grid-column:3; grid-row:1" />
     <OverchargeButtons heat={me.heat} {onOvercharge} style="grid-column:3; grid-row:2" />
@@ -47,11 +53,12 @@
     {/if}
   </div>
   {#if drive}<FleeButton {drive} onFlee={flee} />{/if}
+  </div>
 </div>
 
 <style>
   /* One grid for the whole strip, shared by every column: row 1 status, weapons, heat; row 2 stations, actions, overcharge. Sections in a row
-     are the same height. No frame around the strip: each section has its own. */
+     are the same height. The dock's backplane fills the gaps between sections; each section keeps its own frame. */
   .strip {
     position: relative;
     display: grid;
@@ -62,13 +69,30 @@
     min-width: 0;
     pointer-events: auto;
   }
-  /* The strip and its Flee tab side by side, with a gap between. */
+  /* The Board tab stands on its own at the left; the strip and its Flee tab sit side by side on one shared backplane (`.plane`): a plain fill
+     behind the sections, the Flee tab and the gaps between them, flush with their outer edges (no padding or border of its own). */
   .dock {
     display: flex;
     align-items: stretch;
     gap: 10px;
     width: min(1320px, calc(100vw - 24px));
     pointer-events: auto;
+  }
+  .plane {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .plane::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--panel);
   }
   /* Thermal overload: covers the whole strip and blocks it. */
   .lock {

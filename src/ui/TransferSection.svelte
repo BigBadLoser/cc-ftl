@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
   import ItemIcon from './ItemIcon.svelte';
-  import { NumberStepper, Select } from './kit';
+  import { Meter, NumberStepper, Select } from './kit';
 
   let { api }: { api: UiApi } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
@@ -57,7 +57,7 @@
         <div class="row1"><b>{t.from} to {t.to}</b>{#if t.auto}<small>salvage</small>{/if}
           <button class="mini" data-testid="transfer-cancel-{t.id}" onclick={() => api.dispatch({ type: 'transfer.cancel', order: t.id })}>Cancel</button></div>
         <div class="what">{t.items.map((l) => `${l.count} ${l.name}`).join(', ')}</div>
-        <div class="bar"><i style:width="{pct(t)}%"></i></div>
+        <Meter value={pct(t)} max={100} height={4} title="{t.moved} / {t.total}" />
         <div class="st" data-testid="transfer-status-{t.id}">{t.status}{t.moved ? ` · ${t.moved}/${t.total} delivered` : ''}</div>
       </li>
     {:else}
@@ -87,8 +87,6 @@
   .row1 b { flex: 1; font-weight: 600; }
   .mini { min-height: 28px; min-width: 0; padding: 0 8px; font-size: 12px; }
   .what { font-size: 12px; }
-  .bar { height: 4px; background: var(--panel-3); }
-  .bar i { display: block; height: 100%; background: var(--cyan); }
   .st { font-size: 12px; color: var(--dim); }
   .blocked .st { color: var(--amber); }
   .none { color: var(--dim); margin: 4px 0; }

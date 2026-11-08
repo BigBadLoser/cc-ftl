@@ -7,14 +7,19 @@ import { TICK_HZ } from '../time';
 import { ensureTrader } from '../trade/traders';
 import { spawnContact } from '../galaxy/arrivals';
 import { spawnSceneDerelict } from './derelicts';
+import { tendPods } from './pods';
 import { startVisitClock, tendVisit, visiting } from './visit';
 import { BoarderC } from '../vehicles/components';
+import { ModuleC } from '../modules/components';
+import { shipIdOf } from '../regions';
+import { CrewC, PositionC, type WorkCategory } from '../crew/components';
+import { blockWork } from '../crew/workBlock';
 import type { SceneShip, SceneSpec, Stance } from './types';
 
 /**
  * Making a scene real in its pocket: its ships through the node-contact path (`spawnContact`: the generator, the deploy bounds, the gap rule), on the
  * side their stance gives, with the crew, stock and wallet the spec rolled; its timers start. The scene sets conditions only: what happens next is
- * the sim's.
+ * the sim's. A ship may start damaged (`applyDamage`), come in late (`arriveAt`, retried by `tendScene` from then) or go for another scene ship (`prey`).
  */
 
 /** The combat side a stance puts a ship on: hostile ones on their owner's side, the rest neutral. */
@@ -38,18 +43,76 @@ function spawnSceneShip(sim: Sim, s: SceneShip): boolean {
     party.party = s.ambush.party;
     if (!s.ambush.trap) delete party.weapon; // an honest party comes unarmed
   }
+  if (s.damage) applyDamage(sim, s, s.contact.ship);
+  if (s.lacks) idleHands(sim, s.contact.ship, s.lacks);
   return true;
 }
 
-/** Open a scene in the (fresh) event grid: spawn its derelicts and ships and start its timers. */
+/**
+ * What a scene ship suffered before the player came (`SceneShip.damage`): of its modules of each line's category or def, in id order, the first `count`
+ * (absent: all) are left at the rolled share of their hp. A power source keeps 1 hp at least (none left at 0 is the ship-state system's wreck). The modules
+ * hit are kept (the observer's `repaired`, a timer's `stopOn`).
+ */
+function applyDamage(sim: Sim, s: SceneShip, ship: number): void {
+  const mods = sim.world.query(ModuleC).filter((m) => shipIdOf(sim, sim.world.get(m, ModuleC) as { x: number; y: number }) === ship).sort((a, b) => a - b);
+  const damaged: number[] = [];
+  const failing: number[] = [];
+  for (const d of s.damage ?? []) {
+    const hit = mods.filter((m) => {
+      const def = sim.content.modules[sim.world.get(m, ModuleC)?.def ?? ''];
+      return !!def && !damaged.includes(m) && (d.def ? sim.world.get(m, ModuleC)?.def === d.def : def.category === d.category);
+    }).slice(0, d.count ?? Infinity);
+    for (const id of hit) {
+      const m = sim.world.get(id, ModuleC) as { def: string; hp: number };
+      const def = sim.content.modules[m.def] as { maxHp: number; power: number };
+      m.hp = Math.max(def.power > 0 ? 1 : 0, Math.round((def.maxHp * d.pct) / 100));
+      damaged.push(id);
+      if (d.failing) failing.push(id);
+    }
+  }
+  s.damaged = damaged;
+  if (failing.length) s.failing = failing;
+}
+
+/** The ship's crew cannot do this work (`SceneShip.lacks`, a work block for 'scene' on each: crew/workBlock.ts), so its jobs wait for someone else aboard. */
+function idleHands(sim: Sim, ship: number, lacks: readonly WorkCategory[]): void {
+  for (const id of sim.world.query(CrewC, PositionC)) {
+    if (shipIdOf(sim, sim.world.get(id, PositionC) as { x: number; y: number }) !== ship) continue;
+    for (const c of lacks) blockWork(sim, id, c, 'scene');
+  }
+}
+
+/** Point a scene ship's guns at its prey (by tag) once both are real: the combat AI's target choice ranks it above other foes (systems/enemyAi.ts). */
+function aimAtPrey(sim: Sim, spec: SceneSpec, s: SceneShip): void {
+  const prey = s.prey ? spec.ships.find((o) => o.tag === s.prey)?.contact.ship : undefined;
+  const combat = s.contact.ship === undefined ? undefined : sim.world.get(s.contact.ship, CombatC);
+  const state = prey === undefined ? undefined : sim.world.get(prey, ShipC)?.state;
+  if (combat && prey !== undefined && combat.prey === undefined && (state === 'active' || state === 'disabled')) combat.prey = prey;
+}
+
+/** A ship that comes in late is not in the pocket until its tick (and has none until the player deploys). */
+const due = (sim: Sim, s: SceneShip): boolean => s.arriveAfter === undefined || (s.arriveAt !== undefined && sim.tick >= s.arriveAt);
+
+/**
+ * Start each ship's own clocks (its late arrival, its stay, its visit's ask) once the player's ship is deployed in the pocket, as the scene's timers
+ * do (scene/clock.ts): choosing where to deploy costs no time on any of them. Each is set once.
+ */
+function startShipClocks(sim: Sim, spec: SceneSpec): void {
+  if (sim.sector.state !== 'active') return;
+  for (const s of spec.ships) {
+    if (s.stay !== undefined && s.leaveAt === undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
+    if (s.arriveAfter !== undefined && s.arriveAt === undefined) s.arriveAt = sim.tick + Math.round(s.arriveAfter * TICK_HZ);
+    startVisitClock(sim, s);
+  }
+}
+
+/** Open a scene in the (fresh) event grid: spawn its derelicts and the ships there from the start (its clocks start at deploy). */
 export function openScene(sim: Sim, spec: SceneSpec): void {
   for (const d of spec.derelicts) if (d.ship === undefined) spawnSceneDerelict(sim, d);
-  for (const s of spec.ships) {
-    if (s.stay !== undefined) s.leaveAt = sim.tick + Math.round(s.stay * TICK_HZ);
-    startVisitClock(sim, s);
-    if (s.contact.ship === undefined) spawnSceneShip(sim, s);
-  }
-  for (const t of spec.timers) t.at = sim.tick + Math.round(t.afterSec * TICK_HZ);
+  startShipClocks(sim, spec);
+  for (const s of spec.ships) if (s.contact.ship === undefined && due(sim, s)) spawnSceneShip(sim, s);
+  for (const s of spec.ships) aimAtPrey(sim, spec, s);
+  tendPods(sim, spec);
 }
 
 /**
@@ -57,7 +120,9 @@ export function openScene(sim: Sim, spec: SceneSpec): void {
  * derelicts that found no room. True when something changed.
  */
 export function tendScene(sim: Sim, spec: SceneSpec): boolean {
+  startShipClocks(sim, spec);
   let changed = tendVisit(sim, spec);
+  if (tendPods(sim, spec)) changed = true;
   for (const d of spec.derelicts) if (d.ship === undefined && spawnSceneDerelict(sim, d)) changed = true;
   for (const s of spec.ships) {
     const id = s.contact.ship;
@@ -68,14 +133,15 @@ export function tendScene(sim: Sim, spec: SceneSpec): boolean {
       s.contact.ship = undefined;
       s.gone = 'fled';
       changed = true;
-    } else if (id === undefined && !s.gone && spawnSceneShip(sim, s)) changed = true;
+    } else if (id === undefined && !s.gone && due(sim, s) && spawnSceneShip(sim, s)) changed = true;
   }
+  for (const s of spec.ships) aimAtPrey(sim, spec, s);
   return changed;
 }
 
 /**
  * A neutral scene ship moves on when its business here is done (`leaveAt`): like a scene director, it gives the ship a standing drive-charge order (the
- * ordinary helm job seats one of its crew), and once the drive is charged the ship jumps out through the ordinary `combat.flee`, as a fleeing NPC does. One that was hailed holds station; so does one in the middle of a deal. Hostile ones are the combat AI's.
+ * ordinary helm job seats one of its crew), and once the drive is charged the ship jumps out through the ordinary `combat.flee`, as a fleeing NPC does. A helpless one cannot go (DESIGN.md "Distress freighter"); one that was hailed holds station; so does one in the middle of a deal. Hostile ones are the combat AI's.
  */
 export function departScene(sim: Sim, spec: SceneSpec): void {
   for (const s of spec.ships) {
@@ -83,7 +149,7 @@ export function departScene(sim: Sim, spec: SceneSpec): void {
     const ship = id === undefined ? undefined : sim.world.get(id, ShipC);
     if (id === undefined || !ship) continue;
     if (!s.hailed && !s.dismissed && sim.trade.hails.some((h) => h.ship === id && h.answered)) s.hailed = true;
-    if ((s.hailed && !s.dismissed) || visiting(s.ambush) || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
+    if (s.stance === 'helpless' || (s.hailed && !s.dismissed) || visiting(s.ambush) || s.leaveAt === undefined || sim.tick < s.leaveAt || ship.faction !== 'neutral' || ship.state !== 'active') continue;
     if (sim.trade.deals.some((d) => d.ship === id && isLive(d))) continue;
     const combat = sim.world.get(id, CombatC);
     if (!combat) continue;

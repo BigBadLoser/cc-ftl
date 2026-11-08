@@ -3,6 +3,7 @@ import { ModuleC, ShipC } from '../sim';
 import { shipIdOf } from '../sim/regions';
 import { playerShips } from '../sim/story/world';
 import type { UiFoeModule } from '../ui/api';
+import { moduleNameOf } from '../sim/upgrades/stats';
 import { upgradeEffects } from './upgradeText';
 
 /**
@@ -18,8 +19,8 @@ export function buildFoeModule(sim: Sim, id: number | null): UiFoeModule | null 
   if (!ship || playerShips(sim).has(shipId)) return null;
   const up = m.upgrade ? sim.content.items[m.upgrade] : undefined;
   return {
-    id, name: def.name, ship: ship.name, hp: Math.round(m.hp), maxHp: def.maxHp, powered: m.powered && m.enabled && m.hp > 0,
+    id, name: moduleNameOf(sim, id), ship: ship.name, hp: Math.round(m.hp), maxHp: def.maxHp, powered: m.powered && m.enabled && m.hp > 0,
     slot: def.upgradeSlot ?? null,
-    upgrade: m.upgrade ? { item: m.upgrade, name: up?.name ?? m.upgrade, effects: up?.upgrade ? upgradeEffects(up.upgrade) : [] } : null,
+    upgrade: m.upgrade ? { item: m.upgrade, name: up?.name ?? m.upgrade, effects: up?.upgrade ? upgradeEffects(up.upgrade) : [], renames: !!up?.upgrade?.mods.weapon?.name } : null,
   };
 }

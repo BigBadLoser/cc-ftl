@@ -1,7 +1,8 @@
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
-import { ammoCount } from './ammo';
+import { weaponDefOf } from '../upgrades/stats';
+import { hasAmmo } from './ammo';
 import { CombatC, IonC, WeaponC, type Target } from './components';
 import { operatorOf } from './operators';
 import { shipById } from './ships';
@@ -45,8 +46,8 @@ export function weaponsIdleReason(sim: Sim, shipId: number): string | null {
   });
   if (aimed.length === 0) return 'No targets';
   const armed = aimed.filter((id) => {
-    const ammo = sim.content.weapons?.[sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.weapon ?? '']?.ammo;
-    return !ammo || ammoCount(sim, shipId, ammo) > 0;
+    const wd = weaponDefOf(sim, id);
+    return !wd || hasAmmo(sim, shipId, wd);
   });
   if (armed.length === 0) return 'No ammo';
   if (combat.hold || armed.every((id) => sim.world.get(id, WeaponC)?.mode === 'hold' && !sim.world.get(id, WeaponC)?.once)) return 'Holding fire';

@@ -22,4 +22,6 @@ export interface UpgradeDef {
   /** Module def ids or weapon def ids it fits; absent = any module with that slot. */
   fits?: readonly string[];
   mods: UpgradeMods;
+  /** One player-facing line on what a behaviour upgrade does and costs (the numbers in `mods.weapon` are not read back into text). */
+  blurb?: string;
 }

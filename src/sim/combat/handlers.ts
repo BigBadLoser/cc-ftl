@@ -1,7 +1,6 @@
 import { loseStrandedCrew } from '../boarding/stranded';
 import type { Command } from '../commands';
 import { ModuleC } from '../modules/components';
-import { playerShips } from '../story/world';
 import type { Sim } from '../sim';
 import { flee } from '../galaxy/hyperspace';
 import { leave } from '../galaxy/respond';
@@ -116,13 +115,6 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     weapon.mode = cmd.mode;
     weapon.once = false;
     delete weapon.restore; // an explicit choice, so hold-all no longer owns this weapon
-  },
-  'combat.setAutoDrone': (sim, cmd) => {
-    const weapon = sim.world.get(cmd.weaponId, WeaponC);
-    const at = sim.world.get(cmd.weaponId, ModuleC);
-    if (!weapon || !at || !playerShips(sim).has(shipIdOf(sim, at))) return reject(sim, cmd.type, 'noWeapon');
-    if (weapon.autoDrone === undefined) return reject(sim, cmd.type, 'notAntiDrone');
-    weapon.autoDrone = !!cmd.on;
   },
   'combat.holdAll': (sim, cmd) => {
     if (!sim.world.get(cmd.ship, CombatC)) return reject(sim, cmd.type, 'noShip');

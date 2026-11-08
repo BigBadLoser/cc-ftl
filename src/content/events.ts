@@ -8,28 +8,63 @@ import type { EventDef } from '../sim';
  */
 export const events = {
   // --- Decisions ---
-  /** Skill check with shown odds; cost-free; reputation reward. */
+  /**
+   * A physical encounter (DESIGN.md "Distress freighter"): a crippled freighter, its reactor failing on a clock (fires as it runs down, then it blows),
+   * maybe its drive too. Help is agreed over the hail (its crew then take your party aboard as guests, who mend it through the ordinary repair jobs);
+   * boarding it unasked is boarding. Deeper, raiders may already be on it, or be on their way (the scene seed; a scan warns of them).
+   */
   'event.distress_call': {
     title: 'Distress call',
-    text: 'A battered freighter drifts nearby, its engines dead. The captain begs for help restoring power before the cold gets to the crew.',
+    text: 'A freighter drifts off the lane, its distress call clipped and looping: "...power failing... request any..." Reactor, drive or raiders: the signal does not say.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 8 }],
+    triggers: [{ kind: 'transit', weight: 6 }],
     cooldownSec: 600,
-    choices: [
-      {
-        id: 'repair', label: 'Send a repair team', hint: 'A skilled hand on the engines',
-        check: { skill: 'repair', difficulty: 3 },
-        success: {
-          text: 'The engines catch. The grateful captain empties a cargo crate into your hold.',
-          effects: [{ type: 'items', item: 'item.parts', count: 6 }, { type: 'items', item: 'item.metal', count: 10 }, { type: 'skillXp', skill: 'repair', amount: 40, who: 'actor' }, { type: 'reputation', faction: 'traders', delta: 1 }],
+    eligible: [{ kind: 'shuttle', eva: true }],
+    scene: {
+      persistence: 'transient',
+      ships: [
+        {
+          tag: 'freighter', owner: 'traders', shipgen: 'faction.civilian', family: 'freighter', stance: 'helpless', crew: [2, 4], credits: [150, 400], attitude: 3,
+          damage: [{ def: 'module.reactor', count: 1, hp: [20, 35], failing: true }, { def: 'module.engine', count: 1, hp: [5, 30] }],
+          lacks: ['repair'], // no engineer aboard: "we cannot fix it with what we have"
+          cargo: {
+            lines: [2, 3],
+            pool: [
+              { item: 'item.fuel', min: 6, max: 14 }, { item: 'item.ration', min: 10, max: 24 }, { item: 'item.electronics', min: 4, max: 10 },
+              { item: 'item.polymer', min: 8, max: 18 }, { item: 'item.parts', min: 4, max: 10 },
+            ],
+          },
+          story: '"This is the freighter on your scope. Our reactor took a coolant fault two jumps back and it is getting worse; the drive went with it. We cannot fix it with what we have. Send a repair party and we will make it worth your while: whatever we can spare from the hold."',
         },
-        failure: {
-          text: 'A coolant line bursts while your team works. They get out, scorched, and the freighter stays dead.',
-          effects: [{ type: 'crewDamage', amount: 25, who: 'actor' }, { type: 'skillXp', skill: 'repair', amount: 15, who: 'actor' }],
+        // Deeper only (danger 2 and up), on some seeds: raiders on the freighter, already there or on their way (they jump in on a clock).
+        {
+          tag: 'raider', group: 'raiders', owner: 'pirates', shipgen: 'faction.scrapper', family: 'raider', stance: 'hostile', prey: 'freighter',
+          danger: { min: 2 }, chance: 0.6, arrive: { chance: 0.5, afterSec: [60, 100] },
         },
+      ],
+      timers: [{
+        id: 'reactor', ship: 'freighter', afterSec: [150, 165], stopOn: 'repaired', fires: { leadSec: 30, everySec: 15, max: 2 }, due: 'wreck',
+        // The reactor blows: wrecked systems and hull around it, crew hurt less the further they stand (three rings), fire; then the ship goes dark.
+        blast: [
+          { type: 'moduleDamage', amount: 300, radius: 2 },
+          { type: 'hullDamage', amount: 300, radius: 3, falloff: 0.5 },
+          { type: 'crewDamage', amount: 35, radius: 2 }, { type: 'crewDamage', amount: 25, radius: 4 }, { type: 'crewDamage', amount: 15, radius: 6 },
+          { type: 'ignite', radius: 4 },
+        ],
+      }],
+      rules: {
+        reactorBlew: { on: 'timer', timer: 'reactor', log: "The {ship}'s reactor blows", tone: 'bad' },
       },
-      { id: 'supplies', label: 'Throw them some spare parts', cost: [{ item: 'item.parts', count: 3 }], outcome: { text: 'They patch it together themselves and thank you.', effects: [{ type: 'reputation', faction: 'traders', delta: 1 }] } },
-      { id: 'ignore', label: 'Fly on', outcome: { text: 'You leave them to it.', effects: [{ type: 'reputation', faction: 'traders', delta: -1 }] } },
+    },
+    choices: [
+      { id: 'hail', label: 'Answer the call', hint: 'Hear what happened', remote: 'hail' },
+      { id: 'scan', label: 'Scan it', hint: 'Hull, the failing system, cargo, raiders', remote: 'scan' },
+      {
+        id: 'help', label: 'Offer help', hint: 'Drop out; your party goes aboard as guests',
+        requires: [{ kind: 'remote', action: 'hail' }, { kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene', aid: true }] },
+      },
+      { id: 'approach', label: 'Drop out', hint: 'No promises made', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
     ],
   },
   /**
@@ -205,16 +240,31 @@ export const events = {
       { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.metal', count: -5 }] } },
     ],
   },
-  /** Module requirement; heal effect. */
+  /**
+   * A physical encounter (DESIGN.md "Physical encounters", the medical pod; #173 step 6): an escape pod adrift with one hurt person aboard, bleeding out from
+   * the moment the ship drops out. Called in, the pod docks at an airlock and lets them out; the crew carry them to a bed (the rescue job) and they stay on as
+   * a passenger (consent/passage.ts). What they are worth to anyone, and where they want to go, comes later (#173).
+   */
   'event.medical_emergency': {
-    title: 'Medical emergency',
-    text: 'A stranded prospector floats in a leaking escape pod, barely conscious. Your crew could patch them up if you have somewhere to lay them.',
+    title: 'Pod beacon',
+    text: 'An escape pod beacon repeats on the distress band. Under it, faint and uneven, a life sign.',
     mode: 'decision',
-    triggers: [{ kind: 'transit', weight: 3 }],
+    triggers: [{ kind: 'transit', weight: 4 }],
     cooldownSec: 900,
+    eligible: [{ kind: 'module', def: 'module.bed' }],
+    scene: {
+      persistence: 'transient',
+      pods: [{ roles: ['role.engineer', 'role.pilot', 'role.medic', 'role.gunner'], owners: ['traders', 'meridian', 'helix', 'vantor'], bleed: [150, 210], purse: [60, 150] }],
+      rules: {
+        podRescued: { on: 'rescued', of: 'pod', log: '{crew} is aboard, out of the pod', tone: 'good' },
+        podDied: { on: 'died', of: 'pod', log: '{crew}, the pod survivor, is dead', tone: 'bad' },
+        podLeft: { on: 'left', of: 'pod', effects: [{ type: 'flag', flag: 'pod_left' }], log: "The pod's beacon fades behind you", tone: 'info' },
+      },
+    },
     choices: [
-      { id: 'treat', label: 'Take them aboard', requires: [{ kind: 'module', def: 'module.bed' }], outcome: { text: 'Rested and fed, the prospector rewards you and your crew feel the better for the good deed.', effects: [{ type: 'items', item: 'item.metal', count: 15 }, { type: 'crewHeal', amount: 20, who: 'all' }, { type: 'reputation', faction: 'traders', delta: 1 }] } },
-      { id: 'beacon', label: 'Drop a rescue beacon', outcome: { text: 'Someone will find them.' } },
+      { id: 'scan', label: 'Scan it', hint: 'Who is aboard, and how bad it is', remote: 'scan' },
+      { id: 'approach', label: 'Drop out', hint: 'Bring the pod in once there', outcome: { effects: [{ type: 'scene' }] } },
+      { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
     ],
   },
   // --- Notices (in-world, non-pausing) ---

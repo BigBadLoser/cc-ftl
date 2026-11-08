@@ -9,6 +9,10 @@ import { killCrew } from '../crew/death';
 import { tileHarm } from '../crew/hazard';
 import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
+import { AboardC, VehicleC, type Vehicle } from '../vehicles/components';
+import { occupants } from '../vehicles/lifecycle';
+import { guestHere } from '../consent/guests';
+import { ShipC } from '../combat/components';
 import { skillOf } from '../combat/operators';
 import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
@@ -23,6 +27,8 @@ import { grantXp } from '../crew/xp';
  * Living crew breathe (use O2, emit CO2 on their tile) and take environmental harm. At 0 hp they
  * are downed and bleed out unless a rescuer stabilizes them in a bed, where they heal and
  * eventually get up. A downed crew whose air is still lethal keeps bleeding even in a bed.
+ * Crew aboard a vehicle (no tile: `AboardC`) keep their vitals too (`vitalsAboard`): the cabin is pressurised, so air and the tile fields do not reach
+ * them, but hunger harms, a wound bleeds and they can go down or die in flight.
  * Crew without a Health component are ignored. Species flags: `airless` bodies neither breathe nor mind thin air, CO2 or
  * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down; `creature` ones die at 0 hp.
  */
@@ -72,7 +78,10 @@ export function vitalsSystem(sim: Sim): void {
         else down(sim, id, pos);
       }
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
-      const medic = medicine(shipIdOf(sim, pos), sim.world.get(id, AllegianceC)?.faction ?? '');
+      // A guest is cared for by the crew of the ship that took them in (a passenger in the player's bed has the player's medic).
+      const ship = shipIdOf(sim, pos);
+      const side = guestHere(sim, id) ? sim.world.get(ship, ShipC)?.faction : sim.world.get(id, AllegianceC)?.faction;
+      const medic = medicine(ship, side ?? '');
       const care = 1 + SKILL_STEP * Math.max(0, medic.skill);
       const before = health.hp;
       health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
@@ -84,15 +93,42 @@ export function vitalsSystem(sim: Sim): void {
       if (downed.bleed <= 0) die(sim, id, downed);
     }
   }
+  // (Riders are found through the vehicles: querying the aboard store would create it, and an empty store changes the save bytes of games without one.)
+  for (const v of sim.world.query(VehicleC)) {
+    const veh = sim.world.get(v, VehicleC) as Vehicle;
+    for (const id of occupants(veh)) if (sim.world.has(id, HealthC) && sim.world.has(id, AboardC) && !sim.world.has(id, DeadC)) vitalsAboard(sim, id);
+  }
 }
 
-function down(sim: Sim, id: number, pos: Position): void {
+/** One tick of vitals for someone riding a vehicle: no air or tile harm, only hunger; they regenerate, go down, bleed and die as on a tile. */
+function vitalsAboard(sim: Sim, id: number): void {
+  const health = sim.world.get(id, HealthC) as Health;
+  const downed = sim.world.get(id, DownedC);
+  const species = sim.content.species[(sim.world.get(id, CrewC) as Crew).species];
+  const harm = (sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0;
+  if (!downed) {
+    if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
+    else if (health.hp > 0 && !species?.mechanical) health.hp = Math.min(health.max, health.hp + REGEN_PER_SEC / TICK_HZ);
+    if (health.hp > 0) return;
+    if (species?.wreck) wreck(sim, id);
+    else if (species?.creature) killCrew(sim, id);
+    else down(sim, id, null);
+    return;
+  }
+  health.hp = Math.max(0, health.hp - harm / TICK_HZ);
+  if (!downed.patched || harm > 0) downed.bleed -= 1 / TICK_HZ;
+  if (downed.bleed <= 0) die(sim, id, downed);
+}
+
+function down(sim: Sim, id: number, pos: Position | null): void {
   const crew = sim.world.get(id, CrewC) as Crew;
   abortTask(sim, id, 'downed');
   sim.world.remove(id, DraftedC);
-  pos.toX = pos.x;
-  pos.toY = pos.y;
-  pos.progress = 0;
+  if (pos) {
+    pos.toX = pos.x;
+    pos.toY = pos.y;
+    pos.progress = 0;
+  }
   sim.world.add(id, DownedC, { bleed: bleedOutSec(sim, id), stabilized: false, bed: 0 });
   crew.activity = 'downed';
   sim.events.emit({ type: 'crew.downed', crew: id });

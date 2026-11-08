@@ -1,8 +1,8 @@
 import {
-  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShip,
+  DANGER_STEP, FTL_CHARGE_SEC, edgeBetween, ftlCharge, fuelStock, jumpFuel, galaxyIndex, isHostileFaction, planStarRoute, playerShipPackedOk,
   fleetName, hullLoad, isAdrift, nodeOf, portNode, riskOf, routeBlocker, routeCharge, sensorNodes, standings, visibleFleets, type Fleet, type Sim,
 } from '../sim';
-import { featureName } from './jobsSnapshot';
+import { featureName, passengerName } from './jobsSnapshot';
 import type { UiNodeJob, UiStarExit, UiStarIcon, UiStarFleet, UiTravel, UiStarmap, UiStarNode, UiStarRoute } from '../ui/starmapApi';
 import { cargoOf, marketOf } from './marketSnapshot';
 import { newsOf } from './newsSnapshot';
@@ -66,7 +66,7 @@ function travelOf(sim: Sim): UiTravel | null {
 /** The fuel, charge and progress figures (cheap; refreshed often). */
 export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'chargeMax' | 'jumps' | 'turn' | 'state' | 'travel' | 'current' | 'ship' | 'credits' | 'heat' | 'encounters' | 'event' | 'result'> {
   return {
-    ship: playerShip(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
+    ship: playerShipPackedOk(sim), fuel: fuelStock(sim), charge: Math.floor(ftlCharge(sim) ?? 0), chargeMax: FTL_CHARGE_SEC,
     jumps: sim.galaxy.jumps, turn: sim.galaxy.turn, state: sim.sector.state, travel: travelOf(sim), current: sim.galaxy.current,
     credits: Math.floor(sim.trade.credits), heat: buildHeat(sim), encounters: encountersOf(sim), event: eventOf(sim), result: resultOf(sim),
   };
@@ -76,10 +76,10 @@ export function starmapStatus(sim: Sim): Pick<UiStarmap, 'fuel' | 'charge' | 'ch
 function jobMarkers(sim: Sim): Map<string, UiNodeJob[]> {
   const out = new Map<string, UiNodeJob[]>();
   for (const j of sim.galaxy.jobs) {
-    const at = j.kind === 'delivery' ? j.to : j.node;
+    const at = j.kind === 'delivery' || j.kind === 'passage' ? j.to : j.node;
     if (!at) continue;
     const label = j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${(j.item && sim.content.items[j.item]?.name) || j.item || 'goods'})`
-      : j.kind === 'survey' ? `Survey: ${featureName(j.feature)}` : `Bounty: ${j.target ?? 'target'}`;
+      : j.kind === 'survey' ? `Survey: ${featureName(j.feature)}` : j.kind === 'passage' ? `Passage: ${passengerName(sim, j.crew)}` : `Bounty: ${j.target ?? 'target'}`;
     out.set(at, [...(out.get(at) ?? []), { kind: j.kind, label }]);
   }
   return out;
@@ -164,7 +164,7 @@ const BLOCKERS: Record<string, string> = {
 
 /** The player's hull against its engines when it is over: what the route preview shows beside the Overcharge button. */
 function overweightOf(sim: Sim): UiStarRoute['overweight'] {
-  const ship = playerShip(sim);
+  const ship = playerShipPackedOk(sim);
   const load = ship ? hullLoad(sim, ship) : null;
   return load && load.over > 0 ? { tiles: load.tiles, capacity: load.capacity, risk: riskOf(load).risk } : null;
 }

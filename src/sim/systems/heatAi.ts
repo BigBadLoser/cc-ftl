@@ -1,6 +1,6 @@
 import { CombatC, IonC, ProjectileC, ShipC, WeaponC, type Combat } from '../combat/components';
 import { factionsHostile, isAiFaction } from '../combat/factions';
-import { ammoCount } from '../combat/ammo';
+import { hasAmmo } from '../combat/ammo';
 import { heatCeilingBlocks, overchargeError, ventError } from '../combat/heat';
 import { AI_OVERCHARGE_BELOW, AUTO_SHOT_SOON_CHARGE, AUTO_VENT_AT, AUTO_VENT_FORCE_AT, HEAT_MAX } from '../combat/heatTuning';
 import { shipById } from '../combat/ships';
@@ -8,6 +8,7 @@ import { ModuleC } from '../modules/components';
 import { isDeployed } from '../modules/deploy';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
+import { weaponDefOf } from '../upgrades/stats';
 
 /**
  * Enemy heat management by command. Enemy ships play by the player's rules: they vent when their heat is high and no shot is about to land
@@ -40,9 +41,9 @@ function ceilingBlocksAll(sim: Sim, shipId: number, c: Combat): boolean {
   let usable = 0;
   for (const wid of sim.world.query(WeaponC, ModuleC)) {
     const m = sim.world.get(wid, ModuleC);
-    const def = m && sim.content.weapons?.[sim.content.modules[m.def]?.weapon ?? ''];
+    const def = weaponDefOf(sim, wid); // effective: a coolant jacket lowers its heat
     if (!m || !def || shipIdOf(sim, m) !== shipId || !m.powered || m.hp <= 0 || sim.world.has(wid, IonC) || !isDeployed(sim, wid)) continue;
-    if (def.ammo && ammoCount(sim, shipId, def.ammo) <= 0) continue;
+    if (!hasAmmo(sim, shipId, def)) continue;
     if (!heatCeilingBlocks(c, def.heat)) return false;
     usable++;
   }

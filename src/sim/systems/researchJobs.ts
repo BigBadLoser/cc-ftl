@@ -6,6 +6,7 @@ import { ResearchC } from '../research/components';
 import { isDone, labsOf, projectOf, researchJobs, startHead } from '../research/research';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
+import { moduleSite } from '../modules/footprint';
 
 /**
  * Keeps a ship's research going: drops queued projects that no longer exist or whose blueprints were learnt meanwhile (an unpaid head
@@ -39,7 +40,7 @@ export function researchJobsSystem(sim: Sim): void {
       if (!m || jobs.has(lab)) continue;
       const id = sim.world.createEntity();
       sim.world.add(id, JobC, {
-        category: 'research', kind: 'research', x: m.x, y: m.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: lab,
+        category: 'research', kind: 'research', ...moduleSite(sim.content.modules[m.def], m), struct: 0, work: 1, progress: 0, reservedBy: 0, target: lab,
       });
     }
   }

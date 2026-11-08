@@ -15,6 +15,7 @@
   let { api, onPriorities, onTrade, onStation, onResearch }: { api: UiApi; onPriorities: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
   let foes = $state<UiCrew[]>([]);
+  let guests = $state<UiCrew[]>([]);
   let mods = $state<UiModule[]>([]);
   let bays = $state<UiShuttles['bays']>([]);
   let info = $state<UiInspect | null>(null);
@@ -32,6 +33,7 @@
     const u = [
       api.crew.subscribe((v) => (crew = v)),
       api.hostiles.subscribe((v) => (foes = v)),
+      api.guests.subscribe((v) => (guests = v)),
       api.modules.subscribe((v) => (mods = v)),
       api.shuttles.subscribe((v) => (bays = v.bays)),
       api.inspect.subscribe((v) => (info = v)),
@@ -49,7 +51,7 @@
 
   /** Clearing any selection hides the inspector. */
   const back = () => api.selectCrew(null);
-  const hasCrew = $derived(selCrew !== null && (crew.some((c) => c.id === selCrew) || foes.some((c) => c.id === selCrew)));
+  const hasCrew = $derived(selCrew !== null && (crew.some((c) => c.id === selCrew) || guests.some((c) => c.id === selCrew) || foes.some((c) => c.id === selCrew)));
   const mod = $derived(selMod === null ? undefined : mods.find((m) => m.id === selMod));
   const site = $derived(selSite !== null && sites.some((x) => x.id === selSite));
   const tile = $derived(info?.selected ? info : null);

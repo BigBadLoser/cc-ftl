@@ -5,13 +5,15 @@
    * charged drive). Set in the same thin frame as the combat cards; a ship's row frames it in the view.
    */
   import Icon from './Icon.svelte';
-  import { ActionButton, Frame, Pill } from './kit';
+  import { ActionButton, Chip, chipTone, Frame } from './kit';
   import type { UiApi } from './api';
   import type { UiEventGrid, UiEncounterResult } from './starmapApi';
 
   let { api, event, result }: { api: UiApi; event: UiEventGrid; result: UiEncounterResult | null } = $props();
 
   const leave = () => api.dispatch({ type: 'galaxy.leaveEvent' });
+  const help = () => event.aid && api.dispatch({ type: 'galaxy.aid', ship: event.aid.ship });
+  const callPod = () => event.pod && api.dispatch({ type: 'galaxy.recoverPod', pod: event.pod.pod });
   const answer = (grant: boolean) => event.dockRequest && api.dispatch({ type: 'galaxy.visit', ship: event.dockRequest.ship, grant });
   const title = $derived(event.title.replace(/^Deep space: /, ''));
   const quiet = $derived(
@@ -24,7 +26,7 @@
 <aside class="card" data-testid="event-panel" data-kind={event.kind}>
   <Frame title={title} tone={event.hostiles > 0 ? 'hostile' : 'normal'} style="pointer-events:auto; background: var(--panel)">
     {#snippet right()}
-      <Pill tone="dim">Off the map</Pill>
+      <Chip plate>Off the map</Chip>
     {/snippet}
     <div class="body">
       <ul class="roster">
@@ -32,7 +34,7 @@
           <li>
             <button class="row" disabled={!r.ship} title={r.ship ? 'Show it' : undefined} onclick={() => r.ship && api.focusFight(r.ship)}>
               <span class="who"><b>{r.name}</b><small>{r.owner}</small></span>
-              <Pill tone={r.tone}>{r.status}</Pill>
+              <Chip plate tone={chipTone(r.tone)}>{r.status}</Chip>
             </button>
           </li>
         {/each}
@@ -44,6 +46,24 @@
             <ActionButton tone="plain" onclick={() => answer(true)} testid="dock-allow"><Icon name="shuttle" size={16} />Let them dock</ActionButton>
             <ActionButton tone="plain" onclick={() => answer(false)} testid="dock-refuse"><Icon name="evasion" size={16} />Refuse</ActionButton>
           </div>
+        </div>
+      {/if}
+      {#if event.aid}
+        <div class="ask" data-testid="aid">
+          {#if event.aid.clock !== null}<p class="note warn" data-testid="aid-clock"><Icon name="alert" size={14} />{event.aid.name}: {(event.aid.failing ?? 'systems').toLowerCase()} failing, {event.aid.clock} s left</p>{/if}
+          {#if event.aid.status}<p class="note ask-text">{event.aid.status}</p>{/if}
+          {#if event.aid.action}
+            <ActionButton tone="plain" onclick={help} testid="aid-offer"><Icon name="shuttle" size={16} />{event.aid.action === 'offer' ? 'Offer help' : 'Send the repair party again'}</ActionButton>
+          {/if}
+        </div>
+      {/if}
+      {#if event.pod}
+        <div class="ask" data-testid="pod">
+          {#if event.pod.clock !== null}<p class="note warn" data-testid="pod-clock"><Icon name="alert" size={14} />{event.pod.name}: bleeding out, {event.pod.clock} s left</p>{/if}
+          <p class="note ask-text">{event.pod.status}</p>
+          {#if event.pod.action === 'call'}
+            <ActionButton tone="plain" onclick={callPod} testid="pod-call"><Icon name="shuttle" size={16} />Bring the pod in</ActionButton>
+          {/if}
         </div>
       {/if}
       <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{quiet}</p>

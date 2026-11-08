@@ -9,7 +9,8 @@ import { SEED_TRIES } from '../galaxy/tuning';
 import type { Encounter } from '../galaxy/types';
 import type { ItemQty } from '../registry';
 import { buildDerelict } from './derelicts';
-import type { Ambush, AmbushRecipe, Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, Stance } from './types';
+import { buildPod } from './pods';
+import type { Ambush, AmbushRecipe, Range, SceneDerelict, SceneRecipe, SceneShip, SceneShipRecipe, SceneSpec, SceneTimer, SceneTimerRecipe, Stance } from './types';
 
 /**
  * Scene specs (DESIGN.md "Physical encounters", part b). A story scene is rolled from the world seed, the event id and the hop it was signalled at, so
@@ -70,7 +71,49 @@ function buildShip(sim: Sim, r: SceneShipRecipe, rng: Rng, depth: number, key: r
     ship.ambush = a.ambush;
     ship.crew = a.crew;
   }
+  if (r.tag) ship.tag = r.tag;
+  if (r.prey) ship.prey = r.prey;
+  if (r.story) ship.story = r.story;
+  if (r.lacks) ship.lacks = [...r.lacks];
+  if (r.damage) ship.damage = r.damage.map((d) => ({ ...(d.category ? { category: d.category } : {}), ...(d.def ? { def: d.def } : {}), ...(d.count !== undefined ? { count: d.count } : {}), pct: roll(rng, d.hp), ...(d.failing ? { failing: true as const } : {}) }));
   return ship;
+}
+
+/** The seed's say on whether a ship is in the scene and whether it comes in late: rolled once per group (a ship without one is its own). */
+interface Presence { here: boolean; arriveAfter?: number }
+
+function presence(rng: Rng, r: SceneShipRecipe, depth: number, groups: Map<string, Presence>, i: number): Presence {
+  const key = r.group ?? `#${i}`;
+  const known = groups.get(key);
+  if (known) return known;
+  const tier = (r.danger?.min === undefined || depth >= r.danger.min) && (r.danger?.max === undefined || depth <= r.danger.max);
+  const here = tier && (r.chance === undefined || rng.next() < r.chance);
+  const late = here && r.arrive && rng.next() < r.arrive.chance ? roll(rng, r.arrive.afterSec) : undefined;
+  const p: Presence = { here, ...(late !== undefined ? { arriveAfter: late } : {}) };
+  groups.set(key, p);
+  return p;
+}
+
+/** The ships of a recipe this seed puts in the scene (danger tier, chance and late arrivals rolled first, then each ship's own numbers). */
+function buildShips(sim: Sim, recipes: SceneShipRecipe[], rng: Rng, depth: number, h: number, used: Set<string>): SceneShip[] {
+  const groups = new Map<string, Presence>();
+  const out: SceneShip[] = [];
+  recipes.forEach((r, i) => {
+    const p = r.danger || r.chance !== undefined || r.arrive ? presence(rng, r, depth, groups, i) : { here: true };
+    if (!p.here) return;
+    const ship = buildShip(sim, r, rng, depth, [h, i], used);
+    if (p.arriveAfter !== undefined) ship.arriveAfter = p.arriveAfter;
+    out.push(ship);
+  });
+  return out;
+}
+
+function buildTimer(rng: Rng, t: SceneTimerRecipe): SceneTimer {
+  return {
+    id: t.id, afterSec: typeof t.afterSec === 'number' ? t.afterSec : roll(rng, t.afterSec),
+    ...(t.ship ? { ship: t.ship } : {}), ...(t.stopOn ? { stopOn: t.stopOn } : {}), ...(t.fires ? { fires: { ...t.fires } } : {}), ...(t.due ? { due: t.due } : {}),
+    ...(t.blast ? { blast: t.blast.map((e) => ({ ...e })) } : {}),
+  };
 }
 
 /** The scene a story event's signal is about, for this hop (`galaxy.turn` and `jumps` tell hops apart). */
@@ -84,9 +127,10 @@ export function storySpec(sim: Sim, event: string, recipe: SceneRecipe): SceneSp
     key: `story:${event}:${h.toString(16)}`,
     persistence: recipe.persistence,
     event,
-    ships: (recipe.ships ?? []).map((r, i) => buildShip(sim, r, rng, depth, [h, i], used)),
+    ships: buildShips(sim, recipe.ships ?? [], rng, depth, h, used),
     derelicts: (recipe.derelicts ?? []).map((r, i) => buildDerelict(sim, r, rng, [h, 0x100 + i])).filter((d): d is SceneDerelict => d !== null),
-    timers: (recipe.timers ?? []).map((t) => ({ id: t.id, afterSec: t.afterSec })),
+    timers: (recipe.timers ?? []).map((t) => buildTimer(rng, t)),
+    ...(recipe.pods?.length ? { pods: recipe.pods.map((r) => buildPod(sim, r, rng)) } : {}),
   };
 }
 

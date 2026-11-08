@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiItemDef, UiStorage } from './api';
   import ItemIcon from './ItemIcon.svelte';
@@ -31,7 +32,7 @@
   <section data-testid="storage-panel">
     <div class="cap">
       <span>Slots <b data-testid="storage-slots">{used}/{s.capacity}</b></span>
-      <div class="bar" class:full={pct >= 100}><i style:width="{pct}%"></i></div>
+      <Meter value={pct} max={100} tone={pct >= 100 ? 'warn' : 'neutral'} height={6} title="{used} / {s.capacity}" />
     </div>
     <ul class="contents" data-testid="storage-contents">
       {#each totals as [item, n] (item)}
@@ -61,7 +62,6 @@
   section { margin-top: 8px; }
   .cap { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; color: var(--dim); }
   .cap b { color: var(--text); }
-  .bar.full > i { background: var(--amber); }
   .contents { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
   .contents li { display: flex; align-items: center; gap: 6px; background: var(--track); border-radius: 0; padding: 2px 8px 2px 4px; }
   .contents .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -9,6 +9,7 @@ import type { Sector } from './combat/components';
 import type { SectorArchive } from './sector/archive';
 import { runPipeline } from './pipeline';
 import { NOOP_PROBE, type Probe } from './probe';
+import { stepping } from './packedGuard';
 import { Rng } from './rng';
 import { newStory, type StoryState } from './story/state';
 import { advanceTravel } from './galaxy/hyperspace';
@@ -74,12 +75,17 @@ export class Sim {
   /** Advance one tick: apply commands, run the pipeline in order (unless deploying), increment the counter. */
   step(probe: Probe = NOOP_PROBE): void {
     probe.begin('sim/tick');
-    probe.begin('sim/commands');
-    this.commands.drain(this.tick, (cmd) => this.apply(cmd));
-    probe.end('sim/commands');
-    // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
-    if (this.sector.state === 'active') runPipeline(this, probe);
-    else if (this.sector.state === 'hyperspace') advanceTravel(this);
+    stepping.add(this);
+    try {
+      probe.begin('sim/commands');
+      this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+      probe.end('sim/commands');
+      // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
+      if (this.sector.state === 'active') runPipeline(this, probe);
+      else if (this.sector.state === 'hyperspace') advanceTravel(this);
+    } finally {
+      stepping.delete(this);
+    }
     this.tick++;
     probe.end('sim/tick');
   }

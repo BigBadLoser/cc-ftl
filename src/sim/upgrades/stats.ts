@@ -1,11 +1,13 @@
 import { ModuleC } from '../modules/components';
 import type { WeaponDef } from '../registry';
 import type { Sim } from '../sim';
-import type { UpgradeDef } from './types';
+import type { UpgradeDef, UpgradeMods } from './types';
 
 /**
  * The one place a fitted upgrade's modifiers are read ("effective stats"). Callers ask for the effective value of a stat and never test
  * for a particular upgrade; a new upgrade is an item def with `mods`.
+ * Read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons` directly: the base def
+ * misses the fitted upgrade (a countdown, a heat check or a flag would read the unupgraded weapon).
  */
 
 /** The upgrade fitted in a module's slot, if any. */
@@ -14,15 +16,19 @@ export function upgradeOf(sim: Sim, moduleId: number): UpgradeDef | undefined {
   return item ? sim.content.items[item]?.upgrade : undefined;
 }
 
-/** A weapon's def as the module fires it: the base def with the fitted upgrade's behaviour patch, heat and charge applied. */
-export function effectiveWeapon(sim: Sim, moduleId: number, base: WeaponDef): WeaponDef {
-  const mods = upgradeOf(sim, moduleId)?.mods;
-  if (!mods) return base;
+/** A weapon def with an upgrade's mods applied (the behaviour patch, heat and charge). */
+export function withMods(base: WeaponDef, mods: UpgradeMods): WeaponDef {
   return {
     ...base, ...mods.weapon,
     heat: base.heat * (mods.heatMul ?? 1),
     chargeSec: base.chargeSec * (mods.chargeMul ?? 1),
   };
+}
+
+/** A weapon's def as the module fires it: the base def with the fitted upgrade's behaviour patch, heat and charge applied. */
+export function effectiveWeapon(sim: Sim, moduleId: number, base: WeaponDef): WeaponDef {
+  const mods = upgradeOf(sim, moduleId)?.mods;
+  return mods ? withMods(base, mods) : base;
 }
 
 /** The weapon def a module fires now (effective), or undefined if it is no weapon. */
@@ -42,4 +48,18 @@ export function firedWeapon(sim: Sim, moduleId: number, weapon: string): WeaponD
 /** Multiplier on damage the module takes from hits and on the seconds an ion hit disables it (1 = none). */
 export function damageTakenMul(sim: Sim, moduleId: number): number {
   return upgradeOf(sim, moduleId)?.mods.damageTakenMul ?? 1;
+}
+
+/**
+ * The name the player sees for a module: for a weapon whose fitted upgrade renames it (a behaviour upgrade's variant, `mods.weapon.name`) that name, else the
+ * module def's own. The module def itself is never renamed.
+ */
+export function moduleNameOf(sim: Sim, moduleId: number): string {
+  const m = sim.world.get(moduleId, ModuleC);
+  return upgradeOf(sim, moduleId)?.mods.weapon?.name ?? (m && sim.content.modules[m.def]?.name) ?? 'Module';
+}
+
+/** The one-line name of a weapon module for its card: the effective weapon def's `shortName` (an upgrade may patch it), else its display name. */
+export function weaponShortOf(sim: Sim, moduleId: number): string {
+  return weaponDefOf(sim, moduleId)?.shortName ?? moduleNameOf(sim, moduleId);
 }

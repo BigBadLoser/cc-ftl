@@ -1,16 +1,11 @@
-import { AllegianceC, EquipC } from '../fight/components';
-import { CarryingC, ItemStackC, StorageC } from '../items/components';
-import { storageTake } from '../items/storage';
-import { takeFromStack } from '../items/stacks';
+import { heldItems, withHeld } from '../items/held';
 import { repKey } from '../galaxy/standing';
 import { nodeOf, nodeState } from '../galaxy/state';
 import { ENCOUNTER_TTL } from '../galaxy/tuning';
 import type { Encounter } from '../galaxy/types';
-import { shipIdAt } from '../regions';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
-import { playerShips, playerStorages } from '../story/world';
 import { contrabandItems } from './services';
 import { SCAN_BRIBE_MIN, SCAN_BRIBE_SHARE, SCAN_COOLDOWN, SCAN_FINE_MIN, SCAN_FINE_SHARE, SCAN_STANDING_HIT } from './tuning';
 
@@ -19,7 +14,7 @@ import { SCAN_BRIBE_MIN, SCAN_BRIBE_SHARE, SCAN_COOLDOWN, SCAN_FINE_MIN, SCAN_FI
  * sometimes scan one they cross (encounters.ts calls `scanFor`). Both make a `scan` Encounter. One that finds contraband aboard carries `Encounter.scan`
  * (what the goods are worth, the fine and the bribe) and waits for `galaxy.respond`: 'surrender' (the goods are taken, the fine is paid and the faction
  * thinks less of the player) or 'bribe' (the bribe is paid and nothing else happens). A scan that finds nothing is an ordinary 'acknowledge' scan.
- * Contraband is counted in the player's storage and loose stacks, or in the ship's packet while it is in hyperspace.
+ * Contraband is whatever `heldItems` lists (storage, loose stacks, wielded and carried items, fitted upgrades), in a node or in the ship's packet.
  */
 
 /** Government and corporation factions enforce the law at their stations and with their patrols. */
@@ -27,40 +22,12 @@ export const LAW_ENFORCERS: readonly string[] = ['government', 'corporation'];
 
 export const enforces = (sim: Sim, faction: string): boolean => LAW_ENFORCERS.includes(sim.content.galaxy?.factions[faction]?.kind ?? '');
 
-type PacketStacks = { stacks?: ItemQty[] } | undefined;
-
 /** The contraband the player carries, by item id ascending. */
 export function contrabandAboard(sim: Sim): ItemQty[] {
   const ids = contrabandItems(sim);
   if (!ids.length) return [];
   const have = new Map<string, number>();
-  const add = (item: string, n: number): void => void (n > 0 && have.set(item, (have.get(item) ?? 0) + n));
-  const packet = sim.sector.state === 'hyperspace' ? sim.sector.packet : null;
-  if (packet) {
-    for (const e of packet.entities) {
-      for (const st of (e.c['storage'] as PacketStacks)?.stacks ?? []) if (ids.includes(st.item)) add(st.item, st.count);
-      const loose = e.c['itemStack'] as ItemQty | undefined;
-      if (loose && ids.includes(loose.item)) add(loose.item, loose.count);
-      const wield = (e.c['equip'] as { weapon: string | null } | undefined)?.weapon;
-      if (wield && ids.includes(wield)) add(wield, 1);
-      const hauled = e.c['carrying'] as { item: string; count: number } | undefined;
-      if (hauled && ids.includes(hauled.item)) add(hauled.item, hauled.count);
-    }
-  } else {
-    for (const id of sim.world.query(AllegianceC)) {
-      if (sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
-      const wield = sim.world.get(id, EquipC)?.weapon;
-      if (wield && ids.includes(wield)) add(wield, 1);
-      const hauled = sim.world.get(id, CarryingC);
-      if (hauled && ids.includes(hauled.item)) add(hauled.item, hauled.count);
-    }
-    const ships = playerShips(sim);
-    for (const id of playerStorages(sim)) for (const st of sim.world.get(id, StorageC)?.stacks ?? []) if (ids.includes(st.item)) add(st.item, st.count);
-    for (const id of sim.world.query(ItemStackC)) {
-      const s = sim.world.get(id, ItemStackC);
-      if (s && ids.includes(s.item) && !s.job && ships.has(shipIdAt(sim, s.x, s.y))) add(s.item, s.count);
-    }
-  }
+  for (const h of heldItems(sim)) if (ids.includes(h.item) && h.count > 0) have.set(h.item, (have.get(h.item) ?? 0) + h.count);
   return ids.filter((i) => have.has(i)).map((item) => ({ item, count: have.get(item) as number }));
 }
 
@@ -74,42 +41,13 @@ export const scanPrices = (value: number): { fine: number; bribe: number } => ({
   bribe: Math.max(SCAN_BRIBE_MIN, Math.ceil(value * SCAN_BRIBE_SHARE)),
 });
 
-/** Take every unit of contraband off the player's ship; returns what was taken. */
+/** Take every unit of contraband off the player's ship (wherever it is held, fitted upgrades included); returns what was taken. */
 export function seizeContraband(sim: Sim): ItemQty[] {
   const taken = contrabandAboard(sim);
   const ids = new Set(taken.map((l) => l.item));
-  const packet = sim.sector.state === 'hyperspace' ? sim.sector.packet : null;
-  if (packet) {
-    packet.entities = packet.entities.filter((e) => {
-      const loose = e.c['itemStack'] as ItemQty | undefined;
-      return !(loose && ids.has(loose.item));
-    });
-    for (const e of packet.entities) {
-      const st = (e.c['storage'] as PacketStacks)?.stacks;
-      if (st) (e.c['storage'] as { stacks: ItemQty[] }).stacks = st.filter((s) => !ids.has(s.item));
-      const eq = e.c['equip'] as { weapon: string | null } | undefined;
-      if (eq?.weapon && ids.has(eq.weapon)) eq.weapon = null;
-      if (e.c['carrying'] && ids.has((e.c['carrying'] as { item: string }).item)) delete e.c['carrying'];
-    }
-    return taken;
-  }
-  // What crew wield or carry goes too.
-  for (const id of [...sim.world.query(AllegianceC)]) {
-    if (sim.world.get(id, AllegianceC)?.faction !== 'player') continue;
-    const eq = sim.world.get(id, EquipC);
-    if (eq?.weapon && ids.has(eq.weapon)) eq.weapon = null;
-    const hauled = sim.world.get(id, CarryingC);
-    if (hauled && ids.has(hauled.item)) sim.world.remove(id, CarryingC);
-  }
-  for (const l of taken) {
-    let left = l.count;
-    for (const id of playerStorages(sim)) left -= storageTake(sim, id, l.item, left);
-    const ships = playerShips(sim);
-    for (const id of [...sim.world.query(ItemStackC)]) {
-      const s = sim.world.get(id, ItemStackC);
-      if (left > 0 && s?.item === l.item && !s.job && ships.has(shipIdAt(sim, s.x, s.y))) left -= takeFromStack(sim, id, left);
-    }
-  }
+  withHeld(sim, (held) => {
+    for (const h of held) if (ids.has(h.item)) h.remove();
+  });
   return taken;
 }
 

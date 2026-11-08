@@ -32,7 +32,7 @@ function link(id: string, query = ''): string {
 
 function index(): void {
   bar.innerHTML = '<b>Render lab</b>';
-  msg.innerHTML = `<p><a href="${link('comms')}">Comms pieces</a> <code>?panel=comms</code><br>Every src/ui/comms piece on its own in its states (flicker and stutter held), then composed as the signal window.</p>` + PANELS.map((p) => `<p><a href="${link(p.id)}">${p.title}</a> <code>?panel=${p.id}</code><br>${p.help}</p>`).join('')
+  msg.innerHTML = `<p><a href="${link('comms')}">Comms pieces</a> <code>?panel=comms</code><br>Every src/ui/comms piece on its own in its states (flicker and stutter held), then composed as the signal window.</p><p><a href="${link('kit')}">UI kit</a> <code>?panel=kit</code><br>Every Chip tone and size, every Meter tone and height.</p>` + PANELS.map((p) => `<p><a href="${link(p.id)}">${p.title}</a> <code>?panel=${p.id}</code><br>${p.help}</p>`).join('')
     + '<p>Every panel: <code>&zoom=2</code> <code>&cols=N</code> <code>&play</code> <code>&bg=0a0d12</code>. '
     + 'Screenshot: <code>npm run lab -- --panel ID [--query "&k=v"] [--out file.png]</code>.</p>';
   lab.__labReady = true;
@@ -54,6 +54,13 @@ async function run(): Promise<void> {
       lab.__labError = String(e);
     }
     await new Promise((r) => setTimeout(r, 1200));
+    lab.__labReady = true;
+    return;
+  }
+  if (id === 'kit') {
+    bar.innerHTML = '<a href="?">Render lab</a> <b>UI kit</b> &nbsp; every Chip tone and size, every Meter tone and height';
+    (await import('./kitLab')).mountKitLab(stageEl);
+    await new Promise((r) => setTimeout(r, 300));
     lab.__labReady = true;
     return;
   }

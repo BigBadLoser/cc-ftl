@@ -134,8 +134,8 @@ export interface UiCrew {
   /** Name of the crew member carrying this one, or null. */
   carriedBy: string | null;
   carrying: { item: string; count: number } | null;
-  /** Which side: the player's crew, or hostile crew standing on a grid the player's crew is on. */
-  side: 'player' | 'enemy';
+  /** Which side: the player's crew, a passenger living aboard (a lodging guest), or another side's crew standing on a grid the player's crew is on. */
+  side: 'player' | 'guest' | 'enemy';
   /** Ship they stand on (ShipC entity id; 0 = aboard a shuttle), and a label for where they are. */
   ship: number;
   where: string;
@@ -227,8 +227,6 @@ export interface UiModule {
   droneBay: UiDroneBay | null;
   /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
   suits: { stowed: number; max: number } | null;
-  /** Anti-drone weapons (flak): the standing order to engage drones on its own (a hold still stops it); null for any other module. */
-  autoDrone: boolean | null;
   /** The upgrade slot (null for a module with none). */
   upgradeSlot: UiUpgradeSlot | null;
 }
@@ -244,7 +242,7 @@ export interface UiFoeModule {
   powered: boolean;
   /** Its upgrade slot kind (null = no slot) and what is fitted in it. */
   slot: string | null;
-  upgrade: { item: string; name: string; effects: string[] } | null;
+  upgrade: { item: string; name: string; effects: string[]; renames: boolean } | null;
 }
 
 /** An upgrade item as the slot panel lists it. */
@@ -503,7 +501,7 @@ export type UiStrengthRead = 'outmatched' | 'even' | 'weaker';
 export interface UiJob {
   key: string;
   id: number | null;
-  kind: 'delivery' | 'bounty' | 'survey';
+  kind: 'delivery' | 'bounty' | 'survey' | 'passage';
   issuer: string;
   title: string;
   detail: string;
@@ -534,6 +532,8 @@ export interface UiJobs {
   active: UiJob[];
   /** Finished bounties and surveys the station here takes in (never kept on screen anywhere else). */
   handIn: UiClaim[];
+  /** Passage cards passengers aboard have posted (galaxy/passage.ts), to accept or refuse wherever the ship is. */
+  asked: UiJob[];
   max: number;
   /** The player's own ship, for comparing with a bounty target. */
   mine: UiStrength | null;
@@ -623,7 +623,7 @@ export type UiSubject =
 /** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
-  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed';
+  | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -665,16 +665,14 @@ export interface UiWeapon {
   powered: boolean;
   /** `auto` fires when charged; `hold` waits for a volley or for the player to aim it (then it fires once and stays on hold). */
   mode: 'auto' | 'hold';
-  /** Anti-drone weapons (flak): engages hostile drones on its own while not on hold; null for weapons that cannot shoot drones. */
-  autoDrone: boolean | null;
   /** Own target label, or null when it uses the ship-wide one. */
   target: string | null;
   /** Module id of the own target (0 = whole ship or none). */
   targetModuleId: number;
   /** A blind tile aim (sector tile), or null. */
   targetTile: { x: number; y: number } | null;
-  /** The upgrade fitted in its slot (item id, name), or null. */
-  upgrade: { item: string; name: string } | null;
+  /** The upgrade fitted in its slot (item id, name, what it does), or null. */
+  upgrade: UiUpgradeInfo | null;
   /** An engineer is fitting or removing its upgrade: it is offline. */
   fitting: boolean;
   /** Its upgrade slot kind (null = no slot). */
@@ -736,7 +734,7 @@ export interface UiEnemyWeapon {
   /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
   color: number;
   /** The upgrade fitted in the weapon (a scan reads it off the card), or null. */
-  upgrade: { item: string; name: string } | null;
+  upgrade: UiUpgradeInfo | null;
 }
 
 export interface UiShipCombat {
@@ -754,6 +752,8 @@ export interface UiShipCombat {
   dormant?: boolean;
   /** Not hostile to the player (listed at battle stations): aiming at it does nothing, a shot fired at it turns it hostile. */
   neutral?: boolean;
+  /** Allied to the player: the card tags it Friendly and drops the red hostile frame. Nothing sets it yet (no allied ships are listed). */
+  friendly?: boolean;
   /** 0..1 hull and module integrity. */
   integrity: number;
   shield: { layers: number; max: number; /** 0..1 toward the next layer. */ progress: number };
@@ -1234,6 +1234,15 @@ export interface UiAlert {
   report?: boolean;
   /** A click opens the Esc menu on this page (the save-failed alert opens Save game). */
   menu?: 'save';
+  /** Answers the alert takes itself (a passenger asking to join: Accept, Decline), primary first; each sends its command. */
+  actions?: UiAlertAction[];
+}
+
+/** One answer on an alert: its label, good (the yes) or bad (the no), and the command it sends. */
+export interface UiAlertAction {
+  label: string;
+  tone: 'good' | 'bad';
+  command: Command;
 }
 
 /** One module or crew member in a fight report; a click jumps to `subject` when it has one. */
@@ -1372,6 +1381,8 @@ export interface UiApi {
   errors: Subscribable<UiError[]>;
   inspect: Subscribable<UiInspect | null>;
   crew: Subscribable<UiCrew[]>;
+  /** Passengers living aboard the player's ship (lodging guests: they are not crew, and cannot be drafted). */
+  guests: Subscribable<UiCrew[]>;
   /** Hostile crew on grids the player's crew stand on. */
   hostiles: Subscribable<UiCrew[]>;
   /** The inspector's Status, Skills and Gear tabs for the selected crew member of the player's (null otherwise). */
@@ -1540,4 +1551,13 @@ export interface UiApi {
   /** Resolves when the first scene's sprites are in (the loading screen waits on it). Absent in test stubs. */
   artReady?: Promise<void>;
   throwTestError(): void;
+}
+
+/** A fitted upgrade as the combat rows show it: the item, its name and what it does (one line each). */
+export interface UiUpgradeInfo {
+  item: string;
+  name: string;
+  effects: string[];
+  /** The upgrade renames its weapon (a behaviour upgrade): the name marks it, so the row shows no symbol and the name opens the card. */
+  renames: boolean;
 }

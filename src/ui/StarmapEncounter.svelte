@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip } from './kit';
   /** One pending encounter in the starmap drawer: the fleet (faction, role, strength), how it happened and the choices with their odds or cost. */
   import Icon from './Icon.svelte';
   import type { UiEncounter, UiEncounterChoice } from './starmapApi';
@@ -15,7 +16,7 @@
     <small>{encounter.ships} ship{encounter.ships > 1 ? 's' : ''}</small>
   </div>
   <div class="facts">
-    <span class="chip" class:warn={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming'} title="Fleet strength">{encounter.threat}</span>
+    <Chip size="md" tone={encounter.threat === 'Heavy' || encounter.threat === 'Overwhelming' ? 'bad' : 'warn'} title="Fleet strength">{encounter.threat}</Chip>
     <span class="dim">{encounter.how}</span>
   </div>
   <div class="choices">
@@ -39,8 +40,6 @@
   small { color: var(--dim); font-size: 11px; }
   .facts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
   .dim { color: var(--dim); }
-  .chip { font: 600 12px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border: 1px solid currentColor; color: var(--amber); }
-  .chip.warn { color: var(--red); }
   .choices { display: grid; gap: 4px; }
   .choices button { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .choices button small { font: 600 13px var(--head-font); letter-spacing: 0.04em; text-transform: none; color: var(--cyan); text-align: right; }

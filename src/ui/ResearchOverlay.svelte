@@ -53,11 +53,11 @@
 </div>
 
 <style>
-  .rt { position: fixed; inset: 0; z-index: 30; background: #000; color: #e6e6e6; display: grid; grid-template-rows: 40px minmax(0, 1fr); font-size: 13px; pointer-events: auto; }
+  .rt { position: fixed; inset: 0; z-index: 30; background: var(--build-bg-solid); color: var(--build-ink); display: grid; grid-template-rows: 40px minmax(0, 1fr); font-size: 13px; pointer-events: auto; }
   .top { display: flex; align-items: center; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--amber); color: var(--amber); }
   .top b { font: 700 17px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .chip { font-size: 11px; color: #ffe2a6; border: 1px solid var(--amber); padding: 1px 6px; }
-  .chip.p { border-color: #555; color: #aaa; }
+  .chip.p { border-color: var(--build-line-hi); color: var(--build-dim); }
   .x { margin-left: auto; min-width: 30px; width: 30px; min-height: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--amber); background: transparent; border-color: transparent; }
   .x:hover { border-color: var(--amber); }
   .wrap { display: grid; grid-template-columns: 340px minmax(0, 1fr); min-height: 0; }

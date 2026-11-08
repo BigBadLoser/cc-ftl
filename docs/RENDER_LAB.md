@@ -28,6 +28,7 @@ move in a browser).
 - `shield`: the combat shield dome (#301): layer counts at rest, then every effect as a strip of stills through its
   length (`effects=`, `frames=8`, `rx`, `ry`, `rot`, `rest=1,2,3,4`).
 
+- `shots`: every behaviour upgrade's shot (bolt tint, trail, impact blast, chain arcs) beside the plain weapon's, from the weapons' `look` and the sim's `withMods` (`only=prism,chain`).
 - `marks`: the overhead crew icons `crew.mark.*` (sheet `marks`; social cues, break symbols in their tier's thought bubble, downed,
   surrendered): every icon's frames at 1x and 3x, every break at the three tiers, each over a real crew figure on a lit and a
   dark floor, and a shouting pair. `&preview=1` reads the quick preview sheet instead of the manifest (`&src=`, default
@@ -36,6 +37,7 @@ move in a browser).
 - `comms`: not a Pixi panel but a DOM one (`tools/lab/commsLab.ts`, `CommsLab.svelte`): every piece of `src/ui/comms` on its own in its
   states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
   composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
+- `kit`: a DOM panel (`tools/lab/kitLab.ts`, `KitLab.svelte`): every shared `Chip` tone and size and every `Meter` tone and height, plus base marker and thresholds.
 
 ## Add a panel
 

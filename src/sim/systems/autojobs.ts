@@ -14,6 +14,7 @@ import { regions, shipIdOf, shipGrid } from '../regions';
 import { createJob, BUILD_TICKS } from '../crew/handlers';
 import { findJobAt } from '../crew/helpers';
 import { Struct } from '../structure';
+import { moduleSite } from '../modules/footprint';
 
 /** Work value for jobs that finish by condition (fire out, hp full, patient delivered), not by progress. */
 const CONDITIONAL_WORK = 1;
@@ -78,7 +79,8 @@ export function autoJobsSystem(sim: Sim): void {
     const def = m && sim.content.modules[m.def];
     if (m && def && m.hp >= def.maxHp) delete m.repairFirst; // mended: the priority repair order is done
     if (!m || !def || m.hp >= def.maxHp || seen.has(`repair:${id}`) || onWreck(sim, m)) continue;
-    addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id });
+    // Worked from beside any tile of the module, not only its anchor corner (a 2x2 reactor in a corner is otherwise out of reach).
+    addJob(sim, { category: 'repair', kind: 'repair', x: m.x, y: m.y, target: id, size: moduleSite(def, m).size }); // key order kept: the sectorEquiv hash sees it
   }
   for (const id of sim.world.query(DownedC, PositionC)) {
     const downed = sim.world.get(id, DownedC);

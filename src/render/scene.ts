@@ -171,7 +171,7 @@ interface RendererContent {
   /** Ore kinds (code and placeholder colour) for the asteroid placeholder drawing. */
   ores?: Readonly<Record<string, { code: number; color: number; amount: readonly [number, number] }>>;
   /** Vehicle classes by def id: pods ('pod') are drawn by podView, not as shuttles. */
-  vehicles?: Readonly<Record<string, { class: string; size?: number }>>;
+  vehicles?: Readonly<Record<string, { class: string; size?: number; asset?: string }>>;
   /** Generated factions by id: a ship's roof livery comes from its generating faction's `art.livery`. */
   factions?: Readonly<Record<string, { art: { livery: string } }>>;
   /** Drone types, for the placeholder drone drawing (tint, job marks, battery thresholds). */
@@ -244,7 +244,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return (m && world.query(ShipC).find((id) => { const sh = world.get(id, ShipC); return !!sh && onShip(sh, m); })) ?? 0;
     },
   });
-  const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined) });
+  const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined), art: (def) => content.vehicles?.[def]?.asset ?? def });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).

@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { ammoCount, consumeAmmo } from '../combat/ammo';
+import { ammoNeed, consumeAmmo, hasAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
 import { hostileAct } from '../combat/provoke';
 import { aimDirection, turretPosition } from '../combat/geometry';
@@ -17,10 +17,8 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
 import { shipIdOf } from '../regions';
-import { DroneC } from '../drones/components';
 import { shipById } from '../combat/ships';
 import { weaponDefOf } from '../upgrades/stats';
-import { droneThreats } from '../combat/intercept';
 
 /**
  * Launches shots. A charged weapon fires a volley at its resolved target when the ship is not on hold (or on
@@ -47,21 +45,19 @@ export function firingSystem(sim: Sim): void {
     }
     // The player's weapons have a mode: a held one waits for a volley or for the player to aim it (`once`). Shooting down a hostile shuttle with an
     // ammo weapon stays automatic. AI ships only know `Combat.hold`.
-    // Hold means hold: a held weapon (its own mode, or hold all) fires nothing. Flak on auto with its standing order (`Weapon.autoDrone`) shoots a hostile
-    // drone out in space in range on its own (it never provokes: only what is already at war).
+    // Hold means hold: a held weapon (its own mode, or hold all) fires nothing.
     const shuttleShot = !!def.ammo && (!!w.target?.vehicle || (!!def.antiVehicle && !!combat.vehicleTarget && !w.target));
     const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
     const held = (combat.hold || modeHold) && !combat.volley;
-    const drone = def.antiDrone && ready && !held && w.autoDrone !== false ? flakTarget(sim, id, shipId, def.antiDrone) : null;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
-    const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
+    const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && hasAmmo(sim, shipId, def)));
     const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
     if (!ready || w.charge < 1 || held) continue;
-    const target = drone ?? commit?.target ?? resolveTarget(sim, id, combat);
+    const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
     // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
     if (isAiFaction(ship.faction) && heatCeilingBlocks(combat, def.heat)) continue;
-    if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) continue;
+    if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo, ammoNeed(def))) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
@@ -84,12 +80,11 @@ function launchNext(
   w.nextShotTick = sim.tick + Math.max(1, Math.round(def.shotDelaySec * TICK_HZ));
   const target = w.volleyTarget;
   if (!target) return void (w.shotsLeft = 0);
-  if (def.ammo && !def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) return void (w.shotsLeft = 0);
+  if (def.ammo && !def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo, ammoNeed(def))) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
   const targetGrid = target.ship;
   const alive = shipIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === targetGrid;
-  const droneBody = target.drone && sim.world.has(target.drone, DroneC) ? sim.world.get(target.drone, BodyC) : undefined;
-  const vehicle = droneBody ?? (target.vehicle && sim.world.has(target.vehicle, VehicleC) ? sim.world.get(target.vehicle, BodyC) : undefined);
+  const vehicle = target.vehicle && sim.world.has(target.vehicle, VehicleC) ? sim.world.get(target.vehicle, BodyC) : undefined;
   const to = vehicle ?? (target.tile ? { x: target.tile.x + 0.5, y: target.tile.y + 0.5 } : null) ?? turretPosition(sim, alive ? target.moduleId : 0) ?? centerOf(sim, targetGrid);
   if (!from || !to) return void (w.shotsLeft = 0);
   w.aim = aimDirection(to.x - from.x, to.y - from.y);
@@ -105,20 +100,15 @@ function launchNext(
   // The shot leaving a player weapon is the hostile act (aiming alone is nothing); a shot at a shuttle is one on the ship it belongs to.
   const victim = target.ship || (target.vehicle ? sim.world.get(target.vehicle, VehicleC)?.homeShip ?? 0 : 0);
   if (victim && shipById(sim, shipId)?.faction === 'player') hostileAct(sim, victim, 'fired');
+  const hit = victim ? sim.world.get(victim, CombatC) : undefined;
+  if (hit && victim !== shipId) hit.threat = { ship: shipId, at: sim.tick }; // who is shooting at it (the AI's target choice reads it)
   sim.events.emit({
     type: 'weapon.fired', ship: shipId, weaponId: moduleId, weapon, projectile, targetShip: target.ship, targetModuleId: target.moduleId,
+    ...(def.ammo && !(def.ammoPerVolley && w.shotsLeft < def.shots - 1) ? { ammo: ammoNeed(def) } : {}), ...(def.look ? { look: def.look } : {}),
   });
 }
 
 function centerOf(sim: Sim, shipId: number): { x: number; y: number } | null {
   const ship = shipById(sim, shipId);
   return ship ? { x: ship.x + ship.width / 2, y: ship.y + ship.height / 2 } : null;
-}
-
-/** The nearest enemy drone in space within `range` tiles of the firing ship's centre, as a target; null if none. */
-function flakTarget(sim: Sim, weaponId: number, shipId: number, range: number): Target | null {
-  const c = shipById(sim, shipId);
-  const near = c && droneThreats(sim, shipId, c.x + c.width / 2, c.y + c.height / 2, range)[0];
-  const w = sim.world.get(weaponId, WeaponC);
-  return near && !w?.target ? { ship: 0, moduleId: 0, drone: near } : null;
 }

@@ -1,4 +1,4 @@
-import { ammoCount } from '../combat/ammo';
+import { hasAmmo } from '../combat/ammo';
 import { CombatC, IonC, WeaponC } from '../combat/components';
 import { lockedOut, overchargeActive } from '../combat/heat';
 import { OVERCHARGE_WEAPON_CHARGE } from '../combat/heatTuning';
@@ -39,7 +39,7 @@ export function weaponChargeSystem(sim: Sim): void {
       gunnery.set(shipIdOf(sim, m), skill);
     }
     if (skill === null) continue;
-    if (def.ammo && ammoCount(sim, shipIdOf(sim, m), def.ammo) === 0) continue;
+    if (!hasAmmo(sim, shipIdOf(sim, m), def)) continue;
     const ship = shipIdOf(sim, m);
     if (!trained.has(ship)) {
       trained.add(ship);

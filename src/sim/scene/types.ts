@@ -1,6 +1,8 @@
-import type { ItemQty } from '../registry';
+import type { Effect, ItemQty } from '../registry';
 import type { EventEffect } from '../story/defs';
 import type { Contact } from '../galaxy/types';
+import type { WorkCategory } from '../crew/components';
+import type { RolledCrew } from '../crew/roll';
 
 /**
  * Physical encounters (DESIGN.md "Physical encounters"; #173). A scene says what exists in a deep-space pocket and under what conditions, never how
@@ -40,11 +42,39 @@ export interface SceneShipRecipe {
   attitude?: number;
   /** The ship is a story's hidden question (the pirate ambush): the scene seed rolls whether it is a trap or honest. */
   ambush?: AmbushRecipe;
+  /** A name other parts of the recipe use for it (a timer acting on it, a ship that preys on it). Ships of one `group` share their seed rolls. */
+  tag?: string;
+  group?: string;
+  /** Only at these danger tiers (inclusive) is it in the scene, and only on `chance` of the seeds (rolled once per `group`). */
+  danger?: { min?: number; max?: number };
+  chance?: number;
+  /** On `chance` of the seeds (once per `group`) it is not there when you drop out: it jumps in `afterSec` later. Otherwise it is there from the start. */
+  arrive?: { chance: number; afterSec: Range };
+  /** Its weapons go for this ship (its `tag`) while that is in play, ahead of the player's (raiders on a crippled freighter). */
+  prey?: string;
+  /** What it suffered before you came: its modules of a `category` (or a `def`), `count` of them (absent: all), left at a rolled share of their hp, in percent. */
+  damage?: SceneDamageRecipe[];
+  /**
+   * Work none of its crew can do (a work block on each, reason 'scene': crew/workBlock.ts): a freighter with no engineer aboard cannot mend its own
+   * damage, which is why it calls for help. Anyone else aboard (a party let aboard to help) does that work as usual.
+   */
+  lacks?: WorkCategory[];
+  /** The story its crew tell when hailed (what happened, what they want, what they offer). */
+  story?: string;
+}
+
+/** Damage a scene ship starts with (`SceneShipRecipe.damage`). `failing`: the system a scene timer counts down on (`SceneTimerRecipe.stopOn`). */
+export interface SceneDamageRecipe {
+  category?: string;
+  def?: string;
+  count?: number;
+  hp: Range;
+  failing?: true;
 }
 
 /**
  * A skiff that says it means well and may not (DESIGN.md "Pirate ambush"). `chance` of the seeds roll a trap: it has `crew` aboard, a boarding party of
- * `party` and its shuttle ready, and asks to dock `askAfterSec` after the scene opens. An honest one only talks and trades. Its story (`honest`, `trap`,
+ * `party` and its shuttle ready, and asks to dock `askAfterSec` after the player deploys. An honest one only talks and trades. Its story (`honest`, `trap`,
  * and for a trap sometimes a `tell`: the lie that does not add up) is the hail's talk and the player's to weigh.
  */
 export interface AmbushRecipe {
@@ -84,10 +114,29 @@ export interface Ambush {
   home?: true;
 }
 
-/** A timer of a scene: it comes due `afterSec` after the scene opens. The observer reads it (fact 'timer'); it is not a script. */
+/**
+ * A timer of a scene: it comes due `afterSec` (rolled) after the scene opens. The observer reads it (fact 'timer'). It may also act on the world, as
+ * conditions, not a script (scene/clock.ts): about the ship tagged `ship`, it stops for good once that ship's failing systems are repaired (`stopOn`),
+ * breaks out fires aboard it in its last `fires.leadSec` (every `everySec`, one more each time, at most `max` at once), and at zero the ship blows (`due`).
+ */
 export interface SceneTimerRecipe {
   id: string;
-  afterSec: number;
+  afterSec: number | Range;
+  ship?: string;
+  stopOn?: 'repaired';
+  fires?: SceneFires;
+  due?: 'wreck';
+  /**
+   * With `due: 'wreck'`: the failing system explodes, as a weapon hit at its middle would with these effects (module damage, hull, crew hurt in rings
+   * that fall off with distance, fire), and a hull wall near it is breached; then the ship goes dark. Absent: it only goes dark, with a fire.
+   */
+  blast?: Effect[];
+}
+
+export interface SceneFires {
+  leadSec: number;
+  everySec: number;
+  max: number;
 }
 
 /**
@@ -108,11 +157,44 @@ export interface SceneDerelictRecipe {
 /** What killed a derelict (shipgen/ruinTypes `RuinCause`, repeated here so content needs no shipgen import). */
 export type RuinCauseName = 'combat' | 'decay';
 
+/**
+ * An escape pod drifting in the pocket with one hurt person aboard (DESIGN.md "Medical pod"; vehicles/escape.ts). The patient is rolled from the scene
+ * seed: one of `roles` (their species and skills come from the role, crew/roll.ts), from one of `owners` (the galaxy faction they are from), downed and
+ * bleeding out `bleed` seconds (rolled) after the player deploys. The pod comes in when called (`galaxy.recoverPod`).
+ */
+export interface ScenePodRecipe {
+  roles: string[];
+  owners: string[];
+  bleed: Range;
+  /** The credits they carry, rolled: what they pay once treated (the shared `helpedPerson` rule). */
+  purse: Range;
+}
+
+/** One escape pod of a built scene: who is aboard (the roll that makes them), and once real its vehicle and the person's entity. */
+export interface ScenePod {
+  /** Descriptor id (from `galaxy.nextFleet`): the observer keys its rules per pod with it. */
+  id: number;
+  owner: string;
+  /** The person aboard, as the crew roll made them (name, role, looks, skills, traits). */
+  patient: RolledCrew;
+  /** Seconds they bleed out in, from the player's deploy. */
+  bleed: number;
+  /** The credits they carry. */
+  purse: number;
+  vehicle?: number;
+  crew?: number;
+  /** The player called it in (`galaxy.recoverPod`). */
+  called?: true;
+  /** Taken in as a passenger: the event's rules about them are their grant's now (scene/carried.ts), and the pod's facts end. */
+  handed?: true;
+}
+
 /** What a story encounter puts in its pocket (content: `EventDef.scene`). */
 export interface SceneRecipe {
   persistence: Persistence;
   ships?: SceneShipRecipe[];
   derelicts?: SceneDerelictRecipe[];
+  pods?: ScenePodRecipe[];
   timers?: SceneTimerRecipe[];
   /** Observer rules this encounter adds (a new id) or overrides (a shared id; null switches a shared rule off here). */
   rules?: Record<string, SceneRuleDef | null>;
@@ -130,7 +212,7 @@ export interface SceneShip {
   attitude?: number;
   /** A trap or an honest skiff (the pirate ambush). */
   ambush?: Ambush;
-  /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set when the scene opens. */
+  /** Seconds it stays (rolled from `leaveAfterSec`), and the tick it moves on, set once the player deploys. */
   stay?: number;
   leaveAt?: number;
   /** Its business here is finished (an ambush skiff's visit ended, delivered or refused): it moves on whatever hold a hail put on it. */
@@ -139,6 +221,24 @@ export interface SceneShip {
   hailed?: true;
   /** It jumped away: its entity is gone from the pocket and it is not respawned. */
   gone?: 'fled';
+  tag?: string;
+  /** Seconds after the player deploys that it jumps in (rolled from `arrive`), and the tick that is (set at deploy); until then it is not in the pocket. */
+  arriveAfter?: number;
+  arriveAt?: number;
+  /** The tag of the ship it preys on. */
+  prey?: string;
+  /** Damage it starts with (rolled percent of hp), applied when it is made real; then the modules it hit, and those of them failing. */
+  damage?: { category?: string; def?: string; count?: number; pct: number; failing?: true }[];
+  damaged?: number[];
+  failing?: number[];
+  /** Work its crew do not do (`SceneShipRecipe.lacks`), set on them when it is made real. */
+  lacks?: WorkCategory[];
+  story?: string;
+  /**
+   * Help agreed with it (DESIGN.md "Distress freighter": aid by hail): 'agreed' while it stands (its away site, owner 'aid', takes the party aboard as
+   * guests; `sent` once that site was opened), 'done' when the repairs are, 'broken' when the player turned on it (fired, boarded uninvited, took it).
+   */
+  aid?: { state: 'agreed' | 'done' | 'broken'; sent?: true };
 }
 
 /** What a scan reads off a derelict (taken from its ruin pass when the scene is built): no counts, only what sensors can tell from outside. */
@@ -179,9 +279,18 @@ export interface SceneDerelict {
 
 export interface SceneTimer {
   id: string;
-  /** Seconds after the scene opens; `at` is the tick it comes due, set when it opens. */
+  /** Seconds after the player deploys in the pocket (rolled); `at` is the tick it comes due, set then (scene/clock.ts). */
   afterSec: number;
   at?: number;
+  ship?: string;
+  stopOn?: 'repaired';
+  fires?: SceneFires;
+  due?: 'wreck';
+  blast?: Effect[];
+  /** It was stopped (its ship's failing systems repaired in time): it never comes due. `fired`: its fires broken out so far; `blown`: its due effect is done. */
+  stopped?: true;
+  fired?: number;
+  blown?: true;
 }
 
 /**
@@ -199,15 +308,25 @@ export interface SceneSpec {
   ships: SceneShip[];
   derelicts: SceneDerelict[];
   timers: SceneTimer[];
+  /** Escape pods adrift (absent: none). */
+  pods?: ScenePod[];
 }
 
 /**
  * What the observer can see happen, read from sim state (never from the event stream). Per scene ship or derelict, except `timer` and `crewLost`
  * (per player crew member who was alive when the scene opened and is dead now). `ambushed`: a skiff's boarding party turned on the player after it was let
  * aboard; `boardersDown`: that party is all dead or down; `delivered`: an honest skiff's party came aboard (its debt is paid); `declined`: the player refused an honest skiff's dock. `salvaged`: a salvage order stripped parts of it (or stripped it
- * away entirely); `cleared`: it had something hostile aboard when it was made, and nothing hostile is aboard now.
+ * away entirely); `cleared`: it had something hostile aboard when it was made, and nothing hostile is aboard now. `repaired`: the damage it started with is
+ * mended and the player never turned on it; at leave only, `abandoned`: help agreed with it was still under way, `doomed`: a timer about it that blows it still runs.
+ * A `timer` rule whose timer is about a ship fires about that ship.
  */
-export type SceneFact = 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown' | 'delivered' | 'declined';
+export type SceneFact =
+  | 'traded' | 'attacked' | 'boarded' | 'captured' | 'destroyed' | 'fled' | 'left' | 'timer' | 'salvaged' | 'cleared' | 'crewLost' | 'ambushed' | 'boardersDown'
+  | 'delivered' | 'declined' | 'repaired' | 'abandoned' | 'doomed'
+  /** Of an escape pod's patient: taken aboard the player's ship (`rescued`), or dead (`died`). At leave, a pod still adrift with them alive is `left`. */
+  | 'rescued' | 'died'
+  /** Of a person the scene handed on (a passenger, scene/carried.ts), wherever the ship is: back on their feet aboard (`treated`), or dead (`died`). */
+  | 'treated';
 
 /**
  * An observer rule (content: the shared `sceneRules`, plus an encounter's own in `SceneRecipe.rules`). The first time `on` is seen for a ship whose
@@ -217,8 +336,12 @@ export type SceneFact = 'traded' | 'attacked' | 'boarded' | 'captured' | 'destro
 export interface SceneRuleDef {
   on: SceneFact;
   stance?: Stance[];
-  /** Only for scene ships (`ship`) or only for derelicts (`derelict`); absent: both. A derelict has no stance: a `stance` rule never matches one. */
-  of?: 'ship' | 'derelict';
+  /**
+   * Only for scene ships (`ship`), derelicts (`derelict`), escape pods (`pod`) or a person the scene handed on (`person`: a passenger, after the pocket
+   * too; scene/carried.ts); absent: ships and derelicts (never pods or people: their rules say so). A
+   * derelict has no stance: a `stance` rule never matches one.
+   */
+  of?: 'ship' | 'derelict' | 'pod' | 'person';
   /** Only for an ambush skiff that is a trap (true) or honest (false). */
   trap?: boolean;
   /** For `on: 'timer'`: the timer id. */

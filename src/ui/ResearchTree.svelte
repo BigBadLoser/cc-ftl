@@ -26,7 +26,7 @@
 </div>
 
 <style>
-  .tree { position: relative; overflow: auto; padding: 14px 18px; background: #000; }
+  .tree { position: relative; overflow: auto; padding: 14px 18px; background: var(--build-bg-solid); }
   .nolab { margin: 0 0 10px; color: var(--amber); }
   .canvas { position: relative; min-width: 100%; }
 </style>

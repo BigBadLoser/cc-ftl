@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import type { UiApi, UiRobotBay } from './api';
 
   let { api, id, bay }: { api: UiApi; id: number; bay: UiRobotBay } = $props();
@@ -12,7 +13,7 @@
       <span>Assembling {bay.assembling.name}</span>
       <span class="dim">{bay.assembling.waiting ? 'waiting for parts' : `${Math.round(bay.assembling.progress * 100)}%`}</span>
     </div>
-    <div class="bar"><i style:width="{Math.round(bay.assembling.progress * 100)}%"></i></div>
+    <Meter value={bay.assembling.progress} height={6} />
     <button class="warn full" data-testid="cancel-assembly" onclick={() => api.dispatch({ type: 'module.cancelAssembly', moduleId: id })}>Cancel assembly</button>
   {:else if bay.occupant}
     <div class="row" data-testid="bay-occupant">
@@ -20,7 +21,7 @@
       <span class="dim">{bay.occupant.role}, {bay.occupant.charging ? 'charging' : 'out'}</span>
     </div>
     <div class="row"><span class="dim">Battery</span><span>{bay.occupant.charge}%</span></div>
-    <div class="bar"><i style:width="{bay.occupant.charge}%"></i></div>
+    <Meter value={bay.occupant.charge} max={100} height={6} title="Charge {Math.round(bay.occupant.charge)}%" />
     {#if bay.occupant.maxHp}<div class="row"><span class="dim">Hull</span><span>{bay.occupant.hp}/{bay.occupant.maxHp}</span></div>{/if}
   {:else}
     <p class="dim">Empty.</p>

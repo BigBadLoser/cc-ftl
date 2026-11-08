@@ -387,6 +387,11 @@ scripts. Not every scene has one.
     - **Raiders, by seed, deeper only:** some scenes have them already circling the freighter when you drop out, others have them
       jump in on a clock that the scan warns about.
     - **Survivors later,** with passengers (medical pod, step 6). The freighter is built without them.
+    - **Round 2 (2026-11-06):** its crew cannot repair (a per-crew work block, the general mechanism traits will use); the clock starts at
+      deploy and runs 150-165 s, fires in its last 30 s (a party sent at once finishes with 17-81 s to spare over 12 seeds; the slow ones
+      are reactors in hot rooms, where the party fetches suits first); the reactor blast is real (module damage,
+      breach, crew hurt by distance, fire), then the ship goes dark and wrecks, and guests aboard face fire and vacuum, not instant death;
+      enemy AI targets a recent attacker first, then its prey, then other foes, so raiders turn on a player who shoots them.
 - **Medical pod** (`medical_emergency`). Eligible: a bed aboard.
   - Signal: a pod beacon with a faint life sign.
   - Remote: scan (patient's injury, species, skills hinted), ignore.
@@ -394,6 +399,20 @@ scripts. Not every scene has one.
   - Approaches: fetch the pod by shuttle or crew; treat them; bring them to a port; sell them; leave them.
   - Observed: boarded -> passenger state; treated -> reward and goodwill; died -> log; delivered -> payment; offers to join -> recruit prompt.
   - Persistence: transient. Timer: **yes** (a bleeding patient).
+  - **Built (#345):**
+    - The pod is a vehicle, `vehicle.escape_pod` (`VehicleDef.escape`, `src/sim/vehicles/escape.ts`): one seat, no pilot, the 3x3 pod
+      bay. Asked in, it flies to a free airlock and docks; crew carry the patient to a bed; it casts off empty. Occupants inside a vehicle
+      take vitals (bleeding runs aboard). Later: pod bays on ships, enemy crews ejecting, the player's own abandon ship.
+    - A passenger is a lodging guest, not a new system: a `ConsentC` grant on the player's ship `by: 'passage'` with `lodge`. They own a
+      bed, eat and sleep, pitch in on chores at the lowest priority, are never drafted or armed, and flee fights. `roleOf`
+      (`src/sim/consent/roles.ts`) is the one place that says what a person is to a ship (crew, recruit, station, passenger, guest).
+    - Rules fire after the scene's pocket is gone (`fireRules`, `scene/rules.ts`; per-person memory on `Grant.carry`): `helpedPerson`
+      (getting up pays their purse, +1 standing with their faction, and posts a passage card), `personDied`, `personDelivered`.
+    - Passage job: a port of their faction within 3 jumps, fare 50 + 45 per jump, due in 6 + 3 per jump turns; refused, they get off at the
+      next port. The handover is the recruit run, generalised (`galaxy/handover.ts`).
+    - Join offer: on delivery, or while aboard, a passenger whose mood is above 60 may ask to join (an alert with Accept / Decline, lapses
+      after 2 minutes; no handover moves them meanwhile). Accept makes them crew as recruits become crew. Mood 60 is meant to need great care.
+    - Not built: selling a patient (waits for a prisoner hand-over service, #116), fetching by EVA with a spare suit, crew first aid.
 
 **Settled (user, 2026-11-03).**
 - A persistent derelict gets a map marker as soon as it is found.
@@ -491,6 +510,9 @@ A door that cannot open (a derelict's unpowered airlock) is never a way through,
     with an empty suit is a hazard): its escape aims for breathable air or any source. If that fails, they go down and the
     normal rescue path takes them to a bed.
   - Crew rescue can't help someone who can't reach a source: the rescuer couldn't reach them either. Only a shuttle can.
+- **Hostile rooms (user ruling 2026-11-06).** A room past a hazard line a suit keeps out (thin air; heat over 55°C up to the suit's
+  90°C rating) is suited work: crew going to a job there suit up first, as for vacuum, and stay while their tank lasts and it is
+  within the rating. Fire is never: a suit does not make standing in fire safe, and firefighting, breaches and rescues go at once.
 - **Suits belong to wherever they are.** A worn suit is the wearer's; a stowed one is part of that airlock's or shuttle's
   stock. Stowing anywhere adds to that stock (already true of `doffSuit` and the float-back). `SuitC.vehicle`, `detached` and
   `SuitC.airlock` go. The rule that no shuttle strands anyone comes from the away party (below), not from suit ownership.
@@ -812,11 +834,11 @@ extinguish and stabilise code, flying navigation, charging, the AI core link) an
 - **Jumping and leaving.** Charging a jump, or leaving a scene, recalls every drone. The departure waits a few seconds for
   them (longer the more there are: they dock one after another), the way leaving waits for crew. A drone that can't make it back in time is left behind and lost.
 - **Weaknesses.** Ion or EMP near a drone or on its bay knocks it out for a while; a flying drone drops. Losing the core
-  stops them all. In space, only flak, point defence and enemy defence drones can hit a drone; ordinary ship guns can't
+  stops them all. In space, only point defence and enemy defence drones can hit a drone; ship guns (flak included) can't
   track one.
   - **Range in practice.** Fights are 40 to 100 tiles apart, and the first batch of drones stays near your own ship. At that
-    range enemy flak is inaccurate by design and enemy point defence only covers its own ship, so in practice drones mostly
-    fight drones. A combat drone that flies to the enemy (later) would be exposed to its flak and point defence, so tune it then.
+    range enemy point defence only covers its own ship, so in practice drones mostly
+    fight drones. A combat drone that flies to the enemy (later) would be exposed to its point defence, so tune it then.
 - **Enemies have drones too,** on the same system: rogue AI and navy ships.
 
 **First batch.**

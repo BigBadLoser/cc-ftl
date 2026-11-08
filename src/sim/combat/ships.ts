@@ -12,6 +12,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { TICK_HZ } from '../time';
 import { BoarderC, VehicleC } from '../vehicles/components';
+import { guardPacked } from '../packedGuard';
 import { newHeat } from './heat';
 import { CombatC, IonC, ShipC, type Combat, type Faction, type Ship } from './components';
 import type { GenOrigin } from '../shipgen/types';
@@ -26,6 +27,7 @@ export function shipById(sim: Sim, ship: number): Ship | undefined {
 
 /** The player's home ship: the lowest-id ship of the player's faction (the starting ship; later ships, prizes included, have higher ids), or 0. */
 export function homeShip(sim: Sim): number {
+  guardPacked(sim, 'homeShip');
   let best = 0;
   for (const id of sim.world.query(ShipC)) if (sim.world.get(id, ShipC)?.faction === 'player' && (best === 0 || id < best)) best = id;
   return best;

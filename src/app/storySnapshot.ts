@@ -2,6 +2,8 @@ import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 import { ambushRows } from './ambushIntel';
+import { distressRows } from './distressIntel';
+import { podRows } from './podSnapshot';
 import { commsOf } from './comms/storyComms';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
@@ -37,9 +39,13 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
   const out: UiIntel[] = [];
   const scanned = acts.has('scan') || acts.has('probe');
   if (scanned) for (const d of spec.derelicts) out.push({ kind: 'scan', ship: d.name, rows: derelictRows(sim, d, acts.has('probe')) });
+  if (scanned) for (const p of spec.pods ?? []) out.push({ kind: 'scan', ship: 'Escape pod', rows: podRows(sim, p) });
   for (const s of spec.ships) {
     const ship = s.contact.name ?? 'Unknown ship';
+    // Raiders of a ship in trouble show on its scan, not as ships of their own (they are on the scope as signatures, not hailed).
+    if (s.stance === 'hostile' && spec.ships.some((o) => o.damage)) continue;
     if (scanned && s.ambush) out.push({ kind: 'scan', ship, rows: ambushRows(sim, s, ownerName(sim, s.contact.faction)) });
+    else if (scanned && s.damage) out.push({ kind: 'scan', ship, rows: distressRows(sim, spec, s, ownerName(sim, s.contact.faction)) });
     else if (scanned) {
       out.push({
         kind: 'scan', ship, rows: [
@@ -53,7 +59,7 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
     if (acts.has('hail')) {
       out.push({
         kind: 'hail', ship, rows: [],
-        quote: s.ambush?.talk ?? `${ship} here. Pull alongside if you want to deal; we hold station for you.`,
+        quote: s.ambush?.talk ?? s.story ?? `${ship} here. Pull alongside if you want to deal; we hold station for you.`,
         stock: (s.cargo ?? []).map((q) => ({ item: q.item, name: itemName(sim, q.item), count: q.count })),
         ...(s.credits !== undefined ? { credits: s.credits } : {}),
       });

@@ -33,6 +33,11 @@ function meetsNow(sim: Sim, req: Requirement): boolean {
     }
     case 'crew': return playerCrew(sim).length >= req.count;
     case 'shuttle': return stowedShuttles(sim, !!req.eva) > 0;
+    case 'remote': {
+      const a = story.active;
+      const def = a ? sim.content.events?.[a.event] : undefined;
+      return !!a && (a.done ?? []).some((id) => def?.choices?.find((c) => c.id === id)?.remote === req.action);
+    }
   }
 }
 
@@ -55,6 +60,7 @@ export function describeRequirement(sim: Sim, req: Requirement): string {
     case 'flag': return (req.max ?? Infinity) < 1 ? `Not after ${req.flag}` : `Needs ${req.flag}`;
     case 'crew': return `Needs ${req.count} crew`;
     case 'shuttle': return req.eva ? 'Needs an EVA shuttle in its bay' : 'Needs a shuttle in its bay';
+    case 'remote': return req.action === 'hail' ? 'Hail them first' : req.action === 'scan' ? 'Scan first' : 'Probe first';
   }
 }
 

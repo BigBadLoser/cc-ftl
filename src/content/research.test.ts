@@ -8,7 +8,7 @@ const items: Record<string, unknown> = content.items;
 describe('research content', () => {
   it('every project unlocks a blueprint module (or a recipe blueprint), costs real items and gates Mk III behind Mk II', () => {
     const projects = Object.entries(content.research);
-    expect(projects.length).toBe(13);
+    expect(projects.length).toBe(19);
     const recipeBlueprints = new Set(Object.values(content.recipes as Record<string, RecipeDef>).flatMap((r) => (r.blueprint ? [r.blueprint] : [])));
     for (const [id, p] of projects) {
       expect(p.unlocks.length, id).toBeGreaterThan(0);

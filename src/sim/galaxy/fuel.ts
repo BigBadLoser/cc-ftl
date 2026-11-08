@@ -6,7 +6,7 @@ import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import { packetCount, packetTake } from '../sector/packet';
 import type { Sim } from '../sim';
-import { playerShip } from '../trade/player';
+import { playerShipPackedOk } from '../trade/player';
 
 /** The item jumps burn. */
 export const FUEL_ITEM = 'item.fuel';
@@ -22,7 +22,7 @@ export const storagesOf = (sim: Sim, ship: number): number[] =>
  * Fuel the flown ship holds, in the world (its storage modules and loose stacks on its tiles) or in the hyperspace packet. Only that
  * ship: other player-owned ships (prizes, a second ship) do not pay for it. `ship` defaults to the player's flown ship.
  */
-export function fuelStock(sim: Sim, ship: number = playerShip(sim)): number {
+export function fuelStock(sim: Sim, ship: number = playerShipPackedOk(sim)): number {
   if (inPacket(sim)) return packetCount(sim.sector.packet!, FUEL_ITEM);
   let n = 0;
   for (const id of storagesOf(sim, ship)) n += storageCount(sim, id, FUEL_ITEM);
@@ -34,7 +34,7 @@ export function fuelStock(sim: Sim, ship: number = playerShip(sim)): number {
 }
 
 /** Burn fuel from the flown ship only (from the packet while in hyperspace). Returns the units taken. */
-export function burnFuel(sim: Sim, n: number, ship: number = playerShip(sim)): number {
+export function burnFuel(sim: Sim, n: number, ship: number = playerShipPackedOk(sim)): number {
   if (inPacket(sim)) return packetTake(sim.sector.packet!, FUEL_ITEM, n);
   let left = n;
   for (const id of storagesOf(sim, ship)) left -= storageTake(sim, id, FUEL_ITEM, left);
@@ -52,13 +52,13 @@ const packetCombat = (sim: Sim): { ftl: number } | undefined => {
 };
 
 /** The flown ship's FTL charge in seconds (read from the packet in hyperspace), or null when there is no ship. */
-export function ftlCharge(sim: Sim, ship: number = playerShip(sim)): number | null {
+export function ftlCharge(sim: Sim, ship: number = playerShipPackedOk(sim)): number | null {
   if (inPacket(sim)) return packetCombat(sim)?.ftl ?? null;
   return sim.world.get(ship, CombatC)?.ftl ?? null;
 }
 
 /** Spend FTL charge (the packet's combat component while in hyperspace). */
-export function spendCharge(sim: Sim, seconds: number, ship: number = playerShip(sim)): void {
+export function spendCharge(sim: Sim, seconds: number, ship: number = playerShipPackedOk(sim)): void {
   const c = inPacket(sim) ? packetCombat(sim) : sim.world.get(ship, CombatC);
   if (c) c.ftl = Math.max(0, c.ftl - seconds);
 }
@@ -67,7 +67,7 @@ export function spendCharge(sim: Sim, seconds: number, ship: number = playerShip
  * Fuel factor of the flown ship's drive: the best (lowest) `engine.fuelFactor` of its intact engines, 1 with none or when no engine
  * is better than Mk I. Read from the packet while in hyperspace.
  */
-export function engineFuelFactor(sim: Sim, ship: number = playerShip(sim)): number {
+export function engineFuelFactor(sim: Sim, ship: number = playerShipPackedOk(sim)): number {
   let best = 1;
   const note = (def: string, hp: number): void => {
     const f = sim.content.modules[def]?.engine?.fuelFactor;
@@ -88,4 +88,4 @@ export function engineFuelFactor(sim: Sim, ship: number = playerShip(sim)): numb
 }
 
 /** The fuel a jump of base cost `base` burns on this ship: at least 1, less with a better engine. */
-export const jumpFuel = (sim: Sim, base: number, ship: number = playerShip(sim)): number => Math.max(1, Math.ceil(base * engineFuelFactor(sim, ship) - 1e-9));
+export const jumpFuel = (sim: Sim, base: number, ship: number = playerShipPackedOk(sim)): number => Math.max(1, Math.ceil(base * engineFuelFactor(sim, ship) - 1e-9));

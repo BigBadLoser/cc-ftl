@@ -25,7 +25,7 @@
 </script>
 
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
-<div class="pop legacy" role="tooltip" data-testid="build-popover" style:width="{W}px" style:left="{left}px" style:bottom="{vh - rect.top + 18}px" onmouseenter={onenter} onmouseleave={onleave}>
+<div class="pop legacy build" role="tooltip" data-testid="build-popover" style:width="{W}px" style:left="{left}px" style:bottom="{vh - rect.top + 18}px" onmouseenter={onenter} onmouseleave={onleave}>
   <div class="phd"><b>{entry.name}</b><span class="chip">{catLabel}{def?.tier ? ` · ${def.tier}` : ''}</span>
     <button class="pin" class:on={pinned} title={pinned ? 'Unpin' : 'Pin open'} aria-label="Pin" aria-pressed={pinned} onclick={onpin}><Icon name="pin" size={14} /></button></div>
   <div class="cols" class:narrow>
@@ -65,9 +65,9 @@
 </div>
 
 <style>
-  .pop { position: fixed; z-index: 7; background: rgba(4, 4, 4, 0.97); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: var(--shadow-pop); max-height: calc(100vh - 220px); box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .pop { position: fixed; z-index: 7; background: var(--build-bg); border: 1px solid var(--amber); color: var(--text); font-size: 13px; box-shadow: var(--shadow-pop); max-height: calc(100vh - 220px); box-sizing: border-box; display: grid; grid-template-rows: auto minmax(0, 1fr); }
   .pop > * { min-width: 0; }
-  .phd { box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: #000; border-bottom: 1px solid var(--amber); }
+  .phd { box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; background: var(--build-bg-solid); border-bottom: 1px solid var(--amber); }
   .phd b { font: 700 15px var(--head-font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); }
   .chip { font-size: 11px; color: #ffe2a6; border: 1px solid var(--amber); padding: 0 5px; }
   .pin { margin-left: auto; min-height: 22px; min-width: 22px; height: 22px; padding: 0 4px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; color: var(--amber); background: transparent; border-color: transparent; }
@@ -75,26 +75,26 @@
   .cols { box-sizing: border-box; display: grid; grid-template-columns: 302px minmax(0, 1fr); gap: 12px; padding: 10px; overflow-y: auto; }
   .cols.narrow { grid-template-columns: 1fr; }
   .left { min-width: 0; }
-  .legend { display: flex; gap: 12px; margin-top: 5px; font-size: 11.5px; color: #9a9a9a; align-items: center; flex-wrap: wrap; }
+  .legend { display: flex; gap: 12px; margin-top: 5px; font-size: 11.5px; color: var(--build-dim); align-items: center; flex-wrap: wrap; }
   .rot { margin-left: auto; color: var(--amber); display: inline-flex; align-items: center; gap: 3px; }
   .k { display: inline-block; width: 12px; height: 8px; margin-right: 4px; vertical-align: middle; }
   .k.f { background: rgba(54, 212, 255, 0.27); border: 1px solid #36d4ff; }
   .k.acc { background: rgba(240, 177, 58, 0.2); border: 1px dashed #f0b13a; }
   .vars { display: flex; gap: 4px; margin-top: 6px; }
-  .v { flex: 1; height: 40px; min-height: 0; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid #242424; background: #0b0b0b; font-size: 12px; color: #d4d4d4; }
+  .v { flex: 1; height: 40px; min-height: 0; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--build-line); background: var(--build-fill-2); font-size: 12px; color: var(--build-ink); }
   .v.lock { color: #7a7a7a; border-style: dashed; }
-  .v.on { border-color: var(--amber); background: #000; color: var(--amber); }
+  .v.on { border-color: var(--amber); background: var(--build-bg-solid); color: var(--amber); }
   .lockline { margin: 0 0 8px; display: flex; align-items: center; gap: 5px; color: var(--amber); font-size: 12.5px; }
-  .toolart { height: 200px; width: 300px; display: flex; align-items: center; justify-content: center; color: var(--amber); background: #000; border: 1px solid #242424; }
+  .toolart { height: 200px; width: 300px; display: flex; align-items: center; justify-content: center; color: var(--amber); background: var(--build-bg-solid); border: 1px solid var(--build-line); }
   .toolart :global(svg) { fill: none; stroke: currentColor; }
-  .desc { margin: 0 0 8px; color: #d4d4d4; line-height: 1.35; }
-  .facts div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; border-bottom: 1px solid #1e1e1e; }
-  .facts span { color: #9a9a9a; }
+  .desc { margin: 0 0 8px; color: var(--build-ink); line-height: 1.35; }
+  .facts div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; border-bottom: 1px solid var(--build-line); }
+  .facts span { color: var(--build-dim); }
   .warn { color: var(--amber); }
   .ct { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-  .ct th { font: 600 11px var(--head-font); text-transform: uppercase; letter-spacing: 0.06em; color: #8a8a8a; text-align: right; padding: 0 0 3px; border-bottom: 1px solid #2c2c2c; }
+  .ct th { font: 600 11px var(--head-font); text-transform: uppercase; letter-spacing: 0.06em; color: var(--build-dim); text-align: right; padding: 0 0 3px; border-bottom: 1px solid var(--build-line); }
   .ct th.sec { text-align: left; color: var(--amber); font-size: 12px; }
-  .ct td { padding: 4px 0; border-bottom: 1px solid #1e1e1e; text-align: right; width: 52px; }
+  .ct td { padding: 4px 0; border-bottom: 1px solid var(--build-line); text-align: right; width: 52px; }
   .ct td:first-child { text-align: left; width: auto; display: flex; align-items: center; gap: 6px; }
   .ct tr.short td:last-child { color: var(--red); font-weight: 700; }
   .caret { position: absolute; bottom: -15px; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 15px solid var(--amber); }

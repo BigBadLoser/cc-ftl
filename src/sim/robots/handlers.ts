@@ -1,3 +1,5 @@
+import { takePassenger } from '../consent/passage';
+import { ConsentC } from '../consent/components';
 import { factionsHostile } from '../combat/factions';
 import { abortTask, attachJob } from '../ai/task';
 
@@ -108,6 +110,10 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const grid = shipGrid(sim, cmd.ship);
     if (!grid?.has('struct') || !grid.inBounds(cmd.x, cmd.y) || !isTileWalkable(sim, grid, cmd.x, cmd.y)) return reject(sim, cmd.type, 'notWalkable');
     const faction = cmd.faction ?? shipById(sim, cmd.ship)?.faction ?? 'player';
-    if (!createCrew(sim, cmd.ship, cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 })) return reject(sim, cmd.type, 'badRole');
+    const id = createCrew(sim, cmd.ship, cmd.role, { x: cmd.x, y: cmd.y }, { faction, rest: 100 });
+    if (!id) return reject(sim, cmd.type, 'badRole');
+    if (cmd.lodge) takePassenger(sim, cmd.ship, id);
+    const g = cmd.lodge && cmd.carry ? sim.world.get(cmd.ship, ConsentC)?.grants.find((x) => x.by === 'passage' && x.crew?.includes(id)) : undefined;
+    if (g && cmd.carry) g.carry = { ...cmd.carry, fired: [] };
   },
 };

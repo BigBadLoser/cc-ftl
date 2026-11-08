@@ -15,6 +15,10 @@
 </ToggleGroup.Root>
 
 <style>
-  :global(.kit-seg) { display: inline-flex; gap: 4px; }
+  /* One joined group: no gap, neighbours share a border, the hovered, focused or selected one sits on top so its whole border shows. */
+  :global(.kit-seg) { display: inline-flex; gap: 0; }
+  :global(.kit-seg button + button) { margin-left: -1px; }
+  :global(.kit-seg button) { position: relative; border-radius: 0; }
+  :global(.kit-seg button:hover), :global(.kit-seg button:focus-visible), :global(.kit-seg button.on) { z-index: 1; }
   :global(.kit-seg button:focus-visible) { outline: 2px solid var(--focus); outline-offset: 1px; }
 </style>

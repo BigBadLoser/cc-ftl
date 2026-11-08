@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Chip, chipTone } from '../kit';
   import FlickerText from './FlickerText.svelte';
   import type { CallerInfo } from './types';
 
@@ -10,7 +11,7 @@
   <div class="name"><FlickerText value={caller.name} alt={caller.alt ?? null} {force} /></div>
   {#if caller.ship}<div class="sub">{caller.role ? `${caller.role} ` : ''}<b>{caller.ship}</b></div>{/if}
   <div class="sub"><i class="swatch" style:background={caller.swatch ?? 'var(--dim)'}></i>{caller.faction}</div>
-  {#if caller.status}<div class="pills"><span class="pill {caller.status.tone}">{caller.status.label}</span></div>{/if}
+  {#if caller.status}<div class="pills"><Chip tone={chipTone(caller.status.tone)}>{caller.status.label}</Chip></div>{/if}
 </div>
 
 <style>
@@ -20,9 +21,4 @@
   .sub b { color: var(--text); font-weight: 600; }
   .swatch { display: inline-block; width: 8px; height: 8px; margin-right: 6px; }
   .pills { margin-top: 5px; }
-  .pill { font: 600 11px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; padding: 1px 6px; border: 1px solid var(--line-hi); color: var(--dim); }
-  .pill.amber { color: var(--amber); border-color: var(--amber); }
-  .pill.green { color: var(--green); border-color: var(--green); }
-  .pill.red { color: var(--red); border-color: var(--red); }
-  .pill.cyan { color: var(--cyan); border-color: var(--cyan); }
 </style>

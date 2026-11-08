@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Meter } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiYard, UiYardService } from './api';
   import ItemIcon from './ItemIcon.svelte';
@@ -35,7 +36,7 @@
   {#if order}
     <div class="card" data-testid="yard-order" data-phase={order.phase}>
       <div class="row"><b>{order.status}</b><span>{order.built} / {order.total} tiles</span></div>
-      <div class="bar" role="progressbar" aria-valuemin={0} aria-valuemax={order.total} aria-valuenow={order.built}><i style={`width: ${order.total ? Math.min(100, (order.built / order.total) * 100) : 0}%`}></i></div>
+      <Meter value={order.built} max={Math.max(1, order.total)} height={8} />
       {#if live}
         <p class="note">The station's shuttle brings a crew who work in suits on the hull. Your crew can help. Leaving early sends them home and refunds the unbuilt part.</p>
         <button class="stop" data-testid="yard-cancel" onclick={() => api.dispatch({ type: 'yard.cancel', order: order.id })}>Send the crew home</button>
@@ -80,8 +81,6 @@
   .bad { color: var(--red) !important; }
   .warn { color: var(--red); font-size: 12px; margin: 0; }
   .note { color: var(--dim); font-size: 12px; margin: 0; }
-  .bar { height: 8px; background: var(--bg); border: 1px solid var(--line); }
-  .bar i { display: block; height: 100%; background: var(--cyan); }
   button { min-height: 32px; font: 600 13px var(--head-font); letter-spacing: 0.06em; text-transform: uppercase; }
   .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
   .go:disabled { opacity: 0.4; }
