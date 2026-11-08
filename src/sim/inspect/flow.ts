@@ -25,7 +25,7 @@ export function abortInspections(sim: Sim): void {
     const insp = sim.world.get(id, InspectionC)!;
     if (insp.phase === 'search' || insp.phase === 'settle') {
       refuseConsequences(sim, insp);
-      sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0 });
+      sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
     }
     endInspection(sim, id);
   }
@@ -58,7 +58,7 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       if (open.length === 0) {
         tally(sim, id, insp);
         if (!insp.found.length) {
-          sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0 });
+          sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'clean', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
           return leave(sim, id, insp, 'clean');
         }
         Object.assign(insp, scanPrices(insp.value));

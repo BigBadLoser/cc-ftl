@@ -146,8 +146,8 @@ export function createDescriber(sim: Sim) {
       case 'inspect.waiting': return { kind: 'galaxy', tone: 'warn', text: `The inspectors found contraband worth ${e.value} ₵: fine ${e.fine} ₵, or a bribe of ${e.bribe} ₵`, ...here() };
       case 'inspect.bribeRefused': return { kind: 'galaxy', tone: 'bad', text: 'The inspector turned your bribe down', ...here() };
       case 'inspect.settled': {
-        const text = { fined: `Contraband seized and a ${e.cost} ₵ fine paid`, bribed: `Paid a ${e.cost} ₵ bribe: the inspectors hand the goods back`, refused: 'You refused the inspectors: the station will not deal with you',
-          clean: 'The inspectors found nothing and leave', fled: 'You left before the inspection was done: the station will not deal with you' }[e.outcome];
+        const text = { fined: `Contraband seized and a ${e.cost} ₵ fine paid`, bribed: `Paid a ${e.cost} ₵ bribe: the inspectors hand the goods back`, refused: e.patrol ? 'You refused the patrol\'s inspectors: they will remember it' : 'You refused the inspectors: the station will not deal with you',
+          clean: 'The inspectors found nothing and leave', fled: e.patrol ? 'You left before the patrol\'s inspection was done: they will remember it' : 'You left before the inspection was done: the station will not deal with you' }[e.outcome];
         return { kind: 'galaxy', tone: e.outcome === 'clean' || e.outcome === 'bribed' ? 'info' : 'bad', text, ...here() };
       }
       case 'galaxy.bribed': return { kind: 'galaxy', tone: 'warn', text: `Paid ${e.cost} ₵ to pass`, ...here() };
