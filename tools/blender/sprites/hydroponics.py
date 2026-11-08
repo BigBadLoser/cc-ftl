@@ -140,7 +140,7 @@ def _bar(k, a, b, s, col):
     _tube(k, [a, b], s / math.sqrt(2), col, n=4, phase=math.pi / 4)
 
 
-def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t):
+def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t, glint="dim"):
     """A glass canopy: a short upright wall from the sill to zv, then the long sides slope up to a glass roof (inset
     iv each side), the short ends upright; square frame bars on every edge, a post and rafter mid-length that a strut
     across the roof joins into one hoop, and a ring lamp (colours ring, ring_t) hung from that strut."""
@@ -167,24 +167,34 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
     _lamp_ring(k, cu, 0, zl, Lr, 2 * b2, 0.09, on, col=ring, top=ring_t)
     for sv in (-1, 1):                                                      # hung from the strut
         _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
-    # Reflections: solid pale bands across the panes in pairs (a see-through sheen speckles when it is downsampled).
-    # They mask the crop, so a plant behind one shows the band across it.
     up = zr - zv                                                            # the front slope: v and z at fraction f
     fs = lambda f: (b - f * iv + 0.006, zv + f * up)
-    (v0, za), (v1, zb) = fs(0.08), fs(1.0)
-    for bay in (-1, 1):                                                     # the same pair in each bay: up the front
-        for du, w in ((-0.2, 0.08), (-0.07, 0.04)):                         # slope, then on across the roof
-            u0 = cu + bay * L / 4 + du
-            _streak(k, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0))
-            _streak(k, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0))
-    for dv, w in ((0.1, 0.08), (-0.03, 0.04)):                              # the end pane, centred
-        _streak(k, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0))
+    if glint == "dim":
+        # Reflections: muted bands in pairs (a see-through sheen speckles when it is downsampled). They mask the crop,
+        # so a plant behind one shows the band across it. Each bay: up the front slope, then on across the roof.
+        (v0, za), (v1, zb) = fs(0.08), fs(1.0)
+        for bay in (-1, 1):
+            for du, w in ((-0.2, 0.08), (-0.07, 0.04)):
+                u0 = cu + bay * L / 4 + du
+                _streak(k, (u0, v0, za), (u0 + 0.12, v1, zb), (w, 0, 0), "glassD")
+                _streak(k, (u0 + 0.12, b2, zr + 0.006), (u0 + 0.24, -b2 + 0.04, zr + 0.006), (w, 0, 0), "glassD")
+        for dv, w in ((0.1, 0.08), (-0.03, 0.04)):                          # the end pane, centred
+            _streak(k, (cu + a + 0.006, dv, z0 + 0.06), (cu + a + 0.006, dv - 0.12, zv + 0.2), (0, -w, 0), "glassD")
+    else:
+        # Catch-lights: a thin pale line just inside the frame along the top of each pane, the glass edge in the light.
+        e = 0.035
+        (v0, za) = fs(0.86)
+        for u0, u1 in ((cu - a + 0.06, cu - 0.06), (cu + 0.06, cu + a - 0.06)):
+            _streak(k, (u0, v0, za), (u1, v0, za), (0, iv * 0.1, -e), "glassG")                   # front slope, top
+            _streak(k, (u0, b + 0.006, zv - 0.05), (u1, b + 0.006, zv - 0.05), (0, 0, -e), "glassG")  # upright, top
+            _streak(k, (u0, b2 - 0.06, zr + 0.006), (u1, b2 - 0.06, zr + 0.006), (0, -e, 0), "glassG")  # roof, front
+        _streak(k, (cu + a + 0.006, -b2 + 0.05, zr - 0.06), (cu + a + 0.006, b2 - 0.05, zr - 0.06), (0, 0, -e), "glassG")
 
 
-def _streak(k, p0, p1, e):
+def _streak(k, p0, p1, e, col):
     """A flat reflection band from p0 to p1 (local u, v, z), e wide (a local vector across it)."""
     q = [p0, p1, tuple(p1[i] + e[i] for i in range(3)), tuple(p0[i] + e[i] for i in range(3))]
-    k.m.poly([_G(k, *p) for p in q], "glassG", flip=True)
+    k.m.poly([_G(k, *p) for p in q], col, flip=True)
 
 
 def _tray(k, cu, L, D, z0, zs, seed):
@@ -193,13 +203,13 @@ def _tray(k, cu, L, D, z0, zs, seed):
     _soil(k, cu, 0, zs - 0.05, L - 0.12, D - 0.12, seed, n=int(L * 14))
 
 
-def terra(k, on):
+def terra(k, on, glint="dim"):
     """One long glass canopy on an angular navy base, grey frames, slatted front panel, a control screen."""
     _prism(k, _cham(0, 0, 1.9, 0.84, 0.03), 0.0, 0.1, "dark")                                 # kick
-    body = _cham(0, 0, 2.0, 0.9375, 0.02)                   # (front face on v = 15/32: whole px, as every u below)
-    _prism(k, body, 0.1, 0.54, "tNavy", top="tNavyL")
-    _ring(k, body, _cham(0, 0, 1.86, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")          # sill, flush with it
-    f = 0.46875
+    body = _cham(0, 0, 1.9375, 0.875, 0.02)                 # (front face on v = 14/32: whole px, as every u below)
+    _prism(k, body, 0.1, 0.5, "tNavy", top="tNavyL")
+    _ring(k, _cham(0, 0, 2.0, 0.9375, 0.02), _cham(0, 0, 1.86, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
+    f = 0.4375
     k.box(-0.40625, f, 0.2, 0.75, 0.01, 0.26, "dark")                                       # slatted panel
     for j in range(6):                                                                     # 2 px slats, 2 px gaps
         k.box(-0.71875 + j * 0.125, f + 0.006, 0.22, 0.0625, 0.01, 0.22, "tNavyL")
@@ -209,7 +219,7 @@ def terra(k, on):
     k.box(0.59375, f + 0.012, 0.33, 0.0625, 0.01, 0.05, _on(on, "orange"))
     zs = 0.69
     _tray(k, 0, 1.84, 0.8, 0.6, zs, 3)
-    _canopy_slope(k, 0, 1.92, 0.88, 0.66, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
+    _canopy_slope(k, 0, 1.92, 0.88, 0.66, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL", glint)
     return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
 
 
@@ -240,7 +250,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra}
+VARIANTS = {"terra": terra, "terra.edge": lambda k, on: terra(k, on, "edge")}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 

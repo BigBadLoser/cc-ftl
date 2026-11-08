@@ -3510,6 +3510,7 @@
   "grain": {"hex": "#e0b84e", "set": "hydro"},
   "glassT": {"hex": "#8fbccc", "set": "hydro"},
   "glassG": {"hex": "#d6eef7", "set": "hydro"},
+  "glassD": {"hex": "#7e98a6", "set": "hydro"},
   "tNavy": {"hex": "#28344c", "set": "hydro"},
   "tNavyL": {"hex": "#36445f", "set": "hydro"},
   "tFrame": {"hex": "#6d7885", "set": "hydro"},
