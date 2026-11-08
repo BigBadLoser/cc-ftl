@@ -498,3 +498,6 @@ Marked ref (both layers, numbered): scratchpad
   LookShell._band carries the shelf round the corner (a step lighter than the y face's shelf) with its top at the shelf.
   The corner strip between the shelf and the old ramp top (navy face's corner piece, uncovered by the shelf) a step
   lighter, as the strip over it. Other looks unchanged (gated on ramp_px). ns14.
+- 2026-11-08: the user: the shelf's seam line (its dark back crease) and its lit edge on round the chamfer.
+  LookShell._band's shelf: its back px, top and lit edge as the faces' (_prof), each a step lighter than the y face's.
+  The chamfer's own wall/slope colour (a shade over the lit face) the user finds off; options A-D shown, waiting. ns15.

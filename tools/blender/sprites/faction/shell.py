@@ -265,8 +265,11 @@ class LookShell(T.Shell):
         tones = [(self.run, col["slope"])] if tones is NO else tones   # [(up to d, tone)] out from the wall's line
         sh = T.style().shelf if T.ramp_fall() else 0.0  # (a look's own fall under a shelf: the shelf round it too,
         if sh:                                          # flat from the wall to its edge in its own tone)
-            tones = [(sh, R[min(5, T.style().shelf_lvl + 1)])] + [(d, c) for d, c in tones if d > sh + 1e-9]
-            #   (a step lighter than the y face's shelf, as the chamfer's plates are over the face's)
+            up = lambda lv: R[min(5, lv + 1)]                                       # noqa: E731
+            sb = T.style().shelf_back                   # (as the faces' (_prof): its back px against the wall, its
+            tones = ([((n + 1) / 32, up(v)) for n, v in enumerate(sb)] +           # top, its lit front edge; each a
+                     [(sh - 1 / 32, up(T.style().shelf_lvl)), (sh, up(4))] +      # step lighter than the y face's,
+                     [(d, c) for d, c in tones if d > sh + 1e-9])                  # as the chamfer's plates are)
         run, ft = self.run, self.foot
         pts, cols = [(0.0, 0.0), (run, 0.0)], [R[0]]
         if ft:
