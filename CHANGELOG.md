@@ -58,6 +58,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- A black-market inspection now also finds a contraband upgrade on its way into a weapon (in storage, carried, or half fitted): it is seized and the fit job is cancelled, so the weapon comes back online. ([#355](https://github.com/BigBadLoser/cc-ftl/pull/355))
 - Crew can repair, deconstruct, craft at and research at a module from any side, not only its top-left corner, so a module walled in at that corner is no longer out of reach. ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343), [#344](https://github.com/BigBadLoser/cc-ftl/pull/344))
 - A hovering shuttle comes close enough to a ragged wreck for crew to get back aboard, and "Back to shuttle" works from deep inside a wreck. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
 - Crew no longer repair wrecks they are salvaging or exploring. ([#314](https://github.com/BigBadLoser/cc-ftl/pull/314))
