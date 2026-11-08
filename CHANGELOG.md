@@ -68,6 +68,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- A ship jumping into the node no longer causes a frame hitch: ships of fleets about to arrive are generated on a worker, and a newly loaded sheet only rebuilds the ships that use it. ([#391](https://github.com/BigBadLoser/cc-ftl/pull/391))
 - Evade odds when pirates or a patrol interdict a jump read from the ship's real pilot and engines (they could show 5% right after a jump). [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
 - A shuttle flying home to a hangar bay that breaks on its approach hovers and finds another way in instead of being lost with the bay. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
 - Choosing an option in a story event while paused no longer unpauses the game before the event closes. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
