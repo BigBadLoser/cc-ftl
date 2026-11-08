@@ -3500,5 +3500,10 @@
   "growPink": {"hex": "#ff6ad5", "emissive": 2.5, "set": "hydro"},
   "growViolet": {"hex": "#cfa3ff", "emissive": 2.5, "set": "hydro"},
   "waterD": {"hex": "#1e4a66", "set": "hydro"},
-  "waterL": {"hex": "#5fb3d6", "set": "hydro"}
+  "waterL": {"hex": "#5fb3d6", "set": "hydro"},
+  "soilD": {"hex": "#241910", "set": "hydro"},
+  "soil": {"hex": "#3a2a1b", "set": "hydro"},
+  "soilL": {"hex": "#5a4530", "set": "hydro"},
+  "canvas": {"hex": "#6b6a4e", "set": "hydro"},
+  "canvasD": {"hex": "#4e4d38", "set": "hydro"}
 }

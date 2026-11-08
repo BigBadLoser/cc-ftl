@@ -12,6 +12,10 @@ Round two, one big plant per tile (PLANTS):
   pipe      a split steel pipe trough on cast saddles, domed valve ends, a gooseneck lamp head over each plant
   bowls     two round flared planter pots on a cast base, a ring lamp over each from one central stem
   vat       a flared faceted vat on a sculpted plinth, a bent-tube canopy carrying a lamp pad per plant
+Round three, soil beds (_soil) in place of water:
+  skiff     a boat-shaped planter on curved skids, a crane mast with a pendant bell lamp over each plant
+  hexes     two hexagonal planters at two heights on a stepped base, a mast with angled light panels
+  bags      two canvas grow bags in a drip tray, a drip line, a bent pipe gantry with one long tube lamp
 States: `off` (unlit, empty), `on` (lit, water glint, empty), `on.crop` (lit with a placeholder leafy crop in the raft,
 to judge the lamp over the plants). HYDRO_VARIANTS=bench,tub narrows the build."""
 import math
@@ -303,7 +307,133 @@ def vat(k, on, crop):
             _plant(k, u, v, 0.7, i)
 
 
-VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat}
+def _soil(k, u, v, z, w, d, seed=0, round_=False, n=26):
+    """A soil bed: dark loam with scattered clods, a mound in the middle. Round beds get a disc (w = diameter)."""
+    r = random.Random(seed * 13 + 1)
+    if round_:
+        k.cyl(u, v, z, w / 2, 0.05, "soil", top="soilD", sides=12)
+        k.cyl(u, v, z + 0.05, w / 2 * 0.7, 0.03, "soil", top="soil", sides=10)
+    else:
+        k.box(u, v, z, w, d, 0.05, "soil", top="soilD")
+        k.box(u, v, z + 0.05, w * 0.8, d * 0.6, 0.03, "soil", top="soil", bevel=0.02)
+    for _ in range(n):
+        if round_:
+            a, rr = r.uniform(0, math.tau), r.uniform(0, w / 2 - 0.06)
+            cu, cv = u + rr * math.cos(a), v + rr * math.sin(a)
+        else:
+            cu, cv = u + r.uniform(-w / 2 + 0.05, w / 2 - 0.05), v + r.uniform(-d / 2 + 0.05, d / 2 - 0.05)
+        sz = r.uniform(0.04, 0.09)
+        k.box(cu, cv, z + 0.05 + r.uniform(0, 0.025), sz, sz * r.uniform(0.6, 1.0), 0.035, r.choice(("soilL", "soilD", "soil", "soilL")),
+              rz=r.uniform(0, 3))
+
+
+def _octo(k, u, v, z, w, d, h, col, top=None, cut=0.22, bevel=0.0):
+    """A box with its four corners cut (an elongated octagon from above): a boat-shaped planter body."""
+    k.box(u, v, z, w - 2 * cut, d, h, col, top=top, bevel=bevel)
+    k.box(u, v, z, w, d - 2 * cut, h, col, top=top, bevel=bevel)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(u + su * (w / 2 - cut), v + sv * (d / 2 - cut), z, cut * 1.5, cut * 1.5, h, col, top=top,
+                  rz=math.pi / 4, bevel=bevel)
+
+
+def skiff(k, on, crop):
+    """A boat-shaped planter on two curved skids, soil mounded in it, a crane arm with two pendant lamps."""
+    lit = "growPink" if on else "blueGrey"
+    for e in (-1, 1):                                                         # skids: curved runners
+        for i in range(5):
+            t = (i - 2) / 2
+            k.box(e * 0.55, t * 0.32, 0.04 * t * t, 0.12, 0.2, 0.06, "steelD", top="steel", rx=-0.3 * t)
+        k.box(e * 0.55, 0, 0.06, 0.1, 0.1, 0.1, "steelD")
+    _octo(k, 0, 0, 0.14, 1.72, 0.66, 0.24, "steelD", top="steel", cut=0.22, bevel=0.015)       # hull, narrow below
+    _octo(k, 0, 0, 0.36, 1.94, 0.82, 0.26, "steel", top="steelL", cut=0.26, bevel=0.02)         # flaring up to the rim
+    _octo(k, 0, 0, 0.6, 1.98, 0.86, 0.05, "steelL", top="plate", cut=0.27)                     # gunwale
+    _octo(k, 0, 0, 0.6, 1.78, 0.66, 0.06, "soilD", top="soilD", cut=0.22)                       # the bed
+    _soil(k, 0, 0, 0.64, 1.7, 0.6, 1)
+    k.box(0, 0.42, 0.42, 0.9, 0.012, 0.03, "hazY")                                             # stripe on the bow
+    k.box(-0.6, 0.43, 0.2, 0.24, 0.02, 0.16, "gm")                                              # valve panel
+    k.box(-0.6, 0.445, 0.3, 0.06, 0.012, 0.04, "green" if on else "dark")
+    k.cyl(-0.6, 0.44, 0.22, 0.03, 0.04, "polyB", sides=6)
+    k.box(0, -0.4, 0.3, 1.2, 0.05, 0.05, "polyB")                                               # drip line at the back
+    k.cyl(0.92, -0.3, 0.0, 0.07, 1.55, "steelD", top="steel", sides=8)                          # crane mast at one end
+    k.box(0.92, -0.3, 0.0, 0.3, 0.3, 0.08, "gmD", top="gm", bevel=0.02)
+    k.box(0.1, -0.3, 1.55, 1.7, 0.08, 0.07, "steelD", top="steel")                              # jib along the back
+    k.box(0.1, -0.15, 1.55, 0.06, 0.3, 0.06, "steelD")
+    for e in (-1, 1):                                                                           # pendants over the plants
+        u = e * 0.5
+        k.box(u, -0.3, 1.55, 0.06, 0.06, 0.07, "gmD")
+        k.box(u, -0.15, 1.56, 0.04, 0.34, 0.04, "steelD")                                       # short arm forward
+        k.box(u, 0, 1.3, 0.025, 0.025, 0.27, "dark")                                            # the cable
+        k.cyl(u, 0, 1.24, 0.21, 0.07, "gm", top="steelL", sides=10, rtop=0.13)                  # bell shade
+        k.cyl(u, 0, 1.2, 0.16, 0.045, lit, sides=10)                                            # the lamp under it
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.72, i)
+
+
+def hexes(k, on, crop):
+    """Two hexagonal planters at two heights on a stepped base, soil in each, a mast with two angled light panels."""
+    lit = "growViolet" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.7, 0.6, 0.06, "gmD", top="gm", bevel=0.02)                 # base plate
+    k.cyl(0.5, 0, 0.06, 0.3, 0.2, "steelD", top="steel", sides=6)                  # the raised one's drum
+    for e, z in ((-1, 0.06), (1, 0.26)):
+        u = e * 0.5
+        k.cyl(u, 0, z, 0.4, 0.4, "steel", top="steelL", sides=6, rtop=0.46)        # planter: a flared hex pot
+        k.cyl(u, 0, z + 0.4, 0.48, 0.06, "steelL", top="plate", sides=6)           # rim
+        k.cyl(u, 0, z + 0.4, 0.42, 0.07, "soilD", top="soilD", sides=6)
+        _soil(k, u, 0, z + 0.47, 0.78, 0.78, e + 2, round_=True, n=18)
+        k.box(u, 0.46, z + 0.1, 0.1, 0.03, 0.1, "polyB")                            # feed valve
+    k.box(0, 0, 0.1, 0.5, 0.05, 0.05, "polyB")                                      # pipe between them
+    k.box(0, 0.33, 0.06, 0.26, 0.04, 0.24, "gm")                                    # hub panel
+    k.box(0, 0.355, 0.2, 0.08, 0.012, 0.05, "green" if on else "dark")
+    k.cyl(0, -0.4, 0.0, 0.06, 1.5, "steelD", top="steel", sides=8)                  # the mast at the back
+    k.box(0, -0.4, 0.0, 0.26, 0.2, 0.08, "gmD", top="gm", bevel=0.02)
+    k.box(0, -0.4, 1.5, 1.3, 0.08, 0.07, "steelD", top="steel")                     # cross bar
+    for e in (-1, 1):                                                               # angled light panels, tilted
+        u = e * 0.5                                                                 # down toward the plants
+        k.box(u, -0.2, 1.4, 0.5, 0.42, 0.06, lit, top="gm", rx=-0.45)                # the panel: lit edges, grey top
+        k.box(u, -0.4, 1.46, 0.1, 0.1, 0.1, "gmD")                                   # hinge on the bar
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.56 + (0.2 if u > 0 else 0), i)
+
+
+def bags(k, on, crop):
+    """Two canvas grow bags in a shallow drip tray, soil heaped over their cuffs, a drip line between them, a bent
+    pipe gantry with a long tube lamp."""
+    lit = "growPink" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.9, 0.8, 0.1, "steelD", top="steel", bevel=0.02)             # drip tray
+    k.box(0, 0, 0.04, 1.78, 0.68, 0.07, "gmD", top="grime")
+    for e in (-1, 1):
+        u = e * 0.5
+        k.cyl(u, 0, 0.1, 0.33, 0.36, "canvasD", top="canvas", sides=12, rtop=0.3)   # the bag, slumped
+        k.cyl(u, 0, 0.44, 0.34, 0.1, "canvas", top="canvasD", sides=12, rtop=0.31)  # folded cuff
+        k.cyl(u, 0, 0.52, 0.29, 0.04, "soilD", top="soilD", sides=12)
+        _soil(k, u, 0, 0.55, 0.56, 0.56, e + 5, round_=True, n=14)
+        k.box(u, 0.31, 0.2, 0.1, 0.06, 0.08, "canvasD")                              # handle loop
+        k.cyl(u, 0, 0.6, 0.03, 0.12, "polyB", sides=6)                               # dripper stake
+    k.box(0, 0, 0.56, 1.0, 0.045, 0.045, "polyB")                                    # drip line between
+    k.box(0, -0.38, 0.1, 1.4, 0.045, 0.045, "polyB")
+    k.box(-0.9, -0.3, 0.1, 0.16, 0.16, 0.22, "gmD", top="gm")                        # pump / timer box
+    k.box(-0.9, -0.215, 0.26, 0.07, 0.012, 0.04, "green" if on else "dark")
+    for e in (-1, 1):                                                                # gantry: pipes up the back
+        k.cyl(e * 0.92, -0.36, 0.1, 0.04, 1.3, "steelL", top="plate", sides=8)       # corners, bent forward
+        for i in range(4):
+            t = i / 3
+            k.box(e * 0.92, -0.36 + 0.3 * math.sin(t * math.pi / 2), 1.4 + 0.12 * math.sin(t * math.pi), 0.08, 0.1,
+                  0.08, "steelL")
+        k.cyl(e * 0.92, -0.06, 1.3, 0.05, 0.05, "gm", sides=8)
+    k.box(0, -0.06, 1.44, 1.92, 0.08, 0.08, "steelL", top="plate")                   # the bar
+    k.box(0, -0.06, 1.33, 1.6, 0.09, 0.09, lit)                                      # the tube lamp under it
+    for e in (-1, 1):
+        k.box(e * 0.85, -0.06, 1.32, 0.1, 0.11, 0.11, "gmD")
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.62, i)
+
+
+VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat,
+            "skiff": skiff, "hexes": hexes, "bags": bags}
 STATES = ("off", "on", "on.crop")
 
 
