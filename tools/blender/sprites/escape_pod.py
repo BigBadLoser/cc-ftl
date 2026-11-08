@@ -28,11 +28,9 @@ BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
-H = dict(rb=1.0, rt=0.58, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack")
-VARIANTS = {                                  # (scorch: the heat shield's streaks, their colour and how many)
-    "h": dict(H, scorch=("leather", 2.1), label="H"),
-    "hs": dict(H, scorch=("steelD", 2.2), label="H soot"),
-    "hw": dict(H, scorch=("rust", 2.1), label="H worn"),
+VARIANTS = {                                  # (scorch: the heat shield's soot streaks, their colour and how many)
+    "h": dict(rb=1.0, rt=0.58, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", scorch=("steelD", 2.2),
+              label="H"),
 }
 SIDES = 48
 COLLAR = 0.91                 # the hatch collar's radius, x the cone's top: it steps in, a ledge round it
