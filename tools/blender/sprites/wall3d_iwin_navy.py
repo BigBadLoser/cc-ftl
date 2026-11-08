@@ -16,7 +16,7 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
-CUT_Z = 8                   # art px up: the sill under the ramp's top (the ref's cut: 8 of its 30 rows, ~30%; ours 8 of 26)
+CUT_Z = 13                  # art px: the sill under the wall's top (26), 6 under navy's shelf (19); 8, then 5 deeper (the user)
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
@@ -47,9 +47,20 @@ def _line():
     return W.wall_back() - 0.5 + W.TW
 
 
-def _slope():
-    """The ramp's fall per unit out from the wall's line (its sloped part: RAMP_PX art px a cell)."""
-    return W.RAMP_PX / W.ZART / PX
+def _zr(d):
+    """The plain ramp's top d out from the wall's line: navy's shelf (wall3d.lip_heights), then its fall (Style.ramp_px)
+    down to the foot at the run's end (shell._zsurf's)."""
+    f, ft = T.ramp_fall(), W.foot()
+    return max(ft, min(_zh(), ft + (W.skirt_run() - d) * f))
+
+
+def _zh():
+    return T.lip_heights(_zt())[0]
+
+
+def _d_at(z):
+    """How far out the slope is down to z (under the shelf)."""
+    return W.skirt_run() - (z - W.foot()) / T.ramp_fall()
 
 
 def _zt():
@@ -62,12 +73,12 @@ def _zs():
 
 def _front():
     """The sill's front edge, from the pane: where the slope falls to it."""
-    return _line() + CUT_Z / W.ZART / _slope()
+    return _line() + _d_at(_zs())
 
 
-def _ramp_z(y):
-    """The plain ramp's top at |y| from the pane."""
-    return _zt() - max(0.0, abs(y) - _line()) * _slope()
+def _shelf_end():
+    """The shelf's front edge, from the pane: where the slope starts."""
+    return _line() + _d_at(_zh())
 
 
 def _cells(x0, x1, c0, c1):
@@ -171,8 +182,8 @@ def _pocket(k, pa, pb):
         if c0 - 1e-9 <= u <= c1 + 1e-9:                 # (by the sill: its height, then the slope)
             _quad(k, [(u, yl, zf), (u, ye, zf), (u, ye, zs), (u, yl, zs)], (sd, 0, 0), COL["p_side"])
             _quad(k, [(u, ye, zf), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
-        else:                                           # (under an end block: the slope from its top)
-            _quad(k, [(u, yl, zf), (u, yf, zf), (u, yl, zt)], (sd, 0, 0), COL["p_side"])
+        else:                                           # (under an end block: the ramp's section, shelf and slope)
+            _quad(k, [(u, yl, zf), (u, yf, zf), (u, _shelf_end(), _zh()), (u, yl, _zh())], (sd, 0, 0), COL["p_side"])
 
 
 def _quad(k, pts, out, col):
@@ -205,7 +216,8 @@ def _ends(k, x0, x1, z1, cells):
         for s_ in (1, -1):
             if s_ > 0 and any(pa - 1e-9 <= u <= pb + 1e-9 for pa, pb in _pockets_x(PART)):
                 continue                                # (a slot takes the slope there)
-            _quad(k, [(u, s_ * yl, zs), (u, s_ * ye, zs), (u, s_ * yl, zt)], (sd, 0, 0), COL["end"])
+            _quad(k, [(u, s_ * yl, zs), (u, s_ * ye, zs), (u, s_ * _shelf_end(), _zh()), (u, s_ * yl, _zh())],
+                  (sd, 0, 0), COL["end"])                # (the ramp's section over the sill: slope, then shelf)
 
 
 def hook(k, sp, own=True):
