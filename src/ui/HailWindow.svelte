@@ -62,6 +62,14 @@
     ...(h.replies[ended.outcome] ? [{ kind: 'speech' as const, speaker: h.caller.name, text: h.replies[ended.outcome] as string }] : []),
   ]);
 
+  /** Where things stand, after the caller in the title bar: the node while a patrol waits, halted while an interdiction does, then how it ended. */
+  const AFTER: Record<string, string> = {
+    fought: 'dropping out to fight', evadeFailed: 'dropping out to fight', complied: 'dropping out for inspection',
+    evaded: 'back in hyperspace', bribed: 'back in hyperspace', ran: 'back in hyperspace', ranChased: 'back in hyperspace',
+  };
+  const subtitle = $derived(`${h.subtitle ?? `${encounter.faction} patrol`} · ${
+    answered ? (ended && AFTER[ended.outcome]) || 'channel closed' : h.subtitle ? 'halted in hyperspace' : encounter.node}`);
+
   function pick(id: string) {
     if (answered) return onClose?.();
     if (busy) return;
@@ -93,7 +101,7 @@
 
 <Dialog open title={encounter.title} dismissable={false} testId={encounter.kind === 'interdict' ? 'interdict-hail' : 'patrol-hail'} bare>
   <div class="frame" class:hostile={h.hostile}>
-  <CommsWindow title={h.title ?? 'Incoming hail'} subtitle={h.subtitle ?? `${encounter.faction} patrol · ${encounter.node}`} video={videoCol} comms={commsCol} sensors={sensorsCol} footer={decisionBar} />
+  <CommsWindow title={h.title ?? 'Incoming hail'} {subtitle} video={videoCol} comms={commsCol} sensors={sensorsCol} footer={decisionBar} />
   </div>
 </Dialog>
 

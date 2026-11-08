@@ -129,7 +129,7 @@ export function pirateHailOf(sim: Sim, e: Encounter, threat: string): UiHail {
     ],
     replies: machine ? MACHINE_REPLIES : REPLIES[motive],
     title: 'Interdiction',
-    subtitle: `${fname} ${motive === 'hunter' ? 'hunters' : e.role} · halted in hyperspace`,
+    subtitle: `${fname} ${motive === 'hunter' ? 'hunters' : e.role}`,
     hostile: true,
   };
 }
@@ -142,6 +142,6 @@ function goneHail(e: Encounter, fname: string): UiHail {
     transcript: [{ kind: 'narration', text: 'The channel is dead. Whoever stopped you is gone.' }],
     readout: [{ label: 'Ships', value: String(e.ships) }],
     replies: {},
-    title: 'Interdiction', subtitle: `${fname} · halted in hyperspace`, hostile: true,
+    title: 'Interdiction', subtitle: fname, hostile: true,
   };
 }

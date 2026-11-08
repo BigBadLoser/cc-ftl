@@ -306,7 +306,7 @@ export interface UiEncounter {
 export interface UiHail {
   caller: CallerInfo;
   look: UiLook | null;
-  /** The window's title bar (default "Incoming hail" and "<faction> patrol · <node>"). */
+  /** The window's title bar (default "Incoming hail" and "<faction> patrol"); the window adds where things stand (`HailWindow`). */
   title?: string;
   subtitle?: string;
   /** A hostile caller: the window is edged in red. */
