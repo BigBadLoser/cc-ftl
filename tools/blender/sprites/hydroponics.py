@@ -315,13 +315,17 @@ def _unit(k, cv, on, dz=0.0, seed=3):
 
 
 def large_wide(k, on):
-    """One wide greenhouse over one tray: six plants in two rows, a lamp ring over each row."""
+    """One wide greenhouse over one tray: six plants in two rows, a lamp ring over each row, a strut along the middle
+    of the roof between them."""
     _base_large(k, on)
     _ring(k, _cham(0, 0, 3.0, 1.9375, 0.02), _cham(0, 0, 2.86, 1.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")
     zs = 0.69
     _tray(k, 0, 2.84, 1.8, 0.6, zs, 5)
     _canopy_slope(k, 0, 2.92, 1.88, 0.66, 0.87, 1.36, 0.2, on, "tFrame", "tFrameL", "ringW", "ringWL",
                   mids=[-0.5, 0.5], rings=[(0.42, 0.66), (-0.42, 0.66)])
+    _bar(k, (-1.46, 0.0, 1.36), (1.46, 0.0, 1.36), 0.06, "tFrameL")             # the middle strut, along the roof
+    for su in (-1, 1):                                                       # and a post up the middle of each end
+        _bar(k, (su * 1.46, 0.0, 0.66), (su * 1.46, 0.0, 1.36), 0.06, "tFrame")
     return [(u, v, zs, 1.14) for v in (0.45, -0.45) for u in (-0.98, 0.0, 0.98)], zs, 1.14
 
 
