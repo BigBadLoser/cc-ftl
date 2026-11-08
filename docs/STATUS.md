@@ -11,15 +11,15 @@ Last updated: 2026-11-07.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-## Weapon upgrades slice 1 (#338, merged in #344)
+## Weapon upgrades (#338: slice 1 in #344, slice 2 in #351, art in #346)
 
 Module upgrade slots with the three general weapon upgrades and the flak cannon. Mechanism: `ModuleDef.upgradeSlot`, `ItemDef.upgrade`
 (`slot`, `fits`, `mods`), `Module.upgrade`; read through `sim/upgrades/stats.ts` (effective weapon def, damage-taken multiplier). Fitting is the
 `fit` crew job (commands `module.fitUpgrade/removeUpgrade/cancelUpgrade`); the module is offline while the crew work it (`Module.offlineUntil`, a
 general work hold, `sim/modules/hold.ts`; power reads that, not fits). Enemy loadouts by faction (`FactionDef.upgrades`) are rolled once when a
 generated ship is created (`shipCreated`, `combat/ships.ts`, fed by `spawnShip` `opts.gen` and the derelict spawner; `sim/upgrades/loadout.ts`), strip drops and losses, station stock, ruin loot. Slice 2 (behaviour
-upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item icons are placeholders
-(`ItemDef.placeholderIcon`). Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Drones are covered by point defence and defence drones, not flak.
+upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item art and 40 px UI icons (`item.upg_<id>.icon`) came in #346.
+Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
 scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
@@ -28,8 +28,7 @@ Slice 2 (merged in #351): the seven behaviour upgrades in `content/upgradesBehav
 (nuke: 2 missiles; `hasAmmo`/`consumeAmmo(n)` in `combat/ammo.ts`), effect `arc` (chain coil: lightning from the hit module into the nearest crew, `ifNoDrain`; event
 `projectile.arc`), `WeaponDef.look` (render tint/blast/trail, carried on `weapon.fired`; `render/shotLook.ts`), plus patched shots, shield rule, speed, effects. Nuke is black-market
 only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
-Pending: the upgrade art session (`docs/art-prompts/upgrades.md`: item sprites for all ten, 14 px pixel art icons replacing the Tabler line
-icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
+Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites tinted by `shotLook`), so #338 is complete.
 
 ## On `main` now (merged PRs through #308)
 
