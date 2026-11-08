@@ -14,7 +14,7 @@ from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
 L = 1 / 32                              # an art px along the wall
-POCKETS = {"l": ((15, 27),), "m": ((3, 14), (17, 28)), "r": ((4, 16),)}   # px from the tile's start: each pocket
+POCKETS = {"l": ((18, 28),), "m": ((2, 14), (17, 29)), "r": ((3, 13),)}   # px from the tile's start: each pocket
 RIBS = {"m": ((15, 16),)}               # px: a rib between pockets cut upright, its face under the pockets' top edge
 POCKET_TOP = 3                          # its top this many px under the sill's level top
 POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
@@ -26,6 +26,8 @@ SIDE = "fGS4"                           # its sides
 GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
                                         # tone over it
 TOE = "fGS2"                            # under the opening the ramp from the pockets' floors down (the toe)
+BLOCK = 18                              # px: the blue end blocks under the posts run this far in from the run's ends
+SLOPE = 9                               # px: the sill's crest from the end block's edge down to the window's floor
 RAISE = 3                               # px the window's floor (the sill's level top) stands over the default's
 
 
@@ -91,7 +93,7 @@ def _quad(k, pts, out, col):
 
 def detail(k, part):
     x0, x1 = D._span(part)
-    a, b = max(x0, -0.5), min(x1, 0.5)
+    a, b = max(x0 + D.SILL_OFF, -0.5), min(x1 - D.SILL_OFF, 0.5)     # (the stretch between the end blocks)
     yf = W.wall_back() - 0.5 + W.TW
     zf = D._dip()[1]                                    # (the sill's level top: its floor)
     m = k.m
@@ -171,13 +173,15 @@ def window(fn, part):
     def build():
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
-        floor = D.FLOOR
-        D.FLOOR = floor - RAISE * PZ
+        keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END
+        D.FLOOR = D.FLOOR - RAISE * PZ
+        D.SILL_OFF = BLOCK * L - D.POST                 # (the crest level over the end block, then down)
+        D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, D.GLASS.build()
         finally:
-            D.FLOOR = floor
+            D.FLOOR, D.SILL_OFF, D.RUN, D.END = keep
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
     return build

@@ -16,6 +16,7 @@ RUN = 5 / 32            # the sill's crest: from the lip's top at a post down to
                         # the wall (the lip cut down), then on into the ramp ...
 FLOOR = 5 * PZ          # ... to this far under the ramp's top (the window's floor) ...
 END = 11.5 / 32         # ... reached this far along the wall from the post, then level
+SILL_OFF = 0.0          # (the crest stays at the lip's top this far in from the post before it starts down: a look's)
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
 LINE_COL = "fTG0"       # (blue)
@@ -54,18 +55,23 @@ def _dip():
 def _sill(x, x0, x1):
     """The ramp's crest under the opening at x: the lip's top at a post, down to the ramp's top over RUN from it,
     on down to its floor at END."""
-    d = max(0.0, min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0]))
+    d = max(0.0, min(([x - x0] if x0 > -0.5 else []) + ([x1 - x] if x1 < 0.5 else []) + [9.0]) - SILL_OFF)
     (t, f), zh = _dip(), T.lip_heights(W.skirt_top())[0]
     if d < RUN:
         return t - (t - zh) * d / RUN
     return zh - (zh - f) * min(1.0, (d - RUN) / (END - RUN))
 
 
+def _bends():
+    """The crest's bends, from a post: where it starts down, reaches the ramp's top, reaches its floor."""
+    return tuple(c for c in (SILL_OFF, SILL_OFF + RUN, SILL_OFF + END) if c > 0)
+
+
 def _segs(x0, x1):
     """The opening along x between the crest's bends (and where it passes the ramp's top, off the lip onto the
     ramp): (u0, u1, h0, h1), past the tile where it runs on."""
     xa, xb = (x0 if x0 > -0.5 else -2.0), (x1 if x1 < 0.5 else 2.0)
-    us = sorted({xa, xb} | {u for c in (RUN, END) for u in (x0 + c, x1 - c) if xa < u < xb})
+    us = sorted({xa, xb} | {u for c in _bends() for u in (x0 + c, x1 - c) if xa < u < xb})
     return [(u0, u1, _sill(u0, x0, x1), _sill(u1, x0, x1)) for u0, u1 in zip(us, us[1:])]
 
 
@@ -149,7 +155,8 @@ def hook(k, sp, own=True):
             n, dz = Vector((0, _k(), 1)).normalized() * e, ew * _k()
             _quad(k, [(u0, w0 + n.y, h0 + n.z), (u1, w1 + n.y, h1 + n.z), (u1, w1 + ew + n.y, h1 - dz + n.z),
                       (u0, w0 + ew + n.y, h0 - dz + n.z)], (0, 1, 1), EDGE)
-    for xs, sd in ((x0 + RUN, 1), (x1 - RUN, -1)):    # the seam where the slope into the ramp starts
+    for xs, sd in ((x0 + SILL_OFF + RUN, 1), (x1 - SILL_OFF - RUN, -1)):   # the seam where the slope into the
+        #   ramp starts
         xe = xs + sd * T.LINE
         if not (a < min(xs, xe) and max(xs, xe) < b):
             continue
@@ -165,7 +172,7 @@ def hook(k, sp, own=True):
     if not own:                                         # (a copy past the tile: no pane)
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
-    us = sorted({a, b} | {u for c in (RUN, END) for u in (x0 + c, x1 - c) if a < u < b})
+    us = sorted({a, b} | {u for c in _bends() for u in (x0 + c, x1 - c) if a < u < b})
     for u0, u1 in zip(us, us[1:]):
         h0, h1 = _sill(u0, x0, x1) + e, _sill(u1, x0, x1) + e
         _quad(k, [(u0, -h, h0), (u1, -h, h1), (u1, h, h1), (u0, h, h0)], (0, 0, 1), PANE_EDGE)
