@@ -16,6 +16,7 @@ END_W = 0.25                        # its end blocks along a tile (the middle bl
 LIP_D, LIP_H = PX, 3 * PZ           # the lip at the face's foot: its depth (2 px), its height
 MID_DROP = 3 * PZ                   # the middle block's top: its front edge this far under its back
 SHELF = 4 / 32                      # the ramp's top a flat step this deep against the wall (4 px)
+END_COL = "fGS4"                    # a run's end face from the foot down (_end_cap, the ramps' caps): the wall end's grey
 
 
 def _shelf_z(zs):
@@ -24,7 +25,11 @@ def _shelf_z(zs):
 
 
 class SlateTones(Feature):
-    """The shell's faces in the face's grey (the second tone); the dark outlines at the foot and under the top stay."""
+    """The shell's faces in the face's grey (the second tone); the dark outlines at the foot and under the top stay. The
+    ramps' caps at a wall's free end in the end face's grey (END_COL, as _end_cap's section)."""
+    def end_tone(self, sp, fam, ox):
+        return END_COL
+
     def col_face(self, sp, face, x, y, z):
         c = T.Shell.col_face(sp, face, x, y, z)
         e = 0.5 / T.W.GN
@@ -50,7 +55,7 @@ def _blocks(a, b):
 def _end_cap(k, ax, plane, a, b, zs, zt, F):
     """A run's end face under its face parts: shell._end_section's, its front's top (b: the face's side) the look's own
     section, the lip standing out at the wall's foot, the shelf flat out to its edge, then the slope (in pieces, each
-    convex)."""
+    convex); all of it the wall's end's grey (END_COL), no lit edge down the slope."""
     sh = T.SHELL
     run, ft = getattr(sh, "run", T.W.skirt_run()), max(getattr(sh, "foot", 0.0), 0.0035)
     zh = _shelf_z(zs)
@@ -63,14 +68,13 @@ def _end_cap(k, ax, plane, a, b, zs, zt, F):
         low += [(b + SHELF, zh), (a - SHELF, zh)]
     for q in (low, [(a - SHELF, zh), (b, zh), (b, zs), (a, zs)],
               [(b, zh), (b + LIP_D, zh), (b + LIP_D, zl + LIP_H), (b, zl + LIP_H)]):
-        k.poly([T.P(ax, plane, u, z, 0.0) for u, z in q], F, 2, T.OUT(ax))
+        k.poly([T.P(ax, plane, u, z, 0.0) for u, z in q], F, 2, T.OUT(ax), fixed=END_COL)
     if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
-               T.style().toe or F, 2, T.OUT(ax))
-    for q in ([(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                # (its front edge lit up the face,
-              [(b + SHELF, zh), (b + run, ft), (b + run - 0.06, ft), (b + SHELF, zh - 0.035)]):   # and down the slope
-        k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax))         # from the shelf's edge)
+               T.style().toe or F, 2, T.OUT(ax), fixed=END_COL)
+    k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt))], F, 5,
+           T.OUT(ax))                                   # (its front edge lit up the face; none down the slope)
 
 
 def _thirds(a, b):
