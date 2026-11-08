@@ -492,3 +492,9 @@ Marked ref (both layers, numbered): scratchpad
   chamfer cells and the corner's lit strip a level down; the slope's plates Style.ramp_lvl (new; the first band's level)
   1 (was 2); the shelf's top shelf_lvl 3 (was 2). On screen: y face and slope c1c9d5 -> a9b4c4, shelf a9b4c4 -> c1c9d5;
   x face a9b4c4 -> 8e9cb1, shelf 8e9cb1 -> a9b4c4. shell._ramp_chamfer takes a level (civil keeps 3). ns13.
+- 2026-11-08: the user: the corner. (1) The shade side's red was two tones (the band fNT2, the toe fNT4): the toe's x tone
+  fNT2 too. (2) The chamfer kept the old ramp line (zs straight down to the floor): shell._ramp_chamfer follows a look's
+  own fall (the shelf's height, from its edge down to the foot; its red band and toe in the toe's tone) and
+  LookShell._band carries the shelf round the corner (a step lighter than the y face's shelf) with its top at the shelf.
+  The corner strip between the shelf and the old ramp top (navy face's corner piece, uncovered by the shelf) a step
+  lighter, as the strip over it. Other looks unchanged (gated on ramp_px). ns14.

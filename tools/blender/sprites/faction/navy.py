@@ -92,7 +92,8 @@ def navy(hull):
         zf = T.lip_heights(zs)[0]                      # the face's foot: down to the ramp's shelf
         T.run(k, ax, plane, a, b, pe, zf - 0.03, zs + 0.06, PAINT, F, NAVY_FACE, 0)     # (from the shelf up)
         if cp:
-            corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE)
+            corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, NAVY_FACE + 1)   # (as the chamfer's
+            #   strip over it: a step lighter than the faces)
             _ramp_chamfer(k, X, plane, C, zs, F, NAVY_FACE)
         rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
         H = rt - zs                                                     # wall, so the far hull's parts line up
@@ -159,7 +160,7 @@ class Navy(Faction):
         return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=0, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
-                      toe_lvl={"wall": ("fNT2", "fNT4"), "blue": ("fNT2", "fNT4")},  # (the toe in the red band's tones)
+                      toe_lvl={"wall": ("fNT2", "fNT2"), "blue": ("fNT2", "fNT2")},  # (the toe in the red band's tones)
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
                       shelf=NAVY_SHELF, shelf_lvl=NAVY_FACE + 1, shelf_back=(0, 1),   # (the default's and slate's ramp:
                       #   a flat shelf at the wall, all shelf: no lip on it)

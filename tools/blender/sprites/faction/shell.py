@@ -263,6 +263,10 @@ class LookShell(T.Shell):
         from .parts import corner_piece
         tones = self._ask("band", fam) if self.features else NO
         tones = [(self.run, col["slope"])] if tones is NO else tones   # [(up to d, tone)] out from the wall's line
+        sh = T.style().shelf if T.ramp_fall() else 0.0  # (a look's own fall under a shelf: the shelf round it too,
+        if sh:                                          # flat from the wall to its edge in its own tone)
+            tones = [(sh, R[min(5, T.style().shelf_lvl + 1)])] + [(d, c) for d, c in tones if d > sh + 1e-9]
+            #   (a step lighter than the y face's shelf, as the chamfer's plates are over the face's)
         run, ft = self.run, self.foot
         pts, cols = [(0.0, 0.0), (run, 0.0)], [R[0]]
         if ft:
@@ -272,7 +276,7 @@ class LookShell(T.Shell):
             if d0 > 1e-9:
                 pts.append((d0, self._zsurf(d0)))
             cols.append(c)
-        pts.append((0.0, self.zs))
+        pts.append((0.0, self._zsurf(0.0)))           # (the ramp's top at the wall: zs, or the shelf's height)
         cols.append(R[0])
         corner_piece(k, self.line[0], self.line[1], self.band, pts, fam, 2, cols=cols, cap=R[0])
 
@@ -472,16 +476,23 @@ def _ends(ax, plane, b, ends):
 def _ramp_chamfer(k, X, Y, C, zs, F, lvl=3):
     """Plates on the ramp's chamfer at a corner (X, Y), C along each axis: one step lighter than the ramp (a
     highlight; lvl: its level), with the toe band and the foot line across it."""
-    run, ta = T.W.skirt_run(), T.style().toe_at
-    nrm = Vector((zs / (2 * run), zs / (2 * run), 1.0)).normalized()
+    run, ta, f = T.W.skirt_run(), T.style().toe_at, T.ramp_fall()
+    zf, nrm, t_0, toe = (lambda t: zs * (1 - t / run)), Vector((zs / (2 * run), zs / (2 * run), 1.0)), 0.02, None
+    if f:                                               # a look's own fall under a shelf: the chamfer as its ramps'
+        zh, ft, tl = T.lip_heights(zs)[0], T.W.foot(), T.style().toe_lvl     # (from the shelf's edge down to the
+        zf, nrm, t_0 = (lambda t: min(zh, ft + (run - t) * f)), Vector((f / 2, f / 2, 1.0)), max(0.02, T.style().shelf)
+        toe = tl.get(F) if isinstance(tl, dict) else None                    # foot, its band and toe in the toe's
+                                                                                     # tone, as the faces')
+        toe = toe[0] if isinstance(toe, tuple) else toe
+    nrm = nrm.normalized()
 
     def cq(t):                                          # the chamfer t down its slope: its two edges
-        z = zs * (1 - t / run)
+        z = zf(t)
         return Vector((X - C + t, Y + t, z)), Vector((X + t, Y - C + t, z))
-    for t0, t1, fam, lvl in ((0.02, ta * run, F, lvl), (ta * run, run - 0.03, "ochre", 3),
-                             (run - 0.03, run, F, lvl - 1)):
+    for t0, t1, fam, lv, fx in ((t_0, ta * run, F, lvl, None), (ta * run, run - 0.03, "ochre", 3, toe),
+                                (run - 0.03, run, F, lvl - 1, toe)):
         (a0, b0), (a1, b1) = cq(t0), cq(t1)
-        k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lvl, nrm)
+        k.poly([q + nrm * 2 * PAINT for q in (a0, b0, b1, a1)], fam, lv, nrm, fixed=fx)
 
 
 def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None, foot=None):
