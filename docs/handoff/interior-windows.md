@@ -600,3 +600,8 @@ Marked ref (both layers, numbered): scratchpad
   renumber: recessed .a9-.a11, thin band .a12-.a14): the cover off, in the frame's opening the cover panel pushed
   back RECESS = 2 px (2 px more frame on its near side and top), a level-0 grey (F) and ochre 1 band, both a shade
   under the cover's. The middle slot now also gets zh and H (keywords) for a band in it. nr2.
+- 2026-11-08: new top design "cage" (navy_cage, refs 10-11), before recessed in NAVY_TOPS (ids: cage .a9-.a11,
+  recessed .a12-.a14, thin band .a15-.a17): the cover off, in the opening a dark back (fNS5), a light over its middle
+  (c2T1 core 6 px wide, fSH1 glow 2 px round it), and a lattice of fNX3 bars in front on the px grid: upright every
+  2 px (1 px slits), across every 4 (a first try with 2 x 1 holes broke up: the across bars step every 2 px on the
+  face, and every 3 px uprights never met them). Recessed unchanged at its new id. nc2.

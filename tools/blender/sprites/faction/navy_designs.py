@@ -50,6 +50,25 @@ def navy_lockers(k, ax, plane, a, b, c, e, F, **_):
     flat(k, ax, plane, a + 0.04, uc - 0.04, e - 0.08, e - 0.055, 2 * PX + PAINT, "lvR2")
 
 
+def navy_cage(k, ax, plane, a, b, c, e, F, **_):
+    """T1-4 (refs 10-11): a cage with a light behind it: a dark back, a light (cream, dim at its edges) over its middle,
+    and in front a lattice of navy bars on the px grid: upright every 2 px (1 px slits), across every 4."""
+    du, dz = 1 / 32, 1 / 39.19
+    flat(k, ax, plane, a, b, c, e, 0.6 * PAINT, "fNS5")                                               # the back
+    uc = round((a + b) / 2 * 32) / 32
+    l0, l1 = c + 0.2 * (e - c), c + 0.85 * (e - c)
+    flat(k, ax, plane, uc - 5 * du, uc + 5 * du, l0 - 2 * dz, l1 + 2 * dz, 0.7 * PAINT, "fSH1")       # the light's
+    flat(k, ax, plane, uc - 3 * du, uc + 3 * du, l0, l1, 0.8 * PAINT, "c2T1")                          # glow, its core
+    u = math.ceil(a / du) * du                                                                         # the cage
+    while u < b - 1e-6:
+        flat(k, ax, plane, u, min(b, u + du), c, e, 0.9 * PAINT, "fNX3")
+        u += 2 * du
+    z = math.ceil(c / dz) * dz
+    while z < e - 1e-6:
+        flat(k, ax, plane, a, b, z, min(e, z + dz), 0.9 * PAINT, "fNX3")
+        z += 4 * dz
+
+
 RECESS = 2                          # the recessed cover: pushed back this many px (the user)
 
 
@@ -160,6 +179,7 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
+             Design("cage", middle=navy_cage),
              Design("recessed", middle=navy_recessed), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))
