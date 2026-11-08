@@ -149,7 +149,8 @@ def navy(hull):
             pq = (pe[0] if abs(p0 - a) < 1e-6 else "cont", pe[1] if abs(p1 - b) < 1e-6 else "cont")   # off shows the
             if kind in off:                                                                  # dark frame behind it
                 _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
-                mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F)    # (the design in the opening)
+                mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F, zh=zh, H=H)   # (the design in
+                #   the opening; zh, H: the header's foot and the wall's height, for a band in it)
                 continue
             _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, COVER, F, NAVY_FACE)
             band = navy_band if kind == "strip" else bf   # (a band design's on the cover: the strip keeps the red)

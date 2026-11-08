@@ -20,7 +20,7 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
           cols=[cols[0], cols[1], cols[2], cols[0]], cap=cols[0])
 
 
-def navy_boxes(k, ax, plane, a, b, c, e, F):
+def navy_boxes(k, ax, plane, a, b, c, e, F, **_):
     """Two control boxes (T1-2): light bezels, dark windows packed with red and cream parts and small lights."""
     zm = (c + e) / 2
     a, b = a + 0.06, b - 0.06
@@ -43,11 +43,25 @@ def navy_boxes(k, ax, plane, a, b, c, e, F):
             flat(k, ax, plane, uu - LINE, uu + LINE, zz - 0.025, zz + 0.025, PX + 3 * PAINT, col)
 
 
-def navy_lockers(k, ax, plane, a, b, c, e, F):
+def navy_lockers(k, ax, plane, a, b, c, e, F, **_):
     """T1-3: one tall red locker in the opening (the ref's), chamfered, a lid notch at its top."""
     uc = (a + b) / 2
     _box(k, ax, plane, a, b, c, e, 2 * PX, ("lvR2", "lvR", "drM"), ch=PX)
     flat(k, ax, plane, a + 0.04, uc - 0.04, e - 0.08, e - 0.055, 2 * PX + PAINT, "lvR2")
+
+
+RECESS = 2                          # the recessed cover: pushed back this many px (the user)
+
+
+def navy_recessed(k, ax, plane, a, b, c, e, F, zh=None, H=None, **_):
+    """T1-5 (refs 12-14): the cover panel, its band with it, pushed back RECESS px into the opening: the frame's dark
+    shows that much more on its left and top (the recess's wall and the header's shadow), the panel a shade darker
+    (in the recess)."""
+    du, dz = RECESS / 32, RECESS / 39.19
+    u0, u1 = (a + du, b) if ax == "y" else (a, b - du)
+    T.paint(k, ax, plane, u0, u1, c, e - dz, 0.75 * PAINT, F, 0)                                       # the panel
+    if zh is not None:
+        T.paint(k, ax, plane, u0, u1, max(c, zh - 0.33 * H), e - dz, PAINT, "ochre", 1)                # its band
 
 
 def navy_band(k, ax, plane, a, b, ends, zh, H):
@@ -146,6 +160,6 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
-             Design("thin band", band=navy_thin_band))
+             Design("recessed", middle=navy_recessed), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))

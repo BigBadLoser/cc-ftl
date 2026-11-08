@@ -594,3 +594,9 @@ Marked ref (both layers, numbered): scratchpad
   one, then round the upper pipe from its front over its top (an arc, 0..150° from the slope's normal). nv25.
 - 2026-11-08: the user: the pipes ramp is good enough as nv25 (wrapped straps). Next, from the list: boxes' chunkier
   frames, the locker's handle and seam, then render and adjust all the variants once.
+- 2026-11-08: the user: the variants are missing refs 10-11 and 12-14. 12-14 is the cover panel pushed back 2 px into
+  the recess; 10-11 a cage with a light behind it (we had one before and could not get it right). New top design
+  "recessed" (navy_recessed, refs 12-14), before thin band in NAVY_TOPS (navy variants are not shipped, so the ids
+  renumber: recessed .a9-.a11, thin band .a12-.a14): the cover off, in the frame's opening the cover panel pushed
+  back RECESS = 2 px (2 px more frame on its near side and top), a level-0 grey (F) and ochre 1 band, both a shade
+  under the cover's. The middle slot now also gets zh and H (keywords) for a band in it. nr2.
