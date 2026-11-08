@@ -825,6 +825,17 @@ Each point below gets its own design discussion before it is built.
   shuttle can reach), plus passing traffic. What's there follows the band: common ore and small wrecks in the core, better
   ore and more wrecks on the frontier, rare ore and big derelicts or ruins in deep space. Mined fields and stripped wrecks
   stay gone (no refill for now). Route queueing and charging the drive while working already exist.
+- **Story arcs (discussion 4, user decisions, 2026-11-08):**
+  - **Sources:** both offered at stations (a faction contact's job chain) and found in the world (a derelict's log, a
+    distress call).
+  - **Length:** about 3-5 steps over an hour or two of play, each a jump or two apart, built from existing systems (go,
+    salvage, fight, deliver, rescue).
+  - **Rewards:** a mix that depends on the arc: finds to study (#380), unique named items, standing, a ship, crew with a
+    backstory.
+  - **Consequences:** some arcs change the world (a faction turns on you, a clan hunts you, a character comes back); others
+    stay self-contained.
+  - **Supply:** a few authored arcs plus many templated ones (a frame such as "rescue the hostage" filled with a faction,
+    place and twist).
 - **Losing the ship:** plan for escape pods (survivors reach a station with a worn starter hull, and the wreck can be
   salvaged back). Not urgent.
 
