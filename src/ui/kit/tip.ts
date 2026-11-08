@@ -12,6 +12,9 @@ export interface TipSpec { text?: string | null; key?: ActionId | string; side?:
 }
 export interface TipState { spec: TipSpec; rect: DOMRect }
 
+/** The tooltip host's element id: the shown tip's trigger points `aria-describedby` at it, so screen readers announce the tip. */
+export const TIP_ID = 'game-tip';
+
 /** The one tooltip on screen (drawn by `TipHost`, mounted once in the app). */
 export const tipState = writable<TipState | null>(null);
 
@@ -46,8 +49,16 @@ export function tip(node: Element, spec: TipSpec | null | undefined) {
     if (!cur || !wanted()) { unshow(); return; }
     mine = { spec: cleanTip(cur), rect: node.getBoundingClientRect() };
     tipState.set(mine);
+    describe(true);
   };
-  const unshow = () => { tipState.update((s) => (s === mine ? null : s)); mine = null; };
+  const unshow = () => { tipState.update((s) => (s === mine ? null : s)); mine = null; describe(false); };
+  /** Add or remove the host's id in the trigger's `aria-describedby`, keeping any description it already had. */
+  const describe = (on: boolean) => {
+    const ids = (node.getAttribute('aria-describedby') ?? '').split(/\s+/).filter((x) => x && x !== TIP_ID);
+    if (on) ids.push(TIP_ID);
+    if (ids.length) node.setAttribute('aria-describedby', ids.join(' '));
+    else node.removeAttribute('aria-describedby');
+  };
   const hide = () => { clearTimeout(timer); pending = false; unshow(); };
   const back = () => { if (over && !pending) show(); };
   const drop = () => { const i = hovered.indexOf(back); if (i >= 0) hovered.splice(i, 1); };

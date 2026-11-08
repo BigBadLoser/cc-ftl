@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ACTION_BY_ID, keyLabel, keymap, type ActionId } from '../keymap';
   import KeyBadge from './KeyBadge.svelte';
-  import { tipState } from './tip';
+  import { TIP_ID, tipState } from './tip';
 
   /** Draws the one game tooltip that `use:tip` asks for. Mount once, high in the app. */
   const GAP = 6, PAD = 8;
@@ -21,7 +21,7 @@
 </script>
 
 {#if s}
-  <div class="kit-tip tip-host" class:rich={!!s.spec.rich} role="tooltip" bind:this={box} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box ? 'visible' : 'hidden'}>
+  <div id={TIP_ID} class="kit-tip tip-host" class:rich={!!s.spec.rich} role="tooltip" bind:this={box} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box ? 'visible' : 'hidden'}>
     {#if s.spec.rich}{@render s.spec.rich()}{:else}<span>{s.spec.text}</span>{/if}{#if key}<KeyBadge size="sm">{key}</KeyBadge>{/if}
   </div>
 {/if}

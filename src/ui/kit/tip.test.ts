@@ -10,6 +10,7 @@ function fakeNode() {
     removeEventListener: (t: string) => on.delete(t),
     getBoundingClientRect: () => ({ left: 0, top: 0, right: 10, bottom: 10, width: 10, height: 10 }) as DOMRect,
     matches: () => true,
+    getAttribute: () => null, setAttribute: () => {}, removeAttribute: () => {},
   } as unknown as Element;
   return { node, fire: (t: string) => on.get(t)?.() };
 }
@@ -109,5 +110,25 @@ describe('nested tips', () => {
     expect(get(tipState)).toBeNull();
     a.destroy();
     b.destroy();
+  });
+});
+
+describe('tip a11y', () => {
+  it('points the trigger at the host while shown, keeping its own description', async () => {
+    const attrs = new Map<string, string>([['aria-describedby', 'own']]);
+    const on = new Map<string, () => void>();
+    const node = {
+      addEventListener: (t: string, f: () => void) => on.set(t, f), removeEventListener: () => {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, right: 1, bottom: 1, width: 1, height: 1 }) as DOMRect, matches: () => true,
+      hasAttribute: (k: string) => attrs.has(k), getAttribute: (k: string) => attrs.get(k) ?? null,
+      setAttribute: (k: string, v: string) => attrs.set(k, v), removeAttribute: (k: string) => attrs.delete(k),
+    } as unknown as Element;
+    const a = tip(node, { text: 'Hi' });
+    on.get('pointerenter')?.();
+    await wait(300);
+    expect(attrs.get('aria-describedby')).toBe('own game-tip');
+    on.get('pointerleave')?.();
+    expect(attrs.get('aria-describedby')).toBe('own');
+    a.destroy();
   });
 });
