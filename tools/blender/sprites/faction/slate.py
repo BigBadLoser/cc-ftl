@@ -187,11 +187,11 @@ def _rail(k, ax, plane, a, b, z0, z1, mit, outer=None):
 
 def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
     """Header (T1-4): the base header's rail run on down to the stripe's foot (the paint line), over the stripe, its
-    shadow paint behind it all the way (where a block ends, its front standing out shows the face behind it); each
-    block's foot edge dark, in a box's side tone (as T1-2's boxes')."""
-    T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)
-    _rail(k, ax, plane, a, b, z0, z1, mit, outer="fGT3" if ax == "y" else "fGT4")   # (its side at the tile's
-                                                                # edge a shade under its front: tall, it shows)
+    shadow paint behind it from the rail's foot down (where a block ends, its front standing out shows the face behind
+    it); each block's foot edge dark, in a box's side tone (as T1-2's boxes')."""
+    T.paint(k, ax, plane, a, b, z0, z1 - RAIL_H, 0.0, BLUE, 1)    # (to the base rail's foot, as its: on up it
+    _rail(k, ax, plane, a, b, z0, z1, mit, outer="fGT3" if ax == "y" else "fGT4")   # tinted the top edge's AA;
+                                                # its side at the tile's edge a shade under its front: tall, it shows)
     side = "fGT4" if ax == "y" else "fGT5"
     for u0, u1, mid in _blocks(a, b):
         d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
