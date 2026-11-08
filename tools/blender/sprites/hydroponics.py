@@ -286,21 +286,31 @@ def bed(k, on):
 VQL = 0.96875                                    # the large bed's manifold line, its front face on the tile's edge
 
 
+def _otank(k, u, v, w, d, z, h, on):
+    """A standing white tank with an oval (pill) footprint, w across u and d along v, on a dark foot: navy bands, a
+    sight glass on its front end showing the water (cyan when on)."""
+    pill = lambda ww, dd: [(u + y, v + x) for x, y in _pill_ol(0, 0, dd, ww, n=10)][::-1]   # long along v, CCW
+    _prism(k, pill(w - 0.06, d - 0.06), 0.0, z, "dark")
+    _prism(k, pill(w, d), z, h, "tWhite", top="tWhiteL")
+    for zb in (z + 0.06, z + h - 0.1):
+        _prism(k, pill(w + 0.016, d + 0.016), zb, 0.035, "tNavy", top="tNavyL")
+    gv = v + d / 2 + 0.002
+    k.box(u, gv, z + 0.12, 0.0625, 0.02, h - 0.26, "dark")
+    k.box(u, gv + 0.008, z + 0.13, 0.03125, 0.02, (h - 0.28) * 0.6, _on(on, "cyan") if on else "lens")
+
+
 def _base_large(k, on, back=True):
-    """Two rows of three tanks (one under each plant), a pump between each pair of front tanks lifting into one copper
-    manifold along the front with a valve on each front tank, in grey corner legs."""
+    """Two oval tanks running front to back, one under each half, a pump between them lifting into one copper
+    manifold along the front with a valve on each tank, in grey corner legs."""
     _frame_legs(k, 1.421875, 0.890625)
-    for row in ((0.5, -0.5) if back else (0.5,)):
-        for u in (-1.0, 0.0, 1.0):
-            k.cyl(u, row, 0.0, 0.34, 0.04, "dark", sides=24)
-            _vtank(k, u, row, 0.04, 0.37, 0.52, on)
+    for su in (-1, 1):
+        _otank(k, su * 0.66, -0.02 if back else 0.4, 0.9, 1.7 if back else 0.86, 0.04, 0.52, on)
     zm, zb = 0.48, 0.084
-    for pu in (-0.5, 0.5):
-        _pump(k, pu, 0.76, 0.0, on, s=1.2)
-        _sq_pipe(k, [(pu, 0.8, zb), (pu, VQL, zb), (pu, VQL, zm)])
+    _pump(k, 0.0, 0.66, 0.0, on, s=1.2)
+    _sq_pipe(k, [(0.0, 0.7, zb), (0.0, VQL, zb), (0.0, VQL, zm)])
     _sq_pipe(k, [(-1.21875, VQL, 0.56), (-1.21875, VQL, zm), (1.21875, VQL, zm), (1.21875, VQL, 0.56)])
-    for u in (-1.0, 0.0, 1.0):
-        _valve(k, u, VQL, zm)
+    for su in (-1, 1):
+        _valve(k, su * 0.66, VQL, zm)
 
 
 def _unit(k, cv, on, dz=0.0, seed=3):
