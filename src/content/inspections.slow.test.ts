@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AirlockC, CrewC, ShipC, TraderC, contrabandAboard, deserialize, newGame, serialize, storageAdd, type Sim } from '../sim';
 import { ModuleC } from '../sim/modules/components';
 import { SuitC } from '../sim/eva/components';
-import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE } from '../sim/blackmarket/tuning';
+import { INSPECT_BAN_TURNS, INSPECT_BRIBE_CHANCE, INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT } from '../sim/blackmarket/tuning';
 import { scanPending } from '../sim/blackmarket/scan';
 import { InspectionC, type Inspection } from '../sim/inspect/types';
 import { liveInspection } from '../sim/inspect/start';
@@ -200,15 +200,20 @@ describe('station inspections', () => {
     expect(contrabandAboard(sim).filter((l) => l.item === 'item.upg_nuke')).toEqual([]);
   });
 
-  it('leaving the node while they search counts as refusing them', () => {
+  it('leaving the node while they search, with inspectors aboard, counts as attacking them (#138 step 3 ruling)', () => {
     const { sim, station, id, insp } = inspected();
     run(sim, 6000, phaseIs(sim, id, 'search'));
     const navy = reputationOf(sim.story, 'navy');
+    const crew = [...insp.crew];
     abortInspections(sim);
     expect(sim.world.has(id, InspectionC)).toBe(false);
-    expect(insp.crew.some((c) => sim.world.has(c, PositionC))).toBe(false);
-    expect(reputationOf(sim.story, 'navy')).toBeLessThan(navy);
-    expect(sim.world.get(station, TraderC)!.barredUntil).toBe(sim.galaxy.turn + INSPECT_BAN_TURNS);
+    expect(reputationOf(sim.story, 'navy')).toBe(navy - INSPECT_FIGHT_HIT);
+    expect(sim.world.get(station, ShipC)!.faction).toBe('hostile');
+    expect(sim.world.get(station, TraderC)!.barredUntil).toBe(sim.galaxy.turn + INSPECT_FIGHT_BAN_TURNS);
+    // The ones aboard stay as hostile boarders.
+    const left = crew.filter((c) => sim.world.has(c, PositionC));
+    expect(left.length).toBeGreaterThan(0);
+    for (const c of left) expect(sim.world.get(c, AllegianceC)!.faction).toBe('hostile');
   });
 
   it('a save in the middle of the search loads and carries on', () => {

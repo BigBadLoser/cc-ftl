@@ -5,6 +5,8 @@ import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';
 import { hostileAct } from '../../sim/combat/provoke';
 import { abortInspections } from '../../sim/inspect/flow';
+import { onInspectedShip } from '../../sim/inspect/fight';
+import { EvaFloatC } from '../../sim/eva/components';
 import { InspectionC, type Inspection } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';
 import { shipIdOf } from '../../sim/regions';
@@ -277,6 +279,28 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
     expect(onShip).toBe(true);
     abortInspections(sim);
     expect(sim.world.get(insp.station, ShipC)?.faction).toBe('hostile');
+  });
+
+  it('an inspector already drifting back to the shuttle in a suit when the fight starts is leaving: they go home, they do not fight', () => {
+    const sim = stationSearch();
+    const [vehicle, insp] = live(sim);
+    const leaver = insp.crew[1]!;
+    const pos = sim.world.get(leaver, PositionC)!;
+    sim.world.add(leaver, EvaFloatC, { mode: 'back', vehicle, sx: pos.x + 2, sy: pos.y, ticks: 40, total: 40 });
+    attackLead(sim);
+    expect(sim.world.get(leaver, AllegianceC)?.faction).toBe('neutral');
+    expect(sim.world.has(leaver, AwayC)).toBe(true); // still on the away run: it takes them home
+    expect(sim.world.get(insp.crew[0]!, AllegianceC)?.faction).toBe('hostile');
+    for (let i = 0; i < 60; i++) {
+      const h = sim.world.get(insp.crew[0]!, HealthC);
+      if (h) h.hp = h.max;
+      sim.step();
+    }
+    // The drift ended: they boarded the shuttle (no position on the ship), and the fight goes on without them.
+    expect(sim.world.has(leaver, CrewC)).toBe(true);
+    expect(sim.world.has(leaver, EvaFloatC)).toBe(false);
+    expect(onInspectedShip(sim, leaver, insp)).toBe(false);
+    expect(live(sim)[1].phase).toBe('fight');
   });
 });
 

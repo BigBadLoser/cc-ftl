@@ -3,10 +3,9 @@ import { scanPrices } from '../blackmarket/scan';
 import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC } from '../blackmarket/tuning';
 import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
-import { CrewC, DeadC, DownedC, JobC, PositionC } from '../crew/components';
+import { CrewC, DeadC, DownedC, JobC } from '../crew/components';
 import { SurrenderedC } from '../fight/components';
-import { fightInspection } from './fight';
-import { shipIdOf } from '../regions';
+import { fightInspection, onInspectedShip } from './fight';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
@@ -18,14 +17,12 @@ import { InspectionC, inspections, type Inspection } from './types';
 
 const alive = (sim: Sim, id: number): boolean => sim.world.has(id, CrewC) && !sim.world.has(id, DeadC);
 
-/** True while an inspector stands on the inspected ship. */
-const aboard = (sim: Sim, insp: Inspection): boolean =>
-  insp.crew.some((id) => alive(sim, id) && sim.world.has(id, PositionC) && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
+/** True while an inspector is on the inspected ship (not drifting back to the shuttle: `onInspectedShip`). */
+const aboard = (sim: Sim, insp: Inspection): boolean => insp.crew.some((id) => onInspectedShip(sim, id, insp));
 
 /** True while an inspector still stands and fights on the inspected ship (not downed, surrendered or dead). */
 const standing = (sim: Sim, insp: Inspection): boolean =>
-  insp.crew.some((id) => alive(sim, id) && !sim.world.has(id, DownedC) && !sim.world.has(id, SurrenderedC) && sim.world.has(id, PositionC)
-    && shipIdOf(sim, sim.world.get(id, PositionC)!) === insp.ship);
+  insp.crew.some((id) => onInspectedShip(sim, id, insp) && !sim.world.has(id, DownedC) && !sim.world.has(id, SurrenderedC));
 
 /**
  * A fight is over for the inspection, or the player left mid-fight: the inspectors on the player's ship stay there as ordinary hostile crew (to be taken
@@ -33,8 +30,7 @@ const standing = (sim: Sim, insp: Inspection): boolean =>
  */
 function release(sim: Sim, vehicle: number, insp: Inspection): void {
   insp.crew = insp.crew.filter((id) => {
-    const pos = sim.world.get(id, PositionC);
-    const kept = alive(sim, id) && !!pos && shipIdOf(sim, pos) === insp.ship;
+    const kept = onInspectedShip(sim, id, insp);
     if (kept) sim.world.remove(id, AwayC);
     return !kept;
   });
