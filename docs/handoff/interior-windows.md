@@ -691,3 +691,7 @@ Marked ref (both layers, numbered): scratchpad
   ramp_seam moved off the wall's: wall3d.skirt splits a plate off the low edge, off - ramp_seam = 2 px wide; its
   seam wraps over the toe and shelf with the others). Changes the ramp's low-edge px only (plain 48 px, pipes 49,
   split 77). nr1.
+- 2026-11-08: the user: the seams a step darker. New fNW7 #4a5a73 (set hull, under fNW6). Wall panel line (y face)
+  fixed fNW6 -> fNW7 (on screen 7687a1 -> 67778d); ramp seams: Style.seam_tone (navy "fNW7") draws them on the slope
+  too, over the plates' gap, round a ramp hole, and over the toe and shelf (6c7c94 -> 54647c..687893, toe 707e97 ->
+  516078). x faces unchanged. ns1.

@@ -715,11 +715,19 @@ def _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise, holes=()):
     """Style.seam_wrap: each seam between the slope's plates carried on down over the toe strip to the foot and back
     across the shelf (its lit edge and back px) to the wall, a line as wide as the gap, in the joint's tone."""
     J = RAMPS[fam][1 if ax == "x" else 0][style().joint or 0]
+    tone = style().seam_tone if ax != "x" else None     # (a look's seams a darker tone: drawn on the slope too)
+    J = tone or J
     g, sh, zh = LINE / 2, style().shelf, lip_heights(zs)[0]
     up = Vector((0, 0, 1))
     for (_, s1, _), (t0, _, _) in zip(segs, segs[1:]):
         if abs(s1 - t0) > 1e-6:
             continue
+        if tone:                                # (down the slope, over the plates' gap, round a ramp hole)
+            for q in _minus((s1 - g, s1 + g, max(0.02, sh), run_ - 0.03), holes):
+                poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
+                if len(poly) >= 3:
+                    k.poly([pt(u, dd, rise + PAINT) for u, dd in poly], fam, 0,
+                           pt(s1, q[2], 1.0) - pt(s1, q[2], 0.0), fixed=J)
         poly = _clip(_clip([(s1 - g, run_ - 0.03), (s1 + g, run_ - 0.03), (s1 + g, run_), (s1 - g, run_)], lo), hi)
         if len(poly) >= 3:                      # (over the toe strip, down to the foot)
             k.poly([pt(u, dd, rise + PAINT) for u, dd in poly], fam, 0, pt(s1, run_, 1.0) - pt(s1, run_, 0.0),

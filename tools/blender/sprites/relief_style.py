@@ -41,6 +41,8 @@ class Style:
     ramp_seam: Optional[float] = None     # one_seam: the ramp's seam this far in from the high edge (None: seam)
     seam_wrap: bool = False               # the slope's seams on down over the toe and back across the shelf to the
                                           # wall (a solid ramp under a shelf)
+    seam_tone: Optional[str] = None       # seam_wrap: the seams (on the slope too) in this palette name on the lit (y)
+                                          # side, over the plates' gap (None: the joint's tone, the gap's own)
     toe: Optional[str] = None             # a family for a band along the ramp's toe
     toe_at: float = 0.72                  # where down the ramp the toe band starts (a fraction of its run)
     toe_lvl: Optional[int] = None         # the solid ramp's last cell over its foot (the step's lip) in this level of

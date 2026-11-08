@@ -88,7 +88,7 @@ def _seam(k, ax, plane, u0, u1, z0, z1, F):
     if ax == "x" or F != "wall" or T.CLIP is not None:  # (under a breach's tear: the slab, cut off along it)
         return T.paint(k, ax, plane, u0, u1, z0, z1, LINES - PAINT, F, 0)
     k.poly([T.P(ax, plane, u, z, LINES) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], F, 0, T.OUT(ax),
-           fixed="fNW6")
+           fixed="fNW7")      # (a step darker again: the user)
 
 
 def _sheet(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl, nrm=None):
@@ -274,7 +274,7 @@ class Navy(Faction):
                       shelf=NAVY_SHELF, shelf_lvl=NAVY_FACE + 1, shelf_back=(0, 1),
                       chamfer_shelf=NAVY_MID_SHELF,   # (the default's and slate's ramp:
                       #   a flat shelf at the wall, all shelf: no lip on it)
-                      ramp_px=NAVY_FALL, seam_wrap=True, ramp_lvl=NAVY_FACE - 1,   # (the slope steeper under the shelf)
+                      ramp_px=NAVY_FALL, seam_wrap=True, seam_tone="fNW7", ramp_lvl=NAVY_FACE - 1,   # (the slope steeper under the shelf)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("wall", 2),
                                 FaceHoles(), PlateTones()))
