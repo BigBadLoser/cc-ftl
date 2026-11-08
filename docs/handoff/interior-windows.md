@@ -541,3 +541,7 @@ Marked ref (both layers, numbered): scratchpad
   floor and the pipes sunk square to the steep slope (straight down buried them / slid them under the toe), rows
   at 0.3 and 0.8 of the opening, the silver pipe between them. Split plates: in the cover, unchanged. Plain m10
   pixel-identical to ns24.
+- 2026-11-08: the user: push the pipes opening's top strip (the shelf over it) back 4 px. RampHoles (one_seam): the
+  hole from hd[0] back into the shelf (navy pipes: 4/32, a 2 px ledge left, its lit edge kept: shell._prof gives a
+  piece ending in the shelf its shelf tones, one_seam only); the pipe rows on the slope from the shelf's edge (on
+  the opened flat they rose over the shelf). Plain m10 unchanged. nv8.

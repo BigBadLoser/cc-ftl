@@ -126,7 +126,9 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
             side = [P(u, z_, d_) for d_, z_ in prof] + [P(u, zat(d1), d1)] + [P(u, zat(dd_), dd_) for dd_ in (dk, db)]
             k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
         dp, sn = rp + 0.015, math.sin(math.atan(fall))              # sunk a radius and a bit into the slope,
-        feet = [d0 + fr * (d1 - d0) for fr in (0.3, 0.8)]            # square to it (straight down slid them on
+        s0 = max(d0, T.style().shelf)                               # (on the slope: the opening cut back into
+        feet = [s0 + fr * (d1 - s0) for fr in (0.3, 0.8)]            # the shelf is flat) square to it (straight
+        #   down slid them on
         rows = [dd - sn * dp for dd in feet]                         # towards the toe, the lower one under it)
         zp = [zat(dd) - cs * dp for dd in feet]                      # (two rows down the opened cover)
         for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
@@ -162,5 +164,5 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
              Design("thin band", band=navy_thin_band))
-NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(0.0, 1.0, 0.0)),
+NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(4 / 32, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))
