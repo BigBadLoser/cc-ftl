@@ -69,6 +69,18 @@ def navy_cage(k, ax, plane, a, b, c, e, F, **_):
     while z < e - 1e-6:
         flat(k, ax, plane, a, b, z, min(e, z + dz), 0.9 * PAINT, "fNX3")
         z += 4 * dz
+    so, r = 0.08, 0.06                                  # three guard bars over it: out of the top frame, curving out
+    zt, zb = e + 2 * dz, c - 2 * dz                     # so far, down, and back into the foot's (the ref's: the user)
+    prof = [(zt, 0.0)] + [(zt - r * math.sin(t), so * (1 - math.cos(t))) for t in
+                          (math.pi / 2 * i / 4 for i in range(1, 5))]
+    prof += [(zb + (zt - z_), d_) for z_, d_ in reversed(prof)]
+    for f in (0.25, 0.5, 0.75):
+        ub = round((a + f * (b - a)) * 32) / 32
+        for (za, da), (zb_, db) in zip(prof, prof[1:]):
+            col = "fNX1" if db > da + 1e-6 else "fNX4" if db < da - 1e-6 else "fNX2"   # (lit curving out at
+            k.poly([T.P(ax, plane, ub - du, za, PAINT + da), T.P(ax, plane, ub + du, za, PAINT + da),   # the top,
+                    T.P(ax, plane, ub + du, zb_, PAINT + db), T.P(ax, plane, ub - du, zb_, PAINT + db)],  # shaded in
+                   "wall", 0, T.OUT(ax), fixed=col)                                                      # at the foot)
 
 
 RECESS = 2                          # the recessed cover: pushed back this many px (the user)

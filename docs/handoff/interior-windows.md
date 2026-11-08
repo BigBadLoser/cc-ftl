@@ -608,3 +608,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the cage's ref has a 4 px frame at the foot matching the top, and a side frame 3 px in from
   the tile's edge. navy_cage now stops 3 px in from the tile edge, 4 px under the header and 4 px over the face's foot
   (measured: 3 px at the side, 4 at the foot, 4-5 under the header where the tube's shadow meets it). nc3.
+- 2026-11-08: the user: the ref has 3 upright bars that curve out, run down, and curve back in. navy_cage adds three
+  2 px guard bars at 1/4, 1/2, 3/4 of the opening: out of the top frame (2 px under the header), a quarter-round of
+  0.06 out to 0.08 proud, down, and back into the foot's frame; lit (fNX1) where they curve out, fNX2 down the front,
+  fNX4 curving back in. The lattice and light stay behind them. nc4.
