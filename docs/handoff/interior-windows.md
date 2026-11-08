@@ -712,3 +712,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: split ramp (the user: it must follow the ramp's profile, a px down, not a slope of its own): rebuilt in
   48 thin strips along d on the shell's own zsurf, SPLIT_D under it (the shelf's flat top fNW4, the slope fNW5, the
   red ochre 1 lit by each strip's normal), the seam fNW7 between, side and back walls up to the ramp. nq10.
+- 2026-11-08: split ramp: its hole back over all the shelf's top to the wall (SPLIT_BACK 1.0: RampHoles stops it at 0.02):
+  no lit strip of the shelf left against the wall (the user). nq11.

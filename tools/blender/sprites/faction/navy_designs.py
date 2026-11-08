@@ -273,8 +273,9 @@ CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor,
 
 
 SPLIT_D = 1.2 / 39.19                # the split plates sunk a px into the slope (the user)
-SPLIT_BACK = 0.1                     # their hole back over the shelf's top and on through the toe (the shelf's top and the
-                                     # whole red band sunk with them: the user)
+SPLIT_BACK = 1.0                     # their hole back over all the shelf's top to the wall (RampHoles stops it at 0.02) and
+                                     # on through the toe (the shelf's top and the whole red band sunk with them; no lit
+                                     # strip of the shelf left against the wall: the user)
 
 
 def navy_split(plate, u0, u1, run_, k=None, P=None, zs=0.0, ax="y", fam="wall", hole=None, **_):
