@@ -164,15 +164,17 @@ def slate(hull):
     return face
 
 
-def _rail(k, ax, plane, a, b, z0, z1, mit):
-    """The base header's rail over [a, b]: its blocks from z0 (their foot; the set-back middle's a px lower) to z1."""
+def _rail(k, ax, plane, a, b, z0, z1, mit, shade=0):
+    """The base header's rail over [a, b]: its blocks from z0 (their foot; the set-back middle's a px lower) to z1;
+    shade: steps darker for an end block's side by the middle."""
     for u0, u1, mid in _blocks(a, b):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
         prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else \
             [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]                                       # ends' line)
         m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
-        inner = "fGT3" if ax == "y" else "fGT4"     # (an end block's side by the middle: a step under its front)
+        inner = "fGT%d" % ((3 if ax == "y" else 4) + shade)     # (an end block's side by the middle: a step under
+                                                                # its front)
         cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
                                 inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
         prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
@@ -189,7 +191,7 @@ def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
     shadow paint behind it all the way (where a block ends, its front standing out shows the face behind it); each
     block's foot edge dark, in a box's side tone (as T1-2's boxes')."""
     T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)
-    _rail(k, ax, plane, a, b, z0, z1, mit)
+    _rail(k, ax, plane, a, b, z0, z1, mit, shade=1)        # (its blocks' sides by the middle a shade darker: tall)
     side = "fGT4" if ax == "y" else "fGT5"
     for u0, u1, mid in _blocks(a, b):
         d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
