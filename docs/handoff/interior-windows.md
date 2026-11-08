@@ -554,3 +554,8 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: open the slot to the toe, not to the floor. RampHoles (one_seam): the hole on through the
   toe px (navy's toe is red: it read as a band under the slot) to run - 0.002, the foot kept (a sliver of ramp in
   front of the hole carries it); the pipe rows still spaced over the slope to the toe's edge. nv12.
+- 2026-11-08: the user: the back wall darker and parallel to the slope face. navy_pipes: its back one plane parallel
+  to the slope (the slope's line run on up under the shelf, h under it; no flat floor), cut under the floor along
+  the line behind the foot's bottom edge on screen (none of it shows under the foot), all in the dark back's tone
+  (CAV[1] 141c2c, was the floor's 1c2c44); the thin silver pipe between the rows gone (at this size it read as a lit
+  back wall). nv14.

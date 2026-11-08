@@ -108,20 +108,22 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
         db = d0 + 0.006                                 # (a hair in front of the shell's own hole back: on it they
                                                         # fought, specks of its tone through ours)
-        rp, rs = 0.06, 0.03
+        rp = 0.06
         cs = math.cos(math.atan(fall))                  # (depths into the slope: square to it, so straight down
         h = (2 * rp + 0.035) / cs                       # they're / cs; on a steep one a plain h buried the pipes)
-        zb = lambda d: max(f, zat(d) - h)               # noqa: E731   its bottom parallel to the ramp, h under it
-        #   (on the floor where that would go under it)
-        dk = next((db + (d1 - db) * i / 200 for i in range(201) if zat(db + (d1 - db) * i / 200) - h <= f), d1)
-        #   (where the bottom meets the floor)
-        prof = [(db, zat(db)), (db, zb(db)), (dk, zb(dk)), (d1, zb(d1))]   # its section: a short back, the bottom
+        dr = (T.style().shelf + run_) / 2               # its back: a plane parallel to the slope's face, h under it
+        A = zat(dr) + dr * fall                         # (the slope's line run on up under the shelf: z = A - fall d)
+        zb = lambda d: A - fall * d - h                 # noqa: E731
+        R, K = getattr(T.SHELL, "run", run_), 32 / 39.19   # (under the floor: cut along the line that lies behind
+        zc = lambda d: -K * (R - d)                     # noqa: E731   the foot's bottom edge on screen, so none of it
+        dk = min(d1, (A - h + K * R) / (fall + K))      # shows under the foot)
+        prof = [(db, zat(db)), (db, zb(db)), (dk, zb(dk)), (d1, zc(d1))]   # its section: a short back, the plane
         for (da, za), (dbb, zbb) in zip(prof, prof[1:]):
             if dbb - da < 1e-6 and abs(zbb - za) < 1e-6:
                 continue
             n = out_ if dbb - da < 1e-6 else up * (dbb - da) + out_ * (za - zbb)
             k.poly([P(o0, za, da), P(o1, za, da), P(o1, zbb, dbb), P(o0, zbb, dbb)], "wall", 0, n,
-                   fixed=CAV[1] if dbb - da < 1e-6 else CAV[0])
+                   fixed=CAV[1])                        # (all in the dark back's tone: the user)
         for u, sg in ((o0, 1), (o1, -1)):                                                                # and sides
             side = [P(u, z_, d_) for d_, z_ in prof] + [P(u, zat(d1), d1)] + [P(u, zat(dd_), dd_) for dd_ in (dk, db)]
             k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
@@ -134,10 +136,7 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         zp = [zat(dd) - cs * dp for dd in feet]                      # (two rows down the opened cover)
         for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
             tube(k, ax, plane, o0 - 0.005, o1 + 0.005, dd, zc, rp)           # (ends in the side walls)
-        fs = (feet[0] + feet[1]) / 2                                        # a thin silver pipe between them,
-        ds, zs_ = fs - sn * (rs + 0.05), zat(fs) - cs * (rs + 0.05)         # deeper
-        prof, cols = tube_prof(ds, zs_, rs)
-        prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
+        #   (no silver pipe between them: at this size it read as a lit back wall, the user)
         zf = lambda d: zp[0] + (zp[1] - zp[0]) * (d - rows[0]) / (rows[1] - rows[0])   # noqa: E731
         w = o1 - o0
         for u in (o0 + w / 3, o0 + 2 * w / 3):         # steel brackets: a collar round each pipe, a bar between them
