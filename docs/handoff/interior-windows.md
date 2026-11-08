@@ -684,3 +684,4 @@ Marked ref (both layers, numbered): scratchpad
   stripe 3). The strip keeps its full band (the ref's), which in a run reads as a red tab at each tile. nt3.
 - 2026-11-08: the user: that (nt3) is worse; the band back to 0.18 H, its stripe's foot on the normal band's (0.30-0.33 H
   under the header: the strip's red ends with it; measured, same row). nt4.
+- 2026-11-08: the user: images are the tile next to its ref only, no before/after.
