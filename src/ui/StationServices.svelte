@@ -1,6 +1,6 @@
 <script lang="ts">
   import PaneHeader from './comms/PaneHeader.svelte';
-  import type { Service, ServiceId } from './stationChannel';
+  import type { Service, ServiceId } from './channel';
 
   /** The services as decision buttons: the open one is cyan (actionable), Trade has an arrow because it opens its own window. */
   let { services, active, onpick }: { services: Service[]; active: ServiceId; onpick: (id: ServiceId) => void } = $props();

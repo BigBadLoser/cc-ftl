@@ -78,6 +78,8 @@ export type Command =
   | { type: 'eva.board'; crew: number; vehicle: number }
   /** Turn one shuttle item from a storage module on the bay's ship into a shuttle stowed in the (empty) bay. */
   | { type: 'vehicle.assign'; bay: number; item?: string }
+  /** Build a vehicle in the (empty) bay: `vehicle` (default: the first def of the bay's class that can be built) as an 'assemble' job; `module.cancelAssembly` calls it off. */
+  | { type: 'vehicle.build'; bay: number; vehicle?: string }
   /** Walk a crew member to the vehicle's boarding tile (bay access tile, or the docked airlock's inside tile) and climb in. */
   | { type: 'vehicle.embark'; crew: number; vehicle: number }
   /** Passengers (or just `crew`, pilot included) leave at the boarding tile. Needs the vehicle stowed or docked. */

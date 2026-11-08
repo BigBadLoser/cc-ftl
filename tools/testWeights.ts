@@ -384,7 +384,7 @@ export default {
  "src/ui/shotTokens.test.ts": 0.1,
  "src/ui/starmapGpu.test.ts": 0.1,
  "src/ui/starmapJump.test.ts": 0.1,
- "src/ui/stationChannel.test.ts": 0.1,
+ "src/ui/channel.test.ts": 0.1,
  "src/ui/tradeDraft.test.ts": 0.1,
  "src/ui/upgradeIcon.test.ts": 0.1,
  "tools/shipgen/starters/variants.test.ts": 0.1

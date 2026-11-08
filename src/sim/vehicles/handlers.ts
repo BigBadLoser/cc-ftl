@@ -13,6 +13,8 @@ import { VehicleBayC, VehicleC, type Vehicle } from './components';
 import { bayWorking, boardingTile } from './geometry';
 import { sendToEmbark } from './embark';
 import { occupants, spawnVehicle, unboardCrew, undock, vehicleDefOf } from './lifecycle';
+import { buildError, buildableFor, postVehicleBuild } from './assemble';
+import { assemblyAt } from '../robots/bay';
 import { shipIdOf, shipGrid } from '../regions';
 
 type VehicleCommandType = Extract<Command['type'], `vehicle.${string}`>;
@@ -54,6 +56,7 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
     if (!bay || !m) return reject(sim, cmd.type, 'noBay');
     if (bay.vehicle) return reject(sim, cmd.type, 'bayFull');
     if (m.hp <= 0) return reject(sim, cmd.type, 'bayDown');
+    if (assemblyAt(sim, cmd.bay)) return reject(sim, cmd.type, 'bayTaken'); // being built in place: cancel that first
     for (const sid of sim.world.query(StorageC)) {
       if (shipIdOf(sim, sim.world.get(sid, ModuleC)) !== shipIdOf(sim, m)) continue;
       const stacks = sim.world.get(sid, StorageC)?.stacks ?? [];
@@ -67,6 +70,12 @@ export const vehicleHandlers: { [T in VehicleCommandType]: Handler<T> } = {
       }
     }
     reject(sim, cmd.type, 'noShuttle');
+  },
+  'vehicle.build': (sim, cmd) => {
+    const vehicle = cmd.vehicle ?? buildableFor(sim, cmd.bay);
+    const err = buildError(sim, cmd.bay, vehicle);
+    if (err || !vehicle) return reject(sim, cmd.type, err ?? 'badVehicle');
+    postVehicleBuild(sim, cmd.bay, vehicle);
   },
   'vehicle.embark': (sim, cmd) => {
     const err = sendToEmbark(sim, cmd.crew, cmd.vehicle);

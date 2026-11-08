@@ -13,7 +13,7 @@
   import NavStrip from './NavStrip.svelte';
   import ShipOverview from './ShipOverview.svelte';
   import TradeWindow from './TradeWindow.svelte';
-  import StationPanel from './StationPanel.svelte';
+  import ChannelPanel from './ChannelPanel.svelte';
   import DebugPanel from './DebugPanel.svelte';
   import BugReport from './BugReport.svelte';
   import SelectionPanel from './SelectionPanel.svelte';
@@ -128,11 +128,11 @@
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
   let prizes = $state<UiPrize[]>([]);
-  /** Station entity ids in the node. "Hail station" in a selected station's inspector opens its panel; selecting anything else closes it. */
-  let stations = $state<number[]>([]);
-  let stationOpen = $state<number | null>(null);
+  /** Trade partner ids in the node (stations and trader ships). "Hail" in a selected partner's inspector opens its comms channel; selecting anything else closes it. */
+  let partnerIds = $state<number[]>([]);
+  let channelOpen = $state<number | null>(null);
   $effect(() => {
-    if (stationOpen !== null && (selShip !== stationOpen || !stations.includes(stationOpen))) stationOpen = null;
+    if (channelOpen !== null && (selShip !== channelOpen || !partnerIds.includes(channelOpen))) channelOpen = null;
   });
 
   /** The combat view (#186) replaces the colony panels while a fight is on. */
@@ -174,8 +174,8 @@
       api.deploy.subscribe((d) => (deploy = d)),
       api.selectedShip.subscribe((g) => (selShip = g)),
       api.trade.subscribe((t) => {
-        const ids = t.partners.filter((p) => p.station).map((p) => p.id);
-        if (ids.join() !== stations.join()) stations = ids;
+        const ids = t.partners.map((p) => p.id);
+        if (ids.join() !== partnerIds.join()) partnerIds = ids;
       }),
       api.prizes.subscribe((v) => {
         if (v.length > prizes.length) {
@@ -207,7 +207,7 @@
     { id: 'jobs', sticky: false, pinned: () => isPinned('jobs'), isOpen: () => jobsOpen, close: () => (jobsOpen = false) },
     { id: 'stock', sticky: false, pinned: () => isPinned('stock'), isOpen: () => stockOpen, close: () => (stockOpen = false) },
     { id: 'priorities', sticky: false, pinned: () => isPinned('priorities'), isOpen: () => priorities, close: () => (priorities = false) },
-    { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => stationOpen !== null, close: () => (stationOpen = null) },
+    { id: 'station', sticky: false, pinned: () => isPinned('station'), isOpen: () => channelOpen !== null, close: () => (channelOpen = null) },
     { id: 'trade', sticky: false, pinned: () => isPinned('trade'), isOpen: () => tradeWith !== null, close: () => (tradeWith = null) },
     { id: 'build', sticky: true, isOpen: () => tool.tool === 'build', close: () => {} },
   ];
@@ -340,13 +340,13 @@
   <PriorityGrid {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
-{:else if stationOpen === null}
-  <SelectionPanel {api} onResearch={() => (researchOpen = true)} onPriorities={() => (priorities = true)} onTrade={(ship) => (tradeWith = ship)} onStation={(ship) => (stationOpen = ship)} />
+{:else if channelOpen === null}
+  <SelectionPanel {api} onResearch={() => (researchOpen = true)} onPriorities={() => (priorities = true)} onHail={(ship) => (channelOpen = ship)} />
 {/if}
 {#if toast}<div class="toast" role="status" data-testid="toast">{toast}</div>{/if}
 
-{#if stationOpen !== null}
-  <StationPanel {api} station={stationOpen} onClose={() => (stationOpen = null)} onTrade={(s) => { tradeWith = s; stationOpen = null; }} />
+{#if channelOpen !== null}
+  <ChannelPanel {api} station={channelOpen} onClose={() => (channelOpen = null)} onTrade={(s) => { tradeWith = s; channelOpen = null; }} />
 {/if}
 {#if tradeWith !== null}
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />

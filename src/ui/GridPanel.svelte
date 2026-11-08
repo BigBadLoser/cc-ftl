@@ -7,10 +7,10 @@
   import ShipMeters from './ShipMeters.svelte';
   import StationInfo from './StationInfo.svelte';
   import SalvagePanel from './SalvagePanel.svelte';
-  import TradeList from './TradeList.svelte';
   import Icon, { type IconName } from './Icon.svelte';
 
-  let { api, ship, onBack, onTrade, onStation }: { api: UiApi; ship: number; onBack: () => void; onTrade: (ship: number) => void; onStation: (ship: number) => void } = $props();
+  /** `onHail` opens the comms channel with a station or trader ship (the one way in: trade, jobs and crew open from it). */
+  let { api, ship, onBack, onHail }: { api: UiApi; ship: number; onBack: () => void; onHail: (ship: number) => void } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let prizes = $state<UiPrize[]>([]);
   let combat = $state<UiCombat>({ inCombat: false, player: null, enemies: [] });
@@ -52,10 +52,16 @@
   {/if}
   {#if foe}<ShipMeters ship={foe} compact />{/if}
   {#if prize}<PrizePanel {api} {ship} />{/if}
-  {#if partner && !foe && partner.station}
+  {#if partner && !foe}
     {#if partner.info}<StationInfo info={partner.info} />{/if}
-    <button class="go" data-testid="open-station" data-lesson={anchor('station.hail')} onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onStation(ship); }}>Hail station</button>
-  {:else if partner && !foe}<TradeList {api} {ship} onOpen={onTrade} />{/if}
+    {#if partner.station}
+      <button class="go" data-testid="open-station" data-lesson={anchor('station.hail')} onclick={() => { if (partner.hail === 'none') api.dispatch({ type: 'trade.hail', ship }); onHail(ship); }}>Hail station</button>
+    {:else}
+      <!-- A ship that refused is called again (its answer can change with your guns); one that answered keeps the open line. -->
+      <button class="go" data-testid="open-channel" onclick={() => { if (partner.hail !== 'answered') api.dispatch({ type: 'trade.hail', ship }); onHail(ship); }}>Hail ship</button>
+    {/if}
+    {#each trade.deals.filter((d) => d.live && d.ship === ship) as d (d.id)}<div class="deal" data-testid="deal-{d.id}"><b>{d.partner}</b> {d.status}</div>{/each}
+  {/if}
   {#if !foe && !prize && !partner && !derelict}<p class="dim">Nothing to do here.</p>{/if}
   {#if foe && !prize}<button class="fight" data-testid="grid-focus-fight" onclick={() => api.focusFight(ship)}>Frame fight</button>{/if}
 </div>
@@ -72,5 +78,6 @@
   .cell.warn { border-color: var(--amber); color: var(--amber); }
   .cell.wide { grid-column: 1 / -1; }
   .fight { margin-top: 8px; width: 100%; }
+  .deal { margin-top: 6px; font-size: 12px; color: var(--amber); }
   .go { width: 100%; background: var(--act-fill); border-color: var(--act-edge); }
 </style>

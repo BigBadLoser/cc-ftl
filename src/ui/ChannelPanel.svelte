@@ -13,15 +13,17 @@
   import StationDock from './StationDock.svelte';
   import StationServices from './StationServices.svelte';
   import StationSensors from './StationSensors.svelte';
+  import SensorPanel from './comms/SensorPanel.svelte';
   import StationVideo from './StationVideo.svelte';
-  import { contactFor, linesFor, servicesFor, type ServiceId } from './stationChannel';
+  import { contactFor, linesFor, servicesFor, type ServiceId } from './channel';
   import YardPane from './YardPane.svelte';
 
   /**
-   * A station's panel, an open comms channel with the station (selected station, "Hail station"): the contact of the open service on video, their
+   * An open comms channel with a hailed partner, station or ship (selected partner, "Hail"): the contact of the open service on video, their
    * quote and the service's content in the middle, the station's sensors and the services on the right. Trade opens the trade window instead.
+   * A ship that refuses keeps the channel open with its reason and a Hail again.
    */
-  let { api, station, onClose, onTrade }: { api: UiApi; station: number; onClose: () => void; onTrade: (station: number) => void } = $props();
+  let { api, station, onClose, onTrade }: { api: UiApi; station: number; onClose: () => void; onTrade: (partner: number) => void } = $props();
   let open = $state<ServiceId>('station');
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], asked: [], max: 0, mine: null });
@@ -36,19 +38,20 @@
   const nhire = $derived(p?.recruits.length ?? 0);
   const services = $derived(p ? servicesFor(p, njobs, nhire) : []);
   const shown = $derived<ServiceId>(services.some((s) => s.id === open) ? open : 'station');
-  const contact = $derived(contactFor(station, shown));
+  const contact = $derived(contactFor(station, shown, !p?.station));
   const lines = $derived(p ? linesFor(shown, p, contact, njobs, nhire) : []);
   function pick(id: ServiceId) {
     if (id === 'trade') return onTrade(station);
     open = id;
   }
+  const hail = () => api.dispatch({ type: 'trade.hail', ship: station });
   const TIER = { friendly: 'good', neutral: 'dim', hostile: 'bad' } as const;
   const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
 </script>
 
-<FloatingWindow id="station" title="Channel open" titleFit icon="hull" min={{ w: 900, h: 420 }} defaultRect={(b) => centerTop(b, 1120)} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" titleTestId="station-title">
+<FloatingWindow id="station" title={p && p.hail === 'none' ? 'Calling' : 'Channel open'} titleFit icon="hull" min={{ w: 900, h: 420 }} defaultRect={(b) => centerTop(b, 1120)} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" titleTestId="station-title">
   {#snippet titleExtra()}
-    <span class="sub" data-testid="station-name">{p?.name ?? 'Station'}{p?.role ? ` · ${p.role}` : ''}</span>
+    <span class="sub" data-testid="station-name">{p?.name ?? 'Station'}{p?.role ? ` · ${p.role}` : ''}{p && !p.station && p.distance ? ` · ${p.distance} tiles` : ''}</span>
     {#if p?.info?.owner}<Chip tone={TIER[p.info.owner.tier]} title="Owner and how they regard you" testId="si-owner">{p.info.owner.name} · {p.info.owner.tier}</Chip>{/if}
     {#if p?.market?.truce}<Chip tone={p.market.banned ? 'bad' : 'good'} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
     {#if p?.market}<Chip tone="warn" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</Chip>{/if}
@@ -63,7 +66,8 @@
         <PaneHeader label="COMMS" />
         <div class="body">
           <Transcript {lines} />
-          {#if shown === 'station' && p.info}<StationDock info={p.info} />
+          {#if shown === 'station' && p.hail === 'refused'}<button class="act" data-testid="channel-rehail" onclick={hail}>Hail again</button>
+          {:else if shown === 'station' && p.info}<StationDock info={p.info} />
           {:else if shown === 'jobs'}
             {#if jobs.here === null}<p class="note">Jobs cannot be taken now.</p>{/if}
             {#if jobs.handIn.length}<JobCards {api} {jobs} list="handIn" />{/if}
@@ -75,7 +79,7 @@
         </div>
       </div>
       <div class="pane sensors">
-        {#if p.info}<StationSensors {api} name={p.name} info={p.info} />{/if}
+        {#if p.info}<StationSensors {api} name={p.name} info={p.info} />{:else}<PaneHeader label="SENSORS" /><SensorPanel scanned={false} title="SENSORS" hint="No scan of their hull" />{/if}
         <StationServices {services} active={shown} onpick={pick} />
       </div>
     </div>
@@ -89,5 +93,6 @@
   .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); overflow-y: auto; }
   .pane:last-child { border-right: 0; }
   .body { padding: 10px 12px; display: grid; gap: 10px; align-content: start; }
+  .act { justify-self: start; border-color: var(--cyan); color: var(--cyan); background: transparent; }
   .none, .note { color: var(--dim); font-size: 12px; margin: 8px 12px; }
 </style>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Struct, YardCrewC, builtCount, deserialize, hullLoad, isLiveOrder, plannedTiles, quoteYard, serialize, shipGrid, totalTiles, yardPrice, yardService } from '../sim';
+import { NORMAL_O2, ShipC, Struct, YardCrewC, builtCount, deserialize, hullLoad, isLiveOrder, plannedTiles, quoteYard, serialize, shipGrid, totalTiles, yardPrice, yardService } from '../sim';
 import { content } from './index';
 import { giveItems } from '../sim/story/effects';
 import { outline, planHull, run, yardGame } from './yardFixture';
@@ -83,4 +83,37 @@ describe('shipyard: bigger jobs', () => {
     expect(o2.stage).toBe('hull'); // no planning pass this time
     expect(o2.price.credits).toBe(yardPrice(back, yardService(back, station)!, o2.walls.length + o2.floor.length).credits);
   }, 120000);
+
+  it('opens the old outer hull where the new section joins on, and leaves the outer ring shut (#385)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    const s = { ...sim.world.get(me, ShipC)! }; // the order grows the ship's rectangle: keep the old corner
+    const grid = sim.sector.grid;
+    // Row 1 is the ship's north hull. A drag over it (the hull tiles drop out of the plan) and one beside it (a wall row of its own) both join on.
+    const at = (x: number, y: number) => grid.get('struct', s.x + x, s.y + y);
+    expect([at(9, 1), at(10, 1), at(20, 1), at(21, 1)]).toEqual([Struct.Wall, Struct.Wall, Struct.Wall, Struct.Wall]);
+    planHull(sim, me, [...outline(sim, me, 8, -2, 4, 4), ...outline(sim, me, 19, -2, 4, 3)]);
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    run(sim, 12000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.reason).toBeUndefined();
+    // over the hull: the old wall under the new floor is floor now; beside it: the new wall row and the old one behind it both opened
+    expect([at(9, 1), at(10, 1)]).toEqual([Struct.Floor, Struct.Floor]);
+    expect([at(20, 0), at(21, 0), at(20, 1), at(21, 1)]).toEqual([Struct.Floor, Struct.Floor, Struct.Floor, Struct.Floor]);
+    // the ring stays shut: the new section's side walls where they meet the old hull, and the old hull beyond it
+    expect([at(8, 1), at(11, 1), at(19, 0), at(22, 0), at(12, 1)]).toEqual([Struct.Wall, Struct.Wall, Struct.Wall, Struct.Wall, Struct.Wall]);
+    expect(sim.world.query(YardCrewC)).toHaveLength(0);
+    // Delivered pressurised: the new section and the opened walls took the air of the room they join, so that room keeps normal air, now and a
+    // few minutes on (it used to drop to about 18 kPa, and to about 16 kPa for a bigger section).
+    const joined = (): number => {
+      const tiles: { x: number; y: number }[] = [];
+      for (let y = s.y - 2; y < s.y + 5; y++) for (let x = s.x + 7; x < s.x + 24; x++) if (grid.get('struct', x, y) === Struct.Floor && grid.get('ship', x, y) === me) tiles.push({ x, y });
+      return Math.min(...tiles.map((t) => grid.get('o2', t.x, t.y)));
+    };
+    expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
+    run(sim, 20 * 180);
+    expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
+  }, 300000);
 });

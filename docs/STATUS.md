@@ -98,7 +98,7 @@ playable. The test harness (#371) may run alongside.
 - GitHub issues track work.
 - Shield tiers are 2x2, 2x3 and 3x3. Reactors are 2x2, 2x3 and 2x4.
 - The derelict ending kills everyone aboard. Prisoners wait for the black market phase (#116).
-- Enemy roofs can't be lifted without a future scanning upgrade.
+- Enemy roofs can't be lifted without a future scanning upgrade. Every ship but the player's is roofed until player crew are aboard; stations stay open unless at war with the player (#390).
 - The balance-test cap is 12 minutes.
 - Research nodes are inspectable only when researchable.
 - Drafted-crew colour is lime `#7ae64a`.

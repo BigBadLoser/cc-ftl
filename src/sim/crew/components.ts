@@ -153,8 +153,8 @@ export interface Job {
   haul?: HaulData;
   /** For 'fit' jobs: the upgrade item to install (null = take the fitted one out). */
   fit?: { item: string | null };
-  /** For 'assemble' jobs: the robot role being built. */
-  assemble?: { role: string };
+  /** For 'assemble' jobs: the robot role being built (in a robot bay), or the vehicle (in a vehicle bay). */
+  assemble?: { role?: string; vehicle?: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
   /** For 'plant' jobs: the crop (CropDef id) going into the bed `target`. */
@@ -196,7 +196,7 @@ export type JobKind =
   | 'mend' | 'salvage' | 'hack'
   /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */
   | 'sabotage'
-  /** assemble: build a robot of `assemble.role` in the robot bay `target`. */
+  /** assemble: build a robot of `assemble.role` in the robot bay `target`, or a vehicle of `assemble.vehicle` in the vehicle bay `target`. */
   | 'assemble'
   /** fit: install (or remove) a module upgrade; `target` is the module, `fit` says what (upgrades/fit.ts). */
   | 'fit'
