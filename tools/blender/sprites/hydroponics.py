@@ -300,29 +300,27 @@ def _greens(k, u, v, z, st, seed, hmax):
 
 
 def _beans(k, u, v, z, st, seed, hmax):
-    """Protein beans: a tepee of three canes the full height (set at sowing), a dark green vine climbing them, pale
-    pods hanging when ripe."""
+    """Protein beans: a row of upright canes the full height (set at sowing), a dark green vine climbing each in a
+    column, pale pods hanging when ripe."""
     r = random.Random(seed * 13 + 3)
-    top = (u, v, z + hmax - 0.02)
-    feet = [(u + su * 0.3, v + sv * 0.24, z) for su in (-1, 1) for sv in (-1, 1)]       # four canes to a peak
-    for f in feet:
-        _tube(k, [f, top], 0.022, "cane", n=4, phase=math.pi / 4)
-    reach, n = {"sprout": (0.22, 2), "grow": (0.6, 7), "ripe": (0.95, 11)}[st]
+    canes = [(u + du, v + r.uniform(-0.04, 0.04)) for du in (-0.26, 0.0, 0.26)]
+    for cu, cv in canes:
+        _tube(k, [(cu, cv, z), (cu, cv, z + hmax - 0.02)], 0.022, "cane", n=4, phase=math.pi / 4)
+    reach, n = {"sprout": (0.22, 3), "grow": (0.6, 7), "ripe": (0.95, 11)}[st]
     cols = ("beanL", "bean", "beanL", "beanD")
-    for i, f in enumerate(feet):
+    s = 1.0 if st != "sprout" else 0.7
+    for i, (cu, cv) in enumerate(canes):
         for j in range(n):
-            t = (j + r.uniform(0.2, 0.8)) / n * reach
-            p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
-            s = 1.0 if st != "sprout" else 0.7
-            a = r.uniform(0, math.tau)
-            _leaf(k, p[0], p[1], p[2], a, 0.19 * s, 0.14 * s, r.uniform(-0.2, 0.4), cols[(i + j) % 4])
+            zz = z + (j + r.uniform(0.2, 0.8)) / n * reach * hmax
+            a = j * 2.4 + i                                                      # spiralling up the cane
+            _leaf(k, cu + 0.02 * math.cos(a), cv + 0.02 * math.sin(a), zz, a, 0.15 * s, 0.12 * s, r.uniform(-0.1, 0.3),
+                  cols[(i + j) % 4])
         if st == "ripe":
             for j in range(3):
-                t = r.uniform(0.3, 0.6)                       # below the lamp, which hides the tops
-                p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
+                zz = z + r.uniform(0.35, 0.62) * hmax                            # below the lamp, which hides the tops
                 a = r.uniform(0, math.tau)
-                k.box(p[0] + 0.06 * math.cos(a), p[1] + 0.06 * math.sin(a), p[2] - 0.18, 0.05, 0.05, 0.18, "pod",
-                      top="pod", rx=r.uniform(-0.2, 0.2))
+                k.box(cu + 0.07 * math.cos(a), cv + 0.07 * math.sin(a), zz - 0.15, 0.045, 0.045, 0.15, "pod", top="pod",
+                      rx=r.uniform(-0.15, 0.15))
 
 
 def _herbs(k, u, v, z, st, seed, hmax):
@@ -357,28 +355,28 @@ def _herbs(k, u, v, z, st, seed, hmax):
 
 
 def _grain(k, u, v, z, st, seed, hmax):
-    """Grain: upright stalks. A sprout is a tuft of green blades; half grown, green stalks with small green heads;
-    ripe, gold straw as tall as the bed lets it be with heavy heads that droop."""
+    """Grain: upright stalks in rows. A sprout is rows of green blades; half grown, green stalks with slim green
+    heads; ripe, thin gold straw as tall as the bed lets it be, each with a slim heavy head that nods."""
     r = random.Random(seed * 7 + 2)
+    rows = [(u + du + r.uniform(-0.03, 0.03), v + dv + r.uniform(-0.03, 0.03))
+            for du in (-0.3, -0.15, 0.0, 0.15, 0.3) for dv in (-0.18, 0.0, 0.18)]
     if st == "sprout":
-        for i in range(14):
-            a, d = r.uniform(0, math.tau), 0.26 * math.sqrt(r.uniform(0.05, 1.0))
-            k.box(u + d * math.cos(a), v + d * math.sin(a), z, 0.025, 0.025, r.uniform(0.07, 0.12), "leaf",
-                  rx=r.uniform(-0.3, 0.3), ry=r.uniform(-0.3, 0.3))
+        for cu, cv in rows:
+            for q in range(2):
+                k.box(cu + r.uniform(-0.02, 0.02), cv, z, 0.025, 0.025, r.uniform(0.07, 0.12), "leaf",
+                      rx=r.uniform(-0.35, 0.35), ry=r.uniform(-0.35, 0.35))
         return
     ripe = st == "ripe"
-    stalk, head = ("straw", "grain") if ripe else ("stalk", "stalk")
-    for i in range(21):
-        a, d = r.uniform(0, math.tau), math.sqrt(r.uniform(0.05, 1.0))
-        cu, cv = u + 0.34 * d * math.cos(a), v + 0.26 * d * math.sin(a)
-        h = r.uniform(0.66, 1.0) * (hmax - 0.17) * (1.0 if ripe else 0.62)
-        k.box(cu, cv, z, 0.045, 0.045, h, stalk)
+    for i, (cu, cv) in enumerate(rows):
+        h = r.uniform(0.8, 1.0) * (hmax - 0.14) * (1.0 if ripe else 0.62)
+        k.box(cu, cv, z, 0.03, 0.03, h, "straw" if ripe else "stalk")
+        a = r.uniform(0, math.tau)
         if ripe:
-            k.box(cu, cv, z + h - 0.03, 0.09, 0.09, 0.2, ("grain", "grainD")[i % 2], top="grain", taper=0.6, rz=a,
-                  ry=0.35 * math.cos(a), rx=0.35 * math.sin(a))
+            k.box(cu, cv, z + h - 0.02, 0.055, 0.055, 0.15, ("grain", "grainD")[i % 2], top="grain", taper=0.55,
+                  rz=a, ry=0.3 * math.cos(a), rx=0.3 * math.sin(a))
         else:
-            k.box(cu, cv, z + h - 0.02, 0.045, 0.045, 0.1, head, top="leafL", taper=0.7, rz=a)
-        k.box(cu + 0.03, cv, z + h * 0.4, 0.16, 0.05, 0.03, "straw" if ripe else "leafD", rz=a, ry=-0.5)
+            k.box(cu, cv, z + h - 0.02, 0.04, 0.04, 0.09, "stalk", top="leafL", taper=0.7, rz=a)
+            k.box(cu + 0.03, cv, z + h * 0.35, 0.12, 0.04, 0.025, "leafD", rz=a, ry=-0.5)
 
 
 CROPS = {"greens": _greens, "beans": _beans, "herbs": _herbs, "grain": _grain}
