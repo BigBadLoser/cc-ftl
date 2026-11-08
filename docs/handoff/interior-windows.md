@@ -108,6 +108,12 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   (3, 13), rib m (15, 16). The dip: `wall3d_iwin_def.SILL_OFF` (new, 0 for the default: pixel-identical by
   construction) keeps the crest at the lip's top that far in from the post; slate sets it from `DIP` (sw13: BLOCK - POST,
   6.75 px; sw14: 0, see the log), END to `SLOPE` 9 px and RUN scaled with it (5 * 9 / 11.5), restored in `finally`.
+- Plates over the sill's front edge (ref 44's two light plates bent over the edge above the pockets): `PLATES` px per
+  part, a top PLATE_D 6 px back on the sill's level top (`PLATE` fGW0), its last px at the bend `PLATE_BEND` (fGWh,
+  new, slate set), then PLATE_DN 2 px down the face (`PLATE_FRONT` fGW1), each a hair proud (3 PAINT) of the sill and
+  its lit edge. Ref tones: plate top #9ba0a5 on a #8f949b top, bend #acb1bc..#c5cbd9, front #7b8289 on a dark face.
+  Measured at the ref's edge: m 3-15 and m 29 - r 9; on screen ours landed ~6 cols right (our sill's edge stands
+  further back than its pockets), so PLATES are 6 px toward -x: l 29 - m 9, m 23 - r 3 (sw17).
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -144,3 +150,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw14: the user: the ref's slope starts at the end pocket's outer edge. On screen (deskewed, l end) the
   ref's dip starts over that edge; sw13's started ~8 cols right of it (the crest stands further back than the pockets,
   and depth shifts it right on screen). DIP 0 (the dip from the post, as the default) lands it within ~1-2 cols. Shown.
+- 2026-11-08: sw15-17: the plates over the sill's edge (sw15 fGW1 didn't read: same as the sill's top; sw16 lighter;
+  sw17 6 px toward -x to sit as the ref's on screen). Shown.
