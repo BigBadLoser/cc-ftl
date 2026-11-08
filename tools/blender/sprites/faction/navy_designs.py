@@ -60,8 +60,8 @@ def navy_lockers(k, ax, plane, a, b, c, e, F, mouth=None, **_):
     ct = None
     if mouth:                                           # (in its recess, a px clear each side: the user)
         a, b = T._u(mouth[0] + 1, PX), T._u(mouth[1] - 1, PX)
-        d, ch, ct = PX, dz, 4 * dz                      # (its top 6 px down, a 4 px slope back to it: the user)
-        e -= 6 * dz
+        d, ch, ct = PX, dz, 4 * dz                      # (its top 4 px down, a 4 px slope back to it: the user)
+        e -= 4 * dz
     else:
         d, ch = 2 * PX, PX
     _box(k, ax, plane, a, b, c, e, d, ("fNL3", "fNL2", "fNL1"), ch=ch, ct=ct)

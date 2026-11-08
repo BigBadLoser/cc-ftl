@@ -672,3 +672,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the locker anti-aliased (the user): its reds as their own flat extras fNL0-4 (e0787f, b94f59, a3423a,
   963b34, 7d303b; set hull) in an AA group "navy.locker" (the shared drL/drM/drD/lvR/lvR2 untouched: other families
   use them). Plain m10 identical. Its 1-row lines (the lit top edge, the seam) dash on the 2:1 stairs under AA. nl5.
+- 2026-11-08: the locker's top back up 2 px (4 px down in all, the 4 px slope kept: the user); its 1-row lines stay
+  1 row (thicker lines not wanted). nl7.
