@@ -319,7 +319,10 @@ def _soil(k, u, v, z, w, d, seed=0, round_=False, n=26):
         k.cyl(u, v, z + 0.05, w / 2 * 0.7, 0.03, "soil", top="soil", sides=10)
     else:
         k.box(u, v, z, w, d, 0.05, "soil", top="soilD")
-        k.box(u, v, z + 0.05, w * 0.8, d * 0.6, 0.03, "soil", top="soil", bevel=0.02)
+        for _ in range(max(2, int(w * 2.5))):                                # soft humps, no straight edges
+            hw, hd = r.uniform(0.25, 0.45), r.uniform(0.2, 0.32)
+            k.box(u + r.uniform(-w / 2 + hw / 2, w / 2 - hw / 2), v + r.uniform(-d / 2 + hd / 2, d / 2 - hd / 2), z + 0.05,
+                  hw, hd, r.uniform(0.02, 0.04), "soil", top="soil", bevel=0.05, rz=r.uniform(-0.5, 0.5))
     for _ in range(n):
         if round_:
             a, rr = r.uniform(0, math.tau), r.uniform(0, w / 2 - 0.06)
@@ -628,10 +631,111 @@ def halo(k, on, crop):
             _plant(k, u, v, 0.77, i)
 
 
+def shell(k, on, crop):
+    """A pill hull whose back half rises into a tall shell wall between two round end towers (the same casting), a
+    lip projecting from the wall's top over the bed with the lamp in it. U-shaped in plan, open to the crew."""
+    lit = "growPink" if on else "blueGrey"
+    _pill(k, 0.0, 1.7, 0.6, 0.1, "gmD", top="gm")                                     # base
+    _pill(k, 0.1, 1.98, 0.86, 0.5, "steel", top="steelL")                             # hull
+    _pill(k, 0.3, 2.0, 0.88, 0.05, "navy")                                            # band
+    _pill(k, 0.6, 1.8, 0.68, 0.06, "soilD", top="soilD")                              # well
+    _soil(k, 0, 0, 0.66, 1.6, 0.5, 7)
+    for e in (-1, 1):                                                                # towers at the back corners,
+        k.cyl(e * 0.74, -0.22, 0.5, 0.26, 0.76, "steel", top="steelL", sides=12, rtop=0.2)   # out of the hull's ends
+        k.cyl(e * 0.74, -0.22, 1.26, 0.22, 0.06, "steelL", top="plate", sides=12)
+    k.box(0, -0.3, 0.6, 1.5, 0.24, 0.66, "steel", top="steelL", bevel=0.02)           # the back wall between them
+    k.box(0, -0.4, 0.6, 1.5, 0.06, 0.66, "steelD")                                    # its shadow line
+    k.box(0, -0.08, 1.24, 1.9, 0.62, 0.1, "steel", top="steelL", bevel=0.03)          # the lip over the bed
+    k.box(0, 0.225, 1.25, 1.8, 0.012, 0.06, lit)                                      # lamp along its edge
+    for e in (-1, 1):
+        k.box(e * 0.95, -0.08, 1.25, 0.012, 0.56, 0.06, lit)
+    k.box(-0.3, -0.19, 0.8, 0.3, 0.012, 0.2, "glassD")                                # nutrient window in the wall
+    k.box(-0.3, -0.183, 0.8, 0.3, 0.012, 0.09, "polyB")
+    k.box(0.3, -0.19, 0.86, 0.26, 0.012, 0.1, "dark")                                 # readout
+    k.box(0.3, -0.183, 0.9, 0.16, 0.012, 0.04, "cyan" if on else "steelD")
+    k.box(0.5, 0.43, 0.36, 0.3, 0.012, 0.12, "dark")                                  # front display
+    k.box(0.5, 0.438, 0.4, 0.2, 0.012, 0.05, "cyan" if on else "steelD")
+    k.cyl(-0.99, 0.0, 0.42, 0.05, 0.1, "polyB", sides=6)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.74, i)
+
+
+def stem(k, on, crop):
+    """A flared oval dish; its back swells into one thick stem that rises and spreads into the pill ring lamp."""
+    lit = "growPink" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.5, 0.5, 0.1, "gmD", top="gm", bevel=0.03)                       # foot
+    _octo(k, 0, 0, 0.1, 1.7, 0.66, 0.2, "steel", top="steelL", cut=0.2, bevel=0.03)   # the dish, flaring out
+    _octo(k, 0, 0, 0.3, 1.96, 0.86, 0.26, "steel", top="steelL", cut=0.28, bevel=0.03)
+    _octo(k, 0, 0, 0.56, 2.0, 0.9, 0.05, "steelL", top="plate", cut=0.3)              # rolled rim
+    _octo(k, 0, 0, 0.56, 1.76, 0.66, 0.06, "soilD", top="soilD", cut=0.22)
+    _soil(k, 0, 0, 0.62, 1.56, 0.5, 11)
+    k.box(0, -0.42, 0.3, 0.6, 0.3, 0.3, "steel", top="steelL", bevel=0.05, taper=0.7)  # the stem: swelling from the
+    k.box(0, -0.4, 0.58, 0.42, 0.26, 0.5, "steel", top="steelL", bevel=0.04, taper=0.75)   # dish's back
+    k.box(0, -0.36, 1.06, 0.3, 0.2, 0.26, "steel", top="steelL", bevel=0.03)
+    k.box(0, -0.34, 1.3, 0.34, 0.24, 0.08, "steel", top="steelL", bevel=0.03, taper=1.6)  # spreading into the ring
+    _ring_pill(k, 1.33, 1.3, 0.6, 0.12, 0.08, "steel", "steelL", lit)
+    k.box(-0.22, -0.3, 0.72, 0.012, 0.1, 0.22, "glassD")                                # window in the stem's side
+    k.box(0.5, 0.44, 0.34, 0.3, 0.012, 0.12, "dark")                                    # front display
+    k.box(0.5, 0.448, 0.38, 0.2, 0.012, 0.05, "cyan" if on else "steelD")
+    k.box(-0.5, 0.44, 0.36, 0.2, 0.012, 0.05, "hazY")
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.7, i)
+
+
+def _ring_pill(k, z, L, w, bar, h, col, top, lit):
+    """A racetrack ring lamp at height z: L long over all, w wide (centre line), bar thick; lit along its inner edge."""
+    straight = L - w
+    for sv in (-1, 1):
+        k.box(0, sv * w / 2, z, straight, bar, h, col, top=top, bevel=0.015)
+        k.box(0, sv * (w / 2 - bar / 2 - 0.006), z + 0.01, straight - 0.04, 0.012, h - 0.02, lit)
+    for e in (-1, 1):
+        for i in range(6):
+            a = -math.pi / 2 + math.pi * (i + 0.5) / 6
+            cu, cv = e * straight / 2 + e * (w / 2) * math.cos(a), (w / 2) * math.sin(a)
+            k.box(cu, cv, z, bar, math.pi * w / 12 + 0.02, h, col, top=top, rz=a)
+            ri = w / 2 - bar / 2 - 0.006
+            k.box(e * straight / 2 + e * ri * math.cos(a), ri * math.sin(a), z + 0.01, 0.012, math.pi * ri / 6, h - 0.02, lit,
+                  rz=a)
+
+
+def horns(k, on, crop):
+    """A rounded trough whose end caps are tall tapering towers (horns) of the same casting; a thick light bar spans
+    between their tops. Nothing is added to the body: the body holds the light."""
+    lit = "growPink" if on else "blueGrey"
+    k.box(0, 0, 0.0, 1.4, 0.4, 0.12, "gmD", top="gm", bevel=0.03)                       # skid
+    _halfpipe(k, 0, 0, 0.6, 0.4, 0.1, 1.3, "steel", "steelL")                          # the belly
+    k.box(0, 0, 0.6, 1.3, 0.84, 0.05, "steelL", top="plate")
+    for e in (-1, 1):                                                                 # the horns: the trough's end
+        u, v = e * 0.8, -0.26                                                          # caps swelling up at the back
+        k.cyl(u, 0, 0.2, 0.42, 0.42, "steel", top="steelL", sides=12)                  # round end
+        k.cyl(u, v, 0.4, 0.3, 0.5, "steel", top="steelL", sides=12, rtop=0.22)         # tapering up and back
+        k.cyl(u, v, 0.9, 0.22, 0.36, "steel", top="steelL", sides=12, rtop=0.16)
+        k.cyl(u, v, 1.26, 0.18, 0.06, "steelL", top="plate", sides=12)                 # a cap
+        k.box(u + e * 0.3, v, 0.5, 0.012, 0.2, 0.16, "glassD")                         # porthole on the outer face
+        k.box(u + e * 0.31, v, 0.55, 0.012, 0.12, 0.05, "polyB" if e < 0 else ("green" if on else "dark"))
+    k.box(0, 0.04, 0.6, 1.5, 0.56, 0.08, "soilD", top="soilD")                          # the well between the horns
+    for e in (-1, 1):
+        k.cyl(e * 0.75, 0.04, 0.6, 0.27, 0.08, "soilD", top="soilD", sides=12)
+    _soil(k, 0, 0.04, 0.68, 1.7, 0.44, 13, n=30)
+    k.box(0, -0.26, 1.26, 1.7, 0.2, 0.1, "steel", top="steelL", bevel=0.03)             # the bar between the horns
+    k.box(0, -0.1, 1.26, 1.4, 0.16, 0.08, "steel", top="steelL", bevel=0.02)            # a lip forward over the bed
+    k.box(0, -0.016, 1.27, 1.3, 0.012, 0.05, lit)                                       # lit along its edge
+    k.box(0, -0.156, 1.27, 1.6, 0.012, 0.06, lit)
+    k.box(0.4, 0.43, 0.32, 0.3, 0.012, 0.12, "dark")                                    # front display
+    k.box(0.4, 0.438, 0.36, 0.2, 0.012, 0.05, "cyan" if on else "steelD")
+    k.box(-0.3, 0.43, 0.34, 0.2, 0.012, 0.05, "hazY")
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.76, i)
+
+
 VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat,
             "skiff": skiff, "hexes": hexes, "bags": bags,
             "capsule": capsule, "tunnel": tunnel, "visor": visor,
-            "tunnel2": tunnel2, "hut": hut, "halo": halo}
+            "tunnel2": tunnel2, "hut": hut, "halo": halo,
+            "shell": shell, "stem": stem, "horns": horns}
 STATES = ("off", "on", "on.crop")
 
 
