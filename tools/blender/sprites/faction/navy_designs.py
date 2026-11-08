@@ -68,7 +68,7 @@ navy_thin_band.reds = ((0.18, 0.0), (0.28, 0.25))   # in its tone over them, nav
 def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, ax=0, plane=0.0, **_):
     """B1-2: the ramp's cover off over the hole the shell leaves (its "ramp_hole"): a dark navy recess, its bottom
     parallel to the ramp, two pipes across it in the header tube's orange (a quarter and three down it), a thin
-    silver one between them, flat steel straps over them. (A ramp fill's arguments, wall3d.skirt:
+    silver one between them. (A ramp fill's arguments, wall3d.skirt:
     plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d out from the wall.)"""
     if hole:
         o0, o1, d0, d1 = hole
@@ -114,16 +114,6 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         ds, zs_ = fs - sn * (rs + 0.04), zat(fs) - cs * (rs + 0.04)         # a little deeper
         prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
-        w = o1 - o0
-        lift = dp + 0.003                              # steel straps over the pipes, flat across (not dipping
-        #   between them, over the silver pipe, no collars: the user)
-        for u in (o0 + w / 3, o0 + 2 * w / 3):
-            ub = round(u * 32) / 32                    # flat steel straps, 2 px wide and one tone (a bar's lit top and
-            e = [(rows[i_] + sn * lift + g * cs * (rp + 0.005), zp[i_] + cs * lift - g * sn * (rp + 0.005))
-                 for i_, g in ((0, -1), (1, 1))]       # dark side made them jagged; across the pipes, past them: the user)
-            k.poly([P(ub - 1 / 32, e[0][1], e[0][0]), P(ub + 1 / 32, e[0][1], e[0][0]),
-                    P(ub + 1 / 32, e[1][1], e[1][0]), P(ub - 1 / 32, e[1][1], e[1][0])], "wall", 0,
-                   P(0, cs, sn) - P(0, 0, 0), fixed="fSH0")
 
 
 SILVER = {"fxO": "fNW3", "orL": "fNW4", "orM": "fNW6"}  # the tube's tones in navy's steel greys

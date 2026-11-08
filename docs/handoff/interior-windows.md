@@ -587,3 +587,5 @@ Marked ref (both layers, numbered): scratchpad
   which re-keys every sprite whose palette takes the hull set. nv22.
 - 2026-11-08: the user: the straps cross over the pipes. Each strap now runs on past both pipes along the slope (its
   ends a pipe radius + 0.005 beyond the pipe centres), over them; it splits each pipe and ends inside the slot. nv23.
+- 2026-11-08: the user: ditch the struts. The steel straps are gone; the slot holds the two orange pipes and the silver
+  one between, unbroken. nv24.
