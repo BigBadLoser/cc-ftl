@@ -1,6 +1,7 @@
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
-import { regions, shipIdOf } from '../regions';
+import { regions } from '../regions';
+import { modulesWhere, type DefTest } from '../modules/byShip';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { ShipC } from '../combat/components';
@@ -28,6 +29,8 @@ interface LightCache {
   structRev: number;
   doors: Int32Array;
   open: Uint8Array;
+  /** The `door` revision `open` was read at: unchanged (with `structRev`) means the same doors are open. */
+  doorRev: number;
   /** The `light` revision right after the last solve's writes: unchanged means the field still holds its result. */
   lightRev: number;
 }
@@ -53,8 +56,12 @@ export function lightingSystem(sim: Sim): void {
     const c = caches.get(grid);
     const baseHit = !!c && c.scale === scale && c.roomRev === roomRev && sameNumbers(c.lamps, lampKey);
     const doors = c && c.structRev === structRev ? c.doors : doorTiles(grid);
-    const open = openDoors(grid, doors);
-    if (baseHit && c.structRev === structRev && sameBytes(c.open, open) && c.lightRev === grid.revision('light')) continue;
+    const doorRev = grid.revision('door');
+    const open = c && c.structRev === structRev && c.doorRev === doorRev ? c.open : openDoors(grid, doors);
+    if (baseHit && c.structRev === structRev && sameBytes(c.open, open) && c.lightRev === grid.revision('light')) {
+      c.doorRev = doorRev; // `open` was just read (equal to c.open) at this revision
+      continue;
+    }
     const base = baseHit ? c.base : lampLight(grid, lamps, scale);
     const next = base.slice();
     spillThroughDoors(grid, next, doors, open);
@@ -66,18 +73,21 @@ export function lightingSystem(sim: Sim): void {
         grid.set('light', grid.x0 + x, grid.y0 + (i - x) / width, next[i] as number);
       }
     }
-    caches.set(grid, { base, lamps: lampKey, scale, roomRev, structRev, doors, open, lightRev: grid.revision('light') });
+    caches.set(grid, { base, lamps: lampKey, scale, roomRev, structRev, doors, open, doorRev, lightRev: grid.revision('light') });
   }
 }
+
+const isLight: DefTest = (d) => !!d.light;
 
 /** Powered, intact light modules by the ship they stand on, in module query order (one pass for every region). */
 function litLamps(sim: Sim): Map<number, Lamp[]> {
   const out = new Map<number, Lamp[]>();
-  for (const id of sim.world.query(ModuleC)) {
-    const m = sim.world.get(id, ModuleC);
+  const lights = modulesWhere(sim, isLight);
+  for (let k = 0; k < lights.ids.length; k++) {
+    const m = sim.world.get(lights.ids[k] as number, ModuleC);
     const light = m && sim.content.modules[m.def]?.light;
     if (!m || !light || !m.powered || m.hp <= 0) continue;
-    const ship = shipIdOf(sim, m);
+    const ship = lights.ships[k] as number;
     let list = out.get(ship);
     if (!list) out.set(ship, (list = []));
     list.push({ x: m.x, y: m.y, level: light.level, radius: light.radius });

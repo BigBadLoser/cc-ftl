@@ -3,7 +3,7 @@ import {
   deserialize, homeShip, ModuleC, newGame, removeModule, serialize, shipGrid, shipIdAt, Struct, type Module, type ShipTemplate, type Sim,
 } from '../../sim';
 import { stampShip } from '../../sim/combat/ships';
-import { ShipGrid } from '../../sim/shipGrid';
+import { SectorGrid } from '../../sim/sectorGrid';
 import { spawnStation } from '../../sim/stations/spawn';
 import { content } from '../index';
 
@@ -108,10 +108,11 @@ describe('environment solver skipping', () => {
     let cold = deserialize(serialize(warm), content);
     const loads = { warm: 0, cold: 0 };
     let counting: keyof typeof loads | null = null;
-    const load = ShipGrid.prototype.load;
-    const spy = vi.spyOn(ShipGrid.prototype, 'load').mockImplementation(function (this: ShipGrid, field, rect) {
+    // A solve writes its result back with writeDelta (whether or not anything changed); a skipped one never calls it.
+    const writeDelta = SectorGrid.prototype.writeDelta;
+    const spy = vi.spyOn(SectorGrid.prototype, 'writeDelta').mockImplementation(function (this: SectorGrid, field, ...rest) {
       if (counting && field === 'o2') loads[counting]++;
-      return load.call(this, field, rect);
+      return writeDelta.call(this, field, ...rest);
     });
     for (let i = 0; i < 170; i++) {
       script(warm, cast);
@@ -126,7 +127,7 @@ describe('environment solver skipping', () => {
       cold = deserialize(serialize(cold), content);
     }
     spy.mockRestore();
-    // The warm run really skipped solves (fewer atmosphere loads), so the equality above covers the skips.
+    // The warm run really skipped solves (fewer atmosphere solves), so the equality above covers the skips.
     expect(loads.warm).toBeLessThan(loads.cold);
   }, 120_000); // a long scripted run: under parallel load it outlasts the 30 s default
 });

@@ -1,4 +1,4 @@
-import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, writeBack } from '../diffusion';
+import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, isAirless } from '../structure';
@@ -8,6 +8,8 @@ const TEMP_EPSILON = 1e-3;
 /** Every field the solve reads. */
 const INPUTS = ['temp', 'struct', 'door'] as const;
 const steady = new SteadyState();
+/** Air tiles that relax toward NORMAL_TEMP: floors and doors. */
+const holdsAir = (kind: number): boolean => kind === Struct.Floor || kind === Struct.Door;
 
 /**
  * Temperature diffuses across the same gas-passable links as the air (a breach drains heat to
@@ -21,18 +23,12 @@ export function temperatureSystem(sim: Sim): void {
     const key = inputKey(grid, INPUTS);
     if (steady.quiet(grid, key)) continue;
     const frame = fieldFrame(grid);
-    const struct = frame.struct;
     const cond = conductanceMap(grid, frame);
-    const before = grid.load('temp');
-    const temp = before.slice();
-    for (let i = 0; i < struct.length; i++) if (isAirless(struct[i] as number)) temp[i] = SPACE_TEMP;
+    const before = fieldMirror(grid, 'temp'), temp = scratchOf(grid, 'temp.next');
+    temp.set(before);
+    for (const i of tilesOf(frame, isAirless)) temp[i] = SPACE_TEMP;
     diffuseStep(frame, cond, [temp], TEMP_DIFFUSION, TEMP_VENT, false);
-    for (let i = 0; i < struct.length; i++) {
-      const kind = struct[i];
-      if (kind === Struct.Floor || kind === Struct.Door) {
-        temp[i] = (temp[i] as number) + (NORMAL_TEMP - (temp[i] as number)) * TEMP_AMBIENT_LOSS;
-      }
-    }
-    steady.done(grid, key, writeBack(grid, 'temp', temp, before, TEMP_EPSILON));
+    for (const i of tilesOf(frame, holdsAir)) temp[i] = (temp[i] as number) + (NORMAL_TEMP - (temp[i] as number)) * TEMP_AMBIENT_LOSS;
+    steady.done(grid, key, writeBackMirror(grid, 'temp', temp, before, TEMP_EPSILON));
   }
 }

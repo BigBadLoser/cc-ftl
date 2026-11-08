@@ -9,6 +9,7 @@ import {
   type GridLike,
   type Rect,
 } from './grid';
+import { writeDelta } from './sectorGridBulk';
 
 /** Field name -> value a tile has when no chunk holds it (vacuum). */
 export type EmptySpec = Record<string, number>;
@@ -231,6 +232,31 @@ export class SectorGrid implements GridLike {
     return out;
   }
 
+  /** `writeDelta` in sectorGridBulk.ts: the writes of a `set` per tile of `rect` that changed by more than `eps`. */
+  writeDelta(field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round = false, sync = false): number {
+    return writeDelta(this, field, rect, vals, before, eps, round, sync);
+  }
+
+  /** The watched field and threshold, or null. */
+  watch(): { field: string; below: number } | null {
+    return this.watchF < 0 ? null : { field: this.names[this.watchF] as string, below: this.watchBelow };
+  }
+
+  /**
+   * For sectorGridBulk.ts only: chunk (cx, cy)'s writable array of `field` when a bulk write may go straight into it (allocated,
+   * and not the occupancy field, whose writes keep the solid count), else undefined. Each write must be reported with `bulkWrote`.
+   */
+  bulkChunk(field: string, cx: number, cy: number): FieldArray | undefined {
+    const f = this.field(field);
+    return f === this.occ ? undefined : this.dir.get(chunkKey(cx, cy))?.arrays[f];
+  }
+
+  /** For sectorGridBulk.ts only: count `n` writes into chunk (cx, cy) of `field`, `crossed` of them across the watch threshold. */
+  bulkWrote(field: string, cx: number, cy: number, n: number, crossed: number): void {
+    this.bump(chunkKey(cx, cy), this.field(field), n);
+    this.crossed += crossed;
+  }
+
   /** Allocated chunks, sorted by key (rows of cy, then cx). A snapshot: safe to mutate the grid while iterating. */
   chunks(): { cx: number; cy: number }[] {
     return this.chunkKeys().map((k) => ({ cx: keyCx(k), cy: keyCy(k) }));
@@ -310,11 +336,12 @@ export class SectorGrid implements GridLike {
     for (let f = 0; f < this.names.length; f++) this.bump(key, f);
   }
 
-  private bump(key: number, f: number): void {
+  /** Count `n` writes (default 1) to field `f` of chunk `key`. */
+  private bump(key: number, f: number, n = 1): void {
     let revs = this.chunkRevs.get(key);
     if (!revs) this.chunkRevs.set(key, (revs = new Uint32Array(this.names.length)));
-    revs[f] = (revs[f] as number) + 1;
-    this.fieldRevs[f] = (this.fieldRevs[f] as number) + 1;
+    revs[f] = (revs[f] as number) + n;
+    this.fieldRevs[f] = (this.fieldRevs[f] as number) + n;
   }
 
   private chunkKeys(): number[] {

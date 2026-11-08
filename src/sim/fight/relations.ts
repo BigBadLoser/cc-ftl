@@ -8,6 +8,7 @@ import { isBreaking } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
+import type { Faction } from '../combat/components';
 import { AlienC } from '../aliens/components';
 import { StationCrewC, WantedC } from '../stations/components';
 import { AwayC } from '../away/components';
@@ -23,6 +24,24 @@ export function isHostile(sim: Sim, a: number, b: number): boolean {
     return !!w && sim.world.get(y, StationCrewC)?.station === w.station;
   };
   return wanted(a, b) || wanted(b, a);
+}
+
+/**
+ * True if `isHostile` could hold for some ordered pair of these crew: two of them on factions that are hostile to each other,
+ * or any of them wanted (a `WantedC` makes hostility depend on the other's station). False proves `isHostile(a, b)` is false
+ * for every pair (a machine ally only ever removes hostility), so a caller may skip the pairwise search.
+ */
+export function mayHaveHostilePair(sim: Sim, crew: readonly number[]): boolean {
+  const factions: (Faction | undefined)[] = [];
+  for (const id of crew) {
+    if (sim.world.has(id, WantedC)) return true;
+    const f = sim.world.get(id, AllegianceC)?.faction;
+    if (!factions.includes(f)) factions.push(f);
+  }
+  for (let i = 0; i < factions.length; i++) {
+    for (let j = i + 1; j < factions.length; j++) if (factionsHostile(factions[i], factions[j])) return true;
+  }
+  return false;
 }
 
 /** Is one of the two a rogue-side crew member and the other a zealot (a machine ally on the neutral side while the player is on good terms with them)? */

@@ -1,4 +1,4 @@
-import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, writeBack } from '../diffusion';
+import { SteadyState, conductanceMap, diffuseStep, fieldFrame, inputKey, fieldMirror, scratchOf, tilesOf, writeBackMirror } from '../diffusion';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, isAirless, isSolidRock } from '../structure';
@@ -7,6 +7,8 @@ import { GAS_DIFFUSION, GAS_EPSILON, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
 /** Every field the solve reads. */
 const INPUTS = ['o2', 'co2', 'struct', 'door'] as const;
 const steady = new SteadyState();
+/** Tiles that hold no gas: airless (Space, rock ground), walls and solid rock. */
+const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct.Wall || isSolidRock(kind);
 
 /**
  * Per-tile gas diffusion of O2 and CO2. Floors, open doors (scaled by openness) and Space are
@@ -22,20 +24,17 @@ export function atmosphereSystem(sim: Sim): void {
     const key = inputKey(grid, INPUTS);
     if (steady.quiet(grid, key)) continue;
     const frame = fieldFrame(grid);
-    const struct = frame.struct;
     const cond = conductanceMap(grid, frame);
-    const o2Before = grid.load('o2');
-    const co2Before = grid.load('co2');
-    const o2 = o2Before.slice();
-    const co2 = co2Before.slice();
-    for (let i = 0; i < struct.length; i++) {
-      if (isAirless(struct[i] as number) || struct[i] === Struct.Wall || isSolidRock(struct[i] as number)) {
-        o2[i] = 0;
-        co2[i] = 0;
-      }
+    const o2Before = fieldMirror(grid, 'o2'), co2Before = fieldMirror(grid, 'co2');
+    const o2 = scratchOf(grid, 'gas.o2'), co2 = scratchOf(grid, 'gas.co2');
+    o2.set(o2Before);
+    co2.set(co2Before);
+    for (const i of tilesOf(frame, holdsNoGas)) {
+      o2[i] = 0;
+      co2[i] = 0;
     }
     for (let s = 0; s < GAS_SUBSTEPS; s++) diffuseStep(frame, cond, [o2, co2], GAS_DIFFUSION, GAS_VENT, true);
-    const wrote = writeBack(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBack(grid, 'co2', co2, co2Before, GAS_EPSILON);
+    const wrote = writeBackMirror(grid, 'o2', o2, o2Before, GAS_EPSILON) + writeBackMirror(grid, 'co2', co2, co2Before, GAS_EPSILON);
     steady.done(grid, key, wrote);
   }
 }

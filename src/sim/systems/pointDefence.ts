@@ -12,7 +12,7 @@ import {
 import { DroneC } from '../drones/components';
 import { VehicleC } from '../vehicles/components';
 import { shipById } from '../combat/ships';
-import { shipIdOf } from '../regions';
+import { modulesWhere, type DefTest } from '../modules/byShip';
 
 /**
  * Point defence: each interceptable shot (missiles) gets one roll per working point-defence module on the target
@@ -26,15 +26,19 @@ import { shipIdOf } from '../regions';
  * VEHICLE_PD_DAMAGE hp, never below VEHICLE_PD_FLOOR of its max hp. Enemy drones out in space within VEHICLE_PD_RANGE are shot the same way
  * (DRONE_PD_CHANCE for DRONE_PD_DAMAGE, the nearest first). Who counts as an enemy is the shared rule in combat/intercept.ts.
  */
+const isPdPart: DefTest = (d) => !!(d.aiCore || d.pointDefense);
+
 export function pointDefenceSystem(sim: Sim): void {
   const gunsByGrid = new Map<number, number[]>();
   const coreByGrid = new Map<number, boolean>();
-  for (const id of sim.world.query(ModuleC)) {
+  const parts = modulesWhere(sim, isPdPart);
+  for (let k = 0; k < parts.ids.length; k++) {
+    const id = parts.ids[k] as number, ship = parts.ships[k] as number;
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || !workingModule(sim, id)) continue;
-    if (def.aiCore) coreByGrid.set(shipIdOf(sim, m), true);
-    if (def.pointDefense) gunsByGrid.set(shipIdOf(sim, m), [...(gunsByGrid.get(shipIdOf(sim, m)) ?? []), id]);
+    if (def.aiCore) coreByGrid.set(ship, true);
+    if (def.pointDefense) gunsByGrid.set(ship, [...(gunsByGrid.get(ship) ?? []), id]);
   }
   for (const id of [...sim.world.query(ProjectileC)]) {
     const p = sim.world.get(id, ProjectileC);

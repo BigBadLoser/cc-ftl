@@ -1,4 +1,6 @@
-import type { GridLike } from './grid';
+import { CHUNK_SIZE, type GridLike } from './grid';
+import { ShipGrid } from './shipGrid';
+import { loadChunkInto } from './sectorGridBulk';
 import { Struct, gasConductance, isAirless } from './structure';
 
 /**
@@ -44,22 +46,121 @@ export function fieldFrame(grid: GridLike): FieldFrame {
   return frame;
 }
 
-const conds = new WeakMap<GridLike, { frame: FieldFrame; door: number; cond: Float64Array }>();
+const CHUNK_SHIFT = Math.log2(CHUNK_SIZE);
+
+const conds = new WeakMap<GridLike, { frame: FieldFrame; door: number; cond: Float64Array; doors: Int32Array }>();
 
 /**
  * Per-tile gas conductance (0 walls / closed doors, 1 floor and space, fraction for doors), filled on active tiles only.
  * Cached per grid until its `struct` frame or `door` revision changes, so the three diffusion solvers of a tick share one
- * map. The result is read-only.
+ * map. Only door tiles read the `door` field, so a `door` write alone refreshes just them. The result is read-only.
  */
 export function conductanceMap(grid: GridLike, frame: FieldFrame): Float64Array {
   const doorRev = grid.revision('door');
   const hit = conds.get(grid);
-  if (hit && hit.frame === frame && hit.door === doorRev) return hit.cond;
+  if (hit && hit.frame === frame) {
+    if (hit.door === doorRev) return hit.cond;
+    const { width, x0, y0 } = grid;
+    for (const i of hit.doors) {
+      const x = i % width;
+      hit.cond[i] = gasConductance(Struct.Door, grid.get('door', x0 + x, y0 + (i - x) / width));
+    }
+    hit.door = doorRev;
+    return hit.cond;
+  }
   const door = grid.load('door');
   const out = new Float64Array(frame.struct.length);
   for (const i of frame.active) out[i] = gasConductance(frame.struct[i] as number, door[i] as number);
-  conds.set(grid, { frame, door: doorRev, cond: out });
+  conds.set(grid, { frame, door: doorRev, cond: out, doors: tilesOf(frame, isDoor) });
   return out;
+}
+
+const isDoor = (kind: number): boolean => kind === Struct.Door;
+const tileLists = new WeakMap<FieldFrame, Map<(kind: number) => boolean, Int32Array>>();
+
+/** Ascending indices of the frame's tiles whose struct kind passes `test` (a pure test of the kind), cached per frame and test. */
+export function tilesOf(frame: FieldFrame, test: (kind: number) => boolean): Int32Array {
+  let byTest = tileLists.get(frame);
+  if (!byTest) tileLists.set(frame, (byTest = new Map()));
+  let hit = byTest.get(test);
+  if (!hit) {
+    const list: number[] = [];
+    for (let i = 0; i < frame.struct.length; i++) if (test(frame.struct[i] as number)) list.push(i);
+    byTest.set(test, (hit = Int32Array.from(list)));
+  }
+  return hit;
+}
+
+const buffers = new WeakMap<GridLike, Map<string, Float64Array>>();
+
+/** A reused scratch array of the grid's area, by name (one per name and grid). Contents are whatever the last user left. */
+export function scratchOf(grid: GridLike, name: string): Float64Array {
+  let byName = buffers.get(grid);
+  if (!byName) buffers.set(grid, (byName = new Map()));
+  const n = grid.width * grid.height;
+  let buf = byName.get(name);
+  if (!buf || buf.length !== n) byName.set(name, (buf = new Float64Array(n)));
+  return buf;
+}
+
+/** A field's values over a ship view, kept equal to the grid: the sector revision of each chunk it last matched. */
+interface Mirror {
+  readonly vals: Float64Array;
+  readonly cx0: number;
+  readonly cy0: number;
+  readonly ncx: number;
+  readonly revs: Float64Array;
+}
+
+const mirrors = new WeakMap<GridLike, Map<string, Mirror>>();
+
+function mirrorRecord(grid: ShipGrid, field: string): Mirror {
+  let byField = mirrors.get(grid);
+  if (!byField) mirrors.set(grid, (byField = new Map()));
+  let m = byField.get(field);
+  if (!m) {
+    const cx0 = grid.x0 >> CHUNK_SHIFT, cy0 = grid.y0 >> CHUNK_SHIFT;
+    const ncx = ((grid.x0 + grid.width - 1) >> CHUNK_SHIFT) - cx0 + 1, ncy = ((grid.y0 + grid.height - 1) >> CHUNK_SHIFT) - cy0 + 1;
+    // NaN never equals a revision: the first use loads every chunk.
+    m = { vals: new Float64Array(grid.width * grid.height), cx0, cy0, ncx, revs: new Float64Array(ncx * ncy).fill(NaN) };
+    byField.set(field, m);
+  }
+  return m;
+}
+
+/**
+ * The values of `field` over the whole grid (what `grid.load(field)` returns), from a per-grid copy that reloads only the
+ * chunks written since it last matched (chunk revisions are monotone, so an unchanged revision means unchanged tiles).
+ * Read-only for the caller; `writeBackMirror` keeps it in step with its own writes. A cache, never saved.
+ */
+export function fieldMirror(grid: GridLike, field: string): Float64Array {
+  if (!(grid instanceof ShipGrid)) {
+    const out = scratchOf(grid, `mirror.${field}`);
+    out.set(grid.load(field));
+    return out;
+  }
+  const m = mirrorRecord(grid, field);
+  const rect = grid.rect;
+  for (let k = 0; k < m.revs.length; k++) {
+    const cx = m.cx0 + (k % m.ncx), cy = m.cy0 + Math.floor(k / m.ncx);
+    const rev = grid.sector.chunkRevision(field, cx, cy);
+    if (rev === m.revs[k]) continue;
+    loadChunkInto(grid.sector, field, rect, m.vals, cx, cy);
+    m.revs[k] = rev;
+  }
+  return m.vals;
+}
+
+/**
+ * `writeBack` against the grid's mirror of `field` (`before` must be what `fieldMirror` returned this tick, with no write to the
+ * field since): the same writes, and the mirror takes the written values so it stays equal to the field.
+ */
+export function writeBackMirror(grid: GridLike, field: string, vals: Float64Array, before: Float64Array, eps: number): number {
+  if (!(grid instanceof ShipGrid)) return writeBack(grid, field, vals, before, eps);
+  const m = mirrorRecord(grid, field);
+  const wrote = grid.sector.writeDelta(field, grid.rect, vals, m.vals, eps, false, true);
+  for (let k = 0; k < m.revs.length; k++) m.revs[k] = grid.sector.chunkRevision(field, m.cx0 + (k % m.ncx), m.cy0 + Math.floor(k / m.ncx));
+  return wrote;
 }
 
 /**
@@ -175,6 +276,7 @@ function linkPair(
  * Returns how many tiles it wrote (0: the field is a fixed point of this solve).
  */
 export function writeBack(grid: GridLike, field: string, vals: Float64Array, before: Float64Array, eps: number, round = false): number {
+  if (grid instanceof ShipGrid) return grid.writeDelta(field, vals, before, eps, round);
   const { width, x0, y0 } = grid;
   let wrote = 0;
   for (let i = 0; i < vals.length; i++) {

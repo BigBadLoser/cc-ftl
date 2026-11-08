@@ -6,6 +6,7 @@ import { removeModule, spawnModule } from '../modules/spawn';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { shipGrid } from '../regions';
 import { ShipGrid } from '../shipGrid';
+import { SectorGrid } from '../sectorGrid';
 import { Sim } from '../sim';
 import { Struct } from '../structure';
 import { atmosphereSystem } from './atmosphere';
@@ -16,7 +17,7 @@ import { temperatureSystem } from './temperature';
 
 /**
  * Change tracking of the environment solvers: once a region has settled, a solve is skipped, and every kind of edit to what
- * the solver reads makes it solve again. A solve shows up as a `load` of the solver's own field.
+ * the solver reads makes it solve again. A solve shows up as a write-back (`SectorGrid.writeDelta`) of the solver's own field.
  */
 
 const lamp: ModuleDef = {
@@ -39,20 +40,30 @@ function make(): { sim: Sim; ship: number; grid: ShipGrid; lampId: number } {
   return { sim, ship, grid: shipGrid(sim, ship) as ShipGrid, lampId };
 }
 
-/** How many times `field` is loaded from a ship view while `fn` runs. */
+/**
+ * How many times `field` is solved while `fn` runs: a diffusion solve writes its result back (`SectorGrid.writeDelta`, changed
+ * or not), a lighting solve loads the `light` field from the ship view.
+ */
 function loads(field: string, fn: () => void): number {
   let n = 0;
+  const writeDelta = SectorGrid.prototype.writeDelta;
   const load = ShipGrid.prototype.load;
-  const spy = vi.spyOn(ShipGrid.prototype, 'load').mockImplementation(function (this: ShipGrid, f, rect) {
-    if (f === field) n++;
-    return load.call(this, f, rect);
-  });
+  const spies = [
+    vi.spyOn(SectorGrid.prototype, 'writeDelta').mockImplementation(function (this: SectorGrid, f, ...rest) {
+      if (f === field && field !== 'light') n++;
+      return writeDelta.call(this, f, ...rest);
+    }),
+    vi.spyOn(ShipGrid.prototype, 'load').mockImplementation(function (this: ShipGrid, f, rect) {
+      if (f === field && field === 'light') n++;
+      return load.call(this, f, rect);
+    }),
+  ];
   fn();
-  spy.mockRestore();
+  for (const spy of spies) spy.mockRestore();
   return n;
 }
 
-/** Run `system` until a call skips its solve (no load of `field`); fail if it never settles. */
+/** Run `system` until a call skips its solve (no solve of `field`); fail if it never settles. */
 function settle(sim: Sim, system: (sim: Sim) => void, field: string): void {
   for (let i = 0; i < 2000; i++) if (loads(field, () => system(sim)) === 0) return;
   throw new Error(`${system.name} never settled`);

@@ -5,10 +5,17 @@ import type { Sim } from '../sim';
 import { stat, type StatName } from '../stats';
 import { IonC } from './components';
 import { shipIdOf } from '../regions';
+import { modulesOn, type DefTest } from '../modules/byShip';
 
 export type ConsoleKind = 'weapons' | 'shields' | 'helm';
 
 const SKILL_OF: Record<ConsoleKind, StatName> = { weapons: 'gunnery', shields: 'shielding', helm: 'piloting' };
+/** Def tests (module index keys) for each console kind. */
+const IS_CONSOLE: Record<ConsoleKind, DefTest> = {
+  weapons: (d) => d.console === 'weapons',
+  shields: (d) => d.console === 'shields',
+  helm: (d) => d.console === 'helm',
+};
 
 /** A crew member's skill level, 0 if the crew is unknown to the stat resolver. */
 export function skillOf(sim: Sim, crew: number, name: StatName): number {
@@ -36,9 +43,9 @@ export function operatorOf(sim: Sim, moduleId: number): number {
 
 /** A powered console of a kind on a grid that someone is manning: its module and operator. */
 export function mannedConsole(sim: Sim, shipId: number, kind: ConsoleKind): { module: number; crew: number } | null {
-  for (const id of sim.world.query(ModuleC)) {
+  for (const id of modulesOn(sim, shipId, IS_CONSOLE[kind])) {
     const m = sim.world.get(id, ModuleC);
-    if (!m || sim.content.modules[m.def]?.console !== kind || shipIdOf(sim, m) !== shipId) continue;
+    if (!m) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC)) continue;
     const crew = operatorOf(sim, id);
     if (crew) return { module: id, crew };

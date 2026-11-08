@@ -4,7 +4,8 @@ import { roomTiles } from '../roomIndex';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { GAS_EPSILON, NORMAL_O2 } from '../tuning';
-import { shipIdOf, shipGrid } from '../regions';
+import { shipGrid } from '../regions';
+import { modulesWhere, type DefTest } from '../modules/byShip';
 import { drawFromStores, shipStoreCount } from '../items/stock';
 
 /**
@@ -15,13 +16,16 @@ import { drawFromStores, shipStoreCount } from '../items/stock';
 /** A room counts as short of air below this share of normal oxygen: bottled oxygen boosts the refill only then. */
 const O2_SHORT = 0.9;
 
+const actsOnFields: DefTest = (d) => !!(d.o2PerSec || d.co2ScrubPerSec || d.heatPerSec);
+
 export function modulesSystem(sim: Sim): void {
-  for (const id of sim.world.query(ModuleC)) {
-    const m = sim.world.get(id, ModuleC);
+  const actors = modulesWhere(sim, actsOnFields);
+  for (let k = 0; k < actors.ids.length; k++) {
+    const m = sim.world.get(actors.ids[k] as number, ModuleC);
     const def = m && sim.content.modules[m.def];
-    // Only running modules with a field effect act; check that before the ship lookup (pure checks, same result).
-    if (!m || !def || !m.powered || m.hp <= 0 || !(def.o2PerSec || def.co2ScrubPerSec || def.heatPerSec)) continue;
-    const grid = shipGrid(sim, shipIdOf(sim, m));
+    if (!m || !def || !m.powered || m.hp <= 0) continue;
+    const ship = actors.ships[k] as number;
+    const grid = shipGrid(sim, ship);
     if (!grid?.has('o2')) continue;
 
     if (def.o2PerSec || def.co2ScrubPerSec) {
@@ -36,7 +40,6 @@ export function modulesSystem(sim: Sim): void {
         let sum = 0;
         for (const i of idx) sum += grid.get('o2', grid.x0 + (i % grid.width), grid.y0 + Math.floor(i / grid.width));
         const short = sum / idx.length < NORMAL_O2 * O2_SHORT;
-        const ship = shipIdOf(sim, m);
         if (short && ((m.o2Burn ?? 0) > 0 || shipStoreCount(sim, ship, supply.item) > 0)) {
           boost = supply.mult;
           // A unit is burned when the boost starts and covers `secPerUnit` seconds.

@@ -6,6 +6,7 @@ import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
 import { shipIdOf, shipGrid } from '../regions';
+import { modulesWhere, type ModuleList } from '../modules/byShip';
 
 interface Member {
   id: number;
@@ -20,11 +21,25 @@ interface Member {
  * Disabled, destroyed (hp 0), ion-struck or work-held (`Module.offlineUntil`) modules neither supply nor draw; nor does an idle one (`ModuleDef.drawsWhen`).
  */
 export function powerSystem(sim: Sim): void {
+  for (const members of networksOf(sim)) allocate(sim, members);
+}
+
+/**
+ * The power networks: modules grouped by ship and `networkOf` tile, each list ascending, the networks in order of their
+ * lowest module id. A pure function of the module index (which ship each module stands on), the ship rectangles it is keyed
+ * on and the content, so it is cached on the index's list and rebuilt with it.
+ */
+const networkCache = new WeakMap<ModuleList, Member[][]>();
+
+function networksOf(sim: Sim): Member[][] {
+  const all = modulesWhere(sim, null);
+  const hit = networkCache.get(all);
+  if (hit) return hit;
   const networks = new Map<number, Member[]>();
-  for (const id of sim.world.query(ModuleC)) {
+  for (let k = 0; k < all.ids.length; k++) {
+    const id = all.ids[k] as number, ship = all.ships[k] as number;
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    const ship = shipIdOf(sim, m);
     const grid = shipGrid(sim, ship);
     if (!def || !grid) continue;
     const key = ship * 65536 + networkOf(grid, m.x, m.y);
@@ -32,7 +47,9 @@ export function powerSystem(sim: Sim): void {
     if (list) list.push({ id, m, def });
     else networks.set(key, [{ id, m, def }]);
   }
-  for (const members of networks.values()) allocate(sim, members);
+  const out = [...networks.values()];
+  networkCache.set(all, out);
+  return out;
 }
 
 function allocate(sim: Sim, members: Member[]): void {
