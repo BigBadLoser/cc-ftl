@@ -30,7 +30,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 |---|---|---|---|
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py` |
-| 44 (set 2) | slate | 2757 / 115 / 2861 | lower layer (ramp) approved sw25: `sprites/wall3d_iwin_slate.py`; upper to do |
+| 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
@@ -89,7 +89,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 1. Slate's ramp (the lower layer) first, starting from the default window's geometry (a good start, it lacks
    detail), detailed to ref 44's lower layer. Show both ref layers next to our render.
 2. Then port that ramp geometry back to the default window.
-3. Then slate's upper layer, and the other looks.
+3. Then slate's upper layer, and the other looks. (2026-11-08: the user keeps slate's upper layer as it renders now;
+   slate is done. Next: step 2.)
 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
 - Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
@@ -232,3 +233,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   fGS2, and `PAINT_SHADE` fGT3 on the middle tile's paint block there (the user). Shown.
 - 2026-11-08: sw46: the pockets' (and the rib's) floors lit along their front edge: `LIP` 1 px back, `LIP_LIT` fGW0,
   `LIP_PAINT` fGT0 over the paint block (the user). Shown.
+- 2026-11-08: the user: sw46 "good enough"; slate's upper layer stays as it renders now. Slate done; next the port
+  of the ramp to the default window (step 2).
