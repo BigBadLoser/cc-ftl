@@ -21,29 +21,32 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
 
 
 def navy_boxes(k, ax, plane, a, b, c, e, F, **_):
-    """Two control boxes (T1-2): light bezels, dark windows packed with red and cream parts and small lights."""
+    """Two control boxes (T1-2): flat light bezels 2 px wide, dark windows packed with red and cream parts and small
+    lights, all on the px grid (a raised box's lit top and side blurred its top and left edges: the user)."""
     zm = (c + e) / 2
-    a = T._u(round(T._px(a + 0.06, PX)) + 1, PX)        # (each 3 px narrower, on the px grid: a px off its left, 2
-    b = T._u(round(T._px(b - 0.06, PX)) - 2, PX)        # off its right; 2 px shorter, a px off its top and foot: the
-    hz = 1 / 39.19                                      # user)
+    P = lambda u0, u1, z0, z1, d, fam, lvl=0, col=None: k.poly(              # noqa: E731
+        [T.P(ax, plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], fam, lvl, T.OUT(ax), fixed=col)
+    L = round(T._px(a + 0.06, PAINT)) + 1               # (each 3 px narrower than the opening's old inset: a px off
+    R = round(T._px(b - 0.06, PAINT)) - 2               # its left, 2 off its right; 2 px shorter, a px off its top
+    hz = 1 / 39.19                                      # and foot: the user)
     for q0, q1 in ((c + 0.02 + hz, zm - 0.02 - hz), (zm + 0.02 + hz, e - 0.02 - hz)):
-        T.slab(k, ax, plane, a, b, q0, q1, PX, F, 3)                                                     # bezel
-        w0, w1, v0, v1 = a + 2 / 32, b - 2 / 32, q0 + 2 / 39.19, q1 - 2 / 39.19    # (the bezel 2 px: chunkier, the
-        #   ref's: the user)
-        T.paint(k, ax, plane, w0, w1, v0, v1, PX, "rose", 1)                                             # window
-        cw, ch = (w1 - w0) / 4, (v1 - v0) / 3
+        P(T._u(L, PAINT), T._u(R, PAINT), q0, q1, PAINT, F, 3)                                         # bezel
+        W0, W1, v0, v1 = L + 2, R - 2, q0 + 2 * hz, q1 - 2 * hz                                        # window
+        P(T._u(W0, 2 * PAINT), T._u(W1, 2 * PAINT), v0, v1, 2 * PAINT, "rose", 1)
+        xs = [W0 + round(i * (W1 - W0) / 4) for i in range(5)]
+        ch = (v1 - v0) / 3
         for i in range(4):
             for j in range(3):
-                x0, y0 = w0 + i * cw, v0 + j * ch
+                y0 = v0 + j * ch
                 if (i + j) % 3 == 1:                                                                     # cream parts
-                    T.paint(k, ax, plane, x0 + LINE / 2, x0 + cw - LINE / 2, y0 + 0.01, y0 + ch - 0.01,
-                            PX + PAINT, F, 5)
+                    P(T._u(xs[i] + 1, 3 * PAINT), T._u(xs[i + 1], 3 * PAINT), y0 + 0.01, y0 + ch - 0.01,
+                      3 * PAINT, F, 5)
                 else:                                                                                    # red parts
-                    flat(k, ax, plane, x0 + LINE / 2, x0 + cw - LINE / 2, y0 + 0.01, y0 + ch - 0.01,
-                         PX + 2 * PAINT, ("lvR", "drM", "lvR2")[(i + 2 * j) % 3])
+                    P(T._u(xs[i] + 1, 4 * PAINT), T._u(xs[i + 1], 4 * PAINT), y0 + 0.01, y0 + ch - 0.01,
+                      4 * PAINT, "wall", 0, ("lvR", "drM", "lvR2")[(i + 2 * j) % 3])
         for fu, fz, col in ((0.3, 0.7, "green"), (0.65, 0.35, "green"), (0.8, 0.75, "flameY")):          # lights
-            uu, zz = w0 + fu * (w1 - w0), v0 + fz * (v1 - v0)
-            flat(k, ax, plane, uu - LINE, uu + LINE, zz - 0.025, zz + 0.025, PX + 3 * PAINT, col)
+            n, zz = round(W0 + fu * (W1 - W0)), v0 + fz * (v1 - v0)
+            P(T._u(n - 1, 5 * PAINT), T._u(n + 1, 5 * PAINT), zz - 0.025, zz + 0.025, 5 * PAINT, "wall", 0, col)
 
 
 def navy_lockers(k, ax, plane, a, b, c, e, F, **_):

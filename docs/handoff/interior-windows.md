@@ -633,3 +633,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: shrink both boxes 3 px in width and each 2 px in height. Their sides now set in screen px
   (T._px / T._u at the bezel's depth): a px off the left, 2 off the right (measured: 12-32 to 13-30); each box a px
   lower at its top and higher at its foot (z 1/39.19 each). A gap shows between the two now. nb4.
+- 2026-11-08: the user: the boxes' left edge and top look horrible. They were raised slabs (PX): the lit top face
+  and the side added AA'd strips over the bezel, and the window and parts sat off the px grid. Now flat plates, every
+  u edge in screen px (T._u at its own depth): the bezel at PAINT (F 3), the window 2 px in (rose 1), parts and
+  lights on whole px columns (4 even columns, a px gap each). Same extent as nb4. nb5.
