@@ -3,7 +3,8 @@ r0 `.on`, each in a walled room with a crew member seated at the chair (sit_work
 overlay drawn over them) and one standing for scale.
 
   python3 -I tools/blender/review/research_preview.py <research assets dir> <out dir>
-    -> research-1x.png / -3x.png (all three), research-<v>-3x.png (one each)"""
+    -> research-1x.png / -3x.png (all three), research-<v>-3x.png (one each),
+       research-bare-1x.png / -3x.png (the benches alone)"""
 import sys
 from pathlib import Path
 
@@ -47,6 +48,17 @@ def room(cv, G, pub, ox, oy, v):
     cv.labels.append((ox - 140, oy + 120, NAMES[v]))
 
 
+def bare(G, out):
+    """The three benches alone on the background, no room or crew -> research-bare-1x.png / -3x.png."""
+    cv = Canvas(660, 180)
+    for i, v in enumerate("abc"):
+        ox, oy = 110 + i * 220, 95
+        cv.static(G, f"module.research.{v}.on", *iso(ox, oy, 2, 1))
+        cv.labels.append((ox - 40, 165, NAMES[v]))
+    for s in (1, 3):
+        cv.save(out / f"research-bare-{s}x.png", s)
+
+
 def main():
     G, out = Assets(sys.argv[1]), Path(sys.argv[2])
     pub = Crew(ROOT / "public/assets/1x")
@@ -60,6 +72,7 @@ def main():
         one = Canvas(340, 300)
         room(one, G, pub, 170, 110, v)
         one.save(out / f"research-{v}-3x.png", 3)
+    bare(G, out)
     print("wrote", out)
 
 
