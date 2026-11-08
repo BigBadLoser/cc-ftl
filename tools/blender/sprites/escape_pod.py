@@ -3,7 +3,7 @@ smaller than the mining pod (content size 2.2 against 2.6).
 
 A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and a GRAPPLE COLLAR
 (a tow fixture in a hazard ring) stepped in at its narrow top. A hi-vis orange safety band round the base, broken by the
-round DOCKING PORT on a flat face in the front (the only way in or out: docked, the pod tips forward so it meets an airlock's collar square), two windows, an emergency BEACON by the
+round DOCKING PORT inset in the front (the only way in or out: docked, the pod tips forward so it meets an airlock's collar square), two windows, an emergency BEACON by the
 collar, RCS quads round the shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then stood up
@@ -30,7 +30,7 @@ BEACON = "orange"             # the emergency beacon
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
 PORT = (0.56, 0.5, 0.38)      # the docking port: its centre (s), outer ring radius (the airlock's mouth ring is 0.62), hatch radius
-PORT_LIFT = 0.03              # its flat face stands this far off the cone's front line
+PORT_DEPTH = 0.24             # its floor lies this far in behind the cone's front line (the cone curves 0.18 away at its sides)
 VARIANTS = {
     "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H"),
 }
@@ -111,6 +111,10 @@ def stud(f, c, n, r, h, mat, cap, sides=16, r1=None, phase=0.0):
     f.poly(B, cap)
 
 
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
 def tube(f, c, n, r0, r1, h, mat, sides=16):
     """An open tube (no caps) from c along the unit normal n, h long, radius r0 to r1: a bore's wall, a bell's skin."""
     a = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
@@ -155,13 +159,13 @@ def body(k):
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
     mats = [HULL_D, HULL, HULL, HULL_D, HULL]
-    for (a, b), m in zip(zip(marks, marks[1:]), mats):
-        n = max(1, int((b - a) / 0.06))                                    # fine steps, so a bulge reads round
-        for i in range(n):
-            s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
-            k.cyl(s0, s1, k.r(s0), k.r(s1), m)
+    hole = lambda u, v, z: in_port(k, u, v, z)                             # noqa: E731
+    for (a, b), m in zip(zip(marks, marks[1:]), mats):                     # the front finely, cut for the port's recess
+        sector(k, a, b, 200, 340, 1.0, m, m, ds=0.02, skip=hole, dt=1.5)
+        sector(k, a, b, 340, 560, 1.0, m, m, ds=0.05)
     _g("band")
-    sector(k, 0.06, 0.3, 0, 360, 1.008, BAND, BAND, skip=lambda u, v, z: in_port(k, u, v, z, -0.03))   # cut by the port
+    sector(k, 0.06, 0.3, 200, 340, 1.008, BAND, BAND, ds=0.02, skip=hole, dt=1.5)
+    sector(k, 0.06, 0.3, 340, 560, 1.008, BAND, BAND)
 
 
 def collar(k, beacon_on, thrust=False):
@@ -201,12 +205,12 @@ def collar(k, beacon_on, thrust=False):
     stud(f, tuple(q[i] + nn[i] * 0.04 for i in range(3)), nn, 0.03, 0.03, "steelD", "steelD", sides=8)   # a cap nut
 
 
-def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
+def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None, dt=4.0):
     """A panel lying on the hull over s0..s1 and the arc t0..t1 (degrees), raised to g times the radius (a number, or
     g(s, t degrees) for a shaped one), walled round. skip(u, v, z) leaves out a cell by its centre (capsule frame):
     a hole for something to fill."""
     gf = g if callable(g) else (lambda s, t: g)
-    ns, nt = max(2, int((s1 - s0) / ds)), max(2, int(abs(t1 - t0) / 4))
+    ns, nt = max(2, int((s1 - s0) / ds)), max(2, int(abs(t1 - t0) / dt))
     S = [s0 + (s1 - s0) * i / ns for i in range(ns + 1)]
     T = [math.radians(t0 + (t1 - t0) * j / nt) for j in range(nt + 1)]
 
@@ -227,52 +231,75 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
         k.f.poly([P(sa, ta, 0.99), P(sb, tb, 0.99), P(sb, tb), P(sa, ta)], wall)
 
 
+def port_frame(k):
+    """The docking port's axis: the point where it meets the cone's front line, its outward normal (square to the
+    cone's slope there), and up the slant (square to it)."""
+    p0, n = k.on(PORT[0], 270)
+    d = n[0]
+    up = (1.0 - n[0] * d, -n[1] * d, -n[2] * d)
+    ul = math.sqrt(sum(x * x for x in up))
+    return p0, n, tuple(x / ul for x in up)
+
+
 def in_port(k, u, v, z, pad=0.0):
-    """Is the capsule point (u, v, z) inside the docking port's outer ring (+ pad), measured flat on the cone?"""
-    sc, ro, _ = PORT
-    sl = math.hypot(1.0, (k.v["rb"] - k.v["rt"]) / k.v["length"])
-    s = u - k.s0
-    th = math.atan2(z - k.zc, v)
-    dth = (th - math.radians(270) + math.pi) % math.tau - math.pi
-    return math.hypot((s - sc) * sl, dth * k.r(s)) < ro + pad
+    """Is the capsule point (u, v, z) inside the docking port's recess (its bore radius + pad, from the axis)?"""
+    p0, n, _ = port_frame(k)
+    w = (u - p0[0], v - p0[1], z - p0[2])
+    d = sum(w[q] * n[q] for q in range(3))
+    return math.sqrt(max(0.0, sum(x * x for x in w) - d * d)) < PORT[1] + pad
+
+
+def to_hull(k, q, n):
+    """From q inside the hull, along n, the point where the line comes out through the cone's skin."""
+    def out(t):
+        x = tuple(q[i] + n[i] * t for i in range(3))
+        return math.hypot(x[1], x[2] - k.zc) - k.r(x[0] - k.s0), x
+    lo, hi = 0.0, 0.6
+    for _ in range(30):
+        mid = (lo + hi) / 2
+        if out(mid)[0] < 0:
+            lo = mid
+        else:
+            hi = mid
+    return out(hi)[1]
 
 
 def viewport(k):
-    """The front: the DOCKING PORT, a round hatch on a FLAT face: the plane touching the cone along its front line, with
-    a filler collar behind the face's rim running back into the hull where the cone curves away from it. It docks by
-    tipping the whole pod forward by the cone's slope, so the face stands square to the airlock's collar. On the face: a
-    hazard ring, a steel seal, the round hatch a little below them, a porthole and a handle. It cuts the safety band.
+    """The front: the DOCKING PORT, a round hatch INSET in the cone: a round recess cut straight in (its wall runs from the
+    hull's skin down to a flat floor square to the port's axis, so it is deepest at the sides where the cone curves
+    away). On the floor: a hazard ring, a steel seal, the round hatch, a porthole and a handle. It docks by tipping the
+    whole pod forward by the cone's slope, so the floor stands square to the airlock's collar. It cuts the safety band.
     Two windows either side of it up by the shoulder, so the pod has a face."""
     _g("port")
     f, ln = k.f, k.v["length"]
     sc, ro, rh = PORT
-    p0, n = k.on(sc, 270)                                                   # the face's centre and normal
-    up = (1.0, 0.0, 0.0)                                                    # up the slant, square to n
-    d = sum(up[q] * n[q] for q in range(3))
-    up = tuple(up[q] - n[q] * d for q in range(3))
-    ul = math.sqrt(sum(x * x for x in up))
-    up = tuple(x / ul for x in up)
+    p0, n, up = port_frame(k)
     across = (0.0, 1.0, 0.0)
 
     def at(lift, du=0.0, dv=0.0):
         return tuple(p0[q] + n[q] * lift + up[q] * du + across[q] * dv for q in range(3))
-    face = PORT_LIFT
-    back = tuple(-x for x in n)
-    tube(f, at(face), back, ro, ro, 0.32, HULL, sides=40)                   # the filler, back into the hull
-    segs = 48                                                              # the hazard ring, on the face
-    A = _ring_pts(f, at(face), n, up, rh + 0.035, segs)
+    face = -PORT_DEPTH
+    segs = 64
+    A = _ring_pts(f, at(face), n, up, ro, segs)                            # the recess's wall, floor to skin
+    base = [tuple(at(face)[q] + (up[q] * math.cos(i * math.tau / segs) + _cross(n, up)[q] * math.sin(i * math.tau / segs))
+                  * ro for q in range(3)) for i in range(segs)]
+    skin = [f.pt(*to_hull(k, b_, n)) for b_ in base]
+    for i in range(segs):
+        j = (i + 1) % segs
+        f.poly([A[i], A[j], skin[j], skin[i]], "steelD")
+    A = _ring_pts(f, at(face), n, up, rh + 0.035, segs)                    # the hazard ring, on the floor
     B = _ring_pts(f, at(face), n, up, ro, segs)
     for i in range(segs):
         j = (i + 1) % segs
-        f.poly([A[i], A[j], B[j], B[i]], "hazY" if (i // 3) % 2 else "hazK")
-    disc(f, at(face - 0.004), n, rh, rh + 0.035, "steelD", sides=segs)      # the seal
-    tube(f, at(face - 0.03), n, rh, rh, 0.03, "dark", sides=segs)           # the step down to the hatch
-    disc(f, at(face - 0.03), n, 0.0, rh, "plate", sides=segs)               # the hatch
-    stud(f, at(face - 0.03, rh * 0.45), n, 0.12, 0.02, "steelD", "steelD", sides=20)    # its porthole
-    stud(f, at(face - 0.01, rh * 0.45), n, 0.085, 0.006, "glassD", "glassD", sides=20)
+        f.poly([A[i], A[j], B[j], B[i]], "hazY" if (i // 4) % 2 else "hazK")
+    disc(f, at(face + 0.006), n, rh, rh + 0.035, "steelD", sides=segs)      # the seal
+    tube(f, at(face), n, rh, rh, 0.006, "steelD", sides=segs)
+    disc(f, at(face + 0.003), n, 0.0, rh, "plate", sides=segs)              # the hatch
+    stud(f, at(face + 0.003, rh * 0.45), n, 0.12, 0.02, "steelD", "steelD", sides=20)   # its porthole
+    stud(f, at(face + 0.023, rh * 0.45), n, 0.085, 0.006, "glassD", "glassD", sides=20)
     for dv in (-0.15, 0.15):                                               # a handle across its lower half
-        stud(f, at(face - 0.03, -rh * 0.45, dv), n, 0.022, 0.03, "steelD", "steelD", sides=6)
-    obox(f, at(face - 0.002, -rh * 0.45), n, across, 0.38, 0.05, 0.03, "hazY")
+        stud(f, at(face + 0.003, -rh * 0.45, dv), n, 0.022, 0.04, "steelD", "steelD", sides=6)
+    obox(f, at(face + 0.05, -rh * 0.45), n, across, 0.38, 0.05, 0.03, "hazY")
     _g("windows")
     for cc in (270 - 62, 270 + 62):
         sector(k, ln * 0.62, ln * 0.84, cc - 12, cc + 12, 1.02, "steelD")
