@@ -14,6 +14,7 @@ Costs are reported as **self ms** (time in the label, minus nested labels) and t
 | Record or compare crew decisions | `npm run ai:diff -- --record ...`, `npm run ai:diff -- --a x.jsonl --b y.jsonl` |
 | Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
 | Colony baseline (no scenario) | `npm run profile -- --seconds 20` |
+| A busy node: station, a navy ship and a derelict beside the player's ship | `npm run profile -- --scenario busy --warmup 30 --width 1920 --height 950` (`--width`/`--height`: viewport, default 1280x720; the camera stays on the player's ship, zoom out with the `?hook` API `__cc.zoomTo` to see the rest; `&arrive=<s>&arriveFaction=<name>` adds a ship that many seconds in) |
 | In a browser tab | open `/?perf` (optionally `&scenario=..&seed=..`), press **F3** for the panel |
 
 Both scripts print the text report to stdout and write the JSON summary (`--out`, default `profile.json` / `profile-sim.json`, git-ignored).

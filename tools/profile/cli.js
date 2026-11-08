@@ -77,7 +77,7 @@ if (!given) {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await browser.newPage({ viewport: { width: Number(opt('width', 1280)), height: Number(opt('height', 720)) } });
   page.on('pageerror', (e) => console.error('pageerror:', e.message));
   const q = new URLSearchParams();
   if (scenarioParam) q.set('scenario', scenarioParam);

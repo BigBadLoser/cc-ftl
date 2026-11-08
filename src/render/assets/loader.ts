@@ -78,6 +78,20 @@ export interface Atlas {
   readonly manifest: Manifest;
   /** Bumps whenever an environment sheet arrives or is evicted (crew clips are looked up per frame and do not count): views that cached a resolved texture re-resolve when it changes. */
   readonly generation: number;
+  /**
+   * The environment sheets that arrived or were evicted since `generation` read `since` (null: too long ago to tell).
+   * With `askedFor`, this tells which scenes need building again after a sheet arrives.
+   */
+  changesSince(since: number): { arrived: string[]; evicted: boolean } | null;
+  /**
+   * Attribute the environment sheets asked for from now on, while not loaded, to `who` (a scene id, or any other key a
+   * view of its own makes up); null: unattributed. Call it around the code that builds or updates what `who` draws.
+   */
+  attribute(who: number | null): void;
+  /** Everyone who asked for one of these sheets while it was not loaded; null is in the set when something unattributed did. */
+  askedFor(sheets: readonly string[]): Set<number | null>;
+  /** Forget what `who` asked for (it is built again and will ask again). */
+  forget(who: number): void;
   /** Sheets queued or loading. */
   busy(): number;
   /** Static asset by id; undefined if the manifest lacks it or its sheet is not loaded yet (it is queued). */
@@ -337,17 +351,42 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     const a = manifest.assets[id];
     return a?.kind === 'static' ? a.sheet : undefined;
   };
+  /** Who the sheets asked for now are attributed to (`attribute`), and what each asked for while it was not loaded. */
+  let asker: number | null = null;
+  const asked = new Map<number | null, Set<string>>();
+  const note = (sheet: string): void => {
+    const pool = store.poolOf(sheet);
+    if (pool !== 'core' && pool !== 'env') return;
+    let set = asked.get(asker);
+    if (!set) asked.set(asker, (set = new Set()));
+    set.add(sheet);
+  };
   const atlas: Atlas = {
     manifest,
     get generation() {
       return store.generationOf('core', 'env');
+    },
+    changesSince: (since) => store.changesSince(since, 'core', 'env'),
+    attribute(who) {
+      asker = who;
+    },
+    askedFor(sheets) {
+      const out = new Set<number | null>();
+      for (const [who, set] of asked) if (sheets.some((n) => set.has(n))) out.add(who);
+      return out;
+    },
+    forget(who) {
+      asked.delete(who);
     },
     busy: () => store.pending,
     stat(id) {
       const a = manifest.assets[id];
       if (a?.kind !== 'static') return undefined;
       const sh = store.get(a.sheet);
-      if (!sh) return undefined;
+      if (!sh) {
+        note(a.sheet);
+        return undefined;
+      }
       let s = statics.get(id);
       if (!s) {
         statics.set(id, (s = makeStatic(a.sheet, sh, a)));
@@ -363,7 +402,10 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
         if (!sheet) continue;
         if (store.state(sheet) === 'failed') {
           store.request(sheet, true); // retried once its back-off has passed; the fallback ids draw meanwhile
-          if (store.state(sheet) === 'failed') continue;
+          if (store.state(sheet) === 'failed') {
+            note(sheet);
+            continue;
+          }
         }
         return atlas.stat(id);
       }
@@ -375,9 +417,14 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
         if (!sheet) continue;
         if (store.state(sheet) === 'failed') {
           store.request(sheet, true); // retried once its back-off has passed; the fallback ids draw meanwhile
-          if (store.state(sheet) === 'failed') continue;
+          if (store.state(sheet) === 'failed') {
+            note(sheet);
+            continue;
+          }
         }
-        return store.state(sheet) !== 'ready';
+        if (store.state(sheet) === 'ready') return false;
+        note(sheet);
+        return true;
       }
       return false;
     },

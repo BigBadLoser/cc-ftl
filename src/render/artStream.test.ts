@@ -11,6 +11,8 @@ function rig(over = false, evicts = 0) {
     envOver: () => st.over,
     mark: () => ++st.mark,
     sweepEnv: (m: number) => { st.swept.push(m); return Array(evicts).fill('x') as string[]; },
+    changesSince: () => null, // unknown: everyone is built again
+    askedFor: () => new Set<number | null>(),
   } as unknown as Atlas;
   const s = createArtStream(atlas, { rebuild: () => void st.rebuilt++, sync: () => void st.synced++ }, () => st.t);
   return { st, s };
@@ -63,7 +65,7 @@ describe('artStream', () => {
   });
   it('a rebuild while later sheets still load does not hide a scene that was showing', () => {
     const st = { gen: 0, busy: 0 };
-    const atlas = { get generation() { return st.gen; }, busy: () => st.busy, envOver: () => false } as unknown as Atlas;
+    const atlas = { get generation() { return st.gen; }, busy: () => st.busy, envOver: () => false, changesSince: () => null } as unknown as Atlas;
     let t = 0;
     const s = createArtStream(atlas, { rebuild: () => {}, sync: () => s.built(5) }, () => t);
     s.built(5); // built with the eager sheets in: shown
@@ -136,6 +138,7 @@ describe('artStream', () => {
       envOver: () => store.over('env'),
       mark: () => ++clock,
       sweepEnv: (m: number) => (store.over('env') ? store.sweep('env', m) : []),
+      changesSince: () => null,
     } as unknown as Atlas;
     // A scene resolves its textures only in its own update, after the rebuild (as shipScene does).
     let wall = 0;
@@ -148,5 +151,45 @@ describe('artStream', () => {
     s.settle();
     expect(evicted).toEqual(['c']);
     expect(store.isReady('a') && store.isReady('b')).toBe(true);
+  });
+  describe('what a sheet arrival rebuilds', () => {
+    /** An atlas that says which scenes asked for the sheets that arrived. */
+    function arrivals(change: { readonly arrived: readonly string[]; readonly evicted: boolean } | null, asked: Readonly<Record<string, readonly (number | null)[]>>) {
+      const st = { gen: 0, rebuilt: [] as (number[] | undefined)[] };
+      const atlas = {
+        get generation() { return st.gen; },
+        busy: () => 0,
+        envOver: () => false,
+        changesSince: () => change as { arrived: string[]; evicted: boolean } | null,
+        askedFor: (sheets: string[]) => new Set(sheets.flatMap((n) => asked[n] ?? [])),
+      } as unknown as Atlas;
+      const s = createArtStream(atlas, { rebuild: (only) => void st.rebuilt.push(only && [...only].sort()), sync: () => {} }, () => 0);
+      st.gen = 1;
+      return { st, s };
+    }
+    it('only the scenes that asked for an arrived sheet', () => {
+      const { st, s } = arrivals({ arrived: ['hull2'], evicted: false }, { hull2: [7, 9], walls: [3] });
+      s.update();
+      expect(st.rebuilt).toEqual([[7, 9]]);
+    });
+    it('nothing when no scene asked for the arrived sheets', () => {
+      const { st, s } = arrivals({ arrived: ['unasked'], evicted: false }, { walls: [3] });
+      s.update();
+      expect(st.rebuilt).toEqual([]);
+      st.gen = 1;
+      s.update();
+      expect(st.rebuilt).toEqual([]); // and it is not looked at again
+    });
+    it('everyone when something unattributed asked, a sheet was evicted, or the change is unknown', () => {
+      for (const [change, asked] of [
+        [{ arrived: ['a'], evicted: false }, { a: [7, null] }],
+        [{ arrived: ['a'], evicted: true }, { a: [7] }],
+        [null, { a: [7] }],
+      ] as const) {
+        const { st, s } = arrivals(change, asked);
+        s.update();
+        expect(st.rebuilt).toEqual([undefined]);
+      }
+    });
   });
 });

@@ -373,3 +373,35 @@ describe('SheetStore load timeout', () => {
     }
   });
 });
+
+describe('SheetStore changes', () => {
+  it('lists the sheets that arrived or went since a generation, per pool', async () => {
+    const r = rig({ env: 15 });
+    for (const n of ['a', 'b', 'c']) r.store.register(n, spec('env', `${n}.png`));
+    r.store.register('x', spec('crew', 'x.png'));
+    const g0 = r.store.generationOf('env');
+    r.store.get('a');
+    r.store.get('x');
+    await r.store.idle();
+    expect(r.store.changesSince(g0, 'env')).toEqual({ arrived: ['a'], evicted: false });
+    const g1 = r.store.generationOf('env');
+    r.store.get('b');
+    await r.store.idle();
+    r.clock.t = 100;
+    r.store.get('b');
+    r.store.sweep('env', 50); // a goes: 2 sheets of 10 bytes are over the budget of 15
+    expect(r.store.changesSince(g1, 'env')?.evicted).toBe(true);
+    expect(r.store.changesSince(g1, 'env')?.arrived).toEqual(['b']);
+    expect(r.store.changesSince(r.store.generationOf('env'), 'env')).toEqual({ arrived: [], evicted: false });
+    expect(r.store.poolOf('x')).toBe('crew');
+    expect(r.store.poolOf('nope')).toBeUndefined();
+  });
+  it('is null when the log no longer reaches back', async () => {
+    const r = rig({ env: 1e9 });
+    for (let i = 0; i < 600; i++) r.store.register(`s${i}`, spec('env', `s${i}.png`));
+    for (let i = 0; i < 600; i++) r.store.get(`s${i}`);
+    await r.store.idle();
+    expect(r.store.changesSince(0, 'env')).toBeNull();
+    expect(r.store.changesSince(r.store.generationOf('env') - 5, 'env')?.arrived).toHaveLength(5);
+  });
+});

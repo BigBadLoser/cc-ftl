@@ -83,6 +83,15 @@ interface Rec<T> {
   stale: boolean;
 }
 
+/** One change of the set of ready sheets (`changesSince`). */
+interface ChangeEntry {
+  pool: string;
+  name: string;
+  gone: boolean;
+}
+/** How many changes `changesSince` can look back over. */
+const CHANGE_LOG_MAX = 512;
+
 /**
  * Sheets loaded on demand. `get` returns a ready sheet (and counts as a use), or undefined while it is not loaded, in
  * which case it also queues the load. `generation` goes up whenever the set of ready sheets changes, so views that cached
@@ -98,6 +107,7 @@ export class SheetStore<T> {
   private running = 0;
   private dying: { name: string; sheet: Loaded<T>; spec: SheetSpec; bytes: number }[] = [];
   private requests = 0;
+  private readonly log: ChangeEntry[] = [];
 
   constructor(private readonly o: StoreOpts<T>) {
     for (const [k, p] of Object.entries(o.pools)) this.budgets.set(k, new ByteBudget(p.budget));
@@ -115,9 +125,36 @@ export class SheetStore<T> {
     return n;
   }
 
-  private bump(pool: string): void {
+  private bump(pool: string, name: string, gone = false): void {
     this.generation++;
     this.poolGen.set(pool, (this.poolGen.get(pool) ?? 0) + 1);
+    this.log.push({ pool, name, gone });
+    if (this.log.length > CHANGE_LOG_MAX) this.log.splice(0, this.log.length - CHANGE_LOG_MAX);
+  }
+
+  /**
+   * The sheets of the given pools that arrived or went since `generationOf(...pools)` read `since`, and whether any went
+   * (was evicted); null when the log no longer reaches back that far (the caller then assumes everything changed).
+   */
+  changesSince(since: number, ...pools: string[]): { arrived: string[]; evicted: boolean } | null {
+    const n = this.generationOf(...pools) - since;
+    if (n < 0) return null;
+    const arrived: string[] = [];
+    let evicted = false;
+    let left = n;
+    for (let i = this.log.length - 1; i >= 0 && left > 0; i--) {
+      const e = this.log[i] as ChangeEntry;
+      if (!pools.includes(e.pool)) continue;
+      left--;
+      if (e.gone) evicted = true;
+      else arrived.push(e.name);
+    }
+    return left > 0 ? null : { arrived, evicted };
+  }
+
+  /** The pool a sheet is in (undefined: unknown name). */
+  poolOf(name: string): string | undefined {
+    return this.recs.get(name)?.spec.pool;
   }
 
   has(name: string): boolean {
@@ -161,7 +198,7 @@ export class SheetStore<T> {
       r.sheet = d.sheet;
       r.state = 'ready';
       this.budgets.get(r.spec.pool)?.add(name, d.bytes, this.o.now(), !!r.spec.pinned);
-      this.bump(r.spec.pool);
+      this.bump(r.spec.pool, name);
       this.o.onRestore?.(name);
       return;
     }
@@ -260,7 +297,7 @@ export class SheetStore<T> {
         r.state = 'ready';
         r.fails = 0;
         this.budgets.get(r.spec.pool)?.add(name, bytes, this.o.now(), !!r.spec.pinned);
-        this.bump(r.spec.pool);
+        this.bump(r.spec.pool, name);
         this.pump();
       },
       (err) => {
@@ -282,7 +319,7 @@ export class SheetStore<T> {
     r.sheet = null;
     r.state = 'idle';
     this.budgets.get(r.spec.pool)?.remove(name);
-    this.bump(r.spec.pool);
+    this.bump(r.spec.pool, name, true);
     this.o.onEvict?.(name);
   }
 
