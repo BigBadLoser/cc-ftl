@@ -34,6 +34,7 @@ VARIANTS = {
 SIDES = 48
 COLLAR = 0.91                 # the hatch collar's radius, x the cone's top: it steps in, a ledge round it
 HATCH = 0.8                   # the hatch's radius, x the collar's (0.42: crew-sized); the hazard ring round it is the rest
+WHEEL, WHEEL_D = "plate", "steelL"   # the hatch's hand wheel: light steel on the darker hatch
 WINDOWS = 26                  # the two front windows, this far either side of straight ahead (degrees)
 HOVER = 0.25                  # the lowest point's height in flight
 
@@ -183,30 +184,25 @@ def collar(k):
         f.poly(pts[::-1], "hazY" if i % 2 else "hazK")
     ax = (1.0, 0.0, 0.0)
     tube(f, (u - 0.03, 0.0, k.zc), ax, rh, rh, 0.032, "dark", sides=40)     # the step down to the hatch
-    disc(f, (u - 0.03, 0.0, k.zc), ax, 0.0, rh, "plate", sides=40)          # the hatch
-    wz, wr, ww = k.zc - 0.1, 0.24, 0.06                                   # its HAND WHEEL, standing off the hatch:
-    w0, w1 = u - 0.03 + 0.05, u - 0.03 + 0.09                              # a yellow rim (outer and inner walls, a face),
-    tube(f, (w0, 0.0, wz), ax, wr, wr, w1 - w0, "hazY", sides=28)
-    tube(f, (w0, 0.0, wz), ax, wr - ww, wr - ww, w1 - w0, "ochD", sides=28)
-    disc(f, (w1, 0.0, wz), ax, wr - ww, wr, "hazY", sides=28)
-    for i in range(3):                                                     # three spokes to a hub, on posts off the hatch
+    disc(f, (u - 0.03, 0.0, k.zc), ax, 0.0, rh, "steel", sides=40)          # the hatch
+    wz, wr, ww, th = k.zc - 0.1, 0.23, 0.055, 0.045                       # its HAND WHEEL, one piece close on the hatch:
+    w0 = u - 0.03 + 0.03                                                   # a light steel rim, three solid spokes into it
+    w1 = w0 + th                                                           # and a hub on a short shaft
+    tube(f, (w0, 0.0, wz), ax, wr, wr, th, WHEEL_D, sides=28)
+    tube(f, (w0, 0.0, wz), ax, wr - ww, wr - ww, th, WHEEL_D, sides=28)
+    disc(f, (w1, 0.0, wz), ax, wr - ww, wr, WHEEL, sides=28)
+    disc(f, (w0, 0.0, wz), ax, wr - ww, wr, WHEEL_D, sides=28)
+    for i in range(3):
         a = math.radians(90 + i * 120)
         cv, cz = math.cos(a), math.sin(a)
-        spoke = [(w0 + 0.005, 0.0, wz), (w0 + 0.005, (wr - ww / 2) * cv, wz + (wr - ww / 2) * cz)]
-        stud(f, (u - 0.03, (wr - ww / 2) * cv, wz + (wr - ww / 2) * cz), ax, 0.022, 0.05, "steelD", "steelD", sides=6)   # post
-        d = (0.0, spoke[1][1] - spoke[0][1], spoke[1][2] - spoke[0][2])
-        dl = math.hypot(d[1], d[2])
-        side = (0.0, -d[2] / dl * 0.02, d[1] / dl * 0.02)
-        p0, p1 = spoke
-        for du in (0.0, 0.035):
-            f.poly([f.pt(p0[0] + du, p0[1] - side[1], p0[2] - side[2]), f.pt(p1[0] + du, p1[1] - side[1], p1[2] - side[2]),
-                    f.pt(p1[0] + du, p1[1] + side[1], p1[2] + side[2]), f.pt(p0[0] + du, p0[1] + side[1], p0[2] + side[2])],
-                   "steelL" if du else "steelD")
-        for sg in (-1, 1):
-            f.poly([f.pt(p0[0], p0[1] + sg * side[1], p0[2] + sg * side[2]), f.pt(p1[0], p1[1] + sg * side[1], p1[2] + sg * side[2]),
-                    f.pt(p1[0] + 0.035, p1[1] + sg * side[1], p1[2] + sg * side[2]),
-                    f.pt(p0[0] + 0.035, p0[1] + sg * side[1], p0[2] + sg * side[2])], "steelD")
-    stud(f, (u - 0.03, 0.0, wz), ax, 0.065, 0.1, "steelD", "steelL", sides=14)   # the hub
+        p0, p1 = (0.0, 0.0), ((wr - ww / 2) * cv, (wr - ww / 2) * cz)
+        sv, sz = -cz * 0.028, cv * 0.028                                  # half the spoke's width, square to it
+        q = [(p0[0] - sv, p0[1] - sz), (p1[0] - sv, p1[1] - sz), (p1[0] + sv, p1[1] + sz), (p0[0] + sv, p0[1] + sz)]
+        f.poly([f.pt(w1, x, wz + z) for x, z in q], WHEEL)                 # its face
+        for (xa, za), (xb, zb) in ((q[0], q[1]), (q[2], q[3])):           # its sides
+            f.poly([f.pt(w0, xa, wz + za), f.pt(w0, xb, wz + zb), f.pt(w1, xb, wz + zb), f.pt(w1, xa, wz + za)], WHEEL_D)
+    stud(f, (u - 0.03, 0.0, wz), ax, 0.045, 0.03, "steelD", "steelD", sides=12)   # the shaft
+    stud(f, (w0, 0.0, wz), ax, 0.07, th + 0.015, WHEEL_D, WHEEL, sides=16)   # the hub
     stud(f, (u - 0.03, 0.0, k.zc + rh * 0.62), ax, 0.09, 0.02, "steelD", "steelD", sides=16)   # a porthole, aft
     stud(f, (u - 0.01, 0.0, k.zc + rh * 0.62), ax, 0.06, 0.006, "glassD", "glassD", sides=16)
 
