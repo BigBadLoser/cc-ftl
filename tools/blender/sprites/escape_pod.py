@@ -35,6 +35,7 @@ SIDES = 48
 COLLAR = 0.91                 # the hatch collar's radius, x the cone's top: it steps in, a ledge round it
 HATCH = 0.8                   # the hatch's radius, x the collar's (0.42: crew-sized); the hazard ring round it is the rest
 WHEEL, WHEEL_D = "plate", "steelL"   # the hatch's hand wheel: light steel on the darker hatch
+GLASS = "bK"                  # window glass: a deep blue
 WINDOWS = 26                  # the two front windows, this far either side of straight ahead (degrees)
 HOVER = 0.25                  # the lowest point's height in flight
 
@@ -247,13 +248,58 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None, dt=4.0)
 
 
 def viewport(k):
-    """The front: a pair of windows looking forward, up by the shoulder, so the pod has a face (the heading)."""
+    """The front: a pair of windows looking forward, up by the shoulder, so the pod has a face (the heading). Each is a
+    pane tapering with the cone in a thin dark frame: deep blue glass with two pale streaks of reflection across it."""
     _g("windows")
     ln = k.v["length"]
+    s0, s1, h = ln * 0.52, ln * 0.78, 10
     for cc in (270 - WINDOWS, 270 + WINDOWS):
-        sector(k, ln * 0.5, ln * 0.78, cc - 14, cc + 14, 1.02, "steelD")
-        sector(k, ln * 0.53, ln * 0.75, cc - 11, cc + 11, 1.03, "glassD", "steelD")
-        sector(k, ln * 0.68, ln * 0.72, cc - 8, cc - 2, 1.035, "lens", "glassD")   # a glint
+        sector(k, s0 - 0.03, s1 + 0.03, cc - h - 2.5, cc + h + 2.5, 1.02, "steelD", "steelD")   # the frame
+        sector(k, s0, s1, cc - h, cc + h, 1.026, GLASS, "steelD")                           # the glass
+        for a0, w in ((0.42, 0.2), (0.74, 0.11)):                         # reflections: streaks across it, slanted
+            def pt(fs, ft):                                                # fs up the pane, ft across it (-1..1)
+                ss = s0 + (s1 - s0) * min(1.0, max(0.0, fs))
+                th = math.radians(cc + ft * h * 0.98)
+                r = k.r(ss) * 1.029
+                return k.f.pt(k.u(ss), r * math.cos(th), k.zc + r * math.sin(th))
+            n = 8                                                          # in pieces, so it follows the curve
+            for i in range(n):
+                fa, fb = -1 + 2 * i / n, -1 + 2 * (i + 1) / n
+                la, lb = a0 + 0.25 * fa, a0 + 0.25 * fb
+                k.f.poly([pt(la, fa), pt(la + w, fa), pt(lb + w, fb), pt(lb, fb)], "glassL")
+
+
+def seam_box(k, s0, s1, t0, t1, mat="steelL", w=0.022):
+    """A panel's seam: a thin outline on the hull round s0..s1, t0..t1 (degrees)."""
+    r = k.r((s0 + s1) / 2)
+    dt = math.degrees(w / r)
+    sector(k, s0, s0 + w, t0, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
+    sector(k, s1 - w, s1, t0, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
+    sector(k, s0, s1, t0, t0 + dt, 1.004, mat, mat, ds=0.02, dt=1.0)
+    sector(k, s0, s1, t1 - dt, t1, 1.004, mat, mat, ds=0.02, dt=1.0)
+
+
+def panels(k):
+    """Detail on the plain hull: a big ACCESS PANEL on each side (seam, corner fasteners, two latches), a small one either
+    side of the drive pack, and a vent grille on the front below the windows."""
+    _g("panels")
+    ln = k.v["length"]
+    for c in (0, 180):                                                     # the sides' access panels
+        s0, s1, t0, t1 = 0.38, ln * 0.6, c - 17, c + 17
+        seam_box(k, s0, s1, t0, t1)
+        for ss in (s0 + 0.05, s1 - 0.05):                                  # its corner fasteners
+            for tt in (t0 + 3.5, t1 - 3.5):
+                p, n = k.on(ss, tt)
+                stud(k.f, p, n, 0.022, 0.02, "steelL", "steelL", sides=6)
+        for ss in (s0 + (s1 - s0) * 0.33, s0 + (s1 - s0) * 0.67):           # two latches on its forward edge
+            tl = t0 + 5 if c == 180 else t1 - 5                              # (the edge toward the front, theta 270)
+            sector(k, ss - 0.025, ss + 0.025, tl - 3, tl + 3, 1.02, "steelD", "steelD", ds=0.02, dt=1.0)
+    for c in (90 - 52, 90 + 52):                                           # small panels by the drive pack
+        seam_box(k, 0.42, ln * 0.62, c - 8, c + 8)
+    _g("vent")                                                             # a vent grille below the windows
+    seam_box(k, 0.36, 0.56, 270 - 14, 270 + 14, "steelL")
+    for sa in (0.4, 0.475):                                                # two wide slots
+        sector(k, sa, sa + 0.045, 270 - 10, 270 + 10, 1.006, "dark", "steelD", ds=0.02, dt=1.0)
 
 
 def rcs(k):
@@ -329,6 +375,7 @@ def pod(heading, variant="h", state="fly", beacon_on=False):
     collar(k)
     beacon(k, beacon_on)
     viewport(k)
+    panels(k)
     rcs(k)
     drive(k, state == "fly")
     return [smooth(m.build())]
