@@ -6,9 +6,9 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Done and approved: slate (sw46; upper layer kept as it renders) and default teal (dp16). Tan renders again and its
   join dots are fixed (iw42, shown to the user, no reply needed). Branch pushed; last commits: 7cdd360b (tan's end
   strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
-- Next per the plan: the other looks (navy, drone, civil, bastion), each a `Look` on `wall3d_iwin_ramp.py` where its
-  ref is the default's shape (bastion, navy), its own module where not (civil: tan's arch code; drone). The user had
-  not picked which first; the suggested order below is slate (done), bastion, navy, drone, civil. Ask which first.
+- Next: bastion, ramp (lower layer) first, its own module (the user: bastion and navy don't share the default's
+  shape, upper or lower). Ref measured and plan written (section "Bastion window" below); waiting on the user's go
+  for step B0. Navy, drone, civil after: each its own module too (only the machinery is shared).
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
   palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
 - The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
@@ -59,7 +59,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
-| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | to do |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | measured, planned (own module) |
 | none | scrap | | no ref |
 
 Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
@@ -72,21 +72,23 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Common to every window: end posts on the l / r tiles, a beam across, a ramp block under the opening with the pane
   standing on it, an amber strip on the floor in front. Two blue lines on the cap: all but civil.
   So the machinery (`window()` / hook wrapper, `_cut` + `_clip`, pane edges, `GLASS` + the glass kind, cap lines) is
-  shared. Default-shaped looks share `wall3d_iwin_def.hook` + `wall3d_iwin_ramp` (a `Look` each); tan's
-  `wall3d_iwin.py` is its own (arch, cushions).
+  shared. Only slate and teal share `wall3d_iwin_def.hook` + `wall3d_iwin_ramp` (a `Look` each); tan's
+  `wall3d_iwin.py` is its own (arch, cushions), and so is every other look (the user, 2026-11-08: bastion and navy
+  don't share the default's shape, upper or lower; the default-shaped reading below was wrong for them).
 - Slate (44) is the default (3168) almost shape for shape. Lower layer: the same dished top, pockets on the front and
   end blocks with dark openings; the amber end blocks become blue, the pockets' floors lit blue. Upper layer:
   rectangular opening, posts with a stepped foot like the default's; the beam one raised block over the middle tile
   (the default's has several). Build it as the default's module with look parameters.
-- Bastion (3295): upper layer rectangular like the default's (dark, bricked posts, beam blocks); lower layer dark
-  panels. The default's structure again, own detailing.
+- Bastion (3295): its own build (see "Bastion window"). Upper layer: rectangular opening, bricked posts, a beam
+  with raised blocks, the cap's blue lines. Lower layer: a channel under the pane and an armour-plated front, no
+  pockets.
 - Navy (122): upper layer rectangular, posts with a flared foot, a red light strip along the beam with clamps;
   lower layer differs: tall end blocks over a low middle with pockets, red stripes.
 - Drone (423): upper layer a white pipe beam with clamps, posts with a red block and a flared foot; lower layer red
   boxes either side of a middle console.
 - Civil (428): the odd one: posts curve into the beam (rounded inner corners: tan's arch code is the closest start),
   no blue cap lines, a red edge along the beam; lower layer a white ramp with a recessed panel, a red stripe low.
-- Suggested order: slate, bastion, navy, drone, civil.
+- Order: slate (done), bastion (next, ramp first), then navy, drone, civil.
 - The amber floor strip in every ref's lower layer: ours leave it out (the user: "it's fine").
 
 ## How the built ones work
@@ -222,6 +224,42 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Ours (sw12): post block (blue) 0-11 (12) | grey 12-14 | pocket l 15-27 (13) | rib l28-m2 (7) | pockets m 3-14,
   rib 15-16, 17-28 | rib m29-r3 (7) | pocket r 4-16 (13) | grey 17-19 | post block r 20-31 (12).
 
+## Bastion window (ref 3295; own module, ramp first)
+Our wall: `factions_relief.bastion` (face parts: lower wall band, posts `BAST_P`, the cut, cornice) on the `Recessed`
+shell; its ramp's design is `factions_variants.bastion_ramp` (base: the outlined panel). Plain wall render for
+comparison: SS=4 npz `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/bw1/tile.wall.bastion.full.m10.npz` (jobs `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/jobs_bwall.py`).
+Marked ref image (normal view, sent to the user): `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/bast/ref3295_lower_marked.png`, numbers below.
+
+Measured (ref 3297, lower layer, deskewed with `preview/deskew_ref.py <refdir> small <out> 6 [phase]`, read with
+`preview/ascii_map.py <npy> x0 x1 y0 y1`; ref px, +-1; rows mix height and depth on the flat faces):
+- The front stands on the plain wall's ramp: the same lean (1 col per ~3 rows) and height (~26 rows) as ref
+  wall_8_01's ramp. So the window's front is our bastion ramp's slope; the channel sits where the lower wall is.
+- Tile edges: at the pane's plane cols 55 | 86 | 118 | 150 (32 each); at the front's foot 35 | 67 | 99 | 131.
+- Cross-section from the pane down, rows at a mid column: pane foot dark 1; channel (2): a mid-dark ledge 3, a dark
+  step 3, a mid-dark floor 4; the dark groove (3) 2; the front's lit top (4) 4 (brightest band); upper plate row (5)
+  5; a mid seam 2; lower plate row (6) 3; a lit line 3; base band (8) 6 (as the plain ramp's base, 6 rows); dark
+  bottom edge 1.
+- Plates: dark joints 3-4 px at the tile edges; the upper row one more joint per tile (m at its middle ~15-16, l ~9,
+  r ~6), the lower row staggered (l ~13, m ~22, r ~8); a darker step block ~6 px before each tile-edge joint.
+- Base band notch (7): 4 px wide, one per tile at its middle (local ~14-17; l ~12-15).
+- End blocks: l (1) raised ~5-6 px over the channel's ledge, ~12-13 px along the wall from the tile's -x edge (at the
+  pane's plane), its inner face sloping down into the channel; r (10) the same top, its inner face hidden.
+- Box (9): one per middle tile (none on the 2-tile window, two on the 4-tile one), standing in the channel against
+  its back, ~8-10 px wide at local ~15-24, top ~4-5 px over the ledge.
+- Upper layer (later, own build too): cap black with two blue lines; beam: lit top edge, two raised blocks ~16 px
+  (cols 9-24 and 73-88 of the deskewed full layer), the rest set back, dark undersides; posts ~17 px, bricked.
+
+Plan (each step: render SS=4, before / after with both ref layers, zoom and close-up, a log line, commit, push):
+- B0: `sprites/wall3d_iwin_bast.py` + `preview/jobs_bwin.py`: bastion m10 with the opening cut plain between the
+  posts (shared machinery only: `window()` wrapper, `_cut` / `_clip`, pane, glass kind, cap lines), the ramp as is.
+- B1: the channel blockout under the opening: ledge, dark step, floor, groove, the front's lit top; the wall's own
+  greys (its `RAMPS` levels).
+- B2: the front: the ramp's outlined panel replaced under the opening by the two staggered plate rows and the lit
+  line; the base band kept, a notch per tile.
+- B3: the end blocks at the posts (l and r).
+- B4: the box on m.
+- B5: a tone pass against the ref. Then the upper layer (own posts, beam, blocks).
+
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
@@ -319,3 +357,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   (the join rule): dotted marks on the far floor at each join, the strip fix not ported to tan yet. Shown.
 - 2026-11-08: iw42: tan's join dots fixed (`END_STRIP` on l and m, as the ramp's). Handoff section "Pick up here"
   written for a fresh session.
+- 2026-11-08: the user: bastion and navy don't share the default's shape (upper or lower). Bastion's ref measured
+  (deskew_ref.py, ascii_map.py added to preview/), plan B0-B5 written, marked ref image sent. Waiting on the go.
