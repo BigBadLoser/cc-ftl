@@ -16,14 +16,16 @@ from .faction.parts import PZ
 from .wall3d_iwin import _clip
 
 PX = 1 / 32                 # an art px across or along the wall
-LEDGE = 2                   # px: the ledge either side of the pane (its top LEDGE_Z PZ under the ramp's top)
-LEDGE_Z = -3
-FLOOR = 4                   # px from the pane: the channel's floor runs out to here (FLOOR_Z) ...
-FLOOR_Z = -6
-GROOVE = 5                  # ... then the groove (GROOVE_Z) ...
-GROOVE_Z = -8
-RIM_Z = -6                  # ... then the rim, out to where the ramp's slope falls under it
-COL = {"ledge": "fBW2", "step": "fBW4", "floor": "fBW2", "groove": "fBW5", "rim": "fBW1", "end": darker("fBW2"),
+LEDGE = 3                   # px: the ledge either side of the pane (its top LEDGE_Z PZ under the ramp's top)
+LEDGE_Z = -6
+FLOOR = 6                   # px from the pane: the channel's floor runs out to here (FLOOR_Z) ...
+FLOOR_Z = -9
+GROOVE = 7                  # ... then the groove (GROOVE_Z) ...
+GROOVE_Z = -11
+RIM = 10                    # ... then the front's top (RIM_Z) out to here, an upright face (FRONT) down from its edge
+RIM_Z = -8                  #   to the ramp's slope (the ref's proportions: 3 : 4 : 1.5 : 4 px, ~12 deep, all within
+                            #   ~2 px of one height; ours 10 deep, on a ramp twice the ref's height)
+COL = {"ledge": "fBW2", "step": "fBW4", "floor": "fBW2", "groove": "fBW5", "rim": "fBW1", "front": "fBW10", "end": darker("fBW2"),
        "under": "fBW5"}
 LINES = 3 / 32              # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
@@ -50,8 +52,13 @@ def _slope():
 
 
 def _rim_out():
-    """Where the rim meets the ramp's slope, from the pane."""
-    return _line() - RIM_Z * PZ / _slope()
+    """The front's top edge, from the pane."""
+    return RIM * PX
+
+
+def _ramp_z(y):
+    """The plain ramp's top at |y| from the pane (its slope past the wall's line)."""
+    return W.skirt_top() - max(0.0, abs(y) - _line()) * _slope()
 
 
 def _steps():
@@ -102,18 +109,19 @@ def _quad(k, pts, out, col):
 def _section_top(y, z1):
     """The plain wall's section at a post's side, y across the wall: its top (the post and the body behind it up to
     z1; the ramp's top and slope past the lower wall's front)."""
-    zs, yl = W.skirt_top(), _line()
+    yl = _line()
     if abs(y) <= yl - 2 * PX + 1e-9 or y < 0 and abs(y) <= yl + 1e-9:
         return z1
-    if abs(y) <= yl + 1e-9:
-        return zs
-    return zs - (abs(y) - yl) * _slope()
+    return _ramp_z(y)
 
 
 def _ends(k, x0, x1, z1):
-    """The opening's ends: the posts' sides, down through the channel's section (in strips, each convex)."""
+    """The opening's ends, in strips across the wall (each convex): the posts' sides down through the channel's
+    section where the plain wall stands over the channel, and the channel's block's own ends where it stands over
+    the plain ramp (its front past where the slope falls under it)."""
     yl = _line()
-    br = sorted({y for y0, y1, _, _ in _steps() for y in (y0, y1)} | {yl - 2 * PX, yl, -yl})
+    br = sorted({y for y0, y1, _, _ in _steps() for y in (y0, y1)} | {yl - 2 * PX, yl, -yl} |
+                {s * (yl + (W.skirt_top() - z) / _slope()) for _, _, z, kd in _steps() if kd == "rim" for s in (-1, 1)})
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if not on:
             continue
@@ -121,9 +129,10 @@ def _ends(k, x0, x1, z1):
             ym = (y0 + y1) / 2
             z = next(z for a, b, z, _ in _steps() if a - 1e-9 <= ym <= b + 1e-9)
             t0, t1 = _section_top(y0 + 1e-6, z1), _section_top(y1 - 1e-6, z1)
-            if max(t0, t1) <= z + 1e-9:
-                continue
-            _quad(k, [(u, y0, z), (u, y1, z), (u, y1, t1), (u, y0, t0)], (sd, 0, 0), COL["end"])
+            if min(t0, t1) >= z - 1e-9 and max(t0, t1) > z + 1e-9:
+                _quad(k, [(u, y0, z), (u, y1, z), (u, y1, t1), (u, y0, t0)], (sd, 0, 0), COL["end"])
+            elif max(t0, t1) <= z + 1e-9 and min(t0, t1) < z - 1e-9:
+                _quad(k, [(u, y0, t0), (u, y1, t1), (u, y1, z), (u, y0, z)], (-sd, 0, 0), COL["end"])
 
 
 def _channel(k, a, b):
@@ -138,6 +147,10 @@ def _channel(k, a, b):
         sd = 1 if zb < za else -1
         col = COL["step"] if "ledge" in (ka, kb) else COL["groove"]
         _quad(k, [(a, y, lo), (b, y, lo), (b, y, hi), (a, y, hi)], (0, sd, 0), col)
+    zr = W.skirt_top() + RIM_Z * PZ                     # the front's upright face, down from its top edge to the
+    for s in (-1, 1):                                   # slope
+        y = s * _rim_out()
+        _quad(k, [(a, y, _ramp_z(y)), (b, y, _ramp_z(y)), (b, y, zr), (a, y, zr)], (0, s, 0), COL["front"])
 
 
 def hook(k, sp, own=True):
