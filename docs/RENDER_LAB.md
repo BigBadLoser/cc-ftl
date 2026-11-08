@@ -38,6 +38,8 @@ move in a browser).
   states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
   composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
 - `kit`: a DOM panel (`tools/lab/kitLab.ts`, `KitLab.svelte`): every shared `Chip` tone and size and every `Meter` tone and height, plus base marker and thresholds.
+- `hydroponics`: the grow beds (#59), small and large, dark and lit, each crop layer stacked on its lit bed as the game draws
+  them (`sizes=small,large`, `rots=0,1,2,3`, `crops=`, `stages=sprout,grow,ripe`; default r0, ripe).
 
 ## Add a panel
 

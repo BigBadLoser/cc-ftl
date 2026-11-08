@@ -8,7 +8,7 @@ import { findFreeBed } from '../../sim/crew/beds';
 import { storageAdd } from '../../sim/items/storage';
 import { moodFactors } from '../../sim/crew/mood';
 import { content } from '../index';
-import { accessTile } from '../../sim/modules/footprint';
+import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { findPath } from '../../sim/crew/pathfind';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
@@ -25,12 +25,19 @@ const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((i
 const plotOf = (sim: Sim, id: number) => sim.world.get(id, PlotC)!;
 const jobKinds = (sim: Sim): string[] => sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!.kind);
 
-/** A free spot (with the walkway beside it) for a module, scanning the ship from its top-left. */
+/** A free spot (with the walkway beside it, off every other module's access tile) for a module, scanning the ship from its top-left. */
 function bedAt(sim: Sim, def = 'module.hydroponics'): number {
   const ship = playerShip(sim) as number;
   const at = sim.world.get(ship, ShipC)!;
+  const d = content.modules[def as 'module.hydroponics'];
+  const access = new Set(sim.world.query(ModuleC).map((id) => {
+    const m = sim.world.get(id, ModuleC)!;
+    const a = accessTile(content.modules[m.def as 'module.hydroponics'], m.x, m.y, m.rot);
+    return a ? `${a.x},${a.y}` : '';
+  }));
+  const blocks = (x: number, y: number): boolean => footprintTiles(d, x, y, 0).some((t) => access.has(`${t.x},${t.y}`));
   for (let y = at.y; y < at.y + at.height; y++) {
-    for (let x = at.x; x < at.x + at.width; x++) if (placementError(sim, ship, def, x, y, 0) === null) return spawnModule(sim, def, x, y, 0);
+    for (let x = at.x; x < at.x + at.width; x++) if (placementError(sim, ship, def, x, y, 0) === null && !blocks(x, y)) return spawnModule(sim, def, x, y, 0);
   }
   throw new Error('no room for the bed');
 }
