@@ -714,3 +714,4 @@ Marked ref (both layers, numbered): scratchpad
   red ochre 1 lit by each strip's normal), the seam fNW7 between, side and back walls up to the ramp. nq10.
 - 2026-11-08: split ramp: its hole back over all the shelf's top to the wall (SPLIT_BACK 1.0: RampHoles stops it at 0.02):
   no lit strip of the shelf left against the wall (the user). nq11.
+- 2026-11-08: mock room of navy walls (Blender renders put together as a 2D composite, not committed): m6 corner, back wall m10 with variants pipes, boxes, lockers, recessed, thin band, split; side wall m5 with boxes, lockers, recessed, thin band; shipped floor tile.floor.a and a crew member.
