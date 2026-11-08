@@ -17,8 +17,9 @@ PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
 CUT_Z = 8                   # art px up: the sill under the ramp's top (the ref's cut: 8 of its 30 rows, ~30%; ours 8 of 26)
-POCKETS = ((11, 38), (58, 85))  # px along the window from its -x end: the slots in the front either side of the middle
-                                # panel, their outer edges in line with the posts' (the user)
+POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
+                                # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
+                                # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
 COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
        "p_floor": "fNW2", "p_back": "fNW3", "p_side": "fNS2"}
 OFF = {"l": 0, "m": 1, "r": 2}  # a piece's tiles from the window's -x end

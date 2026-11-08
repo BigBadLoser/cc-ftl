@@ -9,7 +9,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown (last render `nw3e`). Then drone, civil; each its own
+- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown (last render `nw3f`). Then drone, civil; each its own
   module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
   ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -455,3 +455,6 @@ Marked ref (both layers, numbered): scratchpad
   block (11-16 px) the slope stays over the slot as a lintel, its underside drawn.
 - 2026-11-08: the user on nw3d: cut the part above too. nw3e: under an end block the slot takes the slope whole (back up
   to the ramp's top, side the slope's section), no lintel.
+- 2026-11-08: the user on nw3e: the middle panel wider, on the measurement. Re-read up the ref's slope (deskewed row 56):
+  slots 19 | panel 28 (its chamfered edges included; 28-30 lower down, its red face 20) | 19. nw3f: panel 34-62 (28 px,
+  centred), slots 11-34 and 62-85 (23).
