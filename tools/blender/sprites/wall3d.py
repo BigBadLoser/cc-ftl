@@ -488,7 +488,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     o = OUT(ax)
     f = ramp_fall()                             # (a look's own fall a cell: up from the toe)
     nrm = (o * (f or (zs - ft) / run_) + Vector((0, 0, 1))).normalized()
-    zsurf = (lambda dd: ft + (run_ - dd) * f) if f else (lambda dd: ft + (zs - ft) * (1 - dd / run_))   # noqa: E731
+    zh = lip_heights(zs)[0] if f else zs        # (... no higher than its shelf: a design's parts on it lie flat)
+    zsurf = (lambda dd: min(zh, ft + (run_ - dd) * f)) if f else \
+        (lambda dd: ft + (zs - ft) * (1 - dd / run_))                                  # noqa: E731
     if getattr(sp, "end_face", None) and sp.end_face(ax, plane):
         return                                  # a look's wall end: no ramp across it
     lo_t, hi_t = ends or (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))
@@ -654,7 +656,7 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 fx = fx[0 if ax == "y" else 1] if isinstance(fx, tuple) else fx    # (a pair: y face, x face)
                 plate(k, poly, pt, nrm, 0.0, rise, fam, 3, fixed=fx)
         if style().seam_wrap:
-            _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise)
+            _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise, holes)
         return
     tb = b - cr + run_ if cr else b
     toe = [P(ax, plane, u, 0.0035, dd) for u, dd in ((a, run_ - 0.03), (tb, run_ - 0.03), (tb, run_), (a, run_))]
@@ -699,7 +701,7 @@ def slot_cut(k, ax, plane, hole, zsurf, fam):
         k.poly([q(u, zf(d0), d0), q(u, zf(d1), d1), q(u, zsurf(d1), d1), q(u, zsurf(d0), d0)], fam, 1, al * sg)
 
 
-def _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise):
+def _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise, holes=()):
     """Style.seam_wrap: each seam between the slope's plates carried on down over the toe strip to the foot and back
     across the shelf (its lit edge and back px) to the wall, a line as wide as the gap, in the joint's tone."""
     J = RAMPS[fam][1 if ax == "x" else 0][style().joint or 0]
@@ -712,8 +714,10 @@ def _seam_wrap(k, ax, plane, segs, lo, hi, run_, zs, fam, pt, rise):
         if len(poly) >= 3:                      # (over the toe strip, down to the foot)
             k.poly([pt(u, dd, rise + PAINT) for u, dd in poly], fam, 0, pt(s1, run_, 1.0) - pt(s1, run_, 0.0),
                    fixed=J)
-        poly = _clip(_clip([(s1 - g, 0.0), (s1 + g, 0.0), (s1 + g, sh), (s1 - g, sh)], lo), hi)
-        if len(poly) >= 3 and sh:               # (across the shelf to the wall, on its flat top)
+        hs = [h for h in holes if h[0] - g < s1 < h[1] + g]
+        sb = min([sh] + [h[2] for h in hs])     # (not over a ramp design's hole: up to its edge)
+        poly = _clip(_clip([(s1 - g, 0.0), (s1 + g, 0.0), (s1 + g, sb), (s1 - g, sb)], lo), hi)
+        if len(poly) >= 3 and sb > 1e-6:        # (across the shelf to the wall, on its flat top)
             k.poly([P(ax, plane, u, zh + PAINT, dd) for u, dd in poly], fam, 0, up, fixed=J)
 
 

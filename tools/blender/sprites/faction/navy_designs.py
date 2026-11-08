@@ -102,14 +102,17 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
     plate lays a plate on the slope, pt(u, d, rise) is a point on it, P(u, z, d) any point, d out from the wall.)"""
     if hole:
         o0, o1, d0, d1 = hole
-        zat = lambda d: zs * (1 - d / run_)            # noqa: E731   the ramp's height d out
+        sh = getattr(T.SHELL, "_zsurf", None) if T.ramp_fall() else None
+        zat = sh or (lambda d: zs * (1 - d / run_))     # noqa: E731   the ramp's height d out (a look's own fall:
+        fall = T.ramp_fall() or zs / run_               # the shell's, over the shelf flat) and its slope's fall
         f = 0.02
         up, out_, along = Vector((0, 0, 1)), P(0, 0, 1) - P(0, 0, 0), P(1, 0, 0) - P(0, 0, 0)
         db = d0 + 0.012                                 # (a hair in front of the shell's own hole back: on it they
                                                         # fought, specks of its tone through ours)
         h = 0.17                                        # its bottom parallel to the ramp, h under it (on the floor
         zb = lambda d: max(f, zat(d) - h)               # noqa: E731   where that would go under it)
-        dk = max(db, min(d1, run_ * (1 - (f + h) / zs)))                  # (where the bottom meets the floor)
+        dk = next((db + (d1 - db) * i / 200 for i in range(201) if zat(db + (d1 - db) * i / 200) - h <= f), d1)
+        #   (where the bottom meets the floor)
         prof = [(db, zat(db)), (db, zb(db)), (dk, zb(dk)), (d1, zb(d1))]   # its section: a short back, the bottom
         for (da, za), (dbb, zbb) in zip(prof, prof[1:]):
             if dbb - da < 1e-6 and abs(zbb - za) < 1e-6:
@@ -121,7 +124,7 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
             side = [P(u, z_, d_) for d_, z_ in prof] + [P(u, zat(d1), d1)] + [P(u, zat(dd_), dd_) for dd_ in (dk, db)]
             k.poly(side, "rose", 2, along * sg, fixed=CAV[2])
         rp, rs = 0.06, 0.03
-        dz = (rp + 0.025) / math.cos(math.atan(zs / run_))           # sunk a radius and a bit under the slope
+        dz = (rp + 0.025) / math.cos(math.atan(fall))                # sunk a radius and a bit under the slope
         rows = [d0 + fr * (d1 - d0) for fr in (0.12, 0.6)]
         zp = [zat(rows[0]) - rp - 0.005, zat(rows[1]) - dz]          # (the top one up under the lip)
         for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
@@ -142,11 +145,16 @@ CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor,
                                                         # exact: edge AA blended them into a grey speckle)
 
 
-def navy_split(plate, u0, u1, run_, **_):
-    """B1-3: two darker plates split down the middle."""
+def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
+    """B1-3: two darker plates split down the middle, on the slope (a look's own fall: from its shelf's edge down to
+    a px over the red band, a shade under the slope's plates (fNW3 / fNW4 on the y / x face), else 0.04 .. 0.66 of
+    the run, a level under them)."""
     uc = (u0 + u1) / 2
+    own = T.ramp_fall()
+    d0, d1 = (T.style().shelf, T.style().toe_at * run_ - LINE) if own else (0.04, 0.66 * run_)
+    fx = ("fNW4" if ax == "y" else "fNW5") if own and fam == "wall" else None
     for p0, p1 in ((u0 + 0.04, uc - LINE / 2), (uc + LINE / 2, u1 - 0.04)):
-        plate([(p0, 0.04), (p1, 0.04), (p1, 0.66 * run_), (p0, 0.66 * run_)], PAINT, 1, 0.0)
+        plate([(p0, d0), (p1, d0), (p1, d1), (p0, d1)], PAINT, 1, 0.0, fixed=fx)
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),

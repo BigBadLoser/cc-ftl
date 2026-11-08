@@ -505,3 +505,9 @@ Marked ref (both layers, numbered): scratchpad
   likewise. navy.NAVY_MID fBT1 (9cacbc) on the chamfer's wall strip (PlateTones "d" cells, the face's corner piece),
   slope (_ramp_chamfer tone=) and band; Style.chamfer_shelf (new) NAVY_MID_SHELF fBW0, fBT8 (crease), fBT0 (top),
   fNH1 (lit edge). Existing palette tones: new ones (9ca8bb ..) snapped to these in quantisation, so none added. ns16.
+- 2026-11-08: the user: fix navy's ramp variants for the new ramp. Pipes (navy_pipes): the recess, its floor and the
+  pipes on the shell's own surface (T.SHELL._zsurf: the shelf flat, the steeper slope; the slope's fall for the pipes'
+  sink) instead of zs straight to the floor; the seam wrap stops at a ramp hole's edge. Split plates (navy_split): from
+  the shelf's edge to a px over the red band, fixed a shade under the slope (fNW4 y / fNW5 x; after the face/slope swap
+  level 1 matched the plates). wall3d.skirt's slope point no higher than the shelf (a design's parts on it lie flat).
+  The plain walls and the top-only variants pixel-identical. nv1.
