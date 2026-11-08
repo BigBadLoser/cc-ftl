@@ -221,54 +221,108 @@ def _base_orig(k, on):
     _screen(k, 0.5, 0.3, on)
 
 
-def _base_band(k, on):
-    """Two-tone, like an appliance: a navy lower half, a white upper half under the sill, a dark seam between that
-    wraps round all four sides. Vent and screen sit in the white."""
-    _prism(k, BODY, 0.1, 0.2, "tNavy")
-    _prism(k, _cham(0, 0, 1.875, 0.8125, 0.02), 0.3, 0.04, "dark")                          # the seam, 1 px in
-    _prism(k, BODY, 0.34, 0.26, "tWhite", top="tWhiteL")
-    _vent_slots(k, -0.484375, 0.39, 0.12, 5)
-    _screen(k, 0.484375, 0.39, on)
+# ---- plumbing: pipes, valves, tanks, pumps -----------------------------------------------------------------------------
+PIPE, PIPE_R = "sole", 0.035
 
 
-def _vent_slots(k, u, z, h, n):
-    """Dark 2 px slots at a 4 px pitch, centred on u, cut into a panel."""
-    for j in range(n):
-        k.box(u + (j - (n - 1) / 2) * 0.125, FV + 0.012, z, 0.0625, 0.01, h, "dark")
+def _pipe(k, pts, r=PIPE_R, col=PIPE):
+    """A pipe through the local points: straight runs with a coupling at each bend."""
+    for a, b in zip(pts, pts[1:]):
+        _tube(k, [a, b], r, col, n=8)
+    for u, v, z in pts[1:-1]:
+        k.box(u, v, z - r * 1.4, r * 2.8, r * 2.8, r * 2.8, "tFrame")
 
 
-def _base_bays(k, on):
-    """Navy body with a white panel under each canopy bay, framed dark, a navy pilaster between them under the
-    canopy's middle post; a white panel on each end. The vent is in the left panel, the screen in the right."""
-    _prism(k, BODY, 0.1, 0.5, "tNavy", top="tNavyL")
-    w, z0, h = 0.78125, 0.18, 0.3
-    for cu in (-0.484375, 0.484375):
-        k.box(cu, FV, z0 - 0.025, w + 0.0625, 0.01, h + 0.05, "dark")
-        k.box(cu, FV + 0.006, z0, w, 0.01, h, "tWhite")
-    for sg in (-1, 1):
-        k.box(sg * EU, 0, z0 - 0.025, 0.01, 0.6875 + 0.0625, h + 0.05, "dark")
-        k.box(sg * (EU + 0.006), 0, z0, 0.01, 0.6875, h, "tWhite")
-    _vent_slots(k, -0.484375, z0 + 0.05, h - 0.1, 5)
-    _screen(k, 0.484375, z0 + 0.09, on)
+def _valve(k, u, v, z, face="v"):
+    """A brass valve body on a pipe with an orange handwheel, facing front (+v) or up."""
+    k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, "brass")
+    if face == "v":
+        _tube(k, [(u, v + 0.045, z), (u, v + 0.075, z)], 0.012, "steel", n=6)
+        _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, "hivis", n=10)
+    else:
+        k.cyl(u, v, z + 0.045, 0.012, 0.04, "steel", sides=6)
+        k.cyl(u, v, z + 0.085, 0.06, 0.02, "hivis", sides=10)
 
 
-def _base_posts(k, on):
-    """White body on a navy plinth, carried by navy posts at the corners and under the canopy's middle post, so the
-    white reads as panels set in a navy frame. A thin lit strip under the sill; vent left, screen right."""
-    _prism(k, BODY, 0.1, 0.1, "tNavy")
-    _prism(k, BODY, 0.2, 0.4, "tWhite", top="tWhiteL")
+def _vtank(k, u, v, z, r, h, on, glass_v=None):
+    """A standing white tank with navy bands and a sight glass on its front showing the water (cyan when on)."""
+    k.cyl(u, v, z, r, h, "tWhite", top="tWhiteL", sides=20)
+    for zb in (z + 0.06, z + h - 0.1):
+        k.cyl(u, v, zb, r + 0.008, 0.035, "tNavy", top="tNavyL", sides=20)
+    gv = v + r + 0.002 if glass_v is None else glass_v
+    k.box(u, gv, z + 0.12, 0.0625, 0.02, h - 0.26, "dark")
+    k.box(u, gv + 0.008, z + 0.13, 0.03125, 0.02, (h - 0.28) * 0.6, _on(on, "cyan") if on else "lens")
+
+
+def _htank(k, u0, u1, v, z, r, on):
+    """A white capsule tank lying along u: domed ends, navy straps, a sight glass on its front."""
+    _tube(k, [(u0, v, z), (u1, v, z)], r, "tWhite", n=16)
+    for sg, ue in ((-1, u0), (1, u1)):
+        _tube(k, [(ue, v, z), (ue + sg * 0.04, v, z)], r * 0.86, "tWhite", n=16)
+        _tube(k, [(ue + sg * 0.04, v, z), (ue + sg * 0.065, v, z)], r * 0.55, "tWhite", n=16)
+    for us in (u0 + 0.14, u1 - 0.14):
+        _tube(k, [(us - 0.02, v, z), (us + 0.02, v, z)], r + 0.01, "tNavy", n=16)
+    uc = (u0 + u1) / 2
+    k.box(uc, v + r - 0.01, z - r * 0.55, 0.0625 * 4, 0.03, r * 1.1, "dark")
+    k.box(uc - 0.03, v + r + 0.006, z - r * 0.45, 0.0625 * 3, 0.02, r * 0.5, _on(on, "cyan") if on else "lens")
+
+
+def _pump(k, u, v, z, on):
+    """A pump: a steel body under a white motor with a status light."""
+    k.cyl(u, v, z, 0.1, 0.14, "steel", top="steelL", sides=12)
+    k.cyl(u, v, z + 0.14, 0.075, 0.1, "tWhite", top="tWhiteL", sides=12)
+    k.box(u, v + 0.075, z + 0.17, 0.03125, 0.01, 0.03, _on(on))
+
+
+# Under the bed only a shallow strip at the front shows (the tray and sill hide the rest from this angle), so the
+# plumbing sits in front of a recessed body, v 0.15..0.45.
+def _base_rack(k, on):
+    """A navy body set back under the bed, a deck, and in the open front bay a white capsule tank on its side; a
+    pump at the end draws from it through a valve and feeds a riser up into the tray. Corner legs carry the sill."""
+    _prism(k, BODY, 0.1, 0.06, "tNavy", top="tNavyL")                                          # deck
+    _prism(k, _cham(0, -0.15, 1.875, 0.5625, 0.02), 0.16, 0.4, "tNavy", top="tNavyL")         # the body, set back
     for su in (-1, 1):
-        for sv in (-1, 1):
-            k.box(su * 0.90625, sv * 0.375, 0.1, 0.15625, 0.15625, 0.46, "tNavy", top="tNavyL")
-    for sv in (-1, 1):
-        k.box(0, sv * 0.39, 0.1, 0.125, 0.11, 0.46, "tNavy", top="tNavyL")
-    for cu in (-0.453125, 0.453125):                                                       # a lit strip per bay, top
-        k.box(cu, FV + 0.004, 0.5, 0.65625, 0.01, 0.03, _on(on, "growPink"))
-    _vent_slots(k, -0.453125, 0.26, 0.18, 5)
-    _screen(k, 0.453125, 0.3, on)
+        k.box(su * 0.90625, 0.375, 0.16, 0.125, 0.125, 0.4, "tNavy", top="tNavyL")
+    _htank(k, -0.62, 0.12, 0.27, 0.31, 0.15, on)
+    _pump(k, 0.56, 0.28, 0.16, on)
+    _pipe(k, [(0.19, 0.27, 0.24), (0.46, 0.27, 0.24)])                                        # suction, tank to pump
+    _valve(k, 0.33, 0.27, 0.24)
+    _pipe(k, [(0.56, 0.28, 0.4), (0.56, 0.28, 0.56)])                                        # riser into the tray
+    _pipe(k, [(-0.25, 0.27, 0.45), (-0.25, 0.27, 0.56)])                                      # fill line, tank top
+    k.box(-0.82, 0.25, 0.2, 0.0625, 0.2, 0.3, "tWhite", top="tWhiteL")                       # control box on the leg
 
 
-BASES = {"orig": _base_orig, "band": _base_band, "bays": _base_bays, "posts": _base_posts}
+def _base_tower(k, on):
+    """A short navy body and a standing white tank at the end; a manifold pipe runs out of the tank, along the front
+    under the sill with a valve, to a pump on the body."""
+    _prism(k, _cham(-0.3125, 0, 1.3125, 0.875, 0.02), 0.1, 0.5, "tNavy", top="tNavyL")
+    _vtank(k, 0.66, 0.1, 0.1, 0.3, 0.46, on)
+    zm, vm = 0.4, FV + 0.05
+    _pipe(k, [(0.66, 0.35, zm), (0.66, vm, zm), (-0.84, vm, zm), (-0.84, vm, 0.3)], r=0.035)
+    _valve(k, 0.25, vm, zm)
+    _tube(k, [(-0.84, vm + 0.02, 0.22), (-0.52, vm + 0.02, 0.22)], 0.09, "steel", n=12)     # pump, along the front
+    _tube(k, [(-0.52, vm + 0.02, 0.22), (-0.28, vm + 0.02, 0.22)], 0.1, "tWhite", n=12)      # its motor
+    k.box(-0.4, vm + 0.12, 0.2, 0.03125, 0.01, 0.04, _on(on))
+    _screen(k, 0.0, 0.22, on)
+
+
+def _base_twin(k, on):
+    """A tank under each plant: two standing white tanks on a low navy plinth, a pump between them drawing from
+    both and feeding a riser with a valve up into the tray; navy corner legs carry the sill."""
+    _prism(k, BODY, 0.1, 0.08, "tNavy", top="tNavyL")
+    _prism(k, _cham(0, -0.25, 1.875, 0.375, 0.02), 0.18, 0.38, "tNavy", top="tNavyL")       # the back, set back
+    for su in (-1, 1):
+        _vtank(k, su * 0.5, 0.1, 0.18, 0.32, 0.38, on)
+        k.box(su * 0.90625, -0.375, 0.18, 0.125, 0.125, 0.38, "tNavy", top="tNavyL")
+        _pipe(k, [(su * 0.5, 0.1, 0.56), (su * 0.5, 0.1, 0.62)])                            # tank to tray
+    _pump(k, 0.0, 0.3, 0.18, on)
+    for su in (-1, 1):
+        _pipe(k, [(0.0, 0.3, 0.25), (su * 0.3, 0.3, 0.25)])
+    _pipe(k, [(0.0, 0.3, 0.42), (0.0, 0.3, 0.56)])
+    _valve(k, 0.0, 0.3, 0.49)
+
+
+BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin}
 
 
 def terra(k, on, base="orig"):
@@ -309,7 +363,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("band", "bays", "posts")}}
+VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin")}}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
