@@ -114,11 +114,23 @@
       {/if}
     </section>
   {:else}
-    <p class="none">No shuttle yet.{data.bays.some((b) => b.empty) ? ' A bay is free: stow a shuttle item from storage.' : ' Build a vehicle bay to hold one.'}</p>
+    <p class="none">No shuttle yet.{data.bays.some((b) => b.empty) ? ' A bay is free: build one in it, or fit a shuttle item from storage.' : ' Build a vehicle bay to hold one.'}</p>
   {/each}
 
   {#each data.bays.filter((b) => b.empty) as b (b.id)}
-    <button class="assign" data-testid="assign-{b.id}" onclick={() => api.dispatch({ type: 'vehicle.assign', bay: b.id })}>Fit a shuttle from storage</button>
+    {#if b.building}
+      <div class="build" data-testid="bay-building-{b.id}">
+        <span>{b.building.waiting ? 'Waiting for materials' : `Building: ${Math.round(b.building.progress * 100)}%`}</span>
+        <button data-testid="bay-cancel-{b.id}" onclick={() => api.dispatch({ type: 'module.cancelAssembly', moduleId: b.id })}>Cancel</button>
+      </div>
+    {:else}
+      <button class="assign" data-testid="assign-{b.id}" onclick={() => api.dispatch({ type: 'vehicle.assign', bay: b.id })}>Fit a shuttle from storage</button>
+      {#if b.build}
+        <!-- Built in place by the crew: the materials are hauled to the bay, then worked. -->
+        <button class="assign" data-testid="bay-build-{b.id}" use:tip={{ text: `${b.build.cost.map((c) => `${c.count} ${c.name} (${c.have} aboard)`).join(', ')} · about ${b.build.seconds} s of work` }}
+          onclick={() => api.dispatch({ type: 'vehicle.build', bay: b.id })}>Build a {b.build.name.toLowerCase()} here</button>
+      {/if}
+    {/if}
   {/each}
   {#if mining.pods.length}
     <section data-testid="shuttle-pods">
@@ -146,4 +158,5 @@
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   .none { color: var(--dim); margin: 4px 0; }
   .assign { width: 100%; margin-top: 8px; }
+  .build { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; color: var(--amber); font-size: 12px; }
 </style>

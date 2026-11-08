@@ -12,7 +12,7 @@ const ASSEMBLY_FRAMES = 8;
 export function assemblingRole(world: World, bay: number): string | null {
   for (const j of world.query(JobC)) {
     const job = world.get(j, JobC);
-    if (job?.kind === 'assemble' && job.target === bay && job.assemble) return job.assemble.role;
+    if (job?.kind === 'assemble' && job.target === bay && job.assemble?.role) return job.assemble.role;
   }
   return null;
 }

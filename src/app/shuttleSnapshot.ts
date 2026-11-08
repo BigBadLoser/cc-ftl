@@ -1,6 +1,11 @@
 import { launchOf } from '../sim/boarding/launch';
-import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, TICK_HZ, totalStock, type Sim } from '../sim';
+import { JobC } from '../sim/crew/components';
 import { localOf } from './moduleSnapshot';
+import { costsOf } from './logisticsSnapshot';
+import { buildableFor } from '../sim/vehicles/assemble';
+import { assemblyAt } from '../sim/robots/bay';
+import { needsMaterials } from '../sim/items/materials';
 import type { UiSalvage, UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
@@ -137,7 +142,17 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const bays: UiShuttles['bays'] = [];
   for (const id of sim.world.query(VehicleBayC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (shipIdOf(sim, m) === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
+    if (shipIdOf(sim, m) !== PLAYER) continue;
+    const empty = !sim.world.get(id, VehicleBayC)?.vehicle;
+    const kind = empty ? buildableFor(sim, id) : null;
+    const plan = kind ? sim.content.vehicles?.[kind]?.assemble : undefined;
+    const jobId = assemblyAt(sim, id);
+    const job = jobId ? sim.world.get(jobId, JobC) : undefined;
+    bays.push({
+      id, empty,
+      build: kind && plan ? { name: sim.content.vehicles?.[kind]?.name ?? kind, cost: costsOf(sim, plan.cost).map((c) => ({ ...c, have: totalStock(sim, c.item) })), seconds: Math.round(plan.work / TICK_HZ) } : null,
+      building: job ? { progress: job.work > 0 ? job.progress / job.work : 0, waiting: needsMaterials(job) } : null,
+    });
   }
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {

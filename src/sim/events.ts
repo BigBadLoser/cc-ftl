@@ -192,6 +192,7 @@ export type SimEvent =
   | { type: 'robot.flipped'; crew: number; faction: Faction }
   /** A robot bay finished assembling a robot (its home bay). */
   | { type: 'robot.assembled'; crew: number; bay: number; ship: number }
+  | { type: 'vehicle.assembled'; vehicle: number; bay: number; ship: number }
   /** A robot settled into its bay to recharge / left it full. */
   | { type: 'robot.charging'; crew: number; bay: number }
   | { type: 'robot.charged'; crew: number; bay: number }
