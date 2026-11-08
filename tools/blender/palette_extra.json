@@ -3512,8 +3512,8 @@
   "glassG": {"hex": "#d6eef7", "set": "hydro"},
   "tNavy": {"hex": "#28344c", "set": "hydro"},
   "tNavyL": {"hex": "#36445f", "set": "hydro"},
-  "tFrame": {"hex": "#7f8b98", "set": "hydro"},
-  "tFrameL": {"hex": "#a3aeb9", "set": "hydro"},
+  "tFrame": {"hex": "#6d7885", "set": "hydro"},
+  "tFrameL": {"hex": "#8f9aa6", "set": "hydro"},
   "ringW": {"hex": "#c4cbd1", "set": "hydro"},
   "ringWL": {"hex": "#e3e8eb", "set": "hydro"}
 }

@@ -69,8 +69,9 @@ def _ring(k, outer, inner, z0, h, col, top=None, inner_col=None):
                  top or col, flip=True)
 
 
-def _tube(k, pts, r, col, n=8, caps=True):
-    """A round tube through the local (u, v, z) points: a ring of n points at each, square to the path there."""
+def _tube(k, pts, r, col, n=8, caps=True, phase=0.0):
+    """A round tube through the local (u, v, z) points: a ring of n points at each, square to the path there (turned
+    by phase)."""
     def sub(a, b): return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
     def cross(a, b): return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
     def norm(a):
@@ -82,7 +83,7 @@ def _tube(k, pts, r, col, n=8, caps=True):
         b1 = norm(cross(t, (1, 0, 0) if abs(t[0]) < 0.9 else (0, 1, 0)))
         b2 = cross(t, b1)
         rings.append([_G(k, *(p[j] + r * (math.cos(a) * b1[j] + math.sin(a) * b2[j]) for j in range(3)))
-                      for a in (math.tau * q / n for q in range(n))])
+                      for a in (math.tau * q / n + phase for q in range(n))])
     for r0, r1 in zip(rings, rings[1:]):
         for q in range(n):
             k.m.poly([r0[q], r0[(q + 1) % n], r1[(q + 1) % n], r1[q]], col, flip=True)
@@ -136,8 +137,8 @@ def _part(k, name):
 
 
 def _bar(k, a, b, s, col):
-    """A square frame bar from local point a to b (a 4-sided tube)."""
-    _tube(k, [a, b], s * 0.7, col, n=4)
+    """A square frame bar s thick from local point a to b, its faces square to the grid (no diamond edges)."""
+    _tube(k, [a, b], s / math.sqrt(2), col, n=4, phase=math.pi / 4)
 
 
 def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t):
@@ -153,9 +154,8 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
         g.m.poly([_G(g, *lo[j], z0), _G(g, *lo[q], z0), _G(g, *lo[q], zv), _G(g, *lo[j], zv)], "glassT", flip=True)
         g.m.poly([_G(g, *lo[j], zv), _G(g, *lo[q], zv), _G(g, *hi[q], zr), _G(g, *hi[j], zr)], "glassT", flip=True)
     s = 0.06
-    for j in range(4):                                                      # frame: sill, roof edge, corner posts
-        q = (j + 1) % 4                                                     # and rafters
-        _bar(k, (*lo[j], z0 + s / 2), (*lo[q], z0 + s / 2), s, frame)
+    for j in range(4):                                                      # frame: roof edge, corner posts and
+        q = (j + 1) % 4                                                     # rafters (the sill is the base's)
         _bar(k, (*hi[j], zr), (*hi[q], zr), s, frame_l)
         _bar(k, (*lo[j], z0), (*lo[j], zv), s, frame)
         _bar(k, (*lo[j], zv), (*hi[j], zr), s, frame_l)
@@ -183,19 +183,20 @@ def _tray(k, cu, L, D, z0, zs, seed):
 def terra(k, on):
     """One long glass canopy on an angular navy base, grey frames, slatted front panel, a control screen."""
     _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
-    body = _cham(0, 0, 1.98, 0.94, 0.06)
+    body = _cham(0, 0, 1.98, 0.9375, 0.06)                  # (front face on v = 15/32: whole px, as every u below)
     _prism(k, body, 0.1, 0.54, "tNavy", top="tNavyL")
-    _prism(k, _scaled(body, 1.01), 0.56, 0.05, "tFrame", top="tFrameL")                       # top band
-    k.box(-0.35, 0.474, 0.2, 0.8, 0.012, 0.26, "dark")                                       # slatted panel
-    for j in range(8):
-        k.box(-0.70 + j * 0.1, 0.48, 0.22, 0.04, 0.012, 0.22, "tNavyL")
-    k.box(0.5, 0.474, 0.26, 0.34, 0.012, 0.2, "tFrame")                                      # control panel
-    k.box(0.5, 0.48, 0.3, 0.26, 0.012, 0.12, "dark")
-    k.box(0.45, 0.486, 0.33, 0.12, 0.012, 0.05, _on(on))
-    k.box(0.6, 0.486, 0.33, 0.04, 0.012, 0.05, _on(on, "orange"))
+    _ring(k, _cham(0, 0, 2.0, 0.96, 0.07), _cham(0, 0, 1.84, 0.8, 0.03), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
+    f = 0.46875
+    k.box(-0.40625, f, 0.2, 0.75, 0.01, 0.26, "dark")                                       # slatted panel
+    for j in range(6):                                                                     # 2 px slats, 2 px gaps
+        k.box(-0.71875 + j * 0.125, f + 0.006, 0.22, 0.0625, 0.01, 0.22, "tNavyL")
+    k.box(0.5, f, 0.26, 0.3125, 0.01, 0.2, "tFrame")                                       # control panel
+    k.box(0.5, f + 0.006, 0.3, 0.25, 0.01, 0.12, "dark")
+    k.box(0.4375, f + 0.012, 0.33, 0.125, 0.01, 0.05, _on(on))
+    k.box(0.59375, f + 0.012, 0.33, 0.0625, 0.01, 0.05, _on(on, "orange"))
     zs = 0.69
-    _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
-    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
+    _tray(k, 0, 1.84, 0.8, 0.6, zs, 3)
+    _canopy_slope(k, 0, 1.92, 0.88, 0.66, 0.87, 1.36, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL")
     return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
 
 
