@@ -303,9 +303,10 @@ Marked ref (both layers, numbered): scratchpad
   (its lean); ours 22 each. The pockets straddle the l|m and m|r tile edges: each piece builds its share.
 - End blocks (1, 2, 8, 9): our plain navy ramp, unchanged in profile (its slope, upright foot and red foot), with a
   recessed dark navy tray let into its top (a 2-row light rim, the tray 7 rows deep).
-- The cut between the blocks: the sill's top 3-4 rows below the blocks' tops in the ref -> 5 rows below our ramp's
-  top; the front below it stays the ramp's slope. A grey slope (6) rises from the sill's back to the pane's foot (ref:
-  a 2-row ledge, then 6 rows; 7 px of depth from the front's top to the pane) -> ours the same 7 px, about 7 rows.
+- The cut between the blocks (re-measured; the first reading took the sill's top for its front): the blocks' front
+  runs the full 30 rows (45-75 deskewed); the sill's front edge is at row 53, 8 rows down the 30 (27%; the user: at
+  least 30%) -> ours 11 rows down our 37. The sill's top is flat, 8 px deep back from that edge (bright, rows 45-53),
+  then a grey slope (6) of 8 rows rises to the pane's foot -> ours: the same 8 px of depth, about 8 rows of slope.
 - M panel (4): the ramp's front left standing in the cut (20 px, centred on m), with our red foot under it and a seam
   down its middle.
 - Pockets (3, 7): cut into the front: the ref's lower 20 of 30 rows -> our lower 25 of 37, a white strip of 10 rows
@@ -317,8 +318,8 @@ Marked ref (both layers, numbered): scratchpad
   posts' red band up with our wall's red band (14 rows) rather than scaling it.
 - Plan (ramp first; each step rendered and shown, before / after, both ref layers):
   - N0: `sprites/wall3d_iwin_navy.py` + `preview/jobs_nwin.py` (pieces `tile.wall.navy.full.m10.win.{l,m,r}`), the
-    shared window wrapper, pane and glass; our navy ramp kept under the opening and cut: the sill 5 rows down between
-    the end blocks, the grey slope to the pane.
+    shared window wrapper, pane and glass; our navy ramp kept under the opening and cut: the sill's front edge 11 rows
+    down our 37 between the end blocks, its flat top 8 px deep, the grey slope to the pane.
   - N1: the end blocks' trays (2). N2: m panel (4) with its seam. N3: pockets (3, 7).
   - N4: upper layer: beam (A, B, C), then posts (D, E, F).
 
@@ -435,3 +436,5 @@ Marked ref (both layers, numbered): scratchpad
   foot 8) vs the ref's 30 (10 run, one slope); heights x1.23, widths and depth in px; plan numbers updated.
 - 2026-11-08: the user: the ref's window cuts into the ramp. Plan reworked: the end blocks are the ramp left standing, the
   sill is cut 5 rows down between them, the pockets cut into the front.
+- 2026-11-08: the user: the cut is at least 30% of the ramp's height. Re-measured: 8 of 30 rows (27%; I had read the
+  sill's top as its front) -> ours 11 of 37.
