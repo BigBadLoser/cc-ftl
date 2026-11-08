@@ -7,8 +7,8 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
   join dots are fixed (iw42, shown to the user, no reply needed). Branch pushed; last commits: 7cdd360b (tan's end
   strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
 - Next: bastion, ramp (lower layer) first, its own module (the user: bastion and navy don't share the default's
-  shape, upper or lower). Ref measured and plan written (section "Bastion window" below); waiting on the user's go
-  for step B0. Navy, drone, civil after: each its own module too (only the machinery is shared).
+  shape, upper or lower). Ref measured and plan written (section "Bastion window" below). B0+B1 done in one pass
+  (the user) at bw4: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`; shown, waiting on the user. Navy, drone, civil after: each its own module too (only the machinery is shared).
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
   palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
 - The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
@@ -260,6 +260,17 @@ Plan (each step: render SS=4, before / after with both ref layers, zoom and clos
 - B4: the box on m.
 - B5: a tone pass against the ref. Then the upper layer (own posts, beam, blocks).
 
+Built (`sprites/wall3d_iwin_bast.py`): the opening between the posts' inner edges (`BAST_P` in from the tile's edge)
+up to the cornice's foot (`HF - BAST_HB`), cut down to the channel's profile across the wall (`_steps`: (y0, y1, z,
+kind), mirrored on the far side) with `_cut` (convex regions, `wall3d_iwin._clip`). From the pane (px, z in PZ under
+the ramp's top): ledge 0-2 at `LEDGE_Z` -3, floor 2-4 at `FLOOR_Z` -6, groove 4-5 at `GROOVE_Z` -8, rim 5 to where
+the ramp's slope falls under it (`RIM_Z` -6, ~7.5 px; the wall's line is 5 px from the pane, the slope 2.36 PZ a
+px). Tones `COL` (fBW2 ledge / floor, fBW4 step, fBW5 groove, fBW1 rim, darker(fBW2) the ends, fBW5 under the
+cornice). The posts' sides and the channel's section at the opening's ends in convex strips (`_ends`). Pane from the
+ledge to the cornice's foot; cap lines; glass. The ramp's outlined panels kept (B2 replaces them). Rows (deskewed,
+ours): ledge 2, step 3, floor 1-2, groove 3, rim 2 vs the ref's 3 / 3 / 4 / 2 / 4: our wall is 5 px from the pane
+to its line, the ref's channel ~12 px deep, so ours is shallower (the rim runs out onto the slope to make room).
+
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
@@ -359,3 +370,5 @@ Plan (each step: render SS=4, before / after with both ref layers, zoom and clos
   written for a fresh session.
 - 2026-11-08: the user: bastion and navy don't share the default's shape (upper or lower). Bastion's ref measured
   (deskew_ref.py, ascii_map.py added to preview/), plan B0-B5 written, marked ref image sent. Waiting on the go.
+- 2026-11-08: bw4: B0+B1 in one pass (the user): bastion's own window module, the opening cut down to a channel
+  (ledge, step, floor, groove, rim), the pane, cap lines; the ramp's panels kept. Shown.
