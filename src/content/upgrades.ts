@@ -1,4 +1,5 @@
 import type { ItemDef, RecipeDef, ResearchDef } from '../sim';
+import { behaviourItems, behaviourRecipes, behaviourResearch } from './upgradesBehaviour';
 
 /**
  * Module upgrades (DESIGN.md "Weapon upgrades and flak"): items that go in a weapon module's slot. The general ones fit any weapon; the numbers are a
@@ -8,16 +9,17 @@ import type { ItemDef, RecipeDef, ResearchDef } from '../sim';
 export const upgradeItems = {
   'item.upg_coolant': {
     name: 'Coolant jacket', tags: ['upgrade'], stackSize: 4, price: 120, tier: 2,
-    upgrade: { slot: 'weapon', mods: { heatMul: 0.7 } },
+    upgrade: { slot: 'weapon', blurb: 'Adds 30% less heat to the ship per volley', mods: { heatMul: 0.7 } },
   },
   'item.upg_capacitor': {
     name: 'Quick capacitor', tags: ['upgrade'], stackSize: 4, price: 140, tier: 2,
-    upgrade: { slot: 'weapon', mods: { chargeMul: 0.85 } },
+    upgrade: { slot: 'weapon', blurb: 'Charges 15% faster', mods: { chargeMul: 0.85 } },
   },
   'item.upg_housing': {
     name: 'Hardened housing', tags: ['upgrade'], stackSize: 4, price: 130, tier: 2,
-    upgrade: { slot: 'weapon', mods: { damageTakenMul: 0.5 } },
+    upgrade: { slot: 'weapon', blurb: 'Takes half damage from hits and ion', mods: { damageTakenMul: 0.5 } },
   },
+  ...behaviourItems,
 } satisfies Record<string, ItemDef>;
 
 /** Fabricator recipes: each needs its blueprint (researched, or sold at a station). */
@@ -37,6 +39,7 @@ export const upgradeRecipes = {
     inputs: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 4 }],
     outputs: [{ item: 'item.upg_housing', count: 1 }], work: 300,
   },
+  ...behaviourRecipes,
 } satisfies Record<string, RecipeDef>;
 
 const cost = (e: number, parts: number) => [{ item: 'item.electronics', count: e }, { item: 'item.parts', count: parts }];
@@ -58,4 +61,5 @@ export const upgradeResearch = {
     name: 'Flak cannon', description: 'A gun that fires hull scrap: a spread of weak pellets that each strip a shield layer, and shoot down drones.', category: 'defence',
     cost: cost(14, 4), work: 1800, unlocks: ['module.flakCannon'], requires: [],
   },
+  ...behaviourResearch,
 } satisfies Record<string, ResearchDef>;

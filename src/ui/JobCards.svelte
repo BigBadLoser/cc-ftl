@@ -2,8 +2,11 @@
   import type { UiApi, UiJob, UiJobs, UiStrength } from './api';
   import Icon from './Icon.svelte';
 
-  /** The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node, `handIn` the finished work this station takes in. */
-  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' | 'handIn' } = $props();
+  /**
+   * The job cards of the board: `active` the jobs the player holds, `offers` the work posted at the node, `handIn` the finished work this station takes in,
+   * `asked` the passage passengers aboard ask for (accept or refuse, wherever the ship is).
+   */
+  let { api, jobs, list }: { api: UiApi; jobs: UiJobs; list: 'active' | 'offers' | 'handIn' | 'asked' } = $props();
   const full = $derived(jobs.active.length >= jobs.max);
   const far = (j: UiJob): string => (j.here ? 'here' : j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
   const turns = (j: UiJob): string => `${j.turnsLeft} turn${j.turnsLeft === 1 ? '' : 's'} left`;
@@ -61,6 +64,16 @@
         <div class="act"><button data-testid="job-handin" onclick={() => api.dispatch({ type: 'jobs.handIn', id: c.id })}>Hand in</button></div>
       </li>
     {/each}
+  {:else if list === 'asked'}
+    {#each jobs.asked as j (j.key)}
+      <li data-testid="job-asked">
+        {@render head(j)}
+        <div class="act">
+          <button class="ghost" data-testid="job-refuse" onclick={() => api.dispatch({ type: 'jobs.refuse', key: j.key })}>Refuse</button>
+          <button class="commit" data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
+        </div>
+      </li>
+    {/each}
   {:else}
     {#each jobs.offers as j (j.key)}
       <li data-testid="job-offer">
@@ -96,6 +109,6 @@
   .badge.even { color: var(--dim); }
   .badge.weaker { color: var(--good-ink); }
   .warn { color: var(--red); font-size: 12px; }
-  .act { display: flex; justify-content: flex-end; }
+  .act { display: flex; justify-content: flex-end; gap: 6px; }
   li button { min-height: 30px; padding: 0 12px; }
 </style>

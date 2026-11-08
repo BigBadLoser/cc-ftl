@@ -119,8 +119,13 @@ import { newYard, type YardState } from './yard/types';
  * v96 (the distress freighter, #173): `SceneShip` tag, damage, arrivals, prey and `aid`; `SceneTimer` world conditions; `Combat.prey`;
  *     `SceneShip.lacks`; `Combat.threat`; `WorkBlockC` (work a crew member cannot do); `ConsentC` (leave to come aboard) on host ships; away site owner 'aid'.
  * v97 (weapon upgrades, #338): `Module.upgrade`, `Module.offlineUntil` (work hold), job kind 'fit' with `Job.fit`.
+ * v98 (passengers, #173 step 6): consent grants by 'passage' and `Grant.lodge` (a lodging guest: bed, meals, no jobs; crew kind 'guest').
+ * v99 (the medical pod, #173 step 6): `SceneSpec.pods` (escape pods and their patients); vehicles with an escape def; lodging guests have moods.
+ * v100 (carried rules, #173 step 6): `Grant.carry` (a passenger's event, origin, purse and fired rules); `ScenePod.purse`, `handed`.
+ * v101 (passage, #173 step 6): `GalaxyState.posted` (passage cards); job kind 'passage' with `StationJob.crew`, `refused`.
+ * v102 (asking to join, #173 step 6): `Grant.carry` mood stretch, roll and ask state (`happySince`, `rolled`, `asked`, `asking`).
  */
-export const SAVE_VERSION = 97;
+export const SAVE_VERSION = 102;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

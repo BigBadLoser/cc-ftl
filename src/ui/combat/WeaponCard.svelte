@@ -1,8 +1,7 @@
 <script lang="ts">
   import { KeyBadge, Meter } from '../kit';
-  import type { UiWeapon } from '../api';
-  import Icon from '../Icon.svelte';
-  import { upgradeIconName } from '../upgradeIcon';
+  import type { UiApi, UiWeapon } from '../api';
+  import UpgradeTip from './UpgradeTip.svelte';
 
   /**
    * One player weapon: hotkey, name, charge bar and a bottom line that says what it aims at and what it does when charged. Click the card to
@@ -11,7 +10,8 @@
    * AUTO reads "Ship"; HOLD reads "HOLD · Ship" with the bar in amber, and "HOLD · READY" once a held weapon is charged. Compact cards
    * (five or more weapons) have no bottom line: hold is shown by the amber bar alone.
    */
-  let { weapon, label, hotkey, selected, onSelect, onMode, compact = false }: {
+  let { api, weapon, label, hotkey, selected, onSelect, onMode, compact = false }: {
+    api: UiApi;
     weapon: UiWeapon;
     label: string;
     hotkey: string;
@@ -66,8 +66,8 @@
 >
   <span class="top">
     {#if hotkey}<KeyBadge>{hotkey}</KeyBadge>{/if}
-    <span class="nm">{label}</span>
-    {#if compact && weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><Icon name={upgradeIconName(weapon.upgrade.item)} size={13} /></span>{/if}
+    <span class="nm">{#if weapon.upgrade?.renames}<UpgradeTip {api} upgrade={weapon.upgrade} label={label} />{:else}{label}{/if}</span>
+    {#if compact && weapon.upgrade && !weapon.upgrade.renames}<UpgradeTip {api} upgrade={weapon.upgrade} size={13} />{/if}
     {#if weapon.fitting}<span class="am fit" data-testid="weapon-fitting">fitting</span>{/if}
     {#if compact && weapon.ammo !== null}<span class="am">×{weapon.ammo}</span>{/if}
   </span>
@@ -79,7 +79,7 @@
     <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
-    {#if weapon.upgrade}<span class="up" data-testid="weapon-upgrade" title="{weapon.upgrade.name}"><Icon name={upgradeIconName(weapon.upgrade.item)} size={14} /></span>{/if}
+    {#if weapon.upgrade && !weapon.upgrade.renames}<UpgradeTip {api} upgrade={weapon.upgrade} size={14} />{/if}
     </span>
   {/if}
 </div>
@@ -133,7 +133,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .up { flex: none; display: inline-flex; color: var(--hud-key); opacity: 0.85; }
   .low { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-width: 0; }
   .low .sub { flex: 0 1 auto; }
   .fit { color: var(--amber); }

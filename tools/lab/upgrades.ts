@@ -3,9 +3,9 @@ import { loadAtlas, type Atlas, type StaticSprite } from '../../src/render/asset
 import { iso } from '../../src/render/iso';
 import type { LabCell, LabCtx, LabPanel } from './panel';
 
-/** The weapon upgrade items, the three in the game first, then the seven behaviour upgrades of slice 2. */
-const BUILT = ['capacitor', 'coolant', 'housing'];
-const PLANNED = ['prism', 'focus', 'frag', 'rail', 'nuke', 'chain', 'thermite'];
+/** The weapon upgrade items: the three general ones, then the seven behaviour upgrades. */
+const GENERAL = ['capacitor', 'coolant', 'housing'];
+const BEHAVIOUR = ['prism', 'focus', 'frag', 'rail', 'nuke', 'chain', 'thermite'];
 const NAMES: Record<string, string> = {
   capacitor: 'Quick capacitor', coolant: 'Coolant jacket', housing: 'Hardened housing', prism: 'Prism splitter', focus: 'Heavy focus',
   frag: 'Frag slug', rail: 'Rail coil', nuke: 'Nuclear warhead', chain: 'Chain coil', thermite: 'Thermite',
@@ -14,13 +14,13 @@ const SIZES = ['s', 'm', 'l', 'held'] as const;
 const REF = ['item.electronics', 'item.parts'];
 const PANEL_BG = 0x0b0e11; // --panel (src/ui/theme.css)
 const ICON = 40; // css px: the upgrade's UI icon box (module inspector slot, hover card), shown 1:1
-/** Each behaviour upgrade's shot and a proposed tint for it (slice 2 sets the real ones in WeaponDef.look). */
+/** Each behaviour upgrade's shot and its tint (its `WeaponDef.look` in content/upgradesBehaviour.ts). */
 const SHOTS: { shot: string; weapon: string; tints: [string, number][] }[] = [
-  { shot: 'laser_bolt', weapon: 'Burst laser', tints: [['prism', 0xd890ff], ['focus', 0xff4a5a]] },
-  { shot: 'mass_slug', weapon: 'Mass driver', tints: [['frag', 0xffc04a], ['rail', 0xff8a3c]] },
-  { shot: 'missile', weapon: 'Missile', tints: [['nuke', 0xb4ff4a]] },
-  { shot: 'ion_bolt', weapon: 'Ion cannon', tints: [['chain', 0xa88cff]] },
-  { shot: 'fire_shell', weapon: 'Incendiary', tints: [['thermite', 0xff5a2a]] },
+  { shot: 'laser_bolt', weapon: 'Burst laser', tints: [['prism', 0xd49cff], ['focus', 0xfff2c0]] },
+  { shot: 'mass_slug', weapon: 'Mass driver', tints: [['frag', 0xff9a3c], ['rail', 0x9fe8ff]] },
+  { shot: 'missile', weapon: 'Missile', tints: [['nuke', 0xc8ff7a]] },
+  { shot: 'ion_bolt', weapon: 'Ion cannon', tints: [['chain', 0xb48aff]] },
+  { shot: 'fire_shell', weapon: 'Incendiary', tints: [['thermite', 0xff2a00]] },
 ];
 
 /** A sprite on its anchor at (x, y), scaled by k, its glow added over it; an optional floor tile under it; an optional tint on both. */
@@ -71,7 +71,7 @@ export const upgradesPanel: LabPanel = {
     const z = Number(ctx.params.get('zoom') ?? 0.5);
     const view = ctx.params.get('view') ?? 'ref';
     const only = ctx.params.get('items')?.split(',').map((s) => s.trim()).filter(Boolean);
-    const list = [...BUILT, ...PLANNED].filter((n) => !only || only.includes(n));
+    const list = [...GENERAL, ...BEHAVIOUR].filter((n) => !only || only.includes(n));
     // from the game's manifest once the art is built into it, else the preview sheet
     const own = ctx.atlas.ids('item.upg_').length > 0 && !ctx.params.has('src');
     const atlas: Atlas = own ? ctx.atlas : await loadAtlas(ctx.params.get('src') ?? '/.cache/upgrades-preview/');
@@ -82,7 +82,7 @@ export const upgradesPanel: LabPanel = {
     ctx.atlas.stat('tile.floor.a');
     await Promise.all([atlas.whenIdle(), ctx.atlas.whenIdle()]);
     const floor = ctx.atlas.stat('tile.floor.a');
-    const tag = (n: string) => (BUILT.includes(n) ? 'in game' : 'slice 2');
+    const tag = (n: string) => (GENERAL.includes(n) ? 'general' : 'behaviour');
     const ui = 1 / (2 * z); // world scale that draws one art px as one css px (the textures hold two world px per art px)
     const cells: LabCell[] = [];
 

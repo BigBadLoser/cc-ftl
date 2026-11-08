@@ -1,9 +1,12 @@
 import { homeShip } from '../sim/index';
 import { shipIdOf, shipGrid } from '../sim/regions';
-import { BreakdownC, CrewC, DeadC, DownedC, PickupC, IonC, ModuleC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
+import { BreakdownC, CrewC, DeadC, DownedC, PickupC, NeedsC, PositionC, AllegianceC, ShipC, incomingFleets, isSuited, roomTiles, type Sim, type SimEvent } from '../sim';
 import { Struct } from '../sim/structure';
-import { O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
+import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
+import { pendingAsks } from '../sim/galaxy/joinOffer';
+import { deriveAlerts, shortOnPower, powerSubject, DERIVED_KINDS, type Wanted } from './alertsDerived';
+import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { recallReason } from './boardingText';
@@ -11,7 +14,6 @@ import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
 import { createStore, type Readable } from './store';
 
 const MAX = 6;
-const EXPIRE_MS = 45000;
 
 /**
  * Which events raise an alert. Alerts are for urgent, actionable things only; everything else is log-only (the ship's log records
@@ -31,6 +33,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
   'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
   'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log', 'scene.observed': 'log', 'ship.arrived': 'log',
+  'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log', 'crew.asksToJoin': 'log',
 };
 const urgent = (type: SimEvent['type']) => ALERT_URGENCY[type] === 'urgent';
 
@@ -50,11 +53,14 @@ export interface Alerts {
   saveResult(ok: boolean, text: string): boolean;
   /** Remove the alerts raised under a key. */
   clear(key: string): void;
-  /** Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...). Cheap; call it every few frames. */
+  /**
+   * Clear every alert whose condition has resolved (combat over, fire out, crew member stabilised...), and bring the join asks in line with the sim (one
+   * alert per passenger whose ask waits, from saved state, so a reload brings them back). Cheap; call it every few frames.
+   */
   sync(): void;
 }
 
-interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice'] }
+interface Raised { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; resolved?: () => boolean; notice?: UiAlert['notice']; actions?: UiAlert['actions'] }
 
 /** Turns urgent sim events into a short, deduplicated alert queue that clears itself (UI-side only; never feeds the sim). */
 export function createAlerts(sim: Sim): Alerts {
@@ -100,16 +106,6 @@ export function createAlerts(sim: Sim): Alerts {
     for (const i of tiles) sum += o2[i] as number;
     return sum / tiles.length <= O2_ALERT_CLEAR_ABOVE;
   };
-  /** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network, ion-disabled parts excluded). */
-  const shortOnPower = (ship: number) => {
-    for (const id of sim.world.query(ModuleC)) {
-      const m = sim.world.get(id, ModuleC);
-      if (!m || !m.enabled || m.hp <= 0 || m.powered || sim.world.has(id, IonC) || shipIdOf(sim, m) !== ship) continue;
-      if ((sim.content.modules[m.def]?.power ?? 0) < 0) return true;
-    }
-    return false;
-  };
-
   /** "Under attack: Raider": the enemy's name, short. */
   const combatText = () => {
     const s = enemyShip(sim, home());
@@ -123,11 +119,11 @@ export function createAlerts(sim: Sim): Alerts {
       case 'story.started': {
         const def = sim.content.events?.[e.event];
         if (!def || e.mode !== 'notice' || e.notice <= 0) return null;
-        return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title } };
+        return { kind: 'story.lead', key: `ev${e.event}`, text: def.text, subject: null, notice: { id: e.notice, lead: true, title: def.title }, resolved: () => !sim.story.notices.some((n) => n.id === e.notice) };
       }
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
-      case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(), resolved: () => !shortOnPower(e.ship) };
+      case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(sim), resolved: () => !shortOnPower(sim, e.ship) };
       case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', subject: roomOf(sim, e.ship, e.room), resolved: () => thin(e.ship, e.room) === false };
       case 'crew.downed': return {
         kind: e.type, key: `d${e.crew}`, text: `Down: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew),
@@ -182,14 +178,6 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
 
-  const powerSubject = (): UiSubject | null => {
-    for (const id of sim.world.query(ModuleC)) {
-      const m = sim.world.get(id, ModuleC);
-      if (m && (sim.content.modules[m.def]?.power ?? 0) > 0 && shipIdOf(sim, m) === home()) return tileAt(m.x, m.y);
-    }
-    return null;
-  };
-
   let saveFailing = false;
   let saveMuted = false;
   const remove = (id: number) => {
@@ -228,6 +216,60 @@ export function createAlerts(sim: Sim): Alerts {
     }
   }
 
+  /** Join-ask alerts by passenger, and those the player dismissed (quiet until that ask is answered or lapses). */
+  const asks = new Map<number, number>();
+  const askMuted = new Set<number>();
+  function syncAsks(): void {
+    const want = new Set(pendingAsks(sim));
+    for (const c of askMuted) if (!want.has(c)) askMuted.delete(c);
+    for (const [c, id] of asks) {
+      if (want.has(c) && store.get().some((a) => a.id === id)) continue;
+      if (want.has(c)) askMuted.add(c); // dismissed with the X
+      asks.delete(c);
+      remove(id);
+    }
+    for (const c of want) {
+      if (asks.has(c) || askMuted.has(c)) continue;
+      const id = nextId++;
+      asks.set(c, id);
+      const actions: UiAlert['actions'] = [
+        { label: 'Accept', tone: 'good', command: { type: 'jobs.join', crew: c, accept: true } },
+        { label: 'Decline', tone: 'bad', command: { type: 'jobs.join', crew: c, accept: false } },
+      ];
+      store.update((l) => [{ id, kind: 'crew.asksToJoin', text: `${passengerName(sim, c)} asks to join the crew`, subject: crewSubject(sim, c), actions }, ...l]);
+      for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+    }
+  }
+
+  /** Alerts raised from state (see `deriveAlerts`) by key, and the keys the player dismissed: quiet until the condition clears. */
+  const derived = new Map<string, number>();
+  const derivedMuted = new Map<string, UiAlertKind>(); // dismissed key -> the kind dismissed, so a worse kind on the same key (suit air out after low) still raises
+  const hasKey = (k: string) => [...keys.values()].includes(k);
+  let scannedAt = -Infinity;
+  function syncDerived(): void {
+    // The scan walks the home grid: once per alert interval of sim time (and at once after a load, when the tick differs).
+    if (sim.tick === scannedAt || (sim.tick > scannedAt && sim.tick - scannedAt < ALERT_INTERVAL_TICKS)) return;
+    scannedAt = sim.tick;
+    const want = deriveAlerts(sim, (k) => hasKey(k) || derivedMuted.has(k)); // a dismissed alert keeps its hysteresis too
+    for (const [k, kind] of derivedMuted) if (want.get(k)?.kind !== kind) derivedMuted.delete(k);
+    for (const [k, id] of derived) {
+      if (want.has(k) && keys.get(id) === k) continue;
+      derived.delete(k);
+      if (!want.has(k)) remove(id);
+    }
+    for (const w of want.values()) {
+      if (derivedMuted.get(w.key) === w.kind || hasKey(w.key) || store.get().length >= MAX) continue;
+      const id = nextId++;
+      keys.set(id, w.key);
+      derived.set(w.key, id);
+      raise(id, w);
+    }
+  }
+  const raise = (id: number, w: Wanted) => {
+    store.update((l) => [{ id, kind: w.kind, text: w.text, subject: w.subject, ...(w.notice ? { notice: w.notice } : {}) }, ...l]);
+    for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
+  };
+
   return {
     list: store,
     syncIncoming,
@@ -256,23 +298,28 @@ export function createAlerts(sim: Sim): Alerts {
     get: (id) => store.get().find((a) => a.id === id),
     dismiss(id) {
       if (keys.get(id) === 'save') saveMuted = true; // dismissed: quiet until a write succeeds
+      const shown = store.get().find((a) => a.id === id);
+      const key = keys.get(id);
+      if (shown && key && DERIVED_KINDS.has(shown.kind)) derivedMuted.set(key, shown.kind); // dismissed: quiet until its condition clears
       const n = store.get().find((a) => a.id === id)?.notice;
       if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
       remove(id);
     },
     sync() {
+      syncAsks(); // state, not events: a reload or a paused game still shows a waiting ask
+      syncDerived();
       for (const [id, done] of resolvers) if (done()) remove(id);
     },
     onEvents(events) {
       for (const e of events) {
         const d = describe(e);
         if (!d) continue;
+        if (DERIVED_KINDS.has(d.kind) && derivedMuted.get(d.key) === d.kind) continue; // dismissed: the event of a condition already muted stays quiet
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);
-        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}) }, ...l]);
+        store.update((l) => [{ id, kind: d.kind, text: d.text, subject: d.subject, ...(d.notice ? { notice: d.notice } : {}), ...(d.actions ? { actions: d.actions } : {}) }, ...l]);
         if (d.resolved) resolvers.set(id, d.resolved);
-        else setTimeout(() => remove(id), EXPIRE_MS); // nothing to watch (a story lead): it lapses on a timer
         for (let l = store.get(); l.length > MAX; l = store.get()) remove((l[l.length - 1] as UiAlert).id);
       }
     },

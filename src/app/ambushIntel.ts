@@ -1,14 +1,14 @@
 import type { Sim } from '../sim';
 import type { SceneShip } from '../sim/scene/types';
 import type { SkillName } from '../sim/registry';
-import { bestAt, withPlayerAboard } from '../sim/story/world';
+import { bestAt } from '../sim/story/world';
 
 /**
  * What a scan of the pirate ambush's skiff reads (DESIGN.md "Pirate ambush"). Sensors catch its weapons, its boarding craft and its crew; how much
  * they make of it is the crew's skill: gunnery reads the guns, piloting the craft, hacking the crew and the transponder. A dull read says only what any
  * pirate skiff shows; a sharp one tells a trap from an honest skiff. The read is true to the spec (the same facts the scene opens with).
  */
-const level = (sim: Sim, skill: SkillName): number => withPlayerAboard(sim, () => bestAt(sim, skill)?.level ?? 0);
+const level = (sim: Sim, skill: SkillName): number => bestAt(sim, skill)?.level ?? 0;
 
 /** The tell a scan can catch: a hacker (level 2) sees the transponder ID change. The video's stutter (`lag`) needs no skill: it shows on the hail. */
 export function scanSeesNameTell(sim: Sim, s: SceneShip): boolean {

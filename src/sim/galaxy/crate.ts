@@ -1,6 +1,6 @@
 import { STOLEN_GOODS } from '../blackmarket/services';
 import { ItemStackC } from '../items/components';
-import { spillItems, takeFromStack } from '../items/stacks';
+import { spillItems, stackSizeOf, takeFromStack } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -43,11 +43,20 @@ export function loadCrate(sim: Sim, jobId: number): boolean {
 export function unloadCrate(sim: Sim, job: StationJob, open: boolean): void {
   const id = crateOf(sim, job.id);
   if (id === undefined) return resolveInTransit(sim, job, open);
-  const { x, y } = sim.world.get(id, ItemStackC)!;
-  const ship = shipIdAt(sim, x, y);
-  takeFromStack(sim, id, 1);
-  // A crate broken open is a breach of contract: what spills is stolen goods (contraband), not the delivery.
-  if (open && job.item && job.count) spillItems(sim, ship, x, y, sim.content.items[STOLEN_GOODS] ? STOLEN_GOODS : job.item, job.count);
+  const stack = sim.world.get(id, ItemStackC)!;
+  if (!open || !job.item || !job.count) {
+    takeFromStack(sim, id, 1);
+    return;
+  }
+  // A crate broken open is a breach of contract: what spills is stolen goods (contraband), not the delivery. The crate's own stack turns into the
+  // goods in place (same entity, same tile), so this also works while the ship is packed in hyperspace, when there is no grid to spill onto.
+  const { x, y } = stack;
+  const item = sim.content.items[STOLEN_GOODS] ? STOLEN_GOODS : job.item;
+  const here = Math.min(job.count, stackSizeOf(sim, item));
+  stack.item = item;
+  stack.count = here;
+  delete stack.job;
+  if (job.count > here) spillItems(sim, shipIdAt(sim, x, y), x, y, item, job.count - here); // overflow beyond one stack (lost with no room)
 }
 
 /**

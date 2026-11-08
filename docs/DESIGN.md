@@ -399,6 +399,20 @@ scripts. Not every scene has one.
   - Approaches: fetch the pod by shuttle or crew; treat them; bring them to a port; sell them; leave them.
   - Observed: boarded -> passenger state; treated -> reward and goodwill; died -> log; delivered -> payment; offers to join -> recruit prompt.
   - Persistence: transient. Timer: **yes** (a bleeding patient).
+  - **Built (#345):**
+    - The pod is a vehicle, `vehicle.escape_pod` (`VehicleDef.escape`, `src/sim/vehicles/escape.ts`): one seat, no pilot, the 3x3 pod
+      bay. Asked in, it flies to a free airlock and docks; crew carry the patient to a bed; it casts off empty. Occupants inside a vehicle
+      take vitals (bleeding runs aboard). Later: pod bays on ships, enemy crews ejecting, the player's own abandon ship.
+    - A passenger is a lodging guest, not a new system: a `ConsentC` grant on the player's ship `by: 'passage'` with `lodge`. They own a
+      bed, eat and sleep, pitch in on chores at the lowest priority, are never drafted or armed, and flee fights. `roleOf`
+      (`src/sim/consent/roles.ts`) is the one place that says what a person is to a ship (crew, recruit, station, passenger, guest).
+    - Rules fire after the scene's pocket is gone (`fireRules`, `scene/rules.ts`; per-person memory on `Grant.carry`): `helpedPerson`
+      (getting up pays their purse, +1 standing with their faction, and posts a passage card), `personDied`, `personDelivered`.
+    - Passage job: a port of their faction within 3 jumps, fare 50 + 45 per jump, due in 6 + 3 per jump turns; refused, they get off at the
+      next port. The handover is the recruit run, generalised (`galaxy/handover.ts`).
+    - Join offer: on delivery, or while aboard, a passenger whose mood is above 60 may ask to join (an alert with Accept / Decline, lapses
+      after 2 minutes; no handover moves them meanwhile). Accept makes them crew as recruits become crew. Mood 60 is meant to need great care.
+    - Not built: selling a patient (waits for a prisoner hand-over service, #116), fetching by EVA with a spare suit, crew first aid.
 
 **Settled (user, 2026-11-03).**
 - A persistent derelict gets a map marker as soon as it is found.

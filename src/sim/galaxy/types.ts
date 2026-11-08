@@ -344,7 +344,7 @@ export interface EncounterResult {
  * placed at node `node` (one the player has not entered yet) when the job is taken. A survey is for entering node `node`, which has `feature`.
  * A finished bounty or survey becomes a claim (`GalaxyState.claims`, `done` true): paid by `jobs.handIn` at a port of the issuing station class.
  */
-export type StationJobKind = 'delivery' | 'bounty' | 'survey';
+export type StationJobKind = 'delivery' | 'bounty' | 'survey' | 'passage';
 
 export interface StationJob {
   id: number;
@@ -374,6 +374,10 @@ export interface StationJob {
   /** A delivery: handover runs called off so far, by the station's shuttle and by the player's own (the crate is handed across by hand once both are used up). */
   handoverTries?: number;
   ownTries?: number;
+  /** A passage (galaxy/passage.ts): the passenger it carries (their crew entity); `to` is where they want to go (absent: anywhere, they get off at the next port). */
+  crew?: number;
+  /** A passage card the player turned down (or a passage failed): the passenger gets off at the next port the ship is at, no fare. */
+  refused?: true;
 }
 
 /** The player's notoriety and who last sent hunters after them (heat.ts, hunters.ts). */
@@ -437,6 +441,8 @@ export interface GalaxyState {
   heat: HeatState;
   /** Jobs the player holds (jobs.ts), and the offer keys already taken or finished (newest last). */
   jobs: StationJob[];
+  /** Passage cards passengers have posted (galaxy/passage.ts): asked (to accept or refuse) or refused (they get off at the next port). Absent: none yet. */
+  posted?: StationJob[];
   /** Finished bounties and surveys not yet handed in (jobs.ts): they never expire and are not shown as tasks. */
   claims: StationJob[];
   jobLog: string[];

@@ -109,7 +109,7 @@ export interface Interrupt {
 export type DriveInput = 'willing' | 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'awayReturn' | 'mood' | 'food';
 
 /** Which crew a policy is for (ai/utility.ts `crewKind`): battery robots, station crew, the player's colonists, anyone else. */
-export type CrewKind = 'robot' | 'station' | 'colonist' | 'npc';
+export type CrewKind = 'robot' | 'station' | 'colonist' | 'npc' | 'guest';
 
 /** Trait effects that replace a drive's `enter` threshold, in need units (0..100). */
 export type DriveTraitKey = 'eatBelow';

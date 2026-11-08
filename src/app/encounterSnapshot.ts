@@ -1,3 +1,4 @@
+import { podOf } from './podSnapshot';
 import {
   bribeCost, contrabandAboard, choicesOf, evadeOdds, galaxyIndex, hostilesPresent, isHostileFaction, leaveBlocker, type Encounter, type Sim,
 } from '../sim';
@@ -153,6 +154,7 @@ export function eventOf(sim: Sim): UiEventGrid | null {
     who: f ? `${factionName(sim, owner)} ${role}` : `${lead?.name ?? 'Unknown ship'}, ${factionName(sim, owner)}`,
     dockRequest: dockRequestOf(sim),
     aid: aidOf(sim),
+    pod: podOf(sim),
     roster: f ? f.ships.map((c) => rosterRow(sim, c, {})) : ev.scene.ships.map((x) => rosterRow(sim, x.contact, { ...(x.stance === 'helpless' ? { helpless: true } : {}), ...(x.hailed ? { hailed: true } : {}), ...(x.leaveAt !== undefined ? { leaveAt: x.leaveAt } : {}), ...(x.gone ? { gone: x.gone } : {}), ...(x.ambush?.visit ? { visit: x.ambush.visit } : {}) })),
     tone: toneOf(sim.content.galaxy?.factions[owner]?.kind), ships: f ? f.ships.length : ev.scene.ships.filter((s) => s.contact.ship !== undefined).length, hostiles,
     deploying: sim.sector.state === 'deploying', canLeave: blocker === null,

@@ -68,7 +68,7 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
   for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
-  const role = v.pilot === 0 ? 'pilot' : 'passenger';
+  const role = v.pilot === 0 && !vehicleDefOf(sim, v)?.escape ? 'pilot' : 'passenger'; // an escape pod has no pilot
   if (role === 'pilot') v.pilot = crew;
   else v.passengers.push(crew);
   sim.events.emit({ type: 'crew.embarked', crew, vehicle, role });
@@ -86,9 +86,11 @@ export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { shipI
   sim.world.remove(crew, AboardC);
   sim.world.add(crew, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
   sim.world.add(crew, PathC, { steps: [] });
-  const intruder = shipById(sim, at.shipId)?.faction !== vehicleFaction(sim, v);
+  // (Someone carried out downed stays down where they are set: no draft, and their activity stays 'downed'.)
+  const downed = sim.world.has(crew, DownedC);
+  const intruder = !downed && shipById(sim, at.shipId)?.faction !== vehicleFaction(sim, v);
   if (intruder) sim.world.add(crew, DraftedC, { target: null });
-  (sim.world.get(crew, CrewC) as Crew).activity = intruder ? 'drafted' : 'idle';
+  (sim.world.get(crew, CrewC) as Crew).activity = downed ? 'downed' : intruder ? 'drafted' : 'idle';
   sim.events.emit({ type: 'crew.disembarked', crew, vehicle, ship: at.shipId, x: at.x, y: at.y });
 }
 

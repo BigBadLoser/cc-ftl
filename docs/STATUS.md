@@ -24,6 +24,10 @@ Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`
 scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
+Slice 2 (branch `combat/behaviour-upgrades`, no PR yet): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
+(nuke: 2 missiles; `hasAmmo`/`consumeAmmo(n)` in `combat/ammo.ts`), effect `arc` (chain coil: lightning from the hit module into the nearest crew, `ifNoDrain`; event
+`projectile.arc`), `WeaponDef.look` (render tint/blast/trail, carried on `weapon.fired`; `render/shotLook.ts`), plus patched shots, shield rule, speed, effects. Nuke is black-market
+only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
 Pending: the upgrade art session (`docs/art-prompts/upgrades.md`: item sprites for all ten, 14 px pixel art icons replacing the Tabler line
 icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
 
@@ -55,7 +59,7 @@ icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
 
 - **Encounters (#173):** steps 1-4 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314; the pirate
   ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
-  threat-first targeting, suits for hot rooms, scene clocks start at deploy). Next: medical pod, checked in play first. The ambush can grow slightly once relationships and interactions exist.
+  threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.

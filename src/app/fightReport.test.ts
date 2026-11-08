@@ -126,7 +126,7 @@ describe('fight report', () => {
     const reporter = createFightReporter(sim);
     reporter.onEvents([{ type: 'combat.started' }]);
     sim.world.detach(ship); // the jump lifts the ship before this frame's events are drained
-    const done = reporter.onEvents([{ type: 'weapon.fired', ship, weapon: 'weapon.missile', weaponId: 1, projectile: 1, targetShip: 0, targetModuleId: 0 }, { type: 'combat.ended' }]);
+    const done = reporter.onEvents([{ type: 'weapon.fired', ship, weapon: 'weapon.missile', weaponId: 1, projectile: 1, targetShip: 0, targetModuleId: 0, ammo: 1 }, { type: 'combat.ended' }]);
     expect(done?.report.ammo).toEqual([{ name: 'Missile', n: 1 }]);
   });
 

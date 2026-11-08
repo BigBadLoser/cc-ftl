@@ -312,6 +312,7 @@ const api: UiApi = {
   inspect: bridge.inspect,
   errors: errorLog.errors,
   crew: bridge.crew,
+  guests: bridge.guests,
   hostiles: bridge.hostiles,
   crewDetail: bridge.crewDetail,
   opinionHover: bridge.opinionHover,
