@@ -99,7 +99,10 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   and m (the run goes on at +x) a strip `END_STRIP` 3 px tall in the floor's tone (`D.SILL_TOP`) closes the wall's
   end under the floor's +x edge (sw30: open there, the inside showed dark, and the floor's edge px blended with it
   into dotted marks across the floor's back at each join, which the next piece doesn't paint; the default window
-  has the same open end and needs the same strip when the ramp is ported); pockets
+  has the same open end and needs the same strip when the ramp is ported); `_chamfers`: the opening's top corners cut
+  at 45 degrees (in the wall's plane: px along = px up) from where the blue under the header ends on a post up to the
+  beam (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands (ochre lvl 3, the
+  stripe's lit top lvl 4, the shadow lvl 1), its underside `POST_IN`, the posts' sides clipped at its foot (sw31); pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
   px in from the floor's two outer ends (one block across the pockets and the floor in front of the rib, not one per
@@ -190,3 +193,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw30: that edge: the wall's end under the floor is open at x = +0.5 and the floor's edge px blended
   with the dark inside. A strip in the floor's tone closes it on l and m (a full cap showed through the next
   piece's glass). The dots are gone. Shown.
+- 2026-11-08: sw31: the opening's top corners chamfered at 45 degrees (the user), 9 px, the blue under the header. Shown.

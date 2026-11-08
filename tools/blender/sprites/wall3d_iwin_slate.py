@@ -38,6 +38,8 @@ PLATE = "fGS2"                          # its top (the vertical wall's greys: it
 PLATE_FRONT = "fGS3"                    # ... its front, down the face
 BLOCK = 13                              # px: the blue end blocks under the posts run this far in from the run's ends
 END_STRIP = 3                           # px: the strip closing the joined end under the floor's edge
+CHAMFER = 9                             # px: the opening's top corners cut this far (the blue under the header)
+BLUE = "ochre"                          # (the trim's: the stripe's, faction.slate.BLUE)
 PANEL = 0.25                            # the plate's seam panel: the middle half of a tile (faction.slate.slate_plate)
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
@@ -196,6 +198,41 @@ def detail(k, part):
             if v1 > v0:
                 _quad(k, [(v0, ya + nf.y, fl(ya) + nf.z), (v1, ya + nf.y, fl(ya) + nf.z), (v1, y0 + nf.y, z0 + nf.z),
                           (v0, y0 + nf.y, z0 + nf.z)], (0, zb - z0, y0 - yb), FLOOR_PAINT[part])
+    _chamfers(k, x0, x1, yf)
+
+
+def _chamfers(k, x0, x1, yf):
+    """The opening's top corners cut at 45 degrees: from where the blue under the header (the rail's shadow and the
+    stripe, CHAMFER px) ends on a post up to the beam, as far along. The wedge's front in the blue's bands beside it,
+    its underside the posts' dark; the posts' sides end at its foot."""
+    z1 = T.rail_foot(W.HF)                              # (the beam's underside: the rail's foot)
+    zc = z1 - CHAMFER * PZ
+    yr = yf + T.FR                                      # (the posts' front)
+    m = k.m
+    for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
+        if not on:
+            continue
+        out = []                                        # the post's side: up to the chamfer's foot only
+        for f in m.f:
+            pts = [m.v[j] for j in f[0]]
+            if not all(abs(p[0] - u) < 1e-6 for p in pts) or max(p[2] for p in pts) <= zc + 1e-6:
+                out.append(f)
+                continue
+            q = _clip(pts, [(2, zc, -1)])
+            if len(q) >= 3:
+                base = len(m.v)
+                m.v += [tuple(p) for p in q]
+                out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+        m.f = out
+
+        def at(z):                                      # the chamfer's edge along the wall at height z
+            return u + sd * (z - zc) / PZ * L
+        _quad(k, [(u, -yr, zc), (u, yr, zc), (at(z1), yr, z1), (at(z1), -yr, z1)], (sd, 0, -1), D.POST_IN)
+        zs = z1 - 3 * PZ                                # (the stripe's top: the rail's shadow over it)
+        for za, zb, lvl in ((zc, zs - PZ, 3), (zs - PZ, zs, 4), (zs, z1, 1)):   # the front, in the bands
+            pts = [(u, yr, za), (at(za), yr, za), (at(zb), yr, zb), (u, yr, zb)] if za > zc else \
+                  [(u, yr, za), (at(zb), yr, zb), (u, yr, zb)]
+            k.poly([Vector(p) for p in pts], BLUE, lvl, Vector((0, 1, 0)))
 
 
 def window(fn, part):
