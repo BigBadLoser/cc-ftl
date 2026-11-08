@@ -109,6 +109,17 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - The grey recolour only touches faces with max z <= `W.skirt_top()`: without that it also caught the header's blue
   rail over the opening (sw4 showed the header grey there).
 
+## Widths vs ref 44 (deskewed, sw12)
+- Deskew: `tools/blender/preview/deskew_win.py <npz dir> tile.wall.slate.full.m10 <ref 3_tile_window dir> <out>`
+  shifts column x up by (x+1)//2, so lines along the wall run level; one column = one art px along the wall. A step
+  into the ramp (grid y) moves 1 col left per row down, so sloped faces' edges lean: measure within one row, from
+  the front face's left end in that row (the tile boundary, +-1 px). Ref rows 61-67 of the deskewed ref.
+- Ref 44 lower layer, tile px (l 0-31 | m 0-31 | r 0-31), at its pocket floor row:
+  blue end block l 0-17 (18) | pocket l 18-28 (11) | rib l29-m1 (5) | pocket m 2-28 with a 2 px divider about m 16-18
+  (it leans: m 15-16 low, m 18-19 high) | rib m29-r1 (5) | pocket r 2-12 (11) | blue end block r 13-30 (18).
+- Ours (sw12): post block (blue) 0-11 (12) | grey 12-14 | pocket l 15-27 (13) | rib l28-m2 (7) | pockets m 3-14,
+  rib 15-16, 17-28 | rib m29-r3 (7) | pocket r 4-16 (13) | grey 17-19 | post block r 20-31 (12).
+
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
@@ -122,3 +133,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw11: pocket backs 2 px in from sw9 instead (POCKET_IN 4/32). Shown.
 - 2026-11-08: sw12: the middle tile's rib between its pockets upright at the pockets' top edge. Shown. The ribs across
   the tile seams are still sloped.
+- 2026-11-08: deskewed sw12 vs ref 44 and measured the widths (section above); deskew_win.py added to preview/.
