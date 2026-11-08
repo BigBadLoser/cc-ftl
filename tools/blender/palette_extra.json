@@ -3496,5 +3496,9 @@
  "upLensL": {
   "hex": "#c4ecff",
   "set": "upgrades"
- }
+ },
+  "growPink": {"hex": "#ff6ad5", "emissive": 2.5, "set": "hydro"},
+  "growViolet": {"hex": "#cfa3ff", "emissive": 2.5, "set": "hydro"},
+  "waterD": {"hex": "#1e4a66", "set": "hydro"},
+  "waterL": {"hex": "#5fb3d6", "set": "hydro"}
 }

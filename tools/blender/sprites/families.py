@@ -131,7 +131,7 @@ def jobs(name):
     if name == "hydroponics":
         import os
         from . import hydroponics
-        return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+        return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "hydro"
     if name == "workbench":
         import os
         from . import workbench
