@@ -272,22 +272,27 @@ CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor,
                                                         # exact: edge AA blended them into a grey speckle)
 
 
-def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
-    """B1-3 (ref 03): two darker plates split down the middle, edge to edge between the seams. On a look's own fall
-    from its shelf's edge down to the toe, a shade under the slope's plates (fNW4 / fNW5 on the y / x face), the red
-    band on them a level darker; else 0.04 .. 0.66 of the run, a level under them."""
-    uc = (u0 + u1) / 2
-    own = T.ramp_fall()
+SPLIT_D = 1.2 / 39.19                # the split plates sunk a px into the slope (the user)
+
+
+def navy_split(plate, u0, u1, run_, ax="y", fam="wall", hole=None, **_):
+    """B1-3 (ref 03): two darker plates split down the middle, sunk a px into the slope over the hole the shell leaves
+    (its "ramp_hole": the field from the shelf's edge to the toe), the cut's walls round them; the red band on them
+    a level darker. Without the hole (a plain slope): two plates on it, 0.04 .. 0.66 of the run, a level under it."""
     g = LINE / 2
-    if not own:
+    if not hole:
+        uc = (u0 + u1) / 2
         for p0, p1 in ((u0 + 0.04, uc - g), (uc + g, u1 - 0.04)):
             plate([(p0, 0.04), (p1, 0.04), (p1, 0.66 * run_), (p0, 0.66 * run_)], PAINT, 1, 0.0)
         return
-    d0, db, d1 = T.style().shelf, T.style().toe_at * run_, run_ - 0.03
-    fx = ("fNW4" if ax == "y" else "fNW5") if fam == "wall" else None
-    for p0, p1 in ((u0 + g, uc - g), (uc + g, u1 - g)):
-        plate([(p0, d0), (p1, d0), (p1, db), (p0, db)], PAINT, 1, 0.0, fixed=fx)
-        plate([(p0, db), (p1, db), (p1, d1), (p0, d1)], PAINT, 2, 0.0, f="ochre")
+    o0, o1, d0, d1 = hole
+    uc, db = (o0 + o1) / 2, T.style().toe_at * run_
+    fx = ("fNW5" if ax == "y" else "fNW6") if fam == "wall" else None    # (a shade darker again: the user)
+    q = lambda a, b, c, e: [(a, c), (b, c), (b, e), (a, e)]             # noqa: E731
+    for p0, p1 in ((o0, uc - g), (uc + g, o1)):
+        plate(q(p0, p1, d0, db), -SPLIT_D, 1, PAINT, fixed=fx)          # (its sides the cut's walls, up to the slope)
+        plate(q(p0, p1, db, d1), -SPLIT_D, 1, PAINT, f="ochre")
+    plate(q(uc - g, uc + g, d0, d1), -SPLIT_D + 0.002, 0, -SPLIT_D + 0.002, fixed="fNW7")   # the seam between them
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=lipped_holes), Design("lockers", middle=navy_lockers, face_holes=lipped_holes),
@@ -295,4 +300,4 @@ NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_ho
              #   yet: the user; its code kept)
              Design("recessed", middle=navy_recessed, face_holes=lipped_holes), Design("thin band", band=navy_thin_band))
 NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
-              Design("split plates", ramp=navy_split))
+              Design("split plates", ramp=navy_split, ramp_hole=(0.0, 1.0, 0.0, 0.03)))

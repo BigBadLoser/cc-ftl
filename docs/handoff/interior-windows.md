@@ -701,3 +701,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: recessed: the line under its band dark (fNS3 24344a), not lit (the user). nq4.
 - 2026-11-08: split ramp toward ref 03: its two plates edge to edge between the seams, from the shelf's edge down to the
   toe, the red band on them ochre 2 (a level darker). nq5.
+- 2026-11-08: split ramp (the user): sunk a px into the slope over a ramp hole (navy_split's ramp_hole (0, 1, 0, 0.03):
+  RampHoles takes a 4th, the hole that far short of the foot, the toe kept), the plates SPLIT_D under it with their
+  sides as the cut's walls; grey a shade darker (fNW5 y / fNW6 x), the red a shade darker (ochre 1); the middle seam
+  fNW7 (reads faint: 1 px under AA). Plain m10 identical. nq7.
