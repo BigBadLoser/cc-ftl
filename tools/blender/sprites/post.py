@@ -187,13 +187,13 @@ def _aa_set():
 
 def _aa_groups():
     """The palette's opt-in anti-aliasing groups ({name: the places in BASE of its entries' shades}): the extras that
-    name one ("aa"), not flat or emissive."""
+    name one ("aa"), not emissive; a flat one joins by a group's name (a flat "aa": true stays out)."""
     i, out = 0, {}
     for name, v in PAL.items():
         if name == "empty":
             continue
         n = 4 if "emissive" in v else 1 if v.get("flat") else len(SHADES)
-        if v.get("aa") and n == len(SHADES):
+        if v.get("aa") and n == len(SHADES) or isinstance(v.get("aa"), str) and n == 1 and v.get("flat"):
             out.setdefault(v["aa"], []).extend(range(i, i + n))
         i += n
     return [np.array(ix, int) for _, ix in sorted(out.items())]

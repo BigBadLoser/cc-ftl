@@ -1966,12 +1966,12 @@
  },
  "fNC0": {
   "hex": "#1c2c44",
-  "flat": true,
+  "flat": true, "aa": "navy.cav",
   "set": "hull"
  },
  "fNC1": {
   "hex": "#141c2c",
-  "flat": true,
+  "flat": true, "aa": "navy.cav",
   "set": "hull"
  },
  "fDS0": {

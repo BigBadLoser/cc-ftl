@@ -579,3 +579,9 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: no collars. The collars round the pipes are gone (and the unused _collar / _steel helpers);
   the straps stay as they were. The pipes now run unbroken and cover the straps' ends, so a strap shows only between
   the pipes. nv21.
+- 2026-11-08: the user: the slot's top and side edges should anti-alias. The cavity tones (fNC0/fNC1, flat) were left
+  out of coverage AA, so their edges against the wall greys stayed hard. post._aa_groups now lets a flat entry join
+  a group by name (a flat "aa": true stays out; no such entry existed, so nothing else changes), and fNC0/fNC1 join
+  "navy.cav". The lip and sides now blend; the cavity's inner corners blend too (one dark step, no grey speckle).
+  Plain m10 identical to nv9. No RENDER_VERSION bump: the palette key (post.palette_digest) changes with the entries,
+  which re-keys every sprite whose palette takes the hull set. nv22.
