@@ -186,9 +186,16 @@ def _rail(k, ax, plane, a, b, z0, z1, mit):
 
 def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
     """Header (T1-4): the base header's rail run on down to the stripe's foot (the paint line), over the stripe, its
-    shadow paint behind it all the way (where a block ends, its front standing out shows the face behind it)."""
+    shadow paint behind it all the way (where a block ends, its front standing out shows the face behind it); each
+    block's foot edge dark, in a box's side tone (as T1-2's boxes')."""
     T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)
     _rail(k, ax, plane, a, b, z0, z1, mit)
+    side = "fGT4" if ax == "y" else "fGT5"
+    for u0, u1, mid in _blocks(a, b):
+        d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
+        m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
+        prism(k, ax, plane, u0, u1, [(0.0, zb), (d + PAINT, zb), (d + PAINT, zb + PZ), (0.0, zb + PZ)], BLUE, 4,
+              cols=[False, side, False, False], mitre=m)
 
 
 SPLIT = 0.655                                   # the ramp's blue plate from here down the run, a px of seam over it
