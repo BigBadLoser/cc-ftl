@@ -978,7 +978,12 @@ station dock inspection, then the patrol version, then refusing and fighting.
 - Run: a standing hit (3), and the trip goes on. Half the time the patrol chases you for 4 turns and hails again if it catches you; the chase is light on
   purpose (it follows like a hunter, one hop behind). Leaving before its inspectors come over counts as running, without the chase.
 - Refusing a patrol's inspectors costs standing only for now; the patrol turning hostile is step 3.
-- The scan pop-up is gone. Pirate interdictions still use `InterdictModal`; moving them to the comms window is #363.
+- The scan pop-up is gone.
+
+**As built (#363, pirate interdictions in the comms window):** every hail that stops you mid-jump uses the same comms window. An interdiction shows the
+pirate captain on video (a machine faction has no face: static), their demand (varied by faction, and by hunters, a route guard's toll or a plain raid),
+their lead ship on the sensors with the ship count and strength, and Evade (odds), Bribe (price, disabled with the reason when short) and Fight. The numbers
+are unchanged. After the answer the window stays open with how it ended and the caller's reply, and closes on Close channel. `InterdictModal` is removed.
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 
