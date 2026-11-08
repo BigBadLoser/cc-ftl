@@ -57,8 +57,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Civil (428): the odd one: posts curve into the beam (rounded inner corners: tan's arch code is the closest start),
   no blue cap lines, a red edge along the beam; lower layer a white ramp with a recessed panel, a red stripe low.
 - Suggested order: slate, bastion, navy, drone, civil.
-- Open question: the amber floor strip is in every ref's lower layer. Check whether the built tan and default
-  windows have it before deciding where it lives (wall piece or floor).
+- The amber floor strip in every ref's lower layer: ours leave it out (the user: "it's fine").
 
 ## How the built ones work
 - `wall3d.block` calls `T.PRE_HOOK(sp)` as a piece starts and `T.HOOK(k, sp)` on its Relief before it builds.
@@ -80,9 +79,11 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   `wall3d_iwin_def.py`, `seq = (part, "m" if part in "mr" else None)` (the piece, then its -x copy) and
   `assert calls[0] == len(seq)`. Tan not re-rendered yet.
 
-## Next
-1. Ask the user before starting a look. Show both ref layers (full + small) next to our render.
-2. Slate first (the user's current focus), from ref 44: a minimal l / m / r blockout, shown in a run, then stop.
+## Next (the user's plan, 2026-11-08)
+1. Slate's ramp (the lower layer) first, starting from the default window's geometry (a good start, it lacks
+   detail), detailed to ref 44's lower layer. Show both ref layers next to our render.
+2. Then port that ramp geometry back to the default window.
+3. Then slate's upper layer, and the other looks.
 
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
