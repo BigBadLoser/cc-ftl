@@ -29,7 +29,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | Ref style (set) | Our look | Window ids (2/3/4 tiles) | Status |
 |---|---|---|---|
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
-| 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py`; slate's ramp ported (dp2), awaiting the user |
+| 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
@@ -90,7 +90,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
    detail), detailed to ref 44's lower layer. Show both ref layers next to our render.
 2. Then port that ramp geometry back to the default window.
 3. Then slate's upper layer, and the other looks. (2026-11-08: the user keeps slate's upper layer as it renders now;
-   slate is done. Next: step 2.)
+   slate is done. Step 2 done too: teal approved at dp16. Next: the other looks.)
 
 ## The ramp (`sprites/wall3d_iwin_ramp.py`, shared)
 - Slate's ramp moved here (2026-11-08) so the default window gets it too: the raised floor and steeper crest
@@ -281,3 +281,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   3 px tall, dark inside, lit front edge). Shown.
 - 2026-11-08: dp16 (the user: one big header block, in the centre): `header_centre`, `rail_layout`. Base tiles and
   slate pixel-identical (sw49). Shown.
+- 2026-11-08: the user approved teal at dp16 ("this is good enough"). Next: the other looks (navy, drone, civil,
+  bastion; tan's re-render), each a `Look`.
