@@ -685,3 +685,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: that (nt3) is worse; the band back to 0.18 H, its stripe's foot on the normal band's (0.30-0.33 H
   under the header: the strip's red ends with it; measured, same row). nt4.
 - 2026-11-08: the user: images are the tile next to its ref only, no before/after.
+- 2026-11-08: thin band (the user): 3 px of red under the header (drawn 5 rows: the overhang hides 2), the stripe 3 px,
+  its foot on the normal band's (measured: same row as the strip's red); grey between. nt5.

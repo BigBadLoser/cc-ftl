@@ -189,10 +189,12 @@ def navy_band(k, ax, plane, a, b, ends, zh, H):
 
 
 def navy_thin_band(k, ax, plane, a, b, ends, zh, H):
-    """T1-6: no recess; the maroon band thinner, a thin stripe under it, its foot on the normal band's (the strip's
-    red: the user)."""
-    T.run(k, ax, plane, a, b, ends, zh - 0.18 * H, zh, BAND, "ochre", 3, 0)
-    T.run(k, ax, plane, a, b, ends, zh - 0.33 * H, zh - 0.30 * H, BAND, "ochre", 3, 0)
+    """T1-6: no recess; 3 px of the maroon band under the header, a 3 px stripe under it, its foot on the normal
+    band's (the strip's red), grey between (the user)."""
+    dz = 1 / 39.19
+    T.run(k, ax, plane, a, b, ends, zh - 5 * dz, zh, BAND, "ochre", 3, 0)            # (3 px seen: the header's
+    T.run(k, ax, plane, a, b, ends, zh - 0.33 * H, zh - 0.33 * H + 3 * dz, BAND, "ochre", 3, 0)   # overhang hides 2;
+    #   the stripe 3 px: the user)
 
 
 navy_band.reds = ((0.33, 0.0),)             # (its red, as fractions of H under the header: the panel line's lit px
