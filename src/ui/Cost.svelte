@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiCost, UiStock } from './api';
   import ItemIcon from './ItemIcon.svelte';
 
@@ -11,7 +12,7 @@
 
 <span class="cost">
   {#each cost as c (c.item)}
-    <span class="c" class:short={stock !== undefined && have(c.item) < c.count} title="{c.name}: have {have(c.item)}">
+    <span class="c" class:short={stock !== undefined && have(c.item) < c.count} use:tip={{ text: `${c.name}: have ${have(c.item)}` }}>
       <ItemIcon {api} item={c.item} {size} />{c.count}
     </span>
   {/each}

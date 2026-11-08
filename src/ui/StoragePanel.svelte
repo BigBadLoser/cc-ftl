@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiItemDef, UiStorage } from './api';
   import ItemIcon from './ItemIcon.svelte';
@@ -50,7 +50,7 @@
     </div>
     <div class="filters">
       {#each items as it (it.id)}
-        <button class="f" class:on={allowed(it.id)} data-testid="filter-{it.id}" aria-pressed={allowed(it.id)} title={it.name} onclick={() => toggle(it.id)}>
+        <button class="f" class:on={allowed(it.id)} data-testid="filter-{it.id}" aria-pressed={allowed(it.id)} use:tip={{ text: it.name }} onclick={() => toggle(it.id)}>
           <ItemIcon {api} item={it.id} size={26} /><span>{it.name}</span>
         </button>
       {/each}

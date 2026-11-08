@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import Icon from '../Icon.svelte';
-  import { ActionButton, Chips, Dialog, KeyBadge, Meter } from '../kit';
+  import { ActionButton, Chips, Dialog, KeyBadge, Meter, tip } from '../kit';
   import { holdModal } from '../keys';
   import { keyLabel, keymap } from '../keymap';
   import type { UiApi } from '../api';
@@ -87,7 +87,7 @@
       {#each plan.crew as c (c.id)}
         {@const at = picked.indexOf(c.id)}
         <li class:off={!!c.reason}>
-          <label title={c.reason ?? ''}>
+          <label use:tip={{ text: c.reason ?? '' }}>
             <input type="checkbox" checked={at >= 0} disabled={!!c.reason || (at < 0 && picked.length >= seats)} onchange={() => toggle(c.id)} data-testid="board-crew-{c.id}" />
             <span class="nm">{c.name}</span><small>{c.role}</small>
             <span class="role">{at >= 0 ? 'boarder' : c.reason ?? ''}</span>

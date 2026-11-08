@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import { WORK_CATEGORIES, type WorkCategory } from '../sim';
   import type { UiApi, UiCrew } from './api';
@@ -27,7 +28,7 @@
       <thead>
         <tr>
           <th></th>
-          {#each SHOWN as cat (cat)}<th title={HELP[cat] ?? cat}>{SHORT[cat]}</th>{/each}
+          {#each SHOWN as cat (cat)}<th use:tip={{ text: HELP[cat] ?? cat }}>{SHORT[cat]}</th>{/each}
           <th></th>
         </tr>
       </thead>
@@ -39,7 +40,7 @@
               <td>
                 <button
                   class="cell" class:changed={c.priorities[cat] !== c.defaults[cat]} class:off={c.priorities[cat] === 0}
-                  data-testid="prio-{c.id}-{cat}" title="{HELP[cat] ?? cat}: role default {c.defaults[cat] || 'off'}" onclick={() => cycle(c, cat)}
+                  data-testid="prio-{c.id}-{cat}" use:tip={{ text: `${HELP[cat] ?? cat}: role default ${c.defaults[cat] || 'off'}` }} onclick={() => cycle(c, cat)}
                 >{c.priorities[cat] || ''}</button>
               </td>
             {/each}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiThumb } from './api';
   import { CATEGORIES, shortOf, type Entry } from './buildCatalog';
   import BuildPreview from './BuildPreview.svelte';
@@ -27,7 +28,7 @@
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 <div class="pop legacy build" role="tooltip" data-testid="build-popover" style:width="{W}px" style:left="{left}px" style:bottom="{vh - rect.top + 18}px" onmouseenter={onenter} onmouseleave={onleave}>
   <div class="phd"><b>{entry.name}</b><span class="chip">{catLabel}{def?.tier ? ` · ${def.tier}` : ''}</span>
-    <button class="pin" class:on={pinned} title={pinned ? 'Unpin' : 'Pin open'} aria-label="Pin" aria-pressed={pinned} onclick={onpin}><Icon name="pin" size={14} /></button></div>
+    <button class="pin" class:on={pinned} use:tip={{ text: pinned ? 'Unpin' : 'Pin open' }} aria-label="Pin" aria-pressed={pinned} onclick={onpin}><Icon name="pin" size={14} /></button></div>
   <div class="cols" class:narrow>
     <div class="left">
       {#if def}

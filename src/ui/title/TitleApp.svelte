@@ -3,7 +3,7 @@
   import { starterShips as starters } from '../../content/ships/starterShips';
   import type { UiApi } from '../api';
   import Icon, { type IconName } from '../Icon.svelte';
-  import { Frame } from '../kit';
+  import { Frame, TipHost } from '../kit';
   import SavesPage from '../menu/SavesPage.svelte';
   import SettingsPage from '../menu/SettingsPage.svelte';
   import ShipPick from './ShipPick.svelte';
@@ -92,6 +92,7 @@
     </div>
   {/if}
 </main>
+<TipHost />
 
 <style>
   .shade { position: fixed; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 82%, transparent) 0%, color-mix(in srgb, var(--bg) 30%, transparent) 42%, transparent 70%); }

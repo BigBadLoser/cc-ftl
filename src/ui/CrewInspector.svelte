@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
   import type { UiCrewDetail } from './crewDetailApi';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import TabbedInspector from './inspector/TabbedInspector.svelte';
   import CrewOverview from './crew/CrewOverview.svelte';
   import { crewTabs, type CrewTabProps } from './crew/crewTabs';
@@ -35,7 +35,7 @@
 
 {#if c && tabProps}
   <div data-testid="crew-inspector">
-    {#snippet head()}<PanelHead icon={enemy ? 'skull' : 'person'} title={c.name} sub={guest ? 'Passenger' : c.side === 'visitor' ? (c.visit ?? 'Visitor') : `${c.role}${enemy ? ' · hostile' : ''}`} foe={enemy} />{/snippet}
+    {#snippet head()}<PaneHead icon={enemy ? 'skull' : 'person'} title={c.name} sub={guest ? 'Passenger' : c.side === 'visitor' ? (c.visit ?? 'Visitor') : `${c.role}${enemy ? ' · hostile' : ''}`} foe={enemy} />{/snippet}
     {#if enemy || guest || c.side === 'visitor'}{@render head()}<CrewOverview {...tabProps} />{:else}<TabbedInspector tabs={crewTabs} props={tabProps} {head} />{/if}
   </div>
 {/if}

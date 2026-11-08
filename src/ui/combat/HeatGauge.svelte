@@ -1,7 +1,7 @@
 <script lang="ts">
   import { keyLabel, keymap } from '../keymap';
   import Icon from '../Icon.svelte';
-  import { ActionButton, Frame, KeyBadge } from '../kit';
+  import { ActionButton, Frame, KeyBadge, tip } from '../kit';
   import HeatBar, { heatTone } from './HeatBar.svelte';
   import { anchor } from '../lessons/anchors';
   import { VENT_MIN_HEAT } from '../../sim/combat/heatTuning';
@@ -35,7 +35,7 @@
         class:up={rate > 0.05}
         class:down={rate < -0.05}
         data-testid="heat-rate"
-        title="Net heat change per second right now"
+        use:tip={{ text: 'Net heat change per second right now' }}
       >
         {rateText}
       </span>
@@ -43,7 +43,7 @@
         <ActionButton
           tone={heat.venting > 0 ? 'active' : 'plain'}
           disabled={!canVent}
-          title="Vent: dump heat fast, but shields drop and weapons hold fire ({keyLabel($keymap, 'combat.vent')})"
+          title="Vent: dump heat fast, but shields drop and weapons hold fire" key="combat.vent"
           onclick={onVent}
         >
           <span class="ventin">

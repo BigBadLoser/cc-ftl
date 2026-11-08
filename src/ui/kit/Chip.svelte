@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './tip';
   import type { Snippet } from 'svelte';
   import Icon, { type IconName } from '../Icon.svelte';
 
@@ -23,7 +24,7 @@
   } = $props();
 </script>
 
-<span class="chip {tone} {size}" class:outline class:caps class:plate style:color={swatch} {title} data-testid={testId}>
+<span class="chip {tone} {size}" class:outline class:caps class:plate style:color={swatch} use:tip={{ text: title }} data-testid={testId}>
   {#if icon}<Icon name={icon} size={size === 'sm' ? 12 : 14} />{/if}{@render children()}
 </span>
 

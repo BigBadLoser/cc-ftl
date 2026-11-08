@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Chip } from './kit';
+  import { Chip, tip } from './kit';
   /** One pending encounter in the starmap drawer: the fleet (faction, role, strength), how it happened and the choices with their odds or cost. */
   import Icon from './Icon.svelte';
   import type { UiEncounter, UiEncounterChoice } from './starmapApi';
@@ -21,7 +21,7 @@
   </div>
   <div class="choices">
     {#each encounter.choices as c (c.choice)}
-      <button class:fight={c.choice === 'fight'} disabled={!c.enabled} title={c.why ?? ''} onclick={() => onChoose(encounter.id, c.choice)} data-testid="starmap-choice-{c.choice}">
+      <button class:fight={c.choice === 'fight'} disabled={!c.enabled} use:tip={{ text: c.why ?? '' }} onclick={() => onChoose(encounter.id, c.choice)} data-testid="starmap-choice-{c.choice}">
         <span>{c.label}</span><small>{c.why ?? c.detail}</small>
       </button>
     {/each}

@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead, tip } from './kit';
   import type { UiDeploy } from './starmapApi';
 
   let { api, deploy }: { api: UiApi; deploy: UiDeploy } = $props();
@@ -81,10 +81,10 @@
 <div class="veil" data-testid="deploy-picker">
   <div class="streaks" aria-hidden="true"></div>
   <div class="sheet panel">
-    <PanelHead icon="ship" title="Deploy" sub={deploy.nodeName} />
+    <PaneHead icon="ship" title="Deploy" sub={deploy.nodeName} />
     <div class="cells">
       <span class="cell" class:bad={!!error} data-testid="deploy-state"><Icon name={error ? 'alert' : 'target'} size={18} /><b>{error ? REASONS[error] ?? error : 'Spot is clear.'}</b></span>
-      <span class="cell" title="Cell and tile"><Icon name="grid" size={18} /><b>{cell.x},{cell.y}</b><small>tile {tile.x},{tile.y}</small></span>
+      <span class="cell" use:tip={{ text: 'Cell and tile' }}><Icon name="grid" size={18} /><b>{cell.x},{cell.y}</b><small>tile {tile.x},{tile.y}</small></span>
     </div>
     <svg bind:this={svg} viewBox={`0 0 ${cols} ${rows}`} preserveAspectRatio="xMidYMid meet" role="application" aria-label="Node grid"
       onpointerdown={(e) => { dragging = true; svg.setPointerCapture(e.pointerId); pick(e); }} onpointermove={(e) => dragging && pick(e)} onpointerup={() => (dragging = false)} onpointercancel={() => (dragging = false)}>

@@ -4,7 +4,7 @@
    * anything farther is a rumour (factions and the region only, dimmed).
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import type { UiNews } from './starmapApi';
   import { toneColor } from './starmapStyle';
 
@@ -13,7 +13,7 @@
 </script>
 
 <aside class="sheet news steel-tokens" data-testid="starmap-news">
-  <PanelHead icon="list" title="News" sub={news.length ? `${news.length} recent` : 'quiet'} onBack={onClose} backIcon="close" backTitle="Close news" backTestId="starmap-news-close" />
+  <PaneHead icon="list" title="News" sub={news.length ? `${news.length} recent` : 'quiet'} onBack={onClose} backIcon="close" backTitle="Close news" backTestId="starmap-news-close" />
   {#if news.length}
     <ul>
       {#each news as n (n.id)}

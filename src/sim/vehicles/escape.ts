@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import { freeAirlock, playerShip } from '../trade/player';
 import { VehicleC, type Vehicle } from './components';
 import { boardingTile } from './geometry';
+import { TICK_HZ } from '../time';
 import { occupants, undock, unboardCrew, vehicleDefOf } from './lifecycle';
 
 /**
@@ -33,11 +34,20 @@ export function callPod(sim: Sim, pod: number): string | null {
   return null;
 }
 
-/** Each tick: a pod docked at a ship lets everyone aboard out on the airlock tile, then casts off empty. */
+/** Seconds a pod holds at the airlock after letting its people out, before it casts off (long enough to be seen docked). */
+export const POD_HOLD_SEC = 5;
+
+/** Each tick: a pod docked at a ship lets everyone aboard out on the airlock tile, holds there a moment, then casts off empty. */
 export function escapePodSystem(sim: Sim): void {
   for (const id of sim.world.query(VehicleC)) {
     const v = sim.world.get(id, VehicleC) as Vehicle;
     if (v.state !== 'docked' || !isEscapePod(sim, v)) continue;
+    if (v.castOff !== undefined) {
+      if (sim.tick < v.castOff) continue;
+      undock(sim, id, v);
+      delete v.autopilot;
+      continue;
+    }
     const at = boardingTile(sim, id);
     if (!at) continue;
     const ship = shipIdOf(sim, sim.world.get(v.dock, ModuleC) as { x: number; y: number });
@@ -47,7 +57,6 @@ export function escapePodSystem(sim: Sim): void {
       // Taken in by the player: a person of another side lives aboard as a passenger (no intruder, never drafted).
       if (host === 'player' && ship === playerShip(sim) && sim.world.has(crew, CrewC)) takePassenger(sim, ship, crew);
     }
-    undock(sim, id, v);
-    delete v.autopilot;
+    v.castOff = sim.tick + Math.round(POD_HOLD_SEC * TICK_HZ);
   }
 }

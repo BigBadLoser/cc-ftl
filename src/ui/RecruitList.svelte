@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiTradeDeal, UiTradePartner } from './api';
 
   /** The people for hire aboard a station: hire sends the player's shuttle to pick the person up; the credits are held until they arrive. */
@@ -16,7 +17,7 @@
     {#each partner.recruits as r (r.key)}
       {@const poor = r.cost > credits}
       <li data-testid="recruit" class:coming={r.coming}>
-        <div class="t"><b>{r.name}{#if r.shady}<span class="shady" data-testid="recruit-shady" title="Shady crew: better skills, one-time fee, no wages">shady +{r.shady}</span>{/if}</b><span class="pay">{r.cost} cr</span></div>
+        <div class="t"><b>{r.name}{#if r.shady}<span class="shady" data-testid="recruit-shady" use:tip={{ text: 'Shady crew: better skills, one-time fee, no wages' }}>shady +{r.shady}</span>{/if}</b><span class="pay">{r.cost} cr</span></div>
         <div class="d">{r.species} {r.role}{r.skills.length ? ` · ${r.skills.join(', ')}` : ''}</div>
         {#if r.coming}
           <div class="way" data-testid="recruit-coming">On the way: {deal?.status ?? 'shuttle fetching them'}</div>

@@ -1,17 +1,19 @@
 <script lang="ts">
-  import Icon, { type IconName } from './Icon.svelte';
+  import Icon, { type IconName } from '../Icon.svelte';
+  import { tip } from './tip';
 
-  let { icon, title, sub = '', foe = false, onBack, backIcon = 'back', backTitle = 'Back to ship (Esc)', backTestId = 'sel-back' }: {
-    icon: IconName; title: string; sub?: string; foe?: boolean; onBack?: () => void;
+  /** The one pane heading: a band across the pane's top with an icon (or a back / close tile when `onBack` is given), the title and a dim sub-line. */
+  let { icon, title, sub = '', foe = false, onBack, backIcon = 'back', backTitle = 'Back to ship', backKey, backTestId = 'sel-back' }: {
+    icon?: IconName; title: string; sub?: string; foe?: boolean; onBack?: () => void;
     /** The back tile's glyph, tooltip and test id (a card closes with `close`, the starmap goes back to the ship). */
-    backIcon?: IconName; backTitle?: string; backTestId?: string;
+    backIcon?: IconName; backTitle?: string; backKey?: string; backTestId?: string;
   } = $props();
 </script>
 
 <div class="ph head" class:foe>
   {#if onBack}
-    <button class="tile back" title={backTitle} aria-label={backTitle.replace(/ \(.*\)$/, '')} data-testid={backTestId} onclick={onBack}><Icon name={backIcon} size={18} /></button>
-  {:else}
+    <button class="tile back" use:tip={{ text: backTitle, key: backKey ?? (backIcon === 'back' ? 'ui.menu' : undefined) }} aria-label={backTitle} data-testid={backTestId} onclick={onBack}><Icon name={backIcon} size={18} /></button>
+  {:else if icon}
     <span class="ico"><Icon name={icon} size={18} /></span>
   {/if}
   <span class="t">{title}</span>

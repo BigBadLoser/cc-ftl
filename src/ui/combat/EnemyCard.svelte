@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '../Icon.svelte';
   import { anchor } from '../lessons/anchors';
-  import { Chip, chipTone, Frame, FrameGap, Meter, Pips } from '../kit';
+  import { Chip, chipTone, Frame, FrameGap, Meter, Pips, tip } from '../kit';
   import type { UiApi, UiShipCombat } from '../api';
   import UpgradeTip from './UpgradeTip.svelte';
   import { enemyWeaponRow } from './enemyWeapons';
@@ -40,23 +40,23 @@
   {#snippet right()}
     <Chip plate {tone}>{pill.text}</Chip>
     <FrameGap width={14} />
-    <button class="fr" title="Frame both ships" aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
+    <button class="fr" use:tip={{ text: 'Frame both ships' }} aria-label="Frame both ships" onclick={onFrame}><Icon name="frame" size={15} /></button>
   {/snippet}
   <div class="body">
     {#if sub}<span class="fac" class:neutral={calm}>{sub}</span>{/if}
     <div class="stats">
       <span class="lbl">Hull</span>
-      <span class="bar" title="Hull integrity. Evasion {Math.round(enemy.evasion * 100)}%: the chance a shot misses">
+      <span class="bar" use:tip={{ text: `Hull integrity. Evasion ${Math.round(enemy.evasion * 100)}%: the chance a shot misses` }}>
         <Meter value={hull} max={100} tone="auto" height={10} edge="var(--line-hi)" blink={hull < 30} />
       </span>
       <b>{hull}%</b>
       <span class="lbl">Shields</span>
-      <span class="bar" title="Shield layers {enemy.shield.layers}/{enemy.shield.max}">
+      <span class="bar" use:tip={{ text: `Shield layers ${enemy.shield.layers}/${enemy.shield.max}` }}>
         <Pips total={enemy.shield.max} on={enemy.shield.layers} height={10} gap={4} fill empty="no shields" emptyCaps />
       </span>
       <b>{enemy.shield.layers}/{enemy.shield.max}</b>
       <span class="lbl">Heat</span>
-      <span class="bar" title="Heat"><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={10} edge="var(--line-hi)" label="Enemy heat" /></span>
+      <span class="bar" use:tip={{ text: 'Heat' }}><HeatBar value={enemy.heat.value} max={enemy.heat.max} height={10} edge="var(--line-hi)" label="Enemy heat" /></span>
       <b class={hot}>{heatPct}%</b>
     </div>
 
@@ -65,7 +65,7 @@
         {#each enemy.charges as w (w.id)}
           {@const row = enemyWeaponRow(w)}
           {@const shot = row.shotColor ? hex(w.color) : null}
-          <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} title="{w.name}: {Math.round(w.charge * 100)}%">
+          <div class="w" class:aim={row.shotColor} class:off={row.dim} style:--c={shot} use:tip={{ text: `${w.name}: ${Math.round(w.charge * 100)}%` }}>
             <span class="nm"><span class="t">{#if w.upgrade?.renames}<UpgradeTip {api} upgrade={w.upgrade} label={w.name} testid="enemy-upgrade" />{:else}{w.name}{/if}</span>{#if w.upgrade && !w.upgrade.renames}<UpgradeTip {api} upgrade={w.upgrade} size={13} testid="enemy-upgrade" />{/if}</span>
             {#if w.eta !== null}
               <span class="eta">{w.eta.toFixed(1)}<small> s</small></span>
