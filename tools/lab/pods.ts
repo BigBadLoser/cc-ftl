@@ -6,30 +6,28 @@ import { iso, TILE_H, TILE_W } from '../../src/render/iso';
 import type { LabCell, LabPanel } from './panel';
 
 const PAD = 10;
-/** The cone variants of the escape pod's first preview (tools/blender/sprites/escape_pod.py VARIANTS). */
-const LABELS: Record<string, string> = { h: 'H' };
-
 /**
- * `?panel=pods` : pod-family craft side by side for shape and scale. Each variant (`variants=h`) and state
- * (`states=fly,drift:f0,drift:f1,docked`: sprites `vehicle.escape_pod.<v>.<state>.d<d>[.<frame>]`) gets a row at 1x beside the
- * mining pod (`ref=`), the first state also at 3x (`big`: every state), headings `dirs=0,2,5`; then the states side by
- * side at 3x. A floor tile's diamond under each anchor and a crew member beside it (`crew=0` hides them) show the scale.
- * Read a scratch preview build with `&assets=/.cache/escape-preview/` (built into .cache/escape-preview/1x).
+ * `?panel=pods` : pod-family craft side by side for shape and scale. Each state (`states=fly,drift:f0,drift:f1,docked`:
+ * sprites `vehicle.escape_pod.<state>.d<d>[.<frame>]`) gets a row at 1x beside the mining pod (`ref=`), the first state also
+ * at 3x (`big`: every state), headings `dirs=0,2,5`; then the states side by side at 3x. A floor tile's diamond under each
+ * anchor and a crew member beside it (`crew=0` hides them) show the scale. A shape preview names its variants
+ * (`variants=h,j`: ids `vehicle.escape_pod.<v>.<state>...`); read a scratch build with `&assets=/.cache/<dir>/`.
  */
 export const podsPanel: LabPanel = {
   id: 'pods',
   title: 'Pods',
-  help: 'pod craft variants beside the mining pod at 1x and 3x: variants=h, states=fly,drift:f0,drift:f1,docked, big (every state at 3x), dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod',
+  help: 'pod craft beside the mining pod at 1x and 3x: states=fly,drift:f0,drift:f1,docked, big (every state at 3x), dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod, variants= (a shape preview)',
   async cells({ atlas, params }) {
-    const variants = (params.get('variants') ?? 'h').split(',').filter(Boolean);
+    const variants = (params.get('variants') ?? '').split(',');
     const dirs = (params.get('dirs') ?? '0,2,5').split(',').map(Number);
+    const d0 = dirs[0] ?? 0;
     const craft = params.get('craft') ?? 'vehicle.escape_pod';
     const ref = params.get('ref') ?? 'vehicle.mining_pod';
-    // states: a sprite state, with an optional frame after a colon (`drift:f0` = <craft>.<v>.drift.d<d>.f0)
+    // states: a sprite state, with an optional frame after a colon (`drift:f0` = <craft>.drift.d<d>.f0)
     const states = (params.get('states') ?? 'fly,drift:f0,drift:f1,docked').split(',').filter(Boolean);
     const sid = (v: string, st: string, d: number): string => {
       const [name, frame] = st.split(':');
-      return `${craft}.${v}.${name}.d${d}${frame ? `.${frame}` : ''}`;
+      return `${craft}${v ? `.${v}` : ''}.${name}.d${d}${frame ? `.${frame}` : ''}`;
     };
     const ids = [...dirs.map((d) => `${ref}.fly.d${d}`), ...variants.flatMap((v) => states.flatMap((st) => dirs.map((d) => sid(v, st, d))))];
     for (const id of ids) atlas.stat(id);
@@ -89,15 +87,15 @@ export const podsPanel: LabPanel = {
     });
     const cells: LabCell[] = [];
     for (const v of variants) {
-      const name = LABELS[v] ?? v;
+      const name = v || 'escape pod';
       states.forEach((st, k) => {
         const tag = `${name} ${st.replace(':', ' ')}`;
-        cells.push(cell(`mining pod d${dirs[0]}`, `${ref}.fly.d${dirs[0]}`, 1, true));
+        cells.push(cell(`mining pod d${d0}`, `${ref}.fly.d${d0}`, 1, true));
         dirs.forEach((d) => cells.push(cell(`${tag}: d${d}`, sid(v, st, d), 1, false)));
         if (k === 0 || params.has('big')) dirs.forEach((d, i) => cells.push(cell(`${tag}: d${d}`, sid(v, st, d), 3, i === 0)));
       });
       // the states side by side at 3x on one heading, to compare
-      if (states.length > 1) states.forEach((st, i) => cells.push(cell(`${name} ${st.replace(':', ' ')}: d${dirs[0]}`, sid(v, st, dirs[0]), 3, i === 0)));
+      if (states.length > 1) states.forEach((st, i) => cells.push(cell(`${name} ${st.replace(':', ' ')}: d${d0}`, sid(v, st, d0), 3, i === 0)));
     }
     return cells;
   },

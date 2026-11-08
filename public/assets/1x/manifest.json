@@ -4611,6 +4611,10 @@
    "image": "sprites/env.png",
    "glow": "sprites/env.glow.png"
   },
+  "escape_pod": {
+   "image": "sprites/escape_pod.png",
+   "glow": "sprites/escape_pod.glow.png"
+  },
   "fx": {
    "image": "sprites/fx.png",
    "glow": "sprites/fx.glow.png"
@@ -179705,6 +179709,739 @@
    "footprint": [
     2,
     2
+   ]
+  },
+  "vehicle.escape_pod.docked.d0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2266,
+    "y": 1,
+    "w": 103,
+    "h": 95
+   },
+   "anchor": {
+    "x": 58,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.docked.d2": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2370,
+    "y": 1,
+    "w": 103,
+    "h": 95
+   },
+   "anchor": {
+    "x": 45,
+    "y": 97
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.docked.d4": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 197,
+    "y": 1,
+    "w": 103,
+    "h": 102
+   },
+   "anchor": {
+    "x": 45,
+    "y": 87
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.docked.d6": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 301,
+    "y": 1,
+    "w": 103,
+    "h": 102
+   },
+   "anchor": {
+    "x": 58,
+    "y": 87
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d0.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 900,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d0.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 997,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d1.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 502,
+    "y": 1,
+    "w": 96,
+    "h": 101
+   },
+   "anchor": {
+    "x": 48,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d1.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 599,
+    "y": 1,
+    "w": 96,
+    "h": 101
+   },
+   "anchor": {
+    "x": 48,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d2.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1094,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d2.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1191,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d3.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1288,
+    "y": 1,
+    "w": 98,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d3.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1387,
+    "y": 1,
+    "w": 98,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d4.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1486,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d4.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1583,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d5.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1680,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d5.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1777,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d6.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1874,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d6.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1971,
+    "y": 1,
+    "w": 96,
+    "h": 100
+   },
+   "anchor": {
+    "x": 48,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.drift.d7.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2068,
+    "y": 1,
+    "w": 98,
+    "h": 100
+   },
+   "anchor": {
+    "x": 50,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.drift.d7.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2167,
+    "y": 1,
+    "w": 98,
+    "h": 100
+   },
+   "anchor": {
+    "x": 50,
+    "y": 76
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.fly.d0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2474,
+    "y": 1,
+    "w": 97,
+    "h": 95
+   },
+   "anchor": {
+    "x": 44,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.fly.d1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3286,
+    "y": 1,
+    "w": 96,
+    "h": 90
+   },
+   "anchor": {
+    "x": 48,
+    "y": 84
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.fly.d2": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2572,
+    "y": 1,
+    "w": 97,
+    "h": 95
+   },
+   "anchor": {
+    "x": 53,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "vehicle.escape_pod.fly.d3": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 696,
+    "y": 1,
+    "w": 101,
+    "h": 101
+   },
+   "anchor": {
+    "x": 54,
+    "y": 86
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.fly.d4": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 97,
+    "h": 103
+   },
+   "anchor": {
+    "x": 53,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.fly.d5": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 405,
+    "y": 1,
+    "w": 96,
+    "h": 102
+   },
+   "anchor": {
+    "x": 48,
+    "y": 84
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.fly.d6": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 99,
+    "y": 1,
+    "w": 97,
+    "h": 103
+   },
+   "anchor": {
+    "x": 44,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.fly.d7": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 798,
+    "y": 1,
+    "w": 101,
+    "h": 101
+   },
+   "anchor": {
+    "x": 47,
+    "y": 86
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "vehicle.escape_pod.parked.r0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2670,
+    "y": 1,
+    "w": 101,
+    "h": 95
+   },
+   "anchor": {
+    "x": 56,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r0.fold.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2772,
+    "y": 1,
+    "w": 101,
+    "h": 95
+   },
+   "anchor": {
+    "x": 56,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r0.fold.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2874,
+    "y": 1,
+    "w": 103,
+    "h": 95
+   },
+   "anchor": {
+    "x": 58,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 2978,
+    "y": 1,
+    "w": 101,
+    "h": 95
+   },
+   "anchor": {
+    "x": 45,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r1.fold.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3080,
+    "y": 1,
+    "w": 101,
+    "h": 95
+   },
+   "anchor": {
+    "x": 45,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r1.fold.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3182,
+    "y": 1,
+    "w": 103,
+    "h": 95
+   },
+   "anchor": {
+    "x": 45,
+    "y": 98
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r2": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3383,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 45,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r2.fold.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3487,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 45,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r2.fold.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3591,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 45,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r3": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3695,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 58,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r3.fold.f0": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3799,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 58,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "vehicle.escape_pod.parked.r3.fold.f1": {
+   "kind": "static",
+   "sheet": "escape_pod",
+   "frame": {
+    "x": 3903,
+    "y": 1,
+    "w": 103,
+    "h": 90
+   },
+   "anchor": {
+    "x": 58,
+    "y": 88
+   },
+   "footprint": [
+    3,
+    3
    ]
   },
   "vehicle.mining_pod.docked.d0": {

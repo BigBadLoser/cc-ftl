@@ -1,65 +1,59 @@
-"""Escape pod sprite family (escape_pod.py). Preview phase: `escape_pod_variants` renders each cone variant's flying
-headings d0, d2 and d5 as vehicle.escape_pod.<variant>.fly.d<d>, and drifting (upright, beacon on in f0, off in f1) as
-.drift.d<d>.f<k>, to pick a shape."""
+"""Escape pod sprite family `escape_pod` (escape_pod.py), named like the mining pod's (pod_family.py) so the game draws
+them the same way. Craft sprites: origin = the pod's centre on the ground, its lowest point at z 0 (podView adds the hover).
+  vehicle.escape_pod.fly.d0..d7            flying, leaning back, thrusters lit (d0 = +x, d2 = +y)
+  vehicle.escape_pod.drift.d0..d7.f0..f1   adrift: upright, thrusters dark, the beacon lit (f0) and dark (f1)
+  vehicle.escape_pod.docked.d0/2/4/6       on its side, the hatch toward d: docked nose first at an airlock (its axis
+                                           AXIS above the origin, the hatch's face HATCH_FACE ahead of it: podView puts
+                                           them on the collar's), or lifting out of / settling into a pod bay
+  vehicle.escape_pod.parked.r<r>[.fold.f<i>]   in a pod bay of rotation r: the docked pose, the hatch to the bay's gate
+                                           (its +u side), on the pit floor; rendered with that bay state as a holdout, as
+                                           the mining pod's parked sprites are (pod_family.parked_item)
+"""
 import math
 
-from . import core, post, vehicle_bay as VB, escape_pod as E
+from . import core, post, vehicle_bay as VB, escape_pod as E, pod_bay as B, pod_family as PF
 
-CRAFT = "vehicle.escape_pod"
+CRAFT, PARKED_ID = "vehicle.escape_pod", "vehicle.escape_pod.parked"
+HATCH_FACE = E.hatch_face()
+AXIS = E.VARIANTS["h"]["rb"] * 1.04            # docked: the axis's height over the lowest point (the shield's rim)
+PARKED_SAMPLES = 32                            # the bay's soft shadows speckle the white hull at the default 4
 
 
-def craft_item(name, heading, variant, state, beacon=False):
+def craft_item(name, heading, state, beacon=False):
     core.clear_scene_meshes()
     post.select(True)
-    return [VB._render(name, "prop", E.pod(heading, variant, state, beacon), [], (1, 1))]
+    return [VB._render(name, "prop", E.pod(heading, "h", state, beacon, foot=0.0), [], (1, 1))]
 
 
-def variant_jobs():
-    return [lambda v=v, d=d: craft_item(f"{CRAFT}.{v}.fly.d{d}", d * math.pi / 4, v, "fly")
-            for v in E.VARIANTS for d in (0, 2, 5)] + \
-        [lambda v=v, d=d, k=k: craft_item(f"{CRAFT}.{v}.drift.d{d}.f{k}", d * math.pi / 4, v, "drift", k == 0)
-         for v in E.VARIANTS for d in (0, 2, 5) for k in (0, 1)] + \
-        [lambda v=v, d=d: craft_item(f"{CRAFT}.{v}.docked.d{d}", d * math.pi / 4, v, "docked")
-         for v in E.VARIANTS for d in (0, 2, 5)]
-
-
-def dock_item(rot, variant="h"):
-    """Preview: the pod docked nose first at an airlock of rotation rot (its housing, open, and its collar, docked),
-    the hatch's mating face on the collar's, the axes level (airlock.ZC): <CRAFT>.<v>.airlock.r<rot>."""
-    from . import airlock as A, airlock_collar as CO
-    core.clear_scene_meshes()
-    post.select(A.HULL_PAL)
-    fr = A.frame(None, rot)
-    ox, oy = fr.xy(0.0, 0.0)
-    out_x, out_y = (a - b for a, b in zip(fr.xy(1.0, 0.0), (ox, oy)))      # outward through the hull, grid
-    cx, cy = fr.xy(A.COLLAR_END + E.hatch_face(variant), 0.0)
-    obs = E.pod(math.atan2(-out_y, -out_x), variant, "docked", axis=A.ZC)
-    for ob in obs:
-        ob.location = ob.location + core.G(cx, cy, 0.0)
-    co = CO.collar(rot, 1.0, True)                                          # (camera-facing rotations: with the hull row)
-    co = list({id(o): o for o in co[1] + co[0]}.values()) if isinstance(co, tuple) else co
-    objs = A.housing(rot, 1.0) + co + obs
-    return A._item(f"{CRAFT}.{variant}.airlock.r{rot}", "prop", objs, A.HULL_U + 1, 0.0, rot)
-
-
-def bay_item(rot, variant="h"):
-    """Preview: the pod parked in a pod bay of rotation rot in its docked pose (on its side, the hatch to the bay's
-    gate, as at an airlock), resting on the pit floor: <CRAFT>.<v>.inbay.r<rot>."""
-    from . import pod_bay as B
-    core.clear_scene_meshes()
-    post.select(True)
-    hold = B.bay(rot)
+def gate_heading(rot):
+    """The heading from a pod bay's centre to its gate (the bay's +u side), grid radians."""
     bf = B.BayFrame(None, rot, B.FOOT)
-    (x0, y0), (x1, y1) = bf.xy(0.0, 0.0), bf.xy(1.0, 0.0)                  # the gate is on the bay's +u side
-    obs = E.pod(math.atan2(y1 - y0, x1 - x0), variant, "docked", foot=-B.PIT)
-    c = bf.pt(0.0, 0.0, 0.0)
+    (x0, y0), (x1, y1) = bf.xy(0.0, 0.0), bf.xy(1.0, 0.0)
+    return math.atan2(y1 - y0, x1 - x0)
+
+
+def parked_item(rot, state):
+    import bpy
+    core.clear_scene_meshes()
+    post.select(True)
+    hold = B.bay(rot, **PF.PARKED[state])
+    obs = E.pod(gate_heading(rot), "h", "docked", foot=-B.PIT)
+    c = B.BayFrame(None, rot, B.FOOT).pt(0.0, 0.0, 0.0)
     for ob in obs:
         ob.location = (ob.location.x + c.x, ob.location.y + c.y, ob.location.z)
-    return [VB._render(f"{CRAFT}.{variant}.inbay.r{rot}", "block", hold + obs, hold[1:], B.FOOT)]
+    cyc = bpy.context.scene.cycles
+    was, cyc.samples = cyc.samples, PARKED_SAMPLES
+    try:
+        return [VB._render(f"{PARKED_ID}.r{rot}" + (f".{state}" if state else ""), "prop", obs + hold, hold, B.FOOT)]
+    finally:
+        cyc.samples = was
 
 
-def place_jobs():
-    # (one lambda a line: the render cache tells jobs apart by their code and line, not the function they call)
-    docks = [lambda r=r: dock_item(r) for r in range(4)]
-    bays = [lambda r=r: bay_item(r) for r in range(4)]
-    return docks + bays
+def jobs():
+    # (a list per line: the render cache tells callable jobs apart by their code and line, not the function they call)
+    fly = [lambda d=d: craft_item(f"{CRAFT}.fly.d{d}", d * math.pi / 4, "fly") for d in range(8)]
+    drift = [lambda d=d, k=k: craft_item(f"{CRAFT}.drift.d{d}.f{k}", d * math.pi / 4, "drift", k == 0)
+             for d in range(8) for k in (0, 1)]
+    docked = [lambda d=d: craft_item(f"{CRAFT}.docked.d{d}", d * math.pi / 4, "docked") for d in (0, 2, 4, 6)]
+    parked = [lambda r=r, s=s: parked_item(r, s) for r in range(4) for s in PF.PARKED]
+    return fly + drift + docked + parked
