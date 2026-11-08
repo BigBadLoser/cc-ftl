@@ -127,8 +127,7 @@ GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
 
 
 def _part(k, name):
-    """A part in its own mesh: "glass" (the see-through panes) or "glint" (their highlights). Neither masks the crop:
-    the plants show through the glass."""
+    """A part in its own mesh: "glass", the see-through panes. It never masks the crop: the plants show through."""
     if not hasattr(k, "parts"):
         k.parts = {}
     if name not in k.parts:
@@ -164,14 +163,27 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, ring, ring_t)
         _bar(k, (cu, sv * b, zv), (cu, sv * b2, zr), s, frame_l)
     g.m.poly([_G(g, *p, zr) for p in hi], "glassT", flip=True)              # the glass roof
     _bar(k, (cu, -b2, zr), (cu, b2, zr), s, frame_l)                          # the strut across it
-    Lr, zl = L - 0.22, zr - 0.22
+    Lr, zl = L - 0.1, zr - 0.22
     _lamp_ring(k, cu, 0, zl, Lr, 2 * b2, 0.09, on, col=ring, top=ring_t)
     for sv in (-1, 1):                                                      # hung from the strut
         _bar(k, (cu, sv * (b2 - 0.045), zl + 0.1), (cu, sv * (b2 - 0.045), zr), 0.045, frame)
-    t = lambda z: b - max(0.0, z - zv) / (zr - zv) * iv + 0.004             # the front glass's v at height z
-    for du, z1, ln in ((-0.25, 0.9, 0.14), (-0.16, 1.0, 0.09)):            # two glints on the front slope
-        u0 = cu + a * 0.55 + du
-        _bar(_part(k, "glint"), (u0, t(z1), z1), (u0 + ln * 0.6, t(z1 + ln), z1 + ln), 0.03, "glassG")
+    # Reflections: solid pale bands across the panes in pairs (a see-through sheen speckles when it is downsampled).
+    # They mask the crop, so a plant behind one shows the band across it.
+    up = zr - zv                                                            # the front slope: v and z at fraction f
+    fs = lambda f: (b - f * iv + 0.006, zv + f * up)
+    for u0, w in ((cu - 0.78, 0.08), (cu - 0.64, 0.04), (cu + 0.5, 0.08), (cu + 0.64, 0.04)):
+        (v0, z0_), (v1, z1_) = fs(0.12), fs(0.88)
+        _streak(k, (u0, v0, z0_), (u0 + 0.14, v1, z1_), (w, 0, 0))
+    for u0, w in ((cu - 0.55, 0.09), (cu - 0.4, 0.045), (cu + 0.25, 0.09), (cu + 0.4, 0.045)):   # the roof
+        _streak(k, (u0, b2 - 0.04, zr + 0.006), (u0 + 0.16, -b2 + 0.04, zr + 0.006), (w, 0, 0))
+    for v0, w in ((0.26, 0.08), (0.12, 0.04)):                             # the end pane
+        _streak(k, (cu + a + 0.006, v0, z0 + 0.06), (cu + a + 0.006, v0 - 0.12, zv + 0.2), (0, -w, 0))
+
+
+def _streak(k, p0, p1, e):
+    """A flat reflection band from p0 to p1 (local u, v, z), e wide (a local vector across it)."""
+    q = [p0, p1, tuple(p1[i] + e[i] for i in range(3)), tuple(p0[i] + e[i] for i in range(3))]
+    k.m.poly([_G(k, *p) for p in q], "glassG", flip=True)
 
 
 def _tray(k, cu, L, D, z0, zs, seed):
@@ -185,7 +197,7 @@ def terra(k, on):
     _prism(k, _cham(0, 0, 1.86, 0.82, 0.04), 0.0, 0.1, "dark")                                # kick
     body = _cham(0, 0, 1.98, 0.9375, 0.06)                  # (front face on v = 15/32: whole px, as every u below)
     _prism(k, body, 0.1, 0.54, "tNavy", top="tNavyL")
-    _ring(k, _cham(0, 0, 2.0, 0.96, 0.07), _cham(0, 0, 1.84, 0.8, 0.03), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
+    _ring(k, _cham(0, 0, 2.0, 0.96, 0.02), _cham(0, 0, 1.84, 0.8, 0.02), 0.56, 0.1, "tFrame", top="tFrameL")  # sill
     f = 0.46875
     k.box(-0.40625, f, 0.2, 0.75, 0.01, 0.26, "dark")                                       # slatted panel
     for j in range(6):                                                                     # 2 px slats, 2 px gaps
