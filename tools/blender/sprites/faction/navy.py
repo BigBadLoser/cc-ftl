@@ -4,7 +4,7 @@ from .. import wall3d as T
 from .base import Faction, _style
 from .navy_designs import NAVY_RAMPS, NAVY_TOPS, navy_band, navy_recess
 from .parts import LINE, PAINT, PX, _slab, body, bracket, corner_piece, tube, tube_prof
-from .slate import SHELF
+from .slate import LIP_D, SHELF
 from .shell import (
     NO,
     Chamfer,
@@ -24,6 +24,7 @@ NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up
                                     # grid: a px wide, they fill whole px on both faces)
 
 
+NAVY_SHELF = SHELF + LIP_D          # the ramp's shelf: slate's and the lip's depth, all of it shelf (the user)
 RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
                                     # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -147,7 +148,7 @@ class Navy(Faction):
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT4"), "blue": ("fNT2", "fNT4")},  # (the toe in the red band's tones)
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
-                      shelf=SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
+                      shelf=NAVY_SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
                       #   shelf at the wall, all shelf: no lip on it)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("wall", 2),

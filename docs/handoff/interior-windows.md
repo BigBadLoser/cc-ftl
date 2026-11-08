@@ -473,3 +473,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: red band down onto the toe's edge. RED_AT 9/11 and the toe (the slope's last px) in the band's
   tones (toe_lvl fNT2 / fNT4): the red from 9 px out down to the foot. ns7. Shelf vs slate's: both SHELF 4 px; slate's
   reads bigger because its upper slope down to SPLIT (0.655 of the run, ~7 px) is grey like the shelf, the blue below.
+- 2026-11-08: the user: navy's shelf should be slate's shelf + lip, with no lip. NAVY_SHELF = SHELF + LIP_D (6/32, was
+  4/32), all of it flat shelf; the wall face's foot and the ramp seams follow it down. ns8. Corners and ends checked. The
+  window (wall3d_iwin_navy) still cuts from the old ramp top: CUT_Z 8 and `_front()` need re-fitting to the shelf.
