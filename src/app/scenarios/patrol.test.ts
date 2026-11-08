@@ -82,7 +82,7 @@ describe('?scenario=patrol', () => {
     expect(clean.galaxy.encounters.find((x) => x.kind === 'scan')?.scan).toBeUndefined();
   });
 
-  it('jumping away while the patrol\'s inspectors are still on the way counts as running', () => {
+  it('jumping away while the patrol\'s inspectors are still on the way counts as refusing them', () => {
     const { sim, faction } = boarding();
     const [id] = sim.world.query(InspectionC);
     expect(sim.world.get(id!, InspectionC)!.phase).toBe('fly');

@@ -12,8 +12,9 @@ import { VehicleC } from '../vehicles/components';
  *   the inspectors find on crew and floors they pass, they carry to the shuttle with ordinary hauls. Ends when no search or seizure haul is left.
  * - 'settle': contraband was found: the lead inspector waits aboard for the player's answer (`inspect.settle`: the fine, a bribe, or refusing).
  * - 'leave': the site closes, the run brings the party home and the inspection ends with them (`InspectionC` goes with the shuttle).
+ * - 'fight': the player attacked them (inspect/fight.ts): the inspectors are boarders on their side's combat faction until none is left standing aboard.
  */
-export type InspectPhase = 'fly' | 'search' | 'settle' | 'leave';
+export type InspectPhase = 'fly' | 'search' | 'settle' | 'leave' | 'fight';
 export interface Inspection {
   /** The station that sent it, the player's ship it inspects, and the galaxy faction (the station's owner) and name it inspects for. */
   station: number;
@@ -40,7 +41,7 @@ export interface Inspection {
   /** A bribe was offered and turned down: it is not offered again. */
   bribeFailed?: true;
   /** How it ended: the player's answer, 'clean' (nothing found), 'fled' (the player left) or 'off' (a fight, the station gone). */
-  outcome?: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled' | 'off';
+  outcome?: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled' | 'off' | 'fought';
   /** Set while the party cannot reach the work: no inspector has made it aboard, or a search job nobody can take (the urgent alert). */
   blocked?: true;
 }

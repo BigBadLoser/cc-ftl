@@ -43,6 +43,14 @@ export const INSPECT_BOARD_SEC = 90;
 export const INSPECT_STALL_SEC = 45;
 export const INSPECT_HOME_SEC = 300;
 /**
+ * Refusing and fighting (#138 step 3): refusing a patrol's inspectors (or leaving while they search or wait) costs INSPECT_PATROL_REFUSE_HIT standing
+ * (a patrol has no service to bar). Attacking the inspectors costs INSPECT_FIGHT_HIT standing and turns their side hostile; a station also refuses
+ * service for INSPECT_FIGHT_BAN_TURNS.
+ */
+export const INSPECT_PATROL_REFUSE_HIT = 8;
+export const INSPECT_FIGHT_HIT = 10;
+export const INSPECT_FIGHT_BAN_TURNS = 30;
+/**
  * Patrol hails (#138 step 2): a patrol whose scan reads contraband hails the player to stop. Running costs PATROL_RUN_HIT standing, and with
  * PATROL_CHASE_CHANCE (a seeded roll) the patrol gives chase for PATROL_CHASE_TURNS turns (the hunters' path), hailing again if it catches them.
  */
