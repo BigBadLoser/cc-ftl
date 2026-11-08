@@ -31,7 +31,8 @@ export interface OfferCheck {
 
 /**
  * Validate and price a proposal against the current state: the trader answers, every item has a price, the trader has what
- * it is asked for, the player has what they offer, a barter does not short the trader, and both purses cover their part.
+ * it is asked for, the player has what they offer, a barter does not short the trader, and both purses cover their part. No item may
+ * be on both sides (`sameItem`).
  * Used by `trade.offer`, again by `trade.accept`, and by the UI snapshot for its live balance.
  */
 export function checkOffer(sim: Sim, ship: number, giveIn: readonly ItemQty[], getIn: readonly ItemQty[], barter: boolean): OfferCheck {
@@ -39,6 +40,8 @@ export function checkOffer(sim: Sim, ship: number, giveIn: readonly ItemQty[], g
   const get = cleanLines(sim, getIn);
   const fail = (error: string, q: Quote | null = null): OfferCheck => ({ error, give: give ?? [], get: get ?? [], quote: q });
   if (!give || !get) return fail('badLine');
+  // One item on both sides: refused (#150). Delivery tracks cargo by item, so outbound units could pass for the purchase; net it instead.
+  if (give.some((g) => get.some((l) => l.item === g.item))) return fail('sameItem');
   const trader = ensureTrader(sim, ship);
   if (!trader) return fail('noTrader');
   const hail = sim.trade.hails.find((h) => h.ship === ship);

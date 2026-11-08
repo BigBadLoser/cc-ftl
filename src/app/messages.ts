@@ -65,6 +65,7 @@ const REASONS: Record<string, string> = {
   badLine: 'That is not a valid quantity',
   noPrice: 'They will not trade in that',
   theyLack: 'They do not have that much',
+  sameItem: 'Buy or sell an item, not both in one deal',
   noItems: 'You do not have that much in storage',
   contraband: 'They will not touch contraband: only a black market takes it',
   scanPending: 'A scan or an inspection is under way',
