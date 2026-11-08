@@ -17,7 +17,9 @@
     const w = bw, h = bh, r = s.rect;
     const side = s.spec.side ?? 'bottom';
     const flip = side === 'bottom' && r.bottom + GAP + h > innerHeight - PAD ? 'top' : side === 'top' && r.top - GAP - h < PAD ? 'bottom' : side;
-    let x = side === 'left' ? r.left - GAP - w : side === 'right' ? r.right + GAP : r.left + r.width / 2 - w / 2;
+    // A side tip that would cross the screen edge opens on the other side instead of sliding over its trigger.
+    const hside = side === 'left' && r.left - GAP - w < PAD ? 'right' : side === 'right' && r.right + GAP + w > innerWidth - PAD ? 'left' : side;
+    let x = hside === 'left' ? r.left - GAP - w : hside === 'right' ? r.right + GAP : r.left + r.width / 2 - w / 2;
     let y = flip === 'top' ? r.top - GAP - h : flip === 'bottom' ? r.bottom + GAP : r.top + r.height / 2 - h / 2;
     x = Math.max(PAD, Math.min(x, innerWidth - PAD - w)); y = Math.max(PAD, Math.min(y, innerHeight - PAD - h));
     return { x, y };
