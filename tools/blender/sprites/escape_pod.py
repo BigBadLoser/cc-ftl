@@ -28,8 +28,11 @@ BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
-VARIANTS = {
-    "h": dict(rb=1.0, rt=0.58, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H"),
+H = dict(rb=1.0, rt=0.58, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack")
+VARIANTS = {                                  # (scorch: the heat shield's streaks, their colour and how many)
+    "h": dict(H, scorch=("leather", 2.1), label="H"),
+    "hs": dict(H, scorch=("steelD", 2.2), label="H soot"),
+    "hw": dict(H, scorch=("rust", 2.1), label="H worn"),
 }
 SIDES = 48
 COLLAR = 0.91                 # the hatch collar's radius, x the cone's top: it steps in, a ledge round it
@@ -156,7 +159,7 @@ def heat_shield(k):
 
     def scorch(x, th):                                                     # streaks out from the middle, worse
         w = math.sin(3 * th + 1.3) + 0.7 * math.sin(7 * th + 0.4 + 2.5 * x) + 0.5 * math.sin(13 * th + 2.0)
-        return w + 2.2 * x > 2.1                                           # toward the rim
+        return w + 2.2 * x > k.v["scorch"][1]                              # toward the rim
 
     n, m = 12, 48                                                          # in cells, so it can be patchy
     A = [math.pi / 2 * i / n for i in range(n + 1)]
@@ -165,7 +168,7 @@ def heat_shield(k):
         x = math.sin((a0 + a1) / 2)                                        # (r over R)
         for t0, t1 in zip(T, T[1:]):
             base = SHIELD_D if x > 0.8 else SHIELD
-            mat = SHIELD_D if base == SHIELD and scorch(x, (t0 + t1) / 2) else base
+            mat = k.v["scorch"][0] if base == SHIELD and scorch(x, (t0 + t1) / 2) else base
             pts = [on(a, t)[0] for a, t in ((a0, t0), (a1, t0), (a1, t1), (a0, t1))]
             k.f.poly([k.f.pt(*q) for q in pts], mat)
     p, nn = on(0.0, 0.0)

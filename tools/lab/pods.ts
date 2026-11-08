@@ -7,7 +7,7 @@ import type { LabCell, LabPanel } from './panel';
 
 const PAD = 10;
 /** The cone variants of the escape pod's first preview (tools/blender/sprites/escape_pod.py VARIANTS). */
-const LABELS: Record<string, string> = { h: 'H' };
+const LABELS: Record<string, string> = { h: 'H', hs: 'H soot', hw: 'H worn' };
 
 /**
  * `?panel=pods` : pod-family craft side by side for shape and scale. Each variant (`variants=h`) and state
