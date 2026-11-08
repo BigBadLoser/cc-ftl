@@ -27,6 +27,7 @@ BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the door is crew-sized)
+DOOR = (0.12, 30, 6)          # the door: its foot (s, just above the lip, so it cuts the band), half arc, frame width (deg)
 # door: (door, its frame, the frame's wall)
 DOORS = {"steel": ("plate", "steelD", "steelD"), "white": (HULL, BAND, "steelD")}
 VARIANTS = {
@@ -146,17 +147,19 @@ def heat_shield(k):
 
 
 def body(k):
-    """The cone, the safety band round its base, a few seams."""
+    """The cone, a few seams, and the safety band round its base, broken where the door cuts through it."""
     _g("hull")
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
-    mats = [HULL_D, BAND, HULL, HULL_D, HULL]
+    mats = [HULL_D, HULL, HULL, HULL_D, HULL]
     for (a, b), m in zip(zip(marks, marks[1:]), mats):
         n = max(1, int((b - a) / 0.06))                                    # fine steps, so a bulge reads round
         for i in range(n):
             s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
-            g = 1.008 if m == BAND else 1.0
-            k.cyl(s0, s1, k.r(s0) * g, k.r(s1) * g, m)
+            k.cyl(s0, s1, k.r(s0), k.r(s1), m)
+    _g("band")
+    edge = DOOR[1] + DOOR[2]                                               # round from the door frame's one side to the other
+    sector(k, 0.06, 0.3, 270 + edge, 270 - edge + 360, 1.008, BAND, BAND)
 
 
 def collar(k, beacon_on, thrust=False):
@@ -220,12 +223,12 @@ def viewport(k):
     _g("door")
     ln = k.v["length"]
     door, frame, wall = DOORS[k.v["door"]]
-    s0, s1, h, fw = 0.24, ln * 0.94, 30, 6
+    s0, s1, h, fw = DOOR[0], ln * 0.94, DOOR[1], DOOR[2]
     G = 1.06                                                               # the frame stands out this far
     sector(k, s0, s1, 270 - h - fw, 270 - h, G, frame, wall)                # its sides
     sector(k, s0, s1, 270 + h, 270 + h + fw, G, frame, wall)
     sector(k, s1, s1 + 0.06, 270 - h - fw, 270 + h + fw, G, frame, wall)    # its head
-    sector(k, s0 - 0.07, s0, 270 - h - fw, 270 + h + fw, G, "hazY", "hazK")   # the sill, hazard yellow
+    sector(k, s0 - 0.06, s0, 270 - h - fw, 270 + h + fw, G, "hazY", "hazK")   # the sill, hazard yellow
     sector(k, s0, s1, 270 - h, 270 + h, 1.006, door, "dark")                # the door, set back
     sm = s0 + (s1 - s0) * 0.68
     sector(k, sm - 0.09, sm + 0.09, 270 - 10, 270 + 10, 1.02, "steelD", "steelD")   # porthole frame
