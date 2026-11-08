@@ -154,7 +154,7 @@ def body(k):
     """The cone, a few seams, and the safety band round its base."""
     _g("hull")
     ln = k.v["length"]
-    marks = [0.0, 0.06, 0.3, ln * 0.84, ln * 0.84 + 0.035, ln]          # (the seam runs above the porthole)
+    marks = [0.0, 0.06, 0.3, ln * 0.84, ln * 0.84 + 0.06, ln]          # (the seam runs above the porthole)
     mats = [HULL_D, HULL, HULL, HULL_D, HULL]
     sa, sb, half = PACK[0], PACK[1] * ln, PACK[2]
 
@@ -269,9 +269,11 @@ def viewport(k):
     stud(k.f, g, n, 0.04, 0.004, "glassL", "glassL", sides=10)             # a glint
 
 
-def plate(k, s0, s1, t0, t1, mat=None, wall="steel"):
-    """A raised access plate on the hull, its own lighter grey, so its edge reads by colour (no thin seams)."""
-    sector(k, s0, s1, t0, t1, 1.012, mat or PANEL, wall, ds=0.03, dt=2.0)
+def plate(k, s0, s1, t0, t1, mat=None):
+    """A raised access plate on the hull, its own lighter grey, so its edge reads by colour alone: its rim is its own
+    colour too (a darker rim thinner than a pixel comes and goes along the edge, ragged)."""
+    m = mat or PANEL
+    sector(k, s0, s1, t0, t1, 1.012, m, m, ds=0.03, dt=2.0)
 
 
 def panels(k):
@@ -343,7 +345,7 @@ def drive(k, lit):
             if math.sqrt(max(0.0, sum(x * x for x in d) - along * along)) < br + 0.03:
                 return True
         return False
-    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.025, skip=hole)
+    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelL", ds=0.025, skip=hole)   # (rim its own colour: clean)
     sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
     for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
         for s0 in (0.6, 0.67):
