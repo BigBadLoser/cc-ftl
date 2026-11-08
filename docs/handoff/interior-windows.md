@@ -110,8 +110,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   6.75 px; sw14: 0, see the log), END to `SLOPE` 9 px and RUN scaled with it (5 * 9 / 11.5), restored in `finally`.
 - Plates over the sill's front edge: ref 44's DARK plates (the lighter stretches between them are the floor, not
   plates: the user), wrapped from the floor's top over its front edge down the face. `PLATES` px per part: a top
-  PLATE_D 6 px back on the sill's level top (`PLATE` fGW2: the wall greys, the user; fGWp dropped), then PLATE_DN 2 px down the face
-  (`PLATE_FRONT` fGW3), each a hair proud (3 PAINT) of the sill and its lit edge. Ref tones: plate top #8f949b on a
+  PLATE_D 6 px back on the sill's level top (`PLATE` fGS2: the vertical wall's greys, the user: its face is fGS3 / fGS2; fGWp dropped), then PLATE_DN 2 px down the face
+  (`PLATE_FRONT` fGS3), each a hair proud (3 PAINT) of the sill and its lit edge. Ref tones: plate top #8f949b on a
   #9ba0a5 floor (0.92), plate front ~0.82 of the face between. At the ref's edge they measure l 24 - m 2, m 16-28,
   r 10-20; ours sit 6 px toward -x (our sill's edge stands further back than its pockets): l 21-28 (from the dip's
   foot), m 10-22, r 4-14 (sw19).
@@ -160,3 +160,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   fGWp #91969b (round-trips the quantiser). Shown.
 - 2026-11-08: sw20: plates in the wall greys (the user): top fGW2 (a step under the floor's fGW1), front fGW3; fGWp
   removed from palette_extra. Shown.
+- 2026-11-08: sw21: plates in the vertical wall's greys (the user: "the darker greys that the vertical walls use";
+  the plain wall's face renders fGS3 #4c5464 / fGS2): top fGS2, front fGS3. Shown.

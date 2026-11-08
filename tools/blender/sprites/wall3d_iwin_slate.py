@@ -32,8 +32,8 @@ PLATES = {"l": ((21, 28),), "m": ((10, 22),), "r": ((4, 14),)}   # px: dark meta
                                         # -x; l's from the dip's foot); the lighter stretches between are the floor
 PLATE_D = 6                             # px back over the sill's top from its front edge ...
 PLATE_DN = 2                            # ... and PZ down the face over the pockets past it
-PLATE = "fGW2"                          # its top (the wall greys: a step under the floor's fGW1) ...
-PLATE_FRONT = "fGW3"                    # ... its front, down the face (darker than the face)
+PLATE = "fGS2"                          # its top (the vertical wall's greys: its face fGS3, fGS2) ...
+PLATE_FRONT = "fGS3"                    # ... its front, down the face
 BLOCK = 18                              # px: the blue end blocks under the posts run this far in from the run's ends
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
