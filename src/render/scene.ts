@@ -86,6 +86,8 @@ export interface Renderer {
   setRoofEnemies(on: boolean): void;
   /** Roof the player's own ship too (default off), to see it from outside. */
   setRoofPlayer(on: boolean): void;
+  /** Roof every ship that isn't a wreck, whatever its faction (the comms hologram: a hail shows the hull, never the interior). */
+  setRoofAll(on: boolean): void;
   setOverlay(field: string | null): void;
   /** Selected tile(s) on `shipId`'s grid (default the camera ship's; derelicts and other ships take their own). */
   setSelection(tile: Tile | readonly Tile[] | null, shipId?: number): void;
@@ -210,6 +212,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let cutaway: CutawayMode = 'auto';
   let roofEnemies = true;
   let roofPlayer = false;
+  let roofAll = false;
   let overlay: string | null = null;
   let hover: Tile | null = null;
   let selection: Tile | readonly Tile[] | null = null;
@@ -368,7 +371,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   // A ship's hull takes its roof livery's colours (hullArt.hullPaintFor); `?hullPaint=<armour>,<deco>` (hex) paints every ship so.
   const hullPaintOverride = hullPaintParam(window.location.search);
   // a hidden outpost stays under its rock roof whatever the roof toggle says
-  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || wantsRoof(world, id, s, roofEnemies, roofPlayer);
+  const roofFor = (id: number, s: Ship) => !!s.outpost?.hidden || (roofAll && s.state !== 'wreck') || wantsRoof(world, id, s, roofEnemies, roofPlayer);
 
   function addScene(s: Ship, grid: Grid): ShipScene {
     const livery = shipLivery(s, grid);
@@ -633,6 +636,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setRoofPlayer(on) {
       roofPlayer = on;
+    },
+    setRoofAll(on) {
+      roofAll = on;
     },
     setOverlay(f) {
       overlay = f;
