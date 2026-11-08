@@ -66,8 +66,10 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   builds the pane as a separate Relief (`GLASS`).
 - Render kind "glass" (scratchpad `scripts/jobs_window.py` patches `env_build.render_sprite`): solids as usual, the
   pane in its own pass, tinted (`TINT`, `ALPHA`).
-- Job scripts (scratchpad `scripts/`): `jobs_iwin.py` (tan), `jobs_dwin.py` (default), `jobs_swin.py` (slate, a
-  first try with the default module, not working yet). Compare with the ref: `iw_vsref.py`.
+- Job scripts, now in the repo (`tools/blender/preview/`): `jobs_window.py` (the glass kind), `jobs_iwin.py` (tan),
+  `jobs_dwin.py` (default), `jobs_swin.py` (slate). Sheet of our run beside both ref layers: `win_sheet.py`
+  (`python3 -I win_sheet.py out.png 3 "<npz dir>:tile.wall.slate.full.m10:44"`; its REF path is the scratchpad's
+  `iwref`, unzip the v2 zip there first).
 - Render: `cd tools/blender/preview && SPRITE_SS=4 blender -b --factory-startup --python render.py -- <repo> <out>
   <jobs.py> [ids]`.
 
@@ -85,6 +87,17 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 2. Then port that ramp geometry back to the default window.
 3. Then slate's upper layer, and the other looks.
 
+## Slate window (`sprites/wall3d_iwin_slate.py`)
+- Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
+- `detail()`: splits the piece at the opening's ends; under the opening the near ramp's blue-plate polygons recoloured
+  `GREY` (fGS2; matched by their linear colour, Mesh faces store colours, not names); pockets carved into the ramp's
+  front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
+  tiles, fGT0 on the middle), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
+  (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
+- Under the opening the default's sill cuts the ramp down to ~13 px (its FLOOR), so the pockets are small (~6 px);
+  the ref's ramp stays taller there. Likely next: raise the sill to the ref's.
+
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
+- 2026-11-08: slate window blockout v1 (sw4): grey ramp front under the opening, pockets 1 / 2 / 1. Shown.
