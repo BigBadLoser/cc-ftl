@@ -6,14 +6,22 @@ import { outline, planHull, run, yardGame } from './yardFixture';
 
 // Slow tier (see "Test tiers" in docs/ARCHITECTURE.md): bigger yard jobs, run to the end. Skipped by `npm run check:fast`.
 describe('shipyard: bigger jobs', () => {
-  it('a hub yard builds two separate patches, one on each side, and nobody is walled in', () => {
-    const { sim, station, me } = yardGame('hub', 'station.military');
+  it('trading and military hubs offer a yard, other hubs do not', () => {
+    for (const [kind, yes] of [['station.trading', true], ['station.military', true], ['station.farming', false]] as const) {
+      const { sim, station } = yardGame('hub', kind);
+      expect(!!yardService(sim, station), `${kind} hub`).toBe(yes);
+    }
+  });
+
+
+  it('a station yard builds two separate patches, one on each side, and nobody is walled in (the hub-sized version is in yard.soak.test.ts)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
     giveItems(sim, 'item.metal', 300);
-    planHull(sim, me, [...outline(sim, me, 8, -2, 6, 3), ...outline(sim, me, 5, 19, 5, 3), ...outline(sim, me, 24, -2, 4, 3)]);
+    planHull(sim, me, [...outline(sim, me, 8, -2, 4, 3), ...outline(sim, me, 5, 19, 4, 3)]);
     sim.enqueue({ type: 'yard.order', station });
     expect(run(sim, 1)).toContain('yard.ordered');
     const order = sim.yard.orders[0]!;
-    expect(order.gaps).toHaveLength(3);
+    expect(order.gaps).toHaveLength(2);
     const hull = hullLoad(sim, me).tiles;
     run(sim, 12000, () => !isLiveOrder(order));
     expect(order.phase).toBe('done');
@@ -26,7 +34,6 @@ describe('shipyard: bigger jobs', () => {
     for (const g of order.gaps) expect(grid.get('struct', g.wall.x, g.wall.y)).toBe(Struct.Wall);
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
     expect(totalTiles(order)).toBe(order.trusses.length + order.floor.length + order.walls.length);
-    expect(order.walls).toHaveLength(36);
   }, 300000);
 
   it('trusses the whole plan outside the cap, turns up to the cap into hull, and leaves the rest as trusses that persist and are converted at the next yard without a second fee', () => {

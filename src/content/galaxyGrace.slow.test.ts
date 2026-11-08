@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC, newGame, type Sim } from '../sim';
 import { factionsHostile } from '../sim/combat/factions';
-import { GRACE_SEC } from '../sim/galaxy/tuning';
+import { ARRIVAL_EVERY_SEC, GRACE_SEC } from '../sim/galaxy/tuning';
 import { TICK_HZ } from '../sim/time';
 import { content } from './index';
 
@@ -22,17 +22,36 @@ function firstHostileAt(sim: Sim, sec: number): number {
   return -1;
 }
 
+/**
+ * Each arrival roll of the first `rolls` (one per ARRIVAL_EVERY_SEC) at its own game time: jump the clock to the roll's moment and step once, so
+ * the grace check reads the same time it would in a full idle run, without simulating the minutes between. Returns how many rolls it took for a
+ * hostile ship to be in play (0 if none did). Rolls before the current tick are skipped (they already happened in real play).
+ */
+function rollsUntilHostile(sim: Sim, rolls: number): number {
+  for (let n = 1; n <= rolls; n++) {
+    const at = Math.round(n * ARRIVAL_EVERY_SEC * TICK_HZ);
+    if (at < sim.tick) continue;
+    sim.tick = at;
+    sim.galaxy.nextArrival = at;
+    sim.step();
+    sim.events.drain();
+    if (hostileShips(sim) > 0) return n;
+  }
+  return 0;
+}
+
 describe('opening grace period (guard; galaxyGrace.soak.test.ts runs the full 20 minutes and the raid after it)', () => {
-  it('keeps hostiles out of the danger-0 start node for the first 8 minutes (seed 1 used to be raided at ~9 minutes)', { timeout: 600000 }, () => {
+  it('keeps hostiles out of the danger-0 start node for every arrival roll of the first 19 minutes (seed 1 used to be raided at ~9 minutes), and for the first 2 minutes of real play', () => {
     const sim = newGame(1, content, 'ship.starter', true);
-    expect(firstHostileAt(sim, 8 * 60)).toBe(-1);
+    expect(firstHostileAt(sim, 2 * 60)).toBe(-1);
+    expect(rollsUntilHostile(sim, Math.floor(GRACE_SEC / ARRIVAL_EVERY_SEC) - 1)).toBe(0);
   });
 
-  it('ends early when the goal chain is skipped', { timeout: 600000 }, () => {
+  it('ends early when the goal chain is skipped: the same rolls raid the node well inside the grace window', () => {
     const skipped = newGame(1, content, 'ship.starter', true);
     skipped.enqueue({ type: 'story.skipGoals' });
-    const at = firstHostileAt(skipped, 20 * 60);
-    expect(at).toBeGreaterThan(-1);
-    expect(at).toBeLessThan(GRACE_SEC);
+    const rolls = rollsUntilHostile(skipped, Math.floor(GRACE_SEC / ARRIVAL_EVERY_SEC) - 1);
+    expect(rolls).toBeGreaterThan(0);
+    expect(rolls * ARRIVAL_EVERY_SEC).toBeLessThan(GRACE_SEC);
   });
 });

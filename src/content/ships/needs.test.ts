@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { shipIds } from '../../sim/regions';
-import { CrewC, DownedC, HealthC, ModuleC, MoodC, NeedsC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
+import { CrewC, DownedC, HealthC, ModuleC, MoodC, ShipC, StorageC, TaskC, TICK_HZ, deserialize, homeShip, liftShip, removeModule, stampPacket, newGame, serialize, stat, totalStock, type Sim, type SimEvent } from '../../sim';
 import { claimedBed, mealOf } from '../../sim/ai/task';
 import { MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT } from '../../sim/tuning';
 import { content } from '../index';
@@ -9,10 +9,7 @@ import { content } from '../index';
 const nth = (sim: Sim, n: number): number => shipIds(sim)[n - 1] as number;
 import { PLAYER_START as P0 } from '../../sim/tuning'; // the player ship's sector top-left
 
-const run = (sim: Sim, n: number) => { for (let i = 0; i < n; i++) sim.step(); };
-const humans = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, CrewC)?.species === 'species.human');
 const find = (sim: Sim, def: string): number => sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === def) as number;
-const needs = (sim: Sim, id: number) => sim.world.get(id, NeedsC)!;
 /** Remove every ration from storage and switch the galley off so none are printed. */
 function emptyLarder(sim: Sim): void {
   (sim.world.get(find(sim, 'module.galley'), ModuleC) as { enabled: boolean }).enabled = false;
@@ -21,15 +18,7 @@ function emptyLarder(sim: Sim): void {
     if (s) s.stacks = s.stacks.filter((st) => st.item !== 'item.ration');
   }
 }
-/** Starter ship with a single hungry crew member; the rest are fed and held out of the way by being very rested. */
-function hungry(hunger: number): { sim: Sim; id: number } {
-  const sim = newGame(3, content);
-  run(sim, 5);
-  for (const h of humans(sim)) needs(sim, h).hunger = 100;
-  const id = humans(sim)[0] as number;
-  needs(sim, id).hunger = hunger;
-  return { sim, id };
-}
+import { humans, hungry, needs, run } from './needsFixture';
 
 describe('hunger', () => {
   it('decays at the species rate and starts every crew member part-fed', () => {
@@ -91,6 +80,7 @@ describe('hunger', () => {
     for (let i = 0; i < 10; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
     expect(sim.world.get(id, TaskC)?.machine).toBe('sleep');
+    needs(sim, id).rest = 99.9; // nearly rested: it wakes within moments (the whole sleep is in needs.soak.test.ts)
     for (let i = 0; i < 1200 * TICK_HZ && sim.world.get(id, CrewC)!.activity === 'sleeping'; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).not.toBe('sleeping');
   });
@@ -99,7 +89,7 @@ describe('hunger', () => {
     const { sim, id } = hungry(100);
     for (const b of [...sim.world.query(ModuleC)]) if (sim.content.modules[sim.world.get(b, ModuleC)!.def]?.bed) removeModule(sim, b);
     needs(sim, id).rest = 19;
-    needs(sim, id).hunger = 36;
+    needs(sim, id).hunger = 15; // near where it goes to eat (the long wait from 36 is in needs.slow.test.ts)
     for (let i = 0; i < 30 * TICK_HZ && sim.world.get(id, CrewC)!.activity !== 'sleeping'; i++) sim.step();
     expect(sim.world.get(id, CrewC)!.activity).toBe('sleeping');
     let ate = false, lowest = 100;
@@ -228,19 +218,6 @@ describe('hunger', () => {
     expect(lost).toBeLessThan(8);
     expect(events.filter((e) => e.type === 'crew.starving')).toHaveLength(1);
     expect(sim.world.has(id, DownedC)).toBe(false);
-  });
-
-  it('keeps the starter crew fed for ten minutes of normal play', { timeout: 120000 }, () => {
-    const sim = newGame(5, content);
-    let starving = 0;
-    for (let i = 0; i < 10 * 60 * TICK_HZ; i++) {
-      sim.step();
-      if (i % TICK_HZ === 0) for (const h of humans(sim)) if ((needs(sim, h).hunger ?? 1) <= 0) starving++;
-    }
-    expect(starving).toBe(0);
-    // Foreign crews (an arrival may board the sector during ten minutes) have no hunger; the player's crew does.
-    for (const h of humans(sim).filter((id) => needs(sim, id).hunger !== undefined)) expect(needs(sim, h).hunger as number).toBeGreaterThan(5);
-    expect(totalStock(sim, 'item.ration')).toBeGreaterThanOrEqual(8); // the galley's keep order refills the larder
   });
 });
 

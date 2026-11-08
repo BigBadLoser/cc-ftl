@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, newGame, serialize, type Sim } from '../sim';
+import { AboardC, CrewC, DeadC, ForHireC, PositionC, VehicleC, deserialize, galaxyIndex, serialize, type Sim } from '../sim';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { isTileWalkable } from '../sim/modules/walk';
 import { bayAccessTile } from '../sim/vehicles/geometry';
@@ -7,62 +7,12 @@ import { landRecruits } from '../sim/trade/recruitLand';
 import { AllegianceC } from '../sim/fight/components';
 import { portsAt } from '../sim/galaxy/portIndex';
 import { portRecruits, recruitsHere } from '../sim/galaxy/recruit';
-import { ensureAround } from '../sim/galaxy/state';
 import { RECRUIT_TURNS } from '../sim/galaxy/tuningRecruit';
-import { placementGapError } from '../sim/regions';
 import { content } from '.';
 
-const step = (sim: Sim, n = 1): void => {
-  for (let i = 0; i < n; i++) sim.step();
-};
-/** Deploy at the first free spot (a node's structures stand east of the west margin). */
-function deploy(sim: Sim): void {
-  const p = sim.sector.packet!;
-  for (let x = 0; x + p.w <= sim.sector.width; x += 4) {
-    for (let y = 2; y + p.h <= sim.sector.height; y += 4) {
-      if (placementGapError(sim, { x, y, w: p.w, h: p.h })) continue;
-      sim.enqueue({ type: 'sector.deploy', x, y });
-      return step(sim);
-    }
-  }
-  throw new Error('no room to deploy');
-}
-
-/** A game whose player has dropped into a node with a trade station that posts candidates, run until the station's people have appeared. */
-function atStation(): Sim {
-  const sim = newGame(7, content);
-  step(sim, 2);
-  ensureAround(sim, sim.galaxy.current);
-  const node = [...galaxyIndex(sim.galaxy).nodes.values()].sort((a, b) => (a.id < b.id ? -1 : 1))
-    .find((n) => portsAt(sim, n.id).some((p) => portRecruits(sim, p).length > 0));
-  expect(node).toBeDefined();
-  sim.enqueue({ type: 'debug.galaxyTeleport', node: node!.id });
-  step(sim);
-  deploy(sim);
-  step(sim, 25);
-  sim.events.drain();
-  return sim;
-}
-
-const people = (sim: Sim): readonly number[] => sim.world.query(ForHireC);
+import { atBack, atStation, hire, people, playerCrew, run, step } from './recruitFixture';
 const keyOf = (sim: Sim, id: number): string => sim.world.get(id, ForHireC)?.key ?? '';
-const hire = (sim: Sim, key: string) => {
-  sim.enqueue({ type: 'crew.hire', key });
-  sim.step();
-  return sim.events.drain();
-};
 const rejected = (ev: ReturnType<Sim['events']['drain']>): string[] => ev.flatMap((e) => (e.type === 'command.rejected' && e.command === 'crew.hire' ? [e.reason] : []));
-const playerCrew = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player');
-/** Step until `done` or the budget runs out; returns the events seen. */
-function run(sim: Sim, done: () => boolean, max = 6000): ReturnType<Sim['events']['drain']> {
-  const all: ReturnType<Sim['events']['drain']> = [];
-  for (let i = 0; i < max && !done(); i++) {
-    sim.step();
-    all.push(...sim.events.drain());
-  }
-  return all;
-}
-
 describe('crew for hire', () => {
   it('the candidates are people aboard the station, with a stable derived identity', () => {
     const sim = atStation();
@@ -114,26 +64,19 @@ describe('crew for hire', () => {
   });
 
   for (const lost of ['airlock', 'bay'] as const) it(`a run stuck on the way home with the recruit aboard is given up as a hire: paid once, the recruit lands as player crew; survives a reload (${lost} lost)`, () => {
-    const sim = atStation();
-    const [c] = people(sim) as [number];
-    const fh = sim.world.get(c, ForHireC)!;
-    const credits = (sim.trade.credits = 1000);
-    const crew = playerCrew(sim).length;
-    hire(sim, fh.key);
-    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    const { sim, c, cost, credits, crew } = atBack();
     const d = sim.trade.deals[0]!;
-    expect(d.phase).toBe('back');
-    expect(sim.world.get(c, AboardC)).toBeDefined(); // boarded: the exchange is behind it
     sim.world.destroyEntity(d.airlock); // the airlock the shuttle was to dock at is gone
     const v = sim.world.get(d.vehicle, VehicleC)!;
     if (lost === 'bay') sim.world.destroyEntity(v.home); // and so is the hangar bay it would stow in
-    run(sim, () => false, 1500);
+    d.timer = 240 * 20 - 40; // just short of the give-up deadline (BACK_SEC), the shuttle still on its way home (the full wait is in recruit.slow.test.ts)
+    run(sim, () => false, 20);
     const reloaded = deserialize(serialize(sim), content); // save/load in the middle of the blocked stage
-    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'done', 4000);
+    run(reloaded, () => reloaded.trade.deals[0]?.phase === 'done', 400);
     run(reloaded, () => false, 200);
     const s = reloaded;
     expect(s.trade.deals[0]?.phase).toBe('done');
-    expect(s.trade.credits).toBe(credits - fh.cost); // the fee is charged exactly once
+    expect(s.trade.credits).toBe(credits - cost); // the fee is charged exactly once
     expect(s.world.get(c, AllegianceC)?.faction).toBe('player');
     expect(s.world.has(c, ForHireC)).toBe(false);
     expect(s.world.get(c, AboardC)).toBeUndefined();
@@ -148,10 +91,7 @@ describe('crew for hire', () => {
   });
 
   it('a forced landing skips a bay tile that lost its floor and lands the recruit on walkable floor', () => {
-    const sim = atStation();
-    const [c] = people(sim) as [number];
-    hire(sim, sim.world.get(c, ForHireC)!.key);
-    run(sim, () => sim.trade.deals[0]?.phase === 'back', 6000);
+    const { sim, c } = atBack();
     const d = sim.trade.deals[0]!;
     run(sim, () => sim.world.get(d.vehicle, VehicleC)?.state === 'flying', 2000); // away from the station: no boarding tile under it
     expect(sim.world.get(d.vehicle, VehicleC)?.state).toBe('flying');

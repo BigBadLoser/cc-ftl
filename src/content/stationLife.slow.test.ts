@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CrewC, NeedsC, ShipC, newGame, type SimEvent } from '../sim';
 import { StationAlarmC, StationCrewC } from '../sim/stations/components';
 import { content } from './index';
+import { intruderRuns } from './stationLifeFixture';
 
 describe('station life over a long stretch', () => {
   it('a hub runs its schedules for two and a half minutes of game time (guard; stationLife.soak.test.ts runs seven and a half): work, sleep, no alarms, no errors', () => {
@@ -28,4 +29,13 @@ describe('station life over a long stretch', () => {
     expect(activities.has('walking')).toBe(true);
     // The meals come at about tick 6800, past this guard's horizon: the soak test checks hunger and eating.
   }, 600000);
+
+  it('an intruder raises the alarm; guards converge and fight, civilians run; then it calms down (seeds 1 to 8)', () => {
+    // The triggers (alarm, wanted, guards engage) in nearly all of the seeds, the outcomes (civilians flee, intruder downed within 400 ticks, calm, alarm again) in at least half.
+    const runs = intruderRuns([1, 2, 3, 4, 5, 6, 7, 8]);
+    const count = (k: 'alarmed' | 'wanted' | 'engaged' | 'fled' | 'downed' | 'forgotten' | 'again'): number => runs.filter((r) => r[k]).length;
+    const table = JSON.stringify(runs);
+    for (const k of ['alarmed', 'wanted', 'engaged'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(6);
+    for (const k of ['fled', 'downed', 'forgotten', 'again'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(4);
+  }, 120000);
 });
