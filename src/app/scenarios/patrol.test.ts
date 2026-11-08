@@ -5,7 +5,7 @@ import { InspectionC } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';
 import { reputationOf } from '../../sim/story/state';
 import { encountersOf } from '../encounterSnapshot';
-import { galaxyIndex, playerShip } from '../../sim';
+import { ShipC, galaxyIndex, playerShip } from '../../sim';
 import { onTurn } from '../../sim/galaxy/turn';
 import { patrolCommands, patrolNode } from './patrol';
 
@@ -137,6 +137,27 @@ describe('?scenario=patrol', () => {
     const e = sim.galaxy.encounters.find((x) => x.fleet === f.id);
     expect(e?.kind).toBe('scan');
     expect(e?.scan).toBeDefined();
+  });
+
+  it('a patrol its faction now counts hostile comes in peaceful when the player complies, and its inspectors search', () => {
+    const sim = hailed();
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    sim.story.reputation[repKey(sim, e.faction)] = -100; // run from before: the faction is hostile
+    sim.enqueue({ type: 'story.skipGoals' }); // past the opening grace, which would keep a hostile fleet out anyway
+    sim.step();
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'comply' });
+    sim.step();
+    sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
+    for (let i = 0; i < 30 && !sim.world.query(InspectionC).length; i++) sim.step();
+    const f = sim.galaxy.fleets.find((x) => x.id === e.fleet)!;
+    const ships = f.ships.map((c) => c.ship).filter((s): s is number => s !== undefined);
+    expect(ships.length).toBeGreaterThan(0);
+    for (const s of ships) expect(sim.world.get(s, ShipC)?.faction).toBe('neutral');
+    const [id] = sim.world.query(InspectionC);
+    const insp = sim.world.get(id!, InspectionC)!;
+    for (let i = 0; i < 6000 && insp.phase !== 'settle'; i++) sim.step();
+    expect(sim.sector.inCombat).toBe(false);
+    expect(insp.phase).toBe('settle');
   });
 });
 
