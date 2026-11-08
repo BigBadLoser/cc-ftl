@@ -306,16 +306,16 @@ def _beans(k, u, v, z, st, seed, hmax):
     canes = [(u + du, v + 0.1 + r.uniform(-0.03, 0.03)) for du in (-0.26, 0.0, 0.26)]     # towards the front
     for cu, cv in canes:
         _tube(k, [(cu, cv, z), (cu, cv, z + hmax - 0.02)], 0.022, "cane", n=4, phase=math.pi / 4)
-    reach, n = {"sprout": (0.22, 3), "grow": (0.6, 7), "ripe": (0.95, 11)}[st]
+    reach, n = {"sprout": (0.22, 3), "grow": (0.5, 4), "ripe": (0.95, 11)}[st]
     cols = ("beanL", "bean", "beanL", "beanD")
-    s = 1.0 if st != "sprout" else 0.7
+    s = {"sprout": 0.7, "grow": 0.85, "ripe": 1.0}[st]
     for i, (cu, cv) in enumerate(canes):
         for j in range(n):
             zz = z + (j + r.uniform(0.2, 0.8)) / n * reach * hmax
             a = j * 2.4 + i                                                      # spiralling up the cane
             _leaf(k, cu + 0.02 * math.cos(a), cv + 0.02 * math.sin(a), zz, a, 0.15 * s, 0.12 * s, r.uniform(-0.1, 0.3),
                   cols[(i + j) % 4])
-        if st != "sprout":                                                       # low leaves spilling to the front
+        if st == "ripe":                                                         # low leaves spilling to the front
             for j in range(2):
                 a = math.pi / 2 + r.uniform(-0.7, 0.7)
                 _leaf(k, cu + r.uniform(-0.06, 0.06), cv + 0.03, z + r.uniform(0.01, 0.05), a, 0.17, 0.13,
