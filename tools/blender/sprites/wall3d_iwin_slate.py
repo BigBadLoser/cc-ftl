@@ -36,7 +36,7 @@ PLATE_D = 6                             # px back over the sill's top from its f
 PLATE_DN = 2                            # ... and PZ down the face over the pockets past it
 PLATE = "fGS2"                          # its top (the vertical wall's greys: its face fGS3, fGS2) ...
 PLATE_FRONT = "fGS3"                    # ... its front, down the face
-BLOCK = 18                              # px: the blue end blocks under the posts run this far in from the run's ends
+BLOCK = 15                              # px: the blue end blocks under the posts run this far in from the run's ends
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
 SLOPE = 9                               # px: the sill's crest from there down to the window's floor
