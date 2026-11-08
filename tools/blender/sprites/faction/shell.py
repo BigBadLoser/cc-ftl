@@ -117,6 +117,10 @@ class LookShell(T.Shell):
 
     # -- the ramp built as solids (Style.ramp_solid): one profile along each face, mitred where faces meet --
     def _zsurf(self, d):
+        f = T.ramp_fall()                               # (a look's own fall: up from the toe)
+        if f:
+            return max(self.foot, min(T.lip_heights(self.zs)[0], self.foot + (self.run - d) * f))   # (no higher
+                                                        # than the shelf: the sides the camera doesn't see too)
         return max(self.foot, self.zs - d * T.W.GN * T.W.RAMP_PX / T.W.ZART)   # (the walls' fall a cell: over a
                                                                                 # foot it ends on a ledge)
 
@@ -491,12 +495,17 @@ def _end_section(k, ax, plane, a, b, zs, zt, F, col=None, edge=None, foot=None):
     if ft > 0.0035:                                     # (over a foot the slope ends on a ledge, as the ramps')
         dl = min(run, (zs - ft) / (T.W.GN * T.W.RAMP_PX / T.W.ZART))
         sec = sec[:3] + [(b + dl, ft)] + sec[3:5] + [(a - dl, ft)] + sec[5:]
+    f, sl = T.ramp_fall(), [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)]
+    if f and ft > 0.0035:                               # (a look's own fall under a shelf: the section as its ramps',
+        zh, d = T.lip_heights(zs)[0], T.style().shelf   # the shelf flat from the wall, the slope from its edge)
+        sec = sec[:3] + [(b + d, zh), (b, zh)] + sec[4:6] + [(a, zh), (a - d, zh)] + sec[7:]
+        sl = [(b + d, zh), (b + run, ft), (b + run - 0.06, ft), (b + d, zh - 0.035)]
     k.poly([T.P(ax, plane, u, z, 0.0) for u, z in sec], F, 2, T.OUT(ax), fixed=col)
     if ft > 0.0035:                                     # (the feet in the toe band's colour, on across the section)
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in ((a - run, 0.0035), (b + run, 0.0035), (b + run, ft),
                                                            (a - run, ft))],
                foot or T.style().toe or F, 2, T.OUT(ax))
     hl = [[(b - LINE, zs), (b, zs), (b, zt), (b - LINE, zt)],                   # (the front's: the back, the wall's
-          [(b, zs), (b + run, ft), (b + run - 0.06, ft), (b, zs - 0.035)]]      # far side, takes none)
+          sl]                                                                   # far side, takes none)
     for q in hl:
         k.poly([T.P(ax, plane, u, z, PAINT) for u, z in q], F, 5, T.OUT(ax), fixed=edge)

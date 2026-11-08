@@ -476,3 +476,8 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: navy's shelf should be slate's shelf + lip, with no lip. NAVY_SHELF = SHELF + LIP_D (6/32, was
   4/32), all of it flat shelf; the wall face's foot and the ramp seams follow it down. ns8. Corners and ends checked. The
   window (wall3d_iwin_navy) still cuts from the old ramp top: CUT_Z 8 and `_front()` need re-fitting to the shelf.
+- 2026-11-08: the user: the ramp read short under the shelf; the shelf up. Style.ramp_px (a look's own fall a cell, up
+  from the toe; wall3d.ramp_fall) and navy's NAVY_FALL 3: the shelf at 19 px (was 14), the slope 15 px over its 5 cells
+  (was 10). The ramp's top at the wall (skirt_top, 26 px) and its foot unchanged, so doors, breaches, the airlock, wall
+  props and the cutaway still line up. The solid ramp capped at the shelf's height (its unseen sides too) and the end
+  section follows the shelf. Other looks unchanged (ramp_px 0). ns10.

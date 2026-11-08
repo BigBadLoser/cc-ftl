@@ -25,6 +25,7 @@ NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up
 
 
 NAVY_SHELF = SHELF + LIP_D          # the ramp's shelf: slate's and the lip's depth, all of it shelf (the user)
+NAVY_FALL = 3                       # the slope's fall a cell (art px): the shelf up at 19 px, a taller slope (the user)
 RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
                                     # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -150,6 +151,7 @@ class Navy(Faction):
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
                       shelf=NAVY_SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
                       #   shelf at the wall, all shelf: no lip on it)
+                      ramp_px=NAVY_FALL,                          # (the slope steeper under it: the shelf up at 19 px)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("wall", 2),
                                 FaceHoles(), PlateTones()))

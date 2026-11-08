@@ -286,11 +286,17 @@ def _mitres(ends):
     return tuple({"out": 1.0, "in": -1.0}.get(e, 0.0) for e in ends)
 
 
+def ramp_fall():
+    """A look's own fall of its slope a unit out (Style.ramp_px), from the toe up; None: the walls' (from the top)."""
+    return style().ramp_px * W.GN / W.ZART if style().ramp_px else None
+
+
 def lip_heights(zs):
     """The default walls' ramp shelf's height against the wall and their lip's top (_lip), the ramp's top at zs."""
     from .faction.parts import PZ
     from .faction.slate import LIP_H
-    zh = zs - style().shelf * W.GN * W.RAMP_PX / W.ZART
+    f = ramp_fall()
+    zh = W.foot() + (W.skirt_run() - style().shelf) * f if f else zs - style().shelf * W.GN * W.RAMP_PX / W.ZART
     return zh, zh + 3 * PZ + LIP_H
 
 
@@ -480,8 +486,9 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
     run_, zs = sp.run, sp.zs
     ft = getattr(sp, "foot", 0.0)               # (a look whose ramp ends in an upright face this high)
     o = OUT(ax)
-    nrm = (o * (zs - ft) / run_ + Vector((0, 0, 1))).normalized()
-    zsurf = lambda dd: ft + (zs - ft) * (1 - dd / run_)               # noqa: E731
+    f = ramp_fall()                             # (a look's own fall a cell: up from the toe)
+    nrm = (o * (f or (zs - ft) / run_) + Vector((0, 0, 1))).normalized()
+    zsurf = (lambda dd: ft + (run_ - dd) * f) if f else (lambda dd: ft + (zs - ft) * (1 - dd / run_))   # noqa: E731
     if getattr(sp, "end_face", None) and sp.end_face(ax, plane):
         return                                  # a look's wall end: no ramp across it
     lo_t, hi_t = ends or (_end(sp, ax, plane, a, -1), _end(sp, ax, plane, b, 1))

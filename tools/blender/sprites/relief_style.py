@@ -45,6 +45,9 @@ class Style:
     shelf: float = 0.0                    # the ramp's top a flat step against the wall this deep (at the slope's
                                           # height there: the slope as before from its front edge; solid ramps)
     shelf_lvl: int = 3                    # ... its top in this ramp level
+    ramp_px: int = 0                      # the slope's fall a cell in art px, up from the toe (a solid ramp under
+                                          # a shelf: the shelf then sits where it meets it); 0: the walls' (RAMP_PX,
+                                          # down from the ramp's top)
     shelf_back: tuple = ()                # ... its back px in these ramp levels, out from the wall (the rest: its own)
     ramp_bands: tuple = ()                # the ramp's plates split in bands down the run, after the first (the
                                           # face's family, level 2): (from (a fraction of the run), family (None:
