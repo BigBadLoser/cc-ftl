@@ -92,7 +92,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - `detail()`: splits the piece at the opening's ends; under the opening the near ramp's blue-plate polygons recoloured
   `GREY` (fGS2; matched by their linear colour, Mesh faces store colours, not names); pockets carved into the ramp's
   front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
-  tiles, fGT0 on the middle), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
+  tiles, fGT1 on the middle since sw22: the slope's blue, as the end blocks'), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
   (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
 - Pocket depth `POCKET_IN` 4/32 since sw11 (sw10 3/32, sw6-sw9 6/32: the back sits just inside the wall core's face, in the sill). Floor slopes
   up `FLOOR_RISE` (now 2 px; sw6 had 4) from the ramp's front to the back. With both, the floor fills the view and the dark back is
@@ -162,3 +162,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   removed from palette_extra. Shown.
 - 2026-11-08: sw21: plates in the vertical wall's greys (the user: "the darker greys that the vertical walls use";
   the plain wall's face renders fGS3 #4c5464 / fGS2): top fGS2, front fGS3. Shown.
+- 2026-11-08: sw22: middle pocket floors in the slope's blue (fGT1, the end blocks' slope; was fGT0). Shown.
