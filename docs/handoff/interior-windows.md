@@ -654,3 +654,5 @@ Marked ref (both layers, numbered): scratchpad
   m10 identical to nv9. nb13.
 - 2026-11-08: control boxes' lip (the recess wall's front, 2px) in the side wall's level (rose 4, lit front 405d84 by the
   side's 314765; was the back's 24344a, odd in a run: the user). Run base, base, boxes, base, base. nb14.
+- 2026-11-08: the boxes' recess lip and side wall one colour, 314765 (the lip lit as the side wall: `_sheet` takes a
+  normal; the user). Plain m10 identical to nv9. nb15.

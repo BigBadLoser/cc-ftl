@@ -91,14 +91,15 @@ def _seam(k, ax, plane, u0, u1, z0, z1, F):
            fixed="fNW6")
 
 
-def _sheet(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl):
+def _sheet(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl, nrm=None):
     """A flat sheet d proud of the face (the frame, a cover): its front only, run on by d at an outer end as T.run and
     at a tile edge into the next tile (a slab's sides darkened a tile's edge column; stopped at the edge, the face
     behind showed a shade darker there: a line between tiles; under a breach's tear, T.run's torn slab)."""
     if T.CLIP is not None:
         return T.run(k, ax, plane, u0, u1, ends, z0, z1, d, fam, lvl, 0)
     u0, u1 = u0 - (d if ends[0] in ("out", "cont") else 0.0), u1 + (d if ends[1] in ("out", "cont") else 0.0)
-    k.poly([T.P(ax, plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], fam, lvl, T.OUT(ax))
+    k.poly([T.P(ax, plane, u, z, d) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], fam, lvl,
+           T.OUT(ax) if nrm is None else nrm)    # (nrm: lit as another face, the recess lip as its side wall)
 
 
 def _lit(k, ax, plane, u, z0, z1, F, reds):
@@ -194,8 +195,9 @@ def navy(hull):
                     _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
                 elif not getattr(mid, "own_hole", False):   # (or a recess RECESS_D deep, the design inside it: a
                     _recess_in(k, ax, plane, hole, zf)          # recess under the cover, its walls showing: the user)
-                    if hole[0] > p0 + 1e-6:                 # (the cover left of it, plain grey, no band: its wall
-                        _sheet(k, ax, plane, p0, hole[0], (pq[0], "cont"), zf - 0.03, zc, COVER, "rose", 4)  # there)
+                    if hole[0] > p0 + 1e-6:                 # (the lip left of it, no band, lit as the recess's
+                        _sheet(k, ax, plane, p0, hole[0], (pq[0], "cont"), zf - 0.03, zc, COVER, "rose", 4,
+                               T.P(ax, 0, 1, 0, 0) - T.P(ax, 0, 0, 0, 0))   # side wall: one colour: the user)
                     mid(k, ax, plane - RECESS_D, p0 + 0.04 - RECESS_D, p1 - 0.04 - RECESS_D, zf + 0.04, zh - 0.04, F,
                         zh=zh, H=H, mouth=(round(T._px(hole[0], -RECESS_D)) - 3, round(T._px(hole[1], 0.0)) - 3))
                     #   (mouth: the back's px seen between the recess's walls, in the design's frame: a depth shifts
