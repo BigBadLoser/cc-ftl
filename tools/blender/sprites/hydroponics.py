@@ -249,6 +249,19 @@ def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
             k.box(u, v, z - r * 1.15, r * 2.3, r * 2.3, r * 2.3, joint)
 
 
+def _sq_pipe(k, pts, w=0.0625, col=PIPE):
+    """A square-section pipe through the local points (faces square to the axes, like the frame bars, so it stays
+    crisp at pixel scale); each run carries on w / 2 past a bend so the runs meet in a solid square elbow."""
+    n = len(pts)
+    for i, (a, b) in enumerate(zip(pts, pts[1:])):
+        d = [b[j] - a[j] for j in range(3)]
+        m = math.sqrt(sum(x * x for x in d))
+        e = [x / m * w / 2 for x in d]
+        a = tuple(a[j] - e[j] for j in range(3)) if i > 0 else a
+        b = tuple(b[j] + e[j] for j in range(3)) if i + 2 < n else b
+        _bar(k, a, b, w, col)
+
+
 def _valve(k, u, v, z, face="v", body="brass", wheel="hivis"):
     """A valve body on a pipe with a handwheel (brass and orange by default), facing front (+v) or up."""
     k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, body)
@@ -339,12 +352,20 @@ def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis", jc="steel"):
         k.cyl(su * 0.48, 0.0, 0.0, 0.34, 0.04, "dark", sides=24)
         _vtank(k, su * 0.48, 0.0, 0.04, 0.37, 0.52, on)
     _pump(k, 0.0, 0.26, 0.0, on, s=1.2)
-    for su in (-1, 1):
-        _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col=pc)       # suction
+    if jc is not None:
+        for su in (-1, 1):
+            _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col=pc)   # suction
     vm = FV + 0.05
-    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col=pc, joint=jc)  # pump up
-    _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col=pc, joint=jc)
-    # (above: the manifold along the front and a riser at each end)
+    up = [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)]
+    run = [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)]          # manifold and risers
+    if jc is None:     # square copper: one pipe out of the middle of the pump's base, up into the manifold
+        vq, zb = 0.46875, 0.084
+        _sq_pipe(k, [(0.0, 0.3, zb), (0.0, vq, zb), (0.0, vq, zm)], col=pc)
+        _sq_pipe(k, [(-0.71875, vq, 0.56), (-0.71875, vq, zm), (0.71875, vq, zm), (0.71875, vq, 0.56)], col=pc)
+        vm = vq
+    else:
+        _pipe(k, up, r=0.035, col=pc, joint=jc)
+        _pipe(k, run, r=0.035, col=pc, joint=jc)
     for su in (-1, 1):
         _valve(k, su * 0.48, vm, zm, body=vb, wheel=vw)                                     # on the tank's centre
 
