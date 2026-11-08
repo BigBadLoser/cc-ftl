@@ -178,3 +178,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: the user approved slate's lower layer at sw25 ("looks good to me"). Next per the plan: port the ramp
   geometry to the default window, then slate's upper layer.
 - 2026-11-08: sw26: the blue end blocks pulled back 3 px from the end pockets (BLOCK 15, was 18): grey face between. Shown.
+- 2026-11-08: sw27: that gap the ribs' width (the user): 5 px, as the seam ribs (BLOCK 13). Shown.
