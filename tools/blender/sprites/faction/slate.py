@@ -160,23 +160,35 @@ def slate(hull):
             ends = (pe[0] if abs(s0 - a) < 1e-6 else "cut", pe[1] if abs(s1 - b) < 1e-6 else "cut")
             T.run(k, ax, plane, s0, s1, ends, zst - 6 * PZ, zst, PAINT, BLUE, 3, 0)
             T.paint(k, ax, plane, s0, s1, zst - PZ, zst, PAINT, BLUE, 4)                       # ... lit on top
-        for u0, u1, mid in _blocks(a, b):                                                      # the rail
-            d = MID_D if mid else RAIL_D
-            zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
-            prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else \
-                [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]                                       # ends' line)
-            m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
-            inner = "fGT3" if ax == "y" else "fGT4"     # (an end block's side by the middle: a step under its front)
-            cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
-                                    inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
-            prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
-            if cap and cap[0]:                          # (the end block past the middle: its side by the middle
-                prism(k, ax, plane, u0, u0 + LINE, [(d, z0), (d + PAINT, z0), (d + PAINT, z1 - PZ), (d, z1 - PZ)],
-                      BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
-            zt = z1 - MID_DROP if mid else z1                                                  # its front's top
-            prism(k, ax, plane, u0, u1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
-                  cols=[False, "fGTw", False, False], mitre=m)     # edge lit (fGTw: over the ramp's light end, its own)
+        _rail(k, ax, plane, a, b, z0, z1, mit)                                                 # the rail
     return face
+
+
+def _rail(k, ax, plane, a, b, z0, z1, mit):
+    """The base header's rail over [a, b]: its blocks from z0 (their foot; the set-back middle's a px lower) to z1."""
+    for u0, u1, mid in _blocks(a, b):
+        d = MID_D if mid else RAIL_D
+        zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
+        prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else \
+            [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]                                       # ends' line)
+        m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
+        inner = "fGT3" if ax == "y" else "fGT4"     # (an end block's side by the middle: a step under its front)
+        cap = None if mid else (inner if abs(u0 % 1.0 - END_W) < 1e-6 else None,
+                                inner if abs(u1 % 1.0 - (1 - END_W)) < 1e-6 else None)
+        prism(k, ax, plane, u0, u1, prof, BLUE, 3, cap=cap, mitre=m)
+        if cap and cap[0]:                          # (the end block past the middle: its side by the middle
+            prism(k, ax, plane, u0, u0 + LINE, [(d, z0), (d + PAINT, z0), (d + PAINT, z1 - PZ), (d, z1 - PZ)],
+                  BLUE, 3, cols=[False, inner, False, False])   # faces away from the camera, a seam on its front)
+        zt = z1 - MID_DROP if mid else z1                                                  # its front's top
+        prism(k, ax, plane, u0, u1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
+              cols=[False, "fGTw", False, False], mitre=m)     # edge lit (fGTw: over the ramp's light end, its own)
+
+
+def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
+    """Header (T1-4): the base header's rail run on down to the stripe's foot (the paint line), over the stripe, its
+    shadow paint behind it all the way (where a block ends, its front standing out shows the face behind it)."""
+    T.paint(k, ax, plane, a, b, z0, z1, 0.0, BLUE, 1)
+    _rail(k, ax, plane, a, b, z0, z1, mit)
 
 
 SPLIT = 0.655                                   # the ramp's blue plate from here down the run, a px of seam over it
@@ -267,33 +279,6 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031):
             cu = round((u0 + u1) / 2 * 32) / 32
             if q0 <= cu - 2 * LINE and cu + 2 * LINE <= q1:                    # a handle slot, 4 px
                 T.paint(k, ax, plane, cu - 2 * LINE, cu + 2 * LINE, zt - 4 * PZ, zt - 3 * PZ, d, BLUE, 1)
-
-
-BIG_BOXES = ((0, 8, False), (9, 14, True), (24, 8, False))   # T1-4's header boxes a tile (px from its start, width,
-                                                        # middle?): flush but for a dark px between (the ref's widths)
-BIG_D = 2 * PX                                          # their depth (their tops show 2 rows: the ref's)
-
-
-def slate_big_boxes(k, ax, plane, a, b, z0, z1, mit):
-    """Header (T1-4): three tall boxes a tile, the whole header (the stripe's foot to the rail's top, in place of
-    both), BIG_D out, square, a dark px between them (the backing, the stripe's blue at its darkest); the middle one's
-    top a px lower; each front's top edge lit, its foot's edge in its side's tone; plain fronts."""
-    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 1)              # the backing (up to the wall's top)
-    side = "fGT4" if ax == "y" else "fGT5"
-    lit = "fGT0" if ax == "y" else "fGT1"
-    d = BIG_D
-    for c in range(-1, 2):
-        for x0, w, mid in BIG_BOXES:
-            q0, q1 = max(a, c - 0.5 + x0 * LINE), min(b, c - 0.5 + (x0 + w) * LINE)
-            if q1 - q0 < 1e-6:
-                continue
-            zt = z1 - PZ if mid else z1
-            prism(k, ax, plane, q0, q1, [(0.0, z0), (d, z0), (d, zt), (0.0, zt)], BLUE, 3,
-                  cols=[False, None, None, False], cap=(False, side))
-            prism(k, ax, plane, q0, q1, [(0.0, zt - PZ), (d + PAINT, zt - PZ), (d + PAINT, zt), (0.0, zt)], BLUE, 4,
-                  cols=[False, lit, False, False], cap=False)
-            prism(k, ax, plane, q0, q1, [(0.0, z0), (d + PAINT, z0), (d + PAINT, z0 + PZ), (0.0, z0 + PZ)], BLUE, 4,
-                  cols=[False, side, False, False], cap=False)
 
 
 def _seam_col(ax):
@@ -466,7 +451,7 @@ SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=s
               Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
               Design("panel, box", wall=slate_panel_box, lip=box_cuts),
               Design("boxes, console", header=slate_boxes, wall=slate_console),
-              Design("big boxes, console, boxes", header=slate_big_boxes, wall=slate_console,
+              Design("tall rail, console, boxes", header=slate_tall_rail, wall=slate_console,
                      foot=slate_foot_boxes))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
