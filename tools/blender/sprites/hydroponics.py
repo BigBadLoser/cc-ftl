@@ -531,9 +531,107 @@ def visor(k, on, crop):
             _plant(k, u, v, 0.73, i)
 
 
+def _hull(k, on, well=True):
+    """The tunnel family's shared body: a keel, a bellied pill hull with round ends, a rim, the soil well, a front
+    display and the nose fittings."""
+    k.box(0, 0, 0.0, 1.1, 0.3, 0.2, "gmD", top="gm", bevel=0.02)                      # keel
+    _halfpipe(k, 0, 0, 0.6, 0.42, 0.1, 1.5, "steel", "steelL")                        # the belly
+    for e in (-1, 1):                                                                # round ends
+        k.cyl(e * 0.75, 0, 0.18, 0.42, 0.42, "steel", top="steelL", sides=12)
+        k.cyl(e * 0.75, 0, 0.6, 0.44, 0.05, "steelL", top="plate", sides=12)         # rim
+    k.box(0, 0, 0.6, 1.5, 0.88, 0.05, "steelL", top="plate")
+    if well:
+        k.box(0, 0, 0.6, 1.5, 0.64, 0.09, "soilD", top="soilD")
+        for e in (-1, 1):
+            k.cyl(e * 0.75, 0, 0.6, 0.32, 0.09, "soilD", top="soilD", sides=12)
+        _soil(k, 0, 0, 0.69, 1.9, 0.48, 9, n=34)
+    k.box(0.45, 0.44, 0.3, 0.3, 0.012, 0.14, "dark")                                  # front display
+    k.box(0.45, 0.448, 0.34, 0.2, 0.012, 0.06, "cyan" if on else "steelD")
+    k.box(-0.45, 0.44, 0.34, 0.24, 0.012, 0.05, "hazY")                               # label plate
+    k.cyl(-1.17, 0.0, 0.3, 0.05, 0.12, "polyB", sides=6)                              # inlet on the nose
+    k.cyl(1.17, 0.0, 0.3, 0.06, 0.08, "medRed", sides=6)
+
+
+def tunnel2(k, on, crop):
+    """The tunnel, refined: the ribs grow out of shoulders on the hull's sides and cap over the spine; the lamps are
+    segments between the ribs, so nothing crosses them."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    RIBS = ((-0.95, 0.1), (0.0, 0.09), (0.95, 0.1))
+    for u, sz in RIBS:
+        for sv in (-1, 1):                                                           # shoulders on the hull side
+            k.box(u, sv * 0.41, 0.42, sz + 0.1, 0.14, 0.24, "steel", top="steelL", bevel=0.02)
+        _hoop(k, u, 0.56, 0.78, 0.45, "steel", n=8, s=sz, top="steelL")
+        k.box(u, 0, 1.3, sz + 0.06, 0.22, 0.12, "steel", top="steelL", bevel=0.02)   # the cap over the spine
+    k.box(0, 0, 1.3, 1.96, 0.12, 0.09, "steel", top="steelL", bevel=0.02)             # the spine
+    for sv in (-1, 1):
+        for u in (-0.5, 0.5):                                                        # lamps between the ribs
+            k.box(u, sv * 0.066, 1.31, 0.76, 0.012, 0.055, lit)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
+def hut(k, on, crop):
+    """The same hull, with solid arched end walls rising out of its ends (a Nissen hut), a spine between them, and the
+    lamps along the spine. The sides are open, so the plants show."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    for e in (-1, 1):                                                                # end walls: stepped half discs
+        u = e * 1.0
+        for i in range(-4, 5):
+            v = i * 0.1
+            h = 0.78 * math.sqrt(max(0.0, 1 - (v / 0.47) ** 2))
+            k.box(u, v, 0.6, 0.12, 0.1 + 0.005, h, "steel", top="steelL")
+        k.box(u, 0, 0.6, 0.14, 0.9, 0.06, "steelL", top="plate", bevel=0.01)         # its sill on the rim
+        k.box(u + e * 0.065, 0, 0.9, 0.012, 0.3, 0.22, "glassD")                      # a porthole in the wall
+        k.box(u + e * 0.072, 0, 0.98, 0.012, 0.16, 0.08, "green" if on else "dark")
+    k.box(0, 0, 1.3, 2.1, 0.14, 0.1, "steel", top="steelL", bevel=0.02)              # the spine
+    for sv in (-1, 1):
+        k.box(0, sv * 0.076, 1.31, 1.84, 0.012, 0.06, lit)
+    for u in (-0.5, 0.5):                                                            # drip lines down from the spine
+        k.box(u, 0, 1.2, 0.03, 0.03, 0.1, "polyB")
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
+def halo(k, on, crop):
+    """The same hull; two swept arms rise from its ends and carry a racetrack ring lamp over the bed."""
+    lit = "growPink" if on else "blueGrey"
+    _hull(k, on)
+    n = 6
+    for e in (-1, 1):                                                                # the arms: quarter arcs inward
+        pts = [(e * (1.15 - 0.45 * math.sin(a)), 0.55 + 0.75 * (1 - math.cos(a)))
+               for a in (math.pi / 2 * i / n for i in range(n + 1))]
+        for (u0, za), (u1, zb) in zip(pts, pts[1:]):
+            L = math.hypot(u1 - u0, zb - za) + 0.06
+            k.box((u0 + u1) / 2, 0, (za + zb) / 2 - 0.07, L, 0.16, 0.14, "steel", top="steelL",
+                  ry=-math.atan2(zb - za, u1 - u0))
+        k.box(e * 1.0, 0, 0.5, 0.3, 0.3, 0.16, "steel", top="steelL", bevel=0.02)    # root on the nose
+    k.box(0, 0.3, 1.28, 1.3, 0.12, 0.1, "steel", top="steelL", bevel=0.02)            # the ring: two long bars
+    k.box(0, -0.3, 1.28, 1.3, 0.12, 0.1, "steel", top="steelL", bevel=0.02)
+    for e in (-1, 1):                                                                # and round ends
+        for i in range(6):
+            a = -math.pi / 2 + math.pi * (i + 0.5) / 6
+            k.box(e * 0.65 + e * 0.3 * math.cos(a), 0.3 * math.sin(a), 1.28, 0.17, 0.12, 0.1, "steel",
+                  top="steelL", rz=a + math.pi / 2)
+    for sv in (-1, 1):                                                               # lit inner edges
+        k.box(0, sv * 0.235, 1.29, 1.24, 0.012, 0.06, lit)
+    for e in (-1, 1):
+        for i in range(6):
+            a = -math.pi / 2 + math.pi * (i + 0.5) / 6
+            k.box(e * 0.65 + e * 0.235 * math.cos(a), 0.235 * math.sin(a), 1.29, 0.13, 0.012, 0.06, lit,
+                  rz=a + math.pi / 2)
+    if crop:
+        for i, (u, v) in enumerate(PLANTS):
+            _plant(k, u, v, 0.77, i)
+
+
 VARIANTS = {"bench": bench, "scaffold": scaffold, "tub": tub, "pipe": pipe, "bowls": bowls, "vat": vat,
             "skiff": skiff, "hexes": hexes, "bags": bags,
-            "capsule": capsule, "tunnel": tunnel, "visor": visor}
+            "capsule": capsule, "tunnel": tunnel, "visor": visor,
+            "tunnel2": tunnel2, "hut": hut, "halo": halo}
 STATES = ("off", "on", "on.crop")
 
 
