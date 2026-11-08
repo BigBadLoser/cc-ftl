@@ -108,12 +108,16 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   (3, 13), rib m (15, 16). The dip: `wall3d_iwin_def.SILL_OFF` (new, 0 for the default: pixel-identical by
   construction) keeps the crest at the lip's top that far in from the post; slate sets it from `DIP` (sw13: BLOCK - POST,
   6.75 px; sw14: 0, see the log), END to `SLOPE` 9 px and RUN scaled with it (5 * 9 / 11.5), restored in `finally`.
-- Plates over the sill's front edge (ref 44's two light plates bent over the edge above the pockets): `PLATES` px per
-  part, a top PLATE_D 6 px back on the sill's level top (`PLATE` fGW0), its last px at the bend `PLATE_BEND` (fGWh,
-  new, slate set), then PLATE_DN 2 px down the face (`PLATE_FRONT` fGW1), each a hair proud (3 PAINT) of the sill and
-  its lit edge. Ref tones: plate top #9ba0a5 on a #8f949b top, bend #acb1bc..#c5cbd9, front #7b8289 on a dark face.
-  Measured at the ref's edge: m 3-15 and m 29 - r 9; on screen ours landed ~6 cols right (our sill's edge stands
-  further back than its pockets), so PLATES are 6 px toward -x: l 29 - m 9, m 23 - r 3 (sw17).
+- Plates over the sill's front edge: ref 44's DARK plates (the lighter stretches between them are the floor, not
+  plates: the user), wrapped from the floor's top over its front edge down the face. `PLATES` px per part: a top
+  PLATE_D 6 px back on the sill's level top (`PLATE` fGWp, new, slate set, #91969b), then PLATE_DN 2 px down the face
+  (`PLATE_FRONT` fGW3), each a hair proud (3 PAINT) of the sill and its lit edge. Ref tones: plate top #8f949b on a
+  #9ba0a5 floor (0.92), plate front ~0.82 of the face between. At the ref's edge they measure l 24 - m 2, m 16-28,
+  r 10-20; ours sit 6 px toward -x (our sill's edge stands further back than its pockets): l 21-28 (from the dip's
+  foot), m 10-22, r 4-14 (sw19).
+- Quantising: post.quantize looks colours up in a 32-step LUT, so a new colour can land on a neighbour (fGWp
+  #92989f came out #959d98, greenish). Check a new hex round-trips first: `post.select('walls+hull+slate')`, then
+  `post.PALETTE[post.quantize(np.array([[r, g, b]], float))[0]]` (python3 -I with tools/blender on sys.path).
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -152,3 +156,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   and depth shifts it right on screen). DIP 0 (the dip from the post, as the default) lands it within ~1-2 cols. Shown.
 - 2026-11-08: sw15-17: the plates over the sill's edge (sw15 fGW1 didn't read: same as the sill's top; sw16 lighter;
   sw17 6 px toward -x to sit as the ref's on screen). Shown.
+- 2026-11-08: sw18-19: the plates are the dark parts (the user); three dark plates wrapped over the edge, fGWh dropped,
+  fGWp #91969b (round-trips the quantiser). Shown.

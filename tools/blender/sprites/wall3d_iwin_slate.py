@@ -26,14 +26,14 @@ SIDE = "fGS4"                           # its sides
 GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
                                         # tone over it
 TOE = "fGS2"                            # under the opening the ramp from the pockets' floors down (the toe)
-PLATES = {"l": ((29, 31),), "m": ((0, 9), (23, 31)), "r": ((0, 3),)}   # px: metal plates over the sill's front
-                                        # edge: ref 44's two, on screen (its edge measures m 3-15 and m 29 - r 9; ours
-                                        # stands further back than its pockets, so 6 px toward -x)
+PLATES = {"l": ((21, 28),), "m": ((10, 22),), "r": ((4, 14),)}   # px: dark metal plates wrapped over the sill's
+                                        # front edge: ref 44's three, on screen (at its edge they measure l 24 - m 2,
+                                        # m 16-28, r 10-20; ours stands further back than its pockets, so 6 px toward
+                                        # -x; l's from the dip's foot); the lighter stretches between are the floor
 PLATE_D = 6                             # px back over the sill's top from its front edge ...
 PLATE_DN = 2                            # ... and PZ down the face over the pockets past it
-PLATE = "fGW0"                          # its top (a step lighter than the sill's) ...
-PLATE_FRONT = "fGW1"                    # ... its front, down the face
-PLATE_BEND = "fGWh"                     # its last px on the top, at the bend over the edge (lit)
+PLATE = "fGWp"                          # its top (darker than the floor's) ...
+PLATE_FRONT = "fGW3"                    # ... its front, down the face (darker than the face)
 BLOCK = 18                              # px: the blue end blocks under the posts run this far in from the run's ends
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
@@ -140,8 +140,8 @@ def detail(k, part):
     yd = ye + PLATE_DN * PZ / _k()
     for p0, p1 in PLATES.get(part, ()):
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
-        for ya, yb_, col in ((ye - PLATE_D * L, ye - L, PLATE), (ye - L, ye, PLATE_BEND)):
-            _quad(k, [(u0, ya, zf + e), (u1, ya, zf + e), (u1, yb_, zf + e), (u0, yb_, zf + e)], (0, 0, 1), col)
+        _quad(k, [(u0, ye - PLATE_D * L, zf + e), (u1, ye - PLATE_D * L, zf + e), (u1, ye, zf + e), (u0, ye, zf + e)],
+              (0, 0, 1), PLATE)
         _quad(k, [(u0, ye + n.y, zf + n.z), (u1, ye + n.y, zf + n.z), (u1, yd + n.y, zf - PLATE_DN * PZ + n.z),
                   (u0, yd + n.y, zf - PLATE_DN * PZ + n.z)], (0, _k(), 1), PLATE_FRONT)
     z0, z1 = W.foot() + POCKET_FOOT * PZ, zf - POCKET_TOP * PZ   # (a pocket's floor at the front, its top)
