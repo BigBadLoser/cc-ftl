@@ -3558,5 +3558,6 @@
   "resSand": {"hex": "#8a7a5c", "set": "research"},
   "resFrond": {"hex": "#2f7f62", "set": "research"},
   "resFrondL": {"hex": "#5cbf8c", "set": "research"},
+  "resWingL": {"hex": "#b8c6ea", "set": "research"},
   "resWing": {"hex": "#6e5a86", "set": "research"}
 }
