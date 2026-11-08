@@ -123,7 +123,7 @@ def _pocket_cut(k, pa, pb):
     """Take the ramp's front out between pa and pb: everything out past the wall's line (the near side: mesh -y; the
     slot's back in line with the slope's top end, the user) over the slot's floor (the foot's top) and under the sill
     (not the header's tube, out past it high up)."""
-    ye, zf, zs = -_line(), W.foot(), _zs()
+    ye, zf, zs = -_line(), W.foot(), _zt()
     inx = [(0, pa, 1), (0, pb, -1)]
     regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zf, -1)],
                inx + [(1, ye, -1), (2, zs, 1)]]
@@ -135,7 +135,7 @@ def _pocket_cut(k, pa, pb):
             pts = [m.v[i] for i in f[0]]
             xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
             if (max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zf + 1e-9 or
-                    min(zs) >= _zs() - 1e-9):
+                    min(zs) >= _zt() - 1e-9):
                 out.append(f)
                 continue
             for r in regions:
@@ -152,23 +152,26 @@ def _pocket_cut(k, pa, pb):
 
 
 def _pocket(k, pa, pb):
-    """A slot's faces: its floor out to the ramp's foot, its back at the wall's line up to the sill, its sides (the
-    section over the floor: the sill's height, then the slope), and under an end block (the cut's ends past the slot's)
-    the slope's underside over it. The near side: grid +y (mesh -y, as _pocket_cut works)."""
-    yl, ye, zf, zs, yf = _line(), _front(), W.foot(), _zs(), 0.5
+    """A slot's faces: its floor out to the ramp's foot, its back at the wall's line up to the cut over it (the sill,
+    or the ramp's top under an end block: the slot takes the slope there whole), its sides (the section over the
+    floor). The near side: grid +y (mesh -y, as _pocket_cut works)."""
+    yl, ye, zf, zs, zt, yf = _line(), _front(), W.foot(), _zs(), _zt(), 0.5
+    c0, c1 = _sill(PART)
     a, b = max(pa, -0.5), min(pb, 0.5)
     if b - a < 1e-9:
         return
     _quad(k, [(a, yl, zf), (b, yl, zf), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
-    _quad(k, [(a, yl, zf), (b, yl, zf), (b, yl, zs), (a, yl, zs)], (0, 1, 0), COL["p_back"])
+    for u0, u1, z in ((a, min(b, c0), zt), (max(a, c0), min(b, c1), zs), (max(a, c1), b, zt)):
+        if u1 - u0 > 1e-9:
+            _quad(k, [(u0, yl, zf), (u1, yl, zf), (u1, yl, z), (u0, yl, z)], (0, 1, 0), COL["p_back"])
     for u, sd in ((pa, 1), (pb, -1)):
-        if -0.5 < u < 0.5:
+        if not -0.5 < u < 0.5:
+            continue
+        if c0 - 1e-9 <= u <= c1 + 1e-9:                 # (by the sill: its height, then the slope)
             _quad(k, [(u, yl, zf), (u, ye, zf), (u, ye, zs), (u, yl, zs)], (sd, 0, 0), COL["p_side"])
             _quad(k, [(u, ye, zf), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
-    c0, c1 = _sill(PART)
-    for u0, u1 in ((max(a, -0.5), min(b, c0)), (max(a, c1), min(b, 0.5))):
-        if u1 - u0 > 1e-9:
-            _quad(k, [(u0, yl, zs), (u1, yl, zs), (u1, ye, zs), (u0, ye, zs)], (0, 0, -1), COL["p_back"])
+        else:                                           # (under an end block: the slope from its top)
+            _quad(k, [(u, yl, zf), (u, yf, zf), (u, yl, zt)], (sd, 0, 0), COL["p_side"])
 
 
 def _quad(k, pts, out, col):
@@ -199,6 +202,8 @@ def _ends(k, x0, x1, z1, cells):
         sd = 1 if sb else -1                            # (it faces the sill's side)
         _quad(k, [(u, -yl, zs), (u, yl, zs), (u, yl, zt), (u, -yl, zt)], (sd, 0, 0), COL["end"])
         for s_ in (1, -1):
+            if s_ > 0 and any(pa - 1e-9 <= u <= pb + 1e-9 for pa, pb in _pockets_x(PART)):
+                continue                                # (a slot takes the slope there)
             _quad(k, [(u, s_ * yl, zs), (u, s_ * ye, zs), (u, s_ * yl, zt)], (sd, 0, 0), COL["end"])
 
 
