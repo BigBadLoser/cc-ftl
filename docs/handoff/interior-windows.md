@@ -104,10 +104,11 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   beam (`CHAMFER` 9 px: the rail's shadow and the stripe), the wedge's front in those blue bands as they show beside
   it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 all 3 px: the user prefers that dark block to
   sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
-  at its foot (sw31); on l a seam (fGT3, a px) down the blue at the left post's edge, as the right post shows one (its
-  face's cut end against the chamfer), in line with the post's corner line under it (sw34; a px further left in
-  sw33); the rail's shadow band (`SHADOW` 3 px, ochre lvl 1) carried on across under the beam from chamfer to chamfer
-  (a box across the wall, its underside `BEAM_UNDER`) so the dark line under the header runs on over the window (sw34);
+  at its foot (sw31); on l a seam (`SEAM` fGW5, a px: the post's corner line's grey, an AA blend of fGS3 and fGW5
+  there; fGT3 blue in sw33-34) down the blue at the left post's edge, in line with the post's corner line under it, as
+  the right post shows one; over the opening, chamfer to chamfer, the header's front's bottom px dark (fGT4, the
+  chamfers' top tone) on each rail block at its own depth, all on the beam's line (the middle's lower px is cut there)
+  (sw35; sw34's 3 px shadow band hung under the beam didn't read);
   pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
@@ -204,4 +205,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   mirrored on the left of the opening. Shown: the user preferred the block (back in sw33) and meant another seam.
 - 2026-11-08: sw33: the seam they meant: down the blue at the post's edge (marked image sent), added on the left. Shown.
 - 2026-11-08: sw34: that seam a px right (in line with the post's corner line); the dark line under the header carried
-  across the window (the shadow band under the beam). Shown.
+  across the window (the shadow band under the beam). Shown: didn't read.
+- 2026-11-08: sw35: instead the header's bottom px over the window dark (a bottom edge highlight); the left seam in the
+  post's corner line's grey (fGW5). Shown.

@@ -10,6 +10,7 @@ from . import core
 from . import wall3d as T
 from . import walls as W
 from . import wall3d_iwin_def as D
+from .faction import slate as S
 from .faction.parts import PAINT, PZ
 from .wall3d_iwin import _clip
 
@@ -38,6 +39,7 @@ PLATE = "fGS2"                          # its top (the vertical wall's greys: it
 PLATE_FRONT = "fGS3"                    # ... its front, down the face
 BLOCK = 13                              # px: the blue end blocks under the posts run this far in from the run's ends
 END_STRIP = 3                           # px: the strip closing the joined end under the floor's edge
+SEAM = "fGW5"                           # the seam down the blue at the left post (the post's corner line's grey)
 SHADOW = 3                              # px: the rail's shadow band under the header (its lowest px shows)
 CHAMFER = 9                             # px: the opening's top corners cut this far (the blue under the header)
 BLUE = "ochre"                          # (the trim's: the stripe's, faction.slate.BLUE)
@@ -211,16 +213,16 @@ def _chamfers(k, x0, x1, yf):
     yr = yf + T.FR                                      # (the posts' front)
     m = k.m
     if x0 > -0.5:                                       # a seam down the blue at the left post's edge, as the right
-        ys = yr + 3 * PAINT                             # post's shows (its face's cut end against the chamfer)
+        ys = yr + 3 * PAINT                             # post's shows, in the post's corner line's grey
         k.poly([Vector(p) for p in ((x0, ys, zc), (x0 + L, ys, zc), (x0 + L, ys, z1), (x0, ys, z1))], BLUE, 3,
-               Vector((0, 1, 0)), fixed="fGT3")
-    lo = x0 + CHAMFER * L if x0 > -0.5 else -0.5        # the band under the header carried on across the opening,
-    hi = x1 - CHAMFER * L if x1 < 0.5 else 0.5          # chamfer to chamfer: the rail's shadow, SHADOW px under the
-    zh = z1 - SHADOW * PZ                               # beam (its lowest px shows under the rail, as on the wall)
-    if hi > lo:
-        k.poly([Vector(p) for p in ((lo, yr, zh), (hi, yr, zh), (hi, yr, z1), (lo, yr, z1))], BLUE, 1,
-               Vector((0, 1, 0)))
-        _quad(k, [(lo, -yr, zh), (hi, -yr, zh), (hi, yr, zh), (lo, yr, zh)], (0, 0, -1), D.BEAM_UNDER)
+               Vector((0, 1, 0)), fixed=SEAM)
+    lo = x0 + CHAMFER * L if x0 > -0.5 else -0.5        # over the opening, chamfer to chamfer: the header's front's
+    hi = x1 - CHAMFER * L if x1 < 0.5 else 0.5          # bottom px dark (a dark edge under it, the chamfers' top
+    for u0, u1, mid in S._blocks(lo, hi):               # tone), on each of the rail's blocks at its depth (over the
+        d, zb = S.MID_D if mid else S.RAIL_D, z1        # opening all end on the beam's line: the middle's lower px cut)
+        y = yr + d + PAINT
+        k.poly([Vector(p) for p in ((u0, y, zb), (u1, y, zb), (u1, y, zb + PZ), (u0, y, zb + PZ))], BLUE, 1,
+               Vector((0, 1, 0)), fixed="fGT4")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if not on:
             continue
