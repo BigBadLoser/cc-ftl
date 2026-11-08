@@ -3542,5 +3542,15 @@
   "resAmbF": {"hex": "#d29440", "set": "research"},
   "resLime": {"hex": "#dcff7a", "emissive": 2.2, "set": "research"},
   "resLimeF": {"hex": "#a9c95e", "set": "research"},
-  "resLamp": {"hex": "#f4fbe6", "emissive": 1.6, "set": "research"}
+  "resLamp": {"hex": "#f4fbe6", "emissive": 1.6, "set": "research"},
+  "resGold": {"hex": "#ffd27a", "emissive": 2.2, "set": "research"},
+  "resGoldF": {"hex": "#c9a65e", "set": "research"},
+  "resScan": {"hex": "#eef4ff", "emissive": 1.8, "set": "research"},
+  "resScanF": {"hex": "#aeb9cc", "set": "research"},
+  "resWork": {"hex": "#f6f2e4", "emissive": 1.6, "set": "research"},
+  "resVio": {"hex": "#a68cff", "emissive": 2.4, "set": "research"},
+  "resVioF": {"hex": "#7a68c4", "set": "research"},
+  "resRelicD": {"hex": "#2c3034", "set": "research"},
+  "resRelic": {"hex": "#4e575c", "set": "research"},
+  "resRelicL": {"hex": "#7d878a", "set": "research"}
 }
