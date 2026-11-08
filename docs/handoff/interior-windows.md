@@ -564,3 +564,6 @@ Marked ref (both layers, numbered): scratchpad
   it now leaves out a hole opened through the toe. Plain m10 unchanged (as nv9). nv15.
 - 2026-11-08: the user: move the bottom pipe down and make room for the silver pipe. The lower pipe row now sits by
   the foot (d1 − 0.015), and the silver pipe is back between the two rows, rs + 0.04 into the slope. nv16.
+- 2026-11-08: the user: top pipe up 1, silver pipe down 1. Moved along the slope by one screen px each
+  (1 / (16 + 39.19·fall) in d); checked in the pixels: top row and its collars up 1 px, silver down 1 px, lower row
+  unchanged. nv17.

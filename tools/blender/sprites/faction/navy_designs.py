@@ -130,15 +130,16 @@ def navy_pipes(plate, u0, u1, run_, k=None, pt=None, P=None, zs=0.0, hole=None, 
         dp, sn = rp + 0.015, math.sin(math.atan(fall))              # sunk a radius and a bit into the slope,
         s0 = max(d0, T.style().shelf)                               # (on the slope: the opening cut back into
         dt = min(d1, run_ - 0.03)                                   # (over the slope, not the toe the slot opens)
-        feet = [s0 + 0.3 * (dt - s0), d1 - 0.015]                   # the shelf is flat; the lower one down by the
-        #   foot, room for the silver pipe between: the user) square to it (straight
-        #   down slid them on
+        px = 1 / (16 + 39.19 * fall)                                # one screen px down the slope, in d
+        f0 = s0 + 0.3 * (dt - s0)                                   # (the shelf is flat: rows on the slope,
+        feet = [f0 - px, d1 - 0.015]                                # square to it; the top one up a px, the
+        #   lower one down by the foot, room for the silver pipe between: the user)
         rows = [dd - sn * dp for dd in feet]                         # towards the toe, the lower one under it)
         zp = [zat(dd) - cs * dp for dd in feet]                      # (two rows down the opened cover)
         for dd, zc in zip(rows, zp):                                        # the pipes, lit like the header tube
             tube(k, ax, plane, o0 - 0.005, o1 + 0.005, dd, zc, rp)           # (ends in the side walls)
         rs = 0.03
-        fs = (feet[0] + feet[1]) / 2                                        # a thin silver pipe between them,
+        fs = (f0 + feet[1]) / 2 + px                                        # a thin silver pipe between them,
         ds, zs_ = fs - sn * (rs + 0.04), zat(fs) - cs * (rs + 0.04)         # a little deeper
         prof, cols = tube_prof(ds, zs_, rs)
         prism(k, ax, plane, o0 - 0.005, o1 + 0.005, prof, "wall", 0, [SILVER[c] for c in cols], "fNW4")
