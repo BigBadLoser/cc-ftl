@@ -4,6 +4,7 @@ from .. import wall3d as T
 from .base import Faction, _style
 from .navy_designs import NAVY_RAMPS, NAVY_TOPS, navy_band, navy_recess
 from .parts import LINE, PAINT, PX, _slab, body, bracket, corner_piece, tube, tube_prof
+from .slate import SHELF
 from .shell import (
     NO,
     Chamfer,
@@ -57,7 +58,7 @@ class PlateTones(Feature):
         e = 0.5 / T.W.GN
         r = sp._rect_at(x, y - e) if face == "y" else sp._rect_at(x - e, y)
         top = r[3] if r else sp.top
-        if z < sp.zs + 0.02 or z > top - 0.03:
+        if z < T.lip_heights(sp.zs)[0] + 0.02 or z > top - 0.03:      # (the outline at the shelf's height)
             return c
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][4 if face == "d" else 3]
 
@@ -72,9 +73,10 @@ def navy(hull):
         cp = corner and ax == "y"
         pe = ("in" if back else ends[0], ends[1])       # (at a hidden free end the parts stop square: run on, they
                                                         # stuck out past the end)
-        T.run(k, ax, plane, a, b, pe, zs - 0.03, zs + 0.06, PAINT, F, 3, 0)
+        zf = T.lip_heights(zs)[0]                      # the face's foot: down to the ramp's shelf
+        T.run(k, ax, plane, a, b, pe, zf - 0.03, zs + 0.06, PAINT, F, 3, 0)     # (from the shelf up)
         if cp:
-            corner_piece(k, X, plane, C, _slab(zs - 0.03, zs + 0.06, PAINT), F, 3)
+            corner_piece(k, X, plane, C, _slab(zf - 0.03, zs + 0.06, PAINT), F, 3)
             _ramp_chamfer(k, X, plane, C, zs, F)
         rt = min(top, T.W.wall_top("wall", "up")) if full else top     # laid out on a partition's height on every
         H = rt - zs                                                     # wall, so the far hull's parts line up
@@ -84,12 +86,12 @@ def navy(hull):
                 continue
             if s1 - s0 > 2 * NAVY_SEAM + 1e-3:
                 for u in (s0 + NAVY_SEAM, s1 - NAVY_SEAM):
-                    T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, zs - 0.03, zh, PAINT, F, 1)
+                    T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, PAINT, F, 1)
         if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
             for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
                 if e == "in":
                     u0 = u if u == a else u - LINE
-                    T.paint(k, ax, plane, u0, u0 + LINE, zs - 0.03, zh, PAINT, F, 1)
+                    T.paint(k, ax, plane, u0, u0 + LINE, zf - 0.03, zh, PAINT, F, 1)
         if endf:
             _end_section(k, ax, plane, a, b, zs, zh - 0.33 * H if full else top, F)
         if not full:
@@ -138,6 +140,8 @@ class Navy(Faction):
 
     def relief(self, sprite):
         return _style(navy, skirt=None, toe="ochre", seam=NAVY_SEAM, joint=4, chamfer=NAVY_C, ramp_solid=True,
+                      shelf=SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
+                      #   shelf at the wall, all shelf: no lip on it)
                       hole_tone=navy_hole_tone, shell=LookShell, tops=NAVY_TOPS, ramps=NAVY_RAMPS,
                       features=(FreeEnds(), RampHoles(), Chamfer(NAVY_C), FloorDrop(), FootTone("ochre", 2),
                                 FaceHoles(), PlateTones()))

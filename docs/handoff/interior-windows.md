@@ -458,3 +458,8 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user on nw3e: the middle panel wider, on the measurement. Re-read up the ref's slope (deskewed row 56):
   slots 19 | panel 28 (its chamfered edges included; 28-30 lower down, its red face 20) | 19. nw3f: panel 34-62 (28 px,
   centred), slots 11-34 and 62-85 (23).
+- 2026-11-08: window paused (the user) for navy's base wall: its ramp given the default's and slate's geometry, all
+  shelf, no lip (faction/navy.py: Style shelf=slate.SHELF (4 px, 8 art px under the ramp's top), shelf_lvl 2,
+  shelf_back (0, 1); navy's face and its plate seams down to the shelf; PlateTones' foot outline at the shelf).
+  Renders: scratchpad ns0 (before) / ns2 (after). Note for the window: the shelf's height is the sill's (CUT_Z 8);
+  wall3d_iwin_navy still assumes the slope runs up to the wall.
