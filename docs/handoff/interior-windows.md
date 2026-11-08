@@ -649,3 +649,6 @@ Marked ref (both layers, numbered): scratchpad
   recess is plain cover grey (no band). navy_boxes takes the recess's mouth in screen px (navy.py: the back's px seen
   between its walls, in the design's frame) and centres its boxes in it, their width kept (measured: 1 px either side).
   nb11.
+- 2026-11-08: control boxes' recess: its side walls a lighter navy (rose 4, 314765; were rose 1, near black 0c0c14:
+  the user), and the 2px lip left of it the recess back's navy (rose 2, 24344a; was the cover's grey a9b4c4). Plain
+  m10 identical to nv9. nb13.

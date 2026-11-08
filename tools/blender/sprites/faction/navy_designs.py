@@ -68,7 +68,7 @@ def _recess(k, ax, plane, u0, u1, z0, z1, d0, d1):
     k.poly([Q(u0, z0, d0), Q(u1, z0, d0), Q(u1, z0, d1), Q(u0, z0, d1)], "rose", 3, up)                 # floor
     k.poly([Q(u0, z1, d0), Q(u1, z1, d0), Q(u1, z1, d1), Q(u0, z1, d1)], "rose", 1, -up)                # ceiling
     for u, sg in ((u0, 1), (u1, -1)):                                                                    # sides
-        k.poly([Q(u, z0, d0), Q(u, z1, d0), Q(u, z1, d1), Q(u, z0, d1)], "rose", 1, al * sg)
+        k.poly([Q(u, z0, d0), Q(u, z1, d0), Q(u, z1, d1), Q(u, z0, d1)], "rose", 4, al * sg)
 
 
 def cover_holes(a, b, zs, top, ends=None, span=None, ax=None, plane=None, sh=None, **_):
