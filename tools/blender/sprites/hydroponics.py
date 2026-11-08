@@ -232,12 +232,12 @@ def _frame_legs(k, us=(-1, 1)):
 PIPE, PIPE_R = "sole", 0.035
 
 
-def _pipe(k, pts, r=PIPE_R, col=PIPE):
+def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
     """A pipe through the local points: straight runs with a coupling at each bend."""
     for a, b in zip(pts, pts[1:]):
         _tube(k, [a, b], r, col, n=8)
     for u, v, z in pts[1:-1]:
-        k.box(u, v, z - r * 1.4, r * 2.8, r * 2.8, r * 2.8, "tFrame")
+        k.box(u, v, z - r * 1.4, r * 2.8, r * 2.8, r * 2.8, joint)
 
 
 def _valve(k, u, v, z, face="v"):
@@ -323,18 +323,21 @@ def _base_tower(k, on):
 
 
 def _base_twin(k, on):
-    """A tank under each plant: two standing white tanks on dark feet in front of a navy back, a pump between them
-    on the floor drawing from both and feeding a riser with a valve up into the tray."""
-    _prism(k, _cham(0, -0.25, 1.875, 0.375, 0.02), 0.0, 0.56, "tNavy", top="tNavyL")         # the back
+    """A tank under each plant: two standing white tanks on dark feet inside grey corner legs. A pump between them
+    draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
     _frame_legs(k)
     for su in (-1, 1):
         k.cyl(su * 0.48, 0.1, 0.0, 0.28, 0.04, "dark", sides=20)
         _vtank(k, su * 0.48, 0.1, 0.04, 0.31, 0.52, on)
-    _pump(k, 0.0, 0.28, 0.0, on, s=1.2)
+    _pump(k, 0.0, 0.26, 0.0, on, s=1.2)
     for su in (-1, 1):
-        _pipe(k, [(0.0, 0.28, 0.1), (su * 0.28, 0.28, 0.1)])
-    _pipe(k, [(0.0, 0.28, 0.29), (0.0, 0.28, 0.56)])
-    _valve(k, 0.0, 0.28, 0.44)
+        _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col="tFrame")       # suction
+    zm, vm = 0.4, FV + 0.05
+    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col="tFrame", joint="steel")  # pump up
+    _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col="tFrame", joint="steel")
+    # (above: the manifold along the front and a riser at each end)
+    for su in (-1, 1):
+        _valve(k, su * 0.36, vm, zm)
 
 
 BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin}
