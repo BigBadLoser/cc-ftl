@@ -43,10 +43,11 @@ export const INSPECT_BOARD_SEC = 90;
 export const INSPECT_STALL_SEC = 45;
 export const INSPECT_HOME_SEC = 300;
 /**
- * Refusing and fighting (#138 step 3): a refused patrol turns hostile once its inspectors are off the player's ship, or INSPECT_TURN_SEC after they set
- * off home. Attacking the inspectors costs INSPECT_FIGHT_HIT standing and turns their side hostile; a station also refuses service for INSPECT_FIGHT_BAN_TURNS.
+ * Refusing and fighting (#138 step 3): refusing a patrol's inspectors (or leaving while they search or wait) costs INSPECT_PATROL_REFUSE_HIT standing
+ * (a patrol has no service to bar). Attacking the inspectors costs INSPECT_FIGHT_HIT standing and turns their side hostile; a station also refuses
+ * service for INSPECT_FIGHT_BAN_TURNS.
  */
-export const INSPECT_TURN_SEC = 10;
+export const INSPECT_PATROL_REFUSE_HIT = 8;
 export const INSPECT_FIGHT_HIT = 10;
 export const INSPECT_FIGHT_BAN_TURNS = 30;
 /**

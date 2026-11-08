@@ -9,7 +9,10 @@ import { InspectionC, type Inspection } from '../../sim/inspect/types';
 import { repKey } from '../../sim/galaxy/standing';
 import { shipIdOf } from '../../sim/regions';
 import { reputationOf } from '../../sim/story/state';
-import { INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT } from '../../sim/blackmarket/tuning';
+import { INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT, INSPECT_PATROL_REFUSE_HIT } from '../../sim/blackmarket/tuning';
+import { AWAY_LIFT_SEC } from '../../sim/tuning';
+import { TICK_HZ } from '../../sim/time';
+import { DeadC, HealthC } from '../../sim/crew/components';
 import { inspectCommands, inspectStation } from './inspect';
 import { patrolCommands, patrolNode } from './patrol';
 
@@ -96,7 +99,7 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
     expect(sim.world.get(insp.station, ShipC)?.faction).toBe('hostile');
   });
 
-  it('refusing a patrol\'s inspectors: they leave with the goods, then the patrol turns hostile', () => {
+  it('refusing a patrol\'s inspectors: a bigger standing hit, they leave with the goods, and the patrol stays peaceful', () => {
     const sim = patrolSearch();
     const [id, insp] = live(sim);
     until(sim, () => insp.phase === 'settle');
@@ -105,11 +108,53 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
     sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'refuse' });
     sim.step();
     expect(insp.phase).toBe('leave');
-    expect(reputationOf(sim.story, key)).toBeLessThan(before);
-    expect(sim.world.get(insp.station, ShipC)?.faction).toBe('neutral'); // a beat first
-    const seen = until(sim, () => sim.world.get(insp.station, ShipC)?.faction === 'hostile', 2000);
-    expect(seen).toContain('inspect.turned');
+    expect(reputationOf(sim.story, key)).toBe(before - INSPECT_PATROL_REFUSE_HIT);
+    until(sim, () => sim.world.query(InspectionC).length === 0, 8000);
+    expect(sim.world.query(InspectionC)).toEqual([]);
+    expect(sim.world.get(insp.station, ShipC)?.faction).toBe('neutral');
+    expect(sim.sector.inCombat).toBe(false);
+  });
+
+  it('leaving the node with inspectors aboard carries them off: a fight (hostile source, the fight\'s hit and bar), and they come along as boarders', () => {
+    const sim = stationSearch();
+    const [, insp] = live(sim);
+    const key = repKey(sim, insp.faction);
+    const before = reputationOf(sim.story, key);
+    const aboard = insp.crew.filter((c) => {
+      const p = sim.world.get(c, PositionC);
+      return !!p && shipIdOf(sim, p) === insp.ship;
+    });
+    expect(aboard.length).toBeGreaterThan(0);
+    abortInspections(sim); // what galaxy.jump and the flee call on the way out
+    expect(reputationOf(sim.story, key)).toBe(before - INSPECT_FIGHT_HIT);
     expect(sim.world.get(insp.station, ShipC)?.faction).toBe('hostile');
+    expect(sim.world.get(insp.station, TraderC)?.barredUntil).toBeGreaterThanOrEqual(sim.galaxy.turn + INSPECT_FIGHT_BAN_TURNS);
+    for (const c of aboard) expect(sim.world.get(c, AllegianceC)?.faction).toBe('hostile');
+  });
+
+  it('leaving a patrol with its inspectors aboard turns the patrol hostile too', () => {
+    const sim = patrolSearch();
+    const [, insp] = live(sim);
+    abortInspections(sim);
+    expect(sim.world.get(insp.station, ShipC)?.faction).toBe('hostile');
+  });
+
+  it('leaving before the inspectors are aboard is refusing them: no hostility', () => {
+    const sim = newGame(3, content);
+    for (let i = 0; i < 20; i++) sim.step();
+    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4, owner: 'navy' });
+    sim.step();
+    for (const cmd of inspectCommands(sim, inspectStation(sim)!)) sim.enqueue(cmd);
+    sim.step();
+    const [, insp] = live(sim);
+    expect(insp.phase).toBe('fly');
+    const key = repKey(sim, insp.faction);
+    const before = reputationOf(sim.story, key);
+    abortInspections(sim);
+    expect(reputationOf(sim.story, key)).toBeLessThan(before);
+    expect(reputationOf(sim.story, key)).toBeGreaterThan(before - INSPECT_FIGHT_HIT);
+    expect(sim.world.get(insp.station, ShipC)?.faction).toBe('neutral');
+    expect(sim.world.get(insp.station, TraderC)?.barredUntil).toBeGreaterThan(sim.galaxy.turn);
   });
 
   it('firing on the patrol ship while its inspectors search makes them fight too', () => {
@@ -188,6 +233,50 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
       for (const e of sim.events.drain()) if (e.type === 'crew.attacked' && aboard.includes(e.crew)) struck = true;
     }
     expect(struck).toBe(true);
+  });
+
+  it('a fight longer than the away run\'s lift time: the inspectors are not lifted off mid-fight', () => {
+    const sim = stationSearch();
+    attackLead(sim);
+    const [, insp] = live(sim);
+    const ship = insp.ship;
+    const aboard = insp.crew.filter((c) => {
+      const p = sim.world.get(c, PositionC);
+      return !!p && shipIdOf(sim, p) === ship;
+    });
+    expect(aboard.length).toBeGreaterThan(0);
+    // Keep the fight going past the lift time: the inspectors are topped up each tick, so it cannot end before the recall would lift them.
+    for (let i = 0; i < (AWAY_LIFT_SEC + 60) * TICK_HZ; i++) {
+      for (const c of aboard) {
+        const h = sim.world.get(c, HealthC);
+        if (h) h.hp = h.max;
+      }
+      sim.step();
+    }
+    expect(sim.world.query(InspectionC).length).toBe(1); // still the fight
+    expect(live(sim)[1].phase).toBe('fight');
+    for (const c of aboard) {
+      // Still on the ship: standing and hostile, or fallen there. Never carried off by the shuttle's recall.
+      const p = sim.world.get(c, PositionC);
+      expect(!!p && shipIdOf(sim, p) === ship).toBe(true);
+      if (!sim.world.has(c, DeadC)) expect(sim.world.get(c, AllegianceC)?.faction).toBe('hostile');
+    }
+  });
+
+  it('leaving while the inspectors walk back after the answer, still aboard, is a fight too', () => {
+    const sim = stationSearch();
+    const [id, insp] = live(sim);
+    until(sim, () => insp.phase === 'settle');
+    sim.enqueue({ type: 'inspect.settle', inspection: id, choice: 'fine' });
+    sim.step();
+    expect(insp.phase).toBe('leave');
+    const onShip = insp.crew.some((c) => {
+      const p = sim.world.get(c, PositionC);
+      return !!p && shipIdOf(sim, p) === insp.ship;
+    });
+    expect(onShip).toBe(true);
+    abortInspections(sim);
+    expect(sim.world.get(insp.station, ShipC)?.faction).toBe('hostile');
   });
 });
 

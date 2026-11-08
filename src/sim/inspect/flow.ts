@@ -1,17 +1,17 @@
 import { AwayC, SiteRunC } from '../away/components';
 import { scanPrices } from '../blackmarket/scan';
-import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC, INSPECT_TURN_SEC } from '../blackmarket/tuning';
+import { INSPECT_BOARD_SEC, INSPECT_HOME_SEC, INSPECT_STALL_SEC } from '../blackmarket/tuning';
 import { factionsHostile } from '../combat/factions';
 import { shipById } from '../combat/ships';
 import { CrewC, DeadC, DownedC, JobC, PositionC } from '../crew/components';
 import { SurrenderedC } from '../fight/components';
-import { fightInspection, turnPatrol } from './fight';
+import { fightInspection } from './fight';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
 import { partyJobs, postSearches, spotCheck, tally } from './search';
-import { patrolBoards, ranFromInspection } from './patrol';
+import { patrolBoards } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
@@ -42,21 +42,24 @@ function release(sim: Sim, vehicle: number, insp: Inspection): void {
 }
 
 /**
- * The player's ship is leaving the node: an inspection under way ends now; leaving while the inspectors are aboard counts as refusing them, and leaving a
- * patrol whose inspectors are still on the way counts as running from it.
+ * The player's ship is leaving the node (user rulings, #138 step 3). An inspection under way ends now:
+ * - with any inspector on the player's ship, whatever the phase (searching, waiting for the answer, or walking back after it), leaving carries them off:
+ *   that is a fight (`fightInspection`), and they stay aboard as hostile boarders;
+ * - with none aboard before the answer (still on the way, or back on their shuttle) it is refusing them (`refuseConsequences`);
+ * - with none aboard after the answer it costs nothing more.
  */
 export function abortInspections(sim: Sim): void {
   for (const id of inspections(sim)) {
     const insp = sim.world.get(id, InspectionC)!;
-    if (insp.phase === 'search' || insp.phase === 'settle') {
+    if (insp.phase !== 'fight' && aboard(sim, insp)) fightInspection(sim, id, insp);
+    else if (insp.phase === 'fly' || insp.phase === 'search' || insp.phase === 'settle') {
       refuseConsequences(sim, insp);
       sim.events.emit({ type: 'inspect.settled', inspection: id, faction: insp.faction, outcome: 'fled', cost: 0, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
-    } else if (insp.phase === 'fly' && insp.patrol !== undefined) ranFromInspection(sim, insp.faction, insp.patrol);
+    }
     if (insp.phase === 'fight') {
       release(sim, id, insp);
       continue;
     }
-    if (insp.turnOnLeave) turnPatrol(sim, id, insp); // a refused (or fled) patrol turns on the player before they get away
     endInspection(sim, id);
   }
 }
@@ -115,13 +118,9 @@ function step(sim: Sim, id: number, insp: Inspection): void {
       if (lead !== undefined && insp.crew[0] !== lead) insp.crew = [lead, ...insp.crew.filter((c) => c !== lead)];
       return;
     }
-    case 'leave': {
-      const home = !sim.world.has(id, SiteRunC) || insp.timer > INSPECT_HOME_SEC * TICK_HZ;
-      // A refused patrol turns hostile once its people are off the player's ship, or a beat after they set off.
-      if (insp.turnOnLeave && (home || !aboard(sim, insp) || insp.timer > INSPECT_TURN_SEC * TICK_HZ)) turnPatrol(sim, id, insp);
-      if (home) endInspection(sim, id);
+    case 'leave':
+      if (!sim.world.has(id, SiteRunC) || insp.timer > INSPECT_HOME_SEC * TICK_HZ) endInspection(sim, id);
       return;
-    }
   }
 }
 

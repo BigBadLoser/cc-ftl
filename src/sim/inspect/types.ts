@@ -42,8 +42,6 @@ export interface Inspection {
   bribeFailed?: true;
   /** How it ended: the player's answer, 'clean' (nothing found), 'fled' (the player left) or 'off' (a fight, the station gone). */
   outcome?: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled' | 'off' | 'fought';
-  /** A refused patrol (#138 step 3): it turns hostile once its inspectors are off the player's ship (or INSPECT_TURN_SEC into the leave). */
-  turnOnLeave?: true;
   /** Set while the party cannot reach the work: no inspector has made it aboard, or a search job nobody can take (the urgent alert). */
   blocked?: true;
 }

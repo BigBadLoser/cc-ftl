@@ -1,4 +1,4 @@
-import { PATROL_CHASE_CHANCE, PATROL_CHASE_TURNS, PATROL_RUN_HIT } from '../blackmarket/tuning';
+import { INSPECT_PATROL_REFUSE_HIT, PATROL_CHASE_CHANCE, PATROL_CHASE_TURNS, PATROL_RUN_HIT } from '../blackmarket/tuning';
 import { finishEncounter } from '../galaxy/encounters';
 import { unit } from '../galaxy/hash';
 import { drop, resumeAfterHop } from '../galaxy/hyperspace';
@@ -105,12 +105,13 @@ export function patrolBoards(sim: Sim): void {
   delete g.patrolStop;
 }
 
-/** The player leaves before the patrol's inspectors came over: that is running from it (the hit; no chase, the patrol is left behind). */
+/** The player leaves before the patrol's inspectors set off: that is refusing them (INSPECT_PATROL_REFUSE_HIT; nobody turns hostile). */
 export function abortPatrolStop(sim: Sim): void {
   const stop = sim.galaxy.patrolStop;
   if (!stop) return;
   delete sim.galaxy.patrolStop;
-  ranFromInspection(sim, stop.faction, stop.fleet);
+  hit(sim, stop.faction, INSPECT_PATROL_REFUSE_HIT);
+  sim.events.emit({ type: 'patrol.ran', fleet: stop.fleet, faction: stop.faction, chased: false });
 }
 
 /** The patrol fleets held where they are (galaxy/fleets.ts): the one the player stopped for, and each one whose inspectors are out, until it ends. */
@@ -122,10 +123,4 @@ export function inspectingFleets(sim: Sim): Set<number> {
     if (fleet !== undefined) out.add(fleet);
   }
   return out;
-}
-
-/** Leaving a patrol before its inspectors are aboard (they are still on the way) is running from it: the hit, no chase. */
-export function ranFromInspection(sim: Sim, faction: string, fleet: number): void {
-  hit(sim, faction, PATROL_RUN_HIT);
-  sim.events.emit({ type: 'patrol.ran', fleet, faction, chased: false });
 }

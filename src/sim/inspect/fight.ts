@@ -2,7 +2,8 @@ import { INSPECT_FIGHT_BAN_TURNS, INSPECT_FIGHT_HIT } from '../blackmarket/tunin
 import { AwayC } from '../away/components';
 import { hostileAct } from '../combat/provoke';
 import { revoke } from '../consent/guests';
-import { CrewC, DeadC } from '../crew/components';
+import { CrewC, DeadC, PositionC } from '../crew/components';
+import { shipIdOf } from '../regions';
 import { AllegianceC } from '../fight/components';
 import { destroyJob } from '../items/stacks';
 import type { Sim } from '../sim';
@@ -13,12 +14,12 @@ import { go } from './start';
 import { InspectionC, type Inspection } from './types';
 
 /**
- * Refusing and fighting the inspectors (#138 step 3, docs/DESIGN.md "Contraband inspections in the world").
+ * Fighting the inspectors (#138 step 3, docs/DESIGN.md "Contraband inspections in the world").
  * - Fighting (`fightInspection`): an attack order on an inspector, or the player provoking the ship that sent them. The faction thinks much less of the
  *   player (INSPECT_FIGHT_HIT); the inspectors go over to their faction's combat side where they stand and fight as boarders (they leave their jobs and the
  *   leave to be aboard goes); the ship that sent them is provoked (combat/provoke.ts: a patrol and its fleet engage, a station's own guns do), and a station
  *   refuses service for INSPECT_FIGHT_BAN_TURNS.
- * - Refusing a patrol (`turnPatrol`, from flow.ts once the refused party is off the ship): the patrol is provoked the same way, without the bigger hit.
+ * Refusing does not turn anyone hostile (settle.ts: the seized goods and a standing hit are the price).
  */
 
 /** The inspection an inspector belongs to (its shuttle), if `crew` is one. */
@@ -36,13 +37,6 @@ export function attackableInspector(sim: Sim, crew: number): boolean {
 
 const sideOf = (sim: Sim, faction: string): 'hostile' | 'rogue' => sim.content.galaxy?.factions[faction]?.combatFaction ?? 'hostile';
 
-/** The ship that sent a refused patrol's inspectors turns on the player (its fleet with it). */
-export function turnPatrol(sim: Sim, vehicle: number, insp: Inspection): void {
-  delete insp.turnOnLeave;
-  hostileAct(sim, insp.station, 'inspection');
-  sim.events.emit({ type: 'inspect.turned', inspection: vehicle, faction: insp.faction, ship: insp.station });
-}
-
 /** The inspection becomes a fight (see the file's note). No-op once it is one. */
 export function fightInspection(sim: Sim, vehicle: number, insp: Inspection): void {
   if (insp.phase === 'fight') return;
@@ -53,9 +47,11 @@ export function fightInspection(sim: Sim, vehicle: number, insp: Inspection): vo
   for (const id of insp.crew) {
     const a = sim.world.get(id, AllegianceC);
     if (a && sim.world.has(id, CrewC) && !sim.world.has(id, DeadC)) a.faction = side;
+    // Those on the player's ship leave the away run: its recall (combat makes the site unwanted) would otherwise lift them off mid-fight.
+    const pos = sim.world.get(id, PositionC);
+    if (pos && shipIdOf(sim, pos) === insp.ship) sim.world.remove(id, AwayC);
   }
   revoke(sim, insp.ship, 'inspect', { site: insp.ship });
-  delete insp.turnOnLeave;
   insp.outcome = 'fought';
   go(insp, 'fight');
   const t = sim.world.get(insp.station, TraderC);

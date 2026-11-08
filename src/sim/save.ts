@@ -128,7 +128,7 @@ import { newYard, type YardState } from './yard/types';
  *     `Trader.barredUntil`.
  * v104 (patrol hails, #138 step 2): `Encounter.scan` is `{ value }` (a hail to stop), `GalaxyState.patrolStop`, `Fleet.chase`, `Inspection.patrol`.
  * v105 (food and farming, #59): `PlotC` on hydroponics beds, the `cooking` skill and `farming` work priority on crew, meal items.
- * v106 (fighting inspectors, #138 step 3): inspection phase 'fight', `Inspection.turnOnLeave`, outcome 'fought'; `Ship.provoked` 'inspection'.
+ * v106 (fighting inspectors, #138 step 3): inspection phase 'fight', outcome 'fought'; `Ship.provoked` 'inspection'.
  */
 export const SAVE_VERSION = 106;
 

@@ -950,7 +950,9 @@ station dock inspection, then the patrol version, then refusing and fighting.
 - **Settling:** when the search is done, the lead inspector waits aboard and an urgent alert says so ("Inspector
   waiting: fine or bribe"). Clicking it jumps to the inspector and opens the options: pay the fine (with the standing
   hit), offer a bribe (it may fail), or refuse. No pop-up.
-- **Refusing:** at a station, refusing the inspectors means no service there and a standing hit; a patrol turns hostile.
+- **Refusing:** refusing the inspectors sends them home with what they seized, never turns anyone hostile (losing the goods is punishment enough):
+  at a station, no service there and a standing hit; at a patrol, a bigger standing hit (user ruling 2026-11-08, replacing "a patrol turns hostile").
+  Jumping away while any inspector is still aboard your ship carries them off: that counts as fighting them.
 - **Fighting:** attacking the inspectors turns that faction hostile with a big standing hit; the patrol or the station's
   defences engage, and the inspectors fight back as boarders.
 - **No way to dock** (no working or free airlock): the inspectors board by EVA, in suits, through any working door or
@@ -986,15 +988,18 @@ their lead ship on the sensors with the ship count and strength, and Evade (odds
 are unchanged. After the answer the window stays open with how it ended and the caller's reply, and closes on Close channel. `InterdictModal` is removed.
 
 **As built (step 3, refusing and fighting):**
-- Refusing a patrol's inspectors (or leaving while they search or wait) costs the same standing as at a station (4). They walk back to their shuttle
-  with what they took, and the patrol turns hostile once they are off your ship, or 10 seconds after they set off ("The patrol you refused turns
-  hostile", an urgent alert): a beat to jump or arm. A station refusal is unchanged (no service for 10 turns, the hit).
+- Refusing (the answer on the alert) sends the inspectors back to their shuttle with what they took, and nobody turns hostile. At a station it costs
+  4 standing and the station's service for 10 turns; at a patrol, which has no service to bar, 8 standing.
+- Leaving the node is keyed on whether an inspector is aboard your ship at the jump, whatever the phase (searching, waiting for the answer, or
+  walking back after a fine, a bribe or a refusal). With one aboard it is an attack: everything under Fighting, and they come along as boarders. With
+  none aboard before the answer (still on the way, or back on their shuttle) it is a refusal as above; after the answer it costs nothing more.
 - Fighting: an inspector's panel has an Attack button for your drafted crew (the panel only, never a right-click order, so it is a choice). Attacking
   them, or firing on the ship that sent them while they are at work, costs 10 standing; the inspectors go over to their faction's side and fight as
   boarders; the ship that sent them turns on you with its group: a patrol and its fleet engage, and a station's own guns do (stations carry weapons).
   A station also refuses service for 30 turns.
 - The fight ends when none of them still stands on your ship; the downed stay as ordinary hostile crew (to be taken prisoner). Jumping away mid-fight
-  takes the ones aboard with you, still hostile. Leaving after the fight follows the usual rules (hostile faction, chases).
+  takes the ones aboard with you, still hostile, and they fight on. Leaving after the fight follows the usual rules (hostile faction, chases).
+- There is no "refuse" answer at the hail itself: running is the way to refuse a patrol before it boards (step 2).
 
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
