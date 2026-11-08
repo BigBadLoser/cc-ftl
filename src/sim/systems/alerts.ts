@@ -29,12 +29,12 @@ export function alertsSystem(sim: Sim): void {
   }
 }
 
-function scan(sim: Sim, grid: Grid, ship: number, mem: Memory): void {
+/** The rooms of a grid with an open edge to space (`breached`) and those with a fire, each with its first burning tile (`burning`). */
+export function roomHazards(grid: Grid): { breached: Set<number>; burning: Map<number, number> } {
   const { width, height } = grid;
   const struct = grid.load('struct');
   const fire = grid.load('fire');
   const room = grid.load('room');
-  const o2 = grid.load('o2');
   const breached = new Set<number>();
   const burning = new Map<number, number>();
   for (let i = 0; i < struct.length; i++) {
@@ -48,6 +48,13 @@ function scan(sim: Sim, grid: Grid, ship: number, mem: Memory): void {
     ) breached.add(r);
     if ((fire[i] as number) > 0 && !burning.has(r)) burning.set(r, i);
   }
+  return { breached, burning };
+}
+
+function scan(sim: Sim, grid: Grid, ship: number, mem: Memory): void {
+  const { width } = grid;
+  const o2 = grid.load('o2');
+  const { breached, burning } = roomHazards(grid);
   for (const r of breached) {
     if (!mem.breached.has(r)) sim.events.emit({ type: 'hull.breach', ship, room: r });
   }
