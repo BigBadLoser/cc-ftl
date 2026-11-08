@@ -83,9 +83,13 @@ def slate(hull):
                                              (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
                       cols=[False, hl, False, False], mitre=m)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
-            for q0, q1 in lips:                         # (a box in the lip: a dark line up each side to the seam)
-                for u0 in (q0, q1 - LINE):
-                    T.paint(k, ax, plane, u0, u0 + LINE, zl - PZ, zg, 0.0, FACE, 1)
+            for q0, q1 in lips:                         # (a box in the lip: a dark line up each side to the seam,
+                for u0 in (q0, q1 - LINE):              # its floor flat at the lip's foot (not the ramp's slope
+                    T.paint(k, ax, plane, u0, u0 + LINE, zl - PZ, zg, 0.0, FACE, 1)            # under it), a seam
+                prism(k, ax, plane, q0, q1, [(0.0, _shelf_z(zs) - 0.01), (LIP_D, _shelf_z(zs) - 0.01),  # where the
+                                             (LIP_D, zl - PZ), (0.0, zl - PZ)], FACE, 3,               # floor meets
+                      cols=[False, None, top_, False], cap=False)                                      # the face)
+                _seam(k, ax, plane, q0, q1, zl - PZ, zl)
             room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
             if room or top - zl - LIP_H > 0.01:         # no seam over it)
                 if room:
@@ -278,8 +282,13 @@ def _panels(k, ax, plane, a, b, foot, zf, rects, lift=0):
 
 
 def slate_panel(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-2, T1-8): one panel a tile, 22 px wide, its bar 14 px (ticks 7 px each side of the middle)."""
+    """Wall (T1-2): one panel a tile, 22 px wide, its bar 14 px (ticks 7 px each side of the middle)."""
     return _panels(k, ax, plane, a, b, foot, zf, ((-11, 11, 4),))
+
+
+def slate_panel_box(k, ax, plane, a, b, top, foot, zf):
+    """Wall (T1-8): T1-2's panel 3 px higher (the box in the lip under it: box_cuts)."""
+    return _panels(k, ax, plane, a, b, foot, zf, ((-11, 11, 4),), lift=3)
 
 
 def slate_hatches(k, ax, plane, a, b, top, foot, zf):
@@ -338,7 +347,7 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
               Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
-              Design("panel, box", wall=slate_panel, lip=box_cuts))
+              Design("panel, box", wall=slate_panel_box, lip=box_cuts))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
