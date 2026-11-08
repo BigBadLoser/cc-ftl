@@ -3,24 +3,21 @@ import { behaviourItems, behaviourRecipes, behaviourResearch } from './upgradesB
 
 /**
  * Module upgrades (DESIGN.md "Weapon upgrades and flak"): items that go in a weapon module's slot. The general ones fit any weapon; the numbers are a
- * starting point for tuning. Icons are placeholders (`placeholderIcon`) until the item art lands. Each has a blueprint (researched, then built at a
+ * starting point for tuning. Their art is the `upgrades` sprite family (floor stacks and a UI icon each). Each has a blueprint (researched, then built at a
  * fabricator) and a price; stations sell them and enemy ships carry them (see factions/ and the galaxy trade profiles).
  */
 export const upgradeItems = {
   'item.upg_coolant': {
     name: 'Coolant jacket', tags: ['upgrade'], stackSize: 4, price: 120, tier: 2,
     upgrade: { slot: 'weapon', blurb: 'Adds 30% less heat to the ship per volley', mods: { heatMul: 0.7 } },
-    placeholderIcon: { as: 'item.parts', tint: '#4fc3ff' },
   },
   'item.upg_capacitor': {
     name: 'Quick capacitor', tags: ['upgrade'], stackSize: 4, price: 140, tier: 2,
     upgrade: { slot: 'weapon', blurb: 'Charges 15% faster', mods: { chargeMul: 0.85 } },
-    placeholderIcon: { as: 'item.electronics', tint: '#ffd23f' },
   },
   'item.upg_housing': {
     name: 'Hardened housing', tags: ['upgrade'], stackSize: 4, price: 130, tier: 2,
     upgrade: { slot: 'weapon', blurb: 'Takes half damage from hits and ion', mods: { damageTakenMul: 0.5 } },
-    placeholderIcon: { as: 'item.metal', tint: '#9fb4c8' },
   },
   ...behaviourItems,
 } satisfies Record<string, ItemDef>;

@@ -25,7 +25,7 @@
     {/if}
     <div class="row fitted" data-testid="upgrade-fitted">
       {#if slot.fitted}
-        <ItemIcon {api} item={slot.fitted.item} size={30} />
+        <ItemIcon {api} item={slot.fitted.item} size={40} />
         <span class="txt"><b>{slot.fitted.name}</b><small>{row(slot.fitted)}</small></span>
         <button class="act" data-testid="upgrade-remove" disabled={!!slot.job} title="An engineer takes it out and puts it back in cargo" onclick={() => api.dispatch({ type: 'module.removeUpgrade', moduleId: m.id })}>Remove</button>
       {:else}
@@ -34,7 +34,7 @@
     </div>
     {#each slot.options.filter((o) => o.item !== slot.fitted?.item) as o (o.item)}
       <div class="row" data-testid="upgrade-option">
-        <ItemIcon {api} item={o.item} size={30} />
+        <ItemIcon {api} item={o.item} size={40} />
         <span class="txt"><b>{o.name} <em>×{o.count}</em></b><small>{row(o)}</small></span>
         <button class="act" disabled={!!slot.job} title={slot.fitted ? 'Swaps it: the fitted one goes back to cargo' : 'An engineer fetches it from cargo and installs it'} onclick={() => api.dispatch({ type: 'module.fitUpgrade', moduleId: m.id, item: o.item })}>{slot.fitted ? 'Swap' : 'Install'}</button>
       </div>
@@ -47,7 +47,7 @@
 <style>
   section { margin-top: 8px; }
   .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
-  .row { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 2px 0; }
+  .row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 2px 0; }
   .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .txt small { color: var(--dim); font-size: 11px; line-height: 1.2; }
   em { font-style: normal; color: var(--dim); font-weight: 400; }

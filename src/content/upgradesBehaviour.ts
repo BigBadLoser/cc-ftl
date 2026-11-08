@@ -4,7 +4,7 @@ import { weapons } from './weapons';
 /**
  * The behaviour upgrades (DESIGN.md "Weapon upgrades and flak", first batch): each fits one weapon type and changes how it fires, at a cost. They are
  * data over general weapon fields (`UpgradeMods.weapon` patches the fitted weapon's def; nothing in the sim names an upgrade). Numbers are a starting point
- * for tuning. The nuclear warhead is black-market only: no blueprint, no recipe, no research. Icons are placeholders until the item art lands.
+ * for tuning. The nuclear warhead is black-market only: no blueprint, no recipe, no research. Their art is the `upgrades` sprite family.
  */
 
 /** Scale the damage numbers of an effect list (hull, module, crew), leaving areas and everything else alone. */
@@ -24,7 +24,6 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'Five shots instead of three, each 40% weaker; +50% heat', fits: ['weapon.burstLaser'],
       mods: { heatMul: 1.5, weapon: { name: 'Prism laser', shortName: 'Prism laser', shots: 5, shotDelaySec: 0.2, effects: scaled(laser.effects, 0.6), look: { tint: 0xd49cff, trail: 1.5 } } },
     },
-    placeholderIcon: { as: 'item.electronics', tint: '#d49cff' },
   },
   'item.upg_focus': {
     name: 'Heavy focus', tags: ['upgrade'], stackSize: 4, price: 280, tier: 3,
@@ -33,7 +32,6 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'Two heavier shots, each passes one shield layer; slower charge', fits: ['weapon.burstLaser'],
       mods: { chargeMul: 1.4, weapon: { name: 'Lance laser', shortName: 'Lance laser', shots: 2, shotDelaySec: 0.4, shield: { damage: 1, pierce: 1 }, effects: scaled(laser.effects, 1.25), look: { tint: 0xfff2c0, blast: 1.3 } } },
     },
-    placeholderIcon: { as: 'item.electronics', tint: '#fff2c0' },
   },
   'item.upg_frag': {
     name: 'Frag slug', tags: ['upgrade'], stackSize: 4, price: 240, tier: 3,
@@ -52,7 +50,6 @@ export const behaviourItems = {
         },
       },
     },
-    placeholderIcon: { as: 'item.parts', tint: '#ff9a3c' },
   },
   'item.upg_rail': {
     name: 'Rail coil', tags: ['upgrade'], stackSize: 4, price: 340, tier: 3,
@@ -61,7 +58,6 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'Passes two shield layers and flies much faster; runs very hot', fits: ['weapon.massDriver'],
       mods: { heatMul: 2.2, weapon: { name: 'Railgun', shortName: 'Railgun', speed: driver.speed * 2.5, shield: { damage: 1, pierce: 2 }, look: { tint: 0x9fe8ff, trail: 2 } } },
     },
-    placeholderIcon: { as: 'item.electronics', tint: '#9fe8ff' },
   },
   'item.upg_nuke': {
     name: 'Nuclear warhead', tags: ['upgrade', 'contraband'], stackSize: 2, price: 900, tier: 3,
@@ -81,7 +77,6 @@ export const behaviourItems = {
         },
       },
     },
-    placeholderIcon: { as: 'item.parts', tint: '#c8ff7a' },
   },
   'item.upg_chain': {
     name: 'Chain coil', tags: ['upgrade'], stackSize: 4, price: 300, tier: 3,
@@ -90,7 +85,6 @@ export const behaviourItems = {
       slot: 'weapon', blurb: 'The ion arcs from the hit module into nearby crew; +40% heat', fits: ['weapon.ion'],
       mods: { heatMul: 1.4, weapon: { name: 'Arc cannon', shortName: 'Arc cannon', effects: [...ion.effects, { type: 'arc', amount: 14, radius: 4, targets: 3, ifNoDrain: true }], look: { tint: 0xb48aff, blast: 1.2 } } },
     },
-    placeholderIcon: { as: 'item.electronics', tint: '#b48aff' },
   },
   'item.upg_thermite': {
     name: 'Thermite', tags: ['upgrade'], stackSize: 4, price: 220, tier: 3,
@@ -102,7 +96,6 @@ export const behaviourItems = {
         weapon: { name: 'Thermite cannon', shortName: 'Thermite cannon', effects: [{ type: 'hullDamage', amount: 200, radius: 1, falloff: 0.4 }, ...fire.effects.filter((e) => e.type !== 'hullDamage')], look: { tint: 0xff2a00, blast: 1.4, trail: 1.8 } },
       },
     },
-    placeholderIcon: { as: 'item.parts', tint: '#ff5a1a' },
   },
 } satisfies Record<string, ItemDef>;
 
