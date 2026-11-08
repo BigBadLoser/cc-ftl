@@ -3519,5 +3519,20 @@
   "leafD": {"hex": "#2f7a32", "set": "hydro"},
   "stalk": {"hex": "#7d9a3c", "set": "hydro"},
   "grain": {"hex": "#e0b84e", "set": "hydro"},
-  "grainD": {"hex": "#a98330", "set": "hydro"}
+  "grainD": {"hex": "#a98330", "set": "hydro"},
+  "potCream": {"hex": "#b5aa92", "set": "hydro"},
+  "potCreamL": {"hex": "#cbc1a9", "set": "hydro"},
+  "potTerra": {"hex": "#a65a3c", "set": "hydro"},
+  "potFoot": {"hex": "#3b3631", "set": "hydro"},
+  "sage": {"hex": "#6c8866", "set": "hydro"},
+  "sageL": {"hex": "#88a481", "set": "hydro"},
+  "indGun": {"hex": "#4f5862", "set": "hydro"},
+  "indGunL": {"hex": "#69737d", "set": "hydro"},
+  "indGunD": {"hex": "#2c3239", "set": "hydro"},
+  "indRub": {"hex": "#202428", "set": "hydro"},
+  "labNavy": {"hex": "#2b3b57", "set": "hydro"},
+  "labNavyL": {"hex": "#3d5072", "set": "hydro"},
+  "labPearl": {"hex": "#b7c0c7", "set": "hydro"},
+  "labPearlL": {"hex": "#d0d7dc", "set": "hydro"},
+  "labMint": {"hex": "#3fbf95", "set": "hydro"}
 }
