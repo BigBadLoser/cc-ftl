@@ -127,12 +127,16 @@ def _archive(k):
     for (du, dv, s, rz) in ((-0.22, 0.0, 0.12, 0.4), (0.0, 0.04, 0.14, -0.3), (0.22, -0.02, 0.1, 0.9)):
         _fragment(k, FU + du, FV + sv / 2 + out / 2 - 0.1 + dv, dz + 0.04, s, rz)
         k.box(FU + du, FV + sv / 2 + out / 2 - 0.1 + dv + 0.1, dz + 0.04, 0.08, 0.04, 0.01, "lvW")   # tags
-    bz = AZ                                                                           # the rubbing box on top
-    k.box(FU - 0.05, FV - 0.05, bz, 0.56, 0.44, 0.08, "lvW2", top="lvW", bevel=0.01)
-    k.box(FU - 0.05, FV - 0.05, bz + 0.08, 0.46, 0.34, 0.012, "resLamp")
-    k.box(FU - 0.05, FV - 0.05, bz + 0.092, 0.34, 0.26, 0.006, "ochL")
+    rubbing(k, FU - 0.05, FV - 0.05, AZ)                                             # the rubbing box on top
+
+
+def rubbing(k, u, v, z):
+    """A lit rubbing box: a lightbox with a sheet on it and the rubbing's strokes."""
+    k.box(u, v, z, 0.56, 0.44, 0.08, "lvW2", top="lvW", bevel=0.01)
+    k.box(u, v, z + 0.08, 0.46, 0.34, 0.012, "resLamp")
+    k.box(u, v, z + 0.092, 0.34, 0.26, 0.006, "ochL")
     for i in range(3):
-        k.box(FU - 0.1 + 0.02 * i, FV - 0.12 + i * 0.07, bz + 0.098, 0.18 - 0.03 * i, 0.03, 0.006, "resRelicD")
+        k.box(u - 0.05 + 0.02 * i, v - 0.07 + i * 0.07, z + 0.098, 0.18 - 0.03 * i, 0.03, 0.006, "resRelicD")
 
 
 def r3_holo():

@@ -1,12 +1,13 @@
 """Research bench, the combined design c1: the reconstruction bench (round 7's l2a) with
   - r1's desk return at the front left, its top cleared, and r2's display case standing on it;
-  - the right drawer bank's top drawer pulled open, r3's tagged fragments in it.
+  - the right drawer bank's top drawer pulled open, r3's tagged fragments in it, and r3's rubbing box on that cabinet
+    in place of l2's lamp and slate.
 Hologram: the reconstruction, r2's beam from a fragment in the case to its place in it, and r3's index pane over the
 right bank with its marked entry tied to the open drawer."""
 from .research_kit import bar, ring
 from .research_r3 import _pane
 from .research_r7 import bench, l2a_holo
-from .research_r8 import FU, RH, RV0, RV1, F, G, _drawer_front, _fragment, _return, case
+from .research_r8 import FU, RH, RV0, RV1, F, G, _drawer_front, _fragment, _return, case, rubbing
 
 CV = (RV0 + RV1) / 2 + 0.02      # the case on the return: centre v
 CS = (0.8, 0.66)                  # its size
@@ -18,6 +19,7 @@ BED = 0.08                        # the velvet bed in it, raised so it shows ove
 def _combo(k):
     _return(k, items=False)
     case(k, FU, CV, RH, *CS)
+    rubbing(k, 1.0, -0.44, 0.66)
     k.box(DU, -0.14, DZ, 0.86, 0.02, DH, "dark")                                     # the opening it left
     fv = -0.16 + DOUT                                                                # the drawer, out
     k.box(DU, -0.16 + DOUT / 2, DZ, 0.84, DOUT + 0.04, BED, "lvW2", top="lvR")       # a raised velvet bed
@@ -43,4 +45,4 @@ def c1_holo():
     return k
 
 
-BUILD = {"c1": (bench("c1", ((-0.5, 0.3), (0.5, 0.3)), _combo), c1_holo)}
+BUILD = {"c1": (bench("c1", ((-0.5, 0.3), (0.5, 0.3)), _combo, right=False), c1_holo)}

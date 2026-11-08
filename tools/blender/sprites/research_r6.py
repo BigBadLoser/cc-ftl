@@ -147,8 +147,9 @@ def _tablet(T, glow):
     T.put(0.4, -0.12, 0.02, 0.08, 0.06, 0.04, "resRelicD", top="resRelic", rz=0.7)       # a loose chip
 
 
-def l2(layer, finish=True, name="l2"):
-    """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it)."""
+def l2(layer, finish=True, name="l2", right=True):
+    """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it); right=False leaves the
+    lamp and slate off the right cabinet."""
     k = Bench(f"research_{name}_{layer}")
     G = "resGold"
     drawers(k, -0.98, n=3)
@@ -175,12 +176,14 @@ def l2(layer, finish=True, name="l2"):
     T = Table(k, *T2)
     T.build()
     _tablet(T, G)
-    lamp(k, 0.82, -0.36, 0.66, "resLamp")
+    if right:
+        lamp(k, 0.82, -0.36, 0.66, "resLamp")
     # on the cabinet: a brush and picks (left), notes and a rubbing (right)
     k.box(-1.0, -0.46, 0.66, 0.5, 0.24, 0.03, "steelD", top="dark")
     for i, (w, col) in enumerate(((0.3, "ochM"), (0.26, "steelL"), (0.22, "steelL"))):
         k.box(-1.0, -0.54 + i * 0.08, 0.69, w, 0.025, 0.02, col)
-    slate(k, 1.12, -0.48, 0.66, G, rz=-0.12)
+    if right:
+        slate(k, 1.12, -0.48, 0.66, G, rz=-0.12)
     chair(k, "lvW2", "rust")
     return k.build() if finish else k
 
