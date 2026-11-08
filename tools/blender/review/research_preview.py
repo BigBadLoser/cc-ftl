@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import Assets, Canvas, iso  # noqa: E402
 
 ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet",
-       "g": "G  scanner arch", "h": "H  gantry rig", "i": "I  containment field"}
+       "g": "G  sample line", "h": "H  gantry rig", "i": "I  containment field"}
 
 
 def main():
