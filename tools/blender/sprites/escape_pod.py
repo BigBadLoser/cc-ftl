@@ -13,7 +13,8 @@ hatch), 90 aft (the drive). A variant (VARIANTS) sets the cone's proportions, it
 a rounded gumdrop shoulder) and the tilt; `drive` "flank" puts the nozzles on the aft flank, "collar" round the collar
 (the sideways variant b, flying shield first).
 
-States: fly (drive lit), drift (no drive; `beacon` lights the lamp), docked / parked (dark)."""
+States: fly (drive lit, leaning by the variant's tilt), drift (upright, no drive; `beacon` lights the lamp: the blink's on
+frame), docked / parked (upright, dark)."""
 import math
 
 from . import core
@@ -185,9 +186,9 @@ def collar(k, beacon_on, thrust=False):
         k.f.box(u + 0.045, 0, k.zc, 0.02, 0.05 + abs(c[0]) * r * 1.0, 0.05 + abs(c[1]) * r * 1.0, "steelL", base=False)
     _g("beacon")
     p, nn = (u, 0.0, k.zc + r * 0.9), (1.0, 0.0, 0.0)                     # on the mating ring, aft when upright
-    stud(f, p, nn, 0.09, 0.05, "steelD", "steelD")                         # its base
+    stud(f, p, nn, 0.11, 0.05, "steelD", "steelD")                         # its base
     q = tuple(p[i] + nn[i] * 0.05 for i in range(3))
-    stud(f, q, nn, 0.07, 0.09, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.05)
+    stud(f, q, nn, 0.085, 0.12, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.06)   # the lamp
 
 
 def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
@@ -303,7 +304,7 @@ def drive(k, lit):
 def pod(heading, variant="h", state="fly", beacon=False):
     """The escape pod at a heading (grid radians, 0 = +x); state fly / drift / docked / parked."""
     v = VARIANTS[variant]
-    t = math.radians(v["tilt"])
+    t = math.radians(v["tilt"] if state == "fly" else 90)                 # it leans only while it flies; still, it stands
     span = (-(v["length"] - v["dish"]) / 2 - v["dish"] - 0.05, (v["length"] + v["dish"]) / 2 + 0.2)
     rad = v["rb"] * 1.04
     low = min(u * math.sin(t) + w * math.cos(t) for u in span for w in (-rad, rad))
