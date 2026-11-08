@@ -548,3 +548,6 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: move the pipes slot, seam line and all, 2 px right; all ramp lines move 2 px, the walls'
   stay. Style.ramp_seam (navy NAVY_RAMP_SEAM 5.5/32): the ramp's line (and its wrap over the shelf and toe) 2 px
   further along than the wall's; RampHoles shifts the slot with it (a 2 px rim of cover left on its low side). nv9.
+- 2026-11-08: the user: add 2 px back to the top strip: the pipes slot 2 px back into the shelf (ramp_hole 2/32, a
+  4 px ledge over it). nv10. Open: the ref's seam and slot run on down to the floor (through the toe and foot); the
+  user is unsure whether to follow it.

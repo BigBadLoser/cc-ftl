@@ -164,5 +164,5 @@ def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes), Design("lockers", middle=navy_lockers),
              Design("thin band", band=navy_thin_band))
-NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(4 / 32, 1.0, 0.0)),
+NAVY_RAMPS = (Design("plates"), Design("pipes", ramp=navy_pipes, ramp_hole=(2 / 32, 1.0, 0.0)),
               Design("split plates", ramp=navy_split))
