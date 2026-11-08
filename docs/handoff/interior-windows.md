@@ -625,3 +625,6 @@ Marked ref (both layers, numbered): scratchpad
   a design opens it; _ends takes a shell. Plain m10 identical to nv9. nc9.
 - 2026-11-08: the user: the left and right guard bars 3 px further off the centre. Now against the cage's mouth on
   either side (measured: gaps 0, 6, 7, 0 px; the middle bar unchanged). nc10.
+- 2026-11-08: the user: comment the cage variant out, it is still not really working. Its Design line in NAVY_TOPS is
+  commented out (navy_cage, cage_holes and _recess kept, as nc10). The ids are back to: recessed .a9-.a11, thin band
+  .a12-.a14 (a9 identical to nr2).
