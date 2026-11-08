@@ -1,5 +1,6 @@
 /** Starmap view data (published by app/starmapSnapshot.ts). Plain data; map units, y down. */
-import type { UiHeat } from './api';
+import type { UiHeat, UiLook } from './api';
+import type { CallerInfo, CommsLine, ReadoutRow, UiHoloRequest } from './comms/types';
 
 /** A theme colour by token name (`--cyan`...): the view maps it through `starmapStyle.ts`; the data holds no CSS. */
 export type Tone = 'cyan' | 'amber' | 'green' | 'red' | 'text' | 'dim';
@@ -267,7 +268,7 @@ export interface UiStarmap {
 
 /** One thing the player can do about an encounter. `detail` is the odds or the price ("62%", "84 cr"), `why` the reason when it is disabled. */
 export interface UiEncounterChoice {
-  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
+  choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'comply' | 'run';
   label: string;
   detail: string;
   enabled: boolean;
@@ -292,8 +293,20 @@ export interface UiEncounter {
   how: string;
   node: string;
   choices: UiEncounterChoice[];
-  /** A scan that found contraband aboard: what was found (a line of text) and what it is worth; the choices are surrender / bribe. */
-  contraband?: { found: string; value: number; fine: number; bribe: number };
+  /** A patrol's hail to stop (its scan read contraband aboard): what was found (a line of text) and what it is worth; the choices are comply / run. */
+  contraband?: { found: string; value: number };
+  /** The patrol's hail to stop as the comms window shows it (with `contraband`); null when its fleet is gone. */
+  hail?: UiPatrolHail | null;
+}
+
+/** A patrol's hail to stop, for the comms window (app/comms/patrolComms.ts): the captain, the transcript, the patrol ship's picture and the readout. */
+export interface UiPatrolHail {
+  caller: CallerInfo;
+  look: UiLook;
+  transcript: CommsLine[];
+  holo: UiHoloRequest;
+  hullTitle: string;
+  readout: ReadoutRow[];
 }
 
 /** How the last encounter ended, as a line with a tone. */

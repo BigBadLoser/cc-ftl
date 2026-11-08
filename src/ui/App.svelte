@@ -35,7 +35,7 @@
   import ErrorOverlay from './ErrorOverlay.svelte';
   import StoryModal from './StoryModal.svelte';
   import StarmapView from './StarmapView.svelte';
-  import InterdictModal from './InterdictModal.svelte';
+  import PatrolHail from './PatrolHail.svelte';
   import DeployPicker from './DeployPicker.svelte';
   import EventPanel from './EventPanel.svelte';
   import LessonHost from './lessons/LessonHost.svelte';
@@ -118,8 +118,8 @@
     wasAdrift = adrift;
   });
   const mapLocked = $derived(star?.state === 'hyperspace' && !adrift);
-  /** A scan that found contraband aboard waits for the player's answer: shown over the game when the map is not open. */
-  const scanning = $derived(star?.encounters.find((e) => !!e.contraband) ?? null);
+  /** A patrol's hail to stop waits for the player's answer (the trip is halted): shown over the map or the game. */
+  const hailing = $derived(star?.encounters.find((e) => !!e.contraband && !!e.hail) ?? null);
   let selShip = $state<number | null>(null);
   /** Partner (ship or station entity id) whose trade window is open, or null. */
   let tradeWith = $state<number | null>(null);
@@ -348,7 +348,7 @@
   <TradeWindow {api} partner={tradeWith} onClose={() => (tradeWith = null)} />
 {/if}
 {#if star?.event && !deploy && !mapOpen}<EventPanel {api} event={star.event} result={star.result} />{/if}
-{#if scanning && !mapOpen && !deploy}<InterdictModal fixed encounter={scanning} onChoose={(encounter, choice) => api.dispatch({ type: 'galaxy.respond', encounter, choice })} />{/if}
+{#if hailing && !deploy}<PatrolHail {api} encounter={hailing} />{/if}
 {#if deploy}<DeployPicker {api} {deploy} />{:else if mapOpen}<StarmapView {api} {focusNode} onClose={() => { if (mapLocked) return; mapOpen = false; sliding = false; }} onSlide={(on) => (sliding = on)} />{/if}
 <StoryModal {api} hold={sliding} />
 <LessonHost {api} busy={reporting || menuOpen} />

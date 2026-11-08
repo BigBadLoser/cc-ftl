@@ -2587,8 +2587,8 @@ Design: DESIGN.md "Pirate factions and the black market". Content: `content/blac
   only) pays its 50-60% for anything.
 - **Scans** (`scan.ts`). A navy or corporation station inspects the player when they hail it (`trade.hail`, once per SCAN_COOLDOWN turns per node: `dockScan` starts an
   inspection, below), and a patrol that crosses
-  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (value, fine, bribe) and waits for
-  `galaxy.respond` with `surrender` (goods taken, fine paid, standing down) or `bribe`; trade offers are refused meanwhile (`scanPending`). The UI reuses `InterdictModal`.
+  them scans with the usual PASSING_ENCOUNTER_CHANCE (`galaxy/encounters.ts`). A scan that finds contraband carries `Encounter.scan` (`value`): the patrol hails the
+  player to stop (Patrol hails, below); trade offers are refused meanwhile (`scanPending`).
 - **Inspections** (#138 step 1, `src/sim/inspect/`). The station's inspectors come aboard (design: DESIGN.md "Contraband inspections in the world").
   - `InspectionC` sits on the inspectors' shuttle (the trade courier's type, made beside the station, its hold sealed with `Vehicle.outbound` so the player's
     airlock unloaders leave it alone). `start.ts` opens an away site on the player's ship (owner `inspect`, `noLoot`) served by it: the site's run docks at a free

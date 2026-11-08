@@ -1,5 +1,5 @@
 import type { Sim } from '../sim';
-import { settleScan } from '../blackmarket/scan';
+import { comply, holdsTrip, run } from '../inspect/patrol';
 import { headHome } from './agenda';
 import { bribeCost, evadeOdds } from './encounterOdds';
 import { finishEncounter } from './encounters';
@@ -15,13 +15,13 @@ import type { Encounter, EncounterChoice } from './types';
  *   'bribe' (`bribeCost` credits, refused without them; the fleet then leaves you alone for its cooldown) or 'fight' (the event grid opens).
  *   Success lets the halted trip carry on.
  * - distress: 'respond' (an event grid with the damaged fleet's ships as neutral ships; leaving it carries the trip on) or 'ignore'.
- * - hail / scan: 'acknowledge' (or 'ignore'). A scan that found contraband (`Encounter.scan`, blackmarket/scan.ts) takes 'surrender' or 'bribe' instead.
+ * - hail / scan: 'acknowledge' (or 'ignore'). A patrol's hail to stop (its scan read contraband, `Encounter.scan`) takes 'comply' or 'run' (inspect/patrol.ts).
  */
 const EVADE_SALT = 0xe7ad;
 
 /** The choices an encounter offers. */
 export const choicesOf = (e: Encounter): EncounterChoice[] =>
-  e.kind === 'interdict' ? ['evade', 'bribe', 'fight'] : e.kind === 'distress' ? ['respond', 'ignore'] : e.scan ? ['surrender', 'bribe'] : ['acknowledge'];
+  e.kind === 'interdict' ? ['evade', 'bribe', 'fight'] : e.kind === 'distress' ? ['respond', 'ignore'] : e.scan ? ['comply', 'run'] : ['acknowledge'];
 
 /** The evade roll for an encounter: a pure function of the seed and the id. */
 export const evadeRoll = (sim: Sim, e: Encounter): number => unit(sim.seed, e.id, EVADE_SALT);
@@ -29,7 +29,7 @@ export const evadeRoll = (sim: Sim, e: Encounter): number => unit(sim.seed, e.id
 /** Let the interdicted trip go on (the encounter is already settled), unless another interdiction is still waiting for an answer. */
 function resume(sim: Sim): void {
   const t = sim.galaxy.travel;
-  if (sim.galaxy.encounters.some((e) => e.kind === 'interdict')) return;
+  if (sim.galaxy.encounters.some(holdsTrip)) return;
   if (t?.phase === 'interdicted') resumeAfterHop(sim, t);
 }
 
@@ -53,13 +53,9 @@ export function respond(sim: Sim, id: number, choice: EncounterChoice, command =
   if (inEvent(sim)) return reject('inEvent');
   const t = g.travel;
   const waiting = sim.sector.state === 'hyperspace' && !!t;
-  if (e.kind === 'interdict' && !(waiting && t?.phase === 'interdicted')) return reject('notInterdicted');
-  if (e.scan && (choice === 'surrender' || choice === 'bribe')) {
-    const r = settleScan(sim, e, choice);
-    if (r === 'cantAfford') return reject('cantAfford');
-    finishEncounter(sim, id, r.outcome, { cost: r.cost });
-    return true;
-  }
+  if (holdsTrip(e) && !(waiting && t?.phase === 'interdicted')) return reject('notInterdicted');
+  if (choice === 'comply') return comply(sim, e);
+  if (choice === 'run') return run(sim, e), true;
   if (choice === 'bribe') {
     const cost = bribeCost(sim, e);
     if (sim.trade.credits < cost) return reject('cantAfford');

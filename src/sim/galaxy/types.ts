@@ -248,6 +248,8 @@ export interface Fleet {
   hunt?: { until: number };
   /** A hunter that has stood down: it heads home and is disbanded when it gets there. */
   standDown?: true;
+  /** A patrol the player ran from (inspect/patrol.ts): its `hunt` is a chase; when it ends the patrol goes back to its rounds instead of disbanding. */
+  chase?: true;
 }
 
 /**
@@ -295,14 +297,14 @@ export interface Encounter {
   turn: number;
   expires: number;
   /**
-   * A scan that found contraband aboard (blackmarket/scan.ts): `value` is what the goods are worth at base prices, and the player chooses to
-   * 'surrender' them (and pay `fine`, with a standing hit) or 'bribe' (`bribe` credits). Such a scan waits for an answer; it does not expire.
+   * A patrol's scan that read contraband aboard (blackmarket/scan.ts): `value` is what the goods are worth at base prices. The patrol hails the player
+   * to stop (inspect/patrol.ts): the trip halts until they 'comply' or 'run'. It does not expire.
    */
-  scan?: { value: number; fine: number; bribe: number };
+  scan?: { value: number };
 }
 
-/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge, a scan that found contraband surrender / bribe. */
-export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender';
+/** What the player does about an encounter (`galaxy.respond`): interdictions take evade / bribe / fight, a distress call respond / ignore, hails and scans acknowledge, a patrol's hail to stop comply / run. */
+export type EncounterChoice = 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'comply' | 'run';
 
 /**
  * A deep-space pocket (node id `event:<encounter id>`, never in the galaxy index, never archived) the player's packet was deployed into
@@ -397,6 +399,8 @@ export interface Distress {
 
 export interface GalaxyState {
   current: string;
+  /** A patrol the player stopped for (inspect/patrol.ts): it sends its inspectors once the ship is deployed in the node. */
+  patrolStop?: { fleet: number; faction: string; name: string };
   /** Generated chunks by key. Saved as keys only and rebuilt from the seed on load. */
   chunks: Record<string, ChunkData>;
   /** Node id -> tick it was first seen by sensors / first visited. */

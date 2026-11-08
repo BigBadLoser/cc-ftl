@@ -259,7 +259,7 @@ export type Command =
    * Answer a pending encounter (galaxy/respond.ts): an interdiction takes `evade` (a seeded roll against the fleet), `bribe` (credits) or `fight`
    * (the event grid opens); a distress call `respond` (an event grid with the damaged fleet) or `ignore`; a hail or scan `acknowledge`.
    */
-  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'surrender' }
+  | { type: 'galaxy.respond'; encounter: number; choice: 'evade' | 'bribe' | 'fight' | 'respond' | 'ignore' | 'acknowledge' | 'comply' | 'run' }
   /** Pay a pirate den at the current node to clear the player's notoriety (galaxy/heat.ts). */
   | { type: 'galaxy.clearNotoriety' }
   /** Answer a contraband inspection whose lead inspector waits aboard (inspect/settle.ts): pay the fine, offer a bribe (it may be turned down), or refuse. */
@@ -288,6 +288,8 @@ export type Command =
   | { type: 'jobs.openCrate'; id: number }
   /** Debug: set the player's notoriety (galaxy/heat.ts). */
   | { type: 'debug.notoriety'; value: number }
+  /** Debug: a patrol (of `faction`, default the navy) at `node` that chases the player, so it hails them on their next hop there (inspect/patrolDebug.ts). */
+  | { type: 'debug.patrol'; node: string; faction?: string }
   /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
   | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' | 'tracker' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */

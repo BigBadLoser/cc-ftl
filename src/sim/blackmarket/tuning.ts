@@ -42,3 +42,10 @@ export const INSPECT_BAN_TURNS = 10;
 export const INSPECT_BOARD_SEC = 90;
 export const INSPECT_STALL_SEC = 45;
 export const INSPECT_HOME_SEC = 300;
+/**
+ * Patrol hails (#138 step 2): a patrol whose scan reads contraband hails the player to stop. Running costs PATROL_RUN_HIT standing, and with
+ * PATROL_CHASE_CHANCE (a seeded roll) the patrol gives chase for PATROL_CHASE_TURNS turns (the hunters' path), hailing again if it catches them.
+ */
+export const PATROL_RUN_HIT = 3;
+export const PATROL_CHASE_CHANCE = 0.5;
+export const PATROL_CHASE_TURNS = 4;

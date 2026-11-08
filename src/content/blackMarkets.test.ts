@@ -4,7 +4,8 @@ import {
   storageAdd, storageCount, truceBanned, truceHolds, unitPrice, SAVE_VERSION, type Sim,
 } from '../sim';
 import { stat } from '../sim/stats';
-import { scanFor, scanPending, seizeContraband } from '../sim/blackmarket/scan';
+import { scanFor, scanPending } from '../sim/blackmarket/scan';
+import { choicesOf } from '../sim/galaxy/respond';
 import type { Encounter } from '../sim/galaxy/types';
 import { syncRecruits } from '../sim/galaxy/recruit';
 import { PrizeC, WeaponC } from '../sim/combat/components';
@@ -12,11 +13,7 @@ import { capturePrize } from '../sim/capture/prize';
 import { CarryingC, StorageC } from '../sim/items/components';
 import { AllegianceC, EquipC } from '../sim/fight/components';
 import { spillItems } from '../sim/items/stacks';
-import { storageTake } from '../sim/items/storage';
 import { ModuleC } from '../sim/modules/components';
-import { AssignmentC, JobC, type Job } from '../sim/crew/components';
-import { fitError, fitJobOf } from '../sim/upgrades/fit';
-import { isHeldOffline } from '../sim/modules/hold';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
 import { content } from './index';
@@ -197,140 +194,43 @@ describe('scans', () => {
     w.sim.world.get(w.station, TraderC)!.owner = 'navy';
     return w;
   }
-  it('a navy patrol scans; contraband aboard waits for surrender or bribe, and trade is held meanwhile', () => {
+  it('a navy patrol scans; contraband aboard makes it a hail to stop (comply or run), and trade is held meanwhile', () => {
     const { sim, station } = lawStation();
     giveItems(sim, STOLEN, 10);
-    const credits = sim.trade.credits;
     expect(patrolScan(sim)).toBe(true);
     expect(scanPending(sim)).toBe(true);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     expect(e.scan!.value).toBe(10 * content.items[STOLEN].price);
-    expect(e.scan!.bribe).toBeGreaterThan(e.scan!.fine);
+    expect(choicesOf(e)).toEqual(['comply', 'run']);
     sim.enqueue({ type: 'trade.offer', ship: station, give: [], get: [{ item: 'item.metal', count: 1 }], barter: false });
     expect(run(sim, 1)).toContain('command.rejected:trade.offer:scanPending');
-    const navy = reputationOf(sim.story, 'navy');
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
-    run(sim, 1);
-    expect(contrabandAboard(sim)).toEqual([]);
-    expect(sim.trade.credits).toBe(credits - e.scan!.fine);
-    expect(reputationOf(sim.story, 'navy')).toBeLessThan(navy);
-    expect(sim.galaxy.encounters.length).toBe(0);
-    expect(sim.galaxy.lastResult?.outcome).toBe('confiscated');
   });
 
-  it('a fitted contraband upgrade is found and seized, and the weapon is left un-upgraded', () => {
+  it('a fitted contraband upgrade is read by the scan', () => {
     const { sim } = lawStation();
     const mod = sim.world.query(ModuleC).find((id) => !!sim.content.modules[sim.world.get(id, ModuleC)!.def]?.upgradeSlot);
     expect(mod).toBeDefined();
     sim.world.get(mod!, ModuleC)!.upgrade = 'item.upg_nuke';
     expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
     expect(patrolScan(sim)).toBe(true);
-    const e = sim.galaxy.encounters.find((x) => x.scan)!;
-    expect(e.scan!.value).toBe(content.items['item.upg_nuke'].price);
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
-    run(sim, 1);
-    expect(contrabandAboard(sim)).toEqual([]);
-    expect(sim.world.get(mod!, ModuleC)!.upgrade).toBeUndefined();
+    expect(sim.galaxy.encounters.find((x) => x.scan)!.scan!.value).toBe(content.items['item.upg_nuke'].price);
   });
 
-  describe('seizure during a fit job', () => {
-    /** A hold with the nuke upgrade in it and a posted fit job for it at the first weapon module. */
-    function fitPosted() {
-      const { sim } = lawStation();
-      const mod = sim.world.query(ModuleC).find((id) => fitError(sim, id, 'item.upg_nuke') === null) as number;
-      expect(mod).toBeDefined();
-      giveItems(sim, 'item.upg_nuke', 1);
-      sim.enqueue({ type: 'module.fitUpgrade', moduleId: mod, item: 'item.upg_nuke' });
-      const log = run(sim, 1);
-      expect(log.filter((l) => l.startsWith('command.rejected'))).toEqual([]);
-      expect(fitJobOf(sim, mod)).toBeDefined();
-      return { sim, mod };
-    }
-
-    it('an upgrade delivered to a fit job is seized, the job cancelled and the module released', () => {
-      const { sim, mod } = fitPosted();
-      storageTake(sim, playerStorages(sim)[0] as number, 'item.upg_nuke', 1);
-      const [jobId, job] = fitJobOf(sim, mod) as [number, Job];
-      job!.delivered = [{ item: 'item.upg_nuke', count: 1 }];
-      job!.progress = 5;
-      sim.world.get(mod, ModuleC)!.offlineUntil = sim.tick + 2;
-      expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
-      expect(seizeContraband(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
-      expect(sim.world.has(jobId, JobC)).toBe(false);
-      expect(sim.world.get(mod, ModuleC)!.offlineUntil).toBeUndefined();
-      expect(isHeldOffline(sim, sim.world.get(mod, ModuleC)!)).toBe(false);
-      expect(contrabandAboard(sim)).toEqual([]);
-      expect(sim.world.query(ItemStackC).some((i) => sim.world.get(i, ItemStackC)!.item === 'item.upg_nuke')).toBe(false);
-    });
-
-    it('an upgrade a crew member is carrying to the fit job is seized and the job cancelled', () => {
-      const { sim, mod } = fitPosted();
-      storageTake(sim, playerStorages(sim)[0] as number, 'item.upg_nuke', 1);
-      const [fitId, fit] = fitJobOf(sim, mod) as [number, Job];
-      const crew = sim.world.query(CrewC).find((i) => sim.world.get(i, AllegianceC)?.faction === 'player') as number;
-      const haul = sim.world.createEntity();
-      sim.world.add(haul, JobC, { ...fit!, category: 'hauling', kind: 'haul', reservedBy: crew, target: undefined, fit: undefined, needs: undefined, delivered: undefined,
-        haul: { item: 'item.upg_nuke', count: 1, phase: 'deliver', src: { kind: 'storage', id: 0 }, dst: { kind: 'job', id: fitId } } } as never);
-      sim.world.add(crew, AssignmentC, { jobId: haul });
-      sim.world.add(crew, CarryingC, { item: 'item.upg_nuke', count: 1 });
-      seizeContraband(sim);
-      expect(sim.world.has(crew, CarryingC)).toBe(false);
-      expect(sim.world.has(fitId, JobC)).toBe(false);
-    });
-
-    it('an upgrade still in the hold when the fit job is posted is seized and the waiting job cancelled', () => {
-      const { sim, mod } = fitPosted();
-      seizeContraband(sim);
-      expect(fitJobOf(sim, mod)).toBeUndefined();
-      expect(contrabandAboard(sim)).toEqual([]);
-    });
-  });
-
-  it('two stacks of the same contraband in one hold are both seized', () => {
+  it('two stacks of the same contraband in one hold count together', () => {
     const { sim } = lawStation();
     const st = playerStorages(sim)[0] as number;
     sim.world.get(st, StorageC)!.stacks.push({ item: STOLEN, count: 2 }, { item: STOLEN, count: 2 });
     expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }]);
-    patrolScan(sim);
-    const e = sim.galaxy.encounters.find((x) => x.scan)!;
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
-    run(sim, 1);
-    expect(contrabandAboard(sim)).toEqual([]);
   });
 
-  it('an equipped disruptor and carried stolen goods are found and seized too', () => {
+  it('an equipped disruptor and carried stolen goods count as contraband aboard', () => {
     const { sim } = lawStation();
     const crew = sim.world.query(CrewC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'player')!;
     if (sim.world.has(crew, EquipC)) sim.world.get(crew, EquipC)!.weapon = 'item.disruptor';
     else sim.world.add(crew, EquipC, { weapon: 'item.disruptor' });
     sim.world.add(crew, CarryingC, { item: STOLEN, count: 4 });
     expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }, { item: 'item.disruptor', count: 1 }].sort((a, b) => (a.item < b.item ? -1 : 1)));
-    patrolScan(sim);
-    const e = sim.galaxy.encounters.find((x) => x.scan)!;
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
-    run(sim, 1);
-    expect(contrabandAboard(sim)).toEqual([]);
-    expect(sim.world.get(crew, EquipC)!.weapon).toBeNull();
-    expect(sim.world.has(crew, CarryingC)).toBe(false);
   });
-
-  it('a bribe keeps the goods and the standing; it is refused without the credits', () => {
-    const { sim } = lawStation();
-    giveItems(sim, STOLEN, 10);
-    patrolScan(sim);
-    const e = sim.galaxy.encounters.find((x) => x.scan)!;
-    const navy = reputationOf(sim.story, 'navy');
-    sim.trade.credits = e.scan!.bribe - 1;
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'bribe' });
-    expect(run(sim, 1)).toContain('command.rejected:galaxy.respond:cantAfford');
-    sim.trade.credits = e.scan!.bribe + 5;
-    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'bribe' });
-    run(sim, 1);
-    expect(sim.trade.credits).toBe(5);
-    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 10 }]);
-    expect(reputationOf(sim.story, 'navy')).toBe(navy);
-  });
-
 
   it('visiting a black market costs no navy standing', () => {
     const { sim, station } = withStation();
