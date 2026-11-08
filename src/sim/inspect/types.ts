@@ -35,6 +35,8 @@ export interface Inspection {
   /** The fine and the bribe, set when the search ends with something found. */
   fine?: number;
   bribe?: number;
+  /** A patrol's inspection (inspect/patrol.ts): the fleet whose ship (`station`) sent it. What refusing it leads to is step 3. */
+  patrol?: number;
   /** A bribe was offered and turned down: it is not offered again. */
   bribeFailed?: true;
   /** How it ended: the player's answer, 'clean' (nothing found), 'fled' (the player left) or 'off' (a fight, the station gone). */

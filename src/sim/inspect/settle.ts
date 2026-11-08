@@ -111,7 +111,7 @@ export const inspectHandlers: { 'inspect.settle': (sim: Sim, cmd: Extract<Comman
     const insp = sim.world.get(cmd.inspection, InspectionC);
     if (!insp || insp.phase !== 'settle') return reject(sim, cmd.type, 'noInspection');
     const done = (outcome: 'fined' | 'bribed' | 'refused', cost: number): void => {
-      sim.events.emit({ type: 'inspect.settled', inspection: cmd.inspection, faction: insp.faction, outcome, cost });
+      sim.events.emit({ type: 'inspect.settled', inspection: cmd.inspection, faction: insp.faction, outcome, cost, ...(insp.patrol !== undefined ? { patrol: true as const } : {}) });
       leave(sim, cmd.inspection, insp, outcome);
     };
     if (cmd.choice === 'fine') {

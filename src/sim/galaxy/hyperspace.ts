@@ -2,6 +2,7 @@ import { hullLoad } from '../ftl/capacity';
 import { applyOvercharge } from '../ftl/overcharge';
 import { abortYards } from '../yard/flow';
 import { abortInspections } from '../inspect/flow';
+import { abortPatrolStop } from '../inspect/patrol';
 import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
@@ -91,6 +92,7 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   if (overcharged) applyOvercharge(sim, ship);
   abortYards(sim, 'left');
   abortInspections(sim);
+  abortPatrolStop(sim);
   burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
   settleLosses(sim);
   unbindMarkets(sim);
@@ -125,7 +127,7 @@ export function advanceTravel(sim: Sim): void {
   sim.events.emit({ type: 'galaxy.jumped', from, to: g.current, edge: edge.id, fuel: edge.fuel, charge: from === t.route[0] ? t.charge : 0 });
   arrive(sim);
   t.elapsed = 0;
-  // The turn ends here: a fleet that crossed the hop, or is in this node, may interdict. The ship halts in hyperspace until `galaxy.respond` settles it.
+  // The turn ends here: a fleet that crossed the hop, or is in this node, may interdict (or a patrol hail it to stop). The ship halts in hyperspace until `galaxy.respond` settles it.
   if (crossAfterHop(sim, from, g.current)) {
     t.phase = 'interdicted';
     sim.events.emit({ type: 'galaxy.interdicted', node: g.current });
@@ -217,6 +219,7 @@ export function flee(sim: Sim, ship: number): boolean {
   if (hullLoad(sim, ship).over > 0) applyOvercharge(sim, ship);
   abortYards(sim, 'left');
   abortInspections(sim);
+  abortPatrolStop(sim);
   settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);

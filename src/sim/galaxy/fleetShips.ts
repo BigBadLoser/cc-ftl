@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
 import { spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
+import { inspectingFleets } from '../inspect/patrol';
 import { nodesWithin } from './graph';
 import { owe } from './portIndex';
 import { FLEET_NODE_SHIPS, STRANDED_INTEGRITY, WARM_HOPS } from './tuning';
@@ -42,8 +43,12 @@ function shipsInPlay(sim: Sim): number {
  * event grid), up to FLEET_NODE_SHIPS ships in the sector. Ships that find no room stay descriptors and are retried by `tendFleets`.
  */
 export function materialiseFleet(sim: Sim, f: Fleet, node: string = f.node): void {
-  if (node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
-  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet' });
+  // A patrol the player stopped for comes in peaceful for that visit, whatever its faction thinks of them (running may have made it hostile; a hostile
+  // patrol is #138 step 3): its ships are neutral and the opening grace does not keep it out.
+  if (!f.ships.some((c) => c.ship === undefined)) return; // every ship already real (the common case, every tendFleets pass)
+  const visit = inspectingFleets(sim).has(f.id);
+  if (!visit && node === f.node && !sim.galaxy.event && graceHolds(sim, node, f.faction)) return; // opening grace: it stays a descriptor
+  for (const c of f.ships) if (c.ship === undefined && shipsInPlay(sim) < FLEET_NODE_SHIPS) spawnContact(sim, node, c, { reason: 'fleet', ...(visit ? { side: 'neutral' as const } : {}) });
 }
 
 /**

@@ -50,27 +50,30 @@ function crossing(faction: string, role: Fleet['role'], hold: Record<string, num
 }
 
 describe('patrol scans and the truce on the way', () => {
-  it('a navy patrol that scans a ship carrying contraband makes it choose; the goods are in the packet in hyperspace and are taken from it', () => {
+  it('a navy patrol whose scan reads contraband in the packet hails the ship to stop; running costs standing and the trip goes on with the goods', () => {
     const { sim, enc } = crossing('navy', 'patrol', { 'item.stolen_goods': 6 });
     expect(enc?.kind).toBe('scan');
     expect(enc?.scan?.value).toBe(6 * content.items['item.stolen_goods'].price);
+    expect(sim.galaxy.travel?.phase).toBe('interdicted');
     expect(contrabandAboard(sim)).toEqual([{ item: 'item.stolen_goods', count: 6 }]);
     const navy = reputationOf(sim.story, 'navy');
-    sim.enqueue({ type: 'galaxy.respond', encounter: enc!.id, choice: 'surrender' });
+    sim.enqueue({ type: 'galaxy.respond', encounter: enc!.id, choice: 'run' });
     step(sim);
-    expect(contrabandAboard(sim)).toEqual([]);
     expect(reputationOf(sim.story, 'navy')).toBeLessThan(navy);
+    expect(sim.galaxy.travel?.phase).toBe('hop');
+    expect(contrabandAboard(sim)).toEqual([{ item: 'item.stolen_goods', count: 6 }]);
   });
 
-  it('a contraband upgrade fitted in a module is found in the packet and taken from it', () => {
+  it('a fitted contraband upgrade is read in the packet; complying drops out at the node with the patrol held there', () => {
     const { sim, enc } = crossing('navy', 'patrol', {}, false, true);
     expect(enc?.scan?.value).toBe(content.items['item.upg_nuke'].price);
-    expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
-    sim.enqueue({ type: 'galaxy.respond', encounter: enc!.id, choice: 'surrender' });
+    const node = sim.galaxy.current;
+    sim.enqueue({ type: 'galaxy.respond', encounter: enc!.id, choice: 'comply' });
     step(sim);
-    expect(contrabandAboard(sim)).toEqual([]);
-    const mods = sim.sector.packet!.entities.map((e) => e.c['module'] as { upgrade?: string } | undefined).filter(Boolean);
-    expect(mods.some((m) => m!.upgrade)).toBe(false);
+    expect(sim.sector.state).toBe('deploying');
+    expect(sim.galaxy.current).toBe(node);
+    expect(sim.galaxy.patrolStop?.fleet).toBe(enc!.fleet);
+    expect(sim.galaxy.fleets.find((f) => f.id === enc!.fleet)?.node).toBe(node);
   });
 
   it('a scan that finds nothing is an ordinary acknowledge, and a pirate patrol never enforces', () => {
