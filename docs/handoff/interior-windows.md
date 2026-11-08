@@ -592,3 +592,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: without them it is worse; bring the straps back, wrapped round the top of the top pipe. The
   straps are back (flat, 2 px, fSH0), rp + 0.006 off the pipes' centres: from past the lower pipe up over the silver
   one, then round the upper pipe from its front over its top (an arc, 0..150° from the slope's normal). nv25.
+- 2026-11-08: the user: the pipes ramp is good enough as nv25 (wrapped straps). Next, from the list: boxes' chunkier
+  frames, the locker's handle and seam, then render and adjust all the variants once.
