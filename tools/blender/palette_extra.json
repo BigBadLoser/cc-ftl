@@ -3517,5 +3517,7 @@
   "ringW": {"hex": "#c4cbd1", "set": "hydro"},
   "ringWL": {"hex": "#e3e8eb", "set": "hydro"},
   "tWhite": {"hex": "#dde2e6", "set": "hydro"},
-  "tWhiteL": {"hex": "#f1f3f5", "set": "hydro"}
+  "tWhiteL": {"hex": "#f1f3f5", "set": "hydro"},
+  "pipeCu": {"hex": "#b06a3b", "set": "hydro"},
+  "pipeB": {"hex": "#3c78b4", "set": "hydro"}
 }
