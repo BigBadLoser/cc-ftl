@@ -176,6 +176,7 @@ export function undock(sim: Sim, id: number, v: Vehicle): void {
   v.state = 'flying';
   v.dock = 0;
   v.dest = null;
+  delete v.castOff;
   sim.events.emit({ type: 'vehicle.undocked', vehicle: id, ship: shipIdOf(sim, sim.world.get(airlock, ModuleC)), airlock });
 }
 

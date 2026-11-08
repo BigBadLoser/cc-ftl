@@ -8,5 +8,5 @@ export const vehicles = {
   // flies home; crew haul the ore to storage. Fragile and quick to dodge.
   'vehicle.mining_pod': { name: 'Mining pod', class: 'pod', asset: 'vehicle.mining_pod', speed: 6, maxHp: 30, capacity: 0, evasion: 0.4, cargo: 32, size: 2.6, mining: { unitsPerSec: 3 } },
   // Escape pod (vehicles/escape.ts): no pilot, one passenger, slow. Drawn with the mining pod's sprites until its own art exists (`asset`).
-  'vehicle.escape_pod': { name: 'Escape pod', class: 'pod', asset: 'vehicle.mining_pod', speed: 4, maxHp: 30, capacity: 1, evasion: 0.2, size: 2.2, escape: true },
+  'vehicle.escape_pod': { name: 'Escape pod', class: 'pod', asset: 'vehicle.escape_pod', speed: 4, maxHp: 30, capacity: 1, evasion: 0.2, size: 2.2, escape: true },
 } satisfies Record<string, VehicleDef>;

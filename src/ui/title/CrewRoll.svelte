@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { StarterShip } from '../../content/ships/starterShips';
   import Icon from '../Icon.svelte';
-  import { Tooltip } from '../kit';
+  import { tip } from '../kit';
   import CrewCoverage from './CrewCoverage.svelte';
   import CrewDossier from './CrewDossier.svelte';
   import { labelText, labelTip, traitColor } from './crewText';
@@ -62,12 +62,12 @@
             <span class="face">{#if pic}<img src={pic} alt="" />{/if}</span>
             <span class="who">
               <span class="top"><span class="nm">{c.name}</span><span class="role">{c.roleName}</span>
-                {#if c.label}<Tooltip text={labelTip(c)} label={labelTip(c)}><span class="lbl {c.label}">{labelText(c.label)}</span></Tooltip>{/if}
+                {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c), focus: true }}>{labelText(c.label)}</span>{/if}
               </span>
               <span class="tr">{#each c.traits as t (t.id)}<span><i style:background={traitColor(t.kind)}></i>{t.name}</span>{:else}<span class="none">No traits</span>{/each}</span>
             </span>
           </div>
-          <button class="ico" title="Reroll {c.name}" aria-label="Reroll {c.name}" data-testid="crew-reroll-{c.slot}" onclick={() => reroll(c.slot)}><Icon name="dice" size={20} /></button>
+          <button class="ico" use:tip={{ text: `Reroll ${c.name}` }} aria-label="Reroll {c.name}" data-testid="crew-reroll-{c.slot}" onclick={() => reroll(c.slot)}><Icon name="dice" size={20} /></button>
         </li>
       {/each}
     </ul>

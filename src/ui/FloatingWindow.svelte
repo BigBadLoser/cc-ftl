@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { Snippet } from 'svelte';
   import { EDGE_CURSOR, setDragCursor } from './dragCursor';
   import Icon, { type IconName } from './Icon.svelte';
@@ -133,13 +134,13 @@
       <span class="t" class:fit={titleFit} data-testid={titleTestId}>{title}</span>
       {@render titleExtra?.()}
       {@render actions?.()}
-      {#if pinnable}<button class="tile pin" class:on={pinned} title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
+      {#if pinnable}<button class="tile pin" class:on={pinned} use:tip={{ text: pinTitle }} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
         <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
       </button>{/if}
-      <button class="tile x" title={closeLabel} aria-label={closeLabel} data-testid={closeTestId} onclick={onClose}><Icon name="close" size={16} /></button>
+      <button class="tile x" use:tip={{ text: closeLabel }} aria-label={closeLabel} data-testid={closeTestId} onclick={onClose}><Icon name="close" size={16} /></button>
     </header>
   {:else if pinnable}
-    <button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" title={pinTitle} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
+    <button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" use:tip={{ text: pinTitle }} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
       <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
     </button>
   {/if}

@@ -4,7 +4,7 @@
    * an optional main action (the first jump of a plotted route).
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
 
   let { title, lines, zoomLabel, onZoom, onClear, action = null, warn = null }: {
     title: string; lines: string[]; zoomLabel: string; onZoom: () => void; onClear: () => void;
@@ -13,7 +13,7 @@
 </script>
 
 <aside class="sheet card" data-testid="starmap-info">
-  <PanelHead icon="map" {title} onBack={onClear} backIcon="close" backTitle="Close card" backTestId="starmap-card-close" />
+  <PaneHead icon="map" {title} onBack={onClear} backIcon="close" backTitle="Close card" backTestId="starmap-card-close" />
   {#each lines as l, i (i)}<div class="row" class:dim={i > 0}>{l}</div>{/each}
   {#if warn}<div class="row warn">{warn}</div>{/if}
   <div class="buttons">

@@ -3,7 +3,7 @@
   import FloatingWindow from '../FloatingWindow.svelte';
   import Icon from '../Icon.svelte';
   import { centerTop } from '../floatingWindow';
-  import { Frame } from '../kit';
+  import { Frame, tip } from '../kit';
   import { lossRows } from './lossRows';
   import './steel.css';
 
@@ -43,8 +43,8 @@
     <Frame title="Fight report">
       <div class="ph head">
         <h2 class={title.tone}>{title.text}</h2>
-        <span class="time" title="How long the fight lasted">{clock(report.seconds)}</span>
-        <button class="x" aria-label="Close" title="Close (Esc)" data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
+        <span class="time" use:tip={{ text: 'How long the fight lasted' }}>{clock(report.seconds)}</span>
+        <button class="x" aria-label="Close" use:tip={{ text: 'Close', key: 'ui.menu' }} data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
       </div>
       <div class="cols">
         <div class="col">
@@ -69,7 +69,7 @@
           <ul>
             {#each rows as r, i (i)}
               <li>
-                <button disabled={!r.subject} title={r.subject ? 'Go there' : undefined} onclick={() => r.subject && api.focusSubject(r.subject)}>
+                <button disabled={!r.subject} use:tip={{ text: r.subject ? 'Go there' : undefined }} onclick={() => r.subject && api.focusSubject(r.subject)}>
                   <i class="mark {r.tone}" class:dot={r.dot}></i>
                   <span class="nm">{r.name}{#if r.n > 1}&nbsp;×{r.n}{/if}</span>
                   <em class={r.tone}>{r.state}</em>

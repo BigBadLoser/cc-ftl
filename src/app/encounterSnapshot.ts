@@ -47,7 +47,7 @@ function choicesFor(sim: Sim, e: Encounter): UiEncounterChoice[] {
 /** A patrol's hail to stop: what its scan read aboard, and the comms window's data. */
 function scanned(sim: Sim, e: Encounter): Pick<UiEncounter, 'contraband' | 'hail'> {
   const found = contrabandAboard(sim).map((l) => `${l.count} ${sim.content.items[l.item]?.name ?? l.item}`).join(', ') || 'contraband';
-  return { contraband: { found, value: e.scan?.value ?? 0 }, hail: patrolHailOf(sim, e, found, nodeName(sim, e.node)) };
+  return { contraband: { found, value: e.scan?.value ?? 0 }, hail: patrolHailOf(sim, e, nodeName(sim, e.node)) };
 }
 
 /** The pending encounters as cards. */

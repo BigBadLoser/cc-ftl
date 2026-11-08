@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiResearchNode } from './api';
   import { createThumbs } from './buildThumbs';
@@ -29,7 +30,7 @@
     <h3>Cost</h3>
     <div class="cost">
       {#each node.cost as c (c.item)}
-        <span class:short={c.have < c.count} title="{c.name}: have {c.have}, need {c.count}"><ItemIcon {api} item={c.item} size={18} />{c.name} {c.have}/{c.count}</span>
+        <span class:short={c.have < c.count} use:tip={{ text: `${c.name}: have ${c.have}, need ${c.count}` }}><ItemIcon {api} item={c.item} size={18} />{c.name} {c.have}/{c.count}</span>
       {/each}
     </div>
     <div class="row"><Icon name="clock" size={14} /> {dur(node.seconds)} at one crew</div>

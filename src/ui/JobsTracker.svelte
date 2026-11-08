@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiJobs } from './api';
   import Icon, { type IconName } from './Icon.svelte';
@@ -24,11 +25,11 @@
 
 {#snippet row(r: TrackerRow, here: boolean)}
   <li>
-    <button class="row" class:here class:urgent={r.urgent} title={r.full} data-testid="jobs-tracker-row" onclick={onOpen}>
+    <button class="row" class:here class:urgent={r.urgent} use:tip={{ text: r.full }} data-testid="jobs-tracker-row" onclick={onOpen}>
       <Icon name={KIND_ICON[r.kind]} size={13} />
       <span class="m"><b>{r.title}</b><span class="line" class:problem={r.problem}>{r.line}</span></span>
       <span class="n">
-        <span class="turns" class:short={r.urgent} title="Turns left"><Icon name="clock" size={12} />{r.turnsLeft}</span>
+        <span class="turns" class:short={r.urgent} use:tip={{ text: 'Turns left' }}><Icon name="clock" size={12} />{r.turnsLeft}</span>
         <span class="pay">{r.reward} cr</span>
       </span>
     </button>

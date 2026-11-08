@@ -8,6 +8,7 @@ import type { Grid } from '../sim/grid';
 import type { SectorGrid } from '../sim/sectorGrid';
 import { shipGridOf } from '../sim/shipGrid';
 import { ModuleC } from '../sim/modules/components';
+import { hullOutward, hullSide } from '../sim/modules/footprint';
 import type { ItemDef, ModuleDef, WeaponDef } from '../sim/registry';
 import { loadAtlas, type AtlasStats } from './assets/loader';
 import { createArtStream } from './artStream';
@@ -244,7 +245,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       return (m && world.query(ShipC).find((id) => { const sh = world.get(id, ShipC); return !!sh && onShip(sh, m); })) ?? 0;
     },
   });
-  const pods = createPodView(world, atlas, { air: SL.sorted, low: W.low, size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined), art: (def) => content.vehicles?.[def]?.asset ?? def });
+  const pods = createPodView(world, atlas, {
+    air: SL.sorted,
+    low: W.low,
+    size: (def) => (isPod(def) ? content.vehicles?.[def]?.size ?? 2.6 : undefined),
+    art: (def) => content.vehicles?.[def]?.asset ?? def,
+    dockOut: (airlock) => {
+      const m = world.get(airlock, ModuleC);
+      const def = m && content.modules[m.def];
+      return m && def ? hullOutward(hullSide(def, m.rot) ?? 'n') : null;
+    },
+  });
 
   // Shuttles: flying, docked at an airlock, and (while it lifts off or settles) the one in the camera ship's bay. A shuttle
   // parked in a bay is the bay's own layer (vehicleBayArt).

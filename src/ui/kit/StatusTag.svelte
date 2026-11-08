@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { tip } from './tip';
   /** A two-line station tag: a short name over a one-word status, flat, with a coloured bottom edge (cyan when ok, amber when warn, red when down). */
   let { tag, status, ok, warn = false, title }: { tag: string; status: string; ok: boolean; warn?: boolean; title?: string } = $props();
 </script>
 
-<span class="tag" class:ok class:warn {title}>
+<span class="tag" class:ok class:warn use:tip={{ text: title }}>
   <b>{tag}</b>
   <em>{status}</em>
 </span>

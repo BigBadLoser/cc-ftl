@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiLegend } from './api';
   import Icon from './Icon.svelte';
 
@@ -15,7 +16,7 @@
 </script>
 
 <div class="wrap">
-  <button class="tile" class:on={current !== null} title="Overlay: {api.overlayList.find((o) => o.id === current)?.label ?? 'Off'}" aria-label="Overlay" data-testid="overlay-btn" onclick={() => (open = !open)}><Icon name="overlay" size={20} /></button>
+  <button class="tile" class:on={current !== null} use:tip={{ text: `Overlay: ${api.overlayList.find((o) => o.id === current)?.label ?? 'Off'}` }} aria-label="Overlay" data-testid="overlay-btn" onclick={() => (open = !open)}><Icon name="overlay" size={20} /></button>
   {#if open}
     <div class="menu" data-testid="overlay-menu">
       <button class:on={current === null} onclick={() => pick(null)}>Off</button>

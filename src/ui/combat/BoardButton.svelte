@@ -13,7 +13,7 @@
   disabled={!!blocker}
   dim={!!blocker}
   note={blocker}
-  tip={blocker ?? `Send a boarding party in a shuttle (${keyLabel($keymap, 'combat.board')})`}
+  tip={blocker ?? 'Send a boarding party in a shuttle'}
   testid="combat-board"
   onclick={onBoard}
 />

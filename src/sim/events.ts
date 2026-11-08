@@ -312,7 +312,7 @@ export type SimEvent =
   | { type: 'inspect.started'; inspection: number; faction: string; name: string; crew: number[] }
   | { type: 'inspect.waiting'; inspection: number; faction: string; value: number; fine: number; bribe: number }
   | { type: 'inspect.bribeRefused'; inspection: number; faction: string }
-  | { type: 'inspect.settled'; inspection: number; faction: string; outcome: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled'; cost: number }
+  | { type: 'inspect.settled'; inspection: number; faction: string; outcome: 'fined' | 'bribed' | 'refused' | 'clean' | 'fled'; cost: number; patrol?: true }
   | { type: 'truce.breached'; node: string; until: number }
   | { type: 'galaxy.eventEntered'; id: number; kind: 'fight' | 'rescue' | 'scene' }
   /** The scene outcome observer saw a rule's fact (scene/observer.ts): its log line (`text`, '' for none) and tone. Output only. */
