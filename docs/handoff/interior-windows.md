@@ -30,7 +30,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 |---|---|---|---|
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py` |
-| 44 (set 2) | slate | 2757 / 115 / 2861 | to do |
+| 44 (set 2) | slate | 2757 / 115 / 2861 | lower layer (ramp) approved sw25: `sprites/wall3d_iwin_slate.py`; upper to do |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
@@ -175,3 +175,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw24: one paint block across the middle floor (sw23 broke it at the rib: inset at each pocket's side and
   none under the rib). Shown.
 - 2026-11-08: sw25: paint block 2 px more off either side (PAINT_SIDE 4). Shown.
+- 2026-11-08: the user approved slate's lower layer at sw25 ("looks good to me"). Next per the plan: port the ramp
+  geometry to the default window, then slate's upper layer.
