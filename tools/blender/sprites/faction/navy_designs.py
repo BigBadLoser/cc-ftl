@@ -113,9 +113,9 @@ def navy_cage(k, ax, plane, a, b, c, e, F, hole=None, **_):
     g, x = divmod(R - L - 6, 4)                         # then where they stand out)
     gaps = [g, g + (x > 1), g + (x > 0), g + (x > 2)]
     n = L
-    for gi in gaps[:3]:
+    for gi, sp_ in zip(gaps[:3], (-3, 0, 3)):          # (the outer two 3 px further off the middle: the user)
         n += gi
-        ub = T._u(n + 1, ds)
+        ub = T._u(n + 1 + sp_, ds)
         n += 2
         for (za, da), (zb_, db) in zip(prof, prof[1:]):
             col = "fNX1" if db > da + 1e-6 else "fNX4" if db < da - 1e-6 else "fNX2"   # (lit curving out at

@@ -623,3 +623,5 @@ Marked ref (both layers, numbered): scratchpad
   frame, the guard bars standing off the frame (spaced over the cage's mouth: 3, 3, 4, 3 px). navy.py's plate layout
   and heights are shared functions now (_plates, _heights, cover_rects), the face skips the flush frame sheet where
   a design opens it; _ends takes a shell. Plain m10 identical to nv9. nc9.
+- 2026-11-08: the user: the left and right guard bars 3 px further off the centre. Now against the cage's mouth on
+  either side (measured: gaps 0, 6, 7, 0 px; the middle bar unchanged). nc10.
