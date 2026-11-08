@@ -105,7 +105,10 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   it (ochre lvl 3, the stripe's lit top lvl 4, the rail's shadow lvl 1 all 3 px: the user prefers that dark block to
   sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
   at its foot (sw31); on l a seam (fGT3, a px) down the blue at the left post's edge, as the right post shows one (its
-  face's cut end against the chamfer) (sw33); pockets
+  face's cut end against the chamfer), in line with the post's corner line under it (sw34; a px further left in
+  sw33); the rail's shadow band (`SHADOW` 3 px, ochre lvl 1) carried on across under the beam from chamfer to chamfer
+  (a box across the wall, its underside `BEAM_UNDER`) so the dark line under the header runs on over the window (sw34);
+  pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
   px in from the floor's two outer ends (one block across the pockets and the floor in front of the rib, not one per
@@ -200,3 +203,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw32: the chamfer's dark top block (the rail's whole shadow band) down to its lowest px; the rail's seam
   mirrored on the left of the opening. Shown: the user preferred the block (back in sw33) and meant another seam.
 - 2026-11-08: sw33: the seam they meant: down the blue at the post's edge (marked image sent), added on the left. Shown.
+- 2026-11-08: sw34: that seam a px right (in line with the post's corner line); the dark line under the header carried
+  across the window (the shadow band under the beam). Shown.
