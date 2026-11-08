@@ -106,9 +106,11 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
   at its foot (sw31); on l a seam (`SEAM` fGW5, a px: the post's corner line's grey, an AA blend of fGS3 and fGW5
   there; fGT3 blue in sw33-34) down the blue at the left post's edge, in line with the post's corner line under it, as
-  the right post shows one; over the opening, chamfer to chamfer, the header's front's bottom px dark (fGT4, the
-  chamfers' top tone) on each rail block at its own depth, all on the beam's line (the middle's lower px is cut there)
-  (sw35; sw34's 3 px shadow band hung under the beam didn't read);
+  the right post shows one; the opening's top `D.BEAM_DROP` = `SHADOW` (3 px) under the rail's foot (sw36: the cut
+  stops there, so over the window the header keeps the wall's own foot, the rail's shadow band and the set-back middle
+  blocks' lower px, and the band's lowest px reads as the header's dark bottom edge in one straight line, as on the
+  wall; sw34 hung a stand-in band (2 px under the middle blocks, 1 under the ends) and sw35 painted the blocks' fronts
+  at their two depths: both jumped); `wall3d_iwin_def.BEAM_DROP` is 0 for the default window;
   pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
@@ -207,4 +209,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw34: that seam a px right (in line with the post's corner line); the dark line under the header carried
   across the window (the shadow band under the beam). Shown: didn't read.
 - 2026-11-08: sw35: instead the header's bottom px over the window dark (a bottom edge highlight); the left seam in the
-  post's corner line's grey (fGW5). Shown.
+  post's corner line's grey (fGW5). Shown: the line jumped.
+- 2026-11-08: sw36: the opening's top 3 px lower (BEAM_DROP), so the header keeps the wall's foot over it: the dark
+  bottom edge straight. Shown.

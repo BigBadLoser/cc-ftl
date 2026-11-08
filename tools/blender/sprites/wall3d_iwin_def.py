@@ -16,6 +16,7 @@ RUN = 5 / 32            # the sill's crest: from the lip's top at a post down to
                         # the wall (the lip cut down), then on into the ramp ...
 FLOOR = 5 * PZ          # ... to this far under the ramp's top (the window's floor) ...
 END = 11.5 / 32         # ... reached this far along the wall from the post, then level
+BEAM_DROP = 0.0         # (the beam's underside this far under the rail's foot: a look's, its header's foot kept)
 SILL_OFF = 0.0          # (the crest stays at the lip's top this far in from the post before it starts down: a look's)
 LINES = 3 / 32          # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
@@ -127,7 +128,7 @@ def _cut(k, x0, x1, z1, yF, yb):
 
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
-    zs, z1 = W.skirt_top(), T.rail_foot(W.HF)           # (the beam's underside: the rail's foot)
+    zs, z1 = W.skirt_top(), T.rail_foot(W.HF) - BEAM_DROP   # (the beam's underside: the rail's foot)
     zp = _dip()[0]                                      # (the crest at a post: the lip's top)
     yf = W.wall_back() - 0.5 + W.TW
     yr = yf + T.FR                                      # (the face's relief: the posts', the band's, the header's)

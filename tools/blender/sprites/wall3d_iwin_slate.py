@@ -10,7 +10,6 @@ from . import core
 from . import wall3d as T
 from . import walls as W
 from . import wall3d_iwin_def as D
-from .faction import slate as S
 from .faction.parts import PAINT, PZ
 from .wall3d_iwin import _clip
 
@@ -216,13 +215,6 @@ def _chamfers(k, x0, x1, yf):
         ys = yr + 3 * PAINT                             # post's shows, in the post's corner line's grey
         k.poly([Vector(p) for p in ((x0, ys, zc), (x0 + L, ys, zc), (x0 + L, ys, z1), (x0, ys, z1))], BLUE, 3,
                Vector((0, 1, 0)), fixed=SEAM)
-    lo = x0 + CHAMFER * L if x0 > -0.5 else -0.5        # over the opening, chamfer to chamfer: the header's front's
-    hi = x1 - CHAMFER * L if x1 < 0.5 else 0.5          # bottom px dark (a dark edge under it, the chamfers' top
-    for u0, u1, mid in S._blocks(lo, hi):               # tone), on each of the rail's blocks at its depth (over the
-        d, zb = S.MID_D if mid else S.RAIL_D, z1        # opening all end on the beam's line: the middle's lower px cut)
-        y = yr + d + PAINT
-        k.poly([Vector(p) for p in ((u0, y, zb), (u1, y, zb), (u1, y, zb + PZ), (u0, y, zb + PZ))], BLUE, 1,
-               Vector((0, 1, 0)), fixed="fGT4")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if not on:
             continue
@@ -271,7 +263,9 @@ def window(fn, part):
     def build():
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
-        keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END
+        keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP
+        D.BEAM_DROP = SHADOW * PZ                       # the opening's top under the rail's shadow band: the header's
+        #   foot as on the wall over it (the band's lowest px under every block: its dark bottom edge)
         D.FLOOR = D.FLOOR - RAISE * PZ
         D.SILL_OFF = DIP * L
         D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
@@ -280,6 +274,6 @@ def window(fn, part):
             assert calls[0] == len(seq), calls[0]
             return own, wide, D.GLASS.build()
         finally:
-            D.FLOOR, D.SILL_OFF, D.RUN, D.END = keep
+            D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP = keep
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
     return build
