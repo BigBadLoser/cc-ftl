@@ -23,9 +23,10 @@ FLOOR_Z = -9
 GROOVE = 7                  # ... then the groove (GROOVE_Z) ...
 GROOVE_Z = -11
 RIM = 10                    # ... then the front's top (RIM_Z) out to here, an upright face (FRONT) down from its edge
-RIM_Z = -8                  #   to the ramp's slope (the ref's proportions: 3 : 4 : 1.5 : 4 px, ~12 deep, all within
+RIM_Z = -9                  #   to the ramp's slope (the ref's proportions: 3 : 4 : 1.5 : 4 px, ~12 deep, all within
                             #   ~2 px of one height; ours 10 deep, on a ramp twice the ref's height)
-COL = {"ledge": "fBW2", "step": "fBW4", "floor": "fBW2", "groove": "fBW5", "rim": "fBW1", "front": "fBW10", "end": darker("fBW2"),
+COL = {"far": "fBW5", "ledge": "fBW2", "step": "fBW4", "floor": "fBW7", "groove": "fBW6", "rim": "fBW0", "front": "fBW8",
+       "end": darker("fBW2"),
        "under": "fBW5"}
 LINES = 3 / 32              # the pane's top edges on the cap: this apart, about the wall's middle
 LINE_W = 1 / 32
@@ -62,20 +63,21 @@ def _ramp_z(y):
 
 
 def _steps():
-    """The channel's floor across the wall: (y0, y1, z, kind), y from -rim_out to rim_out."""
+    """The channel's floor across the wall: (y0, y1, z, kind), y from -rim_out to rim_out (the far side mirrored, its
+    parts kind "far": seen only through the glass, one flat tone, or they showed as more stripes over the ledge)."""
     zs, ye = W.skirt_top(), _rim_out()
     near = [(LEDGE * PX, FLOOR * PX, zs + FLOOR_Z * PZ, "floor"), (FLOOR * PX, GROOVE * PX, zs + GROOVE_Z * PZ, "groove"),
             (GROOVE * PX, ye, zs + RIM_Z * PZ, "rim")]
-    return ([(-y1, -y0, z, kd) for y0, y1, z, kd in reversed(near)] +
+    return ([(-y1, -y0, z, "far") for y0, y1, z, _ in reversed(near)] +
             [(-LEDGE * PX, LEDGE * PX, zs + LEDGE_Z * PZ, "ledge")] + near)
 
 
 def _cut(k, x0, x1, z1):
     """Take everything over the channel's floor and under z1 (the cornice's foot) out over the opening."""
-    ye = _rim_out()
+    yb, ye = -_rim_out(), _rim_out()
     inx = [(0, x0, 1), (0, x1, -1)]
-    regions = [[(0, x0, -1)], [(0, x1, 1)], inx + [(1, ye, 1)], inx + [(1, -ye, -1)],
-               inx + [(1, -ye, 1), (1, ye, -1), (2, z1, 1)]]
+    regions = [[(0, x0, -1)], [(0, x1, 1)], inx + [(1, ye, 1)], inx + [(1, yb, -1)],
+               inx + [(1, yb, 1), (1, ye, -1), (2, z1, 1)]]
     regions += [inx + [(1, y0, 1), (1, y1, -1), (2, z, -1)] for y0, y1, z, _ in _steps()]
     zlo = min(z for _, _, z, _ in _steps())
     for m in (k.m, k.ns):
@@ -86,7 +88,7 @@ def _cut(k, x0, x1, z1):
             pts = [m.v[i] for i in f[0]]
             xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
             if (max(xs) <= x0 + 1e-9 or min(xs) >= x1 - 1e-9 or max(zs) <= zlo + 1e-9 or min(zs) >= z1 - 1e-9 or
-                    max(ys) <= -ye + 1e-9 or min(ys) >= ye - 1e-9):
+                    max(ys) <= yb + 1e-9 or min(ys) >= ye - 1e-9):
                 out.append(f)
                 continue
             for r in regions:
@@ -121,7 +123,7 @@ def _ends(k, x0, x1, z1):
     the plain ramp (its front past where the slope falls under it)."""
     yl = _line()
     br = sorted({y for y0, y1, _, _ in _steps() for y in (y0, y1)} | {yl - 2 * PX, yl, -yl} |
-                {s * (yl + (W.skirt_top() - z) / _slope()) for _, _, z, kd in _steps() if kd == "rim" for s in (-1, 1)})
+                {yl + (W.skirt_top() - z) / _slope() for _, _, z, kd in _steps() if kd == "rim"})
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if not on:
             continue
@@ -145,12 +147,11 @@ def _channel(k, a, b):
             continue
         lo, hi = min(za, zb), max(za, zb)
         sd = 1 if zb < za else -1
-        col = COL["step"] if "ledge" in (ka, kb) else COL["groove"]
+        col = COL["far"] if y < 0 else COL["step"] if "ledge" in (ka, kb) else COL["groove"]
         _quad(k, [(a, y, lo), (b, y, lo), (b, y, hi), (a, y, hi)], (0, sd, 0), col)
     zr = W.skirt_top() + RIM_Z * PZ                     # the front's upright face, down from its top edge to the
-    for s in (-1, 1):                                   # slope
-        y = s * _rim_out()
-        _quad(k, [(a, y, _ramp_z(y)), (b, y, _ramp_z(y)), (b, y, zr), (a, y, zr)], (0, s, 0), COL["front"])
+    y = _rim_out()                                      # slope
+    _quad(k, [(a, y, _ramp_z(y)), (b, y, _ramp_z(y)), (b, y, zr), (a, y, zr)], (0, 1, 0), COL["front"])
 
 
 def hook(k, sp, own=True):

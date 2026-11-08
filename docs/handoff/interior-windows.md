@@ -8,7 +8,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
   strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
 - Next: bastion, ramp (lower layer) first, its own module (the user: bastion and navy don't share the default's
   shape, upper or lower). Ref measured and plan written (section "Bastion window" below). B0+B1 done in one pass
-  (the user) at bw4, deepened at bw5 (option 3: the ref's proportions on our taller ramp): `sprites/wall3d_iwin_bast.py`,
+  (the user) at bw4, deepened at bw5, re-toned at bw8 (a part map shown: the user couldn't tell the parts apart) (option 3: the ref's proportions on our taller ramp): `sprites/wall3d_iwin_bast.py`,
   `preview/jobs_bwin.py`; shown, waiting on the user. The user's rule: our sizes differ from the ref's, so use the
   ref's proportions where its pixel sizes won't fit. Navy, drone, civil after: each its own module too (only the machinery is shared).
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -266,13 +266,18 @@ Built (`sprites/wall3d_iwin_bast.py`): the opening between the posts' inner edge
 up to the cornice's foot (`HF - BAST_HB`), cut down to the channel's profile across the wall (`_steps`: (y0, y1, z,
 kind), mirrored on the far side) with `_cut` (convex regions, `wall3d_iwin._clip`). bw5, from the pane (px; z in PZ
 under the ramp's top): ledge 0-3 at `LEDGE_Z` -6, floor 3-6 at `FLOOR_Z` -9, groove 6-7 at `GROOVE_Z` -11, the
-front's top 7-10 (`RIM`) at `RIM_Z` -8, an upright face (`front` fBW10) from its edge down to the slope (the wall's line
+front's top 7-10 (`RIM`) at `RIM_Z` -9 (bw8; -8 in bw5 hid the groove behind it), an upright face (`front` fBW10) from its edge down to the slope (the wall's line
 is 5 px from the pane, the slope falls 2.36 PZ a px). Why: the ref's channel (measured on its right end's section) is
 ~12 px from the front's edge to the pane, nearly level (within ~2 px of the ramp's top), on a ramp ~14 px tall, 9 px
 run; ours is 26 PZ tall, 11 px run, so the ref's px sizes don't fit: its proportions (3 : 4 : 1.5 : 4) over 10 px,
 the front's top 8 PZ down (the front 18 PZ, ~70% of the ramp; the ref's ~90%). bw4 had it 7.5 px deep, 3-8 PZ down
-(the user: "why is our ramp cut so shallow"). Tones `COL` (fBW2 ledge / floor, fBW4 step, fBW5 groove, fBW1 rim,
-darker(fBW2) the ends, fBW5 under the cornice). The posts' sides and the channel's section at the opening's ends in
+(the user: "why is our ramp cut so shallow"). Tones `COL` (bw8, to the ref's: ledge fBW2, step fBW4, floor fBW7, groove fBW6, front's top
+fBW0, its upright face fBW8, the ends darker(fBW2), under the cornice fBW5; the far side's parts (kind "far") all fBW5:
+seen through the glass they showed as more stripes over the ledge). Rendered lum at a middle column, from the pane
+down: pane 18, far side 26, pane edge 46, ledge 68, step 38-46, floor 55-60, groove 23, front's top 101-130, its face
+99, ramp 82 (the ref's: 42 / 64 / 40 / 64 / 25 / 110-128). A flat-colour part map for showing: a jobs file that
+patches `COL` (scratchpad `jobs_bwin_map.py`). Tried: the far side as one flat ledge (no channel) hid the near
+floor in the render (cause not found; the cut's regions with an uneven profile); kept mirrored instead. The posts' sides and the channel's section at the opening's ends in
 convex strips (`_ends`, both ways: the plain wall over the channel, the channel's block over the plain slope). Pane
 from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined panels kept (B2 replaces them).
 
@@ -379,3 +384,6 @@ from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined pane
   (ledge, step, floor, groove, rim), the pane, cap lines; the ramp's panels kept. Shown.
 - 2026-11-08: bw5 (the user: the cut too shallow; use the ref's proportions where its sizes won't fit, option 3): the
   channel 10 px deep (3 : 3 : 1 : 3), the front's top 8 PZ down with an upright face to the slope. Shown.
+- 2026-11-08: bw8 (the user: can't tell what's what with these colours): a part map with a legend; the far side
+  (through the glass) dark in one tone, the near parts toned to the ref's contrast, the front's top level with the floor
+  so the groove shows. Shown.
