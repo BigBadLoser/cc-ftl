@@ -148,6 +148,8 @@ def OUT(ax):
 
 BARE = False            # the default walls' ramp without its panel (a window tile: wall3d_iwin_def)
 OPEN = None             # a window's opening along x on the piece (x0, x1): the faces' fields it runs into keep no panel art
+RAIL_LAYOUT = None      # f(a, b) -> (u0, u1, middle?): the rail's blocks on a window tile (wall3d_iwin_ramp), in
+                        # place of faction.slate._blocks
 LIP_OUT = 0             # px: a window's opening widened this far past the default post (wall3d_iwin_ramp post_in): the lip's
                         # seams by its ends move out with it
                         # (wall3d_iwin_def: its posts plain, no panel cut in half)
@@ -336,15 +338,20 @@ def _rail(k, ax, plane, a, b, ends, top, fam):
     mit = _mitres(ends)
     z0 = rail_foot(top)
     z1 = z0 + RAIL_H                                    # (under the cap's black)
-    for u0, u1, mid in _blocks(a, b):
+    bl = (RAIL_LAYOUT or _blocks)(a, b)
+    for i, (u0, u1, mid) in enumerate(bl):
         d = MID_D if mid else RAIL_D
         zb = z0 - PZ if mid else z0
         prof = [(0.0, zb), (d, zb), (d, z1 - MID_DROP), (0.0, z1)] if mid else [(0.0, zb), (d, zb), (d, z1), (0.0, z1)]
         m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
-        prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m)
+        joins = [mid and j is not None and bl[j][2] and abs(bl[j][1 - e] - u) < 1e-6
+                 for j, e, u in ((i - 1 if i else None, 0, u0), (i + 1 if i + 1 < len(bl) else None, 1, u1))]
+        prism(k, ax, plane, u0, u1, prof, fam, 3, mitre=m,       # (no end where it runs on into another set-back
+              cap=tuple(False if jn else None for jn in joins))  # block: a window's rail, RAIL_LAYOUT)
         zt = z1 - MID_DROP if mid else z1
         paint(k, ax, plane, u0, u1, zt - PZ, zt, d, fam, 5)                                      # its top edge lit
-        if mid and u1 < b - 1e-6:                       # (a seam where it meets the end block on its right, as the
+        nxt = bl[i + 1][2] if i + 1 < len(bl) else False
+        if mid and u1 < b - 1e-6 and not nxt:           # (a seam where it meets the end block on its right, as the
             e = RAIL_D + 2 * PAINT                      # end block's side shows on its left: a sheet the px left of
             prism(k, ax, plane, u1 - 0.75 * LINE, u1 + 0.25 * LINE,   # the end block, up to its top; in front of
                   [(e - PAINT, zb), (e, zb), (e, z1), (e - PAINT, z1)], fam, 2,   # it, so the px is whole: a px

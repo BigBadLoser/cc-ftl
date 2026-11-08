@@ -112,7 +112,14 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   posts 2 px thinner, the side slopes moved out); the end blocks' inner edges move with them (`a`, `b` from POST0), so
   teal's blocks are 11 px wide from the tile's edge. The lip's seams by the posts (`_thirds`: 10.3 / 21.3 px, a px outside the default
   opening's ends) move out with it (`wall3d.LIP_OUT` = post_in while a piece builds): cut by the widened opening,
-  the lip's end lost its dark line and the slope seemed to clip it (dp6, the user). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+  the lip's end lost its dark line and the slope seemed to clip it (dp6, the user).
+- `header_centre` (TEAL): the rail over a window (`rail_layout(part)` as `wall3d.RAIL_LAYOUT` while a piece builds, in
+  place of faction.slate._blocks): l raised over its post (END_W) then set back to its +x edge, m set back with a raised
+  half tile at its centre, r mirrors l; the tiles round a piece laid out as a 3-tile window's (a sprite shows a little
+  of its neighbours: m's -x neighbour as l, else a joint showed over l). So a 3-tile window has one raised block, at its
+  middle; a 2-tile window none (set back from post to post), a 4-tile one two. wall3d._rail draws no seam and no end
+  where a set-back block runs on into another. Known: a faint 1 px darker mark where set-back blocks meet at a tile
+  edge (neither sprite covers that edge px whole: the l sprite's edge px blends; m's alpha 0 there). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
 - wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
   tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
   the base tiles pixel-identical (sw48, dp3 checked).
@@ -272,3 +279,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   widened opening (`wall3d.LIP_OUT`). Base tile pixel-identical. Shown.
 - 2026-11-08: dp11 (the user on dp7): no seam line on the yellow blocks; their slot cut into the ramp (3 px back,
   3 px tall, dark inside, lit front edge). Shown.
+- 2026-11-08: dp16 (the user: one big header block, in the centre): `header_centre`, `rail_layout`. Base tiles and
+  slate pixel-identical (sw49). Shown.

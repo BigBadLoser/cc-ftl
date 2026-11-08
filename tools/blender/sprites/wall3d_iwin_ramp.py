@@ -66,6 +66,8 @@ class Look:
                                         # run's ends BLOCK px in) recoloured from the default walls' ramp into it
     block_slot: tuple = ()              # (back, floor, sides, floor's lit front edge): a slot cut into each end
                                         # block's slope
+    header_centre: bool = False         # the rail over a window: raised blocks over its posts and one at its middle
+                                        # (a middle tile's centre), set back between (rail_layout)
     post_in: int = 0                    # px: the opening's ends (the side slopes, the end blocks' inner edges) this far
                                         # further out, the posts that much thinner
     pre: Optional[Callable] = None      # f(k, part, a, b, yf): before the ramp (a, b: between the end blocks)
@@ -74,7 +76,7 @@ class Look:
 
 TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="wHW", back="wXD", side="wD", rib="wL", toe="wM",
             plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot=("oXK", "oXD", "oK", "oH"),
-            post_in=2)   # (the floors lit over the ramp's front, wL;
+            post_in=2, header_centre=True)   # (the floors lit over the ramp's front, wL;
 #   their lit edge a step over wH, the "window" palette set's)
 
 
@@ -310,6 +312,31 @@ def detail(k, part, look):
         look.post(k, part)
 
 
+def rail_layout(part):
+    """The default rail's blocks on a window tile (wall3d.RAIL_LAYOUT): l raised over its post, set back on to its +x
+    edge; m set back, raised a half tile at its centre; r l mirrored; the tiles round it as in a 3-tile window (l m r),
+    past a post as faction.slate._blocks. So a 3-tile window has one raised block, at its middle."""
+    from .faction.slate import END_W, _blocks
+    own = {"l": ((-0.5, -0.5 + END_W, False), (-0.5 + END_W, 0.5, True)),
+           "m": ((-0.5, -END_W, True), (-END_W, END_W, False), (END_W, 0.5, True)),
+           "r": ((-0.5, 0.5 - END_W, True), (0.5 - END_W, 0.5, False))}
+    tiles = {"l": {0: "l", 1: "m"}, "m": {-1: "l", 0: "m", 1: "r"}, "r": {-1: "m", 0: "r"}}[part]   # (a 3-tile
+    #   window's neighbours: a sprite shows a little of the tile on each side)
+
+    def blocks(a, b):
+        out = []
+        for c in range(-1, 2):
+            if c not in tiles:
+                out += [q for q in _blocks(a, b) if c - 0.5 - 1e-6 < (q[0] + q[1]) / 2 < c + 0.5 + 1e-6]
+                continue
+            for u0, u1, mid in own[tiles[c]]:
+                q0, q1 = max(a, c + u0), min(b, c + u1)
+                if q1 - q0 > 1e-6:
+                    out.append((q0, q1, mid))
+        return sorted(out)
+    return blocks
+
+
 def window(fn, part, look):
     """fn: a look's straight piece builder (tile.wall[.look].full.m10). (own, wide, pane objects)."""
     calls = [0]
@@ -320,6 +347,7 @@ def window(fn, part, look):
     def bare(sp):                                       # (a window tile's ramp built bare: its panel left out)
         T.BARE = bool(pre[0] < len(seq) and seq[pre[0]])
         T.OPEN = D._span(seq[pre[0]]) if T.BARE else None
+        T.RAIL_LAYOUT = rail_layout(seq[pre[0]]) if T.BARE and look.header_centre else None
         pre[0] += 1
 
     def each(k, sp):
@@ -347,5 +375,5 @@ def window(fn, part, look):
         finally:
             D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP, D.POST = keep
             D.PART, T.HOOK, T.PRE_HOOK, T.BARE, T.OPEN = None, None, None, False, None
-            T.LIP_OUT = 0
+            T.LIP_OUT, T.RAIL_LAYOUT = 0, None
     return build
