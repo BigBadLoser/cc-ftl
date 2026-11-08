@@ -118,7 +118,7 @@ class _Mesh(core.Mesh):
     def poly(self, pts, color, flip=False):
         look, key = _LOOK[-1]
         if not color.startswith("team.") and color not in ("void", "gW1", "gW2"):      # ghost lines stay as they are
-            color = look.paint(Poly(color, pts, key))
+            color = look.paint(Poly(color, list(pts)[::-1] if flip else pts, key))   # (its winding as drawn: Poly.n)
         super().poly(pts, color, flip)
 
 
