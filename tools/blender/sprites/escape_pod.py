@@ -186,16 +186,20 @@ def collar(k, beacon_on, thrust=False):
         f.poly(pts[::-1], "hazY" if i % 2 else "hazK")
     k.f.hcyl(u, u + 0.025, 0, k.zc, r * HATCH, "steel", sides=32, cap="steel")   # the grapple plate
     for i in range(3):                                                     # three alignment lugs round it
-        a = math.radians(90 + i * 120)
+        a = math.radians(-90 + i * 120)
         k.f.box(u + 0.025, r * HATCH * 0.7 * math.cos(a), k.zc + r * HATCH * 0.7 * math.sin(a), 0.05, 0.07, 0.07, "steelD",
                 base=False)
     k.f.hcyl(u + 0.025, u + 0.13, 0, k.zc, 0.05, "steelL", sides=16)        # the pin
     k.f.hcyl(u + 0.13, u + 0.17, 0, k.zc, 0.1, "steelL", r1=0.07, sides=16, cap="steelL", capstart="steelD")   # its head
     _g("beacon")
-    p, nn = (k.u(t), 0.0, k.zc + (r + k.r(t)) / 2), (1.0, 0.0, 0.0)       # on the ledge, aft when upright
-    stud(f, p, nn, 0.065, 0.04, "steelD", "steelD")                        # its base
+    p, nn = (u, 0.0, k.zc + r * 0.78), (1.0, 0.0, 0.0)                    # on the collar's face, aft when upright
+    stud(f, p, nn, 0.12, 0.04, "steelD", "steelD")                         # its base
     q = tuple(p[i] + nn[i] * 0.04 for i in range(3))
-    stud(f, q, nn, 0.06, 0.13, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.045)   # the lamp
+    lamp, cap = (BEACON, BEACON) if beacon_on else ("drD", "drM")
+    stud(f, q, nn, 0.1, 0.14, lamp, lamp, r1=0.085)                        # the lamp
+    q = tuple(q[i] + nn[i] * 0.14 for i in range(3))
+    stud(f, q, nn, 0.085, 0.04, cap, cap, r1=0.05)                         # its rounded top
+    stud(f, tuple(q[i] + nn[i] * 0.04 for i in range(3)), nn, 0.03, 0.03, "steelD", "steelD", sides=8)   # a cap nut
 
 
 def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
