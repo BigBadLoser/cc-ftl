@@ -22,8 +22,9 @@ FLOOR_RISE = 2                          # px its floor climbs from the ramp's fr
 FLOOR_LIT = {"l": "fGS0", "m": "fGT0", "r": "fGS0"}   # its floor: lit grey on an end tile, lit blue in the middle
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
-GREY = "fGS2"                           # the ramp's front under the opening, in place of the blue plate (fallback)
-TOE = "fGT6"                            # under the opening the ramp from the pockets' floors down (the ref's dark toe)
+GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
+                                        # tone over it
+TOE = "fGS2"                            # under the opening the ramp from the pockets' floors down (the toe)
 RAISE = 3                               # px the window's floor (the sill's level top) stands over the default's
 
 
@@ -104,7 +105,7 @@ def detail(k, part):
                 max(p[2] for p in pts) <= W.skirt_top() + 1e-6):     # (the ramp's only: not the header's rail)
             m.f[i] = (f[0],) + grey
     zt = W.foot() + POCKET_FOOT * PZ                    # the toe: the near ramp under the opening from the pockets'
-    toe = m._cols(TOE)                                  # floors' front edge down, dark
+    toe = m._cols(TOE)                                  # floors' front edge down, a tone of its own
     out = []
     for f in m.f:
         pts = [m.v[j] for j in f[0]]
