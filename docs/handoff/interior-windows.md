@@ -97,6 +97,9 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Pocket depth `POCKET_IN` 6/32 (was 3/32: the back sits just inside the wall core's face, in the sill). Floor slopes
   up `FLOOR_RISE` (now 2 px; sw6 had 4) from the ramp's front to the back. With both, the floor fills the view and the dark back is
   hidden behind the lintel (sw6). sw7: `POCKET_TOP` 3 (top 1 px lower), `FLOOR_RISE` 2.
+- Toe: under the opening the near ramp from the pockets' floor line (foot + `POCKET_FOOT`) down is split off and
+  painted `TOE` (fGT6, dark navy, as the ref's band under the pockets). Before, the grey recolour had turned slate's
+  upright foot grey too, so the toe didn't read.
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -110,3 +113,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw5: window floor up 3 px, pockets up 3 and 3 px deeper; header recolour bug fixed. Shown.
 - 2026-11-08: sw6: pockets' backs deeper (POCKET_IN 6/32), floors slope up 4 px. Shown; the dark back no longer shows.
 - 2026-11-08: sw7: pocket tops 1 px lower (POCKET_TOP 3), floor's back 2 px lower (FLOOR_RISE 2; its front can't drop). Shown.
+- 2026-11-08: sw8: dark toe under the opening (TOE fGT6). Shown.

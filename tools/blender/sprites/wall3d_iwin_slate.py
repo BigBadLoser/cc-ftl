@@ -23,6 +23,7 @@ FLOOR_LIT = {"l": "fGS0", "m": "fGT0", "r": "fGS0"}   # its floor: lit grey on a
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
 GREY = "fGS2"                           # the ramp's front under the opening, in place of the blue plate (fallback)
+TOE = "fGT6"                            # under the opening the ramp from the pockets' floors down (the ref's dark toe)
 RAISE = 3                               # px the window's floor (the sill's level top) stands over the default's
 
 
@@ -102,6 +103,23 @@ def detail(k, part):
         if (a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and c in blues and
                 max(p[2] for p in pts) <= W.skirt_top() + 1e-6):     # (the ramp's only: not the header's rail)
             m.f[i] = (f[0],) + grey
+    zt = W.foot() + POCKET_FOOT * PZ                    # the toe: the near ramp under the opening from the pockets'
+    toe = m._cols(TOE)                                  # floors' front edge down, dark
+    out = []
+    for f in m.f:
+        pts = [m.v[j] for j in f[0]]
+        cx = sum(p[0] for p in pts) / len(pts)
+        if not (a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and min(p[2] for p in pts) < zt - 1e-9):
+            out.append(f)
+            continue
+        for pl, col in (((2, zt, -1), toe), ((2, zt, 1), tuple(f[1:]))):
+            q = _clip(pts, [pl])
+            if len(q) < 3:
+                continue
+            base = len(m.v)
+            m.v += [tuple(p) for p in q]
+            out.append((list(range(base, base + len(q))),) + col)
+    m.f = out
     for p0, p1 in POCKETS[part]:                        # the pockets
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
         z0, z1 = W.foot() + POCKET_FOOT * PZ, zf - POCKET_TOP * PZ
