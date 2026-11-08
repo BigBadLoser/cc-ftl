@@ -200,6 +200,33 @@ describe('scans', () => {
     expect(sim.galaxy.lastResult?.outcome).toBe('confiscated');
   });
 
+  it('a fitted contraband upgrade is found and seized, and the weapon is left un-upgraded', () => {
+    const { sim } = lawStation();
+    const mod = sim.world.query(ModuleC).find((id) => !!sim.content.modules[sim.world.get(id, ModuleC)!.def]?.upgradeSlot);
+    expect(mod).toBeDefined();
+    sim.world.get(mod!, ModuleC)!.upgrade = 'item.upg_nuke';
+    expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
+    expect(dockScan(sim, 'navy', 'Depot')).toBe(true);
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    expect(e.scan!.value).toBe(content.items['item.upg_nuke'].price);
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
+    run(sim, 1);
+    expect(contrabandAboard(sim)).toEqual([]);
+    expect(sim.world.get(mod!, ModuleC)!.upgrade).toBeUndefined();
+  });
+
+  it('two stacks of the same contraband in one hold are both seized', () => {
+    const { sim } = lawStation();
+    const st = playerStorages(sim)[0] as number;
+    sim.world.get(st, StorageC)!.stacks.push({ item: STOLEN, count: 2 }, { item: STOLEN, count: 2 });
+    expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }]);
+    dockScan(sim, 'navy', 'Depot');
+    const e = sim.galaxy.encounters.find((x) => x.scan)!;
+    sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
+    run(sim, 1);
+    expect(contrabandAboard(sim)).toEqual([]);
+  });
+
   it('an equipped disruptor and carried stolen goods are found and seized too', () => {
     const { sim } = lawStation();
     const crew = sim.world.query(CrewC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'player')!;

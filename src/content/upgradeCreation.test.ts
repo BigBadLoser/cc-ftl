@@ -58,7 +58,7 @@ describe('the ship creation step rolls the faction loadout', () => {
       // Hulls and positions can differ between paths (a derelict is ruined), so compare only what the weapons carry: all from the navy table.
       const got = fitted(sim, ship).filter((u) => u !== '-');
       expect(got.length).toBeGreaterThan(0);
-      for (const u of got) expect(['item.upg_capacitor', 'item.upg_coolant']).toContain(u);
+      for (const u of got) expect(content.factions[FACTION]!.upgrades!.map((e) => e.item)).toContain(u);
       if (name !== 'spawnDerelict') expect(fitted(sim, ship)).toEqual(expected);
       const before = fitted(sim, ship);
       for (let t = 0; t < 5; t++) sim.step();

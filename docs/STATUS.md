@@ -24,6 +24,10 @@ Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`
 scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
 directly; every job aimed at a placed module posts `moduleSite` (`modules/footprint.ts`, the rotated footprint) so crew work it from any side.
+Slice 2 (branch `combat/behaviour-upgrades`, no PR yet): the seven behaviour upgrades in `content/upgradesBehaviour.ts`, all data over general fields: `WeaponDef.ammoPerShot`
+(nuke: 2 missiles; `hasAmmo`/`consumeAmmo(n)` in `combat/ammo.ts`), effect `arc` (chain coil: lightning from the hit module into the nearest crew, `ifNoDrain`; event
+`projectile.arc`), `WeaponDef.look` (render tint/blast/trail, carried on `weapon.fired`; `render/shotLook.ts`), plus patched shots, shield rule, speed, effects. Nuke is black-market
+only and tagged contraband (no recipe, research or enemy carries). Lab panel `shots`. Numbers are a first pass.
 Pending: the upgrade art session (`docs/art-prompts/upgrades.md`: item sprites for all ten, 14 px pixel art icons replacing the Tabler line
 icons and `placeholderIcon`); slice 2, the seven behaviour upgrades.
 
