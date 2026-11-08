@@ -1,0 +1,64 @@
+# Handoff: interior windows (wall styles)
+
+Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
+
+## What an interior window is
+A straight partition (mask 10, along x) opened between its end posts, with a beam over the opening and a see-through
+pane. Pieces per look: `tile.wall.<look>.full.m10.win.l` (post at -x), `.win.m` (open across), `.win.r` (post at +x).
+A 2-tile window is l + r, a 3-tile one l + m + r, a 4-tile one l + m + m + r.
+
+## Refs (user uploads; unzip into the scratchpad before use)
+Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
+- `fe3a3595-Space_Haven_Interior_Windows_Tiles_v2.zip` (same as `b4deef86-...`): the main set.
+  `wall_style_<id>/<n>_tile_window_<wid>/{full,small}/`: `tile_0N_W1/W2/W3.png` (each tile rendered on its own),
+  `assembled_from_tiles.png`, `placement.csv`. `all_tiles_manifest.csv` lists every tile.
+  - **`full` = the T layer (upper: posts, beam, the cap's black with the two blue lines).**
+  - **`small` = the B layer (lower: the ramps under the opening, the pane).**
+  - **The whole window is both layers. Always show and compare both, never `full` alone** (the user: "that's half
+    the ref, where are the ramps?").
+- `b40ae0cd-Space_Haven_Interior_Wall_Windows_Attachment.zip`: the same windows as single assembled PNGs
+  (`wall_<wid>_full.png`, `wall_<wid>_small.png`), `source_manifest.csv`, and `far_hull_window_inside_example.png`.
+- Plain wall refs (not windows): scratchpad of the cc-ftl session, `walls/ref_zip/wall_<set>_0N.png` + `manifest.csv`
+  (set -> object id: 2=44, 3=43, 4=122, 5=423, 6=428, 7=3168, 8=3295).
+
+## Style -> our look -> status
+| Ref style (set) | Our look | Window ids (2/3/4 tiles) | Status |
+|---|---|---|---|
+| 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
+| 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | built: `sprites/wall3d_iwin_def.py` |
+| 44 (set 2) | slate | 2757 / 115 / 2861 | to do |
+| 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
+| 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | to do |
+| none | scrap | | no ref |
+
+Slate's ref (44) at a glance: the opening runs down to the ramps (no sill like the default's); the posts have a grey
+stepped foot; the blue beam has a raised block over the middle tile. Needs its own module, not the default's.
+
+## How the built ones work
+- `wall3d.block` calls `T.PRE_HOOK(sp)` as a piece starts and `T.HOOK(k, sp)` on its Relief before it builds.
+  `window(fn, part)` sets them while its piece builds; `hook()` cuts the opening (`_cut`, Sutherland-Hodgman `_clip`),
+  closes the cut (posts' sides, sill top, beam underside), adds the pane edges and the two blue lines on the cap, and
+  builds the pane as a separate Relief (`GLASS`).
+- Render kind "glass" (scratchpad `scripts/jobs_window.py` patches `env_build.render_sprite`): solids as usual, the
+  pane in its own pass, tinted (`TINT`, `ALPHA`).
+- Job scripts (scratchpad `scripts/`): `jobs_iwin.py` (tan), `jobs_dwin.py` (default), `jobs_swin.py` (slate, a
+  first try with the default module, not working yet). Compare with the ref: `iw_vsref.py`.
+- Render: `cd tools/blender/preview && SPRITE_SS=4 blender -b --factory-startup --python render.py -- <repo> <out>
+  <jobs.py> [ids]`.
+
+## Known breakage (fix not committed yet)
+- Commit b30dfa9d (join rule: `envtiles._with_runs` builds only the north/west runs) cut the copies a piece build
+  makes from 3 (own, +x, -x) to 2 (own, -x). Both `window()` wrappers asserted 3 calls, so **tan and default windows
+  no longer render on this branch** (AssertionError(2)).
+- Fix in the working tree, uncommitted (the user stopped the run): in both `wall3d_iwin.py` and
+  `wall3d_iwin_def.py`, `seq = (part, "m" if part in "mr" else None)` (the piece, then its -x copy) and
+  `assert calls[0] == len(seq)`. Not yet rendered to check.
+
+## Next
+1. Ask the user before starting a look. Show both ref layers (full + small) next to our render.
+2. Slate first (the user's current focus), from ref 44: a minimal l / m / r blockout, shown in a run, then stop.
+
+## Log
+- 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong, show both next time).
