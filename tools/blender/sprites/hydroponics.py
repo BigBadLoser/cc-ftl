@@ -1,19 +1,20 @@
-"""Hydroponics grow beds (family `hydroponics`). Local frame and placement: modkit.K (front = +v, where the crew
-stand to work the bed).
+"""Hydroponics grow beds (family `hydroponics`): the small bed `module.hydroponics` (2 x 1) and the large bed
+`module.hydroponics_large` (3 x 2). Local frame and placement: modkit.K (front = +v, where the crew stand to work it).
 
-The bed (chosen from a long look exploration; the other directions are in git history): two standing white tanks,
-one under each plant, and a pump between them, inside grey corner legs; a copper manifold along the front with a red
-valve on each tank. Above, a soil tray under a glass canopy in grey frames: it rises upright a short way, then slopes
-on its long sides to a glass roof; its ends are upright. A strut across the roof carries a white ring lamp, open in
-the middle so the plants show through it, one plant per tile.
-Layers: `.off` / `.on` are the bed; `.crop.<crop>.<stage>` is the crop drawn on top of the bed, rendered with the bed
-as a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
-and HYDRO_LAYERS narrow the build."""
+The small bed (chosen from a long look exploration; the other directions are in git history): two standing white
+tanks, one under each plant, and a pump between them, inside grey corner legs; a copper manifold along the front with
+a red valve on each tank. Above, a soil tray under a glass canopy in grey frames: it rises upright a short way, then
+slopes on its long sides to a glass roof; its ends are upright. A strut across the roof carries a white ring lamp,
+open in the middle so the plants show through it, one plant per tile. The large bed is one wide greenhouse over six
+plants in two rows, a lamp ring over each row and a strut along the roof between them, on two oval tanks.
+Sprites (see sprite_id): the bed lit and `.unpowered`, and `.crop.<crop>.<stage>` drawn on top of the bed, rendered
+with the bed as a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer)."""
 import math
 import os
 import random
 
 from . import core
+from .hydro_crops import CROPS, STAGES
 from .modkit import K
 
 
@@ -282,7 +283,7 @@ def bed(k, on):
     return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.14
 
 
-# ---- the large bed (3 x 2 tiles): options ---------------------------------------------------------------------------
+# ---- the large bed (3 x 2 tiles) --------------------------------------------------------------------------------------
 VQL = 0.96875                                    # the large bed's manifold line, its front face on the tile's edge
 
 
@@ -299,12 +300,12 @@ def _otank(k, u, v, w, d, z, h, on):
     k.box(u, gv + 0.008, z + 0.13, 0.03125, 0.02, (h - 0.28) * 0.6, _on(on, "cyan") if on else "lens")
 
 
-def _base_large(k, on, back=True):
+def _base_large(k, on):
     """Two oval tanks running front to back, one under each half, a pump between them lifting into one copper
     manifold along the front with a valve on each tank, in grey corner legs."""
     _frame_legs(k, 1.421875, 0.890625)
     for su in (-1, 1):
-        _otank(k, su * 0.76, 0.05 if back else 0.47, 1.3, 1.7 if back else 0.86, 0.04, 0.52, on)
+        _otank(k, su * 0.76, 0.05, 1.3, 1.7, 0.04, 0.52, on)
     zm, zb = 0.48, 0.084
     _pump(k, 0.0, 0.66, 0.0, on, s=1.2)
     _sq_pipe(k, [(0.0, 0.7, zb), (0.0, VQL, zb), (0.0, VQL, zm)])
@@ -313,18 +314,7 @@ def _base_large(k, on, back=True):
         _valve(k, su * 0.76, VQL, zm)
 
 
-def _unit(k, cv, on, dz=0.0, seed=3):
-    """One row of the large bed: a 3-tile sill, tray and canopy (posts between the plants), centred on v = cv,
-    lifted dz. Returns its plant spots with their soil height and ceiling."""
-    _ring(k, _cham(0, cv, 3.0, 0.9375, 0.02), _cham(0, cv, 2.86, 0.8, 0.02), 0.56 + dz, 0.1, "tFrame", top="tFrameL")
-    zs = 0.69 + dz
-    _tray(k, 0, 2.84, 0.8, 0.6 + dz, zs, seed, cv=cv)
-    _canopy_slope(k, 0, 2.92, 0.88, 0.66 + dz, 0.87 + dz, 1.36 + dz, 0.13, on, "tFrame", "tFrameL", "ringW", "ringWL",
-                  cv=cv, mids=[-0.5, 0.5])
-    return [(u, cv, zs, 1.14 + dz) for u in (-0.98, 0.0, 0.98)]
-
-
-def large_wide(k, on):
+def large(k, on):
     """One wide greenhouse over one tray: six plants in two rows, a lamp ring over each row, a strut along the middle
     of the roof between them."""
     _base_large(k, on)
@@ -339,150 +329,15 @@ def large_wide(k, on):
     return [(u, v, zs, 1.14) for v in (0.45, -0.45) for u in (-0.98, 0.0, 0.98)], zs, 1.14
 
 
-def large_twin(k, on):
-    """Two long greenhouses side by side, a front row and a back row of three plants."""
-    _base_large(k, on)
-    return _unit(k, 0.5, on) + _unit(k, -0.5, on, seed=5), 0.69, 1.14
-
-
-def large_tiered(k, on):
-    """The twin rows with the back row raised on a white riser, so its plants show over the front ones."""
-    dz = 0.3
-    _base_large(k, on, back=False)
-    _frame_legs(k, 1.421875, 0.390625, cv=-0.5, h=0.56 + dz)
-    k.box(0, -0.5, 0.0, 2.75, 0.75, 0.56 + dz, "tWhite", top="tWhiteL")                          # the riser
-    return _unit(k, 0.5, on) + _unit(k, -0.5, on, dz=dz, seed=5), 0.69, 1.14
-
-
-# ---- the crops: one plant per tile, in three stages, under the lamp (hmax over the soil) ------------------------------
-STAGES = ("sprout", "grow", "ripe")
-
-
-def _leaf(k, u, v, z, a, L, w, tilt, col):
-    """A flat leaf from (u, v, z) out along the angle a, L long and w wide, its tip tilted up by tilt."""
-    d = L * 0.48
-    k.box(u + d * math.cos(a), v + d * math.sin(a), z, L, w, 0.035, col, top=col, rz=a, ry=-tilt)
-
-
-def _greens(k, u, v, z, st, seed, hmax):
-    """Greens: a low, broad leafy head in bright fresh green. A sprout is a small upright rosette; half grown, one
-    open tier; ripe, two tiers of broad leaves round a tight crown."""
-    r = random.Random(seed * 11 + 5)
-    cols = ("leaf", "leafL", "leafD")
-    if st == "sprout":
-        for j in range(5):
-            _leaf(k, u, v, z, j * math.tau / 5 + r.uniform(-0.2, 0.2), 0.16, 0.09, 0.8, cols[j % 2])
-        return
-    g = 0.68 if st == "grow" else 1.0
-    tiers = ((11, 0.46, 0.17, 0.0, 0.2), (9, 0.34, 0.15, 0.06, 0.4), (7, 0.22, 0.12, 0.12, 0.65))
-    for tier, (n, L, w, zz, tilt) in enumerate(tiers):
-        for j in range(n):
-            a = j * math.tau / n + r.uniform(-0.15, 0.15) + tier * 0.4
-            sq = 0.75 if abs(math.sin(a)) > 0.7 else 1.0                       # the soil is narrower in v
-            _leaf(k, u, v, z + zz * g, a, L * g * sq, w * g, tilt + (0.15 if st == "grow" else 0), cols[(j + tier) % 3])
-    k.box(u, v, z + 0.06 * g, 0.2 * g, 0.2 * g, 0.2 * g, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
-
-
-def _beans(k, u, v, z, st, seed, hmax):
-    """Protein beans: a row of upright canes the full height (set at sowing), a dark green vine climbing each in a
-    column, pale pods hanging when ripe."""
-    r = random.Random(seed * 13 + 3)
-    canes = [(u + du, v + 0.1 + r.uniform(-0.03, 0.03)) for du in (-0.26, 0.0, 0.26)]     # towards the front
-    for cu, cv in canes:
-        _tube(k, [(cu, cv, z), (cu, cv, z + hmax - 0.02)], 0.022, "cane", n=4, phase=math.pi / 4)
-    reach, n = {"sprout": (0.22, 3), "grow": (0.5, 4), "ripe": (0.95, 11)}[st]
-    cols = ("beanL", "bean", "beanL", "beanD")
-    s = {"sprout": 0.7, "grow": 0.85, "ripe": 1.0}[st]
-    for i, (cu, cv) in enumerate(canes):
-        for j in range(n):
-            zz = z + (j + r.uniform(0.2, 0.8)) / n * reach * hmax
-            a = j * 2.4 + i                                                      # spiralling up the cane
-            _leaf(k, cu + 0.02 * math.cos(a), cv + 0.02 * math.sin(a), zz, a, 0.15 * s, 0.12 * s, r.uniform(-0.1, 0.3),
-                  cols[(i + j) % 4])
-        if st == "ripe":                                                         # low leaves spilling to the front
-            for j in range(2):
-                a = math.pi / 2 + r.uniform(-0.7, 0.7)
-                _leaf(k, cu + r.uniform(-0.06, 0.06), cv + 0.03, z + r.uniform(0.01, 0.05), a, 0.17, 0.13,
-                      r.uniform(0.1, 0.35), cols[(i + j + 1) % 4])
-        if st == "ripe":
-            for j in range(3):
-                zz = z + r.uniform(0.35, 0.62) * hmax                            # below the lamp, which hides the tops
-                a = r.uniform(0, math.tau)
-                k.box(cu + 0.07 * math.cos(a), cv + 0.07 * math.sin(a), zz - 0.15, 0.045, 0.045, 0.15, "pod", top="pod",
-                      rx=r.uniform(-0.15, 0.15))
-
-
-def _herbs(k, u, v, z, st, seed, hmax):
-    """Medicinal herbs: small bushy clumps in a grey-green touched with dark red; ripe, red flower spikes and pale
-    flowers over them."""
-    r = random.Random(seed * 17 + 7)
-    h = {"sprout": 0.08, "grow": 0.17, "ripe": 0.22}[st]
-    spots = [(0.0, 0.0)] + [(0.2 * math.cos(a), 0.17 * math.sin(a)) for a in (i * math.tau / 5 + 0.3 for i in range(5))]
-    spots += [(0.34 * math.cos(a), 0.26 * math.sin(a)) for a in (i * math.tau / 6 for i in range(6))]
-    if st == "sprout":
-        spots = spots[1::2]
-    cols = ("herb", "herbD", "herbL", "herbRD")
-    for i, (du, dv) in enumerate(spots):                   # each clump: small leaves over a dome
-        s = r.uniform(0.85, 1.1) * (1.15 if i == 0 else 1.0)
-        rad = (0.1 if st != "sprout" else 0.05) * s
-        for j in range(9 if st != "sprout" else 4):
-            a, e = r.uniform(0, math.tau), r.uniform(0.15, 1.2)
-            lu, lv = u + du + rad * math.cos(a) * math.cos(e), v + dv + rad * math.sin(a) * math.cos(e)
-            lz = z + h * s * (0.25 + 0.7 * math.sin(e) / math.sin(1.2))
-            k.box(lu, lv, lz, 0.08 * s, 0.05 * s, 0.03, cols[j % 4], top=cols[(j + 1) % 4], rz=a, ry=-0.5)
-        k.box(u + du, v + dv, z, rad * 1.2, rad * 1.2, h * s * 0.6, "herbD", taper=0.6)
-    if st == "ripe":
-        for j in range(12):
-            a, d = r.uniform(0, math.tau), r.uniform(0.04, 0.3)
-            cu, cv = u + d * math.cos(a), v + d * math.sin(a)
-            hs = r.uniform(0.28, min(0.37, hmax - 0.02))
-            k.box(cu, cv, z + 0.1, 0.025, 0.025, hs - 0.1, "herbD")
-            k.box(cu, cv, z + hs - 0.1, 0.07, 0.07, 0.12, "herbR", top="herbR", taper=0.55)
-        for j in range(16):
-            a, d = r.uniform(0, math.tau), r.uniform(0.02, 0.32)
-            k.box(u + d * math.cos(a), v + d * math.sin(a), z + h * 0.92, 0.055, 0.055, 0.04, "flowerW", top="flowerW")
-
-
-def _grain(k, u, v, z, st, seed, hmax):
-    """Grain: upright stalks in rows. A sprout is rows of green blades; half grown, green stalks with slim green
-    heads; ripe, gold straw as tall as the bed lets it be, each with a slim heavy head that nods. Each stalk is
-    thicker at its foot, where its blades flare out."""
-    r = random.Random(seed * 7 + 2)
-    rows = [(u + du + r.uniform(-0.03, 0.03), v + dv + r.uniform(-0.03, 0.03))
-            for du in (-0.3, -0.15, 0.0, 0.15, 0.3) for dv in (-0.18, 0.0, 0.18)]
-    if st == "sprout":
-        for cu, cv in rows:
-            for q in range(2):
-                k.box(cu + r.uniform(-0.02, 0.02), cv, z, 0.025, 0.025, r.uniform(0.07, 0.12), "leaf",
-                      rx=r.uniform(-0.35, 0.35), ry=r.uniform(-0.35, 0.35))
-        return
-    ripe = st == "ripe"
-    for i, (cu, cv) in enumerate(rows):
-        h = r.uniform(0.8, 1.0) * (hmax - 0.14) * (1.0 if ripe else 0.62)
-        stem = "straw" if ripe else "stalk"
-        k.box(cu, cv, z, 0.03, 0.03, h, stem)
-        k.box(cu, cv, z, 0.05, 0.05, h * 0.35, stem, taper=0.6)                     # thicker at the foot
-        for q in range(3):                                                         # blades flaring from the foot
-            b = r.uniform(0, math.tau)
-            _leaf(k, cu, cv, z + r.uniform(0.0, 0.06), b, r.uniform(0.13, 0.19), 0.04, r.uniform(0.75, 1.05),
-                  ("grainD", "straw", "stalk")[q] if ripe else ("leafD", "stalk", "leaf")[q])
-        a = r.uniform(0, math.tau)
-        if ripe:
-            k.box(cu, cv, z + h - 0.02, 0.055, 0.055, 0.15, ("grain", "grainD")[i % 2], top="grain", taper=0.55,
-                  rz=a, ry=0.3 * math.cos(a), rx=0.3 * math.sin(a))
-        else:
-            k.box(cu, cv, z + h - 0.02, 0.04, 0.04, 0.09, "stalk", top="leafL", taper=0.7, rz=a)
-
-
-CROPS = {"greens": _greens, "beans": _beans, "herbs": _herbs, "grain": _grain}
-VARIANTS = {"bed": (bed, (2, 1)), "large.wide": (large_wide, (3, 2)), "large.twin": (large_twin, (3, 2)),
-            "large.tiered": (large_tiered, (3, 2))}
+SIZES = {"module.hydroponics": (bed, (2, 1)), "module.hydroponics_large": (large, (3, 2))}
 LAYERS = ("off", "on") + tuple(f"crop.{c}.{s}" for c in CROPS for s in STAGES)
 
 
-def build(variant, layer, rot=0):
-    name = f"hydro_{variant.replace('.', '_')}_{layer.replace('.', '_')}_{rot}"
-    fn, fp = VARIANTS[variant]
+def build(asset, layer, rot=0):
+    """The objects of one sprite: the bed lit (`on`) or dark (`off`), or a crop layer (`crop.<crop>.<stage>`) with the
+    bed as its holdout."""
+    name = f"hydro_{asset.split('.')[-1]}_{layer.replace('.', '_')}_{rot}"
+    fn, fp = SIZES[asset]
     kb = K(name, fp, rot)
     kb.fp = fp
     plants, zs, ceil = fn(kb, layer == "on")                      # ceil: the underside of the lamp over the plants
@@ -505,8 +360,31 @@ def build(variant, layer, rot=0):
     return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
 
+def hydroponics(state="on", rot=0):
+    """The small bed lit, for the damage pack's `.damaged` / `.destroyed` (damage.py)."""
+    return build("module.hydroponics", "on", rot)
+
+
+def sprite_id(asset, layer, rot):
+    """`<asset>` (r0) or `<asset>.rN` lit, `<asset>.rN.unpowered` dark (the game's module art chain), and
+    `<asset>.crop.<crop>.<stage>.rN` for a crop layer."""
+    if layer == "on":
+        return asset if rot == 0 else f"{asset}.r{rot}"
+    if layer == "off":
+        return f"{asset}.r{rot}.unpowered"
+    return f"{asset}.{layer}.r{rot}"
+
+
 def jobs(rots=range(4)):
-    names = os.environ.get("HYDRO_VARIANTS", ",".join(VARIANTS)).split(",")
+    """Every size, rotation and layer; HYDRO_SIZES (asset ids) and HYDRO_LAYERS narrow it for previews."""
+    sizes = os.environ.get("HYDRO_SIZES", ",".join(SIZES)).split(",")
     layers = os.environ.get("HYDRO_LAYERS", ",".join(LAYERS)).split(",")
-    return [(f"module.hydroponics.{v}.{s}", VARIANTS[v][1], "over" if s.startswith("crop.") else "prop",
-             lambda v=v, s=s: build(v, s)) for v in names for s in layers]
+    out = []
+    for a in sizes:
+        fp = SIZES[a][1]
+        for r in rots:
+            f = fp if r % 2 == 0 else (fp[1], fp[0])
+            for ly in layers:
+                out.append((sprite_id(a, ly, r), f, "over" if ly.startswith("crop.") else "prop",
+                            lambda a=a, ly=ly, r=r: build(a, ly, r)))
+    return out

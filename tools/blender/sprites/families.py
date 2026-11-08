@@ -27,7 +27,7 @@
             MODPACK_ROTS=1 renders r0 only, for quick previews)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
-  hydroponics  the hydroponics bay, .grow0 .. .grow3, each also .active (hydroponics.py; MODPACK_ROTS as storage_set)
+  hydroponics  the hydroponics beds (small and large), lit and .unpowered, and their crop layers (hydroponics.py; MODPACK_ROTS as storage_set)
   workbench the workbench, idle and .active (workbench.py; MODPACK_ROTS as storage_set)
   storage_ore   ore storage: the hydraulic tip bin, 2x2 and 3x2, 4 rotations, empty and iron / ice / rare fills (tip_bin.py)
   scrapper      the scrapper module: 4x2, 4 rotations; idle, unpowered, 4 active frames (scrapper.py)
