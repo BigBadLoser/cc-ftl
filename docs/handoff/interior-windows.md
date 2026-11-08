@@ -9,7 +9,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw1w`); next N1 on the user's word. Then drone, civil; each its own
+- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown. Then drone, civil; each its own
   module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
   ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -320,7 +320,8 @@ Marked ref (both layers, numbered): scratchpad
   - N0: `sprites/wall3d_iwin_navy.py` + `preview/jobs_nwin.py` (pieces `tile.wall.navy.full.m10.win.{l,m,r}`), the
     shared window wrapper, pane and glass; our navy ramp kept under the opening and cut: the sill's front edge 11 rows
     down our 37 between the end blocks, its flat top 8 px deep, the grey slope to the pane.
-  - N1: the end blocks' trays (2). N2: m panel (4) with its seam. N3: pockets (3, 7). N3b (the user, after the
+  - N1: dropped (the user: when the ref renders, the posts sit on top of the blocks; part 2 is under them).
+    N2: m panel (4) with its seam. N3: pockets (3, 7): built (nw3c). N3b (the user, after the
     slots): the end blocks' sides facing the cut sloped down to the sill, as the ref's (ours are upright).
   - N4: upper layer: beam (A, B, C), then posts (D, E, F).
 
@@ -445,3 +446,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user on N0: a white block where the glass should be. nw1w: the back face and ledge gone; the sill runs
   across the wall, the pane stands on it, its far half shows grey through the glass as in the ref.
 - 2026-11-08: the user on nw1w: the end blocks' sides lack the ref's slope down to the sill; to do after the slots (N3b).
+- 2026-11-08: N1 dropped (the posts sit on the blocks). N3 slots (nw3c): window px 16-38 and 58-80, the ramp's front cut
+  out past the sill's front edge, between the foot's top and the sill; a floor (fNW2), a back (fNW3) up to the sill's
+  edge, sides the slope's section (fNS2). Note: the clip works in mesh coords (near side mesh -y), the quads in grid
+  coords (core.G flips y: near side grid +y). The red foot still runs under the slots.

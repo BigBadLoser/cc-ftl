@@ -17,7 +17,11 @@ PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
 CUT_Z = 8                   # art px up: the sill under the ramp's top (the ref's cut: 8 of its 30 rows, ~30%; ours 8 of 26)
-COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4"}
+POCKETS = ((16, 38), (58, 80))  # px along the window from its -x end: the slots in the front either side of the middle
+                                # panel (the ref's 21 and 25 read through its lean; ours 22 each)
+COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
+       "p_floor": "fNW2", "p_back": "fNW3", "p_side": "fNS2"}
+OFF = {"l": 0, "m": 1, "r": 2}  # a piece's tiles from the window's -x end
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -109,6 +113,57 @@ def _cut(k, x0, x1, z1, cells):
         m.f = out
 
 
+def _pockets_x(part):
+    """The slots along x in a piece's frame (past the tile where they run on)."""
+    o = -0.5 - OFF[part]
+    return [(o + a * PX, o + b * PX) for a, b in POCKETS]
+
+
+def _pocket_cut(k, pa, pb):
+    """Take the ramp's front out between pa and pb: everything out past the sill's front edge (the near side: mesh -y)
+    over the slot's floor (the foot's top) and under the sill (not the header's tube, out past it high up)."""
+    ye, zf, zs = -_front(), W.foot(), _zs()
+    inx = [(0, pa, 1), (0, pb, -1)]
+    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zf, -1)],
+               inx + [(1, ye, -1), (2, zs, 1)]]
+    for m in (k.m, k.ns):
+        if m is None:
+            continue
+        out = []
+        for f in m.f:
+            pts = [m.v[i] for i in f[0]]
+            xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
+            if (max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zf + 1e-9 or
+                    min(zs) >= _zs() - 1e-9):
+                out.append(f)
+                continue
+            for r in regions:
+                q = _clip(pts, r)
+                if len(q) < 3:
+                    continue
+                n = Vector(q[1]) - Vector(q[0])
+                if max((Vector(a) - Vector(q[0])).cross(n).length for a in q) < 1e-10:
+                    continue
+                base = len(m.v)
+                m.v += [tuple(p) for p in q]
+                out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+        m.f = out
+
+
+def _pocket(k, pa, pb):
+    """A slot's faces: its floor out to the ramp's foot, its back up to the sill's front edge, its sides (the slope's
+    section over the floor). The near side: grid +y (mesh -y, as _pocket_cut works)."""
+    ye, zf, zs, yf = _front(), W.foot(), _zs(), 0.5
+    a, b = max(pa, -0.5), min(pb, 0.5)
+    if b - a < 1e-9:
+        return
+    _quad(k, [(a, ye, zf), (b, ye, zf), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
+    _quad(k, [(a, ye, zf), (b, ye, zf), (b, ye, zs), (a, ye, zs)], (0, 1, 0), COL["p_back"])
+    for u, sd in ((pa, 1), (pb, -1)):
+        if -0.5 < u < 0.5:
+            _quad(k, [(u, ye, zf), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
+
+
 def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
@@ -149,6 +204,9 @@ def hook(k, sp, own=True):
     _cut(k, x0, x1, z1, cells)
     _tops(k, cells)
     _ends(k, x0, x1, z1, cells)
+    for pa, pb in _pockets_x(PART):
+        _pocket_cut(k, pa, pb)
+        _pocket(k, pa, pb)
     a, b = max(x0, -0.5), min(x1, 0.5)
     yl = _line()
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
@@ -181,8 +239,8 @@ def _header_foot():
 def window(fn, part):
     """fn: navy's straight piece builder (tile.wall.navy.full.m10). (own, wide, pane objects)."""
     calls = [0]
-    seq = (part, "m" if part in "mr" else None)        # the piece; its copy one tile on at -x (envtiles._with_runs
-    #   builds only the runs drawn before it): the window running on into it, else plain
+    seq = (part, {"m": "l", "r": "m"}.get(part))       # the piece; its copy one tile on at -x (envtiles._with_runs
+    #   builds only the runs drawn before it): the window's tile there, else plain
 
     def each(k, sp):
         global PART
