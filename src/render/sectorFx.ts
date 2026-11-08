@@ -74,7 +74,8 @@ export function createSectorFx(
   content: { weapons: Readonly<Record<string, WeaponDef>>; modules: Readonly<Record<string, ModuleDef>> },
   hull: (ship: number) => GridLike | undefined = () => undefined,
 ): SectorFx {
-  const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number } }>();
+  /** In-flight shots: their sprite, position, muzzle point and bolt asset (`art`, asked for again each frame: see `update`). */
+  const shots = new Map<number, { spr: Sprite; x: number; y: number; from: { x: number; y: number }; art: string }>();
   const shields = createShieldView(world, atlas, { dome: L.fx, add: L.fxAdd }, hull);
   /** Render hints of the shots in flight (a fitted upgrade's tint, blast and trail), from the firing event. */
   const looks = new Map<number, ShotLook>();
@@ -225,10 +226,12 @@ export function createSectorFx(
           if (tint !== undefined) recolor(spr, tint); // an upgraded shot: its neutral bolt (or its own, lacking one) recoloured
           spr.blendMode = 'add';
           L.sorted.addChild(spr);
-          shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0) }));
+          shots.set(id, (sh = { spr, x: a.x, y: a.y, from: secArt(p.x0, p.y0), art: bolt }));
         }
         sh.x = a.x;
         sh.y = a.y;
+        // A neutral bolt's sheet (upgrades) is not pinned like fx: asking for it each frame marks it in use, so an env sweep can't evict it mid-flight.
+        atlas.stat(sh.art);
         // From the roof turret down to the target's floor level.
         const h = MUZZLE_H + (IMPACT_H - MUZZLE_H) * t;
         sh.spr.position.set(Math.round(a.x), Math.round(a.y - h));
