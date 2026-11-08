@@ -68852,25 +68852,6 @@
     3
    ]
   },
-  "module.hydroponics": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 1289,
-    "y": 1,
-    "w": 96,
-    "h": 99
-   },
-   "anchor": {
-    "x": 64,
-    "y": 84
-   },
-   "footprint": [
-    2,
-    1
-   ],
-   "glow": true
-  },
   "module.hydroponics.crop.beans.grow.r0": {
    "kind": "static",
    "sheet": "hydroponics",
@@ -69791,7 +69772,25 @@
     1
    ]
   },
-  "module.hydroponics.r0.unpowered": {
+  "module.hydroponics.r0.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 1289,
+    "y": 1,
+    "w": 96,
+    "h": 99
+   },
+   "anchor": {
+    "x": 64,
+    "y": 84
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.hydroponics.r0.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -69807,24 +69806,6 @@
    "footprint": [
     2,
     1
-   ]
-  },
-  "module.hydroponics.r1": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 1483,
-    "y": 1,
-    "w": 96,
-    "h": 99
-   },
-   "anchor": {
-    "x": 32,
-    "y": 84
-   },
-   "footprint": [
-    1,
-    2
    ],
    "glow": true
   },
@@ -69883,7 +69864,25 @@
     2
    ]
   },
-  "module.hydroponics.r1.unpowered": {
+  "module.hydroponics.r1.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 1483,
+    "y": 1,
+    "w": 96,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 84
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.hydroponics.r1.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -69899,24 +69898,6 @@
    "footprint": [
     1,
     2
-   ]
-  },
-  "module.hydroponics.r2": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 1677,
-    "y": 1,
-    "w": 96,
-    "h": 99
-   },
-   "anchor": {
-    "x": 64,
-    "y": 84
-   },
-   "footprint": [
-    2,
-    1
    ],
    "glow": true
   },
@@ -69975,7 +69956,25 @@
     1
    ]
   },
-  "module.hydroponics.r2.unpowered": {
+  "module.hydroponics.r2.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 1677,
+    "y": 1,
+    "w": 96,
+    "h": 99
+   },
+   "anchor": {
+    "x": 64,
+    "y": 84
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.hydroponics.r2.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -69991,24 +69990,6 @@
    "footprint": [
     2,
     1
-   ]
-  },
-  "module.hydroponics.r3": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 1871,
-    "y": 1,
-    "w": 96,
-    "h": 99
-   },
-   "anchor": {
-    "x": 32,
-    "y": 84
-   },
-   "footprint": [
-    1,
-    2
    ],
    "glow": true
   },
@@ -70068,7 +70049,25 @@
     2
    ]
   },
-  "module.hydroponics.r3.unpowered": {
+  "module.hydroponics.r3.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 1871,
+    "y": 1,
+    "w": 96,
+    "h": 99
+   },
+   "anchor": {
+    "x": 32,
+    "y": 84
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.hydroponics.r3.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -70083,24 +70082,6 @@
    },
    "footprint": [
     1,
-    2
-   ]
-  },
-  "module.hydroponics_large": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 1,
-    "y": 1,
-    "w": 160,
-    "h": 130
-   },
-   "anchor": {
-    "x": 96,
-    "y": 115
-   },
-   "footprint": [
-    3,
     2
    ],
    "glow": true
@@ -71024,7 +71005,25 @@
     2
    ]
   },
-  "module.hydroponics_large.r0.unpowered": {
+  "module.hydroponics_large.r0.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 160,
+    "h": 130
+   },
+   "anchor": {
+    "x": 96,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.hydroponics_large.r0.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -71040,24 +71039,6 @@
    "footprint": [
     3,
     2
-   ]
-  },
-  "module.hydroponics_large.r1": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 323,
-    "y": 1,
-    "w": 160,
-    "h": 130
-   },
-   "anchor": {
-    "x": 64,
-    "y": 115
-   },
-   "footprint": [
-    2,
-    3
    ],
    "glow": true
   },
@@ -71116,7 +71097,25 @@
     3
    ]
   },
-  "module.hydroponics_large.r1.unpowered": {
+  "module.hydroponics_large.r1.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 323,
+    "y": 1,
+    "w": 160,
+    "h": 130
+   },
+   "anchor": {
+    "x": 64,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.hydroponics_large.r1.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -71132,24 +71131,6 @@
    "footprint": [
     2,
     3
-   ]
-  },
-  "module.hydroponics_large.r2": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 645,
-    "y": 1,
-    "w": 160,
-    "h": 130
-   },
-   "anchor": {
-    "x": 96,
-    "y": 115
-   },
-   "footprint": [
-    3,
-    2
    ],
    "glow": true
   },
@@ -71208,7 +71189,25 @@
     2
    ]
   },
-  "module.hydroponics_large.r2.unpowered": {
+  "module.hydroponics_large.r2.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 645,
+    "y": 1,
+    "w": 160,
+    "h": 130
+   },
+   "anchor": {
+    "x": 96,
+    "y": 115
+   },
+   "footprint": [
+    3,
+    2
+   ]
+  },
+  "module.hydroponics_large.r2.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -71224,24 +71223,6 @@
    "footprint": [
     3,
     2
-   ]
-  },
-  "module.hydroponics_large.r3": {
-   "kind": "static",
-   "sheet": "hydroponics",
-   "frame": {
-    "x": 967,
-    "y": 1,
-    "w": 160,
-    "h": 130
-   },
-   "anchor": {
-    "x": 64,
-    "y": 115
-   },
-   "footprint": [
-    2,
-    3
    ],
    "glow": true
   },
@@ -71300,7 +71281,25 @@
     3
    ]
   },
-  "module.hydroponics_large.r3.unpowered": {
+  "module.hydroponics_large.r3.off": {
+   "kind": "static",
+   "sheet": "hydroponics",
+   "frame": {
+    "x": 967,
+    "y": 1,
+    "w": 160,
+    "h": 130
+   },
+   "anchor": {
+    "x": 64,
+    "y": 115
+   },
+   "footprint": [
+    2,
+    3
+   ]
+  },
+  "module.hydroponics_large.r3.on": {
    "kind": "static",
    "sheet": "hydroponics",
    "frame": {
@@ -71316,7 +71315,8 @@
    "footprint": [
     2,
     3
-   ]
+   ],
+   "glow": true
   },
   "module.incendiary_launcher.bay.r0": {
    "kind": "static",

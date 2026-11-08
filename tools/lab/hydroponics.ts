@@ -10,9 +10,8 @@ const SIZES: Record<string, { asset: string; fp: [number, number] }> = {
 const CROPS = ['greens', 'beans', 'herbs', 'grain'];
 const STAGES = ['sprout', 'grow', 'ripe'];
 
-/** The bed's sprite: lit (`<asset>` at r0, `<asset>.rN`) or dark (`<asset>.rN.unpowered`), as the game's module art chain. */
-const bedId = (asset: string, rot: number, on: boolean): string =>
-  on ? (rot === 0 ? asset : `${asset}.r${rot}`) : `${asset}.r${rot}.unpowered`;
+/** The bed's sprite, lit `<asset>.rN.on` or dark `<asset>.rN.off`, as the game's bed chain (render/moduleArt.ts). */
+const bedId = (asset: string, rot: number, on: boolean): string => `${asset}.r${rot}.${on ? 'on' : 'off'}`;
 const cropId = (asset: string, crop: string, stage: string, rot: number): string => `${asset}.crop.${crop}.${stage}.r${rot}`;
 
 const TW = 64;
@@ -48,7 +47,7 @@ function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number):
 
 /**
  * `?panel=hydroponics`: the grow beds (#59), each crop layer drawn over its lit bed as the game will stack them. One row
- * per size and rotation: the bed dark (`.unpowered`) and lit, then each crop at each stage. `sizes=small,large`,
+ * per size and rotation: the bed dark (`.off`) and lit (`.on`), then each crop at each stage. `sizes=small,large`,
  * `rots=0,1,2,3`, `crops=greens,beans,herbs,grain`, `stages=sprout,grow,ripe` (default ripe).
  */
 export const hydroponicsPanel: LabPanel = {

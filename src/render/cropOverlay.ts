@@ -5,7 +5,7 @@ import { Z_PX } from './heights';
 import type { CropStage } from './cropStage';
 
 /**
- * PLACEHOLDER crop layer for hydroponics beds until `module.hydroponics[_large].crop.<crop>.<stage>.r<n>` lands (docs/art-prompts/hydroponics.md):
+ * Stand-in crop layer for a hydroponics bed whose `<asset>.crop.<crop>.<stage>.r<n>` sprite is missing (a new crop before its art):
  * small plant marks on a footprint's troughs, by crop (colour and shape) and stage (sprout, grow, ripe). Anchored like a module sprite, at the
  * footprint's front tile, so it replaces the real layer one for one.
  */

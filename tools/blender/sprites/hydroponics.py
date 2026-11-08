@@ -7,7 +7,7 @@ a red valve on each tank. Above, a soil tray under a glass canopy in grey frames
 slopes on its long sides to a glass roof; its ends are upright. A strut across the roof carries a white ring lamp,
 open in the middle so the plants show through it, one plant per tile. The large bed is one wide greenhouse over six
 plants in two rows, a lamp ring over each row and a strut along the roof between them, on two oval tanks.
-Sprites (see sprite_id): the bed lit and `.unpowered`, and `.crop.<crop>.<stage>` drawn on top of the bed, rendered
+Sprites (see sprite_id): the bed lit (`.on`) and dark (`.off`), and `.crop.<crop>.<stage>` drawn on top of the bed, rendered
 with the bed as a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer)."""
 import math
 import os
@@ -361,12 +361,10 @@ def build(asset, layer, rot=0):
 
 
 def sprite_id(asset, layer, rot):
-    """`<asset>` (r0) or `<asset>.rN` lit, `<asset>.rN.unpowered` dark (the game's module art chain), and
+    """`<asset>.rN.on` lit, `<asset>.rN.off` dark (the bed chain in src/render/moduleArt.ts), and
     `<asset>.crop.<crop>.<stage>.rN` for a crop layer."""
-    if layer == "on":
-        return asset if rot == 0 else f"{asset}.r{rot}"
-    if layer == "off":
-        return f"{asset}.r{rot}.unpowered"
+    if layer in ("on", "off"):
+        return f"{asset}.r{rot}.{layer}"
     return f"{asset}.{layer}.r{rot}"
 
 

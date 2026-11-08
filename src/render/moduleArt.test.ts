@@ -208,4 +208,17 @@ describe('hydroponics layers', () => {
     expect(sown(70, false)[1]!.crop?.stage).toBe('grow');
     expect(sown(100, true)[1]!.crop?.stage).toBe('ripe');
   });
+
+  it('a damaged bed shows its damage art ahead of `.on` / `.off`, and a destroyed one drops its crop', () => {
+    const w = plotWorld({ crop: 'crop.beans', planted: 'crop.beans', grown: 10, need: 100, ready: false });
+    const look = (hp: number) => ({ off: false, now: 0, hp, maxHp: 60, has: () => true });
+    const hurt = moduleLayers(w, 1, { ...mb, hp: 20 }, bed, false, false, null, look(20));
+    expect(hurt[0]!.chain[0]).toBe('module.hydroponics.r1.damaged');
+    expect(hurt[0]!.chain).toContain('module.hydroponics.r1.on');
+    expect(hurt[1]!.crop?.crop).toBe('beans');
+    const gone = moduleLayers(w, 1, { ...mb, hp: 0 }, bed, false, false, null, look(0));
+    expect(gone).toHaveLength(1);
+    expect(gone[0]!.chain[0]).toBe('module.hydroponics.r1.destroyed');
+    expect(moduleLayers(w, 1, mb, bed, false, false, null, look(60))[0]!.chain[0]).toBe('module.hydroponics.r1.on');
+  });
 });
