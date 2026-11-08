@@ -42,7 +42,12 @@ const ISOLATED = [
 const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env; // no @types/node here
 const SLOW = env.VITEST_FAST === '1' ? ['**/*.slow.test.ts'] : [];
 /** The soak tier (`*.soak.test.ts`: design-number runs over game hours or many seeds) runs only with `VITEST_SOAK=1` (`npm run test:soak`). */
-const SOAK = env.VITEST_SOAK === '1' || env.SALVAGE_BENCH || env.SALVAGE_BENCH_ONLY ? [] /* the salvage bench env vars opt in to its soak file */ : ['**/*.soak.test.ts'];
+const SOAK =
+  env.VITEST_SOAK === '1'
+    ? []
+    : env.SALVAGE_BENCH || env.SALVAGE_BENCH_ONLY
+      ? ['**/!(salvageBench).soak.test.ts'] // the salvage bench env vars opt in to its own soak file only
+      : ['**/*.soak.test.ts'];
 
 export default defineConfig({
   define: { __COMMIT__: JSON.stringify(commit()) },
