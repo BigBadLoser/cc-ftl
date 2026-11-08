@@ -44,6 +44,8 @@ export interface Vehicle {
   outbound?: boolean;
   /** Trade: the shuttle is on a trade run and flies itself, so launching, undocking and returning need no pilot. Cleared when it is back in its bay. */
   autopilot?: boolean;
+  /** An escape pod docked and emptied: the tick it casts off (escapePodSystem). Cleared when it undocks. */
+  castOff?: number;
 }
 export const VehicleC = defineComponent<Vehicle>('vehicle');
 

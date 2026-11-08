@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   import type { UiApi, UiModule, UiUpgradeItem } from '../api';
   import ItemIcon from '../ItemIcon.svelte';
 
@@ -27,7 +28,7 @@
       {#if slot.fitted}
         <ItemIcon {api} item={slot.fitted.item} size={40} />
         <span class="txt"><b>{slot.fitted.name}</b><small>{row(slot.fitted)}</small></span>
-        <button class="act" data-testid="upgrade-remove" disabled={!!slot.job} title="An engineer takes it out and puts it back in cargo" onclick={() => api.dispatch({ type: 'module.removeUpgrade', moduleId: m.id })}>Remove</button>
+        <button class="act" data-testid="upgrade-remove" disabled={!!slot.job} use:tip={{ text: 'An engineer takes it out and puts it back in cargo' }} onclick={() => api.dispatch({ type: 'module.removeUpgrade', moduleId: m.id })}>Remove</button>
       {:else}
         <span class="empty">Empty</span>
       {/if}
@@ -36,7 +37,7 @@
       <div class="row" data-testid="upgrade-option">
         <ItemIcon {api} item={o.item} size={40} />
         <span class="txt"><b>{o.name} <em>×{o.count}</em></b><small>{row(o)}</small></span>
-        <button class="act" disabled={!!slot.job} title={slot.fitted ? 'Swaps it: the fitted one goes back to cargo' : 'An engineer fetches it from cargo and installs it'} onclick={() => api.dispatch({ type: 'module.fitUpgrade', moduleId: m.id, item: o.item })}>{slot.fitted ? 'Swap' : 'Install'}</button>
+        <button class="act" disabled={!!slot.job} use:tip={{ text: slot.fitted ? 'Swaps it: the fitted one goes back to cargo' : 'An engineer fetches it from cargo and installs it' }} onclick={() => api.dispatch({ type: 'module.fitUpgrade', moduleId: m.id, item: o.item })}>{slot.fitted ? 'Swap' : 'Install'}</button>
       </div>
     {:else}
       {#if !slot.fitted}<div class="none">No upgrades in cargo that fit.</div>{/if}

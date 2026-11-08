@@ -4,6 +4,7 @@
   import OpinionHover from './OpinionHover.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import SelectBox from './SelectBox.svelte';
+  import { TipHost, tip } from './kit';
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
@@ -265,10 +266,10 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" title="Starmap turn (one per hop, and one every 3 minutes of game time) and game time played" data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
+    <span class="tick" use:tip={{ text: 'Starmap turn (one per hop, and one every 3 minutes of game time) and game time played' }} data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
-        <button class="tile" class:on={snap?.speed === s.speed} title={s.label} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
+        <button class="tile" class:on={snap?.speed === s.speed} use:tip={{ text: s.label }} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
       {/each}
     </span>
   </span>
@@ -277,6 +278,7 @@
 <svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
+<TipHost />
 <SelectBox {api} />
 <ContextMenu {api} />
 
@@ -323,10 +325,10 @@
 {/if}
 {#if fightHud}<CombatHud {api} {combat} />{/if}
 {#if !fightHud}<ToolBar {api}>
-    <button class="tile" class:on={cutaway !== 'auto'} title="Walls: {cutLabel[cutaway]}" aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
-    <button class="tile" class:on={roofOn} aria-pressed={roofOn} title="Roof: {roofOn ? 'on (outside view)' : 'off'}" aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
+    <button class="tile" class:on={cutaway !== 'auto'} use:tip={{ text: `Walls: ${cutLabel[cutaway]}` }} aria-label="Walls" onclick={cycleWalls}><Icon name="walls" size={18} /></button>
+    <button class="tile" class:on={roofOn} aria-pressed={roofOn} use:tip={{ text: `Roof: ${roofOn ? 'on (outside view)' : 'off'}` }} aria-label="Roof" data-testid="toggle-roof" onclick={toggleRoof}><Icon name="roof" size={18} /></button>
     <OverlayPicker {api} />
-    <button class="tile" class:on={reporting} title="Report a bug" aria-label="Report a bug" data-testid="report-bug" onclick={openReport}><Icon name="debug" size={18} /></button>
+    <button class="tile" class:on={reporting} use:tip={{ text: 'Report a bug' }} aria-label="Report a bug" data-testid="report-bug" onclick={openReport}><Icon name="debug" size={18} /></button>
 </ToolBar>{/if}
 {#if fightHud}
   <!-- the colony inspector and build tools give way to the combat HUD -->

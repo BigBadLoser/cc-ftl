@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Chip, Meter } from './kit';
+  import { Chip, Meter, tip } from './kit';
   /**
    * The starmap's side drawer (right on desktop, a bottom sheet on phones). Docked: the picked node's sector info, the fuel info,
    * the route hop by hop, and Jump (which opens the confirm step in place when the jump would leave something behind). In hyperspace:
@@ -9,7 +9,7 @@
   import JumpConfirm from './JumpConfirm.svelte';
   import Icon from './Icon.svelte';
   import type { UiFtl } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import StarmapEncounter from './StarmapEncounter.svelte';
   import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
@@ -51,7 +51,7 @@
 </script>
 
 <aside class="sheet drawer" data-testid="starmap-drawer">
-  <PanelHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
+  <PaneHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
 
   {#if travel}
     {#each map.encounters.filter((x) => x.kind !== 'interdict') as e (e.id)}
@@ -71,8 +71,8 @@
     <section>
       <h4>Fuel</h4>
       <div class="cells">
-        <span class="cell" class:bad={map.fuel < 2} title="Fuel left"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
-        <span class="cell" title="FTL charge"><Icon name="bolt" size={18} /><b>{map.charge}/{map.chargeMax}</b><small>s</small></span>
+        <span class="cell" class:bad={map.fuel < 2} use:tip={{ text: 'Fuel left' }}><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
+        <span class="cell" use:tip={{ text: 'FTL charge' }}><Icon name="bolt" size={18} /><b>{map.charge}/{map.chargeMax}</b><small>s</small></span>
       </div>
     </section>
     <p class="note" class:warn={travel.phase === 'noFuel'}>{dropNote}</p>
@@ -92,12 +92,12 @@
         <div class="row">{node.structures.length ? node.structures.join(', ') : 'Empty space'}</div>
         {#if node.resources.length}<div class="row dim">Resources: {node.resources.join(', ')}</div>{/if}
         {#each node.jobs ?? [] as j, i (i)}<div class="row job" class:bounty={j.kind === 'bounty'} data-testid="starmap-job">{j.label}</div>{/each}
-        {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" title="Notable stock here"><span class="dim">Stock</span>{#each node.hints as h (h)}<Chip size="md" tone="dim" outline>{h}</Chip>{/each}</div>{/if}
+        {#if node.hints?.length}<div class="row stock" data-testid="starmap-hints" use:tip={{ text: 'Notable stock here' }}><span class="dim">Stock</span>{#each node.hints as h (h)}<Chip size="md" tone="dim" outline>{h}</Chip>{/each}</div>{/if}
         {#if node.market}
-          <div class="row market" data-testid="starmap-market" title="Prices follow the port's stock: cheap where plentiful, dear where scarce. Cheap goods show what they sell for, wanted goods what they pay.">
+          <div class="row market" data-testid="starmap-market" use:tip={{ text: 'Prices follow the port\'s stock: cheap where plentiful, dear where scarce. Cheap goods show what they sell for, wanted goods what they pay.' }}>
             <span class="dim">Market</span>
-            {#each node.market.cheap as g (g.name)}<span class="good cheap" title="{g.name}: sells for {g.price} ₵"><Icon name="chevDown" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
-            {#each node.market.dear as g (g.name)}<span class="good dear" title="{g.name}: pays {g.price} ₵"><Icon name="chevUp" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
+            {#each node.market.cheap as g (g.name)}<span class="good cheap" use:tip={{ text: `${g.name}: sells for ${g.price} ₵` }}><Icon name="chevDown" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
+            {#each node.market.dear as g (g.name)}<span class="good dear" use:tip={{ text: `${g.name}: pays ${g.price} ₵` }}><Icon name="chevUp" size={11} />{g.name} <b>{g.price}₵</b></span>{/each}
             {#if !node.market.cheap.length && !node.market.dear.length}<span class="dim">prices steady</span>{/if}
           </div>
         {/if}
@@ -105,7 +105,7 @@
         {#if traffic.length}
           <ul class="traffic" data-testid="starmap-traffic">
             {#each traffic as f (f.id)}
-              <li class:hostile={f.hostile} title={`${f.heading}. Home: ${f.home}`}>
+              <li class:hostile={f.hostile} use:tip={{ text: `${f.heading}. Home: ${f.home}` }}>
                 <i style={`background: ${toneColor(f.tone)}`}></i>
                 <span><b>{f.name}</b> <small>{f.faction} {f.role.toLowerCase()}</small></span>
                 <small class="sub">{f.heading.endsWith(f.home) ? f.heading : `${f.heading} · home ${f.home}`}</small>
@@ -123,14 +123,14 @@
       <section>
         <h4>Fuel</h4>
         <div class="cells" data-testid="starmap-route">
-          <span class="cell" title="Fuel now"><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
-          <span class="cell" class:bad={!route.fuelOk} title="Fuel the whole route burns"><Icon name="fuel" size={18} /><b>{route.fuel}</b><small>burn</small></span>
+          <span class="cell" use:tip={{ text: 'Fuel now' }}><Icon name="fuel" size={18} /><b>{map.fuel}</b></span>
+          <span class="cell" class:bad={!route.fuelOk} use:tip={{ text: 'Fuel the whole route burns' }}><Icon name="fuel" size={18} /><b>{route.fuel}</b><small>burn</small></span>
           {#if route.fuelShort > 0}
-            <span class="cell bad" title="Fuel missing for the whole route" data-testid="starmap-fuel-short"><Icon name="fuel" size={18} /><b>{route.fuelShort}</b><small>short</small></span>
+            <span class="cell bad" use:tip={{ text: 'Fuel missing for the whole route' }} data-testid="starmap-fuel-short"><Icon name="fuel" size={18} /><b>{route.fuelShort}</b><small>short</small></span>
           {:else}
-            <span class="cell" title="Fuel left after the route" data-testid="starmap-fuel-left"><Icon name="fuel" size={18} /><b>{map.fuel - route.fuel}</b><small>left</small></span>
+            <span class="cell" use:tip={{ text: 'Fuel left after the route' }} data-testid="starmap-fuel-left"><Icon name="fuel" size={18} /><b>{map.fuel - route.fuel}</b><small>left</small></span>
           {/if}
-          <span class="cell" class:bad={!route.chargeOk} title="FTL charge needed to enter hyperspace (spent once)"><Icon name="bolt" size={18} /><b>{route.nextCharge}</b><small>s</small></span>
+          <span class="cell" class:bad={!route.chargeOk} use:tip={{ text: 'FTL charge needed to enter hyperspace (spent once)' }}><Icon name="bolt" size={18} /><b>{route.nextCharge}</b><small>s</small></span>
         </div>
         {#if !route.fuelOk}<p class="note warn">Not enough fuel for the whole route: the trip will stop where the fuel runs out.</p>{/if}
       </section>

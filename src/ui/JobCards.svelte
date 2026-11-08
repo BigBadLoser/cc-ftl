@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiJob, UiJobs, UiStrength } from './api';
   import Icon from './Icon.svelte';
 
@@ -70,7 +71,7 @@
         {@render head(j)}
         <div class="act">
           <button class="ghost" data-testid="job-refuse" onclick={() => api.dispatch({ type: 'jobs.refuse', key: j.key })}>Refuse</button>
-          <button class="commit" data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
+          <button class="commit" data-testid="job-accept" disabled={full} use:tip={{ text: full ? `You hold ${jobs.max} jobs already` : '' }} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
         </div>
       </li>
     {/each}
@@ -80,7 +81,7 @@
         {@render head(j)}
         {@render strength(j)}
         <div class="act">
-          <button class="commit" data-testid="job-accept" disabled={full} title={full ? `You hold ${jobs.max} jobs already` : ''} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
+          <button class="commit" data-testid="job-accept" disabled={full} use:tip={{ text: full ? `You hold ${jobs.max} jobs already` : '' }} onclick={() => api.dispatch({ type: 'jobs.accept', key: j.key })}>Accept</button>
         </div>
       </li>
     {/each}

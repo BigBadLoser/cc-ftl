@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ToggleGroup } from 'bits-ui';
+  import { tip } from './tip';
   import type { KitOption } from './types';
 
   /** A wrapping row of toggle chips: pick one (`multiple` false) or any number. `sub` shows dim text after the label. */
@@ -14,7 +15,9 @@
 
 {#snippet items()}
   {#each options as o (o.value)}
-    <ToggleGroup.Item value={o.value} disabled={o.disabled} title={o.title} class={isOn(o.value) ? 'on' : ''} data-testid={o.testId}>{o.label}{#if o.sub}<small>{o.sub}</small>{/if}</ToggleGroup.Item>
+    <ToggleGroup.Item value={o.value} disabled={o.disabled} class={isOn(o.value) ? 'on' : ''} data-testid={o.testId}>
+      {#snippet child({ props })}<button {...props} use:tip={{ text: o.title }}>{o.label}{#if o.sub}<small>{o.sub}</small>{/if}</button>{/snippet}
+    </ToggleGroup.Item>
   {/each}
 {/snippet}
 

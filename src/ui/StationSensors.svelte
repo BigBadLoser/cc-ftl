@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiStationInfo } from './api';
   import PaneHeader from './comms/PaneHeader.svelte';
@@ -108,7 +109,7 @@
       <i class="ship" class:you={c.kind === 'you'} class:other={c.kind === 'ship'} style={`${bg(`starmap.fleet.${c.fleet}.d${c.dir}`, SPRITE[c.kind])};left:${p.x - SPRITE[c.kind] / 2}px;top:${p.y - SPRITE[c.kind] / 2}px`}></i>
     {/if}
   {/each}
-  {#each shuttles as { c, p } (c.id)}<i class="mark" style={`left:${p.x - 4}px;top:${p.y - 3}px`} title={c.label}></i>{/each}
+  {#each shuttles as { c, p } (c.id)}<i class="mark" style={`left:${p.x - 4}px;top:${p.y - 3}px`} use:tip={{ text: c.label }}></i>{/each}
   <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} aria-hidden="true">
     {#each ships as { c, p } (c.id)}
       <path class="head" d={`M${p.x} ${p.y} L${CX + (p.x - CX) * 0.45} ${CY + (p.y - CY) * 0.45}`} class:g={c.kind === 'you'} />

@@ -6,11 +6,11 @@
 </script>
 
 <script lang="ts">
+  import { tip } from './kit/tip';
   let { name, size = 18, title }: { name: IconName; size?: number; title?: string } = $props();
 </script>
 
-<svg class="icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden={title ? undefined : 'true'} role={title ? 'img' : undefined}>
-  {#if title}<title>{title}</title>{/if}
+<svg class="icon" width={size} height={size} viewBox="0 0 24 24" aria-hidden={title ? undefined : 'true'} aria-label={title} role={title ? 'img' : undefined} use:tip={{ text: title }}>
   <!-- eslint-disable-next-line svelte/no-at-html-tags -- static markup from the bundled Tabler SVG files, never user input -->
   {@html ICONS[name]}
 </svg>

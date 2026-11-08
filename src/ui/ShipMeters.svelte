@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import Icon from './Icon.svelte';
   import type { UiShipCombat } from './api';
 
@@ -12,7 +12,7 @@
 <div class="meters" class:compact data-testid="ship-meters">
   {#if label}<div class="name">{label}<span class="state" class:bad={ship.state !== 'active'}>{ship.state}</span></div>{/if}
   <div class="row">
-    <span class="m sh" title="Shield layers; the bar is progress toward the next one" aria-label="Shield {ship.shield.layers} of {ship.shield.max}">
+    <span class="m sh" use:tip={{ text: 'Shield layers; the bar is progress toward the next one' }} aria-label="Shield {ship.shield.layers} of {ship.shield.max}">
       <Icon name="shield" size={16} />
       <span class="pips" data-testid="shield-pips">
         {#each layers as on, i (i)}<i class:on></i>{/each}
@@ -22,12 +22,12 @@
         <span class="mini"><Meter value={ship.shield.progress} height={4} title="Next shield layer" /></span>
       {/if}
     </span>
-    <span class="m hu" class:low={hullPct < 35} title="Hull integrity" aria-label="Hull {hullPct}%">
+    <span class="m hu" class:low={hullPct < 35} use:tip={{ text: 'Hull integrity' }} aria-label="Hull {hullPct}%">
       <Icon name="hull" size={16} />
       <span class="grow"><Meter value={hullPct} max={100} tone="auto" height={6} /></span>
       <b>{hullPct}%</b>
     </span>
-    <span class="m ev" title="Chance an incoming shot misses" aria-label="Evasion {evasionPct}%">
+    <span class="m ev" use:tip={{ text: 'Chance an incoming shot misses' }} aria-label="Evasion {evasionPct}%">
       <Icon name="evasion" size={16} /><b>{evasionPct}%</b>
     </span>
   </div>

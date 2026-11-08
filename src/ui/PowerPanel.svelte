@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { UiApi, UiModule } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import { Segmented } from './kit';
 
   let { api, m, mods, onBack }: { api: UiApi; m: UiModule; mods: UiModule[]; onBack: () => void } = $props();
@@ -23,7 +23,7 @@
 </script>
 
 <div data-testid="power-panel">
-  <PanelHead icon="power" title="Power: {m.name}" sub="{-m.power} draw" {onBack} backTitle="Back to module" backTestId="power-back" />
+  <PaneHead icon="power" title="Power: {m.name}" sub="{-m.power} draw" {onBack} backTitle="Back to module" backTestId="power-back" />
   <p class="hint">When the ship is short of power, modules are served from number 1 up and the rest go dark. Supply now: {supply}.</p>
   <div class="row">
     <span class="lbl">Power order</span>

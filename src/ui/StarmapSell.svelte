@@ -5,7 +5,7 @@
    * move as ships trade.
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead, tip } from './kit';
   import type { UiSellGood } from './starmapApi';
 
   let { goods, current, onPick, onClose }: { goods: UiSellGood[]; current: string; onPick: (node: string) => void; onClose: () => void } = $props();
@@ -13,7 +13,7 @@
 </script>
 
 <aside class="sheet sell steel-tokens" data-testid="starmap-sell">
-  <PanelHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} goods` : 'nothing'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
+  <PaneHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} goods` : 'nothing'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
   {#if goods.length}
     <ul>
       {#each goods as g (g.item)}
@@ -21,7 +21,7 @@
           <div class="good"><b>{g.name}</b><span class="dim">{g.count} aboard</span></div>
           {#if g.best.length}
             {#each g.best as p, i (p.node)}
-              <button class="port" class:top={i === 0} class:here={p.node === current} onclick={() => onPick(p.node)} title="Show {p.name} on the map">
+              <button class="port" class:top={i === 0} class:here={p.node === current} onclick={() => onPick(p.node)} use:tip={{ text: `Show ${p.name} on the map` }}>
                 <span class="name">{#if i === 0}<Icon name="chevUp" size={11} />{/if}{p.name}</span>
                 <span class="hops">{hops(p.hops)}</span>
                 <span class="price">{p.price}₵</span>

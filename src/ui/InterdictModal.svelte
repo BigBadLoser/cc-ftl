@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Chip } from './kit';
+  import { Chip, tip } from './kit';
   /**
    * An interdiction, answered in a modal centred over the map screen (the ship is halted in hyperspace until it is settled): who stopped you,
    * how strong they are, and the three ways out with their odds or price. Hails, scans and distress calls stay in the starmap drawer; a patrol's
    * hail to stop is a comms window (PatrolHail).
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import type { UiEncounter, UiEncounterChoice } from './starmapApi';
   import { toneColor } from './starmapStyle';
 
@@ -23,7 +23,7 @@
 
 <div class="veil steel-tokens" data-testid="interdict-modal">
   <div class="card" role="dialog" aria-modal="true" aria-label={encounter.title}>
-    <PanelHead icon="alert" title={encounter.title} sub={encounter.node} foe />
+    <PaneHead icon="alert" title={encounter.title} sub={encounter.node} foe />
     <div class="body">
       <div class="who">
         <i style={`background: ${toneColor(encounter.tone)}`}></i>
@@ -36,7 +36,7 @@
       </div>
       <div class="choices">
         {#each encounter.choices as c (c.choice)}
-          <button class:fight={c.choice === 'fight'} disabled={!c.enabled || busy} title={c.why ?? ''} onclick={() => pick(c.choice)} data-testid="starmap-choice-{c.choice}">
+          <button class:fight={c.choice === 'fight'} disabled={!c.enabled || busy} use:tip={{ text: c.why ?? '' }} onclick={() => pick(c.choice)} data-testid="starmap-choice-{c.choice}">
             <span class="lbl"><Icon name={c.choice === 'evade' ? 'fast' : c.choice === 'bribe' ? 'credits' : 'combat'} size={18} />{c.label}</span>
             <small>{c.why ?? c.detail}</small>
           </button>

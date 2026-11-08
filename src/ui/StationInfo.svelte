@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { UiStationInfo } from './api';
   import Icon from './Icon.svelte';
-  import { Chip } from './kit';
+  import { Chip, tip } from './kit';
 
   let { info }: { info: UiStationInfo } = $props();
   const TIER = { friendly: 'Friendly', neutral: 'Neutral', hostile: 'Hostile' } as const;
@@ -15,28 +15,28 @@
 
 <div class="info" data-testid="station-info">
   {#if info.owner}
-    <span class="cell wide" class:warn={info.owner.tier === 'hostile'} title="Owner and how they regard you"><Icon name="station" size={18} /><b data-testid="si-owner">{info.owner.name}</b><small>{TIER[info.owner.tier]}</small></span>
+    <span class="cell wide" class:warn={info.owner.tier === 'hostile'} use:tip={{ text: 'Owner and how they regard you' }}><Icon name="station" size={18} /><b data-testid="si-owner">{info.owner.name}</b><small>{TIER[info.owner.tier]}</small></span>
   {/if}
   {#if offers.length}
-    <span class="cell wide" title="What the station offers"><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<Chip size="md" caps={false}>{#if o.n}<em>{o.n}</em>{/if}{o.label}</Chip>{/each}</span></span>
+    <span class="cell wide" use:tip={{ text: 'What the station offers' }}><Icon name="trade" size={18} /><span class="chips" data-testid="si-services">{#each offers as o (o.label)}<Chip size="md" caps={false}>{#if o.n}<em>{o.n}</em>{/if}{o.label}</Chip>{/each}</span></span>
   {/if}
   {#if info.hints.length}
-    <span class="cell wide" title="Notable stock"><Icon name="list" size={18} /><b data-testid="si-hints">{info.hints.join(' · ')}</b></span>
+    <span class="cell wide" use:tip={{ text: 'Notable stock' }}><Icon name="list" size={18} /><b data-testid="si-hints">{info.hints.join(' · ')}</b></span>
   {/if}
   {#if info.market && (info.market.cheap.length || info.market.dear.length)}
-    <span class="cell wide" title="Goods that are cheap here now (what they sell for) or wanted (what they pay), credits per unit"><Icon name="trade" size={18} /><b data-testid="si-market">{#if info.market.cheap.length}Cheap: {info.market.cheap.map((g) => `${g.name} ${g.price}₵`).join(', ')}{/if}{#if info.market.cheap.length && info.market.dear.length} · {/if}{#if info.market.dear.length}Wanted: {info.market.dear.map((g) => `${g.name} ${g.price}₵`).join(', ')}{/if}</b></span>
+    <span class="cell wide" use:tip={{ text: 'Goods that are cheap here now (what they sell for) or wanted (what they pay), credits per unit' }}><Icon name="trade" size={18} /><b data-testid="si-market">{#if info.market.cheap.length}Cheap: {info.market.cheap.map((g) => `${g.name} ${g.price}₵`).join(', ')}{/if}{#if info.market.cheap.length && info.market.dear.length} · {/if}{#if info.market.dear.length}Wanted: {info.market.dear.map((g) => `${g.name} ${g.price}₵`).join(', ')}{/if}</b></span>
   {/if}
   {#if info.prices.length}
-    <div class="cell wide prices" data-testid="si-prices" title="Credits per unit now: what the station pays you for one, and what it asks for one. Prices follow its stock.">
+    <div class="cell wide prices" data-testid="si-prices" use:tip={{ text: 'Credits per unit now: what the station pays you for one, and what it asks for one. Prices follow its stock.' }}>
       <span class="ph"><Icon name="trade" size={16} /><b>Prices</b><small>they pay</small><small>they ask</small></span>
       {#each info.prices as p (p.name)}
         <span class="pr {p.tone}"><span class="nm">{p.name}{#if p.tone === 'dear'}<small> wanted</small>{:else if p.tone === 'cheap'}<small> plenty</small>{/if}</span><b>{p.buy}₵</b><b class="ask">{p.sell}₵</b></span>
       {/each}
     </div>
   {/if}
-  <span class="cell" title="Working airlocks to dock at"><Icon name="door" size={18} /><b data-testid="si-docks">{info.docks}</b><small>{info.docks === 1 ? 'dock' : 'docks'}</small></span>
-  <span class="cell" title="Guns and shield layers: how well it can hit back"><Icon name="shield" size={18} /><b data-testid="si-defence">{info.guns}</b><small>{info.guns === 1 ? 'gun' : 'guns'}, {info.shields} {info.shields === 1 ? 'shield' : 'shields'}</small></span>
-  {#if info.alarm}<span class="cell warn wide" title="The station is on alert"><Icon name="alert" size={18} /><b data-testid="si-alarm">On alert</b><small>{info.alarm}</small></span>{/if}
+  <span class="cell" use:tip={{ text: 'Working airlocks to dock at' }}><Icon name="door" size={18} /><b data-testid="si-docks">{info.docks}</b><small>{info.docks === 1 ? 'dock' : 'docks'}</small></span>
+  <span class="cell" use:tip={{ text: 'Guns and shield layers: how well it can hit back' }}><Icon name="shield" size={18} /><b data-testid="si-defence">{info.guns}</b><small>{info.guns === 1 ? 'gun' : 'guns'}, {info.shields} {info.shields === 1 ? 'shield' : 'shields'}</small></span>
+  {#if info.alarm}<span class="cell warn wide" use:tip={{ text: 'The station is on alert' }}><Icon name="alert" size={18} /><b data-testid="si-alarm">On alert</b><small>{info.alarm}</small></span>{/if}
 </div>
 
 <style>

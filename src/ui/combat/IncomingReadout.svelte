@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   import type { UiIncoming } from '../api';
 
   /**
@@ -22,7 +23,7 @@
       <span class="lbl" style:left={at(t)}>{t}s</span>
     {/each}
     {#each shots as s (s.id)}
-      <div class="shot" class:far={s.eta > SPAN} style:left={at(s.eta)} style:--c={hex(s.color)} title="{s.name}: {s.eta.toFixed(1)}s">
+      <div class="shot" class:far={s.eta > SPAN} style:left={at(s.eta)} style:--c={hex(s.color)} use:tip={{ text: `${s.name}: ${s.eta.toFixed(1)}s` }}>
         <span class="tri"></span>
         <span class="stem"></span>
         {#if s.eta > SPAN}<em>›</em>{/if}
