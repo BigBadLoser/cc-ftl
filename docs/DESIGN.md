@@ -799,14 +799,17 @@ Each point below gets its own design discussion before it is built.
     research can't reach.
   - **The tree grows with discovery:** a solid baseline tree, plus projects added by finds (an alien artifact opens new
     projects).
-  - **Ship weapons:** some of today's weapons move behind research (which ones: see the proposal in discussion 1).
+  - **Ship weapons:** the burst laser and the mass driver are known from the start; missiles, ion, flak and incendiary are
+    researched. Enemies carry the locked ones by faction: pirates flak and incendiary, navy and mercenaries missiles and ion
+    (salvage from them is an early, risky way to get one).
   - **Implants (#311):** basic implants are researched; unique ones are found only.
   - **Scanners and cloaking:** a scanner sees enemy roofs, modules and crew, and what a node holds before the jump. A cloak
     is a combat ability (dodge fire for a few seconds, on a cooldown) and may slip past patrols and inspections.
   - **How finds add projects:** a find (an alien artifact, a prototype) is studied as a research project of its own, and
     the study reveals one or more new projects.
   - **Pace:** a project keeps one crew member busy researching for an extended time; research is a standing job on the
-    ship, not a quick unlock.
+    ship, not a quick unlock. Rough targets in game time for one researcher: tier 2 about 30-45 minutes, tier 3 about 1.5-2
+    hours, studying a find 20-40 minutes; science skill and a second lab speed it up. The baseline tree takes several hours.
 - **Danger is distance.** No global threat clock. Deeper space is harder; the design work is giving players reasons to
   go there (research materials, drops, jobs and gear found only deeper).
 - **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
