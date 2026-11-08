@@ -10,6 +10,7 @@ from typing import Callable, Optional
 
 from mathutils import Vector
 
+from . import core
 from . import wall3d as T
 from . import walls as W
 from . import wall3d_iwin_def as D
@@ -56,13 +57,17 @@ class Look:
     paint_shade: str = ""               # ... under the roof ...
     lip_paint: str = ""                 # ... and its lit front edge
     beam_drop: float = 0.0              # the beam's underside under the rail's foot (wall3d_iwin_def.BEAM_DROP)
+    toe_drop: int = 0                   # px: the toe's top this far under the pockets' floors (the slope's own tone
+                                        # between)
+    blocks: str = ""                    # a wall3d.RAMPS family: the end blocks under the posts (the near ramp from the
+                                        # run's ends BLOCK px in) recoloured from the default walls' ramp into it
     pre: Optional[Callable] = None      # f(k, part, a, b, yf): before the ramp (a, b: between the end blocks)
     post: Optional[Callable] = None     # f(k, part): after it
 
 
-TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="fC4T0", back="wXD", side="wD", rib="wL", toe="wM",
-            plate="wS", plate_front="wM")       # (the floors lit over the ramp's front, wL; their lit edge the hull
-#   set's lightest teal, the walls' own stopping at wH)
+TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="wHW", back="wXD", side="wD", rib="wL", toe="wM",
+            plate="wS", plate_front="wM", toe_drop=1, blocks="ochre")   # (the floors lit over the ramp's front, wL;
+#   their lit edge a step over wH, the "window" palette set's)
 
 
 def _k():
@@ -140,7 +145,7 @@ def _end_strip(k, part, x0, x1, yf):
 def _toe(k, look, a, b, yf):
     """The near ramp under the opening, from the pockets' floors down, in the toe's tone."""
     m = k.m
-    zt = W.foot() + POCKET_FOOT * PZ
+    zt = W.foot() + (POCKET_FOOT - look.toe_drop) * PZ
     toe = m._cols(look.toe)
     out = []
     for f in m.f:
@@ -157,6 +162,25 @@ def _toe(k, look, a, b, yf):
             m.v += [tuple(p) for p in q]
             out.append((list(range(base, base + len(q))),) + col)
     m.f = out
+
+
+def _blocks(k, look, a, b, yf):
+    """The end blocks: the near ramp outside a..b (on the tile), from the foot up to its top, in the look's blocks
+    family (each of the default walls' ramp colours to the same level of it, lit and shaded faces)."""
+    if not look.blocks:
+        return
+    m = k.m
+    key = {}
+    for src, dst in zip(T.RAMPS["wall"], T.RAMPS[look.blocks]):
+        for s_, d_ in zip(src, dst):
+            key.setdefault(tuple(round(c, 5) for c in core.lin(s_)), d_)
+    for i, f in enumerate(m.f):
+        pts = [m.v[j] for j in f[0]]
+        cx = sum(p[0] for p in pts) / len(pts)
+        c = tuple(round(v, 5) for v in f[2])
+        if (c in key and -0.5 < cx < 0.5 and not a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and
+                max(p[2] for p in pts) <= W.skirt_top() + 1e-6 and min(p[2] for p in pts) >= W.foot() - 1e-6):
+            m.f[i] = (f[0],) + m._cols(key[c])
 
 
 def _plates(k, look, part, yf, zf):
@@ -238,6 +262,7 @@ def detail(k, part, look):
     if look.pre:
         look.pre(k, part, a, b, yf)
     _end_strip(k, part, x0, x1, yf)
+    _blocks(k, look, a, b, yf)
     _toe(k, look, a, b, yf)
     _plates(k, look, part, yf, zf)
     _pockets(k, look, part, yf, zf)

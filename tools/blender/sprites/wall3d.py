@@ -564,7 +564,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             from . import wall3d_variants as V
             V.ramp_panel(k, lambda q, rr, lvl, bb: plate(k, q, pt, nrm, 0.0, rise + rr, fam, lvl, base=rise + bb),
                          u0 + 0.06, u1 - 0.06, run_, VARIANT[1])
-        elif field and w >= 0.36 and sk == "panel" and not rv and not BARE:     # a panel under each field
+        elif field and w >= 0.36 and sk == "panel" and not rv and (not BARE or style().plain):   # a panel under each
+            #   field (a window tile's bare ramp on the default walls: only its seam line, below)
                                                             # (insets scale down on a short field)
             im = 0.2 * min(1.0, w / 0.76)
             dn = 0.12 * run_ if style().plain and ft else 0.0   # (the default walls: the panel down to the toe's edge)
@@ -578,10 +579,12 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
                 hz = fd1 - 4 * pd                       # either side a seam across to the slope's edges, its
                 ea = u0 - off - (run_ if abs(u0 - off - a) < 1e-6 else 0.0) + g      # line 3 px over the
                 eb = u1 + off + (run_ if abs(u1 + off - b) < 1e-6 else 0.0) - g      # panel's bottom one
-                for q in ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
+                for q in ((ea, eb, hz, hz + ed),) if BARE else ((ea, fu0, hz, hz + ed), (fu1, eb, hz, hz + ed)):
                     poly = _clip(_clip([(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], lo), hi)
                     if len(poly) >= 3:
                         plate(k, poly, pt, nrm, 0.0, rise + PAINT, fam, 1, base=rise)
+                if BARE:                                # (a window tile: the seam on across, no panel; a window's
+                    continue                            # pockets cut it, wall3d_iwin_ramp)
                 for q in ((fu0, fu1, fd0, fd0 + ed), (fu0, fu1, fd1 - ed, fd1), (fu0, fu0 + LINE, fd0, fd1),
                           (fu1 - LINE, fu1, fd0, fd1)):
                     plate(k, [(q[0], q[2]), (q[1], q[2]), (q[1], q[3]), (q[0], q[3])], pt, nrm, 0.0, rise + PAINT,

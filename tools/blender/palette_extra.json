@@ -37,6 +37,9 @@
  "wXD": {
   "hex": "#172e31", "aa": "teal"
  },
+ "wHW": {
+  "hex": "#80bcae", "aa": "teal", "set": "window"
+ },
  "bH": {
   "hex": "#86aab8"
  },

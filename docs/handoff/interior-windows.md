@@ -99,9 +99,15 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   `beam_drop`); `ramp.window(fn, part, look)` builds a piece. Slate: `wall3d_iwin_slate.LOOK` (its grey recolour,
   seam panel and rail seam as hooks, its blue paint block, the lowered beam), pixel-identical to sw46 (sw47 checked).
   Default: `ramp.TEAL`, used by `wall3d_iwin_def.window`; beam not lowered (`beam_drop` 0), no paint block.
-- TEAL colours: floors wH (lit over the ramp's front, wL), shade wS, lit edge fC4T0 (the hull set's lightest teal;
-  the walls' own stop at wH, and a new walls colour would re-quantise every wall), back wXD, sides wD, rib wL, toe wM,
-  plates wS / wM. dp1 tried floors wL / lip wH: the pockets read flat.
+- TEAL colours: floors wH (lit over the ramp's front, wL), shade wS, lit edge `wHW` #80bcae (a step over wH, in a
+  new palette set "window": a new walls colour would re-quantise every wall; `preview/render.py` selects
+  "walls+hull+window" for default `.win.` pieces, and the pipeline needs the same when windows ship, #49), back wXD,
+  sides wD, rib wL, toe wM (`toe_drop` 1: its top a px under the pockets' floors), plates wS / wM. End blocks under the
+  posts (`blocks` "ochre": the near ramp from the run's ends BLOCK px in, foot to top, each teal ramp colour to the
+  same level of wall3d.RAMPS["ochre"]). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+- wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
+  tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
+  the base tiles pixel-identical (sw48, dp3 checked).
 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
 - Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
@@ -248,3 +254,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   of the ramp to the default window (step 2).
 - 2026-11-08: the user: port everything (shape, pockets, plates) to the default window. Ramp moved to
   `wall3d_iwin_ramp.py`; slate pixel-identical (sw47); teal dp1 (flat), dp2 (floors wH, lip fC4T0). Shown, waiting.
+- 2026-11-08: dp3 (the user on dp2): toe a px shorter (`toe_drop`), lip `wHW`, ochre end blocks, the ramp's seam
+  carried across the window tiles to the pockets. Upper layer next. Shown.
