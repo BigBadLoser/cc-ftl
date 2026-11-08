@@ -26,7 +26,8 @@ def navy_boxes(k, ax, plane, a, b, c, e, F, **_):
     a, b = a + 0.06, b - 0.06
     for q0, q1 in ((c + 0.02, zm - 0.02), (zm + 0.02, e - 0.02)):
         T.slab(k, ax, plane, a, b, q0, q1, PX, F, 3)                                                     # bezel
-        w0, w1, v0, v1 = a + 0.04, b - 0.04, q0 + 0.04, q1 - 0.04
+        w0, w1, v0, v1 = a + 2 / 32, b - 2 / 32, q0 + 2 / 39.19, q1 - 2 / 39.19    # (the bezel 2 px: chunkier, the
+        #   ref's: the user)
         T.paint(k, ax, plane, w0, w1, v0, v1, PX, "rose", 1)                                             # window
         cw, ch = (w1 - w0) / 4, (v1 - v0) / 3
         for i in range(4):

@@ -628,3 +628,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: comment the cage variant out, it is still not really working. Its Design line in NAVY_TOPS is
   commented out (navy_cage, cage_holes and _recess kept, as nc10). The ids are back to: recessed .a9-.a11, thin band
   .a12-.a14 (a9 identical to nr2).
+- 2026-11-08: control boxes (navy_boxes, m10.a3): chunkier frames, the ref's: each box's bezel now 2 px (its window
+  inset 2/32 along u, 2/39.19 up, was 0.04). Contents and tones unchanged. nb2.
