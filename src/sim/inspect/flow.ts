@@ -8,6 +8,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { PLAN_INTERVAL } from '../tuning';
 import { partyJobs, postSearches, spotCheck, tally } from './search';
+import { patrolBoards } from './patrol';
 import { refuseConsequences } from './settle';
 import { endInspection, go, leave } from './start';
 import { InspectionC, inspections, type Inspection } from './types';
@@ -88,5 +89,6 @@ function step(sim: Sim, id: number, insp: Inspection): void {
  * inspection along its phases: aboard, search, the wait for an answer (`inspect.settle`), and home.
  */
 export function inspectSystem(sim: Sim): void {
+  patrolBoards(sim);
   for (const id of inspections(sim)) step(sim, id, sim.world.get(id, InspectionC)!);
 }

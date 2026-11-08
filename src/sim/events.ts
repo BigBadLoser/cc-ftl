@@ -306,7 +306,8 @@ export type SimEvent =
   | { type: 'galaxy.towArrived'; fuel: number; paid: number; owed: number }
   | { type: 'galaxy.bribed'; id: number; cost: number; faction: string }
   | { type: 'scan.found'; id: number; faction: string; value: number }
-  | { type: 'scan.settled'; id: number; faction: string; outcome: 'confiscated' | 'bribed'; cost: number }
+  | { type: 'patrol.complied'; fleet: number; faction: string; node: string }
+  | { type: 'patrol.ran'; fleet: number; faction: string; chased: boolean }
   /** Contraband inspections (inspect/): a station's inspectors set off; the search found contraband and the lead waits; a bribe turned down; how it ended. */
   | { type: 'inspect.started'; inspection: number; faction: string; name: string; crew: number[] }
   | { type: 'inspect.waiting'; inspection: number; faction: string; value: number; fine: number; bribe: number }

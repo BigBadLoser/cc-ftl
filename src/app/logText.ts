@@ -140,7 +140,8 @@ export function createDescriber(sim: Sim) {
         return { kind: 'galaxy', tone: e.kind === 'interdict' ? 'bad' : 'warn', text, ...node(e.node) };
       }
       case 'galaxy.evadeRoll': return { kind: 'galaxy', tone: e.success ? 'good' : 'bad', text: `${e.success ? 'Evaded' : 'Evade failed'}: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%`, ...here() };
-      case 'scan.settled': return { kind: 'galaxy', tone: 'warn', text: e.outcome === 'bribed' ? `Paid a ${e.cost} ₵ bribe: the scan found nothing` : `Contraband confiscated and a ${e.cost} ₵ fine paid`, ...here() };
+      case 'patrol.complied': return { kind: 'galaxy', tone: 'warn', text: `Stopped for the ${factionName(e.faction)} patrol: its inspectors will come aboard`, ...node(e.node) };
+      case 'patrol.ran': return { kind: 'galaxy', tone: 'bad', text: `Ran from the ${factionName(e.faction)} patrol${e.chased ? ': it gives chase' : ''}`, ...here() };
       case 'inspect.started': return { kind: 'galaxy', tone: 'warn', text: `${e.name} sends inspectors aboard to search for contraband`, ...here() };
       case 'inspect.waiting': return { kind: 'galaxy', tone: 'warn', text: `The inspectors found contraband worth ${e.value} ₵: fine ${e.fine} ₵, or a bribe of ${e.bribe} ₵`, ...here() };
       case 'inspect.bribeRefused': return { kind: 'galaxy', tone: 'bad', text: 'The inspector turned your bribe down', ...here() };
