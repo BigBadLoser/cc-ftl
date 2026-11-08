@@ -240,15 +240,15 @@ def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
         k.box(u, v, z - r * 1.4, r * 2.8, r * 2.8, r * 2.8, joint)
 
 
-def _valve(k, u, v, z, face="v"):
-    """A brass valve body on a pipe with an orange handwheel, facing front (+v) or up."""
-    k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, "brass")
+def _valve(k, u, v, z, face="v", body="brass", wheel="hivis"):
+    """A valve body on a pipe with a handwheel (brass and orange by default), facing front (+v) or up."""
+    k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, body)
     if face == "v":
         _tube(k, [(u, v + 0.045, z), (u, v + 0.075, z)], 0.012, "steel", n=6)
-        _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, "hivis", n=10)
+        _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, wheel, n=10)
     else:
         k.cyl(u, v, z + 0.045, 0.012, 0.04, "steel", sides=6)
-        k.cyl(u, v, z + 0.085, 0.06, 0.02, "hivis", sides=10)
+        k.cyl(u, v, z + 0.085, 0.06, 0.02, wheel, sides=10)
 
 
 def _vtank(k, u, v, z, r, h, on, glass_v=None):
@@ -322,7 +322,7 @@ def _base_tower(k, on):
     _screen(k, 0.0, 0.2, on)
 
 
-def _base_twin(k, on, zm=0.4, pc="tFrame"):
+def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis"):
     """A tank under each plant: two standing white tanks on dark feet inside grey corner legs. A pump between them
     draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
     _frame_legs(k)
@@ -337,12 +337,14 @@ def _base_twin(k, on, zm=0.4, pc="tFrame"):
     _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col=pc, joint="steel")
     # (above: the manifold along the front and a riser at each end)
     for su in (-1, 1):
-        _valve(k, su * 0.36, vm, zm)
+        _valve(k, su * 0.36, vm, zm, body=vb, wheel=vw)
 
 
 BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin,
          "twinhi": lambda k, on: _base_twin(k, on, 0.48), "twinlo": lambda k, on: _base_twin(k, on, 0.06),
-         "twincu": lambda k, on: _base_twin(k, on, 0.48, "pipeCu"), "twinblu": lambda k, on: _base_twin(k, on, 0.48, "pipeB")}
+         "twincu": lambda k, on: _base_twin(k, on, 0.48, "pipeCu"), "twinblu": lambda k, on: _base_twin(k, on, 0.48, "pipeB"),
+         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed"),
+         "twincuw": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "tWhite")}
 
 
 def terra(k, on, base="orig"):
@@ -384,7 +386,7 @@ def _grain(k, u, v, z, seed=0, hmax=0.85):
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin", "twinhi", "twinlo", "twincu", "twinblu")}}
+VARIANTS = {"terra": terra, **{f"terra.{b}": (lambda k, on, b=b: terra(k, on, b)) for b in ("rack", "tower", "twin", "twinhi", "twinlo", "twincu", "twinblu", "twincur", "twincuw")}}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
