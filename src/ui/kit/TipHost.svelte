@@ -6,11 +6,13 @@
   /** Draws the one game tooltip that `use:tip` asks for. Mount once, high in the app. */
   const GAP = 6, PAD = 8;
   let box = $state<HTMLDivElement>();
+  /** The host's size, bound (Svelte observes it), so a new tip's content is measured after it renders and the position follows. */
+  let bw = $state(0), bh = $state(0);
   const s = $derived($tipState);
   const key = $derived(!s?.spec.key ? '' : ACTION_BY_ID.has(s.spec.key) ? keyLabel($keymap, s.spec.key as ActionId) : s.spec.key);
   const pos = $derived.by(() => {
     if (!s) return null;
-    const w = box?.offsetWidth ?? 0, h = box?.offsetHeight ?? 0, r = s.rect;
+    const w = bw, h = bh, r = s.rect;
     const side = s.spec.side ?? 'bottom';
     const flip = side === 'bottom' && r.bottom + GAP + h > innerHeight - PAD ? 'top' : side === 'top' && r.top - GAP - h < PAD ? 'bottom' : side;
     let x = side === 'left' ? r.left - GAP - w : side === 'right' ? r.right + GAP : r.left + r.width / 2 - w / 2;
@@ -21,7 +23,7 @@
 </script>
 
 {#if s}
-  <div id={TIP_ID} class="kit-tip tip-host" class:rich={!!s.spec.rich} role="tooltip" bind:this={box} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box ? 'visible' : 'hidden'}>
+  <div id={TIP_ID} class="kit-tip tip-host" class:rich={!!s.spec.rich} role="tooltip" bind:this={box} bind:offsetWidth={bw} bind:offsetHeight={bh} style:left="{pos?.x ?? 0}px" style:top="{pos?.y ?? 0}px" style:visibility={pos && box && bw ? 'visible' : 'hidden'}>
     {#if s.spec.rich}{@render s.spec.rich()}{:else}<span>{s.spec.text}</span>{/if}{#if key}<KeyBadge size="sm">{key}</KeyBadge>{/if}
   </div>
 {/if}
