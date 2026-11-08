@@ -367,10 +367,9 @@ def slate_console(k, ax, plane, a, b, top, foot, zf):
     """Wall (T1-3): a screen a tile, its top 3 px under the header (CONSOLE, its colours CONSOLE_INK: the slate set's
     fGK*, unlit), each px a square on the sprite's grid (tan_tops._px: the face's rows step down a px every 2 across),
     in a bezel a px wide round it, flat (painted 2*PAINT out: a part standing further out lands off the px rows and
-    over the screen's edge), bevelled by tone: its top and left lit, its foot and right dark. Read left to right on
-    either face. The faint line stops at it."""
-    hi, dark = ("fGS1", "fGS5") if ax == "y" else ("fGS2", "fGS6")
-    left, right = (hi, dark) if ax == "y" else (dark, hi)          # (as seen: an x face's u runs the other way)
+    over the screen's edge), all of it lit (to read; a bevel by tone, top and left lit, foot and right dark, looked
+    good but faint). Read left to right on either face. The faint line stops at it."""
+    hi = "fGS1" if ax == "y" else "fGS2"
     cuts = console_cuts(a, b)
     for d0, d1 in cuts:
         s0, s1 = d0 + LINE, d1 - LINE                   # (the screen)
@@ -379,10 +378,9 @@ def slate_console(k, ax, plane, a, b, top, foot, zf):
         for r, row in enumerate(CONSOLE):
             for x, ch in enumerate(row if ax == "y" else row[::-1]):
                 _px(k, ax, plane, s0, x, r, zt, 2 * PAINT, CONSOLE_INK[ch])
-        for u0, u1, z0, z1, col in ((d0, d1, zt, zt + PZ, hi), (d0, d1, zb - PZ, zb, dark),
-                                    (d0, s0, zb, zt, left), (s1, d1, zb, zt, right)):
+        for u0, u1, z0, z1 in ((d0, d1, zt, zt + PZ), (d0, d1, zb - PZ, zb), (d0, s0, zb, zt), (s1, d1, zb, zt)):
             prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
-                  cols=[False, col, False, False])
+                  cols=[False, hi, False, False])
     return _minus(a, b, cuts)
 
 
