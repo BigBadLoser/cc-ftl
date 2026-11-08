@@ -695,3 +695,6 @@ Marked ref (both layers, numbered): scratchpad
   fixed fNW6 -> fNW7 (on screen 7687a1 -> 67778d); ramp seams: Style.seam_tone (navy "fNW7") draws them on the slope
   too, over the plates' gap, round a ramp hole, and over the toe and shelf (6c7c94 -> 54647c..687893, toe 707e97 ->
   516078). x faces unchanged. ns1.
+- 2026-11-08: recessed toward ref 12: its band in ref 12's dark maroon (new fNM0 #4f2732, set hull; ochre 0 read near
+  black), a lit row (F 1) on the panel under it, the panel 2 px off the recess's floor (its dark navy shows under it,
+  the ref's). nq3.

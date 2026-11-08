@@ -170,11 +170,14 @@ def navy_recessed(k, ax, plane, a, b, c, e, F, zh=None, H=None, back=None, **_):
     much more on its left and top, the panel a shade darker."""
     if back:                                            # (the real recess: the panel its back: the user)
         pl, (u0, u1, _, z1), zf = back
-        d = 0.5 * PAINT - RECESS / 32
-        k.poly([T.P(ax, pl, u, z, d) for u, z in ((u0, zf), (u1, zf), (u1, z1), (u0, z1))], F, 0, T.OUT(ax))
-        if zh is not None:
-            k.poly([T.P(ax, pl, u, z, d + 0.25 * PAINT) for u, z in ((u0, zh - 0.33 * H), (u1, zh - 0.33 * H),
-                    (u1, z1), (u0, z1))], "ochre", 1, T.OUT(ax))
+        d, dz = 0.5 * PAINT - RECESS / 32, 1 / 39.19
+        sheet = lambda z0, z1_, dd, fam, lvl, fx=None: k.poly([T.P(ax, pl, u, z, dd) for u, z in (  # noqa: E731
+            (u0, z0), (u1, z0), (u1, z1_), (u0, z1_))], fam, lvl, T.OUT(ax), fixed=fx)
+        sheet(zf + 2 * dz, z1, d, F, 0)                 # (the panel 2 px off the recess's floor: its dark under it)
+        if zh is not None:                              # (ref 12: the band its dark maroon, a lit row under it)
+            zb = zh - 0.33 * H
+            sheet(zb, z1, d + 0.25 * PAINT, "ochre", 1, "fNM0")
+            sheet(zb - dz, zb, d + 0.25 * PAINT, F, 1)
         return
     du, dz = RECESS / 32, RECESS / 39.19
     u0, u1 = (a + du, b) if ax == "y" else (a, b - du)
