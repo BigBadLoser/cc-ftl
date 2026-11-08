@@ -2,13 +2,15 @@
   import { ACTION_BY_ID, keyLabel, keymap, type ActionId } from '../keymap';
   import KeyBadge from './KeyBadge.svelte';
   import { TIP_ID, tipState } from './tip';
+  import { settings } from '../settings/settings';
 
   /** Draws the one game tooltip that `use:tip` asks for. Mount once, high in the app. */
   const GAP = 6, PAD = 8;
   let box = $state<HTMLDivElement>();
   /** The host's size, bound (Svelte observes it), so a new tip's content is measured after it renders and the position follows. */
   let bw = $state(0), bh = $state(0);
-  const s = $derived($tipState);
+  // The Tooltips setting hides a tip already on screen too, not only the next one.
+  const s = $derived($settings.tooltips ? $tipState : null);
   const key = $derived(!s?.spec.key ? '' : ACTION_BY_ID.has(s.spec.key) ? keyLabel($keymap, s.spec.key as ActionId) : s.spec.key);
   const pos = $derived.by(() => {
     if (!s) return null;
