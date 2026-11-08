@@ -59,7 +59,7 @@ These touch shared files (the top bar, `api.ts`, content). Merge them one at a t
    Art for these is in progress in the art thread.
 6. **Shuttle livery** per faction: a Blender mask pass on the shuttle sprites, then the existing livery shader in `shuttleView`.
    Do it after `sector-5`.
-7. **Faction structure variants**, wired into `src/render/tiles.ts` chains once the art (`docs/art-prompts/structure_variants.md`) lands.
+7. **Faction structure variants:** done (faction walls, #299; prompt archived in `docs/art-prompts/archive/structure_variants.md`).
 8. **Small items:**
    - crew on the hull ring look like they stand on air; fix it with walkable beams after the flip;
    - trade not done: restock, regional prices, NPC-to-NPC trade, auto-pilot assignment, some item icons.
