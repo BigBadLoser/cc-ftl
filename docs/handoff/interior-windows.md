@@ -94,7 +94,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
 - Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
 - `detail()`: splits the piece at the end blocks' inner edges (`BLOCK`); between them the near ramp's blue-plate
-  polygons recoloured `GREY` (fGW2; matched by their linear colour, Mesh faces store colours, not names); pockets
+  polygons recoloured `GREY` (fGW2; matched by their linear colour, Mesh faces store colours, not names); the plate's
+  seam panel (fGT2/fGTs, the middle half of a tile, `PANEL`) dropped where an end block's edge cuts it (sw29); pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
   px in from the floor's two outer ends (one block across the pockets and the floor in front of the rib, not one per
@@ -179,3 +180,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   geometry to the default window, then slate's upper layer.
 - 2026-11-08: sw26: the blue end blocks pulled back 3 px from the end pockets (BLOCK 15, was 18): grey face between. Shown.
 - 2026-11-08: sw27: that gap the ribs' width (the user): 5 px, as the seam ribs (BLOCK 13). Shown.
+- 2026-11-08: sw29: the seam panel the end blocks' edge cut in half dropped (plain blue end blocks). A neighbour-pane
+  glass tint pass was tried for the dotted marks across the floor's back at the tile joins and did nothing (reverted):
+  the user's read is that the far floor's edge at the tile edge is anti-aliased unlike the others. Next.

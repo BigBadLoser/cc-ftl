@@ -37,6 +37,7 @@ PLATE_DN = 2                            # ... and PZ down the face over the pock
 PLATE = "fGS2"                          # its top (the vertical wall's greys: its face fGS3, fGS2) ...
 PLATE_FRONT = "fGS3"                    # ... its front, down the face
 BLOCK = 13                              # px: the blue end blocks under the posts run this far in from the run's ends
+PANEL = 0.25                            # the plate's seam panel: the middle half of a tile (faction.slate.slate_plate)
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
 SLOPE = 9                               # px: the sill's crest from there down to the window's floor
@@ -119,6 +120,11 @@ def detail(k, part):
         if (a < cx < b and max(p[1] for p in pts) < -yf + 1e-6 and c in blues and
                 max(p[2] for p in pts) <= W.skirt_top() + 1e-6):     # (the ramp's only: not the header's rail)
             m.f[i] = (f[0],) + grey
+    if any(-PANEL < u < PANEL for u in (a, b)):         # the plate's seam panel (the middle half of a tile) cut by
+        seam = {tuple(round(c, 5) for c in core.lin(s)) for s in ("fGT2", "fGTs")}   # an end block's edge: gone
+        m.f = [f for f in m.f if not (tuple(round(c, 5) for c in f[2]) in seam and
+                                      all(-PANEL - 1e-6 < m.v[j][0] < PANEL + 1e-6 and m.v[j][1] < -yf + 1e-6 and
+                                          m.v[j][2] <= W.skirt_top() + 1e-6 for j in f[0]))]
     zt = W.foot() + POCKET_FOOT * PZ                    # the toe: the near ramp under the opening from the pockets'
     toe = m._cols(TOE)                                  # floors' front edge down, a tone of its own
     out = []
