@@ -106,8 +106,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - sw13, the widths and dip to ref 44 (mirrored, the ref is symmetric within its +-1): `BLOCK` 18 (the blue end blocks
   l 0-17, r 14-31: the grey face, toe and recolour only between them), `POCKETS` l (18, 28), m (2, 14) (17, 29), r
   (3, 13), rib m (15, 16). The dip: `wall3d_iwin_def.SILL_OFF` (new, 0 for the default: pixel-identical by
-  construction) keeps the crest at the lip's top that far in from the post; slate sets it to BLOCK - POST (6.75 px),
-  END to `SLOPE` 9 px and RUN scaled with it (5 * 9 / 11.5), restored in `finally`.
+  construction) keeps the crest at the lip's top that far in from the post; slate sets it from `DIP` (sw13: BLOCK - POST,
+  6.75 px; sw14: 0, see the log), END to `SLOPE` 9 px and RUN scaled with it (5 * 9 / 11.5), restored in `finally`.
 - `RAISE` = 3: `build()` lowers `D.FLOOR` by 3 px while slate builds (restored in `finally`), so the window's floor
   (the sill's level top) stands 3 px higher than the default's. The pockets' tops follow it (still `POCKET_TOP` under
   it), their floors stay at `POCKET_FOOT`, so they run 3 px deeper.
@@ -141,3 +141,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: deskewed sw12 vs ref 44 and measured the widths (section above); deskew_win.py added to preview/.
 - 2026-11-08: sw13: end blocks 18 px, pockets / ribs to the ref's widths, the dip starts at the end block's edge and
   reaches the floor 9 px on. Shown.
+- 2026-11-08: sw14: the user: the ref's slope starts at the end pocket's outer edge. On screen (deskewed, l end) the
+  ref's dip starts over that edge; sw13's started ~8 cols right of it (the crest stands further back than the pockets,
+  and depth shifts it right on screen). DIP 0 (the dip from the post, as the default) lands it within ~1-2 cols. Shown.

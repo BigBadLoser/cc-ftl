@@ -27,7 +27,9 @@ GREY = "fGW2"                           # the ramp's front under the opening, in
                                         # tone over it
 TOE = "fGS2"                            # under the opening the ramp from the pockets' floors down (the toe)
 BLOCK = 18                              # px: the blue end blocks under the posts run this far in from the run's ends
-SLOPE = 9                               # px: the sill's crest from the end block's edge down to the window's floor
+DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
+                                        # the end pocket's outer edge; the crest stands further back, so 0 here)
+SLOPE = 9                               # px: the sill's crest from there down to the window's floor
 RAISE = 3                               # px the window's floor (the sill's level top) stands over the default's
 
 
@@ -93,7 +95,7 @@ def _quad(k, pts, out, col):
 
 def detail(k, part):
     x0, x1 = D._span(part)
-    a, b = max(x0 + D.SILL_OFF, -0.5), min(x1 - D.SILL_OFF, 0.5)     # (the stretch between the end blocks)
+    a, b = max(x0 + BLOCK * L - D.POST, -0.5), min(x1 - BLOCK * L + D.POST, 0.5)   # (between the end blocks)
     yf = W.wall_back() - 0.5 + W.TW
     zf = D._dip()[1]                                    # (the sill's level top: its floor)
     m = k.m
@@ -175,7 +177,7 @@ def window(fn, part):
         T.HOOK, T.PRE_HOOK = each, bare
         keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END
         D.FLOOR = D.FLOOR - RAISE * PZ
-        D.SILL_OFF = BLOCK * L - D.POST                 # (the crest level over the end block, then down)
+        D.SILL_OFF = DIP * L
         D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
         try:
             own, wide = fn()
