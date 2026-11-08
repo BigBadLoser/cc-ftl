@@ -11,7 +11,7 @@ const LABELS: Record<string, string> = { h: 'H' };
 
 /**
  * `?panel=pods` : pod-family craft side by side for shape and scale. Each variant (`variants=h`) and state
- * (`states=fly,drift:f0,drift:f1`: sprites `vehicle.escape_pod.<v>.<state>.d<d>[.<frame>]`) gets a row at 1x beside the
+ * (`states=fly,drift:f0,drift:f1,docked`: sprites `vehicle.escape_pod.<v>.<state>.d<d>[.<frame>]`) gets a row at 1x beside the
  * mining pod (`ref=`), the first state also at 3x (`big`: every state), headings `dirs=0,2,5`; then the states side by
  * side at 3x. A floor tile's diamond under each anchor and a crew member beside it (`crew=0` hides them) show the scale.
  * Read a scratch preview build with `&assets=/.cache/escape-preview/` (built into .cache/escape-preview/1x).
@@ -19,14 +19,14 @@ const LABELS: Record<string, string> = { h: 'H' };
 export const podsPanel: LabPanel = {
   id: 'pods',
   title: 'Pods',
-  help: 'pod craft variants beside the mining pod at 1x and 3x: variants=h, states=fly,drift:f0,drift:f1, big (every state at 3x), dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod',
+  help: 'pod craft variants beside the mining pod at 1x and 3x: variants=h, states=fly,drift:f0,drift:f1,docked, big (every state at 3x), dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod',
   async cells({ atlas, params }) {
     const variants = (params.get('variants') ?? 'h').split(',').filter(Boolean);
     const dirs = (params.get('dirs') ?? '0,2,5').split(',').map(Number);
     const craft = params.get('craft') ?? 'vehicle.escape_pod';
     const ref = params.get('ref') ?? 'vehicle.mining_pod';
     // states: a sprite state, with an optional frame after a colon (`drift:f0` = <craft>.<v>.drift.d<d>.f0)
-    const states = (params.get('states') ?? 'fly,drift:f0,drift:f1').split(',').filter(Boolean);
+    const states = (params.get('states') ?? 'fly,drift:f0,drift:f1,docked').split(',').filter(Boolean);
     const sid = (v: string, st: string, d: number): string => {
       const [name, frame] = st.split(':');
       return `${craft}.${v}.${name}.d${d}${frame ? `.${frame}` : ''}`;

@@ -3,7 +3,7 @@ smaller than the mining pod (content size 2.2 against 2.6).
 
 A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and a GRAPPLE COLLAR
 (a tow fixture in a hazard ring) stepped in at its narrow top. A hi-vis orange safety band round the base, broken by the
-round DOCKING PORT standing out of the front (the only way in or out: it meets an airlock's collar face to face), two windows, an emergency BEACON by the
+round DOCKING PORT flush in the front (the only way in or out: docked, the pod tips forward so it meets an airlock's collar square), two windows, an emergency BEACON by the
 collar, RCS quads round the shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then stood up
@@ -14,7 +14,7 @@ a rounded gumdrop shoulder) and the tilt; `drive` "flank" puts the nozzles on th
 (the sideways variant b, flying shield first).
 
 States: fly (drive lit, leaning by the variant's tilt), drift (upright, no drive; `beacon` lights the lamp: the blink's on
-frame), docked / parked (upright, dark)."""
+frame), docked (dark, tipped forward by the cone's slope so the port's face is vertical), parked (upright, dark)."""
 import math
 
 from . import core
@@ -28,9 +28,9 @@ BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
-PORT = (0.6, 0.5, 0.38)       # the docking port: its axis (s), mating ring radius (inside the airlock's mouth ring, 0.62), hatch radius
+PORT = (0.56, 0.5, 0.38)      # the docking port: its centre (s), outer ring radius (the airlock's mouth ring is 0.62), hatch radius
 VARIANTS = {
-    "h": dict(rb=1.0, rt=0.5, length=1.4, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H"),
+    "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H"),
 }
 SIDES = 48
 COLLAR = 0.76                 # the grapple collar's radius, x the cone's top: it steps in, a ledge round it
@@ -148,7 +148,7 @@ def heat_shield(k):
 
 
 def body(k):
-    """The cone, a few seams, and the safety band round its base."""
+    """The cone, a few seams, and the safety band round its base, cut by the docking port."""
     _g("hull")
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
@@ -159,7 +159,7 @@ def body(k):
             s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
             k.cyl(s0, s1, k.r(s0), k.r(s1), m)
     _g("band")
-    sector(k, 0.06, 0.3, 0, 360, 1.008, BAND, BAND)                        # (the docking port stands out over it)
+    sector(k, 0.06, 0.3, 0, 360, 1.008, BAND, BAND, skip=lambda u, v, z: in_port(k, u, v, z, -0.03))   # cut by the port
 
 
 def collar(k, beacon_on, thrust=False):
@@ -225,42 +225,69 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
         k.f.poly([P(sa, ta, 0.99), P(sb, tb, 0.99), P(sb, tb), P(sa, ta)], wall)
 
 
-def hazard_ring(f, c, n, r0, r1, segs=16):
-    """A flat ring at c square to n, in alternating black and yellow sectors."""
-    a = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
-    a = tuple(a[q] - n[q] * sum(a[i] * n[i] for i in range(3)) for q in range(3))
-    al = math.sqrt(sum(x * x for x in a))
-    a = tuple(x / al for x in a)
-    A, B = _ring_pts(f, c, n, a, r0, segs * 3), _ring_pts(f, c, n, a, r1, segs * 3)
-    for i in range(segs * 3):
-        j = (i + 1) % (segs * 3)
-        f.poly([A[i], A[j], B[j], B[i]], "hazY" if (i // 3) % 2 else "hazK")
+def on_cone(k, sc, thc, rho, phi, g):
+    """A point on the hull round a centre (s sc, angle thc degrees) laid out flat on the cone's face: rho out from the
+    centre in the tangent plane, at phi (0 = up the slant toward the collar, 90 = round toward +theta), raised to g x the
+    radius. Rings drawn this way lie flush on the cone and look round from square on."""
+    sl = math.hypot(1.0, (k.v["rb"] - k.v["rt"]) / k.v["length"])
+    s = sc + rho * math.cos(phi) / sl
+    r = k.r(s)
+    th = math.radians(thc) + rho * math.sin(phi) / r
+    return k.f.pt(k.u(s), r * g * math.cos(th), k.zc + r * g * math.sin(th))
+
+
+def flush_ring(k, sc, thc, r0, r1, g, mat, wall=None, segs=48, g0=None):
+    """A ring (r0 = 0: a disc) lying flush on the cone round (sc, thc), raised to g; mat may be a function of the segment
+    index (hazard sectors). With wall, its edges are walled down to g0 (default just under the hull)."""
+    g0 = 0.995 if g0 is None else g0
+    if r0 <= 0.0 and r1 > 0.1:                                             # a wide disc: in rings, so its flat faces
+        n = int(r1 / 0.06)                                                 # follow the curve instead of cutting under it
+        steps = [r1 * j / n for j in range(n + 1)]
+        flush_ring(k, sc, thc, 0.0, steps[1], g, mat, None, segs)
+        for a, b in zip(steps[1:], steps[2:]):
+            flush_ring(k, sc, thc, a, b, g, mat, None, segs)
+        if wall:
+            flush_ring(k, sc, thc, r1, r1, g, mat, wall, segs, g0)
+        return
+    for i in range(segs):
+        a0, a1 = i * math.tau / segs, (i + 1) * math.tau / segs
+        m = mat(i) if callable(mat) else mat
+        if r0 <= 0.0:
+            k.f.poly([on_cone(k, sc, thc, 0.0, 0.0, g), on_cone(k, sc, thc, r1, a0, g), on_cone(k, sc, thc, r1, a1, g)], m)
+        else:
+            k.f.poly([on_cone(k, sc, thc, r0, a0, g), on_cone(k, sc, thc, r1, a0, g), on_cone(k, sc, thc, r1, a1, g),
+                      on_cone(k, sc, thc, r0, a1, g)], m)
+        if wall:
+            for rr in ((r1,) if r0 <= 0.0 else (r0, r1)):
+                k.f.poly([on_cone(k, sc, thc, rr, a0, g0), on_cone(k, sc, thc, rr, a1, g0), on_cone(k, sc, thc, rr, a1, g),
+                          on_cone(k, sc, thc, rr, a0, g)], wall)
+
+
+def in_port(k, u, v, z, pad=0.0):
+    """Is the capsule point (u, v, z) inside the docking port's outer ring (+ pad), measured flat on the cone?"""
+    sc, ro, _ = PORT
+    sl = math.hypot(1.0, (k.v["rb"] - k.v["rt"]) / k.v["length"])
+    s = u - k.s0
+    th = math.atan2(z - k.zc, v)
+    dth = (th - math.radians(270) + math.pi) % math.tau - math.pi
+    return math.hypot((s - sc) * sl, dth * k.r(s)) < ro + pad
 
 
 def viewport(k):
-    """The front: the DOCKING PORT, a short round collar standing straight out of the cone's face, its mouth square to the
-    heading so it meets an airlock's collar (airlock.RR) face to face: a steel barrel, a mating ring with a hazard ring on
-    its face, and the round hatch set back inside it (crew-sized, the airlock's own bore), a porthole and a handle bar on
-    it. Two windows either side of it up by the shoulder, so the pod has a face."""
+    """The front: the DOCKING PORT, a round hatch lying flush in the cone's face (it docks by tipping the whole pod forward
+    by the cone's slope, so the hatch stands square to the airlock's collar): a raised hazard ring, a steel seal ring, the
+    round hatch inside it, a porthole and a handle on it. It cuts the safety band. Two windows either side of it up by the
+    shoulder, so the pod has a face."""
     _g("port")
-    f, ln = k.f, k.v["length"]
-    sc, rp, rh = PORT
-    n = (0.0, 0.0, -1.0)                                                    # forward, level when upright
-    uc = k.u(sc)
-    z_in = k.r(sc + rp) - 0.08                                              # the barrel starts inside the hull at its top
-    z_face = k.r(sc - rp) + 0.06                                            # and stands clear of it at its foot
-    c = lambda z: (uc, 0.0, k.zc - z)                                       # noqa: E731  a point on the port's axis
-    tube(f, c(z_in), n, rp - 0.04, rp - 0.04, z_face - 0.08 - z_in, "steelL", sides=32)   # the barrel
-    tube(f, c(z_face - 0.08), n, rp, rp, 0.08, "steelD", sides=32)          # the mating ring
-    hazard_ring(f, c(z_face + 0.002), n, rh + 0.03, rp)
-    disc(f, c(z_face), n, rh, rh + 0.03, "steelD", sides=32)                # the hatch's seal
-    tube(f, c(z_face - 0.05), n, rh, rh, 0.05, "dark", sides=32)            # the recess
-    disc(f, c(z_face - 0.05), n, 0.0, rh, "plate", sides=32)                # the hatch, set back
-    stud(f, (uc + rh * 0.45, 0.0, k.zc - z_face + 0.05), n, 0.13, 0.02, "steelD", "steelD", sides=16)   # its porthole
-    stud(f, (uc + rh * 0.45, 0.0, k.zc - z_face + 0.03), n, 0.09, 0.01, "glassD", "glassD", sides=16)
-    for dv in (-0.16, 0.16):                                                # a handle bar across its lower half
-        stud(f, (uc - rh * 0.4, dv, k.zc - z_face + 0.05), n, 0.025, 0.03, "steelD", "steelD", sides=6)
-    f.box(uc - rh * 0.4, 0.0, k.zc - z_face + 0.05 - 0.045, 0.05, 0.4, 0.03, "hazY", base=False)   # (inside the ring's face)
+    ln = k.v["length"]
+    sc, ro, rh = PORT
+    flush_ring(k, sc, 270, rh + 0.035, ro, 1.035, lambda i: "hazY" if (i // 3) % 2 else "hazK", "steelD")   # hazard ring
+    flush_ring(k, sc, 270, rh, rh + 0.035, 1.03, "steelD", "steelD")      # the seal
+    flush_ring(k, sc, 270, 0.0, rh, 1.012, "plate", "dark")               # the hatch, a little below the rings
+    flush_ring(k, sc + rh * 0.42, 270, 0.0, 0.12, 1.02, "steelD", "steelD", segs=24)   # its porthole
+    flush_ring(k, sc + rh * 0.42, 270, 0.0, 0.085, 1.026, "glassD", "steelD", segs=24)
+    sh = sc - rh * 0.45                                                    # a handle across its lower half
+    sector(k, sh - 0.025, sh + 0.025, 270 - 11, 270 + 11, 1.035, "hazY", "steelD")
     _g("windows")
     for cc in (270 - 62, 270 + 62):
         sector(k, ln * 0.62, ln * 0.84, cc - 12, cc + 12, 1.02, "steelD")
@@ -327,7 +354,10 @@ def drive(k, lit):
 def pod(heading, variant="h", state="fly", beacon=False):
     """The escape pod at a heading (grid radians, 0 = +x); state fly / drift / docked / parked."""
     v = VARIANTS[variant]
-    t = math.radians(v["tilt"] if state == "fly" else 90)                 # it leans only while it flies; still, it stands
+    # it leans back only while it flies; docked it tips forward by the cone's slope, so the port in its face stands square
+    # to the airlock; otherwise it stands upright
+    slope = math.degrees(math.atan((v["rb"] - v["rt"]) / v["length"]))
+    t = math.radians(v["tilt"] if state == "fly" else 90 - slope if state == "docked" else 90)
     span = (-(v["length"] - v["dish"]) / 2 - v["dish"] - 0.05, (v["length"] + v["dish"]) / 2 + 0.2)
     rad = v["rb"] * 1.04
     low = min(u * math.sin(t) + w * math.cos(t) for u in span for w in (-rad, rad))

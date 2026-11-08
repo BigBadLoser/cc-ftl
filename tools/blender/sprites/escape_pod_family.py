@@ -18,4 +18,6 @@ def variant_jobs():
     return [lambda v=v, d=d: craft_item(f"{CRAFT}.{v}.fly.d{d}", d * math.pi / 4, v, "fly")
             for v in E.VARIANTS for d in (0, 2, 5)] + \
         [lambda v=v, d=d, k=k: craft_item(f"{CRAFT}.{v}.drift.d{d}.f{k}", d * math.pi / 4, v, "drift", k == 0)
-         for v in E.VARIANTS for d in (0, 2, 5) for k in (0, 1)]
+         for v in E.VARIANTS for d in (0, 2, 5) for k in (0, 1)] + \
+        [lambda v=v, d=d: craft_item(f"{CRAFT}.{v}.docked.d{d}", d * math.pi / 4, v, "docked")
+         for v in E.VARIANTS for d in (0, 2, 5)]
