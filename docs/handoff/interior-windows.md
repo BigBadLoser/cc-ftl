@@ -721,3 +721,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user on nw4: slot sides' profile wrong, sill 5 px deeper, middle block's top level with it. nw5: wall3d_iwin_navy on navy's real ramp (_zr: shelf at 19 art px, 6 px deep, then a fall of 3 a px to the foot at 11; it assumed the old 2-a-px slope from 26, so the middle block stood 1 px over the sill at 18); CUT_Z 8 -> 13 (sill 13 art px); the slots' and end blocks' sections the ramp's (slope, then shelf).
 - 2026-11-08: the user: sill back up 3. nw6: CUT_Z 13 -> 10 (sill 16 art px, 3 under the shelf).
 - 2026-11-08: the user: no base tiles in the preview. preview/win_sheet.py: the run is win.l | win.m | win.r only.
+- 2026-11-08: the user, simpler: the window's floor level with the shelf. nw7: _zs() = the shelf's height (19 art px; CUT_Z gone); the sill's front edge the shelf's.

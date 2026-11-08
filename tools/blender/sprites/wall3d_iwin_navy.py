@@ -1,7 +1,7 @@
 """Interior windows on navy (walls up; Space Haven wall style 122, windows #2772 / #2771 / #2862): its own build, not
 the default's. A straight partition (mask 10, along x) opened between its posts down to the ramp's top, the pane
 standing on it; between the end blocks (the ramp left standing, half a tile at each end) the ramp is cut down: a flat
-sill CUT_Z under the ramp's top, its front edge where the slope falls to it, running across the wall: the pane stands
+sill level with the ramp's shelf, its front edge where the slope falls to it, running across the wall: the pane stands
 on it, and its far half shows through the glass. The same cut on the far side. The opening runs up to the header's foot.
 
 Shared with the other windows: the hook wrapper (wall3d.HOOK on a piece's Relief), the Sutherland-Hodgman clip
@@ -16,7 +16,6 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
-CUT_Z = 10                  # art px: the sill under the wall's top (26), 3 under navy's shelf (19); 8, 13, then 10 (the user)
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
@@ -68,7 +67,8 @@ def _zt():
 
 
 def _zs():
-    return W.skirt_top() - CUT_Z / W.ZART
+    """The sill: level with navy's shelf (the user, simpler; was cut 8, 13, then 10 art px under the wall's top)."""
+    return _zh()
 
 
 def _front():
