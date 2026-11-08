@@ -320,7 +320,8 @@ Marked ref (both layers, numbered): scratchpad
   - N0: `sprites/wall3d_iwin_navy.py` + `preview/jobs_nwin.py` (pieces `tile.wall.navy.full.m10.win.{l,m,r}`), the
     shared window wrapper, pane and glass; our navy ramp kept under the opening and cut: the sill's front edge 11 rows
     down our 37 between the end blocks, its flat top 8 px deep, the grey slope to the pane.
-  - N1: the end blocks' trays (2). N2: m panel (4) with its seam. N3: pockets (3, 7).
+  - N1: the end blocks' trays (2). N2: m panel (4) with its seam. N3: pockets (3, 7). N3b (the user, after the
+    slots): the end blocks' sides facing the cut sloped down to the sill, as the ref's (ours are upright).
   - N4: upper layer: beam (A, B, C), then posts (D, E, F).
 
 ## Log
@@ -443,3 +444,4 @@ Marked ref (both layers, numbered): scratchpad
   back face at 1 px from the pane; the far side mirrored, dark. Shown before / after with both ref layers.
 - 2026-11-08: the user on N0: a white block where the glass should be. nw1w: the back face and ledge gone; the sill runs
   across the wall, the pane stands on it, its far half shows grey through the glass as in the ref.
+- 2026-11-08: the user on nw1w: the end blocks' sides lack the ref's slope down to the sill; to do after the slots (N3b).
