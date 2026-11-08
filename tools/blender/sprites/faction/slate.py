@@ -110,7 +110,8 @@ def slate(hull):
         if hdr:
             hdr(k, ax, plane, a, b, zst - 6 * PZ, z1, mit)
             return
-        T.paint(k, ax, plane, a, b, zst, zst + PZ, 0.0, BLUE, 1)                               # the rail's shadow
+        T.paint(k, ax, plane, a, b, zst, z0, 0.0, BLUE, 1)      # the rail's shadow (on up behind it: where a block
+                                                        # ends, its front standing out shows the face behind it)
         for s0, s1 in _minus(a, b, cuts):                                                      # the stripe ...
             ends = (pe[0] if abs(s0 - a) < 1e-6 else "cut", pe[1] if abs(s1 - b) < 1e-6 else "cut")
             T.run(k, ax, plane, s0, s1, ends, zst - 6 * PZ, zst, PAINT, BLUE, 3, 0)
