@@ -1,6 +1,6 @@
 import type { Encounter, Sim } from '../../sim';
 import { peekGenerated, warmContact } from '../../sim/galaxy/arrivals';
-import type { UiPatrolHail } from '../../ui/starmapApi';
+import type { UiHail } from '../../ui/starmapApi';
 import { speakerOf } from './speaker';
 
 /**
@@ -8,7 +8,7 @@ import { speakerOf } from './speaker';
  * ship as the hologram and a vague reading of their scan (it flags the ship as suspect; it names nothing, so the player is not told what was found).
  * It only reads the sim: the fleet's lead ship (its contact).
  */
-export function patrolHailOf(sim: Sim, e: Encounter, nodeName: string): UiPatrolHail | null {
+export function patrolHailOf(sim: Sim, e: Encounter, nodeName: string): UiHail | null {
   const f = sim.galaxy.fleets.find((x) => x.id === e.fleet);
   const c = f?.ships[0];
   if (!c) return null;
@@ -36,5 +36,10 @@ export function patrolHailOf(sim: Sim, e: Encounter, nodeName: string): UiPatrol
       { label: 'Ships', value: String(e.ships) },
       { label: 'Their scan', value: 'Suspicious' },
     ],
+    replies: {
+      complied: 'Good. Hold position and open your airlock. Our inspectors are on their way.',
+      ran: 'Noted. Your registry is flagged.',
+      ranChased: 'You do not outrun the Navy. All ships, pursue.',
+    },
   };
 }

@@ -286,6 +286,8 @@ export type Command =
   | { type: 'debug.notoriety'; value: number }
   /** Debug: a patrol (of `faction`, default the navy) at `node` that chases the player, so it hails them on their next hop there (inspect/patrolDebug.ts). */
   | { type: 'debug.patrol'; node: string; faction?: string }
+  /** Debug: a fleet of `faction` (default the Scrapper Clans) waiting at `node`, or hunters after the player with `hunt` (galaxy/pirateDebug.ts). */
+  | { type: 'debug.pirates'; node: string; faction?: string; hunt?: boolean }
   /** Debug: set up station jobs for playtesting (galaxy/jobsDebug.ts). */
   | { type: 'debug.jobScenario'; name: 'handover' | 'bounty' | 'survey' | 'tracker' }
   /** Leave the event grid (the player's `combat.flee` does the same): the ship goes back into hyperspace and the trip carries on. Hostiles about need a charged drive. */
