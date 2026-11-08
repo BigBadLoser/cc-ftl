@@ -64,7 +64,7 @@ Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.
-- **Relationships (#239) built on `crew/relationships-239`, not yet a PR** (waits on the user's review of the crew card and the placeholder bubbles); see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
+- **Relationships (#239) done:** merged in #330, the Social tab in #331; see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
 - **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.
