@@ -31,6 +31,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- The flak cannon has its own art: a fat finned-bore turret on the roof whose fins and bore glow from deep red to white-hot as it charges, and a screw-lift bay below with a scrap funnel, in place of the orange-tinted burst laser. ([#357](https://github.com/BigBadLoser/cc-ftl/pull/357))
 - Weapon upgrades have their own art: all ten (the three general ones and the seven behaviour upgrades) now lie on the deck as their own items and show a detailed icon in the weapon's upgrade slot and hover card, in place of the tinted stand-ins. Upgraded shots are coloured more cleanly and brightly. ([#346](https://github.com/BigBadLoser/cc-ftl/pull/346))
 - Urgent alerts come from the ship's current state: fires, breaches, low oxygen, low power, downed or starving crew, suit air, stranded away teams, breaks and attacks come back after you load a save, and a dismissed alert stays quiet until its condition clears (a worse one, like a suit running out after running low, still shows). Parts switched off for fitting work no longer raise a false low-power alert. ([#352](https://github.com/BigBadLoser/cc-ftl/pull/352))
 - The quest and jobs trackers on the right lose their boxes for a dark fade from the screen edge. Jobs are split into what you can do in this node (highlighted, with what to do) and the rest, nearest first; each shows turns left and pay, with an amber edge when time is short. ([#348](https://github.com/BigBadLoser/cc-ftl/pull/348))
