@@ -9,7 +9,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown. Then drone, civil; each its own
+- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown (last render `nw3d`). Then drone, civil; each its own
   module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
   ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -450,3 +450,6 @@ Marked ref (both layers, numbered): scratchpad
   out past the sill's front edge, between the foot's top and the sill; a floor (fNW2), a back (fNW3) up to the sill's
   edge, sides the slope's section (fNS2). Note: the clip works in mesh coords (near side mesh -y), the quads in grid
   coords (core.G flips y: near side grid +y). The red foot still runs under the slots.
+- 2026-11-08: the user on nw3c: the slots' outer edges in line with the posts' (window px 11-38 and 58-85), their backs in
+  line with the slope's top end (the wall's line, 5 px out; were at the sill's front edge, 9 px). nw3d: under an end
+  block (11-16 px) the slope stays over the slot as a lintel, its underside drawn.

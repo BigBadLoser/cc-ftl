@@ -17,8 +17,8 @@ PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
 CUT_Z = 8                   # art px up: the sill under the ramp's top (the ref's cut: 8 of its 30 rows, ~30%; ours 8 of 26)
-POCKETS = ((16, 38), (58, 80))  # px along the window from its -x end: the slots in the front either side of the middle
-                                # panel (the ref's 21 and 25 read through its lean; ours 22 each)
+POCKETS = ((11, 38), (58, 85))  # px along the window from its -x end: the slots in the front either side of the middle
+                                # panel, their outer edges in line with the posts' (the user)
 COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
        "p_floor": "fNW2", "p_back": "fNW3", "p_side": "fNS2"}
 OFF = {"l": 0, "m": 1, "r": 2}  # a piece's tiles from the window's -x end
@@ -120,9 +120,10 @@ def _pockets_x(part):
 
 
 def _pocket_cut(k, pa, pb):
-    """Take the ramp's front out between pa and pb: everything out past the sill's front edge (the near side: mesh -y)
-    over the slot's floor (the foot's top) and under the sill (not the header's tube, out past it high up)."""
-    ye, zf, zs = -_front(), W.foot(), _zs()
+    """Take the ramp's front out between pa and pb: everything out past the wall's line (the near side: mesh -y; the
+    slot's back in line with the slope's top end, the user) over the slot's floor (the foot's top) and under the sill
+    (not the header's tube, out past it high up)."""
+    ye, zf, zs = -_line(), W.foot(), _zs()
     inx = [(0, pa, 1), (0, pb, -1)]
     regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zf, -1)],
                inx + [(1, ye, -1), (2, zs, 1)]]
@@ -151,17 +152,23 @@ def _pocket_cut(k, pa, pb):
 
 
 def _pocket(k, pa, pb):
-    """A slot's faces: its floor out to the ramp's foot, its back up to the sill's front edge, its sides (the slope's
-    section over the floor). The near side: grid +y (mesh -y, as _pocket_cut works)."""
-    ye, zf, zs, yf = _front(), W.foot(), _zs(), 0.5
+    """A slot's faces: its floor out to the ramp's foot, its back at the wall's line up to the sill, its sides (the
+    section over the floor: the sill's height, then the slope), and under an end block (the cut's ends past the slot's)
+    the slope's underside over it. The near side: grid +y (mesh -y, as _pocket_cut works)."""
+    yl, ye, zf, zs, yf = _line(), _front(), W.foot(), _zs(), 0.5
     a, b = max(pa, -0.5), min(pb, 0.5)
     if b - a < 1e-9:
         return
-    _quad(k, [(a, ye, zf), (b, ye, zf), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
-    _quad(k, [(a, ye, zf), (b, ye, zf), (b, ye, zs), (a, ye, zs)], (0, 1, 0), COL["p_back"])
+    _quad(k, [(a, yl, zf), (b, yl, zf), (b, yf, zf), (a, yf, zf)], (0, 0, 1), COL["p_floor"])
+    _quad(k, [(a, yl, zf), (b, yl, zf), (b, yl, zs), (a, yl, zs)], (0, 1, 0), COL["p_back"])
     for u, sd in ((pa, 1), (pb, -1)):
         if -0.5 < u < 0.5:
+            _quad(k, [(u, yl, zf), (u, ye, zf), (u, ye, zs), (u, yl, zs)], (sd, 0, 0), COL["p_side"])
             _quad(k, [(u, ye, zf), (u, yf, zf), (u, ye, zs)], (sd, 0, 0), COL["p_side"])
+    c0, c1 = _sill(PART)
+    for u0, u1 in ((max(a, -0.5), min(b, c0)), (max(a, c1), min(b, 0.5))):
+        if u1 - u0 > 1e-9:
+            _quad(k, [(u0, yl, zs), (u1, yl, zs), (u1, ye, zs), (u0, ye, zs)], (0, 0, -1), COL["p_back"])
 
 
 def _quad(k, pts, out, col):
