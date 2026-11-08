@@ -3,9 +3,9 @@ stand to work the bed).
 
 Look exploration (earlier rounds are in git history). One plant per tile, a lamp over the bed as the only pink glow:
   cab    a navy base with slatted panels, a glass cabin per plant in grey frames, a machinery block between them
-  terra  the same base under one long cab-shaped glass canopy
-  lab    a shallow pearl tray floating on a navy pedestal, a tapered blade spine with a mint stripe, a slim ring lamp
-  lab.sand  lab in cream with an orange detail ring (REMAP swaps the colours)
+  terra  the same base under one long glass canopy
+Both canopies rise upright a short way, then slope on their long sides to a flat roof carrying the lamp; ends upright.
+  lab    a shallow pearl tray on a navy pedestal nearly its size, a tapered blade spine with a mint stripe, a slim ring lamp
 Layers: `.off` / `.on` are the bed; `.crop.<test>` is a stand-in crop drawn on top of the bed, rendered with the bed as
 a holdout so the lamp cuts the plant where it passes in front of it (two draws, no front layer). HYDRO_VARIANTS
 narrows the build."""
@@ -135,10 +135,10 @@ def _on(on, lit="cyan"):
 # ---- the directions --------------------------------------------------------------------------------------------------
 def lab(k, on):
     """Lab: a shallow pearl tray floating on a narrow navy pedestal, a blade spine with a mint stripe."""
-    _prism(k, _pill_ol(0, 0, 1.8, 0.76), 0.0, 0.07, "labNavy", top="labNavyL")               # foot
-    _prism(k, _pill_ol(0, 0, 1.6, 0.6), 0.07, 0.35, "labNavy", top="labNavyL")              # pedestal
+    _prism(k, _pill_ol(0, 0, 1.94, 0.86), 0.0, 0.07, "labNavy", top="labNavyL")              # foot
+    _prism(k, _pill_ol(0, 0, 1.84, 0.76), 0.07, 0.35, "labNavy", top="labNavyL", tl=_pill_ol(0, 0, 1.78, 0.7))
     for i in range(5):                                                                      # vent slots
-        k.box(-0.18 + i * 0.09, 0.304, 0.14, 0.05, 0.012, 0.16, "dark")
+        k.box(-0.18 + i * 0.09, 0.378, 0.14, 0.05, 0.012, 0.16, "dark", rx=-0.17)
     _prism(k, _pill_ol(0, 0, 1.7, 0.66), 0.42, 0.2, "labPearl", top="labPearlL", tl=_pill_ol(0, 0, 2.0, 0.92))
     _prism(k, _pill_ol(0, 0, 2.0, 0.92), 0.565, 0.045, "labMint", tl=_pill_ol(0, 0, 2.03, 0.95))  # detail ring
     zs = 0.66
@@ -153,14 +153,7 @@ def lab(k, on):
     k.box(0, -0.3, 0.72, 0.13, 0.03, 0.8, "labMint")                                       # stripe up its front
     _prism(k, _cham(0, -0.3, 0.16, 0.3, 0.05), 1.6, 0.16, "labNavy", top="labNavyL")         # head
     _lamp_ring(k, 0, 0.0, 1.58, 1.82, 0.68, 0.09, on, col="labPearl", top="labPearlL")
-    return ((-0.47, 0.0), (0.47, 0.0)), zs
-
-def _remapped(k):
-    """k with REMAP applied to every colour it draws (a colour scheme swap)."""
-    poly = k.m.poly
-    k.m.poly = lambda pts, color, flip=False: poly(pts, REMAP.get(color, color), flip)
-    return k
-
+    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.58
 
 # ---- glass enclosed (terrarium) ----------------------------------------------------------------------------------------
 GLASS_ALPHA, GLASS_RIM = 0.1, 0.0
@@ -172,7 +165,7 @@ def _part(k, name):
     if not hasattr(k, "parts"):
         k.parts = {}
     if name not in k.parts:
-        k.parts[name] = _remapped(K(f"{k.m.name}_{name}", (2, 1), k.rot))
+        k.parts[name] = K(f"{k.m.name}_{name}", (2, 1), k.rot)
     return k.parts[name]
 
 
@@ -181,37 +174,7 @@ def _bar(k, a, b, s, col):
     _tube(k, [a, b], s * 0.7, col, n=4)
 
 
-def _canopy(k, cu, L, D, z0, zw, zr, i, on, frame, frame_l, roof, mid=True):
-    """A cab-shaped glass canopy over the bed: vertical glass walls from z0 to zw, sloped glass inset i up to the roof
-    at zr, a solid roof carrying the grow lamp under it, square frame bars on every edge."""
-    g = _part(k, "glass")
-    a, b, a2, b2 = L / 2, D / 2, L / 2 - i, D / 2 - i
-    lo = [(cu - a, -b), (cu + a, -b), (cu + a, b), (cu - a, b)]
-    hi = [(cu - a2, -b2), (cu + a2, -b2), (cu + a2, b2), (cu - a2, b2)]
-    for j in range(4):                                                      # panes: walls, then the slopes
-        q = (j + 1) % 4
-        g.m.poly([_G(g, *lo[j], z0), _G(g, *lo[q], z0), _G(g, *lo[q], zw), _G(g, *lo[j], zw)], "glassT", flip=True)
-        g.m.poly([_G(g, *lo[j], zw), _G(g, *lo[q], zw), _G(g, *hi[q], zr), _G(g, *hi[j], zr)], "glassT", flip=True)
-    s = 0.06
-    for j in range(4):                                                      # frame: sill, eaves, hips, posts, ridge
-        q = (j + 1) % 4
-        (u0, v0), (u1, v1) = lo[j], lo[q]
-        _bar(k, (u0, v0, z0 + s / 2), (u1, v1, z0 + s / 2), s, frame)
-        _bar(k, (u0, v0, zw), (u1, v1, zw), s, frame_l)
-        _bar(k, (u0, v0, z0), (u0, v0, zw), s, frame)
-        _bar(k, (u0, v0, zw), (hi[j][0], hi[j][1], zr), s, frame_l)
-    if mid:                                                                 # a post between the two plants
-        for sv in (-1, 1):
-            _bar(k, (cu, sv * b, z0), (cu, sv * b, zw), s, frame)
-            _bar(k, (cu, sv * b, zw), (cu, sv * b2, zr), s, frame_l)
-    _prism(k, _cham(cu, 0, 2 * a2 + 0.08, 2 * b2 + 0.08, 0.03), zr - 0.01, 0.08, roof, top=frame_l)   # roof
-    _prism(k, _cham(cu, 0, 2 * a2 - 0.02, 2 * b2 - 0.02, 0.02), zr - 0.08, 0.07, "growPink" if on else "lampOff")  # lamp
-    for du, dz, ln in ((-0.25, 0.1, 0.16), (-0.16, 0.2, 0.1)):              # two glints on the front glass
-        _bar(_part(k, "glint"), (cu + a * 0.55 + du, b + 0.004, zw - 0.32 + dz),
-             (cu + a * 0.55 + du + ln * 0.6, b + 0.004, zw - 0.32 + dz + ln), 0.03, "glassG")
-
-
-def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof):
+def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof, mid=True):
     """A glass canopy: a short upright wall from the sill to zv, then the long sides slope up to the roof (inset iv
     each side), the short ends upright; a solid roof carrying the grow lamp, square frame bars on every edge, a post
     mid-length."""
@@ -230,7 +193,7 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof):
         _bar(k, (*hi[j], zr), (*hi[q], zr), s, frame_l)
         _bar(k, (*lo[j], z0), (*lo[j], zv), s, frame)
         _bar(k, (*lo[j], zv), (*hi[j], zr), s, frame_l)
-    for sv in (-1, 1):                                                      # a post and rafter between the plants
+    for sv in (-1, 1) if mid else ():                                       # a post and rafter between the plants
         _bar(k, (cu, sv * b, z0), (cu, sv * b, zv), s, frame)
         _bar(k, (cu, sv * b, zv), (cu, sv * b2, zr), s, frame_l)
     _prism(k, _cham(cu, 0, L + 0.08, 2 * b2 + 0.1, 0.03), zr - 0.01, 0.08, roof, top=frame_l)        # roof
@@ -263,7 +226,7 @@ def terra(k, on):
     zs = 0.69
     _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
     _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.82, 1.36, 0.13, on, "tFrame", "tFrameL", "tFrame")
-    return ((-0.47, 0.0), (0.47, 0.0)), zs
+    return ((-0.47, 0.0), (0.47, 0.0)), zs, 1.28
 
 
 def cab(k, on):
@@ -279,7 +242,7 @@ def cab(k, on):
         for j in range(5):
             k.box(cu - e * 0.06 - 0.2 + j * 0.1, 0.48, 0.2, 0.04, 0.012, 0.2, "tNavyL")
         _tray(k, cu, 0.8, 0.84, 0.58, zs, 5 + e)
-        _canopy(k, cu, 0.84, 0.86, 0.58, 1.2, 1.5, 0.18, on, "tFrame", "tFrameL", "tFrame", mid=False)
+        _canopy_slope(k, cu, 0.84, 0.86, 0.58, 0.79, 1.33, 0.13, on, "tFrame", "tFrameL", "tFrame", mid=False)
     blk = _cham(0, 0, 0.26, 0.76, 0.04)                                                      # machinery block
     _prism(k, blk, 0.56, 0.6, "tNavy", top="tNavyL")
     _prism(k, _scaled(blk, 1.04), 1.08, 0.05, "tFrame", top="tFrameL")
@@ -289,11 +252,11 @@ def cab(k, on):
     k.box(0, 0.391, 0.7, 0.11, 0.012, 0.13, "dark")
     k.box(0, 0.397, 0.74, 0.07, 0.012, 0.05, _on(on))
     k.box(0, 0.397, 0.9, 0.05, 0.012, 0.04, _on(on, "orange"))
-    return ((-0.55, 0.0), (0.55, 0.0)), zs
+    return ((-0.55, 0.0), (0.55, 0.0)), zs, 1.25
 
 
 # ---- stand-in crops (the real crops come once the bed is approved) ---------------------------------------------------
-def _greens(k, u, v, z, seed=0):
+def _greens(k, u, v, z, seed=0, hmax=None):
     """A broad leafy head: two tiers of leaves round a crown."""
     r = random.Random(seed * 11 + 5)
     cols = ("leaf", "leafL", "leafD")
@@ -306,32 +269,27 @@ def _greens(k, u, v, z, seed=0):
     k.box(u, v, z + 0.05, 0.16, 0.16, 0.18, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
 
 
-def _grain(k, u, v, z, seed=0):
-    """Upright stalks with heavy gold heads, the tallest crop: it tests the lamp's clearance."""
+def _grain(k, u, v, z, seed=0, hmax=0.85):
+    """Upright stalks with heavy gold heads, the tallest crop, as tall as the bed lets it be (hmax over the soil)."""
     r = random.Random(seed * 7 + 2)
     for i in range(13):
         a, d = r.uniform(0, math.tau), 0.22 * math.sqrt(r.uniform(0.05, 1.0))
         cu, cv = u + d * math.cos(a), v + d * math.sin(a)
-        h = r.uniform(0.45, 0.68)
+        h = r.uniform(0.66, 1.0) * (hmax - 0.17)
         k.box(cu, cv, z, 0.045, 0.045, h, "stalk")
         k.box(cu, cv, z + h - 0.03, 0.08, 0.08, 0.2, "grain", top="grain", taper=0.6, rz=a)
         k.box(cu + 0.03, cv, z + h * 0.4, 0.16, 0.05, 0.03, "leafD", rz=a, ry=-0.5)
 
 
 CROPS = {"greens": _greens, "grain": _grain}
-SAND_L = {"labNavy": "sandD", "labNavyL": "sand", "labPearl": "sand", "labPearlL": "sandL", "labMint": "arcOr"}  # cream, orange ring
-VARIANTS = {"cab": (cab, {}), "terra": (terra, {}), "lab": (lab, {}), "lab.sand": (lab, SAND_L)}
-REMAP = {}
+VARIANTS = {"cab": cab, "terra": terra, "lab": lab}
 LAYERS = ("off", "on", "crop.greens", "crop.grain")
 
 
 def build(variant, layer, rot=0):
     name = f"hydro_{variant.replace('.', '_')}_{layer.replace('.', '_')}_{rot}"
-    fn, remap = VARIANTS[variant]
-    REMAP.clear()
-    REMAP.update(remap)
-    kb = _remapped(K(name, (2, 1), rot))
-    plants, zs = fn(kb, layer == "on")
+    kb = K(name, (2, 1), rot)
+    plants, zs, ceil = VARIANTS[variant](kb, layer == "on")      # ceil: the underside of the lamp over the plants
     bed = kb.build()
     parts = {n: p.build() for n, p in getattr(kb, "parts", {}).items()}
     for o in parts.get("glass", []):
@@ -342,7 +300,7 @@ def build(variant, layer, rot=0):
         o.hide_render = True
     kc = K(name + "_crop", (2, 1), rot)
     for i, (u, v) in enumerate(plants):
-        CROPS[layer.split(".")[1]](kc, u, v, zs, i)
+        CROPS[layer.split(".")[1]](kc, u, v, zs, i, hmax=ceil - zs - 0.06)
     crop = kc.build()
     return crop, crop + bed                     # "over": the crop's px where it is in front of the bed, no outline
 
