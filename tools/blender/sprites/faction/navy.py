@@ -24,7 +24,8 @@ NAVY_SEAM = 7.5 / 32               # the plate seams, in from each tile edge, up
                                     # grid: a px wide, they fill whole px on both faces)
 
 
-RED_AT = 8 / 11                     # the ramp's red band: from 8 px out (of its 11) down to the toe (its last px)
+RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
+                                    # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
 
 
@@ -144,7 +145,7 @@ class Navy(Faction):
         return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=1, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
-                      toe_lvl={"wall": ("fNW2", "fNW3"), "blue": ("fNH2", "fNH3")},  # (the toe in the slope's tone)
+                      toe_lvl={"wall": ("fNT2", "fNT4"), "blue": ("fNT2", "fNT4")},  # (the toe in the red band's tones)
                       ramp_bands=((RED_AT, "ochre", 2, 0.0),),    # the red band on the slope, just over the toe
                       shelf=SHELF, shelf_lvl=2, shelf_back=(0, 1),       # (the default's and slate's ramp: a flat
                       #   shelf at the wall, all shelf: no lip on it)

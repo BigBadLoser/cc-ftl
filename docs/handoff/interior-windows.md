@@ -470,3 +470,6 @@ Marked ref (both layers, numbered): scratchpad
   fNW2 / fNW3; wall3d skirt and shell ramp now take a (y, x) pair), the red moved off the foot onto the slope just over
   the toe (ramp_bands from 8 px of 11; the foot FootTone("wall", 2); toe_at 8/11 so a corner's chamfer and an end's ramp
   band match; _end_section foot= param: navy's feet the section's). Renders ns5.
+- 2026-11-08: the user: red band down onto the toe's edge. RED_AT 9/11 and the toe (the slope's last px) in the band's
+  tones (toe_lvl fNT2 / fNT4): the red from 9 px out down to the foot. ns7. Shelf vs slate's: both SHELF 4 px; slate's
+  reads bigger because its upper slope down to SPLIT (0.655 of the run, ~7 px) is grey like the shelf, the blue below.
