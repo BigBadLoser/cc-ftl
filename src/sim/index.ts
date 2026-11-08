@@ -116,7 +116,7 @@ export { truceHolds, banned as truceBanned, setTruce, breachTruce, pirateKeys } 
 export { contrabandAboard, contrabandValue, scanPending, scanPrices, enforces } from './blackmarket/scan';
 export { checkOffer, cleanLines, unitsOf, type OfferCheck } from './trade/offers';
 export { planCourier, courierDef, type CourierPlan } from './trade/courier';
-export { playerShip, playerShipPackedOk, playerItems } from './trade/player';
+export { playerShip, playerShipId, playerShipPackedOk, playerItems } from './trade/player';
 export { liveDealWith, isLive } from './trade/deals';
 export { commitments, type Commitments } from './trade/commit';
 export { ShipGrid, shipGridOf } from './shipGrid';

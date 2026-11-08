@@ -5,7 +5,7 @@ import { settleLosses } from './jobs';
 import { dropOut, enterHyperspace } from '../sector/jump';
 import type { Sim } from '../sim';
 import { playerShipInfo, spawnContact } from './arrivals';
-import { playerShipPackedOk } from '../trade/player';
+import { playerShipId } from '../trade/player';
 import { burnFuel, ftlCharge, fuelStock, jumpFuel, spendCharge } from './fuel';
 import { arrive, checkLeaving, type Reject } from './travel';
 import { edgeBetween } from './route';
@@ -234,7 +234,7 @@ export function leaveAdrift(sim: Sim, ship: number, route: readonly string[]): b
   const g = sim.galaxy;
   const reject: Reject = (reason) => (sim.events.emit({ type: 'command.rejected', command: 'galaxy.jump', reason }), false);
   if (!isAdrift(sim)) return reject('notAdrift');
-  if (ship !== playerShipPackedOk(sim)) return reject('notPlayerShip');
+  if (ship !== playerShipId(sim)) return reject('notPlayerShip'); // adrift the ship is packed: its id is the packet's
   const nodes = [g.current, ...route];
   const edges = routeEdges(sim, nodes);
   if (!edges) return reject('noRoute');

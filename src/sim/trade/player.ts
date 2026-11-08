@@ -24,6 +24,11 @@ export function playerShipPackedOk(sim: Sim): number {
   return 0;
 }
 
+/** The player's ship id wherever it is: its ShipC entity in a node, or the hyperspace packet's ship while the ship is packed (0 when there is none). */
+export function playerShipId(sim: Sim): number {
+  return playerShipPackedOk(sim) || (sim.sector.state === 'hyperspace' ? sim.sector.packet?.ship ?? 0 : 0);
+}
+
 /** Storage modules on the player's ship, ascending id. */
 function playerStorages(sim: Sim): number[] {
   const grid = playerShip(sim);

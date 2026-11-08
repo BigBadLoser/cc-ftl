@@ -1,4 +1,5 @@
-import { heldItems, withHeld } from '../items/held';
+import { JobC } from '../crew/components';
+import { cancelFit, heldItems, withHeld } from '../items/held';
 import { repKey } from '../galaxy/standing';
 import { nodeOf, nodeState } from '../galaxy/state';
 import { ENCOUNTER_TTL } from '../galaxy/tuning';
@@ -47,6 +48,11 @@ export function seizeContraband(sim: Sim): ItemQty[] {
   const ids = new Set(taken.map((l) => l.item));
   withHeld(sim, (held) => {
     for (const h of held) if (ids.has(h.item)) h.remove();
+    // A fit job still waiting to fetch a seized upgrade (it lay in storage) has nothing to fit: call it off with the rest.
+    for (const id of sim.world.query(JobC)) {
+      const item = sim.world.get(id, JobC)?.kind === 'fit' ? sim.world.get(id, JobC)?.fit?.item : null;
+      if (item && ids.has(item)) cancelFit(sim, id);
+    }
   });
   return taken;
 }
