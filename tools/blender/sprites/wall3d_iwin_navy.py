@@ -16,6 +16,8 @@ from .wall3d_iwin import _clip
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
+BLOCK_UP = 5                # art px: an end block's top over the wall's top against its post, falling along the wall
+                            # to the sill where the sill starts (the user)
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
@@ -81,15 +83,33 @@ def _shelf_end():
     return _line() + _d_at(_zh())
 
 
+def _zb():
+    return _zt() + BLOCK_UP / W.ZART
+
+
 def _cells(x0, x1, c0, c1):
-    """The opening along x: (xa, xb, z, sill): under an end block the wall taken down to the ramp's top; over the cut
-    down to the sill, across the whole wall (the pane stands on it; its far half shows through the glass)."""
+    """The opening along x: (xa, xb, z, sill), z(x) the floor: under an end block the wall taken down to a top falling
+    along the wall from _zb() at its post to the sill's height where the sill starts; over the cut down to the sill,
+    across the whole wall (the pane stands on it; its far half shows through the glass)."""
+    zs = _zs()
+
+    def block(xp, xe):                                  # (xp its post, xe the sill's end)
+        if abs(xp - xe) < 1e-12:
+            return lambda x: zs
+        return lambda x: zs + (_zb() - zs) * (x - xe) / (xp - xe)
     out = []
-    for xa, xb, z, sill in ((x0, c0, _zt(), False), (c0, c1, _zs(), True), (c1, x1, _zt(), False)):
+    for xa, xb, z, sill in ((x0, c0, block(x0, c0), False), (c0, c1, lambda x: zs, True),
+                            (c1, x1, block(x1, c1), False)):
         a, b = max(xa, x0), min(xb, x1)
         if b - a > 1e-9:
             out.append((a, b, z, sill))
     return out
+
+
+def _under(xa, xb, z):
+    """The clip plane keeping what lies under the floor z(x) between xa and xb (wall3d_iwin._side's (n, c))."""
+    s = (z(xb) - z(xa)) / (xb - xa)
+    return ((s, 0.0, -1.0), s * xa - z(xa))
 
 
 def _cut(k, x0, x1, z1, cells):
@@ -99,8 +119,8 @@ def _cut(k, x0, x1, z1, cells):
     regions = [[(0, x0, -1)], [(0, x1, 1)], inx + [(1, ye, 1)], inx + [(1, yb, -1)],
                inx + [(1, yb, 1), (1, ye, -1), (2, z1, 1)]]
     for xa, xb, z, _ in cells:
-        regions.append([(0, xa, 1), (0, xb, -1), (1, yb, 1), (1, ye, -1), (2, z, -1)])
-    zlo = min(z for _, _, z, _ in cells)
+        regions.append([(0, xa, 1), (0, xb, -1), (1, yb, 1), (1, ye, -1), _under(xa, xb, z)])
+    zlo = min(min(z(xa), z(xb)) for xa, xb, z, _ in cells)
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -198,21 +218,21 @@ def _tops(k, cells):
         if b - a < 1e-9:
             continue
         y = _front() if sill else _line()
-        _quad(k, [(a, -y, z), (b, -y, z), (b, y, z), (a, y, z)], (0, 0, 1), COL["sill" if sill else "top"])
+        _quad(k, [(a, -y, z(a)), (b, -y, z(b)), (b, y, z(b)), (a, y, z(a))], (0, 0, 1), COL["sill" if sill else "top"])
 
 
 def _ends(k, x0, x1, z1, cells):
-    """The opening's ends: the posts' sides from the wall's top up to z1; the end blocks' sides facing the cut, from
-    the sill up to the ramp's section (each in convex strips across the wall)."""
-    yl, ye, zt, zs = _line(), _front(), _zt(), _zs()
+    """The opening's ends: the posts' sides from the end block's top up to z1; the end blocks' sides facing the cut
+    out past the wall, from the sill up to the ramp's section (each in convex strips across the wall; between the
+    wall's lines a block's top falls to the sill there: no side)."""
+    yl, ye, zs = _line(), _front(), _zs()
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
-            _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
+            _quad(k, [(u, -yl, _zb()), (u, yl, _zb()), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
     for (_, u, _, sa), (_, _, _, sb) in zip(cells, cells[1:]):
         if not -0.5 < u < 0.5:
             continue
         sd = 1 if sb else -1                            # (it faces the sill's side)
-        _quad(k, [(u, -yl, zs), (u, yl, zs), (u, yl, zt), (u, -yl, zt)], (sd, 0, 0), COL["end"])
         for s_ in (1, -1):
             if s_ > 0 and any(pa - 1e-9 <= u <= pb + 1e-9 for pa, pb in _pockets_x(PART)):
                 continue                                # (a slot takes the slope there)
@@ -244,14 +264,15 @@ def hook(k, sp, own=True):
         a, b = max(xa, -0.5), min(xb, 0.5)
         if b - a < 1e-9:
             continue
-        _quad(k, [(a, -h, zl + e), (b, -h, zl + e), (b, h, zl + e), (a, h, zl + e)], (0, 0, 1), PANE_EDGE)
+        za, zb = zl(a), zl(b)
+        _quad(k, [(a, -h, za + e), (b, -h, zb + e), (b, h, zb + e), (a, h, za + e)], (0, 0, 1), PANE_EDGE)
         _quad(k, [(a, -h, z1 - e), (b, -h, z1 - e), (b, h, z1 - e), (a, h, z1 - e)], (0, 0, -1), PANE_EDGE)
-        GLASS.poly([Vector((a, 0.0, zl)), Vector((b, 0.0, zl)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
+        GLASS.poly([Vector((a, 0.0, za)), Vector((b, 0.0, zb)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
                    "wall", 2, Vector((0, 1, 0)), fixed="glassL")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
             v = u + sd * e
-            _quad(k, [(v, -h, _zt()), (v, h, _zt()), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+            _quad(k, [(v, -h, _zb()), (v, h, _zb()), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
 
 
 def _header_foot():
