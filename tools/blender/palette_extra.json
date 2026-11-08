@@ -3773,5 +3773,57 @@
  "fTG1": {
   "hex": "#0c1414",
   "set": "tan"
+ },
+ "fGK0": {
+  "hex": "#1b223e",
+  "set": "slate"
+ },
+ "fGK1": {
+  "hex": "#1fbddd",
+  "set": "slate"
+ },
+ "fGK2": {
+  "hex": "#0e5082",
+  "set": "slate"
+ },
+ "fGK3": {
+  "hex": "#de211a",
+  "set": "slate"
+ },
+ "fGK4": {
+  "hex": "#870b2a",
+  "set": "slate"
+ },
+ "fGK5": {
+  "hex": "#03ca48",
+  "set": "slate"
+ },
+ "fGK6": {
+  "hex": "#018947",
+  "set": "slate"
+ },
+ "fGK7": {
+  "hex": "#eecb00",
+  "set": "slate"
+ },
+ "fGK8": {
+  "hex": "#854a1a",
+  "set": "slate"
+ },
+ "fGK9": {
+  "hex": "#e6760d",
+  "set": "slate"
+ },
+ "fGKa": {
+  "hex": "#41344d",
+  "set": "slate"
+ },
+ "fGKb": {
+  "hex": "#511634",
+  "set": "slate"
+ },
+ "fGKc": {
+  "hex": "#004947",
+  "set": "slate"
  }
 }

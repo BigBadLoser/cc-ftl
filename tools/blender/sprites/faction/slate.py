@@ -5,6 +5,7 @@ from .. import wall3d as T
 from ..relief_style import Design
 from .base import Faction, _style
 from .parts import LINE, PAINT, PX, PZ, body, prism
+from .tan_tops import _px
 from .shell import NO, FaceHoles, Feature, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _ends
 
 FACE = "rose"                       # the face's family (its second tone: the wall family is the ramp's light grey)
@@ -335,6 +336,47 @@ def _minus(a, b, cuts):
     return [(g0, g1) for g0, g1 in out + [(u, b)] if g1 - g0 > 1e-6]
 
 
+CONSOLE = ("............................",     # T1-3's screen (ref 05's, px for px; 28 px wide), its top
+           ".......r.r...........m.m.m..",      # under the header; blank rows added over and under the ref's 13
+           "............................",      # (our wall is taller)
+           "....bbrRrR.d.d.d....pYyYyYy.",
+           "...bCCRRRRdgdgdd....mYYyYOr.",
+           "...bCCRRRRgGGGGd....mYYrRRrp",
+           ".b.bCCRrrrggGgGd....pYYrROy.",
+           "....b.m.m.d.d.d.....mROpYYy.",
+           ".p.p.p.p.p.p.p.p....mRRyYYy.",
+           "ppppppppppppp.p.....mYOpYYy.",
+           "....................pYYYYYy.",
+           ".Rr..Yy..Rr..Yy..Rr.yrOrYOr.",
+           "mRR.mYY.mRR.mYY.mRR.mRrpRRm.",
+           "mrr.myY.mrr.myY.mrr.mRRrRrm.",
+           "....p.......p.......m.m.m...",
+           "............................",
+           "............................",
+           "............................")
+CONSOLE_INK = {".": "fGK0", "C": "fGK1", "b": "fGK2", "R": "fGK3", "r": "fGK4", "G": "fGK5", "g": "fGK6", "Y": "fGK7",
+               "y": "fGK8", "O": "fGK9", "p": "fGKa", "m": "fGKb", "d": "fGKc"}
+
+
+def console_cuts(a, b):
+    """T1-3's screen: one a tile, 28 px wide (u c-14..c+14 px)."""
+    return [(c - 14 * LINE, c + 14 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 14 * LINE and c + 14 * LINE <= b + 1e-6]
+
+
+def slate_console(k, ax, plane, a, b, top, foot, zf):
+    """Wall (T1-3): a screen a tile from the header down (CONSOLE, its colours CONSOLE_INK: the slate set's fGK*,
+    unlit), each px a square on the sprite's grid (tan_tops._px: the face's rows step down a px every 2 across), a
+    dark px row under it. Read left to right on either face. The faint line stops at it."""
+    cuts = console_cuts(a, b)
+    for c0, c1 in cuts:
+        for r, row in enumerate(CONSOLE):
+            for x, ch in enumerate(row if ax == "y" else row[::-1]):
+                _px(k, ax, plane, c0, x, r, top, 2 * PAINT, CONSOLE_INK[ch])
+        zb = top - len(CONSOLE) * PZ
+        T.paint(k, ax, plane, c0, c1, zb - PZ, zb, 0.0, FACE, 1)
+    return _minus(a, b, cuts)
+
+
 def box_cuts(a, b):
     """T1-8's box in the lip: one a tile, 10 px wide (u c-5..c+5 px, over the recess it takes the place of)."""
     return [(c - 5 * LINE, c + 5 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 5 * LINE and c + 5 * LINE <= b + 1e-6]
@@ -376,7 +418,8 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
               Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
-              Design("panel, box", wall=slate_panel_box, lip=box_cuts))
+              Design("panel, box", wall=slate_panel_box, lip=box_cuts),
+              Design("boxes, console", header=slate_boxes, wall=slate_console))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
