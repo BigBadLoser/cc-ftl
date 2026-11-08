@@ -242,7 +242,7 @@ export interface UiFoeModule {
   powered: boolean;
   /** Its upgrade slot kind (null = no slot) and what is fitted in it. */
   slot: string | null;
-  upgrade: { item: string; name: string; effects: string[] } | null;
+  upgrade: { item: string; name: string; effects: string[]; renames: boolean } | null;
 }
 
 /** An upgrade item as the slot panel lists it. */
@@ -671,8 +671,8 @@ export interface UiWeapon {
   targetModuleId: number;
   /** A blind tile aim (sector tile), or null. */
   targetTile: { x: number; y: number } | null;
-  /** The upgrade fitted in its slot (item id, name), or null. */
-  upgrade: { item: string; name: string } | null;
+  /** The upgrade fitted in its slot (item id, name, what it does), or null. */
+  upgrade: UiUpgradeInfo | null;
   /** An engineer is fitting or removing its upgrade: it is offline. */
   fitting: boolean;
   /** Its upgrade slot kind (null = no slot). */
@@ -734,7 +734,7 @@ export interface UiEnemyWeapon {
   /** Its shot colour (0xRRGGBB), the same as its line in the world and its marker on the incoming timeline. */
   color: number;
   /** The upgrade fitted in the weapon (a scan reads it off the card), or null. */
-  upgrade: { item: string; name: string } | null;
+  upgrade: UiUpgradeInfo | null;
 }
 
 export interface UiShipCombat {
@@ -1551,4 +1551,13 @@ export interface UiApi {
   /** Resolves when the first scene's sprites are in (the loading screen waits on it). Absent in test stubs. */
   artReady?: Promise<void>;
   throwTestError(): void;
+}
+
+/** A fitted upgrade as the combat rows show it: the item, its name and what it does (one line each). */
+export interface UiUpgradeInfo {
+  item: string;
+  name: string;
+  effects: string[];
+  /** The upgrade renames its weapon (a behaviour upgrade): the name marks it, so the row shows no symbol and the name opens the card. */
+  renames: boolean;
 }

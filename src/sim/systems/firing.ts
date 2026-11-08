@@ -1,5 +1,5 @@
 import { BodyC } from '../body';
-import { ammoCount, consumeAmmo } from '../combat/ammo';
+import { ammoNeed, consumeAmmo, hasAmmo } from '../combat/ammo';
 import { CombatC, IonC, ProjectileC, WeaponC, type Target } from '../combat/components';
 import { hostileAct } from '../combat/provoke';
 import { aimDirection, turretPosition } from '../combat/geometry';
@@ -50,14 +50,14 @@ export function firingSystem(sim: Sim): void {
     const modeHold = !isAiFaction(ship.faction) && w.mode === 'hold' && !w.once && !shuttleShot;
     const held = (combat.hold || modeHold) && !combat.volley;
     // Enemy weapons telegraph: in the last window of the charge they commit to a target and aim area (the module it will hit), which the shot then keeps.
-    const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && (!def.ammo || ammoCount(sim, shipId, def.ammo) > 0)));
+    const live = ready && !held && (w.charge >= 1 || (!!mannedConsole(sim, shipId, 'weapons') && hasAmmo(sim, shipId, def)));
     const commit = isAiFaction(ship.faction) ? updateCommit(sim, id, def.chargeSec, live, () => resolveTarget(sim, id, combat)) : null;
     if (!ready || w.charge < 1 || held) continue;
     const target = commit?.target ?? resolveTarget(sim, id, combat);
     if (!target) continue;
     // Enemy ships manage their own heat: a volley that would overheat them waits for a vent. The player's ship fires into an overheat if told to.
     if (isAiFaction(ship.faction) && heatCeilingBlocks(combat, def.heat)) continue;
-    if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) continue;
+    if (def.ammo && def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo, ammoNeed(def))) continue;
     addHeat(sim, shipId, def.heat);
     w.charge = 0;
     w.shotsLeft = def.shots;
@@ -80,7 +80,7 @@ function launchNext(
   w.nextShotTick = sim.tick + Math.max(1, Math.round(def.shotDelaySec * TICK_HZ));
   const target = w.volleyTarget;
   if (!target) return void (w.shotsLeft = 0);
-  if (def.ammo && !def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo)) return void (w.shotsLeft = 0);
+  if (def.ammo && !def.ammoPerVolley && !consumeAmmo(sim, shipId, def.ammo, ammoNeed(def))) return void (w.shotsLeft = 0);
   const from = turretPosition(sim, moduleId);
   const targetGrid = target.ship;
   const alive = shipIdOf(sim, sim.world.get(target.moduleId, ModuleC)) === targetGrid;
@@ -104,6 +104,7 @@ function launchNext(
   if (hit && victim !== shipId) hit.threat = { ship: shipId, at: sim.tick }; // who is shooting at it (the AI's target choice reads it)
   sim.events.emit({
     type: 'weapon.fired', ship: shipId, weaponId: moduleId, weapon, projectile, targetShip: target.ship, targetModuleId: target.moduleId,
+    ...(def.ammo && !(def.ammoPerVolley && w.shotsLeft < def.shots - 1) ? { ammo: ammoNeed(def) } : {}), ...(def.look ? { look: def.look } : {}),
   });
 }
 

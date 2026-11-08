@@ -6,6 +6,7 @@ import type { Fleet } from '../sim/galaxy/types';
 import { ensureChunk, nodeState } from '../sim/galaxy/state';
 import { placementGapError } from '../sim/regions';
 import { isMarket } from '../sim/galaxy/populateSpawn';
+import { ModuleC } from '../sim/modules/components';
 import { giveItems } from '../sim/story/effects';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
@@ -17,12 +18,16 @@ const step = (sim: Sim, n = 1): void => {
 const adjacent = (sim: Sim, id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
 
 /** The player flies two hops with `items` in the hold; a fleet at the first node flies the other way and crosses them there. */
-function crossing(faction: string, role: Fleet['role'], hold: Record<string, number>, truce = false) {
+function crossing(faction: string, role: Fleet['role'], hold: Record<string, number>, truce = false, fitted = false) {
   const sim = newGame(3, content);
   sim.story.goals.skipped = true;
   sim.galaxy.fleets = [];
   giveItems(sim, 'item.fuel', 50);
   for (const [item, n] of Object.entries(hold)) storageAdd(sim, playerStorages(sim)[0] as number, item, n);
+  if (fitted) {
+    const gun = sim.world.query(ModuleC).find((id) => !!sim.content.modules[sim.world.get(id, ModuleC)!.def]?.upgradeSlot) as number;
+    sim.world.get(gun, ModuleC)!.upgrade = 'item.upg_nuke';
+  }
   const c = sim.world.get(playerShip(sim), CombatC);
   if (c) c.ftl = FTL_CHARGE_SEC;
   const to = adjacent(sim, START_NODE)[0] as string;
@@ -55,6 +60,17 @@ describe('patrol scans and the truce on the way', () => {
     step(sim);
     expect(contrabandAboard(sim)).toEqual([]);
     expect(reputationOf(sim.story, 'navy')).toBeLessThan(navy);
+  });
+
+  it('a contraband upgrade fitted in a module is found in the packet and taken from it', () => {
+    const { sim, enc } = crossing('navy', 'patrol', {}, false, true);
+    expect(enc?.scan?.value).toBe(content.items['item.upg_nuke'].price);
+    expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
+    sim.enqueue({ type: 'galaxy.respond', encounter: enc!.id, choice: 'surrender' });
+    step(sim);
+    expect(contrabandAboard(sim)).toEqual([]);
+    const mods = sim.sector.packet!.entities.map((e) => e.c['module'] as { upgrade?: string } | undefined).filter(Boolean);
+    expect(mods.some((m) => m!.upgrade)).toBe(false);
   });
 
   it('a scan that finds nothing is an ordinary acknowledge, and a pirate patrol never enforces', () => {

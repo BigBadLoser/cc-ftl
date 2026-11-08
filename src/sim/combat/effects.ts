@@ -46,6 +46,9 @@ export function applyEffects(sim: Sim, impact: Impact, effects: readonly Effect[
         if (!(e.ifNoDrain && drained)) ionDisable(sim, impact, e.seconds);
         if (!drained) stunNear(sim, impact, ION_STUN_RADIUS); // ion that reaches the deck stuns robots near the hit
         break;
+      case 'arc':
+        if (!(e.ifNoDrain && drained)) arc(sim, impact, e.amount, e.radius, e.targets ?? 3);
+        break;
       case 'emp':
         for (const id of modulesNear(sim, impact, e.radius)) ionModule(sim, id, e.seconds);
         stunNear(sim, impact, e.radius);
@@ -122,6 +125,30 @@ function crewDamage(sim: Sim, at: Impact, amount: number, radius: number): void 
     if (Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y)) > radius) continue;
     const health = sim.world.get(id, HealthC);
     if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, id)));
+  }
+}
+
+/**
+ * Lightning from the module on the impact tile: the `targets` nearest living crew within `radius` tiles (Chebyshev) of the hit take `amount` hp
+ * (armour counts) and are stunned if ion-vulnerable. Nearest first, ties by id, so it never touches the rng. No module on the tile, no arc.
+ */
+function arc(sim: Sim, at: Impact, amount: number, radius: number, targets: number): void {
+  const grid = shipGrid(sim, at.shipId);
+  if (!grid?.has('module') || !grid.inBounds(at.x, at.y) || !grid.get('module', at.x, at.y)) return;
+  const near: { id: number; d: number; x: number; y: number }[] = [];
+  for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
+    const pos = sim.world.get(id, PositionC);
+    if (!pos || shipIdOf(sim, pos) !== at.shipId || sim.world.has(id, DeadC) || sim.world.has(id, DownedC)) continue;
+    const o = origin(pos);
+    const d = Math.max(Math.abs(o.x - at.x), Math.abs(o.y - at.y));
+    if (d <= radius) near.push({ id, d, x: o.x, y: o.y });
+  }
+  near.sort((a, b) => a.d - b.d || a.id - b.id);
+  for (const n of near.slice(0, targets)) {
+    const health = sim.world.get(n.id, HealthC);
+    if (health) health.hp = Math.max(0, health.hp - amount * (1 - armorOf(sim, n.id)));
+    stunCrew(sim, n.id);
+    sim.events.emit({ type: 'projectile.arc', projectile: at.projectile, weapon: at.weapon, ship: at.shipId, x: at.x, y: at.y, tx: n.x, ty: n.y });
   }
 }
 
