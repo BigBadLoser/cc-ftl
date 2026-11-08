@@ -156,13 +156,20 @@ def body(k):
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.84, ln * 0.84 + 0.035, ln]          # (the seam runs above the porthole)
     mats = [HULL_D, HULL, HULL, HULL_D, HULL]
+    sa, sb, half = PACK[0], PACK[1] * ln, PACK[2]
+
+    def ring(s0, s1, g, m):                                                 # open under the drive pack, so its
+        if s0 >= sa and s1 <= sb:                                           # thrusters' bores run deep (the pack
+            sector(k, s0, s1, 90 + half, 450 - half, g, m, m, ds=s1 - s0)   # covers the gap)
+        else:
+            k.cyl(s0, s1, k.r(s0) * g, k.r(s1) * g, m)
     for (a, b), m in zip(zip(marks, marks[1:]), mats):
         n = max(1, int((b - a) / 0.06))
         for i in range(n):
-            s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
-            k.cyl(s0, s1, k.r(s0), k.r(s1), m)
+            ring(a + (b - a) * i / n, a + (b - a) * (i + 1) / n, 1.0, m)
     _g("band")
-    k.cyl(0.06, 0.3, k.r(0.06) * 1.008, k.r(0.3) * 1.008, BAND)
+    for i in range(4):
+        ring(0.06 + 0.06 * i, 0.12 + 0.06 * i, 1.008, BAND)
 
 
 def collar(k):
@@ -299,13 +306,13 @@ def rcs(k):
         stud(k.f, q, n, 0.035, 0.04, "steelD", "dark", sides=8)
 
 
-PACK = (0.06, 0.82, 36, 0.34)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
+PACK = (0.08, 0.8, 32, 0.08)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
 BORE = (0.13, 0.2)            # the thrusters' bores: radius, depth into the fairing
 
 
 def drive(k, lit):
-    """The DRIVE PACK on the back (theta 90): a fairing moulded onto the cone, thick and round-nosed low down, thinning
-    into the hull toward the shoulder, steel with a yellow stripe and vent slots. Two thrusters SUNK in it, as the mining
+    """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness with its edges rolled
+    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent slots. Two thrusters SUNK in it, as the mining
     pod's rear thruster is: each in a bore cut straight aft into the fairing's thick part (the fairing is cut round it,
     a rim ring over the cut), a short flared bell inside running up to the mouth, its inner wall and throat lit."""
     _g("drive")
@@ -313,10 +320,13 @@ def drive(k, lit):
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
     br, depth = BORE
 
-    def g(s, t, extra=0.0):
-        x = (s - sa) / (sb - sa)
-        along = min(1.0, (s - sa) / 0.1) ** 0.5 * (1 - x * x * (3 - 2 * x))            # round nose low, thin out up top
-        across = math.sqrt(max(0.0, 1 - ((t - 90) / half) ** 2))
+    def ease(d, w):                                                         # 0 at an edge, 1 once w in from it
+        x = min(1.0, max(0.0, d / w))
+        return x * x * (3 - 2 * x)
+
+    def g(s, t, extra=0.0):                                                 # an even slab on the cone, edges rolled
+        along = ease(s - sa, 0.06) * ease(sb - s, 0.06)
+        across = ease(half - abs(t - 90), 6.0)
         return 1.012 + extra + bump * along * across
     n = (0.0, 0.0, 1.0)                                                     # straight aft
     sb_ = sa + 0.27
@@ -335,7 +345,7 @@ def drive(k, lit):
             sector(k, s0 * ln, s0 * ln + 0.04, t - 5, t + 5, lambda s, tt: g(s, tt, 0.006), "dark", "dark", ds=0.02)
     for m in mouths:
         lo = m[2] - depth                                                   # the bore's floor
-        top = m[2] + 0.04
+        top = m[2] + 0.015                                                  # (the rim barely proud of the slab)
         tube(f, (m[0], m[1], lo), n, br, br, top - lo, "steelD")             # its wall
         disc(f, (m[0], m[1], lo), n, 0.0, br, "dark")                       # its floor
         tube(f, (m[0], m[1], top - 0.07), n, br + 0.045, br + 0.045, 0.08, "steelD")   # the rim over the cut
