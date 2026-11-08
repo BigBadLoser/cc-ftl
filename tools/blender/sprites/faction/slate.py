@@ -249,12 +249,12 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True):
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True, mtop=None):
     """Header (T1-2, T1-3; T1-4's foot): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
     a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
     corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
     across each, the end ones a handle slot near the top. back: the backing's reach over z1 (backing False: none,
-    the face's grey between and under them)."""
+    the face's grey between and under them); mtop: the middle one's top tone in place of its own."""
     if backing:
         T.paint(k, ax, plane, a, b, z0, z1 + back, 0.0, BLUE, 3)           # the backing, the stripe's blue (up to
                                                                            # the wall's top)
@@ -268,7 +268,7 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031, backing=True):
             q0, q1 = max(a, u0), min(b, u1)
             if q1 - q0 < 1e-6:
                 continue
-            top = ("fGT1" if ax == "y" else "fGT2") if mid else None           # (the middle one's sloped top lit)
+            top = (mtop or ("fGT1" if ax == "y" else "fGT2")) if mid else None   # (the middle one's sloped top lit)
             for s0, s1, up, down in _steps(u0, u1, not mid):
                 s0, s1 = max(s0, q0), min(s1, q1)
                 if s1 - s0 < 1e-6:
@@ -415,9 +415,11 @@ HEADER_H = RAIL_H + 9 * PZ          # the header from the stripe's foot to the r
 
 def slate_foot_boxes(k, ax, plane, a, b, zh, mit):
     """T1-4's foot: the boxes header (slate_boxes) again, on the shelf in place of the lip (its backing from the shelf
-    up HEADER_H, not on up the wall), on the face's grey (no backing); the seam over a plain wall's lip on along the
-    2 px at each tile's end to the cabinet's side."""
-    slate_boxes(k, ax, plane, a, b, zh, zh + HEADER_H, mit, back=0.0, backing=False)
+    up HEADER_H, not on up the wall), a px down, on the face's grey (no backing), the middle one's top on the shade
+    side in the end ones' tone (fGT1); the seam over a plain wall's lip on along the 2 px at each tile's end to the
+    cabinet's side."""
+    slate_boxes(k, ax, plane, a, b, zh - PZ, zh - PZ + HEADER_H, mit, back=0.0, backing=False,
+                mtop=None if ax == "y" else "fGT1")
     zg, g = zh + 9 * PZ, BOXES[0][0] * LINE              # (the face's zg: the lip's top 3 px over the shelf, 6 more)
     for c in range(-1, 2):
         for q0, q1 in ((c - 0.5, c - 0.5 + g), (c + 0.5 - g, c + 0.5)):
