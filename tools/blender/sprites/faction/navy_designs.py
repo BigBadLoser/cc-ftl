@@ -52,7 +52,7 @@ def navy_lockers(k, ax, plane, a, b, c, e, F, **_):
 
 def navy_cage(k, ax, plane, a, b, c, e, F, **_):
     """T1-4 (refs 10-11): a cage with a light behind it: a dark back, a light (cream, dim at its edges) over its middle,
-    and in front a lattice of navy bars on the px grid: upright every 2 px (1 px slits), across every 4."""
+    and in front navy rungs across every 4 px, three guard bars over them the only uprights."""
     du, dz = 1 / 32, 1 / 39.19
     a, c, e = a - 0.04 + 3 * du, c - 0.04 + 4 * dz, e + 0.04 - 4 * dz    # the frame round it: 3 px in from the tile's
     #   edge, 4 px under the header and over the foot (the ref's: the user)
@@ -61,11 +61,8 @@ def navy_cage(k, ax, plane, a, b, c, e, F, **_):
     l0, l1 = c + 0.2 * (e - c), c + 0.85 * (e - c)
     flat(k, ax, plane, uc - 5 * du, uc + 5 * du, l0 - 2 * dz, l1 + 2 * dz, 0.7 * PAINT, "fSH1")       # the light's
     flat(k, ax, plane, uc - 3 * du, uc + 3 * du, l0, l1, 0.8 * PAINT, "c2T1")                          # glow, its core
-    u = math.ceil(a / du) * du                                                                         # the cage
-    while u < b - 1e-6:
-        flat(k, ax, plane, u, min(b, u + du), c, e, 0.9 * PAINT, "fNX3")
-        u += 2 * du
-    z = math.ceil(c / dz) * dz
+    z = math.ceil(c / dz) * dz                                                       # the cage: its rungs (the guard
+    #   bars below its only uprights: the user)
     while z < e - 1e-6:
         flat(k, ax, plane, a, b, z, min(e, z + dz), 0.9 * PAINT, "fNX3")
         z += 4 * dz
@@ -74,8 +71,15 @@ def navy_cage(k, ax, plane, a, b, c, e, F, **_):
     prof = [(zt, 0.0)] + [(zt - r * math.sin(t), so * (1 - math.cos(t))) for t in
                           (math.pi / 2 * i / 4 for i in range(1, 5))]
     prof += [(zb + (zt - z_), d_) for z_, d_ in reversed(prof)]
-    for f in (0.25, 0.5, 0.75):
-        ub = round((a + f * (b - a)) * 32) / 32
+    ds = PAINT + so                                     # (evenly spaced as seen: the opening's px edges, the bars
+    L, R = round(T._px(a, 0.6 * PAINT)), round(T._px(b, 0.6 * PAINT))   # 2 px each, the gaps equal, the spare px to
+    g, x = divmod(R - L - 6, 4)                                          # the middle ones; then where they stand out)
+    gaps = [g, g + (x > 1), g + (x > 0), g + (x > 2)]
+    n = L
+    for gi in gaps[:3]:
+        n += gi
+        ub = T._u(n + 1, ds)
+        n += 2
         for (za, da), (zb_, db) in zip(prof, prof[1:]):
             col = "fNX1" if db > da + 1e-6 else "fNX4" if db < da - 1e-6 else "fNX2"   # (lit curving out at
             k.poly([T.P(ax, plane, ub - du, za, PAINT + da), T.P(ax, plane, ub + du, za, PAINT + da),   # the top,

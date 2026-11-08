@@ -612,3 +612,7 @@ Marked ref (both layers, numbered): scratchpad
   2 px guard bars at 1/4, 1/2, 3/4 of the opening: out of the top frame (2 px under the header), a quarter-round of
   0.06 out to 0.08 proud, down, and back into the foot's frame; lit (fNX1) where they curve out, fNX2 down the front,
   fNX4 curving back in. The lattice and light stay behind them. nc4.
+- 2026-11-08: the user: those 3 are the only uprights, spaced evenly. The lattice's uprights are gone (the rungs every
+  4 px stay); the guard bars are placed in screen px (T._px / T._u at their stand-off): 2 px each, equal gaps across
+  the opening as seen, the spare px to the middle gaps (measured: 3, 4, 4, 3 px). (Rounding u to 1/32 had put them
+  off the px grid: the camera's px boundaries sit 0.875 px off u's grid, wall3d.PX0.) nc6.
