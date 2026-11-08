@@ -306,15 +306,16 @@ def rcs(k):
         stud(k.f, q, n, 0.035, 0.04, "steelD", "dark", sides=8)
 
 
-PACK = (0.08, 0.8, 32, 0.08)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
+PACK = (0.06, 0.8, 32, 0.08)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
 BORE = (0.13, 0.2)            # the thrusters' bores: radius, depth into the fairing
 
 
 def drive(k, lit):
     """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness with its edges rolled
-    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent slots. Two thrusters SUNK in it, as the mining
-    pod's rear thruster is: each in a bore cut straight aft into the fairing's thick part (the fairing is cut round it,
-    a rim ring over the cut), a short flared bell inside running up to the mouth, its inner wall and throat lit."""
+    (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
+    slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to the
+    slab (the hull is open under the pack, so it runs deep), a round rim over the cut, a short flared bell inside running
+    up to the mouth, its inner wall and throat lit."""
     _g("drive")
     f, ln = k.f, k.v["length"]
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
@@ -327,32 +328,36 @@ def drive(k, lit):
     def g(s, t, extra=0.0):                                                 # an even slab on the cone, edges rolled
         along = ease(s - sa, 0.06) * ease(sb - s, 0.06)
         across = ease(half - abs(t - 90), 6.0)
-        return 1.012 + extra + bump * along * across
-    n = (0.0, 0.0, 1.0)                                                     # straight aft
+        return 1.02 + extra + bump * along * across
     sb_ = sa + 0.27
-    mouths = []
+    mouths = []                                                             # (centre on the slab, its normal)
     for t in (90 - 16, 90 + 16):
-        th = math.radians(t)
-        r = k.r(sb_) * g(sb_, t)
-        mouths.append((k.u(sb_), r * math.cos(th), k.zc + r * math.sin(th)))
+        _, n = k.on(sb_, t)
+        r, th = k.r(sb_) * g(sb_, t), math.radians(t)
+        mouths.append(((k.u(sb_), r * math.cos(th), k.zc + r * math.sin(th)), n))
 
-    def hole(u, v, z):
-        return any(math.hypot(u - m[0], v - m[1]) < br + 0.015 for m in mouths)
+    def hole(u, v, z):                                                      # a cell near a mouth, measured across the slab
+        for c, n in mouths:
+            d = (u - c[0], v - c[1], z - c[2])
+            along = sum(d[i] * n[i] for i in range(3))
+            if math.sqrt(max(0.0, sum(x * x for x in d) - along * along)) < br + 0.03:
+                return True
+        return False
     sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.025, skip=hole)
     sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
     for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
         for s0 in (0.6, 0.67):
             sector(k, s0 * ln, s0 * ln + 0.04, t - 5, t + 5, lambda s, tt: g(s, tt, 0.006), "dark", "dark", ds=0.02)
-    for m in mouths:
-        lo = m[2] - depth                                                   # the bore's floor
-        top = m[2] + 0.015                                                  # (the rim barely proud of the slab)
-        tube(f, (m[0], m[1], lo), n, br, br, top - lo, "steelD")             # its wall
-        disc(f, (m[0], m[1], lo), n, 0.0, br, "dark")                       # its floor
-        tube(f, (m[0], m[1], top - 0.07), n, br + 0.045, br + 0.045, 0.08, "steelD")   # the rim over the cut
-        disc(f, (m[0], m[1], top + 0.01), n, br - 0.005, br + 0.045, "steelL")
-        tube(f, (m[0], m[1], lo), n, 0.05, br - 0.02, depth - 0.02, HULL_K)   # the bell, throat to mouth
-        tube(f, (m[0], m[1], lo + 0.005), n, 0.04, br - 0.035, depth - 0.03, GLOW if lit else "dark")   # its inner wall
-        disc(f, (m[0], m[1], lo + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
+    for c, n in mouths:                                                     # each bore runs in square to the slab
+        def at(d):
+            return tuple(c[i] + n[i] * d for i in range(3))
+        tube(f, at(-depth), n, br, br, depth + 0.02, "steelD", sides=20)     # its wall
+        disc(f, at(-depth), n, 0.0, br, "dark", sides=20)                   # its floor
+        tube(f, at(-0.03), n, br + 0.07, br + 0.07, 0.055, "dark", sides=24)   # a round rim over the cut, its edge
+        disc(f, at(0.025), n, br, br + 0.07, "steelD", sides=24)            # and face
+        tube(f, at(-depth), n, 0.05, br - 0.02, depth - 0.02, HULL_K)        # the bell, throat to mouth
+        tube(f, at(-depth + 0.005), n, 0.04, br - 0.035, depth - 0.03, GLOW if lit else "dark")   # its inner wall
+        disc(f, at(-depth + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
 
 
 def pod(heading, variant="h", state="fly", beacon_on=False):
