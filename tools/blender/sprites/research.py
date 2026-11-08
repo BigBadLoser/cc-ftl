@@ -1,5 +1,6 @@
 """Research bench look studies (family `research`, preview only): every design's bench `.on` and `.holo` layer, r0.
-The kit is research_kit.py; the designs are research_r2.py (d, e, f) and research_r3.py (g, h, i)."""
+The kit is research_kit.py; the designs are research_r2.py (d, e, f) and research_r4.py (g, h, i;
+round 3 in research_r3.py, whose helpers round 4 reuses)."""
 from .research_kit import BUILD, FP, holo_job
 
 

@@ -122,5 +122,5 @@ def holo_job(sid, v):
 
 
 def BUILD():
-    from . import research_r2, research_r3
-    return {**research_r2.BUILD, **research_r3.BUILD}
+    from . import research_r2, research_r4
+    return {**research_r2.BUILD, **research_r4.BUILD}
