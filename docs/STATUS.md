@@ -69,6 +69,10 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 
 ## In progress
 
+**Priority (user, 2026-11-08): make the game playable first.** Playtest bugs come before new features: the batch #384-#390 is
+in progress (one bug PR, one perf PR). The core-loop work (#380 research, #382 bands, #171 nodes, #383 arcs) waits until the game is
+playable. The test harness (#371) may run alongside.
+
 - **Encounters (#173):** steps 1-4 merged (scenes, battle stations and the trader skiff in #309; the derelict in #314; the pirate
   ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
   threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
