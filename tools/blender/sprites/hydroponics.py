@@ -287,15 +287,16 @@ def _greens(k, u, v, z, st, seed, hmax):
     cols = ("leaf", "leafL", "leafD")
     if st == "sprout":
         for j in range(5):
-            _leaf(k, u, v, z, j * math.tau / 5 + r.uniform(-0.2, 0.2), 0.12, 0.07, 0.8, cols[j % 2])
+            _leaf(k, u, v, z, j * math.tau / 5 + r.uniform(-0.2, 0.2), 0.16, 0.09, 0.8, cols[j % 2])
         return
     g = 0.68 if st == "grow" else 1.0
-    tiers = ((9, 0.32, 0.13, 0.0, 0.25), (7, 0.24, 0.12, 0.07, 0.55))
+    tiers = ((11, 0.46, 0.17, 0.0, 0.2), (9, 0.34, 0.15, 0.06, 0.4), (7, 0.22, 0.12, 0.12, 0.65))
     for tier, (n, L, w, zz, tilt) in enumerate(tiers):
         for j in range(n):
             a = j * math.tau / n + r.uniform(-0.15, 0.15) + tier * 0.4
-            _leaf(k, u, v, z + zz * g, a, L * g, w * g, tilt + (0.15 if st == "grow" else 0), cols[(j + tier) % 3])
-    k.box(u, v, z + 0.05 * g, 0.16 * g, 0.16 * g, 0.18 * g, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
+            sq = 0.75 if abs(math.sin(a)) > 0.7 else 1.0                       # the soil is narrower in v
+            _leaf(k, u, v, z + zz * g, a, L * g * sq, w * g, tilt + (0.15 if st == "grow" else 0), cols[(j + tier) % 3])
+    k.box(u, v, z + 0.06 * g, 0.2 * g, 0.2 * g, 0.2 * g, "leafD", top="leafL", rz=r.uniform(0, 1.5), taper=0.5)
 
 
 def _beans(k, u, v, z, st, seed, hmax):
@@ -303,10 +304,10 @@ def _beans(k, u, v, z, st, seed, hmax):
     pods hanging when ripe."""
     r = random.Random(seed * 13 + 3)
     top = (u, v, z + hmax - 0.02)
-    feet = [(u + 0.2 * math.cos(a), v + 0.2 * math.sin(a), z) for a in (math.pi / 2 + i * math.tau / 3 for i in range(3))]
+    feet = [(u + su * 0.3, v + sv * 0.24, z) for su in (-1, 1) for sv in (-1, 1)]       # four canes to a peak
     for f in feet:
         _tube(k, [f, top], 0.022, "cane", n=4, phase=math.pi / 4)
-    reach, n = {"sprout": (0.2, 2), "grow": (0.6, 6), "ripe": (0.95, 10)}[st]
+    reach, n = {"sprout": (0.22, 2), "grow": (0.6, 7), "ripe": (0.95, 11)}[st]
     cols = ("beanL", "bean", "beanL", "beanD")
     for i, f in enumerate(feet):
         for j in range(n):
@@ -314,24 +315,26 @@ def _beans(k, u, v, z, st, seed, hmax):
             p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
             s = 1.0 if st != "sprout" else 0.7
             a = r.uniform(0, math.tau)
-            _leaf(k, p[0], p[1], p[2], a, 0.16 * s, 0.12 * s, r.uniform(-0.2, 0.4), cols[(i + j) % 4])
+            _leaf(k, p[0], p[1], p[2], a, 0.19 * s, 0.14 * s, r.uniform(-0.2, 0.4), cols[(i + j) % 4])
         if st == "ripe":
-            for j in range(4):
+            for j in range(3):
                 t = r.uniform(0.3, 0.6)                       # below the lamp, which hides the tops
                 p = [f[q] + (top[q] - f[q]) * t for q in range(3)]
                 a = r.uniform(0, math.tau)
-                k.box(p[0] + 0.05 * math.cos(a), p[1] + 0.05 * math.sin(a), p[2] - 0.16, 0.045, 0.045, 0.16, "pod",
+                k.box(p[0] + 0.06 * math.cos(a), p[1] + 0.06 * math.sin(a), p[2] - 0.18, 0.05, 0.05, 0.18, "pod",
                       top="pod", rx=r.uniform(-0.2, 0.2))
 
 
 def _herbs(k, u, v, z, st, seed, hmax):
-    """Medicinal herbs: small bushy clumps in a grey-green; ripe, lavender spikes and pale flowers over them."""
+    """Medicinal herbs: small bushy clumps in a grey-green touched with dark red; ripe, red flower spikes and pale
+    flowers over them."""
     r = random.Random(seed * 17 + 7)
     h = {"sprout": 0.08, "grow": 0.17, "ripe": 0.22}[st]
-    spots = [(0.0, 0.0)] + [(0.17 * math.cos(a), 0.17 * math.sin(a)) for a in (i * math.tau / 5 + 0.3 for i in range(5))]
+    spots = [(0.0, 0.0)] + [(0.2 * math.cos(a), 0.17 * math.sin(a)) for a in (i * math.tau / 5 + 0.3 for i in range(5))]
+    spots += [(0.34 * math.cos(a), 0.26 * math.sin(a)) for a in (i * math.tau / 6 for i in range(6))]
     if st == "sprout":
         spots = spots[1::2]
-    cols = ("herb", "herbD", "herbL", "herb")
+    cols = ("herb", "herbD", "herbL", "herbRD")
     for i, (du, dv) in enumerate(spots):                   # each clump: small leaves over a dome
         s = r.uniform(0.85, 1.1) * (1.15 if i == 0 else 1.0)
         rad = (0.1 if st != "sprout" else 0.05) * s
@@ -342,14 +345,14 @@ def _herbs(k, u, v, z, st, seed, hmax):
             k.box(lu, lv, lz, 0.08 * s, 0.05 * s, 0.03, cols[j % 4], top=cols[(j + 1) % 4], rz=a, ry=-0.5)
         k.box(u + du, v + dv, z, rad * 1.2, rad * 1.2, h * s * 0.6, "herbD", taper=0.6)
     if st == "ripe":
-        for j in range(9):
-            a, d = r.uniform(0, math.tau), r.uniform(0.04, 0.22)
+        for j in range(12):
+            a, d = r.uniform(0, math.tau), r.uniform(0.04, 0.3)
             cu, cv = u + d * math.cos(a), v + d * math.sin(a)
             hs = r.uniform(0.28, min(0.37, hmax - 0.02))
             k.box(cu, cv, z + 0.1, 0.025, 0.025, hs - 0.1, "herbD")
-            k.box(cu, cv, z + hs - 0.1, 0.065, 0.065, 0.12, "flowerL", top="flowerL", taper=0.55)
-        for j in range(12):
-            a, d = r.uniform(0, math.tau), r.uniform(0.02, 0.24)
+            k.box(cu, cv, z + hs - 0.1, 0.07, 0.07, 0.12, "herbR", top="herbR", taper=0.55)
+        for j in range(16):
+            a, d = r.uniform(0, math.tau), r.uniform(0.02, 0.32)
             k.box(u + d * math.cos(a), v + d * math.sin(a), z + h * 0.92, 0.055, 0.055, 0.04, "flowerW", top="flowerW")
 
 
@@ -358,16 +361,16 @@ def _grain(k, u, v, z, st, seed, hmax):
     ripe, gold straw as tall as the bed lets it be with heavy heads that droop."""
     r = random.Random(seed * 7 + 2)
     if st == "sprout":
-        for i in range(9):
-            a, d = r.uniform(0, math.tau), 0.16 * math.sqrt(r.uniform(0.05, 1.0))
+        for i in range(14):
+            a, d = r.uniform(0, math.tau), 0.26 * math.sqrt(r.uniform(0.05, 1.0))
             k.box(u + d * math.cos(a), v + d * math.sin(a), z, 0.025, 0.025, r.uniform(0.07, 0.12), "leaf",
                   rx=r.uniform(-0.3, 0.3), ry=r.uniform(-0.3, 0.3))
         return
     ripe = st == "ripe"
     stalk, head = ("straw", "grain") if ripe else ("stalk", "stalk")
-    for i in range(13):
-        a, d = r.uniform(0, math.tau), 0.22 * math.sqrt(r.uniform(0.05, 1.0))
-        cu, cv = u + d * math.cos(a), v + d * math.sin(a)
+    for i in range(21):
+        a, d = r.uniform(0, math.tau), math.sqrt(r.uniform(0.05, 1.0))
+        cu, cv = u + 0.34 * d * math.cos(a), v + 0.26 * d * math.sin(a)
         h = r.uniform(0.66, 1.0) * (hmax - 0.17) * (1.0 if ripe else 0.62)
         k.box(cu, cv, z, 0.045, 0.045, h, stalk)
         if ripe:

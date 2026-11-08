@@ -3528,6 +3528,8 @@
   "herbD": {"hex": "#557668", "set": "hydro"},
   "flowerW": {"hex": "#f4f0fa", "set": "hydro"},
   "flowerL": {"hex": "#c4a6ec", "set": "hydro"},
+  "herbR": {"hex": "#d23a48", "set": "hydro"},
+  "herbRD": {"hex": "#8c2836", "set": "hydro"},
   "straw": {"hex": "#c9a24a", "set": "hydro"},
   "grainD": {"hex": "#b0832c", "set": "hydro"}
 }
