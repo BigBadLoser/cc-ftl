@@ -106,7 +106,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   sw32's 1 px, which read as the corner cutting into the header), its underside `POST_IN`, the posts' sides clipped
   at its foot (sw31); on l a seam (`SEAM` fGW5, a px: the post's corner line's grey, an AA blend of fGS3 and fGW5
   there; fGT3 blue in sw33-34) down the blue at the left post's edge, in line with the post's corner line under it, as
-  the right post shows one; the opening's top `D.BEAM_DROP` = `SHADOW` (3 px) under the rail's foot (sw36: the cut
+  the right post shows one; the opening's top `D.BEAM_DROP` = `SHADOW` + 1 (4 px) under the rail's foot (sw37; 3 px
+  in sw36, where the dark px sat on the glass and read harsh: now on the stripe's lit top px as on the wall) (the cut
   stops there, so over the window the header keeps the wall's own foot, the rail's shadow band and the set-back middle
   blocks' lower px, and the band's lowest px reads as the header's dark bottom edge in one straight line, as on the
   wall; sw34 hung a stand-in band (2 px under the middle blocks, 1 under the ends) and sw35 painted the blocks' fronts
@@ -211,4 +212,6 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw35: instead the header's bottom px over the window dark (a bottom edge highlight); the left seam in the
   post's corner line's grey (fGW5). Shown: the line jumped.
 - 2026-11-08: sw36: the opening's top 3 px lower (BEAM_DROP), so the header keeps the wall's foot over it: the dark
-  bottom edge straight. Shown.
+  bottom edge straight. Shown: still harsher than the wall's.
+- 2026-11-08: sw37: a px more (4): the stripe's lit top px under the dark one, as on the wall (columns now match the
+  wall's to that px). Shown.

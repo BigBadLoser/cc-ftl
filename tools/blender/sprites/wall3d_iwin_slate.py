@@ -264,8 +264,9 @@ def window(fn, part):
         calls[0] = pre[0] = 0
         T.HOOK, T.PRE_HOOK = each, bare
         keep = D.FLOOR, D.SILL_OFF, D.RUN, D.END, D.BEAM_DROP
-        D.BEAM_DROP = SHADOW * PZ                       # the opening's top under the rail's shadow band: the header's
-        #   foot as on the wall over it (the band's lowest px under every block: its dark bottom edge)
+        D.BEAM_DROP = (SHADOW + 1) * PZ                 # the opening's top under the rail's shadow band and the
+        #   stripe's lit top px: the header's foot as on the wall over it (the band's lowest px under every block, its
+        #   dark bottom edge, over the lit px as on the wall)
         D.FLOOR = D.FLOOR - RAISE * PZ
         D.SILL_OFF = DIP * L
         D.RUN, D.END = D.RUN * SLOPE * L / D.END, SLOPE * L
