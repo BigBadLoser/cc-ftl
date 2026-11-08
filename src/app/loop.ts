@@ -93,6 +93,9 @@ export function createLoop(opts: LoopOptions): Loop {
       sim.step(probe);
       push(tickTimes, performance.now() - t0);
     }
+    // Paused by the player: whatever was queued (a build plan, a crew order, any command from any tool) applies now, without a tick, so
+    // the world shows it at once. Not while held: the loading veil keeps the queue until play can start.
+    if (speed === 0 && !held) sim.applyCommands();
     const events = sim.events.drain();
     if (events.length) opts.onEvents?.(events);
     probe.count('loop/ticks', r.steps);
