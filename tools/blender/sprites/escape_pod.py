@@ -353,8 +353,8 @@ def drive(k, lit):
             return tuple(c[i] + n[i] * d for i in range(3))
         tube(f, at(-depth), n, br, br, depth + out, "steelD", sides=20)      # its wall
         disc(f, at(-depth), n, 0.0, br, "dark", sides=20)                   # its floor
-        tube(f, at(-0.03), n, br + 0.07, br + 0.06, out + 0.03, "dark", sides=24)   # a round cowl standing out of the cut
-        disc(f, at(out), n, br, br + 0.06, "steelD", sides=24)              # its lip
+        tube(f, at(-0.03), n, br + 0.07, br + 0.06, out + 0.03, "plate", sides=24)   # a round cowl standing out of the cut
+        disc(f, at(out), n, br, br + 0.06, "steelL", sides=24)              # its lip
         tube(f, at(-depth), n, 0.05, br - 0.02, depth + out - 0.02, HULL_K)  # the bell, throat to mouth
         tube(f, at(-depth + 0.005), n, 0.04, br - 0.035, depth + out - 0.03, GLOW if lit else "dark")   # its inner wall
         disc(f, at(-depth + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
