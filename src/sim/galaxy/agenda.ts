@@ -134,7 +134,9 @@ function huntStep(sim: Sim, f: Fleet, turn: number): boolean {
   const hunt = f.hunt as { until: number };
   if (turn > hunt.until) {
     delete f.hunt;
-    f.standDown = true;
+    // A patrol's chase (inspect/patrol.ts) ends with it back on its rounds; a hunter stands down and disbands at home.
+    if (f.chase) delete f.chase;
+    else f.standDown = true;
     headHome(sim, f);
     return false;
   }

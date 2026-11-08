@@ -25,7 +25,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
-  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, not built yet)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-not-built-yet): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert.
+  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, steps 1-2 built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-steps-1-2-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them.
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
@@ -930,7 +930,7 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
   come later.
 
-### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, step 1 built)
+### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, steps 1-2 built)
 
 Replaces the contraband scan pop-up (`InterdictModal`, #136) with inspectors who come aboard. Built in three steps: the
 station dock inspection, then the patrol version, then refusing and fighting.
@@ -963,6 +963,17 @@ station dock inspection, then the patrol version, then refusing and fighting.
   the station's service for 10 turns (they keep what they took). Leaving the node while they search or wait counts as refusing.
 - With no airlock free they cross in suits and land on the hull; with no way in they wait there under an "Inspectors can't board" alert.
 - Inspectors show as visitors ("Inspector"), not hostiles, and offer no Attack yet (step 3).
+
+**As built (step 2, the patrol hail):**
+- A navy or corporation patrol hails only a ship its scan flags (contraband aboard); a clean ship gets the old passing scan. The hail stops the trip in
+  hyperspace and opens a comms window: the captain on video, their demand, the patrol ship on the sensors. Their scan reads "Suspicious" and names
+  nothing, so the hail does not tell you what they know.
+- Comply: you drop out at the node you reached, the patrol stays there, and once you deploy its ship sends two inspectors by shuttle from where it
+  arrived (about 100 tiles out, user decision: the flight gives you a little time). The search and the answers are step 1's.
+- Run: a standing hit (3), and the trip goes on. Half the time the patrol chases you for 4 turns and hails again if it catches you; the chase is light on
+  purpose (it follows like a hunter, one hop behind). Leaving before its inspectors come over counts as running, without the chase.
+- Refusing a patrol's inspectors costs standing only for now; the patrol turning hostile is step 3.
+- The scan pop-up is gone. Pirate interdictions still use `InterdictModal`; moving them to the comms window is #363.
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 

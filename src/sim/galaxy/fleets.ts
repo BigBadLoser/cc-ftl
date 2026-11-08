@@ -1,5 +1,6 @@
 import type { Sim } from '../sim';
 import { isLive } from '../trade/deals';
+import { inspectingFleets } from '../inspect/patrol';
 import { catchUpFleets, stepAgenda } from './agenda';
 import { liftFleet, materialiseFleet, strandIfCrippled } from './fleetShips';
 import { resolveMeetings } from './meetings';
@@ -44,9 +45,12 @@ export function syncFleets(sim: Sim, turn: number): void {
 /** A fight or a deal in the player's node keeps the fleets there in place. */
 const holdsFleets = (sim: Sim): boolean => sim.sector.inCombat || sim.trade.deals.some(isLive);
 
+/** Fleets held in place on their own account, wherever the player is: a patrol the player stopped for, until its inspection is over (inspect/patrol.ts). */
+const heldFleets = (sim: Sim): Set<number> => inspectingFleets(sim);
+
 /**
  * One turn of traffic: fleets that were frozen catch up to the previous turn, then every simulated fleet takes a step (unless held in the player's
- * node by a fight or a deal), and ports that are due build replacements. When the player's node is live ('active') a fleet that leaves it has its ships
+ * node by a fight or a deal, or held for a patrol's inspection), and ports that are due build replacements. When the player's node is live ('active') a fleet that leaves it has its ships
  * lifted out and one that arrives has them materialised there; a fleet whose ship was crippled there is stranded first.
  */
 export function stepFleets(sim: Sim, turn: number): void {
@@ -56,12 +60,13 @@ export function stepFleets(sim: Sim, turn: number): void {
   syncFleets(sim, turn - 1);
   const area = nodesWithin(sim, g.current, FLEET_AREA_HOPS);
   const hold = holdsFleets(sim);
+  const held = heldFleets(sim);
   const stepped: Fleet[] = [];
   for (const f of g.fleets) {
     if (f.synced >= turn || !simulated(f, area)) continue;
     const here = live && f.node === g.current;
     if (here) strandIfCrippled(sim, f, turn);
-    if (here && hold) {
+    if ((here && hold) || held.has(f.id)) {
       f.from = f.node;
       f.synced = turn;
       continue;

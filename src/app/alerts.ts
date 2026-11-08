@@ -31,7 +31,7 @@ export const ALERT_URGENCY: Partial<Record<SimEvent['type'], 'urgent' | 'log'>> 
   'mining.waiting': 'log', 'mining.done': 'log', 'transfer.queued': 'log', 'transfer.delivered': 'log', 'transfer.blocked': 'log',
   'outpost.discovered': 'log', 'ship.provoked': 'log', 'module.destroyed': 'log', 'ship.destroyed': 'log', 'ship.fled': 'log', 'station.alarm': 'log',
   'trade.hailAnswered': 'log', 'trade.hailRefused': 'log', 'trade.dealMade': 'log', 'crew.hired': 'log', 'trade.delivered': 'log',
-  'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'scan.settled': 'log',
+  'trade.settled': 'log', 'trade.failed': 'log', 'galaxy.encounter': 'log', 'galaxy.evadeRoll': 'log', 'patrol.complied': 'log', 'patrol.ran': 'log',
   'truce.breached': 'log', 'away.homeEmpty': 'log', 'galaxy.bribed': 'log', 'galaxy.eventEntered': 'log', 'scene.observed': 'log', 'ship.arrived': 'log',
   'job.posted': 'log', 'job.alighted': 'log', 'crew.joined': 'log', 'crew.asksToJoin': 'log',
 };

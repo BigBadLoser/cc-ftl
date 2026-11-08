@@ -1,4 +1,5 @@
 import { scanFor } from '../blackmarket/scan';
+import { holdsTrip } from '../inspect/patrol';
 import { truceHolds } from '../blackmarket/truce';
 import type { Sim } from '../sim';
 import { unit } from './hash';
@@ -28,6 +29,9 @@ import type { CrossingHow, Encounter, EncounterKind, Fleet } from './types';
 export function encounterKind(sim: Sim, f: Fleet): EncounterKind {
   const hostile = isHostileFaction(sim, f.faction);
   if (f.damaged) return hostile ? 'hail' : 'distress';
+  // A patrol chasing the player it hailed (inspect/patrol.ts) hails again as a patrol, even if running cost enough standing to make it hostile
+  // (what a hostile patrol does is #138 step 3).
+  if (f.chase) return 'scan';
   if ((f.role === 'pirate' || f.role === 'raider' || f.hunt) && hostile) {
     // A route guard (the cartel) holds up travellers on its own routes only; elsewhere it passes like a trader, unless it was sent to hunt you.
     if (!f.hunt && offRoute(sim, f)) return 'hail';
@@ -44,6 +48,12 @@ export function offRoute(sim: Sim, f: Fleet): boolean {
 
 const PASSING_SALT = 0x9a55;
 
+/** A patrol chasing the player (inspect/patrol.ts) that has not met them this turn: it skips the encounter cooldown and the passing odds. */
+const chasing = (f: Fleet, turn: number): boolean => !!f.chase && !!f.hunt && f.met !== turn;
+
+/** Is the fleet still cooling down from its last encounter with the player? */
+const cooling = (f: Fleet, turn: number): boolean => !chasing(f, turn) && f.met !== undefined && turn - f.met < ENCOUNTER_COOLDOWN;
+
 /** Does a non-hostile fleet crossing the player in this turn make a hail or scan? A pure function of the seed, the fleet and the turn. */
 export const passingMeets = (sim: Sim, fleet: number, turn: number): boolean => unit(sim.seed, fleet, turn, PASSING_SALT) < PASSING_ENCOUNTER_CHANCE;
 
@@ -55,8 +65,8 @@ export function crossingOf(f: Fleet, from: string, to: string, turn: number): Cr
   return f.node === to ? 'node' : null;
 }
 
-/** An interdiction is pending: the player's travel is halted. */
-export const interdicted = (sim: Sim): boolean => sim.galaxy.encounters.some((e) => e.kind === 'interdict');
+/** An interdiction or a patrol's hail to stop is pending: the player's travel is halted. */
+export const interdicted = (sim: Sim): boolean => sim.galaxy.encounters.some(holdsTrip);
 
 /**
  * The player's hop `from` -> `to` has just ended in this turn. Detect crossings with the fleets (ascending id), store and announce
@@ -71,27 +81,29 @@ export function crossAfterHop(sim: Sim, from: string, to: string): boolean {
   // One hop halts the trip once: when several hostile fleets cross it, the strongest (then the lowest id) holds the player and the rest find nothing to
   // intercept this turn (their cooldown is not started, so they can still interdict a later hop). Two pending interdictions could not both be answered.
   const interdictor = g.fleets
-    .filter((f) => crossingOf(f, from, to, g.turn) && !(f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) && encounterKind(sim, f) === 'interdict' && !graced(f) && !calm)
+    .filter((f) => crossingOf(f, from, to, g.turn) && !cooling(f, g.turn) && encounterKind(sim, f) === 'interdict' && !graced(f) && !calm)
     .sort((a, b) => fleetStrength(b.ships) - fleetStrength(a.ships) || a.id - b.id)[0]?.id;
   for (const f of g.fleets) {
     const how = crossingOf(f, from, to, g.turn);
     if (!how) continue;
     sim.events.emit({ type: 'galaxy.crossing', fleet: f.id, faction: f.faction, role: f.role, how, node: to });
-    if (f.met !== undefined && g.turn - f.met < ENCOUNTER_COOLDOWN) continue;
+    // A patrol chasing the player hails whenever it catches them; any other fleet waits out its cooldown.
+    if (cooling(f, g.turn)) continue;
     const kind = encounterKind(sim, f);
     if (kind === 'interdict' && (f.id !== interdictor || graced(f) || calm)) continue;
     // Passing a non-hostile fleet usually means nothing: only a small chance of a hail or scan (distress and interdictions always happen).
-    if ((kind === 'hail' || kind === 'scan') && !passingMeets(sim, f.id, g.turn)) continue;
+    if ((kind === 'hail' || kind === 'scan') && !chasing(f, g.turn) && !passingMeets(sim, f.id, g.turn)) continue;
     f.met = g.turn;
     const ttl = kind === 'interdict' ? ENCOUNTER_TTL.interdict : ENCOUNTER_TTL.alert;
     const e: Encounter = {
       id: g.nextFleet++, kind, fleet: f.id, faction: f.faction, role: f.role, name: fleetName(f), ships: f.ships.length, strength: fleetStrength(f.ships), danger: nodeOf(sim, to)?.danger ?? 0, how, node: to, turn: g.turn, expires: g.turn + ttl,
     };
-    scanFor(sim, e);
+    // One hail holds a hop: a patrol's hail to stop gives way to an interdiction (or an earlier hail) on the same hop, and is then a plain scan.
+    if (!halted && interdictor === undefined) scanFor(sim, e);
     g.encounters.push(e);
     if (g.encounters.length > ENCOUNTER_MAX) g.encounters.splice(0, g.encounters.length - ENCOUNTER_MAX);
     sim.events.emit({ type: 'galaxy.encounter', id: e.id, kind, fleet: f.id, faction: f.faction, role: f.role, node: to });
-    if (kind === 'interdict') halted = true;
+    if (holdsTrip(e)) halted = true;
   }
   if (g.encounters.length) g.rev++;
   return halted;

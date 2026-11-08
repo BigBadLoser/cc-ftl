@@ -126,8 +126,9 @@ import { newYard, type YardState } from './yard/types';
  * v102 (asking to join, #173 step 6): `Grant.carry` mood stretch, roll and ask state (`happySince`, `rolled`, `asked`, `asking`).
  * v103 (inspections, #138): `InspectionC` on an inspection's shuttle, consent grants and away sites by 'inspect', job kind 'search' and `Job.party`,
  *     `Trader.barredUntil`.
+ * v104 (patrol hails, #138 step 2): `Encounter.scan` is `{ value }` (a hail to stop), `GalaxyState.patrolStop`, `Fleet.chase`, `Inspection.patrol`.
  */
-export const SAVE_VERSION = 103;
+export const SAVE_VERSION = 104;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
