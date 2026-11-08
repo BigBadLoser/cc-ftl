@@ -242,30 +242,43 @@ def _faint(k, ax, plane, a, b, z):
           cols=[False, fl, False, False])
 
 
-def slate_panel(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-2, T1-8): an outlined panel a tile, 22 px wide, 15 px tall, its foot 5 px over the seam over the lip,
-    its corners rounded as the ramp's blue panel's (each corner pixel left out); a lit bar 3 px tall along its inside
-    top, 2 px under its top line; a lit tick 7 px each side of the middle from a px under its foot up 4 px."""
+def _panels(k, ax, plane, a, b, foot, zf, rects):
+    """Outlined panels a tile, 15 px tall, their foot 5 px over the seam over the lip, their corners rounded as the
+    ramp's blue panel's (each corner pixel left out); a lit bar 3 px tall along each inside top, 2 px under its top
+    line, m px in from each side; a lit tick under each end of the bar from a px under the foot up 4 px. rects: (u0,
+    u1, m) in px off the tile's middle. Returns the spans of [a, b] they leave free (the face's faint line runs on
+    behind them)."""
     lit = "fGSb" if ax == "y" else "fGSc"               # (the bar and ticks a bluer grey, the ref's)
-    W, K = 11 * LINE, 7 * LINE
     zb = foot + 5 * PZ
     zt = zb + 15 * PZ
-    gaps, u = [], a                                     # (the face's faint line runs on behind it)
+    cuts = []
     for c in range(-1, 2):
-        if not (a - 1e-6 <= c - W and c + W <= b + 1e-6):
+        if not (a - 1e-6 <= c + rects[0][0] * LINE and c + rects[-1][1] * LINE <= b + 1e-6):
             continue
-        if zb <= zf and zf + PZ <= zt:
-            gaps.append((u, c - W))
-            u = c + W
-        for u0, u1, z0, z1 in ((c - W + LINE, c + W - LINE, zt - PZ, zt), (c - W + LINE, c + W - LINE, zb, zb + PZ),
-                               (c - W, c - W + LINE, zb + PZ, zt - PZ), (c + W - LINE, c + W, zb + PZ, zt - PZ)):
-            T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
-        for u0, u1, z0, z1, col in ((c - 7 * LINE, c + 7 * LINE, zt - 6 * PZ, zt - 3 * PZ, lit),
-                                    (c - K, c - K + LINE, zb - PZ, zb + 3 * PZ, lit),
-                                    (c + K - LINE, c + K, zb - PZ, zb + 3 * PZ, lit)):
-            prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
-                  cols=[False, col, False, False])
-    return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
+        for r0, r1, m in rects:
+            p0, p1 = c + r0 * LINE, c + r1 * LINE
+            if zb <= zf and zf + PZ <= zt:
+                cuts.append((p0, p1))
+            for u0, u1, z0, z1 in ((p0 + LINE, p1 - LINE, zt - PZ, zt), (p0 + LINE, p1 - LINE, zb, zb + PZ),
+                                   (p0, p0 + LINE, zb + PZ, zt - PZ), (p1 - LINE, p1, zb + PZ, zt - PZ)):
+                T.paint(k, ax, plane, u0, u1, z0, z1, 0.0, FACE, 1)
+            q0, q1 = p0 + m * LINE, p1 - m * LINE
+            for u0, u1, z0, z1 in ((q0, q1, zt - 6 * PZ, zt - 3 * PZ), (q0, q0 + LINE, zb - PZ, zb + 3 * PZ),
+                                   (q1 - LINE, q1, zb - PZ, zb + 3 * PZ)):
+                prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
+                      cols=[False, lit, False, False])
+    return _minus(a, b, cuts)
+
+
+def slate_panel(k, ax, plane, a, b, top, foot, zf):
+    """Wall (T1-2): one panel a tile, 22 px wide, its bar 14 px (ticks 7 px each side of the middle)."""
+    return _panels(k, ax, plane, a, b, foot, zf, ((-11, 11, 4),))
+
+
+def slate_hatches(k, ax, plane, a, b, top, foot, zf):
+    """Wall (T1-7): two small panels a tile, 9 px wide with 4 px between (the span of T1-2's one), each one's bar
+    5 px (2 px in), its ticks under the bar's ends (the ref's proportions)."""
+    return _panels(k, ax, plane, a, b, foot, zf, ((-11, -2, 2), (2, 11, 2)))
 
 
 def _minus(a, b, cuts):
@@ -312,7 +325,7 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
 
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
-              Design("door", wall=slate_door, cut=door_cuts))
+              Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
