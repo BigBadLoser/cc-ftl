@@ -687,3 +687,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: images are the tile next to its ref only, no before/after.
 - 2026-11-08: thin band (the user): 3 px of red under the header (drawn 5 rows: the overhang hides 2), the stripe 3 px,
   its foot on the normal band's (measured: same row as the strip's red); grey between. nt5.
+- 2026-11-08: the user: a second ramp seam on every navy tile, where the far side of a ramp hole is (one_seam with a
+  ramp_seam moved off the wall's: wall3d.skirt splits a plate off the low edge, off - ramp_seam = 2 px wide; its
+  seam wraps over the toe and shelf with the others). Changes the ramp's low-edge px only (plain 48 px, pipes 49,
+  split 77). nr1.
