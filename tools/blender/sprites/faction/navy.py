@@ -67,6 +67,16 @@ class PlateTones(Feature):
         return T.RAMPS["blue" if r and r[1] == "hull" else "wall"][1 if face == "x" else 0][4 if face == "d" else 3]
 
 
+def _seam(k, ax, plane, u0, u1, z0, z1, F):
+    """A plate seam up the face, a shade darker on screen than level 1 was (the user). Its px are blended with the
+    face (AA): on the x face level 0 reads a shade down; on the lit y face level 0 read two, so it takes fNW6, which
+    reads one (fNW5 on the light plates)."""
+    if ax == "x" or F != "wall" or T.CLIP is not None:  # (under a breach's tear: the slab, cut off along it)
+        return T.paint(k, ax, plane, u0, u1, z0, z1, PAINT, F, 0)
+    k.poly([T.P(ax, plane, u, z, 2 * PAINT) for u, z in ((u0, z0), (u1, z0), (u1, z1), (u0, z1))], F, 0, T.OUT(ax),
+           fixed="fNW6")
+
+
 def navy(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -90,19 +100,19 @@ def navy(hull):
                 continue
             if s1 - s0 > 2 * NAVY_SEAM + 1e-3:
                 for u in (s0 + NAVY_SEAM, s1 - NAVY_SEAM):
-                    T.paint(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, PAINT, F, 1)
+                    _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
         if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
             for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
                 if e == "in":
                     u0 = u if u == a else u - LINE
-                    T.paint(k, ax, plane, u0, u0 + LINE, zf - 0.03, zh, PAINT, F, 1)
+                    _seam(k, ax, plane, u0, u0 + LINE, zf - 0.03, zh, F)
         if endf:
             _end_section(k, ax, plane, a, b, zs, zh - 0.33 * H if full else top, F, foot=F)   # (its feet the
             #   section's: the red is the slope's band now, not the foot)
         if not full:
             return
         mit = (0.0 if back else {"in": -1.0}.get(ends[0], 0.0), {"out": 1.0, "in": -1.0}.get(ends[1], 0.0))
-        T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 1, 0)          # the dark header, up to the cap (a step under
+        T.run(k, ax, plane, a, b, pe, zh, rt, PX, "rose", 2, 0)          # the dark header, up to the cap (a step under
                                                                          # it showed as a dotted line on the black top)
         T.fill("band", navy_band)(k, ax, plane, a, b, pe, zh, H)                              # the maroon band
         mid = T.fill("middle")                          # (a top design's: in a dark recess between band and foot)
@@ -114,7 +124,7 @@ def navy(hull):
             tube(k, ax, plane, a + (0.02 if back else 0.0), b - (0.02 if end1 else 0.0), dc, zc, r,
                  mitre=(mit[0], 0.0 if end1 else mit[1]))
         if cp:
-            corner_piece(k, X, plane, C, _slab(zh, rt, PX), "rose", 1)
+            corner_piece(k, X, plane, C, _slab(zh, rt, PX), "rose", 2)
             corner_piece(k, X, plane, C, _slab(zh - 0.33 * H, zh, PAINT), "ochre", 3)
             prof, cols = tube_prof(dc, zc, r)
             corner_piece(k, X, plane, C, prof, "wall", 0, cols, "or")
@@ -144,7 +154,7 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=1, chamfer=NAVY_C,
+        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, joint=0, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT4"), "blue": ("fNT2", "fNT4")},  # (the toe in the red band's tones)

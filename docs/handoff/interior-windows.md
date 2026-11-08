@@ -484,3 +484,7 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: the user: the ramp's seams down to the toe and up over the shelf to the back wall. Style.seam_wrap
   (wall3d._seam_wrap): each seam between the slope's plates carried over the toe strip to the foot and across the
   shelf's flat top to the wall, the gap's width, in the joint's tone (RAMPS[fam][face][joint]). Navy only. ns11.
+- 2026-11-08: the user: the header behind the pipes a shade lighter; every seam a shade darker. Header "rose" 1 -> 2
+  (on screen 131c2d -> 24344a, fNS4 -> fNS3 look). Ramp seams: joint 1 -> 0 (9fa7b9 -> 7687a1; the wrap and the
+  chamfer's joint line with them). Face seams: navy._seam, level 0 on the x face (7b8ba1 -> 5b718a); on the lit y face
+  level 0 read two shades down, so fixed fNW6, which reads one (8797aa -> 7687a1). ns12.
