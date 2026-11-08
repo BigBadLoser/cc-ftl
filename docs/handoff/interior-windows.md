@@ -39,6 +39,27 @@ between the posts, recessed pockets on its front (lit blue floors, two per middl
 an amber strip on the floor in front, the pane standing on the ramp's top. Needs its own module, not the default's.
 Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built from the v2 zip).
 
+## Reuse across the refs (from the 3-tile refs, both layers; overview sheet: scratchpad `iwref/all_window_refs.png`)
+- Common to every window: end posts on the l / r tiles, a beam across, a ramp block under the opening with the pane
+  standing on it, an amber strip on the floor in front. Two blue lines on the cap: all but civil.
+  So the machinery (`window()` / hook wrapper, `_cut` + `_clip`, pane edges, `GLASS` + the glass kind, cap lines) is
+  shared. It is duplicated now in `wall3d_iwin.py` and `wall3d_iwin_def.py`: factor a common core before adding five.
+- Slate (44) is the default (3168) almost shape for shape. Lower layer: the same dished top, pockets on the front and
+  end blocks with dark openings; the amber end blocks become blue, the pockets' floors lit blue. Upper layer:
+  rectangular opening, posts with a stepped foot like the default's; the beam one raised block over the middle tile
+  (the default's has several). Build it as the default's module with look parameters.
+- Bastion (3295): upper layer rectangular like the default's (dark, bricked posts, beam blocks); lower layer dark
+  panels. The default's structure again, own detailing.
+- Navy (122): upper layer rectangular, posts with a flared foot, a red light strip along the beam with clamps;
+  lower layer differs: tall end blocks over a low middle with pockets, red stripes.
+- Drone (423): upper layer a white pipe beam with clamps, posts with a red block and a flared foot; lower layer red
+  boxes either side of a middle console.
+- Civil (428): the odd one: posts curve into the beam (rounded inner corners: tan's arch code is the closest start),
+  no blue cap lines, a red edge along the beam; lower layer a white ramp with a recessed panel, a red stripe low.
+- Suggested order: slate, bastion, navy, drone, civil.
+- Open question: the amber floor strip is in every ref's lower layer. Check whether the built tan and default
+  windows have it before deciding where it lives (wall piece or floor).
+
 ## How the built ones work
 - `wall3d.block` calls `T.PRE_HOOK(sp)` as a piece starts and `T.HOOK(k, sp)` on its Relief before it builds.
   `window(fn, part)` sets them while its piece builds; `hook()` cuts the opening (`_cut`, Sutherland-Hodgman `_clip`),
@@ -65,3 +86,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
+- 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
