@@ -44,7 +44,7 @@ class Table:
 def drawers(k, u, n=4, top=0.66, skip=()):
     """A drawer bank: the cabinet section, n drawers with label plates and pulls on its front (none for the drawers in
     skip, numbered from the bottom: they are drawn open elsewhere)."""
-    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvW2", faces=(0, 1), lip="lvW2")
+    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
     for i in range(n):
         if i in skip:
             continue
@@ -71,7 +71,7 @@ def tool_tray(k, u, v, z):
 
 
 def middle_bay(k):
-    k.box(0.0, -0.75, 0.0, 0.94, 0.4, 0.655, "lvW2", top="lvW", bevel=0.02)
+    k.box(0.0, -0.75, 0.0, 0.94, 0.4, 0.655, "lvW2", top="lvW")
 
 
 # ---- l1: the entomologist -------------------------------------------------------------------------------------------

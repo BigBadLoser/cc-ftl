@@ -72,14 +72,19 @@ def chair(k, shell="steelD", pad="navy"):
 
 
 def body(k, u, v, su, sv, h, col="steel", top="plate", panel="plateB", faces=(1, 1), lip="gm"):
-    """A cabinet body: kick recess, the shell, inset panels on its +v and +u/-u faces, a top skin (its edge in lip)."""
+    """A cabinet body: kick recess, the shell, inset panels on its +v and +u/-u faces, a top skin (its edge in lip).
+    lip=None: no skin and no bevel, the shell's top edge one clean break (a sub-pixel bevel or overhang dots it)."""
     k.box(u, v, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
-    k.box(u, v, 0.08, su, sv, h - 0.12, col, top=top, bevel=0.02)
+    if lip is None:
+        k.box(u, v, 0.08, su, sv, h - 0.08, col, top=top)
+    else:
+        k.box(u, v, 0.08, su, sv, h - 0.12, col, top=top, bevel=0.02)
     if faces[0]:
         k.box(u, v, 0.15, su - 0.16, sv + 0.014, h - 0.3, panel)
     if faces[1]:
         k.box(u, v, 0.15, su + 0.014, sv - 0.16, h - 0.3, panel)
-    k.box(u, v, h - 0.04, su + 0.03, sv + 0.03, 0.04, lip, top=top, bevel=0.012)
+    if lip is not None:
+        k.box(u, v, h - 0.04, su + 0.03, sv + 0.03, 0.04, lip, top=top, bevel=0.012)
 
 
 def slope_panel(k, u, v, z, su, sv, ry, glow, n=4):

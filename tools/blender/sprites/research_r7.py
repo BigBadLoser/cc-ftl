@@ -25,7 +25,7 @@ def bench(name, pucks=(), extra=None, **kw):
             k.box(su * 0.98, -0.8, 1.085, 0.8, 0.03, 0.015, "resGold")
         T = Table(k, *T2)
         for a, b in pucks:
-            T.put(a, b, 0.0, 0.15, 0.15, 0.03, "lvW2", top="lvW", bevel=0.01)
+            T.put(a, b, 0.0, 0.15, 0.15, 0.03, "lvW2", top="lvW")
             T.put(a, b, 0.03, 0.09, 0.09, 0.012, "resGold")
         if extra:
             extra(k)

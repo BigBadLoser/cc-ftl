@@ -40,17 +40,14 @@ RV0, RV1, RH = -0.18, 0.86, 0.66  # the return's v span and height
 
 
 def _return(k, items=True, joined=False):
-    """The L return; joined=True butts it against the drawer bank's front (and its top skin against the bank's skin)
-    instead of running into them."""
+    """The L return; joined=True butts it against the drawer bank's front instead of running into it."""
     v0, v1, H = (-0.16 if joined else RV0), RV1, RH
     sv, cv = v1 - v0, (v0 + v1) / 2
     k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
-    k.box(FU, cv, 0.08, 0.98, sv, H - 0.12, "lvW2", top="lvW", bevel=0.02)
-    s0 = v0 + 0.015 if joined else v0 - 0.015                                         # the top skin
-    k.box(FU, (s0 + v1 + 0.015) / 2, H - 0.04, 1.01, v1 + 0.015 - s0, 0.04, "lvW2", top="lvW", bevel=0.012)
+    k.box(FU, cv, 0.08, 0.98, sv, H - 0.08, "lvW2", top="lvW")
     for i in range(3):                                                                # drawers toward the chair
         _drawer_front(k, FU + 0.5, cv + 0.05, 0.12 + i * 0.16, 0.6, 0.13, face="u")
-    k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvW2")                           # a panel on its end
+    k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvWS")                           # a panel on its end
     if not items:
         return
     for i, (col, top) in enumerate((("rust", "ochL"), ("pcb", "ochL"), ("navy", "ochL"))):   # field journals
@@ -95,8 +92,7 @@ def case(k, cu, cv, z, su, sv, hz=0.42):
 def _vitrine(k):
     su, sv = 0.84, 0.7
     k.box(FU, FV, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
-    k.box(FU, FV, 0.08, su, sv, VZ - 0.12, "lvW2", top="lvW", bevel=0.02)
-    k.box(FU, FV, VZ - 0.04, su + 0.03, sv + 0.03, 0.04, "lvW2", top="lvW", bevel=0.012)
+    k.box(FU, FV, 0.08, su, sv, VZ - 0.08, "lvW2", top="lvW")
     for i in range(2):
         _drawer_front(k, FU, FV + sv / 2, 0.14 + i * 0.2, su - 0.12, 0.16)
     case(k, FU, FV, VZ, su, sv)
@@ -120,8 +116,7 @@ AZ = 0.82
 def _archive(k):
     su, sv = 0.86, 0.72
     k.box(FU, FV, 0.0, su - 0.08, sv - 0.08, 0.06, "dark")
-    k.box(FU, FV, 0.06, su, sv, AZ - 0.1, "lvW2", top="lvW", bevel=0.02)
-    k.box(FU, FV, AZ - 0.04, su + 0.03, sv + 0.03, 0.04, "lvW2", top="lvW", bevel=0.012)
+    k.box(FU, FV, 0.06, su, sv, AZ - 0.06, "lvW2", top="lvW")
     for i in range(5):                                                                # thin drawers
         _drawer_front(k, FU, FV + sv / 2, 0.1 + i * 0.1, su - 0.1, 0.08)
     dz, out = 0.62, 0.28                                                              # the top one, pulled out
@@ -135,7 +130,7 @@ def _archive(k):
 
 def rubbing(k, u, v, z):
     """A lit rubbing box: a lightbox with a sheet on it and the rubbing's strokes."""
-    k.box(u, v, z, 0.56, 0.44, 0.08, "lvW2", top="lvW", bevel=0.01)
+    k.box(u, v, z, 0.56, 0.44, 0.08, "lvW2", top="lvW")
     k.box(u, v, z + 0.08, 0.46, 0.34, 0.012, "resLamp")
     k.box(u, v, z + 0.092, 0.34, 0.26, 0.006, "ochL")
     for i in range(3):
