@@ -96,6 +96,7 @@ def slate(hull):
         cuts = cut(a, b) if cut and not endf else []    # middle recess under them)
         lipf = T.fill("lip") if full else None          # a top design's openings through the lip (a box in it from
         lips = lipf(a, b) if lipf and not endf else []  # the shelf up to the seam over it; no recess there)
+        footf = T.fill("foot") if full and not endf else None   # a top design's part on the shelf in place of the lip
         if endf:
             _end_cap(k, ax, plane, a, b, zs, F)
         if not endf:
@@ -104,7 +105,7 @@ def slate(hull):
             zl = _shelf_z(zs) + 3 * PZ                  # the lip (its foot meets the shelf's dark back on screen)
             top_ = "fGS2" if ax == "y" else "fGS3"      # (its top a step under a lit top's: a soft edge)
             hl = "fGS1" if ax == "y" else "fGS2"        # its front's top px lit (under the seams over it)
-            for s0, s1 in _minus(a, b, lips):
+            for s0, s1 in ([] if footf else _minus(a, b, lips)):
                 m = (mit[0] if abs(s0 - a) < 1e-6 else 0.0, mit[1] if abs(s1 - b) < 1e-6 else 0.0)
                 cp = (None, False if end1 and abs(s1 - b) < 1e-6 else None)    # (at the run's end: the end face's
                 prism(k, ax, plane, s0, s1, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
@@ -121,7 +122,7 @@ def slate(hull):
                       cols=[False, None, top_, False], cap=False)                                      # the face)
                 _seam(k, ax, plane, q0, q1, zl - PZ, zl)
             room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
-            if room or top - zl - LIP_H > 0.01:         # no seam over it)
+            if not footf and (room or top - zl - LIP_H > 0.01):     # no seam over it)
                 if room:
                     _seam(k, ax, plane, a, b, zg, zg + PZ)
                     for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
@@ -138,6 +139,8 @@ def slate(hull):
                     prism(k, ax, plane, q0, q1, [(0.0, zl - PZ), (dq, zl - PZ), (dq, zq), (0.0, zq)], FACE, 1,
                           cols=[False, _seam_col(ax), "fGS5" if ax == "y" else "fGS6", False])   # front's line,
                     _seam(k, ax, plane, q0, q1, zl + LIP_H, zg if room else min(zg, top))        # darker)
+            if footf:                                   # (its seams and recess with it)
+                footf(k, ax, plane, a, b, _shelf_z(zs), mit)
             wall = T.fill("wall")                                       # a top design's dressing on the face
             gaps = [(a, b)]                                             # (between the header and the seam over
             if full and wall:                                           # the lip; it gives back the spans it
@@ -225,12 +228,12 @@ def _steps(u0, u1, top):
     return [(u0, u0 + LINE, 1, t(1)), (u0 + LINE, u1 - LINE, 0, 0), (u1 - LINE, u1, 1, t(1))]
 
 
-def slate_boxes(k, ax, plane, a, b, z0, z1, mit):
-    """Header (T1-2, T1-3): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on a
-    backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their corners
-    rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low across
-    each, the end ones a handle slot near the top."""
-    T.paint(k, ax, plane, a, b, z0, z1 + 0.031, 0.0, BLUE, 3)              # the backing, the stripe's blue (up to
+def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.031):
+    """Header (T1-2, T1-3, T1-4): three blue boxes a tile over the stripe's foot to the rail's top, in place of both, on
+    a backing in the stripe's blue (2 px gaps at each end and between them, 2 px under them); their fronts flush, their
+    corners rounded a px (the middle one's bottom ones only), its top sloping 4 px down to its front, lit; a seam low
+    across each, the end ones a handle slot near the top. back: the backing's reach over z1."""
+    T.paint(k, ax, plane, a, b, z0, z1 + back, 0.0, BLUE, 3)               # the backing, the stripe's blue (up to
                                                                            # the wall's top)
     side = "fGT4" if ax == "y" else "fGT5"              # (a box's +u side, the one the camera sees: two steps under
     lit = "fGT0" if ax == "y" else "fGT1"               # its front; its front's top edge lit, its foot's edge in the
@@ -384,6 +387,15 @@ def slate_console(k, ax, plane, a, b, top, foot, zf):
     return _minus(a, b, cuts)
 
 
+HEADER_H = RAIL_H + 9 * PZ          # the header from the stripe's foot to the rail's top (16 px)
+
+
+def slate_foot_boxes(k, ax, plane, a, b, zh, mit):
+    """T1-4's foot: the boxes header (slate_boxes) again, on the shelf in place of the lip (its backing from the shelf
+    up HEADER_H, not on up the wall)."""
+    slate_boxes(k, ax, plane, a, b, zh, zh + HEADER_H, mit, back=0.0)
+
+
 def box_cuts(a, b):
     """T1-8's box in the lip: one a tile, 10 px wide (u c-5..c+5 px, over the recess it takes the place of)."""
     return [(c - 5 * LINE, c + 5 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 5 * LINE and c + 5 * LINE <= b + 1e-6]
@@ -426,7 +438,8 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
               Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
               Design("panel, box", wall=slate_panel_box, lip=box_cuts),
-              Design("boxes, console", header=slate_boxes, wall=slate_console))
+              Design("boxes, console", header=slate_boxes, wall=slate_console),
+              Design("boxes, console, boxes", header=slate_boxes, wall=slate_console, foot=slate_foot_boxes))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
