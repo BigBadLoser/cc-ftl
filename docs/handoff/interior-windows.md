@@ -6,11 +6,11 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Done and approved: slate (sw46; upper layer kept as it renders) and default teal (dp16). Tan renders again and its
   join dots are fixed (iw42, shown to the user, no reply needed). Branch pushed; last commits: 7cdd360b (tan's end
   strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
-- Next: bastion, ramp (lower layer) first, its own module (the user: bastion and navy don't share the default's
-  shape, upper or lower). Ref measured and plan written (section "Bastion window" below). B0+B1 done in one pass
-  (the user) at bw4, deepened at bw5, re-toned at bw8 (a part map shown: the user couldn't tell the parts apart) (option 3: the ref's proportions on our taller ramp): `sprites/wall3d_iwin_bast.py`,
-  `preview/jobs_bwin.py`; shown, waiting on the user. The user's rule: our sizes differ from the ref's, so use the
-  ref's proportions where its pixel sizes won't fit. Navy, drone, civil after: each its own module too (only the machinery is shared).
+- Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
+  file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
+  the record.
+- Next: navy, then drone, civil; each its own module (only the machinery is shared). Process (the user, for bastion):
+  deskew, measure, plan, ramp first; use the ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
   palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
 - The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
@@ -61,7 +61,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
-| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | measured, planned (own module) |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
 Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
@@ -90,7 +90,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   boxes either side of a middle console.
 - Civil (428): the odd one: posts curve into the beam (rounded inner corners: tan's arch code is the closest start),
   no blue cap lines, a red edge along the beam; lower layer a white ramp with a recessed panel, a red stripe low.
-- Order: slate (done), bastion (next, ramp first), then navy, drone, civil.
+- Order: slate (done), bastion (dropped: no window), then navy, drone, civil.
 - The amber floor strip in every ref's lower layer: ours leave it out (the user: "it's fine").
 
 ## How the built ones work
@@ -226,7 +226,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Ours (sw12): post block (blue) 0-11 (12) | grey 12-14 | pocket l 15-27 (13) | rib l28-m2 (7) | pockets m 3-14,
   rib 15-16, 17-28 | rib m29-r3 (7) | pocket r 4-16 (13) | grey 17-19 | post block r 20-31 (12).
 
-## Bastion window (ref 3295; own module, ramp first)
+## Bastion window (ref 3295): dropped, no window (the user); notes kept for the record
 Our wall: `factions_relief.bastion` (face parts: lower wall band, posts `BAST_P`, the cut, cornice) on the `Recessed`
 shell; its ramp's design is `factions_variants.bastion_ramp` (base: the outlined panel). Plain wall render for
 comparison: SS=4 npz `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/bw1/tile.wall.bastion.full.m10.npz` (jobs `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/jobs_bwall.py`).
@@ -387,3 +387,4 @@ from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined pane
 - 2026-11-08: bw8 (the user: can't tell what's what with these colours): a part map with a legend; the far side
   (through the glass) dark in one tone, the near parts toned to the ref's contrast, the front's top level with the floor
   so the groove shows. Shown.
+- 2026-11-08: the user on bw8: bastion gets no window. Module and jobs file removed; next navy.
