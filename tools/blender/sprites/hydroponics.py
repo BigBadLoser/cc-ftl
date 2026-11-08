@@ -224,10 +224,9 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof):
         g.m.poly([_G(g, *lo[j], z0), _G(g, *lo[q], z0), _G(g, *lo[q], zv), _G(g, *lo[j], zv)], "glassT", flip=True)
         g.m.poly([_G(g, *lo[j], zv), _G(g, *lo[q], zv), _G(g, *hi[q], zr), _G(g, *hi[j], zr)], "glassT", flip=True)
     s = 0.06
-    for j in range(4):                                                      # frame: sill, knee rail, roof edge,
-        q = (j + 1) % 4                                                     # corner posts and rafters
+    for j in range(4):                                                      # frame: sill, roof edge, corner posts
+        q = (j + 1) % 4                                                     # and rafters
         _bar(k, (*lo[j], z0 + s / 2), (*lo[q], z0 + s / 2), s, frame)
-        _bar(k, (*lo[j], zv), (*lo[q], zv), s, frame_l)
         _bar(k, (*hi[j], zr), (*hi[q], zr), s, frame_l)
         _bar(k, (*lo[j], z0), (*lo[j], zv), s, frame)
         _bar(k, (*lo[j], zv), (*hi[j], zr), s, frame_l)
@@ -237,7 +236,7 @@ def _canopy_slope(k, cu, L, D, z0, zv, zr, iv, on, frame, frame_l, roof):
     _prism(k, _cham(cu, 0, L + 0.08, 2 * b2 + 0.1, 0.03), zr - 0.01, 0.08, roof, top=frame_l)        # roof
     _prism(k, _cham(cu, 0, L - 0.08, 2 * b2 - 0.02, 0.02), zr - 0.08, 0.07, "growPink" if on else "lampOff")  # lamp
     t = lambda z: b - max(0.0, z - zv) / (zr - zv) * iv + 0.004             # the front glass's v at height z
-    for du, z1, ln in ((-0.25, 0.94, 0.16), (-0.16, 1.06, 0.1)):           # two glints on the front slope
+    for du, z1, ln in ((-0.25, 0.9, 0.14), (-0.16, 1.0, 0.09)):            # two glints on the front slope
         u0 = cu + a * 0.55 + du
         _bar(_part(k, "glint"), (u0, t(z1), z1), (u0 + ln * 0.6, t(z1 + ln), z1 + ln), 0.03, "glassG")
 
@@ -263,7 +262,7 @@ def terra(k, on):
     k.box(0.6, 0.486, 0.33, 0.04, 0.012, 0.05, _on(on, "orange"))
     zs = 0.69
     _tray(k, 0, 1.9, 0.86, 0.6, zs, 3)
-    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.84, 1.5, 0.13, on, "tFrame", "tFrameL", "tFrame")
+    _canopy_slope(k, 0, 1.92, 0.88, 0.61, 0.82, 1.36, 0.13, on, "tFrame", "tFrameL", "tFrame")
     return ((-0.47, 0.0), (0.47, 0.0)), zs
 
 
