@@ -72,4 +72,20 @@ describe('wantsRoof', () => {
     pos.x = ship.x + 2;
     expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
   });
+
+  it('roofs every ship but the player\'s, neutral stations and traders too, until player crew step aboard (#390)', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 });
+    sim.step();
+    const id = sim.world.query(ShipC).find((e) => sim.world.get(e, ShipC)?.immobile) as number;
+    const ship = sim.world.get(id, ShipC)!;
+    expect(ship.faction).not.toBe('player');
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(true);
+    const crew = sim.world.query(CrewC, PositionC).find((c) => sim.world.get(c, AllegianceC)?.faction === 'player') as number;
+    const grid = sim.sector.grid;
+    let at: { x: number; y: number } | null = null;
+    for (let y = ship.y; y < ship.y + ship.height && !at; y++) for (let x = ship.x; x < ship.x + ship.width && !at; x++) if (grid.get('ship', x, y) === id && grid.get('struct', x, y) === Struct.Floor) at = { x, y };
+    Object.assign(sim.world.get(crew, PositionC)!, at);
+    expect(wantsRoof(sim.world, id, ship, true)).toBe(false);
+  });
 });

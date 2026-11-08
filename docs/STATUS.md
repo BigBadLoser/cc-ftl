@@ -94,7 +94,7 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 - GitHub issues track work.
 - Shield tiers are 2x2, 2x3 and 3x3. Reactors are 2x2, 2x3 and 2x4.
 - The derelict ending kills everyone aboard. Prisoners wait for the black market phase (#116).
-- Enemy roofs can't be lifted without a future scanning upgrade.
+- Enemy roofs can't be lifted without a future scanning upgrade. Every ship but the player's is roofed until player crew are aboard (#390).
 - The balance-test cap is 12 minutes.
 - Research nodes are inspectable only when researchable.
 - Drafted-crew colour is lime `#7ae64a`.
