@@ -23,13 +23,16 @@ function firstHostileAt(sim: Sim, sec: number): number {
 }
 
 /**
- * The arrival roll comes once per ARRIVAL_EVERY_SEC; hold the clock still and call it `rolls` times in a row (one step each),
- * and report how many rolls it took for a hostile ship to be in play (0 if none did). Grace consumes no galaxy rng, so these are the same rolls
- * the full-length idle run makes.
+ * Each arrival roll of the first `rolls` (one per ARRIVAL_EVERY_SEC) at its own game time: jump the clock to the roll's moment and step once, so
+ * the grace check reads the same time it would in a full idle run, without simulating the minutes between. Returns how many rolls it took for a
+ * hostile ship to be in play (0 if none did). Rolls before the current tick are skipped (they already happened in real play).
  */
 function rollsUntilHostile(sim: Sim, rolls: number): number {
   for (let n = 1; n <= rolls; n++) {
-    sim.galaxy.nextArrival = sim.tick;
+    const at = Math.round(n * ARRIVAL_EVERY_SEC * TICK_HZ);
+    if (at < sim.tick) continue;
+    sim.tick = at;
+    sim.galaxy.nextArrival = at;
     sim.step();
     sim.events.drain();
     if (hostileShips(sim) > 0) return n;
