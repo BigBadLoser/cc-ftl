@@ -35,6 +35,8 @@ VARIANTS = {
     "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", door="steel", label="H steel door"),
 }
 SIDES = 48
+COLLAR = 0.76                 # the docking collar's radius, x the cone's top: it steps in, a ledge round it
+HATCH = 0.6                   # the collar hatch's radius, x the collar's: the hazard ring round it is the rest
 HOVER = 0.25                  # the lowest point's height in flight
 
 
@@ -164,31 +166,33 @@ def body(k):
 
 
 def collar(k, beacon_on, thrust=False):
-    """The docking collar at the narrow top: a heavy ring round the hatch, black-and-yellow hazard sectors on its face,
-    the red hatch with a hand wheel. The beacon stands on the shoulder by it."""
+    """The docking collar, stepped in from the cone's top: a steel ledge round it, then a narrower barrel rising to a
+    mating ring flush with it, black-and-yellow hazard sectors on its face, the red hatch with a hand wheel. The beacon
+    stands on the ledge, aft."""
     _g("collar")
     t = k.top
-    r = k.r(t) * 0.92
-    k.cyl(t, t + 0.1, r, r, HULL_K)                                        # the collar's barrel
-    k.cyl(t + 0.1, t + 0.15, r * 1.08, r * 1.08, "steelD")                 # its mating ring
     f = k.f
+    disc(f, (k.u(t), 0.0, k.zc), (1.0, 0.0, 0.0), 0.0, k.r(t), HULL_D, sides=SIDES)   # the ledge, closing the cone
+    r = k.r(t) * COLLAR
+    k.cyl(t - 0.02, t + 0.1, r, r, HULL_K)                                 # the collar's barrel
+    k.cyl(t + 0.1, t + 0.15, r, r, "steelD")                               # its mating ring, flush
     u = k.u(t + 0.15)
     n = 16
     for i in range(n):                                                     # hazard sectors on the ring's face
         a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
-        ri, ro = r * 0.74, r * 1.08
+        ri, ro = r * HATCH, r
         pts = [f.pt(u + 0.002, rr * math.cos(a), k.zc + rr * math.sin(a)) for rr, a in ((ri, a0), (ri, a1), (ro, a1), (ro, a0))]
         f.poly(pts[::-1], "hazY" if i % 2 else "hazK")
-    k.f.hcyl(u, u + 0.03, 0, k.zc, r * 0.74, "drK", sides=32, cap="drD")   # the hatch
-    k.f.hcyl(u + 0.03, u + 0.06, 0, k.zc, r * 0.3, "steelD", sides=16, cap="steelL")   # its hand wheel's hub
+    k.f.hcyl(u, u + 0.03, 0, k.zc, r * HATCH, "drK", sides=32, cap="drD")   # the hatch
+    k.f.hcyl(u + 0.03, u + 0.06, 0, k.zc, r * 0.22, "steelD", sides=16, cap="steelL")   # its hand wheel's hub
     for ang in (0, 90):
         c = math.cos(math.radians(ang)), math.sin(math.radians(ang))
-        k.f.box(u + 0.045, 0, k.zc, 0.02, 0.05 + abs(c[0]) * r * 1.0, 0.05 + abs(c[1]) * r * 1.0, "steelL", base=False)
+        k.f.box(u + 0.045, 0, k.zc, 0.02, 0.05 + abs(c[0]) * r * 0.9, 0.05 + abs(c[1]) * r * 0.9, "steelL", base=False)
     _g("beacon")
-    p, nn = (u, 0.0, k.zc + r * 0.9), (1.0, 0.0, 0.0)                     # on the mating ring, aft when upright
-    stud(f, p, nn, 0.11, 0.05, "steelD", "steelD")                         # its base
-    q = tuple(p[i] + nn[i] * 0.05 for i in range(3))
-    stud(f, q, nn, 0.085, 0.12, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.06)   # the lamp
+    p, nn = (k.u(t), 0.0, k.zc + (r + k.r(t)) / 2), (1.0, 0.0, 0.0)       # on the ledge, aft when upright
+    stud(f, p, nn, 0.065, 0.04, "steelD", "steelD")                        # its base
+    q = tuple(p[i] + nn[i] * 0.04 for i in range(3))
+    stud(f, q, nn, 0.06, 0.13, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.045)   # the lamp
 
 
 def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
