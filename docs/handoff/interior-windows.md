@@ -132,7 +132,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Plates over the sill's front edge: ref 44's DARK plates (the lighter stretches between them are the floor, not
   plates: the user), wrapped from the floor's top over its front edge down the face. `PLATES` px per part: a top
   PLATE_D 6 px back on the sill's level top (`PLATE` fGS2: the vertical wall's greys, the user: its face is fGS3 / fGS2; fGWp dropped), then PLATE_DN 2 px down the face
-  (`PLATE_FRONT` fGS3), each a hair proud (3 PAINT) of the sill and its lit edge. Ref tones: plate top #8f949b on a
+  (`PLATE_FRONT` fGS3), each a hair proud (3 PAINT) of the sill and its lit edge. The same plates mirrored across the
+  wall onto the sill's far edge (sw44, the user). Ref tones: plate top #8f949b on a
   #9ba0a5 floor (0.92), plate front ~0.82 of the face between. At the ref's edge they measure l 24 - m 2, m 16-28,
   r 10-20; ours sit 6 px toward -x (our sill's edge stands further back than its pockets): l 21-28 (from the dip's
   foot), m 10-22, r 4-14 (sw19).
@@ -226,3 +227,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw43: the user kept the lit line (LIT_UNDER 1) and dropped the corners: `_chamfers` gone (with the left
   post's seam and the corners' edges); `_rail_seam` keeps the right post's rail seam off. The opening's corners square
   again under the lowered beam. Shown.
+- 2026-11-08: sw44: the sill's plates mirrored to its far edge, at the same x (the user). Shown.

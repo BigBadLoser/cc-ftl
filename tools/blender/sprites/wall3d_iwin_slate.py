@@ -157,12 +157,14 @@ def detail(k, part):
     e = 3 * T.PAINT                                     # the ramp), a hair proud of it and of its lit edge
     n = Vector((0, _k(), 1)).normalized() * e
     yd = ye + PLATE_DN * PZ / _k()
-    for p0, p1 in PLATES.get(part, ()):
+    for p0, p1 in PLATES.get(part, ()):                 # (on both sides of the wall: the far one mirrored)
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
-        _quad(k, [(u0, ye - PLATE_D * L, zf + e), (u1, ye - PLATE_D * L, zf + e), (u1, ye, zf + e), (u0, ye, zf + e)],
-              (0, 0, 1), PLATE)
-        _quad(k, [(u0, ye + n.y, zf + n.z), (u1, ye + n.y, zf + n.z), (u1, yd + n.y, zf - PLATE_DN * PZ + n.z),
-                  (u0, yd + n.y, zf - PLATE_DN * PZ + n.z)], (0, _k(), 1), PLATE_FRONT)
+        for sg in (1, -1):
+            _quad(k, [(u0, sg * (ye - PLATE_D * L), zf + e), (u1, sg * (ye - PLATE_D * L), zf + e),
+                      (u1, sg * ye, zf + e), (u0, sg * ye, zf + e)], (0, 0, 1), PLATE)
+            _quad(k, [(u0, sg * (ye + n.y), zf + n.z), (u1, sg * (ye + n.y), zf + n.z),
+                      (u1, sg * (yd + n.y), zf - PLATE_DN * PZ + n.z), (u0, sg * (yd + n.y), zf - PLATE_DN * PZ + n.z)],
+                  (0, sg * _k(), 1), PLATE_FRONT)
     z0, z1 = W.foot() + POCKET_FOOT * PZ, zf - POCKET_TOP * PZ   # (a pocket's floor at the front, its top)
     yb = _slope_y(z1, yf) - POCKET_IN                   # (its back, grid y)
     y0, y1 = _slope_y(z0, yf), _slope_y(z1, yf)         # (the slope at its floor, at its top)
