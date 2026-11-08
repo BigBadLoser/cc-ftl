@@ -233,11 +233,20 @@ PIPE, PIPE_R = "sole", 0.035
 
 
 def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
-    """A pipe through the local points: straight runs with a coupling at each bend."""
-    for a, b in zip(pts, pts[1:]):
+    """A pipe through the local points: straight runs with a coupling at each bend, or (joint None) runs that carry
+    on r past each bend so they meet in a clean square elbow."""
+    n = len(pts)
+    for i, (a, b) in enumerate(zip(pts, pts[1:])):
+        if joint is None:
+            d = [b[j] - a[j] for j in range(3)]
+            m = math.sqrt(sum(x * x for x in d))
+            e = [x / m * r for x in d]
+            a = tuple(a[j] - e[j] for j in range(3)) if i > 0 else a
+            b = tuple(b[j] + e[j] for j in range(3)) if i + 2 < n else b
         _tube(k, [a, b], r, col, n=8)
-    for u, v, z in pts[1:-1]:
-        k.box(u, v, z - r * 1.15, r * 2.3, r * 2.3, r * 2.3, joint)
+    if joint is not None:
+        for u, v, z in pts[1:-1]:
+            k.box(u, v, z - r * 1.15, r * 2.3, r * 2.3, r * 2.3, joint)
 
 
 def _valve(k, u, v, z, face="v", body="brass", wheel="hivis"):
@@ -337,13 +346,13 @@ def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis", jc="steel"):
     _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col=pc, joint=jc)
     # (above: the manifold along the front and a riser at each end)
     for su in (-1, 1):
-        _valve(k, su * 0.36, vm, zm, body=vb, wheel=vw)
+        _valve(k, su * 0.48, vm, zm, body=vb, wheel=vw)                                     # on the tank's centre
 
 
 BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin,
          "twinhi": lambda k, on: _base_twin(k, on, 0.48), "twinlo": lambda k, on: _base_twin(k, on, 0.06),
          "twincu": lambda k, on: _base_twin(k, on, 0.48, "pipeCu"), "twinblu": lambda k, on: _base_twin(k, on, 0.48, "pipeB"),
-         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed", "pipeCu"),
+         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed", None),
          "twincuw": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "tWhite")}
 
 
