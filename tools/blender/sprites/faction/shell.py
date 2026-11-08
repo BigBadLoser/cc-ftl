@@ -391,7 +391,9 @@ class RampHoles(Feature):
             for ax, plane, a, b, _ in T.faces(sp):
                 for s0, s1 in T.spans(a, b):
                     if s1 - s0 > 2 * off + 0.3 and T.style().one_seam:     # (one seam a tile: the cover off, its
-                        sp.holes.append((ax, T.snap(plane), s0 + LINE / 2, s1 - off - LINE / 2,  # seams and band
+                        rs = off if T.style().ramp_seam is None else T.style().ramp_seam  # seams and band with it,
+                        sh = off - rs                                                   # moved with the ramp's seam)
+                        sp.holes.append((ax, T.snap(plane), s0 + sh + LINE / 2, s1 - rs - LINE / 2,
                                          max(0.02, T.style().shelf - hd[0]),                    # with it: from hd[0]
                                          min(hd[1] * sp.run, sp.run - 0.03)))                   # back in the shelf
                     #   to the toe)

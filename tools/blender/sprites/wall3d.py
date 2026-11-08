@@ -524,7 +524,8 @@ def skirt(k, sp, ax, plane, a, b, fam, ends=None):
             segs += [(e0, e1, True)] if style().one_seam else [(e0, s0 + off, False), (s0 + off, e1, True)]
             continue
         if style().one_seam:                    # (one seam: the cover, then the strip)
-            segs += [(e0, s1 - off, True), (s1 - off, e1, False)]
+            rs = off if style().ramp_seam is None else style().ramp_seam
+            segs += [(e0, s1 - rs, True), (s1 - rs, e1, False)]
             continue
         segs += [(e0, s0 + off, False), (s0 + off, s1 - off, True), (s1 - off, e1, False)]
     holes = [h[2:] for h in getattr(sp, "holes", ()) if h[0] == ax and abs(h[1] - plane) < 1e-6]

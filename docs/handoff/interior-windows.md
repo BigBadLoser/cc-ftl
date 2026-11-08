@@ -545,3 +545,6 @@ Marked ref (both layers, numbered): scratchpad
   hole from hd[0] back into the shelf (navy pipes: 4/32, a 2 px ledge left, its lit edge kept: shell._prof gives a
   piece ending in the shelf its shelf tones, one_seam only); the pipe rows on the slope from the shelf's edge (on
   the opened flat they rose over the shelf). Plain m10 unchanged. nv8.
+- 2026-11-08: the user: move the pipes slot, seam line and all, 2 px right; all ramp lines move 2 px, the walls'
+  stay. Style.ramp_seam (navy NAVY_RAMP_SEAM 5.5/32): the ramp's line (and its wrap over the shelf and toe) 2 px
+  further along than the wall's; RampHoles shifts the slot with it (a 2 px rim of cover left on its low side). nv9.

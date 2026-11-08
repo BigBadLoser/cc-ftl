@@ -37,6 +37,7 @@ FRAME, COVER = PAINT / 2, PAINT     # the face's dark frame, and its covers stan
                                     # them, navy_designs.BAND)
 LINES = 2 * PAINT                   # the panel line and its lit px, over the band (on the px grid at this depth: further
                                     # out they shift off it and blur)
+NAVY_RAMP_SEAM = 5.5 / 32           # the ramp's line: 2 px further along than the wall's (the user)
 RED_AT = 9 / 11                     # the ramp's red band: from 9 px out (of its 11) down over the toe (its last px)
                                     # to the foot (the user)
 NAVY_C = 3 / 32                     # a partition's outer corner: chamfered this far along each axis, wall and ramp
@@ -207,7 +208,7 @@ class Navy(Faction):
     pre = "fN"
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, joint=0, chamfer=NAVY_C,
+        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, ramp_seam=NAVY_RAMP_SEAM, joint=0, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT2"), "blue": ("fNT2", "fNT2")},  # (the toe in the red band's tones)
