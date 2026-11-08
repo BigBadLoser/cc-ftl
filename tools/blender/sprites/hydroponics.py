@@ -237,7 +237,7 @@ def _pipe(k, pts, r=PIPE_R, col=PIPE, joint="tFrame"):
     for a, b in zip(pts, pts[1:]):
         _tube(k, [a, b], r, col, n=8)
     for u, v, z in pts[1:-1]:
-        k.box(u, v, z - r * 1.4, r * 2.8, r * 2.8, r * 2.8, joint)
+        k.box(u, v, z - r * 1.15, r * 2.3, r * 2.3, r * 2.3, joint)
 
 
 def _valve(k, u, v, z, face="v", body="brass", wheel="hivis"):
@@ -322,7 +322,7 @@ def _base_tower(k, on):
     _screen(k, 0.0, 0.2, on)
 
 
-def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis"):
+def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis", jc="steel"):
     """A tank under each plant: two standing white tanks on dark feet inside grey corner legs. A pump between them
     draws from both and lifts into a manifold along the front, a valve per plant, a riser at each end into the tray."""
     _frame_legs(k)
@@ -333,8 +333,8 @@ def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis"):
     for su in (-1, 1):
         _pipe(k, [(0.0, 0.26, 0.1), (su * 0.28, 0.26, 0.1)], col=pc)       # suction
     vm = FV + 0.05
-    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col=pc, joint="steel")  # pump up
-    _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col=pc, joint="steel")
+    _pipe(k, [(0.0, 0.26, 0.29), (0.0, 0.26, zm), (0.0, vm, zm)] if zm > 0.29 else [(0.0, 0.26, zm), (0.0, vm, zm)], r=0.035, col=pc, joint=jc)  # pump up
+    _pipe(k, [(-0.72, vm, 0.56), (-0.72, vm, zm), (0.72, vm, zm), (0.72, vm, 0.56)], r=0.035, col=pc, joint=jc)
     # (above: the manifold along the front and a riser at each end)
     for su in (-1, 1):
         _valve(k, su * 0.36, vm, zm, body=vb, wheel=vw)
@@ -343,7 +343,7 @@ def _base_twin(k, on, zm=0.4, pc="tFrame", vb="brass", vw="hivis"):
 BASES = {"orig": _base_orig, "rack": _base_rack, "tower": _base_tower, "twin": _base_twin,
          "twinhi": lambda k, on: _base_twin(k, on, 0.48), "twinlo": lambda k, on: _base_twin(k, on, 0.06),
          "twincu": lambda k, on: _base_twin(k, on, 0.48, "pipeCu"), "twinblu": lambda k, on: _base_twin(k, on, 0.48, "pipeB"),
-         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed"),
+         "twincur": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "medRed", "pipeCu"),
          "twincuw": lambda k, on: _base_twin(k, on, 0.48, "pipeCu", "steel", "tWhite")}
 
 
