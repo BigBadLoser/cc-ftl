@@ -132,6 +132,9 @@ def jobs(name):
         import os
         from . import hydroponics
         return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "hydro"
+    if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
+        from . import research
+        return research.jobs(), "research"
     if name == "workbench":
         import os
         from . import workbench

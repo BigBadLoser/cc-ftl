@@ -3531,5 +3531,10 @@
   "herbR": {"hex": "#d23a48", "set": "hydro"},
   "herbRD": {"hex": "#8c2836", "set": "hydro"},
   "straw": {"hex": "#c9a24a", "set": "hydro"},
-  "grainD": {"hex": "#b0832c", "set": "hydro"}
+  "grainD": {"hex": "#b0832c", "set": "hydro"},
+  "resAmb": {"hex": "#ffb04a", "emissive": 2.4, "set": "research"},
+  "resAmbD": {"hex": "#6a4a24", "set": "research"},
+  "resMint": {"hex": "#c4ffe2", "emissive": 2.2, "set": "research"},
+  "resLime": {"hex": "#dcff7a", "emissive": 2.2, "set": "research"},
+  "resWin": {"hex": "#9fbf62", "emissive": 0.7, "set": "research"}
 }
