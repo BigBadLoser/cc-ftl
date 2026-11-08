@@ -65,6 +65,8 @@ def slate(hull):
                                                         # front shows 2 px under its line: it stands 2 px out)
         cut = T.fill("cut") if full else None           # a top design's openings through the stripe (and the lip's
         cuts = cut(a, b) if cut and not endf else []    # middle recess under them)
+        lipf = T.fill("lip") if full else None          # a top design's openings through the lip (a box in it from
+        lips = lipf(a, b) if lipf and not endf else []  # the shelf up to the seam over it; no recess there)
         if endf:
             _end_section(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
         if not endf:
@@ -72,13 +74,18 @@ def slate(hull):
                                                                                                 # to the shelf
             zl = _shelf_z(zs) + 3 * PZ                  # the lip (its foot meets the shelf's dark back on screen)
             top_ = "fGS2" if ax == "y" else "fGS3"      # (its top a step under a lit top's: a soft edge)
-            prism(k, ax, plane, a, b, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
-                  FACE, 3, cols=[False, None, top_, False], mitre=mit)
             hl = "fGS1" if ax == "y" else "fGS2"        # its front's top px lit (under the seams over it)
-            prism(k, ax, plane, a, b, [(LIP_D, zl + LIP_H - PZ), (LIP_D + PAINT / 2, zl + LIP_H - PZ),
-                                       (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
-                  cols=[False, hl, False, False], mitre=mit)
+            for s0, s1 in _minus(a, b, lips):
+                m = (mit[0] if abs(s0 - a) < 1e-6 else 0.0, mit[1] if abs(s1 - b) < 1e-6 else 0.0)
+                prism(k, ax, plane, s0, s1, [(0.0, zl - PZ), (LIP_D, zl - PZ), (LIP_D, zl + LIP_H), (0.0, zl + LIP_H)],
+                      FACE, 3, cols=[False, None, top_, False], mitre=m)
+                prism(k, ax, plane, s0, s1, [(LIP_D, zl + LIP_H - PZ), (LIP_D + PAINT / 2, zl + LIP_H - PZ),
+                                             (LIP_D + PAINT / 2, zl + LIP_H), (LIP_D, zl + LIP_H)], FACE, 3,
+                      cols=[False, hl, False, False], mitre=m)
             zg = zl + 6 * PZ                            # a dark seam over it (2 px of face between, a px wide)
+            for q0, q1 in lips:                         # (a box in the lip: a dark line up each side to the seam)
+                for u0 in (q0, q1 - LINE):
+                    T.paint(k, ax, plane, u0, u0 + LINE, zl - PZ, zg, 0.0, FACE, 1)
             room = zg + PZ < top - 0.03                 # (under a low cut, walls down: the lip's seams up to it,
             if room or top - zl - LIP_H > 0.01:         # no seam over it)
                 if room:
@@ -86,7 +93,7 @@ def slate(hull):
                     for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
                         q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone, its top px the
                                                                 # faint line's on the face over it
-                        if a - 1e-6 <= q0 and q1 <= b + 1e-6 and not any(x0 <= q0 and q1 <= x1 for x0, x1 in cuts):
+                        if a - 1e-6 <= q0 and q1 <= b + 1e-6 and not any(x0 <= q0 and q1 <= x1 for x0, x1 in cuts + lips):
                             _seam(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ)
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
@@ -271,7 +278,7 @@ def _panels(k, ax, plane, a, b, foot, zf, rects, lift=0):
 
 
 def slate_panel(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-2): one panel a tile, 22 px wide, its bar 14 px (ticks 7 px each side of the middle)."""
+    """Wall (T1-2, T1-8): one panel a tile, 22 px wide, its bar 14 px (ticks 7 px each side of the middle)."""
     return _panels(k, ax, plane, a, b, foot, zf, ((-11, 11, 4),))
 
 
@@ -288,6 +295,11 @@ def _minus(a, b, cuts):
         out.append((u, x0))
         u = x1
     return [(g0, g1) for g0, g1 in out + [(u, b)] if g1 - g0 > 1e-6]
+
+
+def box_cuts(a, b):
+    """T1-8's box in the lip: one a tile, 8 px wide (u c-4..c+4 px, over the recess it takes the place of)."""
+    return [(c - 4 * LINE, c + 4 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 4 * LINE and c + 4 * LINE <= b + 1e-6]
 
 
 def door_cuts(a, b):
@@ -325,7 +337,8 @@ def slate_door(k, ax, plane, a, b, top, foot, zf):
 
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
-              Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches))
+              Design("door", wall=slate_door, cut=door_cuts), Design("hatches", wall=slate_hatches),
+              Design("panel, box", wall=slate_panel, lip=box_cuts))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
