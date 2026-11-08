@@ -17,6 +17,9 @@ export const tipState = writable<TipState | null>(null);
 
 const DELAY = 250;
 
+/** The hovered tip triggers, outermost first: leaving a nested one (a span inside a row button) hands the tooltip back to the one around it. */
+const hovered: Array<() => void> = [];
+
 /**
  * Svelte action: `use:tip={{ text: 'Starmap', key: 'view.starmap' }}` gives any element the game tooltip on hover and keyboard focus.
  * A falsy `text` shows nothing. Use a native `title` only where a tooltip is wrong (text inputs, truncated text that must be selectable).
@@ -46,9 +49,16 @@ export function tip(node: Element, spec: TipSpec | null | undefined) {
   };
   const unshow = () => { tipState.update((s) => (s === mine ? null : s)); mine = null; };
   const hide = () => { clearTimeout(timer); pending = false; unshow(); };
-  const enter = () => { over = true; clearTimeout(timer); pending = true; timer = setTimeout(show, DELAY); };
-  const leave = () => { over = false; if (!focused) hide(); };
-  const down = () => { over = false; hide(); };
+  const back = () => { if (over && !pending) show(); };
+  const drop = () => { const i = hovered.indexOf(back); if (i >= 0) hovered.splice(i, 1); };
+  const enter = () => { over = true; drop(); hovered.push(back); clearTimeout(timer); pending = true; timer = setTimeout(show, DELAY); };
+  const leave = () => {
+    over = false;
+    drop();
+    if (!focused) hide();
+    hovered.at(-1)?.();
+  };
+  const down = () => { over = false; drop(); hide(); };
   const focus = () => { if (node.matches(':focus-visible')) { focused = true; show(); } };
   const blur = () => { focused = false; if (!over) hide(); };
   node.addEventListener('pointerenter', enter);
@@ -64,6 +74,7 @@ export function tip(node: Element, spec: TipSpec | null | undefined) {
       if (mine || ((over || focused) && !pending)) show();
     },
     destroy() {
+      drop();
       hide();
       node.removeEventListener('pointerenter', enter); node.removeEventListener('pointerleave', leave); node.removeEventListener('pointerdown', down);
       node.removeEventListener('focus', focus); node.removeEventListener('blur', blur);

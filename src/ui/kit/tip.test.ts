@@ -91,3 +91,23 @@ describe('tip focus', () => {
     expect(attrs.get('tabindex')).toBe('-1');
   });
 });
+
+describe('nested tips', () => {
+  it('leaving an inner trigger hands the tooltip back to the one around it', async () => {
+    const outer = fakeNode();
+    const inner = fakeNode();
+    const a = tip(outer.node, { text: 'Row' });
+    const b = tip(inner.node, { text: 'Turns left' });
+    outer.fire('pointerenter');
+    await wait(300);
+    inner.fire('pointerenter');
+    await wait(300);
+    expect(get(tipState)?.spec.text).toBe('Turns left');
+    inner.fire('pointerleave');
+    expect(get(tipState)?.spec.text).toBe('Row');
+    outer.fire('pointerleave');
+    expect(get(tipState)).toBeNull();
+    a.destroy();
+    b.destroy();
+  });
+});
