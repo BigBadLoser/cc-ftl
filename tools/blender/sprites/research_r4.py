@@ -247,13 +247,16 @@ def field_i(layer):
     V, DH = "resVio", 0.4
     cu, cv = EC
     # the back crescent: the machine housing, capacitor cells glowing in its inner face, brass coils along its top
-    segs = _arc(k, 0.5, 190, 350, 8, 0.4, 0.76, "steelD", "gm")
+    _arc(k, 0.5, 190, 350, 8, 0.4, 0.76, "steelD", "gm")
     _arc(k, 0.41, 190, 350, 8, 0.05, 0.04, "brass", "brass", z=0.76)
-    for i, (u, v, rz, L) in enumerate(segs):
-        iu, iv = u - 0.21 * math.sin(rz), v + 0.21 * math.cos(rz)                       # (the inner face)
-        k.box(iu, iv, 0.24, L * 0.6, 0.02, 0.44, "dark", rz=rz)
-        for j in range(3):
-            k.box(iu, iv, 0.3 + j * 0.13, L * 0.5, 0.03, 0.05, V if (i + j) % 2 == 0 else "resVioF", rz=rz)
+    for th in (212, 242, 298, 328):                                                   # four capacitor tubes in
+        t = math.radians(th)                                                         # niches on its inner face
+        u, v = cu + (EA - 0.26) * math.cos(t), cv + 0.3 * math.sin(t)
+        k.cyl(u, v, 0.06, 0.1, 0.06, "gm", top="steel", sides=12)
+        k.part("glass").cyl(u, v, 0.12, 0.085, 0.5, "glassL", top="glassL", sides=12)
+        k.cyl(u, v, 0.14, 0.05, 0.46, V, sides=10)
+        k.cyl(u, v, 0.62, 0.1, 0.07, "gm", top="steelL", sides=12)
+        k.cyl(u, v, 0.32, 0.092, 0.04, "brass", sides=12)
     # the sides come down to desk height and run on round the front as the desk
     _arc(k, 0.5, 160, 190, 2, 0.4, 0.62, "steelD", "gm")
     _arc(k, 0.5, 350, 380, 2, 0.4, 0.62, "steelD", "gm")
@@ -269,7 +272,7 @@ def field_i(layer):
         ring(k, "z", cu, cv, DH + 0.04, r, 22, 0.05, 0.05, "brass")
     k.cyl(cu, cv, DH + 0.04, 0.12, 0.04, "dark", top=V, sides=16)
     for su in (-1, 1):
-        pts = [(su * 0.38, cv, DH - 0.1), (su * 0.62, cv, 0.95), (su * 0.52, cv, 1.38), (su * 0.26, cv, 1.5)]
+        pts = [(su * 0.38, cv, DH - 0.1), (su * 0.7, cv, 0.95), (su * 0.62, cv, 1.4), (su * 0.38, cv, 1.52)]
         k.box(su * 0.42, cv, 0.08, 0.18, 0.24, DH - 0.06, "gm", top="steelL", bevel=0.02)
         for a, b in zip(pts, pts[1:]):
             bar(k, a, b, 0.14, "steel")
@@ -294,24 +297,22 @@ def field_i(layer):
 
 
 def field_i_holo():
-    """The field round the find and its arcs."""
+    """The field round the find: a pale violet film sphere with three clean bands, a column up from the well, and a
+    straight beam from each emitter."""
     k = K("research_i_holo", (3, 2), 0)
-    V, F = "resVio", "resVioF"
+    V, F = "resVio", "resVioL"
     cu, cv = EC
-    cz, R = 1.0, 0.32
+    cz, R = 0.98, 0.31
     n = 6
     for i in range(n):
         z0, z1 = -R + 2 * R * i / n, -R + 2 * R * (i + 1) / n
         r0, r1 = math.sqrt(max(R * R - z0 * z0, 0.0)), math.sqrt(max(R * R - z1 * z1, 0.0))
-        k.cyl(cu, cv, cz + z0, max(r0, 0.02), z1 - z0, F, top=F, sides=20, rtop=max(r1, 0.02))
-    ring(k, "z", cu, cv, cz, R + 0.01, 24, 0.03, 0.025, V)
-    ring(k, "u", cu, cv, cz, R + 0.01, 24, 0.02, 0.02, V)
-    k.cyl(cu, cv, 0.48, 0.1, cz - R - 0.46, F, rtop=0.05, sides=12)
+        k.cyl(cu, cv, cz + z0, max(r0, 0.02), z1 - z0, F, top=F, sides=24, rtop=max(r1, 0.02))
+    for dz in (-0.14, 0.0, 0.14):
+        ring(k, "z", cu, cv, cz + dz, math.sqrt(R * R - dz * dz) + 0.01, 28, 0.025, 0.02, V)
+    k.cyl(cu, cv, 0.48, 0.09, cz - R - 0.46, F, rtop=0.05, sides=14)
     for su in (-1, 1):
-        pts = [(su * 0.22, cv, 1.33), (su * 0.18, cv + 0.05, 1.28), (su * 0.16, cv - 0.04, 1.23),
-               (su * 0.1, cv + 0.03, 1.18), (su * 0.07, cv, 1.13)]
-        for a, b in zip(pts, pts[1:]):
-            bar(k, a, b, 0.025, V)
+        bar(k, (su * 0.3, cv, 1.3), (su * 0.12, cv, cz + 0.1), 0.025, V)
     return k
 
 

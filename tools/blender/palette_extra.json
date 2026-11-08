@@ -3550,6 +3550,7 @@
   "resWork": {"hex": "#f6f2e4", "emissive": 1.6, "set": "research"},
   "resVio": {"hex": "#a68cff", "emissive": 2.4, "set": "research"},
   "resVioF": {"hex": "#7a68c4", "set": "research"},
+  "resVioL": {"hex": "#c3b4ff", "set": "research"},
   "resRelicD": {"hex": "#2c3034", "set": "research"},
   "resRelic": {"hex": "#4e575c", "set": "research"},
   "resRelicL": {"hex": "#7d878a", "set": "research"}
