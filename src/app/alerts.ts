@@ -243,7 +243,7 @@ export function createAlerts(sim: Sim): Alerts {
 
   /** Alerts raised from state (see `deriveAlerts`) by key, and the keys the player dismissed: quiet until the condition clears. */
   const derived = new Map<string, number>();
-  const derivedMuted = new Set<string>();
+  const derivedMuted = new Map<string, UiAlertKind>(); // dismissed key -> the kind dismissed, so a worse kind on the same key (suit air out after low) still raises
   const hasKey = (k: string) => [...keys.values()].includes(k);
   let scannedAt = -Infinity;
   function syncDerived(): void {
@@ -251,14 +251,14 @@ export function createAlerts(sim: Sim): Alerts {
     if (sim.tick === scannedAt || (sim.tick > scannedAt && sim.tick - scannedAt < ALERT_INTERVAL_TICKS)) return;
     scannedAt = sim.tick;
     const want = deriveAlerts(sim, (k) => hasKey(k) || derivedMuted.has(k)); // a dismissed alert keeps its hysteresis too
-    for (const k of derivedMuted) if (!want.has(k)) derivedMuted.delete(k);
+    for (const [k, kind] of derivedMuted) if (want.get(k)?.kind !== kind) derivedMuted.delete(k);
     for (const [k, id] of derived) {
       if (want.has(k) && keys.get(id) === k) continue;
       derived.delete(k);
       if (!want.has(k)) remove(id);
     }
     for (const w of want.values()) {
-      if (derivedMuted.has(w.key) || hasKey(w.key) || store.get().length >= MAX) continue;
+      if (derivedMuted.get(w.key) === w.kind || hasKey(w.key) || store.get().length >= MAX) continue;
       const id = nextId++;
       keys.set(id, w.key);
       derived.set(w.key, id);
@@ -300,7 +300,7 @@ export function createAlerts(sim: Sim): Alerts {
       if (keys.get(id) === 'save') saveMuted = true; // dismissed: quiet until a write succeeds
       const shown = store.get().find((a) => a.id === id);
       const key = keys.get(id);
-      if (shown && key && DERIVED_KINDS.has(shown.kind)) derivedMuted.add(key); // dismissed: quiet until its condition clears
+      if (shown && key && DERIVED_KINDS.has(shown.kind)) derivedMuted.set(key, shown.kind); // dismissed: quiet until its condition clears
       const n = store.get().find((a) => a.id === id)?.notice;
       if (n?.lead) sim.enqueue({ type: 'story.dismissNotice', notice: n.id });
       remove(id);
@@ -314,7 +314,7 @@ export function createAlerts(sim: Sim): Alerts {
       for (const e of events) {
         const d = describe(e);
         if (!d) continue;
-        if (DERIVED_KINDS.has(d.kind) && derivedMuted.has(d.key)) continue; // dismissed: the event of a condition already muted stays quiet
+        if (DERIVED_KINDS.has(d.kind) && derivedMuted.get(d.key) === d.kind) continue; // dismissed: the event of a condition already muted stays quiet
         for (const [id, k] of keys) if (k === d.key) remove(id);
         const id = nextId++;
         keys.set(id, d.key);

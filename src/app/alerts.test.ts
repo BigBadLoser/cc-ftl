@@ -243,6 +243,21 @@ describe('alerts', () => {
       expect(current(al).filter((a) => a.kind === 'crew.downed')).toHaveLength(0);
     });
 
+    it('a dismissed suit-air-low warning still escalates when the tank runs out, by scan and by event', () => {
+      for (const viaEvent of [false, true]) {
+        const sim = newGame(1, content);
+        const crew = playerCrew(sim)[0] as number;
+        sim.world.add(crew, SuitC, { worn: true, air: 1 });
+        const al = createAlerts(sim);
+        al.sync();
+        al.dismiss(current(al).find((a) => a.kind === 'suit.airLow')!.id);
+        sim.world.get(crew, SuitC)!.air = 0;
+        if (viaEvent) al.onEvents([{ type: 'suit.airOut', crew }]);
+        else { sim.tick += ALERT_INTERVAL_TICKS; al.sync(); }
+        expect(current(al).filter((a) => a.kind === 'suit.airOut')).toHaveLength(1);
+      }
+    });
+
     it('a story lead notice comes back after a reload and goes when the notice is dismissed', () => {
       const sim = newGame(1, content);
       const defs = sim.content.events ?? {};
