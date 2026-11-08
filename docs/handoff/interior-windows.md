@@ -2,6 +2,31 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
+## Pick up here (state at 2026-11-08, end of session)
+- Done and approved: slate (sw46; upper layer kept as it renders) and default teal (dp16). Tan renders again and its
+  join dots are fixed (iw42, shown to the user, no reply needed). Branch pushed; last commits: 7cdd360b (tan's end
+  strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
+- Next per the plan: the other looks (navy, drone, civil, bastion), each a `Look` on `wall3d_iwin_ramp.py` where its
+  ref is the default's shape (bastion, navy), its own module where not (civil: tan's arch code; drone). The user had
+  not picked which first; the suggested order below is slate (done), bastion, navy, drone, civil. Ask which first.
+- Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
+  palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
+- The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
+  user merges); commit messages carry no attribution and name no model; label images "Blender renders put together
+  as 2D composites"; don't send deskewed views; whole px only; change only what's asked; new colours in
+  `palette_extra.json` in a set (`slate`, or `window` for the default's window pieces), prefer the wall's own greys;
+  bump `sprite_cache.RENDER_VERSION` only for engine files; no `check:fast` for Python art; don't `pkill -f`; when
+  intent is ambiguous, ask with a marked image and send it; each change: render, show before / after (zoom and a
+  close-up), log a line here.
+- Working loop (scratchpad S=`/tmp/claude-0/-home-user/d90bd30e-5bfe-51f0-9d45-019095d96471/scratchpad`):
+  render `cd tools/blender/preview && SPRITE_SS=4 timeout 1500 /opt/tools/blender-4.2.9-linux-x64/blender -b
+  --factory-startup --python render.py -- /home/user/cc-ftl-windows $S/<out> jobs_<dwin|swin|iwin>.py [id,id,...]`
+  (ids comma-separated; none = every job); sheet `cd /tmp && python3 -I $S/scripts/win_sheet.py $S/AvB.png 5
+  "$S/A:<prefix>:<ref>" "$S/B:<prefix>:<ref>"` (prefix `tile.wall.full.m10` / `tile.wall.slate.full.m10` /
+  `tile.wall.tan.full.m10`; ref 3168 / 44 / 43); zoom = its rows at 0.05-0.47 H and 0.54-0.96 H, x 0-0.4 W, side by
+  side; 1x run composite `$S/scripts/run1x.py` (`run(dir, prefix)`), crop and scale it for close-ups. Last renders:
+  teal dp16, slate sw49, tan iw42. Pixel-identical checks: compare npz files (`rgba`, `a`) with numpy.
+
 ## What an interior window is
 A straight partition (mask 10, along x) opened between its end posts, with a beam over the opening and a see-through
 pane. Pieces per look: `tile.wall.<look>.full.m10.win.l` (post at -x), `.win.m` (open across), `.win.r` (post at +x).
@@ -28,7 +53,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 ## Style -> our look -> status
 | Ref style (set) | Our look | Window ids (2/3/4 tiles) | Status |
 |---|---|---|---|
-| 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` |
+| 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` (renders again; join dots fixed, iw42) |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
@@ -47,7 +72,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Common to every window: end posts on the l / r tiles, a beam across, a ramp block under the opening with the pane
   standing on it, an amber strip on the floor in front. Two blue lines on the cap: all but civil.
   So the machinery (`window()` / hook wrapper, `_cut` + `_clip`, pane edges, `GLASS` + the glass kind, cap lines) is
-  shared. It is duplicated now in `wall3d_iwin.py` and `wall3d_iwin_def.py`: factor a common core before adding five.
+  shared. Default-shaped looks share `wall3d_iwin_def.hook` + `wall3d_iwin_ramp` (a `Look` each); tan's
+  `wall3d_iwin.py` is its own (arch, cushions).
 - Slate (44) is the default (3168) almost shape for shape. Lower layer: the same dished top, pockets on the front and
   end blocks with dark openings; the amber end blocks become blue, the pockets' floors lit blue. Upper layer:
   rectangular opening, posts with a stepped foot like the default's; the beam one raised block over the middle tile
@@ -77,14 +103,15 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - Render: `cd tools/blender/preview && SPRITE_SS=4 blender -b --factory-startup --python render.py -- <repo> <out>
   <jobs.py> [ids]`.
 
-## Known breakage (fixed)
+## Known breakage (all fixed)
 - Commit b30dfa9d (join rule: `envtiles._with_runs` builds only the north/west runs) cut the copies a piece build
   makes from 3 (own, +x, -x) to 2 (own, -x). Both `window()` wrappers asserted 3 calls, so **tan and default windows
   no longer render on this branch** (AssertionError(2)).
 - Fixed (committed; default windows render again, SS=1 check): in both `wall3d_iwin.py` and
   `wall3d_iwin_def.py`, `seq = (part, "m" if part in "mr" else None)` (the piece, then its -x copy) and
-  `assert calls[0] == len(seq)`. Tan re-rendered 2026-11-08 (iw41): renders; since the join rule it shows the
-  dotted marks across the far floor at each join (no +x run; `wall3d_iwin.py` has no END_STRIP like the ramp's).
+  `assert calls[0] == len(seq)`. Tan re-rendered 2026-11-08 (iw41): renders; since the join rule it showed dotted
+  marks across the far floor at each join (no +x run), fixed in iw42 by the ramp's end strip (`wall3d_iwin.END_STRIP`:
+  on l and m, a strip in `SILL_TOP` 3 px down at the +x end under the floor's edge; base and r pixel-identical).
 
 ## Next (the user's plan, 2026-11-08)
 1. Slate's ramp (the lower layer) first, starting from the default window's geometry (a good start, it lacks
@@ -109,6 +136,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   to the same level of wall3d.RAMPS["ochre"]; the ramp's seam line, level 2 wM / wXM, left off them); in each a slot
   cut SLOT_IN 3 px back into the ramp, SLOT_W 7 x SLOT_H 3 px, SLOT_TOP 2 under the slope's top (`block_slot`: back
   oXK, floor oXD, sides oK, the floor's front edge lit oH). dp8-dp10 tried 2 px tall, lit floors: a flat patch.
+  dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
 - `post_in` (TEAL 2): the opening's ends 2 px further out each side (`D.POST` = POST0 - 2 px while a piece builds: the
   posts 2 px thinner, the side slopes moved out); the end blocks' inner edges move with them (`a`, `b` from POST0), so
   teal's blocks are 11 px wide from the tile's edge. The lip's seams by the posts (`_thirds`: 10.3 / 21.3 px, a px outside the default
@@ -120,13 +148,16 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   of its neighbours: m's -x neighbour as l, else a joint showed over l). So a 3-tile window has one raised block, at its
   middle; a 2-tile window none (set back from post to post), a 4-tile one two. wall3d._rail draws no seam and no end
   where a set-back block runs on into another. Known: a faint 1 px darker mark where set-back blocks meet at a tile
-  edge (neither sprite covers that edge px whole: the l sprite's edge px blends; m's alpha 0 there). dp1 tried floors wL / lip wH: flat; dp2 lip fC4T0: too green (the user).
+  edge (neither sprite covers that edge px whole: the l sprite's edge px blends; m's alpha 0 there); the user accepted
+  it ("good enough"). Tried without effect: overlapping the blocks across the edge (0.004, then a px).
 - wall3d.py: on the default walls a window tile's bare ramp (`T.BARE`) keeps the panel's seam line, on across the
   tile (no panel); the pockets cut it (the user: carry the ramp's seam to the pocket). Plain walls only; slate and
   the base tiles pixel-identical (sw48, dp3 checked).
 
 ## Slate window (`sprites/wall3d_iwin_slate.py`)
-- Wraps the default window: `window()` runs `wall3d_iwin_def.hook` (opening, sill, beam, pane), then `detail()`.
+- Now `LOOK` on the shared ramp (`wall3d_iwin_ramp.window(fn, part, LOOK)`: `wall3d_iwin_def.hook`, then
+  `ramp.detail`); slate's own touches are `_pre` (grey ramp front, seam panel) and `_post` (`_rail_seam`). The notes
+  below on `detail()` describe what is now in the ramp module.
 - `detail()`: splits the piece at the end blocks' inner edges (`BLOCK`); between them the near ramp's blue-plate
   polygons recoloured `GREY` (fGW2; matched by their linear colour, Mesh faces store colours, not names); the plate's
   seam panel (fGT2/fGTs, the middle half of a tile, `PANEL`) dropped where an end block's edge cuts it (sw29); on l
@@ -286,3 +317,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   bastion; tan's re-render), each a `Look`.
 - 2026-11-08: iw41: tan's window re-rendered (l, m, r; the user: the normal view only): it renders. New since iw40
   (the join rule): dotted marks on the far floor at each join, the strip fix not ported to tan yet. Shown.
+- 2026-11-08: iw42: tan's join dots fixed (`END_STRIP` on l and m, as the ramp's). Handoff section "Pick up here"
+  written for a fresh session.
