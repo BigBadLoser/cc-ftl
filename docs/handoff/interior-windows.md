@@ -83,7 +83,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   no longer render on this branch** (AssertionError(2)).
 - Fixed (committed; default windows render again, SS=1 check): in both `wall3d_iwin.py` and
   `wall3d_iwin_def.py`, `seq = (part, "m" if part in "mr" else None)` (the piece, then its -x copy) and
-  `assert calls[0] == len(seq)`. Tan not re-rendered yet.
+  `assert calls[0] == len(seq)`. Tan re-rendered 2026-11-08 (iw41): renders; since the join rule it shows the
+  dotted marks across the far floor at each join (no +x run; `wall3d_iwin.py` has no END_STRIP like the ramp's).
 
 ## Next (the user's plan, 2026-11-08)
 1. Slate's ramp (the lower layer) first, starting from the default window's geometry (a good start, it lacks
@@ -283,3 +284,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   slate pixel-identical (sw49). Shown.
 - 2026-11-08: the user approved teal at dp16 ("this is good enough"). Next: the other looks (navy, drone, civil,
   bastion; tan's re-render), each a `Look`.
+- 2026-11-08: iw41: tan's window re-rendered (l, m, r; the user: the normal view only): it renders. New since iw40
+  (the join rule): dotted marks on the far floor at each join, the strip fix not ported to tan yet. Shown.
