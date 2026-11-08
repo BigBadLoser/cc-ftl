@@ -231,12 +231,11 @@ def _sq_pipe(k, pts, w=0.0625, col="pipeCu"):
         _bar(k, a, b, w, col)
 
 
-def _valve(k, u, v, z, face=(0, 1)):
-    """A steel valve body on a pipe with a red handwheel facing along face (front by default)."""
+def _valve(k, u, v, z):
+    """A steel valve body on the manifold with a red handwheel facing front."""
     k.box(u, v, z - 0.045, 0.09, 0.09, 0.09, "steel")
-    at = lambda t: (u + face[0] * t, v + face[1] * t, z)
-    _tube(k, [at(0.045), at(0.075)], 0.012, "steel", n=6)
-    _tube(k, [at(0.075), at(0.095)], 0.06, "medRed", n=10)
+    _tube(k, [(u, v + 0.045, z), (u, v + 0.075, z)], 0.012, "steel", n=6)
+    _tube(k, [(u, v + 0.075, z), (u, v + 0.095, z)], 0.06, "medRed", n=10)
 
 
 def _vtank(k, u, v, z, r, h, on):
@@ -309,12 +308,9 @@ def _base_large(k, on, back=True):
     zm, zb = 0.48, 0.084
     _pump(k, 0.0, 0.66, 0.0, on, s=1.2)
     _sq_pipe(k, [(0.0, 0.7, zb), (0.0, VQL, zb), (0.0, VQL, zm)])
-    eu, ze = 1.46875, 0.3              # one pipe: along the front, round each corner, back along the 2-tile end past
-    _sq_pipe(k, [(-eu, -0.75, 0.56), (-eu, -0.75, ze), (-eu, VQL, ze), (-eu, VQL, zm),     # a valve, up into the sill
-                 (eu, VQL, zm), (eu, VQL, ze), (eu, -0.75, ze), (eu, -0.75, 0.56)])
+    _sq_pipe(k, [(-1.21875, VQL, 0.56), (-1.21875, VQL, zm), (1.21875, VQL, zm), (1.21875, VQL, 0.56)])
     for su in (-1, 1):
         _valve(k, su * 0.76, VQL, zm)
-        _valve(k, su * eu, 0.05, ze, face=(su, 0))
 
 
 def _unit(k, cv, on, dz=0.0, seed=3):
