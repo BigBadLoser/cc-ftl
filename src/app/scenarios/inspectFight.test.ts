@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PositionC, ShipC, TraderC, newGame, type Sim } from '../../sim';
+import { CrewC, PositionC, ShipC, TraderC, galaxyIndex, newGame, playerShip, type Sim } from '../../sim';
 import { content } from '../../content';
 import { AllegianceC } from '../../sim/fight/components';
 import { AwayC } from '../../sim/away/components';
@@ -148,4 +148,46 @@ describe('fighting and refusing the inspectors (#138 step 3)', () => {
     expect(sim.world.get(insp.station, ShipC)?.faction).toBe('neutral');
     expect(sim.world.get(insp.station, TraderC)?.barredUntil).toBeGreaterThan(sim.galaxy.turn);
   });
+
+  it('jumping away mid-fight: the hostile inspectors aboard travel with the ship and fight on after arrival', () => {
+    const sim = stationSearch();
+    attackLead(sim);
+    const [, insp] = live(sim);
+    const ship = insp.ship;
+    const aboard = insp.crew.filter((c) => {
+      const p = sim.world.get(c, PositionC);
+      return !!p && shipIdOf(sim, p) === ship;
+    });
+    expect(aboard.length).toBeGreaterThan(0);
+    const g = sim.galaxy;
+    const next = (galaxyIndex(g).adjacent.get(g.current) ?? []).map((e) => (e.a === g.current ? e.b : e.a)).sort()[0]!;
+    sim.enqueue({ type: 'debug.giveItems', item: 'item.fuel', count: 30 });
+    sim.enqueue({ type: 'debug.chargeFtl' });
+    sim.step();
+    sim.enqueue({ type: 'galaxy.jump', ship: playerShip(sim), route: [next] });
+    sim.step();
+    expect(sim.sector.state).toBe('hyperspace');
+    expect(sim.world.query(InspectionC)).toEqual([]);
+    until(sim, () => sim.galaxy.travel?.phase !== 'hop', 2000);
+    sim.galaxy.travel!.stopping = true;
+    sim.enqueue({ type: 'galaxy.drop' });
+    until(sim, () => sim.sector.state === 'deploying', 200);
+    sim.enqueue({ type: 'sector.deploy', x: 0, y: 0 });
+    until(sim, () => sim.sector.state === 'active', 50);
+    expect(sim.sector.state).toBe('active');
+    const me = playerShip(sim);
+    for (const c of aboard) {
+      expect(sim.world.has(c, CrewC)).toBe(true);
+      expect(sim.world.get(c, AllegianceC)?.faction).toBe('hostile');
+      expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(me);
+    }
+    // They fight on: an inspector strikes again.
+    let struck = false;
+    for (let i = 0; i < 1800 && !struck; i++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'crew.attacked' && aboard.includes(e.crew)) struck = true;
+    }
+    expect(struck).toBe(true);
+  });
 });
+
