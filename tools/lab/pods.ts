@@ -7,10 +7,10 @@ import type { LabCell, LabPanel } from './panel';
 
 const PAD = 10;
 /** The cone variants of the escape pod's first preview (tools/blender/sprites/escape_pod.py VARIANTS). */
-const LABELS: Record<string, string> = { g: 'G upright, drive pack', h: 'H leaning 15', i: 'I gumdrop, leaning 15' };
+const LABELS: Record<string, string> = { h: 'H steel door', j: 'H white door, orange frame' };
 
 /**
- * `?panel=pods` : pod-family craft side by side for shape and scale. Each variant (`variants=g,h,i`, sprites
+ * `?panel=pods` : pod-family craft side by side for shape and scale. Each variant (`variants=h,j`, sprites
  * `vehicle.escape_pod.<v>.fly.d<d>`) gets a row at 1x beside the mining pod, then the same headings at 3x (`dirs=0,2,5`).
  * A floor tile's diamond under each anchor and a crew member standing beside (`crew=0` hides them) show the scale. `ref=vehicle.mining_pod` sets the comparison craft. Read a
  * scratch preview build with `&assets=/.cache/escape-preview/` (built into .cache/escape-preview/1x).
@@ -18,9 +18,9 @@ const LABELS: Record<string, string> = { g: 'G upright, drive pack', h: 'H leani
 export const podsPanel: LabPanel = {
   id: 'pods',
   title: 'Pods',
-  help: 'pod craft variants beside the mining pod at 1x and 3x: variants=g,h,i, dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod',
+  help: 'pod craft variants beside the mining pod at 1x and 3x: variants=h,j, dirs=0,2,5, ref=vehicle.mining_pod, craft=vehicle.escape_pod',
   async cells({ atlas, params }) {
-    const variants = (params.get('variants') ?? 'g,h,i').split(',').filter(Boolean);
+    const variants = (params.get('variants') ?? 'h,j').split(',').filter(Boolean);
     const dirs = (params.get('dirs') ?? '0,2,5').split(',').map(Number);
     const ref = params.get('ref') ?? 'vehicle.mining_pod';
     const craft = params.get('craft') ?? 'vehicle.escape_pod';
