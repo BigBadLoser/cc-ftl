@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
-  viewPlan, yardPrice, yardService,
+  viewPlan, yardPrice, yardService, innerWalls,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
 import { storageCount } from '../sim/items/storage';
@@ -377,5 +377,24 @@ describe('shipyard: ending early', () => {
     run(sim, 3);
     expect(sim.world.has(crew, DraftedC)).toBe(false);
     expect(order.ejected).toEqual([]);
+  });
+});
+
+describe('shipyard: joining on (#385)', () => {
+  it('turns inward only the old hull the new section shuts in, and the order\'s own walls against it; the ring and old rooms stay', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    const s = { ...sim.world.get(me, ShipC)! };
+    planHull(sim, me, [...outline(sim, me, 8, -2, 4, 4), ...outline(sim, me, 19, -2, 4, 3)]);
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    expect(innerWalls(sim, order)).toEqual([]); // nothing is shut in while the section is open trusses
+    // Lay the section as the crew would, then ask again.
+    for (const t of order.walls) sim.enqueue({ type: 'debug.setStruct', ship: me, x: t.x, y: t.y, kind: Struct.Wall });
+    for (const t of order.floor) sim.enqueue({ type: 'debug.setStruct', ship: me, x: t.x, y: t.y, kind: Struct.Floor });
+    sim.step();
+    const got = innerWalls(sim, order).map((t) => `${t.x - s.x},${t.y - s.y}`);
+    expect(got.sort()).toEqual(['10,1', '20,0', '20,1', '21,0', '21,1', '9,1'].sort());
   });
 });

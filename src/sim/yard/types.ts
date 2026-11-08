@@ -53,8 +53,11 @@ export interface YardOrder {
   /** The tiles the truss pass builds this visit, and what it costs (credits; part of `price`). */
   trusses: Tile[];
   fee: YardMoney;
-  /** 'truss': the planning pass is running; 'hull': trusses are being turned into hull. */
-  stage: 'truss' | 'hull';
+  /**
+   * 'truss': the planning pass is running; 'hull': trusses are being turned into hull; 'open': the section is shut and the walls it turned inward
+   * (the old outer hull where it joins on, `open.ts`) are being opened into floor.
+   */
+  stage: 'truss' | 'hull' | 'open';
   /**
    * One wall of each painted patch is left for last: `wall` is closed once the crew are out, by way of `stage`, the open tile beyond it. Without
    * that the crew would wall themselves in. `sealed`: those walls have been posted.
