@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { Struct } from '../sim';
   import type { UiApi, UiInspect } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import ItemIcon from './ItemIcon.svelte';
   import InspectorAction from './InspectorAction.svelte';
 
@@ -38,7 +38,7 @@
 
 {#if info}
   <div data-testid="inspector">
-    <PanelHead icon="grid" title="Tile {info.local.x}, {info.local.y}" sub="grid {info.grid}" {onBack} />
+    <PaneHead icon="grid" title="Tile {info.local.x}, {info.local.y}" sub="grid {info.grid}" {onBack} />
     <dl>
       <dt>Struct</dt><dd data-testid="inspect-struct">{info.structName}</dd>
       <dt>Room</dt><dd data-testid="inspect-room">{info.room || 'none'}</dd>

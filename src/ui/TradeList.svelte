@@ -26,7 +26,7 @@
           <button class="go" data-testid="partner-hail-{p.id}" onclick={() => hail(p.id)}>{p.hail === 'refused' ? 'Hail again' : 'Hail'}</button>
         {/if}
       </div>
-      {#if p.hail === 'refused'}<div class="refused" data-testid="partner-refused-{p.id}">No deal: {p.reason === 'weaponsHot' ? 'guns on you' : p.reason === 'silent' ? 'no answer' : 'not interested'}</div>{/if}
+      {#if p.hail === 'refused'}<div class="refused" data-testid="partner-refused-{p.id}">No deal: {p.reason === 'weaponsHot' ? 'guns on you' : p.reason === 'silent' ? 'no answer' : p.reason === 'barred' ? 'you refused their inspectors' : 'not interested'}</div>{/if}
     </section>
   {/each}
   {#each live as d (d.id)}

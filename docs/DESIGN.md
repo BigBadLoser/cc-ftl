@@ -25,6 +25,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Drones (user decisions, 2026-11-04; slice 1, inside the ship, built)](#drones-user-decisions-2026-11-04-slice-1-inside-the-ship-built): Small flying robots run by the AI core, inside and out: defence, repair and medic...
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
+  - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, not built yet)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-not-built-yet): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert.
   - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
@@ -928,6 +929,40 @@ Today there is one pirate faction (the Scrappers) and the pirate den, a hostile 
 - **No navy-standing cost for visiting.** The risk comes from contraband scans instead.
 - **Art:** a placeholder from the pirate den layout. The real station layout belongs to the shipgen session; liveries
   come later.
+
+### Contraband inspections in the world (user decisions, 2026-11-08; issue #138, step 1 built)
+
+Replaces the contraband scan pop-up (`InterdictModal`, #136) with inspectors who come aboard. Built in three steps: the
+station dock inspection, then the patrol version, then refusing and fighting.
+
+- **Where:** docking at a navy or corporation station sends its inspectors over by shuttle to a free airlock. A patrol
+  that hails you mid-jump asks you to stop: comply and you drop out beside it and it sends a shuttle; run and you take a
+  standing hit with that faction, and the patrol may give chase.
+- **The search:** the inspectors walk to each storage module and search it for a few seconds. They also find contraband
+  on crew they pass and anything fitted in a module (the `heldItems` list). The search takes real time, so the player can
+  still move goods while it runs (into a shuttle, out an airlock): an emergent choice, allowed on purpose.
+- **Seizure:** what they find, they carry back to their shuttle by hand, with the same carry jobs crew use.
+- **Settling:** when the search is done, the lead inspector waits aboard and an urgent alert says so ("Inspector
+  waiting: fine or bribe"). Clicking it jumps to the inspector and opens the options: pay the fine (with the standing
+  hit), offer a bribe (it may fail), or refuse. No pop-up.
+- **Refusing:** at a station, refusing the inspectors means no service there and a standing hit; a patrol turns hostile.
+- **Fighting:** attacking the inspectors turns that faction hostile with a big standing hit; the patrol or the station's
+  defences engage, and the inspectors fight back as boarders.
+- **No way to dock** (no working or free airlock): the inspectors board by EVA, in suits, through any working door or
+  breach, like boarders, and then search as usual. If there is no way in at all, they wait with an alert ("Inspectors
+  can't board") until there is.
+- **The pop-up goes:** `InterdictModal` is removed once both triggers play out in the world.
+
+**As built (step 1, the station dock):**
+- Opening trade with a navy or corporation station sends two inspectors (once per scan cooldown per node). Trade waits only while they search or wait
+  for an answer; a clean search opens it at once.
+- They search every storage module (sealed containers too) and every module with an upgrade fitted, about 5 seconds each, and take contraband off crew and
+  floors within 2 tiles of them.
+- The answers sit on the alert ("Inspector waiting: fine or bribe"); clicking its text jumps to the lead. The fine costs standing and the goods. A bribe is
+  taken 60% of the time: the goods are handed back by the shuttle door; turned down, it costs standing and is not offered again. Refusing costs standing and
+  the station's service for 10 turns (they keep what they took). Leaving the node while they search or wait counts as refusing.
+- With no airlock free they cross in suits and land on the hull; with no way in they wait there under an "Inspectors can't board" alert.
+- Inspectors show as visitors ("Inspector"), not hostiles, and offer no Attack yet (step 3).
 
 ### Prisoners and prizes (user decisions, 2026-10-27; issue #116)
 

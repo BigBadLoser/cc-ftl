@@ -1,7 +1,7 @@
 # Project status and handoff
 
 Living document: update it whenever a milestone lands, a decision is made, or a session ends.
-Last updated: 2026-11-07.
+Last updated: 2026-11-08.
 
 **History:** completed-work logs, past PR notes and superseded decisions are in [STATUS_ARCHIVE.md](STATUS_ARCHIVE.md). Standing decisions that live there:
 - Sector grid (user, 2026-10-19): each sector becomes one large chunked grid; ships never move or dock with each other; a jump takes the player's ship plus anything docked to it. Plan: "Sector grid (planned)" in ARCHITECTURE.md; user answers in the archive section "Sector grid decision".
@@ -11,7 +11,7 @@ Last updated: 2026-11-07.
 **Ship generator:** a separate shipgen session works on ships, stations and room layout. See
 [SHIPGEN_HANDOFF.md](SHIPGEN_HANDOFF.md) (scope, file map, sheet commands, backlog) and [SHIPGEN.md](SHIPGEN.md).
 
-## Weapon upgrades (#338: slice 1 in #344, slice 2 in #351, art in #346)
+## Weapon upgrades (#338: slice 1 in #344, slice 2 in #351, art in #346; flak art in #357)
 
 Module upgrade slots with the three general weapon upgrades and the flak cannon. Mechanism: `ModuleDef.upgradeSlot`, `ItemDef.upgrade`
 (`slot`, `fits`, `mods`), `Module.upgrade`; read through `sim/upgrades/stats.ts` (effective weapon def, damage-taken multiplier). Fitting is the
@@ -19,7 +19,8 @@ Module upgrade slots with the three general weapon upgrades and the flak cannon.
 general work hold, `sim/modules/hold.ts`; power reads that, not fits). Enemy loadouts by faction (`FactionDef.upgrades`) are rolled once when a
 generated ship is created (`shipCreated`, `combat/ships.ts`, fed by `spawnShip` `opts.gen` and the derelict spawner; `sim/upgrades/loadout.ts`), strip drops and losses, station stock, ruin loot. Slice 2 (behaviour
 upgrades) plugs into `UpgradeMods.weapon` (a patch over the fitted weapon's def). Debug start: `?scenario=upgrades`. Item art and 40 px UI icons (`item.upg_<id>.icon`) came in #346.
-Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Drones are covered by point defence and defence drones, not flak.
+Flak is an ordinary ammo weapon (starts on HOLD); HOLD, or hold all, stops all fire. Its art (#357): turret `turret_flak.py`,
+bay `turret_bay_flak.py`, no `artTint` (turrets never take it). Drones are covered by point defence and defence drones, not flak.
 Combat: a left click on a foe weapon (not aiming) opens a read-only inspector (`app/foeModule.ts` is the place for a future
 scanner gate). Debug starts live in `app/scenarios/`. Save version 97.
 Rules from its review: read a weapon module's def through `weaponDefOf` (or a shot's through `firedWeapon`), never `sim.content.weapons`
@@ -60,10 +61,12 @@ Done: the art (#346: item sprites and UI icons for all ten, neutral shot sprites
   ambush in #327). The comms window rework (layout E) merged in #329; the distress freighter in #343 (consent record, work blocks,
   threat-first targeting, suits for hot rooms, scene clocks start at deploy). The medical pod in #345 (escape pod vehicle, passengers as lodging guests, passage jobs, join offer, the shared `roleOf`). Step 6 is done. The ambush can grow slightly once relationships and interactions exist.
 - **Shared-cause fixes (2026-11-08):** alerts built from state (#349, merged in #352: `src/app/alertsDerived.ts`, dismissals mute per kind until the condition clears); `heldItems` for item enumeration (`src/sim/items/held.ts`, merged in #351; story stock counts and takes, fit-job seizure (`where: 'fitting'`) and `playerShipId` for the adrift jump in #355); a dev/test guard for reads of the packed player ship (#350, merged in #353: `src/sim/packedGuard.ts`, 'throw' in tests, 'warn' in dev for tick code only).
+- **Contraband inspections (#138):** step 1 (station dock inspection) merged in #359: `src/sim/inspect/`, inspectors as visitor crew from the station's shuttle (dock or EVA), haul up to the hold and impound the rest, sticky settle alert (fine / bribe / refuse), `Trader.barredUntil` (10 turns), `?scenario=inspect[&clean][&eva]`. Next: step 2, a patrol hail mid-jump in the world that replaces InterdictModal; then step 3, the refuse and fight consequences.
+- **UI consistency (#336):** steps 1-3 merged (tokens; chips and meters; the `tip` action with `TipHost`, `PaneHead` and `Tabs` in #358). Step 4, one window frame and the decision bar, needs a mock sheet first.
 - **Drones (#318) done:** repair and medic drones inside (#323, art #324); space flight, defence drones, recall (#325); outside
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.
-- **Relationships (#239) built on `crew/relationships-239`, not yet a PR** (waits on the user's review of the crew card and the placeholder bubbles); see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
+- **Relationships (#239) done:** merged in #330, the Social tab in #331; see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
 - **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.

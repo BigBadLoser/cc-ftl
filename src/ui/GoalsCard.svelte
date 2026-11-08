@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiGoals } from './api';
   import Icon from './Icon.svelte';
@@ -71,7 +72,7 @@
         {#if narrow}<span class="name">{goals.title}</span>{/if}
         <Icon name={collapsed ? 'chevDown' : 'chevUp'} size={16} />
       </button>
-      {#if !(narrow && collapsed)}<button class="x" title="Skip the goals" aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
+      {#if !(narrow && collapsed)}<button class="x" use:tip={{ text: 'Skip the goals' }} aria-label="Skip the goals" data-testid="goals-skip" onclick={() => (confirmSkip = !confirmSkip)}><Icon name="close" size={14} /></button>{/if}
     </div>
     {#if confirmSkip}
       <div class="confirm">
@@ -85,7 +86,7 @@
       {#if !narrow}<p class="act-name">{goals.title}</p>{/if}
       <ul>
         {#each goals.goals as g (g.id)}
-          <li class:done={g.done} title={g.text} data-testid="goal">
+          <li class:done={g.done} use:tip={{ text: g.text }} data-testid="goal">
             <i class="box">{#if g.done}<Icon name="check" size={12} />{/if}</i>
             <span><b>{g.title}</b><em>{g.text}</em></span>
           </li>

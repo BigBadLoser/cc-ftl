@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { tip } from './kit';
   /** One button of an inspector action. With `confirm`, the first tap shows its warning and asks again before `onclick`. */
   export interface InspectorButton {
     label: string;
@@ -52,7 +53,7 @@
       <button class="danger" data-testid={pending.testid} onclick={() => pending && tap(pending)}>{pending.confirm.label}</button>
     {:else}
       {#each buttons as b (b.testid)}
-        <button class:danger={b.danger} class:commit={b.commit} title={b.title} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
+        <button class:danger={b.danger} class:commit={b.commit} use:tip={{ text: b.title }} disabled={b.disabled} data-testid={b.testid} onclick={() => tap(b)}>{b.label}</button>
       {/each}
     {/if}
   </div>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { KeyBadge, SideTabs } from '../kit';
+  import { KeyBadge, SideTabs, tip } from '../kit';
   import { ACTION_BY_ID, ACTIONS, chordLabel, chordOf, KEY_GROUPS, keymap, SLOTS, type ActionId, type KeyGroup, type LostKey } from '../keymap';
 
   /**
@@ -81,7 +81,7 @@
               class:on
               class:unset={!chord}
               disabled={a.fixed || (!chord && i > ($keymap[a.id]?.length ?? 0))}
-              title={a.fixed ? 'Esc always opens and closes this menu' : 'Click, then press a key'}
+              use:tip={{ text: a.fixed ? 'Esc always opens and closes this menu' : 'Click, then press a key' }}
               onclick={() => listen(a.id, i)}
             >
               {#if on}<span class="wait">Press a key…</span>{:else if chord}<KeyBadge tone="light" size="sm">{chordLabel(chord)}</KeyBadge>{:else}<span class="dash">—</span>{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import type { UiApi, UiTrade, UiTradePartner } from './api';
   import ItemIcon from './ItemIcon.svelte';
   import { summarize, tripsFor, type Draft } from './tradeDraft';
@@ -105,12 +106,12 @@
     </div>
     <div class="btns">
       <button class="btn no" disabled={empty} data-testid="trade-clear" onclick={() => (draft = {})}>CLEAR</button>
-      <button class="btn go" disabled={!!problem} title={problem} data-testid="trade-propose" onclick={propose}>PROPOSE</button>
+      <button class="btn go" disabled={!!problem} use:tip={{ text: problem }} data-testid="trade-propose" onclick={propose}>PROPOSE</button>
     </div>
   {/if}
   {#if refuel}
     <div class="refuel" data-testid="refuel">
-      <button class="btn act" data-testid="refuel-go" disabled={refuelOff} title={refuelTip} onclick={doRefuel}>{refuel.n > 0 ? `REFUEL · ${refuel.n} fuel · ₵ ${fmt(refuel.cost)}` : 'FUEL TANKS FULL'}</button>
+      <button class="btn act" data-testid="refuel-go" disabled={refuelOff} use:tip={{ text: refuelTip }} onclick={doRefuel}>{refuel.n > 0 ? `REFUEL · ${refuel.n} fuel · ₵ ${fmt(refuel.cost)}` : 'FUEL TANKS FULL'}</button>
     </div>
   {/if}
 </div>

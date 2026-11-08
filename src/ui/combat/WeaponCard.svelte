@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { KeyBadge, Meter } from '../kit';
+  import { KeyBadge, Meter, tip as tooltip } from '../kit';
   import type { UiApi, UiWeapon } from '../api';
   import UpgradeTip from './UpgradeTip.svelte';
 
@@ -59,7 +59,7 @@
   aria-pressed={selected}
   data-testid="combat-weapon"
   data-mode={weapon.mode}
-  title={`${weapon.name}. ${compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}. Right-click for ${held ? 'AUTO' : 'HOLD'}` : tip}`}
+  use:tooltip={{ text: `${weapon.name}. ${compact ? `${tip}${held ? '. On HOLD' : ''}${own ? `. Aimed at ${weapon.target}` : ''}. Right-click for ${held ? 'AUTO' : 'HOLD'}` : tip}` }}
   onclick={onSelect}
   oncontextmenu={flip}
   onkeydown={onKey}
@@ -76,7 +76,7 @@
   {:else}
     <Meter value={weapon.charge} {tone} height={4} />
     <span class="low">
-    <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" title={modeTip} onclick={flip}>
+    <button class="sub" class:own class:pick={selected} data-testid="weapon-mode" use:tooltip={{ text: modeTip }} onclick={flip}>
       {#if weapon.ammo !== null}×{weapon.ammo}&nbsp;·&nbsp;{/if}{#if held}<b class="hold">Hold</b>&nbsp;·&nbsp;{/if}{#if ready}<b class="rdy">Ready</b>{:else}{aimText}{/if}
     </button>
     {#if weapon.upgrade && !weapon.upgrade.renames}<UpgradeTip {api} upgrade={weapon.upgrade} size={14} />{/if}

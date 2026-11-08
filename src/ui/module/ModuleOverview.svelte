@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from '../kit';
+  import { Meter, tip } from '../kit';
   import type { UiApi, UiFtl, UiModule } from '../api';
   import FtlCharge from '../FtlCharge.svelte';
   import Icon from '../Icon.svelte';
@@ -32,12 +32,12 @@
     {#if m.droneBay}<DroneBayPanel bay={m.droneBay} />{/if}
     {#if m.upgradeSlot}<UpgradePanel {api} {m} />{/if}
     {#if m.hp < m.maxHp}
-      <button class="prio" class:on={m.repairFirst} data-testid="dc-priority" aria-pressed={m.repairFirst} title={m.repairFirst ? 'First in the repair queue (click to undo)' : 'Crew repair this before anything else'} onclick={() => api.dispatch({ type: 'module.priorityRepair', id: m.id, on: !m.repairFirst })}><Icon name="chevUp" size={16} />Priority repair</button>
+      <button class="prio" class:on={m.repairFirst} data-testid="dc-priority" aria-pressed={m.repairFirst} use:tip={{ text: m.repairFirst ? 'First in the repair queue (click to undo)' : 'Crew repair this before anything else' }} onclick={() => api.dispatch({ type: 'module.priorityRepair', id: m.id, on: !m.repairFirst })}><Icon name="chevUp" size={16} />Priority repair</button>
     {/if}
     <div class="btns">
-      <button class="tile" class:on={m.enabled} title={m.enabled ? 'Enabled (click to disable)' : 'Disabled (click to enable)'} aria-label={m.enabled ? 'Disable' : 'Enable'} data-testid="toggle-enabled" onclick={() => api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: !m.enabled })}><Icon name="power" size={20} /></button>
-      {#if m.power < 0}<button class="pow" title="Power order: who keeps power when the ship is short" data-testid="open-power" onclick={onPower}>Power…</button>{/if}
-      <button class="tile warn" title="Deconstruct" aria-label="Deconstruct" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', ship: m.ship, x: m.x, y: m.y }); api.selectModule(null); }}><Icon name="trash" size={20} /></button>
+      <button class="tile" class:on={m.enabled} use:tip={{ text: m.enabled ? 'Enabled (click to disable)' : 'Disabled (click to enable)' }} aria-label={m.enabled ? 'Disable' : 'Enable'} data-testid="toggle-enabled" onclick={() => api.dispatch({ type: 'module.setEnabled', id: m.id, enabled: !m.enabled })}><Icon name="power" size={20} /></button>
+      {#if m.power < 0}<button class="pow" use:tip={{ text: 'Power order: who keeps power when the ship is short' }} data-testid="open-power" onclick={onPower}>Power…</button>{/if}
+      <button class="tile warn" use:tip={{ text: 'Deconstruct' }} aria-label="Deconstruct" data-testid="deconstruct-module" onclick={() => { api.dispatch({ type: 'job.deconstructModule', ship: m.ship, x: m.x, y: m.y }); api.selectModule(null); }}><Icon name="trash" size={20} /></button>
     </div>
 </div>
 

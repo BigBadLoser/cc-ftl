@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import PodList from './PodList.svelte';
   import type { UiMining } from './api';
 
@@ -26,14 +26,14 @@
 </script>
 
 <div data-testid="shuttle-panel" aria-label="Shuttles">
-  <PanelHead icon="shuttle" title={only === null ? 'Shuttles' : 'Shuttle'} {onBack} />
+  <PaneHead icon="shuttle" title={only === null ? 'Shuttles' : 'Shuttle'} {onBack} />
 
   {#each data.shuttles.filter((x) => only === null || x.id === only) as s (s.id)}
     {@const left = seatsLeft(s)}
     <section data-testid="shuttle-{s.id}">
       <h3>
         {s.name} <small data-testid="shuttle-state">{where(s)}</small>
-        <button class="mini" title="Center the camera" onclick={() => api.focusShuttle(s.id)}>Find</button>
+        <button class="mini" use:tip={{ text: 'Center the camera' }} onclick={() => api.focusShuttle(s.id)}>Find</button>
       </h3>
       {#if s.trade}<div class="trade" data-testid="shuttle-trade">Trade run for {s.trade.partner}: {s.trade.status}</div>{/if}
       <Meter value={s.hp} max={Math.max(1, s.maxHp)} tone="auto" height={6} title="{s.hp}/{s.maxHp}" />

@@ -4,8 +4,7 @@
   import FloatingWindow from './FloatingWindow.svelte';
   import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
-  import { Tooltip } from './kit';
+  import { PaneHead, tip } from './kit';
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
@@ -41,17 +40,17 @@
 </script>
 
 <FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} testId="ship-overview" bare pinRight={32} padded>
-  <PanelHead icon="hull" title="Ship overview" />
-  <button class="tile close" title="Close" aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
+  <PaneHead icon="hull" title="Ship overview" />
+  <button class="tile close" use:tip={{ text: 'Close' }} aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
   <div class="res" data-testid="stats">
-    <Tooltip text="Power supply / demand"><span class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span></Tooltip>
-    <Tooltip text="Average O₂ of rooms with crew (kPa)"><span class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span></Tooltip>
-    <Tooltip text={heavy ? 'Ship size over what the engines carry: jumping needs an overcharge' : 'Ship size (tiles inside the outer hull) / what the engines carry'}><span class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Size</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span></Tooltip>
-    <Tooltip text="Credits"><span class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span></Tooltip>
-    {#if hasFuel}<Tooltip text="Fuel"><span class="cell" class:bad={fuel < 3} data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span></Tooltip>{/if}
-    <button class="cell" class:on={stockOpen} aria-pressed={stockOpen} title="Ship stock" data-testid="stat-stock" onclick={onStock}><Icon name="stock" size={18} /><b>{total}</b></button>
-    <Tooltip text="Crew"><span class="cell"><Icon name="person" size={18} /><b>{crew.length}</b></span></Tooltip>
-    <Tooltip text="Modules ({off.length} offline)"><span class="cell" class:bad={off.length > 0}><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span></Tooltip>
+    <span use:tip={{ text: 'Power supply / demand' }} class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span>
+    <span use:tip={{ text: 'Average O₂ of rooms with crew (kPa)' }} class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span>
+    <span use:tip={{ text: heavy ? 'Ship size over what the engines carry: jumping needs an overcharge' : 'Ship size (tiles inside the outer hull) / what the engines carry' }} class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Size</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span>
+    <span use:tip={{ text: 'Credits' }} class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span>
+    {#if hasFuel}<span use:tip={{ text: 'Fuel' }} class="cell" class:bad={fuel < 3} data-testid="stat-fuel"><Icon name="fuel" size={18} /><b>{fuel}</b></span>{/if}
+    <button class="cell" class:on={stockOpen} aria-pressed={stockOpen} use:tip={{ text: 'Ship stock' }} data-testid="stat-stock" onclick={onStock}><Icon name="stock" size={18} /><b>{total}</b></button>
+    <span use:tip={{ text: 'Crew' }} class="cell"><Icon name="person" size={18} /><b>{crew.length}</b></span>
+    <span use:tip={{ text: `Modules (${off.length} offline)` }} class="cell" class:bad={off.length > 0}><Icon name="module" size={18} /><b>{mods.length - off.length}/{mods.length}</b></span>
   </div>
   {#if st.food.eaters > 0}
     <div class="food" class:low={foodLevel === 'low'} class:out={foodLevel === 'out'} data-testid="stat-food" data-level={foodLevel}>

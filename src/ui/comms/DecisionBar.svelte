@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   import type { DecisionOption } from './types';
 
   /** The footer: each option a full-width button side by side (label left, a short note right). The `primary` one has the cyan edge. Calls `onpick(id)`. */
@@ -7,7 +8,7 @@
 
 <div class="decisions" style:grid-template-columns={`repeat(${Math.max(1, options.length)}, 1fr)`}>
   {#each options as o (o.id)}
-    <button class:primary={o.primary} disabled={o.disabled || busy} title={o.reason} data-testid="comms-decision" data-choice={o.id} onclick={() => onpick(o.id)}>
+    <button class:primary={o.primary} disabled={o.disabled || busy} use:tip={{ text: o.reason }} data-testid="comms-decision" data-choice={o.id} onclick={() => onpick(o.id)}>
       <span class="l">{o.label}</span>{#if o.note}<small>{o.note}</small>{/if}
     </button>
   {/each}

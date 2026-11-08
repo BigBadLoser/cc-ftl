@@ -141,6 +141,14 @@ export function createDescriber(sim: Sim) {
       }
       case 'galaxy.evadeRoll': return { kind: 'galaxy', tone: e.success ? 'good' : 'bad', text: `${e.success ? 'Evaded' : 'Evade failed'}: rolled ${Math.round(e.roll * 100)}% against ${Math.round(e.odds * 100)}%`, ...here() };
       case 'scan.settled': return { kind: 'galaxy', tone: 'warn', text: e.outcome === 'bribed' ? `Paid a ${e.cost} ₵ bribe: the scan found nothing` : `Contraband confiscated and a ${e.cost} ₵ fine paid`, ...here() };
+      case 'inspect.started': return { kind: 'galaxy', tone: 'warn', text: `${e.name} sends inspectors aboard to search for contraband`, ...here() };
+      case 'inspect.waiting': return { kind: 'galaxy', tone: 'warn', text: `The inspectors found contraband worth ${e.value} ₵: fine ${e.fine} ₵, or a bribe of ${e.bribe} ₵`, ...here() };
+      case 'inspect.bribeRefused': return { kind: 'galaxy', tone: 'bad', text: 'The inspector turned your bribe down', ...here() };
+      case 'inspect.settled': {
+        const text = { fined: `Contraband seized and a ${e.cost} ₵ fine paid`, bribed: `Paid a ${e.cost} ₵ bribe: the inspectors hand the goods back`, refused: 'You refused the inspectors: the station will not deal with you',
+          clean: 'The inspectors found nothing and leave', fled: 'You left before the inspection was done: the station will not deal with you' }[e.outcome];
+        return { kind: 'galaxy', tone: e.outcome === 'clean' || e.outcome === 'bribed' ? 'info' : 'bad', text, ...here() };
+      }
       case 'galaxy.bribed': return { kind: 'galaxy', tone: 'warn', text: `Paid ${e.cost} ₵ to pass`, ...here() };
       case 'truce.breached': return { kind: 'galaxy', tone: 'bad', text: 'Truce broken: everyone here is hostile to you for 30 turns', ...node(e.node) };
       case 'galaxy.eventEntered': return { kind: 'galaxy', tone: 'warn', text: e.kind === 'fight' ? 'Dropped into deep space: fight' : e.kind === 'rescue' ? 'Dropped into deep space to help' : 'Dropped out of the lane to look', ...here() };

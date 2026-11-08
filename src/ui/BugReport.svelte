@@ -6,7 +6,7 @@
    */
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
-  import { Dialog } from './kit';
+  import { Dialog, tip } from './kit';
 
   let { api, onClose }: { api: UiApi; onClose: () => void } = $props();
 
@@ -67,7 +67,7 @@
     </button>
     {#if showContext}<pre class="ctx" data-testid="bug-context">{context}</pre>{/if}
     <div class="actions">
-      <button type="button" class="primary" disabled={!ready} title={ready ? '' : 'Add a title and say what happened'} data-testid="bug-open" onclick={openIssue}><Icon name="debug" size={16} /> Open issue</button>
+      <button type="button" class="primary" disabled={!ready} use:tip={{ text: ready ? '' : 'Add a title and say what happened' }} data-testid="bug-open" onclick={openIssue}><Icon name="debug" size={16} /> Open issue</button>
       <button type="button" data-testid="bug-download" onclick={files}><Icon name="download" size={16} /> Download save + screenshot</button>
       <button type="button" data-testid="bug-close" onclick={onClose}>Close</button>
     </div>

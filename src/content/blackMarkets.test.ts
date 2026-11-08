@@ -4,7 +4,8 @@ import {
   storageAdd, storageCount, truceBanned, truceHolds, unitPrice, SAVE_VERSION, type Sim,
 } from '../sim';
 import { stat } from '../sim/stats';
-import { dockScan, scanPending, seizeContraband } from '../sim/blackmarket/scan';
+import { scanFor, scanPending, seizeContraband } from '../sim/blackmarket/scan';
+import type { Encounter } from '../sim/galaxy/types';
 import { syncRecruits } from '../sim/galaxy/recruit';
 import { PrizeC, WeaponC } from '../sim/combat/components';
 import { capturePrize } from '../sim/capture/prize';
@@ -177,17 +178,30 @@ describe('contraband sources', () => {
   });
 });
 
+/** A navy patrol's scan at the player's node (the encounter path; a station's scan is an inspection, inspections.test.ts). True when it found contraband. */
+function patrolScan(sim: Sim): boolean {
+  const g = sim.galaxy;
+  const e: Encounter = {
+    id: g.nextFleet++, kind: 'scan', fleet: 0, faction: 'navy', role: 'patrol', name: 'Patrol', ships: 1, strength: 0, danger: 0, how: 'node', node: g.current, turn: g.turn, expires: g.turn + 5,
+  };
+  scanFor(sim, e);
+  if (!e.scan) return false;
+  g.encounters.push(e);
+  g.rev++;
+  return true;
+}
+
 describe('scans', () => {
   function lawStation(): { sim: Sim; station: number } {
     const w = withStation();
     w.sim.world.get(w.station, TraderC)!.owner = 'navy';
     return w;
   }
-  it('a navy station scans on the hail; contraband aboard waits for surrender or bribe, and trade is held meanwhile', () => {
+  it('a navy patrol scans; contraband aboard waits for surrender or bribe, and trade is held meanwhile', () => {
     const { sim, station } = lawStation();
     giveItems(sim, STOLEN, 10);
     const credits = sim.trade.credits;
-    expect(dockScan(sim, 'navy', 'Depot')).toBe(true);
+    expect(patrolScan(sim)).toBe(true);
     expect(scanPending(sim)).toBe(true);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     expect(e.scan!.value).toBe(10 * content.items[STOLEN].price);
@@ -210,7 +224,7 @@ describe('scans', () => {
     expect(mod).toBeDefined();
     sim.world.get(mod!, ModuleC)!.upgrade = 'item.upg_nuke';
     expect(contrabandAboard(sim)).toEqual([{ item: 'item.upg_nuke', count: 1 }]);
-    expect(dockScan(sim, 'navy', 'Depot')).toBe(true);
+    expect(patrolScan(sim)).toBe(true);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     expect(e.scan!.value).toBe(content.items['item.upg_nuke'].price);
     sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
@@ -277,7 +291,7 @@ describe('scans', () => {
     const st = playerStorages(sim)[0] as number;
     sim.world.get(st, StorageC)!.stacks.push({ item: STOLEN, count: 2 }, { item: STOLEN, count: 2 });
     expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }]);
-    dockScan(sim, 'navy', 'Depot');
+    patrolScan(sim);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
     run(sim, 1);
@@ -291,7 +305,7 @@ describe('scans', () => {
     else sim.world.add(crew, EquipC, { weapon: 'item.disruptor' });
     sim.world.add(crew, CarryingC, { item: STOLEN, count: 4 });
     expect(contrabandAboard(sim)).toEqual([{ item: STOLEN, count: 4 }, { item: 'item.disruptor', count: 1 }].sort((a, b) => (a.item < b.item ? -1 : 1)));
-    dockScan(sim, 'navy', 'Depot');
+    patrolScan(sim);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     sim.enqueue({ type: 'galaxy.respond', encounter: e.id, choice: 'surrender' });
     run(sim, 1);
@@ -303,7 +317,7 @@ describe('scans', () => {
   it('a bribe keeps the goods and the standing; it is refused without the credits', () => {
     const { sim } = lawStation();
     giveItems(sim, STOLEN, 10);
-    dockScan(sim, 'navy', 'Depot');
+    patrolScan(sim);
     const e = sim.galaxy.encounters.find((x) => x.scan)!;
     const navy = reputationOf(sim.story, 'navy');
     sim.trade.credits = e.scan!.bribe - 1;
@@ -317,16 +331,6 @@ describe('scans', () => {
     expect(reputationOf(sim.story, 'navy')).toBe(navy);
   });
 
-  it('finds nothing without contraband, never scans for a non-law owner, and scans a node once per cooldown', () => {
-    const { sim } = lawStation();
-    expect(dockScan(sim, 'navy', 'Depot')).toBe(false);
-    giveItems(sim, STOLEN, 3);
-    expect(dockScan(sim, 'pirates', 'Den')).toBe(false);
-    expect(dockScan(sim, 'navy', 'Depot')).toBe(false); // scanned a moment ago (and found nothing)
-    sim.galaxy.turn += 10;
-    expect(dockScan(sim, 'navy', 'Depot')).toBe(true);
-    expect(sim.galaxy.encounters.filter((e) => e.scan).length).toBe(1);
-  });
 
   it('visiting a black market costs no navy standing', () => {
     const { sim, station } = withStation();

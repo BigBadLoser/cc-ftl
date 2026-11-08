@@ -29,6 +29,7 @@ import { vehicleHandlers } from './vehicles/handlers';
 import { salvageHandlers } from './salvage/handlers';
 import { awayHandlers } from './away/handlers';
 import { yardHandlers } from './yard/order';
+import { inspectHandlers } from './inspect/settle';
 import { ModuleC } from './modules/components';
 import { DURATION, tierOf } from './crew/breakTable';
 import { bondBoth } from './crew/bonds';
@@ -65,6 +66,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...galaxyHandlers,
   ...ftlHandlers,
   ...yardHandlers,
+  ...inspectHandlers,
   ...sectorHandlers,
   ...asteroidHandlers,
   ...miningHandlers,

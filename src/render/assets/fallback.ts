@@ -33,6 +33,7 @@ export const FALLBACK: Record<string, Fallback> = {
   'module.ion_cannon.bay': { ids: FLOOR, tint: 0x8ac8ff, perTile: true },
   'module.incendiary_launcher.bay': { ids: FLOOR, tint: 0xff7a4a, perTile: true },
   'module.point_defense.bay': { ids: FLOOR, tint: 0xd0d8e8, perTile: true },
+  'module.flak_cannon.bay': { ids: FLOOR, tint: 0xffb060, perTile: true },
   // Engine: the always-full-height hull section (one wall block per hull-row tile) and the machine behind it.
   'module.engine.hull': { ids: ['tile.hull.full.m15'], tint: 0xffc080, perTile: true },
   'module.engine.machine': { ids: CRATE, tint: 0xffb060, perTile: true },
@@ -74,7 +75,7 @@ export const FALLBACK: Record<string, Fallback> = {
 function deployFallbacks(): Record<string, Fallback> {
   const out: Record<string, Fallback> = {};
   const parts: [string, string][] = [['turret.generic', 'turret.generic']];
-  for (const stem of ['burst_laser', 'mass_driver', 'missile_launcher', 'ion_cannon', 'incendiary_launcher', 'point_defense']) parts.push([`turret.${stem}`, 'turret.generic']);
+  for (const stem of ['burst_laser', 'mass_driver', 'missile_launcher', 'ion_cannon', 'incendiary_launcher', 'point_defense', 'flak_cannon']) parts.push([`turret.${stem}`, 'turret.generic']);
   for (const id of ['roof.shield_gen', 'roof.shield_gen_small', 'roof.ai_core']) parts.push([id, id]);
   for (const [base, like] of parts) {
     const out_ = FALLBACK[like] as Fallback;

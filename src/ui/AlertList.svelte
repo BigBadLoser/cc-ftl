@@ -32,6 +32,7 @@
   const icon: Record<UiAlertKind, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.airUnreachable': 'o2', 'away.stranded': 'downed', 'crew.downed': 'downed',
     'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save', 'crew.asksToJoin': 'person',
+    'inspect.waiting': 'person', 'inspect.blocked': 'person',
   };
 </script>
 
@@ -44,19 +45,21 @@
         {#if a.notice.lead}<span class="tap">Tap to look</span>{/if}
       </button>
     {:else if a.actions?.length && !toast}
-      <!-- An alert that answers itself: the message, then its actions (primary first) under it; the close X stays top right. -->
+      <!-- An alert that answers itself: the message (beside the close X), then its actions (primary first) on a row of their own under both. -->
       <div class="acts">
         <button class="go" onclick={() => jump(a)}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
-        <div class="row">
-          {#each a.actions as act (act.label)}
-            <button class="act {act.tone}" data-testid="alert-action" data-tone={act.tone} onclick={() => api.dispatch(act.command)}>{act.label}</button>
-          {/each}
-        </div>
       </div>
     {:else}
       <button class="go" disabled={toast ? false : !a.subject && !a.report && !a.menu} aria-expanded={toast ? open : undefined} data-testid={toast ? 'alert-toast-text' : undefined} onclick={() => (toast ? (open = !open) : jump(a))}><span class="ic"><Icon name={icon[a.kind]} size={16} /></span><span class="t" title={a.text}>{a.text}</span></button>
     {/if}
-    <button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>
+    {#if !a.sticky}<button class="x" aria-label="Dismiss" onclick={() => api.dismissAlert(a.id)}><Icon name="close" size={14} /></button>{/if}
+    {#if a.actions?.length && !toast && !a.notice}
+      <div class="row">
+        {#each a.actions as act (act.label)}
+          <button class="act {act.tone}" data-testid="alert-action" data-tone={act.tone} onclick={() => api.dispatch(act.command)}>{act.label}</button>
+        {/each}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -99,11 +102,11 @@
   .go.story .tap { display: block; color: var(--cyan); margin-top: 2px; }
   .alert:has(.story) { border-color: var(--cyan); }
   .alert:has(.story:disabled) { border-color: var(--line); }
-  /* Alerts with actions: the X sits top right (not centred on the taller card); the actions line up under the text, after the icon. */
-  .alert:has(.acts) { align-items: flex-start; border-color: var(--cyan); }
+  /* Alerts with actions: the X sits top right beside the text; the actions take a full-width row of their own under both, never wrapping. */
+  .alert:has(.acts) { align-items: flex-start; flex-wrap: wrap; border-color: var(--cyan); }
   .acts { flex: 1; min-width: 0; display: grid; }
-  .acts .row { display: flex; gap: 6px; padding: 0 8px 8px 32px; }
-  .alert .act { min-height: 26px; padding: 0 12px; border: 1px solid currentColor; font-size: 12px; font-weight: 600; }
+  .alert > .row { flex-basis: 100%; display: flex; gap: 6px; padding: 0 8px 8px; }
+  .alert .act { flex: 1 1 auto; min-height: 26px; padding: 0 8px; border: 1px solid currentColor; font-size: 12px; font-weight: 600; white-space: nowrap; }
   .alert .act.good { color: var(--green); }
   .alert .act.bad { color: var(--red); }
   .x { min-width: 32px; padding: 0; color: var(--dim); display: inline-flex; align-items: center; justify-content: center; }

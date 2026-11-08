@@ -251,9 +251,9 @@ function homeShipC() {
  * Debug: generate a station (`kind` 'station.trading'..., `size` outpost | station | hub) east of everything in the node
  * and frame it with the player's ship. `?station=trading:hub` spawns one at start.
  */
-function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameStation = true): void {
+function spawnStation(kind: string, size: 'outpost' | 'station' | 'hub', frameStation = true, owner?: string): void {
   const before = new Set(sim.world.query(ShipC));
-  bridge.dispatch({ type: 'debug.spawnStation', kind, size, seed: (Math.random() * 0x7fffffff) >>> 0 });
+  bridge.dispatch({ type: 'debug.spawnStation', kind, size, seed: (Math.random() * 0x7fffffff) >>> 0, ...(owner ? { owner } : {}) });
   // The command runs on the next tick: frame the new station once it exists.
   const frame = (tries: number): void => {
     const id = sim.world.query(ShipC).find((i) => !before.has(i) && sim.world.get(i, ShipC)?.immobile);

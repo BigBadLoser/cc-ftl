@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from '../kit';
   import type { UiCrew } from '../api';
   import type { UiCrewDetail } from '../crewDetailApi';
   import Section from '../inspector/Section.svelte';
@@ -34,7 +35,7 @@
     <div class="stats">
       {#each d.stats as st (st.stat)}
         {@const inv = st.stat === 'restDecay'}
-        <div class="st" title={[`${num(st.base, st.unit)} base`, ...st.parts.map(part)].join(' · ')}>
+        <div class="st" use:tip={{ text: [`${num(st.base, st.unit)} base`, ...st.parts.map(part)].join(' · ') }}>
           <span class="l">{st.name}</span>
           <span>{num(st.value, st.unit)}{#if st.parts.length}<i class="dot" class:pos={st.parts.every((p) => good(p, inv))} class:neg={!st.parts.every((p) => good(p, inv))}>●</i>{/if}</span>
         </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip as tooltip } from './kit';
   import type { UiApi, UiSalvage, UiScrapType } from './api';
   import InspectorAction from './InspectorAction.svelte';
 
@@ -28,7 +28,7 @@
   <div class="rows">
     {#each salvage.types as t (t.type)}
       {@const empty = t.parts === 0}
-      <label class="row" class:off={!!order || empty} title={empty ? '' : tip(t.materials)} data-testid="salvage-{t.type}">
+      <label class="row" class:off={!!order || empty} use:tooltip={{ text: empty ? '' : tip(t.materials) }} data-testid="salvage-{t.type}">
         <input type="checkbox" checked={live.includes(t.type)} disabled={!!order || empty} onchange={(e) => toggle(t.type, e.currentTarget.checked)} />
         <span class="n">{LABEL[t.type]}</span>
         <span class="c">{t.parts} {t.parts === 1 ? 'part' : 'parts'}</span>
@@ -36,7 +36,7 @@
     {/each}
   </div>
   {#snippet footer()}
-    <p class="eva" title="EVA work: crew need suits. Refill at the shuttle or an intact airlock.">EVA work, needs suits (refill at the shuttle or an airlock)</p>
+    <p class="eva" use:tooltip={{ text: 'EVA work: crew need suits. Refill at the shuttle or an intact airlock.' }}>EVA work, needs suits (refill at the shuttle or an airlock)</p>
   {/snippet}
 </InspectorAction>
 

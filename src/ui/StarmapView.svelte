@@ -3,7 +3,7 @@
   import type { UiApi, UiFtl } from './api';
   import type { UiEncounterChoice, UiJumpWarnings, UiStarArt, UiStarmap, UiStarNode, UiStarRoute } from './starmapApi';
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead, tip } from './kit';
   import InterdictModal from './InterdictModal.svelte';
   import StarmapDrawer from './StarmapDrawer.svelte';
   import StarmapStats from './StarmapStats.svelte';
@@ -463,8 +463,8 @@
 
 <div class="starmap legacy" data-testid="starmap" data-mode="browse">
   <div class="head">
-    <PanelHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
-      onBack={locked ? undefined : onClose} backTitle="Back to ship (Esc)" backTestId="starmap-close" />
+    <PaneHead icon="map" title="Starmap" sub={locked ? 'Drop from hyperspace to leave the map' : here?.cluster ? (map?.clusters.find((c) => c.id === here.cluster)?.name ?? '') : ''}
+      onBack={locked ? undefined : onClose} backTestId="starmap-close" />
   </div>
   <div class="statbar">
     {#if map}<StarmapStats {map} fuelBad={!!route && !route.fuelOk} chargeBad={!!route && !route.chargeOk} />{/if}
@@ -478,11 +478,11 @@
       {/each}
     </div>
     <div class="tools" class:shift={drawerOpen} role="toolbar" aria-label="Map view">
-      <button class="tile" title="Zoom in" aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
-      <button class="tile" title="Zoom out" aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
-      <button class="tile" title="Centre on your ship" aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
-      <button class="tile" class:on={sellOpen} title="Where to sell what is aboard" aria-label="Where to sell" aria-pressed={sellOpen} onclick={() => { sellOpen = !sellOpen; if (sellOpen) newsOpen = false; }} data-testid="starmap-sell-toggle"><Icon name="trade" size={22} /></button>
-      <button class="tile" class:on={newsOpen} title="News and rumours" aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => { newsOpen = !newsOpen; if (newsOpen) sellOpen = false; }} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
+      <button class="tile" use:tip={{ text: 'Zoom in' }} aria-label="Zoom in" onclick={() => zoomAt(w / 2, h / 2, 1.4)}><Icon name="zoomIn" size={22} /></button>
+      <button class="tile" use:tip={{ text: 'Zoom out' }} aria-label="Zoom out" onclick={() => zoomAt(w / 2, h / 2, 1 / 1.4)}><Icon name="zoomOut" size={22} /></button>
+      <button class="tile" use:tip={{ text: 'Centre on your ship' }} aria-label="Centre on your ship" onclick={recenter}><Icon name="recenter" size={22} /></button>
+      <button class="tile" class:on={sellOpen} use:tip={{ text: 'Where to sell what is aboard' }} aria-label="Where to sell" aria-pressed={sellOpen} onclick={() => { sellOpen = !sellOpen; if (sellOpen) newsOpen = false; }} data-testid="starmap-sell-toggle"><Icon name="trade" size={22} /></button>
+      <button class="tile" class:on={newsOpen} use:tip={{ text: 'News and rumours' }} aria-label="News and rumours" aria-pressed={newsOpen} onclick={() => { newsOpen = !newsOpen; if (newsOpen) sellOpen = false; }} data-testid="starmap-news-toggle"><Icon name="list" size={22} />{#if unread}<b class="badge" data-testid="starmap-news-unread">{unread > 9 ? '9+' : unread}</b>{/if}</button>
     </div>
     {#if seenFactions.length && !cardOpen && !newsOpen && !sellOpen}
       <ul class="legend" aria-label="Territory">
@@ -491,7 +491,7 @@
         {/if}
         <li class="lh">Territory</li>
         {#each seenFactions as f (f.id)}
-          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier} title="Your standing with them">{f.tier} {f.standing > 0 ? '+' : ''}{f.standing}</em></li>
+          <li><i style={`background: ${toneColor(f.tone)}`}></i>{f.name}<em class={f.tier} use:tip={{ text: 'Your standing with them' }}>{f.tier} {f.standing > 0 ? '+' : ''}{f.standing}</em></li>
         {/each}
       </ul>
     {/if}

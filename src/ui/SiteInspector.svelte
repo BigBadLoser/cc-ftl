@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Meter } from './kit';
+  import { Meter, tip } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiSite } from './api';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let sites = $state<UiSite[]>([]);
@@ -25,7 +25,7 @@
 
 {#if s}
   <div data-testid="site-inspector">
-    <PanelHead icon="module" title="{s.name} (under construction)" sub="{s.local.x},{s.local.y}" {onBack} />
+    <PaneHead icon="module" title="{s.name} (under construction)" sub="{s.local.x},{s.local.y}" {onBack} />
     <dl>
       <dt>Footprint</dt><dd>{s.w} x {s.h} tiles</dd>
       <dt>Status</dt><dd data-testid="site-state" class:bad={s.state === 'blocked'}>{status(s)}</dd>
@@ -53,7 +53,7 @@
       <dt>Hauling</dt><dd>{names(s.haulers)}</dd>
     </dl>
     <div class="btns">
-      <button class="warn wide" data-testid="site-cancel" title="Cancel the build; delivered materials drop back on the floor" onclick={() => { api.dispatch({ type: 'job.cancel', ship: s.ship, x: s.x, y: s.y }); api.selectSite(null); }}><Icon name="close" size={16} /> Cancel build</button>
+      <button class="warn wide" data-testid="site-cancel" use:tip={{ text: 'Cancel the build; delivered materials drop back on the floor' }} onclick={() => { api.dispatch({ type: 'job.cancel', ship: s.ship, x: s.x, y: s.y }); api.selectSite(null); }}><Icon name="close" size={16} /> Cancel build</button>
     </div>
   </div>
 {/if}

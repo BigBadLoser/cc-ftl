@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiFtl, UiModule } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import PowerPanel from './PowerPanel.svelte';
   import TabbedInspector from './inspector/TabbedInspector.svelte';
   import { moduleTabs, type ModuleTabProps } from './module/moduleTabs';
@@ -30,7 +30,7 @@
 {:else if m && tabProps}
   <div data-testid="module-inspector">
     <TabbedInspector tabs={moduleTabs} props={tabProps}>
-      {#snippet head()}<PanelHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />{/snippet}
+      {#snippet head()}<PaneHead icon="module" title={m.name} sub="{m.local.x},{m.local.y}" {onBack} />{/snippet}
     </TabbedInspector>
   </div>
 {/if}

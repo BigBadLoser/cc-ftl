@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './kit';
   import { onMount } from 'svelte';
   import Segmented from './kit/Segmented.svelte';
   import type { UiApi, UiHullPlan, UiToolState } from './api';
@@ -28,7 +29,7 @@
     { value: 'erase', label: 'Erase', disabled: hull.brush === 'line', title: 'Takes planned tiles out; real hull stays', testId: 'hull-erase' },
   ]} />
   <div class="tools">
-    <button class:on={hull.mirror} onclick={() => set({ mirror: !hull.mirror })} title="Repeat every stroke on the other side of the ship's long axis" aria-pressed={hull.mirror} data-testid="hull-mirror">Mirror</button>
+    <button class:on={hull.mirror} onclick={() => set({ mirror: !hull.mirror })} use:tip={{ text: 'Repeat every stroke on the other side of the ship\'s long axis' }} aria-pressed={hull.mirror} data-testid="hull-mirror">Mirror</button>
     <button disabled={!plan?.tiles.length} onclick={() => plan && api.dispatch({ type: 'hull.plan', ship: plan.ship, tiles: [] })} data-testid="hull-clear">Clear</button>
   </div>
   {#if plan}

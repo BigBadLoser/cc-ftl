@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import { tip } from '../kit';
   /** Heat's own colour scale (cool, then amber from 70%, red from 90%), shared by the player's gauge and the enemy card. */
   export type HeatTone = 'cool' | 'amber' | 'red';
   export function heatTone(frac: number): HeatTone {
@@ -40,7 +41,7 @@
 >
   <i style="width:{pct}%"></i>
   {#if marks}<u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u>{/if}
-  {#if autoVent !== undefined}<s style="left:{autoVent * 100}%" title="Auto-vent line"></s>{/if}
+  {#if autoVent !== undefined}<s style="left:{autoVent * 100}%" use:tip={{ text: 'Auto-vent line' }}></s>{/if}
 </div>
 
 <style>

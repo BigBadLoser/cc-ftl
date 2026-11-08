@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tip } from './tip';
   import type { Snippet } from 'svelte';
 
   /**
@@ -7,19 +8,21 @@
    * bottom edge.
    * `layout` arranges the children: a `row` (icon, text, key) or a centred `stack` (two lines).
    */
-  let { tone = 'plain', disabled = false, progress, layout = 'row', title, testid, onclick, children }: {
+  let { tone = 'plain', disabled = false, progress, layout = 'row', title, key, testid, onclick, children }: {
     tone?: 'plain' | 'go' | 'active' | 'amber';
     disabled?: boolean;
     progress?: number;
     layout?: 'row' | 'stack';
     title?: string;
+    /** The hotkey shown beside the tooltip: an action id, or literal key text. */
+    key?: string;
     testid?: string;
     onclick: () => void;
     children: Snippet;
   } = $props();
 </script>
 
-<button class="btn {tone}" class:off={disabled} {disabled} {title} data-testid={testid} {onclick}>
+<button class="btn {tone}" class:off={disabled} {disabled} use:tip={{ text: title, key }} data-testid={testid} {onclick}>
   <span class="content {layout}">{@render children()}</span>
   {#if progress !== undefined}<i style:width="{Math.round(Math.max(0, Math.min(1, progress)) * 100)}%"></i>{/if}
 </button>

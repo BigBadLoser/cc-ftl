@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCost, UiFab, UiOrder, UiRecipe } from './api';
   import ItemIcon from './ItemIcon.svelte';
-  import { Meter, NumberStepper, Segmented } from './kit';
+  import { Meter, NumberStepper, Segmented, tip } from './kit';
 
   let { api, id, def }: { api: UiApi; id: number; def: string } = $props();
   let fabs = $state<UiFab[]>([]);
@@ -71,7 +71,7 @@
             </div>
           {/if}
           <div class="l2">
-            <button class="mode" data-testid="order-mode-{i}" title="Make N batches, or keep stock at N" onclick={() => edit(i, { mode: o.mode === 'count' ? 'keep' : 'count' })}>{o.mode === 'count' ? 'Make' : 'Keep'}</button>
+            <button class="mode" data-testid="order-mode-{i}" use:tip={{ text: 'Make N batches, or keep stock at N' }} onclick={() => edit(i, { mode: o.mode === 'count' ? 'keep' : 'count' })}>{o.mode === 'count' ? 'Make' : 'Keep'}</button>
             <NumberStepper value={o.target} min={1} {step} label="Batches" decTestId="order-dec-{i}" incTestId="order-inc-{i}" onChange={(v) => edit(i, { target: v })} />
             <span class="mv">
               <button aria-label="Move up" disabled={i === 0} onclick={() => move(i, i - 1)}>↑</button>
@@ -88,7 +88,7 @@
     {#if picking}
       <div class="picker" data-testid="recipe-picker">
         {#each recipes as r (r.id)}
-          <button class="rec" class:on={pick === r.id} class:locked={isLocked(r)} disabled={isLocked(r)} data-testid="recipe-{r.id}" title={isLocked(r) ? 'Needs research' : undefined} onclick={() => (pick = r.id)}>
+          <button class="rec" class:on={pick === r.id} class:locked={isLocked(r)} disabled={isLocked(r)} data-testid="recipe-{r.id}" use:tip={{ text: isLocked(r) ? 'Needs research' : undefined }} onclick={() => (pick = r.id)}>
             <ItemIcon {api} item={r.outputs[0]?.item ?? ''} size={30} />
             <span class="rt">
               <span class="rn">{r.name}</span>
