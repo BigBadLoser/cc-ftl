@@ -4,13 +4,13 @@ smaller than the mining pod (content size 2.2 against 2.6).
 A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and the HATCH COLLAR
 stepped in at its narrow top: the crew-sized round hatch in a hazard ring, the only way in or out. It docks nose first,
 like the old crew capsules: turned on its side, the hatch to an airlock's collar. A hi-vis orange safety band round the
-base, a porthole looking forward (the heading), access plates and a vent, an emergency BEACON on the back of the shoulder, RCS quads round the
-shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
+base, a porthole looking forward (the heading), access plates and a vent, an emergency BEACON on each side of the
+shoulder, the DRIVE PACK on the back with two thrusters sunk in it and RCS quads either side of it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then turned by
 `tilt` (Tilted: 0 = on its side, the hatch forward; 90 = upright, heat shield down; more leans the collar back so the
 shield leads) and to the heading (Spin; u = the heading). Round the axis, theta 270 faces forward when upright (the
-porthole), 90 aft (the drive pack, the beacon). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 =
+porthole), 90 aft (the drive pack). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 =
 straight sides, more = a rounded gumdrop shoulder) and the flying tilt.
 
 States: fly (drive lit, leaning by the variant's tilt), drift (upright, no drive; `beacon_on` lights the lamp: the blink's
@@ -24,7 +24,7 @@ HULL, HULL_D, HULL_K = "medWhite", "steelL", "steel"   # a light hull, steel tri
 BAND = "hivis"                # the safety band
 SHIELD, SHIELD_D = "rustD", "leather"                 # the heat shield's ablative face, scorched dark
 GLOW = "cyan"                 # drive nozzles (the ship's drives glow cyan too)
-BEACON = "orange"             # the emergency beacon
+BEACON, BEACON_HOT = "fxR", "fxO"   # the emergency beacons, lit: emissive red, a hotter top
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
 # (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
@@ -244,16 +244,18 @@ def collar(k):
 
 
 def beacon(k, on):
-    """The emergency beacon on the back of the shoulder, below the collar: a base, a big lamp with a rounded top."""
+    """The emergency BEACONS, one on each side of the shoulder (so one faces the camera whatever the heading): a base, a
+    big red lamp with a rounded top. Lit (the blink's on frame) they are emissive, so they glow; dark, a dull red."""
     _g("beacon")
-    p, nn = k.on(k.v["length"] - 0.13, 90)
-    stud(k.f, p, nn, 0.12, 0.05, "steelD", "steelD")
-    q = tuple(p[i] + nn[i] * 0.05 for i in range(3))
-    lamp, cap = (BEACON, BEACON) if on else ("drD", "drM")
-    stud(k.f, q, nn, 0.1, 0.14, lamp, lamp, r1=0.085)
-    q = tuple(q[i] + nn[i] * 0.14 for i in range(3))
-    stud(k.f, q, nn, 0.085, 0.04, cap, cap, r1=0.05)
-    stud(k.f, tuple(q[i] + nn[i] * 0.04 for i in range(3)), nn, 0.03, 0.03, "steelD", "steelD", sides=8)
+    lamp, cap = (BEACON, BEACON_HOT) if on else ("drD", "drM")
+    for th in (0, 180):
+        p, nn = k.on(k.v["length"] - 0.13, th)
+        stud(k.f, p, nn, 0.12, 0.05, "steelD", "steelD")
+        q = tuple(p[i] + nn[i] * 0.05 for i in range(3))
+        stud(k.f, q, nn, 0.1, 0.14, lamp, lamp, r1=0.085)
+        q = tuple(q[i] + nn[i] * 0.14 for i in range(3))
+        stud(k.f, q, nn, 0.085, 0.04, cap, cap, r1=0.05)
+        stud(k.f, tuple(q[i] + nn[i] * 0.04 for i in range(3)), nn, 0.03, 0.03, "steelD", "steelD", sides=8)
 
 
 def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None, dt=4.0):
@@ -325,10 +327,10 @@ def panels(k):
 
 
 def rcs(k):
-    """Four RCS quads round the shoulder: a block with two nozzle stubs."""
+    """Two RCS quads on the back of the shoulder, either side of the drive pack: a block with two nozzle stubs."""
     _g("rcs")
     s = k.v["length"] * 0.9
-    for th in (0, 180):
+    for th in (45, 135):
         p, n = k.on(s, th)
         stud(k.f, p, n, 0.08, 0.06, HULL_D, "steelD", sides=4)
         q = tuple(p[i] + n[i] * 0.06 for i in range(3))
