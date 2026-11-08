@@ -63,6 +63,8 @@ def slate(hull):
         z0 = z1 - RAIL_H
         zst = z0 - 3 * PZ                               # the stripe's top, a px under the rail's shadow (the rail's
                                                         # front shows 2 px under its line: it stands 2 px out)
+        cut = T.fill("cut") if full else None           # a top design's openings through the stripe (and the lip's
+        cuts = cut(a, b) if cut and not endf else []    # middle recess under them)
         if endf:
             _end_section(k, ax, plane, a, b, zs, zst - 6 * PZ if full else top, F)
         if not endf:
@@ -83,7 +85,8 @@ def slate(hull):
                     T.paint(k, ax, plane, a, b, zg, zg + PZ, 0.0, FACE, 1)
                     for c in range(-1, 2):              # a recess on it at each tile's middle, 8 px wide, 3 px
                         q0, q1 = c - 4 * LINE, c + 4 * LINE     # tall, in the seam's tone, its top px the
-                        if a - 1e-6 <= q0 and q1 <= b + 1e-6:   # faint line's on the face over it
+                                                                # faint line's on the face over it
+                        if a - 1e-6 <= q0 and q1 <= b + 1e-6 and not any(x0 <= q0 and q1 <= x1 for x0, x1 in cuts):
                             T.paint(k, ax, plane, q0, q1, zg + PZ, zg + 3 * PZ, 0.0, FACE, 1)
                             prism(k, ax, plane, q0, q1, [(0.0, zg + 3 * PZ), (PAINT, zg + 3 * PZ), (PAINT, zg + 4 * PZ),
                                                          (0.0, zg + 4 * PZ)], FACE, 4,
@@ -108,8 +111,10 @@ def slate(hull):
             hdr(k, ax, plane, a, b, zst - 6 * PZ, z1, mit)
             return
         T.paint(k, ax, plane, a, b, zst, zst + PZ, 0.0, BLUE, 1)                               # the rail's shadow
-        T.run(k, ax, plane, a, b, pe, zst - 6 * PZ, zst, PAINT, BLUE, 3, 0)                    # the stripe ...
-        T.paint(k, ax, plane, a, b, zst - PZ, zst, PAINT, BLUE, 4)                             # ... lit on top
+        for s0, s1 in _minus(a, b, cuts):                                                      # the stripe ...
+            ends = (pe[0] if abs(s0 - a) < 1e-6 else "cut", pe[1] if abs(s1 - b) < 1e-6 else "cut")
+            T.run(k, ax, plane, s0, s1, ends, zst - 6 * PZ, zst, PAINT, BLUE, 3, 0)
+            T.paint(k, ax, plane, s0, s1, zst - PZ, zst, PAINT, BLUE, 4)                       # ... lit on top
         for u0, u1, mid in _blocks(a, b):                                                      # the rail
             d = MID_D if mid else RAIL_D
             zb = z0 - PZ if mid else z0                 # (the set-back middle a px lower: its foot shows on the
@@ -252,43 +257,52 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
     return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
 
 
+def _minus(a, b, cuts):
+    """[a, b] less the spans in cuts (sorted, inside it)."""
+    out, u = [], a
+    for x0, x1 in sorted(cuts):
+        out.append((u, x0))
+        u = x1
+    return [(g0, g1) for g0, g1 in out + [(u, b)] if g1 - g0 > 1e-6]
+
+
+def door_cuts(a, b):
+    """T1-6's doors: one a tile, 17 px wide (u c-8..c+9 px), where the face holds a whole one."""
+    return [(c - 8 * LINE, c + 9 * LINE) for c in range(-1, 2) if a - 1e-6 <= c - 8 * LINE and c + 9 * LINE <= b + 1e-6]
+
+
 def slate_door(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-6): a double door a tile, 17 px wide, from the stripe's top (cut through it) down to the seam over the
-    lip, in the face's grey; a dark line at each side and between the leaves, each leaf's right edge lit, its top px
-    lit (the next a step under), a small handle by the middle on each leaf (the ref's proportions). The faint line
-    stops at it."""
+    """Wall (T1-6): a double door a tile (door_cuts: the stripe and the lip's middle recess left out there) from the
+    stripe's top down to the seam over the lip, the face's grey; a dark line at each side and between the leaves,
+    each leaf's right edge lit, its top px lit (the next a step under), a small handle on each leaf 2 px off the
+    middle (the ref's proportions). The faint line stops at it."""
     lit, hi = ("fGS2", "fGS1") if ax == "y" else ("fGS3", "fGS2")
     zt = top + 6 * PZ                                   # (the stripe's top)
     H = round((zt - foot) / PZ)
     h1 = zt - round(9 * H / 20) * PZ                    # (the handles: 9 / 20 of the way down, 5 / 20 tall)
     h0 = h1 - round(5 * H / 20) * PZ
-    gaps, u = [], a
 
     def strip(u0, u1, z0, z1, col):
-        prism(k, ax, plane, u0, u1, [(0.0, z0), (4 * PAINT, z0), (4 * PAINT, z1), (0.0, z1)], FACE, 4,
+        prism(k, ax, plane, u0, u1, [(0.0, z0), (2 * PAINT, z0), (2 * PAINT, z1), (0.0, z1)], FACE, 4,
               cols=[False, col, False, False])
 
-    for c in range(-1, 2):
-        d0, d1 = c - 8 * LINE, c + 9 * LINE
-        if not (a - 1e-6 <= d0 and d1 <= b + 1e-6):
-            continue
-        gaps.append((u, d0))
-        u = d1
-        T.paint(k, ax, plane, d0, d1, foot, zt, 2 * PAINT, FACE, 3)                       # the door, over the stripe
+    cuts = door_cuts(a, b)
+    for d0, d1 in cuts:
+        c = d0 + 8 * LINE
         for q in (d0, c, c + 8 * LINE):                                                     # its lines
-            T.paint(k, ax, plane, q, q + LINE, foot, zt, 3 * PAINT, FACE, 1)
+            T.paint(k, ax, plane, q, q + LINE, foot, zt, 0.0, FACE, 1)
         for l0, l1 in ((d0 + LINE, c), (c + LINE, c + 8 * LINE)):                           # its leaves
             strip(l1 - LINE, l1, foot, zt - PZ, lit)                                        # (the right edge lit)
             strip(l0, l1, zt - PZ, zt, hi)                                                  # (the top px lit, the
             strip(l0, l1 - LINE, zt - 2 * PZ, zt - PZ, lit)                                 # next a step under)
-        for x0 in (c - 3 * LINE, c + LINE):                                                 # the handles
+        for x0 in (c - 4 * LINE, c + 2 * LINE):                                             # the handles
             strip(x0, x0 + LINE, h0, h1, hi)
-            T.paint(k, ax, plane, x0 + LINE, x0 + 2 * LINE, h0, h1, 3 * PAINT, FACE, 1)
-    return [(g0, g1) for g0, g1 in gaps + [(u, b)] if g1 - g0 > 1e-6]
+            T.paint(k, ax, plane, x0 + LINE, x0 + 2 * LINE, h0, h1, 0.0, FACE, 1)
+    return _minus(a, b, cuts)
 
 
 SLATE_TOPS = (Design("plain"), Design("boxes, panel", header=slate_boxes, wall=slate_panel),
-              Design("door", wall=slate_door))
+              Design("door", wall=slate_door, cut=door_cuts))
 SLATE_RAMPS = (Design("plates", ramp=slate_plate), Design("grey panel", ramp=slate_grey_panel))
 
 
