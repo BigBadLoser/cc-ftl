@@ -3,13 +3,13 @@ smaller than the mining pod (content size 2.2 against 2.6).
 
 A re-entry capsule of our own: a squat truncated CONE with a broad, shallow HEAT SHIELD at its base and a GRAPPLE COLLAR
 (a tow fixture in a hazard ring) stepped in at its narrow top. A hi-vis orange safety band round the base, broken by the
-crew-sized side DOOR (the only way in or out: it mates with an airlock), two windows, an emergency BEACON by the
+round DOCKING PORT standing out of the front (the only way in or out: it meets an airlock's collar face to face), two windows, an emergency BEACON by the
 collar, RCS quads round the shoulder, the DRIVE PACK on the back with two thrusters sunk in it.
 
 Capsule frame: built along its own axis s (s = 0 the heat shield's rim, +s toward the collar) laid along u, then stood up
 by the variant's `tilt` (Tilted: 90 = upright, heat shield down, collar up; more leans the collar back so the shield
-leads) and turned to the heading (Spin; u = the heading). Round the axis, theta 270 faces forward when upright (the side
-door), 90 aft (the drive). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 = straight sides, more =
+leads) and turned to the heading (Spin; u = the heading). Round the axis, theta 270 faces forward when upright (the docking
+port), 90 aft (the drive). A variant (VARIANTS) sets the cone's proportions, its `bulge` (1 = straight sides, more =
 a rounded gumdrop shoulder) and the tilt; `drive` "flank" puts the nozzles on the aft flank, "collar" round the collar
 (the sideways variant b, flying shield first).
 
@@ -27,12 +27,10 @@ GLOW = "cyan"                 # drive nozzles (the ship's drives glow cyan too)
 BEACON = "orange"             # the emergency beacon
 
 # variant: base radius, top radius, cone length, bulge, heat-shield depth, tilt (degrees), where the drive is
-# (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the door is crew-sized)
-DOOR = (0.12, 30, 6)          # the door: its foot (s, just above the lip, so it cuts the band), half arc, frame width (deg)
-# door: (door, its frame, the frame's wall)
-DOORS = {"steel": ("plate", "steelD", "steelD"), "white": (HULL, BAND, "steelD")}
+# (crew are 1.5 tall and sit inside: the cone stands about crew height on its shield, the port's hatch is the airlock's own bore)
+PORT = (0.6, 0.5, 0.38)       # the docking port: its axis (s), mating ring radius (inside the airlock's mouth ring, 0.62), hatch radius
 VARIANTS = {
-    "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", door="steel", label="H steel door"),
+    "h": dict(rb=1.0, rt=0.5, length=1.4, bulge=1.0, dish=0.16, tilt=105, drive="pack", label="H"),
 }
 SIDES = 48
 COLLAR = 0.76                 # the grapple collar's radius, x the cone's top: it steps in, a ledge round it
@@ -150,7 +148,7 @@ def heat_shield(k):
 
 
 def body(k):
-    """The cone, a few seams, and the safety band round its base, broken where the door cuts through it."""
+    """The cone, a few seams, and the safety band round its base."""
     _g("hull")
     ln = k.v["length"]
     marks = [0.0, 0.06, 0.3, ln * 0.66, ln * 0.66 + 0.035, ln]
@@ -161,15 +159,14 @@ def body(k):
             s0, s1 = a + (b - a) * i / n, a + (b - a) * (i + 1) / n
             k.cyl(s0, s1, k.r(s0), k.r(s1), m)
     _g("band")
-    edge = DOOR[1] + DOOR[2]                                               # round from the door frame's one side to the other
-    sector(k, 0.06, 0.3, 270 + edge, 270 - edge + 360, 1.008, BAND, BAND)
+    sector(k, 0.06, 0.3, 0, 360, 1.008, BAND, BAND)                        # (the docking port stands out over it)
 
 
 def collar(k, beacon_on, thrust=False):
     """The GRAPPLE COLLAR, stepped in from the cone's top: a steel ledge round it, then a narrower barrel rising to a ring
     flush with it, black-and-yellow hazard sectors on its face (the target), and at its centre the grapple fixture a
-    ship's arm takes hold of to tow the pod in: a steel plate and a mushroom-headed pin. No crew hatch: crew use the side
-    door. The beacon stands on the ledge, aft."""
+    ship's arm takes hold of to tow the pod in: a steel plate and a mushroom-headed pin. No crew hatch: crew use the docking
+    port. The beacon stands on the ledge, aft."""
     _g("collar")
     t = k.top
     f = k.f
@@ -228,31 +225,46 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
         k.f.poly([P(sa, ta, 0.99), P(sb, tb, 0.99), P(sb, tb), P(sa, ta)], wall)
 
 
+def hazard_ring(f, c, n, r0, r1, segs=16):
+    """A flat ring at c square to n, in alternating black and yellow sectors."""
+    a = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    a = tuple(a[q] - n[q] * sum(a[i] * n[i] for i in range(3)) for q in range(3))
+    al = math.sqrt(sum(x * x for x in a))
+    a = tuple(x / al for x in a)
+    A, B = _ring_pts(f, c, n, a, r0, segs * 3), _ring_pts(f, c, n, a, r1, segs * 3)
+    for i in range(segs * 3):
+        j = (i + 1) % (segs * 3)
+        f.poly([A[i], A[j], B[j], B[i]], "hazY" if (i // 3) % 2 else "hazK")
+
+
 def viewport(k):
-    """The front: a big DOOR facing forward, nearly the cone's height: a heavy raised frame round the opening, the steel
-    door set back inside it with a porthole, a yellow latch handle on one side and two hinges on the other, a hazard
-    sill below. Two windows either side of it up by the shoulder, so the pod has a face."""
-    _g("door")
-    ln = k.v["length"]
-    door, frame, wall = DOORS[k.v["door"]]
-    s0, s1, h, fw = DOOR[0], ln * 0.94, DOOR[1], DOOR[2]
-    G = 1.06                                                               # the frame stands out this far
-    sector(k, s0, s1, 270 - h - fw, 270 - h, G, frame, wall)                # its sides
-    sector(k, s0, s1, 270 + h, 270 + h + fw, G, frame, wall)
-    sector(k, s1, s1 + 0.06, 270 - h - fw, 270 + h + fw, G, frame, wall)    # its head
-    sector(k, s0 - 0.06, s0, 270 - h - fw, 270 + h + fw, G, "hazY", "hazK")   # the sill, hazard yellow
-    sector(k, s0, s1, 270 - h, 270 + h, 1.006, door, "dark")                # the door, set back
-    sm = s0 + (s1 - s0) * 0.68
-    sector(k, sm - 0.09, sm + 0.09, 270 - 10, 270 + 10, 1.02, "steelD", "steelD")   # porthole frame
-    sector(k, sm - 0.06, sm + 0.06, 270 - 7, 270 + 7, 1.026, "glassD", "steelD")
-    sl = s0 + (s1 - s0) * 0.42
-    sector(k, sl - 0.03, sl + 0.03, 270 + h - 15, 270 + h - 4, 1.035, "hazY", "steelD")   # the latch handle
-    for sh in (s0 + 0.1, s1 - 0.16):                                        # the hinges
-        sector(k, sh, sh + 0.07, 270 - h - 2, 270 - h + 5, 1.07, "steelL", "steelD")
+    """The front: the DOCKING PORT, a short round collar standing straight out of the cone's face, its mouth square to the
+    heading so it meets an airlock's collar (airlock.RR) face to face: a steel barrel, a mating ring with a hazard ring on
+    its face, and the round hatch set back inside it (crew-sized, the airlock's own bore), a porthole and a handle bar on
+    it. Two windows either side of it up by the shoulder, so the pod has a face."""
+    _g("port")
+    f, ln = k.f, k.v["length"]
+    sc, rp, rh = PORT
+    n = (0.0, 0.0, -1.0)                                                    # forward, level when upright
+    uc = k.u(sc)
+    z_in = k.r(sc + rp) - 0.08                                              # the barrel starts inside the hull at its top
+    z_face = k.r(sc - rp) + 0.06                                            # and stands clear of it at its foot
+    c = lambda z: (uc, 0.0, k.zc - z)                                       # noqa: E731  a point on the port's axis
+    tube(f, c(z_in), n, rp - 0.04, rp - 0.04, z_face - 0.08 - z_in, "steelL", sides=32)   # the barrel
+    tube(f, c(z_face - 0.08), n, rp, rp, 0.08, "steelD", sides=32)          # the mating ring
+    hazard_ring(f, c(z_face + 0.002), n, rh + 0.03, rp)
+    disc(f, c(z_face), n, rh, rh + 0.03, "steelD", sides=32)                # the hatch's seal
+    tube(f, c(z_face - 0.05), n, rh, rh, 0.05, "dark", sides=32)            # the recess
+    disc(f, c(z_face - 0.05), n, 0.0, rh, "plate", sides=32)                # the hatch, set back
+    stud(f, (uc + rh * 0.45, 0.0, k.zc - z_face + 0.05), n, 0.13, 0.02, "steelD", "steelD", sides=16)   # its porthole
+    stud(f, (uc + rh * 0.45, 0.0, k.zc - z_face + 0.03), n, 0.09, 0.01, "glassD", "glassD", sides=16)
+    for dv in (-0.16, 0.16):                                                # a handle bar across its lower half
+        stud(f, (uc - rh * 0.4, dv, k.zc - z_face + 0.05), n, 0.025, 0.03, "steelD", "steelD", sides=6)
+    f.box(uc - rh * 0.4, 0.0, k.zc - z_face + 0.05 - 0.045, 0.05, 0.4, 0.03, "hazY", base=False)   # (inside the ring's face)
     _g("windows")
-    for c in (270 - 60, 270 + 60):
-        sector(k, ln * 0.6, ln * 0.82, c - 12, c + 12, 1.02, "steelD")
-        sector(k, ln * 0.62, ln * 0.8, c - 9, c + 9, 1.03, "glassD", "steelD")
+    for cc in (270 - 62, 270 + 62):
+        sector(k, ln * 0.62, ln * 0.84, cc - 12, cc + 12, 1.02, "steelD")
+        sector(k, ln * 0.64, ln * 0.82, cc - 9, cc + 9, 1.03, "glassD", "steelD")
 
 
 def rcs(k):
