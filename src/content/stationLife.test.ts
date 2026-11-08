@@ -22,12 +22,13 @@ describe('station life and security', () => {
 
   it('an intruder raises the alarm; guards converge and fight, civilians run; then it calms down (seeds 1 to 3; seeds 1 to 8 in stationLife.slow.test.ts)', () => {
     // Whether civilians see the intruder before the guards down it (and how long that takes) depends on the station layout and the sim's
-    // rng state, so the outcome is judged over a fixed range of seeds, not one: the triggers (alarm, wanted, guards engage) in nearly
-    // all, the outcomes (civilians flee, intruder downed within 400 ticks, calm, alarm again) in at least half.
+    // rng state, so the outcome is judged over a fixed range of seeds, not one: the triggers (alarm, wanted, guards engage) in every
+    // one, the outcomes (civilians flee, intruder downed within 400 ticks, calm, alarm again) in at least half.
     const runs = intruderRuns([1, 2, 3]);
     const count = (k: 'alarmed' | 'wanted' | 'engaged' | 'fled' | 'downed' | 'forgotten' | 'again'): number => runs.filter((r) => r[k]).length;
     const table = JSON.stringify(runs);
-    for (const k of ['alarmed', 'wanted', 'engaged'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(2);
+    // Every seed reacts at once (#107: seed 7's first patrol stop was under a mess table, so its intruder was never spawned).
+    for (const k of ['alarmed', 'wanted', 'engaged'] as const) expect(count(k), `${k}: ${table}`).toBe(runs.length);
     for (const k of ['fled', 'downed', 'forgotten', 'again'] as const) expect(count(k), `${k}: ${table}`).toBeGreaterThanOrEqual(1);
   }, 120000);
 

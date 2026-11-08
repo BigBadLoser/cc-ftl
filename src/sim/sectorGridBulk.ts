@@ -59,7 +59,7 @@ function writeTiles(grid: SectorGrid, field: string, rect: Rect, cx: number, cy:
 /**
  * Write `vals` (row-major over `rect`) where a value differs from `before` by more than `eps` (`round`: rounded and clamped to
  * 0..255 first), exactly as a `set` per such tile would: same stored values, revisions, watch count and chunk allocation.
- * Returns how many tiles it wrote. `sync`: also store each written tile's new value (as the field holds it) in `before`, which
+ * Returns how many tiles it wrote (changed by more than `eps`, whether or not the stored value moved). `sync`: also store each written tile's new value (as the field holds it) in `before`, which
  * then mirrors the field over `rect`.
  */
 export function writeDelta(grid: SectorGrid, field: string, rect: Rect, vals: Float64Array, before: Float64Array, eps: number, round: boolean, sync: boolean): number {
@@ -89,14 +89,15 @@ export function writeDelta(grid: SectorGrid, field: string, rect: Rect, vals: Fl
             const j = crow + (tx & CHUNK_MASK);
             const was = arr[j] as number;
             arr[j] = v;
+            wrote++;
             if (sync) before[i] = arr[j] as number;
+            if (Object.is(arr[j] as number, was)) continue; // stored value unchanged: no revision, as in `set`
             if (watched && was < below !== (arr[j] as number) < below) crossed++;
             n++;
           }
         }
       }
       if (n > 0) grid.bulkWrote(field, cx, cy, n, crossed);
-      wrote += n;
     }
   }
   return wrote;

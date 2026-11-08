@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { galaxyIndex, newGame, playerShip, type Sim } from '../sim';
+import { galaxyIndex, newGame, playerShip, ShipC, type Sim } from '../sim';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { buildCombat } from './combatSnapshot';
-import { buildDeploy, buildJumpWarnings, deployError } from './deploySnapshot';
+import { buildDeploy, buildJumpWarnings, deployError, deployKey } from './deploySnapshot';
 
 /** A new game teleported to a node with generated ships, waiting to deploy. */
 function waiting(): Sim {
@@ -46,6 +46,20 @@ describe('deploy picker data', () => {
     expect(sim.sector.state).toBe('active');
     expect(buildDeploy(sim)).toBeNull();
     expect(deployError(sim, 0, 0)).toBe('notDeploying');
+  });
+
+  it('keeps its key while the ship waits and the ticks pass, and changes it when an obstacle moves (#154)', () => {
+    const sim = waiting();
+    const key = deployKey(sim);
+    expect(key).not.toBe('');
+    for (let i = 0; i < 30; i++) sim.step();
+    expect(sim.sector.state).toBe('deploying');
+    expect(deployKey(sim)).toBe(key);
+    const other = buildDeploy(sim)!.others[0]!;
+    const ship = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)?.x === other.x && sim.world.get(id, ShipC)?.y === other.y)!;
+    (sim.world.get(ship, ShipC) as { x: number }).x += 40;
+    expect(deployKey(sim)).not.toBe(key);
+    expect(buildDeploy(sim)!.others.some((o) => o.x === other.x + 40)).toBe(true);
   });
 
   it('lists crew away from the ship by name for the jump confirm', () => {

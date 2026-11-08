@@ -1,6 +1,7 @@
 import { ShipC, type Faction } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
-import { placeAt, placementGapError, regions, shipIdOf, type Place } from '../regions';
+import { placeAt, placementGapError, regions, shipGrid, shipIdOf, type Place } from '../regions';
+import { isTileWalkable } from '../modules/walk';
 import { generateStation } from '../shipgen/stationGen';
 import type { StationSize } from '../shipgen/stationTypes';
 import type { Sim } from '../sim';
@@ -77,6 +78,12 @@ const POST_ROLES: readonly string[] = ['armoury', 'dock', 'plaza', 'garden', 'dr
 function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): void {
   const toSector = (i: number): { x: number; y: number } => ({ x: x + (i % gen.width), y: y + Math.floor(i / gen.width) });
   const floor = (i: number): boolean => gen.template.rows[Math.floor(i / gen.width)]?.[i % gen.width] === '_';
+  // A patrol stop is a tile a guard stands on: not under a solid module (a room's centre can be a mess table), or no guard reaches it (#107).
+  const grid = shipGrid(sim, id);
+  const standable = (i: number): boolean => {
+    const t = toSector(i);
+    return floor(i) && (!grid || isTileWalkable(sim, grid, t.x, t.y));
+  };
   const centre = (tiles: number[]): number => {
     const ft = tiles.filter(floor);
     const cx = ft.reduce((t, i) => t + (i % gen.width), 0) / Math.max(1, ft.length);
@@ -89,7 +96,7 @@ function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): v
     const ft = r.tiles.filter(floor);
     if (ft.length === 0) continue;
     if (COURT_ROLES.includes(r.role)) for (let k = 0; k < Math.min(6, ft.length); k++) courts.push(toSector(ft[Math.floor((k * ft.length) / 6)] as number));
-    const c = centre(ft);
+    const c = centre(ft.filter(standable));
     if (POST_ROLES.includes(r.role) && c >= 0) posts.push(toSector(c));
   }
   sim.world.add(id, StationC, { courts, posts, nextPost: 0 });

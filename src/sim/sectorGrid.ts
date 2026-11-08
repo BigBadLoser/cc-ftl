@@ -172,6 +172,7 @@ export class SectorGrid implements GridLike {
     this.check(x, y);
     const key = chunkKey(x >> CHUNK_SHIFT, y >> CHUNK_SHIFT);
     let chunk = this.dir.get(key);
+    const existed = !!chunk;
     if (!chunk) {
       if (value === this.empties[f]) return;
       chunk = this.allocChunk();
@@ -182,6 +183,9 @@ export class SectorGrid implements GridLike {
     const i = ((y & CHUNK_MASK) << CHUNK_SHIFT) + (x & CHUNK_MASK);
     const before = arr[i] as number;
     arr[i] = value;
+    // The stored value (after the field type's rounding) is unchanged: nothing to report, no revision moves (#155). Object.is, so a
+    // -0 over a 0 (different bytes in a save) still counts as a write.
+    if (existed && Object.is(arr[i] as number, before)) return;
     this.bump(key, f);
     if (f === this.watchF && before < this.watchBelow !== (arr[i] as number) < this.watchBelow) this.crossed++;
     if (f === this.occ) {
@@ -191,7 +195,7 @@ export class SectorGrid implements GridLike {
     }
   }
 
-  /** Sector-wide revision of a field: changes whenever any tile of it is written. */
+  /** Sector-wide revision of a field: changes whenever a write changes a tile of it (a write of the stored value is not counted). */
   revision(field: string): number {
     return this.fieldRevs[this.field(field)] as number;
   }
