@@ -147,8 +147,9 @@ def _tablet(T, glow):
     T.put(0.4, -0.12, 0.02, 0.08, 0.06, 0.04, "resRelicD", top="resRelic", rz=0.7)       # a loose chip
 
 
-def l2(layer):
-    k = Bench(f"research_l2_{layer}")
+def l2(layer, finish=True, name="l2"):
+    """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it)."""
+    k = Bench(f"research_{name}_{layer}")
     G = "resGold"
     drawers(k, -0.98, n=3)
     drawers(k, 0.98, n=3)
@@ -181,7 +182,7 @@ def l2(layer):
         k.box(-1.0, -0.54 + i * 0.08, 0.69, w, 0.025, 0.02, col)
     slate(k, 1.12, -0.48, 0.66, G, rz=-0.12)
     chair(k, "lvW2", "rust")
-    return k.build()
+    return k.build() if finish else k
 
 
 def l2_holo():
