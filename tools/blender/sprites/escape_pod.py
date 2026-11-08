@@ -31,8 +31,6 @@ BEACON = "orange"             # the emergency beacon
 DOORS = {"steel": ("plate", "steelD", "steelD"), "white": (HULL, BAND, "steelD")}
 VARIANTS = {
     "h": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", door="steel", label="H steel door"),
-    "j": dict(rb=1.0, rt=0.5, length=1.25, bulge=1.0, dish=0.16, tilt=105, drive="pack", door="white",
-              label="H white door, orange frame"),
 }
 SIDES = 48
 HOVER = 0.25                  # the lowest point's height in flight
@@ -109,6 +107,31 @@ def stud(f, c, n, r, h, mat, cap, sides=16, r1=None, phase=0.0):
     f.poly(B, cap)
 
 
+def tube(f, c, n, r0, r1, h, mat, sides=16):
+    """An open tube (no caps) from c along the unit normal n, h long, radius r0 to r1: a bore's wall, a bell's skin."""
+    a = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    a = tuple(a[q] - n[q] * sum(a[i] * n[i] for i in range(3)) for q in range(3))
+    al = math.sqrt(sum(x * x for x in a))
+    a = tuple(x / al for x in a)
+    A = _ring_pts(f, c, n, a, r0, sides)
+    B = _ring_pts(f, tuple(c[q] + n[q] * h for q in range(3)), n, a, r1, sides)
+    for i in range(sides):
+        j = (i + 1) % sides
+        f.poly([A[i], A[j], B[j], B[i]], mat)
+
+
+def disc(f, c, n, r0, r1, mat, sides=16):
+    """A flat ring (or a disc, r0 = 0) at c square to n."""
+    a = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    a = tuple(a[q] - n[q] * sum(a[i] * n[i] for i in range(3)) for q in range(3))
+    al = math.sqrt(sum(x * x for x in a))
+    a = tuple(x / al for x in a)
+    A, B = _ring_pts(f, c, n, a, max(r0, 0.001), sides), _ring_pts(f, c, n, a, r1, sides)
+    for i in range(sides):
+        j = (i + 1) % sides
+        f.poly([A[i], A[j], B[j], B[i]], mat)
+
+
 def heat_shield(k):
     """The broad shallow dish at the base: a steel lip ring, the ablative face bulging out to a low dome."""
     _g("heat_shield")
@@ -164,9 +187,10 @@ def collar(k, beacon_on, thrust=False):
     stud(f, q, nn, 0.07, 0.09, BEACON if beacon_on else "drD", BEACON if beacon_on else "drM", r1=0.05)
 
 
-def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05):
+def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05, skip=None):
     """A panel lying on the hull over s0..s1 and the arc t0..t1 (degrees), raised to g times the radius (a number, or
-    g(s, t degrees) for a shaped one), walled round."""
+    g(s, t degrees) for a shaped one), walled round. skip(u, v, z) leaves out a cell by its centre (capsule frame):
+    a hole for something to fill."""
     gf = g if callable(g) else (lambda s, t: g)
     ns, nt = max(2, int((s1 - s0) / ds)), max(2, int(abs(t1 - t0) / 4))
     S = [s0 + (s1 - s0) * i / ns for i in range(ns + 1)]
@@ -177,6 +201,11 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05):
         return k.f.pt(k.u(s), r * math.cos(t), k.zc + r * math.sin(t))
     for i in range(ns):
         for j in range(nt):
+            if skip:
+                sm, tm = (S[i] + S[i + 1]) / 2, (T[j] + T[j + 1]) / 2
+                rm = k.r(sm) * gf(sm, math.degrees(tm))
+                if skip(k.u(sm), rm * math.cos(tm), k.zc + rm * math.sin(tm)):
+                    continue
             k.f.poly([P(S[i], T[j]), P(S[i + 1], T[j]), P(S[i + 1], T[j + 1]), P(S[i], T[j + 1])], mat)
     edge = [(S[i], T[0]) for i in range(ns + 1)] + [(S[-1], T[j]) for j in range(1, nt + 1)] + \
         [(S[i], T[-1]) for i in range(ns - 1, -1, -1)] + [(S[0], T[j]) for j in range(nt - 1, 0, -1)]
@@ -185,19 +214,26 @@ def sector(k, s0, s1, t0, t1, g, mat, wall="steelD", ds=0.05):
 
 
 def viewport(k):
-    """The front: a big DOOR facing forward, nearly the cone's height (a frame, the door, a porthole in it, a hazard sill
-    below), and two windows either side of it up by the shoulder, so the pod has a face."""
+    """The front: a big DOOR facing forward, nearly the cone's height: a heavy raised frame round the opening, the steel
+    door set back inside it with a porthole, a yellow latch handle on one side and two hinges on the other, a hazard
+    sill below. Two windows either side of it up by the shoulder, so the pod has a face."""
     _g("door")
     ln = k.v["length"]
     door, frame, wall = DOORS[k.v["door"]]
-    s0, s1, h = 0.22, ln * 0.95, 30
-    sector(k, s0 - 0.05, s1 + 0.04, 270 - h - 5, 270 + h + 5, 1.025, frame, wall)            # the frame
-    sector(k, s0, s1, 270 - h, 270 + h, 1.04, door, "steelD")                              # the door
-    sector(k, s0 + (s1 - s0) * 0.55, s0 + (s1 - s0) * 0.8, 270 - 9, 270 + 9, 1.05, "glassD", "steelD")   # its porthole
-    for c in (270 - h + 6, 270 + h - 6):                                                   # two hinge / latch bars
-        sector(k, s0 + 0.12, s0 + 0.2, c - 4, c + 4, 1.05, "steelD", "steelD")
-        sector(k, s1 - 0.2, s1 - 0.12, c - 4, c + 4, 1.05, "steelD", "steelD")
-    sector(k, s0 - 0.05, s0 + 0.03, 270 - h - 5, 270 + h + 5, 1.04, "hazY", "hazK")         # the hazard sill
+    s0, s1, h, fw = 0.24, ln * 0.94, 30, 6
+    G = 1.06                                                               # the frame stands out this far
+    sector(k, s0, s1, 270 - h - fw, 270 - h, G, frame, wall)                # its sides
+    sector(k, s0, s1, 270 + h, 270 + h + fw, G, frame, wall)
+    sector(k, s1, s1 + 0.06, 270 - h - fw, 270 + h + fw, G, frame, wall)    # its head
+    sector(k, s0 - 0.07, s0, 270 - h - fw, 270 + h + fw, G, "hazY", "hazK")   # the sill, hazard yellow
+    sector(k, s0, s1, 270 - h, 270 + h, 1.006, door, "dark")                # the door, set back
+    sm = s0 + (s1 - s0) * 0.68
+    sector(k, sm - 0.09, sm + 0.09, 270 - 10, 270 + 10, 1.02, "steelD", "steelD")   # porthole frame
+    sector(k, sm - 0.06, sm + 0.06, 270 - 7, 270 + 7, 1.026, "glassD", "steelD")
+    sl = s0 + (s1 - s0) * 0.42
+    sector(k, sl - 0.03, sl + 0.03, 270 + h - 15, 270 + h - 4, 1.035, "hazY", "steelD")   # the latch handle
+    for sh in (s0 + 0.1, s1 - 0.16):                                        # the hinges
+        sector(k, sh, sh + 0.07, 270 - h - 2, 270 - h + 5, 1.07, "steelL", "steelD")
     _g("windows")
     for c in (270 - 60, 270 + 60):
         sector(k, ln * 0.6, ln * 0.82, c - 12, c + 12, 1.02, "steelD")
@@ -215,38 +251,50 @@ def rcs(k):
         stud(k.f, q, n, 0.035, 0.04, "steelD", "dark", sides=8)
 
 
-PACK = (0.06, 0.8, 34, 0.24)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
+PACK = (0.06, 0.82, 36, 0.34)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
+BORE = (0.13, 0.2)            # the thrusters' bores: radius, depth into the fairing
 
 
 def drive(k, lit):
     """The DRIVE PACK on the back (theta 90): a fairing moulded onto the cone, thick and round-nosed low down, thinning
-    into the hull toward the shoulder, steel with a yellow stripe and two vent slots; a pair of flared thruster bells
-    out of its thick part, pointing straight aft. So the pod has a back from any heading."""
+    into the hull toward the shoulder, steel with a yellow stripe and vent slots. Two thrusters SUNK in it, as the mining
+    pod's rear thruster is: each in a bore cut straight aft into the fairing's thick part (the fairing is cut round it,
+    a rim ring over the cut), a short flared bell inside running up to the mouth, its inner wall and throat lit."""
     _g("drive")
     f, ln = k.f, k.v["length"]
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
+    br, depth = BORE
 
     def g(s, t, extra=0.0):
         x = (s - sa) / (sb - sa)
         along = min(1.0, (s - sa) / 0.1) ** 0.5 * (1 - x * x * (3 - 2 * x))            # round nose low, thin out up top
         across = math.sqrt(max(0.0, 1 - ((t - 90) / half) ** 2))
         return 1.012 + extra + bump * along * across
-    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.03)
-    sector(k, sa + 0.08, sb - 0.1, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
-    for t in (90 - 18, 90 + 18):                                            # vent slots up the thin part
-        for s0 in (0.62, 0.7):
-            sector(k, s0 * ln, s0 * ln + 0.04, t - 5, t + 5, lambda s, tt: g(s, tt, 0.006), "dark", "dark", ds=0.02)
-    for t in (90 - 15, 90 + 15):                                            # the bells, from the thick part
-        s = sa + 0.24
+    n = (0.0, 0.0, 1.0)                                                     # straight aft
+    sb_ = sa + 0.27
+    mouths = []
+    for t in (90 - 16, 90 + 16):
         th = math.radians(t)
-        r = k.r(s) * g(s, t)
-        c = (k.u(s), r * math.cos(th), k.zc + r * math.sin(th) - 0.04)
-        n = (0.0, 0.0, 1.0)
-        stud(f, c, n, 0.1, 0.07, "steelD", "steelD", sides=12)                # its collar
-        q = (c[0], c[1], c[2] + 0.07)
-        stud(f, q, n, 0.07, 0.17, HULL_K, "steelD", sides=12, r1=0.13)         # the flared bell
-        q = (q[0], q[1], q[2] + 0.17)
-        stud(f, q, n, 0.13, 0.015, "steelL", GLOW if lit else "dark", sides=12, r1=0.135)   # its lip, lit inside
+        r = k.r(sb_) * g(sb_, t)
+        mouths.append((k.u(sb_), r * math.cos(th), k.zc + r * math.sin(th)))
+
+    def hole(u, v, z):
+        return any(math.hypot(u - m[0], v - m[1]) < br + 0.015 for m in mouths)
+    sector(k, sa, sb, 90 - half, 90 + half, g, "steelL", "steelD", ds=0.025, skip=hole)
+    sector(k, sb_ + 0.16, sb - 0.12, 90 - 4, 90 + 4, lambda s, t: g(s, t, 0.01), "hazY", "hazK", ds=0.03)   # the stripe
+    for t in (90 - 20, 90 + 20):                                            # vent slots up the thin part
+        for s0 in (0.6, 0.67):
+            sector(k, s0 * ln, s0 * ln + 0.04, t - 5, t + 5, lambda s, tt: g(s, tt, 0.006), "dark", "dark", ds=0.02)
+    for m in mouths:
+        lo = m[2] - depth                                                   # the bore's floor
+        top = m[2] + 0.04
+        tube(f, (m[0], m[1], lo), n, br, br, top - lo, "steelD")             # its wall
+        disc(f, (m[0], m[1], lo), n, 0.0, br, "dark")                       # its floor
+        tube(f, (m[0], m[1], top - 0.07), n, br + 0.045, br + 0.045, 0.08, "steelD")   # the rim over the cut
+        disc(f, (m[0], m[1], top + 0.01), n, br - 0.005, br + 0.045, "steelL")
+        tube(f, (m[0], m[1], lo), n, 0.05, br - 0.02, depth - 0.02, HULL_K)   # the bell, throat to mouth
+        tube(f, (m[0], m[1], lo + 0.005), n, 0.04, br - 0.035, depth - 0.03, GLOW if lit else "dark")   # its inner wall
+        disc(f, (m[0], m[1], lo + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
 
 
 def pod(heading, variant="h", state="fly", beacon=False):
