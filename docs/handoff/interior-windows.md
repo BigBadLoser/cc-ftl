@@ -33,8 +33,11 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | to do |
 | none | scrap | | no ref |
 
-Slate's ref (44) at a glance: the opening runs down to the ramps (no sill like the default's); the posts have a grey
-stepped foot; the blue beam has a raised block over the middle tile. Needs its own module, not the default's.
+Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
+middle tile; the cap's black with two blue lines. B layer: a grey ramp block under the opening, its top dished down
+between the posts, recessed pockets on its front (lit blue floors, two per middle tile), blue end blocks at the posts,
+an amber strip on the floor in front, the pane standing on the ramp's top. Needs its own module, not the default's.
+Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built from the v2 zip).
 
 ## How the built ones work
 - `wall3d.block` calls `T.PRE_HOOK(sp)` as a piece starts and `T.HOOK(k, sp)` on its Relief before it builds.
@@ -61,4 +64,4 @@ stepped foot; the blue beam has a raised block over the middle tile. Needs its o
 2. Slate first (the user's current focus), from ref 44: a minimal l / m / r blockout, shown in a run, then stop.
 
 ## Log
-- 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong, show both next time).
+- 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
