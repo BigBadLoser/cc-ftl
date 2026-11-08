@@ -35,7 +35,8 @@ PLATES = {"l": ((21, 28),), "m": ((10, 22),), "r": ((4, 14),)}   # px: dark meta
 PLATE_D = 6                             # px back over the sill's top from its front edge ...
 PLATE_DN = 2                            # ... and PZ down the face over the pockets past it
 BLOCK = 13                              # px: the end blocks under the posts run this far in from the run's ends
-SLOT_W, SLOT_H, SLOT_TOP = 7, 2, 2      # px: a look's dark slot on an end block (wide, tall, under the slope's top)
+SLOT_W, SLOT_H, SLOT_TOP = 7, 3, 2      # px: a look's slot in an end block (wide, tall, under the slope's top) ...
+SLOT_IN = 3 / 32                        # ... cut this far back into the ramp from the slope at its top
 END_STRIP = 3                           # px: the strip closing the joined end under the floor's edge
 DIP = 0                                 # px past the post where the sill's crest starts down (the ref's: on screen over
                                         # the end pocket's outer edge; the crest stands further back, so 0 here)
@@ -63,7 +64,8 @@ class Look:
                                         # between)
     blocks: str = ""                    # a wall3d.RAMPS family: the end blocks under the posts (the near ramp from the
                                         # run's ends BLOCK px in) recoloured from the default walls' ramp into it
-    block_slot: str = ""                # a dark slot on each end block's slope
+    block_slot: tuple = ()              # (back, floor, sides, floor's lit front edge): a slot cut into each end
+                                        # block's slope
     post_in: int = 0                    # px: the opening's ends (the side slopes, the end blocks' inner edges) this far
                                         # further out, the posts that much thinner
     pre: Optional[Callable] = None      # f(k, part, a, b, yf): before the ramp (a, b: between the end blocks)
@@ -71,7 +73,8 @@ class Look:
 
 
 TEAL = Look(floor_lit="wH", floor_shade="wS", lip_lit="wHW", back="wXD", side="wD", rib="wL", toe="wM",
-            plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot="oK", post_in=2)   # (the floors lit over the ramp's front, wL;
+            plate="wM", plate_front="wD", toe_drop=1, blocks="ochre", block_slot=("oXK", "oXD", "oK", "oH"),
+            post_in=2)   # (the floors lit over the ramp's front, wL;
 #   their lit edge a step over wH, the "window" palette set's)
 
 
@@ -172,8 +175,8 @@ def _toe(k, look, a, b, yf):
 def _blocks(k, look, a, b, yf):
     """The end blocks: the near ramp outside a..b (on the tile), from the foot up to its top, in the look's blocks
     family (each of the default walls' ramp colours to the same level of it, lit and shaded faces): the slope only,
-    the shelf and lip over it left as they are; on it a dark slot (SLOT_W px wide, SLOT_H tall, SLOT_TOP under the
-    slope's top)."""
+    the shelf and lip over it left as they are, the ramp's seam line not across it; in it a slot cut SLOT_IN back into
+    the ramp (SLOT_W px wide, SLOT_H tall, SLOT_TOP under the slope's top: its back, floor, sides in block_slot's)."""
     if not look.blocks:
         return
     m = k.m
@@ -181,7 +184,8 @@ def _blocks(k, look, a, b, yf):
     for src, dst in zip(T.RAMPS["wall"], T.RAMPS[look.blocks]):
         for s_, d_ in zip(src, dst):
             key.setdefault(tuple(round(c, 5) for c in core.lin(s_)), d_)
-    top = None
+    seam = {tuple(round(c, 5) for c in core.lin(s_)) for s_ in (T.RAMPS["wall"][0][2], T.RAMPS["wall"][1][2])}
+    top, drop = None, set()
     for i, f in enumerate(m.f):
         pts = [m.v[j] for j in f[0]]
         cx = sum(p[0] for p in pts) / len(pts)
@@ -190,21 +194,32 @@ def _blocks(k, look, a, b, yf):
                 max(p[2] for p in pts) <= W.skirt_top() + 1e-6 and min(p[2] for p in pts) >= W.foot() - 1e-6):
             n = (Vector(pts[1]) - Vector(pts[0])).cross(Vector(pts[2]) - Vector(pts[0]))
             if 0.3 * n.length < abs(n.y) < 0.95 * n.length:   # (the slope's: it faces out and up, the shelf
-                m.f[i] = (f[0],) + m._cols(key[c])          # up, the lip's front out)
+                if c in seam:                               # up, the lip's front out)
+                    drop.add(i)                             # (the ramp's seam line: not on a block)
+                    continue
+                m.f[i] = (f[0],) + m._cols(key[c])
                 top = max(top or -9.0, max(p[2] for p in pts))
+    m.f = [f for i, f in enumerate(m.f) if i not in drop]
     if not look.block_slot or top is None:
         return
+    back, floor, side, lit = look.block_slot
     z1 = top - SLOT_TOP * PZ
     z0 = z1 - SLOT_H * PZ
-    e = Vector((0, _k(), 1)).normalized() * 2 * T.PAINT
+    y0, y1 = _slope_y(z0, yf), _slope_y(z1, yf)         # (the slope at its foot, at its top)
+    yb = y1 - SLOT_IN                                   # (its back)
     for u0, u1 in ((-0.5, a), (b, 0.5)):
         if u1 - u0 < SLOT_W * L or not (-0.5 <= u0 and u1 <= 0.5):
             continue
         c = (u0 + u1) / 2
         v0, v1 = c - SLOT_W * L / 2, c + SLOT_W * L / 2
-        _quad(k, [(v0, _slope_y(z1, yf) + e.y, z1 + e.z), (v1, _slope_y(z1, yf) + e.y, z1 + e.z),
-                  (v1, _slope_y(z0, yf) + e.y, z0 + e.z), (v0, _slope_y(z0, yf) + e.y, z0 + e.z)], (0, _k(), 1),
-              look.block_slot)
+        _carve(m, v0, v1, -(y0 + 0.05), -yb, z0, z1)
+        _quad(k, [(v0, yb, z0), (v1, yb, z0), (v1, yb, z1), (v0, yb, z1)], (0, 1, 0), back)
+        _quad(k, [(v0, yb, z0), (v1, yb, z0), (v1, y0, z0), (v0, y0, z0)], (0, 0, 1), floor)
+        _quad(k, [(v0, yb, z1), (v1, yb, z1), (v1, y1, z1), (v0, y1, z1)], (0, 0, -1), side)
+        for u, sd in ((v0, 1), (v1, -1)):
+            _quad(k, [(u, yb, z0), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), side)
+        h = 2 * T.PAINT                                 # (its front edge lit: a px of its floor)
+        _quad(k, [(v0, y0 - L, z0 + h), (v1, y0 - L, z0 + h), (v1, y0, z0 + h), (v0, y0, z0 + h)], (0, 0, 1), lit)
 
 
 def _plates(k, look, part, yf, zf):

@@ -105,8 +105,9 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   sides wD, rib wL, toe wM (`toe_drop` 1: its top a px under the pockets' floors), plates wM / wD (dp4: wS blended
   with the sill's slope, wS). End blocks under the posts (`blocks` "ochre": the near ramp's slope from the run's ends
   BLOCK px in, foot up to the shelf (faces facing out and up: not the shelf, not the lip's front), each teal ramp colour
-  to the same level of wall3d.RAMPS["ochre"]); on each a dark slot `block_slot` oK, SLOT_W 7 x SLOT_H 2 px, SLOT_TOP 2
-  under the slope's top.
+  to the same level of wall3d.RAMPS["ochre"]; the ramp's seam line, level 2 wM / wXM, left off them); in each a slot
+  cut SLOT_IN 3 px back into the ramp, SLOT_W 7 x SLOT_H 3 px, SLOT_TOP 2 under the slope's top (`block_slot`: back
+  oXK, floor oXD, sides oK, the floor's front edge lit oH). dp8-dp10 tried 2 px tall, lit floors: a flat patch.
 - `post_in` (TEAL 2): the opening's ends 2 px further out each side (`D.POST` = POST0 - 2 px while a piece builds: the
   posts 2 px thinner, the side slopes moved out); the end blocks' inner edges move with them (`a`, `b` from POST0), so
   teal's blocks are 11 px wide from the tile's edge. The lip's seams by the posts (`_thirds`: 10.3 / 21.3 px, a px outside the default
@@ -269,3 +270,5 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   2 px out with them (`post_in`). Shown.
 - 2026-11-08: dp7 (the user: the slope clips the lip oddly): the lip's seams by the posts move out with the
   widened opening (`wall3d.LIP_OUT`). Base tile pixel-identical. Shown.
+- 2026-11-08: dp11 (the user on dp7): no seam line on the yellow blocks; their slot cut into the ramp (3 px back,
+  3 px tall, dark inside, lit front edge). Shown.
