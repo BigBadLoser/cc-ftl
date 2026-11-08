@@ -14,6 +14,21 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
+const gh = (...a) => execFileSync('gh', a, { encoding: 'utf8' }).trim();
+
+// A nightly no-op run succeeds without running the test shards and so has no timing artifacts: walk back to the first
+// successful run on main whose shards 1..N all uploaded one (and have not expired).
+function latestRunWithTimes() {
+  const runs = JSON.parse(gh('run', 'list', '--workflow=ci.yml', '--branch=main', '--status=success', '--limit=20', '--json=databaseId'));
+  for (const { databaseId } of runs) {
+    const arts = JSON.parse(gh('api', `repos/{owner}/{repo}/actions/runs/${databaseId}/artifacts?per_page=100`, '--jq=[.artifacts[]|select(.expired|not)|.name]|tojson'));
+    const shards = new Set(arts.flat().map((n) => /^vitest-times-(\d+)$/.exec(n)?.[1]).filter(Boolean).map(Number));
+    const top = Math.max(0, ...shards);
+    if (top > 0 && shards.size === top) return String(databaseId);
+  }
+  console.error('no successful ci.yml run on main among the last 20 has a full set of vitest-times-* artifacts; pass a run id');
+  process.exit(1);
+}
 const secs = {};
 // Report paths are absolute on the machine that ran them (a CI runner's /home/runner/work/x/x/src/...): make them repo-relative.
 const repoPath = (name) => {
@@ -32,7 +47,7 @@ if (args.includes('--ci')) {
   let run = inputs[0];
   if (run) inputs = inputs.slice(1);
   else {
-    run = execFileSync('gh', ['run', 'list', '--workflow=ci.yml', '--branch=main', '--status=success', '--limit=1', '--json=databaseId', '--jq=.[0].databaseId'], { encoding: 'utf8' }).trim();
+    run = latestRunWithTimes();
   }
   execFileSync('gh', ['run', 'download', run, '--pattern', 'vitest-times-*', '--dir', dir], { stdio: 'inherit' });
   inputs.push(dir);
