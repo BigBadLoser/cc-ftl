@@ -307,19 +307,19 @@ def rcs(k):
 
 
 PACK = (0.06, 0.8, 32, 0.08)  # the drive fairing: s range (x the cone's length), half arc (degrees), bulge (x the radius)
-BORE = (0.13, 0.2)            # the thrusters' bores: radius, depth into the fairing
+BORE = (0.13, 0.2, 0.09)      # the thrusters' bores: radius, depth into the pack, how far the cowl stands out of it
 
 
 def drive(k, lit):
     """The DRIVE PACK on the back (theta 90): a low steel slab lying on the cone, even in thickness with its edges rolled
     (no hump: it must not stick out when the pod lies on its side to dock), a yellow stripe and vent
     slots. Two thrusters SUNK in it, as the mining pod's rear thruster is: each in a round bore running in square to the
-    slab (the hull is open under the pack, so it runs deep), a round rim over the cut, a short flared bell inside running
+    slab (the hull is open under the pack, so it runs deep), a round cowl standing out of the cut, a short flared bell inside running
     up to the mouth, its inner wall and throat lit."""
     _g("drive")
     f, ln = k.f, k.v["length"]
     sa, sb, half, bump = PACK[0], PACK[1] * ln, PACK[2], PACK[3]
-    br, depth = BORE
+    br, depth, out = BORE
 
     def ease(d, w):                                                         # 0 at an edge, 1 once w in from it
         x = min(1.0, max(0.0, d / w))
@@ -351,12 +351,12 @@ def drive(k, lit):
     for c, n in mouths:                                                     # each bore runs in square to the slab
         def at(d):
             return tuple(c[i] + n[i] * d for i in range(3))
-        tube(f, at(-depth), n, br, br, depth + 0.02, "steelD", sides=20)     # its wall
+        tube(f, at(-depth), n, br, br, depth + out, "steelD", sides=20)      # its wall
         disc(f, at(-depth), n, 0.0, br, "dark", sides=20)                   # its floor
-        tube(f, at(-0.03), n, br + 0.07, br + 0.07, 0.055, "dark", sides=24)   # a round rim over the cut, its edge
-        disc(f, at(0.025), n, br, br + 0.07, "steelD", sides=24)            # and face
-        tube(f, at(-depth), n, 0.05, br - 0.02, depth - 0.02, HULL_K)        # the bell, throat to mouth
-        tube(f, at(-depth + 0.005), n, 0.04, br - 0.035, depth - 0.03, GLOW if lit else "dark")   # its inner wall
+        tube(f, at(-0.03), n, br + 0.07, br + 0.06, out + 0.03, "dark", sides=24)   # a round cowl standing out of the cut
+        disc(f, at(out), n, br, br + 0.06, "steelD", sides=24)              # its lip
+        tube(f, at(-depth), n, 0.05, br - 0.02, depth + out - 0.02, HULL_K)  # the bell, throat to mouth
+        tube(f, at(-depth + 0.005), n, 0.04, br - 0.035, depth + out - 0.03, GLOW if lit else "dark")   # its inner wall
         disc(f, at(-depth + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
 
 
