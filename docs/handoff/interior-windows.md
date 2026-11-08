@@ -630,3 +630,6 @@ Marked ref (both layers, numbered): scratchpad
   .a12-.a14 (a9 identical to nr2).
 - 2026-11-08: control boxes (navy_boxes, m10.a3): chunkier frames, the ref's: each box's bezel now 2 px (its window
   inset 2/32 along u, 2/39.19 up, was 0.04). Contents and tones unchanged. nb2.
+- 2026-11-08: the user: shrink both boxes 3 px in width and each 2 px in height. Their sides now set in screen px
+  (T._px / T._u at the bezel's depth): a px off the left, 2 off the right (measured: 12-32 to 13-30); each box a px
+  lower at its top and higher at its foot (z 1/39.19 each). A gap shows between the two now. nb4.

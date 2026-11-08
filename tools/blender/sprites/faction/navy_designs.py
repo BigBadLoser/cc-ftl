@@ -23,8 +23,10 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
 def navy_boxes(k, ax, plane, a, b, c, e, F, **_):
     """Two control boxes (T1-2): light bezels, dark windows packed with red and cream parts and small lights."""
     zm = (c + e) / 2
-    a, b = a + 0.06, b - 0.06
-    for q0, q1 in ((c + 0.02, zm - 0.02), (zm + 0.02, e - 0.02)):
+    a = T._u(round(T._px(a + 0.06, PX)) + 1, PX)        # (each 3 px narrower, on the px grid: a px off its left, 2
+    b = T._u(round(T._px(b - 0.06, PX)) - 2, PX)        # off its right; 2 px shorter, a px off its top and foot: the
+    hz = 1 / 39.19                                      # user)
+    for q0, q1 in ((c + 0.02 + hz, zm - 0.02 - hz), (zm + 0.02 + hz, e - 0.02 - hz)):
         T.slab(k, ax, plane, a, b, q0, q1, PX, F, 3)                                                     # bezel
         w0, w1, v0, v1 = a + 2 / 32, b - 2 / 32, q0 + 2 / 39.19, q1 - 2 / 39.19    # (the bezel 2 px: chunkier, the
         #   ref's: the user)
