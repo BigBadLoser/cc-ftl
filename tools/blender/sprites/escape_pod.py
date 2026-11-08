@@ -357,8 +357,16 @@ def drive(k, lit):
         disc(f, at(-depth + 0.01), n, 0.0, 0.045, "arc" if lit else "dark")   # the injector
 
 
-def pod(heading, variant="h", state="fly", beacon_on=False):
-    """The escape pod at a heading (grid radians, 0 = +x); state fly / drift / docked / parked."""
+def hatch_face(variant="h"):
+    """How far the hatch collar's mating face is from the pod's centre along its axis (docked: from the airlock's
+    collar face to the pod's centre)."""
+    v = VARIANTS[variant]
+    return v["length"] - (v["length"] - v["dish"]) / 2 + 0.15
+
+
+def pod(heading, variant="h", state="fly", beacon_on=False, foot=None, axis=None):
+    """The escape pod at a heading (grid radians, 0 = +x); state fly / drift / docked / parked. Its lowest point at
+    HOVER, or at `foot`; or (docked) its axis at height `axis` (the airlock collar's)."""
     v = VARIANTS[variant]
     # it leans back only while it flies; docked it lies on its side, nose (the hatch) to the airlock; else it stands
     t = math.radians(v["tilt"] if state == "fly" else 0 if state == "docked" else 90)
@@ -366,7 +374,8 @@ def pod(heading, variant="h", state="fly", beacon_on=False):
     rad = v["rb"] * 1.04
     low = min(u * math.sin(t) + w * math.cos(t) for u in span for w in (-rad, rad))
     m = core.Mesh(f"escape_pod_{variant}_{state}")
-    f = Tilted(m, heading + (math.pi if v["drive"] == "collar" else 0.0), t, HOVER - low)
+    tz = axis if axis is not None else (HOVER if foot is None else foot) - low
+    f = Tilted(m, heading + (math.pi if v["drive"] == "collar" else 0.0), t, tz)
     k = Capsule(f, v)
     heat_shield(k)
     body(k)
