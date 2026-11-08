@@ -113,7 +113,8 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   stops there, so over the window the header keeps the wall's own foot, the rail's shadow band and the set-back middle
   blocks' lower px, and the band's lowest px reads as the header's dark bottom edge in one straight line, as on the
   wall; sw34 hung a stand-in band (2 px under the middle blocks, 1 under the ends) and sw35 painted the blocks' fronts
-  at their two depths: both jumped); `wall3d_iwin_def.BEAM_DROP` is 0 for the default window;
+  at their two depths: both jumped); `wall3d_iwin_def.BEAM_DROP` is 0 for the default window; with
+  it set the beam's underside stops at the face (yf), not the posts' relief (sw41);
   pockets
   carved into the ramp's front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor
   (`FLOOR_LIT`: fGS0; on the middle tile a paint block `FLOOR_PAINT` fGT1 (the slope's blue) on it, PAINT_SIDE 4 (sw25; 2 in sw24)
@@ -221,3 +222,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   instead of 9, the wall's own header foot over them; their dark top block gone with it. Shown.
 - 2026-11-08: sw39: the corners twice as tall (the user): 10 px up the post from the beam, blue where level with the
   blue, the wall's face grey under it. Shown.
+- 2026-11-08: sw41: the extra dark row under the header's line gone: the beam's underside (wK) reached out to the
+  posts' relief (yf + T.FR), a px proud of the face it now sits under, and showed; with BEAM_DROP it stops at the face
+  (yf) (wall3d_iwin_def; the default window, BEAM_DROP 0, unchanged). The chamfers' fronts on the face too (out at the
+  relief their top edge showed their dark underside as specks on the line). Shown.

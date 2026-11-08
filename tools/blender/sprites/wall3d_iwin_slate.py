@@ -213,7 +213,8 @@ def _chamfers(k, x0, x1, yf):
     z1 = T.rail_foot(W.HF) - D.BEAM_DROP                # (the beam's underside)
     zc = z1 - CHAMFER * PZ                              # (its foot on the post)
     zbl = T.rail_foot(W.HF) - BLUE_H * PZ               # (the blue under the header's foot: under it the wall's face)
-    yr = yf + T.FR                                      # (the posts' front)
+    yr = yf                                             # (its front: the wall's face, as the blue beside it; out at
+    #   the posts' relief, yf + T.FR, its top edge stood a px proud of the face and showed its dark underside there)
     m = k.m
     if x0 > -0.5:                                       # a seam down the blue at the left post's edge, as the right
         ys = yr + 3 * PAINT                             # post's shows, in the post's corner line's grey

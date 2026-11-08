@@ -165,7 +165,9 @@ def hook(k, sp, own=True):
         ds, de = (yf + (zs - h) / _k() for h in (hs, he))
         _quad(k, [(xs, -ds, hs + T.PAINT), (xe, -de, he + T.PAINT), (xe, de, he + T.PAINT), (xs, ds, hs + T.PAINT)],
               (0, 0, 1), SEAM)
-    _quad(k, [(a, -yr, z1), (b, -yr, z1), (b, yr, z1), (a, yr, z1)], (0, 0, -1), BEAM_UNDER)   # the beam's underside
+    yu = yf if BEAM_DROP > 0 else yr                    # (under the header: out to its relief; dropped under it, to
+    _quad(k, [(a, -yu, z1), (b, -yu, z1), (b, yu, z1), (a, yu, z1)], (0, 0, -1), BEAM_UNDER)   # the face) the beam's
+    #   underside
     zt = max(v[2] for v in k.m.v) + 0.002               # the pane's top edges on the cap
     for c in (-LINES / 2, LINES / 2):
         y0, y1 = -c - LINE_W / 2, -c + LINE_W / 2
