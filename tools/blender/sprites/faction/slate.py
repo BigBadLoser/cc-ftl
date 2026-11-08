@@ -242,14 +242,14 @@ def _faint(k, ax, plane, a, b, z):
           cols=[False, fl, False, False])
 
 
-def _panels(k, ax, plane, a, b, foot, zf, rects):
-    """Outlined panels a tile, 15 px tall, their foot 5 px over the seam over the lip, their corners rounded as the
+def _panels(k, ax, plane, a, b, foot, zf, rects, lift=0):
+    """Outlined panels a tile, 15 px tall, their foot 5 px (+ lift) over the seam over the lip, their corners rounded as the
     ramp's blue panel's (each corner pixel left out); a lit bar 3 px tall along each inside top, 2 px under its top
     line, m px in from each side; a lit tick under each end of the bar from a px under the foot up 4 px. rects: (u0,
     u1, m) in px off the tile's middle. Returns the spans of [a, b] they leave free (the face's faint line runs on
     behind them)."""
     lit = "fGSb" if ax == "y" else "fGSc"               # (the bar and ticks a bluer grey, the ref's)
-    zb = foot + 5 * PZ
+    zb = foot + (5 + lift) * PZ
     zt = zb + 15 * PZ
     cuts = []
     for c in range(-1, 2):
@@ -276,9 +276,9 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
 
 
 def slate_hatches(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-7): two small panels a tile, 9 px wide with 4 px between (the span of T1-2's one), each one's bar
-    5 px (2 px in), its ticks under the bar's ends (the ref's proportions)."""
-    return _panels(k, ax, plane, a, b, foot, zf, ((-11, -2, 2), (2, 11, 2)))
+    """Wall (T1-7): two small panels a tile, 9 px wide with 8 px between, 2 px higher than T1-2's, each one's bar
+    5 px (2 px in), its ticks under the bar's ends."""
+    return _panels(k, ax, plane, a, b, foot, zf, ((-13, -4, 2), (4, 13, 2)), lift=2)
 
 
 def _minus(a, b, cuts):
