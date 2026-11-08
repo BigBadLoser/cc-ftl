@@ -164,11 +164,6 @@ def detail(k, part):
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
         _carve(m, u0, u1, -(y0 + 0.05), -yb, z0, z1)
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
-        if part in FLOOR_PAINT:                         # the paint block on it, a hair proud
-            nf = Vector((0, zb - z0, y0 - yb)).normalized() * 2 * T.PAINT
-            v0, v1, yp = u0 + PAINT_SIDE * L, u1 - PAINT_SIDE * L, yb + PAINT_BACK * L
-            _quad(k, [(v0, yp + nf.y, fl(yp) + nf.z), (v1, yp + nf.y, fl(yp) + nf.z), (v1, y0 + nf.y, z0 + nf.z),
-                      (v0, y0 + nf.y, z0 + nf.z)], (0, zb - z0, y0 - yb), FLOOR_PAINT[part])
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
         for u, sd in ((u0, 1), (u1, -1)):
             if any(abs(u - e) < 1e-9 for e in edges):   # (on a rib: its side only behind the rib's face)
@@ -176,6 +171,18 @@ def detail(k, part):
             else:
                 _quad(k, [(u, yb, zb), (u, y0, z0), (u, y1, z1), (u, yb, z1)], (sd, 0, 0), SIDE)
         _quad(k, [(u0, yb, z1), (u1, yb, z1), (u1, y1, z1), (u0, y1, z1)], (0, 0, -1), SIDE)
+    if part in FLOOR_PAINT:                             # the paint block (after the carving): one across the floor,
+        nf = Vector((0, zb - z0, y0 - yb)).normalized() * 2 * T.PAINT   # the pockets' and in front of the ribs, a
+        #   hair proud
+        ps = POCKETS[part]
+        g0, g1 = -0.5 + ps[0][0] * L + PAINT_SIDE * L, -0.5 + (ps[-1][1] + 1) * L - PAINT_SIDE * L
+        yp = yb + PAINT_BACK * L
+        spans = [(-0.5 + p0 * L, -0.5 + (p1 + 1) * L, yp) for p0, p1 in ps] + [(u0, u1, y1) for u0, u1 in ribs]
+        for v0, v1, ya in spans:
+            v0, v1 = max(v0, g0), min(v1, g1)
+            if v1 > v0:
+                _quad(k, [(v0, ya + nf.y, fl(ya) + nf.z), (v1, ya + nf.y, fl(ya) + nf.z), (v1, y0 + nf.y, z0 + nf.z),
+                          (v0, y0 + nf.y, z0 + nf.z)], (0, zb - z0, y0 - yb), FLOOR_PAINT[part])
 
 
 def window(fn, part):
