@@ -5,7 +5,7 @@
    * move as ships trade.
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import type { UiSellGood } from './starmapApi';
 
   let { goods, current, onPick, onClose }: { goods: UiSellGood[]; current: string; onPick: (node: string) => void; onClose: () => void } = $props();
@@ -13,7 +13,7 @@
 </script>
 
 <aside class="sheet sell steel-tokens" data-testid="starmap-sell">
-  <PanelHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} goods` : 'nothing'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
+  <PaneHead icon="trade" title="Where to sell" sub={goods.length ? `${goods.length} goods` : 'nothing'} onBack={onClose} backIcon="close" backTitle="Close" backTestId="starmap-sell-close" />
   {#if goods.length}
     <ul>
       {#each goods as g (g.item)}

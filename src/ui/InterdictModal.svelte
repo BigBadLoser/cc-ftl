@@ -7,7 +7,7 @@
    * `fixed` over the whole screen when it is shown outside the map.
    */
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import type { UiEncounter, UiEncounterChoice } from './starmapApi';
   import { toneColor } from './starmapStyle';
 
@@ -25,7 +25,7 @@
 
 <div class="veil steel-tokens" class:fixed data-testid={scan ? 'scan-modal' : 'interdict-modal'}>
   <div class="card" role="dialog" aria-modal="true" aria-label={encounter.title}>
-    <PanelHead icon={scan ? 'target' : 'alert'} title={encounter.title} sub={encounter.node} foe />
+    <PaneHead icon={scan ? 'target' : 'alert'} title={encounter.title} sub={encounter.node} foe />
     <div class="body">
       <div class="who">
         <i style={`background: ${toneColor(encounter.tone)}`}></i>

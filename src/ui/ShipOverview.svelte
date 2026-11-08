@@ -4,7 +4,7 @@
   import FloatingWindow from './FloatingWindow.svelte';
   import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import { Tooltip } from './kit';
   import ShipMeters from './ShipMeters.svelte';
 
@@ -41,7 +41,7 @@
 </script>
 
 <FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} testId="ship-overview" bare pinRight={32} padded>
-  <PanelHead icon="hull" title="Ship overview" />
+  <PaneHead icon="hull" title="Ship overview" />
   <button class="tile close" title="Close" aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
   <div class="res" data-testid="stats">
     <Tooltip text="Power supply / demand"><span class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span></Tooltip>

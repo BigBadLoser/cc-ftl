@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { anchor } from './lessons/anchors';
   import type { UiApi, UiCombat, UiPrize, UiShuttles, UiTrade } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import PrizePanel from './PrizePanel.svelte';
   import ShipMeters from './ShipMeters.svelte';
   import StationInfo from './StationInfo.svelte';
@@ -34,7 +34,7 @@
 </script>
 
 <div data-testid="grid-panel">
-  <PanelHead {icon} title={name} {sub} foe={!!foe && !prize} {onBack} />
+  <PaneHead {icon} title={name} {sub} foe={!!foe && !prize} {onBack} />
   {#if derelict}
     <div class="der" data-testid="derelict-panel">
       <span class="cell" title="Where it came from"><Icon name="ship" size={18} /><b>{derelict.kind || 'unknown'}</b><small>{derelict.cause === 'combat' ? 'combat wreck' : 'old wreck'}</small></span>

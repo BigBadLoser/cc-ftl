@@ -4,7 +4,7 @@
   import type { UiApi, UiSite } from './api';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
 
   let { api, onBack }: { api: UiApi; onBack: () => void } = $props();
   let sites = $state<UiSite[]>([]);
@@ -25,7 +25,7 @@
 
 {#if s}
   <div data-testid="site-inspector">
-    <PanelHead icon="module" title="{s.name} (under construction)" sub="{s.local.x},{s.local.y}" {onBack} />
+    <PaneHead icon="module" title="{s.name} (under construction)" sub="{s.local.x},{s.local.y}" {onBack} />
     <dl>
       <dt>Footprint</dt><dd>{s.w} x {s.h} tiles</dd>
       <dt>Status</dt><dd data-testid="site-state" class:bad={s.state === 'blocked'}>{status(s)}</dd>

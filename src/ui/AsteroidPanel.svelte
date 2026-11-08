@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiMining } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import PodList from './PodList.svelte';
   import { Chips } from './kit';
 
@@ -16,7 +16,7 @@
 </script>
 
 <div data-testid="asteroid-panel" aria-label="Asteroid">
-  <PanelHead icon="grid" title={a?.name ?? 'Asteroid'} sub={a ? (a.kind === 'big' ? `${a.w}x${a.h} · ${a.coverage}` : `${a.w}x${a.h}`) : ''} {onBack} />
+  <PaneHead icon="grid" title={a?.name ?? 'Asteroid'} sub={a ? (a.kind === 'big' ? `${a.w}x${a.h} · ${a.coverage}` : `${a.w}x${a.h}`) : ''} {onBack} />
   {#if a}
     <div class="sub">Ore left <small>{total} units</small></div>
     <ul class="ore" data-testid="asteroid-ore">

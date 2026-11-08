@@ -9,7 +9,7 @@
   import JumpConfirm from './JumpConfirm.svelte';
   import Icon from './Icon.svelte';
   import type { UiFtl } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import StarmapEncounter from './StarmapEncounter.svelte';
   import type { UiEncounterChoice, UiJumpWarnings, UiStarCluster, UiStarFaction, UiStarmap, UiStarNode, UiStarRoute, UiStarSector } from './starmapApi';
   import { dangerColor, toneColor } from './starmapStyle';
@@ -51,7 +51,7 @@
 </script>
 
 <aside class="sheet drawer" data-testid="starmap-drawer">
-  <PanelHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
+  <PaneHead icon="map" {title} {sub} onBack={travel ? undefined : onClear} backIcon="close" backTitle="Close drawer" backTestId="starmap-card-close" />
 
   {#if travel}
     {#each map.encounters.filter((x) => x.kind !== 'interdict') as e (e.id)}

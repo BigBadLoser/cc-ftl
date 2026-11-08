@@ -2,7 +2,7 @@
   import { Meter } from './kit';
   import { onMount } from 'svelte';
   import type { UiApi, UiShuttles } from './api';
-  import PanelHead from './PanelHead.svelte';
+  import { PaneHead } from './kit';
   import PodList from './PodList.svelte';
   import type { UiMining } from './api';
 
@@ -26,7 +26,7 @@
 </script>
 
 <div data-testid="shuttle-panel" aria-label="Shuttles">
-  <PanelHead icon="shuttle" title={only === null ? 'Shuttles' : 'Shuttle'} {onBack} />
+  <PaneHead icon="shuttle" title={only === null ? 'Shuttles' : 'Shuttle'} {onBack} />
 
   {#each data.shuttles.filter((x) => only === null || x.id === only) as s (s.id)}
     {@const left = seatsLeft(s)}

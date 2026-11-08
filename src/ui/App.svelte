@@ -4,6 +4,7 @@
   import OpinionHover from './OpinionHover.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import SelectBox from './SelectBox.svelte';
+  import { TipHost } from './kit';
   import { onMount } from 'svelte';
   import { TICK_HZ } from '../sim/time';
   import type { UiStarmap, UiDeploy } from './starmapApi';
@@ -277,6 +278,7 @@
 <svelte:window onkeydown={onKey} onkeydowncapture={onKeyCapture} onpointerdowncapture={(e) => outside.onDown(e)} onpointerupcapture={(e) => outside.onUp(e)} onpointercancelcapture={(e) => outside.onCancel(e)} />
 
 <canvas bind:this={canvas} data-world></canvas>
+<TipHost />
 <SelectBox {api} />
 <ContextMenu {api} />
 

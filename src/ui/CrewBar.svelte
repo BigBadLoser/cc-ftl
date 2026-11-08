@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiCrew } from './api';
   import Icon, { type IconName } from './Icon.svelte';
-  import { keyLabel, keymap } from './keymap';
+  import { tip } from './kit';
 
   /** `compact`: small portraits only (the combat view). `stations`: battle stations are called (the tile beside Draft all toggles them). */
   let { api, compact = false, stations = false, canStation = false, onStations }: {
@@ -62,7 +62,7 @@
 {#snippet chip(c: UiCrew, testId: string)}
     {@const s = status(c)}
     {@const pic = portrait(c)}
-    <button class="card" class:on={sel === c.id} class:warn={trouble(c)} class:bad={c.downed || c.dead} title="{c.name} · {s.label}" data-testid={testId} onclick={() => api.selectCrew(c.id, true)}>
+    <button class="card" class:on={sel === c.id} class:warn={trouble(c)} class:bad={c.downed || c.dead} use:tip={{ text: `${c.name} · ${s.label}` }} data-testid={testId} onclick={() => api.selectCrew(c.id, true)}>
       <span class="face" class:dead={c.dead} class:down={!!c.downed && !c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
       <span class="st {s.tone}"><Icon name={s.icon} size={12} /></span>
       <span class="name">{c.name}</span>
@@ -78,8 +78,8 @@
 
 <nav data-testid="crewbar" class:compact>
   {#each crew as c (c.id)}{@render chip(c, 'crew-chip')}{/each}
-  <button class="tile all" class:on={allDrafted && crew.length > 0} title={allDrafted ? 'Stand down' : 'Draft all'} aria-label={allDrafted ? 'Stand down' : 'Draft all'} data-testid="draft-all" onclick={draftAll}><Icon name="draft" size={20} /></button>
-  {#if onStations}<button class="tile all" class:on={stations} disabled={!canStation} title="{stations ? 'Stand down from battle stations' : 'Battle stations: crew to the consoles, weapons held'} ({keyLabel($keymap, 'combat.stations')})" aria-label={stations ? 'Stand down' : 'Battle stations'} data-testid="battle-stations" onclick={onStations}><Icon name="combat" size={20} /></button>{/if}
+  <button class="tile all" class:on={allDrafted && crew.length > 0} use:tip={{ text: allDrafted ? 'Stand down' : 'Draft all', key: 'crew.draft' }} aria-label={allDrafted ? 'Stand down' : 'Draft all'} data-testid="draft-all" onclick={draftAll}><Icon name="draft" size={20} /></button>
+  {#if onStations}<button class="tile all" class:on={stations} disabled={!canStation} use:tip={{ text: stations ? 'Stand down from battle stations' : 'Battle stations: crew to the consoles, weapons held', key: 'combat.stations' }} aria-label={stations ? 'Stand down' : 'Battle stations'} data-testid="battle-stations" onclick={onStations}><Icon name="combat" size={20} /></button>{/if}
   {#if guests.length}
     <span class="group" data-testid="guest-group"><span class="label">Guests</span>{#each guests as c (c.id)}{@render chip(c, 'guest-chip')}{/each}</span>
   {/if}
