@@ -289,7 +289,9 @@ Marked ref (both layers, numbered): scratchpad
 - Scale (deskewed, rows; 1 row = 1 px of depth or about 1 PZ of height; the ref's plain wall `wall_4_01` against
   our plain navy run; scratchpad `navy/ref4_desk.npy`, `navy/ours_run_desk.npy`, `navy/ours_t_desk.npy`):
   - Ref ramp: 30 rows, 10 px run (one slope, no upright foot): a bright top edge 6 rows, the slope 16, a red stripe
-    5 painted on the slope, a base line 3. The ref window's front is exactly this ramp (same top and foot rows).
+    5 painted on the slope, a base line 3. The ref window is cut into this ramp (the user): its end blocks are the
+    plain ramp left standing (same slope, red stripe, base; the r block shows the ramp's navy end face, 9), and
+    between them the ramp's top is cut down to the sill and the pockets are cut into its front.
   - Our ramp: 37 rows, 11 px run: a 1-row top highlight, the slope 26 rows, then an upright foot of 8 (a light strip
     4, the red foot 4). So ours is 37/30 = about 1.23 times the ref's height, with about the same run.
   - Wall face (for the upper layer): ref red band 11 rows + white 14 = 25; ours red band 14 + white 20 = 34 (1.36x).
@@ -299,25 +301,25 @@ Marked ref (both layers, numbered): scratchpad
 - Lower layer, along the front's foot from the window's left end (96 px): l end block 0-15 (16, half a tile) | l pocket
   16-37 | m panel 38-57 (20, centred on m) | r pocket 58-79 | r end block 80-95 (16). The ref's pockets read 21 and 25
   (its lean); ours 22 each. The pockets straddle the l|m and m|r tile edges: each piece builds its share.
-- Front (1, 4, 8): white, our ramp's slope. The ref's red stripe (5 rows, 2 above the base, on the end blocks and the
-  m panel only) maps to our red foot (4 rows, upright), kept only under the blocks and the panel. The m panel has a
-  seam down its middle.
-- Pockets (3, 7): the ref cuts the lower 20 of its 30 rows (to the base) -> ours the lower 25 of 37, leaving a white
-  strip of 10 rows at the top (ref 8). A 2 px dark navy side wall on the block side, a grey back, a floor with a step /
-  vent detail.
-- Sill (5, 6): the ref's front top meets a 2-row ledge, then a grey slope of 6 rows up to the pane's foot (9 rows from
-  the front's top edge to the pane's foot, 7 px of it depth) -> ours: the same 7 px depth, the slope about 7 rows.
-- End blocks (2, 9): their front's top edge 3-4 rows above the sill's (deskewed) -> ours 5 rows; on top a 2-row light
-  rim round a recessed dark navy tray (7 rows deep); the outer end face navy.
+- End blocks (1, 2, 8, 9): our plain navy ramp, unchanged in profile (its slope, upright foot and red foot), with a
+  recessed dark navy tray let into its top (a 2-row light rim, the tray 7 rows deep).
+- The cut between the blocks: the sill's top 3-4 rows below the blocks' tops in the ref -> 5 rows below our ramp's
+  top; the front below it stays the ramp's slope. A grey slope (6) rises from the sill's back to the pane's foot (ref:
+  a 2-row ledge, then 6 rows; 7 px of depth from the front's top to the pane) -> ours the same 7 px, about 7 rows.
+- M panel (4): the ramp's front left standing in the cut (20 px, centred on m), with our red foot under it and a seam
+  down its middle.
+- Pockets (3, 7): cut into the front: the ref's lower 20 of 30 rows -> our lower 25 of 37, a white strip of 10 rows
+  left above (ref 8); our red foot cut away there too. A 2 px dark navy side wall on the block side, a grey back, a
+  floor with a step / vent detail.
 - Upper layer (later): a beam: a dark top with two blue light lines (B), a front with an orange light strip (A) and
   white clamps (C, ~5 px) at the 4 tile edges; posts 11 px wide: a red band (D, 12 rows), white (E, 14), a flared foot
   (F, 5). Our plain navy wall already has the orange pipe, white clamps and red band: reuse those tones, and line the
   posts' red band up with our wall's red band (14 rows) rather than scaling it.
 - Plan (ramp first; each step rendered and shown, before / after, both ref layers):
   - N0: `sprites/wall3d_iwin_navy.py` + `preview/jobs_nwin.py` (pieces `tile.wall.navy.full.m10.win.{l,m,r}`), the
-    shared window wrapper, pane and glass; the sill: our navy ramp under the opening (no plate seams), a flat white top
-    and the grey slope to the pane.
-  - N1: end blocks (1, 2, 9). N2: m panel (4) with its stripe and seam. N3: pockets (3, 7).
+    shared window wrapper, pane and glass; our navy ramp kept under the opening and cut: the sill 5 rows down between
+    the end blocks, the grey slope to the pane.
+  - N1: the end blocks' trays (2). N2: m panel (4) with its seam. N3: pockets (3, 7).
   - N4: upper layer: beam (A, B, C), then posts (D, E, F).
 
 ## Log
@@ -431,3 +433,5 @@ Marked ref (both layers, numbered): scratchpad
   the user's go.
 - 2026-11-08: the user: ours is different; deskewed our plain navy and re-measured: our ramp 37 rows (11 run, upright
   foot 8) vs the ref's 30 (10 run, one slope); heights x1.23, widths and depth in px; plan numbers updated.
+- 2026-11-08: the user: the ref's window cuts into the ramp. Plan reworked: the end blocks are the ramp left standing, the
+  sill is cut 5 rows down between them, the pockets cut into the front.
