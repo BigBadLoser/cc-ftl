@@ -9,7 +9,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw0`); next N1 on the user's word. Then drone, civil; each its own
+- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw1w`); next N1 on the user's word. Then drone, civil; each its own
   module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
   ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -441,3 +441,5 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-08: navy N0 (nw0): own module; opening between 11 px posts up to the header's foot, the pane on the ramp's
   top; between the 16 px end blocks the ramp cut 8 art px down to a flat sill (front edge 4 px out on the slope), its
   back face at 1 px from the pane; the far side mirrored, dark. Shown before / after with both ref layers.
+- 2026-11-08: the user on N0: a white block where the glass should be. nw1w: the back face and ledge gone; the sill runs
+  across the wall, the pane stands on it, its far half shows grey through the glass as in the ref.

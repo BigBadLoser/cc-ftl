@@ -1,8 +1,8 @@
 """Interior windows on navy (walls up; Space Haven wall style 122, windows #2772 / #2771 / #2862): its own build, not
 the default's. A straight partition (mask 10, along x) opened between its posts down to the ramp's top, the pane
 standing on it; between the end blocks (the ramp left standing, half a tile at each end) the ramp is cut down: a flat
-sill CUT_Z under the ramp's top, its front edge where the slope falls to it, its back a face rising to the pane's
-ledge. The same cut on the far side. The opening runs up to the header's foot.
+sill CUT_Z under the ramp's top, its front edge where the slope falls to it, running across the wall: the pane stands
+on it, and its far half shows through the glass. The same cut on the far side. The opening runs up to the header's foot.
 
 Shared with the other windows: the hook wrapper (wall3d.HOOK on a piece's Relief), the Sutherland-Hodgman clip
 (wall3d_iwin._clip), the pane's edges and the glass Relief (the "glass" render kind).
@@ -17,9 +17,7 @@ PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end (the ref's 11)
 END = 16                    # px: an end block, in from the window's end (the ref's 16: half a tile)
 CUT_Z = 8                   # art px up: the sill under the ramp's top (the ref's cut: 8 of its 30 rows, ~30%; ours 8 of 26)
-BACK = 1                    # px: the sill's back face, from the pane (its flat top runs from here out to the front)
-COL = {"sill": "fNW1", "back": "fNW3", "ledge": "fNW2", "end": "fNW4", "post": "fNW3", "far": "fNS3",
-       "under": "fNS4"}
+COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -68,16 +66,13 @@ def _ramp_z(y):
 
 
 def _cells(x0, x1, c0, c1):
-    """The opening along x: (xa, xb, steps), steps (y0, y1, z) across the wall: under an end block the wall taken
-    down to the ramp's top; over the cut the sill either side of the pane's ledge."""
-    ye, yb, zt, zs = _front(), BACK * PX, _zt(), _zs()
-    sill = [(-ye, -yb, zs), (-yb, yb, zt), (yb, ye, zs)]
-    block = [(-ye, ye, zt)]
+    """The opening along x: (xa, xb, z, sill): under an end block the wall taken down to the ramp's top; over the cut
+    down to the sill, across the whole wall (the pane stands on it; its far half shows through the glass)."""
     out = []
-    for xa, xb, st in ((x0, c0, block), (c0, c1, sill), (c1, x1, block)):
+    for xa, xb, z, sill in ((x0, c0, _zt(), False), (c0, c1, _zs(), True), (c1, x1, _zt(), False)):
         a, b = max(xa, x0), min(xb, x1)
         if b - a > 1e-9:
-            out.append((a, b, st))
+            out.append((a, b, z, sill))
     return out
 
 
@@ -87,9 +82,9 @@ def _cut(k, x0, x1, z1, cells):
     inx = [(0, x0, 1), (0, x1, -1)]
     regions = [[(0, x0, -1)], [(0, x1, 1)], inx + [(1, ye, 1)], inx + [(1, yb, -1)],
                inx + [(1, yb, 1), (1, ye, -1), (2, z1, 1)]]
-    for xa, xb, st in cells:
-        regions += [[(0, xa, 1), (0, xb, -1), (1, y0, 1), (1, y1, -1), (2, z, -1)] for y0, y1, z in st]
-    zlo = min(z for _, _, st in cells for _, _, z in st)
+    for xa, xb, z, _ in cells:
+        regions.append([(0, xa, 1), (0, xb, -1), (1, yb, 1), (1, ye, -1), (2, z, -1)])
+    zlo = min(z for _, _, z, _ in cells)
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -119,40 +114,30 @@ def _quad(k, pts, out, col):
 
 
 def _tops(k, cells):
-    """The cut's floors: the sill's flat tops, the pane's ledge, the wall's top over an end block; and the sill's back
-    faces up to the ledge."""
-    yb, zt, zs = BACK * PX, _zt(), _zs()
-    for xa, xb, st in cells:
+    """The cut's floors: the sill across the wall between the end blocks, the wall's top (between its lines) over an
+    end block."""
+    for xa, xb, z, sill in cells:
         a, b = max(xa, -0.5), min(xb, 0.5)
         if b - a < 1e-9:
             continue
-        for y0, y1, z in st:
-            kind = "sill" if z < zt - 1e-9 else "ledge"
-            if kind == "ledge" and len(st) == 1:        # (over an end block: the wall's top, between its lines)
-                y0, y1 = -_line(), _line()
-            _quad(k, [(a, y0, z), (b, y0, z), (b, y1, z), (a, y1, z)], (0, 0, 1),
-                  COL["far"] if kind == "sill" and y1 <= 0 else COL[kind])
-        if len(st) > 1:
-            for y, sd in ((yb, 1), (-yb, -1)):
-                _quad(k, [(a, y, zs), (b, y, zs), (b, y, zt), (a, y, zt)], (0, sd, 0), COL["back" if sd > 0 else "far"])
+        y = _front() if sill else _line()
+        _quad(k, [(a, -y, z), (b, -y, z), (b, y, z), (a, y, z)], (0, 0, 1), COL["sill" if sill else "top"])
 
 
 def _ends(k, x0, x1, z1, cells):
     """The opening's ends: the posts' sides from the wall's top up to z1; the end blocks' sides facing the cut, from
     the sill up to the ramp's section (each in convex strips across the wall)."""
-    yl, ye, yb, zt, zs = _line(), _front(), BACK * PX, _zt(), _zs()
+    yl, ye, zt, zs = _line(), _front(), _zt(), _zs()
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
             _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
-    for (xa, xb, sa), (_, _, sb) in zip(cells, cells[1:]):
-        u = xb
+    for (_, u, _, sa), (_, _, _, sb) in zip(cells, cells[1:]):
         if not -0.5 < u < 0.5:
             continue
-        sd = 1 if len(sb) > 1 else -1                   # (it faces the sill's side)
-        for s in (1, -1):
-            col = COL["end"] if s > 0 else COL["far"]
-            _quad(k, [(u, s * yb, zs), (u, s * yl, zs), (u, s * yl, zt), (u, s * yb, zt)], (sd, 0, 0), col)
-            _quad(k, [(u, s * yl, zs), (u, s * ye, zs), (u, s * yl, zt)], (sd, 0, 0), col)
+        sd = 1 if sb else -1                            # (it faces the sill's side)
+        _quad(k, [(u, -yl, zs), (u, yl, zs), (u, yl, zt), (u, -yl, zt)], (sd, 0, 0), COL["end"])
+        for s_ in (1, -1):
+            _quad(k, [(u, s_ * yl, zs), (u, s_ * ye, zs), (u, s_ * yl, zt)], (sd, 0, 0), COL["end"])
 
 
 def hook(k, sp, own=True):
@@ -169,18 +154,21 @@ def hook(k, sp, own=True):
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
     if not own:                                         # (a copy past the tile: no pane)
         return
-    zl = _zt()
-    h, e = PANE_T / 2, PANE_OUT                         # the pane's edges
-    _quad(k, [(a, -h, zl + e), (b, -h, zl + e), (b, h, zl + e), (a, h, zl + e)], (0, 0, 1), PANE_EDGE)
-    _quad(k, [(a, -h, z1 - e), (b, -h, z1 - e), (b, h, z1 - e), (a, h, z1 - e)], (0, 0, -1), PANE_EDGE)
+    h, e = PANE_T / 2, PANE_OUT                         # the pane's edges, its foot on each cell's floor
+    global GLASS
+    GLASS = T.Relief("iwin_navy_glass")
+    for xa, xb, zl, _ in cells:
+        a, b = max(xa, -0.5), min(xb, 0.5)
+        if b - a < 1e-9:
+            continue
+        _quad(k, [(a, -h, zl + e), (b, -h, zl + e), (b, h, zl + e), (a, h, zl + e)], (0, 0, 1), PANE_EDGE)
+        _quad(k, [(a, -h, z1 - e), (b, -h, z1 - e), (b, h, z1 - e), (a, h, z1 - e)], (0, 0, -1), PANE_EDGE)
+        GLASS.poly([Vector((a, 0.0, zl)), Vector((b, 0.0, zl)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
+                   "wall", 2, Vector((0, 1, 0)), fixed="glassL")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
             v = u + sd * e
-            _quad(k, [(v, -h, zl), (v, h, zl), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
-    global GLASS
-    GLASS = T.Relief("iwin_navy_glass")
-    GLASS.poly([Vector((a, 0.0, zl)), Vector((b, 0.0, zl)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
-               "wall", 2, Vector((0, 1, 0)), fixed="glassL")
+            _quad(k, [(v, -h, _zt()), (v, h, _zt()), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
 
 
 def _header_foot():
