@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, ItemStackC, JobC, PositionC, ShipC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, deserialize, hullLoad, isLiveOrder, quoteYard, serialize, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  AirlockC, CrewC, ItemStackC, JobC, PositionC, VehicleC, YardCrewC, builtCount, deserialize, isLiveOrder, serialize, yardPrice, yardService,
 } from '../sim';
 import { jobFits } from '../sim/crew/jobFit';
 import { drawAir, sourceSupply } from '../sim/eva/airLedger';
@@ -35,52 +35,6 @@ describe('the yard crew', () => {
     expect(fits(jobs.find((j) => j.yardRank === order.rank + 1)!)).toBe(true);
   });
 
-  it('a small order is built by the station crew in EVA, they fly home and the escrow settles', () => {
-    const { sim, station, me } = yardGame();
-    const trader = sim.world.get(station, TraderC)!;
-    const wallet = trader.credits;
-    const suits = sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0);
-    const credits = sim.trade.credits;
-    planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
-    const quoteHull = quoteYard(sim, station, me).hull.after;
-    const hull = yardPrice(sim, yardService(sim, station)!, 12);
-    const price = { credits: hull.credits + 24, metal: hull.metal }; // plus the planning fee: 12 trusses at 2 credits
-    sim.enqueue({ type: 'yard.order', station });
-    run(sim, 1);
-    const order = sim.yard.orders[0]!;
-    const phases = new Set<string>();
-    const log = run(sim, 7000, () => {
-      phases.add(order.phase);
-      return !isLiveOrder(order);
-    });
-    expect(log).toContain('yard.ended');
-    expect([...phases]).toEqual(expect.arrayContaining(['fly', 'work', 'seal', 'recall', 'home']));
-    expect(order.phase).toBe('done');
-    expect(order.reason).toBeUndefined();
-    // Every floor tile and wall stands, as ordinary construction made them.
-    const grid = shipGrid(sim, me)!;
-    for (const t of order.floor) expect(grid.get('struct', t.x, t.y), `floor ${t.x},${t.y}`).toBe(Struct.Floor);
-    for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
-    expect(builtCount(sim, order)).toEqual({ truss: 12, floor: 2, walls: 10 });
-    expect(totalTiles(order)).toBe(24);
-    // Nobody (the ship's own crew, who also build, included) is walled in.
-    const keys = new Set(order.floor.map((t) => `${t.x},${t.y}`));
-    expect(sim.world.query(CrewC, PositionC).filter((c) => keys.has(`${sim.world.get(c, PositionC)!.x},${sim.world.get(c, PositionC)!.y}`))).toEqual([]);
-    // The new walls are hull tiles the engines have to carry, and the ship owns the new tiles.
-    expect(hullLoad(sim, me).tiles).toBe(quoteHull);
-    expect(sim.sector.grid.get('ship', order.floor[0]!.x, order.floor[0]!.y)).toBe(me);
-    // The station is paid, the crew and the shuttle are gone, nobody kept a suit.
-    expect(sim.trade.credits).toBe(credits - price.credits);
-    expect(trader.credits).toBe(wallet + price.credits);
-    // (the station's own metal stock moves with its trade over a run this long, so only the escrow is checked for metal)
-    expect(order.held).toEqual({ credits: 0, metal: 0 });
-    expect(sim.world.query(YardCrewC)).toHaveLength(0);
-    expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station)).toHaveLength(0);
-    run(sim, 1200); // the ship's own crew, who also worked outside, come back in and hang their suits up
-    expect(sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0)).toBe(suits);
-    expect(sim.world.query(CrewC).filter((c) => sim.world.get(c, CrewC)!.role === 'role.engineer' && !sim.world.has(c, YardCrewC)).length).toBeGreaterThan(0);
-  }, 120000);
-
   it('the order survives a save and load midway', () => {
     const { sim, station, me } = yardGame();
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
@@ -92,11 +46,11 @@ describe('the yard crew', () => {
     const back = deserialize(serialize(sim), content);
     expect(back.yard.orders[0]).toEqual(order);
     const o = back.yard.orders[0]!;
-    run(back, 7000, () => !isLiveOrder(o));
-    expect(o.phase).toBe('done');
-    expect(builtCount(back, o).floor).toBe(2);
-    expect(back.world.get(me, ShipC)!.width).toBe(sim.world.get(me, ShipC)!.width);
-  }, 120000);
+    run(back, 200);
+    expect(isLiveOrder(o)).toBe(true); // the reloaded order carries on (to its end: yardCrew.slow.test.ts)
+    expect(o.reason).toBeUndefined();
+    expect(o.timer).toBeGreaterThan(order.timer);
+  });
 
   it('the contractors are aboard by a working consent grant (not invaders, on duty); the grant goes with the order', () => {
     const { sim, station, me } = yardGame();
@@ -113,15 +67,12 @@ describe('the yard crew', () => {
     expect(isInvader(sim, c)).toBe(false);
     expect(isOffDuty(sim, c)).toBe(false);
     sim.enqueue({ type: 'yard.cancel', order: order.id });
-    run(sim, 4000, () => !isLiveOrder(order));
-    expect(isLiveOrder(order)).toBe(false);
-    expect(sim.world.has(me, ConsentC)).toBe(false);
-  }, 120000);
+    run(sim, 1);
+    expect(sim.world.get(me, ConsentC)?.grants.length ?? 0).toBeGreaterThan(0); // the grant stays while the crew walk home (it goes when the order ends: yardCrew.slow.test.ts)
+  });
 
-  it('calling the yard crew off mid-work sends them home and refunds the part that was not built', () => {
+  it('calling the yard crew off mid-work refunds the part that was not built', () => {
     const { sim, station, me } = yardGame();
-    const trader = sim.world.get(station, TraderC)!;
-    const wallet = trader.credits;
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const hull = yardPrice(sim, yardService(sim, station)!, 12);
@@ -145,16 +96,9 @@ describe('the yard crew', () => {
     expect(order.held.credits).toBe(paid.credits);
     expect(order.held.metal).toBe(paid.metal);
     expect(sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)!.yard === order.id)).toHaveLength(0);
-    // The crew walk back to the shuttle and fly home; then the built part is paid to the station.
-    run(sim, 4000, () => !isLiveOrder(order));
-    expect(order.phase).toBe('done');
+    // (the crew walk back to the shuttle and the built part is paid to the station in yardCrew.slow.test.ts)
     expect(order.reason).toBe('called off');
-    expect(trader.credits).toBe(wallet + paid.credits);
-    expect(sim.trade.credits).toBe(credits - paid.credits);
-    expect(sim.world.query(YardCrewC)).toHaveLength(0);
-    // What was built stays.
-    expect(builtCount(sim, order)).toEqual(built);
-  }, 120000);
+  });
 
   it('the ships own crew can build the yard tiles too', () => {
     const { sim, station, me } = yardGame();
@@ -168,7 +112,7 @@ describe('the yard crew', () => {
     expect(ours.length).toBeGreaterThan(0);
     run(sim, 700);
     expect(builtCount(sim, sim.yard.orders[0]!).truss).toBeGreaterThan(0);
-  }, 120000);
+  });
 
   it('a contractor refilling at the player airlock the station shuttle is docked at draws the shuttle air first; the ship crew draw the airlock store', () => {
     const { sim, station, me } = yardGame();
@@ -198,7 +142,7 @@ describe('the yard crew', () => {
     lock.air = 0;
     expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: ours })).toBe(0);
     expect(sourceSupply(sim, { kind: 'airlock', id: order.airlock }, { for: contractor })).toBe(tank * 1.5);
-  }, 120000);
+  });
 
   it('the yard site on the player ship leaves the ship crew hauling its loose items (the site carries no loot)', () => {
     const { sim, station, me } = yardGame();
@@ -216,5 +160,5 @@ describe('the yard crew', () => {
     const hauled = (): boolean => sim.world.query(JobC).some((j) => sim.world.get(j, JobC)!.haul?.src.id === stack);
     run(sim, 60, hauled);
     expect(hauled()).toBe(true);
-  }, 120000);
+  });
 });
