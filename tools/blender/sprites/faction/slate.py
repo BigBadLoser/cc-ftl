@@ -197,7 +197,7 @@ def slate_tall_rail(k, ax, plane, a, b, z0, z1, mit):
         d, zb = (MID_D, z0 - PZ) if mid else (RAIL_D, z0)
         m = (mit[0] if abs(u0 - a) < 1e-6 else 0.0, mit[1] if abs(u1 - b) < 1e-6 else 0.0)
         prism(k, ax, plane, u0, u1, [(0.0, zb), (d + PAINT, zb), (d + PAINT, zb + PZ), (0.0, zb + PZ)], BLUE, 4,
-              cols=[False, side, False, False], mitre=m)
+              cols=[False, side, False, False], cap=False, mitre=m)   # (no ends: they showed lit)
 
 
 SPLIT = 0.655                                   # the ramp's blue plate from here down the run, a px of seam over it
