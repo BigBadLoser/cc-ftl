@@ -276,9 +276,9 @@ def slate_panel(k, ax, plane, a, b, top, foot, zf):
 
 
 def slate_hatches(k, ax, plane, a, b, top, foot, zf):
-    """Wall (T1-7): two small panels a tile, 9 px wide with 8 px between, 2 px higher than T1-2's, each one's bar
+    """Wall (T1-7): two small panels a tile, 9 px wide with 8 px between, 5 px higher than T1-2's, each one's bar
     5 px (2 px in), its ticks under the bar's ends."""
-    return _panels(k, ax, plane, a, b, foot, zf, ((-13, -4, 2), (4, 13, 2)), lift=2)
+    return _panels(k, ax, plane, a, b, foot, zf, ((-13, -4, 2), (4, 13, 2)), lift=5)
 
 
 def _minus(a, b, cuts):
