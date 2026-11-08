@@ -799,6 +799,14 @@ Each point below gets its own design discussion before it is built.
     research can't reach.
   - **The tree grows with discovery:** a solid baseline tree, plus projects added by finds (an alien artifact opens new
     projects).
+  - **Ship weapons:** some of today's weapons move behind research (which ones: see the proposal in discussion 1).
+  - **Implants (#311):** basic implants are researched; unique ones are found only.
+  - **Scanners and cloaking:** a scanner sees enemy roofs, modules and crew, and what a node holds before the jump. A cloak
+    is a combat ability (dodge fire for a few seconds, on a cooldown) and may slip past patrols and inspections.
+  - **How finds add projects:** a find (an alien artifact, a prototype) is studied as a research project of its own, and
+    the study reveals one or more new projects.
+  - **Pace:** a project keeps one crew member busy researching for an extended time; research is a standing job on the
+    ship, not a quick unlock.
 - **Danger is distance.** No global threat clock. Deeper space is harder; the design work is giving players reasons to
   go there (research materials, drops, jobs and gear found only deeper).
 - **No empty nodes.** Most nodes hold at least a few asteroids or smaller derelicts, so every hop has something to do
