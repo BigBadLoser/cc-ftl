@@ -273,15 +273,21 @@ CAV = ("fNC0", "fNC1", "fNC0")                          # the open ramp's floor,
 
 
 def navy_split(plate, u0, u1, run_, ax="y", fam="wall", **_):
-    """B1-3: two darker plates split down the middle, on the slope (a look's own fall: from its shelf's edge down to
-    a px over the red band, a shade under the slope's plates (fNW3 / fNW4 on the y / x face), else 0.04 .. 0.66 of
-    the run, a level under them)."""
+    """B1-3 (ref 03): two darker plates split down the middle, edge to edge between the seams. On a look's own fall
+    from its shelf's edge down to the toe, a shade under the slope's plates (fNW4 / fNW5 on the y / x face), the red
+    band on them a level darker; else 0.04 .. 0.66 of the run, a level under them."""
     uc = (u0 + u1) / 2
     own = T.ramp_fall()
-    d0, d1 = (T.style().shelf, T.style().toe_at * run_ - LINE) if own else (0.04, 0.66 * run_)
-    fx = ("fNW4" if ax == "y" else "fNW5") if own and fam == "wall" else None
-    for p0, p1 in ((u0 + 0.04, uc - LINE / 2), (uc + LINE / 2, u1 - 0.04)):
-        plate([(p0, d0), (p1, d0), (p1, d1), (p0, d1)], PAINT, 1, 0.0, fixed=fx)
+    g = LINE / 2
+    if not own:
+        for p0, p1 in ((u0 + 0.04, uc - g), (uc + g, u1 - 0.04)):
+            plate([(p0, 0.04), (p1, 0.04), (p1, 0.66 * run_), (p0, 0.66 * run_)], PAINT, 1, 0.0)
+        return
+    d0, db, d1 = T.style().shelf, T.style().toe_at * run_, run_ - 0.03
+    fx = ("fNW4" if ax == "y" else "fNW5") if fam == "wall" else None
+    for p0, p1 in ((u0 + g, uc - g), (uc + g, u1 - g)):
+        plate([(p0, d0), (p1, d0), (p1, db), (p0, db)], PAINT, 1, 0.0, fixed=fx)
+        plate([(p0, db), (p1, db), (p1, d1), (p0, d1)], PAINT, 2, 0.0, f="ochre")
 
 
 NAVY_TOPS = (Design("plain"), Design("control boxes", middle=navy_boxes, face_holes=lipped_holes), Design("lockers", middle=navy_lockers, face_holes=lipped_holes),

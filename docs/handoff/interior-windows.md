@@ -699,3 +699,5 @@ Marked ref (both layers, numbered): scratchpad
   black), a lit row (F 1) on the panel under it, the panel 2 px off the recess's floor (its dark navy shows under it,
   the ref's). nq3.
 - 2026-11-08: recessed: the line under its band dark (fNS3 24344a), not lit (the user). nq4.
+- 2026-11-08: split ramp toward ref 03: its two plates edge to edge between the seams, from the shelf's edge down to the
+  toe, the red band on them ochre 2 (a level darker). nq5.
