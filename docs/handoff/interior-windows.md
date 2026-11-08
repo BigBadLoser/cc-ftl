@@ -679,3 +679,6 @@ Marked ref (both layers, numbered): scratchpad
   variant render nall1). Re-render nall2 to verify.
 - 2026-11-08: all 15 navy m10 variants rendered once (nall2), runs of base, variant x3, base in a 5x3 grid. Plain,
   boxes (a3) and recessed (a9) identical to the last shown; the lockers 1 step off in colour (the offset reds).
+- 2026-11-08: thin band to ref 15 (the user: it needed work): on the cover 2 rows of red under the header (drawn 4: the
+  header's overhang hides 2), 6 rows of grey, a 2-row stripe (measured: header foot, red 3 with its AA, grey 6,
+  stripe 3). The strip keeps its full band (the ref's), which in a run reads as a red tab at each tile. nt3.
