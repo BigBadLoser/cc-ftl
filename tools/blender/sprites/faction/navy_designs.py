@@ -20,12 +20,16 @@ def _box(k, ax, plane, u0, u1, z0, z1, d, cols, ch=0.0):
           cols=[cols[0], cols[1], cols[2], cols[0]], cap=cols[0])
 
 
-def navy_boxes(k, ax, plane, a, b, c, e, F, **_):
+def navy_boxes(k, ax, plane, a, b, c, e, F, mouth=None, **_):
     """Two control boxes (T1-2): light bezels, dark windows packed with red and cream parts and small lights."""
     zm = (c + e) / 2
     a = T._u(round(T._px(a + 0.06, PX)) + 1, PX)        # (each 3 px narrower, on the px grid: a px off its left, 2
     b = T._u(round(T._px(b - 0.06, PX)) - 2, PX)        # off its right; 2 px shorter, a px off its top and foot: the
     hz = 1 / 39.19                                      # user)
+    if mouth:                                           # (centred in its recess's mouth as seen: the user)
+        L, R = round(T._px(a, PX)), round(T._px(b, PX))
+        n = mouth[0] + (mouth[1] - mouth[0] - (R - L)) // 2
+        a, b = T._u(n, PX), T._u(n + R - L, PX)
     for q0, q1 in ((c + 0.02 + hz, zm - 0.02 - hz), (zm + 0.02 + hz, e - 0.02 - hz)):
         T.slab(k, ax, plane, a, b, q0, q1, PX, F, 3)                                                     # bezel
         w0, w1, v0, v1 = a + 2 / 32, b - 2 / 32, q0 + 2 / 39.19, q1 - 2 / 39.19    # (the bezel 2 px: chunkier, the

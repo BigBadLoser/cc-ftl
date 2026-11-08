@@ -645,3 +645,7 @@ Marked ref (both layers, numbered): scratchpad
   starts LIP = 2/32 in from the tile edge (lipped_holes): the cover and its band stay on that lip (the recess's left
   wall); cover_holes opens down to the cell under the shelf and _recess_in puts the recess's floor and back's foot at
   the shelf's height (zf): flush, no step. Plain m10 identical to nv9. nb9.
+- 2026-11-08: the user: centre the boxes in the recess, the left wall grey, no paint stripe. The lip left of the
+  recess is plain cover grey (no band). navy_boxes takes the recess's mouth in screen px (navy.py: the back's px seen
+  between its walls, in the design's frame) and centres its boxes in it, their width kept (measured: 1 px either side).
+  nb11.

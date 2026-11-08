@@ -194,13 +194,12 @@ def navy(hull):
                     _sheet(k, ax, plane, p0, p1, pq, zf - 0.03, zc, FRAME, "rose", 2)
                 elif not getattr(mid, "own_hole", False):   # (or a recess RECESS_D deep, the design inside it: a
                     _recess_in(k, ax, plane, hole, zf)          # recess under the cover, its walls showing: the user)
-                    if hole[0] > p0 + 1e-6:                 # (the cover left of it: its wall there, with its band)
-                        lq = (pq[0], "cont")
-                        _sheet(k, ax, plane, p0, hole[0], lq, zf - 0.03, zc, COVER, F, NAVY_FACE)
-                        if bf:
-                            bf(k, ax, plane, p0 - (1.5 * PAINT if lq[0] == "cont" else 0.0), hole[0], lq, zh, H)
+                    if hole[0] > p0 + 1e-6:                 # (the cover left of it, plain grey, no band: its wall
+                        _sheet(k, ax, plane, p0, hole[0], (pq[0], "cont"), zf - 0.03, zc, COVER, F, NAVY_FACE)  # there)
                     mid(k, ax, plane - RECESS_D, p0 + 0.04 - RECESS_D, p1 - 0.04 - RECESS_D, zf + 0.04, zh - 0.04, F,
-                        zh=zh, H=H)                 # (as far left as seen as before: a depth shifts it a px a LINE)
+                        zh=zh, H=H, mouth=(round(T._px(hole[0], -RECESS_D)) - 3, round(T._px(hole[1], 0.0)) - 3))
+                    #   (mouth: the back's px seen between the recess's walls, in the design's frame: a depth shifts
+                    #   it a px a LINE)
                     continue
                 mid(k, ax, plane, p0 + 0.04, p1 - 0.04, zf + 0.04, zh - 0.04, F, zh=zh, H=H, hole=hole)   # (the design in
                 #   the opening; zh, H: the header's foot and the wall's height, for a band in it)
