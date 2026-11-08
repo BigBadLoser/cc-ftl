@@ -9,7 +9,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Navy: measured and planned (see "Navy window"); waiting on the user's go for N0. Then drone, civil; each its own
+- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw0`); next N1 on the user's word. Then drone, civil; each its own
   module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
   ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
@@ -59,7 +59,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` (renders again; join dots fixed, iw42) |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
-| 122 (set 4) | navy | 2772 / 2771 / 2862 | measured, plan (see "Navy window") |
+| 122 (set 4) | navy | 2772 / 2771 / 2862 | N0 built, shown (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
@@ -282,7 +282,7 @@ floor in the render (cause not found; the cut's regions with an uneven profile);
 convex strips (`_ends`, both ways: the plain wall over the channel, the channel's block over the plain slope). Pane
 from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined panels kept (B2 replaces them).
 
-## Navy window (ref 122, 3-tile 2771): measured, plan (waiting on the user's go)
+## Navy window (ref 122, 3-tile 2771): `sprites/wall3d_iwin_navy.py`, jobs `preview/jobs_nwin.py`; N0 built
 Marked ref (both layers, numbered): scratchpad
 `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/navy/n_marked.png`; deskews in the same
 `navy/` (`n_small_desk.npy`, `n_full_desk.npy`; classified map script `cls.py` one level up). Ref px, tile = 32.
@@ -438,3 +438,6 @@ Marked ref (both layers, numbered): scratchpad
   sill is cut 5 rows down between them, the pockets cut into the front.
 - 2026-11-08: the user: the cut is at least 30% of the ramp's height. Re-measured: 8 of 30 rows (27%; I had read the
   sill's top as its front) -> ours 11 of 37.
+- 2026-11-08: navy N0 (nw0): own module; opening between 11 px posts up to the header's foot, the pane on the ramp's
+  top; between the 16 px end blocks the ramp cut 8 art px down to a flat sill (front edge 4 px out on the slope), its
+  back face at 1 px from the pane; the far side mirrored, dark. Shown before / after with both ref layers.
