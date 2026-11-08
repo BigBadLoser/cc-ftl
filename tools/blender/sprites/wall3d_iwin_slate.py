@@ -20,7 +20,9 @@ POCKET_TOP = 3                          # its top this many px under the sill's 
 POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
 POCKET_IN = 4 / 32                      # how far it runs back into the ramp, from the slope at its top
 FLOOR_RISE = 2                          # px its floor climbs from the ramp's front to its back
-FLOOR_LIT = {"l": "fGS0", "m": "fGT1", "r": "fGS0"}   # its floor: lit grey on an end tile, the slope's blue in the middle
+FLOOR_LIT = {"l": "fGS0", "m": "fGS0", "r": "fGS0"}   # its floor: lit grey ...
+FLOOR_PAINT = {"m": "fGT1"}             # ... on the middle tile a block of the slope's blue painted on it, ...
+PAINT_SIDE, PAINT_BACK = 2, 3           # ... this many px in from each side and from its back (top) edge
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
 GREY = "fGW2"                           # the ramp's front under the opening, in place of the blue plate: the slope's
@@ -162,6 +164,11 @@ def detail(k, part):
         u0, u1 = -0.5 + p0 * L, -0.5 + (p1 + 1) * L
         _carve(m, u0, u1, -(y0 + 0.05), -yb, z0, z1)
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, y0, z0), (u0, y0, z0)], (0, zb - z0, y0 - yb), FLOOR_LIT[part])
+        if part in FLOOR_PAINT:                         # the paint block on it, a hair proud
+            nf = Vector((0, zb - z0, y0 - yb)).normalized() * 2 * T.PAINT
+            v0, v1, yp = u0 + PAINT_SIDE * L, u1 - PAINT_SIDE * L, yb + PAINT_BACK * L
+            _quad(k, [(v0, yp + nf.y, fl(yp) + nf.z), (v1, yp + nf.y, fl(yp) + nf.z), (v1, y0 + nf.y, z0 + nf.z),
+                      (v0, y0 + nf.y, z0 + nf.z)], (0, zb - z0, y0 - yb), FLOOR_PAINT[part])
         _quad(k, [(u0, yb, zb), (u1, yb, zb), (u1, yb, z1), (u0, yb, z1)], (0, 1, 0), BACK)
         for u, sd in ((u0, 1), (u1, -1)):
             if any(abs(u - e) < 1e-9 for e in edges):   # (on a rib: its side only behind the rib's face)
