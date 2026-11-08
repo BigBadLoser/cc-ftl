@@ -94,7 +94,7 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
   front (`_carve`: a box out of the mesh, Sutherland-Hodgman pieces kept) with a floor (`FLOOR_LIT`: fGS0 on the end
   tiles, fGT0 on the middle), back (fGT6), sides and lintel (fGS4). `POCKETS` px per part: l (15, 27), m (3, 14) and
   (17, 28), r (4, 16). `POCKET_TOP` 2 px under the sill's level top, `POCKET_FOOT` 1 px over the ramp's foot.
-- Pocket depth `POCKET_IN` 3/32 again since sw10 (sw6-sw9 had 6/32: the back sits just inside the wall core's face, in the sill). Floor slopes
+- Pocket depth `POCKET_IN` 4/32 since sw11 (sw10 3/32, sw6-sw9 6/32: the back sits just inside the wall core's face, in the sill). Floor slopes
   up `FLOOR_RISE` (now 2 px; sw6 had 4) from the ramp's front to the back. With both, the floor fills the view and the dark back is
   hidden behind the lintel (sw6). sw7: `POCKET_TOP` 3 (top 1 px lower), `FLOOR_RISE` 2.
 - Toe: under the opening the near ramp from the pockets' floor line (foot + `POCKET_FOOT`) down is split off and
@@ -117,3 +117,4 @@ Ref sheet with both layers per tile: scratchpad `iwref/ref44_layers.png` (built 
 - 2026-11-08: sw8: dark toe under the opening (TOE fGT6). Shown.
 - 2026-11-08: sw9: toe fGS2, face fGW2 (the slope's tone). Shown.
 - 2026-11-08: sw10: pockets' backs pulled in 3 px (POCKET_IN 3/32): the dark back shows again as a line over the floor. Shown.
+- 2026-11-08: sw11: pocket backs 2 px in from sw9 instead (POCKET_IN 4/32). Shown.
