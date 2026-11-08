@@ -35,6 +35,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Busy nodes run faster: a station hub's simulation step takes about a third less time (gas, heat, power, consoles, combat checks and lighting do less repeated work), with identical results. ([#374](https://github.com/BigBadLoser/cc-ftl/pull/374))
 - Hydroponics beds have their own art: a glass greenhouse over white water tanks, lit when growing and dark when empty or unpowered, with damaged and destroyed looks. Each crop shows its plants growing from sprout to ripe. The large bed is now 3 wide and 2 deep, worked from the middle of its long side. Saves from before this change don't load. ([#373](https://github.com/BigBadLoser/cc-ftl/pull/373))
 - Pirate interdictions open in the comms window, like patrol hails: the pirate hails you with its demand, you answer from the window, and it stays open with the reply until you close it. The old interdiction pop-up is gone. Rogue AI names no longer start with "The". ([#368](https://github.com/BigBadLoser/cc-ftl/pull/368))
 - Tooltips are game-styled everywhere, open after a short delay, show the hotkey as a badge, and work for keyboard focus too; they follow the Tooltips setting. Pane headers and tab strips share one look. ([#358](https://github.com/BigBadLoser/cc-ftl/pull/358))
