@@ -317,9 +317,11 @@ def slate_boxes(k, ax, plane, a, b, z0, z1, mit, back=0.0, backing=True, lid=Tru
             if lid and x0 == BOXES[-1][0]:              # (the header's: on from the last box to the tile's edge,
                 g0, g1 = max(a, u1), min(b, c + 0.5)    # over the blank backing there)
                 if g1 - g0 > 1e-6:
-                    prism(k, ax, plane, g0, g1, [(0.0, z0 + 6 * PZ), (PAINT, z0 + 6 * PZ), (PAINT, z0 + 7 * PZ),
-                                                 (0.0, z0 + 7 * PZ)], BLUE, 4, cols=[False, side, False, False],
-                          cap=False)                    # (on the backing: a px lower, as the box's front stands out)
+                    for zs, tone in ((6, side), (5, "fGT0")):   # (on the backing: a px lower, as the box's front
+                        prism(k, ax, plane, g0, g1, [(0.0, z0 + zs * PZ), (PAINT, z0 + zs * PZ),   # stands out;
+                                                     (PAINT, z0 + (zs + 1) * PZ), (0.0, z0 + (zs + 1) * PZ)],
+                              BLUE, 4, cols=[False, tone, False, False], cap=False)   # its lit px under, as the
+                                                                                      # plain wall's line's)
             if mid:
                 continue
             cu = round((u0 + u1) / 2 * 32) / 32
