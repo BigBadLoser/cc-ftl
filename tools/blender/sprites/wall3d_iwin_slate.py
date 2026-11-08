@@ -15,10 +15,10 @@ from .wall3d_iwin import _clip
 
 L = 1 / 32                              # an art px along the wall
 POCKETS = {"l": ((15, 27),), "m": ((3, 14), (17, 28)), "r": ((4, 16),)}   # px from the tile's start: each pocket
-POCKET_TOP = 2                          # its top this many px under the sill's level top
+POCKET_TOP = 3                          # its top this many px under the sill's level top
 POCKET_FOOT = 1                         # its floor this many px over the ramp's foot (so it runs RAISE px deeper)
 POCKET_IN = 6 / 32                      # how far it runs back into the ramp, from the slope at its top
-FLOOR_RISE = 4                          # px its floor climbs from the ramp's front to its back
+FLOOR_RISE = 2                          # px its floor climbs from the ramp's front to its back
 FLOOR_LIT = {"l": "fGS0", "m": "fGT0", "r": "fGS0"}   # its floor: lit grey on an end tile, lit blue in the middle
 BACK = "fGT6"                           # its back (dark navy)
 SIDE = "fGS4"                           # its sides
