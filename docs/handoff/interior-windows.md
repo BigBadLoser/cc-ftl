@@ -674,3 +674,6 @@ Marked ref (both layers, numbered): scratchpad
   use them). Plain m10 identical. Its 1-row lines (the lit top edge, the seam) dash on the 2:1 stairs under AA. nl5.
 - 2026-11-08: the locker's top back up 2 px (4 px down in all, the 4 px slope kept: the user); its 1-row lines stay
   1 row (thicker lines not wanted). nl7.
+- 2026-11-08: fNL0-4 a step off the shared reds (e0787e, b94f58, a34239, 963b33, 7d303a): at the same hex, the boxes'
+  lvR/drM/lvR2 quantized into navy.locker and anti-aliased into their dark windows (a3 changed: caught in the full
+  variant render nall1). Re-render nall2 to verify.

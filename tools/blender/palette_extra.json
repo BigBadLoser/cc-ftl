@@ -1975,27 +1975,27 @@
   "set": "hull"
  },
  "fNL0": {
-  "hex": "#e0787f",
+  "hex": "#e0787e",
   "flat": true, "aa": "navy.locker",
   "set": "hull"
  },
  "fNL1": {
-  "hex": "#b94f59",
+  "hex": "#b94f58",
   "flat": true, "aa": "navy.locker",
   "set": "hull"
  },
  "fNL2": {
-  "hex": "#a3423a",
+  "hex": "#a34239",
   "flat": true, "aa": "navy.locker",
   "set": "hull"
  },
  "fNL3": {
-  "hex": "#963b34",
+  "hex": "#963b33",
   "flat": true, "aa": "navy.locker",
   "set": "hull"
  },
  "fNL4": {
-  "hex": "#7d303b",
+  "hex": "#7d303a",
   "flat": true, "aa": "navy.locker",
   "set": "hull"
  },
