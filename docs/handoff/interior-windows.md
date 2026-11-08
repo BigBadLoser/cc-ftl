@@ -463,3 +463,6 @@ Marked ref (both layers, numbered): scratchpad
   shelf_back (0, 1); navy's face and its plate seams down to the shelf; PlateTones' foot outline at the shelf).
   Renders: scratchpad ns0 (before) / ns2 (after). Note for the window: the shelf's height is the sill's (CUT_Z 8);
   wall3d_iwin_navy still assumes the slope runs up to the wall.
+- 2026-11-08: the user: turn AA on (navy). Coverage AA (post._aa) already covered navy's cool greys; its red (fNT*) and
+  navy tones (fNS*, fNX*) now join opt-in groups "navy.red" / "navy.blue" in palette_extra.json (as teal's and
+  slate.blue). ns3: the red band's edges and the navy faces' blend. Every navy sprite (walls, hull) changes on re-render.

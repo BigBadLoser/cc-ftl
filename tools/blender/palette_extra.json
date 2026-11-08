@@ -1161,31 +1161,38 @@
  },
  "fNT0": {
   "hex": "#c78992",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT1": {
   "hex": "#bd606d",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT2": {
   "hex": "#a94654",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT3": {
   "hex": "#8c3a46",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT4": {
   "hex": "#6c2d36",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT5": {
   "hex": "#4f2127",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNT6": {
   "hex": "#2e1317",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.red"
  },
  "fNF0": {
   "hex": "#616e7f",
@@ -1889,59 +1896,73 @@
  },
  "fNS0": {
   "hex": "#5776a0",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS1": {
   "hex": "#405d84",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS2": {
   "hex": "#314765",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS3": {
   "hex": "#24344a",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS4": {
   "hex": "#151e2b",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS5": {
   "hex": "#080b10",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNS6": {
   "hex": "#030507",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX0": {
   "hex": "#88a0bf",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX1": {
   "hex": "#6084b3",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX2": {
   "hex": "#4a6d9c",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX3": {
   "hex": "#3d5a80",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX4": {
   "hex": "#2e4461",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX5": {
   "hex": "#213145",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNX6": {
   "hex": "#121b26",
-  "set": "hull"
+  "set": "hull",
+  "aa": "navy.blue"
  },
  "fNC0": {
   "hex": "#1c2c44",
