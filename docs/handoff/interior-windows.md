@@ -9,8 +9,9 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
 - Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
   file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
   the record.
-- Next: navy, then drone, civil; each its own module (only the machinery is shared). Process (the user, for bastion):
-  deskew, measure, plan, ramp first; use the ref's proportions where its pixel sizes won't fit ours.
+- Navy: measured and planned (see "Navy window"); waiting on the user's go for N0. Then drone, civil; each its own
+  module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
+  ref's proportions where its pixel sizes won't fit ours.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
   palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
 - The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
@@ -58,7 +59,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` (renders again; join dots fixed, iw42) |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
-| 122 (set 4) | navy | 2772 / 2771 / 2862 | to do |
+| 122 (set 4) | navy | 2772 / 2771 / 2862 | measured, plan (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
@@ -281,6 +282,31 @@ floor in the render (cause not found; the cut's regions with an uneven profile);
 convex strips (`_ends`, both ways: the plain wall over the channel, the channel's block over the plain slope). Pane
 from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined panels kept (B2 replaces them).
 
+## Navy window (ref 122, 3-tile 2771): measured, plan (waiting on the user's go)
+Marked ref (both layers, numbered): scratchpad
+`/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/navy/n_marked.png`; deskews in the same
+`navy/` (`n_small_desk.npy`, `n_full_desk.npy`; classified map script `cls.py` one level up). Ref px, tile = 32.
+- Scale: the ref's plain navy ramp and ours have the same size (deskewed front rows ~45-75 in both), so the ref's px
+  are used as they are, unlike bastion.
+- Lower layer, along the front's foot from the window's left end (96 px): l end block 0-15 (16, half a tile) | l pocket
+  16-37 | m panel 38-57 (20, centred on m) | r pocket 58-79 | r end block 80-95 (16). The ref's pockets read 21 and 25
+  (its lean); ours 22 each. The pockets straddle the l|m and m|r tile edges: each piece builds its share.
+- Front (1, 4, 8): the navy ramp's slope, white, top edge at the sill; a red stripe 5 px tall, 2 px above a 2 px base
+  line, on the end blocks and the m panel only. The m panel has a seam down its middle.
+- Pockets (3, 7): cut into the lower 20 of the front's 30 rows, to the foot; a 2 px dark navy side wall on the block
+  side, a grey back, a floor with a step / vent detail.
+- Sill top (5): white, flat; a grey slope (6) behind it rises ~7 rows to the pane's foot.
+- End blocks (2, 9): ~4 px above the sill; a recessed dark navy tray on top with a light rim; the outer end face navy.
+- Upper layer: a beam ~22 rows: a dark top with two blue light lines (B), a front with an orange light strip (A) and
+  white clamps (C, ~5 px) at the 4 tile edges; posts 11 px wide: red band (D) 12 rows, white (E) 14 rows, a flared
+  foot (F) 5 rows. Our plain navy wall already has the orange pipe, white clamps and red band: reuse those tones.
+- Plan (ramp first; each step rendered and shown, before / after, both ref layers):
+  - N0: `sprites/wall3d_iwin_navy.py` + `preview/jobs_nwin.py` (pieces `tile.wall.navy.full.m10.win.{l,m,r}`), the
+    shared window wrapper, pane and glass; the sill: our navy ramp under the opening (no plate seams), a flat white top
+    and the grey slope to the pane.
+  - N1: end blocks (1, 2, 9). N2: m panel (4) with its stripe and seam. N3: pockets (3, 7).
+  - N4: upper layer: beam (A, B, C), then posts (D, E, F).
+
 ## Log
 - 2026-11-08: refs found and mapped; note written. Slate ref shown (full layer only: wrong), then both layers.
 - 2026-11-08: all seven 3-tile refs compared for reuse (section above); overview sheet sent to the user.
@@ -388,3 +414,5 @@ from the ledge to the cornice's foot; cap lines; glass. The ramp's outlined pane
   (through the glass) dark in one tone, the near parts toned to the ref's contrast, the front's top level with the floor
   so the groove shows. Shown.
 - 2026-11-08: the user on bw8: bastion gets no window. Module and jobs file removed; next navy.
+- 2026-11-08: navy's ref (2771) measured, both layers; marked ref and plan N0-N4 written ("Navy window"); waiting on
+  the user's go.
