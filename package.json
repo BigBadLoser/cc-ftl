@@ -11,6 +11,7 @@
     "test:quick": "VITEST_FAST=1 vitest run",
     "test:slow": "vitest run .slow.test",
     "test:fast": "VITEST_FAST=1 vitest run --changed --passWithNoTests",
+    "test:weights:ci": "node tools/testWeights.mjs --ci",
     "test:weights": "vitest run --reporter=json --outputFile=.vitest-report.json && node tools/testWeights.mjs .vitest-report.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p . & p=$!; svelte-check --tsconfig ./tsconfig.json; r=$?; wait $p; w=$?; [ $r = 0 ] && [ $w = 0 ]",

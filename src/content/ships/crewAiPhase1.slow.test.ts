@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   AssignmentC, CarriedC, CarryingC, CrewC, DraftedC, HealthC, JobC, ModuleC, NeedsC, PositionC, PrioritiesC, ShipC, Struct, SuitC, TaskC,
   deserialize, findPath, homeShip, isSuited, isThin, liftShip, newGame, placementError, removeModule, serialize, shipGrid, spawnModule,
@@ -164,7 +164,8 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
  * on to its destination in the same call). Their save point is the travel state on either side.
  */
 const INSTANT = ['haul/Take'];
-const HORIZON = 200;
+/** Ticks after a snapshot at which the replay is compared with the uninterrupted run (hashing the whole world every tick was the cost). */
+const CHECKPOINTS = Array.from({ length: 20 }, (_, i) => (i + 1) * 10);
 
 interface Snap {
   state: string;
@@ -172,23 +173,25 @@ interface Snap {
   crew: number;
   tick: number;
   save: string;
-  /** The uninterrupted run's state hash for the HORIZON ticks after the snapshot. */
+  /** The uninterrupted run's state hash at each of CHECKPOINTS ticks after the snapshot. */
   after: number[];
 }
 
-/** Run every driver and keep, for each machine state the first time any crew member is in it, a save and the next HORIZON ticks' hashes. */
+/** Run every driver and keep, for each machine state the first time any crew member is in it, a save and the state hashes at the CHECKPOINTS. */
 function census(): Snap[] {
   const snaps: Snap[] = [];
   const seen = new Set<string>();
   for (const d of DRIVERS) {
     const sim = d.make();
-    const open: Snap[] = [];
+    const open: { snap: Snap; from: number }[] = [];
     for (let i = 0; i < d.ticks || open.length > 0; i++) {
       run(sim, 1);
-      if (open.length > 0) {
-        const h = fnv(serialize(sim));
-        for (const s of open) s.after.push(h);
-        for (let k = open.length - 1; k >= 0; k--) if (open[k]!.after.length >= HORIZON) open.splice(k, 1);
+      for (let k = open.length - 1; k >= 0; k--) {
+        const o = open[k]!;
+        const elapsed = sim.tick - o.from;
+        if (elapsed !== CHECKPOINTS[o.snap.after.length]) continue;
+        o.snap.after.push(fnv(serialize(sim)));
+        if (o.snap.after.length === CHECKPOINTS.length) open.splice(k, 1);
       }
       if (i >= d.ticks) continue;
       for (const c of sim.world.query(TaskC)) {
@@ -198,14 +201,17 @@ function census(): Snap[] {
         seen.add(key);
         const snap = { state: key, driver: d.name, crew: c, tick: sim.tick, save: serialize(sim), after: [] };
         snaps.push(snap);
-        open.push(snap);
+        open.push({ snap, from: sim.tick });
       }
     }
   }
   return snaps;
 }
 
-const SNAPS = census();
+let SNAPS: Snap[] = [];
+beforeAll(() => {
+  SNAPS = census();
+}, 300_000);
 
 describe('crew AI phase 1: every executor state', () => {
   it('is reached by a scenario (a new state without one fails here)', () => {
@@ -214,15 +220,21 @@ describe('crew AI phase 1: every executor state', () => {
     expect(missing).toEqual([]);
   });
 
-  it('saves and loads mid-state: the next 200 ticks hash as the uninterrupted run', () => {
-    for (const snap of SNAPS) {
-      const sim = deserialize(snap.save, content);
-      expect(sim.world.get(snap.crew, TaskC), snap.state).toBeDefined();
-      for (let k = 0; k < HORIZON; k++) {
-        run(sim, 1);
-        if (fnv(serialize(sim)) !== snap.after[k]) throw new Error(`${snap.state} (${snap.driver}, tick ${snap.tick}): differs ${k + 1} ticks after the load`);
-      }
-    }
+  // One test per machine state. A divergence is located to a checkpoint (every 10 ticks), not to the exact tick.
+  describe('saves and loads mid-state: the next 200 ticks hash as the uninterrupted run', () => {
+    const states = machineStates().map(([m, st]) => `${m}/${st}`).filter((k) => !INSTANT.includes(k));
+    it.each(states)('%s', (state) => {
+      const snap = SNAPS.find((x) => x.state === state);
+      expect(snap, `${state} is never reached`).toBeDefined();
+      const sim = deserialize(snap!.save, content);
+      expect(sim.world.get(snap!.crew, TaskC), state).toBeDefined();
+      let done = 0;
+      CHECKPOINTS.forEach((cp, n) => {
+        run(sim, cp - done);
+        done = cp;
+        if (fnv(serialize(sim)) !== snap!.after[n]) throw new Error(`${state} (${snap!.driver}, tick ${snap!.tick}): differs by ${cp} ticks after the load`);
+      });
+    });
   });
 
   type Disruption = 'draft' | 'down' | 'kill' | 'destroyJob' | 'cancelJob' | 'removeModule' | 'jumpAway';

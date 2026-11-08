@@ -391,7 +391,7 @@ function countAmmo(sim: Sim, crate: number): number {
   return s.stacks.filter((x) => x.item === 'item.missile').reduce((n, x) => n + x.count, 0);
 }
 
-describe('determinism, saves, performance', { timeout: 30000 }, () => {
+describe('determinism, saves, performance', () => {
   const fightSim = (seed: number): Sim => {
     const sim = newGame(seed, content);
     sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });

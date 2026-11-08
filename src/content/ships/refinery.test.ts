@@ -19,7 +19,7 @@ function spot(sim: Sim, ship: number): { x: number; y: number; rot: number } {
 const refineryId = (sim: Sim): number => [...sim.world.query(ModuleC)].find((id) => sim.world.get(id, ModuleC)?.def === 'module.refinery') ?? 0;
 
 describe('ore refinery', () => {
-  it('is a 3x4 crafting workstation that can be placed and built on the player ship', { timeout: 30000 }, () => {
+  it('is a 3x4 crafting workstation that can be placed and built on the player ship', () => {
     const def = content.modules['module.refinery'];
     expect(def.footprint).toEqual([3, 4]);
     expect(def.crafting && def.workstation).toBe(true);
@@ -33,7 +33,7 @@ describe('ore refinery', () => {
     expect(refineryId(sim)).not.toBe(0);
   });
 
-  it('a crew member refines iron ore into metal', { timeout: 30000 }, () => {
+  it('a crew member refines iron ore into metal', () => {
     const sim = newGame(4, content);
     const ship = homeShip(sim);
     const at = spot(sim, ship);
@@ -50,7 +50,7 @@ describe('ore refinery', () => {
     expect(totalStock(sim, 'item.metal')).toBe(metal + r.outputs[0]!.count * 2);
   });
 
-  it('queued for every ore, it refines the ore there is instead of waiting on the first order', { timeout: 30000 }, () => {
+  it('queued for every ore, it refines the ore there is instead of waiting on the first order', () => {
     const sim = newGame(4, content);
     const ship = homeShip(sim);
     const at = spot(sim, ship);

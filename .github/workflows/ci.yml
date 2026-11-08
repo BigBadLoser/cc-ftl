@@ -1,7 +1,7 @@
 name: CI
 
 # The repo is public, so minutes are free and wall time is what counts: lint, typecheck, build and the tests run as parallel
-# jobs, and the tests are split across a matrix of shards (`vitest --shard`, balanced by tools/testWeights.ts).
+# jobs, and the tests are split across a matrix of shards (`vitest --shard`, balanced by tools/testWeights.ts, which comes from the shards' vitest-times artifacts).
 # - Ready PRs: all of that, on the merge result with a clean install. PR_TESTS below picks what the test shards run: `full`
 #   (every test, slow tier included) or `affected` (only the fast tests the change can affect, by Vitest's import graph
 #   against the first parent, the base branch for the PR's merge commit; Vitest runs everything when package.json or the
@@ -123,4 +123,12 @@ jobs:
       - name: Test (shard ${{ matrix.shard }}/${{ needs.gate.outputs.count }}, ${{ needs.gate.outputs.mode }})
         run: |
           if [ "${{ needs.gate.outputs.mode }}" = affected ]; then export VITEST_FAST=1; args="--changed HEAD~1"; fi
-          npx vitest run --shard=${{ matrix.shard }}/${{ needs.gate.outputs.count }} --passWithNoTests ${args:-}
+          npx vitest run --shard=${{ matrix.shard }}/${{ needs.gate.outputs.count }} --passWithNoTests --reporter=default --reporter=json --outputFile.json=vitest-times.json ${args:-}
+      # Per-file times, the source of tools/testWeights.ts (`npm run test:weights:ci`).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitest-times-${{ matrix.shard }}
+          path: vitest-times.json
+          if-no-files-found: ignore
+          retention-days: 30
