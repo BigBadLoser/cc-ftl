@@ -12,6 +12,7 @@ import { TICK_HZ } from '../time';
 import { STINT_SEC } from '../tuning';
 import { isEmergency } from './emergency';
 import { travelTicks } from './travel';
+import { shuttleDueBack } from '../away/crew';
 
 /**
  * Partial-work admission (docs/DESIGN.md "Partial work", #286). A suited (or suiting) crew member in thin air is admitted for a job if the
@@ -73,14 +74,19 @@ export class AirAdmission {
     const left = airLeft(sim, w.id, !suited);
     const walk = sec(travelTicks(sim, w.id, steps, { shipId: w.ship, suited: true }));
     if (!jobThin) return fitsReserve(walk, left) ? null : 'noAir';
-    let back = this.reach.ticksFrom(w.id, w.ship, work);
-    if (back === null) {
-      if (!isEmergency(job)) return 'noSource';
-      back = 0; // a fire, a breach or a patient is not left because there is no way home: they go if the walk and a stint fit
-    }
     const speed = stat(sim, w.id, 'workSpeed') * (suited ? 1 : suitDef(sim).workMult);
     // Only a job that finishes by progress has a stint shorter than STINT_SEC; a repair, a fire, a rescue or a console runs until its condition is met (`work` is a placeholder).
     const stint = PROGRESS_KINDS.has(job.kind) ? Math.min(STINT_SEC, Math.max(0, job.work - job.progress) / (TICK_HZ * Math.max(0.05, speed))) : STINT_SEC;
+    let back = this.reach.ticksFrom(w.id, w.ship, work);
+    if (back === null) {
+      // Their site's shuttle is away on a round trip (#408): it is their source again once back. The tank must last the work, or the wait
+      // for the shuttle if that is longer, and then the walk from the job to where it takes them aboard.
+      const due = shuttleDueBack(sim, w.id, w.ship);
+      const later = due && this.reach.ticksTo(w.id, w.ship, work, due.tile);
+      if (due && later !== null) return fitsReserve(Math.max(walk + stint, sec(due.ticks)) + sec(later), left) ? null : 'noAir';
+      if (!isEmergency(job)) return 'noSource';
+      back = 0; // a fire, a breach or a patient is not left because there is no way home: they go if the walk and a stint fit
+    }
     return fitsReserve(walk + stint + sec(back), left) ? null : 'noAir';
   }
 

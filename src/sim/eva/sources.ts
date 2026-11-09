@@ -121,6 +121,7 @@ export function nearestAirSource(sim: Sim, crew: number, opts: { without?: numbe
  */
 export class SourceReach {
   private byShip = new Map<number, { view: View; from: { r: ReturnType<typeof dijkstraFrom>; src: Candidate }[] } | null>();
+  private toTile = new Map<string, { view: View; r: ReturnType<typeof dijkstraFrom> } | null>();
   constructor(
     private sim: Sim,
     private goals: (ship: number) => readonly PathGoal[],
@@ -134,12 +135,43 @@ export class SourceReach {
     let best: number | null = null;
     for (const { r, src } of reach.from) {
       if (!r.cost.has(key) || !givesTo(this.sim, src, walker)) continue;
-      const path = r.steps(key); // from the source to the tile
-      const back = [...path.slice(0, -1).reverse(), src.tile];
-      const ticks = travelTicks(this.sim, walker, back, { from: path.length ? (path[path.length - 1] as Tile) : src.tile, shipId: ship, suited: true }) + src.extra;
+      const ticks = this.walkBack(walker, ship, r, key, src.tile) + src.extra;
       if (best === null || ticks < best) best = ticks;
     }
     return best;
+  }
+
+  /**
+   * Ticks for `walker` from `tile` on `ship` to another tile of it, `to` (a source that is not there yet: the spot a site's shuttle away on a
+   * round trip takes its party aboard again, away/crew.ts `shuttleDueBack`), or null. Same walk as `ticksFrom`, one search per `to`.
+   */
+  ticksTo(walker: number, ship: number, tile: Tile, to: Tile): number | null {
+    const k = `${ship}:${to.x},${to.y}`;
+    if (!this.toTile.has(k)) {
+      const view = viewOf(this.sim, ship, { suited: true });
+      this.toTile.set(k, view && inView(view, to.x, to.y) ? { view, r: dijkstraFrom(view, to, ...this.goalMaps(view, ship)) } : null);
+    }
+    const reach = this.toTile.get(k);
+    if (!reach) return null;
+    const key = indexOf(reach.view, tile.x, tile.y);
+    return reach.r.cost.has(key) ? this.walkBack(walker, ship, reach.r, key, to) : null;
+  }
+
+  /** The walk from a goal tile (`key`) back to where a search started (`start`), timed for the walker. */
+  private walkBack(walker: number, ship: number, r: ReturnType<typeof dijkstraFrom>, key: number, start: Tile): number {
+    const path = r.steps(key); // from the start to the tile
+    const back = [...path.slice(0, -1).reverse(), start];
+    return travelTicks(this.sim, walker, back, { from: path.length ? (path[path.length - 1] as Tile) : start, shipId: ship, suited: true });
+  }
+
+  /** The search goals of a ship's job tiles (keyed by tile), and its fallback stops. */
+  private goalMaps(view: View, ship: number): [Map<number, number[]>, Map<number, number[]>] {
+    const goals = new Map<number, number[]>();
+    const fallbacks = new Map<number, number[]>();
+    for (const g of this.goals(ship)) {
+      for (const t of goalTiles(view, g)) (isFallbackStop(view, g, t) ? fallbacks : goals).set(t, [t]); // keyed by tile
+    }
+    return [goals, fallbacks];
   }
 
   private reachOf(ship: number) {
@@ -148,11 +180,7 @@ export class SourceReach {
     const sources = view ? sourceCandidates(this.sim, ship) : [];
     let made: { view: View; from: { r: ReturnType<typeof dijkstraFrom>; src: Candidate }[] } | null = null;
     if (view && sources.length > 0) {
-      const goals = new Map<number, number[]>();
-      const fallbacks = new Map<number, number[]>();
-      for (const g of this.goals(ship)) {
-        for (const t of goalTiles(view, g)) (isFallbackStop(view, g, t) ? fallbacks : goals).set(t, [t]); // keyed by tile
-      }
+      const [goals, fallbacks] = this.goalMaps(view, ship);
       made = { view, from: sources.map((src) => ({ r: dijkstraFrom(view, src.tile, goals, fallbacks), src })) };
     }
     this.byShip.set(ship, made);

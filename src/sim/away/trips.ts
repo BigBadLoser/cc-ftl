@@ -1,6 +1,6 @@
 import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
-import { AssignmentC, CarriedC, CrewC, DeadC, DraftedC, PositionC, PrioritiesC, type Crew } from '../crew/components';
+import { AssignmentC, CarriedC, CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { PickupC } from '../ai/components';
 import { flightTicks } from '../ai/travel';
@@ -17,9 +17,8 @@ import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '
 import type { Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { AwayC, type SiteRun } from './components';
-import { passageFits, passengerUrgent } from './crew';
+import { passageFits, passengerUrgent, takesSiteWork } from './crew';
 import { departCheck, homePoint, partyOut } from './depart';
-import { siteDemand } from './seats';
 
 /**
  * Batched round trips (docs/DESIGN.md "Round trips, batched", #286 slice 2b): when a trip home is due, the last call and riders that let it
@@ -52,9 +51,7 @@ function wouldGo(sim: Sim, c: number, vehicle: number, site: number, suits: numb
   if (crew.activity !== 'idle' || sim.world.has(c, AssignmentC) || sim.world.has(c, DraftedC) || sim.world.has(c, DeadC)) return false;
   if (needsAir(sim, c) && suits <= 0) return false;
   if (!passageFits(sim, c, { kind: 'passage', category: 'construction', x: 0, y: 0, struct: 0, work: 1, progress: 0, reservedBy: 0, site, target: vehicle })) return false;
-  const prio = sim.world.get(c, PrioritiesC);
-  const demand = siteDemand(sim, site);
-  return !!prio && Object.entries(demand).some(([cat, n]) => (n ?? 0) > 0 && (prio[cat as keyof typeof prio] ?? 0) >= 1);
+  return takesSiteWork(sim, c, site);
 }
 
 /**
