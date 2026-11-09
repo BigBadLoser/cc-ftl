@@ -323,12 +323,12 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
       lastSites = slk;
       sites.set(sl);
     }
-    // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
-    const g = sim.galaxy;
-    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${uiFrame >> 7}`;
-    if (jk !== lastJobsKey) {
-      lastJobsKey = jk;
-      jobs.set(buildJobs(sim));
+    // The board reads the galaxy and also the ship (its strength rates a bounty, the cargo a delivery needs): rebuilt with every ship pass, sent on when changed.
+    const jb = buildJobs(sim);
+    const jbk = JSON.stringify(jb);
+    if (jbk !== lastJobsKey) {
+      lastJobsKey = jbk;
+      jobs.set(jb);
     }
     // Stranded without fuel: cheap checks, sent on when changed.
     {
