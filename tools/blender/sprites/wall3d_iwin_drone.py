@@ -23,8 +23,9 @@ FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 
 COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
 # The front (the near ramp), in px along the window from its -x end (96: the ref's, measured on its deskewed front):
-BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_H up, back into the slope
-BOX_H = 18                  # art px: their tops (the ref's 15 on its taller-scaled slope: 1-2 under the floor)
+BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_DOWN under the sill, back to it
+BOX_DOWN = 2                # art px: their tops under the sill (the window's floor), running back to it, the ramp cut
+                            # away over them there: a step up to the sill at its front edge (the user)
 BOX_OUT = 0.1               # art px: the boxes' fronts past the toe (at it, a hair proud: behind it the foot hid their
                             # bottoms), upright from the floor (they stay put: the user)
 OUT = 2                     # art px: the ribs' fronts past the toe, upright down to the toe's top (the foot's height),
@@ -36,7 +37,7 @@ RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top fla
                              # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
-         "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4"}
+         "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -183,17 +184,55 @@ def _front_parts(k):
     for a, b in BRACKETS:
         _slope(k, a, b, d0, dz, FRONT["bracket"])
     _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
+    zb = _zf() - BOX_DOWN / W.ZART
     for a, b in BOXES:
-        _block(k, a, b, 0.5 + BOX_OUT * PX, BOX_H / W.ZART, FRONT["box"], FRONT["box_top"], FRONT["box_side"], False)
+        _block(k, a, b, 0.5 + BOX_OUT * PX, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"], False, _front())
+        u0, u1 = max(_x(a), -0.5), min(_x(b), 0.5)
+        if u1 - u0 > 1e-9:                              # (the sill's front edge over the box: the step up to it)
+            y = _front()
+            _quad(k, [(u0, y, zb), (u1, y, zb), (u1, y, _zf()), (u0, y, _zf())], (0, 1, 0), FRONT["step"])
     for a, b in RIBS:
         _block(k, a, b, 0.5 + OUT * PX, _zf(), None, FRONT["rib_top"], FRONT["rib_side"])
 
 
-def _block(k, a, b, yf, zb, front, top, side, under=True):
+def _box_cuts(k):
+    """Take the near ramp away over each red box, out from the sill's front edge, down to the box's top (mesh -y: the
+    near side, core.G)."""
+    ye, zb = -_front(), _zf() - BOX_DOWN / W.ZART
+    for a, b in BOXES:
+        pa, pb = _x(a), _x(b)
+        if pb <= -0.5 or pa >= 0.5:
+            continue
+        inx = [(0, pa, 1), (0, pb, -1)]
+        regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)]]
+        for m in (k.m, k.ns):
+            if m is None:
+                continue
+            out = []
+            for f in m.f:
+                pts = [m.v[i] for i in f[0]]
+                xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
+                if max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9:
+                    out.append(f)
+                    continue
+                for r in regions:
+                    q = _clip(pts, r)
+                    if len(q) < 3:
+                        continue
+                    n = Vector(q[1]) - Vector(q[0])
+                    if max((Vector(c) - Vector(q[0])).cross(n).length for c in q) < 1e-10:
+                        continue
+                    base = len(m.v)
+                    m.v += [tuple(p) for p in q]
+                    out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+            m.f = out
+
+
+def _block(k, a, b, yf, zb, front, top, side, under=True, back=None):
     """A block on the near ramp a..b px along the window: its front upright at yf (past the toe) up to zb, from the
     foot's height with its bottom sloping from there back to the toe on the floor (under), else from the floor; its top
     flat back to the slope (the slope's own height there). front None: the toe's tone (the wall's, as the foot's)."""
-    yb, yt, zf = _out(zb), 0.5, W.foot() if under else 0.0
+    yb, yt, zf = _out(zb) if back is None else back, 0.5, W.foot() if under else 0.0
     u0, u1 = _x(a), _x(b)
     a_, b_ = max(u0, -0.5), min(u1, 0.5)
     if b_ - a_ < 1e-9:
@@ -226,6 +265,7 @@ def hook(k, sp, own=True):
             _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
     a, b = max(x0, -0.5), min(x1, 0.5)
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
+    _box_cuts(k)
     _front_parts(k)
     if not own:                                         # (a copy past the tile: no pane)
         return
