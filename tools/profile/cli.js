@@ -2,7 +2,7 @@
 /**
  * Profile the running game in headless Chromium and print the report.
  *   npm run profile -- [--scenario log|hullplan|handover|bounty|survey|fight|damage|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
- *                      [--out profile.json] [--warmup 2] [--zoom 0.25] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
+ *                      [--out profile.json] [--warmup 2] [--zoom 0.25] [--query 'envmb=40'] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
  * Starts `vite` (dev server: system labels need unminified function names) unless --url is given, opens
  * `/?scenario=..&perf&seed=..`, lets it run, prints `__perf.report()` and writes `__perf.summary()` JSON to --out.
  * Every scenario name is passed straight through as `?scenario=`. No scenario (or `none`) = colony baseline.
@@ -86,6 +86,7 @@ try {
   q.set('seed', seed);
   q.set('lessons', 'off'); // a tutorial card would pause the game mid-profile (e.g. ?scenario=fight)
   if (zoom) q.set('hook', ''); // the debug hook's zoomTo
+  for (const [k, v] of new URLSearchParams(opt('query', ''))) q.set(k, v); // extra URL params, e.g. envmb=40
   await page.goto(`${base}?${q.toString().replace('perf=', 'perf').replace('hook=', 'hook')}`);
   await page.waitForFunction(() => window.__perf && window.__perf.summary().frames > 5, null, { timeout: 60000, polling: 500 });
   if (speed) await page.keyboard.press(speed);

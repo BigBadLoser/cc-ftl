@@ -112,8 +112,10 @@ export interface Atlas {
   tick(): void;
   /** Advance the use clock and return it: sheets used from now on are newer than the mark (see `sweepEnv`). */
   mark(): number;
-  /** If the env pool is over budget, evict the env sheets nobody used since `mark` (rebuild the sprites that hold env textures first). */
+  /** If the env pool is over budget, evict the env sheets nobody used since `mark` (mark the sheets the drawn sprites hold first). */
   sweepEnv(mark: number): string[];
+  /** Count the sheets these texture sources belong to as used now (the census: sources of the sprites in the scene). */
+  touchSources(sources: ReadonlySet<unknown>): void;
   /** True when the env pool is over its budget. */
   envOver(): boolean;
   /** True from a lost WebGL context until the sheets are back on the GPU: do not draw meanwhile. */
@@ -469,6 +471,13 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       store.tick();
     },
     sweepEnv: (before) => (store.over('env') ? store.sweep('env', before) : []),
+    touchSources(sources) {
+      const hit: string[] = [];
+      store.forEachReady((name, sh) => {
+        if (sources.has(sh.image.source) || (sh.glow && sources.has(sh.glow.source))) hit.push(name);
+      });
+      for (const name of hit) store.get(name); // a ready sheet: `get` only touches it
+    },
     envOver: () => store.over('env'),
     whenIdle: () => store.idle(),
     dispose() {

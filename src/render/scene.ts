@@ -1,4 +1,4 @@
-import { autoDetectRenderer, Container, RenderTexture, Sprite } from 'pixi.js';
+import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } from 'pixi.js';
 import './batch';
 import { createCrewAtlas } from './crewAtlas';
 import { artZoom } from './assets/palette'; // the renderer's batcher (installed before the renderer is built)
@@ -446,6 +446,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         }
       },
       sync,
+      touchInUse() {
+        const used = new Set<unknown>();
+        const walk = (c: Container): void => {
+          const t = (c as { texture?: Texture }).texture;
+          if (t?.source) used.add(t.source);
+          for (const p of (c as { particleChildren?: { texture?: Texture }[] }).particleChildren ?? []) if (p.texture?.source) used.add(p.texture.source);
+          for (const k of c.children) walk(k);
+        };
+        walk(stage);
+        atlas.touchSources(used);
+      },
     },
     () => performance.now(),
   );
