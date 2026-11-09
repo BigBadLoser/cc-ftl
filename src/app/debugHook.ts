@@ -38,7 +38,7 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
     /** Roof livery paints baked in the shared livery atlas (true, the default) or a mesh each (render diffs; rebuilds every scene). */
     liveryAtlas: (on: boolean) => r.debugLiveryAtlas(on),
-    /** Build budget and out-of-view scene throttle (#389) on (default) or off (scenes built in one frame, all updated every frame). */
+    /** Build budget, out-of-view scene throttle and crew composite of drawn figures only (#389): on (default) or off (scenes built in one frame, every scene updated and every figure composited each frame). */
     buildBudget: (on: boolean) => r.debugBuildBudget(on),
     /** Sprites drawn / built and scenes being built (render counters). */
     renderInfo: () => r.info(),

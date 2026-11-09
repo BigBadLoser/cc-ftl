@@ -71,7 +71,7 @@ export type Quality = 'high' | 'low';
 export interface RenderInfo {
   /** Display objects in the scenes drawn last frame (floors, walls, crew layers, glow...); scenes out of view are left out. */
   sprites: number;
-  /** The same over every built scene, drawn or not (out of view, hidden roofs, scenes still being built count too). */
+  /** The same over every built scene, drawn or not (out of view, or still being built). */
   built: number;
   /** Scenes being built (hidden until whole). */
   building: number;
@@ -262,6 +262,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     map.get(id)?.dispose();
     map.delete(id);
     if (map === building) dirty.delete(id);
+    else skipped.delete(id);
   };
   let sector: SectorGrid | null = null;
   let refId = 0;
@@ -783,6 +784,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     debugBuildBudget(on) {
       budgetOn = on;
+      crews.skipHidden = on;
     },
     resetWorld: dropAll,
     setBackdrop(spec) {

@@ -107,7 +107,8 @@ change behaviour records identical files, and a deliberate change shows where it
 - `loop/frame` is the work done per frame (sim ticks, render, ui). `interval` is the real time between frames (fps).
 - Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,inset,gl,present,main}`,
   `ui/{bridge,events,upkeep}`, `loop/frame`.
-- Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
+- Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites` (sprites of the scenes shown
+  this frame; `render/spritesBuilt` counts every built scene, out of view or still being built),
   `render/sceneCount`. `draws@<label>` splits the draws by the innermost span that issued them (`draws@render/gl` the main
   pass, `draws@render/crew` the crew atlas, `draws@-` outside any span, e.g. an image-load callback), to tell which pass a
   draw-heavy frame came from.
