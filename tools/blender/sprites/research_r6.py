@@ -127,8 +127,8 @@ def middle_bay(k):
 
 def back(k):
     """The back: 94 px wide, split by two 2 px seams running its full height into three equal 30 px sections; a 24 px
-    inset panel centred in each on the cabinet, a seam between the shelves, a vent and a cable gland centred in the
-    outer sections of the hutch. Every edge on the px grid (off it, an edge breaks into stray px)."""
+    inset panel centred in each on the cabinet and a 2 px seam between the shelves. Every edge on the px grid (off
+    it, an edge breaks into stray px)."""
     def patch(u0, u1, z0, z1, col, d=0.004):
         k.box((u0 + u1) * PXG / 2, BACK - d / 2, z0, (u1 - u0) * PXG, d, z1 - z0, col)
     top = SHELVES[1] + zpx(2)
@@ -137,11 +137,7 @@ def back(k):
     for c in (-32, 0, 32):
         patch(c - 12, c + 12, zpx(6), TOP - zpx(6), "lvWS")                                 # the panels
     for u0, u1 in ((-47, -17), (-15, 15), (17, 47)):
-        patch(u0, u1, SHELVES[0] + zpx(1), SHELVES[0] + zpx(2), "lvWS")                     # between the shelves
-    for c in (-32, 32):
-        for i in range(3):
-            patch(c - 4, c + 4, TOP + zpx(6 + 3 * i), TOP + zpx(7 + 3 * i), "dark", 0.008)  # vent slits
-        patch(c - 2, c + 2, TOP + zpx(1), TOP + zpx(4), "gm", 0.012)                        # a cable gland
+        patch(u0, u1, SHELVES[0], SHELVES[0] + zpx(2), "lvWS")                              # between the shelves
 
 
 # ---- l1: the entomologist -------------------------------------------------------------------------------------------
