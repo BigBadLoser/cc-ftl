@@ -1,5 +1,6 @@
 import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import { setAdditiveMerge } from '../render/batch';
+import { setRenderGroups } from '../render/renderGroups';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { CarryingC, ItemStackC } from '../sim/items/components';
@@ -28,6 +29,7 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     setSpeed: (s: 0 | 1 | 2 | 3) => loop?.setSpeed(s),
     /** Merge flagged additive glow into the normal batches (true, the default) or draw it in its own `add` batches (render diffs). */
     additiveMerge: (on: boolean) => setAdditiveMerge(on),
+    renderGroups: (on: boolean) => setRenderGroups(on),
     /** Composite crew through the shared crew atlas (true, the default) or a filter per figure (render diffs). */
     crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */

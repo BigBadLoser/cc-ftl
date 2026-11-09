@@ -107,7 +107,9 @@ change behaviour records identical files, and a deliberate change shows where it
 - Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,inset,gl,present,main}`,
   `ui/{bridge,events,upkeep}`, `loop/frame`.
 - Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
-  `render/sceneCount`.
+  `render/sceneCount`. `draws@<label>` splits the draws by the innermost span that issued them (`draws@render/gl` the main
+  pass, `draws@render/crew` the crew atlas, `draws@-` outside any span, e.g. an image-load callback), to tell which pass a
+  draw-heavy frame came from.
 - p95 is over the most recent 1024 samples; mean and max cover everything since the last `reset()`.
 
 ## Excluded spans (instrument time)

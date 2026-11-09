@@ -1,5 +1,6 @@
 import { Container, RenderLayer, type IRenderLayer } from 'pixi.js';
 import type { Layers } from './layers';
+import { renderGroup } from './renderGroups';
 
 /**
  * One world layer stack for the whole sector (ARCHITECTURE "Sector grid" §7 step 5a). Every region (ship) decorates it:
@@ -108,7 +109,13 @@ export function createWorldStack(): WorldStack {
   const low = new Container();
   depthBase.set(low, 0);
   feed(low, depth);
-  root.addChild(under, floor, decal, depth, fx, fxAdd, ui, marks, anchors, low);
+  // The depth layer and its sprites' scene parents share one render group (a layer draws children of its own group only).
+  const art = new Container();
+  art.addChild(depth, anchors, low);
+  root.addChild(under, floor, decal, art, fx, fxAdd, ui, marks);
+  // Render groups (#389): the camera moves only `root`'s group transform, not every sprite's, and a pass that hides some
+  // layers (the minified art pass, the combat inset) rebuilds only `root`'s short list of groups, not the sprites in them.
+  for (const c of [root, under, floor, decal, art, fx, ui, marks]) renderGroup(c); // not fxAdd (see renderGroups.ts)
   let scale = 1;
 
   return {
@@ -124,7 +131,7 @@ export function createWorldStack(): WorldStack {
       marks.visible = on;
     },
     setArtVisible(on) {
-      for (const c of [under, floor, decal, depth as unknown as Container, fx, fxAdd, anchors, low]) c.visible = on;
+      for (const c of [under, floor, decal, art, fx, fxAdd]) c.visible = on;
     },
     region(halos) {
       const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new Container(), fx: new Container(), fxAdd: new Container(), ui: new Container(), marks: new Container() };

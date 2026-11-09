@@ -3,7 +3,7 @@ import { Container, type IRenderLayer } from 'pixi.js';
 import { createWorldStack } from './worldLayers';
 import { frontDepth } from './shuttleView';
 
-const depthLayer = (root: Container) => root.children.find((c) => 'renderLayerChildren' in c) as unknown as IRenderLayer;
+const depthLayer = (root: Container) => root.children.flatMap((c) => [c, ...c.children]).find((c) => 'renderLayerChildren' in c) as unknown as IRenderLayer;
 const named = (name: string, z: number) => {
   const c = new Container();
   c.label = name;
