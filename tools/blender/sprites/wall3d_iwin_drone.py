@@ -339,16 +339,20 @@ def window(fn, part):
             PART = seq[i]
             hook(k, sp, own=i == 0)
 
+    def pre(sp):                                        # (the middle piece's rail: no centre block, the user)
+        DR.NO_CENTRE = calls[0] < len(seq) and seq[calls[0]] == "m"
+
     def build():
         global PART
         calls[0] = 0
         T.HOOK = each
-        DR.BLANK = _header_foot()                       # (drone's face detail on the header only, the posts bare;
-        #   the ramp bare: no seams, outline or handle slots, the user)
+        T.PRE_HOOK = pre
+        DR.BLANK = DR.rail_foot()                       # (drone's face detail on the header's rail only: no bars
+        #   under it, the posts bare; the ramp bare: no seams, outline or handle slots, the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK, DR.BLANK = None, None, None
+            PART, T.HOOK, T.PRE_HOOK, DR.BLANK, DR.NO_CENTRE = None, None, None, None, False
     return build

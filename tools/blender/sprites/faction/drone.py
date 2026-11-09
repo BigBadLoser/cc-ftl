@@ -141,9 +141,16 @@ def _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, gw):
           cap=(gw, cp[1]))
 
 
-BLANK = None                        # a window's pieces: a height (the header's foot): the walls' faces' detail only over
-                                    # it (the header kept, the posts bare), the ramp one bare plate a run (no seams,
-                                    # outline or handle slot: wall3d_iwin_drone, the user)
+BLANK = None                        # a window's pieces: a height (the rail's foot, rail_foot): the walls' faces' detail
+                                    # only over it (the header's rail kept, the bars under it and the posts bare), the
+                                    # ramp one bare plate a run (no seams, outline or handle slot: wall3d_iwin_drone, the
+                                    # user)
+NO_CENTRE = False                   # (a window's middle piece: no centre block on its rail, the user)
+
+
+def rail_foot():
+    """The top rail's foot (face0's rl) on a partition."""
+    return T.W.wall_top("wall", "up") - 0.12 - DRONE_HD
 
 
 def drone(hull):
@@ -201,7 +208,7 @@ def drone(hull):
             uc = (s0 + s1) / 2
             at0, at1 = abs(s0 - a) < 1e-6 and ends[0] != "cont", abs(s1 - b) < 1e-6 and ends[1] != "cont"
             in0, in1 = at0 and ends[0] == "in", at1 and ends[1] == "in" and not corner
-            if s1 - s0 > 0.3:
+            if s1 - s0 > 0.3 and not NO_CENTRE:
                 if not (in0 and uc - 0.1 < a + 0.25) and not (in1 and uc + 0.1 > b - 0.25):   # (clear of the
                     prism(k, ax, plane, uc - 0.1, uc + 0.1, [(0.0, cl), (RD + PX, cl),              # other face)
                           (RD + PX, rt - 0.01 - 3 * PZ), (0.0, rt - PZ)], F, 4)      # its centre block, its top
