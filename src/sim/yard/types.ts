@@ -53,14 +53,23 @@ export interface YardOrder {
   /** The tiles the truss pass builds this visit, and what it costs (credits; part of `price`). */
   trusses: Tile[];
   fee: YardMoney;
-  /** 'truss': the planning pass is running; 'hull': trusses are being turned into hull. */
-  stage: 'truss' | 'hull';
+  /**
+   * 'truss': the planning pass is running; 'hull': trusses are being turned into hull; 'open': the section is shut and the walls it turned inward
+   * (the old outer hull where it joins on, `open.ts`) are being opened into floor.
+   */
+  stage: 'truss' | 'hull' | 'open';
   /**
    * One wall of each painted patch is left for last: `wall` is closed once the crew are out, by way of `stage`, the open tile beyond it. Without
    * that the crew would wall themselves in. `sealed`: those walls have been posted.
    */
   gaps: { wall: Tile; stage: Tile }[];
   sealed: boolean;
+  /**
+   * The 'open' pass (#385): the walls still to open into floor, and the air the new section is delivered with (the room it joins, sampled when
+   * the section was shut). Each opened tile takes that air as it turns to floor, so the joined room keeps its pressure.
+   */
+  opens?: Tile[];
+  air?: { o2: number; co2: number; temp: number };
   /** The ship's own crew drafted to walk out of the new rooms before they were closed (given back their work after). */
   ejected: number[];
   /** Escrow still held: all of the price at first; the unbuilt share goes back at the end, the built share to the station. */

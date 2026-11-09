@@ -73,3 +73,34 @@ describe('hold', () => {
     }
   });
 });
+
+describe('paused', () => {
+  it('applies queued commands every frame without a tick (plans placed while paused show at once, #386), but not while held', () => {
+    const g = globalThis as unknown as { requestAnimationFrame: unknown; cancelAnimationFrame: unknown };
+    const saved = { raf: g.requestAnimationFrame, caf: g.cancelAnimationFrame };
+    let next: ((t: number) => void) | undefined;
+    g.requestAnimationFrame = (f: (t: number) => void) => ((next = f), 1);
+    g.cancelAnimationFrame = () => undefined;
+    try {
+      const sim = newGame(4, content);
+      const seen: string[] = [];
+      const loop = createLoop({ sim, render: () => undefined, onFrame: () => undefined, onEvents: (es) => seen.push(...es.map((e) => e.type)) });
+      loop.setSpeed(0);
+      loop.hold(true);
+      loop.start();
+      const tick = sim.tick;
+      sim.enqueue({ type: 'debug.spawnMarker', x: 1, y: 1 });
+      next?.(16);
+      expect(sim.world.query(MarkerC)).toHaveLength(0); // held: the queue waits
+      loop.hold(false);
+      next?.(32);
+      expect(sim.world.query(MarkerC)).toHaveLength(1);
+      expect(sim.tick).toBe(tick);
+      expect(seen.length).toBeGreaterThan(0);
+      loop.stop();
+    } finally {
+      g.requestAnimationFrame = saved.raf;
+      g.cancelAnimationFrame = saved.caf;
+    }
+  });
+});

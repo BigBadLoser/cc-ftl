@@ -3,7 +3,7 @@
   import type { UiApi } from './api';
   import PaneHeader from './comms/PaneHeader.svelte';
   import VideoFeed from './comms/VideoFeed.svelte';
-  import type { Contact } from './stationChannel';
+  import type { Contact } from './channel';
 
   /** The left pane: the open call with the contact of the service on screen. Switching contact cuts to static for a moment, then the new face. */
   let { api, contact, station }: { api: UiApi; contact: Contact; station: string } = $props();

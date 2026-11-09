@@ -131,7 +131,7 @@ import { newYard, type YardState } from './yard/types';
  * v106 (fighting inspectors, #138 step 3): inspection phase 'fight', outcome 'fought'; `Ship.provoked` 'inspection'.
  * v107 (hydroponics art, #59): the large bed is 3x2 (was 2x3), so a saved grid's occupancy for it no longer matches.
  */
-export const SAVE_VERSION = 107;
+export const SAVE_VERSION = 108;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

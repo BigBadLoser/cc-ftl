@@ -202,6 +202,26 @@ describe('crafting and assignment', () => {
     expect(vehicleViews(sim)).toHaveLength(1);
     expect(content.recipes['recipe.shuttle'].outputs[0]?.item).toBe('item.shuttle');
   });
+
+  it('an empty bay builds its own shuttle: crew bring the materials and work it, no fabricator needed (#387)', () => {
+    const sim = newGame(1, content);
+    const bay = sim.world.query(VehicleBayC)[0] as number;
+    destroyVehicle(sim, shuttleOf(sim, 1));
+    for (const id of sim.world.query(ModuleC)) if (sim.world.get(id, ModuleC)!.def === 'module.fabricator') sim.world.get(id, ModuleC)!.hp = 0;
+    const crate = sim.world.query(ModuleC).find((i) => sim.world.get(i, ModuleC)!.def.startsWith('module.storage'))!;
+    for (const q of content.vehicles['vehicle.shuttle'].assemble!.cost) storageAdd(sim, crate, q.item, q.count);
+    sim.enqueue({ type: 'vehicle.build', bay });
+    sim.enqueue({ type: 'vehicle.build', bay }); // one at a time
+    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.build', reason: 'bayTaken' });
+    sim.enqueue({ type: 'vehicle.assign', bay }); // nothing fitted over a build in place
+    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ command: 'vehicle.assign', reason: 'bayTaken' });
+    const out: SimEvent[] = [];
+    for (let i = 0; i < 20 * 600 && vehicleViews(sim).length === 0; i++) out.push(...run(sim, 1));
+    expect(of(out, 'vehicle.assembled')).toHaveLength(1);
+    expect(sim.world.get(bay, VehicleBayC)?.vehicle).toBeTruthy();
+    sim.enqueue({ type: 'vehicle.build', bay });
+    expect(of(run(sim, 1), 'command.rejected')[0]).toMatchObject({ reason: 'bayFull' });
+  });
 });
 
 describe('enemy boarding AI', () => {

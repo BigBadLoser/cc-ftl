@@ -33,10 +33,15 @@ describe('the yard crew, full runs', () => {
     expect([...phases]).toEqual(expect.arrayContaining(['fly', 'work', 'seal', 'recall', 'home']));
     expect(order.phase).toBe('done');
     expect(order.reason).toBeUndefined();
-    // Every floor tile and wall stands, as ordinary construction made them.
+    // Every floor tile and wall stands, as ordinary construction made them; the wall row laid against the old hull (the plan's south side, between
+    // its corners) was turned inward, so it was opened into floor with the old hull behind it (#385).
     const grid = shipGrid(sim, me)!;
+    const south = Math.max(...order.walls.map((t) => t.y));
+    const [west, east] = [Math.min(...order.walls.map((t) => t.x)), Math.max(...order.walls.map((t) => t.x))];
+    const inward = (t: { x: number; y: number }): boolean => t.y === south && t.x !== west && t.x !== east;
     for (const t of order.floor) expect(grid.get('struct', t.x, t.y), `floor ${t.x},${t.y}`).toBe(Struct.Floor);
-    for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(Struct.Wall);
+    for (const t of order.walls) expect(grid.get('struct', t.x, t.y), `wall ${t.x},${t.y}`).toBe(inward(t) ? Struct.Floor : Struct.Wall);
+    for (const t of order.walls.filter(inward)) expect(grid.get('struct', t.x, t.y + 1), `old hull ${t.x},${t.y + 1}`).toBe(Struct.Floor);
     expect(builtCount(sim, order)).toEqual({ truss: 12, floor: 2, walls: 10 });
     expect(totalTiles(order)).toBe(24);
     // Nobody (the ship's own crew, who also build, included) is walled in.

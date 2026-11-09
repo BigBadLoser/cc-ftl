@@ -1232,8 +1232,11 @@ export interface UiShuttles {
   targets: { ship: number; name: string; derelict?: UiDerelict }[];
   /** Crew on the player's ship who could climb in. */
   roster: UiShuttleCrew[];
-  /** The player's vehicle bays (module ids) and whether each is empty. */
-  bays: { id: number; empty: boolean }[];
+  /**
+   * The player's vehicle bays (module ids) and whether each is empty. `build`: what an empty bay can build in place (`vehicle.build`) and its cost with
+   * the stock on hand; `building`: a build is under way there (progress 0..1, materials still to come in `waiting`).
+   */
+  bays: { id: number; empty: boolean; build?: { name: string; cost: (UiCost & { have: number })[]; seconds: number } | null; building?: { progress: number; waiting: boolean } | null }[];
   /** The player's regions shuttles can run cargo and crew between (the home ship first, then claimed bases), with the stock in each region's storage. Empty with only the home ship. */
   regions: { id: number; name: string; home: boolean; stock: { item: string; name: string; count: number }[] }[];
   /** Logistics transfer orders, oldest first. */

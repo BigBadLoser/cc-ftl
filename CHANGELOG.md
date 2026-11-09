@@ -35,6 +35,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Other ships are drawn roofed until your crew board them; stations stay open. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - Busy nodes run faster: a station hub's simulation step takes about a third less time (gas, heat, power, consoles, combat checks and lighting do less repeated work), with identical results. ([#374](https://github.com/BigBadLoser/cc-ftl/pull/374))
 - Hydroponics beds have their own art: a glass greenhouse over white water tanks, lit when growing and dark when empty or unpowered, with damaged and destroyed looks. Each crop shows its plants growing from sprout to ripe. The large bed is now 3 wide and 2 deep, worked from the middle of its long side. Saves from before this change don't load. ([#373](https://github.com/BigBadLoser/cc-ftl/pull/373))
 - Pirate interdictions open in the comms window, like patrol hails: the pirate hails you with its demand, you answer from the window, and it stays open with the reply until you close it. The old interdiction pop-up is gone. Rogue AI names no longer start with "The". ([#368](https://github.com/BigBadLoser/cc-ftl/pull/368))
@@ -69,6 +70,10 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 ### Fixed
 
 - A ship jumping into the node no longer causes a frame hitch: ships of fleets about to arrive are generated on a worker, and a newly loaded sheet only rebuilds the ships that use it. ([#391](https://github.com/BigBadLoser/cc-ftl/pull/391))
+- Hailing a ship opens the comms channel (Bridge and Trade contacts), the same as a station, instead of the old trade panel. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
+- A finished hull expansion opens the old hull wall where the new section joins on, and the shipyard delivers the section with air in it. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
+- Planned builds show at once while the game is paused. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
+- An empty hangar or pod bay can build its own shuttle or mining pod, so a starter without a shuttle can get one. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - Evade odds when pirates or a patrol interdict a jump read from the ship's real pilot and engines (they could show 5% right after a jump). [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
 - A shuttle flying home to a hangar bay that breaks on its approach hovers and finds another way in instead of being lost with the bay. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)
 - Choosing an option in a story event while paused no longer unpauses the game before the event closes. [#378](https://github.com/BigBadLoser/cc-ftl/pull/378)

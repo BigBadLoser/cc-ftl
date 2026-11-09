@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiTrade, UiTradePartner } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
+  import { REFUSAL } from './channel';
   import { centerTop } from './floatingWindow';
   import TradeDeliveries from './TradeDeliveries.svelte';
   import TradeMarket from './TradeMarket.svelte';
@@ -17,11 +18,6 @@
   const deals = $derived(trade.deals.filter((d) => d.ship === id && (d.give || d.get)));
   let draft = $state<Draft>({});
   const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
-  const refusal: Record<string, string> = {
-    hostile: 'They have no interest in talking to you.', weaponsHot: 'Their guns are on you: they will not talk.',
-    silent: 'No answer. Nobody is aboard to hear.', noTrade: 'They have nothing to trade.',
-    barred: 'You refused their inspectors: they will not deal with you for a while.',
-  };
   const truceTip = $derived(p?.market?.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Nobody starts a fight here. Firing on or boarding anyone breaks the truce.');
   const marketTip = $derived(p?.market ? `${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.${p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}` : '');
   const hail = () => api.dispatch({ type: 'trade.hail', ship: id });
@@ -41,7 +37,7 @@
     {:else if p.hail === 'none'}
       <div class="msg"><p>No contact yet.</p><button class="act" data-testid="trade-hail" onclick={hail}>Hail {p.name}</button></div>
     {:else if p.hail === 'refused'}
-      <div class="msg"><p class="bad" data-testid="trade-refused">{refusal[p.reason] ?? 'They refuse to talk.'}</p><button class="act" data-testid="trade-rehail" onclick={hail}>Hail again</button></div>
+      <div class="msg"><p class="bad" data-testid="trade-refused">{REFUSAL[p.reason] ?? 'They refuse to talk.'}</p><button class="act" data-testid="trade-rehail" onclick={hail}>Hail again</button></div>
     {:else}
       <div class="grid" data-testid="trade-answered">
         <TradeMarket {api} {p} credits={trade.free ?? trade.credits} bind:draft locked={!!p.offer} />
