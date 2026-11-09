@@ -104,6 +104,8 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     nutrition) go before `item.ration` (50), which is the emergency fallback printed at the galley from water (`recipe.ration`, 2 water makes
     3 rations); use the usual make-N / keep-N orders. Meals and crops: "Hydroponics and the galley" under New modules. The starter ships
     start with 12 rations, 16 good meals, 6 greens and a planted bed (the food indicator starts green: about an hour for four crew).
+    **Stations** are stocked with rations to their crew when stamped (8 per hungry crew member, about an hour) and topped up every 2 minutes
+    by the station director (`stations/food.ts`; stations the player holds feed themselves). Off-screen supply ships: no new economy (#402).
   - **Mood** (0..100) is 50 plus named factors, shown on the crew card as "Hungry -10, Company +3". Factors: hunger
     (starving -25, hungry -10, peckish -3, well fed +4), rest (exhausted -15, tired -8, rested +4), a hot galley meal
     +6 for 5 minutes (a ration at the galley +3; a cooked meal +5 bland, +9 good, +13 fine, set by `food.mood` on the item), the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
