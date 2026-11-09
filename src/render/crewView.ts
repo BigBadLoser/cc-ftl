@@ -217,6 +217,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
       const home = body.parent;
       s.filter = createCrewFilter(atlas.manifest.keyColors, s.pal);
       homes.set(body, home);
+      s.cell.lend(true);
       s.root.addChildAt(body, s.root.getChildIndex(s.cell.sprite));
       s.shrunk = artZoom(L.scale) < 1;
       body.filters = crewFilters(s.filter, artZoom(L.scale));
@@ -226,6 +227,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     } else {
       body.filters = [];
       homes.get(body)?.addChild(body);
+      s.cell.lend(false);
       s.filter?.destroy();
       s.filter = null;
       s.cell.sprite.visible = true;

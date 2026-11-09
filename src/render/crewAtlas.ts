@@ -1,4 +1,4 @@
-import { BufferImageSource, Container, Filter, GlProgram, Rectangle, RenderTexture, Sprite, Texture, type Renderer } from 'pixi.js';
+import { BufferImageSource, Container, Filter, GlProgram, Rectangle, RenderLayer, RenderTexture, Sprite, Texture, type Renderer } from 'pixi.js';
 import type { Manifest } from './assets/manifest';
 import { crewCompositeFrag, paletteKeys, rgb, type CrewPalette, type PaletteRole } from './assets/palette';
 import { ART_SCALE } from './iso';
@@ -21,6 +21,8 @@ export interface CrewCell {
   setPalette(pal: CrewPalette): void;
   /** Light tint (0xRRGGBB), multiplied after the swap. */
   setTint(color: number): void;
+  /** Debug (`enabled` off): true takes the body's layers out of the atlas pass, so the body can draw elsewhere; false puts them back. */
+  lend(out: boolean): void;
   release(): void;
 }
 
@@ -35,6 +37,8 @@ export interface CrewAtlas {
   onToggle(fn: () => void): () => void;
   readonly cells: number;
 }
+
+const texUid = (c: Container): number => (c instanceof Sprite ? c.texture.source.uid : 0);
 
 /** Texels per cell in the palette texture: MAX_KEYS replacements, then the tint. */
 const PAL_W = 8;
@@ -84,6 +88,16 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
   const cols = Math.max(1, Math.floor(ATLAS_W / g.w));
   const { keys, roles } = paletteKeys(manifest.keyColors);
   const root = new Container();
+  // Cells never overlap, so only the stacking inside a figure matters: the layers of every cell are drawn by their place in
+  // the stack, then grouped by sheet, so a sheet shared by many figures (the body's idle clip) is one run of the batch.
+  const order = new RenderLayer({ sortableChildren: true });
+  const slotOf = new WeakMap<Container, number>();
+  order.sortRenderLayerChildren = () => {
+    const a = order.renderLayerChildren;
+    for (const c of a) slotOf.set(c, c.parent ? c.parent.getChildIndex(c) : 0);
+    a.sort((x, y) => (slotOf.get(x) ?? 0) - (slotOf.get(y) ?? 0) || texUid(x) - texUid(y));
+  };
+  root.addChild(order);
   let rows = 0;
   let rt: RenderTexture | null = null;
   let palette = new Uint8Array(0);
@@ -165,6 +179,7 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
       const f = frameOf(i);
       holder.position.set(f.x + g.ox, f.y + g.oy);
       const body = new Container();
+      body.on('childAdded', (c: Container) => order.attach(c));
       holder.addChild(body);
       root.addChild(holder);
       const sprite = new Sprite(new Texture({ source: (rt as RenderTexture).source, frame: f }));
@@ -177,6 +192,12 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
           roles.forEach((role: PaletteRole, k) => put(i, k, p[role]));
         },
         setTint: (c) => put(i, TINT_TEXEL, c),
+        lend(out) {
+          for (const c of body.children) {
+            if (out) order.detach(c);
+            else order.attach(c);
+          }
+        },
         release() {
           live.delete(i);
           holder.destroy({ children: true });
