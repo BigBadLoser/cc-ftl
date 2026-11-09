@@ -25,7 +25,7 @@ BLOCK_UP = 5                # art px: an end block's top over the wall's top aga
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
-WHITE, LINE_C = "fNW1", "fNW7"  # the middle block's front: a white edge either side, a plate outlined in the panel
+WHITE, LINE_C, SHELF_C = "fNW1", "fNW7", "fNW2" # the middle block's front: a white edge either side, a plate outlined in the panel
                                 # line's tone (navy's seam_tone) between (the user)
 RED = "fNT2"                # the face's band (navy_band: ochre 3, its lit tone), wrapped round the posts (the user)
 COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
@@ -234,8 +234,9 @@ def _plate(k):
         return
     f, yl, run, zh = T.ramp_fall(), _line(), W.skirt_run(), _zh()
     d0 = _d_at(zh)                                      # (the slope's top: the shelf out to it)
-    ts = 1.5 / (16 + f * W.ZART)                        # (1.5 screen px down the slope (16 a unit across, f*ZART
-    tt = 1.5 / 16                                       # down), across the top: at 1 the lines dashed)
+    ts = 1 / (32 + f * W.ZART)                          # (a screen px down the slope: a line along x moves 32 px a
+    tt = 1 / 32                                         # unit of depth on the flat (16 down, 32 across at its 1/2
+    #   slope), f*ZART more on the slope)
     ns, up = Vector((0.0, f, 1.0)).normalized(), Vector((0.0, 0.0, 1.0))
 
     def strip(u0, u1, da, db, col):                     # (over the shelf to d0, down the slope past it)
@@ -254,6 +255,7 @@ def _plate(k):
     strip(a, a + PX, 0.0, run, LINE_C)
     strip(b - PX, b, 0.0, run, LINE_C)
     strip(a, b, 0.0, tt, LINE_C)
+    strip(a + PX, b - PX, tt, d0, SHELF_C)              # (the plate's top in the shelf's tone: the user)
     strip(a, b, run - ts, run, LINE_C)
 
 
