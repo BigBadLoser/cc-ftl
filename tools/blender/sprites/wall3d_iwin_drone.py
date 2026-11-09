@@ -29,9 +29,11 @@ BOX_H, BOX_IN = 18, -0.1    # art px: their tops (the ref's 15 on its taller-sca
 CONSOLE = (37, 59)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
 BRACKETS = ((32, 37), (59, 64))  # its light brackets either side (the ref's 31-36, 60-65: on the tiles' joins, a
                                  # px in, so none straddles one: a 1 px sliver of it showed there as a seam)
+RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
+                             # from where the slope falls to it; its front the toe's (the user)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
-         "vent": "fDS3"}
+         "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -170,7 +172,7 @@ def _slope(k, p0, p1, da, db, col):
 
 
 def _front_parts(k):
-    """The near ramp's dressing: the end blocks' vents, the console and its brackets, the red boxes."""
+    """The near ramp's dressing: the end blocks' vents, the console and its brackets, the red boxes and their ribs."""
     run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
     dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
     for a, b in VENTS:
@@ -179,17 +181,29 @@ def _front_parts(k):
         _slope(k, a, b, d0, dz, FRONT["bracket"])
     _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
     yf, zb = 0.5 - BOX_IN * PX, BOX_H / W.ZART
-    yb = _line() + (_zt() - zb) / _fall()               # (the top runs back to the slope)
     for a, b in BOXES:
-        u0, u1 = _x(a), _x(b)
-        a_, b_ = max(u0, -0.5), min(u1, 0.5)
-        if b_ - a_ < 1e-9:
-            continue
-        _quad(k, [(a_, yf, 0.0), (b_, yf, 0.0), (b_, yf, zb), (a_, yf, zb)], (0, 1, 0), FRONT["box"])
-        _quad(k, [(a_, yb, zb), (a_, yf, zb), (b_, yf, zb), (b_, yb, zb)], (0, 0, 1), FRONT["box_top"])
-        for u, sd in ((u0, -1), (u1, 1)):
-            if -0.5 < u < 0.5:
-                _quad(k, [(u, yb, 0.0), (u, yf, 0.0), (u, yf, zb), (u, yb, zb)], (sd, 0, 0), FRONT["box_side"])
+        _block(k, a, b, yf, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"])
+    for a, b in RIBS:
+        _block(k, a, b, yf, _zf(), None, FRONT["rib_top"], FRONT["rib_side"])
+
+
+def _block(k, a, b, yf, zb, front, top, side):
+    """A block on the near ramp a..b px along the window: its front upright at yf from the floor to zb, its top flat
+    back to the slope (the slope's own height there). front None: the toe's tone (the wall's, as the foot's)."""
+    yb = _out(zb)
+    u0, u1 = _x(a), _x(b)
+    a_, b_ = max(u0, -0.5), min(u1, 0.5)
+    if b_ - a_ < 1e-9:
+        return
+    pts = [(a_, yf, 0.0), (b_, yf, 0.0), (b_, yf, zb), (a_, yf, zb)]
+    if front:
+        _quad(k, pts, (0, 1, 0), front)
+    else:
+        k.poly([Vector(p) for p in pts], "wall", 3, Vector((0, 1, 0)))
+    _quad(k, [(a_, yb, zb), (a_, yf, zb), (b_, yf, zb), (b_, yb, zb)], (0, 0, 1), top)
+    for u, sd in ((u0, -1), (u1, 1)):
+        if -0.5 < u < 0.5:
+            _quad(k, [(u, yb, 0.0), (u, yf, 0.0), (u, yf, zb), (u, yb, zb)], (sd, 0, 0), side)
 
 
 def hook(k, sp, own=True):
