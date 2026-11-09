@@ -5,6 +5,7 @@ import type { Atlas } from './assets/loader';
 import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createLiveryMesh } from './livery';
+import type { PaintAtlas } from './paintAtlas';
 import type { KindAt } from './tiles';
 import { cutHides, cutSuffix, liveryPlan, motifColours, roofCovers, roofCut, roofGradient, roofTile, type RoofCut } from './roofArt';
 
@@ -61,7 +62,7 @@ export interface TileRect {
  * livery masks (`plan`) recoloured by the livery shader, and an edge overlay on each open side, at roof depth
  * (+0.9 .. +0.91). Without the roof family it falls back to the stand-in plate.
  */
-export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: Atlas, L: Layers, livery: Livery | null, plan: RoofPlan, skip: (x: number, y: number) => boolean, rect: TileRect = { x0: 0, y0: 0, x1: W, y1: H }): RoofPiece[] {
+export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: Atlas, L: Layers, livery: Livery | null, plan: RoofPlan, skip: (x: number, y: number) => boolean, rect: TileRect = { x0: 0, y0: 0, x1: W, y1: H }, paints: PaintAtlas | null = null): RoofPiece[] {
   const roofed = (x: number, y: number): boolean => roofCovers(kindAt, x, y);
   const cutOf = (x: number, y: number): RoofCut => roofCut(kindAt, x, y);
   const real = hasRoofArt(atlas);
@@ -111,7 +112,14 @@ export function buildRoofPlating(kindAt: KindAt, W: number, H: number, atlas: At
         const mask = atlas.stat(`roof.lv.${q.mask}`);
         if (!mask || !livery) return;
         const [P, S] = motifColours(livery.scheme, q.motif);
-        objs.push(place(createLiveryMesh(mask, base, col, P, S, p.x, p.y), z + 0.902 + k * 0.0005));
+        let paint: Container;
+        if (paints?.enabled) {
+          // Baked once per distinct paint, anchored at the mask's own anchor (the quad starts at the cell's origin).
+          const key = `roof|${mask.tex.uid},${mask.ax},${mask.ay}|${base.tex.uid},${base.ax},${base.ay}|${col}|${P}|${S}`;
+          paint = paints.sprite(key, mask.tex.frame.width, mask.tex.frame.height, () => createLiveryMesh(mask, base, col, P, S, mask.ax, mask.ay));
+          paint.position.set(Math.round(p.x - mask.ax), Math.round(p.y - mask.ay));
+        } else paint = createLiveryMesh(mask, base, col, P, S, p.x, p.y);
+        objs.push(place(paint, z + 0.902 + k * 0.0005));
       });
       for (const [side, dx, dy] of SIDES) {
         if (roofed(x + dx, y + dy) || cutHides(cut, side)) continue;

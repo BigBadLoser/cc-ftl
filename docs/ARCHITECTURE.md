@@ -226,6 +226,10 @@ and the draw-call count is the number of times the batch has to break. Keep that
 - No filters in the world: each filtered object is its own offscreen pass and cuts the batch. Crew figures composite in the
   shared crew atlas (`render/crewAtlas.ts`): every figure's layers stack in a cell of one texture, one composite pass a frame
   (palette and light tint per cell from a palette texture), and the world draws each figure as one sprite from it.
+- No meshes with their own shader in the world either: a mesh is a draw call and cuts the batch the same way. Recolour shaders whose
+  output depends only on their inputs (roof livery masks, container overlays) bake each distinct paint once into the shared paint
+  atlas (`render/paintAtlas.ts`, keyed by every input) and the world shows it as a sprite; tint and alpha still apply. A roofed
+  ship drew a mesh per livery mask, hundreds of draws per pass (#389, `?scenario=fight` inset 589 -> 60).
 - Render groups (`render/renderGroups.ts`): the world layers (`under`, `floor`, `decal`, `fx`, `ui`, `marks`, the backdrop) are each
   a pixi render group, so a camera move is one group transform and hiding layers for a pass (minified art, combat inset)
   rebuilds a short list of groups, not their sprites. A group root does not pass its blend mode down (`fxAdd` is not one).
@@ -237,7 +241,7 @@ and the draw-call count is the number of times the batch has to break. Keep that
   group. Wider bands mean fewer draws and bigger rebuilds.
 - Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
   with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
-  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)` and `__cc.depthBands(false)` (with `?hook`) switch back to the old paths
+  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths
   for same-frame render diffs (`depthBands(n)` tries a band width).
 
 **Crew.**

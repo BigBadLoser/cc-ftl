@@ -35,6 +35,10 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     depthBands: (on: boolean | number) => setDepthBandWidth(typeof on === 'number' ? on : on ? DEPTH_BAND_WIDTH : Infinity),
     /** Composite crew through the shared crew atlas (true, the default) or a filter per figure (render diffs). */
     crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
+    /** Roof livery paints baked in the shared livery atlas (true, the default) or a mesh each (render diffs; rebuilds every scene). */
+    liveryAtlas: (on: boolean) => r.debugLiveryAtlas(on),
+    /** Roof every ship but wrecks, the player's and stations included (render checks of roof art). */
+    roofAll: (on: boolean) => r.setRoofAll(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
     stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),

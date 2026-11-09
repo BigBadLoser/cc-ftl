@@ -19,7 +19,8 @@ import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
-import { createContainerOverlay } from './containerPaint';
+import { createContainerOverlay, type ContainerOverlay } from './containerPaint';
+import type { PaintAtlas } from './paintAtlas';
 import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
 import { createCollarAnimator, dockedAt } from './airlockArt';
@@ -49,6 +50,8 @@ export interface ModuleViewHost {
   hullPaint?(): HullPaint;
   /** True if the new hull draws its piece on tile (x, y) (global): roofed, an engine's bulkhead is left out under it. */
   hullDrawn?(x: number, y: number): boolean;
+  /** Shared livery paints (paintAtlas.ts) for the container overlays; none = a mesh each. */
+  paints?: PaintAtlas | null;
 }
 
 export interface ModuleView {
@@ -152,6 +155,13 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     }
   }
 
+  /** A container overlay: baked in the shared paint atlas (a plain sprite), or its own mesh without one. */
+  function overlaySprite(kind: ContainerOverlay, s: StaticSprite, P: number, S: number): Sprite | Mesh<Geometry, Shader> {
+    const paints = host.paints;
+    if (!paints?.enabled) return createContainerOverlay(kind, s, P, S);
+    return paints.sprite(`box|${kind}|${s.tex.uid}|${P}|${S}`, s.tex.frame.width, s.tex.frame.height, () => createContainerOverlay(kind, s, P, S));
+  }
+
   function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01, overlay?: 'paint' | 'lv'): Part {
     const p = iso(tx, ty);
     const w = s.tex.width;
@@ -165,7 +175,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       return spr;
     };
     const sch = overlay && SCHEMES[host.livery?.()?.scheme ?? ''];
-    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex, !!painting);
+    const spr = sch && overlay ? overlaySprite(overlay, s, sch.P, sch.S) : mk(s.tex, !!painting);
     if (sch && overlay) spr.position.set(x, y);
     spr.zIndex = key;
     L.sorted.addChild(spr);

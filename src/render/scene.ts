@@ -1,6 +1,7 @@
 import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } from 'pixi.js';
 import './batch';
 import { createCrewAtlas } from './crewAtlas';
+import { createPaintAtlas } from './paintAtlas';
 import { artZoom } from './assets/palette'; // the renderer's batcher (installed before the renderer is built)
 import { animNow } from './animClock';
 import { NOOP_PROBE, type Probe } from '../sim/probe';
@@ -124,6 +125,8 @@ export interface Renderer {
   art(): AtlasStats & { rebuilds: number };
   /** Debug (render diffs): composite crew through the shared crew atlas (true, the default) or a filter per figure. */
   debugCrewAtlas(on: boolean): void;
+  /** Debug (render diffs): false rebuilds every scene with a mesh per roof livery paint, as before the livery atlas. */
+  debugLiveryAtlas(on: boolean): void;
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in), snapped to integer steps, keeping the point under (screenX, screenY) fixed. */
@@ -214,6 +217,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const portraits = createPortraits(gl.extract, atlas, world, content.items);
   const thumbs = createModuleThumbs(gl.extract, atlas, content.modules);
   const crews = createCrewAtlas(atlas.manifest);
+  const liveries = createPaintAtlas();
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
@@ -389,7 +393,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function addScene(s: Ship, grid: Grid): ShipScene {
     const livery = shipLivery(s, grid);
     const hullPaint = hullPaintOverride ?? hullPaintFor(livery.scheme);
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, liveries, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -484,6 +488,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && (regionInView(id, sc.grid, cam) || (!!ic && regionInView(id, sc.grid, ic))));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
+    liveries.setSmooth(c.scale < 1);
     W.setUiVisible(target === null);
     W.setMarksVisible(false);
     SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
@@ -625,6 +630,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.end('render/fx');
       probe.begin('render/crew');
       crews.render(gl, artZoom(cam.scale));
+      liveries.render(gl);
       probe.end('render/crew');
       probe.begin('render/inset');
       backdrop.root.visible = false; // the combat panel has its own flat background
@@ -652,6 +658,11 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     resize,
     debugCrewAtlas: (on) => crews.setEnabled(on),
+    debugLiveryAtlas(on) {
+      liveries.enabled = on;
+      for (const sc of scenes.values()) sc.dispose();
+      scenes.clear();
+    },
     resetWorld() {
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
