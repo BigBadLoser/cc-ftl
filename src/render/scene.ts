@@ -463,7 +463,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function place(c: Camera, target: number | null): void {
     placed = c;
     const any = shipOf(refId) !== undefined;
-    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
+    // The same regions in every pass of a frame (in view of the main or the inset camera; out of a pass's view they are
+    // clipped anyway): a region shown or hidden rebuilds every depth band, so it must not flip between passes.
+    const ic = inset.camera();
+    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && (regionInView(id, sc.grid, cam) || (!!ic && regionInView(id, sc.grid, ic))));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
     W.setUiVisible(target === null);
