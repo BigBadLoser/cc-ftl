@@ -59,9 +59,6 @@ def bconsole(k, u0, u1, glyphs, vb=P(12), vf=P(16), zb=Z(23), za=Z(18), t=Z(5)):
         on_slope(k, u0 + P(2) + (w - P(4)) * a0, u0 + P(2) + (w - P(4)) * a1, A, B, t0, t1, GL, off=0.012)
 
 
-NU0, NU1 = P(9), P(20)                                                                   # x17's rim notch
-
-
 def x17(layer, flip=False):
     """Measured off the reference (r90, its near corner column): plinth 7 px, navy body 10, deck front 6 (cream over a
     2 px brown band), the deck top at 24; the plinth 64 x 26 px, the body 1 px in from it all round."""
@@ -75,26 +72,34 @@ def x17(layer, flip=False):
         flat(k, u0, u1, P(12), Z(9), Z(15), "resNvyL")                                     # rounded panels,
         flat(k, u0, u1, P(12) + 0.002, Z(9), Z(10), "resNvyD")                            # shaded at their feet
     # the deck: rims round a channel that runs out to the near end; a ribbed grey floor, darker under the arm
+    # the tabletop, measured off the reference: the full 32 px wide, overhanging the body 4 px each side; rims 8 px,
+    # the glass 16; a solid block 24 px long at the arm end; the terminals set into slots in the front rim (a 2 px lip
+    # left inside), a long shallow notch (16 x 3 px) in the back rim
     zt, zd = Z(17), Z(23)
-    for v0, v1, n0, n1 in ((P(-13), P(-8), P(-9), P(-8)), (P(8), P(13), P(8), P(9))):
-        blk(k, P(-32), NU0, v0, v1, zt, zd, CREAM)
-        blk(k, NU0, NU1, n0, n1, zt, zd, CREAM)                                             # a notch near the arm end
-        blk(k, NU1, P(32), v0, v1, zt, zd, CREAM)
-    blk(k, P(20), P(32), P(-8), P(8), zt, zd, CREAM)
-    blk(k, P(-32), P(20), P(-8), P(8), zt, Z(21), ("resGls", "resGls", "resGlsD"))
-    for u in range(-31, 8, 3):
-        top(k, P(u), P(u + 1), P(-8), P(8), Z(21), "resGlsL")                              # ribs across it,
-    top(k, P(9), P(20), P(-8), P(8), Z(21), "resGlsD")                                     # the scanner's patch
-    top(k, P(-32), P(20), P(-8), P(-7), Z(21) + 0.004, "resGlsD")
+    BN0, BN1, GE = P(2), P(18), P(8)
+    SLOTS = ((P(-26), P(-12)), (P(2), P(20)))                                               # terminals in the front rim
+    blk(k, P(-32), P(32), P(8), P(10), zt, zd, CREAM)                                       # its inner lip,
+    for u0, u1 in ((P(-32), P(-26)), (P(-12), P(2)), (P(20), P(32))):
+        blk(k, u0, u1, P(10), P(16), zt, zd, CREAM)                                         # the rim between the slots
+    blk(k, P(-32), BN0, P(-16), P(-8), zt, zd, CREAM)                                       # back rim,
+    blk(k, BN0, BN1, P(-13), P(-8), zt, zd, CREAM)
+    blk(k, BN1, P(32), P(-16), P(-8), zt, zd, CREAM)
+    blk(k, GE, P(32), P(-8), P(8), zt, zd, CREAM)                                            # the arm-end block
+    blk(k, P(-32), GE, P(-8), P(8), zt, Z(21), ("resGls", "resGls", "resGlsD"))             # the glass bed
+    for u in range(-31, 10, 3):
+        top(k, P(u), P(u + 1), P(-8), P(8), Z(21), "resGlsL")
+    top(k, P(-32), GE, P(-8), P(-7), Z(21) + 0.004, "resGlsD")
     for cu, w in ((P(-14), 0.035), (P(-9), 0.015)):
-        k.box(cu, 0.0, Z(22.5), w, P(15), 0.004, "resGlsL", rz=0.55)                         # the glass's streaks
-    for v0 in (P(-12), P(9.5)):                                                             # ticks on the rims
-        for u in range(-30, 30, 4):
-            if not (NU0 - P(2) <= P(u) < NU1):
-                blk(k, P(u), P(u + 2), v0, v0 + P(2.5), zd, zd + Z(1), CREAM_HI)
-    for u0, u1 in ((P(-32), NU0), (NU1, P(32))):
-        flat(k, u0, u1, P(13), zd - Z(1), zd, "resCrL")                                     # the rim's lit edge
-    flat(k, NU0, NU1, P(9), zd - Z(1), zd, "resCrL")
+        k.box(cu, 0.0, Z(22.5), w, P(15), 0.004, "resGlsL", rz=0.55)
+    def clear(u, gaps):
+        return all(not (g0 - P(2) <= P(u) < g1) for g0, g1 in gaps)
+    for u in range(-30, 30, 4):                                                             # ticks on the rims
+        if clear(u, ((BN0, BN1),)):
+            blk(k, P(u), P(u + 2), P(-14), P(-11.5), zd, zd + Z(1), CREAM_HI)
+        if clear(u, SLOTS + ((P(-8), P(-1)),)):
+            blk(k, P(u), P(u + 2), P(12), P(14.5), zd, zd + Z(1), CREAM_HI)
+    for u0, u1 in ((P(-32), P(-26)), (P(-12), P(2)), (P(20), P(32))):
+        flat(k, u0, u1, P(16), zd - Z(1), zd, "resCrL")                                     # the rim's lit edge
     # the arm, rising off the back half of the deck's far end over the channel to a head
     arm = [(P(32), zd), (P(27), Z(35)), (P(-1), Z(35)), (P(-1), Z(31)), (P(22), Z(31)), (P(22), zd)]                                                                     # an inverted L, a gap under it
     prism(k, "v", P(-9), P(1), arm, CREAM, "resCrL")
@@ -102,16 +107,13 @@ def x17(layer, flip=False):
     blk(k, P(-1), P(6), P(-8), P(0), Z(28), Z(31), STEEL)                                  # the head,
     flat(k, P(0), P(5), P(0), Z(28.5), Z(30), "resGold")                                   # its light to the front,
     top(k, P(0), P(5), P(-7), P(-1), Z(28) - 0.006, "resGold")                             # its emitter
-    # the console side: from the arm end, one console, the dial block, a pair of consoles
-    def hang(u0, u1, glyphs):
-        bconsole(k, u0, u1, glyphs)
-    bconsole(k, NU0 + P(1), NU1 - P(1), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)),     # down in the notch
-             vb=P(9), vf=P(15), zb=Z(22), za=Z(16))
-    blk(k, P(1), P(7), P(12), P(16), Z(9), Z(22), CREAM)
-    dial(k, P(4), P(14), Z(22))
-    flat(k, P(2), P(6), P(16), Z(11), Z(12), CRK)
-    hang(P(-8), P(0), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9)))
-    hang(P(-17), P(-9), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
+    # the console side: a terminal down in the notch, the dial in the rim, a pair of terminals under the rim
+    for u0, u1, g in ((P(11), P(20), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8))),
+                      (P(2), P(11), ((0.3, 0.45, 0.2, 0.7), (0.55, 0.7, 0.1, 0.5))),
+                      (P(-19), P(-12), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9))),
+                      (P(-26), P(-19), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))):
+        bconsole(k, u0, u1, g, vb=P(10), vf=P(16), zb=Z(23), za=Z(19))                      # set into the rim
+    dial(k, P(-4.5), P(12.5), zd)                                                           # the dial in the rim
     # the screen in the far end (in view once turned): a cream frame on the body's end, a dark pane, glyphs
     e = P(-31) - 0.004
     blk(k, e, P(-31), P(-8), P(8), Z(9), Z(16), ("resCrD",) * 3)
