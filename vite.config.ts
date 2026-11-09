@@ -31,6 +31,7 @@ const ISOLATED = [
   'src/render/assets/gpuKeep.test.ts',
   'src/render/moduleStrips.test.ts',
   'src/render/partPick.test.ts',
+  'src/render/pixiFixes.test.ts', // patches two pixi BindGroup methods
   'src/render/regionTiles.test.ts',
   'src/sim/sector/translate.test.ts', // reads the global component registry that ecs.test.ts adds to
   'src/sim/systems/envSolvers.test.ts',
