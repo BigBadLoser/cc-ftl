@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { createPodBeam, type PodBeam } from './podBeam';
 import { BodyC } from '../sim/body';
 import type { World } from '../sim/ecs';
@@ -125,7 +126,7 @@ export function createPodView(world: World, atlas: Atlas, host: PodHost): PodVie
           const beam = createPodBeam(atlas);
           const body = new Sprite();
           const glow = new Sprite();
-          glow.blendMode = 'add';
+          batchAdditive(glow);
           root.addChild(shadow, beam.back, body, glow, beam.front);
           (low ? host.low : host.air).addChild(root);
           t = { root, shadow, beam, body, glow, low };

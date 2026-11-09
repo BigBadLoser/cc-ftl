@@ -17,6 +17,8 @@ export interface ArtStreamHost {
   rebuild(only?: ReadonlySet<number>): void;
   /** Build the scenes that are missing (after `rebuild`). */
   sync(): void;
+  /** Count the sheets every drawn sprite holds as used now (`Atlas.touchSources`): the census, without a rebuild. */
+  touchInUse(): void;
 }
 
 export interface ArtStream {
@@ -35,8 +37,8 @@ export interface ArtStream {
 /**
  * The renderer's side of lazy sheet loading. Built sprites hold the textures they were made with, so a scene built before
  * its sheets arrived is built again once they have (batched: when nothing is loading, or at most every `REBUILD_MIN_MS`
- * while loads trickle in). Memory is freed the same way: when the env pool is over budget, the scenes are rebuilt (which
- * marks the sheets they still use) and the sheets nothing used since are evicted. A rebuilt scene only resolves its
+ * while loads trickle in). Memory is freed when the env pool is over budget: the sheets the drawn sprites hold are marked,
+ * and the sheets nothing used since are evicted (which rebuilds the scenes). A rebuilt scene only resolves its
  * textures in its own `update`, so the sweep runs in `settle`, after the frame's views have asked for what they draw.
  */
 export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => number): ArtStream {
@@ -92,7 +94,10 @@ export function createArtStream(atlas: Atlas, host: ArtStreamHost, now: () => nu
         if (t - lastCensus >= gap && atlas.envOver()) {
           lastCensus = t;
           pending = atlas.mark();
-          rebuild(t);
+          // The sprites' own textures say which sheets are in use (walking the scene is a few ms; rebuilding every scene to
+          // make the views ask again took hundreds, #389). A sheet held only in a view's data can still be evicted: the
+          // eviction rebuilds every scene (below, `stale`), and the views ask for it again.
+          host.touchInUse();
         }
       }
     },

@@ -1,4 +1,5 @@
 import { Container } from 'pixi.js';
+import { renderGroup } from './renderGroups';
 
 /** Draw layers, bottom to top. Everything depth-sorted (walls, props, crew, glow) shares `sorted`. */
 export interface Layers {
@@ -36,6 +37,8 @@ export function createLayers(halos: boolean): Layers {
   sorted.sortableChildren = true;
   let scale = 1;
   world.addChild(under, floor, decal, sorted, fx, fxAdd, ui);
+  // Render groups (#389): a camera move is one group transform, and hiding layers for a pass rebuilds only `world`'s list.
+  for (const c of [world, under, floor, decal, sorted, fx, ui]) renderGroup(c); // not fxAdd (see renderGroups.ts)
   return {
     world,
     under,

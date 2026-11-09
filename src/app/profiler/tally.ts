@@ -73,6 +73,11 @@ export class Tally {
     return s;
   }
 
+  /** The innermost open span's label, or null outside every span. */
+  get innermost(): string | null {
+    return this.depth > 0 ? this.labels[this.depth - 1]! : null;
+  }
+
   begin(label: string): void {
     const d = this.depth++;
     this.labels[d] = label;

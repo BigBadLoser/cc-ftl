@@ -1,4 +1,5 @@
 import { Sprite, type Container } from 'pixi.js';
+import { batchAdditive } from './batch';
 import type { StaticSprite } from './assets/loader';
 import type { Layers } from './layers';
 import { iso } from './iso';
@@ -19,7 +20,7 @@ export function addStatic(L: Layers, s: StaticSprite, gx: number, gy: number, ke
   const out = [spr];
   if (s.glow) {
     const g = new Sprite(s.glow);
-    g.blendMode = 'add';
+    batchAdditive(g);
     g.position.set(x, y);
     g.zIndex = key + 0.01;
     parent.addChild(g);

@@ -1,4 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import type { Grid } from '../sim/grid';
@@ -68,7 +69,7 @@ export function createItemView(world: World, atlas: Atlas, L: Layers, items: Ite
       let glow: Sprite | null = null;
       if (src.glow) {
         glow = new Sprite(src.glow);
-        glow.blendMode = 'add';
+        batchAdditive(glow);
         glow.position.copyFrom(spr.position);
         root.addChild(glow);
       }

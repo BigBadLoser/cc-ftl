@@ -23,9 +23,12 @@ export interface ProfilerHandle {
 
 let handle: ProfilerHandle | undefined;
 
-/** Count WebGL draw calls by wrapping the context prototypes once; returns a reader that also clears the count. */
-function installDrawCounter(): () => number {
-  let n = 0;
+/**
+ * Count WebGL draw calls by wrapping the context prototypes once, each under the innermost open span (`where`; `-` outside
+ * every span, e.g. a draw from an image-load callback). Returns a reader of the counts by span that also clears them.
+ */
+function installDrawCounter(where: () => string | null): () => Map<string, number> {
+  let by = new Map<string, number>();
   for (const ctor of [globalThis.WebGLRenderingContext, globalThis.WebGL2RenderingContext]) {
     if (!ctor) continue;
     for (const name of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced'] as const) {
@@ -33,14 +36,15 @@ function installDrawCounter(): () => number {
       const orig = proto[name];
       if (typeof orig !== 'function') continue;
       proto[name] = function (this: unknown, ...a: unknown[]) {
-        n++;
+        const k = where() ?? '-';
+        by.set(k, (by.get(k) ?? 0) + 1);
         return orig.apply(this, a);
       };
     }
   }
   return () => {
-    const v = n;
-    n = 0;
+    const v = by;
+    by = new Map();
     return v;
   };
 }
@@ -53,11 +57,19 @@ export function installProfiler(setProbe: (p: Probe | null) => void): ProfilerHa
   if (handle) return handle;
   const mem = (): number | null => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? null;
   const profiler = new Profiler(() => performance.now(), mem);
-  let readDraws: (() => number) | undefined;
+  let readDraws: (() => Map<string, number>) | undefined;
   const enable = (): void => {
     if (!readDraws) {
-      readDraws = installDrawCounter();
-      profiler.beforeFrameEnd = () => profiler.count('render/drawCalls', readDraws?.() ?? 0);
+      readDraws = installDrawCounter(() => profiler.tally.innermost);
+      // The total, and the same split by the span that issued them (`draws@render/gl`), to tell which pass a draw-heavy frame came from.
+      profiler.beforeFrameEnd = () => {
+        let n = 0;
+        for (const [k, v] of readDraws?.() ?? []) {
+          n += v;
+          profiler.count(`draws@${k}`, v);
+        }
+        profiler.count('render/drawCalls', n);
+      };
     } else {
       // The draw wrappers keep counting while disabled: drop those draws so the first measured frame counts only its own.
       readDraws();

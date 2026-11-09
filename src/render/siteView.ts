@@ -1,4 +1,5 @@
 import { ColorMatrixFilter, Rectangle, Sprite, Texture } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { JobC } from '../sim/crew/components';
@@ -105,7 +106,7 @@ export function createSiteView(world: World, atlas: Atlas, L: Layers, defs: Modu
     const base = mk(s.tex);
     const fill = mk(s.tex);
     const edge = mk(s.tex);
-    edge.blendMode = 'add';
+    batchAdditive(edge);
     fill.visible = edge.visible = false;
     return { tex: s.tex, base, fill, edge, x: flip ? x - s.tex.width : x, y, w: s.tex.width, h: s.tex.height, flip, key, art: art.tint };
   }

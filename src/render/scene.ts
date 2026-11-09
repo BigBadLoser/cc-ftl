@@ -1,4 +1,8 @@
-import { autoDetectRenderer, Container, RenderTexture, Sprite } from 'pixi.js';
+import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } from 'pixi.js';
+import './batch';
+import { createCrewAtlas } from './crewAtlas';
+import { createPaintAtlas } from './paintAtlas';
+import { artZoom } from './assets/palette'; // the renderer's batcher (installed before the renderer is built)
 import { animNow } from './animClock';
 import { NOOP_PROBE, type Probe } from '../sim/probe';
 import { ShipC, type Ship } from '../sim/combat/components';
@@ -119,6 +123,10 @@ export interface Renderer {
   moduleThumb(def: string, rot: number): ModuleThumb | null;
   /** Sheet streaming counters (decoded bytes resident, requests, pending...) and scene rebuilds, for the debug hook. */
   art(): AtlasStats & { rebuilds: number };
+  /** Debug (render diffs): composite crew through the shared crew atlas (true, the default) or a filter per figure. */
+  debugCrewAtlas(on: boolean): void;
+  /** Debug (render diffs): false rebuilds every scene with a mesh per roof livery paint, as before the livery atlas. */
+  debugLiveryAtlas(on: boolean): void;
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in), snapped to integer steps, keeping the point under (screenX, screenY) fixed. */
@@ -196,6 +204,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     powerPreference: 'high-performance',
     // The game picks in its own coordinates; pixi's event system would hit-test the whole scene tree on every pointer move.
     eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
+    // Pixi's renderable GC frees the GPU data of anything not drawn for a minute, but it only sees renderables as drawn when
+    // their render group rebuilt, and the world's groups (renderGroups.ts, depthBands.ts) rarely rebuild: it would free
+    // sprites on screen. The views destroy what they stop drawing themselves.
+    renderableGCActive: false,
   });
   // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
   const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });
@@ -204,6 +216,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   if (high) initHalos(gl);
   const portraits = createPortraits(gl.extract, atlas, world, content.items);
   const thumbs = createModuleThumbs(gl.extract, atlas, content.modules);
+  const crews = createCrewAtlas(atlas.manifest);
+  const liveries = createPaintAtlas();
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
   const scenes = new Map<number, ShipScene>();
@@ -379,7 +393,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function addScene(s: Ship, grid: Grid): ShipScene {
     const livery = shipLivery(s, grid);
     const hullPaint = hullPaintOverride ?? hullPaintFor(livery.scheme);
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, ...evaHost() });
+    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, liveries, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -436,6 +450,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         }
       },
       sync,
+      touchInUse() {
+        const used = new Set<unknown>();
+        const walk = (c: Container): void => {
+          const t = (c as { texture?: Texture }).texture;
+          if (t?.source) used.add(t.source);
+          for (const p of (c as { particleChildren?: { texture?: Texture }[] }).particleChildren ?? []) if (p.texture?.source) used.add(p.texture.source);
+          for (const k of c.children) walk(k);
+        };
+        walk(stage);
+        atlas.touchSources(used);
+      },
     },
     () => performance.now(),
   );
@@ -457,9 +482,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   function place(c: Camera, target: number | null): void {
     placed = c;
     const any = shipOf(refId) !== undefined;
-    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && regionInView(id, sc.grid, c));
+    // The same regions in every pass of a frame (in view of the main or the inset camera; out of a pass's view they are
+    // clipped anyway): a region shown or hidden rebuilds every depth band, so it must not flip between passes.
+    const ic = inset.camera();
+    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && (regionInView(id, sc.grid, cam) || (!!ic && regionInView(id, sc.grid, ic))));
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
+    liveries.setSmooth(c.scale < 1);
     W.setUiVisible(target === null);
     W.setMarksVisible(false);
     SL.ui.visible = true; // threat markers, crew marks and fight fx draw in the inset too
@@ -599,6 +628,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       backdrop.update(cam.w, cam.h, cam.originX, cam.originY, ratio());
       art.settle();
       probe.end('render/fx');
+      probe.begin('render/crew');
+      crews.render(gl, artZoom(cam.scale));
+      liveries.render(gl);
+      probe.end('render/crew');
       probe.begin('render/inset');
       backdrop.root.visible = false; // the combat panel has its own flat background
       inset.render(gl, stage, () => threatMarks.update());
@@ -624,6 +657,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe.count('render/sceneCount', scenes.size);
     },
     resize,
+    debugCrewAtlas: (on) => crews.setEnabled(on),
+    debugLiveryAtlas(on) {
+      liveries.enabled = on;
+      for (const sc of scenes.values()) sc.dispose();
+      scenes.clear();
+    },
     resetWorld() {
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
@@ -784,6 +823,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
+      liveries.dispose();
+      // The whole scene graph goes too: its 'destroyed' events unregister the render groups and depth bands from their
+      // module-level registries (renderGroups.ts, depthBands.ts), which would otherwise keep a disposed renderer's graph alive.
+      stage.destroy({ children: true });
       atlas.dispose();
       releaseHalos(gl);
       gl.destroy();

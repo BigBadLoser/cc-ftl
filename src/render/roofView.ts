@@ -5,6 +5,7 @@ import { ModuleC } from '../sim/modules/components';
 import { footprintTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import { exteriorIds, gridHullKeys } from './hullArt';
+import type { PaintAtlas } from './paintAtlas';
 import { buildRoofPlating, hasRoofArt, roofPlan, type Livery, type RoofPiece, type RoofPlan } from './roofPlating';
 import { createChunkViews, regionTiles, type ChunkRef } from './regionTiles';
 import { resolveArt } from './assets/fallback';
@@ -58,7 +59,7 @@ interface PartSprite {
  * The plating is one view per sector chunk (step 5b), rebuilt when the chunk's struct block, its module tiles or its
  * share of the livery plan change; tiles on fire glow.
  */
-export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, livery: Livery | null = null): RoofView {
+export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World, defs: Readonly<Record<string, ModuleDef>>, livery: Livery | null = null, paints: PaintAtlas | null = null): RoofView {
   const tiles = regionTiles(grid);
   const { width: W, height: H } = tiles;
   const chunks = createChunkViews<RoofChunk>((v) => clearChunk(v));
@@ -154,7 +155,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       if (real) return false;
       const mod = tiles.get('module', x, y); // local tile
       return !!(mod && defs[world.get(mod, ModuleC)?.def ?? '']?.roofAsset);
-    }, tiles.chunkRect(c));
+    }, tiles.chunkRect(c), paints);
     for (const p of v.pieces) for (const o of p.objs) o.visible = visible;
     return v;
   }

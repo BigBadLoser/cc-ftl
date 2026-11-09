@@ -25,6 +25,7 @@ const ISOLATED = [
   'src/content/derelictFailure.test.ts',
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
+  'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
   'src/render/animClock.test.ts',
   'src/render/assets/compose.test.ts',
   'src/render/assets/gpuKeep.test.ts',

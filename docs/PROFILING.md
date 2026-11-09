@@ -14,7 +14,7 @@ Costs are reported as **self ms** (time in the label, minus nested labels) and t
 | Record or compare crew decisions | `npm run ai:diff -- --record ...`, `npm run ai:diff -- --a x.jsonl --b y.jsonl` |
 | Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
 | Colony baseline (no scenario) | `npm run profile -- --seconds 20` |
-| A busy node: station, a navy ship and a derelict beside the player's ship | `npm run profile -- --scenario busy --warmup 30 --width 1920 --height 950` (`--width`/`--height`: viewport, default 1280x720; the camera stays on the player's ship, zoom out with the `?hook` API `__cc.zoomTo` to see the rest; `&arrive=<s>&arriveFaction=<name>` adds a ship that many seconds in) |
+| A busy node: station, a navy ship and a derelict beside the player's ship | `npm run profile -- --scenario busy --warmup 30 --width 1920 --height 950` (`--width`/`--height`: viewport, default 1280x720; the camera stays on the player's ship, zoom out with `--zoom 0.125` (the `?hook` API `__cc.zoomTo`) to see the rest; `&arrive=<s>&arriveFaction=<name>` adds a ship that many seconds in) |
 | In a browser tab | open `/?perf` (optionally `&scenario=..&seed=..`), press **F3** for the panel |
 
 Both scripts print the text report to stdout and write the JSON summary (`--out`, default `profile.json` / `profile-sim.json`, git-ignored).
@@ -108,7 +108,9 @@ change behaviour records identical files, and a deliberate change shows where it
 - Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,inset,gl,present,main}`,
   `ui/{bridge,events,upkeep}`, `loop/frame`.
 - Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
-  `render/sceneCount`.
+  `render/sceneCount`. `draws@<label>` splits the draws by the innermost span that issued them (`draws@render/gl` the main
+  pass, `draws@render/crew` the crew atlas, `draws@-` outside any span, e.g. an image-load callback), to tell which pass a
+  draw-heavy frame came from.
 - p95 is over the most recent 1024 samples; mean and max cover everything since the last `reset()`.
 
 ## Excluded spans (instrument time)

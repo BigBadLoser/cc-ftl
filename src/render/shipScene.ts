@@ -3,6 +3,7 @@ import type { Grid } from '../sim/grid';
 import type { ItemDef } from '../sim/registry';
 import type { Atlas } from './assets/loader';
 import { createCrewView } from './crewView';
+import type { CrewAtlas } from './crewAtlas';
 import { createDamageView } from './damageView';
 import { createAtmosphere } from './fx/atmosphere';
 import { createParticles } from './fx/particles';
@@ -17,6 +18,7 @@ import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { PLAIN_PAINT, type HullPaint } from './hullArt';
 import { createRoofView } from './roofView';
+import type { PaintAtlas } from './paintAtlas';
 import { createRockRoofView } from './rockRoofView';
 import { createRuinView } from './ruinView';
 import { createEggSacView } from './eggSacView';
@@ -45,6 +47,10 @@ export interface ShipSceneOptions {
   beamLook?: BeamLook;
   /** The ship's hull colours (hullArt); default plain. */
   hullPaint?: HullPaint;
+  /** The renderer's shared crew composite (crewAtlas.ts). */
+  crews: CrewAtlas;
+  /** The renderer's shared livery paints (paintAtlas.ts); none = a mesh per paint. */
+  liveries?: PaintAtlas;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
@@ -102,10 +108,10 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
     weaponArt: (item) => items[item]?.hand?.art,
-  });
+  }, o.crews);
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y) });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
@@ -114,7 +120,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
-  const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
+  const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null, o.liveries ?? null);
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
   // by the asteroid's view, which lies under them, so anything of the base left showing would cut through the rock.
