@@ -11,7 +11,8 @@ from .modkit import K
 from .research_kit import bar, ring
 from .research_r3 import _pane
 from .research_r4 import slate
-from .research_r6 import stack
+from .research_kit import ZPX, snap, zpx
+from .research_r6 import FRONT, TOP, front, stack
 from .research_r7 import bench, l2a_holo
 
 FU, FV = -0.98, 0.36              # the front-left tile's unit: centre u, v
@@ -19,11 +20,13 @@ G, F = "resGold", "resGoldF"
 
 
 def _drawer_front(k, u, v, z, w, h, face="v"):
-    """One drawer front on the +v face at v (face 'v') or the +u face at u (face 'u'); see stack."""
+    """One drawer front on the +v face at v (face 'v') or the +u face at u (face 'u'), snapped to the px grid; see
+    front."""
+    z, h = zpx(round(z * ZPX)), zpx(max(3, round(h * ZPX)))
     if face == "v":
-        stack(k, "v", u, v, w, z, z + h, 1)
+        front(k, "v", u, snap(v), w, z, h)
     else:
-        stack(k, "u", v, u, w, z, z + h, 1)
+        front(k, "u", v, snap(u), w, z, h)
 
 
 def _fragment(k, u, v, z, s, rz):
@@ -33,16 +36,17 @@ def _fragment(k, u, v, z, s, rz):
 
 # ---- r1: the desk extension -----------------------------------------------------------------------------------------
 
-RV0, RV1, RH = -0.18, 0.86, 0.66  # the return's v span and height
+RV0, RV1, RH = -0.18, 0.86, TOP   # the return's v span and height
 
 
 def _return(k, items=True, joined=False):
     """The L return; joined=True butts it against the drawer bank's front instead of running into it."""
-    v0, v1, H = (-0.16 if joined else RV0), RV1, RH
+    v0, v1, H = (FRONT if joined else RV0), RV1, RH
     sv, cv = v1 - v0, (v0 + v1) / 2
+    ur = snap(FU + 0.49)                                                              # its face toward the chair
     k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
-    k.box(FU, cv, 0.08, 0.98, sv, H - 0.08, "lvW2", top="lvW")
-    stack(k, "u", cv + 0.05, FU + 0.49, 0.6, 0.14, H - 0.1, 3)                        # drawers toward the chair
+    k.box((FU - 0.49 + ur) / 2, cv, 0.08, ur - FU + 0.49, sv, H - 0.08, "lvW2", top="lvW")
+    stack(k, "u", cv + 0.05, ur, 0.6, 3)                                              # drawers toward the chair
     k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvWS")                           # a panel on its end
     if not items:
         return

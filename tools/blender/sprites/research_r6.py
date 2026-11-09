@@ -11,7 +11,7 @@ hologram change.
 import math
 
 from .modkit import K
-from .research_kit import Bench, bar, body, chair, ring
+from .research_kit import PXG, ZPX as ZPX_, Bench, bar, body, chair, ring, zpx
 from .research_r3 import _pane
 from .research_r4 import lamp, slate
 
@@ -41,40 +41,45 @@ class Table:
         self.put(0.0, -d / 2 + 0.03, -0.04, w - 0.06, 0.06, 0.08, "lvW2", top="lvW")
 
 
-GAP = 0.035                       # between drawer fronts: wide enough to draw as a clean line
+TOP_PX = 26                       # cabinet height in px (0.66), so its top edge and the drawers' sit on the z grid
+TOP = zpx(TOP_PX)
+FRONT = -5 * PXG                  # the cabinet's front face (-0.16), on the u/v grid
 
 
-def slots(n, z0, z1, g=GAP):
-    """n drawers stacked from z0 to z1: [(z, h)] from the bottom."""
-    h = (z1 - z0 - (n - 1) * g) / n
-    return [(z0 + i * (h + g), h) for i in range(n)]
+def slots(n, top_px=TOP_PX, z0=4, g=2, margin=2):
+    """n drawers on a cabinet top_px tall, in whole px: from z0 px up, g px apart, margin px (plus the fronts' 1 px
+    top face) under the top. [(z, h)] from the bottom."""
+    h = (top_px - margin - 1 - z0 - (n - 1) * g) // n
+    return [(zpx(z0 + i * (h + g)), zpx(h)) for i in range(n)]
 
 
-def stack(k, face, c, p, w, z0, z1, n, skip=()):
-    """Drawer fronts on a cabinet face, drawn as colour (any step out of the face under a px dots its edges): a shaded
-    backing whose gaps between the fronts read as lines, the fronts in the cabinet's cream, a dark pull on each. face
-    'v': the face is the plane v = p facing +v, centred on u = c; 'u': the plane u = p facing +u, centred on v = c.
-    No front for the drawers in skip (from the bottom: drawn open elsewhere)."""
-    def put(d, z, a, h, col):                       # d out from the face, a wide, h tall
+def front(k, face, c, p, w, z, h):
+    """One drawer front standing a px off the face: a dark fill, a label plate and a pull, all whole px. face 'v': the
+    face is the plane v = p (on the grid) facing +v, centred on u = c; 'u': the plane u = p facing +u, centred on v = c.
+    z, h on the z grid."""
+    def put(d, a, zz, hh, sw, col):                 # d px out from the face, a along it, sw wide
         if face == "v":
-            k.box(c, p + d, z, a, 0.006, h, col)
+            k.box(c + a, p + (d + 0.5) * PXG, zz, sw, PXG, hh, col)
         else:
-            k.box(p + d, c, z, 0.006, a, h, col)
-    put(0.0, z0 - GAP, w + 2 * GAP, z1 - z0 + 2 * GAP, "lvWS")
-    for i, (z, h) in enumerate(slots(n, z0, z1)):
-        if i in skip:
-            continue
-        put(0.003, z, w, h, "lvW2")
-        put(0.006, z + h * 0.55, min(0.26, w * 0.4), 0.04, "gm")
+            k.box(p + (d + 0.5) * PXG, c + a, zz, PXG, sw, hh, col)
+    put(0, 0.0, z, h, w, "lvWS")
+    hp = round(h * ZPX_)
+    put(1, -w * 0.25, z + zpx(max(1, hp // 2 - 1)), zpx(2 if hp >= 4 else 1), round(w * 0.2 * 32) * PXG, "plate")
+    put(1, w * 0.25, z + zpx(max(1, hp // 2)), zpx(1), round(w * 0.16 * 32) * PXG, "steelD")
 
 
-BANK = (0.14, 0.58)               # a drawer bank's drawers: bottom and top
+def stack(k, face, c, p, w, n, top_px=TOP_PX, skip=()):
+    """n drawer fronts (see front, slots) on a cabinet face, none for the drawers in skip (from the bottom: drawn open
+    elsewhere)."""
+    for i, (z, h) in enumerate(slots(n, top_px)):
+        if i not in skip:
+            front(k, face, c, p, w, z, h)
 
 
-def drawers(k, u, n=4, top=0.66, skip=()):
-    """A drawer bank: the cabinet section and n drawers on its front (see stack)."""
-    body(k, u, -0.56, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
-    stack(k, "v", u, -0.16, 0.8, BANK[0], BANK[1] if top == 0.66 else top - 0.08, n, skip)
+def drawers(k, u, n=4, top=TOP, skip=()):
+    """A drawer bank: the cabinet section, its front on the grid, n drawers on it (see stack)."""
+    body(k, u, FRONT - 0.4, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
+    stack(k, "v", u, FRONT, 28 * PXG, n, round(top * ZPX_), skip)
 
 
 def jar(k, u, v, z, inner, r=0.085, h=0.22):

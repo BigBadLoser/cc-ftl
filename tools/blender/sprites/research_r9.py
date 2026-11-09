@@ -6,32 +6,34 @@ Hologram: the reconstruction, r2's beam from a fragment in the case to its place
 right bank with its marked entry tied to the open drawer."""
 from .research_kit import bar, ring
 from .research_r3 import _pane
-from .research_r6 import BANK, slots
+from .research_kit import PXG, zpx
+from .research_r6 import FRONT, front, slots
 from .research_r7 import bench, l2a_holo
 from .research_r8 import FU, RH, RV0, RV1, F, G, _fragment, _return, case, rubbing
 
 CV = (RV0 + RV1) / 2 + 0.02      # the case on the return: centre v
 CS = (0.8, 0.66)                  # its size
-DU, DW, DOUT = 0.98, 0.8, 0.46    # the right bank's top drawer: u, width, how far out (drawers(n=3) in research_r6)
-DZ, DH = slots(3, *BANK)[2]        # its bottom and height
-BED = 0.08                        # the velvet bed in it, raised so it shows over the drawer front
+DU, DW = 0.98, 28 * PXG          # the right bank's top drawer (drawers(n=3) in research_r6): u, width,
+DZ, DH = slots(3)[2]              # bottom and height,
+FV = FRONT + 15 * PXG             # its front face, pulled out (all on the px grid)
+BED = zpx(3)                      # the velvet bed in it, raised so it shows over the drawer front
 
 
 def _combo(k):
     _return(k, items=False, joined=True)
     case(k, FU, CV, RH, *CS)
     rubbing(k, 1.0, -0.44, 0.66)
-    k.box(DU, -0.203, DZ, DW, 0.094, DH, "dark")                                    # the opening it left
-    fv = -0.16 + DOUT                                                                # the drawer, out: its front,
-    tv, td = (-0.2 + fv - 0.02) / 2, fv - 0.02 + 0.2                                 # its tray from inside to it
-    k.box(DU, fv, DZ, DW, 0.04, DH, "lvW2", top="lvW")                               # (walls a px thick or more),
-    k.box(DU, fv + 0.02, DZ + DH * 0.55, 0.26, 0.006, 0.04, "gm")                    # its pull,
-    for su in (-1, 1):                                                               # the sides,
-        k.box(DU + su * (DW / 2 - 0.02), tv, DZ, 0.04, td, DH - 0.03, "lvW2", top="lvW")
-    k.box(DU, tv, DZ, DW - 0.09, td, BED, "lvW2", top="lvR")                         # a raised velvet bed
+    k.box(DU, FRONT - 0.045, DZ, DW, 0.092, DH, "dark")                             # the opening it left
+    k.box(DU, FV - 1.5 * PXG, DZ, DW, PXG, DH, "lvWS")                               # the drawer: its front 2 px
+    front(k, "v", DU, FV - PXG, DW, DZ, DH)                                          # thick, plate and pull,
+    v0, v1 = -0.2, FV - 2 * PXG                                                      # its tray from inside to it:
+    tv, td = (v0 + v1) / 2, v1 - v0
+    for su in (-1, 1):                                                               # sides 2 px thick,
+        k.box(DU + su * (DW / 2 - PXG), tv, DZ, 2 * PXG, td, DH - zpx(1), "lvWS", top="lvW2")
+    k.box(DU, tv, DZ, DW - 4 * PXG, td, BED, "lvW2", top="lvR")                      # a raised velvet bed
     for (du, dv, s, rz) in ((-0.22, -0.04, 0.15, 0.4), (0.0, 0.03, 0.17, -0.3), (0.22, -0.05, 0.13, 0.9)):
-        _fragment(k, DU + du, -0.16 + DOUT / 2 + dv, DZ + BED, s, rz)
-        k.box(DU + du, -0.16 + DOUT / 2 + dv + 0.13, DZ + BED, 0.08, 0.04, 0.01, "lvW")   # tags
+        _fragment(k, DU + du, (FRONT + FV) / 2 + dv, DZ + BED, s, rz)
+        k.box(DU + du, (FRONT + FV) / 2 + dv + 0.13, DZ + BED, 0.08, 0.04, 0.01, "lvW")   # tags
 
 
 def c1_holo():
@@ -44,7 +46,7 @@ def c1_holo():
     pu, pv, z0 = DU + 0.05, -0.1, 0.96                                                # the index pane, over the bank
     _pane(k, pu, pv, z0, 0.42, 0.26, 0.1, G, F, ((0, 1, 0.26), (0, 0.66, 0.22), (0, 0.33, 0.3), (0, 0.0, 0.2)))
     k.box(pu - 0.24, pv + 0.01, z0 + 0.14, 0.05, 0.03, 0.05, G)                        # its marked entry,
-    bar(k, (pu - 0.24, pv + 0.01, z0 + 0.14), (DU - 0.22, -0.16 + DOUT / 2, DZ + BED + 0.06), 0.015, G)  # to the drawer
+    bar(k, (pu - 0.24, pv + 0.01, z0 + 0.14), (DU - 0.22, (FRONT + FV) / 2, DZ + BED + 0.06), 0.015, G)  # to the drawer
     return k
 
 

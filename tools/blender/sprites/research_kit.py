@@ -7,6 +7,22 @@ import math
 from .modkit import K
 
 FP = (3, 2)
+# The pixel grid in the local frame (64x32 tiles, 30 deg elevation, sprite origin on a px): a px is 1/32 along u or v
+# and 1/ZPX up. A 2:1 edge on a face draws as a clean stair only when the face's plane is on the u/v grid and the edge's
+# height on the z grid; anything thinner than a px (a bevel, a lip, a front standing 0.015 off its face) breaks into
+# dots. Small parts that repeat along an edge (drawer fronts, plates, pulls) are sized and placed on this grid.
+PXG = 1 / 32
+ZPX = 32 * math.sqrt(2) * math.cos(math.radians(30))     # px per unit of height (core.ZPX)
+
+
+def snap(x):
+    """x on the u/v px grid."""
+    return round(x / PXG) * PXG
+
+
+def zpx(n):
+    """n px of height."""
+    return n / ZPX
 CU, CV = 0.0, 0.5                 # the chair tile (local)
 GLASS_A, GLASS_RIM = 0.07, 0.12   # see-through glass (as hydroponics: baked by the render over what is behind it)
 FLUID_A = 0.3
