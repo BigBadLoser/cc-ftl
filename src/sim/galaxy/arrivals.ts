@@ -4,6 +4,7 @@ import { factionsHostile } from '../combat/factions';
 import { spawnShip } from '../combat/ships';
 import { placementGapError } from '../regions';
 import { generateShip } from '../shipgen/generate';
+import { Rng } from '../rng';
 import type { Sim } from '../sim';
 import type { ArriveReason } from '../events';
 import { TICK_HZ } from '../time';
@@ -94,6 +95,18 @@ export function provideGenerated(sim: Sim, c: Contact, gen: ReturnType<typeof ge
   claims(sim).delete(key);
   if (c.ship === undefined && !generated(sim).has(key)) remember(sim, key, gen); // a ship that has already turned up needs nothing
 }
+
+/**
+ * Ships are warmed somewhere else (the app's worker prewarm): `warmFleets` leaves every candidate to it instead of racing it a ship a second,
+ * which at high game speed beat the worker's scan to most of them and generated them between frames. Off again when the worker fails. Per
+ * content registry, like the memo; touches no sim state (warming only fills the memo).
+ */
+const elsewhere = new WeakSet<object>();
+export function warmElsewhere(sim: Sim, on: boolean): void {
+  if (on) elsewhere.add(sim.content);
+  else elsewhere.delete(sim.content);
+}
+export const isWarmedElsewhere = (sim: Sim): boolean => elsewhere.has(sim.content);
 
 /** Give up a claim (the generator failed): `warmContact` may generate the ship itself again. */
 export function releaseGeneration(sim: Sim, c: Contact): void {
@@ -231,6 +244,17 @@ export function rollArrival(sim: Sim): void {
   if (!node || !playerShipInfo(sim) || graceHolds(sim, node.id)) return;
   const st = nodeState(sim, node.id);
   if (hostileShipsHere(sim, st.contacts) >= MAX_HOSTILE_CONTACTS) return;
+  const { p, pool } = arrivalPool(sim, node);
+  const roll = withGalaxyRng(g, (rng) => drawArrival(rng, p));
+  if (!roll.hit || !pool.length) return;
+  const c: Contact = { id: g.nextId++, ...arrivalShip(sim, pool, roll, node.danger), since: sim.tick };
+  st.contacts.push(c);
+  g.rev++;
+  if (!spawnContact(sim, node.id, c, { reason: 'jump-in' })) sim.events.emit({ type: 'ship.arrived', node: node.id, ship: null, name: '', faction: null, owner: c.faction, reason: 'jump-in', x: 0, y: 0 });
+}
+
+/** The arrival chance at the node and the factions that may arrive (weighted), as the roll reads them. */
+function arrivalPool(sim: Sim, node: NonNullable<ReturnType<typeof currentNode>>): { p: number; pool: { value: string; weight: number }[] } {
   let p = arrivalChance(sim);
   const content = sim.content.galaxy;
   let pool = trafficPool(content, node.faction, node.danger).filter((w) => isHostileFaction(sim, w.value));
@@ -238,12 +262,31 @@ export function rollArrival(sim: Sim): void {
     pool = [{ value: SCAVENGER_FACTION, weight: 1 }];
     p = Math.max(p, SCAVENGER_CHANCE);
   }
-  const roll = withGalaxyRng(g, (rng) => ({ hit: rng.next() < p, who: rng.next(), ship: rng.next(), seed: rng.int(0, 0x7fffffff) }));
-  if (!roll.hit || !pool.length) return;
+  return { p, pool };
+}
+
+/** One arrival roll's draws from the galaxy Rng, in their order. */
+function drawArrival(rng: Rng, p: number): { hit: boolean; who: number; ship: number; seed: number } {
+  return { hit: rng.next() < p, who: rng.next(), ship: rng.next(), seed: rng.int(0, 0x7fffffff) };
+}
+
+/** Who a roll brings: the faction from the pool, its generator faction and seed. */
+function arrivalShip(sim: Sim, pool: { value: string; weight: number }[], roll: { who: number; ship: number; seed: number }, depth: number): Omit<Contact, 'id' | 'since'> {
   const faction = pickWeighted(pool, roll.who) as string;
-  const shipgen = pickWeighted(content?.factions[faction]?.ships ?? [], roll.ship) ?? '';
-  const c: Contact = { id: g.nextId++, faction, shipgen, seed: roll.seed, depth: node.danger, since: sim.tick };
-  st.contacts.push(c);
-  g.rev++;
-  if (!spawnContact(sim, node.id, c, { reason: 'jump-in' })) sim.events.emit({ type: 'ship.arrived', node: node.id, ship: null, name: '', faction: null, owner: faction, reason: 'jump-in', x: 0, y: 0 });
+  const shipgen = pickWeighted(sim.content.galaxy?.factions[faction]?.ships ?? [], roll.ship) ?? '';
+  return { faction, shipgen, seed: roll.seed, depth };
+}
+
+/**
+ * The ship the next arrival roll brings if it hits, as things stand: the galaxy Rng serves only that roll, so its draws are known now. Reads
+ * only (the Rng state is copied). For generating that ship ahead (app/prewarm.ts) so a jump-in does not stall a tick on `generateShip`; a
+ * wrong guess (the node or standings changed first) costs nothing but the work. Null when no arrival can come.
+ */
+export function nextArrival(sim: Sim): Contact | null {
+  const node = currentNode(sim);
+  if (!node || sim.sector.state !== 'active') return null;
+  const { p, pool } = arrivalPool(sim, node);
+  if (!pool.length || p <= 0) return null;
+  const c: Contact = { id: -1, ...arrivalShip(sim, pool, drawArrival(new Rng(sim.galaxy.rng), p), node.danger), since: sim.tick };
+  return sim.content.factions?.[c.shipgen] ? c : null;
 }
