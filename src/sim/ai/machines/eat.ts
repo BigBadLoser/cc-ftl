@@ -8,9 +8,11 @@ import { walkOpts } from '../../eva/route';
 import { StorageC } from '../../items/components';
 import { dropCarried } from '../../items/stacks';
 import { storageCount } from '../../items/storage';
-import { ModuleC } from '../../modules/components';
+import { ModuleC, type Module } from '../../modules/components';
+import { modulesOn } from '../../modules/byShip';
 import { accessTile } from '../../modules/footprint';
 import { shipIdOf } from '../../regions';
+import type { ModuleDef } from '../../registry';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { EAT_SEC } from '../../tuning';
@@ -50,29 +52,48 @@ export function canStartMeal(sim: Sim, id: number, pos: Position): boolean {
   return !!item && !!pickSpot(sim, id, shipId, origin(pos), item);
 }
 
-/** Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms the eater). */
+/**
+ * Where to eat: the nearest working galley's access tile, else a walkable tile beside the nearest crate holding `item` (never a tile that harms
+ * the eater). Galleys are searched first and crates only when none is reached, and a spot whose walk cannot beat the best so far (its
+ * Chebyshev distance bounds the steps, and friends close by take at most 3 each off the company term) is not searched: the same spot as
+ * searching every galley and crate in id order, without a walk per crate on a big station.
+ */
 function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: string): { x: number; y: number; galley: boolean; steps: Tile[] } | null {
   type Spot = { x: number; y: number; galley: boolean; steps: Tile[]; cost: number };
   let galley: Spot | null = null;
   let crate: Spot | null = null;
   const peers = bondedPeers(sim, crew); // friends sit together, rivals keep apart: a spot's cost is its walk plus the company there
-  for (const id of sim.world.query(ModuleC)) {
+  const social = -3 * peers.filter((p) => p.friend).length; // the lowest the company term can be (socialCost: -3 per friend near)
+  const cheb = (x: number, y: number): number => Math.max(Math.abs(x - from.x), Math.abs(y - from.y));
+  const mods = modulesOn(sim, shipId, null); // the modules of the ship with a def, ascending ids (a scan of every module, by ship)
+  const usable = (id: number): { m: Module; def: ModuleDef } | null => {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || !def || shipIdOf(sim, m) !== shipId || m.hp <= 0) continue;
-    if (def.galley && m.enabled && m.powered) {
-      const at = accessTile(def, m.x, m.y, m.rot);
-      const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at, walkOpts(sim, crew));
-      const cost = steps && at ? steps.length + socialCost(sim, peers, shipId, at.x, at.y) : 0;
-      if (at && steps && (!galley || cost < galley.cost)) galley = { x: at.x, y: at.y, galley: true, steps, cost };
-    } else if (def.storage && sim.world.has(id, StorageC) && storageCount(sim, id, item) > 0) {
-      const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
-      const end = steps && (steps[steps.length - 1] ?? from);
-      const cost = steps && end ? steps.length + socialCost(sim, peers, shipId, end.x, end.y) : 0;
-      if (steps && end && (!crate || cost < crate.cost)) crate = { x: end.x, y: end.y, galley: false, steps, cost };
-    }
+    return m && def && m.hp > 0 ? { m, def } : null;
+  };
+  for (const id of mods) {
+    const u = usable(id);
+    if (!u || !(u.def.galley && u.m.enabled && u.m.powered)) continue;
+    const { m, def } = u;
+    const at = accessTile(def, m.x, m.y, m.rot);
+    if (at && galley && cheb(at.x, at.y) + social >= galley.cost) continue; // cannot be nearer than the best galley
+    const steps = at && !unsafeFor(sim, crew, shipId, at.x, at.y) && findPath(sim, shipId, from, at, walkOpts(sim, crew));
+    const cost = steps && at ? steps.length + socialCost(sim, peers, shipId, at.x, at.y) : 0;
+    if (at && steps && (!galley || cost < galley.cost)) galley = { x: at.x, y: at.y, galley: true, steps, cost };
   }
-  return galley ?? crate;
+  if (galley) return galley;
+  for (const id of mods) {
+    const u = usable(id);
+    if (!u || (u.def.galley && u.m.enabled && u.m.powered)) continue;
+    const { m, def } = u;
+    if (!def.storage || !sim.world.has(id, StorageC) || storageCount(sim, id, item) <= 0) continue;
+    if (crate && Math.max(0, cheb(m.x, m.y) - 1) + social >= crate.cost) continue; // every stop beside it is at least this far
+    const steps = safePathBeside(sim, crew, shipId, from, m.x, m.y);
+    const end = steps && (steps[steps.length - 1] ?? from);
+    const cost = steps && end ? steps.length + socialCost(sim, peers, shipId, end.x, end.y) : 0;
+    if (steps && end && (!crate || cost < crate.cost)) crate = { x: end.x, y: end.y, galley: false, steps, cost };
+  }
+  return crate;
 }
 
 /**

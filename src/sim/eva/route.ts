@@ -1,8 +1,8 @@
 import { findPath, type PathGoal, type PathOpts, type Tile } from '../crew/pathfind';
-import type { Grid } from '../grid';
+import { snapshot, thinMask, type ThinMask } from '../gridSnapshot';
+import type { ShipGrid } from '../shipGrid';
 import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
-import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { isSuited, needsAir, walksOutside } from './suit';
 import { shipGrid } from '../regions';
 
@@ -12,24 +12,23 @@ export interface WalkPlan {
   thin: boolean;
 }
 
-const thinMemo = new WeakMap<Grid, { tick: number; thin: boolean }>();
+const thinMemo = new WeakMap<ThinMask, { struct: Float64Array; thin: boolean }>();
 
-/** True if any walkable tile of the grid has thin air. Memoised per tick (derived data, never saved). */
-function gridHasThinAir(sim: Sim, grid: Grid): boolean {
-  const hit = thinMemo.get(grid);
-  if (hit && hit.tick === sim.tick) return hit.thin;
+/** True if any walkable tile of the grid has thin air. Memoised on the grid's thin-air mask and struct copy (derived data, never saved). */
+function gridHasThinAir(grid: ShipGrid): boolean {
+  if (!grid.has('o2')) return false;
+  const mask = thinMask(grid);
+  const struct = snapshot(grid, 'struct');
+  const hit = thinMemo.get(mask);
+  if (hit && hit.struct === struct) return hit.thin;
   let thin = false;
-  if (grid.has('o2')) {
-    const o2 = grid.load('o2');
-    const struct = grid.load('struct');
-    for (let i = 0; i < o2.length; i++) {
-      if ((o2[i] as number) < EVA_THIN_AIR_BELOW && isWalkable(struct[i] as number)) {
-        thin = true;
-        break;
-      }
+  for (let i = 0; i < mask.thin.length; i++) {
+    if (mask.thin[i] && isWalkable(struct[i] as number)) {
+      thin = true;
+      break;
     }
   }
-  thinMemo.set(grid, { tick: sim.tick, thin });
+  thinMemo.set(mask, { struct, thin });
   return thin;
 }
 
@@ -49,7 +48,7 @@ export function walkOpts(sim: Sim, crew: number): PathOpts {
 export function planWalk(sim: Sim, crew: number, shipId: number, from: Tile, goal: PathGoal, thinOk: () => boolean = () => true): WalkPlan | null {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return null;
-  if (isSuited(sim, crew) || !needsAir(sim, crew) || !gridHasThinAir(sim, grid)) {
+  if (isSuited(sim, crew) || !needsAir(sim, crew) || !gridHasThinAir(grid)) {
     const steps = findPath(sim, shipId, from, goal, { suited: walksOutside(sim, crew) });
     return steps && { steps, thin: false };
   }
@@ -89,6 +88,6 @@ export function siteWalkModes(sim: Sim, crew: number, shipId: number): WalkMode[
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return [];
   if (isSuited(sim, crew) || !needsAir(sim, crew)) return [{ opts: { suited: walksOutside(sim, crew) }, thin: false }];
-  if (!gridHasThinAir(sim, grid)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }, { opts: { suited: true }, thin: true }];
+  if (!gridHasThinAir(grid)) return [{ opts: { suited: isSuited(sim, crew) }, thin: false }, { opts: { suited: true }, thin: true }];
   return [{ opts: { avoidThin: true }, thin: false }, { opts: {}, thin: true }, { opts: { suited: true }, thin: true }];
 }

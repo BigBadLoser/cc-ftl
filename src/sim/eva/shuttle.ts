@@ -42,17 +42,44 @@ export function tileCentre(sim: Sim, shipId: number, x: number, y: number): { x:
   return shipById(sim, shipId) ? { x: x + 0.5, y: y + 0.5 } : null;
 }
 
+/** A grid's exterior tiles (row-major, as x, y pairs), kept per grid view while its struct revision holds. Derived data, never saved. */
+const exteriorMemo = new WeakMap<object, { rev: number; tiles: Int32Array }>();
+
+/** The hull ring tiles and open rock ground of a grid (an asteroid base: suited crew land on the plains), in row-major order. */
+export function exteriorTiles(grid: NonNullable<ReturnType<typeof shipGrid>>): Int32Array {
+  const rev = grid.revision('struct');
+  const hit = exteriorMemo.get(grid);
+  if (hit && hit.rev === rev) return hit.tiles;
+  const out: number[] = [];
+  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
+    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      const k = grid.get('struct', x, y);
+      if ((k === Struct.Space && isEvaWalkable(grid, x, y)) || k === Struct.Ground) out.push(x, y);
+    }
+  }
+  const tiles = Int32Array.from(out);
+  exteriorMemo.set(grid, { rev, tiles });
+  return tiles;
+}
+
 /** The `n` exterior tiles of a grid nearest to a point of its tile frame (ties by row, then column). */
 export function nearestExterior(sim: Sim, shipId: number, at: { x: number; y: number }, n: number): { x: number; y: number; d: number }[] {
   const grid = shipGrid(sim, shipId);
   if (!grid?.has('struct')) return [];
-  const out: { x: number; y: number; d: number }[] = [];
-  for (let y = grid.y0; y < grid.y0 + grid.height; y++) {
-    for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
-      const k = grid.get('struct', x, y);
-      // the hull ring, or open rock ground (an asteroid base: suited crew land on the plains)
-      if ((k === Struct.Space && isEvaWalkable(grid, x, y)) || k === Struct.Ground) out.push({ x, y, d: Math.hypot(x - at.x, y - at.y) });
+  const tiles = exteriorTiles(grid);
+  if (n === 1) {
+    // One pass for the nearest (the common ask): the same order as the sort below, (d, y, x); row-major input, so a tie keeps the first.
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < tiles.length; i += 2) {
+      const d = Math.hypot((tiles[i] as number) - at.x, (tiles[i + 1] as number) - at.y);
+      if (d < bd) [best, bd] = [i, d];
     }
+    return best < 0 ? [] : [{ x: tiles[best] as number, y: tiles[best + 1] as number, d: bd }];
+  }
+  const out: { x: number; y: number; d: number }[] = [];
+  for (let i = 0; i < tiles.length; i += 2) {
+    const x = tiles[i] as number, y = tiles[i + 1] as number;
+    out.push({ x, y, d: Math.hypot(x - at.x, y - at.y) });
   }
   return out.sort((a, b) => a.d - b.d || a.y - b.y || a.x - b.x).slice(0, n);
 }
