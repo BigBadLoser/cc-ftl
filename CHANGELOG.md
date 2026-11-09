@@ -69,6 +69,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Busy nodes draw much faster: sprites are batched into far fewer draw calls, roofed ships' paint and container overlays are drawn once and reused, and modules that haven't changed are no longer redrawn every frame. A node with a station and two ships went from about 13 to 47 frames per second on a mid-range PC. ([#394](https://github.com/BigBadLoser/cc-ftl/pull/394))
 - Fewer stutters in busy nodes and during salvage: crew decisions no longer stall the game for a fraction of a second when crew go to eat near lots of food crates, and the crew scheduler does about half the work per tick. ([#396](https://github.com/BigBadLoser/cc-ftl/pull/396))
 - A ship jumping into the node no longer causes a frame hitch: ships of fleets about to arrive are generated on a worker, and a newly loaded sheet only rebuilds the ships that use it. ([#391](https://github.com/BigBadLoser/cc-ftl/pull/391))
 - Hailing a ship opens the comms channel (Bridge and Trade contacts), the same as a station, instead of the old trade panel. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
