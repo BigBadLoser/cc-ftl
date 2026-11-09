@@ -33,6 +33,10 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
   }
   const fires: FireSlot[] = [];
   let nf = 0;
+  /** The burning floor tiles of the last scan, and the grid and fire / struct revisions it was made at. */
+  const burning: { x: number; y: number; i: number; fv: number }[] = [];
+  let burnGrid: Grid | null = null;
+  let burnRev = -1;
 
   const fireSlot = (): FireSlot => {
     let f = fires[nf];
@@ -54,11 +58,22 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
       const now = animNow() / 1000;
       if (t && frames.length) {
         const tiles = regionTiles(t.grid);
-        tiles.scan((x, y, i, ci, c) => {
-          const kind = tiles.data('struct', c)?.[ci];
-          if (kind !== Struct.Floor && kind !== Struct.Door) return;
-          const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
-          if (fv > 0) {
+        // The burning tiles change only with the fire and struct fields: scan the region again only when a chunk's revision moves.
+        let rev = 0;
+        for (const c of tiles.chunks()) rev += tiles.src.chunkRevision('fire', c.cx, c.cy) * 3 + tiles.src.chunkRevision('struct', c.cx, c.cy);
+        if (t.grid !== burnGrid || rev !== burnRev) {
+          burnGrid = t.grid;
+          burnRev = rev;
+          burning.length = 0;
+          tiles.scan((x, y, i, ci, c) => {
+            const kind = tiles.data('struct', c)?.[ci];
+            if (kind !== Struct.Floor && kind !== Struct.Door) return;
+            const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
+            if (fv > 0) burning.push({ x, y, i, fv });
+          });
+        }
+        for (const { x, y, i, fv } of burning) {
+          {
             const f = frames[(Math.floor(now * FIRE_FPS) + i * 5) % frames.length] as StaticSprite;
             const sc = 0.45 + 0.8 * Math.min(1, fv / 255);
             const p = iso(x, y);
@@ -76,7 +91,7 @@ export function createFxView(atlas: Atlas, L: Layers, host: FxViewHost): FxView 
               slot.glow.zIndex = depthKey(x, y) + 0.31;
             } else slot.glow.visible = false;
           }
-        });
+        }
       }
       for (let i = nf; i < fires.length; i++) {
         const f = fires[i] as FireSlot;

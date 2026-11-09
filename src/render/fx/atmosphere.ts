@@ -6,6 +6,7 @@ import { footprintTiles } from '../../sim/modules/footprint';
 import { ModuleC } from '../../sim/modules/components';
 import { Struct } from '../../sim/structure';
 import { ART_SCALE as S, iso, TILE_H, TILE_W } from '../iso';
+import { createModuleIndex } from '../moduleMemo';
 import { regionTiles } from '../regionTiles';
 import type { ModuleDefs } from '../moduleView';
 import type { EmitterDef, Particles } from './particles';
@@ -38,6 +39,49 @@ export interface AtmosphereHost {
   target(): { grid: Grid } | null;
 }
 
+/** The fields a tile's emitters read. */
+const EMIT_FIELDS = ['struct', 'smoke', 'fire', 'o2'] as const;
+
+/** A floor tile with something to emit, and the field values that set its rates. */
+interface Emitter {
+  x: number;
+  y: number;
+  i: number;
+  sv: number;
+  fv: number;
+  vm: number;
+  air: number;
+}
+
+/** The region's floor tiles with smoke, fire or air venting into vacuum. */
+function scanEmitters(tiles: ReturnType<typeof regionTiles>, vent: Map<number, number>): Emitter[] {
+  const out: Emitter[] = [];
+  // The scan hands out one chunk ref per row run: look its fields up once per run, not per tile.
+  let at: unknown = null;
+  let struct: ArrayLike<number> | undefined;
+  let smoke: ArrayLike<number> | undefined;
+  let fire: ArrayLike<number> | undefined;
+  let o2: ArrayLike<number> | undefined;
+  tiles.scan((x, y, i, ci, c) => {
+    if (c !== at) {
+      at = c;
+      struct = tiles.data('struct', c);
+      smoke = tiles.data('smoke', c);
+      fire = tiles.data('fire', c);
+      o2 = tiles.data('o2', c);
+    }
+    const k = struct?.[ci];
+    if (k !== Struct.Floor && k !== Struct.Door) return;
+    const sv = (smoke?.[ci] ?? 0) as number;
+    const fv = (fire?.[ci] ?? 0) as number;
+    const air = (o2?.[ci] ?? 0) as number;
+    const vm = air > 0.5 ? (vent.get(i) ?? 0) : 0;
+    if (sv < 18 && !(fv > 0) && !vm) return;
+    out.push({ x, y, i, sv, fv, vm, air });
+  });
+  return out;
+}
+
 /** Field- and component-driven emitters: smoke, fire embers, venting air and ice, module sparks, welding sparks. */
 export function createAtmosphere(world: World, particles: Particles, defs: ModuleDefs, host: AtmosphereHost): { update(dt: number): void } {
   const wasPowered = new Map<number, boolean>();
@@ -64,6 +108,9 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
     vents.set(grid, { rev, mask });
     return mask;
   };
+  /** Per region: the floor tiles that emit (smoke, embers, venting air), as of the field revisions in `rev`. */
+  const emitting = new WeakMap<Grid, { rev: number; vent: Map<number, number>; list: Emitter[] }>();
+  const shipModules = createModuleIndex(world);
   return {
     update(dt) {
       const t = host.target();
@@ -71,27 +118,15 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
       const { grid } = t;
       const tiles = regionTiles(grid);
       const vent = ventMask(grid, tiles);
-      // The scan hands out one chunk ref per row run: look its fields up once per run, not per tile.
-      let at: unknown = null;
-      let struct: ArrayLike<number> | undefined;
-      let smoke: ArrayLike<number> | undefined;
-      let fire: ArrayLike<number> | undefined;
-      let o2: ArrayLike<number> | undefined;
-      tiles.scan((x, y, i, ci, c) => {
-        if (c !== at) {
-          at = c;
-          struct = tiles.data('struct', c);
-          smoke = tiles.data('smoke', c);
-          fire = tiles.data('fire', c);
-          o2 = tiles.data('o2', c);
-        }
-        const k = struct?.[ci];
-        if (k !== Struct.Floor && k !== Struct.Door) return;
-        const sv = (smoke?.[ci] ?? 0) as number;
-        const fv = (fire?.[ci] ?? 0) as number;
-        const air = (o2?.[ci] ?? 0) as number;
-        const vm = air > 0.5 ? (vent.get(i) ?? 0) : 0;
-        if (sv < 18 && !(fv > 0) && !vm) return;
+      // The emitting tiles change only with these fields: scan the region again only when a chunk's revision moves.
+      let rev = 0;
+      for (const c of tiles.chunks()) for (const f of EMIT_FIELDS) rev = (rev * 31 + tiles.src.chunkRevision(f, c.cx, c.cy)) % 2147483647;
+      let hot = emitting.get(grid);
+      if (!hot || hot.rev !== rev || hot.vent !== vent) {
+        hot = { rev, vent, list: scanEmitters(tiles, vent) };
+        emitting.set(grid, hot);
+      }
+      for (const { x, y, i, sv, fv, vm, air } of hot.list) {
         const cc = iso(x, y);
         if (sv >= 18) particles.emit(`s${i}`, SMOKE, cc.x, cc.y - 10 * S, 0.4 + (sv / 255) * 2.4, dt, 18);
         if (fv > 0) particles.emit(`e${i}`, EMBER, cc.x, cc.y - 6 * S, (fv / 255) * 5 + 0.6, dt, 14);
@@ -104,11 +139,17 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
             particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4 * S, rate * 0.25, dt, 8);
           }
         }
-      });
-      for (const id of world.query(ModuleC)) {
+      }
+      for (const id of shipModules(grid)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
+        const on = m.powered && m.enabled && m.hp > 0;
+        const prev = wasPowered.get(id);
+        wasPowered.set(id, on);
+        const burst = prev === true && !on && m.enabled;
+        const hurt = m.hp > 0 && m.hp < def.maxHp * 0.5;
+        if (!burst && !hurt) continue;
         const tiles = footprintTiles(def, m.x, m.y, m.rot);
         let cx = 0;
         let cy = 0;
@@ -117,11 +158,8 @@ export function createAtmosphere(world: World, particles: Particles, defs: Modul
           cx += p.x / tiles.length;
           cy += p.y / tiles.length;
         }
-        const on = m.powered && m.enabled && m.hp > 0;
-        const prev = wasPowered.get(id);
-        if (prev === true && !on && m.enabled) particles.burst(SPARK, cx, cy - 14 * S, 10, 10);
-        wasPowered.set(id, on);
-        if (m.hp > 0 && m.hp < def.maxHp * 0.5) particles.emit(`m${id}`, SPARK, cx, cy - 14 * S, 1.5 + 2.5 * (1 - m.hp / (def.maxHp * 0.5)), dt, 12);
+        if (burst) particles.burst(SPARK, cx, cy - 14 * S, 10, 10);
+        if (hurt) particles.emit(`m${id}`, SPARK, cx, cy - 14 * S, 1.5 + 2.5 * (1 - m.hp / (def.maxHp * 0.5)), dt, 12);
       }
       for (const id of world.query(CrewC, PositionC)) {
         const crew = world.get(id, CrewC);

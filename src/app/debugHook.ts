@@ -2,6 +2,7 @@ import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, Co
 import { setAdditiveMerge } from '../render/batch';
 import { setRenderGroups } from '../render/renderGroups';
 import { DEPTH_BAND_WIDTH, setDepthBandWidth } from '../render/depthBands';
+import { setModuleMemo } from '../render/moduleMemo';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { CarryingC, ItemStackC } from '../sim/items/components';
@@ -37,6 +38,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
     /** Roof livery paints baked in the shared livery atlas (true, the default) or a mesh each (render diffs; rebuilds every scene). */
     liveryAtlas: (on: boolean) => r.debugLiveryAtlas(on),
+    /** Skip modules whose art inputs did not change (true, the default) or resolve every module every frame (staleness checks). */
+    moduleMemo: (on: boolean) => setModuleMemo(on),
     /** Roof every ship but wrecks, the player's and stations included (render checks of roof art). */
     roofAll: (on: boolean) => r.setRoofAll(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
