@@ -226,9 +226,19 @@ and the draw-call count is the number of times the batch has to break. Keep that
 - No filters in the world: each filtered object is its own offscreen pass and cuts the batch. Crew figures composite in the
   shared crew atlas (`render/crewAtlas.ts`): every figure's layers stack in a cell of one texture, one composite pass a frame
   (palette and light tint per cell from a palette texture), and the world draws each figure as one sprite from it.
+- Render groups (`render/renderGroups.ts`): the world layers (`under`, `floor`, `decal`, `fx`, `ui`, `marks`, the backdrop) are each
+  a pixi render group, so a camera move is one group transform and hiding layers for a pass (minified art, combat inset)
+  rebuilds a short list of groups, not their sprites. A group root does not pass its blend mode down (`fxAdd` is not one).
+- Depth bands (`render/depthBands.ts`): pixi rebuilds a group's whole instruction list when one zIndex in it changes, and a
+  walking crew member changes its own every frame. The depth-sorted sprites are split by key (`zIndex` + region depth) into
+  bands of `DEPTH_BAND_WIDTH`, each its own render group drawn in key order, so a step rebuilds only its band. The order is
+  exactly the one sorted layer's (equal keys by a rank that mirrors its stable sort; `depthBands.test.ts` checks it against a
+  model of that layer). Sprites keep their region's `DepthParent` as scene parent (transforms) but belong to their band's
+  group. Wider bands mean fewer draws and bigger rebuilds.
 - Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
   with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
-  `__cc.crewAtlas(false)` (with `?hook`) switch back to the old paths for same-frame render diffs.
+  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)` and `__cc.depthBands(false)` (with `?hook`) switch back to the old paths
+  for same-frame render diffs (`depthBands(n)` tries a band width).
 
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,

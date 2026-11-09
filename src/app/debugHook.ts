@@ -1,6 +1,7 @@
 import { galaxyIndex, StorageC, storageTake, totalStock, siteIds, siteStatus, CombatC, WeaponC, FTL_CHARGE_SEC, playerShip, AllegianceC, NeedsC, MoodC, AssignmentC, CrewC, JobC, SuitC, suitAir, DownedC, ModuleC, SurrenderedC, PositionC, ShipC, Struct, accessTile, removeModule, spawnModule, spawnVehicle, placementError, vehicleViews, cargoAdd, spawnShip, VehicleC, BodyC, type Faction, type Sim } from '../sim';
 import { setAdditiveMerge } from '../render/batch';
 import { setRenderGroups } from '../render/renderGroups';
+import { DEPTH_BAND_WIDTH, setDepthBandWidth } from '../render/depthBands';
 import type { Renderer } from '../render/scene';
 import { shipIdAt, shipIdOf, shipGrid } from '../sim/regions';
 import { CarryingC, ItemStackC } from '../sim/items/components';
@@ -30,6 +31,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     /** Merge flagged additive glow into the normal batches (true, the default) or draw it in its own `add` batches (render diffs). */
     additiveMerge: (on: boolean) => setAdditiveMerge(on),
     renderGroups: (on: boolean) => setRenderGroups(on),
+    /** Depth bands (true), one band for every depth-sorted sprite (false, the single sorted layer), or bands of a given width. */
+    depthBands: (on: boolean | number) => setDepthBandWidth(typeof on === 'number' ? on : on ? DEPTH_BAND_WIDTH : Infinity),
     /** Composite crew through the shared crew atlas (true, the default) or a filter per figure (render diffs). */
     crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */

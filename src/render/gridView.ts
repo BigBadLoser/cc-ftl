@@ -82,6 +82,23 @@ interface TileChunk {
   doors: Door[];
   doorKey: number;
   tintKey: string;
+  /** The chunk's o2 revision when `vacuum` was last read, and which tiles were vacuum then (see `vacuumKey`). */
+  o2Rev: number;
+  vacuum: string;
+  /** Bumped when `vacuum` changes: the o2 field changes nearly every tick, the vacuum flag the tint reads rarely. */
+  vacuumGen: number;
+}
+
+/** Which tiles of a chunk's o2 data are below `VACUUM_O2`, as a string (one char per 16 tiles), so equal means same tint input. */
+export function vacuumKey(o2: Readonly<ArrayLike<number>> | undefined): string {
+  if (!o2) return "";
+  let out = "";
+  for (let i = 0; i < o2.length; i += 16) {
+    let bits = 0;
+    for (let b = 0; b < 16 && i + b < o2.length; b++) if ((o2[i + b] as number) < VACUUM_O2) bits |= 1 << b;
+    out += String.fromCharCode(bits);
+  }
+  return out;
 }
 
 /** Multiply tint of a damaged wall: dark and slightly warm toward 0 integrity. */
@@ -193,7 +210,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     } else {
       const floor = new Container();
       L.floor.addChild(floor);
-      v = { c, floor, owned: [], tinted: [], doors: [], doorKey: -1, tintKey: "" };
+      v = { c, floor, owned: [], tinted: [], doors: [], doorKey: -1, tintKey: "", o2Rev: -1, vacuum: "", vacuumGen: 0 };
     }
     v.doorKey = -1;
     v.tintKey = "";
@@ -353,7 +370,16 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
 
   function updateTints(v: TileChunk, pulse: number): void {
     if (!v.tinted.length) return;
-    const key = `${tiles.key("light", v.c, WALL_LIGHT_REACH)}|${tiles.rev("o2", v.c)}|${tiles.rev("hp", v.c)}|${pulse}`;
+    const o2Rev = tiles.rev("o2", v.c);
+    if (o2Rev !== v.o2Rev) {
+      v.o2Rev = o2Rev;
+      const vac = vacuumKey(tiles.data("o2", v.c));
+      if (vac !== v.vacuum) {
+        v.vacuum = vac;
+        v.vacuumGen++;
+      }
+    }
+    const key = `${tiles.key("light", v.c, WALL_LIGHT_REACH)}|${v.vacuumGen}|${tiles.rev("hp", v.c)}|${pulse}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
     const light = tiles.data("light", v.c);

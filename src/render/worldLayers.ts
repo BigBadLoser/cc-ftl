@@ -1,12 +1,13 @@
-import { Container, RenderLayer, type IRenderLayer } from 'pixi.js';
+import { Container } from 'pixi.js';
 import type { Layers } from './layers';
 import { renderGroup } from './renderGroups';
+import { DepthBands, DepthParent } from './depthBands';
 
 /**
  * One world layer stack for the whole sector (ARCHITECTURE "Sector grid" §7 step 5a). Every region (ship) decorates it:
  * its views add sprites to the region's own containers, which sit at the region's sector offset inside shared layers.
- * The depth-sorted sprites of every region (walls, props, crew, low bodies) render through one `DepthLayer`, ordered by
- * `zIndex + region depth`, so one ship's sprites sort against another's and against bodies outside any hull.
+ * The depth-sorted sprites of every region (walls, props, crew, low bodies) render in one order by `zIndex + region depth`
+ * (through depth bands, `depthBands.ts`), so one ship's sprites sort against another's and against bodies outside any hull.
  *
  * Bottom to top: under, floor, decal, sorted, fx, fxAdd, ui, marks. Flat layers keep a sub-container per region,
  * sorted by the region's depth.
@@ -26,6 +27,8 @@ export interface WorldStack {
   setMarksVisible(on: boolean): void;
   /** Everything but the ui and marks layers: the minified view draws that art into a texture and only the ui layers directly. */
   setArtVisible(on: boolean): void;
+  /** The depth-sorted sprites in draw order (tests, debugging; `DepthBands.drawOrder`). */
+  drawOrder(asBuilt?: boolean): Container[];
 }
 
 /** One region's view of the shared stack: a `Layers` whose containers live in the shared layers at the region's offset. */
@@ -39,53 +42,6 @@ export interface RegionLayers extends Layers {
   dispose(): void;
 }
 
-/** Depth base of each container whose children are attached to a depth layer (a region's `sorted`, or the sector `low`). */
-const depthBase = new WeakMap<Container, number>();
-
-/**
- * A render layer sorted by `zIndex + depth base of the child's scene parent` (a stable sort: ties keep their previous order,
- * which starts as the order they were added in, as Pixi's own `sortableChildren` does).
- */
-function createDepthLayer(): IRenderLayer {
-  const layer = new RenderLayer({ sortableChildren: true });
-  let keys = new Float64Array(256);
-  const order: number[] = [];
-  const tmp: Container[] = [];
-  layer.sortRenderLayerChildren = () => {
-    const a = layer.renderLayerChildren;
-    const n = a.length;
-    if (keys.length < n) keys = new Float64Array(n * 2);
-    let parent: Container | null = null;
-    let base = 0;
-    let sorted = true;
-    for (let i = 0; i < n; i++) {
-      const c = a[i] as Container;
-      if (c.parent !== parent) {
-        parent = c.parent;
-        base = (parent && depthBase.get(parent)) ?? 0;
-      }
-      keys[i] = c.zIndex + base;
-      if (i > 0 && (keys[i] as number) < (keys[i - 1] as number)) sorted = false;
-    }
-    if (sorted) return;
-    order.length = n;
-    for (let i = 0; i < n; i++) order[i] = i;
-    order.sort((i, j) => (keys[i] as number) - (keys[j] as number) || i - j);
-    tmp.length = n;
-    for (let i = 0; i < n; i++) tmp[i] = a[order[i] as number] as Container;
-    for (let i = 0; i < n; i++) a[i] = tmp[i] as Container;
-    tmp.length = 0;
-  };
-  return layer;
-}
-
-/** Children added to `c` render through `layer` (Pixi detaches them again when they are removed or destroyed). */
-function feed(c: Container, layer: IRenderLayer): void {
-  c.on('childAdded', (child: Container) => {
-    layer.attach(child);
-  });
-}
-
 const flat = (): Container => {
   const c = new Container();
   c.sortableChildren = true;
@@ -97,25 +53,25 @@ export function createWorldStack(): WorldStack {
   const under = flat();
   const floor = flat();
   const decal = flat();
-  const depth = createDepthLayer();
   const fx = flat();
   const fxAdd = flat();
   fxAdd.blendMode = 'add';
   const ui = flat();
   const marks = flat();
   marks.visible = false;
-  // Scene parents of the depth-sorted sprites (transforms only; they render through `depth`).
-  const anchors = new Container();
-  const low = new Container();
-  depthBase.set(low, 0);
-  feed(low, depth);
-  // The depth layer and its sprites' scene parents share one render group (a layer draws children of its own group only).
+  // The depth-sorted sprites (walls, props, crew, low bodies of every region) draw through depth bands (depthBands.ts) in
+  // `art`, whose other children are their scene parents (transforms only, left out of the build).
   const art = new Container();
-  art.addChild(depth, anchors, low);
+  art.enableRenderGroup(); // always a group (the bands rely on it), so not in the debug switch
+  const bands = new DepthBands(art);
+  const anchors = new Container();
+  anchors.includeInBuild = false;
+  const low = new DepthParent(bands);
+  art.addChild(anchors, low);
   root.addChild(under, floor, decal, art, fx, fxAdd, ui, marks);
   // Render groups (#389): the camera moves only `root`'s group transform, not every sprite's, and a pass that hides some
   // layers (the minified art pass, the combat inset) rebuilds only `root`'s short list of groups, not the sprites in them.
-  for (const c of [root, under, floor, decal, art, fx, ui, marks]) renderGroup(c); // not fxAdd (see renderGroups.ts)
+  for (const c of [root, under, floor, decal, fx, ui, marks]) renderGroup(c); // not fxAdd (see renderGroups.ts)
   let scale = 1;
 
   return {
@@ -133,11 +89,10 @@ export function createWorldStack(): WorldStack {
     setArtVisible(on) {
       for (const c of [under, floor, decal, art, fx, fxAdd]) c.visible = on;
     },
+    drawOrder: (asBuilt) => bands.drawOrder(asBuilt),
     region(halos) {
-      const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new Container(), fx: new Container(), fxAdd: new Container(), ui: new Container(), marks: new Container() };
+      const parts = { under: flat(), floor: new Container(), decal: new Container(), sorted: new DepthParent(bands), fx: new Container(), fxAdd: new Container(), ui: new Container(), marks: new Container() };
       parts.under.sortableChildren = true;
-      depthBase.set(parts.sorted, 0);
-      feed(parts.sorted, depth);
       under.addChild(parts.under);
       floor.addChild(parts.floor);
       decal.addChild(parts.decal);
@@ -171,13 +126,13 @@ export function createWorldStack(): WorldStack {
             c.position.set(ax, ay);
             c.zIndex = d;
           }
-          // A new base changes `parts.sorted.zIndex` too, which flags the render group for a rebuild (and so a re-sort).
-          depthBase.set(parts.sorted, d);
+          parts.sorted.setDepthBase(d);
         },
         setVisible(on) {
           if (on === visible) return;
           visible = on;
           for (const c of all) c.visible = on;
+          bands.recheckAll(); // its sprites draw from the bands, which must rebuild to drop or add them
         },
         get visible() {
           return visible;

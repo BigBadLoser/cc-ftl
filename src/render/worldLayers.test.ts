@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Container, type IRenderLayer } from 'pixi.js';
+import { Container } from 'pixi.js';
 import { createWorldStack } from './worldLayers';
 import { frontDepth } from './shuttleView';
 
-const depthLayer = (root: Container) => root.children.flatMap((c) => [c, ...c.children]).find((c) => 'renderLayerChildren' in c) as unknown as IRenderLayer;
 const named = (name: string, z: number) => {
   const c = new Container();
   c.label = name;
@@ -21,9 +20,7 @@ describe('world stack', () => {
     a.sorted.addChild(named('a12', 12), named('a5', 5), named('a10first', 10));
     b.sorted.addChild(named('b0', 0), named('b3', 3));
     W.low.addChild(named('low11', 11));
-    const L = depthLayer(W.root);
-    L.sortRenderLayerChildren();
-    expect(L.renderLayerChildren.map((c) => c.label)).toEqual(['a5', 'a10first', 'b0', 'low11', 'a12', 'b3']);
+    expect(W.drawOrder().map((c) => c.label)).toEqual(['a5', 'a10first', 'b0', 'low11', 'a12', 'b3']);
   });
 
   it('drops a removed sprite from the shared layer', () => {
@@ -32,7 +29,7 @@ describe('world stack', () => {
     const s = named('s', 1);
     a.sorted.addChild(s);
     s.destroy();
-    expect(depthLayer(W.root).renderLayerChildren).toHaveLength(0);
+    expect(W.drawOrder()).toHaveLength(0);
   });
 });
 
