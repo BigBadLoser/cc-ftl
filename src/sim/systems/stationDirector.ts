@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { StationAlarmC, StationC, StationCrewC } from '../stations/components';
 import { ShipC } from '../combat/components';
 import { TICK_HZ } from '../time';
+import { FOOD_EVERY, stockStationFood } from '../stations/food';
 
 /** Seconds a guard stands watch at each patrol stop. */
 const WATCH_SEC = 3;
@@ -32,6 +33,8 @@ export function stationDirectorSystem(sim: Sim): void {
     patrols.set(st, [...(patrols.get(st) ?? []), j]);
   }
   for (const st of stations) {
+    // Supply runs: a station's larder is topped up to its crew every couple of minutes (stations the player holds feed themselves).
+    if (sim.tick % FOOD_EVERY === 0 && sim.world.get(st, ShipC)?.faction !== 'player') stockStationFood(sim, st);
     const station = sim.world.get(st, StationC);
     const alarm = sim.world.get(st, StationAlarmC);
     const mine = patrols.get(st) ?? [];
