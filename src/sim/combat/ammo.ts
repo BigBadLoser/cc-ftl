@@ -12,7 +12,7 @@ import { shipIdOf } from '../regions';
  */
 const storageIndex = new WeakMap<Sim, { storages: readonly number[]; mods: ModuleList; byShip: Map<number, number[]> }>();
 
-function storagesOn(sim: Sim, shipId: number): readonly number[] {
+export function storagesOn(sim: Sim, shipId: number): readonly number[] {
   const storages = sim.world.query(StorageC);
   const mods = modulesWhere(sim, null);
   let idx = storageIndex.get(sim);
