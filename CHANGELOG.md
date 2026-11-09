@@ -69,6 +69,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Station crew no longer go hungry: stations start with food for their crew and are restocked regularly. ([#403](https://github.com/BigBadLoser/cc-ftl/pull/403))
 - Jumping into a busy node no longer freezes the game while it builds the other ships: they are built over a few frames and appear a moment after yours. Ships out of view also cost much less each frame. ([#401](https://github.com/BigBadLoser/cc-ftl/pull/401))
 - Fewer hitches in busy nodes: the side panels only refresh when the game has changed, ships for arriving fleets and parts of the galaxy map are generated in the background, and hungry crew on big stations no longer stall the game hunting for food. ([#399](https://github.com/BigBadLoser/cc-ftl/pull/399), [#400](https://github.com/BigBadLoser/cc-ftl/pull/400))
 - Busy nodes draw much faster: sprites are batched into far fewer draw calls, roofed ships' paint and container overlays are drawn once and reused, and modules that haven't changed are no longer redrawn every frame. A node with a station and two ships went from about 13 to 47 frames per second on a mid-range PC. ([#394](https://github.com/BigBadLoser/cc-ftl/pull/394))
