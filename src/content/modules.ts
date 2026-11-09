@@ -106,6 +106,7 @@ export const modules = {
     solid: true,
     access: [1, 1],
     openTiles: [[1, 1]],
+    seated: true,
     power: -4,
     powerPriority: 4,
     flammability: 0.3,

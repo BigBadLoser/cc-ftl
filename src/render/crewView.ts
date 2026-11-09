@@ -278,12 +278,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const carried = world.get(id, CarriedC);
         const hurtLying = dead || !!downed || !!carried;
         // Crew on a walkable tile inside a module's footprint (a console's chair) draw in front of its sprite; on the
-        // chair itself they sit (sit_work while operating), facing the desk, without a floor shadow.
+        // chair itself (a console's or a seated module's) they sit (sit_work while operating), facing the desk, without a floor shadow.
         const mx = Math.round(s.x);
         const my = Math.round(s.y);
         const at = host.moduleAt?.(mx, my) ?? null;
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
-        const chair = at && at.def.console ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
+        const chair = at && (at.def.console || at.def.seated) ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
         const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
         // Creature sheets (aliens) carry `attack`, `hurt` and `dead`: an attack (the fight cooldown restarting) or a hit
         // (hp dropping) plays its clip once; a dead one lies as its `dead` corpse.
