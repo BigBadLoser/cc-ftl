@@ -22,7 +22,8 @@ ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet"
        "x5": "X5  cradle", "x6": "X6  cowl", "x7": "X7  pod",
        "y5": "Y5  stepped tower", "y6": "Y6  drum", "y7": "Y7  sample library",
        "x8": "X8  table (blocks)", "y8": "Y8  analyzer (blocks)",
-       "x9": "X9  table (flush)", "y9": "Y9  analyzer (flush)"}
+       "x9": "X9  table (flush)", "y9": "Y9  analyzer (flush)",
+       "x10": "X10  table (between)", "y10": "Y10  analyzer (between)"}
 
 
 def main():
