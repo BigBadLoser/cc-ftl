@@ -9,6 +9,8 @@ import { TICK_HZ } from '../sim/time';
 import { CLOCK_START_HOUR } from '../sim/tuning';
 import { inBed } from '../sim/ai/machines/sleep';
 import { SuitC } from '../sim/eva/components';
+import { claimedBed } from '../sim/ai/task';
+import { auditReservations } from '../sim/ai/audit';
 import { content } from './index';
 import { schedules } from './schedules';
 
@@ -173,6 +175,25 @@ describe('blocks in play', () => {
     expect(sim.world.has(c, SuitC)).toBe(true);
     run(sim, 60 * TICK_HZ);
     expect(sim.world.has(c, SuitC)).toBe(false);
+  });
+
+  it('a walk to bed cut short by the block turning Work gives the bed back', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    for (const id of ids) {
+      sim.world.get(id, NeedsC)!.rest = 90;
+      sim.world.get(id, NeedsC)!.hunger = 100;
+    }
+    allDay(sim, ids, 'sleep');
+    const walking = (): number | undefined => ids.find((id) => claimedBed(sim, id) !== 0 && sim.world.get(id, CrewC)?.activity !== 'sleeping');
+    for (let i = 0; i < 30 * TICK_HZ && walking() === undefined; i++) sim.step();
+    const c = walking()!;
+    expect(c).toBeDefined(); // a bed claimed, still on the way to it
+    allDay(sim, ids, 'work');
+    run(sim, 2 * TICK_HZ);
+    expect(sim.world.get(c, CrewC)?.activity).not.toBe('sleeping');
+    expect(claimedBed(sim, c)).toBe(0);
+    expect(auditReservations(sim).problems).toEqual([]);
   });
 
   it('a fire calls a scheduled sleeper out of bed; one asleep from exhaustion sleeps on', () => {

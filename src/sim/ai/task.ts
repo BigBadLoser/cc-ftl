@@ -95,6 +95,19 @@ function keepsSameNeed(sim: Sim, crew: number, prev: Task): boolean {
 
 const bedHold = (t: Task): number => t.holds.find((h) => h.kind === 'bed')?.id ?? 0;
 
+/**
+ * Every replacement or end of a crew member's `Task` goes through here (#412, Codex 4519362752): a bed the old task held and the new one does
+ * not is freed, since that hold was the claim's only lifeline. So any sleep cut short, a walk to bed included, gives its bed back, whatever
+ * replaced it (a job, a meal, an idle walk, an abort).
+ */
+function putTask(sim: Sim, crew: number, next: Task | undefined): void {
+  const prev = sim.world.get(crew, TaskC);
+  const bed = prev ? bedHold(prev) : 0;
+  if (bed && (!next || bedHold(next) !== bed)) releaseBed(sim, bed, crew);
+  if (next) sim.world.add(crew, TaskC, next);
+  else sim.world.remove(crew, TaskC);
+}
+
 /** The bed a crew member has claimed for this sleep (their sleep task's hold), or 0. */
 export function claimedBed(sim: Sim, crew: number): number {
   const t = sim.world.get(crew, TaskC);
@@ -104,7 +117,7 @@ export function claimedBed(sim: Sim, crew: number): number {
 /** Claim a bed for one sleep: the bed is reserved to the sleeper, and their task becomes the walk to it, holding it. */
 export function claimBed(sim: Sim, crew: number, bed: number): void {
   (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = crew;
-  sim.world.add(crew, TaskC, newTask(sim, 0, 'sleep', 'sleep', 'Walk', { aux: bed }, [{ kind: 'bed', id: bed }]));
+  putTask(sim, crew, newTask(sim, 0, 'sleep', 'sleep', 'Walk', { aux: bed }, [{ kind: 'bed', id: bed }]));
 }
 
 /** Drop a crew member's sleeping-bed claim and free the bed (the task's hold goes; `syncTask` then ends a task left with nothing). */
@@ -126,13 +139,13 @@ export function mealOf(sim: Sim, crew: number): Task | undefined {
 /** Start a meal: the eat task walks to the spot (`tile`; `hot` at a galley, not at a crate) for `item`. */
 export function startMeal(sim: Sim, crew: number, tile: TileRef, hot: boolean, item: string): Task {
   const t = newTask(sim, 0, 'eat', 'eat', 'Walk', { tile, hot, item, n: -1 });
-  sim.world.add(crew, TaskC, t);
+  putTask(sim, crew, t);
   return t;
 }
 
 /** End the crew member's meal task, eaten or dropped. */
 export function endMeal(sim: Sim, crew: number): void {
-  if (mealOf(sim, crew)) sim.world.remove(crew, TaskC);
+  if (mealOf(sim, crew)) putTask(sim, crew, undefined);
 }
 
 /** Same task (same job, machine, nesting and holds): its state and start tick carry over. */
@@ -150,7 +163,7 @@ export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
   if (prev && (prev.job !== 0 ? holdsSameJob(sim, crew, prev) : keepsSameNeed(sim, crew, prev))) return;
   const next = deriveTask(sim, crew);
   if (!next) {
-    if (prev && (!keepJobless || prev.job !== 0 || derivable(prev))) sim.world.remove(crew, TaskC);
+    if (prev && (!keepJobless || prev.job !== 0 || derivable(prev))) putTask(sim, crew, undefined);
     return;
   }
   if (prev && sameTask(prev, next)) {
@@ -158,7 +171,7 @@ export function syncTask(sim: Sim, crew: number, keepJobless = false): void {
     if (next.job === 0 && next.bb.aux !== undefined) prev.bb.aux = next.bb.aux;
     return;
   }
-  sim.world.add(crew, TaskC, next);
+  putTask(sim, crew, next);
 }
 
 /**
@@ -198,13 +211,13 @@ export function setJoblessTask(sim: Sim, crew: number, drive: DriveId, machine: 
     prev.bb = bb;
     return;
   }
-  sim.world.add(crew, TaskC, newTask(sim, 0, drive, machine, state, bb));
+  putTask(sim, crew, newTask(sim, 0, drive, machine, state, bb));
 }
 
 /** End a jobless task (nothing to do). */
 export function clearJoblessTask(sim: Sim, crew: number): void {
   const t = sim.world.get(crew, TaskC);
-  if (t && t.job === 0) sim.world.remove(crew, TaskC);
+  if (t && t.job === 0) putTask(sim, crew, undefined);
 }
 
 // --- Holds --------------------------------------------------------------------------------------------------------------
@@ -285,7 +298,7 @@ export function abortTask(sim: Sim, crew: number, reason: AbortReason): void {
     if (c.activity === 'sleeping' || c.activity === 'charging' || c.activity === 'eating') c.activity = 'idle';
   }
   if (d?.forget) {
-    sim.world.remove(crew, TaskC);
+    putTask(sim, crew, undefined);
     sim.world.remove(crew, IntentC);
     sim.world.remove(crew, InterruptC);
     return;
