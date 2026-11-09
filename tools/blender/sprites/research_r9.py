@@ -36,8 +36,8 @@ def _combo(k):
         k.box(DU + du, (FRONT + FV) / 2 + dv + 0.13, DZ + BED, 0.08, 0.04, 0.01, "lvW")   # tags
 
 
-def c1_holo():
-    k = l2a_holo()
+def c1_holo(rot=0):
+    k = l2a_holo(rot)
     a = (FU - 0.04, CV + 0.14, RH + 0.1)                                              # a case fragment's match
     b = (0.3, -0.44, 1.32)
     bar(k, a, b, 0.02, G)

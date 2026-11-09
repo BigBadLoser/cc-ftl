@@ -33,13 +33,13 @@ class Bench(K):
     """K with see-through parts: part(name) is a K whose objects render with the alpha `SEE[name]`."""
     SEE = {"glass": (GLASS_A, GLASS_RIM), "fluid": (FLUID_A, 0.2)}
 
-    def __init__(self, name, fp=FP):
-        super().__init__(name, fp, 0)
+    def __init__(self, name, fp=FP, rot=0):
+        super().__init__(name, fp, rot)
         self.name, self.parts, self.fp = name, {}, fp
 
     def part(self, name):
         if name not in self.parts:
-            self.parts[name] = K(f"{self.name}_{name}", self.fp, 0)
+            self.parts[name] = K(f"{self.name}_{name}", self.fp, self.rot)
         return self.parts[name]
 
     def build(self):
@@ -117,30 +117,36 @@ def slope_panel(k, u, v, z, su, sv, ry, glow, n=4):
               ry=ry)
 
 
+def holo_item(sid, fp, mask, objs):
+    """The hologram `objs` rendered alone with the bench objects `mask` as holdout, as a manifest item (see holo_job).
+    The bench must be built already (post.select done)."""
+    import numpy as np
+    from . import core, post
+    from . import env_build as E
+    for o in mask:
+        o.is_holdout = True
+    xmin, xmax, ymin, ymax = core.extent_px(objs + mask)
+    W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+    H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    rgb, a = core.render(W, H, "color")
+    c, op = post.downsample(rgb, a > 0.5, E.SS, 8, True)
+    grgb, _ = core.render(W, H, "glow")
+    g = post.glow_down(grgb, E.SS, 3)
+    al = np.where(op, np.where(g[..., 3] > 0, HOLO_LINE, HOLO_FILM), 0).astype(np.uint8)
+    g[..., :3] = (g[..., :3] * 0.45).astype(np.uint8)                              # a soft glow, not a lamp
+    return E.crop_item(sid, fp, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
+
+
 def holo_job(sid, v):
     """A translucent layer: the hologram rendered alone (the bench as holdout, so the bench hides what is behind it),
     alpha HOLO_LINE on its lit px and HOLO_FILM on the rest; no outline. Same origin as the bench sprite."""
     def run(sid=sid, v=v):                  # (the defaults key the render cache: one entry per layer)
-        import numpy as np
         from . import core, post
-        from . import env_build as E
         core.clear_scene_meshes()
         post.select("research")
         bench, holo, fp = entry(v)
         mask = bench("on")
-        for o in mask:
-            o.is_holdout = True
-        objs = holo().build()
-        xmin, xmax, ymin, ymax = core.extent_px(objs + mask)
-        W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
-        H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
-        rgb, a = core.render(W, H, "color")
-        c, op = post.downsample(rgb, a > 0.5, E.SS, 8, True)
-        grgb, _ = core.render(W, H, "glow")
-        g = post.glow_down(grgb, E.SS, 3)
-        al = np.where(op, np.where(g[..., 3] > 0, HOLO_LINE, HOLO_FILM), 0).astype(np.uint8)
-        g[..., :3] = (g[..., :3] * 0.45).astype(np.uint8)                              # a soft glow, not a lamp
-        it = E.crop_item(sid, fp, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
+        it = holo_item(sid, fp, mask, holo().build())
         return [it] if it else []
     return run
 

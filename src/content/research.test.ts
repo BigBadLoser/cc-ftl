@@ -46,10 +46,12 @@ describe('research content', () => {
     const ship = homeShip(sim);
     const store = sim.world.query(ModuleC).find((id) => sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.storage) as number;
     const s = sim.world.get(store, ModuleC);
-    // Drop a research module on a free floor tile near the first storage module.
-    for (let dx = -3; dx <= 3 && labsOf(sim, ship).length === 0; dx++) {
-      sim.enqueue({ type: 'debug.spawnModule', ship, x: (s?.x ?? 0) + dx, y: (s?.y ?? 0) - 2, def: 'module.research', rot: 0 });
-      sim.step();
+    // Drop the 3x2 research bench on free floor near the first storage module.
+    for (let dy = -6; dy <= 6 && labsOf(sim, ship).length === 0; dy++) {
+      for (let dx = -8; dx <= 8 && labsOf(sim, ship).length === 0; dx++) {
+        sim.enqueue({ type: 'debug.spawnModule', ship, x: (s?.x ?? 0) + dx, y: (s?.y ?? 0) + dy, def: 'module.research', rot: 0 });
+        sim.step();
+      }
     }
     expect(labsOf(sim, ship)).toHaveLength(1);
     const before = { e: stockOn(sim, ship, 'item.electronics'), p: stockOn(sim, ship, 'item.parts') };

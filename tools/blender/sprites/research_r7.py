@@ -23,8 +23,8 @@ PUCKS = ((-0.33, 0.3), (0.33, 0.3))   # the reconstruction's projectors on the t
 def bench(name, pucks=(), extra=None, **kw):
     """l2's bench with the light strip under the hutch shelves, pucks [(a, b)] on the table, and extra(k) for more
     (kw goes to l2)."""
-    def build(layer):
-        k = l2(layer, finish=False, name=name, **kw)
+    def build(layer, rot=0):
+        k = l2(layer, finish=False, name=name, rot=rot, **kw)
         for su in (-1, 1):
             k.box(su * 0.98, SHELF_FRONT - 1.5 * PXG, SHELVES[0] - zpx(1), 0.8, PXG, zpx(1), "resGold")
         T = Table(k, *T2)
@@ -52,8 +52,8 @@ def _glyph_rows(k, u0, v, z0, w, rows, cols, G, F, dz=0.07):
 
 # ---- l2a: reconstruction --------------------------------------------------------------------------------------------
 
-def l2a_holo():
-    k = K("research_l2a_holo", (3, 2), 0)
+def l2a_holo(rot=0):
+    k = K("research_l2a_holo", (3, 2), rot)
     G, F = "resGold", "resGoldF"
     T = Table(k, *T2)
     u, v, z = T.at(-0.06, 0.0, 0.1)                                                   # a scan line across the tablet

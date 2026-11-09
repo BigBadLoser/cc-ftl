@@ -1,11 +1,11 @@
 import type { World } from '../sim/ecs';
 import { JobC, PositionC } from '../sim/crew/components';
-import { isSettled } from '../sim/crew/helpers';
+import { atJob, isSettled } from '../sim/crew/helpers';
 import { StorageC } from '../sim/items/components';
-import type { Module } from '../sim/modules/components';
+import { ModuleC, type Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { depthKey } from './iso';
-import { hullOutward, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
+import { hullOutward, hullRow, hullSide, inFootprint, rotatedSize } from '../sim/modules/footprint';
 import { ContainerC } from '../sim/containers/components';
 import { PlotC } from '../sim/farm/components';
 import { cropStage } from './cropStage';
@@ -60,6 +60,21 @@ export function mannedConsoles(world: World): Set<number> {
     if (j?.kind !== 'operate' || !j.target || !j.reservedBy) continue;
     const p = world.get(j.reservedBy, PositionC);
     if (p && isSettled(p) && p.x === j.x && p.y === j.y) out.add(j.target);
+  }
+  return out;
+}
+
+/** Research modules with a crew member settled at them (beside the bench or in its chair), working its job. */
+export function workedLabs(world: World, defs: Readonly<Record<string, ModuleDef>>): Set<number> {
+  const out = new Set<number>();
+  for (const jobId of world.query(JobC)) {
+    const j = world.get(jobId, JobC);
+    if (j?.kind !== 'research' || !j.target || !j.reservedBy) continue;
+    const m = world.get(j.target, ModuleC);
+    const def = m && defs[m.def];
+    const p = world.get(j.reservedBy, PositionC);
+    if (!m || !def || !p || !isSettled(p)) continue;
+    if (atJob(p, { kind: 'research', x: m.x, y: m.y, size: rotatedSize(def, m.rot) }) || inFootprint(def, m.x, m.y, m.rot, p.x, p.y)) out.add(j.target);
   }
   return out;
 }
@@ -224,11 +239,12 @@ export const FRONT_DZ = 0.03;
 /** Targetable on enemy ships: weapons, engines, shield generators and the AI core (what the combat overlay can aim at). */
 export const isTargetable = (def: ModuleDef): boolean => !!(def.weapon || def.engine || def.shieldGen || def.aiCore);
 
-/** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting. */
+/** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting, research benches while worked. */
 export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, manned: boolean): boolean {
   if (!on) return false;
   if (def.console) return manned;
   if (def.crafting) return crafting;
+  if (def.research) return manned;
   return !!(def.hullEdge || def.shieldGen || def.aiCore);
 }
 

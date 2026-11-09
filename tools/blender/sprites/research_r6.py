@@ -196,10 +196,10 @@ def _tablet(T, glow):
                   glow if (i + j) % 3 else "resGoldF")
 
 
-def l2(layer, finish=True, name="l2", right=True, open_top=False):
+def l2(layer, finish=True, name="l2", right=True, open_top=False, rot=0):
     """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it); right=False leaves the
     lamp and slate off the right cabinet, open_top=True leaves the right bank's top drawer front for an open one."""
-    k = Bench(f"research_{name}_{layer}")
+    k = Bench(f"research_{name}_{layer}", rot=rot)
     G = "resGold"
     drawers(k, -0.98, n=3)
     drawers(k, 0.98, n=3, skip=(2,) if open_top else ())

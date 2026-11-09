@@ -28,7 +28,7 @@ import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
 import { bedBox } from './bedBox';
-import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, workedLabs, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -319,6 +319,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const now = animNow();
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
+      const worked = workedLabs(world, defs);
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
@@ -329,7 +330,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const on = m.powered && m.enabled && m.hp > 0;
         // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
         const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };
-        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id));
+        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id));
         const roofed = host.roofed();
         const level = host.level();
         // A bigger tier draws its base module's art at the base footprint (see tierBase).

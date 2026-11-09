@@ -95,16 +95,17 @@ export const modules = {
     workstation: true,
   },
   // The research module: crew work the ship's active research project here (sim/research). No blueprint: known from the start.
-  // Placeholder art: the console sprite (docs/STATUS.md). Needs its own model in an art pack.
+  // 3x2 research bench (tools/blender/sprites/research_bench.py): solid (0,0) (2,0) (0,1) (2,1); the chair (1,1) is the middle of the front row.
   'module.research': {
     scrap: 'tech',
     name: 'Research module',
     category: 'systems',
     description: "Crew study the ship's active research project here, faster with science. A second one speeds the same project up.",
-    asset: 'module.console',
-    footprint: [1, 1],
+    asset: 'module.research',
+    footprint: [3, 2],
     solid: true,
-    access: [0, 1],
+    access: [1, 1],
+    openTiles: [[1, 1]],
     power: -4,
     powerPriority: 4,
     flammability: 0.3,
