@@ -52,6 +52,7 @@ TOP_PX = 26                       # cabinet height in px (0.66), so its top edge
 TOP = zpx(TOP_PX)
 FRONT = -5 * PXG                  # the cabinet's front face (-0.16), on the u/v grid
 HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT = -30 * PXG, -24 * PXG, -23 * PXG   # the hutch: back, uprights' and shelves'
+BACK = -31 * PXG                   # the bench's back: every back face on this one plane, on the u/v grid
 SHELVES = (zpx(43), zpx(57))      # fronts, and its shelves' bottoms (1.1, 1.46)
 
 
@@ -97,7 +98,8 @@ def stack(k, face, c, p, w, n, top_px=TOP_PX, skip=()):
 
 def drawers(k, u, n=4, top=TOP, skip=()):
     """A drawer bank: the cabinet section, its front on the grid, n drawers on it (see stack)."""
-    body(k, u, FRONT - 0.4, 0.98, 0.8, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1), lip=None)
+    body(k, u, (FRONT + BACK) / 2, 0.98, FRONT - BACK, top, col="lvW2", top="lvW", panel="lvWS", faces=(0, 1),
+         lip=None)
     stack(k, "v", u, FRONT, 28 * PXG, n, round(top * ZPX_), skip)
 
 
@@ -117,7 +119,27 @@ def tool_tray(k, u, v, z):
 
 
 def middle_bay(k):
-    k.box(0.0, -0.75, 0.0, 0.94, 0.4, 0.655, "lvW2", top="lvW")
+    """The bay between the drawer banks: flush with them (width, back, top) and kicked like them."""
+    v0, v1 = BACK, -18 * PXG
+    k.box(0.0, (v0 + v1) / 2, 0.0, 0.98 - 2 * PXG, v1 - v0 - 2 * PXG, zpx(3), "dark")
+    k.box(0.0, (v0 + v1) / 2, zpx(3), 0.98, v1 - v0, TOP - zpx(3), "lvW2", top="lvW")
+
+
+def back(k):
+    """The back, as plain as the front is busy but not blank: inset panels on the cabinet like its drawer fronts,
+    seams at the hutch's uprights and between its shelves, a vent and a cable gland on each side."""
+    def patch(u, w, z0, z1, col, d=0.004):
+        k.box(u, BACK - d / 2, z0, w, d, z1 - z0, col)
+    for u in (-0.98, 0.0, 0.98):
+        patch(u, 0.98 - 0.16, zpx(6), TOP - zpx(6), "lvWS")
+    top = SHELVES[1] + zpx(2)
+    for u in (-0.52, 0.52):
+        patch(snap(u - PXG) + PXG, PXG, TOP, top, "lvWS")
+    patch(0.0, 2.9, SHELVES[0] + zpx(1), SHELVES[0] + zpx(2), "lvWS")
+    for su in (-1, 1):
+        for i in range(3):
+            patch(su * 1.0, 0.24, TOP + zpx(6 + 3 * i), TOP + zpx(7 + 3 * i), "dark", 0.008)   # vent slits
+        patch(su * 1.0, 0.1, TOP + zpx(1), TOP + zpx(4), "gm", 0.012)                      # a cable gland
 
 
 # ---- l1: the entomologist -------------------------------------------------------------------------------------------
@@ -213,7 +235,8 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False, rot=0):
         for su in (-1, 1):
             k.box(su * 0.98, (b + sf) / 2, z, 0.92, sf - b, zpx(2), "lvW2", top="lvW")
     k.box(0.0, (b + sf) / 2, SHELVES[1], 1.04, sf - b, zpx(2), "lvW2", top="lvW")
-    k.box(0.0, b - 0.02, TOP, 2.9, 0.04, SHELVES[1] + zpx(2) - TOP, "lvWS")             # its back panel
+    k.box(0.0, (BACK + b) / 2, TOP, 94 * PXG, b - BACK, SHELVES[1] + zpx(2) - TOP, "lvW2", top="lvW")   # back panel
+    back(k)
     # on the shelves: jars (left), labelled specimen boxes (right), slates stacked flat (top middle); under them,
     # books along the back of the cabinet top
     s0, s1 = SHELVES[0] + zpx(2), SHELVES[1] + zpx(2)                                   # the shelf tops
