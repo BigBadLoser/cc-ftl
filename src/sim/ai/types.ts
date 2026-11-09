@@ -74,7 +74,16 @@ export interface Intent {
   since: number;
   /** Per-mille integer scores in the policy's drive order. */
   scores: number[];
+  /** The tick the next full evaluation is due (ai/stagger.ts): the crew member's next staggered tick, or sooner on a wake. */
   nextEval: number;
+  /** The last evaluation's ranking (indices into the policy's drives, best first), served until the next one. */
+  rank?: number[];
+  /** Bit i set: drive i was urgent at the last evaluation (a drive crossing its urgent line wakes the crew member at once). */
+  urgent?: number;
+  /** The crew member's task context at the last evaluation (`taskContext`): a change (task started or ended, suit, away) wakes them. */
+  ctx?: number;
+  /** Wake reasons set since the last evaluation (`WAKE_*` in ai/stagger.ts); the next turn evaluates and clears them. */
+  wake?: number;
   /** Bit i set: drive i of the policy is latched on (Schmitt trigger between `enter` and `exit`). */
   latched?: number;
   /** A job the scheduler does not give this crew member until the tick (left for a hazard on its site: no walking straight back). */

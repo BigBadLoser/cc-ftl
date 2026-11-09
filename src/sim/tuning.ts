@@ -212,6 +212,11 @@ export const RELIEF_AFTER_SEC = 12;
 export const RELIEF_PENALTY = 1000;
 /** The job scheduler (ai/scheduler.ts) runs a pass at least this often (ticks) while crew are free and jobs open, even when nothing it fingerprints changed. */
 export const SCHED_CADENCE = 20;
+/**
+ * A crew member's drives are evaluated in full once per this many ticks, staggered by id (`(tick + id) % EVAL_TICKS`), and at once on a
+ * wake (ai/stagger.ts): between evaluations the last ranking is served.
+ */
+export const EVAL_TICKS = 10;
 /** A free crew member with more candidate jobs than this in one walk mode is costed by one multi-goal Dijkstra; fewer, by lazy A* per job. */
 export const SCHED_DIJKSTRA_ABOVE = 6;
 /**

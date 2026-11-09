@@ -7,7 +7,8 @@ import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { spawnTemplateModules } from '../ship';
 import { Sim } from '../sim';
-import { CREW_MAX_HP } from '../tuning';
+import { CREW_MAX_HP, EVAL_TICKS } from '../tuning';
+import { SLEEP_STAGGER } from '../ai/machines/sleep';
 import { findFreeBed } from './beds';
 import {
   BedOwnerC, CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
@@ -159,19 +160,21 @@ describe('bed ownership', () => {
     expect(claimedBed(open, b)).toBe(bedAt(open, 7, 1));
   });
 
-  it('delays the sleep decision by under 4 ticks, differently per crew member', () => {
+  // The decision waits for the crew member's evaluation tick (EVAL_TICKS, staggered by id: ai/stagger.ts), then the bed search for its
+  // SLEEP_STAGGER tick: both spread a crew crossing the threshold at once over several ticks.
+  it('delays the sleep decision by under EVAL_TICKS + SLEEP_STAGGER ticks, differently per crew member', () => {
     const sim = make(ROOM, [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]]);
     const ids = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => crew(sim, i, 2));
     run(sim, 21);
     for (const id of ids) sim.world.get(id, NeedsC)!.rest = 10;
     const at = new Map<number, number>();
-    for (let t = 1; t <= 6; t++) {
+    for (let t = 1; t <= EVAL_TICKS + SLEEP_STAGGER + 2; t++) {
       sim.step();
       for (const id of ids) if (!at.has(id) && claimedBed(sim, id) !== 0) at.set(id, t);
     }
     expect(at.size).toBe(ids.length);
     const delays = [...at.values()];
-    expect(Math.max(...delays)).toBeLessThanOrEqual(4); // the first step is tick 1, so at most 3 ticks of waiting
+    expect(Math.max(...delays)).toBeLessThanOrEqual(EVAL_TICKS + SLEEP_STAGGER - 1); // the first step is tick 1: at most 9 + 3 ticks of waiting
     expect(new Set(delays).size).toBeGreaterThan(1);
   });
 

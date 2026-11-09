@@ -24,7 +24,8 @@ import { hazardHolds } from './hazard';
 import { breakTurn } from './machines/break';
 import { escapeTurn } from './machines/escape';
 import type { DriveDef, MachineId } from './types';
-import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from './utility';
+import { isUrgent, readInput, serveDrive, type TaskView } from './utility';
+import { decideIntent, freshIntent, wakeIntent, WAKE_HELD } from './stagger';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
@@ -49,12 +50,14 @@ const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
 /**
  * Should a sleeper or eater (`own`: the machine of the task they are in) get up for another need? The scheduler's own ranking decides
  * (`evaluateIntent`): they wake only when the drive it puts first is another urgent need, which is open (its `requires` hold: food aboard,
- * an air source in reach) and beats the current drive (`harmsSooner` between two urgent ones). One evaluation, no second set of rules.
+ * an air source in reach) and beats the current drive (`harmsSooner` between two urgent ones). One evaluation, no second set of rules, and
+ * only when one is due (ai/stagger.ts): a drive crossing its urgent line makes it due, so between evaluations there is nothing new to ask.
  */
 function wakeForNeed(sim: Sim, id: number, own: MachineId): boolean {
   // The first urgent drive of the ranking: a non-urgent drive ahead of it (air above its refill line, with the sleep drive closed past its
   // exit) does not hide it.
-  const ranked = evaluateIntent(sim, id, { atPost: false, underway: underway(sim, id), finishing: () => false });
+  const ranked = freshIntent(sim, id, { atPost: false, underway: underway(sim, id), finishing: () => false });
+  if (!ranked) return false;
   for (const d of ranked) {
     if (!d.urgent || !d.input) continue;
     const x = readInput(sim, id, d.input);
@@ -80,7 +83,8 @@ function pickupRequest(sim: Sim, id: number): void {
 
 /**
  * Crew decisions, in `decide`'s slot (docs/CREW_AI.md sections 4 and 7). Per crew member in id order: the forced states keep them
- * out (drafted, incapacitated, off duty; a sleeper, charger or eater is busy), `policy.legacy` writes what they want (`Intent`), the
+ * out (drafted, incapacitated, off duty; a sleeper, charger or eater is busy), the utility engine writes what they want (`Intent`; in full
+ * on their staggered tick or a wake, else the last ranking: ai/stagger.ts), the
  * need machines (charge, sleep, eat) take it in that order, and a held job is kept, rerouted or dropped for an emergency. The crew
  * left free are then matched to open jobs together by the scheduler (`assignJobs`, Phase 2), and those without a job idle. Every turn leaves the
  * `Task` mirror current; crew held out of the loop are re-synced.
@@ -96,6 +100,7 @@ export function scheduleSystem(sim: Sim): void {
       const pos = sim.world.get(id, PositionC) as Position;
       breakTurn(sim, id, pos);
       sim.world.remove(id, PickupC);
+      wakeIntent(sim, id, WAKE_HELD);
       continue;
     }
     if (sim.world.has(id, DraftedC) || isIncapacitated(sim, id) || isOffDuty(sim, id)) {
@@ -103,6 +108,7 @@ export function scheduleSystem(sim: Sim): void {
       if (sim.world.has(id, DraftedC) && !isIncapacitated(sim, id) && !isOffDuty(sim, id) && hazardHolds(sim, id)) escapeTurn(sim, id, sim.world.get(id, PositionC) as Position, true);
       syncTask(sim, id, true); // held out of the loop: keep the mirror current (the turn below sets it for everyone else)
       sim.world.remove(id, PickupC);
+      wakeIntent(sim, id, WAKE_HELD);
       continue;
     }
     const crew = sim.world.get(id, CrewC) as Crew;
@@ -129,7 +135,7 @@ export function scheduleSystem(sim: Sim): void {
     // Robots: hold still for a mender (an interrupt in the design; kept inline, as a mender may take the job earlier in this pass).
     // Only a mechanical body is ever mended (mend jobs are posted for robots alone): skip the job scan for everyone else.
     if (speciesOf(sim, id)?.mechanical && heldForMend(sim, id) && !isCarrying(sim, id)) {
-      evaluateIntent(sim, id, { atPost, underway: underway(sim, id), finishing: () => true });
+      decideIntent(sim, id, { atPost, underway: underway(sim, id), finishing: () => true });
       abortTask(sim, id, 'heldForMend');
       continue;
     }
@@ -137,7 +143,7 @@ export function scheduleSystem(sim: Sim): void {
     // cannot start (no bay, no food), until one takes the crew member or `work` hands them to the job scheduler.
     const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id) };
     let served = false;
-    const ranked = evaluateIntent(sim, id, view);
+    const ranked = decideIntent(sim, id, view);
     pickupRequest(sim, id);
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;

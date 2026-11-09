@@ -198,7 +198,7 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
     sim.world.add(id, IntentC, intent);
   }
   if (intent.avoid && sim.tick >= intent.avoid.until) delete intent.avoid;
-  intent.nextEval = sim.tick + 1; // every tick: the drives are cheap to read, and a need is answered the tick it arises
+  intent.nextEval = sim.tick + 1; // due again next tick unless the stagger (ai/stagger.ts) sets its own
   const driven = view.atPost || traitFlag(sim, id, 'workaholic'); // a Workaholic keeps going like an operator at a console
   const scored = policy.drives.map((d, i) => scoreDrive(sim, id, d, i, intent, driven, view));
   let blocked: DriveId | undefined;
@@ -223,7 +223,12 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;
-  return rank(sim, id, intent, scored);
+  let urgent = 0;
+  for (const s of scored) if (s.urgent) urgent |= 1 << s.i;
+  intent.urgent = urgent;
+  const ranked = rank(sim, id, intent, scored);
+  intent.rank = ranked.map((s) => s.i);
+  return ranked.map((s) => s.def);
 }
 
 /**
@@ -231,10 +236,10 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
  * does not beat it. A challenger ranked above it beats it when urgent, or once `minDwell` has passed and it clears `margin`.
  * So the order is: the challengers that beat it, the current drive, then everyone else, each part by score.
  */
-function rank(sim: Sim, id: number, intent: Intent, scored: Scored[]): DriveDef[] {
+function rank(sim: Sim, id: number, intent: Intent, scored: Scored[]): Scored[] {
   const open = scored.filter((s) => s.open).sort((a, b) => b.score - a.score || a.i - b.i);
   const at = open.findIndex((s) => s.def.id === intent.drive);
-  if (at < 0) return open.map((s) => s.def);
+  if (at < 0) return open;
   const cur = open[at] as Scored;
   const dwelling = sim.tick - intent.since < (cur.def.minDwell ?? 0);
   // An urgent drive runs ahead of a current drive that is not urgent however the scores and policy order tie (else a sleeper woken for hunger
@@ -245,7 +250,7 @@ function rank(sim: Sim, id: number, intent: Intent, scored: Scored[]): DriveDef[
     (above && !cur.urgent && (s.urgent || (!dwelling && s.score >= cur.score + (cur.def.margin ?? 0)))) ||
     (above && cur.urgent && !s.urgent && !dwelling && s.score >= cur.score + (cur.def.margin ?? 0));
   const beaters = open.filter((s, k) => k !== at && beats(s, k < at));
-  return [...beaters, cur, ...open.filter((s, k) => k !== at && !beaters.includes(s))].map((s) => s.def);
+  return [...beaters, cur, ...open.filter((s, k) => k !== at && !beaters.includes(s))];
 }
 
 /** Record the drive the crew member is serving this tick. */
