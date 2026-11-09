@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JobC, ModuleC, ResearchC, accessTile, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
+import { JobC, ModuleC, PositionC, ResearchC, accessTile, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
 import { content } from './index';
 
 const modules: Record<string, ModuleDef> = content.modules;
@@ -74,6 +74,15 @@ describe('research content', () => {
     expect(at).toBeTruthy();
     expect(job && { x: job.x, y: job.y }).toEqual(at);
     expect(job?.size).toBeUndefined();
+    // A crew member walks into the chair and works from it.
+    let worker = 0;
+    for (let i = 0; i < 4000 && !worker; i++) {
+      sim.step();
+      const j = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)).find((x) => x?.kind === 'research' && x.target === lab);
+      const pos = j?.reservedBy ? sim.world.get(j.reservedBy, PositionC) : undefined;
+      if (j && pos && pos.x === j.x && pos.y === j.y) worker = j.reservedBy;
+    }
+    expect(worker).not.toBe(0);
     const copy = deserialize(serialize(sim), content);
     expect(copy.world.get(ship, ResearchC)).toEqual(sim.world.get(ship, ResearchC));
   });
