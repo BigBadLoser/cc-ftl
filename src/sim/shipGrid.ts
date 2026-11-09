@@ -48,9 +48,17 @@ export class ShipGrid implements GridLike {
     this.sector.set(field, x, y, value);
   }
 
+  /** Last sum per field and the sector-wide revision it was taken at: with no write anywhere since, no chunk under the ship moved either. */
+  private readonly revs = new Map<string, { sector: number; sum: number }>();
+
   /** Sum of the revisions of the sector chunks the rectangle overlaps; changes whenever a tile in them is written. */
   revision(field: string): number {
-    return this.sumRevisions(field, this.x0, this.y0, this.width, this.height);
+    const sector = this.sector.has(field) ? this.sector.revision(field) : -1;
+    const hit = this.revs.get(field);
+    if (hit && hit.sector === sector) return hit.sum;
+    const sum = this.sumRevisions(field, this.x0, this.y0, this.width, this.height);
+    this.revs.set(field, { sector, sum });
+    return sum;
   }
 
   /** Revision of sector chunk (cx, cy), which must overlap the rectangle. */

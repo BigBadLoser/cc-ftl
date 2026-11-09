@@ -27,6 +27,18 @@ describe('grid snapshots', () => {
     expect([...b]).toEqual([...ship.load('struct')]);
   });
 
+  it("a ship's field revision moves with writes under it only, read again after any write in the sector", () => {
+    const { sector, ship } = mk();
+    const r0 = ship.revision('struct');
+    expect(ship.revision('struct')).toBe(r0);
+    sector.set('struct', 70, 70, Struct.Wall);
+    expect(ship.revision('struct')).toBe(r0);
+    sector.set('struct', 6, 6, Struct.Wall);
+    const r1 = ship.revision('struct');
+    expect(r1).toBeGreaterThan(r0);
+    expect(r1).toBe(new ShipGrid(9, sector, 2, 3, 38, 17).revision('struct')); // a fresh view, no memo, agrees
+  });
+
   it('the thin-air mask follows only writes across the line, and matches the field', () => {
     const { sector, ship } = mk();
     const m = thinMask(ship);
