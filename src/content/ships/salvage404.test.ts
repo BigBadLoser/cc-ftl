@@ -1,11 +1,15 @@
-/** Regressions of the salvage playtest (#404): passages, the site's shuttle, seals on the wreck (Call off and strain: app/salvageRun.test.ts). */
+/** Regressions of the salvage playtest (#404): passages, the site's shuttle, seals on the wreck, suits, the helmet lamp (Call off and strain: app/salvageRun.test.ts). */
 import { describe, expect, it } from 'vitest';
-import { AboardC, JobC, NeedsC, ShipC, VehicleC, Struct, shipGrid, type Job } from '../../sim';
+import { AboardC, JobC, ModuleC, NeedsC, PositionC, ShipC, VehicleC, Struct, shipGrid, type Job } from '../../sim';
 import { SiteRunC } from '../../sim/away/components';
 import { passageFits, staySec } from '../../sim/away/crew';
 import { siteShuttleOk } from '../../sim/away/handlers';
 import { passagesOf } from '../../sim/away/passage';
 import { breachTiles } from '../../sim/crew/breach';
+import { contextPresent } from '../../sim/crew/stress';
+import { AirlockC } from '../../sim/modules/airlock';
+import { airlockSuits } from '../../sim/eva/suit';
+import { shipIdOf } from '../../sim/regions';
 import { SuitC } from '../../sim/eva/components';
 import { vehicleSuits } from '../../sim/eva/shuttle';
 import { spillItems } from '../../sim/items/stacks';
@@ -80,5 +84,28 @@ describe('salvage playtest (#404)', () => {
     expect(sim.world.has(c, AboardC)).toBe(true);
     expect(sim.world.has(c, SuitC)).toBe(false);
     expect(vehicleSuits(sim, v)).toBe(before + 1);
+  });
+
+  it("a site's shuttle at home takes spare suits from the home airlocks, leaving each airlock one", () => {
+    const { sim, home, shuttle } = boarding();
+    const v = sim.world.get(shuttle, VehicleC)!;
+    v.suits = 0; // suits lost (the user's save had 1 of 3)
+    const locks = sim.world.query(AirlockC).filter((a) => shipIdOf(sim, sim.world.get(a, ModuleC)!) === home);
+    const spare = locks.reduce((n, a) => n + Math.max(0, airlockSuits(sim, a) - 1), 0);
+    expect(spare).toBeGreaterThan(0);
+    play(sim, 20);
+    expect(vehicleSuits(sim, v)).toBe(Math.min(3, spare));
+    for (const a of locks) expect(airlockSuits(sim, a)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a suited crew member is never in the dark (helmet lamp): no blackout stress', () => {
+    const { sim, home } = setup(3);
+    const [c] = crewOn(sim, home) as [number];
+    const p = sim.world.get(c, PositionC)!;
+    const grid = shipGrid(sim, shipIdOf(sim, p))!;
+    grid.set('light', p.x, p.y, 0);
+    expect(contextPresent(sim, c, 'blackout')).toBe(true);
+    sim.world.add(c, SuitC, { worn: true, air: 100 });
+    expect(contextPresent(sim, c, 'blackout')).toBe(false);
   });
 });

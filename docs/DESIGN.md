@@ -583,7 +583,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
-  At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
+  At home it drops off those going home, unloads the hold (the existing cargo hauls), refills its air and tops its suits back up
+  from the home ship's airlocks, leaving each airlock at least one (#404). Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
 - **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
   - each away site has a **staging zone**, a few floor tiles beside the shuttle's drop-off point (the hatch drop point when it

@@ -1260,8 +1260,9 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `TRIP_WAIT_SEC` (300) since the
     last trip with anyone aboard, or `Vehicle.air` under one tank. A waiting passenger turns urgent below rest 20 / hunger
     10 (needs keep running aboard). Every trigger goes through the departure check.
-  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`, passages for free
-    seats, then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
+  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`, top the suits back up to
+    the def's complement from the home ship's airlocks while each keeps one free suit (`away/suits.ts` `restockSuits`, every tick at home;
+    #404), passages for free seats, then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
   - `keepClose`/`liveBox` move here unchanged (the hover point follows the shrinking hull, and the pickup re-aims it).
   - Loose stacks on a served site become hauls into the hold (from `cargoRun.planCarry` and `looseOn`); `logistics/salvage.ts`
     `crewOn` also accepts a site with `AwaySiteC`, so a second shuttle ferries the overflow. It queues nothing while no shuttle
