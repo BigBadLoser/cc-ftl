@@ -59,7 +59,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 43 (set 3) | tan | 2768 / 2767 / 2866 | built: `sprites/wall3d_iwin.py` (renders again; join dots fixed, iw42) |
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
-| 122 (set 4) | navy | 2772 / 2771 / 2862 | N0 built, shown (see "Navy window") |
+| 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
@@ -728,3 +728,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-09: the user: the middle block 2 px white either side, a plate outlined in the panel line's colour: bottom at the toe, sides 2 px in, top at the sill. nw11: _plate on the slope (3 PAINT proud): WHITE fNW1 strips 2 px wide sill to foot, LINE_C fNW7 outline (sides 1 px, top and bottom 1.5 screen px down the slope: at 1 they dashed), top at the shelf's edge, bottom at the toe's top.
 - 2026-11-09: the user: the plate's bottom line where the red ends; the panel wrapped over the slope to the top, ending where the window's floor starts. nw12: _plate's strips run over the shelf (from the wall's line) and down the slope to the foot; the top line on the shelf at the wall's line (1.5 screen px), the bottom line the slope's last 1.5 screen px (the red's end); the plate's top inside is the sill's white.
 - 2026-11-09: the user: the top line ~3 px thick; the plate's top in the shelf's colour. nw13: the line widths were on a wrong screen scale (a line along x moves 32 px a unit of depth on the flat, 32 + f*ZART on the slope; was 16 and 16 + f*ZART at 1.5x): now 1 screen px each; the plate's top fNW2 (the shelf's).
+- 2026-11-09: the user: navy done for now, flagged ugly (the wall set and its window want a rethink before they ship). Parked at nw13; next look: drone (423).
