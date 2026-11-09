@@ -52,6 +52,19 @@ describe('grid snapshots', () => {
     expect(n.hash).not.toBe(m.hash);
   });
 
+  it('a chunk released and rebuilt drops its air: the mask sees the vacuum though no write crossed the line', () => {
+    const sector = new SectorGrid(1, SHIP_FIELDS, SHIP_EMPTY, { watch: { field: 'o2', below: EVA_THIN_AIR_BELOW } });
+    sector.set('struct', 4, 4, Struct.Floor);
+    sector.set('o2', 4, 4, 21);
+    const ship = new ShipGrid(9, sector, 0, 0, 16, 16);
+    expect(thinMask(ship).thin[4 * 16 + 4]).toBe(0);
+    sector.set('struct', 4, 4, Struct.Space); // the chunk's last floor: released, its o2 gone
+    sector.set('struct', 4, 4, Struct.Floor); // rebuilt: o2 reads empty (vacuum)
+    expect(sector.get('o2', 4, 4)).toBeLessThan(EVA_THIN_AIR_BELOW);
+    expect([...thinMask(ship).thin]).toEqual(mask(ship));
+    expect(thinMask(ship).thin[4 * 16 + 4]).toBe(1);
+  });
+
   it('without the watch the mask follows the o2 revision', () => {
     const { sector, ship } = mk(false);
     const m = thinMask(ship);

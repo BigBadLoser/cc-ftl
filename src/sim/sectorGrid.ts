@@ -107,6 +107,12 @@ export class SectorGrid implements GridLike {
     this.watchBelow = opts.watch?.below ?? 0;
   }
 
+  /** Chunks released so far (their fields drop to empty with no write counted). Monotone; not saved: a cache key, valid for this instance only. */
+  private released = 0;
+  releases(): number {
+    return this.released;
+  }
+
   /** Writes so far that moved a tile of the watched field across its threshold (0 without a watch). Monotone, saved. */
   crossings(): number {
     return this.crossed;
@@ -334,6 +340,7 @@ export class SectorGrid implements GridLike {
   }
 
   private release(key: number): void {
+    this.released++;
     this.dir.delete(key);
     this.sorted = null;
     // The data changed (to empty): bump every field so revision sums never go backwards.

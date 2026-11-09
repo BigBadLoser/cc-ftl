@@ -32,20 +32,21 @@ export interface ThinMask {
   thin: Uint8Array;
   hash: number;
 }
-const masks = new WeakMap<ShipGrid, { key: number; mask: ThinMask }>();
+const masks = new WeakMap<ShipGrid, { key: number; released: number; mask: ThinMask }>();
 
 /**
- * The thin-air mask of a ship with an o2 field. Only a write that moves a tile across EVA_THIN_AIR_BELOW changes it: the sector grid counts
- * those (its `watch`, `crossings()`), so with that watch the mask is kept until the count moves; without it, while the ship's o2 is unchanged.
- * Shared: never write to it.
+ * The thin-air mask of a ship with an o2 field. Only a write that moves a tile across EVA_THIN_AIR_BELOW changes it, or a chunk released
+ * (its last floor gone: its o2 drops to empty with no write). The sector grid counts both (its `watch`, `crossings()`; `releases()`), so with
+ * that watch the mask is kept until either count moves; without it, while the ship's o2 is unchanged. Shared: never write to it.
  */
 export function thinMask(grid: ShipGrid): ThinMask {
   const w = grid.sector.watch();
   const watched = w !== null && w.field === 'o2' && w.below === EVA_THIN_AIR_BELOW;
   // Crossings count up from 0 and revisions too; the sign keeps the two apart should the watch ever be configured away.
   const key = watched ? grid.sector.crossings() : -1 - grid.revision('o2');
+  const released = grid.sector.releases();
   const hit = masks.get(grid);
-  if (hit && hit.key === key) return hit.mask;
+  if (hit && hit.key === key && hit.released === released) return hit.mask;
   const o2 = grid.load('o2');
   const thin = new Uint8Array(o2.length);
   let hash = 2166136261;
@@ -55,6 +56,6 @@ export function thinMask(grid: ShipGrid): ThinMask {
     hash = Math.imul(hash ^ t, 16777619);
   }
   const mask = { thin, hash };
-  masks.set(grid, { key, mask });
+  masks.set(grid, { key, released, mask });
   return mask;
 }
