@@ -13,7 +13,8 @@ import math
 from .modkit import K
 from .research_kit import bar, ring
 from .research_r3 import _pane
-from .research_r6 import T2, Table, l2
+from .research_kit import PXG, zpx
+from .research_r6 import SHELF_FRONT, SHELVES, T2, Table, l2
 
 
 def bench(name, pucks=(), extra=None, **kw):
@@ -22,7 +23,7 @@ def bench(name, pucks=(), extra=None, **kw):
     def build(layer):
         k = l2(layer, finish=False, name=name, **kw)
         for su in (-1, 1):
-            k.box(su * 0.98, -0.8, 1.085, 0.8, 0.03, 0.015, "resGold")
+            k.box(su * 0.98, SHELF_FRONT - 1.5 * PXG, SHELVES[0] - zpx(1), 0.8, PXG, zpx(1), "resGold")
         T = Table(k, *T2)
         for a, b in pucks:
             T.put(a, b, 0.0, 0.15, 0.15, 0.03, "lvW2", top="lvW")

@@ -18,10 +18,16 @@ from .research_r4 import lamp, slate
 
 class Table:
     """The tilted light table: centre (u, v, z), tilt toward the chair. put() lays a box on it: a along u, b up the
-    slope (toward the back), h above the surface."""
+    slope (toward the back), h above the surface. Its edges along u sit on the px grid: an edge at (v, z) draws as a clean
+    2:1 stair when 32 v - ZPX z is whole, so the centre's z is nudged to make it whole there, and the frame's depth,
+    thickness and rim are whole px of that (ph px per unit of b, pt per unit of h)."""
 
     def __init__(self, k, c, tilt):
-        self.k, self.c, self.t = k, c, tilt
+        self.k, self.t = k, tilt
+        self.ph = 32 * math.cos(tilt) + ZPX_ * math.sin(tilt)
+        self.pt = ZPX_ * math.cos(tilt) - 32 * math.sin(tilt)
+        u, v, z = c
+        self.c = (u, v, (32 * v - round(32 * v - ZPX_ * z)) / ZPX_)
 
     def at(self, a, b, h):
         d, n = (-math.cos(self.t), math.sin(self.t)), (math.sin(self.t), math.cos(self.t))
@@ -32,18 +38,21 @@ class Table:
         self.k.box(u, v, z - sz / 2, su, sv, sz, col, top=top, rx=-self.t, rz=rz, bevel=bevel)
 
     def build(self, w=1.26, d=0.86, light="resLamp"):
-        """The frame, the lit glass, a pen ledge along its lip, the stand under it."""
+        """The frame (2 px thick at its lip, a 3 px rim), the lit glass all but flush in it, the stand under it."""
         k, (u, v, z) = self.k, self.c
+        d = 2 * round(d / 2 * self.ph) / self.ph                         # front and back edges whole px from the centre
+        th, m, lh = 2 / self.pt, 3 / self.ph, 0.003                      # frame thickness, rim, glass proud of it
         k.box(u, v, 0.0, 0.5, 0.3, 0.06, "dark")
         k.box(u, v, 0.06, 0.16, 0.16, z - 0.16, "steelD")
-        self.put(0.0, 0.0, -0.08, w, d, 0.08, "lvW2", top="lvW")
-        self.put(0.0, 0.0, 0.0, w - 0.14, d - 0.14, 0.02, light)
-        self.put(0.0, -d / 2 + 0.03, -0.04, w - 0.06, 0.06, 0.08, "lvW2", top="lvW")
+        self.put(0.0, 0.0, -th, w, d, th, "lvW2", top="lvW")
+        self.put(0.0, 0.0, lh - 0.012, w - 2 * m, d - 2 * m, 0.012, light)
 
 
 TOP_PX = 26                       # cabinet height in px (0.66), so its top edge and the drawers' sit on the z grid
 TOP = zpx(TOP_PX)
 FRONT = -5 * PXG                  # the cabinet's front face (-0.16), on the u/v grid
+HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT = -30 * PXG, -24 * PXG, -23 * PXG   # the hutch: back, uprights' and shelves'
+SHELVES = (zpx(43), zpx(57))      # fronts, and its shelves' bottoms (1.1, 1.46)
 
 
 def slots(n, top_px=TOP_PX, z0=4, g=2, margin=2):
@@ -184,33 +193,35 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False):
     drawers(k, -0.98, n=3)
     drawers(k, 0.98, n=3, skip=(2,) if open_top else ())
     middle_bay(k)
-    # the hutch: three uprights, two shelves along the back over the cabinet
+    # the hutch: uprights and two shelves along the back over the cabinet, all on the px grid (see HUTCH)
+    b, uf, sf = HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT
     for u in (-1.44, -0.52, 0.52, 1.44):
-        k.box(u, -0.86, 0.66, 0.06, 0.24, 1.0, "lvW2", top="lvW")
-    for z in (1.1, 1.46):
+        k.box(u, (b + uf) / 2, TOP, 0.06, uf - b, zpx(39), "lvW2", top="lvW")
+    for z in SHELVES:
         for su in (-1, 1):
-            k.box(su * 0.98, -0.86, z, 0.92, 0.26, 0.04, "lvW2", top="lvW")
-    k.box(0.0, -0.86, 1.46, 1.04, 0.26, 0.04, "lvW2", top="lvW")
-    k.box(0.0, -0.96, 0.66, 2.9, 0.04, 0.84, "lvWS")                                    # its back panel
+            k.box(su * 0.98, (b + sf) / 2, z, 0.92, sf - b, zpx(2), "lvW2", top="lvW")
+    k.box(0.0, (b + sf) / 2, SHELVES[1], 1.04, sf - b, zpx(2), "lvW2", top="lvW")
+    k.box(0.0, b - 0.02, TOP, 2.9, 0.04, SHELVES[1] + zpx(2) - TOP, "lvWS")             # its back panel
     # on the shelves: jars (left), labelled specimen boxes (right), slates stacked flat (top middle)
+    s0, s1 = SHELVES[0] + zpx(2), SHELVES[1] + zpx(2)                                   # the shelf tops
     for i, u in enumerate((-1.26, -1.04, -0.82)):
-        jar(k, u, -0.86, 1.14, ("resSpec", "resFrond", "resSpecL")[i], r=0.07, h=0.18)
+        jar(k, u, -0.86, s0, ("resSpec", "resFrond", "resSpecL")[i], r=0.07, h=0.18)
     for i, u in enumerate((0.74, 0.98, 1.22)):
-        k.box(u, -0.86, 1.14, 0.2, 0.2, 0.14, "ochM", top="ochL", bevel=0.01)
-        k.box(u, -0.755, 1.18, 0.1, 0.012, 0.05, "lvW")
-    for i in range(4):
-        k.box(0.0 + 0.01 * i, -0.86, 1.5 + i * 0.03, 0.4, 0.2, 0.025, "gm" if i % 2 else "dark", top="steelD")
+        k.box(u, sf - PXG - 0.1, s0, 0.2, 0.2, zpx(6), "ochM", top="ochL")
+        k.box(u, sf - PXG + 0.002, s0 + zpx(2), 0.1, 0.004, zpx(2), "lvW")
+    for i in range(3):
+        k.box(0.0, -0.86, s1 + zpx(i), 0.4, 0.2, zpx(1), "gm" if i % 2 else "dark", top="steelD")
     for i, u in enumerate((-1.1, 1.1)):
-        jar(k, u, -0.86, 1.5, ("resRelicL", "resSpec")[i], r=0.06, h=0.16)
+        jar(k, u, -0.86, s1, ("resRelicL", "resSpec")[i], r=0.06, h=0.16)
     T = Table(k, *T2)
     T.build()
     _tablet(T, G)
     if right:
         lamp(k, 0.82, -0.36, 0.66, "resLamp")
     # on the cabinet: a brush and picks (left), notes and a rubbing (right)
-    k.box(-1.0, -0.46, 0.66, 0.5, 0.24, 0.03, "steelD", top="dark")
+    k.box(-1.0, -15 * PXG, TOP, 0.5, 8 * PXG, zpx(1), "steelD", top="dark")            # (whole px: see PXG)
     for i, (w, col) in enumerate(((0.3, "ochM"), (0.26, "steelL"), (0.22, "steelL"))):
-        k.box(-1.0, -0.54 + i * 0.08, 0.69, w, 0.025, 0.02, col)
+        k.box(-1.0, (-17.5 + 3 * i) * PXG, TOP + zpx(1), w, PXG, zpx(1), col)
     if right:
         slate(k, 1.12, -0.48, 0.66, G, rz=-0.12)
     chair(k, "lvW2", "rust")

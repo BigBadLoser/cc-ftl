@@ -90,15 +90,18 @@ def chair(k, shell="steelD", pad="navy"):
 def body(k, u, v, su, sv, h, col="steel", top="plate", panel="plateB", faces=(1, 1), lip="gm"):
     """A cabinet body: kick recess, the shell, inset panels on its +v and +u/-u faces, a top skin (its edge in lip).
     lip=None: no skin and no bevel, the shell's top edge one clean break (a sub-pixel bevel or overhang dots it)."""
-    k.box(u, v, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
-    if lip is None:
-        k.box(u, v, 0.08, su, sv, h - 0.08, col, top=top)
+    if lip is None:                                         # on the px grid: a 1 px recessed kick 3 px tall,
+        kz, pz = zpx(3), zpx(6)                             # panels 6 px in from the bottom and the top
+        k.box(u, v, 0.0, su - 2 * PXG, sv - 2 * PXG, kz, "dark")
+        k.box(u, v, kz, su, sv, h - kz, col, top=top)
     else:
+        kz, pz = 0.08, 0.15
+        k.box(u, v, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
         k.box(u, v, 0.08, su, sv, h - 0.12, col, top=top, bevel=0.02)
     if faces[0]:
-        k.box(u, v, 0.15, su - 0.16, sv + 0.014, h - 0.3, panel)
+        k.box(u, v, pz, su - 0.16, sv + 0.014, h - 2 * pz, panel)
     if faces[1]:
-        k.box(u, v, 0.15, su + 0.014, sv - 0.16, h - 0.3, panel)
+        k.box(u, v, pz, su + 0.014, sv - 0.16, h - 2 * pz, panel)
     if lip is not None:
         k.box(u, v, h - 0.04, su + 0.03, sv + 0.03, 0.04, lip, top=top, bevel=0.012)
 

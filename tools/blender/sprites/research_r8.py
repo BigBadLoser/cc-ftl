@@ -11,7 +11,7 @@ from .modkit import K
 from .research_kit import bar, ring
 from .research_r3 import _pane
 from .research_r4 import slate
-from .research_kit import ZPX, snap, zpx
+from .research_kit import PXG, ZPX, snap, zpx
 from .research_r6 import FRONT, TOP, front, stack
 from .research_r7 import bench, l2a_holo
 
@@ -36,7 +36,7 @@ def _fragment(k, u, v, z, s, rz):
 
 # ---- r1: the desk extension -----------------------------------------------------------------------------------------
 
-RV0, RV1, RH = -0.18, 0.86, TOP   # the return's v span and height
+RV0, RV1, RH = -0.18, 28 * PXG, TOP  # the return's v span and height
 
 
 def _return(k, items=True, joined=False):
@@ -44,10 +44,10 @@ def _return(k, items=True, joined=False):
     v0, v1, H = (FRONT if joined else RV0), RV1, RH
     sv, cv = v1 - v0, (v0 + v1) / 2
     ur = snap(FU + 0.49)                                                              # its face toward the chair
-    k.box(FU, cv, 0.0, 0.9, sv - 0.08, 0.08, "dark")
-    k.box((FU - 0.49 + ur) / 2, cv, 0.08, ur - FU + 0.49, sv, H - 0.08, "lvW2", top="lvW")
+    cu, su = (FU - 0.49 + ur) / 2, ur - FU + 0.49
+    k.box(cu, cv, 0.0, su - 2 * PXG, sv - 2 * PXG, zpx(3), "dark")                    # a 1 px recessed kick
+    k.box(cu, cv, zpx(3), su, sv, H - zpx(3), "lvW2", top="lvW")
     stack(k, "u", cv + 0.05, ur, 0.6, 3)                                              # drawers toward the chair
-    k.box(FU, v1 + 0.005, 0.15, 0.8, 0.02, H - 0.3, "lvWS")                           # a panel on its end
     if not items:
         return
     for i, (col, top) in enumerate((("rust", "ochL"), ("pcb", "ochL"), ("navy", "ochL"))):   # field journals
