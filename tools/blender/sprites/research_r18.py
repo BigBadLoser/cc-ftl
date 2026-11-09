@@ -21,6 +21,25 @@ from .research_r16 import INK, STEEL, bar, ring
 GOLD = ("resGold",) * 3
 
 
+def _mirror(k):
+    """Turn k end for end (u -> -u), keeping the long side toward the camera; faces keep their outward winding."""
+    p0, poly0 = k.p, k.m.poly
+    k.p = lambda u, v: p0(-u, v)
+    k.m.poly = lambda pts, color, flip=False: poly0(pts[::-1], color, flip)
+    return k
+
+
+class FlipBench(Bench):
+    def __init__(self, name, fp=FP2):
+        super().__init__(name, fp)
+        _mirror(self)
+
+    def part(self, name):
+        if name not in self.parts:
+            self.parts[name] = _mirror(K(f"{self.name}_{name}", self.fp, 0))
+        return self.parts[name]
+
+
 def ticks(k, u0, u1, v, z, step=6):
     for u in range(round(u0 / P(1)), round(u1 / P(1)) - 2, step):
         top(k, P(u), P(u + 3), v, v + P(1), z, CRK)
@@ -28,8 +47,8 @@ def ticks(k, u0, u1, v, z, step=6):
 
 # ---- x17: the reference ---------------------------------------------------------------------------------------------
 
-def x17(layer):
-    k = Bench(f"research_x17_{layer}", FP2)
+def x17(layer, flip=False):
+    k = (FlipBench if flip else Bench)(f"research_x17{'r' if flip else ''}_{layer}", FP2)
     # low and long: a thick plinth, a tall rounded navy body, a thin cream deck
     blk(k, P(-30), P(30), P(-14), P(14), 0, Z(1), DARK)
     prism(k, "u", P(-31), P(31), [(P(-15), Z(1)), (P(15), Z(1)), (P(15), Z(5)), (P(14), Z(6)), (P(-15), Z(6))],
@@ -80,16 +99,18 @@ def x17(layer):
     return k.build()
 
 
-def x17_holo():
-    k = K("research_x17_holo", FP2, 0)
+def x17_holo(flip=False):
+    k = K(f"research_x17{'r' if flip else ''}_holo", FP2, 0)
+    if flip:
+        _mirror(k)
     k.box(P(2.5), 0.0, Z(17), 0.06, 0.06, Z(15), "resGoldF")
     return k
 
 
 # ---- x18: scanner hood ----------------------------------------------------------------------------------------------
 
-def x18(layer):
-    k = Bench(f"research_x18_{layer}", FP2)
+def x18(layer, flip=False):
+    k = (FlipBench if flip else Bench)(f"research_x18{'r' if flip else ''}_{layer}", FP2)
     # the hull's lower layers: a skirt sloping in, the navy body ribbed
     prism(k, "u", P(-31), P(31), [(P(-13), 0), (P(13), 0), (P(15), Z(5)), (P(-15), Z(5))], BROWN, "resBrnL")
     blk(k, P(-29), P(29), P(-13), P(13), Z(5), Z(12), NAVY)
@@ -122,8 +143,10 @@ def x18(layer):
     return k.build()
 
 
-def x18_holo():
-    k = K("research_x18_holo", FP2, 0)
+def x18_holo(flip=False):
+    k = K(f"research_x18{'r' if flip else ''}_holo", FP2, 0)
+    if flip:
+        _mirror(k)
     k.box(P(3), 0.0, Z(16), 0.012, P(12), Z(12), "resGoldF")
     return k
 
@@ -172,3 +195,5 @@ def x19_holo():
 
 
 BUILD = {v: (globals()[v], globals()[f"{v}_holo"], FP2) for v in ("x17", "x18", "x19")}
+BUILD.update({"x17r": (lambda layer: x17(layer, True), lambda: x17_holo(True), FP2),      # end for end
+              "x18r": (lambda layer: x18(layer, True), lambda: x18_holo(True), FP2)})
