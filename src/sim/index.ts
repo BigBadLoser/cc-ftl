@@ -36,7 +36,7 @@ export { storageSpace, storageCount, storageAdd, storageTake } from './items/sto
 export { stackAt, stackSizeOf } from './items/stacks';
 export { PlotC } from './farm/components';
 export { growth, growTicks, plotScale, plotWaterScale, wantsSowing } from './farm/crops';
-export { totalStock } from './items/stock';
+export { totalStock, reservations } from './items/stock';
 export { missingMaterials, needsMaterials } from './items/materials';
 export { activeOrder } from './items/production';
 export * from './combat/components';
@@ -190,6 +190,7 @@ export { yardService, yardPrice, type YardService } from './yard/rules';
 export { liveOrderOf } from './yard/order';
 export { abortYards, YARD_HISTORY } from './yard/flow';
 export { builtCount, totalTiles } from './yard/progress';
+export { innerWalls } from './yard/open';
 export { YardCrewC, HullPlanC, isLiveOrder, type YardDef, type YardOrder, type YardPhase, type YardState, type YardSizeDef, type YardMoney } from './yard/types';
 export { nodesWithin } from './galaxy/graph';
 export { surrenderBelow } from './fight/surrender';

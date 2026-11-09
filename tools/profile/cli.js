@@ -2,7 +2,7 @@
 /**
  * Profile the running game in headless Chromium and print the report.
  *   npm run profile -- [--scenario log|hullplan|handover|bounty|survey|fight|damage|none] [--seconds 20] [--speed 1|2|3] [--seed 1]
- *                      [--out profile.json] [--warmup 2] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
+ *                      [--out profile.json] [--warmup 2] [--zoom 0.25] [--query 'envmb=40'] [--port N (default: a free one)] [--url http://host:port/] [--rows 20]
  * Starts `vite` (dev server: system labels need unminified function names) unless --url is given, opens
  * `/?scenario=..&perf&seed=..`, lets it run, prints `__perf.report()` and writes `__perf.summary()` JSON to --out.
  * Every scenario name is passed straight through as `?scenario=`. No scenario (or `none`) = colony baseline.
@@ -37,6 +37,7 @@ const warmup = Number(opt('warmup', 2));
 const portArg = opt('port', null);
 const rows = Number(opt('rows', 20));
 const given = opt('url', null);
+const zoom = opt('zoom', null);
 const ALIAS = { none: '', baseline: '' };
 const scenarioParam = scenario in ALIAS ? ALIAS[scenario] : scenario;
 
@@ -77,16 +78,19 @@ if (!given) {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await browser.newPage({ viewport: { width: Number(opt('width', 1280)), height: Number(opt('height', 720)) } });
   page.on('pageerror', (e) => console.error('pageerror:', e.message));
   const q = new URLSearchParams();
   if (scenarioParam) q.set('scenario', scenarioParam);
   q.set('perf', '');
   q.set('seed', seed);
   q.set('lessons', 'off'); // a tutorial card would pause the game mid-profile (e.g. ?scenario=fight)
-  await page.goto(`${base}?${q.toString().replace('perf=', 'perf')}`);
+  if (zoom) q.set('hook', ''); // the debug hook's zoomTo
+  for (const [k, v] of new URLSearchParams(opt('query', ''))) q.set(k, v); // extra URL params, e.g. envmb=40
+  await page.goto(`${base}?${q.toString().replace('perf=', 'perf').replace('hook=', 'hook')}`);
   await page.waitForFunction(() => window.__perf && window.__perf.summary().frames > 5, null, { timeout: 60000, polling: 500 });
   if (speed) await page.keyboard.press(speed);
+  if (zoom) await page.evaluate((z) => window.__cc.zoomTo(z), Number(zoom));
   await page.waitForTimeout(warmup * 1000);
   await page.evaluate(() => { window.__perf.reset(); window.__perf.startRecording(); });
   await page.waitForTimeout(seconds * 1000);

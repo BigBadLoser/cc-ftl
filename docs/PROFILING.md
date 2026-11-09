@@ -14,6 +14,7 @@ Costs are reported as **self ms** (time in the label, minus nested labels) and t
 | Record or compare crew decisions | `npm run ai:diff -- --record ...`, `npm run ai:diff -- --a x.jsonl --b y.jsonl` |
 | Whole game in headless Chromium | `npm run profile -- --scenario log --seconds 20 --speed 3 --seed 1` |
 | Colony baseline (no scenario) | `npm run profile -- --seconds 20` |
+| A busy node: station, a navy ship and a derelict beside the player's ship | `npm run profile -- --scenario busy --warmup 30 --width 1920 --height 950` (`--width`/`--height`: viewport, default 1280x720; the camera stays on the player's ship, zoom out with `--zoom 0.125` (the `?hook` API `__cc.zoomTo`) to see the rest; `&arrive=<s>&arriveFaction=<name>` adds a ship that many seconds in) |
 | In a browser tab | open `/?perf` (optionally `&scenario=..&seed=..`), press **F3** for the panel |
 
 Both scripts print the text report to stdout and write the JSON summary (`--out`, default `profile.json` / `profile-sim.json`, git-ignored).
@@ -49,6 +50,7 @@ JSON summary has `scenario`, `seed` and `metrics`. The observers (metrics, decis
 | `haul` | 500 item stacks on the floors of the ship and a hub, few storages | 2500 |
 | `salvageBench`, `salvageBench4`, `salvageBenchLock`, `salvageBench4Lock` | the salvage throughput bench (6 or 4 crew, a 60x40 wreck without or with an airlock, every scrap type ordered); the report ends with scrap brought home per game hour. 144000 ticks is the 2 game hours of the baseline (several minutes of wall time) | 144000 |
 | `multiship` | the ship, a trading station and a navy derelict (salvage; ~100 repair jobs on the wreck, mostly out of reach) | 5000 |
+| `salvageHub` | salvage beside a station (#389): the ship with 4 more engineers, a navy derelict under a salvage order for every scrap type (away site, passages, hauling) and a 44-crew trading hub | 10000 |
 
 TODO: `fight` and `damage` arrive with PR #184. A prize or a yard crew run is not in `multiship` yet. To add a scenario, append an entry (`name`, `description`,
 `ticks`, `populate`, `setup(sim)`) to `SCENARIOS` in `tools/profile/scenarios.ts`: `exec(sim, commands, steps)` queues commands and steps the sim, and tallies
@@ -105,8 +107,11 @@ change behaviour records identical files, and a deliberate change shows where it
 - `loop/frame` is the work done per frame (sim ticks, render, ui). `interval` is the real time between frames (fps).
 - Labels: `sim/tick` (whole tick, children are `sim/<system>` and `sim/commands`), `render/{sync,scenes,views,fx,inset,gl,present,main}`,
   `ui/{bridge,events,upkeep}`, `loop/frame`.
-- Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites`,
-  `render/sceneCount`.
+- Counters: `loop/ticks` (sim ticks per frame), `loop/interval`, `render/drawCalls` (WebGL draws per frame), `render/sprites` (sprites of the scenes shown
+  this frame; `render/spritesBuilt` counts every built scene, out of view or still being built),
+  `render/sceneCount`. `draws@<label>` splits the draws by the innermost span that issued them (`draws@render/gl` the main
+  pass, `draws@render/crew` the crew atlas, `draws@-` outside any span, e.g. an image-load callback), to tell which pass a
+  draw-heavy frame came from.
 - p95 is over the most recent 1024 samples; mean and max cover everything since the last `reset()`.
 
 ## Excluded spans (instrument time)

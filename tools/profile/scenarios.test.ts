@@ -7,7 +7,7 @@ const jobsOf = (sim: Sim, kind: string): number => sim.world.query(JobC).filter(
 
 describe('scenario registry', () => {
   it('lists the planned scenarios', () => {
-    expect(scenarioNames()).toEqual(['colony', 'hullplan', 'log', 'hub', 'storm', 'haul', 'multiship', 'salvageBench', 'salvageBench4', 'salvageBenchLock', 'salvageBench4Lock']);
+    expect(scenarioNames()).toEqual(['colony', 'hullplan', 'log', 'hub', 'storm', 'haul', 'multiship', 'salvageHub', 'salvageBench', 'salvageBench4', 'salvageBenchLock', 'salvageBench4Lock']);
     expect(() => getScenario('nope')).toThrow(/Known: colony/);
   });
 
@@ -32,6 +32,9 @@ describe('scenario registry', () => {
     expect(buildScenario('haul', 1).world.query(ItemStackC).length).toBeGreaterThan(400);
     expect(buildScenario('multiship', 1).world.query(ShipC).length).toBe(3);
     expect(Object.keys(setupRejections.get(buildScenario('multiship', 1)) ?? {})).toEqual([]);
+    const salv = buildScenario('salvageHub', 1);
+    expect(Object.keys(setupRejections.get(salv) ?? {})).toEqual([]);
+    expect(salv.world.query(ShipC).length).toBe(3);
     const log = buildScenario('log', 1);
     expect(log.sector.inCombat).toBe(true);
   });

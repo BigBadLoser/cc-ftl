@@ -72,8 +72,9 @@ const STROLL_CHANCE = 0.002;
 /** Idle station crew now and then stroll to a court (plaza, garden, mess). True if a walk was planned. */
 function strollTurn(sim: Sim, id: number, pos: Position): boolean {
   const sc = sim.world.get(id, StationCrewC);
+  if (!sc) return false;
   const busy = (sim.world.get(id, PathC)?.steps.length ?? 0) > 0 || !isSettled(pos);
-  if (!sc || busy || shipIdOf(sim, pos) !== sc.station || !sim.rng.chance(STROLL_CHANCE)) return false;
+  if (busy || shipIdOf(sim, pos) !== sc.station || !sim.rng.chance(STROLL_CHANCE)) return false;
   const courts = sim.world.get(sc.station, StationC)?.courts ?? [];
   if (courts.length === 0) return false;
   const goal = courts[sim.rng.int(0, courts.length - 1)] as { x: number; y: number };
@@ -82,6 +83,34 @@ function strollTurn(sim: Sim, id: number, pos: Position): boolean {
   if (!steps || steps.length === 0 || !path) return false;
   path.steps = steps;
   return true;
+}
+
+/** The build and module jobs, in id order, and the tiles of the build jobs: what the vacate checks look for under an idle crew member's feet. */
+interface Sites {
+  jobs: readonly number[];
+  modules: Job[];
+  buildJobs: Job[];
+  builds: Set<number>;
+}
+const sitesMemo = new WeakMap<Sim, Sites>();
+const tileKey = (x: number, y: number): number => x * 65536 + y;
+
+/** The vacate checks' jobs, kept while the job set is unchanged (a job's kind and tile are set when it is posted). A cache, never saved. */
+function sitesOf(sim: Sim): Sites {
+  const jobs = sim.world.query(JobC);
+  const hit = sitesMemo.get(sim);
+  if (hit && hit.jobs === jobs) return hit;
+  const s: Sites = { jobs, modules: [], buildJobs: [], builds: new Set() };
+  for (const jid of jobs) {
+    const j = sim.world.get(jid, JobC);
+    if (j?.kind === 'module') s.modules.push(j);
+    else if (j?.kind === 'build') {
+      s.buildJobs.push(j);
+      s.builds.add(tileKey(j.x, j.y));
+    }
+  }
+  sitesMemo.set(sim, s);
+  return s;
 }
 
 /**
@@ -93,9 +122,8 @@ function vacateSite(sim: Sim, id: number, pos: Position): boolean {
   const ship = shipIdOf(sim, pos);
   if (vacateTile(sim, id, here, ship)) return true;
   let site: Job | undefined;
-  for (const jid of sim.world.query(JobC)) {
-    const j = sim.world.get(jid, JobC);
-    if (j && j.kind === 'module' && j.size && here.x >= j.x && here.x < j.x + j.size[0] && here.y >= j.y && here.y < j.y + j.size[1] && shipIdOf(sim, j) === ship) {
+  for (const j of sitesOf(sim).modules) {
+    if (j.size && here.x >= j.x && here.x < j.x + j.size[0] && here.y >= j.y && here.y < j.y + j.size[1] && shipIdOf(sim, j) === ship) {
       site = j;
       break;
     }
@@ -124,15 +152,7 @@ function vacateSite(sim: Sim, id: number, pos: Position): boolean {
  */
 function vacateTile(sim: Sim, id: number, here: Tile, ship: number): boolean {
   // The common case first, with no list built: no build job on this tile.
-  let underFoot = false;
-  for (const jid of sim.world.query(JobC)) {
-    const j = sim.world.get(jid, JobC);
-    if (j?.kind === 'build' && j.x === here.x && j.y === here.y && shipIdOf(sim, j) === ship) {
-      underFoot = true;
-      break;
-    }
-  }
-  if (!underFoot) return false;
+  if (!sitesOf(sim).builds.has(tileKey(here.x, here.y)) || !sitesOf(sim).buildJobs.some((j) => j.x === here.x && j.y === here.y && shipIdOf(sim, j) === ship)) return false;
   const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)).filter((j) => j?.kind === 'build' && shipIdOf(sim, j) === ship);
   const grid = shipGrid(sim, ship);
   if (!grid) return false;

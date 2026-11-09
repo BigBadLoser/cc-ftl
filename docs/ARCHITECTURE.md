@@ -10,7 +10,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
   - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
   - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
-- [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver.
+- [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
 - [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
@@ -184,6 +184,18 @@ field systems read.
 - Crates: a loose stack is drawn as one crate per twelfth of the item's stack size (`STACK_CRATES`, `crateCount`, `crateUnits` in
   `items/stacks.ts`; `render/stackSlots.ts` lays them out), and a shuttle loads a staging zone a crate at a time.
 
+**One answer per question.**
+- Each game question has one owning function: can this crew member do this work or go out, is this tile breathable or
+  passable, is this ship roofed, where is the air, does this stock exist, may this job run, is this job reachable.
+- Systems, render and UI call the owner. They never rebuild the answer from their own checks, and a snapshot or cache
+  stores the owner's answer rather than computing a parallel one.
+- When a caller needs a slightly different answer, extend the owner with a parameter instead of forking a local copy.
+- Why: copies drift. Most of the game's stubborn bugs have been two systems answering the same question differently
+  (the scheduler posts a job a crew member's own rules refuse, the away drive thinks there is no air while the air
+  system finds some, the UI warns about power the sim considers fine), which shows up as idle crew, ping-ponging
+  shuttles and false alerts.
+- No game-wide audit (user decision, 2026-11-09): when a fix runs into a duplicate, fold it into the owner in that PR.
+
 **Galaxy.**
 - Chunked and seeded, generated on demand (see "Starmap" below).
 - Only the local area simulates at full fidelity. Distant places are abstract until visited.
@@ -216,6 +228,46 @@ Each placeholder is replaced by pipeline art once that art exists.
 
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
+
+**Batching (#389).** Everything depth-sorted renders through one `RenderLayer`, so its sprites from many sheets interleave
+and the draw-call count is the number of times the batch has to break. Keep that run batchable:
+- One batcher (`render/batch.ts`, replacing pixi's default): per-sprite effects are flag bits in the vertex data read by one
+  shader, not separate batchers or blend modes. Additive glow (`batchAdditive`) draws under the normal blend with alpha 0, which
+  is `add` exactly on an opaque target (only world glows opt in, never art drawn into a transparent texture); hull paint is
+  `FLAG_PAINT` (`HullSprite`). A new per-sprite effect is a `registerFlagStep`, not a new batcher.
+- No filters in the world: each filtered object is its own offscreen pass and cuts the batch. Crew figures composite in the
+  shared crew atlas (`render/crewAtlas.ts`): every figure's layers stack in a cell of one texture, one composite pass a frame
+  (palette and light tint per cell from a palette texture), and the world draws each figure as one sprite from it.
+- No meshes with their own shader in the world either: a mesh is a draw call and cuts the batch the same way. Recolour shaders whose
+  output depends only on their inputs (roof livery masks, container overlays) bake each distinct paint once into the shared paint
+  atlas (`render/paintAtlas.ts`, keyed by every input) and the world shows it as a sprite; tint and alpha still apply. A roofed
+  ship drew a mesh per livery mask, hundreds of draws per pass (#389, `?scenario=fight` inset 589 -> 60).
+- Render groups (`render/renderGroups.ts`): the world layers (`under`, `floor`, `decal`, `fx`, `ui`, `marks`, the backdrop) are each
+  a pixi render group, so a camera move is one group transform and hiding layers for a pass (minified art, combat inset)
+  rebuilds a short list of groups, not their sprites. A group root does not pass its blend mode down (`fxAdd` is not one).
+- Depth bands (`render/depthBands.ts`): pixi rebuilds a group's whole instruction list when one zIndex in it changes, and a
+  walking crew member changes its own every frame. The depth-sorted sprites are split by key (`zIndex` + region depth) into
+  bands of `DEPTH_BAND_WIDTH`, each its own render group drawn in key order, so a step rebuilds only its band. The order is
+  exactly the one sorted layer's (equal keys by a rank that mirrors its stable sort; `depthBands.test.ts` checks it against a
+  model of that layer). Sprites keep their region's `DepthParent` as scene parent (transforms) but belong to their band's
+  group. Wider bands mean fewer draws and bigger rebuilds.
+- Culling: a region (ship scene) out of view of the main and the inset camera is hidden whole (`regionInView`); inside a shown
+  region nothing is culled, since pixi 8 costs nothing per frame for a static sprite off screen (hand-culling 10k of them moved
+  `render/gl` by nothing, #389). What costs is CPU work on scenes not drawn: a scene out of view updates every
+  `HIDDEN_EVERY` (4th) frame and in full the frame it comes into view, before it is drawn; the crew atlas composites only the
+  figures the world draws (`CrewAtlas.skipHidden`).
+- Scene builds are spread over frames (`render/buildBudget.ts`): views ask a gate before each tile or roof chunk
+  (`ChunkViews.sync`) and each module; a new scene builds within `BUILD_MS` a frame (each gate's first piece always goes)
+  and stays hidden until an update builds nothing more (`ShipScene.ready`). A drawn scene stays drawn while its replacement
+  builds (art arrived); a scene that art arrived for while it was building finishes, then is built again, so stand-ins never
+  show. The camera ship with nothing drawn yet builds at once, and so does everything while `whenArtReady` waits (a loading
+  screen). A roof that is not shown is plated in the background (`budget.idle()`, idle frames only). A whole-node rebuild
+  (`?scenario=busy`, `__cc.liveryAtlas(true)`): one 210-270 ms frame became 9-13 frames of at most ~40 ms (headless).
+  `__cc.buildBudget(false)` switches the budget, the throttle and the crew skip off for A/B runs.
+- Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
+  with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
+  `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths
+  for same-frame render diffs (`depthBands(n)` tries a band width).
 
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
@@ -1006,7 +1058,7 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
 
 **Slice 2a is built** (branch `away/sites-286`), in `src/sim/away/`:
 - **Components.** `AwaySiteC` (site), `SiteRunC` (vehicle), `AwayC` (crew, with the passage's `cat`, `landing`, `home`). `away.open {ship, vehicle?}` (debug) and `away.recall {ship}`; events `away.opened|departed|returned|closed`.
-- **Passages** (`passage.ts`): job kind `passage` (`Job.site`, `target` the shuttle) at the boarding tile, one per free seat (seats, as far as the shuttle has suits), categories by `allocateSeats` over `siteDemand` (`seats.ts`: the owner's `demand`, else the open jobs on the site plus loose loot as hauling). `passageFits` (in `jobFits`) wants rest and hunger at `AWAY_GO`. `pairCost` adds the flight (`passageTiles`). The holder waits on the tile (`performJob` 'wait'); the run boards them.
+- **Passages** (`passage.ts`): job kind `passage` (`Job.site`, `target` the shuttle) at the boarding tile, one per free seat (seats, as far as the shuttle has suits), categories by `allocateSeats` over `siteDemand` (`seats.ts`: the owner's `demand`, else the open jobs on the site plus loose loot as hauling). `passageFits` (in `jobFits`) wants `staySec` (seconds before the first need falls to its home line) at `AWAY_GO_STAY_SEC` (180; #404, was a flat 60 on every need). `pairCost` adds the flight (`passageTiles`). The holder waits on the tile (`performJob` 'wait'); the run boards them.
 - **Home cover** in `assignJobs`: per level, a walker who could take an unmatched open emergency or `operate` job on their ship (any level, reachable by labelling) gets no passage pair. A passenger waiting at home steps out again for an emergency they rank above their passage (`calledBack`).
 - **The run** (`run.ts`, `awaySystem`, after the salvage teams): `board` (at home; leaves once the passengers are in, within `AWAY_BOARD_WAIT_SEC`, or within `AWAY_TURNAROUND_SEC` while part of the party is out) → `fly` → `stay` (hover beside the site; `keepClose`; passengers sent out with `eva.out` and handed to the crew AI on landing, their suit untied; loose loot hauled into the hold (since slice 3: into the staging zone, loaded by the shuttle); a downed member lifted aboard) → `home` (bay, else a home airlock; those aboard step out and leave the party) → `board`. `recall` (site closing or gone, or a fight) calls everyone aboard and lifts the rest after `AWAY_LIFT_SEC`; the run then ends at home with the site.
 - **Departure check** (`depart.ts`, `unsafeMembers` / `departCheck`): every trip home from the site goes through it; rules (a)–(c) below, R = `roundTripTicks` (two flights plus `AWAY_TURNAROUND_SEC`), margin `AWAY_DEPART_MARGIN`. The last call and riders came with 2b.
@@ -1022,7 +1074,7 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
 - **Shuttle loss** (`replaceLostShuttles`): a site whose shuttle run is gone keeps its party (`AwayC` stays while the site names a vehicle); another free shuttle takes the run over (`board`, party rewired, `away.pickup`), else `AwaySite.block = 'stranded'` and `away.stranded` (an urgent alert, cleared when a shuttle comes). A site with nobody left closes (`lost`).
 - **No way home** (`noWayIn` in run.ts, #287): the site's own run in 'home' whose shuttle has no way into its home ship (`wayHome` in phase.ts: bay down, no free home airlock, or the ship gone) sets the same `block = 'stranded'` and `away.stranded` with `noHome` (alert "Shuttle cannot get home"), cleared as soon as a way in is back. With a live run the block is this case; with none it is a lost shuttle (`replaceLostShuttles` skips sites whose run stands). `crew.recall` refuses `noHome` up front.
 - **Docking at site airlocks.** `flyTo` docks at a free working airlock of the site (`regionAirlock`) when it has one (not on a pickup), else hovers. Docked, passengers step out at the airlock's inside tile (undrafted; a suit from stock for breathers if the tile is thin), and the return machine walks them to it and steps them in (`stepAboard`). `siteSpot` is the boarding point either way (hatch spot or docked tile), used by the return machine, the departure check and the rescue.
-- **Crew who don't breathe** (#284): no robot branch. `passageFits` checks every need the crew member has at `AWAY_GO` (a missing need is satisfied); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1; the first `freeSuits` passages are suited, the rest `Job.airless` (only for crew who need no air). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
+- **Crew who don't breathe** (#284): no robot branch. `passageFits` checks `staySec` over every need the crew member has (a missing need is satisfied; a battery at its busy rate); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1; the first `freeSuits` passages are suited, the rest `Job.airless` (only for crew who need no air). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
 - **Hold and log.** The home stop waits for the unload (cargo still coming out, up to `AWAY_TURNAROUND_SEC`); a stop that empties none of the hold sets `block = 'noRoom'` (`SiteRun.held`). Leaving home with nobody able left aboard logs `away.homeEmpty`.
 - **The air module** (`eva/airLedger.ts` with `eva/sources.ts`; #295 review rounds). The one place the air questions are answered; admission
   (`ai/admitAir.ts`), the air drive (`ai/airNeed.ts`, `ai/machines/air.ts`), the refill (`eva/jobs.ts`, the refill float), the player's refill
@@ -1220,11 +1272,14 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `TRIP_WAIT_SEC` (300) since the
     last trip with anyone aboard, or `Vehicle.air` under one tank. A waiting passenger turns urgent below rest 20 / hunger
     10 (needs keep running aboard). Every trigger goes through the departure check.
-  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`, passages for free
-    seats, then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
+  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`, top the suits back up to
+    the def's complement from the home ship's airlocks while each keeps one free suit (`away/suits.ts` `restockSuits`, every tick at home;
+    #404), passages for free seats, then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
   - `keepClose`/`liveBox` move here unchanged (the hover point follows the shrinking hull, and the pickup re-aims it).
   - Loose stacks on a served site become hauls into the hold (from `cargoRun.planCarry` and `looseOn`); `logistics/salvage.ts`
-    `crewOn` also accepts a site with `AwaySiteC`, so a second shuttle ferries the overflow.
+    `crewOn` also accepts a site with `AwaySiteC`, so a second shuttle ferries the overflow. It queues nothing while no shuttle
+    but the site's own is free (with no site open yet, a second free one), since a transfer would wait for, or take, the site's shuttle (#404);
+    and `siteShuttleOk` refuses a shuttle a transfer holds while its pilot walks to it.
 - **Crew side.** No site code moves crew except the closing lift.
   - The return drive (`return` machine: `Walk` to the hatch spot or docked airlock, then `eva.board` or `Embark`) takes them
     aboard; riders step out again on `back` arrival via `eva.out`.
@@ -2569,7 +2624,7 @@ and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade
 the start: `dock` the order's airlock, `outside` (they land suited from the shuttle's stock), `noLoot`, no demand; the site's run flies, lands them, takes the
 tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
 the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
-is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `recall` (the site closes: its run
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `open` (#385: once the section is shut, the walls it turned inward, the old outer hull where it joins on and any of the order's own walls laid against it, become floor: `yard/open.ts` `innerWalls`, a plain wall with no module whose eight neighbours are all the ship's own structure; the section is delivered pressurised: its floor, and each opened wall as it turns to floor, takes the air of the room it joins, `YardOrder.air`/`opens`; the order ends when they are done), `recall` (the site closes: its run
 calls them aboard, lifting whoever cannot come), `home` (the run ends at the station, where those aboard step out), `done` (`dismiss` ends the run if it still stands and
 removes the crew and shuttle). Their air is the air drive's like anyone's: the ledger gives a crew member a docked shuttle's air first when it is of their side or
 serves their site (`suppliesTo`), so contractors draw the station shuttle before the player's airlock store, and the player's crew never draw a foreign shuttle. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early

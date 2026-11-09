@@ -9,6 +9,7 @@ import { ModuleC } from '../modules/components';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
+import { performVehicleAssemble } from '../vehicles/assemble';
 import { performHack, performMend, performSalvage } from '../robots/jobs';
 import { stripUpgrade } from '../upgrades/loadout';
 import { finishFit } from '../upgrades/fit';
@@ -86,7 +87,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'hack': return performHack(sim, crew, job, speed);
     case 'sabotage': return performSabotage(sim, crew, job);
     case 'fit': holdOffline(sim, job.target ?? 0); return timed(job, speed, () => { finishFit(sim, job); return 'done'; });
-    case 'assemble': return performAssemble(sim, job, speed);
+    case 'assemble': return job.assemble?.vehicle ? performVehicleAssemble(sim, job, speed) : performAssemble(sim, job, speed);
     case 'suitUp':
     case 'suitOff':
     case 'refill': return performSuitJob(sim, crew, job, speed);

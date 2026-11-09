@@ -270,7 +270,8 @@ describe('away sites', () => {
     const { sim, wreck } = setup();
     siteWork(sim, wreck);
     const shuttle = shuttleOf(sim);
-    for (const c of sim.world.query(CrewC, NeedsC)) sim.world.get(c, NeedsC)!.rest = 50;
+    // Under 3 minutes of work before the rest home line (25) at 0.06 a second (#404: a flat 60 used to stand here).
+    for (const c of sim.world.query(CrewC, NeedsC)) sim.world.get(c, NeedsC)!.rest = 33;
     sim.enqueue({ type: 'away.open', ship: wreck });
     play(sim, 20 * 10);
     expect(passagesOf(sim, shuttle).length).toBeGreaterThan(0);

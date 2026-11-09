@@ -78,7 +78,16 @@ export class Sim {
     stepping.add(this);
     try {
       probe.begin('sim/commands');
-      this.commands.drain(this.tick, (cmd) => this.apply(cmd));
+      // Each command under its own label (`sim/cmd/<type>`), so a slow frame names the command that cost it.
+      this.commands.drain(this.tick, (cmd) => {
+        const label = `sim/cmd/${cmd.type}`;
+        probe.begin(label);
+        try {
+          this.apply(cmd);
+        } finally {
+          probe.end(label);
+        }
+      });
       probe.end('sim/commands');
       // While the player's ship waits to deploy, the node is frozen: only a successful `sector.deploy` resumes it.
       if (this.sector.state === 'active') runPipeline(this, probe);

@@ -13,9 +13,11 @@ export const CLUSTER_TYPE_LABEL: Record<string, string> = {
 const sectorOutlines = new Map<string, string>();
 const clusterOutlines = new Map<string, string>();
 
+const outlineKey = (s: SectorData): string => `${s.id}@${s.x},${s.y}`;
+
 /** A sector's fluid outline around its nodes and the routes between them (cached by sector). */
 function outlineOf(s: SectorData, node: (id: string) => NodeData | undefined, routes: () => EdgeData[]): string {
-  const key = `${s.id}@${s.x},${s.y}`;
+  const key = outlineKey(s);
   let d = sectorOutlines.get(key);
   if (d === undefined) {
     const pts = s.nodes.map(node).filter((n) => !!n).map((n): P => [n.x, n.y]);
@@ -35,12 +37,21 @@ export function sectorOutline(index: GalaxyIndex, s: SectorData): string {
   });
 }
 
-/** Compute and cache the outlines of a chunk's sectors ahead of time (the prefetcher calls this). */
-export function warmOutlines(chunk: ChunkData): void {
+/** Compute and cache the outlines of a chunk's sectors ahead of time (the prefetcher calls this, or its worker). Returns them by cache key. */
+export function warmOutlines(chunk: ChunkData): [string, string][] {
   const nodes = new Map(chunk.nodes.map((n) => [n.id, n]));
-  for (const s of chunk.sectors) {
+  return chunk.sectors.map((s) => {
     const mine = new Set(s.nodes);
-    outlineOf(s, (id) => nodes.get(id), () => chunk.edges.filter((e) => e.kind === 'route' && mine.has(e.a) && mine.has(e.b)));
+    return [outlineKey(s), outlineOf(s, (id) => nodes.get(id), () => chunk.edges.filter((e) => e.kind === 'route' && mine.has(e.a) && mine.has(e.b)))];
+  });
+}
+
+/** Outlines computed elsewhere (the prefetch worker's `warmOutlines`), into the cache; ones already there stay. */
+export function provideOutlines(outlines: readonly (readonly [string, string])[]): void {
+  for (const [key, d] of outlines) {
+    if (sectorOutlines.has(key)) continue;
+    if (sectorOutlines.size > 4000) sectorOutlines.clear();
+    sectorOutlines.set(key, d);
   }
 }
 

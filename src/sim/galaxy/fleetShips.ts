@@ -3,7 +3,7 @@ import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
-import { spawnContact, warmContact } from './arrivals';
+import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/patrol';
 import { nodesWithin } from './graph';
@@ -143,12 +143,20 @@ export function tendFleet(sim: Sim, f: Fleet, node: string = f.node, escaped?: C
  * the memo is derived and unsaved, and nothing else is touched, so a run with or without warming plays the same.
  */
 export function warmFleets(sim: Sim): void {
+  if (isWarmedElsewhere(sim)) return;
+  for (const c of warmCandidates(sim)) if (warmContact(sim, c)) return;
+}
+
+/** The contacts `warmFleets` considers, in its order: ships of fleets that will soon turn up in the player's node and are not in it yet. */
+export function warmCandidates(sim: Sim): Contact[] {
   const g = sim.galaxy;
   const near = nodesWithin(sim, g.current, WARM_HOPS);
+  const out: Contact[] = [];
   for (const f of g.fleets) {
     if (f.node === g.current || !(near.has(f.node) || f.dest === g.current || f.route.includes(g.current))) continue;
-    for (const c of f.ships) if (c.ship === undefined && warmContact(sim, c)) return;
+    for (const c of f.ships) if (c.ship === undefined) out.push(c);
   }
+  return out;
 }
 
 /** Once a second in the active node: forget ships that are gone, drop fleets with none left, retry ships that had no room. */

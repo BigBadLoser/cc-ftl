@@ -1,17 +1,47 @@
 import { StorageC } from '../items/components';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
+import { moduleShip, modulesWhere, type ModuleList } from '../modules/byShip';
 import type { WeaponDef } from '../registry';
 import type { Sim } from '../sim';
 import { shipIdOf } from '../regions';
 
+/**
+ * The storage entities on each ship (`shipIdOf` of their module; 0 without one), ascending ids. Kept while the storage set and the module
+ * index (modules/byShip.ts: the module set, positions, ships and their rectangles, the owner layer) are unchanged. A cache, never saved.
+ */
+const storageIndex = new WeakMap<Sim, { storages: readonly number[]; mods: ModuleList; byShip: Map<number, number[]> }>();
+
+export function storagesOn(sim: Sim, shipId: number): readonly number[] {
+  const storages = sim.world.query(StorageC);
+  const mods = modulesWhere(sim, null);
+  let idx = storageIndex.get(sim);
+  if (!idx || idx.storages !== storages || idx.mods !== mods) {
+    const byShip = new Map<number, number[]>();
+    for (const id of storages) {
+      const m = sim.world.get(id, ModuleC);
+      const ship = m && sim.content.modules[m.def] ? moduleShip(sim, id) : shipIdOf(sim, m);
+      const on = byShip.get(ship);
+      if (on) on.push(id);
+      else byShip.set(ship, [id]);
+    }
+    storageIndex.set(sim, (idx = { storages, mods, byShip }));
+  }
+  return idx.byShip.get(shipId) ?? NONE;
+}
+const NONE: readonly number[] = [];
+
 /** Units of an item held in storage modules of a grid. */
 export function ammoCount(sim: Sim, shipId: number, item: string): number {
   let n = 0;
-  for (const id of sim.world.query(StorageC)) {
-    if (shipIdOf(sim, sim.world.get(id, ModuleC)) === shipId) n += storageCount(sim, id, item);
-  }
+  for (const id of storagesOn(sim, shipId)) n += storageCount(sim, id, item);
   return n;
+}
+
+/** True if any storage module of a grid holds the item (`ammoCount > 0`, stopping at the first that does). */
+export function hasStock(sim: Sim, shipId: number, item: string): boolean {
+  for (const id of storagesOn(sim, shipId)) if (storageCount(sim, id, item) > 0) return true;
+  return false;
 }
 
 /** Take up to `count` units of an item from the grid's storage modules (first holding it first). Returns how many it got. */

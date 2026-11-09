@@ -39,8 +39,8 @@ export function crewPalette(seed: number): CrewPalette {
   return { skin: pick(SKIN, seed, 1), hair: pick(HAIR, seed, 2), cloth: saturate(pick(CLOTH, seed, 3), CLOTH_SAT), accent: pick(ACCENT, seed, 4) };
 }
 
-const MAX_KEYS = 6;
-const VERT = `#version 300 es
+export const MAX_KEYS = 6;
+export const VERT = `#version 300 es
 in vec2 aPosition;
 out vec2 vTextureCoord;
 uniform vec4 uInputSize;
@@ -60,18 +60,21 @@ void main(void) {
  *  - ONE 1 px outline around the combined alpha: a darkened version of the adjacent pixel's colour;
  *  - a thin cool rim on the left silhouette edge.
  * Neighbours are sampled `uZoom` px away (one art px: the camera scale, in the filter's unit of device px; the filter texture is at art resolution when the art is shrunk, see `filterResolution`), so everything stays on the art grid.
+ *
+ * This builds its source. `header` declares where the palette comes from; `repl(i)` is the replacement colour of key i and
+ * `tint` the light tint (uniforms for one crew member's filter, a palette texture for the shared crew atlas).
  */
-const FRAG = `#version 300 es
+export function crewCompositeFrag(header: string, repl: (i: string) => string, tint: string, pre = ''): string {
+  return `#version 300 es
 precision highp float;
 in vec2 vTextureCoord;
 out vec4 finalColor;
 uniform sampler2D uTexture;
 uniform highp vec4 uInputSize;
 uniform vec4 uKeys[${MAX_KEYS}];
-uniform vec4 uRepl[${MAX_KEYS}];
 uniform float uCount;
 uniform float uZoom;
-uniform vec3 uTint;
+${header}
 const float MULT[5] = float[5](0.42, 0.62, 0.82, 1.0, 1.22);
 const vec3 RIM = vec3(0.47, 0.8, 1.0);
 // Sit clips mark crew pixels hidden behind the chair with a faint alpha: drawn as nothing, and no outline or rim along the cut.
@@ -94,12 +97,13 @@ vec3 swapColor(vec4 c) {
     if (float(i) >= uCount) break;
     vec3 k = uKeys[i].rgb;
     float s = dot(p, k) / dot(k, k);
-    if (s > KEY_MIN && s < 1.4 && length(p - s * k) < (s < 0.385 ? DARK_TOL : 0.14 * max(s, 0.5))) return clamp(ramp(uRepl[i].rgb, s), 0.0, 1.0);
+    if (s > KEY_MIN && s < 1.4 && length(p - s * k) < (s < 0.385 ? DARK_TOL : 0.14 * max(s, 0.5))) return clamp(ramp(${repl('i')}, s), 0.0, 1.0);
   }
   return p;
 }
 
 void main(void) {
+  ${pre}
   vec2 st = uInputSize.zw * uZoom;
   vec4 c = texture(uTexture, vTextureCoord);
   if (c.a > 0.5) {
@@ -107,7 +111,7 @@ void main(void) {
     float l = texture(uTexture, vTextureCoord - vec2(st.x, 0.0)).a;
     float r = texture(uTexture, vTextureCoord + vec2(st.x, 0.0)).a;
     if (l < HIDDEN && r > 0.5) col = mix(col, RIM, 0.38);
-    finalColor = vec4(col * uTint, 1.0);
+    finalColor = vec4(col * ${tint}, 1.0);
     return;
   }
   if (c.a > HIDDEN) {
@@ -124,29 +128,40 @@ void main(void) {
       n += 1.0;
     }
   }
-  if (n > 0.0) finalColor = vec4(clamp(sum / n * 0.42 + vec3(4.0, 5.0, 10.0) / 255.0, 0.0, 1.0) * uTint, 1.0);
+  if (n > 0.0) finalColor = vec4(clamp(sum / n * 0.42 + vec3(4.0, 5.0, 10.0) / 255.0, 0.0, 1.0) * ${tint}, 1.0);
   else finalColor = vec4(0.0);
 }`;
+}
 
-const rgb = (hex: number): [number, number, number] => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
+const FRAG = crewCompositeFrag(`uniform vec4 uRepl[${MAX_KEYS}];\nuniform vec3 uTint;`, (i) => `uRepl[${i}].rgb`, 'uTint');
+
+export const rgb = (hex: number): [number, number, number] => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255];
 const parseHex = (s: string): number => parseInt(s.replace('#', ''), 16);
 
 let program: GlProgram | undefined;
 
+export type PaletteRole = keyof CrewPalette;
+
+/** The manifest's key colours as shader input (at most MAX_KEYS, in manifest order) and the crew colour role each one takes. */
+export function paletteKeys(keyColors: Record<string, string>): { keys: Float32Array; roles: PaletteRole[] } {
+  const keys = new Float32Array(MAX_KEYS * 4);
+  const roles: PaletteRole[] = [];
+  for (const [name, hex] of Object.entries(keyColors)) {
+    if (roles.length >= MAX_KEYS) break;
+    const role = name.split('.').pop() ?? '';
+    keys.set(rgb(parseHex(hex)), roles.length * 4);
+    roles.push(role === 'skin' || role === 'hair' || role === 'accent' ? role : 'cloth');
+  }
+  return { keys, roles };
+}
+
 /** Composite filter for one crew member: palette swap of the manifest's key colours, one outline, thin rim. */
 export function createCrewFilter(keyColors: Record<string, string>, pal: CrewPalette): Filter {
   program ??= GlProgram.from({ vertex: VERT, fragment: FRAG, name: 'crew-composite' });
-  const keys = new Float32Array(MAX_KEYS * 4);
+  const { keys, roles } = paletteKeys(keyColors);
   const repl = new Float32Array(MAX_KEYS * 4);
-  let n = 0;
-  for (const [name, hex] of Object.entries(keyColors)) {
-    if (n >= MAX_KEYS) break;
-    const role = name.split('.').pop() ?? '';
-    const to = role === 'skin' ? pal.skin : role === 'hair' ? pal.hair : role === 'accent' ? pal.accent : pal.cloth;
-    keys.set(rgb(parseHex(hex)), n * 4);
-    repl.set(rgb(to), n * 4);
-    n++;
-  }
+  roles.forEach((role, i) => repl.set(rgb(pal[role]), i * 4));
+  const n = roles.length;
   return new Filter({
     glProgram: program,
     padding: 1,

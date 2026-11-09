@@ -1,10 +1,10 @@
 import { doorSignature, passAt, type WalkInfo } from '../modules/walk';
-import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { Struct, isWalkable } from '../structure';
 import type { Sim } from '../sim';
 import { shipGrid } from '../regions';
 import type { ShipGrid } from '../shipGrid';
-import { ModuleC } from '../modules/components';
+import { modulesOn } from '../modules/byShip';
+import { snapshot, thinMask } from '../gridSnapshot';
 
 export interface Tile {
   x: number;
@@ -68,44 +68,30 @@ export function findPath(sim: Sim, shipId: number, from: Tile, goal: PathGoal, o
 /** Failed searches per sector grid instance: key -> the walk signature they failed under. Derived data, never saved. */
 const NO_PATH = new WeakMap<object, Map<string, string>>();
 const NO_PATH_MAX = 4096;
-const THIN_MASK = new WeakMap<object, Map<string, { rev: number; h: number }>>();
 
 /**
- * Everything a search reads, as one string: the sector-wide revisions of the fields it walks (struct, door jams, modules), dead airlocks (`doorSignature`), the module count (a
- * module's solid and open tiles come from its component), the ship's window, and for a thin-air-avoiding search a hash of which tiles are thin.
- * The scheduler's navigation views (ai/navView.ts) are cached on it too.
+ * Everything a search reads, as one string: the revisions of the fields it walks (struct, door jams, modules) over the ship's chunks (a write
+ * elsewhere in the sector, say a wreck being stripped, leaves another ship's searches and views cached), dead airlocks (`doorSignature`), the
+ * ship's module count (a module's solid and open tiles come from its component), the ship's window, and for a thin-air-avoiding search a hash of
+ * which tiles are thin. The scheduler's navigation views (ai/navView.ts) are cached on it too.
  */
 export function walkSignature(sim: Sim, grid: ShipGrid, avoidThin: boolean): string {
-  const g = sim.sector.grid;
-  let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${g.revision('struct')}|${grid.has('jam') ? g.revision('jam') : 0}|${grid.has('module') ? g.revision('module') : 0}|${sim.world.query(ModuleC).length}|${doorSignature(sim, grid)}`;
-  if (avoidThin && grid.has('o2')) {
-    // Hashing the mask walks the whole ship, so it is kept for as long as the o2 field is unchanged (many searches per tick share it).
-    const rev = g.revision('o2');
-    const id = `${grid.x0},${grid.y0},${grid.width},${grid.height}`;
-    let masks = THIN_MASK.get(g);
-    if (!masks) THIN_MASK.set(g, (masks = new Map()));
-    let hit = masks.get(id);
-    if (!hit || hit.rev !== rev) {
-      const o2 = grid.load('o2');
-      let h = 2166136261;
-      for (let i = 0; i < o2.length; i++) h = Math.imul(h ^ ((o2[i] as number) < EVA_THIN_AIR_BELOW ? 1 : 0), 16777619);
-      masks.set(id, (hit = { rev, h }));
-    }
-    sig += `|${hit.h}`;
-  }
+  let sig = `${grid.x0},${grid.y0},${grid.width},${grid.height}|${grid.revision('struct')}|${grid.has('jam') ? grid.revision('jam') : 0}|${grid.has('module') ? grid.revision('module') : 0}|${modulesOn(sim, grid.id, null).length}|${doorSignature(sim, grid)}`;
+  if (avoidThin && grid.has('o2')) sig += `|${thinMask(grid).hash}`;
   return sig;
 }
 
 function searchPath(sim: Sim, grid: ShipGrid, from: Tile, goal: PathGoal, opts: PathOpts): Tile[] | null {
   const { width, height, x0, y0 } = grid;
   // The search runs on window indices, i = (y - y0) * width + (x - x0): the tie-break order is the same in any frame.
-  const struct = grid.load('struct');
-  const mods = grid.has('module') ? grid.load('module') : null;
-  const jam = grid.has('jam') ? grid.load('jam') : null;
+  // Shared read-only copies (gridSnapshot.ts): a search per crew member and job no longer copies the ship's fields each time.
+  const struct = snapshot(grid, 'struct');
+  const mods = grid.has('module') ? snapshot(grid, 'module') : null;
+  const jam = grid.has('jam') ? snapshot(grid, 'jam') : null;
   const infos = new Map<number, WalkInfo>();
-  const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
+  const thin = opts.avoidThin && grid.has('o2') ? thinMask(grid).thin : null;
   const walk = (i: number): boolean => {
-    if (o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW && i !== fromIndex) return false;
+    if (thin && thin[i] && i !== fromIndex) return false;
     return passAt(sim, grid, x0 + (i % width), y0 + Math.floor(i / width), struct[i] as number, jam?.[i], mods?.[i], infos, !!opts.suited, !!opts.fly);
   };
   const at = (x: number, y: number): number => (y - y0) * width + (x - x0);

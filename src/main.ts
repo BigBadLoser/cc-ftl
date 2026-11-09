@@ -5,6 +5,8 @@ import App from './ui/App.svelte';
 import type { UiApi, UiIcon, UiSaveSlot, UiSession } from './ui/api';
 import type { UiStarArt } from './ui/starmapApi';
 import { createBridge } from './app/bridge';
+import { workerGenerator } from './app/genRunner';
+import { createPrewarm } from './app/prewarm';
 import { createController } from './app/controller';
 import { buildItemDefs, buildRecipes, buildStructCosts } from './app/logisticsSnapshot';
 import { loadItemIcons } from './app/itemIcons';
@@ -63,7 +65,7 @@ const artReady = new Promise<void>((res) => (artReadyResolve = res));
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
 const start = await startGame(new URLSearchParams(location.search).get('seed'), new URLSearchParams(location.search).get('starter'));
 const sim = start.sim;
-const bridge = createBridge(sim);
+const bridge = createBridge(sim, () => probe);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 let starmapOpen = false;
@@ -84,6 +86,9 @@ const setProbe = (p: Probe | null): void => {
 /** Sim events and issued commands for the lessons engine (ui/lessons). */
 const signals = createSignalFeed(sim.commands);
 let upkeepFrame = 0;
+// Ships of fleets about to arrive are generated on a worker, so the arrival does not stall a frame (#388).
+const shipGen = workerGenerator();
+const prewarm = shipGen ? createPrewarm(sim, shipGen, () => performance.now()) : null;
 const loop = createLoop({
   sim,
   probe: () => probe,
@@ -127,10 +132,20 @@ const loop = createLoop({
   },
   onFrame: (stats) => {
     probe.begin('ui/bridge');
+    probe.begin('ui/bridge/info');
     const info = renderer?.info();
-    if (info) probe.count('render/sprites', info.sprites);
+    probe.end('ui/bridge/info');
+    if (info) {
+      probe.count('render/sprites', info.sprites);
+      probe.count('render/spritesBuilt', info.built);
+    }
     bridge.update(stats, info);
+    probe.begin('ui/bridge/signals');
     signals.poll();
+    probe.end('ui/bridge/signals');
+    probe.begin('ui/bridge/prewarm');
+    prewarm?.update();
+    probe.end('ui/bridge/prewarm');
     probe.end('ui/bridge');
   },
 });

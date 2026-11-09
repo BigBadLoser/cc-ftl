@@ -1,4 +1,5 @@
 import { Container, Sprite } from 'pixi.js';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
 import { ModuleC } from '../sim/modules/components';
@@ -193,11 +194,11 @@ export function createShuttleView(world: World, atlas: Atlas, modules: Readonly<
           const root = new Container();
           const body = new Sprite();
           const glow = new Sprite();
-          glow.blendMode = 'add';
+          batchAdditive(glow);
           const tube = new Container();
           const tubeBody = new Sprite();
           const tubeGlow = new Sprite();
-          tubeGlow.blendMode = 'add';
+          batchAdditive(tubeGlow);
           tube.addChild(tubeBody, tubeGlow);
           tube.visible = false;
           root.addChild(body, glow, tube);

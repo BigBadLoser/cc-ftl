@@ -183,6 +183,8 @@ export interface VehicleDef {
    * its people out there, then casts off empty.
    */
   escape?: true;
+  /** Its bay can build it (`vehicle.build`): crew deliver `cost` to the bay's access tile and work `work` ticks at workSpeed 1, then it stands stowed in the bay. */
+  assemble?: { cost: readonly ItemQty[]; work: number };
 }
 
 /** One typed result of a weapon impact. All are applied by combat/effects.ts. */

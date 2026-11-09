@@ -77,7 +77,9 @@ function decompressing(sim: Sim, id: number): boolean {
   return low || (grid.has('room') && grid.get('room', pos.x, pos.y) !== 0);
 }
 
+/** On a tile under LIGHT_DARK_BELOW, and not suited: a suit's helmet lamp lights the way (#404, user decision 2026-11-09). */
 const darkHere = (sim: Sim, id: number): boolean => {
+  if (sim.world.has(id, SuitC)) return false;
   const pos = sim.world.get(id, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
   return !!pos && !!grid?.has('light') && grid.inBounds(pos.x, pos.y) && grid.get('light', pos.x, pos.y) < LIGHT_DARK_BELOW;

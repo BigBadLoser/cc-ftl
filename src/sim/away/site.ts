@@ -92,7 +92,7 @@ function sendOut(sim: Sim, id: number, v: Vehicle, keepRiders: boolean): void {
     if (suit && vehicleSuits(sim, v) <= 0) continue;
     unboardCrew(sim, c, id, at);
     standBy(sim, c, !!sim.world.get(away.site, AwaySiteC)?.standBy);
-    if (!suit) continue;
+    if (!suit || sim.world.has(c, SuitC)) continue; // unboardCrew fitted one where the tile is thin (the site's `outside` is ours)
     v.suits = vehicleSuits(sim, v) - 1;
     sim.world.add(c, SuitC, { worn: true, air: suitDef(sim).airSec });
     sim.events.emit({ type: 'suit.donned', crew: c, airlock: 0 });

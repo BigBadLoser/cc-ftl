@@ -2,7 +2,9 @@ import { ShipC } from '../combat/components';
 import { homeShip } from '../combat/ships';
 import { JobC } from '../crew/components';
 import { playerCrewOn } from '../away/crew';
-import { isFerryRegion, isPickupRegion, regionStock } from '../ferry/pick';
+import { ferryFree, isFerryRegion, isPickupRegion, regionStock } from '../ferry/pick';
+import { AwaySiteC } from '../away/components';
+import { SalvageOrderC } from '../salvage/components';
 import { shipIdAt } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
@@ -38,6 +40,18 @@ function shuttleLoad(sim: Sim): number {
 }
 
 /**
+ * True when a wreck's own salvage brings its loot home: a salvage order or an away site is on it (its site's shuttle carries the loot), and
+ * no other shuttle is free to take the overflow. A transfer then would only wait for, or take, the site's shuttle (#404).
+ */
+function siteCarries(sim: Sim, site: number): boolean {
+  const own = sim.world.get(site, AwaySiteC)?.vehicle ?? 0;
+  if (!own && !sim.world.has(site, SalvageOrderC)) return false;
+  // With no site open yet (between runs) the order's site takes the first free shuttle: the overflow needs a second one.
+  const others = sim.world.query(VehicleC).filter((v) => v !== own && ferryFree(sim, v)).length;
+  return others < (own ? 1 : 2);
+}
+
+/**
  * Auto-ferry for salvage. On a prize or a wreck where the player's crew work, whatever loot (storage and loose stacks)
  * has piled up is queued as one transfer to the home ship: when it fills a shuttle, or when the salvage has gone quiet (no open
  * jobs there and the pile has not changed for a while). One open salvage order per site; later loot makes a new one.
@@ -52,7 +66,7 @@ export function salvageWatch(sim: Sim): void {
     if (t?.auto === 'salvage') open.add(t.from);
   }
   for (const site of [...sim.world.query(ShipC)].sort((a, b) => a - b)) {
-    if (site === home || isFerryRegion(sim, site) || !isPickupRegion(sim, site) || open.has(site) || !playerCrewOn(sim, site)) continue;
+    if (site === home || isFerryRegion(sim, site) || !isPickupRegion(sim, site) || open.has(site) || !playerCrewOn(sim, site) || siteCarries(sim, site)) continue;
     const stock = regionStock(sim, site);
     const units = stock.reduce((n, l) => n + l.count, 0);
     if (units === 0) {

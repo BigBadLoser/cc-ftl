@@ -7,6 +7,19 @@ function clock() {
 }
 
 describe('Tally', () => {
+  it('names the innermost open span (what the draw counter files a draw under)', () => {
+    const t = new Tally(clock().now);
+    expect(t.innermost).toBeNull();
+    t.begin('frame');
+    t.begin('render/gl');
+    expect(t.innermost).toBe('render/gl');
+    t.end('render/gl');
+    expect(t.innermost).toBe('frame');
+    t.begin('a');
+    t.end('frame'); // closes the stale inner span too
+    expect(t.innermost).toBeNull();
+  });
+
   it('computes calls, total, mean and max', () => {
     const c = clock();
     const t = new Tally(c.now);

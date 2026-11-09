@@ -3,6 +3,7 @@ import type { Grid } from '../sim/grid';
 import type { ItemDef } from '../sim/registry';
 import type { Atlas } from './assets/loader';
 import { createCrewView } from './crewView';
+import type { CrewAtlas } from './crewAtlas';
 import { createDamageView } from './damageView';
 import { createAtmosphere } from './fx/atmosphere';
 import { createParticles } from './fx/particles';
@@ -17,6 +18,7 @@ import { createModuleView, shipHasPower, type ModuleDefs } from './moduleView';
 import { wallLevel } from './tiles';
 import { PLAIN_PAINT, type HullPaint } from './hullArt';
 import { createRoofView } from './roofView';
+import type { PaintAtlas } from './paintAtlas';
 import { createRockRoofView } from './rockRoofView';
 import { createRuinView } from './ruinView';
 import { createEggSacView } from './eggSacView';
@@ -28,6 +30,7 @@ import { createTargetMarks } from './targetMarks';
 import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
+import { OPEN_GATE, type BuildGate } from './buildBudget';
 
 export interface ShipSceneOptions {
   world: World;
@@ -45,6 +48,14 @@ export interface ShipSceneOptions {
   beamLook?: BeamLook;
   /** The ship's hull colours (hullArt); default plain. */
   hullPaint?: HullPaint;
+  /** The renderer's shared crew composite (crewAtlas.ts). */
+  crews: CrewAtlas;
+  /** The renderer's shared livery paints (paintAtlas.ts); none = a mesh per paint. */
+  liveries?: PaintAtlas;
+  /** Asked before each piece of the build (buildBudget.ts): tile and roof chunks, modules. Default: always (built in one update). */
+  gate?: BuildGate;
+  /** The same for the plating of a roof that is not shown (built in the background). */
+  idle?: BuildGate;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
@@ -53,6 +64,8 @@ export interface ShipScene {
   readonly layers: RegionLayers;
   readonly view: GridView;
   update(dt: number): void;
+  /** True once an update had nothing left to build (the gate refused nothing): the scene is whole and may be shown. */
+  ready(): boolean;
   /** Roofed ships hide their interior: roof over the rooms, full-height walls, no crew or items. */
   setRoofed(roofed: boolean): void;
   isRoofed(): boolean;
@@ -88,7 +101,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let wreckTick = 0;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT });
+  const gate = o.gate ?? OPEN_GATE;
+  let whole = false;
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
@@ -102,10 +117,10 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
     weaponArt: (item) => items[item]?.hand?.art,
-  });
+  }, o.crews);
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y) });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null, gate });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
@@ -114,7 +129,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
   const turretView = createTurretView(world, atlas, L, grid, modules);
-  const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null);
+  const roof = createRoofView(grid, atlas, L, world, modules, o.livery ?? null, o.liveries ?? null);
   // A dug outpost is roofed with rock, not plating (PLACEHOLDER, rockRoofView.ts).
   // It sits in the fx layer, and while it is on the region's own tile and entity layers hide: the rock around the base is drawn
   // by the asteroid's view, which lies under them, so anything of the base left showing would cut through the rock.
@@ -122,7 +137,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const showRoof = (on: boolean) => {
     roof.setVisible(on && !rockRoof);
     rockRoof?.setVisible(on);
-    if (rockRoof) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = !on;
+    // Through the region, so a region hidden whole (out of view, still being built) stays hidden.
+    if (rockRoof) L.setPartsVisible([L.floor, L.under, L.decal, L.sorted], !on);
   };
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
@@ -141,9 +157,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     layers: L,
     view,
     update(dt) {
+      gate.reset();
       rockRoof?.update();
-      // region culling re-shows every layer when the region comes into view: keep the base hidden under its rock roof
-      if (rockRoof && roofed) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = false;
       // A wreck shows only emergency lighting (the sim scales its lights down), so dark tiles pulse red.
       emergency = shipHasPower(world, modules, grid) === false || world.get(grid.id, ShipC)?.state === "wreck";
       if (world.get(grid.id, ShipC)?.ruin && (wreckTick++ & 15) === 0) {
@@ -165,11 +180,13 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       particles.update(dt);
       jobView.update();
       crewView.update();
-      roof.update();
+      roof.update(gate, o.idle);
       turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
+      if (gate.refused === 0) whole = true;
     },
+    ready: () => whole,
     setRoofed(r) {
       roofed = r;
       applyMode();

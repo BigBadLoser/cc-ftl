@@ -52,6 +52,11 @@ Persistent isometric ship-colony game in the browser (Space Haven + FTL depth). 
   - `app` wires everything together.
 - Commands are the only way into the sim. Events are output only and are never used for sim logic.
 - Systems never import or call each other. Their order lives in `src/sim/pipeline.ts`.
+- One answer per question. Each game question (can this crew member do this, is this tile breathable or passable, is this
+  ship roofed, does this stock exist, may this job run) has one owning function. Systems, render and UI call it and never
+  re-derive it with their own checks. When a caller needs a slightly different answer, extend the owner with a parameter;
+  don't fork a local copy. When you find a duplicate, fold it into the owner as part of the fix. See "One answer per
+  question" in `docs/ARCHITECTURE.md`.
 - Components are plain serializable data. Entities are referenced by ID.
 - Tile state lives in grid typed arrays, written through the grid API.
 - Content is TS objects using `satisfies XDef`, referenced by string ID.

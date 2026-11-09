@@ -1,4 +1,5 @@
 import { haloTex, makeHalo } from './haloTex';
+import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import { Sprite, type Container, type Geometry, type Mesh, type Shader } from 'pixi.js';
 import type { World } from '../sim/ecs';
@@ -18,7 +19,10 @@ import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
-import { createContainerOverlay } from './containerPaint';
+import { createContainerOverlay, type ContainerOverlay } from './containerPaint';
+import { animated, artClock, createModuleIndex, sameInputs, worldInputs, type ModuleMemo as Memo } from './moduleMemo';
+import type { BuildGate } from './buildBudget';
+import type { PaintAtlas } from './paintAtlas';
 import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
 import { createCollarAnimator, dockedAt } from './airlockArt';
@@ -48,6 +52,10 @@ export interface ModuleViewHost {
   hullPaint?(): HullPaint;
   /** True if the new hull draws its piece on tile (x, y) (global): roofed, an engine's bulkhead is left out under it. */
   hullDrawn?(x: number, y: number): boolean;
+  /** Shared livery paints (paintAtlas.ts) for the container overlays; none = a mesh each. */
+  paints?: PaintAtlas | null;
+  /** Asked before a module without parts is built (buildBudget.ts); a refused one is built on a later update. Default: always. */
+  gate?: BuildGate;
 }
 
 export interface ModuleView {
@@ -69,6 +77,8 @@ interface Part {
   flip: boolean;
   /** Multiply tint of stand-in art (white for real art). */
   art: number;
+  /** The light tint last set on the sprite. */
+  tinted?: number;
   /** A hull layer's part: a HullSprite recoloured by this colour of the hull paint (hullPaint.ts). */
   paint?: keyof HullPaint;
   /** A painted part on its own tile (an airlock's hull row; region-local): lit like the hull walls round it (the brightest light by it). */
@@ -136,6 +146,10 @@ function wallTint(grid: Grid, t: { x: number; y: number }, pulse: number): numbe
 
 export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: ModuleDefs, host: ModuleViewHost): ModuleView {
   const mods = new Map<number, Entry>();
+  const memos = new Map<number, Memo>();
+  const shipModules = createModuleIndex(world);
+  let hostKey: unknown[] = [];
+  let hostGen = 0;
   const lastProgress = new Map<number, { value: number; at: number }>();
   const bayAnim = createBayAnimator();
   const collarAnim = createCollarAnimator();
@@ -151,6 +165,13 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     }
   }
 
+  /** A container overlay: baked in the shared paint atlas (a plain sprite), or its own mesh without one. */
+  function overlaySprite(kind: ContainerOverlay, s: StaticSprite, P: number, S: number): Sprite | Mesh<Geometry, Shader> {
+    const paints = host.paints;
+    if (!paints?.enabled) return createContainerOverlay(kind, s, P, S);
+    return paints.sprite(`box|${kind}|${s.tex.uid}|${P}|${S}`, s.tex.frame.width, s.tex.frame.height, () => createContainerOverlay(kind, s, P, S));
+  }
+
   function makePart(s: StaticSprite, tx: number, ty: number, flip: boolean, key: number, art = 0xffffff, glowKey = key + 0.01, overlay?: 'paint' | 'lv'): Part {
     const p = iso(tx, ty);
     const w = s.tex.width;
@@ -164,7 +185,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       return spr;
     };
     const sch = overlay && SCHEMES[host.livery?.()?.scheme ?? ''];
-    const spr = sch && overlay ? createContainerOverlay(overlay, s, sch.P, sch.S) : mk(s.tex, !!painting);
+    const spr = sch && overlay ? overlaySprite(overlay, s, sch.P, sch.S) : mk(s.tex, !!painting);
     if (sch && overlay) spr.position.set(x, y);
     spr.zIndex = key;
     L.sorted.addChild(spr);
@@ -172,7 +193,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     let halo: Sprite | null = null;
     if (s.glow) {
       glow = mk(s.glow);
-      glow.blendMode = 'add';
+      batchAdditive(glow);
       glow.zIndex = glowKey;
       L.sorted.addChild(glow);
       if (L.halos) {
@@ -293,8 +314,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
    * What a derelict's ruin does to a module's look: extra art ids to try first (state-suffix art, a ruin override such as a
    * broken light or a dormant fabricator, flickering) and a darkening factor when it has no art of its own.
    */
-  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { art: string[]; suffix: string[]; dark: number } {
-    const none = { art: [] as string[], suffix: [] as string[], dark: 1 };
+  function ruinLook(id: number, m: Module, def: ModuleDefs[string], on: boolean, now: number): { art: string[]; suffix: string[]; dark: number; blip: boolean } {
+    const none = { art: [] as string[], suffix: [] as string[], dark: 1, blip: false };
     const ruin = host.ruin?.();
     if (!ruin) return none;
     if (ruin !== ruinData) {
@@ -309,7 +330,17 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     const blip = r.flicker && Math.floor(now / 170 + m.x * 7 + m.y * 3) % 3 === 0;
     // The ruin's own art goes ahead of everything; its `.damaged` / `.destroyed` suffix stand-ins come after the live state art.
     const suffix = state && !art ? moduleAssets(world, id, m, def, false).map((id) => `${id}.${state}`) : [];
-    return { art: art && !blip ? [art] : [], suffix, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1 };
+    return { art: art && !blip ? [art] : [], suffix, dark: state === 'destroyed' ? 0.5 : state === 'damaged' ? 0.8 : 1, blip: !!(art && r.flicker) };
+  }
+
+  /** Bumps when a view input of every module's art changes (moduleMemo.ts). */
+  function hostGeneration(grid: Grid, roofed: boolean, level: WallLevel): number {
+    const key = [roofed, level, host.livery?.(), host.ruin?.(), host.hullPaint?.(), host.paints?.enabled, atlas.busy(), grid.revision('struct')];
+    if (key.length !== hostKey.length || key.some((v, i) => v !== hostKey[i])) {
+      hostKey = key;
+      hostGen++;
+    }
+    return hostGen;
   }
 
   function update(): void {
@@ -323,16 +354,27 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
-      for (const id of world.query(ModuleC)) {
+      const roofed = host.roofed();
+      const level = host.level();
+      const gen = hostGeneration(grid, roofed, level);
+      const clock = artClock(now);
+      for (const id of shipModules(grid)) {
         const m = world.get(id, ModuleC);
         const def = m && defs[m.def];
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
+        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id));
+        const extra = worldInputs(world, id, def);
+        const memo = memos.get(id);
+        let e = mods.get(id);
+        if (e && memo && sameInputs(memo, m, def, active, extra, gen, clock)) {
+          // Nothing its art reads has changed: keep the parts; only the light tint follows the room.
+          live.add(id);
+          tintParts(e, def, grid, memo, on, pulse, now);
+          continue;
+        }
         // Modules are in sector tiles; their art is built region-local (the region's containers sit at its sector offset).
         const lm: Module = { ...m, x: m.x - grid.x0, y: m.y - grid.y0 };
-        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id));
-        const roofed = host.roofed();
-        const level = host.level();
         // A bigger tier draws its base module's art at the base footprint (see tierBase).
         const tb = def.tierArt ? tierBase(lm, def) : null;
         const am = tb?.m ?? lm;
@@ -383,10 +425,14 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           }
           return art ? [{ layer, art }] : [];
         });
-        if (!layers.length) continue;
+        if (!layers.length) {
+          memos.delete(id);
+          continue;
+        }
+        // Only a module that will draw something asks: one with nothing to draw (yet) never holds the scene back.
+        if (!e && host.gate && !host.gate.take()) continue;
         live.add(id);
         const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => (l.layer.anim ? `~${l.layer.anim}` : l.art.s.tex.uid)).join(',')}`;
-        let e = mods.get(id);
         if (e && e.sig !== sig) {
           dropEntry(e);
           e = undefined;
@@ -405,27 +451,46 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           dropEntry(e);
           mods.set(id, (e = fresh(layers)));
         }
-        const tiles = footprintTiles(def, m.x, m.y, m.rot);
-        let lsum = 0;
-        for (const f of tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
-        // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
-        const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, tiles.length), false, pulse);
-        const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
-        // A wreck without its own damaged / destroyed art is darkened instead.
-        const tint = wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? mulColor(lit, grey(wreck.dark)) : lit;
-        for (const p of e.parts) {
-          p.spr.tint = mulColor(p.wallAt ? wallTint(grid, { x: p.wallAt.x + grid.x0, y: p.wallAt.y + grid.y0 }, pulse) : tint, p.paint ? (host.hullPaint?.()[p.paint] ?? p.art) : def.artTint ? mulColor(p.art, def.artTint) : p.art);
-          for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
-          if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
-        }
+        const timed = !animated(def) && (wreck.blip || layers.some((l) => l.layer.anim));
+        const next: Memo = {
+          def: m.def, x: m.x, y: m.y, rot: m.rot, powered: m.powered, enabled: m.enabled, hp: m.hp, active, extra, host: gen,
+          clock: animated(def) ? NaN : timed ? clock : null,
+          tiles: footprintTiles(def, m.x, m.y, m.rot),
+          // A wreck without its own damaged / destroyed art is darkened instead.
+          dark: wreck.dark < 1 && ![...wreck.art, ...wreck.suffix].some((id) => atlas.stat(id)) ? wreck.dark : 1,
+        };
+        memos.set(id, next);
+        tintParts(e, def, grid, next, on, pulse, now);
       }
     }
     for (const [id, e] of mods) {
       if (live.has(id)) continue;
       dropEntry(e);
       mods.delete(id);
+      memos.delete(id);
       bayAnim.forget(id);
       collarAnim.forget(id);
+    }
+  }
+
+  /** The light tint of a module's parts (every frame: the room light and the emergency pulse change without a rebuild). */
+  function tintParts(e: Entry, def: ModuleDefs[string], grid: Grid, memo: Memo, on: boolean, pulse: number, now: number): void {
+    let lsum = 0;
+    for (const f of memo.tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
+    // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
+    const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, memo.tiles.length), false, pulse);
+    const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
+    const tint = memo.dark < 1 ? mulColor(lit, grey(memo.dark)) : lit;
+    const paint = host.hullPaint?.();
+    for (const p of e.parts) {
+      const v = mulColor(p.wallAt ? wallTint(grid, { x: p.wallAt.x + grid.x0, y: p.wallAt.y + grid.y0 }, pulse) : tint, p.paint ? (paint?.[p.paint] ?? p.art) : def.artTint ? mulColor(p.art, def.artTint) : p.art);
+      // Only the module view tints its parts: skip pixi's colour conversion when the value is the one set last.
+      if (p.tinted !== v) {
+        p.spr.tint = v;
+        p.tinted = v;
+      }
+      for (const g of [p.glow, p.halo]) if (g) g.visible = on && p.lit !== false;
+      if (def.robotBay && p.glow) p.glow.alpha = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((now / 1600) * Math.PI * 2)); // charging pulse
     }
   }
 
@@ -435,6 +500,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     dispose() {
       for (const e of mods.values()) dropEntry(e);
       mods.clear();
+      memos.clear();
       lastProgress.clear();
     },
   };

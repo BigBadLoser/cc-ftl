@@ -104,6 +104,8 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     nutrition) go before `item.ration` (50), which is the emergency fallback printed at the galley from water (`recipe.ration`, 2 water makes
     3 rations); use the usual make-N / keep-N orders. Meals and crops: "Hydroponics and the galley" under New modules. The starter ships
     start with 12 rations, 16 good meals, 6 greens and a planted bed (the food indicator starts green: about an hour for four crew).
+    **Stations** are stocked with rations to their crew when stamped (8 per hungry crew member, about an hour) and topped up every 2 minutes
+    by the station director (`stations/food.ts`; stations the player holds feed themselves). Off-screen supply ships: no new economy (#402).
   - **Mood** (0..100) is 50 plus named factors, shown on the crew card as "Hungry -10, Company +3". Factors: hunger
     (starving -25, hungry -10, peckish -3, well fed +4), rest (exhausted -15, tired -8, rested +4), a hot galley meal
     +6 for 5 minutes (a ration at the galley +3; a cooked meal +5 bland, +9 good, +13 fine, set by `food.mood` on the item), the last sleep in a bed +5 or on the floor -6 for 10 minutes, the room (dark -5, stale air -8, thin
@@ -262,6 +264,7 @@ FTL's decision-making with physical consequences, in a shared sector.
   the interior. Modules that should be visible from outside (weapons, shield generators, engines and
   similar) show a unique roof tile above them instead of the generic one, so they can still be
   identified and targeted. Enemy roofs can't be hidden without a scanning upgrade (planned research).
+  Every ship but the player's is roofed this way, traders and neutrals too, until player crew are aboard (#390). Stations stay open unless at war with the player.
 - **Aiming from the main view:** while a fight is on, selecting a weapon card (Q W E R) arms a
   left-click on an enemy ship in the main camera (right-click and Esc cancel; the right button stays with drafted-crew orders). A weapon with no aim of its own follows the ship target, shown as "Auto". A roof-visible
   module (weapons, shields, engines, AI core) is aimed at as that module; any other roof tile is a **blind tile aim**, and shots land near it
@@ -537,7 +540,9 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   seat at the bay's boarding tile. A crew member takes a passage like any other job: at their priority level for its work
   category, compared with every open job at home, nearest crew first. The player steers it with the priority grid; nobody is
   a builder or a hauler.
-  - A passage is only open to crew rested and fed enough to stay a while (rest, hunger, a robot's charge at least 60).
+  - A passage is only open to crew rested and fed enough to stay a while: 3 minutes of work before rest, hunger or a robot's
+    charge falls to its line for going home (about rest 36 and hunger 57 for a human; #404, it was a flat 60, which kept a small
+    crew home most of the time).
   - Seats beyond the shuttle's suits are passages for crew who don't breathe (robots, #284).
   - A passage costs its walk plus the estimated flight time, so a home job of the same level and urgency nearby still wins.
 - **Which categories the seats get.** The site knows how much work of each category is waiting (or coming: salvage counts
@@ -578,7 +583,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
-  At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
+  At home it drops off those going home, unloads the hold (the existing cargo hauls), refills its air and tops its suits back up
+  from the home ship's airlocks, leaving each airlock at least one (#404). Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
 - **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
   - each away site has a **staging zone**, a few floor tiles beside the shuttle's drop-off point (the hatch drop point when it

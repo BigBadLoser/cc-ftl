@@ -84,6 +84,8 @@ export interface InsetPass {
   set(view: { shipId: number; view: HTMLElement } | null): void;
   /** The ship shown, or null. */
   target(): number | null;
+  /** The inset's camera while it draws this frame (from the start of its pass), else null. */
+  camera(): Camera | null;
   /** Render pass B (before the main pass). `after` runs once the world is placed for the inset camera, before it draws (so scale-dependent overlays can redraw). */
   render(gl: PixiRenderer, stage: Container, after?: () => void): void;
   dispose(): void;
@@ -95,6 +97,7 @@ export function createInsetPass(h: InsetPassHost): InsetPass {
   sprite.visible = false;
   let rt: RenderTexture | null = null;
   let view: { shipId: number; view: HTMLElement } | null = null;
+  let shown: Camera | null = null;
 
   return {
     sprite,
@@ -102,7 +105,9 @@ export function createInsetPass(h: InsetPassHost): InsetPass {
       view = v;
     },
     target: () => (view && h.ship(view.shipId) && h.ship(view.shipId)?.state !== 'fled' ? view.shipId : null),
+    camera: () => shown,
     render(gl, stage, after) {
+      shown = null;
       const ship = view && h.ship(view.shipId);
       if (!view || !ship || ship.state === 'fled') {
         sprite.visible = false;
@@ -126,6 +131,7 @@ export function createInsetPass(h: InsetPassHost): InsetPass {
         sprite.texture = rt;
       }
       sprite.visible = false;
+      shown = cam;
       h.place(cam, view.shipId);
       after?.();
       gl.render({ container: stage, target: rt, clear: true, clearColor: PANEL_BG });

@@ -3,7 +3,7 @@ import { passAt, type WalkInfo } from '../modules/walk';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, isWalkable } from '../structure';
-import { EVA_THIN_AIR_BELOW } from '../tuning';
+import { snapshot, thinMask } from '../gridSnapshot';
 
 /**
  * Navigation views for the scheduler (docs/CREW_AI.md 7.2): one ship's window under one set of walker conditions (`findPath`'s `PathOpts`), as
@@ -45,10 +45,10 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
   const hit = views.get(key);
   if (hit && hit.sig === sig) return hit.view;
   const { width: w, height: h, x0, y0 } = grid;
-  const struct = grid.load('struct');
-  const mods = grid.has('module') ? grid.load('module') : null;
-  const jam = grid.has('jam') ? grid.load('jam') : null;
-  const o2 = opts.avoidThin && grid.has('o2') ? grid.load('o2') : null;
+  const struct = snapshot(grid, 'struct');
+  const mods = grid.has('module') ? snapshot(grid, 'module') : null;
+  const jam = grid.has('jam') ? snapshot(grid, 'jam') : null;
+  const thin = opts.avoidThin && grid.has('o2') ? thinMask(grid).thin : null;
   const infos = new Map<number, WalkInfo>();
   const pass = new Uint8Array(w * h);
   const thinOnly = new Uint8Array(w * h);
@@ -61,7 +61,7 @@ export function viewOf(sim: Sim, ship: number, opts: PathOpts): View | null {
     mult[i] = isWalkable(kind) ? 1 : EXTERIOR;
     door[i] = kind === Struct.Door ? 1 : 0;
     pass[i] = passAt(sim, grid, x, y, kind, jam?.[i], mods?.[i], infos, !!opts.suited) ? 1 : 0;
-    if (pass[i] && o2 && (o2[i] as number) < EVA_THIN_AIR_BELOW) {
+    if (pass[i] && thin && thin[i]) {
       pass[i] = 0;
       thinOnly[i] = 1;
     }

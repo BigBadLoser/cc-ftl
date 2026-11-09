@@ -37,7 +37,7 @@
     <span class="face" class:dead={c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
     <div class="vitals">
       <div class="v" use:tip={{ text: 'Health' }} data-testid="crew-health"><span class="ic"><Icon name="heart" size={16} /></span><StatBar value={(c.hp / c.maxHp) * 100} health /><span class="n {healthTone(c.hp / c.maxHp)}">{c.dead ? 'dead' : `${c.hp}/${c.maxHp}`}</span></div>
-      {#if c.mood && !enemy}<div class="v" use:tip={{ text: 'Mood' }} data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}</span></div>{/if}
+      {#if c.mood && !enemy}<div class="v" use:tip={{ text: 'Mood' }} data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}{#if c.mood.strain}<span class="strain" use:tip={{ text: `Under strain (${c.mood.strain}): a break can come at any mood` }} data-testid="crew-strain">, strained</span>{/if}</span></div>{/if}
       {#if c.hunger !== null && !enemy}<div class="v" use:tip={{ text: 'Hunger' }} data-testid="crew-hunger"><span class="ic"><Icon name="food" size={16} /></span><StatBar value={c.hunger} color="var(--hunger)" low={c.hunger < 35} /><span class="n" class:bad={c.hunger < 35}>{c.hunger <= 0 ? 'starving' : `${c.hunger}% fed`}</span></div>{/if}
       {#if !enemy}<div class="v" use:tip={{ text: 'Rest' }} data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
@@ -107,6 +107,7 @@
   .n.good { color: var(--text); } .n.warn { color: var(--amber); } .n.bad { color: var(--red); }
   .ic { display: inline-flex; color: var(--dim); }
   .n { text-align: right; white-space: nowrap; }
+  .strain { color: var(--amber); }
   .doing { display: flex; gap: 6px; align-items: center; margin: 0 0 10px; font-size: 13px; min-width: 0; }
   .doing > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .doing > span:last-child::first-letter { text-transform: uppercase; }

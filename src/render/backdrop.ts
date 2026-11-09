@@ -1,4 +1,6 @@
 import { Container, Graphics, Sprite, Texture, TilingSprite } from 'pixi.js';
+import { batchAdditive } from './batch';
+import { renderGroup } from './renderGroups';
 import type { Atlas } from './assets/loader';
 import { backdropBodySprite, bodySpot, HAS_PROMINENCES } from './backdropPlan';
 
@@ -139,6 +141,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
   const root = new Container();
   root.eventMode = 'none';
   root.interactiveChildren = false;
+  renderGroup(root); // toggled per pass: the stage rebuilds a list of groups, not the backdrop's sprites
   let layers: Layer[] = [];
   let textures: Texture[] = [];
   let body: { sprite: Sprite; glow: Sprite; mask: Graphics; fitH: number; kind: string; hash: number; fx: number; fy: number; factor: number } | null = null;
@@ -186,7 +189,7 @@ export function createBackdrop(atlas: Atlas): Backdrop {
       const glow = new Sprite(Texture.EMPTY);
       glow.anchor.set(0.5);
       glow.alpha = 0.2;
-      glow.blendMode = 'add';
+      batchAdditive(glow);
       glow.visible = false;
       glow.eventMode = 'none';
       const mask = new Graphics();

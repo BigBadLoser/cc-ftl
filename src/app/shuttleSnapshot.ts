@@ -1,6 +1,12 @@
 import { launchOf } from '../sim/boarding/launch';
-import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, type Sim } from '../sim';
+import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, TICK_HZ, totalStock, type Sim } from '../sim';
+import { JobC } from '../sim/crew/components';
+import type { Command } from '../sim';
 import { localOf } from './moduleSnapshot';
+import { costsOf } from './logisticsSnapshot';
+import { buildableFor } from '../sim/vehicles/assemble';
+import { assemblyAt } from '../sim/robots/bay';
+import { needsMaterials } from '../sim/items/materials';
 import type { UiSalvage, UiDerelict, UiShuttle, UiShuttleCrew, UiShuttles, UiTransfer } from '../ui/api';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import type { Ship } from '../sim/combat/components';
@@ -30,15 +36,31 @@ const SITE_STATUS: Record<string, string> = {
   board: 'boarding at home', fly: 'flying out', stay: 'party at work', depart: 'last call before a trip home', home: 'heading home', recall: 'calling the party in', pickup: 'picking up crew',
 };
 
-/** The base run (or away site run) this shuttle is on, as a status line. */
+/** Why a site's run waits at home, when the site says (#404: "boarding at home" alone while nobody comes reads as stuck). */
+const SITE_WAIT: Record<string, string> = {
+  noCrew: 'waiting for crew rested and fed enough to go', noRoom: 'no room at home for the loot', stranded: 'no way back in',
+};
+
+/** The base run (or away site run) this shuttle is on, as a status line, with what its Call off sends. */
 function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
   const run = sim.world.get(vehicle, SiteRunC);
   if (run) {
-    const what = sim.world.get(run.site, AwaySiteC)?.owner === 'salvage' ? 'Salvage' : 'Away';
-    return { status: `${what}: ${SITE_STATUS[run.phase] ?? run.phase}`, to: shipName(sim, run.site) };
+    const site = sim.world.get(run.site, AwaySiteC);
+    const salvage = site?.owner === 'salvage';
+    const wait = site?.block ? SITE_WAIT[site.block] : undefined;
+    // Short of suits, fewer who breathe can go than there are seats (#404: one suit left, one crew member out): say so while it boards.
+    const v = sim.world.get(vehicle, VehicleC);
+    const full = (v && sim.content.vehicles?.[v.def]?.eva?.suits) ?? 0;
+    const have = v ? vehicleSuits(sim, v) : 0;
+    const short = run.phase === 'board' && have < full ? ` (${have} of ${full} suits aboard)` : '';
+    const status = `${salvage ? 'Salvage' : 'Away'}: ${wait ?? SITE_STATUS[run.phase] ?? run.phase}${short}`;
+    // The run is the site's: calling it off ends the salvage order (else the order opens a new site at once), or calls the party home.
+    const cancel: Command = salvage && sim.world.has(run.site, SalvageOrderC)
+      ? { type: 'salvage.cancel', ship: run.site } : { type: 'away.recall', ship: run.site };
+    return { status, to: shipName(sim, run.site), cancel, cancelLabel: salvage ? 'Stop salvage' : 'Call home' };
   }
   const f = sim.world.get(vehicle, FerryC);
-  return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to) } : null;
+  return f ? { status: FERRY_STATUS[f.phase] ?? f.phase, to: shipName(sim, f.to), cancel: { type: 'ferry.cancel', vehicle }, cancelLabel: 'Call off' } : null;
 }
 
 const BLOCK_TEXT: Record<string, string> = {
@@ -137,7 +159,17 @@ export function buildShuttles(sim: Sim): UiShuttles {
   const bays: UiShuttles['bays'] = [];
   for (const id of sim.world.query(VehicleBayC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
-    if (shipIdOf(sim, m) === PLAYER) bays.push({ id, empty: !sim.world.get(id, VehicleBayC)?.vehicle });
+    if (shipIdOf(sim, m) !== PLAYER) continue;
+    const empty = !sim.world.get(id, VehicleBayC)?.vehicle;
+    const kind = empty ? buildableFor(sim, id) : null;
+    const plan = kind ? sim.content.vehicles?.[kind]?.assemble : undefined;
+    const jobId = assemblyAt(sim, id);
+    const job = jobId ? sim.world.get(jobId, JobC) : undefined;
+    bays.push({
+      id, empty,
+      build: kind && plan ? { name: sim.content.vehicles?.[kind]?.name ?? kind, cost: costsOf(sim, plan.cost).map((c) => ({ ...c, have: totalStock(sim, c.item) })), seconds: Math.round(plan.work / TICK_HZ) } : null,
+      building: job ? { progress: job.work > 0 ? job.progress / job.work : 0, waiting: needsMaterials(job) } : null,
+    });
   }
   const targets: UiShuttles['targets'] = [];
   for (const id of sim.world.query(ShipC)) {

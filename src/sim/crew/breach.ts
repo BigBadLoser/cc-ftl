@@ -9,11 +9,15 @@ import type { Tile } from './pathfind';
 
 const SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
-/** Open-space tiles (sector coordinates) touching the floor of a room on the grid: the holes in the hull. */
+/**
+ * Open-space tiles (sector coordinates) touching the floor of a room on the grid: the holes in the hull of the player's ships. Never a
+ * wreck's (#404): nobody keeps one up, and a seal there waits for metal that is not on board.
+ */
 export function breachTiles(sim: Sim): { ship: number; tile: Tile }[] {
   const out: { ship: number; tile: Tile }[] = [];
   for (const { grid, ship } of regions(sim)) {
-    if (sim.world.get(ship, ShipC)?.faction === 'player') for (const tile of breachesOf(grid)) out.push({ ship, tile });
+    const s = sim.world.get(ship, ShipC);
+    if (s?.faction === 'player' && s.state !== 'wreck') for (const tile of breachesOf(grid)) out.push({ ship, tile });
   }
   return out;
 }

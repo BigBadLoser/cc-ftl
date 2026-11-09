@@ -6,8 +6,8 @@ import {
 import { GENERATOR_VERSION } from '../sim/galaxy/tuning';
 import { SCAVENGER_CHANCE, SCAVENGER_FACTION } from '../sim/galaxy/tuningHeat';
 import { galaxySystem } from '../sim/systems/galaxy';
-import { rollArrival } from '../sim/galaxy/arrivals';
-import { ensureAround } from '../sim/galaxy/state';
+import { nextArrival, rollArrival } from '../sim/galaxy/arrivals';
+import { ensureAround, nodeState } from '../sim/galaxy/state';
 import { playerStock } from '../sim/story/world';
 import { takeItems } from '../sim/story/effects';
 import { content } from '.';
@@ -170,6 +170,32 @@ describe('starmap travel', () => {
     const a = run();
     expect(a.some((s) => !s.endsWith(':-'))).toBe(true);
     expect(run()).toEqual(a);
+  }, 60000);
+
+  it('foretells the ship each arrival roll brings (nextArrival reads the galaxy Rng without moving it)', () => {
+    const sim = newGame(4, content);
+    ensureAround(sim, 's.12.0.n0');
+    const far = [...galaxyIndex(sim.galaxy).nodes.values()].filter((n) => n.danger >= 6).sort((a, b) => (a.id < b.id ? -1 : 1))[0];
+    if (!far) throw new Error('no far node');
+    sim.enqueue({ type: 'debug.galaxyTeleport', node: far.id });
+    sim.step();
+    deploy(sim);
+    let hits = 0;
+    for (let t = 0; t < 30; t++) {
+      const rng = sim.galaxy.rng;
+      const guess = nextArrival(sim);
+      expect(sim.galaxy.rng).toBe(rng);
+      const contacts = nodeState(sim, far.id).contacts;
+      const before = contacts.length;
+      sim.tick = sim.galaxy.nextArrival;
+      rollArrival(sim);
+      const c = nodeState(sim, far.id).contacts[before];
+      if (contacts.length > before || c) {
+        hits++;
+        expect(guess && { faction: guess.faction, shipgen: guess.shipgen, seed: guess.seed, depth: guess.depth }).toEqual(c && { faction: c.faction, shipgen: c.shipgen, seed: c.seed, depth: c.depth });
+      }
+    }
+    expect(hits).toBeGreaterThan(0);
   }, 60000);
 
   it('saves and loads the galaxy, regenerating its chunks', () => {

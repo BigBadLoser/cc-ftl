@@ -14,6 +14,7 @@ import { StorageC } from '../items/components';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { EquipC } from '../fight/components';
+import { stockStationFood } from './food';
 
 /** Tiles of open space kept between a new station and whatever is already in the node (beyond the placement minimum). */
 const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
@@ -66,6 +67,7 @@ export function outfitStation(sim: Sim, id: number, kind: string, size: StationS
   ship.immobile = true;
   ensureTrader(sim, id);
   settleIn(sim, id, gen, x, y);
+  stockStationFood(sim, id); // stocked to its crew (#402)
 }
 
 const COURT_ROLES: readonly string[] = ['plaza', 'garden', 'drill', 'support'];

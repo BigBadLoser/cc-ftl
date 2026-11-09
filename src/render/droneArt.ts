@@ -1,4 +1,5 @@
 import { Sprite, type Container } from 'pixi.js';
+import { batchAdditive } from './batch';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { headingIndex } from './shuttleView';
 
@@ -39,7 +40,7 @@ export interface DroneArtSprites {
 
 export function createDroneArtSprites(parent: Container): DroneArtSprites {
   const s = { shadow: new Sprite(), beam: new Sprite(), body: new Sprite(), glow: new Sprite() };
-  s.glow.blendMode = 'add';
+  batchAdditive(s.glow);
   parent.addChild(s.shadow, s.beam, s.body, s.glow);
   return s;
 }

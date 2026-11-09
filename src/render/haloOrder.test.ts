@@ -21,8 +21,6 @@ describe('halo depth', () => {
     behind.zIndex = key - 0.5;
     behind.label = 'behind';
     a.sorted.addChild(front, halo, behind, glow);
-    const L = W.root.children.find((c) => 'renderLayerChildren' in c) as unknown as { sortRenderLayerChildren(): void; renderLayerChildren: Container[] };
-    L.sortRenderLayerChildren();
-    expect(L.renderLayerChildren.map((c) => c.label)).toEqual(['behind', 'glow', 'halo', 'front']);
+    expect(W.drawOrder().map((c) => c.label)).toEqual(['behind', 'glow', 'halo', 'front']);
   });
 });

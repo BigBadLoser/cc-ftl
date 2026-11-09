@@ -1,4 +1,5 @@
-import type { BreakContext, BreakKind } from '../sim';
+import { MoodC, type BreakContext, type BreakKind, type Sim } from '../sim';
+import { stressors } from '../sim/crew/stress';
 
 /** What set a break off, for the log and the inspector ("the fire"). */
 const BECAUSE: Record<BreakContext, string> = {
@@ -30,4 +31,13 @@ export function breakWord(kind: BreakKind): string {
 /** The inspector's Conditions line while a break lasts: "panicking, 24 s left". */
 export function breakNow(kind: BreakKind, secLeft: number): string {
   return `${breakWord(kind)}, ${Math.max(0, Math.ceil(secLeft))} s left`;
+}
+
+/**
+ * The stressors acting on a crew member now that can set off a break whatever their mood ("the dark"), joined; '' for none. Shown beside
+ * the mood (#404: a break in the dark while the mood read "content" looked like a bug).
+ */
+export function strainOf(sim: Sim, id: number): string {
+  const m = sim.world.get(id, MoodC);
+  return m ? stressors(sim, id, m).map((s) => BECAUSE[s.context]).join(', ') : '';
 }

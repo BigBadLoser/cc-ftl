@@ -211,12 +211,13 @@ Stressors are read from state; duration counters live on `MoodC` beside the trai
 | Fire | Burning tile within 3 tiles | 0.3% | panic 5, freeze 2, refusal 2 |
 | Combat | Hostile (`fight/relations.ts`) in sight (`fight/los.ts`) within 8 tiles for ≥ 30 s (counter `m.underFire`) | 0.3% | freeze 3, hide 4, panic 3 |
 | Decompression | Own tile `o2` < `O2_HARM_BELOW` with suit air, or suit air ≤ `EVA_AIR_LOW_FRAC` (25%) | 0.5% | panic 6, freeze 2 |
-| Blackout | Own tile `light` < `LIGHT_DARK_BELOW` (40) for ≥ 3 min (counter `m.dark`) | 0.2% | isolation 3, panic 1, despair 1 |
+| Blackout | Own tile `light` < `LIGHT_DARK_BELOW` (40) for ≥ 3 min (counter `m.dark`), not suited (a suit's helmet lamp lights the way; #404) | 0.2% | isolation 3, panic 1, despair 1 |
 | Exhaustion | Rest < 10 or hunger 0 | 0.2% | refusal 4, despair 2 |
 | Grief | A friend died in the last 10 min (section 6) | 0.5% | despair 6, isolation 3, tantrum 1 |
 | Low mood only | No stressor, base > 0 | — | refusal 4, tantrum 3, isolation 3, despair 2 |
 
-Ordinary dark, EVA or fighting cost mood only, until a line above is crossed. A phobic crew member at a fire for 2
+Ordinary dark, EVA or fighting cost mood only, until a line above is crossed. The crew panel shows a stressor that is acting ("Strain: the dark: a break can come at any
+mood"; the Overview adds ", strained"), since a break from one can come while the mood reads content or happy (#404). A phobic crew member at a fire for 2
 minutes breaks with about 25% odds, never surely.
 
 ### Outcomes

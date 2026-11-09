@@ -136,6 +136,16 @@ export class World {
    * membership of a relevant store changes; treat it as read-only.
    */
   query(...keys: ComponentKey<unknown>[]): readonly number[] {
+    if (keys.length === 1) {
+      // The common case without the key and stamp arrays (the same cache entry: a single key's name is its cache key).
+      const name = (keys[0] as ComponentKey<unknown>).name;
+      const store = this.store(name);
+      const hit = this.cache.get(name);
+      if (hit && hit.stamp === store.version) return hit.result;
+      const result = [...store.data.keys()].sort((a, b) => a - b);
+      this.cache.set(name, { stamp: store.version, result });
+      return result;
+    }
     const stores = keys.map((k) => this.store(k.name));
     const cacheKey = keys.map((k) => k.name).join('|');
     const stamp = stores.reduce((sum, s) => sum + s.version, 0);
