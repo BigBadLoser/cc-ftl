@@ -11,13 +11,15 @@ from mathutils import Vector
 
 from . import wall3d as T
 from . import walls as W
+from .faction import drone as DR
 from .wall3d_iwin import _clip
 
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end
 BLOCK = 12                  # px: an end block's flat top, in from the window's end (the ref's ~10-12)
 END = 16                    # px: the end block's slope reaches the floor (the ref's 3-4 px slope along the wall)
-FLOOR_DOWN = 5              # art px: the floor under the ramp's top (the ref's 4-5, the user; our ramp a step taller)
+FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 4-5 of its ~17 px slope; ours 22: deeper,
+                            # the user)
 COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
 PANE_EDGE = "fTX6"
@@ -198,10 +200,11 @@ def window(fn, part):
         global PART
         calls[0] = 0
         T.HOOK = each
+        DR.BLANK = True                                 # (blank posts and header for now: the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK = None, None
+            PART, T.HOOK, DR.BLANK = None, None, False
     return build

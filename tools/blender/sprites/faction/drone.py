@@ -141,8 +141,13 @@ def _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, gw):
           cap=(gw, cp[1]))
 
 
+BLANK = False                       # a window's pieces: the walls' faces bare, no detail (wall3d_iwin_drone, the user)
+
+
 def drone(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
+        if BLANK and not hull:
+            return
         F = body(hull)
         zb = zs + 0.02
         endf, end1, corner, back = _ends(ax, plane, b, ends)    # (a free end stops square: no channel there; its
