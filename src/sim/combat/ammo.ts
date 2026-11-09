@@ -38,6 +38,12 @@ export function ammoCount(sim: Sim, shipId: number, item: string): number {
   return n;
 }
 
+/** True if any storage module of a grid holds the item (`ammoCount > 0`, stopping at the first that does). */
+export function hasStock(sim: Sim, shipId: number, item: string): boolean {
+  for (const id of storagesOn(sim, shipId)) if (storageCount(sim, id, item) > 0) return true;
+  return false;
+}
+
 /** Take up to `count` units of an item from the grid's storage modules (first holding it first). Returns how many it got. */
 export function takeStock(sim: Sim, shipId: number, item: string, count: number): number {
   let got = 0;
