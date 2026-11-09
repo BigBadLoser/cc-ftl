@@ -33,9 +33,8 @@ export function toleratedHazards(sim: Sim, id: number): number {
 
 /** True while the hazard interrupt holds the crew member (see the file header). */
 export function hazardHolds(sim: Sim, id: number): boolean {
-  if (!policyOf(sim, id).escapeHazards) return false;
-  const here = hazardsHere(sim, id);
-  if (here === 0 || (here & ~toleratedHazards(sim, id)) === 0) return false;
+  const here = hazardsHere(sim, id); // first: a safe tile (nearly everyone, every tick) needs no policy lookup
+  if (here === 0 || !policyOf(sim, id).escapeHazards || (here & ~toleratedHazards(sim, id)) === 0) return false;
   if (sim.world.get(id, TaskC)?.machine === 'escape') return true;
   const drafted = sim.world.get(id, DraftedC);
   // A break suspends the draft's order (a frozen or cowering crew member does not walk to it): survival beats the break.
