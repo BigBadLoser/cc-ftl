@@ -3559,5 +3559,11 @@
   "resFrond": {"hex": "#2f7f62", "set": "research"},
   "resFrondL": {"hex": "#5cbf8c", "set": "research"},
   "resWingL": {"hex": "#b8c6ea", "set": "research"},
-  "resWing": {"hex": "#6e5a86", "set": "research"}
+  "resWing": {"hex": "#6e5a86", "set": "research"},
+  "resBrn": {"hex": "#5c4234", "set": "research"},
+  "resBrnL": {"hex": "#7a5a45", "set": "research"},
+  "resNvy": {"hex": "#2e3d56", "set": "research"},
+  "resNvyL": {"hex": "#41557a", "set": "research"},
+  "resNvyD": {"hex": "#1f2a3e", "set": "research"},
+  "resGlyph": {"hex": "#ffd27a", "emissive": 1.0, "set": "research"}
 }
