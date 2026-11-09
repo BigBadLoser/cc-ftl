@@ -41,33 +41,67 @@ export interface AtmosphereHost {
 /** Field- and component-driven emitters: smoke, fire embers, venting air and ice, module sparks, welding sparks. */
 export function createAtmosphere(world: World, particles: Particles, defs: ModuleDefs, host: AtmosphereHost): { update(dt: number): void } {
   const wasPowered = new Map<number, boolean>();
+  /** Per region: which floor tiles vent which way (bit d: the tile in direction d is Space or rock ground), by struct revision. */
+  const vents = new WeakMap<Grid, { rev: number; mask: Map<number, number> }>();
+  const ventMask = (grid: Grid, tiles: ReturnType<typeof regionTiles>): Map<number, number> => {
+    const rev = grid.revision('struct');
+    const hit = vents.get(grid);
+    if (hit && hit.rev === rev) return hit.mask;
+    const mask = new Map<number, number>();
+    tiles.scan((x, y, i, ci, c) => {
+      const k = tiles.data('struct', c)?.[ci];
+      if (k !== Struct.Floor && k !== Struct.Door) return;
+      let m = 0;
+      for (let d = 0; d < 4; d++) {
+        const [dx, dy] = DIRS[d] as readonly [number, number];
+        // the real tile (not the art kind, which shows asteroid rock as Space): air streams out only into vacuum,
+        // Space or airless rock ground; rock mass is a wall
+        const n = tiles.get('struct', x + dx, y + dy);
+        if (n === Struct.Space || n === Struct.Ground) m |= 1 << d;
+      }
+      if (m) mask.set(i, m);
+    });
+    vents.set(grid, { rev, mask });
+    return mask;
+  };
   return {
     update(dt) {
       const t = host.target();
       if (!t) return;
       const { grid } = t;
       const tiles = regionTiles(grid);
+      const vent = ventMask(grid, tiles);
+      // The scan hands out one chunk ref per row run: look its fields up once per run, not per tile.
+      let at: unknown = null;
+      let struct: ArrayLike<number> | undefined;
+      let smoke: ArrayLike<number> | undefined;
+      let fire: ArrayLike<number> | undefined;
+      let o2: ArrayLike<number> | undefined;
       tiles.scan((x, y, i, ci, c) => {
-        const k = tiles.data('struct', c)?.[ci];
+        if (c !== at) {
+          at = c;
+          struct = tiles.data('struct', c);
+          smoke = tiles.data('smoke', c);
+          fire = tiles.data('fire', c);
+          o2 = tiles.data('o2', c);
+        }
+        const k = struct?.[ci];
         if (k !== Struct.Floor && k !== Struct.Door) return;
+        const sv = (smoke?.[ci] ?? 0) as number;
+        const fv = (fire?.[ci] ?? 0) as number;
+        const air = (o2?.[ci] ?? 0) as number;
+        const vm = air > 0.5 ? (vent.get(i) ?? 0) : 0;
+        if (sv < 18 && !(fv > 0) && !vm) return;
         const cc = iso(x, y);
-        const sv = (tiles.data('smoke', c)?.[ci] ?? 0) as number;
         if (sv >= 18) particles.emit(`s${i}`, SMOKE, cc.x, cc.y - 10 * S, 0.4 + (sv / 255) * 2.4, dt, 18);
-        const fv = (tiles.data('fire', c)?.[ci] ?? 0) as number;
         if (fv > 0) particles.emit(`e${i}`, EMBER, cc.x, cc.y - 6 * S, (fv / 255) * 5 + 0.6, dt, 14);
-        const air = (tiles.data('o2', c)?.[ci] ?? 0) as number;
-        if (air > 0.5) {
+        if (vm) {
           for (let d = 0; d < 4; d++) {
-            const [dx, dy] = DIRS[d] as readonly [number, number];
-            // the real tile (not the art kind, which shows asteroid rock as Space): air streams out only into vacuum,
-            // Space or airless rock ground; rock mass is a wall
-            const n = tiles.get('struct', x + dx, y + dy);
-            if (n === Struct.Space || n === Struct.Ground) {
-              const v = VENT[d] as (typeof VENT)[number];
-              const rate = 3 + 7 * Math.min(1, air / 21);
-              particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4 * S, rate, dt, 8);
-              particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4 * S, rate * 0.25, dt, 8);
-            }
+            if (!(vm & (1 << d))) continue;
+            const v = VENT[d] as (typeof VENT)[number];
+            const rate = 3 + 7 * Math.min(1, air / 21);
+            particles.emit(`va${i}.${d}`, v.air, cc.x, cc.y - 4 * S, rate, dt, 8);
+            particles.emit(`vi${i}.${d}`, v.ice, cc.x, cc.y - 4 * S, rate * 0.25, dt, 8);
           }
         }
       });
