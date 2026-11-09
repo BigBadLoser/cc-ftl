@@ -72,8 +72,9 @@ const STROLL_CHANCE = 0.002;
 /** Idle station crew now and then stroll to a court (plaza, garden, mess). True if a walk was planned. */
 function strollTurn(sim: Sim, id: number, pos: Position): boolean {
   const sc = sim.world.get(id, StationCrewC);
+  if (!sc) return false;
   const busy = (sim.world.get(id, PathC)?.steps.length ?? 0) > 0 || !isSettled(pos);
-  if (!sc || busy || shipIdOf(sim, pos) !== sc.station || !sim.rng.chance(STROLL_CHANCE)) return false;
+  if (busy || shipIdOf(sim, pos) !== sc.station || !sim.rng.chance(STROLL_CHANCE)) return false;
   const courts = sim.world.get(sc.station, StationC)?.courts ?? [];
   if (courts.length === 0) return false;
   const goal = courts[sim.rng.int(0, courts.length - 1)] as { x: number; y: number };

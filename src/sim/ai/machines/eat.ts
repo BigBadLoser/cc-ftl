@@ -1,4 +1,4 @@
-import { ammoCount, consumeAmmo } from '../../combat/ammo';
+import { consumeAmmo, hasStock } from '../../combat/ammo';
 import { CrewC, PathC, type Crew, type Path, type Position } from '../../crew/components';
 import { bondedPeers, socialCost } from '../../crew/bondSpot';
 import { foodOn } from '../../crew/eating';
@@ -106,7 +106,7 @@ function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
   let meal = mealOf(sim, id);
   if (meal && (meal.bb.n ?? -1) >= 0) return true;
   const want = meal?.bb.item;
-  const item = want && ammoCount(sim, shipIdOf(sim, pos), want) > 0 ? want : foodOn(sim, shipIdOf(sim, pos));
+  const item = want && hasStock(sim, shipIdOf(sim, pos), want) ? want : foodOn(sim, shipIdOf(sim, pos));
   if (!item) {
     endMeal(sim, id);
     return false;

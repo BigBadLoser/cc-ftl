@@ -39,20 +39,30 @@ import { IntentC } from './components';
 class Walker {
   readonly from: Tile;
   readonly ship: number;
-  readonly prio: Priorities;
-  readonly modes: WalkMode[];
-  /** A job this crew member is kept off for now (`Intent.avoid`), or 0. */
-  readonly avoid: number;
   private views: (View | null)[] = [];
   private starts: number[][] = [];
   private src: SuitSource | null | undefined;
+  private walkModes: WalkMode[] | undefined;
+  private avoidJob: number | undefined;
+  private prios: Priorities | undefined;
   constructor(private sim: Sim, readonly id: number, readonly pos: Position) {
     this.from = origin(pos);
     this.ship = shipIdOf(sim, pos);
-    this.prio = sim.world.get(id, PrioritiesC) as Priorities;
-    this.modes = siteWalkModes(sim, id, this.ship);
-    const avoid = sim.world.get(id, IntentC)?.avoid;
-    this.avoid = avoid && sim.tick < avoid.until ? avoid.job : 0;
+  }
+  get prio(): Priorities {
+    return (this.prios ??= this.sim.world.get(this.id, PrioritiesC) as Priorities);
+  }
+  /** The walk modes (`siteWalkModes`), worked out on first use: the gate needs only the crew member and their ship. */
+  get modes(): WalkMode[] {
+    return (this.walkModes ??= siteWalkModes(this.sim, this.id, this.ship));
+  }
+  /** A job this crew member is kept off for now (`Intent.avoid`), or 0. */
+  get avoid(): number {
+    if (this.avoidJob === undefined) {
+      const avoid = this.sim.world.get(this.id, IntentC)?.avoid;
+      this.avoidJob = avoid && this.sim.tick < avoid.until ? avoid.job : 0;
+    }
+    return this.avoidJob;
   }
   /** A suit source as the pass began (the cheap filter of `modeFor`); `bookSource` looks again when a match is accepted. */
   source(): SuitSource | null {
