@@ -135,7 +135,10 @@ const loop = createLoop({
     probe.begin('ui/bridge/info');
     const info = renderer?.info();
     probe.end('ui/bridge/info');
-    if (info) probe.count('render/sprites', info.sprites);
+    if (info) {
+      probe.count('render/sprites', info.sprites);
+      probe.count('render/spritesBuilt', info.built);
+    }
     bridge.update(stats, info);
     probe.begin('ui/bridge/signals');
     signals.poll();

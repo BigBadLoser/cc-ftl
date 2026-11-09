@@ -239,6 +239,19 @@ and the draw-call count is the number of times the batch has to break. Keep that
   exactly the one sorted layer's (equal keys by a rank that mirrors its stable sort; `depthBands.test.ts` checks it against a
   model of that layer). Sprites keep their region's `DepthParent` as scene parent (transforms) but belong to their band's
   group. Wider bands mean fewer draws and bigger rebuilds.
+- Culling: a region (ship scene) out of view of the main and the inset camera is hidden whole (`regionInView`); inside a shown
+  region nothing is culled, since pixi 8 costs nothing per frame for a static sprite off screen (hand-culling 10k of them moved
+  `render/gl` by nothing, #389). What costs is CPU work on scenes not drawn: a scene out of view updates every
+  `HIDDEN_EVERY` (4th) frame and in full the frame it comes into view, before it is drawn; the crew atlas composites only the
+  figures the world draws (`CrewAtlas.skipHidden`).
+- Scene builds are spread over frames (`render/buildBudget.ts`): views ask a gate before each tile or roof chunk
+  (`ChunkViews.sync`) and each module; a new scene builds within `BUILD_MS` a frame (each gate's first piece always goes)
+  and stays hidden until an update builds nothing more (`ShipScene.ready`). A drawn scene stays drawn while its replacement
+  builds (art arrived); a scene that art arrived for while it was building finishes, then is built again, so stand-ins never
+  show. The camera ship with nothing drawn yet builds at once, and so does everything while `whenArtReady` waits (a loading
+  screen). A roof that is not shown is plated in the background (`budget.idle()`, idle frames only). A whole-node rebuild
+  (`?scenario=busy`, `__cc.liveryAtlas(true)`): one 210-270 ms frame became 9-13 frames of at most ~40 ms (headless).
+  `__cc.buildBudget(false)` switches the budget, the throttle and the crew skip off for A/B runs.
 - Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
   with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
   `__cc.crewAtlas(false)`, `__cc.renderGroups(false)`, `__cc.depthBands(false)` and `__cc.liveryAtlas(false)` (rebuilds the scenes) (with `?hook`) switch back to the old paths

@@ -21,6 +21,7 @@ import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
 import { createContainerOverlay, type ContainerOverlay } from './containerPaint';
 import { animated, artClock, createModuleIndex, sameInputs, worldInputs, type ModuleMemo as Memo } from './moduleMemo';
+import type { BuildGate } from './buildBudget';
 import type { PaintAtlas } from './paintAtlas';
 import { SCHEMES } from './roofArt';
 import type { ShipRuin } from '../sim/combat/components';
@@ -53,6 +54,8 @@ export interface ModuleViewHost {
   hullDrawn?(x: number, y: number): boolean;
   /** Shared livery paints (paintAtlas.ts) for the container overlays; none = a mesh each. */
   paints?: PaintAtlas | null;
+  /** Asked before a module without parts is built (buildBudget.ts); a refused one is built on a later update. Default: always. */
+  gate?: BuildGate;
 }
 
 export interface ModuleView {
@@ -425,6 +428,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           memos.delete(id);
           continue;
         }
+        // Only a module that will draw something asks: one with nothing to draw (yet) never holds the scene back.
+        if (!e && host.gate && !host.gate.take()) continue;
         live.add(id);
         const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => (l.layer.anim ? `~${l.layer.anim}` : l.art.s.tex.uid)).join(',')}`;
         if (e && e.sig !== sig) {

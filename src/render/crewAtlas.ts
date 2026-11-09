@@ -31,6 +31,8 @@ export interface CrewAtlas {
   cell(pal: CrewPalette): CrewCell;
   /** Composite every cell (once per frame, before the world is drawn). `artZoom` < 1 samples the figures linearly. */
   render(gl: Renderer, artZoom: number): void;
+  /** Composite only the figures the world draws (default); false composites every figure (debug A/B). */
+  skipHidden: boolean;
   /** Debug (render diffs): false makes crew views draw each figure through its own filter, as before the atlas. */
   readonly enabled: boolean;
   setEnabled(on: boolean): void;
@@ -101,6 +103,13 @@ export function figureBounds(body: Container, cell: Rectangle, hx: number, hy: n
     x1: Math.min(cell.x + cell.width, Math.ceil(hx + body.x + x1) + pad),
     y1: Math.min(cell.y + cell.height, Math.ceil(hy + body.y + y1) + pad),
   };
+}
+
+/** True if a sprite and every parent of it are visible (the world draws it this frame, if it is on the stage). */
+function drawn(s: Container): boolean {
+  let o: Container | null = s;
+  for (; o; o = o.parent) if (!o.visible) return false;
+  return true;
 }
 
 export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>): CrewAtlas {
@@ -198,6 +207,7 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
   let enabled = true;
   const toggles = new Set<() => void>();
   const atlas: CrewAtlas = {
+    skipHidden: true,
     get enabled() {
       return enabled;
     },
@@ -266,6 +276,8 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
         palTex.source.update();
         dirty = false;
       }
+      // Only figures the world draws are stacked and composited (a ship out of view keeps its crew's cells, unused).
+      for (const c of live.values()) c.holder.visible = c.lent || !atlas.skipHidden || drawn(c.sprite);
       gl.render({ container: root, target: layersRt as RenderTexture, clear: true, clearColor: [0, 0, 0, 0] });
       const m = meshFor(live.size);
       const buf = m.geometry.getBuffer('aPosition');
@@ -273,7 +285,7 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
       pos.fill(0);
       let q = 0;
       for (const [i, c] of live) {
-        if (c.lent) continue;
+        if (c.lent || !c.holder.visible) continue;
         const b = figureBounds(c.body, frameOf(i), c.holder.x, c.holder.y);
         if (b) pos.set([b.x0, b.y0, b.x1, b.y0, b.x1, b.y1, b.x0, b.y1], q++ * 8);
       }

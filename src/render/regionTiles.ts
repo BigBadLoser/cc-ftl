@@ -2,6 +2,7 @@ import { CHUNK_SIZE, type FieldArray, type Grid } from '../sim/grid';
 import { ShipGrid } from '../sim/shipGrid';
 import { Struct } from '../sim/structure';
 import { artKind } from './tiles';
+import { OPEN_GATE, type BuildGate } from './buildBudget';
 
 /**
  * Chunk tile views (ARCHITECTURE "Sector grid" §7 step 5b). Per-tile render layers (floors, walls, roofs, cracks, fire,
@@ -202,7 +203,13 @@ function denseChunks(grid: Grid): ChunkSource {
  * it (re)built.
  */
 export interface ChunkViews<V> {
-  sync(want: readonly ChunkRef[], key: (c: ChunkRef) => string, build: (c: ChunkRef, old: V | undefined) => V): number;
+  /**
+   * `gate` (buildBudget.ts) may refuse a (re)build: the chunk keeps its old view (or has none yet) and counts in `pending`;
+   * call `sync` again on a later update.
+   */
+  sync(want: readonly ChunkRef[], key: (c: ChunkRef) => string, build: (c: ChunkRef, old: V | undefined) => V, gate?: BuildGate): number;
+  /** Chunks the last `sync` left stale or unbuilt because its gate refused them. */
+  readonly pending: number;
   /** Views in chunk order (row-major, as `want` listed them). */
   views(): V[];
   get(c: ChunkRef): V | undefined;
@@ -212,17 +219,29 @@ export interface ChunkViews<V> {
 export function createChunkViews<V>(drop: (v: V) => void): ChunkViews<V> {
   const map = new Map<string, { key: string; view: V }>();
   let order: V[] = [];
+  let pending = 0;
   const id = (c: ChunkRef) => `${c.cx},${c.cy}`;
   return {
-    sync(want, key, build) {
+    sync(want, key, build, gate = OPEN_GATE) {
       let built = 0;
+      pending = 0;
       const live = new Set<string>();
       const next: V[] = [];
       for (const c of want) {
         const k = id(c);
         live.add(k);
-        const kk = key(c);
         const e = map.get(k);
+        // A chunk with no view yet asks before its key is worked out: a refused one costs nothing.
+        if (!e && !gate.take()) {
+          pending++;
+          continue;
+        }
+        const kk = key(c);
+        if (e && e.key !== kk && !gate.take()) {
+          pending++;
+          next.push(e.view);
+          continue;
+        }
         if (!e || e.key !== kk) {
           const view = build(c, e?.view);
           map.set(k, { key: kk, view });
@@ -238,12 +257,16 @@ export function createChunkViews<V>(drop: (v: V) => void): ChunkViews<V> {
       order = next;
       return built;
     },
+    get pending() {
+      return pending;
+    },
     views: () => order,
     get: (c) => map.get(id(c))?.view,
     clear() {
       for (const e of map.values()) drop(e.view);
       map.clear();
       order = [];
+      pending = 0;
     },
   };
 }

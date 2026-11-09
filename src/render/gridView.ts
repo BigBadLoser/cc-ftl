@@ -16,6 +16,7 @@ import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { HullSprite } from "./hullPaint";
+import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
 import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
 
@@ -44,6 +45,8 @@ export interface GridViewHost {
   beamLook?(): BeamLook;
   /** The ship's hull colours; default plain. */
   hullPaint?(): HullPaint;
+  /** Asked before each chunk (re)build (buildBudget.ts); a refused chunk is built on a later update. Default: always. */
+  gate?: BuildGate;
 }
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
@@ -453,8 +456,9 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
-        chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk);
-        frameKey = "";
+        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
+        if (chunks.pending > 0) builtKey = ""; // the rest on a later update
+        if (n > 0) frameKey = "";
       }
       const pulse = host.emergency() ? pulsePhase(animNow()) : -1;
       const fk = `${grid.revision("door")}|${grid.revision("light")}|${grid.revision("o2")}|${grid.revision("hp")}|${pulse}`;

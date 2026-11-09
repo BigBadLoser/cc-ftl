@@ -145,6 +145,38 @@ describe('chunk views', () => {
   });
 });
 
+describe('chunk views under a build gate', () => {
+  /** A gate that lets `n` pieces through, then refuses until topped up. */
+  const counted = (n: number) => {
+    let left = n;
+    let refused = 0;
+    return { take: () => (left-- > 0 ? true : (refused++, false)), get refused() { return refused; }, reset: () => { refused = 0; }, top: (k: number) => { left = k; } };
+  };
+  it('builds what the gate allows, keeps a stale view while refused, and finishes on later syncs in chunk order', () => {
+    const v = createChunkViews<{ id: string; k: string }>(() => {});
+    const keys = new Map([['0,0', 'a'], ['1,0', 'a'], ['2,0', 'a']]);
+    const want = [{ cx: 0, cy: 0 }, { cx: 1, cy: 0 }, { cx: 2, cy: 0 }];
+    const build = (c: ChunkRef) => ({ id: key(c), k: keys.get(key(c)) as string });
+    const g = counted(1);
+    expect(v.sync(want, (c) => keys.get(key(c)) as string, build, g)).toBe(1);
+    expect(v.pending).toBe(2);
+    expect(v.views().map((x) => x.id)).toEqual(['0,0']);
+    g.top(5);
+    v.sync(want, (c) => keys.get(key(c)) as string, build, g);
+    expect(v.pending).toBe(0);
+    expect(v.views().map((x) => x.id)).toEqual(['0,0', '1,0', '2,0']);
+    // A changed key refused: the old view stays in place until the gate lets the rebuild through.
+    keys.set('1,0', 'b');
+    g.top(0);
+    v.sync(want, (c) => keys.get(key(c)) as string, build, g);
+    expect(v.pending).toBe(1);
+    expect(v.get({ cx: 1, cy: 0 })?.k).toBe('a');
+    g.top(1);
+    v.sync(want, (c) => keys.get(key(c)) as string, build, g);
+    expect(v.get({ cx: 1, cy: 0 })?.k).toBe('b');
+  });
+});
+
 describe('grid view per chunk', () => {
   /** An atlas with one texture per id, so sprites can be told apart. */
   function fakeAtlas(): { atlas: Atlas; idOf: Map<Texture, string> } {
@@ -190,6 +222,27 @@ describe('grid view per chunk', () => {
     const L2 = createLayers();
     const fresh = createGridView(g, atlas, L2, host);
     fresh.update();
+    expect(shape(floors(L), idOf)).toEqual(shape(floors(L2), idOf));
+    expect(shape(L.sorted.children, idOf)).toEqual(shape(L2.sorted.children, idOf));
+    expect(shape(L.under.children, idOf)).toEqual(shape(L2.under.children, idOf));
+  });
+
+  it('built a few chunks per update under a gate, ends up as a build in one update', () => {
+    const g = ship(5, 3, 60, 40);
+    const { atlas, idOf } = fakeAtlas();
+    let allow = 0;
+    const gate = { take: () => allow-- > 0, refused: 0, reset() {} };
+    const L = createLayers();
+    const view = createGridView(g, atlas, L, { ...host, gate });
+    let updates = 0;
+    for (; updates < 50; updates++) {
+      allow = 2;
+      view.update();
+      if (allow > 0) break; // the gate was not needed up: everything is built
+    }
+    expect(updates).toBeGreaterThan(1);
+    const L2 = createLayers();
+    createGridView(g, atlas, L2, host).update();
     expect(shape(floors(L), idOf)).toEqual(shape(floors(L2), idOf));
     expect(shape(L.sorted.children, idOf)).toEqual(shape(L2.sorted.children, idOf));
     expect(shape(L.under.children, idOf)).toEqual(shape(L2.under.children, idOf));

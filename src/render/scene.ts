@@ -56,13 +56,25 @@ import { createModuleThumbs, type ModuleThumb } from './moduleThumb';
 import { createModuleGhost, type ModuleGhostSpec } from './moduleGhost';
 import { createBackdrop, type BackdropSpec } from './backdrop';
 import { createShipScene, type ShipScene } from './shipScene';
+import { createBuildBudget } from './buildBudget';
+
+/** Per frame, ms of scene building (new ships, rebuilds) before the rest waits for the next frame (buildBudget.ts). */
+export const BUILD_MS = 6;
+/** Per frame, ms of background building (roofs not shown) when no scene is being built. */
+export const IDLE_MS = 2;
+/** A scene out of every camera's view updates once in this many frames (it is not drawn; it catches up when it comes into view). */
+export const HIDDEN_EVERY = 4;
 
 export type { CutawayMode };
 export type Quality = 'high' | 'low';
 
 export interface RenderInfo {
-  /** Display objects drawn last frame (floors, walls, crew layers, glow...). */
+  /** Display objects in the scenes drawn last frame (floors, walls, crew layers, glow...); scenes out of view are left out. */
   sprites: number;
+  /** The same over every built scene, drawn or not (out of view, or still being built). */
+  built: number;
+  /** Scenes being built (hidden until whole). */
+  building: number;
   /** Integer zoom step. */
   zoom: number;
 }
@@ -127,6 +139,8 @@ export interface Renderer {
   debugCrewAtlas(on: boolean): void;
   /** Debug (render diffs): false rebuilds every scene with a mesh per roof livery paint, as before the livery atlas. */
   debugLiveryAtlas(on: boolean): void;
+  /** Debug (A/B): false builds scenes in one frame and updates scenes out of view every frame, as before #389's build budget. */
+  debugBuildBudget(on: boolean): void;
   /** Drag the view by a screen-space delta in CSS px. */
   pan(dxPx: number, dyPx: number): void;
   /** Zoom by factor (>1 zooms in), snapped to integer steps, keeping the point under (screenX, screenY) fixed. */
@@ -220,7 +234,36 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const liveries = createPaintAtlas();
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
+  /** The scenes drawn (or ready to be): one per ship. */
   const scenes = new Map<number, ShipScene>();
+  /**
+   * Scenes being built over several frames (buildBudget.ts), hidden until whole: a new ship's, or the replacement of a drawn
+   * scene (art arrived), which stays drawn meanwhile. A ship may have one of each.
+   */
+  const building = new Map<number, ShipScene>();
+  const budget = createBuildBudget(() => performance.now());
+  let budgetOn = true;
+  /** Scenes that have been on screen (a never-shown scene stays hidden while its replacement builds: no placeholder flash). */
+  const seen = new WeakSet<ShipScene>();
+  /** Drawn scenes due a replacement (their art arrived). */
+  const stale = new Set<number>();
+  /**
+   * Scenes being built when art they asked for arrived: they finish (starting over on every arrival would never end while
+   * sheets trickle in), then are replaced at once, hidden if they were never on screen.
+   */
+  const dirty = new Set<number>();
+  /** Seconds a scene out of view has not been updated for. */
+  const skipped = new Map<number, number>();
+  /** Every scene, drawn or building (the setters reach both). */
+  const allScenes = (): ShipScene[] => [...scenes.values(), ...building.values()];
+  /** A ship's drawn and building scenes. */
+  const sceneOf = (id: number): ShipScene[] => [scenes.get(id), building.get(id)].filter((sc): sc is ShipScene => !!sc);
+  const dropScene = (map: Map<number, ShipScene>, id: number): void => {
+    map.get(id)?.dispose();
+    map.delete(id);
+    if (map === building) dirty.delete(id);
+    else skipped.delete(id);
+  };
   let sector: SectorGrid | null = null;
   let refId = 0;
   let cutaway: CutawayMode = 'auto';
@@ -390,10 +433,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   /** The key under which the asteroid views' art requests are filed (scene ids are positive). */
   const ASTEROID_ART = -1;
 
+  /** Start building a ship's scene (hidden until whole). The camera ship with nothing drawn yet is built at once. */
   function addScene(s: Ship, grid: Grid): ShipScene {
     const livery = shipLivery(s, grid);
     const hullPaint = hullPaintOverride ?? hullPaintFor(livery.scheme);
-    const sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers: W.region(high && grid.id === refId), roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, liveries, ...evaHost() });
+    const rush = !budgetOn || (grid.id === refId && !scenes.has(grid.id));
+    const layers = W.region(high && grid.id === refId);
+    layers.setVisible(false);
+    // eslint-disable-next-line prefer-const -- the gate reads the scene it is built into
+    let sc: ShipScene;
+    const gate = budget.gate(() => rush || sc.ready());
+    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -402,7 +452,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     } else if (grid.id === selShip) sc.view.setSelection(selection);
     sc.setSelectedCrew(selectedCrew);
     sc.setSites(siteMarks.blocked, siteMarks.selected);
-    scenes.set(grid.id, sc);
+    building.set(grid.id, sc);
     art.built(grid.id);
     return sc;
   }
@@ -416,21 +466,55 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       if (!s || !grid || s.state === 'fled') continue;
       live.add(id);
       atlas.attribute(id);
-      const sc = scenes.get(id) ?? addScene(s, grid);
-      if (sc.grid !== grid) {
-        sc.dispose();
-        scenes.delete(id);
-        atlas.forget(id);
-        addScene(s, grid);
-      } else if (sc.isRoofed() !== roofFor(id, s)) sc.setRoofed(roofFor(id, s));
+      for (const map of [scenes, building]) {
+        const sc = map.get(id);
+        if (!sc) continue;
+        if (sc.grid !== grid) {
+          dropScene(map, id);
+          atlas.forget(id);
+        } else if (sc.isRoofed() !== roofFor(id, s)) sc.setRoofed(roofFor(id, s));
+      }
+      if (!building.has(id) && (!scenes.has(id) || stale.has(id))) addScene(s, grid);
+      stale.delete(id);
     }
     atlas.attribute(null);
-    for (const [id, sc] of scenes) {
-      if (live.has(id)) continue;
-      sc.dispose();
-      scenes.delete(id);
+    for (const map of [scenes, building])
+      for (const id of [...map.keys()]) {
+        if (live.has(id)) continue;
+        dropScene(map, id);
+        atlas.forget(id);
+      }
+  }
+
+  /**
+   * A whole scene takes its ship's place: the scene it replaces (if any) goes. One that art arrived for while it was built
+   * is dropped instead and built again (the drawn scene, if any, stays meanwhile), so stand-ins are never shown.
+   */
+  function promote(id: number, sc: ShipScene): void {
+    const s = shipOf(id);
+    if (dirty.has(id) && s) {
+      dropScene(building, id);
       atlas.forget(id);
+      addScene(s, sc.grid);
+      return;
     }
+    building.delete(id);
+    dropScene(scenes, id);
+    scenes.set(id, sc);
+  }
+
+  function dropAll(): void {
+    for (const sc of allScenes()) sc.dispose();
+    scenes.clear();
+    building.clear();
+    stale.clear();
+    dirty.clear();
+  }
+
+  /** Every pass's view: the main camera's and the combat inset's. */
+  function inAnyView(id: number, grid: Grid): boolean {
+    const ic = inset.camera();
+    return regionInView(id, grid, cam) || (!!ic && regionInView(id, grid, ic));
   }
 
   // Sheets load on demand: scenes are rebuilt when the art they asked for arrives (artStream.ts).
@@ -438,11 +522,14 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     atlas,
     {
       rebuild(only) {
-        for (const [id, sc] of scenes) {
+        // A drawn scene stays drawn while its replacement builds (sync starts it); a scene being built finishes first.
+        for (const id of new Set([...scenes.keys(), ...building.keys()])) {
           if (only && !only.has(id)) continue;
-          sc.dispose();
-          scenes.delete(id);
-          atlas.forget(id);
+          if (building.has(id)) dirty.add(id);
+          else {
+            stale.add(id);
+            atlas.forget(id);
+          }
         }
         if (!only || only.has(ASTEROID_ART)) {
           asteroids.rebuild();
@@ -478,14 +565,23 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     return x1 >= vx0 && x0 <= vx0 + c.w / c.scale && y1 >= vy0 && y0 <= vy0 + c.h / c.scale;
   }
 
+  /**
+   * Show the scenes in view of the main or the inset camera (out of a pass's view they are clipped anyway). The same regions
+   * in every pass of a frame: a region shown or hidden rebuilds every depth band, so it must not flip between passes.
+   */
+  function showScenes(): void {
+    const any = shipOf(refId) !== undefined;
+    for (const [id, sc] of scenes) {
+      const on = any && !art.waiting(id) && !(building.has(id) && !seen.has(sc)) && inAnyView(id, sc.grid);
+      sc.layers.setVisible(on);
+      if (on) seen.add(sc);
+    }
+  }
+
   /** Place the world for a camera pass: the main pass (target null) or the combat panel (pass B, showing `target`). */
   function place(c: Camera, target: number | null): void {
     placed = c;
-    const any = shipOf(refId) !== undefined;
-    // The same regions in every pass of a frame (in view of the main or the inset camera; out of a pass's view they are
-    // clipped anyway): a region shown or hidden rebuilds every depth band, so it must not flip between passes.
-    const ic = inset.camera();
-    for (const [id, sc] of scenes) sc.layers.setVisible(any && !art.waiting(id) && (regionInView(id, sc.grid, cam) || (!!ic && regionInView(id, sc.grid, ic))));
+    showScenes();
     // Shrunk art (the main camera below zoom 1) is drawn with linear filtering, in the inset too.
     atlas.setSmooth(c.scale < 1);
     liveries.setSmooth(c.scale < 1);
@@ -569,6 +665,8 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       probe = p;
     },
     whenArtReady() {
+      // Nothing to look at until it resolves (a loading screen): scenes are built whole, not spread over frames.
+      budget.setRush(true);
       return new Promise<void>((resolve) => {
         const t0 = performance.now();
         let quiet = 0;
@@ -576,10 +674,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
         const poll = (): void => {
           if (frames !== seen) {
             seen = frames;
-            const hidden = scenes.size === 0 || [...scenes.keys()].some((id) => art.waiting(id));
+            const hidden = scenes.size === 0 || building.size > 0 || [...scenes.keys()].some((id) => art.waiting(id));
             quiet = atlas.busy() === 0 && !hidden ? quiet + 1 : 0;
           }
-          if (quiet >= 5 || performance.now() - t0 > ART_READY_MAX_MS) resolve();
+          if (quiet >= 5 || performance.now() - t0 > ART_READY_MAX_MS) {
+            budget.setRush(false);
+            resolve();
+          }
           else setTimeout(poll, 30);
         };
         poll();
@@ -597,12 +698,30 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       lastFrame = now;
       W.setScale(cam.scale);
       probe.begin('render/scenes');
+      budget.frame(IDLE_MS, building.size === 0);
       for (const [id, sc] of scenes) {
+        const o = origin(id);
+        const p = iso(o.x, o.y);
+        sc.layers.setOrigin(p.x, p.y, o.x + o.y);
+        // Out of every view a scene is not drawn: it updates now and then (its art requests, background roof plating), and
+        // in full in the frame it comes into view, before it is drawn.
+        const owed = (skipped.get(id) ?? 0) + dt;
+        if (budgetOn && !inAnyView(id, sc.grid) && inset.target() !== id && (frames + id) % HIDDEN_EVERY !== 0) {
+          skipped.set(id, owed);
+          continue;
+        }
+        skipped.delete(id);
+        atlas.attribute(id);
+        sc.update(Math.min(owed, 0.1));
+      }
+      if (building.size) budget.frame(BUILD_MS, false);
+      for (const [id, sc] of building) {
         const o = origin(id);
         const p = iso(o.x, o.y);
         sc.layers.setOrigin(p.x, p.y, o.x + o.y);
         atlas.attribute(id);
         sc.update(dt);
+        if (sc.ready()) promote(id, sc);
       }
       atlas.attribute(null);
       probe.end('render/scenes');
@@ -629,6 +748,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       art.settle();
       probe.end('render/fx');
       probe.begin('render/crew');
+      showScenes(); // before the crew composite, which skips the figures of scenes not drawn
       crews.render(gl, artZoom(cam.scale));
       liveries.render(gl);
       probe.end('render/crew');
@@ -660,13 +780,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     debugCrewAtlas: (on) => crews.setEnabled(on),
     debugLiveryAtlas(on) {
       liveries.enabled = on;
-      for (const sc of scenes.values()) sc.dispose();
-      scenes.clear();
+      dropAll();
     },
-    resetWorld() {
-      for (const sc of scenes.values()) sc.dispose();
-      scenes.clear();
+    debugBuildBudget(on) {
+      budgetOn = on;
+      crews.skipHidden = on;
     },
+    resetWorld: dropAll,
     setBackdrop(spec) {
       backdrop.setSpec(spec);
     },
@@ -679,14 +799,14 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setGrid(grid) {
       refId = grid.id;
-      scenes.get(grid.id)?.dispose();
-      scenes.delete(grid.id);
+      dropScene(scenes, grid.id);
+      dropScene(building, grid.id);
       sync();
       frame(grid);
     },
     setCutaway(m) {
       cutaway = m;
-      for (const sc of scenes.values()) sc.setCutaway(m);
+      for (const sc of allScenes()) sc.setCutaway(m);
     },
     setRoofEnemies(on) {
       roofEnemies = on;
@@ -699,17 +819,17 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setOverlay(f) {
       overlay = f;
-      scenes.get(refId)?.view.setOverlay(f);
+      for (const sc of sceneOf(refId)) sc.view.setOverlay(f);
     },
     setSelection(t, shipId = refId) {
       selection = t;
-      if (selShip !== shipId) scenes.get(selShip)?.view.setSelection(null);
+      if (selShip !== shipId) for (const sc of sceneOf(selShip)) sc.view.setSelection(null);
       selShip = shipId;
-      scenes.get(shipId)?.view.setSelection(t);
+      for (const sc of sceneOf(shipId)) sc.view.setSelection(t);
     },
     setHover(t) {
       hover = t;
-      scenes.get(refId)?.view.setHover(t);
+      for (const sc of sceneOf(refId)) sc.view.setHover(t);
     },
     setPreview(tiles, valid = true) {
       // Drawn in the shared sector layer, not the reference ship's: a drag over a distant asteroid has that ship culled away.
@@ -748,8 +868,13 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     info: () => {
       let sprites = sectorParticles.count();
-      for (const sc of scenes.values()) sprites += sc.sprites();
-      return { sprites, zoom: cam.zoom };
+      let built = sprites;
+      for (const sc of allScenes()) {
+        const n = sc.sprites();
+        built += n;
+        if (sc.layers.visible) sprites += n;
+      }
+      return { sprites, built, building: building.size, zoom: cam.zoom };
     },
     portrait: (id) => portraits.url(id),
     portraitOf: (look) => portraits.lookUrl(look),
@@ -790,12 +915,12 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     },
     setSites(blocked, selected) {
       siteMarks = { blocked, selected };
-      for (const sc of scenes.values()) sc.setSites(blocked, selected);
+      for (const sc of allScenes()) sc.setSites(blocked, selected);
     },
     setSelectedCrew(ids) {
       selectedCrew = ids;
       orderFx.setSelected(ids);
-      for (const sc of scenes.values()) sc.setSelectedCrew(ids);
+      for (const sc of allScenes()) sc.setSelectedCrew(ids);
     },
     onEvents: (events) => {
       fx.onEvents(events);
@@ -821,8 +946,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       backdrop.dispose();
       sectorParticles.dispose();
       inset.dispose();
-      for (const sc of scenes.values()) sc.dispose();
-      scenes.clear();
+      dropAll();
       liveries.dispose();
       // The whole scene graph goes too: its 'destroyed' events unregister the render groups and depth bands from their
       // module-level registries (renderGroups.ts, depthBands.ts), which would otherwise keep a disposed renderer's graph alive.

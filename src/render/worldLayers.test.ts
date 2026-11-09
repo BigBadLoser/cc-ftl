@@ -11,6 +11,21 @@ const named = (name: string, z: number) => {
 };
 
 describe('world stack', () => {
+  it('keeps a hidden region hidden whatever its views do to their own layers, and keeps their parts hidden when it shows', () => {
+    const W = createWorldStack();
+    const r = W.region(false);
+    const parts = [r.floor, r.under, r.decal, r.sorted];
+    r.setVisible(false); // culled, or still being built
+    r.setPartsVisible(parts, true); // a rock roof lifted (an outpost unroofed)
+    expect(parts.every((c) => !c.visible)).toBe(true);
+    r.setPartsVisible(parts, false); // the rock roof back on
+    r.setVisible(true);
+    expect(parts.every((c) => !c.visible)).toBe(true);
+    expect(r.fx.visible).toBe(true); // the rock roof itself
+    r.setPartsVisible(parts, true);
+    expect(parts.every((c) => c.visible)).toBe(true);
+  });
+
   it('sorts the sprites of every region by zIndex plus the region depth, and keeps ties in add order', () => {
     const W = createWorldStack();
     const a = W.region(false);
