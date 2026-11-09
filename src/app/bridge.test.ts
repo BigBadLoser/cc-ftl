@@ -1,5 +1,6 @@
+import { get } from 'svelte/store';
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../sim';
+import { ModuleC, newGame } from '../sim';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
 import { createBridge } from './bridge';
@@ -40,5 +41,23 @@ describe('UI commands while paused', () => {
     expect(buildJobs(sim).active).toEqual([]);
     sim.step();
     expect(buildJobs(sim).active.map((j) => j.key)).toEqual([offer.key]);
+  });
+});
+
+describe('snapshots while paused', () => {
+  it('the job board follows the ship (its strength rates a bounty) once the game is paused, not only the galaxy', () => {
+    const sim = newGame(3, content);
+    ensureAround(sim, sim.galaxy.current);
+    const bridge = createBridge(sim);
+    const frame = () => bridge.update({ tick: sim.tick, entityCount: 0, fps: 60, frameMs: 16, tickMs: 1 });
+    for (let i = 0; i < 20; i++) frame();
+    // A gun is lost in a tick, then the player pauses: no tick and no command from here on.
+    for (const id of sim.world.query(ModuleC)) {
+      const m = sim.world.get(id, ModuleC)!;
+      if (sim.content.modules[m.def]?.weapon) m.hp = 0;
+    }
+    sim.step();
+    for (let i = 0; i < 40; i++) frame();
+    expect(get(bridge.jobs)).toEqual(JSON.parse(JSON.stringify(buildJobs(sim))));
   });
 });
