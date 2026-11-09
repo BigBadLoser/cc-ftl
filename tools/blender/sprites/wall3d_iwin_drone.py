@@ -26,8 +26,9 @@ OFF = {"l": 0, "m": 1, "r": 2}
 BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_H up, back into the slope
 BOX_H, BOX_IN = 18, -0.1    # art px: their tops (the ref's 15 on its taller-scaled slope: 1-2 under the floor); their
                             # fronts at the toe, a hair proud (behind it the foot hid their bottoms)
-CONSOLE = (36, 60)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
-BRACKETS = ((31, 36), (60, 65))  # its light brackets either side
+CONSOLE = (37, 59)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
+BRACKETS = ((32, 37), (59, 64))  # its light brackets either side (the ref's 31-36, 60-65: on the tiles' joins, a
+                                 # px in, so none straddles one: a 1 px sliver of it showed there as a seam)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
          "vent": "fDS3"}
@@ -232,11 +233,6 @@ def _header_foot():
     return rt - 0.25 * (rt - zs)
 
 
-def _no_slots(sp):
-    """A window piece's ramps: no handle slots (the plain wall's, one a tile: it showed by the red boxes, the user)."""
-    sp.holes[:] = []
-
-
 def window(fn, part):
     """fn: drone's straight piece builder (tile.wall.drone.full.m10). (own, wide, pane objects)."""
     calls = [0]
@@ -254,12 +250,12 @@ def window(fn, part):
         global PART
         calls[0] = 0
         T.HOOK = each
-        T.PRE_HOOK = _no_slots
-        DR.BLANK = True                                 # (blank posts and header for now: the user)
+        DR.BLANK = True                                 # (blank posts and header for now; the ramp bare: no
+        #   seams, outline or handle slots, the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK, T.PRE_HOOK, DR.BLANK = None, None, None, False
+            PART, T.HOOK, DR.BLANK = None, None, False
     return build

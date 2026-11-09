@@ -141,7 +141,8 @@ def _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, gw):
           cap=(gw, cp[1]))
 
 
-BLANK = False                       # a window's pieces: the walls' faces bare, no detail (wall3d_iwin_drone, the user)
+BLANK = False                       # a window's pieces: the walls' faces bare, no detail, the ramp one bare plate a run
+                                    # (no seams, outline or handle slot: wall3d_iwin_drone, the user)
 
 
 def drone(hull):
@@ -257,8 +258,10 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        return _style(drone, skirt="outline", slot=True, seam=0, outline_d=DRONE_OD, outline_t=DRONE_OT,
-                      tops=DRONE_TOPS, ramps=DRONE_RAMPS, foot=DRONE_FOOT, ramp_solid=True,
+        bare = dict(skirt=None, slot=False, ramps=(), seamless=True) if BLANK else \
+            dict(skirt="outline", slot=True, ramps=DRONE_RAMPS)    # (a window piece: its ramp bare, the user)
+        return _style(drone, seam=0, outline_d=DRONE_OD, outline_t=DRONE_OT,
+                      tops=DRONE_TOPS, foot=DRONE_FOOT, ramp_solid=True, **bare,
                       shell=LookShell,
                       features=(FreeEnds(), SlotHoles(), CornerCut(), FloorDrop(), DiagTone(),
                                 FootTone("wall", 3)))
