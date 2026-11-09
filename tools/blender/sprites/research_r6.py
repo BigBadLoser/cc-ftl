@@ -55,6 +55,16 @@ HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT = -30 * PXG, -24 * PXG, -23 * PXG   # the
 SHELVES = (zpx(43), zpx(57))      # fronts, and its shelves' bottoms (1.1, 1.46)
 
 
+BOOKS = ("rust", "navy", "pcb", "ochM", "medRed")
+
+
+def books(k, u0, z, heights, c0):
+    """Upright books standing at z against the hutch's back panel, from u = u0 (on the grid) along +u: each 2 px thick
+    and 5 px deep, its height in whole px."""
+    for i, h in enumerate(heights):
+        k.box(u0 + (2 * i + 1) * PXG, HUTCH_BACK + 2.5 * PXG, z, 2 * PXG, 5 * PXG, zpx(h), BOOKS[(c0 + i) % len(BOOKS)])
+
+
 def slots(n, top_px=TOP_PX, z0=4, g=2, margin=2):
     """n drawers on a cabinet top_px tall, in whole px: from z0 px up, g px apart, margin px (plus the fronts' 1 px
     top face) under the top. [(z, h)] from the bottom."""
@@ -203,10 +213,13 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False):
             k.box(su * 0.98, (b + sf) / 2, z, 0.92, sf - b, zpx(2), "lvW2", top="lvW")
     k.box(0.0, (b + sf) / 2, SHELVES[1], 1.04, sf - b, zpx(2), "lvW2", top="lvW")
     k.box(0.0, b - 0.02, TOP, 2.9, 0.04, SHELVES[1] + zpx(2) - TOP, "lvWS")             # its back panel
-    # on the shelves: jars (left), labelled specimen boxes (right), slates stacked flat (top middle)
+    # on the shelves: jars (left), labelled specimen boxes (right), slates stacked flat (top middle); under them,
+    # books along the back of the cabinet top
     s0, s1 = SHELVES[0] + zpx(2), SHELVES[1] + zpx(2)                                   # the shelf tops
     for i, u in enumerate((-1.26, -1.04, -0.82)):
         jar(k, u, -0.86, s0, ("resSpec", "resFrond", "resSpecL")[i], r=0.07, h=0.18)
+    books(k, -44 * PXG, TOP, (12, 14, 11, 13, 14, 12, 11), 0)
+    books(k, 19 * PXG, TOP, (13, 11, 14, 12, 13, 11), 2)
     for i, u in enumerate((0.74, 0.98, 1.22)):
         k.box(u, sf - PXG - 0.1, s0, 0.2, 0.2, zpx(6), "ochM", top="ochL")
         k.box(u, sf - PXG + 0.002, s0 + zpx(2), 0.1, 0.004, zpx(2), "lvW")

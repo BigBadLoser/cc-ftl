@@ -47,6 +47,7 @@ def _return(k, items=True, joined=False):
     cu, su = (FU - 0.49 + ur) / 2, ur - FU + 0.49
     k.box(cu, cv, 0.0, su - 2 * PXG, sv - 2 * PXG, zpx(3), "dark")                    # a 1 px recessed kick
     k.box(cu, cv, zpx(3), su, sv, H - zpx(3), "lvW2", top="lvW")
+    k.box(cu, v1, zpx(6), su - 0.16, 0.014, H - zpx(12), "lvWS")                      # a panel on its end, as on
     stack(k, "u", cv + 0.05, ur, 0.6, 3)                                              # drawers toward the chair
     if not items:
         return
