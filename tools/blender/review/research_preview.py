@@ -28,7 +28,8 @@ ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet"
        "x14": "X14  rail ring", "x15": "X15  surgical arm", "x16": "X16  rotisserie",
        "x17": "X17  reference", "x18": "X18  scanner hood", "x19": "X19  tower",
        "x17r": "X17r  reference, end for end", "x18r": "X18r  hood, end for end",
-       "x20": "X20  gantry", "x21": "X21  tool tower", "x22": "X22  lid"}
+       "x20": "X20  gantry", "x21": "X21  tool tower", "x22": "X22  lid",
+       "x23": "X23  lectern hull", "x24": "X24  capsule", "x25": "X25  anvil"}
 
 
 def main():
