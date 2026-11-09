@@ -220,10 +220,10 @@ def navy(hull):
                 ext = 1.5 * PAINT                       # edge, the cover past it lit the edge px a red line)
                 band(k, ax, plane, p0 - (ext if pq[0] == "cont" else 0.0), p1 + (ext if pq[1] == "cont" else 0.0),
                      pq, zh, H)
-        for u in lines:
+        for u in ([] if T.style().seamless else lines):
             _seam(k, ax, plane, u - LINE / 2, u + LINE / 2, zf - 0.03, zh, F)
             _lit(k, ax, plane, u + LINE / 2, zf - 0.03, zh, F, reds)
-        if ax == "y":                                   # a seam up an inner corner (on the lit face, one px, as the
+        if ax == "y" and not T.style().seamless:   # a seam up an inner corner (on the lit face, one px, as the
             for u, e in ((a, ends[0]), (b, ends[1])):   # plates' seams)
                 if e == "in":
                     u0 = u if u == a else u - LINE
@@ -277,6 +277,9 @@ def _shade_tones():
 NAVY_SHADE = _shade_tones()
 
 
+SEAMLESS = False                    # set while a window piece builds (wall3d_iwin_navy): Style.seamless
+
+
 class Navy(Faction):
     pre = "fN"
 
@@ -296,7 +299,7 @@ class Navy(Faction):
         return NAVY_SHADE.get(name, name)
 
     def relief(self, sprite):
-        return _style(navy, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, ramp_seam=NAVY_RAMP_SEAM, joint=0, chamfer=NAVY_C,
+        return _style(navy, seamless=SEAMLESS, skirt=None, toe="ochre", toe_at=RED_AT, seam=NAVY_SEAM, one_seam=True, ramp_seam=NAVY_RAMP_SEAM, joint=0, chamfer=NAVY_C,
                       ramp_solid=True,                  # (toe_at: the red band on a corner's chamfer and an end's
                       #   ramp, as on the ramp)
                       toe_lvl={"wall": ("fNT2", "fNT2"), "blue": ("fNT2", "fNT2")},  # (the toe in the red band's tones)

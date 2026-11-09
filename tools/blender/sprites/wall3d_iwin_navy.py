@@ -11,6 +11,8 @@ from mathutils import Vector
 
 from . import wall3d as T
 from . import walls as W
+from .faction import navy as NV
+from .faction.parts import PAINT
 from .wall3d_iwin import _clip
 
 PX = 1 / 32                 # an art px across or along the wall
@@ -23,6 +25,7 @@ BLOCK_UP = 5                # art px: an end block's top over the wall's top aga
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
+RED = "fNT2"                # the face's band (navy_band: ochre 3, its lit tone), wrapped round the posts (the user)
 COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
        "p_floor": "fNW2", "p_back": "fNW3", "p_side": "fNS2"}
 OFF = {"l": 0, "m": 1, "r": 2}  # a piece's tiles from the window's -x end
@@ -238,9 +241,11 @@ def _ends(k, x0, x1, z1, cells):
     out past the wall, from the sill up to the ramp's section (each in convex strips across the wall; between the
     wall's lines a block's top falls to the sill there: no side)."""
     yl, ye, zs = _line(), _front(), _zs()
-    for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
+    zr, yr = z1 - 0.33 * (_wall_top() - _zt()), yl + 2.5 * PAINT     # (the band: navy_band's height, out over the
+    for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):       # cover and the band's depth)
         if on:
-            _quad(k, [(u, -yl, _zb()), (u, yl, _zb()), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
+            _quad(k, [(u, -yl, _zb()), (u, yl, _zb()), (u, yl, zr), (u, -yl, zr)], (sd, 0, 0), COL["post"])
+            _quad(k, [(u, -yr, zr), (u, yr, zr), (u, yr, z1), (u, -yr, z1)], (sd, 0, 0), RED)
     for (_, u, _, sa), (_, _, _, sb) in zip(cells, cells[1:]):
         if not -0.5 < u < 0.5:
             continue
@@ -287,6 +292,10 @@ def hook(k, sp, own=True):
             _quad(k, [(v, -h, _zb()), (v, h, _zb()), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
 
 
+def _wall_top():
+    return W.wall_top("wall", "up")
+
+
 def _header_foot():
     """The dark header's foot (faction.navy: a quarter of the wall's height under its top, on a partition's height)."""
     zs = W.skirt_top()
@@ -312,10 +321,11 @@ def window(fn, part):
         global PART
         calls[0] = 0
         T.HOOK = each
+        NV.SEAMLESS = True                              # (no seams on a window's pieces: the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK = None, None
+            PART, T.HOOK, NV.SEAMLESS = None, None, False
     return build
