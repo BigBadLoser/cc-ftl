@@ -141,14 +141,20 @@ def _column(k, ax, plane, u0, u1, z0, zt, D, c, F, mt, cp, gw):
           cap=(gw, cp[1]))
 
 
-BLANK = False                       # a window's pieces: the walls' faces bare, no detail, the ramp one bare plate a run
-                                    # (no seams, outline or handle slot: wall3d_iwin_drone, the user)
+BLANK = None                        # a window's pieces: a height (the header's foot): the walls' faces' detail only over
+                                    # it (the header kept, the posts bare), the ramp one bare plate a run (no seams,
+                                    # outline or handle slot: wall3d_iwin_drone, the user)
 
 
 def drone(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
-        if BLANK and not hull:
-            return
+        if BLANK is None or hull:
+            return face0(k, ax, plane, a, b, ends, zs, top, full, variant)
+        n0 = (len(k.m.f), len(k.ns.f) if k.ns is not None else 0)
+        face0(k, ax, plane, a, b, ends, zs, top, full, variant)
+        k.drop_below(BLANK, n0)
+
+    def face0(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
         zb = zs + 0.02
         endf, end1, corner, back = _ends(ax, plane, b, ends)    # (a free end stops square: no channel there; its
@@ -258,7 +264,7 @@ class Drone(Faction):
     pre = "fD"
 
     def relief(self, sprite):
-        bare = dict(skirt=None, slot=False, ramps=(), seamless=True) if BLANK else \
+        bare = dict(skirt=None, slot=False, ramps=(), seamless=True) if BLANK is not None else \
             dict(skirt="outline", slot=True, ramps=DRONE_RAMPS)    # (a window piece: its ramp bare, the user)
         return _style(drone, seam=0, outline_d=DRONE_OD, outline_t=DRONE_OT,
                       tops=DRONE_TOPS, foot=DRONE_FOOT, ramp_solid=True, **bare,

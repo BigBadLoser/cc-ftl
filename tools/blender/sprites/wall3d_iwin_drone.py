@@ -343,12 +343,12 @@ def window(fn, part):
         global PART
         calls[0] = 0
         T.HOOK = each
-        DR.BLANK = True                                 # (blank posts and header for now; the ramp bare: no
-        #   seams, outline or handle slots, the user)
+        DR.BLANK = _header_foot()                       # (drone's face detail on the header only, the posts bare;
+        #   the ramp bare: no seams, outline or handle slots, the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK, DR.BLANK = None, None, False
+            PART, T.HOOK, DR.BLANK = None, None, None
     return build

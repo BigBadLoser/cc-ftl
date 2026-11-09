@@ -81,13 +81,14 @@ class Relief:
         m = self.ns if self.no_shadow else self.m
         m.poly([core.G(*p) for p in pts], col, flip=n.dot((pts[1] - pts[0]).cross(pts[2] - pts[0])) < 0)
 
-    def drop_below(self, z):
-        """Cut every polygon off at height z: what lies over it stays (a part running from the floor up past it too)."""
-        for m in (self.m, self.ns):
+    def drop_below(self, z, start=(0, 0)):
+        """Cut every polygon (from start: an index into each mesh's) off at height z: what lies over it stays (a part
+        running from the floor up past it too)."""
+        for m, s0 in zip((self.m, self.ns), start):
             if m is None:
                 continue
-            out = []
-            for f in m.f:
+            out = m.f[:s0]
+            for f in m.f[s0:]:
                 pts = [m.v[i] for i in f[0]]
                 if min(p[2] for p in pts) >= z - 1e-6:
                     out.append(f)
