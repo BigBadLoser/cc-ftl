@@ -65,7 +65,7 @@ const artReady = new Promise<void>((res) => (artReadyResolve = res));
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
 const start = await startGame(new URLSearchParams(location.search).get('seed'), new URLSearchParams(location.search).get('starter'));
 const sim = start.sim;
-const bridge = createBridge(sim);
+const bridge = createBridge(sim, () => probe);
 const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 let starmapOpen = false;
@@ -132,14 +132,20 @@ const loop = createLoop({
   },
   onFrame: (stats) => {
     probe.begin('ui/bridge');
+    probe.begin('ui/bridge/info');
     const info = renderer?.info();
+    probe.end('ui/bridge/info');
     if (info) {
       probe.count('render/sprites', info.sprites);
       probe.count('render/spritesBuilt', info.built);
     }
     bridge.update(stats, info);
+    probe.begin('ui/bridge/signals');
     signals.poll();
+    probe.end('ui/bridge/signals');
+    probe.begin('ui/bridge/prewarm');
     prewarm?.update();
+    probe.end('ui/bridge/prewarm');
     probe.end('ui/bridge');
   },
 });

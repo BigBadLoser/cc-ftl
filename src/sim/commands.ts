@@ -353,6 +353,8 @@ export class CommandQueue {
   private pending: QueuedCommand[] = [];
   private log: QueuedCommand[] = [];
   private logStart = 0;
+  /** Commands applied since this queue was made (not saved): a cheap "did anything change" counter for readers. */
+  applied = 0;
 
   constructor(private readonly logSize = 2000) {}
 
@@ -367,6 +369,7 @@ export class CommandQueue {
     this.pending = this.pending.filter((q) => q.tick > tick);
     for (const q of due) {
       apply(q.cmd);
+      this.applied++;
       this.record({ tick, cmd: q.cmd });
     }
   }

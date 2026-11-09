@@ -1,4 +1,4 @@
-import { JobC, ResearchC, TICK_HZ, homeShip, isBlueprintKnown, isResearchDone, labsOf, stockOn, type ModuleDef, type Sim } from '../sim';
+import { JobC, ResearchC, TICK_HZ, homeShip, isBlueprintKnown, isResearchDone, labsOf, reservations, stockOn, type ModuleDef, type Sim } from '../sim';
 import type { UiResearch, UiResearchNode, UiResearchStat } from '../ui/api';
 
 const NONE: UiResearch = { ship: 0, labs: 0, workers: 0, bands: [], nodes: [], queue: [] };
@@ -78,6 +78,14 @@ export function buildResearch(sim: Sim): UiResearch {
     status.set(id, st);
     return st;
   };
+  // Stock per item, asked once for the whole tree (each ask scans every stack and storage on the ship).
+  const res = reservations(sim);
+  const held = new Map<string, number>();
+  const have = (item: string): number => {
+    let n = held.get(item);
+    if (n === undefined) held.set(item, (n = stockOn(sim, ship, item, res)));
+    return n;
+  };
   for (const [id, d] of Object.entries(defs)) {
     const unlocked = mods[d.unlocks[0] ?? ''] as ModuleDef | undefined;
     const below = mods[d.requires?.[0] ?? ''] as ModuleDef | undefined;
@@ -86,7 +94,7 @@ export function buildResearch(sim: Sim): UiResearch {
     nodes.set(id, {
       id, name: d.name, band: d.category, parents: (d.requires ?? []).map(nodeOf), project: true, status: st, pos: pos < 0 ? null : pos,
       module: d.unlocks[0] ?? '', sub: sub(unlocked), stats: unlocked ? statLines(unlocked, below) : [],
-      cost: d.cost.map((c) => ({ item: c.item, name: sim.content.items[c.item]?.name ?? c.item, count: c.count, have: stockOn(sim, ship, c.item) })),
+      cost: d.cost.map((c) => ({ item: c.item, name: sim.content.items[c.item]?.name ?? c.item, count: c.count, have: have(c.item) })),
       seconds: Math.round(d.work / TICK_HZ), progress: st === 'active' && r ? Math.min(1, r.progress / d.work) : 0,
       ...(d.col !== undefined ? { col: d.col } : {}), ...(d.row !== undefined ? { row: d.row } : {}),
     });
