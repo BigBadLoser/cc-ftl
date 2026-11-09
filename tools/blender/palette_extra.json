@@ -3571,5 +3571,8 @@
   "resCrM": {"hex": "#c8b47e", "set": "research"},
   "resCrD": {"hex": "#a08a58", "set": "research"},
   "resCrK": {"hex": "#5c4a30", "set": "research"},
+  "resGlsL": {"hex": "#c9cfd8", "set": "research"},
+  "resGls": {"hex": "#a3aab6", "set": "research"},
+  "resGlsD": {"hex": "#7c8392", "set": "research"},
   "resBrnD": {"hex": "#3a2a21", "set": "research"}
 }
