@@ -74,7 +74,7 @@ VZ = 0.6
 
 
 def case(k, cu, cv, z, su, sv, hz=0.42):
-    """The display case: a red velvet bed, tablet fragments on it, brass corner posts, a lid frame with a gold light
+    """The display case: a red velvet bed, tablet fragments on it, brass corner posts and lid frame, a gold light
     along its front, glass all round and over the top."""
     k.box(cu, cv, z, su - 0.08, sv - 0.08, 0.04, "lvR", top="lvR")
     for (du, dv, s, rz) in ((-0.2, -0.12, 0.24, 0.3), (0.16, -0.12, 0.2, -0.5), (-0.04, 0.14, 0.26, 0.9),
@@ -84,8 +84,8 @@ def case(k, cu, cv, z, su, sv, hz=0.42):
         for b in (-1, 1):
             k.box(cu + a * (su / 2 - 0.03), cv + b * (sv / 2 - 0.03), z, 0.04, 0.04, hz, "brass")
     for b in (-1, 1):
-        k.box(cu, cv + b * (sv / 2 - 0.035), z + hz, su, 0.07, 0.05, "lvW2", top="lvW")
-        k.box(cu + b * (su / 2 - 0.035), cv, z + hz, 0.07, sv, 0.05, "lvW2", top="lvW")
+        k.box(cu, cv + b * (sv / 2 - 0.035), z + hz, su, 0.07, 0.05, "brass")
+        k.box(cu + b * (su / 2 - 0.035), cv, z + hz, 0.07, sv, 0.05, "brass")
     k.box(cu, cv + sv / 2 - 0.05, z + hz - 0.02, su - 0.16, 0.03, 0.02, G)
     k.part("glass").box(cu, cv, z + 0.04, su - 0.16, sv - 0.16, hz, "glassL")
 
