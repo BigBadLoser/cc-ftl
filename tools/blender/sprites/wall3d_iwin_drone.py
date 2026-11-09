@@ -23,14 +23,15 @@ FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 
 COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
 # The front (the near ramp), in px along the window from its -x end (96: the ref's, measured on its deskewed front):
-BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_H up, back into the slope
-BOX_H, BOX_IN = 18, -0.1    # art px: their tops (the ref's 15 on its taller-scaled slope: 1-2 under the floor); their
-                            # fronts at the toe, a hair proud (behind it the foot hid their bottoms)
+BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts OUT past the toe, tops BOX_H up, back into the slope
+BOX_H = 18                  # art px: their tops (the ref's 15 on its taller-scaled slope: 1-2 under the floor)
+OUT = 2                     # art px: the boxes' and ribs' fronts past the toe, upright down to the toe's top (the foot's
+                            # height), their bottom sloping from there back to the toe on the floor (the user)
 CONSOLE = (37, 59)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
 BRACKETS = ((32, 37), (59, 64))  # its light brackets either side (the ref's 31-36, 60-65: on the tiles' joins, a
                                  # px in, so none straddles one: a 1 px sliver of it showed there as a seam)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
-                             # from where the slope falls to it; its front the toe's (the user)
+                             # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4"}
@@ -180,7 +181,7 @@ def _front_parts(k):
     for a, b in BRACKETS:
         _slope(k, a, b, d0, dz, FRONT["bracket"])
     _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
-    yf, zb = 0.5 - BOX_IN * PX, BOX_H / W.ZART
+    yf, zb = 0.5 + OUT * PX, BOX_H / W.ZART
     for a, b in BOXES:
         _block(k, a, b, yf, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"])
     for a, b in RIBS:
@@ -188,22 +189,25 @@ def _front_parts(k):
 
 
 def _block(k, a, b, yf, zb, front, top, side):
-    """A block on the near ramp a..b px along the window: its front upright at yf from the floor to zb, its top flat
-    back to the slope (the slope's own height there). front None: the toe's tone (the wall's, as the foot's)."""
-    yb = _out(zb)
+    """A block on the near ramp a..b px along the window: its front upright at yf (past the toe) from the foot's height
+    to zb, its bottom sloping from there back to the toe on the floor, its top flat back to the slope (the slope's own
+    height there). front None: the toe's tone (the wall's, as the foot's)."""
+    yb, yt, zf = _out(zb), 0.5, W.foot()
     u0, u1 = _x(a), _x(b)
     a_, b_ = max(u0, -0.5), min(u1, 0.5)
     if b_ - a_ < 1e-9:
         return
-    pts = [(a_, yf, 0.0), (b_, yf, 0.0), (b_, yf, zb), (a_, yf, zb)]
-    if front:
-        _quad(k, pts, (0, 1, 0), front)
-    else:
-        k.poly([Vector(p) for p in pts], "wall", 3, Vector((0, 1, 0)))
+    under = Vector((0.0, zf, -(yf - yt))).normalized()
+    for pts, n, col in (([(a_, yf, zf), (b_, yf, zf), (b_, yf, zb), (a_, yf, zb)], Vector((0, 1, 0)), front),
+                        ([(a_, yt, 0.0), (b_, yt, 0.0), (b_, yf, zf), (a_, yf, zf)], under, front)):
+        if col:
+            _quad(k, pts, n, col)
+        else:
+            k.poly([Vector(p) for p in pts], "wall", 3, n)
     _quad(k, [(a_, yb, zb), (a_, yf, zb), (b_, yf, zb), (b_, yb, zb)], (0, 0, 1), top)
     for u, sd in ((u0, -1), (u1, 1)):
         if -0.5 < u < 0.5:
-            _quad(k, [(u, yb, 0.0), (u, yf, 0.0), (u, yf, zb), (u, yb, zb)], (sd, 0, 0), side)
+            _quad(k, [(u, yb, 0.0), (u, yt, 0.0), (u, yf, zf), (u, yf, zb), (u, yb, zb)], (sd, 0, 0), side)
 
 
 def hook(k, sp, own=True):
