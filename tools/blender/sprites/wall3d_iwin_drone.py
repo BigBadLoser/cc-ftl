@@ -30,13 +30,12 @@ BOX_OUT = 0.1               # art px: the boxes' fronts past the toe (at it, a h
                             # bottoms), upright from the floor (they stay put: the user)
 OUT = 2                     # art px: the ribs' fronts past the toe, upright down to the toe's top (the foot's height),
                             # their bottom sloping from there back to the toe on the floor (the user)
-CONSOLE = (37, 59)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
-BRACKETS = ((32, 37), (59, 64))  # its light brackets either side (the ref's 31-36, 60-65: on the tiles' joins, a
-                                 # px in, so none straddles one: a 1 px sliver of it showed there as a seam)
+CONSOLE = (32, 64)          # the middle console: a dark panel down the slope, from the floor's edge to the foot, out
+                            # to the tiles' joins (where the light brackets either side ended: those off, the user)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
                              # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
-FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
+FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
@@ -176,13 +175,11 @@ def _slope(k, p0, p1, da, db, col):
 
 
 def _front_parts(k):
-    """The near ramp's dressing: the end blocks' vents, the console and its brackets, the red boxes and their ribs."""
+    """The near ramp's dressing: the end blocks' vents, the console, the red boxes and their ribs."""
     run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
     dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
     for a, b in VENTS:
         _slope(k, a, b, 1 * PX, dz - 1 * PX, FRONT["vent"])
-    for a, b in BRACKETS:
-        _slope(k, a, b, d0, dz, FRONT["bracket"])
     _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
     zb = _zf() - BOX_DOWN / W.ZART
     for a, b in BOXES:
