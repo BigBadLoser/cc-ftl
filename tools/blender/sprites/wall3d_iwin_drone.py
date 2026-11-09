@@ -23,19 +23,22 @@ FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 
 COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
 # The front (the near ramp), in px along the window from its -x end (96: the ref's, measured on its deskewed front):
-BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_DOWN under the sill, back to it
+BOXES = ((17, 30), (66, 79))   # the red boxes: upright fronts at the toe, tops BOX_DOWN under the sill, back to it
+                               # (2 px wider toward the middle than the ref's 17-28, 68-79: the user)
 BOX_DOWN = 2                # art px: their tops under the sill (the window's floor), running back to it, the ramp cut
                             # away over them there: a step up to the sill at its front edge (the user)
 BOX_OUT = 0.1               # art px: the boxes' fronts past the toe (at it, a hair proud: behind it the foot hid their
                             # bottoms), upright from the floor (they stay put: the user)
 OUT = 2                     # art px: the ribs' fronts past the toe, upright down to the toe's top (the foot's height),
                             # their bottom sloping from there back to the toe on the floor (the user)
-CONSOLE = (32, 64)          # the middle console: a dark panel down the slope, from the floor's edge to the foot, out
-                            # to the tiles' joins (where the light brackets either side ended: those off, the user)
+SLOT = (34, 62)             # the middle slot (in place of the console): its sides 4 px in from the red boxes, its
+SLOT_BACK = 4               # floor flat at the toe's top (the foot's height), from the toe back past the slope's top
+                            # end SLOT_BACK px into the sill (the user)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
                              # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
 VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
-FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4",
+FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "slot_floor": "fDW3", "slot_back": "fDX3",
+         "slot_side": "fDX2",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
@@ -175,12 +178,11 @@ def _slope(k, p0, p1, da, db, col):
 
 
 def _front_parts(k):
-    """The near ramp's dressing: the end blocks' vents, the console, the red boxes and their ribs."""
+    """The near ramp's dressing: the end blocks' vents, the red boxes and their ribs."""
     run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
     dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
     for a, b in VENTS:
         _slope(k, a, b, 1 * PX, dz - 1 * PX, FRONT["vent"])
-    _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
     zb = _zf() - BOX_DOWN / W.ZART
     for a, b in BOXES:
         _block(k, a, b, 0.5 + BOX_OUT * PX, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"], False, _front())
@@ -193,36 +195,59 @@ def _front_parts(k):
 
 
 def _box_cuts(k):
-    """Take the near ramp away over each red box, out from the sill's front edge, down to the box's top (mesh -y: the
-    near side, core.G)."""
-    ye, zb = -_front(), _zf() - BOX_DOWN / W.ZART
-    for a, b in BOXES:
-        pa, pb = _x(a), _x(b)
-        if pb <= -0.5 or pa >= 0.5:
+    """Take the near ramp away over each red box, out from the sill's front edge, down to the box's top; and over the
+    slot, out from SLOT_BACK into the sill, down to the toe's top (mesh -y: the near side, core.G)."""
+    zb = _zf() - BOX_DOWN / W.ZART
+    for a, b, ye, z in [(a, b, -_front(), zb) for a, b in BOXES] + [SLOT + (-_slot_back(), W.foot())]:
+        _notch(k, _x(a), _x(b), ye, z)
+
+
+def _slot_back():
+    return _front() - SLOT_BACK * PX
+
+
+def _slot(k):
+    """The slot's faces: its floor at the toe's top from its back to the toe, its back up to the sill, its sides (the
+    sill's section, then the slope's, down to the toe's top)."""
+    pa, pb = _x(SLOT[0]), _x(SLOT[1])
+    a, b = max(pa, -0.5), min(pb, 0.5)
+    if b - a < 1e-9:
+        return
+    yk, yf, zf, zs = _slot_back(), _front(), W.foot(), _zf()
+    _quad(k, [(a, yk, zf), (b, yk, zf), (b, 0.5, zf), (a, 0.5, zf)], (0, 0, 1), FRONT["slot_floor"])
+    _quad(k, [(a, yk, zf), (b, yk, zf), (b, yk, zs), (a, yk, zs)], (0, 1, 0), FRONT["slot_back"])
+    for u, sd in ((pa, 1), (pb, -1)):
+        if -0.5 < u < 0.5:
+            _quad(k, [(u, yk, zf), (u, 0.5, zf), (u, yf, zs), (u, yk, zs)], (sd, 0, 0), FRONT["slot_side"])
+
+
+def _notch(k, pa, pb, ye, zb):
+    """Take everything out between pa and pb, out past mesh y ye (the near side), over zb."""
+    if pb <= -0.5 or pa >= 0.5:
+        return
+    inx = [(0, pa, 1), (0, pb, -1)]
+    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)]]
+    for m in (k.m, k.ns):
+        if m is None:
             continue
-        inx = [(0, pa, 1), (0, pb, -1)]
-        regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)]]
-        for m in (k.m, k.ns):
-            if m is None:
+        out = []
+        for f in m.f:
+            pts = [m.v[i] for i in f[0]]
+            xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
+            if max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9:
+                out.append(f)
                 continue
-            out = []
-            for f in m.f:
-                pts = [m.v[i] for i in f[0]]
-                xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
-                if max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9:
-                    out.append(f)
+            for r in regions:
+                q = _clip(pts, r)
+                if len(q) < 3:
                     continue
-                for r in regions:
-                    q = _clip(pts, r)
-                    if len(q) < 3:
-                        continue
-                    n = Vector(q[1]) - Vector(q[0])
-                    if max((Vector(c) - Vector(q[0])).cross(n).length for c in q) < 1e-10:
-                        continue
-                    base = len(m.v)
-                    m.v += [tuple(p) for p in q]
-                    out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
-            m.f = out
+                n = Vector(q[1]) - Vector(q[0])
+                if max((Vector(c) - Vector(q[0])).cross(n).length for c in q) < 1e-10:
+                    continue
+                base = len(m.v)
+                m.v += [tuple(p) for p in q]
+                out.append((list(range(base, base + len(q))),) + tuple(f[1:]))
+        m.f = out
 
 
 def _block(k, a, b, yf, zb, front, top, side, under=True, back=None):
@@ -263,6 +288,7 @@ def hook(k, sp, own=True):
     a, b = max(x0, -0.5), min(x1, 0.5)
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
     _box_cuts(k)
+    _slot(k)
     _front_parts(k)
     if not own:                                         # (a copy past the tile: no pane)
         return
