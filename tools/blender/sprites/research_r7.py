@@ -17,6 +17,9 @@ from .research_kit import PXG, zpx
 from .research_r6 import SHELF_FRONT, SHELVES, T2, Table, l2
 
 
+PUCKS = ((-0.33, 0.3), (0.33, 0.3))   # the reconstruction's projectors on the table: (a, b)
+
+
 def bench(name, pucks=(), extra=None, **kw):
     """l2's bench with the light strip under the hutch shelves, pucks [(a, b)] on the table, and extra(k) for more
     (kw goes to l2)."""
@@ -70,9 +73,9 @@ def l2a_holo():
     pts = [(0.08, z0 + h), (0.14, z0 + 0.3), (0.05, z0 + 0.2), (0.1, z0)]               # the break, bold
     for (a, za), (b, zb) in zip(pts, pts[1:]):
         bar(k, (a, pv + 0.03, za), (b, pv + 0.03, zb), 0.035, G)
-    for a in (-0.5, 0.5):                                                             # beams from the pucks
-        pu, pvv, pz = T.at(a, 0.3, 0.04)
-        bar(k, (pu, pvv, pz), (a * 0.78, pv, z0), 0.02, G)
+    for (a, b), s in zip(PUCKS, (-1, 1)):                                              # beams from the pucks
+        pu, pvv, pz = T.at(a, b, 0.04)
+        bar(k, (pu, pvv, pz), (s * 0.39, pv, z0), 0.02, G)
     return k
 
 
@@ -142,6 +145,6 @@ def l2c_holo():
     return k
 
 
-BUILD = {"l2a": (bench("l2a", ((-0.5, 0.3), (0.5, 0.3))), l2a_holo),
+BUILD = {"l2a": (bench("l2a", PUCKS), l2a_holo),
          "l2b": (bench("l2b"), l2b_holo),
          "l2c": (bench("l2c", ((0.0, 0.36),)), l2c_holo)}

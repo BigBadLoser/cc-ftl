@@ -172,6 +172,7 @@ def l1_holo():
 # ---- l2: the archivist ----------------------------------------------------------------------------------------------
 
 T2 = ((0.0, -0.3, 0.82), 0.45)
+T2W = 0.94                        # its width: clear of the desk return (u -0.5) and the open right drawer (0.54)
 
 
 def _tablet(T, glow):
@@ -214,7 +215,7 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False):
     for i, u in enumerate((-1.1, 1.1)):
         jar(k, u, -0.86, s1, ("resRelicL", "resSpec")[i], r=0.06, h=0.16)
     T = Table(k, *T2)
-    T.build()
+    T.build(w=T2W)
     _tablet(T, G)
     if right:
         lamp(k, 0.82, -0.36, 0.66, "resLamp")

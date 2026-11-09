@@ -13,7 +13,7 @@ from .research_r3 import _pane
 from .research_r4 import slate
 from .research_kit import PXG, ZPX, snap, zpx
 from .research_r6 import FRONT, TOP, front, stack
-from .research_r7 import bench, l2a_holo
+from .research_r7 import PUCKS, bench, l2a_holo
 
 FU, FV = -0.98, 0.36              # the front-left tile's unit: centre u, v
 G, F = "resGold", "resGoldF"
@@ -146,6 +146,6 @@ def r3_holo():
     return k
 
 
-BUILD = {"r1": (bench("r1", ((-0.5, 0.3), (0.5, 0.3)), _return), r1_holo),
-         "r2": (bench("r2", ((-0.5, 0.3), (0.5, 0.3)), _vitrine), r2_holo),
-         "r3": (bench("r3", ((-0.5, 0.3), (0.5, 0.3)), _archive), r3_holo)}
+BUILD = {"r1": (bench("r1", PUCKS, _return), r1_holo),
+         "r2": (bench("r2", PUCKS, _vitrine), r2_holo),
+         "r3": (bench("r3", PUCKS, _archive), r3_holo)}

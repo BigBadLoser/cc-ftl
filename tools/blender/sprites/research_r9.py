@@ -8,7 +8,7 @@ from .research_kit import bar, ring
 from .research_r3 import _pane
 from .research_kit import PXG, zpx
 from .research_r6 import FRONT, front, slots
-from .research_r7 import bench, l2a_holo
+from .research_r7 import PUCKS, bench, l2a_holo
 from .research_r8 import FU, RH, RV0, RV1, F, G, _fragment, _return, case, rubbing
 
 CV = (RV0 + RV1) / 2 + 0.02      # the case on the return: centre v
@@ -50,4 +50,4 @@ def c1_holo():
     return k
 
 
-BUILD = {"c1": (bench("c1", ((-0.5, 0.3), (0.5, 0.3)), _combo, right=False, open_top=True), c1_holo)}
+BUILD = {"c1": (bench("c1", PUCKS, _combo, right=False, open_top=True), c1_holo)}
