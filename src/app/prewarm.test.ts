@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, type Sim } from '../sim';
-import { isGenerated, peekGenerated, warmContact } from '../sim/galaxy/arrivals';
+import { isGenerated, isWarmedElsewhere, nextArrival, peekGenerated, warmContact } from '../sim/galaxy/arrivals';
 import { warmCandidates, warmFleets } from '../sim/galaxy/fleetShips';
 import { generateShip } from '../sim/shipgen/generate';
 import type { GenResult } from '../sim/shipgen/types';
@@ -30,7 +30,8 @@ describe('ship prewarm', () => {
     let t = 0;
     const pre = createPrewarm(sim, m.gen, () => t);
     pre.update();
-    expect(m.jobs).toHaveLength(pool.length);
+    const next = nextArrival(sim);
+    expect(m.jobs).toHaveLength(pool.length + (next ? 1 : 0)); // and the ship the next jump-in would bring
     warmFleets(sim); // the sim's own once-a-second warm finds everything claimed
     expect(pool.some((c) => isGenerated(sim, c))).toBe(false);
     expect(warmContact(sim, pool[0]!)).toBe(false);
@@ -42,7 +43,28 @@ describe('ship prewarm', () => {
     expect(peekGenerated(sim, pool[0]!)).toEqual(cold);
     t += PREWARM_EVERY_MS;
     pre.update(); // nothing new to claim
-    expect(m.jobs).toHaveLength(pool.length);
+    expect(m.jobs).toHaveLength(pool.length + (next ? 1 : 0));
+  });
+
+  it('generates the ship the next jump-in would bring, and keeps the sim from warming fleet ships itself meanwhile', async () => {
+    const sim = fresh(2);
+    const m = manual(sim);
+    const pre = createPrewarm(sim, m.gen, () => 0);
+    expect(isWarmedElsewhere(sim)).toBe(true);
+    const next = nextArrival(sim);
+    if (!next) throw new Error('no arrival can come at the start node');
+    pre.update();
+    const job = m.jobs.findIndex((j) => j.shipgen === next.shipgen && j.seed === next.seed && j.depth === next.depth);
+    expect(job).toBeGreaterThanOrEqual(0);
+    m.finish(job);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(isGenerated(sim, next)).toBe(true);
+    // A candidate the scan has not claimed yet is left to it: the sim does not generate it between frames.
+    const other = fresh(2);
+    createPrewarm(other, manual(other).gen, () => 0);
+    warmFleets(other);
+    expect(warmCandidates(other).some((c) => isGenerated(other, c))).toBe(false);
   });
 
   it('scans at most every PREWARM_EVERY_MS', () => {

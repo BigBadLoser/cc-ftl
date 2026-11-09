@@ -3,7 +3,7 @@ import { ShipC } from '../combat/components';
 import { liftShip } from '../sector/packet';
 import type { Sim } from '../sim';
 import { retreat, strand } from './agenda';
-import { spawnContact, warmContact } from './arrivals';
+import { isWarmedElsewhere, spawnContact, warmContact } from './arrivals';
 import { graceHolds } from './grace';
 import { inspectingFleets } from '../inspect/patrol';
 import { nodesWithin } from './graph';
@@ -143,6 +143,7 @@ export function tendFleet(sim: Sim, f: Fleet, node: string = f.node, escaped?: C
  * the memo is derived and unsaved, and nothing else is touched, so a run with or without warming plays the same.
  */
 export function warmFleets(sim: Sim): void {
+  if (isWarmedElsewhere(sim)) return;
   for (const c of warmCandidates(sim)) if (warmContact(sim, c)) return;
 }
 
