@@ -216,7 +216,7 @@ def _tablet(T, glow):
                   glow if (i + j) % 3 else "resGoldF")
 
 
-def l2(layer, finish=True, name="l2", right=True, open_top=False, rot=0):
+def l2(layer, finish=True, name="l2", right=True, open_top=False, rot=0, seat=True):
     """The archivist's bench; finish=False returns the builder unbuilt (round 7 adds to it); right=False leaves the
     lamp and slate off the right cabinet, open_top=True leaves the right bank's top drawer front for an open one."""
     k = Bench(f"research_{name}_{layer}", rot=rot)
@@ -260,7 +260,8 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False, rot=0):
         k.box(-1.0, (-17.5 + 3 * i) * PXG, TOP + zpx(1), w, PXG, zpx(1), col)
     if right:
         slate(k, 1.12, -0.48, 0.66, G, rz=-0.12)
-    chair(k, "lvW2", "rust")
+    if seat:                                                       # (the module draws its own: research_bench)
+        chair(k, "lvW2", "rust")
     return k.build() if finish else k
 
 

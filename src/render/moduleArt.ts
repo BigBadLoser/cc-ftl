@@ -253,7 +253,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *    `<asset>.block.r{n}` (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both
  *    sorted by the tile beyond the hull row (`out`); `.active` while burning.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
- *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
+ *  - Consoles and seated modules (the research bench): the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
 /**
@@ -320,7 +320,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
-  if (!def.console) return [main];
+  if (!def.console && !def.seated) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
 }

@@ -330,10 +330,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
-        // A seated module's chair behind its desk from the camera (r1, r2: the crew face +x or +y) keeps the plain depth, so the
-        // module hides them; a console's low desk and every other open tile draw the crew in front.
-        const chairBehind = !!at?.def.seated && (at.m.rot % 4 === 1 || at.m.rot % 4 === 2);
-        if (at && (onOpen || bed) && !chairBehind) {
+        if (at && (onOpen || bed)) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
           z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
         }
