@@ -16,6 +16,8 @@ import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
 import { SuitC } from '../eva/components';
+import { needsAir, suitDef, suitNeeded } from '../eva/suit';
+import { shipGrid } from '../regions';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
 import { shipIdOf } from '../regions';
 
@@ -81,7 +83,23 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
 }
 
 /**
- * Put a crew member back on a grid tile. Crew landing on a ship of another faction than their vehicle's are drafted
+ * Stepping off onto a tile that needs a suit (thin air, heat), a crew member who breathes takes one from the shuttle's stock: boarding put
+ * any worn suit there (`boardCrew`), so every way off (a manual disembark, an unload, a wreck spilling its crew) hands one back (#404).
+ * With none left they step off as they are.
+ */
+function fitSuit(sim: Sim, crew: number, v: Vehicle, at: { shipId: number; x: number; y: number }): void {
+  const full = vehicleDefOf(sim, v)?.eva?.suits;
+  const grid = shipGrid(sim, at.shipId);
+  if (full === undefined || !grid || sim.world.has(crew, SuitC) || !needsAir(sim, crew) || !suitNeeded(grid, at.x, at.y)) return;
+  const stock = v.suits ?? full;
+  if (stock <= 0) return;
+  v.suits = stock - 1;
+  sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec });
+  sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
+}
+
+/**
+ * Put a crew member back on a grid tile. One who breathes stepping onto a tile that needs a suit gets one from the shuttle's stock. Crew landing on a ship of another faction than their vehicle's are drafted
  * (they stand where they land until ordered), so enemy boarders do not wander off to do the defenders' chores.
  */
 export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { shipId: number; x: number; y: number }): void {
@@ -91,6 +109,7 @@ export function unboardCrew(sim: Sim, crew: number, vehicle: number, at: { shipI
   sim.world.remove(crew, AboardC);
   sim.world.add(crew, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });
   sim.world.add(crew, PathC, { steps: [] });
+  fitSuit(sim, crew, v, at);
   // (Someone carried out downed stays down where they are set: no draft, and their activity stays 'downed'.)
   const downed = sim.world.has(crew, DownedC);
   const intruder = !downed && shipById(sim, at.shipId)?.faction !== vehicleFaction(sim, v);

@@ -7,6 +7,7 @@ import { siteShuttleOk } from '../../sim/away/handlers';
 import { passagesOf } from '../../sim/away/passage';
 import { breachTiles } from '../../sim/crew/breach';
 import { contextPresent } from '../../sim/crew/stress';
+import { boardingTile } from '../../sim/vehicles/geometry';
 import { AirlockC } from '../../sim/modules/airlock';
 import { airlockSuits } from '../../sim/eva/suit';
 import { shipIdOf } from '../../sim/regions';
@@ -107,5 +108,23 @@ describe('salvage playtest (#404)', () => {
     expect(contextPresent(sim, c, 'blackout')).toBe(true);
     sim.world.add(c, SuitC, { worn: true, air: 100 });
     expect(contextPresent(sim, c, 'blackout')).toBe(false);
+  });
+
+  it('stepping off a shuttle onto thin air fits a suit from its stock (a worn one went there on boarding; Codex 4517585403)', () => {
+    const { sim, home } = setup(3);
+    const shuttle = shuttleOf(sim);
+    const v = sim.world.get(shuttle, VehicleC)!;
+    const [c] = crewOn(sim, home) as [number];
+    sim.world.add(c, SuitC, { worn: true, air: 100 });
+    sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
+    play(sim, 20 * 60, () => sim.world.has(c, AboardC));
+    const stock = vehicleSuits(sim, v);
+    const at = boardingTile(sim, shuttle)!;
+    shipGrid(sim, at.shipId)!.set('o2', at.x, at.y, 0); // the deck outside the shuttle has lost its air
+    sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: c });
+    play(sim, 1);
+    expect(sim.world.has(c, AboardC)).toBe(false);
+    expect(sim.world.has(c, SuitC)).toBe(true);
+    expect(vehicleSuits(sim, v)).toBe(stock - 1);
   });
 });
