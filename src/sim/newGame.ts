@@ -1,4 +1,5 @@
 import { spawnShip } from './combat/ships';
+import { powerSystem } from './systems/power';
 import type { ContentRegistry } from './registry';
 import { Sim } from './sim';
 import { populateNode } from './galaxy/populate';
@@ -32,6 +33,8 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
     faction: 'player', x: PLAYER_START.x, y: PLAYER_START.y, ...(rolls ? { rolls } : {}),
   });
   startGalaxy(sim);
+  // Modules spawn unpowered and the first tick has not run: allocate power now, so nothing (the "Low power" alert) reads a ship that is dark only because the game has not started.
+  powerSystem(sim);
   if (populate) populateNode(sim, sim.galaxy.current);
   return sim;
 }
