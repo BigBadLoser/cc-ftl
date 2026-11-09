@@ -16,7 +16,7 @@ ALL = {"d": "D  specimen tank", "e": "E  holo table", "f": "F  analysis cabinet"
        "l1": "L1  entomologist", "l2": "L2  archivist", "l3": "L3  dissection",
        "l2a": "L2a  reconstruction", "l2b": "L2b  translation", "l2c": "L2c  star chart",
        "r1": "R1  desk extension", "r2": "R2  fragment vitrine", "r3": "R3  flat-file archive",
-       "c1": "C1  combined"}
+       "c1": "C1  combined", "x1": "X1  dissection table", "y1": "Y1  sample analyzer"}
 
 
 def main():

@@ -33,13 +33,13 @@ class Bench(K):
     """K with see-through parts: part(name) is a K whose objects render with the alpha `SEE[name]`."""
     SEE = {"glass": (GLASS_A, GLASS_RIM), "fluid": (FLUID_A, 0.2)}
 
-    def __init__(self, name):
-        super().__init__(name, FP, 0)
-        self.name, self.parts = name, {}
+    def __init__(self, name, fp=FP):
+        super().__init__(name, fp, 0)
+        self.name, self.parts, self.fp = name, {}, fp
 
     def part(self, name):
         if name not in self.parts:
-            self.parts[name] = K(f"{self.name}_{name}", FP, 0)
+            self.parts[name] = K(f"{self.name}_{name}", self.fp, 0)
         return self.parts[name]
 
     def build(self):
@@ -126,7 +126,7 @@ def holo_job(sid, v):
         from . import env_build as E
         core.clear_scene_meshes()
         post.select("research")
-        bench, holo = BUILD()[v]
+        bench, holo, fp = entry(v)
         mask = bench("on")
         for o in mask:
             o.is_holdout = True
@@ -140,12 +140,18 @@ def holo_job(sid, v):
         g = post.glow_down(grgb, E.SS, 3)
         al = np.where(op, np.where(g[..., 3] > 0, HOLO_LINE, HOLO_FILM), 0).astype(np.uint8)
         g[..., :3] = (g[..., :3] * 0.45).astype(np.uint8)                              # a soft glow, not a lamp
-        it = E.crop_item(sid, FP, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
+        it = E.crop_item(sid, fp, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
         return [it] if it else []
     return run
 
 
+def entry(v):
+    """A design's (bench, holo, footprint): BUILD entries are (bench, holo) for the 3x2 bench or (bench, holo, fp)."""
+    e = BUILD()[v]
+    return e if len(e) == 3 else (*e, FP)
+
+
 def BUILD():
-    from . import research_r2, research_r4, research_r5, research_r6, research_r7, research_r8, research_r9
+    from . import research_r2, research_r4, research_r5, research_r6, research_r7, research_r8, research_r9, research_r10
     return {**research_r2.BUILD, **research_r4.BUILD, **research_r5.BUILD, **research_r6.BUILD, **research_r7.BUILD,
-            **research_r8.BUILD, **research_r9.BUILD}
+            **research_r8.BUILD, **research_r9.BUILD, **research_r10.BUILD}
