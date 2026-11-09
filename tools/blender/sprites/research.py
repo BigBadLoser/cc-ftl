@@ -12,7 +12,8 @@ research_r14.py (x9, y9: a clean outline, the detail on the faces),
 research_r15.py (x10, y10: a few shape moves, flush detail everywhere),
 research_r16.py (x11-x13: three tables, each its own machine),
 research_r17.py (x14-x16: tables that show how they work),
-research_r18.py (x17-x19: one machine each, the reference among them)."""
+research_r18.py (x17-x19: one machine each, the reference among them),
+research_r19.py (x20-x22: our own table, built the way x17 is)."""
 from .research_kit import BUILD, entry, holo_job
 
 
