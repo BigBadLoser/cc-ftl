@@ -81,10 +81,22 @@ def x17(layer, flip=False):
     side(k, P(31) + 0.004, P(0), P(10), Z(19), Z(21.5), "resNvyD")
     for v0, v1 in ((P(1), P(3)), (P(4), P(7)), (P(1), P(5))):
         side(k, P(31) + 0.008, v0, v1, Z(20) if v1 != P(5) else Z(19.5), (Z(20) if v1 != P(5) else Z(19.5)) + Z(0.6), GL)
-    # the dial block on the front, by the arm
-    blk(k, P(12), P(19), P(12), P(16), Z(9), Z(19), CREAM)
-    dial(k, P(15.5), P(14), Z(19))
-    flat(k, P(13), P(18), P(16), Z(11), Z(12), CRK)
+    # the console side (as the reference's r0 and r90): from the arm end, one console, the dial block, a pair of
+    # consoles, all hung off the deck's front with their screens on a slope
+    def hang(u0, u1, glyphs=((0.3, 0.45, 0.15, 0.45), (0.55, 0.7, 0.15, 0.8))):
+        console(k, u0, u1, vb=P(12), vf=P(16), z0=Z(9), z1=Z(14), z2=Z(19), glyphs=glyphs)
+    hang(P(9), P(18))
+    blk(k, P(1), P(7), P(12), P(16), Z(9), Z(19), CREAM)
+    dial(k, P(4), P(14), Z(19))
+    flat(k, P(2), P(6), P(16), Z(11), Z(12), CRK)
+    hang(P(-9), P(-1), glyphs=((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)))
+    hang(P(-18), P(-10), glyphs=((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
+    # a screen in the far end's face (the end in view once turned)
+    e = P(-29) - 0.004
+    blk(k, e, P(-29), P(-6), P(6), Z(8), Z(13), ("resCrD",) * 3)
+    blk(k, e - 0.004, e, P(-5), P(5), Z(9), Z(12), ("resNvyD",) * 3)
+    for v0, v1, z in ((P(-4), P(-1), Z(10.5)), (P(0), P(4), Z(10.5)), (P(-4), P(2), Z(9.5))):
+        blk(k, e - 0.008, e - 0.004, v0, v1, z, z + Z(0.6), (GL,) * 3)
     # the arm: off the near block, on the back half, sloping up toward the far end to a head over the channel
     arm = [(P(29), Z(23)), (P(29), Z(28)), (P(8), Z(40)), (P(-1), Z(40)), (P(-1), Z(35)), (P(8), Z(34)),
            (P(22), Z(23))]
