@@ -63,10 +63,10 @@ def bconsole(k, u0, u1, glyphs, vb=P(11), vf=P(15), z0=Z(8), z1=Z(14), z2=Z(20))
 def x17(layer, flip=False):
     k = (FlipBench if flip else Bench)(f"research_x17{'r' if flip else ''}_{layer}", FP2)
     # low, long and narrow: a tall plinth, a tall rounded navy body, a thin cream deck overhanging it
-    blk(k, P(-30), P(30), P(-12), P(12), 0, Z(1), DARK)
-    prism(k, "u", P(-31), P(31), [(P(-13), Z(1)), (P(13), Z(1)), (P(13), Z(6)), (P(12), Z(7)), (P(-13), Z(7))],
-          BROWN, "resBrnL")
-    flat(k, P(-31), P(31), P(13), Z(1), Z(2), "resBrnD")
+    blk(k, P(-29), P(29), P(-11), P(11), 0, Z(1), DARK)
+    blk(k, P(-30), P(30), P(-12), P(12), Z(1), Z(7), BROWN)                               # 1 px past the navy all round
+    flat(k, P(-30), P(30), P(12), Z(1), Z(2), "resBrnD")
+    flat(k, P(-30), P(30), P(12), Z(6), Z(7), "resBrnL")
     prism(k, "u", P(-29), P(29), [(P(-11), Z(7)), (P(10), Z(7)), (P(11), Z(8)), (P(11), Z(14)), (P(10), Z(15)),
                                   (P(-11), Z(15))], NAVY, "resNvyL")
     for u0, u1 in ((P(-27), P(-19)), (P(-17), P(-9)), (P(-7), P(1)), (P(3), P(11)), (P(13), P(21)), (P(23), P(28))):
@@ -76,29 +76,28 @@ def x17(layer, flip=False):
     zt, zd = Z(15), Z(19)
     blk(k, P(-30), P(20), P(-12), P(-8), zt, zd, CREAM)
     blk(k, P(-30), P(20), P(8), P(12), zt, zd, CREAM)
-    blk(k, P(-30), P(-24), P(-8), P(8), zt, zd, CREAM)
-    blk(k, P(-24), P(20), P(-8), P(8), zt, Z(17), ("resGls", "resGls", "resGlsD"))
-    for u in range(-23, 8, 3):
+    blk(k, P(-30), P(20), P(-8), P(8), zt, Z(17), ("resGls", "resGls", "resGlsD"))        # the bed, out to the end
+    for u in range(-29, 8, 3):
         top(k, P(u), P(u + 1), P(-8), P(8), Z(17), "resGlsL")                              # ribs across it,
     top(k, P(9), P(20), P(-8), P(8), Z(17), "resGlsD")                                     # the scanner's patch
-    top(k, P(-24), P(20), P(-8), P(-7), Z(17) + 0.004, "resGlsD")
+    top(k, P(-30), P(20), P(-8), P(-7), Z(17) + 0.004, "resGlsD")
     for cu, w in ((P(-12), 0.035), (P(-7), 0.015)):
         k.box(cu, 0.0, Z(18.5), w, P(15), 0.004, "resGlsL", rz=0.55)                         # the glass's streaks
     for v0 in (P(-11), P(9)):                                                               # ticks on the rims
         for u in range(-28, 19, 4):
             blk(k, P(u), P(u + 2), v0, v0 + P(2), zd, zd + Z(1), CREAM_HI)
     flat(k, P(-30), P(20), P(12), Z(18), Z(19), "resCrL")                                   # the rim's lit edge
-    # the arm end: a raised block the full width, the arm off its back half
-    blk(k, P(20), P(31), P(-12), P(12), zt, Z(22), CREAM)
-    flat(k, P(21), P(30), P(12), Z(17), Z(18), CRK)
-    arm = [(P(29), Z(22)), (P(29), Z(27)), (P(9), Z(39)), (P(-1), Z(39)), (P(-1), Z(34)), (P(8), Z(33)),
-           (P(22), Z(22))]
+    # the arm end: the deck carried on flush to the end, the arm rising off its back half
+    blk(k, P(20), P(30), P(-12), P(12), zt, zd, CREAM)
+    flat(k, P(21), P(29), P(12), Z(17), Z(18), CRK)
+    arm = [(P(29), zd), (P(29), Z(25)), (P(9), Z(37)), (P(-1), Z(37)), (P(-1), Z(32)), (P(8), Z(31)),
+           (P(22), zd)]
     prism(k, "v", P(-9), P(1), arm, CREAM, "resCrL")
-    bar(k, P(1), P(1) + 0.004, (P(25), Z(26)), (P(9), Z(35.5)), Z(1), (CRK,) * 3)          # a panel line along it,
-    flat(k, P(0), P(7), P(1), Z(36), Z(37), CRK)
-    blk(k, P(-1), P(6), P(-8), P(0), Z(31), Z(34), STEEL)                                  # the head,
-    flat(k, P(0), P(5), P(0), Z(31.5), Z(33), "resGold")                                   # its light to the front,
-    top(k, P(0), P(5), P(-7), P(-1), Z(31) - 0.006, "resGold")                             # its emitter
+    bar(k, P(1), P(1) + 0.004, (P(25), Z(24)), (P(9), Z(33.5)), Z(1), (CRK,) * 3)          # a panel line along it,
+    flat(k, P(0), P(7), P(1), Z(34), Z(35), CRK)
+    blk(k, P(-1), P(6), P(-8), P(0), Z(29), Z(32), STEEL)                                  # the head,
+    flat(k, P(0), P(5), P(0), Z(29.5), Z(31), "resGold")                                   # its light to the front,
+    top(k, P(0), P(5), P(-7), P(-1), Z(29) - 0.006, "resGold")                             # its emitter
     # the console side: from the arm end, one console, the dial block, a pair of consoles
     bconsole(k, P(10), P(18), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)))
     blk(k, P(2), P(8), P(11), P(15), Z(8), Z(20), CREAM)
@@ -108,9 +107,9 @@ def x17(layer, flip=False):
     bconsole(k, P(-17), P(-9), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
     # the screen in the far end (in view once turned): a cream frame over the body's end, a dark pane, glyphs
     e = P(-29) - 0.004
-    blk(k, e, P(-29), P(-8), P(8), Z(9), Z(15), ("resCrD",) * 3)
-    blk(k, e - 0.004, e, P(-7), P(7), Z(10), Z(14), ("resNvyD",) * 3)
-    for v0, v1, z in ((P(-5), P(-1), Z(12)), (P(1), P(5), Z(12)), (P(-5), P(3), Z(10.8))):
+    blk(k, e, P(-29), P(-8), P(8), Z(8), Z(14), ("resCrD",) * 3)
+    blk(k, e - 0.004, e, P(-7), P(7), Z(9), Z(13), ("resNvyD",) * 3)
+    for v0, v1, z in ((P(-5), P(-1), Z(11)), (P(1), P(5), Z(11)), (P(-5), P(3), Z(9.8))):
         blk(k, e - 0.008, e - 0.004, v0, v1, z, z + Z(0.7), (GL,) * 3)
     return k.build()
 
