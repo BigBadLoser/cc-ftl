@@ -5,6 +5,7 @@ import { BreakdownC } from '../sim';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
+import { blockNow, hoursOf } from '../sim/crew/schedule';
 import { StunC } from '../sim/robots/components';
 import { guestHere, lodgingHere } from '../sim/consent/guests';
 
@@ -194,6 +195,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     mechanical: !!sim.content.species[crew.species]?.mechanical,
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
+    schedule: scheduleOf(sim, id),
     defaults: { ...(role?.priorities ?? NONE) },
     hp: Math.round(hp?.hp ?? 100),
     maxHp: hp?.max ?? 100,
@@ -256,4 +258,10 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
     if (c) hostiles.push(c);
   }
   return { crew, guests, hostiles };
+}
+
+/** The crew member's schedule row and the block in force now (crew/schedule.ts owns both), or null without one. */
+function scheduleOf(sim: Sim, id: number): UiCrew['schedule'] {
+  const hours = hoursOf(sim, id);
+  return hours ? { hours: [...hours], now: blockNow(sim, id) } : null;
 }

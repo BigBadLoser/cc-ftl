@@ -9,6 +9,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Structure](#structure): Persistent sandbox with normal saves. A recoverable-failure mode (escape pods, salvaging back)
 - [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
 - [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
+  - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away sites plan around Sleep.
   - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
@@ -131,6 +132,35 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   resistance, fast repair…). **Implants** add on top, with trade-offs: power draw, maintenance,
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
+
+### Schedules (#412, user decisions 2026-11-09)
+
+A ship clock and a per-crew day plan, like Oxygen Not Included and RimWorld. Sim side built in #412; the schedule panel (a UI layout
+the user picks from mocks) and a HUD clock come later.
+
+- **Ship clock.** A 24-hour day. One game hour is 40 s at 1x (`GAME_HOUR_SEC`, one tuning constant), so a day is 16 real minutes.
+  A new game starts at 06:00. The clock is read from the sim tick, so it is in every save.
+- **Hour blocks.** Each crew member has 24 blocks, one per hour:
+  - **Any**: needs decide, as before schedules (work, sleep at rest 20, eat at hunger 35, a break when mood is low and nothing to do).
+  - **Work**: jobs only. Eat when hungry, sleep only at the need line; no breaks.
+  - **Sleep**: go to bed (eating first if hungry) and sleep through the block; a sleeper at full rest stays in bed. No jobs.
+  - **Free**: no jobs. Breaks in the mess or beside a crewmate, and an early meal (below hunger 60) so nobody goes to bed hungry.
+- **Presets** are content data: Default (Work 06-20, Free 20-22, Sleep 22-06), Day shift (Work 06-18, Free 18-22, Sleep 22-06), Night
+  shift (Sleep 10-18, Work 18-06, Free 06-10) and Any (all Any: today's play). Crew of the player's side without a schedule of their own
+  follow Default; commands set an hour or a range, apply a preset, or copy another crew member's row.
+- **Overrides.** The schedule is suspended (every block reads as Work) while the crew member is *on call*: in a fight or at Battle
+  Stations, or while an emergency they would take (a fire, a hull breach, a downed crew member) is open on their ship. A scheduled
+  sleeper gets up for it; one asleep because they were exhausted (rest under 20) sleeps on, as before. Critical needs override as
+  before: an urgent need wakes any sleeper, the air and return drives outrank everything, a console operator holds until the urgent lines.
+- **Oversleeping (ONI rule).** A sleeper not yet at full rest when Sleep ends sleeps on into Work or Any until full, as before. Into
+  Free they get up once rest is at least 50 (`FREE_WAKE_REST`; below it they would only drop back to the need line).
+- **Rest.** Waking decay stays 0.06/s; hunger is unchanged. Sleep recovers 2.2x the decay on the floor (was 2x: 5 real minutes of
+  sleep covers 11 awake) and twice that in a bed (0.264/s), so one 8-hour block in a bed takes even an exhausted crew member (rest 20)
+  to about full. A Default day: 16 h awake drains about 38 rest, so crew go to bed rested-ish and wake full.
+- **Away sites plan around it.** A passage is open only to crew whose stay (AWAY_GO_STAY_SEC) ends before their next Sleep or Free
+  block starts. Crew out on a site whose block turns Sleep or Free are due home like any need, on the next round trip.
+- **Stagger (open).** The Default is the same for everyone, so a starting crew sleeps at once; emergencies and Battle Stations wake
+  scheduled sleepers. Proposed: give every second new crew member a Default shifted by a few hours, or start them on Night shift.
 
 ### EVA and spacesuits
 

@@ -9,7 +9,8 @@ import { canStartMeal, eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
-import { sleepTurn } from './machines/sleep';
+import { endSleep, sleepTurn } from './machines/sleep';
+import { wakesFromSleep } from '../crew/schedule';
 import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
@@ -116,6 +117,8 @@ export function scheduleSystem(sim: Sim): void {
     // Any other need gone urgent ends a sleep or a meal (a suited crew member whose room lost its air, a sleeper who is starving): they get up
     // and the drives below serve it; sleep resumes through its own drive afterwards. Charging is a robot's, which does not breathe.
     if ((crew.activity === 'sleeping' || crew.activity === 'eating') && wakeForNeed(sim, id, crew.activity === 'sleeping' ? 'sleep' : 'eat')) abortTask(sim, id, 'urgentNeed');
+    // A sleeper whose schedule gets them up (#412: a Free block, or on call for an emergency or a fight) wakes as at full rest.
+    else if (crew.activity === 'sleeping' && wakesFromSleep(sim, id)) endSleep(sim, id, crew);
     // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror). A sleeper or eater whose
     // air is out with no source in reach still raises the pickup request (the evaluation above wrote `blocked`).
     if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') {
@@ -152,6 +155,13 @@ export function scheduleSystem(sim: Sim): void {
     // A mild break (work refusal, isolation): the work drive scored 0 (`willing`), so no job is taken; they idle, and sleep, eat and the rest still apply.
     if (refusesWork(sim, id)) {
       if (assignment) abortTask(sim, id, 'breakdown');
+      idleTurn(sim, id, crew, pos);
+      continue;
+    }
+    // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): no job, a held one let go (a carried patient is set down
+    // first: that job runs on), and they idle.
+    if (!ranked.some((d) => d.task === 'job') && !(assignment && isCarrying(sim, id))) {
+      if (assignment) abortTask(sim, id, 'offDuty');
       idleTurn(sim, id, crew, pos);
       continue;
     }

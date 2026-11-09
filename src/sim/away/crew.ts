@@ -14,6 +14,7 @@ import type { Sim } from '../sim';
 import { isIncapacitated } from '../crew/helpers';
 import { hungerDrainPerSec } from '../crew/eating';
 import { stat } from '../stats';
+import { offDuty, blockNow, secToOffDuty } from '../crew/schedule';
 import {
   AWAY_GO_STAY_SEC, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
 } from '../tuning';
@@ -87,14 +88,15 @@ function hurt(sim: Sim, id: number): boolean {
 /**
  * The return drive's input (`awayReturn`): absent unless the crew member works on their site. 0 when they must come aboard now (the site
  * is closing, a fight, hurt below AWAY_HOME_HEALTH, riding out a round trip, or a pickup came for them), 500 when they are due home (a need
- * under its home line, AWAY_HOME_REST / _HUNGER / _CHARGE: before the sleep, eat or charge drives would want them), else 1000.
+ * under its home line, AWAY_HOME_REST / _HUNGER / _CHARGE: before the sleep, eat or charge drives would want them; or their schedule puts them
+ * off duty, #412), else 1000.
  */
 export function awayReturn(sim: Sim, id: number): number | undefined {
   const site = siteUnderFoot(sim, id);
   if (!site) return undefined;
   const away = sim.world.get(id, AwayC);
   if (siteRecalled(sim, site) || away?.ride || away?.pickup || away?.recall || hurt(sim, id)) return 0;
-  return needBelow(sim, id, AWAY_HOME_REST, AWAY_HOME_HUNGER, AWAY_HOME_CHARGE) ? 500 : 1000;
+  return needBelow(sim, id, AWAY_HOME_REST, AWAY_HOME_HUNGER, AWAY_HOME_CHARGE) || offDuty(blockNow(sim, id)) ? 500 : 1000;
 }
 
 /**
@@ -113,7 +115,8 @@ export function ofSide(sim: Sim, crew: number, vehicle: number): boolean {
 
 /**
  * Seconds of work on a site before the first of the crew member's needs falls to its home line (AWAY_HOME_REST / _HUNGER / _CHARGE) at
- * its waking rate (a battery at its busy rate). Infinity for one with no need that drains.
+ * its waking rate (a battery at its busy rate), or their schedule's next Sleep or Free block starts (#412: away parties plan around it).
+ * Infinity for one with no need that drains and no plan.
  */
 export function staySec(sim: Sim, id: number): number {
   const n = sim.world.get(id, NeedsC);
@@ -121,6 +124,7 @@ export function staySec(sim: Sim, id: number): number {
   const left = (value: number, line: number, perSec: number): number => (perSec > 0 ? Math.max(0, value - line) / perSec : Infinity);
   const battery = sim.content.species[sim.world.get(id, CrewC)?.species ?? '']?.charge;
   return Math.min(
+    secToOffDuty(sim, id),
     left(n.rest, AWAY_HOME_REST, stat(sim, id, 'restDecay')),
     n.hunger === undefined ? Infinity : left(n.hunger, AWAY_HOME_HUNGER, hungerDrainPerSec(sim, id, false)),
     n.charge === undefined || !battery ? Infinity : left(n.charge, AWAY_HOME_CHARGE, battery.drainPerSec * battery.busyMult),

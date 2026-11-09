@@ -33,10 +33,13 @@ import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
 import { buildResearch } from './researchSnapshot';
+import { clockAt } from '../sim/clock';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
   tick: number;
+  /** The ship clock (#412): day from 1, hour 0..23, minute. */
+  clock: { day: number; hour: number; minute: number };
   speed: Speed;
   paused: boolean;
   entityCount: number;
@@ -140,6 +143,7 @@ export interface Bridge {
 export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE): Bridge {
   const store = createStore<Snapshot>({
     tick: sim.tick,
+    clock: clockAt(sim.tick),
     speed: 1,
     paused: false,
     entityCount: sim.world.entityCount,
@@ -608,7 +612,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
         fn();
         probe.end(label);
       };
-      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
+      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, clock: clockAt(stats.tick), zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
       step('ui/bridge/inspect', refreshInspect);
       step('ui/bridge/crew', refreshCrew);
       step('ui/bridge/ship', refreshShip);

@@ -232,7 +232,7 @@ export function detachJob(sim: Sim, crew: number): void {
 export type AbortReason =
   | 'downed' | 'dead' | 'drafted' | 'surrendered' | 'boarded' | 'removed' | 'halted' | 'fight' | 'equip'
   | 'heldForMend' | 'preempt' | 'relieved' | 'unreachable' | 'jobGone' | 'cancelled' | 'replaced' | 'order' | 'drive'
-  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air' | 'urgentNeed' | 'breakdown';
+  | 'standDown' | 'imprisoned' | 'dismissed' | 'debug' | 'hazard' | 'air' | 'urgentNeed' | 'breakdown' | 'offDuty';
 
 interface Dispose {
   /** Release the sleeping-bed claim. */
@@ -259,6 +259,8 @@ const DISPOSE: Partial<Record<AbortReason, Dispose>> = {
   urgentNeed: { bed: true, carried: true, wake: true },
   // A mental break takes over (docs/TRAITS.md section 5): like a hazard, whatever they were doing ends, a load is dropped, a sleeper gets up.
   breakdown: { bed: true, carried: true, wake: true },
+  // Their schedule puts them off duty (#412): the job is let go and a load set down where they stand.
+  offDuty: { carried: true },
 };
 
 /**

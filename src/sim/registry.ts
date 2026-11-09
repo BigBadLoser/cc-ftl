@@ -45,7 +45,7 @@ import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
 import type { BlackMarketDef } from './blackmarket/defs';
 import type { TraitDef } from './crew/traitDef';
-import type { PolicyDef } from './ai/types';
+import type { PolicyDef, ScheduleDef } from './ai/types';
 import type { InteractionDef } from './crew/interactionTypes';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -63,6 +63,8 @@ export interface ContentRegistry {
   traits?: Record<string, TraitDef>;
   /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
   policies?: Record<string, PolicyDef>;
+  /** Crew schedule presets (content/schedules.ts, #412) by id. `schedule.default` is what player crew without a row follow. Absent: no schedules. */
+  schedules?: Record<string, ScheduleDef>;
   /** Crew interactions (content/interactions.ts, docs/TRAITS.md section 6) by id. Absent: nobody talks. */
   interactions?: Record<string, InteractionDef>;
   /** Item content id (e.g. 'item.metal') to definition. */

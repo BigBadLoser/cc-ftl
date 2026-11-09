@@ -13,6 +13,7 @@ import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
 import { forceDoorHandlers } from './crew/forceDoor';
 import { repairHandlers } from './crew/priorityRepair';
+import { scheduleHandlers } from './crew/scheduleHandlers';
 import { evaHandlers } from './eva/handlers';
 import { fightHandlers } from './fight/handlers';
 import { galaxyHandlers } from './galaxy/handlers';
@@ -49,6 +50,7 @@ type Handler<T extends Command['type']> = (sim: Sim, cmd: Extract<Command, { typ
 export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...crewHandlers,
   ...repairHandlers,
+  ...scheduleHandlers,
   ...forceDoorHandlers,
   ...fightHandlers,
   ...combatHandlers,

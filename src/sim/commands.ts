@@ -1,6 +1,7 @@
 import type { Faction } from './combat/components';
 import type { BreakContext, BreakKind } from './crew/breakTypes';
 import type { WorkCategory } from './crew/components';
+import type { ScheduleBlock } from './ai/types';
 import type { ItemQty, ScrapType, SkillName } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
@@ -44,6 +45,12 @@ export type Command =
   | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
+  /** Set hours `from` to `to` (inclusive, wrapping past midnight; `to` absent: one hour) of a crew member's schedule to a block (#412). */
+  | { type: 'crew.schedule.set'; id: number; from: number; to?: number; block: ScheduleBlock }
+  /** Give a crew member a schedule preset (content/schedules.ts) as their own row. */
+  | { type: 'crew.schedule.preset'; id: number; preset: string }
+  /** Copy crew member `from`'s schedule row to crew member `id`. */
+  | { type: 'crew.schedule.copy'; id: number; from: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
   /** Drafted crew attack this hostile crew member or egg sac (walking into range first) until it is subdued or burst. Cleared by crew.moveTo. */
   | { type: 'crew.attack'; id: number; target: number }
