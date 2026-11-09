@@ -201,6 +201,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     powerPreference: 'high-performance',
     // The game picks in its own coordinates; pixi's event system would hit-test the whole scene tree on every pointer move.
     eventFeatures: { move: false, globalMove: false, click: false, wheel: false },
+    // Pixi's renderable GC frees the GPU data of anything not drawn for a minute, but it only sees renderables as drawn when
+    // their render group rebuilt, and the world's groups (renderGroups.ts, depthBands.ts) rarely rebuild: it would free
+    // sprites on screen. The views destroy what they stop drawing themselves.
+    renderableGCActive: false,
   });
   // Sheets go to the GPU as they load and their decoded copy is dropped; if the context is lost they are decoded again.
   const atlas = await loadAtlas(undefined, { upload: (src) => gl.texture.initSource(src) });
