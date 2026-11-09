@@ -137,7 +137,8 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const showRoof = (on: boolean) => {
     roof.setVisible(on && !rockRoof);
     rockRoof?.setVisible(on);
-    if (rockRoof) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = !on;
+    // Through the region, so a region hidden whole (out of view, still being built) stays hidden.
+    if (rockRoof) L.setPartsVisible([L.floor, L.under, L.decal, L.sorted], !on);
   };
   const wallHeight = () => wallTopPx(roofed ? 'up' : cutaway);
   const damage = createDamageView(grid, L, wallHeight);
@@ -158,8 +159,6 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     update(dt) {
       gate.reset();
       rockRoof?.update();
-      // region culling re-shows every layer when the region comes into view: keep the base hidden under its rock roof
-      if (rockRoof && roofed) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = false;
       // A wreck shows only emergency lighting (the sim scales its lights down), so dark tiles pulse red.
       emergency = shipHasPower(world, modules, grid) === false || world.get(grid.id, ShipC)?.state === "wreck";
       if (world.get(grid.id, ShipC)?.ruin && (wreckTick++ & 15) === 0) {

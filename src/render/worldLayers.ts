@@ -37,8 +37,11 @@ export interface RegionLayers extends Layers {
   readonly marks: Container;
   /** Art px offset of the region's tile (0, 0) in the sector frame, and the depth (x + y in tiles) its zIndex values add. */
   setOrigin(ax: number, ay: number, depth: number): void;
+  /** Show or hide the whole region (culling, a scene still being built). Authoritative: nothing shows while it is off. */
   setVisible(on: boolean): void;
   readonly visible: boolean;
+  /** Show or hide some of the region's own layers (a rock roof hides the base under it); they show only while the region does. */
+  setPartsVisible(parts: readonly Container[], on: boolean): void;
   dispose(): void;
 }
 
@@ -104,6 +107,8 @@ export function createWorldStack(): WorldStack {
       const all = Object.values(parts);
       parts.fxAdd.blendMode = 'add';
       let visible = true;
+      /** Parts the region's views hide on their own. */
+      const off = new Set<Container>();
       return {
         world: parts.sorted,
         under: parts.under,
@@ -131,8 +136,18 @@ export function createWorldStack(): WorldStack {
         setVisible(on) {
           if (on === visible) return;
           visible = on;
-          for (const c of all) c.visible = on;
+          for (const c of all) c.visible = on && !off.has(c);
           bands.recheckAll(); // its sprites draw from the bands, which must rebuild to drop or add them
+        },
+        setPartsVisible(list, on) {
+          let changed = false;
+          for (const c of list) {
+            if (on ? !off.delete(c) : off.has(c)) continue;
+            if (!on) off.add(c);
+            changed = true;
+            c.visible = visible && on;
+          }
+          if (changed) bands.recheckAll();
         },
         get visible() {
           return visible;
