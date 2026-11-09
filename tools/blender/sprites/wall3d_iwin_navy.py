@@ -25,6 +25,8 @@ BLOCK_UP = 5                # art px: an end block's top over the wall's top aga
 POCKETS = ((11, 34), (62, 85))  # px along the window from its -x end: the slots in the front either side of the middle
                                 # panel, their outer edges in line with the posts' (the user); the panel 28 px (the
                                 # ref's, edges included, read up its slope: 28-30; its red face 20), the slots 23
+WHITE, LINE_C = "fNW1", "fNW7"  # the middle block's front: a white edge either side, a plate outlined in the panel
+                                # line's tone (navy's seam_tone) between (the user)
 RED = "fNT2"                # the face's band (navy_band: ochre 3, its lit tone), wrapped round the posts (the user)
 COL = {"sill": "fNW1", "top": "fNW2", "end": "fNW4", "post": "fNW3", "under": "fNS4",
        "p_floor": "fNW2", "p_back": "fNW3", "p_side": "fNS2"}
@@ -221,6 +223,33 @@ def _pocket(k, pa, pb):
             _quad(k, [(u, yl, zk), (u, yf, zf), (u, _shelf_end(), _zh()), (u, yl, _zh())], (sd, 0, 0), COL["p_side"])
 
 
+def _plate(k):
+    """The middle block's front (the ramp's slope between the slots): 2 px white down either side, sill to foot; between
+    them a plate outlined 1 px in the panel line's tone, its top at the sill (the shelf's edge), its bottom at the toe."""
+    o = -0.5 - OFF[PART]
+    m0, m1 = o + POCKETS[0][1] * PX, o + POCKETS[1][0] * PX
+    if m1 <= -0.5 or m0 >= 0.5:
+        return
+    f, yl, run = T.ramp_fall(), _line(), W.skirt_run()
+    d0, d1 = _d_at(_zh()), run - PX                     # (the slope's top, the toe's top)
+    t = 1.5 / (16 + f * W.ZART)                         # (1.5 screen px down the slope (16 a unit across, f*ZART
+    #   down): at 1 the line straddled two rows and dashed)
+    n = Vector((0.0, f, 1.0)).normalized()
+
+    def strip(u0, u1, da, db, col):
+        u0, u1 = max(u0, -0.5), min(u1, 0.5)
+        if u1 - u0 > 1e-9:
+            k.poly([Vector((u, yl + d, _zr(d))) + n * 3 * PAINT for u, d in ((u0, da), (u1, da), (u1, db), (u0, db))],
+                   "wall", 2, n, fixed=col)
+    a, b = m0 + 2 * PX, m1 - 2 * PX
+    strip(m0, a, d0, run, WHITE)
+    strip(b, m1, d0, run, WHITE)
+    strip(a, a + PX, d0, d1, LINE_C)
+    strip(b - PX, b, d0, d1, LINE_C)
+    strip(a, b, d0, d0 + t, LINE_C)
+    strip(a, b, d1 - t, d1, LINE_C)
+
+
 def _quad(k, pts, out, col):
     k.poly([Vector(p) for p in pts], "wall", 2, Vector(out), fixed=col)
 
@@ -269,6 +298,7 @@ def hook(k, sp, own=True):
     for pa, pb in _pockets_x(PART):
         _pocket_cut(k, pa, pb)
         _pocket(k, pa, pb)
+    _plate(k)
     a, b = max(x0, -0.5), min(x1, 0.5)
     yl = _line()
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
