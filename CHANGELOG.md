@@ -69,6 +69,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Salvage runs work again: the whole away party goes once crew are rested enough for a few minutes' work, the shuttle carries crew as well as cargo, refills its suits from your airlocks and hands suits back out when crew step into vacuum, and the shuttle panel's button (now "Stop salvage" or "Call home") works. Wrecks no longer post repair jobs that spam "missing metal", the pilot is no longer reported busy while idle, and suited crew carry helmet lamps, so the dark can't break them; a crew member under strain now shows it next to their mood. ([#405](https://github.com/BigBadLoser/cc-ftl/pull/405))
 - Station crew no longer go hungry: stations start with food for their crew and are restocked regularly. ([#403](https://github.com/BigBadLoser/cc-ftl/pull/403))
 - Jumping into a busy node no longer freezes the game while it builds the other ships: they are built over a few frames and appear a moment after yours. Ships out of view also cost much less each frame. ([#401](https://github.com/BigBadLoser/cc-ftl/pull/401))
 - Fewer hitches in busy nodes: the side panels only refresh when the game has changed, ships for arriving fleets and parts of the galaxy map are generated in the background, and hungry crew on big stations no longer stall the game hunting for food. ([#399](https://github.com/BigBadLoser/cc-ftl/pull/399), [#400](https://github.com/BigBadLoser/cc-ftl/pull/400))
