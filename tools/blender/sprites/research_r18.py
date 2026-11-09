@@ -59,7 +59,7 @@ def bconsole(k, u0, u1, glyphs, vb=P(12), vf=P(16), zb=Z(23), za=Z(18), t=Z(5)):
         on_slope(k, u0 + P(2) + (w - P(4)) * a0, u0 + P(2) + (w - P(4)) * a1, A, B, t0, t1, GL, off=0.012)
 
 
-NU0, NU1 = P(15), P(20)                                                                   # x17's rim notch
+NU0, NU1 = P(9), P(20)                                                                   # x17's rim notch
 
 
 def x17(layer, flip=False):
@@ -76,7 +76,7 @@ def x17(layer, flip=False):
         flat(k, u0, u1, P(12) + 0.002, Z(9), Z(10), "resNvyD")                            # shaded at their feet
     # the deck: rims round a channel that runs out to the near end; a ribbed grey floor, darker under the arm
     zt, zd = Z(17), Z(23)
-    for v0, v1, n0, n1 in ((P(-13), P(-8), P(-10), P(-8)), (P(8), P(13), P(8), P(10))):
+    for v0, v1, n0, n1 in ((P(-13), P(-8), P(-9), P(-8)), (P(8), P(13), P(8), P(9))):
         blk(k, P(-32), NU0, v0, v1, zt, zd, CREAM)
         blk(k, NU0, NU1, n0, n1, zt, zd, CREAM)                                             # a notch near the arm end
         blk(k, NU1, P(32), v0, v1, zt, zd, CREAM)
@@ -94,7 +94,7 @@ def x17(layer, flip=False):
                 blk(k, P(u), P(u + 2), v0, v0 + P(2.5), zd, zd + Z(1), CREAM_HI)
     for u0, u1 in ((P(-32), NU0), (NU1, P(32))):
         flat(k, u0, u1, P(13), zd - Z(1), zd, "resCrL")                                     # the rim's lit edge
-    flat(k, NU0, NU1, P(10), zd - Z(1), zd, "resCrL")
+    flat(k, NU0, NU1, P(9), zd - Z(1), zd, "resCrL")
     # the arm, rising off the back half of the deck's far end over the channel to a head
     arm = [(P(32), zd), (P(27), Z(35)), (P(-1), Z(35)), (P(-1), Z(31)), (P(22), Z(31)), (P(22), zd)]                                                                     # an inverted L, a gap under it
     prism(k, "v", P(-9), P(1), arm, CREAM, "resCrL")
@@ -105,12 +105,13 @@ def x17(layer, flip=False):
     # the console side: from the arm end, one console, the dial block, a pair of consoles
     def hang(u0, u1, glyphs):
         bconsole(k, u0, u1, glyphs)
-    hang(P(5), P(14), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)))
-    blk(k, P(-3), P(3), P(12), P(16), Z(9), Z(22), CREAM)
-    dial(k, P(0), P(14), Z(22))
-    flat(k, P(-2), P(2), P(16), Z(11), Z(12), CRK)
-    hang(P(-13), P(-5), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9)))
-    hang(P(-22), P(-14), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
+    bconsole(k, NU0 + P(1), NU1 - P(1), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)),     # down in the notch
+             vb=P(9), vf=P(15), zb=Z(22), za=Z(16))
+    blk(k, P(1), P(7), P(12), P(16), Z(9), Z(22), CREAM)
+    dial(k, P(4), P(14), Z(22))
+    flat(k, P(2), P(6), P(16), Z(11), Z(12), CRK)
+    hang(P(-8), P(0), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9)))
+    hang(P(-17), P(-9), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
     # the screen in the far end (in view once turned): a cream frame on the body's end, a dark pane, glyphs
     e = P(-31) - 0.004
     blk(k, e, P(-31), P(-8), P(8), Z(9), Z(16), ("resCrD",) * 3)
