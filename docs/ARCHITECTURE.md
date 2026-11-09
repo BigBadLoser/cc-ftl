@@ -10,7 +10,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Two kinds of state](#two-kinds-of-state): Every ship, station, derelict and wreck is a Grid with:
   - [1. Grids: tile fields as typed arrays](#1-grids-tile-fields-as-typed-arrays): Every ship, station, derelict and wreck is a Grid with:
   - [2. Entities: a small in-house ECS](#2-entities-a-small-in-house-ecs): Crew, modules, doors, items, projectiles, ships and so on. A few hundred to a few thousand entities.
-- [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver.
+- [Cross-cutting mechanisms](#cross-cutting-mechanisms): Stat resolver; effects; materials; hauling; one answer per question.
 - [Content](#content): Content is TypeScript files exporting objects checked with satisfies WeaponDef (and so on): the
 - [Rendering](#rendering): Two-way contract.
 - [Test tiers](#test-tiers): Fast tier (npm run check:fast, before every commit): lint, typecheck, then VITESTFAST=1 vitest run...
@@ -183,6 +183,18 @@ field systems read.
   full; then they walk to the destination once and put everything down (any item into any kind of destination).
 - Crates: a loose stack is drawn as one crate per twelfth of the item's stack size (`STACK_CRATES`, `crateCount`, `crateUnits` in
   `items/stacks.ts`; `render/stackSlots.ts` lays them out), and a shuttle loads a staging zone a crate at a time.
+
+**One answer per question.**
+- Each game question has one owning function: can this crew member do this work or go out, is this tile breathable or
+  passable, is this ship roofed, where is the air, does this stock exist, may this job run, is this job reachable.
+- Systems, render and UI call the owner. They never rebuild the answer from their own checks, and a snapshot or cache
+  stores the owner's answer rather than computing a parallel one.
+- When a caller needs a slightly different answer, extend the owner with a parameter instead of forking a local copy.
+- Why: copies drift. Most of the game's stubborn bugs have been two systems answering the same question differently
+  (the scheduler posts a job a crew member's own rules refuse, the away drive thinks there is no air while the air
+  system finds some, the UI warns about power the sim considers fine), which shows up as idle crew, ping-ponging
+  shuttles and false alerts.
+- No game-wide audit (user decision, 2026-11-09): when a fix runs into a duplicate, fold it into the owner in that PR.
 
 **Galaxy.**
 - Chunked and seeded, generated on demand (see "Starmap" below).
