@@ -66,9 +66,8 @@ def x17(layer, flip=False):
     blk(k, P(-29), P(29), P(-11), P(11), 0, Z(1), DARK)
     blk(k, P(-30), P(30), P(-12), P(12), Z(1), Z(7), BROWN)                               # 1 px past the navy all round
     flat(k, P(-30), P(30), P(12), Z(1), Z(2), "resBrnD")
-    flat(k, P(-30), P(30), P(12), Z(6), Z(7), "resBrnL")
-    prism(k, "u", P(-29), P(29), [(P(-11), Z(7)), (P(10), Z(7)), (P(11), Z(8)), (P(11), Z(14)), (P(10), Z(15)),
-                                  (P(-11), Z(15))], NAVY, "resNvyL")
+    prism(k, "u", P(-29), P(29), [(P(-11), Z(7)), (P(11), Z(7)), (P(11), Z(14)), (P(10), Z(15)), (P(-11), Z(15))],
+          NAVY, "resNvyL")
     for u0, u1 in ((P(-27), P(-19)), (P(-17), P(-9)), (P(-7), P(1)), (P(3), P(11)), (P(13), P(21)), (P(23), P(28))):
         flat(k, u0, u1, P(11), Z(9), Z(13), "resNvyL")                                     # rounded panels,
         flat(k, u0, u1, P(11) + 0.002, Z(9), Z(10), "resNvyD")                            # shaded at their feet
