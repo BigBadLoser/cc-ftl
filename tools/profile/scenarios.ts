@@ -183,6 +183,22 @@ const SCENARIOS: Scenario[] = [
       spawnStation(sim, 'station');
     },
   },
+  {
+    name: 'salvageHub',
+    description: 'Salvage beside a station (#389): the player ship with 4 more engineers, a generated navy derelict under a salvage order for every scrap type (away site, passages, hauling) and a 44-crew trading hub in the same node. Stripping the wreck rewrites tiles while the hub crew path and eat.',
+    ticks: 10000,
+    populate: false,
+    setup(sim) {
+      exec(sim, [{ type: 'debug.spawnDerelict', faction: 'faction.navy', depth: 2, seed: 3, cx: 130, cy: 70, intensity: 0.8, cause: 'combat' }]);
+      const home = homeShip(sim);
+      const wreck = sim.world.query(ShipC).find((id) => id !== home) ?? 0;
+      sim.galaxy.nextArrival = Number.MAX_SAFE_INTEGER;
+      const at = sim.world.get(sim.world.query(CrewC)[0] ?? 0, PositionC);
+      if (at) for (let i = 0; i < 4; i++) exec(sim, [{ type: 'debug.spawnCrew', ship: home, x: at.x, y: at.y, role: 'role.engineer' }]);
+      exec(sim, [{ type: 'salvage.order', ship: wreck, types: ['hull', 'tech', 'energy', 'weapons', 'comfort'] }], 5);
+      spawnStation(sim, 'hub');
+    },
+  },
   ...([[6, false], [4, false], [6, true], [4, true]] as const).map(([crew, airlock]): Scenario => {
     const benches = new WeakMap<Sim, Bench>();
     return {

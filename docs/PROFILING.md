@@ -50,6 +50,7 @@ JSON summary has `scenario`, `seed` and `metrics`. The observers (metrics, decis
 | `haul` | 500 item stacks on the floors of the ship and a hub, few storages | 2500 |
 | `salvageBench`, `salvageBench4`, `salvageBenchLock`, `salvageBench4Lock` | the salvage throughput bench (6 or 4 crew, a 60x40 wreck without or with an airlock, every scrap type ordered); the report ends with scrap brought home per game hour. 144000 ticks is the 2 game hours of the baseline (several minutes of wall time) | 144000 |
 | `multiship` | the ship, a trading station and a navy derelict (salvage; ~100 repair jobs on the wreck, mostly out of reach) | 5000 |
+| `salvageHub` | salvage beside a station (#389): the ship with 4 more engineers, a navy derelict under a salvage order for every scrap type (away site, passages, hauling) and a 44-crew trading hub | 10000 |
 
 TODO: `fight` and `damage` arrive with PR #184. A prize or a yard crew run is not in `multiship` yet. To add a scenario, append an entry (`name`, `description`,
 `ticks`, `populate`, `setup(sim)`) to `SCENARIOS` in `tools/profile/scenarios.ts`: `exec(sim, commands, steps)` queues commands and steps the sim, and tallies

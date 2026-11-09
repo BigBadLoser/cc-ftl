@@ -1,8 +1,8 @@
 import { findPath, type PathGoal, type PathOpts, type Tile } from '../crew/pathfind';
-import type { Grid } from '../grid';
+import { snapshot, thinMask, type ThinMask } from '../gridSnapshot';
+import type { ShipGrid } from '../shipGrid';
 import type { Sim } from '../sim';
 import { isWalkable } from '../structure';
-import { EVA_THIN_AIR_BELOW } from '../tuning';
 import { isSuited, needsAir, walksOutside } from './suit';
 import { shipGrid } from '../regions';
 
@@ -12,24 +12,33 @@ export interface WalkPlan {
   thin: boolean;
 }
 
-const thinMemo = new WeakMap<Grid, { tick: number; thin: boolean }>();
+const tickMemo = new WeakMap<ShipGrid, { tick: number; thin: boolean }>();
+const thinMemo = new WeakMap<ThinMask, { struct: Float64Array; thin: boolean }>();
 
-/** True if any walkable tile of the grid has thin air. Memoised per tick (derived data, never saved). */
-function gridHasThinAir(sim: Sim, grid: Grid): boolean {
-  const hit = thinMemo.get(grid);
-  if (hit && hit.tick === sim.tick) return hit.thin;
+/**
+ * True if any walkable tile of the grid has thin air. Memoised per tick (derived data, never saved): the first answer of a tick holds for the
+ * rest of it. A new tick reads it again from the grid's thin-air mask and struct copy, which are only rebuilt when those change.
+ */
+function gridHasThinAir(sim: Sim, grid: ShipGrid): boolean {
+  const now = tickMemo.get(grid);
+  if (now && now.tick === sim.tick) return now.thin;
   let thin = false;
   if (grid.has('o2')) {
-    const o2 = grid.load('o2');
-    const struct = grid.load('struct');
-    for (let i = 0; i < o2.length; i++) {
-      if ((o2[i] as number) < EVA_THIN_AIR_BELOW && isWalkable(struct[i] as number)) {
-        thin = true;
-        break;
+    const mask = thinMask(grid);
+    const struct = snapshot(grid, 'struct');
+    const hit = thinMemo.get(mask);
+    if (hit && hit.struct === struct) thin = hit.thin;
+    else {
+      for (let i = 0; i < mask.thin.length; i++) {
+        if (mask.thin[i] && isWalkable(struct[i] as number)) {
+          thin = true;
+          break;
+        }
       }
+      thinMemo.set(mask, { struct, thin });
     }
   }
-  thinMemo.set(grid, { tick: sim.tick, thin });
+  tickMemo.set(grid, { tick: sim.tick, thin });
   return thin;
 }
 
