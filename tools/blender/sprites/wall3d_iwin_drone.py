@@ -227,11 +227,14 @@ def _slot(k):
 
 
 def _notch(k, pa, pb, ye, zb):
-    """Take everything out between pa and pb, out past mesh y ye (the near side), over zb."""
+    """Take everything out between pa and pb, out past mesh y ye (the near side), over zb and up to the sill (not the
+    header over it: the slot's cut took its face out)."""
+    zc = _zf() + 0.5 / W.ZART
     if pb <= -0.5 or pa >= 0.5:
         return
     inx = [(0, pa, 1), (0, pb, -1)]
-    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)]]
+    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)],
+               inx + [(1, ye, -1), (2, zc, 1)]]
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -239,7 +242,8 @@ def _notch(k, pa, pb, ye, zb):
         for f in m.f:
             pts = [m.v[i] for i in f[0]]
             xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
-            if max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9:
+            if (max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9 or
+                    min(zs) >= zc - 1e-9):
                 out.append(f)
                 continue
             for r in regions:
