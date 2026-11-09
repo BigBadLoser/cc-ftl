@@ -540,7 +540,9 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
   seat at the bay's boarding tile. A crew member takes a passage like any other job: at their priority level for its work
   category, compared with every open job at home, nearest crew first. The player steers it with the priority grid; nobody is
   a builder or a hauler.
-  - A passage is only open to crew rested and fed enough to stay a while (rest, hunger, a robot's charge at least 60).
+  - A passage is only open to crew rested and fed enough to stay a while: 3 minutes of work before rest, hunger or a robot's
+    charge falls to its line for going home (about rest 36 and hunger 57 for a human; #404, it was a flat 60, which kept a small
+    crew home most of the time).
   - Seats beyond the shuttle's suits are passages for crew who don't breathe (robots, #284).
   - A passage costs its walk plus the estimated flight time, so a home job of the same level and urgency nearby still wins.
 - **Which categories the seats get.** The site knows how much work of each category is waiting (or coming: salvage counts
@@ -581,7 +583,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
-  At home it drops off those going home, unloads the hold (the existing cargo hauls) and refills its air. Meanwhile it
+  At home it drops off those going home, unloads the hold (the existing cargo hauls), refills its air and tops its suits back up
+  from the home ship's airlocks, leaving each airlock at least one (#404). Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
 - **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
   - each away site has a **staging zone**, a few floor tiles beside the shuttle's drop-off point (the hatch drop point when it

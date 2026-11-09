@@ -106,7 +106,9 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
       if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
       if (sim.world.has(crew, AwayC)) sim.world.get(crew, DraftedC)!.away = true;
       (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
-      if (needsAir(sim, crew)) {
+      const fitted = sim.world.get(crew, SuitC); // unboardCrew fits one from stock on the (thin) hull tile
+      if (fitted) fitted.vehicle = cmd.vehicle;
+      else if (needsAir(sim, crew)) {
         v.suits = vehicleSuits(sim, v) - 1;
         sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
         sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });

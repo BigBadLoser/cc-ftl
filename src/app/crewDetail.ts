@@ -5,7 +5,7 @@ import {
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
 import { TICK_HZ } from '../sim/time';
-import { breakNow } from './breakText';
+import { breakNow, strainOf } from './breakText';
 import { buildBonds } from './bondSnapshot';
 import { buildSocial } from './socialSnapshot';
 import { xpGainMult } from '../sim/crew/traits';
@@ -100,7 +100,7 @@ function moodOf(sim: Sim, id: number): UiCrewDetail['mood'] {
   const factors = m.factors.map((f) => ({
     label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value, source: factorSource(sim, id, f.key),
   })).sort((a, b) => b.value - a.value);
-  return { value: m.value, base: MOOD_BASE, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
+  return { value: m.value, base: MOOD_BASE, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1, strain: strainOf(sim, id) };
 }
 
 /** The trait behind a mood factor: the trait's own factor, or the one that changes how this factor feels (Social's Company). */

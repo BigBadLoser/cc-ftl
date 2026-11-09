@@ -117,7 +117,8 @@ export interface UiCrew {
   /** 0..100, 100 = fed; null for crew that never eat (robots, enemies). */
   hunger: number | null;
   /** Mood 0..100 with its reasons (label and points, biggest first) and what it does to work; null for crew without moods. */
-  mood: { value: number; factors: { label: string; value: number }[]; workMult: number } | null;
+  /** `strain`: what can set off a break now whatever the mood ("the dark"), '' for nothing. */
+  mood: { value: number; factors: { label: string; value: number }[]; workMult: number; strain: string } | null;
   drafted: boolean;
   /** A machine (a robot: a mover run by the AI core, not crew proper): the crew bar leaves it out. */
   mechanical: boolean;
@@ -902,8 +903,11 @@ export interface UiShuttle {
   dockShip: string | null;
   /** The trade run it is on (status text and the partner's name), or null. */
   trade: { status: string; partner: string } | null;
-  /** The base-logistics run it is on (status text and the destination region's name), or null. */
-  ferry: { status: string; to: string } | null;
+  /**
+   * The base-logistics or away site run it is on (status text and the destination region's name), or null. `cancel` is what its Call off
+   * sends (a ferry run comes home; a salvage site's order ends; another site calls its party home), `cancelLabel` the button's words.
+   */
+  ferry: { status: string; to: string; cancel: Command; cancelLabel: string } | null;
   /** Units its hold takes. */
   cargo: number;
   /** Free for a new base run (idle, not a pod, no trade run). */

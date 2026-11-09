@@ -12,8 +12,10 @@ import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { isIncapacitated } from '../crew/helpers';
+import { hungerDrainPerSec } from '../crew/eating';
+import { stat } from '../stats';
 import {
-  AWAY_GO, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
+  AWAY_GO_STAY_SEC, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
 } from '../tuning';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
 import { fightCalls } from './phase';
@@ -110,14 +112,30 @@ export function ofSide(sim: Sim, crew: number, vehicle: number): boolean {
 }
 
 /**
- * The passage checks of `jobFits`: a player crew member not already of a party, every need they have at AWAY_GO or more (rested, fed or
- * charged enough to stay a while). A seat beyond the shuttle's suits (`airless`) is for crew who do not breathe.
+ * Seconds of work on a site before the first of the crew member's needs falls to its home line (AWAY_HOME_REST / _HUNGER / _CHARGE) at
+ * its waking rate (a battery at its busy rate). Infinity for one with no need that drains.
+ */
+export function staySec(sim: Sim, id: number): number {
+  const n = sim.world.get(id, NeedsC);
+  if (!n) return Infinity;
+  const left = (value: number, line: number, perSec: number): number => (perSec > 0 ? Math.max(0, value - line) / perSec : Infinity);
+  const battery = sim.content.species[sim.world.get(id, CrewC)?.species ?? '']?.charge;
+  return Math.min(
+    left(n.rest, AWAY_HOME_REST, stat(sim, id, 'restDecay')),
+    n.hunger === undefined ? Infinity : left(n.hunger, AWAY_HOME_HUNGER, hungerDrainPerSec(sim, id, false)),
+    n.charge === undefined || !battery ? Infinity : left(n.charge, AWAY_HOME_CHARGE, battery.drainPerSec * battery.busyMult),
+  );
+}
+
+/**
+ * The passage checks of `jobFits`: a player crew member not already of a party, rested, fed or charged enough to stay a while (AWAY_GO_STAY_SEC
+ * of work before a need sends them home). A seat beyond the shuttle's suits (`airless`) is for crew who do not breathe.
  */
 export function passageFits(sim: Sim, crew: number, job: Job): boolean {
   if (job.kind !== 'passage') return true;
   if (job.holder && job.holder !== crew) return false; // a named party's seat (`AwaySite.invited`)
   if (sim.world.has(crew, AwayC) || !ofSide(sim, crew, job.target ?? 0) || (job.airless && needsAir(sim, crew))) return false;
-  return sim.world.has(crew, NeedsC) && !needBelow(sim, crew, AWAY_GO, AWAY_GO, AWAY_GO);
+  return sim.world.has(crew, NeedsC) && staySec(sim, crew) >= AWAY_GO_STAY_SEC;
 }
 
 /**

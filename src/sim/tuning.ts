@@ -411,8 +411,12 @@ export const SALVAGE_EVERY = 10;
 export const SALVAGE_JOBS_OPEN = 8;
 
 // --- Away sites (sim/away, #286 slice 2a) ---
-/** A passage is open only to crew with rest and hunger (a robot's charge) at or above this. */
-export const AWAY_GO = 60;
+/**
+ * A passage is open only to crew who can work this long on the site before a need (rest, hunger, a robot's charge) falls to its home line
+ * below: about rest 36 and hunger 57 for a human. A flat 60 on every need (#404) kept a small crew home: rest drains so slowly that it
+ * sits under 60 for most of a waking day.
+ */
+export const AWAY_GO_STAY_SEC = 180;
 /** An away crew member wants to go home below this rest or this hunger (just above where they would sleep or go to eat). */
 export const AWAY_HOME_REST = 25;
 export const AWAY_HOME_HUNGER = 35;

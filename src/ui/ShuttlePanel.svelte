@@ -86,7 +86,7 @@
 
       {#if s.ferry}
         <div class="trade" data-testid="shuttle-ferry">Run to {s.ferry.to}: {s.ferry.status}
-          <button class="mini" data-testid="ferry-cancel" onclick={() => api.dispatch({ type: 'ferry.cancel', vehicle: s.id })}>Call off</button>
+          <button class="mini" data-testid="ferry-cancel" onclick={() => s.ferry && api.dispatch(s.ferry.cancel)}>{s.ferry.cancelLabel}</button>
         </div>
       {/if}
 
