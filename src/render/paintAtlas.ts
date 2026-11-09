@@ -22,6 +22,8 @@ export interface PaintAtlas {
   render(gl: Renderer): void;
   /** Linear sampling (below zoom 1, as the sheets). */
   setSmooth(on: boolean): void;
+  /** Free the texture and the paint meshes (the renderer is going away). */
+  dispose(): void;
   /** Debug (render diffs): false makes views built from now on use a mesh per paint, as before the atlas. */
   enabled: boolean;
   readonly cells: number;
@@ -149,6 +151,13 @@ export function createPaintAtlas(): PaintAtlas {
       if (bake.children.length > 0 || full) gl.render({ container: bake, target: rt, clear: full, clearColor: [0, 0, 0, 0] });
       full = false;
       bake.removeChildren();
+    },
+    dispose() {
+      for (const e of entries.values()) e.mesh.destroy();
+      entries.clear();
+      bake.destroy();
+      rt?.destroy(true);
+      rt = null;
     },
     setSmooth(on) {
       if (on === smooth) return;

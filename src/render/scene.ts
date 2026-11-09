@@ -823,6 +823,10 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       inset.dispose();
       for (const sc of scenes.values()) sc.dispose();
       scenes.clear();
+      liveries.dispose();
+      // The whole scene graph goes too: its 'destroyed' events unregister the render groups and depth bands from their
+      // module-level registries (renderGroups.ts, depthBands.ts), which would otherwise keep a disposed renderer's graph alive.
+      stage.destroy({ children: true });
       atlas.dispose();
       releaseHalos(gl);
       gl.destroy();
