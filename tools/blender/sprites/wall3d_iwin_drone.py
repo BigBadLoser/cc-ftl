@@ -232,6 +232,11 @@ def _header_foot():
     return rt - 0.25 * (rt - zs)
 
 
+def _no_slots(sp):
+    """A window piece's ramps: no handle slots (the plain wall's, one a tile: it showed by the red boxes, the user)."""
+    sp.holes[:] = []
+
+
 def window(fn, part):
     """fn: drone's straight piece builder (tile.wall.drone.full.m10). (own, wide, pane objects)."""
     calls = [0]
@@ -249,11 +254,12 @@ def window(fn, part):
         global PART
         calls[0] = 0
         T.HOOK = each
+        T.PRE_HOOK = _no_slots
         DR.BLANK = True                                 # (blank posts and header for now: the user)
         try:
             own, wide = fn()
             assert calls[0] == len(seq), calls[0]
             return own, wide, GLASS.build()
         finally:
-            PART, T.HOOK, DR.BLANK = None, None, False
+            PART, T.HOOK, T.PRE_HOOK, DR.BLANK = None, None, None, False
     return build
