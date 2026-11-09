@@ -217,6 +217,19 @@ Each placeholder is replaced by pipeline art once that art exists.
 **Depth sorting.** Draw order is by isometric depth (tile `x + y`, then height). Multi-tile objects
 anchor at their front-most footprint tile. Crew sort by their interpolated sub-tile position.
 
+**Batching (#389).** Everything depth-sorted renders through one `RenderLayer`, so its sprites from many sheets interleave
+and the draw-call count is the number of times the batch has to break. Keep that run batchable:
+- One batcher (`render/batch.ts`, replacing pixi's default): per-sprite effects are flag bits in the vertex data read by one
+  shader, not separate batchers or blend modes. Additive glow (`batchAdditive`) draws under the normal blend with alpha 0, which
+  is `add` exactly on an opaque target (only world glows opt in, never art drawn into a transparent texture); hull paint is
+  `FLAG_PAINT` (`HullSprite`). A new per-sprite effect is a `registerFlagStep`, not a new batcher.
+- No filters in the world: each filtered object is its own offscreen pass and cuts the batch. Crew figures composite in the
+  shared crew atlas (`render/crewAtlas.ts`): every figure's layers stack in a cell of one texture, one composite pass a frame
+  (palette and light tint per cell from a palette texture), and the world draws each figure as one sprite from it.
+- Measure with the draw counter (`render/drawCalls`) at `?scenario=busy` zoomed out, and see which instruction broke each batch
+  with the scratch tracer approach in #389 (walk `renderGroup.instructionSet`). `__cc.additiveMerge(false)` and
+  `__cc.crewAtlas(false)` (with `?hook`) switch back to the old paths for same-frame render diffs.
+
 **Crew.**
 - Composited at runtime from **sprite layers**: a species body plus slot layers (hair, eyes, arms,
   implants, clothing, gear).
