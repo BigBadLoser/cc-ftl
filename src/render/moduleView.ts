@@ -319,7 +319,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const now = animNow();
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
-      const worked = workedLabs(world, defs);
+      const worked = workedLabs(world);
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;

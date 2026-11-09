@@ -1,11 +1,11 @@
 import type { World } from '../sim/ecs';
 import { JobC, PositionC } from '../sim/crew/components';
-import { atJob, isSettled } from '../sim/crew/helpers';
+import { isSettled } from '../sim/crew/helpers';
 import { StorageC } from '../sim/items/components';
-import { ModuleC, type Module } from '../sim/modules/components';
+import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { depthKey } from './iso';
-import { hullOutward, hullRow, hullSide, inFootprint, rotatedSize } from '../sim/modules/footprint';
+import { hullOutward, hullRow, hullSide, rotatedSize } from '../sim/modules/footprint';
 import { ContainerC } from '../sim/containers/components';
 import { PlotC } from '../sim/farm/components';
 import { cropStage } from './cropStage';
@@ -64,17 +64,15 @@ export function mannedConsoles(world: World): Set<number> {
   return out;
 }
 
-/** Research modules with a crew member settled at them (beside the bench or in its chair), working its job. */
-export function workedLabs(world: World, defs: Readonly<Record<string, ModuleDef>>): Set<number> {
+/** Research modules with a crew member settled in their chair (the job tile), working its job. */
+export function workedLabs(world: World): Set<number> {
   const out = new Set<number>();
   for (const jobId of world.query(JobC)) {
     const j = world.get(jobId, JobC);
     if (j?.kind !== 'research' || !j.target || !j.reservedBy) continue;
-    const m = world.get(j.target, ModuleC);
-    const def = m && defs[m.def];
     const p = world.get(j.reservedBy, PositionC);
-    if (!m || !def || !p || !isSettled(p)) continue;
-    if (atJob(p, { kind: 'research', x: m.x, y: m.y, size: rotatedSize(def, m.rot) }) || inFootprint(def, m.x, m.y, m.rot, p.x, p.y)) out.add(j.target);
+    if (!p || !isSettled(p)) continue;
+    if (p.x === j.x && p.y === j.y) out.add(j.target);
   }
   return out;
 }

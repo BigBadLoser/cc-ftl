@@ -6,11 +6,11 @@ import { ResearchC } from '../research/components';
 import { isDone, labsOf, projectOf, researchJobs, startHead } from '../research/research';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
-import { moduleSite } from '../modules/footprint';
+import { accessTile } from '../modules/footprint';
 
 /**
  * Keeps a ship's research going: drops queued projects that no longer exist or whose blueprints were learnt meanwhile (an unpaid head
- * too), pays the head from stock when it can, and keeps one 'research' job (category research) per research module while a project is
+ * too), pays the head from stock when it can, and keeps one 'research' job (category research, worked on the module's access tile, the chair, as an operate job is) per research module while a project is
  * active. A job whose module is gone, disabled or on a ship with no active project is dropped, releasing its crew member.
  */
 export function researchJobsSystem(sim: Sim): void {
@@ -37,10 +37,12 @@ export function researchJobsSystem(sim: Sim): void {
   for (const ship of active) {
     for (const lab of labsOf(sim, ship)) {
       const m = sim.world.get(lab, ModuleC);
-      if (!m || jobs.has(lab)) continue;
+      const def = m && sim.content.modules[m.def];
+      const at = m && def && accessTile(def, m.x, m.y, m.rot);
+      if (!m || !at || jobs.has(lab)) continue;
       const id = sim.world.createEntity();
       sim.world.add(id, JobC, {
-        category: 'research', kind: 'research', ...moduleSite(sim.content.modules[m.def], m), struct: 0, work: 1, progress: 0, reservedBy: 0, target: lab,
+        category: 'research', kind: 'research', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: lab,
       });
     }
   }
