@@ -566,6 +566,8 @@ export interface ModuleDef {
   bridge?: { holdSec?: number; radius?: number };
   /** Marks a console; its operator runs that ship system during combat. */
   console?: 'weapons' | 'shields' | 'helm';
+  /** Crew sit on its access tile (a chair in the art), facing the module, as at a console. */
+  seated?: true;
   /** WeaponDef id this module fires. */
   weapon?: string;
   /** One upgrade slot of this kind (an `UpgradeDef.slot`); fitting is a crew job (sim/upgrades). */

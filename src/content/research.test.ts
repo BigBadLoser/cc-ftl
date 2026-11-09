@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, ResearchC, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
+import { JobC, ModuleC, PositionC, ResearchC, accessTile, homeShip, isBlueprintKnown, labsOf, newGame, serialize, deserialize, stockOn, storageAdd, type ModuleDef, type RecipeDef } from '../sim';
 import { content } from './index';
 
 const modules: Record<string, ModuleDef> = content.modules;
@@ -46,10 +46,12 @@ describe('research content', () => {
     const ship = homeShip(sim);
     const store = sim.world.query(ModuleC).find((id) => sim.content.modules[sim.world.get(id, ModuleC)?.def ?? '']?.storage) as number;
     const s = sim.world.get(store, ModuleC);
-    // Drop a research module on a free floor tile near the first storage module.
-    for (let dx = -3; dx <= 3 && labsOf(sim, ship).length === 0; dx++) {
-      sim.enqueue({ type: 'debug.spawnModule', ship, x: (s?.x ?? 0) + dx, y: (s?.y ?? 0) - 2, def: 'module.research', rot: 0 });
-      sim.step();
+    // Drop the 3x2 research bench on free floor near the first storage module.
+    for (let dy = -6; dy <= 6 && labsOf(sim, ship).length === 0; dy++) {
+      for (let dx = -8; dx <= 8 && labsOf(sim, ship).length === 0; dx++) {
+        sim.enqueue({ type: 'debug.spawnModule', ship, x: (s?.x ?? 0) + dx, y: (s?.y ?? 0) + dy, def: 'module.research', rot: 0 });
+        sim.step();
+      }
     }
     expect(labsOf(sim, ship)).toHaveLength(1);
     const before = { e: stockOn(sim, ship, 'item.electronics'), p: stockOn(sim, ship, 'item.parts') };
@@ -64,6 +66,23 @@ describe('research content', () => {
     expect(sim.world.get(ship, ResearchC)?.paid).toBe(true);
     expect(stockOn(sim, ship, 'item.electronics')).toBe(before.e + 60 - 20);
     expect(stockOn(sim, ship, 'item.parts')).toBe(before.p + 20 - 6);
+    // The research job is worked from the bench's chair: its access tile, inside the footprint.
+    const lab = labsOf(sim, ship)[0] as number;
+    const lm = sim.world.get(lab, ModuleC);
+    const at = lm && accessTile(modules['module.research'] as ModuleDef, lm.x, lm.y, lm.rot);
+    const job = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)).find((j) => j?.kind === 'research' && j.target === lab);
+    expect(at).toBeTruthy();
+    expect(job && { x: job.x, y: job.y }).toEqual(at);
+    expect(job?.size).toBeUndefined();
+    // A crew member walks into the chair and works from it.
+    let worker = 0;
+    for (let i = 0; i < 4000 && !worker; i++) {
+      sim.step();
+      const j = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)).find((x) => x?.kind === 'research' && x.target === lab);
+      const pos = j?.reservedBy ? sim.world.get(j.reservedBy, PositionC) : undefined;
+      if (j && pos && pos.x === j.x && pos.y === j.y) worker = j.reservedBy;
+    }
+    expect(worker).not.toBe(0);
     const copy = deserialize(serialize(sim), content);
     expect(copy.world.get(ship, ResearchC)).toEqual(sim.world.get(ship, ResearchC));
   });

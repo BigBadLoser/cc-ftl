@@ -1,0 +1,165 @@
+"""Research bench look studies: the shared kit (family `research`, preview only). Local frame: modkit.K, footprint
+(3, 2), front = +v; the chair is the middle front tile (u 0, v +0.5), facing -v. A design is a pair (bench(layer),
+holo()): the bench sprite `.on` (see-through parts through Bench.part), and its hologram as its own translucent layer
+`.holo` (holo_job)."""
+import math
+
+from .modkit import K
+
+FP = (3, 2)
+# The pixel grid in the local frame (64x32 tiles, 30 deg elevation, sprite origin on a px): a px is 1/32 along u or v
+# and 1/ZPX up. A 2:1 edge on a face draws as a clean stair only when the face's plane is on the u/v grid and the edge's
+# height on the z grid; anything thinner than a px (a bevel, a lip, a front standing 0.015 off its face) breaks into
+# dots. Small parts that repeat along an edge (drawer fronts, plates, pulls) are sized and placed on this grid.
+PXG = 1 / 32
+ZPX = 32 * math.sqrt(2) * math.cos(math.radians(30))     # px per unit of height (core.ZPX)
+
+
+def snap(x):
+    """x on the u/v px grid."""
+    return round(x / PXG) * PXG
+
+
+def zpx(n):
+    """n px of height."""
+    return n / ZPX
+CU, CV = 0.0, 0.5                 # the chair tile (local)
+GLASS_A, GLASS_RIM = 0.07, 0.12   # see-through glass (as hydroponics: baked by the render over what is behind it)
+FLUID_A = 0.3
+HOLO_FILM, HOLO_LINE = 90, 230    # the hologram layer's alpha: film (non-emissive colours), lines (emissive)
+
+
+class Bench(K):
+    """K with see-through parts: part(name) is a K whose objects render with the alpha `SEE[name]`."""
+    SEE = {"glass": (GLASS_A, GLASS_RIM), "fluid": (FLUID_A, 0.2)}
+
+    def __init__(self, name, fp=FP, rot=0):
+        super().__init__(name, fp, rot)
+        self.name, self.parts, self.fp = name, {}, fp
+
+    def part(self, name):
+        if name not in self.parts:
+            self.parts[name] = K(f"{self.name}_{name}", self.fp, self.rot)
+        return self.parts[name]
+
+    def build(self):
+        out = super().build()
+        for n, p in self.parts.items():
+            for o in p.build():
+                o["alpha"], o["rim"] = self.SEE[n]
+                out.append(o)
+        return out
+
+
+def ring(k, axis, cu, cv, cz, r, n, w, t, col):
+    """A ring of n boxes round an axis ('u', 'v' or 'z') through (cu, cv, cz): w thick along the axis, t radial."""
+    seg = 2 * math.pi * r / n * 1.1
+    for i in range(n):
+        a = i * math.tau / n
+        if axis == "u":
+            k.box(cu, cv + r * math.cos(a), cz + r * math.sin(a) - t / 2, w, seg, t, col, rx=a + math.pi / 2)
+        elif axis == "v":
+            k.box(cu + r * math.cos(a), cv, cz + r * math.sin(a) - t / 2, seg, w, t, col, ry=-a - math.pi / 2)
+        else:
+            k.box(cu + r * math.cos(a), cv + r * math.sin(a), cz, seg, t, w, col, rz=a + math.pi / 2)
+
+
+def bar(k, a, b, w, col):
+    """A square bar from point a to point b (local u, v, z)."""
+    du, dv, dz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+    L = math.sqrt(du * du + dv * dv + dz * dz)
+    k.box((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2 - L / 2, w, w, L, col,
+          rz=math.atan2(dv, du) - math.pi / 2, rx=-math.atan2(math.hypot(du, dv), dz))
+
+
+def chair(k, shell="steelD", pad="navy"):
+    """A lab chair on the chair tile facing -v: five-star base, gas post, seat pad (top 0.39), backrest at +v."""
+    u, v = CU, CV
+    for i in range(5):
+        a = i * math.tau / 5 + 0.3
+        k.box(u + 0.11 * math.cos(a), v + 0.11 * math.sin(a), 0.04, 0.22, 0.06, 0.045, "steelD", rz=a)
+        k.box(u + 0.21 * math.cos(a), v + 0.21 * math.sin(a), 0.0, 0.07, 0.07, 0.06, "dark")
+    k.cyl(u, v, 0.08, 0.045, 0.2, "steelL", top="steel", sides=8)
+    k.box(u, v, 0.28, 0.46, 0.44, 0.07, shell, top="steel", bevel=0.02)
+    k.box(u, v - 0.01, 0.35, 0.4, 0.38, 0.04, pad, top=pad, bevel=0.012)
+    k.box(u, v + 0.2, 0.3, 0.07, 0.05, 0.14, "steelL")
+    k.box(u, v + 0.23, 0.42, 0.42, 0.07, 0.34, shell, top="steel", rx=-0.12, bevel=0.02)
+    k.box(u, v + 0.19, 0.45, 0.34, 0.02, 0.27, pad, rx=-0.12)
+
+
+def body(k, u, v, su, sv, h, col="steel", top="plate", panel="plateB", faces=(1, 1), lip="gm"):
+    """A cabinet body: kick recess, the shell, inset panels on its +v and +u/-u faces, a top skin (its edge in lip).
+    lip=None: no skin and no bevel, the shell's top edge one clean break (a sub-pixel bevel or overhang dots it)."""
+    if lip is None:                                         # on the px grid: a 1 px recessed kick 3 px tall,
+        kz, pz = zpx(3), zpx(6)                             # panels 6 px in from the bottom and the top
+        k.box(u, v, 0.0, su - 2 * PXG, sv - 2 * PXG, kz, "dark")
+        k.box(u, v, kz, su, sv, h - kz, col, top=top)
+    else:
+        kz, pz = 0.08, 0.15
+        k.box(u, v, 0.0, su - 0.08, sv - 0.08, 0.08, "dark")
+        k.box(u, v, 0.08, su, sv, h - 0.12, col, top=top, bevel=0.02)
+    if faces[0]:
+        k.box(u, v, pz, su - 0.16, sv + 0.014, h - 2 * pz, panel)
+    if faces[1]:
+        k.box(u, v, pz, su + 0.014, sv - 0.16, h - 2 * pz, panel)
+    if lip is not None:
+        k.box(u, v, h - 0.04, su + 0.03, sv + 0.03, 0.04, lip, top=top, bevel=0.012)
+
+
+def slope_panel(k, u, v, z, su, sv, ry, glow, n=4):
+    """A sloped control panel on a wing top, tipped by ry toward the chair: a dark face, a row of buttons, a readout."""
+    k.box(u, v, z, su, sv, 0.08, "steelD", top="blueGrey", ry=ry, bevel=0.012)
+    s = math.copysign(1, ry)
+    k.box(u - s * 0.06, v - 0.12, z + 0.06, su * 0.55, sv * 0.36, 0.03, "dark", ry=ry)
+    k.box(u - s * 0.06, v - 0.12, z + 0.085, su * 0.4, 0.04, 0.012, glow, ry=ry)
+    for i in range(n):
+        k.box(u + s * 0.02, v - 0.18 + i * 0.1, z + 0.08, 0.06, 0.05, 0.025, (glow, "gmD", "hivis", "steelL")[i % 4],
+              ry=ry)
+
+
+def holo_item(sid, fp, mask, objs):
+    """The hologram `objs` rendered alone with the bench objects `mask` as holdout, as a manifest item (see holo_job).
+    The bench must be built already (post.select done)."""
+    import numpy as np
+    from . import core, post
+    from . import env_build as E
+    for o in mask:
+        o.is_holdout = True
+    xmin, xmax, ymin, ymax = core.extent_px(objs + mask)
+    W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+    H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    rgb, a = core.render(W, H, "color")
+    c, op = post.downsample(rgb, a > 0.5, E.SS, 8, True)
+    grgb, _ = core.render(W, H, "glow")
+    g = post.glow_down(grgb, E.SS, 3)
+    al = np.where(op, np.where(g[..., 3] > 0, HOLO_LINE, HOLO_FILM), 0).astype(np.uint8)
+    g[..., :3] = (g[..., :3] * 0.45).astype(np.uint8)                              # a soft glow, not a lamp
+    return E.crop_item(sid, fp, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
+
+
+def holo_job(sid, v):
+    """A translucent layer: the hologram rendered alone (the bench as holdout, so the bench hides what is behind it),
+    alpha HOLO_LINE on its lit px and HOLO_FILM on the rest; no outline. Same origin as the bench sprite."""
+    def run(sid=sid, v=v):                  # (the defaults key the render cache: one entry per layer)
+        from . import core, post
+        core.clear_scene_meshes()
+        post.select("research")
+        bench, holo, fp = entry(v)
+        mask = bench("on")
+        it = holo_item(sid, fp, mask, holo().build())
+        return [it] if it else []
+    return run
+
+
+def entry(v):
+    """A design's (bench, holo, footprint): BUILD entries are (bench, holo) for the 3x2 bench or (bench, holo, fp)."""
+    e = BUILD()[v]
+    return e if len(e) == 3 else (*e, FP)
+
+
+def BUILD():
+    from . import research_r2, research_r4, research_r5, research_r6, research_r7, research_r8, research_r9, research_r10
+    from . import research_r11, research_r12, research_r13, research_r14, research_r15, research_r16, research_r17, research_r18, research_r19, research_r20
+    return {**research_r2.BUILD, **research_r4.BUILD, **research_r5.BUILD, **research_r6.BUILD, **research_r7.BUILD,
+            **research_r8.BUILD, **research_r9.BUILD, **research_r10.BUILD, **research_r11.BUILD, **research_r12.BUILD, **research_r13.BUILD, **research_r14.BUILD,
+            **research_r15.BUILD, **research_r16.BUILD, **research_r17.BUILD, **research_r18.BUILD, **research_r19.BUILD, **research_r20.BUILD}

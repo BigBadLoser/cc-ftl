@@ -64,6 +64,19 @@ export function mannedConsoles(world: World): Set<number> {
   return out;
 }
 
+/** Research modules with a crew member settled in their chair (the job tile), working its job. */
+export function workedLabs(world: World): Set<number> {
+  const out = new Set<number>();
+  for (const jobId of world.query(JobC)) {
+    const j = world.get(jobId, JobC);
+    if (j?.kind !== 'research' || !j.target || !j.reservedBy) continue;
+    const p = world.get(j.reservedBy, PositionC);
+    if (!p || !isSettled(p)) continue;
+    if (p.x === j.x && p.y === j.y) out.add(j.target);
+  }
+  return out;
+}
+
 /** Frames per second of a looping `.active` animation. The manifest does not carry animations.json, so this is the pack's rate (4 fps) for every module. */
 export const ANIM_FPS = 4;
 
@@ -224,11 +237,12 @@ export const FRONT_DZ = 0.03;
 /** Targetable on enemy ships: weapons, engines, shield generators and the AI core (what the combat overlay can aim at). */
 export const isTargetable = (def: ModuleDef): boolean => !!(def.weapon || def.engine || def.shieldGen || def.aiCore);
 
-/** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting. */
+/** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting, research benches while worked. */
 export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, manned: boolean): boolean {
   if (!on) return false;
   if (def.console) return manned;
   if (def.crafting) return crafting;
+  if (def.research) return manned;
   return !!(def.hullEdge || def.shieldGen || def.aiCore);
 }
 
@@ -239,7 +253,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
  *    `<asset>.block.r{n}` (`engineBlock`: in every view, outside the hull) and the bell outside the hull `<asset>.bell.r{n}`, both
  *    sorted by the tile beyond the hull row (`out`); `.active` while burning.
  *  - Weapons: the floor bay `<asset>.bay.r{n}`; the turret above it is drawn by turretView.
- *  - Consoles: the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
+ *  - Consoles and seated modules (the research bench): the usual chain, then the desk-front overlay `<asset>.front.r{n}[.active]` over the seated operator.
  *  - Everything else: the usual chain from `moduleAssets`.
  */
 /**
@@ -306,7 +320,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
-  if (!def.console) return [main];
+  if (!def.console && !def.seated) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
 }
