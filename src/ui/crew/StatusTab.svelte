@@ -22,7 +22,11 @@
       { key: 'conditions', label: 'Conditions', text: other.length ? other.map((c) => `${c.label}: ${c.text}`).join(', ') : 'none', pct: null, tone: other.some((c) => c.tone === 'bad') ? 'bad' : other.length ? 'warn' : 'dim' },
     ];
   });
-  const mood = $derived<Condition[]>(d?.mood ? [{ key: 'mood', label: 'Mood', text: `${d.mood.value} ${moodWord(d.mood.value)}`, pct: d.mood.value, tone: d.mood.value < 35 ? 'bad' : 'ok', color: '#b58cff' }] : []);
+  const mood = $derived<Condition[]>(d?.mood ? [
+    { key: 'mood', label: 'Mood', text: `${d.mood.value} ${moodWord(d.mood.value)}`, pct: d.mood.value, tone: d.mood.value < 35 ? 'bad' : 'ok', color: '#b58cff' },
+    // A stressor can set off a break whatever the mood (docs/TRAITS.md section 5): say so where the mood reads fine.
+    ...(d.mood.strain ? [{ key: 'strain', label: 'Strain', text: `${d.mood.strain}: a break can come at any mood`, pct: null, tone: 'warn' as const }] : []),
+  ] : []);
 </script>
 
 {#if d}

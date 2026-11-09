@@ -15,6 +15,7 @@ import { SKILL_STEP } from '../tuning';
 import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import { AboardC, EmbarkOrderC, VehicleBayC, VehicleC, type Vehicle } from './components';
+import { SuitC } from '../eva/components';
 import { bayCenter, boardingTile, dockPoint, hoverPoint } from './geometry';
 import { shipIdOf } from '../regions';
 
@@ -66,6 +67,10 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
   abortTask(sim, crew, 'boarded');
   for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
+  // A suit worn aboard goes into the shuttle's stock, as at a hatch (#404): worn on, it left the shuttle short when they stepped out at home and
+  // stowed it there, or vanished when `eva.out` fitted them another from stock.
+  const evaSuits = vehicleDefOf(sim, v)?.eva?.suits;
+  if (evaSuits !== undefined && sim.world.remove(crew, SuitC)) v.suits = (v.suits ?? evaSuits) + 1;
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
   const role = v.pilot === 0 && !vehicleDefOf(sim, v)?.escape ? 'pilot' : 'passenger'; // an escape pod has no pilot

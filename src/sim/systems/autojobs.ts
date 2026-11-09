@@ -34,7 +34,7 @@ function drop(sim: Sim, jobId: number, job: Job): void {
 /**
  * Maintains the jobs the colony creates for itself, so crew react to emergencies without orders:
  *  - extinguish (firefighting): one per burning tile, removed once the fire is out;
- *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall;
+ *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall; never on a wreck;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
  *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
@@ -50,6 +50,7 @@ export function autoJobsSystem(sim: Sim): void {
       : job.kind === 'rescue' ? keepRescue(sim, job)
       : job.kind === 'forceDoor' && job.holder ? keepForceDoor(sim, jobId, job)
       : job.kind === 'sabotage' ? keepSabotage(sim, jobId, job)
+      : job.kind === 'build' && job.category === 'firefighting' && onWreck(sim, job) ? false // a breach seal on a wreck (#404; none are posted now)
       : keepRobotJob(sim, jobId, job);
     if (keep === null) continue;
     if (!keep) drop(sim, jobId, job);

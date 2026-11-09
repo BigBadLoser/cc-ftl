@@ -71,8 +71,8 @@ export interface UiGearSlot {
 export interface UiCrewDetail {
   id: number;
   health: { hp: number; maxHp: number; conditions: UiCondition[] };
-  /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. */
-  mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number } | null;
+  /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. `strain`: what can set off a break now whatever the mood. */
+  mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number; strain: string } | null;
   skills: UiSkillDetail[];
   stats: UiStatDetail[];
   traits: { id: string; name: string; kind: string; flavour: string; effect: string; short: string }[];

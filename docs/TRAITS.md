@@ -216,7 +216,8 @@ Stressors are read from state; duration counters live on `MoodC` beside the trai
 | Grief | A friend died in the last 10 min (section 6) | 0.5% | despair 6, isolation 3, tantrum 1 |
 | Low mood only | No stressor, base > 0 | — | refusal 4, tantrum 3, isolation 3, despair 2 |
 
-Ordinary dark, EVA or fighting cost mood only, until a line above is crossed. A phobic crew member at a fire for 2
+Ordinary dark, EVA or fighting cost mood only, until a line above is crossed. The crew panel shows a stressor that is acting ("Strain: the dark: a break can come at any
+mood"; the Overview adds ", strained"), since a break from one can come while the mood reads content or happy (#404). A phobic crew member at a fire for 2
 minutes breaks with about 25% odds, never surely.
 
 ### Outcomes

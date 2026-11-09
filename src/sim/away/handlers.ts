@@ -1,6 +1,7 @@
 import type { Command } from '../commands';
 import { homeShip, shipById } from '../combat/ships';
 import { ferryFree } from '../ferry/pick';
+import { TransferC } from '../logistics/components';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
@@ -14,13 +15,22 @@ function reject(sim: Sim, command: string, reason: string): void {
   sim.events.emit({ type: 'command.rejected', command, reason });
 }
 
+/** True while a transfer order holds the shuttle for a trip whose pilot is on the way to it (logistics: 'boarding'). */
+function heldForTransfer(sim: Sim, id: number): boolean {
+  return sim.world.query(TransferC).some((t) => {
+    const o = sim.world.get(t, TransferC);
+    return o?.status === 'boarding' && o.vehicle === id;
+  });
+}
+
 /**
- * A shuttle free to serve a site, as the away code picks one itself (pickups, a lost shuttle's site, `away.open`): free (ferry rules), fit
- * for EVA (it hovers; its suits are for those aboard who breathe), stowed in a bay on its home ship (its crew walk to it).
+ * A shuttle free to serve a site, as the away code picks one itself (pickups, a lost shuttle's site, `away.open`): free (ferry rules), not
+ * held for a transfer whose pilot is walking to it (#404: the site took it from under them), fit for EVA (it hovers; its suits are for those
+ * aboard who breathe), stowed in a bay on its home ship (its crew walk to it).
  */
 export function siteShuttleOk(sim: Sim, id: number): boolean {
   const v = sim.world.get(id, VehicleC);
-  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || !ferryFree(sim, id)) return false;
+  if (!v || v.state !== 'stowed' || !vehicleDefOf(sim, v)?.eva || !ferryFree(sim, id) || heldForTransfer(sim, id)) return false;
   return boardingTile(sim, id)?.shipId === v.homeShip;
 }
 

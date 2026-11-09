@@ -1,6 +1,6 @@
 import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
 import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
-import { breakWord } from './breakText';
+import { breakWord, strainOf } from './breakText';
 import { BreakdownC } from '../sim';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
@@ -129,7 +129,7 @@ function moodOf(sim: Sim, id: number): UiCrew['mood'] {
   const m = sim.world.get(id, MoodC);
   if (!m) return null;
   const factors = m.factors.map((f) => ({ label: MOOD_LABELS[f.key] ?? (f.key.startsWith('trait:') ? f.key.slice(6) : f.key), value: f.value })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
-  return { value: m.value, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1 };
+  return { value: m.value, factors, workMult: m.value < MOOD_VERY_LOW ? MOOD_VERY_LOW_WORK_MULT : m.value < MOOD_LOW ? MOOD_LOW_WORK_MULT : 1, strain: strainOf(sim, id) };
 }
 
 function traitsOf(sim: Sim, id: number): UiTrait[] {
