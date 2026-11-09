@@ -6,7 +6,8 @@ research_r6.py (l1, l2, l3: variants of l), research_r7.py
 research_r8.py (r1, r2, r3: l2a with the front-left tile used),
 research_r9.py (c1: the combined design),
 research_r10.py (x1, y1: the 1x2 companions, a dissection table and a sample analyzer),
-research_r11.py (x2-x4, y2-y4: the companions as machines)."""
+research_r11.py (x2-x4, y2-y4: the companions as machines),
+research_r12.py (x5-x7, y5-y7: machines shaped by what they do)."""
 from .research_kit import BUILD, entry, holo_job
 
 
