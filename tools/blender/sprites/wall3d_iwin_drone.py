@@ -22,6 +22,15 @@ FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 
                             # the user)
 COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
+# The front (the near ramp), in px along the window from its -x end (96: the ref's, measured on its deskewed front):
+BOXES = ((17, 28), (68, 79))   # the red boxes: upright fronts at the toe, tops BOX_H up, back into the slope
+BOX_H, BOX_IN = 18, -0.1    # art px: their tops (the ref's 15 on its taller-scaled slope: 1-2 under the floor); their
+                            # fronts at the toe, a hair proud (behind it the foot hid their bottoms)
+CONSOLE = (36, 60)          # the middle console: a dark panel down the slope, from the floor's edge to the foot
+BRACKETS = ((31, 36), (60, 65))  # its light brackets either side
+VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
+FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "console": "fDS4", "bracket": "fDW1",
+         "vent": "fDS3"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -143,6 +152,45 @@ def _tops(k, cells):
         _quad(k, [(a, -ya, za), (b, -yb, zb), (b, yb, zb), (a, ya, za)], (0, 0, 1), col)
 
 
+def _x(px):
+    return -0.5 - OFF[PART] + px * PX
+
+
+def _slope(k, p0, p1, da, db, col):
+    """Paint along the window p0..p1 px down the near ramp's slope, da..db out from the wall's line (3 PAINT proud)."""
+    from .faction.parts import PAINT
+    u0, u1 = max(_x(p0), -0.5), min(_x(p1), 0.5)
+    if u1 - u0 < 1e-9:
+        return
+    yl, zt, f = _line(), _zt(), _fall()
+    n = Vector((0.0, f, 1.0)).normalized()
+    pts = [Vector((u, yl + d, zt - d * f)) + n * 3 * PAINT for u, d in ((u0, da), (u1, da), (u1, db), (u0, db))]
+    k.poly(pts, "wall", 2, n, fixed=col)
+
+
+def _front_parts(k):
+    """The near ramp's dressing: the end blocks' vents, the console and its brackets, the red boxes."""
+    run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
+    dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
+    for a, b in VENTS:
+        _slope(k, a, b, 1 * PX, dz - 1 * PX, FRONT["vent"])
+    for a, b in BRACKETS:
+        _slope(k, a, b, d0, dz, FRONT["bracket"])
+    _slope(k, *CONSOLE, d0 + 1 * PX, dz - 1 * PX, FRONT["console"])
+    yf, zb = 0.5 - BOX_IN * PX, BOX_H / W.ZART
+    yb = _line() + (_zt() - zb) / _fall()               # (the top runs back to the slope)
+    for a, b in BOXES:
+        u0, u1 = _x(a), _x(b)
+        a_, b_ = max(u0, -0.5), min(u1, 0.5)
+        if b_ - a_ < 1e-9:
+            continue
+        _quad(k, [(a_, yf, 0.0), (b_, yf, 0.0), (b_, yf, zb), (a_, yf, zb)], (0, 1, 0), FRONT["box"])
+        _quad(k, [(a_, yb, zb), (a_, yf, zb), (b_, yf, zb), (b_, yb, zb)], (0, 0, 1), FRONT["box_top"])
+        for u, sd in ((u0, -1), (u1, 1)):
+            if -0.5 < u < 0.5:
+                _quad(k, [(u, yb, 0.0), (u, yf, 0.0), (u, yf, zb), (u, yb, zb)], (sd, 0, 0), FRONT["box_side"])
+
+
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
     z1 = _header_foot()
@@ -156,6 +204,7 @@ def hook(k, sp, own=True):
             _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
     a, b = max(x0, -0.5), min(x1, 0.5)
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
+    _front_parts(k)
     if not own:                                         # (a copy past the tile: no pane)
         return
     h, e = PANE_T / 2, PANE_OUT                         # the pane's edges, its foot on each cell's floor
