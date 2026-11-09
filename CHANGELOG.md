@@ -69,6 +69,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Fewer stutters in busy nodes and during salvage: crew decisions no longer stall the game for a fraction of a second when crew go to eat near lots of food crates, and the crew scheduler does about half the work per tick. ([#396](https://github.com/BigBadLoser/cc-ftl/pull/396))
 - A ship jumping into the node no longer causes a frame hitch: ships of fleets about to arrive are generated on a worker, and a newly loaded sheet only rebuilds the ships that use it. ([#391](https://github.com/BigBadLoser/cc-ftl/pull/391))
 - Hailing a ship opens the comms channel (Bridge and Trade contacts), the same as a station, instead of the old trade panel. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - A finished hull expansion opens the old hull wall where the new section joins on, and the shipyard delivers the section with air in it. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
