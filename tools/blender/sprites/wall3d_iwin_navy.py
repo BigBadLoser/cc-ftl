@@ -224,30 +224,37 @@ def _pocket(k, pa, pb):
 
 
 def _plate(k):
-    """The middle block's front (the ramp's slope between the slots): 2 px white down either side, sill to foot; between
-    them a plate outlined 1 px in the panel line's tone, its top at the sill (the shelf's edge), its bottom at the toe."""
+    """The middle block's front (the ramp's slope between the slots) and top (the shelf, out from the wall's line): 2 px
+    white down either side, the floor's start to the foot; between them a plate outlined 1 px in the panel line's tone,
+    wrapped over the slope's top: its top line where the window's floor starts (the wall's line), its bottom where the
+    red ends (the foot)."""
     o = -0.5 - OFF[PART]
     m0, m1 = o + POCKETS[0][1] * PX, o + POCKETS[1][0] * PX
     if m1 <= -0.5 or m0 >= 0.5:
         return
-    f, yl, run = T.ramp_fall(), _line(), W.skirt_run()
-    d0, d1 = _d_at(_zh()), run - PX                     # (the slope's top, the toe's top)
-    t = 1.5 / (16 + f * W.ZART)                         # (1.5 screen px down the slope (16 a unit across, f*ZART
-    #   down): at 1 the line straddled two rows and dashed)
-    n = Vector((0.0, f, 1.0)).normalized()
+    f, yl, run, zh = T.ramp_fall(), _line(), W.skirt_run(), _zh()
+    d0 = _d_at(zh)                                      # (the slope's top: the shelf out to it)
+    ts = 1.5 / (16 + f * W.ZART)                        # (1.5 screen px down the slope (16 a unit across, f*ZART
+    tt = 1.5 / 16                                       # down), across the top: at 1 the lines dashed)
+    ns, up = Vector((0.0, f, 1.0)).normalized(), Vector((0.0, 0.0, 1.0))
 
-    def strip(u0, u1, da, db, col):
+    def strip(u0, u1, da, db, col):                     # (over the shelf to d0, down the slope past it)
         u0, u1 = max(u0, -0.5), min(u1, 0.5)
-        if u1 - u0 > 1e-9:
-            k.poly([Vector((u, yl + d, _zr(d))) + n * 3 * PAINT for u, d in ((u0, da), (u1, da), (u1, db), (u0, db))],
-                   "wall", 2, n, fixed=col)
+        if u1 - u0 < 1e-9:
+            return
+        for lo, hi, top in ((da, min(db, d0), True), (max(da, d0), db, False)):
+            if hi - lo > 1e-9:
+                q = [(u0, lo), (u1, lo), (u1, hi), (u0, hi)]
+                pts = ([Vector((u, yl + d, zh)) + up * 3 * PAINT for u, d in q] if top else
+                       [Vector((u, yl + d, _zr(d))) + ns * 3 * PAINT for u, d in q])
+                k.poly(pts, "wall", 2, up if top else ns, fixed=col)
     a, b = m0 + 2 * PX, m1 - 2 * PX
-    strip(m0, a, d0, run, WHITE)
-    strip(b, m1, d0, run, WHITE)
-    strip(a, a + PX, d0, d1, LINE_C)
-    strip(b - PX, b, d0, d1, LINE_C)
-    strip(a, b, d0, d0 + t, LINE_C)
-    strip(a, b, d1 - t, d1, LINE_C)
+    strip(m0, a, 0.0, run, WHITE)
+    strip(b, m1, 0.0, run, WHITE)
+    strip(a, a + PX, 0.0, run, LINE_C)
+    strip(b - PX, b, 0.0, run, LINE_C)
+    strip(a, b, 0.0, tt, LINE_C)
+    strip(a, b, run - ts, run, LINE_C)
 
 
 def _quad(k, pts, out, col):
