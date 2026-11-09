@@ -30,6 +30,7 @@ import { createTargetMarks } from './targetMarks';
 import { crewHidden } from './regionRules';
 import { createTurretView } from './turretView';
 import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
+import { OPEN_GATE, type BuildGate } from './buildBudget';
 
 export interface ShipSceneOptions {
   world: World;
@@ -51,6 +52,10 @@ export interface ShipSceneOptions {
   crews: CrewAtlas;
   /** The renderer's shared livery paints (paintAtlas.ts); none = a mesh per paint. */
   liveries?: PaintAtlas;
+  /** Asked before each piece of the build (buildBudget.ts): tile and roof chunks, modules. Default: always (built in one update). */
+  gate?: BuildGate;
+  /** The same for the plating of a roof that is not shown (built in the background). */
+  idle?: BuildGate;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
@@ -59,6 +64,8 @@ export interface ShipScene {
   readonly layers: RegionLayers;
   readonly view: GridView;
   update(dt: number): void;
+  /** True once an update had nothing left to build (the gate refused nothing): the scene is whole and may be shown. */
+  ready(): boolean;
   /** Roofed ships hide their interior: roof over the rooms, full-height walls, no crew or items. */
   setRoofed(roofed: boolean): void;
   isRoofed(): boolean;
@@ -94,7 +101,9 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   let wreckTick = 0;
   let targeted: ReadonlySet<number> = new Set();
   const inside = () => (roofed ? null : { grid });
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT });
+  const gate = o.gate ?? OPEN_GATE;
+  let whole = false;
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
@@ -111,7 +120,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   }, o.crews);
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null, gate });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
@@ -147,6 +156,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     layers: L,
     view,
     update(dt) {
+      gate.reset();
       rockRoof?.update();
       // region culling re-shows every layer when the region comes into view: keep the base hidden under its rock roof
       if (rockRoof && roofed) for (const c of [L.floor, L.under, L.decal, L.sorted]) c.visible = false;
@@ -171,11 +181,13 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       particles.update(dt);
       jobView.update();
       crewView.update();
-      roof.update();
+      roof.update(gate, o.idle);
       turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
+      if (gate.refused === 0) whole = true;
     },
+    ready: () => whole,
     setRoofed(r) {
       roofed = r;
       applyMode();

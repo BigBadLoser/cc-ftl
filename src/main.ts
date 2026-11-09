@@ -133,7 +133,10 @@ const loop = createLoop({
   onFrame: (stats) => {
     probe.begin('ui/bridge');
     const info = renderer?.info();
-    if (info) probe.count('render/sprites', info.sprites);
+    if (info) {
+      probe.count('render/sprites', info.sprites);
+      probe.count('render/spritesBuilt', info.built);
+    }
     bridge.update(stats, info);
     signals.poll();
     prewarm?.update();

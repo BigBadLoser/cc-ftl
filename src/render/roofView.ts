@@ -17,6 +17,7 @@ import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
 import { mulColor } from './lightTint';
 import { DAMAGED_BELOW } from './moduleArt';
+import { OPEN_GATE, type BuildGate } from './buildBudget';
 
 export { ROOF_H };
 const FIRE_TINT = 0xff9a60;
@@ -32,7 +33,8 @@ export function roofWear(hp: number, maxHp: number, out: boolean, on: boolean): 
 }
 
 export interface RoofView {
-  update(): void;
+  /** `gate` is asked before each plating chunk is built while the roof is shown, `idle` while it is hidden (buildBudget.ts). */
+  update(gate?: BuildGate, idle?: BuildGate): void;
   setVisible(visible: boolean): void;
   dispose(): void;
 }
@@ -172,7 +174,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   }
 
   return {
-    update() {
+    update(gate = OPEN_GATE, idle = OPEN_GATE) {
       const k = `${grid.revision('struct')}|${grid.revision('module')}`;
       if (k !== key) {
         key = k;
@@ -185,7 +187,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
           for (let y = r.y0; y < r.y1; y++) for (let x = r.x0; x < r.x1; x++) k += `${hull.at(x, y)}/`;
           return k;
         };
-        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}|${hullIn(c)}`, buildChunk);
+        // A hidden roof (a ship shown in cutaway) is plated in the background, so roofing a ship later (a hail) costs no hitch.
+        chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}|${hullIn(c)}`, buildChunk, visible ? gate : idle);
+        if (chunks.pending > 0) key = ''; // the rest on a later update
         fireRev = -1;
       }
       let pk = '';
@@ -205,6 +209,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
       }
     },
     setVisible(v) {
+      if (v && !visible) key = ''; // plating still owed in the background is built now
       visible = v;
       partKey = ''; // stowed parts appear on roofed ships only: rebuild
       for (const p of partSprites) p.spr.filters = v ? [] : [p.ghost];

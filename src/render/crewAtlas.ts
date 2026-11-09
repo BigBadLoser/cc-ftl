@@ -103,6 +103,13 @@ export function figureBounds(body: Container, cell: Rectangle, hx: number, hy: n
   };
 }
 
+/** True if a sprite and every parent of it are visible (the world draws it this frame, if it is on the stage). */
+function drawn(s: Container): boolean {
+  let o: Container | null = s;
+  for (; o; o = o.parent) if (!o.visible) return false;
+  return true;
+}
+
 export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>): CrewAtlas {
   const g = crewCellGeometry(manifest);
   const cols = Math.max(1, Math.floor(ATLAS_W / g.w));
@@ -266,6 +273,8 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
         palTex.source.update();
         dirty = false;
       }
+      // Only figures the world draws are stacked and composited (a ship out of view keeps its crew's cells, unused).
+      for (const c of live.values()) c.holder.visible = c.lent || drawn(c.sprite);
       gl.render({ container: root, target: layersRt as RenderTexture, clear: true, clearColor: [0, 0, 0, 0] });
       const m = meshFor(live.size);
       const buf = m.geometry.getBuffer('aPosition');
@@ -273,7 +282,7 @@ export function createCrewAtlas(manifest: Pick<Manifest, 'assets' | 'keyColors'>
       pos.fill(0);
       let q = 0;
       for (const [i, c] of live) {
-        if (c.lent) continue;
+        if (c.lent || !c.holder.visible) continue;
         const b = figureBounds(c.body, frameOf(i), c.holder.x, c.holder.y);
         if (b) pos.set([b.x0, b.y0, b.x1, b.y0, b.x1, b.y1, b.x0, b.y1], q++ * 8);
       }
