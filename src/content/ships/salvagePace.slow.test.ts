@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AboardC, CrewC, DeadC, EvaFloatC, JobC, TaskC, type Sim } from '../../sim';
 import { shipIdOf } from '../../sim/regions';
+import { AwayC, SiteRunC } from '../../sim/away/components';
+import { shuttleDueBack } from '../../sim/away/trips';
 import { scrapHome, setupBench } from './salvageBench';
 
 /**
@@ -50,5 +52,24 @@ describe('salvage pace (#408)', () => {
     expect(idleTicks / crewTicks).toBeLessThan(IDLE_MAX);
     expect(stripped).toBeGreaterThanOrEqual(STRIPPED_MIN);
     expect(scrap).toBeGreaterThanOrEqual(SCRAP_MIN);
+  }, 240000);
+
+  it('counts the shuttle away on a round trip as back by its estimated arrival, before the deadline the watch holds it to', () => {
+    const b = setupBench(1, { crew: 4, airlock: false });
+    const { sim } = b;
+    let seen = 0;
+    for (let i = 0; i < 20 * 60 * 8 && seen < 20; i++) {
+      sim.step();
+      sim.events.drain();
+      for (const c of sim.world.query(AwayC)) {
+        const away = sim.world.get(c, AwayC)!;
+        const r = sim.world.get(away.vehicle, SiteRunC);
+        const due = shuttleDueBack(sim, c, b.wreck);
+        if (!r || !due || r.returnBy === undefined || r.phase !== 'board' || sim.world.has(c, AboardC)) continue;
+        expect(due.ticks).toBeLessThan(r.returnBy - sim.tick); // the stop at home and the flight back, not the air deadline
+        seen++;
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
   }, 240000);
 });

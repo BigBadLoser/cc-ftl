@@ -12,7 +12,7 @@ import { TICK_HZ } from '../time';
 import { STINT_SEC } from '../tuning';
 import { isEmergency } from './emergency';
 import { travelTicks } from './travel';
-import { shuttleDueBack } from '../away/crew';
+import { shuttleDueBack } from '../away/trips';
 
 /**
  * Partial-work admission (docs/DESIGN.md "Partial work", #286). A suited (or suiting) crew member in thin air is admitted for a job if the
@@ -83,8 +83,8 @@ export class AirAdmission {
       // for the shuttle if that is longer, and then the walk from the job to where it takes them aboard.
       const due = shuttleDueBack(sim, w.id, w.ship);
       const later = due && this.reach.ticksTo(w.id, w.ship, work, due.tile);
-      if (due && later !== null) return fitsReserve(Math.max(walk + stint, sec(due.ticks)) + sec(later), left) ? null : 'noAir';
-      if (!isEmergency(job)) return 'noSource';
+      if (due && later !== null && fitsReserve(Math.max(walk + stint, sec(due.ticks)) + sec(later), left)) return null;
+      if (!isEmergency(job)) return due && later !== null ? 'noAir' : 'noSource';
       back = 0; // a fire, a breach or a patient is not left because there is no way home: they go if the walk and a stint fit
     }
     return fitsReserve(walk + stint + sec(back), left) ? null : 'noAir';

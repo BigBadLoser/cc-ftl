@@ -143,7 +143,7 @@ export class SourceReach {
 
   /**
    * Ticks for `walker` from `tile` on `ship` to another tile of it, `to` (a source that is not there yet: the spot a site's shuttle away on a
-   * round trip takes its party aboard again, away/crew.ts `shuttleDueBack`), or null. Same walk as `ticksFrom`, one search per `to`.
+   * round trip takes its party aboard again, away/trips.ts `shuttleDueBack`), or null. Same walk as `ticksFrom`, one search per `to`.
    */
   ticksTo(walker: number, ship: number, tile: Tile, to: Tile): number | null {
     const k = `${ship}:${to.x},${to.y}`;

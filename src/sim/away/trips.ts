@@ -13,10 +13,11 @@ import { shipIdOf } from '../regions';
 import { runDue } from './haul';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '../tuning';
-import type { Vehicle } from '../vehicles/components';
+import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC, AWAY_TURNAROUND_SEC } from '../tuning';
+import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
-import { AwayC, type SiteRun } from './components';
+import { StagingC } from '../items/components';
+import { AwayC, SiteRunC, type SiteRun } from './components';
 import { passageFits, passengerUrgent, takesSiteWork } from './crew';
 import { departCheck, homePoint, partyOut } from './depart';
 
@@ -128,4 +129,42 @@ export function mustTurnBack(sim: Sim, id: number, v: Vehicle, r: SiteRun): bool
   if (out.length === 0) return false;
   if (out.some((m) => isIncapacitated(sim, m) || sim.world.has(m, CarriedC) || sim.world.has(m, PickupC))) return true;
   return r.returnBy !== undefined && sim.tick + backTicks(sim, id, v, r.site) + sec(5) >= r.returnBy;
+}
+
+/**
+ * Ticks until the site's shuttle, away on a round trip, is beside the site again: the rest of its flight back ('fly'); the stop at home, at
+ * most AWAY_TURNAROUND_SEC with part of the party out, then the flight ('board'); or the flight home, the stop and the flight back ('home').
+ * Never later than `returnBy`, the deadline the watch holds it to (it turns back then).
+ */
+function arrivalTicks(sim: Sim, id: number, v: Vehicle, r: SiteRun): number {
+  const s = shipById(sim, r.site);
+  const home = homePoint(sim, v);
+  if (!s || !home) return Infinity;
+  const fromHome = flightTicks(sim, v, Math.hypot(s.x + s.width / 2 - home.x, s.y + s.height / 2 - home.y));
+  const stop = (timer: number): number => Math.max(0, sec(AWAY_TURNAROUND_SEC) - timer);
+  let eta = Infinity;
+  if (r.phase === 'fly') eta = backTicks(sim, id, v, r.site);
+  else if (r.phase === 'board') eta = stop(r.timer) + fromHome;
+  else if (r.phase === 'home') {
+    const body = sim.world.get(id, BodyC);
+    const toHome = body ? flightTicks(sim, v, Math.hypot(home.x - body.x, home.y - body.y)) : 0;
+    eta = toHome + stop(0) + fromHome;
+  }
+  return Math.min(eta, r.returnBy === undefined ? Infinity : Math.max(0, r.returnBy - sim.tick));
+}
+
+/**
+ * For a party member on their site while its shuttle is away on a round trip that left them counting on their own tank (`SiteRun.returnBy`,
+ * the departure check): where it takes the party aboard again (the first tile of the site's staging zone, beside its drop-off point) and the
+ * ticks until it is there (`arrivalTicks`). The shuttle is their air source still, only later: admission lets them work on while it is away
+ * (#408). Null otherwise.
+ */
+export function shuttleDueBack(sim: Sim, crew: number, ship: number): { tile: { x: number; y: number }; ticks: number } | null {
+  const away = sim.world.get(crew, AwayC);
+  const r = away?.site === ship ? sim.world.get(away.vehicle, SiteRunC) : undefined;
+  const v = away && sim.world.get(away.vehicle, VehicleC);
+  const tile = sim.world.get(ship, StagingC)?.tiles[0];
+  if (!away || !r || !v || r.site !== ship || r.returnBy === undefined || r.pickup || !tile || (r.phase !== 'home' && r.phase !== 'board' && r.phase !== 'fly')) return null;
+  const ticks = arrivalTicks(sim, away.vehicle, v, r);
+  return Number.isFinite(ticks) ? { tile, ticks } : null;
 }

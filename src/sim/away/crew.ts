@@ -17,7 +17,6 @@ import { stat } from '../stats';
 import {
   AWAY_GO_STAY_SEC, AWAY_HOME_CHARGE, AWAY_HOME_HEALTH, AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_URGENT_CHARGE, AWAY_URGENT_HUNGER, AWAY_URGENT_REST,
 } from '../tuning';
-import { StagingC } from '../items/components';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
 import { fightCalls } from './phase';
 import { siteDemand } from './seats';
@@ -42,20 +41,6 @@ export function siteUnderFoot(sim: Sim, id: number): number {
   const away = sim.world.get(id, AwayC);
   const pos = away && sim.world.get(id, PositionC);
   return pos && shipIdOf(sim, pos) === away.site ? away.site : 0;
-}
-
-/**
- * For a party member on their site while its shuttle is away on a round trip that left them counting on their own tank (`SiteRun.returnBy`,
- * the departure check): where it takes the party aboard again (the first tile of the site's staging zone, beside its drop-off point) and the
- * ticks until it is due back. The shuttle is their air source still, only later: admission lets them work on while it is away (#408). Null
- * otherwise.
- */
-export function shuttleDueBack(sim: Sim, id: number, ship: number): { tile: { x: number; y: number }; ticks: number } | null {
-  const away = sim.world.get(id, AwayC);
-  const r = away?.site === ship ? sim.world.get(away.vehicle, SiteRunC) : undefined;
-  const tile = sim.world.get(ship, StagingC)?.tiles[0];
-  if (!r || r.site !== ship || r.returnBy === undefined || r.pickup || !tile || (r.phase !== 'home' && r.phase !== 'board' && r.phase !== 'fly')) return null;
-  return { tile, ticks: Math.max(0, r.returnBy - sim.tick) };
 }
 
 /** The crew member a site's shuttle is fetching (a pickup it answered, `AwayC.pickup`): lowest id of its party out. 0 for none. */
