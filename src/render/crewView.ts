@@ -21,6 +21,8 @@ import { SEAT_DZ } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
+import type { CrewAtlas, CrewCell } from './crewAtlas';
+import type { CrewPalette } from './assets/palette';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
@@ -72,10 +74,15 @@ interface Slot {
   glows: { layer: LayerSprite; sprite: Sprite; halo: Sprite | null }[];
   ring: Sprite;
   shadow: Sprite;
-  filter: Filter;
-  /** The stacked layers the filter runs on, and whether its filters are the shrunk-art chain (`crewFilters`). */
-  body: Container;
+  /** The figure's cell in the shared crew atlas: its layers stack in `cell.body`, `cell.sprite` draws the composite. */
+  cell: CrewCell;
+  pal: CrewPalette;
+  /** Debug (`CrewAtlas.enabled` off): the body sits in the root under its own filter, as before the atlas. */
+  filter: Filter | null;
+  /** Whether the filters are the shrunk-art chain (`crewFilters`). */
   shrunk: boolean;
+  /** The light tint last applied. */
+  tint: number;
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
   carryBack: Sprite;
@@ -116,8 +123,9 @@ const HAND_Y = -19 * S;
 const SEAT_DIR = [6, 0, 2, 4];
 /** A robot docked in a bay cradle faces away from the tower (robot_bay.py: r0 6, r1 0, r2 2, r3 4): same table. */
 
-export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost): CrewView {
+export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost, crews: CrewAtlas): CrewView {
   const slots = new Map<number, Slot>();
+  const homes = new WeakMap<Container, Container | null>();
   const tex = diamondTextures();
   let selected: ReadonlySet<number> = new Set();
   let last = animNow();
@@ -141,9 +149,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     const ring = new Sprite(tex.ring);
     ring.anchor.set(0.5);
     ring.visible = false;
-    const body = new Container();
-    const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(crew.appearanceSeed));
-    body.filters = crewFilters(filter, artZoom(L.scale));
+    const pal = crewPalette(crew.appearanceSeed);
+    const cell = crews.cell(pal);
+    const body = cell.body;
     const parts = layers.map((layer) => {
       const sprite = new Sprite();
       sprite.position.set(-layer.def.anchor.x, -layer.def.anchor.y);
@@ -165,7 +173,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     airBg.visible = false;
     const airFill = new Sprite(Texture.WHITE);
     airFill.visible = false;
-    root.addChild(shadow, ring, carryBack, body, carry, barBg, barFill, airBg, airFill);
+    root.addChild(shadow, ring, carryBack, cell.sprite, carry, barBg, barFill, airBg, airFill);
     const glows = layers
       .filter((l) => l.def.glow)
       .map((layer) => {
@@ -182,7 +190,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, filter, body, shrunk: artZoom(L.scale) < 1, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    return { root, parts, glows, ring, shadow, cell, pal, filter: null, shrunk: false, tint: 0xffffff, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -190,14 +198,43 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     const emergency = host.emergency?.() ?? false;
     let tint = lightTint(Math.max(lv, 60), false, emergency ? pulsePhase(animNow()) : -1);
     if (dead) tint = mulColor(tint, 0x7c7c7c);
+    s.tint = tint;
+    if ((s.filter !== null) === crews.enabled) viaFilter(s, !crews.enabled);
+    if (!s.filter) return s.cell.setTint(tint);
     setFilterTint(s.filter, tint);
     setFilterZoom(s.filter, artZoom(L.scale));
     const shrunk = artZoom(L.scale) < 1;
     if (shrunk !== s.shrunk) {
       s.shrunk = shrunk;
-      s.body.filters = crewFilters(s.filter, artZoom(L.scale));
+      s.cell.body.filters = crewFilters(s.filter, artZoom(L.scale));
     }
   }
+
+  /** Debug switch: draw the figure through its own filter (the body moves into the root, where the atlas sprite was) or back. */
+  function viaFilter(s: Slot, on: boolean): void {
+    const body = s.cell.body;
+    if (on) {
+      const home = body.parent;
+      s.filter = createCrewFilter(atlas.manifest.keyColors, s.pal);
+      homes.set(body, home);
+      s.root.addChildAt(body, s.root.getChildIndex(s.cell.sprite));
+      s.shrunk = artZoom(L.scale) < 1;
+      body.filters = crewFilters(s.filter, artZoom(L.scale));
+      s.cell.sprite.visible = false;
+      setFilterTint(s.filter, s.tint);
+      setFilterZoom(s.filter, artZoom(L.scale));
+    } else {
+      body.filters = [];
+      homes.get(body)?.addChild(body);
+      s.filter?.destroy();
+      s.filter = null;
+      s.cell.sprite.visible = true;
+      s.cell.setTint(s.tint);
+    }
+  }
+  const unToggle = crews.onToggle(() => {
+    for (const s of slots.values()) if ((s.filter !== null) === crews.enabled) viaFilter(s, !crews.enabled);
+  });
 
   /** Put the carried item's sprite at the hands: ahead of the body, over it unless the carrier faces away. */
   function showHeld(s: Slot, item: string | undefined, dir: number, ok: boolean, bob: number): void {
@@ -214,6 +251,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
 
   function drop(s: Slot): void {
     for (const g of s.glows) g.halo?.destroy();
+    s.filter?.destroy();
+    s.cell.release();
     s.root.destroy({ children: true });
   }
 
@@ -413,6 +452,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     },
     count: () => slots.size,
     dispose() {
+      unToggle();
       for (const s of slots.values()) drop(s);
       slots.clear();
     },

@@ -3,6 +3,7 @@ import type { Grid } from '../sim/grid';
 import type { ItemDef } from '../sim/registry';
 import type { Atlas } from './assets/loader';
 import { createCrewView } from './crewView';
+import type { CrewAtlas } from './crewAtlas';
 import { createDamageView } from './damageView';
 import { createAtmosphere } from './fx/atmosphere';
 import { createParticles } from './fx/particles';
@@ -45,6 +46,8 @@ export interface ShipSceneOptions {
   beamLook?: BeamLook;
   /** The ship's hull colours (hullArt); default plain. */
   hullPaint?: HullPaint;
+  /** The renderer's shared crew composite (crewAtlas.ts). */
+  crews: CrewAtlas;
 }
 
 /** One ship grid with all its views (tiles, modules, items, crew, fx): a region decorator of the shared world stack. */
@@ -102,7 +105,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
     weaponArt: (item) => items[item]?.hand?.art,
-  });
+  }, o.crews);
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
   const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y) });

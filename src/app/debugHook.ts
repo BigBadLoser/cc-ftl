@@ -28,6 +28,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
     setSpeed: (s: 0 | 1 | 2 | 3) => loop?.setSpeed(s),
     /** Merge flagged additive glow into the normal batches (true, the default) or draw it in its own `add` batches (render diffs). */
     additiveMerge: (on: boolean) => setAdditiveMerge(on),
+    /** Composite crew through the shared crew atlas (true, the default) or a filter per figure (render diffs). */
+    crewAtlas: (on: boolean) => r.debugCrewAtlas(on),
     /** Advance a frozen sim by `n` ticks (one by one, so events and commands behave as in play). */
     stepTicks: (n: number) => { for (let i = 0; i < n; i++) sim.step(); },
     screenOf: (shipId: number, x: number, y: number) => r.screenOf(shipId, x, y),
