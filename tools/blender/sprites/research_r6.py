@@ -126,20 +126,22 @@ def middle_bay(k):
 
 
 def back(k):
-    """The back, as plain as the front is busy but not blank: inset panels on the cabinet like its drawer fronts,
-    seams at the hutch's uprights and between its shelves, a vent and a cable gland on each side."""
-    def patch(u, w, z0, z1, col, d=0.004):
-        k.box(u, BACK - d / 2, z0, w, d, z1 - z0, col)
-    for u in (-0.98, 0.0, 0.98):
-        patch(u, 0.98 - 0.16, zpx(6), TOP - zpx(6), "lvWS")
+    """The back: 94 px wide, split by two 2 px seams running its full height into three equal 30 px sections; a 24 px
+    inset panel centred in each on the cabinet, a seam between the shelves, a vent and a cable gland centred in the
+    outer sections of the hutch. Every edge on the px grid (off it, an edge breaks into stray px)."""
+    def patch(u0, u1, z0, z1, col, d=0.004):
+        k.box((u0 + u1) * PXG / 2, BACK - d / 2, z0, (u1 - u0) * PXG, d, z1 - z0, col)
     top = SHELVES[1] + zpx(2)
-    for u in (-0.52, 0.52):
-        patch(snap(u - PXG) + PXG, PXG, TOP, top, "lvWS")
-    patch(0.0, 2.9, SHELVES[0] + zpx(1), SHELVES[0] + zpx(2), "lvWS")
-    for su in (-1, 1):
+    for u0 in (-17, 15):
+        patch(u0, u0 + 2, zpx(3), top, "lvWS")                                              # the seams
+    for c in (-32, 0, 32):
+        patch(c - 12, c + 12, zpx(6), TOP - zpx(6), "lvWS")                                 # the panels
+    for u0, u1 in ((-47, -17), (-15, 15), (17, 47)):
+        patch(u0, u1, SHELVES[0] + zpx(1), SHELVES[0] + zpx(2), "lvWS")                     # between the shelves
+    for c in (-32, 32):
         for i in range(3):
-            patch(su * 1.0, 0.24, TOP + zpx(6 + 3 * i), TOP + zpx(7 + 3 * i), "dark", 0.008)   # vent slits
-        patch(su * 1.0, 0.1, TOP + zpx(1), TOP + zpx(4), "gm", 0.012)                      # a cable gland
+            patch(c - 4, c + 4, TOP + zpx(6 + 3 * i), TOP + zpx(7 + 3 * i), "dark", 0.008)  # vent slits
+        patch(c - 2, c + 2, TOP + zpx(1), TOP + zpx(4), "gm", 0.012)                        # a cable gland
 
 
 # ---- l1: the entomologist -------------------------------------------------------------------------------------------
