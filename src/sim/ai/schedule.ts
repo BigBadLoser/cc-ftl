@@ -15,6 +15,8 @@ import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
+import { isErrand } from '../eva/errands';
+import { isSuited } from '../eva/suit';
 import { IntentC, PickupC, TaskC } from './components';
 import { airDraining } from './airNeed';
 import { airLeft } from '../eva/airLedger';
@@ -38,7 +40,14 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
   // Never on an away site (#286): there the return drive takes them home to sleep; no lying down on a wreck's floor.
   sleep: (sim, id, crew, pos, holdsJob) => !siteUnderFoot(sim, id) && (sleepTurn(sim, id, crew, pos, holdsJob), true),
   eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
-  leisure: (sim, id, crew, pos) => leisureTurn(sim, id, crew, pos),
+  // A suit is stowed before a break (as in the idle turn): off duty in Free, where the break outranks the closed work drive (#412).
+  leisure: (sim, id, crew, pos) => !isSuited(sim, id) && leisureTurn(sim, id, crew, pos),
+};
+
+/** True if the job is a suit errand (suit up, stow, refill). */
+const isErrandJob = (sim: Sim, jobId: number): boolean => {
+  const job = sim.world.get(jobId, JobC);
+  return !!job && isErrand(job);
 };
 
 /** Whether a drive's own task is under way (`keepWhileTask`): a meal, or a refill errand (the air drive). */
@@ -126,7 +135,7 @@ export function scheduleSystem(sim: Sim): void {
       continue;
     }
     const pos = sim.world.get(id, PositionC) as Position;
-    const assignment = sim.world.get(id, AssignmentC);
+    let assignment = sim.world.get(id, AssignmentC);
     const atPost = !!assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
 
     // Robots: hold still for a mender (an interrupt in the design; kept inline, as a mender may take the job earlier in this pass).
@@ -142,6 +151,14 @@ export function scheduleSystem(sim: Sim): void {
     let served = false;
     const ranked = evaluateIntent(sim, id, view);
     pickupRequest(sim, id);
+    // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): a held job is let go before any need's turn (a break or bed
+    // would otherwise keep it reserved), except a carried patient (set down first: that job runs on) and a suit errand, which they finish.
+    const offDuty = !ranked.some((d) => d.task === 'job');
+    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || isErrandJob(sim, assignment.jobId));
+    if (offDuty && assignment && !keeps()) {
+      abortTask(sim, id, 'offDuty');
+      assignment = undefined;
+    }
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;
       const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
@@ -158,10 +175,8 @@ export function scheduleSystem(sim: Sim): void {
       idleTurn(sim, id, crew, pos);
       continue;
     }
-    // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): no job, a held one let go (a carried patient is set down
-    // first: that job runs on), and they idle.
-    if (!ranked.some((d) => d.task === 'job') && !(assignment && isCarrying(sim, id))) {
-      if (assignment) abortTask(sim, id, 'offDuty');
+    // Off duty with nothing they finish (above): no job, and they idle.
+    if (offDuty && !keeps()) {
       idleTurn(sim, id, crew, pos);
       continue;
     }

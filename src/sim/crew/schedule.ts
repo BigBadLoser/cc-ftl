@@ -2,7 +2,7 @@ import { AssignmentC, CrewC, JobC, NeedsC, PositionC, PrioritiesC, type Job, typ
 import { DAY_HOURS, hourAt, ticksToHour } from '../clock';
 import { defineComponent } from '../ecs';
 import { isEmergency } from '../ai/emergency';
-import { crewKind } from '../ai/utility';
+import { crewKind, policyOf } from '../ai/utility';
 import type { ScheduleBlock } from '../ai/types';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -98,11 +98,20 @@ export function secToOffDuty(sim: Sim, id: number): number {
 export const holdsSleep = (sim: Sim, id: number): boolean => blockNow(sim, id) === 'sleep';
 
 /**
- * True if a sleeper with a plan gets up now (ONI rule): once rest is at least FREE_WAKE_REST, when their block is Free or they are on call.
- * Into Work or Any they sleep on until full, as the needs system has it; below the line they would only drop back to the need line.
+ * True if a sleeper with a plan gets up now. On call (an emergency, a fight) they get up unless exhausted (rest under the sleep drive's need
+ * line, `sleepLine`: they sleep on, as before schedules). Into Free (ONI rule) they get up once rest is at least FREE_WAKE_REST; into Work
+ * or Any they sleep on until full, as the needs system has it.
  */
 export function wakesFromSleep(sim: Sim, id: number): boolean {
-  if ((sim.world.get(id, NeedsC)?.rest ?? 0) < FREE_WAKE_REST) return false;
+  const rest = sim.world.get(id, NeedsC)?.rest ?? 0;
   const b = blockAt(sim, id);
-  return b === 'free' || (b !== 'any' && onCall(sim, id));
+  if (b === 'any') return false;
+  if (b === 'free' && rest >= FREE_WAKE_REST) return true;
+  return rest >= sleepLine(sim, id) && onCall(sim, id);
+}
+
+/** The rest under which the crew member's sleep drive wants them asleep whatever the hour (its entry line; 0 with no such drive). */
+function sleepLine(sim: Sim, id: number): number {
+  const enter = policyOf(sim, id).drives.find((d) => d.task === 'sleep')?.enter;
+  return enter === undefined ? 0 : enter / 10; // drive inputs read in tenths
 }

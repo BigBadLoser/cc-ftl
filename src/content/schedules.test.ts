@@ -8,6 +8,7 @@ import { Struct } from '../sim/structure';
 import { TICK_HZ } from '../sim/time';
 import { CLOCK_START_HOUR } from '../sim/tuning';
 import { inBed } from '../sim/ai/machines/sleep';
+import { SuitC } from '../sim/eva/components';
 import { content } from './index';
 import { schedules } from './schedules';
 
@@ -133,6 +134,47 @@ describe('blocks in play', () => {
     expect(ids.some((id) => sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'repair')).toBe(true);
   });
 
+  it('a crew member whose block turns Free mid-job lets the job go before the break', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    for (const id of ids) {
+      sim.world.get(id, NeedsC)!.hunger = 100;
+      sim.world.get(id, NeedsC)!.rest = 100;
+    }
+    allDay(sim, ids, 'work');
+    const ship = homeShip(sim);
+    const m = sim.world.query(ModuleC).find((id) => shipIdOf(sim, sim.world.get(id, ModuleC)!) === ship && sim.content.modules[sim.world.get(id, ModuleC)!.def]?.bed)!;
+    sim.world.get(m, ModuleC)!.hp = 1;
+    const repairing = (): number | undefined =>
+      ids.find((id) => sim.world.get(id, CrewC)?.activity === 'working' && sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'repair');
+    for (let i = 0; i < 60 * TICK_HZ && repairing() === undefined; i++) sim.step();
+    const worker = repairing()!;
+    expect(worker).toBeDefined(); // settled at the job, at work on it
+    const job = sim.world.get(worker, AssignmentC)!.jobId;
+    sim.world.get(job, JobC)!.work = 1e6; // the repair outlasts the test
+    while ((sim.tick + worker) % 20 !== 0) sim.step(); // the turn a break is looked for (leisure LOOK_EVERY): it starts at once
+    allDay(sim, ids, 'free');
+    run(sim, 2 * TICK_HZ);
+    expect(sim.world.has(worker, AssignmentC)).toBe(false);
+    expect(sim.world.get(job, JobC)?.reservedBy ?? 0).toBe(0);
+  });
+
+  it('a suited crew member in Free still stows the suit', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    const c = ids[0]!;
+    for (const id of ids) {
+      sim.world.get(id, NeedsC)!.hunger = 100;
+      sim.world.get(id, NeedsC)!.rest = 100;
+    }
+    allDay(sim, ids, 'free');
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    run(sim, 2);
+    expect(sim.world.has(c, SuitC)).toBe(true);
+    run(sim, 60 * TICK_HZ);
+    expect(sim.world.has(c, SuitC)).toBe(false);
+  });
+
   it('a fire calls a scheduled sleeper out of bed; one asleep from exhaustion sleeps on', () => {
     const sim = fresh();
     const ids = people(sim);
@@ -141,7 +183,7 @@ describe('blocks in play', () => {
     run(sim, 60 * TICK_HZ);
     expect(sim.world.get(a, CrewC)?.activity).toBe('sleeping');
     expect(sim.world.get(b, CrewC)?.activity).toBe('sleeping');
-    for (const id of ids) sim.world.get(id, NeedsC)!.rest = 80;
+    for (const id of ids) sim.world.get(id, NeedsC)!.rest = 30; // tired but over the need line (20): an emergency still gets them up
     sim.world.get(b, NeedsC)!.rest = 10;
     const ship = homeShip(sim);
     const grid = shipGrid(sim, ship)!;
