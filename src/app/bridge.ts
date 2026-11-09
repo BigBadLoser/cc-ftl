@@ -1,5 +1,5 @@
 import { whereToSell } from './sellSnapshot';
-import { CrewC, JobC, ItemStackC, nodeOf, Struct, stackAt, type Command, type Sim, type SimEvent } from '../sim';
+import { CrewC, JobC, ItemStackC, nodeOf, Struct, stackAt, NOOP_PROBE, type Command, type Probe, type Sim, type SimEvent } from '../sim';
 import type { FrameStats, Loop, Speed } from './loop';
 import type { UiFtl, UiTrade, UiYard, UiStory, UiCombat, UiBoarding, UiPrize, UiMining, UiShuttles, UiCrew, UiFab, UiResearch, UiModule, UiModuleDef, UiGoals, UiStranded, UiJobs, UiSite, UiStats, UiStock, UiStorage } from '../ui/api';
 import { buildFabs, buildStock, buildStorages } from './logisticsSnapshot';
@@ -137,7 +137,7 @@ export interface Bridge {
   update(stats: FrameStats, info?: { sprites: number; zoom: number }): void;
 }
 
-export function createBridge(sim: Sim): Bridge {
+export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE): Bridge {
   const store = createStore<Snapshot>({
     tick: sim.tick,
     speed: 1,
@@ -211,15 +211,35 @@ export function createBridge(sim: Sim): Bridge {
   let lastPrizes = '';
   let lastShuttles = '';
   let lastCombat = '';
-  let combatFrame = 0;
   const lastLog = ['', '', ''];
   let lastMods = '';
   let lastStats = '';
-  let frame = 0;
+  let uiFrame = 0;
   let lastCrew = '';
   let selected: TileRef | null = null;
   let hovered: TileRef | null = null;
   let lastInspect = '';
+
+  /**
+   * The sim only changes in a tick or when a command applies (paused), so a snapshot built from it is the same on a frame that saw
+   * neither. `unchanged(id)` is true when nothing changed since `id` last ran (and records that it runs now); `local` counts the
+   * bridge's own inputs (the watched crew, the yard, the open screens), which a snapshot also reads.
+   */
+  let local = 0;
+  const seenTick = new Map<string, number>();
+  const seenApplied = new Map<string, number>();
+  const seenLocal = new Map<string, number>();
+  const unchanged = (id: string): boolean => {
+    const applied = sim.commands.applied;
+    if (seenTick.get(id) === sim.tick && seenApplied.get(id) === applied && seenLocal.get(id) === local) return true;
+    seenTick.set(id, sim.tick);
+    seenApplied.set(id, applied);
+    seenLocal.set(id, local);
+    return false;
+  };
+
+  /** A panel's turn: every `period` frames (`offset` staggers them so they do not all land on one frame), or at once after a command applied. */
+  const due = (id: string, period: number, offset: number): boolean => (uiFrame + offset) % period === 0 || seenApplied.get(id) !== sim.commands.applied;
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
@@ -260,6 +280,7 @@ export function createBridge(sim: Sim): Bridge {
   };
   const refreshCrew = () => {
     refreshOpinion();
+    if (unchanged('crew')) return;
     const lists = buildCrewLists(sim, watched);
     const key = JSON.stringify(lists.crew);
     if (key !== lastCrew) {
@@ -284,7 +305,7 @@ export function createBridge(sim: Sim): Bridge {
     }
   };
   const refreshShip = () => {
-    if (frame++ % 4) return;
+    if (!due('ship', 8, 0) || unchanged('ship')) return;
     const ml = buildModuleList(sim);
     const mk = JSON.stringify(ml);
     if (mk !== lastMods) {
@@ -304,13 +325,13 @@ export function createBridge(sim: Sim): Bridge {
     }
     // The board only changes with the galaxy (offers, jobs, the player's node) or the cargo a delivery needs: rebuilt on those, not every frame.
     const g = sim.galaxy;
-    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${frame >> 5}`;
+    const jk = `${g.rev}|${g.turn}|${g.current}|${sim.sector.state}|${sim.trade.credits}|${uiFrame >> 7}`;
     if (jk !== lastJobsKey) {
       lastJobsKey = jk;
       jobs.set(buildJobs(sim));
     }
     // Stranded without fuel: cheap checks, sent on when changed.
-    if ((frame >> 1) % 4 === 0) {
+    {
       const st = buildStranded(sim);
       const sk = JSON.stringify(st);
       if (sk !== lastStranded) {
@@ -319,7 +340,7 @@ export function createBridge(sim: Sim): Bridge {
       }
     }
     // The goal chain: cheap, but only sent on when it changed.
-    if ((frame >> 2) % 4 === 0) {
+    {
       const gl = buildGoals(sim);
       const gk = JSON.stringify(gl);
       if (gk !== lastGoals) {
@@ -348,7 +369,8 @@ export function createBridge(sim: Sim): Bridge {
     }
   };
   const refreshCombat = () => {
-    if (combatFrame++ % 3) return;
+    // Out of a fight the panel's weapons idle: five times a second is plenty. In one, the charge bars run at 20 Hz.
+    if (!due('combat', sim.sector.inCombat ? 3 : 12, 1) || unchanged('combat')) return;
     const snap = buildCombat(sim);
     const key = JSON.stringify(snap);
     if (key === lastCombat) return;
@@ -356,7 +378,7 @@ export function createBridge(sim: Sim): Bridge {
     combat.set(snap);
   };
   const refreshBoarding = () => {
-    if (combatFrame % 3) return;
+    if (!due('boarding', 3, 2) || unchanged('boarding')) return;
     const snap = buildBoarding(sim);
     const key = JSON.stringify(snap);
     if (key === lastBoarding) return;
@@ -364,7 +386,7 @@ export function createBridge(sim: Sim): Bridge {
     boarding.set(snap);
   };
   const refreshFtl = () => {
-    if (combatFrame % 3) return;
+    if (!due('ftl', 3, 0) || unchanged('ftl')) return;
     const snap = buildFtl(sim);
     const key = JSON.stringify(snap);
     if (key === lastFtl) return;
@@ -372,7 +394,7 @@ export function createBridge(sim: Sim): Bridge {
     ftl.set(snap);
   };
   const refreshShuttles = () => {
-    if (combatFrame % 3) return;
+    if (!due('shuttles', 12, 3) || unchanged('shuttles')) return;
     const snap = buildShuttles(sim);
     const key = JSON.stringify(snap);
     if (key === lastShuttles) return;
@@ -380,7 +402,7 @@ export function createBridge(sim: Sim): Bridge {
     shuttles.set(snap);
   };
   const refreshTrade = () => {
-    if (combatFrame % 3) return;
+    if (!due('trade', 6, 4) || unchanged('trade')) return;
     const snap = buildTrade(sim, stationLog);
     const key = JSON.stringify(snap);
     if (key === lastTrade) return;
@@ -389,7 +411,8 @@ export function createBridge(sim: Sim): Bridge {
   };
   let yardInputsKey = '';
   const refreshYard = (force = false) => {
-    if (!force && combatFrame % 3) return;
+    if (!force && !due('yard', 3, 1)) return;
+    if (unchanged('yard') && !force) return;
     const inputs = yardInputs(sim, yardStation);
     if (!force && inputs === yardInputsKey) return; // nothing the yard view depends on has changed: no need to quote the plan again
     yardInputsKey = inputs;
@@ -400,7 +423,7 @@ export function createBridge(sim: Sim): Bridge {
     yard.set(snap);
   };
   const refreshMining = () => {
-    if (combatFrame % 6) return;
+    if (!due('mining', 12, 5) || unchanged('mining')) return;
     const snap = buildMining(sim);
     const key = JSON.stringify(snap);
     if (key === lastMining) return;
@@ -408,7 +431,7 @@ export function createBridge(sim: Sim): Bridge {
     mining.set(snap);
   };
   const refreshPrizes = () => {
-    if (combatFrame % 3) return;
+    if (!due('prizes', 12, 7) || unchanged('prizes')) return;
     const snap = buildPrizes(sim);
     const key = JSON.stringify(snap);
     if (key === lastPrizes) return;
@@ -423,6 +446,7 @@ export function createBridge(sim: Sim): Bridge {
    * choice leaves it open, so the game stays paused (#152).
    */
   const refreshStory = () => {
+    if (unchanged('story')) return;
     const snap = buildStory(sim);
     const key = JSON.stringify(snap);
     if (key === lastStory) return;
@@ -517,6 +541,7 @@ export function createBridge(sim: Sim): Bridge {
     jumpWarnings: (ship) => buildJumpWarnings(sim, ship),
     setStarmapOpen(open) {
       starOpen = open;
+      local++;
       if (open) syncStarmap();
     },
     warmStarmap() {
@@ -543,6 +568,7 @@ export function createBridge(sim: Sim): Bridge {
     watchCrew(id) {
       if (id === watched) return;
       watched = id;
+      local++;
       refreshCrew();
     },
     setSelected(t) {
@@ -552,6 +578,7 @@ export function createBridge(sim: Sim): Bridge {
     yard,
     watchYard(station) {
       yardStation = station;
+      local++;
       refreshYard(true);
     },
     setHovered(t) {
@@ -574,22 +601,29 @@ export function createBridge(sim: Sim): Bridge {
       stationLog.onEvents(sim, events);
     },
     update(stats, info) {
-      store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites }));
-      refreshInspect();
-      refreshCrew();
-      refreshShip();
-      refreshShuttles();
-      refreshTrade();
-      refreshYard();
-      refreshPrizes();
-      refreshMining();
-      refreshCombat();
-      refreshBoarding();
-      refreshFtl();
-      refreshStory();
-      refreshDeploy();
-      refreshStarmap();
-      runPrefetch();
+      uiFrame++;
+      const probe = getProbe();
+      const step = (label: string, fn: () => void): void => {
+        probe.begin(label);
+        fn();
+        probe.end(label);
+      };
+      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
+      step('ui/bridge/inspect', refreshInspect);
+      step('ui/bridge/crew', refreshCrew);
+      step('ui/bridge/ship', refreshShip);
+      step('ui/bridge/shuttles', refreshShuttles);
+      step('ui/bridge/trade', refreshTrade);
+      step('ui/bridge/yard', refreshYard);
+      step('ui/bridge/prizes', refreshPrizes);
+      step('ui/bridge/mining', refreshMining);
+      step('ui/bridge/combat', refreshCombat);
+      step('ui/bridge/boarding', refreshBoarding);
+      step('ui/bridge/ftl', refreshFtl);
+      step('ui/bridge/story', refreshStory);
+      step('ui/bridge/deploy', refreshDeploy);
+      step('ui/bridge/starmap', refreshStarmap);
+      step('ui/bridge/prefetch', runPrefetch);
     },
   };
 }
