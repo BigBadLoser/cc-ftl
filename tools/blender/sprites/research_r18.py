@@ -47,17 +47,19 @@ def ticks(k, u0, u1, v, z, step=6):
 
 # ---- x17: the reference ---------------------------------------------------------------------------------------------
 
-def bconsole(k, u0, u1, glyphs, vb=P(11), vf=P(15), z0=Z(8), z1=Z(14), z2=Z(20)):
-    """The reference's console: a brown housing hung off the body's front, its top sloping toward the viewer, a dark
-    framed screen on the slope with glyph rows."""
-    A, B = (vf, z1), (vb + P(1), z2)
-    prism(k, "u", u0, u1, [(vb, z0), (vf, z0), A, B, (vb, z2)], BROWN, "resBrnL")
-    on_slope(k, u0 + P(1), u1 - P(1), A, B, 0.1, 0.9, "resBrnD")
-    on_slope(k, u0 + P(1.5), u1 - P(1.5), A, B, 0.18, 0.82, "resNvyD", off=0.008)
+def bconsole(k, u0, u1, glyphs, vb=P(12), vf=P(16), zb=Z(23), za=Z(18), t=Z(5)):
+    """The reference's terminal: a slab t thick tilted off the body's front, its screen face sloping from zb at the
+    back down to za at vf, its underside parallel to it; a dark framed screen on the face with glyph rows."""
+    A, B = (vf, za), (vb, zb)
+    prism(k, "u", u0, u1, [(vb, zb - t), (vf, za - t), A, B], BROWN, "resBrnL")
+    on_slope(k, u0 + P(1), u1 - P(1), A, B, 0.08, 0.92, "resBrnD")
+    on_slope(k, u0 + P(1.5), u1 - P(1.5), A, B, 0.15, 0.85, "resNvyD", off=0.008)
     w = u1 - u0
     for t0, t1, a0, a1 in glyphs:
         on_slope(k, u0 + P(2) + (w - P(4)) * a0, u0 + P(2) + (w - P(4)) * a1, A, B, t0, t1, GL, off=0.012)
-    flat(k, u0 + P(1), u1 - P(1), vf, z0 + Z(1), z0 + Z(2), "resBrnD")
+
+
+NU0, NU1 = P(15), P(20)                                                                   # x17's rim notch
 
 
 def x17(layer, flip=False):
@@ -74,12 +76,11 @@ def x17(layer, flip=False):
         flat(k, u0, u1, P(12) + 0.002, Z(9), Z(10), "resNvyD")                            # shaded at their feet
     # the deck: rims round a channel that runs out to the near end; a ribbed grey floor, darker under the arm
     zt, zd = Z(17), Z(23)
-    for v0, v1 in ((P(-13), P(-8)), (P(8), P(13))):
-        blk(k, P(-32), P(32), v0, v1, zt, zd, CREAM)
+    for v0, v1, n0, n1 in ((P(-13), P(-8), P(-10), P(-8)), (P(8), P(13), P(8), P(10))):
+        blk(k, P(-32), NU0, v0, v1, zt, zd, CREAM)
+        blk(k, NU0, NU1, n0, n1, zt, zd, CREAM)                                             # a notch near the arm end
+        blk(k, NU1, P(32), v0, v1, zt, zd, CREAM)
     blk(k, P(20), P(32), P(-8), P(8), zt, zd, CREAM)
-    flat(k, P(-32), P(32), P(13), zt, zt + Z(2), "resBrn")                                 # the brown band under it,
-    side(k, P(32), P(-13), P(13), zt, zt + Z(2), "resBrnD")
-    blk(k, P(-32) - 0.004, P(-32), P(-13), P(13), zt, zt + Z(2), ("resBrnD",) * 3)         # (both ends)
     blk(k, P(-32), P(20), P(-8), P(8), zt, Z(21), ("resGls", "resGls", "resGlsD"))
     for u in range(-31, 8, 3):
         top(k, P(u), P(u + 1), P(-8), P(8), Z(21), "resGlsL")                              # ribs across it,
@@ -89,11 +90,13 @@ def x17(layer, flip=False):
         k.box(cu, 0.0, Z(22.5), w, P(15), 0.004, "resGlsL", rz=0.55)                         # the glass's streaks
     for v0 in (P(-12), P(9.5)):                                                             # ticks on the rims
         for u in range(-30, 30, 4):
-            blk(k, P(u), P(u + 2), v0, v0 + P(2.5), zd, zd + Z(1), CREAM_HI)
-    flat(k, P(-32), P(32), P(13), zd - Z(1), zd, "resCrL")                                 # the rim's lit edge
+            if not (NU0 - P(2) <= P(u) < NU1):
+                blk(k, P(u), P(u + 2), v0, v0 + P(2.5), zd, zd + Z(1), CREAM_HI)
+    for u0, u1 in ((P(-32), NU0), (NU1, P(32))):
+        flat(k, u0, u1, P(13), zd - Z(1), zd, "resCrL")                                     # the rim's lit edge
+    flat(k, NU0, NU1, P(10), zd - Z(1), zd, "resCrL")
     # the arm, rising off the back half of the deck's far end over the channel to a head
-    arm = [(P(31), zd), (P(31), Z(32)), (P(28), Z(35)), (P(-1), Z(35)), (P(-1), Z(31)), (P(19), Z(31)),
-           (P(24), zd)]                                                                     # an inverted L, a gap under it
+    arm = [(P(32), zd), (P(27), Z(35)), (P(-1), Z(35)), (P(-1), Z(31)), (P(22), Z(31)), (P(22), zd)]                                                                     # an inverted L, a gap under it
     prism(k, "v", P(-9), P(1), arm, CREAM, "resCrL")
     flat(k, P(0), P(29), P(1), Z(33), Z(34), CRK)                                          # a seam along it
     blk(k, P(-1), P(6), P(-8), P(0), Z(28), Z(31), STEEL)                                  # the head,
@@ -101,13 +104,13 @@ def x17(layer, flip=False):
     top(k, P(0), P(5), P(-7), P(-1), Z(28) - 0.006, "resGold")                             # its emitter
     # the console side: from the arm end, one console, the dial block, a pair of consoles
     def hang(u0, u1, glyphs):
-        bconsole(k, u0, u1, glyphs, vb=P(12), vf=P(16), z0=Z(9), z1=Z(17), z2=Z(22))
-    hang(P(10), P(19), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)))
-    blk(k, P(2), P(8), P(12), P(16), Z(9), Z(22), CREAM)
-    dial(k, P(5), P(14), Z(22))
-    flat(k, P(3), P(7), P(16), Z(11), Z(12), CRK)
-    hang(P(-8), P(0), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9)))
-    hang(P(-17), P(-9), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
+        bconsole(k, u0, u1, glyphs)
+    hang(P(5), P(14), ((0.3, 0.45, 0.1, 0.5), (0.55, 0.7, 0.1, 0.8)))
+    blk(k, P(-3), P(3), P(12), P(16), Z(9), Z(22), CREAM)
+    dial(k, P(0), P(14), Z(22))
+    flat(k, P(-2), P(2), P(16), Z(11), Z(12), CRK)
+    hang(P(-13), P(-5), ((0.3, 0.45, 0.1, 0.6), (0.55, 0.7, 0.3, 0.9)))
+    hang(P(-22), P(-14), ((0.3, 0.45, 0.4, 0.9), (0.55, 0.7, 0.1, 0.6)))
     # the screen in the far end (in view once turned): a cream frame on the body's end, a dark pane, glyphs
     e = P(-31) - 0.004
     blk(k, e, P(-31), P(-8), P(8), Z(9), Z(16), ("resCrD",) * 3)
