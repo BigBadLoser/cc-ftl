@@ -11,7 +11,7 @@ hologram change.
 import math
 
 from .modkit import K
-from .research_kit import PXG, ZPX as ZPX_, Bench, bar, body, chair, ring, zpx
+from .research_kit import PXG, ZPX as ZPX_, Bench, bar, body, chair, ring, snap, zpx
 from .research_r3 import _pane
 from .research_r4 import lamp, slate
 
@@ -206,8 +206,9 @@ def l2(layer, finish=True, name="l2", right=True, open_top=False):
     middle_bay(k)
     # the hutch: uprights and two shelves along the back over the cabinet, all on the px grid (see HUTCH)
     b, uf, sf = HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT
-    for u in (-1.44, -0.52, 0.52, 1.44):
-        k.box(u, (b + uf) / 2, TOP, 0.06, uf - b, zpx(39), "lvW2", top="lvW")
+    for u in (-1.44, -0.52, 0.52, 1.44):                         # 2 px wide, edges on the grid (off it, a column
+        u = snap(u - PXG) + PXG                                  # half covered flickers row by row)
+        k.box(u, (b + uf) / 2, TOP, 2 * PXG, uf - b, zpx(39), "lvW2", top="lvW")
     for z in SHELVES:
         for su in (-1, 1):
             k.box(su * 0.98, (b + sf) / 2, z, 0.92, sf - b, zpx(2), "lvW2", top="lvW")
