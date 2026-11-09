@@ -311,6 +311,17 @@ export class GalaxyGen implements SectorContext {
     return data;
   }
 
+  /**
+   * Take in a chunk generated elsewhere (the app's prefetch worker runs its own generator for the same seed and content): exactly what
+   * `chunk` would build, generation being a pure function of (seed, chunk). Ignored when the chunk is already here.
+   */
+  provideChunk(data: ChunkData): void {
+    const key = chunkKey(data.cx, data.cy);
+    if (data.key !== key || this.done.has(key)) return;
+    if (this.done.size > 4096) this.done.clear();
+    this.done.set(key, data);
+  }
+
   private build(cx: number, cy: number): ChunkData {
     const data: ChunkData = { key: chunkKey(cx, cy), cx, cy, sectors: [], nodes: [], edges: [] };
     const seen = new Set<string>();
