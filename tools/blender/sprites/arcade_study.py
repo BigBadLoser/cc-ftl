@@ -1077,9 +1077,10 @@ def i3_holo():
     return k
 
 
-# ---- projection, round 3: a recessed projector, the screen set back so the beam shows below it -----------------------
+# ---- projection, round 3: a recessed projector, the screen in front of the lens so the beam lights it from behind -----------------------
 
-J_A, J_B = (-7, 45), (-11, 71)                                       # the screen's foot and head, set back and up
+J_A, J_B = (6, 45), (2, 71)                                          # the screen's foot and head, in front of the
+                                                                     # lens, so the beam meets it from behind
 J_LENS = (0.0, 0.0, Z(29.7))
 
 
