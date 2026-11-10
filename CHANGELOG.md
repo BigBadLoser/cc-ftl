@@ -69,6 +69,8 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Crew working a salvage wreck no longer stand around idle: they keep working while the shuttle is away, take the nearest jobs first and carry fuller loads, the shuttle unloads its hold at home by itself, and crew too worn for a trip rest straight away. ([#411](https://github.com/BigBadLoser/cc-ftl/pull/411))
+- Fixed an intermittent crash after jumping (a renderer bug in tiled backgrounds); the starmap backdrop now waits for its art instead of flashing. ([#410](https://github.com/BigBadLoser/cc-ftl/pull/410))
 - Playtest fixes: the Stations strip says why the shield console has nobody on it, the false "Low power" alert at the start of a game is gone, the turn counter matches the save, and dragging a floor, wall or door off the hull shows "Floor must join the hull" instead of doing nothing. ([#409](https://github.com/BigBadLoser/cc-ftl/pull/409))
 - Salvage runs work again: the whole away party goes once crew are rested enough for a few minutes' work, the shuttle carries crew as well as cargo, refills its suits from your airlocks and hands suits back out when crew step into vacuum, and the shuttle panel's button (now "Stop salvage" or "Call home") works. Wrecks no longer post repair jobs that spam "missing metal", the pilot is no longer reported busy while idle, and suited crew carry helmet lamps, so the dark can't break them; a crew member under strain now shows it next to their mood. ([#405](https://github.com/BigBadLoser/cc-ftl/pull/405))
 - Station crew no longer go hungry: stations start with food for their crew and are restocked regularly. ([#403](https://github.com/BigBadLoser/cc-ftl/pull/403))
