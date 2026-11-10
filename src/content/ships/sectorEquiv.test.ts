@@ -219,6 +219,7 @@ const gunner: RoleDef = noRelief['role.gunner'] as RoleDef;
 delete gunner.playerLoadout;
 const legacy: typeof content = {
   ...content,
+  schedules: {} as typeof content.schedules, // crew schedules (#412) came later: with no Default every hour is Any, the needs-only rule
   roles: noRelief as typeof content.roles,
   ships: {
     ...content.ships,

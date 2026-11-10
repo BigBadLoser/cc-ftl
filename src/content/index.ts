@@ -10,6 +10,7 @@ import { crops } from './crops';
 import { roles } from './roles';
 import { traits } from './traits';
 import { policies } from './policies';
+import { schedules } from './schedules';
 import { interactions } from './interactions';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
@@ -42,6 +43,7 @@ export const content = {
   crewNames,
   traits,
   policies,
+  schedules,
   interactions,
   items,
   recipes,

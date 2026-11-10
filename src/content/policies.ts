@@ -9,18 +9,27 @@ import type { DriveDef, PolicyDef } from '../sim';
  * heads for its bay when its battery is low or it is damaged and a repair item is aboard. A crew member holding a console,
  * or a Workaholic, holds out until rest 5 or hunger 10 (`urgent`). Needs outrank work and none is latched past its threshold.
  * Every kind walks off a tile that harms it (`escapeHazards`, the hazard interrupt).
+ * A colonist's schedule block (#412, crew/schedule.ts) moves some drives (`blocks`): Sleep puts them to bed, Free gives breaks and no
+ * jobs, Work no breaks; while they are on call (a fight, an emergency) every block reads as Work.
  * Colonists also take a break when their mood is low and there is nothing to do (`leisure`, below work). Everyone who breathes refills
  * a suit's tank before it runs low (`air`, first: survival).
  */
 
-/** Rest below 20: drop everything and sleep (in a bed when one can be reached, else where standing). */
+/**
+ * Rest below 20: drop everything and sleep (in a bed when one can be reached, else where standing). In a Sleep block (#412) it is on
+ * whatever rest reads, at 900: under a hungry crew member's meal (1000), so they eat before bed, and over work.
+ */
 const sleep = {
-  id: 'sleep', input: 'rest', curve: [[0, 1000]], enter: 200, urgent: { below: 50 }, task: 'sleep',
+  id: 'sleep', input: 'rest', curve: [[0, 1000]], enter: 200, urgent: { below: 50 }, blocks: { sleep: { on: 900 } }, task: 'sleep',
 } satisfies DriveDef;
 
-/** Hunger below 35: walk to a galley (or a crate with food) and eat. A trip under way is finished whatever hunger reads. With no food aboard the drive is closed (a sleeper is not woken for a meal that cannot start). */
+/**
+ * Hunger below 35: walk to a galley (or a crate with food) and eat. A trip under way is finished whatever hunger reads. With no food aboard the
+ * drive is closed (a sleeper is not woken for a meal that cannot start). In a Free block (#412) below 60: supper before bed.
+ */
 const eat = {
-  id: 'eat', input: 'hunger', curve: [[0, 1000]], enter: 350, enterTrait: 'eatBelow', urgent: { below: 100 }, harmsAtZero: true, requires: ['food'], keepWhileTask: true, task: 'eat',
+  id: 'eat', input: 'hunger', curve: [[0, 1000]], enter: 350, enterTrait: 'eatBelow', urgent: { below: 100 }, harmsAtZero: true, requires: ['food'], keepWhileTask: true,
+  blocks: { free: { enter: 600 } }, task: 'eat',
 } satisfies DriveDef;
 
 /** A battery robot whose battery is low, or which is damaged with a repair item aboard, goes to its bay. */
@@ -33,7 +42,7 @@ const recharge = {
  * under work, so it is only tried once the scheduler has found no job: a break never keeps anyone from work.
  */
 const leisure = {
-  id: 'leisure', input: 'mood', curve: [[0, 90]], enter: 400, exit: 550, task: 'leisure',
+  id: 'leisure', input: 'mood', curve: [[0, 90]], enter: 400, exit: 550, blocks: { work: 'off', sleep: 'off', free: { on: 90 } }, task: 'leisure',
 } satisfies DriveDef;
 
 /**
@@ -59,7 +68,7 @@ const goHome = {
 const work = { id: 'work', curve: [[0, 100]], task: 'job' } satisfies DriveDef;
 
 /** A colonist works as `work`, unless a mild mental break (work refusal, isolation) holds them: then the drive scores 0 and the scheduler gives them no job. */
-const willingWork = { id: 'work', input: 'willing', curve: [[0, 0], [1, 100]], task: 'job' } satisfies DriveDef;
+const willingWork = { id: 'work', input: 'willing', curve: [[0, 0], [1, 100]], blocks: { sleep: 'off', free: 'off' }, task: 'job' } satisfies DriveDef;
 
 export const policies = {
   'policy.robot': { id: 'policy.robot', crew: ['robot'], escapeHazards: true, drives: [goHome, recharge, work] },

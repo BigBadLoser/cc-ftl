@@ -25,7 +25,7 @@ import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall' | 'crew.forceDoor'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall' | 'crew.forceDoor' | `crew.schedule.${string}`
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
