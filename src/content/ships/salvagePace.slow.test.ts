@@ -11,7 +11,7 @@ import { scrapHome, setupBench } from './salvageBench';
  * whenever the shuttle was away (no air source: admission turned every job away), the hold stayed full with nobody home to unload it, crew
  * too worn for a passage idled at home until they fell to the sleep or eat line, and parts came up in id order across the wreck: 17% of crew
  * time idle with work open, 61 parts, 80 scrap units home. Now about 5% (mostly waiting at home for a free suit), 135 parts, 336 units.
- * The crew keep the Any schedule (#412): needs alone decide when they rest, as the claim was made; off-duty blocks are not idle time.
+ * On the default schedules (#412: Default and Late shifts, trips up to near Sleep, Free on the site worked through): about 5%, 116 parts, 310 units.
  */
 const IDLE_MAX = 0.08;
 const STRIPPED_MIN = 110;
@@ -32,7 +32,6 @@ describe('salvage pace (#408)', () => {
     const b = setupBench(1, { crew: 4, airlock: false });
     const { sim } = b;
     const crew = sim.world.query(CrewC).filter((c) => !sim.world.has(c, DeadC));
-    for (const id of crew) sim.enqueue({ type: 'crew.schedule.preset', id, preset: 'schedule.any' });
     const ticks = 20 * 60 * 10;
     let stripped = 0, idleTicks = 0, crewTicks = 0;
     for (let i = 0; i < ticks; i++) {

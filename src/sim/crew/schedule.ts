@@ -1,3 +1,4 @@
+import { AwayC } from '../away/components';
 import { CrewC, JobC, NeedsC, PositionC, PrioritiesC, type Job, type WorkCategory } from './components';
 import { DAY_HOURS, hourAt, ticksToHour } from '../clock';
 import { defineComponent } from '../ecs';
@@ -105,10 +106,15 @@ export function onCall(sim: Sim, id: number): boolean {
   return false;
 }
 
-/** The block in force for the crew member now: their plan's, except that an off-duty block reads as Work while they are on call. */
-export function blockNow(sim: Sim, id: number): ScheduleBlock {
+/**
+ * The block in force for the crew member now: their plan's, except that an off-duty block reads as Work while they are on call, and Free
+ * reads as Work for a member of an away party (`onSite`: they work on there until a trip home leaves, user decision 2026-11-10; away/crew.ts
+ * `awayReturn` asks with `onSite` false for their Free time).
+ */
+export function blockNow(sim: Sim, id: number, onSite = sim.world.has(id, AwayC)): ScheduleBlock {
   const b = blockAt(sim, id);
-  return offDuty(b) && onCall(sim, id) ? 'work' : b;
+  if (offDuty(b) && onCall(sim, id)) return 'work';
+  return b === 'free' && onSite ? 'work' : b;
 }
 
 /**

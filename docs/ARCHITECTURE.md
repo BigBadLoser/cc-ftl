@@ -892,7 +892,7 @@ Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSys
 - The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
   floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
   patient is still set down first).
-- Away: `staySec` (away/crew.ts) also ends at `secToSleep`, so `passageFits` plans around it; `awayReturn` is due in a Sleep block.
+- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
 - Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 

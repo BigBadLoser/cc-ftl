@@ -92,14 +92,13 @@ describe('block lookup and commands', () => {
     sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick) + 1, block: 'free' });
     sim.applyCommands();
     expect(secToSleep(sim, id)).toBe(((22 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ);
-    expect(staySec(sim, id)).toBeGreaterThan(AWAY_GO_STAY_SEC); // Free next hour: the trip still goes
     sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick), block: 'free' });
     sim.applyCommands();
     expect(secToSleep(sim, id)).toBe(((22 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ);
     sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick) + 1, block: 'sleep' });
     sim.applyCommands();
     expect(secToSleep(sim, id)).toBe(HOUR_TICKS / TICK_HZ);
-    expect(staySec(sim, id)).toBe(HOUR_TICKS / TICK_HZ); // under AWAY_GO_STAY_SEC: no passage now
+    expect(staySec(sim, id)).toBeGreaterThan(AWAY_GO_STAY_SEC); // needs only: the Sleep block is `tripWorthIt`'s (awaySchedule.test.ts)
     sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick), block: 'sleep' });
     sim.applyCommands();
     expect(secToSleep(sim, id)).toBe(0);

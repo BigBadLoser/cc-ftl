@@ -9,7 +9,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Structure](#structure): Persistent sandbox with normal saves. A recoverable-failure mode (escape pods, salvaging back)
 - [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
 - [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
-  - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away sites plan around Sleep.
+  - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
   - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
@@ -162,9 +162,10 @@ the user picks from mocks) and a HUD clock come later.
 - **Rest.** Waking decay stays 0.06/s; hunger is unchanged. Sleep recovers 2.2x the decay on the floor (was 2x: 5 real minutes of
   sleep covers 11 awake) and twice that in a bed (0.264/s), so one 8-hour block in a bed takes even an exhausted crew member (rest 20)
   to about full. A Default day: 16 h awake drains about 38 rest, so crew go to bed rested-ish and wake full.
-- **Away sites plan around Sleep** (only Sleep; Free does not limit a trip, user decision 2026-11-10). A passage is open only to crew
-  whose stay (AWAY_GO_STAY_SEC) ends before their next Sleep block starts. Crew out on a site whose block turns Sleep are due home like
-  any need, on the next round trip.
+- **Away sites and the schedule (user decisions 2026-11-10).** Crew take a passage whenever they are on duty; the only schedule gate is
+  that the trip is worth it: the time on site before their next Sleep block is longer than the flight there and back. When Sleep
+  starts they are due home and the shuttle leaves with them at once (no batch wait). In Free time on a site they keep working while
+  the shuttle is away and come aboard once it is beside the site; a trip with them aboard is due. They still go home for Sleep.
 
 ### EVA and spacesuits
 
