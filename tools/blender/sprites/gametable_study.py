@@ -627,6 +627,114 @@ def p_holo(v, game):
     return lambda: f(z + dz, R, f"gametable_{v}b_holo")
 
 
+# ---- round 6: on the card dais table (l3), readability first: fewer, bigger, bolder pieces, the dais as projector ----
+
+LENS3 = (0.0, 0.0, TOP + 0.062)                                      # l3's lens, in the dais's well
+
+
+def rays(k, pts, col="arcCyanF"):
+    for q in pts:
+        bar(k, LENS3, q, 0.01, col)
+
+
+def q1_holo():
+    """Drop four, big: a 5x4 grid hovering over the dais (cyan film, lit border), big pink and amber tokens, one
+    dropping in; rays from the lens to its foot."""
+    k = Bench("gametable_q1_holo", FP2)
+    nc, nr, s, z0 = 5, 4, 0.13, TOP + 0.16
+    w, h = nc * s, nr * s
+    k.box(0.0, 0.0, z0, w, 0.01, h, "arcCyanF", top="arcCyanF")
+    for u in (-w / 2, w / 2):
+        k.box(u, 0.0, z0, 0.018, 0.02, h, "arcCyan", top="arcCyan")
+    for z in (z0 - 0.018, z0 + h):
+        k.box(0.0, 0.0, z, w + 0.036, 0.02, 0.018, "arcCyan", top="arcCyan")
+    grid = ("p....", "ap.a.", "pap.p", "apapa")                                           # rows top to bottom
+    for r, row in enumerate(grid[::-1]):
+        for c, ch in enumerate(row):
+            if ch != ".":
+                token(k, -w / 2 + (c + 0.5) * s, 0.0, z0 + (r + 0.11) * s, s * 0.78,
+                      "arcPink" if ch == "p" else "arcAmb")
+    token(k, -w / 2 + 3.5 * s, 0.0, z0 + h + 0.05, s * 0.78, "arcAmb")                    # dropping in
+    rays(k, [(-w / 2, 0.0, z0 - 0.018), (w / 2, 0.0, z0 - 0.018)], "arcCyan")
+    return k
+
+
+def q2_holo():
+    """Drop four in tubes: five lit-edged film tubes standing over the dais, the tokens stacked inside them, one
+    dropping into a tube; rays from the lens to the tubes' feet."""
+    k = Bench("gametable_q2_holo", FP2)
+    nc, s, z0, h = 5, 0.13, TOP + 0.14, 0.52
+    heights = ("ap", "pap", "a", "papa", "pa")
+    for c in range(nc):
+        u = -nc * s / 2 + (c + 0.5) * s
+        k.box(u, 0.0, z0, s * 0.86, s * 0.5, h, "arcCyanF", top="arcCyanF")              # the tube,
+        for du in (-s * 0.43, s * 0.43):
+            k.box(u + du, s * 0.25, z0, 0.012, 0.006, h, "arcCyan")                       # its lit edges
+        k.box(u, 0.0, z0 + h, s * 0.86, s * 0.5, 0.012, "arcCyan", top="arcCyan")         # its lit mouth
+        for r, ch in enumerate(heights[c]):
+            token(k, u, s * 0.27, z0 + 0.01 + r * s * 0.95, s * 0.72, "arcPink" if ch == "p" else "arcAmb")
+    token(k, -nc * s / 2 + 2.5 * s, s * 0.27, z0 + h + 0.06, s * 0.72, "arcPink")          # dropping in
+    rays(k, [(-nc * s / 2, 0.0, z0), (nc * s / 2, 0.0, z0)], "arcCyan")
+    return k
+
+
+def beast2(k, u, z, col, face, scale=1.0):
+    """A big, simple beast facing +u: four legs, a long low body, a head held forward."""
+    q = scale
+    for du in (-0.08, 0.08):
+        for dv in (-0.05, 0.05):
+            k.box(u + du * q, dv * q, z, 0.045 * q, 0.045 * q, 0.08 * q, col, top=col)
+    k.box(u, 0.0, z + 0.08 * q, 0.26 * q, 0.14 * q, 0.1 * q, col, top=col)
+    k.box(u + face * 0.16 * q, 0.0, z + 0.12 * q, 0.1 * q, 0.1 * q, 0.09 * q, col, top=col)
+
+
+def robot2(k, u, z, col, face, scale=1.0):
+    """A big, simple robot: two legs, a tall torso, a head; tall and narrow against the beast's long and low."""
+    q = scale
+    for dv in (-0.045, 0.045):
+        k.box(u, dv * q, z, 0.05 * q, 0.05 * q, 0.12 * q, col, top=col)
+    k.box(u, 0.0, z + 0.12 * q, 0.1 * q, 0.16 * q, 0.15 * q, col, top=col)
+    k.box(u, 0.0, z + 0.27 * q, 0.08 * q, 0.08 * q, 0.07 * q, col, top=col)
+    k.box(u + face * 0.08 * q, 0.1 * q, z + 0.2 * q, 0.1 * q, 0.05 * q, 0.05 * q, col, top=col)   # a reaching arm
+
+
+def bar2(k, u, z, frac, col):
+    """One health bar: the lit share, the rest in film."""
+    W = 0.2
+    k.box(u - W / 2 + W * frac / 2, 0.0, z, W * frac, 0.02, 0.03, col, top=col)
+    k.box(u + W * frac / 2, 0.0, z, W * (1 - frac), 0.02, 0.03, "arcCyanF", top="arcCyanF")
+
+
+def q3_holo():
+    """The duel over the dais: a film arena with a lit rim hovering over it, rays from the lens to the rim, the long
+    pink beast and the tall green robot facing off, one health bar over each."""
+    k = Bench("gametable_q3_holo", FP2)
+    z, R = TOP + 0.14, 0.32
+    k.cyl(0.0, 0.0, z, R, 0.006, "arcCyanF", top="arcCyanF", sides=16)
+    ring_of(k, R, z, 20, R * 0.33, "arcCyan", h=0.016)
+    rays(k, [(R * math.cos(a), R * math.sin(a), z) for a in (0.6, 2.6, 4.6)], "arcCyan")
+    beast2(k, -0.15, z, "arcPink", 1)
+    robot2(k, 0.17, z, "arcGrn", -1)
+    bar2(k, -0.15, z + 0.38, 0.75, "arcPink")
+    bar2(k, 0.17, z + 0.44, 0.4, "arcGrn")
+    return k
+
+
+def q4_holo():
+    """The duel on the dais itself: no arena disc, the creatures larger, standing on the dais's lit ring as their
+    stage, a shot crossing between them, the health bars over them."""
+    k = Bench("gametable_q4_holo", FP2)
+    z = TOP + 0.07
+    beast2(k, -0.2, z, "arcPink", 1, scale=1.25)
+    robot2(k, 0.2, z, "arcGrn", -1, scale=1.25)
+    for i in range(3):                                                                    # a shot, dashed
+        u = 0.08 - i * 0.07
+        k.box(u, 0.06, z + 0.25, 0.04, 0.02, 0.02, "arcAmb", top="arcAmb")
+    bar2(k, -0.2, z + 0.46, 0.75, "arcPink")
+    bar2(k, 0.2, z + 0.52, 0.4, "arcGrn")
+    return k
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -644,6 +752,7 @@ def jobs():
                                                                  ("m2", l3), ("m3", l2))]
     for v, cab in (("n1", n1), ("n2", n2), ("n3", n3)):
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
+    out += [(f"module.gametable.{v}", FP2, "prop", l3) for v in ("q1", "q2", "q3", "q4")]
     for v, (cab, *_) in P_SET.items():
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
@@ -652,4 +761,6 @@ def jobs():
                    ("m3", l2, m3_holo))] + \
         [holo_job(f"module.gametable.{v}{g}.holo", cab, n_holo(v, g)) for v, cab in (("n1", n1), ("n2", n2), ("n3", n3))
          for g in "ab"] + \
-        [holo_job(f"module.gametable.{v}{g}.holo", P_SET[v][0], p_holo(v, g)) for v in P_SET for g in "ab"]
+        [holo_job(f"module.gametable.{v}{g}.holo", P_SET[v][0], p_holo(v, g)) for v in P_SET for g in "ab"] + \
+        [holo_job(f"module.gametable.{v}.holo", l3, h) for v, h in
+         (("q1", q1_holo), ("q2", q2_holo), ("q3", q3_holo), ("q4", q4_holo))]

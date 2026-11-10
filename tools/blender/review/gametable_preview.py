@@ -15,13 +15,15 @@ NAMES = {"k1": "K1  strategy board", "k2": "K2  tabletop battle", "k3": "K3  car
          "n1a": "N1 ridge, drop four", "n1b": "N1 ridge, duel", "n2a": "N2 cantilever, drop four",
          "n2b": "N2 cantilever, duel", "n3a": "N3 ring, drop four", "n3b": "N3 ring, duel",
          "p1a": "P1 ridge, drop A", "p1b": "P1 ridge, duel A", "p2a": "P2 cantilever, drop B 3D",
-         "p2b": "P2 cantilever, duel B", "p3a": "P3 ring, drop B 3D", "p3b": "P3 ring, duel A"}
+         "p2b": "P2 cantilever, duel B", "p3a": "P3 ring, drop B 3D", "p3b": "P3 ring, duel A",
+         "q1": "Q1 drop four, big", "q2": "Q2 drop four, tubes", "q3": "Q3 duel, arena",
+         "q4": "Q4 duel, on the dais"}
 FRONT, BACK = 6, 2                                  # crew sheet rows facing -y and +y
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "p1a,p1b,p2a,p2b,p3a,p3b").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "m2,q1,q2,q3,q4").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(220 * len(names), 220)
     for i, v in enumerate(names):
