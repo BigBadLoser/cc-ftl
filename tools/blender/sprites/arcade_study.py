@@ -854,41 +854,40 @@ ROWS = ("arcCyan", "arcGrn", "arcAmb", "arcPink")
 
 
 def g1():
-    return drum("arcade_g1", BODY, "arcAmb", sides=8)
+    return drum("arcade_g1", BODY, "arcAmb")
 
 
 def g1_holo():
-    """The wall curved round the back of the beam, concave to the player: an arc of lit bricks between amber rails, the
-    paddle at the front, the ball rising; amber beams."""
+    """The wall curved round the back of the beam, wrapping most of the way to the sides, concave to the player: an arc
+    of lit bricks between amber rails, a curved paddle on the near side of the circle, the ball rising; amber beams."""
     k = Bench("arcade_g1_holo", FP)
-    R, z0, z1, A = 0.3, Z(36), Z(65), 1.15
+    R, z0, z1, A, n = 0.34, Z(36), Z(65), 1.4, 28
     def ang(t):
         return 1.5 * math.pi + t
-    n = 24
+    def seg(r, t, z, length, depth, h, col, top=None):
+        k.box(r * math.cos(ang(t)), r * math.sin(ang(t)), z, length, depth, h, col, top=top, rz=ang(t) + math.pi / 2)
     for i in range(n):                                                                   # the rails, top and foot
         t = -A + (i + 0.5) * 2 * A / n
         for z in (z0, z1):
-            k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), z, R * 2 * A / n * 1.05, 0.014, 0.014, "arcAmb",
-                  rz=ang(t) + math.pi / 2)
+            seg(R, t, z, R * 2 * A / n * 1.05, 0.016, 0.016, "arcAmb")
     for t in (-A, A):                                                                    # its end posts
         k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), z0, 0.016, 0.016, z1 - z0, "arcAmb")
-    gone = {(0, 1), (0, 3), (1, 3), (0, 4)}
+    gone = {(0, 1), (0, 4), (0, 5), (1, 4), (0, 2)}
     for r, col in enumerate(ROWS):                                                       # the bricks
-        for c in range(5):
+        for c in range(7):
             if (r, c) not in gone:
-                t = (c - 2) * 0.42
-                k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), Z(50 + r * 3.5), R * 0.36, P(3), Z(2.6), col,
-                      top=col, rz=ang(t) + math.pi / 2)
-    k.box(P(-2), P(4), Z(38), P(7), P(3), Z(1.6), "arcAmb", top="arcAmb")                # the paddle,
-    k.box(P(4), P(-1), Z(45), P(2.2), P(2.2), Z(2.2), "arcPink", top="arcPink")          # the ball,
-    for u, v, z, sz in ((2.5, 1, 43, 1.8), (1, 2.5, 41, 1.4)):                           # its trail
+                seg(R, (c - 3) * 0.39, Z(50 + r * 3.5), R * 0.33, P(3), Z(2.6), col, col)
+    for t in (-0.25, 0.0, 0.25):                                                         # the paddle, on the near
+        seg(0.26, math.pi + t + 0.3, Z(38), 0.26 * 0.26, P(2.5), Z(1.6), "arcAmb", "arcAmb")   # side of the circle
+    k.box(P(1), P(-2), Z(46), P(2.2), P(2.2), Z(2.2), "arcPink", top="arcPink")          # the ball,
+    for u, v, z, sz in ((1.5, 0.5, 43.5, 1.8), (2, 3, 41, 1.4)):                         # its trail
         k.box(P(u), P(v), Z(z), P(sz), P(sz), Z(sz), "arcPinkF", top="arcPinkF")
     beams(k, "arcAmb", z0, r=0.2)
     return k
 
 
 def g2():
-    return drum("arcade_g2", BODY, "arcCyan", sides=8)
+    return drum("arcade_g2", BODY, "arcCyan")
 
 
 def g2_holo():
