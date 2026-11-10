@@ -40,6 +40,9 @@ move in a browser).
 - `kit`: a DOM panel (`tools/lab/kitLab.ts`, `KitLab.svelte`): every shared `Chip` tone and size and every `Meter` tone and height, plus base marker and thresholds.
 - `hydroponics`: the grow beds (#59), small and large, dark and lit, each crop layer stacked on its lit bed as the game draws
   them (`sizes=small,large`, `rots=0,1,2,3`, `crops=`, `stages=sprout,grow,ripe`; default r0, ripe).
+- `ore`: an ore's art (#421): its item at each stack size and held, a 4x4 block of rich and of thin rock tiles (the game's
+  masks, from `massChain`) and a lone tile of each, then both ore bin sizes at every fill (`ores=ore.crystal,ore.rare`,
+  default the energy crystal; `rots=0,1,2,3`, default r0).
 
 ## Add a panel
 

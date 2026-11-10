@@ -4,7 +4,7 @@
   rock.ground.m<mask>[.c<cuts>].v<n>            levelled ground and its under-lip by solid neighbours (rock or ground);
                                                 cuts = SE1 SW2 NE4 NW8; the interior (m15) has 8 variants, edges 3
   rock.ground.m<mask>[.c<cuts>].under           the plain ground under a rock tile (no craters, a shallow worn edge)
-  rock.ore.<iron|ice|rare>.<rich|thin>.m<mask>[.c<cuts>]   rock tiles with ore veins, one variant each
+  rock.ore.<iron|ice|rare|crystal>.<rich|thin>.m<mask>[.c<cuts>]   rock tiles with ore veins, one variant each
 
 The rock roof over a dug base reuses the rock mass tops. Modules: rock_base (frame, noise, strata), rock_crater,
 rock_mass, rock_ore, rock_ground."""
@@ -38,7 +38,7 @@ def jobs():
             for v in range(4):
                 out.append(_job(_sid("rock.mass", mask, c) + f".v{v}",
                                 lambda k, mask=mask, c=c, v=v: mass(k, MassTile(mask, v, c), 0, 0)))
-            for kind in ("iron", "ice", "rare"):
+            for kind in ("iron", "ice", "rare", "crystal"):
                 for rich in (True, False):
                     out.append(_job(_sid(f"rock.ore.{kind}.{'rich' if rich else 'thin'}", mask, c),
                                     lambda k, mask=mask, c=c, kind=kind, rich=rich: mass(

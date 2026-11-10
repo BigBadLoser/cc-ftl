@@ -6,8 +6,7 @@ import type { ModuleDef } from '../sim';
  * None of them adds a mechanic: storage holds items like a crate, the others are dressing (no sit-to-eat yet).
  */
 /** What an ore bin's sprite shows for each ore (art kind of `module.storage_ore.<kind>.<fill>`). */
-// Energy crystal (#421) shows the rare-metals bin art until it has its own.
-const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare', 'item.energy_crystal': 'rare' };
+const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare', 'item.energy_crystal': 'crystal' };
 
 /** Scrap cages hold only scrap. Their sprite has no per-kind variants (art kind '': `module.storage_scrap.<fill>`). */
 const SCRAP_IDS = ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_weapons', 'item.scrap_comfort'];

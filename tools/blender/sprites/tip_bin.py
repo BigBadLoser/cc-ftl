@@ -221,6 +221,14 @@ def heap(k, fill, ore, rng):
             p, q, r_, s_ = P[i, j], P[i + 1, j], P[i + 1, j + 1], P[i, j + 1]
             C._poly(k, [p, q, r_], face())
             C._poly(k, [p, r_, s_], face())
+    if ore == "crystal":                                                    # shards: long, tilted, some glowing
+        for _ in range(int(130 * S)):
+            u, v, z = at(rng.uniform(0.5, nu - 0.5), rng.uniform(0.5, nv - 0.5), jit=False)
+            r = rng.uniform(0.035, 0.07)
+            ax = (rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8), 1.0)
+            cols = (o["glow"][0], o["glow"][1]) if rng.random() < 0.14 else o["chunk"][rng.integers(len(o["chunk"]))]
+            C._lump(k, (u, v, z), ax, r, r * rng.uniform(2.2, 3.6), cols, rng, sides=6)
+        return
     for _ in range(int(95 * S)):                                            # rocks: big, blocky, one tone each
         u, v, z = at(rng.uniform(0.5, nu - 0.5), rng.uniform(0.5, nv - 0.5), jit=False)
         r = rng.uniform(0.06, 0.13)
@@ -309,13 +317,13 @@ def tip_bin(fp, fill, rot, ore="iron"):
     return k.build()
 
 
-ORE_KINDS = ("iron", "ice", "rare")
+ORE_KINDS = ("iron", "ice", "rare", "crystal")
 SIZES = {"module.storage_ore": (2, 2), "module.storage_ore_large": (3, 2)}
 
 
 def jobs():
-    """Family `storage_ore`, per size and rotation: <asset>[.r<r>].empty and <asset>[.r<r>].<ore>.<fill> (ore iron, ice
-    or rare; fill fill1, fill2 or full); the plain <asset> is r0 iron at fill2."""
+    """Family `storage_ore`, per size and rotation: <asset>[.r<r>].empty and <asset>[.r<r>].<ore>.<fill> (ore iron, ice,
+    rare or crystal; fill fill1, fill2 or full); the plain <asset> is r0 iron at fill2."""
     out = []
     for name, fp in SIZES.items():
         states = [("empty", "empty", "iron")] + [(f"{o}.{f}", f, o) for o in ORE_KINDS for f in C.FILLS[1:]]
