@@ -119,6 +119,7 @@ describe('battery banks', () => {
 });
 
 describe('ship state on battery power (#424)', () => {
+  const bankDef = content.modules.bank as ModuleDef;
   const all = { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, farming: 0, patrol: 0 };
   const crewed: ContentRegistry = {
     ...content,
@@ -143,6 +144,23 @@ describe('ship state on battery power (#424)', () => {
     expect(state()).toBe('active');
     run(sim, 15);
     expect(mc(sim, ids[2] as number).powered).toBe(false);
+    expect(state()).toBe('disabled');
+  });
+
+  it('a bank left with less than one tick of its consumer\'s draw feeds nothing, so the ship is disabled', () => {
+    const { sim, ids, state } = active('reactor', 'bank', 'heater');
+    mc(sim, ids[0] as number).fuel = 0; // 400 at a 30 draw leaves a remainder under one tick's draw after about 13 s
+    run(sim, 20);
+    expect(chargeOf(mc(sim, ids[1] as number), bankDef)).toBeGreaterThan(0);
+    expect(mc(sim, ids[2] as number).powered).toBe(false);
+    expect(state()).toBe('disabled');
+  });
+
+  it('a bank too low for the first consumer leaves dry reactors disabled', () => {
+    const { sim, ids, state } = active('reactor', 'bank', 'lamp');
+    mc(sim, ids[0] as number).fuel = 0;
+    mc(sim, ids[1] as number).charge = 0.2;
+    run(sim, 2);
     expect(state()).toBe('disabled');
   });
 
