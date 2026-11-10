@@ -11,14 +11,14 @@ import { SuitC } from './components';
 import { VehicleC } from '../vehicles/components';
 import { occupants, unboardCrew, vehicleDefOf } from '../vehicles/lifecycle';
 import { EvaFloatC } from './components';
-import { floatTicks, nearestExterior, tileCentre, tileFrame, vehicleSuits } from './shuttle';
+import { floatTicks, nearestExterior, tileCentre, tileFrame } from './shuttle';
 import { findSuitStow } from './errands';
 import { hatchFace } from './hatch';
 import { refillOrder } from './refillOrder';
 import { boardHovering } from './board';
 import { startErrand } from '../ai/machines/eva';
 import { planWalk } from './route';
-import { airlockUsable, freeSuits, isSuited, needsAir, suitDef, suitTile } from './suit';
+import { airlockUsable, isSuited, needsAir, suitDef, suitTile } from './suit';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
 
@@ -51,7 +51,6 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const at = suitTile(sim, cmd.airlock);
     if (!at || !airlockUsable(sim, cmd.airlock)) return reject(sim, cmd.type, 'noAirlock');
     if (shipIdOf(sim, sim.world.get(cmd.airlock, ModuleC)) !== shipIdOf(sim, pos)) return reject(sim, cmd.type, 'otherGrid');
-    if (freeSuits(sim, cmd.airlock) <= 0) return reject(sim, cmd.type, 'noSuit');
     const plan = planWalk(sim, cmd.crew, shipIdOf(sim, pos), { x: pos.toX, y: pos.toY }, at);
     if (!plan) return reject(sim, cmd.type, 'unreachable');
     errand(sim, cmd.crew, 'suitUp', cmd.airlock, plan.steps, shipIdOf(sim, pos));
@@ -95,10 +94,7 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
     const spots = frame ? nearestExterior(sim, shipId, frame, going.length) : [];
     if (!frame || spots.length === 0) return reject(sim, cmd.type, 'noHull');
     if ((spots[0] as { d: number }).d > suitDef(sim).floatRange) return reject(sim, cmd.type, 'outOfRange');
-    let suits = vehicleSuits(sim, v);
-    const able = going.filter((c) => !needsAir(sim, c) || suits-- > 0);
-    if (able.length === 0) return reject(sim, cmd.type, 'noSuit');
-    able.slice(0, spots.length).forEach((crew, i) => {
+    going.slice(0, spots.length).forEach((crew, i) => {
       const spot = spots[i] as { x: number; y: number; d: number };
       unboardCrew(sim, crew, cmd.vehicle, { shipId, x: spot.x, y: spot.y });
       // Held for the drift (boarding dropped any draft; stepping off onto another faction's grid may have just added one). A party member's
@@ -106,10 +102,9 @@ export const evaHandlers: { [T in EvaCommandType]: Handler<T> } = {
       if (!sim.world.has(crew, DraftedC)) sim.world.add(crew, DraftedC, { target: null });
       if (sim.world.has(crew, AwayC)) sim.world.get(crew, DraftedC)!.away = true;
       (sim.world.get(crew, CrewKey) as Crew).activity = 'drafted';
-      const fitted = sim.world.get(crew, SuitC); // unboardCrew fits one from stock on the (thin) hull tile
+      const fitted = sim.world.get(crew, SuitC); // unboardCrew fits one on the (thin) hull tile
       if (fitted) fitted.vehicle = cmd.vehicle;
       else if (needsAir(sim, crew)) {
-        v.suits = vehicleSuits(sim, v) - 1;
         sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec, vehicle: cmd.vehicle });
         sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
       }

@@ -4,7 +4,7 @@ import { shipIdOf } from '../../sim/regions';
 import { AwayC, AwaySiteC, SiteRunC } from '../../sim/away/components';
 import { EvaFloatC, SuitC } from '../../sim/eva/components';
 import { NeedsC } from '../../sim/crew/components';
-import { hatchSpot, vehicleSuits } from '../../sim/eva/shuttle';
+import { hatchSpot } from '../../sim/eva/shuttle';
 import { StunC } from '../../sim/robots/components';
 import { content } from '../index';
 import { shuttleOf, storages } from './ferryFixture';
@@ -146,24 +146,24 @@ describe('salvage on an away site: the shuttle and EVA loop', () => {
     expect(of(all, 'suit.airOut')).toEqual([]);
   });
 
-  it('suits belong to whoever wears them: while the shuttle is away no worker\'s suit is tied to it, and no suit is lost', () => {
+  it('suits belong to whoever wears them: while the shuttle is away no worker\'s suit is tied to it, and every worker out keeps theirs', () => {
     const { sim, wreck } = setup(3, smallHold(4));
     sim.enqueue({ type: 'salvage.order', ship: wreck, types: ['hull', 'tech'] });
     const shuttle = shuttleOf(sim);
-    const total = (): number => vehicleSuits(sim, sim.world.get(shuttle, VehicleC)!) + sim.world.query(SuitC).filter((c) => sim.world.has(c, AwayC)).length;
     play(sim, 20 * 120, () => partyOut(sim, wreck).length > 0);
-    const suits = total();
     let away = false;
     for (let i = 0; i < 20 * 60 * 10 && !away; i++) {
       fresh(sim);
       play(sim, 1);
       if (phase(sim, shuttle) === 'home' && partyOut(sim, wreck).length > 0) {
-        for (const c of partyOut(sim, wreck)) expect(sim.world.get(c, SuitC)?.vehicle).toBeUndefined();
+        for (const c of partyOut(sim, wreck)) {
+          expect(sim.world.get(c, SuitC)?.worn).toBe(true);
+          expect(sim.world.get(c, SuitC)?.vehicle).toBeUndefined();
+        }
         away = true;
       }
     }
     expect(away).toBe(true);
-    expect(total()).toBe(suits);
   });
 
   it('a worker boxed in on the wreck, short of any round trip, is never left behind: the shuttle stays, and lifts them in the end', () => {

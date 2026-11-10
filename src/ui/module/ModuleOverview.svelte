@@ -22,7 +22,6 @@
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && !m.idle && m.power !== 0}>{moduleState(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
       <dt>Health</dt><dd>{m.hp}/{m.maxHp}</dd>
-      {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}
     </dl>
     <Meter value={hpPct(m)} max={100} tone="auto" height={6} title="{m.hp}/{m.maxHp}" />
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}

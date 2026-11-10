@@ -60,8 +60,6 @@ describe('away sites: who goes (#286 slice 2b)', () => {
     expect(sim.world.get(bot, AwayC)).toMatchObject({ site: wreck, vehicle: shuttle });
     expect(sim.world.has(bot, SuitC)).toBe(false); // suits are for those who breathe
     expect(all.some((e) => e.type === 'crew.jobDone' && e.ship === wreck && e.crew === bot)).toBe(true);
-    // The seat it took was beyond the suits or a suited one, it needs none either way: the shuttle's suits are all still aboard.
-    expect(sim.world.get(shuttle, VehicleC)?.suits ?? 3).toBe(3);
     expect(isRobot(sim, bot)).toBe(true);
   });
 

@@ -101,6 +101,11 @@ function legacyWorld(sim: Sim): unknown {
     delete rest.research;
     return [id, rest];
   });
+  // Airlocks counted their suits (3, put back in the old key order) until #416 lifted the limit; nobody in these runs takes one.
+  stores.airlock = (stores.airlock ?? []).map(([id, raw]) => {
+    const { state, timer, request, ...rest } = raw as Record<string, unknown>;
+    return [id, { state, timer, request, suits: 3, ...rest }];
+  });
   // `priority` on modules was renamed `powerPriority` (same place in the key order).
   stores.module = (stores.module ?? []).map(([id, raw]) => [id, Object.fromEntries(Object.entries(raw as object).map(([k, v]) => [k === 'powerPriority' ? 'priority' : k, v]))]);
   stores.vehicle = (stores.vehicle ?? []).map(([id, raw]) => {

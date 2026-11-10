@@ -55,7 +55,7 @@ export function startInspection(sim: Sim, station: number, faction: string, name
   reportLaunched(sim, vehicle, sim.world.get(vehicle, VehicleC) as Vehicle);
   Object.assign(sim.world.get(ship, AwaySiteC)!, { demand: {}, noLoot: true });
   const crew: number[] = [];
-  const n = Math.min(INSPECTORS, cd.def.eva?.suits ?? INSPECTORS, cd.def.capacity + 1);
+  const n = Math.min(INSPECTORS, cd.def.capacity + 1);
   for (let i = 0; i < n; i++) {
     const id = createCrew(sim, station, INSPECTOR_ROLE, { x: st.x, y: st.y }, { faction: 'neutral', rest: 100 });
     if (!id) continue;

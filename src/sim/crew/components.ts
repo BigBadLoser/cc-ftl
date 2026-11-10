@@ -177,8 +177,6 @@ export interface Job {
   party?: number;
   /** For 'passage' jobs: the away site (ShipC entity) the seat goes to. */
   site?: number;
-  /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
-  airless?: true;
   /**
    * forceDoor: the drafted crew member ordered to force the door (absent on the undrafted construction job).
    * sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them.

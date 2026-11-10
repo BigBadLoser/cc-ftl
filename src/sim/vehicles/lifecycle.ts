@@ -69,10 +69,8 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
   const v = sim.world.get(vehicle, VehicleC) as Vehicle;
   abortTask(sim, crew, 'boarded');
   for (const key of [EmbarkOrderC, DraftedC, PositionC, PathC, CarriedC]) sim.world.remove(crew, key);
-  // A suit worn aboard goes into the shuttle's stock, as at a hatch (#404): worn on, it left the shuttle short when they stepped out at home and
-  // stowed it there, or vanished when `eva.out` fitted them another from stock.
-  const evaSuits = vehicleDefOf(sim, v)?.eva?.suits;
-  if (evaSuits !== undefined && sim.world.remove(crew, SuitC)) v.suits = (v.suits ?? evaSuits) + 1;
+  // A suit worn aboard a craft that carries suits is stowed there, as at a hatch (#404); stepping off onto thin air fits one again (`fitSuit`).
+  if (vehicleDefOf(sim, v)?.eva) sim.world.remove(crew, SuitC);
   sim.world.add(crew, AboardC, { vehicle });
   (sim.world.get(crew, CrewC) as Crew).activity = 'idle';
   const role = v.pilot === 0 && !vehicleDefOf(sim, v)?.escape ? 'pilot' : 'passenger'; // an escape pod has no pilot
@@ -83,17 +81,13 @@ export function boardCrew(sim: Sim, crew: number, vehicle: number): 'pilot' | 'p
 }
 
 /**
- * Stepping off onto a tile that needs a suit (thin air, heat), a crew member who breathes takes one from the shuttle's stock: boarding put
- * any worn suit there (`boardCrew`), so every way off (a manual disembark, an unload, a wreck spilling its crew) hands one back (#404).
- * With none left they step off as they are.
+ * Stepping off onto a tile that needs a suit (thin air, heat), a crew member who breathes takes one from a craft that carries suits (any such
+ * craft has one for whoever needs it, #416): boarding stowed any worn suit (`boardCrew`), so every way off (a manual disembark, an unload, a
+ * wreck spilling its crew) fits one again (#404).
  */
 function fitSuit(sim: Sim, crew: number, v: Vehicle, at: { shipId: number; x: number; y: number }): void {
-  const full = vehicleDefOf(sim, v)?.eva?.suits;
   const grid = shipGrid(sim, at.shipId);
-  if (full === undefined || !grid || sim.world.has(crew, SuitC) || !needsAir(sim, crew) || !suitNeeded(grid, at.x, at.y)) return;
-  const stock = v.suits ?? full;
-  if (stock <= 0) return;
-  v.suits = stock - 1;
+  if (!vehicleDefOf(sim, v)?.eva || !grid || sim.world.has(crew, SuitC) || !needsAir(sim, crew) || !suitNeeded(grid, at.x, at.y)) return;
   sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec });
   sim.events.emit({ type: 'suit.donned', crew, airlock: 0 });
 }

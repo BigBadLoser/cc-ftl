@@ -70,7 +70,7 @@ export type Command =
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */
   | { type: 'suit.set'; crew: number; worn: boolean }
-  /** Drafted crew walk to the airlock's suit tile and put on one of its stowed suits (a few seconds). Needs a free suit. */
+  /** Drafted crew walk to the airlock's suit tile and put on a suit (a few seconds; any airlock has one, #416). */
   | { type: 'eva.suitUp'; crew: number; airlock: number }
   /** Drafted, suited crew walk to an airlock (default: the nearest on their grid) and take the suit off; it returns there with a full tank. */
   | { type: 'eva.suitOff'; crew: number; airlock?: number }
@@ -79,7 +79,7 @@ export type Command =
   /** Fly a shuttle to hold station a few tiles off another ship's hull (`ship`: its ShipC entity id; launching a stowed one first). Needs a pilot. */
   /** `box` (sector tiles) narrows where beside the ship it holds station (a pickup); with one it may hover beside its own home ship. */
   | { type: 'vehicle.hover'; vehicle: number; ship: number; box?: { x: number; y: number; w: number; h: number } }
-  /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */
+  /** Crew aboard a hovering shuttle (default: all passengers) put on suits (it has one for each, #416) and float out to the target's hull. */
   | { type: 'eva.out'; vehicle: number; crew?: number }
   /** A drafted, suited crew member on the hull floats back to the hovering shuttle, boards and stows the suit. */
   | { type: 'eva.board'; crew: number; vehicle: number }

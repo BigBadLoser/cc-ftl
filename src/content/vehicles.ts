@@ -3,7 +3,7 @@ import type { VehicleDef } from '../sim';
 /** Shuttles and mining pods (3x3 'pod' bays); construction pods come later. Speed is sector tiles per second at piloting 0 (a role.pilot, piloting 3, flies 30% faster). */
 export const vehicles = {
   // A pilot plus 4 passengers. One burst-laser volley (66 module damage) nearly kills it; point defence nibbles.
-  'vehicle.shuttle': { name: 'Shuttle', class: 'shuttle', asset: 'vehicle.shuttle', speed: 8, maxHp: 90, capacity: 4, evasion: 0.3, cargo: 40, eva: { suits: 3, hoverGap: 4.5 },
+  'vehicle.shuttle': { name: 'Shuttle', class: 'shuttle', asset: 'vehicle.shuttle', speed: 8, maxHp: 90, capacity: 4, evasion: 0.3, cargo: 40, eva: { hoverGap: 4.5 },
     // built in its own bay, for what the fabricator's recipe takes (recipe.shuttle)
     assemble: { cost: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }], work: 600 } },
   // Mining pod (3x3 pod bay, 2.6 tiles across): one pilot, no passengers. Flies to asteroid ore, lasers it into a small hold,

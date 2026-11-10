@@ -141,7 +141,7 @@ describe('base logistics: bootstrap and suit limits', () => {
     }
   });
 
-  it('rejects more crew than the suits for a base with no airlock, and accepts them with an airlock', () => {
+  it('takes four crew to a base with no airlock (a suit for each, #416) as to one with an airlock', () => {
     const sim = newGame(3, content);
     const home = homeShip(sim);
     const hover = outpostRegion(sim, 70, 30, false);
@@ -150,8 +150,6 @@ describe('base logistics: bootstrap and suit limits', () => {
     const crew = [...sim.world.query(CrewC)].sort((a, b) => a - b).slice(0, 4);
     expect(crew).toHaveLength(4);
     sim.enqueue({ type: 'ferry.order', from: home, to: hover, crew });
-    expect(run(sim, 1)).toEqual(['rejected:ferry.order:needSuits']);
-    sim.enqueue({ type: 'ferry.order', from: home, to: hover, crew: crew.slice(0, 3) });
     expect(run(sim, 1)).toEqual(['ferry.started']);
     sim.enqueue({ type: 'ferry.cancel', vehicle: shuttleOf(sim) });
     run(sim, 6000, done);

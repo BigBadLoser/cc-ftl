@@ -18,8 +18,6 @@ export interface Airlock {
   timer: number;
   /** Side someone wants open; written by crew waiting at a door and by airlock.cycle, consumed by the airlock system. */
   request: 'inner' | 'outer' | null;
-  /** Free suits stowed here. Absent (an old save) = the def's `airlock.suits`. */
-  suits?: number;
   /** Seconds of suit air in its store (the air a refill draws from). Absent = the full store. */
   air?: number;
 }
@@ -82,7 +80,7 @@ export function initAirlock(sim: Sim, grid: Grid, id: number): void {
   for (const c of t.chamber) writeStruct(grid, c.x, c.y, Struct.Floor);
   grid.set('door', t.outer.x, t.outer.y, 0);
   grid.set('door', t.inner.x, t.inner.y, 255);
-  sim.world.add(id, AirlockC, { state: 'inner', timer: 0, request: null, suits: def.airlock.suits ?? 0 });
+  sim.world.add(id, AirlockC, { state: 'inner', timer: 0, request: null });
 }
 
 /** Undo initAirlock when the module is removed: the outer door goes back to hull wall, the inner door to floor. */

@@ -8,9 +8,8 @@ import { abortTask } from '../../sim/ai/task';
 import { jobGoal, origin } from '../../sim/crew/helpers';
 import type { PathOpts, Tile } from '../../sim/crew/pathfind';
 import { findSuitSource } from '../../sim/eva/errands';
-import { airlockSuits } from '../../sim/eva/suit';
 import { AirlockC } from '../../sim/modules/airlock';
-import { placementError, removeModule, spawnModule } from '../../sim/modules/spawn';
+import { createCrew } from '../../sim/crew/spawn';
 import { planSiteWalk } from '../../sim/eva/route';
 import { destroyJob } from '../../sim/items/stacks';
 import { shipIdOf } from '../../sim/regions';
@@ -255,48 +254,34 @@ describe('crew scheduler: matching', () => {
 });
 
 describe('crew scheduler: suits', () => {
-  it('books suits as matches are accepted: an airlock is never promised more suits than it holds, the next one is used instead', () => {
+  it('has no suit limit (#416): four crew sent out to the hull all suit up at the one airlock', () => {
     const { sim, ship, crew, floor } = board(3);
     const g = shipGrid(sim, ship)!;
-    const [near] = [...sim.world.query(AirlockC)] as [number];
-    sim.world.get(near, AirlockC)!.suits = 1;
-    // A second airlock with its full stock, as far from the first as it can be placed (the starter is packed: clear the modules of its
-    // far corner first).
-    const at = sim.world.get(near, ModuleC)!;
-    for (const m of [...sim.world.query(ModuleC)]) {
-      const mod = sim.world.get(m, ModuleC)!;
-      if (m !== near && Math.abs(mod.x - at.x) > 12 && shipIdOf(sim, mod) === ship) removeModule(sim, m);
-    }
-    let best: { x: number; y: number; rot: number; d: number } | null = null;
-    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) for (const rot of [0, 1, 2, 3]) {
-      const d = Math.abs(x - at.x) + Math.abs(y - at.y);
-      if ((!best || d > best.d) && placementError(sim, ship, 'module.airlock', x, y, rot) === null) best = { x, y, rot, d };
-    }
-    expect(best).not.toBeNull();
-    const far = spawnModule(sim, 'module.airlock', best!.x, best!.y, best!.rot);
-    expect(airlockSuits(sim, far)).toBeGreaterThanOrEqual(2);
-    // Sites out on the hull: reachable only in a suit. Crew are moved next to the one-suit airlock, so it is everyone's nearest.
+    const locks = [...sim.world.query(AirlockC)];
+    expect(locks.length).toBe(1);
+    const [lock] = locks as [number];
+    const at = sim.world.get(lock, ModuleC)!;
+    // Sites out on the hull: reachable only in a suit. Crew are moved next to the airlock.
     const from = floor.sort((p, q) => Math.abs(p.x - at.x) + Math.abs(p.y - at.y) - (Math.abs(q.x - at.x) + Math.abs(q.y - at.y)));
-    const team = crew.filter((c) => sim.world.get(c, CrewC)!.species !== 'species.robot').slice(0, 3);
-    expect(team.length).toBe(3);
-    team.forEach((c, i) => {
+    const team = crew.filter((c) => sim.world.get(c, CrewC)!.species !== 'species.robot');
+    while (team.length < 4) team.push(createCrew(sim, ship, 'role.medic', from[0]!, { faction: 'player', rest: 100 }));
+    team.slice(0, 4).forEach((c, i) => {
       const t = from[i]!;
       sim.world.add(c, PositionC, { x: t.x, y: t.y, toX: t.x, toY: t.y, progress: 0, facing: 0 });
       sim.world.add(c, PrioritiesC, { ...all(0), construction: 1 });
     });
     const sites: Tile[] = [];
-    for (let y = g.y0; y < g.y0 + g.height && sites.length < 3; y++) for (let x = g.x0; x < g.x0 + g.width && sites.length < 3; x++) {
+    for (let y = g.y0; y < g.y0 + g.height && sites.length < 4; y++) for (let x = g.x0; x < g.x0 + g.width && sites.length < 4; x++) {
       const goal = { x, y, adjacent: true };
       if (g.get('struct', x, y) === Struct.Space && !findPath(sim, ship, from[0]!, goal, {}) && findPath(sim, ship, from[0]!, goal, { suited: true })) sites.push({ x, y });
     }
-    expect(sites.length).toBe(3);
+    expect(sites.length).toBe(4);
     for (const t of sites) postJob(sim, t);
     sim.sector.sched = undefined;
-    assignJobs(sim, team);
+    assignJobs(sim, team.slice(0, 4));
     const errands = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).filter((j) => j.kind === 'suitUp');
-    expect(errands.filter((j) => j.target === near).length).toBe(1);
-    expect(errands.filter((j) => j.target === far).length).toBe(2);
-    expect(team.every((c) => sim.world.has(c, AssignmentC))).toBe(true);
+    expect(errands.filter((j) => j.target === lock).length).toBe(4);
+    expect(team.slice(0, 4).every((c) => sim.world.has(c, AssignmentC))).toBe(true);
   });
 });
 
@@ -359,11 +344,12 @@ describe('crew scheduler: pass gate', () => {
     g.set('o2', air.x, air.y, 0);
     expect(ran()).toBe(true);
     expect(ran()).toBe(false);
-    // A suit taken from the airlock.
+    // An airlock that can no longer fit suits (switched off).
     const [lock] = [...sim.world.query(AirlockC)] as [number];
-    sim.world.get(lock, AirlockC)!.suits = airlockSuits(sim, lock) - 1;
+    sim.world.get(lock, ModuleC)!.enabled = false;
     expect(ran()).toBe(true);
     expect(ran()).toBe(false);
+    sim.world.get(lock, ModuleC)!.enabled = true;
     // An open emergency (a fire nobody can reach): a pass every tick.
     postJob(sim, t, { kind: 'extinguish', category: 'firefighting' });
     expect(ran()).toBe(true);

@@ -39,7 +39,7 @@ import { airlockTiles } from '../modules/airlock';
 
 import { isEvaWalkable } from '../structure';
 
-import { airlockSuits, suitAir } from './suit';
+import { suitAir } from './suit';
 
 import { planSiteWalk, planWalk } from './route';
 
@@ -51,7 +51,7 @@ const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [3, 4], solid: true, power: 0, flammability: 0.1, maxHp: 120, buildWork: 20, hullEdge: 'n',
   openTiles: [[1, 0], [1, 1], [1, 2], [1, 3], [0, 3], [2, 3]],
   airlock: {
-    cycleSec: 2, suits: 3,
+    cycleSec: 2,
     layout: {
       outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1],
       unloaders: [{ tiles: [[0, 1], [0, 2]], chute: [0, 2], stand: [0, 3] }, { tiles: [[2, 1], [2, 2]], chute: [2, 2], stand: [2, 3] }],
@@ -145,24 +145,21 @@ const vent = (sim: Sim, x0: number, y0: number, x1: number, y1: number): void =>
 };
 
 describe('suits at the airlock', () => {
-  it('a drafted crew member walks to the airlock, puts a suit on and the airlock has one fewer', () => {
+  it('a drafted crew member walks to the airlock and puts a suit on', () => {
     const sim = world();
     const lock = airlockOf(sim, 1);
     const c = crew(sim, 1, 4, 4, { drafted: true });
-    expect(airlockSuits(sim, lock)).toBe(3);
     sim.enqueue({ type: 'eva.suitUp', crew: c, airlock: lock });
     const ev = run(sim, 40);
     expect(sim.world.has(c, SuitC)).toBe(false); // still walking / fitting
     run(sim, 200, ev);
     expect(sim.world.get(c, SuitC)).toEqual({ worn: true, air: DEFAULT_SUIT.airSec });
-    expect(airlockSuits(sim, lock)).toBe(2);
     expect(ev.filter((e) => e.type === 'suit.donned')).toEqual([{ type: 'suit.donned', crew: c, airlock: lock }]);
     expect(sim.world.query(JobC)).toHaveLength(0);
   });
 
-  it('puts the suit back, with a full tank, at the airlock where it is taken off', () => {
+  it('takes the suit off at the airlock; the next one fitted has a full tank', () => {
     const sim = world();
-    const lock = airlockOf(sim, 1);
     const c = crew(sim, 1, 4, 4, { drafted: true });
     sim.enqueue({ type: 'suit.set', crew: c, worn: true });
     run(sim, 2);
@@ -170,38 +167,35 @@ describe('suits at the airlock', () => {
     sim.enqueue({ type: 'eva.suitOff', crew: c });
     const ev = run(sim, 240);
     expect(sim.world.has(c, SuitC)).toBe(false);
-    expect(airlockSuits(sim, lock)).toBe(4); // suit.set made one from nowhere; stowing returns it to the airlock
     expect(ev.some((e) => e.type === 'suit.doffed')).toBe(true);
   });
 
-  it('refuses when the airlock has no free suit, for robots, for suited and for undrafted crew', () => {
+  it('refuses at an airlock that cannot fit suits (switched off), for robots, for suited and for undrafted crew', () => {
     const sim = world();
     const lock = airlockOf(sim, 1);
     const bot = crew(sim, 1, 4, 4, { drafted: true, species: 'species.robot' });
     const idle = crew(sim, 1, 5, 4);
     const a = crew(sim, 1, 6, 4, { drafted: true });
-    sim.world.get(lock, AirlockC)!.suits = 0;
+    sim.world.get(lock, ModuleC)!.enabled = false;
     sim.enqueue({ type: 'eva.suitUp', crew: bot, airlock: lock });
     sim.enqueue({ type: 'eva.suitUp', crew: idle, airlock: lock });
     sim.enqueue({ type: 'eva.suitUp', crew: a, airlock: lock });
     const ev = run(sim, 2);
-    expect(ev.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason)).toEqual(['airless', 'notDrafted', 'noSuit']);
-    sim.world.get(lock, AirlockC)!.suits = 1;
+    expect(ev.filter((e) => e.type === 'command.rejected').map((e) => (e as { reason: string }).reason)).toEqual(['airless', 'notDrafted', 'noAirlock']);
+    sim.world.get(lock, ModuleC)!.enabled = true;
     sim.enqueue({ type: 'eva.suitUp', crew: a, airlock: lock });
     sim.enqueue({ type: 'eva.suitOff', crew: a });
     expect(run(sim, 2).some((e) => e.type === 'command.rejected' && (e as { reason: string }).reason === 'notSuited')).toBe(true);
   });
 
-  it('a suit is limited: the last one goes to the first crew member there', () => {
+  it('has no suit limit (#416): four crew suit up at the one airlock', () => {
     const sim = world();
     const lock = airlockOf(sim, 1);
-    sim.world.get(lock, AirlockC)!.suits = 1;
-    const a = crew(sim, 1, 4, 4, { drafted: true });
-    const b = crew(sim, 1, 5, 4, { drafted: true });
-    sim.enqueue({ type: 'eva.suitUp', crew: a, airlock: lock });
-    sim.enqueue({ type: 'eva.suitUp', crew: b, airlock: lock });
-    const ev = run(sim, 2);
-    expect(ev.filter((e) => e.type === 'command.rejected')).toHaveLength(1);
+    const team = [4, 5, 6, 7].map((x) => crew(sim, 1, x, 4, { drafted: true }));
+    for (const c of team) sim.enqueue({ type: 'eva.suitUp', crew: c, airlock: lock });
+    const ev = run(sim, 20 * 40);
+    expect(ev.filter((e) => e.type === 'command.rejected')).toEqual([]);
+    expect(team.every((c) => sim.world.has(c, SuitC))).toBe(true);
   });
 });
 
@@ -285,7 +279,6 @@ describe('pathing', () => {
 
   it('crew suit up on their own for a job in a vented room, do it, and put the suit back', () => {
     const sim = world();
-    const lock = airlockOf(sim, 1);
     const c = crew(sim, 1, 3, 3);
     vent(sim, 3, 7, 7, 11);
     run(sim, 2);
@@ -298,7 +291,6 @@ describe('pathing', () => {
     run(sim, 20 * 30, ev);
     expect(ev.filter((e) => e.type === 'suit.doffed')).toHaveLength(1);
     expect(sim.world.has(c, SuitC)).toBe(false);
-    expect(airlockSuits(sim, lock)).toBe(3);
   });
 
   it('a repair in a 60 C room: they suit up first, stay through the heat (no stepping out to cool off), finish unhurt, and put the suit back', () => {
@@ -316,7 +308,7 @@ describe('pathing', () => {
     expect(sim.world.has(c, SuitC)).toBe(false);
   });
 
-  it('prefer a job that needs no EVA over a nearer one that does, and skip vented jobs when no suit is free', () => {
+  it('prefer a job that needs no EVA over a nearer one that does, and skip vented jobs with no airlock to suit up at', () => {
     const sim = world();
     const lock = airlockOf(sim, 1);
     const c = crew(sim, 1, 5, 6);
@@ -327,9 +319,9 @@ describe('pathing', () => {
     run(sim, 3);
     const mine = [...sim.world.query(JobC)].map((j) => sim.world.get(j, JobC)!).find((j) => j.reservedBy === c);
     expect(mine && [mine.x, mine.y]).toEqual([10, 3]);
-    // No suit anywhere: the vented job is never taken, and nobody is hurt.
+    // No airlock that can fit a suit: the vented job is never taken, and nobody is hurt.
     const sim2 = world();
-    sim2.world.get(airlockOf(sim2, 1), AirlockC)!.suits = 0;
+    sim2.world.get(airlockOf(sim2, 1), ModuleC)!.enabled = false;
     const d = crew(sim2, 1, 5, 6);
     vent(sim2, 3, 7, 7, 11);
     run(sim2, 2);
