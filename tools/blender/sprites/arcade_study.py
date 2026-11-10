@@ -297,7 +297,157 @@ def holo_job(sid, cab, holo):
     return run
 
 
+# ---- round 3: every one a hologram ----------------------------------------------------------------------------------
+
+def vpanel(k, u0, u1, v, z0, z1, col, t=0.004):
+    """A thin vertical panel facing +v (holo film and glyphs)."""
+    k.box((u0 + u1) / 2, v + t / 2, z0, u1 - u0, t, z1 - z0, col, top=col)
+
+
+def ring_of(k, r, z, n, w, col, h=0.004):
+    """A flat lit ring of n short tangent bars, radius r at height z."""
+    for i in range(n):
+        a = i * math.tau / n
+        k.box(r * math.cos(a), r * math.sin(a), z, w, 0.012, h, col, top=col, rz=a + math.pi / 2)
+
+
+def c1():
+    """Holo orrery: a round pedestal cabinet, a control console jutting from its front, a lit emitter ring on its top."""
+    k = Bench("arcade_c1", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcBodyK", top="arcBodyK", sides=16)                # the kick,
+    k.cyl(0.0, 0.0, Z(3), 0.36, Z(23), "arcBody", top="arcBodyL", sides=16)              # the drum,
+    k.cyl(0.0, 0.0, Z(26), 0.38, Z(2), "arcChrD", top="arcChr", sides=16)                # the chrome deck,
+    k.cyl(0.0, 0.0, Z(28), 0.3, Z(0.6), "arcVio", top="arcVio", sides=16)                # the emitter ring,
+    k.cyl(0.0, 0.0, Z(28), 0.25, Z(1), "arcBodyK", top="arcBodyK", sides=16)            # its dark lens well
+    body(k, P(-8), P(8), [[(5, 6), (9, 6), (15, 20), (15, 24), (10, 26), (5, 26)]], BODY)   # the console,
+    slab(k, P(-8), P(8), (15, 24), (10, 26), 0.5, PANEL)
+    stick(k, -3.5, 13.5, 24.5)
+    for u, col in ((1.5, "arcBtnY"), (4.5, "arcBtnB")):
+        button(k, u, 13, 25, col)
+    slab(k, P(-2), P(2), (10.3, 9), (11.6, 12), 0.3, one("arcCoin"), d=0.8)             # the coin slot
+    for a in (0.6, 2.2, 3.9, 5.4):                                                       # lit seams down the drum
+        k.box(0.365 * math.cos(a), 0.365 * math.sin(a), Z(6), 0.012, 0.012, Z(17), "arcVio", rz=a)
+    return k.build()
+
+
+def c1_holo():
+    """A game in the round over the ring: a banded planet with lit latitude rings, a wide orbit ring with a ship on it,
+    asteroids; beams up from the emitter to the planet."""
+    k = Bench("arcade_c1_holo", FP)
+    zc, R = Z(50), 0.17
+    for z0, z1, r0, r1 in ((-1, -0.5, 0.3, 0.85), (-0.5, 0.5, 0.85, 0.85), (0.5, 1, 0.85, 0.3)):
+        k.cyl(0.0, 0.0, zc + z0 * R, r0 * R, (z1 - z0) * R, "arcVioF", top="arcVioF", sides=12, rtop=r1 * R)
+    for dz, r in ((-0.5, 0.86), (0.0, 0.87), (0.5, 0.86)):                               # lit latitude rings
+        k.cyl(0.0, 0.0, zc + dz * R - 0.008, r * R, 0.016, "arcVio", top="arcVio", sides=12)
+    ring_of(k, 0.4, zc - 0.05, 24, 0.11, "arcVio", h=0.02)                               # the orbit,
+    k.box(0.4 * math.cos(0.9), 0.4 * math.sin(0.9), zc - 0.08, 0.1, 0.06, 0.07, "arcVio", top="arcVio",
+          rz=0.9 + 1.57)                                                                 # a ship on it
+    for a, r, dz in ((2.4, 0.4, 0.14), (4.0, 0.36, -0.12), (5.3, 0.42, 0.08)):           # asteroids
+        k.box(r * math.cos(a), r * math.sin(a), zc + dz, 0.06, 0.06, 0.06, "arcVio", top="arcVio")
+    for a in (0.3, 2.4, 4.5):                                                            # beams from the ring
+        k.box(0.2 * math.cos(a), 0.2 * math.sin(a), Z(28.6), 0.014, 0.014, zc - R - Z(28.6), "arcVio")
+    return k
+
+
+def c2():
+    """Open-frame upright: the classic upright, its head an open frame with emitters in its corners."""
+    k = Bench("arcade_c2", FP)
+    W, S = 9, 11
+    body(k, P(-W), P(W), [
+        [(-12, 0), (7, 0), (8, 3), (8, 28), (-12, 28)],
+        [(-12, 28), (8, 28), (13, 31), (13, 34), (6, 37), (-12, 37)]], BODY)  # the lower body and panel,
+    body(k, P(-W), P(W), [[(-12, 37), (-9, 37), (-9, 56), (-12, 56)]], INNER)  # a thin dark back
+    body(k, P(-W), P(W), [[(-12, 56), (6, 56), (6, 60), (-12, 60)]], BODY)    # the top bar,
+    for u0, u1 in ((P(-S), P(-W)), (P(W), P(S))):                             # the posts: the side panels
+        body(k, u0, u1, [[(-13, 0), (9, 0), (9, 28), (-13, 28)],
+                         [(-13, 28), (9, 28), (14, 31), (14, 35), (7, 39), (7, 61), (-13, 61)]], BODY)
+        trim(k, u0, u1, [(9, 0), (9, 28), (14, 31), (14, 35), (7, 39), (7, 61)], "arcVio")
+    for u in (-W + 1.5, W - 1.5):                                             # emitters in the frame's top corners
+        k.box(P(u), P(6.5), Z(54.5), P(2), P(1.5), Z(1.5), "arcVio", top="arcVio")
+    slab(k, P(-W), P(W), (13, 34), (6, 37), 0.5, PANEL)
+    stick(k, -4, 10.5, 34)
+    for u, col in ((1, "arcBtnY"), (4, "arcBtnB"), (7, "arcBtnY")):
+        button(k, u, 9.5, 35, col)
+    blk(k, P(-4), P(4), P(8), P(8.6), Z(8), Z(22), CHROME)
+    for u in (-2, 2):
+        flat(k, P(u - 0.8), P(u + 0.8), P(8.6) + 0.006, Z(16), Z(19), "arcCoin")
+    flat(k, P(-W), P(W), P(8) + 0.006, Z(0), Z(3), "arcChrD")
+    side(k, P(S), P(-11), P(5), Z(12), Z(15), "arcVioF")
+    return k.build()
+
+
+def c2_holo():
+    """The screen filling the frame, in bold horizontal shapes that hold at 1x: a sliced sun on the horizon, the floor's
+    grid lines, the car; a title floating out in front of the top bar."""
+    k = Bench("arcade_c2_holo", FP)
+    v = P(5)
+    vpanel(k, P(-7.5), P(7.5), v, Z(38), Z(55.5), "arcVioF")
+    def lit(u0, u1, z0, z1):
+        vpanel(k, P(u0), P(u1), v + 0.006, Z(z0), Z(z1), "arcVio")
+    for z, w in ((48, 4.5), (50.5, 4), (53, 2.6)):                # the sun, in slices
+        lit(-w, w, z, z + 1.6)
+    lit(-7.5, 7.5, 46, 47)                                        # the horizon,
+    for z in (43, 40.5):                                          # the floor's grid
+        lit(-7.5, 7.5, z, z + 1)
+    lit(-2, 2, 38.5, 41.5)                                        # the car
+    vpanel(k, P(-9), P(9), P(7), Z(62), Z(67), "arcVioF")         # the floating title,
+    for u0, u1 in ((-7.5, -3), (-1.5, 2.5), (4, 7.5)):
+        vpanel(k, P(u0), P(u1), P(7) + 0.006, Z(63.5), Z(65.5), "arcVio")
+    return k
+
+
+def c3():
+    """Holo pinball: a pinball table on legs (bumpers, flippers and lanes under its glass, a plunger, flipper buttons, a
+    coin door), its backbox an emitter post at the rear."""
+    k = Bench("arcade_c3", FP)
+    for u in (-7.5, 7.5):                                         # the legs
+        for v in (-10, 11):
+            k.box(P(u), P(v), 0.0, P(2), P(2), Z(19), "arcChrD", top="arcChr")
+            k.box(P(u), P(v), 0.0, P(3), P(3), Z(1), "arcChrD", top="arcChr")
+    body(k, P(-9), P(9), [[(-12, 18), (13, 18), (13, 25), (-12, 29)]], BODY)                # the table, rising to the rear
+    for u0, u1 in ((P(-9.5), P(-9)), (P(9), P(9.5))):
+        trim(k, u0, u1, [(13, 18), (13, 25), (-12, 29)], "arcVio")
+    slab(k, P(-8), P(8), (12, 25.2), (-11, 28.8), 0.3, one("arcBodyK"))                     # the playfield,
+    lane = lambda f: (12 - 23 * f, 25.2 + 3.6 * f)                                            # noqa: E731
+    for u, f, col in ((-3, 0.7, "arcScrP"), (3, 0.7, "arcCyan"), (0, 0.55, "arcBtnY")):     # the bumpers,
+        v, z = lane(f)
+        k.cyl(P(u), P(v), Z(z + 0.3), P(1.6), Z(1.5), col, top=col, sides=8)
+    for u, a in ((-3, -0.5), (3, 0.5)):                                                      # the flippers,
+        v, z = lane(0.15)
+        k.box(P(u), P(v), Z(z + 0.3), P(4), P(1), Z(0.8), "arcChrL", top="arcChrL", rz=a)
+    for u in (-6, 6):                                                                        # the lanes
+        v0, z0 = lane(0.3)
+        v1, z1 = lane(0.9)
+        slab(k, P(u - 0.4), P(u + 0.4), (v0, z0 + 0.3), (v1, z1 + 0.3), 0.6, one("arcChr"))
+    k.part("glass").box(0.0, P(0.5), Z(25), P(17), P(24), Z(4.5), "glassL")                # the glass (a rough wedge)
+    k.cyl(P(6), P(13.5), Z(20.5), P(0.7), Z(1), "arcChr", top="arcChrL", sides=8)           # the plunger,
+    k.box(P(6), P(14.5), Z(20.2), P(1.6), P(1), Z(1.6), "arcStick", top="arcStick")
+    side(k, P(9), P(9), P(11), Z(22), Z(24), "arcBtnB")                                      # a flipper button,
+    blk(k, P(-4), P(2), P(13), P(13.5), Z(19), Z(24), CHROME)                               # the coin door,
+    flat(k, P(-2), P(0), P(13.5) + 0.006, Z(21), Z(23), "arcCoin")
+    blk(k, P(-6), P(6), P(-12), P(-9), Z(29), Z(33), BODY)                                  # the emitter post,
+    flat(k, P(-5), P(5), P(-9) + 0.006, Z(31), Z(32.5), "arcVio")                           # its lens
+    return k.build()
+
+
+def c3_holo():
+    """The backglass as a hologram over the rear: the game's title, art (a planet and a rocket), the score."""
+    k = Bench("arcade_c3_holo", FP)
+    v = P(-10.5)
+    vpanel(k, P(-11), P(11), v, Z(34), Z(58), "arcVioF")
+    for u0, u1, z0, z1 in ((-11, 11, 34, 35), (-11, 11, 57, 58), (-11, -10, 34, 58), (10, 11, 34, 58),   # the frame,
+                           (-8, -2, 52, 54.5), (0, 3, 52, 54.5), (5, 8, 52, 54.5),                        # the title,
+                           (-7, 7, 37, 38.5)):                                                            # the score
+        vpanel(k, P(u0), P(u1), v + 0.006, Z(z0), Z(z1), "arcVio")
+    k.cyl(P(-4), v + 0.01, Z(41), P(3.5), Z(8), "arcVio", top="arcVio", sides=10)        # the planet (a disc on the glass)
+    k.box(P(4), v + 0.012, Z(40), P(1.6), 0.004, Z(9), "arcVio")                         # the rocket,
+    k.box(P(4), v + 0.012, Z(40), P(3.6), 0.004, Z(2), "arcVio")                         # its fins
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
-                                                              ("b2", b2), ("b3", b3))]
-    return out + [holo_job("module.arcade.b1.holo", b1, b1_holo)]
+                                                              ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
+                                                              ("c3", c3))]
+    return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
+                  (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo))]
