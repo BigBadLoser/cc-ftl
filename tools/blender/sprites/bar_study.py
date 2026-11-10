@@ -110,5 +110,117 @@ def b3():
     return k.build()
 
 
+# ---- round 2: three different bodies -----------------------------------------------------------------------------
+
+def stools(k, trim, glow, y0=0.42):
+    for u in STOOLS:
+        bar(k, (u, y0, 0.03), (u, 1.0, 0.03), 0.06, trim)
+        stool(k, u, 1.0, -1, glow)
+
+
+def b4():
+    """Island bar: the counter is a stadium ring round the robot, who stands in the middle on a column; over him a
+    mast carries a ring of bottles, lit from beneath. Navy and chrome, amber light."""
+    from .gametable_study import stadium, stadium_ring
+    k = Bench("bar_b4", FP3)
+    stadium(k, 1.48, 0.48, 0.0, 0.04, "arcBodyK", top="arcBodyK")
+    stadium_ring(k, 1.45, 0.45, 0.04, TOP - 0.1, 0.22, "arcBodyD", "arcBody")             # the ring counter,
+    stadium_ring(k, 1.48, 0.48, TOP - 0.06, 0.06, 0.28, "arcChrD", "arcGlass")           # its top,
+    stadium_ring(k, 1.48, 0.48, TOP - 0.075, 0.012, 0.012, "arcAmb", "arcAmb")           # a lit lip
+    k.cyl(0.0, 0.0, 0.04, 0.12, 0.5, "arcChrD", top="arcChr", sides=12)                  # the robot's column,
+    k.cyl(0.0, 0.0, 0.54, 0.2, 0.32, "arcBody", top="arcBodyL", sides=14)               # its torso,
+    k.box(0.0, 0.19, 0.7, 0.18, 0.006, 0.02, "arcAmb")                                    # a lit chest bar,
+    k.cyl(0.0, 0.0, 0.86, 0.13, 0.15, "arcBodyL", top="arcBodyL", sides=14)             # its head,
+    k.box(0.0, 0.125, 0.92, 0.16, 0.006, 0.04, "arcAmb")                                  # its visor,
+    for s_ in (-1, 1):                                                                    # four arms, two at work
+        bar(k, (s_ * 0.18, 0.0, 0.8), (s_ * 0.42, 0.22, 0.7), 0.06, "arcChrD")
+        k.cyl(s_ * 0.44, 0.24, TOP, 0.05, 0.12, "arcGlass", top="arcAmb" if s_ < 0 else "arcPink", sides=8)
+        bar(k, (s_ * 0.18, 0.0, 0.66), (s_ * 0.3, -0.25, 0.62), 0.05, "arcChrD")
+    k.cyl(0.0, 0.0, 1.0, 0.03, 0.42, "arcChrD", top="arcChr", sides=8)                   # the mast,
+    k.cyl(0.0, 0.0, 1.38, 0.56, 0.04, "arcChrD", top="arcChr", sides=20)                 # the bottle ring,
+    k.cyl(0.0, 0.0, 1.37, 0.5, 0.012, "arcAmb", top="arcAmb", sides=20)                  # lit beneath,
+    for i in range(16):                                                                   # the bottles round it
+        a = i * math.tau / 16
+        col = BOTTLES[i % len(BOTTLES)]
+        k.box(0.52 * math.cos(a), 0.52 * math.sin(a), 1.42, 0.06, 0.06, 0.12, col, top=col)
+    stools(k, "arcChrD", "arcAmb", y0=0.45)
+    return k.build()
+
+
+def b5():
+    """The robot is the bar: a big friendly robot bust forms the back of the counter, its shoulders the back bar, its
+    forearms lying along the counter, hands holding a shaker and pouring; bottles racked in its chest. Teal and white,
+    green light."""
+    k = Bench("bar_b5", FP3)
+    k.box(0.0, 0.0, 0.0, 2.96, 0.94, 0.04, "arcBodyK", top="arcBodyK")
+    k.box(0.0, 0.24, 0.04, 2.9, 0.36, TOP - 0.1, "arcTealD", top="arcTeal")             # the counter,
+    k.box(0.0, 0.25, TOP - 0.06, 3.0, 0.46, 0.06, "arcShellD", top="arcShellL")
+    k.box(0.0, 0.475, TOP - 0.075, 2.96, 0.006, 0.014, "arcGrn")
+    k.box(0.0, -0.3, 0.04, 1.3, 0.36, 0.9, "arcTeal", top="arcTealL")                    # the bust: its chest,
+    for z in (0.3, 0.52):                                                                 # the bottles racked in it
+        k.box(0.0, -0.118, z - 0.02, 0.9, 0.004, 0.18, "arcBodyK")
+        for i in range(7):
+            col = BOTTLES[(i + int(z * 10)) % len(BOTTLES)]
+            k.box(-0.36 + i * 0.12, -0.13, z, 0.06, 0.04, 0.12, col, top=col)
+    for s_ in (-1, 1):
+        k.box(s_ * 0.85, -0.3, 0.04, 0.42, 0.38, 1.0, "arcTealD", top="arcTeal", taper=0.8)   # the shoulders,
+        k.cyl(s_ * 0.85, -0.3, 1.04, 0.2, 0.08, "arcShell", top="arcShellL", sides=12)
+        k.box(s_ * 0.85, -0.05, 0.62, 0.16, 0.16, 0.14, "arcShell", top="arcShellL")          # the elbows,
+        k.box(s_ * 0.55, 0.12, 0.62, 0.62, 0.14, 0.1, "arcShellL", top="arcShellL")           # the forearms,
+        k.box(s_ * 0.22, 0.2, 0.62, 0.14, 0.14, 0.1, "arcTeal", top="arcTealL")               # the hands
+    k.box(-0.22, 0.2, 0.72, 0.07, 0.07, 0.16, "arcChr", top="arcGrn")                     # a shaker,
+    k.cyl(0.22, 0.26, TOP, 0.05, 0.12, "arcGlass", top="arcPink", sides=8)               # a glass
+    k.box(0.0, -0.3, 0.94, 0.5, 0.34, 0.36, "arcShell", top="arcShellL")                 # the head,
+    k.box(0.0, -0.128, 1.08, 0.4, 0.006, 0.12, "arcBodyK")                               # its face screen,
+    for du in (-0.09, 0.09):
+        k.box(du, -0.122, 1.13, 0.07, 0.006, 0.04, "arcGrn")                              # its eyes,
+    k.box(0.0, -0.122, 1.09, 0.14, 0.006, 0.015, "arcGrn")                                # its smile
+    k.box(0.0, -0.3, 1.3, 0.04, 0.04, 0.1, "arcShellD")                                   # its antenna,
+    k.box(0.0, -0.3, 1.4, 0.06, 0.06, 0.06, "arcGrn", top="arcGrn")
+    stools(k, "arcShellD", "arcGrn")
+    return k.build()
+
+
+def b6():
+    """Tube bar: a sleek dark counter; behind it a wall of tall glass tubes of lit liquor feeding taps; a hovering drone
+    bartender (a sphere ringed in light, two arms) mixing over the counter; a hologram cocktail glass sign over it all.
+    Dark and violet, pink light."""
+    k = Bench("bar_b6", FP3)
+    k.box(0.0, 0.0, 0.0, 2.96, 0.94, 0.04, "arcBodyK", top="arcBodyK")
+    k.box(0.0, 0.24, 0.04, 2.9, 0.36, TOP - 0.1, "arcBodyD", top="arcBody")
+    k.box(0.0, 0.25, TOP - 0.06, 3.0, 0.46, 0.06, "arcChrD", top="arcGlass")
+    k.box(0.0, 0.475, TOP - 0.075, 2.96, 0.006, 0.014, "arcPink")
+    k.box(0.0, -0.4, 0.04, 2.9, 0.16, 0.12, "arcBodyD", top="arcBody")                   # the tube wall's base,
+    k.box(0.0, -0.4, 1.3, 2.94, 0.18, 0.06, "arcBodyD", top="arcBody")                   # its top,
+    for i in range(9):                                                                    # the tubes
+        u = -1.28 + i * 0.32
+        col = BOTTLES[i % len(BOTTLES)]
+        h = 0.5 + (i % 3) * 0.2
+        k.cyl(u, -0.4, 0.16, 0.08, h, col, top=col, sides=10)                            # the liquor (lit),
+        k.cyl(u, -0.4, 0.16 + h, 0.08, 1.14 - h, "arcGlass", top="arcGlass", sides=10)  # the empty glass above it,
+        k.box(u, -0.3, 0.2, 0.03, 0.08, 0.03, "arcChr", top="arcChrL")                   # its tap
+    for s_ in (-1, 1):
+        k.box(s_ * 1.46, -0.07, 0.04, 0.08, 0.84, TOP - 0.06, "arcBodyD", top="arcBody")  # the end panels,
+        k.box(s_ * 1.46, -0.4, 0.04, 0.08, 0.18, 1.32, "arcBodyD", top="arcBody")       # the tube wall's ends
+    k.cyl(0.0, 0.0, 0.86, 0.13, 0.22, "arcBodyL", top="arcBodyL", sides=14)             # the drone,
+    k.cyl(0.0, 0.0, 0.95, 0.17, 0.03, "arcPink", top="arcPink", sides=16)                # its ring of light,
+    k.box(0.0, 0.12, 0.96, 0.1, 0.006, 0.03, "arcCyan")                                   # its eye,
+    for s_ in (-1, 1):
+        bar(k, (s_ * 0.1, 0.05, 0.9), (s_ * 0.22, 0.24, 0.76), 0.04, "arcChrD")         # its arms,
+    k.box(-0.22, 0.25, 0.68, 0.06, 0.06, 0.12, "arcChr", top="arcPink")
+    k.cyl(0.22, 0.26, TOP, 0.05, 0.12, "arcGlass", top="arcCyan", sides=8)
+    k.box(0.0, -0.4, 1.36, 0.02, 0.02, 0.12, "arcChrD")                                   # the sign's post,
+    z = 1.48                                                                              # the sign: a cocktail glass
+    bar(k, (-0.16, -0.4, z + 0.18), (0.0, -0.4, z), 0.03, "arcPink")
+    bar(k, (0.16, -0.4, z + 0.18), (0.0, -0.4, z), 0.03, "arcPink")
+    k.box(0.0, -0.4, z + 0.17, 0.34, 0.03, 0.03, "arcPink", top="arcPink")
+    k.box(0.0, -0.4, z - 0.12, 0.03, 0.03, 0.12, "arcPink")
+    k.box(0.0, -0.4, z - 0.13, 0.14, 0.03, 0.02, "arcPink", top="arcPink")
+    k.box(0.1, -0.4, z + 0.2, 0.04, 0.04, 0.04, "arcGrn", top="arcGrn")                   # an olive
+    stools(k, "arcChrD", "arcPink")
+    return k.build()
+
+
 def jobs():
-    return [(f"module.bar.{v}", FP3, "prop", f) for v, f in (("b1", b1), ("b2", b2), ("b3", b3))]
+    return [(f"module.bar.{v}", FP3, "prop", f) for v, f in (("b1", b1), ("b2", b2), ("b3", b3), ("b4", b4), ("b5", b5),
+                                                           ("b6", b6))]

@@ -9,12 +9,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"b1": "B1  neon dive", "b2": "B2  warm lounge", "b3": "B3  white tech"}
+NAMES = {"b1": "B1  neon dive", "b2": "B2  warm lounge", "b3": "B3  white tech",
+         "b4": "B4  island bar", "b5": "B5  the robot is the bar", "b6": "B6  tube bar"}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "b1,b2,b3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "b4,b5,b6").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(260 * len(names), 230)
     for i, v in enumerate(names):
