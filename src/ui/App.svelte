@@ -18,7 +18,9 @@
   import BugReport from './BugReport.svelte';
   import SelectionPanel from './SelectionPanel.svelte';
   import CrewBar from './CrewBar.svelte';
-  import PriorityGrid from './PriorityGrid.svelte';
+  import CrewWindow from './CrewWindow.svelte';
+  import ClockStrip from './ClockStrip.svelte';
+  import { clockText } from './schedule';
   import ToolBar from './ToolBar.svelte';
   import AlertList from './AlertList.svelte';
   import FightReportCard from './combat/FightReportCard.svelte';
@@ -270,12 +272,15 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" use:tip={{ text: 'Starmap turn (one per hop, and one every 3 minutes of game time) and game time played' }} data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
-    <span class="speeds">
-      {#each speeds as s (s.speed)}
-        <button class="tile" class:on={snap?.speed === s.speed} use:tip={{ text: s.label }} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
-      {/each}
+    <span class="trow">
+      <span class="tick" use:tip={{ text: `Ship clock. Starmap turn ${star?.turn ?? 0} (one per hop, and one every 3 minutes of game time), game time played ${clock(snap?.tick ?? 0)}` }} data-testid="clock"><b class="hhmm">{snap ? clockText(snap.clock) : '--:--'}</b><span class="day">Day {snap?.clock.day ?? 1}</span>{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
+      <span class="speeds">
+        {#each speeds as s (s.speed)}
+          <button class="tile" class:on={snap?.speed === s.speed} use:tip={{ text: s.label }} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>
+        {/each}
+      </span>
     </span>
+    <ClockStrip {api} />
   </span>
 {/snippet}
 
@@ -337,7 +342,7 @@
 {#if fightHud}
   <!-- the colony inspector and build tools give way to the combat HUD -->
 {:else if priorities}
-  <PriorityGrid {api} onClose={() => (priorities = false)} />
+  <CrewWindow {api} onClose={() => (priorities = false)} />
 {:else if tool.tool === 'build'}
   <BuildCatalog {api} />
 {:else if channelOpen === null}
@@ -405,9 +410,12 @@
   .cards { display: flex; flex-direction: column; gap: 4px; }
   .frame { background: var(--panel); border: 1px solid var(--line-hi); }
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
-  .time { display: flex; align-items: center; gap: 0; }
-  .fps { display: block; margin-top: 2px; font-size: 11px; color: var(--text); }
-  .tick { white-space: nowrap; flex: 1; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .time { display: flex; flex-direction: column; }
+  .trow { display: flex; align-items: center; }
+  .fps { margin-left: auto; font-size: 11px; color: var(--text); }
+  .tick { white-space: nowrap; flex: 1; display: flex; align-items: baseline; gap: 8px; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
+  .hhmm { font: 700 22px/1 var(--head-font); color: var(--text); letter-spacing: 0.04em; }
+  .day { font-size: 12px; font-weight: 400; }
   .speeds { display: flex; }
   .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }
