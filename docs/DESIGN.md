@@ -249,7 +249,7 @@ the user picks from mocks) and a HUD clock come later.
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
   shortage. Conduits may come later; the code leaves a seam for them.
-- **Reactor fuel and batteries** (user decisions, 2026-11-10; not built yet):
+- **Reactor fuel and batteries** (user decisions, 2026-11-10; built in #421 except the better reactor; non-player ships do not burn fuel; the starter ship has no battery bank yet):
   - **Two fuels.** Jumps burn `item.fuel` (engines, unchanged). Reactors burn their own fuel; the two never substitute.
   - **Energy crystal** (`item.energy_crystal`), a new raw item mined from asteroids (`ore.crystal`, weight about 3, between ice and
     rare metals, 15–40 per deposit). Also sold at mining and industrial stations, so a ship without mining can buy it. Needs art:

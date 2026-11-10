@@ -36,6 +36,19 @@ export function shortOnPower(sim: Sim, ship: number): boolean {
   return false;
 }
 
+/** The power alert's text: the power system's supply and demand, and the reason when a reactor is out of fuel (the cause crew can do something about). */
+export function powerAlertText(sim: Sim, ship: number): string {
+  const { supply, demand } = powerBalance(sim, ship);
+  let dry = false;
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && shipIdOf(sim, m) === ship ? sim.content.modules[m.def] : undefined;
+    if (m && def?.fuel && m.enabled && m.hp > 0 && !hasFuel(sim, ship, m, def)) dry = true;
+  }
+  const base = `Low power: ${Math.round(supply)} of ${Math.round(demand)}`;
+  return dry ? `${base}, a reactor is out of fuel` : base;
+}
+
 /** The jump target for a power alert: the first generator of the home ship. */
 export function powerSubject(sim: Sim): UiSubject | null {
   const home = homeShip(sim);
@@ -92,8 +105,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     }
   }
   if (shortOnPower(sim, home)) {
-    const { supply, demand } = powerBalance(sim, home);
-    add({ kind: 'power.shortage', key: 'p', text: `Low power: ${Math.round(supply)} of ${Math.round(demand)}`, subject: powerSubject(sim) });
+    add({ kind: 'power.shortage', key: 'p', text: powerAlertText(sim, home), subject: powerSubject(sim) });
   }
   for (const id of sim.world.query(DownedC)) {
     const d = sim.world.get(id, DownedC);
