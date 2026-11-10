@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, CrewC, JobC, ModuleC, NeedsC, PositionC, homeShip, newGame, type Sim } from '../sim';
+import { AssignmentC, BedOwnerC, CrewC, JobC, ModuleC, NeedsC, PathC, PositionC, homeShip, newGame, type Sim } from '../sim';
 import { HOUR_TICKS, hourAt } from '../sim/clock';
 import { ScheduleC, blockAt, blockNow, hoursOf, onCall, secToOffDuty } from '../sim/crew/schedule';
 import { staySec } from '../sim/away/crew';
@@ -175,6 +175,29 @@ describe('blocks in play', () => {
     expect(sim.world.has(c, SuitC)).toBe(true);
     run(sim, 60 * TICK_HZ);
     expect(sim.world.has(c, SuitC)).toBe(false);
+  });
+
+  it('a hungry crew member whose Sleep block starts eats before bed', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    for (const id of ids) {
+      sim.world.get(id, NeedsC)!.rest = 90;
+      sim.world.get(id, NeedsC)!.hunger = 20; // hungry, not urgent: a sleeper would not be woken for it
+    }
+    run(sim, 2); // bed owners assigned
+    for (const id of ids) {
+      // Standing on their own bed when the block turns: lying down takes no walk the meal search could interrupt.
+      const bed = sim.world.get(sim.world.get(id, BedOwnerC)?.bed ?? 0, ModuleC);
+      expect(bed).toBeDefined();
+      Object.assign(sim.world.get(id, PositionC)!, { x: bed!.x, y: bed!.y, toX: bed!.x, toY: bed!.y, progress: 0 });
+      sim.world.get(id, PathC)!.steps = [];
+    }
+    allDay(sim, ids, 'sleep');
+    run(sim, 90 * TICK_HZ);
+    for (const id of ids) {
+      expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping');
+      expect(sim.world.get(id, NeedsC)!.hunger).toBeGreaterThan(35);
+    }
   });
 
   it('a walk to bed cut short by the block turning Work gives the bed back', () => {

@@ -15,7 +15,6 @@ import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
-import { isErrand } from '../eva/errands';
 import { isSuited } from '../eva/suit';
 import { IntentC, PickupC, TaskC } from './components';
 import { airDraining } from './airNeed';
@@ -30,7 +29,8 @@ import type { DriveDef, MachineId } from './types';
 import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
-type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
+/** A need machine's turn: true when it took the crew member, false when it cannot start, `'later'` when it may start on a later tick (its search waits). */
+type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean | 'later';
 
 /** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
 const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
@@ -44,10 +44,13 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
   leisure: (sim, id, crew, pos) => !isSuited(sim, id) && leisureTurn(sim, id, crew, pos),
 };
 
-/** True if the job is a suit errand (suit up, stow, refill). */
-const isErrandJob = (sim: Sim, jobId: number): boolean => {
-  const job = sim.world.get(jobId, JobC);
-  return !!job && isErrand(job);
+/**
+ * True if the job is an errand an off-duty crew member still finishes (#412): stowing a suit or refilling its tank. Suiting up is for a job
+ * (the errand's `resume`), which off duty they let go, so that errand goes with it.
+ */
+const finishesOffDuty = (sim: Sim, jobId: number): boolean => {
+  const kind = sim.world.get(jobId, JobC)?.kind;
+  return kind === 'suitOff' || kind === 'refill';
 };
 
 /** Whether a drive's own task is under way (`keepWhileTask`): a meal, or a refill errand (the air drive). */
@@ -152,9 +155,9 @@ export function scheduleSystem(sim: Sim): void {
     const ranked = evaluateIntent(sim, id, view);
     pickupRequest(sim, id);
     // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): a held job is let go before any need's turn (a break or bed
-    // would otherwise keep it reserved), except a carried patient (set down first: that job runs on) and a suit errand, which they finish.
+    // would otherwise keep it reserved), except a carried patient (set down first: that job runs on) and stowing or refilling a suit, which they finish.
     const offDuty = !ranked.some((d) => d.task === 'job');
-    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || isErrandJob(sim, assignment.jobId));
+    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || finishesOffDuty(sim, assignment.jobId));
     if (offDuty && assignment && !keeps()) {
       abortTask(sim, id, 'offDuty');
       assignment = undefined;
@@ -162,7 +165,15 @@ export function scheduleSystem(sim: Sim): void {
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;
       const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
-      if (turn && !turn(sim, id, crew, pos, !!assignment)) continue;
+      const r = turn?.(sim, id, crew, pos, !!assignment);
+      // A need whose start waits for its tick (the meal search) keeps a lower need from taking the turn meanwhile (#412, Codex 4519425149: a
+      // Sleep block's bed before supper); work, when it comes next, goes on as before.
+      if (r === 'later') {
+        if (ranked.slice(i + 1).find((n) => n.task === 'job' || NEED_TURNS[n.task])?.task === 'job') continue;
+        served = true;
+        break;
+      }
+      if (turn && !r) continue;
       if (d.task === 'job' && i + 1 < ranked.length) idleDrives.set(id, ranked.slice(i + 1));
       serveDrive(sim, id, d.id);
       served = d.task !== 'job';
