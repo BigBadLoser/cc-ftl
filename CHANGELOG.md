@@ -38,6 +38,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Enemy ships and stations burn energy crystals like yours: ships spawn with a few days of them in their stores, stations hold a large stock that their supply runs refill, and derelicts have drained reactors. Crystals in their holds are loot.
 - Spacesuits are no longer limited: any airlock or shuttle has a suit for every crew member who needs one, so a shuttle can take a full party of four out to a wreck, all suited. ([#419](https://github.com/BigBadLoser/cc-ftl/pull/419))
 - Other ships are drawn roofed until your crew board them; stations stay open. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - Busy nodes run faster: a station hub's simulation step takes about a third less time (gas, heat, power, consoles, combat checks and lighting do less repeated work), with identical results. ([#374](https://github.com/BigBadLoser/cc-ftl/pull/374))

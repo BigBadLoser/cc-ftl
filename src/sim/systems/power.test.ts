@@ -61,11 +61,14 @@ describe('reactor fuel', () => {
     expect(mc(sim, ids[1] as number).powered).toBe(false);
   });
 
-  it('another faction\'s reactor is exempt: it never burns and never stalls', () => {
+  it('another faction\'s reactor burns like the player\'s and stalls when empty (#425)', () => {
     const { sim, ids } = setup('rogue', 'reactor', 'lamp');
-    run(sim, 100);
+    run(sim, 10);
     expect(mc(sim, ids[1] as number).powered).toBe(true);
-    expect(fuelOf(mc(sim, ids[0] as number), content.modules.reactor as ModuleDef)).toBe(6);
+    expect(fuelOf(mc(sim, ids[0] as number), content.modules.reactor as ModuleDef)).toBeCloseTo(5, 3);
+    mc(sim, ids[0] as number).fuel = 0;
+    run(sim, 1);
+    expect(mc(sim, ids[1] as number).powered).toBe(false);
   });
 });
 
