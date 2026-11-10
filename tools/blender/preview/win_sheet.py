@@ -1,10 +1,11 @@
 """Our window run (l | m | r) per look beside the ref's two layers. argv: out k then triples
 'dir:prefix:refstyle' (prefix e.g. tile.wall.slate.full.m10)."""
-import sys, glob
+import os, sys, glob
 import numpy as np
 from PIL import Image, ImageDraw
 out, k = sys.argv[1], int(sys.argv[2])
-REF = "/tmp/claude-0/-home-user/d90bd30e-5bfe-51f0-9d45-019095d96471/scratchpad/iwref"
+REF = os.environ.get("IWREF", "/tmp/claude-0/-home-user/d90bd30e-5bfe-51f0-9d45-019095d96471/scratchpad/iwref")
+#   (env IWREF: the unzipped v2 ref set, wall_style_<id>/3_tile_window_*/{full,small}/assembled_from_tiles.png)
 BG = (58, 62, 72, 255)
 def crop(im):
     return im.crop(im.getbbox())

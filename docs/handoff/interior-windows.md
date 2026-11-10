@@ -2,33 +2,48 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-08, end of session)
-- Done and approved: slate (sw46; upper layer kept as it renders) and default teal (dp16). Tan renders again and its
-  join dots are fixed (iw42, shown to the user, no reply needed). Branch pushed; last commits: 7cdd360b (tan's end
-  strip), 874eb469 (teal header), f40dabf4 (teal's cut slot).
-- Bastion: no window (the user, 2026-11-08, after bw8: "so bad that bastion gets no window"). Its module and jobs
-  file removed (last in c1a8589a: `sprites/wall3d_iwin_bast.py`, `preview/jobs_bwin.py`); the notes below kept for
-  the record.
-- Navy: N0 built and shown (render scratchpad `/tmp/claude-0/-home-user/62f72465-c138-4e94-9892-01799f49ef8a/scratchpad/nw3c`); N1 dropped (the posts stand on the blocks); slots (N3) built and shown (last render `nw3f`). Then drone, civil; each its own
-  module (only the machinery is shared). Process (the user, for bastion): deskew, measure, plan, ramp first; use the
-  ref's proportions where its pixel sizes won't fit ours.
-- Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, with the "window"
-  palette set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets.
+## Pick up here (state at 2026-11-10: windows parked by the user, "sick of windows")
+- Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
+  the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
+  the preview jobs files.
+- Per look: slate and default teal done and approved; tan built; bastion no window; navy parked at nw13 and flagged
+  ugly (its wall set wants a rethink); **drone parked at d15** (below); civil not started.
+- Drone (style 423) at d15: `tools/blender/sprites/wall3d_iwin_drone.py`, jobs `tools/blender/preview/jobs_drwin.py`.
+  Built: the cut to a flat floor 6 art px under the ramp's top out to where the slope falls to it; end blocks (flat
+  top 12 px in, slope to the floor at 16); blank posts at 11; drone's header rail kept (faction.drone.BLANK = the
+  rail's foot; NO_CENTRE drops the middle tile's centre block); the near ramp bare (no seams/outline/slots) with vents,
+  red boxes (17-30, 66-79, at the toe, tops 2 px under the sill, back to it), ribs (13-17, 79-83, 2 px past the toe,
+  underside sloping back), the middle slot (34-62, floor at the toe's top, 4 px into the sill) with a block in its
+  back (top 1 px under the sill). Not started: the ref's upper layer (pipe beam with clamps; posts with a red block
+  and a flared foot); real colours (blockout tones from drone's palette; the ref's red-box top is a lighter pink).
+- Navy: also carries the shade-side work (Navy.paint `<name>x` tones, restyle.Poly.n) and Style.seamless; see the
+  2026-11-08/09 log lines.
+- Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, the "window" palette
+  set for default `.win.` pieces), hull window wiring, re-rendering the shipped wall sheets (navy variants and its
+  shade-side fix).
 - The user's standing rules for this work: commit and push after every step to `art/hull-windows` (never main; the
-  user merges); commit messages carry no attribution and name no model; label images "Blender renders put together
-  as 2D composites"; don't send deskewed views; whole px only; change only what's asked; new colours in
-  `palette_extra.json` in a set (`slate`, or `window` for the default's window pieces), prefer the wall's own greys;
-  bump `sprite_cache.RENDER_VERSION` only for engine files; no `check:fast` for Python art; don't `pkill -f`; when
-  intent is ambiguous, ask with a marked image and send it; each change: render, show before / after (zoom and a
-  close-up), log a line here.
-- Working loop (scratchpad S=`/tmp/claude-0/-home-user/d90bd30e-5bfe-51f0-9d45-019095d96471/scratchpad`):
-  render `cd tools/blender/preview && SPRITE_SS=4 timeout 1500 /opt/tools/blender-4.2.9-linux-x64/blender -b
-  --factory-startup --python render.py -- /home/user/cc-ftl-windows $S/<out> jobs_<dwin|swin|iwin>.py [id,id,...]`
-  (ids comma-separated; none = every job); sheet `cd /tmp && python3 -I $S/scripts/win_sheet.py $S/AvB.png 5
-  "$S/A:<prefix>:<ref>" "$S/B:<prefix>:<ref>"` (prefix `tile.wall.full.m10` / `tile.wall.slate.full.m10` /
-  `tile.wall.tan.full.m10`; ref 3168 / 44 / 43); zoom = its rows at 0.05-0.47 H and 0.54-0.96 H, x 0-0.4 W, side by
-  side; 1x run composite `$S/scripts/run1x.py` (`run(dir, prefix)`), crop and scale it for close-ups. Last renders:
-  teal dp16, slate sw49, tan iw42. Pixel-identical checks: compare npz files (`rgba`, `a`) with numpy.
+  user merges); log a dated line here per step; commit messages carry no attribution and name no model; label
+  images "Blender renders put together as 2D composite"; show our whole run beside the whole ref at 4x (no
+  before/after, no extreme crops, no deskewed views); whole px only; change only what's asked; when intent is
+  ambiguous, ask; new colours in `palette_extra.json` in a set, edited as text (no JSON re-dump); bump
+  `sprite_cache.RENDER_VERSION` only for engine files (core, post, env_build, scale, geom_digest, sprite_cache);
+  don't `pkill -f`; never `rm` variable paths; don't run Python from inside `sprites/` (`struct.py` shadows the
+  stdlib).
+- Measuring a ref: deskew (`preview/deskew_ref.py`, or shift column x up by (x+1)//2), then `preview/ascii_map.py`.
+  In deskewed space row = y_out - z, col = x - y_out: 1 px out = +1 row, -1 col; 1 art px up = -1 row. Widths and
+  depths carry over as is; heights scale (our walls and ramps are taller than the refs': drone's ramp falls 26 to
+  the ref's ~21).
+- Working loop: render `cd tools/blender/preview && SPRITE_SS=4 timeout 1500
+  /opt/tools/blender-4.2.9-linux-x64/blender -b --factory-startup --python render.py -- /home/user/cc-ftl-windows
+  <out dir> jobs_<drwin|nwin|swin|dwin|iwin>.py [id,id,...]` (out: npz with `rgba`, `a` = anchor); sheet
+  `IWREF=<refs> python3 win_sheet.py <out.png> 4 <dir>:tile.wall.<look>.full.m10:<style id>` (our win.l|m|r beside
+  the ref's upper and lower layers). Pixel-identical checks: compare npz `rgba` with numpy (render the plain
+  `tile.wall.<look>.full.m10` alongside and compare it to an earlier render whenever shared code changes).
+- Scratch state is not durable: renders, refs and helper scripts live in session scratchpads under
+  `/tmp/claude-0/-home-user/*/scratchpad` (this one: `.../d90bd30e-5bfe-51f0-9d45-019095d96471/scratchpad`, refs
+  unzipped in its `iwref/`; renders in `.../62f72465-c138-4e94-9892-01799f49ef8a/scratchpad`: `dr15` drone, `nw13`
+  navy). If they are gone, unzip the user's ref zips again (Refs, below) or ask the user to re-upload them; every
+  render can be remade from the branch.
 
 ## What an interior window is
 A straight partition (mask 10, along x) opened between its end posts, with a beam over the opening and a see-through
@@ -60,7 +75,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
-| 423 (set 5) | drone | 2765 / 2764 / 2863 | to do |
+| 423 (set 5) | drone | 2765 / 2764 / 2863 | parked at d15 (the user, 2026-11-10: sick of windows): `sprites/wall3d_iwin_drone.py`, upper layer not started |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
