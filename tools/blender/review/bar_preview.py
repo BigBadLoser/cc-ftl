@@ -11,12 +11,13 @@ from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
 NAMES = {"b1": "B1  neon dive", "b2": "B2  warm lounge", "b3": "B3  white tech",
          "b4": "B4  island bar", "b5": "B5  the robot is the bar", "b6": "B6  tube bar",
-         "b7": "B7  retro diner", "b8": "B8  the still", "b9": "B9  automat"}
+         "b7": "B7  retro diner", "b8": "B8  the still", "b9": "B9  automat",
+         "b10": "B10  halo globes", "b11": "B11  layer reactor", "b12": "B12  aquarium"}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "b7,b8,b9").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "b10,b11,b12").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(260 * len(names), 230)
     for i, v in enumerate(names):
