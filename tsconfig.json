@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["vite/client", "svelte"]
+    "types": ["vite/client", "svelte"],
+    "paths": { "$lib": ["./tools/layout/lib"], "$lib/*": ["./tools/layout/lib/*"] }
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "tools/profile/**/*.ts", "tools/lab/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "tools/profile/**/*.ts", "tools/lab/**/*.ts", "tools/layout/**/*.ts", "tools/layout/**/*.svelte"]
 }
