@@ -85,7 +85,9 @@ describe('shipyard: bigger jobs', () => {
   }, 120000);
 
   it('opens the old outer hull where the new section joins on, and leaves the outer ring shut (#385)', () => {
-    const { sim, station, me } = yardGame('station', 'station.military');
+    // No crew schedules (#412): the room checked below holds bunks, and a crew member asleep there through a Sleep block breathes its tile
+    // down to about 20 kPa by itself. The test is about the air the delivery brings, not about a sleeper's breath.
+    const { sim, station, me } = yardGame('station', 'station.military', { ...content, schedules: {} as typeof content.schedules });
     giveItems(sim, 'item.metal', 300);
     const s = { ...sim.world.get(me, ShipC)! }; // the order grows the ship's rectangle: keep the old corner
     const grid = sim.sector.grid;

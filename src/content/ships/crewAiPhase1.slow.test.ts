@@ -106,6 +106,7 @@ function hazard(seed: number): Sim {
   sim.world.get(crew[3]!, NeedsC)!.hunger = 40;
   const prio = sim.world.get(crew[3]!, PrioritiesC)!;
   for (const k of Object.keys(prio)) (prio as Record<string, number>)[k] = 0; // no job ever takes them off the break
+  sim.enqueue({ type: 'crew.schedule.preset', id: crew[3]!, preset: 'schedule.any' }); // needs decide (#412): no Work block closing the break
   return sim;
 }
 
