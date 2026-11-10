@@ -445,9 +445,146 @@ def c3_holo():
     return k
 
 
+# ---- round 4: variants of C1 (the drum, its front console, the emitter ring, a game in the round) --------------------
+
+GOLD = ("arcGoldL", "arcGold", "arcGoldD")
+
+
+def console(k, ramp, w=8):
+    """C1's control console jutting from the drum's front: a sloped panel, the stick, two buttons, a coin slot."""
+    body(k, P(-w), P(w), [[(5, 6), (9, 6), (15, 20), (15, 24), (10, 26), (5, 26)]], ramp)
+    slab(k, P(-w), P(w), (15, 24), (10, 26), 0.5, PANEL)
+    stick(k, -3.5, 13.5, 24.5)
+    for u, col in ((1.5, "arcBtnY"), (4.5, "arcBtnB")):
+        button(k, u, 13, 25, col)
+    slab(k, P(-2), P(2), (10.3, 9), (11.6, 12), 0.3, one("arcCoin"), d=0.8)
+
+
+def emitter(k, glow, deck=("arcChrD", "arcChr"), z=26):
+    """The chrome deck on the drum's top, the lit emitter ring, its dark lens well."""
+    k.cyl(0.0, 0.0, Z(z), 0.38, Z(2), deck[0], top=deck[1], sides=16)
+    k.cyl(0.0, 0.0, Z(z + 2), 0.3, Z(0.6), glow, top=glow, sides=16)
+    k.cyl(0.0, 0.0, Z(z + 2), 0.25, Z(1), "arcBodyK", top="arcBodyK", sides=16)
+
+
+def seams(k, r, z0, h, col, angles=(0.6, 2.2, 3.9, 5.4)):
+    for a in angles:
+        k.box(r * math.cos(a), r * math.sin(a), Z(z0), 0.012, 0.012, Z(h), col, rz=a)
+
+
+def beams(k, col, top, r=0.2, angles=(0.3, 2.4, 4.5)):
+    for a in angles:
+        k.box(r * math.cos(a), r * math.sin(a), Z(28.6), 0.014, 0.014, top - Z(28.6), col)
+
+
+def planet(k, zc, R, film, lit):
+    for z0, z1, r0, r1 in ((-1, -0.5, 0.3, 0.85), (-0.5, 0.5, 0.85, 0.85), (0.5, 1, 0.85, 0.3)):
+        k.cyl(0.0, 0.0, zc + z0 * R, r0 * R, (z1 - z0) * R, film, top=film, sides=12, rtop=r1 * R)
+    for dz, r in ((-0.5, 0.86), (0.0, 0.87), (0.5, 0.86)):
+        k.cyl(0.0, 0.0, zc + dz * R - 0.008, r * R, 0.016, lit, top=lit, sides=12)
+
+
+def d1():
+    """White drum, cyan: C1 in a white shell with cyan seams and ring, chrome deck, a dark console."""
+    k = Bench("arcade_d1", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.36, Z(23), "arcShellD", top="arcShell", sides=16)
+    k.cyl(0.0, 0.0, Z(12), 0.365, Z(2), "arcChrD", top="arcChr", sides=16)              # a chrome belt
+    emitter(k, "arcCyan")
+    seams(k, 0.365, 15, 9, "arcCyan")
+    console(k, BODY)
+    return k.build()
+
+
+def d1_holo():
+    """A cyan planet with lit rings, a pink moon and an amber ship on a cyan orbit, cyan beams."""
+    k = Bench("arcade_d1_holo", FP)
+    zc = Z(50)
+    planet(k, zc, 0.17, "arcCyanF", "arcCyan")
+    ring_of(k, 0.4, zc - 0.05, 24, 0.11, "arcCyan", h=0.02)
+    a = 2.6
+    k.cyl(0.4 * math.cos(a), 0.4 * math.sin(a), zc - 0.08, 0.06, 0.12, "arcPinkF", top="arcPink", sides=10)   # the moon
+    a = 0.9
+    k.box(0.4 * math.cos(a), 0.4 * math.sin(a), zc - 0.08, 0.1, 0.06, 0.07, "arcAmb", top="arcAmb", rz=a + 1.57)
+    for a, r, dz in ((4.0, 0.36, -0.12), (5.3, 0.42, 0.08)):
+        k.box(r * math.cos(a), r * math.sin(a), zc + dz, 0.05, 0.05, 0.05, "arcAmbF", top="arcAmb")
+    beams(k, "arcCyan", zc - 0.17)
+    return k
+
+
+def d2():
+    """Brass arena: a dark drum banded in brass, an amber ring, the console in brass."""
+    k = Bench("arcade_d2", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcGoldD", top="arcGold", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.36, Z(23), "arcBodyD", top="arcBody", sides=16)
+    for z in (6, 18):
+        k.cyl(0.0, 0.0, Z(z), 0.365, Z(1.2), "arcGoldD", top="arcGold", sides=16)        # brass bands
+    emitter(k, "arcAmb", deck=("arcGoldD", "arcGoldL"))
+    seams(k, 0.365, 8, 9, "arcAmb", angles=(0.4, 1.4, 2.4, 3.4, 4.4, 5.4))
+    console(k, GOLD)
+    return k.build()
+
+
+def d2_holo():
+    """A battle arena floating over the ring: an amber grid platform, a pink and a cyan fighter on it, a shot between
+    them, the score as a halo above; amber beams."""
+    k = Bench("arcade_d2_holo", FP)
+    zp, h = Z(44), 0.3
+    k.box(0.0, 0.0, zp, 2 * h, 2 * h, 0.01, "arcAmbF", top="arcAmbF")                   # the platform,
+    for i in range(5):                                                                   # its grid
+        t = -h + i * h / 2
+        k.box(t, 0.0, zp + 0.01, 0.014, 2 * h, 0.006, "arcAmb", top="arcAmb")
+        k.box(0.0, t, zp + 0.01, 2 * h, 0.014, 0.006, "arcAmb", top="arcAmb")
+    for (u, v), film, lit in (((-0.15, -0.12), "arcPinkF", "arcPink"), ((0.14, 0.13), "arcCyanF", "arcCyan")):
+        k.box(u, v, zp + 0.01, 0.07, 0.07, 0.09, film, top=lit)                         # the fighters,
+        k.box(u, v, zp + 0.1, 0.04, 0.04, 0.04, lit, top=lit)
+    k.box(0.0, 0.0, zp + 0.06, 0.24, 0.014, 0.014, "arcPink", rz=0.8)                    # a shot
+    ring_of(k, 0.16, Z(60), 14, 0.07, "arcAmb", h=0.02)                                  # the score halo
+    beams(k, "arcAmb", zp, r=0.22, angles=(0.8, 2.4, 3.9, 5.5))
+    return k
+
+
+def d3():
+    """Teal hourglass: the drum pinched at the waist (a wide foot, a narrow waist, the deck flaring out), teal with
+    chrome bands and a green ring."""
+    k = Bench("arcade_d3", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.37, Z(11), "arcTealD", top="arcTeal", sides=16, rtop=0.24)  # the foot tapering in,
+    k.cyl(0.0, 0.0, Z(14), 0.24, Z(12), "arcTealD", top="arcTealL", sides=16, rtop=0.36)  # flaring out to the deck
+    k.cyl(0.0, 0.0, Z(13.5), 0.25, Z(1), "arcChrD", top="arcChr", sides=16)              # a chrome band at the waist
+    emitter(k, "arcGrn")
+    console(k, TEAL, w=7)
+    return k.build()
+
+
+def d3_holo():
+    """Falling blocks: a green well outlined in light, settled blocks at its foot, a piece falling, green beams."""
+    k = Bench("arcade_d3_holo", FP)
+    w, z0, z1 = 0.17, Z(33), Z(60)
+    for u in (-w, w):                                                                    # the well's edges
+        for v in (-w, w):
+            k.box(u, v, z0, 0.014, 0.014, z1 - z0, "arcGrn")
+    for z in (z0, z1):
+        for u in (-w, w):
+            k.box(u, 0.0, z, 0.014, 2 * w, 0.014, "arcGrn")
+        for v in (-w, w):
+            k.box(0.0, v, z, 2 * w, 0.014, 0.014, "arcGrn")
+    s = 0.085
+    cols = (("arcPinkF", "arcPink"), ("arcAmbF", "arcAmb"), ("arcCyanF", "arcCyan"), ("arcGrnF", "arcGrn"))
+    for i, (u, v, lev, c) in enumerate(((-1, -1, 0, 0), (0, -1, 0, 0), (1, -1, 0, 1), (-1, 0, 0, 2), (0, 0, 0, 1),
+                                        (1, 0, 0, 1), (-1, 1, 0, 2), (1, 1, 0, 3), (-1, -1, 1, 3), (1, 0, 1, 0))):
+        film, lit = cols[c]
+        k.box(u * s, v * s, z0 + lev * s * 1.1, s * 0.92, s * 0.92, s, lit, top=lit)      # the settled blocks, lit,
+    for u, v, lev in ((0, 0, 4), (1, 0, 4), (0, 0, 5), (0, 0, 6)):                       # the falling piece
+        k.box(u * s, v * s, z0 + lev * s * 1.1, s * 0.92, s * 0.92, s, "arcPink", top="arcPink")
+    beams(k, "arcGrn", z0)
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
-                                                              ("c3", c3))]
+                                                              ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
-                  (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo))]
+                  (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
+                   ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo))]

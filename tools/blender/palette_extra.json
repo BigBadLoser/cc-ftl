@@ -3606,5 +3606,12 @@
   "arcVioF": {"hex": "#7a68c4", "set": "arcade"},
   "arcOrgL": {"hex": "#ffb36b", "set": "arcade"},
   "arcOrg": {"hex": "#e8873a", "set": "arcade"},
-  "arcOrgD": {"hex": "#ad5f28", "set": "arcade"}
+  "arcOrgD": {"hex": "#ad5f28", "set": "arcade"},
+  "arcAmb": {"hex": "#ffc35a", "emissive": 2.2, "set": "arcade"},
+  "arcAmbF": {"hex": "#b98a46", "set": "arcade"},
+  "arcGrn": {"hex": "#6dff9e", "emissive": 2.2, "set": "arcade"},
+  "arcGrnF": {"hex": "#4c9f72", "set": "arcade"},
+  "arcGoldL": {"hex": "#f0d48a", "set": "arcade"},
+  "arcGold": {"hex": "#c9a24e", "set": "arcade"},
+  "arcGoldD": {"hex": "#8a6a2c", "set": "arcade"}
 }

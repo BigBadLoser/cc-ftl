@@ -1,7 +1,7 @@
 """Arcade cabinet look study preview (plain python3 + numpy + PIL): each design on a floor tile, a crew member at its front
 for scale (two tiles: the cabinet's and the one in front of it, +v).
 
-  python3 -I tools/blender/review/arcade_preview.py <arcade assets dir> <out dir> [designs, default c1,c2,c3]
+  python3 -I tools/blender/review/arcade_preview.py <arcade assets dir> <out dir> [designs, default c1,d1,d2,d3]
     -> arcade-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -11,12 +11,13 @@ from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
 NAMES = {"a1": "A1  classic upright", "a2": "A2  hooded", "a3": "A3  fibreglass",
          "b1": "B1  holo cabinet", "b2": "B2  cocktail table", "b3": "B3  space-age orb",
-         "c1": "C1  holo orrery", "c2": "C2  open-frame upright", "c3": "C3  holo pinball"}
+         "c1": "C1  holo orrery", "c2": "C2  open-frame upright", "c3": "C3  holo pinball",
+         "d1": "D1  white drum, cyan", "d2": "D2  brass arena", "d3": "D3  teal hourglass"}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "c1,c2,c3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "c1,d1,d2,d3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(170 * len(names), 200)
     for i, v in enumerate(names):
