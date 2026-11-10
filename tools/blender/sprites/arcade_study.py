@@ -890,7 +890,7 @@ def g2():
     return drum("arcade_g2", BODY, "arcCyan")
 
 
-TILT_A, TILT_B, TILT_W = (0, 36), (-5, 63), 14                      # the screen's foot (over the ring's middle) and
+TILT_A, TILT_B, TILT_W = (0, 42), (-5, 69), 14                      # the screen's foot (over the ring's middle) and
                                                                      # head (near upright, facing the player), half width
 
 
@@ -1018,6 +1018,65 @@ def g3_holo():
     return k
 
 
+# ---- projection, round 2: every beam from one point, the lens in the emitter's well -----------------------------------
+
+LENS = (0.0, 0.0, Z(28.4))
+
+
+def lens(k):
+    """The projector's lens: a small bright disc in the emitter's well, the point every beam leaves from."""
+    k.cyl(0.0, 0.0, Z(27.8), 0.06, Z(0.8), "arcCyan", top="arcCyan", sides=10)
+
+
+def lerp(p, q, f):
+    return tuple(p[i] + (q[i] - p[i]) * f for i in range(3))
+
+
+def i1_holo():
+    """Pyramid beam: film faces from the lens to the screen's edges (left, right, front), lit rays up its corners."""
+    k = Bench("arcade_i1_holo", FP)
+    c = tilt_screen(k)
+    lens(k)
+    for q in c:
+        bar(k, LENS, q, 0.012, "arcCyan")
+    for i, j in ((0, 1), (0, 3), (1, 2)):
+        film(k, [LENS, c[i], c[j]])
+    return k
+
+
+def i2_holo():
+    """Ray fan: no film, a spray of thin rays from the lens, lit to the corners and film colour to points along the
+    foot and sides between them."""
+    k = Bench("arcade_i2_holo", FP)
+    c = tilt_screen(k)
+    lens(k)
+    for q in c:
+        bar(k, LENS, q, 0.01, "arcCyan")
+    for f in (0.2, 0.4, 0.6, 0.8):
+        bar(k, LENS, lerp(c[0], c[1], f), 0.01, "arcCyanF")
+    for f in (0.33, 0.66):
+        bar(k, LENS, lerp(c[0], c[3], f), 0.01, "arcCyanF")
+        bar(k, LENS, lerp(c[1], c[2], f), 0.01, "arcCyanF")
+    return k
+
+
+def i3_holo():
+    """Fading beam: the pyramid bright near the lens and fading out on the way up (its film faces and lit rays stop
+    part way, film-coloured rays carry on to the corners), so the screen floats in the beam's light."""
+    k = Bench("arcade_i3_holo", FP)
+    c = tilt_screen(k)
+    lens(k)
+    F = 0.45
+    m = [lerp(LENS, q, F) for q in c]
+    for q, p in zip(c, m):
+        bar(k, LENS, p, 0.014, "arcCyan")
+        bar(k, p, q, 0.01, "arcCyanF")
+    for i, j in ((0, 1), (0, 3), (1, 2)):
+        film(k, [LENS, m[i], m[j]])
+    ring_of(k, 0.1, Z(29.5), 10, 0.065, "arcCyan", h=0.01)                              # a halo round the lens
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
@@ -1025,11 +1084,13 @@ def jobs():
                                                               ("e1", e1), ("e2", e2), ("e3", e3), ("f1", f1),
                                                               ("f2", f2), ("f3", f3), ("g1", g1),
                                                               ("g2", g2), ("g3", g3), ("h1", g2),
-                                                              ("h2", g2), ("h3", g2))]
+                                                              ("h2", g2), ("h3", g2), ("i1", g2),
+                                                              ("i2", g2), ("i3", g2))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
                    ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
                    ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo),
                    ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo),
                    ("g1", g1, g1_holo), ("g2", g2, g2_holo), ("g3", g3, g3_holo),
-                   ("h1", g2, h1_holo), ("h2", g2, h2_holo), ("h3", g2, h3_holo))]
+                   ("h1", g2, h1_holo), ("h2", g2, h2_holo), ("h3", g2, h3_holo),
+                   ("i1", g2, i1_holo), ("i2", g2, i2_holo), ("i3", g2, i3_holo))]
