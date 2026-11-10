@@ -10,7 +10,7 @@ import type { Sim } from '../sim';
 import { shipIdOf, shipGrid } from '../regions';
 import { modulesWhere, type ModuleList } from '../modules/byShip';
 
-interface Member {
+export interface Member {
   id: number;
   m: Module;
   def: ModuleDef;
@@ -55,7 +55,8 @@ function networksOf(sim: Sim): Member[][] {
   return out;
 }
 
-function allocate(sim: Sim, members: Member[]): void {
+/** Allocate one network (exported for the tick-cost equivalence test, which groups the modules the naive way). */
+export function allocate(sim: Sim, members: Member[]): void {
   const first = members[0];
   const ship = first ? shipIdOf(sim, first.m) : 0;
   const burns = burnsFuel(sim, ship);

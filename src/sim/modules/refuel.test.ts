@@ -3,6 +3,7 @@ import { stampShip } from '../combat/ships';
 import { CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
 import { storageAdd, storageCount } from '../items/storage';
 import type { ContentRegistry, ModuleDef } from '../registry';
+import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
 import { ModuleC } from './components';
 import { fuelOf } from './energy';
@@ -13,7 +14,7 @@ const reactorDef = mod({ solid: true, footprint: [2, 2], power: 50, powerPriorit
 const content: ContentRegistry = {
   ships: {}, roles: {}, crewNames: [], recipes: {}, structCosts: {},
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, carryCapacity: 20 } },
-  modules: { reactor: reactorDef, storage: mod({ solid: true, access: [0, 1], storage: { capacity: 4 } }) },
+  modules: { reactor: reactorDef, storage: mod({ solid: true, access: [0, 1], storage: { capacity: 4 } }), bank: mod({ battery: { capacity: 400 } }) },
   items: { crystal: { name: 'c', tags: [], stackSize: 50 } },
 };
 const rows = ['############', '#__________#', '#__________#', '#__________#', '#__________#', '############'];
@@ -64,5 +65,20 @@ describe('reactor refuelling', () => {
     sim.world.get(reactor, ModuleC)!.fuel = 0;
     run(sim, 60);
     expect(refuelJobs(sim)).toBe(0);
+  });
+
+  it('a save round trip keeps the store, the charge and the job in step', () => {
+    const { sim, reactor } = setup(20);
+    const bank = spawnModule(sim, 'bank', 6, 4, 0);
+    sim.world.get(reactor, ModuleC)!.fuel = 2.25;
+    sim.world.get(bank, ModuleC)!.charge = 123.5;
+    run(sim, 25); // the refuel job is posted and a haul is under way
+    const copy = deserialize(serialize(sim), content);
+    expect(copy.world.get(reactor, ModuleC)!.fuel).toBeCloseTo(sim.world.get(reactor, ModuleC)!.fuel as number, 9);
+    expect(copy.world.get(bank, ModuleC)!.charge).toBeCloseTo(sim.world.get(bank, ModuleC)!.charge as number, 9);
+    run(sim, 400);
+    run(copy, 400);
+    expect(serialize(copy)).toBe(serialize(sim));
+    expect(fuel(copy, reactor)).toBeGreaterThan(5);
   });
 });
