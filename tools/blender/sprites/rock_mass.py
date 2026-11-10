@@ -121,8 +121,9 @@ def mass(k, tile, ox, oy):
                     n = -n
                 if tile.ore:
                     tc = (tr[0] + tr[1] + tr[2]) / 3
-                    if tile.ore.strength(tc.x, tc.y, tc.z) > 0:
-                        polyg(k, [p + O for p in tr], tile.ore.col(n, tc.x, tc.y, tc.z), up)
+                    vc = tile.ore.col(n, tc.x, tc.y, tc.z) if tile.ore.strength(tc.x, tc.y, tc.z) > 0 else None
+                    if vc:
+                        polyg(k, [p + O for p in tr], vc, up)
                         continue
                 col = None
                 if zc - gbase(cx, cy) < 0.012 and n.z > 0.95:                             # levelled ground at an
