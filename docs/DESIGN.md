@@ -208,6 +208,7 @@ the user picks from mocks) and a HUD clock come later.
   or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are
   **wrecked** and can be salvaged for parts.
 - The **rogue AI** faction is crewed by robots and hostile to everyone. Its robots run off their ship's **AI core**.
+  Off for now (#427): their sealed reactor pods can't be refuelled; returns with a shipgen pass.
   When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
   robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
   the hacking skill can hack a core; this is a job that takes time.

@@ -51,7 +51,8 @@ describe('the population over many seeds', () => {
       }
     }
     expect(withDens).toBeGreaterThanOrEqual(MIN_PIRATE_WORLDS);
-    expect([...kinds].sort()).toEqual(['den', 'depot', 'nest', 'outpost', 'station']);
+    // No 'nest' while the rogue AI is off (#427); add it back with them.
+    expect([...kinds].sort()).toEqual(['den', 'depot', 'outpost', 'station']);
     // Pirates lean strongly to one ship; two small ones now and then.
     expect(pirates[0]).toBeGreaterThan((pirates[1] ?? 0) * 2);
     expect(pirates[1]).toBeGreaterThan(0);
