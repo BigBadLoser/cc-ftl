@@ -27,7 +27,7 @@ def stadium(k, hu, hv, z, h, col, top=None, sides=16):
         k.cyl(s * (hu - hv), 0.0, z, hv, h, col, top=top, sides=sides)
 
 
-def stool(k, u, v, face):
+def stool(k, u, v, face, glow="arcCyan"):
     """A stool: a disc foot, a post, a padded seat with a chrome rim, a low back on the side away from the table;
     `face` = the way the sitter faces (-1: toward -v)."""
     k.cyl(u, v, 0.0, 0.14, 0.03, "arcBodyK", top="arcBodyK", sides=12)
@@ -35,7 +35,7 @@ def stool(k, u, v, face):
     k.cyl(u, v, 0.29, 0.19, 0.04, "arcChrD", top="arcChr", sides=14)
     k.cyl(u, v, 0.33, 0.17, 0.06, "arcBodyD", top="arcBody", sides=14)
     k.box(u, v - face * 0.16, 0.36, 0.3, 0.05, 0.2, "arcBodyD", top="arcBody")              # the back
-    k.box(u, v - face * 0.16, 0.56, 0.3, 0.05, 0.02, "arcCyan", top="arcCyan")             # its lit edge
+    k.box(u, v - face * 0.16, 0.56, 0.3, 0.05, 0.02, glow, top=glow)                       # its lit edge
 
 
 def table(name, rot=0):
@@ -737,11 +737,12 @@ def q4_holo():
 
 # ---- round 7: the dais table with a recessed projector (as the arcade's), the duel spread over the whole table -------
 
-def r_table(name, trough=False):
+def r_table(name, trough=False, rot=0, off=False):
     """L3's table (slim top on one round column), its dais replaced by a recessed projector: a chrome collar with a lit
     rim round a dark well, the lens(es) on a chrome housing held by struts. `trough`: a long stadium-shaped well along
     the table with three lenses in a row, in place of the round one."""
-    k = Bench(name, FP2)
+    glow = "arcCyanOff" if off else "arcCyan"                       # `off`: unpowered, every light dark
+    k = Bench(name, FP2, rot)
     k.cyl(0.0, 0.0, 0.0, 0.3, 0.04, "arcBodyK", top="arcBodyK", sides=16)
     k.cyl(0.0, 0.0, 0.04, 0.16, TOP - 0.14, "arcBodyD", top="arcBody", sides=16)
     k.cyl(0.0, 0.0, 0.3, 0.17, 0.03, "arcChrD", top="arcChr", sides=16)
@@ -750,12 +751,12 @@ def r_table(name, trough=False):
     if trough:
         stadium(k, 0.6, 0.15, TOP, 0.004, "arcBodyK", top="arcBodyK")                    # the well's floor,
         stadium_ring(k, 0.64, 0.19, TOP, 0.045, 0.05, "arcChrD", "arcChr")               # the collar,
-        stadium_ring(k, 0.64, 0.19, TOP + 0.045, 0.008, 0.02, "arcCyan", "arcCyan")      # its lit rim
+        stadium_ring(k, 0.64, 0.19, TOP + 0.045, 0.008, 0.02, glow, glow)      # its lit rim
         for u in LENSES_T:
             for a in (0.0, math.pi):
                 k.box(u, 0.0, TOP + 0.004, 0.012, 0.24, 0.012, "arcChrD", top="arcChr")  # the struts,
             k.cyl(u, 0.0, TOP + 0.004, 0.06, 0.02, "arcChrD", top="arcChr", sides=10)    # a housing,
-            k.cyl(u, 0.0, TOP + 0.024, 0.038, 0.004, "arcCyan", top="arcCyan", sides=10)  # a lens
+            k.cyl(u, 0.0, TOP + 0.024, 0.038, 0.004, glow, top=glow, sides=10)  # a lens
     else:
         r, n = 0.22, 20
         k.cyl(0.0, 0.0, TOP, 0.2, 0.004, "arcBodyK", top="arcBodyK", sides=16)           # the well's floor,
@@ -763,17 +764,17 @@ def r_table(name, trough=False):
             a = i * math.tau / n
             k.box(r * math.cos(a), r * math.sin(a), TOP, math.tau * r / n * 1.12, 0.05, 0.045, "arcChrD",
                   top="arcChr", rz=a + math.pi / 2)
-        ring_of(k, r, TOP + 0.045, n, 0.075, "arcCyan", h=0.008)                         # its lit rim,
+        ring_of(k, r, TOP + 0.045, n, 0.075, glow, h=0.008)                         # its lit rim,
         for a in (0.5, 2.6, 4.7):                                                        # the struts,
             k.box(0.12 * math.cos(a), 0.12 * math.sin(a), TOP + 0.004, 0.12, 0.018, 0.012, "arcChrD",
                   top="arcChr", rz=a)
         k.cyl(0.0, 0.0, TOP + 0.004, 0.07, 0.025, "arcChrD", top="arcChr", sides=12)       # the housing,
-        k.cyl(0.0, 0.0, TOP + 0.029, 0.045, 0.004, "arcCyan", top="arcCyan", sides=12)    # the lens
+        k.cyl(0.0, 0.0, TOP + 0.029, 0.045, 0.004, glow, top=glow, sides=12)    # the lens
     for sgn in (-1, 1):                                                                  # a lit pad at each place
         k.box(sgn * 0.72, 0.0, TOP, 0.22, 0.46, 0.004, "arcCyanF", top="arcCyanF")
     for u, v in SEATS:
         bar(k, (0.0, 0.0, 0.03), (u, v, 0.03), 0.06, "arcChrD")
-        stool(k, u, v, -1 if v > 0 else 1)
+        stool(k, u, v, -1 if v > 0 else 1, glow)
     return k.build()
 
 
@@ -878,7 +879,7 @@ def robot3(k, u, z, col, f):
     bx(k, u, -0.13, z + 0.1, 0.06, 0.05, 0.07, col)                                       # the other fist
 
 
-def dragon(k, u, z, col, f):
+def dragon(k, u, z, col, f, flap=0.0):
     """A dragon: hind legs, a body, a long neck up to a horned head, two wings raised, a tail."""
     for dv in (-0.05, 0.05):
         bx(k, u - f * 0.04, dv, z, 0.05, 0.04, 0.08, col)
@@ -887,8 +888,8 @@ def dragon(k, u, z, col, f):
     bx(k, u + f * 0.15, 0.0, z + 0.25, 0.1, 0.07, 0.05, col)                             # the head,
     bx(k, u + f * 0.12, 0.0, z + 0.3, 0.015, 0.05, 0.04, "arcMarq", ry=-f * 0.4)         # its horns,
     for sv in (-1, 1):                                                                    # the wings: lit sails
-        film(k, [(u + f * 0.03, sv * 0.05, z + 0.16), (u - f * 0.1, sv * 0.1, z + 0.44),  # from the shoulders up
-                 (u - f * 0.16, sv * 0.08, z + 0.18)], col)                               # past the head
+        film(k, [(u + f * 0.03, sv * 0.05, z + 0.16), (u - f * 0.1, sv * (0.1 + flap), z + 0.44 - flap),
+                 (u - f * 0.16, sv * 0.08, z + 0.18)], col)                               # (flap: tips out, down)
     bx(k, u - f * 0.15, 0.0, z + 0.09, 0.14, 0.03, 0.03, col, ry=-f * 0.3)              # the tail
 
 
@@ -905,18 +906,19 @@ def golem(k, u, z, col, f):
         bx(k, u + f * 0.08, sv * 0.14, z, 0.09, 0.09, 0.08, col)                          # fists
 
 
-def serpent(k, u, z, col, f):
+def serpent(k, u, z, col, f, sway=0.0):
     """A serpent: a coil on the ground, its body rising in an S to a hooded head with cream eyes."""
     for i in range(6):                                                                    # the coil
         a = i * math.tau / 6
         bx(k, u + 0.07 * math.cos(a), 0.07 * math.sin(a), z, 0.06, 0.06, 0.05, col)
     for i, (du, dz, sz) in enumerate(((0.02, 0.05, 0.06), (0.05, 0.11, 0.055), (0.04, 0.17, 0.05),
                                       (0.07, 0.22, 0.045))):
-        bx(k, u + f * du, 0.0, z + dz, sz, sz, sz, col)                                   # the rising body,
-    bx(k, u + f * 0.1, 0.0, z + 0.26, 0.06, 0.14, 0.07, col)                              # the hood,
-    bx(k, u + f * 0.13, 0.0, z + 0.27, 0.07, 0.06, 0.045, col)                            # the head,
+        bx(k, u + f * (du + sway * i / 3), 0.0, z + dz, sz, sz, sz, col)                  # the rising body,
+    hu = u + f * sway                                                                     # (sway: the head and neck
+    bx(k, hu + f * 0.1, 0.0, z + 0.26, 0.06, 0.14, 0.07, col)                             # forward or back) the hood,
+    bx(k, hu + f * 0.13, 0.0, z + 0.27, 0.07, 0.06, 0.045, col)                           # the head,
     for dv in (-0.018, 0.018):
-        bx(k, u + f * 0.166, dv, z + 0.29, 0.004, 0.012, 0.012, "arcMarq")               # the eyes
+        bx(k, hu + f * 0.166, dv, z + 0.29, 0.004, 0.012, 0.012, "arcMarq")              # the eyes
 
 
 def crab(k, u, z, col, f):

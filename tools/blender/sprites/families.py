@@ -27,6 +27,8 @@
             MODPACK_ROTS=1 renders r0 only, for quick previews)
   arcade    arcade cabinet look study, preview only (arcade_study.py)
   gametable holo game table look study, preview only (gametable_study.py)
+  gametable_module  the holo game table module.gametable (2x1, study r1 + s4): idle, .unpowered, .active frames (hologram
+            baked in), seated-crew front overlays, four rotations (gametable.py; MODPACK_ROTS as storage_set)
   arcade_cabinet  the arcade module.arcade (1x1, study j2): idle, .unpowered, .active frames (hologram baked in), four
             rotations (arcade.py; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
@@ -143,6 +145,10 @@ def jobs(name):
     if name == "gametable":     # look study, preview only (not in RENDERED): holo game table designs, r0
         from . import gametable_study
         return gametable_study.jobs(), "arcade"
+    if name == "gametable_module":
+        import os
+        from . import gametable
+        return gametable.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
     if name == "arcade_cabinet":
         import os
         from . import arcade
