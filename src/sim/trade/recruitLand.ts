@@ -1,3 +1,4 @@
+import { issueKit } from '../crew/spawn';
 import { CrewC, DeadC, DraftedC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { AllegianceC } from '../fight/components';
@@ -69,6 +70,7 @@ export function becomeCrew(sim: Sim, c: number): void {
   sim.world.remove(c, DraftedC);
   const a = sim.world.get(c, AllegianceC);
   if (a) a.faction = 'player';
+  issueKit(sim, c); // they join with their own sidearm (docs/TRAITS.md 10.9)
   sim.galaxy.rev++;
   bumpStat(sim, 'hired');
 }

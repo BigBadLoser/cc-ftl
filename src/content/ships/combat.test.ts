@@ -253,7 +253,7 @@ describe('weapons', () => {
     sim.enqueue({ type: 'module.setEnabled', id: gen, enabled: false });
     const fab = modulesOf(sim, 1, 'module.fabricator')[0] as number;
     sim.step(); // the raider exists once the spawn command has run: commands name it by ship id
-    spawnCrew(sim, nth(sim, 1), ['role.engineer']); // two hands on the hoses, as the starter once had
+    spawnCrew(sim, nth(sim, 1), ['role.engineer', 'role.engineer']); // three hands on the hoses: with crew no longer walking to the locker at the start (they carry sidearms), two lose the race on seed 1
     aim(sim, 2, 1, fab);
     const events = run(sim, 20 * 60);
     expect(ofType(events, 'fire.started').length).toBeGreaterThan(0);

@@ -10,7 +10,7 @@ export const traits = {
   'trait.brave': {
     name: 'Brave', flavour: 'Runs toward the shooting.', kind: 'behaviour', weight: 5, rollable: true,
     short: 'Fights unarmed · never surrenders', effect: 'Fights intruders even unarmed (bare-handed); never surrenders. Never panics, freezes or hides under fire.',
-    excludes: ['trait.coward', 'trait.battle_shy'], effects: { stressBy: { combat: 0 }, breakBy: { panic: 0, freeze: 0, hide: 0 }, brave: true },
+    excludes: ['trait.coward', 'trait.battle_shy', 'trait.pacifist'], effects: { stressBy: { combat: 0 }, breakBy: { panic: 0, freeze: 0, hide: 0 }, brave: true },
   },
   'trait.coward': {
     name: 'Coward', flavour: 'Runs away from the shooting.', kind: 'behaviour', weight: 10, rollable: true,
@@ -30,7 +30,7 @@ export const traits = {
   'trait.hot_headed': {
     name: 'Hot-headed', flavour: 'Takes it personally.', kind: 'behaviour', weight: 10, rollable: true,
     short: 'Rivalries form fast', effect: 'Rivalries form twice as fast; shouting matches with rivals when unhappy. Throws tantrums three times as often when it breaks.',
-    excludes: ['trait.peacemaker'],
+    excludes: ['trait.peacemaker', 'trait.pacifist'],
     effects: { breakBy: { tantrum: 3 }, bondLoss: 2 },
   },
   'trait.peacemaker': {
@@ -114,6 +114,11 @@ export const traits = {
     name: 'Stim-hooked', flavour: 'Ran double shifts on a mining rig.', kind: 'habit', weight: 2, rollable: false,
     short: 'Craves stims', effect: 'Craves stims; works faster dosed, withdrawal without them.',
     excludes: ['trait.drinker'],
+  },
+  'trait.pacifist': {
+    name: 'Pacifist', flavour: 'Will not lift a weapon. Not for anyone.', kind: 'behaviour', weight: 2, rollable: true,
+    short: 'Won’t fight · at peace +3', effect: 'Carries no weapon, never fights or mans a gun, flees boarders. Mood +3 outside combat.',
+    excludes: ['trait.brave', 'trait.hot_headed'], wontDo: 'violence', effects: { peaceMood: 3 },
   },
   // --- Trade-offs ---
   'trait.strong': {

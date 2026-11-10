@@ -1,5 +1,6 @@
 import type { Faction } from '../combat/components';
-import { AllegianceC } from '../fight/components';
+import { AllegianceC, EquipC } from '../fight/components';
+import { wontDo } from './wontDo';
 
 import { CoreLinkC } from '../robots/components';
 import type { Sim } from '../sim';
@@ -8,6 +9,9 @@ import { ensurePerson } from './bonds';
 import { CrewC, HealthC, NeedsC, PathC, PositionC, PrioritiesC } from './components';
 import type { RolledCrew } from './roll';
 import { RolledSkillsC, TraitsC, traitMult } from './traits';
+import { BackgroundC, InterestsC, WONT_DO_CATEGORY, WontDoC } from './background';
+import { defaultPriorities } from './profile';
+import { WONT_DO_WHY, blockWork } from './workBlock';
 
 /**
  * Create one crew member of a role on a tile. The species comes from the role (default human). `name` defaults to a
@@ -39,9 +43,35 @@ export function createCrew(
   });
   if (rolled?.skills) sim.world.add(id, RolledSkillsC, { skills: { ...rolled.skills } });
   if (rolled?.traits.length) sim.world.add(id, TraitsC, { ids: [...rolled.traits] });
+  if (rolled?.background) {
+    // A person with a background (docs/TRAITS.md 10.5-10.10): interests, won't-do as permanent work blocks, priorities from their skills.
+    sim.world.add(id, BackgroundC, { ...rolled.background });
+    const interests = rolled.interests ?? { keen: [], passionate: [] };
+    sim.world.add(id, InterestsC, { keen: [...interests.keen], passionate: [...interests.passionate] });
+    sim.world.add(id, PrioritiesC, defaultPriorities(rolled.skills ?? {}, interests, rolled.wontDo));
+  }
+  if (rolled?.wontDo?.length) {
+    sim.world.add(id, WontDoC, { ids: [...rolled.wontDo] });
+    for (const w of rolled.wontDo) {
+      const cat = WONT_DO_CATEGORY[w];
+      if (cat) blockWork(sim, id, cat, WONT_DO_WHY);
+    }
+  }
+  if (opts.faction === 'player') issueKit(sim, id);
   const hp = Math.round((species.maxHp ?? CREW_MAX_HP) * traitMult(sim, id, 'maxHpMult'));
   sim.world.add(id, HealthC, { hp, max: hp });
   sim.world.add(id, AllegianceC, { faction: opts.faction });
   if (species.coreLinked && opts.faction === 'rogue') sim.world.add(id, CoreLinkC, { ship: shipId, faction: 'rogue' });
   return id;
+}
+
+/**
+ * Personal kit (docs/TRAITS.md 10.9): a person joining the player's crew (spawned, hired) carries their species' sidearm when they hold
+ * nothing, unless they won't fight. Robots and other kinds arm by their `loadout`.
+ */
+export function issueKit(sim: Sim, id: number): void {
+  const species = sim.content.species[sim.world.get(id, CrewC)?.species ?? ''];
+  const kit = species?.mood ? species.kit : undefined;
+  if (!kit || !sim.content.items[kit]?.hand || sim.world.get(id, EquipC)?.weapon || wontDo(sim, id, 'violence')) return;
+  sim.world.add(id, EquipC, { weapon: kit });
 }

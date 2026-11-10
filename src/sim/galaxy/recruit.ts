@@ -13,6 +13,8 @@ import { planCourier } from '../trade/courier';
 import { isLive, liveDealWith } from '../trade/deals';
 import { TraderC, type Deal } from '../trade/types';
 import { hash32, strHash, unit } from './hash';
+import { Rng } from '../rng';
+import { rollCrewWith } from '../crew/roll';
 import { portsAt } from './portIndex';
 import type { Port } from './ports';
 import { isHostileFaction, tierOf } from './standing';
@@ -156,14 +158,18 @@ export function syncRecruits(sim: Sim): void {
   for (const [station, list] of here) {
     for (const r of list) {
       if (candidateEntity(sim, r.key)) continue;
-      const crew = spawnNamedCrew(sim, station, r.role, sim.content.species[r.species]?.designation ? undefined : r.name);
+      // People roll a background from the candidate's key (the listing's role is a career hint, docs/TRAITS.md 10.11).
+      const rolled = rollCrewWith(new Rng(hash32(sim.seed, strHash(r.key), SALT)), r.role, sim.content, 'strict');
+      const crew = spawnNamedCrew(sim, station, r.role, sim.content.species[r.species]?.designation ? undefined : r.name, rolled);
       if (!crew) continue;
       sim.world.add(crew, StationCrewC, { station });
       sim.world.add(crew, ForHireC, { key: r.key, cost: r.cost, station, ...(r.shady ? { shady: r.shady } : {}) });
       if (r.shady) {
-        // Better skills: extra levels in every skill the role has, through the xp the stat resolver reads.
+        // Better skills: two extra levels per shady level in every skill of their career (else their old role's), through XP.
+        const career = rolled.background && sim.content.careers?.[rolled.background.career];
         const xp: Record<string, number> = {};
-        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = xpForLevels(2 * r.shady); // 0-10 scale: a shady level is two
+        const careerSkills = Object.keys(career?.skills ?? {});
+        for (const skill of careerSkills.length ? careerSkills : Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = xpForLevels(2 * r.shady);
         sim.world.add(crew, SkillXpC, { xp });
       }
     }

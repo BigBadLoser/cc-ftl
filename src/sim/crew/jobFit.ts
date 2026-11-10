@@ -1,3 +1,5 @@
+import { wontDo } from './wontDo';
+import { ModuleC } from '../modules/components';
 import { YardCrewC } from '../yard/types';
 import { AwayC } from '../away/components';
 import { InspectionC } from '../inspect/types';
@@ -19,8 +21,14 @@ export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): bool
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
   if (!partyFits(sim, crewId, job)) return false;
   if (workBlocked(sim, crewId, job.category)) return false;
+  if (job.kind === 'operate' && isWeaponConsole(sim, job) && wontDo(sim, crewId, 'violence')) return false; // a Pacifist never mans a gun
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job) && passageFits(sim, crewId, job);
+}
+
+function isWeaponConsole(sim: Sim, job: Job): boolean {
+  const m = sim.world.get(job.target ?? 0, ModuleC);
+  return !!m && sim.content.modules[m.def]?.console === 'weapons';
 }
 
 /** A party job (`Job.party`) is its party's alone; an inspector (of a shuttle with an inspection) takes nothing else. */

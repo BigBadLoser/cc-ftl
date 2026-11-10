@@ -3,28 +3,26 @@ import type { RoleDef } from '../sim';
 /** Priorities: 0 = off, 1 = highest ... 4 = lowest. Every working role does damage control (fires, breaches) at 1. */
 const NO_WORK = { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, farming: 0, patrol: 0 };
 
-/** Crew who are not gunners grab one of these from storage when boarders are aboard (best first), and put it back afterwards. */
-const EMERGENCY_ARMS = ['item.rifle', 'item.sidearm', 'item.blade'];
-
 const baseRoles = {
+  // Every person on the player's crew (docs/TRAITS.md 10.11): skills, priorities and title come from their background (crew/profile.ts).
+  'role.crew': {
+    name: 'Crew',
+    priorities: { firefighting: 1, medical: 3, operating: 3, repair: 3, construction: 3, hauling: 3, refining: 3, crafting: 3, research: 3, cooking: 3, farming: 3, patrol: 0 },
+  },
   'role.engineer': {
     name: 'Engineer',
     priorities: { firefighting: 1, medical: 4, operating: 3, repair: 1, construction: 1, hauling: 3, refining: 2, crafting: 2, research: 3, cooking: 4, farming: 4, patrol: 0 },
     skills: { shielding: 4, construction: 4, hacking: 2 },
-    emergencyLoadout: EMERGENCY_ARMS,
     relievesStations: true,
   },
   'role.gunner': {
     name: 'Gunner',
     priorities: { firefighting: 1, medical: 4, operating: 1, repair: 3, construction: 4, hauling: 3, refining: 4, crafting: 4, research: 4, cooking: 4, farming: 4, patrol: 0 },
     skills: { gunnery: 6 },
-    // Gunners take a gun from storage when one is there, so they fight boarders without being drafted (not `fighter`: they do not patrol).
-    playerLoadout: ['item.rifle', 'item.sidearm'],
   },
   'role.medic': {
     name: 'Medic',
     skills: { medicine: 6, cooking: 2 },
-    emergencyLoadout: EMERGENCY_ARMS,
     priorities: { firefighting: 1, medical: 1, operating: 4, repair: 4, construction: 4, hauling: 3, refining: 3, crafting: 3, research: 3, cooking: 3, farming: 3, patrol: 0 },
     relievesStations: true,
   },
@@ -40,14 +38,12 @@ const baseRoles = {
     name: 'Pilot',
     priorities: { firefighting: 1, medical: 4, operating: 1, repair: 4, construction: 4, hauling: 3, refining: 4, crafting: 4, research: 4, cooking: 4, farming: 4, patrol: 0 },
     skills: { piloting: 6 },
-    emergencyLoadout: EMERGENCY_ARMS,
   },
   // The lab hand: science 6 makes research 30% faster. Anyone can work a research module; the scientist just prefers it.
   'role.scientist': {
     name: 'Scientist',
     priorities: { firefighting: 1, medical: 4, operating: 3, repair: 4, construction: 4, hauling: 3, refining: 3, crafting: 3, research: 1, cooking: 4, farming: 4, patrol: 0 },
     skills: { science: 6 },
-    emergencyLoadout: EMERGENCY_ARMS,
     relievesStations: true,
   },
   // --- Robot variants (species.robot). They never surrender; no medical or cooking work. ---

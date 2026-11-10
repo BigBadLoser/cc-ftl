@@ -20,6 +20,7 @@ export function moodSystem(sim: Sim): void {
     m.meal = Math.max(0, m.meal - dt);
     m.sleep = Math.max(0, m.sleep - dt);
     if (m.relax) m.relax = Math.max(0, m.relax - dt);
+    if (m.enjoy) m.enjoy = Math.max(0, m.enjoy - dt);
     if (m.letOut) m.letOut = Math.max(0, m.letOut - dt);
     if (m.scene) m.scene = Math.max(0, m.scene - dt);
     for (const k of ['grief', 'chat', 'row'] as const) if (m[k] !== undefined) m[k] = Math.max(0, (m[k] as number) - dt);

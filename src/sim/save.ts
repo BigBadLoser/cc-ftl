@@ -132,8 +132,10 @@ import { newYard, type YardState } from './yard/types';
  * v107 (hydroponics art, #59): the large bed is 3x2 (was 2x3), so a saved grid's occupancy for it no longer matches.
  * v108 (vehicle assembly, #387): job kind 'assemble' for vehicles in their bay.
  * v109 (research bench art, #395): `module.research` is 3x2 (was 1x1), so a saved grid's occupancy for it no longer matches.
+ * v111 (crew backgrounds, #415; v110 is #414's): skills 0-10 with `repair` folded into `construction`, `botany` and `industry`; `BackgroundC`,
+ *     `InterestsC`, `WontDoC`, `Mood.enjoy`; player crew of kind `role.crew`; no `EmergencyArmC` / `StowOrderC`.
  */
-export const SAVE_VERSION = 109;
+export const SAVE_VERSION = 111;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

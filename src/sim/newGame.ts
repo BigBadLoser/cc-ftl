@@ -17,8 +17,9 @@ export function startingRoles(content: ContentRegistry, shipId = 'ship.starter')
 /**
  * Create a fresh game: a Sim with the chosen ship as grid 1 (the player's, placed in the sector) and its crew. `populate` also makes the start node's
  * structures real (stations, rocks, wrecks, east of the player's ship, see galaxy/populate.ts); the app asks for it, tests that want an empty node do not.
- * `crew`: the crew-screen picks (one per slot, roles as `startingRoles`), or 'rolled' for unrerolled picks. The crew are then rolled
- * (crew/roll.ts: skills, traits) from their own RNG; without it they get their roles' skills and no traits (what most tests want).
+ * `crew`: the crew-screen picks (one per berth, kinds as `startingRoles`), or 'rolled' for unrerolled picks. People are then rolled
+ * (crew/roll.ts: background, skills, traits) from their own RNG and become `role.crew`; without it the berths' kinds spawn as they are,
+ * with the kinds' skills and no traits (what most tests want: fixed fixtures).
  */
 export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.starter', populate = false, crew?: readonly CrewPick[] | 'rolled'): Sim {
   const template = content.ships[shipId];
@@ -28,7 +29,7 @@ export function newGame(seed: number, content: ContentRegistry, shipId = 'ship.s
   sim.trade.bestCredits = sim.trade.credits;
   const picks = crew === 'rolled' ? defaultPicks(startingRoles(content, shipId)) : crew;
   const rolls = picks && rollStartingCrew(seed, picks, content);
-  spawnShip(sim, { crew: DEFAULT_CREW, ...template, ...(picks ? { crew: picks.map((p) => p.role) } : {}) }, {
+  spawnShip(sim, { crew: DEFAULT_CREW, ...template, ...(rolls ? { crew: rolls.map((r) => r.role) } : {}) }, {
     faction: 'player', x: PLAYER_START.x, y: PLAYER_START.y, ...(rolls ? { rolls } : {}),
   });
   startGalaxy(sim);

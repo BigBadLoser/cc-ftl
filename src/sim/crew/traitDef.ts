@@ -1,6 +1,7 @@
 import type { SkillName } from '../registry';
 import type { Modifier } from '../stats';
 import type { BreakContext, BreakKind } from './breakTypes';
+import type { WontDoId } from './background';
 
 /** How a trait reads on the crew card (docs/TRAITS.md section 4). */
 export type TraitKind = 'behaviour' | 'phobia' | 'habit' | 'tradeoff' | 'texture';
@@ -28,6 +29,8 @@ export interface TraitEffects {
   darkAdapted?: true;
   /** crew/mood.ts: a flat mood factor (keyed by the trait) of this many points. */
   mood?: number;
+  /** crew/traitMood.ts: like `mood`, but only outside combat (Pacifist, "at peace"). */
+  peaceMood?: number;
   /** crew/mood.ts: every other mood factor is scaled by this. */
   moodScale?: number;
   /** crew/mood.ts: other crew within MOOD_COMPANY_RADIUS get this many mood points. */
@@ -94,4 +97,6 @@ export interface TraitDef {
   /** Stat modifiers, applied through the stat resolver (`traitModifiers`). */
   modifiers?: readonly Modifier[];
   effects?: TraitEffects;
+  /** A refusal the trait brings (Pacifist: violence), written to `WontDoC` at roll (docs/TRAITS.md 10.10). */
+  wontDo?: WontDoId;
 }

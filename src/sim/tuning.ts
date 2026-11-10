@@ -385,8 +385,6 @@ export const NEST_RADIUS = 4;
 /** Idle aliens wander within this many tiles of where they hatched (per-tick chance of a stroll). */
 export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
-/** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
-export const EMERGENCY_STAND_DOWN_SEC = 30;
 
 /** Enemy weapons commit their aim (and the player's ship shows a marker) for this many seconds of charge before they can fire, at base gunnery. */
 export const COMMIT_WINDOW_SEC = 4;
@@ -394,6 +392,8 @@ export const COMMIT_WINDOW_SEC = 4;
 export const COMMIT_MAX_FRACTION = 0.5;
 
 // --- Skill XP (docs/TRAITS.md section 3) ---
+/** Seconds "enjoying the work" (an interest) lasts after the work stops (docs/TRAITS.md 10.7). */
+export const MOOD_ENJOY_SEC = 60;
 /** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +2 at 100, +4 at 600, +6 at 1820, +10 at 7700 (docs/TRAITS.md 10.4). */
 export const XP_LEVEL_COST = 20;
 /** Skills run 0-10: XP levels stop once the rolled (or role) base plus XP levels reaches this. Traits may push the stat past it. */

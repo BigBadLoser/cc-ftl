@@ -77,9 +77,13 @@ export * from './story/defs';
 export { ImplantsC, SkillXpC, type Implants, type SkillXp } from './story/components';
 export { grantXp, levelsFor, xpForLevels, xpProgress } from './crew/xp';
 export type { TraitDef, TraitEffects, TraitKind } from './crew/traitDef';
+export * from './crew/background';
+export { SKILL_ROLL_CAP, mainSkill, rollBackground } from './crew/backgroundRoll';
+export { SKILL_NAMES, SKILL_MAX } from './crew/skillList';
+export { SHIP_JOB_WEAK_BELOW, SKILL_TITLES, bestSkill, crewTitle, defaultPriorities, jobLevel, shipJobs, type ShipJob } from './crew/profile';
 export { RolledSkillsC, TraitsC, bleedOutSec, traitDefs, type RolledSkills, type Traits } from './crew/traits';
 export {
-  CREW_ROLL_SALT, SKILLS, defaultPicks, rollCrewMember, rollStartingCrew, skillLabel, type CrewPick, type RolledCrew, type SkillLabel,
+  CREW_KIND, CREW_ROLL_SALT, SKILLS, crewRollRng, defaultPicks, roleHint, rollCrewMember, rollCrewWith, rollStartingCrew, type CrewPick, type RolledCrew,
 } from './crew/roll';
 export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
 export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
@@ -194,3 +198,6 @@ export { innerWalls } from './yard/open';
 export { YardCrewC, HullPlanC, isLiveOrder, type YardDef, type YardOrder, type YardPhase, type YardState, type YardSizeDef, type YardMoney } from './yard/types';
 export { nodesWithin } from './galaxy/graph';
 export { surrenderBelow } from './fight/surrender';
+export { wontDo } from './crew/wontDo';
+export { currentSkills, priorityDefaults, titleOf } from './crew/profileOf';
+export { WONT_DO_WHY, workBlocked } from './crew/workBlock';
