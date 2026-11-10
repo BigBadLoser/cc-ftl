@@ -8,8 +8,6 @@ import { SKILLS } from './skillList';
 
 /** No rolled skill goes above this (XP takes it to 10). */
 export const SKILL_ROLL_CAP = 8;
-/** A starting berth's soft career hint: careers that fit the berth weigh this much more. */
-const HINT_WEIGHT = 10;
 /** Chance of a knack: one skill at 0 gets +3 to +5. */
 const KNACK_CHANCE = 0.12;
 
@@ -49,18 +47,17 @@ export function mainSkill(def: CareerDef): SkillName | undefined {
 }
 
 /**
- * Roll a background for a person of `species`. `hint`: skills a career's main skill should be among. `strict` (content that names an
- * old role for a recruit or a rescued crew member, 10.11) keeps only those careers; otherwise (a starting berth) they weigh HINT_WEIGHT
- * times more. Ignored when no career matches.
+ * Roll a background for a person of `species`. `hint`: skills a career's main skill must be among (content that names an old role for a
+ * recruit or a rescued crew member, 10.11); ignored when no career matches. Starting crew roll without one.
  */
-export function rollBackground(rng: Rng, content: ContentRegistry, species: string, hint?: readonly SkillName[], strict = true): BackgroundRoll | null {
+export function rollBackground(rng: Rng, content: ContentRegistry, species: string, hint?: readonly SkillName[]): BackgroundRoll | null {
   const ups = Object.entries(content.upbringings ?? {}).filter(([, d]) => allows(d, species));
   let careers = Object.entries(content.careers ?? {}).filter(([, d]) => allows(d, species));
   if (!ups.length || !careers.length) return null;
   const hinted = (d: CareerDef): boolean => !!hint?.includes(mainSkill(d) as SkillName);
-  if (strict && careers.some(([, d]) => hinted(d))) careers = careers.filter(([, d]) => hinted(d));
+  if (careers.some(([, d]) => hinted(d))) careers = careers.filter(([, d]) => hinted(d));
   const [upId, up] = ups[Math.max(0, weightedIndex(rng, ups.map(([, d]) => d.weight)))] as [string, UpbringingDef];
-  const [careerId, career] = careers[Math.max(0, weightedIndex(rng, careers.map(([, d]) => d.weight * (d.upbringings?.[upId] ?? 1) * (!strict && hinted(d) ? HINT_WEIGHT : 1))))] as [string, CareerDef];
+  const [careerId, career] = careers[Math.max(0, weightedIndex(rng, careers.map(([, d]) => d.weight * (d.upbringings?.[upId] ?? 1))))] as [string, CareerDef];
 
   // Base: upbringing + career; the Drifter's 7 points land on random skills (+3, then +2 twice).
   const s = Object.fromEntries(SKILLS.map((k) => [k, (up.skills[k] ?? 0) + (career.skills[k] ?? 0)])) as Record<SkillName, number>;

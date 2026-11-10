@@ -159,7 +159,7 @@ export function syncRecruits(sim: Sim): void {
     for (const r of list) {
       if (candidateEntity(sim, r.key)) continue;
       // People roll a background from the candidate's key (the listing's role is a career hint, docs/TRAITS.md 10.11).
-      const rolled = rollCrewWith(new Rng(hash32(sim.seed, strHash(r.key), SALT)), r.role, sim.content, 'strict');
+      const rolled = rollCrewWith(new Rng(hash32(sim.seed, strHash(r.key), SALT)), r.role, sim.content, true);
       const crew = spawnNamedCrew(sim, station, r.role, sim.content.species[r.species]?.designation ? undefined : r.name, rolled);
       if (!crew) continue;
       sim.world.add(crew, StationCrewC, { station });

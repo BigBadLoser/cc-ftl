@@ -68,11 +68,11 @@ export function rollTraits(rng: Rng, traits: Readonly<Record<string, TraitDef>> 
 
 /**
  * Roll one crew member with any RNG (the crew-generation RNG, or `sim.rng` for crew who join mid-game). People (species with moods) roll a
- * background (crew/backgroundRoll.ts) and become `CREW_KIND`. `hint`: 'strict' makes the career follow the old role `roleId` names
- * (recruits, pods); 'soft' (a starting berth) only makes those careers likelier, so a pilot's berth usually rolls someone who can fly.
+ * background (crew/backgroundRoll.ts) and become `CREW_KIND`. `hint` makes the career follow the old role `roleId` names (recruits,
+ * pods); starting crew roll without one (the ship's jobs list shows the gaps, a reroll fills them).
  * Robots and other fixed bodies keep their kind and its skills.
  */
-export function rollCrewWith(rng: Rng, roleId: string, content: ContentRegistry, hint: 'strict' | 'soft' | false = false): RolledCrew {
+export function rollCrewWith(rng: Rng, roleId: string, content: ContentRegistry, hint = false): RolledCrew {
   const role = content.roles[roleId];
   const speciesId = role?.species ?? 'species.human';
   const species = content.species[speciesId];
@@ -82,7 +82,7 @@ export function rollCrewWith(rng: Rng, roleId: string, content: ContentRegistry,
   const appearanceSeed = rng.int(0, 0x7fffffff);
   const rest = species && species.restDecay > 0 ? rng.int(60, 100) : 100;
   if (!species?.mood) return { role: roleId, name, appearanceSeed, rest, skills: null, traits: [] };
-  const bg = rollBackground(rng, content, speciesId, hint ? roleHint(content, roleId) : undefined, hint === 'strict');
+  const bg = rollBackground(rng, content, speciesId, hint ? roleHint(content, roleId) : undefined);
   const traits = rollTraits(rng, content.traits, bg?.traitWeights, bg?.main);
   const wontDo = [...(bg?.wontDo ?? [])];
   for (const t of traits) {
@@ -103,7 +103,7 @@ export function crewRollRng(seed: number, slot: number, rerolls: number): Rng {
 
 /** Roll one starting crew member: deterministic per (seed, slot, rerolls), independent of `sim.rng` and the other slots. */
 export function rollCrewMember(seed: number, slot: number, rerolls: number, roleId: string, content: ContentRegistry): RolledCrew {
-  return rollCrewWith(crewRollRng(seed, slot, rerolls), roleId, content, 'soft');
+  return rollCrewWith(crewRollRng(seed, slot, rerolls), roleId, content);
 }
 
 /**

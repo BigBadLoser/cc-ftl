@@ -586,10 +586,9 @@ of 4–7, one or two of 2–4, three or four at 1–2, four or five at 0. Averag
 scale): crew are broadly more capable, which is the point of the issue, and since per-level effects are small the buff shows mostly in
 secondary jobs (+5–15%). Slice 1 checks the distribution with a seeded sweep (`*.slow.test.ts`).
 
-As built (#415): a starting berth keeps the kind the ship lists there as a **soft career hint** (careers whose main skill is that kind's
-weigh ×10, `HINT_WEIGHT` in `crew/backgroundRoll.ts`), so a pilot's berth usually rolls someone who can fly: without it only 39% of starter
-crews had Helm and Repair at 3 or better, with it about 57% (the sweep's floor is 50%; the rest show weak on "Ship's jobs" and a reroll
-fixes them). Recruits and rescue pods use the strict hint of 10.11. The noise's floor at 0 lifts the mean total to about 14.7.
+As built (#415): starting crew roll with no hint from the ship's berths (user decision 2026-11-10): a Helm or Repair below 3 shows weak
+on "Ship's jobs" and a reroll fills it. About a third of starter crews cover both at 3 or better first time. Recruits and rescue pods use the
+strict hint of 10.11. The noise's floor at 0 lifts the mean total to about 14.7.
 
 Stored as now: `RolledSkillsC.skills` (the full snapshot), plus new optional components `BackgroundC { upbringing, career, knack? }`,
 `InterestsC { keen: SkillName[]; passionate: SkillName[] }`, and won't-do as permanent `WorkBlockC` entries (10.9).

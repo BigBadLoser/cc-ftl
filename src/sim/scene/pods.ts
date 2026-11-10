@@ -24,7 +24,7 @@ export function buildPod(sim: Sim, r: ScenePodRecipe, rng: Rng): ScenePod {
   const role = r.roles[rng.int(0, r.roles.length - 1)] ?? 'role.engineer';
   const owner = r.owners[rng.int(0, r.owners.length - 1)] ?? 'traders';
   const bleed = rng.int(r.bleed[0], r.bleed[1]);
-  const patient = rollCrewWith(rng, role, sim.content, 'strict'); // the scene's role is a career hint (docs/TRAITS.md 10.11)
+  const patient = rollCrewWith(rng, role, sim.content, true); // the scene's role is a career hint (docs/TRAITS.md 10.11)
   return { id: sim.galaxy.nextFleet++, owner, patient, bleed, purse: rng.int(r.purse[0], r.purse[1]) };
 }
 

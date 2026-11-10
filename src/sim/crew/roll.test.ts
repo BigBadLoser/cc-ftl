@@ -85,7 +85,7 @@ describe('crew members (section 1)', () => {
     expect(c.role).toBe(CREW_KIND);
     expect(c.background?.upbringing).toBe('upbringing.x');
     for (let seed = 0; seed < 40; seed++) {
-      const r = rollCrewWith(new Rng(seed), 'role.gunner', content, 'strict');
+      const r = rollCrewWith(new Rng(seed), 'role.gunner', content, true);
       expect(r.background?.career).toBe('career.shot');
     }
   });

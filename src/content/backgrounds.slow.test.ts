@@ -30,17 +30,23 @@ describe('background rolls, seeded sweep', () => {
     expect(people.filter((p) => p.background?.knack).length / N).toBeCloseTo(0.12, 1);
   });
 
-  it('cover Helm and Repair at 3 or better in most starting crews', () => {
+  it('leave Helm or Repair weak in some starting crews, which a reroll or two of the weak berths fixes (the Ship’s jobs list shows it)', () => {
     for (const ship of ['ship.starter', ...starterShips.map((s) => s.id)]) {
       const def = (content.ships as Record<string, (typeof content.ships)['ship.starter']>)[ship];
       if (!def) continue;
       const jobs = shipJobs(def, content).filter((j) => j.id === 'helm' || j.id === 'repair');
-      let ok = 0;
+      const covered = (seed: number, rerolls: number): boolean => {
+        const crew = rollStartingCrew(seed, startingRoles(content, ship).map((role) => ({ role, rerolls })), content);
+        return jobs.every((j) => crew.some((c) => jobLevel(j, c.skills ?? {}) >= 3));
+      };
+      let first = 0;
+      let within = 0;
       for (let seed = 0; seed < 300; seed++) {
-        const crew = rollStartingCrew(seed, startingRoles(content, ship).map((role) => ({ role })), content);
-        if (jobs.every((j) => crew.some((c) => jobLevel(j, c.skills ?? {}) >= 3))) ok++;
+        if (covered(seed, 0)) first++;
+        if ([0, 1, 2, 3].some((r) => covered(seed, r))) within++;
       }
-      expect(ok / 300, ship).toBeGreaterThan(0.5); // "most": the rest show weak on the Ship's jobs list, and a reroll fixes them
+      expect(first / 300, ship).toBeGreaterThan(0.2); // no berth hint: the crews are rolled as they come
+      expect(within / 300, ship).toBeGreaterThan(0.75);
     }
   });
 });
