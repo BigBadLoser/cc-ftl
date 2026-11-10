@@ -12,7 +12,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
   - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock, no locker or suit item, and no suit limit (#416): any airlock or shuttle has one for whoever needs it...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
-- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
+- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a shortage; reactors burn energy crystals and battery banks store power (planned).
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
   - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
@@ -249,6 +249,22 @@ the user picks from mocks) and a HUD clock come later.
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
   shortage. Conduits may come later; the code leaves a seam for them.
+- **Reactor fuel and batteries** (user decisions, 2026-11-10; not built yet):
+  - **Two fuels.** Jumps burn `item.fuel` (engines, unchanged). Reactors burn their own fuel; the two never substitute.
+  - **Energy crystal** (`item.energy_crystal`), a new raw item mined from asteroids (`ore.crystal`, weight about 3, between ice and
+    rare metals, 15–40 per deposit). Also sold at mining and industrial stations, so a ship without mining can buy it. Needs art:
+    the item icon and the asteroid deposit tint/sprite, from the Blender pipeline.
+  - **Today's reactor burns raw crystals.** Burn follows load: fuel used is proportional to the power actually drawn on its network,
+    not its rated 50, so switching modules off or holding them saves fuel. Tuning start: 1 crystal per game hour (40 s) at full
+    load. The reactor holds a small internal store (about 6 crystals); crew top it up from storage as a hauling job when it runs
+    below half. An empty reactor supplies nothing.
+  - **Later: a better reactor** burns **fuel rods** refined from crystals at the refinery (Industry skill), at much better efficiency
+    (start: about 4× the power per crystal). Not in the first build.
+  - **Battery banks store power.** `module.battery` stops being dressing: a bank charges from spare supply on its network and
+    discharges to cover a shortfall (empty or damaged reactor, ion hit, a spike in draw) before the priority cut-off drops any
+    module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A damaged bank neither charges
+    nor discharges; a destroyed one loses its charge. The charge shows on the module and in the power readout.
+  - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and keep their existing battery banks.
 - **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
   next to space vent.
 - **Injury:** at 0 HP a crew member is **downed** and bleeds out on a timer. Another crew member can
