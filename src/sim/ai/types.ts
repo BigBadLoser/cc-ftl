@@ -146,8 +146,28 @@ export interface DriveDef {
   onMissing?: 'damp' | 'block';
   /** While the drive's own task is under way it keeps its score whatever the input reads (a meal being walked to). */
   keepWhileTask?: true;
+  /** How the drive answers the crew member's schedule block (#412). A block not listed: as without schedules. */
+  blocks?: Partial<Record<ScheduleBlock, BlockRule>>;
   /** The machine the drive starts (`job` hands the crew member to the scheduler). */
   task: MachineId | 'job';
+}
+
+/** One hour of a crew member's day (#412, crew/schedule.ts): needs decide, jobs, bed, or time off. */
+export type ScheduleBlock = 'any' | 'work' | 'sleep' | 'free';
+
+/**
+ * What a drive does in a schedule block (`DriveDef.blocks`): `'off'` closes it; `on` keeps it on whatever its input reads, scoring at least
+ * that; `enter` replaces its latch's entry line (in input units) for the block.
+ */
+export type BlockRule = 'off' | { on?: number; enter?: number };
+
+/** A schedule preset (content/schedules.ts): a name and 24 blocks, hour 0 first. */
+export interface ScheduleDef {
+  id: string;
+  name: string;
+  /** Crew without a row of their own follow the presets marked so, in turn by hire order (content order; the stagger). */
+  rotation?: true;
+  hours: ScheduleBlock[];
 }
 
 export interface PolicyDef {

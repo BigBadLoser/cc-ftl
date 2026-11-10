@@ -18,7 +18,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
 import { StagingC } from '../items/components';
 import { AwayC, SiteRunC, type SiteRun } from './components';
-import { passageFits, passengerUrgent, takesSiteWork } from './crew';
+import { passageFits, passengerUrgent, scheduleHome, takesSiteWork } from './crew';
 import { departCheck, homePoint, partyOut } from './depart';
 
 /**
@@ -64,7 +64,7 @@ export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'urgent' 
   const aboard = partyAboard(sim, v);
   const going = aboard.filter((c) => sim.world.get(c, AwayC)?.home);
   if (going.some((c) => passengerUrgent(sim, c))) return 'urgent';
-  if (runDue(sim, id)) return 'batch';
+  if (runDue(sim, id) || going.some((c) => scheduleHome(sim, c))) return 'batch'; // their Free time (#412): home at the first chance
   // Nobody of the party on the site and none aboard to go out (a cargo run, or the last of them aboard for home): nothing to serve here.
   if (partyOut(sim, id).length === 0 && aboard.length === going.length) return 'batch';
   const seats = (vehicleDefOf(sim, v)?.capacity ?? 0) + 1;

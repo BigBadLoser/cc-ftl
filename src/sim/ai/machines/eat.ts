@@ -26,9 +26,13 @@ import { abortTask, endMeal, mealOf, startMeal, syncTask } from '../task';
  * crate), `item` the ration, `n` the ticks left (-1 while walking).
  */
 
-/** The eat drive's turn: true while the crew member is busy with a meal (the task mirrors it), false to carry on as usual. */
-export function eatTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
-  if (!goEat(sim, id, crew, pos)) return false;
+/**
+ * The eat drive's turn: true while the crew member is busy with a meal (the task mirrors it), false when no meal can start (no food, no spot
+ * in reach), `'later'` while the search for a spot waits for its tick (once a second): a meal may yet start, so no lower need takes the turn.
+ */
+export function eatTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean | 'later' {
+  const r = goEat(sim, id, crew, pos);
+  if (r !== true) return r;
   syncTask(sim, id);
   return true;
 }
@@ -112,7 +116,7 @@ function pickSpot(sim: Sim, crew: number, shipId: number, from: Tile, item: stri
  * with it, false when there is no food or no reachable spot (they carry on as usual and try again later).
  * Starting a trip drops the current job and any load.
  */
-function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
+function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean | 'later' {
   let meal = mealOf(sim, id);
   if (meal && (meal.bb.n ?? -1) >= 0) return true;
   const want = meal?.bb.item;
@@ -123,7 +127,7 @@ function goEat(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
   }
   const path = sim.world.get(id, PathC) as Path;
   if (!meal) {
-    if ((sim.tick + id) % 20 !== 0) return false; // look for a spot once a second, not every tick
+    if ((sim.tick + id) % 20 !== 0) return 'later'; // look for a spot once a second, not every tick
     const spot = pickSpot(sim, id, shipIdOf(sim, pos), origin(pos), item);
     if (!spot) return false;
     abortTask(sim, id, 'drive');

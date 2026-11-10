@@ -881,6 +881,19 @@ The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM ex
 
 Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs the utility engine (`ai/utility.ts` over `content/policies.ts`, Phase 3), the need machines and the job scheduler; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
+
+**Schedules (#412).** Design: DESIGN.md "Schedules".
+- `sim/clock.ts`: the ship clock, read from `sim.tick` (`HOUR_TICKS` from `GAME_HOUR_SEC`, start at `CLOCK_START_HOUR`); nothing extra is saved.
+- `content/schedules.ts`: presets (`ScheduleDef`, `satisfies`), `ContentRegistry.schedules`; the `rotation` presets (Default, Late) are what crew without a row follow, in turn by person id.
+- `sim/crew/schedule.ts` owns every schedule question: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists,
+  else none), `blockAt` / `blockNow` (the block in force: `work` while `onCall`, a fight, Battle Stations or an open emergency on their ship they would
+  take; an empty console only for crew `admitLevel` would seat), `secToSleep` (for away planning: Sleep only), `holdsSleep` (the needs system keeps a sleeper in bed) and `wakesFromSleep` (the scheduler's turn gets
+  a scheduled sleeper up). `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
+- The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
+  floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
+  patient is still set down first).
+- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
+- Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 
 - Svelte components read **snapshots** published by `app` after each tick, or on demand for

@@ -1,24 +1,21 @@
 import { isLodger, onStationRoll, roleOf } from '../consent/roles';
-import { wakeUp } from '../ai/machines/sleep';
+import { endSleep, inBed } from '../ai/machines/sleep';
 import { dropMeal, finishMeal } from '../ai/machines/eat';
-import { CrewC, DraftedC, NeedsC, PositionC, type Crew, type Needs } from '../crew/components';
-import { claimedBed, mealOf } from '../ai/task';
-import { noteMeal, noteSleep } from '../crew/mood';
+import { CrewC, DraftedC, NeedsC, type Crew, type Needs } from '../crew/components';
+import { mealOf } from '../ai/task';
+import { noteMeal } from '../crew/mood';
 import { isIncapacitated } from '../crew/helpers';
 import { FighterC } from '../fight/components';
-import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { stat } from '../stats';
 import { hungerDrainPerSec } from '../crew/eating';
-import { BED_REST_MULT } from '../tuning';
-
-/** Sleeping recovers this many times faster than awake decay. */
-const SLEEP_RECOVERY_MULT = 2;
+import { BED_REST_MULT, SLEEP_REST_MULT } from '../tuning';
+import { holdsSleep } from '../crew/schedule';
 
 /**
  * Rest decays while awake and recovers while sleeping (BED_REST_MULT times faster again when
- * lying in the bed the crew member reserved); sleepers wake at 100 and give the bed back. Hunger decays (half as fast
+ * lying in the bed the crew member reserved); sleepers wake at 100 and give the bed back, unless their Sleep block holds them in bed (#412). Hunger decays (half as fast
  * asleep) and meals finish here (see `hunger`). Species with a battery
  * (SpeciesDef.charge) drain Needs.charge instead, busyMult times faster while working or fighting.
  */
@@ -39,25 +36,12 @@ export function needsSystem(sim: Sim): void {
     hunger(sim, id, crew, needs);
     const perTick = stat(sim, id, 'restDecay') / TICK_HZ;
     if (crew.activity === 'sleeping') {
-      const bed = inBed(sim, id);
-      needs.rest = Math.min(100, needs.rest + perTick * SLEEP_RECOVERY_MULT * (bed ? BED_REST_MULT : 1));
-      if (needs.rest >= 100) {
-        noteSleep(sim, id, bed);
-        wakeUp(sim, id, crew);
-        sim.events.emit({ type: 'crew.wokeUp', crew: id });
-      }
+      needs.rest = Math.min(100, needs.rest + perTick * SLEEP_REST_MULT * (inBed(sim, id) ? BED_REST_MULT : 1));
+      if (needs.rest >= 100 && !holdsSleep(sim, id)) endSleep(sim, id, crew);
     } else {
       needs.rest = Math.max(0, needs.rest - perTick);
     }
   }
-}
-
-/** True if the crew member is on the tile of the bed they reserved. */
-function inBed(sim: Sim, id: number): boolean {
-  const claim = claimedBed(sim, id);
-  const bed = claim ? sim.world.get(claim, ModuleC) : undefined;
-  const pos = sim.world.get(id, PositionC);
-  return !!bed && !!pos && pos.x === bed.x && pos.y === bed.y;
 }
 
 /**

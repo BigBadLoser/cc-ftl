@@ -11,6 +11,7 @@ import { scrapHome, setupBench } from './salvageBench';
  * whenever the shuttle was away (no air source: admission turned every job away), the hold stayed full with nobody home to unload it, crew
  * too worn for a passage idled at home until they fell to the sleep or eat line, and parts came up in id order across the wreck: 17% of crew
  * time idle with work open, 61 parts, 80 scrap units home. Now about 5% (mostly waiting at home for a free suit), 135 parts, 336 units.
+ * On the default schedules (#412: Default and Late shifts, trips up to near Sleep, Free on the site worked through): about 5%, 116 parts, 310 units.
  */
 const IDLE_MAX = 0.08;
 const STRIPPED_MIN = 110;

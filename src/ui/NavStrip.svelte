@@ -29,7 +29,7 @@
 <div class="strip" role="toolbar" aria-label="Screens" data-testid="navstrip">
   <button class="tile" class:on={mapOpen} disabled={mapLocked} use:tip={{ text: mapLocked ? 'Drop from hyperspace to leave the map' : 'Starmap', key: mapLocked ? undefined : 'view.starmap' }} aria-label="Starmap" data-testid="starmap-open" onclick={onMap}><Icon name="map" size={22} /></button>
   <button class="tile" class:on={overviewOpen} use:tip={{ text: 'Ship overview' }} aria-label="Ship overview" data-testid="overview-open" onclick={onOverview}><Icon name="hull" size={22} /></button>
-  <button class="tile" class:on={prioritiesOpen} use:tip={{ text: 'Crew priorities' }} aria-label="Crew" data-testid="crew-open" onclick={onCrew}><Icon name="person" size={22} /></button>
+  <button class="tile" class:on={prioritiesOpen} use:tip={{ text: 'Crew: priorities and schedules' }} aria-label="Crew" data-testid="crew-open" onclick={onCrew}><Icon name="person" size={22} /></button>
   <button class="tile" class:on={stockOpen} use:tip={{ text: 'Ship stock' }} aria-label="Stock" data-testid="stock-open" onclick={onStock}><Icon name="stock" size={22} /></button>
  <button class="tile" class:on={jobsOpen} use:tip={{ text: 'Jobs' }} aria-label="Jobs" data-testid="jobs-open" onclick={onJobs}><Icon name="list" size={22} />{#if jobCount}<b class="badge">{jobCount}</b>{/if}</button>
   {#if hasLab}<button class="tile" class:on={researchOpen} use:tip={{ text: 'Research' }} aria-label="Research" data-testid="research-open" onclick={onResearch}><Icon name="research" size={22} /></button>{/if}

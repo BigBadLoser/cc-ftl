@@ -22,6 +22,8 @@ export interface UiLook {
 
 export interface UiSnapshot {
   tick: number;
+  /** The ship clock (#412): day from 1, hour 0..23, minute. */
+  clock: { day: number; hour: number; minute: number };
   /** The starmap turn: what the HUD shows and the save records. */
   turn: number;
   speed: 0 | 1 | 2 | 3;
@@ -127,6 +129,8 @@ export interface UiCrew {
   /** Human-readable current job, or null. */
   job: string | null;
   priorities: Record<WorkCategory, number>;
+  /** The crew member's 24 schedule blocks, hour 0 first (#412), and the block in force now (Work while on call); null without a schedule. */
+  schedule: { hours: ('any' | 'work' | 'sleep' | 'free')[]; now: 'any' | 'work' | 'sleep' | 'free' } | null;
   /** The role's default priorities (for "differs from role" marks and reset). */
   defaults: Record<WorkCategory, number>;
   hp: number;
