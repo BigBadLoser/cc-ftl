@@ -39,7 +39,7 @@
 </li>
 
 <style>
-  li { position: relative; display: grid; grid-template-columns: 18px 92px 26px var(--pips-w) 1fr; column-gap: 10px; align-items: center; padding: 5px 0 6px; border-bottom: 1px solid var(--panel-3); }
+  li { position: relative; display: grid; grid-template-columns: 18px 92px 24px minmax(0, 1fr) 52px; column-gap: 8px; align-items: center; padding: 5px 0 6px; border-bottom: 1px solid var(--panel-3); }
   li:hover { background: var(--panel-2); }
   .ic { display: inline-flex; color: var(--cyan); }
   .n { font-size: 13px; }

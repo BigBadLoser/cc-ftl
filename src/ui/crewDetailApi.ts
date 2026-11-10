@@ -75,8 +75,9 @@ export interface UiCrewDetail {
   /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. `strain`: what can set off a break now whatever the mood. */
   mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number; strain: string } | null;
   skills: UiSkillDetail[];
-  /** "Station brat · Salvage diver", and what they won't do; empty for crew without a background. */
-  background: string;
+  /** Where they grew up and their career by name ("Station brat", "Salvage diver"), and what they won't do; empty for crew without a background. */
+  upbringing: string;
+  career: string;
   wontDo: string[];
   stats: UiStatDetail[];
   traits: { id: string; name: string; kind: string; flavour: string; effect: string; short: string }[];

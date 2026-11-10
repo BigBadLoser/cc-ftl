@@ -49,7 +49,7 @@
     </tbody>
   </table>
 </div>
-<p class="hint">Tap to cycle 1 (highest) to 4, then off. Dotted cells differ from the role default.</p>
+<p class="hint">Tap to cycle 1 (highest) to 4, then off. Dotted cells differ from their default.</p>
 
 <style>
   .scroll { overflow-x: auto; }

@@ -89,7 +89,8 @@ export function previewCrew(content: ContentRegistry, plan: UiCrewPlan): UiRollC
     return {
       slot, role: c.role, title, name: c.name, rerolls: plan.picks[slot]?.rerolls ?? 0,
       background: up && career ? `${up.name} · ${career.name}` : '',
-      backgroundLines: [up, career].flatMap((b) => (b ? [{ name: b.name, line: b.line, adds: addsOf(b.skills) }] : [])),
+      upbringing: up ? { name: up.name, line: up.line, adds: addsOf(up.skills) } : null,
+      career: career ? { name: career.name, line: career.line, adds: addsOf(career.skills) } : null,
       knack: c.background?.knack ? SKILL_NAMES[c.background.knack] : null,
       wontDo: (c.wontDo ?? []).map((w) => WONT_DO_NAMES[w]),
       look: { species: role?.species ?? 'species.human', role: c.role, appearanceSeed: c.appearanceSeed },

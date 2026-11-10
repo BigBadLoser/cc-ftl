@@ -28,6 +28,13 @@ export interface UiRollSkill { skill: string; name: string; rolled: number; trai
 /** A job a ship needs (Helm, Repair...): the skills that cover it. */
 export interface UiShipJob { id: string; name: string; skills: string[] }
 
+/** An upbringing or a career as the dossier shows it: name, line ("grew up in a dockside hab") and the skills it adds. */
+export interface UiOrigin {
+  name: string;
+  line: string;
+  adds: string;
+}
+
 /** One crew-screen slot as rolled (app/title/crewRoll.ts): what the started game will hold. */
 export interface UiRollCrew {
   slot: number;
@@ -36,9 +43,11 @@ export interface UiRollCrew {
   title: string;
   name: string;
   rerolls: number;
-  /** "Station brat · Salvage diver", and the dossier lines with what each adds; empty for robots. */
+  /** "Station brat · Salvage diver" (the card line); empty for robots. */
   background: string;
-  backgroundLines: { name: string; line: string; adds: string }[];
+  /** The dossier's two columns: Background (where they grew up) and Career, each with what it adds; null for robots. */
+  upbringing: UiOrigin | null;
+  career: UiOrigin | null;
   /** A knack (a surprise skill), and what they won't do. */
   knack: string | null;
   wontDo: string[];

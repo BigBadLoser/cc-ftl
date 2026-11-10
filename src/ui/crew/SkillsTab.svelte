@@ -8,7 +8,7 @@
   import { SOURCE_COLOR } from './format';
 
   /**
-   * The crew Skills tab (mock I1): the background line, all eleven skills in a fixed order as 0-10 pips with interest marks (breakdown on
+   * The crew Skills tab (mock I1): the background and career, all eleven skills in a fixed order as 0-10 pips with interest marks (breakdown on
    * hover; untrained ones dimmed, a won't-do struck through), the pip legend, the traits one line each (full text on hover), and the other
    * stats in two columns (a dot when modified, sources on hover).
    */
@@ -22,8 +22,13 @@
 
 {#if d}
   <Section testId="crew-skills-detail">
-    {#if d.background}<div class="bg" data-testid="crew-background">{d.background}{#each d.wontDo as w (w)}<span class="neg"> · {w}</span>{/each}</div>{/if}
-    <ul class="rows" style:--pips-w="159px">{#each d.skills as s (s.skill)}<SkillRow {s} {max} />{/each}</ul>
+    {#if d.upbringing || d.career}
+      <div class="bg" data-testid="crew-background">
+        <div><span class="l">Background</span>{d.upbringing}</div><div><span class="l">Career</span>{d.career}</div>
+      </div>
+      {#each d.wontDo as w (w)}<div class="neg wd">{w}</div>{/each}
+    {/if}
+    <ul class="rows">{#each d.skills as s (s.skill)}<SkillRow {s} {max} />{/each}</ul>
     <div class="foot">
       <span class="int">✦ keen · ✦✦ passionate</span>
       <span class="key">{#each Object.entries({ rolled: 'rolled', xp: 'XP', trait: 'trait', lost: 'trait −' }) as [k, l] (k)}<span><i style:background={SOURCE_COLOR[k as keyof typeof SOURCE_COLOR]}></i>{l}</span>{/each}</span>
@@ -45,7 +50,9 @@
 
 <style>
   .rows { list-style: none; margin: 0; padding: 0; }
-  .bg { padding: 0 0 6px; font-size: 13px; color: var(--dim); }
+  .bg { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; padding: 0 0 6px; font-size: 13px; }
+  .bg .l { display: block; font: 600 10px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; }
+  .wd { padding: 0 0 6px; font-size: 12px; }
   .int { color: var(--amber); }
   .foot { display: flex; gap: 10px; padding-top: 8px; font-size: 11px; color: var(--dim); }
   .key { margin-left: auto; display: inline-flex; gap: 8px; }

@@ -9,7 +9,7 @@
 
   /**
    * The crew screen's dossier: the selected member in full (mock C1). Name (type to rename), title, the roll stepper (step back to an
-   * earlier roll: rolls are keyed by count) and Reroll; the background lines with what each adds; traits with their whole effect and
+   * earlier roll: rolls are keyed by count) and Reroll; Background (upbringing) and Career side by side with what each adds; traits with their whole effect and
    * flavour; all eleven skills as 0-10 pips with interest marks (a won't-do skill struck through); the stats grid.
    */
   let { c, pic, onRename, onReroll, onRoll }: {
@@ -41,12 +41,14 @@
       </div>
     </div>
     {#if c.read}<p class="read">{c.read}</p>{/if}
-    {#if c.backgroundLines.length}
-      <Section title="Background">
-        {#each c.backgroundLines as b (b.name)}<div class="bgl"><b>{b.name}</b> {b.line}{#if b.adds}: {b.adds}{/if}</div>{/each}
-        {#if c.knack}<div class="bgl">A knack for <b>{c.knack.toLowerCase()}</b>, out of nowhere.</div>{/if}
-        {#each c.wontDo as w (w)}<div class="bgl neg">{w}</div>{/each}
-      </Section>
+    {#if c.upbringing || c.career}
+      <div class="origins" data-testid="crew-origins">
+        {#each [['Background', c.upbringing], ['Career', c.career]] as const as [title, o] (title)}
+          <Section {title}>{#if o}<div class="bgl"><b>{o.name}</b> {o.line}</div>{#if o.adds}<div class="adds">{o.adds}</div>{/if}{/if}</Section>
+        {/each}
+      </div>
+      {#if c.knack}<div class="bgl">A knack for <b>{c.knack.toLowerCase()}</b>, out of nowhere.</div>{/if}
+      {#each c.wontDo as w (w)}<div class="bgl neg">{w}</div>{/each}
     {/if}
     <Section title="Traits">
       {#each c.traits as t (t.id)}
@@ -104,6 +106,9 @@
   .int { color: var(--amber); font-size: 12px; }
   .bgl { padding: 3px 0; font-size: 13px; color: #c9ced3; }
   .bgl b { color: #fff; font-weight: 600; }
+  .origins { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; margin-top: 16px; }
+  .origins > :global(section) { margin-top: 0; }
+  .adds { padding-bottom: 3px; font-size: 12px; color: var(--dim); }
   .sk { display: grid; grid-template-columns: 16px 96px 24px auto 1fr; align-items: center; column-gap: 8px; min-height: 26px; font-size: 13px; }
   .sk > span:last-child { text-align: left; cursor: help; }
   .si { display: inline-flex; color: var(--cyan); }

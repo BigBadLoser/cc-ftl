@@ -66,11 +66,11 @@ function skillsOf(sim: Sim, id: number): UiSkillDetail[] {
   });
 }
 
-function backgroundOf(sim: Sim, id: number): { background: string; wontDo: string[] } {
+function backgroundOf(sim: Sim, id: number): { upbringing: string; career: string; wontDo: string[] } {
   const bg = sim.world.get(id, BackgroundC);
   const up = bg && sim.content.upbringings?.[bg.upbringing];
   const career = bg && sim.content.careers?.[bg.career];
-  return { background: up && career ? `${up.name} · ${career.name}` : '', wontDo: (sim.world.get(id, WontDoC)?.ids ?? []).map((w) => WONT_DO_NAMES[w]) };
+  return { upbringing: up?.name ?? '', career: career?.name ?? '', wontDo: (sim.world.get(id, WontDoC)?.ids ?? []).map((w) => WONT_DO_NAMES[w]) };
 }
 
 function statsOf(sim: Sim, id: number): UiStatDetail[] {
