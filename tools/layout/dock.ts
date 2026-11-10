@@ -39,7 +39,7 @@ export const DEFAULT_DOCK: DockState = {
   sizes: { left: 17, right: 17, bottom: 35 },
 };
 
-const clone = (s: DockState): DockState => structuredClone(s);
+const clone = (s: DockState): DockState => JSON.parse(JSON.stringify(s)) as DockState; // plain data (a Svelte state proxy cannot be structuredClone-d)
 const clampSize = (n: number): number => Math.max(MIN_SIZE, Math.min(MAX_SIZE, n));
 
 /** A window rect kept at least minimum size and on the positive side of the area's origin. */

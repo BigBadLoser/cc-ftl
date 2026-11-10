@@ -112,7 +112,7 @@ export function unreachableTiles(t: ShipTemplate): string[] {
   }
   const main = sizes.indexOf(Math.max(...sizes));
   const out: string[] = [];
-  for (let i = 0; i < w * h; i++) if (region[i] >= 0 && region[i] !== main) out.push(`${i % w},${Math.floor(i / w)}`);
+  for (let i = 0; i < w * h; i++) if ((region[i] ?? -1) >= 0 && region[i] !== main) out.push(`${i % w},${Math.floor(i / w)}`);
   return out;
 }
 
