@@ -412,10 +412,10 @@
   .frame > :global(.sec + .sec) { border-top: 1px solid var(--line); }
   .time { display: flex; flex-direction: column; }
   .trow { display: flex; align-items: center; }
-  .fps { margin-left: auto; font-size: 11px; color: var(--text); }
-  .tick { white-space: nowrap; flex: 1; display: flex; align-items: baseline; gap: 8px; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 8px; }
-  .hhmm { font: 700 22px/1 var(--head-font); color: var(--text); letter-spacing: 0.04em; }
-  .day { font-size: 12px; font-weight: 400; }
+  .fps { flex-basis: 100%; font-size: 11px; color: var(--text); }
+  .tick { white-space: nowrap; flex: 1; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; min-width: 0; font: 600 13px/1 var(--head-font); color: var(--dim); letter-spacing: 0.05em; padding: 0 6px; }
+  .hhmm { font: 700 20px/1 var(--head-font); color: var(--text); letter-spacing: 0.04em; }
+  .day { font-size: 12px; font-weight: 400; letter-spacing: 0; }
   .speeds { display: flex; }
   .speeds :global(button.tile) { border: 0; border-left: 1px solid var(--line); background: transparent; width: 36px; height: 36px; }
   .speeds :global(button.tile:hover) { background: var(--panel-3); }

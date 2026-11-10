@@ -116,8 +116,8 @@
   .sw { width: 12px; height: 12px; display: inline-block; }
   .grid { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
   .line { display: flex; align-items: center; gap: 0; }
-  .left { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; width: 342px; padding-right: 10px; }
-  .name { flex: 0 0 140px; text-align: left; border: 0; background: none; min-height: 0; height: 26px; padding: 0 2px; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .left { display: flex; align-items: center; gap: 3px; flex: 0 0 auto; width: 312px; padding-right: 10px; }
+  .name { flex: 0 0 130px; text-align: left; border: 0; background: none; min-height: 0; height: 26px; padding: 0 2px; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name i { font-style: normal; color: var(--dim); font-size: 11px; margin-left: 4px; }
   .name.sel { box-shadow: inset 0 0 0 1px var(--cyan); background: var(--panel-2); }
   .ic { width: 24px; height: 24px; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--cyan); }

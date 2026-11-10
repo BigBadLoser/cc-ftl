@@ -23,7 +23,7 @@
   }
 </script>
 
-<FloatingWindow id="priorities" title="Crew" icon="person" min={{ w: 360, h: 200 }} defaultRect={(b) => ({ ...centerTop(b, tab === 'schedule' ? 700 : 640), anchor: 'bottom' })} {onClose} testId="priority-grid" closeTestId="priority-close" padded>
+<FloatingWindow id="priorities" title="Crew" icon="person" min={{ w: 360, h: 200 }} defaultRect={(b) => ({ ...centerTop(b, tab === 'schedule' ? 780 : 640), anchor: 'bottom' })} {onClose} testId="priority-grid" closeTestId="priority-close" padded>
   <Tabs options={[{ value: 'priorities', label: 'Priorities', testId: 'crew-tab-priorities' }, { value: 'schedule', label: 'Schedule', testId: 'crew-tab-schedule' }]} value={tab} onChange={pick} label="Crew sections" />
   <div class="page">
     {#if tab === 'schedule'}<SchedulePane {api} {crew} />{:else}<PriorityTable {api} {crew} />{/if}
