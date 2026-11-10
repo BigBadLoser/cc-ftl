@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
 import type { Faction } from '../combat/components';
 import { chargeOf, fuelOf } from '../modules/energy';
+import { ShipC } from '../combat/components';
+import { createCrew } from '../crew/spawn';
 import { ModuleC } from '../modules/components';
 import { spawnModule } from '../modules/spawn';
 import type { SimEvent } from '../events';
@@ -113,5 +115,59 @@ describe('battery banks', () => {
     run(sim, 1);
     expect(mc(sim, ids[2] as number).powered).toBe(false);
     expect(chargeOf(mc(sim, ids[1] as number), bankDef)).toBe(0);
+  });
+});
+
+describe('ship state on battery power (#424)', () => {
+  const bankDef = content.modules.bank as ModuleDef;
+  const all = { firefighting: 0, medical: 0, operating: 0, repair: 0, construction: 0, hauling: 0, refining: 0, crafting: 0, research: 0, cooking: 0, farming: 0, patrol: 0 };
+  const crewed: ContentRegistry = {
+    ...content,
+    roles: { 'role.hand': { name: 'Hand', priorities: all } },
+    species: { 'species.human': { name: 'Human', moveSpeed: 2.5, workSpeed: 1, restDecay: 0 } },
+  };
+
+  /** An active player ship with one crew member aboard and the given modules. */
+  function active(...defs: string[]): { sim: Sim; ids: number[]; state: () => string | undefined } {
+    const sim = new Sim(1, crewed);
+    const ship = stampShip(sim, { name: 't', rows: ['##########', '#________#', '##########'] }, { faction: 'player', state: 'active', x: 0, y: 0 });
+    const ids = defs.map((d, i) => spawnModule(sim, d, 1 + i, 1, 0));
+    createCrew(sim, ship, 'role.hand', { x: 8, y: 1 }, { faction: 'player', name: 'Mara' });
+    return { sim, ids, state: () => sim.world.get(ship, ShipC)?.state };
+  }
+
+  it('stays active while a charged bank covers for dry reactors, and is disabled once the bank runs out', () => {
+    const { sim, ids, state } = active('reactor', 'bank', 'lamp');
+    mc(sim, ids[0] as number).fuel = 0; // the lamp's 10 draw runs on the 400 stored: forty seconds
+    run(sim, 30);
+    expect(mc(sim, ids[2] as number).powered).toBe(true);
+    expect(state()).toBe('active');
+    run(sim, 15);
+    expect(mc(sim, ids[2] as number).powered).toBe(false);
+    expect(state()).toBe('disabled');
+  });
+
+  it('a bank left with less than one tick of its consumer\'s draw feeds nothing, so the ship is disabled', () => {
+    const { sim, ids, state } = active('reactor', 'bank', 'heater');
+    mc(sim, ids[0] as number).fuel = 0; // 400 at a 30 draw leaves a remainder under one tick's draw after about 13 s
+    run(sim, 20);
+    expect(chargeOf(mc(sim, ids[1] as number), bankDef)).toBeGreaterThan(0);
+    expect(mc(sim, ids[2] as number).powered).toBe(false);
+    expect(state()).toBe('disabled');
+  });
+
+  it('a bank too low for the first consumer leaves dry reactors disabled', () => {
+    const { sim, ids, state } = active('reactor', 'bank', 'lamp');
+    mc(sim, ids[0] as number).fuel = 0;
+    mc(sim, ids[1] as number).charge = 0.2;
+    run(sim, 2);
+    expect(state()).toBe('disabled');
+  });
+
+  it('dry reactors and no bank: disabled at the next check', () => {
+    const { sim, ids, state } = active('reactor', 'lamp');
+    mc(sim, ids[0] as number).fuel = 0;
+    run(sim, 2);
+    expect(state()).toBe('disabled');
   });
 });
