@@ -735,6 +735,108 @@ def q4_holo():
     return k
 
 
+# ---- round 7: the dais table with a recessed projector (as the arcade's), the duel spread over the whole table -------
+
+def r_table(name, trough=False):
+    """L3's table (slim top on one round column), its dais replaced by a recessed projector: a chrome collar with a lit
+    rim round a dark well, the lens(es) on a chrome housing held by struts. `trough`: a long stadium-shaped well along
+    the table with three lenses in a row, in place of the round one."""
+    k = Bench(name, FP2)
+    k.cyl(0.0, 0.0, 0.0, 0.3, 0.04, "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, 0.04, 0.16, TOP - 0.14, "arcBodyD", top="arcBody", sides=16)
+    k.cyl(0.0, 0.0, 0.3, 0.17, 0.03, "arcChrD", top="arcChr", sides=16)
+    stadium(k, 0.96, 0.4, TOP - 0.1, 0.06, "arcChrD", top="arcChr")
+    stadium(k, 0.93, 0.37, TOP - 0.04, 0.04, "arcBodyD", top="arcGlass")
+    if trough:
+        stadium(k, 0.6, 0.15, TOP, 0.004, "arcBodyK", top="arcBodyK")                    # the well's floor,
+        stadium_ring(k, 0.64, 0.19, TOP, 0.045, 0.05, "arcChrD", "arcChr")               # the collar,
+        stadium_ring(k, 0.64, 0.19, TOP + 0.045, 0.008, 0.02, "arcCyan", "arcCyan")      # its lit rim
+        for u in LENSES_T:
+            for a in (0.0, math.pi):
+                k.box(u, 0.0, TOP + 0.004, 0.012, 0.24, 0.012, "arcChrD", top="arcChr")  # the struts,
+            k.cyl(u, 0.0, TOP + 0.004, 0.06, 0.02, "arcChrD", top="arcChr", sides=10)    # a housing,
+            k.cyl(u, 0.0, TOP + 0.024, 0.038, 0.004, "arcCyan", top="arcCyan", sides=10)  # a lens
+    else:
+        r, n = 0.22, 20
+        k.cyl(0.0, 0.0, TOP, 0.2, 0.004, "arcBodyK", top="arcBodyK", sides=16)           # the well's floor,
+        for i in range(n):                                                               # the collar,
+            a = i * math.tau / n
+            k.box(r * math.cos(a), r * math.sin(a), TOP, math.tau * r / n * 1.12, 0.05, 0.045, "arcChrD",
+                  top="arcChr", rz=a + math.pi / 2)
+        ring_of(k, r, TOP + 0.045, n, 0.075, "arcCyan", h=0.008)                         # its lit rim,
+        for a in (0.5, 2.6, 4.7):                                                        # the struts,
+            k.box(0.12 * math.cos(a), 0.12 * math.sin(a), TOP + 0.004, 0.12, 0.018, 0.012, "arcChrD",
+                  top="arcChr", rz=a)
+        k.cyl(0.0, 0.0, TOP + 0.004, 0.07, 0.025, "arcChrD", top="arcChr", sides=12)       # the housing,
+        k.cyl(0.0, 0.0, TOP + 0.029, 0.045, 0.004, "arcCyan", top="arcCyan", sides=12)    # the lens
+    for sgn in (-1, 1):                                                                  # a lit pad at each place
+        k.box(sgn * 0.72, 0.0, TOP, 0.22, 0.46, 0.004, "arcCyanF", top="arcCyanF")
+    for u, v in SEATS:
+        bar(k, (0.0, 0.0, 0.03), (u, v, 0.03), 0.06, "arcChrD")
+        stool(k, u, v, -1 if v > 0 else 1)
+    return k.build()
+
+
+LENSES_T = (-0.38, 0.0, 0.38)
+ZA, AU, AV = TOP + 0.4, 0.78, 0.3                                   # the arena's height and half sizes
+
+
+def arena_duel(k):
+    """A wide stadium arena floating over the whole table (a lit rim and centre line, a film pad under each fighter;
+    no floor fill, which would hide the rays under it), the beast and the robot at its two ends with room between them,
+    a health bar over each."""
+    stadium_ring(k, AU, AV, ZA, 0.016, 0.02, "arcCyan", "arcCyan")                       # the rim,
+    k.box(0.0, 0.0, ZA, 0.014, 2 * AV, 0.008, "arcCyan", top="arcCyan")                  # the centre line,
+    for u in (-0.44, 0.44):                                                              # a film pad under each
+        k.cyl(u, 0.0, ZA, 0.16, 0.004, "arcCyanF", top="arcCyanF", sides=14)             # (no floor fill: the rays
+                                                                                         # show through)
+    beast2(k, -0.44, ZA, "arcPink", 1)
+    robot2(k, 0.44, ZA, "arcGrn", -1)
+    bar2(k, -0.44, ZA + 0.36, 0.75, "arcPink")
+    bar2(k, 0.44, ZA + 0.42, 0.4, "arcGrn")
+
+
+def rim_points(n, inset=0.0):
+    """n points round the arena's stadium edge."""
+    pts = []
+    for i in range(n):
+        a = i * math.tau / n + 0.2
+        x, y = math.cos(a), math.sin(a)
+        u = (AU - AV) * (1 if x > 0 else -1) * min(1.0, abs(x) * 3) + AV * x
+        pts.append((u * (1 - inset), AV * y * (1 - inset), ZA))
+    return pts
+
+
+def r1_holo():
+    """One lens: the arena over the whole table, a fan of rays from the lens up to its rim (lit to four points, film to
+    the points between)."""
+    k = Bench("gametable_r1_holo", FP2)
+    arena_duel(k)
+    lens = (0.0, 0.0, TOP + 0.033)
+    for i, q in enumerate(rim_points(12)):
+        bar(k, lens, q, 0.01, "arcCyan" if i % 3 == 0 else "arcCyanF")
+    return k
+
+
+def r2_holo():
+    """The trough: three lenses in a row, each throwing its own fan of rays to the part of the rim over it."""
+    k = Bench("gametable_r2_holo", FP2)
+    arena_duel(k)
+    pts = rim_points(15)
+    for i, q in enumerate(pts):
+        u0 = min(LENSES_T, key=lambda u: abs(u - q[0]))
+        bar(k, (u0, 0.0, TOP + 0.028), q, 0.01, "arcCyan" if i % 3 == 0 else "arcCyanF")
+    return k
+
+
+def r1():
+    return r_table("gametable_r1")
+
+
+def r2():
+    return r_table("gametable_r2", trough=True)
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -753,6 +855,7 @@ def jobs():
     for v, cab in (("n1", n1), ("n2", n2), ("n3", n3)):
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     out += [(f"module.gametable.{v}", FP2, "prop", l3) for v in ("q1", "q2", "q3", "q4")]
+    out += [("module.gametable.r1", FP2, "prop", r1), ("module.gametable.r2", FP2, "prop", r2)]
     for v, (cab, *_) in P_SET.items():
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
@@ -763,4 +866,5 @@ def jobs():
          for g in "ab"] + \
         [holo_job(f"module.gametable.{v}{g}.holo", P_SET[v][0], p_holo(v, g)) for v in P_SET for g in "ab"] + \
         [holo_job(f"module.gametable.{v}.holo", l3, h) for v, h in
-         (("q1", q1_holo), ("q2", q2_holo), ("q3", q3_holo), ("q4", q4_holo))]
+         (("q1", q1_holo), ("q2", q2_holo), ("q3", q3_holo), ("q4", q4_holo))] + \
+        [holo_job("module.gametable.r1.holo", r1, r1_holo), holo_job("module.gametable.r2.holo", r2, r2_holo)]

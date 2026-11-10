@@ -17,13 +17,14 @@ NAMES = {"k1": "K1  strategy board", "k2": "K2  tabletop battle", "k3": "K3  car
          "p1a": "P1 ridge, drop A", "p1b": "P1 ridge, duel A", "p2a": "P2 cantilever, drop B 3D",
          "p2b": "P2 cantilever, duel B", "p3a": "P3 ring, drop B 3D", "p3b": "P3 ring, duel A",
          "q1": "Q1 drop four, big", "q2": "Q2 drop four, tubes", "q3": "Q3 duel, arena",
-         "q4": "Q4 duel, on the dais"}
+         "q4": "Q4 duel, on the dais",
+         "r1": "R1 recessed lens, wide arena", "r2": "R2 recessed trough, wide arena"}
 FRONT, BACK = 6, 2                                  # crew sheet rows facing -y and +y
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "m2,q1,q2,q3,q4").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "q3,r1,r2").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(220 * len(names), 220)
     for i, v in enumerate(names):
