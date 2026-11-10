@@ -3615,5 +3615,9 @@
   "arcGold": {"hex": "#c9a24e", "set": "arcade"},
   "arcGoldD": {"hex": "#8a6a2c", "set": "arcade"},
   "arcCyanOff": {"hex": "#26434d", "set": "arcade"},
-  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"}
+  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"},
+  "arcWoodL": {"hex": "#9a6a44", "set": "arcade"},
+  "arcWood": {"hex": "#74492c", "set": "arcade"},
+  "arcWoodD": {"hex": "#4e2f1d", "set": "arcade"},
+  "arcRed": {"hex": "#e04848", "emissive": 2.2, "set": "arcade"}
 }
