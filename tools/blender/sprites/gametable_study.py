@@ -13,6 +13,7 @@ import math
 
 from .arcade_study import ring_of
 from .research_kit import Bench, bar
+from .research_r15 import prism
 
 FP2 = (2, 1)
 TOP = 0.62                                                           # the table top's height
@@ -309,12 +310,12 @@ def m1_holo():
     return k
 
 
-def m2_holo():
+def m2_holo(z0=TOP + 0.08, name="gametable_m2_holo"):
     """Drop four on the dais table: an upright grid standing between the players (cyan film with a lit frame), pink
     and amber discs stacked in its columns, one pink disc dropping into a column."""
-    k = Bench("gametable_m2_holo", FP2)
+    k = Bench(name, FP2)
     nc, nr, s = 7, 5, 0.1
-    w, h, z0 = nc * s, nr * s, TOP + 0.08
+    w, h = nc * s, nr * s
     k.box(0.0, 0.0, z0, w, 0.01, h, "arcCyanF", top="arcCyanF")                         # the grid's film,
     for u in (-w / 2, w / 2):                                                            # its lit frame,
         k.box(u, 0.0, z0, 0.016, 0.03, h + 0.02, "arcCyan", top="arcCyan")
@@ -331,13 +332,12 @@ def m2_holo():
     return k
 
 
-def m3_holo():
+def m3_holo(z=TOP + 0.06, R=0.36, name="gametable_m3_holo"):
     """Creature duel on the casino table: a round arena (film disc, lit rim), a pink four-legged beast and a green
     robot squaring off, a burst between them, a health bar over each."""
-    k = Bench("gametable_m3_holo", FP2)
-    z = TOP + 0.06
-    k.cyl(0.0, 0.0, z, 0.36, 0.006, "arcCyanF", top="arcCyanF", sides=16)               # the arena,
-    ring_of(k, 0.36, z, 20, 0.12, "arcCyan", h=0.014)
+    k = Bench(name, FP2)
+    k.cyl(0.0, 0.0, z, R, 0.006, "arcCyanF", top="arcCyanF", sides=16)                  # the arena,
+    ring_of(k, R, z, 20, R * 0.33, "arcCyan", h=0.014)
     bu = -0.17                                                                            # the beast:
     for du in (-0.06, 0.06):
         for dv in (-0.05, 0.05):
@@ -359,6 +359,75 @@ def m3_holo():
     return k
 
 
+# ---- round 4: three table bodies, each shown with drop four (a) and the creature duel (b) -----------------------------
+
+def arms(k, root, col="arcChrD"):
+    for u, v in SEATS:
+        bar(k, root(u, v), (u, v, 0.03), 0.06, col)
+        stool(k, u, v, -1 if v > 0 else 1)
+
+
+def n1():
+    """Ridge console: one angular body, the top rising from each player's edge in a sloped glass play deck to a
+    raised central spine that carries the projector strip; chunky end caps, a dark base under it all."""
+    k = Bench("gametable_n1", FP2)
+    k.box(0.0, 0.0, 0.0, 1.5, 0.5, 0.04, "arcBodyK", top="arcBodyK")                    # the kick,
+    k.box(0.0, 0.0, 0.04, 1.4, 0.42, TOP - 0.16, "arcBodyD", top="arcBody")             # the base,
+    prof = [(-0.46, TOP - 0.12), (0.46, TOP - 0.12), (0.46, TOP - 0.04), (0.1, TOP + 0.06), (-0.1, TOP + 0.06),
+            (-0.46, TOP - 0.04)]
+    prism(k, "u", -0.82, 0.82, prof, ("arcBody", "arcBodyD", "arcBodyL"), slope="arcGlass")   # the decks and spine,
+    for s in (-1, 1):
+        k.box(s * 0.89, 0.0, 0.0, 0.14, 0.94, TOP + 0.1, "arcBodyD", top="arcBodyL")    # the end caps,
+        k.box(s * 0.89, 0.0, TOP + 0.1, 0.15, 0.95, 0.02, "arcChrD", top="arcChr")
+        k.box(s * 0.89, 0.472, 0.1, 0.06, 0.006, TOP - 0.1, "arcCyan")                   # their lit seams
+    k.box(0.0, 0.0, TOP + 0.06, 1.5, 0.12, 0.012, "arcCyan", top="arcCyan")              # the projector strip,
+    for s in (-1, 1):                                                                     # a lit edge on each deck
+        k.box(0.0, s * 0.455, TOP - 0.05, 1.6, 0.014, 0.014, "arcCyan")
+    arms(k, lambda u, v: (u * 0.6, v * 0.18, 0.03))
+    return k.build()
+
+
+def n2():
+    """Cantilever slab: a heavy plinth at one end rising into a column that holds the top out over the floor, the far
+    end floating; a lit underglow along the slab's underside."""
+    k = Bench("gametable_n2", FP2)
+    k.box(-0.74, 0.0, 0.0, 0.44, 0.7, 0.06, "arcBodyK", top="arcBodyK")                 # the plinth,
+    k.box(-0.74, 0.0, 0.06, 0.3, 0.42, TOP - 0.16, "arcBodyD", top="arcBody")           # the column,
+    k.box(-0.58, 0.0, 0.1, 0.012, 0.3, TOP - 0.22, "arcCyan")                            # its lit seam,
+    stadium(k, 0.92, 0.4, TOP - 0.14, 0.02, "arcCyan", top="arcCyan")                    # the underglow,
+    stadium(k, 0.96, 0.44, TOP - 0.12, 0.08, "arcBodyD", top="arcBodyL")                # the slab,
+    stadium(k, 0.93, 0.41, TOP - 0.04, 0.04, "arcChrD", top="arcGlass")                 # its glass top,
+    k.box(0.1, 0.0, TOP, 1.2, 0.08, 0.008, "arcCyan", top="arcCyan")                     # the emitter strip
+    arms(k, lambda u, v: (-0.74, v * 0.2, 0.03))
+    return k.build()
+
+
+def n3():
+    """Ring table: an open stadium ring for a top, on two end posts over a long plinth; the projector stands in the
+    middle under the opening, its lit bowl seen through it."""
+    k = Bench("gametable_n3", FP2)
+    stadium(k, 0.84, 0.3, 0.0, 0.05, "arcBodyK", top="arcBodyK")                         # the plinth,
+    for s in (-1, 1):
+        k.cyl(s * 0.66, 0.0, 0.05, 0.13, TOP - 0.15, "arcBodyD", top="arcBody", sides=12)   # the end posts,
+    k.cyl(0.0, 0.0, 0.05, 0.13, TOP - 0.3, "arcBodyD", top="arcBody", sides=12)         # the projector column,
+    k.cyl(0.0, 0.0, TOP - 0.25, 0.2, 0.05, "arcChrD", top="arcBodyK", sides=16)          # its bowl,
+    ring_of(k, 0.19, TOP - 0.2, 16, 0.08, "arcCyan", h=0.01)                             # the bowl's lit rim
+    stadium_ring(k, 0.96, 0.44, TOP - 0.1, 0.08, 0.2, "arcChrD", "arcChr")               # the ring top,
+    stadium_ring(k, 0.75, 0.25, TOP - 0.03, 0.012, 0.02, "arcCyan", "arcCyan")           # its lit inner edge
+    arms(k, lambda u, v: (u * 0.9, v * 0.2, 0.03))
+    return k.build()
+
+
+N_HOLO = {"n1": (TOP + 0.1, 0.34), "n2": (TOP + 0.06, 0.36), "n3": (TOP - 0.18, 0.24)}   # each table's holo base, arena R
+
+
+def n_holo(v, game):
+    z, R = N_HOLO[v]
+    if game == "a":
+        return lambda: m2_holo(z0=z + 0.02, name=f"gametable_{v}a_holo")
+    return lambda: m3_holo(z=z, R=R, name=f"gametable_{v}b_holo")
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -374,7 +443,11 @@ def jobs():
     out = [(f"module.gametable.{v}", FP2, "prop", f) for v, f in (("k1", k1), ("k2", k2), ("k3", k3), ("l1", l1),
                                                                  ("l2", l2), ("l3", l3), ("m1", k1),
                                                                  ("m2", l3), ("m3", l2))]
+    for v, cab in (("n1", n1), ("n2", n2), ("n3", n3)):
+        out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
                   (("k1", k1, k1_holo), ("k2", k2, k2_holo), ("k3", k3, k3_holo), ("l1", l1, l1_holo),
                    ("l2", l2, l2_holo), ("l3", l3, l3_holo), ("m1", k1, m1_holo), ("m2", l3, m2_holo),
-                   ("m3", l2, m3_holo))]
+                   ("m3", l2, m3_holo))] + \
+        [holo_job(f"module.gametable.{v}{g}.holo", cab, n_holo(v, g)) for v, cab in (("n1", n1), ("n2", n2), ("n3", n3))
+         for g in "ab"]

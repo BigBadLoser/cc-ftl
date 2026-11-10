@@ -11,13 +11,15 @@ from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
 NAMES = {"k1": "K1  strategy board", "k2": "K2  tabletop battle", "k3": "K3  card game",
          "l1": "L1  cards, K table", "l2": "L2  casino table", "l3": "L3  card dais",
-         "m1": "M1  disc duel", "m2": "M2  drop four", "m3": "M3  creature duel"}
+         "m1": "M1  disc duel", "m2": "M2  drop four", "m3": "M3  creature duel",
+         "n1a": "N1 ridge, drop four", "n1b": "N1 ridge, duel", "n2a": "N2 cantilever, drop four",
+         "n2b": "N2 cantilever, duel", "n3a": "N3 ring, drop four", "n3b": "N3 ring, duel"}
 FRONT, BACK = 6, 2                                  # crew sheet rows facing -y and +y
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "k3,m1,m2,m3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "n1a,n1b,n2a,n2b,n3a,n3b").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(220 * len(names), 220)
     for i, v in enumerate(names):
