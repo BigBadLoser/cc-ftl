@@ -134,7 +134,6 @@ describe('away sites: batched round trips (#286 slice 2b)', () => {
     const site = sim.world.get(shuttle, SiteRunC)!.site;
     sim.world.remove(fresh, DraftedC);
     boardCrew(sim, fresh, shuttle);
-    sim.world.get(shuttle, VehicleC)!.suits = 1; // a suit for them to go out in
     sim.world.add(fresh, AwayC, { site, vehicle: shuttle, cat: 'construction' });
     sim.world.get(low, HealthC)!.hp = 0;
     let homeWithTie = false;

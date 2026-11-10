@@ -1,4 +1,4 @@
-import { AirlockC, SuitC, freeSuits, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
+import { AirlockC, SuitC, airlockUsable, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
 import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
 import { breakWord, strainOf } from './breakText';
 import { BreakdownC } from '../sim';
@@ -105,19 +105,18 @@ function suitOf(sim: Sim, id: number): UiCrew['suit'] {
   };
 }
 
-/** The airlock on the crew member's grid, nearest by straight line, that has a free suit (null if none, or the body needs none). */
+/** The usable airlock on the crew member's grid, nearest by straight line (any has a suit, #416); null if none, or the body needs none. */
 function suitAtOf(sim: Sim, id: number): UiCrew['suitAt'] {
   const pos = sim.world.get(id, PositionC);
   if (!pos || sim.world.has(id, SuitC) || !needsAir(sim, id)) return null;
-  let best: { id: number; free: number; d: number } | null = null;
+  let best: { id: number; d: number } | null = null;
   for (const lock of sim.world.query(AirlockC)) {
     const at = suitTile(sim, lock);
-    const free = freeSuits(sim, lock);
-    if (!at || free <= 0 || shipIdOf(sim, sim.world.get(lock, ModuleC)) !== shipIdOf(sim, pos)) continue;
+    if (!at || !airlockUsable(sim, lock) || shipIdOf(sim, sim.world.get(lock, ModuleC)) !== shipIdOf(sim, pos)) continue;
     const d = Math.hypot(at.x - pos.x, at.y - pos.y);
-    if (!best || d < best.d) best = { id: lock, free, d };
+    if (!best || d < best.d) best = { id: lock, d };
   }
-  return best && { id: best.id, free: best.free };
+  return best && { id: best.id };
 }
 
 function hungerOf(sim: Sim, id: number): number | null {

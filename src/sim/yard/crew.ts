@@ -49,7 +49,7 @@ export function launchShuttle(sim: Sim, o: YardOrder): boolean {
   }
   reportLaunched(sim, vehicle, sim.world.get(vehicle, VehicleC) as Vehicle);
   Object.assign(sim.world.get(o.ship, AwaySiteC)!, { demand: {}, dock: o.airlock, outside: true, noLoot: true });
-  const n = Math.min(spec.count, cd.def.eva?.suits ?? spec.count, cd.def.capacity + 1);
+  const n = Math.min(spec.count, cd.def.capacity + 1);
   for (let i = 0; i < n; i++) {
     const id = createCrew(sim, o.station, spec.role, { x: station.x, y: station.y }, { faction: 'neutral', rest: 100 });
     if (!id) continue;

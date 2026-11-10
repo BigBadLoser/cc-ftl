@@ -7,7 +7,6 @@ import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
 import { vehicleFaction } from '../vehicles/lifecycle';
 import { hatchSpot } from '../eva/shuttle';
-import { needsAir } from '../eva/suit';
 import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -218,13 +217,12 @@ export function takesSiteWork(sim: Sim, id: number, site: number): boolean {
 
 /**
  * The passage checks of `jobFits`: a player crew member not already of a party, rested, fed or charged enough to stay a while (AWAY_GO_STAY_SEC
- * of work before a need sends them home), with a trip worth making before their Sleep block (`tripWorthIt`). A seat beyond the shuttle's
- * suits (`airless`) is for crew who do not breathe.
+ * of work before a need sends them home), with a trip worth making before their Sleep block (`tripWorthIt`).
  */
 export function passageFits(sim: Sim, crew: number, job: Job): boolean {
   if (job.kind !== 'passage') return true;
   if (job.holder && job.holder !== crew) return false; // a named party's seat (`AwaySite.invited`)
-  if (sim.world.has(crew, AwayC) || !ofSide(sim, crew, job.target ?? 0) || (job.airless && needsAir(sim, crew))) return false;
+  if (sim.world.has(crew, AwayC) || !ofSide(sim, crew, job.target ?? 0)) return false;
   return sim.world.has(crew, NeedsC) && staySec(sim, crew) >= AWAY_GO_STAY_SEC && tripWorthIt(sim, crew, job.target ?? 0, job.site ?? 0);
 }
 

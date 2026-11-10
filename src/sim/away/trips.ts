@@ -7,8 +7,7 @@ import { flightTicks } from '../ai/travel';
 import { hasTank, vehicleAir } from '../eva/air';
 import { setAirHolds } from '../eva/airLedger';
 import { EvaFloatC } from '../eva/components';
-import { outsideCrew, vehicleSuits } from '../eva/shuttle';
-import { needsAir } from '../eva/suit';
+import { outsideCrew } from '../eva/shuttle';
 import { shipIdOf } from '../regions';
 import { runDue } from './haul';
 import type { Sim } from '../sim';
@@ -44,13 +43,12 @@ export function settled(sim: Sim, id: number, v: Vehicle): boolean {
 }
 
 /**
- * True if a crew member at home would take a seat now: free (no job held, awake, not held), of the shuttle's side, fit for a passage (a suit
- * left for them if they breathe) and willing to do some of the site's work (a priority set for a category it wants).
+ * True if a crew member at home would take a seat now: free (no job held, awake, not held), of the shuttle's side, fit for a passage and
+ * willing to do some of the site's work (a priority set for a category it wants).
  */
-function wouldGo(sim: Sim, c: number, vehicle: number, site: number, suits: number): boolean {
+function wouldGo(sim: Sim, c: number, vehicle: number, site: number): boolean {
   const crew = sim.world.get(c, CrewC) as Crew;
   if (crew.activity !== 'idle' || sim.world.has(c, AssignmentC) || sim.world.has(c, DraftedC) || sim.world.has(c, DeadC)) return false;
-  if (needsAir(sim, c) && suits <= 0) return false;
   if (!passageFits(sim, c, { kind: 'passage', category: 'construction', x: 0, y: 0, struct: 0, work: 1, progress: 0, reservedBy: 0, site, target: vehicle })) return false;
   return takesSiteWork(sim, c, site);
 }
@@ -74,9 +72,8 @@ export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'urgent' 
   // Seats free once those going home are out (riders stay aboard), and someone at home who would take one.
   const free = seats - (aboard.length - going.length);
   if (free <= 0) return null;
-  const suits = vehicleSuits(sim, v) - aboard.filter((c) => !sim.world.get(c, AwayC)?.home && needsAir(sim, c)).length;
   const home = sim.world.query(CrewC, PositionC).filter((c) => !sim.world.has(c, AwayC) && shipIdOf(sim, sim.world.get(c, PositionC)!) === v.homeShip);
-  return home.some((c) => wouldGo(sim, c, id, r.site, suits)) ? 'batch' : null;
+  return home.some((c) => wouldGo(sim, c, id, r.site)) ? 'batch' : null;
 }
 
 /** Able to answer the last call or come aboard to ride: on their feet, not carried, not held by the player. */

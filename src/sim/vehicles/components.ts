@@ -36,8 +36,6 @@ export interface Vehicle {
   cargo: ItemQty[];
   /** ShipC entity it holds station beside (a few tiles off its hull) while flying with no destination, else 0/absent. */
   hover?: number;
-  /** EVA suits stowed aboard. Absent = the def's `eva.suits`. */
-  suits?: number;
   /** Seconds of suit air in its store (a refill at the hatch draws from it). Absent = the full store. */
   air?: number;
   /** Trade: the hold is sealed outbound cargo (being loaded or flown to a buyer); the cargo planner must not unload it. */

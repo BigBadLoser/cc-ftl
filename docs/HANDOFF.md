@@ -18,7 +18,7 @@ The refactor's `SectorGrid` is really the node grid. It gets renamed after rende
   - shuttle bay (4x5 pit) and the shuttle with flight art;
   - side docking with the extending 4-ring tube;
   - docking airlock (3x4 plus collar, unloaders, keep-out);
-  - EVA and spacesuits (suits stocked at airlocks and shuttles, hull ring, EVA from a hovering shuttle);
+  - EVA and spacesuits (suits at any airlock or shuttle, no limit, hull ring, EVA from a hovering shuttle);
   - robots and robot bays, capture and prizes;
   - the three military weapons;
   - the event system (11 starter events);

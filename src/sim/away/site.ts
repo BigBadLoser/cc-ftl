@@ -4,7 +4,6 @@ import { CarriedC, CrewC, DraftedC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { abortTask, isCarrying } from '../ai/task';
 import { EvaFloatC, SuitC } from '../eva/components';
-import { vehicleSuits } from '../eva/shuttle';
 import { suitNeeded, needsAir, suitDef } from '../eva/suit';
 import { shipGrid } from '../regions';
 import { keepZone, liveBox, loadStep, loading } from './haul';
@@ -48,7 +47,7 @@ export function lift(sim: Sim, c: number, vehicle: number): void {
   if (!v || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return;
   if (isCarrying(sim, c)) abortTask(sim, c, 'halted'); // a patient in hand is set down first (lifted on their own)
   sim.world.remove(c, EvaFloatC);
-  if (sim.world.remove(c, SuitC)) v.suits = vehicleSuits(sim, v) + 1;
+  sim.world.remove(c, SuitC); // stowed aboard
   boardCrew(sim, c, vehicle);
   const away = sim.world.get(c, AwayC);
   if (away) sim.world.add(c, AwayC, { site: away.site, vehicle: away.vehicle, cat: away.cat, home: true });
@@ -68,32 +67,25 @@ function watchDowned(sim: Sim, id: number): void {
 
 /**
  * Send out the passengers aboard who are not going home (riders too, unless `keepRiders`): hovering, out of the hatch (`eva.out`, a suit
- * from stock for those who breathe), handed to the crew AI once landed; docked, they step out at the airlock, a suit from stock for those
- * who breathe if its tile is thin (none left: they wait aboard).
+ * for those who breathe), handed to the crew AI once landed; docked, they step out at the airlock, a suit for those who breathe if its
+ * tile is thin or the site is `outside` (the shuttle has one for each, #416).
  */
 function sendOut(sim: Sim, id: number, v: Vehicle, keepRiders: boolean): void {
   const at = v.state === 'docked' ? boardingTile(sim, id) : null;
   const grid = at && shipGrid(sim, at.shipId);
-  let suits = vehicleSuits(sim, v);
   for (const c of partyAboard(sim, v)) {
     const away = sim.world.get(c, AwayC)!;
     if (away.home || (keepRiders && away.ride)) continue;
     delete away.ride;
-    if (!at && needsAir(sim, c) && suits-- <= 0) {
-      away.home = true; // no suit to go out in: they go home with the next trip
-      continue;
-    }
     if (!at) {
       away.landing = true; // (a `landing` still aboard: the last eva.out was refused; it is asked again)
       sim.enqueue({ type: 'eva.out', vehicle: id, crew: c });
       continue;
     }
     const suit = needsAir(sim, c) && ((!!grid && suitNeeded(grid, at.x, at.y)) || !!sim.world.get(away.site, AwaySiteC)?.outside);
-    if (suit && vehicleSuits(sim, v) <= 0) continue;
     unboardCrew(sim, c, id, at);
     standBy(sim, c, !!sim.world.get(away.site, AwaySiteC)?.standBy);
     if (!suit || sim.world.has(c, SuitC)) continue; // unboardCrew fitted one where the tile is thin (the site's `outside` is ours)
-    v.suits = vehicleSuits(sim, v) - 1;
     sim.world.add(c, SuitC, { worn: true, air: suitDef(sim).airSec });
     sim.events.emit({ type: 'suit.donned', crew: c, airlock: 0 });
   }

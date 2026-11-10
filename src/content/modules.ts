@@ -297,7 +297,7 @@ export const modules = {
   //   row 1   (1,1)       the pod, the inner door;  (0,1) (2,1) unloader back halves
   //   row 2   (1,2)       inside tile, walkable: where passengers land;  (0,2) (2,2) unloader fronts, the chutes
   //   row 3   (1,3)       walkable;  (0,3) (2,3) keep-out tiles: walkable, where crew work the chutes, nothing else builds here
-  // Cycles in 4 s, pumping the outer door tile's air back into the ship. Holds 3 EVA suits (crew put one on at the inside tile).
+  // Cycles in 4 s, pumping the outer door tile's air back into the ship. Has a suit for whoever needs one (#416: no count; crew put it on at the inside tile).
   'module.airlock': {
     scrap: 'hull',
     name: 'Airlock',
@@ -308,7 +308,6 @@ export const modules = {
     power: -2, powerPriority: 2, flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n',
     airlock: {
       cycleSec: 4,
-      suits: 3,
       layout: {
         outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1],
         unloaders: [
