@@ -285,6 +285,80 @@ def l3_holo():
     return k
 
 
+# ---- round 3: three more games (the card game stays a candidate) ----------------------------------------------------
+
+def m1_holo():
+    """Disc duel (air hockey) on K's table: a lit rink with a centre line and circle, goal mouths at the ends, the
+    pink and the cyan striker, the amber puck sliding with its trail."""
+    k = Bench("gametable_m1_holo", FP2)
+    hu, hv = 0.8, 0.34
+    k.box(0.0, 0.0, Z0, 2 * hu, 2 * hv, 0.004, "arcCyanF", top="arcCyanF")              # the rink's floor,
+    for sgn in (-1, 1):                                                                  # its walls, lit
+        k.box(0.0, sgn * hv, Z0, 2 * hu, 0.014, 0.04, "arcCyan", top="arcCyan")
+        for sv in (-1, 1):
+            k.box(sgn * hu, sv * (hv + 0.12) / 2, Z0, 0.014, hv - 0.12, 0.04, "arcCyan", top="arcCyan")
+        k.box(sgn * (hu + 0.03), 0.0, Z0, 0.05, 0.24, 0.012, "arcAmb", top="arcAmb")   # the goal mouths
+    k.box(0.0, 0.0, Z0, 0.014, 2 * hv, 0.008, "arcCyan", top="arcCyan")                 # the centre line,
+    ring_of(k, 0.12, Z0, 12, 0.065, "arcCyan", h=0.008)                                  # the centre circle
+    for u, v, col in ((-0.5, 0.12, "arcPink"), (0.48, -0.1, "arcCyan")):                 # the strikers
+        k.cyl(u, v, Z0, 0.075, 0.04, col, top=col, sides=12)
+        k.cyl(u, v, Z0 + 0.04, 0.035, 0.05, col, top=col, sides=10)
+    k.cyl(-0.12, 0.16, Z0, 0.05, 0.025, "arcAmb", top="arcAmb", sides=10)               # the puck,
+    for i, (u, v) in enumerate(((0.0, 0.1), (0.1, 0.04))):                               # its trail
+        k.cyl(u, v, Z0, 0.04 - i * 0.01, 0.012, "arcAmbF", top="arcAmbF", sides=8)
+    return k
+
+
+def m2_holo():
+    """Drop four on the dais table: an upright grid standing between the players (cyan film with a lit frame), pink
+    and amber discs stacked in its columns, one pink disc dropping into a column."""
+    k = Bench("gametable_m2_holo", FP2)
+    nc, nr, s = 7, 5, 0.1
+    w, h, z0 = nc * s, nr * s, TOP + 0.08
+    k.box(0.0, 0.0, z0, w, 0.01, h, "arcCyanF", top="arcCyanF")                         # the grid's film,
+    for u in (-w / 2, w / 2):                                                            # its lit frame,
+        k.box(u, 0.0, z0, 0.016, 0.03, h + 0.02, "arcCyan", top="arcCyan")
+    k.box(0.0, 0.0, z0 - 0.016, w + 0.03, 0.03, 0.016, "arcCyan", top="arcCyan")
+    for c in range(1, nc):                                                               # the column lines
+        k.box(-w / 2 + c * s, 0.0, z0, 0.006, 0.014, h, "arcCyan")
+    heights = (1, 3, 2, 4, 2, 1, 0)
+    cols = ("arcPink", "arcAmb")
+    for c, n in enumerate(heights):                                                      # the discs
+        for r in range(n):
+            col = cols[(c * 3 + r * 2 + (c > 3)) % 2]
+            k.box(-w / 2 + (c + 0.5) * s, 0.0, z0 + (r + 0.12) * s, s * 0.76, 0.03, s * 0.76, col, top=col)
+    k.box(-w / 2 + 6.5 * s, 0.0, z0 + h + 0.06, s * 0.76, 0.03, s * 0.76, "arcPink", top="arcPink")   # dropping
+    return k
+
+
+def m3_holo():
+    """Creature duel on the casino table: a round arena (film disc, lit rim), a pink four-legged beast and a green
+    robot squaring off, a burst between them, a health bar over each."""
+    k = Bench("gametable_m3_holo", FP2)
+    z = TOP + 0.06
+    k.cyl(0.0, 0.0, z, 0.36, 0.006, "arcCyanF", top="arcCyanF", sides=16)               # the arena,
+    ring_of(k, 0.36, z, 20, 0.12, "arcCyan", h=0.014)
+    bu = -0.17                                                                            # the beast:
+    for du in (-0.06, 0.06):
+        for dv in (-0.05, 0.05):
+            k.box(bu + du, dv, z, 0.035, 0.035, 0.08, "arcPink", top="arcPink")          # legs,
+    k.box(bu, 0.0, z + 0.08, 0.18, 0.12, 0.08, "arcPink", top="arcPink")                 # body,
+    k.box(bu + 0.11, 0.0, z + 0.12, 0.08, 0.08, 0.07, "arcPink", top="arcPink")          # head
+    ru = 0.17                                                                             # the robot:
+    for dv in (-0.04, 0.04):
+        k.box(ru, dv, z, 0.04, 0.04, 0.1, "arcGrn", top="arcGrn")                        # legs,
+    k.box(ru, 0.0, z + 0.1, 0.09, 0.14, 0.11, "arcGrn", top="arcGrn")                    # body,
+    k.box(ru, 0.0, z + 0.21, 0.07, 0.07, 0.06, "arcGrn", top="arcGrn")                   # head,
+    k.box(ru - 0.06, 0.09, z + 0.15, 0.1, 0.03, 0.03, "arcGrn", top="arcGrn")            # a punching arm
+    for rz in (0.0, 0.785, 1.571, 2.356):                                                # the burst
+        k.box(0.03, 0.06, z + 0.15, 0.12, 0.014, 0.014, "arcAmb", rz=rz)
+    for u, n, col in ((bu, 4, "arcPink"), (ru, 2, "arcGrn")):                            # the health bars
+        for i in range(5):
+            c = col if i < n else "arcCyanF"
+            k.box(u - 0.08 + i * 0.04, 0.0, z + 0.36, 0.034, 0.02, 0.025, c, top=c)
+    return k
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -298,7 +372,9 @@ def holo_job(sid, cab, holo):
 
 def jobs():
     out = [(f"module.gametable.{v}", FP2, "prop", f) for v, f in (("k1", k1), ("k2", k2), ("k3", k3), ("l1", l1),
-                                                                 ("l2", l2), ("l3", l3))]
+                                                                 ("l2", l2), ("l3", l3), ("m1", k1),
+                                                                 ("m2", l3), ("m3", l2))]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
                   (("k1", k1, k1_holo), ("k2", k2, k2_holo), ("k3", k3, k3_holo), ("l1", l1, l1_holo),
-                   ("l2", l2, l2_holo), ("l3", l3, l3_holo))]
+                   ("l2", l2, l2_holo), ("l3", l3, l3_holo), ("m1", k1, m1_holo), ("m2", l3, m2_holo),
+                   ("m3", l2, m3_holo))]

@@ -1,7 +1,7 @@
 """Holo game table look study preview (plain python3 + numpy + PIL): each design on its 2x1 tiles with the tiles in front
 and behind, two crew seated at it (front left facing -y, back right facing +y).
 
-  python3 -I tools/blender/review/gametable_preview.py <gametable dir> <out dir> [designs, default l1,l2,l3]
+  python3 -I tools/blender/review/gametable_preview.py <gametable dir> <out dir> [designs, default m1,m2,m3]
     -> gametable-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -10,13 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
 NAMES = {"k1": "K1  strategy board", "k2": "K2  tabletop battle", "k3": "K3  card game",
-         "l1": "L1  cards, K table", "l2": "L2  casino table", "l3": "L3  card dais"}
+         "l1": "L1  cards, K table", "l2": "L2  casino table", "l3": "L3  card dais",
+         "m1": "M1  disc duel", "m2": "M2  drop four", "m3": "M3  creature duel"}
 FRONT, BACK = 6, 2                                  # crew sheet rows facing -y and +y
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "k3,l1,l2,l3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "k3,m1,m2,m3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(220 * len(names), 220)
     for i, v in enumerate(names):
