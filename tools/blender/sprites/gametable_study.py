@@ -837,6 +837,122 @@ def r2():
     return r_table("gametable_r2", trough=True)
 
 
+# ---- round 8: R1 with more interesting creatures, three pairings (pink: the front player's, green: the back one's) ----
+
+def bx(k, u, v, z, su, sv, sz, col, **kw):
+    k.box(u, v, z, su, sv, sz, col, top=col, **kw)
+
+
+def beast3(k, u, z, col, f):
+    """The beast: four legs, a long body with three spines down its back, a head low and forward with its jaw open and a
+    cream eye, a tail curling up behind."""
+    for du in (-0.08, 0.08):
+        for dv in (-0.05, 0.05):
+            bx(k, u + du, dv, z, 0.045, 0.045, 0.08, col)
+    bx(k, u, 0.0, z + 0.08, 0.26, 0.14, 0.1, col)
+    for i, du in enumerate((-0.07, 0.0, 0.07)):                                          # the spines
+        h = 0.07 - abs(i - 1) * 0.02
+        bx(k, u + du, 0.0, z + 0.18, 0.04, 0.03, h, col, ry=f * 0.35)
+    bx(k, u + f * 0.17, 0.0, z + 0.13, 0.11, 0.1, 0.06, col)                             # the head,
+    bx(k, u + f * 0.19, 0.0, z + 0.08, 0.09, 0.08, 0.025, col)                           # its open jaw,
+    bx(k, u + f * 0.2, 0.051, z + 0.16, 0.025, 0.004, 0.02, "arcMarq")                   # its eye
+    bx(k, u - f * 0.16, 0.0, z + 0.14, 0.1, 0.03, 0.03, col, ry=f * 0.7)                 # the tail,
+    bx(k, u - f * 0.21, 0.0, z + 0.2, 0.04, 0.04, 0.04, col)                             # its tip
+
+
+def robot3(k, u, z, col, f):
+    """The robot: thick legs on feet, a torso wider at the shoulders, shoulder pads, a head with a cream visor and an
+    antenna, an arm cannon levelled at the beast, the other fist down."""
+    for dv in (-0.05, 0.05):
+        bx(k, u, dv, z, 0.08, 0.05, 0.02, col)                                            # feet,
+        bx(k, u, dv, z + 0.02, 0.05, 0.05, 0.1, col)                                      # legs
+    bx(k, u, 0.0, z + 0.12, 0.1, 0.15, 0.15, col, taper=1.25)                             # the torso,
+    for dv in (-0.1, 0.1):
+        bx(k, u, dv, z + 0.24, 0.08, 0.06, 0.05, col)                                     # shoulder pads,
+    bx(k, u, 0.0, z + 0.27, 0.07, 0.07, 0.06, col)                                        # the head,
+    bx(k, u + f * 0.036, 0.0, z + 0.29, 0.004, 0.055, 0.016, "arcMarq")                  # its visor,
+    bx(k, u - 0.01, -0.02, z + 0.33, 0.01, 0.01, 0.06, col)                               # the antenna,
+    bx(k, u - 0.01, -0.02, z + 0.39, 0.02, 0.02, 0.02, "arcMarq")                         # its tip
+    bx(k, u + f * 0.1, 0.12, z + 0.2, 0.16, 0.05, 0.05, col)                              # the arm cannon,
+    bx(k, u + f * 0.19, 0.12, z + 0.205, 0.02, 0.04, 0.04, "arcMarq")                     # its muzzle
+    bx(k, u, -0.13, z + 0.1, 0.06, 0.05, 0.07, col)                                       # the other fist
+
+
+def dragon(k, u, z, col, f):
+    """A dragon: hind legs, a body, a long neck up to a horned head, two wings raised, a tail."""
+    for dv in (-0.05, 0.05):
+        bx(k, u - f * 0.04, dv, z, 0.05, 0.04, 0.08, col)
+    bx(k, u, 0.0, z + 0.08, 0.18, 0.12, 0.09, col)
+    bx(k, u + f * 0.1, 0.0, z + 0.14, 0.04, 0.05, 0.12, col, ry=f * 0.35)                # the neck,
+    bx(k, u + f * 0.15, 0.0, z + 0.25, 0.1, 0.07, 0.05, col)                             # the head,
+    bx(k, u + f * 0.12, 0.0, z + 0.3, 0.015, 0.05, 0.04, "arcMarq", ry=-f * 0.4)         # its horns,
+    for sv in (-1, 1):                                                                    # the wings
+        bx(k, u - f * 0.02, sv * 0.12, z + 0.17, 0.16, 0.1, 0.012, col, rx=sv * 0.7)
+    bx(k, u - f * 0.15, 0.0, z + 0.09, 0.14, 0.03, 0.03, col, ry=-f * 0.3)              # the tail
+
+
+def golem(k, u, z, col, f):
+    """A golem: stumpy legs, a massive block body hunched forward, a small head sunk between the shoulders with a
+    cream eye slit, two huge fists on long arms reaching the ground."""
+    for dv in (-0.05, 0.05):
+        bx(k, u, dv, z, 0.06, 0.06, 0.06, col)
+    bx(k, u, 0.0, z + 0.06, 0.15, 0.2, 0.17, col, ry=f * 0.15)
+    bx(k, u + f * 0.06, 0.0, z + 0.2, 0.07, 0.07, 0.05, col)
+    bx(k, u + f * 0.096, 0.0, z + 0.215, 0.004, 0.05, 0.012, "arcMarq")
+    for sv in (-1, 1):
+        bx(k, u + f * 0.06, sv * 0.14, z + 0.08, 0.04, 0.04, 0.14, col)                  # arms,
+        bx(k, u + f * 0.08, sv * 0.14, z, 0.09, 0.09, 0.08, col)                          # fists
+
+
+def serpent(k, u, z, col, f):
+    """A serpent: a coil on the ground, its body rising in an S to a hooded head with cream eyes."""
+    for i in range(6):                                                                    # the coil
+        a = i * math.tau / 6
+        bx(k, u + 0.07 * math.cos(a), 0.07 * math.sin(a), z, 0.06, 0.06, 0.05, col)
+    for i, (du, dz, sz) in enumerate(((0.02, 0.05, 0.06), (0.05, 0.11, 0.055), (0.04, 0.17, 0.05),
+                                      (0.07, 0.22, 0.045))):
+        bx(k, u + f * du, 0.0, z + dz, sz, sz, sz, col)                                   # the rising body,
+    bx(k, u + f * 0.1, 0.0, z + 0.26, 0.06, 0.14, 0.07, col)                              # the hood,
+    bx(k, u + f * 0.13, 0.0, z + 0.27, 0.07, 0.06, 0.045, col)                            # the head,
+    for dv in (-0.018, 0.018):
+        bx(k, u + f * 0.166, dv, z + 0.29, 0.004, 0.012, 0.012, "arcMarq")               # the eyes
+
+
+def crab(k, u, z, col, f):
+    """A crab mech: a wide flat body on six splayed legs, two big claws raised toward its foe, cream eye stalks."""
+    for du in (-0.06, 0.0, 0.06):
+        for sv in (-1, 1):
+            bx(k, u + du, sv * 0.11, z, 0.025, 0.08, 0.025, col, rx=-sv * 0.8)            # the legs,
+    bx(k, u, 0.0, z + 0.06, 0.18, 0.2, 0.07, col)                                         # the body,
+    for sv in (-1, 1):
+        bx(k, u + f * 0.12, sv * 0.08, z + 0.1, 0.08, 0.035, 0.035, col, ry=-f * 0.5)    # the arms,
+        bx(k, u + f * 0.18, sv * 0.08, z + 0.15, 0.08, 0.06, 0.07, col)                   # the claws
+        bx(k, u + f * 0.05, sv * 0.04, z + 0.13, 0.012, 0.012, 0.05, col)                 # the eye stalks,
+        bx(k, u + f * 0.05, sv * 0.04, z + 0.18, 0.024, 0.024, 0.024, "arcMarq")
+
+
+def s_holo(name, left, right):
+    """R1's projection (the ray fan to a lit rim, no floor) with a pair of creatures."""
+    def make():
+        k = Bench(name, FP2)
+        stadium_ring(k, AU, AV, ZA, 0.016, 0.02, "arcCyan", "arcCyan")
+        k.box(0.0, 0.0, ZA, 0.014, 2 * AV, 0.008, "arcCyan", top="arcCyan")
+        for u in (-0.44, 0.44):
+            k.cyl(u, 0.0, ZA, 0.16, 0.004, "arcCyanF", top="arcCyanF", sides=14)
+        left(k, -0.44, ZA, "arcPink", 1)
+        right(k, 0.44, ZA, "arcGrn", -1)
+        bar2(k, -0.44, ZA + 0.46, 0.75, "arcPink")
+        bar2(k, 0.44, ZA + 0.5, 0.4, "arcGrn")
+        lens = (0.0, 0.0, TOP + 0.033)
+        for i, q in enumerate(rim_points(12)):
+            bar(k, lens, q, 0.01, "arcCyan" if i % 3 == 0 else "arcCyanF")
+        return k
+    return make
+
+
+S_SET = (("s1", beast3, robot3), ("s2", dragon, golem), ("s3", serpent, crab))
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -856,6 +972,7 @@ def jobs():
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     out += [(f"module.gametable.{v}", FP2, "prop", l3) for v in ("q1", "q2", "q3", "q4")]
     out += [("module.gametable.r1", FP2, "prop", r1), ("module.gametable.r2", FP2, "prop", r2)]
+    out += [(f"module.gametable.{v}", FP2, "prop", r1) for v, _, _ in S_SET]
     for v, (cab, *_) in P_SET.items():
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
@@ -867,4 +984,5 @@ def jobs():
         [holo_job(f"module.gametable.{v}{g}.holo", P_SET[v][0], p_holo(v, g)) for v in P_SET for g in "ab"] + \
         [holo_job(f"module.gametable.{v}.holo", l3, h) for v, h in
          (("q1", q1_holo), ("q2", q2_holo), ("q3", q3_holo), ("q4", q4_holo))] + \
-        [holo_job("module.gametable.r1.holo", r1, r1_holo), holo_job("module.gametable.r2.holo", r2, r2_holo)]
+        [holo_job("module.gametable.r1.holo", r1, r1_holo), holo_job("module.gametable.r2.holo", r2, r2_holo)] + \
+        [holo_job(f"module.gametable.{v}.holo", r1, s_holo(f"gametable_{v}_holo", a, b)) for v, a, b in S_SET]
