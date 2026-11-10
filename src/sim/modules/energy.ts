@@ -27,6 +27,14 @@ export function burnsFuel(sim: Sim, ship: number): boolean {
   return sim.world.get(ship, ShipC)?.faction === 'player';
 }
 
+/**
+ * Whether a power source is delivering right now, as the power system last left it: a powered reactor, or a live (powered) battery
+ * bank with charge left. The ship-state check counts these, so a ship whose reactors ran dry stays active on its banks (#424).
+ */
+export function supplying(m: Pick<Module, 'powered' | 'charge'>, def: Pick<ModuleDef, 'power' | 'battery'>): boolean {
+  return m.powered && (def.power > 0 || chargeOf(m, def) > 0);
+}
+
 /** Whether a power module delivers its power, fuel aside from the live checks the power system makes: a reactor with an empty store on a ship that burns does not. */
 export function hasFuel(sim: Sim, ship: number, m: Pick<Module, 'fuel'>, def: Pick<ModuleDef, 'fuel'>): boolean {
   return !def.fuel || !burnsFuel(sim, ship) || fuelOf(m, def) > 0;

@@ -8,6 +8,7 @@ import { AllegianceC } from '../fight/components';
 import { isSubdued } from '../fight/relations';
 import { surrender } from '../fight/surrender';
 import { ModuleC } from '../modules/components';
+import { supplying } from '../modules/energy';
 import type { Sim } from '../sim';
 import { SHIP_STATE_INTERVAL, WALL_WEIGHT, WRECK_BELOW } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
@@ -17,7 +18,7 @@ import { shipIdOf, shipGrid } from '../regions';
  * Ship lifecycle, checked every few ticks. Integrity = (wall integrity x WALL_WEIGHT + module hp) over their
  * maxima. A ship is a WRECK (terminal) when integrity < WRECK_BELOW or every power source is destroyed: its
  * crew dies, its weapons and shields go dead, but the grid stays as a derelict. It is DISABLED while no crew
- * member can act or no power source runs (ion), and recovers when that clears. An enemy ship whose whole crew is subdued or dead (and
+ * member can act or no power source runs (ion, or dry reactors with no charged bank), and recovers when that clears. An enemy ship whose whole crew is subdued or dead (and
  * none of the player's stand aboard) is wrecked too: the fight ends in a derelict, see `crewSubdued`. A hostile ship whose fight is hopeless
  * (combat/hopeless.ts) surrenders first: its crew give up through the ordinary surrender path. Fled ships are left alone.
  */
@@ -44,8 +45,8 @@ export function shipStateSystem(sim: Sim): void {
       if (def.power > 0) {
         sources++;
         if (m.hp > 0) alive++;
-        if (m.powered) running++;
       }
+      if (supplying(m, def)) running++; // a running reactor, or a charged bank covering for dry ones
     }
     ship.integrity = (walls * WALL_WEIGHT + modHp) / Math.max(1, ship.hullMax * WALL_WEIGHT + modMax);
     if (ship.integrity < WRECK_BELOW || (sources > 0 && alive === 0)) {
