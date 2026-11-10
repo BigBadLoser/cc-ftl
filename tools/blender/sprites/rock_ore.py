@@ -11,7 +11,10 @@ from .rock_base import TAU, ZM, gbase, per2, quad, rng, tri
 ORE_SEED = {"iron": 401, "ice": 433, "rare": 467, "crystal": 491}
 ORE_WARP = {"iron": 0.28, "ice": 0.14, "rare": 0.16, "crystal": 0.2}
 ORE_DIR = {"iron": (1, 2), "ice": (2, -1), "rare": (1, -1), "crystal": (1, 1)}   # long veins, joined across tiles
-VARIANTS = {"crystal": 4}         # ore kinds drawn in variants (.v<n>): veins pinned where they cross the tile's edges
+NETWORK = ("crystal",)             # ore kinds whose seams are a network over the field: tiles .e<open edges> (Ore._seams)
+EDGE_AT = (0.11, -0.09)            # where a seam crosses an N/S edge (x) and an E/W edge (y)
+EDGES = ((1, (EDGE_AT[0], -0.5), (0, 1)), (2, (0.5, EDGE_AT[1]), (-1, 0)), (4, (EDGE_AT[0], 0.5), (0, -1)),
+         (8, (-0.5, EDGE_AT[1]), (1, 0)))
 
 
 class Ore:
@@ -60,33 +63,33 @@ class Ore:
         return best
 
     def _seams(self):
-        """[(points along the seam, their t in 0..1, width at t)] for this variant, built once."""
+        """[(points along a seam, their t in 0..1, width at t)], built once. var = the open edges (bits as the mask: 1 N
+        = -y, 2 E = +x, 4 S = +y, 8 W = -x): a seam crosses each open edge at a fixed point (EDGE_AT, the same on both
+        tiles of the edge) and runs in, square to the edge, to a hub inside the tile. One open edge: a seam that pinches
+        out at the hub; none: bare rock. So the seams of a field form one network that never repeats as a grid."""
         if getattr(self, "_cache", None) is None:
-            r = rng(self.seed + 37 * (self.var + 1) + (0 if self.rich else 500))
+            r = rng(self.seed + 13 * self.var + (0 if self.rich else 500))
+            hub = np.array((r.uniform(-0.15, 0.15), r.uniform(-0.15, 0.15)))
+            we = self.w * 0.8
+            open_ = [e for e in EDGES if self.var & e[0]]
             out = []
-            w0 = self.w * 1.25
-
-            def curve(c, ang, L, bend, w, n=20):
-                d = np.array((math.cos(ang), math.sin(ang)))
-                nrm = np.array((-d[1], d[0]))
-                ts = np.linspace(0, 1, n)
-                pts = np.array([c + d * L * (t - 0.5) + nrm * bend * 4 * t * (1 - t) for t in ts])
-                ph = r.uniform(0, TAU)
-                wt = lambda t, w=w, ph=ph: w * math.sin(math.pi * t) ** 0.7 * max(0.0, 0.75 + 0.45 * math.sin(7 * t + ph))  # noqa: E731
-                out.append((np.clip(pts, -0.46, 0.46), ts, wt))
-                return pts, d, nrm
-            ang0 = r.uniform(0, math.pi)
-            for i in range(3 if self.rich else 2):
-                c = np.array((r.uniform(-0.3, 0.3), r.uniform(-0.3, 0.3)))
-                ang = ang0 + i * math.pi / 3 + r.uniform(-0.4, 0.4)
-                L = r.uniform(0.55, 0.85) if self.rich else r.uniform(0.3, 0.5)
-                pts, d, nrm = curve(c, ang, L, r.uniform(-0.12, 0.12), w0 * r.uniform(0.7, 1.2))
-                for _ in range(int(r.integers(1, 3)) if self.rich else 1):                  # spurs
-                    t = r.uniform(0.3, 0.7)
-                    p0 = pts[int(t * (len(pts) - 1))]
-                    sa = ang + r.choice((-1, 1)) * r.uniform(0.5, 1.1)
-                    ls = r.uniform(0.1, 0.2)
-                    curve(p0 + np.array((math.cos(sa), math.sin(sa))) * ls / 2, sa, ls, r.uniform(-0.03, 0.03), w0 * 0.45)
+            for bit, p0, inward in open_:
+                p0, inward = np.array(p0), np.array(inward)
+                p1 = p0 + inward * r.uniform(0.2, 0.32)
+                ts = np.linspace(0, 1, 18)
+                pts = np.array([(1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * hub for t in ts])
+                ph, dead = r.uniform(0, TAU), len(open_) == 1
+                d = np.gradient(pts, axis=0)                                              # a wobble, 0 at both ends
+                nrm = np.stack((-d[:, 1], d[:, 0]), 1) / np.maximum(np.linalg.norm(d, axis=1), 1e-9)[:, None]
+                pts = pts + nrm * (0.035 * np.sin(np.pi * ts) * np.sin(9 * ts + ph))[:, None]
+                wt = (lambda t, ph=ph, dead=dead: we * (1 + 0.7 * math.sin(math.pi * t) * (0.6 + 0.4 * math.sin(5 * t + ph)))
+                      * ((1 - t) ** 0.6 if dead else 1.0))
+                out.append((pts, ts, wt))
+            if self.rich and len(open_) >= 2 and r.random() < 0.6:                       # a spur off the hub
+                sa = r.uniform(0, TAU)
+                ts = np.linspace(0, 1, 8)
+                pts = np.array([hub + np.array((math.cos(sa), math.sin(sa))) * 0.16 * t for t in ts])
+                out.append((pts, ts, lambda t: we * 0.7 * (1 - t) ** 0.7))
             self._cache = out
         return self._cache
 

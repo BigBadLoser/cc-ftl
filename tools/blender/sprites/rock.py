@@ -5,14 +5,15 @@
                                                 cuts = SE1 SW2 NE4 NW8; the interior (m15) has 8 variants, edges 3
   rock.ground.m<mask>[.c<cuts>].under           the plain ground under a rock tile (no craters, a shallow worn edge)
   rock.ore.<iron|ice|rare>.<rich|thin>.m<mask>[.c<cuts>]   rock tiles with ore veins, one variant each
-  rock.ore.crystal.<rich|thin>.m<mask>[.c<cuts>].v<0-3>  crystal seams: four variants (rock_ore.VARIANTS)
+  rock.ore.crystal.<rich|thin>.m<mask>[.c<cuts>].e<edges>  crystal seams, a network over the field: edges = the open
+                                                (seam-crossing) edges among the rock neighbours (rock_ore.NETWORK)
 
 The rock roof over a dug base reuses the rock mass tops. Modules: rock_base (frame, noise, strata), rock_crater,
 rock_mass, rock_ore, rock_ground."""
 from .rock_base import GROUND_CORNERS, MASS_CORNERS, Canvas, valid_corners
 from .rock_ground import GroundTile, ground
 from .rock_mass import MassTile, mass
-from .rock_ore import VARIANTS, Ore
+from .rock_ore import NETWORK, Ore
 
 
 def combos(mask, bits):
@@ -42,8 +43,8 @@ def jobs():
             for kind in ("iron", "ice", "rare", "crystal"):
                 for rich in (True, False):
                     sid = _sid(f"rock.ore.{kind}.{'rich' if rich else 'thin'}", mask, c)
-                    for v in range(VARIANTS.get(kind, 0) or 1):
-                        out.append(_job(sid + (f".v{v}" if kind in VARIANTS else ""),
+                    for v in ([e for e in range(16) if e & mask == e] if kind in NETWORK else [0]):
+                        out.append(_job(sid + (f".e{v}" if kind in NETWORK else ""),
                                         lambda k, mask=mask, c=c, kind=kind, rich=rich, v=v: mass(
                                             k, MassTile(mask, 0, c, Ore(kind, rich, v)), 0, 0)))
         for c in combos(mask, GROUND_CORNERS):
