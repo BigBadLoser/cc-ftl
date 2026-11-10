@@ -4,16 +4,14 @@
   rock.ground.m<mask>[.c<cuts>].v<n>            levelled ground and its under-lip by solid neighbours (rock or ground);
                                                 cuts = SE1 SW2 NE4 NW8; the interior (m15) has 8 variants, edges 3
   rock.ground.m<mask>[.c<cuts>].under           the plain ground under a rock tile (no craters, a shallow worn edge)
-  rock.ore.<iron|ice|rare>.<rich|thin>.m<mask>[.c<cuts>]   rock tiles with ore veins, one variant each
-  rock.ore.crystal.<rich|thin>.m<mask>[.c<cuts>].e<edges>  crystal seams, a network over the field: edges = the open
-                                                (seam-crossing) edges among the rock neighbours (rock_ore.NETWORK)
+  rock.ore.<iron|ice|rare|crystal>.<rich|thin>.m<mask>[.c<cuts>]   rock tiles with ore veins, one variant each
 
 The rock roof over a dug base reuses the rock mass tops. Modules: rock_base (frame, noise, strata), rock_crater,
 rock_mass, rock_ore, rock_ground."""
 from .rock_base import GROUND_CORNERS, MASS_CORNERS, Canvas, valid_corners
 from .rock_ground import GroundTile, ground
 from .rock_mass import MassTile, mass
-from .rock_ore import NETWORK, Ore
+from .rock_ore import Ore
 
 
 def combos(mask, bits):
@@ -42,11 +40,9 @@ def jobs():
                                 lambda k, mask=mask, c=c, v=v: mass(k, MassTile(mask, v, c), 0, 0)))
             for kind in ("iron", "ice", "rare", "crystal"):
                 for rich in (True, False):
-                    sid = _sid(f"rock.ore.{kind}.{'rich' if rich else 'thin'}", mask, c)
-                    for v in ([e for e in range(16) if e & mask == e] if kind in NETWORK else [0]):
-                        out.append(_job(sid + (f".e{v}" if kind in NETWORK else ""),
-                                        lambda k, mask=mask, c=c, kind=kind, rich=rich, v=v: mass(
-                                            k, MassTile(mask, 0, c, Ore(kind, rich, v)), 0, 0)))
+                    out.append(_job(_sid(f"rock.ore.{kind}.{'rich' if rich else 'thin'}", mask, c),
+                                    lambda k, mask=mask, c=c, kind=kind, rich=rich: mass(
+                                        k, MassTile(mask, 0, c, Ore(kind, rich)), 0, 0)))
         for c in combos(mask, GROUND_CORNERS):
             for v in range(8 if mask == 15 and c == 0 else 3):
                 out.append(_job(_sid("rock.ground", mask, c) + f".v{v}",
