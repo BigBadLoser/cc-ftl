@@ -169,8 +169,8 @@ export interface UiCrew {
   /** The hovering shuttle this suited crew member came out of (they can float back to it), or null. */
   evaShuttle: number | null;
   suit: { air: number; max: number; low: boolean; outside: boolean } | null;
-  /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
-  suitAt: { id: number; free: number } | null;
+  /** The nearest usable airlock on their grid (to put a suit on: any has one, #416); null when none or they cannot wear one. */
+  suitAt: { id: number } | null;
   /** Traits (docs/TRAITS.md): name, kind, flavour and the exact effect (for the hover). */
   traits: UiTrait[];
   /** Skills worth showing (above 0 now, or in the role): current level against the role's baseline. */
@@ -243,8 +243,6 @@ export interface UiModule {
   bay: UiRobotBay | null;
   /** Drone bay state (null for other modules). */
   droneBay: UiDroneBay | null;
-  /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
-  suits: { stowed: number; max: number } | null;
   /** The upgrade slot (null for a module with none). */
   upgradeSlot: UiUpgradeSlot | null;
 }
@@ -906,8 +904,7 @@ export interface UiShuttle {
   destination: 'dock' | 'bay' | 'hover' | null;
   /** Name of the ship it hovers beside, or null. */
   hoverShip: string | null;
-  /** EVA suits aboard, and whether crew can go out now (hovering, a suit free, passengers aboard). */
-  suits: number;
+  /** Whether crew can go out now (hovering, passengers aboard; the shuttle has a suit for each, #416). */
   canEva: boolean;
   /** Name of the ship it is docked at, or null. */
   dockShip: string | null;

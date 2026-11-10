@@ -5,7 +5,7 @@ import { ModuleC } from '../modules/components';
 import { AirlockC } from '../modules/airlock';
 import type { Sim } from '../sim';
 import { planWalk } from './route';
-import { airlockUsable, freeSuits, suitNeeded, suitTile } from './suit';
+import { airlockUsable, suitNeeded, suitTile } from './suit';
 import { shipIdOf, shipGrid } from '../regions';
 
 /** An airlock to fit or stow a suit at, with the walk to its suit tile. */
@@ -24,14 +24,14 @@ function onGrid(sim: Sim, airlock: number, shipId: number): boolean {
 }
 
 /**
- * The best airlock on the crew member's grid to get a suit from: one with a free suit and a walk to its suit tile that
+ * The best airlock on the crew member's grid to get a suit from (any usable one has a suit, #416): one with a walk to its suit tile that
  * keeps out of thin air. Shortest walk wins, then the lowest module id. Null when there is none.
  */
 export function findSuitSource(sim: Sim, crew: number, pos: Position): SuitSource | null {
   let best: SuitSource | null = null;
   for (const id of sim.world.query(AirlockC)) {
     const at = suitTile(sim, id);
-    if (!at || !airlockUsable(sim, id) || freeSuits(sim, id) <= 0 || !onGrid(sim, id, shipIdOf(sim, pos))) continue;
+    if (!at || !airlockUsable(sim, id) || !onGrid(sim, id, shipIdOf(sim, pos))) continue;
     const plan = planWalk(sim, crew, shipIdOf(sim, pos), origin(pos), at);
     if (!plan || plan.thin) continue;
     if (!best || plan.steps.length < best.steps.length) best = { airlock: id, steps: plan.steps };

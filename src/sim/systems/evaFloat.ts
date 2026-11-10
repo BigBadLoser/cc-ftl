@@ -1,7 +1,6 @@
 import { CrewC, DeadC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
-import { vehicleSuits } from '../eva/shuttle';
 import { drawAir } from '../eva/airLedger';
 import { shuttleBeside } from '../eva/refillFloat';
 import { SuitC } from '../eva/components';
@@ -29,7 +28,6 @@ export function evaFloatSystem(sim: Sim): void {
     const v = sim.world.get(f.vehicle, VehicleC);
     if (!v || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) continue; // nowhere to climb in: stay out
     if (sim.world.remove(id, SuitC)) {
-      v.suits = vehicleSuits(sim, v) + 1;
       sim.events.emit({ type: 'suit.doffed', crew: id, airlock: 0 });
     }
     boardCrew(sim, id, f.vehicle);

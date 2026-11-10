@@ -10,7 +10,7 @@ One line per section; read the index, then only the sections your task touches.
 - [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
 - [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
   - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
-  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
+  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock, no locker or suit item, and no suit limit (#416): any airlock or shuttle has one for whoever needs it...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
 - [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
@@ -169,14 +169,12 @@ the user picks from mocks) and a HUD clock come later.
 
 ### EVA and spacesuits
 
-- **Suits live at the airlock.** There is no locker module and no suit item. Each airlock holds a few suits (a content
-  value on the airlock def: 3 for the docking airlock). Crew put one on at the airlock's inside tile (about 5 s) and take
-  it off there on return (about 3 s), which stows it in *that* airlock. If an airlock has no free suit, nobody can start
-  an EVA through it.
+- **Suits live at the airlock.** There is no locker module and no suit item. There is no suit limit (user decision
+  2026-11-10, #416): any airlock or shuttle has a suit for whoever needs one. Crew put one on at the airlock's inside tile
+  (about 5 s) and take it off there on return (about 3 s). Better suits come from gear later (#320: tank, armour), not more of them.
 - **Automatic.** A crew member whose job can only be reached through thin air (breached or depressurised rooms) walks to
-  the nearest airlock with a free suit, suits up, does the job, and walks back to take the suit off once idle, so the suit
-  is free for the next one. They prefer jobs and routes that need no EVA, and never take a vacuum job when no suit is
-  free. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
+  the nearest airlock they can reach through breathable air, suits up, does the job, and walks back to take the suit off
+  once idle. They prefer jobs and routes that need no EVA, and never take a vacuum job with no airlock to suit up at. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
 - **Where EVA happens.** Ships never sit close to each other (they cannot move within a sector and are never deployed near
   enough), so **there is no ship-to-ship docking, thruster crossing or walking between ships**. Shuttles (and later cargo
   vehicles) carry crew and cargo between grids. EVA is:

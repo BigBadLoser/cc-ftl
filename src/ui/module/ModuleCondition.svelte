@@ -12,7 +12,6 @@
     { key: 'state', label: 'State', text: moduleState(m), pct: null, tone: moduleState(m) === 'Running' ? 'good' : m.hp <= 0 ? 'bad' : 'warn' },
     { key: 'power', label: 'Power', text: m.power > 0 ? `+${m.power} supply` : m.power < 0 ? `${-m.power} draw${m.powered || m.idle ? (m.idle ? ' when growing, idle now' : '') : ', unpowered'}` : 'none', pct: null, tone: m.power < 0 && !m.powered ? 'bad' : 'ok' },
     ...(m.hp < m.maxHp ? [{ key: 'repair', label: 'Repair', text: m.repairFirst ? 'first in the queue' : 'queued', pct: null, tone: 'warn' as const }] : []),
-    ...(m.suits ? [{ key: 'suits', label: 'EVA suits', text: `${m.suits.stowed} of ${m.suits.max}`, pct: (m.suits.stowed / Math.max(1, m.suits.max)) * 100, tone: 'ok' as const }] : []),
   ]);
 </script>
 

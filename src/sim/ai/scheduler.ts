@@ -3,7 +3,7 @@ import { jobGoal, origin } from '../crew/helpers';
 import type { PathGoal, Tile } from '../crew/pathfind';
 import { findSuitSource, type SuitSource } from '../eva/errands';
 import { AirlockC } from '../modules/airlock';
-import { airlockSuits, airlockUsable, isSuited, needsAir, suitNeeded } from '../eva/suit';
+import { airlockUsable, isSuited, needsAir, suitNeeded } from '../eva/suit';
 import { needsMaterials } from '../items/materials';
 import { siteWalkModes, type WalkMode } from '../eva/route';
 import { shipGrid, shipIdOf } from '../regions';
@@ -27,12 +27,12 @@ import { IntentC } from './components';
  * Costs are exact. A component labelling per (ship, mode) rules out unreachable jobs without a search. A crew member with more than
  * SCHED_DIJKSTRA_ABOVE candidate jobs in a mode gets one multi-goal Dijkstra; smaller sets are costed lazily, by A* only when a pair's lower
  * bound reaches the top of the queue. A pass runs when the open jobs (or their funding), the free crew, the walkable tiles, thin air (the
- * sector grid's count of oxygen writes across the thin-air line) or the suit stock changed, on every tick while an emergency (fire, breach,
+ * sector grid's count of oxygen writes across the thin-air line) or an airlock that fits suits changed, on every tick while an emergency (fire, breach,
  * rescue) is open, and every SCHED_CADENCE ticks regardless (fight state and other job fields change the outcome without changing that). The
  * gate's memory is `sector.sched`, saved with it.
  *
- * Suits are booked as matches are accepted: a thin-air match looks up its suit source then (`findSuitSource` counts the suit errands already
- * started, this pass's included), so an airlock is never promised more suits than it holds; with none left the match is passed over.
+ * A thin-air match takes its suit from the walker's suit source (`findSuitSource`: the nearest usable airlock by a breathable walk). Any
+ * airlock has a suit for whoever needs one (#416), so nothing is booked.
  */
 
 /** One free crew member as a pass sees them. Views, start components and the suit source are looked up on first use. */
@@ -64,15 +64,9 @@ class Walker {
     }
     return this.avoidJob;
   }
-  /** A suit source as the pass began (the cheap filter of `modeFor`); `bookSource` looks again when a match is accepted. */
+  /** The walker's suit source (looked up once a pass). */
   source(): SuitSource | null {
     if (this.src === undefined) this.src = findSuitSource(this.sim, this.id, this.pos) ?? null;
-    return this.src;
-  }
-  /** The suit source now, after the suit errands this pass has already started; none left also rules out this walker's other thin pairs. */
-  bookSource(): SuitSource | null {
-    if (this.src === null) return null;
-    this.src = findSuitSource(this.sim, this.id, this.pos) ?? null;
     return this.src;
   }
   view(k: number): View | null {
@@ -220,19 +214,14 @@ function matchPairs(pairs: Pair[], accept: (pair: Pair, steps: Tile[]) => boolea
 const mix = (h: number, n: number): number => Math.imul(h ^ (n | 0), 0x01000193);
 
 /**
- * What a pass reads that has a cheap fingerprint: thin-air crossings, the suit stock, the open jobs and whether each is funded, the free crew,
+ * What a pass reads that has a cheap fingerprint: thin-air crossings, the airlocks that fit suits, the open jobs and whether each is funded, the free crew,
  * and the walkable tiles of their ships. Save-stable (the crossing count is saved; no grid revisions), so a loaded game skips and runs the
  * same passes as a continuous one.
  */
 function gateSig(sim: Sim, open: number[], free: Walker[]): number {
   let h = mix(0x811c9dc5, sim.sector.grid.crossings());
-  // Suit stock: each airlock's suits, whether it can fit them, and the suit errands that have them spoken for.
-  const wanted = new Map<number, number>();
-  for (const id of sim.world.query(JobC)) {
-    const j = sim.world.get(id, JobC) as Job;
-    if (j.kind === 'suitUp' && j.target) wanted.set(j.target, (wanted.get(j.target) ?? 0) + 1);
-  }
-  for (const a of [...sim.world.query(AirlockC)].sort((x, y) => x - y)) h = mix(mix(mix(h, a), airlockUsable(sim, a) ? airlockSuits(sim, a) : -1), wanted.get(a) ?? 0);
+  // Airlocks that can fit a suit (any usable one has one for whoever needs it, #416).
+  for (const a of [...sim.world.query(AirlockC)].sort((x, y) => x - y)) h = mix(mix(h, a), airlockUsable(sim, a) ? 1 : -1);
   for (const j of open) h = mix(h, 2 * j + (needsMaterials(sim.world.get(j, JobC) as Job) ? 1 : 0));
   h = mix(h, -1);
   const ships: number[] = [];
@@ -300,7 +289,7 @@ export function assignJobs(sim: Sim, ids: number[]): Set<number> {
       // A thin-air walk needs a suit first; so does work in a hostile room (heat or cold a suit keeps out: `suitNeeded`), when a suit can be had.
       const hostile = !(w.modes[pair.k] as WalkMode).thin && hostileWork(sim, w, pair.job, steps);
       const thin = (w.modes[pair.k] as WalkMode).thin || (hostile && !!w.source());
-      const src = thin ? w.bookSource() : null;
+      const src = thin ? w.source() : null;
       if (thin && !src && !hostile) return false;
       if (!air.admits(w, pair.job, steps, thin)) return false;
       taken.add(w.id);

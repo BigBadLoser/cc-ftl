@@ -1,4 +1,4 @@
-import { CrewC, DeadC, blueprintVenue, hullLoad, isBlueprintKnown, ModuleC, PositionC, airlockSuits, roomTiles, type ModuleDef, type Sim } from '../sim';
+import { CrewC, DeadC, blueprintVenue, hullLoad, isBlueprintKnown, ModuleC, PositionC, roomTiles, type ModuleDef, type Sim } from '../sim';
 import { moduleNameOf } from '../sim/upgrades/stats';
 import { buildRobotBay } from './robotSnapshot';
 import { buildDroneBay } from './droneSnapshot';
@@ -35,7 +35,6 @@ export function buildModuleList(sim: Sim): UiModule[] {
       id, ship: home, def: m.def, name: moduleNameOf(sim, id), x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp, repairFirst: !!m.repairFirst,
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
       storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, plot: def.plot ? buildPlot(sim, id) : null, idle: isIdle(sim, id, def), bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
-      suits: def.airlock ? { stowed: airlockSuits(sim, id), max: def.airlock.suits ?? 0 } : null,
       upgradeSlot: def.upgradeSlot ? upgradeSlotOf(sim, id) : null,
     });
   }

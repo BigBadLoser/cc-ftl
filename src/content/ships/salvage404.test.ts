@@ -1,6 +1,6 @@
 /** Regressions of the salvage playtest (#404): passages, the site's shuttle, seals on the wreck, suits, the helmet lamp (Call off and strain: app/salvageRun.test.ts). */
 import { describe, expect, it } from 'vitest';
-import { AboardC, JobC, ModuleC, NeedsC, PositionC, ShipC, VehicleC, Struct, shipGrid, type Job } from '../../sim';
+import { AboardC, JobC, NeedsC, PositionC, ShipC, Struct, shipGrid, type Job } from '../../sim';
 import { SiteRunC } from '../../sim/away/components';
 import { passageFits, staySec } from '../../sim/away/crew';
 import { siteShuttleOk } from '../../sim/away/handlers';
@@ -8,11 +8,8 @@ import { passagesOf } from '../../sim/away/passage';
 import { breachTiles } from '../../sim/crew/breach';
 import { contextPresent } from '../../sim/crew/stress';
 import { boardingTile } from '../../sim/vehicles/geometry';
-import { AirlockC } from '../../sim/modules/airlock';
-import { airlockSuits } from '../../sim/eva/suit';
 import { shipIdOf } from '../../sim/regions';
 import { SuitC } from '../../sim/eva/components';
-import { vehicleSuits } from '../../sim/eva/shuttle';
 import { spillItems } from '../../sim/items/stacks';
 import { TransferC } from '../../sim/logistics/components';
 import { writeStruct } from '../../sim/structure';
@@ -20,6 +17,7 @@ import { AWAY_GO_STAY_SEC, AWAY_HOME_HUNGER, AWAY_HOME_REST } from '../../sim/tu
 import { shuttleOf } from './ferryFixture';
 import { setup } from './salvageEvaFixture';
 import { crewOn, landed, play } from './awayFixture';
+import { content } from '../index';
 import { boarding } from './salvage404Fixture';
 
 describe('salvage playtest (#404)', () => {
@@ -73,30 +71,25 @@ describe('salvage playtest (#404)', () => {
     expect(breachTiles(sim).some((b) => b.ship === wreck)).toBe(true);
   });
 
-  it('a suit worn into a shuttle goes into its stock (it was carried home and stowed there, or lost to a second suit at the hatch)', () => {
+  it('a suit worn into a shuttle is stowed there', () => {
     const { sim, home } = setup(3);
     const shuttle = shuttleOf(sim);
-    const v = sim.world.get(shuttle, VehicleC)!;
-    const before = vehicleSuits(sim, v);
     const [c] = crewOn(sim, home) as [number];
     sim.world.add(c, SuitC, { worn: true, air: 100 });
     sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
     play(sim, 20 * 60, () => sim.world.has(c, AboardC));
     expect(sim.world.has(c, AboardC)).toBe(true);
     expect(sim.world.has(c, SuitC)).toBe(false);
-    expect(vehicleSuits(sim, v)).toBe(before + 1);
   });
 
-  it("a site's shuttle at home takes spare suits from the home airlocks, leaving each airlock one", () => {
-    const { sim, home, shuttle } = boarding();
-    const v = sim.world.get(shuttle, VehicleC)!;
-    v.suits = 0; // suits lost (the user's save had 1 of 3)
-    const locks = sim.world.query(AirlockC).filter((a) => shipIdOf(sim, sim.world.get(a, ModuleC)!) === home);
-    const spare = locks.reduce((n, a) => n + Math.max(0, airlockSuits(sim, a) - 1), 0);
-    expect(spare).toBeGreaterThan(0);
-    play(sim, 20);
-    expect(vehicleSuits(sim, v)).toBe(Math.min(3, spare));
-    for (const a of locks) expect(airlockSuits(sim, a)).toBeGreaterThanOrEqual(1);
+  it('a salvage party of four all go, every one suited (#416: the shuttle has a suit for each, it seated only three suited before)', () => {
+    const { sim, home, wreck, party } = landed(6, content, 0);
+    expect(party.length).toBe(4);
+    expect(crewOn(sim, home)).toEqual([]);
+    for (const c of party) {
+      expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(wreck);
+      expect(sim.world.has(c, SuitC)).toBe(true);
+    }
   });
 
   it('a suited crew member is never in the dark (helmet lamp): no blackout stress', () => {
@@ -110,21 +103,18 @@ describe('salvage playtest (#404)', () => {
     expect(contextPresent(sim, c, 'blackout')).toBe(false);
   });
 
-  it('stepping off a shuttle onto thin air fits a suit from its stock (a worn one went there on boarding; Codex 4517585403)', () => {
+  it('stepping off a shuttle onto thin air fits a suit (a worn one was stowed on boarding; Codex 4517585403)', () => {
     const { sim, home } = setup(3);
     const shuttle = shuttleOf(sim);
-    const v = sim.world.get(shuttle, VehicleC)!;
     const [c] = crewOn(sim, home) as [number];
     sim.world.add(c, SuitC, { worn: true, air: 100 });
     sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
     play(sim, 20 * 60, () => sim.world.has(c, AboardC));
-    const stock = vehicleSuits(sim, v);
     const at = boardingTile(sim, shuttle)!;
     shipGrid(sim, at.shipId)!.set('o2', at.x, at.y, 0); // the deck outside the shuttle has lost its air
     sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: c });
     play(sim, 1);
     expect(sim.world.has(c, AboardC)).toBe(false);
     expect(sim.world.has(c, SuitC)).toBe(true);
-    expect(vehicleSuits(sim, v)).toBe(stock - 1);
   });
 });

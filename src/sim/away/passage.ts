@@ -4,8 +4,6 @@ import { wakeUp } from '../ai/machines/sleep';
 import { planWalk } from '../eva/route';
 import { isEmergency } from '../ai/emergency';
 import { isIncapacitated, isSettled, origin } from '../crew/helpers';
-import { vehicleSuits } from '../eva/shuttle';
-import { needsAir } from '../eva/suit';
 import { destroyJob } from '../items/stacks';
 import { FighterC } from '../fight/components';
 import { isTileWalkable } from '../modules/walk';
@@ -36,15 +34,6 @@ export function passagesOf(sim: Sim, vehicle: number): number[] {
 /** Seats a passenger can still take (the pilot's seat counts: the shuttle flies itself). */
 export function freeSeats(sim: Sim, v: Vehicle): number {
   return Math.max(0, (vehicleDefOf(sim, v)?.capacity ?? 0) + 1 - occupants(v).length);
-}
-
-/**
- * Suits the shuttle still has for new passengers: its stock less those its passengers who breathe will wear going out (all aboard but those
- * going home). Seats beyond these are `airless` passages.
- */
-export function freeSuits(sim: Sim, v: Vehicle): number {
-  const out = occupants(v).filter((c) => needsAir(sim, c) && !sim.world.get(c, AwayC)?.home).length;
-  return Math.max(0, vehicleSuits(sim, v) - out);
 }
 
 /** Withdraw every passage of the shuttle (a walker on the way is called off). */
@@ -117,24 +106,20 @@ export function postPassages(sim: Sim, vehicle: number, site: number, want: bool
   const all = passagesOf(sim, vehicle);
   const taken = all.filter((j) => (sim.world.get(j, JobC) as Job).reservedBy !== 0);
   const open = all.filter((j) => !taken.includes(j));
-  // The first seats are suited ones, as far as suits go (anyone may take them); the rest are for crew who do not breathe. Each kind is split
-  // by the demand on its own, so every category in demand gets a suited seat before any gets a second (a breather can take it).
+  // Every seat has a suit (#416), split by the demand so every category in demand gets a seat before any gets a second.
   const seats = want && v && at ? Math.max(0, freeSeats(sim, v) - taken.length) : 0;
-  const suited = v ? Math.min(seats, Math.max(0, freeSuits(sim, v) - taken.filter((j) => !(sim.world.get(j, JobC) as Job).airless).length)) : 0;
-  const demand = seats > 0 ? siteDemand(sim, site) : {};
-  const cats = seats > 0 ? [...allocateSeats(demand, suited), ...allocateSeats(demand, seats - suited)] : [];
-  const airless = (i: number): boolean => i >= suited;
+  const cats = seats > 0 ? allocateSeats(siteDemand(sim, site), seats) : [];
   const same = open.length === cats.length && open.every((j, i) => {
     const job = sim.world.get(j, JobC) as Job;
-    return !!at && job.category === cats[i] && !!job.airless === airless(i) && job.x === at.x && job.y === at.y;
+    return !!at && job.category === cats[i] && job.x === at.x && job.y === at.y;
   });
   if (same) return;
   for (const j of open) destroyJob(sim, j);
   if (!at) return;
-  cats.forEach((category, i) => {
+  cats.forEach((category) => {
     const id = sim.world.createEntity();
     sim.world.add(id, JobC, {
-      category, kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: vehicle, site, ...(airless(i) ? { airless: true as const } : {}),
+      category, kind: 'passage', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: vehicle, site,
     });
   });
 }

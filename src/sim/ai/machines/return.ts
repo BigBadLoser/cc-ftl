@@ -6,7 +6,7 @@ import { siteSpot, siteUnderFoot } from '../../away/crew';
 import { EvaFloatC, SuitC } from '../../eva/components';
 import { hatchFace } from '../../eva/hatch';
 import { planWalk } from '../../eva/route';
-import { floatTicks, seatsTaken, tileCentre, vehicleSuits } from '../../eva/shuttle';
+import { floatTicks, seatsTaken, tileCentre } from '../../eva/shuttle';
 import { suitDef, walksOutside } from '../../eva/suit';
 import { dropCarried } from '../../items/stacks';
 import { shipIdOf } from '../../regions';
@@ -79,7 +79,7 @@ function stepAboard(sim: Sim, id: number, vehicle: number): boolean {
   if (!v) return false;
   abortTask(sim, id, 'drive');
   dropCarried(sim, id);
-  if (sim.world.remove(id, SuitC)) v.suits = vehicleSuits(sim, v) + 1;
+  sim.world.remove(id, SuitC); // stowed aboard
   boardCrew(sim, id, vehicle);
   cameAboard(sim, id);
   return true;

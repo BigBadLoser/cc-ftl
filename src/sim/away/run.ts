@@ -15,7 +15,6 @@ import { endRun } from './end';
 import { planCarry, unloadStep } from './haul';
 import { stagedStacks } from '../items/staging';
 import { releaseOwned } from './owned';
-import { restockSuits } from './suits';
 import { partyOut } from './depart';
 import { boardPassengers, calledBack, dropPassages, endInvites, freeSeats, letOut, passagesOf, postPassages } from './passage';
 import { atHome, atSite, due, go, hovering, sec, wanted, wayHome } from './phase';
@@ -69,7 +68,6 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   const site = sim.world.get(r.site, AwaySiteC);
   if (r.timer === 1) r.held = cargoCount(v);
   if (atHome(sim, v)) {
-    restockSuits(sim, v); // short of suits: take spares from the home airlocks (each keeps one)
     unloadStep(sim, id, sim.tick - r.timer); // the hold comes out a crate at a time, crew at home or not (#408)
   }
   // Loot staged at the site and nobody going: the shuttle fetches it alone (loading needs no crew), once nobody is on the way to a seat.

@@ -1,5 +1,5 @@
 import { shipIdOf } from '../regions';
-import { CrewC, JobC, PositionC, type Job } from '../crew/components';
+import { CrewC, PositionC } from '../crew/components';
 import type { Grid } from '../grid';
 import { ModuleC } from '../modules/components';
 import { airlockTiles } from '../modules/airlock';
@@ -61,24 +61,7 @@ export function suitNeeded(grid: Grid, x: number, y: number): boolean {
   return t > HOT_ABOVE && t <= SUIT_HEAT_MAX;
 }
 
-/** Suits stowed in an airlock module. */
-export function airlockSuits(sim: Sim, airlock: number): number {
-  const a = sim.world.get(airlock, AirlockC);
-  const m = sim.world.get(airlock, ModuleC);
-  return a ? (a.suits ?? (m && sim.content.modules[m.def]?.airlock?.suits) ?? 0) : 0;
-}
-
-/** Suits in an airlock that nobody has a suit-up errand for yet. */
-export function freeSuits(sim: Sim, airlock: number): number {
-  let wanted = 0;
-  for (const id of sim.world.query(JobC)) {
-    const j = sim.world.get(id, JobC) as Job;
-    if (j.kind === 'suitUp' && j.target === airlock) wanted++;
-  }
-  return airlockSuits(sim, airlock) - wanted;
-}
-
-/** An airlock module that exists and is intact (suits can be fitted without power). */
+/** An airlock module that exists and is intact (suits can be fitted without power). Any such airlock has a suit for whoever needs one (#416). */
 export function airlockUsable(sim: Sim, airlock: number): boolean {
   const m = sim.world.get(airlock, ModuleC);
   return !!m && m.hp > 0 && m.enabled && sim.world.has(airlock, AirlockC);
@@ -91,21 +74,17 @@ export function suitTile(sim: Sim, airlock: number): { x: number; y: number } | 
   return m && def?.airlock ? airlockTiles(def, m).inside : null;
 }
 
-/** Fit a stowed suit (full tank) to a crew member. False when the airlock has none. */
+/** Fit a suit (full tank) to a crew member at an airlock (any airlock has one, #416). False when it is no airlock or they wear one. */
 export function donSuit(sim: Sim, crew: number, airlock: number): boolean {
-  const a = sim.world.get(airlock, AirlockC);
-  if (!a || airlockSuits(sim, airlock) <= 0 || sim.world.has(crew, SuitC)) return false;
-  a.suits = airlockSuits(sim, airlock) - 1;
+  if (!sim.world.has(airlock, AirlockC) || sim.world.has(crew, SuitC)) return false;
   sim.world.add(crew, SuitC, { worn: true, air: suitDef(sim).airSec });
   sim.events.emit({ type: 'suit.donned', crew, airlock });
   return true;
 }
 
-/** Take the suit off and stow it at this airlock (its tank refills). */
+/** Take the suit off and stow it at this airlock. */
 export function doffSuit(sim: Sim, crew: number, airlock: number): boolean {
-  const a = sim.world.get(airlock, AirlockC);
-  if (!a || !sim.world.has(crew, SuitC)) return false;
-  a.suits = airlockSuits(sim, airlock) + 1;
+  if (!sim.world.has(airlock, AirlockC) || !sim.world.has(crew, SuitC)) return false;
   sim.world.remove(crew, SuitC);
   sim.events.emit({ type: 'suit.doffed', crew, airlock });
   return true;

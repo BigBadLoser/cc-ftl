@@ -18,12 +18,12 @@ const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [3, 4], solid: true, power: 0, flammability: 0.1, maxHp: 120, buildWork: 20, hullEdge: 'n',
   openTiles: [[1, 0], [1, 1], [1, 2], [1, 3], [0, 3], [2, 3]],
   airlock: {
-    cycleSec: 2, suits: 3,
+    cycleSec: 2,
     layout: { outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1], unloaders: [{ tiles: [[0, 1], [0, 2]], chute: [0, 2], stand: [0, 3] }, { tiles: [[2, 1], [2, 2]], chute: [2, 2], stand: [2, 3] }] },
   },
 };
 const lifeSupportDef: ModuleDef = { name: 'LS', asset: 'l', footprint: [1, 1], solid: false, power: 0, flammability: 0, maxHp: 50, buildWork: 10, o2PerSec: 1 };
-export const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 8, maxHp: 90, capacity: 4, evasion: 0, eva: { suits: 3, hoverGap: 4.5 } };
+export const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 8, maxHp: 90, capacity: 4, evasion: 0, eva: { hoverGap: 4.5 } };
 export const content: ContentRegistry = {
   ships: {}, roles: {}, crewNames: [], items: {}, recipes: {}, structCosts: {},
   species: {

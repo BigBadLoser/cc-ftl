@@ -4,18 +4,12 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { EvaFloatC, SuitC } from './components';
 import type { Vehicle } from '../vehicles/components';
-import { vehicleDefOf } from '../vehicles/lifecycle';
 import { Struct, isEvaWalkable } from '../structure';
 import { suitDef } from './suit';
 import { shipById } from '../combat/ships';
 import { shipGrid } from '../regions';
 import { BodyC } from '../body';
 import { VehicleC } from '../vehicles/components';
-
-/** EVA suits stowed aboard a shuttle (its def's `eva.suits` until the first one is used). */
-export function vehicleSuits(sim: Sim, v: Vehicle): number {
-  return v.suits ?? vehicleDefOf(sim, v)?.eva?.suits ?? 0;
-}
 
 /** Seats taken on a shuttle: those aboard plus those floating back to it (each will climb in when the drift ends). */
 export function seatsTaken(sim: Sim, vehicle: number, v: Vehicle): number {

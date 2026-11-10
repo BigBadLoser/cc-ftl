@@ -1,6 +1,6 @@
 /** The shuttle panel and crew mood lines of the salvage playtest (#404). */
 import { describe, expect, it } from 'vitest';
-import { MoodC, VehicleC } from '../sim';
+import { MoodC } from '../sim';
 import { AwaySiteC } from '../sim/away/components';
 import { SalvageOrderC } from '../sim/salvage/components';
 import { boarding } from '../content/ships/salvage404Fixture';
@@ -18,8 +18,6 @@ describe('salvage run panel and strain (#404)', () => {
     expect(ferry()?.cancel).toEqual({ type: 'salvage.cancel', ship: wreck });
     sim.world.get(wreck, AwaySiteC)!.block = 'noCrew';
     expect(ferry()?.status).toBe('Salvage: waiting for crew rested and fed enough to go');
-    sim.world.get(shuttle, VehicleC)!.suits = 1; // suits lost: fewer who breathe can go than there are seats
-    expect(ferry()?.status).toBe('Salvage: waiting for crew rested and fed enough to go (1 of 3 suits aboard)');
     sim.enqueue(ferry()!.cancel);
     play(sim, 20);
     expect(sim.world.has(wreck, SalvageOrderC)).toBe(false);
