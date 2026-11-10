@@ -848,14 +848,117 @@ def f3_holo():
     return k
 
 
+# ---- round 7: variants of F1, the brick breaker ----------------------------------------------------------------------
+
+ROWS = ("arcCyan", "arcGrn", "arcAmb", "arcPink")
+
+
+def g1():
+    return drum("arcade_g1", BODY, "arcAmb", sides=8)
+
+
+def g1_holo():
+    """The wall curved round the back of the beam, concave to the player: an arc of lit bricks between amber rails, the
+    paddle at the front, the ball rising; amber beams."""
+    k = Bench("arcade_g1_holo", FP)
+    R, z0, z1, A = 0.3, Z(36), Z(65), 1.15
+    def ang(t):
+        return 1.5 * math.pi + t
+    n = 24
+    for i in range(n):                                                                   # the rails, top and foot
+        t = -A + (i + 0.5) * 2 * A / n
+        for z in (z0, z1):
+            k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), z, R * 2 * A / n * 1.05, 0.014, 0.014, "arcAmb",
+                  rz=ang(t) + math.pi / 2)
+    for t in (-A, A):                                                                    # its end posts
+        k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), z0, 0.016, 0.016, z1 - z0, "arcAmb")
+    gone = {(0, 1), (0, 3), (1, 3), (0, 4)}
+    for r, col in enumerate(ROWS):                                                       # the bricks
+        for c in range(5):
+            if (r, c) not in gone:
+                t = (c - 2) * 0.42
+                k.box(R * math.cos(ang(t)), R * math.sin(ang(t)), Z(50 + r * 3.5), R * 0.36, P(3), Z(2.6), col,
+                      top=col, rz=ang(t) + math.pi / 2)
+    k.box(P(-2), P(4), Z(38), P(7), P(3), Z(1.6), "arcAmb", top="arcAmb")                # the paddle,
+    k.box(P(4), P(-1), Z(45), P(2.2), P(2.2), Z(2.2), "arcPink", top="arcPink")          # the ball,
+    for u, v, z, sz in ((2.5, 1, 43, 1.8), (1, 2.5, 41, 1.4)):                           # its trail
+        k.box(P(u), P(v), Z(z), P(sz), P(sz), Z(sz), "arcPinkF", top="arcPinkF")
+    beams(k, "arcAmb", z0, r=0.2)
+    return k
+
+
+def g2():
+    return drum("arcade_g2", BODY, "arcCyan", sides=8)
+
+
+def g2_holo():
+    """The wall tilted back like a cabinet screen: a lit cyan border, the bricks raised off it, the paddle at its foot,
+    the ball crossing; cyan beams to the foot."""
+    k = Bench("arcade_g2_holo", FP)
+    a, b, W = (5, 36), (-7, 64), 14
+    def at(f):
+        return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+    def lit(u0, u1, f0, f1, col, t=0.4, d=0.3):
+        slab(k, P(u0), P(u1), at(f0), at(f1), t, one(col), d=d)
+    lit(-W, W, 0.0, 0.03, "arcCyan")                                                     # the border
+    lit(-W, W, 0.97, 1.0, "arcCyan")
+    lit(-W, -W + 1, 0.0, 1.0, "arcCyan")
+    lit(W - 1, W, 0.0, 1.0, "arcCyan")
+    gone = {(0, 1), (0, 3), (1, 3), (0, 4)}
+    for r, col in enumerate(ROWS):                                                       # the bricks, raised
+        for c, u in enumerate((-10, -5, 0, 5, 10)):
+            if (r, c) not in gone:
+                lit(u - 2.1, u + 2.1, 0.56 + r * 0.1, 0.64 + r * 0.1, col, t=2.0)
+    lit(-6, 1, 0.07, 0.12, "arcCyan", t=1.6)                                             # the paddle,
+    lit(4, 6.4, 0.34, 0.42, "arcAmb", t=2.0)                                             # the ball,
+    for u, f, w in ((2.2, 0.28, 1.8), (0.4, 0.22, 1.4)):                                 # its trail
+        lit(u, u + w, f, f + 0.06, "arcAmbF", t=1.2)
+    for u in (-8, 8):                                                                    # beams to the foot
+        k.box(P(u), P(4), Z(28.6), 0.014, 0.014, Z(36.5) - Z(28.6), "arcCyan")
+    return k
+
+
+def g3():
+    return drum("arcade_g3", BODY, "arcPink", sides=8)
+
+
+def g3_holo():
+    """The wall as a deep block, three bricks deep, each layer its own colour: a pink wireframe round it, a crater
+    punched through the front layers, the paddle and the ball in front; pink beams."""
+    k = Bench("arcade_g3_holo", FP)
+    z0, z1, W, D = Z(36), Z(65), 13, P(7.5)
+    for u in (-W, W):                                                                    # the wireframe
+        for v in (-D, D):
+            k.box(P(u), v, z0, 0.014, 0.014, z1 - z0, "arcPink")
+        for z in (z0, z1):
+            k.box(P(u), 0.0, z, 0.014, 2 * D, 0.014, "arcPink")
+    for v in (-D, D):
+        k.box(0.0, v, z1, P(2 * W), 0.014, 0.014, "arcPink")
+    layers = ((P(-5), "arcCyan"), (P(0), "arcAmb"), (P(5), "arcGrn"))                    # back to front
+    crater = {2: {(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (0, 4), (1, 1)}, 1: {(0, 2), (0, 3), (1, 2)}, 0: set()}
+    for li, (v, col) in enumerate(layers):
+        for r in range(3):
+            for c, u in enumerate((-10, -5, 0, 5, 10)):
+                if (r, c) not in crater[li]:
+                    k.box(P(u), v, Z(51 + r * 4), P(4.2), P(4.2), Z(3.2), col, top=col)
+    k.box(P(-3), P(9), Z(38), P(7), P(3), Z(1.6), "arcPink", top="arcPink")              # the paddle,
+    k.box(P(4), P(9), Z(45), P(2.2), P(2.2), Z(2.2), "arcMarq", top="arcMarq")           # the ball,
+    for u, z, sz in ((2.5, 43, 1.8), (1, 41, 1.4)):                                      # its trail
+        k.box(P(u), P(9), Z(z), P(sz), P(sz), Z(sz), "arcPinkF", top="arcPinkF")
+    beams(k, "arcPink", z0, r=0.2)
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
                                                               ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3),
                                                               ("e1", e1), ("e2", e2), ("e3", e3), ("f1", f1),
-                                                              ("f2", f2), ("f3", f3))]
+                                                              ("f2", f2), ("f3", f3), ("g1", g1),
+                                                              ("g2", g2), ("g3", g3))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
                    ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
                    ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo),
-                   ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo))]
+                   ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo),
+                   ("g1", g1, g1_holo), ("g2", g2, g2_holo), ("g3", g3, g3_holo))]
