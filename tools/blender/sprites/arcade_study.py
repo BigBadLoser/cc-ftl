@@ -894,7 +894,7 @@ def g2_holo():
     """The wall tilted back like a cabinet screen: a lit cyan border, the bricks raised off it, the paddle at its foot,
     the ball crossing; cyan beams to the foot."""
     k = Bench("arcade_g2_holo", FP)
-    a, b, W = (5, 36), (-7, 64), 14
+    a, b, W = (0, 36), (-14, 63), 14                                # the foot over the middle of the ring
     def at(f):
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
     def lit(u0, u1, f0, f1, col, t=0.4, d=0.3):
@@ -908,12 +908,12 @@ def g2_holo():
         for c, u in enumerate((-10, -5, 0, 5, 10)):
             if (r, c) not in gone:
                 lit(u - 2.1, u + 2.1, 0.56 + r * 0.1, 0.64 + r * 0.1, col, t=2.0)
-    lit(-6, 1, 0.07, 0.12, "arcCyan", t=1.6)                                             # the paddle,
+    lit(-6, 1, 0.12, 0.17, "arcCyan", t=1.6)                                             # the paddle, up off the foot,
     lit(4, 6.4, 0.34, 0.42, "arcAmb", t=2.0)                                             # the ball,
-    for u, f, w in ((2.2, 0.28, 1.8), (0.4, 0.22, 1.4)):                                 # its trail
-        lit(u, u + w, f, f + 0.06, "arcAmbF", t=1.2)
+    for u, f, w in ((2.4, 0.3, 1.6), (0.8, 0.255, 1.2), (-0.6, 0.22, 0.8)):              # its trail, glowing flat
+        lit(u, u + w, f, f + 0.04, "arcAmb", t=0.4)                                      # on the screen
     for u in (-8, 8):                                                                    # beams to the foot
-        k.box(P(u), P(4), Z(28.6), 0.014, 0.014, Z(36.5) - Z(28.6), "arcCyan")
+        k.box(P(u), P(a[0] - 1), Z(28.6), 0.014, 0.014, Z(a[1] + 0.5) - Z(28.6), "arcCyan")
     return k
 
 
