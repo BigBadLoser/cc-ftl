@@ -13,7 +13,7 @@ and edge trim.
 Units: P(n) = n px along u or v (1/32 tile), Z(n) = n z px. Width runs along u, depth along v, the front at +v."""
 import math
 
-from .research_kit import Bench
+from .research_kit import Bench, bar
 from .research_r13 import P, Z, blk, flat
 from .research_r14 import side
 from .research_r15 import prism
@@ -890,11 +890,15 @@ def g2():
     return drum("arcade_g2", BODY, "arcCyan")
 
 
-def g2_holo():
-    """The wall tilted back like a cabinet screen: a lit cyan border, the bricks raised off it, the paddle at its foot,
-    the ball crossing; cyan beams to the foot."""
-    k = Bench("arcade_g2_holo", FP)
-    a, b, W = (0, 36), (-14, 63), 14                                # the foot over the middle of the ring
+TILT_A, TILT_B, TILT_W = (0, 36), (-5, 63), 14                      # the screen's foot (over the ring's middle) and
+                                                                     # head (near upright, facing the player), half width
+
+
+def tilt_screen(k):
+    """G2's game: a screen standing near upright to face the player, a lit cyan border, the bricks raised off it, the paddle up off its
+    foot, the ball crossing with its trail glowing flat on the screen. Returns its corners (foot left, foot right, head
+    right, head left) in tile units."""
+    a, b, W = TILT_A, TILT_B, TILT_W
     def at(f):
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
     def lit(u0, u1, f0, f1, col, t=0.4, d=0.3):
@@ -908,12 +912,78 @@ def g2_holo():
         for c, u in enumerate((-10, -5, 0, 5, 10)):
             if (r, c) not in gone:
                 lit(u - 2.1, u + 2.1, 0.56 + r * 0.1, 0.64 + r * 0.1, col, t=2.0)
-    lit(-6, 1, 0.12, 0.17, "arcCyan", t=1.6)                                             # the paddle, up off the foot,
+    lit(-6, 1, 0.12, 0.17, "arcCyan", t=1.6)                                             # the paddle,
     lit(4, 6.4, 0.34, 0.42, "arcAmb", t=2.0)                                             # the ball,
-    for u, f, w in ((2.4, 0.3, 1.6), (0.8, 0.255, 1.2), (-0.6, 0.22, 0.8)):              # its trail, glowing flat
-        lit(u, u + w, f, f + 0.04, "arcAmb", t=0.4)                                      # on the screen
-    for u in (-8, 8):                                                                    # beams to the foot
-        k.box(P(u), P(a[0] - 1), Z(28.6), 0.014, 0.014, Z(a[1] + 0.5) - Z(28.6), "arcCyan")
+    for u, f, w in ((2.4, 0.3, 1.6), (0.8, 0.255, 1.2), (-0.6, 0.22, 0.8)):              # its trail
+        lit(u, u + w, f, f + 0.04, "arcAmb", t=0.4)
+    return [(P(-W), P(a[0]), Z(a[1])), (P(W), P(a[0]), Z(a[1])), (P(W), P(b[0]), Z(b[1])), (P(-W), P(b[0]), Z(b[1]))]
+
+
+def film(k, pts, col="arcCyanF"):
+    """A flat film polygon through 3D points (u, v, z), seen from both sides."""
+    from .core import G as GV
+    q = [GV(*k.p(u, v), z) for u, v, z in pts]
+    k.m.poly(q, col)
+    k.m.poly(q[::-1], col)
+
+
+def g2_holo():
+    """G2 as last shown, near upright, the two plain beams to its foot."""
+    k = Bench("arcade_g2_holo", FP)
+    tilt_screen(k)
+    for u in (-8, 8):
+        k.box(P(u), P(TILT_A[0] - 1), Z(28.6), 0.014, 0.014, Z(TILT_A[1] + 0.5) - Z(28.6), "arcCyan")
+    return k
+
+
+ZE = Z(28.6)                                                         # the emitter ring's top
+
+
+def h1_holo():
+    """Projection frustum: lit rays from four points on the emitter ring to the screen's corners, film on the frustum's
+    sides and front, so the screen sits on top of a beam of light."""
+    k = Bench("arcade_h1_holo", FP)
+    c = tilt_screen(k)
+    base = [(-0.17, 0.12, ZE), (0.17, 0.12, ZE), (0.17, -0.12, ZE), (-0.17, -0.12, ZE)]
+    for p, q in zip(base, c):                                                            # the rays,
+        bar(k, p, q, 0.012, "arcCyan")
+    film(k, [base[0], base[3], c[3], c[0]])                                              # the film sides
+    film(k, [base[1], base[2], c[2], c[1]])
+    film(k, [base[0], base[1], c[1], c[0]])
+    return k
+
+
+def h2_holo():
+    """Projection cone: a film cone flaring from the emitter ring to a lit lip just under the screen's foot, a scan ring
+    part way up, and lit rays from the lip to the screen's head corners."""
+    k = Bench("arcade_h2_holo", FP)
+    c = tilt_screen(k)
+    zt = Z(TILT_A[1]) - 0.01
+    k.cyl(0.0, 0.0, ZE, 0.27, zt - ZE, "arcCyanF", top="arcCyanF", sides=16, rtop=0.44)  # the cone,
+    ring_of(k, 0.44, zt - 0.012, 24, 0.12, "arcCyan", h=0.014)                           # its lit lip,
+    ring_of(k, 0.355, (ZE + zt) / 2, 20, 0.12, "arcCyan", h=0.01)                        # a scan ring
+    for q in c[2:]:                                                                      # rays up to the head
+        u = q[0] * 0.44 / math.hypot(q[0], q[1])
+        v = q[1] * 0.44 / math.hypot(q[0], q[1])
+        bar(k, (u, v, zt), q, 0.01, "arcCyan")
+    return k
+
+
+def h3_holo():
+    """Light sheet: the screen's plane carried down to the emitter as a film fan narrowing to the ring, lit converging
+    edges, scan lines across the fan, so the screen grows out of the beam."""
+    k = Bench("arcade_h3_holo", FP)
+    c = tilt_screen(k)
+    (va, za), (vb, zb) = TILT_A, TILT_B
+    v0 = P(va - (vb - va) * (za - 28.6) / (zb - za))                                     # the plane at the ring
+    base = [(-0.13, v0, ZE), (0.13, v0, ZE)]
+    film(k, [base[0], base[1], c[1], c[0]])                                              # the fan,
+    for p, q in ((base[0], c[0]), (base[1], c[1])):                                      # its lit edges,
+        bar(k, p, q, 0.012, "arcCyan")
+    for f in (0.35, 0.7):                                                                # scan lines across it
+        pa = [base[0][i] + (c[0][i] - base[0][i]) * f for i in range(3)]
+        pb = [base[1][i] + (c[1][i] - base[1][i]) * f for i in range(3)]
+        bar(k, pa, pb, 0.008, "arcCyan")
     return k
 
 
@@ -954,10 +1024,12 @@ def jobs():
                                                               ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3),
                                                               ("e1", e1), ("e2", e2), ("e3", e3), ("f1", f1),
                                                               ("f2", f2), ("f3", f3), ("g1", g1),
-                                                              ("g2", g2), ("g3", g3))]
+                                                              ("g2", g2), ("g3", g3), ("h1", g2),
+                                                              ("h2", g2), ("h3", g2))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
                    ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
                    ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo),
                    ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo),
-                   ("g1", g1, g1_holo), ("g2", g2, g2_holo), ("g3", g3, g3_holo))]
+                   ("g1", g1, g1_holo), ("g2", g2, g2_holo), ("g3", g3, g3_holo),
+                   ("h1", g2, h1_holo), ("h2", g2, h2_holo), ("h3", g2, h3_holo))]
