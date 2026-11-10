@@ -15,7 +15,7 @@ import { tileHash } from './tiles';
  * Asteroid rock from the `rock` sprite family (tools/blender/sprites/rock.py). Neighbour masks are N 1, E 2, S 4, W 8.
  *  - Rock mass `rock.mass.m<mask>[.c<cuts>].v<0-3>`: mask = the rock neighbours; cuts mark inner corners (the diagonal is not
  *    rock while both sides beside it are): SE 1, SW 2, NE 4 (a NW cut sits behind the rock's own top and is never drawn).
- *    Ore tiles use `rock.ore.<iron|ice|rare>.<rich|thin>.m<mask>[.c<cuts>]` instead (one variant).
+ *    Ore tiles use `rock.ore.<iron|ice|rare|crystal>.<rich|thin>.m<mask>[.c<cuts>]` instead (one variant).
  *  - Ground `rock.ground.m<mask>[.c<cuts>].v<n>`: mask = the solid neighbours (rock or ground), cuts SE 1, SW 2, NE 4, NW 8; the
  *    interior (m15, no cuts) has 8 variants, edges 3. Under every rock tile goes `rock.ground.<...>.under`, the asteroid's
  *    worn edge and under-lip, which the mass stands back on.
@@ -34,7 +34,10 @@ export const ROCK_MASS_Z = ROCK_TOP_Z;
 /** Mass sits a hair behind other things on its diagonal. */
 export const MASS_DZ = -0.1;
 
-const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare', 'ore.crystal': 'rare' };
+const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare', 'ore.crystal': 'crystal' };
+
+/** Art id stem of an ore tile, `rock.ore.<kind>.<rich|thin>`, for the ore def `oreId` (unknown ores draw as iron). */
+export const oreTileId = (oreId: string, rich: boolean): string => `rock.ore.${ORE_KIND[oreId] ?? 'iron'}.${rich ? 'rich' : 'thin'}`;
 
 /** Sum of the struct, ore and ore-amount chunk revisions under the asteroid's bbox (padded by one): a change detector. */
 function revision(sector: SectorGrid, a: Asteroid): number {
@@ -73,7 +76,7 @@ interface Built {
 }
 
 export function createAsteroidView(world: World, atlas: Atlas, L: Layers, ores: Readonly<Record<string, { code: number; amount: readonly [number, number] }>>): AsteroidView {
-  const byCode = new Map(Object.entries(ores).map(([id, o]) => [o.code, { kind: ORE_KIND[id] ?? 'iron', mid: (o.amount[0] + o.amount[1]) / 2 }]));
+  const byCode = new Map(Object.entries(ores).map(([id, o]) => [o.code, { id, mid: (o.amount[0] + o.amount[1]) / 2 }]));
   const views = new Map<number, Built>();
   let last: SectorGrid | null = null;
 
@@ -106,7 +109,7 @@ export function createAsteroidView(world: World, atlas: Atlas, L: Layers, ores: 
         if (under) addStatic(L, under, x, y, 0, b.root);
         const ore = sector.get('ore', x, y);
         const def = ore ? byCode.get(ore) : undefined;
-        const oreId = def ? `rock.ore.${def.kind}.${sector.get('oreAmt', x, y) >= def.mid ? 'rich' : 'thin'}` : undefined;
+        const oreId = def ? oreTileId(def.id, sector.get('oreAmt', x, y) >= def.mid) : undefined;
         const s = atlas.firstOf(massChain((dx, dy) => kind(x + dx, y + dy) === Struct.Rock, x, y, oreId));
         if (s) b.mass.push(...addStatic(L, s, x, y, depthKey(x, y) + MASS_DZ, L.sorted));
       }

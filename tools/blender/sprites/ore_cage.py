@@ -8,7 +8,8 @@ height field closed by a skirt against the bars, with loose chunks scattered on 
 shows through the bars. Wear is tip_bin_wear's soft grime on the frame's fine faces (rust run-off, dust low).
 
 Fills: .empty (a little spill on the floor), .fill1 (a low pile), .fill2 (half), .full (heaped over the rim). Ores use
-the rock family's colours: iron (or*), ice (ic*, a faint glow) and rare metals (rv*, glints on the glow layer)."""
+the rock family's colours: iron (or*), ice (ic*, a faint glow) and rare metals (rv*, glints on the glow layer) and
+energy crystals (ec*, palette set "crystal": shards, glints on the glow layer)."""
 import math
 
 import numpy as np
@@ -35,6 +36,8 @@ ORES = {
     "iron": dict(bed=("rkD", "orD", "rkK"), faces=("orM", "orD", "rkD", "rkM", "orD", "or", "rk"), glow=(), chunk=(("orM", "orD"), ("rkM", "rkD"), ("or", "orM"))),
     "ice": dict(bed=("icD", "icM", "rkD"), faces=("icM", "ic", "icD", "icL", "icM", "rkM"), glow=("icG",), chunk=(("icL", "ic"), ("ic", "icD"), ("icM", "icD"))),
     "rare": dict(bed=("rkD", "rvD", "rkK"), faces=("rkD", "rkM", "rvD", "rk", "rvM", "rkD"), glow=("rvG",), chunk=(("rvM", "rvD"), ("rkM", "rkD"), ("rk", "rkD"))),
+    "crystal": dict(bed=("rkK", "ecD", "rkD"), faces=("ecD", "ecM", "ecD", "rkD", "ecL", "ecM"), glow=("ecG", "ecW"),
+                    chunk=(("ecM", "ecD"), ("ecL", "ecM"), ("ecM", "ecD"))),
     # scrap: the heap's bed under the pieces (scrap.py), dark and rusty
     "scrap": dict(faces=("grime", "steelD", "grime", "rustD", "gmD", "dark"), glow=(), chunk=(("steel", "steelD"), ("rust", "rustD"))),
 }
@@ -367,7 +370,7 @@ def cage(fp, fill, rot, ore="iron", drop=0):
     frame(k, b, drop)
     chute(k, b)
     grime(k, 0, len(k.m.f), Vector((0, (b.v0 + b.v1) / 2, 0.6)), lambda v: H, low_z=0.45, run_k=0.5, dust_k=0.6, run_col="grime")
-    seed = {"iron": 11, "ice": 23, "rare": 37, "scrap": 53}[ore] + FILLS.index(fill)
+    seed = {"iron": 11, "ice": 23, "rare": 37, "crystal": 41, "scrap": 53}[ore] + FILLS.index(fill)
     if ore == "scrap":
         from . import scrap
         if HEAP[fill]:

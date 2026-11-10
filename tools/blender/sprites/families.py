@@ -62,6 +62,12 @@
 Crew layers are built separately (`crew`)."""
 
 
+def _crystal(tag):
+    """Palette selection: the energy crystal sprites (ids containing tag) add their own set ("crystal"); the rest keep
+    the plain extras, so their pixels and cache keys don't move."""
+    return lambda sid: "crystal" if tag in sid else True
+
+
 def jobs(name):
     """(jobs, extra) for a family rendered through env_build.render_jobs; `extra` = palette selection."""
     if name == "env":
@@ -187,7 +193,7 @@ def jobs(name):
         return roofs.SPRITES + roof_cuts.SPRITES, True
     if name == "rock":
         from . import rock
-        return rock.jobs(), True
+        return rock.jobs(), _crystal(".crystal.")
     if name == "rockwall":
         from . import rockwall
         return rockwall.jobs(), True
@@ -219,7 +225,7 @@ def jobs(name):
         from . import items_goods, items_materials, items_now, items_parts, items_tech
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
-        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], _crystal("energy_crystal")
     if name == "salvage":
         from . import items_salvage
         return items_salvage.jobs(), items_salvage.palette
@@ -228,7 +234,7 @@ def jobs(name):
         return items_upgrades.jobs(), items_upgrades.PALETTE
     if name == "storage_ore":
         from . import tip_bin
-        return tip_bin.jobs(), True
+        return tip_bin.jobs(), _crystal(".crystal.")
     if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
         from . import scrapper
         return scrapper.jobs(), "scrapper"
