@@ -62,7 +62,7 @@ export const trade = {
       tagMods: { raw: { sell: 0.8 }, components: { buy: 1.25 } }, credits: [200, 700],
       stock: [
         { item: 'item.ice', min: 20, max: 70 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.metal', min: 15, max: 50 },
-        { item: 'item.iron_ore', min: 20, max: 80 }, { item: 'item.rare_ore', min: 2, max: 12, chance: 0.6 },
+        { item: 'item.iron_ore', min: 20, max: 80 }, { item: 'item.rare_ore', min: 2, max: 12, chance: 0.6 }, { item: 'item.energy_crystal', min: 4, max: 16, chance: 0.7 },
         { item: 'item.parts', min: 0, max: 6, chance: 0.4 },
       ],
     },
@@ -80,6 +80,7 @@ export const trade = {
         { item: 'item.upg_thermite', min: 1, max: 1, chance: 0.1 },
         // Ore and life-support stores the station's industry and habitat eat (galaxyMarket.ts): small, so it pays more as they run low.
         { item: 'item.iron_ore', min: 10, max: 40 }, { item: 'item.rare_ore', min: 2, max: 8 }, { item: 'item.water', min: 5, max: 20 }, { item: 'item.oxygen', min: 5, max: 20 },
+        { item: 'item.energy_crystal', min: 15, max: 40 },
       ],
     },
     'trader.station.mining': {
@@ -87,7 +88,8 @@ export const trade = {
       name: 'Mining station', match: { faction: 'station.mining' }, shuttle: false, sell: 0.9, credits: [1200, 3500],
       tagMods: { ore: { sell: 0.8, buy: 0.85 }, components: { buy: 1.3 } },
       stock: [{ item: 'item.metal', min: 80, max: 200 }, { item: 'item.ice', min: 40, max: 120 }, { item: 'item.scrap_hull', min: 20, max: 80 }, { item: 'item.parts', min: 4, max: 12 },
-        { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }, { item: 'item.fuel', min: 20, max: 60 }],
+        { item: 'item.iron_ore', min: 60, max: 180 }, { item: 'item.rare_ore', min: 6, max: 24 }, { item: 'item.fuel', min: 20, max: 60 },
+        { item: 'item.energy_crystal', min: 40, max: 120 }],
     },
     'trader.station.farming': {
       name: 'Agri station', match: { faction: 'station.farming' }, shuttle: false, credits: [800, 2500],
@@ -128,7 +130,7 @@ export const trade = {
         { item: 'item.parts', min: 5, max: 20 }, { item: 'item.ration', min: 20, max: 60 }, { item: 'item.ice', min: 10, max: 40 },
         { item: 'item.missile', min: 4, max: 16, chance: 0.7 }, { item: 'item.sidearm', min: 1, max: 4, chance: 0.6 },
         { item: 'item.rifle', min: 1, max: 2, chance: 0.35 }, { item: 'item.shuttle', min: 1, max: 1, chance: 0.15 },
-        { item: 'item.fuel', min: 30, max: 70 },
+        { item: 'item.fuel', min: 30, max: 70 }, { item: 'item.energy_crystal', min: 10, max: 30 },
       ],
     },
     // --- Placeholders until the faction system: corp, navy, pirates ---

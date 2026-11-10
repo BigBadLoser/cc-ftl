@@ -190,6 +190,8 @@ export type JobKind =
   | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'
+  /** refuel: load fuel into the reactor `target` (modules/refuel.ts). */
+  | 'refuel'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
   /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */

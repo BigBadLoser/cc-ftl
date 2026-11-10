@@ -8,6 +8,7 @@ import { SuitC } from '../sim/eva/components';
 import { airLeft } from '../sim/eva/airLedger';
 import { suitAir, suitDef } from '../sim/eva/suit';
 import { isHeldOffline } from '../sim/modules/hold';
+import { hasFuel } from '../sim/modules/energy';
 import { AwayC, AwaySiteC, SiteRunC } from '../sim/away/components';
 import { InspectionC, inspections } from '../sim/inspect/types';
 import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
@@ -55,7 +56,7 @@ export function powerBalance(sim: Sim, ship: number): { supply: number; demand: 
     const def = sim.content.modules[m.def];
     const p = def?.power ?? 0;
     if (def && isIdle(sim, id, def)) continue;
-    if (p > 0) supply += p;
+    if (p > 0) supply += !def || hasFuel(sim, ship, m, def) ? p : 0;
     else demand -= p;
   }
   return { supply, demand };

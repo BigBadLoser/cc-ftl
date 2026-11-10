@@ -5,6 +5,8 @@ import { buildDroneBay } from './droneSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
 import { buildPlot } from './plotSnapshot';
+import { buildReserve, buildReserves } from './reserveSnapshot';
+import { hasFuel } from '../sim/modules/energy';
 import { isIdle } from '../sim/modules/draw';
 import { buildHeat } from './heatSnapshot';
 import { buildStock } from './logisticsSnapshot';
@@ -34,7 +36,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     out.push({
       id, ship: home, def: m.def, name: moduleNameOf(sim, id), x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp, repairFirst: !!m.repairFirst,
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
-      storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, plot: def.plot ? buildPlot(sim, id) : null, idle: isIdle(sim, id, def), bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
+      reserve: buildReserve(sim, id), storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, plot: def.plot ? buildPlot(sim, id) : null, idle: isIdle(sim, id, def), bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
       upgradeSlot: def.upgradeSlot ? upgradeSlotOf(sim, id) : null,
     });
   }
@@ -92,7 +94,7 @@ export function buildStats(sim: Sim): UiStats {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || shipIdOf(sim, m) !== GRID || !m.enabled || m.hp <= 0) continue;
-    if (def.power > 0) supply += def.power;
+    if (def.power > 0) supply += hasFuel(sim, GRID, m, def) ? def.power : 0; // an empty reactor supplies nothing
     else demand -= def.power;
   }
   let o2: number | null = null;
@@ -115,7 +117,7 @@ export function buildStats(sim: Sim): UiStats {
     if (rooms.size) o2 = sum / rooms.size;
   }
   const load = hullLoad(sim, GRID);
-  return { supply, demand, food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2, hull: { tiles: load.tiles, capacity: load.capacity } };
+  return { supply, demand, ...buildReserves(sim, GRID), food: buildFood(sim, buildStock(sim)), heat: buildHeat(sim), o2, hull: { tiles: load.tiles, capacity: load.capacity } };
 }
 
 function upgradeItem(sim: Sim, item: string, shipId: number): UiUpgradeItem {

@@ -93,7 +93,7 @@ export function findJobAt(sim: Sim, shipId: number, x: number, y: number): numbe
 }
 
 /** Jobs the crew member stands ON the tile of (consoles, and the suit tile of an airlock). */
-const ON_TILE_KINDS: readonly string[] = ['operate', 'research', 'suitUp', 'suitOff', 'refill', 'patrol', 'passage'];
+const ON_TILE_KINDS: readonly string[] = ['operate', 'research', 'suitUp', 'suitOff', 'refill', 'patrol', 'passage', 'refuel'];
 
 /** Where a crew member must be to work a job: adjacent to it, or ON its tile for operate and suit jobs. */
 export function atJob(pos: Tile, job: { kind: string; x: number; y: number; size?: [number, number] }): boolean {
