@@ -152,6 +152,139 @@ def k3_holo():
     return k
 
 
+# ---- round 2: the card game, cards that read (lit cream faces, bold suit marks), three tables -------------------------
+
+SUITS = ("arcPink", "arcCyan", "arcGrn", "arcAmb")
+
+
+def card2(k, u, v, z, face, suit, w=0.2, h=0.28, lean=0.2, turn=0.0):
+    """A hologram card standing on its foot edge at (u, v, z), facing +v (face 1) or -v (-1), leaning back from the
+    one it faces by `lean`, turned in its own plane by `turn` (a fan). Its face: lit cream with a bold suit mark in the
+    middle and a pip in each corner; its back: cyan film with a lit border and a lit diamond."""
+    rx = face * lean
+    if face > 0:
+        k.box(u, v, z, w, 0.006, h, "arcMarq", top="arcMarq", rx=rx, ry=turn)
+        k.box(u, v + 0.006, z + h * 0.3, w * 0.5, 0.006, h * 0.4, suit, top=suit, rx=rx, ry=turn)
+        k.box(u - w * 0.32, v + 0.006, z + h * 0.8, w * 0.18, 0.006, h * 0.12, suit, top=suit, rx=rx, ry=turn)
+    else:
+        k.box(u, v, z, w, 0.006, h, "arcCyanF", top="arcCyanF", rx=rx, ry=turn)
+        for dz in (0.0, h - 0.016):
+            k.box(u, v - 0.004, z + dz, w, 0.006, 0.016, "arcCyan", rx=rx, ry=turn)
+        k.box(u, v - 0.006, z + h * 0.35, w * 0.3, 0.006, h * 0.3, "arcCyan", rx=rx, ry=turn + 0.785)
+
+
+def hand(k, cu, cv, z, face, suits, spread=0.17, fan=0.22, w=0.2, h=0.28):
+    """A fanned hand of cards around (cu, cv), facing `face`."""
+    n = len(suits)
+    for i, suit in enumerate(suits):
+        t = i - (n - 1) / 2
+        card2(k, cu + t * spread, cv - face * abs(t) * 0.02, z + 0.04 - abs(t) * 0.03, face, suit, w, h, turn=-t * fan * face)
+
+
+def chips(k, u, v, z, cols, r=0.055):
+    for n, col in enumerate(cols):
+        k.cyl(u, v, z + n * 0.03, r, 0.022, col, top=col, sides=10)
+
+
+def stadium_ring(k, hu, hv, z, h, w, col, top, n=8):
+    """A stadium-shaped rail w wide: straight sides and half-round ends of boxes."""
+    for s in (-1, 1):
+        k.box(0.0, s * (hv - w / 2), z, 2 * (hu - hv), w, h, col, top=top)
+        for i in range(n):
+            a = s * math.pi / 2 + (i + 0.5) * math.pi / n * (-s)
+            a = -math.pi / 2 + (i + 0.5) * math.pi / n if s > 0 else math.pi / 2 + (i + 0.5) * math.pi / n
+            r = hv - w / 2
+            k.box(s * (hu - hv) + r * math.cos(a), r * math.sin(a), z, math.pi * r / n * 1.15, w, h, col, top=top,
+                  rz=a + math.pi / 2)
+
+
+def l1():
+    return table("gametable_l1")
+
+
+def l1_holo():
+    """K's table, the card game redone: each player's hand fanned and leaning back to them (cream faces with bold suit
+    marks to us, cyan backs on the far hand), the draw pile and a big face-up card turning over a lit ring in the
+    middle, the pot of chips beside it."""
+    k = Bench("gametable_l1_holo", FP2)
+    hand(k, -0.45, 0.25, Z0, 1, ("arcPink", "arcAmb", "arcCyan"))
+    hand(k, 0.45, -0.25, Z0, -1, ("arcPink", "arcAmb", "arcCyan"))
+    for n in range(4):                                                                   # the draw pile,
+        k.box(-0.12, 0.0, Z0 + n * 0.016, 0.2, 0.26, 0.01, "arcCyanF", top="arcCyan" if n == 3 else "arcCyanF")
+    ring_of(k, 0.16, Z0 + 0.01, 14, 0.075, "arcCyan", h=0.01)                            # the lit ring,
+    card2(k, 0.14, 0.0, Z0 + 0.12, 1, "arcGrn", w=0.24, h=0.32, lean=0.0, turn=0.3)      # the face-up card
+    chips(k, 0.4, 0.12, Z0, ("arcAmb", "arcAmb", "arcPink", "arcAmb"))
+    chips(k, -0.4, -0.12, Z0, ("arcCyan", "arcAmb", "arcAmb"))
+    return k
+
+
+def l2():
+    """Casino table: a padded navy bumper rail round a teal felt-glass top, gold trim, a deep skirt to the floor."""
+    k = Bench("gametable_l2", FP2)
+    stadium(k, 0.8, 0.32, 0.0, 0.05, "arcGoldD", top="arcGold")                          # a gold kick,
+    stadium(k, 0.76, 0.28, 0.05, TOP - 0.17, "arcBodyD", top="arcBody")                 # the skirt,
+    stadium(k, 0.92, 0.42, TOP - 0.12, 0.04, "arcGoldD", top="arcGold")                 # gold under the rail,
+    stadium(k, 0.86, 0.36, TOP - 0.08, 0.08, "arcTealD", top="arcTeal")                 # the felt,
+    stadium_ring(k, 0.96, 0.46, TOP - 0.08, 0.13, 0.1, "arcBodyD", "arcBodyL")           # the bumper rail,
+    for s in (-1, 1):                                                                    # its lit seam
+        k.box(0.0, s * 0.462, TOP - 0.02, 1.0, 0.006, 0.012, "arcAmb")
+    for s in (-1, 1):                                                                    # the dealer's mark on the felt
+        k.box(s * 0.16, 0.0, TOP, 0.05, 0.3, 0.006, "arcAmb", top="arcAmb")
+    for u, v in SEATS:
+        bar(k, (u * 0.7, v * 0.12, 0.03), (u, v, 0.03), 0.06, "arcGoldD")
+        stool(k, u, v, -1 if v > 0 else 1)
+    return k.build()
+
+
+def l2_holo():
+    """Over the felt: big hands fanned to each player, the pile and a dealt row of three face-up cards in the middle,
+    chips piled by each hand."""
+    k = Bench("gametable_l2_holo", FP2)
+    z = TOP + 0.06
+    hand(k, -0.45, 0.24, z, 1, ("arcPink", "arcGrn", "arcAmb", "arcCyan"), spread=0.13, fan=0.18)
+    hand(k, 0.45, -0.24, z, -1, ("arcPink", "arcGrn", "arcAmb", "arcCyan"), spread=0.13, fan=0.18)
+    for i, suit in enumerate(("arcCyan", "arcPink", "arcAmb")):                          # the dealt row, flat-ish
+        card2(k, -0.2 + i * 0.2, 0.0, z + 0.02, 1, suit, w=0.17, h=0.24, lean=0.9)
+    chips(k, 0.1, 0.24, z, ("arcAmb", "arcPink", "arcAmb"))
+    chips(k, -0.1, -0.24, z, ("arcCyan", "arcAmb", "arcAmb", "arcCyan"))
+    return k
+
+
+def l3():
+    """Card dais: a slim table on one round column, a raised chrome dais in the middle of the top with a lit ring."""
+    k = Bench("gametable_l3", FP2)
+    k.cyl(0.0, 0.0, 0.0, 0.3, 0.04, "arcBodyK", top="arcBodyK", sides=16)               # the foot,
+    k.cyl(0.0, 0.0, 0.04, 0.16, TOP - 0.14, "arcBodyD", top="arcBody", sides=16)        # the column,
+    k.cyl(0.0, 0.0, 0.3, 0.17, 0.03, "arcChrD", top="arcChr", sides=16)                 # its chrome belt,
+    stadium(k, 0.96, 0.4, TOP - 0.1, 0.06, "arcChrD", top="arcChr")
+    stadium(k, 0.93, 0.37, TOP - 0.04, 0.04, "arcBodyD", top="arcGlass")
+    k.cyl(0.0, 0.0, TOP, 0.2, 0.05, "arcChrD", top="arcChr", sides=16)                   # the dais,
+    k.cyl(0.0, 0.0, TOP + 0.05, 0.16, 0.008, "arcCyan", top="arcCyan", sides=16)        # its lit ring,
+    k.cyl(0.0, 0.0, TOP + 0.05, 0.12, 0.012, "arcBodyK", top="arcBodyK", sides=16)     # its lens well
+    for s in (-1, 1):                                                                    # a lit pad at each place
+        k.box(s * 0.55, s * -0.0, TOP, 0.3, 0.5, 0.004, "arcCyanF", top="arcCyanF")
+    for u, v in SEATS:
+        bar(k, (0.0, 0.0, 0.03), (u, v, 0.03), 0.06, "arcChrD")
+        stool(k, u, v, -1 if v > 0 else 1)
+    return k.build()
+
+
+def l3_holo():
+    """The dais throws a carousel of cards: a ring of cards standing round it facing out (the deck in play), one big
+    card rising out of the middle; each player's hand floats over their pad."""
+    k = Bench("gametable_l3_holo", FP2)
+    zd = TOP + 0.07
+    for i in range(8):                                                                   # the carousel
+        a = i * math.tau / 8 + 0.2
+        k.box(0.2 * math.cos(a), 0.2 * math.sin(a), zd + 0.04, 0.12, 0.006, 0.17,
+              "arcCyanF", top="arcCyanF", rz=a + math.pi / 2)
+        k.box(0.2 * math.cos(a), 0.2 * math.sin(a), zd + 0.2, 0.12, 0.006, 0.012, "arcCyan", rz=a + math.pi / 2)
+    card2(k, 0.0, 0.0, zd + 0.1, 1, "arcPink", w=0.22, h=0.3, lean=0.0)                   # the card in play
+    hand(k, -0.6, 0.15, TOP + 0.02, 1, ("arcAmb", "arcCyan", "arcGrn"))
+    hand(k, 0.6, -0.15, TOP + 0.02, -1, ("arcAmb", "arcCyan", "arcGrn"))
+    return k
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -164,6 +297,8 @@ def holo_job(sid, cab, holo):
 
 
 def jobs():
-    out = [(f"module.gametable.{v}", FP2, "prop", f) for v, f in (("k1", k1), ("k2", k2), ("k3", k3))]
+    out = [(f"module.gametable.{v}", FP2, "prop", f) for v, f in (("k1", k1), ("k2", k2), ("k3", k3), ("l1", l1),
+                                                                 ("l2", l2), ("l3", l3))]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
-                  (("k1", k1, k1_holo), ("k2", k2, k2_holo), ("k3", k3, k3_holo))]
+                  (("k1", k1, k1_holo), ("k2", k2, k2_holo), ("k3", k3, k3_holo), ("l1", l1, l1_holo),
+                   ("l2", l2, l2_holo), ("l3", l3, l3_holo))]
