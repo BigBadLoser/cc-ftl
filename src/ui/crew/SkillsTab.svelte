@@ -16,7 +16,7 @@
   const untrained = $derived(d?.skills.filter((s) => s.value <= 0) ?? []);
   // The pip track stays six 24px pips wide (159px); a skill past level 6 shrinks the pips instead of widening the row.
   // Room for every pip, the red ones a trait took away included.
-  const max = $derived(Math.max(6, ...trained.map((s) => s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0))));
+  const max = $derived(Math.max(10, ...trained.map((s) => s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0))));
   const num = (v: number, unit: string) => (unit && unit !== 'x' ? `${v} ${unit}` : `${v}`);
   const part = (p: { op: 'add' | 'mul'; value: number; label: string }) => `${p.op === 'mul' ? `x${p.value}` : `${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`} ${p.label}`;
   const good = (p: { op: 'add' | 'mul'; value: number }, invert: boolean) => (p.op === 'mul' ? p.value > 1 : p.value > 0) !== invert;

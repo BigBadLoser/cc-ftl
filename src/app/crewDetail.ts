@@ -60,7 +60,7 @@ function skillsOf(sim: Sim, id: number): UiSkillDetail[] {
     return {
       skill, name: cap(skill), value: Math.round(b.value), rolled: sum('rolled'), xpLevels: sum('xp'),
       mods: parts.filter((p) => p.kind !== 'rolled' && p.kind !== 'xp'), role: role?.[skill] ?? 0,
-      ...xpProgress(xp[skill] ?? 0), gain: xpGainMult(sim, id, skill),
+      ...xpProgress(xp[skill] ?? 0, sum('rolled')), gain: xpGainMult(sim, id, skill),
     };
   });
 }

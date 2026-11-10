@@ -4,7 +4,7 @@ import type { RecipeDef } from '../sim';
 /** The quality tiers of a cooked meal, worst first (RecipeDef.quality). */
 const MEAL_QUALITY: NonNullable<RecipeDef['quality']> = {
   skill: 'cooking',
-  tiers: [{ minSkill: 0, item: 'item.meal_bland' }, { minSkill: 1, item: 'item.meal_good' }, { minSkill: 3, item: 'item.meal_fine' }],
+  tiers: [{ minSkill: 0, item: 'item.meal_bland' }, { minSkill: 2, item: 'item.meal_good' }, { minSkill: 6, item: 'item.meal_fine' }],
 };
 
 /** Work is in ticks (20 per second) at work speed 1. */

@@ -21,6 +21,6 @@ describe('cruise figures at the jump', () => {
     expect(sim.sector.state).toBe('hyperspace');
     const helm = playerHelm(sim);
     expect(helm.evasion).toBeCloseTo(0.312, 3);
-    expect(helm.pilot).toBe(3);
+    expect(helm.pilot).toBe(6);
   });
 });

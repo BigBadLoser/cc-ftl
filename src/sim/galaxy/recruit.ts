@@ -163,7 +163,7 @@ export function syncRecruits(sim: Sim): void {
       if (r.shady) {
         // Better skills: extra levels in every skill the role has, through the xp the stat resolver reads.
         const xp: Record<string, number> = {};
-        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = xpForLevels(r.shady);
+        for (const skill of Object.keys(sim.content.roles[r.role]?.skills ?? {})) xp[skill] = xpForLevels(2 * r.shady); // 0-10 scale: a shady level is two
         sim.world.add(crew, SkillXpC, { xp });
       }
     }

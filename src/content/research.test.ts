@@ -38,7 +38,7 @@ describe('research content', () => {
       const none = id.startsWith('role.alien') || id === 'role.robot_security';
       expect(role.priorities.research > 0, id).toBe(!none);
     }
-    expect(content.roles['role.scientist']?.skills?.science).toBe(3);
+    expect(content.roles['role.scientist']?.skills?.science).toBe(6);
   });
 
   it('queues Mk II on the starter ship, pays it from stock and survives a save', () => {

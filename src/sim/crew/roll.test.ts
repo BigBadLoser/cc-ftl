@@ -6,7 +6,7 @@ import type { TraitDef } from './traitDef';
 
 const role = (skills: Partial<Record<SkillName, number>>): RoleDef => ({ name: 'R', priorities: {} as RoleDef['priorities'], skills });
 const ROLES = {
-  engineer: { shielding: 2, repair: 2, hacking: 1 },
+  engineer: { shielding: 2, construction: 2, hacking: 1 },
   security: { gunnery: 2, melee: 2 },
   gunner: { gunnery: 3 },
   medic: { medicine: 3 },
@@ -60,12 +60,12 @@ describe('skill rolls (docs/TRAITS.md section 2)', () => {
 
   it('labels follow the final skills', () => {
     const r = ROLES.engineer;
-    expect(skillLabel({ shielding: 2, repair: 1, hacking: 1 }, r)).toBe('green');
-    expect(skillLabel({ shielding: 1, repair: 1, hacking: 1, gunnery: 1 }, r)).toBe(null); // below budget, but an off-role point
-    expect(skillLabel({ shielding: 2, repair: 2, hacking: 1, gunnery: 2 }, r)).toBe('talented'); // off-role 2
-    expect(skillLabel({ shielding: 4, repair: 1, hacking: 1 }, r)).toBe('talented'); // core +2
-    expect(skillLabel({ shielding: 3, repair: 3, hacking: 1 }, r)).toBe('talented'); // total +2
-    expect(skillLabel({ shielding: 3, repair: 2, hacking: 1 }, r)).toBe(null);
+    expect(skillLabel({ shielding: 2, construction: 1, hacking: 1 }, r)).toBe('green');
+    expect(skillLabel({ shielding: 1, construction: 1, hacking: 1, gunnery: 1 }, r)).toBe(null); // below budget, but an off-role point
+    expect(skillLabel({ shielding: 2, construction: 2, hacking: 1, gunnery: 2 }, r)).toBe('talented'); // off-role 2
+    expect(skillLabel({ shielding: 4, construction: 1, hacking: 1 }, r)).toBe('talented'); // core +2
+    expect(skillLabel({ shielding: 3, construction: 3, hacking: 1 }, r)).toBe('talented'); // total +2
+    expect(skillLabel({ shielding: 3, construction: 2, hacking: 1 }, r)).toBe(null);
     expect(skillLabel(null, undefined)).toBe(null);
   });
 

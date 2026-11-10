@@ -118,9 +118,9 @@ export const traits = {
   // --- Trade-offs ---
   'trait.strong': {
     name: 'Strong', flavour: 'Carries the crate and the guy on it.', kind: 'tradeoff', weight: 5, rollable: true,
-    short: 'Carry ×1.5 · melee +1 · hungry ×1.25', effect: 'Carry x1.5, melee +1. Gets hungry 1.25x as fast.',
+    short: 'Carry ×1.5 · melee +2 · hungry ×1.25', effect: 'Carry x1.5, melee +2. Gets hungry 1.25x as fast.',
     excludes: ['trait.bookish'],
-    modifiers: [{ stat: 'carryCapacity', op: 'mul', value: 1.5 }, { stat: 'melee', op: 'add', value: 1 }],
+    modifiers: [{ stat: 'carryCapacity', op: 'mul', value: 1.5 }, { stat: 'melee', op: 'add', value: 2 }],
     effects: { hungerMult: 1.25 },
   },
   'trait.quick': {
@@ -168,15 +168,15 @@ export const traits = {
   // --- Texture ---
   'trait.marksman': {
     name: 'Marksman', flavour: 'Never misses twice.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Gunnery +1', effect: 'Gunnery +1.', excludes: ['trait.clumsy'], modifiers: [{ stat: 'gunnery', op: 'add', value: 1 }],
+    short: 'Gunnery +2', effect: 'Gunnery +2.', excludes: ['trait.clumsy'], modifiers: [{ stat: 'gunnery', op: 'add', value: 2 }],
   },
   'trait.natural_pilot': {
     name: 'Natural pilot', flavour: 'Flies by feel.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Piloting +1', effect: 'Piloting +1.', modifiers: [{ stat: 'piloting', op: 'add', value: 1 }],
+    short: 'Piloting +2', effect: 'Piloting +2.', modifiers: [{ stat: 'piloting', op: 'add', value: 2 }],
   },
   'trait.clumsy': {
     name: 'Clumsy', flavour: 'Drops tools. Drops guns.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Melee −1 · gunnery −1 · work ×0.95', effect: 'Melee -1, gunnery -1, work speed x0.95.', excludes: ['trait.marksman'],
-    modifiers: [{ stat: 'melee', op: 'add', value: -1 }, { stat: 'gunnery', op: 'add', value: -1 }, { stat: 'workSpeed', op: 'mul', value: 0.95 }],
+    short: 'Melee −2 · gunnery −2 · work ×0.95', effect: 'Melee -2, gunnery -2, work speed x0.95.', excludes: ['trait.marksman'],
+    modifiers: [{ stat: 'melee', op: 'add', value: -2 }, { stat: 'gunnery', op: 'add', value: -2 }, { stat: 'workSpeed', op: 'mul', value: 0.95 }],
   },
 } satisfies Record<string, TraitDef>;

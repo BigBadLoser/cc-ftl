@@ -26,7 +26,7 @@ const mod = (o: Partial<ModuleDef>): ModuleDef => ({
 });
 const content: ContentRegistry = {
   ships: {},
-  roles: { 'role.fixer': { name: 'Fixer', skills: { repair: 1 }, priorities: {} } as never },
+  roles: { 'role.fixer': { name: 'Fixer', skills: { construction: 2 }, priorities: {} } as never },
   species: {
     'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, mood: true },
     'species.bot': { name: 'B', moveSpeed: 2.5, workSpeed: 1, restDecay: 0 },
@@ -69,9 +69,11 @@ const job = (kind: Job['kind'], target: number, work = 1e6): Job =>
 
 describe('the XP curve', () => {
   it('costs XP_LEVEL_COST x n^2 for level n on top of the earlier levels, and stops at the cap', () => {
-    expect([0, 1, 2, 3, 4, 5].map(xpForLevels)).toEqual([0, 100, 500, 1400, 3000, 5500]);
-    expect(levelsFor(160)).toBe(1);
-    expect(xpProgress(160)).toEqual({ xp: 60, per: 400 });
+    expect([0, 1, 2, 3, 4, 6, 10].map(xpForLevels)).toEqual([0, 20, 100, 280, 600, 1820, 7700]);
+    expect(levelsFor(160)).toBe(2);
+    expect(xpProgress(160)).toEqual({ xp: 60, per: 180 });
+    expect(levelsFor(1e9, 7)).toBe(3); // base plus XP stops at 10
+    expect(xpProgress(1e9, 7)).toEqual({ xp: 0, per: 0 });
     for (let n = 0; n <= XP_MAX_LEVEL; n++) {
       expect(levelsFor(xpForLevels(n))).toBe(n);
       expect(levelsFor(xpForLevels(n))).toBe(n);
@@ -93,32 +95,32 @@ describe('grantXp', () => {
     const plain = person(sim, speciesOf.human);
     const gifted = person(sim, speciesOf.human);
     sim.world.add(gifted, TraitsC, { ids: ['trait.gifted'] });
-    grantXp(sim, plain, 'repair', 40);
-    grantXp(sim, gifted, 'repair', 40);
-    expect(xpOf(sim, plain, 'repair')).toBe(40);
-    expect(xpOf(sim, gifted, 'repair')).toBe(40 * 1.5);
+    grantXp(sim, plain, 'construction', 40);
+    grantXp(sim, gifted, 'construction', 40);
+    expect(xpOf(sim, plain, 'construction')).toBe(40);
+    expect(xpOf(sim, gifted, 'construction')).toBe(40 * 1.5);
   });
 
   it('lets robots learn on top of their role skills, and ignores non-crew', () => {
     const sim = make();
     const bot = person(sim, speciesOf.bot);
-    const before = stat(sim, bot, 'repair');
-    grantXp(sim, bot, 'repair', 500);
-    expect(xpOf(sim, bot, 'repair')).toBe(500);
-    expect(stat(sim, bot, 'repair')).toBe(before + levelsFor(500));
-    grantXp(sim, 9999, 'repair', 500); // not crew at all
+    const before = stat(sim, bot, 'construction');
+    grantXp(sim, bot, 'construction', 500);
+    expect(xpOf(sim, bot, 'construction')).toBe(500);
+    expect(stat(sim, bot, 'construction')).toBe(before + levelsFor(500));
+    grantXp(sim, 9999, 'construction', 500); // not crew at all
     const raider = person(sim, speciesOf.human);
     sim.world.get(raider, AllegianceC)!.faction = 'hostile';
-    grantXp(sim, raider, 'repair', 500);
+    grantXp(sim, raider, 'construction', 500);
     expect(sim.world.get(raider, SkillXpC)).toBeUndefined(); // only the player's side learns
   });
 
   it('takes a penalty as is and never goes below 0', () => {
     const sim = make();
     const id = person(sim, speciesOf.human);
-    grantXp(sim, id, 'repair', 10);
-    grantXp(sim, id, 'repair', -25);
-    expect(xpOf(sim, id, 'repair')).toBe(0);
+    grantXp(sim, id, 'construction', 10);
+    grantXp(sim, id, 'construction', -25);
+    expect(xpOf(sim, id, 'construction')).toBe(0);
   });
 });
 
@@ -130,10 +132,10 @@ describe('XP from routine work', () => {
     const id = person(sim, speciesOf.human);
     const j = job('forceDoor', 0);
     for (let i = 0; i < seconds(10); i++) performJob(sim, id, j, 1);
-    expect(xpOf(sim, id, 'repair')).toBeCloseTo(10);
+    expect(xpOf(sim, id, 'construction')).toBeCloseTo(10);
     const fast = person(sim, speciesOf.human);
     for (let i = 0; i < seconds(10); i++) performJob(sim, fast, job('forceDoor', 0), 2);
-    expect(xpOf(sim, fast, 'repair')).toBeCloseTo(20);
+    expect(xpOf(sim, fast, 'construction')).toBeCloseTo(20);
     const idle = person(sim, speciesOf.human);
     performJob(sim, idle, { ...job('build', 0), needs: [{ item: 'x', count: 1 }] } as Job, 1); // waits for materials
     expect(sim.world.get(idle, SkillXpC)).toBeUndefined();
@@ -143,15 +145,15 @@ describe('XP from routine work', () => {
     const sim = make();
     const id = person(sim, speciesOf.human);
     const panel = moduleId(sim, 'panel');
-    const before = stat(sim, id, 'repair');
+    const before = stat(sim, id, 'construction');
     sim.world.get(panel, ModuleC)!.hp = 1;
     const j = job('repair', panel);
     for (let i = 0; i < seconds(XP_LEVEL_COST + 1); i++) {
       sim.world.get(panel, ModuleC)!.hp = 1; // keep it needing repair
       performJob(sim, id, j, 1);
     }
-    expect(xpOf(sim, id, 'repair')).toBeGreaterThanOrEqual(XP_LEVEL_COST);
-    expect(stat(sim, id, 'repair')).toBe(before + 1);
+    expect(xpOf(sim, id, 'construction')).toBeGreaterThanOrEqual(XP_LEVEL_COST);
+    expect(stat(sim, id, 'construction')).toBe(before + 1);
   });
 
   it('research grants science XP and hacking grants hacking XP', () => {
@@ -161,7 +163,7 @@ describe('XP from routine work', () => {
     sim.world.add(1, ResearchC, { queue: ['research.x'], progress: 0, paid: true });
     for (let i = 0; i < seconds(5); i++) performJob(sim, id, job('research', moduleId(sim, 'lab')), 1);
     expect(xpOf(sim, id, 'science')).toBeCloseTo(5);
-    expect(xpOf(sim, id, 'repair')).toBe(0);
+    expect(xpOf(sim, id, 'construction')).toBe(0);
     for (let i = 0; i < seconds(5); i++) performJob(sim, id, job('hack', moduleId(sim, 'core')), 1);
     expect(xpOf(sim, id, 'hacking')).toBeCloseTo(5);
   });

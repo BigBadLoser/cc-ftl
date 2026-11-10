@@ -179,10 +179,10 @@ export const PLAYER_START = { x: 20, y: 50 } as const;
 export const FTL_CHARGE_SEC = 40;
 /** Evasion never exceeds this. */
 export const EVASION_CAP = 0.75;
-/** Each skill level multiplies the effect by (1 + this). */
-export const SKILL_STEP = 0.1;
+/** Each skill level (0-10) multiplies the effect by (1 + this). */
+export const SKILL_STEP = 0.05;
 /** Aim sigma shrinks by this per gunnery level (floor at MIN_SPREAD_FACTOR). */
-export const SPREAD_PER_GUNNERY = 0.12;
+export const SPREAD_PER_GUNNERY = 0.06;
 export const MIN_SPREAD_FACTOR = 0.3;
 /** Shield recharge speed bonus with an operator at the shield console (plus SKILL_STEP per shielding level). */
 export const SHIELD_OPERATED_BONUS = 0.5;
@@ -262,7 +262,7 @@ export const COMBAT_SIGHT = 16;
 /** Bare hands. */
 export const UNARMED = { damage: 5, cooldownSec: 1.2, accuracy: 0.7 } as const;
 /** Hit chance added per gunnery / melee level. */
-export const ACCURACY_PER_SKILL = 0.05;
+export const ACCURACY_PER_SKILL = 0.025;
 /** Ranged hit chance is scaled by (1 - this * distance / range): a shot at maximum range keeps (1 - this). */
 export const RANGE_FALLOFF = 0.4;
 /** Hit chance multipliers behind partial and full cover. */
@@ -302,12 +302,15 @@ export const PRIZE_VALUE_PER_WALL_HP = 0.05;
 // --- Robots ---
 /** Ion that reaches the deck (no shield layer drained) stuns ion-vulnerable crew this many tiles (Chebyshev) from the hit. */
 export const ION_STUN_RADIUS = 1;
-/** Hp per second a mender restores on a robot at workSpeed 1, plus SKILL_STEP per repair level. */
+/** Hp per second a mender restores on a robot at workSpeed 1, plus SKILL_STEP per construction level. */
 export const MEND_PER_SEC = 4;
 /** Seconds of work to strip a robot wreck for parts. */
 export const SALVAGE_SEC = 4;
-/** Seconds to hack an AI core at hacking level 1 (each level above is SKILL_STEP faster). */
+/** Seconds to hack an AI core at hacking level 2 (each level above is SKILL_STEP faster). */
 export const HACK_SEC = 20;
+/** Least hacking that may hack a core (`crew.hack`), and least construction that may mend a robot. */
+export const HACK_MIN_SKILL = 2;
+export const MEND_MIN_SKILL = 2;
 /** Stat multiplier on moveSpeed and workSpeed of a robot whose battery is empty. */
 export const EMPTY_CHARGE_MULT = 0.3;
 /** A robot heads for its bay to be repaired below this hp fraction (when the ship has repair items). */
@@ -391,10 +394,10 @@ export const COMMIT_WINDOW_SEC = 4;
 export const COMMIT_MAX_FRACTION = 0.5;
 
 // --- Skill XP (docs/TRAITS.md section 3) ---
-/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
-export const XP_LEVEL_COST = 100;
-/** The most levels XP can add to a skill. */
-export const XP_MAX_LEVEL = 5;
+/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +2 at 100, +4 at 600, +6 at 1820, +10 at 7700 (docs/TRAITS.md 10.4). */
+export const XP_LEVEL_COST = 20;
+/** Skills run 0-10: XP levels stop once the rolled (or role) base plus XP levels reaches this. Traits may push the stat past it. */
+export const XP_MAX_LEVEL = 10;
 /** XP for one second of work at workSpeed 1 (job progress points / TICK_HZ). Also the rate for a console held while it matters. */
 export const XP_PER_WORK_SEC = 1;
 /** XP per hp of bed healing, granted to the best medic aboard. */

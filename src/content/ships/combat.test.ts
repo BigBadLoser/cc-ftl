@@ -142,7 +142,9 @@ describe('weapons', () => {
   it('burst laser strips shield layers, then shields recharge', () => {
     const sim = duel('module.burstLaser', dummy);
     aim(sim, 1, 2);
-    const events = run(sim, 1200);
+    // Run until the layers are down (a crew member levelling gunnery mid-run moves the volley, so no fixed tick count).
+    const events: SimEvent[] = [];
+    for (let t = 0; t < 1200 && !(events.some((e) => e.type === 'projectile.shieldHit') && combatOf(sim, 2).shield.layers === 0); t += 10) events.push(...run(sim, 10));
     expect(ofType(events, 'projectile.shieldHit').length).toBeGreaterThanOrEqual(1);
     expect(combatOf(sim, 2).shield.layers).toBe(0);
     // Recharge: one layer after rechargeSec (10 s, about 7 s with SHIELD_REGEN_MULT) without further volleys (hold fire).
@@ -258,7 +260,7 @@ describe('weapons', () => {
     expect(events.some((e) => e.type === 'crew.jobDone' && e.kind === 'extinguish')).toBe(true);
     // Stop the arsonist and let the crew finish.
     sim.enqueue({ type: 'module.setEnabled', id: modulesOf(sim, 2, 'module.incendiaryLauncher')[0] as number, enabled: false });
-    run(sim, 20 * 60);
+    run(sim, 20 * 120); // two minutes: the crew levelling mid-fight shifts when the last fire goes out (90 s on seed 1)
     expect(shipGrid(sim, shipIds(sim)[0] as number)!.load('fire').some((f) => f > 0)).toBe(false);
   });
 });

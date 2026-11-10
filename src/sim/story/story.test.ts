@@ -31,8 +31,8 @@ const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction
 export const baseContent = (events: Record<string, EventDef>): ContentRegistry => ({
   ships: {},
   roles: {
-    'role.engineer': { name: 'Engineer', priorities: all, skills: { repair: 6 } },
-    'role.rookie': { name: 'Rookie', priorities: all, skills: { repair: 1 } },
+    'role.engineer': { name: 'Engineer', priorities: all, skills: { construction: 6 } },
+    'role.rookie': { name: 'Rookie', priorities: all, skills: { construction: 1 } },
     'role.bot': { name: 'Bot', priorities: all, species: 'species.robot' },
   },
   species: {
@@ -83,8 +83,8 @@ describe('requirements', () => {
   it('checks species, skill, module, item, flag, reputation, crew, implant', () => {
     expect(meets(sim, { kind: 'species', species: 'species.robot' })).toBe(false);
     expect(meets(bot, { kind: 'species', species: 'species.robot' })).toBe(true);
-    expect(meets(sim, { kind: 'skill', skill: 'repair', level: 6 })).toBe(true);
-    expect(meets(sim, { kind: 'skill', skill: 'repair', level: 7 })).toBe(false);
+    expect(meets(sim, { kind: 'skill', skill: 'construction', level: 6 })).toBe(true);
+    expect(meets(sim, { kind: 'skill', skill: 'construction', level: 7 })).toBe(false);
     expect(meets(sim, { kind: 'module', def: 'module.crate' })).toBe(true);
     expect(meets(sim, { kind: 'module', def: 'module.crate', count: 2 })).toBe(false);
     give(sim, 'item.scrap', 5);
@@ -106,8 +106,8 @@ describe('requirements', () => {
   });
 
   it('explains unmet requirements and costs', () => {
-    const reasons = unmetReasons(bot, { id: 'c', label: 'c', requires: [{ kind: 'species', species: 'species.alien' }, { kind: 'skill', skill: 'repair', level: 9 }], cost: [{ item: 'item.scrap', count: 3 }] });
-    expect(reasons).toEqual(['Needs a species.alien aboard', 'Needs Repair skill 9', 'Needs 3x Scrap']);
+    const reasons = unmetReasons(bot, { id: 'c', label: 'c', requires: [{ kind: 'species', species: 'species.alien' }, { kind: 'skill', skill: 'construction', level: 9 }], cost: [{ item: 'item.scrap', count: 3 }] });
+    expect(reasons).toEqual(['Needs a species.alien aboard', 'Needs Construction skill 9', 'Needs 3x Scrap']);
     expect(describeRequirement(bot, { kind: 'species', species: 'species.robot' })).toBe('Needs a Robot aboard');
   });
 
@@ -118,30 +118,30 @@ describe('requirements', () => {
     s.world.add(a, DeadC, { tick: 0 });
     s.world.add(b, AllegianceC, { faction: 'hostile' });
     expect(playerCrew(s)).toHaveLength(0);
-    expect(meets(s, { kind: 'skill', skill: 'repair', level: 1 })).toBe(false);
-    expect(skillOf(storySim({}), a, 'repair')).toBe(6);
+    expect(meets(s, { kind: 'skill', skill: 'construction', level: 1 })).toBe(false);
+    expect(skillOf(storySim({}), a, 'construction')).toBe(6);
   });
 });
 
 describe('skill check odds', () => {
-  it('uses the best crew member, base 50% and 10% per level, clamped', () => {
+  it('uses the best crew member, base 50% and 5% per level, clamped', () => {
     const sim = storySim({});
-    const o = checkOdds(sim, { skill: 'repair', difficulty: 6 });
+    const o = checkOdds(sim, { skill: 'construction', difficulty: 6 });
     expect(o?.chance).toBeCloseTo(0.5);
-    expect(o?.label).toBe('Repair skill 6 (Mara): 50%');
-    expect(checkOdds(sim, { skill: 'repair', difficulty: 3 })?.chance).toBeCloseTo(0.8);
-    expect(checkOdds(sim, { skill: 'repair', difficulty: 0 })?.chance).toBe(0.95);
-    expect(checkOdds(sim, { skill: 'repair', difficulty: 30 })?.chance).toBe(0.05);
-    expect(checkOdds(sim, { skill: 'repair', difficulty: 6, base: 0.7, perLevel: 0.05 })?.chance).toBeCloseTo(0.7);
+    expect(o?.label).toBe('Construction skill 6 (Mara): 50%');
+    expect(checkOdds(sim, { skill: 'construction', difficulty: 3 })?.chance).toBeCloseTo(0.65);
+    expect(checkOdds(sim, { skill: 'construction', difficulty: 0, base: 0.9 })?.chance).toBe(0.95);
+    expect(checkOdds(sim, { skill: 'construction', difficulty: 30 })?.chance).toBe(0.05);
+    expect(checkOdds(sim, { skill: 'construction', difficulty: 6, base: 0.7, perLevel: 0.05 })?.chance).toBeCloseTo(0.7);
   });
 
   it('is null with no crew', () => {
-    expect(checkOdds(storySim({}, []), { skill: 'repair', difficulty: 1 })).toBeNull();
+    expect(checkOdds(storySim({}, []), { skill: 'construction', difficulty: 1 })).toBeNull();
   });
 
   it('rolls deterministically for a seed and succeeds about as often as the odds say', () => {
     const ev: Record<string, EventDef> = {
-      e: decision([{ id: 'go', label: 'go', check: { skill: 'repair', difficulty: 6 }, success: { text: 'yes' }, failure: { text: 'no' } }]),
+      e: decision([{ id: 'go', label: 'go', check: { skill: 'construction', difficulty: 6 }, success: { text: 'yes' }, failure: { text: 'no' } }]),
     };
     const outcomes = (seed: number): boolean[] => {
       const sim = storySim(ev, ['role.engineer'], seed);
@@ -162,7 +162,7 @@ describe('skill check odds', () => {
   });
 
   it('does not disturb the simulation rng', () => {
-    const ev = { e: decision([{ id: 'go', label: 'go', check: { skill: 'repair', difficulty: 6 }, success: {}, failure: {} }]) };
+    const ev = { e: decision([{ id: 'go', label: 'go', check: { skill: 'construction', difficulty: 6 }, success: {}, failure: {} }]) };
     const sim = storySim(ev);
     const control = storySim(ev);
     fire(sim, 'e');
@@ -265,7 +265,7 @@ describe('effects', () => {
 
   it('actor effects land on the skill check roller', () => {
     const sim = storySim({
-      e: decision([{ id: 'go', label: 'go', check: { skill: 'repair', difficulty: 99 }, success: {}, failure: { effects: [{ type: 'crewDamage', amount: 40, who: 'actor' }] } }]),
+      e: decision([{ id: 'go', label: 'go', check: { skill: 'construction', difficulty: 99 }, success: {}, failure: { effects: [{ type: 'crewDamage', amount: 40, who: 'actor' }] } }]),
     });
     fire(sim, 'e');
     pick(sim, 'go');
@@ -274,10 +274,10 @@ describe('effects', () => {
   });
 
   it('skillXp adds levels through the stat resolver', () => {
-    const sim = apply({ effects: [{ type: 'skillXp', skill: 'repair', amount: 250, who: 'all' }] });
+    const sim = apply({ effects: [{ type: 'skillXp', skill: 'construction', amount: 250, who: 'all' }] });
     const id = playerCrew(sim)[1] as number;
-    expect(sim.world.get(id, SkillXpC)?.xp['repair']).toBe(250);
-    expect(skillOf(sim, id, 'repair')).toBe(1 + levelsFor(250)); // role.rookie's 1 plus the XP levels
+    expect(sim.world.get(id, SkillXpC)?.xp['construction']).toBe(250);
+    expect(skillOf(sim, id, 'construction')).toBe(1 + levelsFor(250)); // role.rookie's 1 plus the XP levels
   });
 
   it('reputation, flags (set, add, clear)', () => {
@@ -364,7 +364,7 @@ describe('chaining and arcs', () => {
 describe('persistence', () => {
   it('flags, reputation, the open decision, queue and story rng survive a save round trip', () => {
     const ev: Record<string, EventDef> = {
-      e: decision([{ id: 'go', label: 'go', check: { skill: 'repair', difficulty: 6 }, success: {}, failure: {} }]),
+      e: decision([{ id: 'go', label: 'go', check: { skill: 'construction', difficulty: 6 }, success: {}, failure: {} }]),
       q: decision([{ id: 'go', label: 'go', outcome: {} }]),
     };
     const sim = storySim(ev);

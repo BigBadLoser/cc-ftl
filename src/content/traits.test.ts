@@ -90,12 +90,12 @@ describe('rolled skills', () => {
   it('replace the role skills (a missing skill is 0); XP stacks on top; crew without a roll keep the role skills', () => {
     const { sim } = game();
     const gunner = roleOf(sim, 'role.gunner');
-    expect(stat(sim, gunner, 'gunnery')).toBe(3); // old-shape crew: the role's
-    sim.world.add(gunner, RolledSkillsC, { skills: { piloting: 2 } });
+    expect(stat(sim, gunner, 'gunnery')).toBe(6); // old-shape crew: the role's
+    sim.world.add(gunner, RolledSkillsC, { skills: { piloting: 4 } });
     expect(stat(sim, gunner, 'gunnery')).toBe(0);
-    expect(stat(sim, gunner, 'piloting')).toBe(2);
+    expect(stat(sim, gunner, 'piloting')).toBe(4);
     sim.world.add(gunner, SkillXpC, { xp: { piloting: 100 } });
-    expect(stat(sim, gunner, 'piloting')).toBe(3);
+    expect(stat(sim, gunner, 'piloting')).toBe(6);
   });
 });
 
@@ -110,14 +110,14 @@ describe('stat traits', () => {
     expect(stat(sim, a, 'restDecay')).toBeCloseTo(ba.restDecay! * 1.15);
     give(sim, b, 'trait.strong', 'trait.workaholic');
     expect(stat(sim, b, 'carryCapacity')).toBeCloseTo(bb.carryCapacity! * 1.5);
-    expect(stat(sim, b, 'melee')).toBe(bb.melee! + 1);
+    expect(stat(sim, b, 'melee')).toBe(bb.melee! + 2);
     expect(stat(sim, b, 'workSpeed')).toBeCloseTo(bb.workSpeed! * 1.15);
     give(sim, c, 'trait.clumsy', 'trait.natural_pilot');
     expect(stat(sim, c, 'workSpeed')).toBeCloseTo(bc.workSpeed! * 0.95);
-    expect(stat(sim, c, 'gunnery')).toBe(bc.gunnery! - 1);
-    expect(stat(sim, c, 'piloting')).toBe(bc.piloting! + 1);
+    expect(stat(sim, c, 'gunnery')).toBe(bc.gunnery! - 2);
+    expect(stat(sim, c, 'piloting')).toBe(bc.piloting! + 2);
     give(sim, d, 'trait.marksman', 'trait.lazy');
-    expect(stat(sim, d, 'gunnery')).toBe(bd.gunnery! + 1);
+    expect(stat(sim, d, 'gunnery')).toBe(bd.gunnery! + 2);
     expect(stat(sim, d, 'workSpeed')).toBeCloseTo(bd.workSpeed! * 0.9);
   });
 });
@@ -200,10 +200,10 @@ describe('trade-off and behaviour hooks', () => {
     const [a, b] = [roleOf(sim, 'role.engineer'), roleOf(sim, 'role.medic')];
     give(sim, a, 'trait.gifted');
     give(sim, b, 'trait.bookish');
-    applyEffect(sim, { type: 'skillXp', skill: 'repair', amount: 100, who: 'all' }, { event: 't', actor: null });
+    applyEffect(sim, { type: 'skillXp', skill: 'construction', amount: 100, who: 'all' }, { event: 't', actor: null });
     applyEffect(sim, { type: 'skillXp', skill: 'medicine', amount: 100, who: 'all' }, { event: 't', actor: null });
-    expect(sim.world.get(a, SkillXpC)?.xp).toEqual({ repair: 150, medicine: 150 });
-    expect(sim.world.get(b, SkillXpC)?.xp).toEqual({ repair: 100, medicine: 150 });
+    expect(sim.world.get(a, SkillXpC)?.xp).toEqual({ construction: 150, medicine: 150 });
+    expect(sim.world.get(b, SkillXpC)?.xp).toEqual({ construction: 100, medicine: 150 });
   });
 });
 

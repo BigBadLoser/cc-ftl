@@ -328,4 +328,6 @@ describe('sector refactor equivalence', () => {
 // repair job keeps its key order, which the hash sees).
 // Repinned for food (#59). The only differences in the hashed world are the empty `plot` component store and the new `farming` key in every crew member's priorities;
 // with those two stripped from the dump, the world and the event log equal main's byte for byte (the old hashes c50ed4d7 / 62484cd5).
-const EXPECTED = { combat: '5152b06b', disaster: 'be9dcfa7' };
+// Repinned for the 0-10 skill scale (#415): skill keys renamed (repair -> construction), a finer XP curve (crew level mid-run), and Construction speeding
+// repair and firefighting by 5% a level. The starter-vs-raider probe with the old XP curve emulated matched main exactly, so the rescale itself is exact.
+const EXPECTED = { combat: '71c93eee', disaster: '09d9ed8b' };

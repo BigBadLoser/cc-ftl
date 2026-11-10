@@ -2,6 +2,7 @@ import { hash32 } from '../galaxy/hash';
 import type { ContentRegistry, SkillName } from '../registry';
 import { Rng } from '../rng';
 import type { TraitDef } from './traitDef';
+import { SKILLS } from './skillList';
 
 /**
  * Crew generation (docs/TRAITS.md sections 1, 2 and 4). A starting crew member is rolled from their own RNG,
@@ -11,7 +12,7 @@ import type { TraitDef } from './traitDef';
  */
 export const CREW_ROLL_SALT = 0x7c3e9a11;
 
-export const SKILLS: readonly SkillName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'repair', 'hacking', 'medicine', 'science', 'cooking'];
+export { SKILLS };
 /** No rolled skill goes above this. */
 export const SKILL_ROLL_CAP = 5;
 
@@ -38,6 +39,9 @@ export interface RolledCrew {
 
 type Skills = Partial<Record<SkillName, number>>;
 
+const scaleSkills = (s: Skills | undefined, k: number): Skills | undefined =>
+  s && (Object.fromEntries(Object.entries(s).map(([n, v]) => [n, Math.round((v ?? 0) * k)])) as Skills);
+
 const total = (s: Skills): number => Object.values(s).reduce((n, v) => n + (v ?? 0), 0);
 
 /** Weighted pick of an index; null when every weight is 0. */
@@ -59,11 +63,14 @@ function weighted(rng: Rng, weights: readonly number[]): number | null {
  * then d points are added (core weight 3, off-role 1) or taken (from the highest core skill, else the highest off-role one).
  * Every point is placed once, so the total is always T. Null for a role without skills.
  */
+/** The budget roll's skills: Botany and Industry come with backgrounds (step 3), so this roll keeps the nine it had. */
+const ROLL_SKILLS = SKILLS.filter((k) => k !== 'botany' && k !== 'industry');
+
 export function rollSkills(rng: Rng, roleSkills: Skills | undefined): Skills | null {
-  const core = SKILLS.filter((k) => (roleSkills?.[k] ?? 0) > 0);
+  const core = ROLL_SKILLS.filter((k) => (roleSkills?.[k] ?? 0) > 0);
   if (core.length === 0) return null;
-  const off = SKILLS.filter((k) => !core.includes(k));
-  const s: Record<SkillName, number> = Object.fromEntries(SKILLS.map((k) => [k, roleSkills?.[k] ?? 0])) as Record<SkillName, number>;
+  const off = ROLL_SKILLS.filter((k) => !core.includes(k));
+  const s: Record<SkillName, number> = Object.fromEntries(ROLL_SKILLS.map((k) => [k, roleSkills?.[k] ?? 0])) as Record<SkillName, number>;
   const r = rng.next();
   const d = r < 0.2 ? -1 : r < 0.7 ? 0 : r < 0.92 ? 1 : 2;
   const r2 = rng.next();
@@ -80,8 +87,8 @@ export function rollSkills(rng: Rng, roleSkills: Skills | undefined): Skills | n
     s[to]++;
   }
   for (let i = 0; i < d; i++) {
-    const idx = weighted(rng, SKILLS.map((k) => (s[k] >= SKILL_ROLL_CAP ? 0 : core.includes(k) ? 3 : 1)));
-    if (idx !== null) s[SKILLS[idx] as SkillName]++;
+    const idx = weighted(rng, ROLL_SKILLS.map((k) => (s[k] >= SKILL_ROLL_CAP ? 0 : core.includes(k) ? 3 : 1)));
+    if (idx !== null) s[ROLL_SKILLS[idx] as SkillName]++;
   }
   if (d < 0) {
     const highest = (list: readonly SkillName[], min: number): SkillName | undefined =>
@@ -90,7 +97,7 @@ export function rollSkills(rng: Rng, roleSkills: Skills | undefined): Skills | n
     if (k) s[k]--;
   }
   const out: Skills = {};
-  for (const k of SKILLS) if (s[k] > 0) out[k] = s[k];
+  for (const k of ROLL_SKILLS) if (s[k] > 0) out[k] = s[k];
   return out;
 }
 
@@ -131,9 +138,11 @@ export function rollCrewWith(rng: Rng, roleId: string, content: ContentRegistry)
   const appearanceSeed = rng.int(0, 0x7fffffff);
   const rest = species && species.restDecay > 0 ? rng.int(60, 100) : 100;
   // Only crew with moods (people) roll skills and traits; robots and other fixed bodies keep their role's skills.
-  const skills = species?.mood ? rollSkills(rng, role?.skills) : null;
+  // The budget roll works on the old 0-5 steps: role packages are halved going in and the result doubled (0-10 scale, TRAITS.md 10.3).
+  const half = scaleSkills(role?.skills, 0.5);
+  const skills = species?.mood ? rollSkills(rng, half) : null;
   const traits = species?.mood ? rollTraits(rng, content.traits) : [];
-  return { role: roleId, name, appearanceSeed, rest, skills, traits, label: skillLabel(skills, role?.skills) };
+  return { role: roleId, name, appearanceSeed, rest, skills: skills && (scaleSkills(skills, 2) as Skills), traits, label: skillLabel(skills, half) };
 }
 
 /** The crew-generation RNG of one starting slot. */

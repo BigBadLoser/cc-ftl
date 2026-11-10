@@ -18,7 +18,7 @@ import { footprintTiles } from '../modules/footprint';
 import { isTileWalkable } from '../modules/walk';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { HACK_SEC } from '../tuning';
+import { HACK_MIN_SKILL, HACK_SEC } from '../tuning';
 import { HackedC } from './components';
 import { assemblyAt, bayFree, cradleOf, isBay } from './bay';
 import { destroyJob } from '../items/stacks';
@@ -37,7 +37,7 @@ export const robotHandlers: { [T in RobotCommand]: Handler<T> } = {
     const pos = sim.world.get(cmd.id, PositionC);
     if (!sim.world.has(cmd.id, CrewC) || !pos) return reject(sim, cmd.type, 'noCrew');
     if (isIncapacitated(sim, cmd.id)) return reject(sim, cmd.type, 'incapacitated');
-    if (skillOf(sim, cmd.id, 'hacking') <= 0) return reject(sim, cmd.type, 'noSkill');
+    if (skillOf(sim, cmd.id, 'hacking') < HACK_MIN_SKILL) return reject(sim, cmd.type, 'noSkill');
     const m = sim.world.get(cmd.module, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.aiCore || m.hp <= 0) return reject(sim, cmd.type, 'badTarget');
