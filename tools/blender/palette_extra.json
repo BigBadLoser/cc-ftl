@@ -3613,5 +3613,7 @@
   "arcGrnF": {"hex": "#4c9f72", "set": "arcade"},
   "arcGoldL": {"hex": "#f0d48a", "set": "arcade"},
   "arcGold": {"hex": "#c9a24e", "set": "arcade"},
-  "arcGoldD": {"hex": "#8a6a2c", "set": "arcade"}
+  "arcGoldD": {"hex": "#8a6a2c", "set": "arcade"},
+  "arcCyanOff": {"hex": "#26434d", "set": "arcade"},
+  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"}
 }

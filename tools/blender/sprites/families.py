@@ -26,6 +26,8 @@
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
   arcade    arcade cabinet look study, preview only (arcade_study.py)
+  arcade_cabinet  the arcade module.arcade (1x1, study j2): idle, .unpowered, .active frames (hologram baked in), four
+            rotations (arcade.py; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -137,6 +139,10 @@ def jobs(name):
     if name == "arcade":        # look study, preview only (not in RENDERED): arcade cabinet blockouts, r0
         from . import arcade_study
         return arcade_study.jobs(), "arcade"
+    if name == "arcade_cabinet":
+        import os
+        from . import arcade
+        return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
     if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
         from . import research
         return research.jobs(), "research"
