@@ -879,14 +879,15 @@ def robot3(k, u, z, col, f):
     bx(k, u, -0.13, z + 0.1, 0.06, 0.05, 0.07, col)                                       # the other fist
 
 
-def dragon(k, u, z, col, f, flap=0.0):
-    """A dragon: hind legs, a body, a long neck up to a horned head, two wings raised, a tail."""
+def dragon(k, u, z, col, f, flap=0.0, rear=0.0):
+    """A dragon: hind legs, a body, a long neck up to a horned head, two wings raised, a tail. `flap` moves the wing tips
+    out and down, `rear` lifts the neck and head."""
     for dv in (-0.05, 0.05):
         bx(k, u - f * 0.04, dv, z, 0.05, 0.04, 0.08, col)
     bx(k, u, 0.0, z + 0.08, 0.18, 0.12, 0.09, col)
-    bx(k, u + f * 0.1, 0.0, z + 0.14, 0.04, 0.05, 0.12, col, ry=f * 0.35)                # the neck,
-    bx(k, u + f * 0.15, 0.0, z + 0.25, 0.1, 0.07, 0.05, col)                             # the head,
-    bx(k, u + f * 0.12, 0.0, z + 0.3, 0.015, 0.05, 0.04, "arcMarq", ry=-f * 0.4)         # its horns,
+    bx(k, u + f * 0.1, 0.0, z + 0.14, 0.04, 0.05, 0.12 + rear, col, ry=f * 0.35)         # the neck,
+    bx(k, u + f * 0.15, 0.0, z + 0.25 + rear, 0.1, 0.07, 0.05, col)                      # the head,
+    bx(k, u + f * 0.12, 0.0, z + 0.3 + rear, 0.015, 0.05, 0.04, "arcMarq", ry=-f * 0.4)  # its horns,
     for sv in (-1, 1):                                                                    # the wings: lit sails
         film(k, [(u + f * 0.03, sv * 0.05, z + 0.16), (u - f * 0.1, sv * (0.1 + flap), z + 0.44 - flap),
                  (u - f * 0.16, sv * 0.08, z + 0.18)], col)                               # (flap: tips out, down)

@@ -7,8 +7,7 @@ Sprites per rotation r, ids `module.gametable.r<r>[.state]` (`module.gametable` 
   (idle)       powered, nobody playing: the table lit, the lens on, no hologram
   .unpowered   every light dark
   .active      two playing: the hologram composited over the table (partial alpha baked in, as the research
-  .active.f1.. bench's), FRAMES frames at the renderer's ANIM_FPS: the dragon flaps and breathes a bolt across the arena,
-               it bursts on the serpent, which rears back and sways forward again.
+  .active.f1.. bench's), FRAMES frames at the renderer's ANIM_FPS: a round of the fight (see FIGHT).
 Seated players: as the research bench's chair, `module.gametable.front.r<r>[.state]` is the overlay drawn over them
 (the sprite's pixels where the table hides a seated crew member at either stool in some sit frame, grown 1 px over the
 outline ring). The hologram stands in front of the far player and behind the near one: its part over the far player
@@ -28,10 +27,22 @@ from .research_kit import Bench, bar, holo_item
 
 PAL = "arcade"
 PAD = 72                                            # canvas margin for the hologram, px
-FLAP = (0.0, 0.05, 0.09, 0.05, 0.0, -0.03)          # the dragon's wing tips per frame (out and down)
-SWAY = (0.0, 0.01, 0.02, 0.01, -0.04, -0.02)        # the serpent's head (forward +, back -)
-BOLT = (None, None, 0.16, -0.08, "burst", None)     # the dragon's bolt: its u per frame, or the burst on the serpent
-FRAMES = len(FLAP)
+# The fight, frame by frame (8 frames, 2 s at ANIM_FPS 4): the dragon rears and breathes fire across the arena, it
+# bursts on the serpent, which flashes and recoils; then the serpent winds back and strikes across to bite the dragon,
+# which flashes and is knocked back. Per frame: dragon (shift toward the serpent, wing flap, rear), serpent (sway: head
+# forward + / back -), the flame (how far it has gone, 0..3 blobs, or "hit"), who flashes ("s" / "d"), whose bar
+# shows the damage.
+FIGHT = (
+    dict(d=(0.0, 0.0, 0.0), s=0.0),
+    dict(d=(-0.03, 0.12, 0.08), s=0.0),                              # the dragon rears, wings up
+    dict(d=(0.08, -0.04, 0.0), s=0.0, flame=2),                      # lunges, the flame leaves its jaws
+    dict(d=(0.08, 0.0, 0.0), s=-0.07, flame="hit", flash="s"),       # the flame bursts on the serpent; it recoils
+    dict(d=(0.0, 0.06, 0.0), s=-0.03),
+    dict(d=(0.0, 0.0, 0.0), s=-0.06),                                # the serpent winds back,
+    dict(d=(-0.06, 0.1, 0.06), s=0.22, flash="d"),                   # strikes across: the dragon is knocked back
+    dict(d=(-0.02, 0.04, 0.0), s=0.06),
+)
+FRAMES = len(FIGHT)
 
 
 def sid(rot, tag=""):
@@ -50,16 +61,26 @@ def duel(rot, f):
     k.box(0.0, 0.0, ZA, 0.014, 2 * AV, 0.008, "arcCyan", top="arcCyan")
     for u in (-0.44, 0.44):
         k.cyl(u, 0.0, ZA, 0.16, 0.004, "arcCyanF", top="arcCyanF", sides=14)
-    serpent(k, -0.44, ZA, "arcPink", 1, sway=SWAY[f])
-    dragon(k, 0.44, ZA, "arcGrn", -1, flap=FLAP[f])
-    if BOLT[f] == "burst":
+    st = FIGHT[f]
+    du, flap, rear = st["d"]
+    flash = st.get("flash")
+    serpent(k, -0.44, ZA, "arcMarq" if flash == "s" else "arcPink", 1, sway=st["s"])
+    dx = 0.44 - du
+    dragon(k, dx, ZA, "arcMarq" if flash == "d" else "arcGrn", -1, flap=flap, rear=rear)
+    mouth = dx - 0.2
+    if st.get("flame") == "hit":                                                         # the burst on the serpent
         for rz in (0.0, 0.785, 1.571, 2.356):
-            k.box(-0.3, 0.0, ZA + 0.28, 0.12, 0.016, 0.016, "arcMarq", rz=rz)
-    elif BOLT[f] is not None:
-        k.box(BOLT[f], 0.0, ZA + 0.27, 0.1, 0.035, 0.035, "arcAmb", top="arcAmb")
-        k.box(BOLT[f] + 0.08, 0.0, ZA + 0.275, 0.06, 0.02, 0.02, "arcAmbF", top="arcAmbF")
-    bar2(k, -0.44, ZA + 0.46, 0.75, "arcPink")
-    bar2(k, 0.44, ZA + 0.5, 0.4, "arcGrn")
+            k.box(-0.3, 0.0, ZA + 0.27, 0.2, 0.024, 0.024, "arcAmb", rz=rz)
+        k.box(-0.3, 0.0, ZA + 0.24, 0.07, 0.07, 0.07, "arcMarq", top="arcMarq")
+    elif st.get("flame"):                                                                # the flame, growing as it
+        for i in range(3):                                                               # leaves the jaws
+            s_ = 0.04 + i * 0.02
+            k.box(mouth - 0.06 - i * 0.1, 0.0, ZA + 0.26 - s_ / 2, s_, s_, s_, "arcAmb" if i < 2 else "arcAmbF",
+                  top="arcAmb")
+    hurt = {"s": (-0.44, 0.46, "arcPink"), "d": (0.44, 0.5, "arcGrn")}
+    for who, (u, zb, col) in hurt.items():
+        frac = 0.75 if who == "s" else 0.5
+        bar2(k, u, ZA + zb, frac, "arcMarq" if flash == who else col)                    # a bar flashes when hit
     lens = (0.0, 0.0, TOP + 0.033)
     for i, q in enumerate(rim_points(12)):
         bar(k, lens, q, 0.01, "arcCyan" if i % 3 == 0 else "arcCyanF")
