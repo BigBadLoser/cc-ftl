@@ -606,8 +606,8 @@ def e1_holo():
     """A wide court tilted toward the player, laid out as the classic paddle game: paddles on the left and right ends,
     a dashed centre line down the middle, the ball crossing with its trail, both scores in the far half; cyan beams."""
     k = Bench("arcade_e1_holo", FP)
-    a, b = (12, 36), (-13, 51)                                    # the court's near and far edges (v, z px)
-    U = 15
+    a, b = (6, 37), (-4, 51)                                      # the court's near and far edges: steep, short
+    U = 18
     slab(k, P(-U), P(U), a, b, 0.3, one("arcCyanF"))
     def at(f):
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
@@ -619,16 +619,16 @@ def e1_holo():
     lit(U - 1, U, 0.0, 1.0, "arcCyan")
     for f in (0.08, 0.26, 0.44, 0.62, 0.8):                       # the centre line, dashed, down the middle
         lit(-0.6, 0.6, f, f + 0.1, "arcCyan")
-    lit(-U + 2, -U + 3.5, 0.3, 0.55, "arcAmb")                    # the left paddle,
-    lit(U - 3.5, U - 2, 0.5, 0.75, "arcPink")                     # the right one,
-    lit(5, 7.5, 0.42, 0.5, "arcAmb")                              # the ball,
-    for u, f in ((2.5, 0.44), (0, 0.46), (-2.5, 0.48)):           # its trail, back toward the left paddle
-        lit(u, u + 1.6, f, f + 0.05, "arcAmbF")
+    lit(-U + 2, -U + 4, 0.22, 0.62, "arcAmb")                     # the left paddle,
+    lit(U - 4, U - 2, 0.4, 0.8, "arcPink")                        # the right one,
+    lit(5, 8, 0.4, 0.54, "arcAmb")                                # the ball,
+    for u, f in ((2, 0.42), (-1, 0.45), (-4, 0.48)):              # its trail, back toward the left paddle
+        lit(u, u + 2, f, f + 0.08, "arcAmbF")
     for u0 in (-8, 4):                                            # the scores, in the court's colour, small
-        lit(u0, u0 + 1.4, 0.78, 0.9, "arcCyan")
-        lit(u0 + 2.4, u0 + 3.8, 0.78, 0.9, "arcCyan")
-    for u in (-10, 10):                                           # beams to the court's near edge
-        k.box(P(u), P(6), Z(28.6), 0.014, 0.014, Z(39) - Z(28.6), "arcCyan")
+        lit(u0, u0 + 1.6, 0.74, 0.9, "arcCyan")
+        lit(u0 + 2.6, u0 + 4.2, 0.74, 0.9, "arcCyan")
+    for u in (-8, 8):                                             # beams to the court's near edge
+        k.box(P(u), P(4), Z(28.6), 0.014, 0.014, Z(37.5) - Z(28.6), "arcCyan")
     return k
 
 
@@ -654,42 +654,39 @@ def stage(k, z0, z1, r, lit, film):
 
 
 def e2_holo():
-    """A girder climber on a wide upright panel over the drum: sloped pink girders zigzagging up, cyan ladders joining
-    them, amber crates rolling down, the climber at the foot, a robot boss at the top beside the goal star, the score
-    and lives across the top; on a green stage."""
+    """A girder climber built in 3D over a green stage: sloped pink girders zigzagging up (lit tops, film faces), cyan
+    ladders joining them, amber crates rolling down, the climber at the foot, a robot boss at the top beside the goal
+    star, the lives over it all."""
     k = Bench("arcade_e2_holo", FP)
-    stage(k, Z(35), Z(35), 0.3, "arcGrn", "arcGrnF")
-    v = P(1)
-    U, z0, z1 = 15, 37, 71
-    def poly(pts, col, dv=0.0):
-        prism(k, "v", v + dv, v + dv + 0.004, pz(pts), one(col))
-    def rect(u0, u1, za, zb, col, dv=0.006):
-        poly([(u0, za), (u1, za), (u1, zb), (u0, zb)], col, dv)
-    rect(-U, U, z0, z1, "arcGrnF", dv=0.0)                        # the screen,
-    rect(-U, U, z0, z0 + 0.8, "arcGrn")                           # its frame
-    rect(-U, U, z1 - 0.8, z1, "arcGrn")
-    rect(-U, -U + 0.8, z0, z1, "arcGrn")
-    rect(U - 0.8, U, z0, z1, "arcGrn")
-    girders = (((-13, 40), (13, 42.5)), ((-13, 50.5), (13, 48)), ((-13, 56), (13, 58.5)), ((-13, 64), (2, 64)))
-    for (ua, za), (ub, zb) in girders:                            # the girders, sloping
-        poly([(ua, za), (ub, zb), (ub, zb + 1.6), (ua, za + 1.6)], "arcPink")
-    for u, za, zb in ((9, 42.2, 48), (-9, 50.2, 56), (-3, 57.4, 64)):   # the ladders: two rails and rungs
-        rect(u - 1.2, u - 0.6, za, zb, "arcCyan")
-        rect(u + 0.6, u + 1.2, za, zb, "arcCyan")
-        z = za + 1.2
+    k.cyl(0.0, 0.0, Z(35), 0.32, 0.006, "arcGrnF", top="arcGrnF", sides=16)            # the stage,
+    ring_of(k, 0.32, Z(35), 20, 0.11, "arcGrn", h=0.014)
+    D = 0.08                                                                             # the girders' half depth
+    PINK = ("arcPink", "arcPinkF", "arcPinkF")
+    girders = (((-15, 40), (15, 42.5)), ((-15, 50.5), (15, 48)), ((-15, 56), (15, 58.5)), ((-15, 64), (3, 64)))
+    for (ua, za), (ub, zb) in girders:
+        prism(k, "v", -D, D, pz([(ua, za), (ub, zb), (ub, zb + 1.8), (ua, za + 1.8)]), PINK)
+    CY = ("arcCyan",) * 3
+    for u, za, zb in ((10, 42.6, 48), (-10, 50.4, 56), (-3, 57.6, 64)):                 # the ladders, at the front
+        for du in (-1.3, 1.3):
+            k.box(P(u + du), D - 0.01, Z(za), P(0.7), 0.02, Z(zb - za), "arcCyan")
+        z = za + 1.4
         while z < zb - 0.5:
-            rect(u - 1.2, u + 1.2, z, z + 0.5, "arcCyan")
-            z += 1.6
-    for u, z in ((4, 50.6), (-6, 58.1), (7, 44.3)):              # the crates, rolling down
-        rect(u - 1.2, u + 1.2, z, z + 2.4, "arcAmb")
-    rect(-11, -9, 42, 45, "arcCyan")                              # the climber,
-    rect(-11, -9, 45, 46.6, "arcAmb")
-    rect(-12, -7, 65.6, 69.5, "arcGrn")                           # the robot boss,
-    rect(-11, -10, 67.4, 68.4, "arcPink")
-    rect(-9, -8, 67.4, 68.4, "arcPink")
-    rect(-0.5, 1.5, 66, 68, "arcAmb")                             # the goal star,
-    for i in range(3):                                            # the lives,
-        rect(6 + i * 2.3, 7.4 + i * 2.3, 67, 68.6, "arcPink")
+            k.box(P(u), D - 0.01, Z(z), P(3.3), 0.02, Z(0.6), "arcCyan")
+            z += 1.8
+    def girder_z(i, u):
+        (ua, za), (ub, zb) = girders[i]
+        return za + (zb - za) * (u - ua) / (ub - ua) + 1.8
+    for i, u in ((0, 5), (1, 3), (2, -6)):                                               # the crates, rolling down
+        k.box(P(u), 0.0, Z(girder_z(i, u)), P(2.8), P(2.8), Z(2.8), "arcAmbF", top="arcAmb")
+    zc = girder_z(0, -11)
+    k.box(P(-11), 0.0, Z(zc), P(2.2), P(2.2), Z(3), "arcCyan", top="arcCyan")           # the climber,
+    k.box(P(-11), 0.0, Z(zc + 3), P(2), P(2), Z(1.8), "arcAmb", top="arcAmb")
+    zt = girder_z(3, -10)
+    k.box(P(-10), 0.0, Z(zt), P(5), P(4), Z(4.5), "arcGrnF", top="arcGrn")              # the robot boss,
+    for du in (-1, 1):
+        k.box(P(-10 + du), P(2) + 0.002, Z(zt + 2.8), P(1), 0.004, Z(1), "arcPink")     # its eyes
+    k.box(P(0), 0.0, Z(girder_z(3, 0) + 0.8), P(2.2), P(2.2), Z(2.2), "arcAmb", top="arcAmb")   # the goal star
+    pips(k, 0.12, 0.0, Z(70), 3, "arcPink", step=0.06, size=0.04)                       # the lives
     return k
 
 
