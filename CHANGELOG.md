@@ -36,6 +36,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Spacesuits are no longer limited: any airlock or shuttle has a suit for every crew member who needs one, so a shuttle can take a full party of four out to a wreck, all suited. ([#419](https://github.com/BigBadLoser/cc-ftl/pull/419))
 - Other ships are drawn roofed until your crew board them; stations stay open. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - Busy nodes run faster: a station hub's simulation step takes about a third less time (gas, heat, power, consoles, combat checks and lighting do less repeated work), with identical results. ([#374](https://github.com/BigBadLoser/cc-ftl/pull/374))
 - Hydroponics beds have their own art: a glass greenhouse over white water tanks, lit when growing and dark when empty or unpowered, with damaged and destroyed looks. Each crop shows its plants growing from sprout to ripe. The large bed is now 3 wide and 2 deep, worked from the middle of its long side. Saves from before this change don't load. ([#373](https://github.com/BigBadLoser/cc-ftl/pull/373))
