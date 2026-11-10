@@ -10,7 +10,7 @@ import { AWAY_GO_STAY_SEC, CLOCK_START_HOUR, OPERATE_MAX_LEVEL } from '../sim/tu
 import { personOf } from '../sim/crew/bonds';
 import { inBed } from '../sim/ai/machines/sleep';
 import { SuitC } from '../sim/eva/components';
-import { claimedBed } from '../sim/ai/task';
+import { claimedBed, reserveJob } from '../sim/ai/task';
 import { auditReservations } from '../sim/ai/audit';
 import { content } from './index';
 import { schedules } from './schedules';
@@ -287,6 +287,25 @@ describe('blocks in play', () => {
     const helm = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'operate');
     expect(takers).toContain(helm?.reservedBy); // a pilot got up and took the helm
     for (const id of others) expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping'); // nobody else was woken
+  });
+
+  it('a console reached through vacuum keeps its operator on call while they suit up for it', () => {
+    const sim = fresh();
+    const c = people(sim)[0]!;
+    allDay(sim, [c], 'sleep');
+    sim.applyCommands();
+    const helm = sim.world.query(ModuleC).find((m) => sim.content.modules[sim.world.get(m, ModuleC)!.def]?.console)!;
+    const at = sim.world.get(helm, ModuleC)!;
+    const job = (j: object): number => {
+      const e = sim.world.createEntity();
+      sim.world.add(e, JobC, { x: at.x, y: at.y, work: 0, progress: 0, ...j } as never);
+      return e;
+    };
+    const console_ = job({ kind: 'operate', category: 'operating', target: helm, reservedBy: c });
+    const errand = job({ kind: 'suitUp', category: 'operating', target: helm, reservedBy: 0, errandFor: c, resume: console_ });
+    reserveJob(sim, c, errand); // the scheduler's nesting: the console stays theirs while the errand runs
+    expect(onCall(sim, c)).toBe(true);
+    expect(blockNow(sim, c)).toBe('work');
   });
 
   it('Battle Stations suspends every schedule', () => {

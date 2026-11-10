@@ -1,8 +1,9 @@
-import { AssignmentC, CrewC, JobC, NeedsC, PositionC, PrioritiesC, type Job, type WorkCategory } from './components';
+import { CrewC, JobC, NeedsC, PositionC, PrioritiesC, type Job, type WorkCategory } from './components';
 import { DAY_HOURS, hourAt, ticksToHour } from '../clock';
 import { defineComponent } from '../ecs';
 import { isEmergency } from '../ai/emergency';
 import { admitLevel } from '../ai/jobRank';
+import { workJobOf } from '../ai/task';
 import { crewKind, policyOf } from '../ai/utility';
 import type { ScheduleBlock, ScheduleDef } from '../ai/types';
 import { personOf } from './bonds';
@@ -89,7 +90,7 @@ function callsOn(sim: Sim, ship: number): Calls | undefined {
  */
 export function onCall(sim: Sim, id: number): boolean {
   if (sim.sector.inCombat || sim.sector.stations) return true;
-  const held = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
+  const held = workJobOf(sim, id); // through a suit errand nested under it (Codex 4519693576)
   if (held && (held.kind === 'operate' || isEmergency(held))) return true; // a console or an emergency they hold keeps them on it
   const pos = sim.world.get(id, PositionC);
   const on = pos && callsOn(sim, shipIdOf(sim, pos));
