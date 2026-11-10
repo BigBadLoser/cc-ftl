@@ -727,12 +727,135 @@ def e3_holo():
     return k
 
 
+# ---- round 6: three new games, each one hologram colour with accents ----------------------------------------------
+
+def drum(name, shell, glow, sides=16):
+    """The round cabinet the holograms stand on: a kick, the drum in `shell`, a chrome belt, lit seams, the emitter."""
+    k = Bench(name, FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcBodyK", top="arcBodyK", sides=sides)
+    k.cyl(0.0, 0.0, Z(3), 0.37, Z(23), shell[2], top=shell[1], sides=sides)
+    k.cyl(0.0, 0.0, Z(12), 0.375, Z(2), "arcChrD", top="arcChr", sides=sides)
+    seams(k, 0.375, 15, 9, glow)
+    emitter(k, glow)
+    console(k, BODY)
+    return k.build()
+
+
+def f1():
+    """Brick breaker: an eight-sided navy drum, violet ring and seams."""
+    return drum("arcade_f1", BODY, "arcVio", sides=8)
+
+
+def f1_holo():
+    """An upright brick wall facing the player: lit violet side and top walls, four rows of lit
+    bricks (cyan, green, amber, pink) with a few knocked out, the paddle at the foot, the ball rising with its trail,
+    the score on top; violet beams."""
+    k = Bench("arcade_f1_holo", FP)
+    z0, z1, W, D = Z(36), Z(65), 13, P(2.5)
+    for u in (-W, W):                                                                    # the side walls, as lit
+        for v in (-D, D):                                                                # edges only
+            k.box(P(u), v, z0, 0.014, 0.014, z1 - z0, "arcVio")
+        k.box(P(u), 0.0, z1, 0.014, 2 * D, 0.014, "arcVio")
+    for v in (-D, D):                                                                    # the top wall
+        k.box(0.0, v, z1, P(2 * W), 0.014, 0.014, "arcVio")
+    rows = ("arcCyan", "arcGrn", "arcAmb", "arcPink")
+    gone = {(0, 1), (0, 3), (1, 3), (0, 4)}
+    for r, col in enumerate(rows):                                                       # the bricks
+        for c, u in enumerate((-10, -5, 0, 5, 10)):
+            if (r, c) not in gone:
+                k.box(P(u), 0.0, Z(50 + r * 3.5), P(4.2), P(3), Z(2.6), col, top=col)
+    k.box(P(-3), 0.0, Z(38), P(7), P(3), Z(1.6), "arcVio", top="arcVio")                 # the paddle,
+    k.box(P(5), 0.0, Z(45), P(2.2), P(2.2), Z(2.2), "arcAmb", top="arcAmb")              # the ball,
+    for u, z, s in ((3, 43, 1.8), (1, 41, 1.4)):                                         # its trail
+        k.box(P(u), 0.0, Z(z), P(s), P(s), Z(s), "arcAmbF", top="arcAmbF")
+    pips(k, -0.06, 0.0, z1 + Z(2), 3, "arcVio", step=0.06, size=0.035)                  # the score
+    beams(k, "arcVio", z0, r=0.2)
+    return k
+
+
+def f2():
+    """Snake: a teal drum, green ring and seams."""
+    return drum("arcade_f2", TEAL, "arcGrn")
+
+
+def f2_holo():
+    """Snake in 3D over a green film floor with a lit border: the snake runs along the floor's left and front edges,
+    steps up a level, its head bigger with amber eyes, a pink fruit just ahead; green beams."""
+    k = Bench("arcade_f2_holo", FP)
+    zf, s, n = Z(40), 0.09, 5
+    h = s * n / 2
+    k.box(0.0, 0.0, zf, 2 * h, 2 * h, 0.006, "arcGrnF", top="arcGrnF")                  # the floor,
+    for u, v, su, sv in ((0, -h, 2 * h, 0.014), (0, h, 2 * h, 0.014), (-h, 0, 0.014, 2 * h), (h, 0, 0.014, 2 * h)):
+        k.box(u, v, zf, su, sv, 0.012, "arcGrn", top="arcGrn")                         # its lit border
+    def at(i, j):
+        return -h + (i + 0.5) * s, -h + (j + 0.5) * s
+    path = ((0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0), (0, 4, 0), (1, 4, 0), (2, 4, 0), (2, 4, 1), (3, 4, 1))
+    for t, (i, j, l) in enumerate(path):                                                 # the snake, tail to head
+        u, v = at(i, j)
+        q = s * 0.72 if t < len(path) - 1 else s * 0.95
+        k.box(u, v, zf + 0.008 + l * s + (s - q) / 2, q, q, q, "arcGrn", top="arcGrn")
+    u, v = at(3, 4)
+    for dv in (-0.022, 0.022):                                                           # the head's eyes
+        k.box(u + s * 0.48, v + dv, zf + s + 0.05, 0.006, 0.018, 0.018, "arcAmb")
+    u, v = at(4, 4)
+    k.cyl(u, v, zf + s + 0.02, s * 0.34, s * 0.6, "arcPink", top="arcPink", sides=10)       # the fruit,
+    k.box(u, v, zf + s + 0.02 + s * 0.6, 0.012, 0.02, 0.02, "arcGrn", top="arcGrn")       # its leaf
+    beams(k, "arcGrn", zf, r=0.2)
+    return k
+
+
+def f3():
+    """Racer: a white drum, cyan ring and seams."""
+    return drum("arcade_f3", SHELL, "arcCyan")
+
+
+def f3_holo():
+    """A tilted race loop floating over the ring: a cyan film track with lit inner and outer kerbs, a chequered start
+    line under a lit gantry, the pink and the amber car neck and neck on the near bend; cyan beams."""
+    k = Bench("arcade_f3_holo", FP)
+    zc, R, w, tilt, N = Z(46), 0.32, 0.12, 0.08, 32
+    def z_at(a):
+        return zc + tilt * math.sin(a - 0.8)
+    for i in range(N):
+        a = i * math.tau / N
+        L = math.tau * R / N * 1.08
+        c, sn = math.cos(a), math.sin(a)
+        k.box(R * c, R * sn, z_at(a), L, w, 0.006, "arcCyanF", top="arcCyanF", rz=a + math.pi / 2)   # the track,
+        for r in (R - w / 2, R + w / 2):                                                 # its kerbs
+            k.box(r * c, r * sn, z_at(a), math.tau * r / N * 1.05, 0.014, 0.014, "arcCyan", top="arcCyan",
+                  rz=a + math.pi / 2)
+    a = 1.4                                                                              # the start line, chequered
+    for m in range(4):
+        for t in range(2):
+            r = R - w / 2 + (m + 0.5) * w / 4
+            da = (t - 0.5) * 0.06
+            col = "arcMarq" if (m + t) % 2 == 0 else "arcCyanF"
+            k.box(r * math.cos(a + da), r * math.sin(a + da), z_at(a) + 0.006, w / 4, 0.018, 0.006, col, top=col,
+                  rz=a + da + math.pi / 2)
+    for a, r, col in ((0.95, R - 0.03, "arcPink"), (0.55, R + 0.03, "arcAmb")):            # the cars
+        x, y, z = r * math.cos(a), r * math.sin(a), z_at(a) + 0.006
+        k.box(x, y, z, 0.15, 0.065, 0.04, col, top=col, rz=a + math.pi / 2)
+        k.box(x, y, z + 0.04, 0.07, 0.05, 0.03, col, top=col, rz=a + math.pi / 2)
+    a = 1.4                                                                              # the start gantry over the
+    for r in (R - w / 2 - 0.01, R + w / 2 + 0.01):                                       # line: two posts, a
+        k.box(r * math.cos(a), r * math.sin(a), z_at(a), 0.02, 0.02, 0.18, "arcCyan", rz=a)   # chequered bar
+    for m in range(4):
+        r = R - w / 2 - 0.02 + (m + 0.5) * (w + 0.04) / 4
+        col = "arcMarq" if m % 2 == 0 else "arcPink"
+        k.box(r * math.cos(a), r * math.sin(a), z_at(a) + 0.18, 0.04, (w + 0.04) / 4, 0.04, col, top=col, rz=a)
+    for a in (0.3, 2.4, 4.5):                                                            # beams up to the track
+        k.box(R * math.cos(a), R * math.sin(a), Z(28.6), 0.014, 0.014, z_at(a) - Z(28.6), "arcCyan")
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
                                                               ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3),
-                                                              ("e1", e1), ("e2", e2), ("e3", e3))]
+                                                              ("e1", e1), ("e2", e2), ("e3", e3), ("f1", f1),
+                                                              ("f2", f2), ("f3", f3))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
                    ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
-                   ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo))]
+                   ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo),
+                   ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo))]
