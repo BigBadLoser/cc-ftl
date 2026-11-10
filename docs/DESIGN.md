@@ -139,19 +139,18 @@ A ship clock and a per-crew day plan, like Oxygen Not Included and RimWorld. Sim
 the user picks from mocks) and a HUD clock come later.
 
 - **Ship clock.** A 24-hour day. One game hour is 40 s at 1x (`GAME_HOUR_SEC`, one tuning constant), so a day is 16 real minutes.
-  A new game starts at 10:00, when the whole crew is at work (see Stagger). The clock is read from the sim tick, so it is in every save.
+  A new game starts at 14:00, when the whole crew is at work (see Stagger). The clock is read from the sim tick, so it is in every save.
 - **Hour blocks.** Each crew member has 24 blocks, one per hour:
   - **Any**: needs decide, as before schedules (work, sleep at rest 20, eat at hunger 35, a break when mood is low and nothing to do).
   - **Work**: jobs only. Eat when hungry, sleep only at the need line; no breaks.
   - **Sleep**: go to bed (eating first if hungry) and sleep through the block; a sleeper at full rest stays in bed. No jobs.
   - **Free**: no jobs. Breaks in the mess or beside a crewmate, and an early meal (below hunger 60) so nobody goes to bed hungry.
-- **Presets** are content data: Default (Work 06-20, Free 20-22, Sleep 22-06), Late (the Default 4 hours later: Work 10-24, Free 00-02,
-  Sleep 02-10), Day shift (Work 06-18, Free 18-22, Sleep 22-06), Night shift (Sleep 10-18, Work 18-06, Free 06-10) and Any (all Any:
+- **Presets** are content data: Default (Work 06-20, Free 20-22, Sleep 22-06), Late (the Default 8 hours later: Work 14-04, Free 04-06,
+  Sleep 06-14), Day shift (Work 06-18, Free 18-22, Sleep 22-06), Night shift (Sleep 10-18, Work 18-06, Free 06-10) and Any (all Any:
   today's play). Commands set an hour or a range, apply a preset, or copy another crew member's row.
-- **Stagger (user decision 2026-11-10).** Crew of the player's side without a schedule of their own follow Default and Late in turn by
-  hire order (the presets marked `rotation`, picked by person id), so half the crew is up from 22:00 to 02:00 and from 06:00 to 10:00
-  while the other half sleeps. With 8-hour Sleep blocks 4 hours apart, everyone's Sleep overlaps from 02:00 to 06:00; emergencies wake
-  them.
+- **Stagger (user decisions 2026-11-10).** Crew of the player's side without a schedule of their own follow Default and Late in turn by
+  hire order (the presets marked `rotation`, picked by person id). Their Sleep blocks are 8 hours apart and never overlap: Default
+  sleeps 22-06, Late 06-14, so at every hour someone is up (both groups are up 14-22).
 - **Overrides.** The schedule is suspended (every block reads as Work) while the crew member is *on call*: in a fight or at Battle
   Stations, holding a console or an emergency job, while an emergency in a category they work (a fire, a hull breach, a downed crew
   member) is open on their ship, or while a console there stands empty that they would take (the scheduler's own admission: their

@@ -16,8 +16,8 @@ function day(fill: ScheduleBlock, ...runs: [ScheduleBlock, number, number][]): S
 export const schedules = {
   /** About 16 hours awake: work from 06:00, two free hours in the evening, bed at 22:00. */
   'schedule.default': { id: 'schedule.default', name: 'Default', rotation: true, hours: day('work', ['free', 20, 22], ['sleep', 22, 6]) },
-  /** The Default four hours later: work from 10:00, free past midnight, bed at 02:00. */
-  'schedule.late': { id: 'schedule.late', name: 'Late', rotation: true, hours: day('work', ['free', 0, 2], ['sleep', 2, 10]) },
+  /** The Default eight hours later: work from 14:00 into the night, free 04:00-06:00, bed at 06:00. With the Default, someone is always up. */
+  'schedule.late': { id: 'schedule.late', name: 'Late', rotation: true, hours: day('work', ['free', 4, 6], ['sleep', 6, 14]) },
   'schedule.day': { id: 'schedule.day', name: 'Day shift', hours: day('work', ['free', 18, 22], ['sleep', 22, 6]) },
   'schedule.night': { id: 'schedule.night', name: 'Night shift', hours: day('work', ['free', 6, 10], ['sleep', 10, 18]) },
   /** No plan: needs decide every hour, as before schedules. */

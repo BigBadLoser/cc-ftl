@@ -48,13 +48,12 @@ describe('block lookup and commands', () => {
     const byHire = [...ids].sort((x, y) => personOf(sim, x) - personOf(sim, y));
     const rows = byHire.map((id) => hoursOf(sim, id));
     const late = schedules['schedule.late'].hours;
-    expect(late).toEqual(schedules['schedule.default'].hours.map((_, h) => schedules['schedule.default'].hours[(h + 20) % 24])); // Default + 4 h
+    expect(late).toEqual(schedules['schedule.default'].hours.map((_, h) => schedules['schedule.default'].hours[(h + 16) % 24])); // Default + 8 h
     for (const row of rows) expect([schedules['schedule.default'].hours, late]).toContainEqual(row);
     expect(rows.filter((r) => r === late).length).toBe(Math.floor(ids.length / 2)); // every second colonist hired
-    // The stagger: half the crew is up from 22:00 to 02:00 and from 06:00 to 10:00; with 8-hour Sleep blocks four hours apart, everyone's
-    // Sleep overlaps from 02:00 to 06:00. A new game starts at 10:00 with everyone at work.
+    // The stagger: Sleep blocks eight hours apart, so at every hour of the day someone is out of bed. A new game starts with everyone at work.
     const allAsleep = Array.from({ length: 24 }, (_, h) => h).filter((h) => ids.every((id) => blockAt(sim, id, ((h - CLOCK_START_HOUR + 24) % 24) * HOUR_TICKS) === 'sleep'));
-    expect(allAsleep).toEqual([2, 3, 4, 5]);
+    expect(allAsleep).toEqual([]);
     for (const id of ids) expect(blockAt(sim, id)).toBe('work');
     const d = byHire[0]!;
     expect(blockAt(sim, d)).toBe('work');
