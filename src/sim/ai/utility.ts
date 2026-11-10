@@ -148,6 +148,8 @@ export interface TaskView {
   underway: (machine: MachineId) => boolean;
   /** Are they in a `finish` task (carrying a patient)? Asked only when some need wants them, as it is the rare case. */
   finishing: () => boolean;
+  /** Are they on an errand they finish whatever the schedule (stowing or refilling a suit, #412)? Only urgent drives break in. */
+  errand?: () => boolean;
 }
 
 /** One drive's state in an evaluation. */
@@ -210,6 +212,7 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
   const scored = policy.drives.map((d, i) => scoreDrive(sim, id, d, i, intent, driven, view, block));
   let blocked: DriveId | undefined;
   let finishing: boolean | undefined;
+  let errand: boolean | undefined;
   for (const s of scored) {
     intent.scores[s.i] = s.score;
     if (s.score <= 0) {
@@ -227,6 +230,8 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
     }
     // A carried patient is laid down first; only an urgent drive that declares `breaksFinish` may break in, and only once urgent.
     if (!(s.urgent && s.def.urgent?.breaksFinish) && (finishing ??= view.finishing())) s.open = false;
+    // A suit errand is finished before a need that is not urgent (a Sleep block's bed, supper in Free): no sleeping in the suit (#412).
+    else if (!s.urgent && !view.underway(s.def.task) && (errand ??= !!view.errand?.())) s.open = false; // the errand's own drive (air: a refill) runs on
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;

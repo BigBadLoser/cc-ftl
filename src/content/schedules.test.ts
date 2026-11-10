@@ -197,6 +197,26 @@ describe('blocks in play', () => {
     expect(sim.world.has(c, SuitC)).toBe(false);
   });
 
+  it('a Sleep block that starts while a rested crew member stows a suit waits for the suit to come off (Codex 4520410596)', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    const c = ids[0]!;
+    for (const id of ids) {
+      sim.world.get(id, NeedsC)!.hunger = 100;
+      sim.world.get(id, NeedsC)!.rest = 100;
+    }
+    allDay(sim, ids, 'free');
+    sim.enqueue({ type: 'suit.set', crew: c, worn: true });
+    const stowing = (): boolean => sim.world.get(sim.world.get(c, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'suitOff';
+    for (let i = 0; i < 20 * TICK_HZ && !stowing(); i++) sim.step();
+    expect(stowing()).toBe(true);
+    allDay(sim, ids, 'sleep');
+    run(sim, 1200);
+    expect(sim.world.has(c, SuitC)).toBe(false);
+    run(sim, 60 * TICK_HZ);
+    expect(sim.world.get(c, CrewC)?.activity).toBe('sleeping'); // then to bed
+  });
+
   it('a hungry crew member whose Sleep block starts eats before bed', () => {
     const sim = fresh();
     const ids = people(sim);

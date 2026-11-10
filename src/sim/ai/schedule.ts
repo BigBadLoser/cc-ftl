@@ -47,7 +47,7 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
 
 /**
  * True if the job is an errand an off-duty crew member still finishes (#412): stowing a suit or refilling its tank. Suiting up is for a job
- * (the errand's `resume`), which off duty they let go, so that errand goes with it.
+ * (the errand's `resume`), which off duty they let go, so that errand goes with it. A need that is not urgent waits for it too (`TaskView.errand`).
  */
 const finishesOffDuty = (sim: Sim, jobId: number): boolean => {
   const kind = sim.world.get(jobId, JobC)?.kind;
@@ -164,14 +164,14 @@ export function scheduleSystem(sim: Sim): void {
     }
     // The utility engine ranks the drives (ai/utility.ts); each need's machine is tried in that order, falling through when it
     // cannot start (no bay, no food), until one takes the crew member or `work` hands them to the job scheduler.
-    const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id) };
+    const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id), errand: () => !!assignment && finishesOffDuty(sim, assignment.jobId) };
     let served = false;
     const ranked = evaluateIntent(sim, id, view);
     pickupRequest(sim, id);
     // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): a held job is let go before any need's turn (a break or bed
     // would otherwise keep it reserved), except a carried patient (set down first: that job runs on) and stowing or refilling a suit, which they finish.
     const offDuty = !ranked.some((d) => d.task === 'job');
-    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || finishesOffDuty(sim, assignment.jobId));
+    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || view.errand!());
     if (offDuty && assignment && !keeps()) {
       abortTask(sim, id, 'offDuty');
       assignment = undefined;
