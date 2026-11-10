@@ -27,7 +27,8 @@ async function loadImage(src: string): Promise<{ img: HTMLImageElement; source: 
   const img = new Image();
   img.src = src;
   await img.decode();
-  const source = new ImageSource({ resource: img, scaleMode: 'nearest', autoGenerateMipmaps: false });
+  // An ImageBitmap, not the element: Pixi converts an HTMLImageElement to a canvas on every source and warns each time. The element stays for the canvas cuts.
+  const source = new ImageSource({ resource: await createImageBitmap(img), scaleMode: 'nearest', autoGenerateMipmaps: false });
   // The view owns its sheets for as long as it lives: Pixi's texture GC must not unload them (same rule as the atlas, issue #102).
   keepOnGpu(source);
   return { img, source };

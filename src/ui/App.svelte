@@ -270,7 +270,7 @@
 
 {#snippet time()}
   <span class="time sec">
-    <span class="tick" use:tip={{ text: 'Starmap turn (one per hop, and one every 3 minutes of game time) and game time played' }} data-testid="clock">Turn {star?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
+    <span class="tick" use:tip={{ text: 'Starmap turn (one per hop, and one every 3 minutes of game time) and game time played' }} data-testid="clock">Turn {snap?.turn ?? 0} · {clock(snap?.tick ?? 0)}{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
     <span class="speeds">
       {#each speeds as s (s.speed)}
         <button class="tile" class:on={snap?.speed === s.speed} use:tip={{ text: s.label }} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>

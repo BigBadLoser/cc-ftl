@@ -22,6 +22,8 @@ export interface UiLook {
 
 export interface UiSnapshot {
   tick: number;
+  /** The starmap turn: what the HUD shows and the save records. */
+  turn: number;
   speed: 0 | 1 | 2 | 3;
   paused: boolean;
   entityCount: number;
@@ -732,6 +734,8 @@ export interface UiConsole {
   operator: string | null;
   /** Crew member who took the console job and is walking there (null when nobody is on the way). */
   enRoute: string | null;
+  /** Why an empty console stays empty ("nobody has Operating priority 1 or 2"), when there is a reason worth saying. */
+  why?: string | null;
   powered: boolean;
 }
 

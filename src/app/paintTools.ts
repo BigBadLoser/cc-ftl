@@ -81,6 +81,13 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
     }
     return out;
   };
+  /** A floor, wall or door drag that covers no tile of the player's ships (empty space): it would place nothing. */
+  const offHull = (): boolean => {
+    const t = tool.get();
+    if (t.tool !== 'build' || (t.build !== 'floor' && t.build !== 'wall' && t.build !== 'door')) return false;
+    const tiles = shape();
+    return tiles.length > 0 && !tiles.some((p) => mineAt(p.x, p.y));
+  };
   const refreshPreview = () => {
     deps.renderer()?.setWorldGrid(tool.get().tool === 'build'); // the world grid shows while the build tools are open
     if (!hullPlan.active()) deps.renderer()?.setCutLine([]);
@@ -111,6 +118,14 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
       const covered = paintStart ? shape() : hover ? [hover] : [];
       // Drawn on the top of the rock block (the rock is ROCK_MASS_Z tall); ground ore stays flat.
       return deps.renderer()?.setPreview(covered.filter((p) => oreAsteroid(p.x, p.y)).map((p) => ({ ...p, ...(isSolidRock(sim.sector.grid.get('struct', p.x, p.y)) ? { lift: ROCK_MASS_Z } : {}) })), true);
+    }
+    if (paintStart && paintEnd && offHull()) {
+      // Nothing of the drag touches the ship: show it red with the reason at the pointer, as the hull plan does ("Min 3 x 3").
+      deps.renderer()?.setPreview(shape(), false);
+      const rr = deps.renderer();
+      const at = rr ? rr.screenOf(homeShipId(), paintEnd.x, paintEnd.y) : null;
+      placeHint.set(at ? { x: at.x, y: at.y, text: rejectionMessage('offHull'), ok: false } : null);
+      return;
     }
     deps.renderer()?.setPreview(paintStart ? shape() : active && hover ? [hover] : []);
   };
@@ -158,6 +173,7 @@ export function createPaintTools(sim: Sim, bridge: Bridge, deps: PaintDeps): Pic
       paintStart = paintEnd = null;
       return refreshPreview();
     }
+    if (offHull()) showToast(rejectionMessage('offHull'));
     for (const { x, y } of shape()) {
       const ship = mineAt(x, y);
       if (!ship) continue;

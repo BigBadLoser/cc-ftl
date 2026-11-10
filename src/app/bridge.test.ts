@@ -61,3 +61,15 @@ describe('snapshots while paused', () => {
     expect(get(bridge.jobs)).toEqual(JSON.parse(JSON.stringify(buildJobs(sim))));
   });
 });
+
+describe('turn counter', () => {
+  it('the HUD snapshot carries the sim turn from the first frame, and follows it without the starmap open', () => {
+    const sim = newGame(3, content);
+    sim.galaxy.turn = 9; // as a loaded save
+    const bridge = createBridge(sim);
+    expect(get(bridge.snapshot).turn).toBe(9);
+    sim.galaxy.turn = 10;
+    bridge.update({ fps: 60, frameMs: 1, tickMs: 1 } as never);
+    expect(get(bridge.snapshot).turn).toBe(10);
+  });
+});

@@ -43,4 +43,12 @@ describe('stationTags', () => {
     const [w] = stationTags([{ ...con('weapons', null), enRoute: 'Ada' }], []);
     expect(w).toMatchObject({ ok: false, warn: true, status: 'EN ROUTE', tip: 'Ada is on the way to the weapons console' });
   });
+
+  it("gives the sim's reason for an empty console in the tip and as a line", () => {
+    const sh: UiConsole = { ...con('shields', null), why: 'nobody has Operating priority 1 or 2' };
+    const t = stationTags([sh], [])[1];
+    expect(t?.why).toBe('nobody has Operating priority 1 or 2');
+    expect(t?.tip).toContain('Why: nobody has Operating priority 1 or 2');
+    expect(stationTags([{ ...sh, operator: 'Ada' }], [])[1]?.why).toBeUndefined();
+  });
 });
