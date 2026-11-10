@@ -581,10 +581,141 @@ def d3_holo():
     return k
 
 
+# ---- round 5: holograms that read as a game (score, lives, shots, a goal) --------------------------------------------
+
+def pips(k, u0, v, z, n, col, step=0.05, size=0.03):
+    """A row of small lit blocks along u (lives, score digits)."""
+    for i in range(n):
+        k.box(u0 + i * step, v, z, size, size, size, col, top=col)
+
+
+def e1():
+    """Paddle court: a squat eight-sided drum, navy with a white belt, a cyan ring, the console."""
+    k = Bench("arcade_e1", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.42, Z(3), "arcBodyK", top="arcBodyK", sides=8)
+    k.cyl(0.0, 0.0, Z(3), 0.39, Z(23), "arcBodyD", top="arcBody", sides=8)
+    k.cyl(0.0, 0.0, Z(15), 0.395, Z(2.5), "arcShellD", top="arcShell", sides=8)          # a white belt
+    k.cyl(0.0, 0.0, Z(26), 0.41, Z(2), "arcChrD", top="arcChr", sides=8)
+    k.cyl(0.0, 0.0, Z(28), 0.3, Z(0.6), "arcCyan", top="arcCyan", sides=16)
+    k.cyl(0.0, 0.0, Z(28), 0.25, Z(1), "arcBodyK", top="arcBodyK", sides=16)
+    console(k, BODY)
+    return k.build()
+
+
+def e1_holo():
+    """A court tilted toward the player: a lit border, a dashed centre line, an amber paddle near and a pink one far, the
+    ball with its fading trail, both scores over the far end; cyan beams to the court."""
+    k = Bench("arcade_e1_holo", FP)
+    a, b = (10, 37), (-11, 50)                                    # the court's near and far edges (v, z px)
+    U = 12
+    slab(k, P(-U), P(U), a, b, 0.3, one("arcCyanF"))
+    def at(f):
+        return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+    def lit(u0, u1, f0, f1, col):
+        slab(k, P(u0), P(u1), at(f0), at(f1), 0.3, one(col), d=0.3)
+    lit(-U, U, 0.0, 0.04, "arcCyan")                              # the border,
+    lit(-U, U, 0.96, 1.0, "arcCyan")
+    lit(-U, -U + 1, 0.0, 1.0, "arcCyan")
+    lit(U - 1, U, 0.0, 1.0, "arcCyan")
+    for u in range(-10, 11, 4):                                   # the centre line, dashed
+        lit(u, u + 2, 0.48, 0.52, "arcCyan")
+    lit(-4, 2, 0.1, 0.16, "arcAmb")                               # the near paddle,
+    lit(1, 7, 0.84, 0.9, "arcPink")                               # the far one,
+    lit(3, 5.5, 0.63, 0.71, "arcAmb")                             # the ball,
+    for i, (u, f) in enumerate(((1, 0.55), (-1, 0.47), (-3, 0.39))):
+        slab(k, P(u), P(u + 1.6), at(f), at(f + 0.05), 0.3, one("arcAmbF"), d=0.3)   # its trail
+    for u0, col in ((-0.3, "arcAmb"), (0.12, "arcPink")):         # the scores, floating over the far end
+        pips(k, u0, P(-12), Z(55), 3, col, step=0.045, size=0.035)
+    for u in (-U + 1, U - 1):                                     # beams to the court's near corners
+        k.box(P(u * 0.7), P(4), Z(28.6), 0.014, 0.014, Z(40) - Z(28.6), "arcCyan")
+    return k
+
+
+def e2():
+    """Platformer: a two-tier drum (a wide navy base, a narrower teal tier carrying the ring), the console on the base."""
+    k = Bench("arcade_e2", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.42, Z(3), "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.39, Z(15), "arcBodyD", top="arcBody", sides=16)              # the base,
+    k.cyl(0.0, 0.0, Z(18), 0.4, Z(1.5), "arcChrD", top="arcChr", sides=16)               # its rim,
+    k.cyl(0.0, 0.0, Z(19.5), 0.29, Z(12), "arcTealD", top="arcTealL", sides=16)         # the upper tier,
+    seams(k, 0.295, 21, 9, "arcGrn", angles=(0.2, 1.8, 3.4, 5.0))
+    emitter(k, "arcGrn", z=31)
+    console(k, BODY, w=7)
+    return k.build()
+
+
+def stage(k, z0, z1, r, lit, film):
+    """The projection's bounds, so the game reads as one thing: a film disc with a lit rim at its foot, a lit ring
+    capping it."""
+    k.cyl(0.0, 0.0, z0, r, 0.006, film, top=film, sides=16)
+    ring_of(k, r, z0, 20, r * 0.33, lit, h=0.014)
+    ring_of(k, r, z1, 20, r * 0.33, lit, h=0.014)
+
+
+def e2_holo():
+    """Three wide platforms stepping up across the stage, a runner leaping between the first two, a coin over the
+    second, a pink goal flag on the top one, the lives as pips; on a green stage."""
+    k = Bench("arcade_e2_holo", FP)
+    stage(k, Z(35), Z(66), 0.32, "arcGrn", "arcGrnF")
+    plats = ((0.12, 0.12, Z(39)), (-0.1, 0.04, Z(48)), (0.08, -0.14, Z(57)))
+    for u, v, z in plats:
+        k.box(u, v, z, 0.3, 0.13, 0.04, "arcGrnF", top="arcGrn")                        # the platforms,
+    u, v, z = plats[1]
+    k.box(u - 0.06, v, z + 0.09, 0.055, 0.055, 0.055, "arcAmb", top="arcAmb")           # a coin,
+    (u0, v0, z0), (u1, v1, z1) = plats[0], plats[1]
+    ru, rv, rz = (u0 + u1) / 2, (v0 + v1) / 2, (z0 + z1) / 2 + 0.12
+    k.box(ru, rv, rz, 0.07, 0.07, 0.08, "arcAmb", top="arcAmb")                         # the runner, mid-leap,
+    k.box(ru, rv, rz + 0.08, 0.06, 0.06, 0.06, "arcPink", top="arcPink")
+    u, v, z = plats[2]
+    k.box(u + 0.09, v, z + 0.04, 0.02, 0.02, 0.2, "arcCyan")                            # the goal flag,
+    k.box(u + 0.15, v, z + 0.15, 0.11, 0.01, 0.08, "arcPink", top="arcPink")
+    pips(k, -0.25, P(-2), Z(67), 3, "arcPink", step=0.06, size=0.04)                     # the lives
+    return k
+
+
+def e3():
+    """Tower shooter: a tall slim drum, dark with pink seams, a pink ring, a slimmer console."""
+    k = Bench("arcade_e3", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.38, Z(3), "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.32, Z(29), "arcBodyD", top="arcBody", sides=16)
+    for z in (8, 26):
+        k.cyl(0.0, 0.0, Z(z), 0.325, Z(1), "arcChrD", top="arcChr", sides=16)
+    seams(k, 0.325, 10, 15, "arcPink", angles=(0.4, 1.4, 2.4, 3.4, 4.4, 5.4))
+    k.cyl(0.0, 0.0, Z(32), 0.34, Z(2), "arcChrD", top="arcChr", sides=16)
+    k.cyl(0.0, 0.0, Z(34), 0.27, Z(0.6), "arcPink", top="arcPink", sides=16)
+    k.cyl(0.0, 0.0, Z(34), 0.22, Z(1), "arcBodyK", top="arcBodyK", sides=16)
+    console(k, BODY, w=6)
+    return k.build()
+
+
+def e3_holo():
+    """The play runs up the beam: the cyan ship just over the ring, amber shots rising, two rings of enemies at the top
+    (pink and green), one bursting, the score as a bar over it all; on a pink stage."""
+    k = Bench("arcade_e3_holo", FP)
+    stage(k, Z(37), Z(66), 0.3, "arcPink", "arcPinkF")
+    zs = Z(40)
+    k.box(0.0, 0.0, zs, 0.08, 0.14, 0.045, "arcCyan", top="arcCyan")                   # the ship,
+    k.box(0.0, 0.02, zs, 0.24, 0.05, 0.03, "arcCyan", top="arcCyan")                    # its wings
+    for dz in (0.12, 0.22, 0.32):                                                        # its shots
+        k.box(0.0, 0.0, zs + dz, 0.022, 0.022, 0.06, "arcAmb", top="arcAmb")
+    for r, z, n, col, size in ((0.22, Z(56), 6, "arcPink", 0.075), (0.12, Z(61), 4, "arcGrn", 0.065)):
+        for i in range(n):
+            a = i * math.tau / n + 0.3
+            k.box(r * math.cos(a), r * math.sin(a), z, size, size, size * 0.8, col, top=col)   # the enemies
+    a = 0.3 + math.tau / 6
+    cu, cv, cz = 0.22 * math.cos(a), 0.22 * math.sin(a), Z(56) + 0.03
+    for rz in (0.0, 0.785, 1.571, 2.356):                                                # a burst on one
+        k.box(cu, cv, cz, 0.17, 0.016, 0.016, "arcAmb", rz=rz)
+    pips(k, -0.12, P(-4), Z(69), 5, "arcCyan", step=0.06, size=0.035)                   # the score
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
-                                                              ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3))]
+                                                              ("c3", c3), ("d1", d1), ("d2", d2), ("d3", d3),
+                                                              ("e1", e1), ("e2", e2), ("e3", e3))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
-                   ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo))]
+                   ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
+                   ("e1", e1, e1_holo), ("e2", e2, e2_holo), ("e3", e3, e3_holo))]
