@@ -428,6 +428,205 @@ def n_holo(v, game):
     return lambda: m3_holo(z=z, R=R, name=f"gametable_{v}b_holo")
 
 
+# ---- round 5: the three tables refined; drop four and the duel, two takes each --------------------------------------
+
+def token(k, u, v, z, d, col):
+    """A round-looking token facing +v: a square with a diamond over it."""
+    k.box(u, v, z, d, 0.03, d, col, top=col)
+    k.box(u, v, z + d * 0.1, d * 0.8, 0.032, d * 0.8, col, top=col, ry=math.pi / 4)
+
+
+def drop_a(z0, name):
+    """Drop four, upright: a film grid on lit posts with feet and a top rail, round tokens, a line of four pink
+    marked by a cream bar through them, the next token dropping with its streaks."""
+    k = Bench(name, FP2)
+    nc, nr, s = 7, 5, 0.1
+    w, h = nc * s, nr * s
+    k.box(0.0, 0.0, z0, w, 0.01, h, "arcCyanF", top="arcCyanF")
+    for u in (-w / 2, w / 2):
+        k.box(u, 0.0, z0 - 0.03, 0.02, 0.03, h + 0.05, "arcCyan", top="arcCyan")          # the posts,
+        k.box(u, 0.0, z0 - 0.03, 0.03, 0.16, 0.014, "arcCyan", top="arcCyan")             # their feet
+    k.box(0.0, 0.0, z0 + h, w + 0.03, 0.03, 0.014, "arcCyan", top="arcCyan")              # the top rail
+    grid = ("ap.....", "paap...", "papa.a.", "appap.p", "papapap")                          # rows top to bottom
+    for r, row in enumerate(grid[::-1]):
+        for c, ch in enumerate(row):
+            if ch != ".":
+                col = "arcPink" if ch == "p" else "arcAmb"
+                token(k, -w / 2 + (c + 0.5) * s - s * 0.38, 0.0, z0 + (r + 0.12) * s, s * 0.76, col)
+    for (c0, r0), (c1, r1) in (((0, 0), (3, 3)),):                                          # the line of four
+        a = (-w / 2 + (c0 + 0.5) * s, 0.02, z0 + (r0 + 0.5) * s)
+        b = (-w / 2 + (c1 + 0.5) * s, 0.02, z0 + (r1 + 0.5) * s)
+        bar(k, a, b, 0.016, "arcMarq")
+    u = -w / 2 + 5.5 * s
+    token(k, u - s * 0.38, 0.0, z0 + h + 0.07, s * 0.76, "arcAmb")                        # the next one dropping,
+    for du in (-0.02, 0.02):
+        k.box(u + du, 0.0, z0 + h + 0.16, 0.008, 0.01, 0.06, "arcAmbF")                   # its streaks
+    return k
+
+
+def drop_b(z0, name):
+    """Drop four in 3D: a 4x4 grid of lit rods on a film base, beads stacked on them in pink and amber, one bead
+    dropping onto a rod."""
+    k = Bench(name, FP2)
+    su, sv, n = 0.16, 0.11, 4
+    k.box(0.0, 0.0, z0, su * n, sv * n, 0.01, "arcCyanF", top="arcCyanF")                 # the base,
+    for sgn in (-1, 1):
+        k.box(0.0, sgn * sv * n / 2, z0, su * n, 0.012, 0.016, "arcCyan", top="arcCyan")
+        k.box(sgn * su * n / 2, 0.0, z0, 0.012, sv * n, 0.016, "arcCyan", top="arcCyan")
+    heights = ((1, 3, 0, 2), (2, 1, 4, 1), (0, 2, 3, 2), (3, 1, 1, 0))
+    for i in range(n):
+        for jj in range(n):
+            u, v = -su * n / 2 + (i + 0.5) * su, -sv * n / 2 + (jj + 0.5) * sv
+            k.box(u, v, z0, 0.012, 0.012, 0.36, "arcCyan")                                  # a rod,
+            for b in range(heights[i][jj]):
+                col = "arcPink" if (i + jj + b) % 2 else "arcAmb"
+                k.box(u, v, z0 + 0.012 + b * 0.075, 0.065, 0.065, 0.065, col, top=col)      # its beads
+    u, v = -su * n / 2 + 2.5 * su, -sv * n / 2 + 0.5 * sv
+    k.box(u, v, z0 + 0.42, 0.065, 0.065, 0.065, "arcPink", top="arcPink")                 # the dropping bead
+    return k
+
+
+def beast(k, u, z, col, face):
+    """A four-legged beast facing +u (face 1) or -u: legs, a long body, a head with two horns, a tail."""
+    for du in (-0.07, 0.07):
+        for dv in (-0.05, 0.05):
+            k.box(u + du, dv, z, 0.04, 0.04, 0.09, col, top=col)
+    k.box(u, 0.0, z + 0.09, 0.22, 0.13, 0.09, col, top=col)
+    k.box(u + face * 0.14, 0.0, z + 0.13, 0.09, 0.09, 0.08, col, top=col)
+    for dv in (-0.03, 0.03):
+        k.box(u + face * 0.16, dv, z + 0.21, 0.02, 0.02, 0.05, "arcMarq")                 # its horns
+    k.box(u - face * 0.14, 0.0, z + 0.16, 0.09, 0.025, 0.025, col, ry=-face * 0.6)        # its tail
+
+
+def robot(k, u, z, col, face):
+    """A robot facing -u (face -1) or +u: legs, a chunky torso, a head with a lit visor, big fists, one raised."""
+    for dv in (-0.045, 0.045):
+        k.box(u, dv, z, 0.045, 0.045, 0.11, col, top=col)
+    k.box(u, 0.0, z + 0.11, 0.11, 0.17, 0.12, col, top=col)
+    k.box(u, 0.0, z + 0.23, 0.08, 0.08, 0.06, col, top=col)
+    k.box(u + face * 0.041, 0.0, z + 0.25, 0.004, 0.06, 0.014, "arcMarq")                 # its visor
+    k.box(u + face * 0.04, 0.11, z + 0.14, 0.07, 0.06, 0.07, col, top=col)                # the low fist,
+    k.box(u + face * 0.1, -0.1, z + 0.22, 0.07, 0.06, 0.07, col, top=col)                 # the raised one
+
+
+def bars(k, u, z, n, col):
+    for i in range(5):
+        c = col if i < n else "arcCyanF"
+        k.box(u - 0.1 + i * 0.05, 0.0, z, 0.044, 0.02, 0.03, c, top=c)
+
+
+def duel_a(z, R, name):
+    """The duel refined: a lit arena with four pylons, the horned pink beast and the green robot (fists up) closing,
+    a cream burst where they meet, a bigger health bar over each."""
+    k = Bench(name, FP2)
+    k.cyl(0.0, 0.0, z, R, 0.006, "arcCyanF", top="arcCyanF", sides=16)
+    ring_of(k, R, z, 20, R * 0.33, "arcCyan", h=0.014)
+    for i in range(4):
+        a = math.pi / 4 + i * math.pi / 2
+        k.box(R * math.cos(a), R * math.sin(a), z, 0.025, 0.025, 0.09, "arcCyan", top="arcCyan")
+    beast(k, -0.16, z, "arcPink", 1)
+    robot(k, 0.16, z, "arcGrn", -1)
+    for rz in (0.0, 0.785, 1.571, 2.356):
+        k.box(0.0, 0.03, z + 0.17, 0.12, 0.016, 0.016, "arcMarq", rz=rz)
+    bars(k, -0.17, z + 0.4, 4, "arcPink")
+    bars(k, 0.17, z + 0.4, 2, "arcGrn")
+    return k
+
+
+def duel_b(z, R, name):
+    """The duel on two podiums: each creature on its own lit disc, the robot's beam crossing to the beast and bursting
+    on it, the health bars over them."""
+    k = Bench(name, FP2)
+    for u, dz in ((-0.24, 0.0), (0.24, 0.05)):
+        k.cyl(u, 0.0, z + dz, R * 0.55, 0.03, "arcCyanF", top="arcCyanF", sides=14)
+        ring_of(k, R * 0.55, z + dz + 0.03, 14, R * 0.25, "arcCyan", h=0.012)
+    beast(k, -0.24, z + 0.03, "arcPink", 1)
+    robot(k, 0.24, z + 0.08, "arcGrn", -1)
+    bar(k, (0.18, 0.11, z + 0.25), (-0.12, 0.02, z + 0.2), 0.02, "arcAmb")               # the beam,
+    for rz in (0.0, 0.785, 1.571, 2.356):                                                # its burst
+        k.box(-0.13, 0.02, z + 0.19, 0.12, 0.016, 0.016, "arcMarq", rz=rz)
+    bars(k, -0.24, z + 0.4, 4, "arcPink")
+    bars(k, 0.24, z + 0.45, 2, "arcGrn")
+    return k
+
+
+def p1():
+    """Ridge console refined: a stadium base with rounded ends; the sloped glass decks and the spine on it, stopping
+    short of the ends so the base's round ends show as shelves; per-player controls on each deck; a chrome spine
+    rail carrying the projector strip."""
+    k = Bench("gametable_p1", FP2)
+    stadium(k, 0.98, 0.47, 0.0, 0.04, "arcBodyK", top="arcBodyK")
+    stadium(k, 0.95, 0.44, 0.04, TOP - 0.16, "arcBodyD", top="arcBody")
+    stadium(k, 0.96, 0.45, TOP - 0.13, 0.02, "arcChrD", top="arcChr")                    # a chrome band,
+    prof = [(-0.42, TOP - 0.11), (0.42, TOP - 0.11), (0.42, TOP - 0.05), (0.09, TOP + 0.04), (-0.09, TOP + 0.04),
+            (-0.42, TOP - 0.05)]
+    prism(k, "u", -0.62, 0.62, prof, ("arcBody", "arcBodyD", "arcBodyL"), slope="arcGlass")   # the decks and spine,
+    k.box(0.0, 0.0, TOP + 0.04, 1.3, 0.2, 0.03, "arcChrD", top="arcChr")                 # the spine rail,
+    k.box(0.0, 0.0, TOP + 0.07, 1.2, 0.08, 0.01, "arcCyan", top="arcCyan")               # the projector strip
+    for s, (u0, col) in ((1, (-0.35, "arcPink")), (-1, (0.35, "arcGrn"))):              # each player's controls
+        for du, c in ((-0.08, col), (0.0, "arcBtnY"), (0.08, "arcBtnB")):
+            k.box(u0 + du, s * 0.3, TOP - 0.06 + 0.035, 0.05, 0.05, 0.02, c, top=c)
+    for s in (-1, 1):                                                                     # the end shelves' lit rings
+        k.cyl(s * 0.78, 0.0, TOP - 0.11, 0.12, 0.01, "arcCyan", top="arcCyan", sides=12)
+        k.cyl(s * 0.78, 0.0, TOP - 0.11, 0.09, 0.012, "arcBodyK", top="arcBodyK", sides=12)
+    arms(k, lambda u, v: (u * 0.6, v * 0.18, 0.03))
+    return k.build()
+
+
+def p2():
+    """Cantilever refined: the column at the right end (where it shows), a tapered body wide at the floor, chrome
+    banded; the slab with a chrome edge and a lit underglow along its front; the far end floating."""
+    k = Bench("gametable_p2", FP2)
+    k.box(0.72, 0.0, 0.0, 0.5, 0.8, 0.05, "arcBodyK", top="arcBodyK")                   # the plinth,
+    k.box(0.72, 0.0, 0.05, 0.42, 0.56, TOP - 0.17, "arcBodyD", top="arcBody", taper=0.62)   # the tapered column,
+    k.box(0.72, 0.0, 0.3, 0.33, 0.46, 0.03, "arcChrD", top="arcChr")                     # its chrome band,
+    k.box(0.72, 0.24, 0.08, 0.16, 0.006, 0.18, "arcCyan")                                 # its lit badge
+    stadium(k, 0.96, 0.44, TOP - 0.12, 0.08, "arcBodyD", top="arcBodyL")                # the slab,
+    stadium(k, 0.97, 0.45, TOP - 0.05, 0.02, "arcChrD", top="arcChr")                   # its chrome edge,
+    stadium(k, 0.93, 0.41, TOP - 0.03, 0.03, "arcChrD", top="arcGlass")                 # its glass top,
+    k.box(-0.15, 0.445, TOP - 0.14, 1.3, 0.008, 0.02, "arcCyan")                          # the underglow, front
+    k.box(-0.15, -0.445, TOP - 0.14, 1.3, 0.008, 0.02, "arcCyan")                         # and back,
+    k.cyl(-0.82, 0.0, TOP - 0.14, 0.12, 0.02, "arcCyan", top="arcCyan", sides=12)        # a lit pad under the far end
+    k.box(-0.1, 0.0, TOP, 1.2, 0.08, 0.008, "arcCyan", top="arcCyan")                     # the emitter strip
+    arms(k, lambda u, v: (0.72, v * 0.25, 0.03))
+    return k.build()
+
+
+def p3():
+    """Ring table refined: a chrome ring over a navy band with a lit seam and a lit inner edge; two tapered posts with
+    chrome collars; the projector column with its lit bowl and lens in the opening; a plinth with a lit edge."""
+    k = Bench("gametable_p3", FP2)
+    stadium(k, 0.86, 0.32, 0.0, 0.05, "arcBodyK", top="arcBodyK")
+    stadium_ring(k, 0.86, 0.32, 0.05, 0.008, 0.02, "arcCyan", "arcCyan")                  # the plinth's lit edge,
+    for s in (-1, 1):
+        k.cyl(s * 0.66, 0.0, 0.05, 0.16, TOP - 0.17, "arcBodyD", top="arcBody", sides=12, rtop=0.11)   # the posts,
+        k.cyl(s * 0.66, 0.0, TOP - 0.16, 0.13, 0.03, "arcChrD", top="arcChr", sides=12)                # collars
+    k.cyl(0.0, 0.0, 0.05, 0.12, TOP - 0.32, "arcBodyD", top="arcBody", sides=12)
+    k.cyl(0.0, 0.0, TOP - 0.27, 0.21, 0.05, "arcChrD", top="arcBodyK", sides=16)          # the bowl,
+    ring_of(k, 0.2, TOP - 0.22, 16, 0.085, "arcCyan", h=0.012)
+    k.cyl(0.0, 0.0, TOP - 0.23, 0.06, 0.01, "arcCyan", top="arcCyan", sides=10)           # the lens
+    stadium_ring(k, 0.96, 0.44, TOP - 0.13, 0.05, 0.2, "arcBodyD", "arcBody")             # the navy band,
+    stadium_ring(k, 0.96, 0.44, TOP - 0.09, 0.012, 0.012, "arcCyan", "arcCyan")           # its lit seam,
+    stadium_ring(k, 0.96, 0.44, TOP - 0.08, 0.05, 0.2, "arcChrD", "arcChr")               # the chrome ring,
+    stadium_ring(k, 0.75, 0.25, TOP - 0.03, 0.012, 0.02, "arcCyan", "arcCyan")           # its lit inner edge
+    arms(k, lambda u, v: (u * 0.9, v * 0.2, 0.03))
+    return k.build()
+
+
+P_SET = {"p1": (p1, TOP + 0.09, 0.32, "a", "a"), "p2": (p2, TOP + 0.05, 0.36, "b", "b"),
+         "p3": (p3, TOP - 0.2, 0.24, "b", "a")}                       # table, holo base, arena R, drop take, duel take
+
+
+def p_holo(v, game):
+    cab, z, R, dt, wt = P_SET[v]
+    if game == "a":
+        f = drop_a if dt == "a" else drop_b
+        return lambda: f(z + 0.03, f"gametable_{v}a_holo")
+    f = duel_a if wt == "a" else duel_b
+    dz = 0.1 if v == "p3" else 0.0                                   # (up out of the ring, so the ring hides less)
+    return lambda: f(z + dz, R, f"gametable_{v}b_holo")
+
+
 def holo_job(sid, cab, holo):
     def run(sid=sid):
         from . import core, post
@@ -445,9 +644,12 @@ def jobs():
                                                                  ("m2", l3), ("m3", l2))]
     for v, cab in (("n1", n1), ("n2", n2), ("n3", n3)):
         out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
+    for v, (cab, *_) in P_SET.items():
+        out += [(f"module.gametable.{v}{g}", FP2, "prop", cab) for g in "ab"]
     return out + [holo_job(f"module.gametable.{v}.holo", cab, holo) for v, cab, holo in
                   (("k1", k1, k1_holo), ("k2", k2, k2_holo), ("k3", k3, k3_holo), ("l1", l1, l1_holo),
                    ("l2", l2, l2_holo), ("l3", l3, l3_holo), ("m1", k1, m1_holo), ("m2", l3, m2_holo),
                    ("m3", l2, m3_holo))] + \
         [holo_job(f"module.gametable.{v}{g}.holo", cab, n_holo(v, g)) for v, cab in (("n1", n1), ("n2", n2), ("n3", n3))
-         for g in "ab"]
+         for g in "ab"] + \
+        [holo_job(f"module.gametable.{v}{g}.holo", P_SET[v][0], p_holo(v, g)) for v in P_SET for g in "ab"]
