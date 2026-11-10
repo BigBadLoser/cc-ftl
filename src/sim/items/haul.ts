@@ -18,7 +18,7 @@ import { GATHER_RADIUS } from '../tuning';
 import { stageAdd, stageTile } from './staging';
 
 /** Where the haul's destination is (module anchor, the target job's tile, the zone tile its item goes to), or null if it is gone. */
-export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | null {
+export function destinationTile(sim: Sim, job: Job): { x: number; y: number; size?: [number, number] } | null {
   const dst = job.haul?.dst;
   if (!dst) return null;
   if (dst.kind === 'vehicle') {
@@ -27,7 +27,9 @@ export function destinationTile(sim: Sim, job: Job): { x: number; y: number } | 
   }
   if (dst.kind === 'zone') return dst.id === shipIdOf(sim, job) ? stageTile(sim, dst.id, job.haul!.item) : null;
   const at = dst.kind === 'job' ? sim.world.get(dst.id, JobC) : sim.world.get(dst.id, ModuleC);
-  return at ? { x: at.x, y: at.y } : null;
+  if (!at) return null;
+  const size = dst.kind === 'job' ? (at as Job).size : undefined; // a job on a module site: crew deliver from any reachable side of it, not onto it
+  return size ? { x: at.x, y: at.y, size } : { x: at.x, y: at.y };
 }
 
 /** Put units down at a haul's destination; returns how many went in (the rest stays in hand). */
@@ -149,6 +151,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     const to = destinationTile(sim, job) ?? dest;
     job.x = to.x;
     job.y = to.y;
+    if (to.size) job.size = to.size;
     return 'working';
   }
 
@@ -178,6 +181,8 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     delete h.extra; // delivered above; reservations() must not count it at the next stop
     job.x = nj.x;
     job.y = nj.y;
+    if (nj.size) job.size = nj.size;
+    else delete job.size;
     return 'working';
   }
   if (left > 0) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left);

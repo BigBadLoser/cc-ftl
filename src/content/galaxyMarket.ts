@@ -12,7 +12,7 @@ export const market = {
   research: 'trader.station.research',
   rates: {
     'trader.station.mining': {
-      produce: { 'item.iron_ore': 2, 'item.metal': 1, 'item.ice': 1, 'item.rare_ore': 0.2, 'item.fuel': 0.6 },
+      produce: { 'item.iron_ore': 2, 'item.metal': 1, 'item.ice': 1, 'item.rare_ore': 0.2, 'item.fuel': 0.6, 'item.energy_crystal': 1 },
       consume: { 'item.ration': 1, 'item.parts': 0.2 },
     },
     'trader.station.farming': {
@@ -24,11 +24,11 @@ export const market = {
       consume: {
         'item.ration': 1.5, 'item.electronics': 0.5, 'item.parts': 0.4, 'item.metal': 0.8, 'item.missile': 0.2,
         // Smelters and habitats (issue #222): ore and life-support goods are bought in, so selling them here pays.
-        'item.iron_ore': 2, 'item.rare_ore': 0.3, 'item.water': 0.5, 'item.oxygen': 0.5,
+        'item.iron_ore': 2, 'item.rare_ore': 0.3, 'item.water': 0.5, 'item.oxygen': 0.5, 'item.energy_crystal': 0.4,
       },
     },
     'trader.station.military': {
-      consume: { 'item.ration': 1, 'item.metal': 1, 'item.parts': 0.4, 'item.missile': 0.4, 'item.electronics': 0.3, 'item.oxygen': 0.3 },
+      consume: { 'item.ration': 1, 'item.metal': 1, 'item.parts': 0.4, 'item.missile': 0.4, 'item.electronics': 0.3, 'item.oxygen': 0.3, 'item.energy_crystal': 0.2 },
     },
     'trader.station.pirate': {
       produce: { 'item.scrap_weapons': 1 },
@@ -36,7 +36,7 @@ export const market = {
     },
   },
   goods: [
-    'item.scrap_hull', 'item.scrap_weapons', 'item.metal', 'item.electronics', 'item.polymer', 'item.parts', 'item.iron_ore', 'item.rare_ore', 'item.ice', 'item.ration', 'item.missile', 'item.fuel',
+    'item.scrap_hull', 'item.scrap_weapons', 'item.metal', 'item.electronics', 'item.polymer', 'item.parts', 'item.iron_ore', 'item.rare_ore', 'item.ice', 'item.ration', 'item.missile', 'item.fuel', 'item.energy_crystal',
     'item.water', 'item.oxygen',
   ],
 } satisfies MarketContent;

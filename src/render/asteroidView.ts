@@ -34,7 +34,7 @@ export const ROCK_MASS_Z = ROCK_TOP_Z;
 /** Mass sits a hair behind other things on its diagonal. */
 export const MASS_DZ = -0.1;
 
-const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare' };
+const ORE_KIND: Record<string, string> = { 'ore.iron': 'iron', 'ore.ice': 'ice', 'ore.rare': 'rare', 'ore.crystal': 'rare' };
 
 /** Sum of the struct, ore and ore-amount chunk revisions under the asteroid's bbox (padded by one): a change detector. */
 function revision(sector: SectorGrid, a: Asteroid): number {

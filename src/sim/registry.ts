@@ -500,6 +500,15 @@ export interface ModuleDef {
   power: number;
   /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
   powerPriority?: number;
+  /**
+   * Reactor fuel (issue #421): the module supplies power only while its internal store (`Module.fuel`, units of `item`) is above 0, and burns
+   * `1 / powerPerUnit` units per unit of power it actually delivers (power x seconds), so burn follows the network's load. `store`: units it
+   * holds when full (a fresh module starts full); crew top it up from the ship's stores once it is below `refillBelow` (modules/refuel.ts).
+   * Only player ships burn; every other ship's reactor runs on without fuel (modules/energy.ts `burnsFuel`).
+   */
+  fuel?: { item: string; store: number; refillBelow: number; powerPerUnit: number };
+  /** A battery bank (issue #421): stores up to `capacity` power-seconds (`Module.charge`), charged from spare supply and drained to cover a shortfall before any module is cut. */
+  battery?: { capacity: number };
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
   /**

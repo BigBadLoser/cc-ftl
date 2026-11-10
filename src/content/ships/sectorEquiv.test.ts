@@ -336,4 +336,7 @@ describe('sector refactor equivalence', () => {
 // Repinned for backgrounds and always-armed crew (#415): every person of the player's crew starts with a sidearm and the better shots trade up from
 // the locker (no emergency arming), every one of them may relieve an empty console in a fight (the legacy content's `relievesStations` strip no
 // longer reaches the player's side), and the new background, interests and won't-do stores are empty in the dump.
-const EXPECTED = { combat: '93779269', disaster: '9ebe85dd' };
+// Repinned for reactor fuel (#421): the player ship carries crystals (a stack in its stores), its reactors burn them (`Module.fuel` appears in the dump as soon as one burns)
+// and the ship's power draws on the same loads as before; nothing else in the world or the event log moved.
+// Repinned again for the starter's battery bank (#421): one more module (80 hp, a charge field) and its power bookkeeping; the ids after it shift by one.
+const EXPECTED = { combat: '17ca460a', disaster: '4e42952c' };

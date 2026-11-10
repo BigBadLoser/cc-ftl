@@ -209,6 +209,19 @@ export interface UiFight {
 }
 
 /** A placed module, for the inspector and the debug panel. */
+/** A reactor's fuel store or a battery bank's charge (app/reserveSnapshot.ts). */
+export interface UiReserve {
+  kind: 'fuel' | 'charge';
+  /** What is held: the fuel's name, or 'Charge'. */
+  label: string;
+  have: number;
+  max: number;
+  /** One line on what it is doing / what is wrong. */
+  note: string;
+  /** Under the refill line (fuel) or empty (charge): shown as a warning. */
+  low: boolean;
+}
+
 export interface UiModule {
   id: number;
   /** The ship it is on (ShipC entity id): the `ship` of module commands. */
@@ -229,6 +242,8 @@ export interface UiModule {
   powered: boolean;
   /** Units per second: positive supplies, negative draws. */
   power: number;
+  /** A reactor's fuel store or a battery bank's charge (null for other modules). */
+  reserve: UiReserve | null;
   /** Holds items (has a storage panel). */
   storage: boolean;
   /** Crafts recipes (has a production panel). */
@@ -592,6 +607,9 @@ export interface UiJobs {
 export interface UiStats {
   supply: number;
   demand: number;
+  /** Reactor fuel in the stores of all reactors / what they hold full, and the battery banks' charge / capacity; null when the ship has none. */
+  fuel: { have: number; max: number } | null;
+  battery: { have: number; max: number } | null;
   food: UiFood;
   heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */

@@ -114,7 +114,7 @@ describe('exploring a scene derelict by hand', () => {
     step(sim, 4000, () => sim.world.get(shuttle, VehicleC)!.state === 'stowed');
     expect(sim.world.get(shuttle, VehicleC)!.state).toBe('stowed');
     for (const c of crew) sim.enqueue({ type: 'vehicle.disembark', vehicle: shuttle, crew: c });
-    step(sim, 5);
+    step(sim, 1); // one tick: later, the ship's own cargo ferry may take the shuttle (and its pilot) out on a haul
     for (const c of crew) expect(shipIdOf(sim, sim.world.get(c, PositionC)!)).toBe(home);
   });
 });

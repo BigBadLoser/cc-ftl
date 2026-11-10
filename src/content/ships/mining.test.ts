@@ -24,12 +24,15 @@ function setup(seed = 1): { sim: Sim; pod: number; asteroid: number } {
   return { sim, pod, asteroid };
 }
 
-/** The ore tiles of an asteroid, row-major, with their amounts. */
+/**
+ * The ore tiles of an asteroid, row-major, with their amounts. Energy crystal is left out: the ship's reactors burn what is mined of it (#421), so it is
+ * not part of the "every unit cut is in storage" count these tests make.
+ */
 function oreTiles(sim: Sim, asteroid: number): { x: number; y: number; amt: number }[] {
   const a = sim.world.get(asteroid, AsteroidC)!;
   const out: { x: number; y: number; amt: number }[] = [];
   for (let y = a.y; y < a.y + a.height; y++) {
-    for (let x = a.x; x < a.x + a.width; x++) if (sim.sector.grid.get('ore', x, y)) out.push({ x, y, amt: sim.sector.grid.get('oreAmt', x, y) });
+    for (let x = a.x; x < a.x + a.width; x++) if (sim.sector.grid.get('ore', x, y) && sim.sector.grid.get('ore', x, y) !== content.ores['ore.crystal'].code) out.push({ x, y, amt: sim.sector.grid.get('oreAmt', x, y) });
   }
   return out;
 }

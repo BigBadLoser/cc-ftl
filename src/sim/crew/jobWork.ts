@@ -1,4 +1,5 @@
 import { performCraft } from '../items/craft';
+import { performRefuel } from '../modules/refuel';
 import { performFarm } from '../farm/work';
 import { performResearch } from '../research/work';
 import { performHaul } from '../items/haul';
@@ -54,6 +55,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'craft': return performCraft(sim, job, speed, crew);
     case 'plant':
     case 'harvest': return performFarm(sim, job, speed);
+    case 'refuel': return performRefuel(sim, job, speed);
     case 'research': return performResearch(sim, crew, job, speed);
     case 'build':
     case 'deconstruct': return timed(job, speed, () => finishStruct(sim, job));

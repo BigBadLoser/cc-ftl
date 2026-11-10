@@ -180,7 +180,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, fuel: null, battery: null, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
