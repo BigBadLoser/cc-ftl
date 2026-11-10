@@ -40,6 +40,7 @@ export const starterShip = {
     { def: 'module.reactor', x: 26, y: 7, rot: 0 },
     { def: 'module.reactor', x: 24, y: 7, rot: 0 },
     { def: 'module.reactor', x: 25, y: 11, rot: 0 },
+    { def: 'module.battery', x: 27, y: 6, rot: 0 }, // a power bank beside the reactors
     { def: 'module.lifeSupport', x: 23, y: 7, rot: 0 },
     { def: 'module.light', x: 22, y: 2, rot: 0 },
     { def: 'module.light', x: 22, y: 5, rot: 0 },
@@ -94,7 +95,7 @@ export const starterShip = {
       stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }],
     },
     { def: 'module.storage', x: 19, y: 17, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.missile', count: 8 }, { item: 'item.ration', count: 12 }] },
-    { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
+    { def: 'module.storage', x: 18, y: 17, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.energy_crystal', count: 50 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
     { def: 'module.light', x: 15, y: 12, rot: 0 },
     { def: 'module.light', x: 14, y: 12, rot: 0 },
     { def: 'module.light', x: 20, y: 15, rot: 0 },

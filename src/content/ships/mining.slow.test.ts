@@ -21,6 +21,18 @@ function setup(n: number): { sim: Sim; pods: number[]; asteroid: number } {
   return { sim, pods, asteroid: [...sim.world.query(AsteroidC)][0]! };
 }
 
+function oreTiles(sim: Sim, asteroid: number): { x: number; y: number; amt: number }[] {
+  const a = sim.world.get(asteroid, AsteroidC)!;
+  const out: { x: number; y: number; amt: number }[] = [];
+  for (let y = a.y; y < a.y + a.height; y++) {
+    for (let x = a.x; x < a.x + a.width; x++) {
+      const ore = sim.sector.grid.get('ore', x, y);
+      if (ore && ore !== content.ores['ore.crystal'].code) out.push({ x, y, amt: sim.sector.grid.get('oreAmt', x, y) });
+    }
+  }
+  return out;
+}
+
 function oreLeft(sim: Sim, asteroid: number): number {
   const a = sim.world.get(asteroid, AsteroidC)!;
   let n = 0;
@@ -36,7 +48,9 @@ describe('mining pods, long run', () => {
     const stock = () => items.reduce((n, i) => n + totalStock(sim, i), 0);
     const ore0 = oreLeft(sim, asteroid);
     const stock0 = stock();
-    for (const pod of pods) sim.enqueue({ type: 'mining.order', pod, asteroid });
+    // Not the energy crystal: the reactors burn what is mined of it (#421), which this count of what is cut does not follow.
+    const tiles = oreTiles(sim, asteroid);
+    for (const pod of pods) sim.enqueue({ type: 'mining.order', pod, asteroid, tiles });
     let trips = 0;
     for (let i = 0; i < 6 * 60 * 20; i++) {
       sim.step();

@@ -14,6 +14,7 @@ import t_bomb from '@tabler/icons/outline/bomb.svg?raw';
 import t_radioactive from '@tabler/icons/outline/radioactive.svg?raw';
 import t_arrow_big_right_lines from '@tabler/icons/outline/arrow-big-right-lines.svg?raw';
 import t_sparkles from '@tabler/icons/outline/sparkles.svg?raw';
+import t_battery from '@tabler/icons/outline/battery-2.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_settings from '@tabler/icons/outline/settings.svg?raw';
 import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
@@ -111,6 +112,8 @@ export const FILES = {
   o2: 'droplet',
   credits: 'coin',
   fuel: 'gas-station',
+  crystal: 'diamond',
+  battery: 'battery-2',
   stock: 'package',
   wrench: 'tool',
   target: 'crosshair',
@@ -213,6 +216,7 @@ const RAW: Record<string, string> = {
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,
   'bolt': t_bolt,
+  'battery-2': t_battery,
   'snowflake': t_snowflake,
   'broadcast': t_broadcast,
   'bug': t_bug,

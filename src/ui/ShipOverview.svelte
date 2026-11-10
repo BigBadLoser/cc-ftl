@@ -8,7 +8,7 @@
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
-  let st = $state<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
+  let st = $state<UiStats>({ supply: 0, demand: 0, fuel: null, battery: null, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   let stock = $state<UiStock[]>([]);
   let credits = $state(0);
   let crew = $state<UiCrew[]>([]);
@@ -29,6 +29,7 @@
   });
   const total = $derived(stock.reduce((n, s) => n + s.floor + s.stored, 0));
   const fuel = $derived(stock.filter((s) => s.item === 'item.fuel').reduce((n, s) => n + s.floor + s.stored, 0));
+  const crystals = $derived(stock.filter((s) => s.item === 'item.energy_crystal').reduce((n, s) => n + s.floor + s.stored, 0));
   const hasFuel = $derived(stock.some((s) => s.item === 'item.fuel'));
   /** Crew food: hours left at the current rate; amber under an hour, red under 15 minutes or with none. */
   const foodLevel = $derived(st.food.units === 0 && st.food.eaters > 0 ? 'out' : st.food.hours !== null && st.food.hours < 0.25 ? 'out' : st.food.hours !== null && st.food.hours < 1 ? 'low' : 'ok');
@@ -44,6 +45,8 @@
   <button class="tile close" use:tip={{ text: 'Close' }} aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
   <div class="res" data-testid="stats">
     <span use:tip={{ text: 'Power supply / demand' }} class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span>
+    {#if st.fuel}<span use:tip={{ text: `Reactor crystals ${st.fuel.have}/${st.fuel.max} · ${crystals} in stores. Crew top the reactors up from the stores` }} class="cell" class:bad={st.fuel.have < st.fuel.max / 2 && crystals === 0} data-testid="stat-reactor-fuel"><Icon name="crystal" size={18} /><b>{st.fuel.have}/{st.fuel.max}</b></span>{/if}
+    {#if st.battery}<span use:tip={{ text: 'Battery banks: stored power / capacity' }} class="cell" class:bad={st.battery.have <= 0} data-testid="stat-battery"><Icon name="battery" size={18} /><b>{Math.round((st.battery.have / Math.max(1, st.battery.max)) * 100)}%</b></span>{/if}
     <span use:tip={{ text: 'Average O₂ of rooms with crew (kPa)' }} class="cell" class:bad={o2Low} data-testid="stat-o2"><Icon name="o2" size={18} /><b>{st.o2 === null ? '–' : st.o2.toFixed(1)}</b></span>
     <span use:tip={{ text: heavy ? 'Ship size over what the engines carry: jumping needs an overcharge' : 'Ship size (tiles inside the outer hull) / what the engines carry' }} class="cell wide" class:bad={heavy} data-testid="stat-hull"><span class="lab">Size</span><b>{st.hull.tiles} / {st.hull.capacity}</b></span>
     <span use:tip={{ text: 'Credits' }} class="cell" data-testid="stat-credits"><Icon name="credits" size={18} /><b>{credits}</b></span>

@@ -136,8 +136,9 @@ import { newYard, type YardState } from './yard/types';
  *   Then (no bump, #416): `Airlock.suits`, `Vehicle.suits` and `Job.airless` are gone; `deserialize` drops them (`retiredField`).
  * v111 (crew backgrounds, #415): skills 0-10 with `repair` folded into `construction`, `botany` and `industry`; `BackgroundC`,
  *     `InterestsC`, `WontDoC`, `Mood.enjoy`; player crew of kind `role.crew`; no `EmergencyArmC` / `StowOrderC`.
+ * v112 (reactor fuel and batteries, #421): `Module.fuel` (reactor store) and `Module.charge` (battery bank), job kind 'refuel', ore code 4 (`ore.crystal`).
  */
-export const SAVE_VERSION = 111;
+export const SAVE_VERSION = 112;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

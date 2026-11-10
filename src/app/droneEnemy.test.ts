@@ -42,7 +42,9 @@ describe('enemy drones (#318 slice 2b)', () => {
       const deep = against(faction, 5);
       const ds = dronesOf(deep.sim, deep.enemy);
       expect(ds.length).toBe(1);
-      expect(deep.sim.world.get(ds[0] as number, DroneC)).toMatchObject({ def: 'drone.defence', state: 'docked' });
+      expect(deep.sim.world.get(ds[0] as number, DroneC)).toMatchObject({ def: 'drone.defence' });
+      // docked, or just starting to launch: a launch order can land in the first tenth of a second, depending on the entity ids of the start ship
+      expect(['docked', 'launch']).toContain(deep.sim.world.get(ds[0] as number, DroneC)?.state);
       expect(deep.sim.world.query(ModuleC).some((m) => deep.sim.world.get(m, ModuleC)?.def === 'module.droneBay')).toBe(true);
       const late = against(faction, 8);
       expect(dronesOf(late.sim, late.enemy).length).toBe(2);

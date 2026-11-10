@@ -64,7 +64,7 @@ export const wayfarerShip = {
     // Hold: three racks
     { def: 'module.storage_rack', x: 9, y: 19, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
     { def: 'module.storage_rack', x: 11, y: 19, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.meal_bland', count: 20 }, { item: 'item.greens', count: 6 }] },
-    { def: 'module.storage_rack', x: 13, y: 19, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
+    { def: 'module.storage_rack', x: 13, y: 19, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.energy_crystal', count: 28 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
     { def: 'module.light', x: 14, y: 15, rot: 0 },
     // Spine
     { def: 'module.light', x: 17, y: 12, rot: 0 },
@@ -90,6 +90,7 @@ export const wayfarerShip = {
     { def: 'module.lifeSupport', x: 26, y: 14, rot: 0 },
     { def: 'module.reactor', x: 26, y: 16, rot: 0 },
     { def: 'module.reactor', x: 26, y: 18, rot: 0 },
+    { def: 'module.battery', x: 28, y: 16, rot: 0 }, // a power bank beside the reactors
     { def: 'module.shieldGen', x: 29, y: 18, rot: 0 },
     { def: 'module.lifeSupport', x: 30, y: 14, rot: 0 },
     { def: 'module.light', x: 28, y: 13, rot: 0 },
