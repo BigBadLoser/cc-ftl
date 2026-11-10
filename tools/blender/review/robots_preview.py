@@ -46,12 +46,23 @@ class Assets:
 
     def frame(self, aid, d, clip, i):
         a = self.m["assets"][aid]
-        sh = self.m["sheets"][a["clips"][clip].get("sheet", a.get("sheet"))]
-        col = a["clips"][clip]["start"] + i
+        c = a["clips"][clip]
+        sh = self.m["sheets"][c.get("sheet", a.get("sheet"))]
+        col = c["start"] + i
         fw, fh = a["frameW"], a["frameH"]
-        sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
-        g = self.img(sh["glow"])[sl] if "glow" in sh else None
-        return self.img(sh["image"])[sl], g, a["anchor"]
+        if "cw" not in c:
+            sl = (slice(d * fh, (d + 1) * fh), slice(col * fw, (col + 1) * fw))
+            g = self.img(sh["glow"])[sl] if "glow" in sh else None
+            return self.img(sh["image"])[sl], g, a["anchor"]
+        # Cropped sheets: each cell is the frame's (cw, ch) box at (ox, oy); paste it back into a full frame.
+        cw, ch, ox, oy = c["cw"], c["ch"], c["ox"], c["oy"]
+        sl = (slice(d * ch, (d + 1) * ch), slice(col * cw, (col + 1) * cw))
+
+        def full(im):
+            out = np.zeros((fh, fw, 4), np.uint8)
+            out[oy:oy + ch, ox:ox + cw] = im[sl]
+            return out
+        return full(self.img(sh["image"])), full(self.img(sh["glow"])) if "glow" in sh else None, a["anchor"]
 
     def static(self, aid):
         a = self.m["assets"][aid]
