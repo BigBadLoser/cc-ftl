@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent } from '../../sim';
+import { AboardC, AllegianceC, CrewC, DeadC, DownedC, DraftedC, EmbarkOrderC, EquipC, FighterC, HealthC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, Struct, SurrenderedC, VehicleC, type ModuleDef, WeaponC, newGame, shipGrid, spawnCrew, type Sim, type SimEvent, WontDoC } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 import { operatorOf } from '../../sim/combat/operators';
@@ -189,6 +189,22 @@ describe('battle stations', () => {
     run(sim, 20 * 60, () => operatorOf(sim, weapons) === pick);
     expect(operatorOf(sim, weapons)).toBe(pick);
     expect(sim.world.has(pick, DraftedC)).toBe(true);
+  });
+
+  it('crew who won’t fight refuse the weapons console order, and take another console', () => {
+    const sim = newGame(1, content);
+    run(sim, 5);
+    const weapons = consoleOf(sim, 1, 'weapons');
+    const helm = consoleOf(sim, 1, 'helm');
+    const pick = crewOn(sim, 1).find((c) => operatorOf(sim, weapons) !== c)!;
+    sim.world.add(pick, WontDoC, { ids: ['violence'] });
+    draft(sim, [pick]);
+    sim.enqueue({ type: 'crew.man', id: pick, module: weapons });
+    expect(rejected(run(sim, 1))).toEqual(['wontDo']);
+    run(sim, 20 * 30);
+    expect(operatorOf(sim, weapons)).not.toBe(pick);
+    sim.enqueue({ type: 'crew.man', id: pick, module: helm });
+    expect(rejected(run(sim, 1))).toEqual([]);
   });
 
   it('holds the station outside combat while drafted, and a move order releases it', () => {

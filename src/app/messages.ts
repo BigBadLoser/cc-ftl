@@ -16,6 +16,7 @@ const REASONS: Record<string, string> = {
   outOfBounds: "That's outside the ship",
   badGrid: "That isn't a ship tile",
   notDrafted: 'Draft the crew member first',
+  wontDo: 'They refuse: it is something they won’t do',
   otherShip: 'That crew member is on another ship',
   notWalkable: "Can't walk there",
   noCrew: 'That crew member is gone',

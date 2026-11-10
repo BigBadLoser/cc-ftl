@@ -1,5 +1,6 @@
 import { DraftedC, JobC, PositionC } from '../crew/components';
 import { abortTask, reserveJob } from '../ai/task';
+import { refusesConsole } from '../crew/jobFit';
 import { shipById } from '../combat/ships';
 import { ModuleC } from '../modules/components';
 import { accessTile } from '../modules/footprint';
@@ -11,7 +12,8 @@ import { FighterC } from './components';
 /**
  * Send a drafted crew member to man a console of the player's ship (a battle station): they take its 'operate' job, walk to its
  * access tile and stand there as the operator. An operator already there is replaced. The job outlives the fight while the
- * drafted holder stands at it (see operateJobsSystem), so the order can be given before the shooting starts. Returns a reject
+ * drafted holder stands at it (see operateJobsSystem), so the order can be given before the shooting starts. Crew who won't fight
+ * refuse a weapons console ('wontDo'). Returns a reject
  * reason, or null.
  */
 export function manStation(sim: Sim, crew: number, module: number): string | null {
@@ -22,6 +24,7 @@ export function manStation(sim: Sim, crew: number, module: number): string | nul
   const at = m && def && accessTile(def, m.x, m.y, m.rot);
   if (!m || !def?.console || !at || m.hp <= 0 || shipById(sim, shipIdOf(sim, m))?.faction !== 'player') return 'badTarget';
   if (shipIdOf(sim, pos) !== shipIdOf(sim, m)) return 'otherShip';
+  if (refusesConsole(sim, crew, module)) return 'wontDo';
   let jobId = 0;
   for (const id of sim.world.query(JobC)) if (sim.world.get(id, JobC)?.kind === 'operate' && sim.world.get(id, JobC)?.target === module) jobId = id;
   const old = sim.world.get(jobId, JobC);
