@@ -23,13 +23,14 @@ import type { OrderId } from './app/orders';
 import { createLoop } from './app/loop';
 import { buildRepro } from './app/repro';
 import { installDebugHook } from './app/debugHook';
+import { installPlayHook } from './app/playHook';
 import { DRAFT_CSS, DRAFT_CSS_FILL } from './render/draftColor';
 import { shipHolo } from './app/shipHolo';
 import { createRenderer, type Renderer } from './render/scene';
 import { createSaver, loadSlot, lostReason, reloadLastSave, openNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, ModuleC, footprintTiles, NOOP_PROBE, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, serialize, ShipC, type Probe } from './sim';
+import { BodyC, ModuleC, footprintTiles, NOOP_PROBE, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, serialize, ShipC, type Probe, type SimEvent } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { buildFoeModule } from './app/foeModule';
@@ -70,6 +71,7 @@ const controller = createController(sim, bridge);
 let renderer: Renderer | undefined;
 let starmapOpen = false;
 let hook: { onEvents(types: readonly string[]): void } | undefined;
+let play: { onEvents(events: SimEvent[]): void } | undefined;
 
 const itemIcons = createStore<Record<string, UiIcon>>({});
 loadItemIcons(Object.keys(content.items), (id) => (content.items as Record<string, { art?: string }>)[id]?.art ?? id).then((v) => itemIcons.set(v)).catch((e: unknown) => errorLog.push(e));
@@ -129,6 +131,7 @@ const loop = createLoop({
     }
     signals.events(events);
     hook?.onEvents(events.map((e) => e.type));
+    play?.onEvents(events);
   },
   onFrame: (stats) => {
     probe.begin('ui/bridge');
@@ -486,6 +489,11 @@ const api: UiApi = {
         loop.start();
         void r.whenArtReady().then(() => {
           loop.hold(false);
+          // The playtest API (`?agent`) appears once the game can run, so a model that waits for `window.__play` never races the loading veil.
+          play = installPlayHook({
+            sim, loop, api, refresh: () => bridge.refresh(), starmapOpen: () => starmapOpen,
+            lost: () => session.get().lost ?? lostReason(sim), screenOf: (ship, x, y) => r.screenOf(ship, x, y),
+          }, location.search);
           artReadyResolve();
         });
         startScenario();

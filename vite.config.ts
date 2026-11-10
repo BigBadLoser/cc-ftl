@@ -20,6 +20,7 @@ function commit(): string {
  */
 const ISOLATED = [
   'src/app/saves.test.ts',
+  'src/app/playHook.test.ts', // stubs `window`
   'src/app/stockHints.test.ts', // these two set `danger` on generated nodes, which are cached per seed
   'src/content/standing.test.ts',
   'src/content/derelictFailure.test.ts',
