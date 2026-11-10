@@ -1,4 +1,4 @@
-"""Asteroid rock: ore veins through rock tiles (iron, ice, rare metals; rich and thin) and their crystals, glints and
+"""Asteroid rock: ore veins through rock tiles (iron, ice, rare metals, energy crystals; rich and thin) and their crystals, glints and
 nodules."""
 import math
 
@@ -8,9 +8,9 @@ from mathutils import Vector
 from .rock_base import TAU, gbase, per2, quad, rng, tri
 
 
-ORE_SEED = {"iron": 401, "ice": 433, "rare": 467}
-ORE_WARP = {"iron": 0.28, "ice": 0.14, "rare": 0.16}
-ORE_DIR = {"iron": (1, 2), "ice": (2, -1), "rare": (1, -1)}   # long veins, joined across tiles
+ORE_SEED = {"iron": 401, "ice": 433, "rare": 467, "crystal": 491}
+ORE_WARP = {"iron": 0.28, "ice": 0.14, "rare": 0.16, "crystal": 0.2}
+ORE_DIR = {"iron": (1, 2), "ice": (2, -1), "rare": (1, -1), "crystal": (2, 1)}   # long veins, joined across tiles
 
 
 class Ore:
@@ -20,7 +20,7 @@ class Ore:
     def __init__(self, kind, rich):
         self.kind, self.rich = kind, rich
         self.seed = ORE_SEED[kind]
-        self.w = 0.2 if rich else 0.09
+        self.w = (0.26 if rich else 0.11) if kind == "crystal" else (0.2 if rich else 0.09)
 
     def strength(self, x, y, z):
         """0 outside a vein, rising to 1 at its middle."""
@@ -39,6 +39,8 @@ class Ore:
             return ("orL" if lit else "or") if top else ("orM" if (zc * 9) % 1 < 0.5 else "orD")
         if self.kind == "ice":
             return ("icL" if lit else "ic") if top else ("icM" if (zc * 9) % 1 < 0.6 else "icD")
+        if self.kind == "crystal":
+            return ("ecL" if lit else "ecM") if top else ("ecM" if (zc * 9) % 1 < 0.4 else "ecD")
         return "rvM" if top else "rvD"
 
     def sites(self, tile, count):
@@ -105,6 +107,19 @@ def ore_features(k, tile, O):
             r = rng(sd)
             crystal(k, p, (n + Vector((r.uniform(-.4, .4), r.uniform(-.4, .4), 0.3))).normalized(),
                     r.uniform(0.018, 0.035), r.uniform(0.006, 0.01), ("rvM", "rvG", "rvG", "rvG"), O)
+    elif ore.kind == "crystal":                                                           # long teal clusters
+        for p, n, sd in ore.sites(tile, 12 if ore.rich else 4):
+            r = rng(sd)
+            for _ in range(int(r.integers(4, 8) if ore.rich else r.integers(2, 4))):
+                tilt = Vector((r.uniform(-1, 1), r.uniform(-1, 1), r.uniform(-1, 1))) * 0.4
+                ax = (n * 0.7 + Vector((0, 0, 0.35)) + tilt).normalized()
+                L = r.uniform(0.12, 0.26) * (1.0 if ore.rich else 0.6)
+                off = Vector((r.uniform(-1, 1), r.uniform(-1, 1), 0)) * 0.025
+                crystal(k, p + off, ax, L, L * 0.14, ("ecM", "ecL", "ecW" if L > 0.23 else "ecG", "ecL"), O)
+        for p, n, sd in ore.sites(tile, 24 if ore.rich else 8):                           # and glints between
+            r = rng(sd + 1)
+            crystal(k, p, (n + Vector((r.uniform(-.4, .4), r.uniform(-.4, .4), 0.3))).normalized(),
+                    r.uniform(0.02, 0.04), r.uniform(0.007, 0.011), ("ecM", "ecL", "ecG", "ecM"), O)
     elif ore.rich:                                                                        # rusty nodules
         for p, n, sd in ore.sites(tile, 6):
             lump(k, p, rng(sd).uniform(0.025, 0.045), sd, ("orL", "orM"), O, height=0.8)
