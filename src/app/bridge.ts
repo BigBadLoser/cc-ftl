@@ -40,6 +40,8 @@ export interface Snapshot {
   tick: number;
   /** The ship clock (#412): day from 1, hour 0..23, minute. */
   clock: { day: number; hour: number; minute: number };
+  /** The starmap turn (`sim.galaxy.turn`), the one the save meta records. */
+  turn: number;
   speed: Speed;
   paused: boolean;
   entityCount: number;
@@ -144,6 +146,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   const store = createStore<Snapshot>({
     tick: sim.tick,
     clock: clockAt(sim.tick),
+    turn: sim.galaxy.turn,
     speed: 1,
     paused: false,
     entityCount: sim.world.entityCount,
@@ -612,7 +615,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
         fn();
         probe.end(label);
       };
-      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, clock: clockAt(stats.tick), zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
+      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, clock: clockAt(stats.tick), turn: sim.galaxy.turn, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
       step('ui/bridge/inspect', refreshInspect);
       step('ui/bridge/crew', refreshCrew);
       step('ui/bridge/ship', refreshShip);

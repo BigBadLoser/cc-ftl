@@ -1,14 +1,16 @@
 import { JobC } from '../crew/components';
 import { ItemStackC, StagingC } from '../items/components';
 import { makeHaul } from '../items/plan';
-import { refKey, reservations } from '../items/stock';
+import { nearestStorageFor, refKey, reservations, type Reservations } from '../items/stock';
+import { crateUnits, destroyJob, spillItems, stackSizeOf } from '../items/stacks';
+import { boardingTile } from '../vehicles/geometry';
 import { shipGrid, shipIdAt } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { isStaged, loadCrate, stagedStacks, stagingRoom, zoneIntact, zoneTilesNear } from '../items/staging';
 import { TICK_HZ } from '../time';
 import { DEFAULT_CARRY_CAPACITY, LOAD_CRATE_SEC, PLAN_INTERVAL, STAGING_LOADS, STAGING_TILES } from '../tuning';
-import { cargoCount, cargoSpace } from '../vehicles/cargo';
+import { cargoAdd, cargoCount, cargoSpace, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 
@@ -80,6 +82,54 @@ export function planCarry(sim: Sim, ship: number): void {
 export function loadStep(sim: Sim, ship: number, vehicle: number, arrived: number): void {
   const t = sim.tick - arrived;
   if (t > 0 && t % Math.max(1, Math.round(LOAD_CRATE_SEC * TICK_HZ)) === 0) loadCrate(sim, ship, vehicle);
+}
+
+/** Units of an item lying loose on a ship (no delivery crate) that no haul has taken on yet. */
+function unhauled(sim: Sim, ship: number, item: string, res: Reservations): number {
+  let n = 0;
+  for (const id of sim.world.query(ItemStackC)) {
+    const st = sim.world.get(id, ItemStackC)!;
+    if (st.item === item && !st.job && shipIdAt(sim, st.x, st.y) === ship) n += Math.max(0, st.count - (res.out.get(refKey('floor', id, item)) ?? 0));
+  }
+  return n;
+}
+
+/**
+ * Unload the shuttle at home (#408): one crate every LOAD_CRATE_SEC since it got in (`arrived`), put down on the floor beside its boarding
+ * tile, of what no hauler has taken on yet and the home ship has storage room for. The crates are ordinary loose goods there, put away by
+ * whoever is home when they are free, so the hold empties and the shuttle goes back even with the whole crew away or asleep. What the home
+ * ship has no room for stays in the hold (`noRoom`).
+ */
+export function unloadStep(sim: Sim, vehicle: number, arrived: number): void {
+  const t = sim.tick - arrived;
+  if (t <= 0 || t % Math.max(1, Math.round(LOAD_CRATE_SEC * TICK_HZ)) !== 0) return;
+  const v = sim.world.get(vehicle, VehicleC);
+  const at = boardingTile(sim, vehicle);
+  if (!v || !at || cargoCount(v) === 0) return;
+  // Hauls out of the hold that nobody has taken yet go: they are planned again from what is left (systems/cargoJobs.ts), so the units the
+  // reservations keep in the hold are those of hauls someone holds.
+  for (const j of sim.world.query(JobC)) {
+    const job = sim.world.get(j, JobC)!;
+    if (job.reservedBy === 0 && job.haul?.src.kind === 'vehicle' && job.haul.src.id === vehicle) destroyJob(sim, j);
+  }
+  const res = reservations(sim);
+  for (const q of v.cargo) {
+    const avail = q.count - (res.out.get(refKey('vehicle', vehicle, q.item)) ?? 0);
+    // Storage room for it (as the cargo hauls take it: systems/cargoJobs.ts), less what already lies loose on the home ship with no haul yet.
+    const dest = avail > 0 ? nearestStorageFor(sim, at.shipId, q.item, at, res) : null;
+    const room = dest ? dest.room - unhauled(sim, at.shipId, q.item, res) : 0;
+    if (room <= 0) continue;
+    const grid = shipGrid(sim, at.shipId);
+    const tile = grid && zoneTilesNear(sim, at.shipId, at, STAGING_TILES).find((z) => {
+      const st = sim.world.get(grid.get('item', z.x, z.y), ItemStackC);
+      return !st || (st.item === q.item && !st.job && st.count < stackSizeOf(sim, q.item));
+    });
+    if (!tile) return; // the floor by the bay is full: the rest waits for the haulers
+    const n = cargoTake(sim, vehicle, q.item, Math.min(avail, room, crateUnits(sim, q.item)));
+    const lost = spillItems(sim, at.shipId, tile.x, tile.y, q.item, n);
+    if (lost > 0) cargoAdd(sim, vehicle, q.item, lost);
+    return;
+  }
 }
 
 /** True while the shuttle has loading to do: goods in the zone and room in the hold. */

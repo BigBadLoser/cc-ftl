@@ -169,7 +169,7 @@ export const DECON_REFUND = 0.5;
 /** Planners (supply, hauling, crafting) run once per this many ticks. */
 export const PLAN_INTERVAL = 10;
 /** A hauler with room left in hand also takes loose stacks bound for the same place within this many tiles (items/haul.ts, gathering). */
-export const GATHER_RADIUS = 6;
+export const GATHER_RADIUS = 12;
 /** Minimum ticks between repeats of the same 'job.missingMaterials' / 'storage.full' warning. */
 export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */

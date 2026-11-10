@@ -21,7 +21,8 @@ import { airDraining } from './airNeed';
 import { airLeft } from '../eva/airLedger';
 import { airTurn } from './machines/air';
 import { returnTurn } from './machines/return';
-import { siteUnderFoot } from '../away/crew';
+import { needBeforeTrip, siteUnderFoot } from '../away/crew';
+import { shipIdOf } from '../regions';
 import { hazardHolds } from './hazard';
 import { breakTurn } from './machines/break';
 import { escapeTurn } from './machines/escape';
@@ -52,6 +53,19 @@ const finishesOffDuty = (sim: Sim, jobId: number): boolean => {
   const kind = sim.world.get(jobId, JobC)?.kind;
   return kind === 'suitOff' || kind === 'refill';
 };
+
+/**
+ * Getting ready for an away trip (#408): a crew member the scheduler found no job for sees early to the need `needBeforeTrip` names (the one
+ * owner, away/crew.ts, which asks the schedule), rather than idling until it falls to the sleep or eat line. True while it keeps them.
+ */
+function readyTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
+  const need = needBeforeTrip(sim, id, shipIdOf(sim, pos));
+  if (!need) return false;
+  if (need === 'hunger') return eatTurn(sim, id, crew, pos) === true && (serveDrive(sim, id, 'eat'), true);
+  sleepTurn(sim, id, crew, pos, false);
+  serveDrive(sim, id, 'sleep');
+  return crew.activity === 'sleeping' || sim.world.get(id, TaskC)?.machine === 'sleep';
+}
 
 /** Whether a drive's own task is under way (`keepWhileTask`): a meal, or a refill errand (the air drive). */
 const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
@@ -215,6 +229,7 @@ export function scheduleSystem(sim: Sim): void {
   for (const id of free) {
     if (taken.has(id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew, pos = sim.world.get(id, PositionC) as Position;
+    if (readyTurn(sim, id, crew, pos)) continue; // a passage waits once a need is seen to (#408)
     const drives = idleDrives.get(id);
     idleTurn(sim, id, crew, pos, drives && (() => {
       const d = drives.find((d) => d.task !== 'job' && NEED_TURNS[d.task]?.(sim, id, crew, pos, false));

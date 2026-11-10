@@ -4,6 +4,8 @@ import type { UiConsole, UiShipModule } from '../api';
 export interface StationTag {
   tag: string;
   label: string;
+  /** Why an empty console is empty, when the sim says. */
+  why?: string;
   /** Manned and powered (consoles), or online (engines). */
   ok: boolean;
   /** Someone is on the way: shown amber between NO CREW and MANNED. */
@@ -30,14 +32,14 @@ function consoleTag(consoles: readonly UiConsole[], def: (typeof CONSOLES)[numbe
   const c = consoles.find((x) => x.kind === def.kind);
   const ok = !!c && c.powered && c.operator !== null;
   const bad = `${def.empty}: ${CONSEQUENCE[def.kind]}`;
-  let tip = bad;
+  let tip = c?.why ? `${bad}. Why: ${c.why}` : bad;
   if (c && ok) tip = `${def.label} manned by ${c.operator}`;
   else if (!c) tip = `${def.label}: no console installed. ${bad}`;
   else if (!c.powered) tip = `${def.label} console unpowered. ${bad}`;
   if (!ok && c?.powered && c.enRoute) {
     return { tag: def.tag, label: def.label, ok: false, warn: true, status: 'EN ROUTE', tip: `${c.enRoute} is on the way to the ${def.label.toLowerCase()} console` };
   }
-  return { tag: def.tag, label: def.label, ok, status: ok ? 'MANNED' : 'NO CREW', tip };
+  return { tag: def.tag, label: def.label, ok, status: ok ? 'MANNED' : 'NO CREW', tip, ...(!ok && c?.powered && c.why ? { why: c.why } : {}) };
 }
 
 /**

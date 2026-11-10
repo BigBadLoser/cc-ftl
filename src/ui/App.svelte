@@ -273,7 +273,7 @@
 {#snippet time()}
   <span class="time sec">
     <span class="trow">
-      <span class="tick" use:tip={{ text: `Ship clock. Starmap turn ${star?.turn ?? 0} (one per hop, and one every 3 minutes of game time), game time played ${clock(snap?.tick ?? 0)}` }} data-testid="clock"><b class="hhmm">{snap ? clockText(snap.clock) : '--:--'}</b><span class="day">Day {snap?.clock.day ?? 1}</span>{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
+      <span class="tick" use:tip={{ text: `Ship clock. Starmap turn ${snap?.turn ?? 0} (one per hop, and one every 3 minutes of game time), game time played ${clock(snap?.tick ?? 0)}` }} data-testid="clock"><b class="hhmm">{snap ? clockText(snap.clock) : '--:--'}</b><span class="day">Day {snap?.clock.day ?? 1}</span>{#if showFps}<span class="fps" data-testid="fps">{Math.round(snap?.fps ?? 0)} fps</span>{/if}</span>
       <span class="speeds">
         {#each speeds as s (s.speed)}
           <button class="tile" class:on={snap?.speed === s.speed} use:tip={{ text: s.label }} aria-label={s.speed === 0 ? 'Pause' : `Speed ${s.label}`} onclick={() => api.setSpeed(s.speed)}><Icon name={s.icon} size={18} /></button>

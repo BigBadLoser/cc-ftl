@@ -8,6 +8,7 @@ import { autoDetectRenderer, Container, Sprite, Texture, TilingSprite, type Rend
 import type { CreateStarmapGpu, StarmapGlide, StarmapGpu, StarmapGpuScene } from '../../ui/starmapGpu';
 import type { UiStarArt } from '../../ui/starmapApi';
 import { loadArt, type ArtTextures } from './art';
+import { applyPixiFixes } from '../pixiFixes';
 import type { Cam, Ctx, Level, Scene } from './kit';
 import { createLevel1 } from './level1';
 import { createLevel2 } from './level2';
@@ -35,6 +36,9 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   /** The starfield tile (`starmap.backdrop`), repeated behind the map at two screen px per art px. It is drawn here, not by the page, so the nebula's screen blend meets it. */
   const backdrop = stage.addChild(new TilingSprite({ texture: Texture.EMPTY, width: 1, height: 1, roundPixels: true }));
   backdrop.eventMode = 'none';
+  // Hidden until the tile arrives: a tiling sprite drawn sets its texture's sampler to repeat and announces the change, and
+  // Texture.EMPTY's sampler is shared by every batch in every renderer (issue #406).
+  backdrop.visible = false;
   const world = stage.addChild(new Container());
   world.eventMode = 'none';
   const nebulaSprite = world.addChild(new Sprite({ roundPixels: true }));
@@ -151,6 +155,7 @@ export const createStarmapGpu: CreateStarmapGpu = (host) => {
   }
 
   void (async () => {
+    applyPixiFixes();
     const r = await autoDetectRenderer({
       canvas, width: 1, height: 1, resolution: dpr, autoDensity: true, antialias: false, roundPixels: false, backgroundAlpha: 1, background: 0x04080e,
       preference: 'webgl', powerPreference: 'high-performance',
