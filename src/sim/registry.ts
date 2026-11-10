@@ -63,7 +63,7 @@ export interface ContentRegistry {
   traits?: Record<string, TraitDef>;
   /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
   policies?: Record<string, PolicyDef>;
-  /** Crew schedule presets (content/schedules.ts, #412) by id. `schedule.default` is what player crew without a row follow. Absent: no schedules. */
+  /** Crew schedule presets (content/schedules.ts, #412) by id. The `rotation` presets are what player crew without a row follow, in turn. Absent: no schedules. */
   schedules?: Record<string, ScheduleDef>;
   /** Crew interactions (content/interactions.ts, docs/TRAITS.md section 6) by id. Absent: nobody talks. */
   interactions?: Record<string, InteractionDef>;

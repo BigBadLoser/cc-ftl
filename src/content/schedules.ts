@@ -1,8 +1,9 @@
 import type { ScheduleBlock, ScheduleDef } from '../sim';
 
 /**
- * Crew schedule presets (#412, docs/DESIGN.md "Schedules"): 24 hour blocks, hour 0 first. `schedule.default` is what every crew member of
- * the player's side follows until the player gives them a row of their own (`crew.schedule.set`, `.preset`, `.copy`).
+ * Crew schedule presets (#412, docs/DESIGN.md "Schedules"): 24 hour blocks, hour 0 first. The presets marked `rotation` (Default and Late, in
+ * this order) are what crew of the player's side follow in turn by hire order until the player gives them a row of their own
+ * (`crew.schedule.set`, `.preset`, `.copy`): half the crew is up while the other half sleeps.
  */
 
 /** A day from runs of blocks: `[block, fromHour, toHour)` pairs over `fill`; a run may wrap past midnight. */
@@ -14,7 +15,9 @@ function day(fill: ScheduleBlock, ...runs: [ScheduleBlock, number, number][]): S
 
 export const schedules = {
   /** About 16 hours awake: work from 06:00, two free hours in the evening, bed at 22:00. */
-  'schedule.default': { id: 'schedule.default', name: 'Default', hours: day('work', ['free', 20, 22], ['sleep', 22, 6]) },
+  'schedule.default': { id: 'schedule.default', name: 'Default', rotation: true, hours: day('work', ['free', 20, 22], ['sleep', 22, 6]) },
+  /** The Default four hours later: work from 10:00, free past midnight, bed at 02:00. */
+  'schedule.late': { id: 'schedule.late', name: 'Late', rotation: true, hours: day('work', ['free', 0, 2], ['sleep', 2, 10]) },
   'schedule.day': { id: 'schedule.day', name: 'Day shift', hours: day('work', ['free', 18, 22], ['sleep', 22, 6]) },
   'schedule.night': { id: 'schedule.night', name: 'Night shift', hours: day('work', ['free', 6, 10], ['sleep', 10, 18]) },
   /** No plan: needs decide every hour, as before schedules. */

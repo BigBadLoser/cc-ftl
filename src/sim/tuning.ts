@@ -109,8 +109,8 @@ export const SLEEP_REST_MULT = 2.2;
 // --- Ship clock and schedules (#412) ---
 /** Real seconds (at 1x) in one game hour of the ship clock: a 24-hour day is 16 real minutes. */
 export const GAME_HOUR_SEC = 40;
-/** The ship clock's hour at tick 0 (a new game starts in the morning). */
-export const CLOCK_START_HOUR = 6;
+/** The ship clock's hour at tick 0: 10:00, when both rotation presets (Default, Late) are at work, so a new game starts with everyone up. */
+export const CLOCK_START_HOUR = 10;
 /** A sleeper whose block turns Free gets up once rest is at least this (below it they would only drop back to the need line). */
 export const FREE_WAKE_REST = 50;
 

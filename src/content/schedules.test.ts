@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { AssignmentC, BedOwnerC, CrewC, JobC, ModuleC, NeedsC, PathC, PositionC, homeShip, newGame, type Sim } from '../sim';
+import { AssignmentC, BedOwnerC, CrewC, JobC, ModuleC, NeedsC, PathC, PositionC, PrioritiesC, homeShip, newGame, type Sim } from '../sim';
 import { HOUR_TICKS, hourAt } from '../sim/clock';
-import { ScheduleC, blockAt, blockNow, hoursOf, onCall, secToOffDuty } from '../sim/crew/schedule';
+import { ScheduleC, blockAt, blockNow, hoursOf, onCall, secToSleep } from '../sim/crew/schedule';
 import { staySec } from '../sim/away/crew';
 import { shipGrid, shipIdOf } from '../sim/regions';
 import { Struct } from '../sim/structure';
 import { TICK_HZ } from '../sim/time';
-import { CLOCK_START_HOUR } from '../sim/tuning';
+import { AWAY_GO_STAY_SEC, CLOCK_START_HOUR, OPERATE_MAX_LEVEL } from '../sim/tuning';
+import { personOf } from '../sim/crew/bonds';
 import { inBed } from '../sim/ai/machines/sleep';
 import { SuitC } from '../sim/eva/components';
 import { claimedBed } from '../sim/ai/task';
@@ -22,6 +23,8 @@ const run = (sim: Sim, ticks: number): void => {
 /** The starter ship's crew who follow a schedule (people, not robots). */
 const people = (sim: Sim): number[] => sim.world.query(CrewC).filter((id) => hoursOf(sim, id) !== undefined);
 const fresh = (seed = 3): Sim => newGame(seed, content, 'ship.starter', false);
+/** The crew of `people` who follow the Default (the first of each pair in hire order). */
+const onDefault = (sim: Sim): number[] => people(sim).filter((id) => hoursOf(sim, id) === schedules['schedule.default'].hours);
 /** Every hour of every crew member's day set to one block. */
 const allDay = (sim: Sim, ids: number[], block: 'any' | 'work' | 'sleep' | 'free'): void => {
   for (const id of ids) sim.enqueue({ type: 'crew.schedule.set', id, from: 0, to: 23, block });
@@ -38,19 +41,30 @@ describe('schedule presets', () => {
 });
 
 describe('block lookup and commands', () => {
-  it('player crew follow the Default until given a row; robots and station crew have none', () => {
+  it('player crew follow Default and Late in turn by hire order until given a row; robots and station crew have none', () => {
     const sim = fresh();
     const ids = people(sim);
     expect(ids.length).toBeGreaterThan(1);
-    for (const id of ids) expect(hoursOf(sim, id)).toEqual(schedules['schedule.default'].hours);
-    expect(blockAt(sim, ids[0]!)).toBe('work');
-    expect(blockAt(sim, ids[0]!, (22 - CLOCK_START_HOUR) * HOUR_TICKS)).toBe('sleep');
-    expect(blockAt(sim, ids[0]!, (20 - CLOCK_START_HOUR) * HOUR_TICKS)).toBe('free');
+    const byHire = [...ids].sort((x, y) => personOf(sim, x) - personOf(sim, y));
+    const rows = byHire.map((id) => hoursOf(sim, id));
+    const late = schedules['schedule.late'].hours;
+    expect(late).toEqual(schedules['schedule.default'].hours.map((_, h) => schedules['schedule.default'].hours[(h + 20) % 24])); // Default + 4 h
+    for (const row of rows) expect([schedules['schedule.default'].hours, late]).toContainEqual(row);
+    expect(rows.filter((r) => r === late).length).toBe(Math.floor(ids.length / 2)); // every second colonist hired
+    // The stagger: half the crew is up from 22:00 to 02:00 and from 06:00 to 10:00; with 8-hour Sleep blocks four hours apart, everyone's
+    // Sleep overlaps from 02:00 to 06:00. A new game starts at 10:00 with everyone at work.
+    const allAsleep = Array.from({ length: 24 }, (_, h) => h).filter((h) => ids.every((id) => blockAt(sim, id, ((h - CLOCK_START_HOUR + 24) % 24) * HOUR_TICKS) === 'sleep'));
+    expect(allAsleep).toEqual([2, 3, 4, 5]);
+    for (const id of ids) expect(blockAt(sim, id)).toBe('work');
+    const d = byHire[0]!;
+    expect(blockAt(sim, d)).toBe('work');
+    expect(blockAt(sim, d, (22 - CLOCK_START_HOUR) * HOUR_TICKS)).toBe('sleep');
+    expect(blockAt(sim, d, (20 - CLOCK_START_HOUR) * HOUR_TICKS)).toBe('free');
   });
 
   it('set (one hour, a wrapping range), preset and copy write the crew member own row', () => {
     const sim = fresh();
-    const [a, b] = people(sim) as [number, number];
+    const [a, b] = onDefault(sim) as [number, number];
     sim.enqueue({ type: 'crew.schedule.set', id: a, from: 23, to: 1, block: 'free' });
     sim.enqueue({ type: 'crew.schedule.set', id: a, from: 12, block: 'any' });
     sim.applyCommands();
@@ -69,23 +83,30 @@ describe('block lookup and commands', () => {
     expect(rejected).toEqual(['badPreset', 'badHour']);
   });
 
-  it('time to off duty counts to the next Sleep or Free block, 0 inside one; the away stay plans around it', () => {
+  it('only Sleep limits an away trip: time to Sleep counts to the next Sleep block, 0 inside one; Free does not count', () => {
     const sim = fresh();
-    const id = people(sim)[0]!;
+    const id = onDefault(sim)[0]!;
     const n = sim.world.get(id, NeedsC)!;
     n.rest = 100;
     n.hunger = 100;
-    expect(secToOffDuty(sim, id)).toBe(((20 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ);
-    sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick) + 1, block: 'sleep' });
+    expect(secToSleep(sim, id)).toBe(((22 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ); // past the Free block at 20:00
+    sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick) + 1, block: 'free' });
     sim.applyCommands();
-    expect(secToOffDuty(sim, id)).toBe(HOUR_TICKS / TICK_HZ);
-    expect(staySec(sim, id)).toBe(HOUR_TICKS / TICK_HZ); // under AWAY_GO_STAY_SEC: no passage now
+    expect(secToSleep(sim, id)).toBe(((22 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ);
+    expect(staySec(sim, id)).toBeGreaterThan(AWAY_GO_STAY_SEC); // Free next hour: the trip still goes
     sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick), block: 'free' });
     sim.applyCommands();
-    expect(secToOffDuty(sim, id)).toBe(0);
+    expect(secToSleep(sim, id)).toBe(((22 - CLOCK_START_HOUR) * HOUR_TICKS) / TICK_HZ);
+    sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick) + 1, block: 'sleep' });
+    sim.applyCommands();
+    expect(secToSleep(sim, id)).toBe(HOUR_TICKS / TICK_HZ);
+    expect(staySec(sim, id)).toBe(HOUR_TICKS / TICK_HZ); // under AWAY_GO_STAY_SEC: no passage now
+    sim.enqueue({ type: 'crew.schedule.set', id, from: hourAt(sim.tick), block: 'sleep' });
+    sim.applyCommands();
+    expect(secToSleep(sim, id)).toBe(0);
     sim.enqueue({ type: 'crew.schedule.preset', id, preset: 'schedule.any' });
     sim.applyCommands();
-    expect(secToOffDuty(sim, id)).toBe(Infinity);
+    expect(secToSleep(sim, id)).toBe(Infinity);
   });
 });
 
@@ -242,6 +263,30 @@ describe('blocks in play', () => {
     expect(blockNow(sim, a)).toBe('work');
     expect(sim.world.get(a, CrewC)?.activity).not.toBe('sleeping');
     expect(sim.world.get(b, CrewC)?.activity).toBe('sleeping');
+  });
+
+  it('a charge order calls to the helm only the sleepers who would take it', () => {
+    const sim = fresh();
+    const ids = people(sim);
+    allDay(sim, ids, 'sleep');
+    run(sim, 60 * TICK_HZ);
+    for (const id of ids) {
+      expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping');
+      sim.world.get(id, NeedsC)!.rest = 80;
+    }
+    const level = (id: number): number => sim.world.get(id, PrioritiesC)!.operating;
+    const takers = ids.filter((id) => level(id) >= 1 && level(id) <= OPERATE_MAX_LEVEL);
+    const others = ids.filter((id) => !takers.includes(id));
+    expect(takers.length).toBeGreaterThan(0);
+    expect(others.length).toBeGreaterThan(0);
+    sim.events.drain();
+    sim.enqueue({ type: 'ftl.charge', ship: homeShip(sim) });
+    run(sim, 5 * TICK_HZ);
+    const woke = sim.events.drain().filter((e) => e.type === 'crew.wokeUp').map((e) => (e as { crew: number }).crew);
+    expect(woke.filter((id) => others.includes(id))).toEqual([]);
+    const helm = sim.world.query(JobC).map((j) => sim.world.get(j, JobC)!).find((j) => j.kind === 'operate');
+    expect(takers).toContain(helm?.reservedBy); // a pilot got up and took the helm
+    for (const id of others) expect(sim.world.get(id, CrewC)?.activity).toBe('sleeping'); // nobody else was woken
   });
 
   it('Battle Stations suspends every schedule', () => {

@@ -165,6 +165,8 @@ export type BlockRule = 'off' | { on?: number; enter?: number };
 export interface ScheduleDef {
   id: string;
   name: string;
+  /** Crew without a row of their own follow the presets marked so, in turn by hire order (content order; the stagger). */
+  rotation?: true;
   hours: ScheduleBlock[];
 }
 
