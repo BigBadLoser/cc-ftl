@@ -338,4 +338,5 @@ describe('sector refactor equivalence', () => {
 // longer reaches the player's side), and the new background, interests and won't-do stores are empty in the dump.
 // Repinned for reactor fuel (#421): the player ship carries crystals (a stack in its stores), its reactors burn them (`Module.fuel` appears in the dump as soon as one burns)
 // and the ship's power draws on the same loads as before; nothing else in the world or the event log moved.
-const EXPECTED = { combat: '51be0589', disaster: '7b058d07' };
+// Repinned again for the starter's battery bank (#421): one more module (80 hp, a charge field) and its power bookkeeping; the ids after it shift by one.
+const EXPECTED = { combat: '17ca460a', disaster: '4e42952c' };

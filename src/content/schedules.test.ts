@@ -252,7 +252,7 @@ describe('blocks in play', () => {
     const c = walking()!;
     expect(c).toBeDefined(); // a bed claimed, still on the way to it
     allDay(sim, ids, 'work');
-    run(sim, 2 * TICK_HZ);
+    run(sim, 10 * TICK_HZ); // the walker lets the claim go on arrival at the latest, so the wait covers the longest walk a start ship's beds give
     expect(sim.world.get(c, CrewC)?.activity).not.toBe('sleeping');
     expect(claimedBed(sim, c)).toBe(0);
     expect(auditReservations(sim).problems).toEqual([]);

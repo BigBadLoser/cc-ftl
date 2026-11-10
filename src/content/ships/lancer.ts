@@ -85,6 +85,7 @@ export const lancerShip = {
     // Reactor room: two reactors, life support
     { def: 'module.reactor', x: 25, y: 13, rot: 0 },
     { def: 'module.reactor', x: 29, y: 13, rot: 0 },
+    { def: 'module.battery', x: 28, y: 13, rot: 0 }, // a power bank beside the reactors
     { def: 'module.lifeSupport', x: 31, y: 13, rot: 0 },
     { def: 'module.light', x: 27, y: 15, rot: 0 },
     // South tail fin: a burst laser

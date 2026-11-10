@@ -249,7 +249,7 @@ the user picks from mocks) and a HUD clock come later.
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
   shortage. Conduits may come later; the code leaves a seam for them.
-- **Reactor fuel and batteries** (user decisions, 2026-11-10; built in #421 except the better reactor; non-player ships do not burn fuel; the starter ship has no battery bank yet):
+- **Reactor fuel and batteries** (user decisions, 2026-11-10; built in #421 except the better reactor):
   - **Two fuels.** Jumps burn `item.fuel` (engines, unchanged). Reactors burn their own fuel; the two never substitute.
   - **Energy crystal** (`item.energy_crystal`), a new raw item mined from asteroids (`ore.crystal`, weight about 3, between ice and
     rare metals, 15–40 per deposit). Also sold at mining and industrial stations, so a ship without mining can buy it. Needs art:
@@ -264,7 +264,9 @@ the user picks from mocks) and a HUD clock come later.
     discharges to cover a shortfall (empty or damaged reactor, ion hit, a spike in draw) before the priority cut-off drops any
     module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A damaged bank neither charges
     nor discharges; a destroyed one loses its charge. The charge shows on the module and in the power readout.
-  - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and keep their existing battery banks.
+  - **Only player ships burn fuel** (user decision, 2026-11-10). Enemy ships, stations and derelicts run their reactors without crystals and never stall; a
+    derelict's battery banks are drained. A captured prize starts burning with a full store.
+  - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and each has one battery bank beside its reactors.
 - **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
   next to space vent.
 - **Injury:** at 0 HP a crew member is **downed** and bleeds out on a timer. Another crew member can

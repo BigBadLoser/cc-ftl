@@ -90,6 +90,7 @@ export const prospectorShip = {
     { def: 'module.engine', x: 24, y: 16, rot: 1 },
     { def: 'module.reactor', x: 26, y: 12, rot: 0 },
     { def: 'module.reactor', x: 26, y: 14, rot: 0 },
+    { def: 'module.battery', x: 25, y: 12, rot: 0 }, // a power bank beside the reactors
     { def: 'module.light', x: 25, y: 13, rot: 0 },
     { def: 'module.light', x: 27, y: 11, rot: 0 },
   ],

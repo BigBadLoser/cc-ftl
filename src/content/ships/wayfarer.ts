@@ -90,6 +90,7 @@ export const wayfarerShip = {
     { def: 'module.lifeSupport', x: 26, y: 14, rot: 0 },
     { def: 'module.reactor', x: 26, y: 16, rot: 0 },
     { def: 'module.reactor', x: 26, y: 18, rot: 0 },
+    { def: 'module.battery', x: 28, y: 16, rot: 0 }, // a power bank beside the reactors
     { def: 'module.shieldGen', x: 29, y: 18, rot: 0 },
     { def: 'module.lifeSupport', x: 30, y: 14, rot: 0 },
     { def: 'module.light', x: 28, y: 13, rot: 0 },
