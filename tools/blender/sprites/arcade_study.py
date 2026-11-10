@@ -894,11 +894,11 @@ TILT_A, TILT_B, TILT_W = (0, 42), (-5, 69), 14                      # the screen
                                                                      # head (near upright, facing the player), half width
 
 
-def tilt_screen(k):
+def tilt_screen(k, a=None, b=None):
     """G2's game: a screen standing near upright to face the player, a lit cyan border, the bricks raised off it, the paddle up off its
     foot, the ball crossing with its trail glowing flat on the screen. Returns its corners (foot left, foot right, head
     right, head left) in tile units."""
-    a, b, W = TILT_A, TILT_B, TILT_W
+    a, b, W = a or TILT_A, b or TILT_B, TILT_W
     def at(f):
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
     def lit(u0, u1, f0, f1, col, t=0.4, d=0.3):
@@ -1077,6 +1077,74 @@ def i3_holo():
     return k
 
 
+# ---- projection, round 3: a recessed projector, the screen set back so the beam shows below it -----------------------
+
+J_A, J_B = (-7, 45), (-11, 71)                                       # the screen's foot and head, set back and up
+J_LENS = (0.0, 0.0, Z(29.7))
+
+
+def j():
+    """G2's drum with a recessed projector on top: a raised chrome collar with a lit rim round a dark well, the lens in
+    a chrome housing at the well's floor, three struts holding the housing."""
+    k = Bench("arcade_j", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.4, Z(3), "arcBodyK", top="arcBodyK", sides=16)
+    k.cyl(0.0, 0.0, Z(3), 0.37, Z(23), "arcBodyD", top="arcBody", sides=16)
+    k.cyl(0.0, 0.0, Z(12), 0.375, Z(2), "arcChrD", top="arcChr", sides=16)
+    seams(k, 0.375, 15, 9, "arcCyan")
+    k.cyl(0.0, 0.0, Z(26), 0.38, Z(2), "arcChrD", top="arcChr", sides=16)              # the deck,
+    k.cyl(0.0, 0.0, Z(28), 0.3, Z(0.3), "arcBodyK", top="arcBodyK", sides=16)          # the well's dark floor,
+    n, r = 24, 0.335
+    for i in range(n):                                                                   # the collar round it,
+        a = i * math.tau / n
+        k.box(r * math.cos(a), r * math.sin(a), Z(28), math.tau * r / n * 1.12, 0.07, Z(3.5), "arcChrD",
+              top="arcChr", rz=a + math.pi / 2)
+    ring_of(k, r, Z(31.5), n, 0.095, "arcCyan", h=Z(0.4))                              # its lit rim
+    for a in (0.5, 2.6, 4.7):                                                            # the struts,
+        k.box(0.2 * math.cos(a), 0.2 * math.sin(a), Z(28.3), 0.16, 0.025, Z(0.8), "arcChrD", top="arcChr", rz=a)
+    k.cyl(0.0, 0.0, Z(28.3), 0.1, Z(1.2), "arcChrD", top="arcChr", sides=12)            # the lens housing,
+    k.cyl(0.0, 0.0, Z(29.5), 0.065, Z(0.3), "arcCyan", top="arcCyan", sides=12)        # the lens
+    console(k, BODY)
+    return k.build()
+
+
+def j1_holo():
+    """Pyramid beam out of the well: film faces from the lens to the screen's foot and sides, lit corner rays."""
+    k = Bench("arcade_j1_holo", FP)
+    c = tilt_screen(k, J_A, J_B)
+    for q in c:
+        bar(k, J_LENS, q, 0.012, "arcCyan")
+    for i, jj in ((0, 1), (0, 3), (1, 2)):
+        film(k, [J_LENS, c[i], c[jj]])
+    return k
+
+
+def j2_holo():
+    """Ray fan out of the well: lit rays to the corners, film-coloured rays to points along the foot and sides."""
+    k = Bench("arcade_j2_holo", FP)
+    c = tilt_screen(k, J_A, J_B)
+    for q in c:
+        bar(k, J_LENS, q, 0.01, "arcCyan")
+    for f in (0.2, 0.4, 0.6, 0.8):
+        bar(k, J_LENS, lerp(c[0], c[1], f), 0.01, "arcCyanF")
+    for f in (0.33, 0.66):
+        bar(k, J_LENS, lerp(c[0], c[3], f), 0.01, "arcCyanF")
+        bar(k, J_LENS, lerp(c[1], c[2], f), 0.01, "arcCyanF")
+    return k
+
+
+def j3_holo():
+    """A beam only under the screen: one film fan from the lens to the screen's foot, lit rays up its two edges and
+    on to the head corners, so the screen stands on its own light."""
+    k = Bench("arcade_j3_holo", FP)
+    c = tilt_screen(k, J_A, J_B)
+    film(k, [J_LENS, c[0], c[1]])
+    for q in c:
+        bar(k, J_LENS, q, 0.012 if q in c[:2] else 0.009, "arcCyan" if q in c[:2] else "arcCyanF")
+    for f in (0.25, 0.5, 0.75):
+        bar(k, J_LENS, lerp(c[0], c[1], f), 0.008, "arcCyanF")
+    return k
+
+
 def jobs():
     out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
                                                               ("b2", b2), ("b3", b3), ("c1", c1), ("c2", c2),
@@ -1085,7 +1153,8 @@ def jobs():
                                                               ("f2", f2), ("f3", f3), ("g1", g1),
                                                               ("g2", g2), ("g3", g3), ("h1", g2),
                                                               ("h2", g2), ("h3", g2), ("i1", g2),
-                                                              ("i2", g2), ("i3", g2))]
+                                                              ("i2", g2), ("i3", g2), ("j1", j),
+                                                              ("j2", j), ("j3", j))]
     return out + [holo_job(f"module.arcade.{v}.holo", cab, holo) for v, cab, holo in
                   (("b1", b1, b1_holo), ("c1", c1, c1_holo), ("c2", c2, c2_holo), ("c3", c3, c3_holo),
                    ("d1", d1, d1_holo), ("d2", d2, d2_holo), ("d3", d3, d3_holo),
@@ -1093,4 +1162,5 @@ def jobs():
                    ("f1", f1, f1_holo), ("f2", f2, f2_holo), ("f3", f3, f3_holo),
                    ("g1", g1, g1_holo), ("g2", g2, g2_holo), ("g3", g3, g3_holo),
                    ("h1", g2, h1_holo), ("h2", g2, h2_holo), ("h3", g2, h3_holo),
-                   ("i1", g2, i1_holo), ("i2", g2, i2_holo), ("i3", g2, i3_holo))]
+                   ("i1", g2, i1_holo), ("i2", g2, i2_holo), ("i3", g2, i3_holo),
+                   ("j1", j, j1_holo), ("j2", j, j2_holo), ("j3", j, j3_holo))]
