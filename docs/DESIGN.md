@@ -262,8 +262,8 @@ the user picks from mocks) and a HUD clock come later.
     (start: about 4× the power per crystal). Not in the first build.
   - **Battery banks store power.** `module.battery` stops being dressing: a bank charges from spare supply on its network and
     discharges to cover a shortfall (empty or damaged reactor, ion hit, a spike in draw) before the priority cut-off drops any
-    module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A damaged bank neither charges
-    nor discharges; a destroyed one loses its charge. The charge shows on the module and in the power readout.
+    module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A bank works until it is destroyed, like other modules (hp above 0); a destroyed one
+    loses its charge. Switched off or ion-struck, it holds its charge but neither charges nor discharges. The charge shows on the module and in the power readout.
   - **Only player ships burn fuel** (user decision, 2026-11-10). Enemy ships, stations and derelicts run their reactors without crystals and never stall; a
     derelict's battery banks are drained. A captured prize starts burning with a full store.
   - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and each has one battery bank beside its reactors.

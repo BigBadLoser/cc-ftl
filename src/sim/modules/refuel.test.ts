@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stampShip } from '../combat/ships';
 import { CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../crew/components';
-import { storageAdd, storageCount } from '../items/storage';
+import { storageAdd, storageCount, storageTake } from '../items/storage';
 import type { ContentRegistry, ModuleDef } from '../registry';
 import { deserialize, serialize } from '../save';
 import { Sim } from '../sim';
@@ -58,6 +58,23 @@ describe('reactor refuelling', () => {
     expect(fuel(sim, reactor)).toBeLessThanOrEqual(6);
     expect(storageCount(sim, store, 'crystal')).toBe(20 - 4); // 4.5 short rounds down: 4 hauled
     expect(refuelJobs(sim)).toBe(0);
+  });
+
+  it('an empty reactor with one crystal in the stores still gets it', () => {
+    const { sim, reactor, store } = setup(1);
+    sim.world.get(reactor, ModuleC)!.fuel = 0;
+    run(sim, 600);
+    expect(fuel(sim, reactor)).toBe(1);
+    expect(storageCount(sim, store, 'crystal')).toBe(0);
+  });
+
+  it('a job asked for more than the stores now hold settles for what is left', () => {
+    const { sim, reactor, store } = setup(6);
+    sim.world.get(reactor, ModuleC)!.fuel = 0;
+    run(sim, 10); // the job is posted for 6
+    storageTake(sim, store, 'crystal', 4); // used elsewhere before any was fetched
+    run(sim, 600);
+    expect(fuel(sim, reactor)).toBeGreaterThanOrEqual(2);
   });
 
   it('posts nothing while the ship holds no crystals', () => {

@@ -1,8 +1,8 @@
 import { JobC, type Job } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
-import { consumeDelivered, needsFrom, needsMaterials } from '../items/materials';
+import { consumeDelivered, missingMaterials, needsFrom, needsMaterials } from '../items/materials';
 import { destroyJob } from '../items/stacks';
-import { shipStoreCount } from '../items/stock';
+import { refKey, reservations, shipStoreCount } from '../items/stock';
 import { shipIdOf } from '../regions';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
@@ -40,6 +40,7 @@ function standTile(sim: Sim, ship: number, def: ModuleDef, m: { x: number; y: nu
  */
 export function refuelSystem(sim: Sim): void {
   if (sim.tick % PLAN_INTERVAL !== 0) return;
+  const res = reservations(sim);
   const jobs = new Map<number, number>();
   for (const jid of sim.world.query(JobC)) {
     const j = sim.world.get(jid, JobC);
@@ -53,6 +54,19 @@ export function refuelSystem(sim: Sim): void {
     if (!m || !def?.fuel || m.hp <= 0 || fuelOf(m, def) >= def.fuel.store || !burnsFuel(sim, shipIdOf(sim, m)) || (!started && fuelOf(m, def) >= def.fuel.refillBelow)) {
       destroyJob(sim, jid);
       jobs.delete(moduleId);
+      continue;
+    }
+    // The stores ran short of what the job asked for (used elsewhere) and nothing is on its way: settle for what is there, so the reactor still gets it.
+    const item = def.fuel.item;
+    const missing = missingMaterials(job).find((q) => q.item === item)?.count ?? 0;
+    const inFlight = res.incoming.get(refKey('job', jid, item)) ?? 0;
+    const stock = shipStoreCount(sim, shipIdOf(sim, m), item);
+    if (missing > 0 && inFlight === 0 && stock < missing) {
+      const got = (job.delivered ?? []).filter((q) => q.item === item).reduce((n, q) => n + q.count, 0);
+      if (got + stock <= 0) {
+        destroyJob(sim, jid);
+        jobs.delete(moduleId);
+      } else if (job.needs?.[0]) job.needs[0].count = got + stock;
     }
   }
   for (const id of sim.world.query(ModuleC)) {
@@ -63,7 +77,8 @@ export function refuelSystem(sim: Sim): void {
     if (!burnsFuel(sim, ship) || shipStoreCount(sim, ship, def.fuel.item) <= 0) continue;
     const at = standTile(sim, ship, def, m);
     if (!at) continue;
-    const room = Math.floor(def.fuel.store - fuelOf(m, def));
+    // Ask for the top-up, or for all there is when the stores hold less: a reactor with one crystal to be had still gets it.
+    const room = Math.min(Math.floor(def.fuel.store - fuelOf(m, def)), shipStoreCount(sim, ship, def.fuel.item));
     sim.world.add(sim.world.createEntity(), JobC, {
       category: 'hauling', kind: 'refuel', ...at, struct: 0, work: REFUEL_WORK, progress: 0, reservedBy: 0, target: id,
       needs: needsFrom([{ item: def.fuel.item, count: Math.max(1, room) }]), delivered: [],
