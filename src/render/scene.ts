@@ -1,4 +1,5 @@
 import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } from 'pixi.js';
+import { applyPixiFixes } from './pixiFixes';
 import './batch';
 import { createCrewAtlas } from './crewAtlas';
 import { createPaintAtlas } from './paintAtlas';
@@ -206,6 +207,7 @@ interface RendererContent {
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
 export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, content: RendererContent): Promise<Renderer> {
   const high = quality === 'high';
+  applyPixiFixes();
   const gl = await autoDetectRenderer({
     canvas,
     width: 1,
