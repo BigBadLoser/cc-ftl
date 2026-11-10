@@ -97,7 +97,7 @@ export { InteractionC, type Interaction, type InteractionDef, type InteractionOu
 export { PersonC, entityOf, ensurePerson, friendsOf, mainReason, opinionOf, personOf, rivalsOf, type BondReason, type BondState, type Opinion } from './crew/bonds';
 export { abortTask, detachJob, type AbortReason } from './ai/task';
 export { TaskC, IntentC, InterruptC, PickupC } from './ai/components';
-export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind } from './ai/types';
+export type { Task, Intent, Interrupt, DriveId, MachineId, TaskClass, PolicyDef, DriveDef, DriveInput, CrewKind, ScheduleBlock, ScheduleDef, BlockRule } from './ai/types';
 export { captureReady, isAiRun } from './capture/control';
 export { playerCrewAboard, type PlayerAboard } from './boarding/aboard';
 export { playerReach } from './boarding/reach';

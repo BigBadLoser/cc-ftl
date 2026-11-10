@@ -11,6 +11,7 @@ import { AwaySiteC } from '../sim/away/components';
 import { Struct } from '../sim/structure';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createAlerts } from './alerts';
+import { shortOnPower } from './alertsDerived';
 import { ConsentC, type Carry } from '../sim/consent/components';
 import { deserialize, serialize } from '../sim/save';
 import { playerShip } from '../sim/trade/player';
@@ -39,6 +40,13 @@ function awayTeam(): { sim: Sim; crew: number } {
 }
 
 describe('alerts', () => {
+  it('a fresh game raises no power alert before its first tick (modules are powered when the game starts)', () => {
+    for (const ship of ['ship.starter', 'ship.wayfarer', 'ship.prospector']) {
+      const sim = newGame(3, content, ship, true, 'rolled');
+      expect(shortOnPower(sim, homeShip(sim)), ship).toBe(false);
+    }
+  });
+
   it('a passenger asking to join has an alert built from saved state: it comes back after a reload, and goes once answered', () => {
     const sim = newGame(1, content);
     const ship = playerShip(sim);

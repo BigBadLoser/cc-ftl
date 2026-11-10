@@ -11,6 +11,7 @@ import { roles } from './roles';
 import { traits } from './traits';
 import { careers, upbringings } from './backgrounds';
 import { policies } from './policies';
+import { schedules } from './schedules';
 import { interactions } from './interactions';
 import { weapons } from './weapons';
 import { vehicles } from './vehicles';
@@ -45,6 +46,7 @@ export const content = {
   upbringings,
   careers,
   policies,
+  schedules,
   interactions,
   items,
   recipes,

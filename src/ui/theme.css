@@ -95,6 +95,10 @@
   --light: #c9ced3;
   --amber-fill: #11151a;
   --band-tile: #232a31;
+  /* Crew schedule blocks (#412). */
+  --work: #3f78b5;
+  --sleep: #5b4aa8;
+  --free: #2f9c72;
   --pin-ink: var(--dim);
   --role-ink: var(--dim);
   --go-fill: #11151a;

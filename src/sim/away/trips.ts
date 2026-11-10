@@ -1,6 +1,6 @@
 import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
-import { AssignmentC, CarriedC, CrewC, DeadC, DraftedC, PositionC, PrioritiesC, type Crew } from '../crew/components';
+import { AssignmentC, CarriedC, CrewC, DeadC, DraftedC, PositionC, type Crew } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { PickupC } from '../ai/components';
 import { flightTicks } from '../ai/travel';
@@ -13,13 +13,13 @@ import { shipIdOf } from '../regions';
 import { runDue } from './haul';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC } from '../tuning';
-import type { Vehicle } from '../vehicles/components';
+import { AWAY_DEPART_GIVEUP_SEC, AWAY_LAST_CALL_SEC, AWAY_TRIP_WAIT_SEC, AWAY_TURNAROUND_SEC } from '../tuning';
+import { VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants, vehicleDefOf } from '../vehicles/lifecycle';
-import { AwayC, type SiteRun } from './components';
-import { passageFits, passengerUrgent } from './crew';
+import { StagingC } from '../items/components';
+import { AwayC, SiteRunC, type SiteRun } from './components';
+import { passageFits, passengerUrgent, scheduleHome, takesSiteWork } from './crew';
 import { departCheck, homePoint, partyOut } from './depart';
-import { siteDemand } from './seats';
 
 /**
  * Batched round trips (docs/DESIGN.md "Round trips, batched", #286 slice 2b): when a trip home is due, the last call and riders that let it
@@ -52,9 +52,7 @@ function wouldGo(sim: Sim, c: number, vehicle: number, site: number, suits: numb
   if (crew.activity !== 'idle' || sim.world.has(c, AssignmentC) || sim.world.has(c, DraftedC) || sim.world.has(c, DeadC)) return false;
   if (needsAir(sim, c) && suits <= 0) return false;
   if (!passageFits(sim, c, { kind: 'passage', category: 'construction', x: 0, y: 0, struct: 0, work: 1, progress: 0, reservedBy: 0, site, target: vehicle })) return false;
-  const prio = sim.world.get(c, PrioritiesC);
-  const demand = siteDemand(sim, site);
-  return !!prio && Object.entries(demand).some(([cat, n]) => (n ?? 0) > 0 && (prio[cat as keyof typeof prio] ?? 0) >= 1);
+  return takesSiteWork(sim, c, site);
 }
 
 /**
@@ -66,7 +64,7 @@ export function tripDue(sim: Sim, id: number, v: Vehicle, r: SiteRun): 'urgent' 
   const aboard = partyAboard(sim, v);
   const going = aboard.filter((c) => sim.world.get(c, AwayC)?.home);
   if (going.some((c) => passengerUrgent(sim, c))) return 'urgent';
-  if (runDue(sim, id)) return 'batch';
+  if (runDue(sim, id) || going.some((c) => scheduleHome(sim, c))) return 'batch'; // their Free time (#412): home at the first chance
   // Nobody of the party on the site and none aboard to go out (a cargo run, or the last of them aboard for home): nothing to serve here.
   if (partyOut(sim, id).length === 0 && aboard.length === going.length) return 'batch';
   const seats = (vehicleDefOf(sim, v)?.capacity ?? 0) + 1;
@@ -131,4 +129,42 @@ export function mustTurnBack(sim: Sim, id: number, v: Vehicle, r: SiteRun): bool
   if (out.length === 0) return false;
   if (out.some((m) => isIncapacitated(sim, m) || sim.world.has(m, CarriedC) || sim.world.has(m, PickupC))) return true;
   return r.returnBy !== undefined && sim.tick + backTicks(sim, id, v, r.site) + sec(5) >= r.returnBy;
+}
+
+/**
+ * Ticks until the site's shuttle, away on a round trip, is beside the site again: the rest of its flight back ('fly'); the stop at home, at
+ * most AWAY_TURNAROUND_SEC with part of the party out, then the flight ('board'); or the flight home, the stop and the flight back ('home').
+ * Never later than `returnBy`, the deadline the watch holds it to (it turns back then).
+ */
+function arrivalTicks(sim: Sim, id: number, v: Vehicle, r: SiteRun): number {
+  const s = shipById(sim, r.site);
+  const home = homePoint(sim, v);
+  if (!s || !home) return Infinity;
+  const fromHome = flightTicks(sim, v, Math.hypot(s.x + s.width / 2 - home.x, s.y + s.height / 2 - home.y));
+  const stop = (timer: number): number => Math.max(0, sec(AWAY_TURNAROUND_SEC) - timer);
+  let eta = Infinity;
+  if (r.phase === 'fly') eta = backTicks(sim, id, v, r.site);
+  else if (r.phase === 'board') eta = stop(r.timer) + fromHome;
+  else if (r.phase === 'home') {
+    const body = sim.world.get(id, BodyC);
+    const toHome = body ? flightTicks(sim, v, Math.hypot(home.x - body.x, home.y - body.y)) : 0;
+    eta = toHome + stop(0) + fromHome;
+  }
+  return Math.min(eta, r.returnBy === undefined ? Infinity : Math.max(0, r.returnBy - sim.tick));
+}
+
+/**
+ * For a party member on their site while its shuttle is away on a round trip that left them counting on their own tank (`SiteRun.returnBy`,
+ * the departure check): where it takes the party aboard again (the first tile of the site's staging zone, beside its drop-off point) and the
+ * ticks until it is there (`arrivalTicks`). The shuttle is their air source still, only later: admission lets them work on while it is away
+ * (#408). Null otherwise.
+ */
+export function shuttleDueBack(sim: Sim, crew: number, ship: number): { tile: { x: number; y: number }; ticks: number } | null {
+  const away = sim.world.get(crew, AwayC);
+  const r = away?.site === ship ? sim.world.get(away.vehicle, SiteRunC) : undefined;
+  const v = away && sim.world.get(away.vehicle, VehicleC);
+  const tile = sim.world.get(ship, StagingC)?.tiles[0];
+  if (!away || !r || !v || r.site !== ship || r.returnBy === undefined || r.pickup || !tile || (r.phase !== 'home' && r.phase !== 'board' && r.phase !== 'fly')) return null;
+  const ticks = arrivalTicks(sim, away.vehicle, v, r);
+  return Number.isFinite(ticks) ? { tile, ticks } : null;
 }

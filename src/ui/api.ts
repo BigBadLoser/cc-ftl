@@ -22,6 +22,10 @@ export interface UiLook {
 
 export interface UiSnapshot {
   tick: number;
+  /** The ship clock (#412): day from 1, hour 0..23, minute. */
+  clock: { day: number; hour: number; minute: number };
+  /** The starmap turn: what the HUD shows and the save records. */
+  turn: number;
   speed: 0 | 1 | 2 | 3;
   paused: boolean;
   entityCount: number;
@@ -125,6 +129,8 @@ export interface UiCrew {
   /** Human-readable current job, or null. */
   job: string | null;
   priorities: Record<WorkCategory, number>;
+  /** The crew member's 24 schedule blocks, hour 0 first (#412), and the block in force now (Work while on call); null without a schedule. */
+  schedule: { hours: ('any' | 'work' | 'sleep' | 'free')[]; now: 'any' | 'work' | 'sleep' | 'free' } | null;
   /** The default priorities (from their skills, or a crew kind's fixed ones), for "differs from default" marks and reset. */
   defaults: Record<WorkCategory, number>;
   /** Work categories they won't do (docs/TRAITS.md 10.10), with the reason: the grid shows the cell locked. */
@@ -734,6 +740,8 @@ export interface UiConsole {
   operator: string | null;
   /** Crew member who took the console job and is walking there (null when nobody is on the way). */
   enRoute: string | null;
+  /** Why an empty console stays empty ("nobody has Operating priority 1 or 2"), when there is a reason worth saying. */
+  why?: string | null;
   powered: boolean;
 }
 

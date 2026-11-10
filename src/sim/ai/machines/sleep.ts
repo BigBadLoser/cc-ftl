@@ -1,10 +1,11 @@
 import { findFreeBed, ownedBedPlan } from '../../crew/beds';
-import { PathC, type Crew, type Path, type Position } from '../../crew/components';
+import { PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
 import { walkOpts } from '../../eva/route';
 import { dropCarried } from '../../items/stacks';
 import { ModuleC } from '../../modules/components';
+import { noteSleep } from '../../crew/mood';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { unsafeFor } from '../hazard';
@@ -27,6 +28,21 @@ export function sleepTurn(sim: Sim, id: number, crew: Crew, pos: Position, holds
   goToSleep(sim, id, crew, pos);
   if (claimedBed(sim, id) || crew.activity === 'sleeping') syncTask(sim, id);
   else setJoblessTask(sim, id, 'sleep', 'sleep', 'ClaimBed'); // no bed and still stepping: they lie down once settled
+}
+
+/** True if the crew member is on the tile of the bed they reserved. */
+export function inBed(sim: Sim, id: number): boolean {
+  const claim = claimedBed(sim, id);
+  const bed = claim ? sim.world.get(claim, ModuleC) : undefined;
+  const pos = sim.world.get(id, PositionC);
+  return !!bed && !!pos && pos.x === bed.x && pos.y === bed.y;
+}
+
+/** A sleep ends: the night counts for mood (in a bed or on the floor), they get up and `crew.wokeUp` fires. At full rest, or a schedule's wake (#412). */
+export function endSleep(sim: Sim, id: number, crew: Crew): void {
+  noteSleep(sim, id, inBed(sim, id));
+  wakeUp(sim, id, crew);
+  sim.events.emit({ type: 'crew.wokeUp', crew: id });
 }
 
 /** Full rest: give the bed back and get up (the needs system calls this). */

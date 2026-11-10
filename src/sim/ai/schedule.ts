@@ -9,17 +9,20 @@ import { canStartMeal, eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
-import { sleepTurn } from './machines/sleep';
+import { endSleep, sleepTurn } from './machines/sleep';
+import { wakesFromSleep } from '../crew/schedule';
 import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
 import { assignJobs } from './scheduler';
 import { abortTask, clearJoblessTask, isCarrying, syncTask } from './task';
+import { isSuited } from '../eva/suit';
 import { IntentC, PickupC, TaskC } from './components';
 import { airDraining } from './airNeed';
 import { airLeft } from '../eva/airLedger';
 import { airTurn } from './machines/air';
 import { returnTurn } from './machines/return';
-import { siteUnderFoot } from '../away/crew';
+import { needBeforeTrip, siteUnderFoot } from '../away/crew';
+import { shipIdOf } from '../regions';
 import { hazardHolds } from './hazard';
 import { breakTurn } from './machines/break';
 import { escapeTurn } from './machines/escape';
@@ -27,7 +30,8 @@ import type { DriveDef, MachineId } from './types';
 import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from './utility';
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
-type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean;
+/** A need machine's turn: true when it took the crew member, false when it cannot start, `'later'` when it may start on a later tick (its search waits). */
+type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean | 'later';
 
 /** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
 const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
@@ -37,8 +41,31 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
   // Never on an away site (#286): there the return drive takes them home to sleep; no lying down on a wreck's floor.
   sleep: (sim, id, crew, pos, holdsJob) => !siteUnderFoot(sim, id) && (sleepTurn(sim, id, crew, pos, holdsJob), true),
   eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
-  leisure: (sim, id, crew, pos) => leisureTurn(sim, id, crew, pos),
+  // A suit is stowed before a break (as in the idle turn): off duty in Free, where the break outranks the closed work drive (#412).
+  leisure: (sim, id, crew, pos) => !isSuited(sim, id) && leisureTurn(sim, id, crew, pos),
 };
+
+/**
+ * True if the job is an errand an off-duty crew member still finishes (#412): stowing a suit or refilling its tank. Suiting up is for a job
+ * (the errand's `resume`), which off duty they let go, so that errand goes with it. A need that is not urgent waits for it too (`TaskView.errand`).
+ */
+const finishesOffDuty = (sim: Sim, jobId: number): boolean => {
+  const kind = sim.world.get(jobId, JobC)?.kind;
+  return kind === 'suitOff' || kind === 'refill';
+};
+
+/**
+ * Getting ready for an away trip (#408): a crew member the scheduler found no job for sees early to the need `needBeforeTrip` names (the one
+ * owner, away/crew.ts, which asks the schedule), rather than idling until it falls to the sleep or eat line. True while it keeps them.
+ */
+function readyTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
+  const need = needBeforeTrip(sim, id, shipIdOf(sim, pos));
+  if (!need) return false;
+  if (need === 'hunger') return eatTurn(sim, id, crew, pos) === true && (serveDrive(sim, id, 'eat'), true);
+  sleepTurn(sim, id, crew, pos, false);
+  serveDrive(sim, id, 'sleep');
+  return crew.activity === 'sleeping' || sim.world.get(id, TaskC)?.machine === 'sleep';
+}
 
 /** Whether a drive's own task is under way (`keepWhileTask`): a meal, or a refill errand (the air drive). */
 const underway = (sim: Sim, id: number) => (machine: MachineId): boolean => {
@@ -116,6 +143,8 @@ export function scheduleSystem(sim: Sim): void {
     // Any other need gone urgent ends a sleep or a meal (a suited crew member whose room lost its air, a sleeper who is starving): they get up
     // and the drives below serve it; sleep resumes through its own drive afterwards. Charging is a robot's, which does not breathe.
     if ((crew.activity === 'sleeping' || crew.activity === 'eating') && wakeForNeed(sim, id, crew.activity === 'sleeping' ? 'sleep' : 'eat')) abortTask(sim, id, 'urgentNeed');
+    // A sleeper whose schedule gets them up (#412: a Free block, or on call for an emergency or a fight) wakes as at full rest.
+    else if (crew.activity === 'sleeping' && wakesFromSleep(sim, id)) endSleep(sim, id, crew);
     // Asleep, charging or eating: the need's own machine ends it (wakeUp, endCharge, finishMeal keep the mirror). A sleeper or eater whose
     // air is out with no source in reach still raises the pickup request (the evaluation above wrote `blocked`).
     if (crew.activity === 'sleeping' || crew.activity === 'charging' || crew.activity === 'eating') {
@@ -123,7 +152,7 @@ export function scheduleSystem(sim: Sim): void {
       continue;
     }
     const pos = sim.world.get(id, PositionC) as Position;
-    const assignment = sim.world.get(id, AssignmentC);
+    let assignment = sim.world.get(id, AssignmentC);
     const atPost = !!assignment && sim.world.get(assignment.jobId, JobC)?.kind === 'operate';
 
     // Robots: hold still for a mender (an interrupt in the design; kept inline, as a mender may take the job earlier in this pass).
@@ -135,14 +164,30 @@ export function scheduleSystem(sim: Sim): void {
     }
     // The utility engine ranks the drives (ai/utility.ts); each need's machine is tried in that order, falling through when it
     // cannot start (no bay, no food), until one takes the crew member or `work` hands them to the job scheduler.
-    const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id) };
+    const view: TaskView = { atPost, underway: underway(sim, id), finishing: () => isCarrying(sim, id), errand: () => !!assignment && finishesOffDuty(sim, assignment.jobId) };
     let served = false;
     const ranked = evaluateIntent(sim, id, view);
     pickupRequest(sim, id);
+    // Off duty by their schedule (#412: the work drive is closed in Sleep and Free): a held job is let go before any need's turn (a break or bed
+    // would otherwise keep it reserved), except a carried patient (set down first: that job runs on) and stowing or refilling a suit, which they finish.
+    const offDuty = !ranked.some((d) => d.task === 'job');
+    const keeps = (): boolean => !!assignment && (isCarrying(sim, id) || view.errand!());
+    if (offDuty && assignment && !keeps()) {
+      abortTask(sim, id, 'offDuty');
+      assignment = undefined;
+    }
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;
       const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
-      if (turn && !turn(sim, id, crew, pos, !!assignment)) continue;
+      const r = turn?.(sim, id, crew, pos, !!assignment);
+      // A need whose start waits for its tick (the meal search) keeps a lower need from taking the turn meanwhile (#412, Codex 4519425149: a
+      // Sleep block's bed before supper); work, when it comes next, goes on as before.
+      if (r === 'later') {
+        if (ranked.slice(i + 1).find((n) => n.task === 'job' || NEED_TURNS[n.task])?.task === 'job') continue;
+        served = true;
+        break;
+      }
+      if (turn && !r) continue;
       if (d.task === 'job' && i + 1 < ranked.length) idleDrives.set(id, ranked.slice(i + 1));
       serveDrive(sim, id, d.id);
       served = d.task !== 'job';
@@ -152,6 +197,11 @@ export function scheduleSystem(sim: Sim): void {
     // A mild break (work refusal, isolation): the work drive scored 0 (`willing`), so no job is taken; they idle, and sleep, eat and the rest still apply.
     if (refusesWork(sim, id)) {
       if (assignment) abortTask(sim, id, 'breakdown');
+      idleTurn(sim, id, crew, pos);
+      continue;
+    }
+    // Off duty with nothing they finish (above): no job, and they idle.
+    if (offDuty && !keeps()) {
       idleTurn(sim, id, crew, pos);
       continue;
     }
@@ -179,6 +229,7 @@ export function scheduleSystem(sim: Sim): void {
   for (const id of free) {
     if (taken.has(id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew, pos = sim.world.get(id, PositionC) as Position;
+    if (readyTurn(sim, id, crew, pos)) continue; // a passage waits once a need is seen to (#408)
     const drives = idleDrives.get(id);
     idleTurn(sim, id, crew, pos, drives && (() => {
       const d = drives.find((d) => d.task !== 'job' && NEED_TURNS[d.task]?.(sim, id, crew, pos, false));

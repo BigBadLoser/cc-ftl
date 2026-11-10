@@ -5,6 +5,7 @@ import { BreakdownC } from '../sim';
 import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
+import { blockNow, hoursOf } from '../sim/crew/schedule';
 import { StunC } from '../sim/robots/components';
 import { guestHere, lodgingHere } from '../sim/consent/guests';
 
@@ -194,6 +195,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     mechanical: !!sim.content.species[crew.species]?.mechanical,
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
+    schedule: scheduleOf(sim, id),
     defaults: sim.world.has(id, BackgroundC) ? priorityDefaults(sim, id) : { ...(role?.priorities ?? NONE) },
     wontDo: wontDoCells(sim, id),
     hp: Math.round(hp?.hp ?? 100),
@@ -264,4 +266,10 @@ function wontDoCells(sim: Sim, id: number): Partial<Record<WorkCategory, string>
   const out: Partial<Record<WorkCategory, string>> = {};
   for (const cat of WORK_CATEGORIES) if (workBlocked(sim, id, cat) === WONT_DO_WHY) out[cat] = 'Won’t do this work (background or trait)';
   return out;
+}
+
+/** The crew member's schedule row and the block in force now (crew/schedule.ts owns both), or null without one. */
+function scheduleOf(sim: Sim, id: number): UiCrew['schedule'] {
+  const hours = hoursOf(sim, id);
+  return hours ? { hours: [...hours], now: blockNow(sim, id) } : null;
 }

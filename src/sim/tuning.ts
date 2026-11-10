@@ -100,6 +100,19 @@ export const GET_UP_HP = 40;
 export const REGEN_PER_SEC = 0.1;
 /** Sleeping in a bed recovers rest this much faster than sleeping on the floor. */
 export const BED_REST_MULT = 2;
+/**
+ * Sleep on the floor recovers rest this many times faster than waking decay drains it (#412): 5 real minutes of sleep covers 11 awake. A bed
+ * doubles it (BED_REST_MULT), so one 8-hour Sleep block in a bed takes an exhausted crew member (rest 20) to about full.
+ */
+export const SLEEP_REST_MULT = 2.2;
+
+// --- Ship clock and schedules (#412) ---
+/** Real seconds (at 1x) in one game hour of the ship clock: a 24-hour day is 16 real minutes. */
+export const GAME_HOUR_SEC = 40;
+/** The ship clock's hour at tick 0: 14:00, when both rotation presets (Default, Late) are at work, so a new game starts with everyone up. */
+export const CLOCK_START_HOUR = 14;
+/** A sleeper whose block turns Free gets up once rest is at least this (below it they would only drop back to the need line). */
+export const FREE_WAKE_REST = 50;
 
 // --- Hunger and mood ---
 /** Seconds a meal takes once the crew member is at the galley or the crate. */
@@ -156,7 +169,7 @@ export const DECON_REFUND = 0.5;
 /** Planners (supply, hauling, crafting) run once per this many ticks. */
 export const PLAN_INTERVAL = 10;
 /** A hauler with room left in hand also takes loose stacks bound for the same place within this many tiles (items/haul.ts, gathering). */
-export const GATHER_RADIUS = 6;
+export const GATHER_RADIUS = 12;
 /** Minimum ticks between repeats of the same 'job.missingMaterials' / 'storage.full' warning. */
 export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */

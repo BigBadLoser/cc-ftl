@@ -26,6 +26,8 @@ import t_checklist from '@tabler/icons/outline/checklist.svg?raw';
 import t_chevron_down from '@tabler/icons/outline/chevron-down.svg?raw';
 import t_chevron_left from '@tabler/icons/outline/chevron-left.svg?raw';
 import t_chevron_up from '@tabler/icons/outline/chevron-up.svg?raw';
+import t_copy from '@tabler/icons/outline/copy.svg?raw';
+import t_clipboard from '@tabler/icons/outline/clipboard.svg?raw';
 import t_clock from '@tabler/icons/outline/clock.svg?raw';
 import t_coin from '@tabler/icons/outline/coin.svg?raw';
 import t_sword from '@tabler/icons/outline/sword.svg?raw';
@@ -175,6 +177,8 @@ export const FILES = {
   zoomOut: 'zoom-out',
   recenter: 'current-location',
   clock: 'clock',
+  copy: 'copy',
+  paste: 'clipboard',
   fire: 'flame',
   pin: 'pin',
   unpin: 'pinned-off',
@@ -219,6 +223,8 @@ const RAW: Record<string, string> = {
   'chevron-left': t_chevron_left,
   'chevron-up': t_chevron_up,
   'clock': t_clock,
+  'copy': t_copy,
+  'clipboard': t_clipboard,
   'coin': t_coin,
   'sword': t_sword,
   'code': t_code,

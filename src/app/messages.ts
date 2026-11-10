@@ -109,6 +109,7 @@ const REASONS: Record<string, string> = {
   narrowHull: 'No part of the ship can be narrower than 3 tiles',
   minSize: 'Min 3 × 3',
   mustTouch: 'Must touch the ship',
+  offHull: 'Floor must join the hull',
   narrowCut: 'This yard cannot build part of that plan without leaving a strip narrower than 3 tiles: plan it deeper, or use a bigger yard',
   moduleHere: 'A module stands there: remove it first',
   notRock: 'That only works on asteroid rock',

@@ -29,9 +29,13 @@ const at = (sim: Sim, id: number): { x: number; y: number } => {
   return { x: p.x, y: p.y };
 };
 
-/** Content whose colonists always want a break when idle (the mood thresholds themselves are unit-tested in crewPolicy.test.ts). */
+/**
+ * Content whose colonists always want a break when idle (the mood thresholds themselves are unit-tested in crewPolicy.test.ts). No schedules
+ * (#412): the break is the needs-only rule of an Any block, not the Work block a new game starts in.
+ */
 const glum: ContentRegistry = {
   ...content,
+  schedules: undefined,
   policies: {
     ...content.policies,
     'policy.colonist': {
