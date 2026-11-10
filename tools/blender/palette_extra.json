@@ -3601,5 +3601,10 @@
   "arcMarq": {"hex": "#fff0c2", "emissive": 1.4, "set": "arcade"},
   "arcScrG": {"hex": "#7dffb0", "emissive": 1.8, "set": "arcade"},
   "arcScrP": {"hex": "#ff7ae6", "emissive": 1.8, "set": "arcade"},
-  "arcCoin": {"hex": "#ff9a3c", "emissive": 2.0, "set": "arcade"}
+  "arcCoin": {"hex": "#ff9a3c", "emissive": 2.0, "set": "arcade"},
+  "arcVio": {"hex": "#a68cff", "emissive": 2.4, "set": "arcade"},
+  "arcVioF": {"hex": "#7a68c4", "set": "arcade"},
+  "arcOrgL": {"hex": "#ffb36b", "set": "arcade"},
+  "arcOrg": {"hex": "#e8873a", "set": "arcade"},
+  "arcOrgD": {"hex": "#ad5f28", "set": "arcade"}
 }

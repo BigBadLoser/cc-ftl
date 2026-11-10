@@ -167,5 +167,137 @@ def a3():
     return k.build()
 
 
+# ---- round 2 ---------------------------------------------------------------------------------------------------------
+
+VIO = one("arcVio")
+VIO_F = one("arcVioF")
+ORANGE = ("arcOrgL", "arcOrg", "arcOrgD")
+
+
+def b1():
+    """Holo cabinet: a classic lower cabinet whose screen is a projection; the projector housing on the deck behind the
+    controls, its lens lit, the side panels trimmed in violet to match."""
+    k = Bench("arcade_b1", FP)
+    W, S = 9, 11
+    body(k, P(-W), P(W), [
+        [(-12, 0), (7, 0), (8, 3), (8, 26), (-12, 26)],                       # the lower body
+        [(-12, 26), (8, 26), (13, 29), (13, 32), (6, 34), (-12, 34)]], BODY)  # the control panel
+    body(k, P(-W), P(W), [[(-12, 34), (-3, 34), (-3, 38), (-6, 41), (-12, 41)]], BODY)     # the projector housing
+    edge = [(9, 0), (9, 26), (14, 29), (14, 33), (7, 35)]
+    for u0, u1 in ((P(-S), P(-W)), (P(W), P(S))):
+        body(k, u0, u1, [[(-13, 0), (9, 0), (9, 26), (-13, 26)],
+                         [(-13, 26), (9, 26), (14, 29), (14, 33), (7, 35), (-13, 35)]], BODY)
+        trim(k, u0, u1, edge, "arcVio")
+    side(k, P(S), P(-11), P(5), Z(12), Z(15), "arcVioF")                      # side art
+    side(k, P(S), P(-11), P(9), Z(17), Z(19), "arcCyanF")
+    slab(k, P(-W), P(W), (13, 32), (6, 34), 0.5, PANEL)
+    stick(k, -4, 10.5, 32)
+    for u, col in ((1, "arcBtnY"), (4, "arcBtnB"), (7, "arcBtnY")):
+        button(k, u, 9.5, 33, col)
+    slab(k, P(-6), P(6), (-3, 38), (-6, 41), 0.4, VIO)                        # the lens strip, aimed up and forward
+    blk(k, P(-4), P(4), P(8), P(8.6), Z(8), Z(20), CHROME)                    # the coin door
+    for u in (-2, 2):
+        flat(k, P(u - 0.8), P(u + 0.8), P(8.6) + 0.006, Z(14), Z(17), "arcCoin")
+    flat(k, P(-W), P(W), P(8) + 0.006, Z(0), Z(3), "arcChrD")
+    return k.build()
+
+
+def b1_holo():
+    """The game screen projected over the deck: a film panel leaning back, a bright frame, rows of invaders, a ship, a
+    score line; two faint beams down to the lens."""
+    k = Bench("arcade_b1_holo", FP)
+    a, b = (2, 40), (-2, 61)                                      # the panel's foot and head (v, z px)
+    U = 12
+    slab(k, P(-U), P(U), a, b, 0.3, VIO_F)
+    def at(f):
+        return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
+    def line(u0, u1, f0, f1):
+        slab(k, P(u0), P(u1), at(f0), at(f1), 0.3, VIO, d=0.3)
+    line(-U, U, 0.0, 0.04)                                        # the frame
+    line(-U, U, 0.96, 1.0)
+    line(-U, -U + 1, 0.0, 1.0)
+    line(U - 1, U, 0.0, 1.0)
+    for row, f in enumerate((0.62, 0.74)):                        # the invaders
+        for i in range(5):
+            u = -8 + i * 4 + (row % 2) * 1
+            line(u, u + 2, f, f + 0.07)
+    line(-1, 1, 0.12, 0.22)                                       # the ship
+    line(-2.5, 2.5, 0.12, 0.15)
+    line(-9, -3, 0.86, 0.9)                                       # the score
+    line(4, 9, 0.86, 0.9)
+    return k
+
+
+def b2():
+    """Cocktail table: a low square cabinet with the screen face-up under a glass top, a control panel at each end
+    (players face each other), a neon underglow round the kick."""
+    k = Bench("arcade_b2", FP)
+    R = 12
+    blk(k, P(-R + 2), P(R - 2), P(-R + 2), P(R - 2), 0, Z(3), INNER)          # the kick,
+    for v0 in (P(-R + 2) - 0.004, P(R - 2)):
+        blk(k, P(-R + 2), P(R - 2), v0, v0 + 0.004, Z(1), Z(2), VIO)          # its underglow
+    blk(k, P(R - 2), P(R - 2) + 0.004, P(-R + 2), P(R - 2), Z(1), Z(2), VIO)
+    blk(k, P(-R), P(R), P(-R + 3), P(R - 3), Z(3), Z(22), BODY)               # the body,
+    blk(k, P(-R), P(R), P(-R + 3), P(R - 3), Z(22), Z(23), CHROME)            # a chrome band,
+    blk(k, P(-R + 1), P(R - 1), P(-R + 4), P(R - 4), Z(23), Z(24), INNER)     # the screen's well,
+    k.box(0.0, 0.0, Z(24), P(2 * R - 6), P(2 * R - 10), Z(0.3), "arcGlass")
+    for du, dv, w, h, col in ((-5, -4, 2, 2, "arcScrG"), (-1, -4, 2, 2, "arcScrG"), (3, -4, 2, 2, "arcScrG"),
+                              (-3, -1, 2, 2, "arcScrP"), (1, -1, 2, 2, "arcScrP"), (0, 4, 3, 1.5, "arcScrG")):
+        k.box(P(du), P(dv), Z(24.3), P(w), P(h), Z(0.3), col, top=col)
+    k.part("glass").box(0.0, 0.0, Z(24), P(2 * R - 2), P(2 * R - 8), Z(1.5), "glassL")   # the glass top
+    for sv in (-1, 1):                                                        # the two control panels
+        v0, v1 = (P(R - 3), P(R + 1)) if sv > 0 else (P(-R - 1), P(-R + 3))
+        prism(k, "u", P(-R + 2), P(R - 2), pz([(v0 / P(1), 16), (v1 / P(1), 17), (v1 / P(1), 21), (v0 / P(1), 21)]),
+              BODY)
+        blk(k, P(-R + 2), P(R - 2), v0, v1, Z(21), Z(22), PANEL)
+        if sv > 0:
+            stick(k, -5, R - 1, 22)
+            for u, col in ((0, "arcBtnY"), (3, "arcBtnB"), (6, "arcBtnY")):
+                button(k, u, R - 1.5, 22, col)
+    blk(k, P(-3), P(3), P(R - 3), P(R - 2.4), Z(6), Z(14), CHROME)            # the coin door under the near panel
+    flat(k, P(-1), P(1), P(R - 2.4) + 0.006, Z(10), Z(12), "arcCoin")
+    return k.build()
+
+
+def b3():
+    """Space-age orb: a sphere head holding the screen, on a chrome stalk rising from a flared foot through a control
+    deck."""
+    k = Bench("arcade_b3", FP)
+    k.cyl(0.0, 0.0, 0.0, 0.36, Z(3), "arcOrgD", top="arcOrg", sides=20, rtop=0.3)          # the flared foot,
+    k.cyl(0.0, 0.0, Z(3), 0.07, Z(25), "arcChrD", top="arcChr", sides=12)                 # the stalk,
+    k.cyl(0.0, P(2), Z(24), 0.28, Z(3), "arcOrgD", top="arcOrg", sides=20, rtop=0.3)      # the control deck,
+    k.cyl(0.0, P(2), Z(27), 0.3, Z(1), PANEL[2], top=PANEL[0], sides=20)
+    zc, R = Z(44), 0.31                                                                   # the sphere head, in bands
+    for z0, z1, r0, r1, col in ((-0.95, -0.6, 0.3, 0.8, "arcOrgD"), (-0.6, 0.0, 0.8, 1.0, "arcOrg"),
+                                (0.0, 0.45, 1.0, 0.9, "arcOrg"), (0.45, 0.8, 0.9, 0.6, "arcOrgL"),
+                                (0.8, 1.0, 0.6, 0.25, "arcOrgL")):
+        k.cyl(0.0, 0.0, zc + z0 * R, r0 * R, (z1 - z0) * R, col, top=col, sides=12, rtop=r1 * R)
+    sv = 0.25                                                                             # the screen in its face:
+    k.box(0.0, sv, zc - 0.12, 0.38, 0.12, 0.25, "arcChrD", top="arcChr")                 # the bezel,
+    k.box(0.0, sv + 0.065, zc - 0.1, 0.32, 0.01, 0.21, "arcGlass")                      # the glass
+    for dz, du, w, col in ((0.06, -0.06, 0.12, "arcScrG"), (0.0, 0.05, 0.1, "arcScrP"), (-0.06, -0.02, 0.18, "arcScrG")):
+        k.box(du, sv + 0.072, zc + dz - 0.012, w, 0.006, 0.024, col)
+    k.box(0.0, -0.02, zc + R - 0.02, 0.12, 0.12, 0.06, "arcChr", top="arcChrL")         # a chrome cap,
+    k.cyl(0.0, -0.02, zc + R + 0.04, 0.02, 0.05, "arcCyan", top="arcCyan", sides=8)      # its lit tip
+    stick(k, -5, 9, 28)
+    for u, col in ((0, "arcBtnY"), (3, "arcBtnB")):
+        button(k, u, 9, 28, col)
+    return k.build()
+
+
+def holo_job(sid, cab, holo):
+    """A translucent layer over the cabinet (as the research bench's): see research_kit.holo_item."""
+    def run(sid=sid):
+        from . import core, post
+        from .research_kit import holo_item
+        core.clear_scene_meshes()
+        post.select("arcade")
+        it = holo_item(sid, FP, cab(), holo().build())
+        return [it] if it else []
+    return run
+
+
 def jobs():
-    return [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3))]
+    out = [(f"module.arcade.{v}", FP, "prop", f) for v, f in (("a1", a1), ("a2", a2), ("a3", a3), ("b1", b1),
+                                                              ("b2", b2), ("b3", b3))]
+    return out + [holo_job("module.arcade.b1.holo", b1, b1_holo)]
