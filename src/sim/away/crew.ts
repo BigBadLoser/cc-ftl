@@ -1,7 +1,7 @@
 import { BodyC } from '../body';
 import { shipById } from '../combat/ships';
 import { flightTicks, walkSpeed } from '../ai/travel';
-import { CrewC, DeadC, HealthC, NeedsC, PositionC, type Job } from '../crew/components';
+import { CrewC, DeadC, HealthC, NeedsC, PositionC, PrioritiesC, type Job } from '../crew/components';
 import { TICK_HZ } from '../time';
 import { AboardC, VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
@@ -19,18 +19,21 @@ import {
 } from '../tuning';
 import { AwayC, AwaySiteC, SiteRunC } from './components';
 import { fightCalls } from './phase';
+import { siteDemand } from './seats';
 
 /**
  * The crew side of away sites (docs/DESIGN.md "Away sites", #286 slice 2a): who may take a passage, and the return drive's input. No site
  * code moves crew about except the closing lift; the crew AI does (the return machine, ai/machines/return.ts).
  */
 
+/** The living crew of the player's side standing on the ship, ascending id. */
+export function playerCrewOnShip(sim: Sim, ship: number): number[] {
+  return [...sim.world.query(CrewC, PositionC)].filter((id) => !sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)!) === ship).sort((a, b) => a - b);
+}
+
 /** True while a living crew member of the player's side stands on the ship (a site's wreck must not go while anyone is on it). */
 export function playerCrewOn(sim: Sim, ship: number): boolean {
-  for (const id of sim.world.query(CrewC, PositionC)) {
-    if (!sim.world.has(id, DeadC) && sim.world.get(id, AllegianceC)?.faction === 'player' && shipIdOf(sim, sim.world.get(id, PositionC)) === ship) return true;
-  }
-  return false;
+  return playerCrewOnShip(sim, ship).length > 0;
 }
 
 /** The site a crew member is working on: they are of its party and stand on its grid. 0 otherwise. */
@@ -116,15 +119,53 @@ export function ofSide(sim: Sim, crew: number, vehicle: number): boolean {
  * its waking rate (a battery at its busy rate). Infinity for one with no need that drains.
  */
 export function staySec(sim: Sim, id: number): number {
+  const t = needSecs(sim, id);
+  return Math.min(t.rest, t.hunger, t.charge);
+}
+
+/** Per need, seconds of work before it falls to its home line (`staySec` is the least of them). Infinity for a need they lack. */
+function needSecs(sim: Sim, id: number): { rest: number; hunger: number; charge: number } {
   const n = sim.world.get(id, NeedsC);
-  if (!n) return Infinity;
+  if (!n) return { rest: Infinity, hunger: Infinity, charge: Infinity };
   const left = (value: number, line: number, perSec: number): number => (perSec > 0 ? Math.max(0, value - line) / perSec : Infinity);
   const battery = sim.content.species[sim.world.get(id, CrewC)?.species ?? '']?.charge;
-  return Math.min(
-    left(n.rest, AWAY_HOME_REST, stat(sim, id, 'restDecay')),
-    n.hunger === undefined ? Infinity : left(n.hunger, AWAY_HOME_HUNGER, hungerDrainPerSec(sim, id, false)),
-    n.charge === undefined || !battery ? Infinity : left(n.charge, AWAY_HOME_CHARGE, battery.drainPerSec * battery.busyMult),
-  );
+  return {
+    rest: left(n.rest, AWAY_HOME_REST, stat(sim, id, 'restDecay')),
+    hunger: n.hunger === undefined ? Infinity : left(n.hunger, AWAY_HOME_HUNGER, hungerDrainPerSec(sim, id, false)),
+    charge: n.charge === undefined || !battery ? Infinity : left(n.charge, AWAY_HOME_CHARGE, battery.drainPerSec * battery.busyMult),
+  };
+}
+
+/**
+ * The need that keeps a crew member from a passage (`staySec` under AWAY_GO_STAY_SEC): the one that falls to its home line first, rest or
+ * hunger. Null when they may go, or when only a battery's charge keeps them (a robot charges on its own drive).
+ */
+export function needKeepsHome(sim: Sim, id: number): 'rest' | 'hunger' | null {
+  const t = needSecs(sim, id);
+  if (Math.min(t.rest, t.hunger, t.charge) >= AWAY_GO_STAY_SEC) return null;
+  if (t.hunger < AWAY_GO_STAY_SEC && t.hunger <= t.rest) return 'hunger';
+  return t.rest < AWAY_GO_STAY_SEC ? 'rest' : t.hunger < AWAY_GO_STAY_SEC ? 'hunger' : null;
+}
+
+/**
+ * True if an away site of the crew member's side wants workers from the ship they stand on (open, not called in, the general party: no named
+ * party and no standing by) and some work it waits on is in a category they take.
+ */
+export function siteWantsThem(sim: Sim, id: number, ship: number): boolean {
+  if (sim.world.has(id, AwayC)) return false;
+  for (const site of sim.world.query(AwaySiteC)) {
+    const s = sim.world.get(site, AwaySiteC)!;
+    const v = sim.world.get(s.vehicle, VehicleC);
+    if (!v || v.homeShip !== ship || s.status !== 'open' || s.invited || s.standBy || fightCalls(sim, site) || !ofSide(sim, id, s.vehicle)) continue;
+    if (takesSiteWork(sim, id, site)) return true;
+  }
+  return false;
+}
+
+/** True if the crew member takes some of the work a site waits on: a priority set for a category it has demand in. */
+export function takesSiteWork(sim: Sim, id: number, site: number): boolean {
+  const prio = sim.world.get(id, PrioritiesC);
+  return !!prio && Object.entries(siteDemand(sim, site)).some(([cat, n]) => (n ?? 0) > 0 && (prio[cat as keyof typeof prio] ?? 0) >= 1);
 }
 
 /**

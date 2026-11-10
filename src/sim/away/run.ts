@@ -12,7 +12,7 @@ import { dockError } from '../vehicles/handlers';
 import { AwayC, AwaySiteC, SiteRunC, type SiteRun } from './components';
 import { ofSide } from './crew';
 import { endRun } from './end';
-import { planCarry } from './haul';
+import { planCarry, unloadStep } from './haul';
 import { stagedStacks } from '../items/staging';
 import { releaseOwned } from './owned';
 import { restockSuits } from './suits';
@@ -68,7 +68,10 @@ function board(sim: Sim, id: number, v: Vehicle, r: SiteRun): void {
   const aboard = partyAboard(sim, v);
   const site = sim.world.get(r.site, AwaySiteC);
   if (r.timer === 1) r.held = cargoCount(v);
-  if (atHome(sim, v)) restockSuits(sim, v); // short of suits: take spares from the home airlocks (each keeps one)
+  if (atHome(sim, v)) {
+    restockSuits(sim, v); // short of suits: take spares from the home airlocks (each keeps one)
+    unloadStep(sim, id, sim.tick - r.timer); // the hold comes out a crate at a time, crew at home or not (#408)
+  }
   // Loot staged at the site and nobody going: the shuttle fetches it alone (loading needs no crew), once nobody is on the way to a seat.
   const cargoRun = want && aboard.length === 0 && out.length === 0 && stagedStacks(sim, r.site).length > 0;
   // A named party that has not come by AWAY_INVITE_WAIT_SEC: those not aboard stay home (with someone aboard the general wait below rules).

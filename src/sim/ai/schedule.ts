@@ -7,6 +7,7 @@ import { EMERGENCY_CHECK_TICKS, emergencyWaiting } from './emergency';
 import { chargeTurn } from './machines/charge';
 import { canStartMeal, eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
+import { readyTurn } from './machines/ready';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
 import { sleepTurn } from './machines/sleep';
@@ -179,6 +180,7 @@ export function scheduleSystem(sim: Sim): void {
   for (const id of free) {
     if (taken.has(id)) continue;
     const crew = sim.world.get(id, CrewC) as Crew, pos = sim.world.get(id, PositionC) as Position;
+    if (readyTurn(sim, id, crew, pos)) continue; // a passage waits once a need is seen to (#408)
     const drives = idleDrives.get(id);
     idleTurn(sim, id, crew, pos, drives && (() => {
       const d = drives.find((d) => d.task !== 'job' && NEED_TURNS[d.task]?.(sim, id, crew, pos, false));

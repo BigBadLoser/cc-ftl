@@ -497,7 +497,9 @@ A door that cannot open (a derelict's unpowered airlock) is never a way through,
   for a job if the travel time there, plus at least one *work stint* (60 s of work, or what is left of the job if less), plus
   the travel time from the job to its nearest source, plus 30 s, fits in the air they have. A fresh suit counts as a full
   tank. Long jobs are then done in stints with refill trips in between. A job whose site no source can be reached from is
-  never admitted for a suited walker.
+  never admitted for a suited walker. While the site's shuttle is away on a round trip, it still counts as their source, only later (#408): a job is admitted
+  if the tank lasts the work (or the wait for the shuttle, if longer) and then the walk to where it takes them aboard, so the
+  party works on instead of standing idle.
 - **Sources** are found by reachability on the crew member's grid:
   - **An airlock's suit tile.** The airlock holds a finite **air store**, by default 3 full tanks (30 min). A refill draws
     from it. On a ship with working life support the store refills slowly (1 tank per 5 min). On a derelict it does not.
@@ -545,6 +547,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     crew home most of the time).
   - Seats beyond the shuttle's suits are passages for crew who don't breathe (robots, #284).
   - A passage costs its walk plus the estimated flight time, so a home job of the same level and urgency nearby still wins.
+  - Crew kept home only by a need under that line see to it at once (eat, or sleep), instead of idling until it falls to the
+    eat or sleep line (#408). Crew who come home for a need do the same.
 - **Which categories the seats get.** The site knows how much work of each category is waiting (or coming: salvage counts
   the loot its open stripping jobs will drop). Seats are split by that demand, the same way every time:
   - with fewer seats than categories, the categories with the most demand get one seat each (ties in the priority grid's
@@ -583,7 +587,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
-  At home it drops off those going home, unloads the hold (the existing cargo hauls), refills its air and tops its suits back up
+  At home it drops off those going home, unloads the hold (it puts it down a crate every 2 s beside its boarding tile for crew
+  at home to put away, so it never waits on them, #408; what the home ship has no storage room for stays aboard), refills its air and tops its suits back up
   from the home ship's airlocks, leaving each airlock at least one (#404). Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
 - **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
@@ -625,7 +630,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 #### 3. Salvage on top
 
 - A salvage order opens an away site on the wreck and closes it when the order is done or cancelled. The order, the panel,
-  the planner (stage order, reach filter, floors last and farthest first), yields, the hostile block and wreck removal stay.
+  the planner (stage order, reach filter, modules and walls nearest the party first (#408), floors last and farthest first), yields, the hostile block and wreck removal stay.
 - The order tells the site its demand: stripping (construction) and loot (hauling, including the loot its open jobs will
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
