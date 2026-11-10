@@ -887,6 +887,10 @@ Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSys
   inspectors. They never hold references into sim internals.
 - Every action dispatches a command.
 - UI-only state (open drawers, selected tab) lives in `ui/` and never touches the sim.
+- Debug and tooling hooks in `app/`: `?hook` installs `window.__cc` (`debugHook.ts`), the developer tool: cheats, staging and renderer switches. `?agent`
+  installs `window.__play` (`playHook.ts`, `playState.ts`, `playDescribe.ts`, `playElements.ts`), the playtest API for AI models in a headless browser: no cheats, it
+  reads the same UI stores the player sees and its only writes are the player's own pause and speed controls and `step(seconds)`, which runs a paused sim tick by tick
+  (`Loop.drain`, `Bridge.refresh` publish what that did). The two are separate on purpose and combine with other params. Without the flag nothing is installed. See README "Playtesting with AI agents".
 
 ## UI kit, `src/ui/kit/`
 

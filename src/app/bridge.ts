@@ -137,6 +137,8 @@ export interface Bridge {
   attachLoop(loop: Loop): void;
   /** Called by the loop each frame. */
   update(stats: FrameStats, info?: { sprites: number; zoom: number }): void;
+  /** Rebuild every snapshot now, skipping the per-panel frame throttle (a tool that steps the paused sim and reads the UI data at once). */
+  refresh(): void;
 }
 
 export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE): Bridge {
@@ -218,6 +220,8 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   let lastMods = '';
   let lastStats = '';
   let uiFrame = 0;
+  /** Set while `refresh` runs: every panel is due. */
+  let fresh = false;
   let lastCrew = '';
   let selected: TileRef | null = null;
   let hovered: TileRef | null = null;
@@ -242,7 +246,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   };
 
   /** A panel's turn: every `period` frames (`offset` staggers them so they do not all land on one frame), or at once after a command applied. */
-  const due = (id: string, period: number, offset: number): boolean => (uiFrame + offset) % period === 0 || seenApplied.get(id) !== sim.commands.applied;
+  const due = (id: string, period: number, offset: number): boolean => fresh || (uiFrame + offset) % period === 0 || seenApplied.get(id) !== sim.commands.applied;
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
@@ -481,7 +485,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   const refreshStarmap = () => {
     // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace, and answer a scan that found contraband.
     const scanning = sim.galaxy.encounters.some((e) => !!e.scan) || starmap.get().encounters.some((e) => !!e.contraband);
-    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || starFrame++ % 5) return;
+    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || (starFrame++ % 5 && !fresh)) return;
     const cur = starmap.get();
     if (starOpen && cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
@@ -627,6 +631,15 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
       step('ui/bridge/deploy', refreshDeploy);
       step('ui/bridge/starmap', refreshStarmap);
       step('ui/bridge/prefetch', runPrefetch);
+    },
+    refresh() {
+      const s = store.get();
+      fresh = true;
+      try {
+        this.update({ tick: sim.tick, entityCount: sim.world.entityCount, fps: s.fps, frameMs: s.frameMs, tickMs: s.tickMs });
+      } finally {
+        fresh = false;
+      }
     },
   };
 }

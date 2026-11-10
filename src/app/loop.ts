@@ -55,6 +55,8 @@ export interface Loop {
   hold(on: boolean): void;
   /** Apply queued commands now (even paused) without running a tick: trade offers answer while the game is paused. */
   flush(): void;
+  /** Publish the events the sim has emitted since the last frame, without running a tick (a tool that steps a paused sim itself). */
+  drain(): void;
   readonly alpha: number;
 }
 
@@ -133,6 +135,9 @@ export function createLoop(opts: LoopOptions): Loop {
     },
     flush() {
       sim.applyCommands(); // commands only: a paused click must not advance game time
+      this.drain();
+    },
+    drain() {
       const events = sim.events.drain();
       if (events.length) opts.onEvents?.(events);
     },
