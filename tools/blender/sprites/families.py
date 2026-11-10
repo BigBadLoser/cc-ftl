@@ -25,6 +25,7 @@
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
+  research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
   hydroponics  the hydroponics beds (small and large), lit and .unpowered, and their crop layers (hydroponics.py; MODPACK_ROTS as storage_set)
@@ -132,6 +133,13 @@ def jobs(name):
         import os
         from . import hydroponics
         return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "hydro"
+    if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
+        from . import research
+        return research.jobs(), "research"
+    if name == "research_bench":
+        import os
+        from . import research_bench
+        return research_bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "research"
     if name == "workbench":
         import os
         from . import workbench
@@ -238,5 +246,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades")
+            "hull", "scrapper", "upgrades", "research_bench")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

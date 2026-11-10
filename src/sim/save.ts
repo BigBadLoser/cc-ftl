@@ -130,9 +130,11 @@ import { newYard, type YardState } from './yard/types';
  * v105 (food and farming, #59): `PlotC` on hydroponics beds, the `cooking` skill and `farming` work priority on crew, meal items.
  * v106 (fighting inspectors, #138 step 3): inspection phase 'fight', outcome 'fought'; `Ship.provoked` 'inspection'.
  * v107 (hydroponics art, #59): the large bed is 3x2 (was 2x3), so a saved grid's occupancy for it no longer matches.
- * v109 (crew schedules, #412): `ScheduleC` (a crew member's own 24-hour row); the ship clock is read from `tick`.
+ * v108 (vehicle assembly, #387): job kind 'assemble' for vehicles in their bay.
+ * v109 (research bench art, #395): `module.research` is 3x2 (was 1x1), so a saved grid's occupancy for it no longer matches.
+ * v110 (crew schedules, #412): `ScheduleC` (a crew member's own 24-hour row); the ship clock is read from `tick`.
  */
-export const SAVE_VERSION = 109;
+export const SAVE_VERSION = 110;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
