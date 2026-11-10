@@ -603,11 +603,11 @@ def e1():
 
 
 def e1_holo():
-    """A court tilted toward the player: a lit border, a dashed centre line, an amber paddle near and a pink one far, the
-    ball with its fading trail, both scores over the far end; cyan beams to the court."""
+    """A wide court tilted toward the player, laid out as the classic paddle game: paddles on the left and right ends,
+    a dashed centre line down the middle, the ball crossing with its trail, both scores in the far half; cyan beams."""
     k = Bench("arcade_e1_holo", FP)
-    a, b = (10, 37), (-11, 50)                                    # the court's near and far edges (v, z px)
-    U = 12
+    a, b = (12, 36), (-13, 51)                                    # the court's near and far edges (v, z px)
+    U = 15
     slab(k, P(-U), P(U), a, b, 0.3, one("arcCyanF"))
     def at(f):
         return (a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f)
@@ -617,17 +617,18 @@ def e1_holo():
     lit(-U, U, 0.96, 1.0, "arcCyan")
     lit(-U, -U + 1, 0.0, 1.0, "arcCyan")
     lit(U - 1, U, 0.0, 1.0, "arcCyan")
-    for u in range(-10, 11, 4):                                   # the centre line, dashed
-        lit(u, u + 2, 0.48, 0.52, "arcCyan")
-    lit(-4, 2, 0.1, 0.16, "arcAmb")                               # the near paddle,
-    lit(1, 7, 0.84, 0.9, "arcPink")                               # the far one,
-    lit(3, 5.5, 0.63, 0.71, "arcAmb")                             # the ball,
-    for i, (u, f) in enumerate(((1, 0.55), (-1, 0.47), (-3, 0.39))):
-        slab(k, P(u), P(u + 1.6), at(f), at(f + 0.05), 0.3, one("arcAmbF"), d=0.3)   # its trail
-    for u0, col in ((-0.3, "arcAmb"), (0.12, "arcPink")):         # the scores, floating over the far end
-        pips(k, u0, P(-12), Z(55), 3, col, step=0.045, size=0.035)
-    for u in (-U + 1, U - 1):                                     # beams to the court's near corners
-        k.box(P(u * 0.7), P(4), Z(28.6), 0.014, 0.014, Z(40) - Z(28.6), "arcCyan")
+    for f in (0.08, 0.26, 0.44, 0.62, 0.8):                       # the centre line, dashed, down the middle
+        lit(-0.6, 0.6, f, f + 0.1, "arcCyan")
+    lit(-U + 2, -U + 3.5, 0.3, 0.55, "arcAmb")                    # the left paddle,
+    lit(U - 3.5, U - 2, 0.5, 0.75, "arcPink")                     # the right one,
+    lit(5, 7.5, 0.42, 0.5, "arcAmb")                              # the ball,
+    for u, f in ((2.5, 0.44), (0, 0.46), (-2.5, 0.48)):           # its trail, back toward the left paddle
+        lit(u, u + 1.6, f, f + 0.05, "arcAmbF")
+    for u0 in (-8, 4):                                            # the scores, in the court's colour, small
+        lit(u0, u0 + 1.4, 0.78, 0.9, "arcCyan")
+        lit(u0 + 2.4, u0 + 3.8, 0.78, 0.9, "arcCyan")
+    for u in (-10, 10):                                           # beams to the court's near edge
+        k.box(P(u), P(6), Z(28.6), 0.014, 0.014, Z(39) - Z(28.6), "arcCyan")
     return k
 
 
@@ -653,23 +654,42 @@ def stage(k, z0, z1, r, lit, film):
 
 
 def e2_holo():
-    """Three wide platforms stepping up across the stage, a runner leaping between the first two, a coin over the
-    second, a pink goal flag on the top one, the lives as pips; on a green stage."""
+    """A girder climber on a wide upright panel over the drum: sloped pink girders zigzagging up, cyan ladders joining
+    them, amber crates rolling down, the climber at the foot, a robot boss at the top beside the goal star, the score
+    and lives across the top; on a green stage."""
     k = Bench("arcade_e2_holo", FP)
-    stage(k, Z(35), Z(66), 0.32, "arcGrn", "arcGrnF")
-    plats = ((0.12, 0.12, Z(39)), (-0.1, 0.04, Z(48)), (0.08, -0.14, Z(57)))
-    for u, v, z in plats:
-        k.box(u, v, z, 0.3, 0.13, 0.04, "arcGrnF", top="arcGrn")                        # the platforms,
-    u, v, z = plats[1]
-    k.box(u - 0.06, v, z + 0.09, 0.055, 0.055, 0.055, "arcAmb", top="arcAmb")           # a coin,
-    (u0, v0, z0), (u1, v1, z1) = plats[0], plats[1]
-    ru, rv, rz = (u0 + u1) / 2, (v0 + v1) / 2, (z0 + z1) / 2 + 0.12
-    k.box(ru, rv, rz, 0.07, 0.07, 0.08, "arcAmb", top="arcAmb")                         # the runner, mid-leap,
-    k.box(ru, rv, rz + 0.08, 0.06, 0.06, 0.06, "arcPink", top="arcPink")
-    u, v, z = plats[2]
-    k.box(u + 0.09, v, z + 0.04, 0.02, 0.02, 0.2, "arcCyan")                            # the goal flag,
-    k.box(u + 0.15, v, z + 0.15, 0.11, 0.01, 0.08, "arcPink", top="arcPink")
-    pips(k, -0.25, P(-2), Z(67), 3, "arcPink", step=0.06, size=0.04)                     # the lives
+    stage(k, Z(35), Z(35), 0.3, "arcGrn", "arcGrnF")
+    v = P(1)
+    U, z0, z1 = 15, 37, 71
+    def poly(pts, col, dv=0.0):
+        prism(k, "v", v + dv, v + dv + 0.004, pz(pts), one(col))
+    def rect(u0, u1, za, zb, col, dv=0.006):
+        poly([(u0, za), (u1, za), (u1, zb), (u0, zb)], col, dv)
+    rect(-U, U, z0, z1, "arcGrnF", dv=0.0)                        # the screen,
+    rect(-U, U, z0, z0 + 0.8, "arcGrn")                           # its frame
+    rect(-U, U, z1 - 0.8, z1, "arcGrn")
+    rect(-U, -U + 0.8, z0, z1, "arcGrn")
+    rect(U - 0.8, U, z0, z1, "arcGrn")
+    girders = (((-13, 40), (13, 42.5)), ((-13, 50.5), (13, 48)), ((-13, 56), (13, 58.5)), ((-13, 64), (2, 64)))
+    for (ua, za), (ub, zb) in girders:                            # the girders, sloping
+        poly([(ua, za), (ub, zb), (ub, zb + 1.6), (ua, za + 1.6)], "arcPink")
+    for u, za, zb in ((9, 42.2, 48), (-9, 50.2, 56), (-3, 57.4, 64)):   # the ladders: two rails and rungs
+        rect(u - 1.2, u - 0.6, za, zb, "arcCyan")
+        rect(u + 0.6, u + 1.2, za, zb, "arcCyan")
+        z = za + 1.2
+        while z < zb - 0.5:
+            rect(u - 1.2, u + 1.2, z, z + 0.5, "arcCyan")
+            z += 1.6
+    for u, z in ((4, 50.6), (-6, 58.1), (7, 44.3)):              # the crates, rolling down
+        rect(u - 1.2, u + 1.2, z, z + 2.4, "arcAmb")
+    rect(-11, -9, 42, 45, "arcCyan")                              # the climber,
+    rect(-11, -9, 45, 46.6, "arcAmb")
+    rect(-12, -7, 65.6, 69.5, "arcGrn")                           # the robot boss,
+    rect(-11, -10, 67.4, 68.4, "arcPink")
+    rect(-9, -8, 67.4, 68.4, "arcPink")
+    rect(-0.5, 1.5, 66, 68, "arcAmb")                             # the goal star,
+    for i in range(3):                                            # the lives,
+        rect(6 + i * 2.3, 7.4 + i * 2.3, 67, 68.6, "arcPink")
     return k
 
 

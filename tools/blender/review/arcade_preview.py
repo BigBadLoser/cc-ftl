@@ -13,7 +13,7 @@ NAMES = {"a1": "A1  classic upright", "a2": "A2  hooded", "a3": "A3  fibreglass"
          "b1": "B1  holo cabinet", "b2": "B2  cocktail table", "b3": "B3  space-age orb",
          "c1": "C1  holo orrery", "c2": "C2  open-frame upright", "c3": "C3  holo pinball",
          "d1": "D1  white drum, cyan", "d2": "D2  brass arena", "d3": "D3  teal hourglass",
-         "e1": "E1  paddle court", "e2": "E2  platformer", "e3": "E3  tower shooter"}
+         "e1": "E1  paddle court (pong layout)", "e2": "E2  girder climber", "e3": "E3  tower shooter"}
 
 
 def main():
