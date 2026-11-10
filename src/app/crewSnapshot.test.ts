@@ -19,7 +19,7 @@ describe('buildCrewLists', () => {
     const { crew, hostiles } = buildCrewLists(sim);
     expect(crew).toHaveLength(4);
     expect(hostiles).toHaveLength(0);
-    expect(crew.every((c) => c.side === 'player' && c.where === 'Starter ship' && !c.away && c.weapon === null)).toBe(true);
+    expect(crew.every((c) => c.side === 'player' && c.where === 'Starter ship' && !c.away && c.weapon !== null)).toBe(true); // everyone carries a sidearm (docs/TRAITS.md 10.9)
     expect(crew[0]?.arms.map((a) => a.item).sort()).toEqual(['item.blade', 'item.rifle', 'item.sidearm']);
   });
 

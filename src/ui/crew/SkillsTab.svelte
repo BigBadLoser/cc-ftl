@@ -8,15 +8,13 @@
   import { SOURCE_COLOR } from './format';
 
   /**
-   * The crew Skills tab: one row per trained skill (breakdown on hover), the untrained ones on one line with the pip legend,
-   * the traits one line each (full text on hover), and the other stats in two columns (a dot when modified, sources on hover).
+   * The crew Skills tab (mock I1): the background line, all eleven skills in a fixed order as 0-10 pips with interest marks (breakdown on
+   * hover; untrained ones dimmed, a won't-do struck through), the pip legend, the traits one line each (full text on hover), and the other
+   * stats in two columns (a dot when modified, sources on hover).
    */
-  let { c, d }: { c: UiCrew; d: UiCrewDetail | null } = $props();
-  const trained = $derived(d?.skills.filter((s) => s.value > 0) ?? []);
-  const untrained = $derived(d?.skills.filter((s) => s.value <= 0) ?? []);
-  // The pip track stays six 24px pips wide (159px); a skill past level 6 shrinks the pips instead of widening the row.
-  // Room for every pip, the red ones a trait took away included.
-  const max = $derived(Math.max(10, ...trained.map((s) => s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + (m.op === 'add' && m.value > 0 ? m.value : 0), 0))));
+  let { d }: { c: UiCrew; d: UiCrewDetail | null } = $props();
+  // Ten pips (skills run 0-10); a trait past 10 shows as a "+" on the level, not more pips.
+  const max = 10;
   const num = (v: number, unit: string) => (unit && unit !== 'x' ? `${v} ${unit}` : `${v}`);
   const part = (p: { op: 'add' | 'mul'; value: number; label: string }) => `${p.op === 'mul' ? `x${p.value}` : `${p.value >= 0 ? '+' : '−'}${Math.abs(p.value)}`} ${p.label}`;
   const good = (p: { op: 'add' | 'mul'; value: number }, invert: boolean) => (p.op === 'mul' ? p.value > 1 : p.value > 0) !== invert;
@@ -24,9 +22,10 @@
 
 {#if d}
   <Section testId="crew-skills-detail">
-    <ul class="rows" style:--pips-w="159px">{#each trained as s (s.skill)}<SkillRow {s} {max} role={c.role} />{/each}</ul>
+    {#if d.background}<div class="bg" data-testid="crew-background">{d.background}{#each d.wontDo as w (w)}<span class="neg"> · {w}</span>{/each}</div>{/if}
+    <ul class="rows" style:--pips-w="159px">{#each d.skills as s (s.skill)}<SkillRow {s} {max} />{/each}</ul>
     <div class="foot">
-      <span>{#if untrained.length}Untrained: {untrained.map((s) => s.name).join(', ')}{/if}</span>
+      <span class="int">✦ keen · ✦✦ passionate</span>
       <span class="key">{#each Object.entries({ rolled: 'rolled', xp: 'XP', trait: 'trait', lost: 'trait −' }) as [k, l] (k)}<span><i style:background={SOURCE_COLOR[k as keyof typeof SOURCE_COLOR]}></i>{l}</span>{/each}</span>
     </div>
   </Section>
@@ -46,6 +45,8 @@
 
 <style>
   .rows { list-style: none; margin: 0; padding: 0; }
+  .bg { padding: 0 0 6px; font-size: 13px; color: var(--dim); }
+  .int { color: var(--amber); }
   .foot { display: flex; gap: 10px; padding-top: 8px; font-size: 11px; color: var(--dim); }
   .key { margin-left: auto; display: inline-flex; gap: 8px; }
   .key span { display: inline-flex; align-items: center; gap: 3px; }

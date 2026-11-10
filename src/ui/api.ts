@@ -125,8 +125,10 @@ export interface UiCrew {
   /** Human-readable current job, or null. */
   job: string | null;
   priorities: Record<WorkCategory, number>;
-  /** The role's default priorities (for "differs from role" marks and reset). */
+  /** The default priorities (from their skills, or a crew kind's fixed ones), for "differs from default" marks and reset. */
   defaults: Record<WorkCategory, number>;
+  /** Work categories they won't do (docs/TRAITS.md 10.10), with the reason: the grid shows the cell locked. */
+  wontDo: Partial<Record<WorkCategory, string>>;
   hp: number;
   maxHp: number;
   dead: boolean;

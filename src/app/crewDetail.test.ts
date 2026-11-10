@@ -13,7 +13,7 @@ describe('the crew inspector detail', () => {
     sim.world.add(id, SkillXpC, { xp: { gunnery: 160 } });
     const d = buildCrewDetail(sim, id)!;
     const g = d.skills.find((s) => s.skill === 'gunnery')!;
-    expect(g).toMatchObject({ value: 8, rolled: 4, xpLevels: 2, role: 6, xp: 60, per: 180 });
+    expect(g).toMatchObject({ value: 8, rolled: 4, xpLevels: 2, interest: 0, struck: false, xp: 60, per: 180 });
     expect(g.mods).toEqual([{ label: 'Marksman', kind: 'trait', op: 'add', value: 2 }]);
     for (const s of d.skills) expect(s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + m.value, 0)).toBe(Math.round(stat(sim, id, s.skill as 'gunnery')));
     const carry = d.stats.find((s) => s.stat === 'carryCapacity')!;
