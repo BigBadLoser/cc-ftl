@@ -22,12 +22,12 @@ const all = (v: number): Priorities => ({
   firefighting: v, medical: v, operating: v, repair: v, construction: v, hauling: v, refining: v, crafting: v, research: v, cooking: v, farming: v, patrol: v,
 });
 
-function setup(stock: number): { sim: Sim; reactor: number; store: number } {
+function setup(stock: number, layout: string[] = rows, at = { x: 1, y: 1 }, storeAt: { x: number; y: number } | null = { x: 8, y: 1 }): { sim: Sim; reactor: number; store: number } {
   const sim = new Sim(5, content);
-  stampShip(sim, { name: 't', rows }, { faction: 'player', state: 'prize', x: 0, y: 0 });
-  const reactor = spawnModule(sim, 'reactor', 1, 1, 0);
-  const store = spawnModule(sim, 'storage', 8, 1, 0);
-  if (stock) storageAdd(sim, store, 'crystal', stock);
+  stampShip(sim, { name: 't', rows: layout }, { faction: 'player', state: 'prize', x: 0, y: 0 });
+  const reactor = spawnModule(sim, 'reactor', at.x, at.y, 0);
+  const store = storeAt ? spawnModule(sim, 'storage', storeAt.x, storeAt.y, 0) : 0;
+  if (stock && storeAt) storageAdd(sim, store, 'crystal', stock);
   const c = sim.world.createEntity();
   sim.world.add(c, CrewC, { name: 'T', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
   sim.world.add(c, PositionC, { x: 5, y: 3, toX: 5, toY: 3, progress: 0, facing: 0 });
@@ -97,5 +97,22 @@ describe('reactor refuelling', () => {
     run(copy, 400);
     expect(serialize(copy)).toBe(serialize(sim));
     expect(fuel(copy, reactor)).toBeGreaterThan(5);
+  });
+
+  it('loads a reactor whose first neighbouring tile is a pocket crew cannot reach: any reachable side will do', () => {
+    // The tiles north of the reactor are floor, walled in; the east and south sides open on the room.
+    const pocket = ['############', '#__#########', '#__________#', '#__________#', '#__________#', '############'];
+    const { sim, reactor } = setup(10, pocket, { x: 1, y: 2 }, { x: 8, y: 2 });
+    sim.world.get(reactor, ModuleC)!.fuel = 0;
+    run(sim, 800);
+    expect(fuel(sim, reactor)).toBeGreaterThan(5);
+  });
+
+  it('counts loose crystals on the floor as stock, as the supply planner does', () => {
+    const { sim, reactor } = setup(0, rows, { x: 1, y: 1 }, null); // no storage at all: the crystals lie where they are
+    sim.enqueue({ type: 'debug.spawnItems', ship: 1, x: 6, y: 3, item: 'crystal', count: 6 });
+    sim.world.get(reactor, ModuleC)!.fuel = 0;
+    run(sim, 800);
+    expect(fuel(sim, reactor)).toBeGreaterThan(4);
   });
 });

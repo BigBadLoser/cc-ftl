@@ -2,35 +2,16 @@ import { JobC, type Job } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
 import { consumeDelivered, missingMaterials, needsFrom, needsMaterials } from '../items/materials';
 import { destroyJob } from '../items/stacks';
-import { refKey, reservations, shipStoreCount } from '../items/stock';
+import { claimableCount, refKey, reservations } from '../items/stock';
 import { shipIdOf } from '../regions';
-import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
 import { ModuleC } from './components';
 import { burnsFuel, fuelOf } from './energy';
-import { shipGrid } from '../regions';
-import { rotatedSize } from './footprint';
-import { isTileWalkable } from './walk';
+import { moduleSite } from './footprint';
 
 /** Ticks of work (at work speed 1) to load a reactor's store once the fuel is at its side. */
 export const REFUEL_WORK = 20;
-
-/**
- * The tile a crew member stands on to load a solid module (the haul delivers there too): the first walkable tile on the ring around its
- * footprint, scanning the north side, then east, south and west. Null when the module is walled in.
- */
-function standTile(sim: Sim, ship: number, def: ModuleDef, m: { x: number; y: number; rot: number }): { x: number; y: number } | null {
-  const grid = shipGrid(sim, ship);
-  if (!grid) return null;
-  const [w, h] = rotatedSize(def, m.rot);
-  const ring: { x: number; y: number }[] = [];
-  for (let i = 0; i < w; i++) ring.push({ x: m.x + i, y: m.y - 1 });
-  for (let j = 0; j < h; j++) ring.push({ x: m.x + w, y: m.y + j });
-  for (let i = w - 1; i >= 0; i--) ring.push({ x: m.x + i, y: m.y + h });
-  for (let j = h - 1; j >= 0; j--) ring.push({ x: m.x - 1, y: m.y + j });
-  return ring.find((t) => isTileWalkable(sim, grid, t.x, t.y)) ?? null;
-}
 
 /**
  * Reactor refuelling (issue #421), every PLAN_INTERVAL ticks. A reactor on a ship that burns fuel (`burnsFuel`) whose store has fallen below
@@ -60,7 +41,7 @@ export function refuelSystem(sim: Sim): void {
     const item = def.fuel.item;
     const missing = missingMaterials(job).find((q) => q.item === item)?.count ?? 0;
     const inFlight = res.incoming.get(refKey('job', jid, item)) ?? 0;
-    const stock = shipStoreCount(sim, shipIdOf(sim, m), item);
+    const stock = claimableCount(sim, shipIdOf(sim, m), item, res);
     if (missing > 0 && inFlight === 0 && stock < missing) {
       const got = (job.delivered ?? []).filter((q) => q.item === item).reduce((n, q) => n + q.count, 0);
       if (got + stock <= 0) {
@@ -74,13 +55,11 @@ export function refuelSystem(sim: Sim): void {
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.fuel || jobs.has(id) || m.hp <= 0 || fuelOf(m, def) >= def.fuel.refillBelow) continue;
     const ship = shipIdOf(sim, m);
-    if (!burnsFuel(sim, ship) || shipStoreCount(sim, ship, def.fuel.item) <= 0) continue;
-    const at = standTile(sim, ship, def, m);
-    if (!at) continue;
+    if (!burnsFuel(sim, ship) || claimableCount(sim, ship, def.fuel.item, res) <= 0) continue;
     // Ask for the top-up, or for all there is when the stores hold less: a reactor with one crystal to be had still gets it.
-    const room = Math.min(Math.floor(def.fuel.store - fuelOf(m, def)), shipStoreCount(sim, ship, def.fuel.item));
+    const room = Math.min(Math.floor(def.fuel.store - fuelOf(m, def)), claimableCount(sim, ship, def.fuel.item, res));
     sim.world.add(sim.world.createEntity(), JobC, {
-      category: 'hauling', kind: 'refuel', ...at, struct: 0, work: REFUEL_WORK, progress: 0, reservedBy: 0, target: id,
+      category: 'hauling', kind: 'refuel', ...moduleSite(def, m), struct: 0, work: REFUEL_WORK, progress: 0, reservedBy: 0, target: id,
       needs: needsFrom([{ item: def.fuel.item, count: Math.max(1, room) }]), delivered: [],
     });
   }
