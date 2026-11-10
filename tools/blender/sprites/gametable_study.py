@@ -886,8 +886,9 @@ def dragon(k, u, z, col, f):
     bx(k, u + f * 0.1, 0.0, z + 0.14, 0.04, 0.05, 0.12, col, ry=f * 0.35)                # the neck,
     bx(k, u + f * 0.15, 0.0, z + 0.25, 0.1, 0.07, 0.05, col)                             # the head,
     bx(k, u + f * 0.12, 0.0, z + 0.3, 0.015, 0.05, 0.04, "arcMarq", ry=-f * 0.4)         # its horns,
-    for sv in (-1, 1):                                                                    # the wings
-        bx(k, u - f * 0.02, sv * 0.12, z + 0.17, 0.16, 0.1, 0.012, col, rx=sv * 0.7)
+    for sv in (-1, 1):                                                                    # the wings, big and
+        bx(k, u - f * 0.02, sv * 0.13, z + 0.2, 0.2, 0.15, 0.012, col, rx=sv * 0.95)      # raised high
+        bx(k, u - f * 0.02, sv * 0.17, z + 0.27, 0.2, 0.012, 0.012, "arcMarq", rx=sv * 0.95)   # their lit spars
     bx(k, u - f * 0.15, 0.0, z + 0.09, 0.14, 0.03, 0.03, col, ry=-f * 0.3)              # the tail
 
 
@@ -950,7 +951,7 @@ def s_holo(name, left, right):
     return make
 
 
-S_SET = (("s1", beast3, robot3), ("s2", dragon, golem), ("s3", serpent, crab))
+S_SET = (("s1", beast3, robot3), ("s2", dragon, golem), ("s3", serpent, crab), ("s4", dragon, serpent))
 
 
 def holo_job(sid, cab, holo):
