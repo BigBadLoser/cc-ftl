@@ -5,9 +5,10 @@ import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
 import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
+import type { CareerDef, UpbringingDef } from './crew/background';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science' | 'cooking';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'construction' | 'hacking' | 'medicine' | 'science' | 'cooking' | 'botany' | 'industry';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -61,6 +62,9 @@ export interface ContentRegistry {
   crewNames: string[];
   /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
   traits?: Record<string, TraitDef>;
+  /** Backgrounds people roll from (content/backgrounds.ts, docs/TRAITS.md 10.5). Absent: people roll no skills. */
+  upbringings?: Record<string, UpbringingDef>;
+  careers?: Record<string, CareerDef>;
   /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
   policies?: Record<string, PolicyDef>;
   /** Crew schedule presets (content/schedules.ts, #412) by id. The `rotation` presets are what player crew without a row follow, in turn. Absent: no schedules. */
@@ -373,19 +377,15 @@ export interface RoleDef {
   skills?: Partial<Record<SkillName, number>>;
   /** Fights even unarmed, and hunts boarders it cannot see yet. Other roles flee from hostiles unless armed. */
   fighter?: true;
-  /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
+  /** Item ids (best first) the crew member fetches from storage on their own when unarmed (robots and NPC kinds; people of the player's crew use `armsFor`). */
   loadout?: string[];
-  /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
-  playerLoadout?: string[];
-  /** Items (best first) this role's player crew may take from storage when intruders are aboard and they have no weapon (see fight/emergency.ts). */
-  emergencyLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
   assemble?: { cost: readonly ItemQty[]; work: number };
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
-  /** In a fight, this role's crew relieve a weapons or helm console that has been empty for RELIEF_AFTER_SEC, whatever their operating priority (0 still opts out). */
+  /** NPC crew of this kind relieve a weapons or helm console empty for RELIEF_AFTER_SEC in a fight, whatever their operating priority (0 still opts out). The player's crew all do. */
   relievesStations?: true;
 }
 
@@ -432,6 +432,8 @@ export interface SpeciesDef {
   hunger?: { decayPerSec: number };
   /** Has moods (MoodC: a score built from named factors that slows work when low). Absent = no mood (robots). */
   mood?: true;
+  /** Personal kit: the hand weapon (item id) a person of this species joins the player's crew with (docs/TRAITS.md 10.9). */
+  kit?: string;
   /** The body's own weapon (claws, spit), used instead of bare fists when nothing is equipped. `id` names it in events and the UI. */
   natural?: HandWeaponDef & { id: string };
   /**

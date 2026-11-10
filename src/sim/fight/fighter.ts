@@ -23,6 +23,8 @@ import { cooldownTicks, hitChance, isArmed, wielded } from './weapons';
 import { shipIdOf } from '../regions';
 import { modulesOn, type DefTest } from '../modules/byShip';
 import { fightsBareHanded, roleOf } from '../consent/roles';
+import { huntsBoarders, isPlayerPerson } from './arms';
+import { wontDo } from '../crew/wontDo';
 import { EggSacC } from '../aliens/components';
 import { sacInReach, sacTile } from '../aliens/target';
 import { StunC } from '../robots/components';
@@ -157,10 +159,12 @@ export function stepFighter(sim: Sim, grid: Grid, id: number, units: readonly nu
   const weapon = wielded(sim, id);
   const faction = sim.world.get(id, AllegianceC)?.faction;
   // Non-combatants (station civilians, lodging passengers: crew who are neither armed nor fighters) run from trouble like the player's do. A Brave crew member fights bare-handed.
-  const canFight = isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && fightsBareHanded(roleOf(sim, id)));
-  // Armed undrafted crew of the player's own ship hunt intruders they have not seen yet (onboarding: no draft needed).
-  const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id);
-  const hunter = invader || !!role?.fighter || defender;
+  // A won't-fight (Pacifist) never does (docs/TRAITS.md 10.10): they flee like the unarmed.
+  const canFight = !wontDo(sim, id, 'violence') && (isArmed(sim, id) || !!role?.fighter || traitFlag(sim, id, 'brave') || (faction !== 'player' && fightsBareHanded(roleOf(sim, id))));
+  // Armed undrafted crew of the player's own ship fight what they meet; the good fighters among them (and armed robots) hunt intruders
+  // they have not seen yet (docs/TRAITS.md 10.9, Q4).
+  const defender = faction === 'player' && !controlled && !invader && isArmed(sim, id) && (!isPlayerPerson(sim, id) || huntsBoarders(sim, id));
+  const hunter = invader || huntsBoarders(sim, id) || defender;
 
   // The nearest foe we can see (sight range, clear line).
   let seen: (typeof foes)[number] | undefined;

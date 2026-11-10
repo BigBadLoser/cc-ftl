@@ -17,7 +17,7 @@ export function inspectorScenario(sim: Sim): { crew: number | null; commands: Co
     commands: [{
       type: 'debug.setCrew', id: crew, weapon: 'item.rifle', hunger: 52, rest: 24,
       traits: ['trait.marksman', 'trait.strong', 'trait.workaholic', 'trait.social', 'trait.gifted'],
-      xp: { gunnery: 160, repair: 45, piloting: 70 },
+      xp: { gunnery: 160, construction: 45, piloting: 70 },
     }],
   };
 }

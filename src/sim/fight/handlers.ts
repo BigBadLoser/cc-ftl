@@ -1,3 +1,4 @@
+import { wontDo } from '../crew/wontDo';
 import type { Command } from '../commands';
 import { CrewC, DraftedC, PositionC } from '../crew/components';
 import { shipIdOf } from '../regions';
@@ -36,6 +37,7 @@ export const fightHandlers: { [T in FightCommand]: Handler<T> } = {
   },
   'crew.attack': (sim, cmd) => {
     if (!sim.world.has(cmd.id, CrewC)) return reject(sim, cmd.type, 'noCrew');
+    if (wontDo(sim, cmd.id, 'violence')) return reject(sim, cmd.type, 'wontDo');
     const drafted = sim.world.get(cmd.id, DraftedC);
     if (!drafted) return reject(sim, cmd.type, 'notDrafted');
     const sac = sim.world.get(cmd.target, EggSacC);

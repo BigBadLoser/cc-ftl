@@ -155,7 +155,7 @@ function run(sim: Sim, eff: EventEffect, ctx: EffectCtx): string | null {
     case 'skillXp': {
       const ids = targets(sim, eff.who, ctx);
       for (const id of ids) {
-        grantXp(sim, id, eff.skill, eff.amount);
+        grantXp(sim, id, eff.skill, eff.amount, false);
       }
       return `${names(sim, ids)}: ${eff.skill} ${sign(eff.amount)} xp`;
     }

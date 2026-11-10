@@ -7,7 +7,7 @@ import { BreakdownC, BreakMemoryC, type Breakdown, type BreakMemory } from '../c
 import { onCooldown, rollBreak, type BreakPick } from '../crew/breakdown';
 import { AssignmentC, CrewC, DraftedC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
-import { EquipOrderC, FighterC, StowOrderC } from '../fight/components';
+import { EquipOrderC, FighterC } from '../fight/components';
 import { hasMood } from '../crew/mood';
 import { contextPresent } from '../crew/stress';
 import { ShipC } from '../combat/components';
@@ -123,7 +123,6 @@ function standDown(sim: Sim, id: number): void {
     delete f.goal;
   }
   sim.world.remove(id, EquipOrderC);
-  sim.world.remove(id, StowOrderC);
 }
 
 /** A tantrum is heard: crew within BREAK_SCENE_RADIUS tiles feel it for a while and think a little less of the one who threw it (section 6). */

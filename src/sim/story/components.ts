@@ -2,6 +2,7 @@ import { defineComponent } from '../ecs';
 import type { SkillName } from '../registry';
 import type { Modifier, ModifierSource } from '../stats';
 import { levelsFor } from '../crew/xpCurve';
+import { baseSkills } from '../crew/skills';
 
 /** Skill experience a crew member earned (routine work, events): `levelsFor` turns it into levels through the stat resolver. Written by `grantXp`. */
 export interface SkillXp {
@@ -20,9 +21,10 @@ export const ImplantsC = defineComponent<Implants>('implants');
 
 const NONE: readonly Modifier[] = [];
 
-/** Stat modifier source: levels earned from skill xp (docs/TRAITS.md section 3). */
+/** Stat modifier source: levels earned from skill xp (docs/TRAITS.md sections 3 and 10.4), stopping where base plus XP reaches 10. */
 export const xpSkillModifiers: ModifierSource = (sim, entity) => {
   const xp = sim.world.get(entity, SkillXpC)?.xp;
   if (!xp) return NONE;
-  return Object.entries(xp).map(([stat, v]) => ({ stat: stat as Modifier['stat'], op: 'add' as const, value: levelsFor(v ?? 0) }));
+  const base = baseSkills(sim, entity);
+  return Object.entries(xp).map(([stat, v]) => ({ stat: stat as Modifier['stat'], op: 'add' as const, value: levelsFor(v ?? 0, base[stat as SkillName] ?? 0) }));
 };

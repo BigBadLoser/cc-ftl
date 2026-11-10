@@ -2,7 +2,7 @@ import { BreakdownC } from '../crew/breakTypes';
 import { CarriedC, CrewC, DeadC, DownedC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, AssignmentC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
-import { EquipOrderC, FighterC, StowOrderC, SurrenderedC } from '../fight/components';
+import { EquipOrderC, FighterC, SurrenderedC } from '../fight/components';
 import { isBoarding, isOffDuty } from '../fight/relations';
 import { InertC, StunC } from '../robots/components';
 import type { Sim } from '../sim';
@@ -67,7 +67,7 @@ export function detect(sim: Sim, id: number, mend?: ReadonlySet<number>): Interr
   if (sim.world.has(id, EvaFloatC)) return 'floating';
   // Fighting crew are steered by the fight code, which keeps them where the fight is (not yet hazard-aware).
   const f = sim.world.get(id, FighterC);
-  const fighting = (f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, StowOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id);
+  const fighting = (f && f.mode !== 'idle') || sim.world.has(id, EquipOrderC) || sim.world.has(id, SurrenderedC) || isBoarding(sim, id);
   if (!fighting && hazardHolds(sim, id)) return 'hazard';
   const running = sim.world.get(id, BreakdownC);
   const brk = running?.suspended ? undefined : running; // a survival drive is critical: handled as if there were no break (`BreakdownC.suspended`)

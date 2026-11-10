@@ -24,7 +24,7 @@ const content: ContentRegistry = {
   ships: {},
   roles: {
     'role.plain': { name: 'Plain', priorities: prio(4) },
-    'role.sci': { name: 'Sci', priorities: prio(4), skills: { science: 5 } },
+    'role.sci': { name: 'Sci', priorities: prio(4), skills: { science: 10 } },
   },
   species: { 'species.human': { name: 'H', moveSpeed: 2.5, workSpeed: 1, restDecay: 0.6, carryCapacity: 20 } },
   modules: {

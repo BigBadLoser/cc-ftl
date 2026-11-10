@@ -134,8 +134,10 @@ import { newYard, type YardState } from './yard/types';
  * v109 (research bench art, #395): `module.research` is 3x2 (was 1x1), so a saved grid's occupancy for it no longer matches.
  * v110 (crew schedules, #412): `ScheduleC` (a crew member's own 24-hour row); the ship clock is read from `tick`.
  *   Then (no bump, #416): `Airlock.suits`, `Vehicle.suits` and `Job.airless` are gone; `deserialize` drops them (`retiredField`).
+ * v111 (crew backgrounds, #415): skills 0-10 with `repair` folded into `construction`, `botany` and `industry`; `BackgroundC`,
+ *     `InterestsC`, `WontDoC`, `Mood.enjoy`; player crew of kind `role.crew`; no `EmergencyArmC` / `StowOrderC`.
  */
-export const SAVE_VERSION = 110;
+export const SAVE_VERSION = 111;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

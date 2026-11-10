@@ -1,6 +1,6 @@
 import { ShipC, newGame, type Sim, type SimEvent } from '../sim';
 import { CrewC } from '../sim/crew/components';
-import { FighterC } from '../sim/fight/components';
+import { AllegianceC, EquipC, FighterC } from '../sim/fight/components';
 import { StationAlarmC, StationC, StationCrewC, WantedC } from '../sim/stations/components';
 import { content } from './index';
 
@@ -42,6 +42,9 @@ export function intruderRuns(seeds: number[]): IntruderRun[] {
     const ev: SimEvent[] = [];
     for (let i = 0; i < 400; i++) {
       ev.push(...run(sim, 1));
+      // A bare-handed intruder, as before crew carried sidearms (docs/TRAITS.md 10.9): an armed one is downed by the guards at range
+      // before any civilian sees them, and the scenario is about who runs.
+      if (i === 0) for (const c of sim.world.query(CrewC)) if (sim.world.get(c, AllegianceC)?.faction === 'player') sim.world.remove(c, EquipC);
       for (const c of sim.world.query(StationCrewC, FighterC)) {
         const f = sim.world.get(c, FighterC)!;
         if (f.mode === 'flee') fled = true;

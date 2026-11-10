@@ -8,9 +8,9 @@ describe('the crew card', () => {
     const sim = newGame(1, content);
     const gunner = sim.world.query(CrewC).find((id) => sim.world.get(id, CrewC)?.role === 'role.gunner') as number;
     sim.world.add(gunner, TraitsC, { ids: ['trait.marksman'] });
-    sim.world.add(gunner, RolledSkillsC, { skills: { gunnery: 2, piloting: 1 } });
+    sim.world.add(gunner, RolledSkillsC, { skills: { gunnery: 4, piloting: 2 } });
     const card = buildCrewLists(sim).crew.find((c) => c.id === gunner)!;
-    expect(card.traits).toEqual([{ id: 'trait.marksman', name: 'Marksman', kind: 'texture', flavour: 'Never misses twice.', effect: 'Gunnery +1.' }]);
-    expect(card.skills).toEqual([{ skill: 'gunnery', value: 3, base: 3 }, { skill: 'piloting', value: 1, base: 0 }]);
+    expect(card.traits).toEqual([{ id: 'trait.marksman', name: 'Marksman', kind: 'texture', flavour: 'Never misses twice.', effect: 'Gunnery +2.' }]);
+    expect(card.skills).toEqual([{ skill: 'gunnery', value: 6, base: 6 }, { skill: 'piloting', value: 2, base: 0 }]);
   });
 });

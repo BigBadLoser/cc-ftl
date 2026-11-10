@@ -59,7 +59,7 @@ const FUEL_EVENT: EventDef = {
   title: 'Packet test', text: 'Cargo and crew are packet data in hyperspace.', mode: 'decision', triggers: [{ kind: 'chain' }],
   choices: [{
     id: 'go', label: 'Go', requires: [{ kind: 'item', item: 'item.fuel', count: 10 }, { kind: 'crew', count: 1 }],
-    check: { skill: 'repair', difficulty: 0 },
+    check: { skill: 'construction', difficulty: 0 },
     success: { effects: [{ type: 'items', item: 'item.fuel', count: 30 }, { type: 'crewDamage', amount: 7, who: 'actor' }] },
     failure: { effects: [{ type: 'items', item: 'item.fuel', count: 30 }, { type: 'crewDamage', amount: 7, who: 'actor' }] },
   }],

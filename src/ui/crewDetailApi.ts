@@ -23,12 +23,13 @@ export interface UiSkillDetail {
   xpLevels: number;
   /** Everything else (traits, gear, state), each with its source. */
   mods: UiStatPart[];
-  /** The role's level (0 for an off-role skill). */
-  role: number;
+  /** Interest (docs/TRAITS.md 10.7): 0 none, 1 keen, 2 passionate; `struck`: a won't-do rules the skill out. */
+  interest: 0 | 1 | 2;
+  struck: boolean;
   /** XP into the next level, out of `per` (the level's width; 0 at the XP cap). */
   xp: number;
   per: number;
-  /** XP gain multiplier from traits for this skill (1 = none). */
+  /** XP gain multiplier from interest and traits for this skill (1 = none). */
   gain: number;
 }
 
@@ -74,6 +75,10 @@ export interface UiCrewDetail {
   /** Null for crew without moods (robots). `source`: the trait that set or changed the factor. `strain`: what can set off a break now whatever the mood. */
   mood: { value: number; base: number; factors: { label: string; value: number; source?: string }[]; workMult: number; strain: string } | null;
   skills: UiSkillDetail[];
+  /** Where they grew up and their career by name ("Station brat", "Salvage diver"), and what they won't do; empty for crew without a background. */
+  upbringing: string;
+  career: string;
+  wontDo: string[];
   stats: UiStatDetail[];
   traits: { id: string; name: string; kind: string; flavour: string; effect: string; short: string }[];
   gear: UiGearSlot[];

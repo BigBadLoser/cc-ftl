@@ -71,7 +71,7 @@ describe('the crew screen', () => {
   it('shows the levels a trait takes away (Clumsy) as lost, not as a lower roll', () => {
     const c = withTrait('trait.clumsy');
     for (const s of c.skills.filter((x) => x.skill === 'melee' || x.skill === 'gunnery')) {
-      expect(s.lost).toBe(Math.min(1, s.rolled));
+      expect(s.lost).toBe(Math.min(2, s.rolled));
       expect(s.value).toBe(s.rolled - s.lost);
     }
   });

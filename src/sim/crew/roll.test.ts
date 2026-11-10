@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ContentRegistry, RoleDef, SkillName } from '../registry';
 import { Rng } from '../rng';
-import { SKILL_ROLL_CAP, SKILLS, rollCrewMember, rollSkills, rollStartingCrew, rollTraits, skillLabel } from './roll';
+import { CREW_KIND, rollCrewMember, rollCrewWith, rollStartingCrew, rollTraits } from './roll';
 import type { TraitDef } from './traitDef';
 
 const role = (skills: Partial<Record<SkillName, number>>): RoleDef => ({ name: 'R', priorities: {} as RoleDef['priorities'], skills });
 const ROLES = {
-  engineer: { shielding: 2, repair: 2, hacking: 1 },
-  security: { gunnery: 2, melee: 2 },
-  gunner: { gunnery: 3 },
-  medic: { medicine: 3 },
+  engineer: { shielding: 4, construction: 4, hacking: 2 },
+  gunner: { gunnery: 6 },
 } as const;
 const trait = (o: Partial<TraitDef>): TraitDef => ({ name: 'T', flavour: '', kind: 'texture', effect: '', short: '', weight: 5, rollable: true, ...o });
 const traits: Record<string, TraitDef> = {
@@ -21,7 +19,7 @@ const traits: Record<string, TraitDef> = {
 };
 const content = {
   roles: {
-    'role.engineer': role(ROLES.engineer), 'role.gunner': role(ROLES.gunner),
+    'role.engineer': role(ROLES.engineer), 'role.gunner': role(ROLES.gunner), [CREW_KIND]: role({}),
     'role.bot': { name: 'Bot', priorities: {} as RoleDef['priorities'], species: 'species.robot' },
     'role.secbot': { name: 'Security bot', priorities: {} as RoleDef['priorities'], species: 'species.robot', skills: { melee: 2, gunnery: 1 } },
   },
@@ -31,49 +29,12 @@ const content = {
   },
   crewNames: ['Ada', 'Bo', 'Cy'],
   traits,
+  upbringings: { 'upbringing.x': { name: 'X', line: '', weight: 1, skills: { hacking: 2 } } },
+  careers: {
+    'career.fixer': { name: 'Fixer', line: '', weight: 1, skills: { construction: 5 } },
+    'career.shot': { name: 'Shot', line: '', weight: 1, skills: { gunnery: 5 } },
+  },
 } as unknown as ContentRegistry;
-
-const sum = (s: Partial<Record<SkillName, number>>): number => Object.values(s).reduce((a, b) => a + (b ?? 0), 0);
-
-describe('skill rolls (docs/TRAITS.md section 2)', () => {
-  it('stay inside the budget: total within role total -1..+2, every core skill at least 1, nothing above the cap', () => {
-    for (const [name, skills] of Object.entries(ROLES)) {
-      const rt = sum(skills);
-      const totals = new Set<number>();
-      const labels = new Set<string | null>();
-      for (let i = 0; i < 3000; i++) {
-        const s = rollSkills(new Rng(i * 7919 + name.length), skills) as Partial<Record<SkillName, number>>;
-        const t = sum(s);
-        totals.add(t);
-        expect(t, name).toBeGreaterThanOrEqual(rt - 1);
-        expect(t, name).toBeLessThanOrEqual(rt + 2);
-        for (const k of Object.keys(skills) as SkillName[]) expect(s[k] ?? 0, `${name} ${k}`).toBeGreaterThanOrEqual(1);
-        for (const k of SKILLS) expect(s[k] ?? 0).toBeLessThanOrEqual(SKILL_ROLL_CAP);
-        labels.add(skillLabel(s, skills));
-      }
-      // Every budget step happens, and both labels are reachable for every role (Green used to be impossible for engineers).
-      expect([...totals].sort(), name).toEqual([rt - 1, rt, rt + 1, rt + 2]);
-      expect(labels.has('talented'), name).toBe(true);
-      expect(labels.has('green'), name).toBe(true);
-    }
-  });
-
-  it('labels follow the final skills', () => {
-    const r = ROLES.engineer;
-    expect(skillLabel({ shielding: 2, repair: 1, hacking: 1 }, r)).toBe('green');
-    expect(skillLabel({ shielding: 1, repair: 1, hacking: 1, gunnery: 1 }, r)).toBe(null); // below budget, but an off-role point
-    expect(skillLabel({ shielding: 2, repair: 2, hacking: 1, gunnery: 2 }, r)).toBe('talented'); // off-role 2
-    expect(skillLabel({ shielding: 4, repair: 1, hacking: 1 }, r)).toBe('talented'); // core +2
-    expect(skillLabel({ shielding: 3, repair: 3, hacking: 1 }, r)).toBe('talented'); // total +2
-    expect(skillLabel({ shielding: 3, repair: 2, hacking: 1 }, r)).toBe(null);
-    expect(skillLabel(null, undefined)).toBe(null);
-  });
-
-  it('a role without skills rolls none', () => {
-    expect(rollSkills(new Rng(1), undefined)).toBeNull();
-    expect(rollSkills(new Rng(1), {})).toBeNull();
-  });
-});
 
 describe('trait rolls', () => {
   it('draw 0 to 2 rollable traits and never two that exclude each other', () => {
@@ -117,6 +78,16 @@ describe('crew members (section 1)', () => {
       expect(new Set(crew.map((c) => c.name)).size).toBe(3);
     }
     expect(rollStartingCrew(1, [{ role: 'role.gunner', name: 'Vash' }], content)[0]?.name).toBe('Vash');
+  });
+
+  it('people become crew with a background; an old role is a career hint only when asked for', () => {
+    const c = rollCrewMember(3, 0, 0, 'role.gunner', content);
+    expect(c.role).toBe(CREW_KIND);
+    expect(c.background?.upbringing).toBe('upbringing.x');
+    for (let seed = 0; seed < 40; seed++) {
+      const r = rollCrewWith(new Rng(seed), 'role.gunner', content, true);
+      expect(r.background?.career).toBe('career.shot');
+    }
   });
 
   it('robots get a designation, no skill roll and no traits', () => {

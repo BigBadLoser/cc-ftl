@@ -1,3 +1,5 @@
+import { wontDo } from './wontDo';
+import { ModuleC } from '../modules/components';
 import { YardCrewC } from '../yard/types';
 import { AwayC } from '../away/components';
 import { InspectionC } from '../inspect/types';
@@ -19,8 +21,15 @@ export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): bool
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
   if (!partyFits(sim, crewId, job)) return false;
   if (workBlocked(sim, crewId, job.category)) return false;
+  if (job.kind === 'operate' && refusesConsole(sim, crewId, job.target ?? 0)) return false; // a Pacifist never mans a gun
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;
   return shipIdOf(sim, job) === shipIdOf(sim, pos) && job.target !== crewId && !needsMaterials(job) && !isErrand(job) && canTakeRobotJob(sim, crewId, job) && passageFits(sim, crewId, job);
+}
+
+/** Does the crew member refuse to man this console: a weapons console and they won't fight (docs/TRAITS.md 10.10)? Job picks and station orders ask it. */
+export function refusesConsole(sim: Sim, crewId: number, module: number): boolean {
+  const m = sim.world.get(module, ModuleC);
+  return !!m && sim.content.modules[m.def]?.console === 'weapons' && wontDo(sim, crewId, 'violence');
 }
 
 /** A party job (`Job.party`) is its party's alone; an inspector (of a shuttle with an inspection) takes nothing else. */

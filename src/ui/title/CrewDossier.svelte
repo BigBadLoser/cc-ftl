@@ -4,44 +4,33 @@
   import { SKILL_ICON } from '../crew/format';
   import Pips, { pipsOf, type PipKind } from '../inspector/Pips.svelte';
   import Section from '../inspector/Section.svelte';
-  import { labelText, labelTip, traitColor } from './crewText';
+  import { interestMark, interestTip, traitColor } from './crewText';
   import type { UiRollCrew, UiRollSkill } from './titleApi';
 
   /**
-   * The crew screen's dossier: the selected member in full. Name (type to rename), role and label, the roll stepper
-   * (step back to an earlier roll: rolls are keyed by count) and Reroll; the one-line read; traits with their whole
-   * effect and flavour; every skill as the inspector's pips against the role; the stats grid.
+   * The crew screen's dossier: the selected member in full (mock C1). Name (type to rename), title, the roll stepper (step back to an
+   * earlier roll: rolls are keyed by count) and Reroll; Background (upbringing) and Career side by side with what each adds; traits with their whole effect and
+   * flavour; all eleven skills as 0-10 pips with interest marks (a won't-do skill struck through); the stats grid.
    */
   let { c, pic, onRename, onReroll, onRoll }: {
     c: UiRollCrew; pic: string | null; onRename: (name: string) => void; onReroll: () => void; onRoll: (rerolls: number) => void;
   } = $props();
-  const MAX = 6;
-  /** Rolled and trait pips, red ones a trait took away, then dashed amber up to the role's level. */
-  const pips = (s: UiRollSkill): PipKind[] => {
-    const seq = pipsOf(s.rolled, 0, s.trait, s.lost);
-    return [...seq, ...Array<PipKind>(Math.max(0, s.role - seq.length)).fill('below')];
-  };
-  const note = (s: UiRollSkill): { text: string; cls: string } | null => {
-    if (s.role > 0) {
-      const d = s.value - s.role;
-      return d > 0 ? { text: `+${d} over role`, cls: 'pos' } : d < 0 ? { text: `−${-d} under role`, cls: 'warn' } : null;
-    }
-    return s.value > 0 ? { text: 'off-role', cls: 'dim' } : null;
-  };
+  const MAX = 10;
+  /** Rolled and trait pips, red ones a trait took away (bars clamp at 10). */
+  const pips = (s: UiRollSkill): PipKind[] => pipsOf(s.rolled, 0, s.trait, s.lost).slice(0, MAX);
 </script>
 
-{#snippet legend()}<span class="legend"><span><i class="r"></i>rolled</span><span><i class="t"></i>trait</span><span><i class="l"></i>trait −</span><span><i class="b"></i>below role</span></span>{/snippet}
+{#snippet legend()}<span class="legend"><span><i class="r"></i>rolled</span><span><i class="t"></i>trait</span><span><i class="l"></i>trait −</span><span class="int">✦ keen</span><span class="int">✦✦ passionate</span></span>{/snippet}
 
 <section class="win dossier" data-testid="crew-dossier">
-  <div class="ph">{c.name}<small>{c.roleName}</small></div>
+  <div class="ph">{c.name}<small>{c.title}</small></div>
   <div class="body">
     <div class="id">
       <span class="face">{#if pic}<img src={pic} alt="" />{/if}</span>
       <div class="ctl">
         <label class="name"><input value={c.name} maxlength="24" aria-label="Name" data-testid="crew-name" onchange={(e) => onRename(e.currentTarget.value)} /><Icon name="pencil" size={14} /></label>
         <div class="line">
-          <span class="role">{c.roleName}</span>
-          {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c), focus: true }}>{labelText(c.label)}</span>{/if}
+          <span class="role" use:tip={{ text: 'Title from their best skill. Job priorities come from all their skills; change them in game.' }}>{c.title}</span>
           <span class="roll">
             <button aria-label="Previous roll" disabled={c.rerolls === 0} data-testid="crew-roll-prev" onclick={() => onRoll(c.rerolls - 1)}><Icon name="back" size={16} /></button>
             <span data-testid="crew-roll">Roll {c.rerolls + 1}</span>
@@ -51,7 +40,16 @@
         <button class="hd" data-testid="crew-reroll" onclick={onReroll}><Icon name="dice" size={18} />Reroll {c.name}</button>
       </div>
     </div>
-    <p class="read">{c.read}</p>
+    {#if c.read}<p class="read">{c.read}</p>{/if}
+    {#if c.upbringing || c.career}
+      <div class="origins" data-testid="crew-origins">
+        {#each [['Background', c.upbringing], ['Career', c.career]] as const as [title, o] (title)}
+          <Section {title}>{#if o}<div class="bgl"><b>{o.name}</b> {o.line}</div>{#if o.adds}<div class="adds">{o.adds}</div>{/if}{/if}</Section>
+        {/each}
+      </div>
+      {#if c.knack}<div class="bgl">A knack for <b>{c.knack.toLowerCase()}</b>, out of nowhere.</div>{/if}
+      {#each c.wontDo as w (w)}<div class="bgl neg">{w}</div>{/each}
+    {/if}
     <Section title="Traits">
       {#each c.traits as t (t.id)}
         <div class="tl"><i style:background={traitColor(t.kind)}></i><span class="tn">{t.name}</span><span>{t.effect}<em>{t.flavour}</em></span></div>
@@ -59,11 +57,10 @@
     </Section>
     <Section title="Skills" extra={legend}>
       {#each c.skills as s (s.skill)}
-        {@const n = note(s)}
-        <div class="sk" class:off={s.role === 0} class:zero={s.value === 0}>
-          <span class="si"><Icon name={(SKILL_ICON[s.skill] ?? 'list') as IconName} size={15} /></span><span class="sn">{s.name}</span><b>{s.value}</b>
-          <Pips cells={pips(s)} max={Math.max(MAX, s.rolled + s.trait, s.role)} width={22} />
-          <span class={n?.cls ?? ''}>{n?.text ?? ''}</span>
+        <div class="sk" class:zero={s.value === 0} class:struck={s.struck} data-testid="dossier-skill">
+          <span class="si"><Icon name={(SKILL_ICON[s.skill] ?? 'list') as IconName} size={15} /></span><span class="sn">{s.name}</span><b>{s.value}{#if s.value > MAX}+{/if}</b>
+          <Pips cells={pips(s)} max={MAX} width={22} />
+          <span class="int" use:tip={{ text: interestTip(s.interest) }}>{interestMark(s.interest)}</span>
         </div>
       {/each}
     </Section>
@@ -92,8 +89,6 @@
   .name input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: #fff; font: 600 18px var(--head-font); letter-spacing: 0.04em; }
   .line { display: flex; align-items: center; gap: 8px; }
   .role { font: 600 13px var(--head-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cyan); }
-  .lbl { display: inline-block; font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 5px; border: 1px solid currentColor; cursor: help; }
-  .lbl.talented { color: var(--amber); } .lbl.green { color: #a7c98a; }
   .roll { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--dim); }
   .roll button { width: 28px; height: 28px; min-width: 0; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--dim); }
   .roll span { padding: 0 6px; white-space: nowrap; }
@@ -107,15 +102,22 @@
   .legend { display: inline-flex; gap: 10px; font-size: 12px; color: var(--dim); }
   .legend span { display: inline-flex; align-items: center; gap: 4px; }
   .legend i { display: inline-block; width: 10px; height: 10px; box-sizing: border-box; }
-  .legend .r { background: #8b939a; } .legend .t { background: var(--green); } .legend .l { background: var(--red); } .legend .b { border: 1px dashed var(--amber); }
-  .sk { display: grid; grid-template-columns: 16px 84px 18px auto 1fr; align-items: center; column-gap: 8px; min-height: 26px; font-size: 13px; }
-  .sk > span:last-child { text-align: right; font-size: 12px; }
+  .legend .r { background: #8b939a; } .legend .t { background: var(--green); } .legend .l { background: var(--red); }
+  .int { color: var(--amber); font-size: 12px; }
+  .bgl { padding: 3px 0; font-size: 13px; color: #c9ced3; }
+  .bgl b { color: #fff; font-weight: 600; }
+  .origins { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; margin-top: 16px; }
+  .origins > :global(section) { margin-top: 0; }
+  .adds { padding-bottom: 3px; font-size: 12px; color: var(--dim); }
+  .sk { display: grid; grid-template-columns: 16px 96px 24px auto 1fr; align-items: center; column-gap: 8px; min-height: 26px; font-size: 13px; }
+  .sk > span:last-child { text-align: left; cursor: help; }
   .si { display: inline-flex; color: var(--cyan); }
-  .sk.off .si, .sk.off .sn { color: var(--dim); }
+  .sk.zero .si, .sk.zero .sn { color: var(--dim); }
+  .sk.struck .sn { text-decoration: line-through; color: var(--red); }
   .sk b { font: 700 16px/1 var(--head-font); text-align: right; }
   .sk.zero b { color: #4a535b; }
   .stats { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
   .stat { display: flex; justify-content: space-between; gap: 8px; min-height: 24px; align-items: center; border-bottom: 1px solid var(--panel-3); font-size: 13px; }
   .why { color: var(--dim); font-size: 12px; margin-left: 6px; }
-  .dim { color: var(--dim); } .pos { color: var(--good-ink); } .neg { color: var(--red); } .warn { color: var(--amber); }
+  .dim { color: var(--dim); } .pos { color: var(--good-ink); } .neg { color: var(--red); }
 </style>

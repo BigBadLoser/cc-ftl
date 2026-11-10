@@ -15,7 +15,7 @@ import type { UiEventGrid } from '../ui/starmapApi';
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
 
 /** Medicine at which the scan reads the bleeding to the second (a medic aboard), not in rough bands. */
-const READ_EXACT = 2;
+const READ_EXACT = 4;
 
 /** The scan of a pod: who is aboard and how bad it is. A medic reads the time they have left; anyone else a rough band. */
 export function podRows(sim: Sim, p: ScenePod): { label: string; value: string }[] {

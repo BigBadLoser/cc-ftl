@@ -98,10 +98,10 @@ describe('derelict signal', () => {
     expect(buildStory(sim).active?.intel[0]?.rows.find((r) => r.label === 'Signs')?.value).toMatch(/about \d+/);
   });
 
-  it('the hacking scan needs hacking 2, gives nothing but a deep read: counts and cargo without practice', () => {
+  it('the hacking scan needs hacking 4, gives nothing but a deep read: counts and cargo without practice', () => {
     const probe = content.events['event.derelict_sighting'].choices.find((c) => c.id === 'probe');
-    expect(probe?.requires).toEqual([{ kind: 'skill', skill: 'hacking', level: 2 }]);
-    expect(choose(signalled(3), 'probe')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' }); // starter crew: hacking 1
+    expect(probe?.requires).toEqual([{ kind: 'skill', skill: 'hacking', level: 4 }]);
+    expect(choose(signalled(3), 'probe')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' }); // starter crew: hacking 2
     const sim = signalled(seedWith(true), (s) => applyEffect(s, { type: 'skillXp', skill: 'hacking', amount: 300, who: 'all' }, { event: 'test', actor: null }));
     const before = withPlayerAboard(sim, () => playerStock(sim, 'item.electronics'));
     const out = choose(sim, 'probe');

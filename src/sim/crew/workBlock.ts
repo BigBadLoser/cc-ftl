@@ -1,6 +1,9 @@
 import type { Sim } from '../sim';
 import { WorkBlockC, type WorkCategory } from './components';
 
+/** The `why` of a permanent won't-do block (docs/TRAITS.md 10.10). */
+export const WONT_DO_WHY = 'wontDo';
+
 /** Block a work category for the crew member, for a reason (one entry per category and reason). */
 export function blockWork(sim: Sim, crew: number, category: WorkCategory, why: string): void {
   if (!sim.world.isAlive(crew)) return;

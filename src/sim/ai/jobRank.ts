@@ -4,6 +4,7 @@ import { CrewC, type Job, type Position, type Priorities } from '../crew/compone
 import { freeOperatorFor, jobFits } from '../crew/jobFit';
 import { operateAffinity } from '../combat/operators';
 import { ModuleC } from '../modules/components';
+import { AllegianceC } from '../fight/components';
 import { shipIdOf } from '../regions';
 import { passageTiles } from '../away/crew';
 import type { Sim } from '../sim';
@@ -16,10 +17,15 @@ import { EVA_JOB_PENALTY, OPERATE_MAX_LEVEL, PHOBIA_BATTLE_RADIUS, PHOBIA_JOB_PE
  * the urgency, `pairCost` the integer terms added to the path cost. The rules are the legacy picker's (moved here unchanged), in path cost units.
  */
 
-/** True if an empty console may be relieved by crew whose operating priority is low: in a fight, left empty for RELIEF_AFTER_SEC, and one that matters unmanned (the shield console works at base strength without an operator). */
+/**
+ * True if an empty console may be relieved by crew whose operating priority is low: in a fight, left empty for RELIEF_AFTER_SEC, and one
+ * that matters unmanned (the shield console works at base strength without an operator). Anyone on the player's side relieves (docs/TRAITS.md
+ * 10.8); NPC crew only when their kind says so.
+ */
 function canRelieve(sim: Sim, crewId: number, job: Job): boolean {
   const role = sim.world.get(crewId, CrewC)?.role;
-  if (!role || !sim.content.roles[role]?.relievesStations || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
+  const player = sim.world.get(crewId, AllegianceC)?.faction === 'player';
+  if (!role || !(player || sim.content.roles[role]?.relievesStations) || !sim.sector.inCombat || sim.tick - (job.freeSince ?? sim.tick) < RELIEF_AFTER_SEC * TICK_HZ) return false;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   return !!m && sim.content.modules[m.def]?.console !== 'shields' && freeOperatorFor(sim, shipIdOf(sim, m), job) === 0;
 }

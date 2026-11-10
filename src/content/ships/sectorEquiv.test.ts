@@ -64,7 +64,7 @@ function legacyWorld(sim: Sim): unknown {
   if ((stores.container ?? []).length === 0) delete stores.container;
   // So did aliens (egg sacs, nests, creatures): their empty stores are not part of it either.
   // And asteroids, mining pods and base-logistics runs and transfer orders (and later away sites): their empty stores are not part of it.
-  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'emergencyArm', 'stowOrder', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered', 'away', 'awaySite', 'siteRun', 'pickup', 'airHolds', 'staging']) if ((stores[k] ?? []).length === 0) delete stores[k];
+  for (const k of ['eggSac', 'nest', 'alien', 'asteroid', 'miningPod', 'ferry', 'transfer', 'salvageWatch', 'salvageOrder', 'salvageTrip', 'salvageCrew', 'forHire', 'trader', 'background', 'interests', 'wontDo', 'research', 'coreRaider', 'coreRaid', 'recall', 'boardLaunch', 'boardHold', 'sabotageOrder', 'surrendered', 'away', 'awaySite', 'siteRun', 'pickup', 'airHolds', 'staging']) if ((stores[k] ?? []).length === 0) delete stores[k];
   // The helm's `pilot` skill on the combat component came with the evade odds: not part of the legacy shape.
   stores.combat = (stores.combat ?? []).map(([id, raw]) => {
     // `heat` (combat heat, #185) is a new empty field in the same way.
@@ -212,16 +212,13 @@ function run(sim: Sim, n: number, log: string[]): void {
 
 /**
  * Content as the pre-refactor code had it: the starter's crate held no fuel (the starmap added 16 units, which would change
- * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and the gunner fetched no gun, and no role relieved an empty console. Everything else is the live content,
+ * the recorded world), the starter had two engineers, the medic had no medicine skill (it speeds up bed healing), and no NPC kind relieved an empty console. Everything else is the live content,
  * so the recorded hashes still pin the refactor.
  */
 const noRelief: Record<string, RoleDef> = Object.fromEntries(Object.entries(content.roles).map(([id, r]) => [id, { ...(r as RoleDef) }]));
 for (const r of Object.values(noRelief)) delete r.relievesStations;
 const medic: RoleDef = noRelief['role.medic'] as RoleDef;
 delete medic.skills;
-// ...and the gunner took no gun from the crate on its own (the combat-onboarding playerLoadout).
-const gunner: RoleDef = noRelief['role.gunner'] as RoleDef;
-delete gunner.playerLoadout;
 const legacy: typeof content = {
   ...content,
   schedules: {} as typeof content.schedules, // crew schedules (#412) came later: with no Default every hour is Any, the needs-only rule
@@ -334,4 +331,9 @@ describe('sector refactor equivalence', () => {
 // repair job keeps its key order, which the hash sees).
 // Repinned for food (#59). The only differences in the hashed world are the empty `plot` component store and the new `farming` key in every crew member's priorities;
 // with those two stripped from the dump, the world and the event log equal main's byte for byte (the old hashes c50ed4d7 / 62484cd5).
-const EXPECTED = { combat: '5152b06b', disaster: 'be9dcfa7' };
+// Repinned for the 0-10 skill scale (#415): skill keys renamed (repair -> construction), a finer XP curve (crew level mid-run), and Construction speeding
+// repair and firefighting by 5% a level. The starter-vs-raider probe with the old XP curve emulated matched main exactly, so the rescale itself is exact.
+// Repinned for backgrounds and always-armed crew (#415): every person of the player's crew starts with a sidearm and the better shots trade up from
+// the locker (no emergency arming), every one of them may relieve an empty console in a fight (the legacy content's `relievesStations` strip no
+// longer reaches the player's side), and the new background, interests and won't-do stores are empty in the dump.
+const EXPECTED = { combat: '93779269', disaster: '9ebe85dd' };

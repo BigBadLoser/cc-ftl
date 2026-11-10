@@ -586,6 +586,10 @@ of 4–7, one or two of 2–4, three or four at 1–2, four or five at 0. Averag
 scale): crew are broadly more capable, which is the point of the issue, and since per-level effects are small the buff shows mostly in
 secondary jobs (+5–15%). Slice 1 checks the distribution with a seeded sweep (`*.slow.test.ts`).
 
+As built (#415): starting crew roll with no hint from the ship's berths (user decision 2026-11-10): a Helm or Repair below 3 shows weak
+on "Ship's jobs" and a reroll fills it. About a third of starter crews cover both at 3 or better first time. Recruits and rescue pods use the
+strict hint of 10.11. The noise's floor at 0 lifts the mean total to about 14.7.
+
 Stored as now: `RolledSkillsC.skills` (the full snapshot), plus new optional components `BackgroundC { upbringing, career, knack? }`,
 `InterestsC { keen: SkillName[]; passionate: SkillName[] }`, and won't-do as permanent `WorkBlockC` entries (10.9).
 
@@ -717,6 +721,9 @@ Later steps re-pin what they knowingly move (sector hashes, starter-vs-raider), 
 
 Decided 2026-11-10: eleven skills (Repair folded into Construction; Botany and Industry added); no roles for player crew (titles cosmetic, priorities derived); crew always armed; rolled cap 8, cap 10 with XP,
 traits may exceed; `SAVE_VERSION` bump; won't-do holds in emergencies; crew about 50% more skilled overall; one PR, UI screenshots to the user before it is marked ready.
+
+Q1-Q4 were taken as proposed (user defaults 2026-11-10): Construction keeps extinguishing and forcing doors; no title renaming; the
+priority bands as written; hunting at melee or gunnery ≥ 6.
 
 | # | Open | Proposal |
 |---|---|---|

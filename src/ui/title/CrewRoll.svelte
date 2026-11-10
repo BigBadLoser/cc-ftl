@@ -5,12 +5,13 @@
   import { tip } from '../kit';
   import CrewCoverage from './CrewCoverage.svelte';
   import CrewDossier from './CrewDossier.svelte';
-  import { labelText, labelTip, traitColor } from './crewText';
+  import { interestMark, interestTip, topSkills } from './crewText';
   import type { TitleApi, UiCrewPlan, UiRollCrew } from './titleApi';
 
   /**
-   * New game, step 2: roll the crew. The roster (left) lists the ship's slots with a reroll die each, then the crew's
-   * coverage per skill, Back and Start; the dossier (right) is the selected member in full. Rolls are the sim's own
+   * New game, step 2: roll the crew (mock C1, docs/TRAITS.md 10.12). The roster (left) lists the ship's berths with a lock and a reroll
+   * die each, Reroll unlocked, then the ship's jobs and who covers them, Back and Start; the dossier (right) is the selected member in
+   * full. Rolls are the sim's own
    * (`api.rollCrew`), keyed by seed, slot and reroll count, so stepping back through rolls is free and Start gets exactly
    * this crew.
    */
@@ -39,7 +40,11 @@
     plan.picks[slot] = { role: plan.picks[slot]!.role, rerolls: Math.max(0, rerolls) };
   };
   const reroll = (slot: number) => setRolls(slot, plan.picks[slot]!.rerolls + 1);
-  const rerollAll = () => plan.picks.forEach((_p, i) => setRolls(i, plan.picks[i]!.rerolls + 1));
+  /** Locked berths keep their roll through "Reroll unlocked" (screen state only: the plan holds the roll counts). */
+  let locked = $state<boolean[]>([]);
+  const toggleLock = (slot: number) => (locked[slot] = !locked[slot]);
+  const rerollUnlocked = () => plan.picks.forEach((_p, i) => !locked[i] && setRolls(i, plan.picks[i]!.rerolls + 1));
+  const jobs = $derived(api.shipJobs(ship.id));
   const rename = (slot: number, name: string) => {
     const p = plan.picks[slot]!;
     plan.picks[slot] = { ...p, ...(name.trim() ? { name: name.trim().slice(0, 24) } : { name: undefined }) };
@@ -61,20 +66,20 @@
           <div class="pick" role="button" tabindex="0" aria-label="Show {c.name}" onclick={() => (sel = c.slot)} onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (sel = c.slot)}>
             <span class="face">{#if pic}<img src={pic} alt="" />{/if}</span>
             <span class="who">
-              <span class="top"><span class="nm">{c.name}</span><span class="role">{c.roleName}</span>
-                {#if c.label}<span class="lbl {c.label}" use:tip={{ text: labelTip(c), focus: true }}>{labelText(c.label)}</span>{/if}
-              </span>
-              <span class="tr">{#each c.traits as t (t.id)}<span><i style:background={traitColor(t.kind)}></i>{t.name}</span>{:else}<span class="none">No traits</span>{/each}</span>
+              <span class="top"><span class="nm">{c.name}</span><span class="role">{c.title}</span></span>
+              {#if c.background}<span class="bg">{c.background}</span>{/if}
+              <span class="tops">{#each topSkills(c.skills) as s (s.skill)}<span>{s.name} <b>{s.value}</b>{#if s.interest}<i class="int" use:tip={{ text: interestTip(s.interest) }}>{interestMark(s.interest)}</i>{/if}</span>{/each}</span>
             </span>
           </div>
+          <button class="ico lock" class:locked={locked[c.slot]} use:tip={{ text: locked[c.slot] ? `Unlock ${c.name}` : `Lock ${c.name}: keep them through Reroll unlocked` }} aria-label="{locked[c.slot] ? 'Unlock' : 'Lock'} {c.name}" aria-pressed={!!locked[c.slot]} data-testid="crew-lock-{c.slot}" onclick={() => toggleLock(c.slot)}><Icon name={locked[c.slot] ? 'lock' : 'unlock'} size={18} /></button>
           <button class="ico" use:tip={{ text: `Reroll ${c.name}` }} aria-label="Reroll {c.name}" data-testid="crew-reroll-{c.slot}" onclick={() => reroll(c.slot)}><Icon name="dice" size={20} /></button>
         </li>
       {/each}
     </ul>
-    <div class="all">Roles come with the ship. Reroll anyone you don't like, or the lot.
-      <button class="hd" data-testid="crew-reroll-all" onclick={rerollAll}><Icon name="dice" size={18} />Reroll whole crew</button>
+    <div class="all">
+      <button class="hd" data-testid="crew-reroll-all" onclick={rerollUnlocked}><Icon name="dice" size={18} />Reroll unlocked</button>
     </div>
-    <CrewCoverage {crew} />
+    <CrewCoverage {crew} {jobs} />
     </div>
     <div class="foot">
       <button class="hd" data-testid="title-back" onclick={onBack}><Icon name="back" size={16} />Back</button>
@@ -103,7 +108,7 @@
   .sc { color: var(--dim); }
   .role { color: var(--cyan); }
   ul { list-style: none; margin: 0; padding: 0; }
-  li { display: grid; grid-template-columns: 1fr 36px; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  li { display: grid; grid-template-columns: 1fr 32px 32px; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
   li.on { background: #0f1c24; box-shadow: inset 3px 0 0 var(--cyan); }
   .pick { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; cursor: pointer; }
   .face { width: 56px; height: 64px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
@@ -111,15 +116,15 @@
   .who { min-width: 0; }
   .top { display: flex; gap: 8px; align-items: center; }
   .nm { font: 600 18px var(--head-font); letter-spacing: 0.04em; color: var(--text); }
-  .lbl { display: inline-block; font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 5px; border: 1px solid currentColor; cursor: help; }
-  .lbl.talented { color: var(--amber); } .lbl.green { color: #a7c98a; }
-  .tr { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; font: 600 12px var(--head-font); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text); }
-  .tr span { display: inline-flex; align-items: center; gap: 5px; }
-  .tr i { width: 4px; height: 12px; }
-  .tr .none { color: var(--dim); }
+  .bg { display: block; margin-top: 2px; font-size: 13px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tops { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 3px; font-size: 13px; color: #c9ced3; }
+  .tops b { color: #fff; font-weight: 700; }
+  .int { font-style: normal; color: var(--amber); margin-left: 1px; cursor: help; }
+  .lock { color: var(--dim); }
+  .lock.locked { color: var(--amber); border-color: var(--amber); }
   .ico { width: 32px; height: 32px; min-width: 0; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--cyan); }
   .ico:hover { border-color: var(--cyan); background: #12242e; }
-  .all { display: grid; gap: 8px; padding: 12px; font-size: 13px; color: var(--dim); }
+  .all { display: grid; padding: 12px; }
   .hd { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
   .primary { border-color: var(--cyan); color: #fff; background: #0c1a22; min-width: 180px; }
   /* The header and the Back / Start footer stay put; the list and the coverage scroll between them. */

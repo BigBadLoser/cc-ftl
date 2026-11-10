@@ -10,7 +10,7 @@ export const traits = {
   'trait.brave': {
     name: 'Brave', flavour: 'Runs toward the shooting.', kind: 'behaviour', weight: 5, rollable: true,
     short: 'Fights unarmed · never surrenders', effect: 'Fights intruders even unarmed (bare-handed); never surrenders. Never panics, freezes or hides under fire.',
-    excludes: ['trait.coward', 'trait.battle_shy'], effects: { stressBy: { combat: 0 }, breakBy: { panic: 0, freeze: 0, hide: 0 }, brave: true },
+    excludes: ['trait.coward', 'trait.battle_shy', 'trait.pacifist'], effects: { stressBy: { combat: 0 }, breakBy: { panic: 0, freeze: 0, hide: 0 }, brave: true },
   },
   'trait.coward': {
     name: 'Coward', flavour: 'Runs away from the shooting.', kind: 'behaviour', weight: 10, rollable: true,
@@ -30,7 +30,7 @@ export const traits = {
   'trait.hot_headed': {
     name: 'Hot-headed', flavour: 'Takes it personally.', kind: 'behaviour', weight: 10, rollable: true,
     short: 'Rivalries form fast', effect: 'Rivalries form twice as fast; shouting matches with rivals when unhappy. Throws tantrums three times as often when it breaks.',
-    excludes: ['trait.peacemaker'],
+    excludes: ['trait.peacemaker', 'trait.pacifist'],
     effects: { breakBy: { tantrum: 3 }, bondLoss: 2 },
   },
   'trait.peacemaker': {
@@ -115,12 +115,17 @@ export const traits = {
     short: 'Craves stims', effect: 'Craves stims; works faster dosed, withdrawal without them.',
     excludes: ['trait.drinker'],
   },
+  'trait.pacifist': {
+    name: 'Pacifist', flavour: 'Will not lift a weapon. Not for anyone.', kind: 'behaviour', weight: 2, rollable: true,
+    short: 'Won’t fight · at peace +3', effect: 'Carries no weapon, never fights or mans a gun, flees boarders. Mood +3 outside combat.',
+    excludes: ['trait.brave', 'trait.hot_headed'], wontDo: 'violence', effects: { peaceMood: 3 },
+  },
   // --- Trade-offs ---
   'trait.strong': {
     name: 'Strong', flavour: 'Carries the crate and the guy on it.', kind: 'tradeoff', weight: 5, rollable: true,
-    short: 'Carry ×1.5 · melee +1 · hungry ×1.25', effect: 'Carry x1.5, melee +1. Gets hungry 1.25x as fast.',
+    short: 'Carry ×1.5 · melee +2 · hungry ×1.25', effect: 'Carry x1.5, melee +2. Gets hungry 1.25x as fast.',
     excludes: ['trait.bookish'],
-    modifiers: [{ stat: 'carryCapacity', op: 'mul', value: 1.5 }, { stat: 'melee', op: 'add', value: 1 }],
+    modifiers: [{ stat: 'carryCapacity', op: 'mul', value: 1.5 }, { stat: 'melee', op: 'add', value: 2 }],
     effects: { hungerMult: 1.25 },
   },
   'trait.quick': {
@@ -168,15 +173,15 @@ export const traits = {
   // --- Texture ---
   'trait.marksman': {
     name: 'Marksman', flavour: 'Never misses twice.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Gunnery +1', effect: 'Gunnery +1.', excludes: ['trait.clumsy'], modifiers: [{ stat: 'gunnery', op: 'add', value: 1 }],
+    short: 'Gunnery +2', effect: 'Gunnery +2.', excludes: ['trait.clumsy'], modifiers: [{ stat: 'gunnery', op: 'add', value: 2 }],
   },
   'trait.natural_pilot': {
     name: 'Natural pilot', flavour: 'Flies by feel.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Piloting +1', effect: 'Piloting +1.', modifiers: [{ stat: 'piloting', op: 'add', value: 1 }],
+    short: 'Piloting +2', effect: 'Piloting +2.', modifiers: [{ stat: 'piloting', op: 'add', value: 2 }],
   },
   'trait.clumsy': {
     name: 'Clumsy', flavour: 'Drops tools. Drops guns.', kind: 'texture', weight: 5, rollable: true,
-    short: 'Melee −1 · gunnery −1 · work ×0.95', effect: 'Melee -1, gunnery -1, work speed x0.95.', excludes: ['trait.marksman'],
-    modifiers: [{ stat: 'melee', op: 'add', value: -1 }, { stat: 'gunnery', op: 'add', value: -1 }, { stat: 'workSpeed', op: 'mul', value: 0.95 }],
+    short: 'Melee −2 · gunnery −2 · work ×0.95', effect: 'Melee -2, gunnery -2, work speed x0.95.', excludes: ['trait.marksman'],
+    modifiers: [{ stat: 'melee', op: 'add', value: -2 }, { stat: 'gunnery', op: 'add', value: -2 }, { stat: 'workSpeed', op: 'mul', value: 0.95 }],
   },
 } satisfies Record<string, TraitDef>;

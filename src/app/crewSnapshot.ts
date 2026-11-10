@@ -1,4 +1,4 @@
-import { AirlockC, SuitC, airlockUsable, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat } from '../sim';
+import { AirlockC, SuitC, airlockUsable, needsAir, suitAir, suitDef, suitTile, AboardC, AllegianceC, AssignmentC, CarriedC, CarryingC, CrewC, DeadC, DownedC, DraftedC, FighterC, HealthC, InertC, JobC, ModuleC, MoodC, MOOD_LABELS, NeedsC, PositionC, PrioritiesC, PrisonerC, ShipC, StorageC, SurrenderedC, TICK_HZ, VehicleC, WORK_CATEGORIES, sightLine, storageCount, Struct, wielded, EVA_AIR_LOW_FRAC, MOOD_LOW, MOOD_VERY_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW_WORK_MULT, type Job, type Sim, type WorkCategory, SKILLS, TraitsC, stat, titleOf, BackgroundC, WONT_DO_WHY, priorityDefaults, workBlocked } from '../sim';
 import type { UiCrew, UiFight, UiSkill, UiTrait } from '../ui/api';
 import { breakWord, strainOf } from './breakText';
 import { BreakdownC } from '../sim';
@@ -184,7 +184,7 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
   return {
     id,
     name: crew.name,
-    role: role?.name ?? crew.role,
+    role: titleOf(sim, id) ?? role?.name ?? crew.role, // a person's title from their best skill (docs/TRAITS.md 10.8), else the kind
     activity: activityOf(sim, id, crew.activity),
     ...(sim.world.get(id, BreakdownC) ? { broke: breakWord(sim.world.get(id, BreakdownC)!.kind) } : {}),
     rest: Math.round(sim.world.get(id, NeedsC)?.rest ?? 100),
@@ -195,7 +195,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     job,
     priorities: { ...(sim.world.get(id, PrioritiesC) ?? NONE) },
     schedule: scheduleOf(sim, id),
-    defaults: { ...(role?.priorities ?? NONE) },
+    defaults: sim.world.has(id, BackgroundC) ? priorityDefaults(sim, id) : { ...(role?.priorities ?? NONE) },
+    wontDo: wontDoCells(sim, id),
     hp: Math.round(hp?.hp ?? 100),
     maxHp: hp?.max ?? 100,
     dead: sim.world.has(id, DeadC),
@@ -257,6 +258,13 @@ export function buildCrewLists(sim: Sim, watch: number | null = null): { crew: U
     if (c) hostiles.push(c);
   }
   return { crew, guests, hostiles };
+}
+
+/** The work categories a crew member won't do (a background or trait's permanent block), for the priorities grid. */
+function wontDoCells(sim: Sim, id: number): Partial<Record<WorkCategory, string>> {
+  const out: Partial<Record<WorkCategory, string>> = {};
+  for (const cat of WORK_CATEGORIES) if (workBlocked(sim, id, cat) === WONT_DO_WHY) out[cat] = 'Won’t do this work (background or trait)';
+  return out;
 }
 
 /** The crew member's schedule row and the block in force now (crew/schedule.ts owns both), or null without one. */

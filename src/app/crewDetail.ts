@@ -1,5 +1,6 @@
 import {
   BreakdownC, CrewC, DownedC, HealthC, ImplantsC, MoodC, FOOD_MOOD_KEYS, MOOD_BASE, MOOD_LABELS, MOOD_LOW, MOOD_LOW_WORK_MULT, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT,
+  BackgroundC, InterestsC, SKILL_NAMES, WONT_DO_NAMES, WONT_DO_SKILLS, WontDoC, interestIn,
   NeedsC, RolledSkillsC, SKILLS, SkillXpC, SuitC, SurrenderedC, PrisonerC,
   statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
@@ -50,19 +51,26 @@ function partsOf(sim: Sim, id: number, name: StatName, b: StatBreakdown): UiStat
 }
 
 function skillsOf(sim: Sim, id: number): UiSkillDetail[] {
-  const crew = sim.world.get(id, CrewC);
-  const role = crew ? sim.content.roles[crew.role]?.skills : undefined;
+  const interests = sim.world.get(id, InterestsC);
+  const struck = new Set((sim.world.get(id, WontDoC)?.ids ?? []).flatMap((w) => WONT_DO_SKILLS[w]));
   const xp = sim.world.get(id, SkillXpC)?.xp ?? {};
   return SKILLS.map((skill) => {
     const b = statBreakdown(sim, id, skill);
     const parts = partsOf(sim, id, skill, b);
     const sum = (k: UiStatPart['kind']) => parts.filter((p) => p.kind === k && p.op === 'add').reduce((n, p) => n + p.value, 0);
     return {
-      skill, name: cap(skill), value: Math.round(b.value), rolled: sum('rolled'), xpLevels: sum('xp'),
-      mods: parts.filter((p) => p.kind !== 'rolled' && p.kind !== 'xp'), role: role?.[skill] ?? 0,
-      ...xpProgress(xp[skill] ?? 0), gain: xpGainMult(sim, id, skill),
+      skill, name: SKILL_NAMES[skill], value: Math.round(b.value), rolled: sum('rolled'), xpLevels: sum('xp'),
+      mods: parts.filter((p) => p.kind !== 'rolled' && p.kind !== 'xp'), interest: interestIn(interests, skill), struck: struck.has(skill),
+      ...xpProgress(xp[skill] ?? 0, sum('rolled')), gain: xpGainMult(sim, id, skill),
     };
   });
+}
+
+function backgroundOf(sim: Sim, id: number): { upbringing: string; career: string; wontDo: string[] } {
+  const bg = sim.world.get(id, BackgroundC);
+  const up = bg && sim.content.upbringings?.[bg.upbringing];
+  const career = bg && sim.content.careers?.[bg.career];
+  return { upbringing: up?.name ?? '', career: career?.name ?? '', wontDo: (sim.world.get(id, WontDoC)?.ids ?? []).map((w) => WONT_DO_NAMES[w]) };
 }
 
 function statsOf(sim: Sim, id: number): UiStatDetail[] {
@@ -154,6 +162,7 @@ export function buildCrewDetail(sim: Sim, id: number | null): UiCrewDetail | nul
     health: { hp: Math.round(hp?.hp ?? 100), maxHp: hp?.max ?? 100, conditions: conditionsOf(sim, id) },
     mood: moodOf(sim, id),
     skills: skillsOf(sim, id),
+    ...backgroundOf(sim, id),
     stats: statsOf(sim, id),
     traits: (sim.world.get(id, TraitsC)?.ids ?? []).flatMap((tid) => {
       const d = sim.content.traits?.[tid];

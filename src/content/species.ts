@@ -34,6 +34,7 @@ const alien = {
 /** The base human body. Variants spread it and change only what differs, so its tuning (rest, hunger, speed) never drifts. */
 const human = {
   name: 'Human',
+  kit: 'item.sidearm',
   moveSpeed: 2.5,
   workSpeed: 1,
   // Rest drains slowly: about 20 minutes awake (a full sleep takes about 7 in a bed).

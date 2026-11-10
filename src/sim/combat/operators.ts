@@ -64,5 +64,5 @@ export function operateAffinity(sim: Sim, crew: number, job: Job): number {
   if (job.kind !== 'operate') return 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   const kind = m && sim.content.modules[m.def]?.console;
-  return kind ? skillOf(sim, crew, SKILL_OF[kind]) * 100 : 0;
+  return kind ? skillOf(sim, crew, SKILL_OF[kind]) * 50 : 0;
 }

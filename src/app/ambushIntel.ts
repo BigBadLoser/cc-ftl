@@ -10,9 +10,9 @@ import { bestAt } from '../sim/story/world';
  */
 const level = (sim: Sim, skill: SkillName): number => bestAt(sim, skill)?.level ?? 0;
 
-/** The tell a scan can catch: a hacker (level 2) sees the transponder ID change. The video's stutter (`lag`) needs no skill: it shows on the hail. */
+/** The tell a scan can catch: a hacker (level 4) sees the transponder ID change. The video's stutter (`lag`) needs no skill: it shows on the hail. */
 export function scanSeesNameTell(sim: Sim, s: SceneShip): boolean {
-  return !!s.ambush?.trap && s.ambush.tell === 'name' && level(sim, 'hacking') >= 2;
+  return !!s.ambush?.trap && s.ambush.tell === 'name' && level(sim, 'hacking') >= 4;
 }
 
 export function ambushRows(sim: Sim, s: SceneShip, owner: string): { label: string; value: string }[] {
@@ -24,8 +24,8 @@ export function ambushRows(sim: Sim, s: SceneShip, owner: string): { label: stri
   return [
     { label: 'Transponder', value: owner },
     { label: 'Hull', value: s.family ? `${s.family[0]?.toUpperCase()}${s.family.slice(1)} class` : 'Unknown' },
-    { label: 'Weapons', value: gunnery < 1 ? 'Armed, as any pirate' : a.trap ? 'Guns powered and charged' : 'Guns cold' },
-    { label: 'Boarding craft', value: piloting < 1 ? 'A shuttle bay' : a.trap ? 'Shuttle fuelled, suited crew in the bay' : 'Shuttle bay, cold' },
-    { label: 'Crew aboard', value: hacking < 1 ? 'Unclear' : s.crew === undefined ? 'Unclear' : String(s.crew) },
+    { label: 'Weapons', value: gunnery < 2 ? 'Armed, as any pirate' : a.trap ? 'Guns powered and charged' : 'Guns cold' },
+    { label: 'Boarding craft', value: piloting < 2 ? 'A shuttle bay' : a.trap ? 'Shuttle fuelled, suited crew in the bay' : 'Shuttle bay, cold' },
+    { label: 'Crew aboard', value: hacking < 2 ? 'Unclear' : s.crew === undefined ? 'Unclear' : String(s.crew) },
   ];
 }

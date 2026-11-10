@@ -10,9 +10,9 @@ import { chargeModifiers } from './robots/conditions';
 import type { Sim } from './sim';
 import { DEFAULT_CARRY_CAPACITY } from './tuning';
 
-export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay' | 'carryCapacity' | 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science' | 'cooking';
+export type StatName = 'moveSpeed' | 'workSpeed' | 'restDecay' | 'carryCapacity' | 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'construction' | 'hacking' | 'medicine' | 'science' | 'cooking' | 'botany' | 'industry';
 
-const SKILL_STATS: readonly StatName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'repair', 'hacking', 'medicine', 'science', 'cooking'];
+const SKILL_STATS: readonly StatName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'construction', 'hacking', 'medicine', 'science', 'cooking', 'botany', 'industry'];
 
 /** A tagged change to a stat. Applied as: (base + sum of adds) * product of muls. */
 export interface Modifier {

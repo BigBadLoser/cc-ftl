@@ -5,6 +5,9 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_cup from '@tabler/icons/outline/cup.svg?raw';
+import t_plant from '@tabler/icons/outline/plant.svg?raw';
+import t_building_factory from '@tabler/icons/outline/building-factory-2.svg?raw';
+import t_lock_open from '@tabler/icons/outline/lock-open.svg?raw';
 import t_snowflake from '@tabler/icons/outline/snowflake.svg?raw';
 import t_diamond from '@tabler/icons/outline/diamond.svg?raw';
 import t_bomb from '@tabler/icons/outline/bomb.svg?raw';
@@ -192,6 +195,9 @@ export const FILES = {
   chevRight: 'chevron-right',
   shirt: 'shirt',
   cup: 'cup',
+  plant: 'plant',
+  factory: 'building-factory-2',
+  unlock: 'lock-open',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -287,6 +293,9 @@ const RAW: Record<string, string> = {
   'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
   'cup': t_cup,
+  'plant': t_plant,
+  'building-factory-2': t_building_factory,
+  'lock-open': t_lock_open,
 };
 
 

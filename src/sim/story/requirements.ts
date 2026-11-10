@@ -1,13 +1,12 @@
 import { CrewC } from '../crew/components';
+import { SKILL_NAMES } from '../crew/skillList';
 import type { ItemQty } from '../registry';
 import type { Sim } from '../sim';
 import type { ChoiceDef, EventDef, Requirement, SkillCheck } from './defs';
 import { flagValue, reputationOf } from './state';
 import { bestAt, hasImplant, playerCrew, playerModules, playerStock, stowedShuttles, withPlayerAboard } from './world';
 
-const SKILL_LABEL: Record<string, string> = {
-  gunnery: 'Gunnery', piloting: 'Piloting', shielding: 'Shielding', melee: 'Melee', repair: 'Repair', hacking: 'Hacking',
-};
+const SKILL_LABEL: Readonly<Record<string, string>> = SKILL_NAMES;
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const qty = (sim: Sim, q: ItemQty): string => `${q.count}x ${itemName(sim, q.item)}`;
@@ -98,7 +97,7 @@ export interface Odds {
 }
 
 export const CHECK_DEFAULT_BASE = 0.5;
-export const CHECK_DEFAULT_PER_LEVEL = 0.1;
+export const CHECK_DEFAULT_PER_LEVEL = 0.05;
 export const CHECK_MIN = 0.05;
 export const CHECK_MAX = 0.95;
 

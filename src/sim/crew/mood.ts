@@ -5,9 +5,11 @@ import { AllegianceC } from '../fight/components';
 import type { Modifier, ModifierSource } from '../stats';
 import type { Sim } from '../sim';
 import {
-  BREAK_LET_OUT_POINTS, BREAK_SCENE_MOOD, LIGHT_DARK_BELOW, MOOD_BASE, MOOD_BREAKDOWN_BELOW, MOOD_COMPANY_RADIUS, MOOD_LONELY_SEC, MOOD_LOW, MOOD_LOW_WORK_MULT,
+  BREAK_LET_OUT_POINTS, BREAK_SCENE_MOOD, LIGHT_DARK_BELOW, MOOD_BASE, MOOD_ENJOY_SEC, MOOD_BREAKDOWN_BELOW, MOOD_COMPANY_RADIUS, MOOD_LONELY_SEC, MOOD_LOW, MOOD_LOW_WORK_MULT,
   MOOD_MEAL_SEC, MOOD_RELAX_POINTS, MOOD_RELAX_SEC, MOOD_SLEEP_SEC, MOOD_VERY_LOW, MOOD_VERY_LOW_WORK_MULT, O2_ALERT_BELOW, O2_HARM_BELOW,
 } from '../tuning';
+import type { SkillName } from '../registry';
+import { INTEREST_MOOD, InterestsC, interestIn } from './background';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
 import { BOND_MOOD_LABELS, bondFactors } from './bondMood';
 import { applyTraitMood, FOOD_MOOD_KEYS, TRAIT_MOOD_LABELS } from './traitMood';
@@ -22,7 +24,7 @@ export const MOOD_LABELS: Readonly<Record<string, string>> = {
   exhausted: 'Exhausted', tired: 'Tired', rested: 'Rested',
   hotMeal: 'Hot ration at the galley', mealBland: 'Bland meal', mealGood: 'Good meal', mealFine: 'Fine meal', bed: 'Slept in a bed', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
-  company: 'Company', lonely: 'Lonely', relaxed: 'Took a break', letOut: 'Let it out', scene: 'Made a scene',
+  company: 'Company', lonely: 'Lonely', enjoying: 'Enjoying the work', relaxed: 'Took a break', letOut: 'Let it out', scene: 'Made a scene',
   ...TRAIT_MOOD_LABELS,
   ...BOND_MOOD_LABELS,
 };
@@ -51,6 +53,18 @@ export function noteMeal(sim: Sim, id: number, galley: boolean, item = ''): void
 /** A break (the leisure drive's walk and rest, ai/machines/leisure.ts) just ended: mood lifts for a while. */
 export function noteLeisure(sim: Sim, id: number): void {
   if (hasMood(sim, id)) ensureMood(sim, id).relax = MOOD_RELAX_SEC;
+}
+
+/**
+ * Work in a skill just progressed (a job, a console, a hit): a crew member keen on it enjoys the work for MOOD_ENJOY_SEC (docs/TRAITS.md
+ * 10.7). One factor: the highest interest held applies.
+ */
+export function noteWork(sim: Sim, id: number, skill: SkillName): void {
+  const pts = INTEREST_MOOD[interestIn(sim.world.get(id, InterestsC), skill)];
+  if (!pts || !hasMood(sim, id)) return;
+  const m = ensureMood(sim, id);
+  if ((m.enjoy ?? 0) <= 0 || pts >= (m.enjoyPts ?? 0)) m.enjoyPts = pts;
+  m.enjoy = MOOD_ENJOY_SEC;
 }
 
 /** A sleep just ended, in a bed or on the floor. */
@@ -82,6 +96,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
     add(lift.key, lift.points);
   }
   if ((m.relax ?? 0) > 0) add('relaxed', MOOD_RELAX_POINTS);
+  if ((m.enjoy ?? 0) > 0 && m.enjoyPts) add('enjoying', m.enjoyPts);
   if ((m.letOut ?? 0) > 0) add('letOut', BREAK_LET_OUT_POINTS);
   if ((m.scene ?? 0) > 0) add('scene', BREAK_SCENE_MOOD);
   if (m.sleep > 0) add(m.bed > 0 ? 'bed' : 'floor', m.bed > 0 ? 5 : -6);

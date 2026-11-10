@@ -124,6 +124,19 @@ describe('crew jobs', () => {
     expect(sim2.world.get(c, AssignmentC)?.jobId).toBe(far);
   });
 
+  it('two builders each standing on the other one’s wall: one steps aside and both walls go up', () => {
+    const sim = make();
+    const a = spawn(sim, 1, 1, construction);
+    const b = spawn(sim, 2, 1, construction);
+    build(sim, 2, 1); // a works it from where it stands; b stands on it
+    build(sim, 1, 1); // and the other way round
+    run(sim, 2);
+    expect(sim.world.get(a, AssignmentC)?.jobId).not.toBe(sim.world.get(b, AssignmentC)?.jobId);
+    run(sim, 600);
+    expect(struct(sim, 1, 1)).toBe(Struct.Wall);
+    expect(struct(sim, 2, 1)).toBe(Struct.Wall);
+  });
+
   it('drafted crew ignore jobs and go to their target', () => {
     const sim = make();
     const id = spawn(sim, 1, 1, construction);
