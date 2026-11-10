@@ -221,6 +221,128 @@ def b6():
     return k.build()
 
 
+# ---- round 3: diner, still, automat ---------------------------------------------------------------------------------
+
+def counter(k, body, top, trim, glow):
+    """The straight counter (round 2's), its kick and its lit lip; end panels low."""
+    k.box(0.0, 0.0, 0.0, 2.96, 0.94, 0.04, "arcBodyK", top="arcBodyK")
+    k.box(0.0, 0.24, 0.04, 2.9, 0.36, TOP - 0.1, body[1], top=body[0])
+    k.box(0.0, 0.25, TOP - 0.06, 3.0, 0.46, 0.06, trim, top=top)
+    k.box(0.0, 0.475, TOP - 0.075, 2.96, 0.006, 0.014, glow)
+
+
+def b7():
+    """Retro diner: a white counter with a red top and a chequered front, chrome; behind it a soda fountain (a chrome
+    machine with arched spouts and lit labels) and a pie dome; a round mint robot on one wheel, a dome head and a tray."""
+    k = Bench("bar_b7", FP3)
+    counter(k, ("arcShellL", "arcShell"), "arcRedM", "arcChr", "arcRed")
+    for i in range(16):                                                                   # the chequered front
+        for j in range(2):
+            if (i + j) % 2 == 0:
+                k.box(-1.35 + i * 0.18, 0.423, 0.14 + j * 0.16, 0.18, 0.004, 0.16, "arcBodyK")
+    k.box(0.0, 0.43, 0.06, 2.9, 0.02, 0.04, "arcChr", top="arcChrL")                     # a chrome kick rail
+    fu = -0.75                                                                            # the fountain:
+    k.box(fu, -0.3, 0.04, 0.9, 0.34, 0.84, "arcChr", top="arcChrL")                       # its body,
+    k.box(fu, -0.3, 0.88, 0.94, 0.36, 0.06, "arcRedM", top="arcRedM")                     # its red cap,
+    for i, col in enumerate(("arcPink", "arcAmb", "arcGrn", "arcCyan")):
+        u = fu - 0.3 + i * 0.2
+        k.box(u, -0.128, 0.6, 0.12, 0.006, 0.12, col)                                     # its lit labels,
+        bar(k, (u, -0.14, 0.72), (u, 0.0, 0.8), 0.03, "arcChrL")                         # the spouts arching
+        bar(k, (u, 0.0, 0.8), (u, 0.05, 0.7), 0.03, "arcChrL")                           # over the counter
+    k.cyl(0.85, -0.25, 0.04, 0.2, 0.62, "arcShell", top="arcChr", sides=12)              # the pie stand,
+    k.cyl(0.85, -0.25, 0.66, 0.18, 0.14, "arcGlass", top="arcGlass", sides=12, rtop=0.08)  # its glass dome,
+    k.cyl(0.85, -0.25, 0.67, 0.12, 0.05, "arcAmb", top="arcAmb", sides=10)              # a lit pie under it
+    ru = 0.25                                                                             # the robot:
+    k.cyl(ru, -0.15, 0.04, 0.07, 0.1, "arcBodyK", top="arcBodyK", sides=10)               # its wheel,
+    k.cyl(ru, -0.15, 0.14, 0.17, 0.42, "arcTealL", top="arcTealL", sides=14, rtop=0.14)  # its round body,
+    k.cyl(ru, -0.15, 0.56, 0.12, 0.08, "arcChr", top="arcChrL", sides=12)               # its collar,
+    k.cyl(ru, -0.15, 0.64, 0.13, 0.18, "arcGlass", top="arcShellL", sides=12, rtop=0.07)   # its dome head,
+    for du in (-0.04, 0.04):
+        k.box(ru + du, -0.03, 0.7, 0.04, 0.004, 0.04, "arcCyan")                         # its eyes,
+    bar(k, (ru + 0.15, -0.1, 0.48), (ru + 0.25, 0.12, 0.62), 0.04, "arcChr")             # its arm,
+    k.cyl(ru + 0.26, 0.14, 0.64, 0.12, 0.02, "arcChr", top="arcChrL", sides=12)          # the tray,
+    k.cyl(ru + 0.26, 0.14, 0.66, 0.04, 0.1, "arcGlass", top="arcPink", sides=8)          # a milkshake on it
+    for s_ in (-1, 1):
+        k.box(s_ * 1.46, -0.07, 0.04, 0.08, 0.84, TOP - 0.06, "arcShell", top="arcShellL")
+    stools(k, "arcChr", "arcRed")
+    return k.build()
+
+
+def b8():
+    """The still: the bar is built round a copper pot still (a domed pot with green gauge windows, a swan neck over to
+    a condenser column wrapped in coils), pipes running down to brass taps along the counter's back; a cream steward
+    robot minding it between pot and column. Wood counter, copper, green light."""
+    k = Bench("bar_b8", FP3)
+    counter(k, ("arcWoodL", "arcWood"), "arcWoodL", "arcGoldD", "arcGrn")
+    pu = -0.8                                                                             # the pot:
+    k.cyl(pu, -0.22, 0.04, 0.34, 0.6, "arcOrgD", top="arcOrg", sides=16)
+    k.cyl(pu, -0.22, 0.64, 0.34, 0.24, "arcOrg", top="arcOrgL", sides=16, rtop=0.12)     # its dome,
+    for a in (1.2, 1.9):
+        k.box(pu + 0.34 * math.cos(a), -0.22 + 0.34 * math.sin(a), 0.3, 0.08, 0.02, 0.14, "arcGrn", rz=a + 1.57)
+    for z in (0.2, 0.5):                                                                  # its bands
+        k.cyl(pu, -0.22, z, 0.345, 0.03, "arcGoldD", top="arcGold", sides=16)
+    cu = 0.85                                                                             # the condenser column,
+    k.cyl(cu, -0.25, 0.04, 0.14, 1.2, "arcOrgD", top="arcOrg", sides=12)
+    for i in range(6):                                                                    # its coils
+        k.cyl(cu, -0.25, 0.3 + i * 0.13, 0.17, 0.035, "arcGold", top="arcGoldL", sides=12)
+    bar(k, (pu, -0.22, 0.88), (pu + 0.3, -0.22, 1.2), 0.06, "arcOrg")                     # the swan neck,
+    bar(k, (pu + 0.3, -0.22, 1.2), (cu, -0.25, 1.2), 0.06, "arcOrg")
+    k.box(0.0, -0.42, 0.04, 2.8, 0.1, 0.5, "arcWoodD", top="arcWood")                    # a low back counter,
+    bar(k, (cu, -0.25, 0.3), (cu - 0.2, 0.0, 0.66), 0.035, "arcGold")                     # a pipe to the taps,
+    for i in range(4):                                                                    # the taps
+        u = -0.2 + i * 0.25
+        k.box(u, 0.04, TOP, 0.04, 0.04, 0.14, "arcGold", top="arcGoldL")
+        k.box(u, 0.07, TOP + 0.12, 0.03, 0.06, 0.03, "arcGold", top="arcGoldL")
+        k.box(u, 0.063, TOP + 0.04, 0.03, 0.004, 0.05, BOTTLES[i])
+    ru = 0.05                                                                             # the steward:
+    k.cyl(ru, -0.2, 0.04, 0.1, 0.5, "arcWoodD", top="arcWood", sides=12)                 # its column,
+    k.box(ru, -0.2, 0.52, 0.26, 0.18, 0.26, "arcShellL", top="arcShellL")                # its torso,
+    k.box(ru, -0.108, 0.6, 0.2, 0.004, 0.16, "arcWood")                                   # its apron,
+    k.box(ru, -0.2, 0.8, 0.16, 0.15, 0.14, "arcShellL", top="arcShellL")                 # its head,
+    k.box(ru, -0.124, 0.85, 0.1, 0.004, 0.03, "arcGrn")                                   # its eye band,
+    bar(k, (ru + 0.13, -0.18, 0.74), (ru + 0.2, 0.04, 0.68), 0.05, "arcShell")           # an arm at a tap
+    bar(k, (ru - 0.13, -0.18, 0.74), (ru - 0.18, 0.05, 0.66), 0.05, "arcShell")
+    k.cyl(ru - 0.18, 0.08, TOP, 0.045, 0.12, "arcGlass", top="arcAmb", sides=8)
+    for s_ in (-1, 1):
+        k.box(s_ * 1.46, -0.07, 0.04, 0.08, 0.84, TOP - 0.06, "arcWoodD", top="arcWood")
+    stools(k, "arcGoldD", "arcGrn")
+    return k.build()
+
+
+def b9():
+    """Automat: behind the counter a wall of lit cubbies, a drink in each; a gantry runs over it, its carriage dropping
+    a claw that has picked a drink, a little head with eyes on the carriage. Grey and amber, hazard trim."""
+    k = Bench("bar_b9", FP3)
+    counter(k, ("arcChr", "arcChrD"), "arcBodyL", "arcBodyD", "arcAmb")
+    for i in range(14):                                                                   # hazard stripes on the kick
+        k.box(-1.3 + i * 0.2, 0.425, 0.06, 0.08, 0.004, 0.08, "arcAmb", ry=0.6)
+    k.box(0.0, -0.4, 0.04, 2.9, 0.16, 1.1, "arcChrD", top="arcChr")                     # the cubby wall,
+    for i in range(8):
+        for j in range(3):
+            u, z = -1.23 + i * 0.35, 0.22 + j * 0.28
+            k.box(u, -0.318, z, 0.26, 0.004, 0.2, "arcBodyK")                              # a cubby,
+            col = BOTTLES[(i + j * 3) % len(BOTTLES)]
+            if (i, j) != (5, 1):
+                k.box(u, -0.31, z + 0.02, 0.07, 0.04, 0.12, col, top=col)                  # its drink,
+            k.box(u, -0.314, z + 0.18, 0.2, 0.004, 0.012, "arcAmb")                        # its lit label
+    for s_ in (-1, 1):                                                                    # the gantry: its posts,
+        k.box(s_ * 1.42, -0.2, 0.04, 0.08, 0.08, 1.38, "arcAmb", top="arcAmb")
+    k.box(0.0, -0.2, 1.38, 2.92, 0.1, 0.08, "arcAmb", top="arcAmb")                        # its beam,
+    gu = 0.53                                                                             # the carriage,
+    k.box(gu, -0.15, 1.3, 0.22, 0.2, 0.12, "arcBodyD", top="arcBody")
+    k.box(gu, -0.15, 1.18, 0.16, 0.14, 0.12, "arcShellL", top="arcShellL")               # its head,
+    for du in (-0.04, 0.04):
+        k.box(gu + du, -0.078, 1.22, 0.04, 0.004, 0.04, "arcCyan")                         # its eyes,
+    k.box(gu, -0.12, 0.88, 0.03, 0.03, 0.3, "arcChrD")                                    # the claw's arm,
+    for du in (-0.05, 0.05):
+        k.box(gu + du, -0.12, 0.76, 0.02, 0.06, 0.12, "arcChr", top="arcChrL")            # its fingers,
+    k.box(gu, -0.12, 0.76, 0.07, 0.04, 0.12, "arcPink", top="arcPink")                    # the drink it holds
+    for s_ in (-1, 1):
+        k.box(s_ * 1.46, -0.07, 0.04, 0.08, 0.84, TOP - 0.06, "arcChrD", top="arcChr")
+    stools(k, "arcChrD", "arcAmb")
+    return k.build()
+
+
 def jobs():
     return [(f"module.bar.{v}", FP3, "prop", f) for v, f in (("b1", b1), ("b2", b2), ("b3", b3), ("b4", b4), ("b5", b5),
-                                                           ("b6", b6))]
+                                                           ("b6", b6), ("b7", b7), ("b8", b8), ("b9", b9))]

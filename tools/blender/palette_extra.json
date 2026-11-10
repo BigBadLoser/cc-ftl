@@ -3619,5 +3619,7 @@
   "arcWoodL": {"hex": "#9a6a44", "set": "arcade"},
   "arcWood": {"hex": "#74492c", "set": "arcade"},
   "arcWoodD": {"hex": "#4e2f1d", "set": "arcade"},
-  "arcRed": {"hex": "#e04848", "emissive": 2.2, "set": "arcade"}
+  "arcRed": {"hex": "#e04848", "emissive": 2.2, "set": "arcade"},
+  "arcRedM": {"hex": "#b33a3e", "set": "arcade"},
+  "arcRedD": {"hex": "#7d262b", "set": "arcade"}
 }
