@@ -1,7 +1,8 @@
 # Crew traits and per-crew skills
 
-Design for #239 (parent #238: the new-game crew screen rolls a crew, so the roll needs something to roll). Steps 1 to 4
-(section 9) are built: rolls and traits core (#243), the crew card (#246), the crew screen (#249), work XP (#251).
+Design for #239 (parent #238: the new-game crew screen rolls a crew, so the roll needs something to roll). Section 10 (#415,
+design) replaces the role-based skill roll with backgrounds, interests and a 0–10 scale, and turns roles into job presets; where it
+changes sections 1 to 4 they say so. Steps 1 to 4 (section 9) are built: rolls and traits core (#243), the crew card (#246), the crew screen (#249), work XP (#251).
 Sections 5 to 7 are design only. Numbers are starting values for tuning, not promises.
 
 Grounding: the stat resolver (`src/sim/stats.ts`, "traits and implants plug in later"), role skills (`src/content/roles.ts`,
@@ -16,6 +17,8 @@ not a trait worth a slot. Most traits are trade-offs or behaviours; only three a
 
 ## 1. Crew-generation RNG
 
+#415 keeps this RNG and these rules; the roll no longer takes a role (a starting slot is a berth), and its draws change (section 10.6).
+
 | Rule | Value |
 |---|---|
 | Starting crew | Each member is rolled by `rollCrewMember(seed, slot, rerolls, role)` (pure, `src/sim/crew/roll.ts`) from `new Rng(hash32(sim.seed, CREW_ROLL_SALT, slot, rerolls))` (`Rng` from `sim/rng.ts`, `hash32` from `galaxy/hash.ts`). It rolls name, appearance seed, starting rest, skills and traits. |
@@ -25,6 +28,9 @@ not a trait worth a slot. Most traits are trade-offs or behaviours; only three a
 | `createCrew` | Takes an optional `rng` (default `sim.rng`) for name, appearance and rest, which it draws from `sim.rng` today. |
 
 ## 2. Skill generation
+
+**Superseded by section 10 (#415)** for crew with moods: skills roll from a background on 0–10, and the Talented / Green labels go.
+Kept below as the built state until slice 2 lands. `RolledSkillsC` stays as the storage.
 
 Budget first, then distribution. Every point is placed once; nothing is trimmed afterwards.
 
@@ -57,6 +63,9 @@ Final gunnery 3, piloting 1, total 4. No label.
 | Role still owns | Non-skill role fields: `fighter`, `surrenderBelow`, job priorities. |
 
 ## 3. XP from routine work
+
+#415 rescales the curve to 0–10 (`XP_LEVEL_COST` 20, cap 10 on base plus XP) and adds interest multipliers (section 10.4); the grant
+points below stay.
 
 Built in #251. Routine work gives most XP, in proportion to the work done, not the number of jobs; story `skillXp`
 effects and shady recruits (`galaxy/recruit.ts`) go through the same helper.
@@ -92,6 +101,9 @@ Existing numbers: story `skillXp` amounts are worth fewer levels late on (accept
 get `xpForLevels(shady)`. The user chose a `SAVE_VERSION` bump (73) over a migration.
 
 ## 4. Traits
+
+#415 doubles the ±1 skill modifiers below to ±2 (0–10 scale), multiplies roll weights by the backgrounds' `traitWeights`, and adds
+Pacifist (`wontDo: violence`, section 10.9).
 
 | Rule | Value |
 |---|---|
@@ -394,11 +406,13 @@ Size **M** buy-only; **L** with the still and its art.
 
 ## 8. UI
 
+The #415 changes (0–10 bars, interests, background, role picker, coverage, lock) are in section 10.11.
+
 | Where | Shows |
 |---|---|
 | Crew card (`src/ui/CrewInspector.svelte`) | Trait chips under the name, coloured by kind (behaviour, phobia/habit, trade-off, texture); hover shows the effect line. Skills: rolled base, `+n` from XP, a thin bar to the next level. An active break in Status's conditions ("Isolation, 1:20 left"). Bonds: friends and rivals with names. Phobia, craving and grief moods are factors in the mood breakdown. |
 | Crew bar (`CrewBar.svelte`) | Urgent state only: an icon for a break or withdrawal. |
-| Crew screen roll (#238) | Per member: portrait, editable name, fixed role, skill pips against the role baseline (filled = baseline, bright = above, hollow = below), trait chips, Talented or Green. Reroll one or all (section 1). |
+| Crew screen roll (#238; reworked by #415, section 10.11) | Per member: portrait, editable name, fixed role, skill pips against the role baseline (filled = baseline, bright = above, hollow = below), trait chips, Talented or Green. Reroll one or all (section 1). |
 | Ship's log (`app/logText.ts`) | Bonds formed, shouting matches, every break and its end, cravings, habit kicked, level-ups ("Mara's repair is now 4."). |
 | Alerts | Severe breaks only (panic; a combat freeze), throttled (section 5); withdrawal. |
 
@@ -414,6 +428,248 @@ Size **M** buy-only; **L** with the still and its art.
 | 5b | Mental breaks: `BreakdownC`, `BreakMemoryC`, check and stressors, `break` machine, work-drive suppression, trait weights; Battle-shy rollable; effect lines gain their break parts | M | after #194's `hazard` interrupt (Phase 3) |
 | 6 | Relationships; Hot-headed, Peacemaker, Protective rollable; Loner/Social bond half | L | next (user, 2026-11-04), before 5b; decisions in section 6 |
 | 7 | Addictions; Drinker, Stim-hooked rollable | M/L | |
+| 10 | Backgrounds, interests, roles as presets, 0–10 (#415) | L | design; slices in section 10.12 |
 
 Save: `RolledSkillsC`, `TraitsC`, `BreakdownC`, `BreakMemoryC`, `RelationsC`, `AddictionC` are optional components (and optional `MoodC` counters); old saves load with
 role skills and no traits. Step 4 changed what `SkillXpC` means (`SAVE_VERSION` 73, no migration).
+
+## 10. Backgrounds, interests and roles (#415)
+
+Design only (user decisions 2026-11-10, issue #415). It replaces the role-based skill roll of sections 1 and 2 for crew with moods
+(people); robots, aliens and NPC crew keep role skill packages. The UI is mock C1 (new-game screen) and I1 (inspector Skills tab):
+today's screens, reworked, not redrawn. Numbers are starting values for tuning.
+
+### 10.1 What changes, in one table
+
+| Before | After |
+|---|---|
+| A role is a skill package (gunner = gunnery 3) plus priorities | A role is a **job preset**: default priorities and combat posture. It no longer gives skills to people. The game suggests one from the crew member's skills; the player changes it any time (`crew.setRole`). |
+| Skills 0–5, rolled around the role's package | Skills **0–10**, every skill rolled from a **background** (upbringing + career) |
+| Talented / Green labels | Gone: the background lines and the bars tell the story |
+| All XP at one rate (Gifted, Bookish aside) | **Interest** per skill: none, keen, passionate. Faster XP and a small mood lift doing that work |
+| No refusals outside mental breaks | Rare **won't do** from a background or a trait (Pacifist) |
+| Crew screen: one fixed slot per ship role, reroll one or all | Crew screen: the ship's berths, a **ship's jobs** coverage list, a **lock** per crew member and **Reroll unlocked** |
+
+### 10.2 The skill list
+
+Keep the nine skills: gunnery, piloting, shielding, melee, repair, hacking, medicine, science, cooking. Each one has a console, a job
+category or a fight behind it, so each moves a number in play (10.3), and the coverage list (10.8) reads straight off them. Considered
+and not proposed:
+- **Merge shielding into repair** ("engineering"): shielding is narrow (one console), but it is the engineer's second string and the
+  reason a shield operator is worth having. Merging would leave repair covering half the ship.
+- **Add farming / crafting / hauling skills**: those categories have no skill-driven effect today. A skill with nothing behind it is a
+  bar that lies. Farming could join cooking later as "food" if farming gets a quality curve (Q3).
+
+### 10.3 The 0–10 rescale: every consumer
+
+Rule: **new level = 2 × old level**, and every per-level effect is halved, so a level-6 crew member plays exactly like a level-3 one
+today. Odd levels fall between. Thresholds double.
+
+| Consumer | Where | Today | After |
+|---|---|---|---|
+| Helm evasion, cruise evasion, FTL charge boost | `systems/helm.ts`, `combat/cruise.ts`, `galaxy/encounterOdds.ts` | `1 + SKILL_STEP × piloting`, `SKILL_STEP` 0.1 | `SKILL_STEP` **0.05** (one constant, all of these rows) |
+| Weapon charge (and its ETA) | `systems/weaponCharge.ts`, `combat/eta.ts` | `1 + 0.1 × gunnery` | 0.05 per level |
+| Shield regen with an operator | `systems/shields.ts` | `+0.1 × shielding` | 0.05 per level |
+| Bed healing | `systems/vitals.ts` | `1 + 0.1 × medicine` | 0.05 per level |
+| Research speed | `research/work.ts` | `1 + 0.1 × science` | 0.05 per level |
+| Mending a robot | `robots/jobs.ts` | `1 + 0.1 × repair` | 0.05 per level |
+| Hacking an AI core | `robots/jobs.ts` | `1 + 0.1 × (hacking − 1)` | `1 + 0.05 × (hacking − 2)` |
+| Vehicle speed | `vehicles/lifecycle.ts` | `1 + 0.1 × piloting` | 0.05 per level |
+| Hit chance, hand weapons | `fight/weapons.ts` | `ACCURACY_PER_SKILL` 0.05 | **0.025** |
+| Meal quality tiers | `content/recipes.ts` | good at cooking 1, fine at 3 | good at **2**, fine at **6** |
+| May hack (`crew.hack`) | `robots/handlers.ts` | hacking > 0 | hacking ≥ **2** |
+| May mend robots | `robots/jobs.ts` | repair > 0 | repair ≥ **2** |
+| Story skill checks | `story/requirements.ts`, `content/events.ts` | `CHECK_DEFAULT_PER_LEVEL` 0.1; difficulty 2–3; `requires` level 2 | per level **0.05**; every `difficulty` and `requires.level` in content ×2 |
+| Console affinity (who mans what) | `combat/operators.ts` `operateAffinity` | skill × 100 | skill × **50** |
+| Best pilot / medic / operator picks | `ftl/order.ts`, `mining/pilot.ts`, `story/world.ts` `bestAt`, `systems/vitals.ts` | ordering | unchanged (order only) |
+| Trait skill modifiers | `content/traits.ts` | Marksman, Natural pilot, Strong (melee), Protective ±1; Clumsy −1 | **±2** |
+| Role packages kept (robots, aliens, NPC crew) | `content/roles.ts` | e.g. security gunnery 2, melee 2 | ×2 (gunnery 4, melee 4) |
+| Shady recruits | `galaxy/recruit.ts` | `bonus` extra levels in the role's skills | ×2, applied to the suggested role's skills |
+
+Doubled packages and halved steps give the same products, so the starter-vs-raider balance test and the sector hash tests should not
+move beyond float rounding (checked in slice 1).
+
+### 10.4 XP on the new scale
+
+| Rule | Value |
+|---|---|
+| Curve | Level n costs `XP_LEVEL_COST × n²` as now, with `XP_LEVEL_COST` **20** (was 100) and `XP_MAX_LEVEL` 10: +2 at 100 XP (old +1 at 100), +4 at 600 (old +2 at 500), +6 at 1820 (old +3 at 1400), +10 at 7700 (old +5 at 5500). The top is about 1.4× slower in plain work; interests make up for it. |
+| Cap | XP levels stop when the rolled base plus XP levels reaches 10. Traits may push the stat past 10 (Marksman on a 10 gunner is 12); bars clamp at 10 and show a `+`. |
+| Interest | XP × **1.5** keen, × **2** passionate, multiplied with Gifted (× 1.5) and Bookish (× 1.5 for its three skills) in `grantXp`'s existing `xpGainMult`. |
+| Rest of section 3 | Unchanged: what grants XP and how much, player side only. |
+
+### 10.5 Backgrounds
+
+Content: `src/content/backgrounds.ts`, `satisfies UpbringingDef` / `CareerDef`, ids `upbringing.<name>` and `career.<name>`.
+
+```ts
+interface BackgroundDef {
+  id: string;
+  name: string;           // "Station brat"
+  line: string;           // "grew up in a dockside hab" (the dossier line: "Station brat grew up in a dockside hab: hacking +2, repair +1")
+  weight: number;         // roll weight (10 common, 5 uncommon, 2 rare)
+  skills: Partial<Record<SkillName, number>>;    // adds before noise
+  interests?: Partial<Record<SkillName, number>>; // extra interest weight for these skills
+  wontDo?: { id: WontDoId; chance: number };     // rare
+  traitWeights?: Record<string, number>;         // multiplies a trait's roll weight (Belt-born: Void-born x3)
+  species?: string[];     // who can have it (default: humans)
+}
+interface UpbringingDef extends BackgroundDef {}                // adds about 3 points in total
+interface CareerDef extends BackgroundDef { upbringings?: Record<string, number> } // adds about 7; weight x this for a matching upbringing
+```
+
+Starting list. Upbringing adds total 3, career adds total 7 (a career's main skill is 4 or 5).
+
+| Upbringing | Skills | Interest weight | Won't do | Trait weights |
+|---|---|---|---|---|
+| Station brat | hacking 2, repair 1 | hacking | — | Social ×2 |
+| Belt-born | piloting 1, repair 1, shielding 1 | piloting | — | Void-born ×3, Space-sick ×0 |
+| Colony farmer | cooking 2, medicine 1 | cooking | — | Strong ×2 |
+| Navy family | gunnery 2, piloting 1 | gunnery | — | Brave ×2 |
+| Core-world academy | science 2, medicine 1 | science | — | Bookish ×3 |
+| Frontier settler | melee 1, repair 1, cooking 1 | melee | — | Tough ×2 |
+| Monastery ward | medicine 2, science 1 | medicine | violence 40% | Stoic ×2, Hot-headed ×0.5 |
+| Gang runner | melee 2, hacking 1 | melee | — | Hot-headed ×2 |
+
+| Career | Skills | Interest weight | Won't do | Likely upbringings |
+|---|---|---|---|---|
+| Salvage diver | repair 3, shielding 2, piloting 2 | repair | — | Belt-born, Station brat |
+| Dock mechanic | repair 5, hacking 2 | repair | — | Station brat |
+| Navy gunner | gunnery 5, melee 2 | gunnery | — | Navy family |
+| Freight pilot | piloting 5, shielding 2 | piloting | — | Belt-born |
+| Field medic | medicine 5, cooking 1, melee 1 | medicine | — | Navy family, Monastery ward |
+| Lab tech | science 5, hacking 2 | science | — | Core-world academy |
+| Galley cook | cooking 5, medicine 1, melee 1 | cooking | hauling 15% | Colony farmer |
+| Bouncer | melee 5, gunnery 2 | melee | hauling 10% | Gang runner |
+| Systems tech | shielding 4, repair 2, hacking 1 | shielding | — | Core-world academy |
+| Data broker | hacking 5, science 2 | hacking | violence 10% | Station brat |
+| Mercenary | gunnery 3, melee 3, medicine 1 | gunnery | medical 10% | Gang runner, Frontier settler |
+| Drifter | 7 points: one random skill +3, two random +2 | random | — | any (the surprise career) |
+
+### 10.6 The roll
+
+Same RNG as section 1 (`crewRollRng(seed, slot, rerolls)` for the starting crew, `sim.rng` mid-game), same order every time, so the
+crew screen previews exactly what `newGame` makes. Draws in a fixed order: name, appearance, rest, upbringing, career, noise (always
+9 draws), surprise, interests, won't do, traits.
+
+| Step | Rule |
+|---|---|
+| 1. Upbringing | Weighted pick (`weight`, species filter). |
+| 2. Career | Weighted pick, weight × the upbringing affinity (`upbringings`, default 1). |
+| 3. Base | upbringing.skills + career.skills (Drifter rolls its points here). Typically 10 points over 4–5 skills. |
+| 4. Noise | Per skill in `SKILLS` order: −1 (20%), 0 (45%), +1 (25%), +2 (10%), floor 0. About +2 in total on average. |
+| 5. Surprise | 12%: one skill at 0 gets +3 to +5 (uniform), "a knack" (the dossier says so). |
+| 6. Cap | 8 per skill at roll time (room to grow to 10). A point over the cap is lost (no redistribution: the cap is rarely hit). |
+| 7. Interests | Count 0 (15%), 1 (40%), 2 (35%), 3 (10%). Each pick, without replacement, weighted by `1 + skill/2 + 3 × (career or upbringing names it)`. Each is passionate with 25%, else keen; at most one passionate. |
+| 8. Won't do | Each background's `wontDo` rolls its chance; a trait with `wontDo` (Pacifist) adds its own. Never more than one won't-do from backgrounds; never one that covers the career's main skill. About 8% of crew get one. |
+| 9. Traits | As section 4, with each trait's weight × the backgrounds' `traitWeights`. |
+
+Typical result, matching the decision ("one or two strengths, a few middling, some blanks, occasional surprises"): a career main skill
+of 4–7, one or two of 2–4, two or three at 1–2, three or four at 0. Average total about 12 (today about 4 on 0–5, so 8 on the new
+scale): crew are broadly more capable, which is the point of the issue, and since per-level effects are small the buff shows mostly in
+secondary jobs (+5–15%). Slice 1 checks the distribution with a seeded sweep (`*.slow.test.ts`).
+
+Stored as now: `RolledSkillsC.skills` (the full snapshot), plus new optional components `BackgroundC { upbringing, career, knack? }`,
+`InterestsC { keen: SkillName[]; passionate: SkillName[] }`, and won't-do as permanent `WorkBlockC` entries (10.9).
+
+### 10.7 Interests
+
+| Rule | Value |
+|---|---|
+| Levels | none, keen (+), passionate (++). |
+| XP | ×1.5 / ×2 (10.4). |
+| Mood | "Enjoying the work" **+2** (keen) or **+4** (passionate) while working a job or console whose XP skill is that one (the same job-kind → skill map as section 3), held 60 s after the work stops. One factor: the highest applies. For scale: company +3, lonely −4, Cheerful +5. |
+| Who | Mood species only. Robots have no interests. |
+| Change | Fixed at roll. Story effects may add one later (not in this issue). |
+
+### 10.8 Roles as job presets, and the suggestion
+
+`RoleDef` keeps `priorities`, `fighter`, `loadout`, `playerLoadout`, `emergencyLoadout`, `relievesStations`, `surrenderBelow`,
+`species`, `assemble`. New field `suggest: SkillName[]` (the skills the preset is for). `skills` stays only on roles of bodies that do
+not roll (robots, aliens, NPC crew, zealots), doubled (10.3).
+
+| Preset | `suggest` |
+|---|---|
+| Pilot | piloting |
+| Gunner | gunnery |
+| Engineer | repair, shielding |
+| Medic | medicine |
+| Scientist | science |
+| Security | melee, gunnery |
+| Cook (new, Q2) | cooking |
+
+**Suggestion rule (one owner, `suggestRole(skills, interests, presets)` in `sim/crew/roles.ts`, pure):** score each player preset as the
+mean of its `suggest` skills, + 1 for each keen and + 2 for each passionate one among them; the highest wins; ties go to content order.
+A won't-do that blocks the preset's main category rules it out (a Pacifist is never suggested Gunner or Security).
+
+At game start each crew member gets their suggestion, then the crew screen fills empty jobs greedily: if the ship has a helm and no
+one is suggested Pilot, the best piloting crew member not already the only cover for another job switches to Pilot (same for Gunner
+with weapons, Medic with a medbay). The player can change any role on the screen. `crew.setRole { id, role }` sets the role and
+resets priorities to the preset (as `crew.resetPriorities` does today); custom priorities are overwritten, with the log noting it.
+
+**Coverage list ("Ship's jobs"):** one pure owner, `shipJobs(shipDef, content)` → the jobs this hull needs (Helm if it has a helm
+console, Weapons if it has a weapon, Shields with a shield generator, Repair always, Medic with a medbay or bed, Cook with a galley,
+Boarders always, Science with a research module), each with its skill (Boarders: the better of melee and gunnery). The UI shows the best
+level aboard and who, coloured weak under 3 (mock C1). It reads the same rolls the start will create.
+
+### 10.9 Won't do
+
+| Id | Covers | Honoured by |
+|---|---|---|
+| `violence` | Fighting (they never fight, armed or not, and flee instead), weapon consoles, patrol, an attack order | `fight/` `canFight` owner (refuses), `jobFits` (an operate job on a weapon console), `crew.attack` rejected (`wontDo`) |
+| `medical` | The medical category (rescue, tend) | `WorkBlockC` |
+| `hauling` | The hauling category | `WorkBlockC` |
+| `cooking` | The cooking category | `WorkBlockC` |
+
+Mechanism: a background or trait won't-do writes permanent `WorkBlockC` entries (`blockWork(sim, id, category, 'wontDo')`) at spawn;
+`jobFits` already reads `workBlocked`, so the scheduler, emergencies and the priorities grid honour it through the existing owner. The
+priorities grid shows the cell locked with the reason. `violence` adds one flag read by the fight owner (`canFight`) and by `jobFits`
+for weapon consoles; nothing else forks a check. Emergencies are not exempt: a `medical` won't-do crew member doesn't carry the wounded
+(that is the trade-off). New trait **Pacifist** (behaviour, weight 2, excludes Brave, Hot-headed): `wontDo: violence`, mood +3
+"at peace" outside combat.
+
+### 10.10 Who rolls what
+
+| Crew | Skills | Background, interests, won't do |
+|---|---|---|
+| Starting crew (humans) | Rolled (10.6) | Yes |
+| Recruits, rescued crew, crew who join (`galaxy/recruit.ts`, joins) | Rolled with `sim.rng`; a recruit board posting for "a pilot" picks a career whose main skill is piloting | Yes |
+| Shady recruits | Rolled, then `bonus` × 2 in the suggested role's skills | Yes, plus their drawback trait (existing TODO) |
+| Robots | Role package (×2), learn on the player's side as now | No |
+| Aliens | Role package (×2) | No |
+| NPC and hostile human crew | Role package (×2) for now: balance tests depend on them. Later (not this issue): roll backgrounds from `sim.rng` for variety | No |
+| Old saves | `SAVE_VERSION` bump (no migration, as at v73). A migration would be cheap (double `RolledSkillsC`, default backgrounds, XP kept): Q5 | — |
+
+### 10.11 UI (mock C1 and I1; small changes to today's screens)
+
+| Where | Change |
+|---|---|
+| New game, roster (`CrewRoll.svelte`) | Per crew member: name, role picker (suggested, changeable), "Upbringing · Career", their top three skills with interest marks; a lock and a reroll button per row; **Reroll unlocked** replaces "reroll all". |
+| New game, dossier (`CrewDossier.svelte`) | Role picker with "suggested from Repair 7, Hacking 5"; background lines with their adds; traits; all nine skills as 0–10 bars with interest marks; a won't-do skill struck through. |
+| New game, coverage (`CrewCoverage.svelte`) | "Ship's jobs": each job, the best level aboard and who (10.8). |
+| Inspector Skills tab (`SkillsTab.svelte`, `SkillRow.svelte`) | 10-pip bars, interest marks, the background line under the name, the role picker in the header; hover a skill: rolled, from background, from XP, XP to the next level. |
+| Picks into `newGame` | `CrewPick` becomes `{ rerolls, name?, role? }` per berth (role: the player's choice, else the suggestion). The ship def's `crew` list gives the berth count and the robots; human entries no longer fix roles. |
+
+### 10.12 Build order (each a PR)
+
+| Slice | Piece | Notes |
+|---|---|---|
+| 1 | Rescale 0–10: halve `SKILL_STEP`, `ACCURACY_PER_SKILL`, check per-level; double thresholds, content packages, trait mods, story difficulties, meal tiers; XP curve (cost 20, cap 10, total cap); today's roll doubled. UI bars to 10. `SAVE_VERSION` bump. | No player-visible balance change: the tests that pin balance must pass unchanged |
+| 2 | Backgrounds content and the roll (10.5, 10.6), `BackgroundC`; roles lose `skills` for people; dossier and inspector show the background | The big one; distribution sweep test |
+| 3 | Interests: roll, XP multiplier, mood factor; UI marks | |
+| 4 | Roles as presets: `suggest`, `suggestRole`, `crew.setRole`, inspector role picker; Cook preset if approved | |
+| 5 | New-game screen: berths, coverage (`shipJobs`), lock and Reroll unlocked, greedy start suggestion | Mock C1 |
+| 6 | Won't do: `WorkBlockC` from backgrounds, `violence` in the fight owner and weapon consoles, Pacifist trait, priorities grid lock | |
+| 7 | Recruits and rescued crew roll backgrounds; recruit boards post careers; shady bonus | |
+
+### 10.13 Open questions for the user
+
+| # | Question | Proposal |
+|---|---|---|
+| Q1 | Do combat posture fields (`fighter` for Security, the gunner's `playerLoadout`, `emergencyLoadout`) stay on the role preset, so picking Security makes someone patrol and carry a rifle? | Yes: a role is how they work, fights included |
+| Q2 | Add a Cook preset (cooking 1, farming 2) so a cook can be suggested? A "Hand" generalist preset? | Cook yes, Hand no |
+| Q3 | Keep nine skills (no farming / crafting / hauling skill)? | Yes, until those jobs have a skill-driven effect |
+| Q4 | Rolled cap 8 (room to grow) and a total cap of 10 for base plus XP, traits allowed above? | Yes |
+| Q5 | Old saves: `SAVE_VERSION` bump, or a cheap migration (double rolled skills, no backgrounds or interests, XP kept)? | Bump, as at v73 |
+| Q6 | Won't-do ids: violence, medical, hauling, cooking; about 8% of crew; emergencies not exempt (a medical won't-do never carries the wounded)? | Yes |
+| Q7 | `crew.setRole` overwrites custom priorities with the preset's? | Yes, with a log line |
