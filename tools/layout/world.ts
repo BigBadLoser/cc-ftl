@@ -4,6 +4,7 @@
  */
 import { content } from '../../src/content';
 import { ModuleC, Sim, shipGrid, spawnShip } from '../../src/sim';
+import { dronesOf, wreckDrone } from '../../src/sim/drones/bay';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
@@ -25,6 +26,8 @@ export function stampLayout(sim: Sim, l: Layout): number | null {
 
 /** Replace the ship a sim holds with another layout, in place (the game's own wreck removal, then a new stamp): the preview's renderer keeps its world. */
 export function restamp(sim: Sim, old: number, l: Layout): number | null {
+  // removeWreck leaves a ship's drones behind and this sim never ticks: wreck them first with the game's helper (their items fall aboard and go with the ship)
+  for (const d of dronesOf(sim, old)) wreckDrone(sim, d);
   removeWreck(sim, old);
   return stampLayout(sim, l);
 }

@@ -192,6 +192,25 @@ describe('preview restamp', () => {
   });
 });
 
+describe('preview restamp and drones', () => {
+  it('moving a drone bay and restamping leaves exactly one drone, owned by the new ship', async () => {
+    const { DroneC } = await import('../../src/sim/drones/components');
+    const { buildWorld, restamp } = await import('./world');
+    const bay = { def: 'module.droneBay', x: 6, y: 6, rot: 0, drones: ['drone.defence'] };
+    const a = addModule(paint(blank(), rect(4, 4, 8, 6), '_'), bay);
+    const w = buildWorld(a);
+    expect(w).not.toBeNull();
+    if (!w) return;
+    expect(w.sim.world.query(DroneC)).toHaveLength(1);
+    const b = moveModule(a, 0, 8, 6, 0);
+    const ship = restamp(w.sim, w.ship, b);
+    expect(ship).not.toBeNull();
+    const drones = w.sim.world.query(DroneC);
+    expect(drones).toHaveLength(1);
+    expect(w.sim.world.get(drones[0] as number, DroneC)?.ship).toBe(ship);
+  });
+});
+
 describe('room name placement', () => {
   const room = (): { layout: Layout; id: number } => addRoom(blank(), { x: 5, y: 5, w: 10, h: 6 }, 'cargo');
   const cover = (l: Layout, x0: number, y0: number, w: number, h: number): Set<number> => new Set(rect(x0, y0, w, h).map(([x, y]) => y * l.width + x));
