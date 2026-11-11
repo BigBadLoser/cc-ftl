@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ShipC, newGame, type Sim } from '../sim';
 import { factionsHostile } from '../sim/combat/factions';
+import { stockFuel } from '../sim/modules/energy';
 import { GRACE_SEC } from '../sim/galaxy/tuning';
 import { TICK_HZ } from '../sim/time';
 import { content } from './index';
@@ -12,9 +13,15 @@ const hostileShips = (sim: Sim): number =>
     return (s.state === 'active' || s.state === 'disabled') && factionsHostile(s.faction, 'player');
   }).length;
 
-/** Idle for `sec` seconds; the first second a hostile ship is in play, or -1. */
+/**
+ * Idle for `sec` seconds; the first second a hostile ship is in play, or -1. The crew idle, so nobody mines or buys crystals: the
+ * player's stores are topped up each minute, else the reactors burn the starter's 50 crystals dry at about 20 minutes (since reactors
+ * burn fuel, #421), the ship goes dark and no arrival is rolled for a disabled ship, which would hide the raid this test looks for.
+ */
 function firstHostileAt(sim: Sim, sec: number): number {
+  const player = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.faction === 'player')!;
   for (let t = 0; t < sec * TICK_HZ; t++) {
+    if (t % (60 * TICK_HZ) === 0) stockFuel(sim, player, 12);
     sim.step();
     sim.events.drain();
     if (t % TICK_HZ === 0 && hostileShips(sim) > 0) return Math.round(t / TICK_HZ);

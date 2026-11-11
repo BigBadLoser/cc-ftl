@@ -43,7 +43,7 @@ export function powerAlertText(sim: Sim, ship: number): string {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && shipIdOf(sim, m) === ship ? sim.content.modules[m.def] : undefined;
-    if (m && def?.fuel && m.enabled && m.hp > 0 && !hasFuel(sim, ship, m, def)) dry = true;
+    if (m && def?.fuel && m.enabled && m.hp > 0 && !hasFuel(m, def)) dry = true;
   }
   const base = `Low power: ${Math.round(supply)} of ${Math.round(demand)}`;
   return dry ? `${base}, a reactor is out of fuel` : base;
@@ -69,7 +69,7 @@ export function powerBalance(sim: Sim, ship: number): { supply: number; demand: 
     const def = sim.content.modules[m.def];
     const p = def?.power ?? 0;
     if (def && isIdle(sim, id, def)) continue;
-    if (p > 0) supply += !def || hasFuel(sim, ship, m, def) ? p : 0;
+    if (p > 0) supply += !def || hasFuel(m, def) ? p : 0;
     else demand -= p;
   }
   return { supply, demand };
