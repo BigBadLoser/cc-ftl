@@ -7,7 +7,7 @@ import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTil
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
-import { caseOf, caseSlug, decodeLayout, parseCase, serializeCase, type CaseFile, type Provenance } from './cases';
+import { caseOf, caseSlug, decodeLayout, marksOf, parseCase, serializeCase, type CaseFile, type Provenance } from './cases';
 import { changeItems, describeChanges, type Change } from './changes';
 import { diffLayouts, type Diff } from './diff';
 import { frameOf, gridPng } from './gridImage';
@@ -63,6 +63,8 @@ class Lab {
   private nextPin = 1;
   /** The highest module id handed out this session plus one: undo never lowers it, so a pin cannot revive onto a different module. */
   private idMark = 0;
+  /** For tests: set both marks. */
+  idMarkForTest(module: number, room: number): void { this.idMark = module; this.roomMark = room; }
   /** The same for rooms. */
   private roomMark = 0;
   private timer = 0;
@@ -288,7 +290,7 @@ class Lab {
   caseFile(name: string): CaseFile | null {
     const { original, layout, provenance } = this;
     if (!original || !layout || !provenance) return null;
-    return caseOf(name, provenance, original, layout, this.pins, describeChanges(original, layout));
+    return caseOf(name, provenance, original, layout, this.pins, describeChanges(original, layout), { module: this.idMark, room: this.roomMark });
   }
   /** Where a case with this name would be written (repo-relative). */
   casePath(name: string): string {
@@ -351,8 +353,9 @@ class Lab {
     const original = decodeLayout(c.original), edited = decodeLayout(c.edited);
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;
-    this.idMark = Math.max(this.idMark, edited.nextModuleId, original.nextModuleId);
-    this.roomMark = Math.max(this.roomMark, edited.rooms.length, original.rooms.length);
+    const marks = marksOf(c, [original, edited]);
+    this.idMark = Math.max(this.idMark, marks.module);
+    this.roomMark = Math.max(this.roomMark, marks.room);
     this.original = original;
     this.originalDesign = designFromLayout(original, `${c.name} (original)`);
     this.provenance = c.source;

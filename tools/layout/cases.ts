@@ -37,6 +37,23 @@ export interface CaseFile {
   edited: LayoutJson;
   notes: Pin[];
   changes: string[];
+  /** The session's next module and room ids (undo never lowers them); absent in older cases. */
+  marks?: IdMarks;
+}
+export interface IdMarks { module: number; room: number }
+
+/** Where a loaded case starts handing out ids: above the saved marks, every id its layouts use, and every id its notes are anchored to. */
+export function marksOf(c: CaseFile, layouts: readonly Layout[]): IdMarks {
+  let module = c.marks?.module ?? 0, room = c.marks?.room ?? 0;
+  for (const l of layouts) {
+    module = Math.max(module, l.nextModuleId, ...l.moduleIds.map((i) => i + 1));
+    room = Math.max(room, l.rooms.length);
+  }
+  for (const n of c.notes) {
+    if (n.anchor.kind === 'module') module = Math.max(module, n.anchor.id + 1);
+    else if (n.anchor.kind === 'room') room = Math.max(room, n.anchor.id + 1);
+  }
+  return { module, room };
 }
 
 export function encodeLayout(l: Layout): LayoutJson {
@@ -70,8 +87,8 @@ export function pretty(v: unknown, ind = ''): string {
   return `{\n${items.join(',\n')}\n${ind}}`;
 }
 
-export function caseOf(name: string, source: Provenance, original: Layout, edited: Layout, notes: readonly Pin[], changes: readonly string[]): CaseFile {
-  return { format: 'layout-lab-case', version: 1, name, source, original: encodeLayout(original), edited: encodeLayout(edited), notes: [...notes], changes: [...changes] };
+export function caseOf(name: string, source: Provenance, original: Layout, edited: Layout, notes: readonly Pin[], changes: readonly string[], marks?: IdMarks): CaseFile {
+  return { format: 'layout-lab-case', version: 1, name, source, original: encodeLayout(original), edited: encodeLayout(edited), notes: [...notes], changes: [...changes], ...(marks ? { marks } : {}) };
 }
 export const serializeCase = (c: CaseFile): string => `${pretty(c)}\n`;
 export function parseCase(text: string): CaseFile {

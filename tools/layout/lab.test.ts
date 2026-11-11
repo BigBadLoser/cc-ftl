@@ -4,7 +4,7 @@ vi.mock('./previewHost', () => ({ preview: {} })); // the preview needs a DOM
 import { exists, liveRoom } from './design';
 import { addRoom, moduleIndex, type Layout } from './layout';
 import { describeChanges, changeItems } from './changes';
-import { caseOf, decodeLayout, encodeLayout } from './cases';
+import { caseOf, decodeLayout, encodeLayout, marksOf, parseCase, serializeCase } from './cases';
 import { diffLayouts } from './diff';
 import { blankLayout, DEFAULT_SOURCE, specOf } from './source';
 type LabType = typeof import('./lab.svelte').lab;
@@ -100,5 +100,38 @@ describe('padding rooms', () => {
     expect(encodeLayout(layout).rooms.length).toBe(5); // id 4 is used
     const onlyZero = addRoom(blankLayout(20, 20), { x: 3, y: 3, w: 5, h: 5 }, 'cargo').layout;
     expect(encodeLayout({ ...onlyZero, rooms: [...onlyZero.rooms, { role: 'hall' }, { role: 'hall' }] }).rooms.length).toBe(1);
+  });
+});
+
+describe('id marks survive a save and a load', () => {
+  const roundTrip = (): void => {
+    const file = parseCase(serializeCase(lab.caseFile('t') as never));
+    lab.hist = null; lab.idMarkForTest(0, 0);
+    lab.loadCase(file);
+  };
+  it('a note orphaned by an undo stays orphaned after save, load and a new addition', () => {
+    start();
+    const l0 = lab.layout as Layout;
+    lab.provenance = { ...DEFAULT_SOURCE, spec: specOf(DEFAULT_SOURCE), generator: 'x' };
+    lab.original = l0;
+    lab.placeModule('module.chair', 14, 7, 0); // id 2
+    const id = (lab.layout as Layout).moduleIds[2] as number;
+    lab.addPin(14, 7, false);
+    expect(lab.pins[0]?.anchor).toEqual({ kind: 'module', id });
+    lab.undo();
+    expect(lab.pins[0]?.orphan).toBe(true);
+    roundTrip();
+    lab.placeModule('module.chair', 14, 7, 0);
+    const added = (lab.layout as Layout).moduleIds.at(-1) as number;
+    expect(added).toBeGreaterThan(id);
+    expect(lab.pins[0]?.orphan).toBe(true);
+  });
+  it('an older case without marks still starts above its notes', () => {
+    start();
+    lab.provenance = { ...DEFAULT_SOURCE, spec: specOf(DEFAULT_SOURCE), generator: 'x' };
+    const file = lab.caseFile('t') as ReturnType<typeof lab.caseFile> & object;
+    delete file.marks;
+    file.notes = [{ id: 1, text: '', x: 0, y: 0, orphan: true, dx: 0, dy: 0, anchor: { kind: 'module', id: 99 } }];
+    expect(marksOf(file, [blankLayout(4, 4)]).module).toBe(100);
   });
 });
