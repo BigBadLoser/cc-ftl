@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": { "$lib": ["./lib"], "$lib/*": ["./lib/*"] }
+  },
+  "include": ["./**/*.ts", "./**/*.svelte", "../shipgen/**/*.ts", "../../src/env.d.ts"],
+  "exclude": ["../shipgen/starters/**", "../shipgen/cli.js", "../shipgen/live.ts", "../shipgen/bench.js"]
+}

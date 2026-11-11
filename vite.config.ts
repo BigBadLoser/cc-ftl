@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import tailwindcss from '@tailwindcss/vite';
+import { layoutCases } from './tools/layout/casesPlugin.mjs';
 import WeightedSequencer from './vitest.sequencer.ts';
 
 /** The short commit hash baked into the build for bug reports; "dev" when git is not available. */
@@ -27,6 +29,7 @@ const ISOLATED = [
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
   'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
+  'tools/layout/lab.test.ts', // stubs `window` for the lab's state
   'src/render/animClock.test.ts',
   'src/render/assets/compose.test.ts',
   'src/render/assets/gpuKeep.test.ts',
@@ -54,7 +57,9 @@ const SOAK =
 
 export default defineConfig({
   define: { __COMMIT__: JSON.stringify(commit()) },
-  plugins: [svelte()],
+  // Tailwind and the `$lib` alias serve only the layout lab (tools/layout/, dev page): the game's pages never import its CSS, so nothing of it reaches `dist/`.
+  plugins: [tailwindcss(), svelte(), layoutCases()],
+  resolve: { alias: { $lib: new URL('./tools/layout/lib', import.meta.url).pathname } },
   test: {
     testTimeout: 60000, // a failure bound only: full-size ships make the combat scenarios slow under parallel load, and CI runners are slower than the dev box
     maxWorkers: 4, // the whole box: the default leaves a core idle

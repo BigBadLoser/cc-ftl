@@ -180,6 +180,8 @@ export interface Renderer {
   setBackdrop(spec: BackdropSpec): void;
   /** Show or hide the space backdrop (screenshot tooling: a flat background lets a script cut ships out). */
   showBackdrop(on: boolean): void;
+  /** Show or hide the shield domes (default shown; the layout lab's preview hides them to see the hull). */
+  setShields(on: boolean): void;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
   /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
@@ -792,6 +794,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setBackdrop(spec) {
       backdrop.setSpec(spec);
     },
+    setShields: (on) => fx.setShields(on),
     showBackdrop(on) {
       backdropOn = on;
       backdrop.root.visible = on;
