@@ -12,7 +12,7 @@ import { alive, dismiss, launchShuttle, yardRun } from './crew';
 import { payStation, refund } from './money';
 import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
 import { postHullJobs } from './jobs';
-import { fillOpened, postOpenJobs } from './open';
+import { fillOpened, openPassStuck, postOpenJobs } from './open';
 import { isLiveOrder, type YardOrder } from './types';
 
 /** Ticks between repeats of an order the crew or shuttle has not obeyed yet. */
@@ -140,6 +140,7 @@ function step(sim: Sim, o: YardOrder): void {
           return;
         }
         if (o.stage !== 'open' || jobsOf(sim, o).length === 0) return finishOrder(sim, o, '');
+        if (o.timer % REPEAT === 0 && openPassStuck(sim, o)) return finishOrder(sim, o, '');
         if (++o.stall > STALL_SEC * TICK_HZ) return finishOrder(sim, o, 'stalled');
         return;
       }

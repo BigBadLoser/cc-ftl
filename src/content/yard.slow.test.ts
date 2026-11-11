@@ -118,4 +118,20 @@ describe('shipyard: bigger jobs', () => {
     run(sim, 20 * 180);
     expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
   }, 300000);
+
+  // #429: a patch drawn against the old hull where a module of the old ship stands behind the wall leaves wall tiles of the open pass that nobody can
+  // reach (the only approach is the sealed patch). They stay shut; the order must still end done, not wait out the stall timer.
+  it('ends done when the open pass is left with walls nobody can reach (#429)', () => {
+    const { sim, station, me } = yardGame('hub', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    planHull(sim, me, outline(sim, me, 24, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    run(sim, 9000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.reason).toBeUndefined();
+    expect(builtCount(sim, order).walls).toBe(order.walls.length);
+    expect(builtCount(sim, order).floor).toBe(order.floor.length);
+  }, 300000);
 });

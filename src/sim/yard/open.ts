@@ -1,9 +1,13 @@
 import { BUILD_TICKS, createJob } from '../crew/handlers';
+import { JobC, PositionC } from '../crew/components';
+import { jobTakeable } from '../crew/jobFit';
 import { findJobAt } from '../crew/helpers';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP } from '../tuning';
+import { alive } from './crew';
+import { jobsOf } from './progress';
 import type { YardOrder } from './types';
 
 type Tile = { x: number; y: number };
@@ -92,4 +96,20 @@ export function fillOpened(sim: Sim, o: YardOrder): void {
   if (!done.length) return;
   fill(sim, done, o.air);
   o.opens = o.opens.filter((t) => !done.includes(t));
+}
+
+/**
+ * True when the open pass can go no further: jobs remain, nobody is at work on one, and no yard crew member can take any (jobTakeable). A wall
+ * whose only approach is a room that has since been sealed, or is a tile beside a module of the old ship, stays shut: the section is complete and
+ * airtight without it, so the order ends instead of waiting out the stall timer on a job nobody can reach.
+ */
+export function openPassStuck(sim: Sim, o: YardOrder): boolean {
+  const jobs = jobsOf(sim, o).map((id) => sim.world.get(id, JobC)).filter((j) => !!j);
+  if (!jobs.length || jobs.some((j) => j!.reservedBy)) return false;
+  for (const id of o.crew) {
+    const at = sim.world.get(id, PositionC);
+    if (!alive(sim, id) || !at) continue;
+    if (jobs.some((j) => jobTakeable(sim, id, at, j!))) return false;
+  }
+  return true;
 }
