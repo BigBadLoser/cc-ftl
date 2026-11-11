@@ -222,6 +222,7 @@ def job(v, designs):
 
 
 def jobs():
-    from . import recovery_study2, recovery_study3
+    from . import recovery_study2, recovery_study3, recovery_study4
     return ([job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
-            + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS])
+            + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS]
+            + [job(v, recovery_study4.DESIGNS) for v in recovery_study4.DESIGNS])
