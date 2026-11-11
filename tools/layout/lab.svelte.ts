@@ -3,7 +3,7 @@ import { fitRect, fitted, previewView, type Box, type View } from './camera';
 import { designFromLayout, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, takeModuleId, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
@@ -61,6 +61,8 @@ class Lab {
   pins = $state.raw<readonly Pin[]>([]);
   openPin = $state<number | null>(null);
   private nextPin = 1;
+  /** The highest module id handed out this session plus one: undo never lowers it, so a pin cannot revive onto a different module. */
+  private idMark = 0;
   private timer = 0;
 
   get layout(): Layout | null { return this.hist?.present ?? null; }
@@ -84,6 +86,7 @@ class Lab {
       this.source = { ...s };
       this.label = label;
       this.hist = fresh(layout);
+      this.idMark = Math.max(this.idMark, layout.nextModuleId);
       this.original = layout;
       this.originalDesign = designFromLayout(layout, label);
       this.provenance = { ...s, spec: specOf(s), generator: GENERATOR };
@@ -173,6 +176,18 @@ class Lab {
     const l = this.layout;
     if (!l || !def || !moduleDef(def)) { this.ghost = null; return; }
     this.ghost = { def, x, y, rot, error: placementProblem(l, def, x, y, rot, this.moving ?? undefined) };
+  }
+  /** Place the armed module where the ghost is, after checking the spot against the layout as it is now (a second click in the same place is refused). */
+  placeModule(def: string, x: number, y: number, rot: number): boolean {
+    const l = this.layout;
+    if (!l) return false;
+    const error = placementProblem(l, def, x, y, rot);
+    if (error) { this.ghost = { def, x, y, rot, error }; return false; }
+    const { id, mark } = takeModuleId(l, this.idMark);
+    this.idMark = mark;
+    this.edit((cur) => addModule(cur, { def, x, y, rot }, id));
+    this.aim(def, x, y, rot);
+    return true;
   }
   /** R: turn the ghost, else the selected module, a quarter turn. */
   rotate(): void {
@@ -303,6 +318,7 @@ class Lab {
     const original = decodeLayout(c.original), edited = decodeLayout(c.edited);
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;
+    this.idMark = Math.max(this.idMark, edited.nextModuleId, original.nextModuleId);
     this.original = original;
     this.originalDesign = designFromLayout(original, `${c.name} (original)`);
     this.provenance = c.source;

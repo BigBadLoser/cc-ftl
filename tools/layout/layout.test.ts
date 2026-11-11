@@ -220,3 +220,12 @@ describe('room name placement', () => {
     expect(d.rooms[id]).toMatchObject({ lx: expect.any(Number), ly: expect.any(Number) });
   });
 });
+
+describe('placing twice in the same spot', () => {
+  it('the second placement is refused against the layout as it is now', () => {
+    const { layout } = addRoom(blank(), { x: 5, y: 5, w: 10, h: 8 }, 'cargo');
+    expect(placementProblem(layout, 'module.chair', 7, 7, 0)).toBeNull();
+    const placed = addModule(layout, { def: 'module.chair', x: 7, y: 7, rot: 0 });
+    expect(placementProblem(placed, 'module.chair', 7, 7, 0)).not.toBeNull();
+  });
+});

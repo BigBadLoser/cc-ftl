@@ -250,7 +250,16 @@ export function deleteRoom(l: Layout, id: number): Layout {
   return done(w);
 }
 
-export const addModule = (l: Layout, m: TemplateModule): Layout => ({ ...l, modules: [...l.modules, m], moduleIds: [...l.moduleIds, l.nextModuleId], nextModuleId: l.nextModuleId + 1 });
+/**
+ * The id a new module takes, given the session's high-water mark (kept outside undoable state, so an undo never lowers it and an id is
+ * never reused), and the mark after it.
+ */
+export function takeModuleId(l: Layout, mark: number): { id: number; mark: number } {
+  const id = Math.max(l.nextModuleId, mark);
+  return { id, mark: id + 1 };
+}
+/** Add a module with `id` (from `takeModuleId`; by default the layout's own next id). */
+export const addModule = (l: Layout, m: TemplateModule, id: number = l.nextModuleId): Layout => ({ ...l, modules: [...l.modules, m], moduleIds: [...l.moduleIds, id], nextModuleId: Math.max(l.nextModuleId, id + 1) });
 export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => (l.modules[i] ? { ...l, modules: l.modules.map((m, k) => (k === i ? { ...m, x, y, rot } : m)) } : l);
 export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i), moduleIds: l.moduleIds.filter((_, k) => k !== i) });
 /** Rotate a module a quarter turn about its top-left tile. */

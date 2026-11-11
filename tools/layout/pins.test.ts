@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { designFromLayout } from './design';
-import { addModule, addRoom, deleteRoom, moveModule, paint, removeModule, type Layout } from './layout';
+import { addModule, addRoom, deleteRoom, moveModule, paint, removeModule, takeModuleId, type Layout } from './layout';
 import { anchorFor, describeAnchor, newPin, rebase } from './pins';
 import { blankLayout } from './source';
 
@@ -57,6 +57,19 @@ describe('pins', () => {
     expect(again.moduleIds).toEqual([1]);
     const pin = newPin(1, 'a', 7, 7, { kind: 'module', id: 0 }, l, designFromLayout(l, 't'));
     expect(rebase([pin], again, designFromLayout(again, 't'))[0]?.orphan).toBe(true);
+  });
+  it('an id is never reused after an undo: add, pin, undo, add another leaves the pin orphaned', () => {
+    const { layout } = addRoom(blankLayout(30, 24), { x: 5, y: 5, w: 10, h: 8 }, 'cargo');
+    let mark = 0;
+    const first = takeModuleId(layout, mark);
+    mark = first.mark;
+    const withA = addModule(layout, { def: 'module.chair', x: 7, y: 7, rot: 0 }, first.id);
+    const pin = newPin(1, 'a', 7, 7, { kind: 'module', id: first.id }, withA, designFromLayout(withA, 't'));
+    // undo goes back to the layout before the add (its own counter is back at 0), the session mark stays
+    const second = takeModuleId(layout, mark);
+    expect(second.id).not.toBe(first.id);
+    const withB = addModule(layout, { def: 'module.chair', x: 7, y: 7, rot: 0 }, second.id);
+    expect(rebase([pin], withB, designFromLayout(withB, 't'))[0]?.orphan).toBe(true);
   });
   it('returns the same array when nothing moved', () => {
     const { l } = base();
