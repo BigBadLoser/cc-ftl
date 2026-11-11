@@ -3623,5 +3623,11 @@
   "arcRedM": {"hex": "#b33a3e", "set": "arcade"},
   "arcRedD": {"hex": "#7d262b", "set": "arcade"},
   "arcWater": {"hex": "#3f9be8", "emissive": 1.4, "set": "arcade"},
-  "arcWaterD": {"hex": "#1f4f7a", "set": "arcade"}
+  "arcWaterD": {"hex": "#1f4f7a", "set": "arcade"},
+  "podG": {"hex": "#2a9e80", "set": "arcade"},
+  "podGL": {"hex": "#7dffd0", "emissive": 1.8, "set": "arcade"},
+  "podA": {"hex": "#c9802e", "set": "arcade"},
+  "podAL": {"hex": "#ffc870", "emissive": 1.8, "set": "arcade"},
+  "podB": {"hex": "#2f6fb8", "set": "arcade"},
+  "podBL": {"hex": "#7cc4ff", "emissive": 1.8, "set": "arcade"}
 }

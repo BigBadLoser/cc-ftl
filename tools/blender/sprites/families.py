@@ -29,6 +29,7 @@
   gametable holo game table look study, preview only (gametable_study.py)
   bar       bar look study, preview only (bar_study.py)
   exercise  exercise machine look study, preview only (exercise_study.py)
+  pod       recovery pod look study, preview only (pod_study.py)
   gametable_module  the holo game table module.gametable (2x1, study r1 + s4): idle, .unpowered, .active frames (hologram
             baked in), seated-crew front overlays, four rotations (gametable.py; MODPACK_ROTS as storage_set)
   arcade_cabinet  the arcade module.arcade (1x1, study j2): idle, .unpowered, .active frames (hologram baked in), four
@@ -153,6 +154,9 @@ def jobs(name):
     if name == "exercise":      # look study, preview only (not in RENDERED): exercise machine designs, r0
         from . import exercise_study
         return exercise_study.jobs(), "arcade"
+    if name == "pod":           # look study, preview only (not in RENDERED): recovery pod designs, r0
+        from . import pod_study
+        return pod_study.jobs(), "arcade"
     if name == "gametable_module":
         import os
         from . import gametable
