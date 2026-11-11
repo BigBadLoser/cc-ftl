@@ -25,6 +25,11 @@
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
+  gametable_module  the holo game table module.gametable (2x1): idle, .unpowered, .active frames (hologram baked in),
+            seated-crew front overlays, four rotations (gametable.py, parts in gametable_kit.py; MODPACK_ROTS as
+            storage_set)
+  arcade_cabinet  the arcade module.arcade (1x1): idle, .unpowered, .active frames (hologram baked in), four rotations
+            (arcade.py, parts in arcade_kit.py; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -139,6 +144,14 @@ def jobs(name):
         import os
         from . import hydroponics
         return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "hydro"
+    if name == "gametable_module":
+        import os
+        from . import gametable
+        return gametable.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
+    if name == "arcade_cabinet":
+        import os
+        from . import arcade
+        return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
     if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
         from . import research
         return research.jobs(), "research"
@@ -252,5 +265,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades", "research_bench")
+            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
