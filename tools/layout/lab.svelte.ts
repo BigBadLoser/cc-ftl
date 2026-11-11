@@ -74,7 +74,7 @@ class Lab {
   get canRedo(): boolean { return !!this.hist && this.hist.future.length > 0; }
 
   private show(l: Layout): void {
-    this.design = designFromLayout(l, this.label);
+    this.design = designFromLayout(l, l.name); // the title and the header show the ship's name (an import starts with its label)
     clearTimeout(this.timer);
     this.pins = rebase(this.pins, l, this.design);
     // selection and hover are held by stable id: resolved against this layout, dropped when what they name is gone

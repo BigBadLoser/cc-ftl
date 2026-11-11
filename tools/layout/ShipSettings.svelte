@@ -3,7 +3,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import { lab } from './lab.svelte';
@@ -21,6 +20,15 @@
 	$effect(() => { w = layout?.width ?? 0; h = layout?.height ?? 0; error = ''; });
 	const swatch = (id: string): string => { const [a, b] = liverySwatch(id); return `linear-gradient(135deg, ${a} 50%, ${b} 50%)`; };
 
+	let open = $state(false);
+	let card: HTMLElement | undefined = $state();
+	/** Click-away and Esc close it; a pick in the faction list (portalled out of the card) is not a click away. */
+	function away(e: PointerEvent) {
+		const t = e.target as HTMLElement | null;
+		if (open && card && t && !card.contains(t) && !t.closest('[data-slot^=select]')) open = false;
+	}
+	function esc(e: KeyboardEvent) { if (open && e.key === 'Escape') { open = false; e.stopPropagation(); } }
+
 	function resize() {
 		if (!layout) return;
 		const r = resizeGrid(layout, Number(w), Number(h));
@@ -30,17 +38,14 @@
 	}
 </script>
 
-<Popover.Root>
-	<Popover.Trigger>
-		{#snippet child({ props })}
-			<button {...props} class="pointer-events-auto flex items-center gap-1 text-xs tracking-wide text-muted-foreground uppercase hover:text-foreground" aria-label="Ship settings">
-				Grid{lab.design ? ` · ${lab.design.label}` : ''}<ChevronDown class="size-3" />
-			</button>
-		{/snippet}
-	</Popover.Trigger>
-	<Popover.Content align="start" class="w-80 gap-3">
-		{#if layout}
-			<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ship</span>
+<svelte:window onpointerdown={away} onkeydown={esc} />
+<!-- The title is the card's header: closed, plain text in place; open, the same text sits at the same spot and the card grows round it. -->
+<div bind:this={card} class="pointer-events-auto relative {open ? '-mt-1.5 -ml-2.5 w-80 rounded-lg border bg-popover px-2.5 py-1.5 text-popover-foreground shadow-sm' : ''}">
+	<button class="flex items-center gap-1 text-xs tracking-wide text-muted-foreground uppercase hover:text-foreground" aria-label="Ship settings" aria-expanded={open} onclick={() => (open = !open)}>
+		Grid{lab.design ? ` · ${lab.design.label}` : ''}<ChevronDown class="size-3 transition-transform {open ? 'rotate-180' : ''}" />
+	</button>
+	{#if open && layout}
+		<div class="mt-2.5 flex flex-col gap-3 pb-1.5">
 			<div class="grid grid-cols-[4.5rem_1fr] items-center gap-x-3 gap-y-2.5">
 				<Label for="ship-name">Name</Label>
 				<Input id="ship-name" value={layout.name} onchange={(e) => { const v = e.currentTarget.value; lab.edit((l) => renameShip(l, v)); }} />
@@ -58,8 +63,9 @@
 				</Select.Root>
 				<Label>Kind</Label>
 				<ToggleGroup.Root type="single" value={kindOf(layout)} onValueChange={(v) => v && lab.edit((l) => setKind(l, v as 'ship' | 'station'))} variant="outline" size="sm" class="w-full">
-					<ToggleGroup.Item value="ship" class="flex-1">Ship</ToggleGroup.Item>
-					<ToggleGroup.Item value="station" class="flex-1">Station</ToggleGroup.Item>
+					{#each ['ship', 'station'] as k (k)}
+						<ToggleGroup.Item value={k} class="flex-1 capitalize text-muted-foreground hover:bg-muted/40 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary data-[state=on]:hover:text-primary-foreground">{k}</ToggleGroup.Item>
+					{/each}
 				</ToggleGroup.Root>
 				<Label>Grid</Label>
 				<div class="flex items-center gap-1.5">
@@ -71,6 +77,6 @@
 			</div>
 			{#if error}<span class="text-xs text-destructive">{error}</span>{/if}
 			{#if originText(layout)}<span class="text-xs text-muted-foreground">Imported from {originText(layout)}</span>{/if}
-		{/if}
-	</Popover.Content>
-</Popover.Root>
+		</div>
+	{/if}
+</div>

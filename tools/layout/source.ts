@@ -61,10 +61,10 @@ export function blankLayout(w = 48, h = 36): Layout {
 }
 
 export function buildLayout(s: Source): { layout: Layout; label: string } {
-  if (s.kind === 'blank') return { layout: blankLayout(), label: 'Blank grid' };
+  if (s.kind === 'blank') return { layout: { ...blankLayout(), name: 'Blank grid' }, label: 'Blank grid' };
   if (s.kind === 'starter') {
     const st = starterShips.find((x) => x.id === s.id) ?? (starterShips[0] as (typeof starterShips)[number]);
-    return { layout: layoutOfGen(templateResult(st.name, st.template), st.name, false), label: `${st.name} (starter)` };
+    return { layout: layoutOfGen(templateResult(st.name, st.template), `${st.name} (starter)`, false), label: `${st.name} (starter)` };
   }
   // A station's size is picked by the seed (size list, seed 1 the first): one size, so seed only varies the layout.
   const spec = specOf(s);
