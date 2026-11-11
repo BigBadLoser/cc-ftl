@@ -16,13 +16,17 @@ export interface DockState {
   panels: Record<PanelId, PanelState>;
   /** Dock sizes in percent of the work area (left, right: of its width; bottom: of its height). */
   sizes: Record<Dock, number>;
+  /** Which palette groups are open. */
+  groups: Record<Group, boolean>;
 }
+export type Group = 'modules' | 'rooms';
 export type DockAction =
   | { type: 'dock'; id: PanelId; dock: Dock }
   | { type: 'float'; id: PanelId; rect?: Rect }
   | { type: 'rect'; id: PanelId; rect: Rect }
   | { type: 'collapse'; id: PanelId; collapsed?: boolean }
   | { type: 'size'; dock: Dock; size: number }
+  | { type: 'group'; group: Group; open: boolean }
   | { type: 'reset' };
 
 export const PANELS: readonly PanelId[] = ['palette', 'layers', 'preview'];
@@ -34,9 +38,10 @@ export const DEFAULT_DOCK: DockState = {
   panels: {
     palette: { place: 'left', collapsed: false, rect: { x: 16, y: 16, w: 260, h: 420 } },
     layers: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 260, h: 420 } },
-    preview: { place: 'float', collapsed: false, rect: { x: 560, y: 380, w: 520, h: 300 } },
+    preview: { place: 'bottom', collapsed: false, rect: { x: 560, y: 380, w: 520, h: 300 } },
   },
   sizes: { left: 17, right: 17, bottom: 35 },
+  groups: { modules: true, rooms: true },
 };
 
 const clone = (s: DockState): DockState => JSON.parse(JSON.stringify(s)) as DockState; // plain data (a Svelte state proxy cannot be structuredClone-d)
@@ -52,6 +57,10 @@ export function dockReducer(state: DockState, a: DockAction): DockState {
   const s = clone(state);
   if (a.type === 'size') {
     s.sizes[a.dock] = clampSize(a.size);
+    return s;
+  }
+  if (a.type === 'group') {
+    s.groups[a.group] = a.open;
     return s;
   }
   const p = s.panels[a.id];
@@ -77,7 +86,7 @@ export function parseDock(json: string | null): DockState {
   const out = clone(DEFAULT_DOCK);
   if (!json) return out;
   try {
-    const raw = JSON.parse(json) as { panels?: Record<string, Partial<PanelState>>; sizes?: Record<string, unknown> };
+    const raw = JSON.parse(json) as { panels?: Record<string, Partial<PanelState>>; sizes?: Record<string, unknown>; groups?: Record<string, unknown> };
     for (const id of PANELS) {
       const r = raw.panels?.[id];
       if (!r) continue;
@@ -88,6 +97,10 @@ export function parseDock(json: string | null): DockState {
     for (const d of ['left', 'right', 'bottom'] as const) {
       const n = raw.sizes?.[d];
       if (isNum(n)) out.sizes[d] = clampSize(n);
+    }
+    for (const g of ['modules', 'rooms'] as const) {
+      const b = raw.groups?.[g];
+      if (typeof b === 'boolean') out.groups[g] = b;
     }
   } catch { /* a corrupt save: the default */ }
   return out;

@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_DOCK, MIN_RECT, dockOpen, dockReducer, floating, panelsIn, parseDock } from './dock';
 
 describe('dock reducer', () => {
+  it('opens with the preview docked at the bottom', () => {
+    expect(panelsIn(DEFAULT_DOCK, 'bottom')).toEqual(['preview']);
+  });
   it('docks a floating panel and expands it', () => {
-    const s = dockReducer(dockReducer(DEFAULT_DOCK, { type: 'collapse', id: 'preview', collapsed: true }), { type: 'dock', id: 'preview', dock: 'right' });
+    const floated = dockReducer(DEFAULT_DOCK, { type: 'float', id: 'preview' });
+    const s = dockReducer(dockReducer(floated, { type: 'collapse', id: 'preview', collapsed: true }), { type: 'dock', id: 'preview', dock: 'right' });
     expect(s.panels.preview.place).toBe('right');
     expect(s.panels.preview.collapsed).toBe(false);
     expect(panelsIn(s, 'right')).toEqual(['layers', 'preview']);
     expect(floating(s)).toEqual([]);
+    expect(floating(floated)).toEqual(['preview']);
   });
   it('floats a panel at a rect, clamped to a usable size, and keeps the rect while docked', () => {
     let s = dockReducer(DEFAULT_DOCK, { type: 'float', id: 'palette', rect: { x: -30, y: 12.4, w: 50, h: 50 } });
@@ -21,7 +26,7 @@ describe('dock reducer', () => {
     const s = dockReducer(DEFAULT_DOCK, { type: 'collapse', id: 'palette' });
     expect(s.panels.palette.collapsed).toBe(true);
     expect(dockOpen(s, 'left')).toBe(false);
-    expect(dockOpen(s, 'bottom')).toBe(false);
+    expect(dockOpen(s, 'bottom')).toBe(true);
     expect(dockReducer(s, { type: 'collapse', id: 'palette' }).panels.palette.collapsed).toBe(false);
   });
   it('limits dock sizes and does not change its input', () => {
@@ -29,6 +34,11 @@ describe('dock reducer', () => {
     expect(s.sizes.left).toBe(60);
     expect(DEFAULT_DOCK.sizes.left).toBe(17);
     expect(dockReducer(s, { type: 'reset' })).toEqual(DEFAULT_DOCK);
+  });
+  it('remembers which palette groups are open', () => {
+    const s = dockReducer(DEFAULT_DOCK, { type: 'group', group: 'modules', open: false });
+    expect(s.groups).toEqual({ modules: false, rooms: true });
+    expect(parseDock(JSON.stringify(s)).groups.modules).toBe(false);
   });
   it('survives a round trip and ignores malformed saves', () => {
     const s = dockReducer(DEFAULT_DOCK, { type: 'dock', id: 'preview', dock: 'bottom' });

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Box from '@lucide/svelte/icons/box';
 	import DoorOpen from '@lucide/svelte/icons/door-open';
 	import Eraser from '@lucide/svelte/icons/eraser';
@@ -9,6 +11,7 @@
 	import BrickWall from '@lucide/svelte/icons/brick-wall';
 	import type { Component } from 'svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
@@ -17,6 +20,7 @@
 	import { content } from '../../src/content';
 	import type { ModuleDef } from '../../src/sim';
 	import { isLamp, moduleCode, NAMES } from '../shipgen/labels';
+	import { docks } from './dock.svelte';
 	import { keyOf } from './gridDraw';
 	import { lab } from './lab.svelte';
 
@@ -70,35 +74,47 @@
 		</ToggleGroup.Root>
 
 		<Separator />
-		<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Room types</span>
-		<div class="flex flex-col gap-0.5">
-			{#each roleTypes as r (r.role)}
-				<button class="flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted" onclick={() => pickRoom(r.role)}>
-					<span class="size-3 shrink-0 rounded-sm" style="background:{r.color}"></span>
-					<span class="flex-1 truncate">{NAMES[r.role] ?? r.name}</span>
-					<span class="text-xs text-muted-foreground">{rooms.get(r.role) ?? ''}</span>
-				</button>
-			{:else}
-				<span class="text-sm text-muted-foreground">Import a design.</span>
-			{/each}
-		</div>
+		<Collapsible.Root open={docks.state.groups.modules} onOpenChange={(open) => docks.dispatch({ type: 'group', group: 'modules', open })}>
+			<Collapsible.Trigger class="flex w-full items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+				{#if docks.state.groups.modules}<ChevronDown class="size-3.5" />{:else}<ChevronRight class="size-3.5" />{/if}Modules
+			</Collapsible.Trigger>
+			<Collapsible.Content class="pt-2">
+				<Command.Root class="rounded-lg border">
+					<Command.Input placeholder="Search modules" />
+					<Command.List class="max-h-72">
+						<Command.Empty>No module found.</Command.Empty>
+						<Command.Group>
+							{#each defs as d (d.id)}
+								<Command.Item value="{d.name} {d.code}" onSelect={() => pickModule(d.id)}>
+									<span class="w-6 shrink-0 font-mono text-xs font-semibold">{d.code}</span>
+									<span class="flex-1 truncate">{d.name}</span>
+									<span class="text-xs text-muted-foreground">{placed.get(d.id) ?? ''}</span>
+								</Command.Item>
+							{/each}
+						</Command.Group>
+					</Command.List>
+				</Command.Root>
+			</Collapsible.Content>
+		</Collapsible.Root>
 
 		<Separator />
-		<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Modules</span>
-		<Command.Root class="rounded-lg border">
-			<Command.Input placeholder="Search modules" />
-			<Command.List class="max-h-72">
-				<Command.Empty>No module found.</Command.Empty>
-				<Command.Group>
-					{#each defs as d (d.id)}
-						<Command.Item value="{d.name} {d.code}" onSelect={() => pickModule(d.id)}>
-							<span class="w-6 shrink-0 font-mono text-xs font-semibold">{d.code}</span>
-							<span class="flex-1 truncate">{d.name}</span>
-							<span class="text-xs text-muted-foreground">{placed.get(d.id) ?? ''}</span>
-						</Command.Item>
+		<Collapsible.Root open={docks.state.groups.rooms} onOpenChange={(open) => docks.dispatch({ type: 'group', group: 'rooms', open })}>
+			<Collapsible.Trigger class="flex w-full items-center gap-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+				{#if docks.state.groups.rooms}<ChevronDown class="size-3.5" />{:else}<ChevronRight class="size-3.5" />{/if}Room types
+			</Collapsible.Trigger>
+			<Collapsible.Content class="pt-2">
+				<div class="flex flex-col gap-0.5">
+					{#each roleTypes as r (r.role)}
+						<button class="flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted" onclick={() => pickRoom(r.role)}>
+							<span class="size-3 shrink-0 rounded-sm" style="background:{r.color}"></span>
+							<span class="flex-1 truncate">{NAMES[r.role] ?? r.name}</span>
+							<span class="text-xs text-muted-foreground">{rooms.get(r.role) ?? ''}</span>
+						</button>
+					{:else}
+						<span class="text-sm text-muted-foreground">Import a design.</span>
 					{/each}
-				</Command.Group>
-			</Command.List>
-		</Command.Root>
+				</div>
+			</Collapsible.Content>
+		</Collapsible.Root>
 	</div>
 </ScrollArea>
