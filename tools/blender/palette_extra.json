@@ -3630,5 +3630,8 @@
   "recClL": {"hex": "#bdeef3", "set": "recovery"},
   "recCl": {"hex": "#86d0dc", "set": "recovery"},
   "recClD": {"hex": "#5aa7b8", "set": "recovery"},
-  "recClFilm": {"hex": "#e2fcff", "set": "recovery"}
+  "recClFilm": {"hex": "#e2fcff", "set": "recovery"},
+  "recMnL": {"hex": "#c4f3dc", "set": "recovery"},
+  "recMn": {"hex": "#8fdcbc", "set": "recovery"},
+  "recMnFilm": {"hex": "#e4fff1", "set": "recovery"}
 }
