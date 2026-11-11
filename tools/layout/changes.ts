@@ -6,6 +6,7 @@ import { content } from '../../src/content';
 import type { ModuleDef } from '../../src/sim';
 import { isLamp, moduleCode, NAMES } from '../shipgen/labels';
 import { moduleTiles, roomRect, type Layout, type Tile, type TemplateModule } from './layout';
+import { shipChanges } from './ship';
 import { kindOf, type Kind } from './tileKinds';
 
 /** One line of the change list and the tiles it is about (to centre on and flash). */
@@ -171,7 +172,7 @@ function roomChanges(a: Layout, b: Layout): Change[] {
 export function changeItems(a: Layout, b: Layout): Change[] {
   const inB = boxes(b);
   const rooms = [...inB, ...boxes(a).filter((r) => !inB.some((x) => x.id === r.id))];
-  return [...roomChanges(a, b), ...moduleChanges(a, b, rooms), ...tileChanges(a, b, rooms)];
+  return [...shipChanges(a, b).map((text): Change => ({ text, tiles: [] })), ...roomChanges(a, b), ...moduleChanges(a, b, rooms), ...tileChanges(a, b, rooms)];
 }
 /** The sentences alone (what a saved case stores). */
 export const describeChanges = (a: Layout, b: Layout): string[] => changeItems(a, b).map((c) => c.text);

@@ -6,6 +6,7 @@
 	import { diffMarks, drawMoves } from './diffDraw';
 	import { drawGrid, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
+	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
 	import { moduleIndex, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
 
@@ -280,5 +281,5 @@
 		{/if}
 	{/if}
 	<div class="pointer-events-none absolute inset-y-0" style="left:{side ? paneBox.w : 0}px;width:{paneBox.w}px"><PinMarkers space="grid" box={paneBox} /></div>
-	<div class="pointer-events-none absolute top-2 left-3 text-xs tracking-wide text-muted-foreground uppercase">Grid{lab.design ? ` · ${lab.design.label}` : ''}</div>
+	<div class="absolute top-2 left-3"><ShipSettings /></div>
 </div>

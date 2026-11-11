@@ -41,6 +41,12 @@ export function layoutsOf(station: string, size: string): string[] {
   return tier ? tier.grammars.map((g) => g.value) : [];
 }
 
+/** The side a faction (or station kind) flies for, as the game reads it: its own `side`, else 'hostile' as the game's spawn does. */
+export function sideOf(id: string): string {
+  const f = (content.factions as Record<string, { side?: string }>)[id] ?? (content.stations as Record<string, StationDef>)[id];
+  return f?.side ?? 'hostile';
+}
+
 /** The generator spec string (what `tools/shipgen/cli.js` takes) for a source. */
 export function specOf(s: Source): string {
   if (s.kind === 'blank') return '';
@@ -66,9 +72,8 @@ export function buildLayout(s: Source): { layout: Layout; label: string } {
   const made = gen(spec, s.seed, s.depth);
   const layout = layoutOfGen(made, label, s.kind === 'station');
   // as the game spawns it (stations/spawn.ts, combat/handlers.ts): the generator's id, and the faction's or kind's side
-  const side = s.kind === 'station' ? (content.stations as Record<string, StationDef>)[s.id]?.side : (content.factions as Record<string, { side?: string }>)[s.id]?.side;
   const origin = s.kind === 'station'
     ? { faction: s.id, seed: s.seed >>> 0, depth: 0, role: s.size }
     : { faction: s.id, seed: s.seed, depth: s.depth, ...(made.role ? { role: made.role } : {}) };
-  return { layout: { ...layout, origin: { gen: origin, side: side ?? 'hostile' } }, label };
+  return { layout: { ...layout, origin: { gen: origin, side: sideOf(s.id) } }, label };
 }
