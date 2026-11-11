@@ -1,4 +1,5 @@
 import type { Builder } from './builder';
+import type { Canvas } from './canvas';
 import { letterOf, roleOfLetter } from './canvas';
 import { DISTRICT } from './stationKit';
 import type { Rng } from '../rng';
@@ -274,6 +275,44 @@ const DECK_BAYS = 4;
  */
 const COURT_MAX = 450;
 const COURT_MIN_PART = 80;
+/**
+ * A hall big enough to read as a room of its own gets a colonnade: single-tile piers on a COURT_PILLAR lattice, with a
+ * three-wide aisle down the middle of its longer axis. Without some structure a 300-tile hall is a brown field with a
+ * wall across it; piers are art-free (they are walls), leave five-tile aisles and never touch the hall's own walls.
+ */
+const COURT_PILLAR = 6;
+const COURT_PILLAR_MIN = 150;
+
+/** The pier tiles of a hall: lattice points well inside it, minus the spine down the middle of its longer axis. */function pillars(cells: number[], S: number): number[] {
+  if (cells.length < COURT_PILLAR_MIN) return [];
+  const inPart = new Set(cells);
+  const xs = cells.map((k) => k % S);
+  const ys = cells.map((k) => Math.floor(k / S));
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const alongX = x1 - x0 >= y1 - y0;
+  const mid = alongX ? (y0 + y1) / 2 : (x0 + x1) / 2;
+  const out: number[] = [];
+  for (const k of cells) {
+    const x = k % S;
+    const y = Math.floor(k / S);
+    if ((x - x0) % COURT_PILLAR !== 3 || (y - y0) % COURT_PILLAR !== 3) continue;
+    if (Math.abs((alongX ? y : x) - mid) < 1.5) continue;
+    if (![1, -1, S, -S].every((d) => inPart.has(k + d))) continue;
+    out.push(k);
+  }
+  return out;
+}
+
+/** Stamp a handful of tiles as wall. False if the canvas refuses (something floor-like is already there). */
+function stampWall(cv: Canvas, tiles: number[], S: number, off: number, chunk: string): boolean {
+  if (tiles.length === 0) return false;
+  const ps = tiles.map((k) => [(k % S) - off, Math.floor(k / S) - off] as [number, number]);
+  const bx = Math.min(...ps.map((p) => p[0]));
+  const by = Math.min(...ps.map((p) => p[1]));
+  const rows = Array.from({ length: Math.max(...ps.map((p) => p[1])) - by + 1 }, () => Array<string>(Math.max(...ps.map((p) => p[0])) - bx + 1).fill('.'));
+  ps.forEach(([x, y]) => { (rows[y - by] as string[])[x - bx] = '#'; });
+  return cv.stamp(rows.map((r) => r.join('')), bx, by, chunk);
+}
 
 /** The pieces a court is cut into, and the wall tiles that separate them (4-neighbour pieces of what is left). */
 function splitCourt(cells: number[], S: number): { parts: number[][]; walls: number[] } {
@@ -423,21 +462,20 @@ export function courtyards(b: Builder, rng: Rng, role: RoomRole, o: CourtOpts = 
       if (walls.length > 0) {
         // The cut goes in before the courts, so the halls are stamped with their wall between them. A cut that cannot be
         // stamped leaves no wall, so the pocket has to stay whole: two courts over one floor are one room with two names.
-        const ps = walls.map((k) => [(k % S) - off, Math.floor(k / S) - off] as [number, number]);
-        const bx = Math.min(...ps.map((p) => p[0]));
-        const by = Math.min(...ps.map((p) => p[1]));
-        const rows = Array.from({ length: Math.max(...ps.map((p) => p[1])) - by + 1 }, () => Array<string>(Math.max(...ps.map((p) => p[0])) - bx + 1).fill('.'));
-        ps.forEach(([x, y]) => { (rows[y - by] as string[])[x - bx] = '#'; });
-        if (!cv.stamp(rows.map((r) => r.join('')), bx, by, `court${n}:cut`)) { parts = [cells]; walls = []; }
+        if (!stampWall(cv, walls, S, off, `court${n}:cut`)) { parts = [cells]; walls = []; }
       }
       for (const court of parts) {
         // The first court big enough for a bay may be the hangar deck.
         const key = `court${n}`;
         const bays = deckable;
         const letter = bays ? letterOf('hangar') : courtLetter;
+        // Piers first, so the hall is stamped round its colonnade and the piers read as structure, not as a room split.
+        const piers = bays ? [] : pillars(court, S);
+        const cols = new Set(stampWall(cv, piers, S, off, `${key}:cols`) ? piers : []);
+        const floor = cols.size > 0 ? court.filter((k) => !cols.has(k)) : court;
         // Stamp the pocket as floor: its walls are the ones already round it.
-        const xs = court.map((k) => (k % S) - off);
-        const ys = court.map((k) => Math.floor(k / S) - off);
+        const xs = floor.map((k) => (k % S) - off);
+        const ys = floor.map((k) => Math.floor(k / S) - off);
         const bx = Math.min(...xs), by = Math.min(...ys);
         const rows = Array.from({ length: Math.max(...ys) - by + 1 }, () => Array<string>(Math.max(...xs) - bx + 1).fill('.'));
         xs.forEach((cx, i) => { (rows[(ys[i] as number) - by] as string[])[cx - bx] = letter; });

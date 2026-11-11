@@ -213,7 +213,27 @@ What pass 1 does not do: the halls are still bare floor with a wall through them
 deck is unchanged (~28 % on hubs). The next pass is the one that makes a hall look like a hall — colonnade or planter
 spine, a cross-route, frontage both sides.
 
-## 6. State and mechanics, briefly
+## 6. Pass 2: colonnades in the halls (on this branch)
+
+`stationCourts.ts`: a court of 150 tiles or more gets piers — single-tile walls on a six-tile lattice, placed before the
+court is stamped (so they read as structure, not as a room split), never within three tiles of the hall's own walls and
+never on the three-wide aisle down the middle of its longer axis. The piers survive the wall-thinning and thin-stub
+passes (24–32 free-standing piers per hub) and cost nothing downstream: a seed's rooms, hull and doors are identical to
+pass 1 — only the plaza floor changes — so mean attempts stay at 1.00 and the pin moves because the rows moved and
+nothing else.
+
+| | pass 1 | pass 2 |
+|---|---|---|
+| free-standing piers per hub | 0 | 24–32 |
+| occupancy / rooms / mean attempts | 0.35 / 127 / 1.00 | 0.35 / 127 / 1.00 |
+
+Also measured, and *not* done: the other hole in the picture is the wheel leaving quarters open to space — a hub drawn
+with `courts 1` has three quarters of nothing in it, which is most of the black on the sheets. Raising the wheel's court
+count to 2–4 fills them (hub court share 0.25 → 0.35, rooms 127 → 161, mean attempts 1.00 → 1.13), but that is more
+concourse, not more station: those quarters want rooms (a habitat block, an industrial block), which is the
+sector-vocabulary pass.
+
+## 7. State and mechanics, briefly
 
 - `stationgen/staged` = #234 + 15 commits (bench, docs, wheel refactor, wheel pin). #234 is closed, unmerged; nothing
   was lost, the branch is its descendant.
