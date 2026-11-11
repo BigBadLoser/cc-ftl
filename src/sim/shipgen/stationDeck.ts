@@ -87,6 +87,7 @@ function frontage(b: Builder, run: Rect, dir: 'e' | 'w' | 'n' | 's', side: -1 | 
       for (let y = rect.y; y < rect.y + rect.h; y++) {
         for (let x = rect.x; x < rect.x + rect.w; x++) if (y !== keepRow && x !== keepCol) b.cv.put(x, y, '.');
       }
+      b.parts.pop();
       i++;
       continue;
     }
