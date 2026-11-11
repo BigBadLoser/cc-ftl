@@ -7,9 +7,9 @@ import { DARK, DOOR, HALL, INK, LAMP, NAMES, WALL, roleTint } from '../shipgen/l
 import { scaleOf, type Box, type View } from './camera';
 import type { Design } from './design';
 
-export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean }
-export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false };
-export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)' };
+export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
+export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
+export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
 export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean }
 
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;

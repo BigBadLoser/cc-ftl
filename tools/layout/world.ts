@@ -3,7 +3,7 @@
  * Built once per layout and kept; building a big station takes about 60 ms.
  */
 import { content } from '../../src/content';
-import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef } from '../../src/sim';
+import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
@@ -18,7 +18,7 @@ export const fits = (sim: Sim, l: Layout): boolean => ORIGIN + l.width + 8 <= si
 
 /** Stamp a layout into a sim at ORIGIN and allocate power once, as a new game does (nothing is stepped). Returns the ship, or null if it will not stand. */
 export function stampLayout(sim: Sim, l: Layout): number | null {
-  const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: 'player', x: ORIGIN, y: ORIGIN });
+  const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: (l.origin?.side ?? 'player') as NonNullable<ShipTemplate['faction']>, x: ORIGIN, y: ORIGIN, ...(l.origin ? { gen: l.origin.gen } : {}) });
   powerSystem(sim);
   return shipGrid(sim, ship) ? ship : null;
 }

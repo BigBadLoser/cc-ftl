@@ -27,6 +27,11 @@ export interface Layout {
   extra: Omit<ShipTemplate, 'name' | 'rows' | 'modules'>;
   /** Stations are immobile: the engine check is off. */
   immobile: boolean;
+  /**
+   * What the game records on a generated ship (its generator faction, seed, depth and role) and the side it flies for, so the preview
+   * stamps it the way the game does and the renderer picks its livery (container colours, logos) from the faction. Absent for a blank grid or a starter.
+   */
+  origin?: { gen: { faction: string; seed: number; depth: number; role?: string }; side: string };
 }
 export interface Rect { x: number; y: number; w: number; h: number }
 export type Tile = [number, number];

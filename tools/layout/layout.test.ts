@@ -309,3 +309,23 @@ describe('beam painting', () => {
     expect(over).toBe(withBox);
   });
 });
+
+describe('generated designs are stamped the way the game spawns them', () => {
+  it('a faction ship carries its generator faction, seed, depth, role and side, so the renderer picks its livery', async () => {
+    const { ShipC } = await import('../../src/sim/combat/components');
+    const { worldOf } = await import('./world');
+    const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'faction', id: 'faction.civilian', family: 'freighter', seed: 1, depth: 2 });
+    expect(layout.origin?.gen).toMatchObject({ faction: 'faction.civilian', seed: 1, depth: 2 });
+    const w = worldOf(layout);
+    const ship = w?.sim.world.get(w.ship, ShipC);
+    expect(ship?.gen).toMatchObject({ faction: 'faction.civilian', seed: 1, depth: 2 });
+    expect(ship?.faction).toBe(layout.origin?.side);
+  });
+  it('a blank grid is a plain player ship', async () => {
+    const { ShipC } = await import('../../src/sim/combat/components');
+    const { worldOf } = await import('./world');
+    const w = worldOf(paint(blank(), rect(4, 4, 5, 5), '_'));
+    expect(w?.sim.world.get(w.ship, ShipC)).toMatchObject({ faction: 'player' });
+    expect(w?.sim.world.get(w.ship, ShipC)?.gen).toBeUndefined();
+  });
+});

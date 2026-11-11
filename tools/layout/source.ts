@@ -63,5 +63,12 @@ export function buildLayout(s: Source): { layout: Layout; label: string } {
   // A station's size is picked by the seed (size list, seed 1 the first): one size, so seed only varies the layout.
   const spec = specOf(s);
   const label = s.kind === 'faction' ? `${spec.replace('faction.', '')} seed ${s.seed} depth ${s.depth}` : `${spec.replace('station.', '')} seed ${s.seed}`;
-  return { layout: layoutOfGen(gen(spec, s.seed, s.depth), label, s.kind === 'station'), label };
+  const made = gen(spec, s.seed, s.depth);
+  const layout = layoutOfGen(made, label, s.kind === 'station');
+  // as the game spawns it (stations/spawn.ts, combat/handlers.ts): the generator's id, and the faction's or kind's side
+  const side = s.kind === 'station' ? (content.stations as Record<string, StationDef>)[s.id]?.side : (content.factions as Record<string, { side?: string }>)[s.id]?.side;
+  const origin = s.kind === 'station'
+    ? { faction: s.id, seed: s.seed >>> 0, depth: 0, role: s.size }
+    : { faction: s.id, seed: s.seed, depth: s.depth, ...(made.role ? { role: made.role } : {}) };
+  return { layout: { ...layout, origin: { gen: origin, side: side ?? 'hostile' } }, label };
 }

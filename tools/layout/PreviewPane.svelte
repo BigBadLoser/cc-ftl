@@ -36,6 +36,7 @@
 		return () => clearTimeout(t);
 	});
 	$effect(() => preview.setShields(lab.layers.shields));
+	$effect(() => preview.setRoof(lab.layers.roof));
 	$effect(() => {
 		const d = lab.previewDesign;
 		preview.setMarks(d ? [{ tiles: tilesOf(d, lab.selected), tint: 0xffc440, solid: true }, { tiles: tilesOf(d, lab.hover), tint: 0x50dcff }, { tiles: lab.flag, tint: 0xff4646, solid: true }] : []);
