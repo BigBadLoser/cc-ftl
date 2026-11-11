@@ -12,8 +12,9 @@ import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
-import { BOND_SPOT_SAMPLES, LEISURE_SEC } from '../../tuning';
+import { BOND_SPOT_SAMPLES, LEISURE_PLAY_BONUS_TILES, LEISURE_SEC } from '../../tuning';
 import { TaskC } from '../components';
+import { freeSpots, leisureLean } from './leisureSpots';
 import { safePathBeside, unsafeFor } from '../hazard';
 import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
@@ -27,6 +28,8 @@ import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
 /** Look for a spot once a second, not every tick. */
 const LOOK_EVERY = 20;
+/** How many of the nearest free game stands are path-checked per look. */
+const GAME_LOOKS = 4;
 /** Tiles a spot is drawn from around the mess's galley. */
 const MESS_RADIUS = 3;
 
@@ -42,23 +45,30 @@ export function leisureTurn(sim: Sim, id: number, crew: Crew, pos: Position): bo
       return true;
     }
     if (sim.tick < (task.bb.deadline ?? 0)) return true;
-    noteLeisure(sim, id);
+    noteLeisure(sim, id, !!task.bb.target);
     clearJoblessTask(sim, id);
     return false;
   }
   if (!isSettled(pos) || path.steps.length > 0 || (sim.tick + id) % LOOK_EVERY !== 0) return false;
-  const steps = spot(sim, id, pos);
-  if (!steps) return false;
+  const pick = spot(sim, id, pos);
+  if (!pick) return false;
+  const steps = pick.steps;
   if (crew.activity !== 'idle') crew.activity = 'idle';
   if (steps.length === 0) clearPath(sim, id);
   else path.steps = steps;
   const end = steps[steps.length - 1] ?? origin(pos);
-  setJoblessTask(sim, id, 'leisure', 'leisure', 'Walk', { tile: { x: end.x, y: end.y } });
+  setJoblessTask(sim, id, 'leisure', 'leisure', 'Walk', { tile: { x: end.x, y: end.y }, ...(pick.module ? { target: pick.module } : {}) });
   return true;
 }
 
-/** A walk to a break spot, or null when there is none to reach. */
-function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
+/** A walk to a break spot, or null when there is none to reach. `module`: the game spot it ends at (absent = the mess or a seat beside someone). */
+interface Pick { steps: Tile[]; module?: number }
+
+/**
+ * Where to take a break: the quiet room for an isolation break, else the best of the mess and the free game spots (the table, the arcade) by
+ * walking distance, less the lean of the crew member's trait (`leisureLean`) and a small bonus for a game; else someone to sit with.
+ */
+function spot(sim: Sim, id: number, pos: Position): Pick | null {
   const ship = shipIdOf(sim, pos);
   const from = origin(pos);
   const grid = shipGrid(sim, ship);
@@ -66,8 +76,25 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
   // Isolation (a mild mental break): the quietest reachable room instead of company.
   if (sim.world.get(id, BreakdownC)?.kind === 'isolation') {
     const quiet = quietSpot(sim, id, ship, grid, from);
-    if (quiet) return quiet;
+    if (quiet) return { steps: quiet };
   }
+  const mess = messSpot(sim, id, ship, grid, from);
+  let best: { cost: number; pick: Pick } | null = mess ? { cost: mess.length - leisureLean(sim, id, 'social'), pick: { steps: mess } } : null;
+  const near = freeSpots(sim, id, ship).sort((a, b) => dist(a.stand, from) - dist(b.stand, from)).slice(0, GAME_LOOKS);
+  for (const s of near) {
+    const steps = unsafeFor(sim, id, ship, s.stand.x, s.stand.y) ? null : findPath(sim, ship, from, s.stand, walkOpts(sim, id));
+    const cost = steps ? steps.length - leisureLean(sim, id, s.kind) - LEISURE_PLAY_BONUS_TILES : Infinity;
+    if (steps && (!best || cost < best.cost)) best = { cost, pick: { steps, module: s.module } };
+  }
+  if (best) return best.pick;
+  const beside = besideCrew(sim, id, ship, from);
+  return beside ? { steps: beside } : null;
+}
+
+const dist = (a: Tile, b: Tile): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
+/** A walk to a tile in the mess (the room of the nearest working galley), or null with no galley to reach. */
+function messSpot(sim: Sim, id: number, ship: number, grid: ShipGrid, from: Tile): Tile[] | null {
   // The mess: a tile in the room of the nearest working galley, drawn at random so a crowd spreads out.
   let mess: Tile | null = null;
   let best = Infinity;
@@ -99,7 +126,12 @@ function spot(sim: Sim, id: number, pos: Position): Tile[] | null {
       if (steps) return steps;
     }
   }
-  // No mess to go to: someone to sit with.
+  return null;
+}
+
+/** A walk to a tile beside the nearest crew member with a mood ([] when already beside them), or null with nobody to sit with. */
+function besideCrew(sim: Sim, id: number, ship: number, from: Tile): Tile[] | null {
+  let best = Infinity;
   let mate: Position | null = null;
   best = Infinity;
   for (const o of sim.world.query(CrewC, PositionC)) {

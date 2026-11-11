@@ -30,7 +30,7 @@ import { createRenderer, type Renderer } from './render/scene';
 import { createSaver, loadSlot, lostReason, reloadLastSave, openNewGame, startGame, titleWanted, inThisCampaign, writePrecombat, writeSave } from './app/saves';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from './app/saveStore';
 import { content } from './content';
-import { BodyC, ModuleC, footprintTiles, NOOP_PROBE, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, serialize, ShipC, type Probe, type SimEvent } from './sim';
+import { BodyC, ModuleC, shipRoomQuality, ROOM_QUALITY_EVERY, footprintTiles, NOOP_PROBE, SAVE_VERSION, runSummary, commitEtaSec, shotColor, shotSlot, serialize, ShipC, type Probe, type SimEvent } from './sim';
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { buildFoeModule } from './app/foeModule';
@@ -476,6 +476,7 @@ const api: UiApi = {
       .then((r) => {
         renderer = r;
         r.setCommitEta((id) => commitEtaSec(sim, id));
+        r.setRoomTiers((ship) => new Map([...shipRoomQuality(sim, ship, ROOM_QUALITY_EVERY)].map(([room, q]) => [room, q.tier])));
         r.setShotColor((id) => shotColor(shotSlot(sim, id)));
         r.setProbe(probe);
         if (new URLSearchParams(location.search).has('hook')) hook = installDebugHook(sim, r, loop);

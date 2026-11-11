@@ -33,6 +33,7 @@ import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
 import { BED_LIFT, bedPose } from './bedPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
+import { seatIndex } from '../sim/ai/machines/leisureSpots';
 
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
@@ -48,6 +49,8 @@ export interface CrewViewHost {
   hidden?(x: number, y: number): boolean;
   /** The module covering tile (x, y) of the shown grid, if any (to sort crew on a console's chair tile against its sprite). */
   moduleAt?(x: number, y: number): { m: Module; def: ModuleDef } | null;
+  /** The module defs, to find the stool a crew member on a break sits on. */
+  modules?: Readonly<Record<string, ModuleDef>>;
   /** Seconds of air in a full suit tank (scales the air bar). */
   suitAirSec?(): number;
   /** The art of a hand weapon item (ItemDef.hand.art), if it has any. */
@@ -326,7 +329,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const at = host.moduleAt?.(mx, my) ?? null;
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
         const chair = at && (at.def.console || at.def.seated) ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
-        const sitting = !!chair && chair.x === mx && chair.y === my && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
+        const stool = !hurtLying && host.modules ? seatIndex(world, host.modules, id, mx, my) : null; // a game table's stool: seated, facing the table
+        const sitting = ((!!chair && chair.x === mx && chair.y === my) || !!stool) && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
         // Creature sheets (aliens) carry `attack`, `hurt` and `dead`: an attack (the fight cooldown restarting) or a hit
         // (hp dropping) plays its clip once; a dead one lies as its `dead` corpse.
         const has = (c: string) => s.parts.some((q) => q.layer.def.clips[c]);
@@ -354,7 +358,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
         const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
-        const dir = bed ? bed.dir : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
+        const dir = bed ? bed.dir : sitting && stool ? (SEAT_DIR[(stool.m.rot + (stool.index === 0 ? 0 : 2)) % 4] as number) : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
         s.shadow.visible = !sitting && !bed; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
           if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;

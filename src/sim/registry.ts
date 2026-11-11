@@ -536,6 +536,11 @@ export interface ModuleDef {
   drawsWhen?: 'planted';
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
+  /**
+   * A leisure spot (sim/ai/machines/leisureSpots.ts): crew on a break stand on the `stand` tiles (offsets from the footprint's top-left at rotation 0, rotated
+   * with the module) while it is powered. One crew member per tile. `social` spots draw `trait.social` crew, `solo` ones `trait.loner`.
+   */
+  leisure?: { kind: 'social' | 'solo'; stand: [number, number][] };
   workstation?: true;
   /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
   research?: true;

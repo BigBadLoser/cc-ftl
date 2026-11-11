@@ -1,6 +1,6 @@
 # Catalog: modules
 
-Every ship module, furniture piece and sealed container. 53 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
+Every ship module, furniture piece and sealed container. 55 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
 the build catalog test (`src/app/buildCatalog.test.ts`) requires every def to be reachable from a build tab, so any def here can be built by the player
 (Mk II/III and the flak cannon first need a blueprint). "Buildable only" means nothing places it on a ship, so it appears only if the player builds it.
 Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workbench and three storage variants.
@@ -39,6 +39,8 @@ Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workb
 | AI core | `module.aiCore` | Runs ship automation such as point defence. | In game | src/content/modules.ts:419; shipgen, rogue ships; sim/robots/core.ts; research.ts |
 | Shuttle bay | `module.vehicle_bay` | A pit that holds one shuttle and launches it through hatch doors. | In game | src/content/modules.ts:430; Wayfarer, Lancer, shipgen hangars; sim/vehicles/*; ui/ShuttlePanel.svelte |
 | Pod bay | `module.pod_bay` | A pit for one mining or construction pod. | In game | src/content/modules.ts:441; Prospector only (prospector.ts:56); sim/systems/mining.ts; buildable |
+| Arcade cabinet | `module.arcade` | An arcade cabinet for one: a break spot (solo). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; art from PR #440 |
+| Game table | `module.gametable` | A holographic game table for two: a break spot (social, two stools). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; crew sit on its stools |
 | Mess table | `module.mess_table` | A table for the mess. | In game | src/content/furniture.ts:17; shipgen, starters; sim/crew/eating.ts |
 | Chair | `module.chair` | A seat. | In game | src/content/furniture.ts:26; shipgen, starters |
 | Locker | `module.storage_locker` | A tall locker. | In game | src/content/furniture.ts:34; shipgen, starters; sim/items/storage.ts |

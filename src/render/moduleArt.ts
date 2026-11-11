@@ -1,4 +1,5 @@
 import type { World } from '../sim/ecs';
+import { playingAt } from '../sim/ai/machines/leisureSpots';
 import { JobC, PositionC } from '../sim/crew/components';
 import { isSettled } from '../sim/crew/helpers';
 import { StorageC } from '../sim/items/components';
@@ -63,6 +64,9 @@ export function mannedConsoles(world: World): Set<number> {
   }
   return out;
 }
+
+/** Leisure modules with someone playing (settled on a stand tile of a break). */
+export const playedModules = (world: World): Set<number> => new Set(playingAt(world).keys());
 
 /** Research modules with a crew member settled in their chair (the job tile), working its job. */
 export function workedLabs(world: World): Set<number> {
@@ -240,6 +244,7 @@ export const isTargetable = (def: ModuleDef): boolean => !!(def.weapon || def.en
 /** True when a module shows its `.active` art: engines and machines while powered, consoles while manned, fabricators while crafting, research benches while worked. */
 export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, manned: boolean): boolean {
   if (!on) return false;
+  if (def.leisure) return manned; // a game table or arcade in use
   if (def.console) return manned;
   if (def.crafting) return crafting;
   if (def.research) return manned;
@@ -320,9 +325,28 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   }
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
+  if (def.leisure) return leisureLayers(main, a, r, active, look);
   if (!def.console && !def.seated) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
+}
+
+/** Depth offset of a game table's hologram over its players (the front overlay is at FRONT_DZ). */
+export const HOLO_DZ = 0.04;
+
+/**
+ * A leisure module (the game table, the arcade): the body, then the overlay `<asset>.front.r{n}[.state]` over the seated players and, while in use, the
+ * hologram `<asset>.holo.r{n}.active`. The overlays animate in step with the body; each is only there if the art has it.
+ */
+function leisureLayers(main: ModuleLayer, a: string, r: string, active: boolean, look?: ModuleLook): ModuleLayer[] {
+  const looped = (base: string, key: string, dz: number, fallback: string[]): ModuleLayer => {
+    const n = active && look ? frameCount(look.has, base) : 1;
+    const f = n > 1 && look ? animFrame(look.now, n) : 0;
+    return { chain: [...(n > 1 ? [f ? `${base}.f${f}` : base] : []), ...fallback], key, tiles: 'all', dz, optional: true, ...(n > 1 ? { anim: base } : {}) };
+  };
+  const out = [main, looped(`${a}.front${r}.active`, `${a}.front`, FRONT_DZ, active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}.unpowered`, `${a}.front${r}`])];
+  if (active) out.push(looped(`${a}.holo${r}.active`, `${a}.holo`, HOLO_DZ, [`${a}.holo${r}.active`]));
+  return out;
 }
 
 /**
