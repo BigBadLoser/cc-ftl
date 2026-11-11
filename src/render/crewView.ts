@@ -380,6 +380,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
           z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
         }
+        if (stool && sitting) {
+          // A seated player of a game table sorts at the table's seat depth like a console's operator (not by their own tile): the table body is under them and the front overlay, the stool back and table edge, is over them.
+          const f = footprintTiles(stool.def, stool.m.x, stool.m.y, stool.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
+          z = moduleKey(stool.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ;
+        }
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
