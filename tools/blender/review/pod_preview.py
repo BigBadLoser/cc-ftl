@@ -31,12 +31,15 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "t2": ("T2  hanging tank", 2, (0.0, 0.0, 2, "idle", 31)),
      "u1": ("U1  plinth", 2, (0.0, 0.0, 2, "idle", 24)),
      "u2": ("U2  ribbed", 2, (0.0, 0.0, 2, "idle", 24)),
-     "u3": ("U3  octagon", 2, (0.0, 0.0, 2, "idle", 24))}
+     "u3": ("U3  octagon", 2, (0.0, 0.0, 2, "idle", 24)),
+     "v1": ("V1  plinth", 2, (0.0, 0.0, 2, "idle", 24)),
+     "v2": ("V2  ribbed", 2, (0.0, 0.0, 2, "idle", 24)),
+     "v3": ("V3  octagon", 2, (0.0, 0.0, 2, "idle", 24))}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "u1,u2,u3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "v1,v2,v3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(240 * len(names), 280)
     for i, v in enumerate(names):
