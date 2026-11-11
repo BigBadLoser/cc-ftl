@@ -1,9 +1,9 @@
 /** The layout lab's shared state: the design (a layout with undo history), the shared camera, the tool, what the pointer and the lists name, and the layer toggles. */
 import { fitRect, fitted, previewView, type Box, type View } from './camera';
-import { designFromLayout, sameTarget, type Design, type Target } from './design';
+import { designFromLayout, retarget, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { addModule, contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, takeModuleId, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
@@ -63,6 +63,8 @@ class Lab {
   private nextPin = 1;
   /** The highest module id handed out this session plus one: undo never lowers it, so a pin cannot revive onto a different module. */
   private idMark = 0;
+  /** The same for rooms. */
+  private roomMark = 0;
   private timer = 0;
 
   get layout(): Layout | null { return this.hist?.present ?? null; }
@@ -87,6 +89,7 @@ class Lab {
       this.label = label;
       this.hist = fresh(layout);
       this.idMark = Math.max(this.idMark, layout.nextModuleId);
+      this.roomMark = Math.max(this.roomMark, layout.rooms.length);
       this.original = layout;
       this.originalDesign = designFromLayout(layout, label);
       this.provenance = { ...s, spec: specOf(s), generator: GENERATOR };
@@ -115,7 +118,7 @@ class Lab {
   /** One discrete edit (a button, a placement): one undo step. */
   edit(fn: (l: Layout) => Layout): void {
     const h = this.hist;
-    if (!h) return;
+    if (!h || this.compare) return;
     const next = fn(h.present);
     if (next === h.present) return;
     this.hist = commit(live(h, next), h.present);
@@ -126,7 +129,7 @@ class Lab {
   begin(): void { this.from = this.layout; }
   step(fn: (l: Layout) => Layout): void {
     const h = this.hist;
-    if (!h) return;
+    if (!h || this.compare) return;
     const next = fn(h.present);
     if (next === h.present) return;
     this.hist = live(h, next);
@@ -136,8 +139,8 @@ class Lab {
     if (this.hist && this.from) this.hist = commit(this.hist, this.from);
     this.from = null;
   }
-  undo(): void { if (this.hist) { this.hist = undo(this.hist); this.afterJump(); } }
-  redo(): void { if (this.hist) { this.hist = redo(this.hist); this.afterJump(); } }
+  undo(): void { if (this.hist && !this.compare) { this.hist = undo(this.hist); this.afterJump(); } }
+  redo(): void { if (this.hist && !this.compare) { this.hist = redo(this.hist); this.afterJump(); } }
   private afterJump(): void {
     if (!this.hist) return;
     this.show(this.hist.present);
@@ -147,6 +150,7 @@ class Lab {
 
   /** Delete: the selected module or room. */
   removeSelected(): void {
+    if (this.compare) return;
     const s = this.selected;
     if (s?.kind === 'module') this.edit((l) => removeModule(l, s.index));
     else if (s?.kind === 'room') this.edit((l) => deleteRoom(l, s.id));
@@ -180,7 +184,7 @@ class Lab {
   /** Place the armed module where the ghost is, after checking the spot against the layout as it is now (a second click in the same place is refused). */
   placeModule(def: string, x: number, y: number, rot: number): boolean {
     const l = this.layout;
-    if (!l) return false;
+    if (!l || this.compare) return false;
     const error = placementProblem(l, def, x, y, rot);
     if (error) { this.ghost = { def, x, y, rot, error }; return false; }
     const { id, mark } = takeModuleId(l, this.idMark);
@@ -188,6 +192,31 @@ class Lab {
     this.edit((cur) => addModule(cur, { def, x, y, rot }, id));
     this.aim(def, x, y, rot);
     return true;
+  }
+  /** Draw a room over a rectangle; its id never repeats this session. Returns the id. */
+  drawRoom(r: Rect, role: string): number | null {
+    const l = this.layout;
+    if (!l || this.compare) return null;
+    const { id, mark } = takeRoomId(l, this.roomMark);
+    this.roomMark = mark;
+    this.edit((cur) => addRoom(cur, r, role, id).layout);
+    return id;
+  }
+  /** Split a room; the new half's id never repeats this session. Returns it, or null when the room cannot be split. */
+  splitRoomAt(id: number, axis: 'h' | 'v'): number | null {
+    const l = this.layout;
+    if (!l || this.compare) return null;
+    const take = takeRoomId(l, this.roomMark);
+    const made = splitRoom(l, id, axis, take.id);
+    if (!made) return null;
+    this.roomMark = take.mark;
+    this.edit(() => made.layout);
+    return made.id;
+  }
+  /** A pick made on the design the preview shows, as a selection in the edited design (by stable id; null when it no longer exists there). */
+  toEdited(t: Target | null): Target | null {
+    const shown = this.previewDesign, edited = this.design;
+    return shown && edited ? retarget(shown, edited, t) : t;
   }
   /** R: turn the ghost, else the selected module, a quarter turn. */
   rotate(): void {
@@ -319,6 +348,7 @@ class Lab {
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;
     this.idMark = Math.max(this.idMark, edited.nextModuleId, original.nextModuleId);
+    this.roomMark = Math.max(this.roomMark, edited.rooms.length, original.rooms.length);
     this.original = original;
     this.originalDesign = designFromLayout(original, `${c.name} (original)`);
     this.provenance = c.source;

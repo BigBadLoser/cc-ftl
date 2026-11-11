@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { designFromLayout } from './design';
-import { addModule, addRoom, deleteRoom, moveModule, paint, removeModule, takeModuleId, type Layout } from './layout';
+import { designFromLayout, retarget } from './design';
+import { addModule, addRoom, deleteRoom, moveModule, paint, removeModule, splitRoom, takeModuleId, takeRoomId, type Layout } from './layout';
 import { anchorFor, describeAnchor, newPin, rebase } from './pins';
 import { blankLayout } from './source';
 
@@ -70,6 +70,47 @@ describe('pins', () => {
     expect(second.id).not.toBe(first.id);
     const withB = addModule(layout, { def: 'module.chair', x: 7, y: 7, rot: 0 }, second.id);
     expect(rebase([pin], withB, designFromLayout(withB, 't'))[0]?.orphan).toBe(true);
+  });
+  it('a room id is never reused after an undo: draw, pin, undo, draw another leaves the pin orphaned', () => {
+    const { layout } = addRoom(blankLayout(40, 24), { x: 5, y: 5, w: 8, h: 6 }, 'cargo');
+    let mark = 0;
+    const t1 = takeRoomId(layout, mark);
+    mark = t1.mark;
+    const a = addRoom(layout, { x: 20, y: 5, w: 6, h: 5 }, 'cabin', t1.id);
+    expect(a.id).toBe(t1.id);
+    const pin = newPin(1, 'cabin is small', 22, 7, { kind: 'room', id: a.id }, a.layout, designFromLayout(a.layout, 't'));
+    // undo: back to `layout`, whose own room count is lower again; the session mark is not
+    const t2 = takeRoomId(layout, mark);
+    expect(t2.id).not.toBe(t1.id);
+    const b = addRoom(layout, { x: 20, y: 5, w: 6, h: 5 }, 'mess', t2.id);
+    const d = designFromLayout(b.layout, 't');
+    expect(d.rooms[t2.id]?.role).toBe('mess');
+    expect(rebase([pin], b.layout, d)[0]?.orphan).toBe(true);
+    // the gap an undo left holds no tiles and does not show as a room
+    expect(d.rooms.filter((r) => r.tiles > 0)).toHaveLength(2);
+  });
+  it('a split half takes a fresh id too', () => {
+    const { layout, id } = addRoom(blankLayout(40, 24), { x: 5, y: 5, w: 8, h: 6 }, 'cargo');
+    let mark = 0;
+    const t1 = takeRoomId(layout, mark);
+    mark = t1.mark;
+    const first = splitRoom(layout, id, 'v', t1.id);
+    expect(first?.id).toBe(t1.id);
+    const pin = newPin(1, 'half', 11, 7, { kind: 'room', id: t1.id }, first!.layout, designFromLayout(first!.layout, 't'));
+    const t2 = takeRoomId(layout, mark);
+    const second = splitRoom(layout, id, 'h', t2.id);
+    expect(second?.id).not.toBe(t1.id);
+    expect(rebase([pin], second!.layout, designFromLayout(second!.layout, 't'))[0]?.orphan).toBe(true);
+  });
+  it('a pick on the original design maps to the edited design by module id, or to nothing', () => {
+    const { l } = base();
+    const two = addModule(l, { def: 'module.chair', x: 10, y: 9, rot: 0 });
+    const edited = removeModule(two, 0); // the first module is gone: the second moves to index 0
+    const shown = designFromLayout(two, 'o'), now = designFromLayout(edited, 'e');
+    expect(retarget(shown, now, { kind: 'module', index: 1 })).toEqual({ kind: 'module', index: 0 });
+    expect(retarget(shown, now, { kind: 'module', index: 0 })).toBeNull();
+    expect(retarget(shown, now, { kind: 'room', id: 0 })).toEqual({ kind: 'room', id: 0 });
+    expect(retarget(shown, designFromLayout(deleteRoom(edited, 0), 'x'), { kind: 'room', id: 0 })).toBeNull();
   });
   it('returns the same array when nothing moved', () => {
     const { l } = base();

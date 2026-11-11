@@ -164,3 +164,13 @@ export function describe(d: Design, t: Target | null): string {
   const r = d.rooms[t.id];
   return r ? `${r.name || (r.role === 'hall' ? 'corridor' : r.role)} (${r.tiles} tiles)` : '';
 }
+
+/** A target picked on design `shown` as a target in design `edited`, by stable id (a module's id; a room's id): null when it no longer exists there. */
+export function retarget(shown: Design, edited: Design, t: Target | null): Target | null {
+  if (!t || shown === edited) return t;
+  if (t.kind === 'module') {
+    const i = edited.layout.moduleIds.indexOf(shown.layout.moduleIds[t.index] as number);
+    return i >= 0 ? { kind: 'module', index: i } : null;
+  }
+  return (edited.rooms[t.id]?.tiles ?? 0) > 0 ? t : null;
+}

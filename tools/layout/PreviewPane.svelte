@@ -46,12 +46,13 @@
 		return { x: e.clientX - r.left, y: e.clientY - r.top };
 	};
 	function pick(e: MouseEvent) {
-		const d = lab.design;
+		const d = lab.previewDesign;
 		if (!d) return null;
 		const p = local(e);
 		const hit = preview.pick(p.x, p.y);
 		if (!hit) return null;
-		return hit.module !== null ? ({ kind: 'module', index: hit.module } as const) : targetAt(d, hit.x, hit.y);
+		// the pick is on the design the preview shows (the original on the Generated tab): by stable id into the edited one
+		return lab.toEdited(hit.module !== null ? ({ kind: 'module', index: hit.module } as const) : targetAt(d, hit.x, hit.y));
 	}
 	function down(e: PointerEvent) {
 		slot.setPointerCapture(e.pointerId);

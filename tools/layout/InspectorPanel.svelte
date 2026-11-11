@@ -8,7 +8,7 @@
 	import { NAMES } from '../shipgen/labels';
 	import Field from './Field.svelte';
 	import { lab } from './lab.svelte';
-	import { deleteRoom, removeModule, rotateModule, roomRect, setRole, splitRoom } from './layout';
+	import { deleteRoom, removeModule, rotateModule, roomRect, setRole } from './layout';
 	import type { Problem } from './problems';
 
 	const sel = $derived(lab.selected);
@@ -33,8 +33,7 @@
 	function split(axis: 'h' | 'v') {
 		if (sel?.kind !== 'room') return;
 		const id = sel.id;
-		let made: number | null = null;
-		lab.edit((l) => { const r = splitRoom(l, id, axis); made = r ? r.id : null; return r ? r.layout : l; });
+		const made = lab.splitRoomAt(id, axis);
 		if (made !== null) lab.selected = { kind: 'room', id: made };
 	}
 	function remove() {

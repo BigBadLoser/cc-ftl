@@ -7,7 +7,7 @@
 	import { drawGrid, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { addRoom, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
+	import { moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
@@ -224,9 +224,8 @@
 			lab.drag = null;
 			const l = lab.layout;
 			if (r?.ok && l) {
-				const made = addRoom(l, r, lab.role);
-				lab.edit(() => made.layout);
-				lab.select({ kind: 'room', id: made.id });
+				const id = lab.drawRoom(r, lab.role);
+				if (id !== null) lab.select({ kind: 'room', id });
 			}
 		} else if (m?.k === 'move') {
 			const g = lab.ghost;

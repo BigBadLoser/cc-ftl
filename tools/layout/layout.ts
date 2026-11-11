@@ -194,11 +194,22 @@ export function roomRect(l: Layout, id: number): (Rect & { filled: boolean }) | 
   return n ? { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, filled: n === (x1 - x0 + 1) * (y1 - y0 + 1) } : null;
 }
 
-/** A new room of `role` over a rectangle. Returns the layout and the room's id. */
-export function addRoom(l: Layout, r: Rect, role: string): { layout: Layout; id: number } {
+/** The id a new room takes, given the session's high-water mark (outside undoable state, so an undo never lowers it), and the mark after it. */
+export function takeRoomId(l: Layout, mark: number): { id: number; mark: number } {
+  const id = Math.max(l.rooms.length, mark);
+  return { id, mark: id + 1 };
+}
+/** Put a new room at `id`, padding any gap (ids the session handed out and an undo took back) with empty rooms that hold no tiles. */
+function pushRoom(w: Work, id: number, role: string): void {
+  while (w.rooms.length < id) w.rooms.push({ role: 'hall' });
+  w.rooms[id] = { role };
+}
+
+/** A new room of `role` over a rectangle (its id from `takeRoomId`, else the next free). Returns the layout and the room's id. */
+export function addRoom(l: Layout, r: Rect, role: string, roomId?: number): { layout: Layout; id: number } {
   const w = work(l);
-  const id = w.rooms.length;
-  w.rooms.push({ role });
+  const id = roomId ?? w.rooms.length;
+  pushRoom(w, id, role);
   carve(w, r, id);
   return { layout: done(w), id };
 }
@@ -217,12 +228,12 @@ export function resizeRoom(l: Layout, id: number, to: Rect): Layout {
 }
 
 /** Split a room across its middle (`axis` 'h': a wall row, 'v': a wall column) with a door in it; the far half is a new room of the same role. */
-export function splitRoom(l: Layout, id: number, axis: 'h' | 'v'): { layout: Layout; id: number } | null {
+export function splitRoom(l: Layout, id: number, axis: 'h' | 'v', roomId?: number): { layout: Layout; id: number } | null {
   const r = roomRect(l, id);
   if (!r || (axis === 'h' ? r.h < 3 : r.w < 3)) return null;
   const w = work(l);
-  const nid = w.rooms.length;
-  w.rooms.push({ role: l.rooms[id]?.role ?? 'cargo' });
+  const nid = roomId ?? w.rooms.length;
+  pushRoom(w, nid, l.rooms[id]?.role ?? 'cargo');
   const line = axis === 'h' ? r.y + (r.h >> 1) : r.x + (r.w >> 1);
   const wall = new Set<number>();
   for (let y = r.y; y < r.y + r.h; y++) {

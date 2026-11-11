@@ -27,6 +27,7 @@
 		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
 		else if (e.ctrlKey || e.metaKey || e.altKey) return;
 		else if (k === 'c') lab.toggleCompare();
+		else if (lab.compare && k !== 'c' && k !== '0' && k !== 'escape') return;
 		else if (k === 'r') lab.rotate();
 		else if (k === '0') lab.fit();
 		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
