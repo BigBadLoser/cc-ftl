@@ -49,6 +49,14 @@ describe('layout edits', () => {
     const same = paint(strip(0), ring, '_');
     expect(same.roomOf[5 * same.width + 5]).toBe(0);
   });
+  it('floor painted out beside a convex corner frees only hull with no space among its eight neighbours', () => {
+    const { layout, id } = addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'cargo');
+    // the room's east hull is x = 11, y = 4..11; the block covers y = 5..8 beside it
+    const out = paint(layout, rect(12, 5, 4, 4), '_', id);
+    for (const y of [6, 7]) expect(out.cells[y]?.[11]).toBe('_');
+    // (11, 5) and (11, 8) have open space diagonally (12, 4) and (12, 9): they stay hull
+    for (const y of [4, 5, 8, 9]) expect(out.cells[y]?.[11]).toBe('#');
+  });
   it('painting floor never drops a module', () => {
     const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'starter', id: 'ship.wayfarer' });
     const out = paint(layout, rect(36, 7, 7, 7), '_');

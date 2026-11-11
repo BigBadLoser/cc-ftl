@@ -152,7 +152,14 @@ function soleRoom(w: Work, x: number, y: number): number {
  */
 function absorbHull(w: Work, was: ReadonlySet<number>): void {
   const now = hullOf(done(w));
-  const inner = [...was].filter((i) => !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#');
+  // Never one with open space among its eight neighbours: floor there would leak to space through the corner (the game's outline looks at four).
+  const open = (x: number, y: number): boolean => { const c = w.cells[y]?.[x]; return c === undefined || c === '.' || c === '='; };
+  const sealed = (i: number): boolean => {
+    const x = i % w.l.width, y = Math.floor(i / w.l.width);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && open(x + dx, y + dy)) return false;
+    return true;
+  };
+  const inner = [...was].filter((i) => !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#' && sealed(i));
   const rooms = inner.map((i) => soleRoom(w, i % w.l.width, Math.floor(i / w.l.width)));
   inner.forEach((i, k) => set(w, i % w.l.width, Math.floor(i / w.l.width), '_', rooms[k] as number));
 }
