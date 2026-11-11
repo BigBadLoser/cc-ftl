@@ -3,7 +3,7 @@ import { fitRect, fitted, previewView, type Box, type View } from './camera';
 import { designFromLayout, exists, retarget, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, newModule, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
@@ -193,7 +193,7 @@ class Lab {
     if (error) { this.ghost = { def, x, y, rot, error }; return false; }
     const { id, mark } = takeModuleId(l, this.idMark);
     this.idMark = mark;
-    this.edit((cur) => addModule(cur, { def, x, y, rot }, id));
+    this.edit((cur) => addModule(cur, newModule(def, x, y, rot), id));
     this.aim(def, x, y, rot);
     return true;
   }

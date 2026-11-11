@@ -9,7 +9,7 @@ import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, clampAt, removeModule, toTemplate, type Layout } from './layout';
+import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout } from './layout';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -62,8 +62,8 @@ export function placementProblem(l: Layout, def: string, x: number, y: number, r
   const base = ignore === undefined ? l : removeModule(l, ignore);
   if ((content.modules as Record<string, ModuleDef>)[def]?.container) {
     const old = ignore === undefined ? undefined : l.modules[ignore];
-    const clamp = old ? clampAt(old, rot) : undefined; // a moved or turned container keeps its end, turned with it
-    const t = toTemplate(addModule(base, { def, x, y, rot, ...(clamp ? { clamp } : {}) }));
+    // a moved or turned container keeps its end, turned with it; a new one gets the default end for its turn
+    const t = toTemplate(addModule(base, old ? { def, x, y, rot, clamp: clampAt(old, rot) } : newModule(def, x, y, rot)));
     const name = `${def}@${x},${y}:`;
     const own = validateTemplate(t, content.modules as Record<string, ModuleDef>, { immobile: l.immobile }).find((p) => p.startsWith(name));
     return own ? own.slice(name.length).trim() : null;

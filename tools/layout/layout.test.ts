@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { commit, fresh, live, redo, undo } from './history';
 import {
-  addModule, addRoom, deleteRoom, hullOf, moveModule, paint, removeModule, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
+  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
   type Layout, type Tile,
 } from './layout';
 import { designFromLayout, labelSpot } from './design';
@@ -283,5 +283,15 @@ describe('container clamp turns with the module', () => {
     const frame: Layout = { ...lay(), cells: lay().cells.map((r, y) => (y >= 8 && y <= 13 ? `${r.slice(0, 5)}${'='.repeat(10)}#${r.slice(16)}` : r)) };
     expect(placementProblem(frame, 'container.2x4', 6, 9, 1, 0)).toBeNull(); // east end against the hull column
     expect(placementProblem(frame, 'container.2x4', 6, 9, 0, 0)).toBeNull();
+  });
+});
+
+describe('a new container turned before it is placed', () => {
+  const frame = (): Layout => { const l = blank(30, 24); return { ...l, cells: l.cells.map((r, y) => (y >= 8 && y <= 13 ? `${r.slice(0, 5)}${'='.repeat(10)}#${r.slice(16)}` : r)) }; };
+  it('gets the clamp end for its turn, so a quarter-turned container can be placed against the east hull', () => {
+    expect(newModule('container.2x4', 6, 9, 1).clamp).toBe('e');
+    expect(newModule('container.2x4', 6, 9, 3).clamp).toBe('w');
+    expect(newModule('module.chair', 6, 9, 1).clamp).toBeUndefined();
+    expect(placementProblem(frame(), 'container.2x4', 6, 9, 1)).toBeNull();
   });
 });

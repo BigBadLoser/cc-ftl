@@ -280,6 +280,11 @@ export function clampAt(m: TemplateModule, rot: number): TemplateModule['clamp']
   if (!moduleDef(m.def)?.container) return m.clamp;
   return SIDES[(SIDES.indexOf(m.clamp ?? 'n') + (((rot - m.rot) % 4) + 4)) % 4];
 }
+/** A new module of `def` at (x, y) turned to `rot`: a container gets the clamp end its default (north at no turn) has once turned. */
+export function newModule(def: string, x: number, y: number, rot: number): TemplateModule {
+  const clamp = clampAt({ def, x, y, rot: 0 }, rot);
+  return { def, x, y, rot, ...(clamp ? { clamp } : {}) };
+}
 /** Put a module at (x, y) turned to `rot` (a container's clamp turns with it). */
 export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => {
   const m = l.modules[i];
