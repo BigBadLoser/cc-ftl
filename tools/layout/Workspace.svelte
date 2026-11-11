@@ -3,6 +3,8 @@
 	import InspectIcon from '@lucide/svelte/icons/scan-search';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import PaletteIcon from '@lucide/svelte/icons/palette';
+	import NotesIcon from '@lucide/svelte/icons/map-pin';
+	import ChangesIcon from '@lucide/svelte/icons/git-compare';
 	import type { Component } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
@@ -11,13 +13,15 @@
 	import { docks } from './dock.svelte';
 	import FloatWindow from './FloatWindow.svelte';
 	import GridPane from './GridPane.svelte';
+	import ChangesPanel from './ChangesPanel.svelte';
 	import InspectorPanel from './InspectorPanel.svelte';
+	import NotesPanel from './NotesPanel.svelte';
 	import LayersPanel from './LayersPanel.svelte';
 	import PalettePanel from './PalettePanel.svelte';
 	import PanelFrame from './PanelFrame.svelte';
 	import PreviewPane from './PreviewPane.svelte';
 
-	const icons: Record<PanelId, Component> = { palette: PaletteIcon, layers: LayersIcon, inspector: InspectIcon, preview: Eye };
+	const icons: Record<PanelId, Component> = { palette: PaletteIcon, layers: LayersIcon, inspector: InspectIcon, notes: NotesIcon, changes: ChangesIcon, preview: Eye };
 	const s = $derived(docks.state);
 	const left = $derived(dockOpen(s, 'left'));
 	const right = $derived(dockOpen(s, 'right'));
@@ -39,7 +43,7 @@
 </script>
 
 {#snippet body(id: PanelId)}
-	{#if id === 'palette'}<PalettePanel />{:else if id === 'layers'}<LayersPanel />{:else if id === 'inspector'}<InspectorPanel />{:else}<PreviewPane />{/if}
+	{#if id === 'palette'}<PalettePanel />{:else if id === 'layers'}<LayersPanel />{:else if id === 'inspector'}<InspectorPanel />{:else if id === 'notes'}<NotesPanel />{:else if id === 'changes'}<ChangesPanel />{:else}<PreviewPane />{/if}
 {/snippet}
 
 {#snippet railButtons(d: Dock)}

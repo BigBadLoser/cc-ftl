@@ -33,7 +33,7 @@
 		{ id: 'space', label: 'Erase to space (E)', icon: Eraser },
 		{ id: 'room', label: 'Draw a room (G)', icon: SquareDashed },
 		{ id: 'module', label: 'Place a module (M)', icon: Box },
-		{ id: 'note', label: 'Note (a later step)', icon: StickyNote, off: true },
+		{ id: 'note', label: 'Pin a note (N; Alt: free)', icon: StickyNote },
 	];
 	const css = (c: readonly number[]): string => `rgb(${c[0]},${c[1]},${c[2]})`;
 	const defs = Object.entries(content.modules as Record<string, ModuleDef>)

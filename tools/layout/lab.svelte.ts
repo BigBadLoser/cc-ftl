@@ -6,10 +6,15 @@ import { commit, fresh, live, redo, undo, type History } from './history';
 import { contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
-import { DEFAULT_SOURCE, buildLayout, type Source } from './source';
+import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
+import { caseOf, caseSlug, decodeLayout, parseCase, serializeCase, type CaseFile, type Provenance } from './cases';
+import { describeChanges } from './changes';
+import { anchorFor, newPin, rebase, type Pin } from './pins';
 
+/** What generated the designs: the generators have no version, so the commit the dev server runs on. */
+const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'space' | 'room' | 'module';
+export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'space' | 'room' | 'module' | 'note';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
@@ -38,6 +43,15 @@ class Lab {
   gridBox: Box = { w: 900, h: 600 };
   /** The grid pane has reported its real size (the first design is fitted then). */
   sized = false;
+  /** The layout the design started as (what the change list and a saved case compare against), and where it came from. */
+  original = $state.raw<Layout | null>(null);
+  provenance = $state.raw<Provenance | null>(null);
+  /** Plain-language list of what changed since `original`. */
+  changes = $state.raw<string[]>([]);
+  /** The pins, the one being edited (its popover is open on the grid) and the one picked in the list. */
+  pins = $state.raw<readonly Pin[]>([]);
+  openPin = $state<number | null>(null);
+  private nextPin = 1;
   private timer = 0;
 
   get layout(): Layout | null { return this.hist?.present ?? null; }
@@ -47,7 +61,11 @@ class Lab {
   private show(l: Layout): void {
     this.design = designFromLayout(l, this.label);
     clearTimeout(this.timer);
-    this.timer = window.setTimeout(() => { this.problems = problemsOf(l); }, 250);
+    this.pins = rebase(this.pins, l, this.design);
+    this.timer = window.setTimeout(() => {
+      this.problems = problemsOf(l);
+      this.changes = this.original ? describeChanges(this.original, l) : [];
+    }, 250);
   }
 
   import(s: Source): void {
@@ -56,6 +74,11 @@ class Lab {
       this.source = { ...s };
       this.label = label;
       this.hist = fresh(layout);
+      this.original = layout;
+      this.provenance = { ...s, spec: specOf(s), generator: GENERATOR };
+      this.pins = [];
+      this.openPin = null;
+      this.changes = [];
       this.show(layout);
       this.error = '';
       this.hover = this.selected = null;
@@ -154,5 +177,78 @@ class Lab {
     const g = this.ghost;
     return g ? moduleTiles({ def: g.def, x: g.x, y: g.y, rot: g.rot }) : [];
   }
+
+  // --- pins ---
+  /** Drop a note at a position in the grid (tile units); `free` skips attaching it to what is there. */
+  addPin(fx: number, fy: number, free: boolean): void {
+    const l = this.layout, d = this.design;
+    if (!l || !d) return;
+    const pin = newPin(this.nextPin++, '', fx, fy, anchorFor(l, d, fx, fy, free), l, d);
+    this.pins = [...this.pins, pin];
+    this.openPin = pin.id;
+  }
+  setPinText(id: number, text: string): void {
+    this.pins = this.pins.map((p) => (p.id === id ? { ...p, text } : p));
+  }
+  removePin(id: number): void {
+    this.pins = this.pins.filter((p) => p.id !== id);
+    if (this.openPin === id) this.openPin = null;
+  }
+  /** Centre both panes on a pin and open its note on the grid. */
+  focusPin(id: number): void {
+    const p = this.pins.find((x) => x.id === id);
+    if (!p) return;
+    this.view = { ...this.view, cx: p.x, cy: p.y };
+    this.openPin = id;
+  }
+
+  // --- feedback cases ---
+  /** The case as it would be saved now. */
+  caseFile(name: string): CaseFile | null {
+    const { original, layout, provenance } = this;
+    if (!original || !layout || !provenance) return null;
+    return caseOf(name, provenance, original, layout, this.pins, describeChanges(original, layout));
+  }
+  /** Where a case with this name would be written (repo-relative). */
+  casePath(name: string): string {
+    return this.provenance ? `tools/layout/cases/${caseSlug(this.provenance, name)}.json` : '';
+  }
+  /** Save through the dev server; returns the repo-relative path. */
+  async saveCase(name: string): Promise<string> {
+    const file = this.caseFile(name);
+    if (!file || !this.provenance) throw new Error('nothing to save');
+    const res = await fetch(`/__layout/cases/${caseSlug(this.provenance, name)}`, { method: 'POST', body: serializeCase(file) });
+    const body = (await res.json()) as { path?: string; error?: string };
+    if (!res.ok || !body.path) throw new Error(body.error ?? `save failed (${res.status})`);
+    return body.path;
+  }
+  async listCases(): Promise<string[]> {
+    const res = await fetch('/__layout/cases');
+    return res.ok ? ((await res.json()) as string[]) : [];
+  }
+  async loadCaseNamed(slug: string): Promise<void> {
+    const res = await fetch(`/__layout/cases/${slug}`);
+    if (!res.ok) throw new Error(`no case ${slug}`);
+    this.loadCase(parseCase(await res.text()));
+  }
+  /** Open a case: its original and its edited design, with the notes. */
+  loadCase(c: CaseFile): void {
+    const original = decodeLayout(c.original), edited = decodeLayout(c.edited);
+    this.source = { ...DEFAULT_SOURCE, ...c.source };
+    this.label = `${c.name} (case)`;
+    this.original = original;
+    this.provenance = c.source;
+    this.hist = fresh(edited);
+    this.pins = c.notes;
+    this.nextPin = Math.max(0, ...c.notes.map((p) => p.id)) + 1;
+    this.openPin = null;
+    this.hover = this.selected = null;
+    this.flag = [];
+    this.ghost = this.drag = null;
+    this.show(edited);
+    this.view = fitted(edited.width, edited.height, dpr(), this.gridBox);
+    if (this.sized) this.fit();
+  }
 }
+
 export const lab = new Lab();

@@ -4,6 +4,7 @@
 	import { sameTarget, targetAt, tilesOf } from './design';
 	import { drawGrid, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
+	import PinMarkers from './PinMarkers.svelte';
 	import { addModule, addRoom, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
@@ -117,6 +118,9 @@
 			const first = room();
 			lab.step(() => paint(l, [tile], ch, first));
 			mode = { k: 'paint', last: tile, ch, base: l, tiles: [tile], room: first };
+		} else if (tool === 'note') {
+			// a note goes where the pointer is (Alt: free, not attached to what is there)
+			lab.addPin(fx, fy, e.altKey);
 		} else if (tool === 'room') {
 			mode = { k: 'room', a: tile };
 			lab.drag = { x: tile[0], y: tile[1], w: 1, h: 1, ok: false };
@@ -229,5 +233,6 @@
 		onpointerup={up}
 		onpointerleave={cancel}
 	></canvas>
+	<PinMarkers space="grid" {box} />
 	<div class="pointer-events-none absolute top-2 left-3 text-xs tracking-wide text-muted-foreground uppercase">Grid{lab.design ? ` · ${lab.design.label}` : ''}</div>
 </div>

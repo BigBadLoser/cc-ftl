@@ -10,7 +10,7 @@ import { buildLayout, DEFAULT_SOURCE } from './source';
 import { placementProblem } from './world';
 
 const blank = (w = 24, h = 18): Layout => ({
-  name: 'test', width: w, height: h, cells: Array.from({ length: h }, () => '.'.repeat(w)), roomOf: new Array<number>(w * h).fill(-1), rooms: [], modules: [], extra: {}, immobile: true,
+  name: 'test', width: w, height: h, cells: Array.from({ length: h }, () => '.'.repeat(w)), roomOf: new Array<number>(w * h).fill(-1), rooms: [], modules: [], moduleIds: [], nextModuleId: 0, extra: {}, immobile: true,
 });
 const rect = (x: number, y: number, w: number, h: number): Tile[] => { const t: Tile[] = []; for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) t.push([i, j]); return t; };
 const rows = (l: Layout): string[] => toTemplate(l).rows;

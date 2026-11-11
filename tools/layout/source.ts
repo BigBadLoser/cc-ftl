@@ -9,10 +9,10 @@ import { factionIds, gen, stationIds } from '../shipgen/draw';
 import { templateResult } from '../shipgen/templates';
 import { layoutOfGen, type Layout } from './layout';
 
-export type SourceKind = 'faction' | 'station' | 'starter';
+export type SourceKind = 'faction' | 'station' | 'starter' | 'blank';
 export interface Source {
   kind: SourceKind;
-  /** faction: `faction.navy`; station: `station.trading`; starter: its template id. */
+  /** faction: `faction.navy`; station: `station.trading`; starter: its template id; blank: ''. */
   id: string;
   /** Faction hull family ('' any). */
   family: string;
@@ -43,12 +43,19 @@ export function layoutsOf(station: string, size: string): string[] {
 
 /** The generator spec string (what `tools/shipgen/cli.js` takes) for a source. */
 export function specOf(s: Source): string {
+  if (s.kind === 'blank') return '';
   if (s.kind === 'faction') return `${s.id}${s.family ? `:${s.family}` : ''}`;
   if (s.kind === 'station') return `${s.id}:${s.size}${s.layout ? `@${s.layout}` : ''}`;
   return s.id;
 }
 
+/** A blank grid: open space to draw on. */
+export function blankLayout(w = 48, h = 36): Layout {
+  return { name: 'Blank', width: w, height: h, cells: Array.from({ length: h }, () => '.'.repeat(w)), roomOf: new Array<number>(w * h).fill(-1), rooms: [], modules: [], moduleIds: [], nextModuleId: 0, extra: {}, immobile: true };
+}
+
 export function buildLayout(s: Source): { layout: Layout; label: string } {
+  if (s.kind === 'blank') return { layout: blankLayout(), label: 'Blank grid' };
   if (s.kind === 'starter') {
     const st = starterShips.find((x) => x.id === s.id) ?? (starterShips[0] as (typeof starterShips)[number]);
     return { layout: layoutOfGen(templateResult(st.name, st.template), st.name, false), label: `${st.name} (starter)` };

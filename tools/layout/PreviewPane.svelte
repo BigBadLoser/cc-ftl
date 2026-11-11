@@ -5,9 +5,10 @@
 	import { lab, dpr } from './lab.svelte';
 	import { preview } from './previewHost';
 	import { targetAt, tilesOf } from './design';
+	import PinMarkers from './PinMarkers.svelte';
 
 	let slot: HTMLDivElement;
-	let box: Box = { w: 400, h: 300 };
+	let box = $state<Box>({ w: 400, h: 300 });
 	let drag: { x: number; y: number; moved: boolean } | null = null;
 
 	onMount(() => {
@@ -80,13 +81,16 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-	bind:this={slot}
-	class="size-full cursor-grab touch-none bg-black active:cursor-grabbing"
-	{@attach onWheel(wheel)}
-	onpointerdown={down}
-	onpointermove={move}
-	onpointerup={up}
-	onpointerleave={() => lab.setHover(null)}
-></div>
+<div class="relative size-full">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		bind:this={slot}
+		class="size-full cursor-grab touch-none bg-black active:cursor-grabbing"
+		{@attach onWheel(wheel)}
+		onpointerdown={down}
+		onpointermove={move}
+		onpointerup={up}
+		onpointerleave={() => lab.setHover(null)}
+	></div>
+	<PinMarkers space="iso" {box} />
+</div>

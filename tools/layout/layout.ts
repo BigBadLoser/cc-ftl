@@ -19,6 +19,10 @@ export interface Layout {
   /** Rooms by id; the role is a RoomRole id ('cargo', 'hall' for a corridor...). */
   rooms: { role: string }[];
   modules: TemplateModule[];
+  /** A stable id per module (parallel to `modules`): a pin follows a module by it through moves, turns and the removal of others. */
+  moduleIds: number[];
+  /** The next module id to hand out (ids are never reused, so a pin on a removed module stays orphaned). */
+  nextModuleId: number;
   /** The rest of the template (crew, faction, boarding...), carried through unchanged. */
   extra: Omit<ShipTemplate, 'name' | 'rows' | 'modules'>;
   /** Stations are immobile: the engine check is off. */
@@ -53,7 +57,7 @@ export function layoutOfGen(g: GenResult, name: string, immobile: boolean): Layo
   delete (extra as Partial<ShipTemplate>).modules;
   return {
     name, width, height, cells, roomOf, rooms: g.rooms.map((r) => ({ role: String(r.role) })),
-    modules: (modules ?? []).map((m) => ({ ...m, x: m.x + PAD, y: m.y + PAD })), extra, immobile,
+    modules: (modules ?? []).map((m) => ({ ...m, x: m.x + PAD, y: m.y + PAD })), moduleIds: (modules ?? []).map((_, i) => i), nextModuleId: (modules ?? []).length, extra, immobile,
   };
 }
 
@@ -88,9 +92,9 @@ export function toTemplate(l: Layout): ShipTemplate {
 
 // --- edits -------------------------------------------------------------------------------------------------------
 
-interface Work { l: Layout; cells: string[][]; roomOf: number[]; modules: TemplateModule[]; rooms: { role: string }[] }
-const work = (l: Layout): Work => ({ l, cells: l.cells.map((r) => [...r]), roomOf: [...l.roomOf], modules: l.modules.map((m) => ({ ...m })), rooms: l.rooms.map((r) => ({ ...r })) });
-const done = (w: Work): Layout => ({ ...w.l, cells: w.cells.map((r) => r.join('')), roomOf: w.roomOf, modules: w.modules, rooms: w.rooms });
+interface Work { l: Layout; cells: string[][]; roomOf: number[]; modules: TemplateModule[]; ids: number[]; rooms: { role: string }[] }
+const work = (l: Layout): Work => ({ l, cells: l.cells.map((r) => [...r]), roomOf: [...l.roomOf], modules: l.modules.map((m) => ({ ...m })), ids: [...l.moduleIds], rooms: l.rooms.map((r) => ({ ...r })) });
+const done = (w: Work): Layout => ({ ...w.l, cells: w.cells.map((r) => r.join('')), roomOf: w.roomOf, modules: w.modules, moduleIds: w.ids, rooms: w.rooms });
 const idx = (l: Layout, x: number, y: number): number => y * l.width + x;
 
 export function moduleTiles(m: TemplateModule): Tile[] {
@@ -98,7 +102,9 @@ export function moduleTiles(m: TemplateModule): Tile[] {
   return def ? footprintTiles(def, m.x, m.y, m.rot).map((t): Tile => [t.x, t.y]) : [[m.x, m.y]];
 }
 const dropModulesOn = (w: Work, hit: (x: number, y: number) => boolean): void => {
-  w.modules = w.modules.filter((m) => !moduleTiles(m).some(([x, y]) => hit(x, y)));
+  const keep = w.modules.map((m) => !moduleTiles(m).some(([x, y]) => hit(x, y)));
+  w.modules = w.modules.filter((_, i) => keep[i]);
+  w.ids = w.ids.filter((_, i) => keep[i]);
 };
 const set = (w: Work, x: number, y: number, ch: string, room: number): void => {
   if (!inBounds(w.l, x, y)) return;
@@ -244,9 +250,9 @@ export function deleteRoom(l: Layout, id: number): Layout {
   return done(w);
 }
 
-export const addModule = (l: Layout, m: TemplateModule): Layout => ({ ...l, modules: [...l.modules, m] });
+export const addModule = (l: Layout, m: TemplateModule): Layout => ({ ...l, modules: [...l.modules, m], moduleIds: [...l.moduleIds, l.nextModuleId], nextModuleId: l.nextModuleId + 1 });
 export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => (l.modules[i] ? { ...l, modules: l.modules.map((m, k) => (k === i ? { ...m, x, y, rot } : m)) } : l);
-export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i) });
+export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i), moduleIds: l.moduleIds.filter((_, k) => k !== i) });
 /** Rotate a module a quarter turn about its top-left tile. */
 export const rotateModule = (l: Layout, i: number): Layout => { const m = l.modules[i]; return m ? moveModule(l, i, m.x, m.y, (m.rot + 1) % 4) : l; };
 

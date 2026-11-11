@@ -12,11 +12,12 @@
 	import { describe } from './design';
 	import { docks } from './dock.svelte';
 	import { lab, type Tool } from './lab.svelte';
+	import SaveCase from './SaveCase.svelte';
 	import SourcePicker from './SourcePicker.svelte';
 	import Workspace from './Workspace.svelte';
 
 	let open = $state(false);
-	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', e: 'space', g: 'room', m: 'module' };
+	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', e: 'space', g: 'room', m: 'module', n: 'note' };
 	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
 	function keys(e: KeyboardEvent) {
 		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;
@@ -61,6 +62,7 @@
 				</Popover.Trigger>
 				<Popover.Content align="end" class="w-auto"><SourcePicker done={() => (open = false)} /></Popover.Content>
 			</Popover.Root>
+			<SaveCase />
 			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
 			<Tooltip.Root>
