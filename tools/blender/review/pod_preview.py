@@ -37,17 +37,20 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "v3": ("V3  octagon", 2, (0.0, 0.0, 2, "idle", 24)),
      "w1": ("W1  plinth", 2, (0.0, 0.0, 2, "idle", 25)),
      "w2": ("W2  ribbed", 2, (0.0, 0.0, 2, "idle", 25)),
-     "w3": ("W3  octagon", 2, (0.0, 0.0, 2, "idle", 25))}
+     "w3": ("W3  octagon", 2, (0.0, 0.0, 2, "idle", 25)),
+     "x1": ("X1  plinth", 2, (0.0, 0.0, 2, "idle", 34)),
+     "x2": ("X2  spine", 2, (0.0, 0.0, 2, "idle", 34)),
+     "x3": ("X3  octagon", 2, (0.0, 0.0, 2, "idle", 34))}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "w1,w2,w3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "x1,x2,x3").split(",")
     out.mkdir(parents=True, exist_ok=True)
-    cv = Canvas(240 * len(names), 300)
+    cv = Canvas(240 * len(names), 320)
     for i, v in enumerate(names):
         label, n, (u, vv, dr, clip, lift) = D[v]
-        ox, oy = 120 + i * 240, 210
+        ox, oy = 120 + i * 240, 230
         for gx in range(-1, n + 1):
             for gy in range(-1, n + 1):
                 cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
@@ -55,20 +58,20 @@ def main():
         cv.static(G, f"module.pod.{v}", sx, sy)
         h = (n - 1) / 2
         px, py = iso(ox, oy, u - h, vv - h)
-        cv.char(human(pub, dr, clip, 0), round(px) - (3 if dr == 2 else 0), round(py) - lift)
+        cv.char(human(pub, dr, clip, 0), round(px) - (3 if dr == 2 and n == 1 else 0), round(py) - lift)
         img, g, an = G.static(f"module.pod.{v}.glass")
         img = img.copy()
         img[..., 3] = (img[..., 3] * GLASS_A).astype(img.dtype)
         cv.put(img, None, sx - an["x"], sy - an["y"])
         cv.static(G, f"module.pod.{v}.front", sx, sy)
-        cv.labels.append((ox - 60, 285, label))
+        cv.labels.append((ox - 60, 305, label))
     for s in (1, 3):
         cv.save(out / f"pod-{s}x.png", s)
     im = Image.open(out / "pod-1x.png")
     z = Image.new("RGB", (len(names) * 400, 400), (12, 14, 20))
     for i in range(len(names)):
         ox = 120 + i * 240
-        z.paste(im.crop((ox - 100, 30, ox + 100, 230)).resize((400, 400), Image.NEAREST), (i * 400, 0))
+        z.paste(im.crop((ox - 100, 40, ox + 100, 240)).resize((400, 400), Image.NEAREST), (i * 400, 0))
     z.save(out / "pod-zoom.png")
     print("wrote", out)
 
