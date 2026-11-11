@@ -9,7 +9,7 @@ import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { addModule, removeModule, toTemplate, type Layout } from './layout';
+import { addModule, clampAt, removeModule, toTemplate, type Layout } from './layout';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -53,15 +53,16 @@ export function worldOf(l: Layout): World | null {
 }
 
 /**
- * Why a module cannot stand at (x, y, rot) in this layout; null when it can. `ignore`: a module being moved (set aside; it keeps its clamp unless `clampSide` says otherwise).
+ * Why a module cannot stand at (x, y, rot) in this layout; null when it can. `ignore`: a module being moved (set aside; it keeps its clamp end, turned with it).
  * Ordinary modules go through the game's build check (`placementError`). Containers stand on the frame (Beam tiles), clamped by a short end,
  * which that check does not know: the game's template validator (`validateTemplate`) owns those rules, so the candidate is put into the
  * template and the validator's problems that name it are the answer.
  */
-export function placementProblem(l: Layout, def: string, x: number, y: number, rot: number, ignore?: number, clampSide?: 'n' | 'e' | 's' | 'w'): string | null {
+export function placementProblem(l: Layout, def: string, x: number, y: number, rot: number, ignore?: number): string | null {
   const base = ignore === undefined ? l : removeModule(l, ignore);
   if ((content.modules as Record<string, ModuleDef>)[def]?.container) {
-    const clamp = clampSide ?? (ignore === undefined ? undefined : l.modules[ignore]?.clamp);
+    const old = ignore === undefined ? undefined : l.modules[ignore];
+    const clamp = old ? clampAt(old, rot) : undefined; // a moved or turned container keeps its end, turned with it
     const t = toTemplate(addModule(base, { def, x, y, rot, ...(clamp ? { clamp } : {}) }));
     const name = `${def}@${x},${y}:`;
     const own = validateTemplate(t, content.modules as Record<string, ModuleDef>, { immobile: l.immobile }).find((p) => p.startsWith(name));

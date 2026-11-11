@@ -271,3 +271,17 @@ describe('placement of containers', () => {
     expect(placementProblem(l, 'container.2x4', 20, 9, 0)).not.toBeNull();
   });
 });
+
+describe('container clamp turns with the module', () => {
+  const lay = (): Layout => addModule(blank(30, 24), { def: 'container.2x4', x: 6, y: 9, rot: 0 });
+  it('a quarter turn and a drag-turn both turn the clamp side', () => {
+    expect(rotateModule(lay(), 0).modules[0]?.clamp).toBe('e');
+    expect(moveModule(lay(), 0, 6, 9, 2).modules[0]?.clamp).toBe('s');
+    expect(moveModule(addModule(blank(), { def: 'module.chair', x: 3, y: 3, rot: 0 }), 0, 3, 3, 1).modules[0]?.clamp).toBeUndefined();
+  });
+  it('the placement candidate for a turned container uses the turned clamp', () => {
+    const frame: Layout = { ...lay(), cells: lay().cells.map((r, y) => (y >= 8 && y <= 13 ? `${r.slice(0, 5)}${'='.repeat(10)}#${r.slice(16)}` : r)) };
+    expect(placementProblem(frame, 'container.2x4', 6, 9, 1, 0)).toBeNull(); // east end against the hull column
+    expect(placementProblem(frame, 'container.2x4', 6, 9, 0, 0)).toBeNull();
+  });
+});

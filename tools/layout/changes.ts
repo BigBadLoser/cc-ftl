@@ -6,6 +6,7 @@ import { content } from '../../src/content';
 import type { ModuleDef } from '../../src/sim';
 import { isLamp, moduleCode, NAMES } from '../shipgen/labels';
 import { moduleTiles, roomRect, type Layout, type Tile, type TemplateModule } from './layout';
+import { kindOf, type Kind } from './tileKinds';
 
 /** One line of the change list and the tiles it is about (to centre on and flash). */
 export interface Change { text: string; tiles: Tile[] }
@@ -49,19 +50,6 @@ export function whereIs(tiles: readonly [number, number][], rooms: readonly Room
   return `${dir} of ${called(best, rooms)}`;
 }
 
-type Kind = 'floor added' | 'floor removed' | 'wall added' | 'wall removed' | 'floor to wall' | 'wall to floor' | 'door added' | 'door removed';
-function kindOf(a: string, b: string): Kind | null {
-  if (a === b || a === '=' || b === '=') return null;
-  if (b === 'D') return 'door added';
-  if (a === 'D') return 'door removed';
-  if (a === '.' && b === '_') return 'floor added';
-  if (a === '_' && b === '.') return 'floor removed';
-  if (a === '.' && b === '#') return 'wall added';
-  if (a === '#' && b === '.') return 'wall removed';
-  if (a === '_' && b === '#') return 'floor to wall';
-  if (a === '#' && b === '_') return 'wall to floor';
-  return null;
-}
 const plural = (n: number, one: string, many = `${one}s`): string => `${n} ${n === 1 ? one : many}`;
 function sentence(kind: Kind, tiles: [number, number][], where: string): string {
   const n = tiles.length;
@@ -74,7 +62,13 @@ function sentence(kind: Kind, tiles: [number, number][], where: string): string 
     case 'wall added': return `Added ${plural(n, 'wall tile')} ${where}`;
     case 'wall removed': return `Removed ${plural(n, 'wall tile')} ${where}`;
     case 'floor to wall': return `Turned ${plural(n, 'floor tile')} into wall ${where}`;
-    default: return `Turned ${plural(n, 'wall tile')} into floor ${where}`;
+    case 'wall to floor': return `Turned ${plural(n, 'wall tile')} into floor ${where}`;
+    case 'beam added': return `Added ${plural(n, 'beam tile')} ${where}`;
+    case 'beam removed': return `Removed ${plural(n, 'beam tile')} ${where}`;
+    case 'beam to floor': return `Turned ${plural(n, 'beam tile')} into floor ${where}`;
+    case 'beam to wall': return `Turned ${plural(n, 'beam tile')} into wall ${where}`;
+    case 'floor to beam': return `Turned ${plural(n, 'floor tile')} into beam ${where}`;
+    default: return `Turned ${plural(n, 'wall tile')} into beam ${where}`;
   }
 }
 

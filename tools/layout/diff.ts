@@ -2,6 +2,7 @@
  * What differs between the original layout and the edited one, as data the compare view draws: tiles added, removed or changed,
  * modules added, removed or moved (matched by their stable id), and rooms added, removed or retyped.
  */
+import { kindOf, overlayKind } from './tileKinds';
 import { moduleTiles, type Layout, type TemplateModule, type Tile } from './layout';
 
 export type TileKind = 'added' | 'removed' | 'changed';
@@ -16,24 +17,14 @@ export interface ModuleDiff {
 export interface RoomDiff { kind: 'added' | 'removed' | 'retyped'; id: number; from?: string; to?: string }
 export interface Diff { tiles: TileDiff[]; modules: ModuleDiff[]; rooms: RoomDiff[] }
 
-/** 'added' where open space became something (or a door appeared), 'removed' where something became space (or a door went), 'changed' for floor, wall or door swapped. */
-function tileKind(a: string, b: string): TileKind | null {
-  if (a === b || a === '=' || b === '=') return null;
-  if (b === 'D') return 'added';
-  if (a === 'D') return 'removed';
-  if (a === '.') return 'added';
-  if (b === '.') return 'removed';
-  return 'changed';
-}
-
 const hasFloor = (l: Layout, id: number): boolean => l.roomOf.some((r, i) => r === id && l.cells[Math.floor(i / l.width)]?.[i % l.width] === '_');
 
 export function diffLayouts(a: Layout, b: Layout): Diff {
   const tiles: TileDiff[] = [];
   for (let y = 0; y < Math.min(a.height, b.height); y++) {
     for (let x = 0; x < Math.min(a.width, b.width); x++) {
-      const kind = tileKind(a.cells[y]?.[x] ?? '.', b.cells[y]?.[x] ?? '.');
-      if (kind) tiles.push({ x, y, kind });
+      const k = kindOf(a.cells[y]?.[x] ?? '.', b.cells[y]?.[x] ?? '.');
+      if (k) tiles.push({ x, y, kind: overlayKind(k) });
     }
   }
   const modules: ModuleDiff[] = [];

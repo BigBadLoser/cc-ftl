@@ -63,3 +63,15 @@ describe('change list', () => {
     expect(describeChanges(l, paint(l, rect(30, 30, 2, 2), '_'))).toEqual(['Added 4 floor tiles around (31,31)']);
   });
 });
+
+describe('beam edits', () => {
+  const withBeam = (l: Layout, x: number, y: number, ch: string): Layout => ({ ...l, cells: l.cells.map((r, j) => (j === y ? `${r.slice(0, x)}${ch}${r.slice(x + 1)}` : r)) });
+  it('are listed: added, removed and turned into floor or wall', () => {
+    const { l } = two();
+    const beam = withBeam(l, 30, 5, '=');
+    expect(describeChanges(l, beam)[0]).toMatch(/^Added 1 beam tile/);
+    expect(describeChanges(beam, l)[0]).toMatch(/^Removed 1 beam tile/);
+    expect(describeChanges(beam, withBeam(l, 30, 5, '_'))[0]).toMatch(/^Turned 1 beam tile into floor/);
+    expect(describeChanges(beam, withBeam(l, 30, 5, '#'))[0]).toMatch(/^Turned 1 beam tile into wall/);
+  });
+});

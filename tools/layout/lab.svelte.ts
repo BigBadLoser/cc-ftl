@@ -237,7 +237,7 @@ class Lab {
     const i = moduleIndex(l, s.id), m = l.modules[i];
     if (!m) return;
     const rot = (m.rot + 1) % 4;
-    if (placementProblem(l, m.def, m.x, m.y, rot, i, rotateModule(l, i).modules[i]?.clamp)) return;
+    if (placementProblem(l, m.def, m.x, m.y, rot, i)) return;
     this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? rotateModule(cur, k) : cur; });
   }
   ghostTiles(): Tile[] {

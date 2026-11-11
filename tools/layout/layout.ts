@@ -271,20 +271,25 @@ export function takeModuleId(l: Layout, mark: number): { id: number; mark: numbe
 }
 /** Add a module with `id` (from `takeModuleId`; by default the layout's own next id). */
 export const addModule = (l: Layout, m: TemplateModule, id: number = l.nextModuleId): Layout => ({ ...l, modules: [...l.modules, m], moduleIds: [...l.moduleIds, id], nextModuleId: Math.max(l.nextModuleId, id + 1) });
-export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => (l.modules[i] ? { ...l, modules: l.modules.map((m, k) => (k === i ? { ...m, x, y, rot } : m)) } : l);
+const SIDES = ['n', 'e', 's', 'w'] as const;
+/**
+ * A container's clamp side once the module stands at turn `rot`: the side turns with it (a side is named in the ship's frame and rotates with
+ * the module, as the game's hullSide does), so a turned container stays clamped by the same end. Other modules have none (undefined).
+ */
+export function clampAt(m: TemplateModule, rot: number): TemplateModule['clamp'] {
+  if (!moduleDef(m.def)?.container) return m.clamp;
+  return SIDES[(SIDES.indexOf(m.clamp ?? 'n') + (((rot - m.rot) % 4) + 4)) % 4];
+}
+/** Put a module at (x, y) turned to `rot` (a container's clamp turns with it). */
+export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => {
+  const m = l.modules[i];
+  if (!m) return l;
+  const clamp = clampAt(m, rot);
+  return { ...l, modules: l.modules.map((t, k) => (k === i ? { ...t, x, y, rot, ...(clamp ? { clamp } : {}) } : t)) };
+};
 /** The current index of the module with this stable id, or -1 when it no longer exists. */
 export const moduleIndex = (l: Layout, id: number): number => l.moduleIds.indexOf(id);
 export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i), moduleIds: l.moduleIds.filter((_, k) => k !== i) });
 /** Rotate a module a quarter turn about its top-left tile. */
-const SIDES = ['n', 'e', 's', 'w'] as const;
-/** A quarter turn. A container's clamp side turns with it (a side is named in the ship's frame and rotates with the module, as the game's hullSide does), so a turned container stays clamped by the same end. */
-export const rotateModule = (l: Layout, i: number): Layout => {
-  const m = l.modules[i];
-  if (!m) return l;
-  const turned = moveModule(l, i, m.x, m.y, (m.rot + 1) % 4);
-  if (!moduleDef(m.def)?.container) return turned;
-  const clamp = SIDES[(SIDES.indexOf(m.clamp ?? 'n') + 1) % 4];
-  return { ...turned, modules: turned.modules.map((t, k) => (k === i ? { ...t, clamp } : t)) };
-};
-
+export const rotateModule = (l: Layout, i: number): Layout => { const m = l.modules[i]; return m ? moveModule(l, i, m.x, m.y, (m.rot + 1) % 4) : l; };
 export const moduleDef = (id: string): ModuleDef | undefined => defs[id];

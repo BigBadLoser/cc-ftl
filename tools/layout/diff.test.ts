@@ -48,3 +48,15 @@ describe('diff classification', () => {
     expect(centre({ def: 'module.console', x: 7, y: 7, rot: 0 })).toEqual([7, 7]);
   });
 });
+
+describe('beam edits', () => {
+  const withBeam = (l: Layout, x: number, y: number, ch: string): Layout => ({ ...l, cells: l.cells.map((r, j) => (j === y ? `${r.slice(0, x)}${ch}${r.slice(x + 1)}` : r)) });
+  it('painting or erasing a beam shows in the overlay', () => {
+    const { l } = base();
+    const beam = withBeam(l, 20, 20, '=');
+    expect(diffLayouts(l, beam).tiles).toEqual([{ x: 20, y: 20, kind: 'added' }]);
+    expect(diffLayouts(beam, l).tiles).toEqual([{ x: 20, y: 20, kind: 'removed' }]);
+    expect(diffLayouts(beam, withBeam(l, 20, 20, '_')).tiles).toEqual([{ x: 20, y: 20, kind: 'changed' }]);
+    expect(diffLayouts(beam, withBeam(l, 20, 20, '#')).tiles).toEqual([{ x: 20, y: 20, kind: 'changed' }]);
+  });
+});
