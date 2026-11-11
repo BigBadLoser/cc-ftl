@@ -79,7 +79,17 @@ function frontage(b: Builder, run: Rect, dir: 'e' | 'w' | 'n' | 's', side: -1 | 
     if (!fits) { if (at + span - 1 > end) break; i++; continue; }
     const part = b.place(rect, spec.role, spec);
     if (!part) { i++; continue; }
-    b.door(run, part);
+    // Frontage means a door onto the hall: a room that cannot be doored is taken back out rather than left sealed.
+    if (!b.door(run, part)) {
+      // Take the room back out, the wall it shares with the hall left alone.
+      const keepRow = horiz ? (side < 0 ? rect.y + rect.h - 1 : rect.y) : -1;
+      const keepCol = horiz ? -1 : side < 0 ? rect.x + rect.w - 1 : rect.x;
+      for (let y = rect.y; y < rect.y + rect.h; y++) {
+        for (let x = rect.x; x < rect.x + rect.w; x++) if (y !== keepRow && x !== keepCol) b.cv.put(x, y, '.');
+      }
+      i++;
+      continue;
+    }
     queue.splice(i, 1);
     at += span;
   }
