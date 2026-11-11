@@ -266,6 +266,63 @@ const DECK_TILES = 80;
 /** A deck gets a bay per this many tiles of floor, up to DECK_BAYS (and at least the planned bays it takes over). */
 const DECK_SHARE = 150;
 const DECK_BAYS = 4;
+/**
+ * Courts above this many tiles are cut into halls: a single open room that large reads as an empty void rather than a
+ * concourse. The cut is a straight wall through the middle of the longer axis, leaving at least COURT_MIN_PART tiles on
+ * each side; the pieces become courts of their own and the wall gets doors once they are stamped, so both halves stay on
+ * circulation and every piece keeps its own doors, frontage and furniture.
+ */
+const COURT_MAX = 450;
+const COURT_MIN_PART = 80;
+
+/** The pieces a court is cut into, and the wall tiles that separate them (4-neighbour pieces of what is left). */
+function splitCourt(cells: number[], S: number): { parts: number[][]; walls: number[] } {
+  const parts = [cells];
+  const walls: number[] = [];
+  const pieces = (tiles: number[]): number[][] => {
+    const inSet = new Set(tiles);
+    const seen = new Set<number>();
+    const out: number[][] = [];
+    for (const k of tiles) {
+      if (seen.has(k)) continue;
+      const comp = [k];
+      seen.add(k);
+      for (let i = 0; i < comp.length; i++) {
+        const c = comp[i] as number;
+        for (const j of [c + 1, c - 1, c + S, c - S]) if (inSet.has(j) && !seen.has(j)) { seen.add(j); comp.push(j); }
+      }
+      out.push(comp);
+    }
+    return out;
+  };
+  for (let guard = 0; guard < 8; guard++) {
+    const i = parts.findIndex((p) => p.length > COURT_MAX);
+    if (i < 0) break;
+    const part = parts[i] as number[];
+    const xs = part.map((k) => k % S);
+    const ys = part.map((k) => Math.floor(k / S));
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const alongX = x1 - x0 >= y1 - y0;
+    const lo = alongX ? x0 : y0;
+    const hi = alongX ? x1 : y1;
+    const pos = (k: number): number => (alongX ? k % S : Math.floor(k / S));
+    let best: { line: number[]; rest: number[][]; spread: number } | undefined;
+    for (let c = lo + Math.floor((hi - lo) / 4); c <= hi - Math.floor((hi - lo) / 4); c++) {
+      const line = part.filter((k) => pos(k) === c);
+      if (line.length === 0) continue;
+      const onLine = new Set(line);
+      const rest = pieces(part.filter((k) => !onLine.has(k)));
+      const sizes = rest.map((r) => r.length);
+      if (sizes.length < 2 || sizes.some((s) => s < COURT_MIN_PART)) continue;
+      const spread = Math.max(...sizes) - Math.min(...sizes);
+      if (!best || spread < best.spread) best = { line, rest, spread };
+    }
+    if (!best) break;
+    walls.push(...best.line);
+    parts.splice(i, 1, ...best.rest);
+  }
+  return { parts, walls };
+}
 
 /**
  * A hangar deck of `tiles` floor: the court takes over the block's planned hangars (as many as fit), their bays move
@@ -353,46 +410,73 @@ export function courtyards(b: Builder, rng: Rng, role: RoomRole, o: CourtOpts = 
     {
       // Big pockets get a band of rooms round their inside edge; the court is what is left in the middle.
       const cells = pocket.length >= (packed ? PACKED_MIN : BAND_MIN) && bandRoles.length > 0 ? band(b, pocket, bandRoles, packed, halls, `court${n}`) : pocket;
-      // The first court big enough for a bay may be the hangar deck.
-      const key = `court${n}`;
-      const bays = o.deck && b.parts.some((p) => p.role === 'hangar') && cells.length >= DECK_TILES;
-      const letter = bays ? letterOf('hangar') : courtLetter;
-      // Stamp the pocket as floor: its walls are the ones already round it.
-      const xs = cells.map((k) => (k % S) - off);
-      const ys = cells.map((k) => Math.floor(k / S) - off);
-      const bx = Math.min(...xs), by = Math.min(...ys);
-      const rows = Array.from({ length: Math.max(...ys) - by + 1 }, () => Array<string>(Math.max(...xs) - bx + 1).fill('.'));
-      xs.forEach((cx, i) => { (rows[(ys[i] as number) - by] as string[])[cx - bx] = letter; });
-      if (!cv.stamp(rows.map((r) => r.join('')), bx, by, key)) continue;
-      if (bays) deckOver(b, key, cells.length);
-      const me = cv.labelAt(xs[0] as number, ys[0] as number);
-      // Door candidates: a wall with the court on one side and floor straight across.
-      const hallDoors: [number, number, number][] = [];
-      const roomDoors = new Map<number, [number, number][]>();
-      xs.forEach((cx, i) => {
-        const cy = ys[i] as number;
-        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
-          if (cv.at(cx + dx, cy + dy) !== '#' || cv.at(cx + 2 * dx, cy + 2 * dy) !== '_') continue;
-          const other = cv.labelAt(cx + 2 * dx, cy + 2 * dy);
-          if (other === me || other < 0) continue;
-          if (halls.has(other)) hallDoors.push([cx + dx, cy + dy, Math.atan2(cy, cx)]);
-          else if (shops.has(other)) roomDoors.set(other, [...(roomDoors.get(other) ?? []), [cx + dx, cy + dy]]);
+      // The first court big enough for a bay may be the hangar deck (one bay per deck, so a deck is never cut).
+      const deckable = !!o.deck && b.parts.some((p) => p.role === 'hangar') && cells.length >= DECK_TILES;
+      const { parts, walls } = deckable || cells.length <= COURT_MAX ? { parts: [cells], walls: [] as number[] } : splitCourt(cells, S);
+      if (walls.length > 0) {
+        // The cut goes in before the courts, so the halls are stamped with their wall between them.
+        const ps = walls.map((k) => [(k % S) - off, Math.floor(k / S) - off] as [number, number]);
+        const bx = Math.min(...ps.map((p) => p[0]));
+        const by = Math.min(...ps.map((p) => p[1]));
+        const rows = Array.from({ length: Math.max(...ps.map((p) => p[1])) - by + 1 }, () => Array<string>(Math.max(...ps.map((p) => p[0])) - bx + 1).fill('.'));
+        ps.forEach(([x, y]) => { (rows[y - by] as string[])[x - bx] = '#'; });
+        cv.stamp(rows.map((r) => r.join('')), bx, by, `court${n}:cut`);
+      }
+      for (const court of parts) {
+        // The first court big enough for a bay may be the hangar deck.
+        const key = `court${n}`;
+        const bays = deckable;
+        const letter = bays ? letterOf('hangar') : courtLetter;
+        // Stamp the pocket as floor: its walls are the ones already round it.
+        const xs = court.map((k) => (k % S) - off);
+        const ys = court.map((k) => Math.floor(k / S) - off);
+        const bx = Math.min(...xs), by = Math.min(...ys);
+        const rows = Array.from({ length: Math.max(...ys) - by + 1 }, () => Array<string>(Math.max(...xs) - bx + 1).fill('.'));
+        xs.forEach((cx, i) => { (rows[(ys[i] as number) - by] as string[])[cx - bx] = letter; });
+        if (!cv.stamp(rows.map((r) => r.join('')), bx, by, key)) continue;
+        if (bays) deckOver(b, key, court.length);
+        const me = cv.labelAt(xs[0] as number, ys[0] as number);
+        // Door candidates: a wall with the court on one side and floor straight across.
+        const hallDoors: [number, number, number][] = [];
+        const roomDoors = new Map<number, [number, number][]>();
+        xs.forEach((cx, i) => {
+          const cy = ys[i] as number;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+            if (cv.at(cx + dx, cy + dy) !== '#' || cv.at(cx + 2 * dx, cy + 2 * dy) !== '_') continue;
+            const other = cv.labelAt(cx + 2 * dx, cy + 2 * dy);
+            if (other === me || other < 0) continue;
+            if (halls.has(other)) hallDoors.push([cx + dx, cy + dy, Math.atan2(cy, cx)]);
+            else if (shops.has(other)) roomDoors.set(other, [...(roomDoors.get(other) ?? []), [cx + dx, cy + dy]]);
+          }
+        });
+        hallDoors.sort((a, b) => a[2] - b[2]);
+        const k = Math.min(4, hallDoors.length);
+        for (let i = 0; i < k; i++) {
+          const d = hallDoors[Math.floor(((i + 0.5) * hallDoors.length) / k)] as [number, number, number];
+          cv.setDoor(d[0], d[1]);
         }
+        let doors = k;
+        for (const spots of roomDoors.values()) {
+          if (doors > 0 && !rng.chance(shopDoors)) continue;
+          const d = spots[spots.length >> 1] as [number, number];
+          cv.setDoor(d[0], d[1]);
+          doors++;
+        }
+        n++;
+      }
+      // Doors through the cut, once both halls are floor: one per dozen tiles of wall, at most two.
+      const join = walls.flatMap((k) => {
+        const x = (k % S) - off;
+        const y = Math.floor(k / S) - off;
+        const pair: [number, number][] = cv.at(x - 1, y) === '_' && cv.at(x + 1, y) === '_' ? [[x - 1, y], [x + 1, y]] : cv.at(x, y - 1) === '_' && cv.at(x, y + 1) === '_' ? [[x, y - 1], [x, y + 1]] : [];
+        const [a, c] = pair;
+        return a && c && cv.labelAt(a[0], a[1]) >= 0 && cv.labelAt(c[0], c[1]) !== cv.labelAt(a[0], a[1]) ? [k] : [];
       });
-      hallDoors.sort((a, b) => a[2] - b[2]);
-      const k = Math.min(4, hallDoors.length);
-      for (let i = 0; i < k; i++) {
-        const d = hallDoors[Math.floor(((i + 0.5) * hallDoors.length) / k)] as [number, number, number];
-        cv.setDoor(d[0], d[1]);
+      const cuts = join.length === 0 ? 0 : Math.min(2, Math.max(1, Math.floor(join.length / 12)));
+      for (let i = 0; i < cuts; i++) {
+        const k = join[Math.floor(((i + 0.5) * join.length) / cuts)] as number;
+        cv.setDoor((k % S) - off, Math.floor(k / S) - off);
       }
-      let doors = k;
-      for (const spots of roomDoors.values()) {
-        if (doors > 0 && !rng.chance(shopDoors)) continue;
-        const d = spots[spots.length >> 1] as [number, number];
-        cv.setDoor(d[0], d[1]);
-        doors++;
-      }
-      n++;
     }
   }
   return n;
