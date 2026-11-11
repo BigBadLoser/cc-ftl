@@ -30,10 +30,10 @@ def slab(k, a, r0, r1, w, z, h, col, top, end=True, sides=16):
         k.cyl(*at(a, r1), z, w / 2, h, col, top=top, sides=sides)
 
 
-def round_base(k, r, z, h, col, top, lobe_w=0.6):
-    """The round base with a lobe out under the right corner's machinery."""
+def round_base(k, r, z, h, col, top, lobe_w=0.6, r1=RW, end=True):
+    """The round base with a lobe out under the right corner's machinery (to r1: a round end, or square)."""
     k.cyl(0.0, 0.0, z, r, h, col, top=top, sides=40)
-    slab(k, RIGHT, 0.4, RW, lobe_w, z, h, col, top)
+    slab(k, RIGHT, 0.4, r1, lobe_w, z, h, col, top, end=end)
 
 
 def base_body(k, z0, body, top, lit, w=0.5, sides=32):
@@ -96,87 +96,122 @@ def z1(layer="all"):
     return k.build()
 
 
+COL_R0, COL_R1 = 0.5, 0.98                                   # the corner column runs from inside the housings out to here
+
+
+def column(k, w, z0, z1, col, top):
+    """The corner column: one block along RIGHT from inside the housings (COL_R0) to a flat outer face (COL_R1)."""
+    k.box(*at(RIGHT, (COL_R0 + COL_R1) / 2), z0, COL_R1 - COL_R0, w, z1 - z0, col, top=top, rz=RIGHT)
+
+
+def bands(k, w, zs, cols):
+    """The housings' bands carried round the column (a hair proud of it): lip, seam."""
+    for z, h, c in zip(zs, (0.03, 0.014), cols):
+        k.box(*at(RIGHT, (0.7 + COL_R1 + 0.008) / 2), z, COL_R1 + 0.008 - 0.7, w + 0.016, h, c, top=c, rz=RIGHT)
+
+
+def face(w):
+    """The column's face toward the camera: its centre, (along RIGHT), (along FRONT)."""
+    c = at(RIGHT, (COL_R0 + COL_R1) / 2 + 0.12)
+    return (c[0] + (w / 2 + 0.006) * math.cos(FRONT), c[1] + (w / 2 + 0.006) * math.sin(FRONT)), \
+        (math.cos(RIGHT), math.sin(RIGHT)), (math.cos(FRONT), math.sin(FRONT))
+
+
 def z2(layer="all"):
-    """Spine: the spine grows out of the base's wing, up past the top housing; its arm runs over the top housing to
-    the hub the housing hangs from."""
+    """Spine: one column up the right corner, from the base past the top housing, both housings running into it at
+    its own width; its arm runs over the top housing to the hub the housing hangs from."""
     k = Bench(f"pod_z2_{layer}", FP2)
     tank(k, layer, BLUE)
     if layer == "glass":
         return k.build()
-    sr = 0.9
-    su, sv = at(RIGHT, sr)
-    tu, tv = math.cos(RIGHT), math.sin(RIGHT)
+    W = 0.5
     if layer == "all":
-        round_base(k, 0.98, 0.0, 0.12, "arcBodyD", "arcBody", lobe_w=0.7)
+        round_base(k, 0.98, 0.0, 0.12, "arcBodyD", "arcBody", lobe_w=W + 0.12, r1=COL_R1 + 0.06, end=False)
         k.cyl(0.0, 0.0, 0.115, 0.985, 0.012, "arcChrD", top="arcChr", sides=40)
-        base_body(k, 0.12, "arcShellD", "arcShell", "podBL", w=0.6)
+        k.cyl(0.0, 0.0, 0.12, RH, Z0 - 0.2, "arcShellD", top="arcShell", sides=32)          # the base housing,
+        k.cyl(0.0, 0.0, Z0 - 0.08, RH - 0.06, 0.08, "arcShellD", top="arcShell", sides=32)
+        k.cyl(0.0, 0.0, 0.16, RH + 0.008, 0.03, "arcChrD", top="arcChr", sides=32)
+        k.cyl(0.0, 0.0, Z0 - 0.1, RH + 0.006, 0.014, "podBL", top="podBL", sides=32)
+        k.cyl(0.0, 0.0, Z0 - 0.02, 0.66, 0.03, "podBL", top="podBL", sides=32)
         ekg(k, RH, 0.2, "podBL")
-    z = top_body(k, "arcShellD", "arcShell", "podBL", w=0.5, tiers=((0.6, 0.12),))
-    k.box(su, sv, Z0 - 0.08, 0.34, 0.54, z + 0.3 - (Z0 - 0.08), "arcShell", top="arcShell", rz=RIGHT)   # the spine,
-    au, av = at(RIGHT, 0.45)                                                                  # its arm,
-    k.box(au, av, z + 0.02, 0.9, 0.36, 0.14, "arcShellD", top="arcShellD", rz=RIGHT)
+    k.cyl(0.0, 0.0, Z1, RH, 0.24, "arcShellD", top="arcShell", sides=32)                    # the top housing,
+    k.cyl(0.0, 0.0, Z1 + 0.08, RH + 0.006, 0.03, "podBL", top="podBL", sides=32)
+    k.cyl(0.0, 0.0, Z1 + 0.24, 0.6, 0.12, "arcShellD", top="arcShell", sides=32)
+    z = Z1 + 0.36
+    column(k, W, 0.12, z + 0.3, "arcShell", "arcShell")                                      # the spine,
+    bands(k, W, (0.16, Z0 - 0.1), ("arcChrD", "podBL"))
+    bands(k, W, (Z1 + 0.08 - 0.008, Z1 + 0.08 + 0.008), ("podBL", "podBL"))
+    k.box(*at(RIGHT, 0.36), z + 0.02, 0.86, 0.34, 0.14, "arcShellD", top="arcShellD", rz=RIGHT)   # its arm,
     k.cyl(0.0, 0.0, z - 0.02, 0.24, 0.24, "arcShellD", top="arcShell", sides=20)             # the hub (above the arm)
     k.cyl(0.0, 0.0, z + 0.22, 0.12, 0.05, "podBL", top="podBL", sides=14)
-    for d in (-0.19, 0.19):                                                                   # the arm's lit edges
-        k.box(au + d * math.cos(FRONT), av + d * math.sin(FRONT), z + 0.1, 0.8, 0.012, 0.02, "podBL", rz=RIGHT)
-    fu, fv = su + 0.276 * math.cos(FRONT), sv + 0.276 * math.sin(FRONT)                       # its face (the camera's):
-    k.box(fu, fv, Z0 + 0.02, 0.28, 0.02, z - Z0 - 0.1, "arcBodyD", rz=RIGHT)                 # a dark channel,
+    for d in (-0.18, 0.18):
+        k.box(*[c + d * f for c, f in zip(at(RIGHT, 0.36), (math.cos(FRONT), math.sin(FRONT)))], z + 0.1, 0.76,
+              0.012, 0.02, "podBL", rz=RIGHT)
+    (fu, fv), (tu, tv), (nu, nv) = face(W)
+    fu, fv = fu - 0.12 * tu, fv - 0.12 * tv                                                   # (the face's centre)
+    k.box(fu, fv, Z0 + 0.04, 0.26, 0.02, Z1 - Z0 - 0.12, "arcBodyD", rz=RIGHT)              # a dark channel,
     for i in range(2):                                                                         # two hoses in it,
-        d = (i - 0.5) * 0.11
-        bar(k, (fu + d * tu + 0.03, fv + d * tv + 0.03, Z0 + 0.04), (fu + d * tu + 0.03, fv + d * tv + 0.03, z - 0.1),
-            0.065, "arcChr")
-    for zc in (0.9, 1.8, 2.7):                                                                 # clamps over them,
-        k.box(fu + 0.05, fv + 0.05, zc, 0.3, 0.04, 0.08, "arcBodyD", top="arcBody", rz=RIGHT)
-    gu, gv = fu + 0.06, fv + 0.06                                                              # a level gauge,
-    k.box(gu, gv, 1.25, 0.24, 0.03, 0.42, "arcBodyK", top="arcBodyD", rz=RIGHT)
-    for i in range(6):
-        k.box(gu + 0.018, gv + 0.018, 1.29 + i * 0.058, 0.17, 0.004, 0.036, "podBL" if i < 4 else "arcBodyD",
-              rz=RIGHT)
+        d = (i - 0.5) * 0.1
+        p = (fu + d * tu + 0.025 * nu, fv + d * tv + 0.025 * nv)
+        bar(k, (*p, Z0 + 0.06), (*p, Z1 - 0.1), 0.06, "arcChr")
+    for zc in (0.9, 1.7, 2.5):                                                                 # clamps over them,
+        k.box(fu + 0.04 * nu, fv + 0.04 * nv, zc, 0.28, 0.04, 0.08, "arcBodyD", top="arcBody", rz=RIGHT)
+    k.box(fu + 0.05 * nu, fv + 0.05 * nv, 1.25, 0.22, 0.03, 0.42, "arcBodyK", top="arcBodyD", rz=RIGHT)
+    for i in range(6):                                                                         # a level gauge,
+        k.box(fu + 0.068 * nu, fv + 0.068 * nv, 1.29 + i * 0.058, 0.15, 0.004, 0.036,
+              "podBL" if i < 4 else "arcBodyD", rz=RIGHT)
     for i, c in enumerate(("podBL", "podBL", "arcAmb")):                                      # status lights
-        lamp(k, fu + (i - 1) * 0.085 * tu + 0.05, fv + (i - 1) * 0.085 * tv + 0.05, z + 0.12, c, 0.055)
-    for i in range(5):                                                                         # vents on its side
-        k.box(su + 0.172 * tu, sv + 0.172 * tv, 1.0 + i * 0.12, 0.006, 0.3, 0.04, "arcBodyK", rz=RIGHT)
+        lamp(k, fu + (i - 1) * 0.08 * tu + 0.04 * nu, fv + (i - 1) * 0.08 * tv + 0.04 * nv, Z1 + 0.3, c, 0.055)
+    ou, ov = at(RIGHT, COL_R1 + 0.006)                                                          # vents on its outer end
+    for i in range(5):
+        k.box(ou, ov, 1.0 + i * 0.12, 0.006, 0.3, 0.04, "arcBodyK", rz=RIGHT)
     return k.build()
 
 
 def z3(layer="all"):
-    """Octagon: the base housing's wing rises into the cartridge tower in the right corner; the tower's top runs into
-    the octagonal cap's shoulder."""
+    """Octagon: the cartridge tower is one column up the right corner from the platform; the octagonal cap's shoulder
+    sits over it at its own width and line; a riser on its axis joins them."""
     k = Bench(f"pod_z3_{layer}", FP2)
     tank(k, layer)
     if layer == "glass":
         return k.build()
-    bu, bv = at(RIGHT, 0.86)
-    tu, tv = math.cos(RIGHT), math.sin(RIGHT)
+    W = 0.56
     if layer == "all":
         oc = 0.98 / math.cos(math.pi / 8)
         k.cyl(0.0, 0.0, 0.0, oc, 0.16, "arcBodyD", top="arcBody", sides=8)                   # the platform,
         k.cyl(0.0, 0.0, 0.16, oc - 0.1, 0.03, "arcChrD", top="arcChr", sides=8)
-        base_body(k, 0.19, "arcShell", "arcShellL", "podGL", w=0.62, sides=8)
+        k.cyl(0.0, 0.0, 0.19, RH, Z0 - 0.27, "arcShell", top="arcShellL", sides=8)            # the base housing,
+        k.cyl(0.0, 0.0, Z0 - 0.08, RH - 0.06, 0.08, "arcShell", top="arcShellL", sides=8)
+        k.cyl(0.0, 0.0, 0.23, RH + 0.008, 0.03, "arcChrD", top="arcChr", sides=8)
+        k.cyl(0.0, 0.0, Z0 - 0.1, RH + 0.006, 0.014, "podGL", top="podGL", sides=8)
+        k.cyl(0.0, 0.0, Z0 - 0.02, 0.66, 0.03, "podGL", top="podGL", sides=8)
         ekg(k, RH, 0.24, "podGL")
-    k.box(bu, bv, Z0 - 0.08, 0.44, 0.62, 1.32 - (Z0 - 0.08), "arcShell", top="arcShellL", rz=RIGHT)   # the tower,
-    nu, nv = at(FRONT, 0.312)
-    k.box(bu + nu, bv + nv, Z0 + 0.06, 0.42, 0.012, 0.6, "arcBodyK", rz=RIGHT)                # its recess,
+    zt = 1.36                                                                                  # the tower,
+    column(k, W, 0.19, zt, "arcShell", "arcShellL")
+    bands(k, W, (0.23, Z0 - 0.1), ("arcChrD", "podGL"))
+    (fu, fv), (tu, tv), (nu, nv) = face(W)
+    fu, fv = fu - 0.12 * tu, fv - 0.12 * tv
+    k.box(fu, fv, Z0 + 0.04, 0.4, 0.012, 0.64, "arcBodyK", rz=RIGHT)                         # its recess,
     for j in (-1, 0, 1):                                                                       # the cartridges in it,
-        cu, cv = bu + nu * 1.1 + j * 0.13 * tu, bv + nv * 1.1 + j * 0.13 * tv
-        k.cyl(cu, cv, Z0 + 0.12, 0.055, 0.3, "podGM", top="podGM", sides=10)
-        k.cyl(cu, cv, Z0 + 0.42, 0.055, 0.025, "podGL", top="podGL", sides=10)
-        k.cyl(cu, cv, Z0 + 0.445, 0.055, 0.1, "arcGlass", top="arcGlass", sides=10)
-        k.cyl(cu, cv, Z0 + 0.08, 0.065, 0.05, "arcChrD", top="arcChr", sides=10)
-        k.cyl(cu, cv, Z0 + 0.54, 0.065, 0.05, "arcChrD", top="arcChr", sides=10)
-    lamp(k, bu + nu * 1.08 - tu * 0.11, bv + nv * 1.08 - tv * 0.11, 1.22, "podGL", 0.06)
-    lamp(k, bu + nu * 1.08 + tu * 0.11, bv + nv * 1.08 + tv * 0.11, 1.22, "arcAmb", 0.06)
-    k.cyl(bu, bv, 1.32, 0.2, 0.02, "arcBodyK", top="arcBodyK", sides=16)                     # the fan on top,
+        cu, cv = fu + j * 0.12 * tu + 0.06 * nu, fv + j * 0.12 * tv + 0.06 * nv
+        k.cyl(cu, cv, Z0 + 0.12, 0.05, 0.3, "podGM", top="podGM", sides=10)
+        k.cyl(cu, cv, Z0 + 0.42, 0.05, 0.025, "podGL", top="podGL", sides=10)
+        k.cyl(cu, cv, Z0 + 0.445, 0.05, 0.1, "arcGlass", top="arcGlass", sides=10)
+        k.cyl(cu, cv, Z0 + 0.08, 0.06, 0.05, "arcChrD", top="arcChr", sides=10)
+        k.cyl(cu, cv, Z0 + 0.54, 0.06, 0.05, "arcChrD", top="arcChr", sides=10)
+    lamp(k, fu - tu * 0.11 + 0.04 * nu, fv - tv * 0.11 + 0.04 * nv, Z0 + 0.72, "podGL", 0.06)
+    lamp(k, fu + tu * 0.11 + 0.04 * nu, fv + tv * 0.11 + 0.04 * nv, Z0 + 0.72, "arcAmb", 0.06)
+    xu, xv = at(RIGHT, (COL_R0 + COL_R1) / 2 + 0.1)                                           # the fan on its top,
+    k.cyl(xu, xv, zt, 0.19, 0.02, "arcBodyK", top="arcBodyK", sides=16)
     for j in range(3):
-        k.box(bu, bv, 1.34, 0.34, 0.03, 0.012, "arcChrD", top="arcChr", rz=j * math.pi / 3)
-    k.cyl(bu, bv, 1.34, 0.05, 0.03, "podGL", top="podGL", sides=10)
-    ru, rv = at(RIGHT - 0.3, 0.92)                                                             # the riser: tower ->
-    vpipe(k, ru, rv, 1.32, Z1 + 0.02, r=0.08)                                                  # the cap's shoulder
+        k.box(xu, xv, zt + 0.02, 0.32, 0.03, 0.012, "arcChrD", top="arcChr", rz=j * math.pi / 3)
+    k.cyl(xu, xv, zt + 0.02, 0.05, 0.03, "podGL", top="podGL", sides=10)
+    vpipe(k, xu, xv, zt + 0.04, Z1 + 0.02, r=0.08)                                            # the riser on its axis
     k.cyl(0.0, 0.0, Z1, RH + 0.04, 0.22, "arcShell", top="arcShellL", sides=8)               # the octagonal cap,
-    slab(k, RIGHT - 0.12, 0.4, 0.92, 0.42, Z1, 0.22, "arcShell", "arcShellL")                  # its shoulder,
+    column(k, W, Z1, Z1 + 0.22, "arcShell", "arcShellL")                                      # its shoulder,
     k.cyl(0.0, 0.0, Z1 + 0.22, RH - 0.16, 0.12, "arcBodyD", top="arcBody", sides=8)
     k.cyl(0.0, 0.0, Z1 + 0.07, RH + 0.045, 0.03, "podGL", top="podGL", sides=8)
-    slab(k, RIGHT - 0.12, 0.4, 0.92, 0.432, Z1 + 0.07, 0.03, "podGL", "podGL")
+    bands(k, W, (Z1 + 0.07 - 0.008, Z1 + 0.07 + 0.008), ("podGL", "podGL"))
     k.box(*at(FRONT, 0.6), Z1 + 0.34, 0.34, 0.34, 0.02, "arcChrD", top="arcChr", rz=FRONT)
     for i, c in enumerate(("podGL", "arcAmb", "podGL")):
         lamp(k, *at(FRONT + (i - 1) * 0.28, RH + 0.05), Z1 + 0.12, c, 0.05)
