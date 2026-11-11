@@ -210,11 +210,12 @@ def job(v, designs):
         post.select(PAL)
         c, op, g, ox, oy, _ = E.render_sprite("x", "prop", back())
         pod = E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)
-        for build, _alpha in (under[0] if under else ()):  # holograms baked into the pod (behind the patient)
+        mask = getattr(back, "mask", back)                 # what hides a hologram (a pod may leave its fluid out)
+        for build, alpha in (under[0] if under else ()):   # layers baked into the pod (behind the patient)
             from .research_kit import holo_item
             core.clear_scene_meshes()
             post.select(PAL)
-            it = holo_item("x", FP, back(), build())
+            it = holo_item("x", FP, mask(), build()) if alpha == "holo" else layer(mask(), build(), alpha)
             if it is not None:
                 pod = over(pod, it)
                 pod["id"] = f"module.recovery.{v}"
@@ -225,9 +226,9 @@ def job(v, designs):
             post.select(PAL)
             if alpha == "holo":                     # a hologram, as the arcade's and the research bench's
                 from .research_kit import holo_item
-                it = holo_item("x", FP, back(), build())
+                it = holo_item("x", FP, mask(), build())
             else:
-                it = layer(back(), build(), alpha)
+                it = layer(mask(), build(), alpha)
             if it is not None:
                 front = it if front is None else over(front, it)
         front["id"], front["fp"] = f"module.recovery.{v}.front", FP
@@ -236,11 +237,12 @@ def job(v, designs):
 
 
 def jobs():
-    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7, recovery_study8
+    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7, recovery_study8, recovery_study9
     return ([job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
             + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS]
             + [job(v, recovery_study4.DESIGNS) for v in recovery_study4.DESIGNS]
             + [job(v, recovery_study5.DESIGNS) for v in recovery_study5.DESIGNS]
             + [job(v, recovery_study6.DESIGNS) for v in recovery_study6.DESIGNS]
             + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS]
-            + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS])
+            + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS]
+            + [job(v, recovery_study9.DESIGNS) for v in recovery_study9.DESIGNS])

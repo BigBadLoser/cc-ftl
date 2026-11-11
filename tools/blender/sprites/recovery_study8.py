@@ -11,7 +11,7 @@ spine (round 3's r3), its detail on the object and its hologram the treatment it
 import math
 
 from .modkit import K
-from .recovery_study2 import fluid, lathe
+from .recovery_study2 import fluid as fluid_col, lathe
 from .recovery_study3 import FILM_A, SHINE_A, film_of, round_streaks, shine
 from .recovery_study4 import CLIN, FRONT, base
 from .recovery_study5 import N, R, at
@@ -37,11 +37,12 @@ def front_of(a, lim=0.0):
     return math.cos(a - FRONT) > lim
 
 
-def u1_back():
+def u1_back(fluid=True):
     k = K("rec_u1", FP8)
     base(k, 0.96)
     k.cyl(0, 0, 0.14, 0.7, 0.04, "steel", top="steelL", sides=40)
-    fluid(k, DOME, CLIN, 40)
+    if fluid:
+        globals()["fluid_col"](k, DOME, CLIN, 40)
     for p, q in zip(SPINE[:4], SPINE[1:4]):                             # the spine's lower run
         bar(k, p, q, 0.22, "medWhite")
         bar(k, add(p, (0.1, (N[0], N[1], 0))), add(q, (0.1, (N[0], N[1], 0))), 0.035, "cyan")
