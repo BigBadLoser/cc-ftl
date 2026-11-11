@@ -79,12 +79,13 @@ function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] 
   const added = rooms.filter((r) => r.id >= a.rooms.length || !boxes(a).some((x) => x.id === r.id));
   const inAdded = (x: number, y: number): boolean => added.some((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
   const byKind = new Map<Kind, Set<number>>();
-  for (let y = 0; y < Math.min(a.height, b.height); y++) {
-    for (let x = 0; x < Math.min(a.width, b.width); x++) {
+  const W = Math.max(a.width, b.width);
+  for (let y = 0; y < Math.max(a.height, b.height); y++) {
+    for (let x = 0; x < W; x++) {
       const k = kindOf(a.cells[y]?.[x] ?? '.', b.cells[y]?.[x] ?? '.');
       if (!k || inAdded(x, y)) continue;
       if (!byKind.has(k)) byKind.set(k, new Set());
-      (byKind.get(k) as Set<number>).add(y * b.width + x);
+      (byKind.get(k) as Set<number>).add(y * W + x);
     }
   }
   const out: { y: number; x: number; text: string; tiles: Tile[] }[] = [];
@@ -97,12 +98,12 @@ function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] 
       seen.add(start);
       while (stack.length) {
         const i = stack.pop() as number;
-        const x = i % b.width, y = Math.floor(i / b.width);
+        const x = i % W, y = Math.floor(i / W);
         region.push([x, y]);
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = x + dx, ny = y + dy;
-          const j = ny * b.width + nx;
-          if ((dx || dy) && nx >= 0 && nx < b.width && ny >= 0 && set.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
+          const j = ny * W + nx;
+          if ((dx || dy) && nx >= 0 && nx < W && ny >= 0 && set.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
         }
       }
       region.sort((p, q) => p[1] - q[1] || p[0] - q[0]);

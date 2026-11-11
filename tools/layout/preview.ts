@@ -44,6 +44,8 @@ export function createPreview(): Preview {
   let marks: readonly Mark[] = [];
   let shields = false;
   let roof = false;
+  // imported faction ships and stations stamp with their real side, so both roof switches follow the toggle
+  const setRoofs = (r: { setRoofPlayer(on: boolean): void; setRoofEnemies(on: boolean): void }, on: boolean): void => { r.setRoofPlayer(on); r.setRoofEnemies(on); };
   let paused = false;
   let generation = 0;
 
@@ -103,7 +105,7 @@ export function createPreview(): Preview {
       const grid = shipGrid(world.sim, world.ship);
       if (grid) r.setGrid(grid);
       r.setBackdrop({ seed: 7, density: 0.25, body: null, bodyHash: 0 });
-      r.setRoofPlayer(roof);
+      setRoofs(r, roof);
       r.setWorldGrid(false);
       r.setShields(shields);
       r.resize();
@@ -134,8 +136,8 @@ export function createPreview(): Preview {
     },
     setRoof(on) {
       roof = on;
-      cur?.r.setRoofPlayer(on);
-      next?.r.setRoofPlayer(on);
+      if (cur) setRoofs(cur.r, on);
+      if (next) setRoofs(next.r, on);
     },
     setShields(on) {
       shields = on;
