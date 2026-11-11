@@ -25,15 +25,15 @@
 	import { lab, type Tool } from './lab.svelte';
 	import { setRole } from './layout';
 
-	const tools: { id: string; label: string; icon: Component; off?: boolean }[] = [
-		{ id: 'select', label: 'Select (V)', icon: MousePointer2 },
-		{ id: 'floor', label: 'Floor (F)', icon: Grid2x2 },
-		{ id: 'wall', label: 'Interior wall (W)', icon: BrickWall },
-		{ id: 'door', label: 'Door (D)', icon: DoorOpen },
-		{ id: 'space', label: 'Erase to space (E)', icon: Eraser },
-		{ id: 'room', label: 'Draw a room (G)', icon: SquareDashed },
-		{ id: 'module', label: 'Place a module (M)', icon: Box },
-		{ id: 'note', label: 'Pin a note (N; Alt: free)', icon: StickyNote },
+	const tools: { id: string; name: string; tip: string; icon: Component }[] = [
+		{ id: 'select', name: 'Select', tip: 'Select and move (V)', icon: MousePointer2 },
+		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
+		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
+		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
+		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
+		{ id: 'room', name: 'Room', tip: 'Draw a room (G)', icon: SquareDashed },
+		{ id: 'module', name: 'Module', tip: 'Place a module (M)', icon: Box },
+		{ id: 'note', name: 'Pin', tip: 'Pin a note (N; Alt: free)', icon: StickyNote },
 	];
 	const css = (c: readonly number[]): string => `rgb(${c[0]},${c[1]},${c[2]})`;
 	const defs = Object.entries(content.modules as Record<string, ModuleDef>)
@@ -64,16 +64,16 @@
 			<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Paint</span>
 			<Badge variant="secondary">{lab.tool}</Badge>
 		</div>
-		<ToggleGroup.Root type="single" value={lab.tool} onValueChange={(v) => v && lab.setTool(v as Tool)} variant="outline" size="sm" spacing={1} class="flex-wrap justify-start">
+		<ToggleGroup.Root type="single" value={lab.tool} onValueChange={(v) => v && lab.setTool(v as Tool)} variant="outline" size="sm" spacing={1} class="grid w-full grid-cols-2">
 			{#each tools as t (t.id)}
 				{@const Icon = t.icon}
 				<Tooltip.Root>
 					<Tooltip.Trigger>
 						{#snippet child({ props })}
-							<ToggleGroup.Item {...props} value={t.id} aria-label={t.label} disabled={t.off}><Icon /></ToggleGroup.Item>
+							<ToggleGroup.Item {...props} value={t.id} aria-label={t.name} class="w-full justify-start"><Icon /> {t.name}</ToggleGroup.Item>
 						{/snippet}
 					</Tooltip.Trigger>
-					<Tooltip.Content>{t.label}</Tooltip.Content>
+					<Tooltip.Content>{t.tip}</Tooltip.Content>
 				</Tooltip.Root>
 			{/each}
 		</ToggleGroup.Root>
