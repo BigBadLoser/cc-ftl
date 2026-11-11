@@ -1,6 +1,7 @@
 import { EggSacC, NestC } from '../aliens/components';
 import { ShipC } from '../combat/components';
 import { CrewC, DeadC, JobC, PositionC } from '../crew/components';
+import { dronesOf } from '../drones/bay';
 import { ItemStackC } from '../items/components';
 import { destroyJob } from '../items/stacks';
 import { SalvageWatchC, TransferC } from '../logistics/components';
@@ -24,7 +25,7 @@ export function isEmptyShell(sim: Sim, ship: number): boolean {
 }
 
 /**
- * Take a ship out of the world: its jobs, modules, loose stacks, corpses, egg sacs and nests go, every tile it owns becomes open space with
+ * Take a ship out of the world: its jobs, modules, loose stacks, corpses, egg sacs, nests and drones (in the bay or out in space) go, every tile it owns becomes open space with
  * no owner, and then the ShipC entity itself (which carries its salvage order and watch). Living crew are left where they stand (the
  * caller makes sure nobody is aboard), shuttles holding station beside it are released, and queued transfers from it are dropped.
  */
@@ -37,6 +38,8 @@ export function removeWreck(sim: Sim, ship: number): void {
   for (const id of [...sim.world.query(ItemStackC)]) if (here(sim.world.get(id, ItemStackC))) sim.world.destroyEntity(id);
   for (const id of [...sim.world.query(CrewC, PositionC, DeadC)]) if (here(sim.world.get(id, PositionC))) sim.world.destroyEntity(id);
   for (const id of [...sim.world.query(EggSacC)]) if (sim.world.get(id, EggSacC)?.ship === ship) sim.world.destroyEntity(id);
+  // Deleted outright, not through wreckDrone: the ship's items are going too, so there is nothing for a drone's wreck to spill onto.
+  for (const id of dronesOf(sim, ship)) sim.world.destroyEntity(id);
   for (const id of [...sim.world.query(NestC)]) if (sim.world.get(id, NestC)?.ship === ship) sim.world.destroyEntity(id);
   for (const id of [...sim.world.query(TransferC)]) if (sim.world.get(id, TransferC)?.from === ship) sim.world.destroyEntity(id);
   for (const id of sim.world.query(VehicleC)) {
