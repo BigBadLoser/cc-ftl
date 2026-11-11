@@ -233,7 +233,25 @@ count to 2–4 fills them (hub court share 0.25 → 0.35, rooms 127 → 161, mea
 concourse, not more station: those quarters want rooms (a habitat block, an industrial block), which is the
 sector-vocabulary pass.
 
-## 7. State and mechanics, briefly
+## 7. Pass 3: a hall for the shapes that enclose none
+
+First attempt: hand the courtyard pass (`courtOf`) to every grammar that never used it — lattice, welded, arc, spine,
+cross, tree. It has to be a *found* pocket, and frameworks have none worth having: on a lattice every gap between two
+modules is a pocket, so it filled them all. Lattice went to **24 attempts a build with every seed failing validation**
+(67 % of the deck as plaza before the cap, 11 % with `maxCourts: 1` but the damage done), welded to 15.7 and one broken
+seed. Reverted: the pass belongs to shapes that enclose a centre on purpose, which is why the ring, the concentric rings
+and the wheel's sectors take it and nothing else should.
+
+What is kept: `crossStation` now reserves its crossing as the station's public room — a `plaza` of `C + 2` where the
+control room used to sit, with the bridge dealt down one arm. Cross goes from **no public room at all** (0 % plaza,
+biggest room 105 tiles, 59 % of rooms at 12 tiles or less) to one concourse per deck (6 % of deck). It builds as cleanly
+as before: seeds 1–6 all land on the first attempt with no problems.
+
+Still without a hall, and each wants the same treatment rather than a found pocket: **arc** (nothing at the crescent's
+centre), **tree** (its core is four ordinary rooms), **spine** (a four-wide hall with no bulge at the junction),
+**lattice** and **welded** (module grids with no interior at all).
+
+## 8. State and mechanics, briefly
 
 - `stationgen/staged` = #234 + 15 commits (bench, docs, wheel refactor, wheel pin). #234 is closed, unmerged; nothing
   was lost, the branch is its descendant.

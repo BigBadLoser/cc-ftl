@@ -73,11 +73,12 @@ export function spineStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], o: Spin
 /** Cross: a square core room, four arms, rooms on both faces of every arm past the crossing, a dock at each arm end. */
 export function crossStation(rng: Rng, hub: RoomSpec, rooms: RoomSpec[], stubChance: number): Builder | null {
   const b = localBuilder(rng);
-  const C = Math.max(hub.w, hub.h, 5);
-  const core = b.place({ x: -(C >> 1) - 1, y: -(C >> 1) - 1, w: C + 2, h: C + 2 }, hub.role, { ...hub, w: C, h: C });
+  // The crossing is the station's public room: a concourse the arms open onto, with the control room down an arm.
+  const C = Math.max(hub.w, hub.h, 5) + 2;
+  const core = b.place({ x: -(C >> 1) - 1, y: -(C >> 1) - 1, w: C + 2, h: C + 2 }, 'plaza', { role: 'plaza', mods: [], w: C, h: C });
   if (!core) return null;
   const docks = rooms.filter((r) => r.role === 'dock');
-  const rest = rooms.filter((r) => r.role !== 'dock');
+  const rest = [hub, ...rooms.filter((r) => r.role !== 'dock')];
   // Rooms to the four arms, two faces each: deal round-robin to eight faces.
   const faces: RoomSpec[][] = Array.from({ length: 8 }, () => []);
   rest.forEach((r, i) => faces[i % 8]?.push(r));
