@@ -12,7 +12,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-GLASS_A = 0.45                                      # the fluid over the patient
+GLASS_A = 0.42                                      # the fluid over the patient
 # name -> label, footprint, patient (u, v, facing, clip, lift px)
 D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "p2": ("P2  egg", 1, (0.0, 0.0, 2, "idle", 4)),
@@ -34,17 +34,20 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "u3": ("U3  octagon", 2, (0.0, 0.0, 2, "idle", 24)),
      "v1": ("V1  plinth", 2, (0.0, 0.0, 2, "idle", 24)),
      "v2": ("V2  ribbed", 2, (0.0, 0.0, 2, "idle", 24)),
-     "v3": ("V3  octagon", 2, (0.0, 0.0, 2, "idle", 24))}
+     "v3": ("V3  octagon", 2, (0.0, 0.0, 2, "idle", 24)),
+     "w1": ("W1  plinth", 2, (0.0, 0.0, 2, "idle", 25)),
+     "w2": ("W2  ribbed", 2, (0.0, 0.0, 2, "idle", 25)),
+     "w3": ("W3  octagon", 2, (0.0, 0.0, 2, "idle", 25))}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "v1,v2,v3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "w1,w2,w3").split(",")
     out.mkdir(parents=True, exist_ok=True)
-    cv = Canvas(240 * len(names), 280)
+    cv = Canvas(240 * len(names), 300)
     for i, v in enumerate(names):
         label, n, (u, vv, dr, clip, lift) = D[v]
-        ox, oy = 120 + i * 240, 190
+        ox, oy = 120 + i * 240, 210
         for gx in range(-1, n + 1):
             for gy in range(-1, n + 1):
                 cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
@@ -58,14 +61,14 @@ def main():
         img[..., 3] = (img[..., 3] * GLASS_A).astype(img.dtype)
         cv.put(img, None, sx - an["x"], sy - an["y"])
         cv.static(G, f"module.pod.{v}.front", sx, sy)
-        cv.labels.append((ox - 60, 265, label))
+        cv.labels.append((ox - 60, 285, label))
     for s in (1, 3):
         cv.save(out / f"pod-{s}x.png", s)
     im = Image.open(out / "pod-1x.png")
     z = Image.new("RGB", (len(names) * 400, 400), (12, 14, 20))
     for i in range(len(names)):
         ox = 120 + i * 240
-        z.paste(im.crop((ox - 95, 25, ox + 95, 215)).resize((400, 400), Image.NEAREST), (i * 400, 0))
+        z.paste(im.crop((ox - 100, 30, ox + 100, 230)).resize((400, 400), Image.NEAREST), (i * 400, 0))
     z.save(out / "pod-zoom.png")
     print("wrote", out)
 
