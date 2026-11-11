@@ -1,7 +1,7 @@
 """Recovery pod look study preview (plain python3 + numpy + PIL): each design on its 2x2 floor, empty and with a patient
 floating in the tank (the crew sprite drawn between the pod and its `.front` layer), a crew member beside it for scale.
 
-  python3 -I tools/blender/review/recovery_preview.py <recovery assets dir> <out dir> [designs, default t1,t2,t3]
+  python3 -I tools/blender/review/recovery_preview.py <recovery assets dir> <out dir> [designs, default t1,t1b,t2,t2b]
     -> recovery-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -9,7 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
-NAMES = {"t1": "T1  lantern", "t2": "T2  gem", "t3": "T3  alcove slab",
+NAMES = {"t1b": "T1+  lantern, detailed", "t2b": "T2+  gem, detailed",
+         "t1": "T1  lantern", "t2": "T2  gem", "t3": "T3  alcove slab",
          "s1": "S1  halo frame", "s2": "S2  tulip", "s3": "S3  clamshell",
          "r1": "R1  ribcage", "r2": "R2  medigel aquarium", "r3": "R3  field lift",
          "q1": "Q1  gantry capsule", "q2": "Q2  bio-vat", "q3": "Q3  scan prism",
@@ -20,7 +21,7 @@ CW, CH = 230, 250
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "t1,t2,t3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "t1,t1b,t2,t2b").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(CW * len(names), CH * 2)
     for i, v in enumerate(names):
