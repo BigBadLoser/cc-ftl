@@ -90,10 +90,45 @@ function breaches(sim: Sim, o: YardOrder, t: Tile, patch: Set<string>): boolean 
 }
 
 /**
+ * Delivery: each connected piece of the section (its built floor and the walls opened into it) that is shut in, with no tile touching open space, a
+ * truss or another ship's tile, takes the order's air once, whether or not any wall opened for it. An unsealed piece is left alone until it is shut.
+ */
+function pressurise(sim: Sim, o: YardOrder, patch: ReadonlySet<string>, walls: readonly Tile[]): void {
+  const grid = shipGrid(sim, o.ship);
+  if (!grid) return;
+  const done = new Set(o.delivered ?? []);
+  const seen = new Set<string>();
+  for (const k0 of patch) {
+    if (seen.has(k0) || done.has(k0)) continue;
+    const comp: Tile[] = [];
+    let leak = false;
+    const stack = [k0];
+    seen.add(k0);
+    while (stack.length) {
+      const [x, y] = (stack.pop() as string).split(',').map(Number) as [number, number];
+      comp.push({ x, y });
+      for (const [dx, dy] of N4) {
+        const n = { x: x + dx, y: y + dy };
+        const st = grid.inBounds(n.x, n.y) ? grid.get('struct', n.x, n.y) : Struct.Space;
+        if (!grid.inBounds(n.x, n.y) || grid.get('ship', n.x, n.y) !== o.ship || st === Struct.Space || st === Struct.Beam) leak = true;
+        else if (patch.has(key(n)) && !seen.has(key(n))) {
+          seen.add(key(n));
+          stack.push(key(n));
+        }
+      }
+    }
+    if (leak) continue;
+    o.air ??= joinedAir(sim, o, walls);
+    fill(sim, comp, o.air);
+    o.delivered = [...(o.delivered ?? []), ...comp.map(key)];
+  }
+}
+
+/**
  * The old hull a build has turned inward goes at once, with no crew job: each wall `innerWalls` finds (no open space round it, corners included) that
- * would not let the air out of the section (`breaches`) becomes floor, takes the air of the room it joins, and the section's floor takes it too.
- * Called while the crew work, so a wall goes the moment the wall that shuts it in is built. Repeats until nothing more is safe to open (one opening
- * can free the next). Returns how many walls opened.
+ * would not let the air out of the section (`breaches`) becomes floor and takes the air of the room it joins. Called while the crew work, so a wall goes
+ * the moment the wall that shuts it in is built. Repeats until nothing more is safe to open (one opening can free the next). Every shut-in piece of the
+ * section is then pressurised (`pressurise`), walls or no walls. Returns how many walls opened.
  */
 export function openInnerWalls(sim: Sim, o: YardOrder): number {
   const grid = shipGrid(sim, o.ship);
@@ -103,14 +138,15 @@ export function openInnerWalls(sim: Sim, o: YardOrder): number {
   let total = 0;
   for (;;) {
     const ready = innerWalls(sim, o).filter((t) => !breaches(sim, o, t, patch));
-    if (!ready.length) return total;
-    o.air ??= joinedAir(sim, o, ready);
+    if (!ready.length) break;
     for (const t of ready) {
       writeStruct(grid, t.x, t.y, Struct.Floor);
       patch.add(key(t));
     }
-    fill(sim, [...patch].map((k) => ({ x: Number(k.split(',')[0]), y: Number(k.split(',')[1]) })), o.air);
     o.opens = [...(o.opens ?? []), ...ready];
+    pressurise(sim, o, patch, ready);
     total += ready.length;
   }
+  pressurise(sim, o, patch, []);
+  return total;
 }

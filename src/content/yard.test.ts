@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
+  CombatC, CrewC, NORMAL_O2, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
   viewPlan, yardPrice, yardService, innerWalls, openInnerWalls,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
@@ -421,4 +421,19 @@ describe('shipyard: joining on (#385)', () => {
     expect(grid.get('struct', old.x, old.y)).toBe(Struct.Floor);
     expect(order.opens).toContainEqual(old);
   });
+
+  it('pressurises a finished section even when no old wall opens for it (#429)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    planHull(sim, me, outline(sim, me, 28, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    run(sim, 6000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.opens ?? []).toEqual([]);
+    const grid = shipGrid(sim, me)!;
+    expect(order.floor.length).toBeGreaterThan(0);
+    for (const t of order.floor) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
+  }, 120000);
 });

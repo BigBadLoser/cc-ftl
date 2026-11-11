@@ -69,6 +69,8 @@ export interface YardOrder {
    * the first opening). Each opened tile takes that air as it turns to floor, so the joined room keeps its pressure.
    */
   opens?: Tile[];
+  /** Keys (`x,y`) of the section tiles already given the order's air: each shut-in piece is pressurised once. */
+  delivered?: string[];
   air?: { o2: number; co2: number; temp: number };
   /** The ship's own crew drafted to walk out of the new rooms before they were closed (given back their work after). */
   ejected: number[];
