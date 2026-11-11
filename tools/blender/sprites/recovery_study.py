@@ -205,11 +205,20 @@ def layer(mask, objs, alpha):
 
 def job(v, designs):
     def run(v=v, designs=designs):
-        back, layers = designs[v]
+        back, layers, *under = designs[v]
         core.clear_scene_meshes()
         post.select(PAL)
         c, op, g, ox, oy, _ = E.render_sprite("x", "prop", back())
-        out = [E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)]
+        pod = E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)
+        for build, _alpha in (under[0] if under else ()):  # holograms baked into the pod (behind the patient)
+            from .research_kit import holo_item
+            core.clear_scene_meshes()
+            post.select(PAL)
+            it = holo_item("x", FP, back(), build())
+            if it is not None:
+                pod = over(pod, it)
+                pod["id"] = f"module.recovery.{v}"
+        out = [pod]
         front = None
         for build, alpha in layers:
             core.clear_scene_meshes()
@@ -227,10 +236,11 @@ def job(v, designs):
 
 
 def jobs():
-    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7
+    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7, recovery_study8
     return ([job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
             + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS]
             + [job(v, recovery_study4.DESIGNS) for v in recovery_study4.DESIGNS]
             + [job(v, recovery_study5.DESIGNS) for v in recovery_study5.DESIGNS]
             + [job(v, recovery_study6.DESIGNS) for v in recovery_study6.DESIGNS]
-            + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS])
+            + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS]
+            + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS])
