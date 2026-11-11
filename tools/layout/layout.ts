@@ -27,7 +27,7 @@ export interface Layout {
 export interface Rect { x: number; y: number; w: number; h: number }
 export type Tile = [number, number];
 
-export const PAD = 6;
+export const PAD = 10;
 const defs = content.modules as Record<string, ModuleDef>;
 const NONE = -1;
 
