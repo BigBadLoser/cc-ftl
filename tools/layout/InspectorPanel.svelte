@@ -8,12 +8,13 @@
 	import { NAMES } from '../shipgen/labels';
 	import Field from './Field.svelte';
 	import { lab } from './lab.svelte';
-	import { deleteRoom, removeModule, rotateModule, roomRect, setRole } from './layout';
+	import { roomRect, setRole } from './layout';
+	import { liveRoom, moduleOf } from './design';
 	import type { Problem } from './problems';
 
 	const sel = $derived(lab.selected);
-	const room = $derived(sel?.kind === 'room' ? lab.design?.rooms[sel.id] : undefined);
-	const mod = $derived(sel?.kind === 'module' ? lab.design?.modules[sel.index] : undefined);
+	const room = $derived(sel?.kind === 'room' ? lab.design && liveRoom(lab.design, sel.id) : undefined);
+	const mod = $derived(sel?.kind === 'module' ? lab.design && moduleOf(lab.design, sel.id) : undefined);
 	const rect = $derived(sel?.kind === 'room' && lab.layout ? roomRect(lab.layout, sel.id) : null);
 	const roles = $derived([...new Set([...Object.keys(NAMES), 'hall', ...(lab.layout?.rooms.map((r) => r.role) ?? [])])].map((r) => ({ value: r, label: NAMES[r] ?? (r === 'hall' ? 'corridor' : r) })));
 	const doors = $derived.by(() => {
@@ -37,12 +38,10 @@
 		if (made !== null) lab.selected = { kind: 'room', id: made };
 	}
 	function remove() {
-		if (sel?.kind === 'room') { const id = sel.id; lab.edit((l) => deleteRoom(l, id)); }
-		else if (sel?.kind === 'module') { const i = sel.index; lab.edit((l) => removeModule(l, i)); }
-		lab.selected = null;
+		lab.removeSelected();
 	}
 	function show(p: Problem) {
-		if (p.module !== undefined) lab.selected = { kind: 'module', index: p.module };
+		if (p.module !== undefined) lab.selected = { kind: 'module', id: p.module };
 		else lab.selected = null;
 		lab.flag = p.tiles;
 		const t = p.tiles[0];
@@ -71,7 +70,7 @@
 			<div class="flex items-center justify-between">
 				<span class="text-sm font-medium">{mod.name}</span>
 				<div class="flex gap-1">
-					<Button variant="ghost" size="icon-xs" aria-label="Rotate" onclick={() => lab.edit((l) => rotateModule(l, sel.index))}><RotateCw /></Button>
+					<Button variant="ghost" size="icon-xs" aria-label="Rotate" onclick={() => lab.rotateSelected()}><RotateCw /></Button>
 					<Button variant="ghost" size="icon-xs" aria-label="Delete module" onclick={remove}><Trash /></Button>
 				</div>
 			</div>

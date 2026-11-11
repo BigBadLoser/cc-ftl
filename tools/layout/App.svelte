@@ -52,7 +52,7 @@
 			<Separator orientation="vertical" class="h-5" />
 			<Badge variant="secondary" class="max-w-96 truncate">{lab.design?.label ?? 'nothing imported'}</Badge>
 			{#if lab.design}
-				<span class="text-xs text-muted-foreground">{lab.design.width} x {lab.design.height} · {lab.design.rooms.length} rooms · {lab.design.modules.length} modules</span>
+				<span class="text-xs text-muted-foreground">{lab.design.width} x {lab.design.height} · {lab.design.rooms.filter((r) => r.tiles > 0).length} rooms · {lab.design.modules.length} modules</span>
 				{#if lab.problems.length}<Badge variant="destructive">{lab.problems.length} {lab.problems.length === 1 ? 'problem' : 'problems'}</Badge>{/if}
 			{/if}
 			{#if lab.error}<Badge variant="destructive" class="max-w-96 truncate">{lab.error}</Badge>{/if}

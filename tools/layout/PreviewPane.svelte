@@ -52,7 +52,7 @@
 		const hit = preview.pick(p.x, p.y);
 		if (!hit) return null;
 		// the pick is on the design the preview shows (the original on the Generated tab): by stable id into the edited one
-		return lab.toEdited(hit.module !== null ? ({ kind: 'module', index: hit.module } as const) : targetAt(d, hit.x, hit.y));
+		return lab.toEdited(hit.module !== null ? (d.modules[hit.module] ? ({ kind: 'module', id: (d.modules[hit.module] as { id: number }).id } as const) : null) : targetAt(d, hit.x, hit.y));
 	}
 	function down(e: PointerEvent) {
 		slot.setPointerCapture(e.pointerId);

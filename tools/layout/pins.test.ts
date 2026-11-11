@@ -107,8 +107,8 @@ describe('pins', () => {
     const two = addModule(l, { def: 'module.chair', x: 10, y: 9, rot: 0 });
     const edited = removeModule(two, 0); // the first module is gone: the second moves to index 0
     const shown = designFromLayout(two, 'o'), now = designFromLayout(edited, 'e');
-    expect(retarget(shown, now, { kind: 'module', index: 1 })).toEqual({ kind: 'module', index: 0 });
-    expect(retarget(shown, now, { kind: 'module', index: 0 })).toBeNull();
+    expect(retarget(shown, now, { kind: 'module', id: 1 })).toEqual({ kind: 'module', id: 1 });
+    expect(retarget(shown, now, { kind: 'module', id: 0 })).toBeNull();
     expect(retarget(shown, now, { kind: 'room', id: 0 })).toEqual({ kind: 'room', id: 0 });
     expect(retarget(shown, designFromLayout(deleteRoom(edited, 0), 'x'), { kind: 'room', id: 0 })).toBeNull();
   });

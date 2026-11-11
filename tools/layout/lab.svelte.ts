@@ -1,9 +1,9 @@
 /** The layout lab's shared state: the design (a layout with undo history), the shared camera, the tool, what the pointer and the lists name, and the layer toggles. */
 import { fitRect, fitted, previewView, type Box, type View } from './camera';
-import { designFromLayout, retarget, sameTarget, type Design, type Target } from './design';
+import { designFromLayout, exists, retarget, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { addModule, contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
+import { addModule, contentBounds, deleteRoom, moduleDef, moduleIndex, moduleTiles, removeModule, rotateModule, takeModuleId, takeRoomId, addRoom, splitRoom, type Rect, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
@@ -75,6 +75,10 @@ class Lab {
     this.design = designFromLayout(l, this.label);
     clearTimeout(this.timer);
     this.pins = rebase(this.pins, l, this.design);
+    // selection and hover are held by stable id: resolved against this layout, dropped when what they name is gone
+    if (this.selected && !exists(this.design, this.selected)) this.selected = null;
+    if (this.hover && !exists(this.design, this.hover)) this.hover = null;
+    if (this.moving !== null && moduleIndex(l, this.moving) < 0) this.moving = null;
     this.timer = window.setTimeout(() => {
       this.problems = problemsOf(l);
       this.changes = this.original ? changeItems(this.original, l) : [];
@@ -144,15 +148,13 @@ class Lab {
   private afterJump(): void {
     if (!this.hist) return;
     this.show(this.hist.present);
-    const s = this.selected;
-    if (s && ((s.kind === 'module' && !this.hist.present.modules[s.index]) || (s.kind === 'room' && !this.hist.present.rooms[s.id]))) this.selected = null;
   }
 
   /** Delete: the selected module or room. */
   removeSelected(): void {
     if (this.compare) return;
     const s = this.selected;
-    if (s?.kind === 'module') this.edit((l) => removeModule(l, s.index));
+    if (s?.kind === 'module') this.edit((l) => { const i = moduleIndex(l, s.id); return i >= 0 ? removeModule(l, i) : l; });
     else if (s?.kind === 'room') this.edit((l) => deleteRoom(l, s.id));
     this.selected = null;
   }
@@ -173,13 +175,13 @@ class Lab {
     this.armed = def;
     this.setTool('module');
   }
-  /** A module being dragged (its index): the ghost shows where it would land, checked with the module itself set aside. */
+  /** A module being dragged (its stable id): the ghost shows where it would land, checked with the module itself set aside. */
   moving = $state<number | null>(null);
   /** The ghost of a module with its top-left at (x, y): the game's placement owner's reason it cannot stand there, if any. */
   aim(def: string | null, x: number, y: number, rot = this.rot): void {
     const l = this.layout;
     if (!l || !def || !moduleDef(def)) { this.ghost = null; return; }
-    this.ghost = { def, x, y, rot, error: placementProblem(l, def, x, y, rot, this.moving ?? undefined) };
+    this.ghost = { def, x, y, rot, error: placementProblem(l, def, x, y, rot, this.moving === null ? undefined : moduleIndex(l, this.moving)) };
   }
   /** Place the armed module where the ghost is, after checking the spot against the layout as it is now (a second click in the same place is refused). */
   placeModule(def: string, x: number, y: number, rot: number): boolean {
@@ -224,10 +226,12 @@ class Lab {
     if (g) {
       this.rot = (g.rot + 1) % 4;
       this.aim(g.def, g.x, g.y, this.rot);
-    } else if (this.selected?.kind === 'module') {
-      const i = this.selected.index;
-      this.edit((l) => rotateModule(l, i));
-    }
+    } else this.rotateSelected();
+  }
+  /** Turn the selected module a quarter turn. */
+  rotateSelected(): void {
+    const s = this.selected;
+    if (s?.kind === 'module') this.edit((l) => { const i = moduleIndex(l, s.id); return i >= 0 ? rotateModule(l, i) : l; });
   }
   ghostTiles(): Tile[] {
     const g = this.ghost;

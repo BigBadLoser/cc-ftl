@@ -117,7 +117,7 @@ export interface KeyExtra { name: string; color: string; dot?: boolean }
  * Furniture codes are the palette's module list.
  */
 export function keyOf(d: Design): { rooms: KeyRoom[]; extras: KeyExtra[] } {
-  const roles = [...new Set(d.rooms.map((r) => r.role))].filter((r) => r !== 'hall').sort();
+  const roles = [...new Set(d.rooms.filter((r) => r.tiles > 0).map((r) => r.role))].filter((r) => r !== 'hall').sort();
   const rooms = roles.map((role) => ({ role, name: NAMES[role] ?? role, color: css(roleTint(role)) }));
   rooms.push({ role: 'hall', name: 'corridor', color: css(HALL) });
   const extras: KeyExtra[] = [{ name: 'wall / hull', color: css(WALL) }, { name: 'door', color: css(DOOR) }];

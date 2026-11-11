@@ -7,7 +7,7 @@
 	import { drawGrid, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
+	import { moduleIndex, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
@@ -15,7 +15,7 @@
 		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
-		| { k: 'move'; index: number; grab: Tile; x: number; y: number; moved: boolean };
+		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
 
 	let canvas: HTMLCanvasElement;
 	let box = $state<Box>({ w: 800, h: 500 });
@@ -162,8 +162,8 @@
 			if (edge) { lab.begin(); mode = { k: 'edge', id: edge.id, edge: edge.edge, base: l, rect: edge.rect }; return; }
 			const t = pick(tile);
 			const choose = (): void => { if (!sameTarget(lab.selected, t)) lab.select(t); };
-			const m = t?.kind === 'module' ? l.modules[t.index] : undefined;
-			if (t?.kind === 'module' && m) mode = { k: 'move', index: t.index, grab: [tile[0] - m.x, tile[1] - m.y], x: m.x, y: m.y, moved: false };
+			const m = t?.kind === 'module' ? l.modules[moduleIndex(l, t.id)] : undefined;
+			if (t?.kind === 'module' && m) mode = { k: 'move', id: t.id, grab: [tile[0] - m.x, tile[1] - m.y], x: m.x, y: m.y, moved: false };
 			else mode = { k: 'pan', x: e.clientX, y: e.clientY };
 			choose();
 		}
@@ -197,14 +197,14 @@
 			return;
 		}
 		if (m?.k === 'move') {
-			const cur = lab.layout?.modules[m.index];
+			const cur = lab.layout?.modules[moduleIndex(lab.layout, m.id)];
 			if (!cur) return;
 			const x = tile[0] - m.grab[0], y = tile[1] - m.grab[1];
 			if (!m.moved && x === cur.x && y === cur.y) return;
 			m.moved = true;
 			m.x = x;
 			m.y = y;
-			lab.moving = m.index;
+			lab.moving = m.id;
 			lab.rot = lab.ghost?.rot ?? cur.rot;
 			lab.aim(cur.def, x, y, lab.rot);
 			return;
@@ -229,7 +229,7 @@
 			}
 		} else if (m?.k === 'move') {
 			const g = lab.ghost;
-			if (m.moved && g && !g.error) lab.edit((cur) => moveModule(cur, m.index, g.x, g.y, g.rot));
+			if (m.moved && g && !g.error) lab.edit((cur) => { const i = moduleIndex(cur, m.id); return i >= 0 ? moveModule(cur, i, g.x, g.y, g.rot) : cur; });
 			lab.ghost = null;
 			lab.moving = null;
 		}

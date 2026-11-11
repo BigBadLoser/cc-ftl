@@ -7,7 +7,7 @@ import { unpowered } from './world';
 
 export interface Problem {
   text: string;
-  /** The module it names (an index), if any. */
+  /** The module it names (its stable id), if any. */
   module?: number;
   /** Tiles to show for it. */
   tiles: Tile[];
@@ -28,11 +28,11 @@ export function problemsOf(l: Layout): Problem[] {
     const x = at ? Number(at[1]) : NaN, y = at ? Number(at[2]) : NaN;
     const module = at ? moduleAt(x, y) : -1;
     const m = l.modules[module];
-    out.push({ text, ...(module >= 0 ? { module } : {}), tiles: m ? moduleTiles(m) : at ? [[x, y]] : [] });
+    out.push({ text, ...(module >= 0 ? { module: l.moduleIds[module] as number } : {}), tiles: m ? moduleTiles(m) : at ? [[x, y]] : [] });
   }
   for (const i of unpowered(l)) {
     const m = l.modules[i];
-    if (m) out.push({ text: `${defs[m.def]?.name ?? m.def}@${m.x},${m.y}: unpowered`, module: i, tiles: moduleTiles(m) });
+    if (m) out.push({ text: `${defs[m.def]?.name ?? m.def}@${m.x},${m.y}: unpowered`, module: l.moduleIds[i] as number, tiles: moduleTiles(m) });
   }
   return out;
 }

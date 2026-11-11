@@ -29,6 +29,7 @@ const ISOLATED = [
   'src/content/jobs.test.ts',
   'src/content/ships/envSkip.test.ts',
   'src/render/moduleMemo.test.ts', // switches the module-level memo off and back
+  'tools/layout/lab.test.ts', // stubs `window` for the lab's state
   'src/render/animClock.test.ts',
   'src/render/assets/compose.test.ts',
   'src/render/assets/gpuKeep.test.ts',

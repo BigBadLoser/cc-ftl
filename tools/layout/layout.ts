@@ -272,6 +272,8 @@ export function takeModuleId(l: Layout, mark: number): { id: number; mark: numbe
 /** Add a module with `id` (from `takeModuleId`; by default the layout's own next id). */
 export const addModule = (l: Layout, m: TemplateModule, id: number = l.nextModuleId): Layout => ({ ...l, modules: [...l.modules, m], moduleIds: [...l.moduleIds, id], nextModuleId: Math.max(l.nextModuleId, id + 1) });
 export const moveModule = (l: Layout, i: number, x: number, y: number, rot: number): Layout => (l.modules[i] ? { ...l, modules: l.modules.map((m, k) => (k === i ? { ...m, x, y, rot } : m)) } : l);
+/** The current index of the module with this stable id, or -1 when it no longer exists. */
+export const moduleIndex = (l: Layout, id: number): number => l.moduleIds.indexOf(id);
 export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i), moduleIds: l.moduleIds.filter((_, k) => k !== i) });
 /** Rotate a module a quarter turn about its top-left tile. */
 export const rotateModule = (l: Layout, i: number): Layout => { const m = l.modules[i]; return m ? moveModule(l, i, m.x, m.y, (m.rot + 1) % 4) : l; };

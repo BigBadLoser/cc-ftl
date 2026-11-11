@@ -42,7 +42,13 @@ export interface CaseFile {
 export function encodeLayout(l: Layout): LayoutJson {
   const roomOf: string[] = [];
   for (let y = 0; y < l.height; y++) roomOf.push(l.roomOf.slice(y * l.width, (y + 1) * l.width).map((r) => (r < 0 ? '.' : String(r))).join(' '));
-  return { name: l.name, width: l.width, height: l.height, immobile: l.immobile, cells: [...l.cells], roomOf, rooms: l.rooms, modules: l.modules, moduleIds: l.moduleIds, nextModuleId: l.nextModuleId, extra: l.extra };
+  return { name: l.name, width: l.width, height: l.height, immobile: l.immobile, cells: [...l.cells], roomOf, rooms: trimRooms(l), modules: l.modules, moduleIds: l.moduleIds, nextModuleId: l.nextModuleId, extra: l.extra };
+}
+/** The rooms up to the last one any tile still names: empty padding rooms (id gaps after an undo) at the end are not saved. */
+function trimRooms(l: Layout): Layout['rooms'] {
+  let last = -1;
+  for (const r of l.roomOf) if (r > last) last = r;
+  return l.rooms.slice(0, last + 1);
 }
 export function decodeLayout(j: LayoutJson): Layout {
   const roomOf = j.roomOf.flatMap((row) => row.split(' ').map((t) => (t === '.' ? -1 : Number(t))));

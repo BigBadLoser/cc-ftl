@@ -29,7 +29,7 @@ export function anchorFor(l: Layout, d: Design, fx: number, fy: number, free: bo
   if (free) return { kind: 'free' };
   const x = Math.round(fx), y = Math.round(fy);
   const m = d.modules.find((dm) => !dm.lamp && dm.tiles.some((t) => t[0] === x && t[1] === y));
-  if (m) return { kind: 'module', id: l.moduleIds[m.index] as number };
+  if (m) return { kind: 'module', id: m.id };
   const c = l.cells[y]?.[x];
   if (c === 'D') return { kind: 'door', x, y };
   if (c === '#') return { kind: 'wall', x, y };

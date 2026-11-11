@@ -7,7 +7,10 @@ import { defs, isLamp, moduleCode, NAMES } from '../shipgen/labels';
 import { moduleTiles, toTemplate, type Layout } from './layout';
 
 export interface DesignModule {
+  /** Position in the layout's module list (changes with edits; picks and selections hold `id`). */
   index: number;
+  /** The module's stable id (Layout.moduleIds). */
+  id: number;
   def: string;
   name: string;
   /** The two-letter code (the labelled view's), empty for lamps. */
@@ -48,7 +51,7 @@ export interface Design {
   layout: Layout;
 }
 /** What the pointer or a list names: a room or a module. */
-export type Target = { kind: 'room'; id: number } | { kind: 'module'; index: number };
+export type Target = { kind: 'room'; id: number } | { kind: 'module'; id: number };
 
 /**
  * Where a room's name goes: the largest connected patch of the room's floor that no module covers, and in it the free stretch
@@ -125,7 +128,7 @@ export function designFromLayout(l: Layout, label: string): Design {
     const lamp = isLamp(def);
     const xs = tiles.map((t) => t[0]), ys = tiles.map((t) => t[1]);
     return {
-      index, def: m.def, name, code: lamp ? '' : moduleCode(name), lamp, x: m.x, y: m.y, rot: m.rot, tiles,
+      index, id: l.moduleIds[index] as number, def: m.def, name, code: lamp ? '' : moduleCode(name), lamp, x: m.x, y: m.y, rot: m.rot, tiles,
       w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1,
     };
   });
@@ -139,9 +142,9 @@ export function targetAt(d: Design, x: number, y: number): Target | null {
   for (const m of d.modules) {
     if (!m.tiles.some((t) => t[0] === x && t[1] === y)) continue;
     if (m.lamp) lamp ??= m;
-    else return { kind: 'module', index: m.index };
+    else return { kind: 'module', id: m.id };
   }
-  if (lamp) return { kind: 'module', index: lamp.index };
+  if (lamp) return { kind: 'module', id: lamp.id };
   const r = d.roomOf[y * d.width + x] ?? -1;
   return r >= 0 ? { kind: 'room', id: r } : null;
 }
@@ -149,28 +152,31 @@ export function targetAt(d: Design, x: number, y: number): Target | null {
 /** The tiles a target covers. */
 export function tilesOf(d: Design, t: Target | null): [number, number][] {
   if (!t) return [];
-  if (t.kind === 'module') return d.modules[t.index]?.tiles ?? [];
+  if (t.kind === 'module') return moduleOf(d, t.id)?.tiles ?? [];
   const out: [number, number][] = [];
   for (let i = 0; i < d.roomOf.length; i++) if (d.roomOf[i] === t.id) out.push([i % d.width, Math.floor(i / d.width)]);
   return out;
 }
 
 export const sameTarget = (a: Target | null, b: Target | null): boolean =>
-  !!a && !!b && a.kind === b.kind && (a.kind === 'room' ? a.id === (b as typeof a).id : a.index === (b as typeof a).index);
+  !!a && !!b && a.kind === b.kind && (a.id === (b as typeof a).id);
 
 export function describe(d: Design, t: Target | null): string {
   if (!t) return '';
-  if (t.kind === 'module') { const m = d.modules[t.index]; return m ? `${m.name} at ${m.x}, ${m.y}` : ''; }
-  const r = d.rooms[t.id];
+  if (t.kind === 'module') { const m = moduleOf(d, t.id); return m ? `${m.name} at ${m.x}, ${m.y}` : ''; }
+  const r = liveRoom(d, t.id);
   return r ? `${r.name || (r.role === 'hall' ? 'corridor' : r.role)} (${r.tiles} tiles)` : '';
 }
 
 /** A target picked on design `shown` as a target in design `edited`, by stable id (a module's id; a room's id): null when it no longer exists there. */
 export function retarget(shown: Design, edited: Design, t: Target | null): Target | null {
   if (!t || shown === edited) return t;
-  if (t.kind === 'module') {
-    const i = edited.layout.moduleIds.indexOf(shown.layout.moduleIds[t.index] as number);
-    return i >= 0 ? { kind: 'module', index: i } : null;
-  }
-  return (edited.rooms[t.id]?.tiles ?? 0) > 0 ? t : null;
+  return exists(edited, t) ? t : null;
 }
+
+/** The module with this stable id in a design, if it is still there. */
+export const moduleOf = (d: Design, id: number): DesignModule | undefined => d.modules.find((m) => m.id === id);
+/** A room that exists: it has tiles (a deleted room, or an empty padding room added for an id gap, does not). */
+export const liveRoom = (d: Design, id: number): DesignRoom | undefined => { const r = d.rooms[id]; return r && r.tiles > 0 ? r : undefined; };
+/** Whether the target names something in this design now (selection, hover and the rest are cleared when it does not). */
+export const exists = (d: Design, t: Target | null): boolean => !!t && (t.kind === 'module' ? !!moduleOf(d, t.id) : !!liveRoom(d, t.id));
