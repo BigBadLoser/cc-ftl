@@ -29,7 +29,7 @@
   gametable holo game table look study, preview only (gametable_study.py)
   bar       bar look study, preview only (bar_study.py)
   exercise  exercise machine look study, preview only (exercise_study.py)
-  pod       recovery pod look study, preview only (pod_study.py 1x1, pod2_study.py 2x2 lying, pod3-12_study.py 2x2 upright)
+  pod       recovery pod look study, preview only (pod_study.py 1x1, pod2_study.py 2x2 lying, pod3-13_study.py 2x2 upright)
   gametable_module  the holo game table module.gametable (2x1, study r1 + s4): idle, .unpowered, .active frames (hologram
             baked in), seated-crew front overlays, four rotations (gametable.py; MODPACK_ROTS as storage_set)
   arcade_cabinet  the arcade module.arcade (1x1, study j2): idle, .unpowered, .active frames (hologram baked in), four
@@ -155,10 +155,10 @@ def jobs(name):
         from . import exercise_study
         return exercise_study.jobs(), "arcade"
     if name == "pod":           # look study, preview only (not in RENDERED): recovery pod designs, r0
-        from . import pod2_study, pod3_study, pod4_study, pod5_study, pod6_study, pod7_study, pod8_study, pod9_study, pod10_study, pod11_study, pod12_study, pod_study
+        from . import pod2_study, pod3_study, pod4_study, pod5_study, pod6_study, pod7_study, pod8_study, pod9_study, pod10_study, pod11_study, pod12_study, pod13_study, pod_study
         return (pod_study.jobs() + pod2_study.jobs() + pod3_study.jobs() + pod4_study.jobs() + pod5_study.jobs()
                 + pod6_study.jobs() + pod7_study.jobs() + pod8_study.jobs()
-                + pod9_study.jobs() + pod10_study.jobs() + pod11_study.jobs() + pod12_study.jobs(), "arcade")
+                + pod9_study.jobs() + pod10_study.jobs() + pod11_study.jobs() + pod12_study.jobs() + pod13_study.jobs(), "arcade")
     if name == "gametable_module":
         import os
         from . import gametable
