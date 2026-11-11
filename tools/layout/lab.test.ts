@@ -158,3 +158,21 @@ describe('rotating the selected module', () => {
     expect(l.modules[moduleIndex(l, id)]?.rot).toBe(1);
   });
 });
+
+describe('rotating a container', () => {
+  it('turns its clamp with it, so a turned container on a frame stays valid', () => {
+    start();
+    const base = lab.layout as Layout;
+    // a frame: beams x5..14, y8..13, hull wall on the east column
+    const cells = base.cells.map((r, y) => (y >= 8 && y <= 13 ? `${r.slice(0, 5)}${'='.repeat(10)}#${r.slice(16)}` : r));
+    lab.hist = { past: [], present: { ...base, cells }, future: [] } as never;
+    expect(lab.placeModule('container.2x4', 6, 9, 0)).toBe(true);
+    const id = (lab.layout as Layout).moduleIds.at(-1) as number;
+    lab.selected = { kind: 'module', id };
+    lab.rotateSelected();
+    const l = lab.layout as Layout;
+    const m = l.modules[moduleIndex(l, id)];
+    expect(m?.rot).toBe(1);
+    expect(m?.clamp).toBe('e');
+  });
+});

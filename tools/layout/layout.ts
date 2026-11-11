@@ -276,6 +276,15 @@ export const moveModule = (l: Layout, i: number, x: number, y: number, rot: numb
 export const moduleIndex = (l: Layout, id: number): number => l.moduleIds.indexOf(id);
 export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: l.modules.filter((_, k) => k !== i), moduleIds: l.moduleIds.filter((_, k) => k !== i) });
 /** Rotate a module a quarter turn about its top-left tile. */
-export const rotateModule = (l: Layout, i: number): Layout => { const m = l.modules[i]; return m ? moveModule(l, i, m.x, m.y, (m.rot + 1) % 4) : l; };
+const SIDES = ['n', 'e', 's', 'w'] as const;
+/** A quarter turn. A container's clamp side turns with it (a side is named in the ship's frame and rotates with the module, as the game's hullSide does), so a turned container stays clamped by the same end. */
+export const rotateModule = (l: Layout, i: number): Layout => {
+  const m = l.modules[i];
+  if (!m) return l;
+  const turned = moveModule(l, i, m.x, m.y, (m.rot + 1) % 4);
+  if (!moduleDef(m.def)?.container) return turned;
+  const clamp = SIDES[(SIDES.indexOf(m.clamp ?? 'n') + 1) % 4];
+  return { ...turned, modules: turned.modules.map((t, k) => (k === i ? { ...t, clamp } : t)) };
+};
 
 export const moduleDef = (id: string): ModuleDef | undefined => defs[id];
