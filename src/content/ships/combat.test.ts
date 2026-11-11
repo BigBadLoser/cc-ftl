@@ -157,6 +157,20 @@ describe('weapons', () => {
     expect(combatOf(sim, 2).shield.layers).toBe(1);
   });
 
+  it('a shield that is up drops to no layers within a tick or two when its ship loses power', () => {
+    const sim = duel('module.burstLaser', dummy);
+    for (let t = 0; t < 20 * 60 && combatOf(sim, 2).shield.layers === 0; t += 10) run(sim, 10); // the emitter dish deploys first
+    expect(combatOf(sim, 2).shield.max).toBeGreaterThan(0);
+    expect(combatOf(sim, 2).shield.layers).toBeGreaterThan(0);
+    const reactors = modulesOf(sim, 2, 'module.reactor');
+    expect(reactors.length).toBeGreaterThan(0);
+    for (const id of reactors) sim.enqueue({ type: 'module.setEnabled', id, enabled: false });
+    run(sim, 2);
+    expect(modulesOf(sim, 2, 'module.shieldGen').every((id) => !sim.world.get(id, ModuleC)!.powered)).toBe(true);
+    expect(combatOf(sim, 2).shield.max).toBe(0);
+    expect(combatOf(sim, 2).shield.layers).toBe(0);
+  });
+
   it('mass driver breaches the hull and the room vents', () => {
     const wallTarget: ShipTemplate = {
       name: 'Wall', crew: [], faction: 'hostile',
