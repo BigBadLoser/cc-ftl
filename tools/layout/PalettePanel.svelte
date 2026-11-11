@@ -2,6 +2,7 @@
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Box from '@lucide/svelte/icons/box';
+	import Equal from '@lucide/svelte/icons/equal';
 	import DoorOpen from '@lucide/svelte/icons/door-open';
 	import Eraser from '@lucide/svelte/icons/eraser';
 	import Grid2x2 from '@lucide/svelte/icons/grid-2x2';
@@ -30,6 +31,7 @@
 		{ id: 'floor', name: 'Floor', tip: 'Paint floor (F)', icon: Grid2x2 },
 		{ id: 'wall', name: 'Wall', tip: 'Paint an interior wall (W)', icon: BrickWall },
 		{ id: 'door', name: 'Door', tip: 'Place a door (D)', icon: DoorOpen },
+		{ id: 'beam', name: 'Beam', tip: 'Paint frame beams for containers (B)', icon: Equal },
 		{ id: 'space', name: 'Erase', tip: 'Erase to open space (E)', icon: Eraser },
 		{ id: 'room', name: 'Room', tip: 'Draw a room (G)', icon: SquareDashed },
 		{ id: 'module', name: 'Module', tip: 'Place a module (M)', icon: Box },

@@ -12,7 +12,7 @@
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
 		| { k: 'pan'; x: number; y: number }
-		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
+		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '=' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
 		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
@@ -132,7 +132,7 @@
 		for (let i = 0; i <= n; i++) out.push([Math.round(a[0] + ((b[0] - a[0]) * i) / n), Math.round(a[1] + ((b[1] - a[1]) * i) / n)]);
 		return out;
 	}
-	const PAINT: Record<string, '_' | '#' | 'D' | '.'> = { floor: '_', wall: '#', door: 'D', space: '.' };
+	const PAINT: Record<string, '_' | '#' | 'D' | '=' | '.'> = { floor: '_', wall: '#', door: 'D', beam: '=', space: '.' };
 	const room = (): number | undefined => (lab.selected?.kind === 'room' ? lab.selected.id : undefined);
 
 	function down(e: PointerEvent) {
@@ -142,7 +142,7 @@
 		if (e.button !== 0 || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		const tool = lab.tool;
 		if (PAINT[tool]) {
-			const ch = PAINT[tool] as '_' | '#' | 'D' | '.';
+			const ch = PAINT[tool] as '_' | '#' | 'D' | '=' | '.';
 			lab.begin();
 			// A stroke is painted from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
 			const first = room();

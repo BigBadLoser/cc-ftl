@@ -124,8 +124,8 @@ function neighbourRoom(w: Work, x: number, y: number): number {
   return [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? NONE;
 }
 
-/** Paint tiles with a tile kind: '_' floor (joining `room`, else the room beside it), '#' wall, 'D' door, '.' space. Modules the new tile cannot carry go. */
-export function paint(l: Layout, tiles: readonly Tile[], ch: '_' | '#' | 'D' | '.', room?: number): Layout {
+/** Paint tiles with a tile kind: '_' floor (joining `room`, else the room beside it), '#' wall, 'D' door, '=' beam (the frame containers clamp to), '.' space. Modules the new tile cannot carry go. */
+export function paint(l: Layout, tiles: readonly Tile[], ch: '_' | '#' | 'D' | '=' | '.', room?: number): Layout {
   const w = work(l);
   const hit = new Set<number>();
   for (const [x, y] of tiles) {

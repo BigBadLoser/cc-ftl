@@ -295,3 +295,17 @@ describe('a new container turned before it is placed', () => {
     expect(placementProblem(frame(), 'container.2x4', 6, 9, 1)).toBeNull();
   });
 });
+
+describe('beam painting', () => {
+  it('paints, erases and undoes like the other paint tools, and the validator judges the frame', () => {
+    const l = blank(30, 24);
+    const framed = paint(l, [[5, 5], [6, 5], [7, 5]], '=');
+    expect(framed.cells[5]?.slice(5, 8)).toBe('===');
+    expect(framed.roomOf[5 * 30 + 5]).toBe(-1);
+    expect(paint(framed, [[6, 5]], '.').cells[5]?.slice(5, 8)).toBe('=.=');
+    expect(paint(framed, [[5, 5]], '=')).toBe(framed); // nothing changes: no undo step
+    const withBox = addModule(paint(l, rect(6, 9, 2, 4), '='), { def: 'container.2x4', x: 6, y: 9, rot: 0 });
+    const over = paint(withBox, [[6, 9]], '=');
+    expect(over).toBe(withBox);
+  });
+});

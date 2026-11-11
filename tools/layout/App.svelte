@@ -18,7 +18,7 @@
 	import Workspace from './Workspace.svelte';
 
 	let open = $state(false);
-	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', e: 'space', g: 'room', m: 'module', n: 'note' };
+	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', b: 'beam', e: 'space', g: 'room', m: 'module', n: 'note' };
 	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
 	function keys(e: KeyboardEvent) {
 		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;

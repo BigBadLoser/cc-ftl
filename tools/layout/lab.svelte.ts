@@ -17,7 +17,7 @@ import { anchorFor, newPin, rebase, type Pin } from './pins';
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
 const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'space' | 'room' | 'module' | 'note';
+export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
