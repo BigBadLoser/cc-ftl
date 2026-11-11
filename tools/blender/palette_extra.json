@@ -3596,5 +3596,13 @@
   "arcAmbF": {"hex": "#b98a46", "set": "arcade"},
   "arcGrn": {"hex": "#6dff9e", "emissive": 2.2, "set": "arcade"},
   "arcCyanOff": {"hex": "#26434d", "set": "arcade"},
-  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"}
+  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"},
+  "recFlL": {"hex": "#3db3ad", "set": "recovery"},
+  "recFl": {"hex": "#2a8f93", "set": "recovery"},
+  "recFlD": {"hex": "#1d6a75", "set": "recovery"},
+  "recFlK": {"hex": "#134b58", "set": "recovery"},
+  "recFilm": {"hex": "#7fe6dc", "set": "recovery"},
+  "recShine": {"hex": "#e4fffb", "set": "recovery"},
+  "recGlow": {"hex": "#8ffff0", "emissive": 2.0, "set": "recovery"},
+  "recGlowA": {"hex": "#ffc35a", "emissive": 2.0, "set": "recovery"}
 }

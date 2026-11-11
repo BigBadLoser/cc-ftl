@@ -152,6 +152,9 @@ def jobs(name):
         import os
         from . import arcade
         return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
+    if name == "recovery":      # look study, preview only (not in RENDERED): the 2x2 recovery pod, r0, pod + .front
+        from . import recovery_study
+        return recovery_study.jobs(), "recovery"
     if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
         from . import research
         return research.jobs(), "research"
