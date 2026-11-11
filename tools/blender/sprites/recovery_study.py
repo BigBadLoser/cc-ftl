@@ -184,7 +184,8 @@ def p3_cap():
     return k.build()
 
 
-DESIGNS = {"p1": (p1_back, p1_cap), "p2": (p2_back, p2_cap), "p3": (p3_back, p3_cap)}
+DESIGNS = {v: (back, ((film, FILM_A), (shine, SHINE_A), (cap, 255)))
+           for v, (back, cap) in (("p1", (p1_back, p1_cap)), ("p2", (p2_back, p2_cap)), ("p3", (p3_back, p3_cap)))}
 
 
 def layer(mask, objs, alpha):
@@ -202,15 +203,15 @@ def layer(mask, objs, alpha):
     return E.crop_item("x", FP, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
 
 
-def job(v):
-    def run(v=v):
-        back, cap = DESIGNS[v]
+def job(v, designs):
+    def run(v=v, designs=designs):
+        back, layers = designs[v]
         core.clear_scene_meshes()
         post.select(PAL)
         c, op, g, ox, oy, _ = E.render_sprite("x", "prop", back())
         out = [E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)]
         front = None
-        for build, alpha in ((film, FILM_A), (shine, SHINE_A), (cap, 255)):
+        for build, alpha in layers:
             core.clear_scene_meshes()
             post.select(PAL)
             it = layer(back(), build(), alpha)
@@ -221,4 +222,5 @@ def job(v):
 
 
 def jobs():
-    return [job(v) for v in DESIGNS]
+    from . import recovery_study2
+    return [job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
