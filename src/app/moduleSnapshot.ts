@@ -94,7 +94,7 @@ export function buildStats(sim: Sim): UiStats {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
     if (!m || !def || shipIdOf(sim, m) !== GRID || !m.enabled || m.hp <= 0) continue;
-    if (def.power > 0) supply += hasFuel(sim, GRID, m, def) ? def.power : 0; // an empty reactor supplies nothing
+    if (def.power > 0) supply += hasFuel(m, def) ? def.power : 0; // an empty reactor supplies nothing
     else demand -= def.power;
   }
   let o2: number | null = null;

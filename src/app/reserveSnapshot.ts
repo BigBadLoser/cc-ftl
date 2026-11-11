@@ -1,19 +1,18 @@
 import { ModuleC, type Sim } from '../sim';
-import { burnsFuel, chargeOf, fuelOf } from '../sim/modules/energy';
+import { chargeOf, fuelOf } from '../sim/modules/energy';
 import { shipStoreCount } from '../sim/items/stock';
 import { shipIdOf } from '../sim/regions';
 import type { UiReserve } from '../ui/api';
 
 const r1 = (n: number): number => Math.round(n * 10) / 10;
 
-/** A reactor's fuel store or a battery bank's charge for the module panel, or null for any other module (or a reactor that burns nothing). Reads the sim. */
+/** A reactor's fuel store or a battery bank's charge for the module panel, or null for any other module. Reads the sim. */
 export function buildReserve(sim: Sim, id: number): UiReserve | null {
   const m = sim.world.get(id, ModuleC);
   const def = m && sim.content.modules[m.def];
   if (!m || !def) return null;
   if (def.fuel) {
     const ship = shipIdOf(sim, m);
-    if (!burnsFuel(sim, ship)) return null;
     const have = fuelOf(m, def);
     const name = sim.content.items[def.fuel.item]?.name ?? def.fuel.item;
     const stock = shipStoreCount(sim, ship, def.fuel.item);
@@ -37,7 +36,7 @@ export function buildReserves(sim: Sim, ship: number): { fuel: { have: number; m
     const m = sim.world.get(id, ModuleC);
     const def = m && shipIdOf(sim, m) === ship ? sim.content.modules[m.def] : undefined;
     if (!m || !def) continue;
-    if (def.fuel && burnsFuel(sim, ship)) Object.assign(fuel, { have: fuel.have + fuelOf(m, def), max: fuel.max + def.fuel.store, any: true });
+    if (def.fuel) Object.assign(fuel, { have: fuel.have + fuelOf(m, def), max: fuel.max + def.fuel.store, any: true });
     else if (def.battery) Object.assign(battery, { have: battery.have + chargeOf(m, def), max: battery.max + def.battery.capacity, any: true });
   }
   return { fuel: fuel.any ? { have: r1(fuel.have), max: fuel.max } : null, battery: battery.any ? { have: Math.round(battery.have), max: battery.max } : null };

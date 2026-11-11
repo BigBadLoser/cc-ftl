@@ -38,6 +38,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- Enemy ships and stations burn energy crystals like yours: ships spawn with a few days of them in their stores, stations hold a large stock that their supply runs refill, and derelicts have drained reactors. Crystals in their holds are loot. Rogue AI ships are switched off for now: their sealed reactor pods can't be refuelled ([#427](https://github.com/BigBadLoser/cc-ftl/pull/427)).
 - Spacesuits are no longer limited: any airlock or shuttle has a suit for every crew member who needs one, so a shuttle can take a full party of four out to a wreck, all suited. ([#419](https://github.com/BigBadLoser/cc-ftl/pull/419))
 - Other ships are drawn roofed until your crew board them; stations stay open. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))
 - Busy nodes run faster: a station hub's simulation step takes about a third less time (gas, heat, power, consoles, combat checks and lighting do less repeated work), with identical results. ([#374](https://github.com/BigBadLoser/cc-ftl/pull/374))
@@ -73,6 +74,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Hull plans now seal at corners: an L-shaped or notched plan no longer leaves floor touching open space through a diagonal gap in the hull. ([#431](https://github.com/BigBadLoser/cc-ftl/pull/431))
 - Crew working a salvage wreck no longer stand around idle: they keep working while the shuttle is away, take the nearest jobs first and carry fuller loads, the shuttle unloads its hold at home by itself, and crew too worn for a trip rest straight away. ([#411](https://github.com/BigBadLoser/cc-ftl/pull/411))
 - Fixed an intermittent crash after jumping (a renderer bug in tiled backgrounds); the starmap backdrop now waits for its art instead of flashing. ([#410](https://github.com/BigBadLoser/cc-ftl/pull/410))
 - Playtest fixes: the Stations strip says why the shield console has nobody on it, the false "Low power" alert at the start of a game is gone, the turn counter matches the save, and dragging a floor, wall or door off the hull shows "Floor must join the hull" instead of doing nothing. ([#409](https://github.com/BigBadLoser/cc-ftl/pull/409))

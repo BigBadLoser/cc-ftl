@@ -126,7 +126,7 @@ export function totalStock(sim: Sim, item: string): number {
 }
 
 /** Storage modules of one ship crew can reach (not sealed containers), ascending id. */
-function shipStorages(sim: Sim, shipId: number): number[] {
+export function shipStorages(sim: Sim, shipId: number): number[] {
   return sim.world.query(StorageC, ModuleC).filter((id) => {
     const m = sim.world.get(id, ModuleC);
     return !!m && shipIdOf(sim, m) === shipId && !sim.world.has(id, ContainerC);
