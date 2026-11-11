@@ -1,13 +1,7 @@
-import { BUILD_TICKS, createJob } from '../crew/handlers';
-import { JobC, PositionC } from '../crew/components';
-import { jobTakeable } from '../crew/jobFit';
-import { findJobAt } from '../crew/helpers';
 import { shipGrid } from '../regions';
 import type { Sim } from '../sim';
-import { Struct } from '../structure';
+import { Struct, writeStruct } from '../structure';
 import { NORMAL_CO2, NORMAL_O2, NORMAL_TEMP } from '../tuning';
-import { alive } from './crew';
-import { jobsOf } from './progress';
 import type { YardOrder } from './types';
 
 type Tile = { x: number; y: number };
@@ -72,44 +66,51 @@ function fill(sim: Sim, tiles: readonly Tile[], air: NonNullable<YardOrder['air'
 }
 
 /**
- * The last pass ('open'), once the new section is shut: the section is delivered pressurised (its floor takes the air of the room it joins), and
- * floor goes where the walls it turned inward stand. Returns the jobs posted.
+ * Whether turning the wall at `t` to floor would let air out: the section's own floor, and the old walls already opened into it, are walked from the
+ * tiles beside the wall, and any of them touching open space, a truss or another ship's tile is a breach. (Ship floor beyond the opened walls is not
+ * walked: a hole elsewhere in the old ship is not this wall's doing.)
  */
-export function postOpenJobs(sim: Sim, o: YardOrder): number {
-  o.stage = 'open';
-  const walls = innerWalls(sim, o);
-  o.air = joinedAir(sim, o, walls);
-  fill(sim, o.floor.filter((t) => sim.sector.grid.get('struct', t.x, t.y) === Struct.Floor), o.air);
-  o.opens = [];
-  for (const t of walls) {
-    if (findJobAt(sim, o.ship, t.x, t.y)) continue;
-    createJob(sim, 'build', o.ship, t.x, t.y, Struct.Floor, BUILD_TICKS[Struct.Floor] as number, true, { yard: o.id });
-    o.opens.push({ x: t.x, y: t.y });
+function breaches(sim: Sim, o: YardOrder, t: Tile, patch: Set<string>): boolean {
+  const grid = shipGrid(sim, o.ship);
+  if (!grid) return true;
+  const seen = new Set<string>();
+  const stack = N4.map(([dx, dy]) => ({ x: t.x + dx, y: t.y + dy })).filter((n) => patch.has(key(n)));
+  while (stack.length) {
+    const c = stack.pop() as Tile;
+    if (seen.has(key(c))) continue;
+    seen.add(key(c));
+    for (const [dx, dy] of N4) {
+      const n = { x: c.x + dx, y: c.y + dy };
+      if (n.x === t.x && n.y === t.y) continue;
+      if (!grid.inBounds(n.x, n.y) || grid.get('ship', n.x, n.y) !== o.ship || grid.get('struct', n.x, n.y) === Struct.Space || grid.get('struct', n.x, n.y) === Struct.Beam) return true;
+      if (patch.has(key(n))) stack.push(n);
+    }
   }
-  return o.opens.length;
-}
-
-/** Each wall of the open pass that has turned to floor takes the order's air (a wall holds none), and leaves the list. */
-export function fillOpened(sim: Sim, o: YardOrder): void {
-  if (!o.opens?.length || !o.air) return;
-  const done = o.opens.filter((t) => sim.sector.grid.get('struct', t.x, t.y) === Struct.Floor);
-  if (!done.length) return;
-  fill(sim, done, o.air);
-  o.opens = o.opens.filter((t) => !done.includes(t));
+  return false;
 }
 
 /**
- * True when the open pass can go no further: jobs remain, nobody is at work on one, and no yard crew member can take any (jobTakeable). A wall
- * whose only approach is a room that has since been sealed, or is a tile beside a module of the old ship, stays shut: the section is complete and
- * airtight without it, so the order ends instead of waiting out the stall timer on a job nobody can reach.
+ * The old hull a build has turned inward goes at once, with no crew job: each wall `innerWalls` finds (no open space round it, corners included) that
+ * would not let the air out of the section (`breaches`) becomes floor, takes the air of the room it joins, and the section's floor takes it too.
+ * Called while the crew work, so a wall goes the moment the wall that shuts it in is built. Repeats until nothing more is safe to open (one opening
+ * can free the next). Returns how many walls opened.
  */
-export function openPassStuck(sim: Sim, o: YardOrder): boolean {
-  const jobs = jobsOf(sim, o).map((id) => sim.world.get(id, JobC)).filter((j) => !!j);
-  if (!jobs.length || jobs.some((j) => j!.reservedBy)) return false;
-  for (const id of o.crew) {
-    const at = sim.world.get(id, PositionC);
-    if (!alive(sim, id) || !at) continue;
-    if (jobs.some((j) => jobTakeable(sim, id, at, j!))) return false;
+export function openInnerWalls(sim: Sim, o: YardOrder): number {
+  const grid = shipGrid(sim, o.ship);
+  if (!grid) return 0;
+  const patch = new Set(o.floor.filter((t) => grid.get('struct', t.x, t.y) === Struct.Floor).map(key));
+  for (const t of o.opens ?? []) patch.add(key(t));
+  let total = 0;
+  for (;;) {
+    const ready = innerWalls(sim, o).filter((t) => !breaches(sim, o, t, patch));
+    if (!ready.length) return total;
+    o.air ??= joinedAir(sim, o, ready);
+    for (const t of ready) {
+      writeStruct(grid, t.x, t.y, Struct.Floor);
+      patch.add(key(t));
+    }
+    fill(sim, [...patch].map((k) => ({ x: Number(k.split(',')[0]), y: Number(k.split(',')[1]) })), o.air);
+    o.opens = [...(o.opens ?? []), ...ready];
+    total += ready.length;
   }
-  return true;
 }

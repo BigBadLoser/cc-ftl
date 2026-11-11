@@ -119,9 +119,9 @@ describe('shipyard: bigger jobs', () => {
     expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
   }, 300000);
 
-  // #429: a patch drawn against the old hull where a module of the old ship stands behind the wall leaves wall tiles of the open pass that nobody can
-  // reach (the only approach is the sealed patch). They stay shut; the order must still end done, not wait out the stall timer.
-  it('ends done when the open pass is left with walls nobody can reach (#429)', () => {
+  // #429: a patch drawn against the old hull where a module of the old ship stands behind the wall used to leave wall tiles of the old hull that no crew
+  // could reach. Old hull a new wall shuts in now goes at once, with no job, so those walls are gone and the patch joins the ship.
+  it('opens the old hull behind a module as the patch is shut, and the patch joins the ship (#429)', () => {
     const { sim, station, me } = yardGame('hub', 'station.military');
     giveItems(sim, 'item.metal', 300);
     planHull(sim, me, outline(sim, me, 24, -2, 4, 3));
@@ -133,5 +133,24 @@ describe('shipyard: bigger jobs', () => {
     expect(order.reason).toBeUndefined();
     expect(builtCount(sim, order).walls).toBe(order.walls.length);
     expect(builtCount(sim, order).floor).toBe(order.floor.length);
+    const grid = shipGrid(sim, me)!;
+    expect(order.opens?.length).toBeGreaterThan(0);
+    for (const t of order.opens!) expect(grid.get('struct', t.x, t.y), `${t.x},${t.y}`).toBe(Struct.Floor);
+    // the patch joins the ship: its floor is reachable from the old ship's floor over floor tiles alone
+    const start = order.opens![0]!;
+    const seen = new Set<string>([`${start.x},${start.y}`]);
+    const stack = [start];
+    while (stack.length) {
+      const c = stack.pop()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const n = { x: c.x + dx, y: c.y + dy };
+        if (seen.has(`${n.x},${n.y}`) || grid.get('struct', n.x, n.y) !== Struct.Floor) continue;
+        seen.add(`${n.x},${n.y}`);
+        stack.push(n);
+      }
+    }
+    expect(order.floor.every((t) => seen.has(`${t.x},${t.y}`))).toBe(true);
+    const inOrder = new Set([...order.floor, ...order.opens!].map((t) => `${t.x},${t.y}`));
+    expect([...seen].some((k) => !inOrder.has(k))).toBe(true); // and on into the old ship's own floor
   }, 300000);
 });

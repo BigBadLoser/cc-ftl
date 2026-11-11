@@ -12,7 +12,7 @@ import { alive, dismiss, launchShuttle, yardRun } from './crew';
 import { payStation, refund } from './money';
 import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
 import { postHullJobs } from './jobs';
-import { fillOpened, openPassStuck, postOpenJobs } from './open';
+import { openInnerWalls } from './open';
 import { isLiveOrder, type YardOrder } from './types';
 
 /** Ticks between repeats of an order the crew or shuttle has not obeyed yet. */
@@ -132,18 +132,9 @@ function step(sim: Sim, o: YardOrder): void {
       if (sim.sector.inCombat) return finishOrder(sim, o, 'combat');
       if (o.stage === 'truss' && jobsOf(sim, o).length === 0) postHullJobs(sim, o); // the planning pass is done: turn trusses into hull
       const built = builtTotal(sim, o);
-      // The new section is shut: the old hull it joins on comes down (the 'open' pass), and the order ends when that is done too.
-      if (built >= totalTiles(o)) {
-        fillOpened(sim, o);
-        if (o.stage !== 'open' && postOpenJobs(sim, o) > 0) {
-          o.stall = 0;
-          return;
-        }
-        if (o.stage !== 'open' || jobsOf(sim, o).length === 0) return finishOrder(sim, o, '');
-        if (o.timer % REPEAT === 0 && openPassStuck(sim, o)) return finishOrder(sim, o, '');
-        if (++o.stall > STALL_SEC * TICK_HZ) return finishOrder(sim, o, 'stalled');
-        return;
-      }
+      // Old hull the new walls shut in is already gone (opened as each wall landed, `openInnerWalls`); the order ends once everything is built.
+      if (built !== o.built || built >= totalTiles(o)) openInnerWalls(sim, o);
+      if (built >= totalTiles(o)) return finishOrder(sim, o, '');
       if (!o.sealed && jobsOf(sim, o).length === 0) {
         o.phase = 'seal';
         o.timer = 0;

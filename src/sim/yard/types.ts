@@ -54,10 +54,10 @@ export interface YardOrder {
   trusses: Tile[];
   fee: YardMoney;
   /**
-   * 'truss': the planning pass is running; 'hull': trusses are being turned into hull; 'open': the section is shut and the walls it turned inward
-   * (the old outer hull where it joins on, `open.ts`) are being opened into floor.
+   * 'truss': the planning pass is running; 'hull': trusses are being turned into hull. The old hull the new walls turn inward is opened into
+   * floor at once, with no job (`open.ts`).
    */
-  stage: 'truss' | 'hull' | 'open';
+  stage: 'truss' | 'hull';
   /**
    * One wall of each painted patch is left for last: `wall` is closed once the crew are out, by way of `stage`, the open tile beyond it. Without
    * that the crew would wall themselves in. `sealed`: those walls have been posted.
@@ -65,8 +65,8 @@ export interface YardOrder {
   gaps: { wall: Tile; stage: Tile }[];
   sealed: boolean;
   /**
-   * The 'open' pass (#385): the walls still to open into floor, and the air the new section is delivered with (the room it joins, sampled when
-   * the section was shut). Each opened tile takes that air as it turns to floor, so the joined room keeps its pressure.
+   * The old hull opened into floor so far (#385, #429), and the air the new section is delivered with (the room it joins, sampled at
+   * the first opening). Each opened tile takes that air as it turns to floor, so the joined room keeps its pressure.
    */
   opens?: Tile[];
   air?: { o2: number; co2: number; temp: number };
