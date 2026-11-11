@@ -161,7 +161,9 @@ export const LEISURE_PLAY_BONUS_TILES = 8;
 export const ROOM_QUALITY_EVERY = 40;
 /** Tiles per user (bed, console, galley, leisure stand) that score 0 and 100 on space. */
 export const ROOM_SPACE_MIN = 2;
-export const ROOM_SPACE_MAX = 16;
+export const ROOM_SPACE_MAX = 20;
+/** Without comfort data (the next pass) a room's value is capped here, the top of Decent: Pleasant and Impressive need comfort. */
+export const ROOM_NO_COMFORT_CAP = 59;
 /** Quality value under which a room is Grim, Bare, Decent, Pleasant (Impressive from the last). */
 export const ROOM_TIER_BELOW = [20, 40, 60, 80] as const;
 /** The weakest input's share of the quality value (the mean of the inputs takes the rest). */

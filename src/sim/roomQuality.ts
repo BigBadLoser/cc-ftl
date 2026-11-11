@@ -7,7 +7,7 @@ import { roomTiles } from './roomIndex';
 import type { Sim } from './sim';
 import { Struct, STRUCT_MAX_HP } from './structure';
 import {
-  ROOM_DIRT_PER_BODY, ROOM_DIRT_PER_STACK, ROOM_SPACE_MAX, ROOM_SPACE_MIN, ROOM_TIER_BELOW, ROOM_WEAKEST_SHARE,
+  ROOM_DIRT_PER_BODY, ROOM_DIRT_PER_STACK, ROOM_NO_COMFORT_CAP, ROOM_SPACE_MAX, ROOM_SPACE_MIN, ROOM_TIER_BELOW, ROOM_WEAKEST_SHARE,
 } from './tuning';
 
 /**
@@ -18,7 +18,7 @@ import {
  *  - comfort: beauty from modules and decor. NOT BUILT YET (the next pass): `comfortOf` returns null, so the input is left out.
  *  - cleanliness: loose item stacks and bodies lying in the room.
  *  - condition: damaged walls and modules, and a breach (a room open to space scores 0).
- * An unfurnished room is Decent at best (Pleasant and Impressive need a room that is used and roomy).
+ * Until comfort has data every room is Decent at best (`ROOM_NO_COMFORT_CAP`): Pleasant and Impressive need comfort.
  * Cached per ship for the tick (a drawing reader may allow ROOM_QUALITY_EVERY); recomputed when the `room` field changes. Pure read: nothing is saved.
  */
 
@@ -142,7 +142,7 @@ function compute(sim: Sim, ship: number, grid: ShipGrid): Map<number, RoomQualit
     const parts = [space, comfort, cleanliness, condition].filter((v): v is number => v !== null);
     const min = Math.min(...parts), mean = parts.reduce((a, b) => a + b, 0) / parts.length;
     let value = Math.round(min * ROOM_WEAKEST_SHARE + mean * (1 - ROOM_WEAKEST_SHARE));
-    if (n === 0) value = Math.min(value, ROOM_TIER_BELOW[2] - 1); // unfurnished: Decent at best
+    if (comfort === null) value = Math.min(value, ROOM_NO_COMFORT_CAP); // Pleasant and Impressive need comfort (the next pass)
     out.set(room, { room, value, tier: tierOfValue(value), tiles: list.length, users: n, inputs: { space, comfort, cleanliness, condition } });
   }
   return out;

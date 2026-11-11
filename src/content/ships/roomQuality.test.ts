@@ -24,7 +24,7 @@ const keys = (sim: Sim, id: number): string[] => moodFactors(sim, id, ensureMood
 const lapse = (sim: Sim): void => { for (let i = 0; i < 41; i++) sim.step(); };
 
 describe('room quality', () => {
-  it('gives every room a value, a tier and its inputs; an unfurnished room is Decent at best, comfort has no data yet', () => {
+  it('gives every room a value, a tier and its inputs; comfort has no data yet, so no room is above Decent and the starter ship furnished rooms read Bare to Decent', () => {
     const sim = fresh();
     const q = [...shipRoomQuality(sim, homeShip(sim)).values()];
     expect(q.length).toBeGreaterThan(3);
@@ -32,14 +32,16 @@ describe('room quality', () => {
       expect(r.value).toBeGreaterThanOrEqual(0);
       expect(r.value).toBeLessThanOrEqual(100);
       expect(r.inputs.comfort).toBeNull();
-      if (r.users === 0) expect(r.tier).toBeLessThanOrEqual(2);
+      expect(r.tier).toBeLessThanOrEqual(2);
     }
-    expect(q.some((r) => r.users > 0)).toBe(true);
+    const furnished = q.filter((r) => r.users > 0);
+    expect(furnished.length).toBeGreaterThan(0);
+    expect(furnished.some((r) => r.tier >= 1)).toBe(true);
   });
 
-  it('the weakest input pulls the value down: a wrecked module in a roomy room makes it Grim', () => {
+  it('the weakest input pulls the value down: a wrecked module in a Decent room makes it Grim', () => {
     const sim = fresh();
-    const room = [...shipRoomQuality(sim, homeShip(sim)).values()].find((r) => r.users > 0 && r.tier >= 3)!;
+    const room = [...shipRoomQuality(sim, homeShip(sim)).values()].find((r) => r.users > 0 && r.tier >= 2)!;
     expect(room).toBeDefined();
     for (const id of sim.world.query(ModuleC)) {
       const m = sim.world.get(id, ModuleC)!;

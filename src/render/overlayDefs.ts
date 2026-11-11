@@ -15,7 +15,7 @@ export interface OverlayDef {
 }
 
 /** Tier colours, Grim to Impressive. */
-export const QUALITY_COLORS = [0xd7263d, 0xf08a30, 0xe9c46a, 0x6fcf6f, 0x2fd0e0] as const;
+export const QUALITY_COLORS = [0xe5322d, 0xf59e0b, 0xfacc15, 0xa3e635, 0x22c55e] as const;
 
 export const OVERLAY_DEFS: readonly OverlayDef[] = [
   { id: 'o2', label: 'O2', unit: 'kPa', min: 0, max: 21, stops: [0xd7263d, 0xf0a030, 0x2fd0e0] },

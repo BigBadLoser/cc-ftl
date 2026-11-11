@@ -128,8 +128,8 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     - **Not doing:** expectations that scale with wealth, and a "cooped up" factor.
     - **UI:** a room-quality overlay in the overlay picker, and the factors in crew mood lines.
     - **First pass (built):** room quality (`sim/roomQuality.ts`: space = tiles per user of beds, consoles, galleys and leisure stands, an
-      unfurnished room has none and is Decent at best; cleanliness = loose stacks and bodies; condition = wall and module hp, a breach is 0;
-      the weakest input is 85% of the value; tiers at 20/40/60/80; cached per ship, 2 s), the tiered sleep and meal factors, surroundings
+      unfurnished room has none; until comfort has data every room is capped at Decent; cleanliness = loose stacks and bodies; condition = wall and module hp, a breach is 0;
+      the weakest input is 85% of the value; tiers at 20/40/60/80, space 2..20 tiles per user; cached per ship, 2 s), the tiered sleep and meal factors, surroundings
       (-3..+3), the leisure spots (`module.gametable`, `module.arcade`) and "No time off" (-4 after 20 minutes without a break), the
       room-quality overlay. A game scores 11 against the mess's 8, shifted -2..+2 by tier. **Next:** comfort values on modules and decor
       (`comfortOf` returns null: the input is left out until then); cleanliness has no dirt or scorch data yet.
