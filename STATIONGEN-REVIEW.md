@@ -251,7 +251,21 @@ Still without a hall, and each wants the same treatment rather than a found pock
 centre), **tree** (its core is four ordinary rooms), **spine** (a four-wide hall with no bulge at the junction),
 **lattice** and **welded** (module grids with no interior at all).
 
-## 8. State and mechanics, briefly
+## 8. The rebuild, slice 1: a deck-first grammar (`stationDeck`, unshipped)
+
+`src/sim/shipgen/stationDeck.ts`: circulation first. A concourse at the middle, hall runs leaving it (two for a spine,
+four for a cross), every room then placed as frontage on a hall — sharing its wall, doored to it — and the hall's far
+end kept for a dock. It is registered as `stationDeck` and sits in **no kind's grammar list**, so nothing existing moves.
+
+It builds and validates, and as built it is **worse than the cross it is meant to replace**, which is the point of
+measuring it: 52 rooms against 66, compactness 0.19 against the cross's dense cross, corridor ratio 0.37, and 2-23
+attempts a build, nearly all rejected for `docks: N < 5` — a dock on a room flank has no three-wide hull run for its
+airlock. Blocks-and-ports never had to solve that because `dockBanks` reserves hull stretches for the wheel.
+
+Slice 2 is therefore fixed for me: reserve hull runs for dock banks on the deck outline (reuse `stationDocks.dockBanks`),
+then place rooms on the remaining frontage, then score candidates instead of taking the first valid one.
+
+## 9. State and mechanics, briefly
 
 - `stationgen/staged` = #234 + 15 commits (bench, docs, wheel refactor, wheel pin). #234 is closed, unmerged; nothing
   was lost, the branch is its descendant.

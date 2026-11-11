@@ -13,6 +13,7 @@ import { blockOf, civil, shuffle } from './civilKit';
 import { no, type Ctx } from './navyKit';
 import { cardinal, fullRooms, placeRoot, reactorOf, reactorRooms, roomsOf, runs, split, zoned } from './stationKit';
 import { STATION_LAYOUTS } from './stationLayouts';
+import { deckStation } from './stationDeck';
 import type { Rng } from '../rng';
 import type { StationGrammar } from './stationTypes';
 import type { FactionDef } from './types';
@@ -212,6 +213,15 @@ const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sid
  * The rooms of a round civil station with its bridge among them: the bridge is the station's administration, beside
  * the main dock (stationDistricts.ts), and a rotunda takes the centre.
  */
+/** Deck-first stations (the rebuild): halls laid out first, every room on a hall's frontage. */
+function deck(c: Ctx): boolean {
+  const shape = c.rng.pick(['cross', 'spine'] as const);
+  const rooms = [...fullRooms(c), ...reactorRooms(c.plan.reactors, reactorOf(c.plan))];
+  const b = deckStation(c.rng, c.plan.command, rooms, shape);
+  if (!b) return no(c, `deck ${shape}: no fit`);
+  return placeRoot(c, civil(b, 'command', `deck station (${shape})`), shape);
+}
+
 const office = (c: Ctx): RoomSpec[] => tagged(warehoused(customs([{ ...c.plan.command, pinned: true }, ...fullRooms(c)])));
 
 /** The first armoury is the customs post: pinned (role swaps leave it), so it stays beside the office at the main dock. */
@@ -277,4 +287,5 @@ export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) =>
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
   stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
   stationAnnex: withCages(annexed), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
+  stationDeck: withCages(deck),
 };
