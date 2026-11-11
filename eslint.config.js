@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
 import globals from 'globals';
+import svelteParser from 'svelte-eslint-parser';
 
 /** Build a no-restricted-imports rule from exact names and glob patterns. */
 const noImports = (names, patterns) => ({
@@ -47,7 +48,7 @@ const simSyntax = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'spikes', 'docs', 'wiki/**', 'tools/layout/lib/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],
@@ -58,6 +59,11 @@ export default tseslint.config(
   {
     files: ['**/*.svelte'],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
+  },
+  {
+    // Rune modules (the layout lab's shared state).
+    files: ['**/*.svelte.ts'],
+    languageOptions: { parser: svelteParser, parserOptions: { parser: tseslint.parser } },
   },
   {
     files: ['src/sim/**/*.ts'],

@@ -881,12 +881,29 @@ The planned crew AI architecture (interrupts, utility AI, job scheduler, HFSM ex
 
 Phase 1 (the executor, no behaviour change) lives in `src/sim/ai/`: `scheduleSystem` in the old `decide` slot runs the utility engine (`ai/utility.ts` over `content/policies.ts`, Phase 3), the need machines and the job scheduler; `workSystem` is the executor's work step; `interruptSystem` is a read-only forced-state detector. `AssignmentC` is written only through the task API (`reserveJob`, `attachJob`, `detachJob`, `abortTask`, lint-enforced), which keeps the `Task` mirror in step. See "Phase 1 as built" in the design doc.
 
+
+**Schedules (#412).** Design: DESIGN.md "Schedules".
+- `sim/clock.ts`: the ship clock, read from `sim.tick` (`HOUR_TICKS` from `GAME_HOUR_SEC`, start at `CLOCK_START_HOUR`); nothing extra is saved.
+- `content/schedules.ts`: presets (`ScheduleDef`, `satisfies`), `ContentRegistry.schedules`; the `rotation` presets (Default, Late) are what crew without a row follow, in turn by person id.
+- `sim/crew/schedule.ts` owns every schedule question: `ScheduleC` (24 block ids, saved), `hoursOf` (own row, else a rotation preset for colonists,
+  else none), `blockAt` / `blockNow` (the block in force: `work` while `onCall`, a fight, Battle Stations or an open emergency on their ship they would
+  take; an empty console only for crew `admitLevel` would seat), `secToSleep` (for away planning: Sleep only), `holdsSleep` (the needs system keeps a sleeper in bed) and `wakesFromSleep` (the scheduler's turn gets
+  a scheduled sleeper up). `crew/scheduleHandlers.ts`: `crew.schedule.set`, `crew.schedule.preset`, `crew.schedule.copy`.
+- The engine reads the block once per evaluation: `DriveDef.blocks` (policy data) closes a drive in a block (`'off'`), forces it on with a score
+  floor (`on`) or moves its entry line (`enter`). With the work drive closed the scheduler's turn hands nobody a job and idles them (a carried
+  patient is still set down first).
+- Away (away/crew.ts): `tripWorthIt` (time on site before `secToSleep` longer than the round-trip flight) gates `passageFits` and `siteWantsThem`; `staySec` is needs only. `scheduleHome` (Sleep or Free, read with `blockNow(sim, id, false)`) makes `awayReturn` due (Free only while the shuttle is beside the site), `passengerUrgent` (Sleep) and `tripDue` 'batch' (Free). `blockNow` reads Free as Work for a party member (`AwayC`), so they work on there.
+- Snapshot: `Snapshot.clock` (day, hour, minute) and `UiCrew.schedule` / `block`.
 ## UI
 
 - Svelte components read **snapshots** published by `app` after each tick, or on demand for
   inspectors. They never hold references into sim internals.
 - Every action dispatches a command.
 - UI-only state (open drawers, selected tab) lives in `ui/` and never touches the sim.
+- Debug and tooling hooks in `app/`: `?hook` installs `window.__cc` (`debugHook.ts`), the developer tool: cheats, staging and renderer switches. `?agent`
+  installs `window.__play` (`playHook.ts`, `playState.ts`, `playDescribe.ts`, `playElements.ts`), the playtest API for AI models in a headless browser: no cheats, it
+  reads the same UI stores the player sees and its only writes are the player's own pause and speed controls and `step(seconds)`, which runs a paused sim tick by tick
+  (`Loop.drain`, `Bridge.refresh` publish what that did). The two are separate on purpose and combine with other params. Without the flag nothing is installed. See README "Playtesting with AI agents".
 
 ## UI kit, `src/ui/kit/`
 
@@ -1073,8 +1090,8 @@ admission until slice 3, which dropped the exemption (salvage moved onto sites; 
 - **Pickups.** A party member out with `PickupC` gets `AwayC.pickup` (`answerPickups`): the run holds station by them (`holdStation` aims the hover box, their own tile, at them; a docked shuttle undocks to hover), and their tile is the hatch spot (`fetching`, `hatchSpot(…, at)`: the hull near them may be gone). A recall with no hull left to hover beside (`liveBox` null) answers everyone still out the same way, and `awayReturn` 0 brings them aboard as `home`. Anyone else of the player's crew with `PickupC` gets a **pickup run** (`startPickupRuns`, not in a fight): the lowest free stowed EVA shuttle with a tank of air gets `SiteRunC {site: their grid, pickup: crew}` and they get `AwayC {pickup}`; it flies to hover beside them (`vehicle.hover` takes a `box`, which also allows the home ship), waits in `pickup` until they are aboard (lifted after `AWAY_LIFT_SEC`), flies home and ends. Event `away.pickup`.
 - **Shuttle loss** (`replaceLostShuttles`): a site whose shuttle run is gone keeps its party (`AwayC` stays while the site names a vehicle); another free shuttle takes the run over (`board`, party rewired, `away.pickup`), else `AwaySite.block = 'stranded'` and `away.stranded` (an urgent alert, cleared when a shuttle comes). A site with nobody left closes (`lost`).
 - **No way home** (`noWayIn` in run.ts, #287): the site's own run in 'home' whose shuttle has no way into its home ship (`wayHome` in phase.ts: bay down, no free home airlock, or the ship gone) sets the same `block = 'stranded'` and `away.stranded` with `noHome` (alert "Shuttle cannot get home"), cleared as soon as a way in is back. With a live run the block is this case; with none it is a lost shuttle (`replaceLostShuttles` skips sites whose run stands). `crew.recall` refuses `noHome` up front.
-- **Docking at site airlocks.** `flyTo` docks at a free working airlock of the site (`regionAirlock`) when it has one (not on a pickup), else hovers. Docked, passengers step out at the airlock's inside tile (undrafted; a suit from stock for breathers if the tile is thin), and the return machine walks them to it and steps them in (`stepAboard`). `siteSpot` is the boarding point either way (hatch spot or docked tile), used by the return machine, the departure check and the rescue.
-- **Crew who don't breathe** (#284): no robot branch. `passageFits` checks `staySec` over every need the crew member has (a missing need is satisfied; a battery at its busy rate); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1; the first `freeSuits` passages are suited, the rest `Job.airless` (only for crew who need no air). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
+- **Docking at site airlocks.** `flyTo` docks at a free working airlock of the site (`regionAirlock`) when it has one (not on a pickup), else hovers. Docked, passengers step out at the airlock's inside tile (undrafted; a suit for breathers if the tile is thin), and the return machine walks them to it and steps them in (`stepAboard`). `siteSpot` is the boarding point either way (hatch spot or docked tile), used by the return machine, the departure check and the rescue.
+- **Crew who don't breathe** (#284): no robot branch. `passageFits` checks `staySec` over every need the crew member has (a missing need is satisfied; a battery at its busy rate); `awayReturn` the same with the home lines (charge `AWAY_HOME_CHARGE` 30). Seats are capacity + 1, each with a suit for whoever needs one (#416). `eva.out` floats airless crew out without a suit, `eva.board` takes them in unsuited, and the float back stows a suit only if one was worn. `walksOutside` (suited or airless) replaces `isSuited` for exterior walking in `planWalk`/`siteWalkModes`, movement, idle and escape. `policy.robot` has the `return` drive.
 - **Hold and log.** The home stop waits for the unload (cargo still coming out, up to `AWAY_TURNAROUND_SEC`); a stop that empties none of the hold sets `block = 'noRoom'` (`SiteRun.held`). Leaving home with nobody able left aboard logs `away.homeEmpty`.
 - **The air module** (`eva/airLedger.ts` with `eva/sources.ts`; #295 review rounds). The one place the air questions are answered; admission
   (`ai/admitAir.ts`), the air drive (`ai/airNeed.ts`, `ai/machines/air.ts`), the refill (`eva/jobs.ts`, the refill float), the player's refill
@@ -1272,9 +1289,8 @@ The air and return drives are Phase 3 drives (`content/policies.ts`, `satisfies 
     `>= ceil(seats / 2)`, or free seats and a passage-eligible crew member free at home), `TRIP_WAIT_SEC` (300) since the
     last trip with anyone aboard, or `Vehicle.air` under one tank. A waiting passenger turns urgent below rest 20 / hunger
     10 (needs keep running aboard). Every trigger goes through the departure check.
-  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`, top the suits back up to
-    the def's complement from the home ship's airlocks while each keeps one free suit (`away/suits.ts` `restockSuits`, every tick at home;
-    #404), passages for free seats, then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
+  - `turnaround`: unboard the non-riders (they leave `AwayC`), cargo hauls unload, refill `Vehicle.air`,
+    passages for free seats (each with a suit, #416), then back at the earliest of: seats taken and aboard, unload done, 60 s, or `returnBy`.
   - `keepClose`/`liveBox` move here unchanged (the hover point follows the shrinking hull, and the pickup re-aims it).
   - Loose stacks on a served site become hauls into the hold (from `cargoRun.planCarry` and `looseOn`); `logistics/salvage.ts`
     `crewOn` also accepts a site with `AwaySiteC`, so a second shuttle ferries the overflow. It queues nothing while no shuttle
@@ -1353,7 +1369,7 @@ site's `noRoom` / `stranded` beside them.
 
 - **Scenario** `content/ships/salvageBench.ts`:
   - the `salvageEvaFixture` wreck (no airlock and one-airlock variants) and the starter home ship with 6 crew. Three of them
-    have construction and hauling at 1, the rest at 3. One shuttle (3 suits, 3 seats + pilot). No other work at home.
+    have construction and hauling at 1, the rest at 3. One shuttle (4 seats + pilot, a suit for each). No other work at home.
     Rations and beds enough.
   - Order all scrap types and run 2 game hours (144,000 ticks) on seeds 1, 2 and 3.
 - **Measure:**
@@ -2621,10 +2637,10 @@ danger; station cap 40 tiles at 10 credits and 0.75 metal each, hub 100 at x1.4)
 against capacity. `yard.order { station }` pays the whole price into escrow (metal from storage), grows the `ShipC` rectangle, posts the truss jobs (`Job.yard`)
 and the station sends its shuttle. `yardSystem` (`yard/flow.ts`, after the trade system) runs it: `launch` (a courier-type shuttle made beside the station with
 `YardDef.crew` contractors aboard, neutral allegiance, `YardCrewC`; since #287 it is an away site on the player's ship, owner 'yard', the contractors its party from
-the start: `dock` the order's airlock, `outside` (they land suited from the shuttle's stock), `noLoot`, no demand; the site's run flies, lands them, takes the
+the start: `dock` the order's airlock, `outside` (they land suited from the shuttle), `noLoot`, no demand; the site's run flies, lands them, takes the
 tired or hurt home to the station, and brings everyone home when the order closes the site), `fly` (until one has landed), `work` (they take the jobs through the normal crew AI;
 the player's crew take them too, fetching a suit: `planSiteWalk` offers hull-ring sites to crew who breathe), `seal` (the gap wall of each enclosed floor patch
-is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), `open` (#385: once the section is shut, the walls it turned inward, the old outer hull where it joins on and any of the order's own walls laid against it, become floor: `yard/open.ts` `innerWalls`, a plain wall with no module whose eight neighbours are all the ship's own structure; the section is delivered pressurised: its floor, and each opened wall as it turns to floor, takes the air of the room it joins, `YardOrder.air`/`opens`; the order ends when they are done), `recall` (the site closes: its run
+is left for last: everyone inside, the ship's own crew included, walks out first, and only yard crew may close it: `Job.yardOnly`), old hull turned inward (#385, #429: not a stage, no crew job: each time a tile is built, `yard/open.ts` `openInnerWalls` turns the walls `innerWalls` finds, plain walls with no module whose eight neighbours are all the ship's own structure, into floor when the section's floor, walked from them, touches no open space or truss; the section is delivered pressurised: its floor and each opened wall take the air of the room it joins, `YardOrder.air`/`opens`), `recall` (the site closes: its run
 calls them aboard, lifting whoever cannot come), `home` (the run ends at the station, where those aboard step out), `done` (`dismiss` ends the run if it still stands and
 removes the crew and shuttle). Their air is the air drive's like anyone's: the ledger gives a crew member a docked shuttle's air first when it is of their side or
 serves their site (`suppliesTo`), so contractors draw the station shuttle before the player's airlock store, and the player's crew never draw a foreign shuttle. The unbuilt share of the price (hull and fee each by their own tiles) is refunded when work ends early

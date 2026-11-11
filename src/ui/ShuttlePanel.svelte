@@ -77,7 +77,7 @@
           <button data-testid="shuttle-return" onclick={() => api.dispatch({ type: 'vehicle.return', vehicle: s.id })}>Return to bay</button>
         {/if}
         {#if s.canEva}
-          <button data-testid="shuttle-eva" onclick={() => api.dispatch({ type: 'eva.out', vehicle: s.id })}>Crew out (EVA, {s.suits} suits)</button>
+          <button data-testid="shuttle-eva" onclick={() => api.dispatch({ type: 'eva.out', vehicle: s.id })}>Crew out (EVA)</button>
         {/if}
         {#if s.boardable && (s.passengers.length || s.pilot)}
           <button data-testid="shuttle-disembark" onclick={() => api.dispatch({ type: 'vehicle.disembark', vehicle: s.id })}>Passengers out</button>

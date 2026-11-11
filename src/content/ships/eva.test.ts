@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockSuits, airlockTiles, isTileWalkable, newGame, suitAir, suitDef,
+  AirlockC, CrewC, HealthC, ModuleC, PositionC, airlockTiles, isTileWalkable, newGame, suitAir, suitDef,
   type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
@@ -24,12 +24,11 @@ const crewOn = (sim: Sim, shipId: number): number[] => sim.world.query(CrewC).fi
 const roleOf = (sim: Sim, id: number): string => sim.world.get(id, CrewC)!.role;
 
 describe('EVA content', () => {
-  it('values: 3 suits per airlock, a 10 minute tank, suited crew slower', () => {
-    expect((content.modules['module.airlock'] as ModuleDef).airlock?.suits).toBe(3);
+  it('values: no suit count at an airlock (#416), a 10 minute tank, suited crew slower', () => {
+    expect(Object.keys((content.modules['module.airlock'] as ModuleDef).airlock ?? {})).not.toContain('suits');
     expect(content.suit).toMatchObject({ airSec: 600, moveMult: 0.8, workMult: 0.9, accuracyMult: 0.8, });
     const sim = newGame(1, content);
     expect(suitDef(sim)).toBe(content.suit);
-    expect(airlockSuits(sim, airlockOf(sim, 1))).toBe(3);
   });
 
   it('a drafted engineer suits up at the starter airlock and walks out onto the hull beside its collar', () => {
@@ -40,7 +39,6 @@ describe('EVA content', () => {
     sim.enqueue({ type: 'eva.suitUp', crew: eng, airlock: lock });
     const ev = run(sim, 20 * 40);
     expect(ev.filter((e) => e.type === 'command.rejected')).toEqual([]);
-    expect(airlockSuits(sim, lock)).toBe(2);
 
     const collar = airlockTiles(content.modules['module.airlock'] as ModuleDef, sim.world.get(lock, ModuleC)!).collar!;
     const out = { x: collar.x, y: collar.y + 1 };

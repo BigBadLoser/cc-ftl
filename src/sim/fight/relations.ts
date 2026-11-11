@@ -6,7 +6,7 @@ import { factionsHostile, rogueAlly } from '../combat/factions';
 import { InertC, StunC } from '../robots/components';
 import { isBreaking } from '../crew/helpers';
 import type { Sim } from '../sim';
-import { AllegianceC, EquipOrderC, FighterC, StowOrderC, SurrenderedC } from './components';
+import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
 import type { Faction } from '../combat/components';
 import { AlienC } from '../aliens/components';
@@ -119,7 +119,7 @@ export function isPlayerControlled(sim: Sim, crew: number): boolean {
 export function isOffDuty(sim: Sim, crew: number): boolean {
   if (isBreaking(sim, crew)) return true; // a mental break (panic, freeze, hide, tantrum, despair) holds them out of the colony loop
   const f = sim.world.get(crew, FighterC);
-  if ((!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, StowOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew)) return true;
+  if ((!!f && f.mode !== 'idle') || sim.world.has(crew, EquipOrderC) || sim.world.has(crew, SurrenderedC) || isBoarding(sim, crew)) return true;
   const g = guestHere(sim, crew);
   return !!g && !g.work && !g.lodge; // a lodging guest lives aboard (sleeps, eats) and only takes no jobs (`refusesWork`)
 }

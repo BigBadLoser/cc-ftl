@@ -13,6 +13,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { SALVAGE_JOBS_OPEN } from '../tuning';
 import { strandNobody } from './footing';
+import { playerCrewOnShip } from '../away/crew';
 import { reachTest } from './reach';
 
 interface Tile { x: number; y: number; kind: number }
@@ -135,7 +136,18 @@ export function salvageJobs(sim: Sim, ship: number): number[] {
 }
 
 /**
- * Keep the order's stripping jobs topped up (at most SALVAGE_JOBS_OPEN open on the wreck). Modules go first; walls and doors once no
+ * Squared distance from a tile to the nearest crew member of the player's side on the wreck (else to the site's staging zone, where the
+ * party lands; else 0 for all): modules and walls are put up for stripping nearest the party first (#408), so the crew work an area
+ * through and the loot lies together, instead of crossing the wreck in id order.
+ */
+function nearCrew(sim: Sim, ship: number): (t: { x: number; y: number }) => number {
+  const at: { x: number; y: number }[] = playerCrewOnShip(sim, ship).map((id) => sim.world.get(id, PositionC)!);
+  if (at.length === 0) at.push(...(sim.world.get(ship, StagingC)?.tiles.slice(0, 1) ?? []));
+  return (t) => (at.length === 0 ? 0 : Math.min(...at.map((p) => (p.x - t.x) ** 2 + (p.y - t.y) ** 2)));
+}
+
+/**
+ * Keep the order's stripping jobs topped up (at most SALVAGE_JOBS_OPEN open on the wreck), nearest the party first (`nearCrew`). Modules go first; walls and doors once no
  * module of a ticked type is left; floors last, farthest from the crew first among those that strand nobody (`strandNobody`), never one under a loose stack and the staging zone's last
  * (`strippableFloors`). While crew stand on the wreck, a part none of them can reach is skipped and an open job nobody holds
  * that none of them can reach is dropped, so it never holds a place under the cap; a stage whose parts are all out of reach lets the
@@ -162,11 +174,13 @@ export function planJobs(sim: Sim, ship: number, types: readonly ScrapType[]): n
       room--;
     }
   };
+  const near = nearCrew(sim, ship);
   const modules = parts.modules.filter((id) => {
     const m = sim.world.get(id, ModuleC)!;
     return can(jobGoal({ kind: 'moduleDecon', x: m.x, y: m.y }));
-  });
-  const walls = parts.walls.filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y })));
+  }).map((id) => ({ id, d: near(sim.world.get(id, ModuleC)!) })).sort((a, b) => a.d - b.d || a.id - b.id).map((e) => e.id);
+  const walls = parts.walls.filter((t) => can(jobGoal({ kind: 'deconstruct', x: t.x, y: t.y }))).map((t) => ({ t, d: near(t) }))
+    .sort((a, b) => a.d - b.d || a.t.y - b.t.y || a.t.x - b.t.x).map((e) => e.t);
   if (modules.length) {
     for (const id of modules) {
       if (room <= 0) break;

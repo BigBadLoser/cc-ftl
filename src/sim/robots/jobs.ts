@@ -10,7 +10,7 @@ import { spillItems } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP } from '../tuning';
+import { HACK_MIN_SKILL, MEND_MIN_SKILL, MEND_PER_SEC, SALVAGE_SEC, SKILL_STEP } from '../tuning';
 import { HackedC, WreckC } from './components';
 import { speciesOf } from './core';
 import { shipIdOf } from '../regions';
@@ -79,17 +79,17 @@ export function heldForMend(sim: Sim, robot: number): boolean {
   });
 }
 
-/** May this crew member take this robot job? Mending needs the repair skill and a robot of their own side; hacks and sabotage are only ever ordered. */
+/** May this crew member take this robot job? Mending needs construction MEND_MIN_SKILL and a robot of their own side; hacks and sabotage are only ever ordered. */
 export function canTakeRobotJob(sim: Sim, crew: number, job: Job): boolean {
   if (job.kind === 'hack' || job.kind === 'sabotage') return false;
   if (job.kind !== 'mend') return true;
   const mine = sim.world.get(crew, AllegianceC)?.faction;
-  return skillOf(sim, crew, 'repair') > 0 && mine === sim.world.get(job.target ?? 0, AllegianceC)?.faction;
+  return skillOf(sim, crew, 'construction') >= MEND_MIN_SKILL && mine === sim.world.get(job.target ?? 0, AllegianceC)?.faction;
 }
 
 /**
  * Mend: `progress` holds hp already paid for; when it runs out one repair item is taken from the ship's storage
- * (worth `hpPerItem`). Restores MEND_PER_SEC x workSpeed x (1 + SKILL_STEP x repair) hp per second.
+ * (worth `hpPerItem`). Restores MEND_PER_SEC x workSpeed (speed carries 1 + SKILL_STEP x construction, crew/workSkill.ts) hp per second.
  */
 export function performMend(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   const robot = job.target ?? 0;
@@ -101,7 +101,7 @@ export function performMend(sim: Sim, crew: number, job: Job, speed: number): Wo
     if (!item || !consumeAmmo(sim, shipIdOf(sim, job), item)) return 'wait';
     job.progress += mech.hpPerItem;
   }
-  const rate = (MEND_PER_SEC * speed * (1 + SKILL_STEP * skillOf(sim, crew, 'repair'))) / TICK_HZ;
+  const rate = (MEND_PER_SEC * speed) / TICK_HZ; // `speed` already carries the construction multiplier (crew/workSkill.ts)
   const amount = Math.min(job.progress, hp.max - hp.hp, rate);
   hp.hp += amount;
   job.progress -= amount;
@@ -122,12 +122,12 @@ export function performSalvage(sim: Sim, job: Job, speed: number): WorkResult {
   return 'done';
 }
 
-/** Hack: progress at workSpeed x (1 + SKILL_STEP x (hacking - 1)); when complete the core is hacked for the hacker's side. */
+/** Hack: progress at workSpeed x (1 + SKILL_STEP x (hacking - HACK_MIN_SKILL)); when complete the core is hacked for the hacker's side. */
 export function performHack(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   const core = job.target ?? 0;
   const m = sim.world.get(core, ModuleC);
   if (!m || sim.world.get(core, HackedC)?.hacker) return 'done';
-  job.progress = Math.min(job.work, job.progress + speed * (1 + SKILL_STEP * Math.max(0, skillOf(sim, crew, 'hacking') - 1)));
+  job.progress = Math.min(job.work, job.progress + speed * (1 + SKILL_STEP * Math.max(0, skillOf(sim, crew, 'hacking') - HACK_MIN_SKILL)));
   if (job.progress < job.work) return 'working';
   const by = sim.world.get(crew, AllegianceC)?.faction ?? 'player';
   sim.world.add(core, HackedC, { by, tick: sim.tick, hacker: crew });

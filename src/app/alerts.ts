@@ -5,7 +5,7 @@ import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
 import { pendingAsks } from '../sim/galaxy/joinOffer';
-import { deriveAlerts, shortOnPower, powerSubject, DERIVED_KINDS, type Wanted } from './alertsDerived';
+import { deriveAlerts, shortOnPower, powerSubject, powerAlertText, DERIVED_KINDS, type Wanted } from './alertsDerived';
 import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
@@ -123,7 +123,7 @@ export function createAlerts(sim: Sim): Alerts {
       }
       case 'fire.started': return { kind: e.type, key: `f${e.room}`, text: 'Fire', subject: tileAt(e.x, e.y), resolved: () => !burning(e.ship, e.room) };
       case 'hull.breach': return { kind: e.type, key: `b${e.room}`, text: 'Hull breach', subject: roomOf(sim, e.ship, e.room), resolved: () => !venting(e.ship, e.room) };
-      case 'power.shortage': return { kind: e.type, key: 'p', text: `Low power: ${Math.round(e.supply)} of ${Math.round(e.demand)}`, subject: powerSubject(sim), resolved: () => !shortOnPower(sim, e.ship) };
+      case 'power.shortage': return { kind: e.type, key: 'p', text: powerAlertText(sim, e.ship), subject: powerSubject(sim), resolved: () => !shortOnPower(sim, e.ship) };
       case 'o2.low': return { kind: e.type, key: `o${e.room}`, text: 'Low oxygen', subject: roomOf(sim, e.ship, e.room), resolved: () => thin(e.ship, e.room) === false };
       case 'crew.downed': return {
         kind: e.type, key: `d${e.crew}`, text: `Down: ${crewName(e.crew)}`, subject: crewSubject(sim, e.crew),

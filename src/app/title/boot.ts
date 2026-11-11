@@ -5,7 +5,7 @@ import { SAVE_VERSION } from '../../sim';
 import { AUTO_IDS, PRECOMBAT_ID, SLOT_IDS, isAutoId, saveStore } from '../saveStore';
 import { continueGame, loadSlot, newestAutosave, restartNewGame, takeTitleView } from '../saves';
 import { startStage, type Stage } from './stage';
-import { previewCrew } from './crewRoll';
+import { previewCrew, previewJobs } from './crewRoll';
 import { content } from '../../content';
 import { startingRoles } from '../../sim';
 import type { TitleApi } from '../../ui/title/titleApi';
@@ -37,6 +37,7 @@ export async function mountTitle(target: HTMLElement): Promise<void> {
     newSeed: () => (Math.random() * 0x100000000) >>> 0,
     roles: (ship) => startingRoles(content, ship),
     rollCrew: (plan) => previewCrew(content, plan),
+    shipJobs: (ship) => previewJobs(content, ship),
     portrait: (look) => stage?.portrait(look) ?? null,
     stage: async (canvas, ship) => {
       const s = await startStage(canvas, ship);

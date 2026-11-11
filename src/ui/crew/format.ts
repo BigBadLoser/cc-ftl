@@ -5,7 +5,8 @@ export const moodWord = (v: number): string => (v < 20 ? 'miserable' : v < 35 ? 
 
 /** The icon of each skill (the Skills tab). */
 export const SKILL_ICON: Record<string, string> = {
-  gunnery: 'target', piloting: 'helm', shielding: 'shield', melee: 'sword', repair: 'wrench', hacking: 'code', medicine: 'medkit', science: 'research',
+  gunnery: 'target', piloting: 'helm', shielding: 'shield', melee: 'sword', construction: 'wrench', hacking: 'code', medicine: 'medkit', science: 'research',
+  cooking: 'food', botany: 'plant', industry: 'factory',
 };
 
 /** Pip colours by where a skill level comes from. */

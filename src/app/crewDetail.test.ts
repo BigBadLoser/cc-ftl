@@ -9,12 +9,12 @@ describe('the crew inspector detail', () => {
     const sim = newGame(1, content);
     const id = sim.world.query(CrewC).find((i) => sim.world.get(i, CrewC)?.role === 'role.gunner') as number;
     sim.world.add(id, TraitsC, { ids: ['trait.marksman', 'trait.strong'] });
-    sim.world.add(id, RolledSkillsC, { skills: { gunnery: 2, piloting: 1 } });
+    sim.world.add(id, RolledSkillsC, { skills: { gunnery: 4, piloting: 2 } });
     sim.world.add(id, SkillXpC, { xp: { gunnery: 160 } });
     const d = buildCrewDetail(sim, id)!;
     const g = d.skills.find((s) => s.skill === 'gunnery')!;
-    expect(g).toMatchObject({ value: 4, rolled: 2, xpLevels: 1, role: 3, xp: 60, per: 400 });
-    expect(g.mods).toEqual([{ label: 'Marksman', kind: 'trait', op: 'add', value: 1 }]);
+    expect(g).toMatchObject({ value: 8, rolled: 4, xpLevels: 2, interest: 0, struck: false, xp: 60, per: 180 });
+    expect(g.mods).toEqual([{ label: 'Marksman', kind: 'trait', op: 'add', value: 2 }]);
     for (const s of d.skills) expect(s.rolled + s.xpLevels + s.mods.reduce((n, m) => n + m.value, 0)).toBe(Math.round(stat(sim, id, s.skill as 'gunnery')));
     const carry = d.stats.find((s) => s.stat === 'carryCapacity')!;
     expect(carry.parts).toEqual([{ label: 'Strong', kind: 'trait', op: 'mul', value: 1.5 }]);

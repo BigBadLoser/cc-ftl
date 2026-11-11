@@ -4,6 +4,7 @@ import type { Sim } from '../sim';
 import type { Modifier, ModifierSource } from '../stats';
 import { BLEED_OUT_SECONDS } from '../tuning';
 import type { TraitDef, TraitEffects } from './traitDef';
+import { INTEREST_XP, InterestsC, interestIn } from './background';
 
 /** A crew member's traits (content ids, `trait.<name>`), rolled at creation (crew/roll.ts). docs/TRAITS.md section 4. */
 export interface Traits {
@@ -69,9 +70,9 @@ export function bleedOutSec(sim: Sim, id: number): number {
   return BLEED_OUT_SECONDS * traitMult(sim, id, 'bleedMult');
 }
 
-/** The XP multiplier for a gain in `skill` (Gifted, Bookish). */
+/** The XP multiplier for a gain in `skill`: interest, Gifted, Bookish. */
 export function xpGainMult(sim: Sim, id: number, skill: string): number {
-  let m = 1;
+  let m = INTEREST_XP[interestIn(sim.world.get(id, InterestsC), skill as SkillName)]; // keen x1.5, passionate x2 (docs/TRAITS.md 10.4)
   for (const d of traitDefs(sim, id)) {
     const e = d.effects;
     if (e?.xpMult && (!e.xpSkills || e.xpSkills.includes(skill as SkillName))) m *= e.xpMult;

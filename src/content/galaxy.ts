@@ -116,11 +116,12 @@ const factions = {
   },
   rogue: {
     name: 'Rogue AI', kind: 'rogue', reputation: 'drones', combatFaction: 'rogue', alwaysHostile: true,
-    ships: [{ value: 'faction.drones', weight: 1 }],
+    // Off for now (#427): their sealed reactor pods can't be refuelled, so the machines field no ships: no fleets (so no nests), no traffic, no
+    // generator faction for wrecks. Their territory stays so the map is as before. Restore `ships: [{ value: 'faction.drones', weight: 1 }]`,
+    // `fleet: factionFleets.rogue` and `traffic: { weight: 0.9, danger: { min: 4 } }` with a shipgen pass.
+    ships: [],
     territory: { weight: 1, danger: { min: 5 }, reach: 640 },
     baseStanding: -10,
-    fleet: factionFleets.rogue,
-    traffic: { weight: 0.9, danger: { min: 4 } },
   },
 } satisfies Record<string, GalaxyFactionDef>;
 

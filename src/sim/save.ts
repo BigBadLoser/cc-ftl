@@ -132,8 +132,13 @@ import { newYard, type YardState } from './yard/types';
  * v107 (hydroponics art, #59): the large bed is 3x2 (was 2x3), so a saved grid's occupancy for it no longer matches.
  * v108 (vehicle assembly, #387): job kind 'assemble' for vehicles in their bay.
  * v109 (research bench art, #395): `module.research` is 3x2 (was 1x1), so a saved grid's occupancy for it no longer matches.
+ * v110 (crew schedules, #412): `ScheduleC` (a crew member's own 24-hour row); the ship clock is read from `tick`.
+ *   Then (no bump, #416): `Airlock.suits`, `Vehicle.suits` and `Job.airless` are gone; `deserialize` drops them (`retiredField`).
+ * v111 (crew backgrounds, #415): skills 0-10 with `repair` folded into `construction`, `botany` and `industry`; `BackgroundC`,
+ *     `InterestsC`, `WontDoC`, `Mood.enjoy`; player crew of kind `role.crew`; no `EmergencyArmC` / `StowOrderC`.
+ * v112 (reactor fuel and batteries, #421): `Module.fuel` (reactor store) and `Module.charge` (battery bank), job kind 'refuel', ore code 4 (`ore.crystal`).
  */
-export const SAVE_VERSION = 109;
+export const SAVE_VERSION = 112;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
@@ -185,9 +190,21 @@ export function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   return raw;
 }
 
+/**
+ * Fields a save of this version may still hold that the sim no longer has, dropped wherever they sit (the live world, archives, ships in
+ * transit) as the JSON is read: the suit counts of airlocks and shuttles and the `airless` passage seat (#416, no suit limit).
+ */
+function retiredField(this: unknown, key: string, value: unknown): unknown {
+  if (key !== 'suits' && key !== 'airless') return value;
+  const o = this as Record<string, unknown>;
+  if (key === 'suits' && (('request' in o && 'timer' in o) || 'passengers' in o)) return undefined; // an airlock, a vehicle
+  if (key === 'airless' && o['kind'] === 'passage') return undefined;
+  return value;
+}
+
 /** Rebuild a Sim from a JSON save. Throws on a save of another version. */
 export function deserialize(json: string, content: ContentRegistry): Sim {
-  const data = migrate(JSON.parse(json) as Record<string, unknown>) as unknown as SaveData;
+  const data = migrate(JSON.parse(json, retiredField) as Record<string, unknown>) as unknown as SaveData;
   const sim = new Sim(data.seed, content);
   sim.tick = data.tick;
   sim.rng.setState(data.rng);

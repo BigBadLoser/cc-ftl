@@ -1,3 +1,5 @@
+import { BackgroundC } from './background';
+import { priorityDefaults } from './profileOf';
 import { canDraft, roleOf } from '../consent/roles';
 import { shipIdOf, shipGrid } from '../regions';
 import { abortTask } from '../ai/task';
@@ -25,7 +27,7 @@ import { assignTiles, spreadTiles, tileKey, type Tile } from './spread';
 
 export type CrewCommandType = Exclude<
   Extract<Command['type'], `job.${string}` | `crew.${string}`>,
-  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall' | 'crew.forceDoor'
+  'job.buildModule' | 'job.deconstructModule' | 'crew.attack' | 'crew.man' | 'crew.setEngage' | 'crew.equip' | 'crew.unequip' | 'crew.hack' | 'crew.hire' | 'crew.sabotage' | 'crew.cancelSabotage' | 'crew.recall' | 'crew.forceDoor' | `crew.schedule.${string}`
 >;
 type Handler<T extends CrewCommandType> = (sim: Sim, cmd: Extract<Command, { type: T }>) => void;
 
@@ -124,7 +126,8 @@ export const crewHandlers: { [T in CrewCommandType]: Handler<T> } = {
     if (!crew) return;
     const role = sim.content.roles[crew.role];
     if (!role) return reject(sim, cmd.type, 'badRole');
-    sim.world.add(cmd.id, PrioritiesC, { ...role.priorities });
+    // A person with a background resets to what their skills say now (docs/TRAITS.md 10.8); a crew kind to its fixed priorities.
+    sim.world.add(cmd.id, PrioritiesC, sim.world.has(cmd.id, BackgroundC) ? priorityDefaults(sim, cmd.id) : { ...role.priorities });
   },
   'crew.draft': (sim, cmd) => {
     const crew = crewOf(sim, cmd.type, cmd.id);

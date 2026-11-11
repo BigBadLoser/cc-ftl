@@ -4,15 +4,17 @@ import type { Sim } from '../sim';
 import { AllegianceC } from '../fight/components';
 import { CrewC } from './components';
 import { xpGainMult } from './traits';
+import { noteWork } from './mood';
 
 export { levelsFor, xpForLevels, xpProgress } from './xpCurve';
 
 /**
  * Give a crew member skill XP (docs/TRAITS.md section 3). A module function like `stat`, called where the work is done. Positive
  * amounts are multiplied by the crew member's XP traits (Gifted); a negative amount (a story penalty) is taken as is, down to 0.
+ * `work`: the XP comes from doing the work (not a story grant), so an interest in it lifts mood (docs/TRAITS.md 10.7).
  * Any crew member on the player's side can learn (robots keep their role skills as a base and learn on top); no-op for non-crew and for hostile or NPC crew.
  */
-export function grantXp(sim: Sim, id: number, skill: SkillName, xp: number): void {
+export function grantXp(sim: Sim, id: number, skill: SkillName, xp: number, work = true): void {
   if (xp === 0 || !Number.isFinite(xp)) return;
   const crew = sim.world.get(id, CrewC);
   if (!crew || !sim.content.species[crew.species]) return;
@@ -21,4 +23,5 @@ export function grantXp(sim: Sim, id: number, skill: SkillName, xp: number): voi
   if (!c) sim.world.add(id, SkillXpC, (c = { xp: {} }));
   const next = (c.xp[skill] ?? 0) + (xp > 0 ? xp * xpGainMult(sim, id, skill) : xp);
   c.xp[skill] = Math.max(0, next);
+  if (work && xp > 0) noteWork(sim, id, skill);
 }

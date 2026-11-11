@@ -25,7 +25,11 @@
   eggsac    the alien egg sacs, 1x1 and 2x2, every damage / hatch state (derelict_sac.py)
   storage_set lockers, racks, pallets, containers, tanks, cold stores, armories: 3 fills x 4 rotations (storage_set.py;
             MODPACK_ROTS=1 renders r0 only, for quick previews)
-  arcade    arcade cabinet look study, preview only (arcade_study.py)
+  gametable_module  the holo game table module.gametable (2x1): idle, .unpowered, .active frames (hologram baked in),
+            seated-crew front overlays, four rotations (gametable.py, parts in gametable_kit.py; MODPACK_ROTS as
+            storage_set)
+  arcade_cabinet  the arcade module.arcade (1x1): idle, .unpowered, .active frames (hologram baked in), four rotations
+            (arcade.py, parts in arcade_kit.py; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -61,6 +65,12 @@
             each piece with its tint mask (hulltiles.py)
   marks     the overhead crew icons: social cues, break symbols in their bubbles, fight marks; 2D, no render (crew_marks.py)
 Crew layers are built separately (`crew`)."""
+
+
+def _crystal(tag):
+    """Palette selection: the energy crystal sprites (ids containing tag) add their own set ("crystal"); the rest keep
+    the plain extras, so their pixels and cache keys don't move."""
+    return lambda sid: "crystal" if tag in sid else True
 
 
 def jobs(name):
@@ -134,9 +144,14 @@ def jobs(name):
         import os
         from . import hydroponics
         return hydroponics.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "hydro"
-    if name == "arcade":        # look study, preview only (not in RENDERED): arcade cabinet blockouts, r0
-        from . import arcade_study
-        return arcade_study.jobs(), "arcade"
+    if name == "gametable_module":
+        import os
+        from . import gametable
+        return gametable.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
+    if name == "arcade_cabinet":
+        import os
+        from . import arcade
+        return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
     if name == "research":      # look study, preview only (not in RENDERED): three bench designs, r0 .on
         from . import research
         return research.jobs(), "research"
@@ -191,7 +206,7 @@ def jobs(name):
         return roofs.SPRITES + roof_cuts.SPRITES, True
     if name == "rock":
         from . import rock
-        return rock.jobs(), True
+        return rock.jobs(), _crystal(".crystal.")
     if name == "rockwall":
         from . import rockwall
         return rockwall.jobs(), True
@@ -223,7 +238,7 @@ def jobs(name):
         from . import items_goods, items_materials, items_now, items_parts, items_tech
         from .items_kit import jobs as item_jobs
         planned = {**items_tech.ITEMS, **items_materials.ITEMS, **items_parts.ITEMS, **items_goods.ITEMS}
-        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], True
+        return items_now.SPRITES + [j for k, fn in planned.items() for j in item_jobs(k, fn)], _crystal("energy_crystal")
     if name == "salvage":
         from . import items_salvage
         return items_salvage.jobs(), items_salvage.palette
@@ -232,7 +247,7 @@ def jobs(name):
         return items_upgrades.jobs(), items_upgrades.PALETTE
     if name == "storage_ore":
         from . import tip_bin
-        return tip_bin.jobs(), True
+        return tip_bin.jobs(), _crystal(".crystal.")
     if name == "scrapper":      # the scrapper module (scrapper.py): its own palette set
         from . import scrapper
         return scrapper.jobs(), "scrapper"
@@ -250,5 +265,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades", "research_bench")
+            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

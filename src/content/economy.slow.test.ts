@@ -42,7 +42,7 @@ function place(sim: Sim, def: string, back = false): number | null {
   return null;
 }
 
-const GOODS = ['item.iron_ore', 'item.rare_ore', 'item.ice', 'item.metal', 'item.electronics', 'item.water', 'item.oxygen'];
+const GOODS = ['item.iron_ore', 'item.rare_ore', 'item.energy_crystal', 'item.ice', 'item.metal', 'item.electronics', 'item.water', 'item.oxygen'];
 
 export interface MiningResult {
   perMin: number;

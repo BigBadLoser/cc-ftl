@@ -41,8 +41,8 @@ describe('incoming-fire telegraph', () => {
     expect(w.commit!.target.ship).toBe(player);
     const commit = { ...w.commit! };
     const events = until(sim, () => sim.world.query(ProjectileC).some((p) => sim.world.get(p, ProjectileC)!.fromModuleId === id));
+    expect(sim.world.get(id, WeaponC)!.commit).toBeNull(); // cleared on fire (read at the shot: the next charge may commit again before the shot lands)
     const fired = [...events, ...until(sim, () => sim.world.query(ProjectileC).length === 0, 600)];
-    expect(sim.world.get(id, WeaponC)!.commit).toBeNull(); // cleared on fire
     const mine = new Set(fired.filter((e) => e.type === 'weapon.fired' && e.weaponId === id).map((e) => (e as { projectile: number }).projectile));
     expect(mine.size).toBeGreaterThan(0);
     for (const e of fired) {

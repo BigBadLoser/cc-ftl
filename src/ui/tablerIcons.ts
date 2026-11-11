@@ -5,12 +5,16 @@ import t_alert_triangle from '@tabler/icons/outline/alert-triangle.svg?raw';
 import t_arrow_curve_right from '@tabler/icons/outline/arrow-curve-right.svg?raw';
 import t_arrows_exchange from '@tabler/icons/outline/arrows-exchange.svg?raw';
 import t_cup from '@tabler/icons/outline/cup.svg?raw';
+import t_plant from '@tabler/icons/outline/plant.svg?raw';
+import t_building_factory from '@tabler/icons/outline/building-factory-2.svg?raw';
+import t_lock_open from '@tabler/icons/outline/lock-open.svg?raw';
 import t_snowflake from '@tabler/icons/outline/snowflake.svg?raw';
 import t_diamond from '@tabler/icons/outline/diamond.svg?raw';
 import t_bomb from '@tabler/icons/outline/bomb.svg?raw';
 import t_radioactive from '@tabler/icons/outline/radioactive.svg?raw';
 import t_arrow_big_right_lines from '@tabler/icons/outline/arrow-big-right-lines.svg?raw';
 import t_sparkles from '@tabler/icons/outline/sparkles.svg?raw';
+import t_battery from '@tabler/icons/outline/battery-2.svg?raw';
 import t_bolt from '@tabler/icons/outline/bolt.svg?raw';
 import t_settings from '@tabler/icons/outline/settings.svg?raw';
 import t_keyboard from '@tabler/icons/outline/keyboard.svg?raw';
@@ -23,6 +27,8 @@ import t_checklist from '@tabler/icons/outline/checklist.svg?raw';
 import t_chevron_down from '@tabler/icons/outline/chevron-down.svg?raw';
 import t_chevron_left from '@tabler/icons/outline/chevron-left.svg?raw';
 import t_chevron_up from '@tabler/icons/outline/chevron-up.svg?raw';
+import t_copy from '@tabler/icons/outline/copy.svg?raw';
+import t_clipboard from '@tabler/icons/outline/clipboard.svg?raw';
 import t_clock from '@tabler/icons/outline/clock.svg?raw';
 import t_coin from '@tabler/icons/outline/coin.svg?raw';
 import t_sword from '@tabler/icons/outline/sword.svg?raw';
@@ -106,6 +112,8 @@ export const FILES = {
   o2: 'droplet',
   credits: 'coin',
   fuel: 'gas-station',
+  crystal: 'diamond',
+  battery: 'battery-2',
   stock: 'package',
   wrench: 'tool',
   target: 'crosshair',
@@ -172,6 +180,8 @@ export const FILES = {
   zoomOut: 'zoom-out',
   recenter: 'current-location',
   clock: 'clock',
+  copy: 'copy',
+  paste: 'clipboard',
   fire: 'flame',
   pin: 'pin',
   unpin: 'pinned-off',
@@ -188,6 +198,9 @@ export const FILES = {
   chevRight: 'chevron-right',
   shirt: 'shirt',
   cup: 'cup',
+  plant: 'plant',
+  factory: 'building-factory-2',
+  unlock: 'lock-open',
 } as const;
 
 const RAW: Record<string, string> = {
@@ -203,6 +216,7 @@ const RAW: Record<string, string> = {
   'arrow-curve-right': t_arrow_curve_right,
   'arrows-exchange': t_arrows_exchange,
   'bolt': t_bolt,
+  'battery-2': t_battery,
   'snowflake': t_snowflake,
   'broadcast': t_broadcast,
   'bug': t_bug,
@@ -213,6 +227,8 @@ const RAW: Record<string, string> = {
   'chevron-left': t_chevron_left,
   'chevron-up': t_chevron_up,
   'clock': t_clock,
+  'copy': t_copy,
+  'clipboard': t_clipboard,
   'coin': t_coin,
   'sword': t_sword,
   'code': t_code,
@@ -281,6 +297,9 @@ const RAW: Record<string, string> = {
   'steering-wheel': t_steering_wheel,
   'zzz': t_zzz,
   'cup': t_cup,
+  'plant': t_plant,
+  'building-factory-2': t_building_factory,
+  'lock-open': t_lock_open,
 };
 
 

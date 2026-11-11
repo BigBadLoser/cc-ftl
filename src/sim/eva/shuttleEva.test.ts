@@ -44,7 +44,7 @@ const airlockDef: ModuleDef = {
   name: 'Airlock', asset: 'a', footprint: [3, 4], solid: true, power: 0, flammability: 0.1, maxHp: 120, buildWork: 20, hullEdge: 'n',
   openTiles: [[1, 0], [1, 1], [1, 2], [1, 3], [0, 3], [2, 3]],
   airlock: {
-    cycleSec: 2, suits: 3,
+    cycleSec: 2,
     layout: {
       outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1],
       unloaders: [{ tiles: [[0, 1], [0, 2]], chute: [0, 2], stand: [0, 3] }, { tiles: [[2, 1], [2, 2]], chute: [2, 2], stand: [2, 3] }],
@@ -124,7 +124,7 @@ const drain = (sim: Sim): void => {
 const vacuum = new WeakMap<Sim, number[][]>();
 
 
-const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 5, maxHp: 90, capacity: 4, evasion: 0, eva: { suits: 2, hoverGap: 4.5 } };
+const shuttleDef = { name: 'S', class: 'shuttle', asset: 's', speed: 5, maxHp: 90, capacity: 4, evasion: 0, eva: { hoverGap: 4.5 } };
 content.vehicles = { 'vehicle.shuttle': shuttleDef };
 
 /** Ships 1 and 2 far apart (ship 2 at sector (100, 50)); a shuttle of ship 1 flying with a pilot and two passengers. */
@@ -158,7 +158,6 @@ describe('EVA from a hovering shuttle', () => {
     sim.enqueue({ type: 'eva.out', vehicle: v });
     const ev = run(sim, 1);
     expect(reasons(ev)).toEqual([]);
-    expect(veh.suits).toBe(0);
     expect(veh.passengers).toEqual([]);
     expect(veh.pilot).toBe(pilot);
     for (const c of [a, b]) {
@@ -186,7 +185,7 @@ describe('EVA from a hovering shuttle', () => {
     expect(reasons(run(sim, 2))).toEqual(['crewOutside']);
   });
 
-  it('crew float back, board and stow the suit; a third suit does not exist', () => {
+  it('crew float back, board and stow the suit; going out again fits one', () => {
     const { sim, v, a, b } = setup();
     sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: 2 });
     run(sim, 20 * 30);
@@ -205,23 +204,17 @@ describe('EVA from a hovering shuttle', () => {
     expect(veh.passengers).toContain(a);
     expect(sim.world.has(a, SuitC)).toBe(false);
     expect(sim.world.has(a, PositionC)).toBe(false);
-    expect(veh.suits).toBe(2); // 2 stowed, one used, one back
     sim.enqueue({ type: 'eva.out', vehicle: v });
     run(sim, 1);
-    expect(sim.world.get(b, SuitC)).toBeDefined();
+    for (const c of [a, b]) expect(sim.world.get(c, SuitC)).toBeDefined(); // no suit limit (#416)
   });
 
-  it('refuses out of range, without a hover, and with no suits left', () => {
+  it('refuses out of range and without a hover', () => {
     const { sim, v } = setup();
     sim.enqueue({ type: 'eva.out', vehicle: v });
     expect(reasons(run(sim, 1))).toEqual(['notHovering']);
     sim.enqueue({ type: 'vehicle.hover', vehicle: v, ship: 2 });
     run(sim, 20 * 30);
-    const veh = sim.world.get(v, VehicleC)!;
-    veh.suits = 0;
-    sim.enqueue({ type: 'eva.out', vehicle: v });
-    expect(reasons(run(sim, 1))).toEqual(['noSuit']);
-    veh.suits = 2;
     sim.world.get(v, BodyC)!.x -= 10; // drifted off
     sim.enqueue({ type: 'eva.out', vehicle: v });
     expect(reasons(run(sim, 1))).toEqual(['outOfRange']);

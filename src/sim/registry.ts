@@ -5,9 +5,10 @@ import type { Faction } from './combat/components';
 import type { FactionDef } from './shipgen/types';
 import type { StationDef } from './shipgen/stationTypes';
 import type { WorkCategory } from './crew/components';
+import type { CareerDef, UpbringingDef } from './crew/background';
 
 /** Crew skills the stat resolver knows (0 = untrained; roles add levels). */
-export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'repair' | 'hacking' | 'medicine' | 'science' | 'cooking';
+export type SkillName = 'gunnery' | 'piloting' | 'shielding' | 'melee' | 'construction' | 'hacking' | 'medicine' | 'science' | 'cooking' | 'botany' | 'industry';
 
 /** ASCII ship layout. One char per tile, rows top to bottom (row index = y). */
 export interface ShipTemplate {
@@ -45,7 +46,7 @@ import type { GalaxyContent } from './galaxy/defs';
 import type { YardDef } from './yard/types';
 import type { BlackMarketDef } from './blackmarket/defs';
 import type { TraitDef } from './crew/traitDef';
-import type { PolicyDef } from './ai/types';
+import type { PolicyDef, ScheduleDef } from './ai/types';
 import type { InteractionDef } from './crew/interactionTypes';
 
 /** Content injected at boot. The sim only reads it; it is never saved. */
@@ -61,8 +62,13 @@ export interface ContentRegistry {
   crewNames: string[];
   /** Crew trait id (e.g. 'trait.brave') to definition (docs/TRAITS.md). Optional: content without it rolls no traits. */
   traits?: Record<string, TraitDef>;
+  /** Backgrounds people roll from (content/backgrounds.ts, docs/TRAITS.md 10.5). Absent: people roll no skills. */
+  upbringings?: Record<string, UpbringingDef>;
+  careers?: Record<string, CareerDef>;
   /** Crew AI policies (content/policies.ts, docs/CREW_AI.md section 8) by id. Absent: every crew member only works. */
   policies?: Record<string, PolicyDef>;
+  /** Crew schedule presets (content/schedules.ts, #412) by id. The `rotation` presets are what player crew without a row follow, in turn. Absent: no schedules. */
+  schedules?: Record<string, ScheduleDef>;
   /** Crew interactions (content/interactions.ts, docs/TRAITS.md section 6) by id. Absent: nobody talks. */
   interactions?: Record<string, InteractionDef>;
   /** Item content id (e.g. 'item.metal') to definition. */
@@ -172,8 +178,8 @@ export interface VehicleDef {
   evasion: number;
   /** Cargo hold: total item units it carries besides its crew (hauled in and out at its boarding tile). Absent = none. */
   cargo?: number;
-  /** EVA from a hovering shuttle: suits stowed aboard (the hatch works like an airlock for them) and how far off a target's hull it holds station (tiles). */
-  eva?: { suits: number; hoverGap: number; /** Seconds of suit air its store holds (default VEHICLE_AIR_TANKS tanks). */ airStore?: number };
+  /** EVA from a hovering shuttle: suits aboard for whoever needs one (the hatch works like an airlock for them, #416) and how far off a target's hull it holds station (tiles). */
+  eva?: { hoverGap: number; /** Seconds of suit air its store holds (default VEHICLE_AIR_TANKS tanks). */ airStore?: number };
   /** Size across in tiles (render footprint; a mining pod nearly fills its 3x3 bay). Absent = the art's own size. */
   size?: number;
   /** A mining laser: ore units cut per second while it holds over an ore tile (mining pods, see systems/mining.ts). */
@@ -371,19 +377,15 @@ export interface RoleDef {
   skills?: Partial<Record<SkillName, number>>;
   /** Fights even unarmed, and hunts boarders it cannot see yet. Other roles flee from hostiles unless armed. */
   fighter?: true;
-  /** Item ids (best first) the crew member fetches from storage on their own when unarmed. */
+  /** Item ids (best first) the crew member fetches from storage on their own when unarmed (robots and NPC kinds; people of the player's crew use `armsFor`). */
   loadout?: string[];
-  /** Like `loadout`, but only for the player's own crew (so they can fight boarders without a draft); NPC crew of the role stay as they are. */
-  playerLoadout?: string[];
-  /** Items (best first) this role's player crew may take from storage when intruders are aboard and they have no weapon (see fight/emergency.ts). */
-  emergencyLoadout?: string[];
   /** Species of crew spawned in this role (default 'species.human'). Robot variants are roles of robot species. */
   species?: string;
   /** A robot bay can assemble this role (module.assembleRobot): materials delivered, then `work` ticks at workSpeed 1. */
   assemble?: { cost: readonly ItemQty[]; work: number };
   /** Hp fraction (0..1) under which this role surrenders when outnumbered. Default: SURRENDER_HP_FRAC for non-player crew, never for player crew. */
   surrenderBelow?: number;
-  /** In a fight, this role's crew relieve a weapons or helm console that has been empty for RELIEF_AFTER_SEC, whatever their operating priority (0 still opts out). */
+  /** NPC crew of this kind relieve a weapons or helm console empty for RELIEF_AFTER_SEC in a fight, whatever their operating priority (0 still opts out). The player's crew all do. */
   relievesStations?: true;
 }
 
@@ -430,6 +432,8 @@ export interface SpeciesDef {
   hunger?: { decayPerSec: number };
   /** Has moods (MoodC: a score built from named factors that slows work when low). Absent = no mood (robots). */
   mood?: true;
+  /** Personal kit: the hand weapon (item id) a person of this species joins the player's crew with (docs/TRAITS.md 10.9). */
+  kit?: string;
   /** The body's own weapon (claws, spit), used instead of bare fists when nothing is equipped. `id` names it in events and the UI. */
   natural?: HandWeaponDef & { id: string };
   /**
@@ -496,6 +500,15 @@ export interface ModuleDef {
   power: number;
   /** Power-shedding order 1 (served first) .. 5 when the ship is short of power. Default DEFAULT_POWER_PRIORITY. */
   powerPriority?: number;
+  /**
+   * Reactor fuel (issue #421): the module supplies power only while its internal store (`Module.fuel`, units of `item`) is above 0, and burns
+   * `1 / powerPerUnit` units per unit of power it actually delivers (power x seconds), so burn follows the network's load. `store`: units it
+   * holds when full (a fresh module starts full); crew top it up from the ship's stores once it is below `refillBelow` (modules/refuel.ts).
+   * Only player ships burn; every other ship's reactor runs on without fuel (modules/energy.ts `burnsFuel`).
+   */
+  fuel?: { item: string; store: number; refillBelow: number; powerPerUnit: number };
+  /** A battery bank (issue #421): stores up to `capacity` power-seconds (`Module.charge`), charged from spare supply and drained to cover a shortfall before any module is cut. */
+  battery?: { capacity: number };
   /** Oxygen added per second, spread over the module's room. */
   o2PerSec?: number;
   /**
@@ -551,7 +564,7 @@ export interface ModuleDef {
    * Placing it turns the door tiles into doors. Cycling takes `cycleSec` and moves the chamber's air to or from the ship,
    * so crew passing never vents the ship.
    */
-  airlock?: { cycleSec: number; layout?: AirlockLayout; /** Spacesuits stowed in the airlock at build time (default 0). Crew put one on and take it off here. */ suits?: number; /** Seconds of suit air its store holds (default AIRLOCK_AIR_TANKS tanks). */ airStore?: number };
+  airlock?: { cycleSec: number; layout?: AirlockLayout; /** Seconds of suit air its store holds (default AIRLOCK_AIR_TANKS tanks). */ airStore?: number };
   /**
    * Vehicle bay: a pit the vehicle sits in (solid, nothing walkable inside; it launches through hatch doors in the pit
    * floor). Holds one vehicle whose `VehicleDef.class` equals `class` ('shuttle' bays are 4x5; later 'pod' bays, 3x3, for

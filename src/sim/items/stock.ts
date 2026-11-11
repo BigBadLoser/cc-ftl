@@ -71,6 +71,11 @@ export function sourcesOf(sim: Sim, shipId: number, item: string, res: Reservati
   return out;
 }
 
+/** Units of `item` the planners could still claim on a ship: every unreserved source (loose stacks and storage), as `sourcesOf` finds them. */
+export function claimableCount(sim: Sim, shipId: number, item: string, res: Reservations): number {
+  return sourcesOf(sim, shipId, item, res).reduce((n, s) => n + s.avail, 0);
+}
+
 /** The unreserved source of `item` nearest to a point (ties: lower id). */
 export function nearestSource(sim: Sim, shipId: number, item: string, at: { x: number; y: number }, res: Reservations): Located | null {
   let best: Located | null = null;
@@ -121,7 +126,7 @@ export function totalStock(sim: Sim, item: string): number {
 }
 
 /** Storage modules of one ship crew can reach (not sealed containers), ascending id. */
-function shipStorages(sim: Sim, shipId: number): number[] {
+export function shipStorages(sim: Sim, shipId: number): number[] {
   return sim.world.query(StorageC, ModuleC).filter((id) => {
     const m = sim.world.get(id, ModuleC);
     return !!m && shipIdOf(sim, m) === shipId && !sim.world.has(id, ContainerC);

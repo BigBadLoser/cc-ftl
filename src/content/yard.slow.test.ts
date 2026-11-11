@@ -85,7 +85,9 @@ describe('shipyard: bigger jobs', () => {
   }, 120000);
 
   it('opens the old outer hull where the new section joins on, and leaves the outer ring shut (#385)', () => {
-    const { sim, station, me } = yardGame('station', 'station.military');
+    // No crew schedules (#412): the room checked below holds bunks, and a crew member asleep there through a Sleep block breathes its tile
+    // down to about 20 kPa by itself. The test is about the air the delivery brings, not about a sleeper's breath.
+    const { sim, station, me } = yardGame('station', 'station.military', { ...content, schedules: {} as typeof content.schedules });
     giveItems(sim, 'item.metal', 300);
     const s = { ...sim.world.get(me, ShipC)! }; // the order grows the ship's rectangle: keep the old corner
     const grid = sim.sector.grid;
@@ -115,5 +117,40 @@ describe('shipyard: bigger jobs', () => {
     expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
     run(sim, 20 * 180);
     expect(joined()).toBeGreaterThan(NORMAL_O2 - 1);
+  }, 300000);
+
+  // #429: a patch drawn against the old hull where a module of the old ship stands behind the wall used to leave wall tiles of the old hull that no crew
+  // could reach. Old hull a new wall shuts in now goes at once, with no job, so those walls are gone and the patch joins the ship.
+  it('opens the old hull behind a module as the patch is shut, and the patch joins the ship (#429)', () => {
+    const { sim, station, me } = yardGame('hub', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    planHull(sim, me, outline(sim, me, 24, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    run(sim, 9000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.reason).toBeUndefined();
+    expect(builtCount(sim, order).walls).toBe(order.walls.length);
+    expect(builtCount(sim, order).floor).toBe(order.floor.length);
+    const grid = shipGrid(sim, me)!;
+    expect(order.opens?.length).toBeGreaterThan(0);
+    for (const t of order.opens!) expect(grid.get('struct', t.x, t.y), `${t.x},${t.y}`).toBe(Struct.Floor);
+    // the patch joins the ship: its floor is reachable from the old ship's floor over floor tiles alone
+    const start = order.opens![0]!;
+    const seen = new Set<string>([`${start.x},${start.y}`]);
+    const stack = [start];
+    while (stack.length) {
+      const c = stack.pop()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const n = { x: c.x + dx, y: c.y + dy };
+        if (seen.has(`${n.x},${n.y}`) || grid.get('struct', n.x, n.y) !== Struct.Floor) continue;
+        seen.add(`${n.x},${n.y}`);
+        stack.push(n);
+      }
+    }
+    expect(order.floor.every((t) => seen.has(`${t.x},${t.y}`))).toBe(true);
+    const inOrder = new Set([...order.floor, ...order.opens!].map((t) => `${t.x},${t.y}`));
+    expect([...seen].some((k) => !inOrder.has(k))).toBe(true); // and on into the old ship's own floor
   }, 300000);
 });

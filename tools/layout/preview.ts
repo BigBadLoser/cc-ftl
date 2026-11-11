@@ -1,0 +1,178 @@
+/**
+ * The preview: the game's renderer over a sim built from the design and never ticked, so it shows the real art and nothing moves.
+ * One host element lives for the page (panes move it between docks and floating windows). The first design builds a renderer
+ * over a sim of the preview's own; an edit restamps that sim in place (the game's wreck removal, then a new stamp) and the renderer
+ * rebuilds only the ship's scene. A design too big for the sim gets a fresh canvas and renderer, built beside the old one. The
+ * renderer only reads the sim; only this file restamps its own, never the game's.
+ */
+import { content } from '../../src/content';
+import { createRenderer, type Renderer } from '../../src/render/scene';
+import { ModuleC, shipGrid } from '../../src/sim';
+import { ORIGIN, type View } from './camera';
+import type { Design } from './design';
+import { buildWorld, fits, restamp, type World } from './world';
+
+export interface Mark { tiles: readonly [number, number][]; tint: number; solid?: boolean }
+export interface Preview {
+  /** The element panes mount; it holds the canvas. */
+  host: HTMLElement;
+  setDesign(d: Design): Promise<void>;
+  /** Resize to the host's box (call when it changes size or moves). */
+  resize(): void;
+  setView(v: View): void;
+  setMarks(marks: readonly Mark[]): void;
+  setShields(on: boolean): void;
+  setRoof(on: boolean): void;
+  /** The design tile under a host-relative css px position, and the module there if the pointer is on one. */
+  pick(sx: number, sy: number): { x: number; y: number; module: number | null } | null;
+  /** The renderer's current zoom level (null before it exists). */
+  zoom(): number | null;
+  /** A PNG data URL of the design as the preview shows it now (at most `maxW` px wide), or null when the preview is not on screen. */
+  still(maxW: number): Promise<string | null>;
+  /** Stop drawing (a minimised preview). */
+  pause(on: boolean): void;
+}
+
+interface Live { r: Renderer; c: HTMLCanvasElement; world: World; design: Design }
+
+export function createPreview(): Preview {
+  const host = document.createElement('div');
+  host.className = 'relative size-full overflow-hidden bg-black';
+  let cur: Live | undefined;
+  let next: Live | undefined;
+  let view: View | undefined;
+  let marks: readonly Mark[] = [];
+  let shields = false;
+  let roof = false;
+  // imported faction ships and stations stamp with their real side, so both roof switches follow the toggle
+  const setRoofs = (r: { setRoofPlayer(on: boolean): void; setRoofEnemies(on: boolean): void }, on: boolean): void => { r.setRoofPlayer(on); r.setRoofEnemies(on); };
+  let paused = false;
+  let generation = 0;
+
+  function applyView(l: Live | undefined): void {
+    if (!l || !view) return;
+    for (let i = 0; i < 24 && l.r.info().zoom < view.zoom - 1e-9; i++) l.r.zoomAt(1.2, 0, 0);
+    for (let i = 0; i < 24 && l.r.info().zoom > view.zoom + 1e-9; i++) l.r.zoomAt(1 / 1.2, 0, 0);
+    l.r.focusTile(view.cx + ORIGIN, view.cy + ORIGIN);
+  }
+  function applyMarks(l: Live | undefined): void {
+    l?.r.setAreas(marks.map((m) => ({ tiles: m.tiles.map(([x, y]) => ({ x: x + ORIGIN, y: y + ORIGIN })), tint: m.tint, solid: m.solid })));
+  }
+  const loop = (): void => {
+    requestAnimationFrame(loop);
+    if (paused) return;
+    cur?.r.render(1);
+    next?.r.render(1);
+  };
+  requestAnimationFrame(loop);
+
+  function drop(l: Live | undefined): void {
+    if (!l) return;
+    l.r.dispose();
+    l.c.remove();
+  }
+
+  return {
+    host,
+    async setDesign(d) {
+      const mine = ++generation;
+      drop(next);
+      next = undefined;
+      // An edit restamps the preview's own sim in place (the renderer keeps its world and rebuilds only the ship's scene).
+      if (cur && fits(cur.world.sim, d.layout)) {
+        try {
+          const ship = restamp(cur.world.sim, cur.world.ship, d.layout);
+          const grid = ship === null ? undefined : shipGrid(cur.world.sim, ship);
+          if (ship !== null && grid) {
+            cur.world = { sim: cur.world.sim, ship };
+            cur.design = d;
+            cur.r.setGrid(grid);
+            applyView(cur);
+            return;
+          }
+        } catch { /* fall through to a fresh build */ }
+      }
+      const world = buildWorld(d.layout);
+      if (!world) return;
+      const c = document.createElement('canvas');
+      c.className = `absolute inset-0 block size-full ${cur ? 'invisible' : ''}`;
+      host.appendChild(c);
+      const r = await createRenderer(c, 'high', world.sim.world, content);
+      const l: Live = { r, c, world, design: d };
+      if (mine !== generation) { drop(l); return; }
+      next = l;
+      r.setSector(world.sim.sector.grid);
+      const grid = shipGrid(world.sim, world.ship);
+      if (grid) r.setGrid(grid);
+      r.setBackdrop({ seed: 7, density: 0.25, body: null, bodyHash: 0 });
+      setRoofs(r, roof);
+      r.setWorldGrid(false);
+      r.setShields(shields);
+      r.resize();
+      applyMarks(l);
+      applyView(l);
+      if (cur) await Promise.race([r.whenArtReady(), new Promise((res) => setTimeout(res, 4000))]);
+      if (mine !== generation) return;
+      const old = cur;
+      cur = l;
+      next = undefined;
+      c.classList.remove('invisible');
+      drop(old);
+      applyView(cur);
+    },
+    resize() {
+      cur?.r.resize();
+      applyView(cur);
+    },
+    setView(v) {
+      view = v;
+      applyView(cur);
+      applyView(next);
+    },
+    setMarks(m) {
+      marks = m;
+      applyMarks(cur);
+      applyMarks(next);
+    },
+    setRoof(on) {
+      roof = on;
+      if (cur) setRoofs(cur.r, on);
+      if (next) setRoofs(next.r, on);
+    },
+    setShields(on) {
+      shields = on;
+      cur?.r.setShields(on);
+      next?.r.setShields(on);
+    },
+    pick(sx, sy) {
+      if (!cur) return null;
+      const t = cur.r.pickTileAny(sx, sy);
+      if (!t) return null;
+      const x = t.x - ORIGIN, y = t.y - ORIGIN;
+      let module: number | null = null;
+      const e = cur.r.pickModule(sx, sy);
+      const m = e ? cur.world.sim.world.get(e, ModuleC) : undefined;
+      if (m) {
+        const i = cur.design.modules.findIndex((dm) => dm.def === m.def && dm.x === m.x - ORIGIN && dm.y === m.y - ORIGIN);
+        module = i >= 0 ? i : null;
+      }
+      return { x, y, module };
+    },
+    zoom: () => cur?.r.info().zoom ?? null,
+    async still(maxW) {
+      const l = cur;
+      if (!l || paused || !l.c.clientWidth) return null;
+      await new Promise((r) => setTimeout(r, 900)); // the scene builds over a few frames
+      l.r.render(1);
+      const k = Math.min(1, maxW / l.c.width);
+      const out = document.createElement('canvas');
+      out.width = Math.round(l.c.width * k);
+      out.height = Math.round(l.c.height * k);
+      out.getContext('2d')?.drawImage(l.c, 0, 0, out.width, out.height);
+      return out.toDataURL('image/png');
+    },
+    pause(on) {
+      paused = on;
+    },
+  };
+}

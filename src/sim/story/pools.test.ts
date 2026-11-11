@@ -22,8 +22,8 @@ const all = { firefighting: 2, medical: 2, operating: 2, repair: 2, construction
 export const baseContent = (events: Record<string, EventDef>): ContentRegistry => ({
   ships: {},
   roles: {
-    'role.engineer': { name: 'Engineer', priorities: all, skills: { repair: 6 } },
-    'role.rookie': { name: 'Rookie', priorities: all, skills: { repair: 1 } },
+    'role.engineer': { name: 'Engineer', priorities: all, skills: { construction: 6 } },
+    'role.rookie': { name: 'Rookie', priorities: all, skills: { construction: 1 } },
     'role.bot': { name: 'Bot', priorities: all, species: 'species.robot' },
   },
   species: {

@@ -24,7 +24,7 @@ describe('crew for hire', () => {
       const fh = sim.world.get(id, ForHireC)!;
       const r = derived.find((x) => x.key === fh.key)!;
       expect(fh.cost).toBe(r.cost);
-      expect(sim.world.get(id, CrewC)!.role).toBe(r.role);
+      expect(sim.world.get(id, CrewC)!.role).toBe(r.species === 'species.human' ? 'role.crew' : r.role); // people roll a background (the listing's role a career hint)
       expect(sim.world.get(id, AllegianceC)!.faction).not.toBe('player');
       expect(sim.world.has(id, PositionC)).toBe(true);
     }

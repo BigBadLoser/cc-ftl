@@ -18,6 +18,7 @@ import { stationDirectorSystem } from './systems/stationDirector';
 import { craftJobsSystem } from './systems/craftJobs';
 import { researchJobsSystem } from './systems/researchJobs';
 import { farmSystem } from './farm/system';
+import { refuelSystem } from './modules/refuel';
 import { scheduleSystem } from './ai/schedule';
 import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
@@ -152,6 +153,8 @@ export const pipeline: readonly System[] = [
   researchJobsSystem,
   // Hydroponics beds grow on this tick's power, and post their plant and harvest jobs (the planting water is supplied just below).
   farmSystem,
+  // Reactors low on fuel post their refuel jobs (the fuel is supplied just below, like a build's materials).
+  refuelSystem,
   supplyJobsSystem,
   // Shuttle cargo hauls before the floor planner, so salvage on a prize goes to the shuttle, not nowhere.
   cargoJobsSystem,

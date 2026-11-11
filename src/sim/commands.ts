@@ -1,6 +1,7 @@
 import type { Faction } from './combat/components';
 import type { BreakContext, BreakKind } from './crew/breakTypes';
 import type { WorkCategory } from './crew/components';
+import type { ScheduleBlock } from './ai/types';
 import type { ItemQty, ScrapType, SkillName } from './registry';
 
 /** Every way to change the sim from outside. Add new variants here. */
@@ -44,6 +45,12 @@ export type Command =
   | { type: 'module.priorityRepair'; id: number; on: boolean }
   | { type: 'crew.setPriority'; id: number; category: WorkCategory; value: number }
   | { type: 'crew.resetPriorities'; id: number }
+  /** Set hours `from` to `to` (inclusive, wrapping past midnight; `to` absent: one hour) of a crew member's schedule to a block (#412). */
+  | { type: 'crew.schedule.set'; id: number; from: number; to?: number; block: ScheduleBlock }
+  /** Give a crew member a schedule preset (content/schedules.ts) as their own row. */
+  | { type: 'crew.schedule.preset'; id: number; preset: string }
+  /** Copy crew member `from`'s schedule row to crew member `id`. */
+  | { type: 'crew.schedule.copy'; id: number; from: number }
   | { type: 'crew.draft'; id: number; drafted: boolean }
   /** Drafted crew attack this hostile crew member or egg sac (walking into range first) until it is subdued or burst. Cleared by crew.moveTo. */
   | { type: 'crew.attack'; id: number; target: number }
@@ -63,7 +70,7 @@ export type Command =
   | { type: 'airlock.cycle'; moduleId: number; to: 'inner' | 'outer' }
   /** Give or take a crew member's EVA suit. */
   | { type: 'suit.set'; crew: number; worn: boolean }
-  /** Drafted crew walk to the airlock's suit tile and put on one of its stowed suits (a few seconds). Needs a free suit. */
+  /** Drafted crew walk to the airlock's suit tile and put on a suit (a few seconds; any airlock has one, #416). */
   | { type: 'eva.suitUp'; crew: number; airlock: number }
   /** Drafted, suited crew walk to an airlock (default: the nearest on their grid) and take the suit off; it returns there with a full tank. */
   | { type: 'eva.suitOff'; crew: number; airlock?: number }
@@ -72,7 +79,7 @@ export type Command =
   /** Fly a shuttle to hold station a few tiles off another ship's hull (`ship`: its ShipC entity id; launching a stowed one first). Needs a pilot. */
   /** `box` (sector tiles) narrows where beside the ship it holds station (a pickup); with one it may hover beside its own home ship. */
   | { type: 'vehicle.hover'; vehicle: number; ship: number; box?: { x: number; y: number; w: number; h: number } }
-  /** Crew aboard a hovering shuttle (default: all passengers) put on suits from its stock and float out to the target's hull. */
+  /** Crew aboard a hovering shuttle (default: all passengers) put on suits (it has one for each, #416) and float out to the target's hull. */
   | { type: 'eva.out'; vehicle: number; crew?: number }
   /** A drafted, suited crew member on the hull floats back to the hovering shuttle, boards and stows the suit. */
   | { type: 'eva.board'; crew: number; vehicle: number }

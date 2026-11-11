@@ -60,10 +60,10 @@ export function supplyJobsSystem(sim: Sim): void {
           break;
         }
         const n = Math.min(lack, src.avail, DEFAULT_CARRY_CAPACITY);
-        const category = job.kind === 'craft' ? (sim.content.recipes[job.craft?.recipe ?? '']?.category ?? 'crafting') : job.kind === 'plant' ? 'farming' : 'construction';
+        const category = job.kind === 'craft' ? (sim.content.recipes[job.craft?.recipe ?? '']?.category ?? 'crafting') : job.kind === 'plant' ? 'farming' : job.kind === 'refuel' ? 'hauling' : 'construction';
         // One trip carries the job's other materials from the same crate too (builders carry what they need).
         const extra: ItemQty[] = [];
-        if (src.ref.kind === 'storage' && job.kind !== 'craft' && job.kind !== 'plant') {
+        if (src.ref.kind === 'storage' && job.kind !== 'craft' && job.kind !== 'plant' && job.kind !== 'refuel') {
           for (const o of missing) {
             if (o.item === need.item) continue;
             const left = lacks.get(o.item) ?? 0;
@@ -73,7 +73,7 @@ export function supplyJobsSystem(sim: Sim): void {
           }
         }
         // ...and when the load is not full, it carries on to nearby jobs short of the same item (one trip serves a run of walls).
-        const then = job.kind === 'craft' || job.kind === 'plant' ? [] : chain(sim, res, jobId, job, need.item, Math.min(CHAIN_MAX, src.avail) - n);
+        const then = job.kind === 'craft' || job.kind === 'plant' || job.kind === 'refuel' ? [] : chain(sim, res, jobId, job, need.item, Math.min(CHAIN_MAX, src.avail) - n);
         const total = n + then.reduce((s, t) => s + t.count, 0);
         makeHaul(sim, res, category, shipIdOf(sim, job), src, { kind: 'job', id: jobId }, need.item, total, extra, then);
         lack -= n;

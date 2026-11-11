@@ -177,8 +177,6 @@ export interface Job {
   party?: number;
   /** For 'passage' jobs: the away site (ShipC entity) the seat goes to. */
   site?: number;
-  /** For 'passage' jobs: a seat beyond the shuttle's suits, for crew who do not breathe. */
-  airless?: true;
   /**
    * forceDoor: the drafted crew member ordered to force the door (absent on the undrafted construction job).
    * sabotage: the boarder ordered to wreck `target`. Kept after the reservation is released, so the end of the order can name them.
@@ -192,6 +190,8 @@ export type JobKind =
   | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'
+  /** refuel: load fuel into the reactor `target` (modules/refuel.ts). */
+  | 'refuel'
   /** mend: repair a damaged robot (`target`); salvage: strip a robot wreck (`target`); hack: take over an AI core (`target`). */
   | 'mend' | 'salvage' | 'hack'
   /** sabotage: a boarder wrecks the hostile ship's module `target` from beside it (boarding/sabotage.ts). */
@@ -276,6 +276,9 @@ export interface Mood {
   mealItem?: string;
   /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
   relax?: number;
+  /** Seconds left of "enjoying the work" (an interest, docs/TRAITS.md 10.7), and its points (+2 keen, +4 passionate). */
+  enjoy?: number;
+  enjoyPts?: number;
   /** Seconds left of the sleep memory, and whether it was in a bed (1) or on the floor (-1). */
   sleep: number;
   bed: 1 | -1;

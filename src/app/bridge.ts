@@ -33,10 +33,15 @@ import { shipGrid } from '../sim/regions';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
 import { buildResearch } from './researchSnapshot';
+import { clockAt } from '../sim/clock';
 
 /** Plain-data view of the sim published to the UI. Never holds sim references. */
 export interface Snapshot {
   tick: number;
+  /** The ship clock (#412): day from 1, hour 0..23, minute. */
+  clock: { day: number; hour: number; minute: number };
+  /** The starmap turn (`sim.galaxy.turn`), the one the save meta records. */
+  turn: number;
   speed: Speed;
   paused: boolean;
   entityCount: number;
@@ -135,11 +140,15 @@ export interface Bridge {
   attachLoop(loop: Loop): void;
   /** Called by the loop each frame. */
   update(stats: FrameStats, info?: { sprites: number; zoom: number }): void;
+  /** Rebuild every snapshot now, skipping the per-panel frame throttle (a tool that steps the paused sim and reads the UI data at once). */
+  refresh(): void;
 }
 
 export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE): Bridge {
   const store = createStore<Snapshot>({
     tick: sim.tick,
+    clock: clockAt(sim.tick),
+    turn: sim.galaxy.turn,
     speed: 1,
     paused: false,
     entityCount: sim.world.entityCount,
@@ -171,7 +180,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   let lastGoals = '';
   let lastJobsKey = '';
   let lastSites = '[]';
-  const stats = createStore<UiStats>({ supply: 0, demand: 0, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
+  const stats = createStore<UiStats>({ supply: 0, demand: 0, fuel: null, battery: null, food: { units: 0, eaters: 0, perHour: 0, hours: null }, heat: { notoriety: 0, wanted: false, wantedAt: 10, hunters: [], clearCost: 0, clearBlocker: null }, o2: null, hull: { tiles: 0, capacity: 0 } });
   const stock = createStore<UiStock[]>([]);
   const storages = createStore<UiStorage[]>([]);
   const fabs = createStore<UiFab[]>([]);
@@ -215,6 +224,8 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   let lastMods = '';
   let lastStats = '';
   let uiFrame = 0;
+  /** Set while `refresh` runs: every panel is due. */
+  let fresh = false;
   let lastCrew = '';
   let selected: TileRef | null = null;
   let hovered: TileRef | null = null;
@@ -239,7 +250,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   };
 
   /** A panel's turn: every `period` frames (`offset` staggers them so they do not all land on one frame), or at once after a command applied. */
-  const due = (id: string, period: number, offset: number): boolean => (uiFrame + offset) % period === 0 || seenApplied.get(id) !== sim.commands.applied;
+  const due = (id: string, period: number, offset: number): boolean => fresh || (uiFrame + offset) % period === 0 || seenApplied.get(id) !== sim.commands.applied;
 
   const refreshInspect = () => {
     const ref = selected ?? hovered;
@@ -478,7 +489,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
   const refreshStarmap = () => {
     // Closed: only the status (state and trip) is kept fresh, so the game view can tell the player they are in hyperspace, and answer a scan that found contraband.
     const scanning = sim.galaxy.encounters.some((e) => !!e.scan) || starmap.get().encounters.some((e) => !!e.contraband);
-    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || starFrame++ % 5) return;
+    if ((!starOpen && sim.sector.state === 'active' && starmap.get().state === 'active' && !starmap.get().travel && !scanning) || (starFrame++ % 5 && !fresh)) return;
     const cur = starmap.get();
     if (starOpen && cur.rev !== sim.galaxy.rev) return starmap.set(buildStarmap(sim));
     const st = starmapStatus(sim);
@@ -608,7 +619,7 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
         fn();
         probe.end(label);
       };
-      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
+      step('ui/bridge/store', () => store.update((s) => ({ ...s, ...stats, clock: clockAt(stats.tick), turn: sim.galaxy.turn, zoom: info?.zoom ?? s.zoom, sprites: info?.sprites ?? s.sprites })));
       step('ui/bridge/inspect', refreshInspect);
       step('ui/bridge/crew', refreshCrew);
       step('ui/bridge/ship', refreshShip);
@@ -624,6 +635,15 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
       step('ui/bridge/deploy', refreshDeploy);
       step('ui/bridge/starmap', refreshStarmap);
       step('ui/bridge/prefetch', runPrefetch);
+    },
+    refresh() {
+      const s = store.get();
+      fresh = true;
+      try {
+        this.update({ tick: sim.tick, entityCount: sim.world.entityCount, fps: s.fps, frameMs: s.frameMs, tickMs: s.tickMs });
+      } finally {
+        fresh = false;
+      }
     },
   };
 }

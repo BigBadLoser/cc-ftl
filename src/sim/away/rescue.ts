@@ -2,7 +2,6 @@ import { findFreeBed } from '../crew/beds';
 import { CarriedC, CrewC, PositionC, type Crew } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { SuitC } from '../eva/components';
-import { vehicleSuits } from '../eva/shuttle';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
@@ -33,7 +32,7 @@ export function handInPatient(sim: Sim, carrier: number, patient: number): boole
   const spot = away && me && siteSpot(sim, away.vehicle, shipIdOf(sim, me));
   if (!away || !v || !spot || Math.max(Math.abs(me.x - spot.x), Math.abs(me.y - spot.y)) > 1 || occupants(v).length >= (vehicleDefOf(sim, v)?.capacity ?? 0) + 1) return false;
   sim.world.remove(patient, CarriedC);
-  if (sim.world.remove(patient, SuitC)) v.suits = vehicleSuits(sim, v) + 1;
+  sim.world.remove(patient, SuitC); // stowed aboard
   boardCrew(sim, patient, away.vehicle);
   (sim.world.get(patient, CrewC) as Crew).activity = 'downed';
   sim.world.add(patient, AwayC, { site: away.site, vehicle: away.vehicle, cat: away.cat, home: true });

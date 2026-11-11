@@ -23,6 +23,8 @@ import { ARC_COLOR, boltAsset, drawBolt, recolor, shotLook } from './shotLook';
 export interface SectorFx {
   onEvents(events: readonly SimEvent[]): void;
   update(dt: number, alpha: number): void;
+  /** Show or hide the shield domes (default shown). */
+  setShields(on: boolean): void;
   dispose(): void;
 }
 
@@ -205,6 +207,7 @@ export function createSectorFx(
         }
       }
     },
+    setShields: (on) => shields.setVisible(on),
     update(dt, alpha) {
       shields.update(dt, animNow());
       const seen = new Set<number>();

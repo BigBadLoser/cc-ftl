@@ -20,6 +20,8 @@ export const items = {
   // Raw ores from asteroid rock: refined at a refinery (metal, electronics). Ice is used as is.
   'item.iron_ore': { name: 'Iron ore', tags: ['raw', 'ore'], stackSize: 100, price: 4 },
   'item.rare_ore': { name: 'Rare ore', tags: ['raw', 'ore'], stackSize: 50, price: 12 },
+  // Reactor fuel (issue #421), mined from asteroid rock. NEEDS ART: item icon; it borrows the rare ore's until then.
+  'item.energy_crystal': { name: 'Energy crystal', tags: ['raw', 'energy'], stackSize: 50, price: 9 },
   'item.ice': { name: 'Ice', tags: ['raw', 'water'], stackSize: 50, price: 3 },
   // Split from ice at a refinery.
   'item.water': { name: 'Water', tags: ['refined', 'life'], stackSize: 50, price: 4 },

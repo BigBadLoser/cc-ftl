@@ -14,7 +14,8 @@ import type { Sim } from '../sim';
 import { airMargin, airSourceInput } from './airNeed';
 import { awayReturn } from '../away/crew';
 import { IntentC } from './components';
-import type { CrewKind, DriveDef, DriveId, DriveInput, Intent, MachineId, PolicyDef } from './types';
+import { blockNow } from '../crew/schedule';
+import type { CrewKind, DriveDef, DriveId, DriveInput, Intent, MachineId, PolicyDef, ScheduleBlock } from './types';
 
 /**
  * The utility engine (docs/CREW_AI.md sections 4 and 8): one interpreter for every policy in content (`content/policies.ts`).
@@ -147,6 +148,8 @@ export interface TaskView {
   underway: (machine: MachineId) => boolean;
   /** Are they in a `finish` task (carrying a patient)? Asked only when some need wants them, as it is the rare case. */
   finishing: () => boolean;
+  /** Are they on an errand they finish whatever the schedule (stowing or refilling a suit, #412)? Only urgent drives break in. */
+  errand?: () => boolean;
 }
 
 /** One drive's state in an evaluation. */
@@ -162,12 +165,16 @@ interface Scored {
 /** A drive is urgent when its input reads under its `urgent.below`. */
 export const isUrgent = (def: DriveDef, v: number): boolean => !!def.urgent && v < def.urgent.below;
 
-/** Score one drive, updating its latch bit. */
-function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Intent, driven: boolean, view: TaskView): Scored {
+/**
+ * Score one drive, updating its latch bit. The schedule block's rule (`DriveDef.blocks`, #412) closes the drive (`'off'`), keeps it on with a
+ * score floor (`on`, a driven crew member included: the player set the plan) or raises its entry line (`enter`).
+ */
+function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Intent, driven: boolean, view: TaskView, block: ScheduleBlock): Scored {
   const bit = 1 << i;
+  const rule = def.blocks?.[block];
   const x = def.input ? readInput(sim, id, def.input) : 0;
   const busy = !!def.keepWhileTask && def.task !== 'job' && view.underway(def.task);
-  if (x === undefined && !busy) {
+  if (rule === 'off' || (x === undefined && !busy)) {
     intent.latched = (intent.latched ?? 0) & ~bit;
     return { def, i, score: 0, urgent: false, open: false };
   }
@@ -177,12 +184,13 @@ function scoreDrive(sim: Sim, id: number, def: DriveDef, i: number, intent: Inte
   if (def.urgent && driven) on = urgent; // a driven crew member answers only the urgent part of a drive
   else if (def.enter !== undefined) {
     const trait = def.enterTrait ? traitEffect(sim, id, def.enterTrait) : undefined;
-    const enter = trait !== undefined ? tenths(trait) : def.enter;
+    const enter = Math.max(trait !== undefined ? tenths(trait) : def.enter, rule?.enter ?? 0);
     const exit = Math.max(enter, def.exit ?? enter); // a trait moves the entry; a configured exit still holds, never below it
     on = ((intent.latched ?? 0) & bit) !== 0 ? v < exit : v < enter;
   }
   if (def.enter !== undefined) intent.latched = on ? (intent.latched ?? 0) | bit : (intent.latched ?? 0) & ~bit;
-  return { def, i, score: on || busy ? curveAt(def.curve, v) : 0, urgent, open: true };
+  const score = on || busy ? curveAt(def.curve, v) : 0;
+  return { def, i, score: rule?.on !== undefined ? Math.max(score, rule.on) : score, urgent, open: true };
 }
 
 /**
@@ -200,9 +208,11 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
   if (intent.avoid && sim.tick >= intent.avoid.until) delete intent.avoid;
   intent.nextEval = sim.tick + 1; // every tick: the drives are cheap to read, and a need is answered the tick it arises
   const driven = view.atPost || traitFlag(sim, id, 'workaholic'); // a Workaholic keeps going like an operator at a console
-  const scored = policy.drives.map((d, i) => scoreDrive(sim, id, d, i, intent, driven, view));
+  const block = policy.drives.some((d) => d.blocks) ? blockNow(sim, id) : 'any'; // the schedule block in force (crew/schedule.ts)
+  const scored = policy.drives.map((d, i) => scoreDrive(sim, id, d, i, intent, driven, view, block));
   let blocked: DriveId | undefined;
   let finishing: boolean | undefined;
+  let errand: boolean | undefined;
   for (const s of scored) {
     intent.scores[s.i] = s.score;
     if (s.score <= 0) {
@@ -220,6 +230,8 @@ export function evaluateIntent(sim: Sim, id: number, view: TaskView): DriveDef[]
     }
     // A carried patient is laid down first; only an urgent drive that declares `breaksFinish` may break in, and only once urgent.
     if (!(s.urgent && s.def.urgent?.breaksFinish) && (finishing ??= view.finishing())) s.open = false;
+    // A suit errand is finished before a need that is not urgent (a Sleep block's bed, supper in Free): no sleeping in the suit (#412).
+    else if (!s.urgent && !view.underway(s.def.task) && (errand ??= !!view.errand?.())) s.open = false; // the errand's own drive (air: a refill) runs on
   }
   if (blocked) intent.blocked = blocked;
   else delete intent.blocked;

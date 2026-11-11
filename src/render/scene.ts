@@ -1,4 +1,5 @@
 import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } from 'pixi.js';
+import { applyPixiFixes } from './pixiFixes';
 import './batch';
 import { createCrewAtlas } from './crewAtlas';
 import { createPaintAtlas } from './paintAtlas';
@@ -179,6 +180,8 @@ export interface Renderer {
   setBackdrop(spec: BackdropSpec): void;
   /** Show or hide the space backdrop (screenshot tooling: a flat background lets a script cut ships out). */
   showBackdrop(on: boolean): void;
+  /** Show or hide the shield domes (default shown; the layout lab's preview hides them to see the hull). */
+  setShields(on: boolean): void;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
   /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
@@ -206,6 +209,7 @@ interface RendererContent {
 /** Loads the asset manifest and sheets, then builds the renderer. Rejects if assets are missing or invalid. */
 export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality, world: World, content: RendererContent): Promise<Renderer> {
   const high = quality === 'high';
+  applyPixiFixes();
   const gl = await autoDetectRenderer({
     canvas,
     width: 1,
@@ -790,6 +794,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setBackdrop(spec) {
       backdrop.setSpec(spec);
     },
+    setShields: (on) => fx.setShields(on),
     showBackdrop(on) {
       backdropOn = on;
       backdrop.root.visible = on;

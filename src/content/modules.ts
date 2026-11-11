@@ -13,12 +13,14 @@ export const modules = {
     scrap: 'energy',
     name: 'Reactor',
     category: 'power',
-    description: "Burns fuel rods for the ship's main power. Runs hot, so keep it ventilated.",
+    description: "Burns energy crystals for the ship's main power: more load burns more, an empty store supplies nothing, and crew top it up from the stores. Runs hot, so keep it ventilated.",
     asset: 'module.reactor',
     footprint: [2, 2],
     solid: true,
     power: 50,
     powerPriority: 1,
+    // One crystal per game hour (40 s) at the full 50 it can give; burn follows the load. Crew refill the 6-crystal store below half.
+    fuel: { item: 'item.energy_crystal', store: 6, refillBelow: 3, powerPerUnit: 2000 },
     heatPerSec: 8,
     flammability: 0.1,
     maxHp: 200,
@@ -297,7 +299,7 @@ export const modules = {
   //   row 1   (1,1)       the pod, the inner door;  (0,1) (2,1) unloader back halves
   //   row 2   (1,2)       inside tile, walkable: where passengers land;  (0,2) (2,2) unloader fronts, the chutes
   //   row 3   (1,3)       walkable;  (0,3) (2,3) keep-out tiles: walkable, where crew work the chutes, nothing else builds here
-  // Cycles in 4 s, pumping the outer door tile's air back into the ship. Holds 3 EVA suits (crew put one on at the inside tile).
+  // Cycles in 4 s, pumping the outer door tile's air back into the ship. Has a suit for whoever needs one (#416: no count; crew put it on at the inside tile).
   'module.airlock': {
     scrap: 'hull',
     name: 'Airlock',
@@ -308,7 +310,6 @@ export const modules = {
     power: -2, powerPriority: 2, flammability: 0.1, maxHp: 120, buildWork: 200, hullEdge: 'n',
     airlock: {
       cycleSec: 4,
-      suits: 3,
       layout: {
         outer: [1, 0], inner: [1, 1], inside: [1, 2], collar: [1, -1],
         unloaders: [

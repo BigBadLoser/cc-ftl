@@ -22,6 +22,10 @@ export interface UiLook {
 
 export interface UiSnapshot {
   tick: number;
+  /** The ship clock (#412): day from 1, hour 0..23, minute. */
+  clock: { day: number; hour: number; minute: number };
+  /** The starmap turn: what the HUD shows and the save records. */
+  turn: number;
   speed: 0 | 1 | 2 | 3;
   paused: boolean;
   entityCount: number;
@@ -125,8 +129,12 @@ export interface UiCrew {
   /** Human-readable current job, or null. */
   job: string | null;
   priorities: Record<WorkCategory, number>;
-  /** The role's default priorities (for "differs from role" marks and reset). */
+  /** The crew member's 24 schedule blocks, hour 0 first (#412), and the block in force now (Work while on call); null without a schedule. */
+  schedule: { hours: ('any' | 'work' | 'sleep' | 'free')[]; now: 'any' | 'work' | 'sleep' | 'free' } | null;
+  /** The default priorities (from their skills, or a crew kind's fixed ones), for "differs from default" marks and reset. */
   defaults: Record<WorkCategory, number>;
+  /** Work categories they won't do (docs/TRAITS.md 10.10), with the reason: the grid shows the cell locked. */
+  wontDo: Partial<Record<WorkCategory, string>>;
   hp: number;
   maxHp: number;
   dead: boolean;
@@ -161,8 +169,8 @@ export interface UiCrew {
   /** The hovering shuttle this suited crew member came out of (they can float back to it), or null. */
   evaShuttle: number | null;
   suit: { air: number; max: number; low: boolean; outside: boolean } | null;
-  /** The nearest airlock on their grid with a free suit (to put one on), the suits free there and the airlock's tile; null when none or they cannot wear one. */
-  suitAt: { id: number; free: number } | null;
+  /** The nearest usable airlock on their grid (to put a suit on: any has one, #416); null when none or they cannot wear one. */
+  suitAt: { id: number } | null;
   /** Traits (docs/TRAITS.md): name, kind, flavour and the exact effect (for the hover). */
   traits: UiTrait[];
   /** Skills worth showing (above 0 now, or in the role): current level against the role's baseline. */
@@ -201,6 +209,19 @@ export interface UiFight {
 }
 
 /** A placed module, for the inspector and the debug panel. */
+/** A reactor's fuel store or a battery bank's charge (app/reserveSnapshot.ts). */
+export interface UiReserve {
+  kind: 'fuel' | 'charge';
+  /** What is held: the fuel's name, or 'Charge'. */
+  label: string;
+  have: number;
+  max: number;
+  /** One line on what it is doing / what is wrong. */
+  note: string;
+  /** Under the refill line (fuel) or empty (charge): shown as a warning. */
+  low: boolean;
+}
+
 export interface UiModule {
   id: number;
   /** The ship it is on (ShipC entity id): the `ship` of module commands. */
@@ -221,6 +242,8 @@ export interface UiModule {
   powered: boolean;
   /** Units per second: positive supplies, negative draws. */
   power: number;
+  /** A reactor's fuel store or a battery bank's charge (null for other modules). */
+  reserve: UiReserve | null;
   /** Holds items (has a storage panel). */
   storage: boolean;
   /** Crafts recipes (has a production panel). */
@@ -235,8 +258,6 @@ export interface UiModule {
   bay: UiRobotBay | null;
   /** Drone bay state (null for other modules). */
   droneBay: UiDroneBay | null;
-  /** Airlocks: EVA suits stowed now and in a full complement (null for other modules). */
-  suits: { stowed: number; max: number } | null;
   /** The upgrade slot (null for a module with none). */
   upgradeSlot: UiUpgradeSlot | null;
 }
@@ -586,6 +607,9 @@ export interface UiJobs {
 export interface UiStats {
   supply: number;
   demand: number;
+  /** Reactor fuel in the stores of all reactors / what they hold full, and the battery banks' charge / capacity; null when the ship has none. */
+  fuel: { have: number; max: number } | null;
+  battery: { have: number; max: number } | null;
   food: UiFood;
   heat: UiHeat;
   /** Average O2 (kPa) of rooms with crew in them, or null when nobody is inside one. */
@@ -732,6 +756,8 @@ export interface UiConsole {
   operator: string | null;
   /** Crew member who took the console job and is walking there (null when nobody is on the way). */
   enRoute: string | null;
+  /** Why an empty console stays empty ("nobody has Operating priority 1 or 2"), when there is a reason worth saying. */
+  why?: string | null;
   powered: boolean;
 }
 
@@ -896,8 +922,7 @@ export interface UiShuttle {
   destination: 'dock' | 'bay' | 'hover' | null;
   /** Name of the ship it hovers beside, or null. */
   hoverShip: string | null;
-  /** EVA suits aboard, and whether crew can go out now (hovering, a suit free, passengers aboard). */
-  suits: number;
+  /** Whether crew can go out now (hovering, passengers aboard; the shuttle has a suit for each, #416). */
   canEva: boolean;
   /** Name of the ship it is docked at, or null. */
   dockShip: string | null;

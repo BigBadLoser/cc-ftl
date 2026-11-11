@@ -117,7 +117,7 @@ export const events = {
       { id: 'scan', label: 'Scan it', hint: 'Hull, air and signs of life', remote: 'scan' },
       {
         id: 'probe', label: 'Hack its data core', hint: 'A deep scan: what is aboard, and how much', remote: 'probe',
-        requires: [{ kind: 'skill', skill: 'hacking', level: 2 }],
+        requires: [{ kind: 'skill', skill: 'hacking', level: 4 }],
       },
       {
         id: 'approach', label: 'Drop out', hint: 'Board it, strip it, or look and leave',
@@ -222,7 +222,7 @@ export const events = {
     cooldownSec: 900,
     choices: [
       { id: 'interface', label: 'Interface directly', requires: [{ kind: 'species', species: 'species.robot' }], outcome: { text: 'The robot plugs in and downloads the station logs: parts caches, coordinates and a long lullaby.', effects: [{ type: 'items', item: 'item.parts', count: 8 }, { type: 'items', item: 'item.electronics', count: 4 }, { type: 'skillXp', skill: 'hacking', amount: 30, who: 'random' }] } },
-      { id: 'hack', label: 'Crack the port by hand', check: { skill: 'hacking', difficulty: 3, base: 0.4 }, success: { text: 'It takes hours, but you get in.', effects: [{ type: 'items', item: 'item.electronics', count: 4 }, { type: 'skillXp', skill: 'hacking', amount: 30, who: 'actor' }] }, failure: { text: 'A counter-intrusion fries the console.', effects: [{ type: 'crewDamage', amount: 10, who: 'actor' }] } },
+      { id: 'hack', label: 'Crack the port by hand', check: { skill: 'hacking', difficulty: 6, base: 0.4 }, success: { text: 'It takes hours, but you get in.', effects: [{ type: 'items', item: 'item.electronics', count: 4 }, { type: 'skillXp', skill: 'hacking', amount: 30, who: 'actor' }] }, failure: { text: 'A counter-intrusion fries the console.', effects: [{ type: 'crewDamage', amount: 10, who: 'actor' }] } },
       { id: 'leave', label: 'Not worth it', outcome: {} },
     ],
   },
@@ -237,7 +237,7 @@ export const events = {
     choices: [
       { id: 'pay', label: 'Pay the tariff', cost: [{ item: 'item.metal', count: 6 }], outcome: { text: 'The cutter logs you as compliant.', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
       { id: 'vip', label: 'Show your clearance', requires: [{ kind: 'reputation', faction: 'meridian', min: 3 }], outcome: { text: '"Carry on, captain."', effects: [{ type: 'reputation', faction: 'meridian', delta: 1 }] } },
-      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 2, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.metal', count: -5 }] } },
+      { id: 'bluff', label: 'Bluff your way through', check: { skill: 'piloting', difficulty: 4, base: 0.45 }, success: { text: 'They buy it.', effects: [{ type: 'flag', flag: 'bluffed_corp' }] }, failure: { text: 'They do not. Your fine is posted and your name flagged.', effects: [{ type: 'reputation', faction: 'meridian', delta: -2 }, { type: 'items', item: 'item.metal', count: -5 }] } },
     ],
   },
   /**

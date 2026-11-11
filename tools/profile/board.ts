@@ -3,12 +3,12 @@
  * offline on identical input next to the reference. Read-only over the sim.
  *
  * Contents: per ship the rectangle and four nav layers (struct, jam, thin air, blocked-by-module, run-length encoded over the ship's rectangle, row
- * major), every job, every crew member (position, activity, priorities, assignment, flags, suit), the suit stock of every airlock and the reservations
+ * major), every job, every crew member (position, activity, priorities, assignment, flags, suit), every airlock and the reservations
  * (jobs by crew, beds by crew). The `meta` (scenario, seed, tick) also lets the exact state be rebuilt by running the scenario to that tick.
  */
 import {
   AssignmentC, CarryingC, CrewC, DraftedC, JobC, TaskC, ModuleC, PathC, PositionC, PrioritiesC, ShipC, shipGrid, shipIds, shipIdOf,
-  EVA_THIN_AIR_BELOW, freeSuits, airlockSuits, hasSuitAir, isSuited, type Sim,
+  EVA_THIN_AIR_BELOW, hasSuitAir, isSuited, type Sim,
 } from '../../src/sim';
 import { AirlockC } from '../../src/sim/modules/airlock';
 import { walkInfo, OPEN_KEY } from '../../src/sim/modules/walk';
@@ -53,7 +53,7 @@ export interface Board {
     id: number; name: string; role: string; ship: number; x: number; y: number; toX: number; toY: number; activity: string; pathLen: number;
     priorities: Record<string, number>; job: number; drafted: boolean; incapacitated: boolean; offDuty: boolean; suited: boolean; suitAir: boolean; eating: boolean; bed: number; carrying: string | null;
   }[];
-  airlocks: { id: number; ship: number; suits: number; freeSuits: number }[];
+  airlocks: { id: number; ship: number }[];
   reservations: { jobs: { job: number; crew: number }[]; beds: { module: number; crew: number }[] };
 }
 
@@ -102,7 +102,7 @@ export function dumpBoard(sim: Sim, meta: BoardMeta): Board {
   for (const id of [...sim.world.query(AirlockC)].sort((a, b) => a - b)) {
     const m = sim.world.get(id, ModuleC);
     const g = m && shipGrid(sim, shipIdOf(sim, m));
-    airlocks.push({ id, ship: g ? g.id : 0, suits: airlockSuits(sim, id), freeSuits: freeSuits(sim, id) });
+    airlocks.push({ id, ship: g ? g.id : 0 });
   }
   const beds: { module: number; crew: number }[] = [];
   for (const id of [...sim.world.query(ModuleC)].sort((a, b) => a - b)) {

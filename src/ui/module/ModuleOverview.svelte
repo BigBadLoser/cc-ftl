@@ -22,9 +22,11 @@
       <dt>State</dt><dd data-testid="module-state" class:bad={!m.powered && !m.idle && m.power !== 0}>{moduleState(m)}</dd>
       <dt>Power</dt><dd>{power(m)}</dd>
       <dt>Health</dt><dd>{m.hp}/{m.maxHp}</dd>
-      {#if m.suits}<dt>EVA suits</dt><dd data-testid="airlock-suits">{m.suits.stowed} / {m.suits.max}</dd>{/if}
+      {#if m.reserve}<dt>{m.reserve.label}</dt><dd data-testid="module-reserve" class:bad={m.reserve.low}>{m.reserve.have}/{m.reserve.max}</dd>{/if}
     </dl>
     <Meter value={hpPct(m)} max={100} tone="auto" height={6} title="{m.hp}/{m.maxHp}" />
+    {#if m.reserve}<Meter value={m.reserve.have} max={m.reserve.max} tone={m.reserve.low ? 'bad' : 'good'} height={6} title="{m.reserve.note}" />
+      <p class="note" class:bad={m.reserve.low}>{m.reserve.note}</p>{/if}
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.plot}<PlotPanel {api} {m} />{/if}
@@ -48,6 +50,7 @@
   dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; }
   dt { color: var(--dim); } dd { margin: 0; text-align: right; }
   dd.bad { color: var(--red); }
+  .note { margin: 4px 0 0; color: var(--dim); font-size: 12px; } .note.bad { color: var(--red); }
   .btns { display: flex; gap: 4px; margin-top: 10px; }
   .resbtn { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 8px; color: var(--amber); border-color: var(--amber); background: #000; justify-content: center; }
   .prio { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; margin-top: 8px; min-height: 32px; }

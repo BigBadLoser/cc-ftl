@@ -37,13 +37,20 @@ export function play(sim: Sim, n: number, until?: (all: SimEvent[]) => boolean):
   return all;
 }
 
-/** Open a site on the fixture's wreck with work on it, and play until the party has landed and been handed to the crew AI. */
-export function landed(n = 3, c: ContentRegistry = content): { sim: Sim; home: number; wreck: number; shuttle: number; party: number[] } {
+/**
+ * Open a site on the fixture's wreck with work on it, and play until the party has landed and been handed to the crew AI. `stay` crew (the
+ * highest ids) are held at home until then (drafted, let go once the party is out): the away tests are written for a party of three with one
+ * crew member at home, as the fixture's four crew split when a shuttle carried three suits (#416 lifted the limit). 0: everyone may go.
+ */
+export function landed(n = 3, c: ContentRegistry = content, stay = 1): { sim: Sim; home: number; wreck: number; shuttle: number; party: number[] } {
   const { sim, home, wreck } = setup(3, c);
   siteWork(sim, wreck, n);
   const shuttle = shuttleOf(sim);
+  const held = stay > 0 ? crewOn(sim, home).slice(-stay) : [];
+  for (const h of held) sim.world.add(h, DraftedC, { target: null });
   sim.enqueue({ type: 'away.open', ship: wreck });
   play(sim, 20 * 200, () => crewOn(sim, wreck).length > 0 && crewOn(sim, wreck).every((c) => !sim.world.has(c, DraftedC)));
+  for (const h of held) sim.world.remove(h, DraftedC);
   return { sim, home, wreck, shuttle, party: crewOn(sim, wreck) };
 }
 

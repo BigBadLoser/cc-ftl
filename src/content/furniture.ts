@@ -6,7 +6,7 @@ import type { ModuleDef } from '../sim';
  * None of them adds a mechanic: storage holds items like a crate, the others are dressing (no sit-to-eat yet).
  */
 /** What an ore bin's sprite shows for each ore (art kind of `module.storage_ore.<kind>.<fill>`). */
-const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare' };
+const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': 'rare', 'item.energy_crystal': 'crystal' };
 
 /** Scrap cages hold only scrap. Their sprite has no per-kind variants (art kind '': `module.storage_scrap.<fill>`). */
 const SCRAP_IDS = ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_weapons', 'item.scrap_comfort'];
@@ -108,13 +108,13 @@ export const furniture = {
     asset: 'module.med_bed', footprint: [1, 2], solid: false, power: 0, flammability: 0.4, bed: true, medical: true,
     maxHp: 60, buildWork: 100, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
-  // A power cell bank. No storage-of-power mechanic yet: dressing for engineering.
+  // A power cell bank: charges from spare supply on its network and covers a shortfall before anything is cut (systems/power.ts). Damaged or switched off, it holds its charge but neither charges nor drains.
   'module.battery': {
     scrap: 'energy',
     name: 'Battery bank',
     category: 'power',
-    description: "A bank of power cells. Dressing for engineering until power storage lands.",
-    asset: 'module.battery', footprint: [1, 1], solid: true, power: 0, flammability: 0.2,
+    description: "A bank of power cells. Charges from spare power and covers a shortfall (an empty reactor, a spike in draw) before any module is cut off.",
+    asset: 'module.battery', footprint: [1, 1], solid: true, power: 0, flammability: 0.2, battery: { capacity: 4000 },
     maxHp: 80, buildWork: 80, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 6 }],
   },
   // A grow bed: pick a crop, a crew member sows it (the water comes from stock), it grows while powered and is harvested as an item.

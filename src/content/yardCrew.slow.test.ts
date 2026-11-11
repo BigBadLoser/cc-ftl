@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AirlockC, CrewC, PositionC, TraderC, VehicleC, YardCrewC, airlockSuits, builtCount, hullLoad, isLiveOrder, quoteYard, Struct, shipGrid, totalTiles, yardPrice, yardService,
+  CrewC, PositionC, TraderC, VehicleC, YardCrewC, SuitC, builtCount, hullLoad, isLiveOrder, quoteYard, Struct, shipGrid, totalTiles, yardPrice, yardService,
 } from '../sim';
 import { ConsentC } from '../sim/consent/components';
 import { guestOn } from '../sim/consent/guests';
@@ -15,7 +15,6 @@ describe('the yard crew, full runs', () => {
     const { sim, station, me } = yardGame();
     const trader = sim.world.get(station, TraderC)!;
     const wallet = trader.credits;
-    const suits = sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0);
     const credits = sim.trade.credits;
     planHull(sim, me, outline(sim, me, 8, -2, 4, 3));
     const quoteHull = quoteYard(sim, station, me).hull.after;
@@ -58,7 +57,7 @@ describe('the yard crew, full runs', () => {
     expect(sim.world.query(YardCrewC)).toHaveLength(0);
     expect(sim.world.query(VehicleC).filter((v) => sim.world.get(v, VehicleC)!.homeShip === station)).toHaveLength(0);
     run(sim, 1200); // the ship's own crew, who also worked outside, come back in and hang their suits up
-    expect(sim.world.query(AirlockC).reduce((n, a) => n + airlockSuits(sim, a), 0)).toBe(suits);
+    expect(sim.world.query(SuitC).filter((c) => shipIdOf(sim, sim.world.get(c, PositionC)!) === me)).toEqual([]);
     expect(sim.world.query(CrewC).filter((c) => sim.world.get(c, CrewC)!.role === 'role.engineer' && !sim.world.has(c, YardCrewC)).length).toBeGreaterThan(0);
   }, 120000);
 

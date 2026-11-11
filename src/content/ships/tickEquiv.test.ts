@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CombatC, CrewC, DeadC, deserialize, IonC, ModuleC, newGame, PositionC, ProjectileC, serialize, ShipC, shipIds, Struct, TICK_HZ, pipeline,
-  type Command, type Module, type ModuleDef, type Sim,
+  type Command, type Module, type Sim,
 } from '../../sim';
 import { mannedConsole, operatorOf, skillOf, type ConsoleKind } from '../../sim/combat/operators';
 import { shieldCapacity, shieldRechargeSec } from '../../sim/combat/ships';
@@ -18,7 +18,7 @@ import { DoorJam } from '../../sim/structure';
 import { doorsSystem } from '../../sim/systems/doors';
 import { helmSystem } from '../../sim/systems/helm';
 import { modulesSystem } from '../../sim/systems/modules';
-import { powerSystem } from '../../sim/systems/power';
+import { allocate, powerSystem, type Member } from '../../sim/systems/power';
 import {
   DOOR_CLOSE_PER_TICK, EVASION_CAP, FTL_CHARGE_SEC, GAS_EPSILON, NORMAL_O2, SKILL_STEP, XP_PER_WORK_SEC,
 } from '../../sim/tuning';
@@ -151,8 +151,6 @@ function refCruise(sim: Sim, id: number, combat: { cruisePilot: number; cruiseEv
   combat.cruiseEvasion = Math.min(EVASION_CAP, engines * (1 + SKILL_STEP * best));
 }
 
-interface Member { id: number; m: Module; def: ModuleDef }
-
 function refPower(sim: Sim): void {
   const networks = new Map<number, Member[]>();
   for (const id of sim.world.query(ModuleC)) {
@@ -168,39 +166,8 @@ function refPower(sim: Sim): void {
   for (const members of networks.values()) refAllocate(sim, members);
 }
 
-function refAllocate(sim: Sim, members: Member[]): void {
-  let supply = 0;
-  let demand = 0;
-  const consumers: Member[] = [];
-  for (const mem of members) {
-    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC);
-    if (!live) mem.m.powered = false;
-    else if (mem.def.power > 0) {
-      supply += mem.def.power;
-      mem.m.powered = true;
-    } else if (mem.def.power < 0) {
-      demand -= mem.def.power;
-      consumers.push(mem);
-    } else mem.m.powered = true;
-  }
-  consumers.sort((a, b) => a.m.powerPriority - b.m.powerPriority || a.id - b.id);
-  let remaining = supply;
-  let cut = false;
-  let lostPower = false;
-  for (const c of consumers) {
-    const draw = -c.def.power;
-    if (!cut && draw <= remaining) {
-      remaining -= draw;
-      c.m.powered = true;
-    } else {
-      cut = true;
-      if (c.m.powered) lostPower = true;
-      c.m.powered = false;
-    }
-  }
-  const first = members[0];
-  if (lostPower && first) sim.events.emit({ type: 'power.shortage', ship: shipIdOf(sim, first.m), supply, demand });
-}
+/** The allocation of one network is the power system's own (fuel burn and battery included: those are pinned by systems/power.test.ts); this reference checks the grouping and caching around it. */
+const refAllocate = allocate;
 
 function refModules(sim: Sim): void {
   for (const id of sim.world.query(ModuleC)) {

@@ -4,6 +4,7 @@ import {
 } from '../sim';
 import type { UiIncoming, UiEnemyWeapon, UiCombat, UiConsole, UiShipCombat, UiShipModule, UiWeapon, UiUpgradeInfo } from '../ui/api';
 import { upgradeEffects } from './upgradeText';
+import { emptyConsoleReason } from './consoleWhy';
 import { HEAT_MAX } from '../sim/combat/heatTuning';
 import { shieldsDown } from '../sim/combat/heat';
 import { TICK_HZ } from '../sim/time';
@@ -142,10 +143,12 @@ export function buildCombat(sim: Sim, playerGrid = homeShip(sim)): UiCombat {
         }
         if (def.console) {
           const op = operatorOf(sim, mid);
+          const enRoute = op ? null : crewOnTheWay(sim, mid);
           consoles.push({
             id: mid, kind: def.console, name: def.name, powered: m.powered && m.enabled && m.hp > 0,
             operator: op ? (sim.world.get(op, CrewC)?.name ?? null) : null,
-            enRoute: op ? null : crewOnTheWay(sim, mid),
+            enRoute,
+            ...(op || enRoute ? {} : { why: emptyConsoleReason(sim, playerGrid, def.console) }),
           });
         }
       }

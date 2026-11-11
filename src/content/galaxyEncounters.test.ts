@@ -28,7 +28,7 @@ const adjacent = (sim: Sim, id: string): string[] =>
 const enemies = (sim: Sim): number[] => sim.world.query(ShipC).filter((id) => sim.world.get(id, ShipC)?.faction !== 'player');
 const packetCombat = (sim: Sim) => {
   const p = sim.sector.packet;
-  return p?.entities.find((e) => e.id === p.ship)?.c['combat'] as { ftl: number; evasion: number; pilot: number };
+  return p?.entities.find((e) => e.id === p.ship)?.c['combat'] as { ftl: number; evasion: number; pilot: number; cruiseEvasion: number; cruisePilot: number };
 };
 
 /** The player flies two hops; a pirate fleet (or `faction`/`role`) at the first node flies the other way and interdicts there. */
@@ -81,6 +81,7 @@ describe('evade', () => {
     const b = interdiction(26);
     expect(evadeRoll(a.sim, a.enc)).toBe(evadeRoll(b.sim, b.enc));
     expect(a.enc.id).toBe(b.enc.id);
+    Object.assign(packetCombat(a.sim), { evasion: 0, pilot: 0, cruiseEvasion: 0, cruisePilot: 0 }); // engines dark
     const base = evadeOdds(a.sim, a.enc);
     Object.assign(packetCombat(a.sim), { evasion: 0.24, pilot: 3 });
     expect(evadeOdds(a.sim, a.enc)).toBeGreaterThan(base);
@@ -97,7 +98,7 @@ describe('evade', () => {
     r.enc.id = id;
     const roll = evadeRoll(sim, r.enc);
     // A top pilot at powered engines (about 0.8 against one small ship) wins a mid-range roll; no engine power (odds at the minimum) loses it.
-    Object.assign(packetCombat(sim), wins ? { evasion: 0.12 * 1.5, pilot: 5 } : { evasion: 0, pilot: 0 });
+    Object.assign(packetCombat(sim), wins ? { evasion: 0.12 * 1.5, pilot: 5 } : { evasion: 0, pilot: 0, cruiseEvasion: 0, cruisePilot: 0 });
     r.enc.strength = 1.5;
     expect(evadeOdds(sim, r.enc) > roll).toBe(wins);
     return r;

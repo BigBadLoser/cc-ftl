@@ -87,6 +87,7 @@ export function applyTraitMood(sim: Sim, id: number, m: Mood, base: MoodFactor[]
   for (const d of defs) {
     const e = d.effects;
     if (e?.mood) out.push({ key: traitKey(d.name), value: e.mood });
+    if (e?.peaceMood && !sim.sector.inCombat) out.push({ key: traitKey(d.name), value: e.peaceMood });
   }
   for (const other of near) {
     for (const d of traitDefs(sim, other)) {

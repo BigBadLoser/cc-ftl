@@ -100,6 +100,19 @@ export const GET_UP_HP = 40;
 export const REGEN_PER_SEC = 0.1;
 /** Sleeping in a bed recovers rest this much faster than sleeping on the floor. */
 export const BED_REST_MULT = 2;
+/**
+ * Sleep on the floor recovers rest this many times faster than waking decay drains it (#412): 5 real minutes of sleep covers 11 awake. A bed
+ * doubles it (BED_REST_MULT), so one 8-hour Sleep block in a bed takes an exhausted crew member (rest 20) to about full.
+ */
+export const SLEEP_REST_MULT = 2.2;
+
+// --- Ship clock and schedules (#412) ---
+/** Real seconds (at 1x) in one game hour of the ship clock: a 24-hour day is 16 real minutes. */
+export const GAME_HOUR_SEC = 40;
+/** The ship clock's hour at tick 0: 14:00, when both rotation presets (Default, Late) are at work, so a new game starts with everyone up. */
+export const CLOCK_START_HOUR = 14;
+/** A sleeper whose block turns Free gets up once rest is at least this (below it they would only drop back to the need line). */
+export const FREE_WAKE_REST = 50;
 
 // --- Hunger and mood ---
 /** Seconds a meal takes once the crew member is at the galley or the crate. */
@@ -156,7 +169,7 @@ export const DECON_REFUND = 0.5;
 /** Planners (supply, hauling, crafting) run once per this many ticks. */
 export const PLAN_INTERVAL = 10;
 /** A hauler with room left in hand also takes loose stacks bound for the same place within this many tiles (items/haul.ts, gathering). */
-export const GATHER_RADIUS = 6;
+export const GATHER_RADIUS = 12;
 /** Minimum ticks between repeats of the same 'job.missingMaterials' / 'storage.full' warning. */
 export const WARN_DEBOUNCE = 400;
 /** Units per second a stack burns at flammability 1 on a fully burning tile. */
@@ -179,10 +192,10 @@ export const PLAYER_START = { x: 20, y: 50 } as const;
 export const FTL_CHARGE_SEC = 40;
 /** Evasion never exceeds this. */
 export const EVASION_CAP = 0.75;
-/** Each skill level multiplies the effect by (1 + this). */
-export const SKILL_STEP = 0.1;
+/** Each skill level (0-10) multiplies the effect by (1 + this). */
+export const SKILL_STEP = 0.05;
 /** Aim sigma shrinks by this per gunnery level (floor at MIN_SPREAD_FACTOR). */
-export const SPREAD_PER_GUNNERY = 0.12;
+export const SPREAD_PER_GUNNERY = 0.06;
 export const MIN_SPREAD_FACTOR = 0.3;
 /** Shield recharge speed bonus with an operator at the shield console (plus SKILL_STEP per shielding level). */
 export const SHIELD_OPERATED_BONUS = 0.5;
@@ -262,7 +275,7 @@ export const COMBAT_SIGHT = 16;
 /** Bare hands. */
 export const UNARMED = { damage: 5, cooldownSec: 1.2, accuracy: 0.7 } as const;
 /** Hit chance added per gunnery / melee level. */
-export const ACCURACY_PER_SKILL = 0.05;
+export const ACCURACY_PER_SKILL = 0.025;
 /** Ranged hit chance is scaled by (1 - this * distance / range): a shot at maximum range keeps (1 - this). */
 export const RANGE_FALLOFF = 0.4;
 /** Hit chance multipliers behind partial and full cover. */
@@ -302,12 +315,15 @@ export const PRIZE_VALUE_PER_WALL_HP = 0.05;
 // --- Robots ---
 /** Ion that reaches the deck (no shield layer drained) stuns ion-vulnerable crew this many tiles (Chebyshev) from the hit. */
 export const ION_STUN_RADIUS = 1;
-/** Hp per second a mender restores on a robot at workSpeed 1, plus SKILL_STEP per repair level. */
+/** Hp per second a mender restores on a robot at workSpeed 1, plus SKILL_STEP per construction level. */
 export const MEND_PER_SEC = 4;
 /** Seconds of work to strip a robot wreck for parts. */
 export const SALVAGE_SEC = 4;
-/** Seconds to hack an AI core at hacking level 1 (each level above is SKILL_STEP faster). */
+/** Seconds to hack an AI core at hacking level 2 (each level above is SKILL_STEP faster). */
 export const HACK_SEC = 20;
+/** Least hacking that may hack a core (`crew.hack`), and least construction that may mend a robot. */
+export const HACK_MIN_SKILL = 2;
+export const MEND_MIN_SKILL = 2;
 /** Stat multiplier on moveSpeed and workSpeed of a robot whose battery is empty. */
 export const EMPTY_CHARGE_MULT = 0.3;
 /** A robot heads for its bay to be repaired below this hp fraction (when the ship has repair items). */
@@ -382,8 +398,6 @@ export const NEST_RADIUS = 4;
 /** Idle aliens wander within this many tiles of where they hatched (per-tick chance of a stroll). */
 export const ALIEN_ROAM = 4;
 export const ALIEN_WANDER_CHANCE = 0.01;
-/** Seconds the player's ship must stay clear of intruders before emergency-armed crew put their weapon back in storage. */
-export const EMERGENCY_STAND_DOWN_SEC = 30;
 
 /** Enemy weapons commit their aim (and the player's ship shows a marker) for this many seconds of charge before they can fire, at base gunnery. */
 export const COMMIT_WINDOW_SEC = 4;
@@ -391,10 +405,12 @@ export const COMMIT_WINDOW_SEC = 4;
 export const COMMIT_MAX_FRACTION = 0.5;
 
 // --- Skill XP (docs/TRAITS.md section 3) ---
-/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +1 at 100, +2 at 500, +3 at 1400, +4 at 3000, +5 at 5500. */
-export const XP_LEVEL_COST = 100;
-/** The most levels XP can add to a skill. */
-export const XP_MAX_LEVEL = 5;
+/** Seconds "enjoying the work" (an interest) lasts after the work stops (docs/TRAITS.md 10.7). */
+export const MOOD_ENJOY_SEC = 60;
+/** Going from level n-1 to n costs XP_LEVEL_COST x n^2, so the totals are +2 at 100, +4 at 600, +6 at 1820, +10 at 7700 (docs/TRAITS.md 10.4). */
+export const XP_LEVEL_COST = 20;
+/** Skills run 0-10: XP levels stop once the rolled (or role) base plus XP levels reaches this. Traits may push the stat past it. */
+export const XP_MAX_LEVEL = 10;
 /** XP for one second of work at workSpeed 1 (job progress points / TICK_HZ). Also the rate for a console held while it matters. */
 export const XP_PER_WORK_SEC = 1;
 /** XP per hp of bed healing, granted to the best medic aboard. */

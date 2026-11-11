@@ -3,6 +3,8 @@
   parts       an amber tray of gears, brackets and bolts; the large stack two trays and loose gears
   iron_ore    rust-brown rock chunks with rusty iron on top, as the iron veins of the rock tiles (rock_ore.py)
   rare_ore    dark rock chunks studded with violet crystals whose points glow, as the rare veins
+  energy_crystal  clusters of long teal crystals (the reactor's fuel) on thin dark rock bases, glowing to pale tips,
+              as the crystal veins (palette set "crystal")
   fuel        orange jerry cans with a hazard band and a glowing cap; barrels from .m up
   missile     slim grey missiles with red noses on a cradle; the large stack a two-high rack
   sidearm, rifle, ion_pistol, blade   the crew's weapon model lying on its side; .m two of them, .l on a weapon crate
@@ -11,7 +13,10 @@ Grid frame and scale as items.py (STACK_K, HELD_K); each stack fits inside one t
 import math
 
 from . import core
-from .items_kit import chunk, cone, crystal, gun_flat, hashf, jobs, tube
+import bmesh
+from mathutils import Vector
+
+from .items_kit import _axes, chunk, cone, crystal, emit, gun_flat, hashf, jobs, tube
 
 # ---- spare parts -----------------------------------------------------------------------------------------------------
 
@@ -112,6 +117,50 @@ def rare_ore(m, size):
             tilt = (math.cos(a) * 0.5, math.sin(a) * 0.5, 1.0)
             L = 0.08 + 0.05 * hashf(9, i, k)
             crystal(m, (x + off[0], y + off[1], z + sz * 0.7), tilt, L, 0.022 + 0.008 * hashf(5, i, k), "rvM", "rvG")
+
+
+def glow_crystal(m, base, axis, L, r, sides=6):
+    """A long hexagonal energy crystal: teal prism (ecM / ecD faces) that turns to glow (ecG) towards its point, the
+    point pale white (ecW)."""
+    base = Vector(base)
+    a, u, v = _axes(axis)
+    bm = bmesh.new()
+    rings = []
+    for f, rr in ((0.0, r), (0.62, r), (0.8, r * 0.9)):
+        rings.append([bm.verts.new(base + a * (L * f) + (u * math.cos(t) + v * math.sin(t)) * rr)
+                      for t in (k * math.tau / sides for k in range(sides))])
+    pt = bm.verts.new(base + a * L)
+    for lo, hi in zip(rings, rings[1:]):
+        for k in range(sides):
+            j = (k + 1) % sides
+            bm.faces.new((lo[k], lo[j], hi[j], hi[k]))
+    for k in range(sides):
+        bm.faces.new((rings[-1][k], rings[-1][(k + 1) % sides], pt))
+    bm.faces.new(rings[0][::-1])
+
+    def colour(n, c):
+        h = (c - base).dot(a) / L
+        if h > 0.8:
+            return "ecW" if h > 0.88 else "ecG"
+        if h > 0.62:
+            return "ecG"
+        return "ecL" if n.z > 0.3 else "ecM" if n.x + n.y < 0.3 else "ecD"
+    emit(m, bm, colour)
+
+
+def energy_crystal(m, size):
+    """Mostly crystal, little rock: each chunk a flat dark base with 3-4 long teal crystals fanning out of it."""
+    for i, (x, y, z, sx, sy, sz, rz) in enumerate(ore(size)):
+        bs = (sx * 0.85, sy * 0.85, sz * 0.38)
+        chunk(m, (x, y, z), bs, 113 + i, ["rkD", "ecD"], ["rkK", "rkD"], rz=rz)
+        n = 3 if size in ("held", "s") else 3 + (i + 1) % 2
+        for k in range(n):
+            a = (k / n + hashf(113, i, 0)) * math.tau
+            sp = 0.25 + 0.2 * hashf(7, i, k)
+            off = (math.cos(a) * sx * 0.2, math.sin(a) * sy * 0.2)
+            tilt = (math.cos(a) * sp, math.sin(a) * sp, 1.0)
+            L = (0.17 + 0.08 * hashf(19, i, k)) * (0.8 if k else 1.2)
+            glow_crystal(m, (x + off[0], y + off[1], z + bs[2] * 0.5), tilt, L, 0.022 + 0.008 * hashf(5, i, k))
 
 
 # ---- fuel ----------------------------------------------------------------------------------------------------------
@@ -239,5 +288,6 @@ def weapon(name):
     return fn
 
 
-SPRITES = (jobs("parts", parts) + jobs("iron_ore", iron_ore) + jobs("rare_ore", rare_ore) + jobs("fuel", fuel)
+SPRITES = (jobs("parts", parts) + jobs("iron_ore", iron_ore) + jobs("rare_ore", rare_ore)
+           + jobs("energy_crystal", energy_crystal) + jobs("fuel", fuel)
            + jobs("missile", missiles) + [j for w in WEAPONS for j in jobs(w, weapon(w))])

@@ -78,12 +78,12 @@ function robot(seed: number): Sim {
   return sim;
 }
 
-function bedless(seed: number, lifted = false, tired = true): Sim {
+function bedless(seed: number, lifted = false, tired = true, wait = 30): Sim {
   const sim = newGame(seed, content, 'ship.starter', false);
   run(sim, 2);
   const crew = sim.world.query(CrewC);
   sim.world.get(crew[2]!, HealthC)!.hp = 0;
-  run(sim, 30); // the rescue is posted while the beds still stand
+  run(sim, wait); // the rescue is posted while the beds still stand
   // `lifted`: the beds go only once the patient is carried, so the carrier is left with nowhere to lay them. Under the scheduler (#194 Phase 2)
   // the medic, who ranks medical first, takes the rescue from across the ship and has not lifted in 30 ticks; the legacy picker gave it to
   // the lowest id, two tiles away, at their fourth level.
@@ -106,6 +106,7 @@ function hazard(seed: number): Sim {
   sim.world.get(crew[3]!, NeedsC)!.hunger = 40;
   const prio = sim.world.get(crew[3]!, PrioritiesC)!;
   for (const k of Object.keys(prio)) (prio as Record<string, number>)[k] = 0; // no job ever takes them off the break
+  sim.enqueue({ type: 'crew.schedule.preset', id: crew[3]!, preset: 'schedule.any' }); // needs decide (#412): no Work block closing the break
   return sim;
 }
 
@@ -149,6 +150,8 @@ const DRIVERS: { name: string; make: () => Sim; ticks: number }[] = [
   { name: 'robot', make: () => robot(1), ticks: 400 },
   { name: 'bedless 1', make: () => bedless(1), ticks: 900 },
   { name: 'bedless 2', make: () => bedless(2, true), ticks: 300 },
+  // `sleep/ClaimBed` lasts a tick for a tired crew member caught mid-step with no bed: which tick catches one shifts with entity ids (the sleep stagger is tick + id), so the start is also tried with the beds going a few ticks earlier and later.
+  ...[26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 38, 40].map((wait) => ({ name: `bedless wait ${wait}`, make: () => bedless(1, false, true, wait), ticks: 120 })),
   // Rested crew, no bed: the rescue reaches the patient with nowhere to lay them (`rescue/Lift`). Tired crew used to wake from a floor sleep within
   // the 900 ticks of 'bedless 1' and reach it there; a floor sleep now takes about 15 minutes (#278), so the tired board no longer gets that far.
   { name: 'bedless rested', make: () => bedless(1, false, false), ticks: 900 },

@@ -69,7 +69,7 @@ export function drawAssemblies(r: Raster, g: GenResult, ox: number, oy: number, 
       if (c === '.') continue;
       const a = d ? (d.asmOf[y * g.width + x] ?? -1) : -1;
       if (c === '=') { r.rect(ox + x * s, oy + y * s, s, s, [235, 70, 200]); continue; }
-      const t = a >= 0 ? tint(d, a) : ([90, 90, 90] as RGB);
+      const t = d && a >= 0 ? tint(d, a) : ([90, 90, 90] as RGB);
       const k = c === '#' ? 0.45 : 1;
       r.rect(ox + x * s, oy + y * s, s, s, t.map((v) => v * k) as RGB);
     }

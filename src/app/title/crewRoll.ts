@@ -1,7 +1,9 @@
-import { COWARD_FLEE_BELOW, CREW_MAX_HP, DEFAULT_CARRY_CAPACITY, MOOD_BASE, SKILLS, rollStartingCrew, surrenderBelow, type ContentRegistry, type TraitDef } from '../../sim';
-import type { UiCrewPlan, UiRollCrew } from '../../ui/title/titleApi';
+import {
+  COWARD_FLEE_BELOW, CREW_MAX_HP, DEFAULT_CARRY_CAPACITY, MOOD_BASE, SKILLS, SKILL_NAMES, WONT_DO_NAMES, WONT_DO_SKILLS, crewTitle, interestIn,
+  rollStartingCrew, shipJobs, surrenderBelow, type ContentRegistry, type SkillName, type TraitDef,
+} from '../../sim';
+import type { UiCrewPlan, UiRollCrew, UiShipJob } from '../../ui/title/titleApi';
 
-const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 const num = (v: number): string => `${Math.round(v * 100) / 100}`;
 
 /** The product of one stat's `mul` modifiers over a crew member's traits, and the traits that set it. */
@@ -48,10 +50,20 @@ function statsOf(content: ContentRegistry, role: string, defs: readonly TraitDef
   return out;
 }
 
+/** The skill adds of a background, in words ("hacking +2, construction +1"). */
+const addsOf = (skills: Partial<Record<SkillName, number>>): string =>
+  SKILLS.filter((k) => skills[k]).map((k) => `${SKILL_NAMES[k].toLowerCase()} +${skills[k]}`).join(', ');
+
+/** The jobs a ship needs (the "Ship's jobs" list): the sim's own `shipJobs`. */
+export function previewJobs(content: ContentRegistry, ship: string): UiShipJob[] {
+  const def = content.ships[ship];
+  return def ? shipJobs(def, content).map((j) => ({ id: j.id, name: j.name, skills: [...j.skills] })) : [];
+}
+
 /**
  * The crew screen's preview: the crew of a plan rolled exactly as `newGame` will roll them (`rollStartingCrew`, keyed by
- * seed, slot and rerolls, typed names winning), with what the screen shows of each: label, traits, skills against the
- * role and the stats grid.
+ * seed, slot and rerolls, typed names winning), with what the screen shows of each: title, background, traits, skills with
+ * interests and the stats grid.
  */
 export function previewCrew(content: ContentRegistry, plan: UiCrewPlan): UiRollCrew[] {
   const rolled = rollStartingCrew(plan.seed, plan.picks, content);
@@ -62,20 +74,27 @@ export function previewCrew(content: ContentRegistry, plan: UiCrewPlan): UiRollC
       return d ? [{ id, def: d }] : [];
     });
     const defs = traits.map((t) => t.def);
+    const struck = new Set((c.wontDo ?? []).flatMap((w) => WONT_DO_SKILLS[w]));
     const skills = SKILLS.map((skill) => {
       const r = c.skills?.[skill] ?? role?.skills?.[skill] ?? 0;
       const adds = defs.flatMap((d) => (d.modifiers ?? []).filter((m) => m.stat === skill && m.op === 'add').map((m) => m.value));
       const trait = adds.filter((v) => v > 0).reduce((n, v) => n + v, 0);
       const lost = Math.min(r + trait, -adds.filter((v) => v < 0).reduce((n, v) => n + v, 0));
-      return { skill, name: cap(skill), rolled: r, trait, lost, role: role?.skills?.[skill] ?? 0, value: Math.max(0, r + trait - lost) };
+      return { skill, name: SKILL_NAMES[skill], rolled: r, trait, lost, value: Math.max(0, r + trait - lost), interest: interestIn(c.interests, skill), struck: struck.has(skill) };
     });
-    const roleName = role?.name ?? c.role;
-    const r = roleName.toLowerCase();
-    const lead = c.label === 'talented' ? `Talented for ${/^[aeiou]/.test(r) ? 'an' : 'a'} ${r}.` : c.label === 'green' ? `A rookie ${r}.` : '';
+    const up = c.background && content.upbringings?.[c.background.upbringing];
+    const career = c.background && content.careers?.[c.background.career];
+    const values = Object.fromEntries(skills.map((s) => [s.skill, s.value])) as Partial<Record<SkillName, number>>;
+    const title = c.background ? crewTitle(values, c.interests) : role?.name ?? c.role;
     return {
-      slot, role: c.role, roleName, name: c.name, rerolls: plan.picks[slot]?.rerolls ?? 0, label: c.label,
+      slot, role: c.role, title, name: c.name, rerolls: plan.picks[slot]?.rerolls ?? 0,
+      background: up && career ? `${up.name} · ${career.name}` : '',
+      upbringing: up ? { name: up.name, line: up.line, adds: addsOf(up.skills) } : null,
+      career: career ? { name: career.name, line: career.line, adds: addsOf(career.skills) } : null,
+      knack: c.background?.knack ? SKILL_NAMES[c.background.knack] : null,
+      wontDo: (c.wontDo ?? []).map((w) => WONT_DO_NAMES[w]),
       look: { species: role?.species ?? 'species.human', role: c.role, appearanceSeed: c.appearanceSeed },
-      read: [lead, ...defs.map((d) => d.flavour)].filter(Boolean).join(' ') || `A steady ${roleName.toLowerCase()}.`,
+      read: defs.map((d) => d.flavour).join(' '),
       traits: traits.map(({ id, def }) => ({ id, name: def.name, kind: def.kind, effect: def.effect, short: def.short, flavour: def.flavour })),
       skills,
       stats: statsOf(content, c.role, defs),

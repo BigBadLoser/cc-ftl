@@ -1,4 +1,4 @@
-import { CrewC, DraftedC, PathC, PositionC, type Position } from '../crew/components';
+import { AssignmentC, CrewC, DraftedC, PathC, PositionC, type Position } from '../crew/components';
 import { abortTask } from '../ai/task';
 import { clearPath, isBreaking, isIncapacitated, origin } from '../crew/helpers';
 import { findPath } from '../crew/pathfind';
@@ -9,6 +9,10 @@ import { ModuleC } from '../modules/components';
 import { footprintTiles } from '../modules/footprint';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipC, EquipOrderC } from './components';
+import { shipById } from '../combat/ships';
+import { armsFor, isPlayerPerson } from './arms';
+import { wontDo } from '../crew/wontDo';
+import { stat } from '../stats';
 import { handDefOf } from './weapons';
 import { shipIdOf } from '../regions';
 
@@ -40,6 +44,7 @@ export function atStorage(sim: Sim, pos: Position, storage: number): boolean {
 export function orderEquip(sim: Sim, crew: number, item: string): string | null {
   if (!sim.world.has(crew, CrewC)) return 'noCrew';
   if (!handDefOf(sim, item)) return 'notAWeapon';
+  if (wontDo(sim, crew, 'violence')) return 'wontDo';
   const pos = sim.world.get(crew, PositionC);
   if (!pos || isIncapacitated(sim, crew)) return 'incapacitated';
   if (isBreaking(sim, crew)) return 'breaking'; // the break machine is the only path writer: no automatic or ordered fetch mid-break
@@ -96,14 +101,58 @@ export function equipOrders(sim: Sim): void {
   }
 }
 
-/** Unarmed crew whose role has a loadout go and fetch the first item of it that storage holds. */
+/** True while the crew member stands on a ship of their own side (not a station they visit, a wreck or a boarded ship). */
+function onOwnShip(sim: Sim, id: number): boolean {
+  return shipById(sim, shipIdOf(sim, sim.world.get(id, PositionC)))?.faction === sim.world.get(id, AllegianceC)?.faction;
+}
+
+/** Stock of `item` on the ship, less what crew already on their way to a locker will take. */
+function freeStock(sim: Sim, shipId: number, item: string): number {
+  let n = 0;
+  for (const s of sim.world.query(StorageC, ModuleC)) {
+    const m = sim.world.get(s, ModuleC);
+    if (m && m.hp > 0 && shipIdOf(sim, m) === shipId) n += storageCount(sim, s, item);
+  }
+  for (const c of sim.world.query(EquipOrderC, PositionC)) {
+    if (sim.world.get(c, EquipOrderC)?.item === item && shipIdOf(sim, sim.world.get(c, PositionC)) === shipId) n--;
+  }
+  return n;
+}
+
+/**
+ * Crew go for the best weapon `armsFor` lists that storage holds and that beats what they carry (the old one goes back in the locker):
+ * the unarmed (a robot or NPC kind's `loadout`, a person who lost theirs) and people of the player's crew with an upgrade waiting
+ * (docs/TRAITS.md 10.9). One crew member per item, the unarmed and then the better fighters first: a better fighter who is busy still holds
+ * their claim, so the rifle waits for the gunner. A person only goes when idle, out of combat, from their own ship's lockers. Never the
+ * sleeping, drafted, downed or breaking.
+ */
 export function autoLoadout(sim: Sim): void {
+  if (sim.tick % 10 !== 0) return;
+  const want: { id: number; ship: number; arms: readonly string[]; rank: number; skill: number; go: boolean }[] = [];
   for (const id of sim.world.query(CrewC, PositionC)) {
-    if ((sim.tick + id) % 10 !== 0) continue;
-    const role = sim.content.roles[sim.world.get(id, CrewC)?.role ?? ''];
-    const loadout = role?.loadout ?? (sim.world.get(id, AllegianceC)?.faction === 'player' ? role?.playerLoadout : undefined);
-    if (!loadout || sim.world.get(id, EquipC)?.weapon || sim.world.has(id, EquipOrderC) || sim.world.has(id, DraftedC)) continue;
-    if (sim.world.get(id, CrewC)?.activity === 'sleeping') continue;
-    for (const item of loadout) if (orderEquip(sim, id, item) === null) break;
+    const arms = armsFor(sim, id);
+    if (!arms.length || sim.world.has(id, EquipOrderC) || isIncapacitated(sim, id)) continue;
+    const held = sim.world.get(id, EquipC)?.weapon;
+    const rank = held ? arms.indexOf(held) : arms.length + 1;
+    if (rank === 0 || (held && rank < 0)) continue; // the best already, or something the list doesn't rank (an ion pistol): keep it
+    const person = isPlayerPerson(sim, id);
+    if (held && !person) continue; // a kind's loadout only arms the unarmed
+    if (person && !onOwnShip(sim, id)) continue; // from their own ship's lockers only
+    const free = !sim.world.has(id, DraftedC) && !isBreaking(sim, id) && sim.world.get(id, CrewC)?.activity !== 'sleeping';
+    const idle = !person || (!sim.world.has(id, AssignmentC) && sim.world.get(id, CrewC)?.activity === 'idle' && (!held || !sim.sector.inCombat));
+    want.push({ id, ship: shipIdOf(sim, sim.world.get(id, PositionC)), arms, rank, skill: Math.max(stat(sim, id, 'gunnery'), stat(sim, id, 'melee')), go: free && idle });
+  }
+  want.sort((a, b) => Number(b.rank > b.arms.length) - Number(a.rank > a.arms.length) || b.skill - a.skill || a.id - b.id); // the unarmed first
+  const left = new Map<string, number>();
+  for (const w of want) {
+    for (let i = 0; i < Math.min(w.rank, w.arms.length); i++) {
+      const item = w.arms[i] as string;
+      const key = `${w.ship}|${item}`;
+      const n = left.get(key) ?? freeStock(sim, w.ship, item);
+      if (n <= 0) continue;
+      left.set(key, n - 1); // claimed, whether they go now or later
+      if (w.go) orderEquip(sim, w.id, item);
+      break;
+    }
   }
 }

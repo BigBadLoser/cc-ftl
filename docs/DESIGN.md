@@ -9,9 +9,10 @@ One line per section; read the index, then only the sections your task touches.
 - [Structure](#structure): Persistent sandbox with normal saves. A recoverable-failure mode (escape pods, salvaging back)
 - [Ship & building](#ship--building): Tile grid, full-tile walls, no roof. Walls are low bevelled blocks that autotile by neighbour
 - [Crew](#crew): Roles (engineer, gunner, medic, security, pilot…) give a default priority set; a per-crew
-  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock. There is no locker module and no suit item. Each airlock holds a few suits (a...
+  - [Schedules (#412, user decisions 2026-11-09)](#schedules-412-user-decisions-2026-11-09): A 24-hour ship clock (a game hour is 40 s), 24 hour blocks per crew member (Any, Work, Sleep, Free) with presets, emergency overrides, away trips go on duty and come home for Sleep (Free on a site: work on, home at the first chance).
+  - [EVA and spacesuits](#eva-and-spacesuits): Suits live at the airlock, no locker or suit item, and no suit limit (#416): any airlock or shuttle has one for whoever needs it...
   - [Robots and the rogue AI](#robots-and-the-rogue-ai): Robots are not crew, androids will be. A robot is a moving module run by its ship's AI core: not an...
-- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a
+- [Ship systems (M3 decisions)](#ship-systems-m3-decisions): Power: one network per ship for now, with module priorities deciding what loses power in a shortage; reactors burn energy crystals and battery banks store power (planned).
 - [Combat](#combat): FTL's decision-making with physical consequences, in a shared sector.
 - [Exploration & events](#exploration--events): Away teams board derelicts and stations (they're grids in the same world).
   - [Salvaging derelicts (user decisions, 2026-11-01; not built yet)](#salvaging-derelicts-user-decisions-2026-11-01-not-built-yet): Salvage is one order from the inspector. The crew then run it on their own, like any other work.
@@ -132,16 +133,48 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   stability, vulnerability to EMP/ion and hacking.
 - Relationships (friends, rivals, grief) later.
 
+### Schedules (#412, user decisions 2026-11-09)
+
+A ship clock and a per-crew day plan, like Oxygen Not Included and RimWorld. Sim side built in #412; the schedule panel (a UI layout
+the user picks from mocks) and a HUD clock come later.
+
+- **Ship clock.** A 24-hour day. One game hour is 40 s at 1x (`GAME_HOUR_SEC`, one tuning constant), so a day is 16 real minutes.
+  A new game starts at 14:00, when the whole crew is at work (see Stagger). The clock is read from the sim tick, so it is in every save.
+- **Hour blocks.** Each crew member has 24 blocks, one per hour:
+  - **Any**: needs decide, as before schedules (work, sleep at rest 20, eat at hunger 35, a break when mood is low and nothing to do).
+  - **Work**: jobs only. Eat when hungry, sleep only at the need line; no breaks.
+  - **Sleep**: go to bed (eating first if hungry) and sleep through the block; a sleeper at full rest stays in bed. No jobs.
+  - **Free**: no jobs. Breaks in the mess or beside a crewmate, and an early meal (below hunger 60) so nobody goes to bed hungry.
+- **Presets** are content data: Default (Work 06-20, Free 20-22, Sleep 22-06), Late (the Default 8 hours later: Work 14-04, Free 04-06,
+  Sleep 06-14), Day shift (Work 06-18, Free 18-22, Sleep 22-06), Night shift (Sleep 10-18, Work 18-06, Free 06-10) and Any (all Any:
+  today's play). Commands set an hour or a range, apply a preset, or copy another crew member's row.
+- **Stagger (user decisions 2026-11-10).** Crew of the player's side without a schedule of their own follow Default and Late in turn by
+  hire order (the presets marked `rotation`, picked by person id). Their Sleep blocks are 8 hours apart and never overlap: Default
+  sleeps 22-06, Late 06-14, so at every hour someone is up (both groups are up 14-22).
+- **Overrides.** The schedule is suspended (every block reads as Work) while the crew member is *on call*: in a fight or at Battle
+  Stations, holding a console or an emergency job, while an emergency in a category they work (a fire, a hull breach, a downed crew
+  member) is open on their ship, or while a console there stands empty that they would take (the scheduler's own admission: their
+  operating level is at most 2; a charge order calls the pilots, not the whole crew). A scheduled
+  sleeper gets up for it; one asleep because they were exhausted (rest under 20) sleeps on, as before. Critical needs override as
+  before: an urgent need wakes any sleeper, the air and return drives outrank everything, a console operator holds until the urgent lines.
+- **Oversleeping (ONI rule).** A sleeper not yet at full rest when Sleep ends sleeps on into Work or Any until full, as before. Into
+  Free they get up once rest is at least 50 (`FREE_WAKE_REST`; below it they would only drop back to the need line).
+- **Rest.** Waking decay stays 0.06/s; hunger is unchanged. Sleep recovers 2.2x the decay on the floor (was 2x: 5 real minutes of
+  sleep covers 11 awake) and twice that in a bed (0.264/s), so one 8-hour block in a bed takes even an exhausted crew member (rest 20)
+  to about full. A Default day: 16 h awake drains about 38 rest, so crew go to bed rested-ish and wake full.
+- **Away sites and the schedule (user decisions 2026-11-10).** Crew take a passage whenever they are on duty; the only schedule gate is
+  that the trip is worth it: the time on site before their next Sleep block is longer than the flight there and back. When Sleep
+  starts they are due home and the shuttle leaves with them at once (no batch wait). In Free time on a site they keep working while
+  the shuttle is away and come aboard once it is beside the site; a trip with them aboard is due. They still go home for Sleep.
+
 ### EVA and spacesuits
 
-- **Suits live at the airlock.** There is no locker module and no suit item. Each airlock holds a few suits (a content
-  value on the airlock def: 3 for the docking airlock). Crew put one on at the airlock's inside tile (about 5 s) and take
-  it off there on return (about 3 s), which stows it in *that* airlock. If an airlock has no free suit, nobody can start
-  an EVA through it.
+- **Suits live at the airlock.** There is no locker module and no suit item. There is no suit limit (user decision
+  2026-11-10, #416): any airlock or shuttle has a suit for whoever needs one. Crew put one on at the airlock's inside tile
+  (about 5 s) and take it off there on return (about 3 s). Better suits come from gear later (#320: tank, armour), not more of them.
 - **Automatic.** A crew member whose job can only be reached through thin air (breached or depressurised rooms) walks to
-  the nearest airlock with a free suit, suits up, does the job, and walks back to take the suit off once idle, so the suit
-  is free for the next one. They prefer jobs and routes that need no EVA, and never take a vacuum job when no suit is
-  free. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
+  the nearest airlock they can reach through breathable air, suits up, does the job, and walks back to take the suit off
+  once idle. They prefer jobs and routes that need no EVA, and never take a vacuum job with no airlock to suit up at. Drafted crew do none of this on their own: the player orders **Put suit on** and **Take suit off**.
 - **Where EVA happens.** Ships never sit close to each other (they cannot move within a sector and are never deployed near
   enough), so **there is no ship-to-ship docking, thruster crossing or walking between ships**. Shuttles (and later cargo
   vehicles) carry crew and cargo between grids. EVA is:
@@ -175,6 +208,7 @@ Cybernetic implants are everywhere. Neon is both mood and information.
   or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are
   **wrecked** and can be salvaged for parts.
 - The **rogue AI** faction is crewed by robots and hostile to everyone. Its robots run off their ship's **AI core**.
+  Off for now (#427): their sealed reactor pods can't be refuelled; returns with a shipgen pass.
   When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
   robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
   the hacking skill can hack a core; this is a job that takes time.
@@ -216,6 +250,27 @@ Cybernetic implants are everywhere. Neon is both mood and information.
 
 - **Power:** one network per ship for now, with module priorities deciding what loses power in a
   shortage. Conduits may come later; the code leaves a seam for them.
+- **Reactor fuel and batteries** (user decisions, 2026-11-10; built in #421 except the better reactor):
+  - **Two fuels.** Jumps burn `item.fuel` (engines, unchanged). Reactors burn their own fuel; the two never substitute.
+  - **Energy crystal** (`item.energy_crystal`), a new raw item mined from asteroids (`ore.crystal`, weight about 3, between ice and
+    rare metals, 15–40 per deposit). Also sold at mining and industrial stations, so a ship without mining can buy it. Needs art:
+    the item icon and the asteroid deposit tint/sprite, from the Blender pipeline.
+  - **Today's reactor burns raw crystals.** Burn follows load: fuel used is proportional to the power actually drawn on its network,
+    not its rated 50, so switching modules off or holding them saves fuel. Tuning start: 1 crystal per game hour (40 s) at full
+    load. The reactor holds a small internal store (about 6 crystals); crew top it up from storage as a hauling job when it runs
+    below half. An empty reactor supplies nothing.
+  - **Later: a better reactor** burns **fuel rods** refined from crystals at the refinery (Industry skill), at much better efficiency
+    (start: about 4× the power per crystal). Not in the first build.
+  - **Battery banks store power.** `module.battery` stops being dressing: a bank charges from spare supply on its network and
+    discharges to cover a shortfall (empty or damaged reactor, ion hit, a spike in draw) before the priority cut-off drops any
+    module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A bank works until it is destroyed, like other modules (hp above 0); a destroyed one
+    loses its charge. Switched off or ion-struck, it holds its charge but neither charges nor discharges. The charge shows on the module and in the power readout.
+  - **Every hull burns crystals the same way** (user decision, 2026-11-10, #425; replaces "only player ships burn"). Enemies, traders, patrols and
+    stations run the same sim. An NPC ship spawns with about 3 days of crystals at typical draw in its stores and its crew refuel through the
+    same hauling job; they are loot like any other stock. A station holds about 12 days and the station director's supply run (the one that
+    restocks rations) tops it back up; there is no exemption flag. A derelict's banks are drained and its reactors start empty (a sliver on
+    emergency power). A captured prize keeps what it holds.
+  - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and each has one battery bank beside its reactors.
 - **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
   next to space vent.
 - **Injury:** at 0 HP a crew member is **downed** and bleeds out on a timer. Another crew member can
@@ -497,7 +552,9 @@ A door that cannot open (a derelict's unpowered airlock) is never a way through,
   for a job if the travel time there, plus at least one *work stint* (60 s of work, or what is left of the job if less), plus
   the travel time from the job to its nearest source, plus 30 s, fits in the air they have. A fresh suit counts as a full
   tank. Long jobs are then done in stints with refill trips in between. A job whose site no source can be reached from is
-  never admitted for a suited walker.
+  never admitted for a suited walker. While the site's shuttle is away on a round trip, it still counts as their source, only later (#408): a job is admitted
+  if the tank lasts the work (or the wait for the shuttle, if longer) and then the walk to where it takes them aboard, so the
+  party works on instead of standing idle.
 - **Sources** are found by reachability on the crew member's grid:
   - **An airlock's suit tile.** The airlock holds a finite **air store**, by default 3 full tanks (30 min). A refill draws
     from it. On a ship with working life support the store refills slowly (1 tank per 5 min). On a derelict it does not.
@@ -545,6 +602,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     crew home most of the time).
   - Seats beyond the shuttle's suits are passages for crew who don't breathe (robots, #284).
   - A passage costs its walk plus the estimated flight time, so a home job of the same level and urgency nearby still wins.
+  - Crew kept home only by a need under that line see to it at once (eat, or sleep), instead of idling until it falls to the
+    eat or sleep line (#408). Crew who come home for a need do the same.
 - **Which categories the seats get.** The site knows how much work of each category is waiting (or coming: salvage counts
   the loot its open stripping jobs will drop). Seats are split by that demand, the same way every time:
   - with fewer seats than categories, the categories with the most demand get one seat each (ties in the priority grid's
@@ -583,7 +642,8 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
     - the trip timeout (5 minutes since the last trip, with anyone waiting aboard);
     - its own air store is under one tank.
 
-  At home it drops off those going home, unloads the hold (the existing cargo hauls), refills its air and tops its suits back up
+  At home it drops off those going home, unloads the hold (it puts it down a crate every 2 s beside its boarding tile for crew
+  at home to put away, so it never waits on them, #408; what the home ship has no storage room for stays aboard), refills its air and tops its suits back up
   from the home ship's airlocks, leaving each airlock at least one (#404). Meanwhile it
   offers passages for the free seats, then flies back with the replacements. Cargo and crew always share the trip.
 - **Staging and loading** (user design, 2026-11-03; built in slice 3). Crew don't carry loot into the hold one stack at a time:
@@ -625,7 +685,7 @@ Built in slices 2a and 2b (#295); ARCHITECTURE.md "Away sites and the air drive"
 #### 3. Salvage on top
 
 - A salvage order opens an away site on the wreck and closes it when the order is done or cancelled. The order, the panel,
-  the planner (stage order, reach filter, floors last and farthest first), yields, the hostile block and wreck removal stay.
+  the planner (stage order, reach filter, modules and walls nearest the party first (#408), floors last and farthest first), yields, the hostile block and wreck removal stay.
 - The order tells the site its demand: stripping (construction) and loot (hauling, including the loot its open jobs will
   drop), so the first trip already has a hauling seat.
 - The panel's "no shuttle" and "no crew" come from the site (no free shuttle with suits; passages open but untaken for a while).
@@ -1100,6 +1160,8 @@ common there, and the starmap hints at notable stock.
 
 - **Early:** expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station builds the
   new hull sections.
+- **Joining on:** the old outer hull that a new section shuts in (and the section's own walls laid against it) vanishes on its own, with no
+  crew job, as soon as the wall that seals it lands, and never while it would open the ship's air to space. The section arrives pressurised.
 - **Later:** build a construction pod or construction drones, and your crew can expand the hull anywhere.
 - **Size:** maybe no cap, or a cap set by the AI core or reactor tier and upgrades, so growing the ship is tied to
   progression.

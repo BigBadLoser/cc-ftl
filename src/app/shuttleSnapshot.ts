@@ -1,5 +1,5 @@
 import { launchOf } from '../sim/boarding/launch';
-import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, VehicleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleSuits, vehicleViews, TICK_HZ, totalStock, type Sim } from '../sim';
+import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleViews, TICK_HZ, totalStock, type Sim } from '../sim';
 import { JobC } from '../sim/crew/components';
 import type { Command } from '../sim';
 import { localOf } from './moduleSnapshot';
@@ -48,12 +48,7 @@ function ferryRun(sim: Sim, vehicle: number): UiShuttle['ferry'] {
     const site = sim.world.get(run.site, AwaySiteC);
     const salvage = site?.owner === 'salvage';
     const wait = site?.block ? SITE_WAIT[site.block] : undefined;
-    // Short of suits, fewer who breathe can go than there are seats (#404: one suit left, one crew member out): say so while it boards.
-    const v = sim.world.get(vehicle, VehicleC);
-    const full = (v && sim.content.vehicles?.[v.def]?.eva?.suits) ?? 0;
-    const have = v ? vehicleSuits(sim, v) : 0;
-    const short = run.phase === 'board' && have < full ? ` (${have} of ${full} suits aboard)` : '';
-    const status = `${salvage ? 'Salvage' : 'Away'}: ${wait ?? SITE_STATUS[run.phase] ?? run.phase}${short}`;
+    const status = `${salvage ? 'Salvage' : 'Away'}: ${wait ?? SITE_STATUS[run.phase] ?? run.phase}`;
     // The run is the site's: calling it off ends the salvage order (else the order opens a new site at once), or calls the party home.
     const cancel: Command = salvage && sim.world.has(run.site, SalvageOrderC)
       ? { type: 'salvage.cancel', ship: run.site } : { type: 'away.recall', ship: run.site };
@@ -143,8 +138,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
       ferry: ferryRun(sim, v.id),
       ferryFree: ferryFree(sim, v.id),
       hoverShip: v.hoveringGrid ? shipName(sim, v.hoveringGrid) : null,
-      suits: vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never),
-      canEva: v.state === 'flying' && !v.destination && v.hovering !== 0 && v.passengers.length > 0 && vehicleSuits(sim, sim.world.get(v.id, VehicleC) as never) > 0,
+      canEva: v.state === 'flying' && !v.destination && v.hovering !== 0 && v.passengers.length > 0,
     });
   }
   const roster: UiShuttleCrew[] = [];
@@ -237,6 +231,6 @@ function salvageInfo(sim: Sim, id: number): UiSalvage {
   const site = s?.block;
   const lost = !sim.world.has(s?.vehicle ?? 0, SiteRunC); // stranded with its run alive: the shuttle has no way home (away/run.ts noWayIn)
   const held = site === 'noRoom' ? 'no room at home for the loot' : site === 'stranded' ? (lost ? 'shuttle lost: crew stranded' : 'shuttle cannot get home') : '';
-  const block = o.status !== 'blocked' ? held : o.block === 'noShuttle' ? 'no free shuttle with suits' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard';
+  const block = o.status !== 'blocked' ? held : o.block === 'noShuttle' ? 'no free shuttle' : o.block === 'noCrew' ? 'no crew free to go' : why || 'hostiles aboard';
   return { types, order: { types: [...o.types], status: o.status, block, done: o.done ?? 0, total: (o.done ?? 0) + left } };
 }
