@@ -76,13 +76,13 @@ describe('layout edits', () => {
     const out = paint(layout, rect(36, 7, 7, 7), '_');
     expect(out.modules).toEqual(layout.modules);
   });
-  it('derives hull around holes too', () => {
+  it('derives hull around holes too, corners included (8 neighbours, #430)', () => {
     let l = paint(blank(), rect(3, 3, 10, 9), '_');
     l = paint(l, rect(7, 6, 2, 2), '.');
     const r = rows(l);
-    expect(r[5]?.slice(6, 10)).toBe('_##_');
+    expect(r[5]?.slice(6, 10)).toBe('####');
     expect(r[6]?.slice(6, 10)).toBe('#..#');
-    expect(r[8]?.slice(6, 10)).toBe('_##_');
+    expect(r[8]?.slice(6, 10)).toBe('####');
   });
   it('reproduces a generated layout exactly (the owner finds the same hull the generator drew)', () => {
     for (const s of [{ ...DEFAULT_SOURCE, size: 'outpost' }, { ...DEFAULT_SOURCE, kind: 'faction' as const, id: 'faction.navy', layout: '' }]) {
