@@ -3614,5 +3614,17 @@
   "recBl": {"hex": "#4763c6", "set": "recovery"},
   "recBlD": {"hex": "#2f4496", "set": "recovery"},
   "recBlFilm": {"hex": "#a9c4ff", "set": "recovery"},
-  "recGlowB": {"hex": "#9fd0ff", "emissive": 2.2, "set": "recovery"}
+  "recGlowB": {"hex": "#9fd0ff", "emissive": 2.2, "set": "recovery"},
+  "recPuL": {"hex": "#a07ae6", "set": "recovery"},
+  "recPu": {"hex": "#7550c2", "set": "recovery"},
+  "recPuD": {"hex": "#4a2f86", "set": "recovery"},
+  "recPuFilm": {"hex": "#d2b4ff", "set": "recovery"},
+  "recGlowP": {"hex": "#ff6fe8", "emissive": 2.3, "set": "recovery"},
+  "recBoneL": {"hex": "#efe7d2", "set": "recovery"},
+  "recBone": {"hex": "#cfc4a8", "set": "recovery"},
+  "recBoneD": {"hex": "#9a8f76", "set": "recovery"},
+  "recOrL": {"hex": "#f6b257", "set": "recovery"},
+  "recOr": {"hex": "#d9852c", "set": "recovery"},
+  "recOrFilm": {"hex": "#ffd49a", "set": "recovery"},
+  "recGlowO": {"hex": "#ffc870", "emissive": 2.0, "set": "recovery"}
 }
