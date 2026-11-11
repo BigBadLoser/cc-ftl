@@ -54,7 +54,10 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "n3": ("N3  monolith", 2, (0.0, 0.0, 2, "idle", 36)),
      "f1": ("F1  saturn", 2, (0.0, 0.0, 2, "idle", 30)),
      "f2": ("F2  diving bell", 2, (0.0, 0.0, 2, "idle", 30)),
-     "f3": ("F3  double helix", 2, (0.0, 0.0, 2, "idle", 30))}
+     "f3": ("F3  double helix", 2, (0.0, 0.0, 2, "idle", 30)),
+     "g1": ("G1  meridian", 2, (0.0, 0.0, 2, "idle", 32)),
+     "g2": ("G2  crystal", 2, (0.0, 0.0, 2, "idle", 32)),
+     "g3": ("G3  chalice", 2, (0.0, 0.0, 2, "idle", 38))}
 
 
 def main():
