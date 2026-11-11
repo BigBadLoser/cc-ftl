@@ -1160,6 +1160,8 @@ common there, and the starmap hints at notable stock.
 
 - **Early:** expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station builds the
   new hull sections.
+- **Joining on:** the old outer hull that a new section shuts in (and the section's own walls laid against it) vanishes on its own, with no
+  crew job, as soon as the wall that seals it lands, and never while it would open the ship's air to space. The section arrives pressurised.
 - **Later:** build a construction pod or construction drones, and your crew can expand the hull anywhere.
 - **Size:** maybe no cap, or a cap set by the AI core or reactor tier and upgrades, so growing the ship is tied to
   progression.

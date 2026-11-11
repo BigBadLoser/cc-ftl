@@ -12,7 +12,7 @@ These aren't features. They're the aims we use to choose which features to build
 
 ## Now
 
-- **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). The distress freighter ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343)) and the medical pod with passengers ([#345](https://github.com/BigBadLoser/cc-ftl/pull/345)) followed. Left in [#173](https://github.com/BigBadLoser/cc-ftl/issues/173): events that happen outside transit (see "Events in the world" below).
+- **Physical encounters.** Signals, scenes, the trader skiff, the derelict, the pirate ambush and the comms window shipped ([#309](https://github.com/BigBadLoser/cc-ftl/pull/309), [#314](https://github.com/BigBadLoser/cc-ftl/pull/314), [#327](https://github.com/BigBadLoser/cc-ftl/pull/327), [#329](https://github.com/BigBadLoser/cc-ftl/pull/329)). The distress freighter ([#343](https://github.com/BigBadLoser/cc-ftl/pull/343)) and the medical pod with passengers ([#345](https://github.com/BigBadLoser/cc-ftl/pull/345)) followed. Events outside transit are in too (#173, #60).
 - **UI consistency pass.** Shared colour, size and shadow tokens, then shared chips, meters, tooltips, headers and tabs, then one window frame. Art for overhead crew icons is with art sessions.
 
 ## Next
@@ -31,14 +31,11 @@ Not in order. Ship weapon upgrades and the flak cannon shipped ([#344](https://g
 
 Not in order.
 
-- **Events in the world.** Story events happen outside transit and leave something physical behind: a derelict to explore, boarders to fight. ([#173](https://github.com/BigBadLoser/cc-ftl/issues/173), [#60](https://github.com/BigBadLoser/cc-ftl/issues/60))
 - **Prisoners and prizes.** At the end of a fight, take prisoners or let them go. Hold them in a brig, ransom or recruit them, and sell or keep captured hulls. ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116))
-- **Contraband inspections in the world.** Navy shuttles dock, inspectors search your hold on screen, and you can bribe, refuse or fight. ([#138](https://github.com/BigBadLoser/cc-ftl/issues/138))
 - **A second income and things to spend on.** Another way to earn besides deliveries, and real costs to spend credits on. Needs your design call. ([#174](https://github.com/BigBadLoser/cc-ftl/issues/174))
 - **Weapons and gear to chase.** Ten crew weapons with art become items you can find, buy and equip. ([#49](https://github.com/BigBadLoser/cc-ftl/issues/49))
 - **Goals after the tutorial.** A rolling captain's log of goals so there is something to work toward past act 3, with a pull toward deeper space. ([#172](https://github.com/BigBadLoser/cc-ftl/issues/172), [#52](https://github.com/BigBadLoser/cc-ftl/issues/52))
 - **Less dead waiting.** Start sectors with more to find, and fewer idle hops. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
-- **Food and cooking.** The galley posts cooking jobs, hydroponics gives real crops, and meals are made from ingredients. ([#59](https://github.com/BigBadLoser/cc-ftl/issues/59))
 - **Vehicles built at their bays.** Pods and shuttles are built at their own bay, not at the fabricator. ([#48](https://github.com/BigBadLoser/cc-ftl/issues/48))
 - **More job types.** Escort runs, high-risk prisoners and classified cargo. ([#179](https://github.com/BigBadLoser/cc-ftl/issues/179))
 - **Clearer ship overview and alerts.** A labelled by-the-numbers overview, and clickable alerts for low fuel, food and money. ([#164](https://github.com/BigBadLoser/cc-ftl/issues/164))

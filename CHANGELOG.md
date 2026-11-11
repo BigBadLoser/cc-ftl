@@ -74,6 +74,8 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Salvaging a wreck to the end no longer leaves its drones behind, docked or out in space. ([#435](https://github.com/BigBadLoser/cc-ftl/pull/435))
+- Station shipyard hull jobs now finish: the old hull walls between your ship and a new section disappear by themselves once the section is sealed, so the new section joins the ship and gets air even where a module stands behind the old wall. ([#432](https://github.com/BigBadLoser/cc-ftl/pull/432))
 - Hull plans now seal at corners: an L-shaped or notched plan no longer leaves floor touching open space through a diagonal gap in the hull. ([#431](https://github.com/BigBadLoser/cc-ftl/pull/431))
 - Crew working a salvage wreck no longer stand around idle: they keep working while the shuttle is away, take the nearest jobs first and carry fuller loads, the shuttle unloads its hold at home by itself, and crew too worn for a trip rest straight away. ([#411](https://github.com/BigBadLoser/cc-ftl/pull/411))
 - Fixed an intermittent crash after jumping (a renderer bug in tiled backgrounds); the starmap backdrop now waits for its art instead of flashing. ([#410](https://github.com/BigBadLoser/cc-ftl/pull/410))

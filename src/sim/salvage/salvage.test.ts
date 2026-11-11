@@ -12,6 +12,10 @@ import { AllegianceC, SurrenderedC } from '../fight/components';
 import { EggSacC, NestC } from '../aliens/components';
 import { laySac } from '../aliens/spawn';
 import { ItemStackC } from '../items/components';
+import { ALT, BodyC } from '../body';
+import { DroneC } from '../drones/components';
+import { dronesOf } from '../drones/bay';
+import { removeWreck } from './remove';
 import { ModuleC } from '../modules/components';
 import type { ContentRegistry, ModuleDef, ScrapType, ShipTemplate } from '../registry';
 import { shipIdOf } from '../regions';
@@ -422,5 +426,26 @@ describe('floors and the staging zone (#286 slice 3)', () => {
     sim.world.get(w, AwaySiteC)!.status = 'closing';
     planJobs(sim, w, ['hull']);
     expect(floorJobs(sim, w)).toEqual(['1,0']); // the empty zone tile; the one under the stack waits for its loot to go
+  });
+});
+
+describe('removing a wreck', () => {
+  it('takes its drones with it (docked or out in space), and leaves other ships\' drones alone', () => {
+    const sim = new Sim(1, content);
+    const w = derelict(sim);
+    const other = stampShip(sim, { name: 'Other', rows, modules: parts }, { faction: 'neutral', x: 60, y: 0, state: 'wreck' });
+    const drone = (ship: number, space: boolean): number => {
+      const id = sim.world.createEntity();
+      sim.world.add(id, DroneC, { def: 'drone.test', ship, bay: 0, slot: 0, state: 'docked', charge: 100, hp: 10, target: null, steps: [], work: 0, inert: false, stunUntil: 0, space, lift: 0, cool: 0 });
+      sim.world.add(id, BodyC, { x: space ? 40.5 : 2.5, y: 2.5, heading: 0, alt: ALT.dronePad });
+      return id;
+    };
+    drone(w, false);
+    drone(w, true);
+    const kept = drone(other, false);
+    removeWreck(sim, w);
+    for (let i = 0; i < 5; i++) sim.step();
+    expect(dronesOf(sim, w)).toEqual([]);
+    expect(dronesOf(sim, other)).toEqual([kept]);
   });
 });

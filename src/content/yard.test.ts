@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
-  viewPlan, yardPrice, yardService, innerWalls,
+  CombatC, CrewC, NORMAL_O2, DraftedC, FTL_CHARGE_SEC, HullPlanC, ModuleC, START_NODE, ShipC, Struct, TraderC, YardCrewC, deserialize, galaxyIndex, hullLoad, hullTiles, interiorArea, isLiveOrder, nodeOf, plannedTiles, quoteYard, serialize, shipGrid,
+  viewPlan, yardPrice, yardService, innerWalls, openInnerWalls,
 } from '../sim';
 import { giveItems } from '../sim/story/effects';
 import { storageCount } from '../sim/items/storage';
@@ -397,4 +397,51 @@ describe('shipyard: joining on (#385)', () => {
     const got = innerWalls(sim, order).map((t) => `${t.x - s.x},${t.y - s.y}`);
     expect(got.sort()).toEqual(['10,1', '20,0', '20,1', '21,0', '21,1', '9,1'].sort());
   });
+
+  it('opens the old hull at once when the wall that shuts it in lands, and not while the section is still open to space (#429)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    const s = { ...sim.world.get(me, ShipC)! };
+    planHull(sim, me, outline(sim, me, 8, -2, 4, 4));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    const grid = shipGrid(sim, me)!;
+    const last = order.walls.find((w) => w.x === s.x + 10 && w.y === s.y - 2)!; // the far wall, out of the old hull's reach: only the air path can tell
+    for (const t of order.walls) if (t !== last) sim.enqueue({ type: 'debug.setStruct', ship: me, x: t.x, y: t.y, kind: Struct.Wall });
+    for (const t of order.floor) sim.enqueue({ type: 'debug.setStruct', ship: me, x: t.x, y: t.y, kind: Struct.Floor });
+    sim.step();
+    const old = { x: s.x + 9, y: s.y + 1 };
+    expect(innerWalls(sim, order).some((t) => t.x === old.x && t.y === old.y)).toBe(true); // it is shut in, but the section is not
+    expect(openInnerWalls(sim, order)).toBe(0);
+    expect(grid.get('struct', old.x, old.y)).toBe(Struct.Wall);
+    sim.enqueue({ type: 'debug.setStruct', ship: me, x: last.x, y: last.y, kind: Struct.Wall });
+    sim.step();
+    expect(openInnerWalls(sim, order)).toBeGreaterThan(0);
+    expect(grid.get('struct', old.x, old.y)).toBe(Struct.Floor);
+    expect(order.opens).toContainEqual(old);
+    // two adjacent old walls opened in one sweep: the section is delivered with the joined room's air, not a sample diluted by the vacuum walls
+    const next = { x: old.x + 1, y: old.y };
+    expect(order.opens).toContainEqual(next);
+    expect(order.air!.o2).toBeGreaterThan(NORMAL_O2 - 1);
+    for (const t of [...order.floor, old, next]) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
+    const room = { x: old.x, y: old.y + 1 };
+    expect(grid.get('struct', room.x, room.y)).toBe(Struct.Floor);
+    expect(grid.get('o2', room.x, room.y)).toBeGreaterThan(NORMAL_O2 - 1);
+  });
+
+  it('pressurises a finished section even when no old wall opens for it (#429)', () => {
+    const { sim, station, me } = yardGame('station', 'station.military');
+    giveItems(sim, 'item.metal', 300);
+    planHull(sim, me, outline(sim, me, 28, -2, 4, 3));
+    sim.enqueue({ type: 'yard.order', station });
+    expect(run(sim, 1)).toContain('yard.ordered');
+    const order = sim.yard.orders[0]!;
+    run(sim, 6000, () => !isLiveOrder(order));
+    expect(order.phase).toBe('done');
+    expect(order.opens ?? []).toEqual([]);
+    const grid = shipGrid(sim, me)!;
+    expect(order.floor.length).toBeGreaterThan(0);
+    for (const t of order.floor) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
+  }, 120000);
 });
