@@ -135,3 +135,26 @@ describe('id marks survive a save and a load', () => {
     expect(marksOf(file, [blankLayout(4, 4)]).module).toBe(100);
   });
 });
+
+describe('rotating the selected module', () => {
+  it('is refused when the turned footprint would overlap a neighbour, with no undo entry', () => {
+    start();
+    const bed = (lab.layout as Layout).moduleIds.length; // the next id's index
+    expect(lab.placeModule('module.bed', 12, 11, 0)).toBe(true);
+    for (const [x, y] of [[13, 11], [11, 11], [11, 12], [13, 12], [12, 10], [12, 13]] as const) lab.placeModule('module.chair', x, y, 0);
+    lab.selected = { kind: 'module', id: (lab.layout as Layout).moduleIds[bed] as number };
+    const before = lab.layout, past = lab.hist!.past.length;
+    lab.rotateSelected();
+    expect(lab.layout).toBe(before);
+    expect(lab.hist!.past.length).toBe(past);
+  });
+  it('turns the module when the space is free', () => {
+    start();
+    expect(lab.placeModule('module.bed', 16, 11, 0)).toBe(true);
+    const id = (lab.layout as Layout).moduleIds.at(-1) as number;
+    lab.selected = { kind: 'module', id };
+    lab.rotateSelected();
+    const l = lab.layout as Layout;
+    expect(l.modules[moduleIndex(l, id)]?.rot).toBe(1);
+  });
+});

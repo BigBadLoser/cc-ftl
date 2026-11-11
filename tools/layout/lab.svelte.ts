@@ -230,10 +230,15 @@ class Lab {
       this.aim(g.def, g.x, g.y, this.rot);
     } else this.rotateSelected();
   }
-  /** Turn the selected module a quarter turn. */
+  /** Turn the selected module a quarter turn, if the game's placement owner accepts the turned footprint (the module itself set aside); else nothing changes and nothing is undoable. */
   rotateSelected(): void {
-    const s = this.selected;
-    if (s?.kind === 'module') this.edit((l) => { const i = moduleIndex(l, s.id); return i >= 0 ? rotateModule(l, i) : l; });
+    const s = this.selected, l = this.layout;
+    if (s?.kind !== 'module' || !l || this.compare) return;
+    const i = moduleIndex(l, s.id), m = l.modules[i];
+    if (!m) return;
+    const rot = (m.rot + 1) % 4;
+    if (placementProblem(l, m.def, m.x, m.y, rot, i)) return;
+    this.edit((cur) => { const k = moduleIndex(cur, s.id); return k >= 0 ? rotateModule(cur, k) : cur; });
   }
   ghostTiles(): Tile[] {
     const g = this.ghost;
