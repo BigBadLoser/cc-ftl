@@ -295,3 +295,37 @@ describe('a new container turned before it is placed', () => {
     expect(placementProblem(frame(), 'container.2x4', 6, 9, 1)).toBeNull();
   });
 });
+
+describe('beam painting', () => {
+  it('paints, erases and undoes like the other paint tools, and the validator judges the frame', () => {
+    const l = blank(30, 24);
+    const framed = paint(l, [[5, 5], [6, 5], [7, 5]], '=');
+    expect(framed.cells[5]?.slice(5, 8)).toBe('===');
+    expect(framed.roomOf[5 * 30 + 5]).toBe(-1);
+    expect(paint(framed, [[6, 5]], '.').cells[5]?.slice(5, 8)).toBe('=.=');
+    expect(paint(framed, [[5, 5]], '=')).toBe(framed); // nothing changes: no undo step
+    const withBox = addModule(paint(l, rect(6, 9, 2, 4), '='), { def: 'container.2x4', x: 6, y: 9, rot: 0 });
+    const over = paint(withBox, [[6, 9]], '=');
+    expect(over).toBe(withBox);
+  });
+});
+
+describe('generated designs are stamped the way the game spawns them', () => {
+  it('a faction ship carries its generator faction, seed, depth, role and side, so the renderer picks its livery', async () => {
+    const { ShipC } = await import('../../src/sim/combat/components');
+    const { worldOf } = await import('./world');
+    const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'faction', id: 'faction.civilian', family: 'freighter', seed: 1, depth: 2 });
+    expect(layout.origin?.gen).toMatchObject({ faction: 'faction.civilian', seed: 1, depth: 2 });
+    const w = worldOf(layout);
+    const ship = w?.sim.world.get(w.ship, ShipC);
+    expect(ship?.gen).toMatchObject({ faction: 'faction.civilian', seed: 1, depth: 2 });
+    expect(ship?.faction).toBe(layout.origin?.side);
+  });
+  it('a blank grid is a plain player ship', async () => {
+    const { ShipC } = await import('../../src/sim/combat/components');
+    const { worldOf } = await import('./world');
+    const w = worldOf(paint(blank(), rect(4, 4, 5, 5), '_'));
+    expect(w?.sim.world.get(w.ship, ShipC)).toMatchObject({ faction: 'player' });
+    expect(w?.sim.world.get(w.ship, ShipC)?.gen).toBeUndefined();
+  });
+});

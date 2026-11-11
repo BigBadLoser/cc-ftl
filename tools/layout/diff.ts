@@ -21,8 +21,8 @@ const hasFloor = (l: Layout, id: number): boolean => l.roomOf.some((r, i) => r =
 
 export function diffLayouts(a: Layout, b: Layout): Diff {
   const tiles: TileDiff[] = [];
-  for (let y = 0; y < Math.min(a.height, b.height); y++) {
-    for (let x = 0; x < Math.min(a.width, b.width); x++) {
+  for (let y = 0; y < Math.max(a.height, b.height); y++) {
+    for (let x = 0; x < Math.max(a.width, b.width); x++) {
       const k = kindOf(a.cells[y]?.[x] ?? '.', b.cells[y]?.[x] ?? '.');
       if (k) tiles.push({ x, y, kind: overlayKind(k) });
     }

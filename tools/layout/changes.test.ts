@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { describeChanges } from './changes';
+import { changeItems, describeChanges } from './changes';
 import { addModule, addRoom, moveModule, paint, removeModule, resizeRoom, rotateModule, setRole, type Layout, type Tile } from './layout';
 import { blankLayout } from './source';
+import { resizeGrid } from './ship';
 
 const rect = (x: number, y: number, w: number, h: number): Tile[] => { const t: Tile[] = []; for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) t.push([i, j]); return t; };
 const two = (): { l: Layout; hangar: number } => {
@@ -73,5 +74,15 @@ describe('beam edits', () => {
     expect(describeChanges(beam, l)[0]).toMatch(/^Removed 1 beam tile/);
     expect(describeChanges(beam, withBeam(l, 30, 5, '_'))[0]).toMatch(/^Turned 1 beam tile into floor/);
     expect(describeChanges(beam, withBeam(l, 30, 5, '#'))[0]).toMatch(/^Turned 1 beam tile into wall/);
+  });
+});
+
+describe('change list after a resize', () => {
+  it('reports tiles drawn in the grown area', () => {
+    const l = blankLayout(20, 20);
+    const r = resizeGrid(l, 30, 26);
+    if ('error' in r) throw new Error(r.error);
+    const edited = paint(r.layout, rect(24, 21, 2, 2), '#');
+    expect(changeItems(l, edited).flatMap((c) => c.tiles)).toHaveLength(4);
   });
 });

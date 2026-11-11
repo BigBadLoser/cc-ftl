@@ -27,6 +27,7 @@ export interface LayoutJson {
   moduleIds: number[];
   nextModuleId: number;
   extra: Layout['extra'];
+  origin?: Layout['origin'];
 }
 export interface CaseFile {
   format: 'layout-lab-case';
@@ -59,7 +60,7 @@ export function marksOf(c: CaseFile, layouts: readonly Layout[]): IdMarks {
 export function encodeLayout(l: Layout): LayoutJson {
   const roomOf: string[] = [];
   for (let y = 0; y < l.height; y++) roomOf.push(l.roomOf.slice(y * l.width, (y + 1) * l.width).map((r) => (r < 0 ? '.' : String(r))).join(' '));
-  return { name: l.name, width: l.width, height: l.height, immobile: l.immobile, cells: [...l.cells], roomOf, rooms: trimRooms(l), modules: l.modules, moduleIds: l.moduleIds, nextModuleId: l.nextModuleId, extra: l.extra };
+  return { name: l.name, width: l.width, height: l.height, immobile: l.immobile, cells: [...l.cells], roomOf, rooms: trimRooms(l), modules: l.modules, moduleIds: l.moduleIds, nextModuleId: l.nextModuleId, extra: l.extra, ...(l.origin ? { origin: l.origin } : {}) };
 }
 /** The rooms up to the last one any tile still names: empty padding rooms (id gaps after an undo) at the end are not saved. */
 function trimRooms(l: Layout): Layout['rooms'] {
@@ -70,7 +71,7 @@ function trimRooms(l: Layout): Layout['rooms'] {
 export function decodeLayout(j: LayoutJson): Layout {
   const roomOf = j.roomOf.flatMap((row) => row.split(' ').map((t) => (t === '.' ? -1 : Number(t))));
   if (j.cells.length !== j.height || roomOf.length !== j.width * j.height) throw new Error('the case file’s grid does not match its size');
-  return { name: j.name, width: j.width, height: j.height, immobile: j.immobile, cells: [...j.cells], roomOf, rooms: j.rooms, modules: j.modules, moduleIds: j.moduleIds, nextModuleId: j.nextModuleId, extra: j.extra };
+  return { name: j.name, width: j.width, height: j.height, immobile: j.immobile, cells: [...j.cells], roomOf, rooms: j.rooms, modules: j.modules, moduleIds: j.moduleIds, nextModuleId: j.nextModuleId, extra: j.extra, ...(j.origin ? { origin: j.origin } : {}) };
 }
 
 const hasRows = (v: unknown): boolean =>

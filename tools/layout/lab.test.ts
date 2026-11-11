@@ -176,3 +176,16 @@ describe('rotating a container', () => {
     expect(m?.clamp).toBe('e');
   });
 });
+
+describe('the ship name', () => {
+  it('is the title: an import starts with its label, and a rename shows at once (one undo step)', async () => {
+    const { renameShip } = await import('./ship');
+    lab.import({ ...DEFAULT_SOURCE, kind: 'blank', id: '' });
+    expect(lab.design?.label).toBe('Blank grid');
+    expect(lab.layout?.name).toBe('Blank grid');
+    lab.edit((l) => renameShip(l, 'Hauler'));
+    expect(lab.design?.label).toBe('Hauler');
+    lab.undo();
+    expect(lab.design?.label).toBe('Blank grid');
+  });
+});

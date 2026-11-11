@@ -22,6 +22,7 @@ export interface Preview {
   setView(v: View): void;
   setMarks(marks: readonly Mark[]): void;
   setShields(on: boolean): void;
+  setRoof(on: boolean): void;
   /** The design tile under a host-relative css px position, and the module there if the pointer is on one. */
   pick(sx: number, sy: number): { x: number; y: number; module: number | null } | null;
   /** The renderer's current zoom level (null before it exists). */
@@ -42,6 +43,9 @@ export function createPreview(): Preview {
   let view: View | undefined;
   let marks: readonly Mark[] = [];
   let shields = false;
+  let roof = false;
+  // imported faction ships and stations stamp with their real side, so both roof switches follow the toggle
+  const setRoofs = (r: { setRoofPlayer(on: boolean): void; setRoofEnemies(on: boolean): void }, on: boolean): void => { r.setRoofPlayer(on); r.setRoofEnemies(on); };
   let paused = false;
   let generation = 0;
 
@@ -101,7 +105,7 @@ export function createPreview(): Preview {
       const grid = shipGrid(world.sim, world.ship);
       if (grid) r.setGrid(grid);
       r.setBackdrop({ seed: 7, density: 0.25, body: null, bodyHash: 0 });
-      r.setRoofPlayer(false);
+      setRoofs(r, roof);
       r.setWorldGrid(false);
       r.setShields(shields);
       r.resize();
@@ -129,6 +133,11 @@ export function createPreview(): Preview {
       marks = m;
       applyMarks(cur);
       applyMarks(next);
+    },
+    setRoof(on) {
+      roof = on;
+      if (cur) setRoofs(cur.r, on);
+      if (next) setRoofs(next.r, on);
     },
     setShields(on) {
       shields = on;

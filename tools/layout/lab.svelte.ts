@@ -17,7 +17,7 @@ import { anchorFor, newPin, rebase, type Pin } from './pins';
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
 const GENERATOR = `commit ${typeof __COMMIT__ === 'string' ? __COMMIT__ : 'dev'}`;
 export const dpr = (): number => window.devicePixelRatio || 1;
-export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'space' | 'room' | 'module' | 'note';
+export type Tool = 'select' | 'floor' | 'wall' | 'door' | 'beam' | 'space' | 'room' | 'module' | 'note';
 export interface Ghost { def: string; x: number; y: number; rot: number; error: string | null }
 
 class Lab {
@@ -74,7 +74,7 @@ class Lab {
   get canRedo(): boolean { return !!this.hist && this.hist.future.length > 0; }
 
   private show(l: Layout): void {
-    this.design = designFromLayout(l, this.label);
+    this.design = designFromLayout(l, l.name); // the title and the header show the ship's name (an import starts with its label)
     clearTimeout(this.timer);
     this.pins = rebase(this.pins, l, this.design);
     // selection and hover are held by stable id: resolved against this layout, dropped when what they name is gone

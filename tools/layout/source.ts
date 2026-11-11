@@ -41,6 +41,12 @@ export function layoutsOf(station: string, size: string): string[] {
   return tier ? tier.grammars.map((g) => g.value) : [];
 }
 
+/** The side a faction (or station kind) flies for, as the game reads it: its own `side`, else 'hostile' as the game's spawn does. */
+export function sideOf(id: string): string {
+  const f = (content.factions as Record<string, { side?: string }>)[id] ?? (content.stations as Record<string, StationDef>)[id];
+  return f?.side ?? 'hostile';
+}
+
 /** The generator spec string (what `tools/shipgen/cli.js` takes) for a source. */
 export function specOf(s: Source): string {
   if (s.kind === 'blank') return '';
@@ -55,13 +61,19 @@ export function blankLayout(w = 48, h = 36): Layout {
 }
 
 export function buildLayout(s: Source): { layout: Layout; label: string } {
-  if (s.kind === 'blank') return { layout: blankLayout(), label: 'Blank grid' };
+  if (s.kind === 'blank') return { layout: { ...blankLayout(), name: 'Blank grid' }, label: 'Blank grid' };
   if (s.kind === 'starter') {
     const st = starterShips.find((x) => x.id === s.id) ?? (starterShips[0] as (typeof starterShips)[number]);
-    return { layout: layoutOfGen(templateResult(st.name, st.template), st.name, false), label: `${st.name} (starter)` };
+    return { layout: layoutOfGen(templateResult(st.name, st.template), `${st.name} (starter)`, false), label: `${st.name} (starter)` };
   }
   // A station's size is picked by the seed (size list, seed 1 the first): one size, so seed only varies the layout.
   const spec = specOf(s);
   const label = s.kind === 'faction' ? `${spec.replace('faction.', '')} seed ${s.seed} depth ${s.depth}` : `${spec.replace('station.', '')} seed ${s.seed}`;
-  return { layout: layoutOfGen(gen(spec, s.seed, s.depth), label, s.kind === 'station'), label };
+  const made = gen(spec, s.seed, s.depth);
+  const layout = layoutOfGen(made, label, s.kind === 'station');
+  // as the game spawns it (stations/spawn.ts, combat/handlers.ts): the generator's id, and the faction's or kind's side
+  const origin = s.kind === 'station'
+    ? { faction: s.id, seed: s.seed >>> 0, depth: 0, role: s.size }
+    : { faction: s.id, seed: s.seed, depth: s.depth, ...(made.role ? { role: made.role } : {}) };
+  return { layout: { ...layout, origin: { gen: origin, side: sideOf(s.id) } }, label };
 }

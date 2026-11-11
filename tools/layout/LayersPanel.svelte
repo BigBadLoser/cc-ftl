@@ -25,7 +25,7 @@
 		<div class="flex flex-col gap-1">
 			{#each extras as e (e.name)}
 				<div class="flex items-center gap-2 text-sm">
-					<span class="flex size-3 shrink-0 items-center justify-center rounded-sm" style="background:{e.color}">{#if e.dot}<span class="size-1 rounded-full bg-yellow-300"></span>{/if}</span>{e.name}
+					<span class="flex size-3 shrink-0 items-center justify-center rounded-sm" style="background:{e.hatch ? `repeating-linear-gradient(135deg, ${e.color} 0 2px, rgba(170,178,192,0.75) 2px 3.5px)` : e.color}">{#if e.dot}<span class="size-1 rounded-full bg-yellow-300"></span>{/if}</span>{e.name}
 				</div>
 			{/each}
 		</div>

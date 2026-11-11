@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { centre, diffLayouts } from './diff';
 import { addModule, addRoom, moveModule, paint, removeModule, rotateModule, setRole, type Layout } from './layout';
 import { blankLayout } from './source';
+import { resizeGrid } from './ship';
 
 const base = (): { l: Layout; room: number } => {
   const { layout, id } = addRoom(blankLayout(30, 24), { x: 5, y: 5, w: 8, h: 6 }, 'cargo');
@@ -58,5 +59,16 @@ describe('beam edits', () => {
     expect(diffLayouts(beam, l).tiles).toEqual([{ x: 20, y: 20, kind: 'removed' }]);
     expect(diffLayouts(beam, withBeam(l, 20, 20, '_')).tiles).toEqual([{ x: 20, y: 20, kind: 'changed' }]);
     expect(diffLayouts(beam, withBeam(l, 20, 20, '#')).tiles).toEqual([{ x: 20, y: 20, kind: 'changed' }]);
+  });
+});
+
+describe('diff after a resize', () => {
+  it('lists tiles drawn in the grown area, and tiles lost by a shrink', () => {
+    const l = blankLayout(20, 20);
+    const r = resizeGrid(l, 30, 26);
+    if ('error' in r) throw new Error(r.error);
+    const edited = paint(r.layout, [[25, 22]], '_');
+    expect(diffLayouts(l, edited).tiles).toEqual([{ x: 25, y: 22, kind: 'added' }]);
+    expect(diffLayouts(edited, l).tiles).toEqual([{ x: 25, y: 22, kind: 'removed' }]);
   });
 });
