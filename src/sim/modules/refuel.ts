@@ -7,14 +7,14 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { PLAN_INTERVAL } from '../tuning';
 import { ModuleC } from './components';
-import { burnsFuel, fuelOf } from './energy';
+import { fuelOf } from './energy';
 import { moduleSite } from './footprint';
 
 /** Ticks of work (at work speed 1) to load a reactor's store once the fuel is at its side. */
 export const REFUEL_WORK = 20;
 
 /**
- * Reactor refuelling (issue #421), every PLAN_INTERVAL ticks. A reactor on a ship that burns fuel (`burnsFuel`) whose store has fallen below
+ * Reactor refuelling (issue #421), every PLAN_INTERVAL ticks. A reactor whose store has fallen below
  * `ModuleDef.fuel.refillBelow` gets one 'refuel' job while the ship's stores hold some of its fuel; the supply planner (systems/supplyJobs.ts)
  * hauls the fuel to the job like a build's materials, and the crew member loads it (`performRefuel`). A job the reactor no longer wants
  * (store full again, reactor gone or wrecked, the fuel used up elsewhere before any was fetched) is dropped.
@@ -32,7 +32,7 @@ export function refuelSystem(sim: Sim): void {
     const m = sim.world.get(moduleId, ModuleC);
     const def = m && sim.content.modules[m.def];
     const started = job.progress > 0 || !!job.delivered?.length;
-    if (!m || !def?.fuel || m.hp <= 0 || fuelOf(m, def) >= def.fuel.store || !burnsFuel(sim, shipIdOf(sim, m)) || (!started && fuelOf(m, def) >= def.fuel.refillBelow)) {
+    if (!m || !def?.fuel || m.hp <= 0 || fuelOf(m, def) >= def.fuel.store || (!started && fuelOf(m, def) >= def.fuel.refillBelow)) {
       destroyJob(sim, jid);
       jobs.delete(moduleId);
       continue;
@@ -55,7 +55,7 @@ export function refuelSystem(sim: Sim): void {
     const def = m && sim.content.modules[m.def];
     if (!m || !def?.fuel || jobs.has(id) || m.hp <= 0 || fuelOf(m, def) >= def.fuel.refillBelow) continue;
     const ship = shipIdOf(sim, m);
-    if (!burnsFuel(sim, ship) || claimableCount(sim, ship, def.fuel.item, res) <= 0) continue;
+    if (claimableCount(sim, ship, def.fuel.item, res) <= 0) continue;
     // Ask for the top-up, or for all there is when the stores hold less: a reactor with one crystal to be had still gets it.
     const room = Math.min(Math.floor(def.fuel.store - fuelOf(m, def)), claimableCount(sim, ship, def.fuel.item, res));
     sim.world.add(sim.world.createEntity(), JobC, {

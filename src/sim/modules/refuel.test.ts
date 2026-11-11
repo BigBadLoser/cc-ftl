@@ -116,3 +116,34 @@ describe('reactor refuelling', () => {
     expect(fuel(sim, reactor)).toBeGreaterThan(4);
   });
 });
+
+describe('every hull burns crystals (#425)', () => {
+  it('an enemy ship drains its reactor store and its crew refuel it from the ship stores', () => {
+    const sim = new Sim(5, content);
+    stampShip(sim, { name: 'e', rows }, { faction: 'hostile', x: 0, y: 0 });
+    const reactor = spawnModule(sim, 'reactor', 1, 1, 0);
+    const store = spawnModule(sim, 'storage', 8, 1, 0);
+    storageAdd(sim, store, 'crystal', 20);
+    const c = sim.world.createEntity();
+    sim.world.add(c, CrewC, { name: 'E', role: 'r', species: 'species.human', appearanceSeed: 1, activity: 'idle' });
+    sim.world.add(c, PositionC, { x: 5, y: 3, toX: 5, toY: 3, progress: 0, facing: 0 });
+    sim.world.add(c, PathC, { steps: [] });
+    sim.world.add(c, PrioritiesC, { ...all(4), hauling: 1 });
+    sim.world.add(c, NeedsC, { rest: 100 });
+    sim.world.get(reactor, ModuleC)!.fuel = 1.5;
+    run(sim, 600);
+    expect(fuel(sim, reactor)).toBeGreaterThan(5);
+    expect(storageCount(sim, store, 'crystal')).toBeLessThan(20);
+  });
+
+  it('an enemy reactor with an empty store and no crystals supplies nothing', () => {
+    const sim = new Sim(5, content);
+    stampShip(sim, { name: 'e', rows }, { faction: 'hostile', x: 0, y: 0 });
+    const reactor = spawnModule(sim, 'reactor', 1, 1, 0);
+    run(sim, 20);
+    expect(sim.world.get(reactor, ModuleC)!.powered).toBe(true);
+    sim.world.get(reactor, ModuleC)!.fuel = 0;
+    run(sim, 20);
+    expect(sim.world.get(reactor, ModuleC)!.powered).toBe(false);
+  });
+});

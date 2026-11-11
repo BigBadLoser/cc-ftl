@@ -86,7 +86,7 @@ describe('starter vs raider balance (fixed seeds)', { timeout: 120000 }, () => {
       expect(r.seconds).toBeGreaterThan(60); // not a walkover
       // Cap 12 minutes (was 8): station relief keeps both crews manned, so an attrition fight runs longer (seed 1: 586 s, integrity bottoms at 0.79).
       expect(r.seconds).toBeLessThan(12 * 60); // was 6: the gunner now arms and leaves the console for boarders, which shifts the chaotic timeline
-      expect(r.minIntegrity).toBeLessThan(0.975); // some damage (was 0.96 before the 2 s roof-part deploy delay)
+      expect(r.minIntegrity).toBeLessThan(0.985); // some damage (was 0.96 before the 2 s roof-part deploy delay, 0.975 before the battery bank joined the starter: more hull hp to average over; seed 2 bottoms at 0.980)
       expect(r.minIntegrity).toBeGreaterThan(0.6);
       expect(r.deadAt4).toBe(0);
       expect(r.downAt4).toBeLessThanOrEqual(2);

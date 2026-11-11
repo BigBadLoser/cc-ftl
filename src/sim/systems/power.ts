@@ -2,7 +2,7 @@ import { IonC } from '../combat/components';
 import { ModuleC, type Module } from '../modules/components';
 import { isIdle } from '../modules/draw';
 import { TICK_HZ } from '../time';
-import { burnsFuel, chargeOf, fuelOf, hasFuel } from '../modules/energy';
+import { chargeOf, fuelOf, hasFuel } from '../modules/energy';
 import { isHeldOffline } from '../modules/hold';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
@@ -59,7 +59,6 @@ function networksOf(sim: Sim): Member[][] {
 export function allocate(sim: Sim, members: Member[]): void {
   const first = members[0];
   const ship = first ? shipIdOf(sim, first.m) : 0;
-  const burns = burnsFuel(sim, ship);
   const dt = 1 / TICK_HZ;
   let supply = 0;
   let demand = 0;
@@ -72,7 +71,7 @@ export function allocate(sim: Sim, members: Member[]): void {
     if (!live) {
       mem.m.powered = false;
     } else if (mem.def.power > 0) {
-      mem.m.powered = hasFuel(sim, ship, mem.m, mem.def); // an empty reactor supplies nothing
+      mem.m.powered = hasFuel(mem.m, mem.def); // an empty reactor supplies nothing
       if (mem.m.powered) {
         supply += mem.def.power;
         suppliers.push(mem);
@@ -108,7 +107,7 @@ export function allocate(sim: Sim, members: Member[]): void {
   if (fromBanks > 0) drain(banks, fromBanks);
   else if (supply > used) reactorLoad += charge(banks, (supply - used) * dt) / dt; // spare supply fills the banks, and the reactors burn for it
   // Burn follows the load the reactors actually carry (each carries the same share of its rating).
-  if (burns && supply > 0) {
+  if (supply > 0) {
     const share = reactorLoad / supply;
     for (const r of suppliers) {
       const fuel = r.def.fuel;

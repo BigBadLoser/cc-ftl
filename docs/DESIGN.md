@@ -208,6 +208,7 @@ the user picks from mocks) and a HUD clock come later.
   or metal, and a medbay does nothing for them. Ion and EMP **stun** them. They never surrender: at 0 hp they are
   **wrecked** and can be salvaged for parts.
 - The **rogue AI** faction is crewed by robots and hostile to everyone. Its robots run off their ship's **AI core**.
+  Off for now (#427): their sealed reactor pods can't be refuelled; returns with a shipgen pass.
   When a core is destroyed, unpowered or hacked, its robots go **inert**. To capture an AI ship, crewless or
   robot-crewed, take its cores down and hold the bridge (on AI ships, the cores count as the bridge). Crew with
   the hacking skill can hack a core; this is a job that takes time.
@@ -264,8 +265,11 @@ the user picks from mocks) and a HUD clock come later.
     discharges to cover a shortfall (empty or damaged reactor, ion hit, a spike in draw) before the priority cut-off drops any
     module. Capacity per bank to tune (start: about 2 game hours of a starter ship's typical draw). A bank works until it is destroyed, like other modules (hp above 0); a destroyed one
     loses its charge. Switched off or ion-struck, it holds its charge but neither charges nor discharges. The charge shows on the module and in the power readout.
-  - **Only player ships burn fuel** (user decision, 2026-11-10). Enemy ships, stations and derelicts run their reactors without crystals and never stall; a
-    derelict's battery banks are drained. A captured prize starts burning with a full store.
+  - **Every hull burns crystals the same way** (user decision, 2026-11-10, #425; replaces "only player ships burn"). Enemies, traders, patrols and
+    stations run the same sim. An NPC ship spawns with about 3 days of crystals at typical draw in its stores and its crew refuel through the
+    same hauling job; they are loot like any other stock. A station holds about 12 days and the station director's supply run (the one that
+    restocks rations) tops it back up; there is no exemption flag. A derelict's banks are drained and its reactors start empty (a sliver on
+    emergency power). A captured prize keeps what it holds.
   - **Starter ships** carry a stock of crystals (about a day and a half at typical draw) and each has one battery bank beside its reactors.
 - **Atmosphere:** per tile, with gas spreading between tiles. Doors block gas when closed. Floor tiles
   next to space vent.

@@ -120,15 +120,12 @@ describe('node population: first drop', () => {
     expect(wrecks(sim).length).toBeGreaterThan(0);
     const w = wrecks(sim)[0]!;
     expect(w.s.gen?.faction).toMatch(/^faction\./);
-    // Rogue space (drone nests) is checked over the seeds that have one.
+    // Rogue space holds no drone nests while the rogue AI is off (#427), and no wreck is built by the drones.
     for (const seed of SEEDS) {
       const s2 = fresh(seed);
       ensureAround(s2, s2.galaxy.current);
-      const nest = nodeWith(s2, (_n, ports) => ports.some((p) => p.kind === 'nest'));
-      if (!nest) continue;
-      visit(s2, nest.id);
-      expect(wrecks(s2).some(({ s }) => s.gen?.faction === 'faction.drones')).toBe(true);
-      return;
+      expect(nodeWith(s2, (_n, ports) => ports.some((p) => p.kind === 'nest'))).toBeFalsy();
+      expect(wrecks(s2).some(({ s }) => s.gen?.faction === 'faction.drones')).toBe(false);
     }
   });
 

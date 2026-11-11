@@ -1,6 +1,7 @@
 import { createCrew } from '../crew/spawn';
 import { DroneC } from '../drones/components';
 import { ModuleC } from '../modules/components';
+import { NPC_FUEL_DAYS, stockFuel } from '../modules/energy';
 import { isDeployed } from '../modules/deploy';
 import { isTileWalkable } from '../modules/walk';
 import { placementGapError, stampOwner, shipIdOf, shipGrid } from '../regions';
@@ -167,6 +168,8 @@ export function spawnShip(
     });
   }
   spawnCrew(sim, ship, template.crew ?? [], opts.rest, opts.rolls);
+  // Every hull burns crystals by the one rule; a ship that is not the player's starts with days of them in its stores (the player's template says what it carries).
+  if (opts.faction !== 'player') stockFuel(sim, ship, NPC_FUEL_DAYS);
   if (opts.gen) shipCreated(sim, ship, opts.gen);
   sim.events.emit({ type: 'ship.spawned', ship, faction: opts.faction });
   return ship;
