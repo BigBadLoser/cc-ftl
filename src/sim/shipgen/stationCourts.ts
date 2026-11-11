@@ -412,15 +412,18 @@ export function courtyards(b: Builder, rng: Rng, role: RoomRole, o: CourtOpts = 
       const cells = pocket.length >= (packed ? PACKED_MIN : BAND_MIN) && bandRoles.length > 0 ? band(b, pocket, bandRoles, packed, halls, `court${n}`) : pocket;
       // The first court big enough for a bay may be the hangar deck (one bay per deck, so a deck is never cut).
       const deckable = !!o.deck && b.parts.some((p) => p.role === 'hangar') && cells.length >= DECK_TILES;
-      const { parts, walls } = deckable || cells.length <= COURT_MAX ? { parts: [cells], walls: [] as number[] } : splitCourt(cells, S);
+      const split = deckable || cells.length <= COURT_MAX ? { parts: [cells], walls: [] as number[] } : splitCourt(cells, S);
+      let parts = split.parts;
+      let walls = split.walls;
       if (walls.length > 0) {
-        // The cut goes in before the courts, so the halls are stamped with their wall between them.
+        // The cut goes in before the courts, so the halls are stamped with their wall between them. A cut that cannot be
+        // stamped leaves no wall, so the pocket has to stay whole: two courts over one floor are one room with two names.
         const ps = walls.map((k) => [(k % S) - off, Math.floor(k / S) - off] as [number, number]);
         const bx = Math.min(...ps.map((p) => p[0]));
         const by = Math.min(...ps.map((p) => p[1]));
         const rows = Array.from({ length: Math.max(...ps.map((p) => p[1])) - by + 1 }, () => Array<string>(Math.max(...ps.map((p) => p[0])) - bx + 1).fill('.'));
         ps.forEach(([x, y]) => { (rows[y - by] as string[])[x - bx] = '#'; });
-        cv.stamp(rows.map((r) => r.join('')), bx, by, `court${n}:cut`);
+        if (!cv.stamp(rows.map((r) => r.join('')), bx, by, `court${n}:cut`)) { parts = [cells]; walls = []; }
       }
       for (const court of parts) {
         // The first court big enough for a bay may be the hangar deck.
