@@ -48,7 +48,12 @@ export function changeViolations(sim: Sim, ship: number, from: readonly Tile[], 
   return widthViolations(applyChange(hull, { add: planFootprint(sim, to) })).filter((t) => !old.has(key(t)));
 }
 
-/** The outline of a planned footprint: its tiles that touch open space (4-neighbour). Hull and other structure shut the rest in, so tiles beside them need no wall. */
+const N8: readonly (readonly [number, number])[] = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+
+/**
+ * The outline of a planned footprint: its tiles with open space among their 8 neighbours, corners included, so no floor ever touches space even
+ * diagonally. Hull and other structure shut the rest in, so tiles beside them need no wall.
+ */
 export function outlineOf(sim: Sim, footprint: readonly Tile[]): Tile[] {
   const grid = sim.sector.grid;
   const inside = new Set(footprint.map(key));
@@ -57,5 +62,5 @@ export function outlineOf(sim: Sim, footprint: readonly Tile[]): Tile[] {
     const k = grid.get('struct', x, y);
     return k !== Struct.Space && k !== Struct.Beam;
   };
-  return footprint.filter((t) => !(shut(t.x + 1, t.y) && shut(t.x - 1, t.y) && shut(t.x, t.y + 1) && shut(t.x, t.y - 1))).map((t) => ({ x: t.x, y: t.y }));
+  return footprint.filter((t) => !N8.every(([dx, dy]) => shut(t.x + dx, t.y + dy))).map((t) => ({ x: t.x, y: t.y }));
 }

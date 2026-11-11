@@ -4,6 +4,8 @@ import { footprintFromTiles, widthViolations } from '../footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { roofMounted } from './layout';
 
+const N8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
+
 /**
  * Check a ship template the way the layout tests do: modules on floor (hull modules on exterior hull), no overlaps,
  * open chairs and access tiles, every walkable tile reachable from the first door, power balance, a helm, engines on
@@ -117,11 +119,28 @@ export function validateTemplate(t: ShipTemplate, defs: Record<string, ModuleDef
   // One structure: hull, walls, floors, doors and beams all 4-connected (no pod or beam floating a tile off).
   const parts = structureParts(cells, w, h);
   if (parts > 1) problems.push(`disconnected: ${parts} separate structures`);
+  const leak = sealProblem(cells, w, h);
+  if (leak) problems.push(leak);
   const width = widthProblem(cells, w, h);
   if (width) problems.push(width);
   const freeFloor = cells.filter((c, i) => c === '_' && !solid[i]).length;
   if ((t.crew ?? []).length > freeFloor) problems.push('no room for the crew');
   return problems;
+}
+
+/**
+ * The hull seal rule on template cells (`.` is space): no floor (`_`) tile may touch space among its 8 neighbours, corners included. Names the first leak, or null.
+ * The hull is every footprint tile with open space beside it, so a floor tile at a diagonal gap means the outline is missing a wall there.
+ */
+export function sealProblem(cells: string[], w: number, h: number): string | null {
+  const at = (x: number, y: number): string => (x >= 0 && y >= 0 && x < w && y < h ? (cells[y * w + x] as string) : '.');
+  const leaks: string[] = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (at(x, y) !== '_') continue;
+    const gap = N8.find(([dx, dy]) => at(x + dx, y + dy) === '.');
+    if (gap) leaks.push(`${x},${y} (space at ${x + gap[0]},${y + gap[1]})`);
+  }
+  return leaks.length === 0 ? null : `seal: ${leaks.length} floor tiles touch space, first at ${leaks[0]}`;
 }
 
 /**
