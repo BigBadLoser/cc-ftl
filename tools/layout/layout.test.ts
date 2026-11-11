@@ -248,3 +248,26 @@ describe('placing twice in the same spot', () => {
     expect(placementProblem(placed, 'module.chair', 7, 7, 0)).not.toBeNull();
   });
 });
+
+describe('placement of containers', () => {
+  // a frame: a strip of Beam tiles with a hull floor beside it
+  const frame = (): Layout => {
+    const l = blank(30, 24);
+    return { ...l, cells: l.cells.map((r, y) => (y >= 8 && y <= 13 ? `${r.slice(0, 5)}${'='.repeat(10)}${r.slice(15)}` : y === 14 ? `${r.slice(0, 5)}${'#'.repeat(10)}${r.slice(15)}` : r)) };
+  };
+  it('stands on the frame, clamped by a short end, and moves along it', () => {
+    const l = frame();
+    // 2x4 at rot 0 is 2 wide, 4 tall: its north end clamps to the frame row above
+    expect(placementProblem(l, 'container.2x4', 6, 9, 0)).toBeNull();
+    expect(placementProblem(l, 'container.2x4', 9, 9, 0)).toBeNull();
+    expect(placementProblem(l, 'container.2x4', 6, 8, 0)).toMatch(/clamped/); // nothing above it
+  });
+  it('is refused off the frame', () => {
+    const l = frame();
+    expect(placementProblem(l, 'container.2x4', 20, 9, 0)).toMatch(/frame/);
+  });
+  it('a plain-floor spot is refused (the ordinary floor rule is not the container rule)', () => {
+    const l = paint(frame(), [20, 21].flatMap((x): [number, number][] => [8, 9, 10, 11, 12].map((y) => [x, y])), '_');
+    expect(placementProblem(l, 'container.2x4', 20, 9, 0)).not.toBeNull();
+  });
+});

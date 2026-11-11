@@ -3,13 +3,13 @@
  * Built once per layout and kept; building a big station takes about 60 ms.
  */
 import { content } from '../../src/content';
-import { ModuleC, Sim, shipGrid, spawnShip } from '../../src/sim';
+import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef } from '../../src/sim';
 import { dronesOf, wreckDrone } from '../../src/sim/drones/bay';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
-import { removeModule, toTemplate, type Layout } from './layout';
+import { addModule, removeModule, toTemplate, type Layout } from './layout';
 
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
@@ -52,9 +52,21 @@ export function worldOf(l: Layout): World | null {
   return w;
 }
 
-/** Why a module cannot stand at (x, y, rot) in this layout, from the game's own placement check; null when it can. `ignore`: a module being moved. */
+/**
+ * Why a module cannot stand at (x, y, rot) in this layout; null when it can. `ignore`: a module being moved (set aside; it keeps its clamp).
+ * Ordinary modules go through the game's build check (`placementError`). Containers stand on the frame (Beam tiles), clamped by a short end,
+ * which that check does not know: the game's template validator (`validateTemplate`) owns those rules, so the candidate is put into the
+ * template and the validator's problems that name it are the answer.
+ */
 export function placementProblem(l: Layout, def: string, x: number, y: number, rot: number, ignore?: number): string | null {
   const base = ignore === undefined ? l : removeModule(l, ignore);
+  if ((content.modules as Record<string, ModuleDef>)[def]?.container) {
+    const clamp = ignore === undefined ? undefined : l.modules[ignore]?.clamp;
+    const t = toTemplate(addModule(base, { def, x, y, rot, ...(clamp ? { clamp } : {}) }));
+    const name = `${def}@${x},${y}:`;
+    const own = validateTemplate(t, content.modules as Record<string, ModuleDef>, { immobile: l.immobile }).find((p) => p.startsWith(name));
+    return own ? own.slice(name.length).trim() : null;
+  }
   const w = worldOf(base);
   return w ? placementError(w.sim, w.ship, def, ORIGIN + x, ORIGIN + y, rot) : 'noWorld';
 }
