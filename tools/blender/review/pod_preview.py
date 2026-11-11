@@ -43,12 +43,15 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "x3": ("X3  octagon", 2, (0.0, 0.0, 2, "idle", 34)),
      "y1": ("Y1  plinth", 2, (0.0, 0.0, 2, "idle", 36)),
      "y2": ("Y2  spine", 2, (0.0, 0.0, 2, "idle", 36)),
-     "y3": ("Y3  octagon", 2, (0.0, 0.0, 2, "idle", 36))}
+     "y3": ("Y3  octagon", 2, (0.0, 0.0, 2, "idle", 36)),
+     "z1": ("Z1  plinth", 2, (0.0, 0.0, 2, "idle", 36)),
+     "z2": ("Z2  spine", 2, (0.0, 0.0, 2, "idle", 36)),
+     "z3": ("Z3  octagon", 2, (0.0, 0.0, 2, "idle", 36))}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "y1,y2,y3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "z1,z2,z3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(240 * len(names), 320)
     for i, v in enumerate(names):
@@ -71,10 +74,10 @@ def main():
     for s in (1, 3):
         cv.save(out / f"pod-{s}x.png", s)
     im = Image.open(out / "pod-1x.png")
-    z = Image.new("RGB", (len(names) * 400, 400), (12, 14, 20))
+    z = Image.new("RGB", (len(names) * 400, 440), (12, 14, 20))
     for i in range(len(names)):
         ox = 120 + i * 240
-        z.paste(im.crop((ox - 105, 30, ox + 105, 240)).resize((400, 400), Image.NEAREST), (i * 400, 0))
+        z.paste(im.crop((ox - 110, 40, ox + 110, 282)).resize((400, 440), Image.NEAREST), (i * 400, 0))
     z.save(out / "pod-zoom.png")
     print("wrote", out)
 
