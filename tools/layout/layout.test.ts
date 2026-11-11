@@ -35,6 +35,24 @@ describe('layout edits', () => {
     expect(out.cells[7]?.[7]).toBe('#');
     expect(hullOf(out).has(7 * out.width + 11)).toBe(false);
   });
+  it('a freed hull tile joins a room only when the rooms beside it agree', () => {
+    const strip = (right: number): Layout => {
+      let l = paint(blank(), [[4, 5], [6, 5]], '_');
+      l = paint(l, [[5, 5]], '#');
+      return { ...l, rooms: [{ role: 'cargo' }, { role: 'mess' }], roomOf: l.roomOf.map((r, i) => (i === 5 * l.width + 4 ? 0 : i === 5 * l.width + 6 ? right : r)) };
+    };
+    const ring = [...rect(3, 3, 5, 5)].filter(([x, y]) => !(x === 5 && y === 5) && !(y === 5 && (x === 4 || x === 6)));
+    const between = paint(strip(1), ring, '_');
+    expect(between.cells[5]?.[5]).toBe('_');
+    expect(between.roomOf[5 * between.width + 5]).toBe(-1);
+    const same = paint(strip(0), ring, '_');
+    expect(same.roomOf[5 * same.width + 5]).toBe(0);
+  });
+  it('painting floor never drops a module', () => {
+    const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'starter', id: 'ship.wayfarer' });
+    const out = paint(layout, rect(36, 7, 7, 7), '_');
+    expect(out.modules).toEqual(layout.modules);
+  });
   it('derives hull around holes too', () => {
     let l = paint(blank(), rect(3, 3, 10, 9), '_');
     l = paint(l, rect(7, 6, 2, 2), '.');

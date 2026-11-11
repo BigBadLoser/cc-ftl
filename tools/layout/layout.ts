@@ -134,14 +134,27 @@ export function paint(l: Layout, tiles: readonly Tile[], ch: '_' | '#' | 'D' | '
   return done(w);
 }
 
-/** Floor painted outward: the old hull that is now inside the floor becomes floor (the new outer edge is the hull). Walls that were never hull stay. */
+/** The one room all of a tile's room-bearing floor neighbours share (-1 when none, or when they disagree). */
+function soleRoom(w: Work, x: number, y: number): number {
+  const rooms = new Set<number>();
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const nx = x + dx, ny = y + dy;
+    if (!inBounds(w.l, nx, ny) || w.cells[ny]?.[nx] !== '_') continue;
+    const r = w.roomOf[idx(w.l, nx, ny)] ?? NONE;
+    if (r >= 0) rooms.add(r);
+  }
+  return rooms.size === 1 ? ([...rooms][0] as number) : NONE;
+}
+
+/**
+ * Floor painted outward: the old hull that is now inside the floor becomes floor (the new outer edge is the hull). Walls that were
+ * never hull stay. A freed tile joins a room only when every room beside it is the same one; between two rooms it belongs to none.
+ */
 function absorbHull(w: Work, was: ReadonlySet<number>): void {
   const now = hullOf(done(w));
   const inner = [...was].filter((i) => !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#');
-  for (const i of inner) {
-    const x = i % w.l.width, y = Math.floor(i / w.l.width);
-    set(w, x, y, '_', neighbourRoom(w, x, y));
-  }
+  const rooms = inner.map((i) => soleRoom(w, i % w.l.width, Math.floor(i / w.l.width)));
+  inner.forEach((i, k) => set(w, i % w.l.width, Math.floor(i / w.l.width), '_', rooms[k] as number));
 }
 
 /** A rectangle of floor for a room (new, or an existing id), walled where the ring around it is open space. */
