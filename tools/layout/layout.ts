@@ -61,6 +61,13 @@ const at = (l: Layout, x: number, y: number): string => (x < 0 || y < 0 || x >= 
 export const inBounds = (l: Layout, x: number, y: number): boolean => x >= 0 && y >= 0 && x < l.width && y < l.height;
 export const cellAt = at;
 
+/** The tiles that are not open space, as inclusive bounds (null for an empty layout). */
+export function contentBounds(l: Layout): { x0: number; y0: number; x1: number; y1: number } | null {
+  let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+  for (let y = 0; y < l.height; y++) for (let x = 0; x < l.width; x++) if (at(l, x, y) !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  return x1 < 0 ? null : { x0, y0, x1, y1 };
+}
+
 let scratch: Sim | undefined;
 /** The tiles (by index) that are hull: the owner's outline of the footprint (every tile but space and beams). Doors stay doors. */
 export function hullOf(l: Layout): Set<number> {
@@ -123,7 +130,18 @@ export function paint(l: Layout, tiles: readonly Tile[], ch: '_' | '#' | 'D' | '
   }
   if (hit.size === 0) return l;
   if (ch !== '_') dropModulesOn(w, (x, y) => hit.has(idx(l, x, y)));
+  else absorbHull(w, hullOf(l));
   return done(w);
+}
+
+/** Floor painted outward: the old hull that is now inside the floor becomes floor (the new outer edge is the hull). Walls that were never hull stay. */
+function absorbHull(w: Work, was: ReadonlySet<number>): void {
+  const now = hullOf(done(w));
+  const inner = [...was].filter((i) => !now.has(i) && w.cells[Math.floor(i / w.l.width)]?.[i % w.l.width] === '#');
+  for (const i of inner) {
+    const x = i % w.l.width, y = Math.floor(i / w.l.width);
+    set(w, x, y, '_', neighbourRoom(w, x, y));
+  }
 }
 
 /** A rectangle of floor for a room (new, or an existing id), walled where the ring around it is open space. */

@@ -4,6 +4,7 @@
  */
 import { content } from '../../src/content';
 import { ModuleC, Sim, shipGrid, spawnShip } from '../../src/sim';
+import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
@@ -12,20 +13,38 @@ import { removeModule, toTemplate, type Layout } from './layout';
 export interface World { sim: Sim; ship: number }
 const cache = new WeakMap<Layout, World | null>();
 
-export function worldOf(l: Layout): World | null {
-  if (cache.has(l)) return cache.get(l) ?? null;
-  let w: World | null = null;
+/** Whether a layout fits the sector a sim has. */
+export const fits = (sim: Sim, l: Layout): boolean => ORIGIN + l.width + 8 <= sim.sector.width && ORIGIN + l.height + 8 <= sim.sector.height;
+
+/** Stamp a layout into a sim at ORIGIN and allocate power once, as a new game does (nothing is stepped). Returns the ship, or null if it will not stand. */
+export function stampLayout(sim: Sim, l: Layout): number | null {
+  const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: 'player', x: ORIGIN, y: ORIGIN });
+  powerSystem(sim);
+  return shipGrid(sim, ship) ? ship : null;
+}
+
+/** Replace the ship a sim holds with another layout, in place (the game's own wreck removal, then a new stamp): the preview's renderer keeps its world. */
+export function restamp(sim: Sim, old: number, l: Layout): number | null {
+  removeWreck(sim, old);
+  return stampLayout(sim, l);
+}
+
+/** A fresh sim with the layout stamped in. */
+export function buildWorld(l: Layout): World | null {
   try {
     const sim = new Sim(1, content);
     sim.sector.width = Math.max(sim.sector.width, ORIGIN + l.width + 8);
     sim.sector.height = Math.max(sim.sector.height, ORIGIN + l.height + 8);
-    const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: 'player', x: ORIGIN, y: ORIGIN });
-    // Modules spawn unpowered: allocate power once, as a new game does (nothing is stepped).
-    powerSystem(sim);
-    w = shipGrid(sim, ship) ? { sim, ship } : null;
+    const ship = stampLayout(sim, l);
+    return ship === null ? null : { sim, ship };
   } catch {
-    w = null;
+    return null;
   }
+}
+
+export function worldOf(l: Layout): World | null {
+  if (cache.has(l)) return cache.get(l) ?? null;
+  const w = buildWorld(l);
   cache.set(l, w);
   return w;
 }

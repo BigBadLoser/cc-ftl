@@ -1,15 +1,16 @@
 /**
  * The preview: the game's renderer over a sim built from the design and never ticked, so it shows the real art and nothing moves.
- * One host element lives for the page (panes move it between docks and floating windows). A new design gets a fresh canvas and
- * renderer, built beside the old one; the old stays on screen until the new one has its art, so an edit does not flash. The renderer
- * only reads the sim; nothing here writes to it.
+ * One host element lives for the page (panes move it between docks and floating windows). The first design builds a renderer
+ * over a sim of the preview's own; an edit restamps that sim in place (the game's wreck removal, then a new stamp) and the renderer
+ * rebuilds only the ship's scene. A design too big for the sim gets a fresh canvas and renderer, built beside the old one. The
+ * renderer only reads the sim; only this file restamps its own, never the game's.
  */
 import { content } from '../../src/content';
 import { createRenderer, type Renderer } from '../../src/render/scene';
 import { ModuleC, shipGrid } from '../../src/sim';
 import { ORIGIN, type View } from './camera';
 import type { Design } from './design';
-import { worldOf } from './world';
+import { buildWorld, fits, restamp, type World } from './world';
 
 export interface Mark { tiles: readonly [number, number][]; tint: number; solid?: boolean }
 export interface Preview {
@@ -29,7 +30,7 @@ export interface Preview {
   pause(on: boolean): void;
 }
 
-interface Live { r: Renderer; c: HTMLCanvasElement; world: NonNullable<ReturnType<typeof worldOf>>; design: Design }
+interface Live { r: Renderer; c: HTMLCanvasElement; world: World; design: Design }
 
 export function createPreview(): Preview {
   const host = document.createElement('div');
@@ -69,10 +70,24 @@ export function createPreview(): Preview {
     host,
     async setDesign(d) {
       const mine = ++generation;
-      const world = worldOf(d.layout);
-      if (!world) return;
       drop(next);
       next = undefined;
+      // An edit restamps the preview's own sim in place (the renderer keeps its world and rebuilds only the ship's scene).
+      if (cur && fits(cur.world.sim, d.layout)) {
+        try {
+          const ship = restamp(cur.world.sim, cur.world.ship, d.layout);
+          const grid = ship === null ? undefined : shipGrid(cur.world.sim, ship);
+          if (ship !== null && grid) {
+            cur.world = { sim: cur.world.sim, ship };
+            cur.design = d;
+            cur.r.setGrid(grid);
+            applyView(cur);
+            return;
+          }
+        } catch { /* fall through to a fresh build */ }
+      }
+      const world = buildWorld(d.layout);
+      if (!world) return;
       const c = document.createElement('canvas');
       c.className = `absolute inset-0 block size-full ${cur ? 'invisible' : ''}`;
       host.appendChild(c);

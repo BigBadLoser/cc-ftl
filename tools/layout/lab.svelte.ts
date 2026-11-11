@@ -1,9 +1,9 @@
 /** The layout lab's shared state: the design (a layout with undo history), the shared camera, the tool, what the pointer and the lists name, and the layer toggles. */
-import { fitted, type Box, type View } from './camera';
+import { fitRect, fitted, type Box, type View } from './camera';
 import { designFromLayout, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
-import { deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, type Layout, type Tile } from './layout';
+import { contentBounds, deleteRoom, moduleDef, moduleTiles, removeModule, rotateModule, type Layout, type Tile } from './layout';
 import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, type Source } from './source';
@@ -62,12 +62,16 @@ class Lab {
       this.flag = [];
       this.ghost = this.drag = null;
       this.view = fitted(layout.width, layout.height, dpr(), this.gridBox);
+      if (this.sized) this.fit();
     } catch (e) {
       this.error = e instanceof Error ? e.message : String(e);
     }
   }
+  /** Fit the whole design in the grid pane (any zoom; the preview takes the nearest ladder step). */
   fit(): void {
-    if (this.layout) this.view = fitted(this.layout.width, this.layout.height, dpr(), this.gridBox);
+    const l = this.layout;
+    const b = l && contentBounds(l);
+    if (l && b) this.view = fitRect(b.x0, b.y0, b.x1, b.y1, dpr(), this.gridBox);
   }
 
   /** One discrete edit (a button, a placement): one undo step. */

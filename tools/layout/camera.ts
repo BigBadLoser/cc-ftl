@@ -67,18 +67,37 @@ export function panned(space: Space, v: View, dpr: number, dx: number, dy: numbe
   return { ...v, cx: v.cx - (b.x - a.x), cy: v.cy - (b.y - a.y) };
 }
 
-/** The view one zoom level in (dir > 0) or out, keeping the tile under (sx, sy) where it is. */
+/** The ladder step nearest a zoom (in the log scale the ladder is built in). */
+export function nearestLevel(zoom: number, dpr: number): number {
+  let best = 0, gap = Infinity;
+  for (const l of ladder(dpr)) { const g = Math.abs(Math.log(l / zoom)); if (g < gap) { gap = g; best = l; } }
+  return best;
+}
+/** The view the preview shows for a shared view: the same centre at the nearest ladder step (the grid may sit between steps after a fit). */
+export const previewView = (v: View, dpr: number): View => ({ ...v, zoom: nearestLevel(v.zoom, dpr) });
+
+/** The view one ladder step in (dir > 0) or out, keeping the tile under (sx, sy) where it is. From a zoom between steps, the next step in that direction. */
 export function zoomed(space: Space, v: View, dpr: number, box: Box, sx: number, sy: number, dir: number): View {
   const levels = ladder(dpr);
-  let i = levels.findIndex((l) => l >= v.zoom - 1e-9);
-  if (i < 0) i = levels.length - 1;
-  const j = Math.max(0, Math.min(levels.length - 1, i + (dir > 0 ? 1 : -1)));
-  const zoom = levels[j] as number;
+  const eps = 1e-9;
+  const next = dir > 0 ? levels.find((l) => l > v.zoom + eps) : [...levels].reverse().find((l) => l < v.zoom - eps);
+  const zoom = next ?? (dir > 0 ? (levels[levels.length - 1] as number) : (levels[0] as number));
   if (zoom === v.zoom) return v;
   const under = toTile(space, v, dpr, box, sx, sy);
   const moved = { ...v, zoom };
   const after = toTile(space, moved, dpr, box, sx, sy);
   return { ...moved, cx: v.cx + (under.x - after.x), cy: v.cy + (under.y - after.y) };
+}
+
+/**
+ * A view that fits a tile rectangle (`x0`..`x1` inclusive, in tiles) in the grid pane with a margin, at any zoom (not a ladder
+ * step), capped at the ladder's top so a small design is not blown up. The grid pane shows it exactly; the preview takes the nearest step.
+ */
+export function fitRect(x0: number, y0: number, x1: number, y1: number, dpr: number, box: Box, margin = 1): View {
+  const w = x1 - x0 + 1 + 2 * margin, h = y1 - y0 + 1 + 2 * margin;
+  const side = Math.min(box.w / w, box.h / h);
+  const top = ladder(dpr).at(-1) as number;
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, zoom: Math.min(top, (side * dpr) / TILE_H) };
 }
 
 /** A view centred on a design of w x h tiles at the largest level that fits it in the grid pane (with a margin). */

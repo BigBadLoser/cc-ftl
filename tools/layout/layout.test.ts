@@ -25,6 +25,16 @@ describe('layout edits', () => {
     // the stored cells stay plain floor: hull is not a choice
     expect(l.cells[5]?.[4]).toBe('_');
   });
+  it('floor painted outward turns the old hull into floor, and keeps deliberate interior walls', () => {
+    const { layout, id } = addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'cargo');
+    const walled = paint(layout, [[7, 7]], '#');
+    const out = paint(walled, rect(11, 5, 3, 6), '_', id);
+    // the old east wall (x = 11, a hull tile stored as wall) is floor now; the new edge x = 13 is the hull
+    for (let y = 5; y < 11; y++) { expect(out.cells[y]?.[11]).toBe('_'); expect(out.roomOf[y * out.width + 11]).toBe(id); }
+    expect(rows(out)[7]?.[13]).toBe('#');
+    expect(out.cells[7]?.[7]).toBe('#');
+    expect(hullOf(out).has(7 * out.width + 11)).toBe(false);
+  });
   it('derives hull around holes too', () => {
     let l = paint(blank(), rect(3, 3, 10, 9), '_');
     l = paint(l, rect(7, 6, 2, 2), '.');
@@ -119,5 +129,24 @@ describe('undo and redo', () => {
     h = commit(live(h, 9), h.present);
     expect(h.future).toEqual([]);
     expect(undo(fresh(0))).toEqual(fresh(0));
+  });
+});
+
+describe('preview restamp', () => {
+  it('replaces the ship in the same sim: the old tiles go, the new ones stand', async () => {
+    const { shipGrid } = await import('../../src/sim');
+    const { buildWorld, restamp } = await import('./world');
+    const a = paint(blank(), rect(4, 4, 6, 5), '_');
+    const w = buildWorld(a);
+    expect(w).not.toBeNull();
+    if (!w) return;
+    const b = paint(blank(), rect(12, 6, 4, 4), '_');
+    const ship = restamp(w.sim, w.ship, b);
+    expect(ship).not.toBeNull();
+    const grid = ship === null ? undefined : shipGrid(w.sim, ship);
+    expect(grid).toBeDefined();
+    expect(shipGrid(w.sim, w.ship)).toBeUndefined();
+    expect(grid?.get('struct', 8 + 12, 8 + 6)).not.toBe(0);
+    expect(w.sim.sector.grid.get('struct', 8 + 4, 8 + 4)).toBe(0);
   });
 });

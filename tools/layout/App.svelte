@@ -17,7 +17,7 @@
 
 	let open = $state(false);
 	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', e: 'space', g: 'room', m: 'module' };
-	/** Shortcuts: tools by letter, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
+	/** Shortcuts: tools by letter, 0 fits the design, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
 	function keys(e: KeyboardEvent) {
 		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;
 		const k = e.key.toLowerCase();
@@ -25,6 +25,7 @@
 		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
 		else if (e.ctrlKey || e.metaKey || e.altKey) return;
 		else if (k === 'r') lab.rotate();
+		else if (k === '0') lab.fit();
 		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
 		else if (k === 'escape') { lab.setTool('select'); lab.armed = null; lab.ghost = null; }
 		else if (TOOLS[k]) lab.setTool(TOOLS[k] as Tool);
@@ -68,7 +69,7 @@
 						<Button {...props} variant="ghost" size="icon-sm" aria-label="Fit" onclick={() => lab.fit()}><Maximize /></Button>
 					{/snippet}
 				</Tooltip.Trigger>
-				<Tooltip.Content>Fit the design</Tooltip.Content>
+				<Tooltip.Content>Fit the design (0)</Tooltip.Content>
 			</Tooltip.Root>
 			<Tooltip.Root>
 				<Tooltip.Trigger>

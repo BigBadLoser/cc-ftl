@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onWheel } from './attach';
 	import { onDestroy, onMount } from 'svelte';
-	import { panned, zoomed, type Box } from './camera';
+	import { panned, previewView, zoomed, type Box } from './camera';
 	import { lab, dpr } from './lab.svelte';
 	import { preview } from './previewHost';
 	import { targetAt, tilesOf } from './design';
@@ -25,13 +25,13 @@
 	onDestroy(() => preview.pause(true));
 
 	// the preview follows the shared view and the design; its marks follow the lists and the grid
-	$effect(() => preview.setView({ ...lab.view }));
-	// A new or edited design rebuilds the preview a moment after the last change (the first one at once).
+	$effect(() => preview.setView(previewView(lab.view, dpr())));
+	// An edited design restamps the preview a moment after the last change (the first one at once).
 	let built = false;
 	$effect(() => {
 		const d = lab.design;
 		if (!d) return;
-		const t = setTimeout(() => { built = true; void preview.setDesign(d).then(() => preview.setView({ ...lab.view })); }, built ? 500 : 0);
+		const t = setTimeout(() => { built = true; void preview.setDesign(d).then(() => preview.setView(previewView(lab.view, dpr()))); }, built ? 60 : 0);
 		return () => clearTimeout(t);
 	});
 	$effect(() => preview.setShields(lab.layers.shields));
@@ -61,7 +61,7 @@
 			const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
 			if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
 			if (drag.moved) {
-				lab.view = panned('iso', lab.view, dpr(), dx, dy);
+				lab.view = panned('iso', previewView(lab.view, dpr()), dpr(), dx, dy);
 				drag.x = e.clientX;
 				drag.y = e.clientY;
 			}
@@ -76,7 +76,7 @@
 	function wheel(e: WheelEvent) {
 		e.preventDefault();
 		const p = local(e);
-		lab.view = zoomed('iso', lab.view, dpr(), box, p.x, p.y, -e.deltaY);
+		lab.view = zoomed('iso', previewView(lab.view, dpr()), dpr(), box, p.x, p.y, -e.deltaY);
 	}
 </script>
 

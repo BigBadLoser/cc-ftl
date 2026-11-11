@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FOCUS_BIAS, fitted, ladder, panned, scaleOf, toScreen, toTile, zoomed, type Space, type View } from './camera';
+import { FOCUS_BIAS, fitRect, fitted, ladder, panned, previewView, scaleOf, toScreen, toTile, zoomed, type Space, type View } from './camera';
 
 const box = { w: 900, h: 600 };
 const v: View = { cx: 30.5, cy: 18, zoom: 1 };
@@ -60,5 +60,46 @@ describe('layout lab camera', () => {
     expect(100 * scaleOf(f.zoom, 2)).toBeLessThanOrEqual(box.w);
     expect(f.cx).toBe(49.5);
     expect(f.cy).toBe(29.5);
+  });
+});
+
+describe('fit view', () => {
+  it('fits the rectangle at a zoom between ladder steps, centred, inside the box with a margin', () => {
+    const dpr = 2;
+    const f = fitRect(10, 8, 69, 47, dpr, box);
+    expect(f.cx).toBe(39.5);
+    expect(f.cy).toBe(27.5);
+    expect(ladder(dpr)).not.toContain(f.zoom);
+    const s = scaleOf(f.zoom, dpr);
+    expect(62 * s).toBeLessThanOrEqual(box.w + 1e-6);
+    expect(42 * s).toBeLessThanOrEqual(box.h + 1e-6);
+    // the tight axis is filled (to within the margin)
+    expect(Math.max(62 * s / box.w, 42 * s / box.h)).toBeCloseTo(1, 6);
+    const top = toScreen('grid', f, dpr, box, 10 - 0.5, 8 - 0.5);
+    expect(top.x).toBeGreaterThanOrEqual(0);
+    expect(top.y).toBeGreaterThanOrEqual(0);
+  });
+  it('does not blow a small design up past the ladder top', () => {
+    expect(fitRect(0, 0, 3, 3, 2, box).zoom).toBe(ladder(2).at(-1));
+  });
+  it('the preview takes the nearest ladder step at the same centre; pan and selection maths stay exact', () => {
+    const f = fitRect(10, 8, 69, 47, 2, box);
+    const p = previewView(f, 2);
+    expect(ladder(2)).toContain(p.zoom);
+    expect(p.cx).toBe(f.cx);
+    expect(p.cy).toBe(f.cy);
+    for (const l of ladder(2)) expect(Math.abs(Math.log(p.zoom / f.zoom))).toBeLessThanOrEqual(Math.abs(Math.log(l / f.zoom)) + 1e-12);
+    const back = panned('iso', p, 2, 40, -25);
+    expect(back.zoom).toBe(p.zoom);
+    expect(toScreen('iso', back, 2, box, f.cx, f.cy).x).toBeCloseTo(450 + 40, 6);
+  });
+  it('a wheel step from between steps lands on the next ladder step in that direction, in both panes', () => {
+    const f = fitRect(10, 8, 69, 47, 2, box);
+    const L = ladder(2);
+    const up = zoomed('grid', f, 2, box, 300, 200, 1);
+    const down = zoomed('grid', f, 2, box, 300, 200, -1);
+    expect(up.zoom).toBe(L.find((l) => l > f.zoom));
+    expect(down.zoom).toBe([...L].reverse().find((l) => l < f.zoom));
+    expect(toTile('grid', up, 2, box, 300, 200).x).toBeCloseTo(toTile('grid', f, 2, box, 300, 200).x, 6);
   });
 });
