@@ -6,6 +6,8 @@ import { content } from '../../src/content';
 import { ModuleC, Sim, shipGrid, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
+import { roomsSystem } from '../../src/sim/systems/rooms';
+import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
 import { ORIGIN } from './camera';
 import { addModule, clampAt, newModule, removeModule, toTemplate, type Layout } from './layout';
@@ -16,10 +18,12 @@ const cache = new WeakMap<Layout, World | null>();
 /** Whether a layout fits the sector a sim has. */
 export const fits = (sim: Sim, l: Layout): boolean => ORIGIN + l.width + 8 <= sim.sector.width && ORIGIN + l.height + 8 <= sim.sector.height;
 
-/** Stamp a layout into a sim at ORIGIN and allocate power once, as a new game does (nothing is stepped). Returns the ship, or null if it will not stand. */
+/** Stamp a layout into a sim at ORIGIN and allocate power and light once, as a new game does (nothing is stepped; unlit, the hull tints dark and cold against the roof). Returns the ship, or null if it will not stand. */
 export function stampLayout(sim: Sim, l: Layout): number | null {
   const ship = spawnShip(sim, { ...toTemplate(l), crew: [] }, { faction: (l.origin?.side ?? 'player') as NonNullable<ShipTemplate['faction']>, x: ORIGIN, y: ORIGIN, ...(l.origin ? { gen: l.origin.gen } : {}) });
+  roomsSystem(sim);
   powerSystem(sim);
+  lightingSystem(sim);
   return shipGrid(sim, ship) ? ship : null;
 }
 
