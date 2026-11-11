@@ -37,7 +37,7 @@
 	const key = $derived(lab.design ? keyOf(lab.design) : null);
 	const rooms = $derived((lab.design?.rooms ?? []).reduce((m, r) => m.set(r.role, (m.get(r.role) ?? 0) + 1), new Map<string, number>()));
 	const placed = $derived((lab.design?.modules ?? []).reduce((m, x) => m.set(x.def, (m.get(x.def) ?? 0) + 1), new Map<string, number>()));
-	const roleTypes = $derived((key?.rooms ?? []).filter((r) => r.role !== 'door'));
+	const roleTypes = $derived((key?.rooms ?? []));
 
 	function pickRoom(role: string) {
 		const r = lab.design?.rooms.find((x) => x.role === role);

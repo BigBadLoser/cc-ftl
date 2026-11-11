@@ -6,7 +6,7 @@
 	import { keyOf, LAYER_LABELS, type Layers } from './gridDraw';
 	import { lab } from './lab.svelte';
 
-	const key = $derived(lab.design ? keyOf(lab.design) : null);
+	const extras = $derived(lab.design ? keyOf(lab.design).extras : []);
 	const names = Object.keys(LAYER_LABELS) as (keyof Layers)[];
 </script>
 
@@ -21,21 +21,13 @@
 		{/each}
 		<Separator />
 		<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Key</span>
-		{#if key}
-			<div class="flex flex-col gap-1">
-				{#each key.rooms as r (r.role)}
-					<div class="flex items-center gap-2 text-sm">
-						<span class="size-3 shrink-0 rounded-sm" style="background:{r.color}"></span>{r.name}
-					</div>
-				{/each}
-			</div>
-			<Separator />
-			<div class="flex flex-col gap-1">
-				{#each key.codes as c (c.code)}
-					<div class="flex items-center gap-2 text-sm"><span class="w-6 font-mono text-xs font-semibold">{c.code}</span>{c.name}</div>
-				{/each}
-				{#if key.lamps}<div class="flex items-center gap-2 text-sm"><span class="w-6 text-center text-yellow-300">•</span>lamp</div>{/if}
-			</div>
-		{/if}
+		<!-- Room colours and furniture codes are the palette's lists; this is what else the grid draws. -->
+		<div class="flex flex-col gap-1">
+			{#each extras as e (e.name)}
+				<div class="flex items-center gap-2 text-sm">
+					<span class="flex size-3 shrink-0 items-center justify-center rounded-sm" style="background:{e.color}">{#if e.dot}<span class="size-1 rounded-full bg-yellow-300"></span>{/if}</span>{e.name}
+				</div>
+			{/each}
+		</div>
 	</div>
 </ScrollArea>
