@@ -3633,5 +3633,8 @@
   "recClFilm": {"hex": "#e2fcff", "set": "recovery"},
   "recMnL": {"hex": "#c4f3dc", "set": "recovery"},
   "recMn": {"hex": "#8fdcbc", "set": "recovery"},
-  "recMnFilm": {"hex": "#e4fff1", "set": "recovery"}
+  "recMnFilm": {"hex": "#e4fff1", "set": "recovery"},
+  "recHoloF": {"hex": "#3f9fae", "set": "recovery"},
+  "recHoloR": {"hex": "#ff5a6a", "emissive": 2.4, "set": "recovery"},
+  "recHoloG": {"hex": "#7dffa0", "emissive": 2.2, "set": "recovery"}
 }

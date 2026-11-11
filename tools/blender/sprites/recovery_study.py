@@ -214,17 +214,23 @@ def job(v, designs):
         for build, alpha in layers:
             core.clear_scene_meshes()
             post.select(PAL)
-            it = layer(back(), build(), alpha)
-            front = it if front is None else over(front, it)
+            if alpha == "holo":                     # a hologram, as the arcade's and the research bench's
+                from .research_kit import holo_item
+                it = holo_item("x", FP, back(), build())
+            else:
+                it = layer(back(), build(), alpha)
+            if it is not None:
+                front = it if front is None else over(front, it)
         front["id"], front["fp"] = f"module.recovery.{v}.front", FP
         return out + [front]
     return run
 
 
 def jobs():
-    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6
+    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7
     return ([job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
             + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS]
             + [job(v, recovery_study4.DESIGNS) for v in recovery_study4.DESIGNS]
             + [job(v, recovery_study5.DESIGNS) for v in recovery_study5.DESIGNS]
-            + [job(v, recovery_study6.DESIGNS) for v in recovery_study6.DESIGNS])
+            + [job(v, recovery_study6.DESIGNS) for v in recovery_study6.DESIGNS]
+            + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS])

@@ -69,7 +69,7 @@ def octa(k, z, r, h, col, top=None, rtop=None):
     k.cyl(0, 0, z, r, h, col, top=top, sides=OCT, rtop=rtop)
 
 
-def t2_back():
+def t2_back(hide_pylon=False):
     k = K("rec_t2", FP)
     octa(k, 0.0, 0.92, 0.05, "dark")
     octa(k, 0.05, 0.96, 0.1, "medWhite", top="plate")
@@ -83,6 +83,8 @@ def t2_back():
         if math.cos(a - FRONT) < 0.3:
             bar(k, at(a, R + 0.02, 0.32), at(a, R + 0.02, 2.4), 0.05, "medWhite")
             bar(k, at(a, R + 0.04, 0.45), at(a, R + 0.04, 2.25), 0.02, "cyan")
+    if hide_pylon:
+        return k.build()
     a = FRONT - math.radians(112)                                                  # the pylon
     pu, pv, _ = at(a, 0.84)
     k.box(pu, pv, 0.23, 0.2, 0.2, 1.3, "medWhite", top="plate", rz=a, bevel=0.015)
