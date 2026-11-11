@@ -3632,5 +3632,9 @@
   "podBL": {"hex": "#7cc4ff", "emissive": 1.8, "set": "arcade"},
   "podGD": {"hex": "#1b6a5a", "set": "arcade"},
   "podAD": {"hex": "#8a4f1e", "set": "arcade"},
-  "podBD": {"hex": "#1d4680", "set": "arcade"}
+  "podBD": {"hex": "#1d4680", "set": "arcade"},
+  "podGM": {"hex": "#3fc49c", "set": "arcade"},
+  "podP": {"hex": "#b4509e", "set": "arcade"},
+  "podPL": {"hex": "#ff8ae0", "emissive": 1.8, "set": "arcade"},
+  "podPD": {"hex": "#73306c", "set": "arcade"}
 }
