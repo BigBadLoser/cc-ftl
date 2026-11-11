@@ -12,9 +12,11 @@
 	let failed = $state(false);
 	const path = $derived(lab.casePath(name));
 
-	async function save() {
+	async function save(images: boolean) {
+		status = images ? 'Saving, then shooting the images...' : '';
 		try {
 			status = `Saved ${await lab.saveCase(name)}`;
+			if (images) status += `\n+ ${(await lab.exportImages(name)).map((p) => p.split('/').pop()).join(', ')}`;
 			failed = false;
 		} catch (e) {
 			status = e instanceof Error ? e.message : String(e);
@@ -44,10 +46,11 @@
 				<span class="font-mono break-all">{path}</span>
 				<span>{lab.pins.length} {lab.pins.length === 1 ? 'note' : 'notes'} · {lab.changes.length} {lab.changes.length === 1 ? 'change' : 'changes'}</span>
 			</div>
-			{#if status}<p class="text-sm {failed ? 'text-destructive' : ''}">{status}</p>{/if}
+			{#if status}<p class="text-sm break-words whitespace-pre-line {failed ? 'text-destructive' : ''}">{status}</p>{/if}
 		</div>
 		<Dialog.Footer>
-			<Button disabled={!name.trim()} onclick={save}>Save</Button>
+			<Button variant="outline" disabled={!name.trim()} onclick={() => save(true)}>Save with images</Button>
+			<Button disabled={!name.trim()} onclick={() => save(false)}>Save</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

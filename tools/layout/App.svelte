@@ -2,6 +2,7 @@
 	import Import from '@lucide/svelte/icons/download';
 	import Redo from '@lucide/svelte/icons/redo-2';
 	import Undo from '@lucide/svelte/icons/undo-2';
+	import GitCompare from '@lucide/svelte/icons/git-compare';
 	import Maximize from '@lucide/svelte/icons/maximize';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -25,6 +26,7 @@
 		if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) lab.redo(); else lab.undo(); }
 		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
 		else if (e.ctrlKey || e.metaKey || e.altKey) return;
+		else if (k === 'c') lab.toggleCompare();
 		else if (k === 'r') lab.rotate();
 		else if (k === '0') lab.fit();
 		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
@@ -65,6 +67,14 @@
 			<SaveCase />
 			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					{#snippet child({ props })}
+						<Button {...props} variant={lab.compare ? 'secondary' : 'ghost'} size="icon-sm" aria-label="Compare" aria-pressed={lab.compare} onclick={() => lab.toggleCompare()}><GitCompare /></Button>
+					{/snippet}
+				</Tooltip.Trigger>
+				<Tooltip.Content>Compare with the generated design (C)</Tooltip.Content>
+			</Tooltip.Root>
 			<Tooltip.Root>
 				<Tooltip.Trigger>
 					{#snippet child({ props })}

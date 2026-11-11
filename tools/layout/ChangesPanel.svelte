@@ -11,7 +11,7 @@
 			<Badge variant="secondary">{lab.changes.length ? lab.changes.length : 'none'}</Badge>
 		</div>
 		<ul class="flex flex-col gap-1 text-sm">
-			{#each lab.changes as c, i (i)}<li>{c}</li>{/each}
+			{#each lab.changes as c, i (i)}<li><button class="w-full rounded-md px-1.5 py-1 text-left hover:bg-muted" onclick={() => lab.flash(c.tiles)}>{c.text}</button></li>{/each}
 		</ul>
 	</div>
 </ScrollArea>

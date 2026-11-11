@@ -26,6 +26,8 @@ export interface Preview {
   pick(sx: number, sy: number): { x: number; y: number; module: number | null } | null;
   /** The renderer's current zoom level (null before it exists). */
   zoom(): number | null;
+  /** A PNG data URL of the design as the preview shows it now (at most `maxW` px wide), or null when the preview is not on screen. */
+  still(maxW: number): Promise<string | null>;
   /** Stop drawing (a minimised preview). */
   pause(on: boolean): void;
 }
@@ -148,6 +150,18 @@ export function createPreview(): Preview {
       return { x, y, module };
     },
     zoom: () => cur?.r.info().zoom ?? null,
+    async still(maxW) {
+      const l = cur;
+      if (!l || paused || !l.c.clientWidth) return null;
+      await new Promise((r) => setTimeout(r, 900)); // the scene builds over a few frames
+      l.r.render(1);
+      const k = Math.min(1, maxW / l.c.width);
+      const out = document.createElement('canvas');
+      out.width = Math.round(l.c.width * k);
+      out.height = Math.round(l.c.height * k);
+      out.getContext('2d')?.drawImage(l.c, 0, 0, out.width, out.height);
+      return out.toDataURL('image/png');
+    },
     pause(on) {
       paused = on;
     },

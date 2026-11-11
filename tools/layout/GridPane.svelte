@@ -1,7 +1,9 @@
 <script lang="ts">
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { onWheel } from './attach';
 	import { panned, scaleOf, toTile, zoomed, type Box } from './camera';
 	import { sameTarget, targetAt, tilesOf } from './design';
+	import { diffMarks, drawMoves } from './diffDraw';
 	import { drawGrid, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
 	import PinMarkers from './PinMarkers.svelte';
@@ -18,12 +20,17 @@
 	let canvas: HTMLCanvasElement;
 	let box = $state<Box>({ w: 800, h: 500 });
 	let mode: Mode | null = null;
+	/** In Side by side each grid gets half the pane; every pointer position is read against one half. */
+	const side = $derived(lab.compare && lab.tab === 'side');
+	const paneBox = $derived<Box>(side ? { w: box.w / 2, h: box.h } : box);
+	$effect(() => { lab.gridBox = paneBox; });
 	let cursor = $state('crosshair');
 	let space = $state(false);
 
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design;
 		if (!d) return [];
+		if (lab.compare) return [...(lab.tab === 'overlay' && lab.diff ? diffMarks(d, lab.diff) : []), { tiles: lab.flag, color: 'rgba(255,70,70,1)' }];
 		const out: Mark[] = [
 			{ tiles: tilesOf(d, lab.selected), color: 'rgba(255,196,64,1)' },
 			{ tiles: tilesOf(d, lab.hover), color: 'rgba(80,220,255,1)' },
@@ -48,7 +55,29 @@
 		if (!ctx) return;
 		ctx.setTransform(r, 0, 0, r, 0, 0);
 		if (!d) { ctx.clearRect(0, 0, box.w, box.h); return; }
-		drawGrid(ctx, d, lab.view, r, box, lab.layers, marks);
+		if (side && lab.originalDesign) {
+			// two grids, one camera: the original on the left, the edited design on the right
+			const half = paneBox.w;
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(0, 0, half, box.h);
+			ctx.clip();
+			drawGrid(ctx, lab.originalDesign, lab.view, r, paneBox, lab.layers, []);
+			ctx.restore();
+			ctx.save();
+			ctx.translate(half, 0);
+			ctx.beginPath();
+			ctx.rect(0, 0, half, box.h);
+			ctx.clip();
+			drawGrid(ctx, d, lab.view, r, paneBox, lab.layers, marks);
+			ctx.restore();
+			ctx.fillStyle = 'rgba(255,255,255,0.25)';
+			ctx.fillRect(half - 0.5, 0, 1, box.h);
+			return;
+		}
+		const shown = lab.compare && lab.tab === 'generated' && lab.originalDesign ? lab.originalDesign : d;
+		drawGrid(ctx, shown, lab.view, r, box, lab.layers, marks);
+		if (lab.compare && lab.tab === 'overlay' && lab.diff) drawMoves(ctx, lab.diff, lab.view, r, box);
 	});
 
 	const observe = (el: HTMLElement) => {
@@ -65,12 +94,13 @@
 
 	const local = (e: MouseEvent): { x: number; y: number } => {
 		const r = canvas.getBoundingClientRect();
-		return { x: e.clientX - r.left, y: e.clientY - r.top };
+		const x = e.clientX - r.left;
+		return { x: side && x >= paneBox.w ? x - paneBox.w : x, y: e.clientY - r.top };
 	};
 	/** The tile under the pointer (and its exact position in tile units). */
 	function at(e: MouseEvent): { tile: Tile; fx: number; fy: number } {
 		const p = local(e);
-		const t = toTile('grid', lab.view, dpr(), box, p.x, p.y);
+		const t = toTile('grid', lab.view, dpr(), paneBox, p.x, p.y);
 		return { tile: [Math.round(t.x), Math.round(t.y)], fx: t.x, fy: t.y };
 	}
 	const pick = (tile: Tile) => (lab.design ? targetAt(lab.design, tile[0], tile[1]) : null);
@@ -109,7 +139,7 @@
 		canvas.setPointerCapture(e.pointerId);
 		const { tile, fx, fy } = at(e);
 		const l = lab.layout;
-		if (e.button !== 0 || space || !l) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
+		if (e.button !== 0 || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		const tool = lab.tool;
 		if (PAINT[tool]) {
 			const ch = PAINT[tool] as '_' | '#' | 'D' | '.';
@@ -179,6 +209,7 @@
 			lab.aim(cur.def, x, y, lab.rot);
 			return;
 		}
+		if (lab.compare) return;
 		// no gesture: hover, the ghost, the cursor
 		if (lab.tool === 'module') lab.aim(lab.armed, tile[0], tile[1]);
 		lab.setHover(pick(tile));
@@ -215,7 +246,7 @@
 	function wheel(e: WheelEvent) {
 		e.preventDefault();
 		const p = local(e);
-		lab.view = zoomed('grid', lab.view, dpr(), box, p.x, p.y, -e.deltaY);
+		lab.view = zoomed('grid', lab.view, dpr(), paneBox, p.x, p.y, -e.deltaY);
 	}
 	const keys = (e: KeyboardEvent) => { if (e.code === 'Space') space = e.type === 'keydown'; };
 </script>
@@ -233,6 +264,22 @@
 		onpointerup={up}
 		onpointerleave={cancel}
 	></canvas>
-	<PinMarkers space="grid" {box} />
+	{#if lab.compare}
+		<div class="absolute top-2 left-1/2 -translate-x-1/2">
+			<Tabs.Root value={lab.tab} onValueChange={(v) => (lab.tab = v as typeof lab.tab)}>
+				<Tabs.List>
+					<Tabs.Trigger value="generated">Generated</Tabs.Trigger>
+					<Tabs.Trigger value="edited">Edited</Tabs.Trigger>
+					<Tabs.Trigger value="overlay">Overlay</Tabs.Trigger>
+					<Tabs.Trigger value="side">Side by side</Tabs.Trigger>
+				</Tabs.List>
+			</Tabs.Root>
+		</div>
+		{#if side}
+			<div class="pointer-events-none absolute top-12 left-3 text-xs tracking-wide text-muted-foreground uppercase">Generated</div>
+			<div class="pointer-events-none absolute top-12 text-xs tracking-wide text-muted-foreground uppercase" style="left:{paneBox.w + 12}px">Edited</div>
+		{/if}
+	{/if}
+	<div class="pointer-events-none absolute inset-y-0" style="left:{side ? paneBox.w : 0}px;width:{paneBox.w}px"><PinMarkers space="grid" box={paneBox} /></div>
 	<div class="pointer-events-none absolute top-2 left-3 text-xs tracking-wide text-muted-foreground uppercase">Grid{lab.design ? ` · ${lab.design.label}` : ''}</div>
 </div>

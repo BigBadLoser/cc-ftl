@@ -5,7 +5,11 @@
 import { content } from '../../src/content';
 import type { ModuleDef } from '../../src/sim';
 import { isLamp, moduleCode, NAMES } from '../shipgen/labels';
-import { roomRect, type Layout, type TemplateModule } from './layout';
+import { moduleTiles, roomRect, type Layout, type Tile, type TemplateModule } from './layout';
+
+/** One line of the change list and the tiles it is about (to centre on and flash). */
+export interface Change { text: string; tiles: Tile[] }
+const roomTiles = (l: Layout, id: number): Tile[] => { const t: Tile[] = []; for (let i = 0; i < l.roomOf.length; i++) if (l.roomOf[i] === id && l.cells[Math.floor(i / l.width)]?.[i % l.width] === '_') t.push([i % l.width, Math.floor(i / l.width)]); return t; };
 
 const defs = content.modules as Record<string, ModuleDef>;
 const roleName = (role: string): string => (role === 'hall' ? 'corridor' : NAMES[role] ?? role);
@@ -75,7 +79,7 @@ function sentence(kind: Kind, tiles: [number, number][], where: string): string 
 }
 
 /** Tile edits as regions (8-connected tiles that changed the same way), in reading order. */
-function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[] {
+function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] {
   // a room drawn in the edit is one line of its own: its floor and the wall ring round it are not listed again
   const added = rooms.filter((r) => r.id >= a.rooms.length || !boxes(a).some((x) => x.id === r.id));
   const inAdded = (x: number, y: number): boolean => added.some((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
@@ -88,7 +92,7 @@ function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[] 
       (byKind.get(k) as Set<number>).add(y * b.width + x);
     }
   }
-  const out: { y: number; x: number; text: string }[] = [];
+  const out: { y: number; x: number; text: string; tiles: Tile[] }[] = [];
   for (const [kind, set] of byKind) {
     const seen = new Set<number>();
     for (const start of [...set].sort((p, q) => p - q)) {
@@ -107,10 +111,10 @@ function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[] 
         }
       }
       region.sort((p, q) => p[1] - q[1] || p[0] - q[0]);
-      out.push({ y: region[0]?.[1] ?? 0, x: region[0]?.[0] ?? 0, text: sentence(kind, region, whereIs(region, rooms)) });
+      out.push({ y: region[0]?.[1] ?? 0, x: region[0]?.[0] ?? 0, text: sentence(kind, region, whereIs(region, rooms)), tiles: region });
     }
   }
-  return out.sort((p, q) => p.y - q.y || p.x - q.x).map((o) => o.text);
+  return out.sort((p, q) => p.y - q.y || p.x - q.x).map((o) => ({ text: o.text, tiles: o.tiles }));
 }
 
 function moduleName(m: TemplateModule): string {
@@ -120,8 +124,8 @@ function moduleName(m: TemplateModule): string {
 }
 const at = (m: TemplateModule): string => `(${m.x},${m.y})`;
 
-function moduleChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[] {
-  const out: string[] = [];
+function moduleChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): Change[] {
+  const out: Change[] = [];
   const idsB = new Set(b.moduleIds);
   const idsA = new Set(a.moduleIds);
   a.moduleIds.forEach((id, i) => {
@@ -130,9 +134,10 @@ function moduleChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[
     const n = b.modules[j];
     if (!n) return;
     const moved = m.x !== n.x || m.y !== n.y, turned = m.rot !== n.rot;
-    if (moved && turned) out.push(`Moved ${moduleName(m)} from ${at(m)} to ${at(n)} and turned it to ${n.rot * 90} deg`);
-    else if (moved) out.push(`Moved ${moduleName(m)} from ${at(m)} to ${at(n)}`);
-    else if (turned) out.push(`Turned ${moduleName(m)} at ${at(m)} from ${m.rot * 90} to ${n.rot * 90} deg`);
+    const tiles = moduleTiles(n);
+    if (moved && turned) out.push({ text: `Moved ${moduleName(m)} from ${at(m)} to ${at(n)} and turned it to ${n.rot * 90} deg`, tiles });
+    else if (moved) out.push({ text: `Moved ${moduleName(m)} from ${at(m)} to ${at(n)}`, tiles });
+    else if (turned) out.push({ text: `Turned ${moduleName(m)} at ${at(m)} from ${m.rot * 90} to ${n.rot * 90} deg`, tiles });
   });
   const roomAt = (l: Layout, m: TemplateModule): string => {
     const r = l.roomOf[m.y * l.width + m.x] ?? -1;
@@ -143,8 +148,8 @@ function moduleChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[
     const by = new Map<string, TemplateModule[]>();
     for (const id of ids) { const m = l.modules[l.moduleIds.indexOf(id)] as TemplateModule; by.set(moduleName(m), [...(by.get(moduleName(m)) ?? []), m]); }
     for (const [name, ms] of by) {
-      if (ms.length > 3) out.push(`${verb} ${ms.length} x ${name}`);
-      else for (const m of ms) out.push(`${verb} ${name} ${verb === 'Added' ? 'at' : 'from'} ${at(m)}${roomAt(l, m)}`);
+      if (ms.length > 3) out.push({ text: `${verb} ${ms.length} x ${name}`, tiles: ms.flatMap(moduleTiles) });
+      else for (const m of ms) out.push({ text: `${verb} ${name} ${verb === 'Added' ? 'at' : 'from'} ${at(m)}${roomAt(l, m)}`, tiles: moduleTiles(m) });
     }
   };
   group('Added', b, b.moduleIds.filter((id) => !idsA.has(id)));
@@ -152,25 +157,27 @@ function moduleChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[
   return out;
 }
 
-function roomChanges(a: Layout, b: Layout): string[] {
-  const out: string[] = [];
+function roomChanges(a: Layout, b: Layout): Change[] {
+  const out: Change[] = [];
   const n = Math.max(a.rooms.length, b.rooms.length);
   for (let id = 0; id < n; id++) {
     const ra = a.rooms[id], rb = b.rooms[id];
     const ba = ra ? roomRect(a, id) : null, bb = rb ? roomRect(b, id) : null;
-    if (ra && rb && ra.role !== rb.role && bb) out.push(`Retyped room ${id} ${roleName(ra.role)} → ${roleName(rb.role)}`);
-    if (!ba && bb && rb) out.push(`Added room ${id} ${roleName(rb.role)}, ${bb.w}x${bb.h} at (${bb.x},${bb.y})`);
-    else if (ba && !bb && ra) out.push(`Removed room ${id} (${roleName(ra.role)})`);
+    if (ra && rb && ra.role !== rb.role && bb) out.push({ text: `Retyped room ${id} ${roleName(ra.role)} → ${roleName(rb.role)}`, tiles: roomTiles(b, id) });
+    if (!ba && bb && rb) out.push({ text: `Added room ${id} ${roleName(rb.role)}, ${bb.w}x${bb.h} at (${bb.x},${bb.y})`, tiles: roomTiles(b, id) });
+    else if (ba && !bb && ra) out.push({ text: `Removed room ${id} (${roleName(ra.role)})`, tiles: roomTiles(a, id) });
     else if (ba && bb && rb && (ba.w !== bb.w || ba.h !== bb.h || ba.x !== bb.x || ba.y !== bb.y)) {
-      out.push(`Resized room ${id} ${roleName(rb.role)} from ${ba.w} x ${ba.h} at (${ba.x},${ba.y}) to ${bb.w} x ${bb.h} at (${bb.x},${bb.y})`);
+      out.push({ text: `Resized room ${id} ${roleName(rb.role)} from ${ba.w} x ${ba.h} at (${ba.x},${ba.y}) to ${bb.w} x ${bb.h} at (${bb.x},${bb.y})`, tiles: roomTiles(b, id) });
     }
   }
   return out;
 }
 
-/** The sentences for everything that differs between `a` (the original) and `b` (the edited design). */
-export function describeChanges(a: Layout, b: Layout): string[] {
+/** Everything that differs between `a` (the original) and `b` (the edited design), as sentences with the tiles each is about. */
+export function changeItems(a: Layout, b: Layout): Change[] {
   const inB = boxes(b);
   const rooms = [...inB, ...boxes(a).filter((r) => !inB.some((x) => x.id === r.id))];
   return [...roomChanges(a, b), ...moduleChanges(a, b, rooms), ...tileChanges(a, b, rooms)];
 }
+/** The sentences alone (what a saved case stores). */
+export const describeChanges = (a: Layout, b: Layout): string[] => changeItems(a, b).map((c) => c.text);

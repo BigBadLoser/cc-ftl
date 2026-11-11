@@ -9,7 +9,7 @@
 </script>
 
 <ScrollArea class="size-full">
-	<div class="flex flex-col gap-1.5 p-2">
+	<div class="flex flex-col gap-1.5 p-3">
 		{#each lab.pins as p (p.id)}
 			<Card.Root size="sm" class="gap-1 py-2 hover:bg-muted {lab.openPin === p.id ? 'bg-muted' : ''}">
 				<Card.Header class="gap-0">

@@ -1,5 +1,5 @@
 /** The layout lab's shared state: the design (a layout with undo history), the shared camera, the tool, what the pointer and the lists name, and the layer toggles. */
-import { fitRect, fitted, type Box, type View } from './camera';
+import { fitRect, fitted, previewView, type Box, type View } from './camera';
 import { designFromLayout, sameTarget, type Design, type Target } from './design';
 import { DEFAULT_LAYERS, type Layers } from './gridDraw';
 import { commit, fresh, live, redo, undo, type History } from './history';
@@ -8,7 +8,10 @@ import { problemsOf, type Problem } from './problems';
 import { placementProblem } from './world';
 import { DEFAULT_SOURCE, buildLayout, specOf, type Source } from './source';
 import { caseOf, caseSlug, decodeLayout, parseCase, serializeCase, type CaseFile, type Provenance } from './cases';
-import { describeChanges } from './changes';
+import { changeItems, describeChanges, type Change } from './changes';
+import { diffLayouts, type Diff } from './diff';
+import { frameOf, gridPng } from './gridImage';
+import { preview } from './previewHost';
 import { anchorFor, newPin, rebase, type Pin } from './pins';
 
 /** What generated the designs: the generators have no version, so the commit the dev server runs on. */
@@ -47,7 +50,13 @@ class Lab {
   original = $state.raw<Layout | null>(null);
   provenance = $state.raw<Provenance | null>(null);
   /** Plain-language list of what changed since `original`. */
-  changes = $state.raw<string[]>([]);
+  changes = $state.raw<Change[]>([]);
+  /** The original as a design (for the compare view), and what differs from it. */
+  originalDesign = $state.raw<Design | null>(null);
+  diff = $state.raw<Diff | null>(null);
+  /** Compare mode: the grid is read-only and the tab picks what it shows. */
+  compare = $state(false);
+  tab = $state<'generated' | 'edited' | 'overlay' | 'side'>('overlay');
   /** The pins, the one being edited (its popover is open on the grid) and the one picked in the list. */
   pins = $state.raw<readonly Pin[]>([]);
   openPin = $state<number | null>(null);
@@ -64,7 +73,8 @@ class Lab {
     this.pins = rebase(this.pins, l, this.design);
     this.timer = window.setTimeout(() => {
       this.problems = problemsOf(l);
-      this.changes = this.original ? describeChanges(this.original, l) : [];
+      this.changes = this.original ? changeItems(this.original, l) : [];
+      this.diff = this.original ? diffLayouts(this.original, l) : null;
     }, 250);
   }
 
@@ -75,10 +85,12 @@ class Lab {
       this.label = label;
       this.hist = fresh(layout);
       this.original = layout;
+      this.originalDesign = designFromLayout(layout, label);
       this.provenance = { ...s, spec: specOf(s), generator: GENERATOR };
       this.pins = [];
       this.openPin = null;
       this.changes = [];
+      this.diff = null;
       this.show(layout);
       this.error = '';
       this.hover = this.selected = null;
@@ -178,6 +190,27 @@ class Lab {
     return g ? moduleTiles({ def: g.def, x: g.x, y: g.y, rot: g.rot }) : [];
   }
 
+  // --- compare ---
+  /** The design the preview shows: the original on the Generated tab, the edited one otherwise. */
+  get previewDesign(): Design | null { return this.compare && this.tab === 'generated' ? this.originalDesign : this.design; }
+  toggleCompare(): void {
+    this.compare = !this.compare;
+    if (this.compare) {
+      this.diff = this.original && this.layout ? diffLayouts(this.original, this.layout) : null;
+      this.ghost = this.drag = null;
+      this.hover = null;
+    }
+  }
+  /** Centre both panes on tiles and flash them (a clicked change). */
+  flash(tiles: readonly Tile[]): void {
+    if (!tiles.length) return;
+    this.view = { ...this.view, cx: tiles.reduce((s, t) => s + t[0], 0) / tiles.length, cy: tiles.reduce((s, t) => s + t[1], 0) / tiles.length };
+    this.flag = [...tiles];
+    clearTimeout(this.flashTimer);
+    this.flashTimer = window.setTimeout(() => { this.flag = []; }, 1600);
+  }
+  private flashTimer = 0;
+
   // --- pins ---
   /** Drop a note at a position in the grid (tile units); `free` skips attaching it to what is there. */
   addPin(fx: number, fy: number, free: boolean): void {
@@ -222,6 +255,40 @@ class Lab {
     if (!res.ok || !body.path) throw new Error(body.error ?? `save failed (${res.status})`);
     return body.path;
   }
+  /**
+   * Write the case's images beside its JSON: the original, edited and overlay grids (a fixed modest scale, one frame) and a still of the
+   * preview for the original and for the edited design (skipped when the preview is not on screen). Returns the repo-relative paths.
+   */
+  async exportImages(name: string): Promise<string[]> {
+    const { original, layout, provenance, originalDesign, design, diff } = this;
+    if (!original || !layout || !provenance || !originalDesign || !design) throw new Error('nothing to export');
+    const frame = frameOf(original, layout);
+    if (!frame) throw new Error('the design is empty');
+    const slug = caseSlug(provenance, name);
+    const done: string[] = [];
+    const put = async (what: string, url: string | null): Promise<void> => {
+      if (!url) return;
+      const res = await fetch(`/__layout/cases/${slug}.${what}.png`, { method: 'POST', body: url });
+      const body = (await res.json()) as { path?: string; error?: string };
+      if (!res.ok || !body.path) throw new Error(body.error ?? `export failed (${res.status})`);
+      done.push(body.path);
+    };
+    const d = diff ?? diffLayouts(original, layout);
+    await put('original', gridPng(originalDesign, frame, null));
+    await put('edited', gridPng(design, frame, null));
+    await put('overlay', gridPng(design, frame, d));
+    // preview stills: frame the design, shoot each, then put the preview back as it was
+    const view = this.view;
+    this.fit();
+    for (const [what, des] of [['preview-original', originalDesign], ['preview-edited', design]] as const) {
+      await preview.setDesign(des);
+      preview.setView(previewView(this.view, dpr()));
+      await put(what, await preview.still(960));
+    }
+    await preview.setDesign(this.previewDesign ?? design);
+    this.view = view;
+    return done;
+  }
   async listCases(): Promise<string[]> {
     const res = await fetch('/__layout/cases');
     return res.ok ? ((await res.json()) as string[]) : [];
@@ -237,6 +304,7 @@ class Lab {
     this.source = { ...DEFAULT_SOURCE, ...c.source };
     this.label = `${c.name} (case)`;
     this.original = original;
+    this.originalDesign = designFromLayout(original, `${c.name} (original)`);
     this.provenance = c.source;
     this.hist = fresh(edited);
     this.pins = c.notes;

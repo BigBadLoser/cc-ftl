@@ -10,7 +10,7 @@ import type { Design } from './design';
 export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean }
 export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false };
 export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)' };
-export interface Mark { tiles: readonly [number, number][]; color: string }
+export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean }
 
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
@@ -99,7 +99,7 @@ function outline(ctx: CanvasRenderingContext2D, m: Mark, d: Design, ox: number, 
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (const [x, y] of m.tiles) {
-    ctx.fillRect(ox + x * s, oy + y * s, s, s);
+    if (m.fill !== false) ctx.fillRect(ox + x * s, oy + y * s, s, s);
     const has = (dx: number, dy: number): boolean => inSet.has((y + dy) * d.width + x + dx);
     const l = ox + x * s, t = oy + y * s;
     if (!has(0, -1)) { ctx.moveTo(l, t); ctx.lineTo(l + s, t); }
