@@ -46,7 +46,12 @@ export interface RoofView {
 interface RoofChunk {
   c: ChunkRef;
   pieces: RoofPiece[];
+  /** Change key of what the light levels below were read from (light, fire), and of the last tint written (that plus the pulse). */
+  lightKey: string;
   tintKey: string;
+  /** Per piece (same order): its light level and whether it is on fire, read when `lightKey` moves. */
+  lights: number[];
+  fires: boolean[];
 }
 
 /** A roof part (shield generator, AI core): one sprite per footprint tile for stand-ins, else one at the front tile. */
@@ -146,8 +151,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   }
 
   function buildChunk(c: ChunkRef, old: RoofChunk | undefined): RoofChunk {
-    const v = old ?? { c, pieces: [], tintKey: '' };
+    const v = old ?? { c, pieces: [], lightKey: '', tintKey: '', lights: [], fires: [] };
     clearChunk(v);
+    v.lightKey = '';
     v.tintKey = '';
     // Stand-in roof parts replace the plates above their module; real parts sit on the plating.
     const real = hasRoofArt(atlas);
@@ -166,20 +172,32 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
 
   /**
    * The plating's tint: the light (the hull's own answer, wallLight.ts: a roof tile over a floor takes its floor's light, over a
-   * wall the wall rule) times the fire glow, over the piece's base tint. Redone when the light, fire or emergency pulse move.
+   * wall the wall rule) times the fire glow, over the piece's base tint. The light levels are read only when the light or
+   * fire move; an emergency pulse step (10 fps) just maps the stored levels through `lightTint`, once per distinct level.
    */
   function updateTints(v: RoofChunk, pulse: number): void {
-    const key = `${tiles.key('light', v.c, WALL_LIGHT_REACH)}|${tiles.rev('fire', v.c)}|${pulse}`;
+    const lightKey = `${tiles.key('light', v.c, WALL_LIGHT_REACH)}|${tiles.rev('fire', v.c)}`;
+    const key = `${lightKey}|${pulse}`;
     if (key === v.tintKey) return;
     v.tintKey = key;
-    for (const p of v.pieces) {
-      const x = p.idx % W;
-      const y = (p.idx - x) / W;
-      const lv = tiles.kindAt(x, y) === Struct.Floor ? tiles.get('light', x, y) : wallLight(tiles, x, y);
-      const lit = mulColor(p.tint, lightTint(lv, false, pulse));
-      const tint = tiles.get('fire', x, y) > 0 ? mulColor(lit, FIRE_TINT) : lit;
-      for (const o of p.tinted) (o as Sprite).tint = tint;
+    if (lightKey !== v.lightKey) {
+      v.lightKey = lightKey;
+      v.lights = v.pieces.map((p) => {
+        const x = p.idx % W;
+        const y = (p.idx - x) / W;
+        return tiles.kindAt(x, y) === Struct.Floor ? tiles.get('light', x, y) : wallLight(tiles, x, y);
+      });
+      v.fires = v.pieces.map((p) => tiles.get('fire', p.idx % W, Math.floor(p.idx / W)) > 0);
     }
+    const byLevel = new Map<number, number>();
+    v.pieces.forEach((p, i) => {
+      const lv = v.lights[i] as number;
+      let lt = byLevel.get(lv);
+      if (lt === undefined) byLevel.set(lv, (lt = lightTint(lv, false, pulse)));
+      const lit = mulColor(p.tint, lt);
+      const tint = v.fires[i] ? mulColor(lit, FIRE_TINT) : lit;
+      for (const o of p.tinted) (o as Sprite).tint = tint;
+    });
   }
 
   return {
@@ -199,7 +217,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
         // A hidden roof (a ship shown in cutaway) is plated in the background, so roofing a ship later (a hail) costs no hitch.
         chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}|${hullIn(c)}`, buildChunk, visible ? gate : idle);
         if (chunks.pending > 0) key = ''; // the rest on a later update
-        for (const v of chunks.views()) v.tintKey = '';
+        for (const v of chunks.views()) v.lightKey = v.tintKey = '';
       }
       let pk = '';
       for (const id of world.query(ModuleC)) {
