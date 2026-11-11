@@ -3629,5 +3629,8 @@
   "podA": {"hex": "#c9802e", "set": "arcade"},
   "podAL": {"hex": "#ffc870", "emissive": 1.8, "set": "arcade"},
   "podB": {"hex": "#2f6fb8", "set": "arcade"},
-  "podBL": {"hex": "#7cc4ff", "emissive": 1.8, "set": "arcade"}
+  "podBL": {"hex": "#7cc4ff", "emissive": 1.8, "set": "arcade"},
+  "podGD": {"hex": "#1b6a5a", "set": "arcade"},
+  "podAD": {"hex": "#8a4f1e", "set": "arcade"},
+  "podBD": {"hex": "#1d4680", "set": "arcade"}
 }

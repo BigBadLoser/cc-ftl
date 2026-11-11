@@ -22,12 +22,15 @@ D = {"p1": ("P1  classic", 1, (0.0, 0.0, 2, "idle", 4)),
      "q3": ("Q3  scan tube", 2, (0.0, 0.12, 0, "sleep", 12)),
      "r1": ("R1  egg", 2, (0.0, 0.0, 2, "idle", 24)),
      "r2": ("R2  dais", 2, (0.0, 0.0, 2, "idle", 24)),
-     "r3": ("R3  hex", 2, (0.0, 0.0, 2, "idle", 20))}
+     "r3": ("R3  hex", 2, (0.0, 0.0, 2, "idle", 20)),
+     "s1": ("S1  shell egg", 2, (0.0, 0.0, 2, "idle", 24)),
+     "s2": ("S2  med column", 2, (0.0, 0.0, 2, "idle", 24)),
+     "s3": ("S3  capsule", 2, (0.0, 0.0, 2, "idle", 20))}
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "r1,r2,r3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "s1,s2,s3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(240 * len(names), 260)
     for i, v in enumerate(names):
