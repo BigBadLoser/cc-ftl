@@ -2,9 +2,9 @@
  * A design as the lab holds it: the template (what the game builds from) plus the rooms read off it, ready to draw and to pick
  * in. Built from a generator's result or a hand-made template; step 1 never edits it.
  */
-import type { GenResult, ModuleDef, ShipTemplate } from '../../src/sim';
-import { footprintTiles } from '../../src/sim';
+import type { ModuleDef, ShipTemplate } from '../../src/sim';
 import { defs, isLamp, moduleCode, NAMES } from '../shipgen/labels';
+import { moduleTiles, toTemplate, type Layout } from './layout';
 
 export interface DesignModule {
   index: number;
@@ -41,29 +41,29 @@ export interface Design {
   rooms: DesignRoom[];
   modules: DesignModule[];
   problems: string[];
+  /** The data this design reads. */
+  layout: Layout;
 }
 /** What the pointer or a list names: a room or a module. */
 export type Target = { kind: 'room'; id: number } | { kind: 'module'; index: number };
 
-export function designOf(g: GenResult, label: string): Design {
-  const { width, height } = g;
-  const rows = g.template.rows.map((r) => r.padEnd(width, '.'));
-  const sums = new Map<number, [number, number, number]>();
-  for (let i = 0; i < width * height; i++) {
-    const r = g.roomOf[i] ?? -1;
-    if (r < 0) continue;
-    const m = sums.get(r) ?? [0, 0, 0];
-    m[0] += i % width; m[1] += Math.floor(i / width); m[2]++;
-    sums.set(r, m);
+/** A design from a layout: the template with the derived hull, the rooms read off it. */
+export function designFromLayout(l: Layout, label: string): Design {
+  const template = toTemplate(l);
+  const { width, height } = l;
+  const roomOf = Int16Array.from(l.roomOf);
+  const sums = l.rooms.map(() => [0, 0, 0] as [number, number, number]);
+  for (let i = 0; i < roomOf.length; i++) {
+    const m = sums[roomOf[i] as number];
+    if (m) { m[0] += i % width; m[1] += Math.floor(i / width); m[2]++; }
   }
-  const rooms: DesignRoom[] = g.rooms.map((rm, id) => {
-    const [sx, sy, n] = sums.get(id) ?? [0, 0, 0];
-    const role = String(rm.role);
-    return { id, role, name: NAMES[role] ?? '', tiles: n, cx: n ? sx / n : 0, cy: n ? sy / n : 0 };
+  const rooms: DesignRoom[] = l.rooms.map((rm, id) => {
+    const [sx, sy, n] = sums[id] as [number, number, number];
+    return { id, role: rm.role, name: NAMES[rm.role] ?? '', tiles: n, cx: n ? sx / n : 0, cy: n ? sy / n : 0 };
   });
-  const modules: DesignModule[] = (g.template.modules ?? []).map((m, index) => {
+  const modules: DesignModule[] = l.modules.map((m, index) => {
     const def = defs[m.def] as ModuleDef | undefined;
-    const tiles = def ? footprintTiles(def, m.x, m.y, m.rot).map((t): [number, number] => [t.x, t.y]) : [[m.x, m.y] as [number, number]];
+    const tiles = moduleTiles(m);
     const name = def?.name ?? m.def;
     const lamp = isLamp(def);
     const xs = tiles.map((t) => t[0]), ys = tiles.map((t) => t[1]);
@@ -72,7 +72,7 @@ export function designOf(g: GenResult, label: string): Design {
       w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1,
     };
   });
-  return { label, width, height, template: g.template, rows, roomOf: g.roomOf, rooms, modules, problems: g.problems };
+  return { label, width, height, template, rows: template.rows, roomOf, rooms, modules, problems: [], layout: l };
 }
 
 /** The module on a tile (lamps count last), else the room, else nothing. */

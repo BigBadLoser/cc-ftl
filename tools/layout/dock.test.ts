@@ -10,7 +10,7 @@ describe('dock reducer', () => {
     const s = dockReducer(dockReducer(floated, { type: 'collapse', id: 'preview', collapsed: true }), { type: 'dock', id: 'preview', dock: 'right' });
     expect(s.panels.preview.place).toBe('right');
     expect(s.panels.preview.collapsed).toBe(false);
-    expect(panelsIn(s, 'right')).toEqual(['layers', 'preview']);
+    expect(panelsIn(s, 'right')).toEqual(['layers', 'inspector', 'preview']);
     expect(floating(s)).toEqual([]);
     expect(floating(floated)).toEqual(['preview']);
   });

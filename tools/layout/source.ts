@@ -7,7 +7,7 @@ import { starterShips } from '../../src/content/ships/starterShips';
 import type { StationDef } from '../../src/sim';
 import { factionIds, gen, stationIds } from '../shipgen/draw';
 import { templateResult } from '../shipgen/templates';
-import { designOf, type Design } from './design';
+import { layoutOfGen, type Layout } from './layout';
 
 export type SourceKind = 'faction' | 'station' | 'starter';
 export interface Source {
@@ -48,13 +48,13 @@ export function specOf(s: Source): string {
   return s.id;
 }
 
-export function buildDesign(s: Source): Design {
+export function buildLayout(s: Source): { layout: Layout; label: string } {
   if (s.kind === 'starter') {
     const st = starterShips.find((x) => x.id === s.id) ?? (starterShips[0] as (typeof starterShips)[number]);
-    return designOf(templateResult(st.name, st.template), `${st.name} (starter)`);
+    return { layout: layoutOfGen(templateResult(st.name, st.template), st.name, false), label: `${st.name} (starter)` };
   }
   // A station's size is picked by the seed (size list, seed 1 the first): one size, so seed only varies the layout.
   const spec = specOf(s);
   const label = s.kind === 'faction' ? `${spec.replace('faction.', '')} seed ${s.seed} depth ${s.depth}` : `${spec.replace('station.', '')} seed ${s.seed}`;
-  return designOf(gen(spec, s.seed, s.depth), label);
+  return { layout: layoutOfGen(gen(spec, s.seed, s.depth), label, s.kind === 'station'), label };
 }

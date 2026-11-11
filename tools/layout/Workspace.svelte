@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Eye from '@lucide/svelte/icons/eye';
+	import InspectIcon from '@lucide/svelte/icons/scan-search';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import PaletteIcon from '@lucide/svelte/icons/palette';
 	import type { Component } from 'svelte';
@@ -10,12 +11,13 @@
 	import { docks } from './dock.svelte';
 	import FloatWindow from './FloatWindow.svelte';
 	import GridPane from './GridPane.svelte';
+	import InspectorPanel from './InspectorPanel.svelte';
 	import LayersPanel from './LayersPanel.svelte';
 	import PalettePanel from './PalettePanel.svelte';
 	import PanelFrame from './PanelFrame.svelte';
 	import PreviewPane from './PreviewPane.svelte';
 
-	const icons: Record<PanelId, Component> = { palette: PaletteIcon, layers: LayersIcon, preview: Eye };
+	const icons: Record<PanelId, Component> = { palette: PaletteIcon, layers: LayersIcon, inspector: InspectIcon, preview: Eye };
 	const s = $derived(docks.state);
 	const left = $derived(dockOpen(s, 'left'));
 	const right = $derived(dockOpen(s, 'right'));
@@ -37,7 +39,7 @@
 </script>
 
 {#snippet body(id: PanelId)}
-	{#if id === 'palette'}<PalettePanel />{:else if id === 'layers'}<LayersPanel />{:else}<PreviewPane />{/if}
+	{#if id === 'palette'}<PalettePanel />{:else if id === 'layers'}<LayersPanel />{:else if id === 'inspector'}<InspectorPanel />{:else}<PreviewPane />{/if}
 {/snippet}
 
 {#snippet railButtons(d: Dock)}

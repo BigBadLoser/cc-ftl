@@ -26,13 +26,18 @@
 
 	// the preview follows the shared view and the design; its marks follow the lists and the grid
 	$effect(() => preview.setView({ ...lab.view }));
+	// A new or edited design rebuilds the preview a moment after the last change (the first one at once).
+	let built = false;
 	$effect(() => {
 		const d = lab.design;
-		if (d) void preview.setDesign(d).then(() => preview.setView({ ...lab.view }));
+		if (!d) return;
+		const t = setTimeout(() => { built = true; void preview.setDesign(d).then(() => preview.setView({ ...lab.view })); }, built ? 500 : 0);
+		return () => clearTimeout(t);
 	});
+	$effect(() => preview.setShields(lab.layers.shields));
 	$effect(() => {
 		const d = lab.design;
-		preview.setMarks(d ? [{ tiles: tilesOf(d, lab.selected), tint: 0xffc440, solid: true }, { tiles: tilesOf(d, lab.hover), tint: 0x50dcff }] : []);
+		preview.setMarks(d ? [{ tiles: tilesOf(d, lab.selected), tint: 0xffc440, solid: true }, { tiles: tilesOf(d, lab.hover), tint: 0x50dcff }, { tiles: lab.flag, tint: 0xff4646, solid: true }] : []);
 	});
 
 	const local = (e: MouseEvent) => {

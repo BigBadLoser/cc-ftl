@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Import from '@lucide/svelte/icons/download';
+	import Redo from '@lucide/svelte/icons/redo-2';
+	import Undo from '@lucide/svelte/icons/undo-2';
 	import Maximize from '@lucide/svelte/icons/maximize';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -9,11 +11,24 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { describe } from './design';
 	import { docks } from './dock.svelte';
-	import { lab } from './lab.svelte';
+	import { lab, type Tool } from './lab.svelte';
 	import SourcePicker from './SourcePicker.svelte';
 	import Workspace from './Workspace.svelte';
 
 	let open = $state(false);
+	const TOOLS: Record<string, Tool> = { v: 'select', f: 'floor', w: 'wall', d: 'door', e: 'space', g: 'room', m: 'module' };
+	/** Shortcuts: tools by letter, R turns the ghost or the selected module, Delete removes the selection, Esc drops the tool, Ctrl+Z undoes (with Shift: redoes). */
+	function keys(e: KeyboardEvent) {
+		if ((e.target as HTMLElement | null)?.closest('input, textarea, [role=combobox]')) return;
+		const k = e.key.toLowerCase();
+		if ((e.ctrlKey || e.metaKey) && k === 'z') { e.preventDefault(); if (e.shiftKey) lab.redo(); else lab.undo(); }
+		else if ((e.ctrlKey || e.metaKey) && k === 'y') { e.preventDefault(); lab.redo(); }
+		else if (e.ctrlKey || e.metaKey || e.altKey) return;
+		else if (k === 'r') lab.rotate();
+		else if (k === 'delete' || k === 'backspace') lab.removeSelected();
+		else if (k === 'escape') { lab.setTool('select'); lab.armed = null; lab.ghost = null; }
+		else if (TOOLS[k]) lab.setTool(TOOLS[k] as Tool);
+	}
 	const hint = $derived(lab.design ? describe(lab.design, lab.hover ?? lab.selected) : '');
 	lab.import(lab.source);
 	// A hook for scripted screenshots and agents: import by query (`?station=station.trading&size=hub&seed=3`).
@@ -24,6 +39,7 @@
 	}
 </script>
 
+<svelte:window onkeydown={keys} />
 <Tooltip.Provider delayDuration={300}>
 	<div class="flex h-screen flex-col bg-background text-foreground">
 		<header class="flex h-11 shrink-0 items-center gap-3 border-b bg-card px-3">
@@ -32,7 +48,7 @@
 			<Badge variant="secondary" class="max-w-96 truncate">{lab.design?.label ?? 'nothing imported'}</Badge>
 			{#if lab.design}
 				<span class="text-xs text-muted-foreground">{lab.design.width} x {lab.design.height} · {lab.design.rooms.length} rooms · {lab.design.modules.length} modules</span>
-				{#if lab.design.problems.length}<Badge variant="destructive" title={lab.design.problems.join('\n')}>{lab.design.problems.length} problems</Badge>{/if}
+				{#if lab.problems.length}<Badge variant="destructive">{lab.problems.length} {lab.problems.length === 1 ? 'problem' : 'problems'}</Badge>{/if}
 			{/if}
 			{#if lab.error}<Badge variant="destructive" class="max-w-96 truncate">{lab.error}</Badge>{/if}
 			<span class="flex-1 truncate text-center text-xs text-muted-foreground">{hint}</span>
@@ -44,6 +60,8 @@
 				</Popover.Trigger>
 				<Popover.Content align="end" class="w-auto"><SourcePicker done={() => (open = false)} /></Popover.Content>
 			</Popover.Root>
+			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
+			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
 			<Tooltip.Root>
 				<Tooltip.Trigger>
 					{#snippet child({ props })}

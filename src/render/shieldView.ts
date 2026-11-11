@@ -16,6 +16,8 @@ export interface ShieldView {
   /** A shot met ship `ship`'s bubble; `from` (sector art px) is where it came from, so the hit lands on that side. */
   hit(ship: number, kind: ShieldHitKind, from: { x: number; y: number } | undefined): void;
   update(dt: number, now: number): void;
+  /** Show or hide the domes (default shown): a viewer that wants the bare hull. Display only. */
+  setVisible(on: boolean): void;
   dispose(): void;
 }
 
@@ -114,6 +116,7 @@ export function createShieldView(
   const domes = new Map<number, Dome>();
   const pieces: Piece[] = [];
   const pool: Sprite[] = [];
+  let shown = true;
 
   function make(id: number, key: string, fit: Fit, state: DomeState): Dome {
     const { mesh, uniforms: u } = domeMesh(fit);
@@ -165,7 +168,7 @@ export function createShieldView(
       return;
     }
     d.hits = d.hits.filter((x) => domeAge(x.at, hitSec(x), now) >= 0);
-    d.mesh.visible = paintDome(d.u, d.state, d.hits, c.heat.overcharge.shields.left > 0, now);
+    d.mesh.visible = shown && paintDome(d.u, d.state, d.hits, c.heat.overcharge.shields.left > 0, now);
   }
 
   let clock = 0;
@@ -189,6 +192,9 @@ export function createShieldView(
       spr.alpha = 1;
       layers.add.addChild(spr);
       pieces.push({ spr, art: art.art, frames: art.frames, age: 0 });
+    },
+    setVisible(on) {
+      shown = on;
     },
     update(dt, now) {
       clock = now;
