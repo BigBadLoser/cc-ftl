@@ -15,8 +15,24 @@ export interface Mark { tiles: readonly [number, number][]; color: string; /** f
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
 const BEAM: RGB = [90, 96, 108];
+const HATCH = 'rgba(170,178,192,0.75)';
 
 /** Draw one frame into `ctx` (already scaled to css px). */
+let hatchPattern: CanvasPattern | null = null;
+/** The beam hatch: light diagonal strokes (45 degrees, a 6 px period) on clear, over the beam's base colour. */
+function hatch(ctx: CanvasRenderingContext2D): CanvasPattern {
+  if (hatchPattern) return hatchPattern;
+  const c = document.createElement('canvas');
+  c.width = c.height = 6;
+  const g = c.getContext('2d') as CanvasRenderingContext2D;
+  g.strokeStyle = HATCH;
+  g.lineWidth = 1.5;
+  g.beginPath();
+  for (const k of [-6, 0, 6]) { g.moveTo(k, 6); g.lineTo(k + 6, 0); }
+  g.stroke();
+  hatchPattern = ctx.createPattern(c, 'repeat') as CanvasPattern;
+  return hatchPattern;
+}
 export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr: number, box: Box, layers: Layers, marks: readonly Mark[]): void {
   const s = scaleOf(v.zoom, dpr);
   const ox = box.w / 2 - (v.cx + 0.5) * s, oy = box.h / 2 - (v.cy + 0.5) * s;
@@ -33,6 +49,14 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
       const color: RGB = c === '#' ? WALL : c === 'D' ? DOOR : c === '=' ? BEAM : layers.rooms ? roleTint(d.rooms[d.roomOf[y * d.width + x] ?? -1]?.role ?? 'hall') : HALL;
       ctx.fillStyle = css(color);
       ctx.fillRect(ox + x * s + pad, oy + y * s + pad, s - 2 * pad, s - 2 * pad);
+      if (c === '=' && s >= 6) {
+        // a beam is hatched, so it reads apart from a wall; the pattern follows the tile (translated to it), so it does not swim when panning
+        ctx.save();
+        ctx.translate(ox + x * s, oy + y * s);
+        ctx.fillStyle = hatch(ctx);
+        ctx.fillRect(0, 0, s, s);
+        ctx.restore();
+      }
     }
   }
   if (layers.gridLines && s >= 8) {
@@ -111,7 +135,7 @@ function outline(ctx: CanvasRenderingContext2D, m: Mark, d: Design, ox: number, 
 }
 
 export interface KeyRoom { role: string; name: string; color: string }
-export interface KeyExtra { name: string; color: string; dot?: boolean }
+export interface KeyExtra { name: string; color: string; dot?: boolean; hatch?: boolean }
 /**
  * The room types in use (for the palette's list) and what else the grid draws that no list covers (wall, door, beam, lamps).
  * Furniture codes are the palette's module list.
@@ -121,7 +145,7 @@ export function keyOf(d: Design): { rooms: KeyRoom[]; extras: KeyExtra[] } {
   const rooms = roles.map((role) => ({ role, name: NAMES[role] ?? role, color: css(roleTint(role)) }));
   rooms.push({ role: 'hall', name: 'corridor', color: css(HALL) });
   const extras: KeyExtra[] = [{ name: 'wall / hull', color: css(WALL) }, { name: 'door', color: css(DOOR) }];
-  if (d.rows.some((r) => r.includes('='))) extras.push({ name: 'beam', color: css(BEAM) });
+  if (d.rows.some((r) => r.includes('='))) extras.push({ name: 'beam', color: css(BEAM), hatch: true });
   if (d.modules.some((m) => m.lamp)) extras.push({ name: 'lamp', color: css(DARK), dot: true });
   return { rooms, extras };
 }
