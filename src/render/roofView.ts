@@ -15,7 +15,10 @@ import { depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
-import { mulColor } from './lightTint';
+import { lightTint, mulColor, pulsePhase } from './lightTint';
+import { animNow } from './animClock';
+import { Struct } from '../sim/structure';
+import { WALL_LIGHT_REACH, wallLight } from './wallLight';
 import { DAMAGED_BELOW } from './moduleArt';
 import { OPEN_GATE, type BuildGate } from './buildBudget';
 
@@ -34,7 +37,7 @@ export function roofWear(hp: number, maxHp: number, out: boolean, on: boolean): 
 
 export interface RoofView {
   /** `gate` is asked before each plating chunk is built while the roof is shown, `idle` while it is hidden (buildBudget.ts). */
-  update(gate?: BuildGate, idle?: BuildGate): void;
+  update(gate?: BuildGate, idle?: BuildGate, emergency?: boolean): void;
   setVisible(visible: boolean): void;
   dispose(): void;
 }
@@ -43,7 +46,7 @@ export interface RoofView {
 interface RoofChunk {
   c: ChunkRef;
   pieces: RoofPiece[];
-  fireKey: number;
+  tintKey: string;
 }
 
 /** A roof part (shield generator, AI core): one sprite per footprint tile for stand-ins, else one at the front tile. */
@@ -71,7 +74,6 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   let planRev = -1;
   /** Region-wide gates for the per-chunk keys (struct and module, fire). */
   let key = '';
-  let fireRev = -1;
   let visible = true;
   let partKey = '';
   let partSprites: PartSprite[] = [];
@@ -144,9 +146,9 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
   }
 
   function buildChunk(c: ChunkRef, old: RoofChunk | undefined): RoofChunk {
-    const v = old ?? { c, pieces: [], fireKey: -1 };
+    const v = old ?? { c, pieces: [], tintKey: '' };
     clearChunk(v);
-    v.fireKey = -1;
+    v.tintKey = '';
     // Stand-in roof parts replace the plates above their module; real parts sit on the plating.
     const real = hasRoofArt(atlas);
     // The new hull's tiles carry their own top (hullArt.exteriorIds: its piece, or the piece and a roof stand-in).
@@ -162,19 +164,26 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
     return v;
   }
 
-  function updateFire(v: RoofChunk): void {
-    const fr = tiles.rev('fire', v.c);
-    if (fr === v.fireKey) return;
-    v.fireKey = fr;
+  /**
+   * The plating's tint: the light (the hull's own answer, wallLight.ts: a roof tile over a floor takes its floor's light, over a
+   * wall the wall rule) times the fire glow, over the piece's base tint. Redone when the light, fire or emergency pulse move.
+   */
+  function updateTints(v: RoofChunk, pulse: number): void {
+    const key = `${tiles.key('light', v.c, WALL_LIGHT_REACH)}|${tiles.rev('fire', v.c)}|${pulse}`;
+    if (key === v.tintKey) return;
+    v.tintKey = key;
     for (const p of v.pieces) {
       const x = p.idx % W;
-      const lit = tiles.get('fire', x, (p.idx - x) / W) > 0;
-      for (const o of p.tinted) (o as Sprite).tint = lit ? mulColor(p.tint, FIRE_TINT) : p.tint;
+      const y = (p.idx - x) / W;
+      const lv = tiles.kindAt(x, y) === Struct.Floor ? tiles.get('light', x, y) : wallLight(tiles, x, y);
+      const lit = mulColor(p.tint, lightTint(lv, false, pulse));
+      const tint = tiles.get('fire', x, y) > 0 ? mulColor(lit, FIRE_TINT) : lit;
+      for (const o of p.tinted) (o as Sprite).tint = tint;
     }
   }
 
   return {
-    update(gate = OPEN_GATE, idle = OPEN_GATE) {
+    update(gate = OPEN_GATE, idle = OPEN_GATE, emergency = false) {
       const k = `${grid.revision('struct')}|${grid.revision('module')}`;
       if (k !== key) {
         key = k;
@@ -190,7 +199,7 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
         // A hidden roof (a ship shown in cutaway) is plated in the background, so roofing a ship later (a hail) costs no hitch.
         chunks.sync(tiles.chunks(), (c) => `${tiles.key('struct', c)}|${tiles.rev('module', c)}|${planKeys.get(`${c.cx},${c.cy}`) ?? ''}|${hullIn(c)}`, buildChunk, visible ? gate : idle);
         if (chunks.pending > 0) key = ''; // the rest on a later update
-        fireRev = -1;
+        for (const v of chunks.views()) v.tintKey = '';
       }
       let pk = '';
       for (const id of world.query(ModuleC)) {
@@ -202,11 +211,8 @@ export function createRoofView(grid: Grid, atlas: Atlas, L: Layers, world: World
         rebuildParts();
       }
       for (const p of partSprites) setGhostZoom(p.ghost, L.scale);
-      const fr = grid.revision('fire');
-      if (fr !== fireRev) {
-        fireRev = fr;
-        for (const v of chunks.views()) updateFire(v);
-      }
+      const pulse = emergency ? pulsePhase(animNow()) : -1;
+      for (const v of chunks.views()) updateTints(v, pulse);
     },
     setVisible(v) {
       if (v && !visible) key = ''; // plating still owed in the background is built now
