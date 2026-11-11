@@ -4,6 +4,7 @@ import {
   addModule, addRoom, deleteRoom, hullOf, moveModule, paint, removeModule, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
   type Layout, type Tile,
 } from './layout';
+import { designFromLayout, labelSpot } from './design';
 import { problemsOf } from './problems';
 import { buildLayout, DEFAULT_SOURCE } from './source';
 import { placementProblem } from './world';
@@ -166,5 +167,34 @@ describe('preview restamp', () => {
     expect(shipGrid(w.sim, w.ship)).toBeUndefined();
     expect(grid?.get('struct', 8 + 12, 8 + 6)).not.toBe(0);
     expect(w.sim.sector.grid.get('struct', 8 + 4, 8 + 4)).toBe(0);
+  });
+});
+
+describe('room name placement', () => {
+  const room = (): { layout: Layout; id: number } => addRoom(blank(), { x: 5, y: 5, w: 10, h: 6 }, 'cargo');
+  const cover = (l: Layout, x0: number, y0: number, w: number, h: number): Set<number> => new Set(rect(x0, y0, w, h).map(([x, y]) => y * l.width + x));
+  it('sits at the middle when nothing covers it', () => {
+    const { layout, id } = room();
+    const s = labelSpot(layout, id, new Set(), 5, 9.5, 7.5);
+    expect(Math.abs(s.x - 9.5)).toBeLessThanOrEqual(1);
+    expect(Math.abs(s.y - 7.5)).toBeLessThanOrEqual(1);
+  });
+  it('never lands on a module, and takes the larger free patch', () => {
+    const { layout, id } = room();
+    const covered = cover(layout, 7, 5, 2, 6); // a wall of furniture splits the room: 2 columns left, 6 right
+    const s = labelSpot(layout, id, covered, 5, 9.5, 7.5);
+    expect(covered.has(Math.round(s.y) * layout.width + Math.round(s.x))).toBe(false);
+    expect(s.x).toBeGreaterThan(9);
+  });
+  it('goes along the top edge when the floor is covered', () => {
+    const { layout, id } = room();
+    const s = labelSpot(layout, id, cover(layout, 5, 5, 10, 6), 5, 9.5, 7.5);
+    expect(s.y).toBe(5);
+    expect(s.x).toBeCloseTo(9.5, 6);
+  });
+  it('is computed on the design (rooms carry their spot)', () => {
+    const { layout, id } = room();
+    const d = designFromLayout(layout, 't');
+    expect(d.rooms[id]).toMatchObject({ lx: expect.any(Number), ly: expect.any(Number) });
   });
 });

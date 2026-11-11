@@ -79,7 +79,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
     ctx.lineWidth = 3;
     for (const r of d.rooms) {
       if (!r.name || r.tiles < 10) continue;
-      const px = ox + (r.cx + 0.5) * s, py = oy + (r.cy + 0.5) * s;
+      const px = ox + (r.lx + 0.5) * s, py = oy + (r.ly + 0.5) * s;
       if (px < -80 || py < -20 || px > box.w + 80 || py > box.h + 20) continue;
       ctx.strokeStyle = '#000';
       ctx.strokeText(r.name, px, py);

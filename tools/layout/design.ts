@@ -29,6 +29,9 @@ export interface DesignRoom {
   /** Mean tile centre, where the name sits. */
   cx: number;
   cy: number;
+  /** Where the name is drawn (tile centre): free floor, never under a module; else the room's top edge. */
+  lx: number;
+  ly: number;
 }
 export interface Design {
   label: string;
@@ -47,6 +50,55 @@ export interface Design {
 /** What the pointer or a list names: a room or a module. */
 export type Target = { kind: 'room'; id: number } | { kind: 'module'; index: number };
 
+/**
+ * Where a room's name goes: the largest connected patch of the room's floor that no module covers, and in it the free stretch
+ * of a row (at least the name's width in tiles when there is one) nearest the room's middle. A room with no free floor is
+ * named along its top edge. `covered`: tile indices under modules. Pure; computed once per layout change.
+ */
+export function labelSpot(l: Layout, id: number, covered: ReadonlySet<number>, chars: number, cx: number, cy: number): { x: number; y: number } {
+  const { width: w } = l;
+  const floor = (i: number): boolean => l.roomOf[i] === id && l.cells[Math.floor(i / w)]?.[i % w] === '_';
+  const free = new Set<number>();
+  let top = Infinity;
+  const topXs: number[] = [];
+  for (let i = 0; i < l.roomOf.length; i++) {
+    if (!floor(i)) continue;
+    const y = Math.floor(i / w);
+    if (y < top) { top = y; topXs.length = 0; }
+    if (y === top) topXs.push(i % w);
+    if (!covered.has(i)) free.add(i);
+  }
+  if (!free.size) return { x: topXs.length ? topXs.reduce((a, b) => a + b, 0) / topXs.length : cx, y: top === Infinity ? cy : top };
+  // connected patches of free floor (4-neighbour); keep the largest
+  const seen = new Set<number>();
+  let best: number[] = [];
+  for (const start of free) {
+    if (seen.has(start)) continue;
+    const patch: number[] = [], stack = [start];
+    seen.add(start);
+    while (stack.length) {
+      const i = stack.pop() as number;
+      patch.push(i);
+      const x = i % w;
+      for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) if (free.has(j) && !seen.has(j)) { seen.add(j); stack.push(j); }
+    }
+    if (patch.length > best.length) best = patch;
+  }
+  const patch = new Set(best);
+  const need = Math.ceil(chars * 0.55);
+  let pick = { x: cx, y: cy }, score = [-1, Infinity];
+  for (const i of best) {
+    const x = i % w, y = Math.floor(i / w);
+    if (patch.has(i - 1)) continue; // runs are scored from their left end
+    let run = 0;
+    while (patch.has(i + run)) run++;
+    const mid = x + (run - 1) / 2;
+    const fit = Math.min(run, need), dist = Math.hypot(mid - cx, y - cy);
+    if (fit > score[0] || (fit === score[0] && dist < (score[1] as number))) { score = [fit, dist]; pick = { x: mid, y }; }
+  }
+  return pick;
+}
+
 /** A design from a layout: the template with the derived hull, the rooms read off it. */
 export function designFromLayout(l: Layout, label: string): Design {
   const template = toTemplate(l);
@@ -57,9 +109,14 @@ export function designFromLayout(l: Layout, label: string): Design {
     const m = sums[roomOf[i] as number];
     if (m) { m[0] += i % width; m[1] += Math.floor(i / width); m[2]++; }
   }
+  const covered = new Set<number>();
+  for (const m of l.modules) if (!isLamp(defs[m.def] as ModuleDef | undefined)) for (const [x, y] of moduleTiles(m)) covered.add(y * width + x);
   const rooms: DesignRoom[] = l.rooms.map((rm, id) => {
     const [sx, sy, n] = sums[id] as [number, number, number];
-    return { id, role: rm.role, name: NAMES[rm.role] ?? '', tiles: n, cx: n ? sx / n : 0, cy: n ? sy / n : 0 };
+    const name = NAMES[rm.role] ?? '';
+    const cx = n ? sx / n : 0, cy = n ? sy / n : 0;
+    const spot = name && n >= 10 ? labelSpot(l, id, covered, name.length, cx, cy) : { x: cx, y: cy };
+    return { id, role: rm.role, name, tiles: n, cx, cy, lx: spot.x, ly: spot.y };
   });
   const modules: DesignModule[] = l.modules.map((m, index) => {
     const def = defs[m.def] as ModuleDef | undefined;
