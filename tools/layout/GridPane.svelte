@@ -9,7 +9,7 @@
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
 		| { k: 'pan'; x: number; y: number }
-		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '.' }
+		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
 		| { k: 'move'; index: number; grab: Tile; x: number; y: number; moved: boolean };
@@ -113,8 +113,10 @@
 		if (PAINT[tool]) {
 			const ch = PAINT[tool] as '_' | '#' | 'D' | '.';
 			lab.begin();
-			lab.step((cur) => paint(cur, [tile], ch, room()));
-			mode = { k: 'paint', last: tile, ch };
+			// A stroke is painted from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
+			const first = room();
+			lab.step(() => paint(l, [tile], ch, first));
+			mode = { k: 'paint', last: tile, ch, base: l, tiles: [tile], room: first };
 		} else if (tool === 'room') {
 			mode = { k: 'room', a: tile };
 			lab.drag = { x: tile[0], y: tile[1], w: 1, h: 1, ok: false };
@@ -145,7 +147,8 @@
 			const ch = m.ch;
 			const tiles = line(m.last, tile);
 			m.last = tile;
-			lab.step((cur) => paint(cur, tiles, ch, room()));
+			m.tiles.push(...tiles);
+			lab.step(() => paint(m.base, m.tiles, ch, m.room));
 			return;
 		}
 		if (m?.k === 'room') {

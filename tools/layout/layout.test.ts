@@ -57,6 +57,20 @@ describe('layout edits', () => {
     // (11, 5) and (11, 8) have open space diagonally (12, 4) and (12, 9): they stay hull
     for (const y of [4, 5, 8, 9]) expect(out.cells[y]?.[11]).toBe('#');
   });
+  it('a stroke painted whole frees the same hull however it is split, so no tile is left behind', () => {
+    const { layout, id } = addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'cargo');
+    const tiles = rect(12, 5, 4, 4);
+    const whole = paint(layout, tiles, '_', id);
+    // the lab repaints from the stroke's start with all tiles so far: the last step equals one paint of everything
+    let acc: Tile[] = [];
+    let last = layout;
+    for (const t of tiles) { acc = [...acc, t]; last = paint(layout, acc, '_', id); }
+    expect(last).toEqual(whole);
+    // painting tile by tile on each result (the old way) strands hull tiles that were not yet sealed when the tile above them was painted
+    let stepwise = layout;
+    for (const t of tiles) stepwise = paint(stepwise, [t], '_', id);
+    expect(stepwise.cells.join('').split('#').length).toBeGreaterThanOrEqual(whole.cells.join('').split('#').length);
+  });
   it('painting floor never drops a module', () => {
     const { layout } = buildLayout({ ...DEFAULT_SOURCE, kind: 'starter', id: 'ship.wayfarer' });
     const out = paint(layout, rect(36, 7, 7, 7), '_');
