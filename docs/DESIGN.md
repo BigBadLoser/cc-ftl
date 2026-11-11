@@ -1135,7 +1135,7 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - Let them go: the ship becomes a derelict and the crew are gone.
   - Take prisoners: the ship becomes a prize, and its surrendered crew stay put as prisoners until moved.
   - Zealots never surrender, so they never offer this choice.
-- **Holding prisoners:** they go into **cryo pods** (`module.cryo_pod`, already in the game), not a brig. Frozen, they need no food and can't
+- **Holding prisoners:** they go into **cryo pods** (`module.cryo_pod`; only its sprite exists so far, no module def or system, see docs/catalog/modules.md), not a brig. Frozen, they need no food and can't
   escape. If a pod loses power, its prisoner thaws and turns hostile inside your ship. A shuttle or the boarding party
   escorts prisoners over.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
