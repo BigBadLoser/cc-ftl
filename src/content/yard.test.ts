@@ -420,6 +420,14 @@ describe('shipyard: joining on (#385)', () => {
     expect(openInnerWalls(sim, order)).toBeGreaterThan(0);
     expect(grid.get('struct', old.x, old.y)).toBe(Struct.Floor);
     expect(order.opens).toContainEqual(old);
+    // two adjacent old walls opened in one sweep: the section is delivered with the joined room's air, not a sample diluted by the vacuum walls
+    const next = { x: old.x + 1, y: old.y };
+    expect(order.opens).toContainEqual(next);
+    expect(order.air!.o2).toBeGreaterThan(NORMAL_O2 - 1);
+    for (const t of [...order.floor, old, next]) expect(grid.get('o2', t.x, t.y), `${t.x},${t.y}`).toBeGreaterThan(NORMAL_O2 - 1);
+    const room = { x: old.x, y: old.y + 1 };
+    expect(grid.get('struct', room.x, room.y)).toBe(Struct.Floor);
+    expect(grid.get('o2', room.x, room.y)).toBeGreaterThan(NORMAL_O2 - 1);
   });
 
   it('pressurises a finished section even when no old wall opens for it (#429)', () => {

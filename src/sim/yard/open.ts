@@ -139,6 +139,7 @@ export function openInnerWalls(sim: Sim, o: YardOrder): number {
   for (;;) {
     const ready = innerWalls(sim, o).filter((t) => !breaches(sim, o, t, patch));
     if (!ready.length) break;
+    o.air ??= joinedAir(sim, o, ready); // sampled before the walls turn: a wall just opened holds no air and must not count as ship floor
     for (const t of ready) {
       writeStruct(grid, t.x, t.y, Struct.Floor);
       patch.add(key(t));
