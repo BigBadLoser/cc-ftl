@@ -50,6 +50,14 @@ describe('change list', () => {
     const wider = resizeRoom(l, hangar, { x: 10, y: 12, w: 10, h: 6 });
     expect(describeChanges(l, wider)[0]).toBe(`Resized room ${hangar} hangar from 8 x 6 at (10,12) to 10 x 6 at (10,12)`);
   });
+  it('a drawn room is one line: its floor and wall ring are not listed again', () => {
+    const l = blankLayout(40, 30);
+    const made = addRoom(l, { x: 10, y: 8, w: 5, h: 4 }, 'cabin');
+    expect(describeChanges(l, made.layout)).toEqual([`Added room ${made.id} cabin, 5x4 at (10,8)`]);
+    // edits beside the new room still read as tile lines
+    const more = paint(made.layout, rect(20, 8, 2, 2), '_');
+    expect(describeChanges(l, more)).toHaveLength(2);
+  });
   it('adds an unnamed distance as plain coordinates when no room is near', () => {
     const l = blankLayout(60, 40);
     expect(describeChanges(l, paint(l, rect(30, 30, 2, 2), '_'))).toEqual(['Added 4 floor tiles around (31,31)']);

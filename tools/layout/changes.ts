@@ -76,11 +76,14 @@ function sentence(kind: Kind, tiles: [number, number][], where: string): string 
 
 /** Tile edits as regions (8-connected tiles that changed the same way), in reading order. */
 function tileChanges(a: Layout, b: Layout, rooms: readonly RoomBox[]): string[] {
+  // a room drawn in the edit is one line of its own: its floor and the wall ring round it are not listed again
+  const added = rooms.filter((r) => r.id >= a.rooms.length || !boxes(a).some((x) => x.id === r.id));
+  const inAdded = (x: number, y: number): boolean => added.some((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
   const byKind = new Map<Kind, Set<number>>();
   for (let y = 0; y < Math.min(a.height, b.height); y++) {
     for (let x = 0; x < Math.min(a.width, b.width); x++) {
       const k = kindOf(a.cells[y]?.[x] ?? '.', b.cells[y]?.[x] ?? '.');
-      if (!k) continue;
+      if (!k || inAdded(x, y)) continue;
       if (!byKind.has(k)) byKind.set(k, new Set());
       (byKind.get(k) as Set<number>).add(y * b.width + x);
     }
@@ -156,7 +159,7 @@ function roomChanges(a: Layout, b: Layout): string[] {
     const ra = a.rooms[id], rb = b.rooms[id];
     const ba = ra ? roomRect(a, id) : null, bb = rb ? roomRect(b, id) : null;
     if (ra && rb && ra.role !== rb.role && bb) out.push(`Retyped room ${id} ${roleName(ra.role)} → ${roleName(rb.role)}`);
-    if (!ba && bb && rb) out.push(`Added room ${id} (${roleName(rb.role)}, ${bb.w} x ${bb.h}) at (${bb.x},${bb.y})`);
+    if (!ba && bb && rb) out.push(`Added room ${id} ${roleName(rb.role)}, ${bb.w}x${bb.h} at (${bb.x},${bb.y})`);
     else if (ba && !bb && ra) out.push(`Removed room ${id} (${roleName(ra.role)})`);
     else if (ba && bb && rb && (ba.w !== bb.w || ba.h !== bb.h || ba.x !== bb.x || ba.y !== bb.y)) {
       out.push(`Resized room ${id} ${roleName(rb.role)} from ${ba.w} x ${ba.h} at (${ba.x},${ba.y}) to ${bb.w} x ${bb.h} at (${bb.x},${bb.y})`);

@@ -39,7 +39,7 @@ export const DEFAULT_DOCK: DockState = {
     palette: { place: 'left', collapsed: false, rect: { x: 16, y: 16, w: 260, h: 420 } },
     layers: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 260, h: 420 } },
     inspector: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 280, h: 420 } },
-    notes: { place: 'right', collapsed: true, rect: { x: 16, y: 16, w: 280, h: 300 } },
+    notes: { place: 'right', collapsed: false, rect: { x: 16, y: 16, w: 280, h: 300 } },
     changes: { place: 'right', collapsed: true, rect: { x: 16, y: 16, w: 320, h: 300 } },
     preview: { place: 'bottom', collapsed: false, rect: { x: 560, y: 380, w: 520, h: 300 } },
   },

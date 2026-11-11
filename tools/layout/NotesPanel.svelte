@@ -2,14 +2,16 @@
 	import Trash from '@lucide/svelte/icons/trash-2';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import { lab } from './lab.svelte';
 	import { describeAnchor } from './pins';
 </script>
 
 <ScrollArea class="size-full">
-	<div class="flex flex-col gap-1 p-3">
-		{#each lab.pins as p (p.id)}
+	<div class="flex flex-col p-3">
+		{#each lab.pins as p, i (p.id)}
+			{#if i > 0}<Separator class="my-1" />{/if}
 			<div class="flex items-start gap-1 rounded-md px-1.5 py-1 hover:bg-muted {lab.openPin === p.id ? 'bg-muted' : ''}">
 				<button class="flex min-w-0 flex-1 flex-col gap-0.5 text-left" onclick={() => lab.focusPin(p.id)}>
 					<span class="flex items-center gap-1.5 text-xs">
