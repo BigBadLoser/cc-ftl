@@ -8,6 +8,10 @@
    "image": "sprites/airlock.png",
    "glow": "sprites/airlock.glow.png"
   },
+  "arcade_cabinet": {
+   "image": "sprites/arcade_cabinet.png",
+   "glow": "sprites/arcade_cabinet.glow.png"
+  },
   "backdrop": {
    "image": "sprites/backdrop.png",
    "glow": "sprites/backdrop.glow.png"
@@ -4630,6 +4634,10 @@
   "galley": {
    "image": "sprites/galley.png",
    "glow": "sprites/galley.glow.png"
+  },
+  "gametable_module": {
+   "image": "sprites/gametable_module.png",
+   "glow": "sprites/gametable_module.glow.png"
   },
   "hazards": {
    "image": "sprites/hazards.png",
@@ -63843,6 +63851,629 @@
     1
    ]
   },
+  "module.arcade": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1057,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1101,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 529,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active.f1": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 573,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active.f2": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 617,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active.f3": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 661,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active.f4": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 705,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.active.f5": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 749,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 24,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r0.unpowered": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1145,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.arcade.r1": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1189,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active.f1": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 45,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active.f2": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 89,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active.f3": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 133,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active.f4": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 177,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.active.f5": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 221,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 24,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r1.unpowered": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1233,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 24,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.arcade.r2": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1277,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 19,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 265,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active.f1": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 309,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active.f2": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 353,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active.f3": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 397,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active.f4": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 441,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.active.f5": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 485,
+    "y": 1,
+    "w": 43,
+    "h": 90
+   },
+   "anchor": {
+    "x": 19,
+    "y": 80
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r2.unpowered": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1321,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 19,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.arcade.r3": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1365,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 19,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 793,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active.f1": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 837,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active.f2": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 881,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active.f3": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 925,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active.f4": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 969,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.active.f5": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1013,
+    "y": 1,
+    "w": 43,
+    "h": 87
+   },
+   "anchor": {
+    "x": 19,
+    "y": 77
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.arcade.r3.unpowered": {
+   "kind": "static",
+   "sheet": "arcade_cabinet",
+   "frame": {
+    "x": 1409,
+    "y": 1,
+    "w": 43,
+    "h": 51
+   },
+   "anchor": {
+    "x": 19,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "module.battery": {
    "kind": "static",
    "sheet": "battery",
@@ -68482,6 +69113,2145 @@
    "footprint": [
     1,
     2
+   ]
+  },
+  "module.gametable": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 265,
+    "y": 99,
+    "w": 120,
+    "h": 55
+   },
+   "anchor": {
+    "x": 76,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2444,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2542,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2640,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2738,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2836,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2934,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3032,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3130,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3228,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r0.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3326,
+    "y": 99,
+    "w": 97,
+    "h": 28
+   },
+   "anchor": {
+    "x": 72,
+    "y": 28
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.front.r1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3437,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3481,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3525,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3569,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3613,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3657,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3701,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3745,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3789,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r1.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3833,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.front.r2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1168,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1266,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1364,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1462,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1560,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1658,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1756,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1854,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1952,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r2.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2050,
+    "y": 99,
+    "w": 97,
+    "h": 29
+   },
+   "anchor": {
+    "x": 72,
+    "y": 29
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.front.r3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3877,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3921,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3965,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 4009,
+    "y": 1,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 45,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 89,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 133,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 177,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.front.r3.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 221,
+    "y": 99,
+    "w": 43,
+    "h": 62
+   },
+   "anchor": {
+    "x": 2,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.holo.r0.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3424,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3428,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3432,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3436,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3440,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3444,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3448,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r0.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3452,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 908,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 945,
+    "y": 99,
+    "w": 37,
+    "h": 30
+   },
+   "anchor": {
+    "x": 9,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 983,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1020,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1057,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1094,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 870,
+    "y": 99,
+    "w": 37,
+    "h": 31
+   },
+   "anchor": {
+    "x": 9,
+    "y": 64
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r1.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1131,
+    "y": 99,
+    "w": 36,
+    "h": 30
+   },
+   "anchor": {
+    "x": 8,
+    "y": 63
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3456,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3460,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3464,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3468,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3472,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3476,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3480,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r2.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3484,
+    "y": 99,
+    "w": 3,
+    "h": 8
+   },
+   "anchor": {
+    "x": -10,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2148,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2185,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2222,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2259,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2296,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2333,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2370,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.holo.r3.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2407,
+    "y": 99,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 8,
+    "y": 62
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 386,
+    "y": 99,
+    "w": 120,
+    "h": 55
+   },
+   "anchor": {
+    "x": 76,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2469,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2590,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2711,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2832,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2953,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3074,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3195,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 3316,
+    "y": 1,
+    "w": 120,
+    "h": 80
+   },
+   "anchor": {
+    "x": 76,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r0.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 507,
+    "y": 99,
+    "w": 120,
+    "h": 55
+   },
+   "anchor": {
+    "x": 76,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.r1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1201,
+    "y": 1,
+    "w": 74,
+    "h": 81
+   },
+   "anchor": {
+    "x": 21,
+    "y": 61
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 601,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 676,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 751,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 826,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 901,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 976,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1051,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1126,
+    "y": 1,
+    "w": 74,
+    "h": 96
+   },
+   "anchor": {
+    "x": 21,
+    "y": 76
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r1.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1276,
+    "y": 1,
+    "w": 74,
+    "h": 81
+   },
+   "anchor": {
+    "x": 21,
+    "y": 61
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.r2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 628,
+    "y": 99,
+    "w": 120,
+    "h": 55
+   },
+   "anchor": {
+    "x": 76,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1351,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1472,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1593,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1714,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1835,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1956,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2077,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2198,
+    "y": 1,
+    "w": 120,
+    "h": 81
+   },
+   "anchor": {
+    "x": 76,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r2.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 749,
+    "y": 99,
+    "w": 120,
+    "h": 55
+   },
+   "anchor": {
+    "x": 76,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.gametable.r3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2319,
+    "y": 1,
+    "w": 74,
+    "h": 81
+   },
+   "anchor": {
+    "x": 21,
+    "y": 61
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f1": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 76,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f2": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 151,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f3": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 226,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f4": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 301,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f5": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 376,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f6": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 451,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.active.f7": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 526,
+    "y": 1,
+    "w": 74,
+    "h": 97
+   },
+   "anchor": {
+    "x": 21,
+    "y": 77
+   },
+   "footprint": [
+    2,
+    1
+   ],
+   "glow": true
+  },
+  "module.gametable.r3.unpowered": {
+   "kind": "static",
+   "sheet": "gametable_module",
+   "frame": {
+    "x": 2394,
+    "y": 1,
+    "w": 74,
+    "h": 81
+   },
+   "anchor": {
+    "x": 21,
+    "y": 61
+   },
+   "footprint": [
+    2,
+    1
    ]
   },
   "module.helm.front.r1": {
