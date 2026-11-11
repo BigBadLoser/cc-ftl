@@ -86,7 +86,7 @@ export function labelSpot(l: Layout, id: number, covered: ReadonlySet<number>, c
   }
   const patch = new Set(best);
   const need = Math.ceil(chars * 0.55);
-  let pick = { x: cx, y: cy }, score = [-1, Infinity];
+  let pick = { x: cx, y: cy }, bestFit = -1, bestDist = Infinity;
   for (const i of best) {
     const x = i % w, y = Math.floor(i / w);
     if (patch.has(i - 1)) continue; // runs are scored from their left end
@@ -94,7 +94,7 @@ export function labelSpot(l: Layout, id: number, covered: ReadonlySet<number>, c
     while (patch.has(i + run)) run++;
     const mid = x + (run - 1) / 2;
     const fit = Math.min(run, need), dist = Math.hypot(mid - cx, y - cy);
-    if (fit > score[0] || (fit === score[0] && dist < (score[1] as number))) { score = [fit, dist]; pick = { x: mid, y }; }
+    if (fit > bestFit || (fit === bestFit && dist < bestDist)) { bestFit = fit; bestDist = dist; pick = { x: mid, y }; }
   }
   return pick;
 }
