@@ -307,16 +307,21 @@ function splitCourt(cells: number[], S: number): { parts: number[][]; walls: num
     const hi = alongX ? x1 : y1;
     const pos = (k: number): number => (alongX ? k % S : Math.floor(k / S));
     let best: { line: number[]; rest: number[][]; spread: number } | undefined;
+    // A shape no line can cut into two real halls (a long snake, a ring) keeps the best cut that still splits it.
+    let any: { line: number[]; rest: number[][]; spread: number } | undefined;
     for (let c = lo + Math.floor((hi - lo) / 4); c <= hi - Math.floor((hi - lo) / 4); c++) {
       const line = part.filter((k) => pos(k) === c);
       if (line.length === 0) continue;
       const onLine = new Set(line);
       const rest = pieces(part.filter((k) => !onLine.has(k)));
       const sizes = rest.map((r) => r.length);
-      if (sizes.length < 2 || sizes.some((s) => s < COURT_MIN_PART)) continue;
+      if (sizes.length < 2) continue;
       const spread = Math.max(...sizes) - Math.min(...sizes);
+      if (!any || spread < any.spread) any = { line, rest, spread };
+      if (sizes.some((s) => s < COURT_MIN_PART)) continue;
       if (!best || spread < best.spread) best = { line, rest, spread };
     }
+    best = best ?? any;
     if (!best) break;
     walls.push(...best.line);
     parts.splice(i, 1, ...best.rest);
