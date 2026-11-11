@@ -180,7 +180,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       particles.update(dt);
       jobView.update();
       crewView.update();
-      roof.update(gate, o.idle);
+      roof.update(gate, o.idle, emergency);
       turretView.update();
       damage.update();
       marks.update(marksOn, targeted, roofed ? ROOF_H : 0);
