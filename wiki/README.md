@@ -62,4 +62,5 @@ changed panel fails the check. No sim code reaches the browser. The game's theme
 writes `static/guides/<name>.webp`, plus callout positions for `<GuideShot>` in `src/data/guide-shots/`. Re-run it
 after art or UI changes and commit the results. It uses the GPU; on a machine without one (a cloud container) set
 `CAPTURE_SOFTWARE_GL=1`, which is much slower. It prints each shot's progress; `npm run capture -- hud` runs only shots whose name contains `hud`. The
-home page's ship and backdrop come from the same recipes.
+home page's ship comes from the same recipes; its backdrop (`static/guides/home/backdrop.webp`) is a fixed image, shot
+once from open space and kept.

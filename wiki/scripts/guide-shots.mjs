@@ -10,13 +10,6 @@
 //   quality   lossy WebP quality (default lossless)
 // ?starter=wayfarer picks the Wayfarer (it has a shuttle). A fixed ?seed keeps the crew names, ship and start node the same between runs.
 export const shots = [
-  // The home page hero's background: the start node's own backdrop (stars, nebula, its planet), away from the ships.
-  {
-    name: 'home/backdrop',
-    query: '?seed=3&starter=wayfarer',
-    steps: async (h) => { await h.key('Space'); await h.hideHud(); await h.page.evaluate(() => window.__cc.focus(20, 110)); await h.wait(800); },
-    quality: 82,
-  },
   {
     name: 'first-hour/hud',
     query: '?seed=3&starter=wayfarer',
