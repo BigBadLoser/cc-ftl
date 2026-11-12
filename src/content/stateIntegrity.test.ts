@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
+import { VehicleC, CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
 import { stepDistress } from '../sim/galaxy/stranded';
-import { refund } from '../sim/yard/money';
+import { payStation, refund, retryRefund } from '../sim/yard/money';
 import type { YardOrder } from '../sim/yard/types';
 import { playerStock } from '../sim/story/world';
 import { withHeld } from '../sim/items/held';
 import { spillItems } from '../sim/items/stacks';
 import { shipIdOf } from '../sim/regions';
 import { giveItems } from '../sim/story/effects';
+import { contrabandAboard } from '../sim/blackmarket/scan';
 import { content } from '.';
 
 /** Issue #160: a second representation of goods (grid ids, escrow, stock) must follow the entity. */
@@ -60,12 +61,18 @@ describe('refunds and deliveries that need a floor', () => {
     expect(o.held.metal).toBe(0);
   });
 
-  it('a yard refund that finds no room anywhere keeps the metal held and reports only what went back', () => {
+  it('a yard refund that finds no room is the player\'s pending metal: never paid to the station, set down once there is room (#160)', () => {
     const sim = newGame(11, content);
-    for (const id of sim.world.query(ModuleC)) sim.world.destroyEntity(id);
-    const o = { ship: playerShip(sim), held: { credits: 0, metal: 10 } } as YardOrder;
+    const mods = sim.world.query(ModuleC).map((id) => ({ id, c: sim.world.get(id, ModuleC)! }));
+    for (const m of mods) sim.world.destroyEntity(m.id);
+    const o = { ship: playerShip(sim), station: 0, held: { credits: 0, metal: 10 } } as YardOrder;
     expect(refund(sim, o, { credits: 0, metal: 10 }).metal).toBe(0);
-    expect(o.held.metal).toBe(10);
+    expect(o.held.metal).toBe(0);
+    expect(o.pending).toBe(10);
+    payStation(sim, o); // closing the order: the station is paid the escrow only
+    expect(o.pending).toBe(10);
+    retryRefund(sim, o); // still no room
+    expect(o.pending).toBe(10);
   });
 
   it('the distress tug charges only for the fuel it could set down', () => {
@@ -77,5 +84,16 @@ describe('refunds and deliveries that need a floor', () => {
     stepDistress(sim, 1);
     expect(sim.trade.credits).toBe(100000);
     expect(sim.story.reputation['traders']).toBe(rep); // nothing owed for fuel that never came
+  });
+});
+
+describe('what a scan sees', () => {
+  it('shuttle holds are not scanned: contraband in a stowed shuttle is not found (rule, #160)', () => {
+    const sim = newGame(11, content);
+    const shuttle = sim.world.query(VehicleC)[0]!;
+    sim.world.get(shuttle, VehicleC)!.cargo.push({ item: 'item.stolen_goods', count: 5 });
+    expect(contrabandAboard(sim)).toEqual([]);
+    giveItems(sim, 'item.stolen_goods', 2); // the same goods in the hold of the ship itself are found
+    expect(contrabandAboard(sim)).toEqual([{ item: 'item.stolen_goods', count: 2 }]);
   });
 });

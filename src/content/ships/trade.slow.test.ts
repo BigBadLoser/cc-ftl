@@ -6,6 +6,7 @@ import {
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { cargoTake } from '../../sim/vehicles/cargo';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
@@ -228,6 +229,44 @@ describe('trade, end to end', () => {
     expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
     expect(sim.trade.credits).toBe(credits);
     expect((t.stock.find((s) => s.item === 'item.metal')?.count ?? 0) + physical('item.metal') - physicalBefore).toBe(metalStock);
+  });
+
+  it('a shuttle lost on the way back leaves unrelated shelf stock of the bought item alone (#160)', () => {
+    const { sim, station } = atStation();
+    const physical = (item: string): number =>
+      sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+    const shelf = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station)!;
+    storageAdd(sim, shelf, 'item.metal', 20); // the station's own, unrelated to the deal
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'back'; i++) run(sim, 1);
+    expect(deal().phase).toBe('back');
+    const shelfAfter = physical('item.metal');
+    destroyVehicle(sim, deal().vehicle);
+    expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
+    expect(physical('item.metal')).toBe(shelfAfter);
+  });
+
+  it('a shuttle lost at the station after the crew hauled the given goods in: they go back to the player, not kept by the station (#160)', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const physical = (item: string): number =>
+      sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+    const mine = stored(sim, 'item.electronics');
+    const theirs = physical('item.electronics');
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    expect(deal().phase).toBe('stationWork');
+    // The station crew carry the given goods from the hold into station storage (done by hand here: the haul finishes and delivers in one tick).
+    const shelf = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station)!;
+    expect(cargoTake(sim, deal().vehicle, 'item.electronics', 10)).toBe(10);
+    storageAdd(sim, shelf, 'item.electronics', 10);
+    run(sim, 2); // the ledger notes the emptied hold
+    expect(physical('item.electronics')).toBeGreaterThan(theirs);
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 3);
+    expect(deal().phase).toBe('failed');
+    expect(physical('item.electronics')).toBe(theirs);
+    expect(stored(sim, 'item.electronics')).toBe(mine); // back aboard the player's ship, once
   });
 
   it('a trade run with no crew aboard completes end to end', () => {

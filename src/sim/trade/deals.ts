@@ -12,7 +12,8 @@ import { undock } from '../vehicles/lifecycle';
 import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
-import { storageTake } from '../items/storage';
+import { noteHelp } from '../galaxy/eventGrid';
+import { lostInHold, returnGiven, unstage } from './dockLedger';
 import { grant, revoke } from '../consent/guests';
 
 /**
@@ -149,6 +150,7 @@ export function settleDeal(sim: Sim, d: Deal): boolean {
   } else if (d.balance < 0 && !d.barter) addCredits(sim, d.held);
   const amount = d.barter ? 0 : d.balance;
   d.held = 0;
+  noteHelp(sim, d.ship);
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
   if (d.get.some((q) => q.item === FUEL_ITEM && q.count > 0)) bumpStat(sim, 'fuelBought');
   const next = d.trip?.rest[0];
@@ -186,26 +188,17 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
 }
 
 /**
- * Take the bought goods staged in station storage back out (stationDock.ts `stageGoods`): the deal is over, and they return to the trader's stock
- * (failDeal), so they must not stay on the shelves as well. Whatever the staging storage no longer holds is not counted twice.
- */
-export function unstage(sim: Sim, d: Deal): void {
-  if (!d.dock) return;
-  for (const s of d.dock.staged) storageTake(sim, s.storage, s.item, s.count);
-  d.dock.staged = [];
-}
-
-/**
  * End a deal that will not finish. The escrow goes back to the payer. Goods the trader set aside return to its stock unless
  * the shuttle already flew them (`lost`: shot down after the exchange; the payer is refunded but the goods are gone).
  */
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
   closeCourier(sim, d);
   unstage(sim, d);
+  returnGiven(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
-  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
+  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count - Math.min(l.count, lostInHold(sim, d, l.item)));
   touchMarket(sim, trader);
   d.held = 0;
   d.reason = reason;

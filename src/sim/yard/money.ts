@@ -3,6 +3,7 @@ import { storageCount, storageTake } from '../items/storage';
 import { StorageC } from '../items/components';
 import { ModuleC } from '../modules/components';
 import { shipIdOf } from '../regions';
+import { ShipC } from '../combat/components';
 import type { Sim } from '../sim';
 import { TraderC } from '../trade/types';
 import { addStock } from '../trade/deals';
@@ -30,13 +31,20 @@ export function returnMetal(sim: Sim, ship: number, n: number): number {
   return stowOrDrop(sim, ship, METAL, n);
 }
 
+/** Try again to set down metal that found no room (`pending`): any ship that has room by now takes it. Cheap to call; a no-op with nothing pending. */
+export function retryRefund(sim: Sim, o: YardOrder): void {
+  if (!o.pending || !sim.world.has(o.ship, ShipC)) return;
+  o.pending = returnMetal(sim, o.ship, o.pending) || undefined;
+}
+
 /** Give the unbuilt share of an order's price back to the player (credits, and the metal to the ship's storage). Returns what went back. */
 export function refund(sim: Sim, o: YardOrder, share: YardMoney): YardMoney {
   const credits = Math.min(o.held.credits, share.credits);
   const metal = Math.min(o.held.metal, share.metal);
   const homeless = metal > 0 ? returnMetal(sim, o.ship, metal) : 0;
   o.held.credits -= credits;
-  o.held.metal -= metal - homeless; // metal with nowhere to go stays held (never destroyed), and is not reported as returned
+  o.held.metal -= metal;
+  if (homeless > 0) o.pending = (o.pending ?? 0) + homeless; // no room aboard yet: still the player's, not the escrow the station is paid from
   addCredits(sim, credits);
   return { credits, metal: metal - homeless };
 }

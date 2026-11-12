@@ -12,7 +12,8 @@ import { cargoAdd, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
-import { addStock, touchMarket, unstage } from './deals';
+import { addStock, touchMarket } from './deals';
+import { noteHolds, unstage } from './dockLedger';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -60,6 +61,7 @@ export function stageGoods(sim: Sim, d: Deal): void {
  * goods from station storage into the shuttle. True when both directions are complete.
  */
 export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
+  noteHolds(sim, d);
   const res = reservations(sim);
   const stand = cargoTile(sim, d.vehicle);
   const giveLeft = d.give.some((l) => cargoOf(sim, d.vehicle, l.item) > 0 && !d.get.some((g) => g.item === l.item));
