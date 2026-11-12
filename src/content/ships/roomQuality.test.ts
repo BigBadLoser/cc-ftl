@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ModuleC, TaskC, CrewC, PositionC, PrioritiesC, homeShip, newGame, placementError, shipGrid, spawnModule, removeModule, shipRoomQuality, type ContentRegistry, type Sim } from '../../sim';
+import { ModuleC, PathC, TaskC, CrewC, PositionC, PrioritiesC, homeShip, newGame, placementError, shipGrid, spawnModule, removeModule, shipRoomQuality, type ContentRegistry, type Sim } from '../../sim';
 import { noteLeisure, noteMeal, noteSleep, moodFactors, ensureMood } from '../../sim/crew/mood';
 import { TraitsC } from '../../sim/crew/traits';
 import { standTiles } from '../../sim/ai/machines/leisureSpots';
@@ -221,6 +221,25 @@ describe('leisure spots', () => {
       expect(ensureMood(sim, player as number).relaxKey).not.toBe('playedGame');
     }
     expect(onBreak(sim, module)).toHaveLength(0);
+  });
+
+  it('a walk cut short of the game ends the break there: no game credited, the spot freed', () => {
+    const { sim, module } = withSpots('module.arcade');
+    let walker: number | undefined;
+    for (let i = 0; i < 2500 && walker === undefined; i++) {
+      sim.step();
+      walker = onBreak(sim, module).find((c) => sim.world.get(c, TaskC)!.state === 'Walk' && sim.world.get(c, PathC)!.steps.length > 1);
+    }
+    expect(walker).toBeDefined();
+    sim.world.get(walker as number, PathC)!.steps = []; // what movement does when the next tile turns unwalkable
+    const stand = standTiles(sim, module)[0]!;
+    for (let i = 0; i < 1500; i++) {
+      sim.step();
+      // Never relaxing at the game anywhere but on its stand tile (they may set off again and play properly later).
+      const t = sim.world.get(walker as number, TaskC);
+      const p = sim.world.get(walker as number, PositionC)!;
+      if (t?.machine === 'leisure' && t.bb.target === module && t.state === 'Relax') expect({ x: p.toX, y: p.toY }).toEqual(stand);
+    }
   });
 
   it('placement refuses a game whose stand tile is blocked, as it does a module whose access tile is', () => {

@@ -46,6 +46,12 @@ export function leisureTurn(sim: Sim, id: number, crew: Crew, pos: Position): bo
     }
     if (path.steps.length > 0 || !isSettled(pos)) return true; // still walking
     if (task.state === 'Walk') {
+      // The walk ended short of the spot (a wall or a build cut the path): no break there, and the spot is freed.
+      const at = origin(pos), goal = task.bb.tile;
+      if (goal && (at.x !== goal.x || at.y !== goal.y)) {
+        clearJoblessTask(sim, id);
+        return false;
+      }
       setState(sim, id, task, 'Relax');
       task.bb.deadline = sim.tick + Math.round(LEISURE_SEC * TICK_HZ);
       return true;
