@@ -4,6 +4,7 @@ import {
   CarriedC, CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 
+import { jobFits } from '../crew/jobFit';
 import { repairUrgency } from '../ai/jobRank';
 import { AllegianceC, PrisonerC, SurrenderedC } from '../fight/components';
 import { autoJobsSystem } from './autojobs';
@@ -202,12 +203,19 @@ describe('who gets rescued (crew/care.ts)', () => {
     return m;
   };
 
-  it('posts no rescue for a downed enemy who is still fighting', () => {
+  it('never has our crew rescue a downed enemy who is still fighting, but their own crew do', () => {
     const sim = make();
     const foe = crew(sim, 6, 3, all(0));
     down(sim, foe, 'hostile');
+    const medic = crew(sim, 8, 3, all(0));
+    sim.world.add(medic, AllegianceC, { faction: 'player' });
+    const mate = crew(sim, 9, 3, all(0));
+    sim.world.add(mate, AllegianceC, { faction: 'hostile' });
     autoJobsSystem(sim);
-    expect(rescueJobs(sim).size).toBe(0);
+    const job = sim.world.query(JobC).map((id) => sim.world.get(id, JobC)!).find((j) => j.kind === 'rescue' && j.target === foe)!;
+    expect(job).toBeDefined(); // posted for whoever's side may take it
+    expect(jobFits(sim, medic, sim.world.get(medic, PositionC)!, job)).toBe(false);
+    expect(jobFits(sim, mate, sim.world.get(mate, PositionC)!, job)).toBe(true);
   });
 
   it('rescues a downed prisoner, ranked below a downed crew member', () => {
@@ -223,5 +231,8 @@ describe('who gets rescued (crew/care.ts)', () => {
     expect([...jobs.keys()].sort()).toEqual([ours, prisoner, yielded].sort());
     expect(jobs.get(ours)).toBeGreaterThan(jobs.get(prisoner) as number);
     expect(jobs.get(ours)).toBeGreaterThan(jobs.get(yielded) as number);
+    const medic = crew(sim, 9, 3, all(0));
+    sim.world.add(medic, AllegianceC, { faction: 'player' });
+    for (const j of sim.world.query(JobC).map((id) => sim.world.get(id, JobC)!)) expect(jobFits(sim, medic, sim.world.get(medic, PositionC)!, j)).toBe(true);
   });
 });

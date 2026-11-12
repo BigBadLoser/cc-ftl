@@ -6,7 +6,6 @@ import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { bedsToTend } from '../crew/treatment';
-import { careRank } from '../crew/care';
 import { ModuleC } from '../modules/components';
 import { ShipC } from '../combat/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
@@ -40,7 +39,7 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall; never on a wreck;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
  *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
- *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists (not a still-fighting enemy; a prisoner ranks last, crew/care.ts);
+ *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists (a prisoner ranks last and a still-fighting enemy is never taken by the other side's crew: crew/care.ts);
  *  - tend (medical): one per medical bed with a patient in it, dropped when they leave it (crew/treatment.ts `bedsToTend`);
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
@@ -92,7 +91,7 @@ export function autoJobsSystem(sim: Sim): void {
   for (const id of sim.world.query(DownedC, PositionC)) {
     const downed = sim.world.get(id, DownedC);
     const pos = sim.world.get(id, PositionC);
-    if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`) || careRank(sim, id) === 'never') continue;
+    if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
     if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
   }
@@ -129,7 +128,7 @@ function keepRescue(sim: Sim, job: Job): boolean {
   const target = job.target ?? 0;
   const downed = sim.world.get(target, DownedC);
   const pos = sim.world.get(target, PositionC);
-  if (!downed || !pos || downed.stabilized || careRank(sim, target) === 'never') return false;
+  if (!downed || !pos || downed.stabilized) return false;
   const bed = sim.world.get(job.bed ?? 0, ModuleC);
   const spot = sim.world.has(target, CarriedC) && !bed ? rescueSpot(sim, target) : null;
   const goal = sim.world.has(target, CarriedC) && bed ? bedStandTile(sim.content.modules[bed.def] as ModuleDef, bed) : spot ?? pos;
