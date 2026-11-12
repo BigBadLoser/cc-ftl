@@ -158,5 +158,10 @@ def frame_n(n):
     return build
 
 
-DESIGNS = {f"hb{i:02d}": (frame_n(i), (3, 3)) for i in range(len(KEYS))}
+# in-betweens for the two steps that jumped most (the turn, the run-in): hx0-hx5, slotted into the GIF after hb15-hb20
+KEYS_X = [(0, -0.46, -22, ("cradle",)), (0, -0.46, -65, ("cradle",)), (0, -0.46, -108, ("cradle",)),
+          (0, -0.46, -130, ("in", 1.575)), (0, -0.46, -130, ("in", 1.365)), (0, -0.46, -130, ("in", 1.155))]
+KEYS += KEYS_X
+DESIGNS = {f"hb{i:02d}": (frame_n(i), (3, 3)) for i in range(24)}
+DESIGNS.update({f"hx{j}": (frame_n(24 + j), (3, 3)) for j in range(len(KEYS_X))})
 PIT = {v: r_hole for v in DESIGNS}
