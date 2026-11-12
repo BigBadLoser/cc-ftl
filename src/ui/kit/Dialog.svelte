@@ -36,7 +36,7 @@
       {#if bare}
         {@render children()}
       {:else}
-        <Frame {title} style="background: var(--card-bg, var(--panel-2)); --frame-bg: var(--card-bg, var(--panel-2)); max-height: calc(100dvh - 32px); padding: var(--sp-3) 0 0; box-shadow: var(--shadow-window);">
+        <Frame {title} style="background: var(--card-bg, var(--panel-2)); max-height: calc(100dvh - 32px); padding: var(--sp-3) 0 0; box-shadow: var(--shadow-window);">
           {#snippet right()}
             {#if dismissable}<Dialog.Close class="kit-card-x" aria-label="Close"><Icon name="close" size={12} /></Dialog.Close>{/if}
           {/snippet}

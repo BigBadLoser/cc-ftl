@@ -143,7 +143,7 @@
 {:else}
   <!-- The rail frame (kit/Frame): the title sits in a gap in the top line and drags the window; pin and close are tiles on the line. -->
   <Frame {title} class="fw {cls}" testid={testId} aria-label={title} data-pinned={pinned} bind:clientHeight={elH}
-    style="{style ? style + ';' : ''}--fw-z:{z};padding:var(--sp-3) 0 0;{bg ? 'background:var(--panel);--frame-bg:var(--panel);' : ''}{pinned ? '--edge:var(--cyan);' : ''}"
+    style="{style ? style + ';' : ''}--fw-z:{z};padding:var(--sp-3) 0 0;{bg ? 'background:var(--panel);' : ''}{pinned ? '--edge:var(--cyan);' : ''}"
     onpointerdown={(e: PointerEvent) => { if ((e.target as HTMLElement).closest('.rail')) begin(e, 'move'); }}
     onpointermove={drag} onpointerup={end} onpointercancel={end}
     ondblclick={(e: MouseEvent) => { if ((e.target as HTMLElement).closest('.rail') && !(e.target as HTMLElement).closest('button')) reset(); }}>

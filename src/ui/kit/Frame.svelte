@@ -82,8 +82,6 @@
     display: flex;
     align-items: center;
     pointer-events: none;
-    /* The panel colour (set as --frame-bg by a frame that has a background) reaches up to the top of the rail, behind the title and tiles. */
-    background: var(--frame-bg, transparent);
   }
   .rail > :global(*) {
     pointer-events: auto;
