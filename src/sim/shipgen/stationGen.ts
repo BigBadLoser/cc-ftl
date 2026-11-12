@@ -115,7 +115,7 @@ export function generateStation(
     const g = finishLayout(rng, f, id, seed, role, 'sections', r.plan, r.b, r.profile, r.A, r.profile, defs, n, {
       immobile: true, check: (t, d) => stationProblems(t, d, def.tiers[size].docks),
       // The wheel places its departments before its rooms: no role swaps after (docs/STATIONGEN2.md, step 2).
-      ...(r.profile.startsWith('stationWheel') ? { placed: true } : {}),
+      ...(r.profile.startsWith('stationWheel') || r.profile.startsWith('stationFlow') ? { placed: true } : {}),
       ...(architectureMode === 'compile' || architectureMode === 'ranked' ? { architectureConstruction: true } : {}),
     });
     g.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;

@@ -42,7 +42,7 @@ try {
       wallTiles: g.template.rows.join('').split('#').length - 1, rooms: count(g.rooms.map((r) => r.role)), modules: count((g.template.modules ?? []).map((x) => x.def)),
       wallBlocks: m.blocks.map((b) => [b.x, b.y]), under3Wide: m.slivers.length, coreShare: +m.coreShare.toFixed(3), hullCheck: m.hull[0] ?? 'ok', nativeProblems: g.problems, ms: g.ms,
     };
-    if (name.startsWith('legacy')) {
+    if (g.station) {
       const a = architectureOfGenerated(g).audit();
       Object.assign(rec, { audit: { rooms: a.totalRooms, directPublicRoomAccess: a.directPublicRoomAccess, independentPublicRoomAccess: a.independentPublicRoomAccess,
         publicNetworkComponents: a.publicNetworkComponents, roomHullFrontage: a.roomHullFrontage, exposedInteriorGapTiles: a.exposedInteriorGapTiles, issues: count(a.issues.map((i) => i.code)) } });
@@ -54,17 +54,20 @@ try {
     const [{ content }, { generateStation }] = await Promise.all([load('/src/content/index.ts'), load('/src/sim/shipgen/stationGen.ts')]);
     for (const entry of legacy.split(',')) {
       const parts = entry.split(':');
+      // A trailing grammar name (station.trading:1:stationFlow) forces that grammar instead of the legacy wheel.
+      const grammar = /^station[A-Z]/.test(parts[parts.length - 1]) ? parts.pop() : 'stationWheel';
       const kind = parts[0], size = parts.length > 2 ? parts[1] : 'station', seed = Number(parts[parts.length - 1]);
       const o = content.stations[kind];
-      const def = { ...o, tiers: { ...o.tiers, [size]: { ...o.tiers[size], grammars: [{ value: 'stationWheel', weight: 1 }] } } };
+      const def = { ...o, tiers: { ...o.tiers, [size]: { ...o.tiers[size], grammars: [{ value: grammar, weight: 1 }] } } };
       const t0 = performance.now();
       const g = generateStation(def, kind, size, seed, content.modules, true, 'off');
       g.ms = Math.round(performance.now() - t0);
       g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : deptOf({ role: rm.role })));
       g.targets = [];
+      const tag = grammar === 'stationWheel' ? 'legacy' : grammar.replace('station', '').toLowerCase();
       const short = `${kind.replace('station.', '')}-${size}-s${seed}`;
-      results.push({ name: `legacy-${short}`, title: `legacy ${kind} ${size} seed ${seed} (${g.topology.split(' ')[0]})`, g, legacy: true });
-      if (g.problems.length) console.log(`   ${short} native problems: ${g.problems.join('; ')}`);
+      results.push({ name: `${tag}-${short}`, title: `${tag} ${kind} ${size} seed ${seed}`, g, legacy: true });
+      console.log(`   ${tag}-${short}: ${g.topology}; attempts ${g.attempts}${g.problems.length ? `; PROBLEMS: ${g.problems.join('; ')}` : ''}${g.failures?.length ? `; earlier: ${g.failures.slice(0, 3).join(' | ')}` : ''}`);
     }
   }
   for (const m of MOCKS) if (!only.length || only.includes(m.name)) results.push({ name: m.name, title: m.title, g: m.make() });
@@ -76,7 +79,7 @@ try {
   results.forEach(({ name, title, g }, i) => {
     const blocks = wallBlocks(g);
     const hull = stationHullIntegrityProblems(g.template);
-    const problems = name.startsWith('legacy') ? [] : roomProblems(g);
+    const problems = g.targets.length === 0 && g.station ? [] : roomProblems(g);
     const cores = roomCores(g);
     const slivers = cores.filter((c) => Math.min(c.w, c.h) < 3);
     const off = cores.filter((c) => g.targets[c.room] && (c.floor / g.targets[c.room] < 0.6 || c.floor / g.targets[c.room] > 1.6));

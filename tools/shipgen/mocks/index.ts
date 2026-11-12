@@ -17,6 +17,8 @@ export const MOCKS: { name: string; title: string; make: () => GenResult }[] = [
   { name: 'lattice4', title: 'lattice 4 circle, one room a strip', make: () => latticeTest(4, 9) },
   { name: 'lattice3', title: 'lattice 3 circle, one room a strip', make: () => latticeTest(3, 12, 3) },
   { name: 'lattice3x16', title: 'lattice 3, 16-gon outline, one room a strip', make: () => latticeTest(3, 12, 3, 16) },
+  { name: 'lattice4s', title: 'lattice 4 circle, diagonal corner cells kept', make: () => latticeTest(4, 9, 2, 0, true) },
+  { name: 'lattice4b', title: 'lattice 4 circle, radius 9.5 cells, corner cells kept', make: () => latticeTest(4, 9.5, 2, 0, true) },
   { name: 'lattice3s', title: 'lattice 3 circle, diagonal stubs kept', make: () => latticeTest(3, 12, 3, 0, true) },
   { name: 'lattice3d2', title: 'lattice 3 circle, band 2 cells deep', make: () => latticeTest(3, 12, 2, 0, true) },
 ];

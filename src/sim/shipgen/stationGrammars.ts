@@ -6,6 +6,7 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
+import { flowWheel } from './stationFlowWheel';
 import { plannedWheel } from './stationWheel';
 import { tagged, warehoused } from './stationDepartments';
 import { dockSpec, MK1_REACTOR, type Reactor, type RoomSpec } from './plan';
@@ -205,6 +206,16 @@ function wheel(c: Ctx): boolean {
   return placeRoot(c, civil(w?.b ?? null, 'command', 'wheel station'), 'wheel');
 }
 
+/**
+ * The flow wheel (stationFlowWheel.ts): the kind's department flow laid out on a lattice ring, the ring's size following
+ * from the program. Experimental; no station kind uses it by default.
+ */
+function flow(c: Ctx): boolean {
+  const w = flowWheel(c.rng, office(c), !!c.fam.market);
+  if (w) c.parts.push(w.label);
+  return placeRoot(c, civil(w?.b ?? null, 'command', 'flow station'), 'flow wheel');
+}
+
 /** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
 const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sides])];
 
@@ -276,5 +287,5 @@ const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && c
 export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) => boolean> = {
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
   stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
-  stationAnnex: withCages(annexed), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
+  stationAnnex: withCages(annexed), stationFlow: withCages(flow), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
 };
