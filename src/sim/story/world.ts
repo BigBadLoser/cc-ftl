@@ -32,10 +32,16 @@ export function withPlayerAboard<T>(sim: Sim, fn: () => T): T {
   try {
     return fn();
   } finally {
+    const gone = new Set<number>();
     packet.entities = packet.entities.flatMap((e) => {
       const c = sim.world.detach(e.id);
-      return Object.keys(c).length ? [{ id: e.id, c }] : [];
+      if (Object.keys(c).length) return [{ id: e.id, c }];
+      gone.add(e.id);
+      return [];
     });
+    // An entity destroyed inside (a seized stack) must not leave its id on the packet's item grid: stamping would restore it.
+    const items = packet.tiles['item'];
+    if (gone.size && items) for (let i = 0; i < items.length; i++) if (gone.has(items[i] as number)) items[i] = 0;
     aboard.delete(sim);
   }
 }

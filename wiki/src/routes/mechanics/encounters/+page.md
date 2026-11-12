@@ -199,5 +199,4 @@ That's covered in [Contraband and inspections](../inspections/).
 ### Ships you cross
 
 Other ships on the lane sometimes hail or scan you in passing. If they are friendly, there's nothing to decide beyond
-**Acknowledge**. A crippled fleet can send a distress call. **Respond** drops you out to help, and helping raises
-standing.
+**Acknowledge**. A crippled fleet can send a distress call. **Respond** drops you out to help. You can leave again at any time without a penalty, but standing only rises if you actually helped: a deal with the damaged ship has to go through before you leave. Leave early and the ship stays adrift.
