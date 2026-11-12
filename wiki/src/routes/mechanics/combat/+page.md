@@ -8,7 +8,9 @@ order: 6
   import ComingLater from '../../../lib/ComingLater.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
   import UpgradePanel from '../../../../../src/ui/module/UpgradePanel.svelte'
-  import { panel, apiOf } from '../../../lib/panels'
+  import { panelOf, apiOf } from '../../../lib/panels'
+  import upgradeJson from '../../../data/generated/panels/upgrade.json'
+  const upgradePanel = panelOf('upgrade', upgradeJson)
 </script>
 
 Ship fights run in real time. Your guns charge, fire, and overheat your ship; the enemy's do the same. You win by wearing
@@ -195,7 +197,7 @@ behaves.
 the first back to cargo. The fitted upgrade shows as a small icon next to the weapon's name on your bar, and on the enemy card.
 
 <GamePanel title="Burst laser" width="340px" caption="The upgrade slot of a burst laser: a prism splitter fitted, four more upgrades in cargo.">
-  <UpgradePanel api={apiOf()} m={panel.upgrade.module} />
+  <UpgradePanel api={apiOf()} m={upgradePanel.module} />
 </GamePanel>
 
 ### General upgrades

@@ -9,7 +9,9 @@ order: 5
   import ComingLater from '../../../lib/ComingLater.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
   import ModuleOverview from '../../../../../src/ui/module/ModuleOverview.svelte'
-  import { panel, inertApi } from '../../../lib/panels'
+  import { panelOf, inertApi } from '../../../lib/panels'
+  import droneBayJson from '../../../data/generated/panels/droneBay.json'
+  const droneBayPanel = panelOf('droneBay', droneBayJson)
 </script>
 
 Drones are small flying machines that work for the ship on their own. You give them no orders: they pick their own
@@ -43,7 +45,7 @@ Research stations sometimes sell finished drones. A destroyed drone leaves a lit
 A drone bay has two pads. Select it to open the bay panel:
 
 <GamePanel title="Drone bay" width="340px" caption="The bay panel in the module inspector: one repair drone out sealing a hull breach, the other docked.">
-  <ModuleOverview api={inertApi} m={panel.droneBay.module} ftl={null} onPower={() => {}} />
+  <ModuleOverview api={inertApi} m={droneBayPanel.module} ftl={null} onPower={() => {}} />
 </GamePanel>
 
 - Each drone's name and what it is doing, with a charge meter.

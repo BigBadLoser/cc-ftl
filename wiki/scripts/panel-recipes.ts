@@ -10,6 +10,7 @@ import type { Readable } from '../../src/app/store.ts';
 import { droneScenarioCommands } from '../../src/app/droneScenario.ts';
 import { buildTrade } from '../../src/app/tradeSnapshot.ts';
 import { upgradeScenarioCommands } from '../../src/app/upgradeScenario.ts';
+import { buildStructCosts } from '../../src/app/logisticsSnapshot.ts';
 import { buildJobs } from '../../src/app/jobsSnapshot.ts';
 
 /** The bridge's data feeds by name, as values ("modules" -> UiModule[]). */
@@ -87,5 +88,11 @@ export const panels = {
     const sim = scene({ seed: 3, commands: upgradeScenarioCommands, secs: 2 });
     const { modules } = record(sim, ['modules']);
     return { module: must(modules.find((m) => m.def === 'module.burstLaser' && m.upgradeSlot?.fitted), 'upgraded burst laser') };
+  },
+  /** The build menu with a reactor picked: the Power tab, its cards with costs, the reactor marked PLACING. */
+  buildMenu: () => {
+    const sim = scene({ seed: 3 });
+    const feeds = record(sim, ['moduleDefs', 'stock', 'mining']);
+    return { ...feeds, structCosts: buildStructCosts(sim), tool: { tool: 'build', build: 'module', moduleDef: 'module.reactor', rot: 0 } as const };
   },
 };

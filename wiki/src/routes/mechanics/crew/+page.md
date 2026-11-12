@@ -8,7 +8,9 @@ order: 2
   import ComingLater from '../../../lib/ComingLater.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
   import SchedulePane from '../../../../../src/ui/SchedulePane.svelte'
-  import { panel, apiOf } from '../../../lib/panels'
+  import { panelOf, apiOf } from '../../../lib/panels'
+  import scheduleJson from '../../../data/generated/panels/schedule.json'
+  const schedulePanel = panelOf('schedule', scheduleJson)
 </script>
 
 Your crew do the work: they fly, shoot, build, cook, heal and fight. They also eat, sleep, get tired, get hurt and
@@ -160,7 +162,7 @@ Each crew member has a plan of 24 hourly blocks:
 Open the **Crew** window and pick the **Schedule** tab.
 
 <GamePanel title="Crew: Schedule" width="760px" caption="The Schedule tab with the starting crew on the Default and Late plans. The outlined column is the current hour.">
-  <SchedulePane api={apiOf({ snapshot: panel.schedule.snapshot })} crew={panel.schedule.crew} />
+  <SchedulePane api={apiOf({ snapshot: schedulePanel.snapshot })} crew={schedulePanel.crew} />
 </GamePanel>
 
 - Each row is a crew member, each cell an hour. The current hour is outlined.

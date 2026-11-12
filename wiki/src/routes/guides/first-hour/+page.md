@@ -10,7 +10,15 @@ order: 1
   import GamePanel from '../../../lib/GamePanel.svelte'
   import JobsBoard from '../../../../../src/ui/JobsBoard.svelte'
   import TradeView from '../../../../../src/ui/TradeView.svelte'
-  import { panel, apiOf } from '../../../lib/panels'
+  import BuildCatalog from '../../../../../src/ui/BuildCatalog.svelte'
+  import MenuNav from '../../../../../src/ui/menu/MenuNav.svelte'
+  import { panelOf, apiOf } from '../../../lib/panels'
+  import jobsBoardJson from '../../../data/generated/panels/jobsBoard.json'
+  import buildMenuJson from '../../../data/generated/panels/buildMenu.json'
+  import tradeJson from '../../../data/generated/panels/trade.json'
+  const jobsBoardPanel = panelOf('jobsBoard', jobsBoardJson)
+  const buildMenuPanel = panelOf('buildMenu', buildMenuJson)
+  const tradePanel = panelOf('trade', tradeJson)
 </script>
 
 You start with a small ship, a small crew, <Stat kind="tuning" id="trade.startCredits" /> credits and a trade station next door. This guide walks through
@@ -91,9 +99,14 @@ the goals for this game (it asks first). Finishing an act shows its reward for a
 
 ## Building
 
-<GuideShot name="first-hour/build" alt="Build mode with the Power tab of the build menu open" />
+<GamePanel title="Build menu" bare width="830px" caption="The build menu on its Power tab, with a reactor picked (marked PLACING). The tabs along the bottom are the categories.">
+  <!-- The menu is pinned to the bottom of the game window; a transformed box makes it pin to this one instead. -->
+  <div style="position: relative; transform: translateZ(0); height: 206px">
+    <BuildCatalog api={apiOf({ ...buildMenuPanel, placeHint: null })} />
+  </div>
+</GamePanel>
 
-Pick **Build** in the tools (bottom right) to open the build menu (1). Choose a tab, pick a module and move the mouse
+Pick **Build** in the tools (bottom right) to open the build menu. Choose a tab, pick a module and move the mouse
 over your ship to see where it will go; press **R** to rotate. Click to place it, and your crew bring the materials
 from storage and build it. Walls, floors and doors are dragged out instead.
 
@@ -108,7 +121,7 @@ fit a shuttle before you trade (the trade window says "No shuttle to carry it" u
 
 <GamePanel title="Trade" width="1010px" zoom={0.8} caption="The Trade window at a trade outpost, with a deal on the slip: three Metal bought, two Electronics sold.">
   <div style="height: 560px; display: flex; flex-direction: column">
-    <TradeView api={apiOf({ trade: panel.trade.trade })} partner={panel.trade.partner} start={panel.trade.draft} />
+    <TradeView api={apiOf({ trade: tradePanel.trade })} partner={tradePanel.partner} start={tradePanel.draft} />
   </div>
 </GamePanel>
 
@@ -142,7 +155,7 @@ Your starting crystals last a good while. Switching off modules you aren't using
 ## Your first contract
 
 <GamePanel title="Jobs" width="560px" caption="The Jobs window at the start station: one delivery taken, two more on offer.">
-  <JobsBoard api={apiOf({ jobs: panel.jobsBoard.jobs })} />
+  <JobsBoard api={apiOf({ jobs: jobsBoardPanel.jobs })} />
 </GamePanel>
 
 The station's job broker (a service button in the comms channel) and the **Jobs** screen list contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
@@ -176,7 +189,9 @@ Two things to watch as you grow:
 
 ## The menu and saving
 
-<GuideShot name="first-hour/menu" alt="The game menu: Resume, Save game, Load game, New game, Controls, Settings" width="300px" />
+<GamePanel title="Menu" width="300px" caption="The game menu.">
+  <MenuNav onPick={() => {}} />
+</GamePanel>
 
 **Esc** closes whatever is on top: a window, a tool, an aim, a selection. With nothing left to close it opens the game
 menu, which pauses the game.

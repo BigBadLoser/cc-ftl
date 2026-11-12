@@ -8,7 +8,11 @@ order: 10
   import GamePanel from '../../../lib/GamePanel.svelte'
   import JobsBoard from '../../../../../src/ui/JobsBoard.svelte'
   import TradeView from '../../../../../src/ui/TradeView.svelte'
-  import { panel, apiOf } from '../../../lib/panels'
+  import { panelOf, apiOf } from '../../../lib/panels'
+  import jobsBoardJson from '../../../data/generated/panels/jobsBoard.json'
+  import tradeJson from '../../../data/generated/panels/trade.json'
+  const jobsBoardPanel = panelOf('jobsBoard', jobsBoardJson)
+  const tradePanel = panelOf('trade', tradeJson)
 </script>
 
 Stations are where you sell what you've found, buy what you need, take work, hire crew and expand your hull. You deal with
@@ -63,7 +67,7 @@ your credits. A **BLACK MARKET** chip and a **TRUCE** chip appear on stations th
 
 <GamePanel title="Trade" width="1010px" zoom={0.8} caption="The Trade window at a trade outpost, with a deal on the slip: three Metal bought, two Electronics sold.">
   <div style="height: 560px; display: flex; flex-direction: column">
-    <TradeView api={apiOf({ trade: panel.trade.trade })} partner={panel.trade.partner} start={panel.trade.draft} />
+    <TradeView api={apiOf({ trade: tradePanel.trade })} partner={tradePanel.partner} start={tradePanel.draft} />
   </div>
 </GamePanel>
 
@@ -132,7 +136,7 @@ Stations, depots and dens post work, and what a place posts depends on what it i
 in a channel. The window lists the jobs you hold, finished work ready to hand in, and what's offered here.
 
 <GamePanel title="Jobs" width="560px" caption="The Jobs window at the start station, with the first delivery already taken.">
-  <JobsBoard api={apiOf({ jobs: panel.jobsBoard.jobs })} />
+  <JobsBoard api={apiOf({ jobs: jobsBoardPanel.jobs })} />
 </GamePanel>
 
 You can hold <Stat kind="tuning" id="MAX_JOBS" /> jobs at once; finished work waiting to be handed in doesn't count. A station posts up to <Stat kind="tuning" id="OFFERS_PER_PORT" /> offers, and they

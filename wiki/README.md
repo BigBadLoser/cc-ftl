@@ -52,7 +52,7 @@ Guides show real game UI components with `<GamePanel>` instead of screenshots wh
 (not the game world). Their data comes from real games: each recipe in `scripts/panel-recipes.ts` starts a seeded game
 headless in Node, sets a scene up with the game's debug-scenario commands, runs a few seconds and keeps what the game's
 own snapshot functions (`src/app/*Snapshot.ts`) hand the panel. `npm run generate` saves the results to
-`src/data/generated/panels.json`; pages read them through `src/lib/panels.ts`, typed by the recipes' return types, so a
+`src/data/generated/panels/<name>.json`, one file per recipe, so a page imports and ships only its own (`panelOf` in `src/lib/panels.ts`), typed by the recipes' return types, so a
 changed panel fails the check. No sim code reaches the browser. The game's theme is scoped to `.game-ui`
 (`scripts/game-ui-css.ts`) so it can't touch the wiki's own styles.
 

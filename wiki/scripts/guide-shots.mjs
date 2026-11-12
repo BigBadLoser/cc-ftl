@@ -29,25 +29,12 @@ export const shots = [
       ['5', '[data-testid="toolbar"]'],
     ],
   },
-  {
-    name: 'first-hour/menu',
-    query: '?seed=3&starter=wayfarer',
-    steps: async (h) => { await h.key('Escape'); await h.wait(600); },
-    selector: '[data-testid="esc-menu"]',
-    pad: 24,
-  },
   // Also the home page's hero image.
   {
     name: 'first-hour/ship',
     query: '?seed=3&starter=wayfarer',
     steps: async (h) => { await h.hideUi(); },
     keyOut: true,
-  },
-  {
-    name: 'first-hour/build',
-    query: '?seed=3&starter=wayfarer',
-    steps: async (h) => { await h.key('Space'); await h.testid('tool-build'); await h.wait(500); await h.testid('tab-power'); await h.wait(500); },
-    marks: [['1', '[data-testid="build-catalog"]']],
   },
   {
     name: 'first-hour/starmap',

@@ -8,7 +8,9 @@ order: 1
   import ModuleTable from '../../../lib/ModuleTable.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
   import PowerPanel from '../../../../../src/ui/PowerPanel.svelte'
-  import { panel, apiOf } from '../../../lib/panels'
+  import { panelOf, apiOf } from '../../../lib/panels'
+  import powerJson from '../../../data/generated/panels/power.json'
+  const powerPanel = panelOf('power', powerJson)
 </script>
 
 Almost everything aboard runs on power: air, lights, shields, engines, guns and workshops. Reactors make it, everything
@@ -45,7 +47,7 @@ reactors burn fuel in step with the load, switching things off also saves crysta
 have nothing to do, such as an empty hydroponics bed.
 
 <GamePanel title="Module inspector" width="340px" caption="The Power… view of a burst laser: its own order (1 to 5) and the whole ship's order below it, with the laser's row marked.">
-  <PowerPanel api={apiOf()} m={panel.power.module} mods={panel.power.modules} onBack={() => {}} />
+  <PowerPanel api={apiOf()} m={powerPanel.module} mods={powerPanel.modules} onBack={() => {}} />
 </GamePanel>
 
 > **Tip:** if a workshop keeps stalling, the workshop usually isn't the problem. Look at what sits above it in the order.
