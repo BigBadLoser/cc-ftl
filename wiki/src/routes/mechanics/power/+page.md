@@ -19,9 +19,9 @@ rooms make no difference. Each ship and station has its own pool; docking doesn'
 Power itself isn't stored in the pool: what the reactors make each moment is what the ship can use. But reactors need
 fuel to make it, and battery banks can hold some back for later. Both are covered below.
 
-The ship overview shows the pool as **supply / demand** (for example `50/32`), and turns red when demand is higher than
+The **Ship overview** window (second button on the screens strip) shows the pool as **supply / demand** (for example `50/32`), and turns red when demand is higher than
 supply. Click any module to see whether it's **Running** or has **No power**, and how much it supplies or draws.
-The top bar also shows your reactor fuel and battery charge (see below).
+It also shows your reactor crystals and battery charge (see below).
 
 ## Shortages and the power order
 
@@ -96,7 +96,7 @@ Crystals in storage are an ordinary item, shown in **Ship stock**. Every startin
 
 **Running dry**
 
-- The top bar shows a crystal count (loaded in the reactors / their combined capacity) next to the battery gauge. It turns
+- The Ship overview shows a crystal count (loaded in the reactors / their combined capacity) next to the battery gauge. It turns
   red when the reactors are below half full and no crystals are left in storage.
 - When the supply can't cover the draw, the **Low power** alert appears. If a reactor is the cause it adds that a reactor
   is out of fuel.
@@ -118,7 +118,7 @@ banks until they are flat, then the shortage cuts in as usual.
 - Build more banks to hold more. Every starting ship has one.
 - A bank that is switched off or damaged keeps its charge but neither charges nor pays out. A destroyed bank loses its
   charge.
-- The top bar shows the combined charge as a percentage, in red when it is empty.
+- The Ship overview shows the combined charge as a percentage, in red when it is empty.
 
 ### Heat
 

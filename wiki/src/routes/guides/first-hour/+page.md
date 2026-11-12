@@ -54,9 +54,7 @@ tools step aside until it's over; the first time, a short lesson walks you throu
 
 ## Your ship and crew
 
-<GuideShot name="first-hour/ship" alt="The starting ship seen from above with its roof off" width="720px" />
-
-<GuideShot name="first-hour/ship" alt="The Wayfarer seen from above with its roof off" width="720px" />
+<GuideShot name="first-hour/ship" alt="The Wayfarer seen from above with its roof off, showing its rooms" width="720px" />
 
 Every starting ship has what it needs to fly, and the rest of this guide uses the Wayfarer's layout. Where a ship
 differs, the table above says so.
@@ -123,10 +121,10 @@ queue and run one after another.
 
 The game has two, and a new captain should know both.
 
-- **Fuel** pays for jumps. The number is in the top bar. Each jump costs some, and the starmap warns you if your route
+- **Fuel** pays for jumps. The number is in the **Ship overview** window (the second button on the screens strip). Each jump costs some, and the starmap warns you if your route
   will run out. Buy more from traders.
 - **Energy crystals** feed the reactors. Without them the reactors make no power and the ship goes dark. Crew load the
-  reactors from storage on their own, so the job for you is to keep crystals in the crates. The top bar shows the crystals
+  reactors from storage on their own, so the job for you is to keep crystals in the crates. The Ship overview shows the crystals
   in the reactors, in red when they are low and none are left in storage. Buy more at mining and trading stations, or mine
   them from asteroids.
 
@@ -151,7 +149,7 @@ a matching station from the Jobs screen.
 
 Open the **starmap** with **M** (or the map button). Click a destination to see its route, fuel cost and charge time,
 then press **Jump**. If the drive isn't charged yet, choose **Jump when charged**: your pilot sits at the helm and the
-drive charges from the engines (about <Stat kind="tuning" id="FTL_CHARGE_SEC" unit="seconds" /> for a full charge).
+drive charges from the engines (or press **Charge FTL** to start charging first; about <Stat kind="tuning" id="FTL_CHARGE_SEC" unit="seconds" /> for a full charge).
 
 To jump you need a working, powered helm, at least one powered engine, someone aboard to fly, and enough fuel for each
 leg. On a long route the starmap warns you if the trip will stop where the fuel runs out. When you arrive, press **Drop

@@ -99,12 +99,12 @@ its trip count and progress. **Call off** cancels one that hasn't finished, and 
 ### Queued deals
 
 You can agree several deals with the same partner. They queue and run one after another. Nothing is held for a queued
-deal, so you can call it off at no cost. If something changes before it starts, such as a sold-out shelf or a spent
+deal, so you can call it off at no cost, but new deals count what the queued ones will take, so you can't spend the same credits or goods twice. If something changes before it starts, such as a sold-out shelf or a spent
 purse, it fails at the front of the queue.
 
 ### Refuel
 
-When the station sells fuel, a **Refuel** button on the slip tops up your fuel in one click and accepts the deal for you.
+When the station sells fuel, a **Refuel** button on the slip buys fuel up to 24 units aboard in one click and accepts the deal for you.
 
 ### Prices
 
@@ -118,18 +118,18 @@ A price is built from the item's base value:
 
 ## Jobs
 
-Stations, depots and dens post work. Press the **Jobs** button on the navigation strip to open the jobs window, or open the **Jobs** service
+Stations, depots and dens post work, and what a place posts depends on what it is. Press the **Jobs** button on the navigation strip to open the jobs window, or open the **Jobs** service
 in a channel. The window lists the jobs you hold, finished work ready to hand in, and what's offered here.
 
-You can hold <Stat kind="tuning" id="MAX_JOBS" /> jobs at once. A station posts up to <Stat kind="tuning" id="OFFERS_PER_PORT" /> offers, and they
+You can hold <Stat kind="tuning" id="MAX_JOBS" /> jobs at once; finished work waiting to be handed in doesn't count. A station posts up to <Stat kind="tuning" id="OFFERS_PER_PORT" /> offers, and they
 change every <Stat kind="tuning" id="OFFER_TURNS" /> turns. Each card shows the pay, where, how many jumps away, the
 turns left and the client. A card with three turns or fewer left has an amber edge.
 
 | Job | Posted by | What you do |
 |---|---|---|
-| **Delivery** | Trading stations | A sealed crate comes aboard. Carry it to the other port. At arrival the station sends a shuttle, your crew haul the crate to the airlock and you're paid when it leaves. |
-| **Bounty** | Military stations and depots | Destroy or take a named ship, then **Hand in** at a station of the same faction. The card compares its guns, shields and size with yours. |
-| **Survey** | Research stations | Visit a node, then **Hand in**. |
+| **Delivery** | Trading stations and dens | A sealed crate comes aboard. Carry it to the other port. At arrival the station sends a shuttle, your crew haul the crate to the airlock and you're paid when it leaves. |
+| **Bounty** | Military stations, depots and dens | Destroy or take a named ship, then **Hand in** at a military station of the same faction. The card compares its guns, shields and size with yours. |
+| **Survey** | Research stations | Visit a node with a feature, such as a nebula, black hole, blue giant or asteroid field, then **Hand in** at a research station of the same faction. Black holes and blue giants pay extra. |
 | **Passage** | Passengers aboard | A passenger wants a lift. See [Travel and encounters](../encounters/). Accept or refuse from the card, wherever your ship is. |
 
 Pay scales with distance and danger:

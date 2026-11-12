@@ -47,11 +47,10 @@ The alert has three buttons. The log tells you what they found and what it's wor
 | Choice | What it costs | What happens |
 |---|---|---|
 | **Fine** | A fine of <Stat kind="tuning" id="SCAN_FINE_SHARE" percent /> of the goods' value (at least <Stat kind="tuning" id="SCAN_FINE_MIN" /> credits), and <Stat kind="tuning" id="SCAN_STANDING_HIT" /> standing with the faction. | They keep the goods. If you're short, they take all your credits. |
-| **Bribe** | <Stat kind="tuning" id="SCAN_BRIBE_SHARE" percent /> of the goods' value (at least <Stat kind="tuning" id="SCAN_BRIBE_MIN" /> credits). | Usually works: the goods are handed back. If the inspector turns it down you pay nothing, lose <Stat kind="tuning" id="SCAN_STANDING_HIT" /> standing, and no bribe is offered again. |
+| **Bribe** | <Stat kind="tuning" id="SCAN_BRIBE_SHARE" percent /> of the goods' value (at least <Stat kind="tuning" id="SCAN_BRIBE_MIN" /> credits). | Works <Stat kind="tuning" id="INSPECT_BRIBE_CHANCE" percent /> of the time: the goods are handed back. If the inspector turns it down you pay nothing, lose <Stat kind="tuning" id="SCAN_STANDING_HIT" /> standing, and no bribe is offered again. |
 | **Refuse** | Nothing now. | They leave with what they took. You lose <Stat kind="tuning" id="INSPECT_REFUSE_HIT" /> standing and the station won't deal with you for <Stat kind="tuning" id="INSPECT_BAN_TURNS" /> turns. |
 
-A bribe is a gamble that costs more than the fine. It is taken <Stat kind="tuning" id="INSPECT_BRIBE_CHANCE" percent /> of the time. If you want to keep your
-standing and the goods, you need luck. If you can't afford the credits, the button is refused.
+A bribe costs more than the fine and can fail, but it is the only way to keep both your goods and your standing. If you can't afford the credits, the button is refused.
 
 Bribed goods are set down by the shuttle's door for your crew to stow. If your ship has no floor space for them, the
 bribe is refused.
