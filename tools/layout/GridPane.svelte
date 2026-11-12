@@ -8,12 +8,12 @@
 	import { dpr, lab } from './lab.svelte';
 	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
+	import { moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
 		| { k: 'pan'; x: number; y: number }
-		| { k: 'paint'; last: Tile; tool: StrokeTool; erase: boolean; base: Layout; tiles: Tile[]; room: number | undefined }
+		| { k: 'paint'; a: Tile; tool: StrokeTool; erase: boolean; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
 		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
@@ -30,6 +30,8 @@
 	/** The tile under the pointer (null when it is off the grid or a gesture other than a stroke is under way), and whether the right button is held. */
 	let pointer = $state.raw<Tile | null>(null);
 	let erasing = $state(false);
+	/** The shape a stroke in progress will apply on release (nothing is committed before). */
+	let shape = $state.raw<Tile[] | null>(null);
 
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design;
@@ -42,7 +44,7 @@
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
-		if (pointer && lab.tool !== 'select' && lab.tool !== 'module' && lab.tool !== 'note' && !lab.drag) out.push({ tiles: [pointer], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
+		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const r = lab.drag;
 		if (r) {
@@ -133,12 +135,6 @@
 		if (edge === 'n') { const y = Math.min(ty, r.y + r.h - 1); return { ...r, y, h: r.y + r.h - y }; }
 		return { ...r, h: Math.max(1, ty - r.y + 1) };
 	}
-	function line(a: Tile, b: Tile): Tile[] {
-		const out: Tile[] = [];
-		const n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), 1);
-		for (let i = 0; i <= n; i++) out.push([Math.round(a[0] + ((b[0] - a[0]) * i) / n), Math.round(a[1] + ((b[1] - a[1]) * i) / n)]);
-		return out;
-	}
 	const isPaint = (t: string): t is PaintTool => t in PAINT_CHAR;
 	const room = (): number | undefined => (lab.selected?.kind === 'room' ? lab.selected.id : undefined);
 
@@ -153,11 +149,8 @@
 		erasing = erase;
 		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
 		if (isPaint(tool) || (erase && (tool === 'room' || tool === 'module'))) {
-			lab.begin();
-			// A stroke is applied from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
-			const first = room();
-			lab.step(() => stroke(l, tool as StrokeTool, erase, [tile], first));
-			mode = { k: 'paint', last: tile, tool: tool as StrokeTool, erase, base: l, tiles: [tile], room: first };
+			mode = { k: 'paint', a: tile, tool: tool as StrokeTool, erase, room: room() };
+			shape = shapeTiles(mode.tool, tile, tile);
 		} else if (tool === 'note') {
 			// a note goes where the pointer is (Alt: free, not attached to what is there)
 			lab.addPin(fx, fy, e.altKey);
@@ -189,10 +182,7 @@
 			return;
 		}
 		if (m?.k === 'paint') {
-			const tiles = line(m.last, tile);
-			m.last = tile;
-			m.tiles.push(...tiles);
-			lab.step(() => stroke(m.base, m.tool, m.erase, m.tiles, m.room));
+			shape = shapeTiles(m.tool, m.a, tile);
 			return;
 		}
 		if (m?.k === 'room') {
@@ -229,7 +219,12 @@
 		const m = mode;
 		mode = null;
 		erasing = false;
-		if (m?.k === 'paint' || m?.k === 'edge') lab.end();
+		if (m?.k === 'paint') {
+			const tiles = shape;
+			shape = null;
+			const { tool, erase, room: first } = m;
+			if (tiles) lab.edit((cur) => stroke(cur, tool, erase, tiles, first)); // one undo step per stroke
+		} else if (m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
 			lab.drag = null;
@@ -248,7 +243,8 @@
 	function cancel() {
 		pointer = null;
 		erasing = false;
-		if (mode?.k === 'paint' || mode?.k === 'edge') lab.end();
+		shape = null;
+		if (mode?.k === 'edge') lab.end();
 		mode = null;
 		lab.drag = null;
 		lab.ghost = null;

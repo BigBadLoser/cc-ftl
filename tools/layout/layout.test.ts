@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { commit, fresh, live, redo, undo } from './history';
 import {
-  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, stroke, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
+  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, shapeTiles, stroke, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
   type Layout, type Tile,
 } from './layout';
 import { designFromLayout, labelSpot } from './design';
@@ -373,5 +373,23 @@ describe('right-click erases what the tool paints (#464)', () => {
     const gone = stroke(layout, 'module', true, t([6, 6]));
     expect(gone.modules).toHaveLength(0);
     expect(gone.moduleIds).toHaveLength(0);
+  });
+});
+
+describe('drag shapes (#464)', () => {
+  it('wall and beam are an axis-snapped line, either direction; floor and erase a rectangle; door one tile', () => {
+    expect(shapeTiles('wall', [2, 3], [5, 4])).toEqual([[2, 3], [3, 3], [4, 3], [5, 3]]);
+    expect(shapeTiles('beam', [2, 3], [3, 0])).toEqual([[2, 3], [2, 2], [2, 1], [2, 0]]);
+    expect(shapeTiles('wall', [4, 4], [4, 4])).toEqual([[4, 4]]);
+    expect(shapeTiles('floor', [3, 2], [1, 3])).toEqual([[1, 2], [2, 2], [3, 2], [1, 3], [2, 3], [3, 3]]);
+    expect(shapeTiles('space', [0, 0], [1, 1])).toHaveLength(4);
+    expect(shapeTiles('door', [1, 1], [5, 5])).toEqual([[1, 1]]);
+  });
+  it('a line and a rectangle apply through stroke, and erase uses the same shape', () => {
+    const l = stroke(blank(), 'wall', false, shapeTiles('wall', [3, 3], [8, 3]));
+    expect(l.cells[3]?.slice(3, 9)).toBe('######');
+    const r = stroke(blank(), 'floor', false, shapeTiles('floor', [3, 3], [5, 4]));
+    expect(r.cells[4]?.slice(3, 6)).toBe('___');
+    expect(stroke(r, 'floor', true, shapeTiles('floor', [3, 3], [5, 4])).cells[3]?.slice(3, 6)).toBe('...');
   });
 });

@@ -321,6 +321,24 @@ export const PAINT_CHAR: Record<PaintTool, Ch> = { floor: '_', wall: '#', door: 
 /** What erasing a tool's tiles leaves: floor and beams go back to space; a wall or door is cleared back to floor; the space tool's erase lays floor. */
 const ERASES_TO: Record<PaintTool, Ch> = { floor: '.', wall: '_', door: '_', beam: '.', space: '_' };
 
+/**
+ * The tiles a drag from `a` to `b` covers with `tool`: wall and beam a straight line (snapped to the dominant axis: tiles are 4-connected,
+ * the hull and walls are derived on 4 neighbours, so a diagonal wall has no meaning here); floor, the Erase tool, room and module a rectangle;
+ * a door the tile it was pressed on.
+ */
+export function shapeTiles(tool: StrokeTool, a: Tile, b: Tile): Tile[] {
+  const out: Tile[] = [];
+  if (tool === 'door') return [a];
+  if (tool === 'wall' || tool === 'beam') {
+    const horizontal = Math.abs(b[0] - a[0]) >= Math.abs(b[1] - a[1]);
+    const n = horizontal ? Math.abs(b[0] - a[0]) : Math.abs(b[1] - a[1]), sx = Math.sign(b[0] - a[0]), sy = Math.sign(b[1] - a[1]);
+    for (let i = 0; i <= n; i++) out.push(horizontal ? [a[0] + i * sx, a[1]] : [a[0], a[1] + i * sy]);
+    return out;
+  }
+  for (let y = Math.min(a[1], b[1]); y <= Math.max(a[1], b[1]); y++) for (let x = Math.min(a[0], b[0]); x <= Math.max(a[0], b[0]); x++) out.push([x, y]);
+  return out;
+}
+
 /** Unassign floor tiles from their rooms (the floor stays, as hall). */
 function unassign(l: Layout, tiles: readonly Tile[]): Layout {
   const w = work(l);
