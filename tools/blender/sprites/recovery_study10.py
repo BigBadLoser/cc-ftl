@@ -32,8 +32,8 @@ LOBE_R = 0.3                                        # the plinth's lobe round th
 def path():
     """The spine's centre line in (r, z) with its width (across, T) and depth (in its plane) at each point."""
     pts = []
-    for z, w, d in ((0.14, 0.38, 0.3), (0.6, 0.38, 0.3), (0.78, 0.26, 0.2), (BEND, 0.26, 0.2)):   # flat faces, one
-                                                                             # shoulder: a taper's faces speckle
+    for z, w, d in ((0.14, 0.38, 0.2), (0.6, 0.38, 0.2), (0.78, 0.26, 0.2), (BEND, 0.26, 0.2)):   # flat faces, one
+                                                                             # shoulder, across only: a taper speckles
         pts.append((RS, z, w, d))
     for i in range(1, 7):                                                    # the bend
         th = math.pi / 2 * i / 6
