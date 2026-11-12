@@ -85,7 +85,7 @@ Crew refuel the reactors themselves. When a reactor's store falls below <Stat id
 a crew member fetches some and loads it. You don't give an order. This only works if crystals are in storage, so keep
 some there.
 
-Crystals in storage are an ordinary item, shown in **Ship stock**. Every starting ship carries a stock, from 26 to 40 crystals.
+Crystals in storage are an ordinary item, shown in **Ship stock**. Every starting ship carries a stock, from <Stat kind="tuning" id="starters.prospector.stock.item.energy_crystal" /> to <Stat kind="tuning" id="starters.lancer.stock.item.energy_crystal" /> crystals.
 
 **Where crystals come from**
 

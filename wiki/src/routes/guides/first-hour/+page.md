@@ -24,13 +24,13 @@ you like, **Reroll unlocked** for the rest, and press **Start**.
 
 | Ship | Style | Crew | What it has |
 |---|---|---|---|
-| **Wayfarer** (Spine Hauler) | Balanced | 4: engineer, gunner, pilot, medic | A burst laser, a shield, a shuttle with its bay, a lounge, a med bed and a fabricator. |
-| **Prospector** (Claw) | Hauler and miner | 3: pilot and two engineers | A big hold, an ore refinery, a mining pod and one light gun. No shuttle. |
-| **Lancer** (Dart) | Fighter | 4: two gunners, a pilot, an engineer | A missile launcher in the point, a burst laser in each tail fin, a Mk II shield and 16 missiles. No shuttle. |
+| **Wayfarer** (Spine Hauler) | Balanced | <Stat kind="tuning" id="starters.wayfarer.crew" />: engineer, gunner, pilot, medic | A burst laser, a shield, a shuttle with its bay, a lounge, a med bed and a fabricator. |
+| **Prospector** (Claw) | Hauler and miner | <Stat kind="tuning" id="starters.prospector.crew" />: pilot and two engineers | A big hold, an ore refinery, a mining pod and one light gun. No shuttle. |
+| **Lancer** (Dart) | Fighter | <Stat kind="tuning" id="starters.lancer.crew" />: two gunners, a pilot, an engineer | A missile launcher in the point, a burst laser in each tail fin, a Mk II shield and <Stat kind="tuning" id="starters.lancer.stock.item.missile" /> missiles. No shuttle. |
 
-All three have a helm, two reactors with a battery bank beside them, engines, life support, a galley that keeps 12 rations
-in stock, beds for the whole crew, building materials in storage, a few weapons, 16 jump fuel and a stock of energy
-crystals (28 on the Wayfarer, 26 on the Prospector, 40 on the Lancer). The Lancer also has a third reactor.
+All three have a helm, two reactors with a battery bank beside them, engines, life support, a galley that keeps <Stat kind="tuning" id="starters.wayfarer.stock.item.ration" /> rations
+in stock, beds for the whole crew, building materials in storage, a few weapons, <Stat kind="tuning" id="starters.wayfarer.stock.item.fuel" /> jump fuel and a stock of energy
+crystals (<Stat kind="tuning" id="starters.wayfarer.stock.item.energy_crystal" /> on the Wayfarer, <Stat kind="tuning" id="starters.prospector.stock.item.energy_crystal" /> on the Prospector, <Stat kind="tuning" id="starters.lancer.stock.item.energy_crystal" /> on the Lancer). The Lancer also has a third reactor.
 
 Trading needs a shuttle to carry the goods, so only the Wayfarer can trade from the start. The others need a shuttle bay
 and a shuttle first (see [Trading](#Trading)).

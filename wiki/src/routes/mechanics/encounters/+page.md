@@ -3,6 +3,10 @@ title: Travel and encounters
 order: 8
 ---
 
+<script lang="ts">
+  import Stat from '../../../lib/Stat.svelte'
+</script>
+
 Your ship moves between places on the starmap. On the way you can meet other ships, wrecks and calls for help. Most of
 them start as a signal you can read from the lane before you commit to anything.
 
@@ -130,9 +134,9 @@ A crippled freighter with its reactor failing. Its crew can't repair it themselv
 2. **Scan it** to see the failing system, how long it has, the cargo, and whether raiders are on it or coming.
 3. **Offer help** needs the hail first. It drops you out beside the ship, and your repair party goes aboard as invited
    guests. They don't provoke anyone.
-4. Your engineers repair the reactor through the usual repair work. Fires break out in its last 30 seconds.
+4. Your engineers repair the reactor through the usual repair work. Fires break out in its last <Stat kind="tuning" id="events.event.distress_call.scene.timers.0.fires.leadSec" /> seconds.
 
-The clock runs about 150 to 165 seconds from when you drop out. If it runs out, the reactor blows. The blast damages
+The clock runs about <Stat kind="tuning" id="events.event.distress_call.scene.timers.0.afterSec" index={0} /> to <Stat kind="tuning" id="events.event.distress_call.scene.timers.0.afterSec" index={1} /> seconds from when you drop out. If it runs out, the reactor blows. The blast damages
 modules and hull around it and hurts crew who are close. Then the ship goes dark and becomes a wreck.
 
 If you repair it in time, the freighter's owner thinks better of you and the crew send over part of their cargo.
@@ -147,7 +151,7 @@ An escape pod beacon with a life sign in it. You need a bed aboard to answer it.
 badly hurt they are and what skills their suit logs.
 
 After dropping out, press **Bring the pod in**. It docks at a free airlock and your crew carry the patient to a bed. They
-bleed out on a clock of a few minutes, so be quick.
+bleed out on a clock of <Stat kind="tuning" id="events.event.medical_emergency.scene.pods.0.bleed" index={0} /> to <Stat kind="tuning" id="events.event.medical_emergency.scene.pods.0.bleed" index={1} /> seconds, so be quick.
 
 If the patient pulls through:
 

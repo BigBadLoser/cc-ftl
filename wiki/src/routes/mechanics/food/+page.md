@@ -52,7 +52,7 @@ locked in an unreachable room.
 The **Galley** is the ship's kitchen. It needs power (<Stat id="module.galley" field="power" /> units) and a crew member
 working the **Cook** column.
 
-Its **Print rations** order turns 2 water into 3 rations. All three starting ships keep 12 rations in stock this way, so a fresh
+Its **Print rations** order turns <Stat kind="tuning" id="recipes.recipe.ration.in.item.water" /> water into <Stat kind="tuning" id="recipes.recipe.ration.out.item.ration" /> rations. All three starting ships keep <Stat kind="tuning" id="starters.wayfarer.stock.item.ration" /> rations in stock this way, so a fresh
 game never goes hungry as long as there is water. Rations are the emergency fallback: they fill the least and give the
 least mood.
 
@@ -65,7 +65,7 @@ A hydroponics bed grows one crop at a time. Crew sow it, it grows on its own whi
 
 <ModuleTable ids="module.hydroponics, module.hydroponics_large" columns="power:Power:signed, maxHp:Hull points" />
 
-The **large bed** gives <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.scale" /> times the yield of the small one for <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.waterScale" /> times the water and twice the power. Both beds are in
+The **large bed** gives <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.scale" /> times the yield of the small one for <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.waterScale" /> times the water and draws <Stat kind="tuning" id="furniture.module.hydroponics_large.power" scale={-1} /> power instead of <Stat kind="tuning" id="furniture.module.hydroponics.power" scale={-1} />. Both beds are in
 the module menu once built.
 
 ### Crops
@@ -110,8 +110,8 @@ Water is the only input. It comes from ice split at a refinery, or from stations
 
 ## Cooking
 
-Cooking turns crops into meals at the galley. Add an order for **Cook greens** or **Cook protein beans**: 6 produce and
-2 water make 2 meals.
+Cooking turns crops into meals at the galley. Add an order for **Cook greens** or **Cook protein beans**: <Stat kind="tuning" id="recipes.recipe.meal_greens.in.item.greens" /> produce and
+<Stat kind="tuning" id="recipes.recipe.meal_greens.in.item.water" /> water make <Stat kind="tuning" id="recipes.recipe.meal_greens.out.item.meal_good" /> meals.
 
 The **Cooking** skill of the crew member doing the job picks the quality of the whole batch:
 
