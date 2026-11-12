@@ -170,7 +170,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     w:bounds.maxX-bounds.minX,h:bounds.maxY-bounds.minY,
     ax:front.x-bounds.minX,ay:front.y-bounds.minY
   }:null;
-  const access=def.access?{x:def.access[0],y:def.access[1]}:null;
+  const access=def.access?[def.access,...(def.extraAccess??[])].map(([x,y])=>({x,y})):[];
   const g=previewGeometry(w,h,access,thumb,box);
   const polygon=(points:string,cls:string)=>'<polygon class="'+cls+'" points="'+points+'"/>';
   const svgLayers=g.sprite && bounds ? [...layers].sort((a,b)=>a.z-b.z).map(l=>{
@@ -208,9 +208,9 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     +'<rect width="300" height="200" fill="#070b11"/>'
     +'<g stroke="#29313b" stroke-width="0.8" fill="none">'+g.grid.map(p=>polygon(p,'grid')).join('')+'</g>'
     +'<g stroke="#36d4ff" stroke-width="1.15" fill="#143341" fill-opacity=".65">'+g.foot.map(p=>polygon(p,'foot')).join('')+'</g>'
-    +(g.access?'<polygon points="'+g.access+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>':'')
+    +g.access.map(p=>'<polygon points="'+p+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>').join('')
     +svgLayers+ tierOverlay
-    +(g.accessLabel?'<text x="'+number(g.accessLabel.x)+'" y="'+number(g.accessLabel.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>':'')
+    +g.accessLabel.map(l=>'<text x="'+number(l.x)+'" y="'+number(l.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>').join('')
     +(!layers.length?'<text x="150" y="185" text-anchor="middle" fill="#8290a0" font-family="sans-serif" font-size="9">ARTWORK PENDING</text>':'')
     +'</svg>';
   const name=slug(id)+'.png';

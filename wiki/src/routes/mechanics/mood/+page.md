@@ -60,8 +60,9 @@ These factors are live in the game now. Points are before traits.
 | Bland meal | +<Stat kind="items" id="item.meal_bland" field="food.mood.points" /> |
 | Good meal | +<Stat kind="items" id="item.meal_good" field="food.mood.points" /> |
 | Fine meal | +<Stat kind="items" id="item.meal_fine" field="food.mood.points" /> |
-| Slept in a bed | +5 |
+| Slept in a bed | -2 to +9, by the bedroom's quality (see "Room quality") |
 | Slept on the floor | -6 |
+| Ate in the mess | -3 to +4 on top of the meal, by the mess's quality |
 
 Better cooks make better meals. See [Food](../food/).
 
@@ -74,6 +75,7 @@ Better cooks make better meals. See [Food](../food/).
 | Thin air | -20 |
 | Smoky room | -6 |
 | Too hot or too cold | -6 |
+| Surroundings: the room's quality | -3 to +3 |
 
 **Company**
 
@@ -88,6 +90,10 @@ Better cooks make better meals. See [Food](../food/).
 |---|---|
 | Enjoying the work: working at a skill they are keen on (+2) or passionate about (+4), for a minute after | +2 / +4 |
 | Took a break: a crew member with nothing to do and a low mood walks to the mess or beside a crewmate and relaxes. It lifts mood for about five minutes | +<Stat kind="tuning" id="MOOD_RELAX_POINTS" /> |
+| Played a game: a break at a game table or an arcade instead | +<Stat kind="tuning" id="MOOD_PLAY_POINTS" /> |
+| No time off: no break for <Stat kind="tuning" id="NO_BREAK_SEC" unit="s" /> | <Stat kind="tuning" id="NO_BREAK_POINTS" /> |
+
+A break's points shift by the room's quality, from -2 in a Grim room to +2 in an Impressive one.
 
 Breaks only happen when nobody has a job for them, so they never pull anyone off work. In **Free** hours they happen
 more (see [Crew](../crew/)).
@@ -119,12 +125,42 @@ Traits change how mood works for one crew member:
 | Battle-shy | <Stat kind="tuning" id="BATTLE_FEAR_MOOD" /> whenever a hostile is in sight |
 | Protective | Grief hits one and a half times as hard |
 
+### Room quality
+
+Every room has a quality from 0 to 100, shown as a tier: **Grim**, **Bare**, **Decent**, **Pleasant** or **Impressive**.
+Turn on the **Room quality** overlay to see it, coloured from red (Grim) to green (Impressive).
+
+Three things set it, and the weakest one counts most:
+
+- **Space**: floor tiles per user. Beds, consoles, workstations, galleys and game places each count as a user, so a
+  crowded room scores low.
+- **Cleanliness**: loose item stacks on the floor and bodies make a room dirty.
+- **Condition**: damaged walls and modules pull it down, and a breach drops it to zero.
+
+The tier changes how a bed sleeps, how a meal in the mess feels, a break's points, and the **Surroundings** factor for
+whoever is in the room:
+
+| Tier | Sleep | Mess meal | Surroundings | Break |
+|---|---|---|---|---|
+| Grim | -2 | -3 | -3 | -2 |
+| Bare | +2 | -1 | -1 | -1 |
+| Decent | +5 | 0 | 0 | 0 |
+| Pleasant | +7 | +2 | +2 | +1 |
+| Impressive | +9 | +4 | +3 | +2 |
+
+### Breaks and games
+
+A crew member on a break goes to the mess, a **game table** (two players at once, seated) or an **arcade** (one player,
+standing), whichever suits them best. A game is worth more than a rest in the mess. Social crew lean towards the mess and
+the table, Loners towards the arcade. A game must be powered and working; if it loses power mid-break, the break ends and
+doesn't count.
+
+Build both from the **Life** tab. Each needs its play tiles clear (the arcade's front, the table's two stools), as with any
+module's access tile.
+
 <ComingLater>
 
-Room quality and leisure modules. A room's size, comfort, cleanliness and condition will set a tier from Grim to
-Impressive, which will change sleep, meal and surroundings factors. Breaks will gain places to go, such as a game table
-and an arcade, and a long stretch with no time off will cost mood. None of this is in the game yet: today a break is a
-walk to the mess or a crewmate.
+Comfort. Furniture and decor will add a fourth input to room quality. Until then no room rises above Decent.
 
 </ComingLater>
 
@@ -277,7 +313,9 @@ A break pauses while something worse is happening: a crew member who runs short 
 
 - **Feed them well.** Keep rations and meals stocked, and run the galley. A cook with skill makes meals worth up to
   +13 mood. See [Food](../food/).
-- **Let them sleep in beds.** One bed per crew member is best: a night on the floor is -6, in a bed +5.
+- **Let them sleep in beds.** One bed per crew member is best: a night on the floor is -6, in a Decent bedroom +5.
+- **Keep rooms roomy, tidy and repaired.** A crowded, cluttered or damaged room drops a tier and costs mood in it.
+- **Give them somewhere to unwind.** A game table or arcade beats the mess, and crew who never get a break lose mood.
 - **Keep the air, light and temperature normal.** Dark, smoky, thin or hot rooms all hurt. Dark rooms often come from
   a power shortage: see [Power](../power/).
 - **Put out fires and fix breaches quickly.** Both are mood hits and break triggers.
