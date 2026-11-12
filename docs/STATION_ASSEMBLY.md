@@ -16,7 +16,7 @@ them.
 | Recipes (data) | `src/content/stationRecipes.ts` |
 | Recipe types | `src/sim/shipgen/assembly/recipe.ts` |
 | The assembler: candidates, roots, the hard checks | `assemble.ts`, `asm.ts` (placing and taking back), `branch.ts` (rules into branches), `finish.ts` (trim, braces, the room check) |
-| Elements | `elements.ts` (corridor, block, single room), `ring.ts` (ring or arc with its band) |
+| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `ring.ts` (ring or arc with its band) |
 | Frames and ports | `model.ts` |
 | The wall writer | `regions.ts` (`RegionGrid`) |
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
@@ -62,7 +62,8 @@ A recipe has a root, branch rules, and a few settings.
 - A branch rule takes departments (each as its own branch, or together), names a host (trunk, a ring's rim by
   direction, an arc's tip, the end of another rule's branch, or any section already standing) and describes its
   sections: rooms in each, `rowDepth` for a slab of one depth, `cap` for a room across the far end, `cross` for a passage
-  across it with a port on each flank. `gated` puts a gate at its foot. `docks` makes its first section the dock block.
+  across it with a port on each flank. `gated` puts a gate at its foot. `docks` makes its first section the dock block,
+  or with `quay` the harbour (below).
   `mix` deals rooms to sections across departments.
 - Off-centre joins, for a scrapper's tree: `jog` on a rule bends its neck into a dogleg (it steps a few tiles sideways
   halfway along, either way as the seed has it), and `cross: 'any'` on a section puts its cross passage anywhere along
@@ -108,6 +109,59 @@ round, diagonals included. Three rules in `stripsOf` keep it clean at every radi
 into its neighbour; a tile with the ring on one side and another strip or room across from it goes to that one (a
 tongue); a run under three wide beside a room that is not the band's joins that room, and one tile wide stays open.
 Square outlines get one room a corner with a true 45-degree hull (`corners.ts`).
+
+### The harbour
+
+`quay` on the rule that takes the docks (`quay.ts`). The harbour is one open concourse along the station's outside.
+An airlock is a unit of three by two tiles standing in the concourse against a wall, its hatch in the wall: part of
+the hall, with no room and no door between a hatch and the concourse (the user's rule; walled-off dock rooms were
+rejected). Behind the concourse, in the middle, customs: an open hall the quay runs into, with the harbour's only gate
+on its far side, where the street leaves. The harbour's rooms stand along the quay's inner side and open onto it.
+The ground off a wall with airlocks in it is kept clear (shuttles dock at airlocks, not ships: a berth is 4 by 5).
+
+Three forms, all chosen by the user from mock sheets (`form`):
+
+| Form | What it is |
+|---|---|
+| `quay` | the airlocks along the outer wall at an even pitch |
+| `gatehouse` | the control room stands out in front of the quay, in the middle, the airlocks in a wing either side |
+| `basin` | two arms of concourse run out from the quay's ends, the airlocks in their inner walls facing each other |
+
+`shape`: `taper` (one room either side of customs, the rest on the street inland; stations that are not round) or
+`block` (every room in one row along the quay, the harbour one rectangle; round stations, the user's call).
+
+An airlock never faces east (carried over from the old ring generator, `stationDocks.ts`: "the camera-facing stern";
+whether it should hold is an open question to the user). So a quay or gatehouse never looks east, a basin opens east
+or west, and a station that starts at its harbour heads a way its form allows. The old dock block (`docks` without
+`quay`) is still in `elements.ts`; no recipe uses it.
+
+Open: which station gets which form is set per recipe for the sheets, not rolled; customs is empty (no furniture);
+rooms beside customs are stretched to the quay's length.
+
+## Round stations: what was decided before the assembly
+
+The round-station work that led here is recorded in `docs/STATION_FLOW_WHEEL.md` on the branch
+`stationgen/architecture-integration` (with `STATIONFLOWS.md` and `LAYOUT_RESEARCH.md`; code in `src/sim/shipgen/flow/`,
+mocks in `tools/shipgen/mocks/`). Read it before changing the ring recipes. What it settled, in short:
+
+- **What the user wants:** round stations first. The kind shows in the structure. Landmark halls, asymmetry, arms and
+  docks, interior spaces. Arms are inhabited wings, never a room on a stick; a warehouse with its own dock is good.
+  Voids where they make sense. Departments readable on the sheets.
+- **A kit of independent choices that multiply**, not N station types: outline (disc, square, octagon), streets
+  inside the ring (cross, tee, spine, or none), corners, the ring single or double loaded, wings, and which department
+  goes where (from the kind's flow).
+- **Hoops are wrong.** A ring round an empty middle was measured and rejected (66 to 83% of the area inside the hull
+  built, against 85 to 96% on the mocks the user liked). Rooms on the ring's inner side and wings brought it to 86 to 93%.
+- **The centre: one thing a quadrant**: a court with its band of rooms, one department's block, or open to space on
+  purpose. Agreed, not built. The pieces named as missing: a quarter block (a department compound filling the quadrant
+  between two streets, entered from one, gated when controlled) and a lane (a street off a street).
+- **Verdicts on the old grammars:** only the two round enclosed ones (wheel, concentric) need replacing; concentric
+  rings-in-rings read as clutter; the court (`courtyards()` in `stationCourts.ts`) is the part that works.
+- A faceted hull was liked on the mocks; it is clean only where one room owns each 45-degree face.
+
+Against that, the compound recipes here are behind: the ring root carries the outline, the arc cut and the inner
+loading, but no streets inside, no court and no quarter block, so every compound is a hoop with one long block
+hanging off it, and they have only been drawn for the mining station.
 
 ## The rooms
 
@@ -199,7 +253,6 @@ differ little.
 - A band room that overhangs a section's corner by a tile is trimmed back (`mend`); it is a repair after the fact,
   not a rule of the band.
 - Seeds change little within one recipe on a ring: the recipe's preferences decide, the seed rolls lengths and sizes.
-- The harbour is one design, the dock block.
 - Up to three rooms a station come out under three tiles wide (cabins; two wide is accepted for a cabin).
 - Not built: arcs of varying depth, ports on a curve other than at the axes and cut ends, the
   spine recipe (next).
