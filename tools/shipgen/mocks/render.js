@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Render the hand-designed station skeleton mocks through the original shipgen views.
- *   node tools/shipgen/mocks/render.js [--out dir] [--only name,name] [--legacy station.trading:1]
+ *   node tools/shipgen/mocks/render.js [--out dir] [--only name,name|none] [--legacy station.trading:1,station.farming:outpost:2]
  * Per mock: <name>-labels.png (labels.ts; red = 2x2 wall block, cyan = each room's largest rectangle, yellow = a
  * room under 3 wide) and <name>-depts.png (departments). sheet.png: every mock's silhouette, structure and departments.
  * Prints the hull check, 2x2 count, slivers, rooms far off their program size and room problems.
@@ -27,14 +27,20 @@ try {
   const { roomCores, drawDepartments, drawDeptKey } = views;
   const results = [];
   if (legacy) {
+    // Each entry: station.<kind>:<seed> or station.<kind>:<size>:<seed>; the wheel grammar is forced.
     const [{ content }, { generateStation }] = await Promise.all([load('/src/content/index.ts'), load('/src/sim/shipgen/stationGen.ts')]);
-    const [kind, seed] = legacy.split(':');
-    const o = content.stations[kind];
-    const def = { ...o, tiers: { ...o.tiers, station: { ...o.tiers.station, grammars: [{ value: 'stationWheel', weight: 1 }] } } };
-    const g = generateStation(def, kind, 'station', Number(seed), content.modules, true, 'off');
-    g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : deptOf({ role: rm.role })));
-    g.targets = [];
-    results.push({ name: 'legacy', title: `legacy ${kind} seed ${seed}`, g });
+    for (const entry of legacy.split(',')) {
+      const parts = entry.split(':');
+      const kind = parts[0], size = parts.length > 2 ? parts[1] : 'station', seed = Number(parts[parts.length - 1]);
+      const o = content.stations[kind];
+      const def = { ...o, tiers: { ...o.tiers, [size]: { ...o.tiers[size], grammars: [{ value: 'stationWheel', weight: 1 }] } } };
+      const g = generateStation(def, kind, size, seed, content.modules, true, 'off');
+      g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : deptOf({ role: rm.role })));
+      g.targets = [];
+      const short = `${kind.replace('station.', '')}-${size}-s${seed}`;
+      results.push({ name: `legacy-${short}`, title: `legacy ${kind} ${size} seed ${seed} (${g.topology.split(' ')[0]})`, g, legacy: true });
+      if (g.problems.length) console.log(`   ${short} native problems: ${g.problems.join('; ')}`);
+    }
   }
   for (const m of MOCKS) if (!only.length || only.includes(m.name)) results.push({ name: m.name, title: m.title, g: m.make() });
 
@@ -45,7 +51,7 @@ try {
   results.forEach(({ name, title, g }, i) => {
     const blocks = wallBlocks(g);
     const hull = stationHullIntegrityProblems(g.template);
-    const problems = name === 'legacy' ? [] : roomProblems(g);
+    const problems = name.startsWith('legacy') ? [] : roomProblems(g);
     const cores = roomCores(g);
     const slivers = cores.filter((c) => Math.min(c.w, c.h) < 3);
     const off = cores.filter((c) => g.targets[c.room] && (c.floor / g.targets[c.room] < 0.6 || c.floor / g.targets[c.room] > 1.6));
