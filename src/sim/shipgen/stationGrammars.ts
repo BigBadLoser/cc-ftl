@@ -6,6 +6,7 @@ import { latticeStation, ringStation } from './civilStations';
 import type { Builder } from './builder';
 import { courtyards } from './stationCourts';
 import { arcStation, concentricStation, wheelStation } from './stationRings';
+import { flowSpine } from './stationFlowSpine';
 import { flowWheel } from './stationFlowWheel';
 import { plannedWheel } from './stationWheel';
 import { tagged, warehoused } from './stationDepartments';
@@ -216,6 +217,13 @@ function flow(c: Ctx): boolean {
   return placeRoot(c, civil(w?.b ?? null, 'command', 'flow station'), 'flow wheel');
 }
 
+/** The ore spine (stationFlowSpine.ts): a works station as a wheel with a processing spine through it. Experimental. */
+function flowSpineStation(c: Ctx): boolean {
+  const w = flowSpine(c.rng, office(c));
+  if (w) c.parts.push(w.label);
+  return placeRoot(c, civil(w?.b ?? null, 'command', 'spine station'), 'flow spine');
+}
+
 /** Hub spokes always include north and south: the concourse runs dock bank to hub to dock bank. */
 const concourse = (sides: Side[]): Side[] => [...new Set<Side>(['n', 's', ...sides])];
 
@@ -287,5 +295,5 @@ const withCages = (run: (c: Ctx) => boolean) => (c: Ctx): boolean => run(c) && c
 export const STATION_GRAMMARS: Record<StationGrammar, (c: Ctx, f: FactionDef) => boolean> = {
   stationRing: withCages(ring), stationLattice: withCages(lattice), stationHub: withCages(hubStation), stationWelded: withCages(welded),
   stationWheel: withCages(wheel), stationConcentric: withCages(concentric), stationArc: withCages(arc),
-  stationAnnex: withCages(annexed), stationFlow: withCages(flow), stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
+  stationAnnex: withCages(annexed), stationFlow: withCages(flow), stationFlowSpine: flowSpineStation, stationSpine: withCages(STATION_LAYOUTS.spine), stationCross: withCages(STATION_LAYOUTS.cross), stationTree: withCages(STATION_LAYOUTS.tree),
 };

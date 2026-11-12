@@ -145,6 +145,22 @@ file alone until the flow-driven version exists, then decide on deletion. CP4 `p
 | Beds / airlocks | 20 / 5 | 20 / 5 |
 | Time | about 1.0 s | 0.5-0.75 s |
 
+## A second skeleton: the ore spine (`stationFlowSpine.ts`)
+
+Built as a quick go / no-go on whether these pieces can make a station that looks designed: the mining "ore spine" from
+the mocks, generated from the real mining program (grammar `stationFlowSpine`, experimental). A 3-wide haul street runs
+tip to tip through the ring and out past the hull; works halls and warehouses line it at one depth a side; the harbour
+rooms fill the band's depth at each end with a dock on each row's end outside the hull (airlocks face north and south:
+the fit-out never turns one east); machine rooms on a gated north spoke; messes and medbay on a south spoke. The shared
+pieces (lattice ring and band, rooms lining a street, the last checks) moved to `stationFlowKit.ts`; the trading wheel's
+output is unchanged by that (same hashes).
+
+One structural alternative to a bigger ring exists here: a room its spoke has no frontage for carries on along the haul
+street's rows. Without it two small machine rooms grew the whole ring from radius 32 to 40.
+
+Mining seeds 1-6: radius 32 on seed 1 (dense, 2,075 floor tiles, no filler), 36-40 on the others with 3-10 filler strips
+and large voids; one 2x2 wall block on seeds 2 and 5; seed 2 took three attempts ("weapons do not fit"). No ore cages yet.
+
 ## Known problems
 
 - **Looks poor** (above). Boxy, cross-shaped, the same skeleton on every seed.
