@@ -109,6 +109,7 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
   const hosts0 = recipe.branches.filter((b) => !b.gated).reduce((n, b) => n + Math.max(1, Math.ceil(rooms.filter((r) => b.takes.includes(r.dept as Dept)).length / mean(b))), 0);
   const each = pool.length > 0 ? Math.ceil(pool.length / Math.max(1, hosts0)) + 1 : 0;
   for (const [k, rule] of recipe.branches.entries()) {
+    const before = a.ports.length;
     const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept));
     const whole = rule.per === 'together' ? [mine] : rule.takes.map((d) => mine.filter((r) => r.dept === d));
     // A department with more sections than a branch carries is shared out over several branches. Mixed (a scrapper's
@@ -149,7 +150,11 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
         hosts = [...(core && !core.used ? [core] : []), ...open.sort((p, q) => (want.get(p) as number) - (want.get(q) as number))];
         // Any flank the seed picks, a hall's more often than a section's; the ends after them.
         if (rule.host.on === 'flank') {
-          const turn = new Map(hosts.map((p) => [p, rng.next() - (p.node ? 0.35 : 0)]));
+          // Less often straight across from a flank that is taken: a cross is one arrangement, not the rule.
+          const across = (p: Port): boolean => a.ports.some((q) => q !== p && q.used && q.owner === p.owner && q.kind === 'side' && q.along === p.along);
+          // A wing off another wing of the same rule is the rarer arrangement, never the usual one.
+          const own = new Set(a.ports.slice(before));
+          const turn = new Map(hosts.map((p) => [p, rng.next() - (p.node ? 0.35 : 0) + (across(p) ? 0.6 : 0) + (own.has(p) ? 0.3 : 0)]));
           const flanks = hosts.filter((p) => p.kind === 'side').sort((p, q) => (turn.get(p) as number) - (turn.get(q) as number));
           hosts = [...flanks, ...hosts.filter((p) => p.kind !== 'side')];
         }

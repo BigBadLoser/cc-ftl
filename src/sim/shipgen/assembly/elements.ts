@@ -111,10 +111,11 @@ export interface BlockOpts {
   /** A gate across its street at the foot: it joins its host directly and what is in it is controlled. */
   gate?: boolean;
   /**
-   * A passage across it, out to both flanks, with a port at each: other sections join its sides. Midway, or with
-   * 'any' wherever along the block the seed has it (its foot and its far end included).
+   * A passage across it, out to both flanks, with a port at each: other sections join its sides. Midway; with 'any'
+   * wherever along the block the seed has it (its foot and its far end included); with 'end' after its last rooms,
+   * right before the end room when there is one, both rows running up to it.
    */
-  cross?: boolean | 'any';
+  cross?: boolean | 'any' | 'end';
   /** Cabins offered to it: they stand among its rooms, the shorter row first (bunks wherever there is room). */
   bunks?: readonly RoomSpec[];
 }
@@ -179,15 +180,26 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   if (o.cross) {
     // First halves, the passage, then the rest.
     const where = o.cross === 'any' ? c.rng.next() : 0.5;
-    const cut = rows.map((row) => (o.cross === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
+    const cut = rows.map((row) => (o.cross === 'end' ? row.length : o.cross === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
     const e0 = lay(rows[0].slice(0, cut[0]), -1, u0), e1 = lay(rows[1].slice(0, cut[1]), 1, u0);
     if (e0 === null || e1 === null) return null;
     const e = Math.max(e0, e1, u0 + 2);
+    // Before a passage at the end the shorter row's last room runs on to it, so no notch is left beside the passage.
+    if (o.cross === 'end') for (const [k, side] of ([-1, 1] as const).entries()) {
+      const last = made.filter((m) => m.side === side && m.to > m.from).pop(), from = k === 0 ? e0 : e1;
+      if (!last || from >= e) continue;
+      const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3;
+      const box = side < 0 ? rect(f, from, e, -(h + 3), -1) : rect(f, from, e, 1 + X, h + 3 + X);
+      let open = true;
+      for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
+      if (open) g.rect(id, ...box);
+    }
     const lanes = [rect(f, e, e + 2, -(back[0] as number) + 1, -1), rect(f, e, e + 2, 1 + X, back[1] as number)];
     for (const box of lanes) for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (g.at(x, y) !== SPACE || !c.free(x, y)) return null;
     const m0 = lay(rows[0].slice(cut[0]), -1, e + 2), m1 = lay(rows[1].slice(cut[1]), 1, e + 2);
     if (m0 === null || m1 === null) return null;
-    L = Math.max(L, m0, m1, e + 3);
+    // An end room stands straight after a passage at the end; otherwise the street runs a tile past the passage.
+    L = o.cross === 'end' && capOf ? e + 2 : Math.max(L, m0, m1, e + 3);
     ends[0] = m0; ends[1] = m1;
     whole[0] = rows[0].length > (cut[0] as number); whole[1] = rows[1].length > (cut[1] as number);
     cross.push(...lanes);

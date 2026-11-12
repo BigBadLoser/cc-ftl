@@ -47,7 +47,7 @@ export interface BranchRule {
    * Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the
    * last one's end (the biggest, or the first of a role), and the street's width (default 2), and roles that stand at the far end of its rows.
    */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any'; width?: number; far?: readonly RoomRole[] };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any' | 'end'; width?: number; far?: readonly RoomRole[] };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
