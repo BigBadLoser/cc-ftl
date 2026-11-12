@@ -202,6 +202,15 @@ def corner_fill(k, a0, a1, r_in, z0, z1, col, top=None, n=10, half=1.5):
     prism(k, outer + inner, z0, z1, col, top=top)
 
 
+def floor_fill(k, r_in, z0, z1, col, half=1.5, n=256):
+    """The block between a star-shaped hole (its radius r_in(a) at angle a) and the footprint's square."""
+    for i in range(n):
+        a0, a1 = i * math.tau / n, (i + 1) * math.tau / n
+        cs = [c for c in (math.pi / 4 + j * math.pi / 2 for j in range(-4, 8)) if a0 < c < a1]
+        prism(k, [at(r_in(a0), a0)[:2], sq(a0, half)] + [sq(c, half) for c in cs] + [sq(a1, half), at(r_in(a1), a1)[:2]],
+              z0, z1, col)
+
+
 def seams(k, r, z0, z1, n, a0=0.0, a1=math.tau, col="dark"):
     """Vertical panel seams round a drum of radius r."""
     for i in range(n):

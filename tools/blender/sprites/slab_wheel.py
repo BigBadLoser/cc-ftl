@@ -42,7 +42,7 @@ def annulus(k, r0, r1, z0, z1, col, top=None, n=48):
 
 
 # ---- the pit ------------------------------------------------------------------------------------------------------
-def pit(k, deck, trim):
+def pit(k, deck, trim, gap=0.0):
     """The well: a ribbed wall, the race and the rotor's deck with its ring gear, pinion drives at the back, a striped
     lip round the mouth."""
     k.cyl(0, 0, -D, RP, 0.02, "dark", sides=48)
@@ -60,8 +60,13 @@ def pit(k, deck, trim):
         k.box(*at(1.44, a)[:2], -D + 0.02, 0.12, 0.36, 0.42, trim, rz=a)
         for dz in (0.1, 0.18, 0.26):
             k.box(*at(1.38, a)[:2], -D + 0.02 + dz, 0.012, 0.28, 0.03, "dark", rz=a)
-    annulus(k, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")             # the lip
-    hazard(k, RP + 0.055, 0.05, w=0.08)
+    if gap:                                          # the lip, broken where a hatch at the front opens into the pit
+        arc_wall(k, FRONT + gap, FRONT + math.tau - gap, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")
+        ring(k, RP + 0.055, 0.05, 0.012, 0.08, None, n=40, colf=lambda i: "hazY" if i % 2 else "hazK",
+             skip=lambda i: abs(math.remainder((i + 0.5) * math.tau / 40 - FRONT, math.tau)) < gap + 0.05)
+    else:
+        annulus(k, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")         # the lip
+        hazard(k, RP + 0.055, 0.05, w=0.08)
 
 
 def wheel(k, body, trim, skip=()):
@@ -330,11 +335,11 @@ SCHEMES = {
 }
 
 
-def geneva_over_tyres(k, P=None, lights="ring", skip=()):
+def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0):
     """s49 (and its paint schemes, s49a-c)."""
     P = P or scheme("navy", "hivis")
     ol, orr = 1.15, 0.45
-    pit(k, P["deck"], P["guard"])
+    pit(k, P["deck"], P["guard"], gap)
     out = wheel(k, P["clamp"], P["accent"], skip)
     skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
     jamb(k, FRONT + ol, P["wall"], P["stripe"])

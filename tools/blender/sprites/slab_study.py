@@ -147,12 +147,15 @@ def build(v):
     from . import slab_load, slab_wheel
     pit = {**slab_wheel.PIT, **slab_load.PIT}.get(v)
     if pit:                                         # sunk in the floor: a holdout floor round the pit's mouth hides
-        from .slab_kit import corner_fill           # what is under the floor outside it (the game's floor shows;
+        from .slab_kit import corner_fill, floor_fill   # what is under the floor outside it (the game's floor shows;
         #                                             wide: the iso camera sees under-floor parts past the footprint)
         f = K(f"slab_{v}_floor", fp)
-        for i in range(4):
-            c = math.pi / 4 + i * math.pi / 2
-            corner_fill(f, c - math.pi / 4, c + math.pi / 4, pit, -0.04, 0.0, "dark", half=4.0)
+        if callable(pit):                           # a mouth that isn't round (radius by angle)
+            floor_fill(f, pit, -0.04, 0.0, "dark", half=4.0)
+        else:
+            for i in range(4):
+                c = math.pi / 4 + i * math.pi / 2
+                corner_fill(f, c - math.pi / 4, c + math.pi / 4, pit, -0.04, 0.0, "dark", half=4.0)
         for o in f.build():
             o.is_holdout = True
             objs.append(o)
