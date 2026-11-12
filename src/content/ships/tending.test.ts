@@ -152,4 +152,18 @@ describe('tending a medical bed', () => {
     expect(hp(sim, patient)).toBe(100);
     expect(tendJobs(sim)).toHaveLength(0);
   });
+
+  it('a medic tending a stable patient breaks off for a newly downed crew member (a rescue preempts tending)', () => {
+    const { sim, medic, other } = sickbay();
+    run(sim, secs(4));
+    expect(sim.world.get(sim.world.get(medic, AssignmentC)?.jobId ?? 0, JobC)?.kind).toBe('tend');
+    place(sim, 'module.med_bed'); // a free bed to carry them to
+    sim.world.get(other, HealthC)!.hp = 0; // goes down, bleeding out
+    let rescued = false;
+    for (let i = 0; i < secs(15) && !rescued; i++) {
+      run(sim, 1);
+      rescued = sim.world.get(sim.world.get(medic, AssignmentC)?.jobId ?? 0, JobC)?.kind === 'rescue';
+    }
+    expect(rescued).toBe(true);
+  });
 });

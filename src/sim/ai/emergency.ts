@@ -16,11 +16,14 @@ export const isEmergency = (job: Job): boolean => job.kind === 'extinguish' || j
 /** What an emergency never interrupts: a console, a rescue, a suit errand, or another emergency. */
 const HOLDS = ['operate', 'rescue', 'suitUp', 'suitOff', 'refill', 'extinguish'];
 
+/** Standing work that yields to any emergency the crew member is willing to do, whatever its priority (tending a stable patient gives way to a rescue, though both are medical). */
+const YIELDS = ['tend'];
+
 /** True when a free emergency job the crew member ranks higher than their current job is waiting and reachable (checked every few ticks). */
 export function emergencyWaiting(sim: Sim, crewId: number, pos: Position, current: Job): boolean {
   if (HOLDS.includes(current.kind) || isErrand(current) || (current.kind === 'build' && current.category === 'firefighting')) return false;
   const prio = sim.world.get(crewId, PrioritiesC) as Priorities;
-  const held = prio[current.category] || 5; // off counts as the lowest
+  const held = YIELDS.includes(current.kind) ? 5 : prio[current.category] || 5; // off counts as the lowest
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC) as Job;
     if (j.reservedBy !== 0 || !isEmergency(j)) continue;
