@@ -12,10 +12,12 @@
   // renderer, which can't run here, so they are stills the capture made of this very caller (scripts/signal-stills.mjs) and the window asks for them
   // where it would ask the renderer.
   const { story } = panelOf('signal', signalJson);
+  // The recorded call has the bad-link stutter (a story tell); a page that sits still shouldn't jitter, so the wiki holds the picture steady.
+  const active = { ...story.active!, comms: { ...story.active!.comms!, stutter: false } };
   const holo: UiHolo = { ...holoMeta, url: asset('/guides/signal/holo.webp' as Parameters<typeof asset>[0]) };
   const portrait = asset('/guides/signal/portrait.webp' as Parameters<typeof asset>[0]);
   const api = apiOf({}, { lookPortrait: () => portrait, shipHolo: () => Promise.resolve(holo) });
   const none = (): void => {};
 </script>
 
-<SignalComms {api} active={story.active!} busy={false} pick={none} binds={keymap.get()} />
+<SignalComms {api} {active} busy={false} pick={none} binds={keymap.get()} />
