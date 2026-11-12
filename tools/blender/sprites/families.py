@@ -161,7 +161,7 @@ def jobs(name):
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
     if name == "barcounter":    # look study, preview only (not in RENDERED): bar counter designs, r0
         from . import barcounter_study
-        return barcounter_study.jobs(), True
+        return barcounter_study.jobs(), "only:bar"
     if name == "bunk":          # look study, preview only (not in RENDERED): double bunk bed designs, r0
         from . import bunk_study
         return bunk_study.jobs(), True

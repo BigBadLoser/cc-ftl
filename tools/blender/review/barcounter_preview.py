@@ -9,7 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
-NAMES = {"c1": "C1  diner", "c2": "C2  lounge", "c3": "C3  neon"}
+NAMES = {"c1": "C1  diner", "c2": "C2  lounge", "c3": "C3  neon",
+         "d1": "D1  tap gantry", "d2": "D2  crate dive", "d3": "D3  cooler bar"}
 CW, CH = 280, 220
 
 
