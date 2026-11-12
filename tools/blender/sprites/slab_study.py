@@ -22,7 +22,8 @@ from .recovery_study import layer
 from .recovery_study4 import quad
 
 PAL = "slab"
-L, W, T = 2.0, 0.8, 0.22                            # the slab: length (head to foot), width, thickness
+L, W, T = 1.6, 0.8, 0.22                            # the slab: length (head to foot; 1.6 so a wheel of them stands under the
+#                                                     roof: walls 1.85, crew 1.5), width, thickness
 
 
 def add(a, *vs):
