@@ -22,6 +22,23 @@ export function cabinsWithin(r: RoomSpec): RoomSpec[] {
 }
 
 /**
+ * Barracks for so many beds, each room holding a number of beds in `size`: double bunks (a bed's footprint, two beds)
+ * in two rows, heads to the walls, an aisle between, and a tile along for lockers.
+ */
+export function barracksOf(rng: Rng, like: RoomSpec, beds: number, size: readonly [number, number]): RoomSpec[] {
+  const made: RoomSpec[] = [];
+  for (let left = beds; left > 0;) {
+    const n = Math.min(left, rng.int(size[0], size[1])), bunks = Math.ceil(n / 2);
+    made.push({ ...like, mods: Array<string>(n).fill('module.bed'), w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false });
+    left -= n;
+  }
+  return made;
+}
+
+/** A cabin for one, two wide. */
+export const cabinOf = (like: RoomSpec, extra: readonly string[] = []): RoomSpec => ({ ...like, mods: ['module.bed', ...extra], w: 2, h: 4, cabin: true, cabins: false });
+
+/**
  * The crew's beds, when the recipe houses them its own way: the rooms with barracks in place of quarters, and the
  * single cabins to scatter.
  */
@@ -35,18 +52,12 @@ export function house(rng: Rng, recipe: Recipe, all: readonly RoomSpec[]): { roo
     let beds = quarters.reduce((n, r) => n + r.mods.length, 0) - others.length;
     rooms = rooms.filter((r) => r.role !== 'quarters');
     if (first) {
-      const single = (extra: string[]): RoomSpec => ({ ...first, mods: ['module.bed', ...extra], w: 2, h: 4, cabin: true, cabins: false });
       const singles = q === 'scatter' ? beds : Math.min(beds, q.singles ?? 0);
-      for (let i = 0; i < singles; i++) pool.push(single(q === 'scatter' && i === 0 ? others : []));
+      for (let i = 0; i < singles; i++) pool.push(cabinOf(first, q === 'scatter' && i === 0 ? others : []));
       beds -= singles;
-      // A barracks: double bunks (a bed's footprint, two beds) in two rows, heads to the walls, an aisle between, and
-      // a tile along for lockers. What else the quarters held (life support) goes in the first.
-      const made: RoomSpec[] = [];
-      while (q !== 'scatter' && beds > 0) {
-        const n = Math.min(beds, rng.int(q.barracks[0], q.barracks[1])), bunks = Math.ceil(n / 2);
-        made.push({ ...first, mods: [...Array<string>(n).fill('module.bed'), ...(made.length === 0 ? others : [])], w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false });
-        beds -= n;
-      }
+      // What else the quarters held (life support) goes in the first barracks.
+      const made = q === 'scatter' ? [] : barracksOf(rng, first, beds, q.barracks);
+      if (made[0]) made[0] = { ...made[0], mods: [...made[0].mods, ...others] };
       rooms = [...rooms, ...made];
     }
   }

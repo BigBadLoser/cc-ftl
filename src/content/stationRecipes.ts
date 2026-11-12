@@ -81,7 +81,6 @@ export const stationRecipes = {
   spine: [
     spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9 }),
     spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9 }),
-    spine('halls, the crew in barracks and four cabins', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quarters: { barracks: [6, 8], singles: 4 } }),
     spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9 }),
   ],
   compound: [

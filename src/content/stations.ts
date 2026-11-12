@@ -105,7 +105,7 @@ export const stations = {
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
   'station.mining': {
-    name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, space: [0.8, 1.2], crew: CIVIL_CREW,
+    name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', barracks: { beds: [6, 8], cabins: 4 }, security: 0.25, space: [0.8, 1.2], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap_hull', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
     tiers: tiers({ cages: per(1, 1, 2), pods: per(2, 4, 6), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
@@ -136,7 +136,7 @@ export const stations = {
   },
   // Military depot: heavy guns, shield generators, armouries and barracks, few docks.
   'station.military': {
-    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', berths: 'rows', security: 0.55, space: [0.6, 0.9],
+    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', barracks: { beds: [6, 8] }, security: 0.55, space: [0.6, 0.9],
     crew: { required: ['role.engineer', 'role.gunner', 'role.gunner'], pool: [{ value: 'role.gunner', weight: 3 }, { value: 'role.engineer', weight: 2 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },

@@ -114,7 +114,8 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 
 - Rooms grow past what their contents need by the kind's spaciousness (`space` on the def: a navy depot and a pirate
   den are tight, a trade station roomy).
-- Quarters are blocks of one-bed cabins (four beds a block), or bunk rooms where the kind berths in rows (`berths`).
+- Quarters are blocks of one-bed cabins (four beds a block), or, where the kind sets `barracks` (the mining station,
+  the navy depot), barracks of 6 to 8 beds each (3 or 4 double bunks) with a few one-bed cabins beside them.
 - Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and a game table; from
   station size up the next is a rec room with arcade cabinets and a game table (`withCommons`). The fabricator stands
   in a plant room.
@@ -159,8 +160,8 @@ row): the harbour at the head of a main street 3 wide, habitation with the commo
 machinery behind a gate at the tail. Between the parts the street runs through a hall and steps to one side. Works
 and freight are wings on stubs off the flanks along the street. The works wing is a line: the refineries, the ore
 store, a passage (before the pod deck or partway down, as the seed has it), and the pod deck across its end. The
-freight wing stands on a street flank or on that passage, off the works wing. One spine recipe sets `quarters` to
-barracks with four cabins, which shortens the body to one section. 32 of 32 assemble with every room standing.
+freight wing stands on a street flank or on that passage, off the works wing. The crew sleeps in barracks (the mining
+station's default), so the body is short and thin against its 3-wide street. 24 of 24 assemble with every room standing.
 
 Tried and dropped: ore cages (a rail with ore holds in a row and beam teeth between). They were sealed rooms of crates
 off the ore's path from pod bay to store to refinery, and the part most often refused. The ore store replaces them.

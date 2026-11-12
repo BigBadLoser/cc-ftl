@@ -52,8 +52,11 @@ export interface StationDef {
   /** Combat side of a spawned station (spawning is a later slice). */
   side: Faction;
   motif: string;
-  /** Quarters as bunk rooms ('rows') rather than blocks of one-bed cabins. Read by the station assembly (`assembly/program.ts`). */
-  berths?: 'rows';
+  /**
+   * The crew sleeps in barracks: rooms of this many beds each (double bunks, so half as many bunks), with this many
+   * one-bed cabins beside them. Without it, blocks of one-bed cabins. Read by the station assembly (`assembly/program.ts`).
+   */
+  barracks?: { beds: readonly [number, number]; cabins?: number };
   /**
    * Spaciousness, rolled per station between these (default [1, 1]): how far rooms grow past what their contents need.
    * Under 1 tight (a navy depot, a pirate den), over 1 roomy (a trade station's halls). Read by the station assembly.

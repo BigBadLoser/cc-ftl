@@ -4,6 +4,7 @@ import { shuffle } from '../civilKit';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec } from '../plan';
 import { stationCrew } from '../stationPlan';
 import type { StationDef, StationSize } from '../stationTypes';
+import { barracksOf, cabinOf } from './quarters';
 
 /**
  * A station's rooms as the assembly takes them: the kind's doctrine (`StationDef`) at a size tier, as a list of rooms.
@@ -62,11 +63,17 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   }
   const crew = stationCrew(rng, def, size);
   const quarters: RoomSpec[] = [];
-  for (let i = 0; i < crew.length; i += 4) {
+  if (def.barracks) {
+    // Barracks, and a few cabins for those who rate one. Life support as before: one for every four of the crew.
+    const like: RoomSpec = { role: 'quarters', mods: [], w: 3, h: 5 }, cabins = Math.min(crew.length, def.barracks.cabins ?? 0);
+    const made = barracksOf(rng, like, crew.length - cabins, def.barracks.beds);
+    for (let i = 0; i < cabins; i++) made.push(cabinOf(like));
+    for (let i = 0; i < Math.ceil(crew.length / 4) && made.length > 0; i++) { const r = made[i % made.length] as RoomSpec; made[i % made.length] = { ...r, mods: [...r.mods, 'module.lifeSupport'] }; }
+    quarters.push(...made);
+  } else for (let i = 0; i < crew.length; i += 4) {
     const beds = Math.min(4, crew.length - i);
-    // A bunk room where the kind berths in rows; elsewhere a block of one-bed cabins: two wide each and a dividing
-    // wall between, three deep behind a wall, and a hallway.
-    const cabins = def.berths !== 'rows' && beds > 1;
+    // A block of one-bed cabins: two wide each and a dividing wall between, three deep behind a wall, and a hallway.
+    const cabins = beds > 1;
     quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
   }
   const support: RoomSpec[] = [];
