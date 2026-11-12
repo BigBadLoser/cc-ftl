@@ -28,11 +28,11 @@
   const extra = $derived(split.extra);
 
   /** Every alert is urgent: red for threats to the ship and crew, amber for shortages. */
-  const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'crew.break', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded', 'away.stranded', 'save.failed']);
+  const danger = new Set(['fire.started', 'hull.breach', 'crew.downed', 'crew.starving', 'crew.break', 'o2.low', 'suit.airLow', 'suit.airOut', 'combat.started', 'creatures.aboard', 'galaxy.incomingHostile', 'boarders.stranded', 'away.stranded', 'save.failed', 'ship.disabled', 'fuel.out', 'core.lost', 'vehicle.lost']);
   const icon: Record<UiAlertKind, IconName> = {
     'fire.started': 'fire', 'hull.breach': 'alert', 'power.shortage': 'power', 'o2.low': 'o2', 'suit.airLow': 'o2', 'suit.airOut': 'o2', 'crew.airUnreachable': 'o2', 'away.stranded': 'downed', 'crew.downed': 'downed',
     'crew.starving': 'food', 'crew.break': 'alert', 'combat.started': 'combat', 'creatures.aboard': 'combat', 'galaxy.incomingHostile': 'alert', 'story.lead': 'list', 'fight.report': 'list', 'boarders.stranded': 'downed', 'save.failed': 'save', 'crew.asksToJoin': 'person',
-    'inspect.waiting': 'person', 'inspect.blocked': 'person',
+    'inspect.waiting': 'person', 'inspect.blocked': 'person', 'ship.disabled': 'alert', 'fuel.low': 'power', 'fuel.out': 'power', 'core.lost': 'alert', 'vehicle.lost': 'downed',
   };
 </script>
 
