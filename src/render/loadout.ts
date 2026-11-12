@@ -3,6 +3,7 @@ import type { Atlas, LayerSprite } from './assets/loader';
 import { hash } from './assets/palette';
 import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Crew } from '../sim/crew/components';
+import type { SeatKind } from '../sim/registry';
 
 /** What a crew figure's look depends on: species, role (the kit) and the appearance seed (hair, colours). */
 export type CrewLook = Pick<Crew, 'species' | 'role' | 'appearanceSeed'>;
@@ -92,6 +93,9 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
   return activity === 'working' ? 'work' : 'idle';
 }
 
+/** The sit clip of a seat kind. Consoles and seated modules use `sit_idle`/`sit_work`, cut against the console chair; a seat of another shape has a clip cut against that shape (tools/blender/sprites/human_stool.py). */
+export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool' };
+
 /**
  * Clips to try, after the requested one, when a layer has no sheet for it. A layer lacking a clip is normal (sheets are
  * per item and clip, and new clips are added without re-rendering old items), so every clip has a rule:
@@ -100,6 +104,7 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
  * - `sit_idle`: nothing, so the layer is hidden. Seated poses are fitted to the chair; a standing pose would clip through
  *   it. The engineer rig and EVA pack have no sit sheets for exactly this reason;
  * - `sit_work`: the layer's sit_idle;
+ * - `sit_stool`: nothing, like sit_idle (it is that pose cut against another seat);
  * - `walk`: `run` (creature sheets), then idle.
  */
 const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
@@ -107,6 +112,7 @@ const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
   walk: ['run', 'idle'],
   sit_idle: [],
   sit_work: ['sit_idle'],
+  sit_stool: [],
   ...weaponFallbacks(),
 };
 

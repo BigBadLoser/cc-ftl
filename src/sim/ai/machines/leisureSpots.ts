@@ -1,7 +1,7 @@
 import { hasTrait } from '../../crew/traits';
 import type { World } from '../../ecs';
 import { ModuleC, type Module } from '../../modules/components';
-import type { ModuleDef } from '../../registry';
+import type { ModuleDef, SeatKind } from '../../registry';
 import { rotateOffset } from '../../modules/footprint';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
@@ -39,15 +39,16 @@ export function standTiles(sim: Sim, module: number): { x: number; y: number }[]
 
 /**
  * Which stand tile of a social spot (the game table) crew member `id` sits on right now, or -1: they are resting on a break at it, settled on the tile.
- * The art seats players on its stools (render/crewView.ts); a solo spot (the arcade) is played standing.
+ * The art seats players on its stools (render/crewView.ts) when the spot has a `leisure.seat`, which also names the crew clip (SEAT_CLIP);
+ * a spot without one (the arcade) is played standing.
  */
-export function seatIndex(world: World, modules: Readonly<Record<string, ModuleDef>>, id: number, x: number, y: number): { m: Module; def: ModuleDef; index: number } | null {
+export function seatIndex(world: World, modules: Readonly<Record<string, ModuleDef>>, id: number, x: number, y: number): { m: Module; def: ModuleDef; index: number; seat: SeatKind } | null {
   const t = world.get(id, TaskC);
   const m = t?.machine === 'leisure' && t.state === 'Relax' && t.bb.target ? world.get(t.bb.target, ModuleC) : undefined;
   const def = m && modules[m.def];
-  if (!m || !def?.leisure || def.leisure.kind !== 'social') return null;
+  if (!m || !def?.leisure?.seat) return null;
   const index = standTilesOf(m, def).findIndex((s) => s.x === x && s.y === y);
-  return index < 0 ? null : { m, def, index };
+  return index < 0 ? null : { m, def, index, seat: def.leisure.seat };
 }
 
 /** Stand tiles held by crew other than `except` on a break at a spot: "module:x,y". */

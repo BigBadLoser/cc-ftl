@@ -210,7 +210,7 @@ export const modules = {
     maxHp: 70,
     buildWork: 130,
     cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 5 }, { item: 'item.polymer', count: 4 }],
-    leisure: { kind: 'social', stand: [[0, 1], [1, -1]] },
+    leisure: { kind: 'social', stand: [[0, 1], [1, -1]], seat: 'stool' },
   },
   // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
   'module.storage': {

@@ -44,10 +44,10 @@ One sheet per item AND clip: `crew.human.<slot>[.<item>].<clip>`, for example `c
 when that clip has glow pixels). Rows = sim facing d (0 = grid +x, counter-clockwise in grid
 space, 2 = grid +y), i.e. d=0 SE, 1 S, 2 SW, 3 W, 4 NW, 5 N, 6 NE, 7 E on screen. Blender azimuth theta = 90 - 45*d
 (character faces -Y at 0, grid y = -Blender y). Columns = that clip's frames: idle 4, walk 8, work 6, sleep 3, sit_idle 4,
-sit_work 6, eva_float 4. The manifest layer `crew.human.torso.tee` lists its clips, each with its `sheet`
+sit_work 6, eva_float 4, sit_stool 4 (the sit_idle pose cut against the game-table stool instead of the console chair, `human_stool.py`; picked per module by `ModuleDef.leisure.seat`, console seats are the default). The manifest layer `crew.human.torso.tee` lists its clips, each with its `sheet`
 (`clips.walk = {sheet, start: 0, frames, fps, loop}`). An item only has the clips it needs: no `sit_*` for `gear.back`
 (rig/pack would sit inside the chair), `eva_float` only for the body and the suit. The runtime falls back to idle for a
-clip a layer lacks, and hides the layer for `sit_idle` (`resolveClip` in `src/render/loadout.ts`).
+clip a layer lacks, and hides the layer for `sit_idle` and `sit_stool` (`resolveClip` in `src/render/loadout.ts`).
 All layers share ONE fixed frame (`crew_spec.py`: 128x120, feet anchor (64, 94); the largest current gear needs 76 above,
 15 below, 52 to each side), so a new item never changes another item's sheets. Sleep frames are centred on the anchor
 and lifted 0.22 tile for a bed.

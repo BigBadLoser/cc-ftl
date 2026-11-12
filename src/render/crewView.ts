@@ -28,7 +28,7 @@ import { heldAssets } from './itemView';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
-import { clipFor, crewLoadout, preloadLayers } from './loadout';
+import { SEAT_CLIP, clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
 import { BED_LIFT, bedPose } from './bedPose';
@@ -330,7 +330,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const onOpen = !!at && openTilesOf(at.def, at.m.x, at.m.y, at.m.rot).some((t) => t.x === mx && t.y === my);
         const chair = at && (at.def.console || at.def.seated) ? accessTile(at.def, at.m.x, at.m.y, at.m.rot) : null;
         const stool = !hurtLying && host.modules ? seatIndex(world, host.modules, id, mx, my) : null; // a game table's stool: seated, facing the table
-        const sitting = ((!!chair && chair.x === mx && chair.y === my) || !!stool) && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips.sit_idle);
+        const sitting = ((!!chair && chair.x === mx && chair.y === my) || !!stool) && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips[stool ? SEAT_CLIP[stool.seat] : 'sit_idle']);
         // Creature sheets (aliens) carry `attack`, `hurt` and `dead`: an attack (the fight cooldown restarting) or a hit
         // (hp dropping) plays its clip once; a dead one lies as its `dead` corpse.
         const has = (c: string) => s.parts.some((q) => q.layer.def.clips[c]);
@@ -354,7 +354,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.lastHp = hpNow;
         s.lastCooldown = cd;
         if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
-        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
+        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (stool ? SEAT_CLIP[stool.seat] : crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
         const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;

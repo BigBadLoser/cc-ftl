@@ -35,7 +35,7 @@ def scene(cv, G, pub, ox, oy, rot, tag, crew=True):
     cv.static(G, f"module.gametable.r{rot}{tag}", *iso(ox, oy, 0, 0))
     if crew:
         for _, gx, gy, d in sorted(seats):
-            cv.char(human(pub, d, "sit_idle"), *iso(ox, oy, gx, gy))
+            cv.char(human(pub, d, "sit_stool"), *iso(ox, oy, gx, gy))
     for part in ("front", "holo"):                              # (the overlays: over the players, or alone)
         fid = f"module.gametable.{part}.r{rot}{tag}"
         if fid in G.m["assets"] and (crew or part == "holo"):

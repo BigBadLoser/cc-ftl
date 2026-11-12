@@ -469,6 +469,9 @@ export interface AirlockLayout {
 /** What a derelict's part strips into (DESIGN.md "Salvaging derelicts"); the item is `item.scrap_<type>`. */
 export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 
+/** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
+export type SeatKind = 'stool';
+
 export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
@@ -540,7 +543,7 @@ export interface ModuleDef {
    * A leisure spot (sim/ai/machines/leisureSpots.ts): crew on a break stand on the `stand` tiles (offsets from the footprint's top-left at rotation 0, rotated
    * with the module) while it is powered. One crew member per tile. `social` spots draw `trait.social` crew, `solo` ones `trait.loner`.
    */
-  leisure?: { kind: 'social' | 'solo'; stand: [number, number][] };
+  leisure?: { kind: 'social' | 'solo'; stand: [number, number][]; seat?: SeatKind };
   workstation?: true;
   /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
   research?: true;
