@@ -1,5 +1,4 @@
-import { abortTask } from '../ai/task';
-import { releaseBedOwner } from '../crew/beds';
+import { removeCrew } from '../crew/depart';
 import { applyEffect } from '../story/effects';
 import { CrewC, DeadC, DownedC, PositionC } from '../crew/components';
 import { AllegianceC } from '../fight/components';
@@ -187,11 +186,7 @@ function reconcileHome(sim: Sim, a: Ambush, b: Boarder): boolean {
 }
 
 /** A visiting guest leaves play (taken home with their party, or gone when the player leaves the scene). */
-function removeGuest(sim: Sim, c: number): void {
-  abortTask(sim, c, 'removed');
-  releaseBedOwner(sim, c);
-  sim.world.destroyEntity(c);
-}
+const removeGuest = removeCrew;
 
 /** Let the skiff move on: it is no longer held, and its business here is done now. */
 function dismiss(sim: Sim, s: SceneShip): void {

@@ -14,12 +14,13 @@ import { AssignmentC, CrewC, DraftedC, PositionC, PrioritiesC, type Job, type Po
 import { isOffDuty } from '../fight/relations';
 import { workBlocked } from './workBlock';
 import { OPERATE_MAX_LEVEL } from '../tuning';
+import { jobCareFits } from './care';
 import { isIncapacitated, jobGoal, origin, refusesWork } from './helpers';
 
 /** The checks every job pick makes before scoring: the crew member's ship, not their own target, funded, not an errand, and not barred to them (a yard job, a blocked work category). */
 export function jobFits(sim: Sim, crewId: number, pos: Position, job: Job): boolean {
   if (job.yardOnly && !sim.world.has(crewId, YardCrewC)) return false;
-  if (!partyFits(sim, crewId, job)) return false;
+  if (!partyFits(sim, crewId, job) || !jobCareFits(sim, crewId, job)) return false;
   if (workBlocked(sim, crewId, job.category)) return false;
   if (job.kind === 'operate' && refusesConsole(sim, crewId, job.target ?? 0)) return false; // a Pacifist never mans a gun
   if (job.yard !== undefined && job.yardRank !== undefined && job.yardRank > (sim.yard.orders.find((o) => o.id === job.yard)?.rank ?? job.yardRank) + 1) return false;

@@ -1,3 +1,4 @@
+import { shipById, shipCanAct } from '../sim/combat/ships';
 import {
   CombatC, CrewC, IonC, ModuleC, JobC, ProjectileC, ShipC, WeaponC, commitEtaSec, projectileEtaSec, shotSlot, shotColor, ammoCount, isDormant, operatorOf, shieldRechargeSec, weaponsIdleReason, FTL_CHARGE_SEC,
   type Combat, type Sim, type Target,
@@ -58,6 +59,7 @@ function incomingShots(sim: Sim, shipId: number): UiIncoming[] {
 
 function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
   const out: UiEnemyWeapon[] = [];
+  const ship = shipById(sim, shipId);
   const flying = new Set<number>();
   for (const pid of sim.world.query(ProjectileC)) {
     const p = sim.world.get(pid, ProjectileC);
@@ -71,7 +73,7 @@ function enemyWeapons(sim: Sim, shipId: number): UiEnemyWeapon[] {
     if (!m || !w || !def || !wd || shipIdOf(sim, m) !== shipId) continue;
     out.push({
       id, name: moduleNameOf(sim, id), charge: round(w.charge), commitAt: round(commitCharge(wd.chargeSec)), committed: !!w.commit,
-      stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC), destroyed: m.hp <= 0,
+      stalled: !m.powered || m.hp <= 0 || sim.world.has(id, IonC), destroyed: m.hp <= 0, standDown: !shipCanAct(ship),
       eta: w.commit ? (() => { const e = commitEtaSec(sim, id); return e === null ? null : round(e, 1); })() : null,
       fired: !w.commit && flying.has(id), color: shotColor(shotSlot(sim, id)), upgrade: upgradeInfo(sim, id),
     });

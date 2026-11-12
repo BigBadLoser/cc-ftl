@@ -692,7 +692,7 @@ export type UiSubject =
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -798,6 +798,8 @@ export interface UiEnemyWeapon {
   stalled: boolean;
   /** The module is destroyed. */
   destroyed: boolean;
+  /** Its ship has yielded (`shipCanAct`): nothing charges or fires until the player answers. */
+  standDown: boolean;
   /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
   eta: number | null;
   /** One of its shots is in flight to your ship and it has no new aim yet. */

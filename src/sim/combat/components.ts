@@ -79,6 +79,8 @@ export interface Ship {
   integrity: number;
   /** Set by `wreckShip` when the player's guns were on it: the player destroyed it (galaxy/heat.ts counts it). */
   killedBy?: 'player';
+  /** Every enemy crew member is subdued and the player cannot reach the ship: it waits for the player's answer, let them go or take prisoners (`ship.settle`, capture/settle.ts). Cleared when the ship is reached or settled. */
+  yielded?: true;
   /** Its loss (destroyed by the player, or taken) has been counted towards the player's notoriety. */
   tallied?: true;
   /** A bounty target: the id of the station job that wants it destroyed (galaxy/jobs.ts). */

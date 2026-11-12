@@ -17,11 +17,18 @@
       <div class="sub">Prisoners ({p.prisoners.length})</div>
       <ul data-testid="prisoners">
         {#each p.prisoners as c (c.id)}
-          <li><span>{c.name} <small>{c.role}</small></span><span class="dim">{c.state}, {c.hp}/{c.maxHp}</span></li>
+          <li>
+            <span>{c.name} <small>{c.role}</small></span>
+            <span class="dim">{c.state}, {c.hp}/{c.maxHp}</span>
+            <button data-testid="release-{c.id}" title="Let them go: their faction thinks better of you" onclick={() => api.dispatch({ type: 'prisoner.release', crew: c.id })}>Release</button>
+          </li>
         {:else}
           <li class="dim">None.</li>
         {/each}
       </ul>
+      {#if p.prisoners.length > 1}
+        <button class="full" data-testid="release-all" onclick={() => { for (const c of p.prisoners) api.dispatch({ type: 'prisoner.release', crew: c.id }); }}>Release all</button>
+      {/if}
       {#if confirm === p.ship}
         <div class="btns">
           <button class="warn" data-testid="scuttle-confirm" onclick={() => { api.dispatch({ type: 'ship.scuttle', ship: p.ship }); confirm = 0; }}>Scuttle for real</button>
@@ -42,7 +49,8 @@
   .dim { color: var(--dim); }
   .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  li { display: flex; justify-content: space-between; gap: 8px; }
+  li { display: grid; grid-template-columns: 1fr auto 76px; align-items: center; gap: 8px; }
+  li .dim { white-space: nowrap; }
   li small { color: var(--dim); }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
   .full { width: 100%; margin-top: 8px; }

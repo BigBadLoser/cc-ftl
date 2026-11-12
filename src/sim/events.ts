@@ -185,6 +185,10 @@ export type SimEvent =
   /** `by`'s crew took the ship on ship `ship` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
   | { type: 'ship.captured'; ship: number; by: Faction; from: Faction }
   | { type: 'crew.imprisoned'; crew: number; ship: number }
+  /** The player let a beaten crew go: `crew` of them left, and the ship is a derelict (capture/settle.ts). */
+  /** A prisoner was released and left (capture/settle.ts); `faction` is the galaxy faction whose standing it raised ('' for none). */
+  | { type: 'crew.released'; crew: number; name: string; ship: number; faction: string }
+  | { type: 'ship.letGo'; ship: number; crew: number }
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }

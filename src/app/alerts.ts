@@ -6,7 +6,7 @@ import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwayC, AwaySiteC } from '../sim/away/components';
 import { pendingAsks } from '../sim/galaxy/joinOffer';
-import { deriveAlerts, shortOnPower, powerSubject, powerAlertText, hazardKey, alertShips, shipHelpless, DERIVED_KINDS, type Wanted } from './alertsDerived';
+import { deriveAlerts, shortOnPower, underAttack, powerSubject, powerAlertText, hazardKey, alertShips, shipHelpless, DERIVED_KINDS, type Wanted } from './alertsDerived';
 import { ALERT_PRIORITY, raisesAlert } from './eventRoute';
 import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
@@ -178,7 +178,7 @@ export function createAlerts(sim: Sim): Alerts {
         const core = e.type === 'core.hacked' ? sim.world.get(e.moduleId, ModuleC) : undefined;
         return { kind: 'core.lost', key: `core${e.ship}`, text, subject: core ? tileAt(core.x, core.y) : shipSubject(sim, e.ship), resolved: () => hasLiveCore(sim, e.ship) };
       }
-      case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
+      case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !underAttack(sim) };
       default: return null;
     }
   }

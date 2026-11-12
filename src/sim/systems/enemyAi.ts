@@ -3,6 +3,7 @@ import { truceHolds } from '../blackmarket/truce';
 import { CombatC, ShipC, type Combat, type Ship } from '../combat/components';
 import { isDormant } from '../combat/dormant';
 import { factionsHostile, isAiFaction, rogueAlly } from '../combat/factions';
+import { shipCanAct } from '../combat/ships';
 import { hostileVehicle, modulesOnGrid, randomModule } from '../combat/targets';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -24,7 +25,7 @@ export function enemyAiSystem(sim: Sim): void {
   for (const id of sim.world.query(ShipC, CombatC)) {
     const ship = sim.world.get(id, ShipC);
     const combat = sim.world.get(id, CombatC);
-    if (!ship || !combat || !isAiFaction(ship.faction) || ship.state !== 'active' || !sim.sector.inCombat || isDormant(ship)) continue;
+    if (!ship || !combat || !isAiFaction(ship.faction) || !shipCanAct(ship) || !sim.sector.inCombat || isDormant(ship)) continue;
     if (!ship.immobile && ship.integrity < FLEE_BELOW && combat.ftl >= FTL_CHARGE_SEC) {
       sim.enqueue({ type: 'combat.flee', ship: id });
       continue;
