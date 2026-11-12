@@ -3,11 +3,12 @@ import { ModuleC, type Module } from '../modules/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
-import { BED_HEAL_PER_SEC, POD_HEAL_PER_SEC } from '../tuning';
+import { BED_HEAL_PER_SEC, POD_HEAL_PER_SEC, XP_PER_HP_HEALED } from '../tuning';
 import { bedStandTile, bedUsable } from './beds';
 import { CrewC, DownedC, PathC, PositionC, RecoveringC, type Crew, type Downed, type Health, type Position, type Recovering } from './components';
 import { clearPath } from './helpers';
-import { treatmentMult } from './treatment';
+import { tendingOf, treatmentMult } from './treatment';
+import { grantXp } from './xp';
 
 /**
  * Recovery pods (DESIGN.md "Recovery pod"; `ModuleDef.recovery`). A powered tank a hurt crew member lies in and heals to full with no medic, out of
@@ -84,15 +85,18 @@ export function leaveCare(sim: Sim, crew: number, rec: Recovering): void {
 
 /**
  * One tick of healing in a treatment bed for a patient `who` (their `Recovering` or `Downed`, which carry `bed` and `treated`): hp up at `POD_HEAL_PER_SEC` in a pod
- * or `BED_HEAL_PER_SEC` in a medical bed (a walking patient there gets no medic's skill bonus), times a medicinal item's multiplier, less the tile's `harm`.
+ * or `BED_HEAL_PER_SEC` in a medical bed (times the tending medic's care, `tendingOf`, who earns the XP), times a medicinal item's multiplier, less the tile's `harm`.
  * False when the bed gives no care (a pod without power, or not a treatment bed).
  */
 export function careHealStep(sim: Sim, crew: number, who: Pick<Downed, 'bed' | 'treated'>, health: Health, harm: number): boolean {
   const bed = careBed(sim, who.bed);
   const pod = !!bed && !!sim.content.modules[bed.def]?.recovery;
   if (!bed || (pod && !bed.powered)) return false;
-  const care = treatmentMult(sim, shipIdOf(sim, bed), who);
+  const tend = pod ? { medic: 0, mult: 1 } : tendingOf(sim, who.bed); // a pod needs no medic; a medical bed heals faster while one tends it
+  const care = tend.mult * treatmentMult(sim, shipIdOf(sim, bed), who);
+  const before = health.hp;
   health.hp = Math.min(health.max, health.hp + ((pod ? POD_HEAL_PER_SEC : BED_HEAL_PER_SEC) * care - harm) / TICK_HZ);
+  if (tend.medic && health.hp > before) grantXp(sim, tend.medic, 'medicine', (health.hp - before) * XP_PER_HP_HEALED);
   return true;
 }
 

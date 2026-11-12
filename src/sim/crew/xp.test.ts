@@ -168,36 +168,19 @@ describe('XP from routine work', () => {
     expect(xpOf(sim, id, 'hacking')).toBeCloseTo(5);
   });
 
-  it('bed healing grants medicine XP to the best medic aboard, in proportion to the hp healed', () => {
+  it('bed healing with nobody tending trains nobody (the XP goes to the tending medic: content/ships/tending.test.ts)', () => {
     const sim = make();
     const medic = person(sim, speciesOf.human, 3, 3);
     const other = person(sim, speciesOf.human, 4, 3);
     sim.world.add(medic, RolledSkillsC, { skills: { medicine: 2 } });
-    sim.world.add(other, RolledSkillsC, { skills: { medicine: 1 } });
     const patient = person(sim, speciesOf.human, 5, 3);
     sim.world.get(patient, HealthC)!.hp = 10;
     sim.world.add(patient, DownedC, { bleed: 60, stabilized: true, bed: 0 });
     const hp0 = sim.world.get(patient, HealthC)!.hp;
     for (let i = 0; i < seconds(5); i++) sim.step();
-    const healed = sim.world.get(patient, HealthC)!.hp - hp0;
-    expect(healed).toBeGreaterThan(0);
-    expect(xpOf(sim, medic, 'medicine')).toBeGreaterThan(0);
+    expect(sim.world.get(patient, HealthC)!.hp - hp0).toBeGreaterThan(0);
+    expect(xpOf(sim, medic, 'medicine')).toBe(0);
     expect(xpOf(sim, other, 'medicine')).toBe(0);
-    const rate = xpOf(sim, medic, 'medicine') / healed;
-    for (let i = 0; i < seconds(5); i++) sim.step();
-    expect(xpOf(sim, medic, 'medicine') / (sim.world.get(patient, HealthC)!.hp - hp0)).toBeCloseTo(rate, 3);
-  });
-
-  it('bed healing with no medic aboard still trains the lowest-id crew member', () => {
-    const sim = make();
-    const a = person(sim, speciesOf.human, 3, 3);
-    const b = person(sim, speciesOf.human, 4, 3);
-    const patient = person(sim, speciesOf.human, 5, 3);
-    sim.world.get(patient, HealthC)!.hp = 10;
-    sim.world.add(patient, DownedC, { bleed: 60, stabilized: true, bed: 0 });
-    for (let i = 0; i < seconds(5); i++) sim.step();
-    expect(xpOf(sim, a, 'medicine')).toBeGreaterThan(0);
-    expect(xpOf(sim, b, 'medicine')).toBe(0);
   });
 
   describe('helm', () => {

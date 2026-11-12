@@ -187,7 +187,9 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue'
+  /** tend: a medic stands beside the medical bed `target` while a patient lies in it, speeding the healing (crew/treatment.ts `tendingOf`); held until the patient leaves. */
+  | 'tend' | 'haul' | 'craft' | 'research' | 'operate'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'
   /** refuel: load fuel into the reactor `target` (modules/refuel.ts). */

@@ -75,6 +75,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'extinguish': return extinguish(sim, job, speed);
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
+    case 'tend': return 'working'; // held until the patient is out of the bed (autojobs drops it)
     case 'operate': return 'working'; // held until the operate-jobs system drops it
     case 'passage': return 'wait'; // the holder waits at the boarding tile until the site's run boards them (away/passage.ts)
     case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one

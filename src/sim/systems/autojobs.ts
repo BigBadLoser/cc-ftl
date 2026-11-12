@@ -5,6 +5,7 @@ import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
 import { CarriedC, DownedC, JobC, PositionC, type Job } from '../crew/components';
 import { origin } from '../crew/helpers';
+import { bedsToTend } from '../crew/treatment';
 import { ModuleC } from '../modules/components';
 import { ShipC } from '../combat/components';
 import { keepRobotJob, robotJobs } from '../robots/jobs';
@@ -39,16 +40,19 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
  *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
  *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
+ *  - tend (medical): one per medical bed with a patient in it, dropped when they leave it (crew/treatment.ts `bedsToTend`);
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.
  */
 export function autoJobsSystem(sim: Sim): void {
   const seen = new Set<string>();
+  const tendBeds = bedsToTend(sim);
   for (const jobId of [...sim.world.query(JobC)]) {
     const job = sim.world.get(jobId, JobC) as Job;
     const keep = job.kind === 'extinguish' ? keepExtinguish(sim, job)
       : job.kind === 'repair' ? keepRepair(sim, job)
       : job.kind === 'rescue' ? keepRescue(sim, job)
+      : job.kind === 'tend' ? tendBeds.has(job.target ?? 0)
       : job.kind === 'forceDoor' && job.holder ? keepForceDoor(sim, jobId, job)
       : job.kind === 'sabotage' ? keepSabotage(sim, jobId, job)
       : job.kind === 'build' && job.category === 'firefighting' && onWreck(sim, job) ? false // a breach seal on a wreck (#404; none are posted now)
@@ -90,6 +94,13 @@ export function autoJobsSystem(sim: Sim): void {
     if (!downed || !pos || downed.stabilized || seen.has(`rescue:${id}`)) continue;
     if (!downed.bed && !findFreeBed(sim, shipIdOf(sim, pos), origin(pos), false, undefined, bedUseOf(sim, id)) && !rescueSpot(sim, id)) continue; // nowhere to take them
     addJob(sim, { category: 'medical', kind: 'rescue', x: pos.x, y: pos.y, target: id, bed: downed.bed });
+  }
+  // A medical bed with a patient in it gets a tend job (medical category): a medic stands beside it, and the patient heals faster while they do.
+  for (const bed of tendBeds) {
+    const m = sim.world.get(bed, ModuleC);
+    const def = m && sim.content.modules[m.def];
+    if (!m || !def || seen.has(`tend:${bed}`)) continue;
+    addJob(sim, { category: 'medical', kind: 'tend', x: m.x, y: m.y, target: bed, size: moduleSite(def, m).size });
   }
   robotJobs(sim, seen, (job) => addJob(sim, job));
 }
