@@ -71,7 +71,8 @@ A recipe has a root, branch rules, and a few settings.
   chords where the gap is long and there is room, one beam otherwise; none through the clear space off a dock.
 - `hall` on a rule: its neck and its links are halls, not corridors. A hall is a room-sized piece of street the
   street behind runs into; the street beyond leaves it a few tiles to one side (`shift`), and each flank has a port
-  for a wing (host `{ on: 'hall' }`). It is how a long street steps aside instead of running in one line.
+  for a wing. Host `{ on: 'flank' }` puts a branch on any flank along the street as the seed picks it, a hall's more
+  often than a section's. It is how a long street steps aside instead of running in one line.
 - On a section: `width` is its street's width (default 2; a main street 3), `cap` names the role of the room across
   its end, `far` the roles that stand at the far end of its rows.
 - `spacing`: clear ground between sections that are not joined.

@@ -141,14 +141,18 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
         hosts = a.ports.filter((p) => p.kind === 'rim' && !p.used && prefer.includes(p.frame.dir)).sort((p, q) => rank(p.frame.dir) - rank(q.frame.dir));
       } else if (rule.host.on === 'tip') {
         hosts = a.ports.filter((p) => p.kind === 'tip' && !p.used);
-      } else if (rule.host.on === 'section' || rule.host.on === 'hall') {
+      } else if (rule.host.on === 'section' || rule.host.on === 'flank') {
         // The centre first; then the open ports nearest it, a side before an end, with some chance in the order: a
         // cluster that grows round its middle and not in a line.
         const open = a.ports.filter((p) => !p.used && (p.kind === 'end' || p.kind === 'side'));
         const want = new Map(open.map((p) => [p, Math.hypot(p.frame.x - (core?.frame.x ?? 0), p.frame.y) / 30 + (p.kind === 'end' ? 2 : 0) + 0.4 * rng.next()]));
         hosts = [...(core && !core.used ? [core] : []), ...open.sort((p, q) => (want.get(p) as number) - (want.get(q) as number))];
-        // On a hall's flank first, whichever the seed has it.
-        if (rule.host.on === 'hall') hosts = [...shuffle(rng, hosts.filter((p) => p.node)), ...hosts.filter((p) => !p.node)];
+        // Any flank the seed picks, a hall's more often than a section's; the ends after them.
+        if (rule.host.on === 'flank') {
+          const turn = new Map(hosts.map((p) => [p, rng.next() - (p.node ? 0.35 : 0)]));
+          const flanks = hosts.filter((p) => p.kind === 'side').sort((p, q) => (turn.get(p) as number) - (turn.get(q) as number));
+          hosts = [...flanks, ...hosts.filter((p) => p.kind !== 'side')];
+        }
       } else {
         const e = ends[rule.host.rule];
         hosts = e && !e.used ? [e] : [];

@@ -67,7 +67,7 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
       section: { rooms: o.body, cross: 'any', width: o.street, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) },
     },
     { takes: ['secure'], per: 'together', host: { on: 'after', rule: 1 }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
-    { takes: ['works', 'freight'], per: 'department', host: { on: o.hall ? 'hall' : 'section' }, neck: o.stub, section: { rooms: o.wings, cap: 'hangar', far: ['cargo'] }, link: 0 },
+    { takes: ['works', 'freight'], per: 'department', host: { on: 'flank' }, neck: o.stub, section: { rooms: o.wings, cap: 'hangar', far: ['cargo'] }, link: 0 },
   ],
 });
 

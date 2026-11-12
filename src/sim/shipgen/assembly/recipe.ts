@@ -20,10 +20,10 @@ export interface BranchRule {
   /**
    * Where a branch starts: off the trunk's sides, on a ring's rim (directions in order of preference), at an arc's cut
    * end, at the far end of another rule's branch (its index in `branches`), or on the end or side of any section
-   * already standing, the newest first (a cluster that grows), or on the flank of a hall where streets meet (any
-   * section when no hall has a flank free).
+   * already standing, the newest first (a cluster that grows), or on a flank along the street as the seed picks it, a hall's
+   * more often than a section's.
    */
-  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' } | { on: 'hall' };
+  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' } | { on: 'flank' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
   /**
