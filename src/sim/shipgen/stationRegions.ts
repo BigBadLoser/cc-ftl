@@ -27,6 +27,8 @@ export interface Region {
   doors: number;
   /** Wall rank among rooms: the lower gives way. Defaults to creation order. */
   rank: number;
+  /** The department this region belongs to (flow planner), for sheets and the plan class. */
+  dept?: string;
 }
 
 export class RegionGrid {
@@ -55,15 +57,36 @@ export class RegionGrid {
     if (k >= 0) this.own[k] = id;
   }
 
-  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number } = {}): number {
+  room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string } = {}): number {
     const id = this.regions.length;
-    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}) });
+    this.regions.push({ role, hall: false, doors: o.doors ?? 1, rank: o.rank ?? id, ...(o.spec ? { spec: o.spec } : {}), ...(o.access ? { access: o.access } : {}), ...(o.dept ?? o.spec?.dept ? { dept: o.dept ?? o.spec?.dept } : {}) });
     return id;
   }
 
-  hall(role: RoomRole = 'hall'): number {
-    this.regions.push({ role, hall: true, doors: 0, rank: 0 });
+  hall(role: RoomRole = 'hall', dept?: string): number {
+    this.regions.push({ role, hall: true, doors: 0, rank: 0, ...(dept ? { dept } : {}) });
     return this.regions.length - 1;
+  }
+
+  /** The compiled floor cropped to its extent, with the region of every floor tile: for sheets and the plan class. */
+  snapshot(cell: string[] = this.compile()): { rows: string[]; roomOf: Int16Array; width: number; height: number; x0: number; y0: number } {
+    const { size, half } = this;
+    let x0 = size, y0 = size, x1 = -1, y1 = -1;
+    for (let k = 0; k < cell.length; k++) if (cell[k] !== '.') { x0 = Math.min(x0, k % size); x1 = Math.max(x1, k % size); y0 = Math.min(y0, Math.floor(k / size)); y1 = Math.max(y1, Math.floor(k / size)); }
+    x0--; y0--; x1++; y1++; // a tile of space all round, as the generator's templates have
+    const width = x1 - x0 + 1, height = y1 - y0 + 1;
+    const rows: string[] = [];
+    const roomOf = new Int16Array(width * height).fill(-1);
+    for (let y = y0; y <= y1; y++) {
+      let row = '';
+      for (let x = x0; x <= x1; x++) {
+        const k = y * size + x, c = cell[k] ?? '.';
+        row += c;
+        if (c === '_') roomOf[(y - y0) * width + x - x0] = this.own[k] as number;
+      }
+      rows.push(row);
+    }
+    return { rows, roomOf, width, height, x0: x0 - half, y0: y0 - half };
   }
 
   /** Paint `id` where `pred` holds. */
@@ -77,6 +100,17 @@ export class RegionGrid {
   }
 
   private readonly gates: [number, number][] = [];
+
+  /** The grid as it stands, to come back to with `reset` after a trial placement. */
+  mark(): { own: Int16Array; regions: number; gates: number } {
+    return { own: this.own.slice(), regions: this.regions.length, gates: this.gates.length };
+  }
+
+  reset(m: { own: Int16Array; regions: number; gates: number }): void {
+    this.own.set(m.own);
+    this.regions.length = m.regions;
+    this.gates.length = m.gates;
+  }
 
   /** A door forced at a wall tile between two halls (a checkpoint: the only way through a solid line). */
   gate(x: number, y: number): void {
@@ -122,6 +156,35 @@ export class RegionGrid {
       if (k >= 0 && cell[k] === '#') cell[k] = 'D';
     }
     return cell;
+  }
+
+  /** Whether the tile compiles to wall (doors aside): the rule of `compile` for one tile. */
+  private wallAt(x: number, y: number): boolean {
+    const a = this.at(x, y);
+    if (a === SPACE) return false;
+    if (a === SOLID) return true;
+    const pa = this.prio(a), hallA = (this.regions[a] as Region).hall;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const b = this.at(x + dx, y + dy);
+      if (b === a || b === SOLID) continue;
+      if (b !== SPACE && hallA && (this.regions[b] as Region).hall) continue;
+      if (this.prio(b) > pa) return true;
+    }
+    return false;
+  }
+
+  /** Solid 2x2 wall blocks in the box x0 <= x < x1, y0 <= y < y1 as the grid stands, doors not counted. */
+  blocks(x0: number, y0: number, x1: number, y1: number): number {
+    let n = 0;
+    for (let y = y0; y < y1; y++) {
+      let left = this.wallAt(x0, y) && this.wallAt(x0, y + 1);
+      for (let x = x0 + 1; x <= x1; x++) {
+        const here = this.wallAt(x, y) && this.wallAt(x, y + 1);
+        if (left && here) n++;
+        left = here;
+      }
+    }
+    return n;
   }
 
   /** Doors for one room: straight wall tiles with its floor on one side and an allowed region's floor opposite, spread along the frontage. */

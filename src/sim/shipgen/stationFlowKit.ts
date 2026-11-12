@@ -102,12 +102,14 @@ export interface LineOpts {
   /** One depth for the whole line (floor tiles): a room keeps its area, so a shallower one gets shorter. */
   floorDepth?: number;
   free?: (x: number, y: number) => boolean;
+  /** Collects the specs as placed (reshaped ones included). */
+  placed?: RoomSpec[];
 }
 
 /**
  * Rooms lining a street: from `from` outward along `axis` (direction `dir`), on the side `side` of the street's margin
  * `edge`. A room is its floor, one wall along the line and two across it; the first also brings its own near wall when
- * it starts against a hall. A line stops at the first room that will not fit; it returns the rest and where it stopped.
+ * it starts against a hall or open space. A line stops at the first room that will not fit; it returns the rest and where it stopped.
  */
 export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, from: number, edge: number, side: 1 | -1, o: LineOpts = {}): { rest: RoomSpec[]; at: number } {
   const { g } = s, free = o.free ?? s.free;
@@ -116,9 +118,10 @@ export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, f
     let spec = o.deep && room.w > room.h ? { ...room, w: room.h, h: room.w } : room;
     if (o.floorDepth && spec.role !== 'dock') spec = { ...spec, w: Math.max(3, Math.ceil((spec.w * spec.h) / o.floorDepth)), h: o.floorDepth };
     const across = spec.h + 2, c0 = Math.min(edge, edge + side * (across - 1)), c1 = Math.max(edge, edge + side * (across - 1)) + 1;
-    let hallBefore = false;
-    for (let c = c0; c < c1 && !hallBefore; c++) { const b = axis === 'x' ? g.at(at - dir, c) : g.at(c, at - dir); hallBefore = b >= 0 && !!g.regions[b]?.hall; }
-    const along = spec.w + 1 + (hallBefore ? 1 : 0);
+    // Its own near wall when what stands before it would take a tile from it: a hall, or open space.
+    let ownWall = false;
+    for (let c = c0; c < c1 && !ownWall; c++) { const b = axis === 'x' ? g.at(at - dir, c) : g.at(c, at - dir); ownWall = b === SPACE || (b >= 0 && !!g.regions[b]?.hall); }
+    const along = spec.w + 1 + (ownWall ? 1 : 0);
     const a0 = Math.min(at, at + dir * (along - 1)), a1 = Math.max(at, at + dir * (along - 1)) + 1;
     const [x0, y0, x1, y1] = axis === 'x' ? [a0, c0, a1, c1] : [c0, a0, c1, a1];
     let fits = true;
@@ -126,16 +129,13 @@ export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, f
     if (!fits) return { rest: specs.slice(i), at };
     g.rect(g.room(spec.role, { spec, doors: spec.warehouse ? 2 : 1, ...(o.access ? { access: o.access } : {}) }), x0, y0, x1, y1);
     at += dir * along;
+    o.placed?.push(spec);
   }
   return { rest: [], at };
 }
 
-/**
- * Fill the band: every strip of the lattice between hull and ring that is still open space becomes a room. Cabins take
- * one strip each; an `others` room takes as many as its size needs, on one face and one side of its axis. Both lists are
- * consumed; what is left in them did not fit. Returns the strips given to no room (planter nooks).
- */
-export function fillBand(s: Site, cabins: RoomSpec[], others: RoomSpec[]): number {
+/** The band's strips still open to space, folded (a strip with no ring frontage joins its neighbour) and in clockwise order from north. */
+function stripsOf(s: Site): Strip[] {
   const { g, R, hull, inside, ring } = s;
   const strips = new Map<string, Strip>();
   for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) {
@@ -164,17 +164,87 @@ export function fillBand(s: Site, cabins: RoomSpec[], others: RoomSpec[]): numbe
     if (host) host.tiles.push(...st.tiles);
     strips.delete(`${st.face}${st.off}`);
   }
-  const order = [...strips.values()];
+  // A tongue: a tile with the ring on one side and another strip straight across from it. Where the ring turns a
+  // corner it leaves one row of a strip under its neighbour; that row is the neighbour's wall onto the ring, or the two
+  // of them build a wall each, side by side.
+  const owner = new Map<number, Strip>();
+  const at = (x: number, y: number): number => (y + 1024) * 4096 + x + 1024;
+  for (const st of strips.values()) for (const [x, y] of st.tiles) owner.set(at(x, y), st);
+  const roomAt = (x: number, y: number): number => { const a = g.at(x, y); return a >= 0 && !g.regions[a]?.hall ? a : -1; };
+  for (const st of [...strips.values()]) {
+    st.tiles = st.tiles.filter(([x, y]) => {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        if (g.at(x + dx, y + dy) !== ring) continue;
+        const across = owner.get(at(x - dx, y - dy)), room = roomAt(x - dx, y - dy);
+        if (across && across !== st) { across.tiles.push([x, y]); owner.set(at(x, y), across); return false; }
+        // The same beside a room that stands in the band's depth (a wing's): the tile is that room's wall.
+        if (!across && room >= 0) { g.set(x, y, room); owner.delete(at(x, y)); return false; }
+      }
+      return true;
+    });
+  }
+  // A sliver: strip tiles in a run under three wide, left beside a room that is not the band's (a wing crossing the
+  // lattice off its lines). It could only ever be wall, two thick with the room's own, so it joins that room.
+  for (let again = true; again;) {
+    again = false;
+    for (const st of strips.values()) {
+      st.tiles = st.tiles.filter(([x, y]) => {
+        for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+          let lo = 0, hi = 0;
+          while (owner.get(at(x - (lo + 1) * dx, y - (lo + 1) * dy)) === st) lo++;
+          while (owner.get(at(x + (hi + 1) * dx, y + (hi + 1) * dy)) === st) hi++;
+          if (lo + hi + 1 >= 3) continue;
+          const room = [roomAt(x - (lo + 1) * dx, y - (lo + 1) * dy), roomAt(x + (hi + 1) * dx, y + (hi + 1) * dy)].find((r) => r >= 0);
+          if (room === undefined) continue;
+          for (let k = -lo; k <= hi; k++) { g.set(x + k * dx, y + k * dy, room); owner.delete(at(x + k * dx, y + k * dy)); }
+          again = true;
+          return false;
+        }
+        return true;
+      }).filter(([x, y]) => owner.get(at(x, y)) === st);
+    }
+  }
+  const order = [...strips.values()].filter((st) => st.tiles.length > 0);
   for (const st of order) {
     const mx = st.tiles.reduce((t, p) => t + p[0], 0) / st.tiles.length, my = st.tiles.reduce((t, p) => t + p[1], 0) / st.tiles.length;
     st.angle = (Math.atan2(mx, -my) + 2 * Math.PI) % (2 * Math.PI); // 0 = north, clockwise
   }
-  order.sort((a, c) => a.angle - c.angle);
+  return order.sort((a, c) => a.angle - c.angle);
+}
+
+/**
+ * A strip gives way on its side away from the axis (the nearer the axis, the lower the rank), so every strip keeps its
+ * width and a hull step's riser runs straight on as the divider below it.
+ */
+const rankOf = (st: Strip): number => Math.abs(st.off) + (st.face === 'e' || st.face === 'w' ? 0.5 : 0);
+
+/** A place for one band room: one strip, or the two strips either side of a face's axis (which must be one room). */
+export interface BandUnit { face: Strip['face']; tiles: [number, number][]; strips: 1 | 2; angle: number; rank: number; side: number; used: boolean }
+
+/** The band as units in clockwise order from north (stationFlow planner: rooms are placed on them by department). */
+export function bandUnits(s: Site): BandUnit[] {
+  const order = stripsOf(s).filter((st) => st.full);
+  const out: BandUnit[] = [];
+  for (let i = 0; i < order.length; i++) {
+    const st = order[i] as Strip, next = order[i + 1];
+    if (Math.abs(st.off) === K / 2 && next && next.face === st.face && Math.abs(next.off) === K / 2 && next.off !== st.off) {
+      out.push({ face: st.face, tiles: [...st.tiles, ...next.tiles], strips: 2, angle: (st.angle + next.angle) / 2, rank: rankOf(st), side: 0, used: false });
+      i++;
+    } else out.push({ face: st.face, tiles: st.tiles, strips: 1, angle: st.angle, rank: rankOf(st), side: Math.sign(st.off), used: false });
+  }
+  return out;
+}
+
+/**
+ * Fill the band: every strip of the lattice between hull and ring that is still open space becomes a room. Cabins take
+ * one strip each; an `others` room takes as many as its size needs, on one face and one side of its axis. Both lists are
+ * consumed; what is left in them did not fit. Returns the strips given to no room (planter nooks).
+ */
+export function fillBand(s: Site, cabins: RoomSpec[], others: RoomSpec[]): number {
+  const { g } = s;
+  const order = stripsOf(s);
 
   let spare = 0;
-  // A strip gives way on its side away from the axis (the nearer the axis, the lower the rank), so every strip keeps
-  // its width and a hull step's riser runs straight on as the divider below it.
-  const rankOf = (st: Strip): number => Math.abs(st.off) + (st.face === 'e' || st.face === 'w' ? 0.5 : 0);
   const bunks: RoomSpec[] = [];
   const give = (spec: RoomSpec | null, ss: Strip[]): void => {
     const rank = Math.min(...ss.map(rankOf));
