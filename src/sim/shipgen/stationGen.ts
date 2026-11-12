@@ -8,6 +8,7 @@ import { widthProblem } from './validate';
 import { arrangeHull } from './navyLayouts';
 import { SECURITY_ROLE, planStation } from './stationPlan';
 import { architectureOfGenerated, requirementsOfStationPlan, type StationArchitectureReport, type StationRoomRequirement } from './stationArchitecturePlan';
+import { finishedFlowProblems } from './stationFlowChecks';
 import { stationHullIntegrityProblems } from './stationHullIntegrity';
 import type { ShipPlan } from './plan';
 import { STATION_MAX, type StationDef, type StationInfo, type StationSize } from './stationTypes';
@@ -126,6 +127,8 @@ export function generateStation(
       const deficits = sourceModuleDeficits(requirementsOfStationPlan(plan), g.template.modules ?? []);
       if (deficits.length > 0) g.problems.push(`architecture source-program deficit: ${deficits.map((m) => `${m.def} ${m.found}/${m.needed}`).join(', ')}`);
     }
+    // Flow grammars: what must survive the whole pipeline is checked on the finished station (stationFlowChecks.ts).
+    if (r.profile.startsWith('stationFlow')) g.problems.push(...finishedFlowProblems(g, plan));
     last = { ...g, failures: [...failures], station: infoOf(def, size, g.template, defs) };
     lastPlan = plan;
     if (g.problems.length === 0) return attachAudit(last, plan);
