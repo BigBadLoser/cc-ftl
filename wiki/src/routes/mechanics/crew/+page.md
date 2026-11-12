@@ -177,13 +177,13 @@ Open the **Crew** window and pick the **Schedule** tab.
 | Preset | Plan |
 |---|---|
 | Default | Work 06:00 to 20:00, Free 20:00 to 22:00, Sleep 22:00 to 06:00 |
-| Late | The Default eight hours later: Work 14:00 to 04:00, Free 04:00 to 06:00, Sleep 06:00 to 14:00 |
+| Late | Sleep 06:00 to 14:00 (the Default eight hours later), Work 14:00 to 18:00, Free 18:00 to 20:00, Work 20:00 to 06:00 |
 | Day shift | Work 06:00 to 18:00, Free 18:00 to 22:00, Sleep 22:00 to 06:00 |
 | Night shift | Work 18:00 to 06:00, Free 06:00 to 10:00, Sleep 10:00 to 18:00 |
 | Any | No plan |
 
 Crew you haven't given a schedule alternate between **Default** and **Late** in hire order. Their sleep never overlaps,
-so someone is always awake, and everyone is up from 14:00 to 22:00. Give a crew member their own plan and they leave
+so someone is always awake and, at every hour, someone is on Work. Everyone is up from 14:00 to 22:00. Give a crew member their own plan and they leave
 the rotation.
 
 ### When the plan is set aside

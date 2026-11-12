@@ -40,6 +40,17 @@ describe('schedule presets', () => {
   });
 });
 
+describe('rotation coverage (#448)', () => {
+  it('at every hour at least one of Default and Late is on Work', () => {
+    const d = schedules['schedule.default'].hours;
+    const l = schedules['schedule.late'].hours;
+    const gaps = Array.from({ length: 24 }, (_, h) => h).filter((h) => d[h] !== 'work' && l[h] !== 'work');
+    expect(gaps).toEqual([]);
+    expect(l.filter((b) => b === 'sleep')).toHaveLength(8);
+    expect(l.filter((b) => b === 'free')).toHaveLength(2);
+  });
+});
+
 describe('block lookup and commands', () => {
   it('player crew follow Default and Late in turn by hire order until given a row; robots and station crew have none', () => {
     const sim = fresh();
@@ -48,7 +59,7 @@ describe('block lookup and commands', () => {
     const byHire = [...ids].sort((x, y) => personOf(sim, x) - personOf(sim, y));
     const rows = byHire.map((id) => hoursOf(sim, id));
     const late = schedules['schedule.late'].hours;
-    expect(late).toEqual(schedules['schedule.default'].hours.map((_, h) => schedules['schedule.default'].hours[(h + 16) % 24])); // Default + 8 h
+    expect(late.map((b) => b === 'sleep')).toEqual(schedules['schedule.default'].hours.map((_, h) => schedules['schedule.default'].hours[(h + 16) % 24] === 'sleep')); // Sleeps Default + 8 h
     for (const row of rows) expect([schedules['schedule.default'].hours, late]).toContainEqual(row);
     expect(rows.filter((r) => r === late).length).toBe(Math.floor(ids.length / 2)); // every second colonist hired
     // The stagger: Sleep blocks eight hours apart, so at every hour of the day someone is out of bed. A new game starts with everyone at work.
