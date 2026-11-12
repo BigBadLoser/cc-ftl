@@ -106,6 +106,29 @@ describe('new urgent alerts', () => {
     expect(current(al)).toHaveLength(0);
   });
 
+  it('a disabled ship is no alert while every able crew member is away on purpose, but is once anyone is left home or power is out', () => {
+    const sim = newGame(1, content);
+    sim.step();
+    const home = homeShip(sim);
+    const crew = playerCrew(sim);
+    expect(crew.length).toBeGreaterThan(1);
+    sim.world.get(home, ShipC)!.state = 'disabled';
+    for (const c of crew) sim.world.add(c, AwayC, { site: 5, vehicle: 6, cat: 'patrol' });
+    const al = createAlerts(sim);
+    al.onEvents([{ type: 'ship.disabled', ship: home }]);
+    scan(sim, al);
+    expect(kinds(al)).not.toContain('ship.disabled');
+    sim.world.remove(crew[1] as number, AwayC); // one is home again, and the ship is still disabled
+    scan(sim, al);
+    expect(kinds(al)).toContain('ship.disabled');
+    // Everyone away but the power is out: still an emergency.
+    sim.world.add(crew[1] as number, AwayC, { site: 5, vehicle: 6, cat: 'patrol' });
+    const al2 = createAlerts(sim);
+    for (const id of sim.world.query(ModuleC)) { const m = sim.world.get(id, ModuleC)!; if ((sim.content.modules[m.def]?.power ?? 0) > 0) m.hp = 0; }
+    scan(sim, al2);
+    expect(kinds(al2)).toContain('ship.disabled');
+  });
+
   it('a destroyed shuttle with crew aboard raises until they are safe; an empty one or an enemy one does not', () => {
     const sim = newGame(1, content);
     const al = createAlerts(sim);

@@ -54,6 +54,8 @@ export function createAlerts(sim: Sim): Alerts {
   /** Arrival-warning alerts by fleet id. They follow the sim, so they never expire on a timer. */
   const incoming = new Map<number, number>();
   let incomingKey = '';
+  /** An arrival warning was skipped for want of a slot: retry on the next sync even if the galaxy has not changed. */
+  let deferred = false;
   /** Fleets whose warning the player dismissed: quiet until the fleet is no longer on its way. */
   const muted = new Set<number>();
 
@@ -206,8 +208,11 @@ export function createAlerts(sim: Sim): Alerts {
   function syncIncoming(): void {
     const g = sim.galaxy;
     const key = `${g.rev}|${g.current}|${g.turn}`;
-    if (key === incomingKey) return;
+    // Unchanged galaxy: nothing to redo, unless a warning was held back by a full list or has left the list since (capacity may be free now).
+    const stale = deferred || [...incoming.values()].some((id) => !store.get().some((a) => a.id === id));
+    if (key === incomingKey && !stale) return;
     incomingKey = key;
+    deferred = false;
     // Only hostile arrivals are urgent; a friendly fleet dropping in is not an alert.
     const want = sim.content.galaxy ? incomingFleets(sim).filter((w) => w.hostile) : [];
     const ids = new Set(want.map((w) => w.fleet));
@@ -220,7 +225,7 @@ export function createAlerts(sim: Sim): Alerts {
     }
     for (const w of want) {
       if (muted.has(w.fleet)) continue;
-      if (!incoming.has(w.fleet) && !canRaise('galaxy.incomingHostile')) continue;
+      if (!incoming.has(w.fleet) && !canRaise('galaxy.incomingHostile')) { deferred = true; continue; }
       const text = `Arriving: ${w.name}, ${w.eta} turn${w.eta === 1 ? '' : 's'}`;
       const id = incoming.get(w.fleet);
       if (id !== undefined) {

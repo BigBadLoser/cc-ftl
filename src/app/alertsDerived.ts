@@ -90,10 +90,15 @@ export function hazardKey(sim: Sim, prefix: 'f' | 'b' | 'o', ship: number, room:
 /** Ships whose fire, breach and air alerts count: every ship the player owns (the home ship, prizes, captured hulls), not hostile ones. */
 export const alertShips = (sim: Sim, ship: number): boolean => sim.world.get(ship, ShipC)?.faction === 'player';
 
-/** The ship cannot act, and not because the whole crew is away on purpose (a party out on a site is no emergency). */
+/**
+ * The ship cannot act, and not because the whole crew is away on purpose: that case is every able player crew member out on a party, with
+ * power running (the ship is disabled only for want of hands aboard). Anyone left home, downed, or no power, and it is an emergency.
+ */
 export function shipHelpless(sim: Sim, ship: number): boolean {
   if (sim.world.get(ship, ShipC)?.state !== 'disabled') return false;
-  return !sim.world.query(AwayC, CrewC).some((c) => !sim.world.has(c, DeadC) && sim.world.get(c, AllegianceC)?.faction === 'player');
+  const able = sim.world.query(CrewC, AllegianceC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player' && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
+  const allAway = able.length > 0 && able.every((c) => sim.world.has(c, AwayC));
+  return !(allAway && powerBalance(sim, ship).supply > 0);
 }
 
 /** Reactor fuel on a ship: out (a reactor at 0, crew or not able to load more) or about to be (below the refill line with none in the stores). */

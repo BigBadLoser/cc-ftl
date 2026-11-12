@@ -313,6 +313,19 @@ describe('alerts', () => {
       return { sim, a, b, add };
     }
 
+    it('an arrival warning skipped for a full list appears once a slot frees, with no galaxy change', () => {
+      const { sim, a, b, add } = setup();
+      const alerts = createAlerts(sim);
+      for (let i = 0; i < 6; i++) alerts.post({ kind: 'fight.report', key: `r${i}`, text: 'report', report: true });
+      add('pirates', 'pirate', b, [a, START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts).some((x) => x.kind === 'galaxy.incomingHostile')).toBe(false);
+      alerts.dismiss(current(alerts)[0]!.id);
+      alerts.syncIncoming();
+      expect(current(alerts).some((x) => x.kind === 'galaxy.incomingHostile')).toBe(true);
+    });
+
     it('says how many turns until a fleet drops out, in danger styling for hostiles, and follows the fleet', () => {
       const { sim, a, b, add } = setup();
       const alerts = createAlerts(sim);
