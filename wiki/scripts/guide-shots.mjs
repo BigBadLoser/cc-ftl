@@ -8,36 +8,11 @@
 //             sits on the box's top-left corner, or with anchor 'left' just outside the middle of its left edge
 //   keyOut    make the flat space background transparent and trim to the ship (for HUD-less shots)
 //   quality   lossy WebP quality (default lossless)
-// A fixed ?seed keeps the crew names, ship and start node the same between runs.
-// The start node's trade station (the node strip tags it kind="ship", so match its name).
-const station = '[data-testid^="node-"][aria-label^="Trade station"]';
-
-/** Select the start node's trade station and open its panel on `tab`, answering the hail first. */
-async function openStation(h, tab) {
-  await h.click(station);
-  await h.wait(500);
-  await h.testid('open-station');
-  await h.wait(500);
-  if (await h.page.getByTestId('trade-hail').count()) {
-    await h.testid('trade-hail');
-    await h.page.getByTestId('trade-answered').first().waitFor({ timeout: 20000 }).catch(() => {});
-  }
-  if (tab !== 'trade') await h.testid('station-tab-' + tab);
-  await h.wait(600);
-  await h.key('Space');
-}
-
+// ?starter=wayfarer picks the Wayfarer (it has a shuttle). A fixed ?seed keeps the crew names, ship and start node the same between runs.
 export const shots = [
-  // The home page hero's background: the start node's own backdrop (stars, nebula, its planet), away from the ships.
-  {
-    name: 'home/backdrop',
-    query: '?seed=3',
-    steps: async (h) => { await h.key('Space'); await h.hideHud(); await h.page.evaluate(() => window.__cc.focus(20, 110)); await h.wait(800); },
-    quality: 82,
-  },
   {
     name: 'first-hour/hud',
-    query: '?seed=3',
+    query: '?seed=3&starter=wayfarer',
     steps: async (h) => { await h.key('Space'); await h.wait(300); },
     marks: [
       ['1', '[data-testid="navstrip"]'],
@@ -47,41 +22,27 @@ export const shots = [
       ['5', '[data-testid="toolbar"]'],
     ],
   },
-  {
-    name: 'first-hour/menu',
-    query: '?seed=3',
-    steps: async (h) => { await h.key('Escape'); await h.wait(600); },
-    selector: '[data-testid="esc-menu"]',
-    pad: 24,
-  },
   // Also the home page's hero image.
   {
     name: 'first-hour/ship',
-    query: '?seed=3',
-    steps: async (h) => { await h.hideUi(); },
+    query: '?seed=3&starter=wayfarer',
+    steps: async (h) => {
+      // Frame the player's ship alone (the helm's ship), so the neighbouring station stays out of the cut-out and the ship is centred.
+      await h.page.evaluate(() => { const id = window.__cc.modules('module.helm')[0]?.shipId; if (id !== undefined) window.__cc.frame([id]); });
+      await h.wait(1500);
+      await h.hideUi();
+    },
     keyOut: true,
   },
   {
-    name: 'first-hour/build',
-    query: '?seed=3',
-    steps: async (h) => { await h.key('Space'); await h.testid('tool-build'); await h.wait(500); await h.testid('tab-power'); await h.wait(500); },
-    marks: [['1', '[data-testid="build-catalog"]']],
-  },
-  {
-    name: 'first-hour/trade',
-    query: '?seed=3',
-    steps: (h) => openStation(h, 'trade'),
-    selector: '[data-testid="station-panel"]',
-  },
-  {
-    name: 'first-hour/jobs',
-    query: '?seed=3',
-    steps: (h) => openStation(h, 'jobs'),
-    selector: '[data-testid="station-panel"]',
-  },
-  {
     name: 'first-hour/starmap',
-    query: '?seed=3',
-    steps: async (h) => { await h.key('Space'); await h.key('m'); await h.wait(1500); },
+    query: '?seed=3&starter=wayfarer',
+    steps: async (h) => {
+      await h.key('Space');
+      await h.key('m');
+      await h.page.getByTestId('starmap').waitFor();
+      await h.page.mouse.move(960, 700); // off the buttons: no tooltip over the map
+      await h.wait(4000); // the galaxy geometry builds a piece at a time (bridge.warmStarmap); give it time to finish drawing
+    },
   },
 ];

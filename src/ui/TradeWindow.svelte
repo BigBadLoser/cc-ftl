@@ -3,24 +3,17 @@
   import { onMount } from 'svelte';
   import type { UiApi, UiTrade, UiTradePartner } from './api';
   import FloatingWindow from './FloatingWindow.svelte';
-  import { REFUSAL } from './channel';
   import { centerTop } from './floatingWindow';
-  import TradeDeliveries from './TradeDeliveries.svelte';
-  import TradeMarket from './TradeMarket.svelte';
-  import TradeSlip from './TradeSlip.svelte';
-  import type { Draft } from './tradeDraft';
+  import TradeView from './TradeView.svelte';
 
   /** The one trade window, for a station or a trader ship: movable and pinnable, so it can stay open while shuttles fly. */
   let { api, partner: id, onClose }: { api: UiApi; partner: number; onClose: () => void } = $props();
   let trade = $state<UiTrade>({ credits: 0, partners: [], deals: [] });
   onMount(() => api.trade.subscribe((t) => (trade = t)));
   const p = $derived<UiTradePartner | undefined>(trade.partners.find((x) => x.id === id));
-  const deals = $derived(trade.deals.filter((d) => d.ship === id && (d.give || d.get)));
-  let draft = $state<Draft>({});
   const fmt = (n: number) => n.toLocaleString('en').replace(/,/g, ' ');
   const truceTip = $derived(p?.market?.banned ? 'Truce broken: everyone here fires on you until the ban ends.' : 'Nobody starts a fight here. Firing on or boarding anyone breaks the truce.');
   const marketTip = $derived(p?.market ? `${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.${p.market.fence !== null ? ` The fence takes anything at ${Math.round(p.market.fence * 100)}%, no questions.` : ''}` : '');
-  const hail = () => api.dispatch({ type: 'trade.hail', ship: id });
 </script>
 
 <FloatingWindow id="trade" title="Trade" icon="station" min={{ w: 760, h: 380 }} defaultRect={(b) => centerTop(b, 1010)} {onClose} closeLabel="Close trade window" closeTestId="trade-close" testId="trade-window" titleTestId="trade-heading" titleFit>
@@ -31,34 +24,11 @@
     {#if p?.market}<Chip tone="warn" title={marketTip} testId="black-market">BLACK MARKET</Chip>{/if}
     <span class="credits"><Chip tone="gold" size="md" caps={false} outline={false} title="Your credits" testId="trade-credits">₵ {fmt(trade.credits)}</Chip></span>
   {/snippet}
-  <div class="pane" data-testid="trade-pane">
-    {#if !p}
-      <p class="msg">They are gone.</p>
-    {:else if p.hail === 'none'}
-      <div class="msg"><p>No contact yet.</p><button class="act" data-testid="trade-hail" onclick={hail}>Hail {p.name}</button></div>
-    {:else if p.hail === 'refused'}
-      <div class="msg"><p class="bad" data-testid="trade-refused">{REFUSAL[p.reason] ?? 'They refuse to talk.'}</p><button class="act" data-testid="trade-rehail" onclick={hail}>Hail again</button></div>
-    {:else}
-      <div class="grid" data-testid="trade-answered">
-        <TradeMarket {api} {p} credits={trade.free ?? trade.credits} bind:draft locked={!!p.offer} />
-        <div class="side">
-          <TradeSlip {api} {p} {trade} bind:draft />
-          <TradeDeliveries {api} {deals} />
-        </div>
-      </div>
-    {/if}
-  </div>
+  <TradeView {api} partner={id} />
 </FloatingWindow>
 
 <style>
   .who { color: var(--text); white-space: nowrap; }
   .role { color: var(--role-ink); font: 12px var(--head-font); letter-spacing: 0.05em; white-space: nowrap; text-transform: none; }
   .credits { margin-left: auto; }
-  .pane { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  .grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 290px; }
-  .side { display: flex; flex-direction: column; min-height: 0; }
-  .msg { padding: 16px; color: var(--dim); display: grid; gap: 8px; justify-items: start; }
-  .msg p { margin: 0; }
-  .msg .bad { color: var(--red); }
-  .act { border-color: var(--cyan); color: var(--cyan); background: transparent; }
 </style>
