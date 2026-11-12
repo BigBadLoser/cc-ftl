@@ -408,6 +408,14 @@ department, no gaps). The user's call: aim between the two. Done in recipes and 
   about 45% over the old Tree: this room list carries med bays and plant rooms the old tree never placed, and each
   module has its own street.
 
+Fourth pass: habitation still overwhelmed everything. The cause is the room list, not the layout: the pirate hub is
+35 beds, and quarters are 51% of its room floor (41% at station size; 29 to 30% for mining and trading stations). The
+user's idea, tried: `cabins: 'scatter'` on a recipe. Quarters are no department's blocks; every bed is a cabin of its
+own (2 by 4) that stands among the other sections' rooms, a few to a section and never behind a gate (`bunks` on a
+block), and as a pod on a port that is left. 16 of 16 assemble (two seeds on the second try: "no place for 3 cabins"),
+1,380 to 1,515 floor tiles against 1,640 to 1,920 with cabin blocks and about 1,200 for the old Tree. The departments
+read as the masses and the cabins as infill; green is still the commonest colour, because the beds are half the rooms.
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable

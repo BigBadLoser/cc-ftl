@@ -63,6 +63,8 @@ export interface BlockOpts {
   gate?: boolean;
   /** A passage across it midway, out to both flanks, with a port at each: other sections join its sides. */
   cross?: boolean;
+  /** Cabins offered to it: they stand among its rooms, the shorter row first (bunks wherever there is room). */
+  bunks?: readonly RoomSpec[];
 }
 
 /** A quarters room as cabins side by side, one bed each, taking the room's own length (walls between them included). */
@@ -90,12 +92,19 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // Quarters are cut into cabins where they stand, a bed each, inside the room's own length: the row is no longer for
   // it and the station no heavier.
   const rows = sides(body).map((row) => row.flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
+  // Bunks: each goes into the shorter row, somewhere among its rooms.
+  const bunks = o.bunks ?? [];
+  for (const b of bunks) {
+    const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
+    const row = len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1];
+    row.splice(c.rng.int(0, row.length), 0, depth ? { ...b, h: depth } : b);
+  }
   const legal = ([-1, 1] as const).filter((side) => facing(f, side) !== 'e'); // an airlock never faces east
   docks.forEach((d, i) => rows[(legal[i % legal.length] as number) < 0 ? 0 : 1].push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);
   const L0 = Math.max(run(rows[0]), run(rows[1]), 4);
   if (o.even || docks.length > 0) for (const row of rows) {
-    const k = row.map((r) => r.role !== 'dock').lastIndexOf(true);
+    const k = row.map((r) => r.role !== 'dock' && !r.cabin).lastIndexOf(true);
     if (k >= 0) row[k] = { ...(row[k] as RoomSpec), w: (row[k] as RoomSpec).w + L0 - run(row) };
   }
   const hall = g.hall('hall', o.dept ?? rooms[0]?.dept ?? docks[0]?.dept);
@@ -171,7 +180,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
       c.reserved.add(key(x, y));
     }
   }
-  return { ports, regions, box: whole };
+  return { ports, regions, box: whole, took: bunks.length };
 }
 
 /** A single room on a port, opening onto the hall behind it: a pod, or with `dock` a dock with its clear space kept. */

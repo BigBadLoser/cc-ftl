@@ -5,7 +5,7 @@ import type { BandAsk } from '../flow/band';
 import { deptOf, type Dept } from '../stationDepartments';
 import { cabinsOf, K, type Site } from '../stationFlowKit';
 import { RegionGrid, SOLID, SPACE } from '../stationRegions';
-import { block, corridor } from './elements';
+import { block, corridor, single } from './elements';
 import { at, key, type Built, type Ctx, type Dir, type Port } from './model';
 import type { BranchRule, Recipe, Roll } from './recipe';
 import { fillRing, ringPorts, ringSite } from './ring';
@@ -108,14 +108,14 @@ function chunks(rooms: readonly RoomSpec[], range: readonly [number, number]): R
   return out;
 }
 
-interface Chain { end: Port | null; dir: Dir }
+interface Chain { end: Port | null; dir: Dir; took: number }
 
 /**
  * One block section at a port: as the rule draws it, and when staggered bays build a thick wall or will not fit, as a
  * slab of one depth (the rooms keep their floor).
  */
-function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean; docks?: readonly RoomSpec[]; gate?: boolean }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: !!rule.section.cross, ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}) };
+function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: !!rule.section.cross, ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
@@ -123,7 +123,7 @@ function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpe
 }
 
 /** One branch at a port: neck, then sections in series. Null (and nothing kept) when any part of it does not fit. */
-function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[]): Chain | null {
+function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], bunks: readonly RoomSpec[], each: number): Chain | null {
   const { ctx } = a, { rng } = ctx;
   const undo = a.checkpoint();
   const joined = new Set(a.elements[host.owner]?.regions ?? []), outside = new Set(joined);
@@ -138,7 +138,10 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
     port = ps.find((p) => p.kind === 'end') as Port;
   }
   const parts = chunks(rooms, rule.section.rooms);
-  let end: Port | null = null;
+  let end: Port | null = null, took = 0;
+  // Bunks offered to each section in turn (never behind a gate).
+  const offer = (): { bunks?: readonly RoomSpec[] } => (rule.gated || each === 0 ? {} : { bunks: bunks.slice(took, took + each) });
+  const taken = (): void => { took += a.elements[a.elements.length - 1]?.took ?? 0; };
   const first = { ...(docks.length > 0 ? { docks } : {}), ...(rule.gated && neck === 0 ? { gate: true } : {}) };
   if (rule.arrange === 'sides') {
     // A comb: one stem, its sections on the stem's sides, each closed by its own end room; the stem is cut back to
@@ -150,16 +153,18 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
     for (const [i, part] of parts.entries()) {
       let ok = false;
       for (const p of ps.filter((q) => !q.used && q.kind === 'side')) {
-        if (section(a, p, joined, part, rule, { cap: true, ...(i === 0 ? first : {}) })) { ok = true; break; }
+        if (section(a, p, joined, part, rule, { cap: true, ...(i === 0 ? first : {}), ...offer() })) { ok = true; break; }
       }
       if (!ok) return fail();
+      taken();
       a.sections++;
     }
   } else {
     for (const [i, part] of parts.entries()) {
       const last = i === parts.length - 1, here = port;
-      const ps = section(a, here, joined, part, rule, { cap: last && !!rule.section.cap, ...(i === 0 ? first : {}) });
+      const ps = section(a, here, joined, part, rule, { cap: last && !!rule.section.cap, ...(i === 0 ? first : {}), ...offer() });
       if (!ps) return fail();
+      taken();
       a.sections++;
       end = ps.find((p) => p.kind === 'end') ?? null;
       if (last || !end) break;
@@ -179,17 +184,28 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
     for (const p of a.ports) if (a.sealed.has(p.hall)) p.used = true;
     end = null;
   }
-  return { end, dir: host.frame.dir };
+  return { end, dir: host.frame.dir, took };
 }
 
 interface Outcome { asm: Asm; why: string }
 
 /** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
-function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null): string {
+function grow(a: Asm, recipe: Recipe, all: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null): string {
+  let rooms = all;
   const { ctx } = a, { rng } = ctx;
   if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
   const ends: (Port | null)[] = [];
   let lastTrunk: Port | null = null, cursor = 0, berthed = false;
+  // Scattered cabins: every bed a small cabin of its own, a few to each section that is not gated.
+  const scatter = recipe.cabins === 'scatter';
+  const pool: RoomSpec[] = scatter ? rooms.filter((r) => r.role === 'quarters').flatMap((r) => {
+    const others = r.mods.filter((m) => m !== 'module.bed'), beds = r.mods.length - others.length;
+    return Array.from({ length: beds }, (_, i): RoomSpec => ({ ...r, mods: ['module.bed', ...(i === 0 ? others : [])], w: 2, h: 4, cabin: true, cabins: false }));
+  }) : [];
+  if (scatter) rooms = rooms.filter((r) => r.role !== 'quarters');
+  const mean = (b: BranchRule): number => (b.section.rooms[0] + b.section.rooms[1]) / 2;
+  const hosts0 = recipe.branches.filter((b) => !b.gated).reduce((n, b) => n + Math.max(1, Math.ceil(rooms.filter((r) => b.takes.includes(r.dept as Dept)).length / mean(b))), 0);
+  const each = pool.length > 0 ? Math.ceil(pool.length / Math.max(1, hosts0)) + 1 : 0;
   for (const [k, rule] of recipe.branches.entries()) {
     const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept));
     const whole = rule.per === 'together' ? [mine] : rule.takes.map((d) => mine.filter((r) => r.dept === d));
@@ -234,15 +250,27 @@ function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonl
         hosts = e && !e.used ? [e] : [];
       }
       let made: Chain | null = null, at: Port | null = null;
-      for (const h of hosts) { made = branch(a, rule, h, group, berths); if (made) { at = h; break; } }
+      for (const h of hosts) { made = branch(a, rule, h, group, berths, pool, each); if (made) { at = h; break; } }
       if (!made || !at) return `no place for the ${group[0]?.dept ?? 'dock'} branch (${group.length} rooms${berths.length ? `, ${berths.length} docks` : ''}, ${hosts.length} ports tried)`;
       if (berths.length > 0) berthed = true;
+      pool.splice(0, made.took);
       if (rule.host.on === 'trunk') {
         if (!lastTrunk || at.along !== lastTrunk.along) cursor = at.along + (recipe.root.kind === 'trunk' ? roll(rng, recipe.root.step) : 0);
         lastTrunk = at;
       }
       ends[k] = made.end;
     }
+  }
+  // Cabins no section took: pods on what ports are left.
+  for (const bunk of [...pool]) {
+    const open = a.ports.filter((p) => !p.used && !a.sealed.has(p.hall) && (p.kind === 'end' || p.kind === 'side'));
+    let ok = false;
+    for (const p of open) {
+      const joined = new Set(a.elements[p.owner]?.regions ?? []);
+      if (a.place(p, joined, () => single(ctx, p, bunk))) { ok = true; break; }
+    }
+    if (!ok) return `no place for ${pool.length} cabins`;
+    pool.shift();
   }
   return docks.length > 0 && !berthed ? 'the dock block was never built' : '';
 }

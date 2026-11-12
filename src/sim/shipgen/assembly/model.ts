@@ -54,6 +54,8 @@ export interface Built {
   regions: number[];
   /** Its extent, x0, y0, x1, y1. */
   box: [number, number, number, number];
+  /** Cabins it took of those it was offered. */
+  took?: number;
   /** A corridor's run, so an unused tail can be cut back. */
   run?: { frame: Frame; length: number; hall: number };
 }

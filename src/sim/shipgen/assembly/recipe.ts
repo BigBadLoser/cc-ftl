@@ -55,6 +55,11 @@ export interface Recipe {
     /** A ring or an arc with its band: it takes these departments itself. */
     | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number; inner: boolean; gap?: Gap };
   branches: readonly BranchRule[];
+  /**
+   * scatter: quarters are not a department's blocks. Their beds become single cabins that stand among the other
+   * sections' rooms, a few to a section, and as pods on what ports are left. Hard as ever: every bed stands.
+   */
+  cabins?: 'scatter';
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }
