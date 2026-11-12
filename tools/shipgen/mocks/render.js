@@ -4,8 +4,10 @@
  *   node tools/shipgen/mocks/render.js [--out dir] [--only name,name|none] [--legacy station.trading:1,station.farming:outpost:2]
  * Per mock: <name>-labels.png (labels.ts; red = 2x2 wall block, cyan = each room's largest rectangle, yellow = a
  * room under 3 wide) and <name>-depts.png (departments). sheet.png: every mock's silhouette, structure and departments.
- * Prints the hull check, 2x2 count, slivers, rooms far off their program size and room problems.
+ * Prints the hull check, 2x2 count, slivers, rooms far off their program size and room problems; metrics.json holds a
+ * record per layout (hash, floor split, rooms, modules, wall blocks, the architecture audit for generated layouts).
  */
+import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createServer } from 'vite';
@@ -26,6 +28,27 @@ try {
       '/tools/shipgen/png.ts', '/src/sim/shipgen/stationDepartments.ts'].map(load));
   const { roomCores, drawDepartments, drawDeptKey } = views;
   const results = [];
+  const metrics = [];
+  const { architectureOfGenerated } = await load('/src/sim/shipgen/stationArchitecturePlan.ts');
+  // One record a layout: identity, floor split, rooms by role, modules by def, wall blocks, and (generated layouts
+  // only) the architecture audit's access numbers and issue counts.
+  const metricsOf = (name, g, m) => {
+    const count = (list) => list.reduce((o, k) => ({ ...o, [k]: (o[k] ?? 0) + 1 }), {});
+    const roleOf = (k) => g.rooms[k]?.role;
+    const tiles = [...g.roomOf].filter((k) => k >= 0);
+    const rec = {
+      name, topology: g.topology, size: [g.width, g.height], hash: createHash('sha256').update(JSON.stringify([g.template.rows, g.template.modules])).digest('hex').slice(0, 12),
+      floor: m.floor, corridorFloor: tiles.filter((k) => roleOf(k) === 'hall').length, courtFloor: tiles.filter((k) => ['plaza', 'garden', 'drill'].includes(roleOf(k))).length,
+      wallTiles: g.template.rows.join('').split('#').length - 1, rooms: count(g.rooms.map((r) => r.role)), modules: count((g.template.modules ?? []).map((x) => x.def)),
+      wallBlocks: m.blocks.map((b) => [b.x, b.y]), under3Wide: m.slivers.length, coreShare: +m.coreShare.toFixed(3), hullCheck: m.hull[0] ?? 'ok', nativeProblems: g.problems, ms: g.ms,
+    };
+    if (name.startsWith('legacy')) {
+      const a = architectureOfGenerated(g).audit();
+      Object.assign(rec, { audit: { rooms: a.totalRooms, directPublicRoomAccess: a.directPublicRoomAccess, independentPublicRoomAccess: a.independentPublicRoomAccess,
+        publicNetworkComponents: a.publicNetworkComponents, roomHullFrontage: a.roomHullFrontage, exposedInteriorGapTiles: a.exposedInteriorGapTiles, issues: count(a.issues.map((i) => i.code)) } });
+    }
+    return rec;
+  };
   if (legacy) {
     // Each entry: station.<kind>:<seed> or station.<kind>:<size>:<seed>; the wheel grammar is forced.
     const [{ content }, { generateStation }] = await Promise.all([load('/src/content/index.ts'), load('/src/sim/shipgen/stationGen.ts')]);
@@ -34,7 +57,9 @@ try {
       const kind = parts[0], size = parts.length > 2 ? parts[1] : 'station', seed = Number(parts[parts.length - 1]);
       const o = content.stations[kind];
       const def = { ...o, tiers: { ...o.tiers, [size]: { ...o.tiers[size], grammars: [{ value: 'stationWheel', weight: 1 }] } } };
+      const t0 = performance.now();
       const g = generateStation(def, kind, size, seed, content.modules, true, 'off');
+      g.ms = Math.round(performance.now() - t0);
       g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : deptOf({ role: rm.role })));
       g.targets = [];
       const short = `${kind.replace('station.', '')}-${size}-s${seed}`;
@@ -76,9 +101,11 @@ try {
     const where = (c) => `${g.rooms[c.room]?.role} #${c.room} at ${c.x},${c.y}`;
     for (const c of slivers) console.log(`   sliver: ${where(c)} core ${c.w}x${c.h}`);
     for (const c of off) console.log(`   size: ${where(c)} floor ${c.floor} vs program ${g.targets[c.room]}`);
+    metrics.push(metricsOf(name, g, { floor, blocks, hull, slivers, coreShare }));
     for (const p of problems.slice(0, 12)) console.log(`   ${p}`);
     if (problems.length > 12) console.log(`   ... ${problems.length - 12} more`);
   });
   writeFileSync(join(out, 'sheet.png'), encodePng(sheet));
+  writeFileSync(join(out, 'metrics.json'), JSON.stringify(metrics, null, 1));
   console.log(`wrote ${out}`);
 } finally { await server.close(); }
