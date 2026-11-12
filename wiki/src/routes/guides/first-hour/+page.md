@@ -155,7 +155,7 @@ Your starting crystals last a good while. Switching off modules you aren't using
 ## Your first contract
 
 <GamePanel title="Jobs" width="560px" caption="The Jobs window at the start station: one delivery taken, two more on offer.">
-  <JobsBoard api={apiOf({ jobs: jobsBoardPanel.jobs })} />
+  <JobsBoard api={apiOf(jobsBoardPanel)} note={false} />
 </GamePanel>
 
 The station's job broker (a service button in the comms channel) and the **Jobs** screen list contracts: deliveries, bounties and surveys, each with its pay, destination, distance and

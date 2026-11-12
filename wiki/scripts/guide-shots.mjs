@@ -33,12 +33,23 @@ export const shots = [
   {
     name: 'first-hour/ship',
     query: '?seed=3&starter=wayfarer',
-    steps: async (h) => { await h.hideUi(); },
+    steps: async (h) => {
+      // Frame the player's ship alone (the helm's ship), so the neighbouring station stays out of the cut-out and the ship is centred.
+      await h.page.evaluate(() => { const id = window.__cc.modules('module.helm')[0]?.shipId; if (id !== undefined) window.__cc.frame([id]); });
+      await h.wait(1500);
+      await h.hideUi();
+    },
     keyOut: true,
   },
   {
     name: 'first-hour/starmap',
     query: '?seed=3&starter=wayfarer',
-    steps: async (h) => { await h.key('Space'); await h.key('m'); await h.wait(1500); },
+    steps: async (h) => {
+      await h.key('Space');
+      await h.key('m');
+      await h.page.getByTestId('starmap').waitFor();
+      await h.page.mouse.move(960, 700); // off the buttons: no tooltip over the map
+      await h.wait(4000); // the galaxy geometry builds a piece at a time (bridge.warmStarmap); give it time to finish drawing
+    },
   },
 ];

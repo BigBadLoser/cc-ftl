@@ -11,6 +11,8 @@ import { droneScenarioCommands } from '../../src/app/droneScenario.ts';
 import { buildTrade } from '../../src/app/tradeSnapshot.ts';
 import { upgradeScenarioCommands } from '../../src/app/upgradeScenario.ts';
 import { buildStructCosts } from '../../src/app/logisticsSnapshot.ts';
+import { portsAt, nodesWithin } from '../../src/sim/index.ts';
+import { stationClass } from '../../src/sim/galaxy/ports.ts';
 import { buildJobs } from '../../src/app/jobsSnapshot.ts';
 
 /** The bridge's data feeds by name, as values ("modules" -> UiModule[]). */
@@ -46,6 +48,28 @@ export function must<T>(value: T | undefined | null, what: string): T {
   return value;
 }
 
+/** The jobs board at the nearest station of a class (the start node's for trade): a game taken there, the first offer accepted. */
+function jobsAt(cls: 'trade' | 'military' | 'research') {
+  const sim = scene({ seed: 3 });
+  const here = sim.galaxy.current;
+  const near = [...nodesWithin(sim, here, 12)].sort((a, b) => a[1] - b[1]).map(([id]) => id).find((id) => portsAt(sim, id).some((p) => stationClass(p) === cls));
+  if (near === undefined) throw Error('Panel recipe found no ' + cls + ' station');
+  if (near !== here) sim.enqueue({ type: 'debug.galaxyTeleport', node: near });
+  const run = (n: number) => { for (let i = 0; i < n; i++) { sim.step(); sim.events.drain(); } };
+  run(40);
+  // A new node waits for the ship to be placed (the deploy picker): try spots until one is accepted.
+  for (const [x, y] of [[100, 60], [20, 50], [60, 120], [150, 40], [30, 130], [170, 110], [10, 10]] as const) {
+    if (sim.sector.state !== 'deploying') break;
+    sim.enqueue({ type: 'sector.deploy', x, y });
+    run(10);
+  }
+  run(40);
+  const first = must(buildJobs(sim).offers[0], cls + ' offer');
+  sim.enqueue({ type: 'jobs.accept', key: first.key });
+  for (let i = 0; i < 40; i++) { sim.step(); sim.events.drain(); }
+  return record(sim, ['jobs']);
+}
+
 export const panels = {
   /** The module inspector on a drone bay: one repair drone out sealing a hull breach, one docked (the drone scenario). */
   droneBay: () => {
@@ -59,11 +83,12 @@ export const panels = {
     const { crew, snapshot } = record(sim, ['crew', 'snapshot']);
     return { crew, snapshot };
   },
-  /** The jobs board at the start station: its offers, with the first delivery already taken. */
-  jobsBoard: () => {
-    const sim = scene({ seed: 3, commands: (s) => buildJobs(s).offers.slice(0, 1).map((o) => ({ type: 'jobs.accept', key: o.key })), secs: 2 });
-    return record(sim, ['jobs']);
-  },
+  /** The jobs board at the start (trade) station: its deliveries, the first already taken. */
+  jobsBoard: () => jobsAt('trade'),
+  /** The jobs board at the nearest military station: bounties, the first already taken. */
+  jobsMilitary: () => jobsAt('military'),
+  /** The jobs board at the nearest research station: surveys, the first already taken. */
+  jobsResearch: () => jobsAt('research'),
   /** The Trade window with a trade outpost hailed: a deal on the slip (three units bought, two sold). */
   trade: () => {
     const sim = scene({ seed: 3, commands: () => [{ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 }], secs: 2 });

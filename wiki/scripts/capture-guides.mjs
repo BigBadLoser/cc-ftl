@@ -95,6 +95,30 @@ async function keyOutBackground(png) {
     data[i + 3] = 0;
     stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
   }
+  // Keep only the largest connected shape (the player's ship): a neighbouring ship or station that the frame catches the corner of goes.
+  // Pixels count as joined when they are within 4 px of each other, so thin parts (flames, antennae) stay with their ship.
+  const near = 4;
+  const label = new Int32Array(w * h);
+  const sizes = [0];
+  for (let sy = 0; sy < h; sy++) for (let sx = 0; sx < w; sx++) {
+    if (data[at(sx, sy) + 3] === 0 || label[sy * w + sx]) continue;
+    const id = sizes.length;
+    sizes.push(0);
+    const todo = [sx, sy];
+    label[sy * w + sx] = id;
+    while (todo.length) {
+      const y = todo.pop(), x = todo.pop();
+      sizes[id]++;
+      for (let dy = -near; dy <= near; dy++) for (let dx = -near; dx <= near; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h || label[ny * w + nx] || data[at(nx, ny) + 3] === 0) continue;
+        label[ny * w + nx] = id;
+        todo.push(nx, ny);
+      }
+    }
+  }
+  const keep = sizes.indexOf(Math.max(...sizes.slice(1)));
+  for (let i = 0; i < w * h; i++) if (label[i] !== keep) data[i * 4 + 3] = 0;
   return sharp(data, { raw: { width: w, height: h, channels: 4 } }).trim({ threshold: 0 }).png().toBuffer();
 }
 
@@ -135,6 +159,8 @@ try {
     // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
     const query = shot.query ?? '';
     await page.goto(base + query + (query ? '&' : '?') + 'hook&lessons=off', { waitUntil: 'load' });
+    // The loading veil lifts once the game can run; a shot taken under it shows the "Loading" screen.
+    await page.waitForSelector('#boot-veil', { state: 'detached', timeout: 240000 });
     await page.waitForTimeout(shot.settle ?? 6000);
     page.setDefaultTimeout(SLOW);
     const h = helpers(page);

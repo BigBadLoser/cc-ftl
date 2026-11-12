@@ -6,12 +6,16 @@ order: 10
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import GamePanel from '../../../lib/GamePanel.svelte'
-  import JobsBoard from '../../../../../src/ui/JobsBoard.svelte'
+  import JobsTabs from '../../../lib/JobsTabs.svelte'
   import TradeView from '../../../../../src/ui/TradeView.svelte'
   import { panelOf, apiOf } from '../../../lib/panels'
   import jobsBoardJson from '../../../data/generated/panels/jobsBoard.json'
+  import jobsMilitaryJson from '../../../data/generated/panels/jobsMilitary.json'
+  import jobsResearchJson from '../../../data/generated/panels/jobsResearch.json'
   import tradeJson from '../../../data/generated/panels/trade.json'
   const jobsBoardPanel = panelOf('jobsBoard', jobsBoardJson)
+  const jobsMilitaryPanel = panelOf('jobsMilitary', jobsMilitaryJson)
+  const jobsResearchPanel = panelOf('jobsResearch', jobsResearchJson)
   const tradePanel = panelOf('trade', tradeJson)
 </script>
 
@@ -135,8 +139,8 @@ A price is built from the item's base value:
 Stations, depots and dens post work, and what a place posts depends on what it is. Press the **Jobs** button on the navigation strip to open the jobs window, or open the **Jobs** service
 in a channel. The window lists the jobs you hold, finished work ready to hand in, and what's offered here.
 
-<GamePanel title="Jobs" width="560px" caption="The Jobs window at the start station, with the first delivery already taken.">
-  <JobsBoard api={apiOf({ jobs: jobsBoardPanel.jobs })} />
+<GamePanel title="Jobs" width="560px" caption="The Jobs window at each kind of station, with the first offer taken: deliveries at a trade station, bounties at a military one, surveys at a research one. Use the tabs to switch.">
+  <JobsTabs boards={{ trade: jobsBoardPanel, military: jobsMilitaryPanel, research: jobsResearchPanel }} />
 </GamePanel>
 
 You can hold <Stat kind="tuning" id="MAX_JOBS" /> jobs at once; finished work waiting to be handed in doesn't count. A station posts up to <Stat kind="tuning" id="OFFERS_PER_PORT" /> offers, and they
