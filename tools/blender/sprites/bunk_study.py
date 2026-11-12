@@ -293,13 +293,13 @@ def _px(k, u0, u1, v0, v1, z0, z1, col, top=None):
     k.box((u0 + u1) / 64, (v0 + v1) / 64, z0 / ZPX, (u1 - u0) / 32, (v1 - v0) / 32, (z1 - z0) / ZPX, col, top=top)
 
 
-def b1h():
+def b1h(ph=2, name="bunk_b1h"):
     """B1h: B1g3a (slate frame a shade down, red blanket) rebuilt on the pixel grid, no bevels. Footprint 32 x 64 px;
     the bunk 28 x 60 (u -14..14, v -30..30). Heights in px: lower deck top 5, upper 38, mattress 4, posts 54."""
     c = SCHEMES["g3a"]
-    k = K("bunk_b1h", FP)
-    kp = K("bunk_b1h_pillows", FP)
-    kp.m = core.Mesh("bunk_b1h_pillows", flat=True)
+    k = K(name, FP)
+    kp = K(name + "_pillows", FP)
+    kp.m = core.Mesh(name + "_pillows", flat=True)
     lo, hi = 5, 38                                     # deck tops
     for su in (-1, 1):                                 # posts, 2 x 2 px at the corners
         for sv in (-1, 1):
@@ -310,7 +310,7 @@ def b1h():
         _px(k, -12, 12, -30, -28, z - 3, z, c["deck"][0], c["deck"][1])
         _px(k, -12, 12, 28, 30, z - 3, z, c["deck"][0], c["deck"][1])
         _px(k, -10, 10, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])             # mattress
-        _px(kp, -8, 8, -25, -14, z + 4, z + 7, "lvW2", "lvWL")                    # pillow (unlit: no speckle)
+        _px(kp, -8, 8, -25, -14, z + 4, z + 4 + ph, "lvW2", "lvWL")               # pillow, ph px (unlit: no speckle)
         _px(k, -11, 11, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])  # blanket, over the sides and foot
         _px(k, -11, 11, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])          # its turned-down hem
     for z, head, foot in ((lo, 12, 8), (hi, 13, 10)):                            # solid head and foot boards
@@ -336,7 +336,7 @@ def b1h():
     return k.build() + kp.build()
 
 
-DESIGNS = {"b1h": b1h, "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
+DESIGNS = {"b1h": b1h, "b1h1": lambda: b1h(1, "bunk_b1h1"), "b1h3": lambda: b1h(3, "bunk_b1h3"), "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
            **{f"b1{g}": (lambda g=g: _b1g(f"bunk_b1{g}", SCHEMES[g])) for g in SCHEMES}}
 
 
