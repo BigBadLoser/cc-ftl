@@ -30,14 +30,14 @@ class SlabF(Slab2):
 
 
 # ---- slabs ----------------------------------------------------------------------------------------------------------
-def cassette(k, s):
-    s.box(k, 0.12, L - 0.12, -W / 2, W / 2, -T, 0.0, "slbGr", face="slbFace")
+def cassette(k, s, body="slbGr", caps="dark"):
+    s.box(k, 0.12, L - 0.12, -W / 2, W / 2, -T, 0.0, body, face="slbFace")
     for w in (-1, 1):                                                        # the steel lip round the face
         s.box(k, 0.12, L - 0.12, w * (W / 2 - 0.07), w * W / 2, 0.0, 0.03, "steel", face="steelL")
         s.box(k, 0.3, L - 0.3, w * (W / 2 + 0.001) - 0.012, w * (W / 2 + 0.001) + 0.012, -T / 2 - 0.02, -T / 2 + 0.02,
               "slbCy")                                                       # field line in the grip channel
     for l0, l1 in ((0.0, 0.16), (L - 0.16, L)):                              # the heavy end caps
-        s.box(k, l0, l1, -W / 2 - 0.04, W / 2 + 0.04, -T - 0.04, 0.06, "dark", face="steelD")
+        s.box(k, l0, l1, -W / 2 - 0.04, W / 2 + 0.04, -T - 0.04, 0.06, caps, face="steelD" if caps == "dark" else "steel")
         e = l0 - 0.015 if l0 == 0.0 else l1
         s.box(k, e, e + 0.015, -0.12, 0.12, -0.16, -0.04, "slbCy")           # docking socket
     s.box(k, L - 0.12, L - 0.04, -0.22, 0.22, 0.06, 0.072, "slbCy")           # status strip on the head cap
