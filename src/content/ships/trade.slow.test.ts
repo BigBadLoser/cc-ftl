@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   destroyVehicle, AirlockC, CarryingC, CrewC, JobC, ModuleC, PositionC, ShipC, StorageC, TraderC, VehicleC, deserialize, newGame, playerItems, serialize,
-  storageCount, storageAdd, type Deal, type Sim, type SimEvent,
+  storageCount, storageAdd, storageSpace, storageTake, type Deal, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
@@ -286,6 +286,47 @@ describe('trade, end to end', () => {
     expect(at.hand).toBeGreaterThan(0);
     expect(stationHolds(sim, station, 'item.electronics')).toBe(theirs);
     expect(stored(sim, 'item.electronics')).toBe(mine - at.hold); // only what was still in the lost hold is gone
+  });
+
+  it('storage fits only part of a purchase, the rest goes straight into the hold: a lost shuttle returns exactly the staged units (#160)', () => {
+    const { sim, station } = atStation();
+    const t = sim.world.get(station, TraderC)!;
+    const stores = sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station);
+    // Fill every shelf with the station's own metal, then free room for just 5 units: only 5 of the 10 bought fit on the shelf.
+    for (const id of stores) for (let k = 0; k < 50 && storageSpace(sim, id, 'item.metal') > 0; k++) storageAdd(sim, id, 'item.metal', storageSpace(sim, id, 'item.metal'));
+    storageTake(sim, stores[0]!, 'item.metal', 5);
+    const base = stationHolds(sim, station, 'item.metal');
+    const stock = t.stock.find((x) => x.item === 'item.metal')?.count ?? 0;
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    const u = deal().dock!.units!['item.metal']!;
+    expect(u.hold).toBeGreaterThan(0); // some went straight into the hold
+    expect(u.shelf).toBeGreaterThan(0);
+    const direct = u.hold;
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 3);
+    expect(stationHolds(sim, station, 'item.metal')).toBe(base); // the staged units left the shelf; the station's own metal stays
+    expect(t.stock.find((x) => x.item === 'item.metal')?.count ?? 0).toBe(stock - direct); // restocked: bought minus what was lost in the hold, once
+  });
+
+  it('a shuttle lost at the player\'s airlock while player crew carry purchased goods: those goods are not lost to the deal rollback (#160)', () => {
+    const { sim, station } = atStation();
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    const carrier = (): number | undefined =>
+      sim.world.query(CarryingC).find((c) => sim.world.get(c, CarryingC)!.item === 'item.metal' && deal().phase !== 'stationWork');
+    let who: number | undefined;
+    for (let i = 0; i < 12000 && who === undefined; i++) {
+      run(sim, 1);
+      if (['back', 'unload'].includes(deal().phase)) who = carrier();
+    }
+    expect(who).toBeDefined();
+    const carried = sim.world.get(who!, CarryingC)!.count;
+    const before = stored(sim, 'item.metal');
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 1);
+    expect(sim.world.get(who!, CarryingC)?.count).toBe(carried); // untouched by the rollback
+    run(sim, 900);
+    expect(stored(sim, 'item.metal')).toBeGreaterThanOrEqual(before + carried);
   });
 
   it('a trade run with no crew aboard completes end to end', () => {
