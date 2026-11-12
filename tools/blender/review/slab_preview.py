@@ -56,9 +56,9 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
-order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s37", "s38", "s39"]
-names = {"c11": "hover B: floating cradle", "s37": "37 one spine: canopy on a round spine, drive on top",
-         "s38": "38 twin spines: canopy between two round spines", "s39": "39 back shroud: a curved shell round the back"}
+order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s40", "s41", "s42"]
+names = {"c11": "hover B: floating cradle", "s40": "40 one lobe: sunk in a pit, canopy on a lobe of itself",
+         "s41": "41 twin lobes: sunk in a pit, canopy on two lobes", "s42": "42 ring canopy: open middle, hub and belt seen"}
 Z = 3
 rows = (len(order) + 2) // 3
 sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)

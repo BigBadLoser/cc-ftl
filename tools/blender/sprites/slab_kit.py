@@ -194,10 +194,10 @@ def sq(a, half=1.5):
     return at(half / max(abs(math.cos(a)), abs(math.sin(a))), a)[:2]
 
 
-def corner_fill(k, a0, a1, r_in, z0, z1, col, top=None, n=10):
+def corner_fill(k, a0, a1, r_in, z0, z1, col, top=None, n=10, half=1.5):
     """The block between the circle r_in and the footprint's square from angle a0 to a1 (a corner housing)."""
     cs = sorted(c for c in (math.pi / 4 + j * math.pi / 2 for j in range(-4, 8)) if a0 < c < a1)
-    outer = [sq(a0)] + [sq(c) for c in cs] + [sq(a1)]                    # straight edges: their ends and corners
+    outer = [sq(a0, half)] + [sq(c, half) for c in cs] + [sq(a1, half)]                    # straight edges: their ends and corners
     inner = [at(r_in, a1 - (a1 - a0) * i / n)[:2] for i in range(n + 1)]
     prism(k, outer + inner, z0, z1, col, top=top)
 

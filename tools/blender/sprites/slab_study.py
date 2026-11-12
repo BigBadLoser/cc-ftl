@@ -143,7 +143,20 @@ def build(v):
     fn, fp = tables()[0][v]
     k = K(f"slab_{v}", fp)
     slabs = fn(k)
-    return k, k.build(), slabs
+    objs = k.build()
+    from . import slab_wheel
+    pit = getattr(slab_wheel, "PIT", {}).get(v)
+    if pit:                                         # sunk in the floor: a holdout floor round the pit's mouth hides
+        from .slab_kit import corner_fill           # what is under the floor outside it (the game's floor shows;
+        #                                             wide: the iso camera sees under-floor parts past the footprint)
+        f = K(f"slab_{v}_floor", fp)
+        for i in range(4):
+            c = math.pi / 4 + i * math.pi / 2
+            corner_fill(f, c - math.pi / 4, c + math.pi / 4, pit, -0.04, 0.0, "dark", half=4.0)
+        for o in f.build():
+            o.is_holdout = True
+            objs.append(o)
+    return k, objs, slabs
 
 
 def job(v):
