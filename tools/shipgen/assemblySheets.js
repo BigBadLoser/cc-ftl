@@ -58,7 +58,8 @@ try {
     const g = a.ctx.g, snap = g.snapshot();
     return {
       template: { rows: snap.rows, modules: [] }, rooms: g.regions.map((r) => ({ role: r.role })), roomOf: snap.roomOf, width: snap.width, height: snap.height,
-      depts: g.regions.map((r) => r.dept ?? (r.hall ? (r.role === 'hall' ? 'circulation' : 'commons') : deptOf({ role: r.role }))), targets: [],
+      // Streets and halls are circulation whatever department they run through.
+      depts: g.regions.map((r) => (r.hall ? 'circulation' : r.dept ?? deptOf({ role: r.role }))), targets: [],
     };
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {

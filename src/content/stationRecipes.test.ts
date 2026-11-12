@@ -42,9 +42,9 @@ describe('station recipes', () => {
     expect(assembled(stationRecipes.compound[0], 'station.mining', 'station', 1)).toEqual([]);
   });
 
-  it('hangs every ore hold in a cage on the spine', () => {
+  it('assembles the spine, with its ore store in the works', () => {
     const { rooms } = programOf('station.mining', 'station', 3);
-    expect(rooms.filter((r) => r.cage !== undefined).length).toBeGreaterThanOrEqual(2);
+    expect(rooms.filter((r) => r.role === 'cargo' && deptOf(r) === 'works')).toHaveLength(1);
     expect(assembled(stationRecipes.spine[0], 'station.mining', 'station', 3)).toEqual([]);
   });
 

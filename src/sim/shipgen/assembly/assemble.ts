@@ -52,10 +52,7 @@ function context(g: RegionGrid, s: Site | null, rng: Rng): Ctx {
 
 function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: number): Outcome & { R?: number } {
   const docks = all.filter((r) => r.role === 'dock'), housed = house(rng, recipe, all.filter((r) => r.role !== 'dock'));
-  // Ore holds hang in cages when the recipe has them; otherwise they are freight rooms like any other.
-  const hung = recipe.cages ? housed.rooms.filter((r) => r.cage !== undefined) : [];
-  const cages = [...new Set(hung.map((r) => r.cage))].map((k) => hung.filter((r) => r.cage === k));
-  const rooms = housed.rooms.filter((r) => !hung.includes(r)), pool = housed.pool;
+  const rooms = housed.rooms, pool = housed.pool;
   const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
   const takers = new Set<string>([...(recipe.root.kind === 'ring' ? recipe.root.takes : []), ...recipe.branches.flatMap((b) => b.takes)]);
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
@@ -72,7 +69,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     if (!made) return { asm: a, why: 'no trunk' };
     a.corridors++;
     const trunk = a.add(made).filter((p) => p.kind === 'side');
-    const why = grow(a, recipe, rooms, docks, trunk, null, pool, cages);
+    const why = grow(a, recipe, rooms, docks, trunk, null, pool);
     if (!why) finish(a);
     return { asm: a, why };
   }
@@ -82,7 +79,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const a = new Asm(ctx, recipe.spacing);
     // The centre: a port in open ground, heading east or west as the seed has it, a little off the middle each try.
     const core: Port = { frame: { x: 4 * attempt, y: 0, dir: rng.chance(0.5) ? 'e' : 'w' }, kind: 'end', hall: -1, owner: -1, along: 0, side: 0, used: false };
-    const why = grow(a, recipe, rooms, docks, null, core, pool, cages);
+    const why = grow(a, recipe, rooms, docks, null, core, pool);
     if (!why) finish(a);
     return { asm: a, why };
   }
@@ -96,7 +93,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });
     // On a ring the single cabins stand in its band with the rest; nothing is scattered.
-    why = grow(a, recipe, rooms, docks, null, null, [], cages);
+    why = grow(a, recipe, rooms, docks, null, null, []);
     if (why) { why = `R ${R}: ${why}`; continue; }
     // The ring's own rooms: habitation away from the first branch, guns all round, the rest between.
     const first = a.ports.find((p) => p.kind === 'rim' && p.used)?.frame.dir ?? 'n';

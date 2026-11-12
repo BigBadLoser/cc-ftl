@@ -69,10 +69,11 @@ A recipe has a root, branch rules, and a few settings.
   beds in double bunks, with a few private cabins scattered.
 - `braces`: the chance that a gap between two sections gets a beam (the game's open truss tile, `=`). A truss of two
   chords where the gap is long and there is room, one beam otherwise; none through the clear space off a dock.
-- `cages`: ore cages (mining stations). The program lists the ore holds, grouped by cage; with `cages` on the recipe
-  each group hangs off a flank or an end on a stub: a rail across it, the holds in a row beyond the rail with open
-  gaps, a tooth of beam in gaps of three or more, and the space beyond kept clear. Without it the holds are freight
-  rooms like any other.
+- `hall` on a rule: its neck and its links are halls, not corridors. A hall is a room-sized piece of street the
+  street behind runs into; the street beyond leaves it a few tiles to one side (`shift`), and each flank has a port
+  for a wing (host `{ on: 'hall' }`). It is how a long street steps aside instead of running in one line.
+- On a section: `width` is its street's width (default 2; a main street 3), `cap` names the role of the room across
+  its end, `far` the roles that stand at the far end of its rows.
 - `spacing`: clear ground between sections that are not joined.
 
 ### Hard checks and preferences
@@ -116,6 +117,7 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 - Plant rooms: one for every reactor room, two at least.
 - A pod deck where the tier has mining pods (`pods`: the mining station, 2 / 4 / 6 bays): one hangar, the bays in a row
   (two rows past four) with an aisle.
+- An ore store with it: two ore bins a pod, a works room (not merged into the warehouses).
 - Shuttle bays where the tier has them (`bays`: the navy depot). Farms on the agri station (`assemblyRooms`).
 
 | Department | Rooms |
@@ -145,17 +147,17 @@ which has 43 to 56 solid wall blocks.
 ### The spine (in progress)
 
 `stationRecipes.spine`, on the mining station's rooms (`--family spine`, `--versus` for the old Spine as the first
-row): the harbour at the head, habitation with the commons and the guns as the body (sections in series, joined
-directly), the machinery behind a gate at the tail, works and freight as wings on stubs off the flanks.
+row): the harbour at the head of a main street 3 wide, habitation with the commons and the guns along it, the
+machinery behind a gate at the tail. Between the parts the street runs through a hall and steps to one side. Works
+and freight are wings on stubs off the halls' flanks. The works wing is a line: the refineries, the ore store, and the
+pod deck across its end. 12 of 12 assemble with every room standing.
 
-- The main street is 3 wide (`width` on a section; module streets and stubs stay 2).
-- The works wing ends in the pod deck (`cap: 'hangar'`: the room across a section's end is the first of that role).
-- Ore cages hang on what ports are left. They are under review (sealed rooms of crates on a rail, off the ore's path
-  from pod bay to store to refinery): to be dropped or replaced.
-- 12 of 12 assemble with every room standing. A cage is the part most often refused (up to five candidates rejected
-  before one stands).
+Tried and dropped: ore cages (a rail with ore holds in a row and beam teeth between). They were sealed rooms of crates
+off the ore's path from pod bay to store to refinery, and the part most often refused. The ore store replaces them.
+A container yard on open truss by the docks is a possible outside feature, not built.
 
-Open: the street is one straight uniform line; the body is nearly all cabins; seeds differ little.
+Open: the body is nearly all cabins; the mess does not face a hall; no open space is kept off the pod deck; seeds
+differ little.
 
 ## Known limits
 
@@ -168,6 +170,6 @@ Open: the street is one straight uniform line; the body is nearly all cabins; se
 - Seeds change little within one recipe on a ring: the recipe's preferences decide, the seed rolls lengths and sizes.
 - The harbour is one design, the dock block.
 - Up to three rooms a station come out under three tiles wide (cabins; two wide is accepted for a cabin).
-- Not built: arcs of varying depth, ports on a curve other than at the axes and cut ends, ore cages on beams, the
+- Not built: arcs of varying depth, ports on a curve other than at the axes and cut ends, the
   spine recipe (next).
 - A cluster takes about 2.5 s to assemble (eight candidates); a ring 0.2 to 0.5 s.

@@ -20,9 +20,10 @@ export interface BranchRule {
   /**
    * Where a branch starts: off the trunk's sides, on a ring's rim (directions in order of preference), at an arc's cut
    * end, at the far end of another rule's branch (its index in `branches`), or on the end or side of any section
-   * already standing, the newest first (a cluster that grows).
+   * already standing, the newest first (a cluster that grows), or on the flank of a hall where streets meet (any
+   * section when no hall has a flank free).
    */
-  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' };
+  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' } | { on: 'hall' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
   /**
@@ -30,6 +31,12 @@ export interface BranchRule {
    * section stands off its host's line. Under two it runs straight; a range makes some necks straight and some not.
    */
   jog?: Roll;
+  /**
+   * Its neck and its links are halls, not corridors: each a room-sized piece of street this wide (and as long as the
+   * neck or link), with a port on each flank for a wing. The street beyond leaves it `shift` tiles to one side, either
+   * way as the seed has it: the step that keeps a long street from being one straight line.
+   */
+  hall?: { wide: Roll; shift?: Roll };
   /** Rooms dealt to sections at random across the departments it takes, each section its own branch (scrappers). */
   mix?: boolean;
   /** Sections on one branch at most; a department with more gets another branch. Default: all on one. */
@@ -38,9 +45,9 @@ export interface BranchRule {
   gated?: boolean;
   /**
    * Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the
-   * last one's end (the biggest, or the first of a role), and the street's width (default 2).
+   * last one's end (the biggest, or the first of a role), and the street's width (default 2), and roles that stand at the far end of its rows.
    */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any'; width?: number };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any'; width?: number; far?: readonly RoomRole[] };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
@@ -70,13 +77,6 @@ export interface Recipe {
    * station of modules on stubs reads as one structure. The chance, 0 to 1, that a gap that can take a brace gets one.
    */
   braces?: number;
-  /**
-   * Ore cages: each of the program's cages hangs off a flank or an end of some section, on a stub of this length. A
-   * cage is a rail with its holds in a row beyond it, `gap` open tiles between holds, and in gaps of three or more a
-   * tooth of beam reaching `tooth` tiles past the holds. Without this the holds stand as ordinary freight rooms.
-   * Hard: every hold stands, and the space beyond a cage stays open.
-   */
-  cages?: { stub: Roll; gap: Roll; tooth: Roll };
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }

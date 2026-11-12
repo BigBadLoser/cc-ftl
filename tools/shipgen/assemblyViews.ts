@@ -74,8 +74,9 @@ export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: nu
     const col = d === 'door' ? ([240, 150, 40] as RGB) : DEPT_TINT[d] ?? [200, 200, 200];
     r.rect(ox + x * s, oy + y * s, s, s, c === '#' ? shade(col, 0.6) : col);
   }
-  // Name each connected block of one department (floor and its walls).
+  // Name each connected block of one department (floor and its walls): the biggest first, and none over another's name.
   const seen = new Uint8Array(W * H);
+  const blocks: { d: string; n: number; cx: number; cy: number }[] = [];
   for (let i = 0; i < W * H; i++) {
     const d = tile[i] as string;
     if (seen[i] || !d || d === 'circulation' || d === 'door') continue;
@@ -92,10 +93,15 @@ export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: nu
         q.push(n);
       }
     }
-    if (q.length < 40) continue;
-    const cx = ox + (sx / q.length) * s + s / 2, cy = oy + (sy / q.length) * s + s / 2;
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) r.text(d, Math.round(cx - d.length * 4) + dx * 2, Math.round(cy - 5) + dy * 2, [0, 0, 0], 2);
-    r.text(d, Math.round(cx - d.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
+    if (q.length >= 40) blocks.push({ d, n: q.length, cx: ox + (sx / q.length) * s + s / 2, cy: oy + (sy / q.length) * s + s / 2 });
+  }
+  const drawn: [number, number, number, number][] = [];
+  for (const { d, cx, cy } of blocks.sort((p, q) => q.n - p.n)) {
+    const x = Math.round(cx - d.length * 4), y = Math.round(cy - 5), box: [number, number, number, number] = [x - 3, y - 3, x + d.length * 8 + 3, y + 13];
+    if (drawn.some((o) => box[0] < o[2] && o[0] < box[2] && box[1] < o[3] && o[1] < box[3])) continue;
+    drawn.push(box);
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) r.text(d, x + dx * 2, y + dy * 2, [0, 0, 0], 2);
+    r.text(d, x, y, [255, 255, 255], 2);
   }
 }
 

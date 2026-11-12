@@ -69,6 +69,31 @@ function dogleg(c: Ctx, port: Port, length: number, shift: number): Built | null
   return { ports: [{ frame: { x, y, dir: f.dir }, kind: 'end', hall, along: length, side: 0 }], regions: [hall], box: rect(f, 0, length + 1, lo, hi) };
 }
 
+/**
+ * A hall where streets meet: a room-sized piece of street, `wide` across and `length` along, that the street behind
+ * the port runs into. The street beyond leaves it `shift` tiles to one side, `width` wide, and each flank has a port
+ * for a wing.
+ */
+export function concourse(c: Ctx, port: Port, o: { length: number; wide: number; shift: number; width: number }): Built | null {
+  const f = port.frame, g = c.g, L = Math.max(4, o.length);
+  let lo = Math.min(-1, o.shift - 1), hi = Math.max((port.width ?? 2) - 1, o.shift + o.width - 1);
+  const more = Math.max(0, o.wide - (hi - lo));
+  lo -= more >> 1; hi += more - (more >> 1);
+  for (let u = 0; u < L; u++) for (let v = lo; v < hi; v++) {
+    const [x, y] = at(f, u, v), a = g.at(x, y);
+    if (!c.inside(x, y) || c.reserved.has(key(x, y)) || !(a === SPACE || (a === SOLID && u === 0))) return null;
+  }
+  const hall = g.hall('plaza', 'commons');
+  g.street(hall, ...rect(f, 0, L, lo, hi));
+  const [ex, ey] = at(f, L, o.shift), m = (L >> 1) - 1;
+  const ports: Built['ports'] = [{ frame: { x: ex, y: ey, dir: f.dir }, kind: 'end', hall, along: L, side: 0, width: o.width }];
+  for (const side of [-1, 1] as const) {
+    const v = side < 0 ? lo - 1 : hi, [ax, ay] = at(f, m, v), [bx, by] = at(f, m + 1, v);
+    ports.push({ frame: { x: Math.max(ax, bx), y: Math.max(ay, by), dir: facing(f, side) }, kind: 'side', hall, along: m, side, flank: true, node: true });
+  }
+  return { ports, regions: [hall], box: rect(f, 0, L + 1, lo - 1, hi + 1) };
+}
+
 export interface BlockOpts {
   /** One floor depth for both rows (a slab); the rooms' own when not given (staggered bays). */
   rowDepth?: number;
@@ -76,6 +101,8 @@ export interface BlockOpts {
   cap?: boolean | RoomSpec['role'];
   /** The street's width in tiles (default 2): a main street is wider than a module's. */
   width?: number;
+  /** Rooms of these roles stand at the far end of the rows (by the end room, when there is one). */
+  far?: readonly RoomSpec['role'][];
   /** Both rows end together (the shorter one's last room is stretched). */
   even?: boolean;
   dept?: string;
@@ -107,7 +134,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const X = Math.max(2, o.width ?? 2) - 2;
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
   const depth = docks.length > 0 ? DOCK_DEPTH - 2 : o.rowDepth;
-  const body = rooms.filter((r) => r !== capOf).map((r) => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w }));
+  const farther = (r: RoomSpec): number => (o.far?.includes(r.role) ? 1 : 0);
+  const body = rooms.filter((r) => r !== capOf).sort((p, q) => farther(p) - farther(q)).map((r) => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w }));
   // Quarters are cut into cabins where they stand, a bed each, inside the room's own length: the row is no longer for
   // it and the station no heavier.
   const rows = sides(body).map((row) => row.flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
@@ -145,6 +173,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // The street is as long as the rows turn out, so it never runs on alone past the last room.
   let L = u0 + 3;
   const ends = [u0, u0];
+  // Whether a row's last room reaches its end (not when a passage across the block comes after it).
+  const whole = [true, true];
   const ports: Built['ports'] = [], cross: [number, number, number, number][] = [];
   if (o.cross) {
     // First halves, the passage, then the rest.
@@ -159,6 +189,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     if (m0 === null || m1 === null) return null;
     L = Math.max(L, m0, m1, e + 3);
     ends[0] = m0; ends[1] = m1;
+    whole[0] = rows[0].length > (cut[0] as number); whole[1] = rows[1].length > (cut[1] as number);
     cross.push(...lanes);
     for (const side of [-1, 1] as const) {
       const v = side < 0 ? -(back[0] as number) : (back[1] as number);
@@ -177,7 +208,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   if (capOf) for (const [k, side] of ([-1, 1] as const).entries()) {
     const last = made.filter((m) => m.side === side && m.to > m.from).pop();
     const end = ends[k] as number;
-    if (!last || end >= L) continue;
+    if (!last || end >= L || !whole[k]) continue;
     const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3;
     const box = side < 0 ? rect(f, end, L, -(h + 3), -1) : rect(f, end, L, 1 + X, h + 3 + X);
     let open = true;
@@ -200,15 +231,15 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y)) return null;
     g.rect(g.room(capOf.role, { spec: capOf, access: [hall] }), ...box);
     far = L + along;
-  } else ports.push({ frame: { x: at(f, L, 0)[0], y: at(f, L, 0)[1], dir: f.dir }, kind: 'end', hall, along: L, side: 0 });
+  } else ports.push({ frame: { x: at(f, L, 0)[0], y: at(f, L, 0)[1], dir: f.dir }, kind: 'end', hall, along: L, side: 0, ...(X > 0 ? { width: X + 2 } : {}) });
   for (let id = n0; id < g.regions.length; id++) regions.push(id);
   const deep = Math.max(back[0] as number, back[1] as number) + 1;
-  const whole = rect(f, 0, far + 1, -deep - 1, deep + 1);
+  const bounds = rect(f, 0, far + 1, -deep - 1, deep + 1);
   // The space off each dock stays open: where ships come in. It must be open now, and outside any hull still to fill.
   for (const m of made) for (let id = m.from; id < m.to; id++) {
     if (g.regions[id]?.role !== 'dock') continue;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (let y = whole[1]; y < whole[3]; y++) for (let x = whole[0]; x < whole[2]; x++) if (g.at(x, y) === id) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    for (let y = bounds[1]; y < bounds[3]; y++) for (let x = bounds[0]; x < bounds[2]; x++) if (g.at(x, y) === id) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
     const out = facing(f, m.side), D = 6;
     const zone: [number, number, number, number] = out === 'n' ? [x0, y0 - D, x1 + 1, y0] : out === 's' ? [x0, y1 + 1, x1 + 1, y1 + 1 + D] : out === 'w' ? [x0 - D, y0, x0, y1 + 1] : [x1 + 1, y0, x1 + 1 + D, y1 + 1];
     for (let y = zone[1]; y < zone[3]; y++) for (let x = zone[0]; x < zone[2]; x++) {
@@ -216,35 +247,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
       c.reserved.add(key(x, y));
     }
   }
-  return { ports, regions, box: whole, took: bunks.length };
-}
-
-/**
- * An ore cage on a port: a stub out to a rail across it, the holds in a row beyond the rail with open gaps between,
- * and a tooth of beam in every gap of three or more. The space beyond the holds is kept clear.
- */
-export function cage(c: Ctx, port: Port, holds: readonly RoomSpec[], o: { stub: number; gap: number; tooth: number }): Built | null {
-  const f = port.frame, g = c.g, first = holds[0];
-  if (!first) return null;
-  const s = Math.max(2, o.stub), w = first.w + 2, out = first.h + 2;
-  const T = holds.length * w + (holds.length - 1) * o.gap, v0 = -(T >> 1);
-  const far = s + 2 + out + o.tooth;
-  const whole = rect(f, 0, far + 4, v0 - 1, v0 + T + 1);
-  for (let y = whole[1]; y < whole[3]; y++) for (let x = whole[0]; x < whole[2]; x++) if (!c.free(x, y) || c.site.hull?.(x, y)) return null;
-  const hall = g.hall('hall', 'freight');
-  g.street(hall, ...rect(f, 0, s + 2, -1, 1));
-  g.street(hall, ...rect(f, s, s + 2, v0, v0 + T));
-  const regions = [hall];
-  for (const [i, spec] of holds.entries()) {
-    const v = v0 + i * (w + o.gap), id = g.room(spec.role, { spec, access: [hall] });
-    g.rect(id, ...rect(f, s + 2, s + 2 + out, v, v + w));
-    regions.push(id);
-    if (i < holds.length - 1 && o.gap >= 3) for (let u = s + 3; u < far; u++) g.beam(...at(f, u, v + w + (o.gap >> 1)));
-  }
-  // Open space beyond the holds: where the ore barges come alongside.
-  const beyond = rect(f, s + 2 + out, far + 4, v0 - 1, v0 + T + 1);
-  for (let y = beyond[1]; y < beyond[3]; y++) for (let x = beyond[0]; x < beyond[2]; x++) c.reserved.add(key(x, y));
-  return { ports: [], regions, box: whole };
+  return { ports, regions, box: bounds, took: bunks.length };
 }
 
 /** A single room on a port, opening onto the hall behind it: a pod, or with `dock` a dock with its clear space kept. */

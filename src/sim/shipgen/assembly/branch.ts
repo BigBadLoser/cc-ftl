@@ -2,7 +2,7 @@ import type { RoomSpec } from '../plan';
 import { shuffle } from '../civilKit';
 import { roll, type Asm } from './asm';
 import type { Dept } from './dept';
-import { block, cage, corridor, single } from './elements';
+import { block, concourse, corridor, single } from './elements';
 import { K } from './lattice';
 import type { Dir, Port } from './model';
 import type { BranchRule, Recipe } from './recipe';
@@ -28,7 +28,7 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * slab of one depth (the rooms keep their floor).
  */
 function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
@@ -44,7 +44,19 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
   let port = host;
   // A neck: a corridor before the first section. A gated branch with none is gated at its first section's foot.
   const neck = (host.kind === 'rim' && roll(rng, rule.neck) > 0 ? host.along : 0) + roll(rng, rule.neck);
-  if (neck > 0) {
+  // A hall in place of a corridor: stepping to one side, else to the other, else straight on.
+  const hall = (from: Port, length: number): Port[] | null => {
+    const h = rule.hall;
+    if (!h) return null;
+    const wide = roll(rng, h.wide), width = rule.section.width ?? 2, shift = (h.shift ? roll(rng, h.shift) : 0) * (rng.chance(0.5) ? 1 : -1);
+    const at = (s: number): Port[] | null => a.place(from, joined, () => concourse(ctx, from, { length, wide, shift: s, width }));
+    return at(shift) ?? (shift ? at(-shift) ?? at(0) : null);
+  };
+  if (neck > 0 && rule.hall) {
+    const ps = hall(port, neck);
+    if (!ps) return fail();
+    port = ps.find((p) => p.kind === 'end') as Port;
+  } else if (neck > 0) {
     const straight = (): Port[] | null => a.place(port, joined, () => corridor(ctx, port, { length: Math.max(neck, rule.gated ? 3 : 0), ...(rule.gated ? { gated: true } : { pitch: K }) }));
     // A dogleg to one side, else to the other, else straight.
     const jog = rule.jog && !rule.gated ? roll(rng, rule.jog) * (rng.chance(0.5) ? 1 : -1) : 0;
@@ -72,9 +84,9 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
       const from = end, len = roll(rng, rule.link);
       end = null;
       if (len === 0) { port = from; continue; } // joined directly: the next section starts where this one's street ends
-      const link = a.place(from, joined, () => corridor(ctx, from, { length: len, ...(rule.gated ? {} : { pitch: K }) }));
+      const link = rule.hall ? hall(from, len) : a.place(from, joined, () => corridor(ctx, from, { length: len, ...(rule.gated ? {} : { pitch: K }) }));
       if (!link) return fail();
-      a.corridors++;
+      if (!rule.hall) a.corridors++;
       port = link.find((p) => p.kind === 'end') as Port;
     }
   }
@@ -88,7 +100,7 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
 }
 
 /** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
-export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[], cages: readonly RoomSpec[][] = []): string {
+export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[]): string {
   const { ctx } = a, { rng } = ctx;
   if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
   const ends: (Port | null)[] = [];
@@ -129,12 +141,14 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
         hosts = a.ports.filter((p) => p.kind === 'rim' && !p.used && prefer.includes(p.frame.dir)).sort((p, q) => rank(p.frame.dir) - rank(q.frame.dir));
       } else if (rule.host.on === 'tip') {
         hosts = a.ports.filter((p) => p.kind === 'tip' && !p.used);
-      } else if (rule.host.on === 'section') {
+      } else if (rule.host.on === 'section' || rule.host.on === 'hall') {
         // The centre first; then the open ports nearest it, a side before an end, with some chance in the order: a
         // cluster that grows round its middle and not in a line.
         const open = a.ports.filter((p) => !p.used && (p.kind === 'end' || p.kind === 'side'));
         const want = new Map(open.map((p) => [p, Math.hypot(p.frame.x - (core?.frame.x ?? 0), p.frame.y) / 30 + (p.kind === 'end' ? 2 : 0) + 0.4 * rng.next()]));
         hosts = [...(core && !core.used ? [core] : []), ...open.sort((p, q) => (want.get(p) as number) - (want.get(q) as number))];
+        // On a hall's flank first, whichever the seed has it.
+        if (rule.host.on === 'hall') hosts = [...shuffle(rng, hosts.filter((p) => p.node)), ...hosts.filter((p) => !p.node)];
       } else {
         const e = ends[rule.host.rule];
         hosts = e && !e.used ? [e] : [];
@@ -150,14 +164,6 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
       }
       ends[k] = made.end;
     }
-  }
-  // Ore cages: each on a port that is left, the ones on a flank first.
-  for (const holds of cages) {
-    const o = recipe.cages;
-    if (!o) break;
-    const open = shuffle(rng, a.ports.filter((p) => !p.used && !a.sealed.has(p.hall) && (p.kind === 'end' || p.kind === 'side'))).sort((p, q) => Number(!!q.flank) - Number(!!p.flank));
-    const size = { stub: roll(rng, o.stub), gap: roll(rng, o.gap), tooth: roll(rng, o.tooth) };
-    if (!open.some((p) => a.place(p, new Set(a.elements[p.owner]?.regions ?? []), () => cage(ctx, p, holds, size)))) return `no place for an ore cage of ${holds.length} holds (${open.length} ports tried)`;
   }
   // Cabins no section took: pods on what ports are left.
   for (const bunk of [...pool]) {

@@ -49,21 +49,25 @@ const compound = (name: string, o: {
 });
 
 /**
- * A spine: the departments in sequence along one street, the harbour at its head and the machinery behind a gate at
- * its tail, with the works and the freight as wings off its flanks.
+ * A spine: the harbour at the head of a wide main street, habitation with the commons and the guns along it, the
+ * machinery behind a gate at its tail. Between the parts the street runs through a hall and steps to one side; the
+ * works and the freight are wings off the halls' flanks. The works wing is a line: the refineries, the ore store, and
+ * the pod deck across its end.
  */
-const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; braces?: number }): Recipe => ({
+const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; braces?: number }): Recipe => ({
   name,
   root: { kind: 'core' },
   spacing: 2,
   ...(o.braces ? { braces: o.braces } : {}),
-  cages: { stub: [2, 4], gap: [1, 4], tooth: [1, 3] },
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true, width: o.street }, link: 0 },
-    { takes: ['habitation', 'commons', 'defence'], per: 'together', host: { on: 'after', rule: 0 }, neck: 0, section: { rooms: o.body, cross: 'any', width: o.street, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) }, link: 0 },
+    {
+      takes: ['habitation', 'commons', 'defence'], per: 'together', host: { on: 'after', rule: 0 }, neck: o.hall?.length ?? 0, link: o.hall?.length ?? 0,
+      ...(o.hall ? { hall: { wide: o.hall.wide, shift: o.hall.shift } } : {}),
+      section: { rooms: o.body, cross: 'any', width: o.street, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) },
+    },
     { takes: ['secure'], per: 'together', host: { on: 'after', rule: 1 }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
-    // The works wing ends in the pod deck; the freight wing stands apart.
-    { takes: ['works', 'freight'], per: 'department', host: { on: 'section' }, neck: o.stub, section: { rooms: o.wings, cross: true, cap: 'hangar' }, link: 0 },
+    { takes: ['works', 'freight'], per: 'department', host: { on: o.hall ? 'hall' : 'section' }, neck: o.stub, section: { rooms: o.wings, cap: 'hangar', far: ['cargo'] }, link: 0 },
   ],
 });
 
@@ -74,9 +78,9 @@ export const stationRecipes = {
     scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
   ],
   spine: [
-    spine('main street 3 wide, pod deck at the end of the works', { street: 3, body: [6, 8], wings: [2, 4], stub: [2, 4], braces: 0.9 }),
-    spine('the same at one depth along the street', { street: 3, body: [6, 8], rowDepth: 5, wings: [2, 4], stub: [2, 4], braces: 0.9 }),
-    spine('before: main street 2 wide', { street: 2, body: [6, 8], wings: [2, 4], stub: [2, 4], braces: 0.9 }),
+    spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9 }),
+    spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9 }),
+    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9 }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),

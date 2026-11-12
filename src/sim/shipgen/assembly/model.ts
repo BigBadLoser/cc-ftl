@@ -46,6 +46,10 @@ export interface Port {
   used: boolean;
   /** Rooms stand either side of it (the flank of a block): what joins here starts its own rooms a tile further out. */
   flank?: boolean;
+  /** The width of the street that ends here, when not two. */
+  width?: number;
+  /** On the flank of a hall where streets meet: where wings join. */
+  node?: boolean;
 }
 
 export interface Built {
