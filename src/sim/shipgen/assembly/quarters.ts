@@ -47,10 +47,12 @@ export function house(rng: Rng, recipe: Recipe, all: readonly RoomSpec[]): { roo
   const q = recipe.quarters;
   const pool: RoomSpec[] = [];
   if (q) {
-    const quarters = rooms.filter((r) => r.role === 'quarters'), first = quarters[0];
+    // The crew's quarters, not a cabin that belongs to another department (the chief's, by the bridge).
+    const crews = (r: RoomSpec): boolean => r.role === 'quarters' && (r.dept ?? 'habitation') === 'habitation';
+    const quarters = rooms.filter(crews), first = quarters[0];
     const others = quarters.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
     let beds = quarters.reduce((n, r) => n + r.mods.length, 0) - others.length;
-    rooms = rooms.filter((r) => r.role !== 'quarters');
+    rooms = rooms.filter((r) => !crews(r));
     if (first) {
       const singles = q === 'scatter' ? beds : Math.min(beds, q.singles ?? 0);
       for (let i = 0; i < singles; i++) pool.push(cabinOf(first, q === 'scatter' && i === 0 ? others : []));

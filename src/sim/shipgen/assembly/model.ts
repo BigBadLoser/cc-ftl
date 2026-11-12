@@ -86,7 +86,7 @@ export function sides(rooms: readonly RoomSpec[]): [RoomSpec[], RoomSpec[]] {
   for (const r of rooms) {
     const k = (len[0] as number) <= (len[1] as number) ? 0 : 1;
     out[k].push(r);
-    len[k] = (len[k] as number) + r.w + 1;
+    len[k] = (len[k] as number) + r.w + 1 + (r.annex ? r.annex.w + 1 : 0);
   }
   return out;
 }

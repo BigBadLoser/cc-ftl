@@ -24,6 +24,8 @@ them.
 | Hull check | `hull.ts` |
 | Sheets | `node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]` |
 
+`--program station.research:station` assembles a family's recipes for another kind and size than its own.
+
 Sheets go through the shipgen views (silhouette, structure) plus a department view and a rooms view (the same picture
 with each room named: MESS, REC, MED, B8 for a barracks of eight beds, C for a cabin), one row a recipe and one column a
 seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel with the reason.
@@ -120,12 +122,20 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 - Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and mess tables, one
   for every eight crew (a table seats four on its chairs, which come with it at fit-out); from station size up the
   next is a rec room with arcade cabinets and a game table (`withCommons`). With no rec room the game table stands in
-  the mess. The fabricator stands
-  in a plant room.
+  the mess. Each mess has a pantry (racks) beside it.
+- A workshop on every station (two at hub size): the fabricator with racks and lockers, in the works.
+- From station size up: a battery room behind the gate (a bank and a console), and a suit-up room by the docks
+  (lockers and a bench). A pod deck has its own suit-up room beside it.
+- The station chief's cabin stands by the bridge, in the harbour: a bed, a desk and chair, a locker (crews of six up).
+- Kind rooms: laboratories on a research station (research modules, consoles, lockers), a breaker shop on mining
+  stations and pirate dens (the scrapper, scrap cages, a pallet), drone bays on a navy depot (defence).
+- An `annex` on a room is a small room of its own that stands right beside it in its row: the mess's pantry, the
+  ward's trauma room, the pod deck's suit-up room. A passage across the block can still fall between the two.
 - Shield rooms and the core get floor round the machine on a station that is not tight. Gun bays keep the mount size.
 - Reactors: the smallest tier the size allows that powers the station from one room of two; rooms of two at most.
 - Crate rooms merge into warehouses of up to 24 crates.
-- Medbays: one for every five quarters blocks; a large station has a clinic (a ward and two treatment rooms).
+- Medbays: one for every 20 crew; a large station has a clinic (a ward and a treatment room). From 16 crew the ward
+  has a trauma room beside it: the recovery pod and a cot.
 - Plant rooms: one for every reactor room, two at least.
 - A pod deck where the tier has mining pods (`pods`: the mining station, 2 / 4 / 6 bays): one hangar, the bays in a row
   (two rows past four) with an aisle.
@@ -180,7 +190,12 @@ differ little.
 - **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
   as drawn.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant
-  rooms have none at all.
+  rooms have none at all. The rooms added since are the same: planned with their modules, no room recipe (workshop,
+  battery room, suit-up rooms, chief's cabin, pantry, trauma room, laboratory, breaker shop, drone bay).
+- Rooms waiting on modules: a pantry's cold store, a workbench for the workshop, comms and sensor consoles (traffic
+  control, ops), a medical console, armoury storage, storage tanks (a tank farm), a bar counter, hall furniture.
+- A band room that overhangs a section's corner by a tile is trimmed back (`mend`); it is a repair after the fact,
+  not a rule of the band.
 - Seeds change little within one recipe on a ring: the recipe's preferences decide, the seed rolls lengths and sizes.
 - The harbour is one design, the dock block.
 - Up to three rooms a station come out under three tiles wide (cabins; two wide is accepted for a cabin).

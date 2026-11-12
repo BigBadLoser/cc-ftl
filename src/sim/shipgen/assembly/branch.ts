@@ -1,4 +1,5 @@
 import type { RoomSpec } from '../plan';
+import type { RoomRole } from '../types';
 import { shuffle } from '../civilKit';
 import { roll, type Asm } from './asm';
 import type { Dept } from './dept';
@@ -12,12 +13,19 @@ import type { BranchRule, Recipe } from './recipe';
  * branch (a neck, then its sections in series) is tried at one host port after another until it stands.
  */
 
-/** Rooms cut into sections of a size in `range`, as even as they go. */
-function chunks(rooms: readonly RoomSpec[], range: readonly [number, number]): RoomSpec[][] {
+/**
+ * Rooms cut into sections of a size in `range`, as even as they go. Rooms of the `tail` roles (the end room's, and
+ * those kept at the far end) go to the last section, up to a section's worth of them.
+ */
+function chunks(rooms: readonly RoomSpec[], range: readonly [number, number], tail: readonly RoomRole[] = []): RoomSpec[][] {
   const n = Math.max(1, Math.ceil(rooms.length / range[1]));
   const out: RoomSpec[][] = Array.from({ length: n }, () => []);
-  // Biggest first, dealt round: every section gets one of the big rooms.
-  [...rooms].sort((a, b) => b.w * b.h - a.w * a.h).forEach((r, i) => (out[i % n] as RoomSpec[]).push(r));
+  const last = n > 1 ? rooms.filter((r) => tail.includes(r.role)).slice(0, range[1]) : [];
+  (out[n - 1] as RoomSpec[]).push(...last);
+  // Biggest first, each to the section with the fewest rooms: every section gets one of the big rooms.
+  for (const r of rooms.filter((x) => !last.includes(x)).sort((a, b) => b.w * b.h - a.w * a.h)) {
+    (out.reduce((p, q) => (q.length < p.length ? q : p)) as RoomSpec[]).push(r);
+  }
   return out;
 }
 
@@ -66,7 +74,7 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
     a.corridors++;
     port = ps.find((p) => p.kind === 'end') as Port;
   }
-  const parts = chunks(rooms, rule.section.rooms);
+  const parts = chunks(rooms, rule.section.rooms, [...(typeof rule.section.cap === 'string' ? [rule.section.cap] : []), ...(rule.section.far ?? [])]);
   let end: Port | null = null, took = 0;
   // Bunks offered to each section in turn (never behind a gate).
   const offer = (): { bunks?: readonly RoomSpec[] } => (rule.gated || each === 0 ? {} : { bunks: bunks.slice(took, took + each) });

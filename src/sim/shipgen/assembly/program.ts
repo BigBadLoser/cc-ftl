@@ -1,7 +1,7 @@
 import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
-import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec } from '../plan';
+import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept } from '../plan';
 import { stationCrew } from '../stationPlan';
 import type { StationDef, StationSize } from '../stationTypes';
 import { barracksOf, cabinOf } from './quarters';
@@ -63,15 +63,19 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   }
   const crew = stationCrew(rng, def, size);
   const quarters: RoomSpec[] = [];
+  // The station chief's cabin, by the bridge (the harbour's): a bed, a desk and chair, a locker. Not on the smallest crews.
+  const chief = crew.length >= 6 ? 1 : 0;
+  if (chief) quarters.push({ role: 'quarters', dept: 'harbour', mods: ['module.bed', 'module.mess_table', 'module.chair', 'module.storage_locker'], w: 4, h: 4, cabins: false });
+  const housed = crew.length - chief;
   if (def.barracks) {
     // Barracks, and a few cabins for those who rate one. Life support as before: one for every four of the crew.
-    const like: RoomSpec = { role: 'quarters', mods: [], w: 3, h: 5 }, cabins = Math.min(crew.length, def.barracks.cabins ?? 0);
-    const made = barracksOf(rng, like, crew.length - cabins, def.barracks.beds);
+    const like: RoomSpec = { role: 'quarters', mods: [], w: 3, h: 5 }, cabins = Math.max(0, Math.min(housed, (def.barracks.cabins ?? 0) - chief));
+    const made = barracksOf(rng, like, housed - cabins, def.barracks.beds);
     for (let i = 0; i < cabins; i++) made.push(cabinOf(like));
     for (let i = 0; i < Math.ceil(crew.length / 4) && made.length > 0; i++) { const r = made[i % made.length] as RoomSpec; made[i % made.length] = { ...r, mods: [...r.mods, 'module.lifeSupport'] }; }
     quarters.push(...made);
-  } else for (let i = 0; i < crew.length; i += 4) {
-    const beds = Math.min(4, crew.length - i);
+  } else for (let i = 0; i < housed; i += 4) {
+    const beds = Math.min(4, housed - i);
     // A block of one-bed cabins: two wide each and a dividing wall between, three deep behind a wall, and a hallway.
     const cabins = beds > 1;
     quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
@@ -79,11 +83,22 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   const support: RoomSpec[] = [];
   // Common rooms: about one for every 12 crew.
   for (let i = 0; i < Math.max(1, Math.round(crew.length / 12)); i++) {
-    support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport', ...(i === 0 ? ['module.fabricator'] : [])], w: 5, h: 3 }, space));
+    support.push(grown(rng, { role: 'support', mods: ['module.lifeSupport'], w: 5, h: 3 }, space));
   }
-  for (const r of def.assemblyRooms ?? def.rooms) {
+  // The workshop (two at hub size): the fabricator with racks for stock and lockers for tools. It is the works'.
+  for (let i = 0; i < (size === 'hub' ? 2 : 1); i++) {
+    support.push(grown(rng, { role: 'industry', dept: 'works', mods: ['module.fabricator', ...Array<string>(2).fill('module.storage_rack'), ...Array<string>(2).fill('module.storage_locker')], w: 6, h: 4 }, space));
+  }
+  // A battery room behind the gate from station size up: a bank along the wall and a console to watch it.
+  const cells = size === 'hub' ? 8 : size === 'station' ? 4 : 0;
+  if (cells > 0) support.push({ role: 'plant', mods: [...Array<string>(cells).fill('module.battery'), 'module.console'], w: cells / 2 + 3, h: 4 });
+  // Where crew suit up: lockers and a bench by the docks from station size up, and beside the pod deck (its annex).
+  const suits = (dept: StationDept, lockers: number): RoomSpec => ({ role: 'support', dept, mods: [...Array<string>(lockers).fill('module.storage_locker'), 'module.chair', 'module.chair'], w: Math.max(4, lockers), h: 3 });
+  if (size !== 'outpost') support.push(suits('harbour', 4));
+
+  for (const r of [...(def.assemblyRooms ?? def.rooms), ...(def.assemblyAlso ?? [])]) {
     for (let i = 0; i < r.count[size]; i++) {
-      support.push(grown(rng, { role: r.role, mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }, space));
+      support.push(grown(rng, { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }, space));
     }
   }
   const docks = Array.from({ length: Math.max(2, t.docks) }, dockSpec);
@@ -92,7 +107,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, (): RoomSpec => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
   // The pod deck: mining pod bays in a row (two rows past four), each with the tile beside it crew unload at, and an aisle.
   const pods = t.pods ?? 0, podRows = pods > 4 ? 2 : 1, perRow = Math.ceil(pods / podRows);
-  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8 });
+  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8, annex: suits('works', Math.min(6, pods + 2)) });
   // The ore store beside it: two ore bins a pod, in a row along each long wall with an aisle between. It is the works'.
   if (pods > 0) support.push({ role: 'cargo', dept: 'works', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 });
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];
@@ -145,9 +160,15 @@ function medbays(rooms: readonly RoomSpec[]): RoomSpec[] {
   const quarters = Math.ceil(rooms.filter((r) => r.role === 'quarters').flatMap((r) => r.mods).filter((m) => m === 'module.bed').length / 4);
   if (quarters === 0) return [];
   const room = (cots: number): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4 });
-  if (quarters >= 8) return [room(4), room(1), room(1)];
+  // From 16 crew a trauma room beside the ward (its annex): the recovery pod and a cot. The ward gives up a cot for it.
+  const trauma: RoomSpec = { role: 'medbay', mods: ['module.recovery', 'module.med_bed'], w: 5, h: 4 };
+  if (quarters >= 8) return [{ ...room(4), annex: trauma }, room(1)];
   const n = Math.max(1, Math.round(quarters / 5));
-  return Array.from({ length: n }, () => room(Math.min(4, 1 + Math.ceil(quarters / n / 2))));
+  const wards = Array.from({ length: n }, () => room(Math.min(4, 1 + Math.ceil(quarters / n / 2))));
+  if (quarters < 4) return wards;
+  const first = wards[0] as RoomSpec;
+  wards[0] = { ...(first.mods.length > 2 ? room(first.mods.length - 1) : first), annex: trauma };
+  return wards;
 }
 
 /** Plant rooms: one for every reactor room, two at least, so the machinery has working rooms round it. */
@@ -160,28 +181,23 @@ function plant(rooms: readonly RoomSpec[]): RoomSpec[] {
  * The common rooms as a mess and a rec room: the first one (two at hub size) is a mess with a galley and mess tables
  * (a table seats four on its chairs, which come with it at fit-out; seats for about half the crew at once), and from
  * station size up the next is a rec room with arcade cabinets and a game table. Where there is no rec room the game
- * table stands in the mess. They are the commons department. The fabricator the first common room held goes to a
- * plant room, the station's workshop.
+ * table stands in the mess. Each mess has a pantry beside it (its annex): racks of stores. They are the commons department.
  */
 export function withCommons(rooms: readonly RoomSpec[], size: StationSize): RoomSpec[] {
   const out = rooms.map((r) => ({ ...r, mods: [...r.mods] }));
   const common = out.filter((r) => r.role === 'support' && !r.dept);
   const messes = size === 'hub' ? 2 : 1, rec = size === 'outpost' ? 0 : 1;
-  const bench = out.find((r) => r.role === 'plant');
   const crew = out.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
   const tables = Math.max(1, Math.ceil(crew / 8 / messes));
   for (const [i, r] of common.slice(0, messes + rec).entries()) {
     const mess = i < messes;
-    if (bench && r.mods.includes('module.fabricator')) {
-      r.mods = r.mods.filter((m) => m !== 'module.fabricator');
-      bench.mods.push('module.fabricator');
-    }
     r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
     // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle, or a wall of
     // cabinets and a table.
     const long = Math.max(r.w, r.h, mess ? 3 + 3 * tables : 5), short = Math.max(Math.min(r.w, r.h), mess ? 5 : 4);
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
+    if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
   }
   return out;
 }

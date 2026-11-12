@@ -1,4 +1,5 @@
 import type { Faction } from '../combat/components';
+import type { StationDept } from './plan';
 import type { TransitionStyle, Weighted } from './types';
 
 /**
@@ -17,7 +18,9 @@ export type StationGrammar =
 
 /** A kind-specific room: its role, the modules it holds, its interior size, and how many per size tier. */
 export interface StationRoomDef {
-  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support';
+  role: 'farm' | 'industry' | 'armoury' | 'cargo' | 'quarters' | 'support' | 'hangar';
+  /** Its department in the station assembly, where the role's own is not it (a drone bay is defence, not works). */
+  dept?: StationDept;
   mods: readonly string[];
   w: number;
   h: number;
@@ -74,6 +77,8 @@ export interface StationDef {
   rooms: readonly StationRoomDef[];
   /** The kind's rooms for the station assembly, where they differ from `rooms`. */
   assemblyRooms?: readonly StationRoomDef[];
+  /** Rooms the station assembly adds to those (a breaker shop, a drone bay). */
+  assemblyAlso?: readonly StationRoomDef[];
   /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
   atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
 }

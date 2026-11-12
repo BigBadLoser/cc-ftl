@@ -2,7 +2,8 @@
 /**
  * Station assembly sheets: the recipes of src/content/stationRecipes.ts, assembled for several seeds and drawn through
  * the original views (silhouette, structure, departments). Unfurnished: composition first.
- *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree] [--versus]   (--versus: the old grammar as the first row)
+ *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree] [--program station.research:hub] [--versus]
+ *   (--versus: the old grammar as the first row; --program: another kind and size than the family's own)
  * One set of sheets per family (tree: the pirate hub's rooms; spine and compound: the mining station's). A row per recipe
  * variation, a column per seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel.
  */
@@ -59,6 +60,16 @@ try {
   const nameOf = (r) => {
     const mods = r.spec?.mods ?? [], has = (m) => mods.includes(`module.${m}`), beds = mods.filter((m) => m === 'module.bed').length;
     if (has('galley')) return 'MESS';
+    if (has('bed') && has('mess_table')) return 'CHIEF';
+    if (has('research')) return 'LAB';
+    if (has('scrapper')) return 'BREAK';
+    if (has('fabricator')) return 'SHOP';
+    if (has('battery')) return 'BATT';
+    if (has('recovery')) return 'TRAUMA';
+    if (has('droneBay')) return 'DRONES';
+    if (has('vehicle_bay')) return 'SHUTTLE';
+    if (r.role === 'support' && has('storage_locker')) return 'SUITS';
+    if (r.role === 'cargo' && has('storage_rack')) return 'PANTRY';
     if (has('arcade')) return 'REC';
     if (has('pod_bay')) return 'PODS';
     if (has('storage_ore')) return 'ORE';
@@ -76,7 +87,7 @@ try {
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {
     if (only && family !== only) continue;
-    const [kind, size] = PROGRAM[family];
+    const [kind, size] = arg('program') ? arg('program').split(':') : PROGRAM[family];
     const rows = [];
     // --versus: the old grammar for the same rooms and seeds as the first row, through the whole old pipeline.
     if (args.includes('--versus') && VERSUS[family]) {

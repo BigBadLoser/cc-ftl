@@ -1,7 +1,7 @@
 import type { RoomSpec } from '../plan';
 import type { Asm } from './asm';
 import { at, key, type Ctx } from './model';
-import { SOLID, SPACE } from './regions';
+import { SOLID, SPACE, type RegionGrid } from './regions';
 
 /** The last steps of an assembly: corridor tails cut back, bracing beams, and the hard check that every room stands. */
 
@@ -66,6 +66,38 @@ export function brace(a: Asm, chance: number): void {
   }
 }
 
+/**
+ * Where a room of the band (regions from `from` on) overhangs the corner between two rooms of a section by a tile, the
+ * walls meet two thick. The band room gives up that edge line, so its wall falls in with the section's; kept only
+ * where it leaves fewer thick walls than before.
+ */
+export function mend(g: RegionGrid, from: number, box: readonly [number, number, number, number]): void {
+  for (let pass = 0; pass < 4; pass++) {
+    const before = g.blocks(...box);
+    if (before === 0) return;
+    const cell = g.compile(), S = g.size, H = g.half;
+    const wall = (x: number, y: number): boolean => cell[(y + H) * S + x + H] === '#';
+    let fixed = false;
+    for (let y = box[1]; y < box[3] && !fixed; y++) for (let x = box[0]; x < box[2] && !fixed; x++) {
+      if (!wall(x, y) || !wall(x + 1, y) || !wall(x, y + 1) || !wall(x + 1, y + 1)) continue;
+      for (const [tx, ty] of [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]] as const) {
+        const id = g.at(tx, ty);
+        if (id < from || g.regions[id]?.hall) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          if (g.at(tx + dx, ty + dy) !== SPACE) continue;
+          // The room's line of tiles through this one, along its edge.
+          const m = g.mark();
+          for (const s of [1, -1]) for (let k = s > 0 ? 0 : 1; g.at(tx + s * k * dy, ty + s * k * dx) === id; k++) g.set(tx + s * k * dy, ty + s * k * dx, SPACE);
+          if (g.blocks(...box) < before) { fixed = true; break; }
+          g.reset(m);
+        }
+        if (fixed) break;
+      }
+    }
+    if (!fixed) return;
+  }
+}
+
 /** Cut back every corridor's unused tail: a corridor ends a little past the last thing that hangs on it. */
 export function trim(a: Asm): void {
   const { g } = a.ctx;
@@ -97,7 +129,7 @@ export function missing(ctx: Ctx, rooms: readonly RoomSpec[]): string {
   const beds = (r: RoomSpec): number => r.mods.filter((m) => m === 'module.bed').length;
   const have = new Map<string, number>(), want = new Map<string, number>();
   const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? beds(r) : 1)); };
-  for (const r of rooms) count(want, r);
+  for (const r of rooms) { count(want, r); if (r.annex) count(want, r.annex); }
   for (const id of floored) { const spec = g.regions[id]?.spec; if (spec && !g.regions[id]?.hall) count(have, spec); }
   const short = [...want].filter(([k, n]) => (have.get(k) ?? 0) < n).map(([k, n]) => `${k} ${have.get(k) ?? 0}/${n}`);
   return short.length > 0 ? `rooms missing from the finished layout: ${short.join(', ')}` : '';

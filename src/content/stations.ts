@@ -69,6 +69,9 @@ const n = (k: number, id: string): string[] => Array<string>(k).fill(id);
 const ARMS = [{ item: 'item.rifle', min: 1, max: 2 }, { item: 'item.sidearm', min: 0, max: 1 }];
 const armoury = (count: Per, lockers = 4): StationRoomDef => room('armoury', n(lockers, 'module.storage_locker'), lockers + 2, 3, count, ARMS);
 
+/** A breaker shop: the scrapper, scrap cages beside it and a pallet for what comes out. */
+const breaker = (count: Per): StationRoomDef => room('industry', ['module.scrapper', 'module.storage_scrap', 'module.storage_scrap', 'module.storage_pallet'], 8, 5, count);
+
 const CIVIL_CREW = {
   required: ['role.engineer', 'role.gunner'],
   pool: [{ value: 'role.engineer', weight: 3 }, { value: 'role.medic', weight: 1 }, { value: 'role.gunner', weight: 1 }, { value: 'role.pilot', weight: 1 }, { value: 'role.scientist', weight: 1 }],
@@ -101,6 +104,12 @@ export const stations = {
       room('cargo', n(3, 'module.storage'), 7, 4, per(1, 1, 2), [{ item: 'item.electronics', min: 6, max: 20 }, { item: 'item.parts', min: 2, max: 8 }]),
       armoury(per(1, 1, 1), 3),
     ],
+    // The station assembly gives it laboratories; its fabricators stand in the workshop every station has.
+    assemblyRooms: [
+      room('industry', ['module.research', 'module.research', 'module.console', 'module.console', 'module.storage_locker', 'module.storage_locker'], 9, 5, per(1, 2, 4)),
+      room('cargo', n(3, 'module.storage'), 7, 4, per(1, 1, 2), [{ item: 'item.electronics', min: 6, max: 20 }, { item: 'item.parts', min: 2, max: 8 }]),
+      armoury(per(1, 1, 1), 3),
+    ],
     atrium: { role: 'garden', chance: 0.5 },
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
@@ -114,6 +123,7 @@ export const stations = {
       room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 3), [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.iron_ore', min: 6, max: 20 }, { item: 'item.rare_ore', min: 0, max: 5 }]),
       armoury(per(1, 1, 1)),
     ],
+    assemblyAlso: [breaker(per(0, 1, 1))],
     atrium: { role: 'plaza', chance: 0.4 },
   },
   // Farming: extra crew quarters and messes round a plaza, ration stores; lightly guarded. (No hydroponics beds on stations.)
@@ -143,6 +153,8 @@ export const stations = {
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
     tiers: tiers({ crew: 1.2, bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
+    // Drone bays (two drones a bay) in rooms of two: the depot's own patrol. Defence, not works.
+    assemblyAlso: [{ ...room('hangar', n(2, 'module.droneBay'), 6, 4, per(1, 2, 3)), dept: 'defence' }],
     atrium: { role: 'drill', chance: 0.6 },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.
@@ -161,5 +173,6 @@ export const stations = {
       room('cargo', n(3, 'module.storage'), 6, 4, per(1, 2, 3), [{ item: 'item.electronics', min: 1, max: 4 }, { item: 'item.rifle', min: 0, max: 1 }, { item: 'item.parts', min: 0, max: 3 }]),
       armoury(per(1, 1, 1), 3),
     ],
+    assemblyAlso: [breaker(per(1, 1, 2))],
   },
 } satisfies Record<string, StationDef>;

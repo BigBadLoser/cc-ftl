@@ -5,7 +5,7 @@ import type { BandAsk } from './band';
 import { grow } from './branch';
 import { deptOf, type Dept } from './dept';
 import { corridor } from './elements';
-import { brace, missing, trim } from './finish';
+import { brace, mend, missing, trim } from './finish';
 import { K, type Site } from './lattice';
 import { key, type Ctx, type Dir, type Port } from './model';
 import { cabinsOf, house } from './quarters';
@@ -97,12 +97,14 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     if (why) { why = `R ${R}: ${why}`; continue; }
     // The ring's own rooms: habitation away from the first branch, guns all round, the rest between.
     const first = a.ports.find((p) => p.kind === 'rim' && p.used)?.frame.dir ?? 'n';
-    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap((r) => (r.cabins === false ? [r] : cabinsOf(r))), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))];
+    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap((r) => (r.annex ? [r, { ...r.annex, dept: r.annex.dept ?? r.dept }] : [r])).flatMap((r) => (r.cabins === false ? [r] : cabinsOf(r))), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))];
     const guns = own.filter((r) => r.dept === 'defence');
     const asks: BandAsk[] = own.map((spec) => ({ spec, angle: spec.dept === 'defence' ? (guns.indexOf(spec) * 2 * Math.PI) / Math.max(1, guns.length) : ANGLE[first] + (spec.dept === 'habitation' ? Math.PI : Math.PI / 2) }));
+    const band = site.g.regions.length;
     const left = fillRing(site, asks, root.inner);
     if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms`; continue; }
     // The band is filled last, round everything joined to the rim: no thick wall may come of it.
+    mend(site.g, band, [-R - 60, -R - 60, R + 60, R + 60]);
     const thick = site.g.blocks(-R - 60, -R - 60, R + 60, R + 60);
     if (thick > 0) { why = `R ${R}: ${thick} thick wall${thick > 1 ? 's' : ''} where the band meets a section`; continue; }
     a.sections++;
