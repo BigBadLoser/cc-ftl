@@ -798,10 +798,11 @@ Every new module feeds a system that already exists and changes play. None is de
     gives its own mood factor ("Played the arcade +N"). Traits set preferences, and variety helps: using the same thing every
     break is worth less. No new need.
   - This is the frame for more comfort modules later (viewport, bar, gym).
-- **Recovery pod.** A powered bed. A hurt crew member lies in it and heals to full over time with no medic, but is out of
+- **Recovery pod (first pass built, #319).** A powered bed. A hurt crew member lies in it and heals to full over time with no medic, but is out of
   action meanwhile. Downed crew carried there are stabilised and heal. The medic drone only patches and stabilises where crew
   fall; the pod is where they get well.
-  - Injuries are left for later: the pod works on HP, built so lasting injuries (and surgery) can slot in.
+  - Injuries are left for later: the pod works on HP, built so lasting injuries (and surgery) can slot in (`podHealStep`, sim/crew/recovery.ts).
+  - Built: a hurt crew member (under 70% hp) who can walk goes to a free medical bed first, else a free powered pod (the `recover` drive), and heals to full there (pod 2 hp/s, med bed 1.5 hp/s, herbs x2; a medic standing beside a medical bed, on its `tend` job, adds their medicine skill and earns the XP: `tendingOf`, crew/treatment.ts; ordinary beds and the pod get no medic bonus); a downed (critical) patient is carried to a pod first, else a medical bed: a pod heals them as in a bed to 40 hp, then they stay on to full. The pod is for the critical cases. One owner: `findFreeBed` with a `BedUse` (`walking` / `critical`, decided by `bedUseOf`, crew/beds.ts). An unpowered pod ejects a walking patient and pauses a downed one.
 - **Workbench** (art already in the sheets: `module.workbench`). Crew make and repair personal gear here: suits, sidearms,
   tools, armour. The fabricator keeps ship-scale things (missiles, parts).
 - **Water purifier.** Turns ice into water, a small dedicated alternative to the refinery's split-ice recipe.
@@ -815,7 +816,7 @@ Every new module feeds a system that already exists and changes play. None is de
   |---|---|---|
   | Greens | Fast, small yield | Meals |
   | Protein beans | Slow, big yield | Meals |
-  | Medicinal herbs | Medium | In stock, the med bed (built: x2 heal for the stay, one herb per treatment) and later the recovery pod heal faster |
+  | Medicinal herbs | Medium | In stock, the med bed (built: x2 heal for the stay, one herb per treatment) and the recovery pod (built, same mechanism) heal faster |
   | Grain | Medium | A trade good for now; brewed into drinks later (bar, Drinker habit) |
 
 - **Galley: meals by cook quality (#59; built).** Cooking produce with water into a meal is a cooking job (`recipe.meal_greens`, `recipe.meal_beans`:

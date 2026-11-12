@@ -52,6 +52,7 @@ const SUPPORT_REPAIR_BONUS = 10000;
  * support next, then everything else (lights, beds, storage) by distance as usual. Outside combat nothing changes.
  */
 export function repairUrgency(sim: Sim, job: Job): number {
+  if (job.kind === 'rescue') return 1; // a bleeding-out crew member goes ahead of standing work of the same priority (tending a stable patient), whatever the walk
   if (job.kind !== 'repair') return 0;
   const m = sim.world.get(job.target ?? 0, ModuleC);
   if (!m) return 0;

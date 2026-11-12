@@ -9,7 +9,7 @@ import { canStartMeal, eatTurn } from './machines/eat';
 import { idleTurn } from './machines/idle';
 import { leisureTurn } from './machines/leisure';
 import { navigateTurn } from './machines/navigate';
-import { endSleep, sleepTurn } from './machines/sleep';
+import { endSleep, recoverTurn, sleepTurn } from './machines/sleep';
 import { wakesFromSleep } from '../crew/schedule';
 import { speciesOf } from '../robots/core';
 import { heldForMend } from '../robots/jobs';
@@ -31,7 +31,7 @@ import { evaluateIntent, isUrgent, readInput, serveDrive, type TaskView } from '
 
 /** A need machine's turn: true when it took the crew member this tick, false to fall through to the next drive. */
 /** A need machine's turn: true when it took the crew member, false when it cannot start, `'later'` when it may start on a later tick (its search waits). */
-type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean) => boolean | 'later';
+type NeedTurn = (sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean, drive: DriveDef) => boolean | 'later';
 
 /** The need machines a drive may start (`DriveDef.task`). A new need is a machine plus its turn here. */
 const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
@@ -39,7 +39,8 @@ const NEED_TURNS: Partial<Record<MachineId, NeedTurn>> = {
   return: returnTurn, // an away crew member heads for their site's shuttle
   charge: chargeTurn,
   // Never on an away site (#286): there the return drive takes them home to sleep; no lying down on a wreck's floor.
-  sleep: (sim, id, crew, pos, holdsJob) => !siteUnderFoot(sim, id) && (sleepTurn(sim, id, crew, pos, holdsJob), true),
+  // The recover drive (a hurt crew member) shares the machine: the walk to a bed, but to a recovery pod only, and the stay in it instead of sleep.
+  sleep: (sim, id, crew, pos, holdsJob, drive) => !siteUnderFoot(sim, id) && (drive.id === 'recover' ? recoverTurn(sim, id, crew, pos, holdsJob) : (sleepTurn(sim, id, crew, pos, holdsJob), true)),
   eat: (sim, id, crew, pos) => eatTurn(sim, id, crew, pos),
   // A suit is stowed before a break (as in the idle turn): off duty in Free, where the break outranks the closed work drive (#412).
   leisure: (sim, id, crew, pos) => !isSuited(sim, id) && leisureTurn(sim, id, crew, pos),
@@ -179,7 +180,7 @@ export function scheduleSystem(sim: Sim): void {
     for (let i = 0; i < ranked.length; i++) {
       const d = ranked[i] as DriveDef;
       const turn = d.task === 'job' ? undefined : NEED_TURNS[d.task];
-      const r = turn?.(sim, id, crew, pos, !!assignment);
+      const r = turn?.(sim, id, crew, pos, !!assignment, d);
       // A need whose start waits for its tick (the meal search) keeps a lower need from taking the turn meanwhile (#412, Codex 4519425149: a
       // Sleep block's bed before supper); work, when it comes next, goes on as before.
       if (r === 'later') {
@@ -232,7 +233,7 @@ export function scheduleSystem(sim: Sim): void {
     if (readyTurn(sim, id, crew, pos)) continue; // a passage waits once a need is seen to (#408)
     const drives = idleDrives.get(id);
     idleTurn(sim, id, crew, pos, drives && (() => {
-      const d = drives.find((d) => d.task !== 'job' && NEED_TURNS[d.task]?.(sim, id, crew, pos, false));
+      const d = drives.find((d) => d.task !== 'job' && NEED_TURNS[d.task]?.(sim, id, crew, pos, false, d));
       if (d) serveDrive(sim, id, d.id);
       return !!d;
     }));

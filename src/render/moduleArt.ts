@@ -250,7 +250,7 @@ export function showsActive(def: ModuleDef, on: boolean, crafting: boolean, mann
   if (def.console) return manned;
   if (def.crafting) return crafting;
   if (def.research) return manned;
-  return !!(def.hullEdge || def.shieldGen || def.aiCore);
+  return !!(def.hullEdge || def.shieldGen || def.aiCore || def.recovery); // a recovery pod bubbles whenever it is powered
 }
 
 /**

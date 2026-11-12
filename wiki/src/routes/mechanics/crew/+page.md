@@ -60,7 +60,7 @@ with use (see "Learning" below).
 | Melee | Fighting hand to hand. |
 | Construction | Building, repairing, deconstructing, salvaging, putting out fires and forcing doors. Work goes faster the higher it is. |
 | Hacking | Hacking robots and AI cores. Some hacks need at least level <Stat kind="tuning" id="HACK_MIN_SKILL" />. |
-| Medicine | Patching up the wounded: beds heal faster with a good medic aboard. |
+| Medicine | Patching up the wounded: a patient in a medical bed heals faster while a medic with this skill tends them. |
 | Science | Research: the active project advances faster. |
 | Cooking | Meal quality. A better cook turns the same ingredients into better meals. |
 | Botany | Sowing and harvesting hydroponics beds faster. |
@@ -222,8 +222,24 @@ Before that, a badly hurt crew member is **downed**. They fall, can't act, and *
 <Stat kind="tuning" id="BLEED_OUT_SECONDS" /> seconds** unless a crewmate carries them to a bed. A free bed is needed;
 an alert fires when someone goes down. Crew with the Med column on handle it themselves. In a bed the bleeding stops
 ("Downed, stable"), they heal, and get up again at <Stat kind="tuning" id="GET_UP_HP" /> health. A medical bed with
-medicinal herbs in the stores heals faster, and a good medic aboard speeds all bed healing. Medic drones also stop
+medicinal herbs in the stores heals faster. Medic drones also stop
 bleeding. See [Drones and robots](../drones/).
+
+### Medical beds and the recovery pod
+
+A crew member who is hurt but on their feet (under 70% health) walks to a **medical bed** when one is free, lies in it
+and heals to full health, out of action meanwhile. A **recovery pod** is the same idea for a powered, bigger bed: it
+heals <Stat kind="tuning" id="POD_HEAL_PER_SEC" /> health a second with no medic needed, and the patient floats in the
+tank. Walking patients take a medical bed first and the pod only when no medical bed is free; the downed (critical)
+take a pod first, then a medical bed. A downed crew member carried to a pod is stabilised, heals, and stays in until
+they are at full health instead of getting up at <Stat kind="tuning" id="GET_UP_HP" />. A pod needs power: without it
+a walking patient is let out and a downed one stops healing (and stops bleeding). One patient per bed; medicinal herbs
+in the stores speed up either. Build the pod from the **Life** tab.
+
+A medical bed with a patient in it gets a **tend** job (Med column): a medic walks to the bed and stands beside it, and
+while they do, the patient heals faster by the medic's Medicine skill and the medic earns Medicine XP for it. If the medic
+is called away the job waits for the next free medic. Crew who won't do medical work never tend. Ordinary beds and the
+pod have no such bonus: the pod needs no medic at all.
 
 > **Tip:** keep a bed free for the downed. Without one, the rescue job never starts.
 

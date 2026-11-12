@@ -277,7 +277,7 @@ describe('medicinal herbs', () => {
     expect(findFreeBed(sim, ship, from)?.bed).not.toBe(med);
     for (const id of sim.world.query(ModuleC)) if (id !== med && content.modules[sim.world.get(id, ModuleC)!.def as 'module.bed'].bed) sim.world.get(id, ModuleC)!.reservedBy = 99;
     expect(findFreeBed(sim, ship, from)).toBeNull();
-    expect(findFreeBed(sim, ship, from, false, undefined, true)?.bed).toBe(med);
+    expect(findFreeBed(sim, ship, from, false, undefined, 'critical')?.bed).toBe(med);
   });
 });
 

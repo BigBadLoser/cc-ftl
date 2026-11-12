@@ -14,7 +14,7 @@ function healed(sim: Sim, secs: number): number {
 }
 
 describe('medicine', () => {
-  it('a medic aboard speeds up healing in a bed, by their medicine skill', () => {
+  it('a medic merely aboard does not speed up healing: only one tending the bed does (content/ships/tending.test.ts)', () => {
     const withMedic = newGame(3, content);
     expect(playerCrew(withMedic).some((id) => withMedic.world.get(id, CrewC)?.role === 'role.medic')).toBe(true);
     const without = newGame(3, content);
@@ -25,8 +25,7 @@ describe('medicine', () => {
     const a = healed(withMedic, 5);
     const b = healed(without, 5);
     expect(b).toBeGreaterThan(0);
-    // Medicine 3 at SKILL_STEP 0.1: 30% faster.
-    expect(a / b).toBeCloseTo(1.3, 1);
+    expect(a / b).toBeCloseTo(1, 5);
   });
 
   it('a patched patient still bleeds out while something harms them, and lives on when nothing does', () => {

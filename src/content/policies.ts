@@ -32,6 +32,14 @@ const eat = {
   blocks: { free: { enter: 600 } }, task: 'eat',
 } satisfies DriveDef;
 
+/**
+ * Health under 70%, with a medical bed or a recovery pod free aboard: walk to one (a medical bed first, the pod only when none is free: the pod is for the critical
+ * cases, `BedUse` in crew/beds.ts) and lie in it until healed (runs the sleep machine's bed walk; crew/recovery.ts). Over work, under the survival needs; with no bed the drive is closed.
+ */
+const recover = {
+  id: 'recover', input: 'health', curve: [[0, 800]], enter: 700, exit: 1000, requires: ['care'], task: 'sleep',
+} satisfies DriveDef;
+
 /** A battery robot whose battery is low, or which is damaged with a repair item aboard, goes to its bay. */
 const recharge = {
   id: 'recharge', input: 'robotUpkeep', curve: [[0, 1000]], enter: 1, task: 'charge',
@@ -72,12 +80,12 @@ const willingWork = { id: 'work', input: 'willing', curve: [[0, 0], [1, 100]], b
 
 export const policies = {
   'policy.robot': { id: 'policy.robot', crew: ['robot'], escapeHazards: true, drives: [goHome, recharge, work] },
-  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, willingWork, leisure] },
+  'policy.colonist': { id: 'policy.colonist', crew: ['colonist'], escapeHazards: true, drives: [air, goHome, sleep, eat, recover, willingWork, leisure] },
   // Station crew get hungry and eat too; the hunger floor that keeps them from starving is the needs system's.
   'policy.station': { id: 'policy.station', crew: ['station'], escapeHazards: true, drives: [air, sleep, eat, work] },
   // A lodging guest (a passenger, consent/components.ts `lodge`) lives aboard as the crew do (sleep, meals, a break when low), and works as their grant and
   // priorities say (a passenger's chores).
-  'policy.guest': { id: 'policy.guest', crew: ['guest'], escapeHazards: true, drives: [air, sleep, eat, willingWork, leisure] },
+  'policy.guest': { id: 'policy.guest', crew: ['guest'], escapeHazards: true, drives: [air, sleep, eat, recover, willingWork, leisure] },
   // Enemy ship crew tire but have no hunger.
   'policy.npc': { id: 'policy.npc', crew: ['npc'], escapeHazards: true, drives: [air, sleep, work] },
 } satisfies Record<string, PolicyDef>;

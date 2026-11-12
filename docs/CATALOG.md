@@ -57,7 +57,8 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Research module:** buildable but placed on no ship, so research needs the player to build one first. Same for the scrapper, radiator and large hydroponics bed ("buildable only").
 - **Freight container art:** `module.cargo_container` points at an asset that is not in the manifest (the sprite is `module.storage_container`), so it draws a placeholder.
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
-- **Construction pods and drones, logistics robot, water purifier, arcade/recovery pod:** planned only, even though `module.pod_bay` text mentions construction pods.
+- **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
+- **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
 - **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
 - **Hyperlane gates, mining/farming/pirate "structures":** the map has gateway nodes and port kinds, not separate gate or structure objects for these.

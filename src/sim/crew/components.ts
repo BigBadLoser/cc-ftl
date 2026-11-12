@@ -51,7 +51,7 @@ export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
 /** 'inert': a robot shut down (no live AI core) or stunned. 'charging': a robot in its bay. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging' | 'eating';
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging' | 'eating' | 'recovering';
 
 export interface Crew {
   name: string;
@@ -187,7 +187,9 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue'
+  /** tend: a medic stands beside the medical bed `target` while a patient lies in it, speeding the healing (crew/treatment.ts `tendingOf`); held until the patient leaves. */
+  | 'tend' | 'haul' | 'craft' | 'research' | 'operate'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'
   /** refuel: load fuel into the reactor `target` (modules/refuel.ts). */
@@ -233,6 +235,18 @@ export interface Downed {
   treated?: number;
 }
 export const DownedC = defineComponent<Downed>('downed');
+
+/**
+ * Present while a crew member lies in a recovery pod (`ModuleDef.recovery`, crew/recovery.ts), hurt but not (or no longer) downed: they heal to full
+ * hp, out of action meanwhile. The pod holds them: `bed` is the pod module (reserved to them). A downed patient carried to a pod stays `Downed` until
+ * `GET_UP_HP`, then becomes this and carries on to full.
+ */
+export interface Recovering {
+  bed: number;
+  /** A medicinal item was used on this stay (crew/treatment.ts): its heal multiplier, as `Downed.treated`. */
+  treated?: number;
+}
+export const RecoveringC = defineComponent<Recovering>('recovering');
 
 /** Corpse marker. The Crew data stays; no AI components remain. */
 export interface Dead {

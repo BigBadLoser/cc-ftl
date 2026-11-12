@@ -26,6 +26,8 @@ export type SimEvent =
   | { type: 'crew.downed'; crew: number }
   | { type: 'crew.died'; crew: number }
   | { type: 'crew.rescued'; crew: number; by: number }
+  | { type: 'crew.enteredCare'; crew: number; bed: number }
+  | { type: 'crew.leftCare'; crew: number; bed: number }
   | { type: 'crew.fellAsleep'; crew: number }
   | { type: 'crew.wokeUp'; crew: number }
   | { type: 'crew.ate'; crew: number; item: string; galley: boolean }

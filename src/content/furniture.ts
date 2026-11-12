@@ -108,6 +108,16 @@ export const furniture = {
     asset: 'module.med_bed', footprint: [1, 2], solid: false, power: 0, flammability: 0.4, bed: true, medical: true,
     maxHp: 60, buildWork: 100, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
+  // A recovery pod (#319): a powered tank, entered from the tile in front. A hurt crew member lies in it and heals to full with no medic, out of action meanwhile; a downed
+  // patient carried here is stabilised and heals. The critical (downed) take it before a medical bed, walking patients after one (crew/beds.ts `BedUse`). Also a bed and medical, so the bed code finds it; sleepers never do.
+  'module.recovery': {
+    scrap: 'tech',
+    name: 'Recovery pod',
+    category: 'life',
+    description: "A powered tank of healing fluid. A hurt crew member lies in it and heals to full with no medic, out of action meanwhile. Downed crew carried here are stabilised and heal. Heals faster with medicinal herbs in stock.",
+    asset: 'module.recovery', footprint: [2, 2], solid: true, access: [0, 2], power: -3, flammability: 0.2, bed: true, medical: true, recovery: true,
+    maxHp: 120, buildWork: 180, cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
+  },
   // A power cell bank: charges from spare supply on its network and covers a shortfall before anything is cut (systems/power.ts). Damaged or switched off, it holds its charge but neither charges nor drains.
   'module.battery': {
     scrap: 'energy',
