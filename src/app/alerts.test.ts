@@ -11,7 +11,8 @@ import { AwaySiteC } from '../sim/away/components';
 import { Struct } from '../sim/structure';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createAlerts } from './alerts';
-import { shortOnPower } from './alertsDerived';
+import { deriveAlerts, shortOnPower } from './alertsDerived';
+import { wreckShip } from '../sim/combat/wreck';
 import { ConsentC, type Carry } from '../sim/consent/components';
 import { deserialize, serialize } from '../sim/save';
 import { playerShip } from '../sim/trade/player';
@@ -389,5 +390,17 @@ describe('a beaten ship waits for the answer', () => {
     const a = current(alerts).find((x) => x.kind === 'ship.yielded')!;
     expect(a.text).toBe(`${sim.world.get(enemy, ShipC)!.name} surrendered`);
     expect(a.actions?.map((x) => x.label)).toEqual(['Take prisoners', 'Let them go']);
+  });
+
+  it('is no longer offered once the ship is destroyed before the answer', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 90 });
+    for (let i = 0; i < 10; i++) sim.step();
+    const enemy = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.faction === 'hostile')!;
+    sim.enqueue({ type: 'debug.surrender', ship: enemy });
+    for (let i = 0; i < 40; i++) sim.step();
+    expect(deriveAlerts(sim, () => false).has(`sy${enemy}`)).toBe(true);
+    wreckShip(sim, enemy);
+    expect(deriveAlerts(sim, () => false).has(`sy${enemy}`)).toBe(false);
   });
 });

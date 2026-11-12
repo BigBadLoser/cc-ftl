@@ -798,6 +798,8 @@ export interface UiEnemyWeapon {
   stalled: boolean;
   /** The module is destroyed. */
   destroyed: boolean;
+  /** Its ship has yielded (`shipCanAct`): nothing charges or fires until the player answers. */
+  standDown: boolean;
   /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
   eta: number | null;
   /** One of its shots is in flight to your ship and it has no new aim yet. */

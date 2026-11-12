@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, CrewC, DownedC, ModuleC, PositionC, ShipC, SurrenderedC, WeaponC, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CombatC, CrewC, DownedC, ModuleC, RecoveringC, PositionC, ShipC, SurrenderedC, WeaponC, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { wreckShip } from '../../sim/combat/wreck';
 import { repKey } from '../../sim/galaxy/standing';
 import { PrisonerC } from '../../sim/fight/components';
 import { content } from '../index';
@@ -104,6 +105,42 @@ describe('the fight ends in the player\'s answer when the enemy crew is subdued 
     sim.enqueue({ type: 'combat.flee', ship: enemy });
     run(sim, 2);
     expect(sim.world.get(enemy, ShipC)!.state).toBe('active');
+  });
+
+  it('a yielded ship that is destroyed before the answer is no longer offered, and the answer is refused', () => {
+    const sim = setup();
+    const enemy = nth(sim, 2);
+    for (const c of crewOf(sim, enemy)) sim.world.add(c, SurrenderedC, { tick: sim.tick });
+    run(sim, 30);
+    expect(sim.world.get(enemy, ShipC)!.yielded).toBe(true);
+    wreckShip(sim, enemy);
+    expect(sim.world.get(enemy, ShipC)!.yielded).toBeUndefined();
+    sim.world.get(enemy, ShipC)!.yielded = true; // even a stale flag cannot turn a wreck back into a prize
+    settle(sim, enemy, 'takePrisoners');
+    expect(sim.world.get(enemy, ShipC)!.state).toBe('wreck');
+    expect(sim.world.get(enemy, ShipC)!.faction).not.toBe('player');
+  });
+
+  it('releasing a prisoner who lies in a bed frees the bed', () => {
+    const sim = setup();
+    const enemy = nth(sim, 2);
+    const crew = crewOf(sim, enemy);
+    for (const c of crew) sim.world.add(c, SurrenderedC, { tick: sim.tick });
+    run(sim, 30);
+    settle(sim, enemy, 'takePrisoners');
+    const [downed, resting] = crew as [number, number];
+    const mods = sim.world.query(ModuleC).filter((m) => shipIdOf(sim, sim.world.get(m, ModuleC)!) === enemy);
+    const [bedA, bedB] = mods as [number, number];
+    sim.world.add(downed, DownedC, { bleed: 99, stabilized: true, bed: bedA });
+    sim.world.get(bedA, ModuleC)!.reservedBy = downed;
+    sim.world.add(resting, RecoveringC, { bed: bedB });
+    sim.world.get(bedB, ModuleC)!.reservedBy = resting;
+    sim.enqueue({ type: 'prisoner.release', crew: downed });
+    sim.enqueue({ type: 'prisoner.release', crew: resting });
+    run(sim, 2);
+    expect(sim.world.has(downed, CrewC)).toBe(false);
+    expect(sim.world.get(bedA, ModuleC)!.reservedBy).toBe(0);
+    expect(sim.world.get(bedB, ModuleC)!.reservedBy).toBe(0);
   });
 
   it('rejects an answer for a ship nobody is waiting on', () => {

@@ -21,7 +21,7 @@ import { capturePrize } from './prize';
  */
 export function settleYielded(sim: Sim, shipId: number, choice: 'letGo' | 'takePrisoners'): string | null {
   const ship = sim.world.get(shipId, ShipC);
-  if (!ship?.yielded) return 'notYielded';
+  if (!ship?.yielded || (ship.state !== 'active' && ship.state !== 'disabled')) return 'notYielded';
   delete ship.yielded;
   if (choice === 'takePrisoners') {
     capturePrize(sim, shipId);
