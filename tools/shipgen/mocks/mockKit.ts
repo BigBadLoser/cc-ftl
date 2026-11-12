@@ -77,6 +77,18 @@ export class Mock {
     });
   }
 
+  /**
+   * A ring r0 <= r < r1 on a coarse lattice: a tile is in when the centre of its k x k cell is (cells aligned on the
+   * centre). The outline then steps k tiles at a time, never one, so a straight wall can meet it anywhere.
+   */
+  coarse(id: number, r0: number, r1: number, k: number): this {
+    return this.paint(id, (x, y) => {
+      const dx = (Math.floor((x - this.cx) / k) + 0.5) * k, dy = (Math.floor((y - this.cy) / k) + 0.5) * k;
+      const r = Math.hypot(dx, dy);
+      return r >= r0 && r < r1;
+    });
+  }
+
   /** Only repaint tiles currently owned by `from` (e.g. split a band into rooms). */
   within(from: number, id: number, pred: (x: number, y: number, r: number, a: number) => boolean): this {
     return this.paint(id, (x, y, r, a) => this.own[y * this.w + x] === from && pred(x, y, r, a));
