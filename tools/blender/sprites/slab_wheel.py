@@ -2,15 +2,15 @@
 on a 3x3, turned 40 deg off radial so the faces on the near side fan open to the room. Parts in slab_kit.py; earlier
 rounds in git history.
 
-Round 16, after round 15's review (the Geneva top and the tyre drives are good; the lobe columns are ugly, the body
-needs fixing). Round 14's pit, wheel and two-tier canopy stay, the lobes go: what carries the canopy is the housing's
-own skin, flush with the canopy's band on the same circle, nothing out in the corners:
+Round 17, after round 16's review (the Geneva tops' rim detail, lines and bolts, is liked; sink part of the top,
+the Geneva kept on top, the tyre wheels down in the lower part; the wrap's control panel further round to the front,
+the opening asymmetric). All three on the wrap: the housing's skin, flush with the canopy, open at the front from the
+right jamb (near the front) round to the left; the canopy's middle sunk into a well, its rim seamed and bolted:
 
-  s46  hood (navy, orange): a curved shell round the back from the left corner to the right, rounded jambs with
-       screens, the front wide open; Geneva top, a pendant
-  s47  wrap (machine green, yellow): the housing all round but a front window (about 120 deg), the control panel
-       set into the wall by it; the turntable with clamp rams and two tyre drives on top
-  s48  ribs (teal, yellow): three slim ribs in the skin's plane, each flaring into the canopy; Geneva top"""
+  s49  Geneva over tyres (navy, orange): the star on the rotor's boss at rim height, its driver on a bridge from the
+       rim; three tyre drives in the well turning the rotor's crown
+  s50  Geneva well (teal, yellow): the whole Geneva drive down in a shallow well
+  s51  crown well (machine green, yellow): the crown with its clamp rams and two tyre drives down in the well"""
 import math
 
 from .slab_kit import BACK, FRONT, NS, R0, angles, at, cassette, frame, hazard, links, loop, prism, ring, spring, tube
@@ -132,13 +132,14 @@ def canopy(k, body, trim, lobes, hole=0.0):
 
 
 # ---- what rides on top ----------------------------------------------------------------------------------------------
-def bolt_ring(k, zt=ZT):
-    ring(k, 1.1, zt, 0.006, 0.03, "dark", skip=lambda i: i % 6 == 0)
+def bolt_ring(k, zt=ZT, r_in=0.85):
+    if r_in < 1.05:
+        ring(k, 1.1, zt, 0.006, 0.03, "dark", skip=lambda i: i % 6 == 0)
     for i in range(16):
         k.cyl(*at(1.24, i * math.tau / 16)[:2], zt, 0.025, 0.02, "steelL", sides=6)
     for i in range(10):                                                      # the top's panel seams
         a = (i + 0.25) * math.tau / 10
-        beam(k, at(0.9, a, zt + 0.004), at(1.3, a)[:2], 0.018, 0.008, "dark")
+        beam(k, at(r_in + 0.05, a, zt + 0.004), at(1.3, a)[:2], 0.018, 0.008, "dark")
 
 
 def ram(k, a, r0, r1, z, body):
@@ -150,13 +151,13 @@ def ram(k, a, r0, r1, z, body):
         k.box(*at(r, a)[:2], z - 0.034, s, 0.08, 0.06, "steelD", top="steel", rz=a)
 
 
-def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05):
+def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None):
     """A Geneva drive on the canopy's top, mid-step: a ten-slot star (one step a slab) on the rotor's shaft, its driver
     beside it with the pin down a slot and the locking disc's half away from the star, a gearmotor behind."""
     n = NS
     c = rs / math.cos(math.pi / n)                                           # the centres' distance
     cr = c * math.sin(math.pi / n)                                           # the crank
-    rl = 0.2                                                                 # the locking arcs
+    rl = 0.256 * rs                                                          # the locking arcs
     k.cyl(0, 0, z, rs - 0.1, 0.012, "dark", sides=32)
     for i in range(n):                                                       # the star's lobes
         m = ang + (i + 0.5) * math.tau / n
@@ -169,13 +170,13 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05):
         a0, a1 = m - math.pi / n + sl, m + math.pi / n - sl
         for j in range(8):
             b0, b1 = a0 + (a1 - a0) * j / 8, a0 + (a1 - a0) * (j + 1) / 8
-            prism(k, [at(0.5, b0)[:2], at(ro(b0), b0)[:2], at(ro(b1), b1)[:2], at(0.5, b1)[:2]], z, z + h,
+            prism(k, [at(0.64 * rs, b0)[:2], at(ro(b0), b0)[:2], at(ro(b1), b1)[:2], at(0.64 * rs, b1)[:2]], z, z + h,
                   "steel", top="steelL")
-    k.cyl(0, 0, z, 0.52, h, "steel", top="steelL", sides=30)              # its boss and the shaft's cap
-    k.cyl(0, 0, z + h, 0.24, 0.03, "steelD", top="steel", sides=16)
+    k.cyl(0, 0, z, 0.667 * rs, h, "steel", top="steelL", sides=30)              # its boss and the shaft's cap
+    k.cyl(0, 0, z + h, 0.31 * rs, 0.03, "steelD", top="steel", sides=16)
     k.cyl(0, 0, z + h + 0.03, 0.1, 0.02, trim, sides=12)
     for i in range(10):
-        k.cyl(*at(0.38, (i + 0.5) * math.tau / 10 + ang)[:2], z + h, 0.025, 0.015, "steelD", sides=6)
+        k.cyl(*at(0.49 * rs, (i + 0.5) * math.tau / 10 + ang)[:2], z + h, 0.025, 0.015, "steelD", sides=6)
     d = at(c, ang)
     k.cyl(d[0], d[1], z, 0.07, h + 0.05, "steel", sides=10)                 # the driver's shaft
     hp = [at(rl - 0.02, ang + math.pi / 2 + j * math.pi / 10) for j in range(11)]   # the locking disc's far half
@@ -194,6 +195,11 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05):
         tube(k, (g[0] + f * math.cos(t), g[1] + f * math.sin(t), z + 0.06),
              (g[0] + (f + 0.025) * math.cos(t), g[1] + (f + 0.025) * math.sin(t), z + 0.06), 0.08, "steelD", sides=12)
     beam(k, (d[0], d[1], z + h + 0.02), (g[0], g[1]), 0.06, 0.02, "steelD")
+    if bridge:                                       # the driver's frame, a bridge out to the rim it stands on
+        beam(k, at(c - 0.1, ang, z - 0.03), at(bridge, ang)[:2], 0.46, 0.06, "steelD", top="steel")
+        for e in (-0.2, 0.2):
+            beam(k, (d[0] - e * math.sin(ang), d[1] + e * math.cos(ang), z + 0.004),
+                 (at(bridge, ang)[0] - e * math.sin(ang), at(bridge, ang)[1] + e * math.cos(ang)), 0.04, 0.008, trim)
 
 
 def top_tyres(k, a, r, house, guard, z=ZT):
@@ -268,70 +274,73 @@ def panel(k, a, body, trim):
     c(1.51, 0.16, 0.44, 0.02, 0.06, 0.05, "hivis")
 
 
-def rib(k, a, body, trim):
-    """A slim rib in the skin's plane that flares into the canopy at its top."""
-    for z0, z1, w in ((0.0, ZC - 0.34, 0.15), (ZC - 0.34, ZC - 0.22, 0.2), (ZC - 0.22, ZC - 0.12, 0.28),
-                      (ZC - 0.12, ZC - 0.04, 0.38), (ZC - 0.04, ZC + 0.06, 0.5)):
-        h = w / 2 / 1.47
-        arc_wall(k, a - h, a + h, 1.44, 1.49, z0, z1, body)
-    h = 0.1 / 1.47
-    arc_wall(k, a - h, a + h, 1.44, 1.51, 0.0, 0.09, "steelD", top="steel")
-    arc_wall(k, a - h, a + h, 1.44, 1.505, 0.3, 0.35, trim)
-    k.box(*at(1.492, a)[:2], 0.4, 0.012, 0.02, ZC - 0.5, "dark", rz=a)
-    k.box(*at(1.493, a)[:2], ZC - 0.28, 0.01, 0.05, 0.12, "slbCy", rz=a)
+def sunk_top(k, rh, depth, body, trim):
+    """The canopy's middle sunk `depth` below its rim (radius rh): a steel well floor, the lip in trim, the well's
+    wall seamed; the rim keeps its lines and bolts."""
+    zf = ZT - depth
+    k.cyl(0, 0, ZC + 0.06, rh + 0.01, zf - ZC - 0.06, "steelD", top="slbGr", sides=48)
+    annulus(k, rh, rh + 0.045, ZT, ZT + 0.01, trim)
+    for i in range(20):
+        a = (i + 0.5) * math.tau / 20
+        k.box(*at(rh + 0.004, a)[:2], zf, 0.012, 0.02, depth, "dark", rz=a)
+    bolt_ring(k, r_in=rh)
+    return zf
+
+
+def wrap(k, body, trim, open_l, open_r):
+    """The housing all round but a front window from FRONT - open_r to FRONT + open_l, the control panel set into
+    the wall just round from its right jamb, toward the front."""
+    pit(k, body, trim)
+    out = wheel(k, body, trim)
+    skin(k, FRONT + open_l, FRONT + math.tau - open_r, body, trim)
+    jamb(k, FRONT + open_l, body, trim)
+    jamb(k, FRONT - open_r, body, trim)
+    panel(k, FRONT - open_r - 0.27, body, trim)
+    return out
 
 
 # ---- the designs ----------------------------------------------------------------------------------------------------
-def hood(k):
-    """s46."""
+def geneva_over_tyres(k):
+    """s49."""
     body, trim = "navy", "hivis"
-    pit(k, body, trim)
-    out = wheel(k, body, trim)
-    canopy(k, body, trim, [])
-    skin(k, LEFT, RIGHT + math.tau, body, trim)
-    jamb(k, LEFT, body, trim, screen=True)
-    jamb(k, RIGHT, body, trim, screen=True)
-    bolt_ring(k)
-    geneva(k, BACK + 0.55, body, trim)
-    pendant(k, LEFT - 0.32, 1.62, trim)
+    out = wrap(k, body, trim, 1.15, 0.45)
+    canopy(k, body, trim, [], hole=1.0)
+    zf = sunk_top(k, 1.0, 0.18, body, trim)
+    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelL", sides=40)          # the rotor's crown, down in the well
+    k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steel", sides=20)        # its boss up to the star
+    for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
+        top_tyres(k, a, 0.74, body, trim, z=zf)
+    geneva(k, BACK + 0.55 - math.pi / 2, body, trim, rs=0.5, bridge=1.25)
     return out
 
 
-def wrap(k):
-    """s47."""
-    body, trim = "slbMach", "hazY"
-    w = 1.08                                                                 # the front window's half angle
-    pit(k, body, trim)
-    out = wheel(k, body, trim)
-    canopy(k, body, trim, [], hole=0.95)
-    skin(k, FRONT + w, FRONT + math.tau - w, body, trim)
-    jamb(k, FRONT + w, body, trim)
-    jamb(k, FRONT - w, body, trim)
-    panel(k, FRONT - w - 0.3, body, trim)
-    zt = ZT + 0.09                                                           # the rotor's crown, proud of the canopy
-    k.cyl(0, 0, ZC, 0.92, zt - ZC, "steelD", top="steelL", sides=40)
-    ring(k, 0.92, zt - 0.03, 0.03, 0.01, trim, n=40, skip=lambda i: i % 2)
-    for th in angles():                                                      # a clamp ram over each slab
-        ram(k, th, 0.3, 0.84, zt + 0.034, trim)
-    k.cyl(0, 0, zt, 0.24, 0.03, body, top=trim, sides=16)
-    for a in (LEFT, BACK + 0.5):
-        top_tyres(k, a, 0.92, body, trim)
-    return out
-
-
-def ribs(k):
-    """s48."""
+def geneva_well(k):
+    """s50."""
     body, trim = "slbTeal", "hazY"
-    pit(k, body, trim)
-    out = wheel(k, body, trim)
-    canopy(k, body, trim, [])
-    for a in (FRONT + 0.95, FRONT - 0.95, BACK):
-        rib(k, a, body, trim)
-    bolt_ring(k)
-    geneva(k, BACK - 0.55, body, trim)
+    out = wrap(k, body, trim, 1.15, 0.45)
+    canopy(k, body, trim, [], hole=1.16)
+    zf = sunk_top(k, 1.16, 0.12, body, trim)
+    geneva(k, BACK + 0.55, body, trim, z=zf, rs=0.72)
     return out
 
 
-DESIGNS = {"s46": (hood, (3, 3)), "s47": (wrap, (3, 3)), "s48": (ribs, (3, 3))}
+def crown_well(k):
+    """s51."""
+    body, trim = "slbMach", "hazY"
+    out = wrap(k, body, trim, 1.15, 0.45)
+    canopy(k, body, trim, [], hole=1.0)
+    zf = sunk_top(k, 1.0, 0.18, body, trim)
+    zt = zf + 0.08                                                           # the rotor's crown, in the well
+    k.cyl(0, 0, zf, 0.74, 0.08, "steelD", top="steelL", sides=40)
+    ring(k, 0.74, zt - 0.03, 0.03, 0.01, trim, n=40, skip=lambda i: i % 2)
+    for th in angles():                                                      # a clamp ram over each slab
+        ram(k, th, 0.26, 0.68, zt + 0.034, trim)
+    k.cyl(0, 0, zt, 0.2, 0.03, body, top=trim, sides=16)
+    for a in (LEFT, BACK + 0.5):
+        top_tyres(k, a, 0.74, body, trim, z=zf)
+    return out
+
+
+DESIGNS = {"s49": (geneva_over_tyres, (3, 3)), "s50": (geneva_well, (3, 3)), "s51": (crown_well, (3, 3))}
 OVERLAYS = {}
 PIT = {v: RP for v in DESIGNS}
