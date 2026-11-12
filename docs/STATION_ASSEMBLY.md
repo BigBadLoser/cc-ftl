@@ -156,6 +156,8 @@ changing the ring recipes; do not redesign from scratch.
   filtered.
 - Liked on the earlier mocks: arms as inhabited wings (never a room on a stick), a warehouse with its own dock, a
   faceted hull.
+- The mocks themselves are in `docs/refs/station-mocks/` (see `docs/refs/README.md`): the mining ring with the ore
+  spine through it, the faceted trading hull.
 
 **Regressed since, not redesigned:** the rooms added to the program after that review (ore store, pod deck, workshop,
 breaker shop, battery room) all went into the one works block, so it grew from about two thirds of the ring's width
