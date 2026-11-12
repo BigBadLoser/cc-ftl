@@ -157,8 +157,14 @@ def container(fill, rot):
                 cu = side * (0.12 + j * 0.42)
                 k.box(cu, vf + 0.02, 0.12, 0.04, 0.04, H - 0.3, "steelL")
                 k.box(cu, vf + 0.04, 0.6, 0.07, 0.04, 0.05, "gm")
-    k.box(-0.45, vf + 0.01, H - 0.32, 0.3, 0.02, 0.14, "plate")                       # placard
-    lamp(k, 0.55, vf + 0.01, H - 0.3, LAMP[fill], 0.09)
+    # placard on the -u leaf, lamp on the +u leaf: carried on the leaf face, so they swing with it
+    def on_leaf(side, a, dist, off):
+        hu = side * (W / 2 - 0.04)
+        return (hu - side * math.cos(a) * dist + side * math.sin(a) * off, vf - 0.02 + math.sin(a) * dist + math.cos(a) * off)
+    pu, pv = on_leaf(-1, ang[1], 0.36, 0.03)
+    k.box(pu, pv, H - 0.32, 0.3, 0.02, 0.14, "plate", rz=ang[1])
+    lu, lv = on_leaf(1, ang[0], 0.26, 0.03)
+    lamp(k, lu, lv, H - 0.3, LAMP[fill], 0.09)
     return k.build()
 
 
