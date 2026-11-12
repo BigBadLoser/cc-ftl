@@ -13,7 +13,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "b1a": "B1a  upper railed full length", "b1b": "B1b  both decks railed", "b1c": "B1c  upper walled in",
          "b1d": "B1d  rails all round, thin", "b1e": "B1e  rails all round, thick",
          "b1f": "B1f  solid ends, rails both decks",
-         "b1g1": "B1g1  light frame", "b1g2": "B1g2  dark frame, white rails", "b1g3": "B1g3  slate frame, red blanket"}
+         "b1g1": "B1g1  light frame", "b1g2": "B1g2  dark frame, white rails", "b1g3": "B1g3  slate frame, red blanket",
+         "b1g3a": "B1g3a  a shade darker", "b1g3b": "B1g3b  two shades darker"}
 CW, CH = 200, 220
 
 

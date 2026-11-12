@@ -187,6 +187,10 @@ SCHEMES = {
                mat=("dnW3", "dnW2"), blanket=("c3T4", "c3T2"), pillow="medWhite", stripe="cyan"),
     "g3": dict(post=("nvW5", "nvW3"), deck=("nvW6", "nvW4"), board=("nvW4", "nvW2"), rail="nvW1",
                mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+    "g3a": dict(post=("nvW6", "nvW4"), deck=("dnW1", "nvW5"), board=("nvW5", "nvW3"), rail="nvW2",   # g3 a shade down
+                mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+    "g3b": dict(post=("dnW2", "nvW5"), deck=("dnW3", "nvW6"), board=("nvW6", "nvW4"), rail="nvW3",   # two shades down
+                mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
 }
 
 
