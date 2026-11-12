@@ -5,6 +5,8 @@ order: 8
 
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
+  import GamePanel from '../../../lib/GamePanel.svelte'
+  import SignalSample from '../../../lib/SignalSample.svelte'
 </script>
 
 Your ship moves between places on the starmap. On the way you can meet other ships, wrecks and calls for help. Most of
@@ -58,6 +60,10 @@ During a trip, a hop can draw a signal. A window opens: **Incoming signal**. It 
 | **Video** | The caller's face and details, once you've hailed. Before that: an unknown transponder. |
 | **Comms** | A transcript, and what they carry and have in their wallet once hailed. |
 | **Sensors** | A hologram of the ship with a readout, once you've scanned. Before that: **NO SCAN**. |
+
+<GamePanel title="Incoming signal" bare width="1080px" zoom={0.74} caption="A new signal before you hail or scan: an unknown transponder, no video, no scan.">
+  <SignalSample />
+</GamePanel>
 
 The buttons along the bottom are your decisions.
 

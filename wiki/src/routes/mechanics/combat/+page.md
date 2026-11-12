@@ -6,6 +6,9 @@ order: 6
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import ComingLater from '../../../lib/ComingLater.svelte'
+  import GamePanel from '../../../lib/GamePanel.svelte'
+  import UpgradePanel from '../../../../../src/ui/module/UpgradePanel.svelte'
+  import { panel, apiOf } from '../../../lib/panels'
 </script>
 
 Ship fights run in real time. Your guns charge, fire, and overheat your ship; the enemy's do the same. You win by wearing
@@ -190,6 +193,10 @@ behaves.
 (with **Remove**) and the fitting upgrades in your cargo (with a button to fit them). An **engineer** does the work, and
 **the weapon is offline until they finish**. A job waiting for an engineer can be cancelled. Fitting a second upgrade swaps
 the first back to cargo. The fitted upgrade shows as a small icon next to the weapon's name on your bar, and on the enemy card.
+
+<GamePanel title="Burst laser" width="340px" caption="The upgrade slot of a burst laser: a prism splitter fitted, four more upgrades in cargo.">
+  <UpgradePanel api={apiOf()} m={panel.upgrade.module} />
+</GamePanel>
 
 ### General upgrades
 

@@ -9,6 +9,7 @@ import { createBridge, type Bridge } from '../../src/app/bridge.ts';
 import type { Readable } from '../../src/app/store.ts';
 import { droneScenarioCommands } from '../../src/app/droneScenario.ts';
 import { buildTrade } from '../../src/app/tradeSnapshot.ts';
+import { upgradeScenarioCommands } from '../../src/app/upgradeScenario.ts';
 import { buildJobs } from '../../src/app/jobsSnapshot.ts';
 
 /** The bridge's data feeds by name, as values ("modules" -> UiModule[]). */
@@ -73,5 +74,18 @@ export const panels = {
     const buy = must(partner.lines.find((l) => l.theirs >= 3 && l.sell > 0), 'item to buy');
     const sell = must(partner.lines.find((l) => l.mine >= 2 && l.buy > 0 && l.item !== buy.item && !l.contraband), 'item to sell');
     return { trade, partner: station.id, draft: { [buy.item]: 3, [sell.item]: -2 } as Record<string, number> };
+  },
+  /** The Power... view of a module on the starting ship: the whole ship's order, the module's own row marked. */
+  power: () => {
+    const sim = scene({ seed: 3 });
+    const { modules } = record(sim, ['modules']);
+    const mine = must(modules.find((m) => m.def === 'module.burstLaser'), 'power consumer');
+    return { module: mine, modules: modules.filter((m) => m.power !== 0) }; // the panel reads only the drawing and supplying ones
+  },
+  /** A weapon's upgrade slot: a burst laser with a prism splitter fitted and other upgrades in cargo (the upgrades scenario). */
+  upgrade: () => {
+    const sim = scene({ seed: 3, commands: upgradeScenarioCommands, secs: 2 });
+    const { modules } = record(sim, ['modules']);
+    return { module: must(modules.find((m) => m.def === 'module.burstLaser' && m.upgradeSlot?.fitted), 'upgraded burst laser') };
   },
 };
