@@ -69,13 +69,17 @@ A recipe has a root, branch rules, and a few settings.
   beds in double bunks, with a few private cabins scattered.
 - `braces`: the chance that a gap between two sections gets a beam (the game's open truss tile, `=`). A truss of two
   chords where the gap is long and there is room, one beam otherwise; none through the clear space off a dock.
+  A beam touches hull at its two ends only: along its run at least two tiles stay open on either side, or it is not
+  built.
 - `hall` on a rule: its neck and its links are halls, not corridors. A hall is a room-sized piece of street the
   street behind runs into; the street beyond leaves it a few tiles to one side (`shift`), and each flank has a port
   for a wing. Host `{ on: 'flank' }` puts a branch on any flank along the street as the seed picks it, a hall's more
   often than a section's, less often straight across from a flank already taken (a cross is one arrangement, not the
   rule) and less often on a wing of the same rule. It is how a long street steps aside instead of running in one line.
 - `cross: 'end'` on a section puts its passage after the last rooms, right before the end room: both rows run up to
-  it, so a wing can carry another wing beside its end room with no notch.
+  it, so a wing can carry another wing beside its end room with no notch. `cross: 'inner'` puts it partway down, on
+  each flank whose row has a room either side of it; a row of one room runs through and has no passage. A list
+  (`['end', 'inner']`) lets the seed pick for each section.
 - On a section: `width` is its street's width (default 2; a main street 3), `cap` names the role of the room across
   its end, `far` the roles that stand at the far end of its rows.
 - `spacing`: clear ground between sections that are not joined.
@@ -154,9 +158,9 @@ which has 43 to 56 solid wall blocks.
 row): the harbour at the head of a main street 3 wide, habitation with the commons and the guns along it, the
 machinery behind a gate at the tail. Between the parts the street runs through a hall and steps to one side. Works
 and freight are wings on stubs off the flanks along the street. The works wing is a line: the refineries, the ore
-store, a passage across, and the pod deck across its end. The freight wing stands on a street flank or on that passage,
-off the works wing (about half and half on eight seeds; two of eight on the straight street are a cross). 24 of 24
-assemble with every room standing.
+store, a passage (before the pod deck or partway down, as the seed has it), and the pod deck across its end. The
+freight wing stands on a street flank or on that passage, off the works wing. One spine recipe sets `quarters` to
+barracks with four cabins, which shortens the body to one section. 32 of 32 assemble with every room standing.
 
 Tried and dropped: ore cages (a rail with ore holds in a row and beam teeth between). They were sealed rooms of crates
 off the ore's path from pod bay to store to refinery, and the part most often refused. The ore store replaces them.

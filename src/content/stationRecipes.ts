@@ -54,11 +54,12 @@ const compound = (name: string, o: {
  * works and the freight are wings off the halls' flanks. The works wing is a line: the refineries, the ore store, and
  * the pod deck across its end.
  */
-const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; braces?: number }): Recipe => ({
+const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; braces?: number; quarters?: Recipe['quarters'] }): Recipe => ({
   name,
   root: { kind: 'core' },
   spacing: 2,
   ...(o.braces ? { braces: o.braces } : {}),
+  ...(o.quarters ? { quarters: o.quarters } : {}),
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true, width: o.street }, link: 0 },
     {
@@ -67,7 +68,7 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
       section: { rooms: o.body, cross: 'any', width: o.street, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) },
     },
     { takes: ['secure'], per: 'together', host: { on: 'after', rule: 1 }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
-    { takes: ['works', 'freight'], per: 'department', host: { on: 'flank' }, neck: o.stub, section: { rooms: o.wings, cross: 'end', cap: 'hangar', far: ['cargo'] }, link: 0 },
+    { takes: ['works', 'freight'], per: 'department', host: { on: 'flank' }, neck: o.stub, section: { rooms: o.wings, cross: ['end', 'inner'], cap: 'hangar', far: ['cargo'] }, link: 0 },
   ],
 });
 
@@ -80,6 +81,7 @@ export const stationRecipes = {
   spine: [
     spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9 }),
     spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9 }),
+    spine('halls, the crew in barracks and four cabins', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quarters: { barracks: [6, 8], singles: 4 } }),
     spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9 }),
   ],
   compound: [

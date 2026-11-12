@@ -113,9 +113,10 @@ export interface BlockOpts {
   /**
    * A passage across it, out to both flanks, with a port at each: other sections join its sides. Midway; with 'any'
    * wherever along the block the seed has it (its foot and its far end included); with 'end' after its last rooms,
-   * right before the end room when there is one, both rows running up to it.
+   * right before the end room when there is one, both rows running up to it; with 'inner' partway down, on each
+   * flank whose row has a room either side of it (the other row runs through), or as 'end' when neither has.
    */
-  cross?: boolean | 'any' | 'end';
+  cross?: boolean | 'any' | 'end' | 'inner';
   /** Cabins offered to it: they stand among its rooms, the shorter row first (bunks wherever there is room). */
   bunks?: readonly RoomSpec[];
 }
@@ -179,31 +180,35 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const ports: Built['ports'] = [], cross: [number, number, number, number][] = [];
   if (o.cross) {
     // First halves, the passage, then the rest.
-    const where = o.cross === 'any' ? c.rng.next() : 0.5;
-    const cut = rows.map((row) => (o.cross === 'end' ? row.length : o.cross === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
+    const mode = o.cross === 'inner' && rows.every((row) => row.length < 2) ? 'end' : o.cross;
+    const where = mode === 'any' || mode === 'inner' ? c.rng.next() : 0.5;
+    // Where each row is cut; a row that runs through (no passage on its flank) is cut at its end.
+    const through = rows.map((row) => mode === 'inner' && row.length < 2);
+    const cut = rows.map((row, k) => (mode === 'end' || through[k] ? row.length : mode === 'inner' ? 1 + Math.floor(where * (row.length - 1)) : mode === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
     const e0 = lay(rows[0].slice(0, cut[0]), -1, u0), e1 = lay(rows[1].slice(0, cut[1]), 1, u0);
     if (e0 === null || e1 === null) return null;
-    const e = Math.max(e0, e1, u0 + 2);
-    // Before a passage at the end the shorter row's last room runs on to it, so no notch is left beside the passage.
-    if (o.cross === 'end') for (const [k, side] of ([-1, 1] as const).entries()) {
+    const e = Math.max(through[0] ? 0 : e0, through[1] ? 0 : e1, u0 + 2);
+    // Before a passage at the end or partway the shorter row's last room runs on to it: no notch beside the passage.
+    if (mode === 'end' || mode === 'inner') for (const [k, side] of ([-1, 1] as const).entries()) {
       const last = made.filter((m) => m.side === side && m.to > m.from).pop(), from = k === 0 ? e0 : e1;
-      if (!last || from >= e) continue;
+      if (!last || from >= e || through[k]) continue;
       const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3;
       const box = side < 0 ? rect(f, from, e, -(h + 3), -1) : rect(f, from, e, 1 + X, h + 3 + X);
       let open = true;
       for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
       if (open) g.rect(id, ...box);
     }
-    const lanes = [rect(f, e, e + 2, -(back[0] as number) + 1, -1), rect(f, e, e + 2, 1 + X, back[1] as number)];
+    const lanes = [rect(f, e, e + 2, -(back[0] as number) + 1, -1), rect(f, e, e + 2, 1 + X, back[1] as number)].filter((_b, k) => !through[k]);
     for (const box of lanes) for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (g.at(x, y) !== SPACE || !c.free(x, y)) return null;
-    const m0 = lay(rows[0].slice(cut[0]), -1, e + 2), m1 = lay(rows[1].slice(cut[1]), 1, e + 2);
+    const m0 = through[0] ? e0 : lay(rows[0].slice(cut[0]), -1, e + 2), m1 = through[1] ? e1 : lay(rows[1].slice(cut[1]), 1, e + 2);
     if (m0 === null || m1 === null) return null;
     // An end room stands straight after a passage at the end; otherwise the street runs a tile past the passage.
-    L = o.cross === 'end' && capOf ? e + 2 : Math.max(L, m0, m1, e + 3);
+    L = mode === 'end' && capOf ? e + 2 : Math.max(L, m0, m1, e + 3);
     ends[0] = m0; ends[1] = m1;
-    whole[0] = rows[0].length > (cut[0] as number); whole[1] = rows[1].length > (cut[1] as number);
+    whole[0] = through[0] || rows[0].length > (cut[0] as number); whole[1] = through[1] || rows[1].length > (cut[1] as number);
     cross.push(...lanes);
-    for (const side of [-1, 1] as const) {
+    for (const [k, side] of ([-1, 1] as const).entries()) {
+      if (through[k]) continue;
       const v = side < 0 ? -(back[0] as number) : (back[1] as number);
       const [ax, ay] = at(f, e, v), [bx, by] = at(f, e + 1, v);
       ports.push({ frame: { x: Math.max(ax, bx), y: Math.max(ay, by), dir: facing(f, side) }, kind: 'side', hall, along: e, side, flank: true });

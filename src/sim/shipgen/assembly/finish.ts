@@ -8,7 +8,9 @@ import { SOLID, SPACE } from './regions';
 /**
  * Bracing: open beams across the gaps between sections that face each other one to nine tiles apart and are not the
  * same element, whatever their departments. One a gap at most every four tiles, none through the clear space off a dock.
+ * A beam touches hull at its two ends only: beside it, along its whole run, at least CLEAR tiles are open.
  */
+const CLEAR = 2;
 export function brace(a: Asm, chance: number): void {
   const { g, reserved, rng } = a.ctx;
   const of = new Map<number, number>();
@@ -27,6 +29,16 @@ export function brace(a: Asm, chance: number): void {
       // Square on to both walls: the tiles beside each end are wall too.
       if (at(x - dy, y - dx) !== '#' || at(x + dy, y + dx) !== '#' || at(ex - dy, ey - dx) !== '#' || at(ex + dy, ey + dx) !== '#') continue;
       const h = dx === 1;
+      // Open space beside the run, from offset `from` out to CLEAR tiles more, on both sides.
+      const open = (from: number): boolean => {
+        for (let k = 1; k < t; k++) for (const s of [-1, 1]) for (let o = from; o < from + CLEAR; o++) {
+          const px = x + k * dx + s * o * dy, py = y + k * dy + s * o * dx;
+          if (at(px, py) !== '.') return false;
+        }
+        return true;
+      };
+      const truss = t >= 5 && open(2);
+      if (!truss && !open(1)) continue;
       // Near enough together that a stub between two sections gets a brace either side of it.
       if (done.some((b) => b.h === h && Math.abs(b.x - x) + Math.abs(b.y - y) < 4) || !rng.chance(chance)) continue;
       done.push({ x, y, h });
@@ -35,13 +47,13 @@ export function brace(a: Asm, chance: number): void {
         for (let k = 1; k < t; k++) { const px = x + k * dx + o * dy, py = y + k * dy + o * dx; if (at(px, py) !== '.' || reserved.has(key(px, py))) return false; }
         return at(x + o * dy, y + o * dx) === '#' && at(ex + o * dy, ey + o * dx) === '#';
       };
-      if (t >= 5 && clear(-1) && clear(1)) {
+      if (truss && clear(-1) && clear(1)) {
         for (let k = 1; k < t; k++) {
           g.beam(x + k * dx - dy, y + k * dy - dx);
           g.beam(x + k * dx + dy, y + k * dy + dx);
           if (k % 2 === 0) g.beam(x + k * dx, y + k * dy);
         }
-      } else for (let k = 1; k < t; k++) g.beam(x + k * dx, y + k * dy);
+      } else if (open(1)) for (let k = 1; k < t; k++) g.beam(x + k * dx, y + k * dy);
     }
   }
 }
