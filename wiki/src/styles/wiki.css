@@ -664,3 +664,5 @@ kbd {
 .wiki-build-embed [data-testid='build-catalog'] { position: relative !important; inset: auto !important; }
 /* Its card popovers float over the page like in the game, so they go above the wiki's header and sidebar. */
 .wiki-build-embed .pop { z-index: 1000 !important; }
+/* Game tooltips (the live panels' TipHost) draw over everything, the wiki's header and sidebar included. */
+.game-ui .tip-host { z-index: 1000 !important; }
