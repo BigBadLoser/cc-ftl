@@ -3638,5 +3638,15 @@
   "recHoloR": {"hex": "#ff5a6a", "emissive": 2.4, "set": "recovery"},
   "recHoloG": {"hex": "#7dffa0", "emissive": 2.2, "set": "recovery"},
   "recCyanOff": {"hex": "#26434d", "set": "recovery"},
-  "recGlowOff": {"hex": "#4a6e72", "set": "recovery"}
+  "recGlowOff": {"hex": "#4a6e72", "set": "recovery"},
+  "slbGr": {"hex": "#3b4049", "set": "slab"},
+  "slbGrL": {"hex": "#555b66", "set": "slab"},
+  "slbFace": {"hex": "#8a9098", "set": "slab"},
+  "slbFaceL": {"hex": "#b3b8bf", "set": "slab"},
+  "slbCy": {"hex": "#7ff0ff", "emissive": 2.0, "set": "slab"},
+  "slbFilm": {"hex": "#9fe6ff", "set": "slab"},
+  "slbAmb": {"hex": "#ffb04a", "emissive": 2.0, "set": "slab"},
+  "slbCon": {"hex": "#8f8a80", "set": "slab"},
+  "slbConL": {"hex": "#b5b0a5", "set": "slab"},
+  "slbHaz": {"hex": "#e0a020", "set": "slab"}
 }

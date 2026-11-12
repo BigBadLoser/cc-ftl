@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
+        from . import slab_study
+        return slab_study.jobs(), "slab"
     if name == "recovery":      # look study, preview only (not in RENDERED): the 2x2 recovery pod, r0, pod + .front
         from . import recovery_study
         return recovery_study.jobs(), "recovery"
