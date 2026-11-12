@@ -141,8 +141,9 @@ import { newYard, type YardState } from './yard/types';
  * v114 (recovery pod, #319): `RecoveringC` (a crew member lying in a pod), activity 'recovering', the `recover` drive.
  * v115 (freight container art, #443): `module.cargo_container` is 2x3 with its access on the short front end (was 3x2), so saved containers occupy other tiles.
  *   Also v115 (prisoners, #461): `Ship.yielded`, commands 'prisoner.release' and 'ship.settle', and the rescue job's care rank (prisoners after the wounded).
+ * v116 (door vents, #393): tile field `vent` (VentState) and command 'door.vent'.
  */
-export const SAVE_VERSION = 115;
+export const SAVE_VERSION = 116;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
