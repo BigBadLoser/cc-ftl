@@ -20,9 +20,10 @@ const base = `http://127.0.0.1:${port}/cc-ftl/`;
 const only = process.argv[2];
 const SLOW = 120000; // generous: software GL makes some frames slow
 
-async function waitForServer(url, ms = 60000) {
+async function waitForServer(url, exited, ms = 60000) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
+    if (exited() !== null) throw Error(`Game dev server exited (${exited()}) before it was ready. Is port ${port} in use? Its output:\n${serverLog.slice(-2000)}`);
     try { if ((await fetch(url)).ok) return; } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 500));
   }
@@ -98,13 +99,24 @@ async function keyOutBackground(png) {
 }
 
 // Its own process group, so stopping it also stops the vite process npx starts.
-const server = spawn('npx', ['vite', '--port', String(port), '--strictPort'], { cwd: join(wiki, '..'), stdio: 'ignore', detached: true });
+// Its output is kept, and shown if it exits early (a busy port, a build error), so a failed start says why.
+const server = spawn('npx', ['vite', '--port', String(port), '--strictPort'], { cwd: join(wiki, '..'), stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+let serverLog = '';
+let serverExit = null;
+server.stdout.on('data', (d) => { serverLog += d; });
+server.stderr.on('data', (d) => { serverLog += d; });
+server.on('exit', (code) => { serverExit = code ?? 'signal'; });
 try {
-  await waitForServer(base);
-  const browser = await chromium.launch({
-    executablePath: process.env.CHROME_BIN,
-    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
-  });
+  await waitForServer(base, () => serverExit);
+  let browser;
+  try {
+    browser = await chromium.launch({
+      executablePath: process.env.CHROME_BIN,
+      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
+    });
+  } catch (err) {
+    throw Error('Could not start Chromium. Install it with `npx playwright install chromium` (from wiki/), or set CHROME_BIN.\n' + String(err.message).split('\n')[0]);
+  }
   for (const shot of shots.filter((s) => !only || s.name.includes(only))) {
     try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
@@ -138,6 +150,10 @@ try {
     } catch (err) { console.error('FAILED ' + shot.name + ': ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
   }
   await browser.close();
+} catch (err) {
+  console.error(String(err.message ?? err));
+  process.exitCode = 1;
 } finally {
-  process.kill(-server.pid);
+  // The server may already be gone (it failed to start, or exited); that's not a second error.
+  try { process.kill(-server.pid); } catch { /* already stopped */ }
 }
