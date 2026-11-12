@@ -1,60 +1,63 @@
 /**
- * Farming, "greenhouse torus": the whole outer band is four long curved greenhouses against the hull (the kind shows
- * in the outline: one continuous glass ring, no rooms cut across it). Inside: the main ring, a habitation band of
- * cabins with the big common rooms spanning the diagonals, an inner ring, a band of service rooms and a central garden
- * court. A dock arm north, a produce arm south to a freight dock; grain silos hang off east and west on 3-wide arms.
+ * Farming, "greenhouse hub": the kind shows as a ring around a square hub with open space between them. The hub is
+ * four straight rectangular greenhouse halls (planter rows need straight runs) round a small court, with a row of
+ * cabins on a 1-wide gallery along its north and south sides. Bridge spokes cross the voids to the main ring. The ring
+ * band holds the secure block east, cabins south and west, the harbour north (a dock bank on the flat top with the
+ * office and armoury beside it) and one big common room across each diagonal.
  */
-import { Mock } from './mockKit';
+import { Mock, type Part } from './mockKit';
 import type { RoomRole } from '../../../src/sim';
 
 export function farming(): ReturnType<Mock['build']> {
-  const m = new Mock(124, 112, 62, 60);
+  const m = new Mock(92, 96, 46, 50);
   const { cx, cy } = m;
-  const box = (id: number, x0: number, y0: number, x1: number, y1: number, rMax = 99): number => {
-    m.paint(id, (x, y, r) => x >= cx + x0 && x < cx + x1 && y >= cy + y0 && y < cy + y1 && r < rMax);
+  const IN = 28, HUB = 19;
+  const box = (id: number, x0: number, y0: number, x1: number, y1: number): number => {
+    m.paint(id, (x, y) => x >= cx + x0 && x < cx + x1 && y >= cy + y0 && y < cy + y1);
     return id;
   };
-  const q = (n: number, deg: number, role: RoomRole = 'quarters'): [RoomRole, number][] => Array.from({ length: n }, () => [role, deg / n]);
+  const room = (role: RoomRole, target: number | undefined, x0: number, y0: number, x1: number, y1: number): number => box(m.room(role, { target }), x0, y0, x1, y1);
+  const cab = (n: number, deg: number): Part[] => Array.from({ length: n }, () => ['quarters', deg / n, 20] as Part);
 
-  const glass = m.room('farm');
-  m.arc(glass, 32, 38);
+  const band = m.room('quarters');
+  m.arc(band, IN + 2, 38);
   const ring = m.hall();
-  m.arc(ring, 30, 32);
-  const hab = m.room('quarters');
-  m.arc(hab, 22, 30);
-  const iring = m.hall();
-  m.arc(iring, 20, 22);
-  const service = m.room('support');
-  m.arc(service, 12, 20);
-  // Spokes on the axes from the court to the main ring.
-  const spoke = m.hall();
-  box(spoke, -1, -30, 1, 30, 30);
-  box(spoke, -30, -1, 30, 1, 30);
-  m.arc(m.hall('plaza'), 0, 12);
+  m.arc(ring, IN, IN + 2);
 
-  // Dock arm north to two docks; silo connectors east and west, through the greenhouse ring.
-  const arm = m.hall();
-  box(arm, -1, -38, 2, -30);
-  box(arm, -2, -46, 3, -38);
-  box(arm, -9, -50, 10, -46);
-  for (const x0 of [-9, 4]) box(m.room('dock'), x0, -56, x0 + 6, -50);
-  for (const s of [1, -1]) {
-    box(arm, s > 0 ? 30 : -38, -1, s > 0 ? 38 : -30, 2);
-    box(arm, s > 0 ? 38 : -46, -2, s > 0 ? 46 : -38, 3);
-    const silo = m.room('cargo');
-    box(silo, s > 0 ? 46 : -58, -6, s > 0 ? 58 : -46, 7);
+  // The hub: farm halls round a court, cabins on galleries north and south. Everything else inside the ring is void.
+  const street = m.hall();
+  for (const sy of [-1, 1]) {
+    const y0 = sy < 0 ? -10 : 1, y1 = sy < 0 ? -1 : 10;
+    room('farm', 122, -HUB, y0, -1, y1);
+    room('farm', 109, 2, y0, HUB, y1);
+    box(street, -HUB, sy < 0 ? -11 : 10, HUB, sy < 0 ? -10 : 11); // gallery
+    const rowY0 = sy < 0 ? -HUB : 11, rowY1 = sy < 0 ? -11 : HUB;
+    m.slice(room('quarters', undefined, -HUB, rowY0, -1, rowY1), 0, 360, cab(4, 4), { axis: 'x' });
+    m.slice(room('quarters', undefined, 2, rowY0, HUB, rowY1), 0, 360, cab(4, 4), { axis: 'x' });
   }
-  // South: a produce arm through the greenhouse ring to a freight dock.
-  box(arm, -1, 30, 2, 38);
-  box(arm, -2, 38, 3, 43);
-  box(m.room('dock'), -3, 43, 4, 49);
+  // Spokes: 3-wide north-south, 2-wide east-west; painted wider where they bridge the voids (space takes the edge tiles).
+  box(street, -1, -IN, 2, IN);
+  box(street, -2, -IN, 3, -HUB);
+  box(street, -2, HUB, 3, IN);
+  box(street, -IN, -1, IN, 1);
+  box(street, -IN, -2, -HUB, 2);
+  box(street, HUB, -2, IN, 2);
+  box(m.hall('plaza'), -5, -5, 6, 5);
+  m.arc(ring, IN, IN + 2);
 
-  m.around(glass, 0, [['farm', 90], ['farm', 90], ['farm', 90], ['farm', 90]]);
-  const habQuad = (big: RoomRole): [RoomRole, number][] => [...q(2, 22.5), [big, 45], ...q(2, 22.5)];
-  m.around(hab, 0, [...habQuad('support'), ...habQuad('medbay'), ...habQuad('cargo'), ...habQuad('bridge')]);
-  m.around(service, 0, [
-    ['plant', 45], ['plant', 45], ['reactor', 45], ['shields', 45],
-    ['support', 45], ['armoury', 45], ['core', 45], ['cargo', 45],
+  // Harbour north: the concourse through the band to a dock bank that steps out of the flat top.
+  room('dock', 24, -8, -41, -1, -28);
+  room('dock', 24, 2, -41, 9, -28);
+  m.arc(ring, IN, IN + 2); // the ring again, under the dock bank
+  box(street, -1, -38, 2, -IN);
+
+  // The band, clockwise from the dock bank: the office, a mess across the north-east diagonal, the secure block east,
+  // a common room across the south-east, the medbay and cabins south, a hold across the south-west, cabins and gun bays
+  // west, a garden across the north-west, the armoury. The last part is the dock bank (no floor of its own).
+  m.around(band, 285.5, [
+    ['bridge', 12, 53], ['support', 40, 77, 'commons'], ['weapons', 8.5, 16], ['reactor', 12, 42], ['core', 12.5, 45], ['shields', 12, 42],
+    ['support', 45, 55, 'commons'], ['medbay', 15, 53], ...cab(4, 30), ['cargo', 45, 75], ['weapons', 7.5, 16], ...cab(4, 30), ['weapons', 7.5, 16],
+    ['garden', 40, 103], ['armoury', 12, 53], ['cargo', 31],
   ]);
   return m.clean().build('farming');
 }

@@ -5,6 +5,13 @@
  * it and the station checks run on it unchanged. No furniture: these are skeletons.
  */
 import type { GenResult, GenRoom, RoomRole } from '../../../src/sim';
+import { deptOf } from '../../../src/sim/shipgen/stationDepartments';
+import type { RoomSpec } from '../../../src/sim/shipgen/plan';
+
+/** A mock's result: a GenResult plus each room's department and target floor area (the program's size for it). */
+export type MockResult = GenResult & { depts: string[]; targets: (number | undefined)[] };
+/** A room in a band or strip: role, share (degrees or weight), optional target floor area and department. */
+export type Part = [RoomRole, number, number?, string?];
 
 export interface MockRegion {
   role: RoomRole;
@@ -13,6 +20,10 @@ export interface MockRegion {
   /** Regions this room may open a door onto (default: any hall). */
   access?: number[];
   doors: number;
+  /** The game's department (stationDepartments.deptOf by role unless given). */
+  dept: string;
+  /** Floor area the program asks for, when known. */
+  target?: number;
 }
 
 const SPACE = -1;
@@ -29,13 +40,14 @@ export class Mock {
     this.cy = cy;
   }
 
-  room(role: RoomRole, o: { access?: number[]; doors?: number } = {}): number {
-    this.regions.push({ role, hall: false, access: o.access, doors: o.doors ?? 1 });
+  room(role: RoomRole, o: { access?: number[]; doors?: number; dept?: string; target?: number } = {}): number {
+    const dept = o.dept ?? deptOf({ role } as RoomSpec);
+    this.regions.push({ role, hall: false, access: o.access, doors: o.doors ?? 1, dept, target: o.target });
     return this.regions.length - 1;
   }
 
   hall(role: RoomRole = 'hall'): number {
-    this.regions.push({ role, hall: true, doors: 0 });
+    this.regions.push({ role, hall: true, doors: 0, dept: role === 'hall' ? 'circulation' : 'commons' });
     return this.regions.length - 1;
   }
 
@@ -77,7 +89,8 @@ export class Mock {
    * where the band runs north-south, vertical where it runs east-west (or `axis`). Chunks start equal by tile count;
    * clean() then slides each cut to where its wall meets the curves without a 2x2 block.
    */
-  slice(band: number, a0: number, a1: number, roles: RoomRole[], o: { axis?: 'x' | 'y'; access?: number[] } = {}): number[] {
+  slice(band: number, a0: number, a1: number, roles: (RoomRole | Part)[], o: { axis?: 'x' | 'y'; access?: number[] } = {}): number[] {
+    const parts: Part[] = roles.map((r) => (typeof r === 'string' ? [r, 1] : r));
     const mid = (((a0 + a1) / 2) * Math.PI) / 180;
     const axis = o.axis ?? (Math.abs(Math.cos(mid)) > Math.abs(Math.sin(mid)) ? 'y' : 'x');
     const inArc = (a: number): boolean => (a0 <= a1 ? a >= a0 && a < a1 : a >= a0 || a < a1);
@@ -88,8 +101,10 @@ export class Mock {
       return own;
     });
     const sorted = [...keys].sort((p, q) => p - q);
-    const ids = roles.map((role) => this.room(role, { access: o.access }));
-    const cuts = ids.slice(0, -1).map((_, k) => sorted[Math.floor(((k + 1) * sorted.length) / ids.length) - 1] ?? 0);
+    const ids = parts.map(([role, , target, dept]) => this.room(role, { access: o.access, target, dept }));
+    const total = parts.reduce((t, p) => t + p[1], 0);
+    let acc = 0;
+    const cuts = parts.slice(0, -1).map((p) => { acc += p[1]; return sorted[Math.max(0, Math.floor((acc / total) * sorted.length) - 1)] ?? 0; });
     const s = { tiles, keys, ids, cuts };
     this.slices.push(s);
     this.applySlice(s);
@@ -105,7 +120,7 @@ export class Mock {
     });
   }
 
-  private bands: { tiles: number[]; ids: number[]; cuts: { a: number; axis: 'x' | 'y'; c: number }[] }[] = [];
+  private bands: { tiles: number[]; ids: number[]; cuts: { a: number; axis: 'x' | 'y'; c: number }[]; fixed: Set<number> }[] = [];
 
   /**
    * Rooms around a band, clockwise from angle `start`: each [role, degrees]. Every boundary is a straight cut across
@@ -113,7 +128,7 @@ export class Mock {
    * the diagonals (about 30-60 degrees from an axis): there both curves step one tile at a time and any straight wall
    * meeting them makes a 2x2 block, so a room should span the whole diagonal stretch instead.
    */
-  around(band: number, start: number, rooms: [RoomRole, number][], o: { access?: number[] } = {}): number[] {
+  around(band: number, start: number, rooms: Part[], o: { access?: number[] } = {}): number[] {
     const tiles: number[] = [];
     for (let i = 0; i < this.own.length; i++) if (this.own[i] === band) tiles.push(i);
     let rs = 0, n = 0;
@@ -127,10 +142,13 @@ export class Mock {
       a += deg;
       return { a: a - deg, axis, c };
     });
-    const ids = rooms.map(([role]) => this.room(role, { access: o.access }));
-    const b = { tiles, ids, cuts };
+    const ids = rooms.map(([role, , target, dept]) => this.room(role, { access: o.access, target, dept }));
+    const b = { tiles, ids, cuts, fixed: new Set<number>() };
     this.bands.push(b);
     this.applyBand(b);
+    // A part with no floor stands in for something else (a wing, a spine): cuts beside it stay where they are.
+    const empty = new Set(ids.filter((id) => !tiles.some((t) => this.own[t] === id)));
+    ids.forEach((id, k) => { if (empty.has(id)) { b.fixed.add(k); b.fixed.add((k + 1) % ids.length); } });
     return ids;
   }
 
@@ -148,7 +166,8 @@ export class Mock {
     for (const t of b.tiles) {
       let pick = 0;
       for (let k = 0; k < n; k++) if (passed(t, k) && !passed(t, (k + 1) % n)) { pick = k; break; }
-      this.own[t] = b.ids[pick] as number;
+      const id = b.ids[pick] as number;
+      this.own[t] = this.regions[id]?.dept === 'void' ? SPACE : id; // a 'void' part opens the band to space
     }
   }
 
@@ -160,11 +179,19 @@ export class Mock {
     for (const s of this.slices) s.cuts.forEach((_, k) => knobs.push({
       get: () => s.cuts[k] as number,
       set: (v) => { s.cuts[k] = v; this.applySlice(s); },
-      ok: (v) => v > (k > 0 ? (s.cuts[k - 1] as number) + 1 : -1e9) && v < (k + 1 < s.cuts.length ? (s.cuts[k + 1] as number) - 1 : 1e9),
+      // Never squeeze a room under 3 floor tiles (4 with its wall) to save a wall block.
+      ok: (v) => v >= (k > 0 ? (s.cuts[k - 1] as number) : Math.min(...s.keys) - 1) + 4 && v <= (k + 1 < s.cuts.length ? (s.cuts[k + 1] as number) : Math.max(...s.keys)) - 4,
     }));
-    for (const b of this.bands) b.cuts.forEach((cut) => knobs.push({
-      get: () => cut.c, set: (v) => { cut.c = v; this.applyBand(b); }, ok: () => true,
-    }));
+    for (const b of this.bands) b.cuts.forEach((cut, k) => {
+      if (b.fixed.has(k)) return;
+      const home = cut.c, n = b.cuts.length;
+      // Two tiles at most, and never within 4 tiles of a neighbouring parallel cut (a room under 3 floor tiles wide).
+      const near = [b.cuts[(k + n - 1) % n], b.cuts[(k + 1) % n]].filter((o) => o && o !== cut && o.axis === cut.axis && Math.abs(((o.a - cut.a + 540) % 360) - 180) < 40);
+      knobs.push({
+        get: () => cut.c, set: (v) => { cut.c = v; this.applyBand(b); },
+        ok: (v) => Math.abs(v - home) <= 2 && near.every((o) => Math.abs(v - (o as { c: number }).c) >= 4),
+      });
+    });
     for (let pass = 0; pass < 2; pass++) for (const kn of knobs) {
       const base = kn.get();
       let pick = base;
@@ -208,7 +235,7 @@ export class Mock {
     return cell;
   }
 
-  build(title: string): GenResult {
+  build(title: string): MockResult {
     const { w, h, own } = this;
     const at = (x: number, y: number): number => (x < 0 || y < 0 || x >= w || y >= h ? SPACE : (own[y * w + x] as number));
     const cell = this.walls();
@@ -244,6 +271,7 @@ export class Mock {
       template: { rows: cell.map((r) => r.join('')), modules: [] } as unknown as GenResult['template'],
       rooms, roomOf, width: w, height: h, role: 'station', archetype: 'station' as GenResult['archetype'],
       topology: `mock ${title}`, attempts: 1, problems: [], failures: [],
+      depts: this.regions.map((rg) => rg.dept), targets: this.regions.map((rg) => rg.target),
     };
   }
 }
@@ -291,7 +319,7 @@ export function roomProblems(g: GenResult): string[] {
     const cx = tiles.reduce((s, i) => s + (i % w), 0) / tiles.length, cy = tiles.reduce((s, i) => s + Math.floor(i / w), 0) / tiles.length;
     const where = `${rm.role} #${id} near ${Math.round(cx)},${Math.round(cy)}`;
     if (rm.role !== 'hall' && seen.size !== tiles.length) out.push(`${where}: floor split in ${tiles.length - seen.size}+ tiles`);
-    if (rm.role === 'hall' || rm.role === 'plaza') return; // open circulation
+    if (rm.role === 'hall' || rm.role === 'plaza' || rm.role === 'garden') return; // open circulation
     const door = tiles.some((i) => [i - 1, i + 1, i - w, i + w].some((j) => rows[Math.floor(j / w)]?.[j % w] === 'D'));
     if (!door) out.push(`${where}: no door`);
   });
