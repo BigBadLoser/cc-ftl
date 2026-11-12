@@ -25,3 +25,11 @@ export function pendingHull(h: HullKeys | null, kindAt: KindAt, x: number, y: nu
   const b = bellyIds(h, x, y, has);
   return b ? { ...b, replacesWall: kind !== Struct.Floor } : null;
 }
+
+/**
+ * Whether an old wall piece of a tile stays once the new hull art is drawn there (cutaway views): none of a wall's, and a door
+ * keeps its own pieces without the old belly under it. The one rule of the finished tiles (gridView) and the blueprint ghosts.
+ */
+export function keepsOldPiece(kind: number, ghosts: boolean, under: boolean | undefined): boolean {
+  return kind === Struct.Door && ghosts && !under;
+}

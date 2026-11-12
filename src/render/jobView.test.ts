@@ -14,7 +14,7 @@ const atlas = {
   firstOf: (ids: readonly string[]) => ({ tex: new Texture({ label: ids[0] }), glow: null, ax: 0, ay: 0, footprint: [1, 1] }),
 } as unknown as Atlas;
 
-function ghostsFor(build: [number, number, number][]): string[] {
+function ghostsFor(build: [number, number, number][], layer: "sorted" | "under" = "sorted"): string[] {
   const grid = new Grid(1, 10, 10, { struct: "u8" });
   // A ship: floor 2..7 x 2..5 inside a wall rim.
   for (let y = 1; y <= 6; y++)
@@ -24,10 +24,10 @@ function ghostsFor(build: [number, number, number][]): string[] {
     const id = world.createEntity();
     world.add(id, JobC, { category: "construction", kind: "build", x, y, struct, work: 10, progress: 0, reservedBy: 0 });
   }
-  const sorted = new Container();
-  const view = createJobView(world, atlas, { sorted } as unknown as Layers, { target: () => ({ grid }) });
+  const layers = { sorted: new Container(), under: new Container() };
+  const view = createJobView(world, atlas, layers as unknown as Layers, { target: () => ({ grid }) });
   view.update();
-  return sorted.children.filter((c): c is Sprite => c instanceof Sprite && c.visible).map((s) => s.texture.label ?? "");
+  return layers[layer].children.filter((c): c is Sprite => c instanceof Sprite && c.visible).map((s) => s.texture.label ?? "");
 }
 
 describe("blueprint ghosts of new hull", () => {
@@ -40,5 +40,15 @@ describe("blueprint ghosts of new hull", () => {
     const ids = ghostsFor([[4, 3, Struct.Wall]]);
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.some((id) => id.startsWith("tile.hull."))).toBe(false);
+  });
+  it("a pending door on the near hull keeps its door sprite beside the hull piece", () => {
+    const ids = ghostsFor([[3, 7, Struct.Wall], [4, 7, Struct.Door], [5, 7, Struct.Wall]]);
+    expect(ids.some((id) => id.startsWith("tile.door"))).toBe(true);
+  });
+  it("the below-deck belly piece goes to the under layer", () => {
+    const sorted = ghostsFor([[3, 7, Struct.Wall], [4, 7, Struct.Wall], [5, 7, Struct.Wall]]);
+    const under = ghostsFor([[3, 7, Struct.Wall], [4, 7, Struct.Wall], [5, 7, Struct.Wall]], "under");
+    expect(under.some((id) => id.startsWith("tile.hull.belly.under"))).toBe(true);
+    expect(sorted.some((id) => id.startsWith("tile.hull.belly.under"))).toBe(false);
   });
 });
