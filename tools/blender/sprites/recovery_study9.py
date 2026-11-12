@@ -14,7 +14,7 @@ from .recovery_study2 import lathe
 from .recovery_study3 import FILM_A
 from .recovery_study4 import CLIN, FRONT, base
 from .recovery_study5 import N, R, at
-from .recovery_study8 import (FP8, HAT_R, HAT_Z, RING_R, SPINE, SPINE_A, STILL, SWEEP, front_of, u1_back, u1_top)
+from .recovery_study8 import FP8, HAT_R, HAT_Z, RING_R, STILL, front_of, u1_back, u1_top
 from .recovery_study7 import FILM, LIT
 from .research_kit import bar
 
@@ -25,6 +25,10 @@ GLASS = ((SURF, R + 0.012), (1.94, R + 0.012), (2.03, 0.57), (2.1, 0.46), (2.15,
 STREAMS = ((FRONT + math.radians(150), False), (FRONT + math.radians(205), False),       # (angle, in front)
            (FRONT + math.radians(68), True), (FRONT - math.radians(70), True))
 GAP, SPAN = 0.26, 1.56                              # bubble spacing up a stream; the stream's height (6 gaps)
+FRAMES = 16                                         # the loop: 4 s at the renderer's ANIM_FPS 4 (round 8 had 8)
+LO, HI = 0.45, 1.8                                  # the scanner's sweep, foot to head and back, eased at the ends
+SWEEP = tuple(LO + (HI - LO) * (1 - math.cos(math.tau * f / FRAMES)) / 2 for f in range(FRAMES))
+RISE = GAP / 4                                      # bubbles rise a quarter gap a frame: 4 gaps a loop, so it closes
 
 
 def tank(k, fluid=True):
@@ -55,9 +59,9 @@ def bubbles(f, front):
             if fr != front:
                 continue
             for i in range(int(SPAN / GAP)):
-                z = 0.3 + (i * GAP + f * GAP / 2) % SPAN
+                z = 0.3 + (i * GAP + f * RISE) % SPAN
                 s = (0.06, 0.08, 0.05, 0.095, 0.065, 0.075)[i % 6]
-                w = 0.03 * math.sin(i * 1.7 + f * 0.8)                       # a little wobble
+                w = 0.03 * math.sin(i * 1.7 + f * math.tau / FRAMES * 2)     # a little wobble (2 a loop)
                 r = 0.42 if not fr else 0.5
                 k.cyl(r * math.cos(a) - w * math.sin(a), r * math.sin(a) + w * math.cos(a), z, s / 2, s * 0.8,
                       "recShine", top="recShine", sides=8)
