@@ -176,21 +176,47 @@ and large voids; one 2x2 wall block on seeds 2 and 5; seed 2 took three attempts
 - Not run: anything in the game (crew paths, docking, security). Lint and typecheck errors in the handoff's test files
   (5) are parked (user).
 
-## Next
+## The planner (in progress)
 
-Make the flow the input, so the layout code knows no particular station:
+After review (the handoff's author and the user): the two layout functions above are hard-coded station designs, the
+flow drives nothing, and the lattice had become the whole architectural vocabulary. The redirect: **no more
+station-specific layout functions**; a compositional grammar in which flows change the architecture through data and
+one flow supports structural variation; design intent and proportions as first-class constraints; visual quality as a
+continuous gate (silhouette and department sheets before construction detail); the finished station validated. The
+lattice and the region compiler stay as techniques, not as the vocabulary. If the planner cannot produce an intended
+structure, the limitation is named, not worked round with another fixed layout.
 
-1. Program to departments: floor and frontage needs, access type, needs (hull face, large floor); shops and court sized.
-2. Flows as data: the three trading flows as drawn.
-3. Skeletons that expose slots: each piece of circulation offers slots with a frontage, a depth, public or gated,
-   hull-facing or not.
-4. Assignment by a small search: hard rules from the flow, preferences scored, street lengths and radius solved from
-   what was assigned.
-5. Realise and furnish (exists), writing the plan class natively.
-6. Validate the built tiles against the flow; on failure a structural edit and a retry.
+**Step 0 (done): checks on the finished station** (`stationFlowChecks.ts`), applied to every flow grammar: content
+parity, the hull check, regions in one piece, every room reachable, controlled departments behind exactly one gate.
+Both hard-coded layouts fail them (the wheel: a split hall, and its gate sits on the court's edge where the fit-out's
+archway pass opens it; the spine: missing beds and guns). A gate must stand between two halls to survive the fit-out.
 
-**The test:** flow A reproduces roughly today's station, and flows B and C come out by changing data only. If either needs
-new layout code, the model is wrong. Keep the layer small; abstraction ahead of results is what sank the earlier attempts.
+**The model** (`src/sim/shipgen/flow/`):
+
+- **Flow** (data, `src/content/stationFlows.ts`): departments (the roles they take, access open or controlled, the
+  places they may take, docks, customs) and preferences between them (near, far), plus intent (the landmark department,
+  the court).
+- **Vocabulary.** One structural element does the work of street, wing and spine: an **arm**, a straight street from the
+  court outward in one of four directions, with a reach (short of the ring, to the ring, or out through the hull as a
+  wing) and frontage on both sides in three sections (inside the ring, the band's depth, beyond the hull). Round it: the
+  **court**, the **ring** with its **band** (lattice strips, placed by department round an anchor direction), **gates**
+  (customs at a wing's foot, the guard gate of a controlled arm), **docks** (on a wing's flanks or tip, wherever an
+  airlock may face), and **voids** (inboard ground nothing is built on).
+- **Planning.** Every way of giving the arm departments a direction and a section is enumerated, filtered by the flow's
+  hard rules (a controlled department has its arm to itself, docks need hull), sized from the program, built, and
+  scored: the flow's preferences, the proportion rules (a landmark that breaks the hull, streets lined not bare, the
+  ring no bigger than its contents, no four-fold sameness), size. Candidates are grouped by structure (which arms run
+  out, where the gated arm is, how the market stands); the seed picks among the good structures, so one flow gives
+  several skeletons.
+- **Limits named up front:** arms are axis-aligned (four directions); no inner ring, no hub of halls, no diagonal
+  elements yet. The faceted-bazaar and greenhouse-hub mocks are outside this vocabulary until those operations exist.
+
+**Order of work:** massing first (departments on the grid, rooms by the street-lining rule, no furniture) rendered
+through the original views beside the legacy generator and the mocks, for the user's eye; then the plan class written
+natively, layout-time validation, the fit-out and the finished-station checks; structural edits on failure.
+
+**The test:** trading flows A, B and C come out as different structures from the same code, each with variation by
+seed, every one passing the finished-station checks, and the user judges the silhouettes.
 
 ## Tried and set aside
 
