@@ -1,4 +1,6 @@
-import { ModuleC } from '../modules/components';
+import { ModuleC, type Module } from '../modules/components';
+import { accessTile } from '../modules/footprint';
+import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
 import { BedOwnerC } from './components';
 import { findPath, type Tile } from './pathfind';
@@ -19,6 +21,23 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
   return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.bed && shipIdOf(sim, m) === shipId;
 }
 
+/** Which kind of bed a module is: a recovery pod, a medical bed (patients only) or an ordinary bed. */
+export type BedKind = 'recovery' | 'medical' | 'ordinary';
+export const bedKind = (def: ModuleDef): BedKind => (def.recovery ? 'recovery' : def.medical ? 'medical' : 'ordinary');
+
+/**
+ * The tile crew stand on to use a bed: its own tile, or for a recovery pod (a solid tank) its access tile. Carriers and walkers aim at this one
+ * (searchBeds, the rescue job); the patient themselves lie inside the pod (crew/recovery.ts).
+ */
+export function bedStandTile(def: ModuleDef, m: Module): Tile {
+  return (def.recovery ? accessTile(def, m.x, m.y, m.rot) : null) ?? { x: m.x, y: m.y };
+}
+
+/** A bed the planners may pick now: intact, free and (a pod) powered. The one answer to "can a patient be sent to this bed". */
+export function bedUsable(def: ModuleDef | undefined, m: Module): boolean {
+  return !!def?.bed && m.reservedBy === 0 && m.hp > 0 && (!def.recovery || (m.powered && m.enabled));
+}
+
 /**
  * The nearest unreserved, intact bed module on a grid (fewest steps, then lowest id). With
  * `adjacent`, the path ends next to the bed (for carriers) instead of on it.
@@ -28,20 +47,26 @@ export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
  */
 export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, patient = false): BedPlan | null {
-  // Medical beds are for patients (who take one first when it is free); sleepers never lie in one.
-  if (patient) return searchBeds(sim, shipId, from, adjacent, skip, true) ?? searchBeds(sim, shipId, from, adjacent, skip, false);
-  return searchBeds(sim, shipId, from, adjacent, skip, false);
+  // Patients prefer a recovery pod (it heals to full with no medic), then a medical bed, then an ordinary bed. Sleepers use ordinary beds only.
+  if (patient) return searchBeds(sim, shipId, from, adjacent, skip, 'recovery') ?? searchBeds(sim, shipId, from, adjacent, skip, 'medical') ?? searchBeds(sim, shipId, from, adjacent, skip, 'ordinary');
+  return searchBeds(sim, shipId, from, adjacent, skip, 'ordinary');
 }
 
-/** `medical` true: only medical beds; false: only ordinary ones. */
-function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, medical: boolean): BedPlan | null {
+/** The nearest free recovery pod, for a hurt crew member who can still walk (the recover drive, ai/machines/sleep.ts). */
+export function findFreePod(sim: Sim, shipId: number, from: Tile, skip?: BedSkip): BedPlan | null {
+  return searchBeds(sim, shipId, from, false, skip, 'recovery');
+}
+
+/** Only beds of `kind`. */
+function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, skip: BedSkip | undefined, kind: BedKind): BedPlan | null {
   const cands: { id: number; lb: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     const def = m && sim.content.modules[m.def];
-    if (!m || m.reservedBy !== 0 || m.hp <= 0 || !def?.bed || !!def.medical !== medical || shipIdOf(sim, m) !== shipId) continue;
-    if (skip?.(m.x, m.y)) continue;
-    const cheb = Math.max(Math.abs(m.x - from.x), Math.abs(m.y - from.y));
+    if (!m || !def || !bedUsable(def, m) || bedKind(def) !== kind || shipIdOf(sim, m) !== shipId) continue;
+    const at = bedStandTile(def, m);
+    if (skip?.(at.x, at.y)) continue;
+    const cheb = Math.max(Math.abs(at.x - from.x), Math.abs(at.y - from.y));
     cands.push({ id, lb: adjacent ? Math.max(0, cheb - 1) : cheb });
   }
   cands.sort((a, b) => a.lb - b.lb || a.id - b.id);
@@ -51,8 +76,9 @@ function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, ski
       if (c.lb > best.steps.length) break;
       if (c.lb === best.steps.length && c.id > best.bed) continue;
     }
-    const m = sim.world.get(c.id, ModuleC) as { x: number; y: number };
-    const steps = findPath(sim, shipId, from, { x: m.x, y: m.y, adjacent });
+    const m = sim.world.get(c.id, ModuleC) as Module;
+    const at = bedStandTile(sim.content.modules[m.def] as ModuleDef, m);
+    const steps = findPath(sim, shipId, from, { x: at.x, y: at.y, adjacent });
     if (steps && (!best || steps.length < best.steps.length || (steps.length === best.steps.length && c.id < best.bed))) best = { bed: c.id, steps };
   }
   return best;

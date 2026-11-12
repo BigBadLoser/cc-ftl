@@ -1,4 +1,5 @@
-import { findFreeBed, ownedBedPlan } from '../../crew/beds';
+import { bedStandTile, findFreeBed, findFreePod, ownedBedPlan } from '../../crew/beds';
+import { lieDownInPod } from '../../crew/recovery';
 import { PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
@@ -25,9 +26,24 @@ export function sleepTurn(sim: Sim, id: number, crew: Crew, pos: Position, holds
   if (!claimedBed(sim, id) && (sim.tick + id) % SLEEP_STAGGER !== 0) return;
   if (holdsJob) abortTask(sim, id, 'drive');
   dropCarried(sim, id);
-  goToSleep(sim, id, crew, pos);
-  if (claimedBed(sim, id) || crew.activity === 'sleeping') syncTask(sim, id);
+  goToSleep(sim, id, crew, pos, false);
+  if (claimedBed(sim, id) || crew.activity === 'sleeping' || crew.activity === 'recovering') syncTask(sim, id);
   else setJoblessTask(sim, id, 'sleep', 'sleep', 'ClaimBed'); // no bed and still stepping: they lie down once settled
+}
+
+/**
+ * The recover drive's turn (content/policies.ts, a hurt crew member): the sleep machine's walk to a bed, but to a recovery pod only, and the stay in
+ * it instead of sleep. True while they walk to the pod or lie in it; false when no pod can be reached (the next drive serves them).
+ */
+export function recoverTurn(sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean): boolean {
+  if (holdsJob) abortTask(sim, id, 'drive');
+  dropCarried(sim, id);
+  goToSleep(sim, id, crew, pos, true);
+  if (crew.activity === 'recovering' || claimedBed(sim, id)) {
+    syncTask(sim, id);
+    return true;
+  }
+  return false;
 }
 
 /** True if the crew member is on the tile of the bed they reserved. */
@@ -56,7 +72,7 @@ export function wakeUp(sim: Sim, id: number, crew: Crew): void {
  * Tired: claim the bed they own (else the nearest free one) and walk to it, then sleep there (faster rest). With no
  * reachable bed, sleep where standing. A bed whose tile harms them is passed over. Only falls asleep once settled on a tile.
  */
-function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
+function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position, toPod: boolean): void {
   let claim = claimedBed(sim, id);
   const bed = claim ? sim.world.get(claim, ModuleC) : undefined;
   if (claim && (!bed || bed.hp <= 0)) {
@@ -66,20 +82,30 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position): void {
   const path = sim.world.get(id, PathC) as Path;
   const ship = shipIdOf(sim, pos);
   const unsafe = (x: number, y: number): boolean => unsafeFor(sim, id, ship, x, y);
-  if (claim && bed && unsafe(bed.x, bed.y)) {
+  const def = bed && sim.content.modules[bed.def];
+  const stand = bed && def ? bedStandTile(def, bed) : { x: 0, y: 0 };
+  if (claim && bed && unsafe(stand.x, stand.y)) {
     releaseBedClaim(sim, id); // the bed now harms them (a fire on it): another bed, else the floor
     clearPath(sim, id);
     claim = 0;
   }
   if (claim && bed) {
-    if (isSettled(pos) && pos.x === bed.x && pos.y === bed.y) return fallAsleep(sim, id, crew);
+    if (isSettled(pos) && pos.x === stand.x && pos.y === stand.y) return def?.recovery ? lieDownInPod(sim, id, claim) : fallAsleep(sim, id, crew);
     if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
-    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), { x: bed.x, y: bed.y }, walkOpts(sim, id));
+    const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), stand, walkOpts(sim, id));
     if (steps && steps.length > 0) {
       path.steps = steps;
       return;
     }
-    releaseBedClaim(sim, id); // unreachable: sleep on the floor instead
+    releaseBedClaim(sim, id); // unreachable: sleep on the floor instead (a pod patient just stays hurt)
+    if (toPod) return;
+  } else if (toPod) {
+    const plan = findFreePod(sim, ship, origin(pos), unsafe);
+    if (plan) {
+      claimBed(sim, id, plan.bed);
+      path.steps = plan.steps;
+    }
+    return;
   } else {
     const plan = ownedBedPlan(sim, id, ship, origin(pos), unsafe) ?? findFreeBed(sim, ship, origin(pos), false, unsafe);
     if (plan) {

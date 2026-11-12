@@ -1,6 +1,7 @@
 import { isLodger, onStationRoll, roleOf } from '../consent/roles';
 import { CrewC, HealthC, MoodC, NeedsC, PositionC } from '../crew/components';
 import { refusesWork } from '../crew/helpers';
+import { podAvailable } from '../crew/recovery';
 import { foodOn, hungerDrainPerSec } from '../crew/eating';
 import { airLeft } from '../eva/airLedger';
 import { traitEffect, traitFlag } from '../crew/traits';
@@ -67,6 +68,8 @@ const INPUTS: Record<DriveInput, (sim: Sim, id: number) => number | undefined> =
     const m = sim.world.get(id, MoodC);
     return m ? tenths(m.value) : undefined;
   },
+  /** A recovery pod on the crew member's ship is free to use: 1000 or 0 (crew/recovery.ts). */
+  pod: (sim, id) => (podAvailable(sim, id) ? 1000 : 0),
   /** Food in the crew member's ship's storage: 1000 or 0. */
   food: (sim, id) => {
     const pos = sim.world.get(id, PositionC);

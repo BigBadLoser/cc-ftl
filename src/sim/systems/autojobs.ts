@@ -1,4 +1,5 @@
-import { findFreeBed } from '../crew/beds';
+import { bedStandTile, findFreeBed } from '../crew/beds';
+import type { ModuleDef } from '../registry';
 import { rescueSpot } from '../away/rescue';
 import { abortTask } from '../ai/task';
 import { breachTiles, canAffordWall } from '../crew/breach';
@@ -119,7 +120,7 @@ function keepRescue(sim: Sim, job: Job): boolean {
   if (!downed || !pos || downed.stabilized) return false;
   const bed = sim.world.get(job.bed ?? 0, ModuleC);
   const spot = sim.world.has(target, CarriedC) && !bed ? rescueSpot(sim, target) : null;
-  const goal = sim.world.has(target, CarriedC) && bed ? bed : spot ?? pos;
+  const goal = sim.world.has(target, CarriedC) && bed ? bedStandTile(sim.content.modules[bed.def] as ModuleDef, bed) : spot ?? pos;
   job.x = goal.x;
   job.y = goal.y;
   return true;

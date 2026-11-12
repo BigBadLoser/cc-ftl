@@ -530,6 +530,11 @@ export interface ModuleDef {
   bed?: true;
   /** A medical bed: only patients lie in it (never sleepers), and it heals the way a bed does, faster with medicinal herbs in stock. */
   medical?: true;
+  /**
+   * A recovery pod (crew/recovery.ts): a powered, solid tank (also `bed` and `medical`) entered from its `access` tile. A hurt crew member lies in it and heals to
+   * full with no medic, out of action meanwhile; a downed patient carried there is stabilised and heals too. Patients prefer it to a medical bed (crew/beds.ts `bedKind`).
+   */
+  recovery?: true;
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
   plot?: { scale: number; waterScale?: number };
   /** Draws its power (and shows as running) only while the rule holds, else it is idle: no draw, `powered` false (modules/draw.ts). 'planted': a bed with a crop in the soil. */

@@ -6,7 +6,8 @@ import { performHaul } from '../items/haul';
 import { consumeDelivered, needsMaterials } from '../items/materials';
 import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
-import { ModuleC } from '../modules/components';
+import { ModuleC, type Module } from '../modules/components';
+import type { ModuleDef } from '../registry';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
@@ -24,7 +25,7 @@ import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from './xp';
 import { workSkill, workSkillMult } from './workSkill';
-import { findFreeBed } from './beds';
+import { bedStandTile, findFreeBed } from './beds';
 import { handInPatient, rescueSpot } from '../away/rescue';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
@@ -208,7 +209,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
       bed = plan.bed;
       (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;
     }
-    const target = sim.world.get(bed, ModuleC) as { x: number; y: number };
+    const bedMod = sim.world.get(bed, ModuleC) as Module;
+    const target = bedStandTile(sim.content.modules[bedMod.def] as ModuleDef, bedMod); // a pod is entered from its access tile
     job.bed = bed;
     job.x = target.x;
     job.y = target.y;

@@ -5,7 +5,7 @@
  */
 
 /** What a crew member wants (a utility drive). `idle` and `leisure` are jobless. */
-export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'air' | 'return' | 'idle';
+export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'air' | 'return' | 'idle' | 'recover';
 
 /** The executor machines (section 6). `generic` covers simple jobs and jobless walks. */
 export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge' | 'escape' | 'leisure' | 'return' | 'break';
@@ -106,7 +106,7 @@ export interface Interrupt {
  * crew member has no such need. Needs are read in tenths of their 0..100 scale (0..1000), floored once at the reader; the
  * predicates (`food`, `robotUpkeep`) read 1000 (fine) or 0. A new input is a reader in that table plus its name here.
  */
-export type DriveInput = 'willing' | 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'awayReturn' | 'mood' | 'food';
+export type DriveInput = 'willing' | 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'awayReturn' | 'mood' | 'food' | 'pod';
 
 /** Which crew a policy is for (ai/utility.ts `crewKind`): battery robots, station crew, the player's colonists, anyone else. */
 export type CrewKind = 'robot' | 'station' | 'colonist' | 'npc' | 'guest';

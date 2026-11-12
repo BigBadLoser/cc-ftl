@@ -2,7 +2,7 @@ import { shipIdOf, shipGrid } from '../regions';
 import { abortTask } from '../ai/task';
 import { releaseBed } from '../crew/beds';
 import {
-  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
+  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC, RecoveringC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
@@ -21,6 +21,7 @@ import { TICK_HZ } from '../time';
 import {
   BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, SKILL_STEP, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
+import { podHealStep, podModule, restInPod, startRecovery } from '../crew/recovery';
 import { treatmentMult } from '../crew/treatment';
 import { grantXp } from '../crew/xp';
 
@@ -68,7 +69,10 @@ export function vitalsSystem(sim: Sim): void {
     }
 
     const harm = tileHarm(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
-    if (!downed) {
+    const resting = sim.world.get(id, RecoveringC);
+    if (resting) {
+      restInPod(sim, id, resting, health, harm); // a recovery pod: heals to full, out of action meanwhile
+    } else if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.
       } else if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
@@ -78,6 +82,9 @@ export function vitalsSystem(sim: Sim): void {
         else if (species?.creature) killCrew(sim, id); // creatures die outright (the corpse stays)
         else down(sim, id, pos);
       }
+    } else if (downed.stabilized && harm < BED_HEAL_PER_SEC && podModule(sim, downed.bed)) {
+      // Carried to a recovery pod: no medic needed; at GET_UP_HP they stay on as a pod patient to full (crew/recovery.ts).
+      if (podHealStep(sim, id, downed, health, harm) && health.hp >= GET_UP_HP) startRecovery(sim, id, downed);
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
       // A guest is cared for by the crew of the ship that took them in (a passenger in the player's bed has the player's medic).
       const ship = shipIdOf(sim, pos);

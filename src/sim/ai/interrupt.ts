@@ -1,5 +1,5 @@
 import { BreakdownC } from '../crew/breakTypes';
-import { CarriedC, CrewC, DeadC, DownedC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, AssignmentC } from '../crew/components';
+import { CarriedC, CrewC, DeadC, DownedC, RecoveringC, DraftedC, JobC, NeedsC, PathC, PositionC, PrioritiesC, AssignmentC } from '../crew/components';
 import { isIncapacitated } from '../crew/helpers';
 import { EvaFloatC } from '../eva/components';
 import { EquipOrderC, FighterC, SurrenderedC } from '../fight/components';
@@ -60,7 +60,7 @@ function mendTargets(sim: Sim): Set<number> {
 /** The highest-precedence forced reason that holds for the crew member, or null. */
 export function detect(sim: Sim, id: number, mend?: ReadonlySet<number>): InterruptReason | null {
   if (sim.world.has(id, DeadC)) return 'dead';
-  if (sim.world.has(id, DownedC)) return 'downed';
+  if (sim.world.has(id, DownedC) || sim.world.has(id, RecoveringC)) return 'downed';
   if (sim.world.has(id, CarriedC)) return 'carried';
   if (sim.world.has(id, InertC)) return 'inert';
   if (sim.world.has(id, StunC)) return 'stunned';

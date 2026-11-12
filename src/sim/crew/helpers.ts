@@ -1,7 +1,7 @@
 import { lodgingHere } from '../consent/guests';
 import type { Sim } from '../sim';
 import {
-  CarriedC, CrewC, DeadC, DownedC, JobC, PathC, PositionC, type Position,
+  CarriedC, CrewC, DeadC, DownedC, RecoveringC, JobC, PathC, PositionC, type Position,
 } from './components';
 
 import { InertC, StunC } from '../robots/components';
@@ -66,7 +66,7 @@ export function refusesWork(sim: Sim, crew: number): boolean {
 }
 
 export function isIncapacitated(sim: Sim, crew: number): boolean {
-  return sim.world.has(crew, DownedC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
+  return sim.world.has(crew, DownedC) || sim.world.has(crew, RecoveringC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
     || sim.world.has(crew, InertC) || sim.world.has(crew, StunC);
 }
 

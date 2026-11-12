@@ -4,10 +4,10 @@ import { ModuleC } from '../modules/components';
 import type { Downed } from './components';
 
 /**
- * The heal multiplier of a patient's stay in a medical bed (`ModuleDef.medical`): the first tick of a stay with a medicinal item in the ship's stock
+ * The heal multiplier of a patient's stay in a medical bed (`ModuleDef.medical`; a recovery pod is one too, crew/recovery.ts): the first tick of a stay with a medicinal item in the ship's stock
  * (`ItemDef.medicine`) uses one up (the best one) and the patient heals that much faster until they get up. 1 in an ordinary bed or without any.
  */
-export function treatmentMult(sim: Sim, shipId: number, downed: Downed): number {
+export function treatmentMult(sim: Sim, shipId: number, downed: Pick<Downed, 'bed' | 'treated'>): number {
   if (downed.treated) return downed.treated;
   const bed = sim.world.get(downed.bed, ModuleC);
   if (!bed || !sim.content.modules[bed.def]?.medical) return 1;

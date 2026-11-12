@@ -3,7 +3,7 @@ import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import { Container, Sprite, Texture } from 'pixi.js';
 import type { World } from '../sim/ecs';
-import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC } from '../sim/crew/components';
+import { CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, PositionC, RecoveringC } from '../sim/crew/components';
 import type { HandWeaponArt } from '../sim';
 import { EvaFloatC } from '../sim/eva/components';
 import { EquipC, FighterC } from '../sim/fight/components';
@@ -32,6 +32,7 @@ import { clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
 import { BED_LIFT, bedPose } from './bedPose';
+import { POD_LIFT, podPose } from './podPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 
 export interface CrewViewHost {
@@ -318,7 +319,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const dead = world.has(id, DeadC);
         const downed = world.get(id, DownedC);
         const carried = world.get(id, CarriedC);
-        const hurtLying = dead || !!downed || !!carried;
+        // A patient in a recovery pod floats upright in the tank (centred, facing the camera, no bars): in it as a pod patient, or stabilised there while still downed.
+        const mx0 = Math.round(s.x), my0 = Math.round(s.y);
+        const podAt = !dead && !carried && (world.has(id, RecoveringC) || !!downed?.stabilized) ? host.moduleAt?.(mx0, my0) ?? null : null;
+        const pod = podAt?.def.recovery ? podPose(podAt.def, podAt.m.x, podAt.m.y, podAt.m.rot) : null;
+        const hurtLying = !pod && (dead || !!downed || !!carried);
         // Crew on a walkable tile inside a module's footprint (a console's chair) draw in front of its sprite; on the
         // chair itself (a console's or a seated module's) they sit (sit_work while operating), facing the desk, without a floor shadow.
         const mx = Math.round(s.x);
@@ -350,12 +355,12 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.lastHp = hpNow;
         s.lastCooldown = cd;
         if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
-        const clipName = hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
+        const clipName = pod ? 'idle' : hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (crew.activity === 'working' ? 'sit_work' : 'sit_idle') : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
         const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
-        const dir = bed ? bed.dir : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
-        s.shadow.visible = !sitting && !bed; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
+        const dir = pod ? pod.dir : bed ? bed.dir : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : facing;
+        s.shadow.visible = !sitting && !bed && !pod; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
           if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;
           s.clip = clipName;
@@ -366,13 +371,14 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.lying = clipName === 'sleep';
         drawLayers(s, clipName, dir, s.t);
         // Region-local art position and depth (the region's containers sit at its sector offset).
-        const lx = (bed ? bed.x : s.x) - target.ox, ly = (bed ? bed.y : s.y) - target.oy;
+        const lx = (pod ?? bed ?? s).x - target.ox, ly = (pod ?? bed ?? s).y - target.oy;
         const p = iso(lx, ly);
         if (bed) p.y -= BED_LIFT * S;
+        if (pod) p.y -= POD_LIFT * S;
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
-        if (at && (onOpen || bed)) {
+        if (at && (onOpen || bed || pod)) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
           z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
         }
@@ -381,7 +387,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const carrying = world.get(id, CarryingC);
         showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
         const hp = world.get(id, HealthC);
-        const showBar = !dead && (!!downed || (!!hp && hp.hp < hp.max));
+        const showBar = !dead && !pod && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
         if (showBar) {
           // Tough crew last longer downed: their bar stays full until the usual bleed-out time is left.
