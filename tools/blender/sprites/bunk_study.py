@@ -190,6 +190,10 @@ SCHEMES = {
 }
 
 
+# The space inside the frame: posts (0.07) and rails (0.04) stand on the deck's edge, the boards (0.04) at its ends.
+MW, ML = W - 2 * 0.07 - 0.02, L - 2 * 0.06 - 0.02
+
+
 def _b1g(name, c):
     """B1f in a colour scheme, with an upright at the open-side rail's foot end (by the ladder)."""
     k = K(name, FP)
@@ -198,11 +202,11 @@ def _b1g(name, c):
             k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, c["post"][0], top=c["post"][1])
     for z in (LOW, HIGH):
         k.box(0, 0, z - 0.08, W, L, 0.08, c["deck"][0], top=c["deck"][1], bevel=0.01)
-        k.box(0, 0, z, W - 0.04, L - 0.04, MAT, c["mat"][0], top=c["mat"][1], bevel=0.02)
+        k.box(0, 0, z, MW, ML, MAT, c["mat"][0], top=c["mat"][1], bevel=0.02)   # inside the posts, rails, boards
         k.box(0, -0.66, z + MAT, 0.6, 0.38, 0.07, c["pillow"], top=c["pillow"], bevel=0.025)
-        b0, b1 = -0.31, L / 2 - 0.06                                               # the blanket: the fold to the foot
-        k.box(0, (b0 + b1) / 2, z + 0.03, W - 0.02, b1 - b0, MAT + 0.005, c["blanket"][0], top=c["blanket"][1])
-        k.box(0, b0 + 0.03, z + 0.03, W - 0.01, 0.06, MAT + 0.02, c["stripe"], top=c["stripe"])   # turned-down hem
+        b0, b1 = -0.31, ML / 2 + 0.01                                              # the blanket: the fold to the foot
+        k.box(0, (b0 + b1) / 2, z + 0.03, MW + 0.02, b1 - b0, MAT + 0.005, c["blanket"][0], top=c["blanket"][1])
+        k.box(0, b0 + 0.03, z + 0.03, MW + 0.02, 0.06, MAT + 0.02, c["stripe"], top=c["stripe"])   # turned-down hem
     for sv in (-1, 1):
         k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, c["board"][0], top=c["board"][1])
         k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, c["board"][0], top=c["board"][1])
