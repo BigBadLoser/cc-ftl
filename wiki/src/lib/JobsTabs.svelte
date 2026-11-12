@@ -17,7 +17,7 @@
 
 <Tabs {options} value={tab} onChange={(v) => (tab = v as keyof typeof boards)} label="Station types" />
 <div class="board">
-  {#key tab}<JobsBoard api={apiOf(boards[tab])} note={false} />{/key}
+  {#key tab}<JobsBoard api={apiOf(boards[tab])} />{/key}
 </div>
 
 <style>
