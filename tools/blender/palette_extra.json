@@ -3675,5 +3675,18 @@
   "barTeal": {"hex": "#27e0c4", "emissive": 2.5, "set": "bar3"},
   "barNebula": {"hex": "#6a3fd0", "emissive": 1.5, "set": "bar3"},
   "barSeat": {"hex": "#4a3a6a", "set": "bar3"},
-  "barCyan": {"hex": "#19e6ff", "emissive": 2.5, "set": "bar"}
+  "barCyan": {"hex": "#19e6ff", "emissive": 2.5, "set": "bar"},
+  "b4Shell": {"hex": "#b4afa6", "set": "bar4"},
+  "b4Top": {"hex": "#363b43", "set": "bar4"},
+  "b4Steel": {"hex": "#8b929b", "set": "bar4"},
+  "b4Gun": {"hex": "#3f454e", "set": "bar4"},
+  "b4Bronze": {"hex": "#7a6248", "set": "bar4"},
+  "b4Seat": {"hex": "#6a4636", "set": "bar4"},
+  "b4Panel": {"hex": "#3e5f61", "set": "bar4"},
+  "b4Navy": {"hex": "#2b3445", "set": "bar4"},
+  "b4Drink": {"hex": "#c7813f", "set": "bar4"},
+  "b4Wine": {"hex": "#7e2f3c", "set": "bar4"},
+  "b4Green": {"hex": "#5d7d48", "set": "bar4"},
+  "b4Glass": {"hex": "#9fb3bd", "set": "bar4"},
+  "b4Lamp": {"hex": "#ffd38a", "emissive": 1.2, "set": "bar4"}
 }
