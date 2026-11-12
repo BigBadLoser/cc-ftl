@@ -25,10 +25,11 @@ medic drone only patches the downed: it doesn't get them up. Rescue to a bed and
 
 ## Getting drones
 
-1. **Research** the drone you want: Repair drone, Medic drone or Defence drone, in the automation branch. Each needs an AI
-   core. See [Research](../../reference/research/).
-2. **Build** it at a fabricator from parts and electronics (the recipe appears once researched).
-3. **Store it.** The drone is an item. A free pad in a drone bay takes one from ship storage by itself.
+1. **Build the hardware.** A **drone bay** and an **AI core** are in the build menu from the start; no blueprint needed.
+2. **Research** the drone you want: Repair drone, Medic drone or Defence drone, in the automation branch. It needs a lab and
+   a known AI core, and costs electronics and parts. See [Research](../../reference/research/).
+3. **Build** it at a fabricator from parts and electronics (the recipe appears once researched).
+4. **Store it.** The drone is an item. A free pad in a drone bay takes one from ship storage by itself.
 
 Research stations sometimes sell finished drones. A destroyed drone leaves a little scrap.
 

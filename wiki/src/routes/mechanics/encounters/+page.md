@@ -78,19 +78,6 @@ Then you decide:
   trip waits there.
 - **Fly on** or **Leave it** ignores the signal and the trip continues.
 
-### Reading the tells
-
-Not everyone on the lane is honest. The sensor panel and the video can give them away, and **some tells only show on
-screen**:
-
-- A caller's **name** may flicker to a second name on the video card.
-- The video can **stutter**.
-- On a scan, a **transponder ID** can change to a different value. Spotting that takes a hacker of skill 4.
-- Other rows depend on your crew's skills. A gunner of skill 2 reads the weapons row properly, a pilot of skill 2 reads the
-  boarding craft, a hacker of skill 2 reads the crew count. With less skill, the row says something vague and true.
-
-> **Tip:** keep a good gunner, pilot and hacker aboard on the lane. A scan is only as sharp as the best skill you have.
-
 ## Off the lane
 
 When you drop out, a panel appears at the top with the roster of ships there and what state they're in. Everything on the
@@ -132,7 +119,7 @@ A crippled freighter with its reactor failing. Its crew can't repair it themselv
 
 1. **Answer the call** to hear the crew's story.
 2. **Scan it** to see the failing system, how long it has, the cargo, and whether raiders are on it or coming.
-3. **Offer help** needs the hail first. It drops you out beside the ship, and your repair party goes aboard as invited
+3. **Offer help** needs the hail first, and a shuttle that can fly a suited party. It drops you out beside the ship, and your repair party goes aboard as invited
    guests. They don't provoke anyone.
 4. Your engineers repair the reactor through the usual repair work. Fires break out in its last <Stat kind="tuning" id="events.event.distress_call.scene.timers.0.fires.leadSec" /> seconds.
 
@@ -186,8 +173,17 @@ judge whether it's honest.
 - **Trap**: a boarding party of three and a shuttle. Let them dock and they turn on you. Refusing turns the skiff hostile
   at once.
 
-Look for the tells: a caller whose name flickers, a video that stutters, a transponder that changes, powered guns,
-or a shuttle with suited crew in the bay. **Let them dock** and **Refuse** are the buttons on the panel.
+Look for the tells. Some only show on screen:
+
+- The caller's **name** flickers to a second name on the video card, or the video **stutters**. Anyone can see these.
+- On a scan, the **transponder ID** changes to a different value. Spotting that takes a hacker of skill 4.
+- The other scan rows depend on your crew's best skill. A gunner of skill 2 reads whether the guns are powered, a pilot of
+  skill 2 reads whether the shuttle is fuelled with suited crew in the bay, a hacker of skill 2 reads the crew count. With
+  less skill, the row says something vague and true.
+
+> **Tip:** keep a good gunner, pilot and hacker aboard on the lane.
+
+**Let them dock** and **Refuse** are the buttons on the panel.
 
 ### Patrol hails
 
