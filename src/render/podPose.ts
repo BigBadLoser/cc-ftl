@@ -1,8 +1,9 @@
 import { footprintTiles } from '../sim/modules/footprint';
+import { facingOf } from '../sim/crew/helpers';
 import type { ModuleDef } from '../sim/registry';
 
-/** Facing (clip row) toward the camera: between +x (SE, 4) and +y (SW, 6). A patient in the tank faces out through the glass. */
-export const POD_DIR = 5;
+/** Facing (clip row) toward the camera: the grid step (+1,+1) points straight down the screen (row 1; row 5 is its opposite, the back). A patient faces out through the glass at every rotation. */
+export const POD_DIR = facingOf(1, 1);
 
 /**
  * Art px a patient floats above the floor point of the pod's centre: the stage of the plinth, plus the fluid they hang in. Tuned on the sprites
