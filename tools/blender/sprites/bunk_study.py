@@ -337,7 +337,7 @@ def b1h(ph=2, name="bunk_b1h"):
     return k.build() + kp.build()
 
 
-def bed_s(wall_rail, name):
+def bed_s(wall_rail, name, mw=10, foot_style=None):
     """The single bed (module.bed, 1x2) in the bunk's look: B1h's lower deck on its own, posts only as tall as the
     boards they carry, optionally the bunk's wall-side rail. Mattress top 9 px (0.23, as the old bed's 0.22, so sleeping
     crew sit at the same height)."""
@@ -353,12 +353,22 @@ def bed_s(wall_rail, name):
     _px(k, -14, 14, -28, 28, z - 3, z, c["deck"][0], c["deck"][1])
     _px(k, -12, 12, -30, -28, z - 3, z, c["deck"][0], c["deck"][1])
     _px(k, -12, 12, 28, 30, z - 3, z, c["deck"][0], c["deck"][1])
-    _px(k, -10, 10, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])
-    _px(kp, -8, 8, -25, -14, z + 4, z + 6, "lvW2", "lvWL")
-    _px(k, -11, 11, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])
-    _px(k, -11, 11, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])
+    _px(k, -mw, mw, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])                 # mattress, 2 mw px wide
+    _px(kp, -(mw - 2), mw - 2, -25, -14, z + 4, z + 6, "lvW2", "lvWL")
+    _px(k, -(mw + 1), mw + 1, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])
+    _px(k, -(mw + 1), mw + 1, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])
     _px(k, -12, 12, -29, -28, z, z + head, c["board"][0], c["board"][1])
     _px(k, -12, 12, 28, 29, z, z + foot, c["board"][0], c["board"][1])
+    if foot_style:                                    # the footboard's outer face is v 29 (toward the camera at r0)
+        ft = z + foot
+        _px(k, -12, 12, 27, 30, ft, ft + 1, c["post"][1], c["rail"])               # a cap rail, 3 px deep
+        if foot_style == "panel":                                                  # a raised panel
+            _px(k, -9, 9, 29, 30, z + 2, ft - 2, c["board"][0], c["board"][1])
+        elif foot_style == "stripe":                                               # a band in the blanket's red
+            _px(k, -12, 12, 29, 30, z + 3, z + 5, c["blanket"][0], c["blanket"][1])
+        elif foot_style == "slots":                                                # three dark slots
+            for u in (-8, -2, 4):
+                _px(k, u, u + 4, 29, 30, z + 2, ft - 2, "dnW4", "dnW3")
     if wall_rail:
         r = c["rail"]
         _px(k, -13, -12, -28, 28, z + 10, z + 12, r, r)
@@ -368,7 +378,9 @@ def bed_s(wall_rail, name):
     return k.build() + kp.build()
 
 
-DESIGNS = {"s1": lambda: bed_s(False, "bed_s1"), "s2": lambda: bed_s(True, "bed_s2"), "b1h": b1h, "b1h1": lambda: b1h(1, "bunk_b1h1"), "b1h3": lambda: b1h(3, "bunk_b1h3"), "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
+DESIGNS = {"s3": lambda: bed_s(False, "bed_s3", 12), "s3p": lambda: bed_s(False, "bed_s3p", 12, "panel"),
+           "s3s": lambda: bed_s(False, "bed_s3s", 12, "stripe"), "s3k": lambda: bed_s(False, "bed_s3k", 12, "slots"),
+           "s1": lambda: bed_s(False, "bed_s1"), "s2": lambda: bed_s(True, "bed_s2"), "b1h": b1h, "b1h1": lambda: b1h(1, "bunk_b1h1"), "b1h3": lambda: b1h(3, "bunk_b1h3"), "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
            **{f"b1{g}": (lambda g=g: _b1g(f"bunk_b1{g}", SCHEMES[g])) for g in SCHEMES}}
 
 

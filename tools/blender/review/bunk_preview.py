@@ -16,7 +16,9 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "b1g1": "B1g1  light frame", "b1g2": "B1g2  dark frame, white rails", "b1g3": "B1g3  slate frame, red blanket",
          "b1g3a": "B1g3a  a shade darker", "b1g3b": "B1g3b  two shades darker",
          "b1h": "B1h  pillows 2 px", "b1h1": "B1h  pillows 1 px", "b1h3": "B1h  pillows 3 px (round 9)",
-         "s1": "S1  single bed, bunk look", "s2": "S2  single bed, wall rail"}
+         "s1": "S1  single bed, bunk look", "s2": "S2  single bed, wall rail",
+         "s3": "S3  wider mattress", "s3p": "S3p  cap + raised panel", "s3s": "S3s  cap + red band",
+         "s3k": "S3k  cap + slots"}
 CW, CH = 200, 220
 
 
