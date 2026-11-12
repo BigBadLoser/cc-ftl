@@ -86,6 +86,19 @@ export function dockReducer(state: DockState, a: DockAction): DockState {
 export const panelsIn = (s: DockState, dock: Dock): PanelId[] => PANELS.filter((id) => s.panels[id].place === dock);
 /** The floating panels. */
 export const floating = (s: DockState): PanelId[] => PANELS.filter((id) => s.panels[id].place === 'float');
+/**
+ * The flex weight a panel gets: its saved `grow` while it shares a dock with another expanded panel, scaled up so the expanded panels'
+ * weights sum to at least 1 (flex does not normalise a sum below 1, so a lone or shrunk panel would leave the dock partly empty); a floating
+ * or lone panel always fills (1).
+ */
+export function growOf(s: DockState, id: PanelId): number {
+  const p = s.panels[id];
+  if (p.place === 'float') return 1;
+  const peers = panelsIn(s, p.place).filter((k) => !s.panels[k].collapsed);
+  if (peers.length < 2) return 1;
+  const sum = peers.reduce((n, k) => n + s.panels[k].grow, 0);
+  return p.grow / Math.min(1, sum);
+}
 /** A dock is open (a resizable pane) while at least one of its panels is expanded; otherwise its panels show as rail buttons. */
 export const dockOpen = (s: DockState, dock: Dock): boolean => panelsIn(s, dock).some((id) => !s.panels[id].collapsed);
 
