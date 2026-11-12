@@ -1,3 +1,4 @@
+import type { ModuleDef } from '../../src/sim/registry';
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { modules as defs } from '../../src/content/modules';
 import { ANIM_FPS, frameCount, moduleLayers } from '../../src/render/moduleArt';
@@ -48,7 +49,8 @@ export const leisurePanel: LabPanel = {
           ...Array.from({ length: n }, (_, f) => ({ label: `in use f${f}`, active: true, off: false, at: f / ANIM_FPS + 0.01 })),
         ];
         const [w, h] = rot % 2 === 0 ? def.footprint : [def.footprint[1], def.footprint[0]];
-        const stands = (def.leisure?.stand ?? []).map(([dx, dy]) => {
+        const use = def as ModuleDef;
+        const stands = (use.access ? [use.access, ...(use.extraAccess ?? [])] : []).map(([dx, dy]) => {
           const [fw, fh] = def.footprint;
           let x = dx, y = dy, bw = fw, bh = fh;
           for (let i = 0; i < rot; i++) { [x, y] = [bh - 1 - y, x]; [bw, bh] = [bh, bw]; }

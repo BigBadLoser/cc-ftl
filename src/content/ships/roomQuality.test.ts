@@ -3,7 +3,7 @@ import { ModuleC, TaskC, CrewC, PositionC, PrioritiesC, homeShip, newGame, place
 import { noteLeisure, noteMeal, noteSleep, moodFactors, ensureMood } from '../../sim/crew/mood';
 import { TraitsC } from '../../sim/crew/traits';
 import { standTiles } from '../../sim/ai/machines/leisureSpots';
-import { footprintTiles, useTiles } from '../../sim/modules/footprint';
+import { accessTiles, footprintTiles } from '../../sim/modules/footprint';
 import { isTileWalkable } from '../../sim/modules/walk';
 import { findPath } from '../../sim/crew/pathfind';
 import { content } from '../index';
@@ -145,7 +145,7 @@ describe('leisure spots', () => {
     for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
       if (grid.get('room', x, y) !== home.room || placementError(sim, ship, def, x, y, 0)) continue;
       // The stand tiles (2 for the table) must be floor of the same room, not wall.
-      const stands = content.modules[def].leisure.stand.map(([dx, dy]) => [x + dx, y + dy] as const);
+      const stands = accessTiles(content.modules[def], x, y, 0).map((t) => [t.x, t.y] as const);
       if (!stands.every(([sx, sy]) => grid.inBounds(sx, sy) && grid.get('room', sx, sy) === home.room)) continue;
       const module = spawnModule(sim, def, x, y, 0);
       // Every stand tile must be reachable on foot (the table can be walled into a pocket).
@@ -233,7 +233,7 @@ describe('leisure spots', () => {
         const err = placementError(sim, ship, id, x, y, rot);
         if (err !== null && err !== 'noAccess') continue;
         // Only spots that would be fine but for a stand tile: every footprint tile placeable, the error (if any) from a use tile.
-        const stands = useTiles(def, x, y, rot);
+        const stands = accessTiles(def, x, y, rot);
         const walled = stands.some((t) => !grid.inBounds(t.x, t.y) || !isTileWalkable(sim, grid, t.x, t.y));
         if (walled) { expect(err).toBe('noAccess'); blocked++; } else if (err === null) open++;
         expect(footprintTiles(def, x, y, rot).length).toBeGreaterThan(0);

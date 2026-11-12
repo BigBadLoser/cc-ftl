@@ -492,6 +492,8 @@ export interface ModuleDef {
    * footprint (a tile beside the module) or inside it, in which case it must also be listed in `openTiles`.
    */
   access?: readonly [number, number];
+  /** More places to use it from, one crew member each, after `access` (the game table's second stool). Same rules as `access`; `accessTiles` lists them all. */
+  extraAccess?: readonly (readonly [number, number])[];
   /**
    * Per-tile solidity: footprint tiles (rotation-0 offsets) crew can walk on although the module is solid, e.g. a
    * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
@@ -543,7 +545,8 @@ export interface ModuleDef {
    * A leisure spot (sim/ai/machines/leisureSpots.ts): crew on a break stand on the `stand` tiles (offsets from the footprint's top-left at rotation 0, rotated
    * with the module) while it is powered. One crew member per tile. `social` spots draw `trait.social` crew, `solo` ones `trait.loner`.
    */
-  leisure?: { kind: 'social' | 'solo'; stand: [number, number][]; seat?: SeatKind };
+  /** A leisure spot: one crew member plays at each of its access tiles (`accessTiles`). */
+  leisure?: { kind: 'social' | 'solo'; seat?: SeatKind };
   workstation?: true;
   /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
   research?: true;

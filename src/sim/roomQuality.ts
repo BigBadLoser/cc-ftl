@@ -104,7 +104,7 @@ function compute(sim: Sim, ship: number, grid: ShipGrid): Map<number, RoomQualit
     if (!m || !def || shipIdOf(sim, m) !== ship) continue;
     const room = roomAt(m.x, m.y) || footprintTiles(def, m.x, m.y, m.rot).map((t) => roomAt(t.x, t.y)).find((r) => r !== 0) || 0;
     if (room === 0) continue;
-    const slots = def.leisure ? def.leisure.stand.length : def.bed || def.console || def.workstation || def.galley ? 1 : 0;
+    const slots = def.leisure ? 1 + (def.extraAccess?.length ?? 0) : def.bed || def.console || def.workstation || def.galley ? 1 : 0;
     if (slots) users.set(room, (users.get(room) ?? 0) + slots);
     if (def.maxHp > 0) (hpShare.get(room) ?? (hpShare.set(room, []), hpShare.get(room) as number[])).push(Math.max(0, Math.min(1, m.hp / def.maxHp)));
   }

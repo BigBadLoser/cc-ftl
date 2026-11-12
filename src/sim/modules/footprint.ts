@@ -40,31 +40,21 @@ export function footprintTiles(def: ModuleDef, x: number, y: number, rot: number
   return out;
 }
 
-/** The tile crew stand on to use the module, or null if it has none. */
-export function accessTile(def: ModuleDef, x: number, y: number, rot: number): Tile | null {
-  if (!def.access) return null;
-  const o = rotateOffset(def, rot, def.access[0], def.access[1]);
-  return { x: x + o.x, y: y + o.y };
-}
-
 /**
- * Every tile crew stand on to use the module: its access tile, then the stand tile of each place at a leisure spot (`leisure.stand`:
- * the game table's two stools, the arcade's front). Placement refuses a module whose use tiles are blocked, and the build ghost marks them.
+ * Every tile crew stand on to use the module, one crew member each: its `access` tile, then its `extraAccess` (the game table's
+ * second stool). Placement refuses a module with any of them blocked, the build ghost marks them, and a leisure spot seats one player on each.
  */
-export function useTiles(def: ModuleDef, x: number, y: number, rot: number): Tile[] {
-  const out: Tile[] = [];
-  const a = accessTile(def, x, y, rot);
-  if (a) out.push(a);
-  for (const s of standTilesAt(def, x, y, rot)) if (!out.some((t) => t.x === s.x && t.y === s.y)) out.push(s);
-  return out;
-}
-
-/** World stand tiles of a leisure spot placed at (x, y, rot), in the order of its def's `leisure.stand` (none for other modules). */
-export function standTilesAt(def: ModuleDef, x: number, y: number, rot: number): Tile[] {
-  return (def.leisure?.stand ?? []).map(([dx, dy]) => {
+export function accessTiles(def: ModuleDef, x: number, y: number, rot: number): Tile[] {
+  if (!def.access) return [];
+  return [def.access, ...(def.extraAccess ?? [])].map(([dx, dy]) => {
     const o = rotateOffset(def, rot, dx, dy);
     return { x: x + o.x, y: y + o.y };
   });
+}
+
+/** The tile crew stand on to use the module (the first of `accessTiles`), or null if it has none. */
+export function accessTile(def: ModuleDef, x: number, y: number, rot: number): Tile | null {
+  return accessTiles(def, x, y, rot)[0] ?? null;
 }
 
 /** World tiles of a module's footprint that crew can walk on (its `openTiles`, rotated). */

@@ -194,7 +194,8 @@ export const modules = {
     maxHp: 60,
     buildWork: 100,
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }, { item: 'item.polymer', count: 2 }],
-    leisure: { kind: 'solo', stand: [[0, 1]] },
+    access: [0, 1],
+    leisure: { kind: 'solo' },
   },
   'module.gametable': {
     scrap: 'comfort',
@@ -210,7 +211,9 @@ export const modules = {
     maxHp: 70,
     buildWork: 130,
     cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 5 }, { item: 'item.polymer', count: 4 }],
-    leisure: { kind: 'social', stand: [[0, 1], [1, -1]], seat: 'stool' },
+    access: [0, 1],
+    extraAccess: [[1, -1]],
+    leisure: { kind: 'social', seat: 'stool' },
   },
   // A crate. Crew use it from any neighbouring tile; the access tile just keeps one side walkable.
   'module.storage': {

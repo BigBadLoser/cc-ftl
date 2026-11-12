@@ -8,7 +8,7 @@ import type { Sim } from '../sim';
 import { DEFAULT_POWER_PRIORITY } from '../tuning';
 import { Struct } from '../structure';
 import { ModuleC } from './components';
-import { footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf, useTiles } from './footprint';
+import { footprintTiles, hullOutward, hullRow, hullSide, inFootprint, openTilesOf, accessTiles } from './footprint';
 import { isTileWalkable } from './walk';
 import { dismantleAirlock, initAirlock } from './airlock';
 import { VehicleBayC } from '../vehicles/components';
@@ -92,7 +92,7 @@ export function placementError(sim: Sim, shipId: number, defId: string, x: numbe
       if (!grid.inBounds(bx, by) || grid.get('struct', bx, by) !== Struct.Space) return 'notOnHull';
     }
   }
-  for (const access of useTiles(def, x, y, rot)) {
+  for (const access of accessTiles(def, x, y, rot)) {
     const inside = inFootprint(def, x, y, rot, access.x, access.y);
     if (inside ? !openTilesOf(def, x, y, rot).some((o) => o.x === access.x && o.y === access.y) : !grid.inBounds(access.x, access.y) || !isTileWalkable(sim, grid, access.x, access.y)) {
       return 'noAccess';
