@@ -42,6 +42,7 @@ export const shots = [
       await h.key('m');
       await h.page.getByTestId('starmap').waitFor();
       await h.page.mouse.move(960, 700); // off the buttons: no tooltip over the map
+      await h.page.evaluate(() => document.activeElement?.blur()); // the Back button takes focus on open, and focus shows its "Back to ship" tip
       await h.wait(4000); // the galaxy geometry builds a piece at a time (bridge.warmStarmap); give it time to finish drawing
     },
   },

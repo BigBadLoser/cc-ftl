@@ -25,15 +25,16 @@ const thumbOf = (def: string): UiThumb | null => (previews as Record<string, { t
 /**
  * A stand-in for the game's UI api: each recorded feed is a store holding its recorded value, and everything else (dispatch,
  * selection, saves) is a function that does nothing, so a real panel renders the recorded scene and its buttons are inert.
- * Item icons are always there.
+ * `fns` are functions the panel calls for pictures only the game's renderer draws (the signal window's portrait), answered with stills. Item icons are always there.
  */
-export function apiOf(feeds: Partial<Feeds> & Record<string, unknown> = {}): UiApi {
+export function apiOf(feeds: Partial<Feeds> & Record<string, unknown> = {}, fns: Record<string, unknown> = {}): UiApi {
   const store = (v: unknown) => ({ subscribe: (run: (x: unknown) => void) => { run(v); return () => {}; } });
   return new Proxy({}, {
     get: (_, key) => {
       if (typeof key !== 'string') return undefined;
       if (key === 'structCosts' && key in feeds) return feeds[key]; // a plain record, not a feed
       if (key in feeds) return store(feeds[key]);
+      if (key in fns) return fns[key];
       if (key === 'itemIcons') return store(itemIcons);
       if (key === 'moduleThumb') return thumbOf;
       return () => undefined;
