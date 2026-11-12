@@ -56,10 +56,13 @@ export interface Recipe {
     | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number; inner: boolean; gap?: Gap };
   branches: readonly BranchRule[];
   /**
-   * scatter: quarters are not a department's blocks. Their beds become single cabins that stand among the other
-   * sections' rooms, a few to a section, and as pods on what ports are left. Hard as ever: every bed stands.
+   * How the crew sleeps, when not in quarters cut into cabins where they stand:
+   *   scatter   every bed a small cabin of its own, standing among the other sections' rooms and as pods on spare ports
+   *   barracks  shared rooms of this many beds each, in double bunks (two beds to a bunk, an aisle between two rows);
+   *             `singles` beds are kept as private cabins and scattered
+   * Hard either way: every bed of the program stands.
    */
-  cabins?: 'scatter';
+  quarters?: 'scatter' | { barracks: readonly [number, number]; singles?: number };
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }

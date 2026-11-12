@@ -70,7 +70,7 @@ export interface BlockOpts {
 /** A quarters room as cabins side by side, one bed each, taking the room's own length (walls between them included). */
 function cabinsWithin(r: RoomSpec): RoomSpec[] {
   const beds = r.mods.filter((m) => m === 'module.bed').length;
-  if (r.role !== 'quarters' || beds < 2) return [r];
+  if (r.role !== 'quarters' || beds < 2 || r.cabins === false) return [r]; // a barracks stays one room
   const others = r.mods.filter((m) => m !== 'module.bed');
   const room = Math.max(2 * beds, r.w - (beds - 1)), base = Math.floor(room / beds);
   return Array.from({ length: beds }, (_, i): RoomSpec => ({ ...r, mods: ['module.bed', ...(i === 0 ? others : [])], w: base + (i < room - base * beds ? 1 : 0), cabin: true, cabins: false }));

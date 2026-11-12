@@ -196,13 +196,30 @@ function grow(a: Asm, recipe: Recipe, all: readonly RoomSpec[], docks: readonly 
   if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
   const ends: (Port | null)[] = [];
   let lastTrunk: Port | null = null, cursor = 0, berthed = false;
-  // Scattered cabins: every bed a small cabin of its own, a few to each section that is not gated.
-  const scatter = recipe.cabins === 'scatter';
-  const pool: RoomSpec[] = scatter ? rooms.filter((r) => r.role === 'quarters').flatMap((r) => {
-    const others = r.mods.filter((m) => m !== 'module.bed'), beds = r.mods.length - others.length;
-    return Array.from({ length: beds }, (_, i): RoomSpec => ({ ...r, mods: ['module.bed', ...(i === 0 ? others : [])], w: 2, h: 4, cabin: true, cabins: false }));
-  }) : [];
-  if (scatter) rooms = rooms.filter((r) => r.role !== 'quarters');
+  // The crew's beds, when the recipe houses them its own way: single cabins to scatter, and barracks rooms.
+  const q = recipe.quarters;
+  const pool: RoomSpec[] = [];
+  if (q) {
+    const quarters = rooms.filter((r) => r.role === 'quarters'), first = quarters[0];
+    const others = quarters.flatMap((r) => r.mods.filter((m) => m !== 'module.bed'));
+    let beds = quarters.reduce((n, r) => n + r.mods.length, 0) - others.length;
+    rooms = rooms.filter((r) => r.role !== 'quarters');
+    if (first) {
+      const single = (extra: string[]): RoomSpec => ({ ...first, mods: ['module.bed', ...extra], w: 2, h: 4, cabin: true, cabins: false });
+      const singles = q === 'scatter' ? beds : Math.min(beds, q.singles ?? 0);
+      for (let i = 0; i < singles; i++) pool.push(single(q === 'scatter' && i === 0 ? others : []));
+      beds -= singles;
+      // A barracks: double bunks (a bed's footprint, two beds) in two rows, heads to the walls, an aisle between, and
+      // a tile along for lockers. What else the quarters held (life support) goes in the first.
+      const made: RoomSpec[] = [];
+      while (q !== 'scatter' && beds > 0) {
+        const n = Math.min(beds, rng.int(q.barracks[0], q.barracks[1])), bunks = Math.ceil(n / 2);
+        made.push({ ...first, mods: [...Array<string>(n).fill('module.bed'), ...(made.length === 0 ? others : [])], w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false });
+        beds -= n;
+      }
+      rooms = [...rooms, ...made];
+    }
+  }
   const mean = (b: BranchRule): number => (b.section.rooms[0] + b.section.rooms[1]) / 2;
   const hosts0 = recipe.branches.filter((b) => !b.gated).reduce((n, b) => n + Math.max(1, Math.ceil(rooms.filter((r) => b.takes.includes(r.dept as Dept)).length / mean(b))), 0);
   const each = pool.length > 0 ? Math.ceil(pool.length / Math.max(1, hosts0)) + 1 : 0;

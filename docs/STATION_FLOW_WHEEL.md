@@ -416,6 +416,13 @@ block), and as a pod on a port that is left. 16 of 16 assemble (two seeds on the
 1,380 to 1,515 floor tiles against 1,640 to 1,920 with cabin blocks and about 1,200 for the old Tree. The departments
 read as the masses and the cabins as infill; green is still the commonest colour, because the beds are half the rooms.
 
+Fifth pass: barracks. The user: assume a double bunk will be added; bed numbers were arbitrary anyway. A recipe's
+`quarters: { barracks: [6, 8], singles: 3 }` turns the program's beds into shared rooms of six to eight beds (double
+bunks, a bed's footprint each, in two rows with an aisle: 3 or 4 by 5 tiles) and keeps three as private cabins that
+are scattered. The bed count is unchanged and still checked. 16 of 16 assemble, no wall block, hull check passes,
+1,120 to 1,250 floor tiles (old Tree: about 1,200), and the departments are of a size with each other. Not yet real:
+there is no double bunk module in the content, so these rooms cannot be furnished as drawn until there is.
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable

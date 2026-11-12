@@ -25,11 +25,11 @@ const cluster = (name: string, o: { rooms: [number, number]; rowDepth?: number; 
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
  * block first, the machinery as one gated module. `mix` false keeps a module to one department.
  */
-const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; scatter?: boolean }): Recipe => ({
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters'] }): Recipe => ({
   name,
   root: { kind: 'core' },
   spacing: o.spacing,
-  ...(o.scatter ? { cabins: 'scatter' as const } : {}),
+  ...(o.quarters ? { quarters: o.quarters } : {}),
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
     o.mix
@@ -73,10 +73,10 @@ const compound = (name: string, o: {
 
 export const stationRecipes = {
   tree: [
-    scrap('scattered cabins: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, scatter: true }),
-    scrap('scattered cabins: mixed modules on stubs', { rooms: [2, 4], stub: [2, 3], spacing: 2, mix: true, scatter: true }),
-    scrap('scattered cabins: modules joined directly', { rooms: [2, 4], stub: [0, 0], spacing: 0, mix: false, scatter: true }),
-    scrap('cabin blocks (before): mixed modules on stubs', { rooms: [2, 4], stub: [2, 3], spacing: 2, mix: true }),
+    scrap('barracks: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
+    scrap('barracks: mixed modules on stubs', { rooms: [2, 4], stub: [2, 3], spacing: 2, mix: true, quarters: { barracks: [6, 8], singles: 3 } }),
+    scrap('barracks: modules joined directly', { rooms: [2, 4], stub: [0, 0], spacing: 0, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
+    scrap('scattered cabins (before): one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: 'scatter' }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
