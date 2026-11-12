@@ -63,7 +63,7 @@ def hatch(k, pz, turn):
     sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,               # the striped rim on the floor
             lambda i: "hazY" if (i // 2) % 2 else "hazK")
     if pz < -0.01:                                                           # the shaft's dark bottom
-        sectors(k, lambda a: W.RP, r_hole, -W.D - 0.05, -W.D - 0.04, lambda i: "dark")
+        sectors(k, lambda a: W.RP, r_hole, -1.75, -1.74, lambda i: "dark")    # (deep: the cradle drops away in it)
     sectors(k, lambda a: W.RP, r_hole, pz - 0.03, pz, lambda i: "steel")    # the platform
     c = at(HC, ST)
     k.cyl(c[0], c[1], pz, 0.36, 0.008, "steelD", sides=28)                 # its turntable, a bar across to show it turn
@@ -151,8 +151,9 @@ def frame_n(n):
                 s = bed
         elif sl[0] == "cradle":
             s = bed
-        else:
-            s = frame(ST, W.Z0, r=sl[1])
+        else:                                       # on the shuttle: held by its foot while the cradle drops away
+            s = frame(ST, W.Z0, r=HC if sl[0] == "hold" else sl[1])
+            s.box(k, -0.12, 0.0, -0.42, 0.42, -T - 0.06, 0.06, "steelD", face="hazY")
         cassette(k, s)
         return out + [s]
     return build
@@ -161,7 +162,19 @@ def frame_n(n):
 # in-betweens for the two steps that jumped most (the turn, the run-in): hx0-hx5, slotted into the GIF after hb15-hb20
 KEYS_X = [(0, -0.46, -22, ("cradle",)), (0, -0.46, -65, ("cradle",)), (0, -0.46, -108, ("cradle",)),
           (0, -0.46, -130, ("in", 1.575)), (0, -0.46, -130, ("in", 1.365)), (0, -0.46, -130, ("in", 1.155))]
+# round 23: the cradle is on the slab's back, and a slab in the wheel faces out, so after the turn the cradle stood in
+# the slab's way in. Now a shuttle takes the slab by its foot, the platform sinks on with the cradle down the shaft out
+# of its way, the slab runs in over it, and the platform rises from the bottom turning back. These replace hb19-hb23
+# and hx3-hx5: hs0-hs1 (the cradle drops), hr0-hr5 (the run-in), hu0-hu2 (the rise), then back to hb00.
+DEEP = -1.6
+KEYS_S = [(0, -1.0, -130, ("hold",)), (0, DEEP, -130, ("hold",))] + \
+    [(0, DEEP, -130, ("in", r)) for r in (1.575, 1.47, 1.365, 1.26, 1.155, 1.05)] + \
+    [(0, -1.2, -98, "home"), (0, -0.8, -65, "home"), (0, -0.4, -33, "home")]
+NAMES_S = ["hs0", "hs1"] + [f"hr{j}" for j in range(6)] + [f"hu{j}" for j in range(3)]
 KEYS += KEYS_X
+n0 = len(KEYS)
+KEYS += KEYS_S
 DESIGNS = {f"hb{i:02d}": (frame_n(i), (3, 3)) for i in range(24)}
 DESIGNS.update({f"hx{j}": (frame_n(24 + j), (3, 3)) for j in range(len(KEYS_X))})
+DESIGNS.update({nm: (frame_n(n0 + j), (3, 3)) for j, nm in enumerate(NAMES_S)})
 PIT = {v: r_hole for v in DESIGNS}
