@@ -38,15 +38,15 @@ export function standTiles(sim: Sim, module: number): { x: number; y: number }[]
 }
 
 /**
- * Which stand tile of a social spot (the game table) crew member `id` sits on right now, or -1: they are resting on a break at it, settled on the tile.
- * The art seats players on its stools (render/crewView.ts) when the spot has a `leisure.seat`, which also names the crew clip (SEAT_CLIP);
- * a spot without one (the arcade) is played standing.
+ * Which stand tile of a leisure spot crew member `id` is playing at right now, or null: they are resting on a break at it, on the tile.
+ * The art faces them at the module and plays the work clip (render/crewView.ts); `seat` is set when the spot seats its players
+ * (the game table's stools, `leisure.seat`, which also names the crew clip via SEAT_CLIP), unset for one played standing (the arcade).
  */
-export function seatIndex(world: World, modules: Readonly<Record<string, ModuleDef>>, id: number, x: number, y: number): { m: Module; def: ModuleDef; index: number; seat: SeatKind } | null {
+export function playSpot(world: World, modules: Readonly<Record<string, ModuleDef>>, id: number, x: number, y: number): { m: Module; def: ModuleDef; index: number; seat?: SeatKind } | null {
   const t = world.get(id, TaskC);
   const m = t?.machine === 'leisure' && t.state === 'Relax' && t.bb.target ? world.get(t.bb.target, ModuleC) : undefined;
   const def = m && modules[m.def];
-  if (!m || !def?.leisure?.seat) return null;
+  if (!m || !def?.leisure) return null;
   const index = standTilesOf(m, def).findIndex((s) => s.x === x && s.y === y);
   return index < 0 ? null : { m, def, index, seat: def.leisure.seat };
 }

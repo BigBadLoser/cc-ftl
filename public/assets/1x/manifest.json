@@ -138,9 +138,9 @@
    "image": "sprites/crew.human.arm.L.cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.L.cyber.sit_idle.glow.png"
   },
-  "crew.human.arm.L.cyber.sit_stool": {
-   "image": "sprites/crew.human.arm.L.cyber.sit_stool.png",
-   "glow": "sprites/crew.human.arm.L.cyber.sit_stool.glow.png"
+  "crew.human.arm.L.cyber.sit_stool_work": {
+   "image": "sprites/crew.human.arm.L.cyber.sit_stool_work.png",
+   "glow": "sprites/crew.human.arm.L.cyber.sit_stool_work.glow.png"
   },
   "crew.human.arm.L.cyber.sit_work": {
    "image": "sprites/crew.human.arm.L.cyber.sit_work.png",
@@ -247,8 +247,8 @@
   "crew.human.arm.L.eva.sit_idle": {
    "image": "sprites/crew.human.arm.L.eva.sit_idle.png"
   },
-  "crew.human.arm.L.eva.sit_stool": {
-   "image": "sprites/crew.human.arm.L.eva.sit_stool.png"
+  "crew.human.arm.L.eva.sit_stool_work": {
+   "image": "sprites/crew.human.arm.L.eva.sit_stool_work.png"
   },
   "crew.human.arm.L.eva.sit_work": {
    "image": "sprites/crew.human.arm.L.eva.sit_work.png"
@@ -369,9 +369,9 @@
    "image": "sprites/crew.human.arm.L.eva_cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.L.eva_cyber.sit_idle.glow.png"
   },
-  "crew.human.arm.L.eva_cyber.sit_stool": {
-   "image": "sprites/crew.human.arm.L.eva_cyber.sit_stool.png",
-   "glow": "sprites/crew.human.arm.L.eva_cyber.sit_stool.glow.png"
+  "crew.human.arm.L.eva_cyber.sit_stool_work": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.sit_stool_work.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.sit_stool_work.glow.png"
   },
   "crew.human.arm.L.eva_cyber.sit_work": {
    "image": "sprites/crew.human.arm.L.eva_cyber.sit_work.png",
@@ -475,8 +475,8 @@
   "crew.human.arm.L.flesh.sit_idle": {
    "image": "sprites/crew.human.arm.L.flesh.sit_idle.png"
   },
-  "crew.human.arm.L.flesh.sit_stool": {
-   "image": "sprites/crew.human.arm.L.flesh.sit_stool.png"
+  "crew.human.arm.L.flesh.sit_stool_work": {
+   "image": "sprites/crew.human.arm.L.flesh.sit_stool_work.png"
   },
   "crew.human.arm.L.flesh.sit_work": {
    "image": "sprites/crew.human.arm.L.flesh.sit_work.png"
@@ -593,9 +593,9 @@
    "image": "sprites/crew.human.arm.R.cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.R.cyber.sit_idle.glow.png"
   },
-  "crew.human.arm.R.cyber.sit_stool": {
-   "image": "sprites/crew.human.arm.R.cyber.sit_stool.png",
-   "glow": "sprites/crew.human.arm.R.cyber.sit_stool.glow.png"
+  "crew.human.arm.R.cyber.sit_stool_work": {
+   "image": "sprites/crew.human.arm.R.cyber.sit_stool_work.png",
+   "glow": "sprites/crew.human.arm.R.cyber.sit_stool_work.glow.png"
   },
   "crew.human.arm.R.cyber.sit_work": {
    "image": "sprites/crew.human.arm.R.cyber.sit_work.png",
@@ -702,8 +702,8 @@
   "crew.human.arm.R.eva.sit_idle": {
    "image": "sprites/crew.human.arm.R.eva.sit_idle.png"
   },
-  "crew.human.arm.R.eva.sit_stool": {
-   "image": "sprites/crew.human.arm.R.eva.sit_stool.png"
+  "crew.human.arm.R.eva.sit_stool_work": {
+   "image": "sprites/crew.human.arm.R.eva.sit_stool_work.png"
   },
   "crew.human.arm.R.eva.sit_work": {
    "image": "sprites/crew.human.arm.R.eva.sit_work.png"
@@ -798,8 +798,8 @@
   "crew.human.arm.R.flesh.sit_idle": {
    "image": "sprites/crew.human.arm.R.flesh.sit_idle.png"
   },
-  "crew.human.arm.R.flesh.sit_stool": {
-   "image": "sprites/crew.human.arm.R.flesh.sit_stool.png"
+  "crew.human.arm.R.flesh.sit_stool_work": {
+   "image": "sprites/crew.human.arm.R.flesh.sit_stool_work.png"
   },
   "crew.human.arm.R.flesh.sit_work": {
    "image": "sprites/crew.human.arm.R.flesh.sit_work.png"
@@ -897,8 +897,8 @@
   "crew.human.body.sit_idle": {
    "image": "sprites/crew.human.body.sit_idle.png"
   },
-  "crew.human.body.sit_stool": {
-   "image": "sprites/crew.human.body.sit_stool.png"
+  "crew.human.body.sit_stool_work": {
+   "image": "sprites/crew.human.body.sit_stool_work.png"
   },
   "crew.human.body.sit_work": {
    "image": "sprites/crew.human.body.sit_work.png"
@@ -993,8 +993,8 @@
   "crew.human.eyes.cyber.sit_idle": {
    "image": "sprites/crew.human.eyes.cyber.sit_idle.png"
   },
-  "crew.human.eyes.cyber.sit_stool": {
-   "image": "sprites/crew.human.eyes.cyber.sit_stool.png"
+  "crew.human.eyes.cyber.sit_stool_work": {
+   "image": "sprites/crew.human.eyes.cyber.sit_stool_work.png"
   },
   "crew.human.eyes.cyber.sit_work": {
    "image": "sprites/crew.human.eyes.cyber.sit_work.png"
@@ -1089,8 +1089,8 @@
   "crew.human.eyes.organic.sit_idle": {
    "image": "sprites/crew.human.eyes.organic.sit_idle.png"
   },
-  "crew.human.eyes.organic.sit_stool": {
-   "image": "sprites/crew.human.eyes.organic.sit_stool.png"
+  "crew.human.eyes.organic.sit_stool_work": {
+   "image": "sprites/crew.human.eyes.organic.sit_stool_work.png"
   },
   "crew.human.eyes.organic.sit_work": {
    "image": "sprites/crew.human.eyes.organic.sit_work.png"
@@ -1595,8 +1595,8 @@
   "crew.human.gear.belt.tool_belt.sit_idle": {
    "image": "sprites/crew.human.gear.belt.tool_belt.sit_idle.png"
   },
-  "crew.human.gear.belt.tool_belt.sit_stool": {
-   "image": "sprites/crew.human.gear.belt.tool_belt.sit_stool.png"
+  "crew.human.gear.belt.tool_belt.sit_stool_work": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.sit_stool_work.png"
   },
   "crew.human.gear.belt.tool_belt.sit_work": {
    "image": "sprites/crew.human.gear.belt.tool_belt.sit_work.png"
@@ -1634,8 +1634,8 @@
   "crew.human.gear.hand.blade.sit_idle": {
    "image": "sprites/crew.human.gear.hand.blade.sit_idle.png"
   },
-  "crew.human.gear.hand.blade.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.blade.sit_stool.png"
+  "crew.human.gear.hand.blade.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.blade.sit_stool_work.png"
   },
   "crew.human.gear.hand.blade.sit_work": {
    "image": "sprites/crew.human.gear.hand.blade.sit_work.png"
@@ -1649,8 +1649,8 @@
   "crew.human.gear.hand.breach_axe.sit_idle": {
    "image": "sprites/crew.human.gear.hand.breach_axe.sit_idle.png"
   },
-  "crew.human.gear.hand.breach_axe.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.breach_axe.sit_stool.png"
+  "crew.human.gear.hand.breach_axe.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.breach_axe.sit_stool_work.png"
   },
   "crew.human.gear.hand.breach_axe.sit_work": {
    "image": "sprites/crew.human.gear.hand.breach_axe.sit_work.png"
@@ -1674,9 +1674,9 @@
    "image": "sprites/crew.human.gear.hand.flamethrower.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.flamethrower.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.flamethrower.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.flamethrower.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.flamethrower.sit_stool.glow.png"
+  "crew.human.gear.hand.flamethrower.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.flamethrower.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.flamethrower.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.flamethrower.sit_work": {
    "image": "sprites/crew.human.gear.hand.flamethrower.sit_work.png",
@@ -1698,8 +1698,8 @@
   "crew.human.gear.hand.heavy_repeater.sit_idle": {
    "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_idle.png"
   },
-  "crew.human.gear.hand.heavy_repeater.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_stool.png"
+  "crew.human.gear.hand.heavy_repeater.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_stool_work.png"
   },
   "crew.human.gear.hand.heavy_repeater.sit_work": {
    "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_work.png"
@@ -1735,9 +1735,9 @@
    "image": "sprites/crew.human.gear.hand.ion_pistol.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.ion_pistol.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.ion_pistol.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.ion_pistol.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.ion_pistol.sit_stool.glow.png"
+  "crew.human.gear.hand.ion_pistol.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.ion_pistol.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.ion_pistol.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.ion_pistol.sit_work": {
    "image": "sprites/crew.human.gear.hand.ion_pistol.sit_work.png",
@@ -1775,9 +1775,9 @@
    "image": "sprites/crew.human.gear.hand.laser_pistol.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.laser_pistol.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.laser_pistol.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.laser_pistol.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.laser_pistol.sit_stool.glow.png"
+  "crew.human.gear.hand.laser_pistol.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.laser_pistol.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.laser_pistol.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.laser_pistol.sit_work": {
    "image": "sprites/crew.human.gear.hand.laser_pistol.sit_work.png",
@@ -1815,9 +1815,9 @@
    "image": "sprites/crew.human.gear.hand.laser_rifle.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.laser_rifle.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.laser_rifle.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.laser_rifle.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.laser_rifle.sit_stool.glow.png"
+  "crew.human.gear.hand.laser_rifle.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.laser_rifle.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.laser_rifle.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.laser_rifle.sit_work": {
    "image": "sprites/crew.human.gear.hand.laser_rifle.sit_work.png",
@@ -1855,9 +1855,9 @@
    "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.plasma_cutter.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.plasma_cutter.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.plasma_cutter.sit_stool.glow.png"
+  "crew.human.gear.hand.plasma_cutter.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.plasma_cutter.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.plasma_cutter.sit_work": {
    "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_work.png",
@@ -1895,9 +1895,9 @@
    "image": "sprites/crew.human.gear.hand.rail_rifle.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.rail_rifle.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.rail_rifle.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.rail_rifle.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.rail_rifle.sit_stool.glow.png"
+  "crew.human.gear.hand.rail_rifle.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.rail_rifle.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.rail_rifle.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.rail_rifle.sit_work": {
    "image": "sprites/crew.human.gear.hand.rail_rifle.sit_work.png",
@@ -1928,8 +1928,8 @@
   "crew.human.gear.hand.rifle.sit_idle": {
    "image": "sprites/crew.human.gear.hand.rifle.sit_idle.png"
   },
-  "crew.human.gear.hand.rifle.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.rifle.sit_stool.png"
+  "crew.human.gear.hand.rifle.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.rifle.sit_stool_work.png"
   },
   "crew.human.gear.hand.rifle.sit_work": {
    "image": "sprites/crew.human.gear.hand.rifle.sit_work.png"
@@ -1949,9 +1949,9 @@
    "image": "sprites/crew.human.gear.hand.shock_baton.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.shock_baton.sit_idle.glow.png"
   },
-  "crew.human.gear.hand.shock_baton.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.shock_baton.sit_stool.png",
-   "glow": "sprites/crew.human.gear.hand.shock_baton.sit_stool.glow.png"
+  "crew.human.gear.hand.shock_baton.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.shock_baton.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.hand.shock_baton.sit_stool_work.glow.png"
   },
   "crew.human.gear.hand.shock_baton.sit_work": {
    "image": "sprites/crew.human.gear.hand.shock_baton.sit_work.png",
@@ -1982,8 +1982,8 @@
   "crew.human.gear.hand.shotgun.sit_idle": {
    "image": "sprites/crew.human.gear.hand.shotgun.sit_idle.png"
   },
-  "crew.human.gear.hand.shotgun.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.shotgun.sit_stool.png"
+  "crew.human.gear.hand.shotgun.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.shotgun.sit_stool_work.png"
   },
   "crew.human.gear.hand.shotgun.sit_work": {
    "image": "sprites/crew.human.gear.hand.shotgun.sit_work.png"
@@ -2012,8 +2012,8 @@
   "crew.human.gear.hand.sidearm.sit_idle": {
    "image": "sprites/crew.human.gear.hand.sidearm.sit_idle.png"
   },
-  "crew.human.gear.hand.sidearm.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.sidearm.sit_stool.png"
+  "crew.human.gear.hand.sidearm.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.sidearm.sit_stool_work.png"
   },
   "crew.human.gear.hand.sidearm.sit_work": {
    "image": "sprites/crew.human.gear.hand.sidearm.sit_work.png"
@@ -2042,8 +2042,8 @@
   "crew.human.gear.hand.smg.sit_idle": {
    "image": "sprites/crew.human.gear.hand.smg.sit_idle.png"
   },
-  "crew.human.gear.hand.smg.sit_stool": {
-   "image": "sprites/crew.human.gear.hand.smg.sit_stool.png"
+  "crew.human.gear.hand.smg.sit_stool_work": {
+   "image": "sprites/crew.human.gear.hand.smg.sit_stool_work.png"
   },
   "crew.human.gear.hand.smg.sit_work": {
    "image": "sprites/crew.human.gear.hand.smg.sit_work.png"
@@ -2120,8 +2120,8 @@
   "crew.human.gear.head.eva_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.eva_helmet.sit_idle.png"
   },
-  "crew.human.gear.head.eva_helmet.sit_stool": {
-   "image": "sprites/crew.human.gear.head.eva_helmet.sit_stool.png"
+  "crew.human.gear.head.eva_helmet.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.sit_stool_work.png"
   },
   "crew.human.gear.head.eva_helmet.sit_work": {
    "image": "sprites/crew.human.gear.head.eva_helmet.sit_work.png"
@@ -2216,8 +2216,8 @@
   "crew.human.gear.head.headset.sit_idle": {
    "image": "sprites/crew.human.gear.head.headset.sit_idle.png"
   },
-  "crew.human.gear.head.headset.sit_stool": {
-   "image": "sprites/crew.human.gear.head.headset.sit_stool.png"
+  "crew.human.gear.head.headset.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.headset.sit_stool_work.png"
   },
   "crew.human.gear.head.headset.sit_work": {
    "image": "sprites/crew.human.gear.head.headset.sit_work.png"
@@ -2312,8 +2312,8 @@
   "crew.human.gear.head.heavy_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.heavy_helmet.sit_idle.png"
   },
-  "crew.human.gear.head.heavy_helmet.sit_stool": {
-   "image": "sprites/crew.human.gear.head.heavy_helmet.sit_stool.png"
+  "crew.human.gear.head.heavy_helmet.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.heavy_helmet.sit_stool_work.png"
   },
   "crew.human.gear.head.heavy_helmet.sit_work": {
    "image": "sprites/crew.human.gear.head.heavy_helmet.sit_work.png"
@@ -2408,8 +2408,8 @@
   "crew.human.gear.head.tactical_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.tactical_helmet.sit_idle.png"
   },
-  "crew.human.gear.head.tactical_helmet.sit_stool": {
-   "image": "sprites/crew.human.gear.head.tactical_helmet.sit_stool.png"
+  "crew.human.gear.head.tactical_helmet.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.sit_stool_work.png"
   },
   "crew.human.gear.head.tactical_helmet.sit_work": {
    "image": "sprites/crew.human.gear.head.tactical_helmet.sit_work.png"
@@ -2504,8 +2504,8 @@
   "crew.human.gear.head.visor_cap.sit_idle": {
    "image": "sprites/crew.human.gear.head.visor_cap.sit_idle.png"
   },
-  "crew.human.gear.head.visor_cap.sit_stool": {
-   "image": "sprites/crew.human.gear.head.visor_cap.sit_stool.png"
+  "crew.human.gear.head.visor_cap.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.visor_cap.sit_stool_work.png"
   },
   "crew.human.gear.head.visor_cap.sit_work": {
    "image": "sprites/crew.human.gear.head.visor_cap.sit_work.png"
@@ -2600,8 +2600,8 @@
   "crew.human.gear.head.welding_goggles.sit_idle": {
    "image": "sprites/crew.human.gear.head.welding_goggles.sit_idle.png"
   },
-  "crew.human.gear.head.welding_goggles.sit_stool": {
-   "image": "sprites/crew.human.gear.head.welding_goggles.sit_stool.png"
+  "crew.human.gear.head.welding_goggles.sit_stool_work": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.sit_stool_work.png"
   },
   "crew.human.gear.head.welding_goggles.sit_work": {
    "image": "sprites/crew.human.gear.head.welding_goggles.sit_work.png"
@@ -2642,8 +2642,8 @@
   "crew.human.gear.holster.blade.sit_idle": {
    "image": "sprites/crew.human.gear.holster.blade.sit_idle.png"
   },
-  "crew.human.gear.holster.blade.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.blade.sit_stool.png"
+  "crew.human.gear.holster.blade.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.blade.sit_stool_work.png"
   },
   "crew.human.gear.holster.blade.sit_work": {
    "image": "sprites/crew.human.gear.holster.blade.sit_work.png"
@@ -2733,9 +2733,9 @@
    "image": "sprites/crew.human.gear.holster.ion_pistol.sit_idle.png",
    "glow": "sprites/crew.human.gear.holster.ion_pistol.sit_idle.glow.png"
   },
-  "crew.human.gear.holster.ion_pistol.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.ion_pistol.sit_stool.png",
-   "glow": "sprites/crew.human.gear.holster.ion_pistol.sit_stool.glow.png"
+  "crew.human.gear.holster.ion_pistol.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.ion_pistol.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.holster.ion_pistol.sit_stool_work.glow.png"
   },
   "crew.human.gear.holster.ion_pistol.sit_work": {
    "image": "sprites/crew.human.gear.holster.ion_pistol.sit_work.png",
@@ -2765,8 +2765,8 @@
   "crew.human.gear.holster.laser_pistol.sit_idle": {
    "image": "sprites/crew.human.gear.holster.laser_pistol.sit_idle.png"
   },
-  "crew.human.gear.holster.laser_pistol.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.laser_pistol.sit_stool.png"
+  "crew.human.gear.holster.laser_pistol.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.laser_pistol.sit_stool_work.png"
   },
   "crew.human.gear.holster.laser_pistol.sit_work": {
    "image": "sprites/crew.human.gear.holster.laser_pistol.sit_work.png"
@@ -2820,9 +2820,9 @@
    "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_idle.png",
    "glow": "sprites/crew.human.gear.holster.plasma_cutter.sit_idle.glow.png"
   },
-  "crew.human.gear.holster.plasma_cutter.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_stool.png",
-   "glow": "sprites/crew.human.gear.holster.plasma_cutter.sit_stool.glow.png"
+  "crew.human.gear.holster.plasma_cutter.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.holster.plasma_cutter.sit_stool_work.glow.png"
   },
   "crew.human.gear.holster.plasma_cutter.sit_work": {
    "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_work.png",
@@ -2898,9 +2898,9 @@
    "image": "sprites/crew.human.gear.holster.shock_baton.sit_idle.png",
    "glow": "sprites/crew.human.gear.holster.shock_baton.sit_idle.glow.png"
   },
-  "crew.human.gear.holster.shock_baton.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.shock_baton.sit_stool.png",
-   "glow": "sprites/crew.human.gear.holster.shock_baton.sit_stool.glow.png"
+  "crew.human.gear.holster.shock_baton.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.shock_baton.sit_stool_work.png",
+   "glow": "sprites/crew.human.gear.holster.shock_baton.sit_stool_work.glow.png"
   },
   "crew.human.gear.holster.shock_baton.sit_work": {
    "image": "sprites/crew.human.gear.holster.shock_baton.sit_work.png",
@@ -2948,8 +2948,8 @@
   "crew.human.gear.holster.sidearm.sit_idle": {
    "image": "sprites/crew.human.gear.holster.sidearm.sit_idle.png"
   },
-  "crew.human.gear.holster.sidearm.sit_stool": {
-   "image": "sprites/crew.human.gear.holster.sidearm.sit_stool.png"
+  "crew.human.gear.holster.sidearm.sit_stool_work": {
+   "image": "sprites/crew.human.gear.holster.sidearm.sit_stool_work.png"
   },
   "crew.human.gear.holster.sidearm.sit_work": {
    "image": "sprites/crew.human.gear.holster.sidearm.sit_work.png"
@@ -3047,8 +3047,8 @@
   "crew.human.gear.shoulder.pads.sit_idle": {
    "image": "sprites/crew.human.gear.shoulder.pads.sit_idle.png"
   },
-  "crew.human.gear.shoulder.pads.sit_stool": {
-   "image": "sprites/crew.human.gear.shoulder.pads.sit_stool.png"
+  "crew.human.gear.shoulder.pads.sit_stool_work": {
+   "image": "sprites/crew.human.gear.shoulder.pads.sit_stool_work.png"
   },
   "crew.human.gear.shoulder.pads.sit_work": {
    "image": "sprites/crew.human.gear.shoulder.pads.sit_work.png"
@@ -3143,8 +3143,8 @@
   "crew.human.hair.bun.sit_idle": {
    "image": "sprites/crew.human.hair.bun.sit_idle.png"
   },
-  "crew.human.hair.bun.sit_stool": {
-   "image": "sprites/crew.human.hair.bun.sit_stool.png"
+  "crew.human.hair.bun.sit_stool_work": {
+   "image": "sprites/crew.human.hair.bun.sit_stool_work.png"
   },
   "crew.human.hair.bun.sit_work": {
    "image": "sprites/crew.human.hair.bun.sit_work.png"
@@ -3239,8 +3239,8 @@
   "crew.human.hair.long.sit_idle": {
    "image": "sprites/crew.human.hair.long.sit_idle.png"
   },
-  "crew.human.hair.long.sit_stool": {
-   "image": "sprites/crew.human.hair.long.sit_stool.png"
+  "crew.human.hair.long.sit_stool_work": {
+   "image": "sprites/crew.human.hair.long.sit_stool_work.png"
   },
   "crew.human.hair.long.sit_work": {
    "image": "sprites/crew.human.hair.long.sit_work.png"
@@ -3335,8 +3335,8 @@
   "crew.human.hair.mohawk.sit_idle": {
    "image": "sprites/crew.human.hair.mohawk.sit_idle.png"
   },
-  "crew.human.hair.mohawk.sit_stool": {
-   "image": "sprites/crew.human.hair.mohawk.sit_stool.png"
+  "crew.human.hair.mohawk.sit_stool_work": {
+   "image": "sprites/crew.human.hair.mohawk.sit_stool_work.png"
   },
   "crew.human.hair.mohawk.sit_work": {
    "image": "sprites/crew.human.hair.mohawk.sit_work.png"
@@ -3431,8 +3431,8 @@
   "crew.human.hair.ponytail.sit_idle": {
    "image": "sprites/crew.human.hair.ponytail.sit_idle.png"
   },
-  "crew.human.hair.ponytail.sit_stool": {
-   "image": "sprites/crew.human.hair.ponytail.sit_stool.png"
+  "crew.human.hair.ponytail.sit_stool_work": {
+   "image": "sprites/crew.human.hair.ponytail.sit_stool_work.png"
   },
   "crew.human.hair.ponytail.sit_work": {
    "image": "sprites/crew.human.hair.ponytail.sit_work.png"
@@ -3527,8 +3527,8 @@
   "crew.human.hair.shaved.sit_idle": {
    "image": "sprites/crew.human.hair.shaved.sit_idle.png"
   },
-  "crew.human.hair.shaved.sit_stool": {
-   "image": "sprites/crew.human.hair.shaved.sit_stool.png"
+  "crew.human.hair.shaved.sit_stool_work": {
+   "image": "sprites/crew.human.hair.shaved.sit_stool_work.png"
   },
   "crew.human.hair.shaved.sit_work": {
    "image": "sprites/crew.human.hair.shaved.sit_work.png"
@@ -3623,8 +3623,8 @@
   "crew.human.hair.short.sit_idle": {
    "image": "sprites/crew.human.hair.short.sit_idle.png"
   },
-  "crew.human.hair.short.sit_stool": {
-   "image": "sprites/crew.human.hair.short.sit_stool.png"
+  "crew.human.hair.short.sit_stool_work": {
+   "image": "sprites/crew.human.hair.short.sit_stool_work.png"
   },
   "crew.human.hair.short.sit_work": {
    "image": "sprites/crew.human.hair.short.sit_work.png"
@@ -3741,9 +3741,9 @@
    "image": "sprites/crew.human.implant.temple.neural_jack.sit_idle.png",
    "glow": "sprites/crew.human.implant.temple.neural_jack.sit_idle.glow.png"
   },
-  "crew.human.implant.temple.neural_jack.sit_stool": {
-   "image": "sprites/crew.human.implant.temple.neural_jack.sit_stool.png",
-   "glow": "sprites/crew.human.implant.temple.neural_jack.sit_stool.glow.png"
+  "crew.human.implant.temple.neural_jack.sit_stool_work": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.sit_stool_work.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.sit_stool_work.glow.png"
   },
   "crew.human.implant.temple.neural_jack.sit_work": {
    "image": "sprites/crew.human.implant.temple.neural_jack.sit_work.png",
@@ -3847,8 +3847,8 @@
   "crew.human.legs.cargo_pants.sit_idle": {
    "image": "sprites/crew.human.legs.cargo_pants.sit_idle.png"
   },
-  "crew.human.legs.cargo_pants.sit_stool": {
-   "image": "sprites/crew.human.legs.cargo_pants.sit_stool.png"
+  "crew.human.legs.cargo_pants.sit_stool_work": {
+   "image": "sprites/crew.human.legs.cargo_pants.sit_stool_work.png"
   },
   "crew.human.legs.cargo_pants.sit_work": {
    "image": "sprites/crew.human.legs.cargo_pants.sit_work.png"
@@ -3946,8 +3946,8 @@
   "crew.human.legs.eva.sit_idle": {
    "image": "sprites/crew.human.legs.eva.sit_idle.png"
   },
-  "crew.human.legs.eva.sit_stool": {
-   "image": "sprites/crew.human.legs.eva.sit_stool.png"
+  "crew.human.legs.eva.sit_stool_work": {
+   "image": "sprites/crew.human.legs.eva.sit_stool_work.png"
   },
   "crew.human.legs.eva.sit_work": {
    "image": "sprites/crew.human.legs.eva.sit_work.png"
@@ -4042,8 +4042,8 @@
   "crew.human.torso.armor_heavy.sit_idle": {
    "image": "sprites/crew.human.torso.armor_heavy.sit_idle.png"
   },
-  "crew.human.torso.armor_heavy.sit_stool": {
-   "image": "sprites/crew.human.torso.armor_heavy.sit_stool.png"
+  "crew.human.torso.armor_heavy.sit_stool_work": {
+   "image": "sprites/crew.human.torso.armor_heavy.sit_stool_work.png"
   },
   "crew.human.torso.armor_heavy.sit_work": {
    "image": "sprites/crew.human.torso.armor_heavy.sit_work.png"
@@ -4138,8 +4138,8 @@
   "crew.human.torso.armor_vest.sit_idle": {
    "image": "sprites/crew.human.torso.armor_vest.sit_idle.png"
   },
-  "crew.human.torso.armor_vest.sit_stool": {
-   "image": "sprites/crew.human.torso.armor_vest.sit_stool.png"
+  "crew.human.torso.armor_vest.sit_stool_work": {
+   "image": "sprites/crew.human.torso.armor_vest.sit_stool_work.png"
   },
   "crew.human.torso.armor_vest.sit_work": {
    "image": "sprites/crew.human.torso.armor_vest.sit_work.png"
@@ -4237,8 +4237,8 @@
   "crew.human.torso.eva.sit_idle": {
    "image": "sprites/crew.human.torso.eva.sit_idle.png"
   },
-  "crew.human.torso.eva.sit_stool": {
-   "image": "sprites/crew.human.torso.eva.sit_stool.png"
+  "crew.human.torso.eva.sit_stool_work": {
+   "image": "sprites/crew.human.torso.eva.sit_stool_work.png"
   },
   "crew.human.torso.eva.sit_work": {
    "image": "sprites/crew.human.torso.eva.sit_work.png"
@@ -4333,8 +4333,8 @@
   "crew.human.torso.flight_vest.sit_idle": {
    "image": "sprites/crew.human.torso.flight_vest.sit_idle.png"
   },
-  "crew.human.torso.flight_vest.sit_stool": {
-   "image": "sprites/crew.human.torso.flight_vest.sit_stool.png"
+  "crew.human.torso.flight_vest.sit_stool_work": {
+   "image": "sprites/crew.human.torso.flight_vest.sit_stool_work.png"
   },
   "crew.human.torso.flight_vest.sit_work": {
    "image": "sprites/crew.human.torso.flight_vest.sit_work.png"
@@ -4429,8 +4429,8 @@
   "crew.human.torso.harness.sit_idle": {
    "image": "sprites/crew.human.torso.harness.sit_idle.png"
   },
-  "crew.human.torso.harness.sit_stool": {
-   "image": "sprites/crew.human.torso.harness.sit_stool.png"
+  "crew.human.torso.harness.sit_stool_work": {
+   "image": "sprites/crew.human.torso.harness.sit_stool_work.png"
   },
   "crew.human.torso.harness.sit_work": {
    "image": "sprites/crew.human.torso.harness.sit_work.png"
@@ -4525,8 +4525,8 @@
   "crew.human.torso.medic_vest.sit_idle": {
    "image": "sprites/crew.human.torso.medic_vest.sit_idle.png"
   },
-  "crew.human.torso.medic_vest.sit_stool": {
-   "image": "sprites/crew.human.torso.medic_vest.sit_stool.png"
+  "crew.human.torso.medic_vest.sit_stool_work": {
+   "image": "sprites/crew.human.torso.medic_vest.sit_stool_work.png"
   },
   "crew.human.torso.medic_vest.sit_work": {
    "image": "sprites/crew.human.torso.medic_vest.sit_work.png"
@@ -4621,8 +4621,8 @@
   "crew.human.torso.tee.sit_idle": {
    "image": "sprites/crew.human.torso.tee.sit_idle.png"
   },
-  "crew.human.torso.tee.sit_stool": {
-   "image": "sprites/crew.human.torso.tee.sit_stool.png"
+  "crew.human.torso.tee.sit_stool_work": {
+   "image": "sprites/crew.human.torso.tee.sit_stool_work.png"
   },
   "crew.human.torso.tee.sit_work": {
    "image": "sprites/crew.human.torso.tee.sit_work.png"
@@ -4717,8 +4717,8 @@
   "crew.human.torso.work_shirt.sit_idle": {
    "image": "sprites/crew.human.torso.work_shirt.sit_idle.png"
   },
-  "crew.human.torso.work_shirt.sit_stool": {
-   "image": "sprites/crew.human.torso.work_shirt.sit_stool.png"
+  "crew.human.torso.work_shirt.sit_stool_work": {
+   "image": "sprites/crew.human.torso.work_shirt.sit_stool_work.png"
   },
   "crew.human.torso.work_shirt.sit_work": {
    "image": "sprites/crew.human.torso.work_shirt.sit_work.png"
@@ -13865,15 +13865,15 @@
      "ox": 35,
      "oy": 51
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.L.cyber.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.L.cyber.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
-     "ch": 35,
-     "ox": 38,
+     "cw": 58,
+     "ch": 36,
+     "ox": 35,
      "oy": 51
     },
     "aim_1h": {
@@ -14243,15 +14243,15 @@
      "ox": 36,
      "oy": 33
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.L.eva.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.L.eva.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
+     "cw": 58,
      "ch": 36,
-     "ox": 38,
+     "ox": 35,
      "oy": 50
     },
     "aim_1h": {
@@ -14620,15 +14620,15 @@
      "ox": 36,
      "oy": 33
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.L.eva_cyber.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.L.eva_cyber.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
-     "ch": 36,
-     "ox": 38,
+     "cw": 58,
+     "ch": 37,
+     "ox": 35,
      "oy": 50
     },
     "aim_1h": {
@@ -14987,15 +14987,15 @@
      "ox": 36,
      "oy": 52
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.L.flesh.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.L.flesh.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 50,
+     "cw": 56,
      "ch": 33,
-     "ox": 39,
+     "ox": 36,
      "oy": 52
     },
     "aim_1h": {
@@ -15353,15 +15353,15 @@
      "ox": 40,
      "oy": 51
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.R.cyber.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.R.cyber.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 42,
-     "ch": 33,
-     "ox": 43,
+     "cw": 48,
+     "ch": 31,
+     "ox": 40,
      "oy": 51
     },
     "aim_1h": {
@@ -15731,16 +15731,16 @@
      "ox": 41,
      "oy": 32
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.R.eva.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.R.eva.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 42,
-     "ch": 31,
-     "ox": 43,
-     "oy": 52
+     "cw": 48,
+     "ch": 30,
+     "ox": 40,
+     "oy": 51
     },
     "aim_1h": {
      "sheet": "crew.human.arm.R.eva.aim_1h",
@@ -16097,15 +16097,15 @@
      "ox": 41,
      "oy": 52
     },
-    "sit_stool": {
-     "sheet": "crew.human.arm.R.flesh.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.arm.R.flesh.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 40,
-     "ch": 31,
-     "ox": 44,
+     "cw": 46,
+     "ch": 28,
+     "ox": 41,
      "oy": 52
     },
     "aim_1h": {
@@ -16474,15 +16474,15 @@
      "ox": 36,
      "oy": 22
     },
-    "sit_stool": {
-     "sheet": "crew.human.body.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.body.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 44,
-     "ch": 65,
-     "ox": 42,
+     "cw": 42,
+     "ch": 64,
+     "ox": 43,
      "oy": 39
     },
     "aim_1h": {
@@ -16840,15 +16840,15 @@
      "ox": 52,
      "oy": 44
     },
-    "sit_stool": {
-     "sheet": "crew.human.eyes.cyber.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.eyes.cyber.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 22,
+     "cw": 24,
      "ch": 15,
-     "ox": 53,
+     "ox": 52,
      "oy": 44
     },
     "aim_1h": {
@@ -17206,15 +17206,15 @@
      "ox": 52,
      "oy": 44
     },
-    "sit_stool": {
-     "sheet": "crew.human.eyes.organic.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.eyes.organic.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 22,
+     "cw": 24,
      "ch": 15,
-     "ox": 53,
+     "ox": 52,
      "oy": 44
     },
     "aim_1h": {
@@ -18917,16 +18917,16 @@
      "ox": 55,
      "oy": 69
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.belt.tool_belt.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.belt.tool_belt.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 20,
-     "ch": 12,
-     "ox": 54,
-     "oy": 68
+     "cw": 18,
+     "ch": 14,
+     "ox": 55,
+     "oy": 69
     },
     "aim_1h": {
      "sheet": "crew.human.gear.belt.tool_belt.aim_1h",
@@ -19595,159 +19595,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.blade.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.blade.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 44,
-     "ch": 34,
-     "ox": 42,
-     "oy": 45,
+     "cw": 46,
+     "ch": 40,
+     "ox": 41,
+     "oy": 41,
      "muzzle": [
       [
        [
-        7.2,
-        -29.9
-       ],
-       [
-        8.4,
-        -28.9
+        8.9,
+        -30.7
        ],
        [
         7.9,
-        -28.6
+        -32.5
        ],
        [
-        6.8,
-        -29.5
+        7.9,
+        -32.5
+       ],
+       [
+        8.9,
+        -30.7
+       ],
+       [
+        9.7,
+        -29.0
+       ],
+       [
+        9.7,
+        -29.0
        ]
       ],
       [
        [
-        -7.8,
-        -30.0
+        -8.2,
+        -30.6
        ],
        [
-        -7.9,
-        -28.8
+        -8.6,
+        -32.6
+       ],
+       [
+        -8.6,
+        -32.6
+       ],
+       [
+        -8.2,
+        -30.6
        ],
        [
         -7.7,
-        -28.5
+        -28.6
        ],
        [
-        -7.6,
-        -29.6
+        -7.7,
+        -28.6
        ]
       ],
       [
        [
-        -18.2,
-        -35.4
+        -20.4,
+        -36.5
        ],
        [
-        -19.5,
+        -20.1,
+        -38.6
+       ],
+       [
+        -20.1,
+        -38.6
+       ],
+       [
+        -20.4,
+        -36.5
+       ],
+       [
+        -20.6,
         -34.5
        ],
        [
-        -18.8,
-        -34.0
-       ],
-       [
-        -17.6,
-        -34.8
+        -20.6,
+        -34.5
        ]
       ],
       [
        [
-        -18.0,
-        -42.9
+        -20.7,
+        -45.0
        ],
        [
         -19.8,
-        -42.6
+        -46.8
        ],
        [
-        -18.9,
-        -41.8
+        -19.8,
+        -46.8
        ],
        [
-        -17.2,
-        -42.1
+        -20.7,
+        -45.0
+       ],
+       [
+        -21.4,
+        -43.2
+       ],
+       [
+        -21.4,
+        -43.2
        ]
       ],
       [
        [
-        -7.2,
-        -48.1
-       ],
-       [
-        -8.4,
-        -48.4
+        -8.9,
+        -51.1
        ],
        [
         -7.9,
-        -47.4
+        -52.6
        ],
        [
-        -6.8,
-        -47.0
+        -7.9,
+        -52.6
+       ],
+       [
+        -8.9,
+        -51.1
+       ],
+       [
+        -9.7,
+        -49.6
+       ],
+       [
+        -9.7,
+        -49.6
        ]
       ],
       [
        [
-        7.8,
-        -48.0
+        8.2,
+        -51.3
        ],
        [
-        7.9,
-        -48.6
+        8.6,
+        -52.4
+       ],
+       [
+        8.6,
+        -52.4
+       ],
+       [
+        8.2,
+        -51.3
        ],
        [
         7.7,
-        -47.4
+        -50.0
        ],
        [
-        7.6,
-        -46.9
+        7.7,
+        -50.0
        ]
       ],
       [
        [
-        18.2,
-        -42.6
+        20.4,
+        -45.4
        ],
        [
-        19.5,
-        -42.9
+        20.1,
+        -46.5
        ],
        [
-        18.8,
-        -41.9
+        20.1,
+        -46.5
        ],
        [
-        17.6,
-        -41.7
+        20.4,
+        -45.4
+       ],
+       [
+        20.6,
+        -44.1
+       ],
+       [
+        20.6,
+        -44.1
        ]
       ],
       [
        [
-        18.0,
-        -35.1
+        20.7,
+        -36.8
        ],
        [
         19.8,
-        -34.7
+        -38.2
        ],
        [
-        18.9,
-        -34.1
+        19.8,
+        -38.2
        ],
        [
-        17.2,
-        -34.5
+        20.7,
+        -36.8
+       ],
+       [
+        21.4,
+        -35.4
+       ],
+       [
+        21.4,
+        -35.4
        ]
       ]
      ]
@@ -20519,159 +20583,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.breach_axe.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.breach_axe.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
-     "ch": 45,
-     "ox": 38,
-     "oy": 40,
+     "cw": 54,
+     "ch": 52,
+     "ox": 37,
+     "oy": 36,
      "muzzle": [
       [
        [
-        1.5,
-        -34.9
+        3.1,
+        -35.7
        ],
        [
-        2.6,
-        -34.5
+        1.7,
+        -37.2
        ],
        [
-        2.3,
-        -33.9
+        1.7,
+        -37.2
        ],
        [
-        1.2,
-        -34.3
+        3.1,
+        -35.7
+       ],
+       [
+        4.3,
+        -34.2
+       ],
+       [
+        4.3,
+        -34.2
        ]
       ],
       [
        [
-        -9.0,
-        -36.5
+        -9.4,
+        -37.0
+       ],
+       [
+        -9.8,
+        -38.9
+       ],
+       [
+        -9.8,
+        -38.9
+       ],
+       [
+        -9.4,
+        -37.0
        ],
        [
         -9.0,
-        -35.9
+        -35.2
        ],
        [
-        -8.9,
-        -35.3
-       ],
-       [
-        -8.9,
-        -35.9
+        -9.0,
+        -35.2
        ]
       ],
       [
        [
-        -14.2,
-        -41.3
+        -16.3,
+        -42.4
        ],
        [
-        -15.3,
-        -40.9
+        -15.5,
+        -44.1
        ],
        [
-        -14.9,
-        -40.2
+        -15.5,
+        -44.1
        ],
        [
-        -13.8,
+        -16.3,
+        -42.4
+       ],
+       [
+        -17.0,
+        -40.6
+       ],
+       [
+        -17.0,
         -40.6
        ]
       ],
       [
        [
-        -11.0,
-        -46.5
-       ],
-       [
-        -12.7,
-        -46.7
+        -13.7,
+        -48.6
        ],
        [
         -12.2,
-        -45.8
-       ],
-       [
-        -10.6,
-        -45.6
-       ]
-      ],
-      [
-       [
-        -1.5,
-        -49.1
-       ],
-       [
-        -2.6,
         -49.8
        ],
        [
-        -2.3,
-        -48.8
+        -12.2,
+        -49.8
        ],
        [
-        -1.2,
-        -48.1
+        -13.7,
+        -48.6
+       ],
+       [
+        -15.0,
+        -47.2
+       ],
+       [
+        -15.0,
+        -47.2
        ]
       ],
       [
+       [
+        -3.1,
+        -52.1
+       ],
+       [
+        -1.7,
+        -52.7
+       ],
+       [
+        -1.7,
+        -52.7
+       ],
+       [
+        -3.1,
+        -52.1
+       ],
+       [
+        -4.3,
+        -51.2
+       ],
+       [
+        -4.3,
+        -51.2
+       ]
+      ],
+      [
+       [
+        9.4,
+        -50.7
+       ],
+       [
+        9.8,
+        -51.0
+       ],
+       [
+        9.8,
+        -51.0
+       ],
+       [
+        9.4,
+        -50.7
+       ],
        [
         9.0,
-        -47.5
+        -50.2
        ],
        [
         9.0,
-        -48.5
-       ],
-       [
-        8.9,
-        -47.4
-       ],
-       [
-        8.9,
-        -46.5
+        -50.2
        ]
       ],
       [
        [
-        14.2,
-        -42.7
+        16.3,
+        -45.4
        ],
        [
-        15.3,
-        -43.5
+        15.5,
+        -45.8
        ],
        [
-        14.9,
-        -42.5
+        15.5,
+        -45.8
        ],
        [
-        13.8,
-        -41.8
+        16.3,
+        -45.4
+       ],
+       [
+        17.0,
+        -44.9
+       ],
+       [
+        17.0,
+        -44.9
        ]
       ],
       [
        [
-        11.0,
-        -37.5
-       ],
-       [
-        12.7,
-        -37.7
+        13.7,
+        -39.2
        ],
        [
         12.2,
-        -36.9
+        -40.0
        ],
        [
-        10.6,
-        -36.7
+        12.2,
+        -40.0
+       ],
+       [
+        13.7,
+        -39.2
+       ],
+       [
+        15.0,
+        -38.2
+       ],
+       [
+        15.0,
+        -38.2
        ]
       ]
      ]
@@ -21382,159 +21510,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.flamethrower.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.flamethrower.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 80,
-     "ch": 45,
-     "ox": 24,
-     "oy": 42,
+     "cw": 82,
+     "ch": 51,
+     "ox": 23,
+     "oy": 35,
      "muzzle": [
       [
        [
-        23.4,
-        -17.3
-       ],
-       [
-        24.6,
-        -14.8
-       ],
-       [
-        23.6,
-        -15.1
-       ],
-       [
-        22.4,
-        -17.5
-       ]
-      ],
-      [
-       [
-        -4.5,
-        -13.4
-       ],
-       [
-        -4.9,
-        -10.7
-       ],
-       [
-        -4.5,
-        -11.1
-       ],
-       [
-        -4.1,
-        -13.7
-       ]
-      ],
-      [
-       [
-        -29.7,
-        -20.5
-       ],
-       [
-        -31.5,
+        25.0,
         -18.2
        ],
        [
-        -30.0,
-        -18.3
+        25.0,
+        -21.0
        ],
        [
-        -28.2,
-        -20.4
+        25.0,
+        -21.0
+       ],
+       [
+        25.0,
+        -18.2
+       ],
+       [
+        24.7,
+        -15.7
+       ],
+       [
+        24.7,
+        -15.7
        ]
       ],
       [
        [
-        -37.6,
-        -34.4
+        -5.0,
+        -14.0
        ],
        [
-        -39.7,
-        -33.0
+        -5.6,
+        -17.0
        ],
        [
-        -37.9,
-        -32.3
+        -5.6,
+        -17.0
        ],
        [
-        -35.8,
-        -33.7
+        -5.0,
+        -14.0
+       ],
+       [
+        -4.5,
+        -11.5
+       ],
+       [
+        -4.5,
+        -11.5
        ]
       ],
       [
        [
-        -23.4,
-        -47.0
+        -32.1,
+        -21.7
        ],
        [
-        -24.6,
-        -46.3
+        -32.9,
+        -24.9
        ],
        [
-        -23.6,
-        -45.1
+        -32.9,
+        -24.9
        ],
        [
-        -22.4,
-        -45.7
+        -32.1,
+        -21.7
+       ],
+       [
+        -31.1,
+        -18.9
+       ],
+       [
+        -31.1,
+        -18.9
        ]
       ],
       [
+       [
+        -40.4,
+        -36.7
+       ],
+       [
+        -40.9,
+        -40.2
+       ],
+       [
+        -40.9,
+        -40.2
+       ],
+       [
+        -40.4,
+        -36.7
+       ],
+       [
+        -39.4,
+        -33.5
+       ],
+       [
+        -39.4,
+        -33.5
+       ]
+      ],
+      [
+       [
+        -25.0,
+        -50.3
+       ],
+       [
+        -25.0,
+        -53.9
+       ],
+       [
+        -25.0,
+        -53.9
+       ],
+       [
+        -25.0,
+        -50.3
+       ],
+       [
+        -24.7,
+        -46.8
+       ],
+       [
+        -24.7,
+        -46.8
+       ]
+      ],
+      [
+       [
+        5.0,
+        -54.4
+       ],
+       [
+        5.6,
+        -57.9
+       ],
+       [
+        5.6,
+        -57.9
+       ],
+       [
+        5.0,
+        -54.4
+       ],
        [
         4.5,
-        -50.9
-       ],
-       [
-        4.9,
-        -50.4
+        -51.0
        ],
        [
         4.5,
-        -49.0
-       ],
-       [
-        4.1,
-        -49.5
+        -51.0
        ]
       ],
       [
        [
-        29.7,
-        -43.8
+        32.1,
+        -46.7
        ],
        [
-        31.5,
-        -42.9
+        32.9,
+        -49.9
        ],
        [
-        30.0,
-        -41.9
+        32.9,
+        -49.9
        ],
        [
-        28.2,
-        -42.8
+        32.1,
+        -46.7
+       ],
+       [
+        31.1,
+        -43.6
+       ],
+       [
+        31.1,
+        -43.6
        ]
       ],
       [
        [
-        37.6,
-        -29.9
+        40.4,
+        -31.7
        ],
        [
-        39.7,
-        -28.1
+        40.9,
+        -34.7
        ],
        [
-        37.9,
-        -27.8
+        40.9,
+        -34.7
        ],
        [
-        35.8,
-        -29.6
+        40.4,
+        -31.7
+       ],
+       [
+        39.4,
+        -29.0
+       ],
+       [
+        39.4,
+        -29.0
        ]
       ]
      ]
@@ -22624,159 +22816,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.heavy_repeater.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.heavy_repeater.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 84,
-     "ch": 46,
-     "ox": 22,
-     "oy": 40,
+     "cw": 88,
+     "ch": 52,
+     "ox": 20,
+     "oy": 33,
      "muzzle": [
       [
        [
-        24.9,
-        -17.1
+        26.5,
+        -18.0
+       ],
+       [
+        26.5,
+        -21.0
+       ],
+       [
+        26.5,
+        -21.0
+       ],
+       [
+        26.5,
+        -18.0
        ],
        [
         26.2,
-        -14.5
+        -15.4
        ],
        [
-        25.2,
-        -14.8
-       ],
-       [
-        23.9,
-        -17.3
+        26.2,
+        -15.4
        ]
       ],
       [
+       [
+        -4.9,
+        -13.5
+       ],
+       [
+        -5.4,
+        -16.6
+       ],
+       [
+        -5.4,
+        -16.6
+       ],
+       [
+        -4.9,
+        -13.5
+       ],
        [
         -4.3,
-        -12.8
+        -10.8
        ],
        [
-        -4.7,
-        -10.0
-       ],
-       [
-        -4.2,
-        -10.5
-       ],
-       [
-        -3.9,
-        -13.2
+        -4.3,
+        -10.8
        ]
       ],
       [
        [
-        -30.9,
-        -20.1
+        -33.4,
+        -21.4
        ],
        [
-        -32.8,
-        -17.8
+        -34.2,
+        -24.8
        ],
        [
-        -31.2,
-        -17.8
+        -34.2,
+        -24.8
        ],
        [
-        -29.4,
-        -20.0
+        -33.4,
+        -21.4
+       ],
+       [
+        -32.3,
+        -18.4
+       ],
+       [
+        -32.3,
+        -18.4
        ]
       ],
       [
        [
-        -39.5,
-        -34.7
+        -42.3,
+        -37.1
        ],
        [
-        -41.8,
-        -33.2
+        -42.9,
+        -40.8
        ],
        [
-        -39.9,
-        -32.5
+        -42.9,
+        -40.8
        ],
        [
-        -37.7,
-        -33.9
+        -42.3,
+        -37.1
+       ],
+       [
+        -41.4,
+        -33.7
+       ],
+       [
+        -41.4,
+        -33.7
        ]
       ],
       [
        [
-        -24.9,
-        -48.0
+        -26.5,
+        -51.3
+       ],
+       [
+        -26.5,
+        -55.2
+       ],
+       [
+        -26.5,
+        -55.2
+       ],
+       [
+        -26.5,
+        -51.3
        ],
        [
         -26.2,
-        -47.3
+        -47.7
        ],
        [
-        -25.2,
-        -46.0
-       ],
-       [
-        -23.9,
-        -46.7
+        -26.2,
+        -47.7
        ]
       ],
       [
+       [
+        4.9,
+        -55.8
+       ],
+       [
+        5.4,
+        -59.5
+       ],
+       [
+        5.4,
+        -59.5
+       ],
+       [
+        4.9,
+        -55.8
+       ],
        [
         4.3,
-        -52.3
+        -52.2
        ],
        [
-        4.7,
-        -51.8
-       ],
-       [
-        4.2,
-        -50.3
-       ],
-       [
-        3.9,
-        -50.9
+        4.3,
+        -52.2
        ]
       ],
       [
        [
-        30.9,
-        -45.0
+        33.4,
+        -47.9
        ],
        [
-        32.8,
-        -44.0
+        34.2,
+        -51.3
        ],
        [
-        31.2,
-        -43.0
+        34.2,
+        -51.3
        ],
        [
-        29.4,
-        -44.0
+        33.4,
+        -47.9
+       ],
+       [
+        32.3,
+        -44.6
+       ],
+       [
+        32.3,
+        -44.6
        ]
       ],
       [
        [
-        39.5,
-        -30.4
+        42.3,
+        -32.2
        ],
        [
-        41.8,
-        -28.6
+        42.9,
+        -35.3
        ],
        [
-        39.9,
-        -28.3
+        42.9,
+        -35.3
        ],
        [
-        37.7,
-        -30.1
+        42.3,
+        -32.2
+       ],
+       [
+        41.4,
+        -29.4
+       ],
+       [
+        41.4,
+        -29.4
        ]
       ]
      ]
@@ -23865,159 +24121,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.ion_pistol.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.ion_pistol.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 58,
-     "ch": 34,
-     "ox": 35,
-     "oy": 49,
+     "cw": 62,
+     "ch": 38,
+     "ox": 33,
+     "oy": 43,
      "muzzle": [
       [
        [
-        15.6,
-        -18.3
+        17.6,
+        -19.4
        ],
        [
-        16.5,
-        -16.5
+        17.6,
+        -21.3
        ],
        [
-        15.7,
-        -16.8
+        17.6,
+        -21.3
        ],
        [
-        14.8,
-        -18.5
+        17.6,
+        -19.4
+       ],
+       [
+        17.3,
+        -17.7
+       ],
+       [
+        17.3,
+        -17.7
        ]
       ],
       [
        [
         -5.8,
-        -16.3
+        -16.9
        ],
        [
-        -6.1,
-        -14.3
+        -6.2,
+        -18.9
+       ],
+       [
+        -6.2,
+        -18.9
        ],
        [
         -5.8,
-        -14.7
+        -16.9
        ],
        [
-        -5.5,
-        -16.6
+        -5.4,
+        -15.2
+       ],
+       [
+        -5.4,
+        -15.2
        ]
       ],
       [
        [
-        -23.7,
-        -22.4
+        -25.7,
+        -23.5
        ],
        [
-        -25.0,
-        -20.8
+        -26.3,
+        -25.6
        ],
        [
-        -23.8,
-        -20.8
+        -26.3,
+        -25.6
        ],
        [
-        -22.6,
-        -22.4
+        -25.7,
+        -23.5
+       ],
+       [
+        -24.9,
+        -21.5
+       ],
+       [
+        -24.9,
+        -21.5
        ]
       ],
       [
        [
-        -27.8,
-        -33.1
+        -30.6,
+        -35.1
        ],
        [
-        -29.3,
-        -32.0
+        -31.0,
+        -37.5
        ],
        [
-        -28.0,
-        -31.6
+        -31.0,
+        -37.5
        ],
        [
-        -26.5,
-        -32.6
+        -30.6,
+        -35.1
+       ],
+       [
+        -29.9,
+        -32.9
+       ],
+       [
+        -29.9,
+        -32.9
        ]
       ],
       [
        [
-        -15.6,
-        -42.0
+        -17.6,
+        -45.1
        ],
        [
-        -16.5,
-        -41.5
+        -17.6,
+        -47.6
        ],
        [
-        -15.7,
-        -40.6
+        -17.6,
+        -47.6
        ],
        [
-        -14.8,
-        -41.1
+        -17.6,
+        -45.1
+       ],
+       [
+        -17.3,
+        -42.6
+       ],
+       [
+        -17.3,
+        -42.6
        ]
       ],
       [
        [
         5.8,
-        -44.1
+        -47.5
        ],
        [
-        6.1,
-        -43.6
+        6.2,
+        -50.0
+       ],
+       [
+        6.2,
+        -50.0
        ],
        [
         5.8,
-        -42.7
+        -47.5
        ],
        [
-        5.5,
-        -43.1
+        5.4,
+        -45.1
+       ],
+       [
+        5.4,
+        -45.1
        ]
       ],
       [
        [
-        23.7,
-        -38.0
+        25.7,
+        -41.0
        ],
        [
-        25.0,
-        -37.2
+        26.3,
+        -43.2
        ],
        [
-        23.8,
-        -36.5
+        26.3,
+        -43.2
        ],
        [
-        22.6,
-        -37.3
+        25.7,
+        -41.0
+       ],
+       [
+        24.9,
+        -38.8
+       ],
+       [
+        24.9,
+        -38.8
        ]
       ],
       [
        [
-        27.8,
-        -27.3
+        30.6,
+        -29.3
        ],
        [
-        29.3,
-        -26.0
+        31.0,
+        -31.3
        ],
        [
-        28.0,
-        -25.8
+        31.0,
+        -31.3
        ],
        [
-        26.5,
-        -27.1
+        30.6,
+        -29.3
+       ],
+       [
+        29.9,
+        -27.5
+       ],
+       [
+        29.9,
+        -27.5
        ]
       ]
      ]
@@ -25322,159 +25642,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.laser_pistol.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.laser_pistol.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
-     "ch": 31,
-     "ox": 38,
-     "oy": 52,
+     "cw": 56,
+     "ch": 35,
+     "ox": 36,
+     "oy": 46,
      "muzzle": [
       [
        [
-        13.4,
-        -18.6
+        15.5,
+        -19.7
        ],
        [
-        14.2,
-        -16.9
+        15.5,
+        -21.3
        ],
        [
-        13.5,
-        -17.2
+        15.5,
+        -21.3
        ],
        [
-        12.7,
-        -18.8
+        15.5,
+        -19.7
+       ],
+       [
+        15.3,
+        -18.2
+       ],
+       [
+        15.3,
+        -18.2
        ]
       ],
       [
        [
-        -6.1,
-        -17.1
+        -6.0,
+        -17.7
        ],
        [
-        -6.4,
-        -15.3
+        -6.3,
+        -19.4
        ],
        [
-        -6.1,
-        -15.6
+        -6.3,
+        -19.4
        ],
        [
-        -5.8,
-        -17.4
+        -6.0,
+        -17.7
+       ],
+       [
+        -5.6,
+        -16.2
+       ],
+       [
+        -5.6,
+        -16.2
        ]
       ],
       [
        [
-        -22.0,
-        -22.9
+        -23.9,
+        -23.9
+       ],
+       [
+        -24.5,
+        -25.8
+       ],
+       [
+        -24.5,
+        -25.8
+       ],
+       [
+        -23.9,
+        -23.9
        ],
        [
         -23.2,
-        -21.4
+        -22.2
        ],
        [
-        -22.1,
-        -21.5
-       ],
-       [
-        -21.0,
-        -22.9
+        -23.2,
+        -22.2
        ]
       ],
       [
        [
-        -25.0,
-        -32.7
+        -27.9,
+        -34.6
        ],
        [
-        -26.4,
-        -31.7
+        -28.3,
+        -36.7
        ],
        [
-        -25.2,
-        -31.3
+        -28.3,
+        -36.7
        ],
        [
-        -23.8,
-        -32.2
+        -27.9,
+        -34.6
+       ],
+       [
+        -27.2,
+        -32.6
+       ],
+       [
+        -27.2,
+        -32.6
        ]
       ],
       [
        [
-        -13.4,
-        -40.6
+        -15.5,
+        -43.6
        ],
        [
-        -14.2,
-        -40.1
+        -15.5,
+        -45.8
        ],
        [
-        -13.5,
-        -39.3
+        -15.5,
+        -45.8
        ],
        [
-        -12.7,
-        -39.8
+        -15.5,
+        -43.6
+       ],
+       [
+        -15.3,
+        -41.4
+       ],
+       [
+        -15.3,
+        -41.4
        ]
       ],
       [
        [
-        6.1,
-        -42.1
+        6.0,
+        -45.5
        ],
        [
-        6.4,
-        -41.7
+        6.3,
+        -47.7
        ],
        [
-        6.1,
-        -40.8
+        6.3,
+        -47.7
        ],
        [
-        5.8,
-        -41.2
+        6.0,
+        -45.5
+       ],
+       [
+        5.6,
+        -43.4
+       ],
+       [
+        5.6,
+        -43.4
        ]
       ],
       [
        [
-        22.0,
-        -36.3
+        23.9,
+        -39.4
+       ],
+       [
+        24.5,
+        -41.3
+       ],
+       [
+        24.5,
+        -41.3
+       ],
+       [
+        23.9,
+        -39.4
        ],
        [
         23.2,
-        -35.6
+        -37.5
        ],
        [
-        22.1,
-        -35.0
-       ],
-       [
-        21.0,
-        -35.7
+        23.2,
+        -37.5
        ]
       ],
       [
        [
-        25.0,
-        -26.5
+        27.9,
+        -28.6
        ],
        [
-        26.4,
-        -25.3
+        28.3,
+        -30.4
        ],
        [
-        25.2,
-        -25.2
+        28.3,
+        -30.4
        ],
        [
-        23.8,
-        -26.4
+        27.9,
+        -28.6
+       ],
+       [
+        27.2,
+        -27.0
+       ],
+       [
+        27.2,
+        -27.0
        ]
       ]
      ]
@@ -26779,159 +27163,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.laser_rifle.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.laser_rifle.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 70,
-     "ch": 37,
-     "ox": 29,
-     "oy": 46,
+     "cw": 72,
+     "ch": 43,
+     "ox": 28,
+     "oy": 39,
      "muzzle": [
       [
        [
-        19.6,
-        -17.7
+        21.5,
+        -18.7
        ],
        [
-        20.7,
-        -15.5
+        21.5,
+        -21.0
        ],
        [
-        19.8,
-        -15.8
+        21.5,
+        -21.0
        ],
        [
-        18.8,
-        -17.9
+        21.5,
+        -18.7
+       ],
+       [
+        21.2,
+        -16.6
+       ],
+       [
+        21.2,
+        -16.6
        ]
       ],
       [
        [
-        -5.1,
-        -14.7
+        -5.4,
+        -15.3
+       ],
+       [
+        -5.8,
+        -17.8
+       ],
+       [
+        -5.8,
+        -17.8
        ],
        [
         -5.4,
-        -12.3
+        -15.3
        ],
        [
-        -5.1,
-        -12.8
+        -4.9,
+        -13.2
        ],
        [
-        -4.8,
-        -15.0
+        -4.9,
+        -13.2
        ]
       ],
       [
        [
-        -26.9,
-        -21.3
+        -29.0,
+        -22.5
        ],
        [
-        -28.4,
-        -19.4
+        -29.7,
+        -25.2
        ],
        [
-        -27.0,
-        -19.4
+        -29.7,
+        -25.2
        ],
        [
-        -25.5,
-        -21.3
+        -29.0,
+        -22.5
+       ],
+       [
+        -28.1,
+        -20.1
+       ],
+       [
+        -28.1,
+        -20.1
        ]
       ],
       [
        [
-        -32.9,
-        -33.7
+        -35.7,
+        -35.9
        ],
        [
-        -34.7,
-        -32.4
+        -36.2,
+        -38.8
        ],
        [
-        -33.1,
-        -31.9
+        -36.2,
+        -38.8
        ],
        [
-        -31.4,
+        -35.7,
+        -35.9
+       ],
+       [
+        -34.9,
+        -33.1
+       ],
+       [
+        -34.9,
         -33.1
        ]
       ],
       [
        [
-        -19.6,
-        -44.6
+        -21.5,
+        -47.7
        ],
        [
-        -20.7,
-        -43.9
+        -21.5,
+        -50.8
        ],
        [
-        -19.8,
-        -42.8
+        -21.5,
+        -50.8
        ],
        [
-        -18.8,
-        -43.5
+        -21.5,
+        -47.7
+       ],
+       [
+        -21.2,
+        -44.7
+       ],
+       [
+        -21.2,
+        -44.7
        ]
       ],
       [
        [
-        5.1,
-        -47.6
+        5.4,
+        -51.0
+       ],
+       [
+        5.8,
+        -54.0
+       ],
+       [
+        5.8,
+        -54.0
        ],
        [
         5.4,
-        -47.1
+        -51.0
        ],
        [
-        5.1,
-        -45.9
+        4.9,
+        -48.1
        ],
        [
-        4.8,
-        -46.4
+        4.9,
+        -48.1
        ]
       ],
       [
        [
-        26.9,
-        -40.9
+        29.0,
+        -43.9
        ],
        [
-        28.4,
-        -40.1
+        29.7,
+        -46.7
        ],
        [
-        27.0,
-        -39.3
+        29.7,
+        -46.7
        ],
        [
-        25.5,
-        -40.1
+        29.0,
+        -43.9
+       ],
+       [
+        28.1,
+        -41.3
+       ],
+       [
+        28.1,
+        -41.3
        ]
       ],
       [
        [
-        32.9,
-        -28.6
+        35.7,
+        -30.5
        ],
        [
-        34.7,
-        -27.0
+        36.2,
+        -33.0
        ],
        [
-        33.1,
-        -26.8
+        36.2,
+        -33.0
        ],
        [
-        31.4,
-        -28.3
+        35.7,
+        -30.5
+       ],
+       [
+        34.9,
+        -28.2
+       ],
+       [
+        34.9,
+        -28.2
        ]
       ]
      ]
@@ -28236,159 +28684,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.plasma_cutter.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.plasma_cutter.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 60,
-     "ch": 34,
-     "ox": 34,
-     "oy": 49,
+     "cw": 64,
+     "ch": 40,
+     "ox": 32,
+     "oy": 43,
      "muzzle": [
       [
        [
-        16.0,
-        -17.8
+        18.0,
+        -18.8
        ],
        [
-        16.9,
-        -15.9
+        18.1,
+        -20.7
        ],
        [
-        16.1,
-        -16.2
+        18.1,
+        -20.7
        ],
        [
-        15.3,
-        -18.0
+        18.0,
+        -18.8
+       ],
+       [
+        17.7,
+        -17.2
+       ],
+       [
+        17.7,
+        -17.2
        ]
       ],
       [
        [
-        -5.7,
-        -15.6
+        -5.6,
+        -16.3
        ],
        [
         -6.0,
-        -13.6
+        -18.2
+       ],
+       [
+        -6.0,
+        -18.2
        ],
        [
         -5.6,
-        -14.0
+        -16.3
        ],
        [
-        -5.4,
-        -15.9
+        -5.2,
+        -14.6
+       ],
+       [
+        -5.2,
+        -14.6
        ]
       ],
       [
        [
-        -24.0,
-        -21.8
+        -26.0,
+        -22.8
        ],
        [
-        -25.3,
-        -20.1
+        -26.7,
+        -25.0
        ],
        [
-        -24.1,
-        -20.2
+        -26.7,
+        -25.0
        ],
        [
-        -22.9,
-        -21.8
+        -26.0,
+        -22.8
+       ],
+       [
+        -25.2,
+        -20.9
+       ],
+       [
+        -25.2,
+        -20.9
        ]
       ],
       [
        [
-        -28.3,
-        -32.6
+        -31.1,
+        -34.6
        ],
        [
-        -29.9,
-        -31.5
+        -31.7,
+        -37.1
        ],
        [
-        -28.5,
-        -31.1
+        -31.7,
+        -37.1
        ],
        [
-        -27.0,
-        -32.1
+        -31.1,
+        -34.6
+       ],
+       [
+        -30.3,
+        -32.4
+       ],
+       [
+        -30.3,
+        -32.4
        ]
       ],
       [
        [
-        -16.0,
-        -41.8
+        -18.0,
+        -44.8
        ],
        [
-        -16.9,
-        -41.2
+        -18.1,
+        -47.4
        ],
        [
-        -16.1,
-        -40.3
+        -18.1,
+        -47.4
        ],
        [
-        -15.3,
-        -40.9
+        -18.0,
+        -44.8
+       ],
+       [
+        -17.7,
+        -42.3
+       ],
+       [
+        -17.7,
+        -42.3
        ]
       ],
       [
        [
-        5.7,
-        -43.9
+        5.6,
+        -47.4
        ],
        [
         6.0,
-        -43.4
+        -49.9
+       ],
+       [
+        6.0,
+        -49.9
        ],
        [
         5.6,
-        -42.5
+        -47.4
        ],
        [
-        5.4,
-        -42.9
+        5.2,
+        -44.9
+       ],
+       [
+        5.2,
+        -44.9
        ]
       ],
       [
        [
-        24.0,
-        -37.8
+        26.0,
+        -40.8
        ],
        [
-        25.3,
-        -37.0
+        26.7,
+        -43.1
        ],
        [
-        24.1,
-        -36.3
+        26.7,
+        -43.1
        ],
        [
-        22.9,
-        -37.1
+        26.0,
+        -40.8
+       ],
+       [
+        25.2,
+        -38.6
+       ],
+       [
+        25.2,
+        -38.6
        ]
       ],
       [
        [
-        28.3,
-        -26.9
+        31.1,
+        -29.0
        ],
        [
-        29.9,
-        -25.5
+        31.7,
+        -31.0
        ],
        [
-        28.5,
-        -25.4
+        31.7,
+        -31.0
        ],
        [
-        27.0,
-        -26.8
+        31.1,
+        -29.0
+       ],
+       [
+        30.3,
+        -27.1
+       ],
+       [
+        30.3,
+        -27.1
        ]
       ]
      ]
@@ -29693,159 +30205,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.rail_rifle.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.rail_rifle.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 88,
-     "ch": 46,
-     "ox": 20,
-     "oy": 40,
+     "cw": 90,
+     "ch": 53,
+     "ox": 19,
+     "oy": 32,
      "muzzle": [
       [
        [
-        26.5,
-        -16.9
+        28.0,
+        -17.8
        ],
        [
         27.9,
-        -14.2
+        -21.0
        ],
        [
-        26.8,
-        -14.5
+        27.9,
+        -21.0
        ],
        [
-        25.4,
-        -17.1
+        28.0,
+        -17.8
+       ],
+       [
+        27.7,
+        -15.0
+       ],
+       [
+        27.7,
+        -15.0
        ]
       ],
       [
        [
-        -4.0,
-        -12.3
+        -4.7,
+        -13.0
        ],
        [
-        -4.4,
-        -9.3
+        -5.3,
+        -16.3
        ],
        [
-        -4.0,
-        -9.8
+        -5.3,
+        -16.3
        ],
        [
-        -3.6,
-        -12.6
+        -4.7,
+        -13.0
+       ],
+       [
+        -4.1,
+        -10.1
+       ],
+       [
+        -4.1,
+        -10.1
        ]
       ],
       [
        [
-        -32.2,
-        -19.8
+        -34.6,
+        -21.1
        ],
        [
-        -34.1,
-        -17.3
+        -35.5,
+        -24.7
        ],
        [
-        -32.4,
-        -17.3
+        -35.5,
+        -24.7
        ],
        [
-        -30.5,
-        -19.7
+        -34.6,
+        -21.1
+       ],
+       [
+        -33.5,
+        -17.9
+       ],
+       [
+        -33.5,
+        -17.9
        ]
       ],
       [
        [
-        -41.5,
-        -35.0
+        -44.3,
+        -37.5
        ],
        [
-        -43.8,
-        -33.5
+        -44.8,
+        -41.4
        ],
        [
-        -41.8,
-        -32.7
+        -44.8,
+        -41.4
        ],
        [
-        -39.6,
-        -34.2
+        -44.3,
+        -37.5
+       ],
+       [
+        -43.3,
+        -33.8
+       ],
+       [
+        -43.3,
+        -33.8
        ]
       ],
       [
        [
-        -26.5,
-        -49.1
+        -28.0,
+        -52.4
        ],
        [
         -27.9,
-        -48.3
+        -56.4
        ],
        [
-        -26.8,
-        -46.9
+        -27.9,
+        -56.4
        ],
        [
-        -25.4,
-        -47.7
+        -28.0,
+        -52.4
+       ],
+       [
+        -27.7,
+        -48.5
+       ],
+       [
+        -27.7,
+        -48.5
        ]
       ],
       [
        [
-        4.0,
-        -53.7
+        4.7,
+        -57.2
        ],
        [
-        4.4,
-        -53.2
+        5.3,
+        -61.1
        ],
        [
-        4.0,
-        -51.6
+        5.3,
+        -61.1
        ],
        [
-        3.6,
-        -52.2
+        4.7,
+        -57.2
+       ],
+       [
+        4.1,
+        -53.4
+       ],
+       [
+        4.1,
+        -53.4
        ]
       ],
       [
        [
-        32.2,
-        -46.2
+        34.6,
+        -49.1
        ],
        [
-        34.1,
-        -45.2
+        35.5,
+        -52.7
        ],
        [
-        32.4,
-        -44.1
+        35.5,
+        -52.7
        ],
        [
-        30.5,
-        -45.1
+        34.6,
+        -49.1
+       ],
+       [
+        33.5,
+        -45.6
+       ],
+       [
+        33.5,
+        -45.6
        ]
       ],
       [
        [
-        41.5,
-        -31.0
+        44.3,
+        -32.7
        ],
        [
-        43.8,
-        -29.0
+        44.8,
+        -36.0
        ],
        [
-        41.8,
-        -28.7
+        44.8,
+        -36.0
        ],
        [
-        39.6,
-        -30.6
+        44.3,
+        -32.7
+       ],
+       [
+        43.3,
+        -29.7
+       ],
+       [
+        43.3,
+        -29.7
        ]
       ]
      ]
@@ -31150,159 +31726,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.rifle.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.rifle.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 88,
-     "ch": 47,
-     "ox": 20,
-     "oy": 39,
+     "cw": 90,
+     "ch": 53,
+     "ox": 19,
+     "oy": 32,
      "muzzle": [
       [
        [
-        26.1,
-        -17.1
+        27.6,
+        -18.0
        ],
        [
-        27.5,
-        -14.4
+        27.6,
+        -21.2
        ],
        [
-        26.4,
-        -14.8
+        27.6,
+        -21.2
        ],
        [
-        25.1,
-        -17.3
+        27.6,
+        -18.0
+       ],
+       [
+        27.3,
+        -15.2
+       ],
+       [
+        27.3,
+        -15.2
        ]
       ],
       [
        [
-        -4.1,
-        -12.6
+        -4.8,
+        -13.3
        ],
        [
-        -4.5,
-        -9.7
+        -5.4,
+        -16.6
        ],
        [
-        -4.0,
-        -10.1
+        -5.4,
+        -16.6
        ],
        [
-        -3.7,
-        -12.9
+        -4.8,
+        -13.3
+       ],
+       [
+        -4.2,
+        -10.5
+       ],
+       [
+        -4.2,
+        -10.5
        ]
       ],
       [
        [
-        -31.9,
-        -20.0
+        -34.4,
+        -21.4
        ],
        [
-        -33.8,
-        -17.6
+        -35.2,
+        -25.0
        ],
        [
-        -32.1,
-        -17.6
+        -35.2,
+        -25.0
        ],
        [
-        -30.3,
-        -19.9
+        -34.4,
+        -21.4
+       ],
+       [
+        -33.3,
+        -18.2
+       ],
+       [
+        -33.3,
+        -18.2
        ]
       ],
       [
        [
-        -41.0,
-        -35.1
+        -43.8,
+        -37.6
        ],
        [
-        -43.4,
-        -33.6
+        -44.4,
+        -41.4
        ],
        [
-        -41.4,
-        -32.9
+        -44.4,
+        -41.4
        ],
        [
-        -39.1,
-        -34.3
+        -43.8,
+        -37.6
+       ],
+       [
+        -42.9,
+        -34.0
+       ],
+       [
+        -42.9,
+        -34.0
        ]
       ],
       [
        [
-        -26.1,
+        -27.6,
+        -52.4
+       ],
+       [
+        -27.6,
+        -56.3
+       ],
+       [
+        -27.6,
+        -56.3
+       ],
+       [
+        -27.6,
+        -52.4
+       ],
+       [
+        -27.3,
+        -48.5
+       ],
+       [
+        -27.3,
+        -48.5
+       ]
+      ],
+      [
+       [
+        4.8,
+        -57.1
+       ],
+       [
+        5.4,
+        -60.9
+       ],
+       [
+        5.4,
+        -60.9
+       ],
+       [
+        4.8,
+        -57.1
+       ],
+       [
+        4.2,
+        -53.3
+       ],
+       [
+        4.2,
+        -53.3
+       ]
+      ],
+      [
+       [
+        34.4,
         -49.0
        ],
        [
-        -27.5,
-        -48.3
+        35.2,
+        -52.5
        ],
        [
-        -26.4,
-        -46.9
+        35.2,
+        -52.5
        ],
        [
-        -25.1,
-        -47.6
+        34.4,
+        -49.0
+       ],
+       [
+        33.3,
+        -45.5
+       ],
+       [
+        33.3,
+        -45.5
        ]
       ],
       [
        [
-        4.1,
-        -53.6
+        43.8,
+        -32.8
        ],
        [
-        4.5,
-        -53.0
+        44.4,
+        -36.1
        ],
        [
-        4.0,
-        -51.5
+        44.4,
+        -36.1
        ],
        [
-        3.7,
-        -52.1
-       ]
-      ],
-      [
-       [
-        31.9,
-        -46.1
+        43.8,
+        -32.8
        ],
        [
-        33.8,
-        -45.1
+        42.9,
+        -29.8
        ],
        [
-        32.1,
-        -44.0
-       ],
-       [
-        30.3,
-        -45.0
-       ]
-      ],
-      [
-       [
-        41.0,
-        -31.0
-       ],
-       [
-        43.4,
-        -29.1
-       ],
-       [
-        41.4,
-        -28.8
-       ],
-       [
-        39.1,
-        -30.6
+        42.9,
+        -29.8
        ]
       ]
      ]
@@ -32606,159 +33246,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.shock_baton.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.shock_baton.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 44,
-     "ch": 34,
-     "ox": 42,
-     "oy": 44,
+     "cw": 48,
+     "ch": 37,
+     "ox": 40,
+     "oy": 40,
      "muzzle": [
       [
        [
-        7.8,
-        -29.9
+        9.4,
+        -30.7
        ],
        [
-        9.0,
-        -28.9
+        8.4,
+        -32.6
        ],
        [
-        8.5,
-        -28.6
+        8.4,
+        -32.6
        ],
        [
-        7.3,
-        -29.5
+        9.4,
+        -30.7
+       ],
+       [
+        10.2,
+        -29.0
+       ],
+       [
+        10.2,
+        -29.0
        ]
       ],
       [
+       [
+        -8.1,
+        -30.5
+       ],
+       [
+        -8.6,
+        -32.6
+       ],
+       [
+        -8.6,
+        -32.6
+       ],
+       [
+        -8.1,
+        -30.5
+       ],
        [
         -7.7,
-        -29.9
+        -28.5
        ],
        [
-        -7.8,
-        -28.7
-       ],
-       [
-        -7.6,
-        -28.4
-       ],
-       [
-        -7.5,
-        -29.6
+        -7.7,
+        -28.5
        ]
       ],
       [
        [
-        -18.7,
-        -35.4
-       ],
-       [
-        -20.0,
-        -34.4
-       ],
-       [
-        -19.2,
-        -34.0
-       ],
-       [
-        -18.0,
-        -34.8
-       ]
-      ],
-      [
-       [
-        -18.7,
-        -43.1
+        -20.9,
+        -36.5
        ],
        [
         -20.5,
-        -42.8
+        -38.7
        ],
        [
-        -19.6,
-        -42.0
+        -20.5,
+        -38.7
        ],
        [
-        -17.9,
-        -42.3
-       ]
-      ],
-      [
-       [
-        -7.8,
-        -48.6
+        -20.9,
+        -36.5
        ],
        [
-        -9.0,
-        -48.9
-       ],
-       [
-        -8.5,
-        -47.8
-       ],
-       [
-        -7.3,
-        -47.5
-       ]
-      ],
-      [
-       [
-        7.7,
-        -48.6
-       ],
-       [
-        7.8,
-        -49.2
-       ],
-       [
-        7.6,
-        -48.0
-       ],
-       [
-        7.5,
-        -47.4
-       ]
-      ],
-      [
-       [
-        18.7,
-        -43.1
-       ],
-       [
-        20.0,
-        -43.4
-       ],
-       [
-        19.2,
-        -42.4
-       ],
-       [
-        18.0,
-        -42.2
-       ]
-      ],
-      [
-       [
-        18.7,
-        -35.4
-       ],
-       [
-        20.5,
-        -35.0
-       ],
-       [
-        19.6,
+        -21.0,
         -34.4
        ],
        [
-        17.9,
-        -34.7
+        -21.0,
+        -34.4
+       ]
+      ],
+      [
+       [
+        -21.4,
+        -45.3
+       ],
+       [
+        -20.4,
+        -47.1
+       ],
+       [
+        -20.4,
+        -47.1
+       ],
+       [
+        -21.4,
+        -45.3
+       ],
+       [
+        -22.1,
+        -43.3
+       ],
+       [
+        -22.1,
+        -43.3
+       ]
+      ],
+      [
+       [
+        -9.4,
+        -51.6
+       ],
+       [
+        -8.4,
+        -53.1
+       ],
+       [
+        -8.4,
+        -53.1
+       ],
+       [
+        -9.4,
+        -51.6
+       ],
+       [
+        -10.2,
+        -50.0
+       ],
+       [
+        -10.2,
+        -50.0
+       ]
+      ],
+      [
+       [
+        8.1,
+        -51.9
+       ],
+       [
+        8.6,
+        -53.1
+       ],
+       [
+        8.6,
+        -53.1
+       ],
+       [
+        8.1,
+        -51.9
+       ],
+       [
+        7.7,
+        -50.5
+       ],
+       [
+        7.7,
+        -50.5
+       ]
+      ],
+      [
+       [
+        20.9,
+        -45.9
+       ],
+       [
+        20.5,
+        -47.1
+       ],
+       [
+        20.5,
+        -47.1
+       ],
+       [
+        20.9,
+        -45.9
+       ],
+       [
+        21.0,
+        -44.6
+       ],
+       [
+        21.0,
+        -44.6
+       ]
+      ],
+      [
+       [
+        21.4,
+        -37.1
+       ],
+       [
+        20.4,
+        -38.6
+       ],
+       [
+        20.4,
+        -38.6
+       ],
+       [
+        21.4,
+        -37.1
+       ],
+       [
+        22.1,
+        -35.7
+       ],
+       [
+        22.1,
+        -35.7
        ]
       ]
      ]
@@ -33531,159 +34235,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.shotgun.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.shotgun.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 74,
-     "ch": 41,
-     "ox": 27,
-     "oy": 43,
+     "cw": 76,
+     "ch": 46,
+     "ox": 26,
+     "oy": 37,
      "muzzle": [
       [
        [
-        21.0,
-        -18.2
+        22.7,
+        -19.2
        ],
        [
-        22.2,
-        -16.0
+        22.6,
+        -21.8
        ],
        [
-        21.3,
-        -16.2
+        22.6,
+        -21.8
        ],
        [
-        20.1,
-        -18.4
+        22.7,
+        -19.2
+       ],
+       [
+        22.5,
+        -16.9
+       ],
+       [
+        22.5,
+        -16.9
        ]
       ],
       [
        [
-        -4.9,
-        -14.9
+        -5.3,
+        -15.6
+       ],
+       [
+        -5.9,
+        -18.3
+       ],
+       [
+        -5.9,
+        -18.3
        ],
        [
         -5.3,
-        -12.5
+        -15.6
        ],
        [
-        -4.9,
-        -12.8
+        -4.8,
+        -13.2
        ],
        [
-        -4.6,
-        -15.2
+        -4.8,
+        -13.2
        ]
       ],
       [
        [
-        -28.0,
-        -21.7
+        -30.2,
+        -22.9
        ],
        [
-        -29.6,
-        -19.7
+        -30.9,
+        -25.9
        ],
        [
-        -28.2,
-        -19.7
+        -30.9,
+        -25.9
        ],
        [
-        -26.6,
-        -21.6
+        -30.2,
+        -22.9
+       ],
+       [
+        -29.3,
+        -20.3
+       ],
+       [
+        -29.3,
+        -20.3
        ]
       ],
       [
        [
-        -34.6,
-        -34.7
+        -37.4,
+        -37.0
        ],
        [
-        -36.6,
-        -33.4
+        -37.9,
+        -40.1
        ],
        [
-        -35.0,
-        -32.8
+        -37.9,
+        -40.1
        ],
        [
-        -33.0,
+        -37.4,
+        -37.0
+       ],
+       [
+        -36.7,
+        -34.0
+       ],
+       [
+        -36.7,
         -34.0
        ]
       ],
       [
        [
-        -21.0,
+        -22.7,
+        -49.4
+       ],
+       [
+        -22.6,
+        -52.7
+       ],
+       [
+        -22.6,
+        -52.7
+       ],
+       [
+        -22.7,
+        -49.4
+       ],
+       [
+        -22.5,
         -46.2
        ],
        [
-        -22.2,
-        -45.6
-       ],
-       [
-        -21.3,
-        -44.4
-       ],
-       [
-        -20.1,
-        -45.0
+        -22.5,
+        -46.2
        ]
       ],
       [
        [
-        4.9,
-        -49.5
+        5.3,
+        -53.0
+       ],
+       [
+        5.9,
+        -56.2
+       ],
+       [
+        5.9,
+        -56.2
        ],
        [
         5.3,
-        -49.1
+        -53.0
        ],
        [
-        4.9,
-        -47.8
+        4.8,
+        -49.9
        ],
        [
-        4.6,
-        -48.2
+        4.8,
+        -49.9
        ]
       ],
       [
        [
-        28.0,
-        -42.7
+        30.2,
+        -45.6
        ],
        [
-        29.6,
-        -41.9
+        30.9,
+        -48.5
        ],
        [
-        28.2,
-        -41.0
+        30.9,
+        -48.5
        ],
        [
-        26.6,
-        -41.8
+        30.2,
+        -45.6
+       ],
+       [
+        29.3,
+        -42.8
+       ],
+       [
+        29.3,
+        -42.8
        ]
       ],
       [
        [
-        34.6,
-        -29.8
+        37.4,
+        -31.6
        ],
        [
-        36.6,
-        -28.1
+        37.9,
+        -34.3
        ],
        [
-        35.0,
-        -27.9
+        37.9,
+        -34.3
        ],
        [
-        33.0,
-        -29.4
+        37.4,
+        -31.6
+       ],
+       [
+        36.7,
+        -29.2
+       ],
+       [
+        36.7,
+        -29.2
        ]
       ]
      ]
@@ -34987,159 +35755,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.sidearm.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.sidearm.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 52,
-     "ch": 32,
-     "ox": 38,
-     "oy": 51,
+     "cw": 56,
+     "ch": 35,
+     "ox": 36,
+     "oy": 46,
      "muzzle": [
       [
        [
-        12.8,
-        -18.7
+        14.9,
+        -19.7
        ],
        [
-        13.5,
-        -17.0
+        14.9,
+        -21.3
        ],
        [
-        12.9,
-        -17.3
+        14.9,
+        -21.3
        ],
        [
-        12.1,
-        -18.9
+        14.9,
+        -19.7
+       ],
+       [
+        14.7,
+        -18.4
+       ],
+       [
+        14.7,
+        -18.4
        ]
       ],
       [
        [
-        -6.2,
-        -17.3
+        -6.0,
+        -17.9
        ],
        [
-        -6.5,
-        -15.6
+        -6.4,
+        -19.5
        ],
        [
-        -6.2,
-        -15.9
+        -6.4,
+        -19.5
        ],
        [
         -6.0,
-        -17.6
+        -17.9
+       ],
+       [
+        -5.7,
+        -16.5
+       ],
+       [
+        -5.7,
+        -16.5
        ]
       ],
       [
        [
-        -21.5,
-        -23.0
+        -23.4,
+        -24.0
+       ],
+       [
+        -24.0,
+        -25.8
+       ],
+       [
+        -24.0,
+        -25.8
+       ],
+       [
+        -23.4,
+        -24.0
        ],
        [
         -22.7,
-        -21.6
+        -22.4
        ],
        [
-        -21.6,
-        -21.7
-       ],
-       [
-        -20.5,
-        -23.1
+        -22.7,
+        -22.4
        ]
       ],
       [
        [
-        -24.3,
-        -32.5
-       ],
-       [
-        -25.6,
-        -31.6
-       ],
-       [
-        -24.4,
-        -31.2
-       ],
-       [
-        -23.1,
-        -32.1
-       ]
-      ],
-      [
-       [
-        -12.8,
-        -40.2
-       ],
-       [
-        -13.5,
-        -39.7
-       ],
-       [
-        -12.9,
-        -38.9
-       ],
-       [
-        -12.1,
-        -39.4
-       ]
-      ],
-      [
-       [
-        6.2,
-        -41.6
-       ],
-       [
-        6.5,
-        -41.2
-       ],
-       [
-        6.2,
-        -40.3
-       ],
-       [
-        6.0,
-        -40.7
-       ]
-      ],
-      [
-       [
-        21.5,
-        -35.8
-       ],
-       [
-        22.7,
-        -35.1
-       ],
-       [
-        21.6,
+        -27.1,
         -34.5
        ],
        [
-        20.5,
-        -35.2
+        -27.5,
+        -36.5
+       ],
+       [
+        -27.5,
+        -36.5
+       ],
+       [
+        -27.1,
+        -34.5
+       ],
+       [
+        -26.4,
+        -32.6
+       ],
+       [
+        -26.4,
+        -32.6
        ]
       ],
       [
        [
-        24.3,
-        -26.3
+        -14.9,
+        -43.1
        ],
        [
-        25.6,
-        -25.1
+        -14.9,
+        -45.3
        ],
        [
-        24.4,
-        -25.0
+        -14.9,
+        -45.3
        ],
        [
-        23.1,
-        -26.2
+        -14.9,
+        -43.1
+       ],
+       [
+        -14.7,
+        -41.1
+       ],
+       [
+        -14.7,
+        -41.1
+       ]
+      ],
+      [
+       [
+        6.0,
+        -45.0
+       ],
+       [
+        6.4,
+        -47.0
+       ],
+       [
+        6.4,
+        -47.0
+       ],
+       [
+        6.0,
+        -45.0
+       ],
+       [
+        5.7,
+        -42.9
+       ],
+       [
+        5.7,
+        -42.9
+       ]
+      ],
+      [
+       [
+        23.4,
+        -38.9
+       ],
+       [
+        24.0,
+        -40.8
+       ],
+       [
+        24.0,
+        -40.8
+       ],
+       [
+        23.4,
+        -38.9
+       ],
+       [
+        22.7,
+        -37.1
+       ],
+       [
+        22.7,
+        -37.1
+       ]
+      ],
+      [
+       [
+        27.1,
+        -28.4
+       ],
+       [
+        27.5,
+        -30.1
+       ],
+       [
+        27.5,
+        -30.1
+       ],
+       [
+        27.1,
+        -28.4
+       ],
+       [
+        26.4,
+        -26.9
+       ],
+       [
+        26.4,
+        -26.9
        ]
       ]
      ]
@@ -36443,159 +37275,223 @@
       ]
      ]
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.hand.smg.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.hand.smg.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 66,
-     "ch": 40,
-     "ox": 31,
-     "oy": 47,
+     "cw": 70,
+     "ch": 45,
+     "ox": 29,
+     "oy": 40,
      "muzzle": [
       [
        [
-        18.7,
-        -18.0
+        20.5,
+        -19.0
        ],
        [
-        19.7,
+        20.5,
+        -21.2
+       ],
+       [
+        20.5,
+        -21.2
+       ],
+       [
+        20.5,
+        -19.0
+       ],
+       [
+        20.3,
+        -17.0
+       ],
+       [
+        20.3,
+        -17.0
+       ]
+      ],
+      [
+       [
+        -5.5,
         -15.9
        ],
        [
-        18.9,
-        -16.2
-       ],
-       [
-        17.9,
+        -5.9,
         -18.2
+       ],
+       [
+        -5.9,
+        -18.2
+       ],
+       [
+        -5.5,
+        -15.9
+       ],
+       [
+        -5.0,
+        -13.8
+       ],
+       [
+        -5.0,
+        -13.8
        ]
       ],
       [
        [
-        -5.3,
-        -15.2
+        -28.2,
+        -22.8
        ],
        [
-        -5.6,
-        -13.0
+        -28.9,
+        -25.4
        ],
        [
-        -5.3,
-        -13.4
+        -28.9,
+        -25.4
        ],
        [
-        -4.9,
-        -15.5
+        -28.2,
+        -22.8
+       ],
+       [
+        -27.4,
+        -20.5
+       ],
+       [
+        -27.4,
+        -20.5
        ]
       ],
       [
        [
-        -26.1,
-        -21.7
+        -34.5,
+        -35.8
        ],
        [
-        -27.6,
-        -19.8
-       ],
-       [
-        -26.3,
-        -19.9
-       ],
-       [
-        -24.8,
-        -21.7
-       ]
-      ],
-      [
-       [
-        -31.7,
-        -33.7
-       ],
-       [
-        -33.5,
-        -32.5
-       ],
-       [
-        -31.9,
-        -31.9
-       ],
-       [
-        -30.2,
-        -33.1
-       ]
-      ],
-      [
-       [
-        -18.7,
-        -44.1
-       ],
-       [
-        -19.7,
-        -43.5
-       ],
-       [
-        -18.9,
-        -42.5
-       ],
-       [
-        -17.9,
-        -43.0
-       ]
-      ],
-      [
-       [
-        5.3,
-        -46.9
-       ],
-       [
-        5.6,
-        -46.4
-       ],
-       [
-        5.3,
-        -45.3
-       ],
-       [
-        4.9,
-        -45.7
-       ]
-      ],
-      [
-       [
-        26.1,
-        -40.4
-       ],
-       [
-        27.6,
-        -39.5
-       ],
-       [
-        26.3,
+        -35.0,
         -38.7
        ],
        [
-        24.8,
-        -39.5
+        -35.0,
+        -38.7
+       ],
+       [
+        -34.5,
+        -35.8
+       ],
+       [
+        -33.7,
+        -33.2
+       ],
+       [
+        -33.7,
+        -33.2
        ]
       ],
       [
        [
-        31.7,
-        -28.4
+        -20.5,
+        -47.2
        ],
        [
-        33.5,
-        -26.9
+        -20.5,
+        -50.2
        ],
        [
-        31.9,
-        -26.7
+        -20.5,
+        -50.2
        ],
        [
-        30.2,
-        -28.1
+        -20.5,
+        -47.2
+       ],
+       [
+        -20.3,
+        -44.4
+       ],
+       [
+        -20.3,
+        -44.4
+       ]
+      ],
+      [
+       [
+        5.5,
+        -50.3
+       ],
+       [
+        5.9,
+        -53.2
+       ],
+       [
+        5.9,
+        -53.2
+       ],
+       [
+        5.5,
+        -50.3
+       ],
+       [
+        5.0,
+        -47.5
+       ],
+       [
+        5.0,
+        -47.5
+       ]
+      ],
+      [
+       [
+        28.2,
+        -43.4
+       ],
+       [
+        28.9,
+        -46.0
+       ],
+       [
+        28.9,
+        -46.0
+       ],
+       [
+        28.2,
+        -43.4
+       ],
+       [
+        27.4,
+        -40.8
+       ],
+       [
+        27.4,
+        -40.8
+       ]
+      ],
+      [
+       [
+        34.5,
+        -30.4
+       ],
+       [
+        35.0,
+        -32.7
+       ],
+       [
+        35.0,
+        -32.7
+       ],
+       [
+        34.5,
+        -30.4
+       ],
+       [
+        33.7,
+        -28.2
+       ],
+       [
+        33.7,
+        -28.2
        ]
       ]
      ]
@@ -37598,15 +38494,15 @@
      "ox": 48,
      "oy": 19
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.eva_helmet.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.eva_helmet.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 28,
+     "cw": 30,
      "ch": 25,
-     "ox": 50,
+     "ox": 49,
      "oy": 36
     },
     "aim_1h": {
@@ -37964,15 +38860,15 @@
      "ox": 50,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.headset.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.headset.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 26,
-     "ch": 22,
-     "ox": 51,
+     "cw": 28,
+     "ch": 23,
+     "ox": 50,
      "oy": 39
     },
     "aim_1h": {
@@ -38330,16 +39226,16 @@
      "ox": 48,
      "oy": 34
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.heavy_helmet.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.heavy_helmet.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 30,
-     "ch": 29,
-     "ox": 49,
-     "oy": 33
+     "cw": 32,
+     "ch": 28,
+     "ox": 48,
+     "oy": 34
     },
     "aim_1h": {
      "sheet": "crew.human.gear.head.heavy_helmet.aim_1h",
@@ -38696,16 +39592,16 @@
      "ox": 51,
      "oy": 38
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.tactical_helmet.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.tactical_helmet.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
      "ch": 19,
      "ox": 51,
-     "oy": 37
+     "oy": 38
     },
     "aim_1h": {
      "sheet": "crew.human.gear.head.tactical_helmet.aim_1h",
@@ -39062,15 +39958,15 @@
      "ox": 49,
      "oy": 38
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.visor_cap.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.visor_cap.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 28,
+     "cw": 30,
      "ch": 18,
-     "ox": 50,
+     "ox": 49,
      "oy": 38
     },
     "aim_1h": {
@@ -39428,11 +40324,11 @@
      "ox": 51,
      "oy": 37
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.head.welding_goggles.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.head.welding_goggles.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
      "ch": 17,
@@ -39794,11 +40690,11 @@
      "ox": 49,
      "oy": 68
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.blade.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.blade.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 30,
      "ch": 30,
@@ -40148,15 +41044,15 @@
      "ox": 48,
      "oy": 67
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.ion_pistol.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.ion_pistol.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 34,
+     "cw": 32,
      "ch": 18,
-     "ox": 47,
+     "ox": 48,
      "oy": 67
     },
     "crouch_idle": {
@@ -40262,13 +41158,13 @@
      "ox": 49,
      "oy": 67
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.laser_pistol.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.laser_pistol.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 31,
+     "cw": 30,
      "ch": 18,
      "ox": 49,
      "oy": 67
@@ -40456,15 +41352,15 @@
      "ox": 48,
      "oy": 67
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.plasma_cutter.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.plasma_cutter.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 34,
+     "cw": 32,
      "ch": 18,
-     "ox": 47,
+     "ox": 48,
      "oy": 67
     },
     "crouch_idle": {
@@ -40731,16 +41627,16 @@
      "ox": 51,
      "oy": 69
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.shock_baton.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.shock_baton.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
-     "ch": 29,
+     "ch": 28,
      "ox": 51,
-     "oy": 68
+     "oy": 69
     },
     "crouch_idle": {
      "sheet": "crew.human.gear.holster.shock_baton.crouch_idle",
@@ -40925,13 +41821,13 @@
      "ox": 49,
      "oy": 67
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.holster.sidearm.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.holster.sidearm.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 31,
+     "cw": 30,
      "ch": 18,
      "ox": 49,
      "oy": 67
@@ -41118,15 +42014,15 @@
      "ox": 45,
      "oy": 47
     },
-    "sit_stool": {
-     "sheet": "crew.human.gear.shoulder.pads.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.gear.shoulder.pads.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 36,
-     "ch": 29,
-     "ox": 46,
+     "cw": 38,
+     "ch": 30,
+     "ox": 45,
      "oy": 47
     },
     "aim_1h": {
@@ -41484,16 +42380,16 @@
      "ox": 53,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.bun.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.bun.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 20,
-     "ch": 19,
-     "ox": 54,
-     "oy": 38
+     "cw": 22,
+     "ch": 18,
+     "ox": 53,
+     "oy": 39
     },
     "aim_1h": {
      "sheet": "crew.human.hair.bun.aim_1h",
@@ -41850,16 +42746,16 @@
      "ox": 53,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.long.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.long.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 20,
+     "cw": 22,
      "ch": 23,
-     "ox": 54,
-     "oy": 38
+     "ox": 53,
+     "oy": 39
     },
     "aim_1h": {
      "sheet": "crew.human.hair.long.aim_1h",
@@ -42216,16 +43112,16 @@
      "ox": 54,
      "oy": 32
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.mohawk.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.mohawk.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 20,
-     "ch": 20,
+     "ch": 19,
      "ox": 54,
-     "oy": 31
+     "oy": 32
     },
     "aim_1h": {
      "sheet": "crew.human.hair.mohawk.aim_1h",
@@ -42582,16 +43478,16 @@
      "ox": 53,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.ponytail.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.ponytail.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 20,
-     "ch": 23,
-     "ox": 54,
-     "oy": 38
+     "cw": 22,
+     "ch": 22,
+     "ox": 53,
+     "oy": 39
     },
     "aim_1h": {
      "sheet": "crew.human.hair.ponytail.aim_1h",
@@ -42948,13 +43844,13 @@
      "ox": 54,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.shaved.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.shaved.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 20,
+     "cw": 21,
      "ch": 18,
      "ox": 54,
      "oy": 39
@@ -43314,16 +44210,16 @@
      "ox": 53,
      "oy": 39
     },
-    "sit_stool": {
-     "sheet": "crew.human.hair.short.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.hair.short.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 22,
      "ch": 19,
      "ox": 53,
-     "oy": 38
+     "oy": 39
     },
     "aim_1h": {
      "sheet": "crew.human.hair.short.aim_1h",
@@ -43680,14 +44576,14 @@
      "ox": 55,
      "oy": 44
     },
-    "sit_stool": {
-     "sheet": "crew.human.implant.temple.neural_jack.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.implant.temple.neural_jack.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 17,
-     "ch": 10,
+     "cw": 16,
+     "ch": 11,
      "ox": 55,
      "oy": 44
     },
@@ -44047,16 +44943,16 @@
      "ox": 42,
      "oy": 67
     },
-    "sit_stool": {
-     "sheet": "crew.human.legs.cargo_pants.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.legs.cargo_pants.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 46,
-     "ch": 39,
-     "ox": 41,
-     "oy": 66
+     "cw": 44,
+     "ch": 37,
+     "ox": 42,
+     "oy": 67
     },
     "aim_1h": {
      "sheet": "crew.human.legs.cargo_pants.aim_1h",
@@ -44424,16 +45320,16 @@
      "ox": 32,
      "oy": 51
     },
-    "sit_stool": {
-     "sheet": "crew.human.legs.eva.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.legs.eva.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 50,
-     "ch": 42,
-     "ox": 39,
-     "oy": 65
+     "cw": 46,
+     "ch": 40,
+     "ox": 41,
+     "oy": 66
     },
     "aim_1h": {
      "sheet": "crew.human.legs.eva.aim_1h",
@@ -44790,15 +45686,15 @@
      "ox": 49,
      "oy": 51
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.armor_heavy.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.armor_heavy.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
-     "cw": 29,
+     "cw": 30,
      "ch": 28,
-     "ox": 50,
+     "ox": 49,
      "oy": 51
     },
     "aim_1h": {
@@ -45156,11 +46052,11 @@
      "ox": 50,
      "oy": 52
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.armor_vest.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.armor_vest.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 28,
      "ch": 26,
@@ -45533,11 +46429,11 @@
      "ox": 49,
      "oy": 31
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.eva.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.eva.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 30,
      "ch": 36,
@@ -45899,14 +46795,14 @@
      "ox": 51,
      "oy": 53
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.flight_vest.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.flight_vest.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
-     "ch": 25,
+     "ch": 24,
      "ox": 51,
      "oy": 53
     },
@@ -46265,11 +47161,11 @@
      "ox": 51,
      "oy": 53
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.harness.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.harness.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
      "ch": 24,
@@ -46631,11 +47527,11 @@
      "ox": 51,
      "oy": 53
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.medic_vest.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.medic_vest.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
      "ch": 24,
@@ -46997,11 +47893,11 @@
      "ox": 51,
      "oy": 53
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.tee.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.tee.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
      "ch": 24,
@@ -47363,14 +48259,14 @@
      "ox": 51,
      "oy": 53
     },
-    "sit_stool": {
-     "sheet": "crew.human.torso.work_shirt.sit_stool",
+    "sit_stool_work": {
+     "sheet": "crew.human.torso.work_shirt.sit_stool_work",
      "start": 0,
-     "frames": 4,
-     "fps": 3,
+     "frames": 6,
+     "fps": 8,
      "loop": true,
      "cw": 26,
-     "ch": 24,
+     "ch": 23,
      "ox": 51,
      "oy": 53
     },

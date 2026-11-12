@@ -23,9 +23,9 @@ describe('resolveClip', () => {
     expect(resolveClip(layer(['idle']), 'sit_work')).toBeUndefined();
     expect(resolveClip(layer(['idle', 'sit_idle']), 'sit_work')?.sheet).toBe('s.sit_idle');
   });
-  it('hides a layer without a sit_stool sheet; a seat kind names its clip', () => {
+  it('hides a layer without a sit_stool_work sheet; a seat kind names its clip', () => {
     expect(resolveClip(layer(['idle', 'sit_idle']), SEAT_CLIP.stool)).toBeUndefined();
-    expect(resolveClip(layer(['idle', 'sit_stool']), SEAT_CLIP.stool)?.sheet).toBe('s.sit_stool');
+    expect(resolveClip(layer(['idle', 'sit_stool_work']), SEAT_CLIP.stool)?.sheet).toBe('s.sit_stool_work');
   });
   it('is undefined for a layer with no clips at all', () => {
     expect(resolveClip(layer([]), 'idle')).toBeUndefined();

@@ -1,9 +1,9 @@
-"""The game-table stool as a sit-clip holdout (clip `sit_stool`; docs/ARCHITECTURE.md, seats).
+"""The game-table stool as a sit-clip holdout (clip `sit_stool_work`; docs/ARCHITECTURE.md, seats).
 
 The console clips (`sit_idle`, `sit_work`) cut the sitter wherever the console swivel chair's backrest, seat cushion and
 armrests are nearer the camera (human_render.chair_holdout), and the cut pixels stay hidden at run time. A stool has no
 armrests, a thinner back and a different seat, so seating a crew member on one with the console cut leaves holes in the
-lap. `sit_stool` is the same pose rendered against the stool itself: the module's own seat shape, chosen per module by
+lap. `sit_stool_work` is the sit_work pose rendered against the stool itself: the module's own seat shape, chosen per module by
 `ModuleDef.seat` (src/sim/registry.ts). Add another seat kind the same way: a holdout builder here, a `Pose(chair=<kind>)`
 row in crew_clips, a clip row in crew_spec.CLIPS."""
 from . import gametable_kit as GK

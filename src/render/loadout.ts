@@ -93,8 +93,8 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
   return activity === 'working' ? 'work' : 'idle';
 }
 
-/** The sit clip of a seat kind. Consoles and seated modules use `sit_idle`/`sit_work`, cut against the console chair; a seat of another shape has a clip cut against that shape (tools/blender/sprites/human_stool.py). */
-export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool' };
+/** The sit clip of a seat kind. Consoles and seated modules use `sit_idle`/`sit_work`, cut against the console chair; a seat of another shape has a work clip cut against that shape (players are always at work) (tools/blender/sprites/human_stool.py). */
+export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool_work' };
 
 /**
  * Clips to try, after the requested one, when a layer has no sheet for it. A layer lacking a clip is normal (sheets are
@@ -104,7 +104,7 @@ export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool
  * - `sit_idle`: nothing, so the layer is hidden. Seated poses are fitted to the chair; a standing pose would clip through
  *   it. The engineer rig and EVA pack have no sit sheets for exactly this reason;
  * - `sit_work`: the layer's sit_idle;
- * - `sit_stool`: nothing, like sit_idle (it is that pose cut against another seat);
+ * - `sit_stool_work`: nothing, like sit_idle (it is sit_work cut against another seat);
  * - `walk`: `run` (creature sheets), then idle.
  */
 const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
@@ -112,7 +112,7 @@ const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
   walk: ['run', 'idle'],
   sit_idle: [],
   sit_work: ['sit_idle'],
-  sit_stool: [],
+  sit_stool_work: [],
   ...weaponFallbacks(),
 };
 
