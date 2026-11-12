@@ -139,6 +139,7 @@ import { newYard, type YardState } from './yard/types';
  * v112 (reactor fuel and batteries, #421): `Module.fuel` (reactor store) and `Module.charge` (battery bank), job kind 'refuel', ore code 4 (`ore.crystal`).
  * v113 (room quality, #441): `Mood.relaxPts` / `relaxKey` / `mealTier` / `sleepTier` / `noBreak`.
  * v114 (recovery pod, #319): `RecoveringC` (a crew member lying in a pod), activity 'recovering', the `recover` drive.
+ * v115 (freight container art, #443): `module.cargo_container` is 2x3 with its access on the short front end (was 3x2), so saved containers occupy other tiles.
  */
 export const SAVE_VERSION = 115;
 
