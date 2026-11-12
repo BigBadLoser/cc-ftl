@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
 NAMES = {"c1": "C1  diner", "c2": "C2  lounge", "c3": "C3  neon",
-         "d1": "D1  tap gantry", "d2": "D2  crate dive", "d3": "D3  cooler bar"}
+         "d1": "D1  tap gantry", "d2": "D2  crate dive", "d3": "D3  cooler bar",
+         "e1": "E1  synth bar", "e2": "E2  mag-rail bar", "e3": "E3  backlit wall bar"}
 CW, CH = 280, 220
 
 

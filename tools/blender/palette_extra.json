@@ -3667,5 +3667,13 @@
   "barBulbY": {"hex": "#ffd23a", "emissive": 3.0, "set": "bar"},
   "barBulbO": {"hex": "#ff7a1a", "emissive": 2.5, "set": "bar"},
   "barBulbM": {"hex": "#ff2fb4", "emissive": 2.5, "set": "bar"},
+  "barPearl": {"hex": "#d6dbe4", "set": "bar3"},
+  "barViolet": {"hex": "#9a5cff", "emissive": 2.5, "set": "bar3"},
+  "barGraphite": {"hex": "#2b2f36", "set": "bar3"},
+  "barAmberL": {"hex": "#ffb03a", "emissive": 2.5, "set": "bar3"},
+  "barNavy": {"hex": "#1b2540", "set": "bar3"},
+  "barTeal": {"hex": "#27e0c4", "emissive": 2.5, "set": "bar3"},
+  "barNebula": {"hex": "#6a3fd0", "emissive": 1.5, "set": "bar3"},
+  "barSeat": {"hex": "#4a3a6a", "set": "bar3"},
   "barCyan": {"hex": "#19e6ff", "emissive": 2.5, "set": "bar"}
 }
