@@ -16,8 +16,9 @@ export const DIRS: readonly Dir[] = ['n', 'e', 's', 'w'];
  *   wing   lining a street that runs out through the hull (docks go on wings)
  *   band   in the ring's band, against the hull; with 'arm' too, what the band cannot hold lines a street instead
  *   court  where the public streets leave the central court, shared between them
+ *   corner in the cut corners of a square outline, one room each (where the outline has them)
  */
-export type Place = 'arm' | 'wing' | 'band' | 'court';
+export type Place = 'arm' | 'wing' | 'band' | 'court' | 'corner';
 
 export interface FlowDeptDef {
   id: string;
@@ -52,3 +53,12 @@ export interface StationFlowDef {
 
 /** A department with its rooms for one station. */
 export interface Dept { def: FlowDeptDef; rooms: RoomSpec[]; docks: RoomSpec[] }
+
+/**
+ * The skeleton's independent choices. Any outline goes with any street pattern; what a flow cannot be built on (two
+ * wings and a gated street on a spine) the planner reports instead of bending.
+ *   outline  a stepped disc, or a square with cut corners (each corner one room with a diagonal hull)
+ *   streets  cross: four streets from the court; tee: three; spine: one street straight through
+ */
+export interface Kit { outline: 'disc' | 'square'; streets: 'cross' | 'tee' | 'spine' }
+export const KITS: readonly Kit[] = (['disc', 'square'] as const).flatMap((outline) => (['cross', 'tee', 'spine'] as const).map((streets) => ({ outline, streets })));

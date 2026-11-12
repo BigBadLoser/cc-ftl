@@ -248,6 +248,36 @@ Missing vocabulary, in order of what it would buy: a **quarter block** (a depart
 between two streets, entered from one of them, gated when controlled); a **lane** (a street off a street, the same arm
 code in a shifted frame) to build it from; rooms on the ring's inner side (a double-loaded ring).
 
+### The kit: independent skeleton choices (the direction since the massing pass)
+
+The user's framing, adopted: not N station types but a few independent choices that multiply, each a part that works
+without knowing which others were picked. One order on one grid: outline, streets, features that claim ground (wings,
+corner rooms), then the band, then the ring's inner side, then whatever spills.
+
+| Axis | Options built | Where |
+|---|---|---|
+| Outline | stepped disc; square with cut corners | `site(R, pad, outline)` in `stationFlowKit.ts` |
+| Streets | cross (4), tee (3), spine (2, straight through) | `LAYOUTS` in `flow/planner.ts` |
+| Corners | one room per cut corner, true diagonal hull | `flow/corners.ts` |
+| Ring | rooms on its inner side as well as the band | `flow/inner.ts` |
+| Extensions | wings (docks, freight, a gated machinery annex) | `flow/arms.ts` |
+| Departments | which goes where, from the flow | `content/stationFlows.ts` |
+
+`Kit { outline, streets }` is passed to `planFlow`; `node tools/shipgen/flowSheets.js --flow <id>` draws the grid
+(outlines down, street patterns across).
+
+Two findings that changed the picture:
+
+- **The ring's inner side is frontage.** Rooms line its flats and take one tread each on its stair, the far wall carrying
+  the riser on (`inner.ts`). The band's overflow goes there first. The same program then fits R 32 to 36 instead of 36
+  to 44, and built share goes from 66-83% to 86-93% on the structures that use wings (mocks: 85 and 96%).
+- **A true diagonal is clean when one room owns it.** A one-tile stair only builds thick wall where another wall meets
+  it. A cut corner as a single room (its dividers on lattice lines, meeting the hull on the flats) has a 45 degree hull
+  and no wall block at any size.
+
+Still wrong: disc + spine is a hoop (a spine wants an oblong outline, not built); square interiors keep empty yards
+between the streets; nothing here has been through the fit-out yet.
+
 ## Tried and set aside
 
 - **Hand-drawn mocks** (`tools/shipgen/mocks/`, two rounds). They gave the user's preferences and the wall rule, and no

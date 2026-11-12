@@ -5,7 +5,8 @@ import { buildArm, type ArmPlan } from './arms';
 import { placeBand, type BandAsk } from './band';
 import { departmentsOf, frontage } from './departments';
 import { innerRoom, placeInner } from './inner';
-import { DIRS, type Dept, type Dir, type StationFlowDef } from './types';
+import { placeCorners } from './corners';
+import { DIRS, type Dept, type Dir, type Kit, type StationFlowDef } from './types';
 
 /**
  * The flow planner: a station's structure from its department flow and its program (docs/STATION_FLOW_WHEEL.md).
@@ -17,6 +18,14 @@ import { DIRS, type Dept, type Dir, type StationFlowDef } from './types';
  * good ones, so one flow gives several skeletons. No direction, radius or coordinate is written anywhere but here and
  * in arms.ts, and none of it names a station.
  */
+
+/** A street pattern laid one way round: the directions streets may take, and how many there are. */
+interface Layout { dirs: readonly Dir[]; count: number }
+const LAYOUTS: Record<Kit['streets'], readonly Layout[]> = {
+  cross: [{ dirs: DIRS, count: 4 }],
+  tee: DIRS.map((skip) => ({ dirs: DIRS.filter((d) => d !== skip), count: 3 })),
+  spine: [{ dirs: ['e', 'w'], count: 2 }, { dirs: ['n', 's'], count: 2 }],
+};
 
 const ANGLE: Record<Dir, number> = { n: 0, e: Math.PI / 2, s: Math.PI, w: (3 * Math.PI) / 2 };
 /** Quarter turns between two directions: 0 the same, 1 neighbours, 2 opposite. */
@@ -33,6 +42,7 @@ interface Slot { dept: Dept; dir: Dir; section: 'inner' | 'outer' }
 export interface FlowPlan {
   site: Site;
   flow: StationFlowDef;
+  kit: Kit;
   /** The skeleton in words: wings, the gated arm, the streets. */
   skeleton: string;
   score: number;
@@ -53,7 +63,7 @@ export interface FlowPlan {
 }
 
 /** Every assignment of the arm departments to a direction and a section that the flow's hard rules allow. */
-function assignments(depts: readonly Dept[]): Slot[][] {
+function assignments(depts: readonly Dept[], dirs: readonly Dir[]): Slot[][] {
   const arm = depts.filter((d) => !d.def.place.includes('band') && (d.def.place.includes('arm') || d.def.place.includes('wing')) && d.rooms.length + d.docks.length > 0);
   // Departments that follow another onto its arm are placed after it.
   arm.sort((a, c) => Number(!!a.def.with) - Number(!!c.def.with));
@@ -66,7 +76,7 @@ function assignments(depts: readonly Dept[]): Slot[][] {
       const host = got.find((q) => q.dept.def.id === d.def.with && q.section === 'outer');
       if (host) options.push([host.dir, 'inner']);
     } else {
-      for (const dir of DIRS) {
+      for (const dir of dirs) {
         if (d.def.place.includes('arm') && d.docks.length === 0) options.push([dir, 'inner']);
         if (d.def.place.includes('wing')) options.push([dir, 'outer']);
       }
@@ -99,7 +109,7 @@ function liking(flow: StationFlowDef, slots: readonly Slot[]): number {
 }
 
 /** The arms of an assignment: its streets, what lines them, how far each runs. */
-function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[], cells: number): ArmPlan[] {
+function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[], cells: number, lay: Layout): ArmPlan[] {
   const arms = new Map<Dir, ArmPlan>();
   const arm = (dir: Dir): ArmPlan => arms.get(dir) ?? arms.set(dir, { dir, width: 2, inner: [], fill: [], gated: false, reach: 'ring', outer: [], docks: [], customs: false }).get(dir) as ArmPlan;
   const bySize = (a: RoomSpec, c: RoomSpec): number => c.w * c.h - a.w * a.h;
@@ -115,8 +125,9 @@ function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Sl
   const open = (): ArmPlan[] => [...arms.values()].filter((a) => !a.gated);
   // The ring joins the centre by two public streets at least (a loop, and nobody walks the long way round): streets
   // are added opposite what is there.
-  while (open().length < 2) {
-    const free = DIRS.filter((d) => !arms.has(d));
+  // The street pattern asks for its number of streets besides: plain ones fill it up.
+  while (open().length < 2 || arms.size < lay.count) {
+    const free = lay.dirs.filter((d) => !arms.has(d));
     if (free.length === 0) break;
     const far = (d: Dir): number => open().reduce((t, a) => t + turns(d, a.dir), 0);
     arm(free.sort((a, c) => far(c) - far(a))[0] as Dir);
@@ -179,7 +190,7 @@ interface Built { site: Site; R: number; bare: number; out: number; spare: numbe
  * One try at one radius. `spill` names band rooms (department index:room index) to stand on the streets instead; when
  * the band comes up short of rooms that may, they are returned to be spilled on the next try.
  */
-function attempt(flow: StationFlowDef, source: readonly Dept[], placed: readonly Slot[], cells: number, spill: ReadonlySet<string>): Built | { why: string; spill?: Set<string> } {
+function attempt(flow: StationFlowDef, kit: Kit, lay: Layout, source: readonly Dept[], placed: readonly Slot[], cells: number, spill: ReadonlySet<string>): Built | { why: string; spill?: Set<string> } {
   // Fresh room specs for every build: placing may change one (a cabin given a second bed).
   const copy = (r: RoomSpec): RoomSpec => ({ ...r, mods: [...r.mods] });
   const depts = source.map((d) => ({ ...d, rooms: d.rooms.map(copy), docks: d.docks.map(copy) }));
@@ -193,12 +204,12 @@ function attempt(flow: StationFlowDef, source: readonly Dept[], placed: readonly
   }
   const slots = placed.map((q) => ({ ...q, dept: depts[source.indexOf(q.dept)] as Dept }));
   const R = cells * K;
-  const s = site(R, 40);
+  const s = site(R, 40, kit.outline);
   // The court keeps its intended size where the ring allows, and never takes more than a third of the way out.
   const c = Math.min(COURT[flow.intent.court], Math.max(2, Math.floor(s.reach * 0.3)));
   const court = s.g.hall(flow.intent.court === 'none' ? 'hall' : 'plaza', 'commons');
   s.g.street(court, -c, -c, c, c);
-  const arms = armsOf(flow, depts, slots, cells);
+  const arms = armsOf(flow, depts, slots, cells, lay);
   // Spilled rooms line the public streets after what is there: plain streets before a wing's, the emptiest first, each
   // taking what its frontage should hold.
   const hosts = arms.filter((a) => !a.gated).sort((a, b) => Number(a.reach === 'out') - Number(b.reach === 'out') || frontage(a.inner) - frontage(b.inner));
@@ -221,6 +232,9 @@ function attempt(flow: StationFlowDef, source: readonly Dept[], placed: readonly
     shops += r.filled;
     out = Math.max(out, r.out);
   }
+  // Corner rooms (an outline that has corners): the biggest rooms of the departments that may stand there.
+  const cornered = placeCorners(s, depts.filter((d) => d.def.place.includes('corner')).flatMap((d) => d.rooms).sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 4));
+  for (const d of depts) d.rooms = d.rooms.filter((r) => !cornered.includes(r));
   const asks = bandAsks(flow, depts, slots);
   const band = placeBand(s, asks);
   // What the band cannot hold stands on the ring's inner side, when it is small enough to.
@@ -240,13 +254,13 @@ function attempt(flow: StationFlowDef, source: readonly Dept[], placed: readonly
 }
 
 /** Build an assignment on the smallest ring that takes it, or say why none does. */
-function build(flow: StationFlowDef, source: readonly Dept[], placed: readonly Slot[]): Built | string {
+function build(flow: StationFlowDef, kit: Kit, lay: Layout, source: readonly Dept[], placed: readonly Slot[]): Built | string {
   let why = '';
   const smaller: string[] = [];
   for (const cells of CELLS) {
-    let r = attempt(flow, source, placed, cells, new Set());
+    let r = attempt(flow, kit, lay, source, placed, cells, new Set());
     // The band short of rooms that may line a street: once more with those on the streets.
-    if (!('site' in r) && r.spill) { smaller.push(`${r.why}, spilled`); r = attempt(flow, source, placed, cells, r.spill); }
+    if (!('site' in r) && r.spill) { smaller.push(`${r.why}, spilled`); r = attempt(flow, kit, lay, source, placed, cells, r.spill); }
     if ('site' in r) return { ...r, smaller };
     why = r.why;
     smaller.push(why);
@@ -258,8 +272,8 @@ function build(flow: StationFlowDef, source: readonly Dept[], placed: readonly S
  * The skeleton of an assignment in a few words, the same for every turn and mirror image of it: what runs out as a
  * wing, what is gated, how many plain streets, and how the pieces stand to each other (beside or opposite).
  */
-function skeletonOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[]): string {
-  const arms = armsOf(flow, depts, slots, 10);
+function skeletonOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[], lay: Layout): string {
+  const arms = armsOf(flow, depts, slots, 10, lay);
   const named = arms.filter((a) => a.dept).map((a) => ({ name: `${a.dept} ${a.reach === 'out' ? 'wing' : a.gated ? 'gated' : 'street'}`, dir: a.dir })).sort((p, q) => p.name.localeCompare(q.name));
   const rel: string[] = [];
   for (let i = 0; i < named.length; i++) for (let j = i + 1; j < named.length; j++) {
@@ -275,28 +289,31 @@ function skeletonOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonl
  * Plan a station for these rooms. `pick` chooses among the best skeletons (0 = the best); without it the seed chooses.
  * Returns null when no structure of the flow can be built, with the reasons in `trace`.
  */
-export function planFlow(rng: Rng, flow: StationFlowDef, rooms: readonly RoomSpec[], o: { pick?: number; trace?: string[] } = {}): FlowPlan | null {
+export function planFlow(rng: Rng, flow: StationFlowDef, rooms: readonly RoomSpec[], o: { pick?: number; trace?: string[]; kit?: Kit } = {}): FlowPlan | null {
   const { depts, loose } = departmentsOf(flow, rooms);
-  const all = assignments(depts).map((slots) => ({ slots, like: liking(flow, slots) })).sort((a, c) => c.like - a.like);
+  const kit = o.kit ?? { outline: 'disc', streets: 'cross' };
+  // Each way round the street pattern can lie, and on it each assignment that uses no more streets than it has.
+  const all = LAYOUTS[kit.streets].flatMap((lay) => assignments(depts, lay.dirs).filter((slots) => new Set(slots.map((q) => q.dir)).size <= lay.count).map((slots) => ({ slots, lay, like: liking(flow, slots) }))).sort((a, c) => c.like - a.like);
+  if (all.length === 0) o.trace?.push(`${kit.streets}: the flow's departments need more streets than the pattern has`);
   const best = new Map<string, FlowPlan>();
   const rejected: string[] = [];
-  for (const { slots, like } of all.slice(0, BUILD)) {
-    const skeleton = skeletonOf(flow, depts, slots);
-    const b = build(flow, depts, slots);
+  for (const { slots, lay, like } of all.slice(0, BUILD)) {
+    const skeleton = skeletonOf(flow, depts, slots, lay);
+    const b = build(flow, kit, lay, depts, slots);
     if (typeof b === 'string') { rejected.push(`${skeleton}: ${b}`); continue; }
     // Proportions: the ring no bigger than its contents, streets lined not bare, band not left spare, and a wing that
     // stands out far enough to read.
     const wings = slots.filter((q) => q.section === 'outer').length;
-    const score = like - 0.5 * (b.R / K) - 0.06 * b.bare - 0.15 * b.spare + 0.15 * b.shops + (wings > 0 && b.out >= 2 * K ? 1 : 0) - (wings > 2 ? 1 : 0);
+    const score = like - 1.0 * (b.R / K) - 0.06 * b.bare - 0.15 * b.spare + 0.15 * b.shops + (wings > 0 && b.out >= 2 * K ? 1 : 0) - (wings > 2 ? 1 : 0);
     // Turned and mirrored copies of one skeleton score alike: the seed keeps one of them.
     const prev = best.get(skeleton);
-    if (!prev || score > prev.score + 0.01 || (Math.abs(score - prev.score) <= 0.01 && rng.chance(0.5))) best.set(skeleton, { site: b.site, flow, skeleton, score, R: b.R, spare: b.spare, bare: b.bare, shops: b.shops, spilled: b.spilled, loose, smaller: b.smaller, others: [], rejected });
+    if (!prev || score > prev.score + 0.01 || (Math.abs(score - prev.score) <= 0.01 && rng.chance(0.5))) best.set(skeleton, { site: b.site, flow, kit, skeleton, score, R: b.R, spare: b.spare, bare: b.bare, shops: b.shops, spilled: b.spilled, loose, smaller: b.smaller, others: [], rejected });
   }
   const ranked = [...best.values()].sort((a, c) => c.score - a.score);
   o.trace?.push(...rejected);
   if (ranked.length === 0) return null;
   // The seed chooses among the best few skeletons that are close to the best.
-  const close = ranked.filter((p) => p.score >= (ranked[0] as FlowPlan).score - 3).slice(0, CHOICE);
+  const close = ranked.filter((p) => p.score >= (ranked[0] as FlowPlan).score - 2).slice(0, CHOICE);
   const chosen = close[o.pick !== undefined ? Math.min(o.pick, close.length - 1) : rng.int(0, close.length - 1)] as FlowPlan;
   chosen.others = ranked.filter((p) => p !== chosen).map((p) => `${p.skeleton} (${p.score.toFixed(1)}, R ${p.R})`);
   return chosen;

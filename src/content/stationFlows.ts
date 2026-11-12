@@ -6,7 +6,7 @@ import type { StationFlowDef } from '../sim/shipgen/flow/types';
  */
 const commons = { id: 'commons', roles: ['support', 'medbay'], place: ['court'] } as const;
 const habitation = { id: 'habitation', roles: ['quarters'], place: ['band', 'arm'] } as const;
-const defence = { id: 'defence', roles: ['weapons', 'plant'], place: ['band'] } as const;
+const defence = { id: 'defence', roles: ['weapons', 'plant'], place: ['corner', 'band'] } as const;
 const secure = { id: 'secure', roles: ['reactor', 'shields', 'core'], access: 'controlled', place: ['arm', 'wing'] } as const;
 const prefs = [
   { kind: 'near', a: 'freight', b: 'harbour' }, { kind: 'far', a: 'habitation', b: 'harbour' }, { kind: 'far', a: 'secure', b: 'harbour' },
@@ -32,7 +32,7 @@ export const stationFlows = {
     depts: [
       { id: 'harbour', roles: ['dock', 'bridge', 'armoury'], place: ['wing'], docks: 'all', customs: true },
       { id: 'market', roles: ['shop'], place: ['arm'], with: 'harbour', fill: true },
-      { id: 'freight', roles: ['cargo'], place: ['arm'] },
+      { id: 'freight', roles: ['cargo'], place: ['arm', 'wing'] },
       commons, secure, habitation, defence,
     ],
     prefs,

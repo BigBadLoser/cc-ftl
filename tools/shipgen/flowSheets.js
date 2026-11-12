@@ -4,6 +4,7 @@
  * (silhouette, structure, departments; labels.ts for each one), beside the legacy generator and the hand-designed
  * mocks. Unfurnished: this is the massing, for the eye, before any construction detail.
  *   node tools/shipgen/flowSheets.js [--kind station.trading] [--size station] [--seed 1] [--picks 3] [--out dir]
+ *   node tools/shipgen/flowSheets.js --flow flow.trading.harbourMarket   the kit grid: outlines down, street patterns across
  * Columns: the best skeletons of each flow for one seed (pick 0, 1, 2). Last row: legacy and the mocks.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -41,24 +42,36 @@ try {
     };
   };
   const rows = [];
-  for (const [id, flow] of Object.entries(stationFlows)) {
-    const row = [];
-    for (let pick = 0; pick < picks; pick++) {
-      const { rng, rooms } = roomsFor(seed);
-      const trace = [];
-      const t0 = performance.now();
-      const p = planFlow(rng, flow, rooms, { pick, trace });
-      if (!p) { console.log(`${id} pick ${pick}: NO STRUCTURE\n   ${trace.slice(0, 6).join('\n   ')}`); continue; }
-      if (pick > 0 && row.some((q) => q.plan.skeleton === p.skeleton)) continue; // fewer skeletons than picks
-      const g = asResult(p);
-      const blocks = wallBlocks(g), hull = stationHullIntegrityProblems(g.template);
-      const thin = roomCores(g).filter((c) => Math.min(c.w, c.h) < 3).length;
-      console.log(`${id} pick ${pick}: ${p.skeleton}\n   R ${p.R}, score ${p.score.toFixed(1)}, ${g.width}x${g.height}, floor ${[...g.roomOf].filter((k) => k >= 0).length}, spare strips ${p.spare}, bare street ${p.bare}, shops ${p.shops}, spilled ${p.spilled}, 2x2 ${blocks.length}, hull ${hull[0] ?? 'ok'}, under 3 wide ${thin}, loose rooms ${p.loose.length}, ${Math.round(performance.now() - t0)} ms`);
-      console.log(`   sized by: ${p.smaller.join(' | ') || 'the smallest radius tried'}`);
-      if (pick === 0) console.log(`   other skeletons: ${p.others.slice(0, 5).join(' | ') || 'none'}\n   rejected ${p.rejected.length}${p.rejected.length ? `: ${p.rejected.slice(0, 3).join(' | ')}` : ''}`);
-      row.push({ name: `${id.split('.').pop()}-${pick}`, title: `${flow.name}: ${p.skeleton}`, g, plan: p });
+  // One planned structure as a sheet panel, with its numbers printed.
+  const panel = (id, flow, pick, kit, name) => {
+    const { rng, rooms } = roomsFor(seed);
+    const trace = [];
+    const t0 = performance.now();
+    const p = planFlow(rng, flow, rooms, { pick, trace, ...(kit ? { kit } : {}) });
+    const tag = kit ? `${kit.outline} ${kit.streets}` : `pick ${pick}`;
+    if (!p) { console.log(`${id} ${tag}: NO STRUCTURE\n   ${trace.slice(0, 4).join('\n   ')}`); return null; }
+    const g = asResult(p);
+    const blocks = wallBlocks(g), hull = stationHullIntegrityProblems(g.template);
+    const thin = roomCores(g).filter((c) => Math.min(c.w, c.h) < 3).length;
+    console.log(`${id} ${tag}: ${p.skeleton}\n   R ${p.R}, score ${p.score.toFixed(1)}, ${g.width}x${g.height}, floor ${[...g.roomOf].filter((k) => k >= 0).length}, spare strips ${p.spare}, bare street ${p.bare}, shops ${p.shops}, spilled ${p.spilled}, 2x2 ${blocks.length}, hull ${hull[0] ?? 'ok'}, under 3 wide ${thin}, loose rooms ${p.loose.length}, ${Math.round(performance.now() - t0)} ms`);
+    console.log(`   sized by: ${p.smaller.join(' | ') || 'the smallest radius tried'}`);
+    if (pick === 0 && !kit) console.log(`   other skeletons: ${p.others.slice(0, 5).join(' | ') || 'none'}\n   rejected ${p.rejected.length}${p.rejected.length ? `: ${p.rejected.slice(0, 3).join(' | ')}` : ''}`);
+    return { name, title: `${kit ? `${kit.outline.toUpperCase()} + ${kit.streets.toUpperCase()}: ` : `${flow.name}: `}${p.skeleton}`, g, plan: p };
+  };
+  const only = arg('flow', '');
+  if (only) {
+    // The kit grid for one flow: outlines down, street patterns across.
+    const flow = stationFlows[only];
+    for (const outline of ['disc', 'square']) rows.push(['cross', 'tee', 'spine'].map((streets) => panel(only, flow, 0, { outline, streets }, `${outline}-${streets}`)).filter(Boolean));
+  } else {
+    for (const [id, flow] of Object.entries(stationFlows)) {
+      const row = [];
+      for (let pick = 0; pick < picks; pick++) {
+        const q = panel(id, flow, pick, null, `${id.split('.').pop()}-${pick}`);
+        if (q && !row.some((r) => r.plan.skeleton === q.plan.skeleton)) row.push(q);
+      }
+      rows.push(row);
     }
-    rows.push(row);
   }
   // References: the legacy wheel for this seed, and the hand-designed mocks.
   const refs = [];

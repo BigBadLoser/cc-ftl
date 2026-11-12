@@ -25,13 +25,19 @@ interface Strip { face: 'n' | 'e' | 's' | 'w'; off: number; tiles: [number, numb
 export const cellOf = (x: number, y: number): [number, number] => [(Math.floor(x / K) + 0.5) * K, (Math.floor(y / K) + 0.5) * K];
 const vertical = (x: number, y: number): boolean => { const [cx, cy] = cellOf(x, y); return Math.abs(cy) >= Math.abs(cx); };
 
-/** The lattice shapes of a wheel of radius R tiles: the hull disc, and the floor inboard of the band. */
-function shapes(R: number): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
-  const hull = (x: number, y: number): boolean => { const [cx, cy] = cellOf(x, y); return Math.hypot(cx, cy) < R; };
+/** The station's outline on the lattice: a stepped disc, or a square with its corners cut. */
+export type Outline = 'disc' | 'square';
+/** Cells cut from each corner of a square outline, along either side. */
+export const CUT = 2;
+
+/** The lattice shapes of a station of half-size R tiles: the hull, and the floor inboard of the band. */
+function shapes(R: number, outline: Outline): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
+  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && Math.abs(cx) + Math.abs(cy) < 2 * R - K * CUT);
+  const hull = (x: number, y: number): boolean => within(...cellOf(x, y));
   // A cell is inboard when the cell DEEP cells further out along its octant's axis is still hull: every strip is DEEP deep.
   const inner = (x: number, y: number): boolean => {
     const [cx, cy] = cellOf(x, y);
-    return Math.abs(cy) >= Math.abs(cx) ? Math.hypot(cx, cy + Math.sign(cy) * DEEP * K) < R : Math.hypot(cx + Math.sign(cx) * DEEP * K, cy) < R;
+    return Math.abs(cy) >= Math.abs(cx) ? within(cx, cy + Math.sign(cy) * DEEP * K) : within(cx + Math.sign(cx) * DEEP * K, cy);
   };
   // At a step the divider between two strips runs straight from the hull's riser to the ring, so the ring's own riser
   // sits one tile nearer the axis than the lattice line (that one-tile column stays with the band).
@@ -58,6 +64,7 @@ export const stripsFor = (r: RoomSpec): number => {
 export interface Site {
   g: RegionGrid;
   R: number;
+  outline: Outline;
   hull: (x: number, y: number) => boolean;
   inside: (x: number, y: number) => boolean;
   /** How far a tile is inside the inboard floor (0 outside it): 1-2 the ring, 3 its inner wall, more is free ground. */
@@ -71,9 +78,9 @@ export interface Site {
   freeOut: (x: number, y: number) => boolean;
 }
 
-export function site(R: number, pad = 24): Site {
+export function site(R: number, pad = 24, outline: Outline = 'disc'): Site {
   const g = new RegionGrid(R + pad);
-  const { hull, inside } = shapes(R);
+  const { hull, inside } = shapes(R, outline);
   const memo = new Map<number, number>();
   const depth = (x: number, y: number): number => {
     const key = (y + 512) * 1024 + x + 512;
@@ -91,7 +98,7 @@ export function site(R: number, pad = 24): Site {
   let reach = 0;
   while (depth(0, -(reach + 1)) >= 3) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, hull, inside, depth, ring, reach, free: (x, y) => depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, hull, inside, depth, ring, reach, free: (x, y) => depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {
