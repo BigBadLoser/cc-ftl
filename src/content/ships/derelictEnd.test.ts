@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, DownedC, PositionC, ShipC, SurrenderedC, deserialize, newGame, serialize, type Sim } from '../../sim';
+import { CombatC, CrewC, DownedC, ModuleC, PositionC, ShipC, SurrenderedC, WeaponC, deserialize, newGame, serialize, type Sim } from '../../sim';
 import { repKey } from '../../sim/galaxy/standing';
 import { PrisonerC } from '../../sim/fight/components';
 import { content } from '../index';
@@ -81,6 +81,29 @@ describe('the fight ends in the player\'s answer when the enemy crew is subdued 
     sim.enqueue({ type: 'prisoner.release', crew: mine });
     run(sim, 1);
     expect(sim.world.has(mine, CrewC)).toBe(true);
+  });
+
+  it('a yielded ship cannot charge or fire its weapons, and cannot jump away', () => {
+    const sim = setup();
+    const enemy = nth(sim, 2);
+    const guns = sim.world.query(WeaponC).filter((w) => shipIdOf(sim, sim.world.get(w, ModuleC)!) === enemy);
+    expect(guns.length).toBeGreaterThan(0);
+    for (const c of crewOf(sim, enemy)) sim.world.add(c, SurrenderedC, { tick: sim.tick });
+    run(sim, 30);
+    expect(sim.world.get(enemy, ShipC)!.yielded).toBe(true);
+    for (const g of guns) sim.world.get(g, WeaponC)!.charge = 0;
+    sim.world.get(enemy, CombatC)!.ftl = 1e6;
+    sim.events.drain();
+    const fired: string[] = [];
+    for (let i = 0; i < 200; i++) {
+      sim.step();
+      for (const e of sim.events.drain()) if (e.type === 'weapon.fired' || e.type === 'ship.fled') fired.push(e.type);
+    }
+    expect(fired).toEqual([]);
+    for (const g of guns) expect(sim.world.get(g, WeaponC)!.charge).toBe(0);
+    sim.enqueue({ type: 'combat.flee', ship: enemy });
+    run(sim, 2);
+    expect(sim.world.get(enemy, ShipC)!.state).toBe('active');
   });
 
   it('rejects an answer for a ship nobody is waiting on', () => {

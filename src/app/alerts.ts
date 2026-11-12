@@ -5,7 +5,7 @@ import { Struct } from '../sim/structure';
 import { O2_ALERT_CLEAR_ABOVE, ALERT_INTERVAL_TICKS } from '../sim/tuning';
 import { AwaySiteC } from '../sim/away/components';
 import { pendingAsks } from '../sim/galaxy/joinOffer';
-import { deriveAlerts, shortOnPower, powerSubject, powerAlertText, DERIVED_KINDS, type Wanted } from './alertsDerived';
+import { deriveAlerts, shortOnPower, underAttack, powerSubject, powerAlertText, DERIVED_KINDS, type Wanted } from './alertsDerived';
 import { passengerName } from './jobsSnapshot';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
@@ -173,7 +173,7 @@ export function createAlerts(sim: Sim): Alerts {
         const aboard = (id: number) => alive(id) && shipIdOf(sim, sim.world.get(id, PositionC)) !== home();
         return { kind: 'boarders.stranded', key: `rl${first.crew}`, text, subject: crewSubject(sim, first.crew), resolved: () => !ids.some(aboard) };
       }
-      case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !sim.sector.inCombat };
+      case 'combat.started': return { kind: e.type, key: 'cs', text: combatText(), subject: enemyShip(sim, home()), resolved: () => !underAttack(sim) };
       default: return null;
     }
   }

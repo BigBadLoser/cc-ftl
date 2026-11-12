@@ -27,6 +27,14 @@ export function shipById(sim: Sim, ship: number): Ship | undefined {
   return ship ? sim.world.get(ship, ShipC) : undefined;
 }
 
+/**
+ * May this ship act on its own: fire and charge its weapons, run its AI, launch boarders and drones, jump away? Only while it is `active` and has not
+ * yielded (`Ship.yielded`: its whole crew is beaten and waits on the player's answer). The one answer for the weapon, AI, boarding, drone and flee checks.
+ */
+export function shipCanAct(ship: Ship | undefined): boolean {
+  return ship?.state === 'active' && !ship.yielded;
+}
+
 /** The player's home ship: the lowest-id ship of the player's faction (the starting ship; later ships, prizes included, have higher ids), or 0. */
 export function homeShip(sim: Sim): number {
   guardPacked(sim, 'homeShip');

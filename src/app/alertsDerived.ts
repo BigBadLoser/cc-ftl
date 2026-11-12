@@ -1,3 +1,5 @@
+import { isDormant } from '../sim/combat/dormant';
+import { factionsHostile } from '../sim/combat/factions';
 import { isIdle } from '../sim/modules/draw';
 import { homeShip } from '../sim/index';
 import { shipIdOf, shipGrid } from '../sim/regions';
@@ -24,6 +26,22 @@ export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
   'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked', 'ship.yielded',
 ]);
+
+/**
+ * Is there still a fight to be alarmed by: the sector is in combat and not every ship at war with the player has yielded (`Ship.yielded`: beaten, waiting on the
+ * player's answer, its own alert asks it). Combat stays on in the sim until the answer.
+ */
+export function underAttack(sim: Sim): boolean {
+  if (!sim.sector.inCombat) return false;
+  let yielded = false;
+  for (const id of sim.world.query(ShipC)) {
+    const s = sim.world.get(id, ShipC);
+    if (!s || (s.state !== 'active' && s.state !== 'disabled') || isDormant(s) || !factionsHostile(s.faction, 'player')) continue;
+    if (!s.yielded) return true;
+    yielded = true;
+  }
+  return !yielded;
+}
 
 /** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network; ion-disabled parts and parts held offline by work excluded). */
 export function shortOnPower(sim: Sim, ship: number): boolean {
@@ -143,7 +161,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     if (!alive(id) || !player(id) || (sim.world.get(id, NeedsC)?.hunger ?? 1) > 0) continue;
     add({ kind: 'crew.starving', key: `st${id}`, text: `Starving: ${name(id)}`, subject: crewSubject(sim, id) });
   }
-  if (sim.sector.inCombat) {
+  if (underAttack(sim)) {
     const s = enemyShip(sim, home);
     const n = s?.kind === 'ship' ? sim.world.get(s.id, ShipC)?.name : undefined;
     add({ kind: 'combat.started', key: 'cs', text: `Under attack${n ? `: ${n}` : ''}`, subject: s });
@@ -174,7 +192,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
       { label: 'Take prisoners', tone: 'good', command: { type: 'ship.settle', ship: id, choice: 'takePrisoners' } },
       { label: 'Let them go', tone: 'good', command: { type: 'ship.settle', ship: id, choice: 'letGo' } },
     ];
-    add({ kind: 'ship.yielded', key: `sy${id}`, text: `${ship.name} has surrendered: take prisoners or let them go`, subject: { kind: 'ship', id }, actions, sticky: true });
+    add({ kind: 'ship.yielded', key: `sy${id}`, text: `${ship.name} surrendered`, subject: { kind: 'ship', id }, actions, sticky: true });
   }
   return out;
 }

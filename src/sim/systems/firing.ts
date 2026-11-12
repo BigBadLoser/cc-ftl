@@ -17,7 +17,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { MIN_SPREAD_FACTOR, SPREAD_PER_GUNNERY } from '../tuning';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/ships';
 import { weaponDefOf } from '../upgrades/stats';
 
 /**
@@ -36,7 +36,7 @@ export function firingSystem(sim: Sim): void {
     const ship = shipById(sim, shipId);
     const combat = ship && sim.world.get(shipId, CombatC);
     if (!m || !w || !def || !ship || !combat) continue;
-    const ready = ship.state === 'active' && !fireBlocked(combat) && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
+    const ready = shipCanAct(ship) && !fireBlocked(combat) && m.powered && m.hp > 0 && !sim.world.has(id, IonC) && isDeployed(sim, id);
     if (w.shotsLeft > 0) {
       w.commit = null;
       if (!ready) w.shotsLeft = 0;

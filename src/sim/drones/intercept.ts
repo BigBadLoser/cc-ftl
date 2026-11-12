@@ -1,7 +1,7 @@
 import { BodyC, type Body } from '../body';
 import { ProjectileC, ShipC } from '../combat/components';
 import { chipShuttle, droneThreats, incomingShots, shipCentre, shuttleThreat, underThreat } from '../combat/intercept';
-import { shipById } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/ships';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { VehicleC } from '../vehicles/components';
@@ -26,10 +26,10 @@ export const intercept: KindRules<Intercept> = {
   shared: true,
   candidates(sim, ship) {
     const c = shipCentre(sim, ship);
-    if (!c || sim.world.get(ship, ShipC)?.state !== 'active' || !underThreat(sim, ship)) return [];
+    if (!c || !shipCanAct(sim.world.get(ship, ShipC)) || !underThreat(sim, ship)) return [];
     return [{ kind: 'intercept', id: ship, x: Math.floor(c.x), y: Math.floor(c.y), rank: 0 } satisfies Candidate];
   },
-  valid: (sim, ship) => sim.world.get(ship, ShipC)?.state === 'active' && underThreat(sim, ship),
+  valid: (sim, ship) => shipCanAct(sim.world.get(ship, ShipC)) && underThreat(sim, ship),
   work(sim, id, d, t, job) {
     const b = sim.world.get(id, BodyC);
     if (!b) return 'done';

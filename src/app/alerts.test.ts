@@ -366,3 +366,28 @@ describe('alerts', () => {
     });
   });
 });
+
+describe('a beaten ship waits for the answer', () => {
+  it('raises "<ship> surrendered" with both answers and no "Under attack" alert beside it', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 90 });
+    for (let i = 0; i < 10; i++) sim.step();
+    const alerts = createAlerts(sim);
+    alerts.onEvents(sim.events.drain());
+    alerts.sync();
+    expect(current(alerts).map((a) => a.kind)).toContain('combat.started');
+    const enemy = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.faction === 'hostile')!;
+    sim.enqueue({ type: 'debug.surrender', ship: enemy });
+    for (let i = 0; i < 40; i++) sim.step();
+    expect(sim.world.get(enemy, ShipC)!.yielded).toBe(true);
+    expect(sim.sector.inCombat).toBe(true); // the fight holds until the answer
+    alerts.onEvents(sim.events.drain());
+    alerts.sync();
+    const kinds = current(alerts).map((a) => a.kind);
+    expect(kinds).toContain('ship.yielded');
+    expect(kinds).not.toContain('combat.started');
+    const a = current(alerts).find((x) => x.kind === 'ship.yielded')!;
+    expect(a.text).toBe(`${sim.world.get(enemy, ShipC)!.name} surrendered`);
+    expect(a.actions?.map((x) => x.label)).toEqual(['Take prisoners', 'Let them go']);
+  });
+});
