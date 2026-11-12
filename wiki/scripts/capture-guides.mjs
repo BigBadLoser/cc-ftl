@@ -18,6 +18,7 @@ const marksOut = join(wiki, 'src/data/guide-shots');
 const port = 5199;
 const base = `http://127.0.0.1:${port}/cc-ftl/`;
 const only = process.argv[2];
+const SLOW = 120000; // generous: software GL makes some frames slow
 
 async function waitForServer(url, ms = 60000) {
   const end = Date.now() + ms;
@@ -105,12 +106,14 @@ try {
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
   });
   for (const shot of shots.filter((s) => !only || s.name.includes(only))) {
+    try {
     const page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
     await page.context().addInitScript(() => { try { localStorage.setItem('cc-ftl.lessons', JSON.stringify({ seen: [], off: true })); } catch { /* no storage */ } });
     // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
     const query = shot.query ?? '';
     await page.goto(base + query + (query ? '&' : '?') + 'hook&lessons=off', { waitUntil: 'load' });
     await page.waitForTimeout(shot.settle ?? 6000);
+    page.setDefaultTimeout(SLOW);
     const h = helpers(page);
     await shot.steps?.(h);
     const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1920, height: 950 };
@@ -124,7 +127,7 @@ try {
       await mkdir(marksOut, { recursive: true });
       await writeFile(join(marksOut, shot.name.replaceAll('/', '__') + '.json'), JSON.stringify(marks, null, 2) + '\n');
     }
-    let png = await page.screenshot({ clip: area });
+    let png = await page.screenshot({ clip: area, timeout: 180000 });
     if (shot.keyOut) png = await keyOutBackground(png);
     const file = join(out, shot.name + '.webp');
     await mkdir(dirname(file), { recursive: true });
@@ -132,6 +135,7 @@ try {
     await sharp(png).webp(shot.quality ? { quality: shot.quality } : { lossless: true }).toFile(file);
     console.log('Captured ' + shot.name + '.webp');
     await page.close();
+    } catch (err) { console.error('FAILED ' + shot.name + ': ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
   }
   await browser.close();
 } finally {

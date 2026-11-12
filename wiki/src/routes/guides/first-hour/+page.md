@@ -104,11 +104,11 @@ construction you haven't finished.
 The goods travel by shuttle. The Wayfarer has one; the Prospector and Lancer have no bay, so build a shuttle bay and
 fit a shuttle before you trade (the trade window says "No shuttle to carry it" until then).
 
-<GuideShot name="first-hour/trade" alt="The trade station's panel on the Trade tab" width="440px" />
+<GuideShot name="first-hour/trade" alt="The floating Trade window with the market list and deal slip" />
 
 Click the trade station (in the strip of nearby ships and stations, or in the world), then **Hail station**. The comms
 channel opens with the station's services as buttons: dock control, quartermaster, job broker, recruiter and more.
-**Trade** (marked with an arrow) opens its own floating **Trade** window, which you can drag, resize and pin. It works the same for
+**Trade** opens its own floating **Trade** window, which you can drag, resize and pin. It works the same for
 stations and trader ships. The market list shows every item with a **−** and **+** beside it: **+** buys, and **−** walks down through
 zero into selling. Click moves one, Shift five, Ctrl ten and Alt as many as you can. The deal slip shows what you pay or
 get and how many shuttle trips it needs. Press **PROPOSE** and, when the station answers, **ACCEPT**. Your shuttle
@@ -135,7 +135,7 @@ Your starting crystals last a good while. Switching off modules you aren't using
 
 ## Your first contract
 
-<GuideShot name="first-hour/jobs" alt="The station's contracts, with delivery jobs" width="440px" />
+<GuideShot name="first-hour/jobs" alt="The station's comms window on the job broker, listing contracts" />
 
 The station's job broker (a service button in the comms channel) lists contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
 deadline, and how strong any opposition is next to your own ship. **Accept** one and it appears in the jobs tracker on
