@@ -688,11 +688,11 @@ export type UiSubject =
   | { kind: 'ship'; id: number }
   | { kind: 'node'; id: string };
 
-/** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
+/** Alerts are urgent things only (see EVENT_ROUTE in app/eventRoute.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
