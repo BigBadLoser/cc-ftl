@@ -16,6 +16,7 @@
 
 <style>
   .decisions { display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .decisions:first-child { border-top: 0; }
   button { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 12px; min-height: 0; border: 1px solid var(--line-hi); border-radius: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
   button.primary { border-color: var(--cyan); color: var(--cyan); background: rgba(54, 212, 255, 0.08); }
   button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.05); }

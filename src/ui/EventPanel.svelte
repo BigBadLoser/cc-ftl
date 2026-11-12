@@ -25,7 +25,7 @@
 </script>
 
 <aside class="card" data-testid="event-panel" data-kind={event.kind}>
-  <Frame title={title} tone={event.hostiles > 0 ? 'hostile' : 'normal'} style="pointer-events:auto; background: var(--panel)">
+  <Frame title={title} tone={event.hostiles > 0 ? 'hostile' : 'normal'} style="pointer-events:auto; background: var(--panel); --frame-bg: var(--panel)">
     {#snippet right()}
       <Chip plate>Off the map</Chip>
     {/snippet}

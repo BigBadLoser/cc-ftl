@@ -143,7 +143,7 @@
 {:else}
   <!-- The rail frame (kit/Frame): the title sits in a gap in the top line and drags the window; pin and close are tiles on the line. -->
   <Frame {title} class="fw {cls}" testid={testId} aria-label={title} data-pinned={pinned} bind:clientHeight={elH}
-    style="{style ? style + ';' : ''}--fw-z:{z};padding:var(--sp-3) 0 0;{pinned ? '--edge:var(--cyan);' : ''}"
+    style="{style ? style + ';' : ''}--fw-z:{z};padding:var(--sp-3) 0 0;{bg ? '--frame-bg:var(--panel);' : ''}{pinned ? '--edge:var(--cyan);' : ''}"
     onpointerdown={(e: PointerEvent) => { if ((e.target as HTMLElement).closest('.rail')) begin(e, 'move'); }}
     onpointermove={drag} onpointerup={end} onpointercancel={end}
     ondblclick={(e: MouseEvent) => { if ((e.target as HTMLElement).closest('.rail') && !(e.target as HTMLElement).closest('button')) reset(); }}>
@@ -172,7 +172,9 @@
   /* The framed window: the rail is the handle; the inner box clips the content (the frame itself can't, the title rides above its edge). */
   .inner { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .inner.bg { background: var(--panel); }
-  :global(.frame.fw .rail) { cursor: move; touch-action: none; }
+  :global(.frame.fw .rail) { cursor: move; touch-action: none; pointer-events: auto; top: -8px; height: 17px; z-index: 6; }
+  /* The rail is the drag handle, so the top-edge resize strips sit just below it. */
+  :global(.frame.fw) .grip.n, :global(.frame.fw) .grip.ne, :global(.frame.fw) .grip.nw { top: 9px; }
   .ico { display: inline-flex; color: var(--ink-accent); margin-right: 5px; vertical-align: -2px; }
   :global(.frame.fw .rail button.tile) { width: 18px; height: 18px; padding: 0; margin-left: 4px; display: grid; place-items: center; border: 1px solid var(--frame-line); border-radius: 0; background: var(--band-tile); color: #fff; cursor: pointer; }
   :global(.frame.fw .rail button.tile:hover) { background: var(--panel-3); }
