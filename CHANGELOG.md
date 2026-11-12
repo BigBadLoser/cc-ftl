@@ -38,6 +38,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Changed
 
+- A ship's roof now darkens with its hull when the lights go out, and pulses red with it on an unpowered ship, so the roof and hull always match. ([#437](https://github.com/BigBadLoser/cc-ftl/pull/437))
 - Enemy ships and stations burn energy crystals like yours: ships spawn with a few days of them in their stores, stations hold a large stock that their supply runs refill, and derelicts have drained reactors. Crystals in their holds are loot. Rogue AI ships are switched off for now: their sealed reactor pods can't be refuelled ([#427](https://github.com/BigBadLoser/cc-ftl/pull/427)).
 - Spacesuits are no longer limited: any airlock or shuttle has a suit for every crew member who needs one, so a shuttle can take a full party of four out to a wreck, all suited. ([#419](https://github.com/BigBadLoser/cc-ftl/pull/419))
 - Other ships are drawn roofed until your crew board them; stations stay open. ([#392](https://github.com/BigBadLoser/cc-ftl/pull/392))

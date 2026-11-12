@@ -8,6 +8,7 @@ import { Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
+import { WALL_LIGHT_REACH, wallLight } from "./wallLight";
 import { createMarkers, type Markers } from "./markers";
 import { createOverlay, type Overlay, type OverlayWorld } from "./overlay";
 import { addStatic } from "./sprites";
@@ -51,8 +52,6 @@ export interface GridViewHost {
 
 /** Air thinner than this (kPa) is vacuum and gets a cold cast. */
 const VACUUM_O2 = 5;
-/** How far a wall inside a thick block looks for light (tiles; a wall with a floor tile round it uses only its 3x3). */
-const WALL_LIGHT_REACH = 6;
 
 interface Door {
   /** Display objects as returned by addStatic: sprite, glow, halo. */
@@ -390,28 +389,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const hp = tiles.data("hp", v.c);
     const at = (a: Readonly<ArrayLike<number>> | undefined, i: number): number => (a ? (a[i] as number) : 0);
     const r = tiles.chunkRect(v.c);
-    // A wall takes the brightest light round it; inside a thick block (no floor round it) the search widens until it
-    // reaches a floor tile, so the block's top is lit as one mass instead of darkening into a pit.
-    const floorAt = (x: number, y: number) => tiles.inside(x, y) && kindAt(x, y) === Struct.Floor;
-    const wallLight = (x: number, y: number): number => {
-      let best = 0;
-      for (let rr = 1; rr <= WALL_LIGHT_REACH; rr++) {
-        let open = false;
-        for (let dy = -rr; dy <= rr; dy++)
-          for (let dx = -rr; dx <= rr; dx++) {
-            const nx = x + dx;
-            const ny = y + dy;
-            if (Math.max(Math.abs(dx), Math.abs(dy)) === rr && floorAt(nx, ny)) open = true;
-            if (!tiles.inside(nx, ny)) continue;
-            const own = nx >= r.x0 && ny >= r.y0 && nx < r.x1 && ny < r.y1;
-            best = Math.max(best, own ? at(light, (ny - r.y0) * CHUNK_SIZE + (nx - r.x0)) : tiles.get("light", nx, ny));
-          }
-        if (open) break;
-      }
-      return best;
-    };
+    // A wall takes the brightest light round it (wallLight.ts, shared with the roof).
+    const litWall = (x: number, y: number): number => wallLight(tiles, x, y, (nx, ny) => (nx >= r.x0 && ny >= r.y0 && nx < r.x1 && ny < r.y1 ? at(light, (ny - r.y0) * CHUNK_SIZE + (nx - r.x0)) : tiles.get("light", nx, ny)));
     for (const t of v.tinted) {
-      const lv = t.wall ? wallLight(t.x, t.y) : at(light, t.ci);
+      const lv = t.wall ? litWall(t.x, t.y) : at(light, t.ci);
       const lit = lightTint(lv, !t.wall && at(o2, t.ci) < VACUUM_O2, pulse);
       const base = t.solid ? mulColor(lit, damageTint(at(hp, t.ci))) : lit;
       t.spr.tint = t.paint === undefined ? base : mulColor(base, t.paint);
