@@ -48,6 +48,8 @@ def main():
         n = sum(1 for k in G.m["assets"] if re.fullmatch(rf"module\.recovery\.{v}\.f\d+\.front", k))
         if n:
             sweep(G, pub, v, n, out)
+        if f"module.recovery.{v}.scan.back.f0" in G.m["assets"]:
+            timeline(G, pub, out, v)
     print("wrote", out)
 
 
@@ -65,6 +67,30 @@ def sweep(G, pub, v, n, out):
         c.static(G, f"module.recovery.{v}.f{f}.front", ox, oy)
         frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 3, CH * 3), Image.NEAREST))
     frames[0].save(out / f"recovery-{v}-sweep-3x.gif", save_all=True, append_images=frames[1:], duration=250, loop=0)
+
+
+def timeline(G, pub, out, v="u3", loop=16, scan=16, every=48):
+    """The game's behaviour: the bubble loop (`<v>b.fN`) always running, the scanner (`<v>.scan.back/front.fN`) played
+    once every `every` frames; `every` frames at 4 fps (48 = 12 s)."""
+    from PIL import Image
+    frames = []
+    for t in range(every):
+        c = Canvas(CW, CH)
+        ox, oy = 115, 165
+        for gx in range(-1, 2):
+            for gy in range(-1, 2):
+                floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
+        b = t % loop
+        s = t - loop if loop <= t < loop + scan else None              # the scan plays in the second loop
+        c.static(G, f"module.recovery.{v}b.f{b}", ox, oy)
+        if s is not None:
+            c.static(G, f"module.recovery.{v}.scan.back.f{s}", ox, oy)
+        c.char(human(pub, 1), ox, oy - 16 - FLOATS.get(v[0], FLOAT))
+        c.static(G, f"module.recovery.{v}b.f{b}.front", ox, oy)
+        if s is not None:
+            c.static(G, f"module.recovery.{v}.scan.front.f{s}", ox, oy)
+        frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 3, CH * 3), Image.NEAREST))
+    frames[0].save(out / f"recovery-{v}-timeline-3x.gif", save_all=True, append_images=frames[1:], duration=250, loop=0)
 
 
 if __name__ == "__main__":

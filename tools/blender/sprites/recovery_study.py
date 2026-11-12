@@ -246,4 +246,5 @@ def jobs():
             + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS]
             + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS]
             + [job(v, recovery_study9.DESIGNS) for v in recovery_study9.DESIGNS]
-            + [job(v, recovery_study10.DESIGNS) for v in recovery_study10.DESIGNS])
+            + [job(v, recovery_study10.DESIGNS) for v in recovery_study10.DESIGNS]
+            + recovery_study10.SCAN_JOBS)

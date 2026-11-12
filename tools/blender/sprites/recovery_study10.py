@@ -220,4 +220,31 @@ def design(h, f):
             ((bubbles(f, False), 220), (scan(h, False), "holo")))
 
 
-DESIGNS = {"u3": design(STILL, 0), **{f"u3.f{i}": design(h, i) for i, h in enumerate(SWEEP)}}
+def bubbles_only(f):
+    """A frame of the always-on loop: the pod and its bubbles, no scanner (that is its own layer, played now and then)."""
+    return (u3_back,
+            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True), 220), (u3_top, 255)),
+            ((bubbles(f, False), 220),))
+
+
+def scan_job(f, h):
+    """The scanner on its own, frame f of a sweep: `module.recovery.u3.scan.back.fN` (drawn under the patient) and
+    `.scan.front.fN` (over them), the pod's solid parts as holdout."""
+    def run(f=f, h=h):
+        from . import core, post
+        from .research_kit import holo_item
+        out = []
+        for name, front in (("back", False), ("front", True)):
+            core.clear_scene_meshes()
+            post.select("recovery")
+            it = holo_item(f"module.recovery.u3.scan.{name}.f{f}", FP8, u3_back.mask(), scan(h, front)())
+            if it:
+                it["id"] = f"module.recovery.u3.scan.{name}.f{f}"
+                out.append(it)
+        return out
+    return run
+
+
+DESIGNS = {"u3": design(STILL, 0), **{f"u3.f{i}": design(h, i) for i, h in enumerate(SWEEP)},
+           **{f"u3b.f{i}": bubbles_only(i) for i in range(FRAMES)}}
+SCAN_JOBS = [scan_job(f, h) for f, h in enumerate(SWEEP)]
