@@ -140,7 +140,7 @@ import { newYard, type YardState } from './yard/types';
  * v113 (room quality, #441): `Mood.relaxPts` / `relaxKey` / `mealTier` / `sleepTier` / `noBreak`.
  * v114 (recovery pod, #319): `RecoveringC` (a crew member lying in a pod), activity 'recovering', the `recover` drive.
  */
-export const SAVE_VERSION = 114;
+export const SAVE_VERSION = 115;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

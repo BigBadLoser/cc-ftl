@@ -22,7 +22,7 @@ export interface Wanted { kind: UiAlertKind; key: string; text: string; subject:
 /** The kinds `deriveAlerts` covers: a dismissal of one of these stays quiet until its condition clears. */
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
-  'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked',
+  'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked', 'ship.yielded',
 ]);
 
 /** Whether a live, switched-on consumer is unpowered: the power system's own allocation (per network; ion-disabled parts and parts held offline by work excluded). */
@@ -165,6 +165,16 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     } else if (insp.blocked && insp.phase !== 'leave') {
       add({ kind: 'inspect.blocked', key: `ib${id}`, text: `Inspectors can't board: ${insp.name}`, subject: lead !== undefined ? crewSubject(sim, lead) : null });
     }
+  }
+  // A beaten ship waits for the answer (`Ship.yielded`, sim/capture/settle.ts).
+  for (const id of sim.world.query(ShipC)) {
+    const ship = sim.world.get(id, ShipC);
+    if (!ship?.yielded) continue;
+    const actions: UiAlert['actions'] = [
+      { label: 'Take prisoners', tone: 'good', command: { type: 'ship.settle', ship: id, choice: 'takePrisoners' } },
+      { label: 'Let them go', tone: 'good', command: { type: 'ship.settle', ship: id, choice: 'letGo' } },
+    ];
+    add({ kind: 'ship.yielded', key: `sy${id}`, text: `${ship.name} has surrendered: take prisoners or let them go`, subject: { kind: 'ship', id }, actions, sticky: true });
   }
   return out;
 }

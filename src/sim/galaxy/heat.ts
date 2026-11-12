@@ -76,7 +76,7 @@ function stationOwner(sim: Sim, id: number): string | null {
  * The galaxy faction a ship in the active sector flies (or flew) for: its node or fleet descriptor, the owner of a station, else its combat `side`'s
  * faction (a prize's side is the one it was taken from).
  */
-function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string | null {
+export function factionOfShip(sim: Sim, id: number, ship: Ship, side: Faction): string | null {
   const c = contactOf(sim, id);
   if (c) return c.faction;
   if (ship.immobile) {

@@ -177,6 +177,10 @@ describe('zealots', () => {
     expect(crewSubdued(sim, id, ship)).toBe(false);
     for (const c of crew) sim.world.add(c, DownedC, { bleed: 99, stabilized: false, bed: 0 });
     expect(crewSubdued(sim, id, ship)).toBe(true);
+    // Zealots never surrender, so the ship is wrecked outright: no choice is offered.
+    for (let i = 0; i < 12; i++) sim.step();
+    expect(ship.yielded).toBeUndefined();
+    expect(ship.state).toBe('wreck');
   });
 
   it('answer a hail only when standing is high (the augmentation check counts nobody until implants)', () => {
