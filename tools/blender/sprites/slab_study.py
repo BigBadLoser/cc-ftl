@@ -135,8 +135,8 @@ CART_OVERLAYS = {"c11": [(single(cradle_floor, (1, 2), "fl"), 120), (single(crad
 
 # ---- rendering ------------------------------------------------------------------------------------------------------
 def tables():
-    from . import slab_wheel
-    return {**slab_wheel.DESIGNS, **CARTS}, {**slab_wheel.OVERLAYS, **CART_OVERLAYS}
+    from . import slab_load, slab_wheel
+    return {**slab_wheel.DESIGNS, **slab_load.DESIGNS, **CARTS}, {**slab_wheel.OVERLAYS, **CART_OVERLAYS}
 
 
 def build(v):
@@ -144,8 +144,8 @@ def build(v):
     k = K(f"slab_{v}", fp)
     slabs = fn(k)
     objs = k.build()
-    from . import slab_wheel
-    pit = getattr(slab_wheel, "PIT", {}).get(v)
+    from . import slab_load, slab_wheel
+    pit = {**slab_wheel.PIT, **slab_load.PIT}.get(v)
     if pit:                                         # sunk in the floor: a holdout floor round the pit's mouth hides
         from .slab_kit import corner_fill           # what is under the floor outside it (the game's floor shows;
         #                                             wide: the iso camera sees under-floor parts past the footprint)
@@ -178,6 +178,8 @@ def scene_items(v):
     c, op, g, ox, oy, _ = E.render_sprite("x", "prop", objs)
     out = [E.crop_item(f"slab.study.{v}", tables()[0][v][1], c, op, g, ox, oy)]
     corners = []
+    if os.environ.get("SLAB_NOMASK"):               # a quick still: no face masks (the preview leaves faces blank)
+        slabs = []
     import bpy
     full = bpy.context.scene.cycles.samples
     bpy.context.scene.cycles.samples = 1            # a face mask is only its alpha: one sample is plenty
