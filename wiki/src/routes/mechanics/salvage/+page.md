@@ -94,7 +94,7 @@ recall buttons.
 Every airlock and every shuttle has a suit for each crew member who needs one. Crew put one on at the inside tile of the
 airlock. They don't need to be drafted for a salvage order.
 
-A tank lasts about ten minutes. Crew refill at the hovering shuttle or at an intact airlock before it runs low, then go back to
+A tank lasts about <Stat kind="tuning" id="DEFAULT_SUIT.airSec" scale={1/60} /> minutes. Crew refill at the hovering shuttle or at an intact airlock before it runs low, then go back to
 work. The game raises urgent alerts if a suit runs **low** or **out**, or if a crew member has **no air in reach**. A **Crew
 stranded** alert means an away party cannot get home.
 

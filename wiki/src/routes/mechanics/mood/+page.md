@@ -56,10 +56,10 @@ These factors are live in the game now. Points are before traits.
 
 | Factor | Points |
 |---|---|
-| Hot ration at the galley | +3 |
-| Bland meal | +5 |
-| Good meal | +9 |
-| Fine meal | +13 |
+| Hot ration at the galley | +<Stat kind="items" id="item.ration" field="food.mood.points" /> |
+| Bland meal | +<Stat kind="items" id="item.meal_bland" field="food.mood.points" /> |
+| Good meal | +<Stat kind="items" id="item.meal_good" field="food.mood.points" /> |
+| Fine meal | +<Stat kind="items" id="item.meal_fine" field="food.mood.points" /> |
 | Slept in a bed | +5 |
 | Slept on the floor | -6 |
 
@@ -80,7 +80,7 @@ Better cooks make better meals. See [Food](../food/).
 | Factor | Points |
 |---|---|
 | Company: another crew member within <Stat kind="tuning" id="MOOD_COMPANY_RADIUS" /> tiles | +3 |
-| Lonely: nobody near for two minutes | -4 |
+| Lonely: nobody near for <Stat kind="tuning" id="MOOD_LONELY_SEC" unit="s" /> | -4 |
 
 **Work and rest**
 
@@ -96,8 +96,8 @@ more (see [Crew](../crew/)).
 <Stat kind="tuning" id="BOND_RIVAL_MOOD" />, a good talk +<Stat kind="tuning" id="BOND_CHAT_MOOD" />, a row
 <Stat kind="tuning" id="BOND_ROW_MOOD" />, grieving a dead friend <Stat kind="tuning" id="BOND_GRIEF_MOOD" /> for a while.
 
-**After a break**: "Let it out" gives a few points back for a few minutes after a mental break ends. Someone who made a
-scene nearby costs "Made a scene" -3 for five minutes.
+**After a break**: "Let it out" gives <Stat kind="tuning" id="BREAK_LET_OUT_POINTS" /> points back for a few minutes after a mental break ends. Someone who made a
+scene nearby costs "Made a scene" <Stat kind="tuning" id="BREAK_SCENE_MOOD" /> for <Stat kind="tuning" id="BREAK_SCENE_SEC" unit="s" />.
 
 ### Traits
 
@@ -105,18 +105,18 @@ Traits change how mood works for one crew member:
 
 | Trait | Effect |
 |---|---|
-| Cheerful | +5 mood, and +2 mood to others nearby. Less likely to break. |
-| Gloomy | -5 mood, and -1 to others nearby. More likely to break, and more likely to despair. |
+| Cheerful | +<Stat kind="tuning" id="traits.trait.cheerful.effects.mood" /> mood, and +<Stat kind="tuning" id="traits.trait.cheerful.effects.aura" /> mood to others nearby. Less likely to break. |
+| Gloomy | <Stat kind="tuning" id="traits.trait.gloomy.effects.mood" /> mood, and <Stat kind="tuning" id="traits.trait.gloomy.effects.aura" /> to others nearby. More likely to break, and more likely to despair. |
 | Social | Company +6 instead of +3, lonely -8 instead of -4 |
-| Loner | Likes being alone (+3). Crowded (three or more crew near) -4. No lonely or company terms |
+| Loner | Likes being alone (+3). Crowded (<Stat kind="tuning" id="MOOD_CROWD" /> or more crew near) -4. No lonely or company terms |
 | Stoic | Every factor counts half |
 | Sensitive | Every factor counts one and a half times |
 | Thrill-seeker | +6 in combat or on a spacewalk, but bored (-3) after a long quiet stretch |
-| Pacifist | +3 whenever the ship isn't in a fight |
-| Lazy | +3 mood but more likely to refuse work |
+| Pacifist | +<Stat kind="tuning" id="traits.trait.pacifist.effects.peaceMood" /> whenever the ship isn't in a fight |
+| Lazy | +<Stat kind="tuning" id="traits.trait.lazy.effects.mood" /> mood but more likely to refuse work |
 | Small appetite / Glutton | Food factors count half / twice |
 | Dark-adapted | Dark rooms don't bother them, but a bright room does (-3) |
-| Battle-shy | -6 whenever a hostile is in sight |
+| Battle-shy | <Stat kind="tuning" id="BATTLE_FEAR_MOOD" /> whenever a hostile is in sight |
 | Protective | Grief hits one and a half times as hard |
 
 <ComingLater>
@@ -135,7 +135,7 @@ holds separately, so one crew member can like another who doesn't like them back
 
 - At <Stat kind="tuning" id="BOND_FRIEND" /> or more, they count as **friends**.
 - At minus <Stat kind="tuning" id="BOND_FRIEND" /> or less, they are **rivals**.
-- A label sticks until the score drifts back under 40.
+- A label sticks until the score drifts back under <Stat kind="tuning" id="BOND_KEEP" />.
 - Each crew member can have at most <Stat kind="tuning" id="BOND_MAX_FRIENDS" /> friends and
   <Stat kind="tuning" id="BOND_MAX_RIVALS" /> rivals. A new bond that would be one too many only forms if it is
   stronger than the weakest one, which then falls back to just under the line.
@@ -189,7 +189,7 @@ heads, a scribble when it goes badly and a red burst in a shouting match.
 ### Grief
 
 When a friend dies, everyone who counted them a friend grieves. They take
-<Stat kind="tuning" id="BOND_GRIEF_MOOD" /> mood for ten minutes, one and a half times that if Protective. Grief is also
+<Stat kind="tuning" id="BOND_GRIEF_MOOD" /> mood for <Stat kind="tuning" id="BOND_GRIEF_SEC" unit="s" />, one and a half times that if Protective. Grief is also
 a trigger for a mental break (despair is the usual one). Keeping your crew alive is the best morale policy.
 
 ### The Social tab
@@ -218,21 +218,21 @@ a few minutes. Every break is noted in the ship's log, with the crew member's na
 Two things push the chance up. Each check, there is a small chance of a break; the check runs every few seconds per
 crew member.
 
-1. **Low mood.** From mood 35 there is a small chance, higher under 20 and highest under 10. A stressed mood is the
+1. **Low mood.** From mood <Stat kind="tuning" id="BREAK_BASE_BELOW" /> there is a small chance, higher under <Stat kind="tuning" id="BREAK_BASE_LOWER" /> and highest under <Stat kind="tuning" id="MOOD_BREAKDOWN_BELOW" />. A stressed mood is the
    steady cause of breaks that come from nowhere.
 2. **Acute stress.** Each of these adds its own chance while it is happening:
 
 | Stress | When |
 |---|---|
-| Fire | A fire burns within a few tiles |
-| Combat | A hostile has been in sight for half a minute |
+| Fire | A fire burns within <Stat kind="tuning" id="BREAK_FIRE_RADIUS" /> tiles |
+| Combat | A hostile has been in sight for <Stat kind="tuning" id="BREAK_COMBAT_SEC" unit="s" /> |
 | Decompression | In a suit in a breached room, or with the suit tank low and no air |
-| Blackout | In the dark, without a suit lamp, for a few minutes |
+| Blackout | In the dark, without a suit lamp, for <Stat kind="tuning" id="BREAK_DARK_SEC" unit="s" /> |
 | Exhaustion | Rest nearly gone, or starving |
 | Grief | A friend has died recently |
 
 Stress counts for more when mood is low, and for less when it is high. After a break ends, that crew member can't break
-again for <Stat kind="tuning" id="BREAK_COOLDOWN_SEC" /> seconds, and not from the same cause for twice that.
+again for <Stat kind="tuning" id="BREAK_COOLDOWN_SEC" /> seconds, and not from the same cause for <Stat kind="tuning" id="BREAK_CONTEXT_COOLDOWN_SEC" unit="s" />.
 
 The Overview tab says "strained" and the Status tab names the cause when someone is under stress that can set off a
 break at any mood. A calm-looking crew member in a dark corridor can still snap.
@@ -255,7 +255,7 @@ break less likely, Sensitive and Gloomy more; Battle-shy gets scared of fighting
 Which kind depends on the cause. Fire and decompression mostly give panic; combat gives freeze, hide or panic; grief
 gives despair; low mood gives refusal, tantrums, isolation or despair.
 
-A break ends early when its cause is gone for ten seconds. Ending one is a relief (**Let it out**).
+A break ends early when its cause is gone for <Stat kind="tuning" id="BREAK_GONE_SEC" unit="s" />. Ending one is a relief (**Let it out**).
 
 Severe breaks (panic, and freeze in combat) take over completely, even from a drafted crew member. The rest let go if you
 draft the crew member. Drafted crew are also steadier overall and can only have the severe kinds.
@@ -265,7 +265,7 @@ A break pauses while something worse is happening: a crew member who runs short 
 ### Alerts and orders
 
 - A panic, or a freeze in combat, raises an **urgent alert** (click it to jump to them). They are throttled: one per
-  crew member every ten minutes, and a second severe break on the same ship within a minute goes to the log only.
+  crew member every <Stat kind="tuning" id="BREAK_ALERT_SEC" unit="s" />, and a second severe break on the same ship within <Stat kind="tuning" id="BREAK_ALERT_SHIP_SEC" unit="s" /> goes to the log only.
 - Everything else is a log line only.
 - The crew bar and Overview tab show the crew member as "Panicking", "In despair", "Refusing work" and so on, and
   the Status tab's Conditions line counts down what is left.

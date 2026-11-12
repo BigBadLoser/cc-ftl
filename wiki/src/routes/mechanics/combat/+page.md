@@ -145,25 +145,25 @@ Your ship has a heat meter, shown as a percentage with its change per second.
 - Every volley adds heat, and so does every shield layer a hit removes.
 - **Heat only falls while your shields are down**, plus whatever **radiators** shed. Holding the shields up runs the ship
   hot, so you choose when to drop them.
-- At 100% the ship **overheats**: for 8 seconds weapons can't charge or fire and the shields stay down (**Thermal
-  overload**). Heat then drops to half.
-- **Vent** (**G**) dumps heat fast for 3.5 seconds, but the shields drop and the weapons hold fire. You need at least 15%
+- At 100% the ship **overheats**: for <Stat kind="tuning" id="LOCKOUT_SEC" /> seconds weapons can't charge or fire and the shields stay down (**Thermal
+  overload**). Heat then drops to <Stat kind="tuning" id="LOCKOUT_EXIT_HEAT" />%.
+- **Vent** (**G**) dumps heat fast for <Stat kind="tuning" id="VENT_SEC" /> seconds, but the shields drop and the weapons hold fire. You need at least <Stat kind="tuning" id="VENT_MIN_HEAT" />%
   heat to vent. Time it between enemy volleys.
 
-**Overcharge** pushes one system for 5 seconds for extra heat, then needs 40 seconds before the next one:
+**Overcharge** pushes one system for <Stat kind="tuning" id="OVERCHARGE_SEC" /> seconds for extra heat, then needs <Stat kind="tuning" id="OVERCHARGE_COOLDOWN_SEC" /> seconds before the next one:
 
 | System | While overcharged |
 |---|---|
-| Weapons | Charge 30% faster. |
-| Shields | Layers return three times as fast. |
-| Engines | +15% evasion (needs a pilot). |
+| Weapons | Charge speed rises to <Stat kind="tuning" id="OVERCHARGE_WEAPON_CHARGE" percent />. |
+| Shields | Layers return <Stat kind="tuning" id="OVERCHARGE_SHIELD_REGEN" /> times as fast. |
+| Engines | +<Stat kind="tuning" id="OVERCHARGE_ENGINE_EVASION" percent /> evasion (needs a pilot). |
 
 The enemy plays the same game. It vents and overcharges, and a hot enemy can lock itself out. Watch its heat row.
 
 ## Evasion and engines
 
 **Evasion** is the chance an incoming shot misses outright. It comes from your **powered engines**, boosted by the
-**pilot's skill**, and is capped at 75%. With no pilot at a powered helm, or no engine power, evasion is zero. Ion hits on
+**pilot's skill**, and is capped at <Stat kind="tuning" id="EVASION_CAP" percent />. With no pilot at a powered helm, or no engine power, evasion is zero. Ion hits on
 an engine take its share away for a while. Evasion appears on your Status card; the enemy's is in the hull tooltip.
 
 ## Damage
@@ -179,7 +179,7 @@ an engine take its share away for a while. Evasion appears on your Status card; 
 - **Crew.** Blasts hurt anyone near the impact, so keep crew away from the side under fire. Downed crew are covered in
   [Boarding and crew fights](../boarding/).
 
-A ship's **integrity** is its hull and its modules together. Below 15% it becomes a wreck.
+A ship's **integrity** is its hull and its modules together. Below <Stat kind="tuning" id="WRECK_BELOW" percent /> it becomes a wreck.
 
 ## Upgrades
 
@@ -197,9 +197,9 @@ These fit any weapon.
 
 | Upgrade | Effect |
 |---|---|
-| **Quick capacitor** | Charges 15% faster. |
-| **Coolant jacket** | 30% less heat per volley. |
-| **Hardened housing** | The weapon takes half damage from hits and ion. |
+| **Quick capacitor** | Charge time drops to <Stat kind="items" id="item.upg_capacitor" field="upgrade.mods.chargeMul" percent />of normal. |
+| **Coolant jacket** | Heat per volley drops to <Stat kind="items" id="item.upg_coolant" field="upgrade.mods.heatMul" percent />. |
+| **Hardened housing** | The weapon takes <Stat kind="items" id="item.upg_housing" field="upgrade.mods.damageTakenMul" percent /> of the damage from hits and ion. |
 
 ### Behaviour upgrades
 
@@ -207,12 +207,12 @@ Each fits one weapon type and turns it into a new weapon, with its own shot colo
 
 | Upgrade | Fits | Turns it into |
 |---|---|---|
-| **Prism splitter** | Burst laser | **Prism laser**: five shots instead of three, each 40% weaker, and 50% more heat. |
-| **Heavy focus** | Burst laser | **Lance laser**: two heavier shots, each passing one shield layer; slower to charge. |
+| **Prism splitter** | Burst laser | **Prism laser**: <Stat kind="items" id="item.upg_prism" field="upgrade.mods.weapon.shots" /> shots instead of three, each 40% weaker, and runs at <Stat kind="items" id="item.upg_prism" field="upgrade.mods.heatMul" percent /> heat. |
+| **Heavy focus** | Burst laser | **Lance laser**: two heavier shots, each passing one shield layer; charges slower (charge time <Stat kind="items" id="item.upg_focus" field="upgrade.mods.chargeMul" percent />). |
 | **Frag slug** | Mass driver | **Frag driver**: a bigger blast, harder on crew and modules, but no longer passes a shield layer. |
 | **Rail coil** | Mass driver | **Railgun**: passes two shield layers and flies much faster, but runs very hot. |
-| **Nuclear warhead** | Missile launcher | **Nuke launcher**: a huge blast with fire across it, for two missiles a shot. |
-| **Chain coil** | Ion cannon | **Arc cannon**: the ion bolt arcs from the module it hits into nearby crew; 40% more heat. |
+| **Nuclear warhead** | Missile launcher | **Nuke launcher**: a huge blast with fire across it, for <Stat kind="items" id="item.upg_nuke" field="upgrade.mods.weapon.ammoPerShot" /> missiles a shot. |
+| **Chain coil** | Ion cannon | **Arc cannon**: the ion bolt arcs from the module it hits into nearby crew; runs at <Stat kind="items" id="item.upg_chain" field="upgrade.mods.heatMul" percent /> heat. |
 | **Thermite** | Incendiary launcher | **Thermite cannon**: real hull damage on top of the fire, so it breaches as well as burns. |
 
 ### Where to get upgrades
@@ -241,13 +241,13 @@ You can also charge the drive outside combat with a pilot at the helm, ready for
 
 - **Enemy disabled.** A ship is **disabled** while no crew member can act, or no power flows (no reactor running).
   It can't shoot, and it recovers if the cause clears.
-- **Wreck.** A ship is a **wreck** once its integrity falls below 15%, or when every power source is destroyed. Everyone aboard dies, weapons and shields go dead, and the hull stays
+- **Wreck.** A ship is a **wreck** once its integrity falls below <Stat kind="tuning" id="WRECK_BELOW" percent />, or when every power source is destroyed. Everyone aboard dies, weapons and shields go dead, and the hull stays
   as a derelict you can salvage. See [Salvage](../salvage/).
-- **Surrender.** A hostile ship whose hull is below 50%, with its
+- **Surrender.** A hostile ship whose hull is below <Stat kind="tuning" id="HOPELESS_HULL" percent />, with its
   weapons dead, its drive uncharged and its crew cut off or outnumbered by your boarders, gives up. When every enemy crew
   member is down, surrendered or dead, the ship is given up as a derelict, unless your people can still reach it. Keep
   boarders aboard or a shuttle docked to take it as a prize; see [Boarding and crew fights](../boarding/).
-- **Enemy flees.** Below 30% hull, a ship with a charged drive jumps away.
+- **Enemy flees.** Below <Stat kind="tuning" id="FLEE_BELOW" percent /> hull, a ship with a charged drive jumps away.
 - **You lose.** Your own ship can be disabled or wrecked the same way.
 
 When a fight ends, the **Fight report** card shows the outcome (**Destroyed**, **Disabled**, **Captured**, **Enemy fled**,

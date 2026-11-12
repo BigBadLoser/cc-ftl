@@ -47,19 +47,19 @@ A powered bay recharges the drones docked in it and slowly repairs their hull. A
 
 ### Charge
 
-A drone's battery drains in flight, faster while it works. It heads home when the charge drops under 25 and goes out
-again once it is back above 70. Flying time on a full battery is a few minutes.
+A drone's battery drains in flight, faster while it works. It heads home when the charge drops under <Stat kind="tuning" id="drones.drone.repair.charge.lowBelow" /> and goes out
+again once it is back above <Stat kind="tuning" id="drones.drone.repair.charge.launchAbove" />. Flying time on a full battery is a few minutes.
 
 ### The repair drone's metal
 
-A repair drone pays for hull seals from a small load of metal (4 units, enough for two walls). While docked in a powered
+A repair drone pays for hull seals from a small load of metal (<Stat kind="tuning" id="drones.drone.repair.supply.capacity" /> units, enough for two walls). While docked in a powered
 bay it refills the load from ship storage. If storage has no metal, it still repairs modules (free) but won't take
 breach jobs. The bay panel shows the load in red when it is empty.
 
 ## The AI core
 
 Drones only work while the ship has a powered **AI core**. The core sets how many drones may be out of their bays at
-once: two with the standard core. Other drones stay docked and charge.
+once: <Stat kind="tuning" id="DRONE_CAP_BY_TIER" index={1} /> with the standard core. Other drones stay docked and charge.
 
 If the core is destroyed, switched off or out of power, every drone goes inert: flying drones drop where they are (in
 space they drift) and docked ones sit dark. They wake again when the core is back. Protect the core.
@@ -88,7 +88,7 @@ hull. They shoot only what is already hostile, so a defence drone never starts a
 ## Before a jump
 
 Charging a jump recalls every drone. None launches, and those outside fly home and land one after another. The jump
-waits for them a few seconds, a little longer the more there are. **Any drone still outside when the ship goes is lost.**
+waits for them up to <Stat kind="tuning" id="DRONE_RECALL_WAIT_SEC" unit="seconds" />, a little longer the more there are. **Any drone still outside when the ship goes is lost.**
 Leaving a scene or fleeing works the same way. Drones inside the ship are aboard and lift with it.
 
 Drones that die are lost for good. Fire inside the ship burns drones, and crew hand weapons can hit enemy drones that
@@ -101,7 +101,7 @@ and a docked one stays dark until it wears off.
 
 ## Enemy drones
 
-Navy ships from sector depth <Stat kind="tuning" id="ENEMY_DRONE_MIN_DEPTH" /> on carry a drone bay with defence drones, one to start and two from sector depth <Stat kind="tuning" id="ENEMY_DRONE_SECOND_DEPTH" />. They
+Navy ships from sector depth <Stat kind="tuning" id="ENEMY_DRONE_MIN_DEPTH" /> on carry a drone bay with defence drones, <Stat kind="tuning" id="ENEMY_DRONES_BASE" /> to start and one more from sector depth <Stat kind="tuning" id="ENEMY_DRONE_SECOND_DEPTH" />. They
 shoot down your missiles and shuttles, so a missile-heavy plan hits trouble against them. Your point defence can hit their
 drones in return.
 

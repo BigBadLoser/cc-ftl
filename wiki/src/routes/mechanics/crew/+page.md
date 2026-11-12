@@ -54,7 +54,7 @@ with use (see "Learning" below).
 | Shielding | Manning the shield console: shields recharge faster. |
 | Melee | Fighting hand to hand. |
 | Construction | Building, repairing, deconstructing, salvaging, putting out fires and forcing doors. Work goes faster the higher it is. |
-| Hacking | Hacking robots and AI cores. Some hacks need at least level 2. |
+| Hacking | Hacking robots and AI cores. Some hacks need at least level <Stat kind="tuning" id="HACK_MIN_SKILL" />. |
 | Medicine | Patching up the wounded: beds heal faster with a good medic aboard. |
 | Science | Research: the active project advances faster. |
 | Cooking | Meal quality. A better cook turns the same ingredients into better meals. |
@@ -132,7 +132,7 @@ usually gets it. A job with a 1 always goes before a job with a 3, wherever it i
 3, starts at 1; a skill of 4 or 5 starts at 2; a skill of 2 or 3 starts at 3; below that, 4. Damage control starts at 1
 for everyone, hauling at 3. Work they refuse starts off and cannot be turned on.
 
-> **Tip:** consoles are a special case. Outside a fight, a crew member only staffs a console if their Ops number is 2
+> **Tip:** consoles are a special case. Outside a fight, a crew member only staffs a console if their Ops number is <Stat kind="tuning" id="OPERATE_MAX_LEVEL" />
 > or better. In a fight, any idle crew relieve an empty console that has stood empty a while, unless you turned Ops
 > off.
 
@@ -242,7 +242,7 @@ crew member is in a mental break". See [Mood, relationships and breaks](../mood/
 ## Recruiting
 
 Trade stations have people looking for a berth. Hail a trade station and pick **Crew** among its services. It lists up
-to three candidates at a time with their role, skills and price. **Hire** sends your shuttle to fetch them, the fee is
+to <Stat kind="tuning" id="RECRUIT_SLOTS" /> candidates at a time with their role, skills and price. **Hire** sends your shuttle to fetch them, the fee is
 held until they step aboard and returned if the run fails. You need a shuttle, a free working airlock to dock at, and
 enough credits. Candidates change as you travel.
 

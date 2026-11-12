@@ -81,7 +81,7 @@ given load are the same whichever reactor supplies it.
 **An empty reactor makes no power.** The rest of the ship doesn't notice until the supply falls short, then the power
 order decides who goes dark.
 
-Crew refuel the reactors themselves. When a reactor's store falls below half and the ship's storage holds crystals,
+Crew refuel the reactors themselves. When a reactor's store falls below <Stat id="module.reactor" field="fuel.refillBelow" /> crystals and the ship's storage holds crystals,
 a crew member fetches some and loads it. You don't give an order. This only works if crystals are in storage, so keep
 some there.
 
@@ -113,7 +113,7 @@ using, the surplus goes into the banks (and the reactors burn a little extra cry
 reactors, or a reactor is empty, the banks pay out first, **before any module goes dark**. The ship keeps flying on its
 banks until they are flat, then the shortage cuts in as usual.
 
-- A bank holds about two crystals' worth of energy. That is a couple of minutes at a light starting-ship load and
+- A bank holds <Stat id="module.battery" field="battery.capacity" /> power-seconds, about two crystals' worth. That is a couple of minutes at a light starting-ship load and
   less at full draw, so a bank buys you time to refuel, not a way to do without.
 - Build more banks to hold more. Every starting ship has one.
 - A bank that is switched off or damaged keeps its charge but neither charges nor pays out. A destroyed bank loses its

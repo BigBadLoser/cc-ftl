@@ -9,7 +9,7 @@ order: 1
   import Stat from '../../../lib/Stat.svelte'
 </script>
 
-You start with a small ship, a small crew, 500 credits and a trade station next door. This guide walks through
+You start with a small ship, a small crew, <Stat kind="tuning" id="trade.startCredits" /> credits and a trade station next door. This guide walks through
 the first hour: choosing a ship, reading the screen, looking after your crew, building, trading, taking a contract and making your first
 jump.
 

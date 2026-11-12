@@ -66,11 +66,11 @@ function helpers(page) {
   };
 }
 
-/** An element's box grown by `pad` px on every side, kept inside the 1600x1000 viewport. */
+/** An element's box grown by `pad` px on every side, kept inside the 1920x950 viewport. */
 function padded(box, pad) {
   if (!box) throw Error('Shot selector is not on screen');
   const x = Math.max(0, box.x - pad), y = Math.max(0, box.y - pad);
-  return { x, y, width: Math.min(1600, box.x + box.width + pad) - x, height: Math.min(1000, box.y + box.height + pad) - y };
+  return { x, y, width: Math.min(1920, box.x + box.width + pad) - x, height: Math.min(950, box.y + box.height + pad) - y };
 }
 
 /** Make the game's flat background transparent, flood-filling from the edges, then trim to the content. */
@@ -105,14 +105,15 @@ try {
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
   });
   for (const shot of shots.filter((s) => !only || s.name.includes(only))) {
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    const page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
+    await page.context().addInitScript(() => { try { localStorage.setItem('cc-ftl.lessons', JSON.stringify({ seen: [], off: true })); } catch { /* no storage */ } });
     // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
     const query = shot.query ?? '';
     await page.goto(base + query + (query ? '&' : '?') + 'hook&lessons=off', { waitUntil: 'load' });
     await page.waitForTimeout(shot.settle ?? 6000);
     const h = helpers(page);
     await shot.steps?.(h);
-    const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1600, height: 1000 };
+    const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1920, height: 950 };
     if (shot.marks) {
       const marks = [];
       for (const [label, selector, anchor] of shot.marks) {

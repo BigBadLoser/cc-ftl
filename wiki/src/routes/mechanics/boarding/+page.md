@@ -59,7 +59,7 @@ shuttles are still out.
 The enemy's crew fight the intruders. A ship can be **taken** when:
 
 1. all its crew are **down, surrendered or dead**; and
-2. one of your combat-ready crew **holds its bridge**: they stand within a couple of tiles of the helm for about
+2. one of your combat-ready crew **holds its bridge**: they stand within <Stat kind="tuning" id="CAPTURE_BRIDGE_RADIUS" /> tiles of the helm for about
    <Stat kind="tuning" id="CAPTURE_HOLD_SEC" unit="s" />, unopposed.
 
 A machine-run ship (rogue AI) has no crew to beat; its AI cores are its will, so you take it by knocking out the cores
@@ -139,7 +139,7 @@ How well a shot lands:
 - A target **behind a solid module** gets partial or full cover, which cuts the chance to hit. Cover is passive: crew don't
   seek it themselves.
 - A **spacesuit** is bulky: it makes shots and blows land less often.
-- Hit chance is never below 5% or above 95%.
+- Hit chance is never below <Stat kind="tuning" id="HIT_CHANCE_MIN" percent /> or above <Stat kind="tuning" id="HIT_CHANCE_MAX" percent />.
 
 <ComingLater>
 
@@ -168,10 +168,10 @@ out of the intruders' sight. A medic is the best defence against losing crew. Se
 
 **Surrender.** Hurt, outnumbered crew can give up:
 
-- **Enemy crew** surrender when their health drops below 30% and more of your people than theirs stand close by.
+- **Enemy crew** surrender when their health drops below <Stat kind="tuning" id="SURRENDER_HP_FRAC" percent /> and more of your people than theirs stand close by.
   **Fearless species and Brave crew never surrender.**
 - **Your crew never surrender**, with one exception: a **Coward** gives up at the same point, and runs from foes when
-  below half health. A surrendered crew member lays down their weapon and stops working, then **rallies** a few seconds
+  below <Stat kind="tuning" id="COWARD_FLEE_BELOW" percent /> health. A surrendered crew member lays down their weapon and stops working, then **rallies** about <Stat kind="tuning" id="RALLY_AFTER_TICKS" scale={0.05} /> seconds
   after no hostile is left on their ship.
 - A hostile **ship** whose fight is lost surrenders as a whole; see [Ship combat](../combat/#How-fights-end).
 

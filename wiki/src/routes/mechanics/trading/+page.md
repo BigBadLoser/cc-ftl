@@ -110,10 +110,10 @@ When the station sells fuel, a **Refuel** button on the slip tops up your fuel i
 
 A price is built from the item's base value:
 
-- The station **sells** at a quarter over base and **buys** at about 60% of it, so you can't make money shuttling the same
+- The station **sells** at <Stat kind="tuning" id="trade.spread.sell" /> times base and **buys** at <Stat kind="tuning" id="trade.spread.buy" /> times it, so you can't make money shuttling the same
   goods back and forth.
 - **Scarcity**: cheap where plentiful, dear where scarce. The starmap shows a port's cheap and wanted goods.
-- **Standing**: friends sell for less and pay more, about 3% per point of standing, up to 25%.
+- **Standing**: friends sell for less and pay more, about <Stat kind="tuning" id="trade.repStep" percent /> per point of standing, up to <Stat kind="tuning" id="trade.repMax" percent />.
 - Factions and kinds of station add their own adjustments.
 
 ## Jobs
@@ -175,7 +175,7 @@ The station's shuttle brings a crew of contractors who work in suits on your hul
 home** ends it early and refunds the part not built. Whatever the yard can't finish this visit stays planned for the next
 one.
 
-A station yard builds up to 40 tiles a visit; a hub builds 100 and charges 40% more. Each tile costs 10 credits and some
+A station yard builds up to <Stat kind="tuning" id="yard.sizes.station.cap" /> tiles a visit; a hub builds <Stat kind="tuning" id="yard.sizes.hub.cap" /> and charges <Stat kind="tuning" id="yard.sizes.hub.price" /> times as much. Each tile costs <Stat kind="tuning" id="yard.perTile.credits" /> credits and some
 metal, and costs a little more in dangerous space. Tiles that need a quick truss pass first cost a small planning fee.
 The yard warns you if the hull is now bigger than your engines can carry, in which case jumping needs an overcharge.
 
@@ -186,9 +186,9 @@ Every faction has its own **standing** with you. The starmap legend and the chan
 
 | Standing | Tier |
 |---|---|
-| 3 or more | Friendly |
-| From -2 up to 3 | Neutral |
-| Below -2 | Hostile |
+| <Stat kind="tuning" id="FRIENDLY_AT" /> or more | Friendly |
+| From <Stat kind="tuning" id="HOSTILE_BELOW" /> up to <Stat kind="tuning" id="FRIENDLY_AT" /> | Neutral |
+| Below <Stat kind="tuning" id="HOSTILE_BELOW" /> | Hostile |
 
 What it changes:
 

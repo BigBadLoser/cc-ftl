@@ -28,10 +28,10 @@ Crew eat the most filling food the ship holds first, so your best meals go first
 
 | Food | Fills | Mood (at a galley) | Where it comes from |
 |---|---|---|---|
-| Fine meal | 80 | +13 | Galley, cook with Cooking 6 or more |
-| Good meal | 70 | +9 | Galley, cook with Cooking 2 or more |
-| Bland meal | 60 | +5 | Galley, any cook |
-| Ration | 50 | +3 | Galley (printed from water), or bought |
+| Fine meal | <Stat kind="items" id="item.meal_fine" field="food.nutrition" /> | <Stat kind="items" id="item.meal_fine" field="food.mood.points" signed /> | Galley, cook with Cooking 6 or more |
+| Good meal | <Stat kind="items" id="item.meal_good" field="food.nutrition" /> | <Stat kind="items" id="item.meal_good" field="food.mood.points" signed /> | Galley, cook with Cooking 2 or more |
+| Bland meal | <Stat kind="items" id="item.meal_bland" field="food.nutrition" /> | <Stat kind="items" id="item.meal_bland" field="food.mood.points" signed /> | Galley, any cook |
+| Ration | <Stat kind="items" id="item.ration" field="food.nutrition" /> | <Stat kind="items" id="item.ration" field="food.mood.points" signed /> | Galley (printed from water), or bought |
 
 These numbers are the food items' own values. Raw crops can't be eaten: they have to be cooked.
 
@@ -65,7 +65,7 @@ A hydroponics bed grows one crop at a time. Crew sow it, it grows on its own whi
 
 <ModuleTable ids="module.hydroponics, module.hydroponics_large" columns="power:Power:signed, maxHp:Hull points" />
 
-The **large bed** gives three times the yield of the small one for twice the water and twice the power. Both beds are in
+The **large bed** gives <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.scale" /> times the yield of the small one for <Stat kind="tuning" id="furniture.module.hydroponics_large.plot.waterScale" /> times the water and twice the power. Both beds are in
 the module menu once built.
 
 ### Crops
@@ -75,13 +75,13 @@ farming that bed. A crop already in the soil isn't disturbed when you change the
 
 | Crop | Yield (small bed) | Grow time | Water to sow | Used for |
 |---|---|---|---|---|
-| Greens | 6 | 4 min | 1 | Cooked into meals |
-| Protein beans | 18 | 10 min | 2 | Cooked into meals |
-| Medicinal herbs | 4 | 6 min | 1 | Used up in a medical bed to heal faster |
-| Grain | 10 | 6 min | 1 | Sold at stations; not food |
+| Greens | <Stat kind="tuning" id="crops.crop.greens.yield" /> | <Stat kind="tuning" id="crops.crop.greens.growSec" scale={1/60} unit="min" /> | <Stat kind="tuning" id="crops.crop.greens.water" /> | Cooked into meals |
+| Protein beans | <Stat kind="tuning" id="crops.crop.beans.yield" /> | <Stat kind="tuning" id="crops.crop.beans.growSec" scale={1/60} unit="min" /> | <Stat kind="tuning" id="crops.crop.beans.water" /> | Cooked into meals |
+| Medicinal herbs | <Stat kind="tuning" id="crops.crop.herbs.yield" /> | <Stat kind="tuning" id="crops.crop.herbs.growSec" scale={1/60} unit="min" /> | <Stat kind="tuning" id="crops.crop.herbs.water" /> | Used up in a medical bed to heal faster |
+| Grain | <Stat kind="tuning" id="crops.crop.grain.yield" /> | <Stat kind="tuning" id="crops.crop.grain.growSec" scale={1/60} unit="min" /> | <Stat kind="tuning" id="crops.crop.grain.water" /> | Sold at stations; not food |
 
 Greens grow fast for a small yield. Beans are slow but give the most food. In round numbers, one bed of greens or beans
-feeds three to five crew. Herbs: a patient in a medical bed uses one herb on arrival and heals twice as fast for that
+feeds three to five crew. Herbs: a patient in a medical bed uses one herb on arrival and heals <Stat kind="items" id="item.herbs" field="medicine.healMult" /> times as fast for that
 stay.
 
 ### Sowing and harvesting
