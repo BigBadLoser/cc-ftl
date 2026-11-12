@@ -2,15 +2,15 @@
 on a 3x3, turned 40 deg off radial so the faces on the near side fan open to the room. Parts in slab_kit.py; earlier
 rounds in git history.
 
-Round 15, after round 14's review (the pit idea is good; can the old detail come back?). Height is spent (canopy top
-1.87, roof top 2.05; sinking deeper hides the near slabs' faces), so the detail goes where the pit freed room: the
-canopy's top, the free corners, the floor round the mouth. Round 14's pit, wheel and two-tier canopy with lobes stay:
+Round 16, after round 15's review (the Geneva top and the tyre drives are good; the lobe columns are ugly, the body
+needs fixing). Round 14's pit, wheel and two-tier canopy stay, the lobes go: what carries the canopy is the housing's
+own skin, flush with the canopy's band on the same circle, nothing out in the corners:
 
-  s43  Geneva top (navy, orange): a ten-slot Geneva star on the canopy's top, mid-step, its driver and gearmotor
-  s44  turntable (machine green, yellow): the rotor's crown proud through the canopy, a clamp ram over each slab,
-       two tyre drives on the canopy pressing its rim; a pedestal console in the right corner
-  s45  open hub (teal, orange): the canopy open in the middle, the hub with a clamp ram toward each slab, a chain drive
-       to a motor hung off the canopy, a pendant controller on a coiled cord"""
+  s46  hood (navy, orange): a curved shell round the back from the left corner to the right, rounded jambs with
+       screens, the front wide open; Geneva top, a pendant
+  s47  wrap (machine green, yellow): the housing all round but a front window (about 120 deg), the control panel
+       set into the wall by it; the turntable with clamp rams and two tyre drives on top
+  s48  ribs (teal, yellow): three slim ribs in the skin's plane, each flaring into the canopy; Geneva top"""
 import math
 
 from .slab_kit import BACK, FRONT, NS, R0, angles, at, cassette, frame, hazard, links, loop, prism, ring, spring, tube
@@ -209,25 +209,6 @@ def top_tyres(k, a, r, house, guard, z=ZT):
         k.box(*at(r + 0.445, a)[:2], z + dz, 0.012, 0.36, 0.014, "dark", rz=a)
 
 
-def console(k, a, body, trim):
-    """A pedestal console in a free corner, facing the room: a sloped screen, the cell selector (one lit), a key."""
-    c = at(1.72, a)
-    k.box(c[0], c[1], 0.0, 0.26, 0.4, 0.08, "steelD", top="steel", rz=FRONT)
-    k.box(c[0], c[1], 0.08, 0.2, 0.34, 0.5, body, rz=FRONT)
-    k.box(c[0], c[1], 0.58, 0.26, 0.4, 0.05, trim, rz=FRONT, ry=0.45)
-    f = lambda t, z, su, sv, sz, col, ry=0.0: k.box(                         # noqa: E731
-        c[0] + t * math.cos(FRONT), c[1] + t * math.sin(FRONT), z, su, sv, sz, col, rz=FRONT, ry=ry)
-    f(0.105, 0.36, 0.012, 0.28, 0.16, "dark")                               # the screen
-    f(0.11, 0.4, 0.006, 0.12, 0.09, "slbCy")
-    f(0.11, 0.42, 0.006, 0.08, 0.03, "green")
-    for j in range(NS):                                                      # the cell selector
-        k.box(c[0] + 0.105 * math.cos(FRONT) + (j - 4.5) * 0.026 * math.cos(FRONT + math.pi / 2),
-              c[1] + 0.105 * math.sin(FRONT) + (j - 4.5) * 0.026 * math.sin(FRONT + math.pi / 2), 0.24, 0.012, 0.018,
-              0.03, "slbAmb" if j == 3 else "steelL", rz=FRONT)
-    f(0.105, 0.14, 0.02, 0.06, 0.06, "hivis")                               # the release key
-    tube(k, at(1.6, a, 0.03), at(1.5, a, 0.03), 0.03, "black")              # its conduit to the pit
-
-
 def pendant(k, a, r_out, col):
     """A pendant controller hung from the canopy's rim on a coiled cord."""
     tp = at(r_out, a, ZC + 0.1)
@@ -239,57 +220,118 @@ def pendant(k, a, r_out, col):
               rz=FRONT)
 
 
+# ---- the body: curved to the canopy's own outline ---------------------------------------------------------------------
+def arc_wall(k, a0, a1, r0, r1, z0, z1, col, top=None):
+    n = max(1, round((a1 - a0) / (math.tau / 64)))
+    for i in range(n):
+        b0, b1 = a0 + (a1 - a0) * i / n, a0 + (a1 - a0) * (i + 1) / n
+        prism(k, [at(r0, b0)[:2], at(r1, b0)[:2], at(r1, b1)[:2], at(r0, b1)[:2]], z0, z1, col, top=top)
+
+
+def skin(k, a0, a1, body, trim, z1=ZC + 0.06):
+    """A wall panel of the housing from angle a0 to a1 (counter-clockwise), flush with the canopy's band: a steel
+    kick skirt, a trim band, panel seams, vent grilles low, a broken status strip high."""
+    arc_wall(k, a0, a1, 1.46, 1.48, 0.0, z1, body)
+    arc_wall(k, a0, a1, 1.46, 1.505, 0.0, 0.09, "steelD", top="steel")
+    arc_wall(k, a0, a1, 1.46, 1.495, 0.3, 0.35, trim)
+    n = max(1, round((a1 - a0) / 0.36))
+    for i in range(n + 1):
+        a = a0 + (a1 - a0) * i / n
+        k.box(*at(1.482, a)[:2], 0.35, 0.012, 0.016, ZC - 0.37, "dark", rz=a)
+    for i in range(n):
+        a = a0 + (a1 - a0) * (i + 0.5) / n
+        for dz in (0.14, 0.18, 0.22):
+            k.box(*at(1.482, a)[:2], dz, 0.012, 0.2, 0.018, "dark", rz=a)
+        k.box(*at(1.483, a)[:2], ZC - 0.16, 0.01, 0.14, 0.025, "slbCy" if i % 3 else "green", rz=a)
+
+
+def jamb(k, a, body, trim, screen=False):
+    """A housing edge, rounded: a post of the skin's own thickness, capped, a screen on it if asked."""
+    k.cyl(*at(1.47, a)[:2], 0.0, 0.055, ZC + 0.06, body, sides=12)
+    k.cyl(*at(1.47, a)[:2], 0.0, 0.065, 0.09, "steelD", top="steel", sides=12)
+    k.cyl(*at(1.47, a)[:2], 0.3, 0.065, 0.05, trim, sides=12)
+    if screen:
+        k.box(*at(1.52, a)[:2], 0.7, 0.012, 0.09, 0.3, "dark", rz=a)
+        k.box(*at(1.527, a)[:2], 0.78, 0.006, 0.06, 0.16, "slbCy", rz=a)
+
+
+def panel(k, a, body, trim):
+    """The control face set into the housing's wall: a framed screen, the cell selector (one lit), the release key."""
+    c = lambda r, t, z, sr, st, sz, col: k.box(                              # noqa: E731
+        at(r, a)[0] - math.sin(a) * t, at(r, a)[1] + math.cos(a) * t, z, sr, st, sz, col, rz=a)
+    c(1.49, 0.0, 0.42, 0.03, 0.46, 0.56, trim)
+    c(1.505, 0.0, 0.62, 0.012, 0.36, 0.26, "dark")
+    c(1.51, -0.06, 0.66, 0.006, 0.16, 0.14, "slbCy")
+    c(1.51, 0.1, 0.7, 0.006, 0.1, 0.04, "green")
+    for j in range(NS):
+        c(1.505, (j - 4.5) * 0.034, 0.5, 0.012, 0.024, 0.04, "slbAmb" if j == 3 else "steelL")
+    c(1.51, 0.16, 0.44, 0.02, 0.06, 0.05, "hivis")
+
+
+def rib(k, a, body, trim):
+    """A slim rib in the skin's plane that flares into the canopy at its top."""
+    for z0, z1, w in ((0.0, ZC - 0.34, 0.15), (ZC - 0.34, ZC - 0.22, 0.2), (ZC - 0.22, ZC - 0.12, 0.28),
+                      (ZC - 0.12, ZC - 0.04, 0.38), (ZC - 0.04, ZC + 0.06, 0.5)):
+        h = w / 2 / 1.47
+        arc_wall(k, a - h, a + h, 1.44, 1.49, z0, z1, body)
+    h = 0.1 / 1.47
+    arc_wall(k, a - h, a + h, 1.44, 1.51, 0.0, 0.09, "steelD", top="steel")
+    arc_wall(k, a - h, a + h, 1.44, 1.505, 0.3, 0.35, trim)
+    k.box(*at(1.492, a)[:2], 0.4, 0.012, 0.02, ZC - 0.5, "dark", rz=a)
+    k.box(*at(1.493, a)[:2], ZC - 0.28, 0.01, 0.05, 0.12, "slbCy", rz=a)
+
+
 # ---- the designs ----------------------------------------------------------------------------------------------------
-def geneva_top(k):
-    """s43."""
-    pit(k, "navy", "hivis")
-    out = wheel(k, "navy", "hivis")
-    canopy(k, "navy", "hivis", [LEFT, RIGHT])
-    bolt_ring(k)
-    geneva(k, BACK + 0.55, "navy", "hivis")
-    return out
-
-
-def turntable(k):
-    """s44."""
-    pit(k, "slbMach", "hazY")
-    out = wheel(k, "slbMach", "hazY")
-    canopy(k, "slbMach", "hazY", [LEFT], hole=0.95)
-    zt = ZT + 0.09                                                           # the rotor's crown, proud of the canopy
-    k.cyl(0, 0, ZC, 0.92, zt - ZC, "steelD", top="steelL", sides=40)
-    ring(k, 0.92, zt - 0.03, 0.03, 0.01, "hazY", n=40, skip=lambda i: i % 2)
-    for th in angles():                                                      # a clamp ram over each slab
-        ram(k, th, 0.3, 0.84, zt + 0.034, "hazY")
-    k.cyl(0, 0, zt, 0.24, 0.03, "slbMach", top="hazY", sides=16)
-    for a in (LEFT, BACK + 0.5):
-        top_tyres(k, a, 0.92, "slbMach", "hazY")
-    console(k, RIGHT, "slbMach", "hazY")
-    return out
-
-
-def open_hub(k):
-    """s45."""
-    body, trim = "slbTeal", "hivis"
+def hood(k):
+    """s46."""
+    body, trim = "navy", "hivis"
     pit(k, body, trim)
     out = wheel(k, body, trim)
-    canopy(k, body, trim, [LEFT, RIGHT], hole=0.72)
-    zh = ZC + 0.26                                                           # the rotor's hub, down in the canopy's middle
-    k.cyl(0, 0, ZH + 0.02, 0.68, zh - ZH - 0.02, "steelD", top="steel", sides=32)
-    for th in angles():                                                      # a clamp ram toward each slab
-        ram(k, th, 0.22, 0.6, zh + 0.034, trim)
-    k.cyl(0, 0, zh, 0.15, 0.08, "steelL", top="steel", sides=16)           # its sprocket, the chain to a motor
-    ring(k, 0.16, zh + 0.03, 0.03, 0.025, "steelL", n=16, skip=lambda i: i % 2)
-    mc = at(0.5, RIGHT + 0.5)
-    links(k, loop((0, 0), 0.16, mc, 0.08), zh + 0.05, closed=True, h=0.04, w=0.035, pitch=0.06)
-    k.cyl(mc[0], mc[1], zh, 0.08, 0.1, "steelL", sides=10)
-    k.cyl(mc[0], mc[1], zh + 0.1, 0.13, ZT - zh + 0.02, trim, top=body, sides=14)
-    for dz in (0.2, 0.3, 0.4):
-        k.cyl(mc[0], mc[1], zh + dz, 0.15, 0.025, "steelD", sides=14)
-    beam(k, at(0.62, RIGHT + 0.5, ZT - 0.04), at(1.0, RIGHT + 0.5)[:2], 0.16, 0.08, "steelD", top="steel")
-    pendant(k, LEFT - 0.45, 1.62, trim)
+    canopy(k, body, trim, [])
+    skin(k, LEFT, RIGHT + math.tau, body, trim)
+    jamb(k, LEFT, body, trim, screen=True)
+    jamb(k, RIGHT, body, trim, screen=True)
+    bolt_ring(k)
+    geneva(k, BACK + 0.55, body, trim)
+    pendant(k, LEFT - 0.32, 1.62, trim)
     return out
 
 
-DESIGNS = {"s43": (geneva_top, (3, 3)), "s44": (turntable, (3, 3)), "s45": (open_hub, (3, 3))}
+def wrap(k):
+    """s47."""
+    body, trim = "slbMach", "hazY"
+    w = 1.08                                                                 # the front window's half angle
+    pit(k, body, trim)
+    out = wheel(k, body, trim)
+    canopy(k, body, trim, [], hole=0.95)
+    skin(k, FRONT + w, FRONT + math.tau - w, body, trim)
+    jamb(k, FRONT + w, body, trim)
+    jamb(k, FRONT - w, body, trim)
+    panel(k, FRONT - w - 0.3, body, trim)
+    zt = ZT + 0.09                                                           # the rotor's crown, proud of the canopy
+    k.cyl(0, 0, ZC, 0.92, zt - ZC, "steelD", top="steelL", sides=40)
+    ring(k, 0.92, zt - 0.03, 0.03, 0.01, trim, n=40, skip=lambda i: i % 2)
+    for th in angles():                                                      # a clamp ram over each slab
+        ram(k, th, 0.3, 0.84, zt + 0.034, trim)
+    k.cyl(0, 0, zt, 0.24, 0.03, body, top=trim, sides=16)
+    for a in (LEFT, BACK + 0.5):
+        top_tyres(k, a, 0.92, body, trim)
+    return out
+
+
+def ribs(k):
+    """s48."""
+    body, trim = "slbTeal", "hazY"
+    pit(k, body, trim)
+    out = wheel(k, body, trim)
+    canopy(k, body, trim, [])
+    for a in (FRONT + 0.95, FRONT - 0.95, BACK):
+        rib(k, a, body, trim)
+    bolt_ring(k)
+    geneva(k, BACK - 0.55, body, trim)
+    return out
+
+
+DESIGNS = {"s46": (hood, (3, 3)), "s47": (wrap, (3, 3)), "s48": (ribs, (3, 3))}
 OVERLAYS = {}
 PIT = {v: RP for v in DESIGNS}

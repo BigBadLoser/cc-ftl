@@ -178,6 +178,9 @@ def scene_items(v):
     c, op, g, ox, oy, _ = E.render_sprite("x", "prop", objs)
     out = [E.crop_item(f"slab.study.{v}", tables()[0][v][1], c, op, g, ox, oy)]
     corners = []
+    import bpy
+    full = bpy.context.scene.cycles.samples
+    bpy.context.scene.cycles.samples = 1            # a face mask is only its alpha: one sample is plenty
     for i, s in enumerate(slabs):
         px = []
         for u, vv, z in s.corners():
@@ -191,6 +194,7 @@ def scene_items(v):
         if it is not None:
             it["id"] = f"slab.study.{v}.face{i}"
             out.append(it)
+    bpy.context.scene.cycles.samples = full
     for j, (ov, alpha) in enumerate(tables()[1].get(v, [])):
         core.clear_scene_meshes()
         post.select(PAL)
