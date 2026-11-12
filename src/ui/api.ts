@@ -106,6 +106,8 @@ export interface UiInspect {
   fields: { name: string; value: number }[];
   /** A player job on the tile (forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
+  /** True when the tile is a door that can have a vent (the sim's answer; an airlock's door cannot). */
+  ventable: boolean;
   selected: boolean;
 }
 

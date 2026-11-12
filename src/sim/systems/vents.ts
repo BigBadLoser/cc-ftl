@@ -2,6 +2,7 @@ import { airHazardAt } from '../crew/hazard';
 import { networkHasPower } from '../modules/gridPower';
 import { fieldFrame, tilesOf } from '../diffusion';
 import type { GridLike } from '../grid';
+import { ventableDoor } from '../vents';
 import { regions } from '../regions';
 import type { Sim } from '../sim';
 import { Struct, VentState, gasConductance, ventWanted } from '../structure';
@@ -36,7 +37,7 @@ export function ventsSystem(sim: Sim): void {
       const x = grid.x0 + (i % grid.width), y = grid.y0 + Math.floor(i / grid.width);
       const cur = grid.get('vent', x, y);
       if (cur === 0) continue;
-      const next = ventWanted(cur) ? ventHold(sim, ship, grid, x, y) : VentState.Closed;
+      const next = ventWanted(cur) && ventableDoor(sim, grid, x, y) ? ventHold(sim, ship, grid, x, y) : VentState.Closed;
       if (next !== cur) grid.set('vent', x, y, next);
     }
   }

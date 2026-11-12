@@ -7,11 +7,13 @@ import { Sim } from '../sim';
 import { Struct, VentState, gasConductance } from '../structure';
 import { VENT_CONDUCTANCE } from '../tuning';
 import { ModuleC } from '../modules/components';
+import { IonC } from '../combat/components';
+import { spawnModule } from '../modules/spawn';
 
 const mod = (o: Partial<ModuleDef>): ModuleDef => ({ name: 'm', asset: 'm', footprint: [1, 1], solid: true, power: 0, flammability: 0.1, maxHp: 100, buildWork: 20, ...o });
 const content: ContentRegistry = {
   ships: {}, roles: {}, species: {}, crewNames: [], items: {}, recipes: {}, structCosts: {},
-  modules: { reactor: mod({ power: 20 }) },
+  modules: { reactor: mod({ power: 20 }), bank: mod({ battery: { capacity: 400 } }) },
 };
 // Two 3x3 rooms joined by a door at (5, 3).
 const rows = ['...........', '.#########.', '.#___#___#.', '.#___D___#.', '.#___#___#.', '.#########.', '...........'];
@@ -132,5 +134,22 @@ describe('door vents', () => {
     sim.enqueue({ type: 'door.vent', ship: 1, x: 4, y: 3, open: true });
     sim.step();
     expect(grid(sim).get('vent', 4, 3)).toBe(0);
+  });
+
+  it('a charged battery that is ion-struck or held offline gives no power, so the vent fails shut', () => {
+    const sim = make(false);
+    const bank = spawnModule(sim, 'bank', 3, 2, 0);
+    setOpen(sim);
+    run(sim, 2);
+    expect(vent(sim)).toBe(VentState.Open); // a live charged bank powers it
+    sim.world.add(bank, IonC, { until: sim.tick + 400 });
+    run(sim, 2);
+    expect(vent(sim)).toBe(VentState.HeldNoPower);
+    sim.world.remove(bank, IonC);
+    run(sim, 2);
+    expect(vent(sim)).toBe(VentState.Open);
+    (sim.world.get(bank, ModuleC) as { offlineUntil?: number }).offlineUntil = sim.tick + 400;
+    run(sim, 2);
+    expect(vent(sim)).toBe(VentState.HeldNoPower);
   });
 });

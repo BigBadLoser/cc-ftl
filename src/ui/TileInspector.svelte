@@ -24,7 +24,7 @@
   const jammedDoor = $derived(info?.structName === 'Door' && jam !== 0);
   /** The door's vent (VentState): 0 closed, 1 open, 2 set open but held shut by a hazard, 3 set open but held shut for no power. */
   const vent = $derived(info?.fields.find((f) => f.name === 'vent')?.value ?? 0);
-  const ventDoor = $derived(info?.structName === 'Door' && info.fields.some((f) => f.name === 'vent'));
+  const ventDoor = $derived(!!info?.ventable);
   const ventMessage = $derived(
     vent === 0 ? 'Vent closed' : vent === 1 ? 'Vent open: air passes' : vent === 2 ? 'Vent set open, held shut: hazard nearby' : 'Vent set open, held shut: no power',
   );
