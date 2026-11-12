@@ -42,8 +42,11 @@ export const DEPT_TINT: Record<string, RGB> = {
 };
 const shade = (c: RGB, f: number): RGB => c.map((v) => Math.round(v * f)) as RGB;
 
-/** Departments at `s` pixels a tile; names each connected block of 40+ tiles. */
-export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: number, oy: number, s: number): void {
+/**
+ * Departments at `s` pixels a tile; names each connected block of 40+ tiles. With `names` (one a room, by region) it
+ * names the rooms instead, in small letters.
+ */
+export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: number, oy: number, s: number, names?: readonly (string | undefined)[]): void {
   const { width: W, height: H, roomOf } = g;
   const rows = g.template.rows;
   const at = (x: number, y: number): string => rows[y]?.[x] ?? '.';
@@ -73,6 +76,22 @@ export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: nu
     tile[i] = d;
     const col = d === 'door' ? ([240, 150, 40] as RGB) : DEPT_TINT[d] ?? [200, 200, 200];
     r.rect(ox + x * s, oy + y * s, s, s, c === '#' ? shade(col, 0.6) : col);
+  }
+  if (names) {
+    const sum = new Map<number, [number, number, number]>();
+    for (let i = 0; i < W * H; i++) {
+      const id = roomOf[i] as number;
+      if (id < 0 || !names[id]) continue;
+      const t = sum.get(id) ?? [0, 0, 0];
+      t[0] += i % W; t[1] += Math.floor(i / W); t[2]++;
+      sum.set(id, t);
+    }
+    for (const [id, [sx, sy, n]] of sum) {
+      const d = names[id] as string, x = Math.round(ox + (sx / n) * s + s / 2 - d.length * 2), y = Math.round(oy + (sy / n) * s + s / 2 - 3);
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) r.text(d, x + dx, y + dy, [0, 0, 0], 1);
+      r.text(d, x, y, [255, 255, 255], 1);
+    }
+    return;
   }
   // Name each connected block of one department (floor and its walls): the biggest first, and none over another's name.
   const seen = new Uint8Array(W * H);

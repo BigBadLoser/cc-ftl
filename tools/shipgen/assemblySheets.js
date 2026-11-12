@@ -54,12 +54,24 @@ try {
     const rng = new Rng(gen.seedOf(seed, 0));
     return { rng, rooms: stationProgram(rng, content.stations[kind], size, content.modules) };
   };
+  // What a room is, short enough to stand in it: by what it holds first, then by its role.
+  const NAME = { bridge: 'BRIDGE', armoury: 'ARMS', dock: 'DOCK', medbay: 'MED', reactor: 'REACT', shields: 'SHLD', core: 'CORE', plant: 'PLANT', weapons: 'GUN', industry: 'REFINE', farm: 'FARM', hangar: 'BAY', cargo: 'CARGO', support: 'COMMON' };
+  const nameOf = (r) => {
+    const mods = r.spec?.mods ?? [], has = (m) => mods.includes(`module.${m}`), beds = mods.filter((m) => m === 'module.bed').length;
+    if (has('galley')) return 'MESS';
+    if (has('arcade')) return 'REC';
+    if (has('pod_bay')) return 'PODS';
+    if (has('storage_ore')) return 'ORE';
+    if (r.role === 'quarters') return beds > 1 ? `B${beds}` : 'C';
+    return NAME[r.role] ?? r.role.toUpperCase();
+  };
   const asResult = (a) => {
     const g = a.ctx.g, snap = g.snapshot();
     return {
       template: { rows: snap.rows, modules: [] }, rooms: g.regions.map((r) => ({ role: r.role })), roomOf: snap.roomOf, width: snap.width, height: snap.height,
       // Streets and halls are circulation whatever department they run through.
       depts: g.regions.map((r) => (r.hall ? 'circulation' : r.dept ?? deptOf({ role: r.role }))), targets: [],
+      names: g.regions.map((r) => (r.hall ? undefined : nameOf(r))),
     };
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {
@@ -100,11 +112,11 @@ try {
     const colW = Array.from({ length: cols }, (_, i) => Math.max(120, ...rows.map((r) => (r[i]?.g ? r[i].g.width : 0))) * S + PAD);
     const rowH = rows.map((r) => Math.max(40, ...r.map((p) => (p.g ? p.g.height : 0))) * S + PAD + 14);
     const xOf = (i) => PAD + colW.slice(0, i).reduce((a, b) => a + b, 0), yOf = (j) => TOP + rowH.slice(0, j).reduce((a, b) => a + b, 0);
-    for (const [view, draw] of [['silhouette', (r, g, x, y) => drawSilhouette(r, g, x, y, S)], ['structure', (r, g, x, y) => drawStructure(r, g, x, y, S)], ['departments', (r, g, x, y) => drawDepartments(r, g, g.depts, x, y, S)]]) {
+    for (const [view, draw] of [['silhouette', (r, g, x, y) => drawSilhouette(r, g, x, y, S)], ['structure', (r, g, x, y) => drawStructure(r, g, x, y, S)], ['departments', (r, g, x, y) => drawDepartments(r, g, g.depts, x, y, S)], ['rooms', (r, g, x, y) => drawDepartments(r, g, g.depts, x, y, S, g.names)]]) {
       const sheet = new Raster(xOf(cols) + PAD, yOf(rows.length) + KEY);
       sheet.text(`station assembly, ${family} (${kind} ${size}): ${view}`, PAD, 8, [235, 235, 235], 2);
       rows.forEach((row, j) => row.forEach((p, i) => { sheet.text(p.title.slice(0, Math.floor(colW[i] / 4.2)), xOf(i), yOf(j), p.g ? [200, 205, 215] : [255, 120, 120], 1); if (p.g) draw(sheet, p.g, xOf(i), yOf(j) + 12); }));
-      if (view === 'departments') drawDeptKey(sheet, PAD, yOf(rows.length) + 4);
+      if (view === 'departments' || view === 'rooms') drawDeptKey(sheet, PAD, yOf(rows.length) + 4);
       writeFileSync(join(out, `${family}-${view}.png`), encodePng(sheet));
     }
   }

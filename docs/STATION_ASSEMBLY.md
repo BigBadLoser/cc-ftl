@@ -24,7 +24,8 @@ them.
 | Hull check | `hull.ts` |
 | Sheets | `node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]` |
 
-Sheets go through the shipgen views (silhouette, structure) plus a department view, one row a recipe and one column a
+Sheets go through the shipgen views (silhouette, structure) plus a department view and a rooms view (the same picture
+with each room named: MESS, REC, MED, B8 for a barracks of eight beds, C for a cabin), one row a recipe and one column a
 seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel with the reason.
 
 ## The model

@@ -141,7 +141,8 @@ export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
  * instead: a ward and two treatment rooms.
  */
 function medbays(rooms: readonly RoomSpec[]): RoomSpec[] {
-  const quarters = rooms.filter((r) => r.role === 'quarters').length;
+  // Counted in fours of the crew, however they are housed.
+  const quarters = Math.ceil(rooms.filter((r) => r.role === 'quarters').flatMap((r) => r.mods).filter((m) => m === 'module.bed').length / 4);
   if (quarters === 0) return [];
   const room = (cots: number): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4 });
   if (quarters >= 8) return [room(4), room(1), room(1)];

@@ -26,13 +26,13 @@ export function cabinsWithin(r: RoomSpec): RoomSpec[] {
  * in two rows, heads to the walls, an aisle between, and a tile along for lockers.
  */
 export function barracksOf(rng: Rng, like: RoomSpec, beds: number, size: readonly [number, number]): RoomSpec[] {
-  const made: RoomSpec[] = [];
-  for (let left = beds; left > 0;) {
-    const n = Math.min(left, rng.int(size[0], size[1])), bunks = Math.ceil(n / 2);
-    made.push({ ...like, mods: Array<string>(n).fill('module.bed'), w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false });
-    left -= n;
-  }
-  return made;
+  if (beds <= 0) return [];
+  // As many rooms as the beds need at a size in the range, the beds shared out evenly: no room of two beds left over.
+  const count = Math.max(1, Math.round(beds / rng.int(size[0], size[1])));
+  return Array.from({ length: count }, (_, i): RoomSpec => {
+    const n = Math.floor(beds / count) + (i < beds % count ? 1 : 0), bunks = Math.ceil(n / 2);
+    return { ...like, mods: Array<string>(n).fill('module.bed'), w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false };
+  });
 }
 
 /** A cabin for one, two wide. */
