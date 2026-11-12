@@ -96,18 +96,14 @@ def spine_back(k):
     lower = [p for p in pts if p[1] <= BEND + 1e-6]
     sweep(k, lower)
     X = E                                                                    # the side face's plane: (E, up)
-    g = side_face(RS, 0, 0.38)                                               # the pump's gauge on the foot
-    rect(k, g, X, UP, -0.1, 0.1, 0.22, 0.5, "dark", 0.0)
-    rect(k, g, X, UP, -0.085, 0.085, 0.24, 0.38, "recCl", 0.003)
-    for i in range(3):
-        rect(k, g, X, UP, -0.085, -0.06, 0.4 + i * 0.03, 0.41 + i * 0.03, "steelL", 0.003)
     s = side_face(RS, 0, 0.26)                                               # the vitals screen on the column
     rect(k, s, X, UP, -0.085, 0.085, 1.06, 1.44, "dark", 0.0)
     trace(lambda a, b: rect(k, s, X, UP, a - 0.006, a + 0.006, 1.33 + b - 0.006, 1.33 + b + 0.006, "green", 0.003),
           [(-0.055, 0.0), (-0.02, 0.0), (-0.005, 0.04), (0.01, -0.03), (0.025, 0.0), (0.055, 0.0)], d=0.01)
     for i, (w, col) in enumerate(((0.1, "cyan"), (0.06, "recGlowO"), (0.035, "cyan"))):
         rect(k, s, X, UP, -0.05, -0.05 + w, 1.13 + i * 0.05, 1.16 + i * 0.05, col, 0.003)
-    rect(k, s, X, UP, -0.012, 0.012, 1.55, BEND - 0.08, "cyan", 0.0)          # a conduit line up the column
+    for z0, z1 in ((0.2, 1.0), (1.5, BEND - 0.08)):                          # a conduit line from the lobe up the column
+        rect(k, s, X, UP, -0.012, 0.012, z0, z1, "cyan", 0.0)
 
 
 def fascia(k):
@@ -124,16 +120,14 @@ def fascia(k):
 
 
 def tank(k):
-    k.cyl(0, 0, 0.18, R, 0.32, "recClL", top="recClL", sides=40)            # lit by the floor light
-    k.cyl(0, 0, 0.5, R, SURF - 0.5, "recCl", top="recCl", sides=40)
-    k.cyl(0, 0, 0.18, R + 0.005, 0.05, "recGlow", top="recGlow", sides=40)
-    for r, col in ((0.2, "recClL"), (0.4, "recClL")):                       # ripple rings on the surface
-        n = 28
-        for i in range(n):
-            a = (i + 0.5) * math.tau / n
-            if (i + int(r * 10)) % 3:
-                k.box(r * math.cos(a), r * math.sin(a), SURF, math.tau * r / n * 1.05, 0.02, 0.004, col,
-                      rz=a + math.pi / 2)
+    k.cyl(0, 0, 0.18, R, 0.32, "recClL", top="recClL", sides=96)            # lit by the floor light
+    k.cyl(0, 0, 0.5, R, SURF - 0.5, "recCl", top="recCl", sides=96)
+    k.cyl(0, 0, 0.18, R + 0.005, 0.05, "recGlow", top="recGlow", sides=96)
+    n = 64                                                                   # a ripple ring on the surface, unbroken
+    for i in range(n):
+        a = (i + 0.5) * math.tau / n
+        k.box(0.32 * math.cos(a), 0.32 * math.sin(a), SURF, math.tau * 0.32 / n * 1.1, 0.04, 0.004, "recClL",
+              rz=a + math.pi / 2)
     n = 40                                                                   # the meniscus, far side (bright)
     for i in range(n):
         a = (i + 0.5) * math.tau / n
@@ -158,16 +152,15 @@ u3_back.mask = lambda: u3_back(fluid=False)
 
 
 def u3_top():
-    """The spine's bend and arm, the hub, the hat hung from it, the steel collar where the dome meets the hat."""
+    """The spine's bend and arm, the hub, the hat hung from it."""
     k = K("rec_u3_top", FP8)
     pts = path()
     sweep(k, [p for p in pts if p[1] >= BEND - 1e-6])
-    k.cyl(0, 0, HAT_Z + 0.14, 0.13, ARM_Z + 0.1 - HAT_Z - 0.14, "steel", top="steelL", sides=16)   # the hub
+    k.cyl(0, 0, HAT_Z + 0.14, 0.13, ARM_Z + 0.1 - HAT_Z - 0.14, "medWhite", top="plate", sides=16)   # the hub
     lathe(k, ((HAT_Z, HAT_R), (HAT_Z + 0.05, HAT_R + 0.02), (HAT_Z + 0.1, HAT_R - 0.02), (HAT_Z + 0.16, 0.3),
               (HAT_Z + 0.2, 0.14)), "medWhite", "plate", 32)
     k.cyl(0, 0, HAT_Z + 0.03, HAT_R + 0.022, 0.018, "cyan", sides=32)
     k.cyl(0, 0, HAT_Z - 0.03, HAT_R - 0.03, 0.035, "recGlow", top="steel", sides=32)
-    k.cyl(0, 0, 2.15, 0.3, 0.04, "steelD", top="steel", sides=24)            # the collar on the dome's crown
     return k.build()
 
 
@@ -237,8 +230,11 @@ def scan_job(f, h):
     """The scanner on its own, frame f of a sweep: `module.recovery.u3.scan.back.fN` (drawn under the patient) and
     `.scan.front.fN` (over them), the pod's solid parts as holdout."""
     def run(f=f, h=h):
+        import bpy
         from . import core, post
+        from .recovery_study import SAMPLES
         from .research_kit import holo_item
+        bpy.context.scene.cycles.samples = SAMPLES
         out = []
         for name, front in (("back", False), ("front", True)):
             core.clear_scene_meshes()
@@ -247,6 +243,7 @@ def scan_job(f, h):
             if it:
                 it["id"] = f"module.recovery.u3.scan.{name}.f{f}"
                 out.append(it)
+        bpy.context.scene.cycles.samples = core.SAMPLES
         return out
     return run
 

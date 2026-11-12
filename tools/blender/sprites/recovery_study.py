@@ -12,6 +12,7 @@ fluid. Front = +v. Each design is two sprites at r0, so the game can draw the pa
 The tank's axis is the middle of the footprint. The patient's feet float at FLOAT over the floor."""
 import math
 
+import bpy
 import numpy as np
 
 from . import core, env_build as E, post
@@ -203,37 +204,49 @@ def layer(mask, objs, alpha):
     return E.crop_item("x", FP, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1))
 
 
-def job(v, designs):
+SAMPLES = 16      # at the pipeline's 4, curved white and fluid faces quantise to speckle; keyed via geom_digest
+
+
+def job(v, designs, samples=None):
+    """A design's pod and front items; `samples` overrides the pipeline's (the earlier rounds keep theirs)."""
     def run(v=v, designs=designs):
-        back, layers, *under = designs[v]
+        bpy.context.scene.cycles.samples = samples or core.SAMPLES
+        try:
+            return _run(v, designs)
+        finally:
+            bpy.context.scene.cycles.samples = core.SAMPLES
+    return run
+
+
+def _run(v, designs):
+    back, layers, *under = designs[v]
+    core.clear_scene_meshes()
+    post.select(PAL)
+    c, op, g, ox, oy, _ = E.render_sprite("x", "prop", back())
+    pod = E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)
+    mask = getattr(back, "mask", back)                 # what hides a hologram (a pod may leave its fluid out)
+    for build, alpha in (under[0] if under else ()):   # layers baked into the pod (behind the patient)
+        from .research_kit import holo_item
         core.clear_scene_meshes()
         post.select(PAL)
-        c, op, g, ox, oy, _ = E.render_sprite("x", "prop", back())
-        pod = E.crop_item(f"module.recovery.{v}", FP, c, op, g, ox, oy)
-        mask = getattr(back, "mask", back)                 # what hides a hologram (a pod may leave its fluid out)
-        for build, alpha in (under[0] if under else ()):   # layers baked into the pod (behind the patient)
+        it = holo_item("x", FP, mask(), build()) if alpha == "holo" else layer(mask(), build(), alpha)
+        if it is not None:
+            pod = over(pod, it)
+            pod["id"] = f"module.recovery.{v}"
+    out = [pod]
+    front = None
+    for build, alpha in layers:
+        core.clear_scene_meshes()
+        post.select(PAL)
+        if alpha == "holo":                     # a hologram, as the arcade's and the research bench's
             from .research_kit import holo_item
-            core.clear_scene_meshes()
-            post.select(PAL)
-            it = holo_item("x", FP, mask(), build()) if alpha == "holo" else layer(mask(), build(), alpha)
-            if it is not None:
-                pod = over(pod, it)
-                pod["id"] = f"module.recovery.{v}"
-        out = [pod]
-        front = None
-        for build, alpha in layers:
-            core.clear_scene_meshes()
-            post.select(PAL)
-            if alpha == "holo":                     # a hologram, as the arcade's and the research bench's
-                from .research_kit import holo_item
-                it = holo_item("x", FP, mask(), build())
-            else:
-                it = layer(mask(), build(), alpha)
-            if it is not None:
-                front = it if front is None else over(front, it)
-        front["id"], front["fp"] = f"module.recovery.{v}.front", FP
-        return out + [front]
-    return run
+            it = holo_item("x", FP, mask(), build())
+        else:
+            it = layer(mask(), build(), alpha)
+        if it is not None:
+            front = it if front is None else over(front, it)
+    front["id"], front["fp"] = f"module.recovery.{v}.front", FP
+    return out + [front]
 
 
 def jobs():
@@ -246,5 +259,5 @@ def jobs():
             + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS]
             + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS]
             + [job(v, recovery_study9.DESIGNS) for v in recovery_study9.DESIGNS]
-            + [job(v, recovery_study10.DESIGNS) for v in recovery_study10.DESIGNS]
+            + [job(v, recovery_study10.DESIGNS, SAMPLES) for v in recovery_study10.DESIGNS]
             + recovery_study10.SCAN_JOBS)
