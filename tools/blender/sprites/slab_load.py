@@ -3,12 +3,13 @@
 the floor past the pit's mouth), so it comes and goes by a hatch in the front corner (round 21's option B, chosen; the
 tip-out lift at the window was dropped as unconvincing):
 
-  hb0  idle: the hatch closed, flush, its striped rim round it
-  hb1  the cart has set the slab face up on the hatch's tipping cradle, head out (the prisoner on show)
-  hb2  the cradle tips it up about its foot
-  hb3  upright on the hatch, its face to the wheel
-  hb4  lowered through the hatch (its head now under the canopy) and turned on the hatch's turntable to the wheel's angle
-  hb5  run in under the floor to the wheel's empty socket; the hatch shut
+  idle: the yellow tipping cradle stands upright on the hatch's platform, flush with the floor (a loading stand)
+  in:   the cradle folds flat; the cart slides in, lowers the slab onto it face up (the prisoner on show) and pulls away;
+        the cradle tips the slab up; the platform sinks until its head is under the canopy, turns it 130 deg to the
+        wheel's angle, and the slab runs in under the floor to the wheel's empty socket
+  back: the platform rises, turning back; the empty cradle stands upright again
+  out:  the same, backwards
+Frames hb00-hb23 (KEYS); review/slab_preview.py makes the sheet, the GIF is cut from it.
 
 The hatch is a round turntable merged into the pit's mouth by a channel as wide as a slab: the hole is star-shaped from
 the wheel's centre, so the holdout floor follows it (PIT: a radius by angle)."""
@@ -57,80 +58,105 @@ def sectors(k, r0f, r1f, z0, z1, colf):
         prism(k, [at(p0, a0)[:2], at(q0, a0)[:2], at(q1, a1)[:2], at(p1, a1)[:2]], z0, z1, colf(i))
 
 
-def hatch(k, shut):
-    rp = lambda a: W.RP                                                      # noqa: E731
-    sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,                  # the striped rim on the floor
+def hatch(k, pz, turn):
+    """The hatch: its striped rim on the floor, the platform (a turntable, `turn` rad) at height pz (0: flush)."""
+    sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,               # the striped rim on the floor
             lambda i: "hazY" if (i // 2) % 2 else "hazK")
-    if shut:                                                                 # the lid, flush: the turntable's plate
-        sectors(k, rp, r_hole, -0.01, 0.01, lambda i: "steel")
-        c = at(HC, ST)
-        k.cyl(c[0], c[1], 0.01, 0.3, 0.006, "steelD", sides=24)
-        k.cyl(c[0], c[1], 0.01, 0.08, 0.012, "steelL", sides=10)
-    else:                                                                    # open: the shaft's dark bottom, the
-        sectors(k, rp, r_hole, -W.D, -W.D + 0.01, lambda i: "dark")           # turntable down in it
-        c = at(HC, ST)
-        k.cyl(c[0], c[1], -0.5, HR - 0.04, 0.04, "steelD", top="steel", sides=24)
+    if pz < -0.01:                                                           # the shaft's dark bottom
+        sectors(k, lambda a: W.RP, r_hole, -W.D - 0.05, -W.D - 0.04, lambda i: "dark")
+    sectors(k, lambda a: W.RP, r_hole, pz - 0.03, pz, lambda i: "steel")    # the platform
+    c = at(HC, ST)
+    k.cyl(c[0], c[1], pz, 0.36, 0.008, "steelD", sides=28)                 # its turntable, a bar across to show it turn
+    k.box(c[0], c[1], pz, 0.66, 0.08, 0.014, "steelL", rz=ST + turn)
+    k.cyl(c[0], c[1], pz, 0.07, 0.02, "hazY", sides=10)
 
 
-def module(k, skip, shut):
-    out = W.geneva_over_tyres(k, P, lights=LAMP, skip=skip, gap=GAP)
-    hatch(k, shut)
-    return out
-
-
-def at_hatch(z, tilt=0.0):
-    """The slab on the hatch's cradle, foot at height z, its face to the wheel, tipped `tilt` (rad) head-outward."""
+def pose(z, tilt=0.0, turn=0.0, r=HC):
+    """A slab frame on the hatch: foot at radius r, height z; face to the wheel, tipped `tilt` (rad) head-outward,
+    then turned `turn` (rad) about the vertical (-130 deg brings it to the wheel's own angle)."""
     out = (math.cos(ST), math.sin(ST), 0.0)
     tang = (-math.sin(ST), math.cos(ST), 0.0)
-    U, Nn = (0.0, 0.0, 1.0), tuple(-c for c in out)
+    up = (0.0, 0.0, 1.0)
+    U, Nn = up, tuple(-c for c in out)
     if tilt:
         U, Nn = rot(U, tang, tilt), rot(Nn, tang, tilt)
-    return Slab(at(HC, ST, z), U, Nn)
+    if turn:
+        U, Nn = rot(U, up, turn), rot(Nn, up, turn)
+    return Slab(at(r, ST, z), U, Nn)
 
 
-def cradle(k, s, ram=True):
-    """The tipping cradle behind slab s: a yellow frame on its back, cross bars, the hinge at its foot, a ram."""
+def cradle(k, s, pz):
+    """The tipping cradle on the platform (at pz) behind frame s: a yellow frame, cross bars, the hinge at its foot,
+    a ram from the platform."""
     s.box(k, 0.05, 1.05, -0.32, 0.32, -T - 0.08, -T - 0.03, "hazY", face="steelD")
     for l in (0.12, 0.9):
         s.box(k, l - 0.05, l + 0.05, -0.38, 0.38, -T - 0.1, -T - 0.03, "steelD")
     tube(k, s.p(0.0, -0.4, -T - 0.1), s.p(0.0, 0.4, -T - 0.1), 0.06, "steel", sides=10)       # the hinge
-    if ram:
-        foot = s.p(0.0, 0.0, -T - 0.1)
-        a, b = (foot[0], foot[1], -0.45), s.p(0.75, 0.0, -T - 0.1)
+    foot = s.p(0.0, 0.0, -T - 0.1)
+    for e in (-0.42, 0.42):                                                  # its hinge's brackets on the platform
+        b = s.p(0.0, e, -T - 0.1)
+        k.box(b[0], b[1], pz, 0.1, 0.1, max(0.02, b[2] - pz), "steelD")
+    a, b = (foot[0], foot[1], pz), s.p(0.75, 0.0, -T - 0.1)
+    if math.dist(a, b) > 0.3:
         m = tuple(a[i] + (b[i] - a[i]) * 0.55 for i in range(3))
         tube(k, a, m, 0.055, "hazY", sides=10)
         tube(k, m, b, 0.028, "steelL", sides=8)
 
 
 def cart(k, s):
-    """The hover cart's two emitter clamps under slab s's ends (a stand-in for c11)."""
+    """The hover cart under slab s: two emitter clamps at its ends, the push bar at its head (a stand-in for c11)."""
     for l in (0.35, 1.25):
         c = s.p(l, 0.0, -T - 0.12)
         k.box(c[0], c[1], c[2] - 0.2, 0.22, 1.0, 0.2, "dark", top="steelD", rz=ST)
         k.cyl(c[0], c[1], c[2] - 0.25, 0.14, 0.03, "slbCy", sides=12)
+    for e in (-0.38, 0.38):
+        a, b = s.p(1.75, e, -T), s.p(1.75, e, -T + 0.55)
+        tube(k, a, (b[0], b[1], a[2] + 0.55), 0.025, "steel", sides=6)
+    a, b = s.p(1.75, -0.4, -T), s.p(1.75, 0.4, -T)
+    tube(k, (a[0], a[1], a[2] + 0.55), (b[0], b[1], b[2] + 0.55), 0.03, "steelL", sides=6)
 
 
-def stage(n):
+BED = 0.12 + T + 0.05                               # a flat slab's face height on the cradle
+CART = 0.75                                         # and on the cart
+D90, RAD = math.radians(90), math.radians
+# frames: (cradle tilt deg, platform z, turn deg, slab: None | ("cart", out, z) | ("cradle",) | ("in", r))
+KEYS = [(0, 0, 0, None), (45, 0, 0, None), (90, 0, 0, None),
+        (90, 0, 0, ("cart", 0.9, CART)), (90, 0, 0, ("cart", 0.0, CART)), (90, 0, 0, ("cart", 0.0, (CART + BED) / 2)),
+        (90, 0, 0, ("cart", 0.0, BED)), (90, 0, 0, ("left", 0.6, BED)), (90, 0, 0, ("cradle",)),
+        (67, 0, 0, ("cradle",)), (45, 0, 0, ("cradle",)), (22, 0, 0, ("cradle",)), (0, 0, 0, ("cradle",)),
+        (0, -0.15, 0, ("cradle",)), (0, -0.3, 0, ("cradle",)), (0, -0.46, 0, ("cradle",)),
+        (0, -0.46, -43, ("cradle",)), (0, -0.46, -87, ("cradle",)), (0, -0.46, -130, ("cradle",)),
+        (0, -0.46, -130, ("in", 1.47)), (0, -0.46, -130, ("in", 1.26)), (0, -0.46, -130, ("in", 1.05)),
+        (0, -0.3, -87, "home"), (0, -0.15, -43, "home")]
+
+
+def frame_n(n):
+    tilt, pz, turn, sl = KEYS[n]
+    tilt, turn = RAD(tilt), RAD(turn)
+
     def build(k):
-        out = module(k, skip=() if n in (0, 5) else (0,), shut=n in (0, 5))
-        if n == 1:
-            s = at_hatch(0.12 + T + 0.05, math.radians(90))
-        elif n == 2:
-            s = at_hatch(0.12 + (T + 0.05) * 0.6, math.radians(45))
-        elif n == 3:
-            s = at_hatch(0.12)
-        elif n == 4:
-            s = cassette(k, frame(ST, W.Z0, r=HC))
-        else:
+        home = sl in (None, "home")
+        out = W.geneva_over_tyres(k, P, lights=LAMP, skip=() if home else (0,), gap=GAP)
+        hatch(k, pz, turn)
+        bed = pose(pz + 0.12 + (BED - 0.12) * math.sin(tilt), tilt, turn)    # the cradle's frame (a slab on it)
+        cradle(k, bed, pz)
+        if home:
             return out
-        if n < 4:
-            cassette(k, s)
-            cradle(k, s)
-        if n == 1:
+        if sl[0] in ("cart", "left"):
+            o = (math.cos(ST), math.sin(ST), 0.0)
+            s = pose(sl[2], D90)
+            s = Slab(tuple(s.O[i] + o[i] * sl[1] for i in range(3)), s.U, s.N)
             cart(k, s)
+            if sl[0] == "left":                     # the cart pulls away; the slab stays on the cradle
+                s = bed
+        elif sl[0] == "cradle":
+            s = bed
+        else:
+            s = frame(ST, W.Z0, r=sl[1])
+        cassette(k, s)
         return out + [s]
     return build
 
 
-DESIGNS = {f"hb{i}": (stage(i), (3, 3)) for i in range(6)}
+DESIGNS = {f"hb{i:02d}": (frame_n(i), (3, 3)) for i in range(len(KEYS))}
 PIT = {v: r_hole for v in DESIGNS}
