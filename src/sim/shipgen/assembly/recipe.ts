@@ -24,6 +24,8 @@ export interface BranchRule {
   host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
+  /** Rooms dealt to sections at random across the departments it takes, each section its own branch (scrappers). */
+  mix?: boolean;
   /** Sections on one branch at most; a department with more gets another branch. Default: all on one. */
   most?: number;
   /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch or stands against it. */

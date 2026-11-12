@@ -1,5 +1,6 @@
 import type { RoomSpec } from '../plan';
 import type { Rng } from '../../rng';
+import { shuffle } from '../civilKit';
 import type { BandAsk } from '../flow/band';
 import { deptOf, type Dept } from '../stationDepartments';
 import { cabinsOf, K, type Site } from '../stationFlowKit';
@@ -190,11 +191,18 @@ function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonl
   const ends: (Port | null)[] = [];
   let lastTrunk: Port | null = null, cursor = 0, berthed = false;
   for (const [k, rule] of recipe.branches.entries()) {
-    // Quarters stand as cabins, one bed each, here as on a ring: a section of them is a row of small rooms.
-    const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept)).flatMap(cabinsOf);
+    const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept));
     const whole = rule.per === 'together' ? [mine] : rule.takes.map((d) => mine.filter((r) => r.dept === d));
-    // A department with more sections than a branch carries is shared out over several branches.
+    // A department with more sections than a branch carries is shared out over several branches. Mixed (a scrapper's
+    // way): the rooms are dealt out at random, a section's worth to a branch, whatever their department.
     const groups = whole.flatMap((grp) => {
+      if (rule.mix) {
+        const pool = shuffle(rng, grp), out: RoomSpec[][] = [];
+        while (pool.length > 0) out.push(pool.splice(0, Math.min(pool.length, rng.int(rule.section.rooms[0], rule.section.rooms[1]))));
+        const last = out[out.length - 1];
+        if (out.length > 1 && last && last.length < rule.section.rooms[0]) (out[out.length - 2] as RoomSpec[]).push(...(out.pop() as RoomSpec[]));
+        return out;
+      }
       const n = rule.most ? Math.ceil(chunks(grp, rule.section.rooms).length / rule.most) : 1;
       return n <= 1 ? [grp] : Array.from({ length: n }, (_, i) => grp.filter((_r, j) => j % n === i));
     });

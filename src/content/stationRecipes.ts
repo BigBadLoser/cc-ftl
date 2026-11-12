@@ -21,6 +21,23 @@ const cluster = (name: string, o: { rooms: [number, number]; rowDepth?: number; 
   ],
 });
 
+/**
+ * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
+ * block first, the machinery as one gated module. `mix` false keeps a module to one department.
+ */
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean }): Recipe => ({
+  name,
+  root: { kind: 'core' },
+  spacing: o.spacing,
+  branches: [
+    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
+    o.mix
+      ? { takes: ['commons', 'freight', 'works', 'habitation', 'defence'], per: 'together', mix: true, host: { on: 'section' }, neck: o.stub, section: { rooms: o.rooms, cross: true }, link: 0 }
+      : { takes: ['commons', 'freight', 'works', 'habitation', 'defence'], per: 'department', host: { on: 'section' }, neck: o.stub, section: { rooms: o.rooms, cross: true }, link: 0, most: 1 },
+    { takes: ['secure'], per: 'together', host: { on: 'section' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
+  ],
+});
+
 /** A tree on a trunk: department branches off a short trunk, joined directly; the dock block at its head. */
 const trunked = (name: string, o: { pairs: number; step: [number, number]; rooms: [number, number]; link: [number, number]; most: number }): Recipe => ({
   name,
@@ -55,10 +72,10 @@ const compound = (name: string, o: {
 
 export const stationRecipes = {
   tree: [
+    scrap('scrap: small mixed modules on stubs', { rooms: [2, 4], stub: [2, 3], spacing: 2, mix: true }),
+    scrap('scrap: mixed modules joined directly', { rooms: [2, 4], stub: [0, 0], spacing: 0, mix: true }),
+    scrap('scrap: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false }),
     cluster('cluster: slabs joined at ends and sides', { rooms: [4, 8], rowDepth: 5, link: [0, 0], cross: true, spacing: 0 }),
-    cluster('cluster: small staggered modules', { rooms: [3, 6], link: [0, 0], cross: true, spacing: 0 }),
-    cluster('cluster: small modules on short stubs', { rooms: [3, 5], link: [2, 3], cross: true, spacing: 2 }),
-    trunked('short trunk: branches joined straight on', { pairs: 0.8, step: [14, 20], rooms: [3, 5], link: [0, 0], most: 2 }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),

@@ -65,6 +65,15 @@ export interface BlockOpts {
   cross?: boolean;
 }
 
+/** A quarters room as cabins side by side, one bed each, taking the room's own length (walls between them included). */
+function cabinsWithin(r: RoomSpec): RoomSpec[] {
+  const beds = r.mods.filter((m) => m === 'module.bed').length;
+  if (r.role !== 'quarters' || beds < 2) return [r];
+  const others = r.mods.filter((m) => m !== 'module.bed');
+  const room = Math.max(2 * beds, r.w - (beds - 1)), base = Math.floor(room / beds);
+  return Array.from({ length: beds }, (_, i): RoomSpec => ({ ...r, mods: ['module.bed', ...(i === 0 ? others : [])], w: base + (i < room - base * beds ? 1 : 0), cabin: true, cabins: false }));
+}
+
 /**
  * A block: the standard module. A street from the port with rooms lining both sides, closed by a room across its end
  * or open to carry on. Its size is its rooms': each room is its floor and its walls, laid out by the shared lining code,
@@ -78,7 +87,9 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
   const depth = docks.length > 0 ? DOCK_DEPTH - 2 : o.rowDepth;
   const body = rooms.filter((r) => r !== capOf).map((r) => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w }));
-  const rows = sides(body);
+  // Quarters are cut into cabins where they stand, a bed each, inside the room's own length: the row is no longer for
+  // it and the station no heavier.
+  const rows = sides(body).map((row) => row.flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
   const legal = ([-1, 1] as const).filter((side) => facing(f, side) !== 'e'); // an airlock never faces east
   docks.forEach((d, i) => rows[(legal[i % legal.length] as number) < 0 ? 0 : 1].push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);

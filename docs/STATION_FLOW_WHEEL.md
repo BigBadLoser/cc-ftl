@@ -394,6 +394,20 @@ Result, 4 seeds of 7 parameter sets: 28 of 28 assemble, every room verified, no 
 Connecting corridors: none in the clusters and compounds, the trunk alone in the trunk tree. Rooms under 3 wide: 0 in
 the trees, 0 to 4 in the compounds (the arcs).
 
+Third pass: the tree beside the old Tree (`assemblySheets.js --versus`, same rooms, seeds and scale). They were not
+the same kind of thing: the old one light and fine-grained (about 1,200 floor tiles, modules of two to four rooms dealt
+at random, thin corridors showing between them), the new one a heavy body of slabs (2,000 to 2,250 tiles, one mass a
+department, no gaps). The user's call: aim between the two. Done in recipes and two small general changes:
+
+- `scrap` recipes: sections of two to four rooms at their own sizes, each on a stub of two to four tiles off one
+  already there; `mix` on a rule deals rooms to sections at random across its departments (a scrapper's way), without
+  it a module keeps to one department. The dock block and the gated machinery module stay.
+- A block cuts quarters into cabins where they stand, inside the room's own length (`cabinsWithin`), so a row is no
+  longer for it. Cabins come out two or three wide (the user has said two is fine for a cabin).
+- Result, 4 seeds of 4 sets: 16 of 16 assemble, no wall block, hull check passes, 1,640 to 1,920 floor tiles. Still
+  about 45% over the old Tree: this room list carries med bays and plant rooms the old tree never placed, and each
+  module has its own street.
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable
