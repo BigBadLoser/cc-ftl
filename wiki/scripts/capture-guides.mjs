@@ -107,18 +107,27 @@ server.stdout.on('data', (d) => { serverLog += d; });
 server.stderr.on('data', (d) => { serverLog += d; });
 server.on('exit', (code) => { serverExit = code ?? 'signal'; });
 try {
+  console.log('Starting the game dev server...');
   await waitForServer(base, () => serverExit);
+  console.log('Dev server up.');
   let browser;
   try {
+    // The GPU by default. CAPTURE_SOFTWARE_GL=1 forces SwiftShader for machines without one (cloud containers): far slower.
+    const software = process.env.CAPTURE_SOFTWARE_GL === '1';
     browser = await chromium.launch({
       executablePath: process.env.CHROME_BIN,
-      args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'],
+      args: software ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] : ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=default', '--no-sandbox'],
     });
+    console.log(`Chromium up (${software ? 'software GL' : 'GPU'}).`);
   } catch (err) {
     throw Error('Could not start Chromium. Install it with `npx playwright install chromium` (from wiki/), or set CHROME_BIN.\n' + String(err.message).split('\n')[0]);
   }
-  for (const shot of shots.filter((s) => !only || s.name.includes(only))) {
+  const todo = shots.filter((s) => !only || s.name.includes(only));
+  const t0 = Date.now();
+  const since = () => ((Date.now() - t0) / 1000).toFixed(0) + 's';
+  for (const [n, shot] of todo.entries()) {
     try {
+    console.log(`[${n + 1}/${todo.length}] ${shot.name}: loading (${since()})`);
     const page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
     await page.context().addInitScript(() => { try { localStorage.setItem('cc-ftl.lessons', JSON.stringify({ seen: [], off: true })); } catch { /* no storage */ } });
     // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
@@ -127,7 +136,9 @@ try {
     await page.waitForTimeout(shot.settle ?? 6000);
     page.setDefaultTimeout(SLOW);
     const h = helpers(page);
+    if (shot.steps) console.log(`  steps (${since()})`);
     await shot.steps?.(h);
+    console.log(`  shooting (${since()})`);
     const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1920, height: 950 };
     if (shot.marks) {
       const marks = [];
@@ -145,7 +156,7 @@ try {
     await mkdir(dirname(file), { recursive: true });
     // Starfields compress poorly losslessly; a shot can ask for lossy quality instead.
     await sharp(png).webp(shot.quality ? { quality: shot.quality } : { lossless: true }).toFile(file);
-    console.log('Captured ' + shot.name + '.webp');
+    console.log(`  captured ${shot.name}.webp (${since()})`);
     await page.close();
     } catch (err) { console.error('FAILED ' + shot.name + ': ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
   }
