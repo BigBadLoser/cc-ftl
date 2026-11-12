@@ -194,13 +194,14 @@ VENTS = [(rng.uniform(0, math.tau), rng.uniform(0.12, 0.52), rng.random(), rng.c
 LO_Z, HI_Z = 0.24, SURF - 0.06
 
 
-def bubbles(f, front):
-    """Bubbles from VENTS: each rises `loops` times a loop from its vent, drifting a little."""
+def bubbles(f, front, n=FRAMES):
+    """Bubbles from VENTS: each rises `loops` times a loop of FRAMES frames from its vent, drifting a little. A loop of n
+    frames (n < FRAMES: shorter, same pace for the slow vents) has every vent rise once in it."""
     def build():
         k = K("rec_u3_bubbles", FP8)
         for i, (a, r, ph, loops, s) in enumerate(VENTS):
             for j in range(2):
-                t = (ph + j * 0.5 + loops * f / FRAMES) % 1.0
+                t = (ph + j * 0.5 + (loops if n == FRAMES else 1) * f / n) % 1.0
                 z = LO_Z + (HI_Z - LO_Z) * t
                 aa = a + 0.25 * math.sin(t * math.tau + i)
                 u, v = r * math.cos(aa), r * math.sin(aa)
@@ -220,11 +221,12 @@ def design(h, f):
             ((bubbles(f, False), 220), (scan(h, False), "holo")))
 
 
-def bubbles_only(f):
-    """A frame of the always-on loop: the pod and its bubbles, no scanner (that is its own layer, played now and then)."""
+def bubbles_only(f, n=FRAMES):
+    """A frame of the always-on loop (n frames): the pod and its bubbles, no scanner (its own layer, played now and
+    then)."""
     return (u3_back,
-            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True), 220), (u3_top, 255)),
-            ((bubbles(f, False), 220),))
+            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True, n), 220), (u3_top, 255)),
+            ((bubbles(f, False, n), 220),))
 
 
 def scan_job(f, h):
@@ -246,5 +248,6 @@ def scan_job(f, h):
 
 
 DESIGNS = {"u3": design(STILL, 0), **{f"u3.f{i}": design(h, i) for i, h in enumerate(SWEEP)},
-           **{f"u3b.f{i}": bubbles_only(i) for i in range(FRAMES)}}
+           **{f"u3b.f{i}": bubbles_only(i) for i in range(FRAMES)},
+           **{f"u3c.f{i}": bubbles_only(i, 8) for i in range(8)}}              # the loop at 8 frames
 SCAN_JOBS = [scan_job(f, h) for f, h in enumerate(SWEEP)]

@@ -50,6 +50,9 @@ def main():
             sweep(G, pub, v, n, out)
         if f"module.recovery.{v}.scan.back.f0" in G.m["assets"]:
             timeline(G, pub, out, v)
+    if "module.recovery.u3c.f0" in G.m["assets"]:
+        compare(G, pub, out)
+        timeline8(G, pub, out)
     print("wrote", out)
 
 
@@ -91,6 +94,49 @@ def timeline(G, pub, out, v="u3", loop=16, scan=16, every=48):
             c.static(G, f"module.recovery.{v}.scan.front.f{s}", ox, oy)
         frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 3, CH * 3), Image.NEAREST))
     frames[0].save(out / f"recovery-{v}-timeline-3x.gif", save_all=True, append_images=frames[1:], duration=250, loop=0)
+
+
+def timeline8(G, pub, out):
+    """As timeline, the bubbles at 8 frames: 12 s, the scan once."""
+    from PIL import Image
+    frames = []
+    for t in range(48):
+        c = Canvas(CW, CH)
+        ox, oy = 115, 165
+        for gx in range(-1, 2):
+            for gy in range(-1, 2):
+                floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
+        s = t - 16 if 16 <= t < 32 else None
+        c.static(G, f"module.recovery.u3c.f{t % 8}", ox, oy)
+        if s is not None:
+            c.static(G, f"module.recovery.u3.scan.back.f{s}", ox, oy)
+        c.char(human(pub, 1), ox, oy - 16 - FLOATS["u"])
+        c.static(G, f"module.recovery.u3c.f{t % 8}.front", ox, oy)
+        if s is not None:
+            c.static(G, f"module.recovery.u3.scan.front.f{s}", ox, oy)
+        frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 3, CH * 3), Image.NEAREST))
+    frames[0].save(out / "recovery-u3-timeline-bubbles8-3x.gif", save_all=True, append_images=frames[1:], duration=250,
+                   loop=0)
+
+
+def compare(G, pub, out, a="u3b", na=16, b="u3c", nb=8, secs=8):
+    """Two bubble loops side by side at 4 fps for `secs` s: a (na frames) and b (nb frames), each with a patient."""
+    from PIL import Image
+    frames = []
+    for t in range(secs * 4):
+        c = Canvas(CW * 2, CH)
+        for col, (v, n) in enumerate(((a, na), (b, nb))):
+            ox, oy = 115 + col * CW, 165
+            for gx in range(-1, 2):
+                for gy in range(-1, 2):
+                    floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
+            c.static(G, f"module.recovery.{v}.f{t % n}", ox, oy)
+            c.char(human(pub, 1), ox, oy - 16 - FLOATS.get(v[0], FLOAT))
+            c.static(G, f"module.recovery.{v}.f{t % n}.front", ox, oy)
+            c.labels.append((ox - 40, oy + 62, f"{n} frames"))
+        frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 6, CH * 3), Image.NEAREST))
+    frames[0].save(out / f"recovery-bubbles-{na}-vs-{nb}-3x.gif", save_all=True, append_images=frames[1:], duration=250,
+                   loop=0)
 
 
 if __name__ == "__main__":
