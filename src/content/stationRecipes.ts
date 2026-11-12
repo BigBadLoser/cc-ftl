@@ -9,7 +9,7 @@ import type { BranchRule, Recipe } from '../sim/shipgen/assembly/recipe';
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
  * block first, the machinery as one gated module. `mix` false keeps a module to one department.
  */
-const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number; jog?: [number, number]; cross?: 'any'; customs?: number; end?: boolean }): Recipe => {
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number; jog?: [number, number]; cross?: 'any' }): Recipe => {
   const section = { rooms: o.rooms, cross: o.cross ?? true };
   const takes = ['commons', 'freight', 'works', 'habitation', 'defence'] as const;
   return {
@@ -19,7 +19,7 @@ const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number
     ...(o.quarters ? { quarters: o.quarters } : {}),
     ...(o.braces ? { braces: o.braces } : {}),
     branches: [
-      { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, quay: { wide: 5, pitch: 7, customs: o.customs ?? 7, shape: 'taper', ...(o.end ? { end: true } : {}) }, section: { rooms: [2, 6], cross: true }, link: 0 },
+      { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper' }, section: { rooms: [2, 6], cross: true }, link: 0 },
       o.mix
         ? { takes, per: 'together', mix: true, host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0 }
         : { takes, per: 'department', host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0, most: 1 },
@@ -75,19 +75,19 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
 export const stationRecipes = {
   tree: [
     scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
-    scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any', end: true }),
-    scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, customs: 0 }),
+    scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any' }),
+    scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
   ],
   spine: [
     spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper' } }),
-    spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper', end: true } }),
-    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: { wide: 5, pitch: 7, customs: 0, shape: 'taper' } }),
+    spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper' } }),
+    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper' } }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
-    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block', end: true } }),
-    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: { wide: 5, pitch: 7, customs: 0, shape: 'block' } }),
-    compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block', end: true } }),
+    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
+    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
+    compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's'], neck: 0, rowDepth: 8, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;
