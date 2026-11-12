@@ -20,9 +20,9 @@ done while paused.
 
 <GuideShot name="first-hour/hud" alt="The game screen at the start of a new game, with the main HUD areas numbered" />
 
-1. **Screens:** the starmap, ship overview, crew priorities, ship stock, jobs and, once you have a lab, research.
+1. **Screens:** the starmap, ship overview, the Crew window (priorities and schedules), ship stock, jobs and, once you have a lab, research.
 2. **Crew bar:** one card per crew member, with their role and status. Click a card to select them.
-3. **Time:** the clock, pause and three speeds, sharing a frame with the **ship's log**.
+3. **Time:** the clock, pause and three speeds, sharing a frame with the **ship's log**. A game hour is <Stat kind="tuning" id="GAME_HOUR_SEC" unit="seconds" />, and the ship clock matters for crew schedules.
 4. **Goals:** what to do next (see Goals below).
 5. **Tools:** Select, Build, Deconstruct and Cancel jobs, plus wall and roof views, overlays and the bug reporter.
 
@@ -39,7 +39,7 @@ tools step aside until it's over; the first time, a short lesson walks you throu
 
 The starter ship has everything it needs to fly and fight: reactors, life support, shields, two burst lasers and a
 missile launcher, point defence, a helm, a fabricator, a galley, beds for four, three storage crates and a shuttle bay
-with a shuttle. The crates hold building materials, ammunition, a few weapons, rations and **16 fuel**.
+with a shuttle. The crates hold building materials, ammunition, a few weapons, rations, **16 fuel** and **50 energy crystals**. A battery bank sits beside the reactors.
 
 Your four crew each have a role:
 
@@ -51,7 +51,7 @@ Your four crew each have a role:
 | Medic | Medicine | Treating the wounded |
 
 Crew pick their own jobs: put out fires, repair damage, haul, build, cook and so on. You set what each person
-prefers in **Crew priorities**. You don't need to micromanage them, but you do need to keep them fed, rested and
+prefers in the **Crew** window (**Priorities** tab) and when they work, sleep and rest in its **Schedule** tab. You don't need to micromanage them, but you do need to keep them fed, rested and
 breathing. Rations come from the galley, so keep an eye on your stock.
 
 To take direct control (in a fight, say), **draft** crew: select them and press **R**, or use **Draft all** on the crew
@@ -84,12 +84,26 @@ construction you haven't finished.
 <GuideShot name="first-hour/trade" alt="The trade station's panel on the Trade tab" width="440px" />
 
 Click the trade station (in the strip of nearby ships and stations, or in the world), then **Hail station**. Once it
-answers, the **Trade** tab lets you switch between **You give** and **You get**; add items with + and −,
-then press **Propose** and, when they agree, **Accept deal**. Your shuttle ferries the goods over, in several trips if
-there's a lot. Tick **Barter** to swap items for items with no credits changing hands.
+answers, the **Trade** tab lists every item with a **−** and **+** beside it: **+** buys, and **−** walks down through
+zero into selling. Click moves one, Shift five, Ctrl ten and Alt as many as you can. The deal slip shows what you pay or
+get and how many shuttle trips it needs. Press **PROPOSE** and, when the station answers, **ACCEPT**. Your shuttle
+ferries the goods over.
 
-**Refuel** tops your tanks up in one click and shows the price first. Fuel is what limits how far you can go, so top up
-whenever you pass a trader.
+**REFUEL** on the slip tops your jump fuel up in one click and shows the price first. Do it whenever you pass a trader.
+
+## Two kinds of fuel
+
+The game has two, and a new captain should know both.
+
+- **Fuel** pays for jumps. The number is in the top bar. Each jump costs some, and the starmap warns you if your route
+  will run out. Buy more from traders.
+- **Energy crystals** feed the reactors. Without them the reactors make no power and the ship goes dark. Crew load the
+  reactors from storage on their own, so the job for you is to keep crystals in the crates. The top bar shows the crystals
+  in the reactors, in red when they are low and none are left in storage. Buy more at mining and trading stations, or mine
+  them from asteroids.
+
+Your 50 starting crystals last a good while. Switching off modules you aren't using saves them. See
+[Power and reactors](../../mechanics/power/).
 
 ## Your first contract
 
@@ -121,7 +135,7 @@ Two things to watch as you grow:
 
 - **Engine capacity.** Your engines can only move so much hull. Build bigger than they can carry and the jump is
   blocked; **Overcharge** forces it, at the risk of damaging an engine and starting fires. More engines carry more.
-- **Running dry.** If you can't afford any jump, an **Out of fuel** banner appears. It points you to a trader's
+- **Running dry.** If you can't afford any jump, an **Out of fuel** banner appears (this is jump fuel; a ship out of crystals shows a **Low power** alert instead). It points you to a trader's
   **Refuel** if there is one, or lets you send a distress call for a tug.
 
 ## The menu and saving

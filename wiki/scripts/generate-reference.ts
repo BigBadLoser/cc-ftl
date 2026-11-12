@@ -341,7 +341,12 @@ function liveKind(kind: Kind, extra: (id: string, def: any) => Record<string, un
   return Object.fromEntries(Object.entries(registries[kind]).map(([id, def]) => [id, { slug: slug(kind, id), ...scalars(def), ...extra(id, def) }]));
 }
 await saveJson('game-data', {
-  modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
+  modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({
+    powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY,
+    // Reactor fuel and battery storage, flattened so <Stat field="..."> can read them.
+    ...(def.fuel ? { fuelStore: def.fuel.store, fuelRefillBelow: def.fuel.refillBelow, fuelPowerPerUnit: def.fuel.powerPerUnit } : {}),
+    ...(def.battery ? { batteryCapacity: def.battery.capacity } : {}),
+  })),
   items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
   tuning: { ...scalars(tuning), ...scalars(tuningJobs) },
   // Default key bindings by group, labelled the way the game shows them (src/ui/keymap). Debug keys are for development.
