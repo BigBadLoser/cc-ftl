@@ -15,12 +15,12 @@ from .recovery_study2 import lathe
 from .recovery_study4 import FRONT, base, quad, seam
 from .recovery_study5 import N, R, at
 from .recovery_study6 import UP, add, rect
-from .recovery_study8 import FP8, HAT_Z, RING_R, STILL, front_of
+from .recovery_study8 import FP8, HAT_R, HAT_Z, RING_R, STILL, front_of
 from .recovery_study9 import FRAMES, SURF, SWEEP, scan, surface_film
 from .medbay import trace
 
-HAT_R = R + 0.04                                    # the hat is the glass's lid
-GLASS = ((SURF, R + 0.012), (HAT_Z - 0.03, R + 0.012), (HAT_Z - 0.025, 0.06))   # straight up to the lid: one edge
+GLASS = ((SURF, R + 0.012), (2.08, R + 0.012), (2.15, 0.55), (2.21, 0.42), (2.24, 0.2))   # a band of clear glass
+                                                                             # over the fluid, the dome under the hat
 SPINE_A = math.radians(146)                         # its side face turned toward the camera
 E = (math.cos(SPINE_A), math.sin(SPINE_A), 0.0)     # out from the axis toward the spine
 T = (-math.sin(SPINE_A), math.cos(SPINE_A), 0.0)    # across the spine (its side faces look along -T and +T)
@@ -161,7 +161,7 @@ def u3_top():
     pts = path()
     sweep(k, [p for p in pts if p[1] >= BEND - 1e-6])
     k.cyl(0, 0, HAT_Z + 0.14, 0.13, ARM_Z + 0.1 - HAT_Z - 0.14, "medWhite", top="plate", sides=16)   # the hub
-    lathe(k, ((HAT_Z, HAT_R), (HAT_Z + 0.05, HAT_R + 0.02), (HAT_Z + 0.1, HAT_R - 0.04), (HAT_Z + 0.16, 0.34),
+    lathe(k, ((HAT_Z, HAT_R), (HAT_Z + 0.05, HAT_R + 0.02), (HAT_Z + 0.1, HAT_R - 0.02), (HAT_Z + 0.16, 0.3),
               (HAT_Z + 0.2, 0.14)), "medWhite", "plate", 32)
     k.cyl(0, 0, HAT_Z + 0.03, HAT_R + 0.022, 0.018, "cyan", sides=32)
     k.cyl(0, 0, HAT_Z - 0.03, HAT_R - 0.03, 0.035, "recGlow", top="steel", sides=32)
