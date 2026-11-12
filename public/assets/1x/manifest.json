@@ -69154,8 +69154,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active": {
    "kind": "static",
@@ -69173,8 +69172,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f1": {
    "kind": "static",
@@ -69192,8 +69190,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f2": {
    "kind": "static",
@@ -69211,8 +69208,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f3": {
    "kind": "static",
@@ -69230,8 +69226,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f4": {
    "kind": "static",
@@ -69249,8 +69244,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f5": {
    "kind": "static",
@@ -69268,8 +69262,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f6": {
    "kind": "static",
@@ -69287,8 +69280,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.active.f7": {
    "kind": "static",
@@ -69306,8 +69298,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r0.unpowered": {
    "kind": "static",
@@ -69341,8 +69332,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69360,8 +69351,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69379,8 +69370,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69398,8 +69389,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69417,8 +69408,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69436,8 +69427,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69455,8 +69446,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69474,8 +69465,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69493,8 +69484,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69512,8 +69503,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ]
   },
   "module.gametable.front.r2": {
@@ -69532,8 +69523,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active": {
    "kind": "static",
@@ -69551,8 +69541,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f1": {
    "kind": "static",
@@ -69570,8 +69559,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f2": {
    "kind": "static",
@@ -69589,8 +69577,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f3": {
    "kind": "static",
@@ -69608,8 +69595,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f4": {
    "kind": "static",
@@ -69627,8 +69613,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f5": {
    "kind": "static",
@@ -69646,8 +69631,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f6": {
    "kind": "static",
@@ -69665,8 +69649,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.active.f7": {
    "kind": "static",
@@ -69684,8 +69667,7 @@
    "footprint": [
     2,
     1
-   ],
-   "glow": true
+   ]
   },
   "module.gametable.front.r2.unpowered": {
    "kind": "static",
@@ -69719,8 +69701,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69738,8 +69720,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69757,8 +69739,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69776,8 +69758,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69795,8 +69777,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69814,8 +69796,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69833,8 +69815,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69852,8 +69834,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69871,8 +69853,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -69890,8 +69872,8 @@
     "y": 49
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ]
   },
   "module.gametable.holo.r0.active": {
@@ -70060,8 +70042,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70079,8 +70061,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70098,8 +70080,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70117,8 +70099,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70136,8 +70118,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70155,8 +70137,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70174,8 +70156,8 @@
     "y": 64
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70193,8 +70175,8 @@
     "y": 63
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70364,8 +70346,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70383,8 +70365,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70402,8 +70384,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70421,8 +70403,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70440,8 +70422,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70459,8 +70441,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70478,8 +70460,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70497,8 +70479,8 @@
     "y": 62
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70525,7 +70507,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2469,
+    "x": 2169,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70544,7 +70526,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2590,
+    "x": 2290,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70563,7 +70545,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2711,
+    "x": 2411,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70582,7 +70564,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2832,
+    "x": 2532,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70601,7 +70583,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2953,
+    "x": 2653,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70620,7 +70602,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 3074,
+    "x": 2774,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70639,7 +70621,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 3195,
+    "x": 2895,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70658,7 +70640,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 3316,
+    "x": 3016,
     "y": 1,
     "w": 120,
     "h": 80
@@ -70695,18 +70677,18 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1201,
+    "x": 3137,
     "y": 1,
     "w": 74,
-    "h": 81
+    "h": 80
    },
    "anchor": {
     "x": 21,
-    "y": 61
+    "y": 60
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70724,8 +70706,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70743,8 +70725,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70762,8 +70744,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70781,8 +70763,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70800,8 +70782,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70819,8 +70801,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70838,8 +70820,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70857,8 +70839,8 @@
     "y": 76
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -70866,18 +70848,18 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1276,
+    "x": 3212,
     "y": 1,
     "w": 74,
-    "h": 81
+    "h": 80
    },
    "anchor": {
     "x": 21,
-    "y": 61
+    "y": 60
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ]
   },
   "module.gametable.r2": {
@@ -70903,7 +70885,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1351,
+    "x": 1201,
     "y": 1,
     "w": 120,
     "h": 81
@@ -70922,7 +70904,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1472,
+    "x": 1322,
     "y": 1,
     "w": 120,
     "h": 81
@@ -70941,7 +70923,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1593,
+    "x": 1443,
     "y": 1,
     "w": 120,
     "h": 81
@@ -70960,7 +70942,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1714,
+    "x": 1564,
     "y": 1,
     "w": 120,
     "h": 81
@@ -70979,7 +70961,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1835,
+    "x": 1685,
     "y": 1,
     "w": 120,
     "h": 81
@@ -70998,7 +70980,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 1956,
+    "x": 1806,
     "y": 1,
     "w": 120,
     "h": 81
@@ -71017,7 +70999,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2077,
+    "x": 1927,
     "y": 1,
     "w": 120,
     "h": 81
@@ -71036,7 +71018,7 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2198,
+    "x": 2048,
     "y": 1,
     "w": 120,
     "h": 81
@@ -71073,18 +71055,18 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2319,
+    "x": 3287,
     "y": 1,
     "w": 74,
-    "h": 81
+    "h": 80
    },
    "anchor": {
     "x": 21,
-    "y": 61
+    "y": 60
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71102,8 +71084,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71121,8 +71103,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71140,8 +71122,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71159,8 +71141,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71178,8 +71160,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71197,8 +71179,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71216,8 +71198,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71235,8 +71217,8 @@
     "y": 77
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ],
    "glow": true
   },
@@ -71244,18 +71226,18 @@
    "kind": "static",
    "sheet": "gametable_module",
    "frame": {
-    "x": 2394,
+    "x": 3362,
     "y": 1,
     "w": 74,
-    "h": 81
+    "h": 80
    },
    "anchor": {
     "x": 21,
-    "y": 61
+    "y": 60
    },
    "footprint": [
-    2,
-    1
+    1,
+    2
    ]
   },
   "module.helm.front.r1": {

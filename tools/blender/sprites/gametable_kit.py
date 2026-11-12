@@ -26,9 +26,9 @@ def stool(k, u, v, face, glow="arcCyan"):
     k.cyl(u, v, 0.0, 0.14, 0.03, "arcBodyK", top="arcBodyK", sides=12)
     k.cyl(u, v, 0.03, 0.045, 0.26, "arcChrD", top="arcChr", sides=8)
     k.cyl(u, v, 0.29, 0.19, 0.04, "arcChrD", top="arcChr", sides=14)
-    k.cyl(u, v, 0.33, 0.17, 0.06, "arcBodyD", top="arcBody", sides=14)
-    k.box(u, v - face * 0.16, 0.36, 0.3, 0.05, 0.2, "arcBodyD", top="arcBody")              # the back
-    k.box(u, v - face * 0.16, 0.56, 0.3, 0.05, 0.02, glow, top=glow)                       # its lit edge
+    k.cyl(u, v, 0.33, 0.17, 0.06, "arcSeatD", top="arcSeat", sides=14)
+    k.box(u, v - face * 0.16, 0.36, 0.3, 0.05, 0.2, "arcSeatD", top="arcSeat")              # the back (no light on it:
+    # the cyan lit edge it had read as hologram light on the seat backs; the seat's red contrasts with crew trousers)
 
 
 def stadium_ring(k, hu, hv, z, h, w, col, top, n=8):
