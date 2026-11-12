@@ -21,13 +21,15 @@ from . import core, crew_cache as cc, crew_digest as dg, crew_pack
 from . import crew_spec as cs
 from . import crew_clips as clips
 from . import human_render as hr
+from .human_stool import stool_holdout
 
 SRC = Path(__file__).resolve().parent
 BL = SRC.parent
 REPO = BL.parents[1]
 GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
                 BL / "lib/palette.py", REPO / "palette.json", BL / "palette_extra.json", BL / "source/base_cc0.glb"]
-CLIP_FILES = {"sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
+CLIP_FILES = {"sit_stool_work": ["human_sit.py", "human_stool.py", "gametable_kit.py", "modkit.py"],
+              "sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "walk_aim_1h", "walk_aim_2h",
            "walk_heavy", "ready_1m", "swing_1m", "ready_2m", "swing_2m", "crouch_aim_1h", "crouch_fire_1h",
@@ -79,6 +81,7 @@ def build(out, opts, log=_log):
     # The sit chair (a hidden holdout) is always in the scene, like in every full build: Cycles output at a few knife-edge
     # pixels depends on what else is in the scene, so the scene must not depend on which clips this run renders.
     hr.chair_holdout()
+    stool_holdout()
     sc = bpy.context.scene
     rig = dg.rig_digest(arm)
     idig = {it.id: dg.item_digest(it) for it in items}
@@ -144,6 +147,7 @@ def _render(arm, items, miss, log):
     frames = {(c, i): (name, f) for c, i, name, f in clips.clip_frames()}
     order = {c: n for n, (c, _, _, _) in enumerate(cs.CLIPS)}
     chair = hr.chair_holdout()
+    seats = {True: chair, "stool": stool_holdout()}      # Pose.chair -> the holdout it renders against
     done, last_d = 0, None
     for d, clip, i in sorted(todo, key=lambda k: (k[0], order[k[1]], k[2])):
         if d != last_d:
@@ -156,9 +160,11 @@ def _render(arm, items, miss, log):
         if p.puffs:
             hr._PUFFS.update(p.puffs(i))
         head = hr.head_px(arm)
-        chair.hide_render, chair.rotation_euler = not p.chair, arm.rotation_euler
+        seat = seats.get(p.chair)
+        for s in seats.values():
+            s.hide_render, s.rotation_euler = s is not seat, arm.rotation_euler
         for k, _, _, _, _, path in todo[(d, clip, i)]:
-            rgba, g = hr.render_item(items[k], items, head, chair=chair if p.chair else None)
+            rgba, g = hr.render_item(items[k], items, head, chair=seat)
             cc.store(path, rgba, g, muzzle_px(arm, items[k]))
             done += 1
         if done % 200 < len(todo[(d, clip, i)]):

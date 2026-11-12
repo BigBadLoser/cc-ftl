@@ -75,7 +75,7 @@ export function buildModuleDefs(sim: Sim): UiModuleDef[] {
       cost: costsOf(sim, d.cost),
       category: d.category ?? 'utility',
       description: d.description ?? '',
-      access: d.access ? [d.access[0], d.access[1]] : null,
+      access: d.access ? [d.access, ...(d.extraAccess ?? [])].map(([x, y]) => [x, y] as [number, number]) : [],
       facts: moduleFacts(d),
       tier: tiered ? TIER_NAME[d.blueprint?.tier ?? 1] ?? null : null,
       family: tiered ? family : null,

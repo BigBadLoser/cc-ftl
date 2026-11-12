@@ -276,6 +276,14 @@ export interface Mood {
   mealItem?: string;
   /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
   relax?: number;
+  /** The points and factor key of that break (a game scores more than the mess; the room's tier shifts it); absent = the mess's flat lift. */
+  relaxPts?: number;
+  relaxKey?: string;
+  /** Tier index (0 grim .. 4 impressive; absent = decent) of the room of the last galley meal and of the last sleep in a bed. */
+  mealTier?: number;
+  sleepTier?: number;
+  /** Seconds since the last break (crew/roomMood.ts "No time off"); absent = 0. */
+  noBreak?: number;
   /** Seconds left of "enjoying the work" (an interest, docs/TRAITS.md 10.7), and its points (+2 keen, +4 passionate). */
   enjoy?: number;
   enjoyPts?: number;
