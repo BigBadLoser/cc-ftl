@@ -97,11 +97,11 @@ def spine_back(k):
     sweep(k, lower)
     X = E                                                                    # the side face's plane: (E, up)
     s = side_face(RS, 0, 0.26)                                               # the vitals screen on the column
-    rect(k, s, X, UP, -0.085, 0.085, 1.06, 1.44, "dark", 0.0)
+    rect(k, s, X, UP, -0.085, 0.06, 1.06, 1.44, "dark", 0.0)       # +E (outer) bezel wide enough to hold a px
     trace(lambda a, b: rect(k, s, X, UP, a - 0.006, a + 0.006, 1.33 + b - 0.006, 1.33 + b + 0.006, "green", 0.003),
-          [(-0.055, 0.0), (-0.02, 0.0), (-0.005, 0.04), (0.01, -0.03), (0.025, 0.0), (0.055, 0.0)], d=0.01)
+          [(-0.06, 0.0), (-0.03, 0.0), (-0.015, 0.04), (0.0, -0.03), (0.015, 0.0), (0.035, 0.0)], d=0.01)
     for i, (w, col) in enumerate(((0.1, "cyan"), (0.06, "recGlowO"), (0.035, "cyan"))):
-        rect(k, s, X, UP, -0.05, -0.05 + w, 1.13 + i * 0.05, 1.16 + i * 0.05, col, 0.003)
+        rect(k, s, X, UP, -0.06, -0.06 + w, 1.13 + i * 0.05, 1.16 + i * 0.05, col, 0.003)
     f = side_face(RS, 0, 0.38)                                               # a conduit line from the lobe up the column
     rect(k, f, X, UP, -0.012, 0.012, 0.18, 0.56, "cyan", 0.0)
     for z0, z1 in ((0.82, 1.0), (1.5, BEND - 0.08)):
