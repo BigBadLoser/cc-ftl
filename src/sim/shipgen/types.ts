@@ -15,7 +15,9 @@ export type RoomRole =
   /** Station rooms: hydroponics farms, ore refining and processing, the armoury (weapon lockers). */
   | 'farm' | 'industry' | 'armoury'
   /** Station courtyards (open rooms filling enclosed centres): a concourse, a garden deck, a drill hall. */
-  | 'plaza' | 'garden' | 'drill';
+  | 'plaza' | 'garden' | 'drill'
+  /** Station medbays (sickbay cots) and plant rooms (life support, the station's workshop, by the machinery). */
+  | 'medbay' | 'plant';
 
 /** Structural topologies the builder knows. Factions weight them; any faction could use any. */
 export type ArchetypeId =

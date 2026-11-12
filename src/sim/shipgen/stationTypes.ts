@@ -40,6 +40,8 @@ export interface StationTier {
   grammars: readonly Weighted<StationGrammar>[];
   /** Ore cages (rows of ore holds on a rail) hung off the structure: mining stations. */
   cages?: number;
+  /** Shuttle bays (hangars), for boarding parties and patrols. Read by the station assembly (`assembly/program.ts`). */
+  bays?: number;
 }
 
 export interface StationDef {
@@ -48,6 +50,13 @@ export interface StationDef {
   /** Combat side of a spawned station (spawning is a later slice). */
   side: Faction;
   motif: string;
+  /** Quarters as bunk rooms ('rows') rather than blocks of one-bed cabins. Read by the station assembly (`assembly/program.ts`). */
+  berths?: 'rows';
+  /**
+   * Spaciousness, rolled per station between these (default [1, 1]): how far rooms grow past what their contents need.
+   * Under 1 tight (a navy depot, a pirate den), over 1 roomy (a trade station's halls). Read by the station assembly.
+   */
+  space?: readonly [number, number];
   /** Share (0..1) of the crew who are security (armed fighters, `role.security`). */
   security: number;
   /** Role ids of the non-security crew, weighted; the first `required` always come aboard. */
@@ -58,6 +67,8 @@ export interface StationDef {
   transition: TransitionStyle;
   tiers: Readonly<Record<StationSize, StationTier>>;
   rooms: readonly StationRoomDef[];
+  /** The kind's rooms for the station assembly, where they differ from `rooms`. */
+  assemblyRooms?: readonly StationRoomDef[];
   /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
   atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
 }

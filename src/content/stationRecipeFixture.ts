@@ -1,4 +1,4 @@
-import { Rng, assemble, hullProblems, planStation, stationFaction, stationProgram, type Assembly, type HullFamilyDef, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
+import { Rng, assemble, hullProblems, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
 import { seedOf } from '../sim/shipgen/generate';
 import { content } from './index';
 import { stations } from './stations';
@@ -8,10 +8,8 @@ import { stations } from './stations';
 const defs = content.modules as Record<string, ModuleDef>;
 
 export function programOf(kind: keyof typeof stations, size: StationSize, seed: number): { rng: Rng; rooms: RoomSpec[] } {
-  const def = stations[kind] as StationDef, fam = (stationFaction(def, size).hullFamilies as HullFamilyDef[])[0] as HullFamilyDef;
   const rng = new Rng(seedOf(seed, 0));
-  const plan = planStation(rng, def, size, { id: size, weight: fam.weight, archetypes: [] }, defs);
-  return { rng, rooms: stationProgram(rng, plan) };
+  return { rng, rooms: stationProgram(rng, stations[kind] as StationDef, size, defs) };
 }
 
 const beds = (rooms: readonly (RoomSpec | undefined)[]): number => rooms.reduce((n, r) => n + (r?.role === 'quarters' ? r.mods.filter((m) => m === 'module.bed').length : 0), 0);

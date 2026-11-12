@@ -92,28 +92,46 @@ Square outlines get one room a corner with a true 45-degree hull (`corners.ts`).
 
 ## The rooms
 
-`stationProgram` builds the room list from the station plan: the control room, the plan's rooms, its reactors, two
-docks; crate rooms merged into warehouses of up to 24 crates; and the shared rooms.
+The assembly has its own station plan (`stationProgram` in `program.ts`), built from the kind's `StationDef` at a size
+tier. The station grammars keep theirs (`planStation`), which goes when they do. Nothing here is taken from that one;
+where `main` has something better or new (the arcade cabinet and game table, power-drawing grow beds) it is wired in.
+
+- Rooms grow past what their contents need by the kind's spaciousness (`space` on the def: a navy depot and a pirate
+  den are tight, a trade station roomy).
+- Quarters are blocks of one-bed cabins (four beds a block), or bunk rooms where the kind berths in rows (`berths`).
+- Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and a game table; from
+  station size up the next is a rec room with arcade cabinets and a game table (`withCommons`). The fabricator stands
+  in a plant room.
+- Shield rooms and the core get floor round the machine on a station that is not tight. Gun bays keep the mount size.
+- Reactors: the smallest tier the size allows that powers the station from one room of two; rooms of two at most.
+- Crate rooms merge into warehouses of up to 24 crates.
+- Medbays: one for every five quarters blocks; a large station has a clinic (a ward and two treatment rooms).
+- Plant rooms: one for every reactor room, two at least.
+- Shuttle bays where the tier has them (`bays`: the navy depot). Farms on the agri station (`assemblyRooms`).
 
 | Department | Rooms |
 |---|---|
 | harbour | control room, armoury, docks |
-| habitation | quarters, life-support rooms |
-| commons | mess (galley, game table), rec room (arcade cabinets, game table), courts |
+| habitation | quarters, common rooms that are not the mess or the rec room, medbays |
+| commons | mess, rec room, courts |
 | freight | warehouses |
-| secure | reactors, shields, the AI core |
+| secure | reactors, shields, the AI core, plant rooms |
 | defence | gun bays, point defence |
-| works | refineries, farms, hangars |
+| works | refineries, farms, shuttle bays |
 
-A mess stands on every station (two at hub size) and a rec room from station size up (`commonRooms`). Both carry role
-`support`, tagged `commons` on the spec; a room's `dept` overrides its role's department.
+A room's `dept` overrides its role's department (`deptOf`). The mess and the rec room carry role `support`, tagged
+`commons`.
+
+The list was checked room for room against the experimental branch it came from (six kinds, three sizes, four seeds):
+60 of 72 identical before the mess and rec room are dressed; the 12 agri stations have one more reactor room, because
+a grow bed draws power on `main`.
 
 ## Results
 
-Eight recipes on four seeds each (tree: the pirate hub's rooms; compound: the mining station's): 32 of 32 assemble,
-every room and bed stands, no solid 2x2 wall block, the hull check passes. `stationRecipes.slow.test.ts` asserts it.
-Trees are 1,080 to 1,190 floor tiles against 1,270 to 1,420 for the old Tree on the same rooms, which has 43 to 56
-solid wall blocks.
+Eight recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compound: the mining station's, 28 or 29):
+32 of 32 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes.
+`stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
+which has 43 to 56 solid wall blocks.
 
 ## Known limits
 
@@ -121,7 +139,8 @@ solid wall blocks.
   beams yet), run `finishLayout`, register a grammar, and validate finished stations.
 - **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
   as drawn.
-- The mess and the rec room have no room recipe of their own; `support` furnishes as a mess.
+- The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant
+  rooms have none at all.
 - Seeds change little within one recipe on a ring: the recipe's preferences decide, the seed rolls lengths and sizes.
 - The harbour is one design, the dock block.
 - Up to three rooms a station come out under three tiles wide (cabins; two wide is accepted for a cabin).

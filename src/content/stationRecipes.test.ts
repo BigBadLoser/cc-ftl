@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { commonRooms, deptOf, warehoused, type Recipe } from '../sim';
+import { deptOf, warehoused, type Recipe, type StationSize } from '../sim';
 import { assembled, programOf } from './stationRecipeFixture';
 import { stationRecipes } from './stationRecipes';
+import { stations } from './stations';
 
 describe('station program', () => {
   it('merges crate rooms into warehouses that hold every crate', () => {
@@ -13,11 +14,22 @@ describe('station program', () => {
     expect(warehoused(crates).flatMap((r) => r.mods)).toHaveLength(11);
   });
 
-  it('adds a mess to every station, a second at hub size, and a rec room from station size up', () => {
-    const has = (size: number, mod: string): number => commonRooms(size).filter((r) => r.mods.includes(mod)).length;
-    expect([1, 2, 3].map((s) => has(s, 'module.galley'))).toEqual([1, 1, 2]);
-    expect([1, 2, 3].map((s) => has(s, 'module.arcade'))).toEqual([0, 1, 1]);
-    expect(commonRooms(3).every((r) => deptOf(r) === 'commons')).toBe(true);
+  it('has one mess (two at hub size) and a rec room from station size up, as the commons department', () => {
+    const count = (size: StationSize, mod: string): number => programOf('station.mining', size, 1).rooms.filter((r) => r.mods.includes(mod) && deptOf(r) === 'commons').length;
+    expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.galley'))).toEqual([1, 1, 2]);
+    expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.arcade'))).toEqual([0, 1, 1]);
+  });
+
+  it('houses the whole crew, with a medbay and plant rooms', () => {
+    for (const kind of ['station.pirate', 'station.military', 'station.farming'] as const) {
+      const { rooms } = programOf(kind, 'station', 2);
+      const beds = rooms.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
+      expect(beds).toBe(stations[kind].tiers.station.crew);
+      expect(rooms.some((r) => r.role === 'medbay')).toBe(true);
+      expect(rooms.filter((r) => r.role === 'plant').length).toBeGreaterThanOrEqual(2);
+    }
+    expect(programOf('station.farming', 'station', 1).rooms.some((r) => r.role === 'farm')).toBe(true);
+    expect(programOf('station.military', 'hub', 1).rooms.filter((r) => r.role === 'hangar')).toHaveLength(2);
   });
 });
 

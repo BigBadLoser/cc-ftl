@@ -44,16 +44,14 @@ function encodePng({ width, height, data }) {
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true } });
 try {
   const L = (p) => server.ssrLoadModule(p);
-  const [{ content }, { stationRecipes }, sg, { planStation }, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }] = await Promise.all([
-    '/src/content/index.ts', '/src/content/stationRecipes.ts', '/src/sim/shipgen/stationGen.ts', '/src/sim/shipgen/stationPlan.ts', '/src/sim/rng.ts', '/src/sim/shipgen/generate.ts',
+  const [{ content }, { stationRecipes }, sg, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }] = await Promise.all([
+    '/src/content/index.ts', '/src/content/stationRecipes.ts', '/src/sim/shipgen/stationGen.ts', '/src/sim/rng.ts', '/src/sim/shipgen/generate.ts',
     '/src/sim/shipgen/assembly/dept.ts', '/src/sim/shipgen/assembly/program.ts', '/src/sim/shipgen/assembly/assemble.ts', '/tools/shipgen/assemblyViews.ts',
     '/src/sim/shipgen/assembly/hull.ts', '/tools/shipgen/draw.ts', '/tools/shipgen/views.ts'].map(L));
   const { roomCores, drawDepartments, drawDeptKey, wallBlocks } = views;
   const roomsFor = (kind, size, seed) => {
-    const def = content.stations[kind], f = sg.stationFaction(def, size), fam = f.hullFamilies[0];
     const rng = new Rng(gen.seedOf(seed, 0));
-    const plan = planStation(rng, def, size, { id: size, weight: fam.weight, archetypes: [] }, content.modules);
-    return { rng, rooms: stationProgram(rng, plan) };
+    return { rng, rooms: stationProgram(rng, content.stations[kind], size, content.modules) };
   };
   const asResult = (a) => {
     const g = a.ctx.g, snap = g.snapshot();

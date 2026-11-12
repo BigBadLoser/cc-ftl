@@ -9,8 +9,8 @@ export function deptOf(r: Pick<RoomSpec, 'role' | 'dept'>): Dept {
   switch (r.role) {
     case 'cargo': return 'freight';
     case 'bridge': case 'armoury': case 'dock': return 'harbour';
-    case 'quarters': case 'support': return 'habitation';
-    case 'reactor': case 'shields': case 'core': return 'secure';
+    case 'quarters': case 'support': case 'medbay': return 'habitation';
+    case 'reactor': case 'shields': case 'core': case 'plant': return 'secure';
     case 'weapons': return 'defence';
     case 'industry': case 'farm': case 'hangar': return 'works';
     default: return 'commons';

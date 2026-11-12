@@ -52,11 +52,11 @@ const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 
   },
 };
 
-interface TierNums { cages?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
+interface TierNums { cages?: Per; bays?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
 function tiers(n: TierNums): Record<StationSize, StationTier> {
   const one = (s: StationSize): StationTier => ({
     crew: Math.round(CREW[s] * n.crew), guns: n.guns[s], heavyPct: n.heavyPct, shields: n.shields[s], pointDefense: n.pd[s],
-    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}),
+    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}), ...(n.bays ? { bays: n.bays[s] } : {}),
   });
   return { outpost: one('outpost'), station: one('station'), hub: one('hub') };
 }
@@ -82,7 +82,7 @@ const SMALL_SHIELD = [{ value: 'module.shieldGen', weight: 1 }];
 export const stations = {
   // Trade: big holds round a market core, many docking arms.
   'station.trading': {
-    name: 'Trade station', kind: 'trading', side: 'neutral', motif: 'motif.civilian', security: 0.3, crew: CIVIL_CREW,
+    name: 'Trade station', kind: 'trading', side: 'neutral', motif: 'motif.civilian', security: 0.3, space: [1.1, 1.6], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
@@ -91,7 +91,7 @@ export const stations = {
   },
   // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.
   'station.research': {
-    name: 'Research station', kind: 'research', side: 'neutral', motif: 'motif.civilian', security: 0.2, crew: CIVIL_CREW,
+    name: 'Research station', kind: 'research', side: 'neutral', motif: 'motif.civilian', security: 0.2, space: [1, 1.5], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.electronics', min: 3, max: 8 }, { item: 'item.parts', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }],
     tiers: tiers({ crew: 0.9, guns: per(1, 3, 6), heavyPct: 10, shields: per(1, 1, 2), pd: per(1, 1, 2), crates: per(8, 18, 36), docks: per(2, 3, 4), shapes: SHAPES.research }),
@@ -105,7 +105,7 @@ export const stations = {
   },
   // Mining: refineries on ore-processing floors, ore cages and big ore stores, docks for the mining ships.
   'station.mining': {
-    name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, crew: CIVIL_CREW,
+    name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, space: [0.8, 1.2], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap_hull', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
     tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
@@ -118,7 +118,7 @@ export const stations = {
   },
   // Farming: extra crew quarters and messes round a plaza, ration stores; lightly guarded. (No hydroponics beds on stations.)
   'station.farming': {
-    name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, crew: CIVIL_CREW,
+    name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, space: [1, 1.4], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
     tiers: tiers({ crew: 1.1, guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(6, 14, 28), docks: per(2, 2, 3), shapes: SHAPES.farming }),
@@ -126,22 +126,28 @@ export const stations = {
       room('support', ['module.lifeSupport'], 6, 3, per(2, 4, 8)),
       armoury(per(1, 1, 1)),
     ],
+    // The station assembly gives it farms (hydroponics in rows) and half as many extra common rooms.
+    assemblyRooms: [
+      room('farm', ['module.lifeSupport', ...n(10, 'module.hydroponics')], 11, 7, per(1, 2, 4)),
+      room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
+      armoury(per(1, 1, 1)),
+    ],
     atrium: { role: 'plaza', chance: 0.85 },
   },
   // Military depot: heavy guns, shield generators, armouries and barracks, few docks.
   'station.military': {
-    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', security: 0.55,
+    name: 'Navy depot', kind: 'military', side: 'hostile', motif: 'motif.navy', berths: 'rows', security: 0.55, space: [0.6, 0.9],
     crew: { required: ['role.engineer', 'role.gunner', 'role.gunner'], pool: [{ value: 'role.gunner', weight: 3 }, { value: 'role.engineer', weight: 2 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
-    tiers: tiers({ crew: 1.2, guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
+    tiers: tiers({ crew: 1.2, bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
     atrium: { role: 'drill', chance: 0.6 },
   },
   // Pirate den: scrappy welded modules, light defences (conquerable on purpose), loot stores.
   'station.pirate': {
-    name: 'Pirate den', kind: 'pirate', side: 'hostile', motif: 'motif.scrapper', security: 0.15,
+    name: 'Pirate den', kind: 'pirate', side: 'hostile', motif: 'motif.scrapper', security: 0.15, space: [0.5, 1.1],
     crew: { required: ['role.engineer'], pool: [{ value: 'role.gunner', weight: 2 }, { value: 'role.engineer', weight: 2 }, { value: 'role.pilot', weight: 1 }, { value: 'role.medic', weight: 1 }], species: ['species.human'] },
     weapons: { light: [{ value: 'module.burstLaser', weight: 2 }, { value: 'module.incendiaryLauncher', weight: 1 }], heavy: [{ value: 'module.massDriver', weight: 1 }] },
     shields: [{ value: 'module.shieldGen', weight: 1 }],
