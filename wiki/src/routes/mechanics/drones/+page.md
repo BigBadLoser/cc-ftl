@@ -7,6 +7,9 @@ order: 5
   import Stat from '../../../lib/Stat.svelte'
   import ModuleTable from '../../../lib/ModuleTable.svelte'
   import ComingLater from '../../../lib/ComingLater.svelte'
+  import GamePanel from '../../../lib/GamePanel.svelte'
+  import ModuleOverview from '../../../../../src/ui/module/ModuleOverview.svelte'
+  import { droneBay, inertApi } from '../../../lib/samples/droneBay'
 </script>
 
 Drones are small flying machines that work for the ship on their own. You give them no orders: they pick their own
@@ -38,6 +41,10 @@ Research stations sometimes sell finished drones. A destroyed drone leaves a lit
 <ModuleTable ids="module.droneBay, module.aiCore" columns="power:Power:signed, maxHp:Hull points" />
 
 A drone bay has two pads. Select it to open the bay panel:
+
+<GamePanel title="Drone bay" width="340px" caption="The bay panel in the module inspector: a repair drone out at work, a medic drone charging.">
+  <ModuleOverview api={inertApi} m={droneBay} ftl={null} onPower={() => {}} />
+</GamePanel>
 
 - Each drone's name and what it is doing, with a charge meter.
 - A **Load** line for drones that carry supplies.
