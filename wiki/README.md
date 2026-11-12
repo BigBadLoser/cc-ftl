@@ -46,6 +46,16 @@ content types, so a renamed field fails the check instead of printing "undefined
 Hand-written guides live in `src/routes/guides/` and `src/routes/mechanics/`. Mark behaviour that is planned but not
 built with `<ComingLater>`.
 
+## Live panels
+
+Guides show real game UI components with `<GamePanel>` instead of screenshots wherever the thing shown is a panel or card
+(not the game world). Their data comes from real games: each recipe in `scripts/panel-recipes.ts` starts a seeded game
+headless in Node, sets a scene up with the game's debug-scenario commands, runs a few seconds and keeps what the game's
+own snapshot functions (`src/app/*Snapshot.ts`) hand the panel. `npm run generate` saves the results to
+`src/data/generated/panels.json`; pages read them through `src/lib/panels.ts`, typed by the recipes' return types, so a
+changed panel fails the check. No sim code reaches the browser. The game's theme is scoped to `.game-ui`
+(`scripts/game-ui-css.ts`) so it can't touch the wiki's own styles.
+
 ## Guide screenshots
 
 `npm run capture` starts the game's dev server, runs every recipe in `scripts/guide-shots.mjs` in headless Chromium and
