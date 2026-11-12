@@ -76,6 +76,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Crew schedules: the Late shift's free hours move from 04:00–06:00 to 18:00–20:00, so with the Default and Late shifts someone is always on Work. ([#455](https://github.com/BigBadLoser/cc-ftl/pull/455))
 - Salvaging a wreck to the end no longer leaves its drones behind, docked or out in space. ([#435](https://github.com/BigBadLoser/cc-ftl/pull/435))
 - Station shipyard hull jobs now finish: the old hull walls between your ship and a new section disappear by themselves once the section is sealed, so the new section joins the ship and gets air even where a module stands behind the old wall. ([#432](https://github.com/BigBadLoser/cc-ftl/pull/432))
 - Hull plans now seal at corners: an L-shaped or notched plan no longer leaves floor touching open space through a diagonal gap in the hull. ([#431](https://github.com/BigBadLoser/cc-ftl/pull/431))
