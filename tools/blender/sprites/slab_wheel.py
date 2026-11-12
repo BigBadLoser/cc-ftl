@@ -107,14 +107,14 @@ def canopy(k, body, trim, lobes, hole=0.0):
             k.box(m[0], m[1], z0, LC - 1.2, w, h if dtop is None else h * 0.5, col[c], top=col[t] if t else None,
                   rz=a)
     for a0, a1 in ((FRONT - 1.3, FRONT + 1.3),):                            # vents and lights on the lower band
-        for i in range(16):
-            a = a0 + (a1 - a0) * (i + 0.5) / 16
-            for dz in (0.1, 0.16):
-                k.box(*at(1.484, a)[:2], ZC + dz, 0.07, 0.012, 0.025, "dark", rz=a + math.pi / 2)
-    ring(k, 1.485, ZC + 0.22, 0.025, 0.012, "slbCy", n=48, skip=lambda i: i % 3 == 0)
-    for i in range(16):                                                      # seams on the upper band
-        a = (i + 0.5) * math.tau / 16
-        k.box(*at(1.444, a)[:2], ZC + 0.34, 0.022, 0.012, 0.15, "dark", rz=a + math.pi / 2)
+        for i in range(8):
+            a = a0 + (a1 - a0) * (i + 0.5) / 8
+            for dz in (0.09, 0.16):
+                k.box(*at(1.484, a)[:2], ZC + dz, 0.16, 0.012, 0.04, "dark", rz=a + math.pi / 2)
+    ring(k, 1.485, ZC + 0.225, 0.04, 0.012, "slbCy", n=24, skip=lambda i: i % 3 == 0)
+    for i in range(10):                                                      # seams on the upper band
+        a = (i + 0.5) * math.tau / 10
+        k.box(*at(1.444, a)[:2], ZC + 0.34, 0.05, 0.012, 0.15, "dark", rz=a + math.pi / 2)
     for a in lobes:                                                          # the lobes' columns
         u, v, _ = at(LC, a)
         k.cyl(u, v, 0.0, LR + 0.06, 0.08, "steelD", top="steel", sides=20)
@@ -133,13 +133,11 @@ def canopy(k, body, trim, lobes, hole=0.0):
 
 # ---- what rides on top ----------------------------------------------------------------------------------------------
 def bolt_ring(k, zt=ZT, r_in=0.85):
-    if r_in < 1.05:
-        ring(k, 1.1, zt, 0.006, 0.03, "dark", skip=lambda i: i % 6 == 0)
-    for i in range(16):
-        k.cyl(*at(1.24, i * math.tau / 16)[:2], zt, 0.025, 0.02, "steelL", sides=6)
-    for i in range(10):                                                      # the top's panel seams
+    """The rim's panel seams and a bolt between each pair (sized to read: lines two pixels wide, no dashes)."""
+    for i in range(10):
         a = (i + 0.25) * math.tau / 10
-        beam(k, at(r_in + 0.05, a, zt + 0.004), at(1.3, a)[:2], 0.018, 0.008, "dark")
+        beam(k, at(r_in + 0.06, a, zt + 0.004), at(1.34, a)[:2], 0.06, 0.008, "dark")
+        k.cyl(*at(1.22, a + math.pi / 10)[:2], zt, 0.045, 0.025, "steelL", top="steel", sides=8)
 
 
 def ram(k, a, r0, r1, z, body):
@@ -151,14 +149,15 @@ def ram(k, a, r0, r1, z, body):
         k.box(*at(r, a)[:2], z - 0.034, s, 0.08, 0.06, "steelD", top="steel", rz=a)
 
 
-def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None):
+def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True):
     """A Geneva drive on the canopy's top, mid-step: a ten-slot star (one step a slab) on the rotor's shaft, its driver
     beside it with the pin down a slot and the locking disc's half away from the star, a gearmotor behind."""
     n = NS
     c = rs / math.cos(math.pi / n)                                           # the centres' distance
     cr = c * math.sin(math.pi / n)                                           # the crank
     rl = 0.256 * rs                                                          # the locking arcs
-    k.cyl(0, 0, z, rs - 0.1, 0.012, "dark", sides=32)
+    if pad:
+        k.cyl(0, 0, z, rs - 0.1, 0.012, "dark", sides=32)
     for i in range(n):                                                       # the star's lobes
         m = ang + (i + 0.5) * math.tau / n
 
@@ -171,12 +170,10 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None):
         for j in range(8):
             b0, b1 = a0 + (a1 - a0) * j / 8, a0 + (a1 - a0) * (j + 1) / 8
             prism(k, [at(0.64 * rs, b0)[:2], at(ro(b0), b0)[:2], at(ro(b1), b1)[:2], at(0.64 * rs, b1)[:2]], z, z + h,
-                  "steel", top="steelL")
-    k.cyl(0, 0, z, 0.667 * rs, h, "steel", top="steelL", sides=30)              # its boss and the shaft's cap
+                  "steelD", top="steelL")
+    k.cyl(0, 0, z, 0.667 * rs, h, "steelD", top="steelL", sides=30)              # its boss and the shaft's cap
     k.cyl(0, 0, z + h, 0.31 * rs, 0.03, "steelD", top="steel", sides=16)
     k.cyl(0, 0, z + h + 0.03, 0.1, 0.02, trim, sides=12)
-    for i in range(10):
-        k.cyl(*at(0.49 * rs, (i + 0.5) * math.tau / 10 + ang)[:2], z + h, 0.025, 0.015, "steelD", sides=6)
     d = at(c, ang)
     k.cyl(d[0], d[1], z, 0.07, h + 0.05, "steel", sides=10)                 # the driver's shaft
     hp = [at(rl - 0.02, ang + math.pi / 2 + j * math.pi / 10) for j in range(11)]   # the locking disc's far half
@@ -185,21 +182,18 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None):
     beam(k, (d[0], d[1], z + h + 0.035), (pin[0], pin[1]), 0.08, 0.03, trim, top=trim)   # the crank
     k.cyl(pin[0], pin[1], z + 0.005, 0.032, h + 0.05, "steelL", sides=8)   # its pin, down the slot
     g = at(c + 0.3, ang)                                                     # the gearmotor
-    k.box(g[0], g[1], z, 0.26, 0.4, 0.11, trim, top=body, rz=ang)
+    k.box(g[0], g[1], z, 0.26, 0.4, 0.11, trim, top=trim, rz=ang)
     t = ang + math.pi / 2
     e0 = (g[0] + 0.17 * math.cos(t), g[1] + 0.17 * math.sin(t), z + 0.06)
     e1 = (g[0] + 0.5 * math.cos(t), g[1] + 0.5 * math.sin(t), z + 0.06)
-    tube(k, e0, e1, 0.065, body, sides=12)
-    for j in range(4):
-        f = 0.24 + j * 0.065
+    tube(k, e0, e1, 0.065, "steelD", sides=12)
+    for j in range(2):
+        f = 0.27 + j * 0.12
         tube(k, (g[0] + f * math.cos(t), g[1] + f * math.sin(t), z + 0.06),
-             (g[0] + (f + 0.025) * math.cos(t), g[1] + (f + 0.025) * math.sin(t), z + 0.06), 0.08, "steelD", sides=12)
+             (g[0] + (f + 0.05) * math.cos(t), g[1] + (f + 0.05) * math.sin(t), z + 0.06), 0.085, "steelD", sides=12)
     beam(k, (d[0], d[1], z + h + 0.02), (g[0], g[1]), 0.06, 0.02, "steelD")
     if bridge:                                       # the driver's frame, a bridge out to the rim it stands on
-        beam(k, at(c - 0.1, ang, z - 0.03), at(bridge, ang)[:2], 0.46, 0.06, "steelD", top="steel")
-        for e in (-0.2, 0.2):
-            beam(k, (d[0] - e * math.sin(ang), d[1] + e * math.cos(ang), z + 0.004),
-                 (at(bridge, ang)[0] - e * math.sin(ang), at(bridge, ang)[1] + e * math.cos(ang)), 0.04, 0.008, trim)
+        beam(k, at(c - 0.1, ang, z - 0.03), at(bridge, ang)[:2], 0.4, 0.06, "steelD", top="steel")
 
 
 def top_tyres(k, a, r, house, guard, z=ZT):
@@ -207,12 +201,12 @@ def top_tyres(k, a, r, house, guard, z=ZT):
     k.box(*at(r + 0.2, a)[:2], z, 0.36, 0.62, 0.02, "steelD", top="steel", rz=a)
     for da in (-0.17, 0.17):
         t = at(r + 0.12, a + da)
-        k.cyl(t[0], t[1], z + 0.02, 0.12, 0.08, "black", top="slbGr", sides=16)
+        k.cyl(t[0], t[1], z + 0.02, 0.12, 0.08, "black", top="slbGrL", sides=16)
         k.cyl(t[0], t[1], z + 0.1, 0.05, 0.015, "steelL", sides=8)
     m = at(r + 0.34, a)
     k.box(m[0], m[1], z, 0.2, 0.42, 0.12, house, top=guard, rz=a)
-    for dz in (0.03, 0.06, 0.09):
-        k.box(*at(r + 0.445, a)[:2], z + dz, 0.012, 0.36, 0.014, "dark", rz=a)
+    for dz in (0.03, 0.075):
+        k.box(*at(r + 0.445, a)[:2], z + dz, 0.012, 0.32, 0.03, "dark", rz=a)
 
 
 def pendant(k, a, r_out, col):
@@ -243,12 +237,12 @@ def skin(k, a0, a1, body, trim, z1=ZC + 0.06):
     n = max(1, round((a1 - a0) / 0.36))
     for i in range(n + 1):
         a = a0 + (a1 - a0) * i / n
-        k.box(*at(1.482, a)[:2], 0.35, 0.012, 0.016, ZC - 0.37, "dark", rz=a)
+        k.box(*at(1.482, a)[:2], 0.35, 0.012, 0.045, ZC - 0.37, "dark", rz=a)
     for i in range(n):
         a = a0 + (a1 - a0) * (i + 0.5) / n
-        for dz in (0.14, 0.18, 0.22):
-            k.box(*at(1.482, a)[:2], dz, 0.012, 0.2, 0.018, "dark", rz=a)
-        k.box(*at(1.483, a)[:2], ZC - 0.16, 0.01, 0.14, 0.025, "slbCy" if i % 3 else "green", rz=a)
+        for dz in (0.13, 0.2):
+            k.box(*at(1.482, a)[:2], dz, 0.012, 0.24, 0.04, "dark", rz=a)
+        k.box(*at(1.483, a)[:2], ZC - 0.17, 0.01, 0.16, 0.045, "slbCy" if i % 3 else "green", rz=a)
 
 
 def jamb(k, a, body, trim, screen=False):
@@ -269,8 +263,8 @@ def panel(k, a, body, trim):
     c(1.505, 0.0, 0.62, 0.012, 0.36, 0.26, "dark")
     c(1.51, -0.06, 0.66, 0.006, 0.16, 0.14, "slbCy")
     c(1.51, 0.1, 0.7, 0.006, 0.1, 0.04, "green")
-    for j in range(NS):
-        c(1.505, (j - 4.5) * 0.034, 0.5, 0.012, 0.024, 0.04, "slbAmb" if j == 3 else "steelL")
+    for j in range(5):
+        c(1.505, (j - 2) * 0.07 - 0.04, 0.48, 0.012, 0.05, 0.05, "slbAmb" if j == 1 else "steelL")
     c(1.51, 0.16, 0.44, 0.02, 0.06, 0.05, "hivis")
 
 
@@ -279,10 +273,10 @@ def sunk_top(k, rh, depth, body, trim):
     wall seamed; the rim keeps its lines and bolts."""
     zf = ZT - depth
     k.cyl(0, 0, ZC + 0.06, rh + 0.01, zf - ZC - 0.06, "steelD", top="slbGr", sides=48)
-    annulus(k, rh, rh + 0.045, ZT, ZT + 0.01, trim)
-    for i in range(20):
-        a = (i + 0.5) * math.tau / 20
-        k.box(*at(rh + 0.004, a)[:2], zf, 0.012, 0.02, depth, "dark", rz=a)
+    annulus(k, rh, rh + 0.06, ZT, ZT + 0.01, trim)
+    for i in range(10):
+        a = (i + 0.5) * math.tau / 10
+        k.box(*at(rh + 0.004, a)[:2], zf, 0.012, 0.05, depth, "dark", rz=a)
     bolt_ring(k, r_in=rh)
     return zf
 
@@ -306,11 +300,13 @@ def geneva_over_tyres(k):
     out = wrap(k, body, trim, 1.15, 0.45)
     canopy(k, body, trim, [], hole=1.0)
     zf = sunk_top(k, 1.0, 0.18, body, trim)
-    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelL", sides=40)          # the rotor's crown, down in the well
-    k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steel", sides=20)        # its boss up to the star
+    k.cyl(0, 0, zf - 0.005, 1.0, 0.006, "dark", sides=48)                  # the well's floor, dark under it all
+    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelD", sides=40)          # the rotor's crown, down in the well
+    ring(k, 0.7, zf + 0.05, 0.004, 0.05, "steel", n=40)
+    k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
         top_tyres(k, a, 0.74, body, trim, z=zf)
-    geneva(k, BACK + 0.55 - math.pi / 2, body, trim, rs=0.5, bridge=1.25)
+    geneva(k, BACK + 0.55 - math.pi / 2, body, trim, rs=0.6, bridge=1.25, pad=False)
     return out
 
 
