@@ -83,6 +83,9 @@ playable. The test harness (#371) may run alongside.
   breach seals, supplies, enemy drones, staggered landing (#326).
 - **Mental breaks (#175) done** (#328, TRAITS.md section 5 "As built"); the grief stressor and the tantrum's relationship hit are seams for relationships.
 - **Relationships (#239) done:** merged in #330, the Social tab in #331; see TRAITS.md section 6 "As built (#239)". `?scenario=bonds` shows it.
+- **Station assembly (#460), work branch `claude/practical-ptolemy-v7azd8`:** one modular system for station layouts (recipes as data, one assembler, one wall
+  writer) meant to replace the station grammars one at a time. Composition only so far: it assembles unfurnished floor plans that pass
+  their hard checks; not handed to the fit-out, not a grammar, nothing in the game uses it. See [STATION_ASSEMBLY.md](STATION_ASSEMBLY.md).
 - **Designed, not started:** new modules (comfort, medical, gear, food: DESIGN.md "New modules");
   crew implants (#311) needs its design pass.
 - **Next:** see [ROADMAP.md](ROADMAP.md): relationships (#239) merged in #330, its Social tab in #331. Trade and station rework (#332): the trade window (#333) and the station comms channel (#335) are merged; step 3 (a hologram sprite per station type) is dropped: the user prefers the scaled starmap icon, so #332 is done.

@@ -35,6 +35,9 @@ export function shuffle<T>(rng: Rng, a: T[]): T[] {
   return a;
 }
 
+/** A station room's department: what the assembly recipes group and place rooms by. */
+export type StationDept = 'harbour' | 'habitation' | 'commons' | 'freight' | 'secure' | 'defence' | 'works';
+
 /** A room the structure must provide: its role, the modules it will hold, and its interior size (tiles). */
 export interface RoomSpec {
   role: RoomRole;
@@ -50,6 +53,14 @@ export interface RoomSpec {
   sealed?: boolean;
   /** Storage here starts with these instead of the faction's stock (a station armoury's weapons). */
   items?: readonly { item: string; min: number; max: number }[];
+  /** Station assembly: the department the room belongs to, when not its role's own (`assembly/dept.ts`). */
+  dept?: StationDept;
+  /** Station assembly: a one-bed cabin cut from a quarters room. */
+  cabin?: boolean;
+  /** Station assembly: false keeps a quarters room whole (a barracks); otherwise it may be cut into cabins. */
+  cabins?: boolean;
+  /** Station assembly: a warehouse (the plan's crate rooms merged), with two doors. */
+  warehouse?: boolean;
 }
 
 /** Everything the ship carries, grouped into rooms. Topologies decide where each room goes. */
