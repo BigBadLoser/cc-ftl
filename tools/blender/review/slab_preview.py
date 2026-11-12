@@ -7,9 +7,11 @@ from robots_preview import ROOT, Assets, Canvas, floor, human, iso
 from PIL import Image, ImageDraw
 G = Assets(sys.argv[1]); pub = Assets(ROOT / "public/assets/1x"); faces = json.load(open(sys.argv[2]))
 TINT = {"1": (127, 240, 255), "2": (255, 176, 74), "3": (127, 240, 255), "4": (127, 240, 255), "5": (255, 176, 74),
-        "6": (127, 240, 255)}
-crew = human(pub, 1)[0]
-ys, xs = np.nonzero(crew[..., 3]); crew = crew[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+        "6": (127, 240, 255), "7": (127, 240, 255), "8": (255, 176, 74), "9": (127, 240, 255)}
+body = human(pub, 1)[0]
+ys, xs = np.nonzero(body[..., 3]); body = body[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+HEAD = body[:int(body.shape[0] * 0.3)]                                # a drawer label: head and shoulders
+ys, xs = np.nonzero(HEAD[..., 3]); HEAD = HEAD[:, xs.min():xs.max() + 1]
 def coeffs(dst, w, h):
     """PIL perspective coefficients mapping output (canvas) px to input (sprite) px for quad dst."""
     src = [(0, 0), (w, 0), (w, h), (0, h)]
@@ -17,7 +19,7 @@ def coeffs(dst, w, h):
     for (x, y), (u, v) in zip(dst, src):
         A += [[x, y, 1, 0, 0, 0, -u * x, -u * y], [0, 0, 0, x, y, 1, -v * x, -v * y]]; B += [u, v]
     return np.linalg.solve(np.array(A, float), np.array(B, float))
-def press(c, quad, mask, mx, my, tint):
+def press(c, quad, mask, mx, my, tint, crew):
     H, W = c.px.shape[:2]
     if quad[0][0] > quad[1][0]:                                       # keep the figure unmirrored on screen
         quad = [quad[1], quad[0], quad[3], quad[2]]
@@ -43,20 +45,28 @@ def scene(v):
         for gy in range(-3, 3):
             floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
     c.static(G, f"slab.study.{v}", ox, oy)
-    for i, quad in enumerate(faces[v]):
+    f = faces[v] if isinstance(faces[v], dict) else {"faces": faces[v], "kinds": ["body"] * len(faces[v])}
+    for i, (quad, kind) in enumerate(zip(f["faces"], f["kinds"])):
         aid = f"slab.study.{v}.face{i}"
         if aid not in G.m["assets"]:
             continue
         img, _, an = G.static(aid)
-        press(c, [(ox + x, oy + y) for x, y in quad], img, ox - an["x"], oy - an["y"], TINT[v[1]])
+        press(c, [(ox + x, oy + y) for x, y in quad], img, ox - an["x"], oy - an["y"], TINT[v[1]], HEAD if kind == "head" else body)
+    j = 0
+    while f"slab.study.{v}.ov{j}" in G.m["assets"]:                 # translucent layers (light, shadow, glass)
+        c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
+        j += 1
     return Image.fromarray(c.px[..., :3])
-ROUNDS = {"1": ["s1", "s2", "s3", "c1", "c2", "c3"], "2": ["s4", "s5", "s6", "c4", "c5", "c6"]}
+ROUNDS = {"1": ["s1", "s2", "s3", "c1", "c2", "c3"], "2": ["s4", "s5", "s6", "c4", "c5", "c6"],
+          "3": ["s7", "s8", "s9", "c7", "c8", "c9"]}
 order = ROUNDS[sys.argv[4] if len(sys.argv) > 4 else "1"]
 names = {"s1": "1 graphite: rack row (3x1)", "s2": "2 prison block: tiered stand (2x2)", "s3": "3 medical: echelon rack (3x1)",
          "c1": "1 graphite: hover sled", "c2": "2 prison block: trolley", "c3": "3 medical: anti-grav tray",
          "s4": "4 coffin: one to a 1x1 stand", "s5": "5 clamp block: wall rack (3x1, wall for context)",
          "s6": "6 halo frame: corner shrine (2x2)", "c4": "4 coffin: hover cart", "c5": "5 clamp block: hand truck",
-         "c6": "6 halo frame: gurney"}
+         "c6": "6 halo frame: gurney", "s7": "7 cassette: revolver drum (3x2, rotary)",
+         "s8": "8 ribbed block: turntable carousel (2x2, rotary)", "s9": "9 glass case: catalog drawer bank (2x2)",
+         "c7": "7 cassette: hover cart", "c8": "8 ribbed block: hand truck", "c9": "9 glass case: wheeled dolly"}
 Z = 3
 sheet = Image.new("RGB", (3 * (260 * Z + 10), 2 * (230 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for i, v in enumerate(order):

@@ -186,10 +186,16 @@ DESIGNS = {"s1": (rack_row, (3, 1)), "s2": (tiered, (2, 2)), "s3": (echelon, (3,
 
 def designs(v):
     """The design table holding v (this round's or a later one's)."""
-    if v in DESIGNS:
-        return DESIGNS
-    from . import slab_study2
-    return slab_study2.DESIGNS
+    return study(v).DESIGNS
+
+
+def study(v):
+    """The round's module holding design v."""
+    import sys
+    from . import slab_study2, slab_study3
+    for m in (sys.modules[__name__], slab_study2, slab_study3):
+        if v in m.DESIGNS:
+            return m
 
 
 def build(v):
@@ -233,10 +239,18 @@ def scene_items(v):
         if it is not None:
             it["id"] = f"slab.study.{v}.face{i}"
             out.append(it)
+    for j, (ov, alpha) in enumerate(getattr(study(v), "OVERLAYS", {}).get(v, [])):
+        core.clear_scene_meshes()
+        post.select(PAL)
+        _, holdout, _ = build(v)
+        it = layer(holdout, ov(), alpha)
+        if it is not None:
+            it["id"] = f"slab.study.{v}.ov{j}"
+            out.append(it)
     path = os.environ.get("SLAB_FACES")
     if path:
         data = json.loads(open(path).read()) if os.path.exists(path) else {}
-        data[v] = corners
+        data[v] = {"faces": corners, "kinds": [getattr(s, "kind", "body") for s in slabs]}
         open(path, "w").write(json.dumps(data))
     return out
 
@@ -258,5 +272,5 @@ def face_quad_objs(v, i):
 
 
 def jobs():
-    from . import slab_study2
-    return [job(v) for v in DESIGNS] + [job(v) for v in slab_study2.DESIGNS]
+    from . import slab_study2, slab_study3
+    return [job(v) for m in (DESIGNS, slab_study2.DESIGNS, slab_study3.DESIGNS) for v in m]
