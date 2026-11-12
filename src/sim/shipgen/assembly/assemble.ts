@@ -8,6 +8,7 @@ import { corridor } from './elements';
 import { brace, mend, missing, trim } from './finish';
 import { K, type Site } from './lattice';
 import { key, type Ctx, type Dir, type Port } from './model';
+import { quayHeadings } from './quay';
 import { cabinsOf, house } from './quarters';
 import type { Recipe } from './recipe';
 import { RegionGrid, SOLID, SPACE } from './regions';
@@ -78,8 +79,8 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const ctx = context(new RegionGrid(HALF), null, rng);
     const a = new Asm(ctx, recipe.spacing);
     // The centre: a port in open ground, heading east or west as the seed has it, a little off the middle each try.
-    // A station that starts at a quay heads east, north or south: the quay faces the other way, and never east.
-    const core: Port = { frame: { x: 4 * attempt, y: 0, dir: recipe.branches[0]?.quay ? rng.pick(['e', 'n', 's'] as const) : rng.chance(0.5) ? 'e' : 'w' }, kind: 'end', hall: -1, owner: -1, along: 0, side: 0, used: false };
+    // A station that starts at a quay heads a way its harbour's form allows (an airlock never faces east).
+    const core: Port = { frame: { x: 4 * attempt, y: 0, dir: recipe.branches[0]?.quay ? rng.pick(quayHeadings(recipe.branches[0].quay)) : rng.chance(0.5) ? 'e' : 'w' }, kind: 'end', hall: -1, owner: -1, along: 0, side: 0, used: false };
     const why = grow(a, recipe, rooms, docks, null, core, pool);
     if (!why) finish(a);
     return { asm: a, why };
