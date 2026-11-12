@@ -8,7 +8,8 @@ import { SOLID, SPACE } from './regions';
 /**
  * Bracing: open beams across the gaps between sections that face each other one to nine tiles apart and are not the
  * same element, whatever their departments. One a gap at most every four tiles, none through the clear space off a dock.
- * A beam touches hull at its two ends only: beside it, along its whole run, at least CLEAR tiles are open.
+ * A beam touches hull at its two ends only: beside it, along its whole run, at least CLEAR tiles are open, clear of
+ * hull and of every other beam (a truss counts from its chords).
  */
 const CLEAR = 2;
 export function brace(a: Asm, chance: number): void {
@@ -19,6 +20,10 @@ export function brace(a: Asm, chance: number): void {
   const at = (x: number, y: number): string => (Math.abs(x) >= H || Math.abs(y) >= H ? '.' : (cell[(y + H) * S + x + H] as string));
   const el = (x: number, y: number): number => { const o = g.at(x, y); return o >= 0 ? of.get(o) ?? -2 : -3; };
   const done: { x: number; y: number; h: boolean }[] = [];
+  // Beams already built: a new one keeps as clear of them as of hull, and never crosses one.
+  const built = new Set<number>();
+  const beam = (px: number, py: number): void => { g.beam(px, py); built.add(key(px, py)); };
+  const space = (px: number, py: number): boolean => at(px, py) === '.' && !built.has(key(px, py));
   for (let y = -H + 12; y < H - 12; y++) for (let x = -H + 12; x < H - 12; x++) {
     if (at(x, y) !== '#' || el(x, y) === -3) continue;
     for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
@@ -33,10 +38,13 @@ export function brace(a: Asm, chance: number): void {
       const open = (from: number): boolean => {
         for (let k = 1; k < t; k++) for (const s of [-1, 1]) for (let o = from; o < from + CLEAR; o++) {
           const px = x + k * dx + s * o * dy, py = y + k * dy + s * o * dx;
-          if (at(px, py) !== '.') return false;
+          if (!space(px, py)) return false;
         }
         return true;
       };
+      let crossed = false;
+      for (let k = 1; k < t && !crossed; k++) crossed = built.has(key(x + k * dx, y + k * dy));
+      if (crossed) continue;
       const truss = t >= 5 && open(2);
       if (!truss && !open(1)) continue;
       // Near enough together that a stub between two sections gets a brace either side of it.
@@ -44,16 +52,16 @@ export function brace(a: Asm, chance: number): void {
       done.push({ x, y, h });
       // Where the gap is long and there is room either side, a truss: two chords with ties between. Else one beam.
       const clear = (o: number): boolean => {
-        for (let k = 1; k < t; k++) { const px = x + k * dx + o * dy, py = y + k * dy + o * dx; if (at(px, py) !== '.' || reserved.has(key(px, py))) return false; }
+        for (let k = 1; k < t; k++) { const px = x + k * dx + o * dy, py = y + k * dy + o * dx; if (!space(px, py) || reserved.has(key(px, py))) return false; }
         return at(x + o * dy, y + o * dx) === '#' && at(ex + o * dy, ey + o * dx) === '#';
       };
       if (truss && clear(-1) && clear(1)) {
         for (let k = 1; k < t; k++) {
-          g.beam(x + k * dx - dy, y + k * dy - dx);
-          g.beam(x + k * dx + dy, y + k * dy + dx);
-          if (k % 2 === 0) g.beam(x + k * dx, y + k * dy);
+          beam(x + k * dx - dy, y + k * dy - dx);
+          beam(x + k * dx + dy, y + k * dy + dx);
+          if (k % 2 === 0) beam(x + k * dx, y + k * dy);
         }
-      } else if (open(1)) for (let k = 1; k < t; k++) g.beam(x + k * dx, y + k * dy);
+      } else if (open(1)) for (let k = 1; k < t; k++) beam(x + k * dx, y + k * dy);
     }
   }
 }
