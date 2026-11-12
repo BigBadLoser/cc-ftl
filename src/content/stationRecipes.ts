@@ -82,11 +82,11 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
  */
 const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'octagon'; court: number }): Recipe => ({
   name,
-  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: o.cut, inner: true, hub: { court: o.court, market: ['market'], spokes: ['secure'] } },
+  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: o.cut, inner: true, hub: { court: o.court, arm: 7, market: ['market'], spokes: ['secure'] } },
   spacing: 2,
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w'] }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
-    { takes: ['freight', 'works'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w', 'e'], roll: true }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
+    { takes: ['freight', 'works'], per: 'together', host: { on: 'rim', prefer: ['e', 'w'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
   ],
 });
 
@@ -106,7 +106,7 @@ export const stationRecipes = {
     compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8, quay: harbour('gatehouse', 'block') }),
     compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('basin', 'block') }),
     compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('gatehouse', 'block') }),
-    compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
+    compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   bazaar: [
     bazaar('market court and spokes in a stepped ring', { outline: 'disc', cut: 2, court: 14 }),

@@ -15,8 +15,7 @@ import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type 
  *              the shuttles lie between the arms
  *
  * With nothing behind its port (a station that starts here) the quay is laid first and the street runs on inland; on
- * a host the quay is the far end. An airlock never faces east: a quay or a gatehouse never looks east, and a basin
- * opens east or west (its airlocks face north and south).
+ * a host the quay is the far end. A harbour may look any way.
  */
 
 export interface QuayOpts {
@@ -42,15 +41,13 @@ const BASIN = 13;
 const area = (r: RoomSpec): number => r.w * r.h;
 /** A row of rooms at one floor depth: its length, walls counted. */
 const need = (row: readonly RoomSpec[], depth: number): number => row.reduce((n, r) => n + Math.max(3, Math.ceil(area(r) / depth)) + 1, 1);
-/** The way a harbour of this form at a core must head (its open side is the other way). */
-export const quayHeadings = (o: QuayOpts): readonly Dir[] => (o.form === 'basin' ? ['e', 'w'] : ['e', 'n', 's']);
 
 export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], o: QuayOpts, b: BlockOpts): Built | null {
   const g = c.g, near = port.hall < 0, n0 = g.regions.length, N = docks.length, P = o.pitch;
   // The gatehouse is the control room; without one the harbour is a plain quay.
   const tower = o.form === 'gatehouse' ? rooms.find((r) => r.role === 'bridge') : undefined;
-  const form = o.form === 'gatehouse' && !tower ? 'quay' : o.form, sea = near ? BACK[port.frame.dir] : port.frame.dir;
-  if (N === 0 || (form === 'basin' ? sea === 'n' || sea === 's' : sea === 'e')) return null;
+  const form = o.form === 'gatehouse' && !tower ? 'quay' : o.form;
+  if (N === 0) return null;
   const width = Math.max(2, b.width ?? port.width ?? 2), X = width - 2;
   // Which rooms line the quay, by side; the rest stand along the street.
   const inside = rooms.filter((r) => r !== tower), bySize = [...inside].sort((p, q) => area(q) - area(p));

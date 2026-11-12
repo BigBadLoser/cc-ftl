@@ -93,7 +93,7 @@ A recipe has a root, branch rules, and a few settings.
 Hard, or the candidate is rejected with the reason, and another is tried:
 
 - Every room of the program stands as a region with floor in the compiled grid, counted by role; quarters by beds.
-- Every dock has a berth on a side an airlock may face (never east), with the space off it kept clear.
+- Every dock has a berth with the space off it kept clear.
 - A gated branch is joined by its gate alone; nothing stands within two tiles of it.
 - Nothing is placed off the grid. No floor is stranded. No solid 2x2 wall block.
 - A recipe that takes no part for a department the program has is rejected at once.
@@ -130,9 +130,8 @@ Three forms, all chosen by the user from mock sheets (`form`):
 `shape`: `taper` (one room either side of customs, the rest on the street inland; stations that are not round) or
 `block` (every room in one row along the quay, the harbour one rectangle; round stations, the user's call).
 
-An airlock never faces east (carried over from the old ring generator, `stationDocks.ts`: "the camera-facing stern";
-whether it should hold is an open question to the user). So a quay or gatehouse never looks east, a basin opens east
-or west, and a station that starts at its harbour heads a way its form allows. The old dock block (`docks` without
+An airlock may face any way, east included (the user's call; the old ring generator's "never east" rule is not
+carried over). The old dock block (`docks` without
 `quay`) is still in `elements.ts`; no recipe uses it.
 
 Open: which station gets which form is set per recipe for the sheets, not rolled; customs is empty (no furniture);

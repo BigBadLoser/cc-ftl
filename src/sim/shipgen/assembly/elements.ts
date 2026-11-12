@@ -150,8 +150,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const k = c.rng.int(0, row.length);
     row.splice(row[k]?.annexed ? k + 1 : k, 0, depth ? { ...b, h: depth } : b);
   }
-  const legal = ([-1, 1] as const).filter((side) => facing(f, side) !== 'e'); // an airlock never faces east
-  docks.forEach((d, i) => rows[(legal[i % legal.length] as number) < 0 ? 0 : 1].push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
+  docks.forEach((d, i) => (rows[i % 2] as RoomSpec[]).push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);
   const L0 = Math.max(run(rows[0]), run(rows[1]), 4);
   if (o.even || docks.length > 0) for (const row of rows) {
@@ -288,7 +287,6 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
 /** A single room on a port, opening onto the hall behind it: a pod, or with `dock` a dock with its clear space kept. */
 export function single(c: Ctx, port: Port, spec: RoomSpec, dock = false): Built | null {
   const f = port.frame, g = c.g;
-  if (dock && f.dir === 'e') return null; // an airlock never faces east
   const wide = (dock ? 3 : Math.max(spec.w, spec.h)) + 2, along = dock ? DOCK_DEPTH : Math.min(spec.w, spec.h) + 2;
   const v0 = -Math.floor(wide / 2);
   const box = rect(f, 0, along, v0, v0 + wide);
