@@ -138,12 +138,16 @@ try {
     const h = helpers(page);
     if (shot.steps) console.log(`  steps (${since()})`);
     await shot.steps?.(h);
+    // Freeze the sim before measuring and shooting: a running game keeps the page's main thread busy, and every
+    // lookup below waits on it. The renderer still draws, so the shot shows the same frame.
+    await page.evaluate(() => window.__cc?.setSpeed(0)).catch(() => {});
     console.log(`  shooting (${since()})`);
     const area = shot.selector ? padded(await page.locator(shot.selector).first().boundingBox(), shot.pad ?? 0) : shot.clip ?? { x: 0, y: 0, width: 1920, height: 950 };
     if (shot.marks) {
       const marks = [];
       for (const [label, selector, anchor] of shot.marks) {
         const box = await page.locator(selector).first().boundingBox();
+        console.log(`    mark ${label} (${since()})`);
         if (!box) throw Error(`${shot.name}: mark ${label} (${selector}) is not on screen`);
         marks.push({ label, anchor: anchor ?? 'corner', x: (box.x - area.x) / area.width, y: (box.y - area.y) / area.height, w: box.width / area.width, h: box.height / area.height });
       }
