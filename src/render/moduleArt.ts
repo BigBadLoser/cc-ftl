@@ -207,6 +207,8 @@ export interface ModuleLayer {
   tiles: LayerTiles;
   /** Depth offset over the module's key (a console's desk front draws over its seated operator). */
   dz?: number;
+  /** Its glow is light that falls on whoever sits at the module (a game table's hologram), so it paints over them even from a layer above SEAT_DZ. */
+  glowOver?: boolean;
   /** Lies outside the hull (an engine bell): sorts by the tile just beyond the hull row's front tile. */
   out?: boolean;
   /** Real art is cut into screen strips, one per footprint diagonal, each sorted by its front-most tile (a pit crew walk around). */
@@ -339,22 +341,23 @@ export const HOLO_DZ = 0.04;
  * hologram `<asset>.holo.r{n}.active`. The overlays animate in step with the body; each is only there if the art has it.
  */
 function leisureLayers(main: ModuleLayer, a: string, r: string, active: boolean, look?: ModuleLook): ModuleLayer[] {
-  const looped = (base: string, key: string, dz: number, fallback: string[]): ModuleLayer => {
+  const looped = (base: string, key: string, dz: number, fallback: string[], glowOver = false): ModuleLayer => {
     const n = active && look ? frameCount(look.has, base) : 1;
     const f = n > 1 && look ? animFrame(look.now, n) : 0;
-    return { chain: [...(n > 1 ? [f ? `${base}.f${f}` : base] : []), ...fallback], key, tiles: 'all', dz, optional: true, ...(n > 1 ? { anim: base } : {}) };
+    return { chain: [...(n > 1 ? [f ? `${base}.f${f}` : base] : []), ...fallback], key, tiles: 'all', dz, optional: true, ...(n > 1 ? { anim: base } : {}), ...(glowOver ? { glowOver } : {}) };
   };
   const out = [main, looped(`${a}.front${r}.active`, `${a}.front`, FRONT_DZ, active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}.unpowered`, `${a}.front${r}`])];
-  if (active) out.push(looped(`${a}.holo${r}.active`, `${a}.holo`, HOLO_DZ, [`${a}.holo${r}.active`]));
+  if (active) out.push(looped(`${a}.holo${r}.active`, `${a}.holo`, HOLO_DZ, [`${a}.holo${r}.active`], true));
   return out;
 }
 
 /**
  * Depth key of a layer's additive glow. It sits just over the layer, except for a layer that draws over the seated operator
- * (a console's desk front): its glow stays under the operator, so the screens' light never paints over their head.
+ * (a console's desk front): its glow stays under the operator, so the screens' light never paints over their head. A `glowOver` layer
+ * (a hologram) keeps its glow over the layer, and so over the seated players.
  */
 export function glowKey(layer: ModuleLayer, key: number): number {
-  return layer.dz !== undefined && layer.dz >= SEAT_DZ ? key - layer.dz + SEAT_DZ - 0.005 : key + 0.01;
+  return !layer.glowOver && layer.dz !== undefined && layer.dz >= SEAT_DZ ? key - layer.dz + SEAT_DZ - 0.005 : key + 0.01;
 }
 
 /**
