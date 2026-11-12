@@ -81,6 +81,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Freight containers draw their real art instead of a placeholder: a 2x3 container with doors on one end. Its door plate and lamp now swing with the doors, and the closed doors sit flush with the body. ([#462](https://github.com/BigBadLoser/cc-ftl/pull/462))
 - Jobs window: the long rules paragraph is gone; each rule now shows as a tooltip on the part of a job card it explains (also reachable by keyboard). Bounty cards read "a Cartel ship" rather than "a The Cartel ship". ([#454](https://github.com/BigBadLoser/cc-ftl/pull/454))
 - Crew schedules: the Late shift's free hours move from 04:00–06:00 to 18:00–20:00, so with the Default and Late shifts someone is always on Work. ([#455](https://github.com/BigBadLoser/cc-ftl/pull/455))
 - Salvaging a wreck to the end no longer leaves its drones behind, docked or out in space. ([#435](https://github.com/BigBadLoser/cc-ftl/pull/435))
