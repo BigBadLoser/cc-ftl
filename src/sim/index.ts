@@ -65,7 +65,7 @@ export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
 export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
-export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
+export { isHostile, isSubdued, isCombatReady, isInvader, isOnOurSide } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { shipIdAt, shipIdOf, shipGrid, shipIds, regions, shipAt, shipFrame, shipRect, inRect, inShip, padded, type Region } from './regions';

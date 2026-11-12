@@ -1,4 +1,5 @@
 import { ALT, BodyC } from '../body';
+import { AwayC } from '../away/components';
 import { abortTask } from '../ai/task';
 import { shipById } from '../combat/ships';
 import {
@@ -120,7 +121,9 @@ export function destroyVehicle(sim: Sim, id: number): void {
   const v = sim.world.get(id, VehicleC);
   if (!v) return;
   const dock = v.state === 'docked' ? boardingTile(sim, id) : null;
-  for (const crew of occupants(v)) {
+  const aboard = occupants(v);
+  const away = sim.world.query(AwayC).filter((c) => sim.world.get(c, AwayC)?.vehicle === id && !aboard.includes(c) && !sim.world.has(c, DeadC)).sort((a, b) => a - b);
+  for (const crew of aboard) {
     if (dock) {
       unboardCrew(sim, crew, id, dock);
       downCrew(sim, crew);
@@ -132,7 +135,7 @@ export function destroyVehicle(sim: Sim, id: number): void {
   const bay = sim.world.get(v.home, VehicleBayC);
   if (bay && bay.vehicle === id) bay.vehicle = 0;
   const b = sim.world.get(id, BodyC);
-  sim.events.emit({ type: 'vehicle.destroyed', vehicle: id, state: v.state, x: b?.x ?? 0, y: b?.y ?? 0 });
+  sim.events.emit({ type: 'vehicle.destroyed', vehicle: id, state: v.state, x: b?.x ?? 0, y: b?.y ?? 0, faction: vehicleFaction(sim, v), aboard, away });
   sim.world.destroyEntity(id);
 }
 

@@ -1,7 +1,12 @@
 import { isDormant } from '../sim/combat/dormant';
-import { factionsHostile } from '../sim/combat/factions';
 import { isIdle } from '../sim/modules/draw';
-import { homeShip } from '../sim/index';
+import { homeShip, isOnOurSide, factionsHostile } from '../sim/index';
+import { playerShipsPackedOk } from '../sim/story/world';
+import { aiCores } from '../sim/robots/core';
+import { HackedC } from '../sim/robots/components';
+import { AlienC } from '../sim/aliens/components';
+import { VehicleC } from '../sim/vehicles/components';
+import { shipStoreCount } from '../sim/items/stock';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { AllegianceC, BreakdownC, CrewC, DeadC, DownedC, IonC, ModuleC, NeedsC, PickupC, PositionC, ShipC, roomTiles, type Sim } from '../sim';
 import { roomHazards } from '../sim/systems/alerts';
@@ -10,13 +15,13 @@ import { SuitC } from '../sim/eva/components';
 import { airLeft } from '../sim/eva/airLedger';
 import { suitAir, suitDef } from '../sim/eva/suit';
 import { isHeldOffline } from '../sim/modules/hold';
-import { hasFuel } from '../sim/modules/energy';
+import { fuelLow, hasFuel } from '../sim/modules/energy';
 import { AwayC, AwaySiteC, SiteRunC } from '../sim/away/components';
 import { InspectionC, inspections } from '../sim/inspect/types';
 import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/tuning';
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
-import { crewSubject, enemyShip, roomOf, tileAt } from './subjects';
+import { crewSubject, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
 
 /** An alert whose condition holds in the sim right now, keyed as the event-born one is (so the two never double up). */
 export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions']; sticky?: true }
@@ -25,6 +30,7 @@ export interface Wanted { kind: UiAlertKind; key: string; text: string; subject:
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
   'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked', 'ship.yielded',
+  'ship.disabled', 'fuel.low', 'fuel.out', 'core.lost', 'creatures.aboard', 'boarders.stranded',
 ]);
 
 /**
@@ -93,10 +99,79 @@ export function powerBalance(sim: Sim, ship: number): { supply: number; demand: 
   return { supply, demand };
 }
 
+/** The alert key of a room hazard: the home ship keeps the short key (`f3`), another player ship's carries the ship, as room ids repeat across grids. */
+export function hazardKey(sim: Sim, prefix: 'f' | 'b' | 'o', ship: number, room: number): string {
+  return ship === homeShip(sim) ? `${prefix}${room}` : `${prefix}${ship}.${room}`;
+}
+
+/** Ships whose fire, breach and air alerts count: every ship the player owns (the home ship, prizes, captured hulls), not hostile ones. */
+export const alertShips = (sim: Sim, ship: number): boolean => sim.world.get(ship, ShipC)?.faction === 'player';
+
+/**
+ * The ship cannot act, and not because the whole crew is away on purpose: that case is every able player crew member out on a party, with
+ * power running (the ship is disabled only for want of hands aboard). Anyone left home, downed, or no power, and it is an emergency.
+ */
+export function shipHelpless(sim: Sim, ship: number): boolean {
+  if (sim.world.get(ship, ShipC)?.state !== 'disabled') return false;
+  const able = sim.world.query(CrewC, AllegianceC).filter((c) => sim.world.get(c, AllegianceC)?.faction === 'player' && !sim.world.has(c, DeadC) && !sim.world.has(c, DownedC));
+  const allAway = able.length > 0 && able.every((c) => sim.world.has(c, AwayC));
+  return !(allAway && powerBalance(sim, ship).supply > 0);
+}
+
+/** Reactor fuel on a ship: out (a reactor at 0, crew or not able to load more) or about to be (below the refill line with none in the stores). */
+function addFuel(sim: Sim, ship: number, add: (w: Wanted) => void): void {
+  let out: ModuleLike | null = null;
+  let low: ModuleLike | null = null;
+  for (const id of sim.world.query(ModuleC)) {
+    const m = sim.world.get(id, ModuleC);
+    const def = m && m.enabled && m.hp > 0 && shipIdOf(sim, m) === ship ? sim.content.modules[m.def] : undefined;
+    if (!m || !def?.fuel) continue;
+    const stock = shipStoreCount(sim, ship, def.fuel.item);
+    const item = sim.content.items[def.fuel.item]?.name ?? def.fuel.item;
+    if (!hasFuel(m, def)) out ??= { m, item, stock };
+    else if (fuelLow(m, def) && stock <= 0) low ??= { m, item, stock };
+  }
+  if (out) add({ kind: 'fuel.out', key: `fu${ship}`, text: `Reactor out of ${out.item.toLowerCase()}${out.stock > 0 ? ': crew must load more' : ': none in the stores'}`, subject: tileAt(out.m.x, out.m.y) });
+  else if (low) add({ kind: 'fuel.low', key: `fu${ship}`, text: `Reactor ${low.item.toLowerCase()} running low: none in the stores`, subject: tileAt(low.m.x, low.m.y) });
+}
+interface ModuleLike { m: { x: number; y: number }; item: string; stock: number }
+
+/** Live creatures (hatched aliens) on player ships, by ship. */
+function aliensAboard(sim: Sim): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  for (const id of sim.world.query(AlienC, CrewC, PositionC)) {
+    if (sim.world.has(id, DeadC)) continue;
+    const ship = shipIdOf(sim, sim.world.get(id, PositionC));
+    if (!alertShips(sim, ship)) continue;
+    out.set(ship, [...(out.get(ship) ?? []), id]);
+  }
+  return out;
+}
+
+/**
+ * The player's crew standing on a hostile ship with no party to bring them home (not in an away party) and no shuttle of ours docked there:
+ * boarders a recall could not take (the crew.recallFailed / recallStarted `left` cases), as state so a reload keeps it.
+ */
+function boardersLeft(sim: Sim): Map<number, number[]> {
+  const out = new Map<number, number[]>();
+  const docked = new Set<number>();
+  for (const id of sim.world.query(VehicleC)) {
+    const v = sim.world.get(id, VehicleC);
+    if (v?.state === 'docked' && sim.world.get(v.homeShip, ShipC)?.faction === 'player') docked.add(shipIdOf(sim, sim.world.get(v.dock, ModuleC)));
+  }
+  for (const id of sim.world.query(CrewC, PositionC, AllegianceC)) {
+    if (sim.world.has(id, DeadC) || sim.world.get(id, AllegianceC)?.faction !== 'player' || sim.world.has(id, AwayC)) continue;
+    const ship = shipIdOf(sim, sim.world.get(id, PositionC));
+    const host = sim.world.get(ship, ShipC);
+    if (!host || host.state === 'wreck' || !factionsHostile('player', host.faction) || docked.has(ship)) continue;
+    out.set(ship, [...(out.get(ship) ?? []), id]);
+  }
+  return out;
+}
+
 /**
  * Every urgent condition that holds in the sim now, by alert key. State, not events: a reload brings each back. `held` says which alert keys are
  * on screen, so a low-oxygen alert lasts until the room is above the clear line (the sim's own hysteresis) rather than flickering at the raise line.
- * Not covered, because the sim keeps no lasting state for them: `creatures.aboard` (a hatch is one event) and `boarders.stranded` (a failed recall).
  */
 export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<string, Wanted> {
   const out = new Map<string, Wanted>();
@@ -106,20 +181,22 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   const alive = (id: number) => !sim.world.has(id, DeadC);
   const player = (id: number) => sim.world.get(id, AllegianceC)?.faction === 'player';
 
-  const grid = shipGrid(sim, home);
-  if (grid?.has('room') && grid.has('fire') && grid.has('o2')) {
+  for (const ship of playerShipsPackedOk(sim)) {
+    const grid = shipGrid(sim, ship);
+    if (!grid?.has('room') || !grid.has('fire') || !grid.has('o2')) continue;
     const { breached, burning } = roomHazards(grid);
     for (const [room, i] of burning) {
       const x = i % grid.width;
-      add({ kind: 'fire.started', key: `f${room}`, text: 'Fire', subject: tileAt(grid.x0 + x, grid.y0 + (i - x) / grid.width) });
+      add({ kind: 'fire.started', key: hazardKey(sim, 'f', ship, room), text: 'Fire', subject: tileAt(grid.x0 + x, grid.y0 + (i - x) / grid.width) });
     }
-    for (const room of breached) add({ kind: 'hull.breach', key: `b${room}`, text: 'Hull breach', subject: roomOf(sim, home, room) });
+    for (const room of breached) add({ kind: 'hull.breach', key: hazardKey(sim, 'b', ship, room), text: 'Hull breach', subject: roomOf(sim, ship, room) });
     const o2 = grid.load('o2');
     for (const [room, tiles] of roomTiles(grid)) {
       let sum = 0;
       for (const i of tiles) sum += o2[i] as number;
       const avg = sum / tiles.length;
-      if (avg < O2_ALERT_BELOW || (avg <= O2_ALERT_CLEAR_ABOVE && held(`o${room}`))) add({ kind: 'o2.low', key: `o${room}`, text: 'Low oxygen', subject: roomOf(sim, home, room) });
+      const key = hazardKey(sim, 'o', ship, room);
+      if (avg < O2_ALERT_BELOW || (avg <= O2_ALERT_CLEAR_ABOVE && held(key))) add({ kind: 'o2.low', key, text: 'Low oxygen', subject: roomOf(sim, ship, room) });
     }
   }
   if (shortOnPower(sim, home)) {
@@ -128,7 +205,7 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   for (const id of sim.world.query(DownedC)) {
     const d = sim.world.get(id, DownedC);
     if (!d || d.stabilized || !alive(id) || !sim.world.has(id, CrewC)) continue;
-    if (!player(id) && shipIdOf(sim, sim.world.get(id, PositionC)) !== home) continue;
+    if (!isOnOurSide(sim, id)) continue; // a downed enemy boarder or prisoner is no alert
     add({ kind: 'crew.downed', key: `d${id}`, text: `Down: ${name(id)}`, subject: crewSubject(sim, id) });
   }
   const full = suitDef(sim).airSec;
@@ -160,6 +237,19 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
   for (const id of sim.world.query(NeedsC, CrewC)) {
     if (!alive(id) || !player(id) || (sim.world.get(id, NeedsC)?.hunger ?? 1) > 0) continue;
     add({ kind: 'crew.starving', key: `st${id}`, text: `Starving: ${name(id)}`, subject: crewSubject(sim, id) });
+  }
+  if (shipHelpless(sim, home)) add({ kind: 'ship.disabled', key: `sd${home}`, text: 'Ship disabled: no able crew or power', subject: shipSubject(sim, home) });
+  addFuel(sim, home, add);
+  for (const core of aiCores(sim, home)) {
+    const hack = sim.world.get(core, HackedC);
+    const m = sim.world.get(core, ModuleC);
+    if (hack && hack.by !== 'player' && m) add({ kind: 'core.lost', key: `core${home}`, text: 'AI core hacked: robots shut down', subject: tileAt(m.x, m.y) });
+  }
+  for (const [ship, aliens] of aliensAboard(sim)) {
+    add({ kind: 'creatures.aboard', key: `ca${ship}`, text: `Creatures aboard: ${sim.world.get(ship, ShipC)?.name ?? 'wreck'}`, subject: crewSubject(sim, aliens[0] as number) });
+  }
+  for (const [ship, left] of boardersLeft(sim)) {
+    add({ kind: 'boarders.stranded', key: `rl${ship}`, text: `Left behind: ${left.map(name).join(', ')}`, subject: crewSubject(sim, left[0] as number) });
   }
   if (underAttack(sim)) {
     const s = enemyShip(sim, home);
