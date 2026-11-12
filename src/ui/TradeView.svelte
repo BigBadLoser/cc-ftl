@@ -13,7 +13,8 @@
   onMount(() => api.trade.subscribe((t) => (trade = t)));
   const p = $derived<UiTradePartner | undefined>(trade.partners.find((x) => x.id === id));
   const deals = $derived(trade.deals.filter((d) => d.ship === id && (d.give || d.get)));
-  // svelte-ignore state_referenced_locally -- only the first value matters: the slip is the player's own after that
+  // Only the first value of `start` matters: the slip is the player's own after that.
+  // svelte-ignore state_referenced_locally
   let draft = $state<Draft>({ ...start });
   const hail = () => api.dispatch({ type: 'trade.hail', ship: id });
 </script>
