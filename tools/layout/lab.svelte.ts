@@ -70,6 +70,8 @@ class Lab {
   private timer = 0;
 
   get layout(): Layout | null { return this.hist?.present ?? null; }
+  /** The hover highlight (grid and preview) is for picking: only the select tool shows it. */
+  get showsHover(): boolean { return this.tool === 'select'; }
   get canUndo(): boolean { return !!this.hist && this.hist.past.length > 0; }
   get canRedo(): boolean { return !!this.hist && this.hist.future.length > 0; }
 

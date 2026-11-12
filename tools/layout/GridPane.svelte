@@ -40,7 +40,7 @@
 		// the hovered-room overlay is for picking: it stays out of the way of a paint tool
 		const out: Mark[] = [
 			{ tiles: tilesOf(d, lab.selected), color: 'rgba(255,196,64,1)' },
-			...(lab.tool === 'select' ? [{ tiles: tilesOf(d, lab.hover), color: 'rgba(80,220,255,1)' }] : []),
+			{ tiles: lab.showsHover ? tilesOf(d, lab.hover) : [], color: 'rgba(80,220,255,1)' },
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
