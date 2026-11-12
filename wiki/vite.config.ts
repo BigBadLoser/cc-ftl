@@ -20,6 +20,7 @@ export default defineConfig({
           { title: 'Guides', to: '/guides/first-hour/' },
           { title: 'Mechanics', to: '/mechanics/power/' },
           { title: 'Reference', to: '/reference/modules/' },
+          { title: "What's new", to: '/whats-new/' },
         ],
         // Keep generated reference entries in the searchable catalog, not the sidebar.
         // The auto-sidebar grouped each index under an identical title,
@@ -31,6 +32,16 @@ export default defineConfig({
           ],
           '/mechanics/': [
             { title: 'Power and reactors', to: '/mechanics/power/' },
+            { title: 'Crew', to: '/mechanics/crew/' },
+            { title: 'Mood, relationships and breaks', to: '/mechanics/mood/' },
+            { title: 'Food and farming', to: '/mechanics/food/' },
+            { title: 'Drones', to: '/mechanics/drones/' },
+            { title: 'Ship combat', to: '/mechanics/combat/' },
+            { title: 'Boarding and crew fights', to: '/mechanics/boarding/' },
+            { title: 'Travel and encounters', to: '/mechanics/encounters/' },
+            { title: 'Salvage and derelicts', to: '/mechanics/salvage/' },
+            { title: 'Stations and trading', to: '/mechanics/trading/' },
+            { title: 'Contraband and inspections', to: '/mechanics/inspections/' },
           ],
           '/reference/': [
             { title: 'Reference overview', to: '/reference/' },
