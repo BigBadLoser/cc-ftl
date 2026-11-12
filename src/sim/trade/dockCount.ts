@@ -28,8 +28,17 @@ export function haulPicked(sim: Sim, h: HaulData, n: number): void {
   const d = dockedDeal(sim, h);
   if (!d || !h.deal || n <= 0) return;
   const u = unitsOf(d, h.item);
-  if (h.deal.dir === 'get') u.shelf -= n;
-  else u.hold -= n;
+  if (h.src.kind === 'vehicle') u.hold -= n; // the bucket it came out of
+  else if (h.src.kind === 'storage' || h.src.kind === 'floor') {
+    // Station units are fungible: a pickup that finds fewer of the deal's units in its place than it took drew the rest from the other place.
+    const from = h.src.kind === 'storage' ? 'shelf' : 'floor';
+    const other = from === 'shelf' ? 'floor' : 'shelf';
+    u[from] -= n;
+    if (u[from] < 0) {
+      u[other] = Math.max(0, u[other] + u[from]);
+      u[from] = 0;
+    }
+  }
 }
 
 /** A deal's haul put down `moved` units at its destination and `spilled` on the deck. */
@@ -37,8 +46,9 @@ export function haulDeposited(sim: Sim, h: HaulData, moved: number, spilled: num
   const d = dockedDeal(sim, h);
   if (!d || !h.deal) return;
   const u = unitsOf(d, h.item);
-  if (h.deal.dir === 'get') u.hold += moved;
-  else u.shelf += moved;
+  if (h.dst.kind === 'vehicle') u.hold += moved; // the bucket it went into
+  else if (h.dst.kind === 'storage') u.shelf += moved;
+  else u.floor += moved;
   u.floor += spilled;
 }
 

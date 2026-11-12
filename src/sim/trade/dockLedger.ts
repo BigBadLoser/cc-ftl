@@ -116,8 +116,10 @@ export function reclaim(sim: Sim, d: Deal): void {
     const back = takeHands(sim, d, item) + takeAtStation(sim, d, item);
     if (dir === 'get') {
       if (alive) cargoTake(sim, d.vehicle, item, u.hold);
-    } else if (alive) cargoAdd(sim, d.vehicle, item, back);
-    else if (back > 0) stowOrDrop(sim, playerShip(sim), item, back);
+    } else {
+      const placed = alive ? cargoAdd(sim, d.vehicle, item, back) : 0; // the hold may not take it all: the rest goes to the player's ship
+      if (back > placed) stowOrDrop(sim, playerShip(sim), item, back - placed);
+    }
     if (alive) u.hold = 0;
   }
   for (const id of [...sim.world.query(JobC)]) if (sim.world.get(id, JobC)?.haul?.deal?.id === d.id) destroyJob(sim, id);

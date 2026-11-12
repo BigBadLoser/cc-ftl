@@ -55,8 +55,7 @@ export function stageGoods(sim: Sim, d: Deal): void {
     }
     // No room in station storage: the rest goes straight into the hold (a crate on the dock).
     if (left > 0) {
-      cargoAdd(sim, d.vehicle, l.item, left);
-      unitsOf(d, l.item).hold += left;
+      unitsOf(d, l.item).hold += cargoAdd(sim, d.vehicle, l.item, left); // what the hold took, not what was meant for it
     }
   }
 }
