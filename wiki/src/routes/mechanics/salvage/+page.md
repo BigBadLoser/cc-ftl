@@ -52,17 +52,17 @@ Every part of a wreck gives one kind of scrap. Only parts that give a ticked typ
 
 | Scrap | Comes from |
 |---|---|
-| **Hull** | Hull plating, walls, beams, floors. |
-| **Tech** | Consoles, computers, sensors, shield and medical modules, and doors. |
-| **Energy** | Reactors, batteries, engines, power conduits. |
-| **Weapons** | Turrets, launchers, magazines, armouries. |
-| **Comfort** | Furniture, beds, kitchens, lounge and storage fittings. |
+| **Hull** | Walls, beams and floors, plus life support, lights, airlocks, radiators and vehicle bays. |
+| **Tech** | Doors, consoles, labs, fabricators, shield generators, the helm, drone bays, medical beds and refineries. |
+| **Energy** | Reactors, batteries and engines. |
+| **Weapons** | Guns, launchers and point defence. |
+| **Comfort** | Beds, galleys, storage, tables, chairs and hydroponics. |
 
 Stripping gives back less than building cost. A part gives scrap worth <Stat kind="tuning" id="SALVAGE_FRAC" /> times the
 items in its build cost, so salvage never beats mining and trade for bulk materials. Big wrecks are still worth it: the
 scrapper sometimes makes rare extras.
 
-Doors count as Tech scrap, so unticking Hull still takes them. A row greys out when there's nothing of that type left.
+Doors count as Tech scrap, so they come out with Tech even if Hull is unticked. A row greys out when there's nothing of that type left.
 
 ### How the crew do it
 
@@ -114,7 +114,7 @@ Leaving the node is blocked while crew are away, and the jump warning lists anyo
 
 ## Scrap items, the scrapper and scrap bins
 
-Salvage drops **scrap items**: hull, tech, energy, weapons and comfort scrap, plus **cloth** from comfort scrap. They go
+Salvage drops **scrap items**: hull, tech, energy, weapons and comfort scrap. They go
 into **scrap bins**, barred cages that take only scrap and feed the scrapper. They need no power. A large bin holds more.
 
 The **scrapper** turns scrap into materials. It is crew work, from the front tile, and you can build it from the start. A
