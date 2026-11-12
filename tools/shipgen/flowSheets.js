@@ -84,7 +84,7 @@ try {
     let built = 0, inside = 0;
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { if (!out[y * W + x]) inside++; if ((rws[y]?.[x] ?? '.') !== '.') built++; }
     p.built = Math.round((100 * built) / inside);
-    p.title = `${p.title} [${p.built}% built]`;
+    p.title = `${p.built} PCT BUILT - ${p.title}`;
     console.log(`built ${p.built}%  ${p.name}`);
   }
   const cellW = Math.max(...all.map((r) => r.g.width)) * S + PAD, cellH = Math.max(...all.map((r) => r.g.height)) * S + PAD + 14;
