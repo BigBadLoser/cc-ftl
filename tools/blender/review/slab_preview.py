@@ -56,8 +56,8 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
-order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s40", "s41", "s42"]
-names = {"c11": "hover B: floating cradle", "s40": "40 one lobe: sunk in a pit, canopy on a lobe of itself",
+order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s43", "s44", "s45"]
+names = {"s43": "43 Geneva top: star, driver and gearmotor on the canopy", "s44": "44 turntable: crown with clamp rams, tyre drives, console", "s45": "45 open hub: clamp rams, chain drive, pendant controller", "c11": "hover B: floating cradle", "s40": "40 one lobe: sunk in a pit, canopy on a lobe of itself",
          "s41": "41 twin lobes: sunk in a pit, canopy on two lobes", "s42": "42 ring canopy: open middle, hub and belt seen"}
 Z = 3
 rows = (len(order) + 2) // 3
