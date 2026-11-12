@@ -114,7 +114,7 @@ def canopy(k, body, trim, lobes, hole=0.0):
     ring(k, 1.485, ZC + 0.225, 0.04, 0.012, "slbCy", n=24, skip=lambda i: i % 3 == 0)
     for i in range(10):                                                      # seams on the upper band
         a = (i + 0.5) * math.tau / 10
-        k.box(*at(1.444, a)[:2], ZC + 0.34, 0.05, 0.012, 0.15, "dark", rz=a + math.pi / 2)
+        k.box(*at(1.444, a)[:2], ZC + 0.33, 0.05, 0.012, 0.225, "dark", rz=a + math.pi / 2)   # up over the top tier
     for a in lobes:                                                          # the lobes' columns
         u, v, _ = at(LC, a)
         k.cyl(u, v, 0.0, LR + 0.06, 0.08, "steelD", top="steel", sides=20)
@@ -135,8 +135,8 @@ def canopy(k, body, trim, lobes, hole=0.0):
 def bolt_ring(k, zt=ZT, r_in=0.85):
     """The rim's panel seams and a bolt between each pair (sized to read: lines two pixels wide, no dashes)."""
     for i in range(10):
-        a = (i + 0.25) * math.tau / 10
-        beam(k, at(r_in + 0.06, a, zt + 0.004), at(1.34, a)[:2], 0.06, 0.008, "dark")
+        a = (i + 0.5) * math.tau / 10                # on the same lines as the band's seams, out to the edge
+        beam(k, at(r_in + 0.06, a, zt + 0.004), at(1.445, a)[:2], 0.06, 0.008, "dark")
         k.cyl(*at(1.22, a + math.pi / 10)[:2], zt, 0.045, 0.025, "steelL", top="steel", sides=8)
 
 
@@ -201,7 +201,7 @@ def top_tyres(k, a, r, house, guard, z=ZT):
     k.box(*at(r + 0.2, a)[:2], z, 0.36, 0.62, 0.02, "steelD", top="steel", rz=a)
     for da in (-0.17, 0.17):
         t = at(r + 0.12, a + da)
-        k.cyl(t[0], t[1], z + 0.02, 0.12, 0.08, "black", top="slbGrL", sides=16)
+        k.cyl(t[0], t[1], z + 0.02, 0.12, 0.08, "black", top="slbGr", sides=16)
         k.cyl(t[0], t[1], z + 0.1, 0.05, 0.015, "steelL", sides=8)
     m = at(r + 0.34, a)
     k.box(m[0], m[1], z, 0.2, 0.42, 0.12, house, top=guard, rz=a)
@@ -302,7 +302,7 @@ def geneva_over_tyres(k):
     zf = sunk_top(k, 1.0, 0.18, body, trim)
     k.cyl(0, 0, zf - 0.005, 1.0, 0.006, "dark", sides=48)                  # the well's floor, dark under it all
     k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelD", sides=40)          # the rotor's crown, down in the well
-    ring(k, 0.7, zf + 0.05, 0.004, 0.05, "steel", n=40)
+    annulus(k, 0.62, 0.74, zf + 0.05, zf + 0.054, "steelL")              # its rim, light: the tyres' track
     k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
         top_tyres(k, a, 0.74, body, trim, z=zf)
