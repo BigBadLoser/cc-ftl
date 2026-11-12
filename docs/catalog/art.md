@@ -37,7 +37,7 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 | Armory storage | `module.storage_armory` | Sprite only | Art only | manifest; tools/blender/sprites/storage_set.py |
 | Cold storage | `module.storage_cold` | Sprite only | Art only | manifest |
 | Storage tank | `module.storage_tank` | Sprite only | Art only | manifest |
-| Freight container art | `module.storage_container` | Sprite exists but `module.cargo_container` points at a different id | Art only | manifest; see modules.md |
+| Freight container art | `module.storage_container` | Used by `module.cargo_container` (2x3, doors on the short end) | In game | manifest; see modules.md |
 | Wall props (11) | `wallprop.beacon, cable, conduit, grille, panel, pipe, pipes, sign, terminal, tray, vent` | Wall decorations; no code places them | Art only | manifest; tools/blender/sprites/wallprops.py |
 | Floor props (7) | `prop.barrel, barrels, cable, chair, crates, plant, toolcart` | Floor decoration; only `prop.crate` is used (item held fallback) | Art only | manifest; render/itemView.ts uses prop.crate |
 | Item sprites (32) | `item.ai_chip, alien_tissue, alloy, ammo_cells, artifact, carbon, circuit, consumer_goods, contraband, coolant, copper, data_core, explosive, gas_canister, glass, gold, implant, luxury_food, luxury_goods, medkit, nanites, plasma_cell, power_cell, robot_scrap, sensor, servo, silicon, stim, textiles, titanium_ore, torpedo, wreck_core` | Goods with art but no ItemDef | Art only | manifest; see items.md |

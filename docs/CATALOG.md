@@ -23,7 +23,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 41 | 12 | 9 | 0 | 0 | 0 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 42 | 11 | 8 | 0 | 0 | 0 |
 | [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 67 | 8 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 4 | 2 |
@@ -55,7 +55,6 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Cover in combat:** targets do get cover from solid modules, but crew never seek it (issue #50).
 - **Lessons:** the engine is general, but only two lessons exist (combat, hail).
 - **Research module:** buildable but placed on no ship, so research needs the player to build one first. Same for the scrapper, radiator and large hydroponics bed ("buildable only").
-- **Freight container art:** `module.cargo_container` points at an asset that is not in the manifest (the sprite is `module.storage_container`), so it draws a placeholder.
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
