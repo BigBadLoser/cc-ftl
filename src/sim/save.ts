@@ -137,8 +137,9 @@ import { newYard, type YardState } from './yard/types';
  * v111 (crew backgrounds, #415): skills 0-10 with `repair` folded into `construction`, `botany` and `industry`; `BackgroundC`,
  *     `InterestsC`, `WontDoC`, `Mood.enjoy`; player crew of kind `role.crew`; no `EmergencyArmC` / `StowOrderC`.
  * v112 (reactor fuel and batteries, #421): `Module.fuel` (reactor store) and `Module.charge` (battery bank), job kind 'refuel', ore code 4 (`ore.crystal`).
+ * v113 (room quality, #441): `Mood.relaxPts` / `relaxKey` / `mealTier` / `sleepTier` / `noBreak`.
  */
-export const SAVE_VERSION = 112;
+export const SAVE_VERSION = 113;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

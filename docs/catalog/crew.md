@@ -120,6 +120,8 @@ Name | id column holds the code path.
 |---|---|---|---|---|
 | Needs: rest, hunger | ``sim/systems/needs.ts`` | Rest and hunger drain; sleep in beds, eat meals; robots use charge | In game | ai/machines/sleep.ts, eat.ts, charge.ts |
 | Mood | ``sim/systems/mood.ts`` | Mood factors (food, beds, light, company, fear, traits) set work speed | In game | sim/crew/mood.ts, traitMood.ts, bondMood.ts |
+| Room quality | `-` | Per-room value from space, cleanliness, condition (comfort has no data yet; first pass of #441), tiers Grim..Impressive; sets sleep and meal factors, surroundings, break points | In game | sim/roomQuality.ts, crew/roomMood.ts |
+| Leisure spots and no time off | `-` | Breaks go to the mess, the game table (2) or the arcade (1); Social/Loner lean; "No time off" -4 after 1200 s | In game | sim/ai/machines/leisure.ts, leisureSpots.ts |
 | Mental breaks | ``sim/systems/breakdown.ts`` | 7 kinds (panic, freeze, hide, tantrum, despair, refusal, isolation) from 7 contexts | In game | sim/crew/breakdown.ts, breakTable.ts |
 | Relationships and bonds | ``sim/systems/relationship.ts`` | Chats and rows build friendships and rivalries; grief on a friend's death | In game | sim/crew/bonds.ts, interact.ts |
 | More interactions | ``content/interactions.ts`` | Deep talk, joke, insult, comfort | Planned | only chat and shout exist (interactions.ts header; TRAITS.md section 6) |

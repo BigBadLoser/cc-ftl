@@ -11,8 +11,11 @@ export interface OverlayDef {
   /** Tiles whose value is 0 are left clear. */
   hideZero?: boolean;
   /** Tiles are not coloured from a field (rooms, power). */
-  special?: 'room' | 'power';
+  special?: 'room' | 'power' | 'quality';
 }
+
+/** Tier colours, Grim to Impressive. */
+export const QUALITY_COLORS = [0xe5322d, 0xf59e0b, 0xfacc15, 0xa3e635, 0x22c55e] as const;
 
 export const OVERLAY_DEFS: readonly OverlayDef[] = [
   { id: 'o2', label: 'O2', unit: 'kPa', min: 0, max: 21, stops: [0xd7263d, 0xf0a030, 0x2fd0e0] },
@@ -22,6 +25,7 @@ export const OVERLAY_DEFS: readonly OverlayDef[] = [
   { id: 'smoke', label: 'Smoke', unit: '', min: 0, max: 255, stops: [0x555a66, 0xb6bcc8, 0xf2f4f8], hideZero: true },
   { id: 'light', label: 'Light', unit: '', min: 0, max: 255, stops: [0x10143a, 0x7a62c0, 0xffe08a] },
   { id: 'power', label: 'Power', unit: '', min: 0, max: 1, stops: [0xe5322d, 0x4cd964], special: 'power' },
+  { id: 'quality', label: 'Room quality', unit: '', min: 0, max: 4, stops: QUALITY_COLORS, special: 'quality' },
   { id: 'room', label: 'Rooms', unit: '', min: 0, max: 1, stops: [0x3a6bff, 0xf0c030], special: 'room' },
 ];
 

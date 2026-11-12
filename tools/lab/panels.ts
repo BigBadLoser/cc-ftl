@@ -9,6 +9,7 @@ import { upgradesPanel } from './upgrades';
 import { podsPanel } from './pods';
 import { hydroponicsPanel } from './hydroponics';
 import { orePanel } from './ore';
+import { leisurePanel } from './leisure';
 
 /** Every lab page. A new visual gets a panel here (a file of its own in tools/lab/), so it can be seen and shot on its own. */
-export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel];
+export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel, leisurePanel];

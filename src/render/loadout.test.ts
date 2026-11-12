@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ClipDef, LayerAsset } from './assets/manifest';
 import type { Atlas, LayerSprite } from './assets/loader';
 import type { Crew } from '../sim/crew/components';
-import { colOf, crewLoadout, pickFrame, resolveClip } from './loadout';
+import { SEAT_CLIP, colOf, crewLoadout, pickFrame, resolveClip } from './loadout';
 import { cellOf } from './assets/manifest';
 
 const clip = (sheet: string): ClipDef => ({ sheet, start: 0, frames: 4, fps: 4, loop: true });
@@ -22,6 +22,10 @@ describe('resolveClip', () => {
     expect(resolveClip(layer(['idle']), 'sit_idle')).toBeUndefined();
     expect(resolveClip(layer(['idle']), 'sit_work')).toBeUndefined();
     expect(resolveClip(layer(['idle', 'sit_idle']), 'sit_work')?.sheet).toBe('s.sit_idle');
+  });
+  it('hides a layer without a sit_stool_work sheet; a seat kind names its clip', () => {
+    expect(resolveClip(layer(['idle', 'sit_idle']), SEAT_CLIP.stool)).toBeUndefined();
+    expect(resolveClip(layer(['idle', 'sit_stool_work']), SEAT_CLIP.stool)?.sheet).toBe('s.sit_stool_work');
   });
   it('is undefined for a layer with no clips at all', () => {
     expect(resolveClip(layer([]), 'idle')).toBeUndefined();

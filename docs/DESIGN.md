@@ -113,7 +113,7 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     air -20, smoke -6, too hot or cold -6) and a light social term (company within 7 tiles +3, alone for 2 minutes
     -4). Under 35 work speed is x0.85, under 20 it is x0.7 and a "very unhappy" alert fires once.
   - **Robots** (any species without `hunger` / `mood`) neither eat nor have moods; enemy crews are exempt too.
-  - **Room quality and leisure (user decisions, 2026-11-11; not built yet).** Leisure is part of mood, not a separate need or meter.
+  - **Room quality and leisure (user decisions, 2026-11-11; first pass built, #441).** Leisure is part of mood, not a separate need or meter.
     - **Room quality** is worked out per room and cached when the room changes. Four inputs: **space** (tiles per crew member who uses
       the room), **comfort** (beauty from modules and decor: leisure modules, plants, later a viewport), **cleanliness** (loose items,
       debris, scorch, blood, bodies) and **condition** (damaged walls or modules, a breach). The weakest input pulls the result down
@@ -127,9 +127,12 @@ Cybernetic implants are everywhere. Neon is both mood and information.
     - **No time off:** no break for a long stretch gives a mood penalty (about -4).
     - **Not doing:** expectations that scale with wealth, and a "cooped up" factor.
     - **UI:** a room-quality overlay in the overlay picker, and the factors in crew mood lines.
-    - **First pass:** room quality (space, cleanliness, condition), the tiered sleep and meal factors, surroundings, the leisure
-      spots and no time off, the overlay. **Next:** comfort values on modules and decor. Arcade and game-table art is on the
-      `claude/arcade-cabinet` branch and is not in the sheets yet.
+    - **First pass (built):** room quality (`sim/roomQuality.ts`: space = tiles per user of beds, consoles, galleys and leisure stands, an
+      unfurnished room has none; until comfort has data every room is capped at Decent; cleanliness = loose stacks and bodies; condition = wall and module hp, a breach is 0;
+      the weakest input is 85% of the value; tiers at 20/40/60/80, space 2..20 tiles per user; cached per ship, 2 s), the tiered sleep and meal factors, surroundings
+      (-3..+3), the leisure spots (`module.gametable`, `module.arcade`) and "No time off" (-4 after 20 minutes without a break), the
+      room-quality overlay. A game scores 11 against the mess's 8, shifted -2..+2 by tier. **Next:** comfort values on modules and decor
+      (`comfortOf` returns null: the input is left out until then); cleanliness has no dirt or scorch data yet.
   - **Open:** breakdowns. `breakdownRisk()` (mood under 10) is the hook; nothing calls it yet. Also open: friends and rivals, whether drafted crew should starve quietly (they do now: they
     never stop to eat while drafted).
 - **Damage control (#181):** crew deal with fires and hull breaches on their own, at the top priority. The `firefighting`

@@ -2,7 +2,7 @@ import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers } from './moduleArt';
+import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers, glowKey, SEAT_DZ, FRONT_DZ, HOLO_DZ } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -220,5 +220,15 @@ describe('hydroponics layers', () => {
     expect(gone).toHaveLength(1);
     expect(gone[0]!.chain[0]).toBe('module.hydroponics.r1.destroyed');
     expect(moduleLayers(w, 1, mb, bed, false, false, null, look(60))[0]!.chain[0]).toBe('module.hydroponics.r1.on');
+  });
+});
+
+describe('glowKey', () => {
+  const base = { chain: ['x'], key: 'x', tiles: 'all' as const };
+  it('keeps the glow of a layer over the seated operator under them (a desk front), but a hologram lights them', () => {
+    // The key passed in is the layer's own (the module's key plus its dz).
+    expect(glowKey({ ...base, dz: FRONT_DZ }, 10 + FRONT_DZ)).toBeLessThan(10 + SEAT_DZ);
+    expect(glowKey({ ...base, dz: HOLO_DZ, glowOver: true }, 10 + HOLO_DZ)).toBeGreaterThan(10 + SEAT_DZ);
+    expect(glowKey(base, 10)).toBe(10.01);
   });
 });
