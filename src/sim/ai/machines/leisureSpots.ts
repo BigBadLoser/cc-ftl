@@ -2,7 +2,7 @@ import { hasTrait } from '../../crew/traits';
 import type { World } from '../../ecs';
 import { ModuleC, type Module } from '../../modules/components';
 import type { ModuleDef, SeatKind } from '../../registry';
-import { rotateOffset } from '../../modules/footprint';
+import { standTilesAt } from '../../modules/footprint';
 import { isTileWalkable } from '../../modules/walk';
 import { shipGrid, shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
@@ -24,10 +24,7 @@ export interface PlaySpot {
 
 /** World stand tiles of a placed leisure module, in the order of its def's `stand` (the first is the front stool of the game table). */
 export function standTilesOf(m: Module, def: ModuleDef): { x: number; y: number }[] {
-  return (def.leisure?.stand ?? []).map(([dx, dy]) => {
-    const o = rotateOffset(def, m.rot, dx, dy);
-    return { x: m.x + o.x, y: m.y + o.y };
-  });
+  return standTilesAt(def, m.x, m.y, m.rot);
 }
 
 /** `standTilesOf` for a module entity (none for a missing one or one that is no leisure spot). */
