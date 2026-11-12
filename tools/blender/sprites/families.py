@@ -30,6 +30,9 @@
             storage_set)
   arcade_cabinet  the arcade module.arcade (1x1): idle, .unpowered, .active frames (hologram baked in), four rotations
             (arcade.py, parts in arcade_kit.py; MODPACK_ROTS as storage_set)
+  recovery_pod  the recovery pod module.recovery (2x2): idle, .unpowered, .active bubble frames, the patient's front
+            overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
+            storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -152,6 +155,10 @@ def jobs(name):
         import os
         from . import arcade
         return arcade.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "arcade"
+    if name == "recovery_pod":
+        import os
+        from . import recovery
+        return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
     if name == "recovery":      # look study, preview only (not in RENDERED): the 2x2 recovery pod, r0, pod + .front
         from . import recovery_study
         return recovery_study.jobs(), "recovery"
@@ -268,5 +275,6 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "fx", "galley", "derelict", "eggsac", "storage_set", "medbay", "battery", "hydroponics", "workbench",
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
-            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module")
+            "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
+            "recovery_pod")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
