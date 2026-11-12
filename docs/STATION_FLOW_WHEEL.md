@@ -293,6 +293,43 @@ act on: a program that scales, or space left open on purpose.
 Still wrong: square and octagon interiors keep empty yards between the streets; five of the nine have one to four
 wall blocks before thinning (stacked spine wings, deep wings); nothing here has been through the fit-out yet.
 
+## Inventory of the existing grammars
+
+`node tools/shipgen/grammarInventory.js` draws every grammar a station kind uses, at each size tier it is used at,
+through the whole pipeline (silhouette, structure, departments; two seeds each). Read from those sheets, 44 stations.
+Wall blocks are solid 2x2 blocks in the finished template, after the pipeline's thinning.
+
+| Grammar | Class | Tiers | Interior organisation | Wall blocks | Verdict |
+|---|---|---|---|---|---|
+| Ring | enclosed, rectangular | outpost, station | The clearest: a perimeter band, a corridor cross, two or three courts each lined with a band of rooms | 0 | keep |
+| Lattice | modular | outpost, station | Modules on a corridor grid; regular to the point of a diagram | 0 | keep |
+| Cross | modular | all | Harbour at the crossing, room clusters along four arms; sparse | 0 to 2 (hub: 17 to 58, and over the size limit) | keep below hub size |
+| Spine | modular | outpost, station | Departments in sequence along one corridor, ore cages hung off it | 0 to 9 | keep |
+| Arc | enclosed, open crescent | outpost | One band on a curved corridor | 4 to 6 | keep |
+| Annex | compound | station | A ring block with its courts, plus a lattice wing carrying one district | 0 to 2 | keep |
+| Hub | compound | hub | A ring-block core with courts, satellites (ring blocks, lattices) on spokes | 12 to 24 | keep |
+| Welded | modular, scrappy | all | Clumps and loot pods; disorder is the point | 10 to 28 | keep for pirates |
+| Tree | modular, scrappy | all | Branching corridors | 9 to 64 | keep for pirates; worst walls |
+| Wheel | enclosed, round | outpost, station | One or two quarters are a court with a room band and read well; the others are room islands on spokes | 10 to 22 | replace the geometry |
+| Concentric | enclosed, round | station, hub | Rings in rings: the most hierarchy, and the most clutter | 24 to 60 | replace the geometry |
+
+Findings:
+
+- **The problem is two grammars of eleven.** Everything rectangular or modular is clean or good enough. The round
+  enclosed ones (wheel, concentric) carry the wall debris and the weak open quarters, and they carry most of the weight
+  for trading and farming stations. The kit should replace those two and nothing else.
+- **The centre already has a solution: the court.** `courtyards()` in `stationCourts.ts` turns every pocket a block
+  encloses into one open, pressurised room (plaza, garden, drill hall), walled by what is round it, doored onto the
+  corridors that bound it, with a band of rooms facing it (shops on a concourse). Ring, annex and hub get their
+  composition from it, and so does the wheel's good quarter. It works on a Builder and on any enclosed pocket.
+- Patterns worth carrying over: a rotunda where the spokes meet; the harbour at the crossing; dock banks at the ends
+  of the main axis; departments ordered by their pull towards the docks (`stationDistricts.ts`); one quarter, one thing.
+- Floor area does not compare across classes: a trading station is about 1,200 floor tiles as a cross and 2,900 as a
+  wheel, because the enclosed ones add courts.
+
+For the kit's centres (not done; the order agreed is composition first): one thing per quadrant, a court with its band,
+one department's block, or open to space on purpose; no more rooms of mixed departments scattered along the streets.
+
 ## Tried and set aside
 
 - **Hand-drawn mocks** (`tools/shipgen/mocks/`, two rounds). They gave the user's preferences and the wall rule, and no
