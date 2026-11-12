@@ -1,5 +1,5 @@
 """Shared parts for the stasis slab storage study (slab_wheel.py; family `slab`, preview only; issue #116): the wheel's
-slab placement (twelve round a core, turned 40 deg off radial), rings, bolts, springs, motors, tubes and prisms drawn
+slab placement (ten round a core, turned 40 deg off radial), rings, bolts, springs, motors, tubes and prisms drawn
 into a modkit.K, and the striped base with its turning deck."""
 import math
 
@@ -9,7 +9,7 @@ from .recovery_study4 import quad
 from .slab_study import Slab, cassette
 
 UP = (0.0, 0.0, 1.0)
-N12, SKEW, R0 = 12, math.radians(40), 1.0
+NS, SKEW, R0 = 10, math.radians(40), 1.05       # ten slabs: twelve clipped (round 10's review)
 FRONT = math.pi / 4                                 # the footprint's front corner (toward the viewer)
 BACK = FRONT + math.pi
 
@@ -40,7 +40,7 @@ def prism(k, pts, z0, z1, col, top=None):
 
 
 def angles():
-    return [math.radians(45 + 360 * i / N12) for i in range(N12)]
+    return [math.radians(45 + 360 * i / NS) for i in range(NS)]
 
 
 def at(r, a, z=0.0):
@@ -186,3 +186,79 @@ def truss_beam(k, a, b, z, h, col, n=None):
         p = [(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t) for t in (i / n, (i + 1) / n)]
         lo, hi = (z - h / 2, z + h / 2) if i % 2 == 0 else (z + h / 2, z - h / 2)
         tube(k, (*p[0], lo), (*p[1], hi), 0.018, col)
+
+
+# ---- housings (round 11) --------------------------------------------------------------------------------------------
+def sq(a, half=1.5):
+    """The footprint square's edge at angle a."""
+    return at(half / max(abs(math.cos(a)), abs(math.sin(a))), a)[:2]
+
+
+def corner_fill(k, a0, a1, r_in, z0, z1, col, top=None, n=10):
+    """The block between the circle r_in and the footprint's square from angle a0 to a1 (a corner housing)."""
+    cs = sorted(c for c in (math.pi / 4 + j * math.pi / 2 for j in range(-4, 8)) if a0 < c < a1)
+    outer = [sq(a0)] + [sq(c) for c in cs] + [sq(a1)]                    # straight edges: their ends and corners
+    inner = [at(r_in, a1 - (a1 - a0) * i / n)[:2] for i in range(n + 1)]
+    prism(k, outer + inner, z0, z1, col, top=top)
+
+
+def seams(k, r, z0, z1, n, a0=0.0, a1=math.tau, col="dark"):
+    """Vertical panel seams round a drum of radius r."""
+    for i in range(n):
+        a = a0 + (a1 - a0) * (i + 0.5) / n
+        k.box(*at(r + 0.004, a)[:2], z0, 0.022, 0.012, z1 - z0, col, rz=a + math.pi / 2)
+
+
+def base_drum(k, body, trim, deck, zb=0.42, window=None, wcol="hivis"):
+    """The housed base: a kick recess, a panelled drum wall (with a service window at angle `window` showing the
+    drive inside), a chamfered lip, and the rotor's deck turning on it with index marks."""
+    k.cyl(0, 0, 0.0, 1.4, 0.06, "dark", sides=48)
+    k.cyl(0, 0, 0.06, 1.3, zb - 0.14, "dark", sides=48)                   # the inside, seen through the window
+    half = math.radians(13)
+    skip = (lambda i: abs(math.remainder((i + 0.5) * math.tau / 48 - window, math.tau)) < half) if window else None
+    ring(k, 1.45, 0.06, zb - 0.14, 0.07, body, n=48, skip=skip)
+    seams(k, 1.48, 0.1, zb - 0.12, 12)
+    k.cyl(0, 0, zb - 0.08, 1.48, 0.08, trim, sides=48, rtop=1.42)
+    k.cyl(0, 0, zb, 1.42, 0.025, "dark", sides=48)                        # the seam the rotor turns on
+    k.cyl(0, 0, zb + 0.025, 1.4, 0.07, deck, top="steelL", sides=48)
+    ring(k, 1.37, zb + 0.095, 0.006, 0.05, "steelL", n=40, skip=lambda i: i % 2)
+    if window is not None:                                                   # the drive behind the window
+        for s_ in (-1, 1):
+            k.box(*at(1.49, window + s_ * half)[:2], 0.06, 0.06, 0.08, zb - 0.14, wcol, rz=window)
+        ring(k, 1.22, 0.12, 0.16, 0.08, "steelD", top="steel")
+        ring(k, 1.27, 0.14, 0.12, 0.03, "black")
+        for da in (-0.1, 0.1):
+            t = at(1.38, window + da)
+            k.cyl(t[0], t[1], 0.1, 0.11, 0.18, "black", top="steelD", sides=14)
+            k.cyl(t[0], t[1], 0.28, 0.05, 0.02, "steelL", sides=8)
+
+
+def canopy(k, z, body, trim, light="slbCy"):
+    """The housed top: a chamfered underside, a panelled drum, a chamfered top with panel lines and vents, and the
+    rotor's head ring hung under it."""
+    k.cyl(0, 0, z, 1.32, 0.08, trim, sides=48, rtop=1.48)
+    k.cyl(0, 0, z + 0.08, 1.48, 0.24, body, sides=48)
+    seams(k, 1.48, z + 0.1, z + 0.3, 12)
+    ring(k, 1.485, z + 0.13, 0.025, 0.012, light, n=48, skip=lambda i: i % 4 == 0)
+    k.cyl(0, 0, z + 0.32, 1.48, 0.06, trim, sides=48, rtop=1.38)
+    k.cyl(0, 0, z + 0.38, 1.0, 0.04, body, sides=32)
+    for i in range(6):
+        a = (i + 0.5) * math.tau / 6
+        k.box(*at(1.18, a)[:2], z + 0.38, 0.3, 0.06, 0.012, "dark", rz=a + math.pi / 2)
+    k.cyl(0, 0, z + 0.42, 0.36, 0.06, trim, sides=16)
+    ring(k, R0, z - 0.12, 0.12, 0.12, "steelD", top="steel")              # the head ring
+
+
+def console(k, a, zb, body, trim):
+    """The control panel set into the base's front: a screen, a cell selector (one lit), a field gauge, a key."""
+    c = at(1.56, a)
+    k.box(c[0], c[1], 0.0, 0.32, 0.7, zb + 0.12, body, rz=a)
+    k.box(*at(1.6, a)[:2], zb + 0.12, 0.22, 0.66, 0.05, trim, rz=a)
+    f = lambda r, t, z, su, sv, sz, col: k.box(  # noqa: E731
+        *(at(r, a)[0] - math.sin(a) * t, at(r, a)[1] + math.cos(a) * t), z, su, sv, sz, col, rz=a)
+    f(1.72, 0.0, zb - 0.16, 0.012, 0.44, 0.18, "dark")                       # the screen
+    f(1.725, -0.1, zb - 0.12, 0.006, 0.18, 0.1, "slbCy")
+    f(1.725, 0.12, zb - 0.1, 0.006, 0.12, 0.04, "green")
+    for j in range(NS):                                                      # the cell selector
+        f(1.72, -0.22 + j * 0.049, 0.1, 0.012, 0.03, 0.04, "slbAmb" if j == 0 else "steelL")
+    f(1.73, 0.26, 0.16, 0.02, 0.06, 0.06, "hivis")

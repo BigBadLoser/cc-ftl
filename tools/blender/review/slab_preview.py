@@ -39,7 +39,7 @@ def press(c, quad, mask, mx, my, tint, crew):
     out = out * 0.85 + np.array(tint) * 0.15
     c.px[..., :3] = np.where(a[..., None], out, base).astype(np.uint8)
 def scene(v):
-    c = Canvas(260, 260); ox, oy = 150, 205
+    c = Canvas(260, 290); ox, oy = 150, 235
     for gx in range(-3, 3):
         for gy in range(-3, 3):
             floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
@@ -56,14 +56,14 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
-order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s28", "s29", "s30"]
-names = {"c11": "hover B: floating cradle", "s28": "28 robot cell: box frame, tyre drives, slotted plate",
-         "s29": "29 lattice frame: truss posts and top, chain drive, head ring",
-         "s30": "30 octagon frame: hung rotor, top belt drive, floor track"}
+order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s31", "s32", "s33"]
+names = {"c11": "hover B: floating cradle", "s31": "31 twin towers: housed base and canopy, corner towers",
+         "s32": "32 three columns: housed base and canopy, corner columns",
+         "s33": "33 back tower: canopy cantilevered off one corner tower"}
 Z = 3
 rows = (len(order) + 2) // 3
-sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (260 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
+sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for i, v in enumerate(order):
-    x, y = (i % 3) * (260 * Z + 10), (i // 3) * (260 * Z + 30)
-    sheet.paste(scene(v).resize((260 * Z, 260 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names[v], fill=(230, 230, 230))
+    x, y = (i % 3) * (260 * Z + 10), (i // 3) * (290 * Z + 30)
+    sheet.paste(scene(v).resize((260 * Z, 290 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names[v], fill=(230, 230, 230))
 sheet.save(sys.argv[3])
