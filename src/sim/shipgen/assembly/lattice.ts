@@ -28,7 +28,14 @@ function shapes(R: number, outline: Outline, cut: number, round: boolean): { hul
   // A square's corners: cut straight across, or rounded (an arc as deep as the cut, running into both flats).
   const corner = (ax: number, ay: number): boolean => (round ? ax <= R - K * cut || ay <= R - K * cut || Math.hypot(ax - (R - K * cut), ay - (R - K * cut)) < K * cut : ax + ay < 2 * R - K * cut);
   const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && corner(Math.abs(cx), Math.abs(cy)));
-  const hull = (x: number, y: number): boolean => within(...cellOf(x, y));
+  // A rounded corner is a true arc, tile by tile, and the ring inside it another, the band's depth in: no lattice
+  // steps there (a corner is one room, so no wall runs into the curve). `arc` is null off the corners.
+  const C = R - K * cut;
+  const arc = (x: number, y: number, r: number): boolean | null => {
+    const ax = Math.abs(x + 0.5), ay = Math.abs(y + 0.5);
+    return round && outline === 'square' && ax > C && ay > C ? Math.hypot(ax - C, ay - C) <= r - 0.2 : null;
+  };
+  const hull = (x: number, y: number): boolean => arc(x, y, K * cut) ?? within(...cellOf(x, y));
   // A cell is inboard when the cell DEEP cells further out along its octant's axis is still hull: every strip is DEEP deep.
   const inner = (x: number, y: number): boolean => {
     const [cx, cy] = cellOf(x, y);
@@ -36,7 +43,7 @@ function shapes(R: number, outline: Outline, cut: number, round: boolean): { hul
   };
   // At a step the divider between two strips runs straight from the hull's riser to the ring, so the ring's own riser
   // sits one tile nearer the axis than the lattice line (that one-tile column stays with the band).
-  const inside = (x: number, y: number): boolean => inner(x, y) && (vertical(x, y) ? inner(x + Math.sign(x + 0.5), y) : inner(x, y + Math.sign(y + 0.5)));
+  const inside = (x: number, y: number): boolean => arc(x, y, K * (cut - DEEP)) ?? (inner(x, y) && (vertical(x, y) ? inner(x + Math.sign(x + 0.5), y) : inner(x, y + Math.sign(y + 0.5))));
   return { hull, inside };
 }
 
