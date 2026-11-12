@@ -52,7 +52,9 @@ def main():
             timeline(G, pub, out, v)
     if "module.recovery.u3c.f0" in G.m["assets"]:
         compare(G, pub, out)
-        timeline8(G, pub, out)
+    if "module.recovery.u3d.f0" in G.m["assets"]:
+        compare(G, pub, out, b="u3d")
+        timeline8(G, pub, out, "u3d")
     print("wrote", out)
 
 
@@ -96,7 +98,7 @@ def timeline(G, pub, out, v="u3", loop=16, scan=16, every=48):
     frames[0].save(out / f"recovery-{v}-timeline-3x.gif", save_all=True, append_images=frames[1:], duration=250, loop=0)
 
 
-def timeline8(G, pub, out):
+def timeline8(G, pub, out, v="u3c"):
     """As timeline, the bubbles at 8 frames: 12 s, the scan once."""
     from PIL import Image
     frames = []
@@ -107,15 +109,15 @@ def timeline8(G, pub, out):
             for gy in range(-1, 2):
                 floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
         s = t - 16 if 16 <= t < 32 else None
-        c.static(G, f"module.recovery.u3c.f{t % 8}", ox, oy)
+        c.static(G, f"module.recovery.{v}.f{t % 8}", ox, oy)
         if s is not None:
             c.static(G, f"module.recovery.u3.scan.back.f{s}", ox, oy)
         c.char(human(pub, 1), ox, oy - 16 - FLOATS["u"])
-        c.static(G, f"module.recovery.u3c.f{t % 8}.front", ox, oy)
+        c.static(G, f"module.recovery.{v}.f{t % 8}.front", ox, oy)
         if s is not None:
             c.static(G, f"module.recovery.u3.scan.front.f{s}", ox, oy)
         frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 3, CH * 3), Image.NEAREST))
-    frames[0].save(out / "recovery-u3-timeline-bubbles8-3x.gif", save_all=True, append_images=frames[1:], duration=250,
+    frames[0].save(out / f"recovery-{v}-timeline-bubbles8-3x.gif", save_all=True, append_images=frames[1:], duration=250,
                    loop=0)
 
 
@@ -135,7 +137,7 @@ def compare(G, pub, out, a="u3b", na=16, b="u3c", nb=8, secs=8):
             c.static(G, f"module.recovery.{v}.f{t % n}.front", ox, oy)
             c.labels.append((ox - 40, oy + 62, f"{n} frames"))
         frames.append(Image.fromarray(c.px[..., :3]).resize((CW * 6, CH * 3), Image.NEAREST))
-    frames[0].save(out / f"recovery-bubbles-{na}-vs-{nb}-3x.gif", save_all=True, append_images=frames[1:], duration=250,
+    frames[0].save(out / f"recovery-bubbles-{a}-vs-{b}-3x.gif", save_all=True, append_images=frames[1:], duration=250,
                    loop=0)
 
 

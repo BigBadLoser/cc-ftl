@@ -194,14 +194,17 @@ VENTS = [(rng.uniform(0, math.tau), rng.uniform(0.12, 0.52), rng.random(), rng.c
 LO_Z, HI_Z = 0.24, SURF - 0.06
 
 
-def bubbles(f, front, n=FRAMES):
-    """Bubbles from VENTS: each rises `loops` times a loop of FRAMES frames from its vent, drifting a little. A loop of n
-    frames (n < FRAMES: shorter, same pace for the slow vents) has every vent rise once in it."""
+def bubbles(f, front, n=FRAMES, keep_pace=False):
+    """Bubbles from VENTS, two a vent half a column apart, drifting a little. A vent's bubbles rise `loops` columns
+    per FRAMES frames (slow 1, fast 2). A loop of n frames: by default every vent rises once in it; keep_pace keeps the
+    FRAMES pace, each bubble rising loops * n / FRAMES of a column a loop and handing over to its partner (the shift a
+    loop is a multiple of their half-column spacing, so the loop closes)."""
     def build():
         k = K("rec_u3_bubbles", FP8)
         for i, (a, r, ph, loops, s) in enumerate(VENTS):
             for j in range(2):
-                t = (ph + j * 0.5 + (loops if n == FRAMES else 1) * f / n) % 1.0
+                rise = loops / FRAMES if keep_pace else (loops if n == FRAMES else 1) / n     # columns a frame
+                t = (ph + j * 0.5 + rise * f) % 1.0
                 z = LO_Z + (HI_Z - LO_Z) * t
                 aa = a + 0.25 * math.sin(t * math.tau + i)
                 u, v = r * math.cos(aa), r * math.sin(aa)
@@ -221,12 +224,13 @@ def design(h, f):
             ((bubbles(f, False), 220), (scan(h, False), "holo")))
 
 
-def bubbles_only(f, n=FRAMES):
+def bubbles_only(f, n=FRAMES, keep_pace=False):
     """A frame of the always-on loop (n frames): the pod and its bubbles, no scanner (its own layer, played now and
     then)."""
     return (u3_back,
-            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True, n), 220), (u3_top, 255)),
-            ((bubbles(f, False, n), 220),))
+            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True, n, keep_pace), 220),
+             (u3_top, 255)),
+            ((bubbles(f, False, n, keep_pace), 220),))
 
 
 def scan_job(f, h):
@@ -249,5 +253,6 @@ def scan_job(f, h):
 
 DESIGNS = {"u3": design(STILL, 0), **{f"u3.f{i}": design(h, i) for i, h in enumerate(SWEEP)},
            **{f"u3b.f{i}": bubbles_only(i) for i in range(FRAMES)},
-           **{f"u3c.f{i}": bubbles_only(i, 8) for i in range(8)}}              # the loop at 8 frames
+           **{f"u3c.f{i}": bubbles_only(i, 8) for i in range(8)},              # the loop at 8 frames
+           **{f"u3d.f{i}": bubbles_only(i, 8, True) for i in range(8)}}        # at 8, the 16-frame pace kept
 SCAN_JOBS = [scan_job(f, h) for f, h in enumerate(SWEEP)]
