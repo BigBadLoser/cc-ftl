@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VehicleC, CombatC, FTL_CHARGE_SEC, ModuleC, StorageC, galaxyIndex, newGame, playerShip, type Sim } from '../sim';
 import { stepDistress } from '../sim/galaxy/stranded';
+import { yardSystem } from '../sim/yard/flow';
 import { payStation, refund, retryRefund } from '../sim/yard/money';
 import type { YardOrder } from '../sim/yard/types';
 import { playerStock } from '../sim/story/world';
@@ -73,6 +74,18 @@ describe('refunds and deliveries that need a floor', () => {
     expect(o.pending).toBe(10);
     retryRefund(sim, o); // still no room
     expect(o.pending).toBe(10);
+  });
+
+  it('pending yard metal is set down by yardSystem once there is room, and none of it goes to the station (#160)', () => {
+    const sim = newGame(11, content);
+    const o = { id: 1, ship: playerShip(sim), station: 0, phase: 'failed', held: { credits: 0, metal: 0 }, pending: 10 } as unknown as YardOrder;
+    sim.yard.orders.push(o);
+    const before = playerStock(sim, 'item.metal');
+    sim.tick = 60;
+    yardSystem(sim);
+    expect(o.pending).toBeUndefined();
+    expect(playerStock(sim, 'item.metal')).toBe(before + 10);
+    expect(o.held).toEqual({ credits: 0, metal: 0 });
   });
 
   it('the distress tug charges only for the fuel it could set down', () => {
