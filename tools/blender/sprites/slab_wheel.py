@@ -87,7 +87,7 @@ TIERS = (  # (z from ZC, height, radius change, colour key, top key, radius chan
 )
 
 
-def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None):
+def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring"):
     """The canopy tiers over the wheel (open to radius `hole` in the middle if set) and over each lobe at angle a,
     then the lobes' columns down to the floor."""
     col = {"body": body, "trim": trim, "low": low or body, "top": top or body}
@@ -111,7 +111,15 @@ def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None):
             a = a0 + (a1 - a0) * (i + 0.5) / 8
             for dz in (0.09, 0.16):
                 k.box(*at(1.484, a)[:2], ZC + dz, 0.16, 0.012, 0.04, "dark", rz=a + math.pi / 2)
-    ring(k, 1.485, ZC + 0.225, 0.04, 0.012, "slbCy", n=24, skip=lambda i: i % 3 == 0)
+    if lights == "ring":                                                     # the band's lights: a broken ring,
+        ring(k, 1.485, ZC + 0.225, 0.04, 0.012, "slbCy", n=24, skip=lambda i: i % 3 == 0)
+    elif lights == "line":                                                   # one unbroken line,
+        ring(k, 1.485, ZC + 0.23, 0.03, 0.012, "slbCy", n=64)
+    elif isinstance(lights, tuple):                                          # or one station lamp over (a0, a1)
+        a0, a1 = lights
+        for i in range(5):
+            a = a0 + (a1 - a0) * (i + 0.5) / 5
+            k.box(*at(1.486, a)[:2], ZC + 0.215, 0.05, 0.014, 0.05, "slbAmb", rz=a + math.pi / 2)
     for i in range(10):                                                      # seams on the upper band
         a = (i + 0.5) * math.tau / 10
         k.box(*at(1.444, a)[:2], ZC + 0.33, 0.05, 0.012, 0.225, "dark", rz=a + math.pi / 2)   # up over the top tier
@@ -230,7 +238,7 @@ def arc_wall(k, a0, a1, r0, r1, z0, z1, col, top=None):
         prism(k, [at(r0, b0)[:2], at(r1, b0)[:2], at(r1, b1)[:2], at(r0, b1)[:2]], z0, z1, col, top=top)
 
 
-def skin(k, a0, a1, body, trim, z1=ZC + 0.06):
+def skin(k, a0, a1, body, trim, z1=ZC + 0.06, strip=True):
     """A wall panel of the housing from angle a0 to a1 (counter-clockwise), flush with the canopy's band: a steel
     kick skirt, a trim band, panel seams, vent grilles low, a broken status strip high."""
     arc_wall(k, a0, a1, 1.46, 1.48, 0.0, z1, body)
@@ -244,7 +252,8 @@ def skin(k, a0, a1, body, trim, z1=ZC + 0.06):
         a = a0 + (a1 - a0) * (i + 0.5) / n
         for dz in (0.13, 0.2):
             k.box(*at(1.482, a)[:2], dz, 0.012, 0.24, 0.04, "dark", rz=a)
-        k.box(*at(1.483, a)[:2], ZC - 0.17, 0.01, 0.16, 0.045, "slbCy" if i % 3 else "green", rz=a)
+        if strip:
+            k.box(*at(1.483, a)[:2], ZC - 0.17, 0.01, 0.16, 0.045, "slbCy" if i % 3 else "green", rz=a)
 
 
 def jamb(k, a, body, trim, screen=False):
@@ -319,17 +328,17 @@ SCHEMES = {
 }
 
 
-def geneva_over_tyres(k, P=None):
+def geneva_over_tyres(k, P=None, lights="ring"):
     """s49 (and its paint schemes, s49a-c)."""
     P = P or scheme("navy", "hivis")
     ol, orr = 1.15, 0.45
     pit(k, P["deck"], P["guard"])
     out = wheel(k, P["clamp"], P["accent"])
-    skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"])
+    skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
     jamb(k, FRONT + ol, P["wall"], P["stripe"])
     jamb(k, FRONT - orr, P["wall"], P["stripe"])
     panel(k, FRONT - orr - 0.27, P["wall"], P["panel"])
-    canopy(k, P["cap"], P["stripe"], [], hole=1.0, low=P["band"], top=P["cap"])
+    canopy(k, P["cap"], P["stripe"], [], hole=1.0, low=P["band"], top=P["cap"], lights=lights)
     zf = sunk_top(k, 1.0, 0.18, P["cap"], P["lip"])
     k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top=P["crown"], sides=40)       # the rotor's crown, down in the well
     k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
@@ -366,7 +375,9 @@ def crown_well(k):
     return out
 
 
+LIGHTS = {"s49d": "none", "s49e": "line", "s49f": (FRONT + 0.1, FRONT + 0.6)}
 DESIGNS = {**{v: ((lambda k, c=c: geneva_over_tyres(k, c)), (3, 3)) for v, c in SCHEMES.items()},
+           **{v: ((lambda k, li=li: geneva_over_tyres(k, SCHEMES["s49a"], li)), (3, 3)) for v, li in LIGHTS.items()},
            "s49": (geneva_over_tyres, (3, 3)), "s50": (geneva_well, (3, 3)), "s51": (crown_well, (3, 3))}
 OVERLAYS = {}
 PIT = {v: RP for v in DESIGNS}
