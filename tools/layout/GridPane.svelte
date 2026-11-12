@@ -8,12 +8,12 @@
 	import { dpr, lab } from './lab.svelte';
 	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { moduleIndex, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
+	import { moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
 		| { k: 'pan'; x: number; y: number }
-		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '=' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
+		| { k: 'paint'; last: Tile; tool: StrokeTool; erase: boolean; base: Layout; tiles: Tile[]; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
 		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
@@ -27,16 +27,22 @@
 	$effect(() => { lab.gridBox = paneBox; });
 	let cursor = $state('crosshair');
 	let space = $state(false);
+	/** The tile under the pointer (null when it is off the grid or a gesture other than a stroke is under way), and whether the right button is held. */
+	let pointer = $state.raw<Tile | null>(null);
+	let erasing = $state(false);
 
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design;
 		if (!d) return [];
 		if (lab.compare) return [...(lab.tab === 'overlay' && lab.diff ? diffMarks(d, lab.diff) : []), { tiles: lab.flag, color: 'rgba(255,70,70,1)' }];
+		// the hovered-room overlay is for picking: it stays out of the way of a paint tool
 		const out: Mark[] = [
 			{ tiles: tilesOf(d, lab.selected), color: 'rgba(255,196,64,1)' },
-			{ tiles: tilesOf(d, lab.hover), color: 'rgba(80,220,255,1)' },
+			...(lab.tool === 'select' ? [{ tiles: tilesOf(d, lab.hover), color: 'rgba(80,220,255,1)' }] : []),
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
+		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
+		if (pointer && lab.tool !== 'select' && lab.tool !== 'module' && lab.tool !== 'note' && !lab.drag) out.push({ tiles: [pointer], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const r = lab.drag;
 		if (r) {
@@ -133,22 +139,25 @@
 		for (let i = 0; i <= n; i++) out.push([Math.round(a[0] + ((b[0] - a[0]) * i) / n), Math.round(a[1] + ((b[1] - a[1]) * i) / n)]);
 		return out;
 	}
-	const PAINT: Record<string, '_' | '#' | 'D' | '=' | '.'> = { floor: '_', wall: '#', door: 'D', beam: '=', space: '.' };
+	const isPaint = (t: string): t is PaintTool => t in PAINT_CHAR;
 	const room = (): number | undefined => (lab.selected?.kind === 'room' ? lab.selected.id : undefined);
 
 	function down(e: PointerEvent) {
 		canvas.setPointerCapture(e.pointerId);
 		const { tile, fx, fy } = at(e);
 		const l = lab.layout;
-		if (e.button !== 0 || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		const tool = lab.tool;
-		if (PAINT[tool]) {
-			const ch = PAINT[tool] as '_' | '#' | 'D' | '=' | '.';
+		// the right button erases what the active tool paints (a note: the one under the pointer); the select tool pans with it
+		const erase = e.button === 2 && tool !== 'select';
+		if ((e.button !== 0 && !erase) || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
+		erasing = erase;
+		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
+		if (isPaint(tool) || (erase && (tool === 'room' || tool === 'module'))) {
 			lab.begin();
-			// A stroke is painted from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
+			// A stroke is applied from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
 			const first = room();
-			lab.step(() => paint(l, [tile], ch, first));
-			mode = { k: 'paint', last: tile, ch, base: l, tiles: [tile], room: first };
+			lab.step(() => stroke(l, tool as StrokeTool, erase, [tile], first));
+			mode = { k: 'paint', last: tile, tool: tool as StrokeTool, erase, base: l, tiles: [tile], room: first };
 		} else if (tool === 'note') {
 			// a note goes where the pointer is (Alt: free, not attached to what is there)
 			lab.addPin(fx, fy, e.altKey);
@@ -172,6 +181,7 @@
 	function move(e: PointerEvent) {
 		const { tile, fx, fy } = at(e);
 		const m = mode;
+		pointer = !lab.compare && (!m || m.k === 'paint') ? tile : null;
 		if (m?.k === 'pan') {
 			lab.view = panned('grid', lab.view, dpr(), e.clientX - m.x, e.clientY - m.y);
 			m.x = e.clientX;
@@ -179,11 +189,10 @@
 			return;
 		}
 		if (m?.k === 'paint') {
-			const ch = m.ch;
 			const tiles = line(m.last, tile);
 			m.last = tile;
 			m.tiles.push(...tiles);
-			lab.step(() => paint(m.base, m.tiles, ch, m.room));
+			lab.step(() => stroke(m.base, m.tool, m.erase, m.tiles, m.room));
 			return;
 		}
 		if (m?.k === 'room') {
@@ -219,6 +228,7 @@
 	function up() {
 		const m = mode;
 		mode = null;
+		erasing = false;
 		if (m?.k === 'paint' || m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
@@ -236,6 +246,8 @@
 		}
 	}
 	function cancel() {
+		pointer = null;
+		erasing = false;
 		if (mode?.k === 'paint' || mode?.k === 'edge') lab.end();
 		mode = null;
 		lab.drag = null;

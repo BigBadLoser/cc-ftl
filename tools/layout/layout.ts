@@ -175,15 +175,21 @@ function absorbHull(w: Work, was: ReadonlySet<number>): void {
   inner.forEach((i, k) => set(w, i % w.l.width, Math.floor(i / w.l.width), '_', rooms[k] as number));
 }
 
-/** A rectangle of floor for a room (new, or an existing id), walled where the ring around it is open space. */
-function carve(w: Work, r: Rect, id: number): void {
+/**
+ * A rectangle of floor for a room (new, or an existing id), walled where the ring around it is open space. A room holds floor only:
+ * a wall, door or beam inside the rectangle stays what it is (and belongs to no room); open space inside becomes floor. `takes` names
+ * walls that may become floor anyway (a resize moving the room's own wall).
+ */
+function carve(w: Work, r: Rect, id: number, takes: (x: number, y: number) => boolean = () => false): void {
   const l = w.l;
   for (let y = r.y - 1; y <= r.y + r.h; y++) {
     for (let x = r.x - 1; x <= r.x + r.w; x++) {
       if (!inBounds(l, x, y)) continue;
       const inside = x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
-      if (inside) set(w, x, y, '_', id);
-      else if (w.cells[y]?.[x] === '.') set(w, x, y, '#', NONE);
+      const c = w.cells[y]?.[x];
+      if (!inside) { if (c === '.') set(w, x, y, '#', NONE); }
+      else if (c === '.' || c === '_' || (c === '#' && takes(x, y))) set(w, x, y, '_', id);
+      else w.roomOf[idx(l, x, y)] = NONE;
     }
   }
 }
@@ -227,7 +233,8 @@ export function resizeRoom(l: Layout, id: number, to: Rect): Layout {
   const inNew = (x: number, y: number): boolean => x >= to.x && y >= to.y && x < to.x + to.w && y < to.y + to.h;
   const gone = new Set<number>();
   for (let y = old.y; y < old.y + old.h; y++) for (let x = old.x; x < old.x + old.w; x++) if (!inNew(x, y)) { set(w, x, y, '#', NONE); gone.add(idx(l, x, y)); }
-  carve(w, to, id);
+  const ring = (x: number, y: number): boolean => x >= old.x - 1 && y >= old.y - 1 && x <= old.x + old.w && y <= old.y + old.h;
+  carve(w, to, id, ring);
   dropModulesOn(w, (x, y) => gone.has(idx(l, x, y)));
   return done(w);
 }
@@ -303,3 +310,40 @@ export const removeModule = (l: Layout, i: number): Layout => ({ ...l, modules: 
 /** Rotate a module a quarter turn about its top-left tile. */
 export const rotateModule = (l: Layout, i: number): Layout => { const m = l.modules[i]; return m ? moveModule(l, i, m.x, m.y, (m.rot + 1) % 4) : l; };
 export const moduleDef = (id: string): ModuleDef | undefined => defs[id];
+
+// --- paint tools and their erase ---------------------------------------------------------------------------------
+
+export type PaintTool = 'floor' | 'wall' | 'door' | 'beam' | 'space';
+export type StrokeTool = PaintTool | 'room' | 'module';
+type Ch = '_' | '#' | 'D' | '=' | '.';
+/** The tile character each paint tool lays. */
+export const PAINT_CHAR: Record<PaintTool, Ch> = { floor: '_', wall: '#', door: 'D', beam: '=', space: '.' };
+/** What erasing a tool's tiles leaves: floor and beams go back to space; a wall or door is cleared back to floor; the space tool's erase lays floor. */
+const ERASES_TO: Record<PaintTool, Ch> = { floor: '.', wall: '_', door: '_', beam: '.', space: '_' };
+
+/** Unassign floor tiles from their rooms (the floor stays, as hall). */
+function unassign(l: Layout, tiles: readonly Tile[]): Layout {
+  const w = work(l);
+  let n = 0;
+  for (const [x, y] of tiles) if (inBounds(l, x, y) && w.cells[y]?.[x] === '_' && w.roomOf[idx(l, x, y)] !== NONE) { w.roomOf[idx(l, x, y)] = NONE; n++; }
+  return n ? done(w) : l;
+}
+
+/**
+ * The one owner of a pointer stroke over `tiles` with `tool`: painting it, or (`erase`, the right button) erasing what that tool paints.
+ * A paint tool's erase clears only tiles of its own kind; room unassigns floor; module removes the modules under the tiles.
+ */
+export function stroke(l: Layout, tool: StrokeTool, erase: boolean, tiles: readonly Tile[], room?: number): Layout {
+  if (tool === 'module' || tool === 'room') {
+    if (!erase) return l;
+    if (tool === 'room') return unassign(l, tiles);
+    const hit = new Set(tiles.filter(([x, y]) => inBounds(l, x, y)).map(([x, y]) => idx(l, x, y)));
+    const gone = l.modules.map((m) => moduleTiles(m).some(([x, y]) => inBounds(l, x, y) && hit.has(idx(l, x, y))));
+    if (!gone.some(Boolean)) return l;
+    return { ...l, modules: l.modules.filter((_, i) => !gone[i]), moduleIds: l.moduleIds.filter((_, i) => !gone[i]) };
+  }
+  if (!erase) return paint(l, tiles, PAINT_CHAR[tool], room);
+  const kind = PAINT_CHAR[tool];
+  const of = tiles.filter(([x, y]) => inBounds(l, x, y) && (tool === 'space' ? cellAt(l, x, y) === '.' : cellAt(l, x, y) === kind));
+  return of.length ? paint(l, of, ERASES_TO[tool]) : l;
+}

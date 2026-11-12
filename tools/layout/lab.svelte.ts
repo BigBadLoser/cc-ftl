@@ -275,6 +275,15 @@ class Lab {
     this.pins = [...this.pins, pin];
     this.openPin = pin.id;
   }
+  /** Right-click with the note tool: remove the nearest note within about a tile of a position (tile units). */
+  erasePinAt(fx: number, fy: number): void {
+    let best: Pin | null = null, d = 1;
+    for (const p of this.pins) {
+      const k = Math.hypot(p.x - fx, p.y - fy);
+      if (k < d) { d = k; best = p; }
+    }
+    if (best) this.removePin(best.id);
+  }
   setPinText(id: number, text: string): void {
     this.pins = this.pins.map((p) => (p.id === id ? { ...p, text } : p));
   }

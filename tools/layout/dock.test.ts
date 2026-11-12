@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_DOCK, MIN_RECT, dockOpen, dockReducer, floating, panelsIn, parseDock } from './dock';
 
 describe('dock reducer', () => {
+  it('stores panel height weights, clamped, and they survive a save', () => {
+    const s = dockReducer(DEFAULT_DOCK, { type: 'grow', weights: { inspector: 3, notes: 0 } });
+    expect(s.panels.inspector.grow).toBe(3);
+    expect(s.panels.notes.grow).toBeGreaterThan(0);
+    expect(parseDock(JSON.stringify(s)).panels.inspector.grow).toBe(3);
+  });
   it('opens with the preview docked at the bottom', () => {
     expect(panelsIn(DEFAULT_DOCK, 'bottom')).toEqual(['preview']);
   });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { commit, fresh, live, redo, undo } from './history';
 import {
-  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
+  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, stroke, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
   type Layout, type Tile,
 } from './layout';
 import { designFromLayout, labelSpot } from './design';
@@ -327,5 +327,51 @@ describe('generated designs are stamped the way the game spawns them', () => {
     const w = worldOf(paint(blank(), rect(4, 4, 5, 5), '_'));
     expect(w?.sim.world.get(w.ship, ShipC)).toMatchObject({ faction: 'player' });
     expect(w?.sim.world.get(w.ship, ShipC)?.gen).toBeUndefined();
+  });
+});
+
+describe('a room holds floor only (#464)', () => {
+  it('drawn across an existing wall, door and beam it leaves them as they are and gives them no room', () => {
+    let l = blank();
+    for (const [x, y, c] of [[7, 6, '#'], [7, 7, 'D'], [7, 8, '=']] as const) l = paint(l, [[x, y]], c);
+    const { layout, id } = addRoom(l, { x: 5, y: 5, w: 6, h: 5 }, 'cargo');
+    expect([layout.cells[6]?.[7], layout.cells[7]?.[7], layout.cells[8]?.[7]]).toEqual(['#', 'D', '=']);
+    for (const y of [6, 7, 8]) expect(layout.roomOf[y * layout.width + 7]).toBe(-1);
+    for (let i = 0; i < layout.roomOf.length; i++) if (layout.roomOf[i] === id) expect(layout.cells[Math.floor(i / layout.width)]?.[i % layout.width]).toBe('_');
+  });
+  it('resizing a room over a wall does not turn the wall into room floor', () => {
+    const { layout, id } = addRoom(blank(), { x: 5, y: 5, w: 4, h: 4 }, 'cargo');
+    const wide = resizeRoom(layout, id, { x: 5, y: 5, w: 6, h: 4 }); // the ring wall at x=9 is inside the new rectangle
+    expect(wide.cells[6]?.[9]).toBe('_');
+    const walled = paint(layout, [[10, 6]], '#');
+    const over = resizeRoom(walled, id, { x: 5, y: 5, w: 6, h: 4 });
+    expect(over.cells[6]?.[10]).toBe('#');
+    expect(over.roomOf[6 * over.width + 10]).toBe(-1);
+  });
+});
+
+describe('right-click erases what the tool paints (#464)', () => {
+  const t = (...p: Tile[]): Tile[] => p;
+  it('floor goes to space, wall and door to floor, beam to space, space lays floor; other kinds are left', () => {
+    const { layout } = addRoom(blank(), { x: 5, y: 5, w: 4, h: 4 }, 'cargo');
+    expect(stroke(layout, 'floor', true, t([6, 6])).cells[6]?.[6]).toBe('.');
+    expect(stroke(layout, 'floor', true, t([4, 4])).cells[4]?.[4]).toBe('#'); // a wall is not floor
+    expect(stroke(layout, 'wall', true, t([4, 6])).cells[6]?.[4]).toBe('_');
+    expect(stroke(paint(layout, [[6, 6]], 'D'), 'door', true, t([6, 6])).cells[6]?.[6]).toBe('_');
+    expect(stroke(paint(layout, [[2, 2]], '='), 'beam', true, t([2, 2])).cells[2]?.[2]).toBe('.');
+    expect(stroke(layout, 'space', true, t([1, 1])).cells[1]?.[1]).toBe('_');
+  });
+  it('room unassigns floor and keeps it; module removes the module under the pointer', () => {
+    const made = addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'support');
+    const id = made.id;
+    const layout = addModule(made.layout, { def: 'module.chair', x: 6, y: 6, rot: 0 });
+    const un = stroke(layout, 'room', true, t([8, 8]));
+    expect(un.cells[8]?.[8]).toBe('_');
+    expect(un.roomOf[8 * un.width + 8]).toBe(-1);
+    expect(un.roomOf[9 * un.width + 8]).toBe(id);
+    expect(stroke(layout, 'module', true, t([9, 9]))).toBe(layout);
+    const gone = stroke(layout, 'module', true, t([6, 6]));
+    expect(gone.modules).toHaveLength(0);
+    expect(gone.moduleIds).toHaveLength(0);
   });
 });

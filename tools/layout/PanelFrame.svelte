@@ -20,7 +20,7 @@
 	];
 </script>
 
-<section class="flex min-h-0 min-w-0 flex-col bg-card text-card-foreground {p.collapsed ? 'flex-none' : 'flex-1'}" data-panel={id}>
+<section class="flex min-h-0 min-w-0 flex-col bg-card text-card-foreground {p.collapsed ? 'flex-none' : 'flex-1'}" style={p.collapsed ? '' : `flex-grow:${p.grow}`} data-panel={id}>
 	<header role="presentation" class="flex h-8 shrink-0 items-center gap-1 px-1.5 {drag ? 'cursor-grab touch-none active:cursor-grabbing' : ''}" onpointerdown={drag}>
 		<Button variant="ghost" size="icon-xs" aria-label={p.collapsed ? 'Expand' : 'Collapse'} onclick={() => docks.dispatch({ type: 'collapse', id })} onpointerdown={(e) => e.stopPropagation()}>
 			{#if p.collapsed}<ChevronRight />{:else}<ChevronDown />{/if}
