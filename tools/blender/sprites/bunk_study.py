@@ -122,6 +122,58 @@ def b1c():
     return k.build()
 
 
+RAIL = {"thin": (0.04, 0.035, "steelL", "steelL"), "thick": (0.06, 0.05, "steelD", "steel")}   # bar, upright, colours
+
+
+def _rails(k, z, h, side, a0, a1, posts, weight, mid=True):
+    """A rail h over the deck at z along one side: side 'u+' / 'u-' (a long side, a0..a1 along v) or 'v+' / 'v-' (an
+    end, a0..a1 along u), uprights at `posts`, a mid bar unless mid is False."""
+    bar, up, col, top = RAIL[weight]
+    e = (W / 2 - 0.03) if side[0] == "u" else (L / 2 - 0.03)
+    e = e if side[1] == "+" else -e
+    c, n = (a0 + a1) / 2, a1 - a0
+
+    def box(a, zz, sa, sz, w):
+        if side[0] == "u":
+            k.box(e, a, zz, w, sa, sz, col, top=top)
+        else:
+            k.box(a, e, zz, sa, w, sz, col, top=top)
+    box(c, z + h - bar, n, bar, bar)
+    if mid:
+        box(c, z + h * 0.5, n, bar * 0.75, bar * 0.85)
+    for a in posts:
+        box(a, z, up, h - bar, up)
+
+
+def _railed(name, weight):
+    """B1 with every solid board turned to a rail: head and foot on both decks, the upper deck's back (wall side), and
+    the open side's rail as B1's (the head two thirds, the ladder at the foot)."""
+    k = K(name, FP)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, "steelD", top="steel")
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, "steelD", top="steel", bevel=0.01)
+        mattress(k, z)
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+    eu = W / 2 - 0.06
+    for z, h in ((LOW, 0.3), (HIGH, 0.36)):
+        for side in ("v-", "v+"):
+            _rails(k, z, h, side, -eu, eu, (0.0,), weight)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), weight)
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3,), weight)
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1d():
+    return _railed("bunk_b1d", "thin")
+
+
+def b1e():
+    return _railed("bunk_b1e", "thick")
+
+
 def b2():
     """B2 berth cabinet: a white shell round both berths (the open side faces the camera), each berth lit along its
     ceiling, a privacy curtain drawn halfway on the upper one, a ladder by the foot."""
@@ -176,7 +228,7 @@ def b3():
     return k.build()
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c}
+DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e}
 
 
 def jobs():

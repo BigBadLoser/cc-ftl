@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
 NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker frame",
-         "b1a": "B1a  upper railed full length", "b1b": "B1b  both decks railed", "b1c": "B1c  upper walled in"}
+         "b1a": "B1a  upper railed full length", "b1b": "B1b  both decks railed", "b1c": "B1c  upper walled in",
+         "b1d": "B1d  rails all round, thin", "b1e": "B1e  rails all round, thick"}
 CW, CH = 200, 220
 
 
