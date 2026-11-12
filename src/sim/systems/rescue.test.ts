@@ -4,6 +4,10 @@ import {
   CarriedC, CrewC, DeadC, DownedC, HealthC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities,
 } from '../crew/components';
 
+import { repairUrgency } from '../ai/jobRank';
+import { AllegianceC, PrisonerC, SurrenderedC } from '../fight/components';
+import { autoJobsSystem } from './autojobs';
+import { JobC } from '../crew/components';
 import type { SimEvent } from '../events';
 import { ModuleC } from '../modules/components';
 
@@ -179,5 +183,45 @@ describe('darkness', () => {
     const darkTicks = buildTicks([]);
     expect(litTicks).toBeGreaterThan(0);
     expect(darkTicks).toBeGreaterThan(litTicks + 15);
+  });
+});
+
+describe('who gets rescued (crew/care.ts)', () => {
+  const down = (sim: Sim, id: number, faction: 'player' | 'hostile', extra?: 'prisoner' | 'surrendered'): void => {
+    sim.world.add(id, AllegianceC, { faction });
+    if (extra) sim.world.add(id, SurrenderedC, { tick: 0 });
+    if (extra === 'prisoner') sim.world.add(id, PrisonerC, { tick: 0 });
+    sim.world.add(id, DownedC, { bleed: 100, stabilized: false, bed: 0 });
+  };
+  const rescueJobs = (sim: Sim): Map<number, number> => {
+    const m = new Map<number, number>();
+    for (const id of sim.world.query(JobC)) {
+      const j = sim.world.get(id, JobC)!;
+      if (j.kind === 'rescue') m.set(j.target ?? 0, repairUrgency(sim, j));
+    }
+    return m;
+  };
+
+  it('posts no rescue for a downed enemy who is still fighting', () => {
+    const sim = make();
+    const foe = crew(sim, 6, 3, all(0));
+    down(sim, foe, 'hostile');
+    autoJobsSystem(sim);
+    expect(rescueJobs(sim).size).toBe(0);
+  });
+
+  it('rescues a downed prisoner, ranked below a downed crew member', () => {
+    const sim = make();
+    const ours = crew(sim, 6, 3, all(0));
+    const prisoner = crew(sim, 7, 3, all(0));
+    const yielded = crew(sim, 8, 3, all(0));
+    down(sim, ours, 'player');
+    down(sim, prisoner, 'hostile', 'prisoner');
+    down(sim, yielded, 'hostile', 'surrendered');
+    autoJobsSystem(sim);
+    const jobs = rescueJobs(sim);
+    expect([...jobs.keys()].sort()).toEqual([ours, prisoner, yielded].sort());
+    expect(jobs.get(ours)).toBeGreaterThan(jobs.get(prisoner) as number);
+    expect(jobs.get(ours)).toBeGreaterThan(jobs.get(yielded) as number);
   });
 });
