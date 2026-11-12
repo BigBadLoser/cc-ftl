@@ -129,8 +129,10 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 - The station chief's cabin stands by the bridge, in the harbour: a bed, a desk and chair, a locker (crews of six up).
 - Kind rooms: laboratories on a research station (research modules, consoles, lockers), a breaker shop on mining
   stations and pirate dens (the scrapper, scrap cages, a pallet), drone bays on a navy depot (defence).
-- An `annex` on a room is a small room of its own that stands right beside it in its row: the mess's pantry, the
-  ward's trauma room, the pod deck's suit-up room. A passage across the block can still fall between the two.
+- An `annex` on a room is a small room of its own that stands against it and opens into it, never onto a hall: the
+  mess's pantry, the ward's trauma room, the pod deck's suit-up room. In a row it is the next room, with its door in
+  the wall they share, and a passage across the block never parts them. An end room's annex is cut from one end of
+  it. In a ring's band it is the last strip of the room's run.
 - Shield rooms and the core get floor round the machine on a station that is not tight. Gun bays keep the mount size.
 - Reactors: the smallest tier the size allows that powers the station from one room of two; rooms of two at most.
 - Crate rooms merge into warehouses of up to 24 crates.

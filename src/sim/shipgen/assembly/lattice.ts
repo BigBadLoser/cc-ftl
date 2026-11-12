@@ -119,7 +119,7 @@ export interface LineOpts {
  */
 export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, from: number, edge: number, side: 1 | -1, o: LineOpts = {}): { rest: RoomSpec[]; at: number } {
   const { g } = s, free = o.free ?? s.free;
-  let at = from;
+  let at = from, before = -1;
   for (const [i, room] of specs.entries()) {
     let spec = o.deep && room.w > room.h ? { ...room, w: room.h, h: room.w } : room;
     if (o.floorDepth && spec.role !== 'dock') spec = { ...spec, w: Math.max(3, Math.ceil((spec.w * spec.h) / o.floorDepth)), h: o.floorDepth };
@@ -133,7 +133,10 @@ export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, f
     let fits = true;
     for (let y = y0; y < y1 && fits; y++) for (let x = x0; x < x1 && fits; x++) fits = free(x, y);
     if (!fits) return { rest: specs.slice(i), at };
-    g.rect(g.room(spec.role, { spec, doors: spec.warehouse ? 2 : 1, ...(o.access ? { access: o.access } : {}) }), x0, y0, x1, y1);
+    // An annex opens into the room before it, through the wall they share.
+    const access = room.annexed && before >= 0 ? [before] : o.access;
+    before = g.room(spec.role, { spec, doors: spec.warehouse ? 2 : 1, ...(access ? { access } : {}) });
+    g.rect(before, x0, y0, x1, y1);
     at += dir * along;
     o.placed?.push(spec);
   }

@@ -58,7 +58,8 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): Roo
   const rest = asks.filter((a) => !cornered.includes(a.spec));
   const band = placeBand(s, rest);
   if (band.left.length === 0 || !inner) return band.left;
-  const small = band.left.filter(innerRoom);
+  // A room with an annex stands in the band, where its annex can stand against it.
+  const small = band.left.filter((r) => innerRoom(r) && !r.annex);
   const out = placeInner(s, rest.filter((a) => small.includes(a.spec)));
   return band.left.filter((r) => !small.includes(r) || out.includes(r));
 }

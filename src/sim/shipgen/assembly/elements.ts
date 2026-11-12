@@ -139,27 +139,23 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const farther = (r: RoomSpec): number => (o.far?.includes(r.role) ? 1 : 0);
   const shape = (r: RoomSpec): RoomSpec => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w });
   const body = rooms.filter((r) => r !== capOf).sort((p, q) => farther(p) - farther(q)).map(shape);
-  // A room's annex stands right after it in its row. Quarters are cut into cabins where they stand, a bed each, inside
-  // the room's own length: the row is no longer for it and the station no heavier.
-  const rows = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, shape(r.annex)] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
-  // The end room's annex stands last in the shorter row: beside it.
-  if (capOf?.annex) {
-    const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
-    (len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1]).push(shape(capOf.annex));
-  }
+  // A room's annex stands right after it in its row and opens into it. Quarters are cut into cabins where they stand,
+  // a bed each, inside the room's own length: the row is no longer for it and the station no heavier.
+  const rows = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, { ...shape(r.annex), annexed: true }] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
   // Bunks: each goes into the shorter row, somewhere among its rooms.
   const bunks = o.bunks ?? [];
   for (const b of bunks) {
     const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
     const row = len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1];
-    row.splice(c.rng.int(0, row.length), 0, depth ? { ...b, h: depth } : b);
+    const k = c.rng.int(0, row.length);
+    row.splice(row[k]?.annexed ? k + 1 : k, 0, depth ? { ...b, h: depth } : b);
   }
   const legal = ([-1, 1] as const).filter((side) => facing(f, side) !== 'e'); // an airlock never faces east
   docks.forEach((d, i) => rows[(legal[i % legal.length] as number) < 0 ? 0 : 1].push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);
   const L0 = Math.max(run(rows[0]), run(rows[1]), 4);
   if (o.even || docks.length > 0) for (const row of rows) {
-    const k = row.map((r) => r.role !== 'dock' && !r.cabin).lastIndexOf(true);
+    const k = row.map((r) => r.role !== 'dock' && !r.cabin && !r.annexed).lastIndexOf(true);
     if (k >= 0) row[k] = { ...(row[k] as RoomSpec), w: (row[k] as RoomSpec).w + L0 - run(row) };
   }
   const hall = g.hall('hall', o.dept ?? rooms[0]?.dept ?? docks[0]?.dept);
@@ -191,6 +187,14 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     // Where each row is cut; a row that runs through (no passage on its flank) is cut at its end.
     const through = rows.map((row) => mode === 'inner' && row.length < 2);
     const cut = rows.map((row, k) => (mode === 'end' || through[k] ? row.length : mode === 'inner' ? 1 + Math.floor(where * (row.length - 1)) : mode === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
+    // A passage never parts an annex from its room: it moves past the annex, or before the room, or that row runs through.
+    for (const [k, row] of rows.entries()) {
+      const n = cut[k] as number;
+      if (n <= 0 || n >= row.length || !row[n]?.annexed) continue;
+      if (n + 1 <= (mode === 'inner' ? row.length - 1 : row.length)) cut[k] = n + 1;
+      else if (n - 1 >= (mode === 'inner' ? 1 : 0)) cut[k] = n - 1;
+      else { through[k] = true; cut[k] = row.length; }
+    }
     const e0 = lay(rows[0].slice(0, cut[0]), -1, u0), e1 = lay(rows[1].slice(0, cut[1]), 1, u0);
     if (e0 === null || e1 === null) return null;
     const e = Math.max(through[0] ? 0 : e0, through[1] ? 0 : e1, u0 + 2);
@@ -249,10 +253,18 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     // The end room spans the whole block, back wall to back wall: a head. Narrower, its corners would stand on the
     // last rooms' walls and build them two thick.
     const v0 = -(back[0] as number), v1 = (back[1] as number) + 1;
-    const along = Math.max(3, Math.ceil((capOf.w * capOf.h) / (v1 - v0 - 2))) + 2;
+    // Its annex is cut from one end of it: the head is that much longer, the wall between them is the end room's,
+    // and the annex opens into the end room.
+    const nook = capOf.annex, nookArea = nook ? nook.w * nook.h : 0;
+    const along = Math.max(3, Math.ceil((capOf.w * capOf.h + nookArea) / (v1 - v0 - 2 - (nook ? 1 : 0)))) + 2;
     const box = rect(f, L, L + along, v0, v1);
     for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y)) return null;
-    g.rect(g.room(capOf.role, { spec: capOf, access: [hall] }), ...box);
+    const head = g.room(capOf.role, { spec: capOf, access: [hall] });
+    g.rect(head, ...box);
+    if (nook) {
+      const wide = Math.max(2, Math.ceil(nookArea / (along - 2))) + 1;
+      g.rect(g.room(nook.role, { spec: nook, access: [head] }), ...(c.rng.chance(0.5) ? rect(f, L, L + along, v0, v0 + wide) : rect(f, L, L + along, v1 - wide, v1)));
+    }
     far = L + along;
   } else ports.push({ frame: { x: at(f, L, 0)[0], y: at(f, L, 0)[1], dir: f.dir }, kind: 'end', hall, along: L, side: 0, ...(X > 0 ? { width: X + 2 } : {}) });
   for (let id = n0; id < g.regions.length; id++) regions.push(id);

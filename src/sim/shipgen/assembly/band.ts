@@ -23,27 +23,35 @@ export function placeBand(s: Site, asks: readonly BandAsk[]): { left: RoomSpec[]
     const v = units[(i + 1) % n] as BandUnit, vk = keys[(i + 1) % n] as Set<number>;
     return n > 1 && v.face === u.face && u.tiles.some(([x, y]) => vk.has((y + 512) * 1024 + x + 1 + 512) || vk.has((y + 512) * 1024 + x - 1 + 512) || vk.has((y + 513) * 1024 + x + 512) || vk.has((y + 511) * 1024 + x + 512));
   });
-  const give = (spec: RoomSpec | null, idx: number[]): void => {
+  const give = (spec: RoomSpec | null, idx: number[], access?: number[]): number => {
     const us = idx.map((i) => units[i] as BandUnit);
-    const id = spec ? g.room(spec.role, { spec, rank: Math.min(...us.map((u) => u.rank)) }) : g.room('garden', { rank: Math.min(...us.map((u) => u.rank)), dept: 'commons' });
+    const id = spec ? g.room(spec.role, { spec, rank: Math.min(...us.map((u) => u.rank)), ...(access ? { access } : {}) }) : g.room('garden', { rank: Math.min(...us.map((u) => u.rank)), dept: 'commons' });
     for (const u of us) { u.used = true; for (const [x, y] of u.tiles) g.set(x, y, id); }
+    return id;
   };
-  const order = [...asks].sort((a, c) => (a.spec.cabin ? 0 : stripsFor(a.spec)) < (c.spec.cabin ? 0 : stripsFor(c.spec)) ? 1 : -1);
+  // Bigger rooms choose first; a room with an annex counts as both and goes before a plain one its size, since it
+  // needs a run of two units.
+  const size = (r: RoomSpec): number => (r.cabin ? 0 : stripsFor(r)) + (r.annex ? 1.5 : 0);
+  const order = [...asks].sort((a, c) => (size(a.spec) < size(c.spec) ? 1 : -1));
   const left: RoomSpec[] = [];
   const bunks: RoomSpec[] = [];
   for (const ask of order) {
-    const need = ask.spec.cabin ? 1 : stripsFor(ask.spec);
+    // A room with an annex takes a run for both, of two units at least: the annex is the run's last unit, one strip
+    // of the band (a small room, whatever its planned shape).
+    const annex = ask.spec.annex, extra = annex ? 1 : 0;
+    const need = (ask.spec.cabin ? 1 : stripsFor(ask.spec)) + extra;
     let best: { idx: number[]; cost: number } | null = null;
     for (let i = 0; i < n; i++) {
       const idx: number[] = [];
       let cap = 0, j = i;
-      while (cap < need && idx.length < n && !(units[j] as BandUnit).used) {
+      const enough = (): boolean => cap >= need && (!annex || idx.length >= 2);
+      while (!enough() && idx.length < n && !(units[j] as BandUnit).used) {
         idx.push(j);
         cap += (units[j] as BandUnit).strips;
-        if (cap >= need || !joined[j]) break;
+        if (enough() || !joined[j]) break;
         j = (j + 1) % n;
       }
-      if (cap < need) continue;
+      if (!enough()) continue;
       const mid = idx.reduce((t, k) => t + (units[k] as BandUnit).angle, 0) / idx.length;
       // Nearest its angle; a room wider than it needs (a cabin on a double unit) costs a little.
       const cost = apart(mid, ask.angle) + (cap - need) * 0.4;
@@ -51,7 +59,11 @@ export function placeBand(s: Site, asks: readonly BandAsk[]): { left: RoomSpec[]
     }
     if (!best) { left.push(ask.spec); continue; }
     if (ask.spec.cabin) bunks.push(ask.spec);
-    give(ask.spec, best.idx);
+    if (annex) {
+      // The annex opens into its room, through the wall between their units.
+      const tail = [best.idx.pop() as number];
+      give(annex, tail, [give(ask.spec, best.idx)]);
+    } else give(ask.spec, best.idx);
   }
   // A cabin or two over: they double up (a second bed in a cabin already placed) before the whole ring grows a step.
   const cabinsLeft = left.filter((r) => r.cabin);

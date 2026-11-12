@@ -97,7 +97,9 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     if (why) { why = `R ${R}: ${why}`; continue; }
     // The ring's own rooms: habitation away from the first branch, guns all round, the rest between.
     const first = a.ports.find((p) => p.kind === 'rim' && p.used)?.frame.dir ?? 'n';
-    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap((r) => (r.annex ? [r, { ...r.annex, dept: r.annex.dept ?? r.dept }] : [r])).flatMap((r) => (r.cabins === false ? [r] : cabinsOf(r))), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))];
+    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap((r) => (r.cabins === false ? [r] : cabinsOf(r))), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))]
+      // Its own copies: a cabin that takes a second bed must not change the program's room.
+      .map((r) => ({ ...r, mods: [...r.mods] }));
     const guns = own.filter((r) => r.dept === 'defence');
     const asks: BandAsk[] = own.map((spec) => ({ spec, angle: spec.dept === 'defence' ? (guns.indexOf(spec) * 2 * Math.PI) / Math.max(1, guns.length) : ANGLE[first] + (spec.dept === 'habitation' ? Math.PI : Math.PI / 2) }));
     const band = site.g.regions.length;
