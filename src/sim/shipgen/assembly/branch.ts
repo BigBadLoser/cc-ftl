@@ -28,7 +28,7 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * slab of one depth (the rooms keep their floor).
  */
 function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: !!rule.section.cross, ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: rule.section.cross ?? false, ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
@@ -45,7 +45,11 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
   // A neck: a corridor before the first section. A gated branch with none is gated at its first section's foot.
   const neck = (host.kind === 'rim' && roll(rng, rule.neck) > 0 ? host.along : 0) + roll(rng, rule.neck);
   if (neck > 0) {
-    const ps = a.place(port, joined, () => corridor(ctx, port, { length: Math.max(neck, rule.gated ? 3 : 0), ...(rule.gated ? { gated: true } : { pitch: K }) }));
+    const straight = (): Port[] | null => a.place(port, joined, () => corridor(ctx, port, { length: Math.max(neck, rule.gated ? 3 : 0), ...(rule.gated ? { gated: true } : { pitch: K }) }));
+    // A dogleg to one side, else to the other, else straight.
+    const jog = rule.jog && !rule.gated ? roll(rng, rule.jog) * (rng.chance(0.5) ? 1 : -1) : 0;
+    const bent = (shift: number): Port[] | null => a.place(port, joined, () => corridor(ctx, port, { length: neck, shift }));
+    const ps = Math.abs(jog) >= 2 ? bent(jog) ?? bent(-jog) ?? straight() : straight();
     if (!ps) return fail();
     a.corridors++;
     port = ps.find((p) => p.kind === 'end') as Port;

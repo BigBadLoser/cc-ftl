@@ -61,6 +61,9 @@ A recipe has a root, branch rules, and a few settings.
   sections: rooms in each, `rowDepth` for a slab of one depth, `cap` for a room across the far end, `cross` for a passage
   across it with a port on each flank. `gated` puts a gate at its foot. `docks` makes its first section the dock block.
   `mix` deals rooms to sections across departments.
+- Off-centre joins, for a scrapper's tree: `jog` on a rule bends its neck into a dogleg (it steps a few tiles sideways
+  halfway along, either way as the seed has it), and `cross: 'any'` on a section puts its cross passage anywhere along
+  the block instead of midway. Modules then stand off each other's centre lines.
 - `quarters`: how the crew sleeps. Default: quarters rooms, cut into one-bed cabins where they stand. `'scatter'`: every
   bed a small cabin among the other sections' rooms. `{ barracks: [min, max], singles }`: shared rooms of that many
   beds in double bunks, with a few private cabins scattered.

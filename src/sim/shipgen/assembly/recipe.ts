@@ -24,6 +24,11 @@ export interface BranchRule {
   host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
+  /**
+   * A dogleg in the neck: it steps this many tiles sideways halfway along, to either side as the seed has it, so the
+   * section stands off its host's line. Under two it runs straight; a range makes some necks straight and some not.
+   */
+  jog?: Roll;
   /** Rooms dealt to sections at random across the departments it takes, each section its own branch (scrappers). */
   mix?: boolean;
   /** Sections on one branch at most; a department with more gets another branch. Default: all on one. */
@@ -31,7 +36,7 @@ export interface BranchRule {
   /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch or stands against it. */
   gated?: boolean;
   /** Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the last one's end. */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean; even?: boolean; cross?: boolean };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean; even?: boolean; cross?: boolean | 'any' };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */

@@ -27,11 +27,14 @@ export interface CorridorOpts {
   gated?: boolean;
   /** Side ports every this many tiles (0: none). */
   pitch?: number;
+  /** A dogleg: halfway along it steps this many tiles sideways (to +v or -v, two at least) and carries on. No side ports. */
+  shift?: number;
 }
 
 /** A corridor from a port: a two-wide hall, ports at its end and along both sides. */
 export function corridor(c: Ctx, port: Port, o: CorridorOpts): Built | null {
   const f = port.frame, g = c.g;
+  if (o.shift) return dogleg(c, port, Math.max(4, o.length), o.shift);
   if (!clear(c, f, 0, o.length)) return null;
   const hall = g.hall();
   const from = o.gated ? 1 : 0;
@@ -50,6 +53,22 @@ export function corridor(c: Ctx, port: Port, o: CorridorOpts): Built | null {
   return { ports, regions: [hall], box: rect(f, 0, o.length + 1, -2, 2), run: { frame: f, length: o.length, hall } };
 }
 
+/** A corridor that steps sideways halfway: out, across, and on in the same heading, `shift` tiles over. */
+function dogleg(c: Ctx, port: Port, length: number, shift: number): Built | null {
+  const f = port.frame, g = c.g;
+  const t = Math.max(1, (length - 2) >> 1);
+  const legs: [number, number, number, number][] = [[0, t + 2, -1, 1], [t, t + 2, Math.min(-1, shift - 1), Math.max(1, shift + 1)], [t, length, shift - 1, shift + 1]];
+  if (!clear(c, f, 0, t + 2)) return null;
+  for (const [u0, u1, v0, v1] of legs.slice(1)) for (let u = u0; u < u1; u++) for (let v = v0; v < v1; v++) {
+    const [x, y] = at(f, u, v);
+    if (!c.inside(x, y) || c.reserved.has(key(x, y)) || (g.at(x, y) !== SPACE && !(u < t + 2 && v >= -1 && v < 1))) return null;
+  }
+  const hall = g.hall();
+  for (const [u0, u1, v0, v1] of legs) g.street(hall, ...rect(f, u0, u1, v0, v1));
+  const [x, y] = at(f, length, shift), lo = Math.min(-2, shift - 2), hi = Math.max(2, shift + 2);
+  return { ports: [{ frame: { x, y, dir: f.dir }, kind: 'end', hall, along: length, side: 0 }], regions: [hall], box: rect(f, 0, length + 1, lo, hi) };
+}
+
 export interface BlockOpts {
   /** One floor depth for both rows (a slab); the rooms' own when not given (staggered bays). */
   rowDepth?: number;
@@ -62,8 +81,11 @@ export interface BlockOpts {
   docks?: readonly RoomSpec[];
   /** A gate across its street at the foot: it joins its host directly and what is in it is controlled. */
   gate?: boolean;
-  /** A passage across it midway, out to both flanks, with a port at each: other sections join its sides. */
-  cross?: boolean;
+  /**
+   * A passage across it, out to both flanks, with a port at each: other sections join its sides. Midway, or with
+   * 'any' wherever along the block the seed has it (its foot and its far end included).
+   */
+  cross?: boolean | 'any';
   /** Cabins offered to it: they stand among its rooms, the shorter row first (bunks wherever there is room). */
   bunks?: readonly RoomSpec[];
 }
@@ -121,7 +143,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const ports: Built['ports'] = [], cross: [number, number, number, number][] = [];
   if (o.cross) {
     // First halves, the passage, then the rest.
-    const cut = rows.map((row) => Math.ceil(row.length / 2));
+    const where = o.cross === 'any' ? c.rng.next() : 0.5;
+    const cut = rows.map((row) => (o.cross === 'any' ? Math.round(where * row.length) : Math.ceil(row.length / 2)));
     const e0 = lay(rows[0].slice(0, cut[0]), -1, u0), e1 = lay(rows[1].slice(0, cut[1]), 1, u0);
     if (e0 === null || e1 === null) return null;
     const e = Math.max(e0, e1, u0 + 2);

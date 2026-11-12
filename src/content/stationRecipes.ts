@@ -9,20 +9,24 @@ import type { Recipe } from '../sim/shipgen/assembly/recipe';
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
  * block first, the machinery as one gated module. `mix` false keeps a module to one department.
  */
-const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number }): Recipe => ({
-  name,
-  root: { kind: 'core' },
-  spacing: o.spacing,
-  ...(o.quarters ? { quarters: o.quarters } : {}),
-  ...(o.braces ? { braces: o.braces } : {}),
-  branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
-    o.mix
-      ? { takes: ['commons', 'freight', 'works', 'habitation', 'defence'], per: 'together', mix: true, host: { on: 'section' }, neck: o.stub, section: { rooms: o.rooms, cross: true }, link: 0 }
-      : { takes: ['commons', 'freight', 'works', 'habitation', 'defence'], per: 'department', host: { on: 'section' }, neck: o.stub, section: { rooms: o.rooms, cross: true }, link: 0, most: 1 },
-    { takes: ['secure'], per: 'together', host: { on: 'section' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
-  ],
-});
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number; jog?: [number, number]; cross?: 'any' }): Recipe => {
+  const section = { rooms: o.rooms, cross: o.cross ?? true };
+  const takes = ['commons', 'freight', 'works', 'habitation', 'defence'] as const;
+  return {
+    name,
+    root: { kind: 'core' },
+    spacing: o.spacing,
+    ...(o.quarters ? { quarters: o.quarters } : {}),
+    ...(o.braces ? { braces: o.braces } : {}),
+    branches: [
+      { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
+      o.mix
+        ? { takes, per: 'together', mix: true, host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0 }
+        : { takes, per: 'department', host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0, most: 1 },
+      { takes: ['secure'], per: 'together', host: { on: 'section' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
+    ],
+  };
+};
 
 /**
  * A compound: an inhabited ring or arc with a substantial industrial block joined to it. The secure rooms are the gated
@@ -46,9 +50,9 @@ const compound = (name: string, o: {
 
 export const stationRecipes = {
   tree: [
-    scrap('braced: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
-    scrap('braced: mixed modules on longer stubs', { rooms: [2, 4], stub: [3, 6], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
-    scrap('no braces (before): one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
+    scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
+    scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any' }),
+    scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
