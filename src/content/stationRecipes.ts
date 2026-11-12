@@ -55,8 +55,9 @@ const compound = (name: string, o: {
 
 export const stationRecipes = {
   tree: [
-    cluster('cluster: slabs joined at ends and sides', { rooms: [2, 4], rowDepth: 5, link: [0, 0], cross: true, spacing: 0 }),
-    cluster('cluster: small staggered modules', { rooms: [2, 3], link: [0, 0], cross: true, spacing: 0 }),
+    cluster('cluster: slabs joined at ends and sides', { rooms: [4, 8], rowDepth: 5, link: [0, 0], cross: true, spacing: 0 }),
+    cluster('cluster: small staggered modules', { rooms: [3, 6], link: [0, 0], cross: true, spacing: 0 }),
+    cluster('cluster: small modules on short stubs', { rooms: [3, 5], link: [2, 3], cross: true, spacing: 2 }),
     trunked('short trunk: branches joined straight on', { pairs: 0.8, step: [14, 20], rooms: [3, 5], link: [0, 0], most: 2 }),
   ],
   compound: [

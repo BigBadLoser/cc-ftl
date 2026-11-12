@@ -190,7 +190,8 @@ function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonl
   const ends: (Port | null)[] = [];
   let lastTrunk: Port | null = null, cursor = 0, berthed = false;
   for (const [k, rule] of recipe.branches.entries()) {
-    const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept));
+    // Quarters stand as cabins, one bed each, here as on a ring: a section of them is a row of small rooms.
+    const mine = rooms.filter((r) => rule.takes.includes(r.dept as Dept)).flatMap(cabinsOf);
     const whole = rule.per === 'together' ? [mine] : rule.takes.map((d) => mine.filter((r) => r.dept === d));
     // A department with more sections than a branch carries is shared out over several branches.
     const groups = whole.flatMap((grp) => {

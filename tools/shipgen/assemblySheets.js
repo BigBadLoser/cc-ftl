@@ -2,7 +2,7 @@
 /**
  * Assembly prototype sheets: the recipes of src/content/stationRecipes.ts, assembled for several seeds and drawn through
  * the original views (silhouette, structure, departments). Unfurnished: composition first.
- *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir]
+ *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]   (--versus: the old grammar as the first row)
  * One set of sheets per family (tree: the pirate station's rooms; compound: the mining station's). A row per recipe
  * variation, a column per seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel.
  */
@@ -15,6 +15,7 @@ const arg = (f, d) => { const i = args.indexOf(`--${f}`); return i < 0 ? d : arg
 const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
+const VERSUS = { tree: 'stationTree' };
 const PROGRAM = { tree: ['station.pirate', 'hub'], compound: ['station.mining', 'station'] };
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true } });
@@ -41,6 +42,18 @@ try {
   for (const [family, recipes] of Object.entries(stationRecipes)) {
     const [kind, size] = PROGRAM[family];
     const rows = [];
+    // --versus: the old grammar for the same rooms and seeds as the first row, through the whole old pipeline.
+    if (args.includes('--versus') && VERSUS[family]) {
+      const def = content.stations[kind];
+      const d2 = { ...def, tiers: { ...def.tiers, [size]: { ...def.tiers[size], grammars: [{ value: VERSUS[family], weight: 1 }] } } };
+      rows.push(seeds.map((seed) => {
+        const g = sg.generateStation(d2, kind, size, seed, content.modules, true, 'off');
+        g.depts = g.rooms.map((rm) => (rm.role === 'hall' ? 'circulation' : rm.role === 'plaza' ? 'commons' : dep.deptOf({ role: rm.role })));
+        const floor = [...g.roomOf].filter((k) => k >= 0).length;
+        console.log(`${family} | OLD ${VERSUS[family]} | seed ${seed}: ${g.width}x${g.height}, rooms ${g.rooms.length}, floor ${floor}, 2x2 ${wallBlocks(g).length}`);
+        return { title: `OLD ${VERSUS[family].replace('station', '').toUpperCase()} - seed ${seed} - ${g.width}x${g.height}`, g };
+      }));
+    }
     for (const recipe of recipes) {
       const row = [];
       for (const seed of seeds) {
@@ -52,7 +65,7 @@ try {
         const g = asResult(ok);
         const hull = stationHullIntegrityProblems(g.template), thin = roomCores(g).filter((c) => Math.min(c.w, c.h) < 3).length;
         console.log(`${family} | ${recipe.name} | seed ${seed}: ${g.width}x${g.height}${ok.R ? `, R ${ok.R}` : ''}, sections ${ok.sections}, corridors ${ok.corridors}, rooms ${ok.rooms}/${rooms.length} placed, floor ${[...g.roomOf].filter((k) => k >= 0).length}, 2x2 ${wallBlocks(g).length}, hull ${hull[0]?.replace('graph-wheel ', '') ?? 'ok'}, under 3 wide ${thin}, rejected first ${rejected.length}${rejected.length ? ` (${rejected[0]})` : ''}, ${ms} ms`);
-        row.push({ title: `${recipe.name.toUpperCase()} - seed ${seed}`, g });
+        row.push({ title: `${recipe.name.toUpperCase()} - seed ${seed} - ${g.width}x${g.height}`, g });
       }
       rows.push(row);
     }
