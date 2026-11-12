@@ -4,7 +4,7 @@
   import JobCards from './JobCards.svelte';
 
   /** The jobs board's content: the jobs asked by passengers, yours, finished ones to hand in, and the work posted here. */
-  let { api, note = true }: { api: UiApi; /** The long rules note under the cards (the game shows it; the wiki explains the same in its text). */ note?: boolean } = $props();
+  let { api }: { api: UiApi } = $props();
   let jobs = $state<UiJobs>({ here: null, offers: [], active: [], handIn: [], asked: [], max: 0, mine: null });
   onMount(() => api.jobs.subscribe((v) => (jobs = v)));
 </script>
@@ -26,14 +26,12 @@
   {#if jobs.here === null}
     <p class="none">Jobs are posted at stations: drop out of hyperspace to see them.</p>
   {:else if !jobs.offers.length}
-    <p class="none">No work posted here.</p>
+    <p class="none">No work posted here. Trade stations post deliveries, military stations and depots bounties, research stations surveys.</p>
   {/if}
   <JobCards {api} {jobs} list="offers" />
-  {#if note}<p class="note">Trade stations post deliveries, military stations and depots bounties, research stations surveys. A delivery comes aboard as a sealed crate, set on deck apart from your hold; at the destination the station sends a shuttle, your crew carry the crate to the airlock and you are paid when it is taken. A missed one is broken open, its goods yours, but it costs standing with the issuer and marks you a thief (notoriety). A bounty or survey you finish is paid when you hand it in at a station of the same type and faction that posted it. A passenger you took in asks for passage home: accepted, you are paid when they are handed over at their port; refused, they get off at the next port.</p>{/if}
 
 <style>
   h3 { display: flex; justify-content: space-between; margin: 10px 0 4px; font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-accent); }
   h3 span { color: var(--dim); text-transform: none; letter-spacing: 0; }
-  .none, .note { color: var(--dim); font-size: 12px; margin: 2px 0; }
-  .note { margin-top: 10px; }
+  .none { color: var(--dim); font-size: 12px; margin: 2px 0; }
 </style>

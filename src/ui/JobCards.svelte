@@ -11,6 +11,17 @@
   const full = $derived(jobs.active.length >= jobs.max);
   const far = (j: UiJob): string => (j.here ? 'here' : j.hops === null ? 'out of range' : `${j.hops} jump${j.hops === 1 ? '' : 's'}`);
   const turns = (j: UiJob): string => `${j.turnsLeft} turn${j.turnsLeft === 1 ? '' : 's'} left`;
+  const KIND_TIP: Record<UiJob['kind'], string> = {
+    delivery: 'The crate comes aboard sealed, set on deck apart from your hold. At the destination a shuttle comes; carry the crate to the airlock.',
+    bounty: 'Destroy the target, then hand it in at a military station or depot of the client.',
+    survey: 'Enter the node, then hand it in at a research station of the client.',
+    passage: 'Accepted, you are paid when they are handed over at their port. Refused, they get off at the next port.',
+  };
+  const PAY_TIP: Record<UiJob['kind'], string> = {
+    delivery: 'Paid when the crate is taken at the destination.', bounty: 'Paid on hand-in.', survey: 'Paid on hand-in.', passage: 'Paid when the passenger is handed over.',
+  };
+  const MISSED_TIP = 'A missed delivery breaks the crate open: its goods are yours, but you lose standing with the client and are marked a thief.';
+  const HANDIN_TIP = 'Hand it in at a station of the same type and faction that posted it.';
   const VERDICT = { outmatched: 'Outmatched', even: 'Even match', weaker: 'Weaker than you' } as const;
   const ROWS: { key: keyof UiStrength; label: string }[] = [
     { key: 'guns', label: 'Guns' }, { key: 'shields', label: 'Shields' }, { key: 'hull', label: 'Size' },
@@ -18,13 +29,13 @@
 </script>
 
 {#snippet head(j: UiJob)}
-  <div class="t"><b>{j.title}</b><span class="pay">{j.reward} cr</span></div>
+  <div class="t"><b use:tip={{ text: KIND_TIP[j.kind] }}>{j.title}</b><span class="pay" use:tip={{ text: PAY_TIP[j.kind] }}>{j.reward} cr</span></div>
   {#if j.detail}<div class="sub">{j.detail}</div>{/if}
   <dl class="facts">
     <div><dt><Icon name="map" size={13} title="Where" /></dt><dd>{j.where}</dd></div>
     <div><dt><Icon name="ship" size={13} title="Distance" /></dt><dd>{far(j)}</dd></div>
-    <div><dt><Icon name="clock" size={13} title="Time left" /></dt><dd>{turns(j)}</dd></div>
-    <div><dt><Icon name="flag" size={13} title="Client" /></dt><dd>{j.issuer}</dd></div>
+    <div><dt><Icon name="clock" size={13} title="Time left" /></dt><dd use:tip={{ text: j.kind === 'delivery' ? MISSED_TIP : '' }}>{turns(j)}</dd></div>
+    <div><dt><Icon name="flag" size={13} title="Client" /></dt><dd use:tip={{ text: j.kind === 'bounty' || j.kind === 'survey' ? HANDIN_TIP : '' }}>{j.issuer}</dd></div>
   </dl>
 {/snippet}
 

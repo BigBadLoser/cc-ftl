@@ -6,7 +6,7 @@ import { spawnContact } from '../sim/galaxy/arrivals';
 import { offersHere, portOffers } from '../sim/galaxy/jobOffers';
 import { ensureAround } from '../sim/galaxy/state';
 import { content } from '../content';
-import { buildJobs } from './jobsSnapshot';
+import { buildJobs, shipOf } from './jobsSnapshot';
 import { buildStarmap } from './starmapSnapshot';
 
 describe('buildJobs', () => {
@@ -100,5 +100,13 @@ describe('buildStarmap job markers', () => {
     }
     expect(nodes.filter((n) => !n.known).every((n) => !n.jobs?.length)).toBe(true);
     expect(nodes.some((n) => n.jobs?.length)).toBe(true);
+  });
+});
+
+describe('shipOf', () => {
+  it('drops a leading "The" so a bounty reads "a Cartel ship"', () => {
+    expect(shipOf('The Cartel')).toBe('Cartel');
+    expect(shipOf('Raider Clans')).toBe('Raider Clans');
+    expect(shipOf(undefined)).toBe('hostile');
   });
 });
