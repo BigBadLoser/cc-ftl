@@ -184,8 +184,16 @@ DESIGNS = {"s1": (rack_row, (3, 1)), "s2": (tiered, (2, 2)), "s3": (echelon, (3,
            "c1": (sled, (1, 2)), "c2": (trolley, (1, 2)), "c3": (tray, (1, 2))}
 
 
+def designs(v):
+    """The design table holding v (this round's or a later one's)."""
+    if v in DESIGNS:
+        return DESIGNS
+    from . import slab_study2
+    return slab_study2.DESIGNS
+
+
 def build(v):
-    fn, fp = DESIGNS[v]
+    fn, fp = designs(v)[v]
     k = K(f"slab_{v}", fp)
     slabs = fn(k)
     return k, k.build(), slabs
@@ -208,7 +216,7 @@ def scene_items(v):
     post.select(PAL)
     k, objs, slabs = build(v)
     c, op, g, ox, oy, _ = E.render_sprite("x", "prop", objs)
-    scene = E.crop_item(f"slab.study.{v}", DESIGNS[v][1], c, op, g, ox, oy)
+    scene = E.crop_item(f"slab.study.{v}", designs(v)[v][1], c, op, g, ox, oy)
     out = [scene]
     corners = []
     for i, s in enumerate(slabs):
@@ -236,11 +244,19 @@ def scene_items(v):
 def face_quad_objs(v, i):
     """Slab i's face window alone, a hair in front of the face (the mask the press fills). The scene is built into a
     mesh that is never linked, only to place slab i the same way."""
-    slabs = DESIGNS[v][0](K(f"slab_{v}_tmp", DESIGNS[v][1]))
-    f = K(f"slab_{v}_face{i}", DESIGNS[v][1])
-    quad(f, slabs[i].corners(), "slbFace", slabs[i].N)
+    fn, fp = designs(v)[v]
+    s = fn(K(f"slab_{v}_tmp", fp))[i]
+    f = K(f"slab_{v}_face{i}", fp)
+    if hasattr(s, "mask_outline"):                  # a shaped face (round 2's coffin): its own outline
+        from .slab_study2 import poly
+        poly(f, [s.p(l, w, 0.003) for l, w in s.mask_outline], "slbFace", s.N)
+    else:
+        l0, l1, hw = s.window()
+        n = getattr(s, "mask_n", 0.006)
+        quad(f, [s.p(l1, -hw, n), s.p(l1, hw, n), s.p(l0, hw, n), s.p(l0, -hw, n)], "slbFace", s.N)
     return f.build()
 
 
 def jobs():
-    return [job(v) for v in DESIGNS]
+    from . import slab_study2
+    return [job(v) for v in DESIGNS] + [job(v) for v in slab_study2.DESIGNS]

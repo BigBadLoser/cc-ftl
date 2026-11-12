@@ -1,4 +1,4 @@
-"""Slab study sheet: each scene over a floor, the crew sprite pressed into every slab face (a stand-in for the game's
+"""Slab study sheet (args: outdir faces.json out [round]): each scene over a floor, the crew sprite pressed into every slab face (a stand-in for the game's
 shader: the crew's shading carried into the face colour, its outline cut in, a tint of the field). args: outdir faces.json out"""
 import json, sys
 sys.path.insert(0, "/home/user/cc-ftl/tools/blender/review")
@@ -6,7 +6,8 @@ import numpy as np
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso
 from PIL import Image, ImageDraw
 G = Assets(sys.argv[1]); pub = Assets(ROOT / "public/assets/1x"); faces = json.load(open(sys.argv[2]))
-TINT = {"1": (127, 240, 255), "2": (255, 176, 74), "3": (127, 240, 255)}
+TINT = {"1": (127, 240, 255), "2": (255, 176, 74), "3": (127, 240, 255), "4": (127, 240, 255), "5": (255, 176, 74),
+        "6": (127, 240, 255)}
 crew = human(pub, 1)[0]
 ys, xs = np.nonzero(crew[..., 3]); crew = crew[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
 def coeffs(dst, w, h):
@@ -49,9 +50,13 @@ def scene(v):
         img, _, an = G.static(aid)
         press(c, [(ox + x, oy + y) for x, y in quad], img, ox - an["x"], oy - an["y"], TINT[v[1]])
     return Image.fromarray(c.px[..., :3])
-order = ["s1", "s2", "s3", "c1", "c2", "c3"]
+ROUNDS = {"1": ["s1", "s2", "s3", "c1", "c2", "c3"], "2": ["s4", "s5", "s6", "c4", "c5", "c6"]}
+order = ROUNDS[sys.argv[4] if len(sys.argv) > 4 else "1"]
 names = {"s1": "1 graphite: rack row (3x1)", "s2": "2 prison block: tiered stand (2x2)", "s3": "3 medical: echelon rack (3x1)",
-         "c1": "1 graphite: hover sled", "c2": "2 prison block: trolley", "c3": "3 medical: anti-grav tray"}
+         "c1": "1 graphite: hover sled", "c2": "2 prison block: trolley", "c3": "3 medical: anti-grav tray",
+         "s4": "4 coffin: one to a 1x1 stand", "s5": "5 clamp block: wall rack (3x1, wall for context)",
+         "s6": "6 halo frame: corner shrine (2x2)", "c4": "4 coffin: hover cart", "c5": "5 clamp block: hand truck",
+         "c6": "6 halo frame: gurney"}
 Z = 3
 sheet = Image.new("RGB", (3 * (260 * Z + 10), 2 * (230 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for i, v in enumerate(order):
