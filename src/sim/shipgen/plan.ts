@@ -61,6 +61,8 @@ export interface RoomSpec {
   cabins?: boolean;
   /** Station assembly: a warehouse (the plan's crate rooms merged), with two doors. */
   warehouse?: boolean;
+  /** Station assembly: an ore hold, and which of the station's ore cages it hangs in. */
+  cage?: number;
 }
 
 /** Everything the ship carries, grouped into rooms. Topologies decide where each room goes. */

@@ -102,14 +102,16 @@ export class RegionGrid {
   private readonly gates: [number, number][] = [];
 
   /** The grid as it stands, to come back to with `reset` after a trial placement. */
-  mark(): { own: Int16Array; regions: number; gates: number } {
-    return { own: this.own.slice(), regions: this.regions.length, gates: this.gates.length };
+  mark(): { own: Int16Array; regions: number; gates: number; beams: number[] } {
+    return { own: this.own.slice(), regions: this.regions.length, gates: this.gates.length, beams: [...this.beams] };
   }
 
-  reset(m: { own: Int16Array; regions: number; gates: number }): void {
+  reset(m: { own: Int16Array; regions: number; gates: number; beams: number[] }): void {
     this.own.set(m.own);
     this.regions.length = m.regions;
     this.gates.length = m.gates;
+    this.beams.clear();
+    for (const k of m.beams) this.beams.add(k);
   }
 
   /** A door forced at a wall tile between two halls (a checkpoint: the only way through a solid line). */

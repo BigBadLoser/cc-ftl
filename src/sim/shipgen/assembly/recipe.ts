@@ -66,6 +66,13 @@ export interface Recipe {
    * station of modules on stubs reads as one structure. The chance, 0 to 1, that a gap that can take a brace gets one.
    */
   braces?: number;
+  /**
+   * Ore cages: each of the program's cages hangs off a flank or an end of some section, on a stub of this length. A
+   * cage is a rail with its holds in a row beyond it, `gap` open tiles between holds, and in gaps of three or more a
+   * tooth of beam reaching `tooth` tiles past the holds. Without this the holds stand as ordinary freight rooms.
+   * Hard: every hold stands, and the space beyond a cage stays open.
+   */
+  cages?: { stub: Roll; gap: Roll; tooth: Roll };
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }

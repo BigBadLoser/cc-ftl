@@ -214,6 +214,34 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   return { ports, regions, box: whole, took: bunks.length };
 }
 
+/**
+ * An ore cage on a port: a stub out to a rail across it, the holds in a row beyond the rail with open gaps between,
+ * and a tooth of beam in every gap of three or more. The space beyond the holds is kept clear.
+ */
+export function cage(c: Ctx, port: Port, holds: readonly RoomSpec[], o: { stub: number; gap: number; tooth: number }): Built | null {
+  const f = port.frame, g = c.g, first = holds[0];
+  if (!first) return null;
+  const s = Math.max(2, o.stub), w = first.w + 2, out = first.h + 2;
+  const T = holds.length * w + (holds.length - 1) * o.gap, v0 = -(T >> 1);
+  const far = s + 2 + out + o.tooth;
+  const whole = rect(f, 0, far + 4, v0 - 1, v0 + T + 1);
+  for (let y = whole[1]; y < whole[3]; y++) for (let x = whole[0]; x < whole[2]; x++) if (!c.free(x, y) || c.site.hull?.(x, y)) return null;
+  const hall = g.hall('hall', 'freight');
+  g.street(hall, ...rect(f, 0, s + 2, -1, 1));
+  g.street(hall, ...rect(f, s, s + 2, v0, v0 + T));
+  const regions = [hall];
+  for (const [i, spec] of holds.entries()) {
+    const v = v0 + i * (w + o.gap), id = g.room(spec.role, { spec, access: [hall] });
+    g.rect(id, ...rect(f, s + 2, s + 2 + out, v, v + w));
+    regions.push(id);
+    if (i < holds.length - 1 && o.gap >= 3) for (let u = s + 3; u < far; u++) g.beam(...at(f, u, v + w + (o.gap >> 1)));
+  }
+  // Open space beyond the holds: where the ore barges come alongside.
+  const beyond = rect(f, s + 2 + out, far + 4, v0 - 1, v0 + T + 1);
+  for (let y = beyond[1]; y < beyond[3]; y++) for (let x = beyond[0]; x < beyond[2]; x++) c.reserved.add(key(x, y));
+  return { ports: [], regions, box: whole };
+}
+
 /** A single room on a port, opening onto the hall behind it: a pod, or with `dock` a dock with its clear space kept. */
 export function single(c: Ctx, port: Port, spec: RoomSpec, dock = false): Built | null {
   const f = port.frame, g = c.g;

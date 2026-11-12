@@ -69,6 +69,10 @@ A recipe has a root, branch rules, and a few settings.
   beds in double bunks, with a few private cabins scattered.
 - `braces`: the chance that a gap between two sections gets a beam (the game's open truss tile, `=`). A truss of two
   chords where the gap is long and there is room, one beam otherwise; none through the clear space off a dock.
+- `cages`: ore cages (mining stations). The program lists the ore holds, grouped by cage; with `cages` on the recipe
+  each group hangs off a flank or an end on a stub: a rail across it, the holds in a row beyond the rail with open
+  gaps, a tooth of beam in gaps of three or more, and the space beyond kept clear. Without it the holds are freight
+  rooms like any other.
 - `spacing`: clear ground between sections that are not joined.
 
 ### Hard checks and preferences
@@ -135,6 +139,15 @@ Eight recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compou
 32 of 32 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes.
 `stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
 which has 43 to 56 solid wall blocks.
+
+### The spine (first pass)
+
+`stationRecipes.spine`, on the mining station's rooms with the old Spine as the first row (`--family spine --versus`):
+the harbour at the head, habitation with the commons and the guns as the body (sections in series, joined directly),
+the machinery behind a gate at the tail, works and freight as wings on stubs off the flanks, ore cages on what ports
+are left. 8 of 8 assemble with every room and hold standing; a cage is the part most often refused (up to six
+candidates rejected before one stands). Read against the old Spine it is a heavy bar with two wings rather than a thin
+line of pods, the body is nearly all cabins, and the cages hang off the wings more often than off the spine.
 
 ## Known limits
 

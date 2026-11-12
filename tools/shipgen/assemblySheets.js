@@ -2,8 +2,8 @@
 /**
  * Station assembly sheets: the recipes of src/content/stationRecipes.ts, assembled for several seeds and drawn through
  * the original views (silhouette, structure, departments). Unfurnished: composition first.
- *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]   (--versus: the old grammar as the first row)
- * One set of sheets per family (tree: the pirate station's rooms; compound: the mining station's). A row per recipe
+ *   node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--family tree] [--versus]   (--versus: the old grammar as the first row)
+ * One set of sheets per family (tree: the pirate hub's rooms; spine and compound: the mining station's). A row per recipe
  * variation, a column per seed. Nothing is filtered: a seed that cannot be assembled shows as a rejected panel.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -16,8 +16,9 @@ const arg = (f, d) => { const i = args.indexOf(`--${f}`); return i < 0 ? d : arg
 const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
-const VERSUS = { tree: 'stationTree' };
-const PROGRAM = { tree: ['station.pirate', 'hub'], compound: ['station.mining', 'station'] };
+const VERSUS = { tree: 'stationTree', spine: 'stationSpine' };
+const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'] };
+const only = arg('family', '');
 
 function crc32(buf) {
   let c = ~0;
@@ -61,6 +62,7 @@ try {
     };
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {
+    if (only && family !== only) continue;
     const [kind, size] = PROGRAM[family];
     const rows = [];
     // --versus: the old grammar for the same rooms and seeds as the first row, through the whole old pipeline.

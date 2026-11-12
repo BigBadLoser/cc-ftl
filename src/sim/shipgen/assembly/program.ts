@@ -109,7 +109,7 @@ const WAREHOUSE = 24;
 
 /** The plan's cargo rooms merged into warehouses: a few large rectangles for aisles of racks, in place of many small crate rooms. */
 export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
-  const cargo = rooms.filter((r) => r.role === 'cargo');
+  const cargo = rooms.filter((r) => r.role === 'cargo' && r.cage === undefined);
   if (cargo.length < 2) return [...rooms];
   const mods = cargo.flatMap((r) => r.mods), items = cargo.flatMap((r) => r.items ?? []);
   const k = Math.max(1, Math.ceil(mods.length / WAREHOUSE));
@@ -168,10 +168,24 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
   return out;
 }
 
+/**
+ * Ore cages (mining stations): two to five ore holds each, to hang in a row on a rail. A hold is two or three tiles
+ * wide and three or four out, crates on all but the row they are reached from.
+ */
+function oreHolds(rng: Rng, cages: number): RoomSpec[] {
+  const out: RoomSpec[] = [];
+  for (let k = 0; k < cages; k++) {
+    const w = rng.int(2, 3), h = rng.int(3, 4), each = w * (h - 1);
+    const n = Math.max(2, Math.min(5, Math.ceil(rng.int(12, 24) / each)));
+    for (let i = 0; i < n; i++) out.push({ ...cargoSpec(each), w, h, cage: k });
+  }
+  return out;
+}
+
 /** Every room of a station of `def`'s kind at a size tier, for `assemble`. `commons` false leaves the common rooms plain. */
 export function stationProgram(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>, o: { commons?: boolean } = {}): RoomSpec[] {
   const { command, rest } = planned(rng, def, size, defs);
   const base = warehoused([command, ...shuffle(rng, rest)]);
-  const rooms = [...base, ...medbays(base), ...plant(base)];
+  const rooms = [...base, ...medbays(base), ...plant(base), ...oreHolds(rng, def.tiers[size].cages ?? 0)];
   return o.commons === false ? rooms : withCommons(rooms, size);
 }

@@ -2,7 +2,7 @@ import type { RoomSpec } from '../plan';
 import { shuffle } from '../civilKit';
 import { roll, type Asm } from './asm';
 import type { Dept } from './dept';
-import { block, corridor, single } from './elements';
+import { block, cage, corridor, single } from './elements';
 import { K } from './lattice';
 import type { Dir, Port } from './model';
 import type { BranchRule, Recipe } from './recipe';
@@ -88,7 +88,7 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
 }
 
 /** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
-export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[]): string {
+export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[], cages: readonly RoomSpec[][] = []): string {
   const { ctx } = a, { rng } = ctx;
   if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
   const ends: (Port | null)[] = [];
@@ -150,6 +150,14 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
       }
       ends[k] = made.end;
     }
+  }
+  // Ore cages: each on a port that is left, the ones on a flank first.
+  for (const holds of cages) {
+    const o = recipe.cages;
+    if (!o) break;
+    const open = shuffle(rng, a.ports.filter((p) => !p.used && !a.sealed.has(p.hall) && (p.kind === 'end' || p.kind === 'side'))).sort((p, q) => Number(!!q.flank) - Number(!!p.flank));
+    const size = { stub: roll(rng, o.stub), gap: roll(rng, o.gap), tooth: roll(rng, o.tooth) };
+    if (!open.some((p) => a.place(p, new Set(a.elements[p.owner]?.regions ?? []), () => cage(ctx, p, holds, size)))) return `no place for an ore cage of ${holds.length} holds (${open.length} ports tried)`;
   }
   // Cabins no section took: pods on what ports are left.
   for (const bunk of [...pool]) {

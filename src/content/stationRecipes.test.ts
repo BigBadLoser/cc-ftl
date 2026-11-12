@@ -39,6 +39,12 @@ describe('station recipes', () => {
     expect(assembled(stationRecipes.compound[0], 'station.mining', 'station', 1)).toEqual([]);
   });
 
+  it('hangs every ore hold in a cage on the spine', () => {
+    const { rooms } = programOf('station.mining', 'station', 3);
+    expect(rooms.filter((r) => r.cage !== undefined).length).toBeGreaterThanOrEqual(2);
+    expect(assembled(stationRecipes.spine[0], 'station.mining', 'station', 3)).toEqual([]);
+  });
+
   it('assembles departments off a trunk', () => {
     const trunk: Recipe = {
       name: 'trunk', root: { kind: 'trunk', pairs: 0.6, step: [8, 12] }, spacing: 2,

@@ -48,11 +48,33 @@ const compound = (name: string, o: {
   ],
 });
 
+/**
+ * A spine: the departments in sequence along one street, the harbour at its head and the machinery behind a gate at
+ * its tail, with the works and the freight as wings off its flanks.
+ */
+const spine = (name: string, o: { body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; braces?: number }): Recipe => ({
+  name,
+  root: { kind: 'core' },
+  spacing: 2,
+  ...(o.braces ? { braces: o.braces } : {}),
+  cages: { stub: [2, 4], gap: [1, 4], tooth: [1, 3] },
+  branches: [
+    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
+    { takes: ['habitation', 'commons', 'defence'], per: 'together', host: { on: 'after', rule: 0 }, neck: 0, section: { rooms: o.body, cross: 'any', ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) }, link: 0 },
+    { takes: ['secure'], per: 'together', host: { on: 'after', rule: 1 }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
+    { takes: ['works', 'freight'], per: 'department', host: { on: 'section' }, neck: o.stub, section: { rooms: o.wings, cross: true }, link: 0 },
+  ],
+});
+
 export const stationRecipes = {
   tree: [
     scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
     scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any' }),
     scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
+  ],
+  spine: [
+    spine('departments in sequence, works and freight as wings', { body: [6, 8], wings: [2, 4], stub: [2, 4], braces: 0.9 }),
+    spine('one depth along the street', { body: [6, 8], rowDepth: 5, wings: [2, 4], stub: [2, 4], braces: 0.9 }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
