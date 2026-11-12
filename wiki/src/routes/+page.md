@@ -17,8 +17,11 @@ features:
     description: Look up modules, item statistics, and construction requirements straight from game definitions.
     link: /reference/modules/
   - title: Explore the galaxy
-    description: Learn factions, travel, exploration, and the systems behind a working ship.
-    link: /reference/factions/
+    description: Learn travel, encounters, salvage, trade and the factions you meet along the way.
+    link: /mechanics/encounters/
+  - title: What's new
+    description: Patch notes for every release of the live game.
+    link: /whats-new/
 ---
 
 The wiki is under development. Reference statistics are sourced from the game code; guides explain gameplay rather than implementation internals.

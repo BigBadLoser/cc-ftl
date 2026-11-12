@@ -86,6 +86,11 @@ or removes content. Before non-trivial work, read the index at the top of `docs/
   effect merges, add a line under "Unreleased" (New / Changed / Fixed) with its PR link. A Pages deploy is a release
   named by its date: before the user runs the deploy, rename "Unreleased" to that date and start a new empty one. A
   deploy implies no size; milestones and version numbers are labelled only when the user declares them.
+- The player wiki (`wiki/`, see `wiki/README.md`) stays current with the game. A PR with a player-facing change updates the
+  hand-written page that covers it (`wiki/src/routes/{guides,mechanics}/`), or adds one and its sidebar entry in
+  `wiki/vite.config.ts`, in the PR itself (the CHANGELOG line follows at merge); the PR body names the wiki page it touched. Reference pages
+  and "What's new" are generated from content and `CHANGELOG.md`, so they need no edit. Unfinished behaviour goes in
+  `<ComingLater>`; never describe what isn't in the game.
 - GitHub issues track the work. Every bug or piece of work gets an issue (create one if none exists), and every PR
   links it: `Closes #N` when it finishes the issue, `Part of #N` when it doesn't. Reference the issue in commit messages
   (`Refs #N`). When work lands or stalls without a PR, comment on the issue.

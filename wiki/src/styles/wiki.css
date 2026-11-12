@@ -659,3 +659,10 @@ kbd {
 .feature-item .feature-title::after { flex: 1 1 0; min-width: 6px; margin-left: 5px; }
 /* Titles rise 7px above their cards, so card grids need a little more room between rows. */
 .wiki-reference-grid, .wiki-module-grid { row-gap: 1.25rem !important; }
+
+/* The game's build menu is fixed to the bottom of the game window; in a guide it sits in the page flow. */
+.wiki-build-embed [data-testid='build-catalog'] { position: relative !important; inset: auto !important; }
+/* Its card popovers float over the page like in the game, so they go above the wiki's header and sidebar. */
+.wiki-build-embed .pop { z-index: 1000 !important; }
+/* Game tooltips (the live panels' TipHost) draw over everything, the wiki's header and sidebar included. */
+.game-ui .tip-host { z-index: 1000 !important; }
