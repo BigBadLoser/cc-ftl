@@ -29,13 +29,13 @@
 </script>
 
 {#snippet head(j: UiJob)}
-  <div class="t"><b use:tip={{ text: KIND_TIP[j.kind] }}>{j.title}</b><span class="pay" use:tip={{ text: PAY_TIP[j.kind] }}>{j.reward} cr</span></div>
+  <div class="t"><b use:tip={{ text: KIND_TIP[j.kind], focus: true }}>{j.title}</b><span class="pay" use:tip={{ text: PAY_TIP[j.kind], focus: true }}>{j.reward} cr</span></div>
   {#if j.detail}<div class="sub">{j.detail}</div>{/if}
   <dl class="facts">
     <div><dt><Icon name="map" size={13} title="Where" /></dt><dd>{j.where}</dd></div>
     <div><dt><Icon name="ship" size={13} title="Distance" /></dt><dd>{far(j)}</dd></div>
-    <div><dt><Icon name="clock" size={13} title="Time left" /></dt><dd use:tip={{ text: j.kind === 'delivery' ? MISSED_TIP : '' }}>{turns(j)}</dd></div>
-    <div><dt><Icon name="flag" size={13} title="Client" /></dt><dd use:tip={{ text: j.kind === 'bounty' || j.kind === 'survey' ? HANDIN_TIP : '' }}>{j.issuer}</dd></div>
+    <div><dt><Icon name="clock" size={13} title="Time left" /></dt><dd use:tip={{ text: j.kind === 'delivery' ? MISSED_TIP : '', focus: j.kind === 'delivery' }}>{turns(j)}</dd></div>
+    <div><dt><Icon name="flag" size={13} title="Client" /></dt><dd use:tip={{ text: j.kind === 'bounty' || j.kind === 'survey' ? HANDIN_TIP : '', focus: j.kind === 'bounty' || j.kind === 'survey' }}>{j.issuer}</dd></div>
   </dl>
 {/snippet}
 
