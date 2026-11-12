@@ -19,11 +19,8 @@ const itemIcons: Record<string, UiIcon> = Object.fromEntries(
   Object.entries(sprites as Record<string, string>).map(([id, src]) => [id, { src, x: 0, y: 0, w: 72, h: 72, sheetW: 72, sheetH: 72 }]),
 );
 
-/** A module's placement preview from the wiki's own build-time renders (scripts/render-module-previews.ts), as the build menu's thumb. */
-const thumbOf = (def: string): UiThumb | null => {
-  const url = (previews as Record<string, { url: string } | undefined>)[def]?.url;
-  return url ? { url, w: 1, h: 1, ax: 0, ay: 0 } : null;
-};
+/** A module's art from the wiki's own build-time renders (scripts/render-module-previews.ts), sized and anchored like the game's build menu thumb. */
+const thumbOf = (def: string): UiThumb | null => (previews as Record<string, { thumb?: UiThumb } | undefined>)[def]?.thumb ?? null;
 
 /**
  * A stand-in for the game's UI api: each recorded feed is a store holding its recorded value, and everything else (dispatch,
