@@ -55,7 +55,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const docks = all.filter((r) => r.role === 'dock'), housed = house(rng, recipe, all.filter((r) => r.role !== 'dock'));
   const rooms = housed.rooms, pool = housed.pool;
   const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
-  const takers = new Set<string>([...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
+  const takers = new Set<string>([...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
 
@@ -94,31 +94,44 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const ctx = context(site.g, site, rng);
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });
+    // Rooms the hub holds of those the ring would take.
+    const inHub = new Set<RoomSpec>();
     if (root.hub) {
       const of = (ds: readonly Dept[]): RoomSpec[] => rooms.filter((r) => ds.includes(r.dept as Dept));
-      const made = hub(ctx, site, of(root.hub.market), of(root.hub.spokes), root.hub);
+      const made = hub(ctx, site, of(root.hub.market), { open: of(root.hub.spokes), gated: of(root.hub.gated ?? []) }, root.hub);
       if (!made || site.g.blocks(-R, -R, R, R) > 0) { why = `R ${R}: the hub does not fit`; continue; }
+      for (const r of of(root.hub.spokes)) if (!made.left?.includes(r)) inHub.add(r);
       a.add(made);
       a.sections++;
     }
     // On a ring the single cabins stand in its band with the rest; nothing is scattered.
     why = grow(a, recipe, rooms, docks, null, null, []);
     if (why) { why = `R ${R}: ${why}`; continue; }
-    // The ring's own rooms: habitation away from the first branch, guns all round, the rest between.
+    // The ring's own rooms.
     const first = a.ports.find((p) => p.kind === 'rim' && p.used)?.frame.dir ?? 'n';
     const whole = (r: RoomSpec): RoomSpec[] => (r.cabins === false ? [r] : cabinsOf(r));
     // Its own copies: a cabin that takes a second bed must not change the program's room.
     const copy = (r: RoomSpec): RoomSpec => ({ ...r, mods: [...r.mods] });
-    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap(whole), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))].map(copy);
-    const guns = own.filter((r) => r.dept === 'defence');
+    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept) && !inHub.has(r)).flatMap(whole), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))].map(copy);
+    const guns = own.filter((r) => r.dept === 'defence'), beds = own.filter((r) => r.cabin), halls = own.filter((r) => r.dept === 'commons');
+    // The band by sectors. Round a hub: cabins on the faces across the main axis, half to each; guns either side of
+    // the two faces on it; common rooms on the diagonals. Otherwise: habitation away from the first branch, guns all
+    // round, the rest between.
+    const angle = (spec: RoomSpec): number => {
+      if (root.hub && spec.cabin) return (beds.indexOf(spec) % 2) * Math.PI;
+      if (root.hub && spec.dept === 'defence') { const k = guns.indexOf(spec); return (k % 2 ? 1.5 : 0.5) * Math.PI + ((k >> 1) % 2 ? 0.6 : -0.6); }
+      if (root.hub && spec.dept === 'commons') return (0.25 + 0.5 * (1 + 2 * halls.indexOf(spec))) * Math.PI;
+      if (root.hub) return 0;
+      return spec.dept === 'defence' ? (guns.indexOf(spec) * 2 * Math.PI) / Math.max(1, guns.length) : ANGLE[first] + (spec.dept === 'habitation' ? Math.PI : Math.PI / 2);
+    };
     const asks: BandAsk[] = [
-      ...own.map((spec) => ({ spec, angle: spec.dept === 'defence' ? (guns.indexOf(spec) * 2 * Math.PI) / Math.max(1, guns.length) : ANGLE[first] + (spec.dept === 'habitation' ? Math.PI : Math.PI / 2) })),
+      ...own.map((spec) => ({ spec, angle: angle(spec) })),
       // What a part on the rim left to the band stands in the band beside it.
       ...a.spill.flatMap((sp) => whole(sp.spec).map((spec) => ({ spec: copy(spec), angle: ANGLE[sp.dir] }))),
     ];
     const band = site.g.regions.length;
     const left = fillRing(site, asks, root.inner);
-    if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms`; continue; }
+    if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms (${left.map((r) => `${r.role} ${r.w}x${r.h}`).join(", ")})`; continue; }
     // The band is filled last, round everything joined to the rim: no thick wall may come of it.
     mend(site.g, band, [-R - 60, -R - 60, R + 60, R + 60]);
     const thick = site.g.blocks(-R - 60, -R - 60, R + 60, R + 60);

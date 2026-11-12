@@ -82,11 +82,11 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
  */
 const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'octagon'; court: number }): Recipe => ({
   name,
-  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: o.cut, inner: true, hub: { court: o.court, arm: 7, market: ['market'], spokes: ['secure'] } },
+  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'works'], outline: o.outline, cut: o.cut, inner: false, hub: { court: o.court, arm: 7, slab: 7, market: ['market'], spokes: ['habitation', 'works'], gated: ['secure'] } },
   spacing: 2,
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w', 'e'], roll: true }, neck: 0, docks: true, quay: harbour('quay', 'face'), section: { rooms: [2, 6] }, link: 0 },
-    { takes: ['freight', 'works'], per: 'together', host: { on: 'rim', prefer: ['e', 'w'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
+    { takes: ['freight'], per: 'together', host: { on: 'rim', prefer: ['e', 'w'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
   ],
 });
 

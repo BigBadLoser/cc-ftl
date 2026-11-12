@@ -149,17 +149,24 @@ placement of any specific department, but to me that has a decent trading identi
 (`stationRecipes.ts`), on the trade station's program; sheets with `--family bazaar`.
 
 - `hub.ts`: what stands inside the ring. An octagonal market at the centre (a square court, the stalls round it with
-  the corners cut, a road round the lot), a spoke on each axis from the court through the road to the ring, and the
-  machinery lining the spokes beyond the road. The ground between the spokes stays open.
+  the corners cut, a road round the lot) and a spoke on each axis from the court through the road to the ring. The
+  north and south spokes are gated at both ends and carry the machinery as a slab of one depth either side; the east
+  and west spokes (the main axis) carry rows of cabins, as many of the quarters as fit, and what does not fit goes to
+  the ring's band (`Built.left`). The ground between the spokes stays open.
 - A `market` department: stalls in the trade station's assembly program (`assemblyAlso`; racks and a console as
   placeholder fittings, no stall module exists).
-- The harbour on one side of the main axis (shape `face`, above), the warehouses with the workshop as a wing on the
-  other.
-- Outlines: the stepped ring, and an octagon (`cut: 'octagon'`) whose four corner faces are garden galleries.
+- The harbour on one side of the main axis (shape `face`, above), the warehouses as a wing on the other.
+- Outlines: the stepped ring, and an octagon (`cut: 'octagon'`). An octagon's four corner faces are one room each:
+  the common rooms take them, biggest first and opposite each other (the mess with its pantry as the cell at one end),
+  and a face with none is a garden gallery.
+- The band by sectors round a hub: cabins on the north and south faces, guns either side of the east and west faces,
+  common rooms on the diagonals. No rooms on the ring's inner side.
 
 The user's verdicts so far: first prototype "really ugly", the centre "square and not as nicely cohesive" (now the
-octagon), the harbour's join to the stepped ring "so bad" (now `face`). Open: the stepped ring's ragged band, cabins
-on the ring's inner side, the octagon's four big gardens, no dock on the warehouse wing, machinery not behind a gate.
+octagon), the harbour's join to the stepped ring "so bad" (now `face`). Then, asked for: machinery behind gates,
+cabins off the ring's inner side, the octagon's gardens, the ragged band. Open: on the stepped ring the band is still
+stepped and now mostly garden (the octagon is the cleaner of the two); no dock on the warehouse wing; the ring is
+about 107x90 at station size.
 
 ## Ring stations: what was decided, and where they stand
 

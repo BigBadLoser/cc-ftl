@@ -16,7 +16,7 @@ const QUADS: readonly [1 | -1, 1 | -1][] = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
  * Build the corner rooms. `rooms` are given one each in order, clockwise from the north-east (a corner with none is a
  * garden gallery). Call before the band is filled. Returns the rooms placed.
  */
-export function placeCorners(s: Site, rooms: readonly RoomSpec[]): RoomSpec[] {
+export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]): RoomSpec[] {
   if (s.outline !== 'square') return [];
   const { g, R } = s;
   // The block starts one cell before the cut on either flat; the diagonal runs through the cut's outer corners.
@@ -26,10 +26,13 @@ export function placeCorners(s: Site, rooms: readonly RoomSpec[]): RoomSpec[] {
     const spec = rooms[k];
     const id = spec ? g.room(spec.role, { spec, access: [s.ring], rank: 1e5 + k }) : g.room('garden', { access: [s.ring], rank: 1e5 + k, dept: 'commons' });
     if (spec) placed.push(spec);
+    // Its annex is the cell at one end of it, on the flat before the cut, and opens into it. The cell's last row is
+    // where the ring steps in: that row is the corner room's, and its wall onto the annex.
+    const nook = spec?.annex ? g.room(spec.annex.role, { spec: spec.annex, access: [id], rank: 2e5 + k }) : -1;
     for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) {
       const tx = (x + 0.5) * sx, ty = (y + 0.5) * sy;
       if (tx < T || ty < T || g.at(x, y) !== SPACE || s.inside(x, y)) continue;
-      if (s.hull(x, y) || tx + ty <= line) g.set(x, y, id);
+      if (s.hull(x, y) || tx + ty <= line) g.set(x, y, nook >= 0 && ty < T + K - 1 ? nook : id);
     }
   }
   return placed;
