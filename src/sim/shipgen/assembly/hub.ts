@@ -82,15 +82,18 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   // A lane is one side of one spoke, beyond the road (and the gate).
   const lanes = shuffle(c.rng, SPOKE.flatMap((f) => ([-1, 1] as const).map((side) => {
     const axis: 'x' | 'y' = f.dir === 'e' || f.dir === 'w' ? 'x' : 'y', dir: 1 | -1 = f.dir === 'e' || f.dir === 's' ? 1 : -1, across = axis === 'x' ? f.y : f.x;
-    return { axis, dir, side, gated: gated(f), at: (axis === 'x' ? f.x : f.y) + dir * (H + (gated(f) ? 3 : 2)), edge: side < 0 ? across - 2 : across + 1, len: 0 };
+    const from = axis === 'x' ? f.x : f.y, u0 = H + (gated(f) ? 3 : 2);
+    return { axis, dir, side, gated: gated(f), from, u0, at: from + dir * u0, edge: side < 0 ? across - 2 : across + 1, len: 0, done: [] as { specs: RoomSpec[]; access: number[] }[] };
   })));
   type Lane = (typeof lanes)[number];
+  const laid = g.mark();
   // One unit at a lane's end. Against the ring it shares the ring's inner wall or stands two tiles clear of it or
   // more: never a second wall beside that one, never a one-tile slit.
   const B = s.reach + 2;
   const put = (l: Lane, unit: RoomSpec[], o: { access: number[]; floorDepth?: number }): boolean => {
     const m = g.mark(), first = g.regions.length, before = g.blocks(-B, -B, B, B);
-    const r = line(c.site, unit, l.axis, l.dir, l.at, l.edge, l.side, { ...o, free: c.free });
+    const specs: RoomSpec[] = [];
+    const r = line(c.site, unit, l.axis, l.dir, l.at, l.edge, l.side, { ...o, free: c.free, placed: specs });
     let ok = r.rest.length === 0 && g.blocks(-B, -B, B, B) <= before;
     for (let y = -B; y < B && ok; y++) for (let x = -B; x < B && ok; x++) {
       if (g.at(x, y) < first) continue;
@@ -101,6 +104,7 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
     }
     if (!ok) { g.reset(m); return false; }
     l.at = r.at;
+    l.done.push({ specs, access: o.access });
     return true;
   };
   const open = lanes.filter((l) => !l.gated), shut = lanes.filter((l) => l.gated);
@@ -128,6 +132,24 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   if (shut.length > 0 && deal(rooms.gated, shut, o.slab).length > 0) return null;
   const blocks = rooms.open.filter((r) => r.role === 'quarters'), most = Math.ceil(blocks.length * (o.cabins ?? 1));
   const left = [...blocks.slice(most), ...deal(rooms.open.filter((r) => !blocks.slice(most).includes(r)), open)];
+  // No bare spoke between a lane's last rooms and the ring: laid again as they came out, with the last room of each
+  // lane run on to the ring's inner wall, which becomes its own (a row of cabins shares the length out). Where the
+  // ring's inner side is not straight across the room, it stays as it was.
+  const plan = lanes.map((l) => l.done);
+  g.reset(laid);
+  for (const [i, l] of lanes.entries()) {
+    l.at = l.from + l.dir * l.u0;
+    l.done = [];
+    for (const [k, rec] of (plan[i] as Lane['done']).entries()) {
+      const end = (l.at - l.from) * l.dir + rec.specs.reduce((n, r) => n + r.w + 1, 1), extra = s.reach - end;
+      let grown: RoomSpec[] | null = null;
+      if (k === (plan[i] as Lane['done']).length - 1 && extra > 0) {
+        const cabins = rec.specs.every((r) => r.cabin), last = rec.specs.map((r) => !r.annexed).lastIndexOf(true);
+        grown = rec.specs.map((r, j) => ({ ...r, w: r.w + (cabins ? Math.floor(extra / rec.specs.length) + (j < extra % rec.specs.length ? 1 : 0) : j === last ? extra : 0) }));
+      }
+      if (!(grown && put(l, grown, { access: rec.access })) && !put(l, rec.specs, { access: rec.access })) return null;
+    }
+  }
   const regions: number[] = [];
   for (let id = n0; id < g.regions.length; id++) regions.push(id);
   return { ports: [], regions, box: [-s.reach, -s.reach, s.reach, s.reach], ...(left.length > 0 ? { left } : {}) };
