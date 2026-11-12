@@ -138,30 +138,29 @@ or west, and a station that starts at its harbour heads a way its form allows. T
 Open: which station gets which form is set per recipe for the sheets, not rolled; customs is empty (no furniture);
 rooms beside customs are stretched to the quay's length.
 
-## Round stations: what was decided before the assembly
+## Ring stations: what was decided, and where they stand
 
-The round-station work that led here is recorded in `docs/STATION_FLOW_WHEEL.md` on the branch
-`stationgen/architecture-integration` (with `STATIONFLOWS.md` and `LAYOUT_RESEARCH.md`; code in `src/sim/shipgen/flow/`,
-mocks in `tools/shipgen/mocks/`). Read it before changing the ring recipes. What it settled, in short:
+The record: the user's own messages in this work (the review that redirected it, the kit, the inventory, the assembly
+model), and `docs/STATION_FLOW_WHEEL.md` on the branch `stationgen/architecture-integration`. Read both before
+changing the ring recipes; do not redesign from scratch.
 
-- **What the user wants:** round stations first. The kind shows in the structure. Landmark halls, asymmetry, arms and
-  docks, interior spaces. Arms are inhabited wings, never a room on a stick; a warehouse with its own dock is good.
-  Voids where they make sense. Departments readable on the sheets.
-- **A kit of independent choices that multiply**, not N station types: outline (disc, square, octagon), streets
-  inside the ring (cross, tee, spine, or none), corners, the ring single or double loaded, wings, and which department
-  goes where (from the kind's flow).
-- **Hoops are wrong.** A ring round an empty middle was measured and rejected (66 to 83% of the area inside the hull
-  built, against 85 to 96% on the mocks the user liked). Rooms on the ring's inner side and wings brought it to 86 to 93%.
-- **The centre: one thing a quadrant**: a court with its band of rooms, one department's block, or open to space on
-  purpose. Agreed, not built. The pieces named as missing: a quarter block (a department compound filling the quadrant
-  between two streets, entered from one, gated when controlled) and a lane (a street off a street).
-- **Verdicts on the old grammars:** only the two round enclosed ones (wheel, concentric) need replacing; concentric
-  rings-in-rings read as clutter; the court (`courtyards()` in `stationCourts.ts`) is the part that works.
-- A faceted hull was liked on the mocks; it is clean only where one room owns each 45-degree face.
+- The compound (an enclosed ring or arc joined to a substantial rectangular industrial section) is one of the two
+  cases the assembly model was proved on. The user's verdict on its first sheets: "it's convincing. my issues aren't
+  necessarily with the chosen architecture." The issues named: the harbour ugly and the same everywhere (since
+  replaced by the quay forms); on the arcs with the works on a tip, the secure department "feels just stuck on after";
+  many very small walkways that make a layout feel as if it could fall apart.
+- Standing rules from the same discussion: one modular system, simple, not a general solver; structural parts declare
+  their dimensions and attachment points and rooms fit into intentional bays (do not fill the middle by dividing
+  whatever space is left; unused space may stay open on purpose); coherent composition over variation for its own
+  sake; a recipe describes relationships and preferences, never every room's position; weak outcomes shown, nothing
+  filtered.
+- Liked on the earlier mocks: arms as inhabited wings (never a room on a stick), a warehouse with its own dock, a
+  faceted hull.
 
-Against that, the compound recipes here are behind: the ring root carries the outline, the arc cut and the inner
-loading, but no streets inside, no court and no quarter block, so every compound is a hoop with one long block
-hanging off it, and they have only been drawn for the mining station.
+**Regressed since, not redesigned:** the rooms added to the program after that review (ore store, pod deck, workshop,
+breaker shop, battery room) all went into the one works block, so it grew from about two thirds of the ring's width
+to the ring's full width and reads as a tail. The recipe was not rebalanced. Ring stations are parked at the user's
+call; when they come back, start from that proportion, not from a new composition.
 
 ## The rooms
 
