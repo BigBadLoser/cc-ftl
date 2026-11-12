@@ -10,7 +10,7 @@ import type { Design } from './design';
 export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
 export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
 export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
-export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'diamond': a dashed diamond in each tile (where crew stand), as the game's build ghost marks access. */ shape?: 'diamond' }
+export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'square': a dashed square in each tile (where crew stand). */ shape?: 'square' }
 /** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
 export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }
 
@@ -113,21 +113,19 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
       ctx.fillText(r.name, px, py);
     }
   }
-  for (const m of marks) (m.shape === 'diamond' ? diamonds : outline)(ctx, m, d, ox, oy, s);
+  for (const m of marks) (m.shape === 'square' ? squares : outline)(ctx, m, d, ox, oy, s);
   for (const e of edges) hullEdge(ctx, e, ox, oy, s);
 }
 
-/** A dashed diamond in each tile (the game's access marker). */
-function diamonds(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, ox: number, oy: number, s: number): void {
+/** A dashed square outline filling each tile, with a faint fill (where crew stand). */
+function squares(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, ox: number, oy: number, s: number): void {
   ctx.strokeStyle = m.color;
+  ctx.fillStyle = m.color.replace(/[\d.]+\)$/, '0.15)');
   ctx.lineWidth = 2;
   ctx.setLineDash([Math.max(3, s * 0.18), Math.max(2, s * 0.12)]);
   for (const [x, y] of m.tiles) {
-    const cx = ox + (x + 0.5) * s, cy = oy + (y + 0.5) * s, r = s * 0.42;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r, cy);
-    ctx.closePath();
-    ctx.stroke();
+    ctx.fillRect(ox + x * s, oy + y * s, s, s);
+    ctx.strokeRect(ox + x * s + 1, oy + y * s + 1, s - 2, s - 2);
   }
   ctx.setLineDash([]);
 }

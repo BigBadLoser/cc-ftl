@@ -47,7 +47,7 @@
 		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
 		const cue = cues();
-		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'diamond' });
+		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'square' });
 		const r = lab.drag;
 		if (r) {
 			const t: Tile[] = [];
