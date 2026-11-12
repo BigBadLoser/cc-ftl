@@ -3688,5 +3688,7 @@
   "b4Wine": {"hex": "#7e2f3c", "set": "bar4"},
   "b4Green": {"hex": "#5d7d48", "set": "bar4"},
   "b4Glass": {"hex": "#9fb3bd", "set": "bar4"},
+  "b4Copper": {"hex": "#a5643c", "set": "bar4"},
+  "b4Wood": {"hex": "#6e4b33", "set": "bar4"},
   "b4Lamp": {"hex": "#ffd38a", "emissive": 1.2, "set": "bar4"}
 }

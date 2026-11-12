@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "barcounter5":   # look study, preview only (not in RENDERED): bar counter round 5, new designs
+        from . import barcounter_r5
+        return barcounter_r5.jobs(), "only:bar4"
     if name == "barcounter4":   # look study, preview only (not in RENDERED): bar counter round 4, muted
         from . import barcounter_r4
         return barcounter_r4.jobs(), "only:bar4"
