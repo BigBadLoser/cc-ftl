@@ -166,6 +166,18 @@ def _railed(name, weight):
     return k.build()
 
 
+def b1f():
+    """B1f: B1's solid head and foot boards; thin rails on the wall side of both decks and along the upper deck's open
+    side (its head two thirds, the ladder at the foot)."""
+    k = K("bunk_b1f", FP)
+    _frame(k)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "thin")
+    _rails(k, LOW, 0.3, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "thin")
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3,), "thin")
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
 def b1d():
     return _railed("bunk_b1d", "thin")
 
@@ -228,7 +240,7 @@ def b3():
     return k.build()
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e}
+DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f}
 
 
 def jobs():
