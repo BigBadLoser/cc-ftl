@@ -237,7 +237,7 @@ def job(v, designs):
 
 
 def jobs():
-    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7, recovery_study8, recovery_study9
+    from . import recovery_study2, recovery_study3, recovery_study4, recovery_study5, recovery_study6, recovery_study7, recovery_study8, recovery_study9, recovery_study10
     return ([job(v, DESIGNS) for v in DESIGNS] + [job(v, recovery_study2.DESIGNS) for v in recovery_study2.DESIGNS]
             + [job(v, recovery_study3.DESIGNS) for v in recovery_study3.DESIGNS]
             + [job(v, recovery_study4.DESIGNS) for v in recovery_study4.DESIGNS]
@@ -245,4 +245,5 @@ def jobs():
             + [job(v, recovery_study6.DESIGNS) for v in recovery_study6.DESIGNS]
             + [job(v, recovery_study7.DESIGNS) for v in recovery_study7.DESIGNS]
             + [job(v, recovery_study8.DESIGNS) for v in recovery_study8.DESIGNS]
-            + [job(v, recovery_study9.DESIGNS) for v in recovery_study9.DESIGNS])
+            + [job(v, recovery_study9.DESIGNS) for v in recovery_study9.DESIGNS]
+            + [job(v, recovery_study10.DESIGNS) for v in recovery_study10.DESIGNS])
