@@ -25,7 +25,7 @@ export function problemsOf(a: Assembly | null, rooms: readonly RoomSpec[], rejec
   // Beams are open structure: for the hull they are space.
   out.push(...hullProblems({ rows: snap.rows.map((r) => r.replace(/=/g, '.')) }));
   const floored = new Set<number>(snap.roomOf);
-  const standing = g.regions.filter((r, id) => !r.hall && floored.has(id)).map((r) => r.spec);
+  const standing = g.regions.filter((r, id) => (!r.hall || r.spec) && floored.has(id)).map((r) => r.spec);
   for (const role of new Set(rooms.map((r) => r.role))) {
     if (role === 'quarters') continue;
     const want = rooms.filter((r) => r.role === role).length, have = standing.filter((r) => r?.role === role).length;

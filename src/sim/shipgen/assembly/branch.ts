@@ -5,6 +5,7 @@ import { roll, type Asm } from './asm';
 import type { Dept } from './dept';
 import { block, concourse, corridor, single } from './elements';
 import { K } from './lattice';
+import { quay } from './quay';
 import type { Dir, Port } from './model';
 import type { BranchRule, Recipe } from './recipe';
 
@@ -37,6 +38,11 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  */
 function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
   const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  // A rule with a quay builds its docks and this section's rooms as one.
+  if (rule.quay && o.docks?.length) {
+    const { docks: _d, ...plain } = base;
+    return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain));
+  }
   const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);

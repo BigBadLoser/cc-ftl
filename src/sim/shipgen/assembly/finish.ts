@@ -130,7 +130,7 @@ export function missing(ctx: Ctx, rooms: readonly RoomSpec[]): string {
   const have = new Map<string, number>(), want = new Map<string, number>();
   const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? beds(r) : 1)); };
   for (const r of rooms) { count(want, r); if (r.annex) count(want, r.annex); }
-  for (const id of floored) { const spec = g.regions[id]?.spec; if (spec && !g.regions[id]?.hall) count(have, spec); }
+  for (const id of floored) { const spec = g.regions[id]?.spec; if (spec) count(have, spec); }
   const short = [...want].filter(([k, n]) => (have.get(k) ?? 0) < n).map(([k, n]) => `${k} ${have.get(k) ?? 0}/${n}`);
   return short.length > 0 ? `rooms missing from the finished layout: ${short.join(', ')}` : '';
 }

@@ -1,6 +1,7 @@
 import type { Dept } from './dept';
 import type { Outline } from './lattice';
 import type { Dir } from './model';
+import type { QuayOpts } from './quay';
 import type { Gap } from './ring';
 import type { RoomRole } from '../types';
 
@@ -52,6 +53,8 @@ export interface BranchRule {
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
   docks?: boolean;
+  /** With `docks`: the docks and the first section's rooms stand as a quay (quay.ts) in place of the dock block. */
+  quay?: QuayOpts;
 }
 
 export interface Recipe {

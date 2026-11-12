@@ -63,8 +63,9 @@ export class RegionGrid {
     return id;
   }
 
-  hall(role: RoomRole = 'hall', dept?: string): number {
-    this.regions.push({ role, hall: true, doors: 0, rank: 0, ...(dept ? { dept } : {}) });
+  /** A hall; with a spec, a fixture that stands in one (an airlock unit on a quay): open to the halls round it, and a room of the program. */
+  hall(role: RoomRole = 'hall', dept?: string, spec?: RoomSpec): number {
+    this.regions.push({ role, hall: true, doors: 0, rank: 0, ...(dept ? { dept } : {}), ...(spec ? { spec } : {}) });
     return this.regions.length - 1;
   }
 

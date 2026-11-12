@@ -1,4 +1,4 @@
-import type { Recipe } from '../sim/shipgen/assembly/recipe';
+import type { BranchRule, Recipe } from '../sim/shipgen/assembly/recipe';
 
 /**
  * Station recipes for the assembly model (docs/STATION_ASSEMBLY.md): what a station is composed of and how its parts
@@ -9,7 +9,7 @@ import type { Recipe } from '../sim/shipgen/assembly/recipe';
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
  * block first, the machinery as one gated module. `mix` false keeps a module to one department.
  */
-const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number; jog?: [number, number]; cross?: 'any' }): Recipe => {
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number; jog?: [number, number]; cross?: 'any'; customs?: number; end?: boolean }): Recipe => {
   const section = { rooms: o.rooms, cross: o.cross ?? true };
   const takes = ['commons', 'freight', 'works', 'habitation', 'defence'] as const;
   return {
@@ -19,7 +19,7 @@ const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number
     ...(o.quarters ? { quarters: o.quarters } : {}),
     ...(o.braces ? { braces: o.braces } : {}),
     branches: [
-      { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
+      { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, quay: { wide: 5, pitch: 7, customs: o.customs ?? 7, shape: 'taper', ...(o.end ? { end: true } : {}) }, section: { rooms: [2, 6], cross: true }, link: 0 },
       o.mix
         ? { takes, per: 'together', mix: true, host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0 }
         : { takes, per: 'department', host: { on: 'section' }, neck: o.stub, ...(o.jog ? { jog: o.jog } : {}), section, link: 0, most: 1 },
@@ -35,7 +35,7 @@ const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number
  */
 const compound = (name: string, o: {
   outline: 'disc' | 'square'; inner: boolean; gap?: { side: 'n' | 'e' | 's' | 'w'; from: number };
-  works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip'; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number; quarters?: Recipe['quarters'];
+  works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip'; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number; quarters?: Recipe['quarters']; quay?: BranchRule['quay'];
 }): Recipe => ({
   name,
   ...(o.quarters ? { quarters: o.quarters } : {}),
@@ -44,7 +44,7 @@ const compound = (name: string, o: {
   branches: [
     { takes: ['works', 'freight'], per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
     { takes: ['secure'], per: 'together', host: o.secure === 'tip' ? { on: 'tip' } : { on: 'after', rule: 0 }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: o.secure === 'tip' ? 6 : o.rowDepth, even: true, cap: true }, link: 0 },
-    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: o.dock, roll: true }, neck: 0, docks: true, section: { rooms: [2, 6] }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: o.dock, roll: true }, neck: 0, docks: true, ...(o.quay ? { quay: o.quay } : {}), section: { rooms: [2, 6] }, link: 0 },
   ],
 });
 
@@ -54,14 +54,14 @@ const compound = (name: string, o: {
  * works and the freight are wings off the halls' flanks. The works wing is a line: the refineries, the ore store, and
  * the pod deck across its end.
  */
-const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; braces?: number; quarters?: Recipe['quarters'] }): Recipe => ({
+const spine = (name: string, o: { street: number; body: [number, number]; rowDepth?: number; wings: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; braces?: number; quarters?: Recipe['quarters']; quay?: BranchRule['quay'] }): Recipe => ({
   name,
   root: { kind: 'core' },
   spacing: 2,
   ...(o.braces ? { braces: o.braces } : {}),
   ...(o.quarters ? { quarters: o.quarters } : {}),
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true, width: o.street }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, ...(o.quay ? { quay: o.quay } : {}), section: { rooms: [2, 6], cross: true, width: o.street }, link: 0 },
     {
       takes: ['habitation', 'commons', 'defence'], per: 'together', host: { on: 'after', rule: 0 }, neck: o.hall?.length ?? 0, link: o.hall?.length ?? 0,
       ...(o.hall ? { hall: { wide: o.hall.wide, shift: o.hall.shift } } : {}),
@@ -75,19 +75,19 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
 export const stationRecipes = {
   tree: [
     scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
-    scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any' }),
-    scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
+    scrap('off centre, mixed modules on longer stubs', { rooms: [2, 4], stub: [4, 7], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 6], cross: 'any', end: true }),
+    scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, customs: 0 }),
   ],
   spine: [
-    spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9 }),
-    spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9 }),
-    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9 }),
+    spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper' } }),
+    spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'taper', end: true } }),
+    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: { wide: 5, pitch: 7, customs: 0, shape: 'taper' } }),
   ],
   compound: [
-    compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
-    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
-    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7 }),
-    compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 } }),
-    compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
+    compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
+    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block', end: true } }),
+    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: { wide: 5, pitch: 7, customs: 0, shape: 'block' } }),
+    compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block', end: true } }),
+    compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's'], neck: 0, rowDepth: 8, quay: { wide: 5, pitch: 7, customs: 7, shape: 'block' } }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;

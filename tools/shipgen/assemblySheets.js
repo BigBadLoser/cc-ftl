@@ -81,8 +81,8 @@ try {
     return {
       template: { rows: snap.rows, modules: [] }, rooms: g.regions.map((r) => ({ role: r.role })), roomOf: snap.roomOf, width: snap.width, height: snap.height,
       // Streets and halls are circulation whatever department they run through.
-      depts: g.regions.map((r) => (r.hall ? 'circulation' : r.dept ?? deptOf({ role: r.role }))), targets: [],
-      names: g.regions.map((r) => (r.hall ? undefined : nameOf(r))),
+      depts: g.regions.map((r) => (r.hall ? (r.dept === 'customs' || r.dept === 'airlock' ? r.dept : 'circulation') : r.dept ?? deptOf({ role: r.role }))), targets: [],
+      names: g.regions.map((r) => (r.hall ? (r.dept === 'customs' ? 'CUSTOMS' : undefined) : nameOf(r))),
     };
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {
