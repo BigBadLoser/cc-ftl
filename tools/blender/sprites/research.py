@@ -14,7 +14,8 @@ research_r16.py (x11-x13: three tables, each its own machine),
 research_r17.py (x14-x16: tables that show how they work),
 research_r18.py (x17-x19: one machine each, the reference among them),
 research_r19.py (x20-x22: our own table, built the way x17 is),
-research_r20.py (x23-x25: tables designed as one machine form, nothing carried over)."""
+research_r20.py (x23-x25: tables designed as one machine form, nothing carried over); research_r21.py (b1-b4: grey
+blockouts of the dissection table, shape only)."""
 from .research_kit import BUILD, entry, holo_job
 
 

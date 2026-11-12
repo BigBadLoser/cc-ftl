@@ -43,6 +43,8 @@ move in a browser).
 - `ore`: an ore's art (#421): its item at each stack size and held, a 4x4 block of rich and of thin rock tiles (the game's
   masks, from `massChain`) and a lone tile of each, then both ore bin sizes at every fill (`ores=ore.crystal,ore.rare`,
   default the energy crystal; `rots=0,1,2,3`, default r0).
+- `recovery`: the recovery pod (#319), empty, stacked as the game will draw it: one row per rotation, unpowered, powered (the
+  8-frame bubble loop) and scanning (the 16-frame sweep, its far and near halves); `&play` runs them (`rots=0,1,2,3`).
 - `leisure`: the arcade cabinet and game table (#441) as `moduleLayers` stacks them (body, seat overlay, hologram): unpowered, idle and each
   in-use frame, with the stand tiles marked (`ids=module.arcade,module.gametable`, `rots=0,1,2,3`, default r0).
 

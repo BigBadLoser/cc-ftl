@@ -19,7 +19,7 @@ const TH = 32;
 const PAD = 12;
 
 /** Floor tiles under a w x h footprint, the sprite origin at the centre of the front-most tile (ox, oy). */
-function floor(w: number, h: number, ox: number, oy: number): Graphics {
+export function floor(w: number, h: number, ox: number, oy: number): Graphics {
   const g = new Graphics();
   for (let tx = 0; tx < w; tx++) {
     for (let ty = 0; ty < h; ty++) {
@@ -32,7 +32,7 @@ function floor(w: number, h: number, ox: number, oy: number): Graphics {
 }
 
 /** Draw the sprite `id` with its glow at the origin (ox, oy). */
-function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number): void {
+export function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number): void {
   const s = atlas.stat(id);
   if (!s) return;
   const x = Math.round(ox - s.ax);

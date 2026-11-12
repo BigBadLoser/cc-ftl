@@ -1221,6 +1221,14 @@ common there, and the starmap hints at notable stock.
   (translucent, gear floating inside).
 - **Lighting is a sim field.** Lights need power, and darkness has gameplay effects.
 - **Art never blocks gameplay.** Placeholders are fine, and art gets timeboxed sessions.
+- **One body per module** (user, 2026-11-10). A module is one machine with one core body that fills its footprint. The body
+  can be cut, notched, stepped or curved, but the footprint is never filled by separate, loosely related objects side by
+  side (a desk across the back row with props in the remaining tiles reads as filler added afterwards).
+- **Details explain the machine** (user, 2026-11-10). Detail follows from what the module does: list its working parts
+  first (a water purifier: intake and outlet pipes, tanks, a filter housing, a pump), then detail those. No generic
+  greebles, such as vent grilles everywhere, without a reason.
+- **The user sets a new module's shape** (sketch or paint-over) before it is modelled. Agents build to that shape and
+  detail it; their judgement of proportions against a reference image is not reliable enough to drive the shape.
 
 ## UI
 

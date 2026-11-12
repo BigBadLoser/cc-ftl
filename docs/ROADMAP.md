@@ -45,3 +45,6 @@ Not in order.
 ## Parked
 
 - **Addictions.** Drinker and stim-hooked crew, until there are things to get addicted to. ([#239](https://github.com/BigBadLoser/cc-ftl/issues/239))
+- **Ribcage healing pod (art idea).** A violet fluid column inside spiralling bone ribs on a root mound, magenta nodes, a
+  glowing sac on a vein: too alien for the crew's recovery pod, kept for alien or derelict tech (a hive healer, a creature
+  incubator). Look study `r1` in `tools/blender/sprites/recovery_study3.py`.
