@@ -44,9 +44,11 @@ for (const def of Object.values(vehicles)) {
   selectVariant(def.asset, [def.asset + '.fly.d0', def.asset + '.fly.d2', def.asset + '.parked.r0', def.asset]);
 }
 for (const def of Object.values(modules)) if (def.weapon && weapons[def.weapon as keyof typeof weapons]) select(def.asset);
-// The game's inventory uses a medium stack, then small, then held sprite.
+// Same order as src/app/itemIcons.ts: the item's own UI icon, then its floor
+// stack (medium, small, unit, held). An item may borrow another's art (ItemDef.art).
 for (const [id, def] of Object.entries(items)) {
-  selectVariant(id, [id + '.m', id + '.s', id + '.held'], true);
+  const art = (def as { art?: string }).art ?? id;
+  selectVariant(id, ['icon', 'm', 's', 'unit', 'held'].map(s => art + '.' + s), true);
   // A fabricated vehicle may have no separate inventory icon. Its item
   // definition explicitly references the vehicle, so use its genuine art.
   const vehicleId = (def as { vehicle?: string }).vehicle;

@@ -7,7 +7,7 @@ import { Struct } from '../sim/structure';
 import { diamondTextures } from './diamonds';
 import { iso } from './iso';
 import { regionTiles } from './regionTiles';
-import { overlayDef, rampAt, type OverlayDef } from './overlayDefs';
+import { overlayDef, QUALITY_COLORS, rampAt, type OverlayDef } from './overlayDefs';
 
 function hsl(h: number, s: number, l: number): number {
   const a = s * Math.min(l, 1 - l);
@@ -25,6 +25,8 @@ export const roomColor = (id: number): number => hsl((id * 0.618034) % 1, 0.7, 0
 export interface OverlayWorld {
   world: World;
   modules: Readonly<Record<string, ModuleDef>>;
+  /** Tier index (0 grim .. 4 impressive) of each room of the grid's ship: the room-quality overlay. */
+  roomTiers?: () => ReadonlyMap<number, number>;
 }
 
 /** Tinted floor diamonds for one grid field (gases, fire, light, power, rooms). Rebuilt from revisions, at most ~8x a second. */
@@ -87,6 +89,15 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
         const on = m.powered && m.enabled && m.hp > 0;
         put(i, on ? (power > 0 ? 0x4ce0ff : 0x4cd964) : 0xe5322d);
       }, true);
+    } else if (d.special === 'quality') {
+      const tiers = ow.roomTiers?.();
+      tiles.scan((_x, _y, i, ci, c) => {
+        const s = tiles.data('struct', c)?.[ci];
+        if (s !== Struct.Floor && s !== Struct.Door) return;
+        const room = (tiles.data('room', c)?.[ci] ?? 0) as number;
+        const tier = room === 0 ? undefined : tiers?.get(room);
+        if (tier !== undefined) put(i, QUALITY_COLORS[tier] ?? QUALITY_COLORS[2]);
+      });
     } else {
       const room = d.special === 'room';
       const field = room ? 'room' : d.id;
@@ -116,6 +127,7 @@ export function createOverlay(grid: Grid, parent: Container, ow: OverlayWorld): 
       if (now - lastAt < MIN_INTERVAL_MS) return;
       let k: string;
       if (def.special === 'power') k = `p:${grid.revision('module')}:${powerKey()}`;
+      else if (def.special === 'quality') k = `q:${grid.revision('room')}:${grid.revision('struct')}:${[...(ow.roomTiers?.() ?? [])].join(',')}`;
       else k = `${def.id}:${grid.revision(def.special === 'room' ? 'room' : def.id)}:${grid.revision('struct')}`;
       if (k === key) return;
       key = k;

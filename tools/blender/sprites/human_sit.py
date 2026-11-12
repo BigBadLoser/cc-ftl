@@ -42,11 +42,11 @@ def _rest_dir(arm, name):
 
 def apply(arm, i, scale, clip="sit_idle"):
     """Pose `arm` (pose bones already reset to the idle pose for finger curl) as frame i of `sit_idle` (4 frames: watching,
-    leaning back a little, hands resting) or `sit_work` (6 frames: leaning in, both hands reaching onto the desk and
+    leaning back a little, hands resting) or `sit_work` / `sit_stool_work` (6 frames: leaning in, both hands reaching onto the desk and
     tapping alternately). `scale` = rig scale. Returns the breathing phase."""
     arm.animation_data.action = None                         # keep the idle finger curl, but stop the action overwriting our pose
     pb = arm.pose.bones
-    work = clip == "sit_work"
+    work = clip in ("sit_work", "sit_stool_work")
     n = FRAMES_WORK if work else FRAMES_IDLE
     ph = math.tau * i / n
     b = math.sin(ph)                                         # breathing

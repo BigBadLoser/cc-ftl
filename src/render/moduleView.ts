@@ -32,7 +32,7 @@ import type { WallLevel } from './tiles';
 import { createBayAnimator, shuttleHome, steady } from './vehicleBayArt';
 import { cropOverlay } from './cropOverlay';
 import { bedBox } from './bedBox';
-import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, workedLabs, showsActive, type ModuleLayer } from './moduleArt';
+import { craftProgress, diagonalFront, moduleAssets, mergeRuinChain, stateArt, glowKey, layerKey, mannedConsoles, playedModules, workedLabs, showsActive, type ModuleLayer } from './moduleArt';
 
 export type ModuleDefs = Readonly<Record<string, ModuleDef>>;
 
@@ -351,6 +351,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
       const progress = craftProgress(world);
       const manned = mannedConsoles(world);
       const worked = workedLabs(world);
+      const played = playedModules(world);
       const { grid } = t;
       const emergency = host.emergency();
       const pulse = emergency ? pulsePhase(now) : -1;
@@ -363,7 +364,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         const def = m && defs[m.def];
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
-        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id));
+        const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id) || played.has(id));
         const extra = worldInputs(world, id, def);
         const memo = memos.get(id);
         let e = mods.get(id);

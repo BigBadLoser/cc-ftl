@@ -45,6 +45,8 @@ move in a browser).
   default the energy crystal; `rots=0,1,2,3`, default r0).
 - `recovery`: the recovery pod (#319), empty, stacked as the game will draw it: one row per rotation, unpowered, powered (the
   8-frame bubble loop) and scanning (the 16-frame sweep, its far and near halves); `&play` runs them (`rots=0,1,2,3`).
+- `leisure`: the arcade cabinet and game table (#441) as `moduleLayers` stacks them (body, seat overlay, hologram): unpowered, idle and each
+  in-use frame, with the stand tiles marked (`ids=module.arcade,module.gametable`, `rots=0,1,2,3`, default r0).
 
 ## Add a panel
 

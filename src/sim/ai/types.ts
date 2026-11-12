@@ -106,7 +106,7 @@ export interface Interrupt {
  * crew member has no such need. Needs are read in tenths of their 0..100 scale (0..1000), floored once at the reader; the
  * predicates (`food`, `robotUpkeep`) read 1000 (fine) or 0. A new input is a reader in that table plus its name here.
  */
-export type DriveInput = 'willing' | 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'awayReturn' | 'mood' | 'food' | 'pod';
+export type DriveInput = 'willing' | 'rest' | 'hunger' | 'charge' | 'robotUpkeep' | 'health' | 'air' | 'airMargin' | 'airSource' | 'awayReturn' | 'mood' | 'food' | 'care';
 
 /** Which crew a policy is for (ai/utility.ts `crewKind`): battery robots, station crew, the player's colonists, anyone else. */
 export type CrewKind = 'robot' | 'station' | 'colonist' | 'npc' | 'guest';

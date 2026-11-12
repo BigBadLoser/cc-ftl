@@ -2,7 +2,7 @@ import { ModuleC, type Module } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
-import { BedOwnerC } from './components';
+import { BedOwnerC, CarriedC, DownedC } from './components';
 import { findPath, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
 
@@ -19,6 +19,19 @@ export interface BedPlan {
 export function isIntactBed(sim: Sim, id: number, shipId: number): boolean {
   const m = sim.world.get(id, ModuleC);
   return !!m && m.hp > 0 && !!sim.content.modules[m.def]?.bed && shipIdOf(sim, m) === shipId;
+}
+
+/** Who a bed is for: a sleeper, a patient who can walk to treatment, or a critical (downed) one. */
+export type BedUse = 'sleep' | 'walking' | 'critical';
+const BED_ORDER: Record<BedUse, readonly BedKind[]> = {
+  sleep: ['ordinary'],
+  walking: ['medical', 'recovery'],
+  critical: ['recovery', 'medical', 'ordinary'],
+};
+
+/** The use a hurt crew member's bed search is for: critical when downed or carried (the game's incapacitated-by-injury test), else walking. The one place that decides. */
+export function bedUseOf(sim: Sim, crew: number): BedUse {
+  return sim.world.has(crew, DownedC) || sim.world.has(crew, CarriedC) ? 'critical' : 'walking';
 }
 
 /** Which kind of bed a module is: a recovery pod, a medical bed (patients only) or an ordinary bed. */
@@ -46,15 +59,14 @@ export function bedUsable(def: ModuleDef | undefined, m: Module): boolean {
  * less when ending beside the bed) and the search stops once the best path found beats every remaining bound, so the answer
  * is the exhaustive one (a candidate whose bound ties the best only wins with a lower id).
  */
-export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, patient = false): BedPlan | null {
-  // Patients prefer a recovery pod (it heals to full with no medic), then a medical bed, then an ordinary bed. Sleepers use ordinary beds only.
-  if (patient) return searchBeds(sim, shipId, from, adjacent, skip, 'recovery') ?? searchBeds(sim, shipId, from, adjacent, skip, 'medical') ?? searchBeds(sim, shipId, from, adjacent, skip, 'ordinary');
-  return searchBeds(sim, shipId, from, adjacent, skip, 'ordinary');
-}
-
-/** The nearest free recovery pod, for a hurt crew member who can still walk (the recover drive, ai/machines/sleep.ts). */
-export function findFreePod(sim: Sim, shipId: number, from: Tile, skip?: BedSkip): BedPlan | null {
-  return searchBeds(sim, shipId, from, false, skip, 'recovery');
+export function findFreeBed(sim: Sim, shipId: number, from: Tile, adjacent = false, skip?: BedSkip, use: BedUse = 'sleep'): BedPlan | null {
+  // Sleepers use ordinary beds only. A critical patient (downed: carried in, stabilised) takes a recovery pod first, then a medical bed, then an ordinary bed;
+  // a patient who can walk to treatment takes a medical bed first and the pod only when none is free (the pod is for the critical cases). Never an ordinary bed.
+  for (const kind of BED_ORDER[use]) {
+    const plan = searchBeds(sim, shipId, from, adjacent, skip, kind);
+    if (plan) return plan;
+  }
+  return null;
 }
 
 /** Only beds of `kind`. */

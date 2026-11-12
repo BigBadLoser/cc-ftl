@@ -19,6 +19,8 @@ import { begin as beginInteraction } from '../sim/crew/interact';
 import { parkCrew } from './parkCrew';
 import type { Loop } from './loop';
 import { DroneC } from '../sim/drones/components';
+import { shipHolo } from './shipHolo';
+import type { UiHoloRequest } from '../ui/comms/types';
 
 /**
  * Debug/tooling hook, only installed with `?hook` in the URL: lets headless scripts find screen positions of tiles and
@@ -29,6 +31,9 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
   (window as unknown as { __cc: unknown }).__cc = {
     /** Freeze (0) or run the sim at speed 1..3 (screenshot and debug sessions); the renderer goes on. */
     setSpeed: (s: 0 | 1 | 2 | 3) => loop?.setSpeed(s),
+    /** The comms window's two renderer-drawn pictures for a recorded signal (the wiki's capture): a crew look's portrait (a data URL, null while its art loads) and a ship's hologram. */
+    portraitOf: (look: Parameters<Renderer['portraitOf']>[0]) => r.portraitOf(look),
+    shipHolo: (req: UiHoloRequest) => shipHolo(req),
     /** Merge flagged additive glow into the normal batches (true, the default) or draw it in its own `add` batches (render diffs). */
     additiveMerge: (on: boolean) => setAdditiveMerge(on),
     renderGroups: (on: boolean) => setRenderGroups(on),

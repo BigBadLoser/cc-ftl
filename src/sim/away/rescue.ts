@@ -1,4 +1,4 @@
-import { findFreeBed } from '../crew/beds';
+import { bedUseOf, findFreeBed } from '../crew/beds';
 import { CarriedC, CrewC, PositionC, type Crew } from '../crew/components';
 import { origin } from '../crew/helpers';
 import { SuitC } from '../eva/components';
@@ -19,7 +19,7 @@ export function rescueSpot(sim: Sim, patient: number): { x: number; y: number; v
   const pos = sim.world.get(patient, PositionC);
   const away = sim.world.get(patient, AwayC);
   const site = siteUnderFoot(sim, patient);
-  if (!pos || !away || !site || findFreeBed(sim, site, origin(pos), false, undefined, true)) return null;
+  if (!pos || !away || !site || findFreeBed(sim, site, origin(pos), false, undefined, bedUseOf(sim, patient))) return null;
   const spot = siteSpot(sim, away.vehicle, site);
   return spot && { x: spot.x, y: spot.y, vehicle: away.vehicle };
 }

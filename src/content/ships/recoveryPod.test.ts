@@ -3,7 +3,7 @@ import {
   AssignmentC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule,
   type Sim, type SimEvent,
 } from '../../sim';
-import { findFreeBed } from '../../sim/crew/beds';
+import { bedUseOf, findFreeBed } from '../../sim/crew/beds';
 import { isIncapacitated } from '../../sim/crew/helpers';
 import { content } from '../index';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
@@ -45,6 +45,7 @@ function podGame(): { sim: Sim; pod: number; crew: number[] } {
     sim.world.get(h, NeedsC)!.hunger = 100;
     sim.world.get(h, NeedsC)!.rest = 100;
   }
+  for (const id of sim.world.query(ModuleC)) if ((content.modules[sim.world.get(id, ModuleC)!.def as 'module.med_bed'] as { medical?: true }).medical && id !== pod) sim.world.get(id, ModuleC)!.reservedBy = 99; // the pod tests are about the pod
   run(sim, 3);
   return { sim, pod, crew: humans(sim) };
 }
@@ -65,7 +66,7 @@ describe('recovery pod', () => {
     const id = crew[0] as number;
     hurt(sim, id, 30);
     const events = run(sim, secs(20));
-    expect(events.some((e) => e.type === 'crew.enteredPod' && e.crew === id)).toBe(true);
+    expect(events.some((e) => e.type === 'crew.enteredCare' && e.crew === id)).toBe(true);
     expect(sim.world.get(id, RecoveringC)?.bed).toBe(pod);
     expect(sim.world.get(pod, ModuleC)!.reservedBy).toBe(id);
     expect(isIncapacitated(sim, id)).toBe(true);
@@ -74,7 +75,7 @@ describe('recovery pod', () => {
     const m = sim.world.get(pod, ModuleC)!;
     expect(sim.world.get(id, PositionC)).toMatchObject({ x: m.x, y: m.y });
     const later = run(sim, secs(60));
-    expect(later.some((e) => e.type === 'crew.leftPod' && e.crew === id)).toBe(true);
+    expect(later.some((e) => e.type === 'crew.leftCare' && e.crew === id)).toBe(true);
     expect(hp(sim, id)).toBe(100);
     expect(sim.world.has(id, RecoveringC)).toBe(false);
     expect(sim.world.get(pod, ModuleC)!.reservedBy).toBe(0);
@@ -145,21 +146,59 @@ describe('recovery pod', () => {
     expect(hp(sim, patient)).toBe(1);
   });
 
-  it('patients prefer a pod to a medical bed; sleepers never get one', () => {
+  it('critical patients take a pod first, then a medical bed; walking ones a medical bed first, then the pod; sleepers never either', () => {
     const { sim, pod, crew } = podGame();
     const med = place(sim, 'module.med_bed');
     const ship = homeShip(sim);
     const pos = sim.world.get(crew[0] as number, PositionC)!;
     const from = { x: pos.x, y: pos.y };
-    expect(findFreeBed(sim, ship, from, false, undefined, true)?.bed).toBe(pod);
-    sim.world.get(pod, ModuleC)!.reservedBy = 99;
-    expect(findFreeBed(sim, ship, from, false, undefined, true)?.bed).toBe(med);
-    sim.world.get(pod, ModuleC)!.reservedBy = 0;
+    const pick = (use: 'sleep' | 'walking' | 'critical'): number | null => findFreeBed(sim, ship, from, false, undefined, use)?.bed ?? null;
+    expect(pick('critical')).toBe(pod);
+    expect(pick('walking')).toBe(med);
+    sim.world.get(med, ModuleC)!.reservedBy = 99; // no medical bed free
+    expect(pick('walking')).toBe(pod);
+    expect(pick('critical')).toBe(pod);
+    sim.world.get(med, ModuleC)!.reservedBy = 0;
+    sim.world.get(pod, ModuleC)!.reservedBy = 99; // no pod free
+    expect(pick('critical')).toBe(med);
+    expect(pick('walking')).toBe(med);
     for (const id of sim.world.query(ModuleC)) {
       const d = content.modules[sim.world.get(id, ModuleC)!.def as 'module.bed'];
       if (d.bed && id !== pod && id !== med) sim.world.get(id, ModuleC)!.reservedBy = 99;
     }
-    sim.world.get(med, ModuleC)!.reservedBy = 99;
-    expect(findFreeBed(sim, ship, from)).toBeNull();
+    sim.world.get(pod, ModuleC)!.reservedBy = 0;
+    sim.world.get(med, ModuleC)!.reservedBy = 0;
+    expect(pick('sleep')).toBeNull();
+  });
+
+  it('bedUseOf: downed or carried crew are critical, the rest walk', () => {
+    const { sim, crew } = podGame();
+    const id = crew[0] as number;
+    expect(bedUseOf(sim, id)).toBe('walking');
+    sim.world.add(id, DownedC, { bleed: 100, stabilized: false, bed: 0 });
+    expect(bedUseOf(sim, id)).toBe('critical');
+  });
+
+  it('a hurt crew member who can walk goes to a free medical bed before the pod, and heals there to full', () => {
+    const { sim, pod, crew } = podGame();
+    const med = place(sim, 'module.med_bed');
+    run(sim, 3);
+    const id = crew[0] as number;
+    hurt(sim, id, 30);
+    run(sim, secs(12));
+    expect(sim.world.get(id, RecoveringC)?.bed).toBe(med);
+    expect(sim.world.get(pod, ModuleC)!.reservedBy).toBe(0);
+    run(sim, secs(80));
+    expect(hp(sim, id)).toBe(100);
+    expect(sim.world.has(id, RecoveringC)).toBe(false);
+  });
+
+  it('refuses a pod whose access tile is blocked (placement checks it)', () => {
+    const { sim, pod } = podGame();
+    const m = sim.world.get(pod, ModuleC)!;
+    const at = accessTile(content.modules['module.recovery'], m.x, m.y, m.rot)!;
+    spawnModule(sim, 'module.battery', at.x, at.y, 0);
+    const ship = playerShip(sim) as number;
+    expect(placementError(sim, ship, 'module.recovery', m.x, m.y, 0)).not.toBeNull();
   });
 });

@@ -1,5 +1,5 @@
-import { bedStandTile, findFreeBed, findFreePod, ownedBedPlan } from '../../crew/beds';
-import { lieDownInPod } from '../../crew/recovery';
+import { bedStandTile, bedUseOf, findFreeBed, ownedBedPlan } from '../../crew/beds';
+import { lieDownInCare } from '../../crew/recovery';
 import { PathC, PositionC, type Crew, type Path, type Position } from '../../crew/components';
 import { clearPath, isSettled, origin } from '../../crew/helpers';
 import { findPath } from '../../crew/pathfind';
@@ -32,8 +32,8 @@ export function sleepTurn(sim: Sim, id: number, crew: Crew, pos: Position, holds
 }
 
 /**
- * The recover drive's turn (content/policies.ts, a hurt crew member): the sleep machine's walk to a bed, but to a recovery pod only, and the stay in
- * it instead of sleep. True while they walk to the pod or lie in it; false when no pod can be reached (the next drive serves them).
+ * The recover drive's turn (content/policies.ts, a hurt crew member): the sleep machine's walk to a treatment bed (a medical bed first, else a recovery pod:
+ * `bedUseOf`) and the stay in it instead of sleep. True while they walk to it or lie in it; false when none can be reached (the next drive serves them).
  */
 export function recoverTurn(sim: Sim, id: number, crew: Crew, pos: Position, holdsJob: boolean): boolean {
   if (holdsJob) abortTask(sim, id, 'drive');
@@ -90,7 +90,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position, toPod: boole
     claim = 0;
   }
   if (claim && bed) {
-    if (isSettled(pos) && pos.x === stand.x && pos.y === stand.y) return def?.recovery ? lieDownInPod(sim, id, claim) : fallAsleep(sim, id, crew);
+    if (isSettled(pos) && pos.x === stand.x && pos.y === stand.y) return def?.medical ? lieDownInCare(sim, id, claim) : fallAsleep(sim, id, crew);
     if (path.steps.length > 0 || !isSettled(pos)) return; // still walking to the bed
     const steps = findPath(sim, shipIdOf(sim, pos), origin(pos), stand, walkOpts(sim, id));
     if (steps && steps.length > 0) {
@@ -100,7 +100,7 @@ function goToSleep(sim: Sim, id: number, crew: Crew, pos: Position, toPod: boole
     releaseBedClaim(sim, id); // unreachable: sleep on the floor instead (a pod patient just stays hurt)
     if (toPod) return;
   } else if (toPod) {
-    const plan = findFreePod(sim, ship, origin(pos), unsafe);
+    const plan = findFreeBed(sim, ship, origin(pos), false, unsafe, bedUseOf(sim, id));
     if (plan) {
       claimBed(sim, id, plan.bed);
       path.steps = plan.steps;

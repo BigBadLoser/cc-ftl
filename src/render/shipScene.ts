@@ -33,6 +33,8 @@ import { DEFAULT_BEAM_LOOK, type BeamLook } from './beamArt';
 import { OPEN_GATE, type BuildGate } from './buildBudget';
 
 export interface ShipSceneOptions {
+  /** Tier index of each room of this ship, for the room-quality overlay. */
+  roomTiers?: () => ReadonlyMap<number, number>;
   world: World;
   atlas: Atlas;
   modules: ModuleDefs;
@@ -103,7 +105,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const inside = () => (roofed ? null : { grid });
   const gate = o.gate ?? OPEN_GATE;
   let whole = false;
-  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate });
+  const view = createGridView(grid, atlas, L, { emergency: () => emergency, overlayWorld: { world, modules, roomTiers: o.roomTiers }, beamLook: () => o.beamLook ?? DEFAULT_BEAM_LOOK, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, gate });
   const crewView = createCrewView(world, atlas, L, {
     target: () => ({ shipId: grid.id, ox: grid.x0, oy: grid.y0 }),
     hidden: (x, y) => crewHidden(grid, roofed, x, y),
@@ -114,6 +116,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       const def = m && modules[m.def];
       return m && def ? { m, def } : null;
     },
+    modules,
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
     weaponArt: (item) => items[item]?.hand?.art,

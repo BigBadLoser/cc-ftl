@@ -469,6 +469,9 @@ export interface AirlockLayout {
 /** What a derelict's part strips into (DESIGN.md "Salvaging derelicts"); the item is `item.scrap_<type>`. */
 export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 
+/** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
+export type SeatKind = 'stool';
+
 export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
@@ -489,6 +492,8 @@ export interface ModuleDef {
    * footprint (a tile beside the module) or inside it, in which case it must also be listed in `openTiles`.
    */
   access?: readonly [number, number];
+  /** More places to use it from, one crew member each, after `access` (the game table's second stool). Same rules as `access`; `accessTiles` lists them all. */
+  extraAccess?: readonly (readonly [number, number])[];
   /**
    * Per-tile solidity: footprint tiles (rotation-0 offsets) crew can walk on although the module is solid, e.g. a
    * console's chair and the free floor beside it. All other footprint tiles of a solid module block walking.
@@ -532,7 +537,7 @@ export interface ModuleDef {
   medical?: true;
   /**
    * A recovery pod (crew/recovery.ts): a powered, solid tank (also `bed` and `medical`) entered from its `access` tile. A hurt crew member lies in it and heals to
-   * full with no medic, out of action meanwhile; a downed patient carried there is stabilised and heals too. Patients prefer it to a medical bed (crew/beds.ts `bedKind`).
+   * full with no medic, out of action meanwhile; a downed patient carried there is stabilised and heals too. The critical (downed) take it before a medical bed, walking patients only when no medical bed is free (crew/beds.ts `BedUse`).
    */
   recovery?: true;
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
@@ -541,6 +546,12 @@ export interface ModuleDef {
   drawsWhen?: 'planted';
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
+  /**
+   * A leisure spot (sim/ai/machines/leisureSpots.ts): crew on a break stand on the `stand` tiles (offsets from the footprint's top-left at rotation 0, rotated
+   * with the module) while it is powered. One crew member per tile. `social` spots draw `trait.social` crew, `solo` ones `trait.loner`.
+   */
+  /** A leisure spot: one crew member plays at each of its access tiles (`accessTiles`). */
+  leisure?: { kind: 'social' | 'solo'; seat?: SeatKind };
   workstation?: true;
   /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
   research?: true;

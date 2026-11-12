@@ -508,8 +508,8 @@ export interface UiModuleDef {
   /** Build catalog tab. */
   category: 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
   description: string;
-  /** Access tile (offset from the footprint's top-left at rotation 0), or null. */
-  access: [number, number] | null;
+  /** Access tiles (offsets from the footprint's top-left at rotation 0): `access` then `extraAccess`, empty for none. */
+  access: [number, number][];
   /** Facts for the popover besides cost: power, operator, shield layers, capacity... */
   facts: { label: string; value: string; tone?: 'warn' }[];
   /** Tier name ("Mk I", "Mk II", "Mk III") of a module that comes in tiers, else null. */

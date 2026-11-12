@@ -19,6 +19,7 @@ export function moodSystem(sim: Sim): void {
     const dt = MOOD_INTERVAL / 20;
     m.meal = Math.max(0, m.meal - dt);
     m.sleep = Math.max(0, m.sleep - dt);
+    m.noBreak = (m.noBreak ?? 0) + dt;
     if (m.relax) m.relax = Math.max(0, m.relax - dt);
     if (m.enjoy) m.enjoy = Math.max(0, m.enjoy - dt);
     if (m.letOut) m.letOut = Math.max(0, m.letOut - dt);

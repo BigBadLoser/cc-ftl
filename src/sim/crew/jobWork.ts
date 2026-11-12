@@ -25,7 +25,7 @@ import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from './xp';
 import { workSkill, workSkillMult } from './workSkill';
-import { bedStandTile, findFreeBed } from './beds';
+import { bedStandTile, bedUseOf, findFreeBed } from './beds';
 import { handInPatient, rescueSpot } from '../away/rescue';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
@@ -194,7 +194,7 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   if (!carried) {
     let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
     if (!bed) {
-      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, true);
+      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, bedUseOf(sim, patient));
       const spot = plan ? null : rescueSpot(sim, patient);
       if (spot) {
         // An away site with no bed: carried to the shuttle (away/rescue.ts).

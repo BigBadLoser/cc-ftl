@@ -33,11 +33,11 @@ const eat = {
 } satisfies DriveDef;
 
 /**
- * Health under 70%, with a free recovery pod aboard: walk to it and lie in it until healed (runs the sleep machine's bed walk, to a pod only; crew/recovery.ts).
- * Over work, under the survival needs; with no pod the drive is closed.
+ * Health under 70%, with a medical bed or a recovery pod free aboard: walk to one (a medical bed first, the pod only when none is free: the pod is for the critical
+ * cases, `BedUse` in crew/beds.ts) and lie in it until healed (runs the sleep machine's bed walk; crew/recovery.ts). Over work, under the survival needs; with no bed the drive is closed.
  */
 const recover = {
-  id: 'recover', input: 'health', curve: [[0, 800]], enter: 700, exit: 1000, requires: ['pod'], task: 'sleep',
+  id: 'recover', input: 'health', curve: [[0, 800]], enter: 700, exit: 1000, requires: ['care'], task: 'sleep',
 } satisfies DriveDef;
 
 /** A battery robot whose battery is low, or which is damaged with a repair item aboard, goes to its bay. */

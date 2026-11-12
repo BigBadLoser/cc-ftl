@@ -7,13 +7,11 @@ import { ANIM_FPS, FRONT_DZ, animFrame, frameCount, moduleLayers, type ModuleLay
  * The recovery pod's layers (#319; sprite ids in docs/RENDER_LAB.md `recovery`). Bottom up, over the pod's depth key K: the pod (bubble loop while powered,
  * `.unpowered` dark), the scanner's far half K+0.01, the patient K+0.02 (crewView: a crew member in the pod is the module's seated figure), the front
  * overlay K+0.03 (the fluid's near film, glass, near bubbles and the hat, on the same bubble frame) and the scanner's near half K+0.04.
- * TODO(glowOver): `glowKey` puts the glow of a layer with dz >= SEAT_DZ under the seated figure, so the lit `front` and `scan.front` glows draw under the patient. When
- * `ModuleLayer.glowOver` (feat/room-quality-441) reaches this branch, set it on those two layers (`GLOW_OVER` below).
  * The scanner sweeps (16 frames, foot to head and back) every `SCAN_PERIOD_MS` while powered, each pod on its own offset.
  */
 
-/** Extra fields of the two layers over the patient: the place to add `glowOver: true` once the field exists. */
-const GLOW_OVER = {};
+/** The two layers over the patient: their glow paints over the patient too (`glowKey`), not under the seated figure as a console desk front's does. */
+const GLOW_OVER = { glowOver: true as const };
 
 export const SCAN_FRAMES = 16;
 export const SCAN_PERIOD_MS = 30000;

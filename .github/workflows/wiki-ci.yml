@@ -8,14 +8,22 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'wiki/**'
-      - 'src/content/**'
+      # Live panels run the game headless at build time, so any game source can break the wiki.
+      - 'src/**'
+      - 'public/assets/**'
+      - 'CHANGELOG.md'
+      - 'package-lock.json'
       - '.github/workflows/pages.yml'
       - '.github/workflows/wiki-ci.yml'
   push:
     branches: [main]
     paths:
       - 'wiki/**'
-      - 'src/content/**'
+      # Live panels run the game headless at build time, so any game source can break the wiki.
+      - 'src/**'
+      - 'public/assets/**'
+      - 'CHANGELOG.md'
+      - 'package-lock.json'
       - '.github/workflows/pages.yml'
       - '.github/workflows/wiki-ci.yml'
 
@@ -32,6 +40,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+      # The live panels import the game's own code (pixi.js, svelte and the rest).
+      - run: npm ci
       - run: npm --prefix wiki install --no-audit --no-fund
       - run: npm --prefix wiki run check
       - run: npm --prefix wiki run build

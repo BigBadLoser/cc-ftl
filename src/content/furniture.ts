@@ -109,7 +109,7 @@ export const furniture = {
     maxHp: 60, buildWork: 100, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
   },
   // A recovery pod (#319): a powered tank, entered from the tile in front. A hurt crew member lies in it and heals to full with no medic, out of action meanwhile; a downed
-  // patient carried here is stabilised and heals. Patients prefer it to a medical bed (crew/beds.ts). Also a bed and medical, so the bed code finds it; sleepers never do.
+  // patient carried here is stabilised and heals. The critical (downed) take it before a medical bed, walking patients after one (crew/beds.ts `BedUse`). Also a bed and medical, so the bed code finds it; sleepers never do.
   'module.recovery': {
     scrap: 'tech',
     name: 'Recovery pod',
