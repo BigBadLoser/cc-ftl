@@ -178,6 +178,44 @@ def b1f():
     return k.build()
 
 
+# B1g colour schemes: frame (posts, deck sides, boards), rails and ladder, mattress, blanket, pillow, stripe; each a
+# (side, top) pair where it has a lit top.
+SCHEMES = {
+    "g1": dict(post=("c3W4", "c3W2"), deck=("c3W5", "c3W3"), board=("c3W3", "c3W1"), rail="c3W1",
+               mat=("dnW2", "dnW1"), blanket=("c3T4", "c3T2"), pillow="medWhite", stripe="orange"),
+    "g2": dict(post=("steelD", "steel"), deck=("steelD", "steel"), board=("steel", "steelL"), rail="medWhite",
+               mat=("dnW3", "dnW2"), blanket=("c3T4", "c3T2"), pillow="medWhite", stripe="cyan"),
+    "g3": dict(post=("nvW5", "nvW3"), deck=("nvW6", "nvW4"), board=("nvW4", "nvW2"), rail="nvW1",
+               mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+}
+
+
+def _b1g(name, c):
+    """B1f in a colour scheme, with an upright at the open-side rail's foot end (by the ladder)."""
+    k = K(name, FP)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, c["post"][0], top=c["post"][1])
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, c["deck"][0], top=c["deck"][1], bevel=0.01)
+        k.box(0, 0, z, W - 0.04, L - 0.04, MAT, c["mat"][0], top=c["mat"][1], bevel=0.02)
+        k.box(0, -0.66, z + MAT, 0.6, 0.38, 0.07, c["pillow"], top=c["pillow"], bevel=0.025)
+        k.box(0, 0.22, z + MAT, W - 0.06, 1.06, 0.03, c["blanket"][0])
+        k.box(0, 0.22, z + MAT + 0.03, W - 0.08, 1.02, 0.008, c["blanket"][1])
+        k.box(0, -0.31, z + MAT, W - 0.06, 0.05, 0.035, c["stripe"])
+    for sv in (-1, 1):
+        k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, c["board"][0], top=c["board"][1])
+        k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, c["board"][0], top=c["board"][1])
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+    r = c["rail"]
+    RAIL["scheme"] = (0.04, 0.035, r, r)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "scheme")
+    _rails(k, LOW, 0.3, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "scheme")
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3, 0.3), "scheme")
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4, rails=r, rungs=r)
+    return k.build()
+
+
 def b1d():
     return _railed("bunk_b1d", "thin")
 
@@ -240,7 +278,8 @@ def b3():
     return k.build()
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f}
+DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
+           **{f"b1{g}": (lambda g=g: _b1g(f"bunk_b1{g}", SCHEMES[g])) for g in SCHEMES}}
 
 
 def jobs():
