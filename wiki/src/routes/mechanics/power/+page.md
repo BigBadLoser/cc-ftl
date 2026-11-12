@@ -72,7 +72,7 @@ Bigger reactors come from blueprints and research; see [Research](../../referenc
 
 ### Fuel: energy crystals
 
-Reactors burn **energy crystals**. Each reactor has a small store (<Stat id="module.reactor" field="fuelStore" /> crystals) and burns from it only as fast as the
+Reactors burn **energy crystals**. Each reactor has a small store (<Stat id="module.reactor" field="fuel.store" /> crystals) and burns from it only as fast as the
 ship draws power: a reactor carrying half its rating burns half as fast, and one with nothing to carry barely burns at all.
 A crystal gives enough energy for a game hour of a basic reactor running flat out (<Stat kind="tuning" id="GAME_HOUR_SEC" unit="seconds" /> of real time). The
 bigger tiers hold the same number of crystals, so at full output they get through them faster, but the crystals needed for a

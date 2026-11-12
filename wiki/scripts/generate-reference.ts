@@ -13,6 +13,21 @@ import * as tuning from '../../src/sim/tuning.ts';
 import type { Effect, ItemDef, ItemQty, ModuleDef, RecipeDef, ResearchDef, VehicleDef, WeaponDef } from '../../src/sim/registry.ts';
 import type { FactionDef } from '../../src/sim/shipgen/types.ts';
 import * as tuningJobs from '../../src/sim/galaxy/tuningJobs.ts';
+import * as tuningGalaxy from '../../src/sim/galaxy/tuning.ts';
+import * as tuningRecruit from '../../src/sim/galaxy/tuningRecruit.ts';
+import * as tuningGalaxyHeat from '../../src/sim/galaxy/tuningHeat.ts';
+import * as tuningWar from '../../src/sim/galaxy/tuningWar.ts';
+import * as tuningBlackMarket from '../../src/sim/blackmarket/tuning.ts';
+import * as tuningCombatHeat from '../../src/sim/combat/heatTuning.ts';
+import { trade } from '../../src/content/trade.ts';
+import { yard } from '../../src/content/yard.ts';
+import { crops } from '../../src/content/crops.ts';
+import { blackMarkets } from '../../src/content/blackMarkets.ts';
+import { traits } from '../../src/content/traits.ts';
+import { upbringings, careers } from '../../src/content/backgrounds.ts';
+import { drones } from '../../src/content/drones.ts';
+import { events } from '../../src/content/events.ts';
+import { furniture } from '../../src/content/furniture.ts';
 import { goals } from '../../src/content/goals.ts';
 import { ACTIONS, KEY_GROUPS } from '../../src/ui/keymap/actions.ts';
 import { chordLabel } from '../../src/ui/keymap/chords.ts';
@@ -333,22 +348,36 @@ await saveJson('reference-catalog', catalog);
 
 // Live numbers for handwritten guides (<Stat>, <ModuleTable>): the plain scalar fields of each definition and the
 // sim's tuning constants, so a rebalance updates the guides on the next build.
-function scalars(def: object): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(def).filter(([, v]) =>
-    ['number', 'string', 'boolean'].includes(typeof v) || (Array.isArray(v) && v.every(x => typeof x === 'number'))));
+function scalars(def: object, prefix = '', depth = 3): Record<string, unknown> {
+  // Plain scalar fields, and number arrays; nested plain objects flatten to dotted keys ("fuel.store", "food.fill").
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(def)) {
+    if (['number', 'string', 'boolean'].includes(typeof v) || (Array.isArray(v) && v.every(x => typeof x === 'number'))) out[prefix + k] = v;
+    else if (depth > 0 && v && typeof v === 'object' && !Array.isArray(v)) Object.assign(out, scalars(v, prefix + k + '.', depth - 1));
+  }
+  return out;
+}
+/** Merges constant pools for <Stat kind="tuning">; a name two files define differently is an error, not a silent pick. */
+function pool(...parts: Record<string, unknown>[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const part of parts) for (const [k, v] of Object.entries(part)) {
+    if (k in out && JSON.stringify(out[k]) !== JSON.stringify(v)) throw Error(`Tuning name clash for the wiki: ${k}`);
+    out[k] = v;
+  }
+  return out;
 }
 function liveKind(kind: Kind, extra: (id: string, def: any) => Record<string, unknown> = () => ({})) {
   return Object.fromEntries(Object.entries(registries[kind]).map(([id, def]) => [id, { slug: slug(kind, id), ...scalars(def), ...extra(id, def) }]));
 }
 await saveJson('game-data', {
-  modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({
-    powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY,
-    // Reactor fuel and battery storage, flattened so <Stat field="..."> can read them.
-    ...(def.fuel ? { fuelStore: def.fuel.store, fuelRefillBelow: def.fuel.refillBelow, fuelPowerPerUnit: def.fuel.powerPerUnit } : {}),
-    ...(def.battery ? { batteryCapacity: def.battery.capacity } : {}),
-  })),
+  modules: liveKind('modules', (_, def: Module & { powerPriority?: number }) => ({ powerPriority: def.powerPriority ?? tuning.DEFAULT_POWER_PRIORITY })),
   items: liveKind('items'), weapons: liveKind('weapons'), vehicles: liveKind('vehicles'), research: liveKind('research'),
-  tuning: { ...scalars(tuning), ...scalars(tuningJobs) },
+  // Sim constants by their exported name, and content tables by dotted path ("trade.sellSpread", "crops.crop.greens.yield").
+  tuning: pool(
+    scalars(tuning, '', 2), scalars(tuningJobs, '', 2), scalars(tuningGalaxy, '', 2), scalars(tuningRecruit, '', 2),
+    scalars(tuningGalaxyHeat, '', 2), scalars(tuningWar, '', 2), scalars(tuningBlackMarket, '', 2), scalars(tuningCombatHeat, '', 2),
+    scalars({ trade, yard, crops, blackMarkets, traits, upbringings, careers, drones, events, furniture }, '', 4),
+  ),
   // Default key bindings by group, labelled the way the game shows them (src/ui/keymap). Debug keys are for development.
   controls: KEY_GROUPS.filter((g) => g.id !== 'debug').map((g) => ({
     id: g.id, label: g.label,
