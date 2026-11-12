@@ -94,7 +94,7 @@ more (see [Crew](../crew/)).
 
 **People** (see below): near a friend +<Stat kind="tuning" id="BOND_FRIEND_MOOD" />, near a rival
 <Stat kind="tuning" id="BOND_RIVAL_MOOD" />, a good talk +<Stat kind="tuning" id="BOND_CHAT_MOOD" />, a row
-<Stat kind="tuning" id="BOND_ROW_MOOD" />, grieving a dead friend <Stat kind="tuning" id="BOND_GRIEF_MOOD" /> for a while.
+<Stat kind="tuning" id="BOND_ROW_MOOD" />, grieving a dead friend -<Stat kind="tuning" id="BOND_GRIEF_MOOD" /> for a while.
 
 **After a break**: "Let it out" gives <Stat kind="tuning" id="BREAK_LET_OUT_POINTS" /> points back for a few minutes after a mental break ends. Someone who made a
 scene nearby costs "Made a scene" <Stat kind="tuning" id="BREAK_SCENE_MOOD" /> for <Stat kind="tuning" id="BREAK_SCENE_SEC" unit="s" />.

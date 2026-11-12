@@ -129,7 +129,7 @@ A crew member takes the open job in their best column first, then the next. With
 usually gets it. A job with a 1 always goes before a job with a 3, wherever it is.
 
 **Default priorities** come from skills and interests: a skill of 6 or more, or a passionate interest with at least
-3, starts at 1; a skill of 4 or 5 starts at 2; a skill of 2 or 3 starts at 3; below that, 4. Damage control starts at 1
+3, starts at 1; a skill of 4 or 5 (or a keen interest with at least 2) starts at 2; a skill of 2 or 3 starts at 3; below that, 4. Damage control starts at 1
 for everyone, hauling at 3. Work they refuse starts off and cannot be turned on.
 
 > **Tip:** consoles are a special case. Outside a fight, a crew member only staffs a console if their Ops number is <Stat kind="tuning" id="OPERATE_MAX_LEVEL" />
