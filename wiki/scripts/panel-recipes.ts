@@ -11,7 +11,7 @@ import { droneScenarioCommands } from '../../src/app/droneScenario.ts';
 import { buildTrade } from '../../src/app/tradeSnapshot.ts';
 import { upgradeScenarioCommands } from '../../src/app/upgradeScenario.ts';
 import { buildStructCosts } from '../../src/app/logisticsSnapshot.ts';
-import { portsAt, nodesWithin } from '../../src/sim/index.ts';
+import { galaxyIndex, playerShip, portsAt, nodesWithin } from '../../src/sim/index.ts';
 import { stationClass } from '../../src/sim/galaxy/ports.ts';
 import { buildJobs } from '../../src/app/jobsSnapshot.ts';
 
@@ -70,7 +70,36 @@ function jobsAt(cls: 'trade' | 'military' | 'research') {
   return record(sim, ['jobs']);
 }
 
+/** An incoming signal (the pirate's returning skiff) opened on a two-hop trip, hailed and scanned: the story feed's open decision. */
+function signalAfterHailAndScan() {
+  const sim = scene({ seed: 3, ship: 'ship.wayfarer', warm: 2 });
+  const run = (n: number) => { for (let i = 0; i < n; i++) { sim.step(); sim.events.drain(); } };
+  const adjacent = (id: string): string[] => (galaxyIndex(sim.galaxy).adjacent.get(id) ?? []).map((e) => (e.a === id ? e.b : e.a)).sort();
+  const route: string[] = [];
+  let at = sim.galaxy.current;
+  for (let i = 0; i < 2; i++) {
+    const next = adjacent(at).find((n) => n !== sim.galaxy.current && !route.includes(n));
+    if (!next) break;
+    route.push(next);
+    at = next;
+  }
+  const event = 'event.pirate_returns';
+  for (const c of [
+    { type: 'story.setFlag', flag: 'spared_pirate', value: 1 }, { type: 'debug.giveItems', item: 'item.fuel', count: 80 }, { type: 'debug.chargeFtl' },
+    { type: 'galaxy.jump', ship: playerShip(sim), route },
+  ] as const) sim.enqueue(c);
+  for (let i = 0; i < 2000 && sim.galaxy.travel?.phase !== 'hop'; i++) run(1);
+  sim.enqueue({ type: 'story.fire', event });
+  for (let i = 0; i < 100 && sim.galaxy.signal?.event !== event; i++) run(1);
+  must(sim.galaxy.signal, 'signal');
+  for (const choice of ['hail', 'scan']) { sim.enqueue({ type: 'story.choose', choice }); run(20); }
+  const { story } = record(sim, ['story']);
+  return { story };
+}
+
 export const panels = {
+  /** The Incoming signal window on a pirate's returning skiff, hailed and scanned (its portrait and hologram are stills from the game, see capture). */
+  signal: signalAfterHailAndScan,
   /** The module inspector on a drone bay: one repair drone out sealing a hull breach, one docked (the drone scenario). */
   droneBay: () => {
     const sim = scene({ seed: 7, ship: 'ship.starter', commands: (s) => droneScenarioCommands(s, false, true), secs: 4 });

@@ -10,12 +10,13 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import sharp from 'sharp';
 import { shots } from './guide-shots.mjs';
+import { captureSignalStills } from './signal-stills.mjs';
 
 const wiki = fileURLToPath(new URL('../', import.meta.url));
 const out = join(wiki, 'static/guides');
 // Marker positions for <GuideShot>, as fractions of the image, so callouts follow the UI when it moves.
 const marksOut = join(wiki, 'src/data/guide-shots');
-const port = 5199;
+const port = Number(process.env.CAPTURE_PORT ?? 5199); // CAPTURE_PORT when another dev server already holds 5199
 const base = `http://127.0.0.1:${port}/cc-ftl/`;
 const only = process.argv[2];
 const SLOW = 120000; // generous: software GL makes some frames slow
@@ -191,6 +192,22 @@ try {
     console.log(`  captured ${shot.name}.webp (${since()})`);
     } catch (err) { console.error('FAILED ' + shot.name + ': ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
     // Always close the shot's page, failed or not: each one holds a whole game.
+    finally { await page?.close().catch(() => {}); }
+  }
+  // The Incoming signal panel's portrait and hologram (scripts/signal-stills.mjs): drawn by the renderer on any game page.
+  if (!only || 'signal'.includes(only)) {
+    let page;
+    try {
+      console.log(`signal stills: loading (${since()})`);
+      page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
+      await page.context().addInitScript(() => { try { localStorage.setItem('cc-ftl.lessons', JSON.stringify({ seen: [], off: true })); } catch { /* no storage */ } });
+      await page.goto(base + '?seed=3&starter=wayfarer&hook&lessons=off', { waitUntil: 'load' });
+      await page.waitForSelector('#boot-veil', { state: 'detached', timeout: 240000 });
+      page.setDefaultTimeout(SLOW);
+      await page.waitForFunction(() => window.__cc?.portraitOf, null, { timeout: 240000, polling: 1000 }); // the hook installs once the renderer is up
+      await captureSignalStills(page, wiki);
+      console.log(`  captured signal/portrait.webp, signal/holo.webp (${since()})`);
+    } catch (err) { console.error('FAILED signal stills: ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
     finally { await page?.close().catch(() => {}); }
   }
   await browser.close();

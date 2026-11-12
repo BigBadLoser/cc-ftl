@@ -61,7 +61,7 @@ During a trip, a hop can draw a signal. A window opens: **Incoming signal**. It 
 | **Comms** | A transcript, and what they carry and have in their wallet once hailed. |
 | **Sensors** | A hologram of the ship with a readout, once you've scanned. Before that: **NO SCAN**. |
 
-<GamePanel title="Incoming signal" bare width="1080px" zoom={0.74} caption="A new signal before you hail or scan: an unknown transponder, no video, no scan.">
+<GamePanel title="Incoming signal" bare width="1080px" zoom={0.74} caption="A returning pirate skiff after a hail and a scan: the caller on video and in the transcript, the ship as a hologram with its readings, and the decisions along the bottom.">
   <SignalSample />
 </GamePanel>
 

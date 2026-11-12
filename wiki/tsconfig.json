@@ -4,7 +4,8 @@
     "strict": true,
     "resolveJsonModule": true,
     "allowJs": true,
-    "checkJs": false
+    "checkJs": false,
+    "paths": { "svelte": ["./node_modules/svelte"], "svelte/*": ["./node_modules/svelte/*"] }
   },
   "include": ["src", "vite.config.ts"]
 }
