@@ -80,11 +80,11 @@ const HH = 32;
 const iso = (x: number, y: number) => ({ x: (x - y) * HW, y: (x + y) * HH });
 
 export interface PreviewGeometry {
-  /** Diamond corner points (SVG `points`) of each footprint tile, grid tiles around it, and the access tile. */
+  /** Diamond corner points (SVG `points`) of each footprint tile, grid tiles around it, and each access tile. */
   foot: string[];
   grid: string[];
-  access: string | null;
-  accessLabel: { x: number; y: number } | null;
+  access: string[];
+  accessLabel: { x: number; y: number }[];
   /** The sprite's CSS box inside the preview. */
   sprite: { left: number; top: number; width: number; height: number } | null;
 }
@@ -95,15 +95,15 @@ const diamond = (x: number, y: number, s: number, ox: number, oy: number) => {
   return `${px(0, -HH)} ${px(HW, 0)} ${px(0, HH)} ${px(-HW, 0)}`;
 };
 
-/** Lay the isometric preview out in a box: footprint tiles, the access tile, a grid around them and the sprite (anchored at the front tile centre), scaled to fit. */
-export function previewGeometry(w: number, h: number, access: { x: number; y: number } | null, thumb: { w: number; h: number; ax: number; ay: number } | null, box: { w: number; h: number }): PreviewGeometry {
+/** Lay the isometric preview out in a box: footprint tiles, the access tiles, a grid around them and the sprite (anchored at the front tile centre), scaled to fit. */
+export function previewGeometry(w: number, h: number, access: { x: number; y: number }[], thumb: { w: number; h: number; ax: number; ay: number } | null, box: { w: number; h: number }): PreviewGeometry {
   const front = iso(w - 1, h - 1);
   const tiles: { x: number; y: number }[] = [];
   for (let y = -1; y <= h; y++) for (let x = -1; x <= w; x++) tiles.push({ x, y });
-  if (access) tiles.push(access);
+  tiles.push(...access);
   // Scale by the content (footprint, access, sprite); the grid ring around it just frames it.
   let cx0 = Infinity, cy0 = Infinity, cx1 = -Infinity, cy1 = -Infinity;
-  const own = [...Array.from({ length: w * h }, (_, i) => ({ x: i % w, y: Math.floor(i / w) })), ...(access ? [access] : [])];
+  const own = [...Array.from({ length: w * h }, (_, i) => ({ x: i % w, y: Math.floor(i / w) })), ...access];
   for (const t of own) { const c = iso(t.x, t.y); cx0 = Math.min(cx0, c.x - HW); cy0 = Math.min(cy0, c.y - HH); cx1 = Math.max(cx1, c.x + HW); cy1 = Math.max(cy1, c.y + HH); }
   if (thumb) { cx0 = Math.min(cx0, front.x - thumb.ax); cy0 = Math.min(cy0, front.y - thumb.ay); cx1 = Math.max(cx1, front.x - thumb.ax + thumb.w); cy1 = Math.max(cy1, front.y - thumb.ay + thumb.h); }
   const pad = 22;
@@ -111,13 +111,12 @@ export function previewGeometry(w: number, h: number, access: { x: number; y: nu
   const ox = box.w / 2 - ((cx0 + cx1) / 2) * s;
   const oy = box.h / 2 - ((cy0 + cy1) / 2) * s;
   const isFoot = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h;
-  const isAcc = (x: number, y: number) => !!access && access.x === x && access.y === y;
-  const ac = access ? iso(access.x, access.y) : null;
+  const isAcc = (x: number, y: number) => access.some((a) => a.x === x && a.y === y);
   return {
     grid: tiles.filter((t) => !isFoot(t.x, t.y) && !isAcc(t.x, t.y)).map((t) => diamond(t.x, t.y, s, ox, oy)),
     foot: tiles.filter((t) => isFoot(t.x, t.y)).map((t) => diamond(t.x, t.y, s, ox, oy)),
-    access: access ? diamond(access.x, access.y, s, ox, oy) : null,
-    accessLabel: ac ? { x: ox + ac.x * s, y: oy + ac.y * s + 4 } : null,
+    access: access.map((a) => diamond(a.x, a.y, s, ox, oy)),
+    accessLabel: access.map((a) => { const c = iso(a.x, a.y); return { x: ox + c.x * s, y: oy + c.y * s + 4 }; }),
     sprite: thumb ? { left: ox + (front.x - thumb.ax) * s, top: oy + (front.y - thumb.ay) * s, width: thumb.w * s, height: thumb.h * s } : null,
   };
 }

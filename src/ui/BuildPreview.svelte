@@ -5,7 +5,7 @@
   let { def, thumb, rot }: { def: UiModuleDef; thumb?: UiThumb; rot: number } = $props();
   const W = 300, H = 200;
   const dims = $derived(rot % 2 ? { w: def.h, h: def.w } : { w: def.w, h: def.h });
-  const access = $derived(def.access ? rotateAccess(def.w, def.h, rot, def.access[0], def.access[1]) : null);
+  const access = $derived(def.access.map(([dx, dy]) => rotateAccess(def.w, def.h, rot, dx, dy)));
   const g = $derived(previewGeometry(dims.w, dims.h, access, thumb && thumb.w ? thumb : null, { w: W, h: H }));
 </script>
 
@@ -13,11 +13,11 @@
   <svg width={W} height={H} viewBox="0 0 {W} {H}" aria-hidden="true">
     {#each g.grid as p, i (i)}<polygon class="g" points={p} />{/each}
     {#each g.foot as p, i (i)}<polygon class="f" points={p} />{/each}
-    {#if g.access}<polygon class="acc" points={g.access} />{/if}
+    {#each g.access as p, i (i)}<polygon class="acc" points={p} />{/each}
   </svg>
   {#if g.sprite && thumb}<img src={thumb.url} alt="" style:left="{g.sprite.left}px" style:top="{g.sprite.top}px" style:width="{g.sprite.width}px" style:height="{g.sprite.height}px" />{/if}
   <svg width={W} height={H} viewBox="0 0 {W} {H}" aria-hidden="true">
-    {#if g.accessLabel}<text x={g.accessLabel.x} y={g.accessLabel.y} class="lbl">USE</text>{/if}
+    {#each g.accessLabel as l, i (i)}<text x={l.x} y={l.y} class="lbl">USE</text>{/each}
   </svg>
 </div>
 
