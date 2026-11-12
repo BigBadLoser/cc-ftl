@@ -204,4 +204,20 @@ describe('leisure spots', () => {
     }
     expect(sim.world.get(module, ModuleC)).toBeDefined();
   });
+
+  it('a game that stops working mid-break ends the break without crediting a game', () => {
+    const { sim, module } = withSpots('module.arcade');
+    let player: number | undefined;
+    for (let i = 0; i < 2500 && player === undefined; i++) {
+      sim.step();
+      player = onBreak(sim, module)[0];
+    }
+    expect(player).toBeDefined();
+    sim.world.get(module, ModuleC)!.enabled = false;
+    for (let i = 0; i < 1500; i++) {
+      sim.step();
+      expect(ensureMood(sim, player as number).relaxKey).not.toBe('playedGame');
+    }
+    expect(onBreak(sim, module)).toHaveLength(0);
+  });
 });

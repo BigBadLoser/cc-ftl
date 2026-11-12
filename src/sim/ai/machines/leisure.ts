@@ -14,7 +14,7 @@ import type { Sim } from '../../sim';
 import { TICK_HZ } from '../../time';
 import { BOND_SPOT_SAMPLES, LEISURE_PLAY_BONUS_TILES, LEISURE_SEC } from '../../tuning';
 import { TaskC } from '../components';
-import { freeSpots, leisureLean } from './leisureSpots';
+import { freeSpots, leisureLean, usable } from './leisureSpots';
 import { safePathBeside, unsafeFor } from '../hazard';
 import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
@@ -38,6 +38,12 @@ export function leisureTurn(sim: Sim, id: number, crew: Crew, pos: Position): bo
   const task = sim.world.get(id, TaskC);
   const path = sim.world.get(id, PathC) as Path;
   if (task?.machine === 'leisure') {
+    // A game spot that stops working mid-break (unpowered, switched off, broken, dismantled) ends the break without its credit.
+    if (task.bb.target && !usable(sim, task.bb.target, shipIdOf(sim, pos))) {
+      clearPath(sim, id);
+      clearJoblessTask(sim, id);
+      return false;
+    }
     if (path.steps.length > 0 || !isSettled(pos)) return true; // still walking
     if (task.state === 'Walk') {
       setState(sim, id, task, 'Relax');

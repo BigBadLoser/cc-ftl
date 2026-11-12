@@ -62,7 +62,7 @@ function held(world: World, except: number): Set<string> {
 }
 
 /** A leisure module that can be used: placed on this ship, switched on, powered and whole. */
-function usable(sim: Sim, module: number, ship: number): boolean {
+export function usable(sim: Sim, module: number, ship: number): boolean {
   const m = sim.world.get(module, ModuleC);
   const def = m && sim.content.modules[m.def];
   return !!m && !!def?.leisure && m.enabled && m.powered && m.hp > 0 && shipIdOf(sim, m) === ship;
