@@ -12,7 +12,7 @@ import { cargoAdd, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
-import { addStock, touchMarket } from './deals';
+import { addStock, touchMarket, unstage } from './deals';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -123,8 +123,7 @@ export function unwindStation(sim: Sim, d: Deal): void {
     if (touches(h.src) || touches(h.dst)) sim.world.destroyEntity(id);
   }
   for (const l of d.get) cargoTake(sim, d.vehicle, l.item, l.count);
-  for (const s of dock.staged) storageTake(sim, s.storage, s.item, s.count);
-  dock.staged = [];
+  unstage(sim, d);
   for (const l of d.give) {
     if (d.get.some((g) => g.item === l.item)) continue;
     const missing = l.count - cargoOf(sim, d.vehicle, l.item);

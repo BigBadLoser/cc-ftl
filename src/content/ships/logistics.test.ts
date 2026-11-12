@@ -56,6 +56,21 @@ describe('logistics: transfer orders', () => {
     expect(sim.world.get(shuttleOf(sim), VehicleC)).toMatchObject({ state: 'stowed', pilot: 0, autopilot: false });
   });
 
+  it('duplicate lines of one item are one line: 5 + 1 moves exactly 6 and conserves stock (#160)', () => {
+    const { sim, home, base } = setup({ metal: 30 });
+    const total0 = stockOn(sim, home, 'item.metal') + stockOn(sim, base, 'item.metal');
+    const metal0 = stockOn(sim, home, 'item.metal');
+    sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 5 }, { item: 'item.metal', count: 1 }] });
+    const all = play(sim, 9000, (a) => finished(a) && of(a, 'ferry.done').length > 0);
+    expect(of(all, 'ferry.started')).toHaveLength(1); // one trip carries all six
+    expect(of(all, 'transfer.queued')).toMatchObject([{ items: 6 }]);
+    expect(finished(all)).toBe(true);
+    expect(stockOn(sim, base, 'item.metal')).toBe(6);
+    expect(stockOn(sim, home, 'item.metal')).toBe(metal0 - 6);
+    expect(stockOn(sim, home, 'item.metal') + stockOn(sim, base, 'item.metal')).toBe(total0);
+    expect(orders(sim)).toEqual([]);
+  });
+
   it('prefers a real pilot over other free crew', () => {
     const { sim, home, base, pilot } = setup({ metal: 10 });
     sim.enqueue({ type: 'transfer.order', from: home, to: base, items: [{ item: 'item.metal', count: 5 }] });

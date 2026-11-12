@@ -12,6 +12,7 @@ import { undock } from '../vehicles/lifecycle';
 import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
+import { storageTake } from '../items/storage';
 import { grant, revoke } from '../consent/guests';
 
 /**
@@ -185,11 +186,22 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
 }
 
 /**
+ * Take the bought goods staged in station storage back out (stationDock.ts `stageGoods`): the deal is over, and they return to the trader's stock
+ * (failDeal), so they must not stay on the shelves as well. Whatever the staging storage no longer holds is not counted twice.
+ */
+export function unstage(sim: Sim, d: Deal): void {
+  if (!d.dock) return;
+  for (const s of d.dock.staged) storageTake(sim, s.storage, s.item, s.count);
+  d.dock.staged = [];
+}
+
+/**
  * End a deal that will not finish. The escrow goes back to the payer. Goods the trader set aside return to its stock unless
  * the shuttle already flew them (`lost`: shot down after the exchange; the payer is refunded but the goods are gone).
  */
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
   closeCourier(sim, d);
+  unstage(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;

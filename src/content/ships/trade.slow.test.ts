@@ -211,6 +211,25 @@ describe('trade, end to end', () => {
     expect(stored(sim, 'item.electronics')).toBe(before.elec);
   });
 
+  it('a shuttle lost while docked at the station leaves no staged goods behind: they are the trader\'s again, once (#160)', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const t = sim.world.get(station, TraderC)!;
+    const metalStock = t.stock.find((s) => s.item === 'item.metal')?.count ?? 0;
+    const physical = (item: string): number =>
+      sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+    const physicalBefore = physical('item.metal');
+    const credits = sim.trade.credits;
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    expect(deal().phase).toBe('stationWork');
+    expect(physical('item.metal')).toBeGreaterThan(physicalBefore); // staged
+    destroyVehicle(sim, deal().vehicle);
+    expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
+    expect(sim.trade.credits).toBe(credits);
+    expect((t.stock.find((s) => s.item === 'item.metal')?.count ?? 0) + physical('item.metal') - physicalBefore).toBe(metalStock);
+  });
+
   it('a trade run with no crew aboard completes end to end', () => {
     const { sim, ship } = withCivilian('mining');
     const shuttle = sim.world.query(VehicleC)[0] as number;
