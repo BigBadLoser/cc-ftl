@@ -121,7 +121,7 @@ you want it firing on its own.
 
 ### Point defence
 
-A **Point defence** module takes a shot at each incoming missile. It doesn't stop everything, and each module rolls on its
+A **Point defence** module takes a shot at each incoming missile. It needs power and an **AI core** with its mast out to work. It doesn't stop everything, and each module rolls on its
 own, so fit more than one against missile ships. Defence drones help too; see [Drones](../drones/).
 
 ## Shields
