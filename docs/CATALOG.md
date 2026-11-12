@@ -44,8 +44,8 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 Things people believe exist and do not (or only partly), and the reverse.
 
-- **Cryo pods** (`module.cryo_pod`): sprite only. No def, no system. Prisoner holding is issue #116. `DESIGN.md` ("Holding prisoners") wrongly says "already in the game".
-- **Prisoners:** captured crew get a `PrisonerC` (`sim/capture/prize.ts`) but there is nowhere to hold them and no ransom or sale.
+- **Cryo pods** (`module.cryo_pod`): sprite only. No def, no system. Prisoner holding is issue #116. `DESIGN.md` says the same (sprite only).
+- **Prisoners:** captured crew get a `PrisonerC` (`sim/capture/prize.ts`); downed ones are rescued after our own crew (`sim/crew/care.ts`). A fully subdued ship waits for "take prisoners / let them go" (`ship.settle`, `sim/capture/settle.ts`); a prisoner can be released for a little standing (`prisoner.release`). There is nowhere to hold them (no cryo pod) and no ransom, sale or recruiting.
 - **Workbench, comms console, medical console, sensor console, armory/cold storage, storage tank:** sprites only (workbench is issue #320; `workbench` in code is a work-priority label).
 - **Rogue AI faction:** the faction, its ship generator (`faction.drones`), a shipyard template and a terminal event exist, but the galaxy fields no rogue ships (`ships: []`, issue #427). You do not meet machine fleets in a normal game.
 - **Black markets:** only `bm.lesser` is ever attached to a station. The cartel market, machine bazaar and hiring hall are defined and tested but never spawned. `item.ai_core`, `item.robot_parts`, `item.drone_tech` are sold there and consumed by nothing.
