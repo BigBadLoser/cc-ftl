@@ -4,6 +4,7 @@ import { K, site, stripsFor, type Site } from '../stationFlowKit';
 import { buildArm, type ArmPlan } from './arms';
 import { placeBand, type BandAsk } from './band';
 import { departmentsOf, frontage } from './departments';
+import { innerRoom, placeInner } from './inner';
 import { DIRS, type Dept, type Dir, type StationFlowDef } from './types';
 
 /**
@@ -220,7 +221,14 @@ function attempt(flow: StationFlowDef, source: readonly Dept[], placed: readonly
     shops += r.filled;
     out = Math.max(out, r.out);
   }
-  const band = placeBand(s, bandAsks(flow, depts, slots));
+  const asks = bandAsks(flow, depts, slots);
+  const band = placeBand(s, asks);
+  // What the band cannot hold stands on the ring's inner side, when it is small enough to.
+  if (band.left.length > 0) {
+    const inner = band.left.filter(innerRoom);
+    const rest = placeInner(s, asks.filter((a) => inner.includes(a.spec)));
+    band.left = band.left.filter((r) => !inner.includes(r) || rest.includes(r));
+  }
   if (band.left.length > 0) {
     const may = band.left.every((r) => depts.some((d) => d.def.place.includes('arm') && d.rooms.includes(r)));
     const why = `R ${R}: band short of ${band.left.length} rooms (${band.left.filter((r) => !r.cabin).map((r) => `${r.role} ${stripsFor(r)}`).join(', ')})`;
