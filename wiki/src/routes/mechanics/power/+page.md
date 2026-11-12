@@ -85,13 +85,13 @@ Crew refuel the reactors themselves. When a reactor's store falls below half and
 a crew member fetches some and loads it. You don't give an order. This only works if crystals are in storage, so keep
 some there.
 
-Crystals in storage are an ordinary item, shown in **Ship stock**. Your starting ship carries a good supply.
+Crystals in storage are an ordinary item, shown in **Ship stock**. Every starting ship carries a stock, from 26 to 40 crystals.
 
 **Where crystals come from**
 
 - **Mining.** Crystals are an ore in asteroid rock. Select an asteroid, then use your mining pods (for example with
   **Paint ore to mine…**) to cut the ore.
-- **Stations.** Mining and trading stations sell crystals. Their Trade tab lists them like any other item.
+- **Stations.** Mining and trading stations sell crystals. The trade window lists them like any other item.
 - **Loot.** Enemy ships and derelicts carry some in their holds, and you can take them.
 
 **Running dry**
@@ -101,7 +101,7 @@ Crystals in storage are an ordinary item, shown in **Ship stock**. Your starting
 - When the supply can't cover the draw, the **Low power** alert appears. If a reactor is the cause it adds that a reactor
   is out of fuel.
 - Modules start going dark from the bottom of the power order, as in any shortage.
-- A ship with every reactor dry and no battery charge has no power running at all and counts as [disabled](#under-fire).
+- A ship with every reactor dry and no battery charge has no power running at all and counts as [disabled](#Under-fire).
 
 Crystals are separate from jump fuel. The **fuel** that charges the jump drive is a different item and a different
 supply; see [Your first hour](../../guides/first-hour/).
@@ -113,9 +113,9 @@ using, the surplus goes into the banks (and the reactors burn a little extra cry
 reactors, or a reactor is empty, the banks pay out first, **before any module goes dark**. The ship keeps flying on its
 banks until they are flat, then the shortage cuts in as usual.
 
-- A bank holds about two crystals' worth of energy. That is a couple of minutes at the starter ship's usual load and
+- A bank holds about two crystals' worth of energy. That is a couple of minutes at a light starting-ship load and
   less at full draw, so a bank buys you time to refuel, not a way to do without.
-- Build more banks to hold more. Most starting ships have one.
+- Build more banks to hold more. Every starting ship has one.
 - A bank that is switched off or damaged keeps its charge but neither charges nor pays out. A destroyed bank loses its
   charge.
 - The top bar shows the combined charge as a percentage, in red when it is empty.

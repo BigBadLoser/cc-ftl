@@ -20,7 +20,7 @@ window. The current list:
 - **Disruptors**, a hand weapon.
 - **Nuclear warhead**, a weapon upgrade for the nuke launcher.
 
-An honest trader refuses to buy contraband. Only a [black market](#black-markets) will.
+An honest trader refuses to buy contraband. Only a [black market](#Black-markets) will.
 
 ## Station inspections
 

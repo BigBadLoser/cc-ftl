@@ -9,12 +9,31 @@ order: 1
   import Stat from '../../../lib/Stat.svelte'
 </script>
 
-You start with a small ship, four crew, a few hundred credits and a trade station next door. This guide walks through
-the first hour: reading the screen, looking after your crew, building, trading, taking a contract and making your first
+You start with a small ship, a small crew, 500 credits and a trade station next door. This guide walks through
+the first hour: choosing a ship, reading the screen, looking after your crew, building, trading, taking a contract and making your first
 jump.
 
 The game starts running straight away. Press **Space** whenever you want to stop and think: everything here can be
 done while paused.
+
+## Choosing a ship
+
+Pick **New game** on the title screen. The first page offers three ships as cards; click one to see it behind the menu,
+then press **Next**. The next page is your crew: each berth shows a portrait, background and top skills. Lock the ones
+you like, **Reroll unlocked** for the rest, and press **Start**.
+
+| Ship | Style | Crew | What it has |
+|---|---|---|---|
+| **Wayfarer** (Spine Hauler) | Balanced | 4: engineer, gunner, pilot, medic | A burst laser, a shield, a shuttle with its bay, a lounge, a med bed and a fabricator. |
+| **Prospector** (Claw) | Hauler and miner | 3: pilot and two engineers | A big hold, an ore refinery, a mining pod and one light gun. No shuttle. |
+| **Lancer** (Dart) | Fighter | 4: two gunners, a pilot, an engineer | A missile launcher in the point, a burst laser in each tail fin, a Mk II shield and 16 missiles. No shuttle. |
+
+All three have a helm, two reactors with a battery bank beside them, engines, life support, a galley that keeps 12 rations
+in stock, beds for the whole crew, building materials in storage, a few weapons, 16 jump fuel and a stock of energy
+crystals (28 on the Wayfarer, 26 on the Prospector, 40 on the Lancer). The Lancer also has a third reactor.
+
+Trading needs a shuttle to carry the goods, so only the Wayfarer can trade from the start. The others need a shuttle bay
+and a shuttle first (see [Trading](#Trading)).
 
 ## The screen
 
@@ -37,11 +56,12 @@ tools step aside until it's over; the first time, a short lesson walks you throu
 
 <GuideShot name="first-hour/ship" alt="The starting ship seen from above with its roof off" width="720px" />
 
-The starter ship has everything it needs to fly and fight: reactors, life support, shields, two burst lasers and a
-missile launcher, point defence, a helm, a fabricator, a galley, beds for four, three storage crates and a shuttle bay
-with a shuttle. The crates hold building materials, ammunition, a few weapons, rations, **16 fuel** and **50 energy crystals**. A battery bank sits beside the reactors.
+<GuideShot name="first-hour/ship" alt="The Wayfarer seen from above with its roof off" width="720px" />
 
-Your four crew each have a role:
+Every starting ship has what it needs to fly, and the rest of this guide uses the Wayfarer's layout. Where a ship
+differs, the table above says so.
+
+Crews are built from these roles (the Wayfarer has one of each):
 
 | Role | Good at | Usually found |
 |---|---|---|
@@ -81,13 +101,21 @@ construction you haven't finished.
 
 ## Trading
 
+The goods travel by shuttle. The Wayfarer has one; the Prospector and Lancer have no bay, so build a shuttle bay and
+fit a shuttle before you trade (the trade window says "No shuttle to carry it" until then).
+
 <GuideShot name="first-hour/trade" alt="The trade station's panel on the Trade tab" width="440px" />
 
-Click the trade station (in the strip of nearby ships and stations, or in the world), then **Hail station**. Once it
-answers, the **Trade** tab lists every item with a **−** and **+** beside it: **+** buys, and **−** walks down through
+Click the trade station (in the strip of nearby ships and stations, or in the world), then **Hail station**. The comms
+channel opens with the station's services as buttons: dock control, quartermaster, job broker, recruiter and more.
+**Trade** (marked with an arrow) opens its own floating **Trade** window, which you can drag, resize and pin. It works the same for
+stations and trader ships. The market list shows every item with a **−** and **+** beside it: **+** buys, and **−** walks down through
 zero into selling. Click moves one, Shift five, Ctrl ten and Alt as many as you can. The deal slip shows what you pay or
 get and how many shuttle trips it needs. Press **PROPOSE** and, when the station answers, **ACCEPT**. Your shuttle
 ferries the goods over.
+
+The deliveries under way are listed in the window too, and you can agree several deals with the same partner: they
+queue and run one after another.
 
 **REFUEL** on the slip tops your jump fuel up in one click and shows the price first. Do it whenever you pass a trader.
 
@@ -102,14 +130,14 @@ The game has two, and a new captain should know both.
   in the reactors, in red when they are low and none are left in storage. Buy more at mining and trading stations, or mine
   them from asteroids.
 
-Your 50 starting crystals last a good while. Switching off modules you aren't using saves them. See
+Your starting crystals last a good while. Switching off modules you aren't using saves them. See
 [Power and reactors](../../mechanics/power/).
 
 ## Your first contract
 
-<GuideShot name="first-hour/jobs" alt="The station's Jobs tab with delivery contracts" width="440px" />
+<GuideShot name="first-hour/jobs" alt="The station's contracts, with delivery jobs" width="440px" />
 
-The **Jobs** tab lists contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
+The station's job broker (a service button in the comms channel) lists contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
 deadline, and how strong any opposition is next to your own ship. **Accept** one and it appears in the jobs tracker on
 the right and in the **Jobs** screen. You can hold up to <Stat kind="tuning" id="MAX_JOBS" /> jobs at a time.
 

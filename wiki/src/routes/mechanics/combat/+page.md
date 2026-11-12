@@ -82,8 +82,8 @@ line of the card, right-click the card or press **Shift** plus its key to flip i
 |---|---|---|
 | **Volley** | **V** | Fires every charged weapon now. |
 | **Hold all** | **H** | Puts every weapon on hold. Press again to restore each to its old mode. |
-| **Vent** | **G** | Dumps heat; see [Heat](#heat). |
-| **Flee** | **F** | Jump away; see [Fleeing](#fleeing-and-the-jump-drive). |
+| **Vent** | **G** | Dumps heat; see [Heat](#Heat). |
+| **Flee** | **F** | Jump away; see [Fleeing](#Fleeing-and-the-jump-drive). |
 | **Board** | **B** | Send boarders; see [Boarding](../boarding/). |
 
 ### Firing on a ship that isn't hostile

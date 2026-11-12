@@ -41,7 +41,7 @@ While your party is on the enemy ship, a **Boarding party** card sits under the 
 and a state: **ready**, **fighting**, **wrecking** (sabotaging), **returning** or **down**.
 
 - **Select** a boarder by clicking their name. Boarders are ordinary crew, so everything in
-  [Drafting crew](#drafting-and-ordering-crew) applies.
+  [Drafting crew](#Drafting-and-ordering-crew) applies.
 - **Sabotage.** Select boarders and **right-click an enemy module**. They walk to it and wreck it. The card shows the
   module's health and who is on it, and a **Cancel** button. Sabotage **pauses while hostiles are in sight** and resumes
   once the fighting is over.
@@ -173,7 +173,7 @@ out of the intruders' sight. A medic is the best defence against losing crew. Se
 - **Your crew never surrender**, with one exception: a **Coward** gives up at the same point, and runs from foes when
   below half health. A surrendered crew member lays down their weapon and stops working, then **rallies** a few seconds
   after no hostile is left on their ship.
-- A hostile **ship** whose fight is lost surrenders as a whole; see [Ship combat](../combat/#how-fights-end).
+- A hostile **ship** whose fight is lost surrenders as a whole; see [Ship combat](../combat/#How-fights-end).
 
 Traits change all of this; see [Crew](../crew/). Fear, injury, fire and combat also strain mood, and a panicking crew
 member may flee or freeze; see [Mood](../mood/).

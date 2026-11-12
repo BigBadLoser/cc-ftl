@@ -52,7 +52,7 @@ locked in an unreachable room.
 The **Galley** is the ship's kitchen. It needs power (<Stat id="module.galley" field="power" /> units) and a crew member
 working the **Cook** column.
 
-Its **Print rations** order turns 2 water into 3 rations. Starter ships keep 12 rations in stock this way, so a fresh
+Its **Print rations** order turns 2 water into 3 rations. All three starting ships keep 12 rations in stock this way, so a fresh
 game never goes hungry as long as there is water. Rations are the emergency fallback: they fill the least and give the
 least mood.
 
