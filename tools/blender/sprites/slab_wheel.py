@@ -79,18 +79,18 @@ def wheel(k, body, trim):
 
 # ---- the canopy and its lobes ---------------------------------------------------------------------------------------
 TIERS = (  # (z from ZC, height, radius change, colour key, top key, radius change at the top)
-    (0.0, 0.06, -0.18, "trim", None, 0.0),           # the chamfered underside
-    (0.06, 0.22, 0.0, "body", None, None),           # the lower band
+    (0.0, 0.06, -0.18, "low", None, 0.0),            # the chamfered underside
+    (0.06, 0.22, 0.0, "low", None, None),            # the lower band (the machinery's: vents, lights)
     (0.28, 0.05, 0.02, "trim", None, None),          # a proud trim band
     (0.33, 0.17, -0.04, "body", None, None),         # the upper band, set in
-    (0.5, 0.05, -0.04, "trim", "body", -0.12),       # the chamfered top
+    (0.5, 0.05, -0.04, "trim", "top", -0.12),        # the chamfered top
 )
 
 
-def canopy(k, body, trim, lobes, hole=0.0):
+def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None):
     """The canopy tiers over the wheel (open to radius `hole` in the middle if set) and over each lobe at angle a,
     then the lobes' columns down to the floor."""
-    col = {"body": body, "trim": trim}
+    col = {"body": body, "trim": trim, "low": low or body, "top": top or body}
     for z, h, dr, c, t, dtop in TIERS:
         z0 = ZC + z
         if hole:
@@ -149,7 +149,7 @@ def ram(k, a, r0, r1, z, body):
         k.box(*at(r, a)[:2], z - 0.034, s, 0.08, 0.06, "steelD", top="steel", rz=a)
 
 
-def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True):
+def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True, star=("steelD", "steelL")):
     """A Geneva drive on the canopy's top, mid-step: a ten-slot star (one step a slab) on the rotor's shaft, its driver
     beside it with the pin down a slot and the locking disc's half away from the star, a gearmotor behind."""
     n = NS
@@ -170,8 +170,8 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True):
         for j in range(8):
             b0, b1 = a0 + (a1 - a0) * j / 8, a0 + (a1 - a0) * (j + 1) / 8
             prism(k, [at(0.64 * rs, b0)[:2], at(ro(b0), b0)[:2], at(ro(b1), b1)[:2], at(0.64 * rs, b1)[:2]], z, z + h,
-                  "steelD", top="steelL")
-    k.cyl(0, 0, z, 0.667 * rs, h, "steelD", top="steelL", sides=30)              # its boss and the shaft's cap
+                  star[0], top=star[1])
+    k.cyl(0, 0, z, 0.667 * rs, h, star[0], top=star[1], sides=30)              # its boss and the shaft's cap
     for i in range(10):                                                      # the boss's bolts
         k.cyl(*at(0.49 * rs, (i + 0.5) * math.tau / 10 + ang)[:2], z + h, 0.03, 0.015, "steelD", sides=6)
     k.cyl(0, 0, z + h, 0.31 * rs, 0.03, "steelD", top="steel", sides=16)
@@ -296,16 +296,46 @@ def wrap(k, body, trim, open_l, open_r):
 
 
 # ---- the designs ----------------------------------------------------------------------------------------------------
-def geneva_over_tyres(k, body="navy", trim="hivis"):
+def scheme(body, trim):
+    """The old two-colour paint as a role map."""
+    return dict(wall=body, cap=body, band=body, stripe=trim, lip=trim, guard=trim, guard_top=trim, panel=trim,
+                crown="steelL", star=("steelD", "steelL"), deck=body, clamp=body, accent=trim)
+
+
+# Paint by role (round 18): housing paint (wall, cap: one colour, the module's identity); the machinery band (band: the
+# canopy's lower band and underside, where vents and lights sit: darker, a break between wall and cap); one accent
+# (stripe, lip, panel, accent); safety yellow on guards over moving parts (guard); bare steel on everything that turns
+# (crown, star, deck, clamp: lighter the higher it sits); cyan stays the stasis field's alone.
+SCHEMES = {
+    "s49a": dict(wall="slbHull", cap="slbHull", band="steelD", stripe="steel", lip="hazY", guard="hazY",
+                 guard_top="hazY", panel="hazY", crown="plate", star=("steel", "sole"), deck="steel", clamp="steel",
+                 accent="hazY"),                                             # workhorse: warm grey, yellow guards
+    "s49b": dict(wall="blueGrey", cap="blueGrey", band="dark", stripe="medRed", lip="medRed", guard="hazY",
+                 guard_top="hazY", panel="medRed", crown="plate", star=("steel", "sole"), deck="steelD",
+                 clamp="blueGrey", accent="medRed"),                        # containment: slate, security red
+    "s49c": dict(wall="medWhite", cap="medWhite", band="steel", stripe="polyB", lip="polyB", guard="plate",
+                 guard_top="polyB", panel="polyB", crown="steelL", star=("steelL", "sole"), deck="steel",
+                 clamp="steel", accent="polyB"),                            # cryo: white, blue, machine grey
+}
+
+
+def geneva_over_tyres(k, P=None):
     """s49 (and its paint schemes, s49a-c)."""
-    out = wrap(k, body, trim, 1.15, 0.45)
-    canopy(k, body, trim, [], hole=1.0)
-    zf = sunk_top(k, 1.0, 0.18, body, trim)
-    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelL", sides=40)          # the rotor's crown, down in the well
+    P = P or scheme("navy", "hivis")
+    ol, orr = 1.15, 0.45
+    pit(k, P["deck"], P["guard"])
+    out = wheel(k, P["clamp"], P["accent"])
+    skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"])
+    jamb(k, FRONT + ol, P["wall"], P["stripe"])
+    jamb(k, FRONT - orr, P["wall"], P["stripe"])
+    panel(k, FRONT - orr - 0.27, P["wall"], P["panel"])
+    canopy(k, P["cap"], P["stripe"], [], hole=1.0, low=P["band"], top=P["cap"])
+    zf = sunk_top(k, 1.0, 0.18, P["cap"], P["lip"])
+    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top=P["crown"], sides=40)       # the rotor's crown, down in the well
     k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
-        top_tyres(k, a, 0.74, body, trim, z=zf)
-    geneva(k, BACK + 0.55 - math.pi / 2, body, trim, rs=0.7, bridge=1.25, pad=False)
+        top_tyres(k, a, 0.74, P["guard"], P["guard_top"], z=zf)
+    geneva(k, BACK + 0.55 - math.pi / 2, P["cap"], P["guard"], rs=0.7, bridge=1.25, pad=False, star=P["star"])
     return out
 
 
@@ -336,8 +366,7 @@ def crown_well(k):
     return out
 
 
-SCHEMES = {"s49a": ("gm", "hazY"), "s49b": ("medWhite", "medRed"), "s49c": ("slbTeal", "hivis")}
-DESIGNS = {**{v: ((lambda k, c=c: geneva_over_tyres(k, *c)), (3, 3)) for v, c in SCHEMES.items()},
+DESIGNS = {**{v: ((lambda k, c=c: geneva_over_tyres(k, c)), (3, 3)) for v, c in SCHEMES.items()},
            "s49": (geneva_over_tyres, (3, 3)), "s50": (geneva_well, (3, 3)), "s51": (crown_well, (3, 3))}
 OVERLAYS = {}
 PIT = {v: RP for v in DESIGNS}
