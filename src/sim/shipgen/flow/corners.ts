@@ -1,5 +1,5 @@
 import type { RoomSpec } from '../plan';
-import { CUT, K, type Site } from '../stationFlowKit';
+import { K, type Site } from '../stationFlowKit';
 import { SPACE } from '../stationRegions';
 
 /**
@@ -20,7 +20,7 @@ export function placeCorners(s: Site, rooms: readonly RoomSpec[]): RoomSpec[] {
   if (s.outline !== 'square') return [];
   const { g, R } = s;
   // The block starts one cell before the cut on either flat; the diagonal runs through the cut's outer corners.
-  const T = R - K * (CUT + 1), line = 2 * R - K * CUT - 1;
+  const T = R - K * (s.cut + 1), line = 2 * R - K * s.cut - 1;
   const placed: RoomSpec[] = [];
   for (const [k, [sx, sy]] of QUADS.entries()) {
     const spec = rooms[k];

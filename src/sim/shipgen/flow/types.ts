@@ -55,10 +55,23 @@ export interface StationFlowDef {
 export interface Dept { def: FlowDeptDef; rooms: RoomSpec[]; docks: RoomSpec[] }
 
 /**
- * The skeleton's independent choices. Any outline goes with any street pattern; what a flow cannot be built on (two
- * wings and a gated street on a spine) the planner reports instead of bending.
- *   outline  a stepped disc, or a square with cut corners (each corner one room with a diagonal hull)
- *   streets  cross: four streets from the court; tee: three; spine: one street straight through
+ * The skeleton's choices: parts that mix, and proportions. Any outline goes with any street pattern; what a flow cannot
+ * be built on the planner reports instead of bending.
  */
-export interface Kit { outline: 'disc' | 'square'; streets: 'cross' | 'tee' | 'spine' }
-export const KITS: readonly Kit[] = (['disc', 'square'] as const).flatMap((outline) => (['cross', 'tee', 'spine'] as const).map((streets) => ({ outline, streets })));
+export interface Kit {
+  /** A stepped disc, or a square with cut corners (each corner one room with a diagonal hull). */
+  outline: 'disc' | 'square';
+  /** Cells cut from each corner of a square: 2 a square with bastions, 4 or more an octagon. */
+  cut: number;
+  /** cross: four streets from the court; tee: three; spine: one straight through; ring: none, the centre left open. */
+  streets: 'cross' | 'tee' | 'spine' | 'ring';
+  /** The court at the centre; the flow's own when not given. */
+  court?: 'none' | 'small' | 'large';
+  /** Rooms on the ring's inner side as well as in the band (a ring twice as thick, a station a size smaller). */
+  inner: boolean;
+  /** Wing rows: slim (long and narrow) or deep (short and broad). */
+  wing: 'slim' | 'deep';
+  /** How wings stand to each other: mirror (one opposite another), offset (none opposite), or as it comes. */
+  symmetry: 'any' | 'mirror' | 'offset';
+}
+export const KIT: Kit = { outline: 'disc', cut: 2, streets: 'cross', inner: true, wing: 'slim', symmetry: 'any' };

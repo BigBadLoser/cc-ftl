@@ -275,8 +275,23 @@ Two findings that changed the picture:
   it. A cut corner as a single room (its dividers on lattice lines, meeting the hull on the flats) has a 45 degree hull
   and no wall block at any size.
 
-Still wrong: disc + spine is a hoop (a spine wants an oblong outline, not built); square interiors keep empty yards
-between the streets; nothing here has been through the fit-out yet.
+`Kit` (flow/types.ts) now also carries: `cut` (corner cut of a square: 2 bastions, 4 an octagon), streets `ring` (no
+streets inside, wings hang off the ring, the centre open, the court's departments on the ring's inner side), and the
+proportions `court`, `inner` (single or double-loaded ring), `wing` (slim or deep rows), `symmetry` (wings mirrored or
+offset). On a spine a wing carries several departments one after another, which is what makes a spine station long.
+
+Sheets: `--flow <id>` draws the matrix (disc, square, octagon by cross, spine, ring); `--flow <id> --props` holds the
+parts fixed and changes one proportion a panel.
+
+What the two sheets showed (trading, seed 1): the nine part combinations are nine visibly different stations, 82 to
+91% built but for octagon + cross and octagon + ring (72%, the second open by intent). The proportion knobs are much
+weaker. The program fixes the floor area, the planner sizes the ring to it and re-chooses the structure round each
+change, so a knob either does little (court size, ring loading) or flips the skeleton (a small court brought the gated
+secure street back and a bigger ring with it). Only wing depth acts as a clean proportion. Proportions need slack to
+act on: a program that scales, or space left open on purpose.
+
+Still wrong: square and octagon interiors keep empty yards between the streets; five of the nine have one to four
+wall blocks before thinning (stacked spine wings, deep wings); nothing here has been through the fit-out yet.
 
 ## Tried and set aside
 

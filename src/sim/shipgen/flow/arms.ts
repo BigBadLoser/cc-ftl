@@ -28,6 +28,10 @@ export interface ArmPlan {
   customs: boolean;
   /** The department of the gated street or the wing, for the sheets. */
   dept?: string;
+  /** No street inside the ring: the wing hangs off the ring itself (a station with an open centre). */
+  noInner?: boolean;
+  /** Floor depth of the wing's rows (a deep wing is short and broad); the rooms' own when not given. */
+  rowDepth?: number;
 }
 
 export interface ArmBuilt {
@@ -165,17 +169,19 @@ function buildOne(s: Site, c: number, arm: ArmPlan): ArmBuilt {
     return { ok: true, why: '', bare: 0, out: 0, rest: [], filled: 0 };
   }
 
-  const hall = g.hall();
-  const innerEnd = arm.reach === 'short' ? Math.min(c + need + 2, uWall) : uRing;
-  street(hall, c, innerEnd);
-  let lined = c;
-  for (const [list, side] of [[inL, -1], [inR, 1]] as const) {
-    const r = lining(list, side, c, {}, arm.reach === 'short' ? undefined : uWall);
-    if (r.rest.length > 0) return fail('inside the ring', r.rest);
-    lined = Math.max(lined, r.end);
+  if (!arm.noInner) {
+    const hall = g.hall();
+    const innerEnd = arm.reach === 'short' ? Math.min(c + need + 2, uWall) : uRing;
+    street(hall, c, innerEnd);
+    let lined = c;
+    for (const [list, side] of [[inL, -1], [inR, 1]] as const) {
+      const r = lining(list, side, c, {}, arm.reach === 'short' ? undefined : uWall);
+      if (r.rest.length > 0) return fail('inside the ring', r.rest);
+      lined = Math.max(lined, r.end);
+    }
+    bare = Math.max(0, Math.min(innerEnd, uWall) - lined);
+    if (arm.reach === 'short' && !cap(hall, innerEnd)) return fail('end', [capOf as RoomSpec]);
   }
-  bare = Math.max(0, Math.min(innerEnd, uWall) - lined);
-  if (arm.reach === 'short' && !cap(hall, innerEnd)) return fail('end', [capOf as RoomSpec]);
   if (arm.reach !== 'out') return { ok: true, why: '', bare, out: 0, rest: [], filled: 0 };
 
   // The wing: from just outside the ring, through the band's depth and out past the hull.
@@ -185,7 +191,7 @@ function buildOne(s: Site, c: number, arm: ArmPlan): ArmBuilt {
   const [outL, outR] = sides(arm.outer);
   const rowOf = (list: RoomSpec[]): number => list.reduce((n, r) => n + r.w + 1, 0);
   // One depth for both rows: a dock's on a wing with flank docks, else the deepest room's short side (5 to 7).
-  const floorDepth = flank && arm.docks.length > 0 ? DOCK_DEPTH - 2 : Math.max(5, Math.min(7, Math.max(0, ...arm.outer.map((r) => Math.min(r.w, r.h)))));
+  const floorDepth = flank && arm.docks.length > 0 ? DOCK_DEPTH - 2 : arm.rowDepth ?? Math.max(5, Math.min(7, Math.max(0, ...arm.outer.map((r) => Math.min(r.w, r.h)))));
   // A wing reads as one: at least two lattice steps past the hull, both rows the same length (the last room of the
   // shorter row is stretched to it).
   const shaped = (list: RoomSpec[]): RoomSpec[] => list.map((r) => (r.role === 'dock' ? r : { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / floorDepth)), h: floorDepth }));

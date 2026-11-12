@@ -6,7 +6,7 @@ import { placeBand, type BandAsk } from './band';
 import { departmentsOf, frontage } from './departments';
 import { innerRoom, placeInner } from './inner';
 import { placeCorners } from './corners';
-import { DIRS, type Dept, type Dir, type Kit, type StationFlowDef } from './types';
+import { DIRS, KIT, type Dept, type Dir, type Kit, type StationFlowDef } from './types';
 
 /**
  * The flow planner: a station's structure from its department flow and its program (docs/STATION_FLOW_WHEEL.md).
@@ -20,11 +20,19 @@ import { DIRS, type Dept, type Dir, type Kit, type StationFlowDef } from './type
  */
 
 /** A street pattern laid one way round: the directions streets may take, and how many there are. */
-interface Layout { dirs: readonly Dir[]; count: number }
+interface Layout {
+  dirs: readonly Dir[];
+  count: number;
+  /** No streets inside the ring: wings hang off it and the centre stays open. */
+  ring?: boolean;
+  /** A wing may carry several departments one after another (a spine has only two ends). */
+  stack?: boolean;
+}
 const LAYOUTS: Record<Kit['streets'], readonly Layout[]> = {
   cross: [{ dirs: DIRS, count: 4 }],
   tee: DIRS.map((skip) => ({ dirs: DIRS.filter((d) => d !== skip), count: 3 })),
-  spine: [{ dirs: ['e', 'w'], count: 2 }, { dirs: ['n', 's'], count: 2 }],
+  spine: [{ dirs: ['e', 'w'], count: 2, stack: true }, { dirs: ['n', 's'], count: 2, stack: true }],
+  ring: [{ dirs: DIRS, count: 0, ring: true }],
 };
 
 const ANGLE: Record<Dir, number> = { n: 0, e: Math.PI / 2, s: Math.PI, w: (3 * Math.PI) / 2 };
@@ -63,7 +71,8 @@ export interface FlowPlan {
 }
 
 /** Every assignment of the arm departments to a direction and a section that the flow's hard rules allow. */
-function assignments(depts: readonly Dept[], dirs: readonly Dir[]): Slot[][] {
+function assignments(depts: readonly Dept[], lay: Layout): Slot[][] {
+  const dirs = lay.dirs;
   const arm = depts.filter((d) => !d.def.place.includes('band') && (d.def.place.includes('arm') || d.def.place.includes('wing')) && d.rooms.length + d.docks.length > 0);
   // Departments that follow another onto its arm are placed after it.
   arm.sort((a, c) => Number(!!a.def.with) - Number(!!c.def.with));
@@ -77,13 +86,13 @@ function assignments(depts: readonly Dept[], dirs: readonly Dir[]): Slot[][] {
       if (host) options.push([host.dir, 'inner']);
     } else {
       for (const dir of dirs) {
-        if (d.def.place.includes('arm') && d.docks.length === 0) options.push([dir, 'inner']);
+        if (d.def.place.includes('arm') && d.docks.length === 0 && !lay.ring) options.push([dir, 'inner']);
         if (d.def.place.includes('wing')) options.push([dir, 'outer']);
       }
     }
     for (const [dir, section] of options) {
       const here = got.filter((q) => q.dir === dir);
-      if (here.some((q) => q.section === section)) continue;
+      if (here.some((q) => q.section === section) && !(lay.stack && section === 'outer')) continue;
       // A controlled department has its arm to itself.
       if (here.some((q) => q.dept.def.access === 'controlled') || (d.def.access === 'controlled' && here.length > 0)) continue;
       walk(i + 1, [...got, { dept: d, dir, section }]);
@@ -109,14 +118,17 @@ function liking(flow: StationFlowDef, slots: readonly Slot[]): number {
 }
 
 /** The arms of an assignment: its streets, what lines them, how far each runs. */
-function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[], cells: number, lay: Layout): ArmPlan[] {
+function armsOf(flow: StationFlowDef, kit: Kit, depts: readonly Dept[], slots: readonly Slot[], cells: number, lay: Layout): ArmPlan[] {
   const arms = new Map<Dir, ArmPlan>();
   const arm = (dir: Dir): ArmPlan => arms.get(dir) ?? arms.set(dir, { dir, width: 2, inner: [], fill: [], gated: false, reach: 'ring', outer: [], docks: [], customs: false }).get(dir) as ArmPlan;
   const bySize = (a: RoomSpec, c: RoomSpec): number => c.w * c.h - a.w * a.h;
   for (const q of slots) {
     const a = arm(q.dir);
     if (q.section === 'outer') {
-      Object.assign(a, { outer: [...q.dept.rooms].sort(bySize), docks: q.dept.docks, reach: 'out', width: 3, customs: !!q.dept.def.customs || q.dept.def.access === 'controlled', dept: q.dept.def.id });
+      // Several departments on one wing stand one after another, the first nearest the ring.
+      Object.assign(a, { outer: [...a.outer, ...[...q.dept.rooms].sort(bySize)], docks: [...a.docks, ...q.dept.docks], reach: 'out', width: 3, customs: a.customs || !!q.dept.def.customs || q.dept.def.access === 'controlled', dept: a.dept ?? q.dept.def.id });
+      if (lay.ring) a.noInner = true;
+      if (kit.wing === 'deep') a.rowDepth = 9;
     } else {
       (q.dept.def.fill ? a.fill : a.inner).push(...[...q.dept.rooms].sort(bySize));
       if (q.dept.def.access === 'controlled') Object.assign(a, { gated: true, reach: 'short', dept: q.dept.def.id });
@@ -126,7 +138,7 @@ function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Sl
   // The ring joins the centre by two public streets at least (a loop, and nobody walks the long way round): streets
   // are added opposite what is there.
   // The street pattern asks for its number of streets besides: plain ones fill it up.
-  while (open().length < 2 || arms.size < lay.count) {
+  while (!lay.ring && (open().length < 2 || arms.size < lay.count)) {
     const free = lay.dirs.filter((d) => !arms.has(d));
     if (free.length === 0) break;
     const far = (d: Dir): number => open().reduce((t, a) => t + turns(d, a.dir), 0);
@@ -134,9 +146,9 @@ function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Sl
   }
   // Court departments stand where the public streets leave the court, shared between them: their rooms first, then
   // their filler (a market's shops).
-  const streets = open();
+  const streets = lay.ring ? [] : open();
   let turn = 0;
-  for (const d of depts.filter((q) => q.def.place.includes('court'))) {
+  for (const d of depts.filter((q) => q.def.place.includes('court') && streets.length > 0)) {
     for (const r of [...d.rooms].sort(bySize)) {
       const a = streets[turn++ % streets.length] as ArmPlan;
       if (d.def.fill) a.fill.push(r); else a.inner.unshift(r);
@@ -144,7 +156,7 @@ function armsOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Sl
   }
   // A street runs to the ring when it is one of the first two public ones, or when rooms line most of the way;
   // otherwise it stops with its rooms (no long bare corridor).
-  const inside = cells * K - 13 - COURT[flow.intent.court];
+  const inside = cells * K - 13 - COURT[kit.court ?? flow.intent.court];
   let joined = open().filter((a) => a.reach === 'out').length;
   for (const a of open().filter((q) => q.reach !== 'out').sort((p, q) => q.inner.length - p.inner.length)) {
     const need = frontage([...a.inner, ...a.fill]) / 2;
@@ -204,15 +216,15 @@ function attempt(flow: StationFlowDef, kit: Kit, lay: Layout, source: readonly D
   }
   const slots = placed.map((q) => ({ ...q, dept: depts[source.indexOf(q.dept)] as Dept }));
   const R = cells * K;
-  const s = site(R, 40, kit.outline);
+  const s = site(R, 40, kit.outline, kit.cut);
   // The court keeps its intended size where the ring allows, and never takes more than a third of the way out.
-  const c = Math.min(COURT[flow.intent.court], Math.max(2, Math.floor(s.reach * 0.3)));
-  const court = s.g.hall(flow.intent.court === 'none' ? 'hall' : 'plaza', 'commons');
-  s.g.street(court, -c, -c, c, c);
-  const arms = armsOf(flow, depts, slots, cells, lay);
+  const size = kit.court ?? flow.intent.court;
+  const c = lay.ring ? 0 : Math.min(COURT[size], Math.max(2, Math.floor(s.reach * 0.3)));
+  if (!lay.ring) s.g.street(s.g.hall(size === 'none' ? 'hall' : 'plaza', 'commons'), -c, -c, c, c);
+  const arms = armsOf(flow, kit, depts, slots, cells, lay);
   // Spilled rooms line the public streets after what is there: plain streets before a wing's, the emptiest first, each
   // taking what its frontage should hold.
-  const hosts = arms.filter((a) => !a.gated).sort((a, b) => Number(a.reach === 'out') - Number(b.reach === 'out') || frontage(a.inner) - frontage(b.inner));
+  const hosts = arms.filter((a) => !a.gated && !a.noInner).sort((a, b) => Number(a.reach === 'out') - Number(b.reach === 'out') || frontage(a.inner) - frontage(b.inner));
   let pending = extra;
   for (const a of hosts) {
     if (pending.length === 0) break;
@@ -238,10 +250,19 @@ function attempt(flow: StationFlowDef, kit: Kit, lay: Layout, source: readonly D
   const asks = bandAsks(flow, depts, slots);
   const band = placeBand(s, asks);
   // What the band cannot hold stands on the ring's inner side, when it is small enough to.
-  if (band.left.length > 0) {
+  if (band.left.length > 0 && kit.inner) {
     const inner = band.left.filter(innerRoom);
     const rest = placeInner(s, asks.filter((a) => inner.includes(a.spec)));
     band.left = band.left.filter((r) => !inner.includes(r) || rest.includes(r));
+  }
+  // With no streets inside the ring, the court's departments stand on the ring's inner side too: their rooms must
+  // find a place, their filler takes what is left.
+  if (lay.ring) {
+    const court = depts.filter((d) => d.def.place.includes('court'));
+    const must = court.filter((d) => !d.def.fill).flatMap((d) => d.rooms), filler = court.filter((d) => d.def.fill).flatMap((d) => d.rooms);
+    const rest = placeInner(s, must.map((spec, i) => ({ spec, angle: (i * 2 * Math.PI) / Math.max(1, must.length) })));
+    if (rest.length > 0) return { why: `R ${R}: no place on the ring for ${rest.map((r) => `${r.role} ${r.w}x${r.h}`).join(', ')}` };
+    shops += filler.length - placeInner(s, filler.map((spec, i) => ({ spec, angle: (i * 2 * Math.PI) / Math.max(1, filler.length) }))).length;
   }
   if (band.left.length > 0) {
     const may = band.left.every((r) => depts.some((d) => d.def.place.includes('arm') && d.rooms.includes(r)));
@@ -273,7 +294,7 @@ function build(flow: StationFlowDef, kit: Kit, lay: Layout, source: readonly Dep
  * wing, what is gated, how many plain streets, and how the pieces stand to each other (beside or opposite).
  */
 function skeletonOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonly Slot[], lay: Layout): string {
-  const arms = armsOf(flow, depts, slots, 10, lay);
+  const arms = armsOf(flow, KIT, depts, slots, 10, lay);
   const named = arms.filter((a) => a.dept).map((a) => ({ name: `${a.dept} ${a.reach === 'out' ? 'wing' : a.gated ? 'gated' : 'street'}`, dir: a.dir })).sort((p, q) => p.name.localeCompare(q.name));
   const rel: string[] = [];
   for (let i = 0; i < named.length; i++) for (let j = i + 1; j < named.length; j++) {
@@ -289,11 +310,18 @@ function skeletonOf(flow: StationFlowDef, depts: readonly Dept[], slots: readonl
  * Plan a station for these rooms. `pick` chooses among the best skeletons (0 = the best); without it the seed chooses.
  * Returns null when no structure of the flow can be built, with the reasons in `trace`.
  */
-export function planFlow(rng: Rng, flow: StationFlowDef, rooms: readonly RoomSpec[], o: { pick?: number; trace?: string[]; kit?: Kit } = {}): FlowPlan | null {
+export function planFlow(rng: Rng, flow: StationFlowDef, rooms: readonly RoomSpec[], o: { pick?: number; trace?: string[]; kit?: Partial<Kit> } = {}): FlowPlan | null {
   const { depts, loose } = departmentsOf(flow, rooms);
-  const kit = o.kit ?? { outline: 'disc', streets: 'cross' };
+  const kit: Kit = { ...KIT, ...o.kit };
+  // Symmetry: whether some wing stands opposite another.
+  const balanced = (slots: readonly Slot[]): boolean => {
+    const wings = [...new Set(slots.filter((q) => q.section === 'outer').map((q) => q.dir))];
+    if (kit.symmetry === 'any' || wings.length < 2) return true;
+    const mirror = wings.some((a) => wings.some((b) => turns(a, b) === 2));
+    return kit.symmetry === 'mirror' ? mirror : !mirror;
+  };
   // Each way round the street pattern can lie, and on it each assignment that uses no more streets than it has.
-  const all = LAYOUTS[kit.streets].flatMap((lay) => assignments(depts, lay.dirs).filter((slots) => new Set(slots.map((q) => q.dir)).size <= lay.count).map((slots) => ({ slots, lay, like: liking(flow, slots) }))).sort((a, c) => c.like - a.like);
+  const all = LAYOUTS[kit.streets].flatMap((lay) => assignments(depts, lay).filter((slots) => (lay.ring || new Set(slots.map((q) => q.dir)).size <= lay.count) && balanced(slots)).map((slots) => ({ slots, lay, like: liking(flow, slots) }))).sort((a, c) => c.like - a.like);
   if (all.length === 0) o.trace?.push(`${kit.streets}: the flow's departments need more streets than the pattern has`);
   const best = new Map<string, FlowPlan>();
   const rejected: string[] = [];

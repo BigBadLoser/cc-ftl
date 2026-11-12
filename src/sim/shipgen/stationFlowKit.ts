@@ -27,12 +27,10 @@ const vertical = (x: number, y: number): boolean => { const [cx, cy] = cellOf(x,
 
 /** The station's outline on the lattice: a stepped disc, or a square with its corners cut. */
 export type Outline = 'disc' | 'square';
-/** Cells cut from each corner of a square outline, along either side. */
-export const CUT = 2;
 
 /** The lattice shapes of a station of half-size R tiles: the hull, and the floor inboard of the band. */
-function shapes(R: number, outline: Outline): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
-  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && Math.abs(cx) + Math.abs(cy) < 2 * R - K * CUT);
+function shapes(R: number, outline: Outline, cut: number): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
+  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && Math.abs(cx) + Math.abs(cy) < 2 * R - K * cut);
   const hull = (x: number, y: number): boolean => within(...cellOf(x, y));
   // A cell is inboard when the cell DEEP cells further out along its octant's axis is still hull: every strip is DEEP deep.
   const inner = (x: number, y: number): boolean => {
@@ -65,6 +63,8 @@ export interface Site {
   g: RegionGrid;
   R: number;
   outline: Outline;
+  /** Cells cut from each corner of a square outline, along either side (2: a square with bastions; more: an octagon). */
+  cut: number;
   hull: (x: number, y: number) => boolean;
   inside: (x: number, y: number) => boolean;
   /** How far a tile is inside the inboard floor (0 outside it): 1-2 the ring, 3 its inner wall, more is free ground. */
@@ -78,9 +78,9 @@ export interface Site {
   freeOut: (x: number, y: number) => boolean;
 }
 
-export function site(R: number, pad = 24, outline: Outline = 'disc'): Site {
+export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2): Site {
   const g = new RegionGrid(R + pad);
-  const { hull, inside } = shapes(R, outline);
+  const { hull, inside } = shapes(R, outline, cut);
   const memo = new Map<number, number>();
   const depth = (x: number, y: number): number => {
     const key = (y + 512) * 1024 + x + 512;
@@ -98,7 +98,7 @@ export function site(R: number, pad = 24, outline: Outline = 'disc'): Site {
   let reach = 0;
   while (depth(0, -(reach + 1)) >= 3) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, outline, hull, inside, depth, ring, reach, free: (x, y) => depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, cut, hull, inside, depth, ring, reach, free: (x, y) => depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {
