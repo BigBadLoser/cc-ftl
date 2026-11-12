@@ -157,7 +157,7 @@ export interface Deal {
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
   via?: 'dock' | 'hover';
   /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
-  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[]; seen?: Record<string, number>; direct?: Record<string, number>; hand?: { get: Record<string, number>; give: Record<string, number> }; carrying?: { get: Record<string, number>; give: Record<string, number> } };
+  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[]; units?: Record<string, { shelf: number; hand: number; hold: number }> };
   /**
    * An order bigger than one hold runs as several trips, one after another (settled trip by trip: each trip's credits and goods are held
    * only while it runs). `n` of `of` is the trip now running (the deal's give/get/balance/held are that trip's) and `rest` the trips still to

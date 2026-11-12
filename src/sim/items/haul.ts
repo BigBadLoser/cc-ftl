@@ -1,3 +1,4 @@
+import { haulDeposited, haulPicked } from '../trade/dockCount';
 import { JobC, PositionC, type Job } from '../crew/components';
 import { jobGoal, origin } from '../crew/helpers';
 import { reaches, startLabels, viewOf } from '../ai/navView';
@@ -115,6 +116,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
       : h.src.kind === 'vehicle' ? cargoTake(sim, h.src.id, h.item, want)
       : storageTake(sim, h.src.id, h.item, want);
     if (taken <= 0 && !h.gathered) return 'done';
+    haulPicked(sim, h, taken);
     if (h.src.kind === 'storage') {
       const extra: ItemQty[] = [];
       for (const q of h.extra ?? []) {
@@ -159,6 +161,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
   const pos = sim.world.get(crew, PositionC);
   if (!carrying || carrying.item !== h.item || !pos) return 'done';
   const moved = deposit(sim, h.dst, h.item, carrying.count);
+  haulDeposited(sim, h, carrying.count, moved);
   for (const q of carrying.extra ?? []) {
     const got = deposit(sim, h.dst, q.item, q.count);
     if (q.count > got) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, q.item, q.count - got);

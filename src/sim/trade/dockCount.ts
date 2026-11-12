@@ -1,0 +1,43 @@
+import type { HaulData } from '../items/components';
+import type { Sim } from '../sim';
+import type { Deal } from './types';
+
+/**
+ * The docked-deal unit counters, written by the code that moves the goods (the haul's pickup and deposit, `stageGoods`), never inferred afterwards.
+ * `Deal.dock.units[item]`: where the deal's units are now. `shelf`: in station storage. `hand`: in a station crew member's hands. `hold`: in the shuttle's hold.
+ * A haul belongs to a deal when `HaulData.deal` names it (tagged where the haul is made); the direction follows from its source and destination.
+ */
+export interface Units {
+  shelf: number;
+  hand: number;
+  hold: number;
+}
+
+/** The counters of one item of a deal's dock visit. */
+export function unitsOf(d: Deal, item: string): Units {
+  const dock = d.dock as NonNullable<Deal['dock']>;
+  const all = (dock.units ??= {});
+  return (all[item] ??= { shelf: 0, hand: 0, hold: 0 });
+}
+
+const dockedDeal = (sim: Sim, h: HaulData): Deal | undefined => (h.deal ? sim.trade.deals.find((d) => d.id === h.deal?.id && d.dock) : undefined);
+
+/** A deal's haul took `n` units into a crew member's hands: out of storage (`get`) or out of the hold (`give`). */
+export function haulPicked(sim: Sim, h: HaulData, n: number): void {
+  const d = dockedDeal(sim, h);
+  if (!d || !h.deal || n <= 0) return;
+  const u = unitsOf(d, h.item);
+  if (h.deal.dir === 'get') u.shelf -= n;
+  else u.hold -= n;
+  u.hand += n;
+}
+
+/** A deal's haul put down: `carried` left the hands, `moved` of them reached the destination (the rest was spilled on the floor and is the deal's no more). */
+export function haulDeposited(sim: Sim, h: HaulData, carried: number, moved: number): void {
+  const d = dockedDeal(sim, h);
+  if (!d || !h.deal) return;
+  const u = unitsOf(d, h.item);
+  u.hand -= carried;
+  if (h.deal.dir === 'get') u.hold += moved;
+  else u.shelf += moved;
+}

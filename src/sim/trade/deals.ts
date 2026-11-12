@@ -13,7 +13,7 @@ import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
 import { noteHelp } from '../galaxy/eventGrid';
-import { lostInHold, returnGiven, unstage } from './dockLedger';
+import { lostInHold, reclaim } from './dockLedger';
 import { grant, revoke } from '../consent/guests';
 
 /**
@@ -193,12 +193,12 @@ function startTrip(sim: Sim, d: Deal, t: Trip): boolean {
  */
 export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void {
   closeCourier(sim, d);
-  unstage(sim, d);
-  returnGiven(sim, d);
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
-  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count - Math.min(l.count, lostInHold(sim, d, l.item)));
+  const gone = new Map(d.get.map((l) => [l.item, lostInHold(sim, d, l.item)]));
+  reclaim(sim, d);
+  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count - Math.min(l.count, gone.get(l.item) ?? 0));
   touchMarket(sim, trader);
   d.held = 0;
   d.reason = reason;
