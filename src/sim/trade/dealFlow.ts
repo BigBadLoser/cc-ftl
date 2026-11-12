@@ -11,6 +11,7 @@ import { addStock, cancelCourierHauls, closeCourier, failDeal, isLive, setPhase,
 import type { ItemQty } from '../registry';
 import { spawnCourier } from './courier';
 import { holding } from './player';
+import { settleDock } from './dockLedger';
 import { isStation, stageGoods, stationAirlock, stationWork, takeDelivery, unwindStation } from './stationDock';
 import { bayAccessTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
@@ -164,6 +165,7 @@ function work(sim: Sim, d: Deal, v: Vehicle): void {
   }
   if (!stationWork(sim, d, v)) return;
   takeDelivery(sim, d);
+  settleDock(d);
   v.outbound = false;
   if (d.give.length > 0) sim.events.emit({ type: 'trade.delivered', deal: d.id, ship: d.ship, to: 'trader' });
   sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });

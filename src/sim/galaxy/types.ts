@@ -324,6 +324,8 @@ export interface EventGrid {
   fleet?: Fleet;
   /** Ships that escaped from the grid (jumped away); a fleet's rejoin it when the grid is left. */
   fled: Contact[];
+  /** Rescue: the player has done something for the damaged ship (a deal with it settled). Leaving early is free, but only a helped rescue pays (`settleFleet`). */
+  helped?: boolean;
 }
 
 /** How the last encounter ended, for the view's outcome line (`GalaxyState.lastResult`). `odds` and `roll` for an evade, `cost` for a bribe. */

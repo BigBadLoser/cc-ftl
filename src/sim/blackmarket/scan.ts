@@ -13,6 +13,8 @@ import { SCAN_BRIBE_MIN, SCAN_BRIBE_SHARE, SCAN_COOLDOWN, SCAN_FINE_MIN, SCAN_FI
  * (what the goods are worth): the patrol hails the player to stop, and the trip waits for `galaxy.respond` 'comply' or 'run' (inspect/patrol.ts).
  * A scan that finds nothing is an ordinary 'acknowledge' scan.
  * Contraband is whatever `heldItems` lists (storage, loose stacks, wielded and carried items, fitted upgrades), in a node or in the ship's packet.
+ * By rule (#160) shuttle holds (`VehicleC.cargo`, stowed or docked) are NOT scanned or seized: a patrol sees the ship, not its shuttles' holds. Pinned by a test in
+ * src/content/stateIntegrity.test.ts; do not add a vehicle source to `heldItems` to "fix" it.
  */
 
 /** Government and corporation factions enforce the law at their stations and with their patrols. */
