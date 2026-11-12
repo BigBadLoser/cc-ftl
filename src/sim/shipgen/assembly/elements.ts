@@ -123,7 +123,9 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const back = [Math.max(3, ...rows[0].map((r) => r.h)) + 3, Math.max(3, ...rows[1].map((r) => r.h)) + 2];
   // On the flank of another block the rows start a tile out: the first tile is that block's back wall.
   const u0 = port.flank ? 1 : 0;
-  let L = L0 + u0;
+  // The street is as long as the rows turn out, so it never runs on alone past the last room.
+  let L = u0 + 3;
+  const ends = [u0, u0];
   const ports: Built['ports'] = [], cross: [number, number, number, number][] = [];
   if (o.cross) {
     // First halves, the passage, then the rest.
@@ -136,6 +138,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const m0 = lay(rows[0].slice(cut[0]), -1, e + 2), m1 = lay(rows[1].slice(cut[1]), 1, e + 2);
     if (m0 === null || m1 === null) return null;
     L = Math.max(L, m0, m1, e + 3);
+    ends[0] = m0; ends[1] = m1;
     cross.push(...lanes);
     for (const side of [-1, 1] as const) {
       const v = side < 0 ? -(back[0] as number) : (back[1] as number);
@@ -146,8 +149,21 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const e0 = lay(rows[0], -1, u0), e1 = lay(rows[1], 1, u0);
     if (e0 === null || e1 === null) return null;
     L = Math.max(L, e0, e1);
+    ends[0] = e0; ends[1] = e1;
   }
   if (!clear(c, f, 0, L)) return null;
+  // Under an end room the rows end together: the shorter row's last room runs on to the end room, so no notch is
+  // left between them.
+  if (capOf) for (const [k, side] of ([-1, 1] as const).entries()) {
+    const last = made.filter((m) => m.side === side && m.to > m.from).pop();
+    const end = ends[k] as number;
+    if (!last || end >= L) continue;
+    const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3;
+    const box = side < 0 ? rect(f, end, L, -(h + 3), -1) : rect(f, end, L, 1, h + 3);
+    let open = true;
+    for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
+    if (open) g.rect(id, ...box);
+  }
   g.street(hall, ...rect(f, o.gate ? 1 : 0, L, -1, 1));
   for (const box of cross) g.street(hall, ...box);
   if (o.gate) {

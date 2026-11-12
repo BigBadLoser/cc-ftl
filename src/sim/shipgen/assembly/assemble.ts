@@ -222,8 +222,8 @@ function house(rng: Rng, recipe: Recipe, all: readonly RoomSpec[]): { rooms: Roo
 }
 
 /**
- * Bracing: open beams across the gaps between sections that face each other two to nine tiles apart and are not the
- * same element. One a gap at most every six tiles, none through the clear space off a dock.
+ * Bracing: open beams across the gaps between sections that face each other one to nine tiles apart and are not the
+ * same element, whatever their departments. One a gap at most every four tiles, none through the clear space off a dock.
  */
 function brace(a: Asm, chance: number): void {
   const { g, reserved, rng } = a.ctx;
@@ -239,11 +239,12 @@ function brace(a: Asm, chance: number): void {
       let t = 1;
       while (t <= 10 && at(x + t * dx, y + t * dy) === '.' && !reserved.has(key(x + t * dx, y + t * dy))) t++;
       const [ex, ey] = [x + t * dx, y + t * dy];
-      if (t < 3 || t > 10 || at(ex, ey) !== '#' || el(ex, ey) === -3 || el(ex, ey) === el(x, y)) continue;
+      if (t < 2 || t > 10 || at(ex, ey) !== '#' || el(ex, ey) === -3 || el(ex, ey) === el(x, y)) continue;
       // Square on to both walls: the tiles beside each end are wall too.
       if (at(x - dy, y - dx) !== '#' || at(x + dy, y + dx) !== '#' || at(ex - dy, ey - dx) !== '#' || at(ex + dy, ey + dx) !== '#') continue;
       const h = dx === 1;
-      if (done.some((b) => b.h === h && Math.abs(b.x - x) + Math.abs(b.y - y) < 7) || !rng.chance(chance)) continue;
+      // Near enough together that a stub between two sections gets a brace either side of it.
+      if (done.some((b) => b.h === h && Math.abs(b.x - x) + Math.abs(b.y - y) < 4) || !rng.chance(chance)) continue;
       done.push({ x, y, h });
       // Where the gap is long and there is room either side, a truss: two chords with ties between. Else one beam.
       const clear = (o: number): boolean => {

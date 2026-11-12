@@ -435,6 +435,19 @@ Sixth pass: beams, and barracks for any station.
 - **Barracks on a ring.** `house()` turns the beds into barracks and single cabins before anything is placed, so a
   ring's band takes barracks rooms as it takes any room (the single cabins stand in the band with them).
 
+Seventh pass, three points from the user:
+
+- **The gap in every secure module** was the street running on alone for a tile or two between the last rooms and the
+  end room (the street's length came from an estimate, not from where the rows ended), with a notch where one row
+  was shorter. Now the street is as long as the rows turn out, and under an end room the shorter row's last room runs
+  on to it.
+- **Braces between any two sections**, the same department's included. They were allowed but rare: a gap of one tile
+  was refused, and one brace kept the next seven tiles clear, so a stub got a brace on one side only. Now a gap of one
+  to nine tiles takes one and they stand four apart.
+- **What habitation holds**: beds, life-support rooms (role `support`: life support, sometimes a fabricator) and med
+  bays. No mess and no lounge: the content has a galley module (`module.galley`, where crew eat) but no station's room
+  list places one.
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable
