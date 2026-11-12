@@ -128,19 +128,19 @@ def container(fill, rot):
     W, L, H = 1.7, 2.8, 1.62
     vf = L / 2
     body, rib = "navy", "blueGrey"
-    k.box(0, -0.04, 0.0, W, L - 0.08, 0.08, "gmD")                                    # floor frame
+    k.box(0, -0.02, 0.0, W, L - 0.04, 0.08, "gmD")                                    # floor frame
     k.box(0, -L / 2 + 0.04, 0.0, W, 0.08, H, body)                                    # back wall
     for s in (-1, 1):
-        k.box(s * (W / 2 - 0.03), -0.04, 0.0, 0.06, L - 0.08, H, body, top=rib)        # side walls
+        k.box(s * (W / 2 - 0.03), -0.02, 0.0, 0.06, L - 0.04, H, body, top=rib)        # side walls
         for j in range(9):                                                            # corrugation ribs
             k.box(s * (W / 2 + 0.0), -L / 2 + 0.25 + j * 0.29, 0.1, 0.03, 0.12, H - 0.2, rib)
-    k.box(0, -0.04, H - 0.06, W, L - 0.08, 0.06, body, top=rib)                       # roof
+    k.box(0, -0.02, H - 0.06, W, L - 0.04, 0.06, body, top=rib)                       # roof
     for j in range(6):
         k.box(0, -L / 2 + 0.3 + j * 0.44, H, W - 0.2, 0.1, 0.02, rib)                 # roof ribs
     for su in (-1, 1):                                                                # corner castings
         for sv in (-1, 1):
-            k.box(su * (W / 2 - 0.04), sv * (L / 2 - 0.08) - 0.04, 0.0, 0.1, 0.1, H, "gmD", top="gm")
-    k.box(0, vf - 0.12, H - 0.12, W, 0.1, 0.12, "gmD")                                # door header
+            k.box(su * (W / 2 - 0.04), sv * (L / 2 - 0.08) - (0.04 if sv < 0 else 0.0), 0.0, 0.1, 0.1, H, "gmD", top="gm")
+    k.box(0, vf - 0.09, H - 0.12, W, 0.1, 0.12, "gmD")                                # door header
     k.box(0, -0.04, 0.08, W - 0.12, L - 0.2, 0.02, "steelD")                          # inside floor
     k.box(0, -L / 2 + 0.1, 0.1, W - 0.12, 0.02, H - 0.2, "gmD")                       # inside back
     load = {"empty": 0, "partial": 3, "full": 6}[fill]
@@ -151,7 +151,7 @@ def container(fill, rot):
         crate(k, u, v, 0.65, 0.56, ("steel", "navy", "rust")[i % 3], h=0.5)
     ang = {"empty": (2.0, 2.0), "partial": (0.0, 1.9), "full": (0.0, 0.0)}[fill]    # (+u door, -u door)
     for side, a in zip((1, -1), ang):
-        k.door(side * (W / 2 - 0.04), vf - 0.02, 0.08, W / 2 - 0.04, H - 0.22, 0.04, body, a, side, top=rib)
+        k.door(side * (W / 2 - 0.04), vf - 0.02, 0.08, W / 2 - 0.04, H - 0.20, 0.04, body, a, side, top=rib)
         if a == 0:
             for j in range(2):                                                        # lock bars
                 cu = side * (0.12 + j * 0.42)
