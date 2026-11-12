@@ -1,5 +1,6 @@
 """Double bunk bed look study (family `bunk`, preview only): a 1x2 module, two sleeping decks one over the other, r0.
 Approved (user, 2026-11-12): B1h with 2 px pillows (`b1h`), the slate frame a shade down on the pixel grid.
+The single bed (module.bed) to match, approved: S3 (`s3`), B1h's lower deck alone, a 24 px mattress, plain boards.
 
 Local frame modkit.K, footprint (1, 2): u across (the bunk's open long side is +u, which faces the camera at r0), v
 along it (the head end is -v, the foot end +v, the module's front). Crew are 1.5 tall: the lower mattress tops out
