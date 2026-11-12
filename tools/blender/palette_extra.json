@@ -3598,5 +3598,10 @@
   "arcCyanOff": {"hex": "#26434d", "set": "arcade"},
   "arcCoinOff": {"hex": "#4f3626", "set": "arcade"},
   "arcSeat": {"hex": "#b8465a", "set": "arcade"},
-  "arcSeatD": {"hex": "#7e2c40", "set": "arcade"}
+  "arcSeatD": {"hex": "#7e2c40", "set": "arcade"},
+  "ecL": {"hex": "#4fc0c8", "set": "crystal"},
+  "ecM": {"hex": "#2a9aa6", "set": "crystal"},
+  "ecD": {"hex": "#1b4a55", "set": "crystal"},
+  "ecG": {"hex": "#36e2f2", "emissive": 2.5, "set": "crystal"},
+  "ecW": {"hex": "#e8ffff", "emissive": 2.5, "set": "crystal"}
 }
