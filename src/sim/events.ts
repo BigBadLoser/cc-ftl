@@ -169,8 +169,8 @@ export type SimEvent =
   /** A shuttle flew into its home bay. */
   | { type: 'vehicle.stowed'; vehicle: number; bay: number }
   | { type: 'vehicle.damaged'; vehicle: number; amount: number; hp: number; source: 'weapon' | 'pointDefence' }
-  /** A shuttle was destroyed in `state`; see destroyVehicle for what happens to those aboard. */
-  | { type: 'vehicle.destroyed'; vehicle: number; state: 'stowed' | 'flying' | 'docked'; x: number; y: number }
+  /** A shuttle was destroyed in `state`; see destroyVehicle for what happens to those aboard. `faction` is its home ship's; `aboard` were in it, `away` are the rest of its site's party (no ride home now). */
+  | { type: 'vehicle.destroyed'; vehicle: number; state: 'stowed' | 'flying' | 'docked'; x: number; y: number; faction: string; aboard: number[]; away: number[] }
   | { type: 'crew.embarked'; crew: number; vehicle: number; role: 'pilot' | 'passenger' }
   | { type: 'crew.disembarked'; crew: number; vehicle: number; ship: number; x: number; y: number }
   /** A crew member attacked `target` with `weapon` (item id or 'unarmed'); (x, y) to (tx, ty) on ship `ship`. Followed by crew.hit or crew.miss. */
