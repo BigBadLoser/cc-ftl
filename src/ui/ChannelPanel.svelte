@@ -52,10 +52,10 @@
 <FloatingWindow id="station" title={p && p.hail === 'none' ? 'Calling' : 'Channel open'} titleFit icon="hull" min={{ w: 900, h: 420 }} defaultRect={(b) => centerTop(b, 1120)} {onClose} closeLabel="Close station panel" closeTestId="station-close" testId="station-panel" titleTestId="station-title">
   {#snippet titleExtra()}
     <span class="sub" data-testid="station-name">{p?.name ?? 'Station'}{p?.role ? ` · ${p.role}` : ''}{p && !p.station && p.distance ? ` · ${p.distance} tiles` : ''}</span>
-    {#if p?.info?.owner}<Chip tone={TIER[p.info.owner.tier]} title="Owner and how they regard you" testId="si-owner">{p.info.owner.name} · {p.info.owner.tier}</Chip>{/if}
-    {#if p?.market?.truce}<Chip tone={p.market.banned ? 'bad' : 'good'} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
-    {#if p?.market}<Chip tone="warn" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</Chip>{/if}
-    <span class="credits"><Chip tone="gold" size="md" caps={false} outline={false} title="Your credits" testId="station-credits">₵ {fmt(trade.credits)}</Chip></span>
+    {#if p?.info?.owner}<Chip plate tone={TIER[p.info.owner.tier]} title="Owner and how they regard you" testId="si-owner">{p.info.owner.name} · {p.info.owner.tier}</Chip>{/if}
+    {#if p?.market?.truce}<Chip plate tone={p.market.banned ? 'bad' : 'good'} title="Nobody starts a fight here. Firing on or boarding anyone breaks the truce.">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
+    {#if p?.market}<Chip plate tone="warn" title={`${p.market.names.join(' · ')}. Contraband is bought at ${Math.round(p.market.contrabandRate * 100)}% of its value.`}>BLACK MARKET</Chip>{/if}
+    <span class="credits"><Chip tone="gold" plate caps={false} outline={false} title="Your credits" testId="station-credits">₵ {fmt(trade.credits)}</Chip></span>
   {/snippet}
   {#if !p}
     <p class="none">Out of range.</p>
