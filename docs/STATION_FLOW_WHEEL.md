@@ -330,6 +330,53 @@ Findings:
 For the kit's centres (not done; the order agreed is composition first): one thing per quadrant, a court with its band,
 one department's block, or open to space on purpose; no more rooms of mixed departments scattered along the streets.
 
+## The assembly model (prototype)
+
+The direction agreed after the inventory: one modular assembly system instead of a mix of old grammars and new, proved
+first on two cases. Code in `src/sim/shipgen/assembly/`, recipes in `src/content/stationRecipes.ts`, sheets from
+`node tools/shipgen/assemblySheets.js`. Unfurnished; not a registered grammar; no old grammar is touched.
+
+Two layers:
+
+| Layer | Elements | Where |
+|---|---|---|
+| Composition (what a recipe says) | Section, Connection, Void, Attachment | `recipe.ts` |
+| Geometry (how a section is drawn) | box with a street and two rows (`block`), single room, ring or arc with band strips | `elements.ts`, `ring.ts` |
+| Shared | frames and ports (`model.ts`), the assembler (`assemble.ts`), RegionGrid as the only wall compiler | |
+
+- Every element paints regions at a port's frame and returns its own ports. Nothing declares a wall.
+- The assembler is one procedure for every recipe: root, then each rule's branches (a neck, then sections in series or
+  on the sides of a stem), then the docks, then a ring root's own rooms. An element that does not fit, stands nearer
+  than `spacing` to something it is not joined to, or builds a solid 2x2 wall block is taken back and the next port
+  tried. Unused corridor is cut back at the end.
+- A section's size is its rooms': it is laid out from them by the shared lining code, so capacity is what was drawn.
+  A ring's capacity is the strips it really has: `fillRing` returns what did not fit.
+- Hard, or the candidate is rejected with the reason: every room of the program stands as a region with floor in the
+  compiled grid (`missing`, counted by role, quarters by beds); every dock has a berth facing north, south or west with
+  clear space off it (a Void, reserved); a gated branch is joined by its gate alone; nothing is placed off the grid.
+  Preferences: where on the rim, pairs, order along the trunk.
+- A recipe names no coordinate and no room: departments, what joins what, ranges for the seed to roll in.
+
+Results, 4 seeds each (tree: the pirate hub's rooms, 30 to 32; compound: the mining station's, 28 or 29):
+
+- Tree, three parameter sets (ribs, combs, scrappy): 12 of 12 assemble, all rooms placed, no wall block, hull check
+  passes, no room under 3 wide.
+- Compound, five parameter sets: 17 of 20 assemble, same results (one seed has 2 rooms under 3 wide). The 3 rejected
+  are the single-loaded arc, set too small for its rooms on purpose: "the ring is short of N rooms".
+
+Found on the way, worth knowing:
+
+- Off-grid tiles read as open space, so a trunk longer than the grid placed whole departments nowhere while the
+  bookkeeping said all rooms placed. Now nothing is free off the grid and the room count is read from the grid.
+- A room across a block's end must span the whole block (a head). Narrower, its corners stand on the last rooms' walls.
+- Staggered rows run longer than their rooms add up to (a deeper room after a shallower one brings a wall), so the
+  street is measured after the rows are laid.
+
+Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
+only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
+block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable
+depth arcs, ports on a curve other than at the axes and cut ends, open framework.
+
 ## Tried and set aside
 
 - **Hand-drawn mocks** (`tools/shipgen/mocks/`, two rounds). They gave the user's preferences and the wall rule, and no

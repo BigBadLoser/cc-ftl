@@ -78,9 +78,16 @@ export interface Site {
   freeOut: (x: number, y: number) => boolean;
 }
 
-export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2): Site {
+/**
+ * `keep` clips the station to part of its outline (an arc: a ring with a piece cut away, along lattice lines). The
+ * ring's own shape does not change at a cut; what lies beyond it is simply not built, and the cut faces are closed
+ * with a solid line.
+ */
+export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean): Site {
   const g = new RegionGrid(R + pad);
-  const { hull, inside } = shapes(R, outline, cut);
+  const whole = shapes(R, outline, cut), inside = whole.inside;
+  const kept = keep ?? ((): boolean => true);
+  const hull = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y);
   const memo = new Map<number, number>();
   const depth = (x: number, y: number): number => {
     const key = (y + 512) * 1024 + x + 512;
@@ -93,12 +100,17 @@ export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2): S
     return d;
   };
   const ring = g.hall();
-  g.paint(ring, (x, y) => { const d = depth(x, y); return d === 1 || d === 2; });
-  g.paint(SOLID, (x, y) => depth(x, y) === 3);
+  g.paint(ring, (x, y) => { const d = depth(x, y); return kept(x, y) && (d === 1 || d === 2); });
+  g.paint(SOLID, (x, y) => kept(x, y) && depth(x, y) === 3);
+  // The cut faces: a solid line across the band, the ring and its inner wall, one tile beyond the cut.
+  if (keep) {
+    const built = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y) && depth(x, y) <= 3;
+    g.paint(SOLID, (x, y) => !kept(x, y) && (built(x + 1, y) || built(x - 1, y) || built(x, y + 1) || built(x, y - 1)));
+  }
   let reach = 0;
   while (depth(0, -(reach + 1)) >= 3) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, outline, cut, hull, inside, depth, ring, reach, free: (x, y) => depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, cut, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {
