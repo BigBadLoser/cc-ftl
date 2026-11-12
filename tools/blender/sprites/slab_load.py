@@ -6,11 +6,11 @@ tip-out lift at the window was dropped as unconvincing):
   idle: the yellow tipping cradle stands upright on the hatch's platform, flush with the floor (a loading stand)
   in:   the cradle folds flat to the right, across the screen; the cart slides in from the right, lowers the slab onto
         it face up (the prisoner on show) and pulls away; the cradle tips the slab up; the platform sinks until its
-        head is under the canopy; a shuttle takes it by its foot and runs it in, turning it 40 deg to the wheel's angle
-        as it goes, while the cradle swings open like a gate about its outer end (it sits on the slab's back, and any
-        turn swings the back into it); the gate swings shut and the platform rises
+        head is under the canopy; a shuttle takes it by its foot and runs it in while the platform sinks on with the
+        cradle (it sits on the slab's back, and any turn swings the back into it), then turns it 40 deg to the wheel's
+        angle as it goes; the platform rises with the cradle (a gate swing was tried: it swung out of the slot)
   out:  the same, backwards
-Frames hc00-hc29 (KEYS). Round 24: tipping across the screen (toward the camera read oddly); the turn moved into the
+Frames hc00-hc28 (KEYS). Round 24: tipping across the screen (toward the camera read oddly); the turn moved into the
 slide (it was a 130 deg turntable turn and the cradle dropping down the shaft). The tip goes right, not left: left, the
 slab would need a 140 deg turn and hits its neighbours; right, 40 deg clears them by 0.035.
 
@@ -66,7 +66,7 @@ def hatch(k, pz):
     sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,               # the striped rim on the floor
             lambda i: "hazY" if (i // 2) % 2 else "hazK")
     if pz < -0.01:                                                           # the shaft's dark bottom
-        sectors(k, lambda a: W.RP, r_hole, -0.62, -0.61, lambda i: "dark")
+        sectors(k, lambda a: W.RP, r_hole, -1.75, -1.74, lambda i: "dark")
     sectors(k, lambda a: W.RP, r_hole, pz - 0.03, pz, lambda i: "steel")    # the platform
     c = at(HC, ST)
     k.cyl(c[0], c[1], pz, 0.36, 0.008, "steelD", sides=28)
@@ -130,16 +130,20 @@ def cart(k, s):
 BED = 0.12 + T + 0.05                               # a flat slab's face height on the cradle
 CART = 0.75                                         # and on the cart
 SINK = -0.46                                        # the platform down: the slab's foot at the wheel's (Z0)
+DEEP = -1.6                                         # and on down, the cradle's top below the slab's foot
 # frames: (cradle tilt deg, platform z, cradle swing deg, slab: None | "home" | ("cart"/"left", out, z) | ("cradle",)
-#          | ("slide", t): on the shuttle, t of the way in, turned -40 deg * t to the wheel's angle)
+#          | ("slide", t, f): on the shuttle, t of the way in, turned f of the 40 deg to the wheel's angle)
+# The run-in: the shuttle takes the slab by its foot and runs it straight in while the platform sinks on with the
+# cradle (it sits on the slab's back: the slab can't turn until it is clear), then turns it as it goes.
 KEYS = [(0, 0, 0, None), (30, 0, 0, None), (60, 0, 0, None), (90, 0, 0, None),
         (90, 0, 0, ("cart", 1.0, CART)), (90, 0, 0, ("cart", 0.0, CART)),
         (90, 0, 0, ("cart", 0.0, (CART + BED) / 2)), (90, 0, 0, ("cart", 0.0, BED)),
         (90, 0, 0, ("left", 0.6, BED)), (90, 0, 0, ("cradle",)),
         (72, 0, 0, ("cradle",)), (54, 0, 0, ("cradle",)), (36, 0, 0, ("cradle",)), (18, 0, 0, ("cradle",)),
         (0, 0, 0, ("cradle",)), (0, -0.15, 0, ("cradle",)), (0, -0.3, 0, ("cradle",)), (0, SINK, 0, ("cradle",))] + \
-    [(0, SINK, 80 * min(1.0, (j / 8) / 0.4), ("slide", j / 8)) for j in range(1, 9)] + \
-    [(0, SINK, 40, "home"), (0, SINK, 0, "home"), (0, -0.3, 0, "home"), (0, -0.15, 0, "home")]
+    [(0, SINK + (DEEP - SINK) * min(1.0, (j / 8) / 0.4), 0, ("slide", j / 8, max(0.0, (j / 8 - 0.4) / 0.6)))
+     for j in range(1, 9)] + \
+    [(0, -1.2, 0, "home"), (0, -0.8, 0, "home"), (0, -0.4, 0, "home")]
 
 
 def frame_n(n):
@@ -163,9 +167,9 @@ def frame_n(n):
         elif sl[0] == "cradle":
             s = bed
         else:                                       # on the shuttle, held by its foot: in and turning as it goes
-            t = sl[1]
+            t, f = sl[1], sl[2]
             o = at(HC + (W.R0 - HC) * t, ST, W.Z0)
-            s = Slab(o, UP, rot(ET, UP, math.radians(-40) * t))
+            s = Slab(o, UP, rot(ET, UP, math.radians(-40) * f))
             s.box(k, -0.12, 0.0, -0.42, 0.42, -T - 0.06, 0.06, "steelD", face="hazY")
         cassette(k, s)
         return out + [s]

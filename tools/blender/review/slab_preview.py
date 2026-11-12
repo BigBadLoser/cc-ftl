@@ -28,7 +28,8 @@ def press(c, quad, mask, mx, my, tint, crew):
     im = Image.fromarray(crew).transform((W, H), Image.PERSPECTIVE, tuple(coeffs(q.tolist(), w, h)), Image.NEAREST)
     a = np.asarray(im)[..., 3] > 0
     m = np.zeros((H, W), bool)
-    mh, mw = mask.shape[:2]; m[my:my + mh, mx:mx + mw] = mask[..., 3] > 0
+    mh, mw = mask.shape[:2]; mh, mw = min(mh, H - my), min(mw, W - mx)   # (clipped at the canvas edge)
+    m[my:my + mh, mx:mx + mw] = mask[:mh, :mw, 3] > 0
     a &= m
     rgb = np.asarray(im)[..., :3].astype(float); lum = rgb.mean(-1) / 255
     base = c.px[..., :3].astype(float)
@@ -39,7 +40,7 @@ def press(c, quad, mask, mx, my, tint, crew):
     out = out * 0.85 + np.array(tint) * 0.15
     c.px[..., :3] = np.where(a[..., None], out, base).astype(np.uint8)
 def scene(v):
-    c = Canvas(260, 290); ox, oy = 150, 235
+    c = Canvas(CW, 290); ox, oy = 150, 235
     for gx in range(-3, 3):
         for gy in range(-3, 3):
             floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
@@ -56,14 +57,15 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
+CW = int(os.environ.get("SLAB_CANVAS_W", 260))         # the canvas width (wider for the loading frames)
 order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s49", "s50", "s51"]
 names = {"s49d": "49a, no lights: vents only", "s49e": "49a, one unbroken line", "s49f": "49a, a station lamp over the window", "s49a": "49a workhorse: warm grey, dark band, yellow guards", "s49b": "49b containment: slate, red accent, yellow guards", "s49c": "49c cryo: white, steel band, blue accent", "s49": "49 Geneva over tyres: star on top, tyre drives in the sunk ring", "s50": "50 Geneva well: the drive sunk in the top", "s51": "51 crown well: rams and tyre drives sunk in the top", "s46": "46 hood: back shell, open front, Geneva top", "s47": "47 wrap: housing with a front window, tyre drives", "s48": "48 ribs: three flush ribs flaring into the canopy", "s43": "43 Geneva top: star, driver and gearmotor on the canopy", "s44": "44 turntable: crown with clamp rams, tyre drives, console", "s45": "45 open hub: clamp rams, chain drive, pendant controller", "c11": "hover B: floating cradle", "s40": "40 one lobe: sunk in a pit, canopy on a lobe of itself",
          "s41": "41 twin lobes: sunk in a pit, canopy on two lobes", "s42": "42 ring canopy: open middle, hub and belt seen"}
 Z = 3
 COLS = int(os.environ.get("SLAB_COLS", 3))
 rows = (len(order) + COLS - 1) // COLS
-sheet = Image.new("RGB", (COLS * (260 * Z + 10), rows * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
+sheet = Image.new("RGB", (COLS * (CW * Z + 10), rows * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for i, v in enumerate(order):
-    x, y = (i % COLS) * (260 * Z + 10), (i // COLS) * (290 * Z + 30)
-    sheet.paste(scene(v).resize((260 * Z, 290 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names.get(v, v), fill=(230, 230, 230))
+    x, y = (i % COLS) * (CW * Z + 10), (i // COLS) * (290 * Z + 30)
+    sheet.paste(scene(v).resize((CW * Z, 290 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names.get(v, v), fill=(230, 230, 230))
 sheet.save(sys.argv[3])
