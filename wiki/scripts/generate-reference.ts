@@ -413,7 +413,7 @@ await saveJson('game-data', {
     scalars(tuning, '', 2), scalars(tuningJobs, '', 2), scalars(tuningGalaxy, '', 2), scalars(tuningRecruit, '', 2),
     scalars(tuningGalaxyHeat, '', 2), scalars(tuningWar, '', 2), scalars(tuningBlackMarket, '', 2), scalars(tuningCombatHeat, '', 2),
     scalars({ trade, yard, crops, blackMarkets, traits, upbringings, careers, drones, events, furniture }, '', 6),
-    scalars({ recipes: recipeData(), starters: starterData() }, '', 4),
+    scalars({ recipes: recipeData(), starters: starterData() }, '', 6),
   )),
 
   // Default key bindings by group, labelled the way the game shows them (src/ui/keymap). Debug keys are for development.

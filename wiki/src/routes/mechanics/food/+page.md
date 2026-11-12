@@ -28,8 +28,8 @@ Crew eat the most filling food the ship holds first, so your best meals go first
 
 | Food | Fills | Mood (at a galley) | Where it comes from |
 |---|---|---|---|
-| Fine meal | <Stat kind="items" id="item.meal_fine" field="food.nutrition" /> | <Stat kind="items" id="item.meal_fine" field="food.mood.points" signed /> | Galley, cook with Cooking 6 or more |
-| Good meal | <Stat kind="items" id="item.meal_good" field="food.nutrition" /> | <Stat kind="items" id="item.meal_good" field="food.mood.points" signed /> | Galley, cook with Cooking 2 or more |
+| Fine meal | <Stat kind="items" id="item.meal_fine" field="food.nutrition" /> | <Stat kind="items" id="item.meal_fine" field="food.mood.points" signed /> | Galley, cook with Cooking <Stat kind="tuning" id="recipes.recipe.meal_greens.quality.tiers.2.minSkill" /> or more |
+| Good meal | <Stat kind="items" id="item.meal_good" field="food.nutrition" /> | <Stat kind="items" id="item.meal_good" field="food.mood.points" signed /> | Galley, cook with Cooking <Stat kind="tuning" id="recipes.recipe.meal_greens.quality.tiers.1.minSkill" /> or more |
 | Bland meal | <Stat kind="items" id="item.meal_bland" field="food.nutrition" /> | <Stat kind="items" id="item.meal_bland" field="food.mood.points" signed /> | Galley, any cook |
 | Ration | <Stat kind="items" id="item.ration" field="food.nutrition" /> | <Stat kind="items" id="item.ration" field="food.mood.points" signed /> | Galley (printed from water), or bought |
 
@@ -117,9 +117,9 @@ The **Cooking** skill of the crew member doing the job picks the quality of the 
 
 | Cooking skill | Meal |
 |---|---|
-| 0 to 1 | Bland meal |
-| 2 to 5 | Good meal |
-| 6 or more | Fine meal |
+| Below <Stat kind="tuning" id="recipes.recipe.meal_greens.quality.tiers.1.minSkill" /> | Bland meal |
+| <Stat kind="tuning" id="recipes.recipe.meal_greens.quality.tiers.1.minSkill" /> or more | Good meal |
+| <Stat kind="tuning" id="recipes.recipe.meal_greens.quality.tiers.2.minSkill" /> or more | Fine meal |
 
 Cooking practice trains the skill. A good cook is worth more than a bigger farm: a fine meal fills more and cheers the
 crew more than a ration. Medics start with some Cooking. See [Crew](../crew/) for how skills grow.
