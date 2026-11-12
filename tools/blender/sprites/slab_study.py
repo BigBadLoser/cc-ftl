@@ -192,8 +192,8 @@ def designs(v):
 def study(v):
     """The round's module holding design v."""
     import sys
-    from . import slab_study2, slab_study3
-    for m in (sys.modules[__name__], slab_study2, slab_study3):
+    from . import slab_study2, slab_study3, slab_study4
+    for m in (sys.modules[__name__], slab_study2, slab_study3, slab_study4):
         if v in m.DESIGNS:
             return m
 
@@ -272,5 +272,5 @@ def face_quad_objs(v, i):
 
 
 def jobs():
-    from . import slab_study2, slab_study3
-    return [job(v) for m in (DESIGNS, slab_study2.DESIGNS, slab_study3.DESIGNS) for v in m]
+    from . import slab_study2, slab_study3, slab_study4
+    return [job(v) for m in (DESIGNS, slab_study2.DESIGNS, slab_study3.DESIGNS, slab_study4.DESIGNS) for v in m]
