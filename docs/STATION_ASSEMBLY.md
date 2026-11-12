@@ -117,8 +117,10 @@ where `main` has something better or new (the arcade cabinet and game table, pow
   den are tight, a trade station roomy).
 - Quarters are blocks of one-bed cabins (four beds a block), or, where the kind sets `barracks` (the mining station,
   the navy depot), barracks of 6 to 8 beds each (3 or 4 double bunks) with a few one-bed cabins beside them.
-- Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and a game table; from
-  station size up the next is a rec room with arcade cabinets and a game table (`withCommons`). The fabricator stands
+- Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and mess tables, one
+  for every eight crew (a table seats four on its chairs, which come with it at fit-out); from station size up the
+  next is a rec room with arcade cabinets and a game table (`withCommons`). With no rec room the game table stands in
+  the mess. The fabricator stands
   in a plant room.
 - Shield rooms and the core get floor round the machine on a station that is not tight. Gun bays keep the mount size.
 - Reactors: the smallest tier the size allows that powers the station from one room of two; rooms of two at most.

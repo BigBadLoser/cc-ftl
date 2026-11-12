@@ -157,25 +157,30 @@ function plant(rooms: readonly RoomSpec[]): RoomSpec[] {
 }
 
 /**
- * The common rooms as a mess and a rec room: the first one (two at hub size) is a mess with a galley and a game
- * table, and from station size up the next is a rec room with arcade cabinets and a game table. They are the commons
- * department. The fabricator the first common room held goes to a plant room, the station's workshop.
+ * The common rooms as a mess and a rec room: the first one (two at hub size) is a mess with a galley and mess tables
+ * (a table seats four on its chairs, which come with it at fit-out; seats for about half the crew at once), and from
+ * station size up the next is a rec room with arcade cabinets and a game table. Where there is no rec room the game
+ * table stands in the mess. They are the commons department. The fabricator the first common room held goes to a
+ * plant room, the station's workshop.
  */
 export function withCommons(rooms: readonly RoomSpec[], size: StationSize): RoomSpec[] {
   const out = rooms.map((r) => ({ ...r, mods: [...r.mods] }));
   const common = out.filter((r) => r.role === 'support' && !r.dept);
   const messes = size === 'hub' ? 2 : 1, rec = size === 'outpost' ? 0 : 1;
   const bench = out.find((r) => r.role === 'plant');
+  const crew = out.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
+  const tables = Math.max(1, Math.ceil(crew / 8 / messes));
   for (const [i, r] of common.slice(0, messes + rec).entries()) {
     const mess = i < messes;
     if (bench && r.mods.includes('module.fabricator')) {
       r.mods = r.mods.filter((m) => m !== 'module.fabricator');
       bench.mods.push('module.fabricator');
     }
-    r.mods.push(...(mess ? ['module.galley', 'module.gametable'] : ['module.arcade', 'module.arcade', 'module.gametable']));
+    r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
-    // Floor for what it holds: a counter and a table with its stools, or a wall of cabinets and a table.
-    const long = Math.max(r.w, r.h, mess ? 6 : 5), short = Math.max(Math.min(r.w, r.h), 4);
+    // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle, or a wall of
+    // cabinets and a table.
+    const long = Math.max(r.w, r.h, mess ? 3 + 3 * tables : 5), short = Math.max(Math.min(r.w, r.h), mess ? 5 : 4);
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
   }
   return out;
