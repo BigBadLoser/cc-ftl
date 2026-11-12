@@ -32,8 +32,8 @@ LOBE_R = 0.3                                        # the plinth's lobe round th
 def path():
     """The spine's centre line in (r, z) with its width (across, T) and depth (in its plane) at each point."""
     pts = []
-    for z, w, d in ((0.14, 0.4, 0.34), (0.3, 0.38, 0.3), (0.62, 0.34, 0.26), (0.82, 0.27, 0.21), (1.2, 0.26, 0.2),
-                    (BEND, 0.26, 0.2)):
+    for z, w, d in ((0.14, 0.38, 0.3), (0.6, 0.38, 0.3), (0.78, 0.26, 0.2), (BEND, 0.26, 0.2)):   # flat faces, one
+                                                                             # shoulder: a taper's faces speckle
         pts.append((RS, z, w, d))
     for i in range(1, 7):                                                    # the bend
         th = math.pi / 2 * i / 6
@@ -102,7 +102,9 @@ def spine_back(k):
           [(-0.055, 0.0), (-0.02, 0.0), (-0.005, 0.04), (0.01, -0.03), (0.025, 0.0), (0.055, 0.0)], d=0.01)
     for i, (w, col) in enumerate(((0.1, "cyan"), (0.06, "recGlowO"), (0.035, "cyan"))):
         rect(k, s, X, UP, -0.05, -0.05 + w, 1.13 + i * 0.05, 1.16 + i * 0.05, col, 0.003)
-    for z0, z1 in ((0.2, 1.0), (1.5, BEND - 0.08)):                          # a conduit line from the lobe up the column
+    f = side_face(RS, 0, 0.38)                                               # a conduit line from the lobe up the column
+    rect(k, f, X, UP, -0.012, 0.012, 0.18, 0.56, "cyan", 0.0)
+    for z0, z1 in ((0.82, 1.0), (1.5, BEND - 0.08)):
         rect(k, s, X, UP, -0.012, 0.012, z0, z1, "cyan", 0.0)
 
 
