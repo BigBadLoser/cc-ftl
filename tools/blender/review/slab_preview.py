@@ -56,10 +56,10 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
-order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s22", "s23", "s24"]
-names = {"c11": "hover B: floating cradle", "s22": "22 Geneva indexer: star and crank drive, spring detent, side frames",
-         "s23": "23 ferris drive: tyre drives on the rim, slabs as gondolas on trunnions",
-         "s24": "24 ratchet and drawers: ram and pawls, slabs on rails (front one out), latch hooks"}
+order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s25", "s26", "s27"]
+names = {"c11": "hover B: floating cradle", "s25": "25 ferris, revised: tyre drives, cable-stayed arms, gondolas",
+         "s26": "26 worm drive and tilt-out: worm and hand wheel, hinged cradles, front one tipped out",
+         "s27": "27 chain drive and jib crane: chain and tensioner, slot guides, front one lifted out"}
 Z = 3
 rows = (len(order) + 2) // 3
 sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (260 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
