@@ -218,6 +218,36 @@ natively, layout-time validation, the fit-out and the finished-station checks; s
 **The test:** trading flows A, B and C come out as different structures from the same code, each with variation by
 seed, every one passing the finished-station checks, and the user judges the silhouettes.
 
+### Massing pass: first result (trading station, seed 1)
+
+Code: `src/sim/shipgen/flow/` (types, departments, arms, band, planner), flows in `src/content/stationFlows.ts`, sheets
+from `node tools/shipgen/flowSheets.js`. Unfurnished; not yet a registered grammar.
+
+What it does:
+
+- Flows A, B and C give different structures from the same code, three each: wings (harbour, freight, secure), a gated
+  secure street, freight inside or out. Departments read as blocks.
+- Filler (shops) sizes to the frontage left; band rooms the band cannot hold (cabins) line a street; a room too long
+  for its street turns its short side to it; the last room of a row runs up to the ring wall.
+- Walls: 7 of 9 structures have no solid 2x2 block and pass the hull check before any thinning. Two lattice rules did
+  most of it (`stripsOf`): a *tongue* (a strip tile with the ring on one side and another strip or room straight
+  across) goes to the neighbour, and a *sliver* (a strip run under three wide beside a wing's room) joins that room.
+  Before them the bare lattice had 12 blocks at every radius.
+
+What is wrong with it:
+
+- **They are hoops.** Built share of the area inside the hull: planner 66 to 83%, legacy 89%, mocks 85 and 96%.
+- Cause 1: 20 one-strip cabins on a single-loaded band need R 36 by themselves, and the rest of the program fills
+  about half of what that ring encloses.
+- Cause 2: the only way to put rooms inside the ring is along four radial streets. A radius is the scarce dimension
+  (24 tiles at R 36, less the court); the quadrants between the streets stay empty. Five machine rooms behind a gate
+  need R 44 on a radial street; two 15x9 warehouses inside need R 44 too.
+- The mocks fill the quadrants with department blocks. That element does not exist here yet.
+
+Missing vocabulary, in order of what it would buy: a **quarter block** (a department compound filling the quadrant
+between two streets, entered from one of them, gated when controlled); a **lane** (a street off a street, the same arm
+code in a shifted frame) to build it from; rooms on the ring's inner side (a double-loaded ring).
+
 ## Tried and set aside
 
 - **Hand-drawn mocks** (`tools/shipgen/mocks/`, two rounds). They gave the user's preferences and the wall rule, and no
