@@ -16,9 +16,11 @@ from .recovery_study4 import FRONT, base, quad, seam
 from .recovery_study5 import N, R, at
 from .recovery_study6 import UP, add, rect
 from .recovery_study8 import FP8, HAT_R, HAT_Z, RING_R, STILL, front_of
-from .recovery_study9 import FRAMES, GLASS, SURF, SWEEP, scan, surface_film
+from .recovery_study9 import FRAMES, SURF, SWEEP, scan, surface_film
 from .medbay import trace
 
+GLASS = ((SURF, R + 0.012), (2.08, R + 0.012), (2.15, 0.55), (2.21, 0.42), (2.24, 0.2))   # a band of clear glass
+                                                                             # over the fluid, the dome under the hat
 SPINE_A = math.radians(146)                         # its side face turned toward the camera
 E = (math.cos(SPINE_A), math.sin(SPINE_A), 0.0)     # out from the axis toward the spine
 T = (-math.sin(SPINE_A), math.cos(SPINE_A), 0.0)    # across the spine (its side faces look along -T and +T)
@@ -173,8 +175,8 @@ def glass_edges():
     prof = ((0.2, R + 0.014), (SURF, R + 0.014)) + GLASS[1:-1]
     for a in (FRONT + math.radians(88), FRONT - math.radians(88)):
         seam(k, prof, a, "recShine", w=0.025, out=0.0)
-    seam(k, GLASS[1:-1], FRONT + math.radians(35), "recShine", w=0.05, out=0.004)
-    seam(k, GLASS[1:-1], FRONT + math.radians(22), "recShine", w=0.02, out=0.004)
+    seam(k, GLASS[:-1], FRONT + math.radians(35), "recShine", w=0.05, out=0.004)
+    seam(k, GLASS[:-1], FRONT + math.radians(22), "recShine", w=0.02, out=0.004)
     n = 72                                                                   # the lit lip where the dome curves in
     z, r = GLASS[1]
     for i in range(n):
