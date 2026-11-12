@@ -20,6 +20,8 @@ export { footprintTiles, accessTile, rotatedSize, openTilesOf, hullRow, hullSide
 export { spawnModule, removeModule, placementError } from './modules/spawn';
 export { isTileWalkable } from './modules/walk';
 export { roomTiles } from './roomIndex';
+export { roomQualityAt, roomQualityOf, shipRoomQuality, tierOfValue, ROOM_TIERS, ROOM_TIER_LABELS, type RoomQuality, type RoomTier } from './roomQuality';
+export { playingAt } from './ai/machines/leisureSpots';
 export * from './tuning';
 export { newGame, startingRoles } from './newGame';
 export { pipeline, runPipeline, systemLabels, type System } from './pipeline';

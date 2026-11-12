@@ -1,6 +1,6 @@
 # Catalog: modules
 
-Every ship module, furniture piece and sealed container. 53 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
+Every ship module, furniture piece and sealed container. 55 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
 the build catalog test (`src/app/buildCatalog.test.ts`) requires every def to be reachable from a build tab, so any def here can be built by the player
 (Mk II/III and the flak cannon first need a blueprint). "Buildable only" means nothing places it on a ship, so it appears only if the player builds it.
 Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workbench and three storage variants.
@@ -39,6 +39,8 @@ Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workb
 | AI core | `module.aiCore` | Runs ship automation such as point defence. | In game | src/content/modules.ts:419; shipgen, rogue ships; sim/robots/core.ts; research.ts |
 | Shuttle bay | `module.vehicle_bay` | A pit that holds one shuttle and launches it through hatch doors. | In game | src/content/modules.ts:430; Wayfarer, Lancer, shipgen hangars; sim/vehicles/*; ui/ShuttlePanel.svelte |
 | Pod bay | `module.pod_bay` | A pit for one mining or construction pod. | In game | src/content/modules.ts:441; Prospector only (prospector.ts:56); sim/systems/mining.ts; buildable |
+| Arcade cabinet | `module.arcade` | An arcade cabinet for one: a break spot (solo). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; art from PR #440 |
+| Game table | `module.gametable` | A holographic game table for two: a break spot (social, two stools). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; crew sit on its stools |
 | Mess table | `module.mess_table` | A table for the mess. | In game | src/content/furniture.ts:17; shipgen, starters; sim/crew/eating.ts |
 | Chair | `module.chair` | A seat. | In game | src/content/furniture.ts:26; shipgen, starters |
 | Locker | `module.storage_locker` | A tall locker. | In game | src/content/furniture.ts:34; shipgen, starters; sim/items/storage.ts |
@@ -49,6 +51,7 @@ Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workb
 | Scrap bin | `module.storage_scrap` | A barred cage that takes only scrap. | Partial: buildable only | src/content/furniture.ts:77; nothing places one; art and `storageAccepts` scrap exist; scrapper reads stock anywhere |
 | Large scrap bin | `module.storage_scrap_large` | A large barred cage. | Partial: buildable only | src/content/furniture.ts:85; nothing places one; no test other than art |
 | Freight container | `module.cargo_container` | A freight container opened from one long side. | Partial: placeholder art | src/content/furniture.ts:94; def asset `module.cargo_container` is not in the manifest (sprite exists as `module.storage_container`); listed ART_PENDING in render/moduleThumb.test.ts:15; shipgen places it |
+| Recovery pod | `module.recovery` | A powered tank: hurt crew walk to it and heal to full with no medic, out of action meanwhile; downed crew carried there are stabilised and heal. Critical (downed) patients take it before a med bed; walking ones take a med bed first and the pod only when none is free; herbs x2. | Partial (first pass: buildable, no ship starts with one; HP only, no injuries) | src/content/furniture.ts; sim/crew/recovery.ts, beds.ts, ai/machines/sleep.ts (`recover` drive); render/recoveryArt.ts, podPose.ts |
 | Medical bed | `module.med_bed` | A sickbay cot for patients. | In game | src/content/furniture.ts:103; Wayfarer, Lancer, shipgen medbay; sim/crew/treatment.ts |
 | Battery bank | `module.battery` | A bank of power cells. | In game | src/content/furniture.ts:112; shipgen engineering, starters; sim/systems/power.ts |
 | Hydroponics bed | `module.hydroponics` | A grow bed. | In game | src/content/furniture.ts:121; shipgen, starters; sim/farm/* |

@@ -1,5 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
-import { accessTile, rotatedSize } from '../sim/modules/footprint';
+import { accessTiles, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import { iso, TILE_H, TILE_W } from './iso';
 import type { ModuleThumbs } from './moduleThumb';
@@ -42,15 +42,15 @@ function dashedDiamond(): Graphics {
 
 /**
  * The placement ghost: the module's real art (the build catalog's rendered layers, rotation included) at the cursor, see-through,
- * tinted red when it cannot go there, plus the access tile as a dashed amber diamond.
+ * tinted red when it cannot go there, plus each tile crew stand on to use it (`accessTiles`) as a dashed amber diamond.
  */
 export function createModuleGhost(parent: Container, thumbs: ModuleThumbs, defs: Readonly<Record<string, ModuleDef>>): ModuleGhost {
   const root = new Container();
   root.visible = false;
   const spr = new Sprite();
   spr.alpha = GHOST_ALPHA;
-  const access = dashedDiamond();
-  root.addChild(spr, access);
+  const marks: Graphics[] = [];
+  root.addChild(spr);
   parent.addChild(root);
   return {
     set(g) {
@@ -66,12 +66,16 @@ export function createModuleGhost(parent: Container, thumbs: ModuleThumbs, defs:
         spr.position.set(Math.round(p.x - art.ax), Math.round(p.y - art.ay));
         spr.tint = g.valid ? 0xffffff : BAD_TINT;
       }
-      const a = accessTile(def, g.x, g.y, g.rot);
-      access.visible = !!a;
-      if (a) {
-        const p = iso(a.x, a.y);
-        access.position.set(p.x, p.y);
-      }
+      const tiles = g && def ? accessTiles(def, g.x, g.y, g.rot) : [];
+      while (marks.length < tiles.length) marks.push(root.addChild(dashedDiamond()));
+      marks.forEach((mk, i) => {
+        const t = tiles[i];
+        mk.visible = !!t;
+        if (t) {
+          const p = iso(t.x, t.y);
+          mk.position.set(p.x, p.y);
+        }
+      });
     },
   };
 }

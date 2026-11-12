@@ -51,7 +51,7 @@ export type WorkCategory = (typeof WORK_CATEGORIES)[number];
 
 /** What a crew member is currently doing, shown in UI and used by render for animation. */
 /** 'inert': a robot shut down (no live AI core) or stunned. 'charging': a robot in its bay. */
-export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging' | 'eating';
+export type Activity = 'idle' | 'walking' | 'working' | 'sleeping' | 'drafted' | 'downed' | 'carried' | 'dead' | 'inert' | 'charging' | 'eating' | 'recovering';
 
 export interface Crew {
   name: string;
@@ -187,7 +187,9 @@ export interface Job {
 export const JobC = defineComponent<Job>('job');
 
 export type JobKind =
-  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue' | 'haul' | 'craft' | 'research' | 'operate'
+  | 'build' | 'deconstruct' | 'module' | 'moduleDecon' | 'extinguish' | 'repair' | 'rescue'
+  /** tend: a medic stands beside the medical bed `target` while a patient lies in it, speeding the healing (crew/treatment.ts `tendingOf`); held until the patient leaves. */
+  | 'tend' | 'haul' | 'craft' | 'research' | 'operate'
   /** plant / harvest: sow or cut the crop of the hydroponics bed `target` (farm/work.ts). */
   | 'plant' | 'harvest'
   /** refuel: load fuel into the reactor `target` (modules/refuel.ts). */
@@ -234,6 +236,18 @@ export interface Downed {
 }
 export const DownedC = defineComponent<Downed>('downed');
 
+/**
+ * Present while a crew member lies in a recovery pod (`ModuleDef.recovery`, crew/recovery.ts), hurt but not (or no longer) downed: they heal to full
+ * hp, out of action meanwhile. The pod holds them: `bed` is the pod module (reserved to them). A downed patient carried to a pod stays `Downed` until
+ * `GET_UP_HP`, then becomes this and carries on to full.
+ */
+export interface Recovering {
+  bed: number;
+  /** A medicinal item was used on this stay (crew/treatment.ts): its heal multiplier, as `Downed.treated`. */
+  treated?: number;
+}
+export const RecoveringC = defineComponent<Recovering>('recovering');
+
 /** Corpse marker. The Crew data stays; no AI components remain. */
 export interface Dead {
   /** Tick of death. */
@@ -276,6 +290,14 @@ export interface Mood {
   mealItem?: string;
   /** Seconds left of the bonus from a break (the leisure drive); absent = none. */
   relax?: number;
+  /** The points and factor key of that break (a game scores more than the mess; the room's tier shifts it); absent = the mess's flat lift. */
+  relaxPts?: number;
+  relaxKey?: string;
+  /** Tier index (0 grim .. 4 impressive; absent = decent) of the room of the last galley meal and of the last sleep in a bed. */
+  mealTier?: number;
+  sleepTier?: number;
+  /** Seconds since the last break (crew/roomMood.ts "No time off"); absent = 0. */
+  noBreak?: number;
   /** Seconds left of "enjoying the work" (an interest, docs/TRAITS.md 10.7), and its points (+2 keen, +4 passionate). */
   enjoy?: number;
   enjoyPts?: number;

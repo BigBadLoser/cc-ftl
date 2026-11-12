@@ -1,4 +1,4 @@
-import { AssignmentC, CrewC, DeadC, DownedC, JobC, type Job } from '../crew/components';
+import { AssignmentC, CrewC, DeadC, DownedC, RecoveringC, JobC, type Job } from '../crew/components';
 import { isErrand } from '../eva/errands';
 import { ModuleC } from '../modules/components';
 import type { Sim } from '../sim';
@@ -68,7 +68,7 @@ export function auditReservations(sim: Sim): AuditReport {
     const m = sim.world.get(id, ModuleC);
     if (!m || !m.reservedBy || !sim.content.modules[m.def]?.bed) continue;
     const b = m.reservedBy;
-    const lines = Number(claimedBed(sim, b) === id) + Number(sim.world.get(b, DownedC)?.bed === id);
+    const lines = Number(claimedBed(sim, b) === id) + Number(sim.world.get(b, DownedC)?.bed === id) + Number(sim.world.get(b, RecoveringC)?.bed === id);
     if (lines !== 1) problems.push(`bed ${id} reserved by ${b} with ${lines} lifelines`);
   }
   return { problems, pendingSweep };

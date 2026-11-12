@@ -2,7 +2,7 @@ import { shipIdOf, shipGrid } from '../regions';
 import { abortTask } from '../ai/task';
 import { releaseBed } from '../crew/beds';
 import {
-  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC,
+  CrewC, DeadC, DownedC, DraftedC, HealthC, NeedsC, PositionC, RecoveringC,
   type Crew, type Downed, type Health, type Position,
 } from '../crew/components';
 import { killCrew } from '../crew/death';
@@ -11,17 +11,14 @@ import { hasSuitAir } from '../eva/suit';
 import { WreckC } from '../robots/components';
 import { AboardC, VehicleC, type Vehicle } from '../vehicles/components';
 import { occupants } from '../vehicles/lifecycle';
-import { guestHere } from '../consent/guests';
-import { ShipC } from '../combat/components';
-import { skillOf } from '../combat/operators';
-import { AllegianceC } from '../fight/components';
 import type { Sim } from '../sim';
 import { bleedOutSec } from '../crew/traits';
 import { TICK_HZ } from '../time';
 import {
-  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, SKILL_STEP, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
+  BED_HEAL_PER_SEC, BREATH_CO2_PER_SEC, BREATH_O2_PER_SEC, GET_UP_HP, REGEN_PER_SEC, STARVE_HARM_PER_SEC, XP_PER_HP_HEALED,
 } from '../tuning';
-import { treatmentMult } from '../crew/treatment';
+import { careHealStep, podModule, restInCare, startRecovery } from '../crew/recovery';
+import { tendingOf, treatmentMult } from '../crew/treatment';
 import { grantXp } from '../crew/xp';
 
 /**
@@ -34,23 +31,6 @@ import { grantXp } from '../crew/xp';
  * cold, and starve at zero hunger (a slow harm); `mechanical` ones never regenerate (crew mend them); `wreck` ones are wrecked at 0 hp instead of going down; `creature` ones die at 0 hp.
  */
 export function vitalsSystem(sim: Sim): void {
-  // Best medicine level per ship and side, worked out only when a patient in a bed needs it (rare), once per tick.
-  const medics = new Map<string, { skill: number; id: number }>();
-  const medicine = (ship: number, side: string): { skill: number; id: number } => {
-    const key = `${ship}:${side}`;
-    let best = medics.get(key);
-    if (best === undefined) {
-      best = { skill: 0, id: 0 }; // the best medicine wins; ties (all at 0 too) go to the lowest id, the query order
-      for (const c of sim.world.query(CrewC, PositionC)) {
-        if (sim.world.has(c, DeadC) || sim.world.has(c, DownedC) || sim.world.get(c, AllegianceC)?.faction !== side) continue;
-        if (shipIdOf(sim, sim.world.get(c, PositionC) as Position) !== ship) continue;
-        const skill = skillOf(sim, c, 'medicine');
-        if (best.id === 0 || skill > best.skill || (skill === best.skill && c < best.id)) best = { skill, id: c };
-      }
-      medics.set(key, best);
-    }
-    return best;
-  };
   for (const id of sim.world.query(CrewC, HealthC, PositionC)) {
     if (sim.world.has(id, DeadC)) continue;
     const pos = sim.world.get(id, PositionC) as Position;
@@ -68,7 +48,10 @@ export function vitalsSystem(sim: Sim): void {
     }
 
     const harm = tileHarm(grid, pos.x, pos.y, suited, airless) + ((sim.world.get(id, NeedsC)?.hunger ?? 1) <= 0 ? STARVE_HARM_PER_SEC : 0);
-    if (!downed) {
+    const resting = sim.world.get(id, RecoveringC);
+    if (resting) {
+      restInCare(sim, id, resting, health, harm); // a recovery pod: heals to full, out of action meanwhile
+    } else if (!downed) {
       if (health.hp <= 0) {
         // Already at 0 (combat damage): go down without regenerating first.
       } else if (harm > 0) health.hp = Math.max(0, health.hp - harm / TICK_HZ);
@@ -78,15 +61,17 @@ export function vitalsSystem(sim: Sim): void {
         else if (species?.creature) killCrew(sim, id); // creatures die outright (the corpse stays)
         else down(sim, id, pos);
       }
+    } else if (downed.stabilized && harm < BED_HEAL_PER_SEC && podModule(sim, downed.bed)) {
+      // Carried to a recovery pod: no medic needed; at GET_UP_HP they stay on as a pod patient to full (crew/recovery.ts).
+      if (careHealStep(sim, id, downed, health, harm) && health.hp >= GET_UP_HP) startRecovery(sim, id, downed);
     } else if (downed.stabilized && harm < BED_HEAL_PER_SEC) {
-      // A guest is cared for by the crew of the ship that took them in (a passenger in the player's bed has the player's medic).
+      // Heals at the bed rate, faster while a medic tends a medical bed (crew/treatment.ts `tendingOf`: the one answer; the XP goes to the tender).
       const ship = shipIdOf(sim, pos);
-      const side = guestHere(sim, id) ? sim.world.get(ship, ShipC)?.faction : sim.world.get(id, AllegianceC)?.faction;
-      const medic = medicine(ship, side ?? '');
-      const care = (1 + SKILL_STEP * Math.max(0, medic.skill)) * treatmentMult(sim, ship, downed);
+      const tend = tendingOf(sim, downed.bed);
+      const care = tend.mult * treatmentMult(sim, ship, downed);
       const before = health.hp;
       health.hp = Math.min(health.max, health.hp + (BED_HEAL_PER_SEC * care - harm) / TICK_HZ);
-      if (medic.id && health.hp > before) grantXp(sim, medic.id, 'medicine', (health.hp - before) * XP_PER_HP_HEALED); // the medic whose skill sped the healing
+      if (tend.medic && health.hp > before) grantXp(sim, tend.medic, 'medicine', (health.hp - before) * XP_PER_HP_HEALED);
       if (health.hp >= GET_UP_HP) getUp(sim, id, downed);
     } else {
       health.hp = Math.max(0, health.hp - harm / TICK_HZ);

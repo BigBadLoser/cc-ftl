@@ -151,6 +151,7 @@ def place(item, full):
 
 
 def items(rot):
+    fp = FP2 if rot % 2 == 0 else FP2[::-1]                 # the manifest footprint turns with the sprite (the renderer mirrors a quarter turn whose art keeps the r0 footprint)
     CO._rig()                                         # (the rig first: building it clears the scene)
     post.select(PAL)
     objs = table(rot)
@@ -187,7 +188,7 @@ def items(rot):
         if ov.any():
             g = h["g"].copy()
             g[~ov] = 0
-            out.append(E.crop_item(f"module.gametable.holo.r{rot}{tag}", FP2, h["rgba"][..., :3], ov, g, ox, oy,
+            out.append(E.crop_item(f"module.gametable.holo.r{rot}{tag}", fp, h["rgba"][..., :3], ov, g, ox, oy,
                                    np.where(ov, h["rgba"][..., 3], 0)))
     for tag, item in states:
         cv = np.zeros(full["rgba"].shape, np.uint8)
@@ -203,11 +204,11 @@ def items(rot):
         gb, gf = gv.copy(), gv.copy()
         gb[fr] = 0
         gf[~fr] = 0
-        out.append(E.crop_item(sid(rot, tag), FP2, cv[..., :3], al > 0, gb, ox, oy, al))
+        out.append(E.crop_item(sid(rot, tag), fp, cv[..., :3], al > 0, gb, ox, oy, al))
         if rot == 0 and tag == "":
-            out.append(E.crop_item("module.gametable", FP2, cv[..., :3], al > 0, gb, ox, oy, al))
+            out.append(E.crop_item("module.gametable", fp, cv[..., :3], al > 0, gb, ox, oy, al))
         if fr.any():
-            out.append(E.crop_item(f"module.gametable.front.r{rot}{tag}", FP2, cv[..., :3], fr, gf, ox, oy,
+            out.append(E.crop_item(f"module.gametable.front.r{rot}{tag}", fp, cv[..., :3], fr, gf, ox, oy,
                                    np.where(fr, al, 0)))
     return [it for it in out if it]
 

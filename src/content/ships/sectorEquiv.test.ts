@@ -340,4 +340,5 @@ describe('sector refactor equivalence', () => {
 // and the ship's power draws on the same loads as before; nothing else in the world or the event log moved.
 // Repinned again for the starter's battery bank (#421): one more module (80 hp, a charge field) and its power bookkeeping; the ids after it shift by one.
 // Repinned for NPC fuel (#425): the raider's reactors burn too, so `Module.fuel` appears on them; with that field left out the run hashes as before (event log and every other field unchanged).
-const EXPECTED = { combat: '78a78900', disaster: '4e42952c' };
+// Repinned for medic tending (#319): a patient in a medical bed gets a `tend` job (a medic stands beside it and speeds the healing) instead of the old ambient medic bonus; a job entity shifts the ids after it.
+const EXPECTED = { combat: 'c7f409b2', disaster: 'de482b42' };

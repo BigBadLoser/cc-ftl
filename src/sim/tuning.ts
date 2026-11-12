@@ -94,6 +94,8 @@ export const BLEED_OUT_SECONDS = 120;
 /** Hp per second regained in a bed while stabilized. */
 export const BED_HEAL_PER_SEC = 1.5;
 /** Bed healing is SKILL_STEP faster per medicine level of the best conscious medic aboard the patient's ship. */
+/** Hp per second regained in a recovery pod (powered; no medic needed). Medicinal herbs multiply it as in a medical bed. */
+export const POD_HEAL_PER_SEC = 2;
 /** Stabilized crew get up at this hp. */
 export const GET_UP_HP = 40;
 /** Hp per second regained by upright crew in safe air. */
@@ -146,6 +148,36 @@ export const MOOD_RELAX_POINTS = 8;
 export const MOOD_RELAX_SEC = 300;
 /** Seconds a crew member on a break rests at the spot before the break counts. */
 export const LEISURE_SEC = 20;
+/** A game-table or arcade break lifts mood by this much (the mess keeps MOOD_RELAX_POINTS), before the room-tier shift (ROOM_TIER_LEISURE). */
+export const MOOD_PLAY_POINTS = 11;
+/** Seconds without a break before "No time off" weighs on mood, and its points. */
+export const NO_BREAK_SEC = 1200;
+export const NO_BREAK_POINTS = -4;
+/** Added score for a leisure spot a crew member's trait likes (social to social, loner to solo), in tiles of walking: the spot looks that much nearer. */
+export const LEISURE_LEAN_TILES = 12;
+/** A free game spot looks this many tiles nearer than the mess to a crew member with no lean (it lifts mood more). */
+export const LEISURE_PLAY_BONUS_TILES = 8;
+
+// --- Room quality (sim/roomQuality.ts) ---
+/** A room's quality is recomputed at most this often (ticks), and at once when its `room` field changes. */
+export const ROOM_QUALITY_EVERY = 40;
+/** Tiles per user (bed, console, galley, leisure stand) that score 0 and 100 on space. */
+export const ROOM_SPACE_MIN = 2;
+export const ROOM_SPACE_MAX = 20;
+/** Without comfort data (the next pass) a room's value is capped here, the top of Decent: Pleasant and Impressive need comfort. */
+export const ROOM_NO_COMFORT_CAP = 59;
+/** Quality value under which a room is Grim, Bare, Decent, Pleasant (Impressive from the last). */
+export const ROOM_TIER_BELOW = [20, 40, 60, 80] as const;
+/** The weakest input's share of the quality value (the mean of the inputs takes the rest). */
+export const ROOM_WEAKEST_SHARE = 0.85;
+/** Score cost of a loose item stack and of a body lying in a room. */
+export const ROOM_DIRT_PER_STACK = 12;
+export const ROOM_DIRT_PER_BODY = 35;
+/** Mood points by tier index (grim..impressive): the always-on surroundings factor, a meal or sleep in the room, and the shift to a break's points. */
+export const ROOM_TIER_SURROUND = [-3, -1, 0, 2, 3] as const;
+export const ROOM_TIER_MEAL = [-3, -1, 0, 2, 4] as const;
+export const ROOM_TIER_SLEEP = [-2, 2, 5, 7, 9] as const;
+export const ROOM_TIER_LEISURE = [-2, -1, 0, 1, 2] as const;
 /** Another living crew member within this many tiles counts as company; alone this many seconds is lonely. */
 export const MOOD_COMPANY_RADIUS = 7;
 export const MOOD_LONELY_SEC = 120;

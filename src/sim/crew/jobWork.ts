@@ -6,7 +6,8 @@ import { performHaul } from '../items/haul';
 import { consumeDelivered, needsMaterials } from '../items/materials';
 import { evictStack, refundCost, structCostKey } from '../items/stacks';
 import { footprintTiles } from '../modules/footprint';
-import { ModuleC } from '../modules/components';
+import { ModuleC, type Module } from '../modules/components';
+import type { ModuleDef } from '../registry';
 import { footprintBlockedByCrew, removeModule, spawnModule } from '../modules/spawn';
 import { performSuitJob } from '../eva/jobs';
 import { performAssemble } from '../robots/bay';
@@ -24,7 +25,7 @@ import { stochasticRound } from '../stochastic';
 import { EXTINGUISH_PER_SEC, REPAIR_PER_SEC, XP_PER_WORK_SEC } from '../tuning';
 import { grantXp } from './xp';
 import { workSkill, workSkillMult } from './workSkill';
-import { findFreeBed } from './beds';
+import { bedStandTile, bedUseOf, findFreeBed } from './beds';
 import { handInPatient, rescueSpot } from '../away/rescue';
 import { CarriedC, CrewC, DownedC, PositionC, type Crew, type Job, type Position } from './components';
 import { isTileOccupied, origin } from './helpers';
@@ -74,6 +75,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'extinguish': return extinguish(sim, job, speed);
     case 'repair': return repair(sim, job, speed);
     case 'rescue': return rescue(sim, crew, job);
+    case 'tend': return 'working'; // held until the patient is out of the bed (autojobs drops it)
     case 'operate': return 'working'; // held until the operate-jobs system drops it
     case 'passage': return 'wait'; // the holder waits at the boarding tile until the site's run boards them (away/passage.ts)
     case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one
@@ -193,7 +195,7 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   if (!carried) {
     let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
     if (!bed) {
-      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, true);
+      const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, bedUseOf(sim, patient));
       const spot = plan ? null : rescueSpot(sim, patient);
       if (spot) {
         // An away site with no bed: carried to the shuttle (away/rescue.ts).
@@ -208,7 +210,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
       bed = plan.bed;
       (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;
     }
-    const target = sim.world.get(bed, ModuleC) as { x: number; y: number };
+    const bedMod = sim.world.get(bed, ModuleC) as Module;
+    const target = bedStandTile(sim.content.modules[bedMod.def] as ModuleDef, bedMod); // a pod is entered from its access tile
     job.bed = bed;
     job.x = target.x;
     job.y = target.y;

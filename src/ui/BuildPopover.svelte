@@ -33,7 +33,7 @@
     <div class="left">
       {#if def}
         <BuildPreview {def} {thumb} {rot} />
-        <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
+        <div class="legend"><span><i class="k f"></i>Footprint</span>{#if def.access.length}<span><i class="k acc"></i>Access: keep clear</span>{/if}<span class="rot"><Icon name="rotate" size={13} /> R to rotate</span></div>
         {#if variants.length > 1}
           <div class="vars" data-testid="popover-variants">
             {#each variants as v (v.key)}

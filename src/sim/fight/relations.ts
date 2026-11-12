@@ -1,10 +1,10 @@
 import { guestHere, guestOn } from '../consent/guests';
 import { shipIdOf } from '../regions';
-import { AssignmentC, CarriedC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
+import { AssignmentC, CrewC, DeadC, DownedC, DraftedC, HealthC, JobC, PositionC } from '../crew/components';
 import { factionsHostile, rogueAlly } from '../combat/factions';
 
-import { InertC, StunC } from '../robots/components';
-import { isBreaking } from '../crew/helpers';
+import { InertC } from '../robots/components';
+import { isBreaking, isIncapacitated } from '../crew/helpers';
 import type { Sim } from '../sim';
 import { AllegianceC, EquipOrderC, FighterC, SurrenderedC } from './components';
 import { shipById } from '../combat/ships';
@@ -62,7 +62,7 @@ export function isSubdued(sim: Sim, crew: number): boolean {
 /** Alive, on a grid, able to act and still in the fight (not downed, carried, dead, surrendered, inert or stunned). */
 export function isCombatReady(sim: Sim, crew: number): boolean {
   if (!sim.world.has(crew, CrewC) || !sim.world.has(crew, PositionC)) return false;
-  if (isSubdued(sim, crew) || sim.world.has(crew, CarriedC) || sim.world.has(crew, StunC)) return false;
+  if (isSubdued(sim, crew) || isIncapacitated(sim, crew)) return false; // downed, carried, resting in a bed or pod, dead, inert or stunned
   const hp = sim.world.get(crew, HealthC);
   return !hp || hp.hp > 0;
 }

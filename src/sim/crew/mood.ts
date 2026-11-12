@@ -12,6 +12,7 @@ import type { SkillName } from '../registry';
 import { INTEREST_MOOD, InterestsC, interestIn } from './background';
 import { CrewC, DeadC, MoodC, NeedsC, PositionC, type Mood, type MoodFactor } from './components';
 import { BOND_MOOD_LABELS, bondFactors } from './bondMood';
+import { bedFactor, breakPoints, ROOM_MOOD_LABELS, roomFactors, tierHere } from './roomMood';
 import { applyTraitMood, FOOD_MOOD_KEYS, TRAIT_MOOD_LABELS } from './traitMood';
 
 export { FOOD_MOOD_KEYS };
@@ -22,9 +23,10 @@ const NONE: readonly Modifier[] = [];
 export const MOOD_LABELS: Readonly<Record<string, string>> = {
   starving: 'Starving', hungry: 'Hungry', peckish: 'Peckish', wellFed: 'Well fed',
   exhausted: 'Exhausted', tired: 'Tired', rested: 'Rested',
-  hotMeal: 'Hot ration at the galley', mealBland: 'Bland meal', mealGood: 'Good meal', mealFine: 'Fine meal', bed: 'Slept in a bed', floor: 'Slept on the floor',
+  hotMeal: 'Hot ration at the galley', mealBland: 'Bland meal', mealGood: 'Good meal', mealFine: 'Fine meal', floor: 'Slept on the floor',
   dark: 'Dark room', thinAir: 'Thin air', staleAir: 'Stale air', smoky: 'Smoky room', temperature: 'Uncomfortable temperature',
   company: 'Company', lonely: 'Lonely', enjoying: 'Enjoying the work', relaxed: 'Took a break', letOut: 'Let it out', scene: 'Made a scene',
+  ...ROOM_MOOD_LABELS,
   ...TRAIT_MOOD_LABELS,
   ...BOND_MOOD_LABELS,
 };
@@ -47,12 +49,20 @@ export function noteMeal(sim: Sim, id: number, galley: boolean, item = ''): void
   if (!hasMood(sim, id)) return;
   const m = ensureMood(sim, id);
   m.meal = galley ? MOOD_MEAL_SEC : 0;
-  if (galley) m.mealItem = item; // which meal it was sets the factor (ItemDef.food.mood)
+  if (galley) {
+    m.mealItem = item; // which meal it was sets the factor (ItemDef.food.mood)
+    m.mealTier = tierHere(sim, id); // and the room it was eaten in sets the extra one
+  }
 }
 
-/** A break (the leisure drive's walk and rest, ai/machines/leisure.ts) just ended: mood lifts for a while. */
-export function noteLeisure(sim: Sim, id: number): void {
-  if (hasMood(sim, id)) ensureMood(sim, id).relax = MOOD_RELAX_SEC;
+/** A break (the leisure drive's walk and rest, ai/machines/leisure.ts) just ended: mood lifts for a while, more for a game, shifted by the room's tier. */
+export function noteLeisure(sim: Sim, id: number, play = false): void {
+  if (!hasMood(sim, id)) return;
+  const m = ensureMood(sim, id);
+  m.relax = MOOD_RELAX_SEC;
+  m.relaxPts = breakPoints(play, tierHere(sim, id));
+  m.relaxKey = play ? 'playedGame' : 'relaxed';
+  m.noBreak = 0;
 }
 
 /**
@@ -73,6 +83,7 @@ export function noteSleep(sim: Sim, id: number, inBed: boolean): void {
   const m = ensureMood(sim, id);
   m.sleep = MOOD_SLEEP_SEC;
   m.bed = inBed ? 1 : -1;
+  m.sleepTier = tierHere(sim, id);
 }
 
 /** The factors that make up a crew member's mood right now. Pure read; the counters in `m` supply the memory. */
@@ -95,11 +106,14 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
     const lift = sim.content.items[m.mealItem ?? '']?.food?.mood ?? { key: 'hotMeal', points: 6 };
     add(lift.key, lift.points);
   }
-  if ((m.relax ?? 0) > 0) add('relaxed', MOOD_RELAX_POINTS);
+  if ((m.relax ?? 0) > 0) add(m.relaxKey ?? 'relaxed', m.relaxPts ?? MOOD_RELAX_POINTS);
   if ((m.enjoy ?? 0) > 0 && m.enjoyPts) add('enjoying', m.enjoyPts);
   if ((m.letOut ?? 0) > 0) add('letOut', BREAK_LET_OUT_POINTS);
   if ((m.scene ?? 0) > 0) add('scene', BREAK_SCENE_MOOD);
-  if (m.sleep > 0) add(m.bed > 0 ? 'bed' : 'floor', m.bed > 0 ? 5 : -6);
+  if (m.sleep > 0) {
+    if (m.bed > 0) out.push(bedFactor(m.sleepTier));
+    else add('floor', -6);
+  }
 
   const pos = sim.world.get(id, PositionC);
   const grid = pos && shipGrid(sim, shipIdOf(sim, pos));
@@ -114,6 +128,7 @@ export function moodFactors(sim: Sim, id: number, m: Mood): MoodFactor[] {
     const temp = grid.get('temp', pos.x, pos.y);
     if (temp > 40 || temp < 5) add('temperature', -6);
   }
+  out.push(...roomFactors(sim, id, m));
   if (m.alone >= MOOD_LONELY_SEC) add('lonely', -4);
   else if (m.alone === 0) add('company', 3);
   out.push(...bondFactors(sim, id, m));

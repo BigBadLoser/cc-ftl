@@ -120,13 +120,15 @@ Name | id column holds the code path.
 |---|---|---|---|---|
 | Needs: rest, hunger | ``sim/systems/needs.ts`` | Rest and hunger drain; sleep in beds, eat meals; robots use charge | In game | ai/machines/sleep.ts, eat.ts, charge.ts |
 | Mood | ``sim/systems/mood.ts`` | Mood factors (food, beds, light, company, fear, traits) set work speed | In game | sim/crew/mood.ts, traitMood.ts, bondMood.ts |
+| Room quality | `-` | Per-room value from space, cleanliness, condition (comfort has no data yet; first pass of #441), tiers Grim..Impressive; sets sleep and meal factors, surroundings, break points | In game | sim/roomQuality.ts, crew/roomMood.ts |
+| Leisure spots and no time off | `-` | Breaks go to the mess, the game table (2) or the arcade (1); Social/Loner lean; "No time off" -4 after 1200 s | In game | sim/ai/machines/leisure.ts, leisureSpots.ts |
 | Mental breaks | ``sim/systems/breakdown.ts`` | 7 kinds (panic, freeze, hide, tantrum, despair, refusal, isolation) from 7 contexts | In game | sim/crew/breakdown.ts, breakTable.ts |
 | Relationships and bonds | ``sim/systems/relationship.ts`` | Chats and rows build friendships and rivalries; grief on a friend's death | In game | sim/crew/bonds.ts, interact.ts |
 | More interactions | ``content/interactions.ts`` | Deep talk, joke, insult, comfort | Planned | only chat and shout exist (interactions.ts header; TRAITS.md section 6) |
 | Schedules | ``sim/ai/schedule.ts`` | 24-hour work/free/sleep rows, 5 presets, per-crew rows | In game | content/schedules.ts; ui/SchedulePane.svelte |
 | AI drives and policies | ``sim/ai/*`` | Drives pick sleep, eat, air, work, leisure; interrupts for forced states | In game | content/policies.ts; docs/CREW_AI.md |
 | Skills and XP | ``sim/crew/xp.ts`` | Use trains skills 0-10 | In game | sim/crew/skills.ts, workSkill.ts |
-| Medical treatment | ``sim/crew/treatment.ts`` | Med beds heal faster with medicinal herbs; downed crew bleed out unless rescued | In game | sim/systems/vitals.ts, autojobs.ts |
+| Medical treatment | ``sim/crew/treatment.ts`` | Med beds and recovery pods heal faster with medicinal herbs; a medic tending a medical bed (`tend` job, `tendingOf`) adds their skill and earns the XP; downed crew bleed out unless rescued; hurt crew (under 70%) walk to a free medical bed, else a powered recovery pod (`recover` drive); the downed go to a pod first | In game | sim/systems/vitals.ts, autojobs.ts |
 | Hand-weapon fighting and cover | ``sim/fight/*`` | Crew shoot and melee; target cover lowers hit chance | Partial: no cover-seeking | sim/fight/los.ts gives targets cover; crew do not move to cover and the crouch/lean clips are unused (issue #50) |
 | Surrender and capture | ``sim/fight/surrender.ts`` | Hurt, outnumbered crew surrender | Partial: no prisoner holding | holding prisoners is issue #116 (cryo pods, not built) |
 | Crew implants | ``-`` | Tiered augments as stat modifiers | Planned | issue #311 (phase 7) |

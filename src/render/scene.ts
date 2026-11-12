@@ -184,6 +184,8 @@ export interface Renderer {
   setShields(on: boolean): void;
   /** Where the threat markers read the seconds until an enemy weapon's committed shot lands. */
   setCommitEta(fn: (weaponId: number) => number | null): void;
+  /** Where the room-quality overlay reads each room's tier of a ship (room id -> tier index 0..4; sim/roomQuality.ts). */
+  setRoomTiers(fn: (ship: number) => ReadonlyMap<number, number>): void;
   /** Where the threat arrows read each enemy weapon's colour (matches the incoming timeline). */
   setShotColor(fn: (weaponId: number) => number): void;
   /** The enemy tile or module the pointer would aim at while "Target in view" is armed (null clears the preview). */
@@ -353,6 +355,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   let placed: Camera = cam;
   let shotColor: (weaponId: number) => number = () => 0xff5a5a;
   let commitEta: (weaponId: number) => number | null = () => null;
+  let roomTiers: (ship: number) => ReadonlyMap<number, number> = () => new Map();
   const threatMarks = createThreatMarks({ world, modules: content.modules, weapons: content.weapons ?? {}, refId: () => refId, roofed: (id) => scenes.get(id)?.isRoofed() ?? false, scale: () => SL.scale, commitEta: (id) => commitEta(id), color: (id) => shotColor(id),
     frame: () => ({ x0: -placed.originX / placed.scale, y0: -placed.originY / placed.scale, x1: (placed.w - placed.originX) / placed.scale, y1: (placed.h - placed.originY) / placed.scale }),
     shipCenter: (id) => { const sh = shipOf(id); const o = sh && origin(id); return sh && o ? { x: o.x + sh.width / 2 - 0.5, y: o.y + sh.height / 2 - 0.5 } : null; } }, SL.ui);
@@ -447,7 +450,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     // eslint-disable-next-line prefer-const -- the gate reads the scene it is built into
     let sc: ShipScene;
     const gate = budget.gate(() => rush || sc.ready());
-    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, crews, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
+    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, roomTiers: () => roomTiers(grid.id), crews, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -935,6 +938,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setInset: (v) => inset.set(v),
     insetSize: (id) => { const sh = shipOf(id); if (!sh) return null; const f = insetFit(sh, scenes.get(id)?.isRoofed() ? ROOF_H : 0, ratio()); return { w: f.w, h: f.h }; },
     setCommitEta: (fn) => { commitEta = fn; },
+    setRoomTiers: (fn) => { roomTiers = fn; },
     setShotColor: (fn) => { shotColor = fn; },
     dispose() {
       asteroids.dispose();

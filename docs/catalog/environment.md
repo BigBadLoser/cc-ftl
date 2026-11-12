@@ -25,8 +25,9 @@ Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`)
 | Structure types (floor, wall, door, truss, rock) | `-` | Grid structure kinds; costs in structCosts (floor, wall, door) | In game | sim/structure.ts; content/costs.ts |
 | Building and hull plan | `-` | Build modules and hull from the catalog; hull plan brushes; shipyard planning | In game | sim/modules/handlers.ts; app/hullBrush.ts, hullPlanTool.ts; ui/BuildCatalog.svelte, HullPlanBar.svelte |
 | Rock digging | `-` | Dig and carve asteroid rock for outposts | In game | sim/rock/dig.ts |
-| Overlays | `-` | Eight field views: o2, co2, temp, fire, smoke, light, power, rooms | In game | render/overlayDefs.ts; ui/OverlayPicker.svelte |
+| Overlays | `-` | Nine field views: o2, co2, temp, fire, smoke, light, power, room quality, rooms | In game | render/overlayDefs.ts; ui/OverlayPicker.svelte |
 | Toggleable vents on doors | `-` | Per-door venting control | Planned | issue #393 |
 | Water purifier module | `-` | Ice to water module | Planned | issue #321 |
-| Arcade and recovery pod modules | `-` | New recreation and recovery modules | Planned | issue #319 |
+| Arcade module | `-` | New recreation module | Art only | issue #319 |
+| Recovery pod module | `module.recovery` | Recovery module | Partial (built, first pass; see catalog/modules.md) | issue #319 |
 | Performance of environment systems | `-` | Per-tick environment cost dominates | Planned | issue #65 |

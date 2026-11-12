@@ -31,7 +31,7 @@ const world = new World();
 const mult = 128 / manifest.tile.w; // 2× world/art conversion; mirrors composeManifest().
 const HW = 64, HH = 32;
 const box = { w: 300, h: 200 };
-const result: Record<string, { url: string; art: boolean; layers: number; placeholder: boolean; gameFallback?: boolean }> = {};
+const result: Record<string, { url: string; art: boolean; layers: number; placeholder: boolean; gameFallback?: boolean; thumb?: { url: string; w: number; h: number; ax: number; ay: number } }> = {};
 const cache = new Map<string, string>();
 sharp.cache(false);
 sharp.concurrency(2);
@@ -170,7 +170,7 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     w:bounds.maxX-bounds.minX,h:bounds.maxY-bounds.minY,
     ax:front.x-bounds.minX,ay:front.y-bounds.minY
   }:null;
-  const access=def.access?{x:def.access[0],y:def.access[1]}:null;
+  const access=def.access?[def.access,...(def.extraAccess??[])].map(([x,y])=>({x,y})):[];
   const g=previewGeometry(w,h,access,thumb,box);
   const polygon=(points:string,cls:string)=>'<polygon class="'+cls+'" points="'+points+'"/>';
   const svgLayers=g.sprite && bounds ? [...layers].sort((a,b)=>a.z-b.z).map(l=>{
@@ -208,14 +208,25 @@ for (const [id, original] of Object.entries(mods).sort(([a],[b])=>a.localeCompar
     +'<rect width="300" height="200" fill="#070b11"/>'
     +'<g stroke="#29313b" stroke-width="0.8" fill="none">'+g.grid.map(p=>polygon(p,'grid')).join('')+'</g>'
     +'<g stroke="#36d4ff" stroke-width="1.15" fill="#143341" fill-opacity=".65">'+g.foot.map(p=>polygon(p,'foot')).join('')+'</g>'
-    +(g.access?'<polygon points="'+g.access+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>':'')
+    +g.access.map(p=>'<polygon points="'+p+'" stroke="#f0b13a" stroke-width="1.1" stroke-dasharray="4 3" fill="#f0b13a" fill-opacity=".12"/>').join('')
     +svgLayers+ tierOverlay
-    +(g.accessLabel?'<text x="'+number(g.accessLabel.x)+'" y="'+number(g.accessLabel.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>':'')
+    +g.accessLabel.map(l=>'<text x="'+number(l.x)+'" y="'+number(l.y)+'" text-anchor="middle" fill="#f0b13a" stroke="#05080d" stroke-width="2.5" paint-order="stroke" font-family="sans-serif" font-weight="700" font-size="9">USE</text>').join('')
     +(!layers.length?'<text x="150" y="185" text-anchor="middle" fill="#8290a0" font-family="sans-serif" font-size="9">ARTWORK PENDING</text>':'')
     +'</svg>';
   const name=slug(id)+'.png';
   await sharp(Buffer.from(svg)).resize(600,400,{kernel:'nearest'}).png({compressionLevel:9}).toFile(join(dest,name));
-  result[id]={url:urlPrefix+name,art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:(!!def.container || id === 'module.cargo_container') && layers.length>0};
+  // The module's art alone, as the game's build menu thumb (UiThumb): drawn at 2x, sized and anchored in world px.
+  let thumbOut: {url:string;w:number;h:number;ax:number;ay:number}|undefined;
+  if (bounds && thumb) {
+    const tw=Math.ceil(thumb.w), th=Math.ceil(thumb.h);
+    const art='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+tw+' '+th+'" width="'+tw*2+'" height="'+th*2+'">'
+      +[...layers].sort((a,b)=>a.z-b.z).map(l=>'<image x="'+number(l.left-bounds.minX)+'" y="'+number(l.top-bounds.minY)+'" width="'+number(l.w)+'" height="'+number(l.h)+'" href="data:image/png;base64,'+l.png+'" style="image-rendering:pixelated" preserveAspectRatio="none"/>').join('')
+      +'</svg>';
+    const thumbName=slug(id)+'.thumb.png';
+    await sharp(Buffer.from(art)).png({compressionLevel:9}).toFile(join(dest,thumbName));
+    thumbOut={url:urlPrefix+thumbName,w:tw,h:th,ax:thumb.ax,ay:thumb.ay};
+  }
+  result[id]={url:urlPrefix+name,...(thumbOut?{thumb:thumbOut}:{}),art:layers.length>0,layers:layers.length,placeholder:!!def.tierArt,gameFallback:(!!def.container || id === 'module.cargo_container') && layers.length>0};
   if(layers.length){withArt++;if(layers.length>1)multi++;totalLayers+=layers.length;}else {blank++;console.warn('No atlas artwork for module '+id+' ('+def.name+')');}
 }
 await mkdir(join(root,'src/data/generated'),{recursive:true});
