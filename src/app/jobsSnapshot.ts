@@ -27,6 +27,9 @@ export function passengerName(sim: Sim, crew: number | undefined): string {
   return live ?? packed?.name ?? 'A passenger';
 }
 
+/** A faction name as an adjective before "ship": "The Cartel" reads "Cartel", no name reads "hostile". */
+export const shipOf = (name: string | undefined): string => name?.replace(/^the\s+/i, '') || 'hostile';
+
 /** The job board as the jobs panel shows it: the offers at the player's node and the jobs they hold. */
 export function buildJobs(sim: Sim): UiJobs {
   const g = sim.galaxy;
@@ -44,7 +47,7 @@ export function buildJobs(sim: Sim): UiJobs {
       title: j.kind === 'delivery' ? `Deliver a sealed crate (${j.count ?? 0} ${itemName})` : j.kind === 'survey' ? `Survey ${featureName(j.feature)}`
         : j.kind === 'passage' ? `Take ${passengerName(sim, j.crew)} home` : `Destroy the ${j.target ?? 'target'}`,
       detail: j.kind === 'delivery' ? '' : j.kind === 'survey' ? 'Enter the node. Hand it in at a research station of the client.'
-        : j.kind === 'passage' ? 'Your passenger asks for passage. Paid when they are handed over at the port.' : `a ${content?.factions[j.targetFaction ?? '']?.name ?? 'hostile'} ship`,
+        : j.kind === 'passage' ? 'Your passenger asks for passage. Paid when they are handed over at the port.' : `a ${shipOf(content?.factions[j.targetFaction ?? '']?.name)} ship`,
       ready: j.kind === 'delivery' && 'id' in j && crateAboard(sim, j.id),
       target: bountyTarget(j),
     };
