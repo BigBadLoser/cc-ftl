@@ -61,6 +61,67 @@ def b1():
     return k.build()
 
 
+def _frame(k):
+    """B1's frame without its open-side rail: posts, both decks and mattresses, head and foot boards, the back rail."""
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, "steelD", top="steel")
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, "steelD", top="steel", bevel=0.01)
+        mattress(k, z)
+    for sv in (-1, 1):
+        k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, "steel", top="steelL")
+        k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, "steel", top="steelL")
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+
+
+def _rail(k, z, v0, v1, h, posts):
+    """A rail along the open side (+u) from v0 to v1, its top h over the deck at z, with uprights at `posts`."""
+    u = W / 2 - 0.03
+    k.box(u, (v0 + v1) / 2, z + h - 0.07, 0.06, v1 - v0, 0.07, "steelD", top="steel")   # top bar
+    k.box(u, (v0 + v1) / 2, z + h * 0.5, 0.05, v1 - v0, 0.045, "steelD", top="steel")   # mid bar
+    for v in posts:
+        k.box(u, v, z, 0.05, 0.05, h - 0.07, "steelD", top="steel")
+
+
+def b1a():
+    """B1a: the upper deck railed the whole length of its open side, the ladder hooked over the rail at the foot."""
+    k = K("bunk_b1a", FP)
+    _frame(k)
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, 0.3, "steel", top="steelL")
+    _rail(k, HIGH, -L / 2 + 0.03, L / 2 - 0.03, 0.4, (-0.5, 0.0, 0.5))
+    ladder(k, W / 2 + 0.04, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1b():
+    """B1b: both decks railed along the open side, the upper the whole length, the lower with a gap in the middle to
+    get in (the ladder stands in front of the lower rail at the foot)."""
+    k = K("bunk_b1b", FP)
+    _frame(k)
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, 0.3, "steel", top="steelL")
+    k.box(-(W / 2 - 0.03), 0, LOW, 0.04, L - 0.06, 0.26, "steel", top="steelL")
+    _rail(k, HIGH, -L / 2 + 0.03, L / 2 - 0.03, 0.4, (-0.5, 0.0, 0.5))
+    _rail(k, LOW, -L / 2 + 0.03, -0.3, 0.34, (-0.6,))
+    _rail(k, LOW, 0.4, L / 2 - 0.03, 0.34, ())
+    ladder(k, W / 2 + 0.04, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1c():
+    """B1c: the upper deck walled on every side by low panels as tall as the head board, a gap at the ladder."""
+    k = K("bunk_b1c", FP)
+    _frame(k)
+    H = 0.34
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, H, "steel", top="steelL")
+    u = W / 2 - 0.03
+    k.box(u, -0.2, HIGH, 0.04, 1.36, H, "steel", top="steelL")                    # open side, head to the ladder
+    k.box(u, -0.2, HIGH + H - 0.06, 0.045, 1.3, 0.02, "steelL")                     # its top trim
+    k.box(0, L / 2 - 0.03, HIGH, W - 0.06, 0.04, H, "steel", top="steelL")        # foot board raised to match
+    ladder(k, W / 2 + 0.01, 0.7, 0, HIGH + H)
+    return k.build()
+
+
 def b2():
     """B2 berth cabinet: a white shell round both berths (the open side faces the camera), each berth lit along its
     ceiling, a privacy curtain drawn halfway on the upper one, a ladder by the foot."""
@@ -115,7 +176,7 @@ def b3():
     return k.build()
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3}
+DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c}
 
 
 def jobs():
