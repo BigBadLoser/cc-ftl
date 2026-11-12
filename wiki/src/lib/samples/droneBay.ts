@@ -1,7 +1,7 @@
 import type { UiApi, UiModule } from '../../../../src/ui/api';
-import { modules } from '../../../../src/content/modules';
+import { entryOf } from '../game-data';
 
-const def = modules['module.droneBay'];
+const def = entryOf('modules', 'module.droneBay') as unknown as { maxHp: number; power: number; powerPriority: number };
 
 // A drone bay as the module inspector shows it: a repair drone out working, a medic drone charging on its pad.
 // The module's own numbers (power, hull) come from the game's content.
