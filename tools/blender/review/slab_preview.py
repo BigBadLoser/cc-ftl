@@ -39,7 +39,7 @@ def press(c, quad, mask, mx, my, tint, crew):
     out = out * 0.85 + np.array(tint) * 0.15
     c.px[..., :3] = np.where(a[..., None], out, base).astype(np.uint8)
 def scene(v):
-    c = Canvas(260, 230); ox, oy = 150, 175
+    c = Canvas(260, 260); ox, oy = 150, 205
     for gx in range(-3, 3):
         for gy in range(-3, 3):
             floor(c, pub, *iso(ox, oy, gx, gy), 1, 1)
@@ -56,14 +56,14 @@ def scene(v):
         c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
         j += 1
     return Image.fromarray(c.px[..., :3])
-order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s19", "s20", "s21"]
-names = {"c11": "hover B: floating cradle", "s19": "19 carousel: slewing ring, ring gear and motor, cage core, arms",
-         "s20": "20 manifold: field vessel, header ring, a valved drop to each slab",
-         "s21": "21 gantry: overhead slewing ring on columns, slabs hung on links"}
+order = sys.argv[4].split(",") if len(sys.argv) > 4 else ["s22", "s23", "s24"]
+names = {"c11": "hover B: floating cradle", "s22": "22 Geneva indexer: star and crank drive, spring detent, side frames",
+         "s23": "23 ferris drive: tyre drives on the rim, slabs as gondolas on trunnions",
+         "s24": "24 ratchet and drawers: ram and pawls, slabs on rails (front one out), latch hooks"}
 Z = 3
 rows = (len(order) + 2) // 3
-sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (230 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
+sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (260 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for i, v in enumerate(order):
-    x, y = (i % 3) * (260 * Z + 10), (i // 3) * (230 * Z + 30)
-    sheet.paste(scene(v).resize((260 * Z, 230 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names[v], fill=(230, 230, 230))
+    x, y = (i % 3) * (260 * Z + 10), (i // 3) * (260 * Z + 30)
+    sheet.paste(scene(v).resize((260 * Z, 260 * Z), Image.NEAREST), (x, y + 30)); d.text((x + 8, y + 8), names[v], fill=(230, 230, 230))
 sheet.save(sys.argv[3])
