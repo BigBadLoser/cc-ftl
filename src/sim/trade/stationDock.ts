@@ -13,7 +13,7 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { addStock, touchMarket } from './deals';
-import { noteHolds, unstage } from './dockLedger';
+import { noteDirect, noteHolds, takeCarried, unstage } from './dockLedger';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -52,7 +52,10 @@ export function stageGoods(sim: Sim, d: Deal): void {
       dock.staged.push({ storage: s.ref.id, item: l.item, count: n });
     }
     // No room in station storage: the rest goes straight into the hold (a crate on the dock).
-    if (left > 0) cargoAdd(sim, d.vehicle, l.item, left);
+    if (left > 0) {
+      cargoAdd(sim, d.vehicle, l.item, left);
+      noteDirect(d, l.item, left);
+    }
   }
 }
 
@@ -118,6 +121,7 @@ export function takeDelivery(sim: Sim, d: Deal): void {
 export function unwindStation(sim: Sim, d: Deal): void {
   const dock = d.dock;
   if (!dock) return;
+  takeCarried(sim, d); // goods in crew hands first (their jobs end below)
   for (const id of [...sim.world.query(JobC)]) {
     const h = sim.world.get(id, JobC)?.haul;
     if (!h) continue;
@@ -128,6 +132,8 @@ export function unwindStation(sim: Sim, d: Deal): void {
   unstage(sim, d);
   for (const l of d.give) {
     if (d.get.some((g) => g.item === l.item)) continue;
+    const carried = dock.hand?.give[l.item] ?? 0; // taken from the crew's hands: straight back into the hold
+    cargoAdd(sim, d.vehicle, l.item, carried);
     const missing = l.count - cargoOf(sim, d.vehicle, l.item);
     if (missing <= 0) continue;
     let left = missing;
@@ -138,6 +144,7 @@ export function unwindStation(sim: Sim, d: Deal): void {
     }
     cargoAdd(sim, d.vehicle, l.item, missing - left);
   }
+  if (dock.hand) dock.hand.give = {};
   const v = sim.world.get(d.vehicle, VehicleC);
   if (v?.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
 }
