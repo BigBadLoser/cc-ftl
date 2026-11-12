@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AssignmentC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule,
+  AssignmentC, CarryingC, CrewC, DownedC, HealthC, ModuleC, NeedsC, PositionC, RecoveringC, ShipC, TICK_HZ, homeShip, newGame, placementError, playerShip, spawnModule,
   type Sim, type SimEvent,
 } from '../../sim';
 import { bedUseOf, findFreeBed } from '../../sim/crew/beds';
 import { isIncapacitated } from '../../sim/crew/helpers';
+import { recoverTurn } from '../../sim/ai/machines/sleep';
+import { isCombatReady } from '../../sim/fight/relations';
 import { content } from '../index';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 
@@ -200,5 +202,25 @@ describe('recovery pod', () => {
     spawnModule(sim, 'module.battery', at.x, at.y, 0);
     const ship = playerShip(sim) as number;
     expect(placementError(sim, ship, 'module.recovery', m.x, m.y, 0)).not.toBeNull();
+  });
+
+  it('a hurt crew member with no reachable treatment bed keeps their load and job (the drive does not serve them)', () => {
+    const { sim, pod, crew } = podGame();
+    const m = sim.world.get(pod, ModuleC)!;
+    const at = accessTile(content.modules['module.recovery'], m.x, m.y, m.rot)!;
+    spawnModule(sim, 'module.battery', at.x, at.y, 0); // the pod's stand tile is walled off
+    const id = crew[0] as number;
+    sim.world.add(id, CarryingC, { item: 'item.scrap_hull', count: 3 });
+    hurt(sim, id, 30);
+    expect(recoverTurn(sim, id, sim.world.get(id, CrewC)!, sim.world.get(id, PositionC)!, false)).toBe(false); // no reachable bed: not served
+    expect(sim.world.get(id, CarryingC)?.count).toBe(3);
+  });
+
+  it('a patient resting in a bed or pod is not combat-ready', () => {
+    const { sim, pod, crew } = podGame();
+    const id = crew[0] as number;
+    expect(isCombatReady(sim, id)).toBe(true);
+    sim.world.add(id, RecoveringC, { bed: pod });
+    expect(isCombatReady(sim, id)).toBe(false);
   });
 });
