@@ -1,14 +1,14 @@
 <script lang="ts">
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { onWheel } from './attach';
-	import { panned, scaleOf, toTile, zoomed, type Box } from './camera';
+	import { panned, percentOf, scaleOf, toTile, zoomed, type Box } from './camera';
 	import { sameTarget, targetAt, tilesOf } from './design';
 	import { diffMarks, drawMoves } from './diffDraw';
-	import { drawGrid, type Mark } from './gridDraw';
+	import { drawGrid, type HullEdge, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
 	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
+	import { moduleCues, moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
@@ -46,6 +46,8 @@
 		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
 		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
+		const cue = cues();
+		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'diamond' });
 		const r = lab.drag;
 		if (r) {
 			const t: Tile[] = [];
@@ -53,6 +55,19 @@
 			out.push({ tiles: t, color: r.ok ? 'rgba(80,220,255,1)' : 'rgba(255,70,70,1)' });
 		}
 		return out;
+	});
+
+	/** The module whose needs are shown: the ghost being placed, else the selected module. */
+	const cueModule = $derived.by(() => {
+		const g = lab.ghost, l = lab.layout, s = lab.selected;
+		if (g) return { def: g.def, x: g.x, y: g.y, rot: g.rot, bad: !!g.error };
+		const m = s?.kind === 'module' && l ? l.modules[moduleIndex(l, s.id)] : undefined;
+		return m ? { ...m, bad: false } : null;
+	});
+	const cues = () => (cueModule ? moduleCues(cueModule) : null);
+	const edges = $derived.by((): HullEdge[] => {
+		const h = cueModule && !lab.compare ? moduleCues(cueModule).hull : null;
+		return h ? [{ tiles: h.tiles, out: h.out, color: cueModule?.bad ? 'rgba(255,70,70,1)' : 'rgba(240,177,58,1)' }] : [];
 	});
 
 	$effect(() => {
@@ -78,14 +93,14 @@
 			ctx.beginPath();
 			ctx.rect(0, 0, half, box.h);
 			ctx.clip();
-			drawGrid(ctx, d, lab.view, r, paneBox, lab.layers, marks);
+			drawGrid(ctx, d, lab.view, r, paneBox, lab.layers, marks, edges);
 			ctx.restore();
 			ctx.fillStyle = 'rgba(255,255,255,0.25)';
 			ctx.fillRect(half - 0.5, 0, 1, box.h);
 			return;
 		}
 		const shown = lab.compare && lab.tab === 'generated' && lab.originalDesign ? lab.originalDesign : d;
-		drawGrid(ctx, shown, lab.view, r, box, lab.layers, marks);
+		drawGrid(ctx, shown, lab.view, r, box, lab.layers, marks, edges);
 		if (lab.compare && lab.tab === 'overlay' && lab.diff) drawMoves(ctx, lab.diff, lab.view, r, box);
 	});
 
@@ -290,4 +305,6 @@
 	{/if}
 	<div class="pointer-events-none absolute inset-y-0" style="left:{side ? paneBox.w : 0}px;width:{paneBox.w}px"><PinMarkers space="grid" box={paneBox} /></div>
 	<div class="absolute top-2 left-3"><ShipSettings /></div>
+	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-muted-foreground tabular-nums" aria-label="Grid zoom">{percentOf(lab.view.zoom, dpr())}%</div>
+	{#if lab.ghost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.ghost.error}</div>{/if}
 </div>

@@ -6,6 +6,7 @@
 import { content } from '../../src/content';
 import { Sim, footprintTiles, type GenResult, type ModuleDef, type ShipTemplate } from '../../src/sim';
 import { outlineOf } from '../../src/sim/yard/width';
+import { accessTiles, hullOutward, hullRow, hullSide } from '../../src/sim/modules/footprint';
 
 export type TemplateModule = NonNullable<ShipTemplate['modules']>[number];
 export interface Layout {
@@ -101,6 +102,22 @@ interface Work { l: Layout; cells: string[][]; roomOf: number[]; modules: Templa
 const work = (l: Layout): Work => ({ l, cells: l.cells.map((r) => [...r]), roomOf: [...l.roomOf], modules: l.modules.map((m) => ({ ...m })), ids: [...l.moduleIds], rooms: l.rooms.map((r) => ({ ...r })) });
 const done = (w: Work): Layout => ({ ...w.l, cells: w.cells.map((r) => r.join('')), roomOf: w.roomOf, modules: w.modules, moduleIds: w.ids, rooms: w.rooms });
 const idx = (l: Layout, x: number, y: number): number => y * l.width + x;
+
+/**
+ * What a module at (x, y) turned `rot` needs around it, all from the game's own owners (`accessTiles`, `hullSide`, `hullRow`, `hullOutward`):
+ * the tiles crew stand on to use it, and, for one that must sit on the hull line (engine, airlock), the footprint tiles on that side and the
+ * unit step pointing out of the ship (null for any other module).
+ */
+export function moduleCues(m: { def: string; x: number; y: number; rot: number }): { access: Tile[]; hull: { tiles: Tile[]; out: Tile } | null } {
+  const def = defs[m.def];
+  if (!def) return { access: [], hull: null };
+  const side = hullSide(def, m.rot);
+  const o = side ? hullOutward(side) : null;
+  return {
+    access: accessTiles(def, m.x, m.y, m.rot).map((t): Tile => [t.x, t.y]),
+    hull: o ? { tiles: hullRow(def, m.x, m.y, m.rot).map((t): Tile => [t.x, t.y]), out: [o.x, o.y] } : null,
+  };
+}
 
 export function moduleTiles(m: TemplateModule): Tile[] {
   const def = defs[m.def];
@@ -318,8 +335,8 @@ export type StrokeTool = PaintTool | 'room' | 'module';
 type Ch = '_' | '#' | 'D' | '=' | '.';
 /** The tile character each paint tool lays. */
 export const PAINT_CHAR: Record<PaintTool, Ch> = { floor: '_', wall: '#', door: 'D', beam: '=', space: '.' };
-/** What erasing a tool's tiles leaves: floor and beams go back to space; a wall or door is cleared back to floor; the space tool's erase lays floor. */
-const ERASES_TO: Record<PaintTool, Ch> = { floor: '.', wall: '_', door: '_', beam: '.', space: '_' };
+/** What erasing a tool's tiles leaves: floor and beams go back to space; a wall or door is cleared back to floor; the Erase (space) tool clears to space either button: a right-click never paints. */
+const ERASES_TO: Record<PaintTool, Ch> = { floor: '.', wall: '_', door: '_', beam: '.', space: '.' };
 
 /**
  * The tiles a drag from `a` to `b` covers with `tool`: wall and beam a straight line (snapped to the dominant axis: tiles are 4-connected,
@@ -352,16 +369,22 @@ function unassign(l: Layout, tiles: readonly Tile[]): Layout {
  * A paint tool's erase clears only tiles of its own kind; room unassigns floor; module removes the modules under the tiles.
  */
 export function stroke(l: Layout, tool: StrokeTool, erase: boolean, tiles: readonly Tile[], room?: number): Layout {
+  const inside = tiles.filter(([x, y]) => inBounds(l, x, y));
+  const hit = new Set(inside.map(([x, y]) => idx(l, x, y)));
+  const covered = l.modules.map((m) => moduleTiles(m).some(([x, y]) => inBounds(l, x, y) && hit.has(idx(l, x, y))));
+  const withoutModules = (): Layout => ({ ...l, modules: l.modules.filter((_, i) => !covered[i]), moduleIds: l.moduleIds.filter((_, i) => !covered[i]) });
   if (tool === 'module' || tool === 'room') {
     if (!erase) return l;
     if (tool === 'room') return unassign(l, tiles);
-    const hit = new Set(tiles.filter(([x, y]) => inBounds(l, x, y)).map(([x, y]) => idx(l, x, y)));
-    const gone = l.modules.map((m) => moduleTiles(m).some(([x, y]) => inBounds(l, x, y) && hit.has(idx(l, x, y))));
-    if (!gone.some(Boolean)) return l;
-    return { ...l, modules: l.modules.filter((_, i) => !gone[i]), moduleIds: l.moduleIds.filter((_, i) => !gone[i]) };
+    return covered.some(Boolean) ? withoutModules() : l;
   }
-  if (!erase) return paint(l, tiles, PAINT_CHAR[tool], room);
+  if (!erase && tool !== 'space') return paint(l, tiles, PAINT_CHAR[tool], room);
+  // Erasing peels one layer at a time, judged on the layout the stroke began on: a tile under a module loses the module (its whole
+  // footprint) and keeps what it stands on; only a tile with nothing on it loses its own kind (the Erase tool clears either button).
+  const free = new Set<number>();
+  l.modules.forEach((m, i) => { if (covered[i]) for (const [x, y] of moduleTiles(m)) free.add(idx(l, x, y)); });
   const kind = PAINT_CHAR[tool];
-  const of = tiles.filter(([x, y]) => inBounds(l, x, y) && (tool === 'space' ? cellAt(l, x, y) === '.' : cellAt(l, x, y) === kind));
-  return of.length ? paint(l, of, ERASES_TO[tool]) : l;
+  const of = inside.filter(([x, y]) => !free.has(idx(l, x, y)) && (tool === 'space' || cellAt(l, x, y) === kind));
+  const base = covered.some(Boolean) ? withoutModules() : l;
+  return of.length ? paint(base, of, ERASES_TO[tool]) : base;
 }

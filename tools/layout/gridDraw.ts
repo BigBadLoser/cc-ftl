@@ -10,7 +10,9 @@ import type { Design } from './design';
 export interface Layers { rooms: boolean; names: boolean; furniture: boolean; lamps: boolean; gridLines: boolean; shields: boolean; roof: boolean }
 export const DEFAULT_LAYERS: Layers = { rooms: true, names: true, furniture: true, lamps: true, gridLines: false, shields: false, roof: false };
 export const LAYER_LABELS: Record<keyof Layers, string> = { rooms: 'Rooms', names: 'Room names', furniture: 'Furniture codes', lamps: 'Lamps', gridLines: 'Tile grid', shields: 'Shields (preview)', roof: 'Roof (preview)' };
-export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean }
+export interface Mark { tiles: readonly [number, number][]; color: string; /** false: an outline only. */ fill?: boolean; /** 'diamond': a dashed diamond in each tile (where crew stand), as the game's build ghost marks access. */ shape?: 'diamond' }
+/** The side of a module that must sit on the hull: its tiles along that side and the step pointing out of the ship. */
+export interface HullEdge { tiles: readonly [number, number][]; out: readonly [number, number]; color: string }
 
 const css = (c: RGB, a = 1): string => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 const BG = '#0a0c10';
@@ -33,7 +35,7 @@ function hatch(ctx: CanvasRenderingContext2D): CanvasPattern {
   hatchPattern = ctx.createPattern(c, 'repeat') as CanvasPattern;
   return hatchPattern;
 }
-export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr: number, box: Box, layers: Layers, marks: readonly Mark[]): void {
+export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr: number, box: Box, layers: Layers, marks: readonly Mark[], edges: readonly HullEdge[] = []): void {
   const s = scaleOf(v.zoom, dpr);
   const ox = box.w / 2 - (v.cx + 0.5) * s, oy = box.h / 2 - (v.cy + 0.5) * s;
   ctx.fillStyle = BG;
@@ -111,7 +113,48 @@ export function drawGrid(ctx: CanvasRenderingContext2D, d: Design, v: View, dpr:
       ctx.fillText(r.name, px, py);
     }
   }
-  for (const m of marks) outline(ctx, m, d, ox, oy, s);
+  for (const m of marks) (m.shape === 'diamond' ? diamonds : outline)(ctx, m, d, ox, oy, s);
+  for (const e of edges) hullEdge(ctx, e, ox, oy, s);
+}
+
+/** A dashed diamond in each tile (the game's access marker). */
+function diamonds(ctx: CanvasRenderingContext2D, m: Mark, _d: Design, ox: number, oy: number, s: number): void {
+  ctx.strokeStyle = m.color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([Math.max(3, s * 0.18), Math.max(2, s * 0.12)]);
+  for (const [x, y] of m.tiles) {
+    const cx = ox + (x + 0.5) * s, cy = oy + (y + 0.5) * s, r = s * 0.42;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r, cy);
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+}
+
+/** The hull side of a module: a thick line along the outer edge of its hull tiles and an arrow pointing out of the ship. */
+function hullEdge(ctx: CanvasRenderingContext2D, e: HullEdge, ox: number, oy: number, s: number): void {
+  if (e.tiles.length === 0) return;
+  const [dx, dy] = e.out;
+  const pts = e.tiles.map(([x, y]) => [ox + (x + 0.5 + dx * 0.5) * s, oy + (y + 0.5 + dy * 0.5) * s] as const);
+  const sx = Math.abs(dy) * 0.5 * s, sy = Math.abs(dx) * 0.5 * s; // the edge runs along the side, half a tile either way
+  const first = pts[0] as readonly [number, number], last = pts[pts.length - 1] as readonly [number, number];
+  const mx = (first[0] + last[0]) / 2, my = (first[1] + last[1]) / 2;
+  ctx.strokeStyle = e.color;
+  ctx.fillStyle = e.color;
+  ctx.lineWidth = Math.max(3, s * 0.18);
+  ctx.beginPath();
+  ctx.moveTo(first[0] - sx, first[1] - sy);
+  ctx.lineTo(last[0] + sx, last[1] + sy);
+  ctx.stroke();
+  // arrowhead on the outer side, centred on the edge
+  const a = Math.max(5, s * 0.55);
+  ctx.beginPath();
+  ctx.moveTo(mx + dx * a, my + dy * a);
+  ctx.lineTo(mx - dy * a * 0.6, my + dx * a * 0.6);
+  ctx.lineTo(mx + dy * a * 0.6, my - dx * a * 0.6);
+  ctx.closePath();
+  ctx.fill();
 }
 
 /** The outer edge of a set of tiles, drawn over the view (with a faint fill). */
