@@ -23,6 +23,10 @@ const run = (sim: Sim, n: number): SimEvent[] => {
 };
 /** The ledger invariant (#160): no bucket of a docked deal is negative, and its hold count is what the shuttle's hold really holds. */
 function ledgerHolds(sim: Sim): void {
+  for (const c of sim.world.query(CarryingC)) {
+    const load = sim.world.get(c, CarryingC)!;
+    if (load.deal && load.extra?.length) throw new Error('a deal load carries a second item the ledger does not count');
+  }
   for (const d of sim.trade.deals) {
     if (d.phase !== 'stationWork' || !d.dock?.units || !sim.world.has(d.vehicle, VehicleC)) continue;
     for (const [item, u] of Object.entries(d.dock.units)) {
@@ -415,6 +419,25 @@ describe('trade, end to end', () => {
     const events = runSettled(sim, 8000, 10);
     expect(ofType(events, 'trade.settled').length + ofType(events, 'trade.failed').length).toBeGreaterThan(0);
     void t;
+  });
+
+  it('two bought items dropped on the deck are not gathered into one load: every unit stays counted to settlement (#160)', () => {
+    const { sim, station } = atStation();
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 3 }, { item: 'item.ice', count: 3 }]);
+    const dropped = new Set<string>();
+    for (let i = 0; i < 6000 && dropped.size < 2; i++) {
+      run(sim, 1);
+      for (const c of sim.world.query(CarryingC)) {
+        const load = sim.world.get(c, CarryingC)!;
+        if (load.deal?.id === deal().id && !dropped.has(load.item)) {
+          dropped.add(load.item);
+          dropCarried(sim, c);
+        }
+      }
+    }
+    expect(dropped.size).toBe(2);
+    const events = runSettled(sim, 9000, 10);
+    expect(ofType(events, 'trade.settled').length + ofType(events, 'trade.failed').length).toBeGreaterThan(0);
   });
 
   it('a trade run with no crew aboard completes end to end', () => {

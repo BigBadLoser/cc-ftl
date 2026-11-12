@@ -82,6 +82,7 @@ function nextGather(sim: Sim, crew: number, job: Job): number {
     const j = sim.world.get(id, JobC)!;
     const o = j.haul;
     if (!o || j.reservedBy !== 0 || j.category !== job.category || o.phase !== 'pickup' || o.src.kind !== 'floor' || o.then || o.extra || o.gathered) continue;
+    if (h.deal || o.deal) continue; // a station deal's load is counted per item (trade/dockCount.ts): it neither gathers nor is gathered, so a load never mixes deals or items
     if (o.dst.kind !== h.dst.kind || o.dst.id !== h.dst.id) continue;
     const st = sim.world.get(o.src.id, ItemStackC);
     const d = st ? Math.hypot(st.x - pos.toX, st.y - pos.toY) : Infinity;
