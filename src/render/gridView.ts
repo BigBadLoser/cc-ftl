@@ -17,6 +17,7 @@ import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { HullSprite } from "./hullPaint";
+import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
 import { iso } from "./iso";
 import { bellyIds, engineHullTiles, exteriorIds, gridHullKeys, PLAIN_PAINT, type HullKeys, type HullPaint } from "./hullArt";
@@ -273,7 +274,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
           for (const piece of wallPieces(wallAt, x, y, stone ? Struct.RockWall : k, mode, ghosts, gapAt)) {
-            if (drew && (k !== Struct.Door || !ghosts || piece.under)) continue; // (a door stays, without its old belly)
+            if (drew && !keepsOldPiece(k, ghosts, piece.under)) continue; // (a door stays, without its old belly)
             const s = atlas.firstOf(piece.chain);
             if (!s) continue;
             // Roofed (no ghosts): walls and hull sort a little earlier so the roof plate of the tile behind them covers
