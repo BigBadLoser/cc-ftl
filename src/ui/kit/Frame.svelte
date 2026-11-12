@@ -7,7 +7,7 @@
    * around the title is a real gap and works over a transparent panel. `right` renders items (a Chip, a button) into the top edge: put a
    * `<FrameGap width={n} />` between them. `tone="hostile"` is the red frame with a large title.
    */
-  let { title, tone = 'normal', style = '', testid, lesson, notch, children, head, right }: {
+  let { title, tone = 'normal', style = '', testid, lesson, notch, children, head, right, class: cls = '', clientHeight = $bindable(0), ...rest }: {
     title: string;
     tone?: 'normal' | 'hostile';
     style?: string;
@@ -20,10 +20,15 @@
     /** A real break in the left border, `top` px down from the top edge and `height` px tall (a portrait sits in it). */
     notch?: { top: number; height: number };
     right?: Snippet;
+    class?: string;
+    /** The frame's rendered height (a window that sizes to its content reads it). */
+    clientHeight?: number;
+    /** Anything else (pointer handlers, aria-label) lands on the frame's root. */
+    [key: string]: unknown;
   } = $props();
 </script>
 
-<section class="frame {tone}" class:notched={!!notch} {style} data-testid={testid} data-lesson={lesson}>
+<section class="frame {tone} {cls}" class:notched={!!notch} {style} data-testid={testid} data-lesson={lesson} bind:clientHeight {...rest}>
   {#if notch}
     <i class="side" style:top="0" style:height="{notch.top}px"></i>
     <i class="side" style:top="{notch.top + notch.height}px" style:bottom="0"></i>

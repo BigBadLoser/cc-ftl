@@ -5,7 +5,7 @@
    * charged drive). Set in the same thin frame as the combat cards; a ship's row frames it in the view.
    */
   import Icon from './Icon.svelte';
-  import { ActionButton, Chip, chipTone, Frame, tip } from './kit';
+  import { ActionButton, Chip, chipTone, DecisionBar, type DecisionOption, Frame, tip } from './kit';
   import type { UiApi } from './api';
   import type { UiEventGrid, UiEncounterResult } from './starmapApi';
 
@@ -20,6 +20,7 @@
     event.hostiles > 0 ? `${event.hostiles} hostile ship${event.hostiles > 1 ? 's' : ''} in range`
     : event.kind === 'rescue' ? 'All quiet. Help them, then move on.' : event.kind === 'scene' ? 'Nobody here is hostile.' : 'The sky is clear: the fight is won.',
   );
+  const decisions = $derived<DecisionOption[]>([{ id: 'leave', label: event.fleeing ? 'Flee and resume' : 'Resume travel', note: event.fleeing ? 'Spends the drive' : undefined, primary: event.canLeave, disabled: !event.canLeave || event.deploying, testId: 'event-leave' }]);
   const trip = $derived(event.hopsLeft === 0 ? `Trip ends at ${event.resumeTo}` : `To ${event.resumeTo} · ${event.hopsLeft} hop${event.hopsLeft === 1 ? '' : 's'}`);
 </script>
 
@@ -69,11 +70,9 @@
       <p class="note" class:warn={event.hostiles > 0}><Icon name={event.hostiles > 0 ? 'alert' : 'shield'} size={14} />{quiet}</p>
       {#if result && result.tone === 'red' && event.hostiles > 0}<p class="note warn" data-testid="event-result">{result.text}</p>{/if}
       <p class="note"><Icon name="map" size={14} />{trip}</p>
-      <ActionButton tone={event.canLeave ? 'go' : 'plain'} disabled={!event.canLeave || event.deploying} onclick={leave} testid="event-leave">
-        <Icon name={event.fleeing ? 'evasion' : 'fast'} size={16} />{event.fleeing ? 'Flee and resume' : 'Resume travel'}
-      </ActionButton>
       {#if event.why && !event.deploying}<p class="note warn">{event.why}</p>{/if}
     </div>
+    <DecisionBar options={decisions} onpick={leave} />
   </Frame>
 </aside>
 

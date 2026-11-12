@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { tip } from '../kit';
+  import { tip } from './tip';
   import type { DecisionOption } from './types';
 
-  /** The footer: each option a full-width button side by side (label left, a short note right). The `primary` one has the cyan edge. Calls `onpick(id)`. */
-  let { options, onpick, busy = false }: { options: DecisionOption[]; onpick: (id: string) => void; busy?: boolean } = $props();
+  /** The one decision bar of every window (comms, jump confirm, event card): up to 3 options, each option a full-width button side by side (label left, a short note right). The `primary` one has the cyan edge. Calls `onpick(id)`. */
+  let { options, onpick, busy = false }: { options: DecisionOption[] /* at most 3 */; onpick: (id: string) => void; busy?: boolean } = $props();
 </script>
 
 <div class="decisions" style:grid-template-columns={`repeat(${Math.max(1, options.length)}, 1fr)`}>
   {#each options as o (o.id)}
-    <button class:primary={o.primary} disabled={o.disabled || busy} use:tip={{ text: o.reason }} data-testid="comms-decision" data-choice={o.id} onclick={() => onpick(o.id)}>
+    <button class:primary={o.primary} disabled={o.disabled || busy} use:tip={{ text: o.reason }} data-testid={o.testId ?? 'comms-decision'} data-choice={o.id} onclick={() => onpick(o.id)}>
       <span class="l">{o.label}</span>{#if o.note}<small>{o.note}</small>{/if}
     </button>
   {/each}
