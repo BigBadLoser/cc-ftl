@@ -5,42 +5,64 @@ import type { Recipe } from '../sim/shipgen/assembly/recipe';
  * stand to each other. Prototype: two structures, each in a few variations made by changing parameters only.
  */
 
-/** A modular tree: department branches off a trunk, each a chain or a comb of modules; the secure one behind a gate. */
-const tree = (name: string, o: { most: number; pairs: number; step: [number, number]; neck: [number, number]; link: [number, number]; rooms: [number, number]; fork: number; spacing: number; arrange: 'series' | 'sides' }): Recipe => ({
+/**
+ * A modular tree as a cluster: sections joined directly, each growing off the end or the side of one already there
+ * (the old tree's way). The dock block first, the secure rooms as a gated section.
+ */
+const cluster = (name: string, o: { rooms: [number, number]; rowDepth?: number; link: [number, number]; cross: boolean; spacing: number }): Recipe => ({
   name,
-  root: { kind: 'trunk', pairs: o.pairs, step: o.step },
+  root: { kind: 'core' },
   spacing: o.spacing,
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'trunk' }, neck: 0, section: { rooms: [2, 4], cap: true }, link: o.link },
-    { takes: ['freight', 'works', 'commons'], per: 'department', host: { on: 'trunk' }, neck: o.neck, section: { rooms: o.rooms, cap: true }, link: o.link, fork: o.fork, arrange: o.arrange, most: o.most },
-    { takes: ['secure'], per: 'together', host: { on: 'trunk' }, neck: [3, 5], gated: true, section: { rooms: [3, 6], cap: true }, link: 4 },
-    { takes: ['habitation', 'defence'], per: 'department', host: { on: 'trunk' }, neck: o.neck, section: { rooms: o.rooms, cap: true }, link: o.link, fork: o.fork, arrange: o.arrange, most: o.most },
+    { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
+    { takes: ['commons', 'freight', 'works'], per: 'department', host: { on: 'section' }, neck: 0, section: { rooms: o.rooms, cross: o.cross, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) }, link: o.link, most: 1 },
+    { takes: ['habitation', 'defence'], per: 'department', host: { on: 'section' }, neck: 0, section: { rooms: o.rooms, cross: o.cross, ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) }, link: o.link, most: 1 },
+    { takes: ['secure'], per: 'together', host: { on: 'section' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
   ],
 });
 
-/** A compound: an inhabited ring or arc, a substantial industrial block joined to it, the secure rooms beyond that behind a gate, a pier. */
-const compound = (name: string, o: { outline: 'disc' | 'square'; inner: boolean; gap?: { side: 'n' | 'e' | 's' | 'w'; from: number }; works: ('n' | 'e' | 's' | 'w')[] | 'tip'; pier: ('n' | 'e' | 's' | 'w')[] | 'tip'; neck: [number, number]; rowDepth?: number }): Recipe => ({
+/** A tree on a trunk: department branches off a short trunk, joined directly; the dock block at its head. */
+const trunked = (name: string, o: { pairs: number; step: [number, number]; rooms: [number, number]; link: [number, number]; most: number }): Recipe => ({
+  name,
+  root: { kind: 'trunk', pairs: o.pairs, step: o.step },
+  spacing: 2,
+  branches: [
+    { takes: ['harbour'], per: 'together', host: { on: 'trunk' }, neck: 0, docks: true, section: { rooms: [2, 6] }, link: 0 },
+    { takes: ['commons', 'freight', 'works'], per: 'department', host: { on: 'trunk' }, neck: 0, section: { rooms: o.rooms, cap: true }, link: o.link, most: o.most },
+    { takes: ['secure'], per: 'together', host: { on: 'trunk' }, neck: 0, gated: true, section: { rooms: [3, 8], cap: true }, link: 0 },
+    { takes: ['habitation', 'defence'], per: 'department', host: { on: 'trunk' }, neck: 0, section: { rooms: o.rooms, cap: true }, link: o.link, most: o.most },
+  ],
+});
+
+/**
+ * A compound: an inhabited ring or arc with a substantial industrial block joined to it. The secure rooms are the gated
+ * far end of that block (one mass, its machinery behind a gate) or stand on the arc's other tip; the harbour is a dock
+ * block on the rim.
+ */
+const compound = (name: string, o: {
+  outline: 'disc' | 'square'; inner: boolean; gap?: { side: 'n' | 'e' | 's' | 'w'; from: number };
+  works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip'; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number;
+}): Recipe => ({
   name,
   root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: 2, inner: o.inner, ...(o.gap ? { gap: o.gap } : {}) },
   spacing: 2,
   branches: [
-    { takes: ['works', 'freight'], per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], ...(o.rowDepth ? { rowDepth: o.rowDepth, even: true } : {}) }, link: [3, 5] },
-    { takes: ['secure'], per: 'together', host: { on: 'after', rule: 0 }, neck: 3, gated: true, section: { rooms: [3, 7], cap: true }, link: 4 },
-    { takes: ['harbour'], per: 'together', host: o.pier === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.pier }, neck: 2, pier: true, section: { rooms: [2, 4], cap: true }, link: 4 },
+    { takes: ['works', 'freight'], per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
+    { takes: ['secure'], per: 'together', host: o.secure === 'tip' ? { on: 'tip' } : { on: 'after', rule: 0 }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: o.secure === 'tip' ? 6 : o.rowDepth, even: true, cap: true }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: o.dock, roll: true }, neck: 0, docks: true, section: { rooms: [2, 6] }, link: 0 },
   ],
 });
 
 export const stationRecipes = {
   tree: [
-    tree('ribs: paired chains, even steps', { most: 2, pairs: 0.9, step: [20, 20], neck: [4, 4], link: [4, 4], rooms: [3, 4], fork: 0, spacing: 2, arrange: 'series' }),
-    tree('combs: modules on the sides of stems', { most: 4, pairs: 0.5, step: [16, 28], neck: [2, 4], link: [14, 18], rooms: [2, 3], fork: 0, spacing: 2, arrange: 'sides' }),
-    tree('scrappy: small modules, forks, uneven', { most: 3, pairs: 0.2, step: [8, 30], neck: [2, 10], link: [3, 8], rooms: [2, 3], fork: 0.6, spacing: 2, arrange: 'series' }),
+    cluster('cluster: slabs joined at ends and sides', { rooms: [2, 4], rowDepth: 5, link: [0, 0], cross: true, spacing: 0 }),
+    cluster('cluster: small staggered modules', { rooms: [2, 3], link: [0, 0], cross: true, spacing: 0 }),
+    trunked('short trunk: branches joined straight on', { pairs: 0.8, step: [14, 20], rooms: [3, 5], link: [0, 0], most: 2 }),
   ],
   compound: [
-    compound('ring with a works block and a pier', { outline: 'disc', inner: true, works: ['s', 'n'], pier: ['w', 'e'], neck: [0, 0], rowDepth: 8 }),
-    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 8 }, works: ['n'], pier: ['w', 'e'], neck: [2, 4] }),
-    compound('half ring, the works on its tip', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', pier: ['w'], neck: [2, 2], rowDepth: 7 }),
-    compound('single-loaded arc (too small for its rooms)', { outline: 'disc', inner: false, gap: { side: 'e', from: 4 }, works: ['s', 'n'], pier: ['w'], neck: [0, 0], rowDepth: 7 }),
-    compound('square with bastions, staggered bays', { outline: 'square', inner: true, works: ['e', 'w'], pier: ['w', 'e'], neck: [3, 5] }),
+    compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
+    compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
+    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7 }),
+    compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;

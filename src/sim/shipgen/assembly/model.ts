@@ -44,6 +44,8 @@ export interface Port {
   along: number;
   side: -1 | 0 | 1;
   used: boolean;
+  /** Rooms stand either side of it (the flank of a block): what joins here starts its own rooms a tile further out. */
+  flank?: boolean;
 }
 
 export interface Built {

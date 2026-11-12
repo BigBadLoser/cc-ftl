@@ -372,6 +372,28 @@ Found on the way, worth knowing:
 - Staggered rows run longer than their rooms add up to (a deeper room after a shallower one brings a wall), so the
   street is measured after the rows are laid.
 
+Second pass, after the user's read of the first sheets (tree too sprawling, nearer the old welded than the old tree;
+the harbour ugly and the same everywhere; the secure rooms stuck on after the works; thin walkways that make a layout
+look as if it could fall apart). All four answered in the model, not by placing things:
+
+- **Direct joins are the default.** A section starts where its host's street ends or on the host's flank; a corridor
+  is for things to hang on. `block` takes `cross` (a passage across it midway, a port on each flank), so sections join
+  each other's sides; a port on a flank says so (`flank`) and what joins there starts its rows a tile out. The cluster
+  recipes (root `core`, host `section`) have no corridor at all. With `spacing` 0 sections may stand wall to wall but
+  never one tile apart.
+- **The harbour is a dock block**: docks stand in a block's rows at its far end, on the flanks an airlock may face,
+  the space off each kept open (`docks` on a rule; hard: every dock stands).
+- **The secure rooms are the gated far end of the works block** (`gate` on a block: joined directly, one mass, a gate
+  across its street), or stand on an arc's other tip. Nothing may stand within two tiles of a gated section.
+- A cluster has no outline to hold it, so of eight candidates that stand the most compact is kept.
+- Two lattice rules came out of it (`stripsOf`): a one-tile sliver beside a section stays open instead of joining it
+  (it could only be a second wall), and at an arc's cut a tile between the ring and the solid face is the ring's.
+- After the band is filled round the sections on a rim, any solid 2x2 block rejects that size.
+
+Result, 4 seeds of 7 parameter sets: 28 of 28 assemble, every room verified, no wall block, hull check passes.
+Connecting corridors: none in the clusters and compounds, the trunk alone in the trunk tree. Rooms under 3 wide: 0 in
+the trees, 0 to 4 in the compounds (the arcs).
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable

@@ -198,6 +198,8 @@ function stripsOf(s: Site): Strip[] {
         if (across && across !== st) { across.tiles.push([x, y]); owner.set(at(x, y), across); return false; }
         // The same beside a room that stands in the band's depth (a wing's): the tile is that room's wall.
         if (!across && room >= 0) { g.set(x, y, room); owner.delete(at(x, y)); return false; }
+        // And at an arc's cut, where the solid face is across from the ring: the tile is the ring's, a tile wider there.
+        if (!across && g.at(x - dx, y - dy) === SOLID && !hull(x - dx, y - dy)) { g.set(x, y, ring); owner.delete(at(x, y)); return false; }
       }
       return true;
     });
@@ -215,7 +217,8 @@ function stripsOf(s: Site): Strip[] {
           if (lo + hi + 1 >= 3) continue;
           const room = [roomAt(x - (lo + 1) * dx, y - (lo + 1) * dy), roomAt(x + (hi + 1) * dx, y + (hi + 1) * dy)].find((r) => r >= 0);
           if (room === undefined) continue;
-          for (let k = -lo; k <= hi; k++) { g.set(x + k * dx, y + k * dy, room); owner.delete(at(x + k * dx, y + k * dy)); }
+          // Two wide, it joins the room. One wide it could only be a second wall against the room's own: it stays open.
+          for (let k = -lo; k <= hi; k++) { if (lo + hi + 1 > 1) g.set(x + k * dx, y + k * dy, room); owner.delete(at(x + k * dx, y + k * dy)); }
           again = true;
           return false;
         }

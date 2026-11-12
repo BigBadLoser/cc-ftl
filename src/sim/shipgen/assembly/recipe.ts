@@ -18,17 +18,18 @@ export interface BranchRule {
   per: 'department' | 'together';
   /**
    * Where a branch starts: off the trunk's sides, on a ring's rim (directions in order of preference), at an arc's cut
-   * end, or at the far end of another rule's branch (its index in `branches`).
+   * end, at the far end of another rule's branch (its index in `branches`), or on the end or side of any section
+   * already standing, the newest first (a cluster that grows).
    */
-  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[] } | { on: 'tip' } | { on: 'after'; rule: number };
+  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'after'; rule: number } | { on: 'section' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
   /** Sections on one branch at most; a department with more gets another branch. Default: all on one. */
   most?: number;
-  /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch. */
+  /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch or stands against it. */
   gated?: boolean;
   /** Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the last one's end. */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean; even?: boolean };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean; even?: boolean; cross?: boolean };
   /**
    * How its sections stand: in series along the branch (beads on a string), or on the sides of one stem corridor (a
    * comb). Default series.
@@ -38,8 +39,8 @@ export interface BranchRule {
   link: Roll;
   /** Chance a later section turns off the side of the link instead of carrying straight on. */
   fork?: number;
-  /** The station's docks hang on this branch's corridors (a pier). */
-  pier?: boolean;
+  /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
+  docks?: boolean;
 }
 
 export interface Recipe {
@@ -47,9 +48,11 @@ export interface Recipe {
   root:
     /** A trunk corridor: everything hangs off its sides. `pairs`: chance a branch stands opposite the one before; `step`: trunk between one branch and the next. */
     | { kind: 'trunk'; pairs: number; step: Roll }
+    /** No root of its own: the first branch stands at the centre and the rest grow from the sections. */
+    | { kind: 'core' }
     /** A ring or an arc with its band: it takes these departments itself. */
     | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number; inner: boolean; gap?: Gap };
   branches: readonly BranchRule[];
-  /** Clear ground kept between sections that are not joined. */
+  /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }
