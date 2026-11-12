@@ -296,9 +296,8 @@ def wrap(k, body, trim, open_l, open_r):
 
 
 # ---- the designs ----------------------------------------------------------------------------------------------------
-def geneva_over_tyres(k):
-    """s49."""
-    body, trim = "navy", "hivis"
+def geneva_over_tyres(k, body="navy", trim="hivis"):
+    """s49 (and its paint schemes, s49a-c)."""
     out = wrap(k, body, trim, 1.15, 0.45)
     canopy(k, body, trim, [], hole=1.0)
     zf = sunk_top(k, 1.0, 0.18, body, trim)
@@ -337,6 +336,8 @@ def crown_well(k):
     return out
 
 
-DESIGNS = {"s49": (geneva_over_tyres, (3, 3)), "s50": (geneva_well, (3, 3)), "s51": (crown_well, (3, 3))}
+SCHEMES = {"s49a": ("gm", "hazY"), "s49b": ("medWhite", "medRed"), "s49c": ("slbTeal", "hivis")}
+DESIGNS = {**{v: ((lambda k, c=c: geneva_over_tyres(k, *c)), (3, 3)) for v, c in SCHEMES.items()},
+           "s49": (geneva_over_tyres, (3, 3)), "s50": (geneva_well, (3, 3)), "s51": (crown_well, (3, 3))}
 OVERLAYS = {}
 PIT = {v: RP for v in DESIGNS}
