@@ -3656,5 +3656,6 @@
   "slbCon": {"hex": "#8f8a80", "set": "slab"},
   "slbConL": {"hex": "#b5b0a5", "set": "slab"},
   "slbHaz": {"hex": "#e0a020", "set": "slab"},
-  "slbTeal": {"hex": "#2f6b72", "set": "slab"}
+  "slbTeal": {"hex": "#2f6b72", "set": "slab"},
+  "slbMach": {"hex": "#4f6a5c", "set": "slab"}
 }

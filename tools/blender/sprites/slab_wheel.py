@@ -1,229 +1,190 @@
 """Stasis slab storage, the flap wheel (family `slab`, preview only; issue #116): twelve cassette slabs round a core on a
-3x3, turned 40 deg off radial so the faces on the near side fan open to the room. Parts in slab_kit.py.
+3x3, turned 40 deg off radial so the faces on the near side fan open to the room. Parts in slab_kit.py; earlier rounds
+in git history.
 
-Round 8 found the direction (each variant its own paint, a drive and a hold you can read; s22 Geneva indexer, s23
-ferris drive, s24 ratchet and drawers: in git history). Round 9, after its review (ferris the strongest but western:
-a wagon-wheel top, brass and "wood"; the tyre drives liked; a readable flow for taking a slab out liked):
+Round 10, after round 9's review (the ferris still a carnival; the tilt-out unreadable; the crane not liked; the tyre
+and chain drives liked; all of them read as mechanisms, not as manufactured modules, too "open"): a module chassis
+bounding the 3x3 (plinth, corner structure, a top frame holding the rotor's top bearing, so the rotor is held top and
+bottom), still open so the slabs show:
 
-  s25  ferris, revised (industrial teal, safety orange, steel): the tyre drives kept; the gondolas hang from box arms
-       cantilevered off a tall mast, each held by a stay cable from the masthead (cable-stayed, no rim)
-  s26  worm drive and tilt-out (white machinery, red): a worm screw on a bearinged shaft (a motor at one end, a hand
-       wheel at the other) turns the toothed rim; each slab stands in a hinged cradle latched to the column's collar,
-       the front one tipped out toward the room by a ram
-  s27  chain drive and jib crane (gunmetal, crane yellow): a roller chain wraps the base's sprocket ring from a motor
-       sprocket at the left corner, a sprung tensioner on the slack run; each slab stands in a foot socket, its head
-       in a slot guide; a jib crane on the right corner lifts the front one straight up out of its slot"""
+  s28  robot cell (graphite, safety orange): a square plinth with louvred skirts and a striped access step at the
+       front; four orange box posts (at the edge midpoints, a diamond) and a top frame whose X beams carry the bearing housing; the tyre drives in three
+       corners; the rotor holds each slab's foot in a socket, its head through a slotted plate
+  s29  lattice frame (machine green, yellow): lattice-truss corner posts and truss beams over the top; the chain drive
+       from the left corner with its tensioner; the rotor a drum with a head ring, each slab clamped at foot and head
+  s30  octagon frame, top belt (navy, white, red): a chamfered plinth, eight slim posts and an octagonal top frame; the
+       rotor hangs from a top drum turned by a belt from a motor on the frame; the slabs' feet run on pins and rollers
+       in a floor track"""
 import math
 
-from .slab_kit import (BACK, FRONT, R0, UP, angles, at, base, bolts, cassette, frame, hazard, motor, ring,
-                       spring, tube)
+from .slab_kit import (BACK, FRONT, R0, angles, at, bolts, cassette, frame, links, loop, motor, prism, ring, spring,
+                       truss_beam, truss_post, tube, tyre_drive)
 from .slab_study import L, beam
 
-assert BACK and hazard
+Q = 1.4                                             # the posts' centres: the edge midpoints (a diamond, so none
+POSTS = [(Q, 0.0), (0.0, Q), (-Q, 0.0), (0.0, -Q)]  # stands in front of the front slab)
+RIM = list(zip(POSTS, POSTS[1:] + POSTS[:1]))
 
 
-def add(a, b, s=1.0):
-    return tuple(a[i] + s * b[i] for i in range(3))
+def race(k, deck, z=0.12):
+    """The slewing race on the plinth and the rotor's deck over it."""
+    k.cyl(0, 0, z, 1.3, 0.06, "steelD", top="steel", sides=48)
+    k.cyl(0, 0, z + 0.06, 1.27, 0.02, "dark", sides=48)
+    k.cyl(0, 0, z + 0.08, 1.18, 0.12, deck, top="steelL", sides=48)
 
 
-def norm(v):
-    n = math.sqrt(sum(c * c for c in v))
-    return tuple(c / n for c in v)
+def cup(k, s, col, lever="hazY"):
+    """A bolted socket round the slab's foot cap."""
+    s.box(k, -0.1, 0.12, -0.5, 0.5, -0.32, 0.1, col, face="steelL")
+    for w in (-0.38, 0.38):
+        s.box(k, -0.06, 0.0, w - 0.03, w + 0.03, 0.1, 0.12, "steel")
+    s.box(k, -0.04, 0.08, -0.06, 0.06, 0.1, 0.125, lever)
 
 
-def tyre_drives(k, house, guard):
-    """The rim's three tyre drives (round 8's), pressing on its outside."""
-    for a in (FRONT + math.pi / 3, FRONT + math.pi, FRONT - math.pi / 3):
-        k.box(*at(1.56, a)[:2], 0.1, 0.3, 0.6, 0.12, "steelD", top="steel", rz=a)
-        for da in (-0.13, 0.13):
-            t = at(1.42, a + da)
-            k.cyl(t[0], t[1], 0.26, 0.14, 0.14, "black", top="steelD", sides=16)
-            k.cyl(t[0], t[1], 0.4, 0.06, 0.03, "steelL", sides=10)
-        m = at(1.6, a)
-        k.box(m[0], m[1], 0.22, 0.26, 0.42, 0.28, house, rz=a)
-        for dz in (0.28, 0.36, 0.44):
-            k.box(*at(1.735, a)[:2], dz, 0.012, 0.34, 0.03, "dark", rz=a)
-        k.box(m[0], m[1], 0.5, 0.2, 0.3, 0.03, guard, rz=a)
+def edge_stripes(k, z, col0="hazY", col1="hazK"):
+    """Hazard stripes along the plinth's two front edges."""
+    for i in range(13):
+        c = col0 if i % 2 else col1
+        t = -1.2 + i * 0.2
+        k.box(1.42, t, z, 0.08, 0.2, 0.012, c)
+        k.box(t, 1.42, z, 0.2, 0.08, 0.012, c)
 
 
-# ---- s25 ferris, revised --------------------------------------------------------------------------------------------
-def ferris(k):
-    """s25."""
-    z0 = 0.52
-    za = z0 + L + 0.36                                                       # the arms' centre line
-    zm = za + 0.95                                                           # the masthead
-    base(k, None)
-    for i in range(6):                                                       # the turning rim and its spokes
-        a = (i + 0.5) * math.pi / 3
-        beam(k, at(0.3, a, 0.38), at(1.18, a, 0.38), 0.1, 0.1, "steelD", top="steel")
-    ring(k, 1.2, 0.3, 0.14, 0.1, "slbTeal")
-    ring(k, 1.27, 0.32, 0.1, 0.035, "black")
-    tyre_drives(k, "slbTeal", "hivis")
-    k.cyl(0, 0, 0.3, 0.26, zm - 0.3, "steel", top="steelL", sides=14)      # the mast
-    for z in (0.6, 1.5):
-        k.cyl(0, 0, z, 0.29, 0.1, "slbTeal", sides=14)
-    k.cyl(0, 0, za - 0.14, 0.44, 0.28, "slbTeal", sides=16)                 # the arms' collar
-    bolts(k, 0.36, za + 0.14, 12)
-    k.cyl(0, 0, zm - 0.12, 0.3, 0.14, "steelD", top="steel", sides=14)      # the masthead and its beacon
-    k.cyl(0, 0, zm + 0.02, 0.1, 0.1, "hivis", sides=10)
+# ---- s28 robot cell -------------------------------------------------------------------------------------------------
+def cell(k):
+    """s28."""
+    z0, zt = 0.42, 2.8
+    zp = z0 + L - 0.14                                                       # the slotted plate
+    k.box(0, 0, 0.0, 2.96, 2.96, 0.12, "steelD", top="steel")               # the plinth, louvred skirts
+    for i in range(12):
+        t = -1.1 + i * 0.2
+        k.box(1.481, t, 0.025, 0.01, 0.12, 0.07, "dark")
+        k.box(t, 1.481, 0.025, 0.12, 0.01, 0.07, "dark")
+    race(k, "gm")
+    ring(k, 1.2, 0.2, 0.14, 0.1, "gm", top="steelL")                        # the rim the tyres drive
+    ring(k, 1.27, 0.22, 0.1, 0.035, "black")
+    for a in (FRONT + math.pi / 2, BACK, FRONT - math.pi / 2):
+        tyre_drive(k, a, "hivis", "steelD", rm=1.62)
+    su, sv, _ = at(1.8, FRONT)                                               # the access step
+    k.box(su, sv, 0.12, 0.6, 0.44, 0.05, "steel", top="steelL", rz=FRONT + math.pi / 2)
+    for j in range(-2, 3):
+        p = at(1.8, FRONT)
+        o = (math.cos(FRONT + math.pi / 2) * j * 0.11, math.sin(FRONT + math.pi / 2) * j * 0.11)
+        k.box(p[0] + o[0], p[1] + o[1], 0.17, 0.05, 0.4, 0.008, "hazY", rz=FRONT + math.pi / 2 + 0.6)
+    for cu, cv in POSTS:                                                     # the posts and the top frame
+        k.box(cu, cv, 0.12, 0.3, 0.3, 0.06, "steelD", top="steel", rz=FRONT)
+        k.box(cu, cv, 0.18, 0.14, 0.14, zt - 0.18, "hivis", rz=FRONT)
+        beam(k, (cu, cv, zt + 0.06), (0.25 * cu / Q, 0.25 * cv / Q, zt + 0.06), 0.12, 0.12, "gm", top="steelL")
+    for a, b in RIM:
+        beam(k, (*a, zt + 0.08), (*b, zt + 0.08), 0.16, 0.16, "hivis")
+    k.cyl(0, 0, zt - 0.14, 0.3, 0.34, "gm", top="steelL", sides=16)        # the bearing housing
+    bolts(k, 0.22, zt + 0.2, 8)
+    k.cyl(0, 0, zt + 0.2, 0.1, 0.06, "hivis", sides=10)
+    k.cyl(0, 0, 0.32, 0.3, zp - 0.32, "gm", top="steelL", sides=14)        # the rotor's core, its shaft
+    k.cyl(0, 0, zp + 0.08, 0.12, zt - 0.14 - zp - 0.08, "steelL", sides=10)
+    ring(k, 0.8, zp, 0.08, 0.72, "steelD", top="steel")                     # the slotted plate
+    bolts(k, 0.5, zp + 0.08, 12)
     out = []
     for th in angles():
         s = cassette(k, frame(th, z0))
         out.append(s)
-        for w in (-1, 1):                                                    # the yoke and its trunnions
-            a, b = sorted((w * 0.5, w * 0.58))
-            s.box(k, 1.15, L + 0.22, a, b, -0.16, -0.06, "steelD", face="steel")
-            tube(k, s.p(1.25, w * 0.4, -0.11), s.p(1.25, w * 0.64, -0.11), 0.07, "steelL", sides=10)
-            tube(k, s.p(1.25, w * 0.64, -0.11), s.p(1.25, w * 0.68, -0.11), 0.075, "hivis", sides=10)
-        s.box(k, L + 0.14, L + 0.22, -0.58, 0.58, -0.16, -0.06, "steelD", face="steel")
-        s.box(k, -0.05, 0.03, -0.14, 0.14, 0.06, 0.08, "medWhite")           # a cell plate
-        hp = s.p(L + 0.22, 0.0, -0.11)
+        cup(k, s, "gm")
+    return out
+
+
+# ---- s29 lattice frame ----------------------------------------------------------------------------------------------
+def lattice(k):
+    """s29."""
+    z0, zt = 0.4, 2.95
+    zh = z0 + L + 0.08                                                       # the head ring
+    k.box(0, 0, 0.0, 2.96, 2.96, 0.12, "slbMach", top="steel")              # the plinth
+    edge_stripes(k, 0.12)
+    race(k, "slbMach")
+    ring(k, 1.27, 0.2, 0.12, 0.05, "steelL", n=64, skip=lambda i: i % 2)   # the sprocket ring
+    sa = FRONT + math.pi / 2                                                 # the chain drive, left corner
+    C2, r1, r2 = at(1.55, sa), 1.31, 0.17
+    links(k, loop((0, 0), r1, C2, r2), 0.21, closed=True)
+    k.box(C2[0], C2[1], 0.0, 0.36, 0.36, 0.19, "steelD", top="steel", rz=sa)
+    k.cyl(C2[0], C2[1], 0.19, r2, 0.1, "steelL", top="steel", sides=14)
+    motor(k, C2[0], C2[1], 0.31, h=0.42, body="hazY")
+    ta = sa + math.acos((r1 - r2) / 1.55)                                    # its tensioner, on the slack run
+    d = (math.cos(ta), math.sin(ta))
+    mid = ((r1 * d[0] + C2[0] + r2 * d[0]) / 2, (r1 * d[1] + C2[1] + r2 * d[1]) / 2)
+    ip = (mid[0] + 0.1 * d[0], mid[1] + 0.1 * d[1])
+    k.cyl(ip[0], ip[1], 0.19, 0.08, 0.12, "steel", top="steelL", sides=10)
+    pv = (C2[0] + 0.16 * d[0], C2[1] + 0.16 * d[1])
+    beam(k, (pv[0], pv[1], 0.3), (ip[0], ip[1], 0.3), 0.06, 0.05, "hazY")
+    spring(k, (pv[0], pv[1], 0.25), (ip[0], ip[1], 0.25), r=0.03, n=3, col="hazY")
+    for cu, cv in POSTS:                                                     # the lattice posts, truss top
+        truss_post(k, cu, cv, 0.12, zt, "slbMach", w=0.18)
+    for a, b in RIM:
+        truss_beam(k, a, b, zt - 0.13, 0.24, "slbMach")
+    for a in POSTS:
+        truss_beam(k, a, (0.3 * a[0] / Q, 0.3 * a[1] / Q), zt - 0.13, 0.24, "slbMach", n=4)
+    k.cyl(0, 0, zt - 0.3, 0.3, 0.36, "slbMach", top="steelL", sides=16)    # the bearing housing
+    bolts(k, 0.22, zt + 0.06, 8, col="hazY")
+    k.cyl(0, 0, 0.32, 0.36, zh + 0.1 - 0.32, "slbMach", top="steelL", sides=16)   # the rotor: drum, shaft
+    for z in (0.8, 1.6):
+        k.cyl(0, 0, z, 0.39, 0.08, "hazY", sides=16)
+    k.cyl(0, 0, zh + 0.1, 0.13, zt - 0.3 - zh - 0.1, "steelL", sides=10)
+    ring(k, R0, zh, 0.1, 0.12, "slbMach", top="steelL")                     # the head ring and its arms
+    for a in (FRONT + 0.26, FRONT + 0.26 + math.tau / 3, FRONT + 0.26 - math.tau / 3):
+        beam(k, at(0.34, a, zh + 0.05), at(0.96, a, zh + 0.05), 0.1, 0.1, "slbMach", top="steelL")
+    out = []
+    for th in angles():
+        s = cassette(k, frame(th, z0))
+        out.append(s)
+        cup(k, s, "slbMach")
+        s.box(k, L - 0.1, L + 0.1, -0.16, 0.16, -0.3, 0.09, "hazY")            # the head clamp
+        s.box(k, L - 0.04, L + 0.04, -0.05, 0.05, 0.09, 0.11, "steel")
+    return out
+
+
+# ---- s30 octagon frame, top belt ------------------------------------------------------------------------------------
+OCT = [(1.48, -0.9), (1.48, 0.9), (0.9, 1.48), (-0.9, 1.48), (-1.48, 0.9), (-1.48, -0.9), (-0.9, -1.48), (0.9, -1.48)]
+
+
+def octagon(k):
+    """s30."""
+    z0, zt = 0.44, 3.2
+    zd = zt - 0.52                                                           # the drum's foot
+    zh = z0 + L + 0.18                                                       # the hanger arms
+    prism(k, OCT, 0.0, 0.12, "navy", top="steel")                           # the plinth
+    prism(k, [(u * 0.97, v * 0.97) for u, v in OCT], 0.12, 0.14, "steelD", top="steel")
+    ring(k, R0, 0.14, 0.08, 0.16, "steelD", top="dark")                     # the floor track
+    for r in (R0 - 0.09, R0 + 0.09):
+        ring(k, r, 0.14, 0.1, 0.03, "steelL")
+    ins = [(u * 0.95, v * 0.95) for u, v in OCT]
+    for u, v in ins:                                                         # the posts
+        k.box(u, v, 0.14, 0.12, 0.12, zt - 0.14, "navy")
+    for (u0, v0), (u1, v1) in zip(ins, ins[1:] + ins[:1]):                   # the top frame, two cross beams
+        beam(k, (u0, v0, zt + 0.07), (u1, v1, zt + 0.07), 0.14, 0.14, "navy")
+    for a, b in (((-1.4, 0), (1.4, 0)), ((0, -1.4), (0, 1.4))):
+        beam(k, (*a, zt + 0.06), (*b, zt + 0.06), 0.14, 0.12, "medWhite")
+    k.cyl(0, 0, zt - 0.34, 0.26, 0.34, "navy", top="steelL", sides=16)     # the bearing housing
+    k.cyl(0, 0, zd, 0.44, 0.18, "medWhite", top="steelL", sides=24)        # the drum, the belt, the motor
+    mc = at(1.12, BACK)
+    links(k, loop((0, 0), 0.46, mc, 0.12), zd + 0.03, closed=True, cols=("black",), h=0.12, w=0.03, pitch=0.1)
+    k.cyl(mc[0], mc[1], zd, 0.12, 0.18, "steelL", top="steel", sides=12)
+    motor(k, mc[0], mc[1], zd + 0.2, h=0.36, body="medRed")
+    beam(k, (mc[0], mc[1], zt + 0.0), at(1.4, BACK, zt), 0.2, 0.06, "steelD", top="steel")
+    tube(k, (mc[0], mc[1], zd + 0.62), (mc[0], mc[1], zt), 0.05, "steelD")
+    k.cyl(0, 0, zd - 0.16, 0.62, 0.16, "navy", top="medWhite", sides=24)   # the rotor's hub
+    out = []
+    for th in angles():
+        s = cassette(k, frame(th, z0))
+        out.append(s)
+        s.box(k, L, L + 0.14, -0.08, 0.08, -0.16, -0.04, "steelL")           # its hanger lug
+        hp = s.p(L + 0.1, 0.0, -0.1)
         a = math.atan2(hp[1], hp[0])
-        tip = (hp[0], hp[1], za)
-        beam(k, at(0.4, a, za), add(tip, at(0.08, a)), 0.1, 0.16, "slbTeal")   # the arm
-        k.box(hp[0], hp[1], za - 0.1, 0.14, 0.14, 0.2, "steelD", top="steel", rz=a)   # its tip block
-        tube(k, hp, (hp[0], hp[1], za - 0.1), 0.03, "steelL")                # the hanger
-        k.box(hp[0], hp[1], z0 + L + 0.24, 0.08, 0.08, 0.06, "hivis")
-        tube(k, (0, 0, zm - 0.05), (hp[0], hp[1], za + 0.08), 0.014, "steelL")   # its stay
+        beam(k, at(0.58, a, zh), (hp[0], hp[1], zh), 0.08, 0.1, "navy", top="medWhite")   # its arm
+        k.box(hp[0], hp[1], zh - 0.08, 0.12, 0.12, 0.14, "medRed", rz=a)
+        s.box(k, -0.06, 0.0, -0.22, 0.22, -0.22, 0.0, "steelD", face="steel")   # its foot shoe, pin and roller
+        f = s.p(0.0, 0.0, -0.1)
+        tube(k, (f[0], f[1], z0 - 0.06), (f[0], f[1], 0.2), 0.03, "steelL")
+        k.cyl(f[0], f[1], 0.16, 0.07, 0.06, "steel", top="steelL", sides=10)
     return out
 
 
-# ---- s26 worm drive and tilt-out ------------------------------------------------------------------------------------
-def worm(k):
-    """s26."""
-    z0 = 0.42
-    zc = z0 + L - 0.1                                                        # the column's collar
-    base(k, "medWhite")
-    ring(k, 1.29, 0.19, 0.1, 0.06, "steelL", n=72, skip=lambda i: i % 2)    # the worm wheel's teeth
-    ring(k, 1.16, 0.3, 0.012, 0.06, "medRed")
-    a = FRONT + math.pi / 2                                                  # the worm at the left corner
-    c, ax = at(1.45, a, 0.25), (-math.sin(a), math.cos(a), 0.0)
-    tube(k, add(c, ax, -0.66), add(c, ax, 0.4), 0.04, "steelL")             # its shaft
-    d = norm(add(ax, UP, math.tan(math.radians(14))))
-    for j in range(-4, 5):                                                   # its thread
-        p = add(c, ax, j * 0.055)
-        tube(k, add(p, d, -0.012), add(p, d, 0.012), 0.13, "steel", sides=12)
-    for t in (-0.32, 0.32):                                                  # its bearings
-        b = add(c, ax, t)
-        k.box(b[0], b[1], 0.1, 0.12, 0.2, 0.26, "medWhite", rz=a)
-        k.box(b[0], b[1], 0.36, 0.14, 0.22, 0.03, "medRed", rz=a)
-    m0, m1 = add(c, ax, 0.4), add(c, ax, 0.66)                               # its motor
-    tube(k, m0, m1, 0.13, "medRed", sides=12)
-    for t in (0.46, 0.53, 0.6):
-        tube(k, add(c, ax, t), add(c, ax, t + 0.02), 0.16, "steelD", sides=12)
-    k.box(*add(c, ax, 0.53)[:2], 0.1, 0.12, 0.26, 0.04, "steelD", rz=a)
-    hw = add(c, ax, -0.6)                                                    # the hand wheel
-    tube(k, add(hw, ax, -0.015), add(hw, ax, 0.015), 0.15, "medRed", sides=12)
-    tube(k, add(hw, ax, -0.04), add(hw, ax, 0.04), 0.04, "steelL")
-    k.cyl(0, 0, 0.3, 0.3, zc - 0.3, "medWhite", sides=14)                   # the column, its collar
-    for z in (0.7, 1.4):
-        k.cyl(0, 0, z, 0.32, 0.06, "medRed", sides=14)
-    k.cyl(0, 0, zc - 0.07, 0.5, 0.14, "medWhite", sides=20)
-    k.cyl(0, 0, zc + 0.07, 0.3, 0.08, "steelD", top="steel", sides=14)
-    out = []
-    for i, th in enumerate(angles()):
-        tilt = math.radians(26) if i == 0 else 0.0                          # the front one tipped out
-        up = frame(th, z0)
-        s = cassette(k, frame(th, z0, tilt=tilt))
-        out.append(s)
-        s.box(k, 0.1, L - 0.1, -0.3, 0.3, -0.3, -0.22, "medRed")             # the cradle's back spine
-        s.box(k, -0.1, 0.06, -0.48, 0.48, -0.3, 0.08, "medWhite")            # its foot shoe
-        for w in (-0.4, 0.4):                                                # the hinge, fixed to the deck
-            k.box(*up.p(-0.1, w, -0.24)[:2], 0.3, 0.1, 0.1, 0.12, "steelD", top="steel", rz=th)
-        tube(k, up.p(-0.04, -0.48, -0.24), up.p(-0.04, 0.48, -0.24), 0.035, "steelL")
-        h = s.p(L - 0.05, 0.0, -0.26)
-        a2 = math.atan2(h[1], h[0])
-        if tilt:                                                             # its ram, and the latch thrown off
-            base_pt = at(0.55, th, 0.34)
-            end = s.p(0.95, 0.0, -0.3)
-            mid = add(base_pt, add(end, base_pt, -1.0), 0.55)
-            tube(k, base_pt, mid, 0.06, "medWhite", sides=10)
-            tube(k, mid, end, 0.028, "steelL")
-            k.box(*base_pt[:2], 0.3, 0.14, 0.14, 0.08, "steelD", top="steel", rz=th)
-            beam(k, at(0.48, a2, zc), at(0.75, a2, zc + 0.12), 0.07, 0.06, "medRed")
-            continue
-        beam(k, at(0.48, a2, zc), (h[0], h[1], zc), 0.07, 0.06, "medRed")     # the latch to the collar
-        k.box(h[0], h[1], zc - 0.05, 0.1, 0.1, 0.1, "steelD", top="steel", rz=a2)
-    return out
-
-
-# ---- s27 chain drive and jib crane ----------------------------------------------------------------------------------
-def links(k, pts, z, closed=False):
-    """A roller chain along the polyline pts: links every 0.09, alternating plates and rollers."""
-    segs = list(zip(pts, pts[1:] + (pts[:1] if closed else [])))
-    j = 0
-    for (u0, v0), (u1, v1) in segs:
-        ln = math.hypot(u1 - u0, v1 - v0)
-        n = max(1, round(ln / 0.09))
-        for t in range(n):
-            u, v = u0 + (u1 - u0) * (t + 0.5) / n, v0 + (v1 - v0) * (t + 0.5) / n
-            col = "steelL" if j % 2 else "dark"
-            k.box(u, v, z, ln / n * 0.9, 0.05, 0.07, col, rz=math.atan2(v1 - v0, u1 - u0))
-            j += 1
-
-
-def arc(c, r, a0, a1, n):
-    return [(c[0] + r * math.cos(a0 + (a1 - a0) * i / n), c[1] + r * math.sin(a0 + (a1 - a0) * i / n))
-            for i in range(n + 1)]
-
-
-def crane(k):
-    """s27."""
-    z0 = 0.36
-    base(k, "gm")
-    ring(k, 1.27, 0.18, 0.12, 0.05, "steelL", n=64, skip=lambda i: i % 2)   # the sprocket ring
-    sa = FRONT + math.pi / 2                                                 # the drive sprocket, left corner
-    C2, r1, r2 = at(1.8, sa), 1.31, 0.17
-    al = math.acos((r1 - r2) / 1.8)
-    path = arc((0, 0), r1, sa + al, sa + math.tau - al, 72) + arc(C2, r2, sa - al, sa + al, 8)
-    links(k, path, 0.2, closed=True)                                         # the chain
-    k.box(C2[0], C2[1], 0.0, 0.4, 0.4, 0.18, "steelD", top="steel", rz=sa)
-    k.cyl(C2[0], C2[1], 0.18, r2, 0.1, "steelL", top="steel", sides=14)
-    motor(k, C2[0], C2[1], 0.3, h=0.4, body="hivis")
-    ip = at(1.56, sa + 0.4)                                                 # the tensioner on the slack run
-    k.cyl(ip[0], ip[1], 0.18, 0.08, 0.12, "steel", top="steelL", sides=10)
-    pv = at(1.62, sa + 0.15)
-    k.box(pv[0], pv[1], 0.0, 0.16, 0.16, 0.3, "steelD", top="steel")
-    beam(k, (pv[0], pv[1], 0.26), (ip[0], ip[1], 0.26), 0.06, 0.05, "hazY")
-    spring(k, (pv[0], pv[1], 0.14), (ip[0], ip[1], 0.14), r=0.035, n=4, col="hivis")
-    zg = z0 + L - 0.08                                                       # the slot guides' height
-    k.cyl(0, 0, 0.3, 0.28, zg + 0.1 - 0.3, "gm", sides=14)                  # the mast and its guide collar
-    for z in (0.7, 1.5):
-        k.cyl(0, 0, z, 0.31, 0.08, "hivis", sides=14)
-    k.cyl(0, 0, zg - 0.04, 0.42, 0.14, "steelD", top="steel", sides=16)
-    out = []
-    for i, th in enumerate(angles()):
-        lift = 0.62 if i == 0 else 0.0
-        seat = frame(th, z0)
-        s = cassette(k, frame(th, z0, lift=lift))
-        out.append(s)
-        seat.box(k, -0.1, 0.14, -0.5, 0.5, -0.34, 0.1, "gm", face="steelL")   # the foot socket
-        seat.box(k, -0.02, 0.1, -0.06, 0.06, 0.1, 0.12, "hazY")
-        for n0, n1 in ((0.08, 0.14), (-0.36, -0.3)):                         # the slot guide round its head
-            seat.box(k, L - 0.14, L - 0.04, -0.52, 0.52, n0, n1, "steelD", face="steel")
-        g = seat.p(L - 0.09, 0.0, -0.33)
-        beam(k, at(0.4, math.atan2(g[1], g[0]), zg + 0.03), (g[0], g[1], zg + 0.03), 0.06, 0.06, "steelD", top="steel")
-    s = out[0]                                                               # the lifting beam on the raised one
-    s.box(k, L, L + 0.08, -0.08, 0.08, -0.16, -0.04, "steelL")
-    s.box(k, L + 0.22, L + 0.3, -0.36, 0.36, -0.14, -0.06, "hazY")
-    for w in (-0.3, 0.3):
-        tube(k, s.p(L + 0.06, 0.0, -0.1), s.p(L + 0.22, w, -0.1), 0.015, "steelL")
-    hk = s.p(L + 0.3, 0.0, -0.1)
-    zj = 3.25
-    k.box(hk[0], hk[1], hk[2], 0.14, 0.14, 0.16, "medRed")                  # the hook block
-    tube(k, (hk[0], hk[1], hk[2] + 0.16), (hk[0], hk[1], zj - 0.12), 0.012, "dark")
-    cu, cv, _ = at(1.86, FRONT - math.pi / 2)                                # the crane's post, its jib
-    k.box(cu, cv, 0.0, 0.46, 0.46, 0.08, "steelD", top="steel")
-    k.box(cu, cv, 0.08, 0.2, 0.2, zj + 0.3 - 0.08, "hazY")
-    k.cyl(cu, cv, zj - 0.12, 0.16, 0.12, "steelD", top="steel", sides=12)
-    tip = add((hk[0], hk[1], zj), add((hk[0], hk[1], 0), (cu, cv, 0), -1.0), 0.12)
-    beam(k, (cu, cv, zj), tip, 0.12, 0.16, "hazY")
-    tube(k, (cu, cv, zj + 0.3), add(tip, (0, 0, 0.06)), 0.016, "steelL")    # its tie
-    k.box(hk[0], hk[1], zj - 0.2, 0.22, 0.16, 0.12, "steelD", top="steel")  # the trolley
-    k.box(cu, cv, zj + 0.3, 0.14, 0.14, 0.06, "hivis")
-    return out
-
-
-DESIGNS = {"s25": (ferris, (3, 3)), "s26": (worm, (3, 3)), "s27": (crane, (3, 3))}
+DESIGNS = {"s28": (cell, (3, 3)), "s29": (lattice, (3, 3)), "s30": (octagon, (3, 3))}
 OVERLAYS = {}
-assert R0
