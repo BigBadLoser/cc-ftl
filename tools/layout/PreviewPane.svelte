@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onWheel } from './attach';
 	import { onDestroy, onMount } from 'svelte';
-	import { panned, previewView, zoomed, type Box } from './camera';
+	import { panned, percentOf, previewView, zoomed, type Box } from './camera';
 	import { lab, dpr } from './lab.svelte';
 	import { preview } from './previewHost';
 	import { targetAt, tilesOf } from './design';
@@ -39,7 +39,7 @@
 	$effect(() => preview.setRoof(lab.layers.roof));
 	$effect(() => {
 		const d = lab.previewDesign;
-		preview.setMarks(d ? [{ tiles: tilesOf(d, lab.selected), tint: 0xffc440, solid: true }, { tiles: tilesOf(d, lab.hover), tint: 0x50dcff }, { tiles: lab.flag, tint: 0xff4646, solid: true }] : []);
+		preview.setMarks(d ? [{ tiles: tilesOf(d, lab.selected), tint: 0xffc440, solid: true }, { tiles: lab.showsHover ? tilesOf(d, lab.hover) : [], tint: 0x50dcff }, { tiles: lab.flag, tint: 0xff4646, solid: true }] : []);
 	});
 
 	const local = (e: MouseEvent) => {
@@ -64,7 +64,7 @@
 			const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
 			if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
 			if (drag.moved) {
-				lab.view = panned('iso', previewView(lab.view, dpr()), dpr(), dx, dy);
+				lab.view = { ...panned('iso', previewView(lab.view, dpr()), dpr(), dx, dy), zoom: lab.view.zoom }; // the shared zoom stays a grid step
 				drag.x = e.clientX;
 				drag.y = e.clientY;
 			}
@@ -79,7 +79,7 @@
 	function wheel(e: WheelEvent) {
 		e.preventDefault();
 		const p = local(e);
-		lab.view = zoomed('iso', previewView(lab.view, dpr()), dpr(), box, p.x, p.y, -e.deltaY);
+		lab.view = zoomed('iso', lab.view, dpr(), box, p.x, p.y, -e.deltaY);
 	}
 </script>
 
@@ -95,4 +95,5 @@
 		onpointerleave={() => lab.setHover(null)}
 	></div>
 	<PinMarkers space="iso" {box} />
+	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-white/60 tabular-nums" aria-label="Preview zoom">{percentOf(previewView(lab.view, dpr()).zoom, dpr())}%</div>
 </div>

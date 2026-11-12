@@ -35,6 +35,25 @@
 			if (Math.abs(pct - docks.state.sizes[dock]) > 0.2) docks.dispatch({ type: 'size', dock, size: pct });
 		};
 	}
+	/** Drag the seam between two stacked panels: their heights trade, the pair's total share is kept (saved as the panels' weights). */
+	function seam(a: PanelId, b: PanelId) {
+		return (e: PointerEvent) => {
+			if (e.button !== 0) return;
+			e.preventDefault();
+			const el = e.currentTarget as HTMLElement;
+			el.setPointerCapture(e.pointerId);
+			const px = (id: PanelId): number => document.querySelector(`[data-panel="${id}"]`)?.getBoundingClientRect().height ?? 0;
+			const ha = px(a), hb = px(b), total = ha + hb, wsum = docks.state.panels[a].grow + docks.state.panels[b].grow, y0 = e.clientY;
+			if (total < 120) return;
+			const move = (ev: PointerEvent) => {
+				const na = Math.min(Math.max(ha + ev.clientY - y0, 60), total - 60);
+				docks.dispatch({ type: 'grow', weights: { [a]: (na / total) * wsum, [b]: ((total - na) / total) * wsum } });
+			};
+			const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); };
+			el.addEventListener('pointermove', move);
+			el.addEventListener('pointerup', up);
+		};
+	}
 	const measure = (el: HTMLElement) => {
 		const ro = new ResizeObserver(() => (area = { w: el.clientWidth, h: el.clientHeight }));
 		ro.observe(el);
@@ -62,7 +81,11 @@
 
 {#snippet stack(d: Dock)}
 	<div class="flex size-full min-h-0 min-w-0 {d === 'bottom' ? 'flex-row' : 'flex-col'} divide-border {d === 'bottom' ? 'divide-x' : 'divide-y'}">
-		{#each panelsIn(s, d) as id (id)}
+		{#each panelsIn(s, d) as id, i (id)}
+			{@const prev = panelsIn(s, d)[i - 1]}
+			{#if d !== 'bottom' && prev && !s.panels[prev].collapsed && !s.panels[id].collapsed}
+				<div class="h-1.5 shrink-0 cursor-row-resize touch-none bg-border/40 hover:bg-primary/60" role="separator" aria-label="Resize panels" onpointerdown={seam(prev, id)}></div>
+			{/if}
 			<PanelFrame {id}>{@render body(id)}</PanelFrame>
 		{/each}
 	</div>
