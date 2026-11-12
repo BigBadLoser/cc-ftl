@@ -25,11 +25,12 @@ const cluster = (name: string, o: { rooms: [number, number]; rowDepth?: number; 
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
  * block first, the machinery as one gated module. `mix` false keeps a module to one department.
  */
-const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters'] }): Recipe => ({
+const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number]; spacing: number; mix: boolean; quarters?: Recipe['quarters']; braces?: number }): Recipe => ({
   name,
   root: { kind: 'core' },
   spacing: o.spacing,
   ...(o.quarters ? { quarters: o.quarters } : {}),
+  ...(o.braces ? { braces: o.braces } : {}),
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, section: { rooms: [2, 6], cross: true }, link: 0 },
     o.mix
@@ -59,9 +60,10 @@ const trunked = (name: string, o: { pairs: number; step: [number, number]; rooms
  */
 const compound = (name: string, o: {
   outline: 'disc' | 'square'; inner: boolean; gap?: { side: 'n' | 'e' | 's' | 'w'; from: number };
-  works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip'; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number;
+  works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip'; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number; quarters?: Recipe['quarters'];
 }): Recipe => ({
   name,
+  ...(o.quarters ? { quarters: o.quarters } : {}),
   root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: 2, inner: o.inner, ...(o.gap ? { gap: o.gap } : {}) },
   spacing: 2,
   branches: [
@@ -73,15 +75,15 @@ const compound = (name: string, o: {
 
 export const stationRecipes = {
   tree: [
-    scrap('barracks: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
-    scrap('barracks: mixed modules on stubs', { rooms: [2, 4], stub: [2, 3], spacing: 2, mix: true, quarters: { barracks: [6, 8], singles: 3 } }),
-    scrap('barracks: modules joined directly', { rooms: [2, 4], stub: [0, 0], spacing: 0, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
-    scrap('scattered cabins (before): one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: 'scatter' }),
+    scrap('braced: one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
+    scrap('braced: mixed modules on longer stubs', { rooms: [2, 4], stub: [3, 6], spacing: 3, mix: true, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9 }),
+    scrap('no braces (before): one department a module, on stubs', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 } }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9 }),
     compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
     compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7 }),
+    compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 } }),
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8 }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;

@@ -63,6 +63,11 @@ export interface Recipe {
    * Hard either way: every bed of the program stands.
    */
   quarters?: 'scatter' | { barracks: readonly [number, number]; singles?: number };
+  /**
+   * Bracing: open beams (the game's truss tile) across the gaps between sections that stand near each other, so a
+   * station of modules on stubs reads as one structure. The chance, 0 to 1, that a gap that can take a brace gets one.
+   */
+  braces?: number;
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
 }

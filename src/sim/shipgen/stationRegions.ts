@@ -117,6 +117,15 @@ export class RegionGrid {
     this.gates.push([x, y]);
   }
 
+  /** Open beams: structure in open space (the game's truss tile, '='). They stand on space and change no wall. */
+  private readonly beams = new Set<number>();
+
+  /** A beam tile, where there is open space. */
+  beam(x: number, y: number): void {
+    const k = this.idx(x, y);
+    if (k >= 0 && this.own[k] === SPACE) this.beams.add(k);
+  }
+
   /** A hall box with a solid margin round it, so it keeps its width beside open space; rooms painted later replace the margin. */
   street(id: number, x0: number, y0: number, x1: number, y1: number): void {
     for (let y = y0 - 1; y < y1 + 1; y++) for (let x = x0 - 1; x < x1 + 1; x++) {
@@ -155,6 +164,7 @@ export class RegionGrid {
       const k = this.idx(x, y);
       if (k >= 0 && cell[k] === '#') cell[k] = 'D';
     }
+    for (const k of this.beams) if (cell[k] === '.') cell[k] = '=';
     return cell;
   }
 

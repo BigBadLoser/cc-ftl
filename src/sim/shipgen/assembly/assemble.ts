@@ -189,14 +189,12 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
 
 interface Outcome { asm: Asm; why: string }
 
-/** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
-function grow(a: Asm, recipe: Recipe, all: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null): string {
-  let rooms = all;
-  const { ctx } = a, { rng } = ctx;
-  if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
-  const ends: (Port | null)[] = [];
-  let lastTrunk: Port | null = null, cursor = 0, berthed = false;
-  // The crew's beds, when the recipe houses them its own way: single cabins to scatter, and barracks rooms.
+/**
+ * The crew's beds, when the recipe houses them its own way: the rooms with barracks in place of quarters, and the
+ * single cabins to scatter.
+ */
+function house(rng: Rng, recipe: Recipe, all: readonly RoomSpec[]): { rooms: RoomSpec[]; pool: RoomSpec[] } {
+  let rooms = [...all];
   const q = recipe.quarters;
   const pool: RoomSpec[] = [];
   if (q) {
@@ -220,6 +218,55 @@ function grow(a: Asm, recipe: Recipe, all: readonly RoomSpec[], docks: readonly 
       rooms = [...rooms, ...made];
     }
   }
+  return { rooms, pool };
+}
+
+/**
+ * Bracing: open beams across the gaps between sections that face each other two to nine tiles apart and are not the
+ * same element. One a gap at most every six tiles, none through the clear space off a dock.
+ */
+function brace(a: Asm, chance: number): void {
+  const { g, reserved, rng } = a.ctx;
+  const of = new Map<number, number>();
+  a.elements.forEach((el, i) => { for (const id of el.regions) of.set(id, i); });
+  const cell = g.compile(), S = g.size, H = g.half;
+  const at = (x: number, y: number): string => (Math.abs(x) >= H || Math.abs(y) >= H ? '.' : (cell[(y + H) * S + x + H] as string));
+  const el = (x: number, y: number): number => { const o = g.at(x, y); return o >= 0 ? of.get(o) ?? -2 : -3; };
+  const done: { x: number; y: number; h: boolean }[] = [];
+  for (let y = -H + 12; y < H - 12; y++) for (let x = -H + 12; x < H - 12; x++) {
+    if (at(x, y) !== '#' || el(x, y) === -3) continue;
+    for (const [dx, dy] of [[1, 0], [0, 1]] as const) {
+      let t = 1;
+      while (t <= 10 && at(x + t * dx, y + t * dy) === '.' && !reserved.has(key(x + t * dx, y + t * dy))) t++;
+      const [ex, ey] = [x + t * dx, y + t * dy];
+      if (t < 3 || t > 10 || at(ex, ey) !== '#' || el(ex, ey) === -3 || el(ex, ey) === el(x, y)) continue;
+      // Square on to both walls: the tiles beside each end are wall too.
+      if (at(x - dy, y - dx) !== '#' || at(x + dy, y + dx) !== '#' || at(ex - dy, ey - dx) !== '#' || at(ex + dy, ey + dx) !== '#') continue;
+      const h = dx === 1;
+      if (done.some((b) => b.h === h && Math.abs(b.x - x) + Math.abs(b.y - y) < 7) || !rng.chance(chance)) continue;
+      done.push({ x, y, h });
+      // Where the gap is long and there is room either side, a truss: two chords with ties between. Else one beam.
+      const clear = (o: number): boolean => {
+        for (let k = 1; k < t; k++) { const px = x + k * dx + o * dy, py = y + k * dy + o * dx; if (at(px, py) !== '.' || reserved.has(key(px, py))) return false; }
+        return at(x + o * dy, y + o * dx) === '#' && at(ex + o * dy, ey + o * dx) === '#';
+      };
+      if (t >= 5 && clear(-1) && clear(1)) {
+        for (let k = 1; k < t; k++) {
+          g.beam(x + k * dx - dy, y + k * dy - dx);
+          g.beam(x + k * dx + dy, y + k * dy + dx);
+          if (k % 2 === 0) g.beam(x + k * dx, y + k * dy);
+        }
+      } else for (let k = 1; k < t; k++) g.beam(x + k * dx, y + k * dy);
+    }
+  }
+}
+
+/** The branches on a root that is already there. Returns why it failed, or '' when everything stands. */
+function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], trunk: Port[] | null, core: Port | null, pool: RoomSpec[]): string {
+  const { ctx } = a, { rng } = ctx;
+  if (docks.length > 0 && !recipe.branches.some((b) => b.docks)) return 'no part of the recipe takes the docks';
+  const ends: (Port | null)[] = [];
+  let lastTrunk: Port | null = null, cursor = 0, berthed = false;
   const mean = (b: BranchRule): number => (b.section.rooms[0] + b.section.rooms[1]) / 2;
   const hosts0 = recipe.branches.filter((b) => !b.gated).reduce((n, b) => n + Math.max(1, Math.ceil(rooms.filter((r) => b.takes.includes(r.dept as Dept)).length / mean(b))), 0);
   const each = pool.length > 0 ? Math.ceil(pool.length / Math.max(1, hosts0)) + 1 : 0;
@@ -339,7 +386,9 @@ function context(g: RegionGrid, s: Site | null, rng: Rng): Ctx {
 }
 
 function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: number): Outcome & { R?: number } {
-  const docks = all.filter((r) => r.role === 'dock'), rooms = all.filter((r) => r.role !== 'dock');
+  const docks = all.filter((r) => r.role === 'dock'), housed = house(rng, recipe, all.filter((r) => r.role !== 'dock'));
+  const rooms = housed.rooms, pool = housed.pool;
+  const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
   const takers = new Set<string>([...(recipe.root.kind === 'ring' ? recipe.root.takes : []), ...recipe.branches.flatMap((b) => b.takes)]);
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
@@ -355,8 +404,8 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     if (!made) return { asm: a, why: 'no trunk' };
     a.corridors++;
     const trunk = a.add(made).filter((p) => p.kind === 'side');
-    const why = grow(a, recipe, rooms, docks, trunk, null);
-    if (!why) trim(a);
+    const why = grow(a, recipe, rooms, docks, trunk, null, pool);
+    if (!why) finish(a);
     return { asm: a, why };
   }
 
@@ -365,8 +414,8 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const a = new Asm(ctx, recipe.spacing);
     // The centre: a port in open ground, heading east or west as the seed has it, a little off the middle each try.
     const core: Port = { frame: { x: 4 * attempt, y: 0, dir: rng.chance(0.5) ? 'e' : 'w' }, kind: 'end', hall: -1, owner: -1, along: 0, side: 0, used: false };
-    const why = grow(a, recipe, rooms, docks, null, core);
-    if (!why) trim(a);
+    const why = grow(a, recipe, rooms, docks, null, core, pool);
+    if (!why) finish(a);
     return { asm: a, why };
   }
 
@@ -378,11 +427,12 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const ctx = context(site.g, site, rng);
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });
-    why = grow(a, recipe, rooms, docks, null, null);
+    // On a ring the single cabins stand in its band with the rest; nothing is scattered.
+    why = grow(a, recipe, rooms, docks, null, null, []);
     if (why) { why = `R ${R}: ${why}`; continue; }
     // The ring's own rooms: habitation away from the first branch, guns all round, the rest between.
     const first = a.ports.find((p) => p.kind === 'rim' && p.used)?.frame.dir ?? 'n';
-    const own = rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap(cabinsOf);
+    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept)).flatMap((r) => (r.cabins === false ? [r] : cabinsOf(r))), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))];
     const guns = own.filter((r) => r.dept === 'defence');
     const asks: BandAsk[] = own.map((spec) => ({ spec, angle: spec.dept === 'defence' ? (guns.indexOf(spec) * 2 * Math.PI) / Math.max(1, guns.length) : ANGLE[first] + (spec.dept === 'habitation' ? Math.PI : Math.PI / 2) }));
     const left = fillRing(site, asks, root.inner);
@@ -391,7 +441,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const thick = site.g.blocks(-R - 60, -R - 60, R + 60, R + 60);
     if (thick > 0) { why = `R ${R}: ${thick} thick wall${thick > 1 ? 's' : ''} where the band meets a section`; continue; }
     a.sections++;
-    trim(a);
+    finish(a);
     return { asm: a, why: '', R };
   }
   return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why };

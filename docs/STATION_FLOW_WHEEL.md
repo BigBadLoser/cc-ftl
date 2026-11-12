@@ -423,6 +423,18 @@ are scattered. The bed count is unchanged and still checked. 16 of 16 assemble, 
 1,120 to 1,250 floor tiles (old Tree: about 1,200), and the departments are of a size with each other. Not yet real:
 there is no double bunk module in the content, so these rooms cannot be furnished as drawn until there is.
 
+Sixth pass: beams, and barracks for any station.
+
+- **Beams.** The game has an open truss tile (`Struct.Beam`, '=' in a template: structure with no floor, which suited
+  crew walk along). Ships and the old lattice use it; station generation never emitted it. `RegionGrid.beam()` puts
+  one on open space and `compile` writes '='; a beam changes no wall. `braces` on a recipe (a chance, 0 to 1) runs a
+  last pass: where two different elements face each other square on across two to nine tiles of open space, a brace
+  goes across, a truss of two chords with ties where the gap is long and there is room, one beam otherwise; one a
+  gap every six tiles at most, none through the clear space off a dock. 58 to 97 beam tiles a tree. The original
+  views draw '='; the hull check is run with beams read as space.
+- **Barracks on a ring.** `house()` turns the beds into barracks and single cabins before anything is placed, so a
+  ring's band takes barracks rooms as it takes any room (the single cabins stand in the band with them).
+
 Weak, as seen on the sheets: seeds change little within one parameter set (the recipe's preferences decide, the seed
 only rolls lengths and room sizes); habitation dominates the trees; the half ring with the works on its tip reads as a
 block hooked onto a thin sweep; the works block is narrow against the ring in the first compound. Not built: variable

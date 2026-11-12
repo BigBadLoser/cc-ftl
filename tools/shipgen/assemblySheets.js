@@ -63,8 +63,10 @@ try {
         const ms = Math.round(performance.now() - t0);
         if (!ok) { console.log(`${family} | ${recipe.name} | seed ${seed}: REJECTED after ${rejected.length} tries, ${ms} ms\n   ${rejected.join('\n   ')}`); row.push({ title: `REJECTED seed ${seed}: ${rejected[rejected.length - 1]}`, g: null }); continue; }
         const g = asResult(ok);
-        const hull = stationHullIntegrityProblems(g.template), thin = roomCores(g).filter((c) => Math.min(c.w, c.h) < 3).length;
-        console.log(`${family} | ${recipe.name} | seed ${seed}: ${g.width}x${g.height}${ok.R ? `, R ${ok.R}` : ''}, sections ${ok.sections}, corridors ${ok.corridors}, rooms ${ok.rooms}/${rooms.length} placed, floor ${[...g.roomOf].filter((k) => k >= 0).length}, 2x2 ${wallBlocks(g).length}, hull ${hull[0]?.replace('graph-wheel ', '') ?? 'ok'}, under 3 wide ${thin}, rejected first ${rejected.length}${rejected.length ? ` (${rejected[0]})` : ''}, ${ms} ms`);
+        const beams = g.template.rows.join('').split('=').length - 1;
+        // Beams are open structure: for the hull check they are space.
+        const hull = stationHullIntegrityProblems({ ...g.template, rows: g.template.rows.map((r) => r.replace(/=/g, '.')) }), thin = roomCores(g).filter((c) => Math.min(c.w, c.h) < 3).length;
+        console.log(`${family} | ${recipe.name} | seed ${seed}: ${g.width}x${g.height}${ok.R ? `, R ${ok.R}` : ''}, sections ${ok.sections}, corridors ${ok.corridors}, rooms ${ok.rooms}/${rooms.length} placed, floor ${[...g.roomOf].filter((k) => k >= 0).length}, 2x2 ${wallBlocks(g).length}, hull ${hull[0]?.replace('graph-wheel ', '') ?? 'ok'}, under 3 wide ${thin}, beams ${beams}, rejected first ${rejected.length}${rejected.length ? ` (${rejected[0]})` : ''}, ${ms} ms`);
         row.push({ title: `${recipe.name.toUpperCase()} - seed ${seed} - ${g.width}x${g.height}`, g });
       }
       rows.push(row);

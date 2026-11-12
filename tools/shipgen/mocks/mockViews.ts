@@ -67,6 +67,8 @@ export function drawDepartments(r: Raster, g: GenResult, depts: string[], ox: nu
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = at(x, y), i = y * W + x;
     if (c === '.') continue;
+    // An open beam: structure, no floor.
+    if (c === '=') { r.rect(ox + x * s, oy + y * s, s, s, [112, 118, 134]); continue; }
     const d = c === '#' ? wallDept(x, y) : deptAt[i] as string;
     tile[i] = d;
     const col = d === 'door' ? ([240, 150, 40] as RGB) : DEPT_TINT[d] ?? [200, 200, 200];
