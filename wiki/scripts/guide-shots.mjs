@@ -9,22 +9,6 @@
 //   keyOut    make the flat space background transparent and trim to the ship (for HUD-less shots)
 //   quality   lossy WebP quality (default lossless)
 // ?starter=wayfarer picks the Wayfarer (it has a shuttle). A fixed ?seed keeps the crew names, ship and start node the same between runs.
-// The start node's trade station (the node strip tags it kind="ship", so match its name).
-const station = '[data-testid^="node-"][aria-label^="Trade station"]';
-
-/** Select the start node's trade station and hail it. `service` picks what to show: 'trade' opens the floating Trade window
- *  (the comms window closes), 'jobs' leaves the comms window open on the job broker. */
-async function openStation(h, service) {
-  await h.click(station);
-  await h.wait(500);
-  await h.testid('open-station');
-  await h.page.getByTestId('station-panel').waitFor({ timeout: 20000 });
-  await h.wait(1500);
-  await h.testid('station-tab-' + service);
-  await h.wait(service === 'trade' ? 1200 : 600);
-  await h.key('Space');
-}
-
 export const shots = [
   // The home page hero's background: the start node's own backdrop (stars, nebula, its planet), away from the ships.
   {
@@ -64,18 +48,6 @@ export const shots = [
     query: '?seed=3&starter=wayfarer',
     steps: async (h) => { await h.key('Space'); await h.testid('tool-build'); await h.wait(500); await h.testid('tab-power'); await h.wait(500); },
     marks: [['1', '[data-testid="build-catalog"]']],
-  },
-  {
-    name: 'first-hour/trade',
-    query: '?seed=3&starter=wayfarer',
-    steps: (h) => openStation(h, 'trade'),
-    selector: '[data-testid="trade-window"]',
-  },
-  {
-    name: 'first-hour/jobs',
-    query: '?seed=3&starter=wayfarer',
-    steps: (h) => openStation(h, 'jobs'),
-    selector: '[data-testid="station-panel"]',
   },
   {
     name: 'first-hour/starmap',

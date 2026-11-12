@@ -5,11 +5,11 @@
 
   // A real game UI component shown in a guide, in the game's own theme (scoped to .game-ui, scripts/game-ui-css.ts).
   // Feed it a typed sample (src/lib/samples/), not a running game: if the component's props change, the wiki's check fails.
-  let { title, width = '300px', caption, children }: { title: string; width?: string; caption?: string; children: Snippet } = $props();
+  let { title, width = '300px', zoom = 1, caption, children }: { title: string; width?: string; /** Shrinks a window wider than the page (the game's Trade window is 1010px wide) to fit, keeping its layout. */ zoom?: number; caption?: string; children: Snippet } = $props();
 </script>
 
 <figure class="wiki-game-panel">
-  <div class="game-ui" style:width>
+  <div class="game-ui" style:width style:zoom={zoom === 1 ? undefined : zoom}>
     <Frame {title}>{@render children()}</Frame>
   </div>
   {#if caption}<figcaption>{caption}</figcaption>{/if}

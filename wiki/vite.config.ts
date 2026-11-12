@@ -7,6 +7,8 @@ import { defineConfig } from 'vite';
 // The wiki always lives beneath the playable game in the same Pages artifact.
 // SvelteKit 3 reads its configuration through the SveltePress Vite plugin.
 export default defineConfig({
+  // The game's UI kit imports bits-ui (and its Svelte helpers) from the repo root's node_modules; SSR must compile it, not load it as plain Node.
+  ssr: { noExternal: ['bits-ui', 'svelte-toolbelt', 'runed'] },
   plugins: [
     sveltepress({
       siteConfig: {

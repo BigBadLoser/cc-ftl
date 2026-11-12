@@ -8,6 +8,8 @@ import { newGame, type Command, type Sim } from '../../src/sim/index.ts';
 import { createBridge, type Bridge } from '../../src/app/bridge.ts';
 import type { Readable } from '../../src/app/store.ts';
 import { droneScenarioCommands } from '../../src/app/droneScenario.ts';
+import { buildTrade } from '../../src/app/tradeSnapshot.ts';
+import { buildJobs } from '../../src/app/jobsSnapshot.ts';
 
 /** The bridge's data feeds by name, as values ("modules" -> UiModule[]). */
 export type Feeds = { [K in keyof Bridge as Bridge[K] extends Readable<unknown> ? K : never]: Bridge[K] extends Readable<infer T> ? T : never };
@@ -48,5 +50,28 @@ export const panels = {
     const sim = scene({ seed: 7, ship: 'ship.starter', commands: (s) => droneScenarioCommands(s, false, true), secs: 4 });
     const { modules } = record(sim, ['modules']);
     return { module: must(modules.find((m) => m.def === 'module.droneBay'), 'drone bay') };
+  },
+  /** The Crew window's Schedule tab: the starting crew on their day plans, the clock a few hours in. */
+  schedule: () => {
+    const sim = scene({ seed: 3, warm: 1, secs: 2 });
+    const { crew, snapshot } = record(sim, ['crew', 'snapshot']);
+    return { crew, snapshot };
+  },
+  /** The jobs board at the start station: its offers, with the first delivery already taken. */
+  jobsBoard: () => {
+    const sim = scene({ seed: 3, commands: (s) => buildJobs(s).offers.slice(0, 1).map((o) => ({ type: 'jobs.accept', key: o.key })), secs: 2 });
+    return record(sim, ['jobs']);
+  },
+  /** The Trade window with a trade outpost hailed: a deal on the slip (three units bought, two sold). */
+  trade: () => {
+    const sim = scene({ seed: 3, commands: () => [{ type: 'debug.spawnStation', kind: 'station.trading', size: 'outpost', seed: 4 }], secs: 2 });
+    const station = must(buildTrade(sim).partners.find((p) => p.station), 'trade station');
+    sim.enqueue({ type: 'trade.hail', ship: station.id });
+    for (let i = 0; i < 60; i++) { sim.step(); sim.events.drain(); }
+    const { trade } = record(sim, ['trade']);
+    const partner = must(trade.partners.find((p) => p.id === station.id), 'hailed station');
+    const buy = must(partner.lines.find((l) => l.theirs >= 3 && l.sell > 0), 'item to buy');
+    const sell = must(partner.lines.find((l) => l.mine >= 2 && l.buy > 0 && l.item !== buy.item && !l.contraband), 'item to sell');
+    return { trade, partner: station.id, draft: { [buy.item]: 3, [sell.item]: -2 } as Record<string, number> };
   },
 };

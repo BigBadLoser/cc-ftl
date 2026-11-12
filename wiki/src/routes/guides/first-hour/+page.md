@@ -7,6 +7,10 @@ order: 1
   import GuideShot from '../../../lib/GuideShot.svelte'
   import GoalActs from '../../../lib/GoalActs.svelte'
   import Stat from '../../../lib/Stat.svelte'
+  import GamePanel from '../../../lib/GamePanel.svelte'
+  import JobsBoard from '../../../../../src/ui/JobsBoard.svelte'
+  import TradeView from '../../../../../src/ui/TradeView.svelte'
+  import { panel, apiOf } from '../../../lib/panels'
 </script>
 
 You start with a small ship, a small crew, <Stat kind="tuning" id="trade.startCredits" /> credits and a trade station next door. This guide walks through
@@ -102,7 +106,11 @@ construction you haven't finished.
 The goods travel by shuttle. The Wayfarer has one; the Prospector and Lancer have no bay, so build a shuttle bay and
 fit a shuttle before you trade (the trade window says "No shuttle to carry it" until then).
 
-<GuideShot name="first-hour/trade" alt="The floating Trade window with the market list and deal slip" />
+<GamePanel title="Trade" width="1010px" zoom={0.8} caption="The Trade window at a trade outpost, with a deal on the slip: three Metal bought, two Electronics sold.">
+  <div style="height: 560px; display: flex; flex-direction: column">
+    <TradeView api={apiOf({ trade: panel.trade.trade })} partner={panel.trade.partner} start={panel.trade.draft} />
+  </div>
+</GamePanel>
 
 Click the trade station (in the strip of nearby ships and stations, or in the world), then **Hail station**. The comms
 channel opens with the station's services as buttons: dock control, quartermaster, job broker, recruiter and more.
@@ -133,11 +141,13 @@ Your starting crystals last a good while. Switching off modules you aren't using
 
 ## Your first contract
 
-<GuideShot name="first-hour/jobs" alt="The station's comms window on the job broker, listing contracts" />
+<GamePanel title="Jobs" width="560px" caption="The Jobs window at the start station: one delivery taken, two more on offer.">
+  <JobsBoard api={apiOf({ jobs: panel.jobsBoard.jobs })} />
+</GamePanel>
 
-The station's job broker (a service button in the comms channel) lists contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
-deadline, and how strong any opposition is next to your own ship. **Accept** one and it appears in the jobs tracker on
-the right and in the **Jobs** screen. You can hold up to <Stat kind="tuning" id="MAX_JOBS" /> jobs at a time.
+The station's job broker (a service button in the comms channel) and the **Jobs** screen list contracts: deliveries, bounties and surveys, each with its pay, destination, distance and
+deadline, and how strong any opposition is next to your own ship. **Accept** one and it moves to **Your jobs**, and appears in the jobs tracker on
+the right. You can hold up to <Stat kind="tuning" id="MAX_JOBS" /> jobs at a time.
 
 A delivery puts a sealed crate on your deck. At the destination your crew carry it to an airlock, the station's shuttle
 collects it, and you're paid. Bounties and surveys are finished out in the field, then handed in: press **Hand in** at

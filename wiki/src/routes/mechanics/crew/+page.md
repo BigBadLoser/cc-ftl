@@ -6,6 +6,9 @@ order: 2
 <script lang="ts">
   import Stat from '../../../lib/Stat.svelte'
   import ComingLater from '../../../lib/ComingLater.svelte'
+  import GamePanel from '../../../lib/GamePanel.svelte'
+  import SchedulePane from '../../../../../src/ui/SchedulePane.svelte'
+  import { panel, apiOf } from '../../../lib/panels'
 </script>
 
 Your crew do the work: they fly, shoot, build, cook, heal and fight. They also eat, sleep, get tired, get hurt and
@@ -155,6 +158,10 @@ Each crew member has a plan of 24 hourly blocks:
 ### Editing schedules
 
 Open the **Crew** window and pick the **Schedule** tab.
+
+<GamePanel title="Crew: Schedule" width="760px" caption="The Schedule tab with the starting crew on the Default and Late plans. The outlined column is the current hour.">
+  <SchedulePane api={apiOf({ snapshot: panel.schedule.snapshot })} crew={panel.schedule.crew} />
+</GamePanel>
 
 - Each row is a crew member, each cell an hour. The current hour is outlined.
 - Pick a **brush** (**Any**, **Work**, **Sleep**, **Free**, keys 1 to 4 while the pane has focus) and drag across hours
