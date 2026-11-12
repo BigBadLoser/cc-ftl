@@ -4,6 +4,7 @@ import { JobC } from "../sim/crew/components";
 import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
 import type { Atlas } from "./assets/loader";
+import { pendingHull, pendingHullKeys } from "./jobHull";
 import { depthKey, iso } from "./iso";
 import type { Layers } from "./layers";
 import {
@@ -97,6 +98,15 @@ export function createJobView(
           const k = p === Struct.Wall || p === Struct.Door || p === Struct.RockWall ? p : grid.get("struct", x0 + x, y0 + y);
           return k === Struct.RockWall ? k : artKind(k); // a rock wall stays one (never hull), see tiles.ts
         };
+        // The hull as it will stand once every pending build is done, so ghosts on it show the new hull art.
+        const final: KindAt = (x, y) => {
+          if (!grid.inBounds(x0 + x, y0 + y)) return Struct.Space;
+          const p = pending.get(y * grid.width + x);
+          const k = p ?? grid.get("struct", x0 + x, y0 + y);
+          return k === Struct.RockWall ? k : artKind(k);
+        };
+        const hull = jobs.length ? pendingHullKeys(final, grid.width, grid.height) : null;
+        const has = (id: string) => !!atlas.stat(id);
         for (const j of jobs) {
           const build = j.kind === "build";
           const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
@@ -105,7 +115,12 @@ export function createJobView(
           const alpha = build ? 0.3 + 0.5 * frac : 0.65;
           const lx = j.x - x0, ly = j.y - y0;
           const key = depthKey(lx, ly) + 0.02;
-          if (kind === Struct.Floor)
+          const hg = build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
+          if (hg) {
+            if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
+            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key - 0.9);
+            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001);
+          } else if (kind === Struct.Floor)
             draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
             for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
