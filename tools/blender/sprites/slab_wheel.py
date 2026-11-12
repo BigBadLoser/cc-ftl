@@ -275,11 +275,10 @@ def sunk_top(k, rh, depth, body, trim):
     wall seamed; the rim keeps its lines and bolts."""
     zf = ZT - depth
     k.cyl(0, 0, ZC + 0.06, rh + 0.01, zf - ZC - 0.06, "steelD", top="slbGr", sides=48)
-    annulus(k, rh - 0.015, rh, zf, ZT, "steel")       # the well's wall: a light liner, apart from its dark bottom
     annulus(k, rh, rh + 0.06, ZT, ZT + 0.01, trim)
     for i in range(10):
         a = (i + 0.5) * math.tau / 10                # its seams on the rim seams' lines
-        k.box(*at(rh - 0.019, a)[:2], zf, 0.012, 0.05, depth, "dark", rz=a)
+        k.box(*at(rh + 0.004, a)[:2], zf, 0.012, 0.05, depth, "dark", rz=a)
     bolt_ring(k, r_in=rh)
     return zf
 
@@ -303,9 +302,7 @@ def geneva_over_tyres(k):
     out = wrap(k, body, trim, 1.15, 0.45)
     canopy(k, body, trim, [], hole=1.0)
     zf = sunk_top(k, 1.0, 0.18, body, trim)
-    k.cyl(0, 0, zf - 0.005, 1.0, 0.006, "dark", sides=48)                  # the well's floor, dark under it all
-    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelD", sides=40)          # the rotor's crown, down in the well
-    annulus(k, 0.66, 0.74, zf + 0.05, zf + 0.054, "steelL")              # its rim, light: the tyres' track
+    k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top="steelL", sides=40)          # the rotor's crown, down in the well
     k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
         top_tyres(k, a, 0.74, body, trim, z=zf)
