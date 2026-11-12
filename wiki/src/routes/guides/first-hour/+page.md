@@ -100,8 +100,9 @@ the goals for this game (it asks first). Finishing an act shows its reward for a
 ## Building
 
 <GamePanel title="Build menu" bare width="830px" caption="The build menu on its Power tab, with a reactor picked (marked PLACING). The tabs along the bottom are the categories.">
-  <!-- The menu is pinned to the bottom of the game window; a transformed box makes it pin to this one instead. -->
-  <div style="position: relative; transform: translateZ(0); height: 206px">
+  <!-- The menu is pinned to the bottom of the game window; .wiki-build-embed (wiki.css) puts it in the page flow instead.
+       No transformed box: its card popovers place themselves in viewport coordinates. -->
+  <div class="wiki-build-embed">
     <BuildCatalog api={apiOf({ ...buildMenuPanel, placeHint: null })} />
   </div>
 </GamePanel>
