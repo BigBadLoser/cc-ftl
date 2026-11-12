@@ -1,6 +1,7 @@
 import type { Rng } from '../../rng';
 import { SPACE } from './regions';
-import type { Built, Ctx, Port } from './model';
+import type { RoomSpec } from '../plan';
+import type { Built, Ctx, Dir, Port } from './model';
 import type { Roll } from './recipe';
 
 export const roll = (rng: Rng, r: Roll): number => (typeof r === 'number' ? r : rng.int(r[0], r[1]));
@@ -16,6 +17,8 @@ export class Asm {
   corridors = 0;
   /** Regions of gated branches: nothing that is not joined to them stands within two tiles. */
   sealed = new Set<number>();
+  /** Rooms an element left to its host, and the way the port it stands on heads: a ring's band takes them there. */
+  spill: { spec: RoomSpec; dir: Dir }[] = [];
   constructor(readonly ctx: Ctx, readonly spacing: number) {}
 
   add(b: Built): Port[] {
@@ -28,7 +31,7 @@ export class Asm {
   /** Everything needed to take a run of placements back. */
   checkpoint(): () => void {
     const { g } = this.ctx;
-    const m = g.mark(), held = [...this.ctx.reserved], np = this.ports.length, ne = this.elements.length, used = this.ports.map((p) => p.used), s = this.sections, c = this.corridors;
+    const m = g.mark(), held = [...this.ctx.reserved], np = this.ports.length, ne = this.elements.length, used = this.ports.map((p) => p.used), s = this.sections, c = this.corridors, ns = this.spill.length;
     return () => {
       g.reset(m);
       this.ctx.reserved.clear();
@@ -37,6 +40,7 @@ export class Asm {
       this.elements.length = ne;
       this.ports.forEach((p, i) => { p.used = used[i] as boolean; });
       this.sections = s;
+      this.spill.length = ns;
       this.corridors = c;
     };
   }
@@ -66,6 +70,7 @@ export class Asm {
       }
     }
     port.used = true;
+    for (const spec of b.left ?? []) this.spill.push({ spec, dir: port.frame.dir });
     for (const id of b.regions) joined.add(id);
     return this.add(b);
   }

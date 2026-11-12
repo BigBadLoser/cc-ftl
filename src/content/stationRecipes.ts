@@ -6,7 +6,7 @@ import type { BranchRule, Recipe } from '../sim/shipgen/assembly/recipe';
  */
 
 /** A harbour: one of the quay's forms, tapering inland or (on a ring) as one block. */
-const harbour = (form: 'quay' | 'gatehouse' | 'basin', shape: 'taper' | 'block' = 'taper'): NonNullable<BranchRule['quay']> => ({ form, wide: 5, pitch: 7, customs: 7, shape });
+const harbour = (form: 'quay' | 'gatehouse' | 'basin', shape: 'taper' | 'block' | 'face' = 'taper'): NonNullable<BranchRule['quay']> => ({ form, wide: 5, pitch: 7, customs: 7, shape });
 
 /**
  * A scrapper's tree: small modules of whatever rooms came to hand, each on a short stub off one already there; the dock
@@ -85,7 +85,7 @@ const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'oc
   root: { kind: 'ring', takes: ['habitation', 'defence', 'commons'], outline: o.outline, cut: o.cut, inner: true, hub: { court: o.court, arm: 7, market: ['market'], spokes: ['secure'] } },
   spacing: 2,
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w', 'e'], roll: true }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w', 'e'], roll: true }, neck: 0, docks: true, quay: harbour('quay', 'face'), section: { rooms: [2, 6] }, link: 0 },
     { takes: ['freight', 'works'], per: 'together', host: { on: 'rim', prefer: ['e', 'w'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
   ],
 });

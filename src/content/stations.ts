@@ -95,6 +95,8 @@ export const stations = {
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
     // The station assembly gives it a market: traders' stalls round a court.
     assemblyAlso: [stall(per(4, 8, 12))],
+    // Fewer airlocks than the old generator's docks: a harbour the length of one face of the ring.
+    assemblyDocks: per(3, 3, 6),
     atrium: { role: 'plaza', chance: 0.8 },
   },
   // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.

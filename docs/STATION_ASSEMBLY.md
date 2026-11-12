@@ -129,6 +129,11 @@ Three forms, all chosen by the user from mock sheets (`form`):
 
 `shape`: `taper` (one room either side of customs, the rest on the street inland; stations that are not round) or
 `block` (every room in one row along the quay, the harbour one rectangle; round stations, the user's call).
+`face` (the bazaar ring; picked by the user from mock sheet 4, "fitted to the face"): on a ring's rim the harbour's
+rooms are the band of the flat face it stands on and no longer than it, customs in the band at the axis with its gate
+onto the ring, the quay along the face outside the hull. It holds the rooms the face has length for (control, then
+the armoury, then by size); the rest (`Built.left`) go to the ring's band beside it. A trade station has three
+airlocks at outpost and station size and six at hub size (`assemblyDocks`), so the quay is no longer than the face.
 
 An airlock may face any way, east included (the user's call; the old ring generator's "never east" rule is not
 carried over). The old dock block (`docks` without
@@ -136,6 +141,25 @@ carried over). The old dock block (`docks` without
 
 Open: which station gets which form is set per recipe for the sheets, not rolled; customs is empty (no furniture);
 rooms beside customs are stretched to the quay's length.
+
+## The bazaar ring (trade stations): prototype
+
+Reference: the faceted bazaar mock (`docs/refs/station-mocks/tradingB-*.png`). The user: "not necessarily the
+placement of any specific department, but to me that has a decent trading identity". Recipe family `bazaar`
+(`stationRecipes.ts`), on the trade station's program; sheets with `--family bazaar`.
+
+- `hub.ts`: what stands inside the ring. An octagonal market at the centre (a square court, the stalls round it with
+  the corners cut, a road round the lot), a spoke on each axis from the court through the road to the ring, and the
+  machinery lining the spokes beyond the road. The ground between the spokes stays open.
+- A `market` department: stalls in the trade station's assembly program (`assemblyAlso`; racks and a console as
+  placeholder fittings, no stall module exists).
+- The harbour on one side of the main axis (shape `face`, above), the warehouses with the workshop as a wing on the
+  other.
+- Outlines: the stepped ring, and an octagon (`cut: 'octagon'`) whose four corner faces are garden galleries.
+
+The user's verdicts so far: first prototype "really ugly", the centre "square and not as nicely cohesive" (now the
+octagon), the harbour's join to the stepped ring "so bad" (now `face`). Open: the stepped ring's ragged band, cabins
+on the ring's inner side, the octagon's four big gardens, no dock on the warehouse wing, machinery not behind a gate.
 
 ## Ring stations: what was decided, and where they stand
 

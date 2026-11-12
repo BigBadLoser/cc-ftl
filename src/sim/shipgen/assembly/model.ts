@@ -60,6 +60,8 @@ export interface Built {
   box: [number, number, number, number];
   /** Cabins it took of those it was offered. */
   took?: number;
+  /** Rooms it was given and did not take: left to its host (a harbour on a ring's face holds what the face has length for). */
+  left?: RoomSpec[];
   /** A corridor's run, so an unused tail can be cut back. */
   run?: { frame: Frame; length: number; hall: number };
 }

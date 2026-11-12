@@ -79,6 +79,8 @@ export interface StationDef {
   assemblyRooms?: readonly StationRoomDef[];
   /** Rooms the station assembly adds to those (a breaker shop, a drone bay). */
   assemblyAlso?: readonly StationRoomDef[];
+  /** Airlocks at each size for the station assembly, where not the tier's `docks`. */
+  assemblyDocks?: Readonly<Record<StationSize, number>>;
   /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
   atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
 }

@@ -1,5 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { block, type BlockOpts } from './elements';
+import { K } from './lattice';
 import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type Port } from './model';
 
 /**
@@ -29,8 +30,11 @@ export interface QuayOpts {
   /**
    * block  every room stands along the quay's inner side, out to its ends: the harbour is one rectangle
    * taper  one room either side of customs, the quay running on a little past them, and the rest along the street inland
+   * face   on a ring's rim: the rooms are the band of the flat face it stands on, customs in the band at the axis with
+   *        its gate onto the ring, and the quay runs along the face outside the hull. It holds the rooms the face has
+   *        length for (control first, then the armoury); the rest are left to the band beside it. Elsewhere, a block.
    */
-  shape: 'block' | 'taper';
+  shape: 'block' | 'taper' | 'face';
 }
 
 const BACK: Record<Dir, Dir> = { n: 's', s: 'n', e: 'w', w: 'e' };
@@ -52,7 +56,28 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   // Which rooms line the quay, by side; the rest stand along the street.
   const inside = rooms.filter((r) => r !== tower), bySize = [...inside].sort((p, q) => area(q) - area(p));
   let rows: [RoomSpec[], RoomSpec[]], rest: RoomSpec[] = [];
-  if (o.shape === 'block') rows = sides(bySize);
+  const cw = Math.max(o.customs, width + 2), c0 = -1 - ((cw - width) >> 1), c1 = c0 + cw;
+  // A face: the flat of the hull this rim port stands on, as far as the hull line runs straight either side of the axis.
+  const hull = c.site.hull, B = port.along, left: RoomSpec[] = [];
+  let face: [number, number] | null = null;
+  if (o.shape === 'face' && port.kind === 'rim' && hull) {
+    // Short of a cut corner's block, which starts a cell before the cut.
+    const lim = c.site.outline === 'square' ? c.site.R - K * (c.site.cut + 1) : Infinity;
+    const flat = (v: number): boolean => Math.abs(v + 0.5) < lim && hull(...at(port.frame, B - 1, v)) && !hull(...at(port.frame, B, v));
+    let v0 = 0, v1 = 0;
+    while (flat(v0 - 1)) v0--;
+    while (flat(v1 + 1)) v1++;
+    face = [c0 - v0, v1 + 1 - c1];
+    // Control first, then the armoury, then by size: each to the side with more length left, while it fits.
+    const rank = (r: RoomSpec): number => (r.role === 'bridge' ? 0 : r.role === 'armoury' ? 1 : 2);
+    rows = [[], []];
+    for (const r of [...bySize].sort((p, q) => rank(p) - rank(q))) {
+      const unit = r.annex ? [r, r.annex] : [r];
+      const k = ([0, 1] as const).filter((i) => need([...rows[i], ...unit], B - 2) <= (face as [number, number])[i]).sort((i, j) => ((face as [number, number])[j] - need(rows[j], B - 2)) - ((face as [number, number])[i] - need(rows[i], B - 2)))[0];
+      if (k === undefined) left.push(r);
+      else rows[k].push(r);
+    }
+  } else if (o.shape !== 'taper') rows = sides(bySize);
   else {
     const first = inside.find((r) => r.role === 'bridge') ?? inside.find((r) => r.role === 'armoury') ?? bySize[0];
     const second = inside.find((r) => r.role === 'armoury' && r !== first) ?? bySize.find((r) => r !== first);
@@ -74,8 +99,7 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   // Sizes. Customs stands in the middle; the quay reaches `A` tiles either side of it: what its form asks, and more
   // when the rooms beside customs need it. The rooms' depth is the least that fits them into that length, and they
   // take up whatever is left over.
-  const cw = Math.max(o.customs, width + 2), edge = o.shape === 'block' ? 1 : -1, Q = Math.max(4, o.wide);
-  const c0 = -1 - ((cw - width) >> 1), c1 = c0 + cw;
+  const edge = o.shape === 'taper' ? -1 : 1, Q = Math.max(4, o.wide);
   // The gatehouse: as deep as it is wide, six at most and four by five at least, centred on customs. A wing: two clear of it, its airlocks, two past the last.
   const th = tower ? Math.max(4, Math.min(6, Math.floor(Math.sqrt(area(tower))))) : 0, tw = tower ? Math.max(5, Math.ceil(area(tower) / th)) : 0;
   const t0 = (c0 + c1 - tw - 2) >> 1, t1 = t0 + tw + 2, wings = [Math.ceil(N / 2), N >> 1];
@@ -83,18 +107,23 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   let A = form === 'quay' ? Math.ceil(((N - 1) * P + 3 + 4 - cw) / 2) : form === 'basin' ? Math.ceil((BASIN + 2 * Q - cw) / 2) : Math.max(c0 - t0 + wing(wings[0] as number), t1 - c1 + wing(wings[1] as number));
   A = Math.max(A, 2);
   const fit = (reach: number, depth: number): boolean => Math.max(need(rows[0], depth), need(rows[1], depth)) <= reach + edge;
-  let D = 4;
-  while (D < 9 && !fit(A, D)) D++;
-  while (!fit(A, D)) A++;
+  let D = face ? B - 2 : 4;
+  if (!face) {
+    while (D < 9 && !fit(A, D)) D++;
+    while (!fit(A, D)) A++;
+  }
+  // The rooms' length either side of customs: the face's, else the quay's reach and a tile (a block) or less one (a taper).
+  const span: [number, number] = face ?? [A + edge, A + edge];
   const T = D + 2 + Q, arm = form === 'basin' ? 4 + (Math.ceil(N / 2) - 1) * P + 3 + 2 : 0, far = T + (form === 'basin' ? arm : tower ? th + 2 : 0);
   // The frame everything is drawn in: from the gate line (u = 0) out to sea, v as the street has it.
   const f: Frame = near ? { x: at(from.frame, T - 1, 0)[0], y: at(from.frame, T - 1, 0)[1], dir: BACK[from.frame.dir] } : from.frame;
-  const q0 = c0 - A, q1 = c1 + A;
+  // On a face the quay is as long as the face, and longer only when its airlocks need it.
+  const q0 = Math.min(c0 - A, face ? c0 - face[0] : c0), q1 = Math.max(c1 + A, face ? c1 + face[1] : c1);
   const free = (box: readonly [number, number, number, number], open = false): boolean => {
     for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y))) return false;
     return true;
   };
-  const boxes = rows.map((_row, k) => (k === 0 ? rect(f, 0, D + 2, q0 - edge, c0) : rect(f, 0, D + 2, c1, q1 + edge)));
+  const boxes = rows.map((_row, k) => (k === 0 ? rect(f, 0, D + 2, c0 - span[0], c0) : rect(f, 0, D + 2, c1, c1 + span[1])));
   if (!free(rect(f, 0, D + 2, c0 - 1, c1 + 1)) || !free(rect(f, D + 1, T + 1, q0 - 1, q1 + 1)) || boxes.some((bx, k) => (rows[k] as RoomSpec[]).length > 0 && !free(bx))) return null;
   // What stands out to sea, and the shuttles' ground: open now, outside any hull still to fill, and kept.
   const arms = form === 'basin' ? [rect(f, T, T + arm, q0, q0 + Q), rect(f, T, T + arm, q1 - Q, q1)] : [];
@@ -114,11 +143,13 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   for (const [k, row] of rows.entries()) {
     if (row.length === 0) continue;
     const len = row.map((r) => Math.max(3, Math.ceil(area(r) / D)));
-    for (let over = A + edge - need(row, D), i = 0; over > 0; over--, i++) (len[i % len.length] as number)++;
+    for (let over = (span[k] as number) - need(row, D), i = 0; over > 0; over--, i++) (len[i % len.length] as number)++;
     let v = k === 0 ? c0 : c1, parent = -1;
     for (const [i, r] of row.entries()) {
       const span = (len[i] as number) + (i === 0 ? 2 : 1);
-      const id = g.room(r.role, { spec: { ...r, w: len[i] as number, h: D }, access: [r.annexed && parent >= 0 ? parent : hall] });
+      // On a face the rooms are band rooms among band rooms: the walls between them and their neighbours round the
+      // ring are theirs (they rank below every strip).
+      const id = g.room(r.role, { spec: { ...r, w: len[i] as number, h: D }, access: [r.annexed && parent >= 0 ? parent : hall], ...(face ? { rank: -1 - i - 8 * k } : {}) });
       g.rect(id, ...(k === 0 ? rect(f, 0, D + 2, v - span, v) : rect(f, 0, D + 2, v, v + span)));
       v += k === 0 ? -span : span;
       if (!r.annexed) parent = id;
@@ -139,7 +170,7 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
     }
     // Along the outer wall: evenly, or in a wing either side of the gatehouse, counted out from it.
     const lo = i < (wings[0] as number), k = lo ? i : i - (wings[0] as number);
-    const v = tower ? (lo ? t0 - 5 - k * P : t1 + 2 + k * P) : q0 + 2 + i * P + ((2 * A + cw - ((N - 1) * P + 3 + 4)) >> 1);
+    const v = tower ? (lo ? t0 - 5 - k * P : t1 + 2 + k * P) : q0 + i * P + ((q1 - q0 - ((N - 1) * P + 3)) >> 1);
     unit(d, rect(f, T - 2, T, v, v + 3), at(f, T, v + 1));
   }
   for (const r of berths) for (let y = r[1]; y < r[3]; y++) for (let x = r[0]; x < r[2]; x++) c.reserved.add(key(x, y));
@@ -159,5 +190,5 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   const regions: number[] = [];
   for (let id = n0; id < g.regions.length; id++) regions.push(id);
   if (inland) box = [Math.min(box[0], inland[0]), Math.min(box[1], inland[1]), Math.max(box[2], inland[2]), Math.max(box[3], inland[3])];
-  return { ports, regions, box, took };
+  return { ports, regions, box, took, ...(left.length > 0 ? { left } : {}) };
 }
