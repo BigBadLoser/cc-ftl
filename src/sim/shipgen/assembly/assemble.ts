@@ -6,6 +6,7 @@ import { grow } from './branch';
 import { deptOf, type Dept } from './dept';
 import { corridor } from './elements';
 import { brace, mend, missing, trim } from './finish';
+import { hub } from './hub';
 import { K, type Site } from './lattice';
 import { key, type Ctx, type Dir, type Port } from './model';
 import { quayHeadings } from './quay';
@@ -55,7 +56,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const docks = all.filter((r) => r.role === 'dock'), housed = house(rng, recipe, all.filter((r) => r.role !== 'dock'));
   const rooms = housed.rooms, pool = housed.pool;
   const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
-  const takers = new Set<string>([...(recipe.root.kind === 'ring' ? recipe.root.takes : []), ...recipe.branches.flatMap((b) => b.takes)]);
+  const takers = new Set<string>([...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
 
@@ -90,10 +91,17 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   let why = '';
   for (let cells = 5; cells <= 12; cells++) {
     const R = cells * K;
-    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut, inner: root.inner, ...(root.gap ? { gap: root.gap } : {}) }, 120);
+    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : root.cut, inner: root.inner, ...(root.gap ? { gap: root.gap } : {}) }, 120);
     const ctx = context(site.g, site, rng);
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });
+    if (root.hub) {
+      const of = (ds: readonly Dept[]): RoomSpec[] => rooms.filter((r) => ds.includes(r.dept as Dept));
+      const made = hub(ctx, site, of(root.hub.market), of(root.hub.spokes), root.hub);
+      if (!made || site.g.blocks(-R, -R, R, R) > 0) { why = `R ${R}: the hub does not fit`; continue; }
+      a.add(made);
+      a.sections++;
+    }
     // On a ring the single cabins stand in its band with the rest; nothing is scattered.
     why = grow(a, recipe, rooms, docks, null, null, []);
     if (why) { why = `R ${R}: ${why}`; continue; }

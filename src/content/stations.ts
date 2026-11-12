@@ -69,6 +69,9 @@ const n = (k: number, id: string): string[] => Array<string>(k).fill(id);
 const ARMS = [{ item: 'item.rifle', min: 1, max: 2 }, { item: 'item.sidearm', min: 0, max: 1 }];
 const armoury = (count: Per, lockers = 4): StationRoomDef => room('armoury', n(lockers, 'module.storage_locker'), lockers + 2, 3, count, ARMS);
 
+/** A trader's stall: racks of goods and a counter. Placeholder fittings until a stall has modules of its own. */
+const stall = (count: Per): StationRoomDef => ({ ...room('cargo', ['module.storage_rack', 'module.storage_rack', 'module.console'], 5, 4, count), dept: 'market' });
+
 /** A breaker shop: the scrapper, scrap cages beside it and a pallet for what comes out. */
 const breaker = (count: Per): StationRoomDef => room('industry', ['module.scrapper', 'module.storage_scrap', 'module.storage_scrap', 'module.storage_pallet'], 8, 5, count);
 
@@ -90,6 +93,8 @@ export const stations = {
     stock: [{ item: 'item.metal', min: 2, max: 8 }, { item: 'item.electronics', min: 1, max: 4 }, { item: 'item.polymer', min: 0, max: 4 }, { item: 'item.ration', min: 0, max: 4 }],
     tiers: tiers({ crew: 1, guns: per(2, 6, 12), heavyPct: 25, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(12, 30, 60), docks: per(3, 5, 8), shapes: SHAPES.trading }),
     rooms: [room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 4)), armoury(per(1, 1, 2))],
+    // The station assembly gives it a market: traders' stalls round a court.
+    assemblyAlso: [stall(per(4, 8, 12))],
     atrium: { role: 'plaza', chance: 0.8 },
   },
   // Research: consoles and fabricator benches round a quiet ring, stores of parts and electronics; lightly armed, calm space.

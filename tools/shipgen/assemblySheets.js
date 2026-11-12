@@ -18,7 +18,7 @@ const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
 const VERSUS = { tree: 'stationTree', spine: 'stationSpine' };
-const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'] };
+const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'], bazaar: ['station.trading', 'station'] };
 const only = arg('family', '');
 
 function crc32(buf) {
@@ -64,6 +64,7 @@ try {
     if (has('research')) return 'LAB';
     if (has('scrapper')) return 'BREAK';
     if (has('fabricator')) return 'SHOP';
+    if (r.dept === 'market') return 'STALL';
     if (has('battery')) return 'BATT';
     if (has('recovery')) return 'TRAUMA';
     if (has('droneBay')) return 'DRONES';
@@ -81,8 +82,8 @@ try {
     return {
       template: { rows: snap.rows, modules: [] }, rooms: g.regions.map((r) => ({ role: r.role })), roomOf: snap.roomOf, width: snap.width, height: snap.height,
       // Streets and halls are circulation whatever department they run through.
-      depts: g.regions.map((r) => (r.hall ? (r.dept === 'customs' || r.dept === 'airlock' ? r.dept : 'circulation') : r.dept ?? deptOf({ role: r.role }))), targets: [],
-      names: g.regions.map((r) => (r.hall ? (r.dept === 'customs' ? 'CUSTOMS' : undefined) : nameOf(r))),
+      depts: g.regions.map((r) => (r.hall ? (r.dept === 'customs' || r.dept === 'airlock' || r.dept === 'market' ? r.dept : 'circulation') : r.dept ?? deptOf({ role: r.role }))), targets: [],
+      names: g.regions.map((r) => (r.hall ? (r.dept === 'customs' ? 'CUSTOMS' : r.dept === 'market' ? 'MARKET' : undefined) : nameOf(r))),
     };
   };
   for (const [family, recipes] of Object.entries(stationRecipes)) {

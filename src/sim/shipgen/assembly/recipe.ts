@@ -1,4 +1,5 @@
 import type { Dept } from './dept';
+import type { HubOpts } from './hub';
 import type { Outline } from './lattice';
 import type { Dir } from './model';
 import type { QuayOpts } from './quay';
@@ -64,8 +65,12 @@ export interface Recipe {
     | { kind: 'trunk'; pairs: number; step: Roll }
     /** No root of its own: the first branch stands at the centre and the rest grow from the sections. */
     | { kind: 'core' }
-    /** A ring or an arc with its band: it takes these departments itself. */
-    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number; inner: boolean; gap?: Gap };
+    /**
+     * A ring or an arc with its band: it takes these departments itself. `cut` 'octagon': a square outline cut to
+     * eight even sides, whatever its size. `hub`: a market court at its centre with spokes to the ring (hub.ts); the
+     * `market` departments stand round the court and the `spokes` departments line the spokes.
+     */
+    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon'; inner: boolean; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[] } };
   branches: readonly BranchRule[];
   /**
    * How the crew sleeps, when not in quarters cut into cabins where they stand:

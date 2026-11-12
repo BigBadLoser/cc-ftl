@@ -36,7 +36,7 @@ export function shuffle<T>(rng: Rng, a: T[]): T[] {
 }
 
 /** A station room's department: what the assembly recipes group and place rooms by. */
-export type StationDept = 'harbour' | 'habitation' | 'commons' | 'freight' | 'secure' | 'defence' | 'works';
+export type StationDept = 'harbour' | 'habitation' | 'commons' | 'market' | 'freight' | 'secure' | 'defence' | 'works';
 
 /** A room the structure must provide: its role, the modules it will hold, and its interior size (tiles). */
 export interface RoomSpec {

@@ -54,7 +54,8 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
 
 /** Fill the ring with its rooms: corners, then the band, then its inner side. Returns the rooms it could not hold. */
 export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): RoomSpec[] {
-  const cornered = placeCorners(s, asks.map((a) => a.spec).filter((r) => r.role === 'weapons').sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 4));
+  // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: a garden gallery.
+  const cornered = placeCorners(s, s.cut > 2 ? [] : asks.map((a) => a.spec).filter((r) => r.role === 'weapons').sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 4));
   const rest = asks.filter((a) => !cornered.includes(a.spec));
   const band = placeBand(s, rest);
   if (band.left.length === 0 || !inner) return band.left;

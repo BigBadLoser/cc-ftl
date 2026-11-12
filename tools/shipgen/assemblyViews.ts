@@ -37,7 +37,7 @@ export function roomCores(g: GenResult): Core[] {
 }
 
 export const DEPT_TINT: Record<string, RGB> = {
-  harbour: [80, 140, 225], habitation: [105, 185, 90], commons: [225, 135, 205], freight: [195, 150, 80],
+  harbour: [80, 140, 225], habitation: [105, 185, 90], commons: [225, 135, 205], market: [240, 120, 150], freight: [195, 150, 80],
   secure: [225, 85, 70], defence: [150, 95, 185], works: [235, 205, 70], circulation: [62, 66, 78],
   customs: [70, 190, 190], airlock: [200, 200, 205],
 };

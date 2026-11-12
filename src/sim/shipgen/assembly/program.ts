@@ -98,7 +98,9 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
 
   for (const r of [...(def.assemblyRooms ?? def.rooms), ...(def.assemblyAlso ?? [])]) {
     for (let i = 0; i < r.count[size]; i++) {
-      support.push(grown(rng, { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) }, space));
+      const spec: RoomSpec = { role: r.role, ...(r.dept ? { dept: r.dept } : {}), mods: [...r.mods], w: r.w, h: r.h, ...(r.role === 'armoury' || r.items ? { stock: true } : {}), ...(r.items ? { items: r.items } : {}) };
+      // A market stall keeps its planned size: a stall is small.
+      support.push(r.dept === 'market' ? spec : grown(rng, spec, space));
     }
   }
   const docks = Array.from({ length: Math.max(2, t.docks) }, dockSpec);
