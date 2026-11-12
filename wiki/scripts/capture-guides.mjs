@@ -112,11 +112,12 @@ try {
   console.log('Dev server up.');
   let browser;
   try {
-    // The GPU by default. CAPTURE_SOFTWARE_GL=1 forces SwiftShader for machines without one (cloud containers): far slower.
+    // Chromium's own GPU choice by default (it falls back to software on a GPU it doesn't trust, such as some WSL setups).
+    // CAPTURE_SOFTWARE_GL=1 forces SwiftShader for machines without a GPU (cloud containers): far slower.
     const software = process.env.CAPTURE_SOFTWARE_GL === '1';
     browser = await chromium.launch({
       executablePath: process.env.CHROME_BIN,
-      args: software ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] : ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=default', '--no-sandbox'],
+      args: software ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] : ['--no-sandbox'],
     });
     console.log(`Chromium up (${software ? 'software GL' : 'GPU'}).`);
   } catch (err) {
@@ -126,9 +127,10 @@ try {
   const t0 = Date.now();
   const since = () => ((Date.now() - t0) / 1000).toFixed(0) + 's';
   for (const [n, shot] of todo.entries()) {
+    let page;
     try {
     console.log(`[${n + 1}/${todo.length}] ${shot.name}: loading (${since()})`);
-    const page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
+    page = await browser.newPage({ viewport: { width: 1920, height: 950 } });
     await page.context().addInitScript(() => { try { localStorage.setItem('cc-ftl.lessons', JSON.stringify({ seen: [], off: true })); } catch { /* no storage */ } });
     // ?hook installs the screenshot helpers (window.__cc); lessons stay off so tutorial cards don't cover the shot.
     const query = shot.query ?? '';
@@ -161,8 +163,9 @@ try {
     // Starfields compress poorly losslessly; a shot can ask for lossy quality instead.
     await sharp(png).webp(shot.quality ? { quality: shot.quality } : { lossless: true }).toFile(file);
     console.log(`  captured ${shot.name}.webp (${since()})`);
-    await page.close();
     } catch (err) { console.error('FAILED ' + shot.name + ': ' + String(err.message).split('\n')[0]); process.exitCode = 1; }
+    // Always close the shot's page, failed or not: each one holds a whole game.
+    finally { await page?.close().catch(() => {}); }
   }
   await browser.close();
 } catch (err) {
