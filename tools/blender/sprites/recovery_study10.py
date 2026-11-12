@@ -167,13 +167,20 @@ def u3_top():
 
 
 def glass_edges():
-    """The glass where light catches it: both edges lit top to bottom, a streak curving over the dome."""
+    """The glass where light catches it: both edges lit top to bottom, streaks curving over the dome, the lip round
+    the dome's foot (outlines the glass above the fluid)."""
     k = K("rec_u3_glass", FP8)
     prof = ((0.2, R + 0.014), (SURF, R + 0.014)) + GLASS[1:-1]
     for a in (FRONT + math.radians(88), FRONT - math.radians(88)):
         seam(k, prof, a, "recShine", w=0.025, out=0.0)
     seam(k, GLASS[1:-1], FRONT + math.radians(35), "recShine", w=0.05, out=0.004)
     seam(k, GLASS[1:-1], FRONT + math.radians(22), "recShine", w=0.02, out=0.004)
+    n = 72                                                                   # the lit lip where the dome curves in
+    z, r = GLASS[1]
+    for i in range(n):
+        a = (i + 0.5) * math.tau / n
+        k.box((r + 0.006) * math.cos(a), (r + 0.006) * math.sin(a), z - 0.015, math.tau * r / n * 1.1, 0.02, 0.03,
+              "recShine", rz=a + math.pi / 2)
     return k.build()
 
 
@@ -214,7 +221,7 @@ def bubbles(f, front, n=FRAMES, keep_pace=False):
 
 def design(h, f):
     return (u3_back,
-            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True), 220), (u3_top, 255),
+            ((surface_film, 110), (dome, 72), (glass_edges, 170), (bubbles(f, True), 220), (u3_top, 255),
              (scan(h, True), "holo")),
             ((bubbles(f, False), 220), (scan(h, False), "holo")))
 
@@ -223,7 +230,7 @@ def bubbles_only(f, n=FRAMES, keep_pace=False):
     """A frame of the always-on loop (n frames): the pod and its bubbles, no scanner (its own layer, played now and
     then)."""
     return (u3_back,
-            ((surface_film, 110), (dome, 38), (glass_edges, 170), (bubbles(f, True, n, keep_pace), 220),
+            ((surface_film, 110), (dome, 72), (glass_edges, 170), (bubbles(f, True, n, keep_pace), 220),
              (u3_top, 255)),
             ((bubbles(f, False, n, keep_pace), 220),))
 
