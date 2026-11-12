@@ -35,6 +35,8 @@ const keepThemeOffGamePanels = {
 
 export default defineConfig({
   css: { postcss: { plugins: [keepThemeOffGamePanels] } },
+  // One Svelte for the wiki and the game's components it embeds (the repo root has its own copy): snippets cross between them (SignalComms).
+  resolve: { dedupe: ['svelte'] },
   // The game's UI kit imports bits-ui (and its Svelte helpers) from the repo root's node_modules; SSR must compile it, not load it as plain Node.
   ssr: { noExternal: ['bits-ui', 'svelte-toolbelt', 'runed'] },
   plugins: [
