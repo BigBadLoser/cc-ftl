@@ -1,3 +1,4 @@
+import { compileStationConstruction } from './stationStructuralIntegration';
 import { Rng } from '../rng';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { FINISH_CHARS } from '../structure';
@@ -315,7 +316,7 @@ export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => s
 export function finishLayout(
   rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: ShipPlan, b: Builder,
   topology: string, comp: Arranger | null, profile: string, defs: Record<string, ModuleDef>, n: number,
-  opts: { immobile?: boolean; check?: ExtraCheck; placed?: boolean } = {},
+  opts: { immobile?: boolean; check?: ExtraCheck; placed?: boolean; architectureConstruction?: boolean } = {},
 ): GenResult {
   b.cv.fixDoors();
   const labels = b.cv.labels;
@@ -342,7 +343,14 @@ export function finishLayout(
   const { rows: drawn, labels: roomOf, width, height, ox, oy } = b.cv.crop();
   const roles = labels.map((l) => roleOfLabel(l));
   const { rows: framed, containers } = extractContainers(drawn);
-  const rows = pruneDoors(framed, roomOf, width, roles);
+  const preparedRows = pruneDoors(framed, roomOf, width, roles);
+  // In integrated mode the shared plan, not Builder's accumulated wall stamps,
+  // emits the physical pre-furnishing wall/door grid. The exact same resulting
+  // rows pass into the existing room assignment, equipment and module pipeline.
+  const construction = opts.architectureConstruction
+    ? compileStationConstruction(preparedRows, roomOf, roles)
+    : null;
+  const rows = construction?.rows ?? preparedRows;
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
   // Stations: rooms that can stand in for each other trade roles where their neighbours suit them better (roleSwap.ts).
@@ -368,6 +376,11 @@ export function finishLayout(
   const rooms: GenRoom[] = cab.roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
     template, rooms, roomOf: cab.roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
+    ...(construction ? { architecturalConstruction: {
+      changedWalls: construction.changedWalls, changedDoors: construction.changedDoors,
+      changedFloor: construction.changedFloor, regions: construction.report.regions,
+      rooms: construction.report.rooms, wallSlabs: construction.report.wallSlabs,
+    } } : {}),
     ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
   };
 }

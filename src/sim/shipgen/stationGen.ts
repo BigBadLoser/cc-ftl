@@ -1,3 +1,4 @@
+import { sourceModuleDeficits } from './stationStructuralIntegration';
 import { airlockTiles } from '../modules/airlock';
 import { footprintTiles } from '../modules/footprint';
 import type { ModuleDef, ShipTemplate } from '../registry';
@@ -6,6 +7,9 @@ import { GEN_ATTEMPTS, finishLayout, seedOf } from './generate';
 import { widthProblem } from './validate';
 import { arrangeHull } from './navyLayouts';
 import { SECURITY_ROLE, planStation } from './stationPlan';
+import { architectureOfGenerated, requirementsOfStationPlan, type StationArchitectureReport, type StationRoomRequirement } from './stationArchitecturePlan';
+import { stationHullIntegrityProblems } from './stationHullIntegrity';
+import type { ShipPlan } from './plan';
 import { STATION_MAX, type StationDef, type StationInfo, type StationSize } from './stationTypes';
 import type { FactionDef, GenResult, HullFamilyDef, ShipRoleDef } from './types';
 
@@ -61,6 +65,13 @@ export function stationProblems(t: ShipTemplate, defs: Record<string, ModuleDef>
 
 export interface StationResult extends GenResult {
   station: StationInfo;
+  /** Opt-in architectural diagnostic of the identical furnished template, not a second generator. */
+  architecture?: {
+    sourceRequirements: StationRoomRequirement[];
+    report: StationArchitectureReport;
+    /** Recovered V2 hard checker; currently diagnostic until the compiler is authoritative. */
+    hullIntegrityProblems: string[];
+  };
 }
 
 const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Record<string, ModuleDef>): StationInfo => {
@@ -73,30 +84,54 @@ const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Recor
 };
 
 /** Generate a station of `def`'s kind at a size tier, deterministically from `seed`; bad layouts are reseeded. */
-export function generateStation(def: StationDef, id: string, size: StationSize, seed: number, defs: Record<string, ModuleDef>): StationResult {
+export function generateStation(
+  def: StationDef, id: string, size: StationSize, seed: number, defs: Record<string, ModuleDef>,
+  auditArchitecture = false, architectureMode: 'off' | 'compile' | 'ranked' | 'neighborhood' | 'programBay' = 'off',
+): StationResult {
   const f = stationFaction(def, size);
   const fam = (f.hullFamilies as HullFamilyDef[])[0] as HullFamilyDef;
   const role: ShipRoleDef = { id: size, weight: fam.weight, archetypes: [] };
   const failures: string[] = [];
   let last: StationResult | null = null;
+  let lastPlan: ShipPlan | null = null;
+  const attachAudit = (result: StationResult, source: ShipPlan): StationResult => {
+    if (!auditArchitecture) return result;
+    return {
+      ...result,
+      architecture: {
+        sourceRequirements: requirementsOfStationPlan(source),
+        report: architectureOfGenerated(result).audit(),
+        hullIntegrityProblems: stationHullIntegrityProblems(result.template),
+      },
+    };
+  };
   // A layout short of power designates one more reactor room on the next attempt (never reactors in other rooms).
   let extra = 0;
   for (let n = 0; n < GEN_ATTEMPTS; n++) {
     const rng = new Rng(seedOf(seed, n));
     const plan = planStation(rng, def, size, role, defs, extra);
-    const r = arrangeHull(rng, f, fam, plan, defs, size === 'hub' ? 3 : 4);
+    const r = arrangeHull(rng, f, fam, plan, defs, size === 'hub' ? 3 : 4, architectureMode === 'ranked', architectureMode === 'neighborhood' || architectureMode === 'programBay', architectureMode === 'programBay');
     if (typeof r === 'string') { failures.push(`${size}: ${r}`); continue; }
     const g = finishLayout(rng, f, id, seed, role, 'sections', r.plan, r.b, r.profile, r.A, r.profile, defs, n, {
       immobile: true, check: (t, d) => stationProblems(t, d, def.tiers[size].docks),
       // The wheel places its departments before its rooms: no role swaps after (docs/STATIONGEN2.md, step 2).
       ...(r.profile.startsWith('stationWheel') ? { placed: true } : {}),
+      ...(architectureMode === 'compile' || architectureMode === 'ranked' ? { architectureConstruction: true } : {}),
     });
     g.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
+    if (architectureMode === 'ranked' || architectureMode === 'neighborhood' || architectureMode === 'programBay') {
+      // Keep the SOURCE plan immutable for content parity. The architecture
+      // may change bay sizes or candidate ordering, but must not silently drop
+      // an explicit bed, machine, weapons system or requested cargo module.
+      const deficits = sourceModuleDeficits(requirementsOfStationPlan(plan), g.template.modules ?? []);
+      if (deficits.length > 0) g.problems.push(`architecture source-program deficit: ${deficits.map((m) => `${m.def} ${m.found}/${m.needed}`).join(', ')}`);
+    }
     last = { ...g, failures: [...failures], station: infoOf(def, size, g.template, defs) };
-    if (g.problems.length === 0) return last;
+    lastPlan = plan;
+    if (g.problems.length === 0) return attachAudit(last, plan);
     if (g.problems.some((p) => p.includes('power'))) extra++;
     failures.push(`${g.topology.split(' ')[0]}: ${g.problems[0]}`);
   }
-  if (last) return { ...last, failures };
+  if (last && lastPlan) return attachAudit({ ...last, failures }, lastPlan);
   throw new Error(`generateStation: no layout for ${id} ${size} seed ${seed}: ${failures.join(', ')}`);
 }

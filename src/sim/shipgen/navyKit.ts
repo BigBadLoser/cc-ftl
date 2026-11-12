@@ -31,6 +31,11 @@ export interface Ctx {
   defs: Record<string, import('../registry').ModuleDef>;
   /** Drawn once per ship (like the grammar): architecture choices every candidate arrangement shares. */
   variant?: number;
+  /** Opt-in integrated structural plan search; not active in normal game generation. */
+  integratedStationArchitecture?: boolean;
+  /** Replaces angular room partitions with program-sized inhabited structural neighborhoods. */
+  neighborhoodStationArchitecture?: boolean;
+  programBayStationArchitecture?: boolean;
 }
 
 export const no = (c: Ctx, why: string): false => { c.why ||= why; return false; };

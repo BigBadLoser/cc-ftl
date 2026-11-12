@@ -1,0 +1,22 @@
+{
+  "cases": 8,
+  "successfulForcedNativeProgramBays": 8,
+  "requiredModuleDeficits": 0,
+  "nativeProblems": 0,
+  "hullIntegrityPasses": 0,
+  "totalArea": {
+    "legacy": 22522,
+    "sector": 34075,
+    "programBay": 25492
+  },
+  "totalWallSlabs": {
+    "legacy": 138,
+    "sector": 79,
+    "programBay": 76
+  },
+  "totalDirectPublicRoomDoors": {
+    "legacy": 398,
+    "sector": 390,
+    "programBay": 393
+  }
+}

@@ -36,7 +36,7 @@ function score(A: Arranger, fam: HullFamilyDef, noise: number): number {
 let GRAMMARS: Record<string, (c: Ctx, f: FactionDef) => boolean> | null = null;
 
 export function arrangeHull(
-  rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan, defs: Record<string, ModuleDef>, candidates = CANDIDATES,
+  rng: Rng, f: FactionDef, fam: HullFamilyDef, plan: ShipPlan, defs: Record<string, ModuleDef>, candidates = CANDIDATES, integratedStationArchitecture = false, neighborhoodStationArchitecture = false, programBayStationArchitecture = false,
 ): { b: Builder; A: Arranger; profile: string; plan: ShipPlan } | string {
   let best: { A: Arranger; c: Ctx; s: number } | null = null;
   let why = '';
@@ -53,7 +53,7 @@ export function arrangeHull(
     }
     const grammar = k < candidates ? first : pickWeighted(rng, fam.grammars);
     const A = new Arranger(() => rng.next(), -1);
-    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant };
+    const c: Ctx = { rng, fam, plan: clonePlan(plan), A, depth, parts: [grammar], why: '', defs, variant, integratedStationArchitecture, neighborhoodStationArchitecture, programBayStationArchitecture };
     GRAMMARS ??= { ...NAVY, ...DRONE_GRAMMARS, ...SCRAP_GRAMMARS, ...CIVIL_GRAMMARS, ...STATION_GRAMMARS };
     const run = GRAMMARS[grammar];
     if (!run || !run(c, f)) { why ||= `${grammar}: ${c.why || 'no fit'}`; continue; }

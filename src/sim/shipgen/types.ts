@@ -257,6 +257,8 @@ export interface GenResult {
   thin?: { slabs: number; folded: number; outlineChanged: number };
   /** Airlock-only docks opened into their corridor, and those left walled for want of one (openDocks.ts). */
   docks?: { merged: number; walled: number };
+  /** Opt-in station shared-plan physical wall compiler, before the native fit-out. */
+  architecturalConstruction?: { changedWalls: number; changedDoors: number; changedFloor: number; regions: number; rooms: number; wallSlabs: number };
   /** Assemblies, ports, joins and traversal (assembly-driven generation only), for the viewer. */
   debug?: CompDebug;
 }

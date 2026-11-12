@@ -1,8 +1,10 @@
+import { architectureOfBuilder, structuralFeedback } from './stationStructuralIntegration';
 import { localBuilder } from './blocks';
 import type { Builder, Rect } from './builder';
 import type { RoomSpec } from './plan';
 import type { Rng } from '../rng';
 import { bandArcs, bandDepth, bandRadius } from './stationBands';
+import { buildNeighborhoodBand } from './stationNeighborhoods';
 import { isDock, isSystem, placeDepartments, ringProgram, type RingProgram } from './stationDepartments';
 import { dockBanks } from './stationDocks';
 import { besideSpoke, centreOf, circleCells, corridor, fitAlong, free, roleAt, ROTUNDA, SHOP, span, spoke, widthOf } from './stationRings';
@@ -28,6 +30,7 @@ const FRONT = 8;
 /** About the most inboard frontage a candidate's skeleton shows (its courts' shop bands; rarely over a third). */
 const MAX_FRONT = 0.4;
 const DIAGONALS = [-Math.PI / 4, Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4];
+const TAU = Math.PI * 2;
 
 /**
  * Units lining one side of spoke d (side -1 or 1), from the ring inward, each opening onto the spoke through its middle;
@@ -127,26 +130,27 @@ function skeleton(rng: Rng, R: number, market: boolean): { b: Builder; ring: num
 export interface PlannedWheel { b: Builder; label: string }
 
 /** The trading wheel: rooms (the office first), docks among them; `market` lines the south concourse with shops. */
-export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean, court: (b: Builder) => void = () => {}): PlannedWheel | null {
+export function plannedWheel(rng: Rng, rooms: RoomSpec[], market: boolean, court: (b: Builder) => void = () => {}, integratedArchitecture = false, neighborhoodArchitecture = false, programBayArchitecture = false): PlannedWheel | null {
   const docks = rooms.filter(isDock);
   const sys = rooms.filter(isSystem);
   const bandIn = rooms.filter((r) => !isDock(r) && !isSystem(r));
   const depth = bandDepth(bandIn);
   const prog = ringProgram(bandIn, sys);
   // The least ring: the band and its dock banks round the rotunda; the blocks inside may ask for more.
-  const R0 = Math.max(bandRadius([...prog.band, ...docks], depth), ROTUNDA + 12);
+  const R0 = Math.max(bandRadius([...prog.band, ...docks], depth), ROTUNDA + 12,
+    ...(neighborhoodArchitecture ? [Math.ceil(prog.band.reduce((n, r) => n + Math.min(r.w, r.h) + 1, 0) / (TAU * 0.72))] : []));
   const cands = wheelCandidates(rng, { prog, R0, market, westDocks: false });
   // Compact first: candidates within SLACK tiles of the least ring any of them needs are built first (a bigger ring is
   // emptier, stretches its band and needs more lamps and power); the rest only if none of those works out.
   const least = Math.min(...cands.map((c) => c.R));
   for (const pool of [cands.filter((c) => c.R <= least + SLACK), cands.filter((c) => c.R > least + SLACK)]) {
-    const w = choose(rng, pool.slice(0, TRIES), { prog, docks, depth, market, court });
+    const w = choose(rng, pool.slice(0, TRIES), { prog, docks, depth, market, court, integratedArchitecture, neighborhoodArchitecture, programBayArchitecture });
     if (w) return w;
   }
   return null;
 }
 
-interface Ctx { prog: RingProgram; docks: RoomSpec[]; depth: number; market: boolean; court: (b: Builder) => void }
+interface Ctx { prog: RingProgram; docks: RoomSpec[]; depth: number; market: boolean; court: (b: Builder) => void; integratedArchitecture: boolean; neighborhoodArchitecture: boolean; programBayArchitecture: boolean }
 
 /**
  * Build candidates on their skeletons and keep the best. The search's radius is an estimate from the blocks' lengths:
@@ -174,15 +178,32 @@ function choose(rng: Rng, cands: WheelCandidate[], x: Ctx): PlannedWheel | null 
       break;
     }
   }
-  for (const { cand, b, ring, R } of built.sort((p, q) => q.v - p.v)) {
-    const banks = dockBanks(b, R, ring, x.docks, R + Math.max(x.depth, 6) + 2);
+  let integratedBest: { result: PlannedWheel; value: number } | null = null;
+  for (const { cand, b, ring, R, v } of built.sort((p, q) => q.v - p.v)) {
+    const banks = dockBanks(b, R, ring, x.docks, R + (x.neighborhoodArchitecture ? 22 : Math.max(x.depth, 6) + 2));
     if (!banks) continue;
     const plan = { secure: cand.secure, freight: cand.freight, quiet: cand.quiet, market: x.market };
     const { arcs, band } = placeDepartments(rng, x.prog, banks.splits, x.market, plan);
+    if (x.neighborhoodArchitecture) {
+      const result = buildNeighborhoodBand(b, R, ring, band, x.depth, arcs, x.programBayArchitecture ? 'programBay' : 'sector');
+      // No fallback to legacy angular room slicing. A candidate without
+      // capacity AND actual public frontage is not an acceptable architecture.
+      if (!result || result.roomsWithAccess !== result.roomCount || result.baysWithPublicFrontage !== result.envelopes.length) continue;
+      const chosen = { b, label: `${cand.label} R ${R} ${x.programBayArchitecture ? 'programBays' : 'neighborhoods'} ${result.envelopes.length} rooms ${result.roomCount}` };
+      return chosen;
+    }
     if (!bandArcs(b, R, ring, band, x.depth, arcs) || !publicOnRing(b, ring)) continue;
-    return { b, label: `${cand.label} R ${R}` };
+    const result = { b, label: `${cand.label} R ${R}` };
+    if (!x.integratedArchitecture) return result;
+    // Room-programmed candidate selection against the actual Builder layout.
+    // No new door is punched through an unrelated room. When public frontage is
+    // missing, the candidate loses rank instead of receiving a fake repair.
+    const feedback = structuralFeedback(architectureOfBuilder(b));
+    const value = v - 0.6 * feedback.accessPenalty;
+    if (integratedBest === null || value > integratedBest.value)
+      integratedBest = { result: { ...result, label: `${result.label} [integrated access ${feedback.report.independentPublicRoomAccess}/${feedback.report.rooms}]` }, value };
   }
-  return null;
+  return integratedBest?.result ?? null;
 }
 
 /** Public rooms of the band (the office, messes, medbays) whose door is not onto the ring. */

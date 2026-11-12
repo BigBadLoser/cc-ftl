@@ -200,7 +200,7 @@ function wheel(c: Ctx): boolean {
   const a = c.fam.atrium;
   const on = !!a && courts > 0 && c.rng.chance(a.chance);
   const court = (b: Builder): void => { if (a && on) courtyards(b, c.rng, a.role, { band: a.band, ...(a.packed ? { packed: true } : {}), ...(a.deck ? { deck: true } : {}), maxCourts: courts }); };
-  const w = plannedWheel(c.rng, office(c), !!c.fam.market, court);
+  const w = plannedWheel(c.rng, office(c), !!c.fam.market, court, !!c.integratedStationArchitecture, !!c.neighborhoodStationArchitecture, !!c.programBayStationArchitecture);
   c.parts.push(`spokes nesw courts ${courts}`, ...(w ? [w.label] : []), ...(on ? ['atrium'] : []));
   return placeRoot(c, civil(w?.b ?? null, 'command', 'wheel station'), 'wheel');
 }

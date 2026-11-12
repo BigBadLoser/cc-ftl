@@ -5,7 +5,7 @@
  *   node tools/shipgen/cli.js station.trading --size station --layout stationWheel --views labels --count 2
  * writes <base>-labels-s<seed>.png per seed.
  */
-import type { ModuleDef, RoomRole } from '../../src/sim';
+import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';
 import { content } from '../../src/content';
 import { rotatedSize } from '../../src/sim/modules/footprint';
 import { gen, Raster, ROLE_TINT, type RGB } from './draw';
@@ -40,13 +40,17 @@ function outlined(r: Raster, s: string, x: number, y: number, c: RGB, ts: number
 
 /** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right. */
 export function labelView(spec: string, seed: number, depth = 4, t = 16): Raster {
-  const g = gen(spec, seed, depth);
+  return labelResult(gen(spec, seed, depth), `${spec} seed ${seed}`, t);
+}
+
+/** Render an already generated station (any architecture mode) with the original labels, furniture, and palette. */
+export function labelResult(g: GenResult, title: string, t = 16): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
   const KEY = 320, TOP = 40;
   const r = new Raster(W * t + KEY, Math.max(H * t + TOP + 10, 760));
-  r.text(`${spec} seed ${seed}`, 8, 12, INK, 3);
+  r.text(title, 8, 12, INK, 3);
   const mid = new Map<number, [number, number, number]>();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = rows[y]?.[x] ?? '.';
