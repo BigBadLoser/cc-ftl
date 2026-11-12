@@ -156,7 +156,9 @@ placement of any specific department, but to me that has a decent trading identi
 - A `market` department: stalls in the trade station's assembly program (`assemblyAlso`; racks and a console as
   placeholder fittings, no stall module exists).
 - The harbour on one side of the main axis (shape `face`, above), the warehouses as a wing on the other.
-- Outlines: the stepped ring, and an octagon (`cut: 'octagon'`). An octagon's four corner faces are one room each:
+- Outline: a square cut to eight even sides (`cut: 'octagon'`) with the corners rounded (`round`; the user: "if
+  we're not gonna subdivide the corners why aren't we just using circular corners"). The stepped ring and the
+  straight-cut octagon were tried and dropped ("so terrible"). The four corner faces are one room each:
   the common rooms take them, biggest first and opposite each other (the mess with its pantry as the cell at one end),
   and a face with none is a garden gallery.
 - The band by sectors round a hub: cabins on the north and south faces, guns either side of the east and west faces,

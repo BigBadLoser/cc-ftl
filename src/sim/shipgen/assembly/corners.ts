@@ -20,7 +20,7 @@ export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]):
   if (s.outline !== 'square') return [];
   const { g, R } = s;
   // The block starts one cell before the cut on either flat; the diagonal runs through the cut's outer corners.
-  const T = R - K * (s.cut + 1), line = 2 * R - K * s.cut - 1;
+  const T = R - K * (s.cut + 1), line = 2 * R - K * s.cut - 1, C = R - K * s.cut;
   const placed: RoomSpec[] = [];
   for (const [k, [sx, sy]] of QUADS.entries()) {
     const spec = rooms[k];
@@ -32,7 +32,7 @@ export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]):
     for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) {
       const tx = (x + 0.5) * sx, ty = (y + 0.5) * sy;
       if (tx < T || ty < T || g.at(x, y) !== SPACE || s.inside(x, y)) continue;
-      if (s.hull(x, y) || tx + ty <= line) g.set(x, y, nook >= 0 && ty < T + K - 1 ? nook : id);
+      if (s.hull(x, y) || (s.round ? Math.hypot(tx - C, ty - C) <= R - C : tx + ty <= line)) g.set(x, y, nook >= 0 && ty < T + K - 1 ? nook : id);
     }
   }
   return placed;

@@ -80,9 +80,9 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
  * round the court and the machinery along the spokes, open ground between them. On the main axis the
  * harbour stands on one side of the ring and the warehouses with the workshop on the other; the ring's band is cabins, the mess, guns.
  */
-const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'octagon'; court: number }): Recipe => ({
+const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'octagon'; court: number; round?: boolean }): Recipe => ({
   name,
-  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'works'], outline: o.outline, cut: o.cut, inner: false, hub: { court: o.court, arm: 7, slab: 7, market: ['market'], spokes: ['habitation', 'works'], gated: ['secure'] } },
+  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'works'], outline: o.outline, cut: o.cut, ...(o.round ? { round: true } : {}), inner: false, hub: { court: o.court, arm: 7, slab: 7, market: ['market'], spokes: ['habitation', 'works'], gated: ['secure'] } },
   spacing: 2,
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['w', 'e'], roll: true }, neck: 0, docks: true, quay: harbour('quay', 'face'), section: { rooms: [2, 6] }, link: 0 },
@@ -109,7 +109,6 @@ export const stationRecipes = {
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   bazaar: [
-    bazaar('market court and spokes in a stepped ring', { outline: 'disc', cut: 2, court: 14 }),
-    bazaar('the same in an octagon', { outline: 'square', cut: 'octagon', court: 14 }),
+    bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;

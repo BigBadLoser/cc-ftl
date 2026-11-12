@@ -24,8 +24,10 @@ const vertical = (x: number, y: number): boolean => { const [cx, cy] = cellOf(x,
 export type Outline = 'disc' | 'square';
 
 /** The lattice shapes of a station of half-size R tiles: the hull, and the floor inboard of the band. */
-function shapes(R: number, outline: Outline, cut: number): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
-  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && Math.abs(cx) + Math.abs(cy) < 2 * R - K * cut);
+function shapes(R: number, outline: Outline, cut: number, round: boolean): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
+  // A square's corners: cut straight across, or rounded (an arc as deep as the cut, running into both flats).
+  const corner = (ax: number, ay: number): boolean => (round ? ax <= R - K * cut || ay <= R - K * cut || Math.hypot(ax - (R - K * cut), ay - (R - K * cut)) < K * cut : ax + ay < 2 * R - K * cut);
+  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && corner(Math.abs(cx), Math.abs(cy)));
   const hull = (x: number, y: number): boolean => within(...cellOf(x, y));
   // A cell is inboard when the cell DEEP cells further out along its octant's axis is still hull: every strip is DEEP deep.
   const inner = (x: number, y: number): boolean => {
@@ -52,6 +54,8 @@ export interface Site {
   outline: Outline;
   /** Cells cut from each corner of a square outline, along either side (2: a square with bastions; more: an octagon). */
   cut: number;
+  /** The cut corners are arcs, not straight. */
+  round: boolean;
   hull: (x: number, y: number) => boolean;
   inside: (x: number, y: number) => boolean;
   /** How far a tile is inside the inboard floor (0 outside it): 1-2 the ring, 3 its inner wall, more is free ground. */
@@ -70,9 +74,9 @@ export interface Site {
  * ring's own shape does not change at a cut; what lies beyond it is simply not built, and the cut faces are closed
  * with a solid line.
  */
-export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean): Site {
+export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false): Site {
   const g = new RegionGrid(R + pad);
-  const whole = shapes(R, outline, cut), inside = whole.inside;
+  const whole = shapes(R, outline, cut, round), inside = whole.inside;
   const kept = keep ?? ((): boolean => true);
   const hull = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y);
   const memo = new Map<number, number>();
@@ -97,7 +101,7 @@ export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, ke
   let reach = 0;
   while (depth(0, -(reach + 1)) >= 3) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, outline, cut, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, cut, round, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {

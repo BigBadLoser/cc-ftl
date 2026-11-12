@@ -90,7 +90,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   let why = '';
   for (let cells = 5; cells <= 12; cells++) {
     const R = cells * K;
-    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : root.cut, inner: root.inner, ...(root.gap ? { gap: root.gap } : {}) }, 120);
+    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : root.cut, inner: root.inner, ...(root.round ? { round: true } : {}), ...(root.gap ? { gap: root.gap } : {}) }, 120);
     const ctx = context(site.g, site, rng);
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });

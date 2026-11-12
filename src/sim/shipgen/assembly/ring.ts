@@ -15,14 +15,14 @@ import { at, type Built, type Dir, type Frame } from './model';
 /** A piece cut away: everything on the far side of a lattice line (`from` tiles from the centre on side `side`). */
 export interface Gap { side: Dir; from: number }
 
-export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap }
+export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap; round?: boolean }
 
 const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0, dir: 'e' }, s: { x: 0, y: 0, dir: 's' }, w: { x: -1, y: 0, dir: 'w' } };
 
 export function ringSite(o: RingOpts, pad: number): { site: Site; kept: (x: number, y: number) => boolean } {
   const gap = o.gap;
   const kept = (x: number, y: number): boolean => !gap || (gap.side === 's' ? y < gap.from : gap.side === 'n' ? y >= -gap.from : gap.side === 'e' ? x < gap.from : x >= -gap.from);
-  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined), kept };
+  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round), kept };
 }
 
 /** The ring's ports: on its rim at the four axes (where the ring is there), and at the cut ends of an arc. */
