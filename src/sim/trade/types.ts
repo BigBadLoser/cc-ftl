@@ -177,7 +177,7 @@ export interface Deal {
 export interface TradeState {
   /** The player's credits. NPC wallets live on their `TraderC`. */
   credits: number;
-  /** The most credits the player has held at once (the game-over summary). Optional: older saves start it at 0 and it catches up at once. */
+  /** The most credits the player has held at once (the game-over summary). Optional: reads as 0 when unset, and `addCredits` raises it. Load leaves it as saved, so a reload replays exactly. */
   bestCredits?: number;
   hails: Hail[];
   offers: Offer[];

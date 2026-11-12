@@ -140,7 +140,9 @@ import { newYard, type YardState } from './yard/types';
  * v113 (room quality, #441): `Mood.relaxPts` / `relaxKey` / `mealTier` / `sleepTier` / `noBreak`.
  * v114 (recovery pod, #319): `RecoveringC` (a crew member lying in a pod), activity 'recovering', the `recover` drive.
  * v115 (freight container art, #443): `module.cargo_container` is 2x3 with its access on the short front end (was 3x2), so saved containers occupy other tiles.
+ *   Also v115 (prisoners, #461): `Ship.yielded`, commands 'prisoner.release' and 'ship.settle', and the rescue job's care rank (prisoners after the wounded).
  * v116 (state integrity, #160): `Deal.dock.seen` / `direct` / `hand` / `carrying` (the exact unit ledger of a docked station deal), `YardOrder.pending` (refund metal waiting for room), `EventGrid.helped` (a rescue the player acted on).
+
  */
 export const SAVE_VERSION = 116;
 
@@ -216,7 +218,6 @@ export function deserialize(json: string, content: ContentRegistry): Sim {
   sim.sector = { ...data.sector, grid: SectorGrid.deserialize(0, data.sector.grid) };
   sim.story = { ...newStory(data.seed), ...data.story };
   sim.trade = { ...newTrade(), ...data.trade };
-  sim.trade.bestCredits = Math.max(sim.trade.bestCredits ?? 0, sim.trade.credits); // a save from before the field starts at what it holds
   sim.yard = { ...newYard(), ...data.yard };
   sim.bonds = { ...newBonds(), ...data.bonds };
   sim.galaxy = loadGalaxy(sim, data.galaxy);

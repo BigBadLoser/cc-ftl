@@ -6,9 +6,9 @@ import { content } from './index';
 
 /**
  * #107: a station's patrol stops are tiles guards stand on, so none may lie under a solid module (a room's centre can be a
- * mess table). Seed 7's first post was, so a guard could never reach it, and an intruder put there (the stationLife test) never arrived.
+ * mess table). #379: so are the courts civilians wander to. Seed 7's first post was, so a guard could never reach it, and an intruder put there (the stationLife test) never arrived.
  */
-describe('station patrol posts', () => {
+describe('station patrol posts and courts', () => {
   for (const size of ['outpost', 'station'] as const) {
     it(`are walkable on every ${size}, seeds 1 to 8`, () => {
       const bad: string[] = [];
@@ -20,7 +20,8 @@ describe('station patrol posts', () => {
         const grid = shipGrid(sim, st)!;
         const s = sim.world.get(st, StationC)!;
         expect(s.posts.length).toBeGreaterThan(0);
-        for (const [kind, tiles] of [['post', s.posts]] as const) {
+        expect(s.courts.length).toBeGreaterThan(0);
+        for (const [kind, tiles] of [['post', s.posts], ['court', s.courts]] as const) {
           for (const t of tiles) if (!isTileWalkable(sim, grid, t.x, t.y)) bad.push(`seed ${seed} ${kind} ${t.x},${t.y}`);
         }
       }
