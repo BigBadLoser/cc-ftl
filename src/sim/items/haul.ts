@@ -125,6 +125,8 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
       }
       sim.world.add(crew, CarryingC, { item: h.item, count: taken, ...(extra.length > 0 ? { extra } : {}) });
     } else if (taken > 0) addToHand(sim, crew, h.item, taken);
+    const load = sim.world.get(crew, CarryingC);
+    if (load && h.deal && taken > 0) load.deal = h.deal; // the load is the deal's (haulPicked counted it out of its place)
     if (taken < asked) delete h.then; // the source held less than planned: no more stops
     if (h.src.kind === 'floor' && !h.then && !h.extra && inHand(sim, crew) < cap) {
       const next = nextGather(sim, crew, job);
@@ -161,7 +163,6 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
   const pos = sim.world.get(crew, PositionC);
   if (!carrying || carrying.item !== h.item || !pos) return 'done';
   const moved = deposit(sim, h.dst, h.item, carrying.count);
-  haulDeposited(sim, h, carrying.count, moved);
   for (const q of carrying.extra ?? []) {
     const got = deposit(sim, h.dst, q.item, q.count);
     if (q.count > got) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, q.item, q.count - got);
@@ -188,7 +189,8 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     else delete job.size;
     return 'working';
   }
-  if (left > 0) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left);
+  const spilled = left > 0 ? left - spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left) : 0;
+  haulDeposited(sim, h, moved, spilled);
   sim.world.remove(crew, CarryingC);
   return 'done';
 }

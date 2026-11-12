@@ -141,7 +141,7 @@ import { newYard, type YardState } from './yard/types';
  * v114 (recovery pod, #319): `RecoveringC` (a crew member lying in a pod), activity 'recovering', the `recover` drive.
  * v115 (freight container art, #443): `module.cargo_container` is 2x3 with its access on the short front end (was 3x2), so saved containers occupy other tiles.
  *   Also v115 (prisoners, #461): `Ship.yielded`, commands 'prisoner.release' and 'ship.settle', and the rescue job's care rank (prisoners after the wounded).
- * v116 (state integrity, #160): `Deal.dock.units` (where a docked station deal's goods are: shelf, hand, hold) and `HaulData.deal` (a haul's deal and direction), `YardOrder.pending` (refund metal waiting for room), `EventGrid.helped` (a rescue the player acted on).
+ * v116 (state integrity, #160): `Deal.dock.units` (where a docked station deal's goods are: shelf, hold, floor), `HaulData.deal` and `Carrying.deal` (a haul's or load's deal and direction), `YardOrder.pending` (refund metal waiting for room), `EventGrid.helped` (a rescue the player acted on).
 
  */
 export const SAVE_VERSION = 116;

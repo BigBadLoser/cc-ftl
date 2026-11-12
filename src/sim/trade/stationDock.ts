@@ -13,7 +13,7 @@ import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { addStock, touchMarket } from './deals';
 import { unitsOf } from './dockCount';
-import { deliverGiven, reclaim, startUnits } from './dockLedger';
+import { dockDone, deliverGiven, reclaim, startUnits } from './dockLedger';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -68,9 +68,7 @@ export function stageGoods(sim: Sim, d: Deal): void {
 export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
   const res = reservations(sim);
   const stand = cargoTile(sim, d.vehicle);
-  const giveLeft = d.give.some((l) => cargoOf(sim, d.vehicle, l.item) > 0 && !d.get.some((g) => g.item === l.item));
-  const getLeft = d.get.some((l) => cargoOf(sim, d.vehicle, l.item) < l.count);
-  if (!giveLeft && !getLeft) return true;
+  if (dockDone(sim, d)) return true;
   if (sim.tick % PLAN_INTERVAL !== 0 || v.state !== 'docked' || !stand) return false;
   for (const l of d.give) {
     if (d.get.some((g) => g.item === l.item)) continue;

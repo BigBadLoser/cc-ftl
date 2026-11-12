@@ -1,4 +1,4 @@
-import type { HaulData } from '../items/components';
+import type { Carrying, HaulData } from '../items/components';
 import type { Sim } from '../sim';
 import type { Deal } from './types';
 
@@ -9,15 +9,16 @@ import type { Deal } from './types';
  */
 export interface Units {
   shelf: number;
-  hand: number;
   hold: number;
+  /** Put down on the deck without reaching the destination (an interrupted haul, a hold or shelf with no room). Goods in hand are counted from the hands themselves (`handOf`). */
+  floor: number;
 }
 
 /** The counters of one item of a deal's dock visit. */
 export function unitsOf(d: Deal, item: string): Units {
   const dock = d.dock as NonNullable<Deal['dock']>;
   const all = (dock.units ??= {});
-  return (all[item] ??= { shelf: 0, hand: 0, hold: 0 });
+  return (all[item] ??= { shelf: 0, hold: 0, floor: 0 });
 }
 
 const dockedDeal = (sim: Sim, h: HaulData): Deal | undefined => (h.deal ? sim.trade.deals.find((d) => d.id === h.deal?.id && d.dock) : undefined);
@@ -29,15 +30,20 @@ export function haulPicked(sim: Sim, h: HaulData, n: number): void {
   const u = unitsOf(d, h.item);
   if (h.deal.dir === 'get') u.shelf -= n;
   else u.hold -= n;
-  u.hand += n;
 }
 
-/** A deal's haul put down: `carried` left the hands, `moved` of them reached the destination (the rest was spilled on the floor and is the deal's no more). */
-export function haulDeposited(sim: Sim, h: HaulData, carried: number, moved: number): void {
+/** A deal's haul put down `moved` units at its destination and `spilled` on the deck. */
+export function haulDeposited(sim: Sim, h: HaulData, moved: number, spilled: number): void {
   const d = dockedDeal(sim, h);
   if (!d || !h.deal) return;
   const u = unitsOf(d, h.item);
-  u.hand -= carried;
   if (h.deal.dir === 'get') u.hold += moved;
   else u.shelf += moved;
+  u.floor += spilled;
+}
+
+/** A load of a deal was put down on the deck (`dropCarried`, the one owner of hand to floor): `placed` of its units found floor. */
+export function loadDropped(sim: Sim, c: Carrying, placed: number): void {
+  const d = c.deal ? sim.trade.deals.find((x) => x.id === c.deal?.id && x.dock) : undefined;
+  if (d) unitsOf(d, c.item).floor += placed;
 }

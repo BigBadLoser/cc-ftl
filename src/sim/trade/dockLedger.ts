@@ -1,11 +1,10 @@
 import { JobC } from '../crew/components';
-import { AssignmentC } from '../crew/components';
 import { stowOrDrop } from '../items/deck';
-import { CarryingC } from '../items/components';
-import { destroyJob } from '../items/stacks';
+import { CarryingC, ItemStackC } from '../items/components';
+import { destroyJob, takeFromStack } from '../items/stacks';
 import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
-import { shipIdOf } from '../regions';
+import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { cargoAdd, cargoOf, cargoTake } from '../vehicles/cargo';
 import { VehicleC } from '../vehicles/components';
@@ -37,25 +36,42 @@ const lines = (d: Deal): { item: string; dir: 'get' | 'give' }[] => [
   ...d.give.filter((l) => !d.get.some((g) => g.item === l.item)).map((l) => ({ item: l.item, dir: 'give' as const })),
 ];
 
-/** Take the deal's goods out of its crew members' hands (their hauls end). A carrier whose job is already gone with a lost shuttle is found by what it carries. */
+/** Units of an item in the hands of station crew for this deal (loads are tagged with the deal where the haul picks them up). */
+export function handOf(sim: Sim, d: Deal, item: string): number {
+  let n = 0;
+  for (const crew of sim.world.query(CarryingC)) {
+    const c = sim.world.get(crew, CarryingC);
+    if (c?.deal?.id === d.id && c.item === item) n += c.count;
+  }
+  return n;
+}
+
+/**
+ * Where the deal's units of an item are, in one answer: in the hold, on the shelf, on the deck, in hands. The station-work exchange is complete when
+ * every bought line is in the hold and nothing given is in the hold or in hands (shelf and deck count as delivered).
+ */
+export function dockDone(sim: Sim, d: Deal): boolean {
+  return lines(d).every(({ item, dir }) => {
+    const u = unitsOf(d, item);
+    if (dir === 'get') return u.hold >= (d.get.find((l) => l.item === item)?.count ?? 0) && handOf(sim, d, item) === 0;
+    return u.hold <= 0 && handOf(sim, d, item) === 0;
+  });
+}
+
+/** Take the deal's loads out of its crew members' hands (their hauls end). Returns the units. */
 function takeHands(sim: Sim, d: Deal, item: string): number {
-  const want = unitsOf(d, item).hand;
   let got = 0;
   for (const crew of [...sim.world.query(CarryingC)]) {
-    if (got >= want) break;
     const c = sim.world.get(crew, CarryingC);
-    const job = sim.world.get(crew, AssignmentC)?.jobId;
-    const haul = job === undefined ? undefined : sim.world.get(job, JobC)?.haul;
-    if (!c || c.item !== item || (haul && haul.deal?.id !== d.id)) continue; // another job's load
+    if (c?.deal?.id !== d.id || c.item !== item) continue;
     got += c.count;
     sim.world.remove(crew, CarryingC);
-    if (job !== undefined && haul) destroyJob(sim, job);
   }
   return got;
 }
 
-/** Take up to `n` of an item out of the station's storage (the deal's own shelf units; the staging storages first). */
-export function takeShelf(sim: Sim, d: Deal, item: string, n: number): number {
+/** Take up to `n` of an item out of the station's storage (the staging storages first). */
+function takeShelf(sim: Sim, d: Deal, item: string, n: number): number {
   let left = n;
   const preferred = (d.dock?.staged ?? []).filter((s) => s.item === item).map((s) => s.storage);
   const rest = sim.world.query(ModuleC).filter((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === d.ship && !preferred.includes(id));
@@ -66,23 +82,42 @@ export function takeShelf(sim: Sim, d: Deal, item: string, n: number): number {
   return n - left;
 }
 
+/** Take up to `n` of an item off the station's deck (loose stacks). */
+function takeFloor(sim: Sim, d: Deal, item: string, n: number): number {
+  let left = n;
+  for (const id of sim.world.query(ItemStackC)) {
+    const st = sim.world.get(id, ItemStackC);
+    if (left <= 0) break;
+    if (st?.item === item && !st.job && shipIdAt(sim, st.x, st.y) === d.ship) left -= takeFromStack(sim, id, left);
+  }
+  return n - left;
+}
+
+/** The deal's units of an item that are at the station (deck, then shelf), taken out. The one place that counts what the station holds of the deal. */
+function takeAtStation(sim: Sim, d: Deal, item: string): number {
+  const u = unitsOf(d, item);
+  const got = takeFloor(sim, d, item, u.floor);
+  const rest = takeShelf(sim, d, item, u.shelf + (u.floor - got));
+  u.floor = 0;
+  u.shelf = 0;
+  return got + rest;
+}
+
 /**
- * Pull everything of the deal back out of the station side, by the exact counters: hands emptied, shelf units out of storage, hauls ended. With the
- * shuttle alive the bought units in its hold come out and the given units go back in; with it lost the given units (hands and shelf) return to the
- * player's ship, and the bought units that were in the hold are gone with it (`lostInHold`). The deal's counters are cleared.
+ * Pull everything of the deal back out of the station side, by the ledger: hands emptied, deck and shelf units taken, hauls ended. With the shuttle
+ * alive the bought units in its hold come out and the given units go back in; with it lost the given units return to the player's ship, and the bought
+ * units that were in the hold are gone with it (`lostInHold`).
  */
 export function reclaim(sim: Sim, d: Deal): void {
   if (!d.dock?.units) return;
   const alive = sim.world.has(d.vehicle, VehicleC);
   for (const { item, dir } of lines(d)) {
     const u = unitsOf(d, item);
-    const back = takeHands(sim, d, item) + takeShelf(sim, d, item, u.shelf);
+    const back = takeHands(sim, d, item) + takeAtStation(sim, d, item);
     if (dir === 'get') {
       if (alive) cargoTake(sim, d.vehicle, item, u.hold);
     } else if (alive) cargoAdd(sim, d.vehicle, item, back);
     else if (back > 0) stowOrDrop(sim, playerShip(sim), item, back);
-    u.shelf = 0;
-    u.hand = 0;
     if (alive) u.hold = 0;
   }
   for (const id of [...sim.world.query(JobC)]) if (sim.world.get(id, JobC)?.haul?.deal?.id === d.id) destroyJob(sim, id);
@@ -91,7 +126,7 @@ export function reclaim(sim: Sim, d: Deal): void {
 
 /** The player's given goods that reached station storage, taken out for the trader's stock (the exchange is complete). */
 export function deliverGiven(sim: Sim, d: Deal): { item: string; count: number }[] {
-  return lines(d).filter((l) => l.dir === 'give').map((l) => ({ item: l.item, count: takeShelf(sim, d, l.item, unitsOf(d, l.item).shelf) }));
+  return lines(d).filter((l) => l.dir === 'give').map((l) => ({ item: l.item, count: takeAtStation(sim, d, l.item) }));
 }
 
 /** Bought units that were in a lost shuttle's hold: gone with it (the trader's stock does not get them back). Read before `reclaim`. */

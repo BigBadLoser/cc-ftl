@@ -30,6 +30,8 @@ export interface Carrying {
   count: number;
   /** The rest of a construction bundle (see HaulData.extra). */
   extra?: ItemQty[];
+  /** The station deal this load belongs to (from the haul's tag): the ledger (trade/dockCount.ts) counts it while it is in hand and when it is put down. */
+  deal?: { id: number; dir: 'get' | 'give' };
 }
 export const CarryingC = defineComponent<Carrying>('carrying');
 
