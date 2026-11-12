@@ -3596,5 +3596,7 @@
   "arcAmbF": {"hex": "#b98a46", "set": "arcade"},
   "arcGrn": {"hex": "#6dff9e", "emissive": 2.2, "set": "arcade"},
   "arcCyanOff": {"hex": "#26434d", "set": "arcade"},
-  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"}
+  "arcCoinOff": {"hex": "#4f3626", "set": "arcade"},
+  "arcSeat": {"hex": "#b8465a", "set": "arcade"},
+  "arcSeatD": {"hex": "#7e2c40", "set": "arcade"}
 }
