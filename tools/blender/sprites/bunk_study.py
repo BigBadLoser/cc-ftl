@@ -5,6 +5,7 @@ along it (the head end is -v, the foot end +v, the module's front). Crew are 1.5
 about where the single bed's does (0.22), the upper deck leaves a seated crew member room under it."""
 import math
 
+from . import core
 from .modkit import K
 
 FP = (1, 2)
@@ -286,7 +287,56 @@ def b3():
     return k.build()
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
+def _px(k, u0, u1, v0, v1, z0, z1, col, top=None):
+    """A box between pixel edges: u and v in px of the tile (32 a tile, 0 the footprint's middle), z in px of height.
+    Whole px only, so every edge draws as a clean stair and nothing thinner than a px breaks into dots."""
+    k.box((u0 + u1) / 64, (v0 + v1) / 64, z0 / ZPX, (u1 - u0) / 32, (v1 - v0) / 32, (z1 - z0) / ZPX, col, top=top)
+
+
+def b1h():
+    """B1h: B1g3a (slate frame a shade down, red blanket) rebuilt on the pixel grid, no bevels. Footprint 32 x 64 px;
+    the bunk 28 x 60 (u -14..14, v -30..30). Heights in px: lower deck top 5, upper 38, mattress 4, posts 54."""
+    c = SCHEMES["g3a"]
+    k = K("bunk_b1h", FP)
+    kp = K("bunk_b1h_pillows", FP)
+    kp.m = core.Mesh("bunk_b1h_pillows", flat=True)
+    lo, hi = 5, 38                                     # deck tops
+    for su in (-1, 1):                                 # posts, 2 x 2 px at the corners
+        for sv in (-1, 1):
+            u, v = (12, 14) if su > 0 else (-14, -12), (28, 30) if sv > 0 else (-30, -28)
+            _px(k, *u, *v, 0, 54, c["post"][0], c["post"][1])
+    for z in (lo, hi):
+        _px(k, -14, 14, -28, 28, z - 3, z, c["deck"][0], c["deck"][1])          # deck, between the posts
+        _px(k, -12, 12, -30, -28, z - 3, z, c["deck"][0], c["deck"][1])
+        _px(k, -12, 12, 28, 30, z - 3, z, c["deck"][0], c["deck"][1])
+        _px(k, -10, 10, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])             # mattress
+        _px(kp, -8, 8, -25, -14, z + 4, z + 7, "lvW2", "lvWL")                    # pillow (unlit: no speckle)
+        _px(k, -11, 11, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])  # blanket, over the sides and foot
+        _px(k, -11, 11, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])          # its turned-down hem
+    for z, head, foot in ((lo, 12, 8), (hi, 13, 10)):                            # solid head and foot boards
+        _px(k, -12, 12, -29, -28, z, z + head, c["board"][0], c["board"][1])
+        _px(k, -12, 12, 28, 29, z, z + foot, c["board"][0], c["board"][1])
+    _px(k, -8, 8, -6, -4, hi - 4, hi - 3, "cyan")                                 # reading light under the deck
+    r = c["rail"]
+
+    def rail(u, z, h, v0, v1, posts):
+        """A rail on the long side at u (the px column u..u+1): a 2 px top bar, a 1 px mid bar, 1 px uprights."""
+        _px(k, u, u + 1, v0, v1, z + h - 2, z + h, r, r)
+        _px(k, u, u + 1, v0, v1, z + h // 2, z + h // 2 + 1, r, r)
+        for v in posts:
+            _px(k, u, u + 1, v, v + 1, z, z + h - 2, r, r)
+    rail(-13, hi, 14, -28, 28, (-14, 0, 14))                                     # wall side, both decks
+    rail(-13, lo, 12, -28, 28, (-14, 0, 14))
+    rail(12, hi, 14, -28, 10, (-10, 9))                                           # open side, head to the ladder
+    for v in (15, 24):                                                            # ladder: rails and four rungs
+        _px(k, 14, 15, v, v + 1, 0, hi + 14, r, r)
+    for i in range(1, 5):
+        z = round(i * (hi + 14) / 5)
+        _px(k, 14, 15, 16, 24, z, z + 1, r, r)
+    return k.build() + kp.build()
+
+
+DESIGNS = {"b1h": b1h, "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
            **{f"b1{g}": (lambda g=g: _b1g(f"bunk_b1{g}", SCHEMES[g])) for g in SCHEMES}}
 
 
