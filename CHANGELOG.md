@@ -81,6 +81,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Shipyard: the see-through build ghosts of new hull tiles show the new hull art instead of the old wall blocks, and hull doors keep their door in the preview. ([#466](https://github.com/BigBadLoser/cc-ftl/pull/466))
 - Station courts are always on open floor, never under furniture, so civilians can reach every one. ([#465](https://github.com/BigBadLoser/cc-ftl/pull/465))
 - Saving and loading no longer changes your best-credits record on the game-over summary, so a reloaded game plays on exactly as it would have. ([#463](https://github.com/BigBadLoser/cc-ftl/pull/463))
 - Freight containers draw their real art instead of a placeholder: a 2x3 container with doors on one end. Its door plate and lamp now swing with the doors, and the closed doors sit flush with the body. ([#462](https://github.com/BigBadLoser/cc-ftl/pull/462))
