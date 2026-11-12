@@ -7,6 +7,9 @@
 **Date:** 2026-11-11.  
 **Audience:** Claude Code or another implementation agent resuming this branch.  
 
+> **Later work:** what was built from this handoff, the decisions taken and what is still open are in
+> [STATION_FLOW_WHEEL.md](STATION_FLOW_WHEEL.md).
+
 > **Read this first:** Do **not** continue incrementally tuning the current angular sector generator. The critical unfinished deliverable is to replace angular *placement* of departments with a genuine connected architectural bay/topology planner, while retaining circular inhabited masses, native furnishings and strong validation. The new `programBay` mode in this branch is a useful intermediate, not the goal.
 
 ## 0. Immediate assignment
