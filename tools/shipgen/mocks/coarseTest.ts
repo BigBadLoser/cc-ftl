@@ -3,32 +3,34 @@
  * coarseTest: many small rooms at equal angles on a plain circle and on coarse lattices of 2 and 3 tiles.
  * latticeTest: hull and ring on a k-tile lattice, the band cut along the lattice itself, one room a strip.
  */
-import { Mock, type Part } from './mockKit';
+import { Mock, polyR, type Part } from './mockKit';
 
-export function coarseTest(k: number, rooms = 44): ReturnType<Mock['build']> {
+export function coarseTest(k: number, rooms = 44, sides = 0): ReturnType<Mock['build']> {
   const m = new Mock(84, 84, 42, 42);
   const band = m.room('quarters');
   const ring = m.hall();
   const court = m.hall('garden');
-  if (k <= 1) { m.arc(band, 30, 36); m.arc(ring, 28, 30); m.arc(court, 0, 28); }
+  if (k <= 1) { m.arc(band, 30, 36, 0, 360, sides); m.arc(ring, 28, 30, 0, 360, sides); m.arc(court, 0, 28, 0, 360, sides); }
   else { m.coarse(band, 30, 36, k); m.coarse(ring, 30 - (k === 3 ? 3 : 2), 30, k); m.coarse(court, 0, 30 - (k === 3 ? 3 : 2), k); }
   m.around(band, 2, Array.from({ length: rooms }, () => ['quarters', 360 / rooms] as Part));
   return m.clean().build(`coarse ${k}`);
 }
 
-export function latticeTest(k: number, cells: number, deep = 2): ReturnType<Mock['build']> {
+export function latticeTest(k: number, cells: number, deep = 2, sides = 0, stubs = false): ReturnType<Mock['build']> {
   const size = 2 * (cells + 2) * k;
   const m = new Mock(size, size, size / 2, size / 2);
   const { cx, cy, w } = m;
   const R = cells * k;
   // Cell coordinates of a tile (cell centre, in tiles from the station centre).
   const cell = (x: number, y: number): [number, number] => [(Math.floor((x - cx) / k) + 0.5) * k, (Math.floor((y - cy) / k) + 0.5) * k];
-  const inDisc = (x: number, y: number, r: number): boolean => { const [dx, dy] = cell(x, y); return Math.hypot(dx, dy) < r; };
+  // Distance from the centre: to a circle, or to a `sides`-gon with a flat face on each axis (a faceted outline).
+  const dist = (dx: number, dy: number): number => polyR(Math.hypot(dx, dy), ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360, sides);
+  const inDisc = (x: number, y: number, r: number): boolean => { const [dx, dy] = cell(x, y); return dist(dx, dy) < r; };
   // Inboard of the band: a cell is inner when the cell `deep` cells further out along its octant's axis is still in
   // the hull disc, so every strip of the band is exactly `deep` cells deep and the ring steps where the hull steps.
   const inner = (x: number, y: number): boolean => {
     const [dx, dy] = cell(x, y);
-    return Math.abs(dy) >= Math.abs(dx) ? Math.hypot(dx, dy + Math.sign(dy) * deep * k) < R : Math.hypot(dx + Math.sign(dx) * deep * k, dy) < R;
+    return Math.abs(dy) >= Math.abs(dx) ? dist(dx, dy + Math.sign(dy) * deep * k) < R : dist(dx + Math.sign(dx) * deep * k, dy) < R;
   };
   // At a step the divider between two strips must run straight from the hull's riser down to the ring. So the ring's
   // own riser sits one tile nearer the axis than the lattice line: `inside` is `inner` less that one-tile column, which
@@ -57,9 +59,10 @@ export function latticeTest(k: number, cells: number, deep = 2): ReturnType<Mock
     strips.get(key)?.tiles.push(y * w + x);
   }
   for (const s of [...strips.values()].sort((p, q) => p.off - q.off)) {
-    if (s.tiles.length < deep * k * k) continue; // a stub at the exact diagonal: left open (a one-cell notch in the hull)
+    // A stub at the exact diagonal (a strip cut short by the other octant): left open, a notch in the hull, or kept.
+    if (!stubs && s.tiles.length < deep * k * k) continue;
     const id = m.room('quarters');
     for (const t of s.tiles) m.own[t] = id;
   }
-  return m.build(`lattice ${k}`);
+  return m.build(`lattice ${k}${sides ? ` ${sides}-gon` : ''}`);
 }
