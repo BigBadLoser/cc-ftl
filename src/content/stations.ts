@@ -52,11 +52,11 @@ const SHAPES: Record<'trading' | 'mining' | 'farming' | 'military' | 'pirate' | 
   },
 };
 
-interface TierNums { cages?: Per; bays?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
+interface TierNums { cages?: Per; bays?: Per; pods?: Per; crew: number; guns: Per; heavyPct: number; shields: Per; pd: Per; crates: Per; docks: Per; shapes: Shapes }
 function tiers(n: TierNums): Record<StationSize, StationTier> {
   const one = (s: StationSize): StationTier => ({
     crew: Math.round(CREW[s] * n.crew), guns: n.guns[s], heavyPct: n.heavyPct, shields: n.shields[s], pointDefense: n.pd[s],
-    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}), ...(n.bays ? { bays: n.bays[s] } : {}),
+    crates: n.crates[s], docks: n.docks[s], grammars: n.shapes[s], ...(n.cages ? { cages: n.cages[s] } : {}), ...(n.bays ? { bays: n.bays[s] } : {}), ...(n.pods ? { pods: n.pods[s] } : {}),
   });
   return { outpost: one('outpost'), station: one('station'), hub: one('hub') };
 }
@@ -108,7 +108,7 @@ export const stations = {
     name: 'Mining station', kind: 'mining', side: 'neutral', motif: 'motif.civilian', security: 0.25, space: [0.8, 1.2], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.scrap_hull', min: 0, max: 6 }, { item: 'item.iron_ore', min: 4, max: 14 }, { item: 'item.rare_ore', min: 0, max: 4 }],
-    tiers: tiers({ cages: per(1, 1, 2), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
+    tiers: tiers({ cages: per(1, 1, 2), pods: per(2, 4, 6), crew: 1, guns: per(2, 5, 10), heavyPct: 20, shields: per(1, 2, 3), pd: per(1, 2, 3), crates: per(10, 24, 48), docks: per(3, 4, 6), shapes: SHAPES.mining }),
     rooms: [
       room('industry', n(2, 'module.refinery'), 10, 7, per(1, 2, 4), [{ item: 'item.iron_ore', min: 300, max: 3000 }, { item: 'item.ice', min: 150, max: 1500 }, { item: 'item.rare_ore', min: 150, max: 1500 }, { item: 'item.energy_crystal', min: 100, max: 600 }]),
       room('cargo', n(4, 'module.storage'), 8, 5, per(1, 2, 3), [{ item: 'item.metal', min: 4, max: 12 }, { item: 'item.ice', min: 2, max: 8 }, { item: 'item.iron_ore', min: 6, max: 20 }, { item: 'item.rare_ore', min: 0, max: 5 }]),

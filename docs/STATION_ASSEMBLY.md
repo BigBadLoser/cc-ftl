@@ -114,6 +114,8 @@ where `main` has something better or new (the arcade cabinet and game table, pow
 - Crate rooms merge into warehouses of up to 24 crates.
 - Medbays: one for every five quarters blocks; a large station has a clinic (a ward and two treatment rooms).
 - Plant rooms: one for every reactor room, two at least.
+- A pod deck where the tier has mining pods (`pods`: the mining station, 2 / 4 / 6 bays): one hangar, the bays in a row
+  (two rows past four) with an aisle.
 - Shuttle bays where the tier has them (`bays`: the navy depot). Farms on the agri station (`assemblyRooms`).
 
 | Department | Rooms |
@@ -140,14 +142,20 @@ Eight recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compou
 `stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
 which has 43 to 56 solid wall blocks.
 
-### The spine (first pass)
+### The spine (in progress)
 
-`stationRecipes.spine`, on the mining station's rooms with the old Spine as the first row (`--family spine --versus`):
-the harbour at the head, habitation with the commons and the guns as the body (sections in series, joined directly),
-the machinery behind a gate at the tail, works and freight as wings on stubs off the flanks, ore cages on what ports
-are left. 8 of 8 assemble with every room and hold standing; a cage is the part most often refused (up to six
-candidates rejected before one stands). Read against the old Spine it is a heavy bar with two wings rather than a thin
-line of pods, the body is nearly all cabins, and the cages hang off the wings more often than off the spine.
+`stationRecipes.spine`, on the mining station's rooms (`--family spine`, `--versus` for the old Spine as the first
+row): the harbour at the head, habitation with the commons and the guns as the body (sections in series, joined
+directly), the machinery behind a gate at the tail, works and freight as wings on stubs off the flanks.
+
+- The main street is 3 wide (`width` on a section; module streets and stubs stay 2).
+- The works wing ends in the pod deck (`cap: 'hangar'`: the room across a section's end is the first of that role).
+- Ore cages hang on what ports are left. They are under review (sealed rooms of crates on a rail, off the ore's path
+  from pod bay to store to refinery): to be dropped or replaced.
+- 12 of 12 assemble with every room standing. A cage is the part most often refused (up to five candidates rejected
+  before one stands).
+
+Open: the street is one straight uniform line; the body is nearly all cabins; seeds differ little.
 
 ## Known limits
 

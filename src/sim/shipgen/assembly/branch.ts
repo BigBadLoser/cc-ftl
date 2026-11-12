@@ -27,8 +27,8 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * One block section at a port: as the rule draws it, and when staggered bays build a thick wall or will not fit, as a
  * slab of one depth (the rooms keep their floor).
  */
-function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: rule.section.cross ?? false, ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
@@ -63,7 +63,7 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
   {
     for (const [i, part] of parts.entries()) {
       const last = i === parts.length - 1, here = port;
-      const ps = section(a, here, joined, part, rule, { cap: last && !!rule.section.cap, ...(i === 0 ? first : {}), ...offer() });
+      const ps = section(a, here, joined, part, rule, { cap: last ? rule.section.cap ?? false : false, ...(i === 0 ? first : {}), ...offer() });
       if (!ps) return fail();
       taken();
       a.sections++;

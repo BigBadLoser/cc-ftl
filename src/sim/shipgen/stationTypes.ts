@@ -42,6 +42,8 @@ export interface StationTier {
   cages?: number;
   /** Shuttle bays (hangars), for boarding parties and patrols. Read by the station assembly (`assembly/program.ts`). */
   bays?: number;
+  /** Mining pod bays, together on one pod deck (a hangar). Read by the station assembly. */
+  pods?: number;
 }
 
 export interface StationDef {

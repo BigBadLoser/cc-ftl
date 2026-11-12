@@ -72,8 +72,10 @@ function dogleg(c: Ctx, port: Port, length: number, shift: number): Built | null
 export interface BlockOpts {
   /** One floor depth for both rows (a slab); the rooms' own when not given (staggered bays). */
   rowDepth?: number;
-  /** Its biggest room stands across the far end; otherwise the street runs through to a port there. */
-  cap?: boolean;
+  /** A room stands across the far end (its biggest, or the first of this role); otherwise the street runs through to a port there. */
+  cap?: boolean | RoomSpec['role'];
+  /** The street's width in tiles (default 2): a main street is wider than a module's. */
+  width?: number;
   /** Both rows end together (the shorter one's last room is stretched). */
   even?: boolean;
   dept?: string;
@@ -99,7 +101,10 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const f = port.frame, g = c.g;
   const docks = o.docks ?? [];
   if (rooms.length + docks.length === 0) return null;
-  const capOf = o.cap && rooms.length >= 3 ? [...rooms].sort((a, b) => b.w * b.h - a.w * a.h)[0] : undefined;
+  const bySize = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
+  const capOf = o.cap && rooms.length >= 3 ? (typeof o.cap === 'string' ? bySize.find((r) => r.role === o.cap) : undefined) ?? bySize[0] : undefined;
+  // The street runs v = -1 up to X: two tiles and what a wider one adds, on its +v side.
+  const X = Math.max(2, o.width ?? 2) - 2;
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
   const depth = docks.length > 0 ? DOCK_DEPTH - 2 : o.rowDepth;
   const body = rooms.filter((r) => r !== capOf).map((r) => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w }));
@@ -130,11 +135,11 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // than its rooms add up to, and the street is as long as the rows turn out.
   const lay = (list: RoomSpec[], side: -1 | 1, u: number): number | null => {
     const first = g.regions.length;
-    const r = line(c.site, list, axis, dir, from + dir * u, side < 0 ? across - 2 : across + 1, side, { access: [hall], free: c.free });
+    const r = line(c.site, list, axis, dir, from + dir * u, side < 0 ? across - 2 : across + 1 + X, side, { access: [hall], free: c.free });
     made.push({ side, from: first, to: g.regions.length });
     return r.rest.length > 0 ? null : list.length > 0 ? (r.at - from) * dir : u;
   };
-  const back = [Math.max(3, ...rows[0].map((r) => r.h)) + 3, Math.max(3, ...rows[1].map((r) => r.h)) + 2];
+  const back = [Math.max(3, ...rows[0].map((r) => r.h)) + 3, Math.max(3, ...rows[1].map((r) => r.h)) + 2 + X];
   // On the flank of another block the rows start a tile out: the first tile is that block's back wall.
   const u0 = port.flank ? 1 : 0;
   // The street is as long as the rows turn out, so it never runs on alone past the last room.
@@ -148,7 +153,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const e0 = lay(rows[0].slice(0, cut[0]), -1, u0), e1 = lay(rows[1].slice(0, cut[1]), 1, u0);
     if (e0 === null || e1 === null) return null;
     const e = Math.max(e0, e1, u0 + 2);
-    const lanes = [rect(f, e, e + 2, -(back[0] as number) + 1, -1), rect(f, e, e + 2, 1, back[1] as number)];
+    const lanes = [rect(f, e, e + 2, -(back[0] as number) + 1, -1), rect(f, e, e + 2, 1 + X, back[1] as number)];
     for (const box of lanes) for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (g.at(x, y) !== SPACE || !c.free(x, y)) return null;
     const m0 = lay(rows[0].slice(cut[0]), -1, e + 2), m1 = lay(rows[1].slice(cut[1]), 1, e + 2);
     if (m0 === null || m1 === null) return null;
@@ -166,7 +171,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     L = Math.max(L, e0, e1);
     ends[0] = e0; ends[1] = e1;
   }
-  if (!clear(c, f, 0, L)) return null;
+  if (!clear(c, f, 0, L, -1, 1 + X)) return null;
   // Under an end room the rows end together: the shorter row's last room runs on to the end room, so no notch is
   // left between them.
   if (capOf) for (const [k, side] of ([-1, 1] as const).entries()) {
@@ -174,15 +179,15 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const end = ends[k] as number;
     if (!last || end >= L) continue;
     const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3;
-    const box = side < 0 ? rect(f, end, L, -(h + 3), -1) : rect(f, end, L, 1, h + 3);
+    const box = side < 0 ? rect(f, end, L, -(h + 3), -1) : rect(f, end, L, 1 + X, h + 3 + X);
     let open = true;
     for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
     if (open) g.rect(id, ...box);
   }
-  g.street(hall, ...rect(f, o.gate ? 1 : 0, L, -1, 1));
+  g.street(hall, ...rect(f, o.gate ? 1 : 0, L, -1, 1 + X));
   for (const box of cross) g.street(hall, ...box);
   if (o.gate) {
-    g.rect(SOLID, ...rect(f, 0, 1, -1, 1));
+    g.rect(SOLID, ...rect(f, 0, 1, -1, 1 + X));
     g.gate(...at(f, 0, 0));
   }
   let far = L;

@@ -30,6 +30,9 @@ describe('station program', () => {
     }
     expect(programOf('station.farming', 'station', 1).rooms.some((r) => r.role === 'farm')).toBe(true);
     expect(programOf('station.military', 'hub', 1).rooms.filter((r) => r.role === 'hangar')).toHaveLength(2);
+    // A mining station's pod deck: one hangar with a bay for every pod of its tier.
+    const decks = programOf('station.mining', 'station', 1).rooms.filter((r) => r.role === 'hangar');
+    expect(decks.map((r) => r.mods)).toEqual([Array<string>(stations['station.mining'].tiers.station.pods ?? 0).fill('module.pod_bay')]);
   });
 });
 

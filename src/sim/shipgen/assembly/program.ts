@@ -83,6 +83,9 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   const cargo: RoomSpec[] = [];
   for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left)), space));
   const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, (): RoomSpec => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
+  // The pod deck: mining pod bays in a row (two rows past four), each with the tile beside it crew unload at, and an aisle.
+  const pods = t.pods ?? 0, podRows = pods > 4 ? 2 : 1, perRow = Math.ceil(pods / podRows);
+  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8 });
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];
   // Power: every room's draw, a lamp a room, and a margin for the fittings a fit-out adds; then the smallest reactor
   // tier the size allows that powers the station from one room of two, else the largest.

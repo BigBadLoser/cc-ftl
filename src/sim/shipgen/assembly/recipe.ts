@@ -2,6 +2,7 @@ import type { Dept } from './dept';
 import type { Outline } from './lattice';
 import type { Dir } from './model';
 import type { Gap } from './ring';
+import type { RoomRole } from '../types';
 
 /**
  * A recipe: what a station is composed of and how its parts stand to each other. It names no coordinate and no room.
@@ -35,8 +36,11 @@ export interface BranchRule {
   most?: number;
   /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch or stands against it. */
   gated?: boolean;
-  /** Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the last one's end. */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean; even?: boolean; cross?: boolean | 'any' };
+  /**
+   * Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the
+   * last one's end (the biggest, or the first of a role), and the street's width (default 2).
+   */
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any'; width?: number };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
