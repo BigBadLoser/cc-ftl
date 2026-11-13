@@ -60,7 +60,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "bn18j": "BN18J  plinth", "bn18k": "BN18K  sled legs", "bn18l": "BN18L  back spine",
          "bn18m": "BN18M  end T-legs", "bn18n": "BN18N  panel ends", "bn18o": "BN18O  posts",
          "pl1": "PL1  glazed pot", "pl2": "PL2  grow trough", "pl3": "PL3  bio-dome",
-         "pl1a": "PL1A  taller", "pl1b": "PL1B  upright blades", "pl1c": "PL1C  footed"}
+         "pl1a": "PL1A  taller", "pl1b": "PL1B  upright blades", "pl1c": "PL1C  footed",
+         "vm1": "VM1  snack tower", "vm2": "VM2  can column", "vm3": "VM3  ration printer"}
 CW, CH = 200, 220
 
 
