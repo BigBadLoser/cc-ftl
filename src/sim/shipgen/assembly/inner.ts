@@ -66,9 +66,18 @@ export const innerRoom = (r: RoomSpec): boolean => !!r.cabin || (Math.min(r.w, r
  */
 export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity, rows = false): RoomSpec[] {
   const { g } = s;
-  // `rows`: the longest runs first, so what stands inboard is a row along a straight (an arc's arms), not rooms
-  // scattered on the short runs by the axes.
-  const runs = rows ? runsOf(s).sort((p, q) => q.a1 - q.a0 - (p.a1 - p.a0)) : runsOf(s);
+  // `rows`: the runs with the longest stretch of open ground in front of them first (a pier cuts a run in two), so
+  // what stands inboard is a row along a straight (an arc's arms), not rooms scattered on the short runs by the axes.
+  const stretch = (run: Run): number => {
+    let best = 0, n = 0;
+    for (let a = run.a0; a <= run.a1; a++) {
+      const [x, y] = run.axis === 'x' ? [a, run.at + run.inward] : [run.at + run.inward, a];
+      n = s.free(x, y) ? n + 1 : 0;
+      best = Math.max(best, n);
+    }
+    return best;
+  };
+  const runs = rows ? runsOf(s).map((r) => ({ r, n: stretch(r) })).sort((p, q) => q.n - p.n).map((p) => p.r) : runsOf(s);
   const left = [...asks];
   for (const run of runs) {
     if (left.length === 0) break;
