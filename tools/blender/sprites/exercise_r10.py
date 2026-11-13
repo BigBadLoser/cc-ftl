@@ -126,15 +126,16 @@ def v4a(p):
     arms(p)
 
 
-def v4b(p, sh_f=0.0, **kw):
+def v4b(p, sh_f=0.0, lean=12.0, **kw):
     p.cyl((0, 0, 0.66), 0.08, 0.1, DARK)
     p.rbox((0, 0, 0.77), (0.2, 0.14, 0.16), DARK, r=0.03)                          # abdomen
     for sx in (1, -1):                                                             # side pistons, waist to chest
         piston(p, (sx * 0.1, -0.02, 0.68), (sx * 0.15, 0.0, 0.9))
     p.rbox((0, 0, 0.86), (0.36, 0.24, 0.045), ACCENT, r=0.03)                      # seam
-    p.rbox((0, 0.05, 1.0), (0.34, 0.31, 0.3), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # sloped broad chest
-    p.rbox((0, 0.2, 1.04), (0.2, 0.06, 0.15), DARK_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
-    sensor_head(p, 0.12, 1.2, 1.0, pitch=-12, brow=1.15)
+    t = lean / 12.0                                                                # (lean: the chest's tip forward, deg)
+    p.rbox((0, 0.05 * t, 1.0), (0.34, 0.31, 0.3), CLOTH, r=0.04, taper=1.4, rot=(-lean, 0, 0))   # broad chest
+    p.rbox((0, 0.17 + 0.03 * t, 1.04), (0.2, 0.06, 0.15), DARK_L, r=0.03, taper=1.15, rot=(-lean, 0, 0))  # inset
+    sensor_head(p, 0.03 + 0.09 * t, 1.2, 1.0, pitch=-lean, brow=1.15)
     kw = {"el": (0.36, 0.12, 0.8), "wr": (0.2, 0.3, 1.0), **kw}
     arms(p, sh_x=0.3, sh_z=1.04, k=1.2, sh_f=sh_f, **kw)
 
@@ -166,3 +167,8 @@ POSES = {
 }
 for _n, _kw in POSES.items():
     DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, **kw))
+
+
+# ---- round 19: the lean taken out of v4b's chest and head ---------------------------------------------------------------
+for _n, _lean, _kw in (("v4g", 0.0, POSES["v4d"]), ("v4h", 5.0, POSES["v4d"]), ("v4i", 0.0, {})):
+    DESIGNS[_n] = droid(f"ex_{_n}", lambda p, ln=_lean, kw=_kw: v4b(p, SH_F, lean=ln, **kw))
