@@ -95,54 +95,41 @@ def beam(k, a, b, w, h, col, top=None):
 
 
 # ---- the cart (hover B: a floating cradle) --------------------------------------------------------------------------
-CV = L / 2 + 0.02                                    # the clamps' centres: on the slab's end caps (round 36: they
-                                                    # sat at 1.05, spaced for the old longer slab, one hung off its end)
+# Settled in rounds 35-44: level, the clamps on the slab's end caps, the lift field as two rings per emitter that leave
+# it, run down and dim out before the floor (fading in the same palette steps), a twelve-frame loop. Built round any
+# slab frame lying face up, so the cart's own sprite (c11, its loop c11w<n>) and the loading frames share it.
+CV = L / 2 + 0.02                                   # a clamp's centre from the slab's middle: on its end cap
+HOVER_N, RINGS = 12, 2                              # the loop's frames, its rings
 
 
-def tip(v, deg):
-    """A clamp's height offset at v along the cart, the slab tipped `deg` head up about its foot."""
-    return (v + L / 2) * math.tan(math.radians(deg))
+def ring_fs(n):
+    """The rings' places down their run (0: leaving the emitter, 1: gone) in loop frame n."""
+    return [((i + (n % HOVER_N) / HOVER_N) / RINGS) for i in range(RINGS)]
 
 
-def cradle(k, deg=6.0):
-    """c11: two emitter clamps hold the slab's ends in the air, a push bar on the foot clamp; the slab tipped `deg`
-    head up (round 35: the user found 6 deg looked wrong; c11f carries it level, c11t clearly tipped)."""
-    z, a = 0.62, math.radians(deg)
-    for v in (-CV, CV):
-        h = z + tip(v, deg) - 0.06
-        k.box(0, v, h - 0.16, 0.98, 0.2, 0.34, "dark", top="steelD")          # the clamp
-        k.cyl(0, v, h - 0.2, 0.16, 0.04, "steelD", top="steel", sides=14)    # its emitter
-        k.cyl(0, v, h - 0.21, 0.13, 0.012, "slbCy", sides=14)
-        k.box(0, v + (0.1 if v > 0 else -0.1), h, 0.6, 0.012, 0.05, "slbCy")
-    for u in (-0.4, 0.4):                                                    # the push bar
-        k.box(u, -CV - 0.16, z - 0.1, 0.05, 0.05, 0.6, "steel", top="steelL")
-    k.box(0, -CV - 0.16, z + 0.48, 0.86, 0.06, 0.06, "steelL")
-    return [cassette(k, Slab((0.0, -L / 2, z), (0.0, math.cos(a), math.sin(a)), (0.0, -math.sin(a), math.cos(a))))]
+def ring_col(f):
+    return "slbCyD" if f < 0.09 or f >= 0.75 else "slbCyM" if f < 0.18 or f >= 0.45 else "slbCy"
 
 
-def cradle_beams(k, deg=6.0):
-    for v in (-CV, CV):
-        k.cyl(0, v, 0.0, 0.22, 0.62 + tip(v, deg) - 0.43, "slbFilm", sides=14, rtop=0.13)
-
-
-def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85), end=None):
-    """Round 37: the lift field as rings under each emitter (not the solid cone), widening to the floor; fs: each
-    ring's place down from the emitter (0) to the floor (1). end (round 41, how a ring finishes): "floor" dims in two
-    palette steps to the floor, "air" dims out two thirds of the way down, "ripple" spreads fast and dims at the floor;
-    None: full bright all the way."""
+def hover_cart(k, s, n=0, bar=-1):
+    """The hover cart under slab s (face up): an emitter clamp on each end cap, the push bar past the end `bar` (-1:
+    the foot, 1: the head), and loop frame n's rings under the emitters, down toward the floor (z = 0)."""
     from .slab_wheel import annulus
-    for v in (-CV, CV):
-        top = 0.62 + tip(v, deg) - 0.29                 # just under the emitter
-        for f in fs:
-            z, r = top * (1 - (0.65 if end == "air" else 1.0) * f), 0.15 + 0.09 * f
-            if end == "ripple":
-                r += 0.3 * max(0.0, (f - 0.6) / 0.4) ** 2
-            col = "slbCy" if end is None or f < 0.6 else "slbCyM" if f < 0.8 else "slbCyD"
-            if end == "air":                        # round 43: a ring under the emitter's disc hid half the run, so
-                z, r = top - 0.04 - 0.23 * f, 0.2 + 0.07 * f    # it starts wider than the emitter, just below it,
-                col = ("slbCyD" if f < 0.09 or f >= 0.75 else "slbCyM" if f < 0.18 or f >= 0.45   # and dims over
-                       else "slbCy")                # the run; round 44: it fades in the same steps (it popped in)
-            annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, col, n=28)
+    for e in (-1, 1):
+        lc = L / 2 + e * CV
+        s.box(k, lc - 0.1, lc + 0.1, -0.49, 0.49, -0.22, 0.12, "dark", face="steelD")    # the clamp
+        s.box(k, *sorted((lc + e * 0.1, lc + e * 0.112)), -0.3, 0.3, -0.06, -0.01, "slbCy")  # its strip
+        c = s.p(lc, 0.0, -0.26)
+        k.cyl(c[0], c[1], c[2], 0.16, 0.04, "steelD", top="steel", sides=14)              # its emitter
+        k.cyl(c[0], c[1], c[2] - 0.01, 0.13, 0.012, "slbCy", sides=14)
+        top = c[2] - 0.03
+        for f in ring_fs(n):
+            annulus(_Shift(k, c[0], c[1]), 0.155 + 0.07 * f, 0.2 + 0.07 * f, top - 0.04 - (top - 0.06) * 0.85 * f,
+                    top - 0.015 - (top - 0.06) * 0.85 * f, ring_col(f), n=28)
+    lb = L / 2 + bar * (CV + 0.16)
+    for w in (-0.4, 0.4):                                                    # the push bar
+        s.box(k, lb - 0.025, lb + 0.025, w - 0.025, w + 0.025, -0.1, 0.5, "steel", face="steelL")
+    s.box(k, lb - 0.03, lb + 0.03, -0.43, 0.43, 0.48, 0.54, "steelL")
 
 
 class _Shift:
@@ -153,6 +140,19 @@ class _Shift:
 
     def p(self, u, v):
         return self.k.p(u + self.u, v + self.v)
+
+
+def level(z=0.62):
+    """The cart's slab on its own sprite: face up at height z along the footprint's long axis."""
+    return Slab((0.0, -L / 2, z), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+
+
+def cradle(n=0):
+    def go(k):
+        s = level()
+        hover_cart(k, s, n)
+        return [cassette(k, s)]
+    return go
 
 
 def cradle_sheet(k):
@@ -173,60 +173,9 @@ def single(build, fp, name):
     return go
 
 
-CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0, "c11r": 0.0, "c11s": 0.0, "c11r2": 0.0}   # c11r: solid rings, c11s: see-through
-
-
-def cart_design(v, d):
-    def go(k):
-        if v == "c11r":
-            hover_rings(k, d)
-        if v == "c11r2":                            # two rings
-            hover_rings(k, d, fs=(0.35, 0.8))
-        return cradle(k, d)
-    return go
-
-
-def cart_field(v, d):
-    if v in ("c11r", "c11r2"):
-        return []
-    if v == "c11s":
-        return [(single(lambda k: hover_rings(k, d), (1, 2), "rg"), 150)]
-    return [(single(lambda k: cradle_beams(k, d), (1, 2), "bm"), 55)]
-
-
-CARTS = {v: (cart_design(v, d), (1, 2)) for v, d in CART_TIP.items()}
-CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d),
-                     (single(cradle_sheet, (1, 2), "st"), 60)] for v, d in CART_TIP.items()}
-
-# Round 39: the hover loop. Rings leave the emitter and run down into the floor glow, widening as they go:
-# c11h<n>, n of HOVER_N frames, RINGS rings evenly spaced along the run, drawn into the cart's own sprite (as layers
-# each ring was cut by the cart differently frame to frame, and the loop jumped).
-HOVER_N, RINGS = 6, 3
-
-
-def hover_frame(n, rings=RINGS, floor=True, frames=HOVER_N):
-    fs = [(i + n / frames) / rings for i in range(rings)]
-    return tuple(f for f in fs if f > 0.04) + ((1.0,) if floor else ())    # (one just out of the emitter is still
-                                                            # inside it; one on the floor stays: a ring landing merges)
-
-
-def hover_design(n, rings=RINGS, end=None, frames=HOVER_N):
-    def go(k):
-        fs = hover_frame(n, rings, floor=end is None, frames=frames)
-        if end == "air" and n == 0:                 # (its rings show from the start: keep the one just out)
-            fs = (0.0, *fs)
-        hover_rings(k, 0.0, fs=fs, end=end)
-        return cradle(k, 0.0)
-    return go
-
-
-HOVERS = {"c11h": (3, None, 6), "c11g": (2, None, 6), "c11a": (2, "floor", 6), "c11b": (2, "air", 6),
-          "c11c": (2, "ripple", 6), "c11w": (2, "air", 12)}    # c11w: B slower (twelve frames; six flickered)
-for _id, (_r, _e, _f) in HOVERS.items():                    # c11h/g: three/two rings and the floor ring (round 40)
-    for _n in range(_f):
-        CARTS[f"{_id}{_n}"] = (hover_design(_n, _r, _e, _f), (1, 2))
-        CART_OVERLAYS[f"{_id}{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120),
-                                        (single(cradle_sheet, (1, 2), "st"), 60)]
+CARTS = {"c11": (cradle(0), (1, 2)), **{f"c11w{n}": (cradle(n), (1, 2)) for n in range(HOVER_N)}}
+CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), (single(cradle_sheet, (1, 2), "st"), 60)]
+                 for v in CARTS}
 
 
 # ---- rendering ------------------------------------------------------------------------------------------------------

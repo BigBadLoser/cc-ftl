@@ -21,7 +21,7 @@ import math
 from . import slab_bay as B
 from . import slab_wheel as W
 from .slab_kit import FRONT, at, cassette, rot, tube
-from .slab_study import Slab, T
+from .slab_study import Slab, T, hover_cart
 
 P = W.SCHEMES["s49a"]
 ST = FRONT                                          # the loading station: the wheel's slab 0 stands there
@@ -131,20 +131,8 @@ def cradle(k, s, pz):
         tube(k, m, b, 0.042, "steelL", sides=8)       # (rods >= 2 px)
 
 
-def cart(k, s):
-    """The hover cart under slab s: two emitter clamps at its ends, the push bar at its head (a stand-in for c11)."""
-    for l in (0.35, 1.25):
-        c = s.p(l, 0.0, -T - 0.12)
-        k.box(c[0], c[1], c[2] - 0.2, 0.22, 1.0, 0.2, "dark", top="steelD", rz=ST + math.pi / 2)
-        k.cyl(c[0], c[1], c[2] - 0.25, 0.14, 0.03, "slbCy", sides=12)
-    a, b = s.p(1.75, -0.4, -T), s.p(1.75, 0.4, -T)
-    for e in (a, b):
-        tube(k, e, (e[0], e[1], e[2] + 0.55), 0.045, "steel", sides=8)
-    tube(k, (a[0], a[1], a[2] + 0.55), (b[0], b[1], b[2] + 0.55), 0.045, "steelL", sides=8)
-
-
 BED = 0.12 + T + 0.05                               # a flat slab's face height on the cradle
-CART = 0.75                                         # and on the cart
+CART = 0.62                                         # and on the hover cart (its own sprite's height)
 SINK = -0.46                                        # the platform down: the slab's foot at the wheel's (Z0)
 DEEP = -1.6                                         # and on down, the cradle's top below the slab's foot
 # frames: (cradle tilt deg, platform z, cradle swing deg, slab: None | "home" | ("cart"/"left", out, z) | ("cradle",)
@@ -183,7 +171,7 @@ def frame_n(n, key=None):
         if sl[0] in ("cart", "left"):
             s = pose(sl[2], math.radians(90))
             s = Slab(tuple(s.O[i] - ET[i] * sl[1] for i in range(3)), s.U, s.N)
-            cart(k, s)
+            hover_cart(k, s, n, bar=1)               # (the push bar trailing, to the right)
             if sl[0] == "left":                     # the cart pulls away; the slab stays on the cradle
                 s = bed
         elif sl[0] == "cradle":
