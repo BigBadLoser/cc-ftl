@@ -49,7 +49,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "v6g": "V6g  grey arms, elbows out", "v6h": "V6h  grey arms, elbows down", "v6i": "V6i  warm grey, darkest joints",
          "bn1": "BN1  cantilever", "bn2": "BN2  lounge shell", "bn3": "BN3  slat bench",
          "bn2a": "BN2A  solid body", "bn2b": "BN2B  end panels", "bn2c": "BN2C  pedestal",
-         "bn4": "BN4  ribbon", "bn5": "BN5  lander legs", "bn6": "BN6  sled"}
+         "bn4": "BN4  ribbon", "bn5": "BN5  lander legs", "bn6": "BN6  sled",
+         "bn7": "BN7  seat row", "bn8": "BN8  crescent", "bn9": "BN9  jump seats"}
 CW, CH = 200, 220
 
 
