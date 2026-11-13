@@ -171,6 +171,9 @@ def jobs(name):
     if name == "vending13":     # look study, preview only (not in RENDERED): 90s paper-cup livery on the r11 body
         from . import vending_r13
         return vending_r13.jobs(), "only:vending"
+    if name == "vending14":     # look study, preview only (not in RENDERED): cup variants, one wrapping the front
+        from . import vending_r14
+        return vending_r14.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
