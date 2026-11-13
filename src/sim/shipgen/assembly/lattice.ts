@@ -23,17 +23,22 @@ const vertical = (x: number, y: number): boolean => { const [cx, cy] = cellOf(x,
 /** The station's outline on the lattice: a stepped disc, or a square with its corners cut. */
 export type Outline = 'disc' | 'square';
 
-/** The lattice shapes of a station of half-size R tiles: the hull, and the floor inboard of the band. */
-function shapes(R: number, outline: Outline, cut: number, round: boolean): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
+/**
+ * The lattice shapes of a station of half-size R tiles: the hull, and the floor inboard of the band. `open`: the side
+ * an arc is open to; a square's corners on that side are not cut, so its arms run straight to their ends.
+ */
+function shapes(R: number, outline: Outline, cut: number, round: boolean, open?: 'n' | 'e' | 's' | 'w'): { hull: (x: number, y: number) => boolean; inside: (x: number, y: number) => boolean } {
+  // Whether a point is on the open side's half: no corner there.
+  const plain = (x: number, y: number): boolean => (open === 'w' ? x < 0 : open === 'e' ? x > 0 : open === 'n' ? y < 0 : open === 's' ? y > 0 : false);
   // A square's corners: cut straight across, or rounded (an arc as deep as the cut, running into both flats).
   const corner = (ax: number, ay: number): boolean => (round ? ax <= R - K * cut || ay <= R - K * cut || Math.hypot(ax - (R - K * cut), ay - (R - K * cut)) < K * cut : ax + ay < 2 * R - K * cut);
-  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && corner(Math.abs(cx), Math.abs(cy)));
+  const within = (cx: number, cy: number): boolean => (outline === 'disc' ? Math.hypot(cx, cy) < R : Math.max(Math.abs(cx), Math.abs(cy)) < R && (plain(cx, cy) || corner(Math.abs(cx), Math.abs(cy))));
   // A rounded corner is a true arc, tile by tile, and the ring inside it another, the band's depth in: no lattice
   // steps there (a corner is one room, so no wall runs into the curve). `arc` is null off the corners.
   const C = R - K * cut;
   const arc = (x: number, y: number, r: number): boolean | null => {
     const ax = Math.abs(x + 0.5), ay = Math.abs(y + 0.5);
-    return round && outline === 'square' && ax > C && ay > C ? Math.hypot(ax - C, ay - C) <= r - 0.2 : null;
+    return round && outline === 'square' && ax > C && ay > C && !plain(x + 0.5, y + 0.5) ? Math.hypot(ax - C, ay - C) <= r - 0.2 : null;
   };
   const hull = (x: number, y: number): boolean => arc(x, y, K * cut) ?? within(...cellOf(x, y));
   // A cell is inboard when the cell DEEP cells further out along its octant's axis is still hull: every strip is DEEP deep.
@@ -83,9 +88,9 @@ export interface Site {
  * ring's own shape does not change at a cut; what lies beyond it is simply not built, and the cut faces are closed
  * with a solid line.
  */
-export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false, shoulders = false): Site {
+export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false, shoulders = false, openTo?: 'n' | 'e' | 's' | 'w'): Site {
   const g = new RegionGrid(R + pad);
-  const whole = shapes(R, outline, cut, round), inside = whole.inside;
+  const whole = shapes(R, outline, cut, round, openTo), inside = whole.inside;
   const kept = keep ?? ((): boolean => true);
   const hull = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y);
   const memo = new Map<number, number>();

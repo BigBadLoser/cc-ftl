@@ -90,19 +90,30 @@ const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'oc
   ],
 });
 
-/** PROTOTYPE. A harbour crescent: a rounded square open to the west, everything in two rows along its promenade. */
-const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number }; from: number; shoulders?: boolean; pier?: 'market' | 'habitation' }): Recipe => ({
-  name,
-  root: { kind: 'ring', takes: (['market', 'commons', 'defence', 'works', 'habitation'] as const).filter((d) => d !== o.pier), outline: 'square', cut: o.cut, round: true, ...(o.shoulders ? { shoulders: true } : {}), inner: true, gap: { side: 'w', from: o.from } },
-  spacing: 2,
-  branches: [
-    // The harbour on an arm's end; or with a pier, at the end of a wing that runs from the east side out through the basin.
-    ...(o.pier ? [{ takes: [o.pier], per: 'together', host: { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [8, 30], even: true }, link: 0 } as const] : []),
-    { takes: ['harbour'], per: 'together', host: o.pier ? { on: 'after', rule: 0 } : { on: 'tip' }, neck: o.pier ? 3 : 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
-    { takes: ['freight'], per: 'together', host: { on: 'tip' }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
-    { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: 7, even: true, cap: true }, link: 0 },
-  ],
-});
+/**
+ * PROTOTYPE. A harbour crescent: a rounded square open to the west, rooms in two rows along its promenade, and a pier
+ * from the east side out through the basin with the harbour at its end. The machinery is gated off the back, and each
+ * arm ends in a block of cabins on a private lane. Where the freight stands is the variation:
+ *   pier    the pier is the two warehouses; the stalls stand on the promenade's inner side, facing the basin
+ *   foot    the warehouses at the pier's foot, the stalls beyond them
+ *   behind  the pier is a market street, a warehouse behind the stalls on either side
+ */
+const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number }; from: number; freight: 'pier' | 'foot' | 'behind' }): Recipe => {
+  const stalls: BranchRule = { takes: o.freight === 'behind' ? ['market', 'freight'] : ['market'], per: 'together', host: o.freight === 'foot' ? { on: 'after', rule: 0 } : { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [8, 30], rowDepth: o.freight === 'behind' ? 3 : 4, even: true, ...(o.freight === 'behind' ? { behind: ['freight'] } : {}) }, link: 0 };
+  const sheds: BranchRule = { takes: ['freight'], per: 'together', host: { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 };
+  const pier = o.freight === 'pier' ? [sheds] : o.freight === 'foot' ? [sheds, stalls] : [stalls];
+  return {
+    name,
+    root: { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works'] : ['commons', 'defence', 'works'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: true, ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } },
+    spacing: 2,
+    branches: [
+      ...pier,
+      { takes: ['harbour'], per: 'together', host: { on: 'after', rule: pier.length - 1 }, neck: 3, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
+      { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: 7, even: true, cap: true }, link: 0 },
+      { takes: ['habitation'], per: 'together', host: { on: 'tip' }, neck: 0, most: 1, section: { rooms: [3, 5], rowDepth: 5, even: true, evenCabins: true }, link: 0 },
+    ],
+  };
+};
 
 export const stationRecipes = {
   tree: [
@@ -123,10 +134,9 @@ export const stationRecipes = {
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   crescent: [
-    crescent('harbour on an arm', { cut: { flat: 4 }, from: 22, shoulders: true }),
-    crescent('pier of stalls, harbour at its end', { cut: { flat: 4 }, from: 22, shoulders: true, pier: 'market' }),
-    crescent('pier of cabins, harbour at its end', { cut: { flat: 4 }, from: 22, shoulders: true, pier: 'habitation' }),
-    crescent('pier of cabins, rounder (flats of 3 cells)', { cut: { flat: 3 }, from: 22, shoulders: true, pier: 'habitation' }),
+    crescent('freight pier, stalls on the waterfront', { cut: { flat: 4 }, from: 20, freight: 'pier' }),
+    crescent('warehouses at the pier foot, stalls beyond', { cut: { flat: 4 }, from: 20, freight: 'foot' }),
+    crescent('market street, a warehouse behind the stalls either side', { cut: { flat: 4 }, from: 20, freight: 'behind' }),
   ],
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),

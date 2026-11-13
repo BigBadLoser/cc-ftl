@@ -119,6 +119,13 @@ export interface BlockOpts {
   cross?: boolean | 'any' | 'end' | 'inner';
   /** Cabins offered to it: they stand among its rooms, the shorter row first (bunks wherever there is room). */
   bunks?: readonly RoomSpec[];
+  /**
+   * Rooms that stand behind its rows, one a side, as long as the street: a shed behind a row of shops. It opens onto
+   * the host's hall at the block's foot. More than two: the rest stand in the rows.
+   */
+  behind?: readonly RoomSpec[];
+  /** Its cabins are one width and shared out so both rows end together (the last few a tile wider to close the gap). */
+  evenCabins?: boolean;
 }
 
 /**
@@ -130,6 +137,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const f = port.frame, g = c.g;
   const docks = o.docks ?? [];
   if (rooms.length + docks.length === 0) return null;
+  const sheds = (o.behind ?? []).slice(0, 2);
+  rooms = [...rooms, ...(o.behind ?? []).slice(2)];
   const bySize = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
   const capOf = o.cap && rooms.length >= 3 ? (typeof o.cap === 'string' ? bySize.find((r) => r.role === o.cap) : undefined) ?? bySize[0] : undefined;
   // The street runs v = -1 up to X: two tiles and what a wider one adds, on its +v side.
@@ -142,6 +151,16 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // A room's annex stands right after it in its row and opens into it. Quarters are cut into cabins where they stand,
   // a bed each, inside the room's own length: the row is no longer for it and the station no heavier.
   const rows = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, { ...shape(r.annex), annexed: true }] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
+  if (o.evenCabins) {
+    const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
+    const cabins = rows.flatMap((row) => row.filter((r) => r.cabin));
+    const wide = Math.max(2, Math.floor(cabins.reduce((n, r) => n + r.w, 0) / Math.max(1, cabins.length)));
+    for (const k of [0, 1] as const) rows[k] = rows[k].filter((r) => !r.cabin);
+    for (const cabin of cabins) (len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1]).push({ ...cabin, w: wide });
+    // The shorter row's cabins take up the difference, a tile each from its far end.
+    const short = len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1], own = short.map((r, i) => (r.cabin ? i : -1)).filter((i) => i >= 0);
+    for (let over = Math.abs(len(rows[0]) - len(rows[1])), j = own.length - 1; over > 0 && own.length > 0; over--, j = (j - 1 + own.length) % own.length) short[own[j] as number] = { ...(short[own[j] as number] as RoomSpec), w: (short[own[j] as number] as RoomSpec).w + 1 };
+  }
   // Bunks: each goes into the shorter row, somewhere among its rooms.
   const bunks = o.bunks ?? [];
   for (const b of bunks) {
@@ -229,6 +248,15 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     ends[0] = e0; ends[1] = e1;
   }
   if (!clear(c, f, 0, L, -1, 1 + X)) return null;
+  // The sheds: each behind its row, from the block's foot to the street's end, as deep as its floor asks.
+  let shedDeep = 0;
+  for (const [k, shed] of sheds.entries()) {
+    const deep = Math.max(4, Math.ceil((shed.w * shed.h) / Math.max(1, L - u0 - 2)));
+    const b = back[k] as number, box = k === 0 ? rect(f, u0, L, -(b + deep + 1), -b) : rect(f, u0, L, b + 1, b + deep + 2);
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y)) return null;
+    g.rect(g.room(shed.role, { spec: { ...shed, w: L - u0 - 2, h: deep }, doors: shed.warehouse ? 2 : 1, ...(port.hall >= 0 ? { access: [port.hall] } : {}) }), ...box);
+    shedDeep = Math.max(shedDeep, deep + 1);
+  }
   // Under an end room the rows end together: the shorter row's last room runs on to the end room, so no notch is
   // left between them.
   if (capOf) for (const [k, side] of ([-1, 1] as const).entries()) {
@@ -267,7 +295,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     far = L + along;
   } else ports.push({ frame: { x: at(f, L, 0)[0], y: at(f, L, 0)[1], dir: f.dir }, kind: 'end', hall, along: L, side: 0, ...(X > 0 ? { width: X + 2 } : {}) });
   for (let id = n0; id < g.regions.length; id++) regions.push(id);
-  const deep = Math.max(back[0] as number, back[1] as number) + 1;
+  const deep = Math.max(back[0] as number, back[1] as number) + 1 + shedDeep;
   const bounds = rect(f, 0, far + 1, -deep - 1, deep + 1);
   // The space off each dock stays open: where ships come in. It must be open now, and outside any hull still to fill.
   for (const m of made) for (let id = m.from; id < m.to; id++) {

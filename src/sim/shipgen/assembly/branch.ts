@@ -39,14 +39,16 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * slab of one depth (the rooms keep their floor).
  */
 function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, ...(rule.section.evenCabins ? { evenCabins: true } : {}), cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   // A rule with a quay builds its docks and this section's rooms as one.
   if (rule.quay && o.docks?.length) {
     const plain: BlockOpts = { ...base };
     delete plain.docks;
     return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain));
   }
-  const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, part, { ...base, ...(rowDepth ? { rowDepth } : {}) }));
+  // Rooms of the departments that stand behind the rows (sheds) are not row rooms.
+  const sheds = part.filter((r) => rule.section.behind?.includes(r.dept as Dept)), front = sheds.length > 0 ? part.filter((r) => !sheds.includes(r)) : part;
+  const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, front, { ...base, ...(sheds.length > 0 ? { behind: sheds } : {}), ...(rowDepth ? { rowDepth } : {}) }));
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
   return as() ?? as(Math.max(4, depths[depths.length >> 1] ?? 4));

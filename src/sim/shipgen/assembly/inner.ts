@@ -61,9 +61,10 @@ export const innerRoom = (r: RoomSpec): boolean => !!r.cabin || (Math.min(r.w, r
 
 /**
  * Place rooms on the ring's inner side, each on the run nearest its angle. `asks` in order of who chooses first.
+ * `within`: a room stands only on a run this near its angle (the rest find no place).
  * Returns the rooms that found no place.
  */
-export function placeInner(s: Site, asks: readonly InnerAsk[]): RoomSpec[] {
+export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity): RoomSpec[] {
   const { g } = s;
   const runs = runsOf(s);
   const left = [...asks];
@@ -97,6 +98,7 @@ export function placeInner(s: Site, asks: readonly InnerAsk[]): RoomSpec[] {
           let fits = true;
           for (let d = 0; d <= h + 1 && fits; d++) for (let k2 = 0; k2 < along && fits; k2++) fits = open(at + dir * k2, d);
           if (!fits) continue;
+          if (apart(run.angle, ask.angle) > within) continue;
           const cost = apart(run.angle, ask.angle) + (turned ? 0.05 : 0);
           if (cost < bestCost) { best = k; bestCost = cost; bestBox = { along, depth: h, turned }; }
         }

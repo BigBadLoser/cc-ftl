@@ -23,7 +23,7 @@ const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0
 export function ringSite(o: RingOpts, pad: number): { site: Site; kept: (x: number, y: number) => boolean } {
   const gap = o.gap;
   const kept = (x: number, y: number): boolean => !gap || (gap.side === 's' ? y < gap.from : gap.side === 'n' ? y >= -gap.from : gap.side === 'e' ? x < gap.from : x >= -gap.from);
-  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round, !!o.shoulders), kept };
+  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round, !!o.shoulders, gap?.side), kept };
 }
 
 /** The ring's ports: on its rim and on its inner side at the four axes (where the ring is there), and at the cut ends of an arc. */
@@ -57,18 +57,21 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
 }
 
 /** Fill the ring with its rooms: corners, then the band, then its inner side. Returns the rooms it could not hold. */
-export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): RoomSpec[] {
+export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean, front?: (r: RoomSpec) => boolean): RoomSpec[] {
   // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: the common rooms
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
   // A corner with shoulders is all curve, with no straight end for an annex to stand on: it takes the biggest rooms
   // without one, whatever their department, so no corner is left a gallery while the band is short.
-  const halls = specs.filter((r) => !r.cabin && (s.shoulders ? !r.annex && !r.annexed : r.dept === 'commons')).sort(bySize);
+  const halls = specs.filter((r) => !r.cabin && !front?.(r) && (s.shoulders ? !r.annex && !r.annexed : r.dept === 'commons')).sort(bySize);
   // The corners the outline has (an arc lacks some), in the order they are given rooms: halls to opposite corners first.
   const order = (s.cut > 2 ? [1, 3, 0, 2] : [0, 1, 2, 3]).filter((k) => cornersOf(s).includes(k));
   const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
   const cornered = placeCorners(s, [0, 1, 2, 3].map((k) => (order.includes(k) ? given[order.indexOf(k)] : undefined)));
-  const rest = asks.filter((a) => !cornered.includes(a.spec));
+  // The waterfront: rooms that stand on the inner side first. What finds no place there goes to the band with the rest.
+  const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && innerRoom(a.spec) && !a.spec.annex) : [];
+  const ashore = fronted.length > 0 ? placeInner(s, fronted, Math.PI / 4) : [];
+  const rest = asks.filter((a) => !cornered.includes(a.spec) && (!fronted.includes(a) || ashore.includes(a.spec)));
   const band = placeBand(s, rest);
   if (band.left.length === 0 || !inner) return band.left;
   // A room with an annex stands in the band, where its annex can stand against it.
