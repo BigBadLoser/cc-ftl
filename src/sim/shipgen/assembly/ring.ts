@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { placeBand, type BandAsk } from './band';
-import { placeCorners } from './corners';
+import { cornersOf, placeCorners } from './corners';
 import { innerRoom, placeInner } from './inner';
 import { site, type Outline, type Site } from './lattice';
 import { at, type Built, type Dir, type Frame } from './model';
@@ -58,7 +58,10 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): Roo
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
   const halls = specs.filter((r) => r.dept === 'commons' && !r.cabin).sort(bySize);
-  const cornered = placeCorners(s, s.cut > 2 ? [0, 1, 2, 3].map((k) => halls[[1, 3, 0, 2].indexOf(k)]) : specs.filter((r) => r.role === 'weapons').sort(bySize).slice(0, 4));
+  // The corners the outline has (an arc lacks some), in the order they are given rooms: halls to opposite corners first.
+  const order = (s.cut > 2 ? [1, 3, 0, 2] : [0, 1, 2, 3]).filter((k) => cornersOf(s).includes(k));
+  const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
+  const cornered = placeCorners(s, [0, 1, 2, 3].map((k) => (order.includes(k) ? given[order.indexOf(k)] : undefined)));
   const rest = asks.filter((a) => !cornered.includes(a.spec));
   const band = placeBand(s, rest);
   if (band.left.length === 0 || !inner) return band.left;

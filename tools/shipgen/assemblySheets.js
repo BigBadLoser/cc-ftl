@@ -18,7 +18,7 @@ const seeds = arg('seeds', '1,2,3,4').split(',').map(Number);
 const out = resolve(arg('out', 'tools/shipgen/out/assembly'));
 mkdirSync(out, { recursive: true });
 const VERSUS = { tree: 'stationTree', spine: 'stationSpine' };
-const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'], bazaar: ['station.trading', 'station'] };
+const PROGRAM = { tree: ['station.pirate', 'hub'], spine: ['station.mining', 'station'], compound: ['station.mining', 'station'], bazaar: ['station.trading', 'station'], crescent: ['station.trading', 'station'] };
 const only = arg('family', '');
 
 function crc32(buf) {

@@ -12,6 +12,13 @@ import { SPACE } from './regions';
 /** The four corners, clockwise from north-east, as the signs of x and y. */
 const QUADS: readonly [1 | -1, 1 | -1][] = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
 
+/** The corners an outline has (indices into the four, clockwise from north-east): an arc lacks those cut away. */
+export function cornersOf(s: Site): number[] {
+  if (s.outline !== 'square') return [];
+  const T = s.R - K * (s.cut + 1);
+  return QUADS.flatMap(([sx, sy], k) => (s.hull(sx > 0 ? T : -T - 1, sy > 0 ? T : -T - 1) ? [k] : []));
+}
+
 /**
  * Build the corner rooms. `rooms` are given one each in order, clockwise from the north-east (a corner with none is a
  * garden gallery). Call before the band is filled. Returns the rooms placed.
@@ -22,7 +29,8 @@ export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]):
   // The block starts one cell before the cut on either flat; the diagonal runs through the cut's outer corners.
   const T = R - K * (s.cut + 1), line = 2 * R - K * s.cut - 1;
   const placed: RoomSpec[] = [];
-  for (const [k, [sx, sy]] of QUADS.entries()) {
+  for (const k of cornersOf(s)) {
+    const [sx, sy] = QUADS[k] as [1 | -1, 1 | -1];
     const spec = rooms[k];
     const id = spec ? g.room(spec.role, { spec, access: [s.ring], rank: 1e5 + k }) : g.room('garden', { access: [s.ring], rank: 1e5 + k, dept: 'commons' });
     if (spec) placed.push(spec);
