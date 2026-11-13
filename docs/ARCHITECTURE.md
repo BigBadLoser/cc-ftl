@@ -52,6 +52,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Pirate factions (phase 2b slice 1)](#pirate-factions-phase-2b-slice-1): Galaxy factions pirates (Scrappers), raiders, cartel, zealots, mercenaries, each with its own reputation...
 - [Hull width rule and the hull plan brushes (#143)](#hull-width-rule-and-the-hull-plan-brushes-143): The rule. No part of a ship may be narrower than 3 tiles. The footprint (every struct tile except Space...
 - [Station jobs by station type (issue #178)](#station-jobs-by-station-type-issue-178): Offers (galaxy/jobOffers.ts) are still a pure function of (seed, port, window, slot). The port's station...
+- [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw; the owning reads render uses.
 
 
 The previous attempt (`bigbadloser/space-web-game`, **reference only, nothing is copied**) bloated
@@ -2753,3 +2754,29 @@ trade stations post deliveries only, military stations and depots bounties only,
   Combat holds both back alike (a run out is called off, a crate in the hold goes back on deck, the job's clock runs, it is retried when calm); a run that cannot dock or load is retried after `HANDOVER_RETRY_SEC`. A live handover blocks jumping like any live deal.
 - Debug: `?scenario=handover|bounty|survey` (handover shows the own-shuttle path: the spawned trade station has no shuttle) (`debug.jobScenario`, `galaxy/jobsDebug.ts`).
 - Save v65: `GalaxyState.claims`, `StationJob.station/feature/collected/handoverTries`, `Deal.handover`.
+
+## Prisoner holding (stasis), `src/sim/stasis/` (#116)
+
+Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; the wheel and slab art is wired by the render side.
+
+- **State.** A full slab is the frozen prisoner's own crew entity: `StasisC { reserve, at: 'wheel' | 'carried' | 'floor', carrier, x, y, rot }`,
+  with Position, Path, carry and job removed (out of the world, like crew aboard a vehicle; `isIncapacitated` covers it, so needs and mood stop).
+  A wheel module (`ModuleDef.stasisWheel`) carries `StasisWheelC.slots`: `SLOT_NONE` (0), `SLOT_EMPTY` (-1, an empty slab) or the prisoner id. The
+  wheel is the one record of which slot a slab is in. An empty slab out of a wheel is the item `item.stasis_slab`.
+- **Owning reads** (`stasis/query.ts`; render and UI read only these): `wheelSlots(sim, wheel)` (slot 0 at the hatch corner, then
+  counter-clockwise seen from above in the module's unrotated frame), `slabPlace(sim, prisoner)` (wheel and slot, carrier, or the two floor tiles
+  and `rot`), `slabInfo(sim, prisoner)` (reserve 0..1), `isFrozen`, `slabHeld` (in a powered wheel), `slabDraining` (out of a powered wheel and not
+  on a cart), `cartsFor`, `wheelTakes`, `wheelHolding` (the `drawsWhen: 'holding'` rule).
+- **Writes** (`stasis/freeze.ts`): `takeEmptySlab`, `sealPrisoner`, `liftSlab`, `dropSlab` (`place.ts` finds two free floor tiles), `stowSlab`
+  (lowest free slot, else the lowest empty one, whose slab is set out at the hatch), `initWheel`/`releaseWheel` (from `spawnModule`/`removeModule`),
+  `thawPrisoner`.
+- **The job** (`stasis/jobs.ts`): one `stasis` job per prisoner or floor slab, category hauling, phases fetch (an empty slab from a wheel slot,
+  storage or a floor stack), seal (`SEAL_WORK`, beside the prisoner), pickup (a floor slab) and stow (beside the wheel's hatch). `stasisRoom` (wheel
+  slots not holding a full slab, minus slabs on carts and stasis jobs that will make or move one) gates posting. Same ship only: crew take jobs on
+  the ship they stand on, so a prize's prisoners need a wheel on the prize until the escort slice. `isCarrying` counts a cart, so its carrier is not
+  preempted or sent to fight.
+- **The system** (`stasisSystem`, after power and autojobs): a cart whose carrier no longer holds the slab's job is set down on the floor (the job
+  turns into a pickup); reserves drain one tick a tick while `slabDraining` and refill `REFILL_PER_TICK` in a powered wheel; at 0 the prisoner thaws
+  (no PrisonerC or SurrenderedC, drafted where the slab was, hostile). The "Stasis failing" alert is derived from state (`app/stasisAlert.ts`).
+- Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
+  (`items/held.ts`, 'slotted'). Debug: `?scenario=prisoners[&unpowered]`, `debug.imprison`. Save v115.

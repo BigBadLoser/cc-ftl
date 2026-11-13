@@ -68,12 +68,13 @@ export const TRANSLATE: Record<string, Shift | null> = {
     (c.parts as Xy[]).forEach((r) => point(r, dx, dy));
   },
   station: (c, dx, dy) => [...(c.courts as Xy[]), ...(c.posts as Xy[])].forEach((t) => point(t, dx, dy)),
+  stasis: xy, // a frozen prisoner's slab: its last tile (floor head, carrier or wheel hatch)
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,
   container: null, allegiance: null, equip: null, equipOrder: null, background: null, interests: null, wontDo: null, surrendered: null, prisoner: null, skillXp: null, traits: null, rolledSkills: null,
   implants: null, storage: null, carrying: null, production: null, plot: null, crew: null, priorities: null, workBlock: null, schedule: null, needs: null,
   assignment: null, health: null, downed: null, dead: null, carried: null, recovering: null, bedClaim: null, bedOwner: null, mood: null, suit: null,
-  intent: null, interrupt: null, pickup: null, breakMemory: null, person: null, interaction: null,
+  intent: null, interrupt: null, pickup: null, breakMemory: null, person: null, interaction: null, stasisWheel: null,
   trader: null, coreRaider: null, coreRaid: null, coreLink: null, inert: null, stun: null, wreck: null, hacked: null, robotBay: null, fabricator: null,
   vehicle: null, ferry: null, transfer: null, salvageWatch: null, salvageOrder: null, awaySite: null, siteRun: null, away: null, airHolds: null, vehicleBay: null, aboard: null, embarkOrder: null, boarder: null, recall: null, boardLaunch: null, boardHold: null, sabotageOrder: null, stationCrew: null, forHire: null, stationAlarm: null, wanted: null, research: null,
 };

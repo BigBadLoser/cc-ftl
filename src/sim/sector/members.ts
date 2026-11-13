@@ -12,6 +12,8 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { AboardC, VehicleC } from '../vehicles/components';
 import { vehicleFaction } from '../vehicles/lifecycle';
+import { StasisC } from '../stasis/components';
+import { slabPlace } from '../stasis/query';
 
 /**
  * Which non-player vehicles docked at the ship's airlocks travel with it: `true` all of them, `false` (the default) none
@@ -53,6 +55,8 @@ function onShipSet(sim: Sim, ship: number): Set<number> {
   for (const id of w.query(ItemStackC)) at(id, w.get(id, ItemStackC));
   // A suited crew member drifting to or from a shuttle that stays behind is away, whatever tile their Position names.
   for (const id of w.query(PositionC)) if (!w.has(id, EvaFloatC)) at(id, w.get(id, PositionC));
+  // Frozen prisoners have no Position: their slab's place says where they are (stasis/query.ts).
+  for (const id of w.query(StasisC)) if (slabPlace(sim, id)?.ship === ship) out.add(id);
   for (const key of [EggSacC, NestC, AlienC] as ComponentKey<{ ship: number }>[]) for (const id of w.query(key)) if (w.get(id, key)?.ship === ship) out.add(id);
   // Drones aboard (docked, or flying inside); one out in space or in the hatch stays behind (drones/recall.ts).
   for (const id of w.query(DroneC)) {

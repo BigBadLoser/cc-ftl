@@ -74,6 +74,7 @@ export default defineConfig({
             { title: 'Salvage and derelicts', to: '/mechanics/salvage/' },
             { title: 'Stations and trading', to: '/mechanics/trading/' },
             { title: 'Contraband and inspections', to: '/mechanics/inspections/' },
+            { title: 'Prisoners and stasis', to: '/mechanics/prisoners/' },
           ],
           '/reference/': [
             { title: 'Reference overview', to: '/reference/' },

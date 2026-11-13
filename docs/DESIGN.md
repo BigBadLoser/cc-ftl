@@ -1157,7 +1157,9 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - Zealots never surrender, so they never offer this choice.
 - **Holding prisoners (user decisions, 2026-11-13; replaces the cryo pod for prisoners):** they are sealed into
   **stasis slabs** and stored in a **stasis wheel** (a 3x3 module, ten slots), not a brig. Frozen, they need no food
-  and can't escape.
+  and can't escape. **Built (slice 1, #116):** sealing, carting, the wheel, the empty-slab item, the reserve and thawing (sim
+  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=prisoners`). The
+  prisoner, the slab and the wheel must be on the same ship; the wheel and slab sprites are not wired into the game yet.
   - **Sealing:** on the spot. Crew bring an empty slab to the prisoner (on the hover cart), seal them in where they
     are, and cart the full slab to a wheel with a free slot. A full slab is a sealed package: it can later travel by
     shuttle or be handed over at a station without escorting anyone.
@@ -1166,8 +1168,10 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - **Power:** a slab runs on a short reserve (about a game hour) when its wheel loses power, with an urgent alert;
     when the reserve runs out the prisoner thaws and turns hostile inside your ship.
   - **The hover cart** is how a carried slab looks, not an object to build or manage.
-  - A shuttle or the boarding party escorts prisoners over (not built).
-- **Look study: stasis slab and stasis wheel (user decisions, November 2026; art only, not built).** The
+  - A slab on the hover cart keeps its charge (it does not drain); one lying on the floor or in an unpowered wheel drains. Power back refills a
+    reserve in about a quarter of a game hour. A thawed prisoner leaves an empty slab behind (in the wheel slot, or on the floor).
+  - A shuttle or the boarding party escorts prisoners over (not built), so prisoners on a prize stay there unless it has a wheel.
+- **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim is built, the art not yet wired in).** The
   sprites are a preview-only Blender family (`slab`, `tools/blender/sprites/slab_*.py`), not in the manifest.
   - **The slab:** a prisoner travels as a stasis slab, a two-tile item crew cart around. A steel-framed face (unlit,
     a screen) with the prisoner's crew sprite pressed into it by a shader, cyan field lines in the side channels, heavy

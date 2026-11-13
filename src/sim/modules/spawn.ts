@@ -16,6 +16,7 @@ import { AUTO_LEVEL_MAX } from '../rock/dig';
 import { releaseBayVehicle } from '../vehicles/lifecycle';
 import { shipIdOf, shipGrid } from '../regions';
 import { initContainer } from '../containers/detach';
+import { initWheel, releaseWheel } from '../stasis/freeze';
 
 /** Create a module entity and claim its footprint in the grid. Assumes placement was validated. */
 export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: number): number {
@@ -36,6 +37,7 @@ export function spawnModule(sim: Sim, defId: string, x: number, y: number, rot: 
   for (const t of footprintTiles(def, x, y, rot)) grid.set('module', t.x, t.y, id);
   if (def.airlock) initAirlock(sim, grid, id);
   if (def.container) initContainer(sim, id);
+  if (def.stasisWheel) initWheel(sim, id, def.stasisWheel.slots);
   return id;
 }
 
@@ -54,6 +56,7 @@ export function removeModule(sim: Sim, id: number): void {
     }
   }
   if (def?.vehicleBay) releaseBayVehicle(sim, id, shipIdOf(sim, m), m.x, m.y);
+  if (def?.stasisWheel) releaseWheel(sim, id); // full slabs onto the floor by the hatch, empty ones spilled as items
   for (const st of sim.world.get(id, StorageC)?.stacks ?? []) spillItems(sim, shipIdOf(sim, m), m.x, m.y, st.item, st.count);
   if (m.upgrade) spillItems(sim, shipIdOf(sim, m), m.x, m.y, m.upgrade, 1); // a fitted upgrade comes out with the module
   clearBedOwners(sim, id);

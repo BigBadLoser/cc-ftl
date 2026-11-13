@@ -23,8 +23,8 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 41 | 12 | 9 | 0 | 0 | 0 |
-| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 67 | 8 | 32 | 0 | 0 | 0 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 41 | 13 | 9 | 0 | 0 | 0 |
+| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 68 | 9 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 4 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 15 | 6 | 0 | 0 | 0 | 1 |
@@ -36,16 +36,17 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [galaxy-starmap](catalog/galaxy-starmap.md) | Map generator, structures, jumps, fleets, wars, heat, starmap UI | 21 | 2 | 0 | 0 | 0 | 2 |
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 0 | 0 | 0 | 0 | 4 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
-| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 36 | 0 |
+| [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
 | [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 0 | 13 | 0 | 0 | 3 |
-| **Total** | | 464 | 54 | 65 | 2 | 41 | 30 |
+| **Total** | | 465 | 56 | 65 | 2 | 42 | 30 |
 
 ## Commonly confused
 
 Things people believe exist and do not (or only partly), and the reverse.
 
-- **Cryo pods** (`module.cryo_pod`): sprite only. No def, no system. Prisoner holding is issue #116. `DESIGN.md` ("Holding prisoners") wrongly says "already in the game".
-- **Prisoners:** captured crew get a `PrisonerC` (`sim/capture/prize.ts`) but there is nowhere to hold them and no ransom or sale.
+- **Cryo pods** (`module.cryo_pod`): sprite only. No def, no system, and not the prisoner holding: prisoners go in stasis slabs and the stasis wheel (#116).
+- **Prisoners:** captured crew get a `PrisonerC` (`sim/capture/prize.ts`); crew seal them into stasis slabs and hold them in a stasis wheel (`sim/stasis/`,
+  #116 slice 1), but only on the ship they are on (no escort from a prize yet), and there is no ransom, sale or hand-over. The wheel and slab have no in-game art yet.
 - **Workbench, comms console, medical console, sensor console, armory/cold storage, storage tank:** sprites only (workbench is issue #320; `workbench` in code is a work-priority label).
 - **Rogue AI faction:** the faction, its ship generator (`faction.drones`), a shipyard template and a terminal event exist, but the galaxy fields no rogue ships (`ships: []`, issue #427). You do not meet machine fleets in a normal game.
 - **Black markets:** only `bm.lesser` is ever attached to a station. The cartel market, machine bazaar and hiring hall are defined and tested but never spawned. `item.ai_core`, `item.robot_parts`, `item.drone_tech` are sold there and consumed by nothing.

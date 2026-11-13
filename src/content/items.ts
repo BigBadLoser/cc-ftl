@@ -44,6 +44,8 @@ export const items = {
   'item.fuel': { name: 'Fuel', tags: ['fuel'], stackSize: 50, price: 6, flammability: 0.7 },
   'item.missile': { name: 'Missile', tags: ['ammo'], stackSize: 20, price: 24, flammability: 0.5 },
   // A delivery job's sealed crate (one per job): it sits on deck apart from storage until it is handed over.
+  // An empty stasis slab (#116): a prisoner is sealed into one where they stand and it is carted to a stasis wheel. A new wheel comes with ten.
+  'item.stasis_slab': { name: 'Stasis slab', tags: ['machine', 'prison'], stackSize: 1, price: 60 },
   'item.cargo_crate': { name: 'Cargo crate', tags: ['cargo'], stackSize: 1, cargo: true },
   // Crafted at the fabricator; a vehicle bay turns it into a stowed shuttle (vehicle.assign).
   'item.shuttle': { name: 'Shuttle', tags: ['vehicle'], stackSize: 1, price: 650, vehicle: 'vehicle.shuttle' },
