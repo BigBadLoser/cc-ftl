@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "vending8":      # look study, preview only (not in RENDERED): one continuous ribbon, r8
+        from . import vending_r8
+        return vending_r8.jobs(), "only:vending"
     if name == "vending7":      # look study, preview only (not in RENDERED): split side, r7
         from . import vending_r7
         return vending_r7.jobs(), "only:vending"
