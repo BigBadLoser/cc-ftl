@@ -324,8 +324,8 @@ FTL's decision-making with physical consequences, in a shared sector.
     powered AI core whose mast is out; several modules stack). Its tier sets how much else it can
     automate later (drones, standing in for missing operators at reduced efficiency).
 - **Physical systems:**
-  - **Weapons and engines** are modules that must touch the hull.
-  - **Shield generators** can sit anywhere inside the ship.
+  - **Engines** are modules that must touch the hull (as airlocks do).
+  - **Weapons** and **shield generators** can sit anywhere inside the ship.
   - All of them are targetable, can burn, and need power.
 - **Weapons** charge and fire in volleys (auto-fire at the chosen target, or hold and fire together).
   - **Burst laser:** strips shield layers, light hull damage.

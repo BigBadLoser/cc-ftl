@@ -166,7 +166,7 @@ mention 2x art describe the earlier state.
   - No movement or maneuvering. Distance only affects projectile travel time.
   - Combat overlay; consoles (weapons/shields/helm) instead of manning each weapon; the AI core
     runs point defence.
-  - Shield generators can sit inside the ship; weapons and engines must touch the hull.
+  - Shield generators and weapons can sit anywhere inside the ship; engines must touch the hull.
   - **Roofed enemy view** instead of fog: special roof tiles mark weapons, shields and engines
     (`ModuleDef.roofAsset`).
 - **Sectors:**
