@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "vending5":      # look study, preview only (not in RENDERED): VM1C5 wave cleaned up, r5
+        from . import vending_r5
+        return vending_r5.jobs(), "only:vending"
     if name == "vending4":      # look study, preview only (not in RENDERED): VM1C side-art variants, r4
         from . import vending_r4
         return vending_r4.jobs(), "only:vending"
