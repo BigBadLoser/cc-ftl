@@ -52,27 +52,63 @@ export function stasisLayers(
   return out;
 }
 
-/** The way a cart at rotation r is pushed (r0 toward +y, each step 90 deg on, as the sprites face): the carrier stands at its push bar, behind. */
-const PUSH: readonly (readonly [number, number])[] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-/** How far ahead of the carrier the cart's middle runs, in tiles (its bar just past their hands). */
-export const CART_REACH = 1.4;
-
 /**
- * The cart's rotation for a carrier facing `dir` (crew facings: 0 = +x, 2 = +y, 4 = -x, 6 = -y, odd ones between). Facing
- * between two axes it keeps `prev` when that is one of the two, so a cart going round a diagonal does not flip back and forth.
+ * The hover cart trails its carrier along the way they walked (always floor they crossed, so it never pokes into a wall or
+ * through furniture, follows them round corners and stays put while they work), its push bar toward them. The sprite at
+ * rotation r has its bar at the end away from PUSH[r], so a cart towed toward v turns to the r whose PUSH is -v.
  */
-export function cartRot(dir: number, prev: number): number {
-  const d = ((dir % 8) + 8) % 8;
-  const rot = (e: number): number => (e / 2 + 3) % 4;
-  if (d % 2 === 0) return rot(d);
-  const a = rot(d - 1), b = rot((d + 1) % 8);
-  return prev === a || prev === b ? prev : a;
+const PUSH: readonly (readonly [number, number])[] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
+/** Tiles from the carrier back to the cart's middle, and how much of their way is remembered. */
+export const CART_GAP = 1.3;
+const TRAIL_LEN = 3;
+
+export interface TrailPt {
+  x: number;
+  y: number;
 }
 
-/** Where the cart's sprite anchors (the centre of its front-most tile), in tiles from the carrier, for rotation `rot`. */
-export function cartAnchor(rot: number): { dx: number; dy: number } {
-  const [px, py] = PUSH[((rot % 4) + 4) % 4] as readonly [number, number];
-  const near = { dx: px * (CART_REACH - 0.5), dy: py * (CART_REACH - 0.5) };
-  const far = { dx: px * (CART_REACH + 0.5), dy: py * (CART_REACH + 0.5) };
-  return far.dx + far.dy > near.dx + near.dy ? far : near;
+/** Note the carrier's position (tiles): the trail is newest first, points at least a quarter tile apart, about TRAIL_LEN tiles long. */
+export function pushTrail(trail: TrailPt[], x: number, y: number): void {
+  const head = trail[0];
+  if (head && Math.hypot(x - head.x, y - head.y) < 0.25) return;
+  trail.unshift({ x, y });
+  let len = 0;
+  for (let i = 1; i < trail.length; i++) {
+    const a = trail[i - 1] as TrailPt, b = trail[i] as TrailPt;
+    len += Math.hypot(a.x - b.x, a.y - b.y);
+    if (len > TRAIL_LEN) {
+      trail.length = i + 1;
+      return;
+    }
+  }
+}
+
+/**
+ * The cart behind a carrier at (x, y) with that trail: its sprite anchor (the centre of its front-most tile, in tiles) and
+ * rotation. It lies along the axis nearer the line back to the carrier, keeping `prev`'s axis until the other is clearly
+ * nearer (a diagonal walk does not flip it every step); with no way behind them it stays at `prev`.
+ */
+export function cartPose(trail: readonly TrailPt[], x: number, y: number, prev: number): { x: number; y: number; rot: number } {
+  let px = x, py = y, left = CART_GAP;
+  for (const t of trail) {
+    const d = Math.hypot(t.x - px, t.y - py);
+    if (d >= left) {
+      px += ((t.x - px) * left) / d;
+      py += ((t.y - py) * left) / d;
+      left = 0;
+      break;
+    }
+    left -= d;
+    px = t.x;
+    py = t.y;
+  }
+  const vx = x - px, vy = y - py;
+  let rot = ((prev % 4) + 4) % 4;
+  if (Math.hypot(vx, vy) > 0.3) {
+    const alongX = rot % 2 === 1 ? Math.abs(vx) >= 0.7 * Math.abs(vy) : Math.abs(vx) > 1.4 * Math.abs(vy);
+    const want: readonly [number, number] = alongX ? [-Math.sign(vx), 0] : [0, -Math.sign(vy)];
+    rot = PUSH.findIndex(([a, b]) => a === want[0] && b === want[1]);
+  }
+  const [ux, uy] = rot % 2 === 1 ? [0.5, 0] : [0, 0.5];
+  return { x: px + ux, y: py + uy, rot };
 }

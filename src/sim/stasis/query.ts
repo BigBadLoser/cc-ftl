@@ -58,6 +58,16 @@ export function slabPlace(sim: Sim, prisoner: number): SlabPlace | null {
   return { kind: 'floor', ship: shipIdAt(sim, s.x, s.y), tiles: floorTiles(s.x, s.y, s.rot), rot: s.rot };
 }
 
+/** Full slabs lying on the floor (a carry cut short): the prisoner, the slab's two tiles (the second at +1 along x for rot 0, along y for rot 1). */
+export function floorSlabs(world: World): { prisoner: number; tiles: [Tile, Tile]; rot: 0 | 1 }[] {
+  const out: { prisoner: number; tiles: [Tile, Tile]; rot: 0 | 1 }[] = [];
+  for (const id of world.query(StasisC)) {
+    const s = world.get(id, StasisC);
+    if (s?.at === 'floor') out.push({ prisoner: id, tiles: floorTiles(s.x, s.y, s.rot), rot: s.rot });
+  }
+  return out;
+}
+
 /** A full slab's prisoner and how much of its reserve is left (0..1). Null when `prisoner` is not frozen. */
 export function slabInfo(sim: Sim, prisoner: number): { prisoner: number; reserve: number } | null {
   const s = sim.world.get(prisoner, StasisC);

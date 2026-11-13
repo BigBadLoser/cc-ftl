@@ -30,7 +30,7 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
 | Cryo pod | `module.cryo_pod` | Sprite only; not used for prisoners (they go in the stasis wheel, #116) | Art only | manifest |
-| Stasis slab, hover cart, stasis wheel | `-` | Prisoner holding look study (#116): the slab item, its cart, the 3x3 wheel with loading and fill levels | Art only (preview, not in the manifest) | tools/blender/sprites/slab_*.py; DESIGN.md "Prisoners and prizes" |
+| Stasis wheel, slab, hover cart | `module.stasis_wheel`, `item.stasis_slab`, `slab.cart`, `slab.floor` | Prisoner holding (#116): the 3x3 wheel (4 rotations) with a slab layer per slot seen through its window, the empty slab as a floor stack, a full slab set down on the floor, the hover cart's 12-frame ring loop. The loading animation, the prisoner's face on a full slab and an unpowered wheel are not rendered yet | Partial | tools/blender/sprites/slab_game.py, slab_floor.py (family `stasis`); render/stasisArt.ts, cartView.ts, slabView.ts; lab panel `stasis` |
 | Comms console | `module.comms_console` | Sprite only | Art only | manifest |
 | Medical console | `module.med_console` | Sprite only | Art only | manifest |
 | Sensor console | `module.sensor_console` | Sprite only | Art only | manifest |
