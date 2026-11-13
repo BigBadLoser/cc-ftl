@@ -48,6 +48,14 @@ def annulus(k, r0, r1, z0, z1, col, top=None, n=48):
         prism(k, [at(r0, a0)[:2], at(r1, a0)[:2], at(r1, a1)[:2], at(r0, a1)[:2]], z0, z1, col, top=top)
 
 
+def seam(a, w=0.05, face=FRONT):
+    """A seam's width round a drum at angle a, so it shows >= w wide on screen (a seam turned from the camera
+    foreshortens to 1 px and breaks up); None where it is nearly edge-on (skip it). face: the way the surface faces
+    the camera from (FRONT for the outside, BACK for a well's inner wall)."""
+    c = math.cos(a - face)
+    return None if c < 0.3 else w / c
+
+
 # ---- the pit ------------------------------------------------------------------------------------------------------
 def pit(k, deck, trim, gap=0.0):
     """The well: a ribbed wall, the race and the rotor's deck with its ring gear, pinion drives at the back, a striped
@@ -139,7 +147,8 @@ def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring"):
             k.box(*at(1.486, a)[:2], ZC + 0.215, 0.05, 0.014, 0.05, "slbAmb", rz=a + math.pi / 2)
     for i in range(10):                                                      # seams on the upper band
         a = (i + 0.5) * math.tau / 10
-        k.box(*at(1.444, a)[:2], ZC + 0.33, 0.05, 0.012, 0.225, "dark", rz=a + math.pi / 2)   # up over the top tier
+        if seam(a):
+            k.box(*at(1.444, a)[:2], ZC + 0.33, seam(a), 0.012, 0.225, "dark", rz=a + math.pi / 2)   # up over the top
     for a in lobes:                                                          # the lobes' columns
         u, v, _ = at(LC, a)
         k.cyl(u, v, 0.0, LR + 0.06, 0.08, "steelD", top="steel", sides=20)
@@ -264,7 +273,8 @@ def skin(k, a0, a1, body, trim, z1=ZC + 0.06, strip=True):
     n = max(1, round((a1 - a0) / 0.36))
     for i in range(n + 1):
         a = a0 + (a1 - a0) * i / n
-        k.box(*at(1.482, a)[:2], 0.35, 0.012, 0.045, ZC - 0.37, "dark", rz=a)
+        if seam(a):
+            k.box(*at(1.482, a)[:2], 0.35, 0.012, seam(a), ZC - 0.37, "dark", rz=a)
     for i in range(n):
         a = a0 + (a1 - a0) * (i + 0.5) / n
         for dz in (0.13, 0.2):
@@ -274,10 +284,11 @@ def skin(k, a0, a1, body, trim, z1=ZC + 0.06, strip=True):
 
 
 def jamb(k, a, body, trim, screen=False):
-    """A housing edge, rounded: a post of the skin's own thickness, capped, a screen on it if asked."""
-    k.cyl(*at(1.47, a)[:2], 0.0, 0.055, ZC + 0.06, body, sides=12)
-    k.cyl(*at(1.47, a)[:2], 0.0, 0.065, 0.09, "steelD", top="steel", sides=12)
-    k.cyl(*at(1.47, a)[:2], 0.3, 0.065, 0.05, trim, sides=12)
+    """A housing edge: a square post of the skin's own thickness (a thin round one's facets flicker), squared to the
+    wall, its skirt and trim band carried round it, a screen on it if asked."""
+    k.box(*at(1.47, a)[:2], 0.0, 0.11, 0.11, ZC + 0.06, body, rz=a)
+    k.box(*at(1.47, a)[:2], 0.0, 0.13, 0.13, 0.09, "steelD", top="steel", rz=a)
+    k.box(*at(1.47, a)[:2], 0.3, 0.13, 0.13, 0.05, trim, rz=a)
     if screen:
         k.box(*at(1.52, a)[:2], 0.7, 0.012, 0.09, 0.3, "dark", rz=a)
         k.box(*at(1.527, a)[:2], 0.78, 0.006, 0.06, 0.16, "slbCy", rz=a)
@@ -304,7 +315,8 @@ def sunk_top(k, rh, depth, body, trim):
     annulus(k, rh, rh + 0.06, ZT, ZT + 0.01, trim)
     for i in range(10):
         a = (i + 0.5) * math.tau / 10                # its seams on the rim seams' lines
-        k.box(*at(rh + 0.004, a)[:2], zf, 0.012, 0.05, depth, "dark", rz=a)
+        if seam(a, face=BACK):
+            k.box(*at(rh + 0.004, a)[:2], zf, 0.012, seam(a, face=BACK), depth, "dark", rz=a)
     bolt_ring(k, r_in=rh)
     return zf
 
