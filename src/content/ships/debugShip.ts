@@ -1,0 +1,105 @@
+import type { ShipTemplate } from '../../sim';
+
+/**
+ * Debug hull (#475), never offered in the new-game picker: 55x33, three columns of rooms either side of a 2-wide corridor along y = 15..16, doors two
+ * tiles wide. It carries the Wayfarer's systems (helm, gun and shield consoles, a laser, airlock, galley, two hydroponics beds, med bay, four bunks,
+ * workshop, shuttle hangar, three racks, reactors, shield, life support, engines) and leaves the rest of each room bare, so a debug scenario that
+ * spawns modules or crew (the stasis wheel of `?scenario=prisoners`) never squeezes into a real layout. NW: cockpit and lounge; N: med bay, workshop
+ * and the hangar; NE: engineering and the north engine; SW: the hold; S: quarters; SE: the south engine and open floor.
+ */
+export const debugShip = {
+  name: 'Debug hull',
+  crew: ['role.engineer', 'role.gunner', 'role.pilot', 'role.medic'],
+  rows: [
+    '.......................................................',
+    '.......................................................',
+    '.......................................................',
+    '.#####################################################.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.########DD################DD###############DD########.',
+    '.#___________________________________________________#.',
+    '.#___________________________________________________#.',
+    '.########DD################DD###############DD########.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#_________________#________________#________________#.',
+    '.#####################################################.',
+    '.......................................................',
+    '.......................................................',
+    '.......................................................',
+  ],
+  modules: [
+    // NW: cockpit (helm, gun and shield consoles, the burst laser), lounge (airlock, galley, mess, two hydroponics beds)
+    { def: 'module.helm', x: 4, y: 5, rot: 0 },
+    { def: 'module.weaponsConsole', x: 3, y: 8, rot: 0 },
+    { def: 'module.burstLaser', x: 5, y: 8, rot: 0 },
+    { def: 'module.shieldConsole', x: 4, y: 11, rot: 0 },
+    { def: 'module.airlock', x: 9, y: 3, rot: 0 },
+    { def: 'module.galley', x: 13, y: 4, rot: 0, orders: [{ recipe: 'recipe.ration', mode: 'keep', target: 12 }] },
+    { def: 'module.mess_table', x: 14, y: 8, rot: 0 },
+    { def: 'module.chair', x: 14, y: 7, rot: 2 },
+    { def: 'module.chair', x: 15, y: 7, rot: 2 },
+    { def: 'module.hydroponics', x: 9, y: 10, rot: 0, crop: 'crop.greens', grown: 90 },
+    { def: 'module.hydroponics', x: 15, y: 11, rot: 0, crop: 'crop.herbs' },
+    { def: 'module.light', x: 7, y: 5, rot: 0 },
+    { def: 'module.light', x: 12, y: 12, rot: 0 },
+    { def: 'module.light', x: 17, y: 5, rot: 0 },
+    { def: 'module.light', x: 3, y: 13, rot: 0 },
+    // N: med bay, workshop, shuttle hangar
+    { def: 'module.med_bed', x: 22, y: 5, rot: 0 },
+    { def: 'module.fabricator', x: 22, y: 11, rot: 2 },
+    { def: 'module.vehicle_bay', x: 28, y: 4, rot: 0, vehicle: 'vehicle.shuttle' },
+    { def: 'module.light', x: 21, y: 8, rot: 0 },
+    { def: 'module.light', x: 33, y: 11, rot: 0 },
+    { def: 'module.light', x: 26, y: 12, rot: 0 },
+    // NE: engineering (two reactors, a battery, the shield, life support) and the north engine
+    { def: 'module.lifeSupport', x: 38, y: 5, rot: 0 },
+    { def: 'module.lifeSupport', x: 42, y: 5, rot: 0 },
+    { def: 'module.reactor', x: 38, y: 9, rot: 0 },
+    { def: 'module.reactor', x: 40, y: 9, rot: 0 },
+    { def: 'module.battery', x: 43, y: 9, rot: 0 },
+    { def: 'module.shieldGen', x: 45, y: 9, rot: 0 },
+    { def: 'module.engine', x: 49, y: 5, rot: 1 },
+    { def: 'module.light', x: 40, y: 7, rot: 0 },
+    { def: 'module.light', x: 47, y: 12, rot: 0 },
+    { def: 'module.light', x: 51, y: 11, rot: 0 },
+    // SW: the hold, three racks
+    { def: 'module.storage_rack', x: 3, y: 20, rot: 2, stock: [{ item: 'item.metal', count: 60 }, { item: 'item.electronics', count: 20 }, { item: 'item.polymer', count: 20 }] },
+    { def: 'module.storage_rack', x: 5, y: 20, rot: 2, stock: [{ item: 'item.metal', count: 20 }, { item: 'item.electronics', count: 10 }, { item: 'item.polymer', count: 10 }, { item: 'item.ice', count: 10 }, { item: 'item.ration', count: 12 }, { item: 'item.meal_bland', count: 20 }, { item: 'item.greens', count: 6 }] },
+    { def: 'module.storage_rack', x: 7, y: 20, rot: 2, stock: [{ item: 'item.rifle', count: 1 }, { item: 'item.sidearm', count: 2 }, { item: 'item.blade', count: 1 }, { item: 'item.fuel', count: 16 }, { item: 'item.energy_crystal', count: 28 }, { item: 'item.water', count: 30 }, { item: 'item.oxygen', count: 20 }] },
+    { def: 'module.light', x: 12, y: 20, rot: 0 },
+    { def: 'module.light', x: 4, y: 26, rot: 0 },
+    { def: 'module.light', x: 16, y: 26, rot: 0 },
+    // S: quarters, four bunks
+    { def: 'module.bed', x: 22, y: 20, rot: 0 },
+    { def: 'module.bed', x: 24, y: 20, rot: 0 },
+    { def: 'module.bed', x: 26, y: 20, rot: 0 },
+    { def: 'module.bed', x: 28, y: 20, rot: 0 },
+    { def: 'module.light', x: 25, y: 24, rot: 0 },
+    { def: 'module.light', x: 33, y: 20, rot: 0 },
+    { def: 'module.light', x: 22, y: 27, rot: 0 },
+    // SE: the south engine, the rest bare floor
+    { def: 'module.engine', x: 49, y: 20, rot: 1 },
+    { def: 'module.light', x: 40, y: 20, rot: 0 },
+    { def: 'module.light', x: 44, y: 26, rot: 0 },
+  ],
+} satisfies ShipTemplate;
+
+export const debugShipId = 'ship.debug';

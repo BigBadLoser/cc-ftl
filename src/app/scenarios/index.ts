@@ -21,6 +21,9 @@ export const scenarios: Readonly<Record<string, Scenario>> = {
   log: logScenario, ambush, freighter, handover, bounty, survey, tracker, fight, boarding, inspector, breaks, bonds, drones, upgrades, damage, hullplan, medpod, inspect, patrol, pirates, farm, busy, prisoners,
 };
 
+/** The hull a scenario starts on when `?starter=` names none: the roomy debug hull, so what the scenario spawns never squeezes into a real layout (#475). */
+export const scenarioStarters: Readonly<Record<string, string>> = { prisoners: 'ship.debug' };
+
 /** Start the scenario `name` (none, or an unknown name, starts nothing). */
 export function startScenario(name: string | null, ctx: ScenarioCtx): void {
   const run = name === null ? undefined : scenarios[name];

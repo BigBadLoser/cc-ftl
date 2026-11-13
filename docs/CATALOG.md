@@ -26,7 +26,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 41 | 13 | 9 | 0 | 0 | 0 |
 | [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
-| [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 4 | 2 |
+| [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 15 | 6 | 0 | 0 | 0 | 1 |
 | [combat](catalog/combat.md) | Ship combat, boarding, capture, hand weapons, cover | 29 | 3 | 11 | 0 | 0 | 0 |
 | [drones-vehicles-robots](catalog/drones-vehicles-robots.md) | Drones, shuttles, pods, robots | 13 | 1 | 0 | 0 | 0 | 4 |
@@ -61,7 +61,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
-- **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
+- **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.debug` (a roomy hull; `?scenario=prisoners` and `?starter=debug` start on it), `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
 - **Hyperlane gates, mining/farming/pirate "structures":** the map has gateway nodes and port kinds, not separate gate or structure objects for these.
 - **Engine Mk II and III:** work in play but use a tinted outline as placeholder art (issue #105). Reactor and shield Mk II/III have real art.
 - **Habit traits** (drinker, stim-hooked) and the three phobias (fire, dark, spacewalk): defined but not rollable; only the phobias have effect code.

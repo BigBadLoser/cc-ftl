@@ -12,6 +12,7 @@ fleets, stations) picks one or more *generator styles* to build its hulls. Only 
 | Prospector (Claw) | `ship.prospector` | Miner start: big hold, ore refinery, mining pod, 3 crew | In game | src/content/ships/prospector.ts:11; starterShips.ts |
 | Lancer (Dart) | `ship.lancer` | Fighter start: missile + 2 lasers, Mk II shield, 4 crew | In game | src/content/ships/lancer.ts:10; starterShips.ts |
 | Starter ship | `ship.starter` | Original starter; the default for `newGame()` and the sim tests, not offered in the picker | Debug only | src/content/ships/starter.ts:9; sim/newGame.ts default |
+| Debug hull | `ship.debug` | Roomy test hull (55x33): the Wayfarer's systems in three columns of rooms off a 2-wide corridor, with bare floor to spare; `?scenario=prisoners` starts on it, `?starter=debug` starts any game on it | Debug only | src/content/ships/debugShip.ts; not in starterShips.ts; app/scenarios/index.ts scenarioStarters, saves.ts starterOf |
 | Raider | `ship.raider` | Hand-made hostile used by debug spawns | Debug only | src/content/ships/raider.ts; main.ts:242, scenarios/log.ts, boardingScenario.ts. Real raiders are generated |
 | Raider (boarders) | `ship.raiderBoarder` | Raider variant with a boarding doctrine | Debug only | src/content/ships/raider.ts; main.ts:242 |
 | Rogue AI shipyard | `ship.rogueShipyard` | Hall run by an AI core: reactor, robot fabricator, bays, one gun | Debug only | src/content/ships/rogue.ts; ui/DebugPanel.svelte only; the galaxy fields no rogue ships (#427) |

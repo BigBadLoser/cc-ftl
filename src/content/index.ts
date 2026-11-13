@@ -33,11 +33,12 @@ import { ores } from './ores';
 import { starterShip, starterShipId } from './ships/starter';
 import { starterShips } from './ships/starterShips';
 import { rogueShipyard, rogueShipyardId } from './ships/rogue';
+import { debugShip, debugShipId } from './ships/debugShip';
 
 const modules = { ...baseModules, ...tierModules };
 
 export const content = {
-  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard, ...Object.fromEntries(starterShips.map((s) => [s.id, s.template])) },
+  ships: { [starterShipId]: starterShip, [raiderShipId]: raiderShip, [raiderBoarderId]: raiderBoarder, [rogueShipyardId]: rogueShipyard, [debugShipId]: debugShip, ...Object.fromEntries(starterShips.map((s) => [s.id, s.template])) },
   roles,
   modules,
   species,
