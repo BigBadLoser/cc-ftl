@@ -3699,5 +3699,7 @@
   "gymRubber": {"hex": "#2a3038", "set": "gym"},
   "gymRed": {"hex": "#a3423a", "set": "gym"},
   "gymRedD": {"hex": "#76302b", "set": "gym"},
+  "gymGlass": {"hex": "#a9c9d3", "set": "gym"},
+  "gymWater": {"hex": "#3d8aa3", "set": "gym"},
   "gymLit": {"hex": "#9ad8f0", "emissive": 0.9, "set": "gym"}
 }
