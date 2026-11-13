@@ -47,7 +47,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "v6a": "V6a  round, leaning", "v6b": "V6b  athletic, leaning", "v6c": "V6c  heavy + ear plates",
          "v6d": "V6d  white upper, dark gauntlet", "v6e": "V6e  dark upper, white gauntlet", "v6f": "V6f  elbows down, forearms up",
          "v6g": "V6g  grey arms, elbows out", "v6h": "V6h  grey arms, elbows down", "v6i": "V6i  warm grey, darkest joints",
-         "bn1": "BN1  cantilever", "bn2": "BN2  lounge shell", "bn3": "BN3  slat bench"}
+         "bn1": "BN1  cantilever", "bn2": "BN2  lounge shell", "bn3": "BN3  slat bench",
+         "bn2a": "BN2A  solid body", "bn2b": "BN2B  end panels", "bn2c": "BN2C  pedestal"}
 CW, CH = 200, 220
 
 
@@ -65,7 +66,7 @@ def main():
             for gy in range(-2, 2):
                 floor(cv, pub, *iso(ox, oy, gx, gy), 1, 1)
         cv.static(src, aid, ox, oy)
-        cv.char(human(pub, 6), *iso(ox, oy, -1, 1) if fam != "bench" else iso(ox, oy, 2, -1))
+        cv.char(human(pub, 6), *iso(ox, oy, -1, 1) if not fam.startswith("bench") else iso(ox, oy, 2, -1))
         cv.labels.append((ox - 50, oy + 52, label))
     for s in (1, 3):
         cv.save(out / f"{fam}-{s}x.png", s)
