@@ -99,10 +99,11 @@ describe('scene signal', () => {
     expect(ship?.crew).toBeLessThanOrEqual(3);
     expect(ship?.cargo?.length).toBeGreaterThanOrEqual(2);
     expect(ship?.contact.name).toBeTruthy();
-    const out = choose(sim, 'hail');
-    expect(out).toContainEqual({ type: 'story.remote', event: 'event.trader_swap', choice: 'hail', action: 'hail' });
-    expect(sim.story.active?.done).toEqual(['hail']);
-    expect(choose(sim, 'hail')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'done' });
+    expect(sim.story.active?.done).toEqual(['hail']); // a call is answered as it opens
+    const out = choose(sim, 'scan');
+    expect(out).toContainEqual({ type: 'story.remote', event: 'event.trader_swap', choice: 'scan', action: 'scan' });
+    expect(sim.story.active?.done).toEqual(['hail', 'scan']);
+    expect(choose(sim, 'scan')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'done' });
     expect(sim.galaxy.travel?.phase).toBe('story');
     expect(sim.world.query(ShipC).length).toBe(0); // nothing spawned: the ship waits in hyperspace
   });
@@ -126,8 +127,8 @@ describe('scene signal', () => {
     step(sim, 2);
     expect(sim.story.active?.event).toBe('event.trader_swap');
     expect(sim.galaxy.signal).toBeNull();
-    for (const c of ['hail', 'scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
-    expect(sim.story.active?.done ?? []).toEqual([]);
+    for (const c of ['scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
+    expect(sim.story.active?.done ?? []).toEqual(['hail']); // a comms event opens already answered; nothing else was taken
     choose(sim, 'ignore');
     expect(sim.story.active).toBeNull();
     expect(sim.galaxy.event).toBeNull();

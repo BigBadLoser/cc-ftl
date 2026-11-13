@@ -116,3 +116,6 @@ function checkOddsNow(sim: Sim, check: SkillCheck): Odds | null {
 }
 
 export { qty as describeQty };
+
+/** True when the event opens the comms window (someone is talking to you), not the plain decision window: it has a `comms` block. The one answer; the view and the engine ask it. */
+export const opensComms = (def: EventDef): boolean => def.comms !== undefined;

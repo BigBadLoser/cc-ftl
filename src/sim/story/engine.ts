@@ -2,7 +2,7 @@ import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { applyEffect, takeItems } from './effects';
 import type { EventDef, EventTrigger, Outcome, RemoteAction } from './defs';
-import { checkOdds, describeQty, eligible, unmetReasons } from './requirements';
+import { checkOdds, describeQty, eligible, opensComms, unmetReasons } from './requirements';
 import { withRng } from './state';
 import { withPlayerAboard } from './world';
 
@@ -72,6 +72,8 @@ export function startEvent(sim: Sim, id: string): boolean {
   if (def.mode === 'decision') {
     story.active = { event: id, since: sim.tick };
     sim.events.emit({ type: 'story.started', event: id, mode: 'decision', notice: 0 });
+    // Someone is calling you (comms): the call is already connected, so the hail is done before the window opens.
+    if (opensComms(def)) for (const c of def.choices ?? []) if (c.remote === 'hail') remote(sim, story.active, c);
     return true;
   }
   for (const eff of def.effects ?? []) applyEffect(sim, eff, { event: id, actor: null });

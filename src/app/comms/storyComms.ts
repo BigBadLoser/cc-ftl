@@ -34,25 +34,26 @@ export interface CommsInput {
   hailQuote: string | null;
   goods: UiComms['goods'];
   credits: number | undefined;
+  /** The voice of an event with no scene ship (`EventDef.comms.caller`). */
+  voice?: { name: string; faction: string };
 }
 
 export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   const { text, signal, done, remotes, scanRows, hailQuote, goods, credits } = i;
-  if (!signal) return null;
-  const ship = signal.ships[0];
-  const derelict = signal.derelicts[0];
-  if (!ship && !derelict) return null;
-  const hailed = done.hail && !!ship;
+  const ship = signal?.ships[0];
+  if (!ship) {
+    // A call with no scene ship behind it (a checkpoint cutter, a surrendering scout): just the caller and what they say, nothing to scan.
+    if (!i.voice) return null;
+    const base = { hailed: true, scanned: false, hailChoice: null, scanChoice: null, scanKind: null, goods: [] };
+    return {
+      ...base, caller: { name: i.voice.name, faction: i.voice.faction, status: { label: 'Connected', tone: 'green' } }, look: null, stutter: false,
+      transcript: transcriptOf(text, { name: i.voice.name }), hint: null, holo: null, hullTitle: null, scanHint: null, callouts: [], readout: [],
+    };
+  }
+  const hailed = done.hail;
   const scanned = done.scan;
   const factionName = (id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
   const base = { hailed, scanned, hailChoice: remotes.hail, scanChoice: remotes.scan, scanKind: remotes.scanKind, goods, ...(credits !== undefined ? { credits } : {}) };
-  if (!ship) {
-    const rows = scanView(scanRows ?? []);
-    return {
-      ...base, hailed: false, caller: null, look: null, stutter: false, transcript: transcriptOf(text, { name: 'Signal' }), hint: null, holo: null,
-      hullTitle: 'DERELICT', scanHint: 'Scan for hull, air and signs of life.', callouts: rows.callouts, readout: rows.readout,
-    };
-  }
   const c = ship.contact;
   const kind = sim.content.galaxy?.factions[c.faction]?.kind;
   warmContact(sim, c);

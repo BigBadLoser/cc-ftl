@@ -1,4 +1,4 @@
-import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
+import { checkOdds, opensComms, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 import { ambushRows } from './ambushIntel';
@@ -90,10 +90,11 @@ export function buildStory(sim: Sim): UiStory {
           title: def.title,
           text: def.text,
           intel,
-          comms: def && commsOf(sim, {
+          comms: def && opensComms(def) ? commsOf(sim, {
             text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe'), scanKind: remoteLeft('scan', 'probe')?.remote === 'probe' ? 'probe' : remoteLeft('scan', 'probe') ? 'scan' : null },
             scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: wares ? hail?.stock ?? [] : [], credits: wares ? hail?.credits : undefined,
-          }),
+            ...(def.comms?.caller ? { voice: def.comms.caller } : {}),
+          }) : null,
           choices: (def.choices ?? []).map((c) => {
             const taken = done.includes(c.id);
             const reasons = taken ? [] : unmetReasons(sim, c);

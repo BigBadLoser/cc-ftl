@@ -15,6 +15,7 @@ export const events = {
    */
   'event.distress_call': {
     title: 'Distress call',
+    comms: {},
     text: 'A freighter drifts off the lane, its distress call clipped and looping: "...power failing... request any..." Reactor, drive or raiders: the signal does not say.',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 6 }],
@@ -57,11 +58,13 @@ export const events = {
       },
     },
     choices: [
+      // Info actions (remote): the call is answered as it opens, the scan is the sensors panel's button. The bar holds the three real choices.
       { id: 'hail', label: 'Answer the call', hint: 'Hear what happened', remote: 'hail' },
       { id: 'scan', label: 'Scan it', hint: 'Hull, the failing system, cargo, raiders', remote: 'scan' },
       {
+        // Offering help over the open call is the agreement.
         id: 'help', label: 'Offer help', hint: 'Drop out; your party goes aboard as guests',
-        requires: [{ kind: 'remote', action: 'hail' }, { kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene', aid: true }] },
+        requires: [{ kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene', aid: true }] },
       },
       { id: 'approach', label: 'Drop out', hint: 'No promises made', outcome: { effects: [{ type: 'scene' }] } },
       { id: 'ignore', label: 'Fly on', hint: 'Continue the trip', outcome: {} },
@@ -73,6 +76,7 @@ export const events = {
    */
   'event.trader_swap': {
     title: 'A skiff on the lane',
+    comms: {},
     text: 'Sensors catch a small trading skiff drifting along the lane, transponder on. Its drive is cold: it is in no hurry.',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 5 }],
@@ -123,12 +127,13 @@ export const events = {
         id: 'approach', label: 'Drop out', hint: 'Board it, strip it, or look and leave',
         requires: [{ kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene' }] },
       },
-      { id: 'skip', label: 'Leave it', outcome: {} },
+      { id: 'skip', label: 'Skip', hint: 'Leave it behind', outcome: {} },
     ],
   },
   /** Arc part 1: the choice sets a flag. */
   'event.pirate_captive': {
     title: 'Pirate scout surrenders',
+    comms: { showWares: false, caller: { name: 'Pirate scout', faction: 'Scrapper clans' } },
     text: 'A pirate skiff took a hit from something else and its pilot hails you, hands up. "I only fly the boat. Please. I have a kid."',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 6 }],
@@ -229,6 +234,7 @@ export const events = {
   /** Faction territory: a corporate checkpoint; reputation both gates and changes. */
   'event.corp_checkpoint': {
     title: 'Meridian checkpoint',
+    comms: { showWares: false, caller: { name: 'Meridian patrol cutter', faction: 'Meridian' } },
     text: 'A corporate patrol cutter hails you. "Transit tariff applies in Meridian space. Cargo manifest, captain."',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 8 }],

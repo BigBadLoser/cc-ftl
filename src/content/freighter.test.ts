@@ -125,10 +125,9 @@ describe('distress freighter: signal', () => {
     expect(s.timers[0]!.afterSec).toBeGreaterThanOrEqual(150);
   });
 
-  it('offering help needs the hail first, and agrees help before dropping out', () => {
+  it('opens already connected, so help can be offered from the start and is agreed before dropping out', () => {
     const sim = signalled(3, content);
-    expect(choose(sim, 'help')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
-    choose(sim, 'hail');
+    expect(sim.story.active?.done).toContain('hail');
     choose(sim, 'help');
     deploy(sim);
     expect(spec(sim).aid?.state).toBe('agreed');

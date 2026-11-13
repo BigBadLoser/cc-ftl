@@ -121,8 +121,12 @@ export interface ChoiceDef {
 
 export interface EventDef {
   title: string;
-  /** What the signal's comms window shows of this event (UI only, no sim logic): `showWares: false` hides the hailed ship's stock and wallet. */
-  comms?: { showWares?: boolean };
+  /**
+   * Someone is talking to you: the event opens the comms window, not the plain decision window (`opensComms`, requirements.ts), with the call already
+   * connected (the hail remote is done as it opens). `showWares: false` hides the hailed ship's stock and wallet. `caller` names the voice for an event
+   * with no scene ship behind it (a checkpoint cutter, a surrendering scout).
+   */
+  comms?: { showWares?: boolean; caller?: { name: string; faction: string } };
   text: string;
   /** 'decision' pauses the game in a modal; 'notice' arrives in-world and may be ignored. */
   mode: 'decision' | 'notice';
