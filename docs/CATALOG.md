@@ -24,7 +24,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
 | [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 41 | 13 | 9 | 0 | 0 | 0 |
-| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 68 | 9 | 32 | 0 | 0 | 0 |
+| [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 4 | 2 |
 | [stations](catalog/stations.md) | Station kinds, services, shipyard, black markets | 15 | 6 | 0 | 0 | 0 | 1 |
@@ -37,7 +37,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 0 | 0 | 0 | 0 | 4 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
-| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 0 | 13 | 0 | 0 | 3 |
+| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 12 | 0 | 0 | 3 |
 | **Total** | | 465 | 56 | 65 | 2 | 42 | 30 |
 
 ## Commonly confused

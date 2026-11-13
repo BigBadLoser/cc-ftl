@@ -64084,6 +64084,25 @@
     1
    ]
   },
+  "item.stasis_slab.l": {
+   "kind": "static",
+   "sheet": "stasis",
+   "frame": {
+    "x": 1608,
+    "y": 160,
+    "w": 76,
+    "h": 35
+   },
+   "anchor": {
+    "x": 38,
+    "y": 24
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
   "item.stim.held": {
    "kind": "static",
    "sheet": "items",
@@ -92968,7 +92987,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1500,
+    "x": 1743,
     "y": 160,
     "w": 3,
     "h": 7
@@ -93062,7 +93081,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1395,
+    "x": 1561,
     "y": 160,
     "w": 8,
     "h": 53
@@ -93081,7 +93100,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1404,
+    "x": 1570,
     "y": 160,
     "w": 35,
     "h": 45
@@ -93099,7 +93118,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1459,
+    "x": 1702,
     "y": 160,
     "w": 29,
     "h": 26
@@ -93117,7 +93136,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1504,
+    "x": 1747,
     "y": 160,
     "w": 1,
     "h": 1
@@ -93135,7 +93154,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1489,
+    "x": 1732,
     "y": 160,
     "w": 10,
     "h": 22
@@ -93154,7 +93173,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1506,
+    "x": 1749,
     "y": 160,
     "w": 1,
     "h": 1
@@ -93172,7 +93191,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1440,
+    "x": 1606,
     "y": 160,
     "w": 1,
     "h": 38
@@ -93209,7 +93228,7 @@
    "kind": "static",
    "sheet": "stasis",
    "frame": {
-    "x": 1442,
+    "x": 1685,
     "y": 160,
     "w": 16,
     "h": 32
@@ -141005,6 +141024,44 @@
    "anchor": {
     "x": 63,
     "y": 77
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "slab.floor.x": {
+   "kind": "static",
+   "sheet": "stasis",
+   "frame": {
+    "x": 1395,
+    "y": 160,
+    "w": 82,
+    "h": 54
+   },
+   "anchor": {
+    "x": 57,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true
+  },
+  "slab.floor.y": {
+   "kind": "static",
+   "sheet": "stasis",
+   "frame": {
+    "x": 1478,
+    "y": 160,
+    "w": 82,
+    "h": 54
+   },
+   "anchor": {
+    "x": 25,
+    "y": 41
    },
    "footprint": [
     1,

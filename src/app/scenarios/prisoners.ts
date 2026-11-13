@@ -88,8 +88,10 @@ export const prisoners: Scenario = ({ sim, params, dispatch, setSpeed }) => {
   setSpeed(1);
   const before = new Set(sim.world.query(CrewC));
   for (const cmd of prisonerCommands(sim)) dispatch(cmd);
-  setTimeout(() => {
+  // The spawns land on the next sim step, which on a slow page can be well after any fixed delay: wait until they are there.
+  const imprison = (): void => {
     const caught = newHostiles(sim, before);
+    if (caught.length === 0) return void setTimeout(imprison, 200);
     for (const id of caught) dispatch({ type: 'debug.imprison', crew: id });
     if (!params.has('unpowered')) return;
     const wheel = sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === WHEEL);
@@ -99,5 +101,6 @@ export const prisoners: Scenario = ({ sim, params, dispatch, setSpeed }) => {
       dispatch({ type: 'module.setEnabled', id: wheel, enabled: false });
     };
     setTimeout(cut, 1000);
-  }, 300);
+  };
+  setTimeout(imprison, 200);
 };

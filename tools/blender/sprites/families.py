@@ -161,8 +161,8 @@ def jobs(name):
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
     if name == "stasis":        # the stasis wheel and the slab on its hover cart (issue #116)
         import os
-        from . import slab_game
-        return slab_game.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "slab"
+        from . import slab_floor, slab_game
+        return slab_game.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))) + slab_floor.jobs(), "slab"
     if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
         from . import slab_study
         return slab_study.jobs(), "slab"

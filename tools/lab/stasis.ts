@@ -29,7 +29,8 @@ function playing(root: Container, atlas: Atlas, id: (t: number) => string, ox: n
 
 /**
  * `?panel=stasis`: the stasis wheel (#116) at fill levels, stacked as the game draws it (the base, then each full slot's
- * slab back to front), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop).
+ * slab back to front), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop); then
+ * an empty slab as a floor stack and a full one set down on the floor along x and along y.
  * `rots=0,1,2,3` (default all).
  */
 export const stasisPanel: LabPanel = {
@@ -39,7 +40,7 @@ export const stasisPanel: LabPanel = {
   help: 'rots=0,1,2,3 (default all); &play runs the hover cart loop',
   async cells({ atlas, params }) {
     const rots = (params.get('rots')?.split(',').map(Number).filter((r) => r >= 0 && r < 4)) ?? [0, 1, 2, 3];
-    const ids = [...atlas.ids(A), ...atlas.ids('slab.cart')];
+    const ids = [...atlas.ids(A), ...atlas.ids('slab.'), 'item.stasis_slab.l'];
     ids.forEach((id) => atlas.stat(id));            // queue the sheets
     await atlas.whenIdle();
     const st = atlas.ids(A).map((id) => atlas.stat(id)).filter((s) => !!s);
@@ -76,6 +77,20 @@ export const stasisPanel: LabPanel = {
           root.addChild(floor(1, 2, x, y));
           const set = playing(root, atlas, (t) => cartFrame(rot, t * 1000), x, y);
           return (t) => set(t);
+        },
+      });
+    });
+    // Off the wheel and the cart: [label, sprite, tiles back along x, along y].
+    const loose: readonly [string, string, number, number][] = [['empty slab (item)', 'item.stasis_slab.l', 1, 1], ['floor slab, along x', 'slab.floor.x', 2, 1], ['floor slab, along y', 'slab.floor.y', 1, 2]];
+    loose.forEach(([label, id, fx, fy], j) => {
+      cells.push({
+        label, note: id, w: cw, h: ch, newRow: j === 0,
+        mount(root) {
+          const x = Math.round(cw / 2);
+          const y = ch - PAD - TH;
+          root.addChild(floor(fx, fy, x, y));
+          put(root, atlas, id, x, y);
+          return () => {};
         },
       });
     });
