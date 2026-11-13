@@ -3807,5 +3807,11 @@
   "vmChipR": {"hex": "#c4392d", "set": "vending"},
   "vmChipP": {"hex": "#8a55b0", "set": "vending"},
   "vmChipB": {"hex": "#3f7fc8", "set": "vending"},
-  "vmChipY": {"hex": "#e8c440", "set": "vending"}
+  "vmChipY": {"hex": "#e8c440", "set": "vending"},
+  "vmBagRose": {"hex": "#b06d62", "set": "vending"},
+  "vmBagSage": {"hex": "#87966a", "set": "vending"},
+  "vmBagMustard": {"hex": "#bf9d55", "set": "vending"},
+  "vmBagSlate": {"hex": "#6f8098", "set": "vending"},
+  "vmBagClay": {"hex": "#a97550", "set": "vending"},
+  "vmBagPlum": {"hex": "#86687f", "set": "vending"}
 }

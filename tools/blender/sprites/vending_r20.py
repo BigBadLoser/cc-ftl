@@ -5,9 +5,10 @@ should be a real recess).
 
 - glass: no pane over the windows any more (it washed the contents out); two thin glints across the snack window
   say "glass" instead.
-- chips: proper little bags (boxes) in six colours, mixed so no two neighbours match.
-- cans: three rows of short cans with lit tops and a dark shelf between rows, one flavour (colour) per column
-  (mixed per can, they read as a jumble of dots).
+- chips: proper little bags (boxes) in six muted colours (user: the livery's bright primaries drown bright bags),
+  mixed so no two neighbours match.
+- cans: two rows of four bigger cans (user: three rows of five was too many) with lit tops and a dark shelf
+  between rows, one flavour (colour) per column (mixed per can, they read as a jumble of dots).
 - keypad: fewer, bigger keys standing proud of a dark panel with a gap between each, and a small screen.
 - pickup: a deep recess (5 px) with pale walls and floor, and a dark flap hinged at its top, swung in.
 
@@ -26,8 +27,8 @@ from .vending_study import FP
 VF = R.VF
 TRAY = (-10.0, 3.6, 3.4, 10.6, 5.0)                                  # u0, u1, z0, z1, depth
 HOLES = [h for h in R.HOLES if h[4] != 9.6] + [("F", TRAY[0], TRAY[1], TRAY[2], TRAY[3], TRAY[4], "vmPanel")]
-BAGS = ["vmChipR", "vmChipY", "vmChipB", "vmChipG", "vmChipO", "vmChipP"]
-CANS = ["vmChipR", "vmCanW", "vmChipB", "vmChipG", "vmCanO"]
+BAGS = ["vmBagRose", "vmBagMustard", "vmBagSlate", "vmBagSage", "vmBagClay", "vmBagPlum"]
+CANS = ["vmChipR", "vmChipB", "vmChipG", "vmCanO"]
 
 
 def bx(k, u0, u1, v0, v1, z0, z1, col, top=None):
@@ -54,12 +55,12 @@ def snacks(k):
 
 
 def cans(k):
-    for row, z in enumerate((12.6, 17.2, 21.8)):
+    for row, z in enumerate((12.6, 19.6)):
         if row:
-            bx(k, -11.2, 4.8, VF - 3.0, VF - 1.2, z - 0.8, z - 0.1, "vmGraph")   # dark shelf between rows
-        for j, u in enumerate((-9.6, -6.6, -3.6, -0.6, 2.4)):
+            bx(k, -11.2, 4.8, VF - 3.0, VF - 1.0, z - 1.0, z - 0.1, "vmGraph")   # dark shelf between rows
+        for j, u in enumerate((-9.0, -5.0, -1.0, 3.0)):
             col = CANS[j]                                                       # one flavour per column
-            sweep(k, [(u, VF - 1.9, z, 1.15, 1.15), (u, VF - 1.9, z + 3.6, 1.15, 1.15)], col, p=2, n=10,
+            sweep(k, [(u, VF - 1.8, z, 1.55, 1.55), (u, VF - 1.8, z + 5.2, 1.55, 1.55)], col, p=2, n=12,
                   cap1="vmAlu")
 
 
