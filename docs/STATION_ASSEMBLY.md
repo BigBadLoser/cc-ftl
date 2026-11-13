@@ -148,8 +148,11 @@ Reference: the faceted bazaar mock (`docs/refs/station-mocks/tradingB-*.png`). T
 placement of any specific department, but to me that has a decent trading identity". Recipe family `bazaar`
 (`stationRecipes.ts`), on the trade station's program; sheets with `--family bazaar`.
 
-- `hub.ts`: what stands inside the ring. An octagonal market at the centre (a square court, the stalls round it with
-  the corners cut, a road round the lot) and a spoke on each axis from the court through the road to the ring. The
+- `hub.ts`: what stands inside the ring. A round market at the centre (a square court, the stalls round it out to a
+  circular rim, a ring road round the lot; the user: "might as well make the center round too") and a spoke on each
+  axis from the court through the road to the ring. The first room of each line on a spoke runs in to the road, so its
+  near side follows the curve; at the room's far wall the road widens to a flat, or that wall would run into a step
+  and build a thick wall. The
   north and south spokes are gated at both ends and carry the machinery as a slab of one depth either side; the east
   and west spokes (the main axis) carry rows of cabins, as many of the quarters as fit, and what does not fit goes to
   the ring's band (`Built.left`). The ground between the spokes stays open.
@@ -157,18 +160,20 @@ placement of any specific department, but to me that has a decent trading identi
   placeholder fittings, no stall module exists).
 - The harbour on one side of the main axis (shape `face`, above), the warehouses as a wing on the other.
 - Outline: a square cut to eight even sides (`cut: 'octagon'`) with the corners rounded (`round`; the user: "if
-  we're not gonna subdivide the corners why aren't we just using circular corners"). The stepped ring and the
+  we're not gonna subdivide the corners why aren't we just using circular corners"). The corners are true arcs, hull
+  and ring both, cut tile by tile (filling the lattice's steps was not round enough). The stepped ring and the
   straight-cut octagon were tried and dropped ("so terrible"). The four corner faces are one room each:
   the common rooms take them, biggest first and opposite each other (the mess with its pantry as the cell at one end),
   and a face with none is a garden gallery.
 - The band by sectors round a hub: cabins on the north and south faces, guns either side of the east and west faces,
   common rooms on the diagonals. No rooms on the ring's inner side.
 
-The user's verdicts so far: first prototype "really ugly", the centre "square and not as nicely cohesive" (now the
-octagon), the harbour's join to the stepped ring "so bad" (now `face`). Then, asked for: machinery behind gates,
+The user's verdicts so far: first prototype "really ugly", the centre "square and not as nicely cohesive" (then an
+octagon, now round), the harbour's join to the stepped ring "so bad" (now `face`). Then, asked for: machinery behind gates,
 cabins off the ring's inner side, the octagon's gardens, the ragged band. Open: on the stepped ring the band is still
 stepped and now mostly garden (the octagon is the cleaner of the two); no dock on the warehouse wing; the ring is
-about 107x90 at station size.
+about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98); the stalls round the court
+are small wedges, their curved walls taking much of the floor.
 
 ## Ring stations: what was decided, and where they stand
 
