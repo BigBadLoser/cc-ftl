@@ -69,8 +69,9 @@ def along(line, s, z):
     return best[1], best[2]
 
 
-def stroke(line, w0, w1, seed):
-    """A brush stroke: w0 wide at the start, w1 at the end (pointed), its edge a little ragged in 2px steps."""
+def stroke(line, w0, w1, seed, start=0.05):
+    """A brush stroke: w0 wide at the start, w1 at the end (pointed), its edge a little ragged in 2px steps. `start`:
+    how much of its length the start takes to swell to full width (small: a rounded start, larger: a point)."""
     line = spline(line, 6)
 
     def hit(s, z):
@@ -78,7 +79,7 @@ def stroke(line, w0, w1, seed):
         if t <= 0.001 or t >= 0.999:
             return False
         w = (w0 + (w1 - w0) * t) / 2 * (1 + 0.08 * math.sin(t * 19 + seed))
-        w *= min(1.0, (1 - t) / 0.12, t / 0.05)                                  # rounded start, pointed tip
+        w *= min(1.0, (1 - t) / 0.12, t / start)                                 # start, pointed tip
         return abs(d) <= w * (0.88 + 0.16 * hash2(round(s / 1.5) + seed, round(z / 2)))
     return hit
 

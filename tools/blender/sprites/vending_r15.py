@@ -64,7 +64,8 @@ def periodic(hit):
 
 
 def painter(look):
-    strokes = [periodic(stroke(line, w0, w1, i * 7)) for i, (line, w0, w1) in enumerate(look["strokes"])]
+    strokes = [periodic(stroke(line, w0, w1, i * 7, *rest))
+               for i, (line, w0, w1, *rest) in enumerate(look["strokes"])]
     inks = [periodic(scribble(line)) for line in look["lines"]]
     shadows = [periodic(scribble(shifted(line, 1.0, -1.0))) for line in look["lines"]]
 
