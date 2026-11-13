@@ -8,7 +8,11 @@ heavy robot's forward lean, and a guard held forward off the chest.
   v6c heavy + round head: the heavy robot (V4b, lean and reach of V4t) with smaller shoulder plates and the round droid's
      white ear plates on its sensor head
 
-Sweep parts in px of the droid frame (exercise_r9.D); robot parts in tiles (exercise_r10)."""
+Sweep parts in px of the droid frame (exercise_r9.D); robot parts in tiles (exercise_r10).
+
+Approved (user, 2026-11-13): V6g (`v6g`), the exercise machine's art: the round sparring droid on its weighted base,
+post and gimbal ring, tipped 12 degrees forward, white ear plates, T visor and green eyes, light grey segmented arms with
+dark ball joints, red gloves held forward in guard; no mat, round 5's turn (crew stand in front of it, on +v)."""
 import math
 
 from . import exercise_r9 as R9
