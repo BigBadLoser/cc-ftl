@@ -66,8 +66,9 @@ def periodic(hit):
 def painter(look):
     strokes = [periodic(stroke(line, w0, w1, i * 7, *rest))
                for i, (line, w0, w1, *rest) in enumerate(look["strokes"])]
-    inks = [periodic(scribble(line)) for line in look["lines"]]
-    shadows = [periodic(scribble(shifted(line, 1.0, -1.0))) for line in look["lines"]]
+    half, (ds, dz) = look.get("half", 0.7), look.get("shadow", (1.0, -1.0))
+    inks = [periodic(scribble(line, half)) for line in look["lines"]]
+    shadows = [periodic(scribble(shifted(line, ds, dz), half)) for line in look["lines"]]
 
     def paint(side, u, v, z):
         if side == "F" and R.SIGN[0] < u < R.SIGN[1] and R.SIGN[2] < z < R.SIGN[3]:
