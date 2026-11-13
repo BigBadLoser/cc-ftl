@@ -140,7 +140,8 @@ def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85), end=None):
             col = "slbCy" if end is None or f < 0.6 else "slbCyM" if f < 0.8 else "slbCyD"
             if end == "air":                        # round 43: a ring under the emitter's disc hid half the run, so
                 z, r = top - 0.04 - 0.23 * f, 0.2 + 0.07 * f    # it starts wider than the emitter, just below it,
-                col = "slbCy" if f < 0.45 else "slbCyM" if f < 0.75 else "slbCyD"   # and dims over the whole run
+                col = ("slbCyD" if f < 0.09 or f >= 0.75 else "slbCyM" if f < 0.18 or f >= 0.45   # and dims over
+                       else "slbCy")                # the run; round 44: it fades in the same steps (it popped in)
             annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, col, n=28)
 
 
