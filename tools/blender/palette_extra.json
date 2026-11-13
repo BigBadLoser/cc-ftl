@@ -3735,5 +3735,17 @@
   "b6Gun": {"hex": "#586577", "set": "bench6"},
   "b6GunD": {"hex": "#3e4754", "set": "bench6"},
   "b6Carbon": {"hex": "#24272c", "set": "bench6"},
-  "b6Titan": {"hex": "#c3c8cc", "set": "bench6"}
+  "b6Titan": {"hex": "#c3c8cc", "set": "bench6"},
+  "b7Vinyl": {"hex": "#3d4552", "set": "bench7"},
+  "b7VinylD": {"hex": "#2c323c", "set": "bench7"},
+  "b7Steel": {"hex": "#a7aeb5", "set": "bench7"},
+  "b7SteelD": {"hex": "#7b828a", "set": "bench7"},
+  "b7Green": {"hex": "#3f5a48", "set": "bench7"},
+  "b7GreenD": {"hex": "#2d4134", "set": "bench7"},
+  "b7Teak": {"hex": "#9a6a43", "set": "bench7"},
+  "b7TeakD": {"hex": "#74502f", "set": "bench7"},
+  "b7Coral": {"hex": "#c4705e", "set": "bench7"},
+  "b7CoralD": {"hex": "#96503f", "set": "bench7"},
+  "b7Black": {"hex": "#26282c", "set": "bench7"},
+  "b7Chrome": {"hex": "#c9ced3", "set": "bench7"}
 }
