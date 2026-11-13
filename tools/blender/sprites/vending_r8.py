@@ -1,8 +1,8 @@
 """Vending machine look study, round 8 (family `vending8`, palette set vending, preview only): suggestion 1 (the
 user's pick, 2026-11-13, after the split side): one continuous ribbon. The cream S of round 4's wave (its swing eased
 a little so the edges stay on the flat of the side) in the lighter side cream, with a yellow band along its back edge
-and a blue band along its front edge, both following the ribbon at a fixed perpendicular distance for the full
-height. Locked back and VM1C front as before.
+and a blue band along its front edge, both following the ribbon at a fixed perpendicular distance, all three running
+from the floor to the top of the side (clamped there, so they end square). Locked back and VM1C front as before.
 
 All in px of the tile (u, v -16..16, z up); the front (+v) faces the camera."""
 import math
@@ -13,8 +13,9 @@ from .vending_r3 import SIDE, back, front
 from .vending_study import FP
 
 X = (1.0, 0.0, 0.0)
-CENTRE = [(v * 0.85 - 0.15, z) for v, z in ((6, 4), (4, 16), (-6, 30), (-8, 42), (2, 54), (4.5, 62))]
+CENTRE = [(v * 0.85 - 0.15, z) for v, z in ((6.3, 0.2), (6, 4), (4, 16), (-6, 30), (-8, 42), (2, 54), (4.5, 62), (5.2, 66.8))]
 W, EDGE, GAP = 2.8, 0.75, 0.05                    # ribbon half width, edge band half width, gap between them
+Z0, Z1 = 0.2, 66.8                                # floor to the cheek's top: the ribbon runs the full height
 
 
 def offset(d):
@@ -24,7 +25,7 @@ def offset(d):
     for i, (v, z) in enumerate(pts):
         (v0, z0), (v1, z1) = pts[max(i - 1, 0)], pts[min(i + 1, len(pts) - 1)]
         ln = math.hypot(v1 - v0, z1 - z0) or 1
-        out.append((v + d * (z1 - z0) / ln, z - d * (v1 - v0) / ln))
+        out.append((v + d * (z1 - z0) / ln, min(max(z - d * (v1 - v0) / ln, Z0), Z1)))
     return out[::3] + ([out[-1]] if (len(out) - 1) % 3 else [])
 
 
