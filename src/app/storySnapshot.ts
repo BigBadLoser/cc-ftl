@@ -1,4 +1,4 @@
-import { checkOdds, opensComms, unmetReasons, type SceneSpec, type Sim } from '../sim';
+import { checkOdds, opensComms, remotesDone, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 import { ambushRows } from './ambushIntel';
@@ -75,7 +75,7 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
 export function buildStory(sim: Sim): UiStory {
   const { active, last } = sim.story;
   const def = active && sim.content.events?.[active.event];
-  const done = active?.done ?? [];
+  const done = active && def ? remotesDone(def, active) : [];
   const lastDef = last && sim.content.events?.[last.event];
   const signal = sim.galaxy.signal?.event === active?.event ? sim.galaxy.signal : null;
   const intel = def ? intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote) : [];

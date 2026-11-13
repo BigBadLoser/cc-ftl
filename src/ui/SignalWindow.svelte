@@ -3,7 +3,7 @@
   import type { UiApi, UiStory } from './api';
   import { Dialog } from './kit';
   import SignalComms from './SignalComms.svelte';
-  import { holdModal, isTypingTarget } from './keys';
+  import { storyKeys } from './storyKeys';
   import { keymap } from './keymap';
 
   /**
@@ -11,19 +11,11 @@
    * scan key, which is the story's remote choice.
    */
   let { api, active, busy, pick }: { api: UiApi; active: NonNullable<UiStory['active']>; busy: boolean; pick: (id: string) => void } = $props();
-  const c = $derived(active.comms!);
-
-  function keydown(e: KeyboardEvent) {
-    if (busy || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e)) return;
-    if (keymap.matches(e, 'ui.scan') && c.scanChoice) { e.preventDefault(); pick(c.scanChoice); }
-  }
   let binds = $state(keymap.get());
   onMount(() => {
-    // A forced decision: the game's own keys (S pans the camera down) stand aside while it is open.
-    const release = holdModal();
-    window.addEventListener('keydown', keydown);
     const off = keymap.subscribe((b) => (binds = b));
-    return () => { window.removeEventListener('keydown', keydown); off(); release(); };
+    const stop = storyKeys(() => ({ active, busy, pick }));
+    return () => { off(); stop(); };
   });
 </script>
 

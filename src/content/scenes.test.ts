@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, remotesDone, type Sim } from '../sim';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
 import { leaveBlocker } from '../sim/galaxy/eventGrid';
@@ -99,10 +99,13 @@ describe('scene signal', () => {
     expect(ship?.crew).toBeLessThanOrEqual(3);
     expect(ship?.cargo?.length).toBeGreaterThanOrEqual(2);
     expect(ship?.contact.name).toBeTruthy();
-    expect(sim.story.active?.done).toEqual(['hail']); // a call is answered as it opens
+    const answered = () => remotesDone(content.events['event.trader_swap'], sim.story.active ?? {});
+    expect(answered()).toEqual(['hail']); // a call is answered by definition (nothing stored, so an older save answers too)
+    sim.story.active!.done = []; // a restored save from before: still answered
+    expect(answered()).toEqual(['hail']);
     const out = choose(sim, 'scan');
     expect(out).toContainEqual({ type: 'story.remote', event: 'event.trader_swap', choice: 'scan', action: 'scan' });
-    expect(sim.story.active?.done).toEqual(['hail', 'scan']);
+    expect(answered().sort()).toEqual(['hail', 'scan']);
     expect(choose(sim, 'scan')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'done' });
     expect(sim.galaxy.travel?.phase).toBe('story');
     expect(sim.world.query(ShipC).length).toBe(0); // nothing spawned: the ship waits in hyperspace
@@ -128,7 +131,7 @@ describe('scene signal', () => {
     expect(sim.story.active?.event).toBe('event.trader_swap');
     expect(sim.galaxy.signal).toBeNull();
     for (const c of ['scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
-    expect(sim.story.active?.done ?? []).toEqual(['hail']); // a comms event opens already answered; nothing else was taken
+    expect(remotesDone(content.events['event.trader_swap'], sim.story.active ?? {})).toEqual(['hail']); // a comms event is answered by definition; nothing else was taken
     choose(sim, 'ignore');
     expect(sim.story.active).toBeNull();
     expect(sim.galaxy.event).toBeNull();

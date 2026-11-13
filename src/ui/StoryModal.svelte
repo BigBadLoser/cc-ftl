@@ -3,6 +3,7 @@
   import type { UiApi, UiStory } from './api';
   import { Chip, DecisionBar, Dialog } from './kit';
   import { storyOptions } from './storyOptions';
+  import { storyKeys } from './storyKeys';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
   import SignalWindow from './SignalWindow.svelte';
@@ -15,6 +16,10 @@
   let busy = $state(false);
   /** Which choices were open: a remote action (scan, hail) keeps the decision up, and marking it done frees the other buttons again. */
   let openSig = '';
+
+  // The scan key and the held game keys, while a decision is open (the same handling as the comms window).
+  const plain = $derived(!hold && !!story.active && !story.active.comms);
+  $effect(() => (plain ? storyKeys(() => ({ active: story.active!, busy, pick })) : undefined));
 
   onMount(() =>
     api.story.subscribe((s) => {

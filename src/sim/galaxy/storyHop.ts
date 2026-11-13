@@ -1,4 +1,5 @@
 import { drawEvent, pump } from '../story/engine';
+import { remotesDone } from '../story/requirements';
 import { withRng } from '../story/state';
 import type { Sim } from '../sim';
 import { STORY_ANCHOR_CHANCE, STORY_HOP_CHANCE } from './tuning';
@@ -21,7 +22,7 @@ function noteHails(sim: Sim): void {
   const spec = sim.galaxy.signal;
   if (!a || spec?.event !== a.event) return;
   const def = sim.content.events?.[a.event];
-  if (!(a.done ?? []).some((id) => def?.choices?.find((c) => c.id === id)?.remote === 'hail')) return;
+  if (!def || !remotesDone(def, a).some((id) => def.choices?.find((c) => c.id === id)?.remote === 'hail')) return;
   for (const s of spec.ships) s.hailed = true;
   sim.galaxy.rev++;
 }

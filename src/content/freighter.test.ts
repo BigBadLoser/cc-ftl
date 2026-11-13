@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, WeaponC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
+import { CombatC, WeaponC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, remotesDone, type Sim } from '../sim';
 import { CrewC, DeadC, JobC, PositionC, WorkBlockC } from '../sim/crew/components';
 import { jobFits } from '../sim/crew/jobFit';
 import { AllegianceC } from '../sim/fight/components';
@@ -127,7 +127,8 @@ describe('distress freighter: signal', () => {
 
   it('opens already connected, so help can be offered from the start and is agreed before dropping out', () => {
     const sim = signalled(3, content);
-    expect(sim.story.active?.done).toContain('hail');
+    expect(sim.story.active?.done ?? []).toEqual([]); // nothing stored: a comms call is answered by definition
+    expect(remotesDone(content.events['event.distress_call'], sim.story.active ?? {})).toContain('hail');
     choose(sim, 'help');
     deploy(sim);
     expect(spec(sim).aid?.state).toBe('agreed');

@@ -88,7 +88,7 @@ export {
   CREW_KIND, CREW_ROLL_SALT, SKILLS, crewRollRng, defaultPicks, roleHint, rollCrewMember, rollCrewWith, rollStartingCrew, type CrewPick, type RolledCrew,
 } from './crew/roll';
 export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
-export { opensComms, choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
+export { opensComms, remotesDone, choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
 export { poolFor, startEvent } from './story/engine';
 export type * from './scene/types';
 export { createCrew } from './crew/spawn';
