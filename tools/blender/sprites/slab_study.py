@@ -125,6 +125,26 @@ def cradle_beams(k, deg=6.0):
         k.cyl(0, v, 0.0, 0.22, 0.62 + tip(v, deg) - 0.43, "slbFilm", sides=14, rtop=0.13)
 
 
+def hover_rings(k, deg=0.0):
+    """Round 37: the lift field as three rings under each emitter (not the solid cone), widening to the floor."""
+    from .slab_wheel import annulus
+    for v in (-CV, CV):
+        top = 0.62 + tip(v, deg) - 0.29                 # just under the emitter
+        for f in (0.25, 0.55, 0.85):
+            z, r = top * (1 - f), 0.15 + 0.09 * f
+            annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, "slbCy", n=28)
+
+
+class _Shift:
+    """k seen from (u, v): annulus() draws round the origin, so shift it under an emitter."""
+
+    def __init__(self, k, u, v):
+        self.k, self.u, self.v, self.m = k, u, v, k.m
+
+    def p(self, u, v):
+        return self.k.p(u + self.u, v + self.v)
+
+
 def cradle_sheet(k):
     k.box(0, 0.0, 0.42, 0.7, 2 * CV - 0.1, 0.01, "slbFilm")
 
@@ -143,10 +163,27 @@ def single(build, fp, name):
     return go
 
 
-CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0}
-CARTS = {v: ((lambda k, d=d: cradle(k, d)), (1, 2)) for v, d in CART_TIP.items()}
-CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120),
-                     (single(lambda k, d=d: cradle_beams(k, d), (1, 2), "bm"), 55),
+CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0, "c11r": 0.0, "c11s": 0.0}   # c11r: solid rings, c11s: see-through
+
+
+def cart_design(v, d):
+    def go(k):
+        if v == "c11r":
+            hover_rings(k, d)
+        return cradle(k, d)
+    return go
+
+
+def cart_field(v, d):
+    if v == "c11r":
+        return []
+    if v == "c11s":
+        return [(single(lambda k: hover_rings(k, d), (1, 2), "rg"), 150)]
+    return [(single(lambda k: cradle_beams(k, d), (1, 2), "bm"), 55)]
+
+
+CARTS = {v: (cart_design(v, d), (1, 2)) for v, d in CART_TIP.items()}
+CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d),
                      (single(cradle_sheet, (1, 2), "st"), 60)] for v, d in CART_TIP.items()}
 
 
