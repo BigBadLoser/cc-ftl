@@ -7,6 +7,10 @@ seats (visible in the gaps) on legs at its two ends, seen in profile. Seats and 
   bn18n panel ends: a solid black end panel at each end, wide at the floor, narrowing up to the beam
   bn18o posts: end T-legs plus straight vertical chrome posts in the two gaps, each on a round black foot
 
+Approved (user, 2026-11-13): BN18O (`bn18o`), the bench's art: three moulded coral plastic seats with black pad arms on
+a chunky black beam, chrome T-legs with long black feet at both ends of the beam and straight chrome posts on round black
+feet in the two gaps between the seats; palette set bench7, 2 x 1.
+
 Same frame as bench_study (px of the footprint, u -32..32, v -16..16, z up; the front, +v, faces the camera)."""
 from .bench_r7 import BLACK, CHROME, tube
 from .bench_r9 import finish
