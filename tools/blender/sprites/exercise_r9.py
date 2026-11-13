@@ -17,17 +17,29 @@ from .exercise_study import FP
 from .research_kit import Bench
 
 V = -16                                                                            # the droid's centre on the footprint
-R2 = math.sqrt(0.5)
-SIDE = (R2, -R2, 0.0)                                                              # the droid's x on the footprint
+TURN = [math.pi / 4]                                                               # its turn: 45 deg faces the camera,
+                                                                                   # 0 faces +v (round 5's way)
 
 
 def D(x, y, z, a=1.0, b=None):
     """Droid frame -> a sweep control point on the footprint."""
-    return ((x + y) * R2, V + (y - x) * R2, z, a, a if b is None else b)
+    c, s = math.cos(TURN[0]), math.sin(TURN[0])
+    return (x * c + y * s, V + y * c - x * s, z, a, a if b is None else b)
 
 
 def sw(k, pts, col, **kw):
-    sweep(k, [D(*p) for p in pts], col, side=SIDE, **kw)
+    sweep(k, [D(*p) for p in pts], col, side=(math.cos(TURN[0]), -math.sin(TURN[0]), 0.0), **kw)
+
+
+def turned(f, a, name):
+    """f built at turn a (radians), under its own sprite name."""
+    def g():
+        TURN[0] = a
+        try:
+            return f(name)
+        finally:
+            TURN[0] = math.pi / 4
+    return g
 
 
 def body(k, torso=True):
@@ -62,8 +74,8 @@ def glove(k, x, y, z, r=4):
     sw(k, [(x, y - 2, z - 1, r * 0.7), (x, y, z, r), (x, y + 2.5, z + 1, r * 0.6)], PAD, p=2.2)
 
 
-def v3j():
-    k = Bench("ex_v3j", FP)
+def v3j(name="ex_v3j"):
+    k = Bench(name, FP)
     body(k)
     head(k, FRAME_D)
     for s in (-1, 1):
@@ -107,7 +119,8 @@ def v3l():
     return build(k)
 
 
-DESIGNS = {"v3j": v3j, "v3k": v3k, "v3l": v3l}
+DESIGNS = {"v3j": v3j, "v3k": v3k, "v3l": v3l,
+           "v3j0": turned(v3j, 0.0, "ex_v3j0")}                                     # boxer, round 5's turn
 
 
 def jobs():
