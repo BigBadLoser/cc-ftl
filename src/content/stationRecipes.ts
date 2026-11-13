@@ -91,9 +91,9 @@ const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'oc
 });
 
 /** PROTOTYPE. A harbour crescent: a rounded square open to the west, everything in two rows along its promenade. */
-const crescent = (name: string, o: { cut: number | 'octagon'; from: number; wing?: boolean }): Recipe => ({
+const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number }; from: number; wing?: boolean; shoulders?: boolean }): Recipe => ({
   name,
-  root: { kind: 'ring', takes: o.wing ? ['market', 'commons', 'defence', 'works'] : ['market', 'commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, inner: true, gap: { side: 'w', from: o.from } },
+  root: { kind: 'ring', takes: o.wing ? ['market', 'commons', 'defence', 'works'] : ['market', 'commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, ...(o.shoulders ? { shoulders: true } : {}), inner: true, gap: { side: 'w', from: o.from } },
   spacing: 2,
   branches: [
     { takes: ['harbour'], per: 'together', host: { on: 'tip' }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
@@ -122,11 +122,9 @@ export const stationRecipes = {
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   crescent: [
-    crescent('corner 3', { cut: 3, from: 22 }),
     crescent('corner 5', { cut: 5, from: 22 }),
-    crescent('corner 5, short arms', { cut: 5, from: 14 }),
-    crescent('corner 5, long arms', { cut: 5, from: 30 }),
-    crescent('octagon', { cut: 'octagon', from: 22 }),
+    crescent('octagon, corners divided', { cut: 'octagon', from: 22, shoulders: true }),
+    crescent('rounder (flats of 4 cells), corners divided', { cut: { flat: 4 }, from: 22, shoulders: true }),
   ],
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),

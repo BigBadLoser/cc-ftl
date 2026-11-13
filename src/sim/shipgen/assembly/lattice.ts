@@ -63,6 +63,8 @@ export interface Site {
   cut: number;
   /** The cut corners are arcs, not straight. */
   round: boolean;
+  /** An arc corner's ends are the band's, as far in as a room's wall can meet the curve; the corner room is the rest. */
+  shoulders: boolean;
   hull: (x: number, y: number) => boolean;
   inside: (x: number, y: number) => boolean;
   /** How far a tile is inside the inboard floor (0 outside it): 1-2 the ring, 3 its inner wall, more is free ground. */
@@ -81,7 +83,7 @@ export interface Site {
  * ring's own shape does not change at a cut; what lies beyond it is simply not built, and the cut faces are closed
  * with a solid line.
  */
-export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false): Site {
+export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, keep?: (x: number, y: number) => boolean, round = false, shoulders = false): Site {
   const g = new RegionGrid(R + pad);
   const whole = shapes(R, outline, cut, round), inside = whole.inside;
   const kept = keep ?? ((): boolean => true);
@@ -108,7 +110,7 @@ export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, ke
   let reach = 0;
   while (depth(0, -(reach + 1)) >= 3) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, outline, cut, round, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, cut, round, shoulders, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {

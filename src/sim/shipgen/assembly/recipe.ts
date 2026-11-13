@@ -67,11 +67,13 @@ export interface Recipe {
     | { kind: 'core' }
     /**
      * A ring or an arc with its band: it takes these departments itself. `cut` 'octagon': a square outline cut to
-     * eight even sides, whatever its size; with `round` the cut corners are arcs. `hub`: a market court at its centre with spokes to the ring (hub.ts); the
+     * eight even sides, whatever its size; `{ flat }`: cut so each side keeps that many cells of flat either side of its
+     * axis (rounder as the number falls). With `round` the cut corners are arcs; with `shoulders` the ends of each arc
+     * are the band's (rooms stand there) and only its steep middle is one corner room. `hub`: a market court at its centre with spokes to the ring (hub.ts); the
      * `market` departments stand round the court, the `gated` ones line the north and south spokes behind gates, and
      * of the `spokes` ones (which the ring takes too) as many line the east and west spokes as fit.
      */
-    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon'; round?: boolean; inner: boolean; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
+    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
   branches: readonly BranchRule[];
   /**
    * How the crew sleeps, when not in quarters cut into cabins where they stand:

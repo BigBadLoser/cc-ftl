@@ -15,14 +15,14 @@ import { at, type Built, type Dir, type Frame } from './model';
 /** A piece cut away: everything on the far side of a lattice line (`from` tiles from the centre on side `side`). */
 export interface Gap { side: Dir; from: number }
 
-export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap; round?: boolean }
+export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap; round?: boolean; shoulders?: boolean }
 
 const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0, dir: 'e' }, s: { x: 0, y: 0, dir: 's' }, w: { x: -1, y: 0, dir: 'w' } };
 
 export function ringSite(o: RingOpts, pad: number): { site: Site; kept: (x: number, y: number) => boolean } {
   const gap = o.gap;
   const kept = (x: number, y: number): boolean => !gap || (gap.side === 's' ? y < gap.from : gap.side === 'n' ? y >= -gap.from : gap.side === 'e' ? x < gap.from : x >= -gap.from);
-  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round), kept };
+  return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round, !!o.shoulders), kept };
 }
 
 /** The ring's ports: on its rim at the four axes (where the ring is there), and at the cut ends of an arc. */
@@ -57,7 +57,9 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): Roo
   // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: the common rooms
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
-  const halls = specs.filter((r) => r.dept === 'commons' && !r.cabin).sort(bySize);
+  // A corner with shoulders is all curve, with no straight end for an annex to stand on: it takes the biggest rooms
+  // without one, whatever their department, so no corner is left a gallery while the band is short.
+  const halls = specs.filter((r) => !r.cabin && (s.shoulders ? !r.annex && !r.annexed : r.dept === 'commons')).sort(bySize);
   // The corners the outline has (an arc lacks some), in the order they are given rooms: halls to opposite corners first.
   const order = (s.cut > 2 ? [1, 3, 0, 2] : [0, 1, 2, 3]).filter((k) => cornersOf(s).includes(k));
   const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
@@ -68,5 +70,9 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean): Roo
   // A room with an annex stands in the band, where its annex can stand against it.
   const small = band.left.filter((r) => innerRoom(r) && !r.annex);
   const out = placeInner(s, rest.filter((a) => small.includes(a.spec)));
-  return band.left.filter((r) => !small.includes(r) || out.includes(r));
+  const left = band.left.filter((r) => !small.includes(r) || out.includes(r));
+  // A cabin or two still over: they double up, as in the band, with cabins that found a place on either side.
+  const stood = specs.filter((r) => r.cabin && !left.includes(r));
+  if (left.length <= 2 && left.every((r) => r.cabin) && stood.length >= left.length) for (const [k, extra] of left.splice(0).entries()) (stood[k] as RoomSpec).mods.push(...extra.mods);
+  return left;
 }
