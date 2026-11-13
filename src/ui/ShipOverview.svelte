@@ -4,7 +4,7 @@
   import FloatingWindow from './FloatingWindow.svelte';
   import FtlCharge from './FtlCharge.svelte';
   import Icon from './Icon.svelte';
-  import { PaneHead, tip } from './kit';
+  import { tip } from './kit';
   import ShipMeters from './ShipMeters.svelte';
 
   let { api, stockOpen, onStock, onClose }: { api: UiApi; stockOpen: boolean; onStock: () => void; onClose: () => void } = $props();
@@ -40,9 +40,7 @@
   const off = $derived(mods.filter((m) => !m.enabled || m.hp <= 0 || (!m.powered && !m.idle && m.power < 0)));
 </script>
 
-<FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} testId="ship-overview" bare pinRight={32} padded>
-  <PaneHead icon="hull" title="Ship overview" />
-  <button class="tile close" use:tip={{ text: 'Close' }} aria-label="Close overview" data-testid="overview-close" onclick={onClose}><Icon name="close" size={16} /></button>
+<FloatingWindow id="overview" title="Ship overview" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: b.top, w: 300, h: 0 })} {onClose} icon="hull" closeTestId="overview-close" closeLabel="Close overview" testId="ship-overview" padded>
   <div class="res" data-testid="stats">
     <span use:tip={{ text: 'Power supply / demand' }} class="cell" class:bad={short} data-testid="stat-power"><Icon name="power" size={18} /><b>{st.supply}/{st.demand}</b></span>
     {#if st.fuel}<span use:tip={{ text: `Reactor crystals ${st.fuel.have}/${st.fuel.max} · ${crystals} in stores. Crew top the reactors up from the stores` }} class="cell" class:bad={st.fuel.have < st.fuel.max / 2 && crystals === 0} data-testid="stat-reactor-fuel"><Icon name="crystal" size={18} /><b>{st.fuel.have}/{st.fuel.max}</b></span>{/if}
@@ -75,7 +73,6 @@
 </FloatingWindow>
 
 <style>
-  .close { position: absolute; top: 0; right: 0; width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: #fff; }
   .res { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .cell { display: flex; align-items: center; gap: 8px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); font: inherit; text-align: left; }
   .cell b { color: var(--text); font-weight: 600; }

@@ -34,7 +34,7 @@ All top-level components are imported by something except `EnemyCharges.svelte`.
 | Lessons | `lessons/*` | Coach mark engine with two lessons | Partial: two lessons | see events-story.md |
 | Overlay picker | `OverlayPicker` | Air, power, rooms and other field views | In game | src/ui/OverlayPicker.svelte |
 | Context menu and select box | `ContextMenu, SelectBox, FloatingWindow` | Right-click orders, drag select, floating windows | In game | src/ui/ContextMenu.svelte |
-| UI kit | `kit/*` | Frame, Tabs, Meter, Chip, Dialog, Slider, Select, tooltips | In game | src/ui/kit/*; consistency pass is issue #336 |
+| UI kit | `kit/*` | Frame, Tabs, Meter, Chip, Dialog, Slider, Select, tooltips | In game | src/ui/kit/*; FloatingWindow, Dialog, event card and deploy picker use the rail frame, decisions use kit/DecisionBar; consistency pass is issue #336 |
 | Bug report and error overlay | `BugReport, ErrorOverlay` | Report a bug with state and params | In game | src/ui/BugReport.svelte |
 | Debug panel | `DebugPanel` | Spawn items, modules, ships, enemies, outposts; set credits and crew | Debug only | src/ui/DebugPanel.svelte |
 | UI scale setting | `-` | Scale the whole UI | Planned | issue #215 |

@@ -8,7 +8,7 @@
   import CallerCard from './comms/CallerCard.svelte';
   import Transcript from './comms/Transcript.svelte';
   import SensorPanel from './comms/SensorPanel.svelte';
-  import DecisionBar from './comms/DecisionBar.svelte';
+  import { DecisionBar } from './kit';
   import type { Callout, DecisionOption, ReadoutRow, UiHolo } from './comms/types';
   import { keyLabel, type Bindings } from './keymap';
 
