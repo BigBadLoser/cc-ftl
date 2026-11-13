@@ -2,7 +2,8 @@
 (rising sweep; user, 2026-11-13: best so far) with the side gradient back. Rounds 8 and 9 got a dark-to-light ramp
 down the side by accident (bent normals from the old geometry); the user liked it, so here it is on purpose: the
 side walls' shading normals lean down near the top and up near the bottom, so the side runs from dark under the roof
-to a lighter wine at the floor. Only the shading changes; the mesh is round 10's, and the front and back stay flat.
+to a lighter wine at the floor (the lean's angle runs linearly with height, so the bands spread evenly from
+roof to floor; user, 2026-11-13). Only the shading changes; the mesh is round 10's, and the front and back stay flat.
 The lean fades in round the vertical corners (by how much a normal faces sideways), so the front stays one tone,
 and only the wine faces take it (on the cream it streaked).
 
@@ -45,10 +46,10 @@ def ramp(k, ob, top, bot):
             if abs(u) < R.FU - 0.01 or abs(n.dot(zh)) > 0.2 or z > zwall + 0.01:
                 continue                                     # outer side walls and their corners only
             w = n.dot(uh) ** 2                               # full on the side, none on the front or back
-            t = (1 - z / zwall)
-            t = t * t * (3 - 2 * t)                          # smoothstep: top of the wall 0, floor 1
+            t = 1 - z / zwall                                # linear: top of the wall 0, floor 1, so the
+            a = math.atan(top) + (math.atan(bot) - math.atan(top)) * t   # ramp spreads over the full height
             h = n - zh * n.dot(zh)
-            normals[li] = (h.normalized() + zh * (w * (top + (bot - top) * t))).normalized()
+            normals[li] = (h.normalized() + zh * (w * math.tan(a))).normalized()
     me.normals_split_custom_set(normals)
 
 
