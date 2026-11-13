@@ -89,3 +89,55 @@ DESIGNS = R12
 
 def jobs():
     return [(f"module.exercise.{v}", FP, "prop", f) for v, f in DESIGNS.items()]
+
+
+# ---- round 26: arms rebuilt so the upper arm and forearm read apart --------------------------------------------------
+RAIL = "gymRail"
+
+
+def lerp(a, b, t):
+    return tuple(p + (q - p) * t for p, q in zip(a, b))
+
+
+def ball(k, c, r, col):
+    x, y, z = c
+    sw(k, [(x, y, z - r, 0.4), (x, y, z - r * 0.6, r * 0.8), (x, y, z, r), (x, y, z + r * 0.6, r * 0.8),
+           (x, y, z + r, 0.4)], col, p=2.0)
+
+
+def seg_arms(k, sh, el, wr, fist, up_col, fore_col, joint_col=RAIL, up_r=(2.8, 2.0), fore_r=(1.8, 2.7)):
+    """Arms in separate segments: a joint ball at the shoulder, a tapered upper arm stopping short of the elbow, a joint
+    ball at the elbow, a forearm flaring to a gauntlet, the glove. The gaps at the joints and the two colours keep the
+    upper arm and forearm from merging."""
+    for s in (-1, 1):
+        S, E, W = (s * sh[0], sh[1], sh[2]), (s * el[0], el[1], el[2]), (s * wr[0], wr[1], wr[2])
+        ball(k, S, 3.2, joint_col)
+        sw(k, [(*lerp(S, E, 0.18), up_r[0]), (*lerp(S, E, 0.55), (up_r[0] + up_r[1]) / 2), (*lerp(S, E, 0.8), up_r[1])],
+           up_col, p=2.4)
+        ball(k, E, 2.3, joint_col)
+        sw(k, [(*lerp(E, W, 0.22), fore_r[0]), (*lerp(E, W, 0.65), (fore_r[0] + fore_r[1]) / 2), (*W, fore_r[1])],
+           fore_col, p=2.4)
+        glove(k, s * fist[0], fist[1], fist[2])
+
+
+def round_lean(arms_kw):
+    def f(name):
+        k = Bench(name, FP)
+        stand(k)
+        sw(k, [(0, 0, 24, 5, 3.5), (0, 0, 30, 8, 5), (0, 0, 40, 9, 5.5), (0, 0, 46, 6, 4)], SHELL, p=2.6, cap0=SHELL_D)
+        head_plates(k, EYE)
+        seg_arms(k, **arms_kw)
+        return build(k)
+    return f
+
+
+ARMS2 = {
+    "v6d": dict(sh=(11, 0, 43), el=(15.5, 5, 33), wr=(9.5, 12, 40), fist=(8, 14.5, 43.5),           # white upper arm,
+                up_col=SHELL, fore_col=DARK),                                                       # dark gauntlet
+    "v6e": dict(sh=(11, 0, 43), el=(15.5, 5, 33), wr=(9.5, 12, 40), fist=(8, 14.5, 43.5),           # dark upper arm,
+                up_col=DARK, fore_col=SHELL),                                                       # white gauntlet
+    "v6f": dict(sh=(11, 0, 43), el=(15, 4, 31), wr=(12.5, 9, 41), fist=(11, 11, 45),                # elbows down, the
+                up_col=SHELL, fore_col=DARK),                                                       # forearms upright
+}
+for _n, _kw in ARMS2.items():
+    DESIGNS[_n] = turned(leaned(round_lean(_kw), 12, f"ex_{_n}"), 0.0, f"ex_{_n}")
