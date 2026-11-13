@@ -28,7 +28,9 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "v3d": "V3d  no chest pad", "v3e": "V3e  no floor mat", "v3f": "V3f  neither",
          "v3g": "V3g  dark head, sockets", "v3h": "V3h  faceplate, yoke", "v3i": "V3i  cyclops, ball joints",
          "v3j": "V3j  boxer", "v3k": "V3k  faceplate, twin rods", "v3l": "V3l  heavy",
-         "v3j0": "V3j  boxer, original turn"}
+         "v3j0": "V3j  boxer, original turn",
+         "v3m": "V3m  T visor", "v3n": "V3n  two eyes", "v3o": "V3o  face shield",
+         "v3mc": "V3m  facing camera", "v3nc": "V3n  facing camera", "v3oc": "V3o  facing camera"}
 CW, CH = 200, 220
 
 

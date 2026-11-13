@@ -59,7 +59,9 @@ def head(k, shell, z=49, face=None, eye="slit", r=5):
     if face:
         sw(k, [(r * 1.04 * math.sin(t), (r - 0.4) * math.cos(t), zc, 0.8, 2.6) for t in (-1.1, -0.55, 0, 0.55, 1.1)],
            face, p=3)
-    if eye == "slit":
+    if eye is None:
+        pass
+    elif eye == "slit":
         sw(k, [(r * 1.1 * math.sin(t), r * 0.98 * math.cos(t), zc + 0.5, 0.5, 0.7) for t in (-0.8, -0.4, 0, 0.4, 0.8)],
            LIT, p=2.0)
     else:
@@ -125,3 +127,59 @@ DESIGNS = {"v3j": v3j, "v3k": v3k, "v3l": v3l,
 
 def jobs():
     return [(f"module.exercise.{v}", FP, "prop", f) for v, f in DESIGNS.items()]
+
+
+# ---- round 10: the boxer (v3j) with elbows that read and three new faces ----------------------------------------------
+def boxer_arms(k):
+    """Boxer arms with readable elbows: white upper arm, a big dark elbow pin with lit-grey caps and a white elbow
+    guard behind it, a mid-slate forearm (so the pin sits between two tones), a dark wrist collar, the glove."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)                                                   # shoulder
+        sw(k, [(s * 11, 0, 43, 3.2), (s * 12.5, 1.5, 38.5, 3), (s * 13, 3, 35.5, 2.2)], SHELL, p=2.4)  # upper arm
+        sw(k, [(s * 11.2, 4, 34, 2.9), (s * 14.8, 4, 34, 2.9)], FRAME_D, p=2.0, cap0=RAIL, cap1=RAIL)   # elbow pin
+        sw(k, [(s * 13, 3, 33, 2.4), (s * 13.5, 1, 30.5, 1.6), (s * 13.6, 0, 29.5, 0.5)], SHELL, p=2.2)  # elbow guard
+        sw(k, [(s * 13, 5, 35, 2.2), (s * 10.5, 8, 39, 2)], FRAME)                 # forearm
+        sw(k, [(s * 10.3, 8.2, 39.3, 2.5), (s * 9.5, 9.2, 40.8, 2.5)], FRAME_D)     # wrist collar
+        glove(k, s * 8, 10, 43)
+
+
+def face_t(k):
+    """Dark helmet, a lit visor slit with a dark brow ridge over it and a vertical nose ridge splitting it (a T)."""
+    head(k, FRAME_D)
+    z = 53
+    sw(k, [(5.4 * math.sin(t), 5.1 * math.cos(t), z + 2.2, 0.8, 0.7) for t in (-0.9, -0.45, 0, 0.45, 0.9)], FRAME,
+       p=2.5)                                                                      # brow ridge
+    sw(k, [(0, 5.2, z + 1.5, 0.7, 0.6), (0, 5.4, z - 3, 0.9, 0.6)], FRAME, p=2.5)  # nose ridge
+
+
+def face_eyes(k):
+    """White helmet with a dark face plate and two round lit eyes."""
+    head(k, SHELL, face=FRAME_D, eye=None)
+    for x in (-2, 2):
+        sw(k, [(x, 5.0, 53, 1.1), (x, 5.8, 53, 0.9)], LIT, p=2.0)
+
+
+def face_shield(k):
+    """White helmet, a big dark glass face shield, a lit bar inside it, dark ear discs either side."""
+    head(k, SHELL, eye=None)
+    sw(k, [(5.4 * math.sin(t), 5.0 * math.cos(t), 52.5, 0.9, 3.4) for t in (-1.0, -0.5, 0, 0.5, 1.0)], FRAME_D,
+       p=3.5)                                                                      # face shield
+    sw(k, [(4.6 * math.sin(t), 5.7 * math.cos(t), 52.5, 0.5, 0.6) for t in (-0.5, -0.25, 0, 0.25, 0.5)], LIT, p=2.0)
+    for s in (-1, 1):
+        sw(k, [(s * 4.6, 0, 53, 2.4), (s * 6, 0, 53, 2.4)], FRAME_D, p=2.0, cap0=RAIL, cap1=RAIL)   # ear discs
+
+
+def boxer2(face, name):
+    def f(nm=name):
+        k = Bench(nm, FP)
+        body(k)
+        face(k)
+        boxer_arms(k)
+        return build(k)
+    return f
+
+
+R10 = {"v3m": boxer2(face_t, "ex_v3m"), "v3n": boxer2(face_eyes, "ex_v3n"), "v3o": boxer2(face_shield, "ex_v3o")}
+for _n, _f in R10.items():                                                         # at round 5's turn, as asked,
+    DESIGNS[_n] = turned(_f, 0.0, f"ex_{_n}")
+    DESIGNS[_n + "c"] = _f                                                         # and facing the camera
