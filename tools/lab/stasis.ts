@@ -1,6 +1,6 @@
 import { Sprite, type Container } from 'pixi.js';
 import type { Atlas } from '../../src/render/assets/loader';
-import { CART_FPS, CART_FRAMES, cartFrame, slotOrder } from '../../src/render/stasisArt';
+import { CART_FPS, CART_FRAMES, LAMP_TINT, cartFrame, slotOrder } from '../../src/render/stasisArt';
 import { floor, put } from './hydroponics';
 import type { LabCell, LabPanel } from './panel';
 
@@ -67,7 +67,7 @@ export const stasisPanel: LabPanel = {
             for (const i of slotOrder(rot)) if (!none.includes(i)) put(root, atlas, `${A}.slot${i}.r${rot}`, ox, oy);
             for (let i = 0; i < 10; i++) {
               if (none.includes(i)) continue;
-              put(root, atlas, `${A}.lamp${i}.${full.includes(i) ? (reserve ? 'red' : 'cy') : 'amb'}.r${rot}`, ox, oy);
+              put(root, atlas, `${A}.lamp${i}.r${rot}`, ox, oy, LAMP_TINT[full.includes(i) ? (reserve ? 'red' : 'cy') : 'amb']);
             }
             return () => {};
           },

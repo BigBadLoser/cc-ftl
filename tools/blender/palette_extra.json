@@ -4166,9 +4166,9 @@
     "emissive": 2.0,
     "set": "slab"
   },
-  "slbRed": {
-    "hex": "#ff4040",
-    "emissive": 2.0,
+  "slbLmp": {
+    "hex": "#f2f2f2",
+    "emissive": 0.7,
     "set": "slab"
   },
   "slbCon": {

@@ -36,6 +36,9 @@ ZH = Z0 + L                                         # their heads
 ZC = ZH + 0.06                                      # the canopy's underside
 ZT = ZC + 0.55                                      # its top
 LEFT, RIGHT = FRONT + math.pi / 2, FRONT - math.pi / 2
+# The top's panel seams: at (i + SEAM0) tenths of a turn. 0.75 puts them midway between the slots (45 + 36 i deg), so
+# each slot's gauge segment sits in its own panel.
+SEAM0 = 0.75
 LR, LC = 0.32, 1.8                                  # a lobe's radius and its centre's distance out
 
 
@@ -130,13 +133,23 @@ TIERS = (  # (z from ZC, height, radius change, colour key, top key, radius chan
 )
 
 
-def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring"):
+def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring", pockets=()):
     """The canopy tiers over the wheel (open to radius `hole` in the middle if set) and over each lobe at angle a,
-    then the lobes' columns down to the floor."""
+    then the lobes' columns down to the floor. `pockets`: angles where the top tier has a lamp pocket cut through it
+    (GAUGE_* sizes; the tier below is its floor)."""
     col = {"body": body, "trim": trim, "low": low or body, "top": top or body}
-    for z, h, dr, c, t, dtop in TIERS:
+    for n, (z, h, dr, c, t, dtop) in enumerate(TIERS):
         z0 = ZC + z
-        if hole:
+        if hole and pockets and n == len(TIERS) - 1:
+            r0, r1 = GAUGE_R - GAUGE_W / 2, GAUGE_R + GAUGE_W / 2
+            top_c = col[t] if t else None
+            annulus(k, hole, r0, z0, z0 + h, col[c], top=top_c)
+            annulus(k, r1, 1.48 + dr, z0, z0 + h, col[c], top=top_c)
+            ps = sorted(pockets)
+            for i, a in enumerate(ps):
+                b = ps[(i + 1) % len(ps)] + (math.tau if i == len(ps) - 1 else 0.0)
+                arc_wall(k, a + GAUGE_HALF, b - GAUGE_HALF, r0, r1, z0, z0 + h, col[c], top=top_c)
+        elif hole:
             annulus(k, hole, 1.48 + dr, z0, z0 + h, col[c], top=col[t] if t else None)
         else:
             k.cyl(0, 0, z0, 1.48 + dr, h, col[c], top=col[t] if t else None, sides=48,
@@ -164,7 +177,7 @@ def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring"):
             a = a0 + (a1 - a0) * (i + 0.5) / 5
             k.box(*at(1.486, a)[:2], ZC + 0.215, 0.05, 0.014, 0.05, "slbAmb", rz=a + math.pi / 2)
     for i in range(10):                                                      # seams on the upper band
-        a = (i + 0.5) * math.tau / 10
+        a = (i + SEAM0) * math.tau / 10
         if seam(a):
             k.box(*at(1.444, a)[:2], ZC + 0.33, seam(a), 0.012, 0.225, "dark", rz=a + math.pi / 2)   # up over the top
     for a in lobes:                                                          # the lobes' columns
@@ -184,12 +197,13 @@ def canopy(k, body, trim, lobes, hole=0.0, low=None, top=None, lights="ring"):
 
 
 # ---- what rides on top ----------------------------------------------------------------------------------------------
-def bolt_ring(k, zt=ZT, r_in=0.85):
+def bolt_ring(k, zt=ZT, r_in=0.85, bolts=True):
     """The rim's panel seams and a bolt between each pair (sized to read: lines two pixels wide, no dashes)."""
     for i in range(10):
-        a = (i + 0.5) * math.tau / 10                # on the same lines as the band's seams, out to the edge
+        a = (i + SEAM0) * math.tau / 10              # on the same lines as the band's seams, out to the edge
         beam(k, at(r_in + 0.06, a, zt + 0.004), at(1.445, a)[:2], 0.06, 0.008, "dark")
-        k.cyl(*at(1.22, a + math.pi / 10)[:2], zt, 0.045, 0.025, "steelL", top="steel", sides=8)
+        if bolts:
+            k.cyl(*at(1.22, a + math.pi / 10)[:2], zt, 0.045, 0.025, "steelL", top="steel", sides=8)
 
 
 def ram(k, a, r0, r1, z, body):
@@ -201,7 +215,7 @@ def ram(k, a, r0, r1, z, body):
         k.box(*at(r, a)[:2], z - 0.034, s, 0.08, 0.06, "steelD", top="steel", rz=a)
 
 
-def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True, star=("steelD", "steelL")):
+def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True, star=("steelD", "steelL"), motor=True):
     """A Geneva drive on the canopy's top, mid-step: a ten-slot star (one step a slab) on the rotor's shaft, its driver
     beside it with the pin down a slot and the locking disc's half away from the star, a gearmotor behind."""
     n = NS
@@ -238,13 +252,14 @@ def geneva(k, ang, body, trim, z=ZT, rs=0.78, h=0.05, bridge=None, pad=True, sta
     g = at(c + 0.3, ang)                                                     # the gearmotor
     k.box(g[0], g[1], z, 0.26, 0.4, 0.11, trim, top=trim, rz=ang)
     t = ang + math.pi / 2
-    e0 = (g[0] + 0.17 * math.cos(t), g[1] + 0.17 * math.sin(t), z + 0.06)
-    e1 = (g[0] + 0.5 * math.cos(t), g[1] + 0.5 * math.sin(t), z + 0.06)
-    tube(k, e0, e1, 0.065, "steelD", sides=12)
-    for j in range(2):
-        f = 0.27 + j * 0.12
-        tube(k, (g[0] + f * math.cos(t), g[1] + f * math.sin(t), z + 0.06),
-             (g[0] + (f + 0.05) * math.cos(t), g[1] + (f + 0.05) * math.sin(t), z + 0.06), 0.085, "steelD", sides=12)
+    if motor:                                                                # its motor barrel and fins, out across the rim
+        e0 = (g[0] + 0.17 * math.cos(t), g[1] + 0.17 * math.sin(t), z + 0.06)
+        e1 = (g[0] + 0.5 * math.cos(t), g[1] + 0.5 * math.sin(t), z + 0.06)
+        tube(k, e0, e1, 0.065, "steelD", sides=12)
+        for j in range(2):
+            f = 0.27 + j * 0.12
+            tube(k, (g[0] + f * math.cos(t), g[1] + f * math.sin(t), z + 0.06),
+                 (g[0] + (f + 0.05) * math.cos(t), g[1] + (f + 0.05) * math.sin(t), z + 0.06), 0.085, "steelD", sides=12)
     beam(k, (d[0], d[1], z + h + 0.02), (g[0], g[1]), 0.06, 0.02, "steelD")
     if bridge:                                       # the driver's frame, a bridge out to the rim it stands on
         beam(k, at(c - 0.1, ang, z - 0.03), at(bridge, ang)[:2], 0.4, 0.06, "steelD", top="steel")
@@ -289,7 +304,7 @@ def skin(k, a0, a1, body, trim, z1=ZC + 0.06, strip=True):
     arc_wall(k, a0, a1, 1.46, 1.505, 0.0, 0.09, "steelD", top="steel")
     arc_wall(k, a0, a1, 1.46, 1.495, 0.3, 0.35, trim)
     n = max(1, round((a1 - a0) / 0.36))
-    for i in range(n + 1):
+    for i in range(1, n):                                                    # not at its ends: a jamb stands there
         a = a0 + (a1 - a0) * i / n
         if seam(a):
             k.box(*at(1.482, a)[:2], 0.35, 0.012, seam(a), ZC - 0.37, "dark", rz=a)
@@ -325,17 +340,17 @@ def panel(k, a, body, trim):
     c(1.51, 0.16, 0.44, 0.02, 0.06, 0.05, "hivis")
 
 
-def sunk_top(k, rh, depth, body, trim):
+def sunk_top(k, rh, depth, body, trim, bolts=True):
     """The canopy's middle sunk `depth` below its rim (radius rh): a steel well floor, the lip in trim, the well's
     wall seamed; the rim keeps its lines and bolts."""
     zf = ZT - depth
     k.cyl(0, 0, ZC + 0.06, rh + 0.01, zf - ZC - 0.06, "steelD", top="slbGr", sides=48)
     annulus(k, rh, rh + 0.06, ZT, ZT + 0.01, trim)
     for i in range(10):
-        a = (i + 0.5) * math.tau / 10                # its seams on the rim seams' lines
+        a = (i + SEAM0) * math.tau / 10              # its seams on the rim seams' lines
         if seam(a, inner=True):
             k.box(*at(rh + 0.004, a)[:2], zf, 0.012, seam(a, inner=True), depth, "dark", rz=a)
-    bolt_ring(k, r_in=rh)
+    bolt_ring(k, r_in=rh, bolts=bolts)
     return zf
 
 
@@ -392,30 +407,36 @@ def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0, empty=(), wind
     jamb(k, FRONT + ol, P["wall"], P["stripe"])
     jamb(k, FRONT - orr, P["wall"], P["stripe"])
     panel(k, FRONT - orr - 0.27, P["wall"], P["panel"])
-    canopy(k, P["cap"], P["stripe"], [], hole=1.0, low=P["band"], top=P["cap"], lights=lights)
-    zf = sunk_top(k, 1.0, 0.18, P["cap"], P["lip"])
+    canopy(k, P["cap"], P["stripe"], [], hole=1.0, low=P["band"], top=P["cap"], lights=lights,
+           pockets=angles() if lamps else ())
+    zf = sunk_top(k, 1.0, 0.18, P["cap"], P["lip"], bolts=not lamps)
     k.cyl(0, 0, zf, 0.74, 0.05, "steelD", top=P["crown"], sides=40)       # the rotor's crown, down in the well
     k.cyl(0, 0, zf + 0.05, 0.3, ZT - zf - 0.05, "steelD", sides=20)       # its boss up to the star
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
         top_tyres(k, a, 0.74, P["guard"], P["guard_top"], z=zf)
-    geneva(k, BACK + 0.55 - math.pi / 2, P["cap"], P["guard"], rs=0.7, bridge=1.25, pad=False, star=P["star"])
+    geneva(k, BACK + 0.55 - math.pi / 2, P["cap"], P["guard"], rs=0.7, bridge=1.25, pad=False, star=P["star"],
+           motor=not lamps)                                                  # with the gauge: off its lamps
     if lamps:
         for th in angles():
             rim_lamp(k, th, None)
     return out
 
 
-LAMP_R = 1.27                                       # the slot lamps' radius on the top rim (lip 1.0-1.06, edge ~1.5)
+GAUGE_R = 1.25                                      # the gauge's lamp pockets' middle radius on the top rim (lip 1.0-1.06)
+GAUGE_W = 0.13                                      # a pocket's width across the rim
+GAUGE_HALF = math.radians(9)                        # half a pocket's arc (a slot's panel is 36 deg)
+GAUGE_DEPTH = 0.03                                  # the lens's depth below the rim's top
 
 
 def rim_lamp(k, th, col):
-    """The slot lamp over the slot at angle th: a dark bezel set in the rim (col None), or its lit lens (col)."""
-    u, v, _ = at(LAMP_R, th)
+    """Slot th's lamp of the rim gauge, down in its pocket (canopy `pockets`): its dark lens (col None: off, in the
+    base), or the lens lit (col; drawn white, the game tints it by the slot's state). The pocket's own walls frame it."""
+    r0, r1 = GAUGE_R - GAUGE_W / 2, GAUGE_R + GAUGE_W / 2
+    z = ZT - GAUGE_DEPTH
     if col is None:
-        k.box(u, v, ZT, 0.13, 0.13, 0.012, "steelD", rz=th)
-        k.box(u, v, ZT + 0.012, 0.09, 0.09, 0.004, "dark", rz=th)
-    else:
-        k.box(u, v, ZT + 0.012, 0.09, 0.09, 0.008, col, rz=th)
+        arc_wall(k, th - GAUGE_HALF, th + GAUGE_HALF, r0, r1, ZT - 0.05, z, "steelD")
+    else:                                                                    # a hair over the dark lens (held out under it)
+        arc_wall(k, th - GAUGE_HALF + 0.005, th + GAUGE_HALF - 0.005, r0 + 0.005, r1 - 0.005, z, z + 0.004, col)
 
 
 def geneva_well(k):

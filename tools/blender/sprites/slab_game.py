@@ -6,9 +6,9 @@ Per rotation r (`module.stasis_wheel` is the r0 copy):
   module.stasis_wheel.slot<i>.r<r>    slot i's slab alone, the wheel held out (no sprite where the wheel hides it all).
                                       Slot i stands at angle 45 + 36 i deg in the wheel's own frame (slot 0 at the
                                       hatch corner); the renderer draws full slots over the base back to front.
-  module.stasis_wheel.lamp<i>.<c>.r<r>  slot i's rim lamp lit, c = cy (a prisoner held), amb (an empty slab ready) or red
-                                      (running on its reserve: the renderer pulses it); dark in the base. On the top rim, so
-                                      the fill shows at every rotation.
+  module.stasis_wheel.lamp<i>.r<r>    slot i's segment of the rim gauge lit, in white: the game tints it cyan (a prisoner
+                                      held), amber (an empty slab ready) or red (on its reserve, pulsing); dark in the base.
+                                      On the top rim, so the fill shows at every rotation.
 The wheel has a window front and back (the back one is seen at the half turn). The hover cart is slab_cart.py.
 The prisoner's face is pressed into a slab by a shader (a later slice), so one slab sprite serves empty and full."""
 from . import core, post
@@ -22,7 +22,6 @@ from .slab_kit import angles, cassette, floor_fill, frame
 from .slab_study import PAL
 
 FP = (3, 3)
-LAMPS = (("cy", "slbCy"), ("amb", "slbAmb"), ("red", "slbRed"))
 A = "module.stasis_wheel"
 
 
@@ -71,12 +70,11 @@ def wheel_items(rot):
         if it is not None:
             out.append(named(it, f"{A}.slot{i}.r{rot}", FP))
     for i in range(10):
-        for tag, col in LAMPS:
-            core.clear_scene_meshes()
-            post.select(PAL)
-            it = layer(wheel_objs(rot), lamp_objs(rot, i, col), 255)
-            if it is not None:
-                out.append(named(it, f"{A}.lamp{i}.{tag}.r{rot}", FP))
+        core.clear_scene_meshes()
+        post.select(PAL)
+        it = layer(wheel_objs(rot), lamp_objs(rot, i, "slbLmp"), 255)
+        if it is not None:
+            out.append(named(it, f"{A}.lamp{i}.r{rot}", FP))
     return out
 
 

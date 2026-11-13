@@ -28,6 +28,8 @@ const LAMP_DZ = 0.02;                               // the rim lamps, over every
 
 /** Each slot's rim lamp: off (no slab), amber (an empty slab ready), cyan (a prisoner held) or red (their slab on its reserve). */
 export type Lamp = 'off' | 'amb' | 'cy' | 'red';
+/** Each lit lamp's colour, multiplied into its white lens: green held, yellow an empty slab ready, red on its reserve. */
+export const LAMP_TINT: Readonly<Record<Exclude<Lamp, 'off'>, number>> = { cy: 0x4f8f3a, amb: 0xc07a18, red: 0xb02a22 };
 /** The red lamp's pulse: lit this many ms, then dark as long. */
 export const PULSE_MS = 500;
 
@@ -68,12 +70,12 @@ export function stasisLayers(
     const sid = `${def.asset}.slot${i}.r${m.rot}`;
     out.push({ chain: [sid], key: `${def.asset}.slot${i}`, tiles: 'all', dz: DZ * (k + 1), optional: true });
   });
-  // The rim lamps, on the canopy's top over everything inside: lit per slot (dark in the base), red pulsing.
+  // The rim gauge, on the canopy's top over everything inside: one segment per slot, lit in its state's colour (dark in the base), red pulsing.
   const lit = pulseLit(look?.now ?? 0);
   slots.forEach((s, i) => {
     const lamp = lampOf(world, s);
     if (lamp === 'off' || (lamp === 'red' && !lit)) return;
-    out.push({ chain: [`${def.asset}.lamp${i}.${lamp}.r${m.rot}`], key: `${def.asset}.lamp${i}`, tiles: 'all', dz: LAMP_DZ, optional: true });
+    out.push({ chain: [`${def.asset}.lamp${i}.r${m.rot}`], key: `${def.asset}.lamp${i}`, tiles: 'all', dz: LAMP_DZ, optional: true, tint: LAMP_TINT[lamp] });
   });
   return out;
 }
