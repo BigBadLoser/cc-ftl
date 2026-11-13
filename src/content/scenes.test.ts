@@ -111,6 +111,17 @@ describe('scene signal', () => {
     expect(sim.world.query(ShipC).length).toBe(0); // nothing spawned: the ship waits in hyperspace
   });
 
+  it('a comms call holds its ship at once: hailed when the signal opens, and still so when dropped out of with no tick between', () => {
+    const sim = signalled(3);
+    expect(sim.galaxy.signal?.ships[0]?.hailed).toBe(true); // no tick has run since it opened
+    sim.enqueue({ type: 'story.choose', choice: 'approach' });
+    const spec = sim.galaxy.signal;
+    if (spec) delete spec.ships[0]!.hailed; // as if no hail had been marked yet
+    step(sim, 2);
+    deploy(sim);
+    expect(sim.galaxy.event?.scene.ships[0]?.hailed).toBe(true);
+  });
+
   it('is the same scene for the same signal (seed, event, hop)', () => {
     expect(signalled(5).galaxy.signal).toEqual(signalled(5).galaxy.signal);
   });
@@ -271,9 +282,10 @@ describe('scene observer', () => {
 });
 
 describe('scene departures', () => {
-  it('an unhailed neutral jumps out when its business is done, and the observer logs it', () => {
+  it('a neutral not holding station jumps out when its business is done, and the observer logs it', () => {
     const { sim, skiff } = inScene(3);
     const s = sim.galaxy.event?.scene.ships[0];
+    delete s?.hailed; // (a comms call holds it; here the hail is taken back)
     expect(s?.stay).toBeGreaterThanOrEqual(100);
     const out = step(sim, Math.round(((s?.stay ?? 0) + 60) * 20));
     expect(out.some((e) => e.type === 'ship.fled' && e.ship === skiff)).toBe(true);
@@ -285,9 +297,8 @@ describe('scene departures', () => {
     expect(sim.galaxy.event).toBeNull();
   });
 
-  it('a skiff hailed from the signal holds station', () => {
+  it('a skiff that called holds station', () => {
     const sim = signalled(3);
-    choose(sim, 'hail');
     choose(sim, 'approach');
     deploy(sim);
     const s = sim.galaxy.event?.scene.ships[0];

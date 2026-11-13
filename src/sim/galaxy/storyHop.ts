@@ -6,6 +6,19 @@ import { STORY_ANCHOR_CHANCE, STORY_HOP_CHANCE } from './tuning';
 import type { EdgeData, Travel } from './types';
 import { enterEvent } from './eventGrid';
 import { storySpec } from '../scene/spec';
+import type { SceneSpec } from '../scene/types';
+
+/**
+ * The scene's ships know you are coming and hold station once you drop out, when the hail is answered (`remotesDone`: a remote hail taken, or a comms
+ * call, answered by definition). Asked wherever the scene is built, held or entered, so it needs no tick in between.
+ */
+function markHailed(sim: Sim, spec: SceneSpec, done?: string[]): void {
+  const def = sim.content.events?.[spec.event ?? ''];
+  if (!def || !remotesDone(def, { ...(done ? { done } : {}) }).some((id) => def.choices?.find((c) => c.id === id)?.remote === 'hail')) return;
+  let changed = false;
+  for (const s of spec.ships) if (!s.hailed) { s.hailed = true; changed = true; }
+  if (changed) sim.galaxy.rev++;
+}
 
 /** A decision that is about a scene (`EventDef.scene`) gets its scene built as it opens: remote actions read it, and investigating opens it. */
 function noteSignal(sim: Sim): void {
@@ -14,17 +27,15 @@ function noteSignal(sim: Sim): void {
   if (!a || !recipe || sim.galaxy.signal?.event === a.event) return;
   sim.galaxy.signal = storySpec(sim, a.event, recipe);
   sim.story.scene = null; // a stale request (an event answered outside a trip) never opens this one
+  markHailed(sim, sim.galaxy.signal, a.done);
 }
 
-/** A remote hail answered on the signal: its ships know you are coming and hold station once you drop out. */
+/** A remote hail answered on the signal: see `markHailed`. */
 function noteHails(sim: Sim): void {
   const a = sim.story.active;
   const spec = sim.galaxy.signal;
   if (!a || spec?.event !== a.event) return;
-  const def = sim.content.events?.[a.event];
-  if (!def || !remotesDone(def, a).some((id) => def.choices?.find((c) => c.id === id)?.remote === 'hail')) return;
-  for (const s of spec.ships) s.hailed = true;
-  sim.galaxy.rev++;
+  markHailed(sim, spec, a.done);
 }
 
 /**
@@ -35,6 +46,7 @@ function investigate(sim: Sim): boolean {
   const g = sim.galaxy;
   const spec = g.signal;
   const want = sim.story.scene;
+  if (spec) markHailed(sim, spec); // answered with no tick since it opened: a comms call still counts
   g.signal = null;
   sim.story.scene = null;
   return !!spec && want === spec.event && enterEvent(sim, 'scene', spec);
