@@ -8,15 +8,14 @@
 
   /**
    * The incoming-signal window: a forced-decision modal around SignalComms (the comms pieces composed for a story signal). It owns the modal, and the
-   * hail and scan keys, which are the story's remote choices.
+   * scan key, which is the story's remote choice.
    */
   let { api, active, busy, pick }: { api: UiApi; active: NonNullable<UiStory['active']>; busy: boolean; pick: (id: string) => void } = $props();
   const c = $derived(active.comms!);
 
   function keydown(e: KeyboardEvent) {
     if (busy || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e)) return;
-    if (keymap.matches(e, 'ui.hail') && c.hailChoice) { e.preventDefault(); pick(c.hailChoice); }
-    else if (keymap.matches(e, 'ui.scan') && c.scanChoice) { e.preventDefault(); pick(c.scanChoice); }
+    if (keymap.matches(e, 'ui.scan') && c.scanChoice) { e.preventDefault(); pick(c.scanChoice); }
   }
   let binds = $state(keymap.get());
   onMount(() => {

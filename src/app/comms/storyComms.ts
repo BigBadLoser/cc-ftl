@@ -35,7 +35,7 @@ export interface CommsInput {
   goods: UiComms['goods'];
   credits: number | undefined;
   /** The voice of an event with no scene ship (`EventDef.comms.caller`). */
-  voice?: { name: string; faction: string };
+  voice?: { name: string; faction: string; seed: number };
 }
 
 export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
@@ -44,10 +44,13 @@ export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   if (!ship) {
     // A call with no scene ship behind it (a checkpoint cutter, a surrendering scout): just the caller and what they say, nothing to scan.
     if (!i.voice) return null;
+    const v = i.voice;
+    const kind = sim.content.galaxy?.factions[v.faction]?.kind;
+    const sp = speakerOf({ contact: { seed: v.seed } }, undefined, kind);
     const base = { hailed: true, scanned: false, hailChoice: null, scanChoice: null, scanKind: null, goods: [] };
     return {
-      ...base, caller: { name: i.voice.name, faction: i.voice.faction, status: { label: 'Connected', tone: 'green' } }, look: null, stutter: false,
-      transcript: transcriptOf(text, { name: i.voice.name }), hint: null, holo: null, hullTitle: null, scanHint: null, callouts: [], readout: [],
+      ...base, look: sp.look, stutter: false, transcript: transcriptOf(text, { name: sp.name }, sp.name), hint: null, holo: null, hullTitle: null, scanHint: null, callouts: [], readout: [],
+      caller: { name: sp.name, role: 'Calling from the', ship: v.name, faction: sim.content.galaxy?.factions[v.faction]?.name ?? v.faction, swatch: FACTION_COLOUR[kind ?? ''] ?? 'var(--dim)', status: { label: 'Connected', tone: 'green' } },
     };
   }
   const hailed = done.hail;

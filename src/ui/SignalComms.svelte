@@ -65,7 +65,7 @@
 </script>
 
 {#snippet videoCol()}
-  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} action={c.hailChoice ? { label: 'HAIL', key: keyLabel(binds, 'ui.hail'), onclick: () => pick(c.hailChoice!), disabled: busy } : undefined} testId="signal-hail" />
+  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} />
   <div class="col">
     <VideoFeed src={c.hailed ? face : null} stutter={c.stutter} />
     {#if c.caller}<CallerCard caller={c.caller} />{/if}

@@ -63,7 +63,7 @@ export const events = {
       { id: 'scan', label: 'Scan it', hint: 'Hull, the failing system, cargo, raiders', remote: 'scan' },
       {
         // Offering help over the open call is the agreement.
-        id: 'help', label: 'Offer help', hint: 'Drop out; your party goes aboard as guests',
+        id: 'help', label: 'Offer help', hint: 'Board as guests',
         requires: [{ kind: 'shuttle', eva: true }], outcome: { effects: [{ type: 'scene', aid: true }] },
       },
       { id: 'approach', label: 'Drop out', hint: 'No promises made', outcome: { effects: [{ type: 'scene' }] } },
@@ -133,7 +133,7 @@ export const events = {
   /** Arc part 1: the choice sets a flag. */
   'event.pirate_captive': {
     title: 'Pirate scout surrenders',
-    comms: { showWares: false, caller: { name: 'Pirate scout', faction: 'Scrapper clans' } },
+    comms: { showWares: false, caller: { name: 'Pirate scout', faction: 'pirates' } },
     text: 'A pirate skiff took a hit from something else and its pilot hails you, hands up. "I only fly the boat. Please. I have a kid."',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 6 }],
@@ -234,7 +234,7 @@ export const events = {
   /** Faction territory: a corporate checkpoint; reputation both gates and changes. */
   'event.corp_checkpoint': {
     title: 'Meridian checkpoint',
-    comms: { showWares: false, caller: { name: 'Meridian patrol cutter', faction: 'Meridian' } },
+    comms: { showWares: false, caller: { name: 'Meridian patrol cutter', faction: 'meridian' } },
     text: 'A corporate patrol cutter hails you. "Transit tariff applies in Meridian space. Cargo manifest, captain."',
     mode: 'decision',
     triggers: [{ kind: 'transit', weight: 8 }],

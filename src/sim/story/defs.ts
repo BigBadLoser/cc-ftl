@@ -123,8 +123,8 @@ export interface EventDef {
   title: string;
   /**
    * Someone is talking to you: the event opens the comms window, not the plain decision window (`opensComms`, requirements.ts), with the call already
-   * connected (the hail remote is done as it opens). `showWares: false` hides the hailed ship's stock and wallet. `caller` names the voice for an event
-   * with no scene ship behind it (a checkpoint cutter, a surrendering scout).
+   * connected (the hail remote is done as it opens). `showWares: false` hides the hailed ship's stock and wallet. `caller` is the voice of an event with no scene ship behind it (a checkpoint cutter, a surrendering scout):
+   * its role line and its faction id (the name, face and kit are seeded from the event, as a scene captain's are).
    */
   comms?: { showWares?: boolean; caller?: { name: string; faction: string } };
   text: string;
