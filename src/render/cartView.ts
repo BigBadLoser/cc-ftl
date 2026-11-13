@@ -1,6 +1,9 @@
 import { Container, Sprite } from 'pixi.js';
 import { batchAdditive } from './batch';
+import type { World } from '../sim/ecs';
+import { PathC, PositionC } from '../sim/crew/components';
 import type { Atlas } from './assets/loader';
+import { cartAhead, restPose, type CartPose, type Pt } from './stasisArt';
 
 /**
  * The hover cart a crew member pushes a stasis slab on (#116; `slab.cart.r<n>[.fN]`, see stasisArt): one sprite and its
@@ -44,4 +47,22 @@ export function createCart(parent: Container): CartSprite {
       root.destroy({ children: true });
     },
   };
+}
+
+/**
+ * Where the cart of a carrier drawn at (x, y) should be now: ahead along the route they walk (the tile they are stepping to,
+ * then their path's steps), or, standing, at rest (`rest`, the sim's spot) or where it last was (`last`). Null: no cart to draw.
+ */
+export function cartTarget(world: World, id: number, x: number, y: number, last: CartPose | null, rest: { x: number; y: number; rot: 0 | 1 } | null): CartPose | null {
+  const pos = world.get(id, PositionC);
+  const steps = world.get(id, PathC)?.steps ?? [];
+  const moving = !!pos && (pos.toX !== pos.x || pos.toY !== pos.y);
+  const route: Pt[] = moving && pos ? [{ x: pos.toX, y: pos.toY }, ...steps] : steps;
+  return cartAhead(x, y, route, last?.rot ?? 0) ?? (rest ? restPose(x, y, rest) : last);
+}
+
+/** Ease the drawn cart toward `next` (`k` of the way; a turn snaps), so a corner or a stop slides rather than jumps. */
+export function easeCart(cur: CartPose | null, next: CartPose, k: number): CartPose {
+  if (!cur || cur.rot !== next.rot || Math.hypot(next.x - cur.x, next.y - cur.y) > 3) return next;
+  return { x: cur.x + (next.x - cur.x) * k, y: cur.y + (next.y - cur.y) * k, rot: next.rot };
 }

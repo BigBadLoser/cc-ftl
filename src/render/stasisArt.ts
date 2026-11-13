@@ -53,44 +53,47 @@ export function stasisLayers(
 }
 
 /**
- * The hover cart trails its carrier along the way they walked (always floor they crossed, so it never pokes into a wall or
- * through furniture, follows them round corners and stays put while they work), its push bar toward them. The sprite at
- * rotation r has its bar at the end away from PUSH[r], so a cart towed toward v turns to the r whose PUSH is -v.
+ * The hover cart is pushed ahead of its carrier along the way they are about to walk (always floor, so it never pokes into a
+ * wall, and it turns where their route turns), its push bar toward them. While they stand it rests where the sim says
+ * (stasis/query cartRest). The sprite at rotation r is pushed toward PUSH[r], its bar at the other end.
  */
 const PUSH: readonly (readonly [number, number])[] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-/** Tiles from the carrier back to the cart's middle, and how much of their way is remembered. */
+/** Tiles from the carrier to the cart's middle. */
 export const CART_GAP = 1.3;
-const TRAIL_LEN = 3;
 
-export interface TrailPt {
+export interface Pt {
   x: number;
   y: number;
 }
 
-/** Note the carrier's position (tiles): the trail is newest first, points at least a quarter tile apart, about TRAIL_LEN tiles long. */
-export function pushTrail(trail: TrailPt[], x: number, y: number): void {
-  const head = trail[0];
-  if (head && Math.hypot(x - head.x, y - head.y) < 0.25) return;
-  trail.unshift({ x, y });
-  let len = 0;
-  for (let i = 1; i < trail.length; i++) {
-    const a = trail[i - 1] as TrailPt, b = trail[i] as TrailPt;
-    len += Math.hypot(a.x - b.x, a.y - b.y);
-    if (len > TRAIL_LEN) {
-      trail.length = i + 1;
-      return;
-    }
+/** A cart pose: its sprite anchor (the centre of its front-most tile, in tiles) and its rotation. */
+export interface CartPose {
+  x: number;
+  y: number;
+  rot: number;
+}
+
+/** The pose of a cart whose middle is at (cx, cy), pushed from (x, y): along the axis nearer that line, the bar toward the pusher. */
+function poseFrom(x: number, y: number, cx: number, cy: number, prev: number): CartPose {
+  const vx = cx - x, vy = cy - y;
+  let rot = ((prev % 4) + 4) % 4;
+  if (Math.hypot(vx, vy) > 0.2) {
+    const alongX = rot % 2 === 1 ? Math.abs(vx) >= 0.7 * Math.abs(vy) : Math.abs(vx) > 1.4 * Math.abs(vy);
+    const want: readonly [number, number] = alongX ? [Math.sign(vx), 0] : [0, Math.sign(vy)];
+    rot = PUSH.findIndex(([a, b]) => a === want[0] && b === want[1]);
   }
+  const [ux, uy] = rot % 2 === 1 ? [0.5, 0] : [0, 0.5];
+  return { x: cx + ux, y: cy + uy, rot };
 }
 
 /**
- * The cart behind a carrier at (x, y) with that trail: its sprite anchor (the centre of its front-most tile, in tiles) and
- * rotation. It lies along the axis nearer the line back to the carrier, keeping `prev`'s axis until the other is clearly
- * nearer (a diagonal walk does not flip it every step); with no way behind them it stays at `prev`.
+ * The cart ahead of a carrier at (x, y) walking `route` (the tiles still ahead, next first): its middle CART_GAP along the
+ * route, or at the route's end when less is left. Null with no route (they stand: the cart rests, see restPose).
  */
-export function cartPose(trail: readonly TrailPt[], x: number, y: number, prev: number): { x: number; y: number; rot: number } {
+export function cartAhead(x: number, y: number, route: readonly Pt[], prev: number): CartPose | null {
+  if (route.length === 0) return null;
   let px = x, py = y, left = CART_GAP;
-  for (const t of trail) {
+  for (const t of route) {
     const d = Math.hypot(t.x - px, t.y - py);
     if (d >= left) {
       px += ((t.x - px) * left) / d;
@@ -102,13 +105,17 @@ export function cartPose(trail: readonly TrailPt[], x: number, y: number, prev: 
     px = t.x;
     py = t.y;
   }
-  const vx = x - px, vy = y - py;
-  let rot = ((prev % 4) + 4) % 4;
-  if (Math.hypot(vx, vy) > 0.3) {
-    const alongX = rot % 2 === 1 ? Math.abs(vx) >= 0.7 * Math.abs(vy) : Math.abs(vx) > 1.4 * Math.abs(vy);
-    const want: readonly [number, number] = alongX ? [-Math.sign(vx), 0] : [0, -Math.sign(vy)];
-    rot = PUSH.findIndex(([a, b]) => a === want[0] && b === want[1]);
-  }
-  const [ux, uy] = rot % 2 === 1 ? [0.5, 0] : [0, 0.5];
-  return { x: px + ux, y: py + uy, rot };
+  return poseFrom(x, y, px, py, prev);
+}
+
+/** The cart resting on its two tiles (the sim's cartRest: the second at +1 along x for rot 0, along y for rot 1), its bar toward the carrier at (x, y). */
+export function restPose(x: number, y: number, rest: { x: number; y: number; rot: 0 | 1 }): CartPose {
+  const cx = rest.x + (rest.rot === 0 ? 0.5 : 0), cy = rest.y + (rest.rot === 1 ? 0.5 : 0);
+  const p = poseFrom(x, y, cx, cy, rest.rot === 0 ? 1 : 0);
+  // On the rest tiles' own axis whatever the line to the carrier says (they stand beside one end).
+  const axisX = rest.rot === 0;
+  if ((p.rot % 2 === 1) === axisX) return p;
+  const s = axisX ? Math.sign(cx - x) || 1 : Math.sign(cy - y) || 1;
+  const rot = PUSH.findIndex(([a, b]) => (axisX ? a === s && b === 0 : a === 0 && b === s));
+  return { x: cx + (axisX ? 0.5 : 0), y: cy + (axisX ? 0 : 0.5), rot };
 }
