@@ -91,15 +91,16 @@ const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'oc
 });
 
 /** PROTOTYPE. A harbour crescent: a rounded square open to the west, everything in two rows along its promenade. */
-const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number }; from: number; wing?: boolean; shoulders?: boolean }): Recipe => ({
+const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number }; from: number; shoulders?: boolean; pier?: 'market' | 'habitation' }): Recipe => ({
   name,
-  root: { kind: 'ring', takes: o.wing ? ['market', 'commons', 'defence', 'works'] : ['market', 'commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, ...(o.shoulders ? { shoulders: true } : {}), inner: true, gap: { side: 'w', from: o.from } },
+  root: { kind: 'ring', takes: (['market', 'commons', 'defence', 'works', 'habitation'] as const).filter((d) => d !== o.pier), outline: 'square', cut: o.cut, round: true, ...(o.shoulders ? { shoulders: true } : {}), inner: true, gap: { side: 'w', from: o.from } },
   spacing: 2,
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'tip' }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
+    // The harbour on an arm's end; or with a pier, at the end of a wing that runs from the east side out through the basin.
+    ...(o.pier ? [{ takes: [o.pier], per: 'together', host: { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [8, 30], even: true }, link: 0 } as const] : []),
+    { takes: ['harbour'], per: 'together', host: o.pier ? { on: 'after', rule: 0 } : { on: 'tip' }, neck: o.pier ? 3 : 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
     { takes: ['freight'], per: 'together', host: { on: 'tip' }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 },
     { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: 7, even: true, cap: true }, link: 0 },
-    ...(o.wing ? [{ takes: ['habitation'], per: 'together', host: { on: 'rim', prefer: ['n', 's'], roll: true }, neck: 0, section: { rooms: [8, 14] }, link: 0 } as const] : []),
   ],
 });
 
@@ -122,9 +123,10 @@ export const stationRecipes = {
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   crescent: [
-    crescent('corner 5', { cut: 5, from: 22 }),
-    crescent('octagon, corners divided', { cut: 'octagon', from: 22, shoulders: true }),
-    crescent('rounder (flats of 4 cells), corners divided', { cut: { flat: 4 }, from: 22, shoulders: true }),
+    crescent('harbour on an arm', { cut: { flat: 4 }, from: 22, shoulders: true }),
+    crescent('pier of stalls, harbour at its end', { cut: { flat: 4 }, from: 22, shoulders: true, pier: 'market' }),
+    crescent('pier of cabins, harbour at its end', { cut: { flat: 4 }, from: 22, shoulders: true, pier: 'habitation' }),
+    crescent('pier of cabins, rounder (flats of 3 cells)', { cut: { flat: 3 }, from: 22, shoulders: true, pier: 'habitation' }),
   ],
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),

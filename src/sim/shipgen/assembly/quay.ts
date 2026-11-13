@@ -120,12 +120,13 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   // On a face the quay is as long as the face, and longer only when its airlocks need it.
   const q0 = Math.min(c0 - A, face ? c0 - face[0] : c0), q1 = Math.max(c1 + A, face ? c1 + face[1] : c1);
   const free = (box: readonly [number, number, number, number], open = false): boolean => {
-    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y))) return false;
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y) && !(c.site.depth?.(x, y) >= 4))) return false;
     return true;
   };
   const boxes = rows.map((_row, k) => (k === 0 ? rect(f, 0, D + 2, c0 - span[0], c0) : rect(f, 0, D + 2, c1, c1 + span[1])));
   if (!free(rect(f, 0, D + 2, c0 - 1, c1 + 1)) || !free(rect(f, D + 1, T + 1, q0 - 1, q1 + 1)) || boxes.some((bx, k) => (rows[k] as RoomSpec[]).length > 0 && !free(bx))) return null;
-  // What stands out to sea, and the shuttles' ground: open now, outside any hull still to fill, and kept.
+  // What stands out to sea, and the shuttles' ground: open now, outside any hull still to fill (the open ground
+  // inboard of a ring will do: a harbour may lie inside an arc), and kept.
   const arms = form === 'basin' ? [rect(f, T, T + arm, q0, q0 + Q), rect(f, T, T + arm, q1 - Q, q1)] : [];
   const out = tower ? rect(f, T, T + th + 2, t0, t1) : null;
   const berths = form === 'basin'

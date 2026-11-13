@@ -35,8 +35,11 @@ export const facing = (f: Frame, side: -1 | 1): Dir => (f.dir === 'e' || f.dir =
 
 export interface Port {
   frame: Frame;
-  /** end: where a street stops; side: off the side of a corridor; rim: the outside of a ring; tip: the cut end of an arc. */
-  kind: 'end' | 'side' | 'rim' | 'tip';
+  /**
+   * end: where a street stops; side: off the side of a corridor; rim: the outside of a ring; tip: the cut end of an
+   * arc; spoke: the inner side of a ring, heading for its centre.
+   */
+  kind: 'end' | 'side' | 'rim' | 'tip' | 'spoke';
   /** The hall behind it (what a room placed here opens onto). */
   hall: number;
   /** The element that owns it, and how far along that element it is. */

@@ -17,6 +17,7 @@ export interface Gap { side: Dir; from: number }
 
 export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap; round?: boolean; shoulders?: boolean }
 
+const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
 const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0, dir: 'e' }, s: { x: 0, y: 0, dir: 's' }, w: { x: -1, y: 0, dir: 'w' } };
 
 export function ringSite(o: RingOpts, pad: number): { site: Site; kept: (x: number, y: number) => boolean } {
@@ -25,7 +26,7 @@ export function ringSite(o: RingOpts, pad: number): { site: Site; kept: (x: numb
   return { site: site(o.R, pad, o.outline, o.cut, gap ? kept : undefined, !!o.round, !!o.shoulders), kept };
 }
 
-/** The ring's ports: on its rim at the four axes (where the ring is there), and at the cut ends of an arc. */
+/** The ring's ports: on its rim and on its inner side at the four axes (where the ring is there), and at the cut ends of an arc. */
 export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Built['ports'] {
   const { g } = s, ports: Built['ports'] = [];
   for (const dir of ['n', 'e', 's', 'w'] as const) {
@@ -35,6 +36,9 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
     const [x, y] = at(f, u, 0);
     if (g.at(...at(f, u - 1, 0)) !== s.ring || !kept(x, y) || !kept(...at(f, s.R, 0))) continue;
     ports.push({ frame: { x, y, dir }, kind: 'rim', hall: s.ring, along: s.R - u, side: 0 });
+    // And on its inner side there: from the ring's inner wall, heading for the centre.
+    const [ix, iy] = at(f, u - 3, 0);
+    ports.push({ frame: { x: ix, y: iy, dir: BACK[dir] }, kind: 'spoke', hall: s.ring, along: 0, side: 0 });
   }
   // Cut ends: the two ring tiles that face the cut, one port a pair.
   const seen = new Set<string>();

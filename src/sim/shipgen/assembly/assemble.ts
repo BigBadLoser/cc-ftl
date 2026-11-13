@@ -92,6 +92,9 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const R = cells * K;
     const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : typeof root.cut === 'object' ? cells - root.cut.flat : root.cut, inner: root.inner, ...(root.round ? { round: true } : {}), ...(root.shoulders ? { shoulders: true } : {}), ...(root.gap ? { gap: root.gap } : {}) }, 120);
     const ctx = context(site.g, site, rng);
+    // Ground kept open inboard of the ring (the berths of a harbour inside an arc) is not the inner rooms' to take.
+    const inboard = site.free;
+    site.free = (x, y) => inboard(x, y) && !ctx.reserved.has(key(x, y));
     const a = new Asm(ctx, recipe.spacing);
     a.add({ ports: ringPorts(site, kept), regions: [site.ring], box: [-R, -R, R, R] });
     // Rooms the hub holds of those the ring would take.

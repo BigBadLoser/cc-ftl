@@ -30,6 +30,8 @@ function chunks(rooms: readonly RoomSpec[], range: readonly [number, number], ta
   return out;
 }
 
+const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
+
 interface Chain { end: Port | null; dir: Dir; took: number }
 
 /**
@@ -155,6 +157,9 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
         const turn = rule.host.roll ? rng.int(0, prefer.length - 1) : 0;
         const rank = (d: Dir): number => (prefer.indexOf(d) - turn + prefer.length) % prefer.length;
         hosts = a.ports.filter((p) => p.kind === 'rim' && !p.used && prefer.includes(p.frame.dir)).sort((p, q) => rank(p.frame.dir) - rank(q.frame.dir));
+      } else if (rule.host.on === 'spoke') {
+        const side = rule.host.side;
+        hosts = a.ports.filter((p) => p.kind === 'spoke' && !p.used && side.includes(BACK[p.frame.dir]));
       } else if (rule.host.on === 'tip') {
         hosts = a.ports.filter((p) => p.kind === 'tip' && !p.used);
       } else if (rule.host.on === 'section' || rule.host.on === 'flank') {
