@@ -165,6 +165,9 @@ def jobs(name):
     if name == "vending11":     # look study, preview only (not in RENDERED): r10's rising sweep with a side gradient
         from . import vending_r11
         return vending_r11.jobs(), "only:vending"
+    if name == "vending12":     # look study, preview only (not in RENDERED): new cream edge shapes on the r11 body
+        from . import vending_r12
+        return vending_r12.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
