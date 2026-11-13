@@ -61,11 +61,15 @@ def annulus(k, r0, r1, z0, z1, col, top=None, n=48):
         prism(k, [at(r0, a0)[:2], at(r1, a0)[:2], at(r1, a1)[:2], at(r0, a1)[:2]], z0, z1, col, top=top)
 
 
-def seam(a, w=0.05, face=FRONT):
+VIEW = [0]                                          # the rotation being rendered (slab_game sets it): the camera
+                                                    # looks from local angle FRONT - VIEW * 90 deg
+
+
+def seam(a, w=0.05, inner=False):
     """A seam's width round a drum at angle a, so it shows >= w wide on screen (a seam turned from the camera
-    foreshortens to 1 px and breaks up); None where it is nearly edge-on (skip it). face: the way the surface faces
-    the camera from (FRONT for the outside, BACK for a well's inner wall)."""
-    c = math.cos(a - face)
+    foreshortens to 1 px and breaks up); None where it is nearly edge-on (skip it). inner: a well's inner wall, which
+    faces the camera from the far side."""
+    c = math.cos(a - (FRONT - VIEW[0] * math.pi / 2) - (math.pi if inner else 0.0))
     return None if c < 0.3 else w / c
 
 
@@ -329,8 +333,8 @@ def sunk_top(k, rh, depth, body, trim):
     annulus(k, rh, rh + 0.06, ZT, ZT + 0.01, trim)
     for i in range(10):
         a = (i + 0.5) * math.tau / 10                # its seams on the rim seams' lines
-        if seam(a, face=BACK):
-            k.box(*at(rh + 0.004, a)[:2], zf, 0.012, seam(a, face=BACK), depth, "dark", rz=a)
+        if seam(a, inner=True):
+            k.box(*at(rh + 0.004, a)[:2], zf, 0.012, seam(a, inner=True), depth, "dark", rz=a)
     bolt_ring(k, r_in=rh)
     return zf
 

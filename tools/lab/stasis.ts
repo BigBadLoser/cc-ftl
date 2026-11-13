@@ -1,0 +1,84 @@
+import { Sprite, type Container } from 'pixi.js';
+import type { Atlas } from '../../src/render/assets/loader';
+import { CART_FPS, CART_FRAMES, cartFrame, slotOrder } from '../../src/render/stasisArt';
+import { floor, put } from './hydroponics';
+import type { LabCell, LabPanel } from './panel';
+
+const A = 'module.stasis_wheel';
+const TW = 64;
+const TH = 32;
+const PAD = 12;
+const FILLS: readonly [string, readonly number[]][] = [['empty', []], ['3 full', [0, 3, 8]], ['7 full', [0, 1, 2, 4, 6, 7, 9]], ['all 10', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]];
+
+/** A sprite that shows `id(t)` each frame, placed by that frame's own anchor (and its glow). */
+function playing(root: Container, atlas: Atlas, id: (t: number) => string, ox: number, oy: number): (t: number) => void {
+  const spr = new Sprite();
+  const glow = new Sprite();
+  glow.blendMode = 'add';
+  root.addChild(spr, glow);
+  return (t) => {
+    const s = atlas.stat(id(t));
+    if (!s) return;
+    const x = Math.round(ox - s.ax);
+    const y = Math.round(oy - s.ay);
+    Object.assign(spr, { texture: s.tex, x, y });
+    glow.visible = !!s.glow;
+    if (s.glow) Object.assign(glow, { texture: s.glow, x, y });
+  };
+}
+
+/**
+ * `?panel=stasis`: the stasis wheel (#116) at fill levels, stacked as the game draws it (the base, then each full slot's
+ * slab back to front), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop).
+ * `rots=0,1,2,3` (default all).
+ */
+export const stasisPanel: LabPanel = {
+  id: 'stasis',
+  title: 'Stasis wheel',
+  zoom: 2,
+  help: 'rots=0,1,2,3 (default all); &play runs the hover cart loop',
+  async cells({ atlas, params }) {
+    const rots = (params.get('rots')?.split(',').map(Number).filter((r) => r >= 0 && r < 4)) ?? [0, 1, 2, 3];
+    const ids = [...atlas.ids(A), ...atlas.ids('slab.cart')];
+    ids.forEach((id) => atlas.stat(id));            // queue the sheets
+    await atlas.whenIdle();
+    const st = atlas.ids(A).map((id) => atlas.stat(id)).filter((s) => !!s);
+    const left = Math.max(TW, ...st.map((s) => s.ax));
+    const right = Math.max(TW, ...st.map((s) => s.tex.width - s.ax));
+    const top = Math.max((3 * TH) / 2, ...st.map((s) => s.ay));
+    const bottom = Math.max(TH / 2, ...st.map((s) => s.tex.height - s.ay));
+    const w = Math.ceil(left + right) + PAD * 2;
+    const h = Math.ceil(top + bottom) + PAD * 2;
+    const ox = PAD + Math.round(left);
+    const oy = PAD + Math.round(top);
+    const cells: LabCell[] = [];
+    for (const rot of rots) {
+      FILLS.forEach(([label, full], j) => {
+        cells.push({
+          label, note: `r${rot}`, w, h, newRow: j === 0,
+          mount(root) {
+            root.addChild(floor(3, 3, ox, oy));
+            put(root, atlas, `${A}.r${rot}`, ox, oy);
+            for (const i of slotOrder(rot)) if (full.includes(i)) put(root, atlas, `${A}.slot${i}.r${rot}`, ox, oy);
+            return () => {};
+          },
+        });
+      });
+    }
+    const cw = 3 * TW + PAD * 2;
+    const ch = 3 * TH + PAD * 2;
+    rots.forEach((rot, j) => {
+      cells.push({
+        label: 'hover cart', note: `r${rot}, ${CART_FRAMES} frames`, w: cw, h: ch, newRow: j === 0, at: 0, loop: CART_FRAMES / CART_FPS,
+        mount(root) {
+          const x = Math.round(cw / 2);
+          const y = ch - PAD - TH;
+          root.addChild(floor(1, 2, x, y));
+          const set = playing(root, atlas, (t) => cartFrame(rot, t * 1000), x, y);
+          return (t) => set(t);
+        },
+      });
+    });
+    return cells;
+  },
+};
