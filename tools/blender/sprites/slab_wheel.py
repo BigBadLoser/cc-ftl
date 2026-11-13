@@ -27,11 +27,18 @@ LR, LC = 0.32, 1.8                                  # a lobe's radius and its ce
 
 
 def cup(k, s, col, lever="hazY"):
-    """A bolted socket round the slab's foot cap."""
-    s.box(k, -0.1, 0.12, -0.5, 0.5, -0.32, 0.1, col, face="steelL")
-    for w in (-0.38, 0.38):
-        s.box(k, -0.06, 0.0, w - 0.03, w + 0.03, 0.1, 0.12, "steel")
-    s.box(k, -0.04, 0.08, -0.06, 0.06, 0.1, 0.125, lever)
+    """A bolted socket round the slab's foot cap: a recess (cheeks, back wall, low front lip) with a docking pad where
+    the cap's socket lands, so an empty bay reads as a socket and not a block."""
+    s.box(k, -0.1, 0.0, -0.5, 0.5, -0.32, 0.1, col, face="steelL")                # the base
+    s.box(k, 0.0, 0.006, -0.45, 0.45, -0.27, 0.07, "steelD")                       # the recess floor
+    s.box(k, 0.006, 0.012, -0.16, 0.16, -0.2, 0.0, "dark")                         # the docking pad
+    s.box(k, 0.012, 0.02, -0.08, 0.08, -0.14, -0.06, "steelL")                     # its contact
+    for w in (-1, 1):                                                              # the cheeks
+        s.box(k, 0.0, 0.14, w * 0.45, w * 0.5, -0.32, 0.1, col, face="steelL")
+        s.box(k, 0.14, 0.16, w * 0.475 - 0.022, w * 0.475 + 0.022, -0.12, -0.075, "steelL")   # a bolt
+    s.box(k, 0.0, 0.14, -0.45, 0.45, -0.32, -0.27, col)                            # the back wall
+    s.box(k, 0.0, 0.04, -0.45, 0.45, 0.07, 0.1, col, face="steelL")                # the front lip
+    s.box(k, 0.03, 0.1, 0.45, 0.5, 0.1, 0.125, lever)                              # the release lever
 
 
 def annulus(k, r0, r1, z0, z1, col, top=None, n=48):
