@@ -1,5 +1,4 @@
 import { CarryingC, ItemStackC } from '../items/components';
-import { dropCarried } from '../items/stacks';
 import { reservations, sourcesOf } from '../items/stock';
 import { JobC, PositionC, type Job, type Position } from '../crew/components';
 import type { WorkResult } from '../crew/jobWork';
@@ -10,7 +9,8 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { PrisonerC } from '../fight/components';
 import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './components';
-import { dropSlab, liftSlab, sealPrisoner, stowSlab, takeEmptySlab } from './freeze';
+import { dropSlab, liftSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
+import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
 import { SEAL_WORK, SLAB_ITEM } from './tuning';
 
@@ -23,6 +23,11 @@ const dist2 = (a: { x: number; y: number }, b: { x: number; y: number }): number
 
 /** A job's stop: a tile (worked from beside it), or a module footprint `size` worked from beside any of its tiles. */
 interface Site { x: number; y: number; size?: [number, number] }
+
+/** Can a crew member walk from `from` to beside the site (a plain walk on the ship's grid)? The stasis job's stops must all be reachable from the prisoner. */
+function reachable(sim: Sim, ship: number, from: Tile, site: Site): boolean {
+  return findPath(sim, ship, from, { x: site.x, y: site.y, adjacent: true, ...(site.size ? { w: site.size[0], h: site.size[1] } : {}) }) !== null;
+}
 
 /** Where crew stand to take an empty slab from a source, or null when the source is gone. */
 function sourceSite(sim: Sim, from: SlabSource): Site | null {
@@ -46,7 +51,7 @@ function fetchClaims(sim: Sim): Map<string, number> {
 }
 
 /** Every place on a ship an empty slab can be taken from now, with how many are not yet claimed: wheel slots, storage, loose stacks. */
-export function slabSources(sim: Sim, ship: number): (Site & { from: SlabSource; avail: number })[] {
+export function slabSources(sim: Sim, ship: number, reach?: Tile): (Site & { from: SlabSource; avail: number })[] {
   const claims = fetchClaims(sim);
   const claimed = (f: SlabSource): number => claims.get(`${f.kind}:${f.id}`) ?? 0;
   const out: (Site & { from: SlabSource; avail: number })[] = [];
@@ -54,23 +59,24 @@ export function slabSources(sim: Sim, ship: number): (Site & { from: SlabSource;
     const m = sim.world.get(id, ModuleC);
     const from: SlabSource = { kind: 'wheel', id };
     const avail = emptySlabsIn(sim, id) - claimed(from);
-    if (m && m.hp > 0 && shipIdOf(sim, m) === ship && avail > 0) out.push({ ...wheelHatch(sim, m), from, avail });
+    const site = m && wheelHatch(sim, m);
+    if (m && site && m.hp > 0 && shipIdOf(sim, m) === ship && avail > 0 && (!reach || reachable(sim, ship, reach, site))) out.push({ ...site, from, avail });
   }
   for (const s of sourcesOf(sim, ship, SLAB_ITEM, reservations(sim))) {
     if (s.ref.kind !== 'floor' && s.ref.kind !== 'storage') continue;
     const from: SlabSource = { kind: s.ref.kind, id: s.ref.id };
     const avail = s.avail - claimed(from);
     const site = sourceSite(sim, from);
-    if (avail > 0 && site) out.push({ ...site, from, avail });
+    if (avail > 0 && site && (!reach || reachable(sim, ship, reach, site))) out.push({ ...site, from, avail });
   }
   return out;
 }
 
-/** The unclaimed empty-slab source nearest to `at` on the ship (ties: wheels first, then lower id), or null. */
-export function nearestSlabSource(sim: Sim, ship: number, at: { x: number; y: number }): (Site & { from: SlabSource }) | null {
+/** The unclaimed empty-slab source nearest to `at` on the ship that a walk from `reach` gets to (ties: wheels first, then lower id), or null. */
+export function nearestSlabSource(sim: Sim, ship: number, at: { x: number; y: number }, reach: Tile): (Site & { from: SlabSource }) | null {
   let best: (Site & { from: SlabSource }) | null = null;
   let bestD = Infinity;
-  for (const s of slabSources(sim, ship)) {
+  for (const s of slabSources(sim, ship, reach)) {
     const d = dist2(s, at);
     if (d < bestD) {
       best = s;
@@ -80,7 +86,7 @@ export function nearestSlabSource(sim: Sim, ship: number, at: { x: number; y: nu
   return best;
 }
 
-/** The wheel on the ship a slab carted from `at` goes to: one that can take it, powered ones first, then the nearest hatch (ties: lower id). 0 for none. */
+/** The wheel on the ship a slab carted from `at` goes to: one that can take it and whose hatch a walk from `at` reaches, powered ones first, then the nearest hatch (ties: lower id). 0 for none. */
 export function pickWheel(sim: Sim, ship: number, at: { x: number; y: number }): number {
   let best = 0;
   let bestKey = Infinity;
@@ -89,7 +95,7 @@ export function pickWheel(sim: Sim, ship: number, at: { x: number; y: number }):
     if (!m || shipIdOf(sim, m) !== ship || !wheelTakes(sim, id)) continue;
     const h = wheelHatch(sim, m);
     const key = (m.powered ? 0 : 1e9) + dist2(h, at);
-    if (key < bestKey) {
+    if (key < bestKey && reachable(sim, ship, { x: at.x, y: at.y }, h)) {
       best = id;
       bestKey = key;
     }
@@ -126,10 +132,15 @@ function aim(job: Job, site: Site): void {
   else delete job.size;
 }
 
-/** Point a fetch at the nearest unclaimed source from `at`. False when there is none. */
+/**
+ * Point a fetch at the nearest unclaimed source from `at` that the prisoner's tile reaches (the slab is carried there next). False when there is
+ * none, or when no wheel that can take the slab is reachable from the prisoner either (it would be sealed only to be dropped).
+ */
 export function aimFetch(sim: Sim, job: Job, st: StasisJob, ship: number, at: { x: number; y: number }): boolean {
   delete st.from; // not a claim of its own while it looks
-  const src = nearestSlabSource(sim, ship, at);
+  const pos = sim.world.get(job.target ?? 0, PositionC);
+  if (!pos || !pickWheel(sim, ship, origin(pos))) return false;
+  const src = nearestSlabSource(sim, ship, at, origin(pos));
   if (!src) return false;
   st.phase = 'fetch';
   st.from = src.from;
@@ -160,9 +171,7 @@ export function performStasis(sim: Sim, crew: number, job: Job, speed: number): 
   if (!st || !me) return 'done';
   const ship = shipIdOf(sim, me);
   if (st.phase === 'fetch') {
-    if (!st.from || !takeEmptySlab(sim, st.from)) return aimFetch(sim, job, st, ship, origin(me)) ? 'working' : 'done'; // taken meanwhile
-    dropCarried(sim, crew);
-    sim.world.add(crew, CarryingC, { item: SLAB_ITEM, count: 1 });
+    if (!takeSlabFor(sim, crew, st.from)) return aimFetch(sim, job, st, ship, origin(me)) ? 'working' : 'done'; // taken meanwhile
     const pos = sim.world.get(prisoner, PositionC);
     if (!pos) return 'done';
     st.phase = 'seal';

@@ -2772,7 +2772,9 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   `thawPrisoner`.
 - **The job** (`stasis/jobs.ts`): one `stasis` job per prisoner or floor slab, category hauling, phases fetch (an empty slab from a wheel slot,
   storage or a floor stack), seal (`SEAL_WORK`, beside the prisoner), pickup (a floor slab) and stow (beside the wheel's hatch). `stasisRoom` (wheel
-  slots not holding a full slab, minus slabs on carts and stasis jobs that will make or move one) gates posting. Same ship only: crew take jobs on
+  slots not holding a full slab, minus slabs on carts and stasis jobs that will make or move one) gates posting. A seal job is posted only when
+  a wheel that can take the slab and an empty-slab source are both reachable on foot from the prisoner (`pickWheel`, `slabSources`), and
+  `takeSlabFor` is the one way a crew member comes to hold an empty slab: one already in hand is used, never a second taken. Same ship only: crew take jobs on
   the ship they stand on, so a prize's prisoners need a wheel on the prize until the escort slice. `isCarrying` counts a cart, so its carrier is not
   preempted or sent to fight.
 - **The system** (`stasisSystem`, after power and autojobs): a cart whose carrier no longer holds the slab's job is set down on the floor (the job

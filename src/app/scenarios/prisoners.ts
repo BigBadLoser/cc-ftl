@@ -1,14 +1,40 @@
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { footprintBlockedByCrew } from '../../sim/modules/spawn';
+import { isTileWalkable } from '../../sim/modules/walk';
+import { shipGrid } from '../../sim/regions';
 import { slabPlace } from '../../sim/stasis/query';
 import { playerCrew } from '../../sim/story/world';
 import type { Scenario } from './types';
 
 const WHEEL = 'module.stasis_wheel';
 
-/** A free spot for the stasis wheel nearest the ship's middle, its footprint off every other module's access tile. */
-function wheelSpot(sim: Sim, ship: number): { x: number; y: number } | null {
+/** True if, with the footprint at (x, y) turned `rot` blocked, a walk from its hatch still reaches every tile in `must` (the wheel does not wall anyone off). */
+function keepsReach(sim: Sim, ship: number, x: number, y: number, rot: number, must: { x: number; y: number }[]): boolean {
+  const def = sim.content.modules[WHEEL];
+  const grid = shipGrid(sim, ship);
+  const hatch = def && accessTile(def, x, y, rot);
+  if (!def || !grid || !hatch) return false;
+  const blocked = new Set(footprintTiles(def, x, y, rot).map((t) => `${t.x},${t.y}`));
+  const seen = new Set<string>([`${hatch.x},${hatch.y}`]);
+  const queue = [hatch];
+  while (queue.length > 0) {
+    const t = queue.pop()!;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const n = { x: t.x + dx, y: t.y + dy }, k = `${n.x},${n.y}`;
+      if (seen.has(k) || blocked.has(k) || !grid.inBounds(n.x, n.y) || !isTileWalkable(sim, grid, n.x, n.y)) continue;
+      seen.add(k);
+      queue.push(n);
+    }
+  }
+  return must.every((t) => seen.has(`${t.x},${t.y}`));
+}
+
+/**
+ * A free spot (and turn) for the stasis wheel nearest the ship's middle: off the crew, its hatch still reaching every crew member (a wheel in front of
+ * a room's only door would wall the prisoners off from it), and off every other module's access tile where the ship has room for that.
+ */
+function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number } | null {
   const s = sim.world.get(ship, ShipC);
   const def = sim.content.modules[WHEEL];
   if (!s || !def) return null;
@@ -19,15 +45,17 @@ function wheelSpot(sim: Sim, ship: number): { x: number; y: number } | null {
     const a = d && accessTile(d, m.x, m.y, m.rot);
     if (a) access.add(`${a.x},${a.y}`);
   }
+  const crew = playerCrew(sim).map((id) => sim.world.get(id, PositionC)).filter((p) => !!p).map((p) => ({ x: p!.x, y: p!.y }));
   const cx = s.x + s.width / 2, cy = s.y + s.height / 2;
-  let best: { x: number; y: number; d: number } | null = null;
-  for (let y = s.y; y < s.y + s.height; y++) for (let x = s.x; x < s.x + s.width; x++) {
-    if (placementError(sim, ship, WHEEL, x, y, 0) !== null || footprintBlockedByCrew(sim, ship, WHEEL, x, y, 0)) continue;
-    if (footprintTiles(def, x, y, 0).some((t) => access.has(`${t.x},${t.y}`))) continue;
-    const d = Math.hypot(x - cx, y - cy);
-    if (!best || d < best.d) best = { x, y, d };
+  const spots: { x: number; y: number; rot: number; d: number; covers: boolean }[] = [];
+  for (let y = s.y; y < s.y + s.height; y++) for (let x = s.x; x < s.x + s.width; x++) for (let rot = 0; rot < 4; rot++) {
+    if (placementError(sim, ship, WHEEL, x, y, rot) !== null || footprintBlockedByCrew(sim, ship, WHEEL, x, y, rot)) continue;
+    const covers = footprintTiles(def, x, y, rot).some((t) => access.has(`${t.x},${t.y}`));
+    spots.push({ x, y, rot, d: Math.hypot(x - cx, y - cy), covers });
   }
-  return best;
+  // A packed starter (the Wayfarer) has no 3x3 spot clear of every access tile that leaves its rooms joined: covering a module's access tile is the lesser evil.
+  spots.sort((a, b) => Number(a.covers) - Number(b.covers) || a.d - b.d || a.rot - b.rot);
+  return spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
 }
 
 /** The commands of the start: the wheel, two hostile crew (by the second and third crew members) and two spare empty slabs on the floor. */
@@ -36,7 +64,7 @@ export function prisonerCommands(sim: Sim): Command[] {
   if (!ship) return [];
   const out: Command[] = [];
   const spot = wheelSpot(sim, ship);
-  if (spot) out.push({ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: 0 });
+  if (spot) out.push({ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot });
   const crew = playerCrew(sim);
   for (const c of [crew[1] ?? crew[0], crew[2] ?? crew[0]]) {
     const at = sim.world.get(c ?? 0, PositionC);

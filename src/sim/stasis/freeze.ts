@@ -3,9 +3,9 @@ import { releaseBed } from '../crew/beds';
 import { CarriedC, CrewC, DownedC, DraftedC, PathC, PositionC, type Crew } from '../crew/components';
 import type { Tile } from '../crew/pathfind';
 import { FighterC, PrisonerC, SurrenderedC } from '../fight/components';
-import { ItemStackC } from '../items/components';
-import { spillItems, takeFromStack } from '../items/stacks';
-import { storageTake } from '../items/storage';
+import { CarryingC, ItemStackC } from '../items/components';
+import { dropCarried, spillItems, takeFromStack } from '../items/stacks';
+import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -25,6 +25,27 @@ export function takeEmptySlab(sim: Sim, from: SlabSource): boolean {
   }
   if (from.kind === 'storage') return storageTake(sim, from.id, SLAB_ITEM, 1) === 1;
   return sim.world.get(from.id, ItemStackC)?.item === SLAB_ITEM && takeFromStack(sim, from.id, 1) === 1;
+}
+
+/**
+ * The one way a crew member comes to hold an empty slab: true if they hold one afterwards. One already in hand is kept and nothing more is taken
+ * (a fetch that runs again never empties a source into thin air); any other load is set down first, then one slab is taken from `from`.
+ */
+export function takeSlabFor(sim: Sim, crew: number, from: SlabSource | undefined): boolean {
+  if (sim.world.get(crew, CarryingC)?.item === SLAB_ITEM) return true;
+  if (!from || !sourceHasSlab(sim, from)) return false;
+  dropCarried(sim, crew);
+  if (!takeEmptySlab(sim, from)) return false;
+  sim.world.add(crew, CarryingC, { item: SLAB_ITEM, count: 1 });
+  return true;
+}
+
+/** True if the source still holds an empty slab. */
+function sourceHasSlab(sim: Sim, from: SlabSource): boolean {
+  if (from.kind === 'wheel') return (sim.world.get(from.id, StasisWheelC)?.slots ?? []).includes(SLOT_EMPTY);
+  if (from.kind === 'storage') return storageCount(sim, from.id, SLAB_ITEM) > 0;
+  const st = sim.world.get(from.id, ItemStackC);
+  return st?.item === SLAB_ITEM && st.count > 0;
 }
 
 /** Take up to `n` empty slabs out of a wheel's slots (a seizure, a sale); returns how many. */

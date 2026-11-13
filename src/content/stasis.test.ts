@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AllegianceC, CrewC, DraftedC, ModuleC, NeedsC, PositionC, ShipC, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
-import { JobC } from '../sim/crew/components';
+import { JobC, type Job } from '../sim/crew/components';
+import { CarryingC } from '../sim/items/components';
+import { performStasis } from '../sim/stasis/jobs';
+import { Struct, writeStruct } from '../sim/structure';
+import { shipGrid } from '../sim/regions';
 import { abortTask } from '../sim/ai/task';
 import { isHostile } from '../sim/fight/relations';
 import { PrisonerC } from '../sim/fight/components';
@@ -176,5 +180,30 @@ describe('stasis wheel', () => {
     expect(copy.world.get(prisoner, StasisC)).toEqual(sim.world.get(prisoner, StasisC));
     expect(slabPlace(copy, prisoner)).toEqual(slabPlace(sim, prisoner));
     expect(copy.world.get(prisoner, CrewC)?.name).toBe(sim.world.get(prisoner, CrewC)?.name);
+  });
+
+  it('never takes a second empty slab while the crew member holds one (a fetch that runs again)', () => {
+    const { sim, wheel, prisoner } = prisonGame();
+    const crew = playerCrew(sim)[1] as number;
+    sim.world.add(crew, CarryingC, { item: SLAB_ITEM, count: 1 });
+    const job = { category: 'hauling', kind: 'stasis', x: 0, y: 0, struct: 0, work: 1, progress: 0, reservedBy: crew, target: prisoner, stasis: { phase: 'fetch', from: { kind: 'wheel', id: wheel } } } as Job;
+    for (let i = 0; i < 3; i++) {
+      job.stasis = { phase: 'fetch', from: { kind: 'wheel', id: wheel } };
+      performStasis(sim, crew, job, 1);
+    }
+    expect(wheelSlots(sim.world, wheel).filter((s) => s.kind === 'empty')).toHaveLength(10);
+    expect(sim.world.get(crew, CarryingC)).toEqual({ item: SLAB_ITEM, count: 1 });
+    expect(job.stasis?.phase).toBe('seal');
+  });
+
+  it('a prisoner walled off from the wheel gets no job, and the wheel keeps its slabs', () => {
+    const { sim, wheel, prisoner } = prisonGame();
+    const pos = sim.world.get(prisoner, PositionC)!;
+    const grid = shipGrid(sim, playerShip(sim) as number)!;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) writeStruct(grid, pos.x + dx, pos.y + dy, Struct.Wall);
+    run(sim, 600);
+    expect(wheelSlots(sim.world, wheel).filter((s) => s.kind === 'empty')).toHaveLength(10);
+    expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)?.kind === 'stasis')).toBe(false);
+    expect(isFrozen(sim, prisoner)).toBe(false);
   });
 });
