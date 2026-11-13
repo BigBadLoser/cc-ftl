@@ -114,7 +114,8 @@ export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity
           if (cost < bestCost) { best = k; bestCost = cost; bestBox = { along, depth: h, turned }; }
         }
       }
-      if (best < 0) break;
+      // Nothing fits here: step along (a run may start where nothing can stand, at an arc's open end).
+      if (best < 0) { at += dir; continue; }
       const ask = left[best] as InnerAsk;
       const m = g.mark();
       const spec = bestBox.turned ? { ...ask.spec, w: ask.spec.h, h: ask.spec.w } : ask.spec;
