@@ -1,5 +1,6 @@
 """Vending machine look study, round 1 (family `vending`, palette set vending, preview only): three machines on one
-tile, each its own concept, colours and materials. Bodies are swept rounded sections (exercise_r4.sweep), not boxes.
+tile, each its own concept, colours and materials. Bodies are swept rounded sections (exercise_r4.sweep), not boxes; heights below are
+before the TALL stretch.
 The front (+v) faces the camera.
 
   vm1 snack tower: a cream body with wine side cheeks and header (a dim warm sign strip), a dark glass front showing
@@ -18,6 +19,15 @@ from .exercise_r4 import build, sweep
 from .research_kit import Bench
 
 FP = (1, 1)
+TALL = 1.55          # the shapes are modelled short and stretched up after the build: a machine stands a head over the crew
+
+
+def tall(out):
+    for ob in out:
+        for vt in ob.data.vertices:
+            vt.co.z *= TALL
+        ob.data.update()
+    return out
 
 
 def column(k, u, v, z0, z1, a, b, col, p=4.5, cap0=None, cap1=None):
@@ -42,7 +52,7 @@ def vm1():
         for u in (7.3, 9):
             along_u(k, u - 0.5, u + 0.5, 8.9, z, 0.3, 0.5, "vmCreamD", p=3)          # keys
     along_u(k, -9, 4, 8.3, 7, 0.6, 2.4, "vmGlass", p=4)                              # pickup tray
-    return build(k)
+    return tall(build(k))
 
 
 def vm2():
@@ -63,7 +73,7 @@ def vm2():
     niche = [(10.9 * math.cos(t), 10.9 * math.sin(t), 11, 0.6, 3) for t in
              [math.radians(d) for d in range(65, 116, 10)]]
     sweep(k, niche, "vmGreenD", p=4, n=12, steps=3)                                # pickup niche
-    return build(k)
+    return tall(build(k))
 
 
 def vm3():
@@ -78,7 +88,7 @@ def vm3():
     sweep(k, [(0, -3, z, r, r) for z, r in ((29, 5), (33, 6.6), (36.5, 7.6), (37.5, 7.6))], "vmRust", p=2, n=24,
           steps=4, cap1="vmDark")                                                  # feed hopper
     tube(k, [(7, -3, 34), (11.5, -3, 31), (12.2, -2, 22), (11.3, 0, 15)], 1.0, "vmPipe")   # feed pipe
-    return build(k)
+    return tall(build(k))
 
 
 DESIGNS = {"vm1": vm1, "vm2": vm2, "vm3": vm3}
