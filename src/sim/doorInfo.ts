@@ -1,14 +1,13 @@
 import { HAZARD_AIR, airHazardAt, tileHazards } from './crew/hazard';
 import type { Grid } from './grid';
 import { airlockDoorAt } from './modules/airlock';
-import { ModuleC, type Module } from './modules/components';
-import { roomTiles } from './roomIndex';
+import { roomKind } from './roomKind';
 import type { Sim } from './sim';
 import { DoorJam, Struct } from './structure';
 
 /** What one side of a door is: a named room, open Space, or Hull (wall or anything else that is not a room). */
 export interface DoorSide {
-  /** The room's name (its first module's name, else "Corridor"), "Space" or "Hull". */
+  /** The room's name (`roomKind`), "Space" or "Hull". */
   label: string;
   /** True when a crew member could breathe here unsuited (no thin air or CO2); always false in Space and Hull. */
   breathable: boolean;
@@ -28,27 +27,13 @@ export interface DoorInfo {
   sides: [DoorSide, DoorSide];
 }
 
-function roomName(sim: Sim, grid: Grid, room: number): string {
-  const tiles = roomTiles(grid).get(room);
-  if (tiles) {
-    for (const i of tiles) {
-      const id = grid.get('module', grid.x0 + (i % grid.width), grid.y0 + Math.floor(i / grid.width));
-      if (id === 0) continue;
-      const m = sim.world.get(id, ModuleC) as Module | undefined;
-      const name = m ? sim.content.modules[m.def]?.name : undefined;
-      if (name) return name;
-    }
-  }
-  return 'Corridor';
-}
-
 function sideAt(sim: Sim, grid: Grid, x: number, y: number): DoorSide {
   const kind = grid.inBounds(x, y) ? grid.get('struct', x, y) : Struct.Space;
   const base = { o2: grid.inBounds(x, y) ? grid.get('o2', x, y) : 0, co2: grid.inBounds(x, y) ? grid.get('co2', x, y) : 0, temp: grid.inBounds(x, y) ? grid.get('temp', x, y) : 0 };
   if (kind === Struct.Space) return { label: 'Space', breathable: false, hazard: true, ...base };
   if (kind === Struct.Wall || kind === Struct.Door) return { label: 'Hull', breathable: false, hazard: false, ...base };
   const room = grid.get('room', x, y);
-  return { label: room ? roomName(sim, grid, room) : 'Corridor', breathable: (tileHazards(grid, x, y, false, false) & HAZARD_AIR) === 0, hazard: airHazardAt(grid, x, y), ...base };
+  return { label: room ? roomKind(sim, grid, room) : 'Corridor', breathable: (tileHazards(grid, x, y, false, false) & HAZARD_AIR) === 0, hazard: airHazardAt(grid, x, y), ...base };
 }
 
 /** The door at (x, y) as the player sees it, or null when the tile is not a door. The one owner of a door's words and sides. */
