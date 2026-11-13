@@ -199,7 +199,7 @@ The user liked the old arc grammar as a concept ("this just reminds me of the ar
 from the assembly's own parts, not a port). Recipe family `crescent` (`stationRecipes.ts`), on the trade station's
 program; sheets with `--family crescent`.
 
-- Outline: a rounded square open to the west (`cut: { flat: 4 }`, `round`, `shoulders`, `gap` on the west). The two
+- Outline: a rounded square open to the west (`cut: 5`, a fixed corner radius so the flats grow with the ring; `round`, `shoulders`, `gap` on the west). The two
   east corners are arcs, the arms run straight west. A true circle was tried first and dropped: room dividers that meet
   a curve build thick walls nearly everywhere, and the stepped lattice arc before it was "just so ugly".
 - A pier on the main axis from the ring's east side into the basin (host `spoke`), the harbour as its head (form
@@ -216,10 +216,16 @@ program; sheets with `--family crescent`.
 - The crew sleeps two to a cabin in the band (`quarters: { barracks: [2, 2] }`; the user: crew blocks on the arms
   "are odd", cabins belong in the band, and cabins for two are fine). One-bed cabins did not fit: the straight band
   does not grow with the ring.
-- At station size: 79 to 92 by 74 (freight pier), 102 to 116 by 74 (pier foot), 94 to 101 by 74 (market street).
-  12 of 12 assemble and pass the shared fit-out with no problems (three airlocks, six guns, crew of twenty).
+- What the band cannot hold stands in a second row along the arms' inner side (`inner: 'rows'`: the inner runs with
+  the longest open stretch first). The user picked this for hub size over a bigger ring or a second pier.
+- At station size: 79 to 92 by 74 (freight pier), 102 to 116 by 66 (pier foot, R 32 with a short inner row),
+  94 to 101 by 66 to 74 (market street). 12 of 12 assemble and pass the shared fit-out with no problems (three
+  airlocks, six guns, crew of twenty).
+- At hub size (crew 44, twelve guns): 12 of 12 assemble at R 44 to 52: 117 to 129 by 106 (freight pier), 153 to 165
+  by 90 (pier foot), 173 to 187 by 90 (market street). The pier doubles in length and runs far past the ring; the old
+  trade hubs are 107 to 126 by 105. A ring may now grow past R 48 (its grid grows with it).
 
-Open: the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
+Open: at hub size the pier is too long (pier foot and market street); the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
 head is one open hall with three airlocks; the market street's warehouses open onto the ring, not the market; seeds
 differ little; no stall module exists.
 
