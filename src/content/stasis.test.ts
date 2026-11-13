@@ -16,7 +16,7 @@ import { accessTile, footprintTiles } from '../sim/modules/footprint';
 import { footprintBlockedByCrew, removeModule } from '../sim/modules/spawn';
 import { deserialize, serialize } from '../sim/save';
 import { SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
-import { cartRest, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { CART_PARK_STEPS, cartRest, onCart, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
 import { RESERVE_TICKS, SLAB_ITEM } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
@@ -229,19 +229,30 @@ describe('stasis wheel', () => {
     for (const t of [a, b]) expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(true);
     const p = sim.world.get(prisoner, PositionC)!;
     expect([a, b].some((t) => t.x === p.x && t.y === p.y)).toBe(false);
-    // Toward the prisoner where there is room: no other side is closer to them.
-    const side = { x: near!.x - at.x, y: near!.y - at.y };
-    const best = parkCart(sim, crew, { x: at.x, y: at.y }, { x: p.x, y: p.y });
-    expect(best).toEqual(rest);
-    expect(side.x * (p.x - at.x) + side.y * (p.y - at.y)).toBeGreaterThanOrEqual(0);
     // Stable while they stand and work.
     for (let i = 0; i < 5 && !walking(sim.world, crew); i++) {
       run(sim, 1);
       if (!walking(sim.world, crew) && cartRest(sim.world, crew)) expect(cartRest(sim.world, crew)).toEqual(rest);
     }
-    // Walking: no rest.
-    until(sim, () => walking(sim.world, crew));
+    // Walking further than its last steps: no rest (the cart is pushed ahead of them).
+    until(sim, () => walkLeft(sim.world, crew).length > CART_PARK_STEPS);
     expect(cartRest(sim.world, crew)).toBeNull();
+  });
+
+  it('over a carrier\'s last steps the cart is parked at their stop already, off every tile they still walk, and kept when they arrive', () => {
+    const { sim } = prisonGame();
+    const short = (): number => sim.world.query(CrewC).find((id) => onCart(sim.world, id) && walking(sim.world, id) && cartRest(sim.world, id) !== null) ?? 0;
+    until(sim, () => short() !== 0);
+    const crew = short();
+    expect(crew).not.toBe(0);
+    const left = walkLeft(sim.world, crew);
+    expect(left.length).toBeLessThanOrEqual(CART_PARK_STEPS);
+    const rest = cartRest(sim.world, crew)!;
+    const pos = sim.world.get(crew, PositionC)!;
+    const under = floorTiles(rest.x, rest.y, rest.rot).map((t) => `${t.x},${t.y}`);
+    for (const t of [{ x: pos.x, y: pos.y }, ...left]) expect(under).not.toContain(`${t.x},${t.y}`);
+    until(sim, () => !walking(sim.world, crew));
+    expect(cartRest(sim.world, crew)).toEqual(rest);
   });
 
   it('parks on the side toward the target, never on it, and finds none when boxed in', () => {

@@ -38,14 +38,16 @@ export interface Stasis {
 export const StasisC = defineComponent<Stasis>('stasis');
 
 /**
- * On a crew member pushing a slab on a hover cart while they stand still: where the cart is parked, on (x, y) and the next tile along +x (`rot` 0)
- * or +y (`rot` 1), its push bar end beside them. Set by the stasis system when they stop, kept until they walk again or the cart is gone. Read it
- * through `cartRest` (stasis/query.ts).
+ * On a crew member pushing a slab on a hover cart who stands still or is about to: where the cart is parked, on (x, y) and the next tile along +x
+ * (`rot` 0) or +y (`rot` 1), its push bar end beside them. Set by the stasis system when they stop, or already over their last steps (then `at`
+ * is the tile they are walking to), kept until they walk elsewhere or the cart is gone. Read it through `cartRest` (stasis/query.ts).
  */
 export interface CartRest {
   x: number;
   y: number;
   rot: 0 | 1;
+  /** Set when parked ahead of the stop: the tile the carrier is walking to (the cart was moved there before they arrived). */
+  at?: { x: number; y: number };
 }
 export const CartRestC = defineComponent<CartRest>('cartRest');
 

@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import { Struct } from '../structure';
 import { CartRestC, StasisC } from './components';
 import { floorTiles } from './place';
-import { floorSlabs, onCart, walking } from './query';
+import { CART_PARK_STEPS, cartRest, floorSlabs, onCart, walkEnd, walkLeft, walking } from './query';
 import { SLAB_ITEM } from './tuning';
 
 /** The four sides a cart can stand on, in the order ties are broken. */
@@ -23,7 +23,7 @@ function targetOf(sim: Sim, crew: number): Tile | null {
  * Where a cart parks beside a carrier standing on `at`: two free floor tiles straight out from them on one side (the near one beside them), on
  * the side most toward `target` first and never covering it, else any side; null when no side has room. `cartRest` (query.ts) documents the rule.
  */
-export function parkCart(sim: Sim, crew: number, at: Tile, target: Tile | null): { x: number; y: number; rot: 0 | 1 } | null {
+export function parkCart(sim: Sim, crew: number, at: Tile, target: Tile | null, avoid: readonly Tile[] = []): { x: number; y: number; rot: 0 | 1 } | null {
   const ship = shipIdOf(sim, at);
   const grid = shipGrid(sim, ship);
   if (!grid) return null;
@@ -34,6 +34,7 @@ export function parkCart(sim: Sim, crew: number, at: Tile, target: Tile | null):
     if (r && id !== crew) for (const t of floorTiles(r.x, r.y, r.rot)) taken.add(`${t.x},${t.y}`);
   }
   if (target) taken.add(`${target.x},${target.y}`);
+  for (const t of avoid) taken.add(`${t.x},${t.y}`);
   const free = (x: number, y: number): boolean => grid.inBounds(x, y) && isTileWalkable(sim, grid, x, y) && grid.get('struct', x, y) !== Struct.Door && !taken.has(`${x},${y}`);
   const toward = ([dx, dy]: readonly [number, number]): number => (target ? dx * (target.x - at.x) + dy * (target.y - at.y) : 0);
   const sides = SIDES.map((d, i) => ({ d, i })).sort((a, b) => toward(b.d) - toward(a.d) || a.i - b.i);
@@ -45,10 +46,13 @@ export function parkCart(sim: Sim, crew: number, at: Tile, target: Tile | null):
   return null;
 }
 
-/** Each tick: a carrier who stopped gets their cart parked once (kept while they stand); walking or no longer carting clears it. */
+/**
+ * Each tick: a carrier gets their cart parked once at their stop, already over their last CART_PARK_STEPS (clear of the tiles they still walk) or
+ * when they stop, and keeps it while they stand; walking elsewhere or no longer carting clears it.
+ */
 export function keepCartRests(sim: Sim): void {
   for (const id of [...sim.world.query(CartRestC)]) {
-    if (!onCart(sim.world, id) || walking(sim.world, id)) sim.world.remove(id, CartRestC);
+    if (!onCart(sim.world, id) || cartRest(sim.world, id) === null) sim.world.remove(id, CartRestC);
   }
   const carriers = new Set<number>();
   // Crew, not a `CarryingC` query: querying makes the store exist, and runs that never carried anything keep their saved shape.
@@ -59,8 +63,16 @@ export function keepCartRests(sim: Sim): void {
   }
   for (const crew of [...carriers].sort((a, b) => a - b)) {
     const pos = sim.world.get(crew, PositionC);
-    if (!pos || sim.world.has(crew, CartRestC) || walking(sim.world, crew)) continue;
-    const rest = parkCart(sim, crew, { x: pos.x, y: pos.y }, targetOf(sim, crew));
-    if (rest) sim.world.add(crew, CartRestC, rest);
+    if (!pos || sim.world.has(crew, CartRestC)) continue;
+    if (!walking(sim.world, crew)) {
+      const rest = parkCart(sim, crew, { x: pos.x, y: pos.y }, targetOf(sim, crew));
+      if (rest) sim.world.add(crew, CartRestC, rest);
+      continue;
+    }
+    const left = walkLeft(sim.world, crew);
+    const end = walkEnd(sim.world, crew);
+    if (!end || left.length > CART_PARK_STEPS) continue;
+    const rest = parkCart(sim, crew, end, targetOf(sim, crew), [{ x: pos.x, y: pos.y }, ...left]);
+    if (rest) sim.world.add(crew, CartRestC, { ...rest, at: end });
   }
 }

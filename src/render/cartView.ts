@@ -51,15 +51,15 @@ export function createCart(parent: Container): CartSprite {
 }
 
 /**
- * Where the cart of a carrier drawn at (x, y) should be now: walking, ahead along their route (the tile they are stepping
- * to, then their path's steps); standing, on the sim's rest tiles (cartRest). Where it last was while neither answers (a
- * stop with no room beside them keeps it where it came to); null: no cart to draw.
+ * Where the cart of a carrier drawn at (x, y) should be now: on the sim's rest tiles once it has parked them (cartRest: when
+ * they stop, or already over their last steps, too short a walk to push it ahead); else, walking, ahead along their route
+ * (the tile they are leaving, the one they step to, then their path). Where it last was while neither answers (a stop with
+ * no room beside them keeps it where it came to); null: no cart to draw.
  */
 export function cartTarget(world: World, id: number, x: number, y: number, last: CartPose | null): CartPose | null {
-  if (!walking(world, id)) {
-    const rest = cartRest(world, id);
-    return rest ? restPose(x, y, rest) : last;
-  }
+  const rest = cartRest(world, id);
+  if (rest) return restPose(x, y, rest);
+  if (!walking(world, id)) return last;
   const pos = world.get(id, PositionC);
   if (!pos) return last;
   const steps = world.get(id, PathC)?.steps ?? [];

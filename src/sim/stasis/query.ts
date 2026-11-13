@@ -119,16 +119,43 @@ export function walking(world: World, crew: number): boolean {
 }
 
 /**
- * Where the hover cart of a crew member pushing a slab (`onCart`) stands while they are not walking: its two tiles, (x, y) and the next along +x
- * (`rot` 0) or +y (`rot` 1), as `floorTiles`. One tile is beside the carrier and the cart lies straight out from them, so its push bar touches
- * them; it is on free walkable floor (no floor slab, no other parked cart), toward the job's target where it can be but never on it. Chosen once
- * when they stop and kept until they walk again (`CartRestC`, set by the stasis system). Null while walking, when not carting, or when no side
- * had room (then no cart is drawn).
+ * Where the hover cart of a crew member pushing a slab (`onCart`) is parked: its two tiles, (x, y) and the next along +x (`rot` 0) or +y (`rot` 1),
+ * as `floorTiles`. One tile is beside the carrier's stop and the cart lies straight out from it, so its push bar touches them; it is on free
+ * walkable floor (no floor slab, no other parked cart, none of the tiles they still walk), toward the job's target where it can be but never on it.
+ * Chosen once over their last steps (`CART_PARK_STEPS`; too short a walk to push the cart ahead of them) or when they stop, and kept until they walk
+ * elsewhere (`CartRestC`, set by the stasis system). Null while walking further, when not carting, or when no side had room.
  */
 export function cartRest(world: World, crew: number): { x: number; y: number; rot: 0 | 1 } | null {
   const r = world.get(crew, CartRestC);
-  return r && onCart(world, crew) && !walking(world, crew) ? { x: r.x, y: r.y, rot: r.rot } : null;
+  if (!r || !onCart(world, crew)) return null;
+  if (walking(world, crew) && !(r.at && sameTile(r.at, walkEnd(world, crew)))) return null;
+  return { x: r.x, y: r.y, rot: r.rot };
 }
+
+/** Steps left to walk at or under which a carrier's cart is parked at their stop rather than pushed ahead (it is two tiles long). */
+export const CART_PARK_STEPS = 2;
+
+/** The tiles a crew member still walks, each once: the one they step to, then their path (which may repeat it). Empty while they stand. */
+export function walkLeft(world: World, crew: number): Tile[] {
+  const p = world.get(crew, PositionC);
+  if (!p || !walking(world, crew)) return [];
+  const steps = world.get(crew, PathC)?.steps ?? [];
+  const out: Tile[] = [];
+  for (const t of [{ x: p.toX, y: p.toY }, ...steps]) {
+    const last = out[out.length - 1] ?? { x: p.x, y: p.y };
+    if (t.x !== last.x || t.y !== last.y) out.push({ x: t.x, y: t.y });
+  }
+  return out;
+}
+
+/** Where a crew member's walk ends: the last tile they walk to, or where they stand. */
+export function walkEnd(world: World, crew: number): Tile | null {
+  const left = walkLeft(world, crew);
+  const p = world.get(crew, PositionC);
+  return left[left.length - 1] ?? (p ? { x: p.x, y: p.y } : null);
+}
+
+const sameTile = (a: Tile, b: Tile | null): boolean => !!b && a.x === b.x && a.y === b.y;
 
 /** True if the crew member has the prisoner's slab on their cart for the stasis job they hold (anything else is a carry that ended). */
 export function cartsFor(sim: Sim, crew: number, prisoner: number): boolean {
