@@ -1,7 +1,7 @@
-"""Double bunk bed look study preview (plain python3 + numpy + PIL): each design at r0 on its 1x2 floor, a crew member
+"""Furniture look study (bunk, exercise, ...; 1 x 2) preview (plain python3 + numpy + PIL): each design at r0 on its 1x2 floor, a crew member
 at its foot end for scale, and the game's single bed first for comparison.
 
-  python3 -I tools/blender/review/bunk_preview.py <bunk assets dir> <out dir> [designs, default b1,b2,b3]
+  python3 -I tools/blender/review/bunk_preview.py <bunk assets dir> <out dir> [designs, default b1,b2,b3] [family, default bunk]
     -> bunk-1x.png / -3x.png"""
 import sys
 from pathlib import Path
@@ -18,15 +18,18 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "b1h": "B1h  pillows 2 px", "b1h1": "B1h  pillows 1 px", "b1h3": "B1h  pillows 3 px (round 9)",
          "s1": "S1  single bed, bunk look", "s2": "S2  single bed, wall rail",
          "s3": "S3  wider mattress", "s3p": "S3p  cap + raised panel", "s3s": "S3s  cap + red band",
-         "s3k": "S3k  cap + slots"}
+         "s3k": "S3k  cap + slots",
+         "x1": "X1  treadmill", "x2": "X2  exercise bike", "x3": "X3  cable station"}
 CW, CH = 200, 220
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
     names = (sys.argv[3] if len(sys.argv) > 3 else "b1,b2,b3").split(",")
+    fam = sys.argv[4] if len(sys.argv) > 4 else "bunk"
     out.mkdir(parents=True, exist_ok=True)
-    cols = [("module.bed", pub, "single bed (game)")] + [(f"module.bunk.{v}", G, NAMES.get(v, v)) for v in names]
+    cols = [("module.bed", pub, "single bed (game)")] if fam == "bunk" else []
+    cols += [(f"module.{fam}.{v}", G, NAMES.get(v, v)) for v in names]
     cv = Canvas(CW * len(cols), CH)
     for i, (aid, src, label) in enumerate(cols):
         ox, oy = 95 + i * CW, 150                                    # the module's anchor: its front tile
@@ -37,7 +40,7 @@ def main():
         cv.char(human(pub, 6), *iso(ox, oy, -1, 1))
         cv.labels.append((ox - 50, oy + 52, label))
     for s in (1, 3):
-        cv.save(out / f"bunk-{s}x.png", s)
+        cv.save(out / f"{fam}-{s}x.png", s)
     print("wrote", out)
 
 
