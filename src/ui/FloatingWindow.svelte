@@ -10,7 +10,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -24,6 +24,8 @@
     bg?: boolean;
     /** Wrap the content in a scrolling body with the usual 10px panel padding. */
     padded?: boolean;
+    /** No header of its own: the content brings its own `.ph` heading, which drags the window; only the pin tile is added (`pinRight` px in from the right edge). */
+    bare?: boolean; pinRight?: number;
     /** False hides the pin tile (a panel that belongs to another and closes with it). */
     pinnable?: boolean;
     /** The title keeps its own width, so what `titleExtra` adds follows it instead of sitting at the far right. */
@@ -113,6 +115,10 @@
     pinned = !pinned;
     save();
   }
+  /** Bare windows drag by whichever `.ph` heading their content draws. */
+  function bareDown(e: PointerEvent) {
+    if (bare && (e.target as HTMLElement).closest('.ph')) begin(e, 'move');
+  }
   const pinTitle = $derived(pinned ? 'Unpin: closes on outside click and Esc again' : 'Pin: stay open on outside click and Esc');
 </script>
 
@@ -124,6 +130,17 @@
   {/each}
 {/snippet}
 
+{#if bare}
+  <section class="fw {cls}" class:bg class:pinned class:bare data-testid={testId} data-pinned={pinned} aria-label={title}
+    style="{style ? style + ';' : ''}--fw-z:{z};--fw-pin:{pinRight + 38}px" bind:clientHeight={elH}
+    onpointerdown={bareDown} onpointermove={drag} onpointerup={end} onpointercancel={end} ondblclick={(e) => { if ((e.target as HTMLElement).closest('.ph') && !(e.target as HTMLElement).closest('button')) reset(); }}>
+    {#if pinnable}<button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" use:tip={{ text: pinTitle }} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
+      <Icon name={pinned ? 'unpin' : 'pin'} size={16} />
+    </button>{/if}
+    {#if padded}<div class="fwbody">{@render children()}</div>{:else}{@render children()}{/if}
+    {@render grips()}
+  </section>
+{:else}
   <!-- The rail frame (kit/Frame): the title sits in a gap in the top line and drags the window; pin and close are tiles on the line. -->
   <Frame {title} class="fw {cls}" testid={testId} aria-label={title} data-pinned={pinned} bind:clientHeight={elH}
     style="{style ? style + ';' : ''}--fw-z:{z};padding:var(--sp-3) 0 0;{bg ? 'background:var(--panel);' : ''}{pinned ? '--edge:var(--cyan);' : ''}"
@@ -145,9 +162,13 @@
     </div>
     {@render grips()}
   </Frame>
+{/if}
 
 <style>
-  :global(.frame.fw) { z-index: var(--fw-z); position: fixed; }
+  .fw, :global(.frame.fw) { z-index: var(--fw-z); position: fixed; }
+  .fw { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line-hi); box-sizing: border-box; }
+  .fw.bg { background: var(--panel); }
+  .fw.pinned { border-color: var(--cyan); }
   /* The framed window: the rail is the handle; the inner box clips the content (the frame itself can't, the title rides above its edge). */
   .inner { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   .inner.bg { background: var(--panel); }
@@ -160,6 +181,13 @@
   :global(.frame.fw .rail button.tile.pin) { color: var(--pin-ink); }
   :global(.frame.fw .rail button.tile.pin.on) { background: var(--cyan); border-color: var(--cyan); color: #04202c; }
   .fwbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+  .fw.bare :global(.ph) { cursor: move; touch-action: none; }
+  .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: var(--pin-ink); cursor: pointer; position: absolute; top: 0; z-index: 3; }
+  .barepin:hover { background: var(--panel-3); }
+  .barepin.on { background: var(--cyan); color: #04202c; }
+  .fw.bare :global(.ph button) { cursor: pointer; }
+  /* Keep the heading's text clear of the pin tile. */
+  .fw.bare :global(.ph) { padding-right: var(--fw-pin); }
   /* Resize grips: 6px strips on the edges, 14px corners, above the content (and its scrollbar). */
   .grip { position: absolute; z-index: 5; touch-action: none; }
   .grip.n, .grip.s { left: 14px; right: 14px; height: 6px; cursor: ns-resize; }
