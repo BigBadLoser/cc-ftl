@@ -69,7 +69,7 @@ def shell_head(p, c, s, eye_r):
 
 
 def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH, sh_f=0.0, pose=None,
-         mitts=False, glove_k=1.0, limb=MID, plate_k=1.0, fore=None):
+         mitts=False, glove_k=1.0, limb=MID, plate_k=1.0, fore=None, roll=12.0, yaw=0.0):
     """Guard arms: a hinge disc and a livery shoulder plate, a dark strut with a grey plate to a big dark elbow hinge,
     a grey forearm plate to the red glove held up in front of the face."""
     for sx in (1, -1):
@@ -80,7 +80,7 @@ def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=
         hinge(p, sh, 0.06 * k, 0.09 * k)
         pk = k * plate_k
         p.rbox((sx * (sh_x + 0.02), sh_f, sh_z + 0.04), (0.15 * pk, 0.19 * pk, 0.14 * pk), plate, r=0.03, taper=0.8,
-               rot=(0, sx * 12, 0))                                                # shoulder plate
+               rot=(0, sx * roll, sx * yaw))                                       # shoulder plate
         p.strut(sh, e, 0.03 * k, DARK)
         p.plate(along(sh, e, 0.06), along(e, sh, 0.05), 0.085 * k, 0.09 * k, limb, taper=1.1, r=0.02)  # upper arm
         hinge(p, e, 0.055 * k, 0.13 * k)                                           # elbow
@@ -196,4 +196,14 @@ GUARD = {
     "v4o": dict(el=(0.34, 0.1, 0.82), wr=(0.24, 0.28, 1.08), glove_k=0.75, fore=CLOTH),   # forearms armoured in
 }                                                                                  # the livery, like the body
 for _n, _kw in GUARD.items():
+    DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, lean=0.0, **kw))
+
+
+# ---- round 22: v4i's guard, shoulders turned out, arms slanting in to the gloves ----------------------------------------
+SLANT = {
+    "v4p": dict(roll=22.0, yaw=-10.0, el=(0.38, 0.12, 0.8), wr=(0.15, 0.3, 1.0)),
+    "v4q": dict(roll=30.0, yaw=-18.0, el=(0.41, 0.12, 0.81), wr=(0.12, 0.31, 1.01)),
+    "v4r": dict(roll=38.0, yaw=-26.0, el=(0.44, 0.11, 0.82), wr=(0.1, 0.32, 1.02)),
+}
+for _n, _kw in SLANT.items():
     DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, lean=0.0, **kw))
