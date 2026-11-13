@@ -6,6 +6,11 @@
   vm1c22b a purple lid: the roof and its rounded edge in the livery's purple
   vm1c22c roof hardware: a slatted vent grille towards the back, a round fan cap, a small hatch plate
 
+Then (user: "something like a with a little more coverage"):
+  vm1c22d a third stroke coming over the front edge, all wider
+  vm1c22e the same three strokes wider still
+  vm1c22f four strokes over the right and front edges, a longer pen line across the whole roof
+
 Uses round 21's machine (r20/r21 front pieces, r10 body, r15 painter, 19e look). SPRITE_SAMPLES=64."""
 import math
 
@@ -19,7 +24,7 @@ from .vending_study import FP
 ZT = R.TOP + 0.06                                                    # just above the flat top
 
 
-def ribbon(k, pts, w0, w1, col):
+def ribbon(k, pts, w0, w1, col, z=ZT):
     """A flat tapered band on the roof along (u, v) points, w0 wide at the start, w1 at the end."""
     n = len(pts)
     left, right = [], []
@@ -31,15 +36,34 @@ def ribbon(k, pts, w0, w1, col):
         left.append((u - dv / L * w, v + du / L * w))
         right.append((u + dv / L * w, v - du / L * w))
     for i in range(n - 1):
-        R.face(k, [(*left[i], ZT), (*right[i], ZT), (*right[i + 1], ZT), (*left[i + 1], ZT)], col, (0, 0, 1))
+        R.face(k, [(*left[i], z), (*right[i], z), (*right[i + 1], z), (*left[i + 1], z)], col, (0, 0, 1))
 
 
-def livery_top(k):
-    for pts, w0, w1 in (([(12.7, 6.0), (6, 1), (-2, -4.5), (-9, -10)], 8.0, 1.0),         # from the flat's edge
-                        ([(12.7, -5.0), (8, -8.5), (3, -11.5)], 6.5, 1.0)):              # over the side
+ROOFS = {  # teal strokes (points, start width, end width) and the pen line, in (u, v) on the roof's flat
+    "a": ([([(12.7, 6.0), (6, 1), (-2, -4.5), (-9, -10)], 8.0, 1.0),
+           ([(12.7, -5.0), (8, -8.5), (3, -11.5)], 6.5, 1.0)],
+          [(12.7, 1.0), (1.0, -3.5), (6.5, -5.5), (-6.0, -10.5), (-2.5, -11.4)]),
+    "d": ([([(12.7, 7.0), (5, 1.5), (-3, -4.5), (-11, -10.5)], 10.0, 2.0),
+           ([(12.7, -3.5), (6, -7.5), (-1, -11.4)], 9.0, 2.0),
+           ([(3.5, 8.5), (-4, 3), (-12.6, -3.5)], 8.0, 1.5)],
+          [(12.7, 2.0), (0.0, -3.0), (7.0, -5.5), (-6.5, -10.5), (-2.5, -11.4)]),
+    "e": ([([(12.7, 7.0), (5, 1.5), (-3, -4.5), (-11, -10.5)], 13.0, 3.0),
+           ([(12.7, -3.5), (6, -7.5), (-1, -11.4)], 11.0, 2.5),
+           ([(3.5, 8.5), (-4, 3), (-12.6, -3.5)], 10.0, 2.0)],
+          [(12.7, 2.0), (0.0, -3.0), (7.0, -5.5), (-6.5, -10.5), (-2.5, -11.4)]),
+    "f": ([([(12.7, 8.3), (6, 4), (-1, -0.5), (-8, -5)], 9.0, 2.0),
+           ([(12.7, 0.5), (5, -4.5), (-3, -9.5)], 9.0, 2.0),
+           ([(12.7, -8.0), (8, -11.4)], 6.0, 2.0),
+           ([(-1, 8.5), (-7, 4), (-12.6, 0.5)], 8.0, 2.0)],
+          [(12.7, 4.0), (-4.0, -1.0), (4.0, -4.0), (-10.0, -9.0), (-6.0, -11.4)]),
+}
+
+
+def livery_top(k, roof="a"):
+    strokes, pen = ROOFS[roof]
+    for pts, w0, w1 in strokes:
         ribbon(k, pts, w0, w1, "jzTeal")
-    pen = [(12.7, 1.0), (1.0, -3.5), (6.5, -5.5), (-6.0, -10.5), (-2.5, -11.4)]
-    ribbon(k, [(u + 0.6, v - 0.6) for u, v in pen], 1.2, 1.2, "jzMagenta")
+    ribbon(k, [(u + 0.6, v - 0.6) for u, v in pen], 1.2, 1.2, "jzMagenta", ZT + 0.02)   # over the teal
     ZT2 = ZT + 0.04
     for a, b in zip(pen, pen[1:]):
         du, dv = b[0] - a[0], b[1] - a[1]
@@ -81,8 +105,8 @@ def make(name):
             W.cans(k)
             X.keypad(k)
             W.tray(k, "a")
-            if style == "a":
-                livery_top(k)
+            if style in ROOFS:
+                livery_top(k, style)
             if style == "c":
                 hardware(k)
             R.back(k)
@@ -95,7 +119,7 @@ def make(name):
     return f
 
 
-DESIGNS = {n: make(n) for n in ("vm1c22a", "vm1c22b", "vm1c22c")}
+DESIGNS = {n: make(n) for n in ("vm1c22a", "vm1c22b", "vm1c22c", "vm1c22d", "vm1c22e", "vm1c22f")}
 
 
 def jobs():
