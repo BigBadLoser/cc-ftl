@@ -44,7 +44,7 @@ Nothing here is part of the shipped game loop; "Debug only" is the status for al
 |---|---|---|---|---|
 | Render lab | ``npm run lab -- --panel <id>`` | Screenshot any visual as a grid of stills; 10 panels: shield, sprites, drones, droneLaunch, marks, shots, upgrades, pods, hydroponics, ore | Debug only | tools/lab/*; docs/RENDER_LAB.md; dev page /tools/lab/ |
 | Comms and kit labs | ``tools/lab/CommsLab.svelte, KitLab.svelte`` | UI kit and comms window samples | Debug only | tools/lab/commsLab.ts, kitLab.ts |
-| Layout lab | ``/tools/layout/`` | Ship layout editor: grid, layers, palette, notes, source picker | Debug only | tools/layout/* |
+| Layout lab | ``/tools/layout/`` | Ship layout editor: grid, layers, palette, notes, source picker (station layouts include the station assembly's recipes, `assembly.<family>`) | Debug only | tools/layout/* |
 | Ship generator viewer | ``/tools/shipgen/, npm run shipgen`` | Generate and draw faction ships and stations, benchmark metrics | Debug only | tools/shipgen/*; docs/SHIPGEN.md |
 | Asteroid sheets | ``tools/asteroids/`` | Asteroid generation CLI and sheet drawing | Debug only | tools/asteroids/* |
 | Profiler | ``npm run profile, profile:sim, profile:baseline, ai:diff`` | Per-system sim cost, headless-game profile, crew decision diffs | Debug only | tools/profile/*; docs/PROFILING.md; in-game ?perf |

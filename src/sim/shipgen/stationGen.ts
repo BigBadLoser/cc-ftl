@@ -61,7 +61,7 @@ export interface StationResult extends GenResult {
   station: StationInfo;
 }
 
-const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Record<string, ModuleDef>): StationInfo => {
+export const infoOf = (def: StationDef, size: StationSize, t: ShipTemplate, defs: Record<string, ModuleDef>): StationInfo => {
   const mods = t.modules ?? [];
   const n = (p: (d: ModuleDef) => boolean): number => mods.filter((m) => defs[m.def] && p(defs[m.def] as ModuleDef)).length;
   return {

@@ -5,7 +5,7 @@
 import { content } from '../../src/content';
 import { starterShips } from '../../src/content/ships/starterShips';
 import type { StationDef } from '../../src/sim';
-import { factionIds, gen, stationIds } from '../shipgen/draw';
+import { assemblyLayouts, factionIds, gen, stationIds } from '../shipgen/draw';
 import { templateResult } from '../shipgen/templates';
 import { layoutOfGen, type Layout } from './layout';
 
@@ -34,11 +34,11 @@ export function familiesOf(faction: string): string[] {
   const f = (content.factions as Record<string, { hullFamilies?: { id: string }[] }>)[faction];
   return f?.hullFamilies?.map((h) => h.id) ?? [];
 }
-/** The layouts a station kind uses at a size. */
+/** The layouts a station kind uses at a size, then every station assembly recipe (any kind's rooms can be assembled by any). */
 export function layoutsOf(station: string, size: string): string[] {
   const def = (content.stations as Record<string, StationDef>)[station];
   const tier = def?.tiers[size as keyof StationDef['tiers']];
-  return tier ? tier.grammars.map((g) => g.value) : [];
+  return tier ? [...tier.grammars.map((g) => g.value), ...assemblyLayouts()] : [];
 }
 
 /** The side a faction (or station kind) flies for, as the game reads it: its own `side`, else 'hostile' as the game's spawn does. */

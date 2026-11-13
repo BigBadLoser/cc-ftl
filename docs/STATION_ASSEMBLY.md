@@ -4,9 +4,11 @@ One modular system for station layouts, meant to replace the station grammars on
 (data) says what a station is composed of and how its parts stand to each other; one assembler builds every recipe from
 the same few elements; one wall writer turns the result into tiles.
 
-**State:** composition only. The assembler produces an unfurnished floor plan (walls, floor, doors, beams) that passes
-its own hard checks. It is not handed to the fit-out yet and is not a registered grammar, so nothing in the game uses
-it. The station grammars (`stationGrammars.ts` and the files round it) are untouched and stay until a recipe replaces
+**State:** assembled and fitted out, not in the game. The assembler produces a floor plan (walls, floor, doors,
+beams) that passes its own hard checks, and `assembleStation` (`assembly/station.ts`) hands it to the shared fit-out
+(`fitShell` in `generate.ts`, the back half of `finishLayout`), which furnishes, validates and measures it as it does
+the station grammars' structures. It is not a registered grammar, so nothing in the game spawns one; the layout lab
+and the generator CLI load one by layout name (`assembly.<family>`, below). The station grammars (`stationGrammars.ts` and the files round it) are untouched and stay until a recipe replaces
 them.
 
 ## Where things are
@@ -22,6 +24,8 @@ them.
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
 | The rooms a station is assembled from | `program.ts` (from `stationPlan.ts`), `quarters.ts` (cabins, barracks), `dept.ts` |
 | Hull check | `hull.ts` |
+| The hub inside a ring (the bazaar's market and spokes) | `hub.ts` |
+| Fitting one out (the handoff to the shared fit-out) | `station.ts` (`assembleStation`), `fitShell` in `../generate.ts` |
 | Sheets | `node tools/shipgen/assemblySheets.js [--seeds 1,2,3,4] [--out dir] [--versus]` |
 
 `--program station.research:station` assembles a family's recipes for another kind and size than its own.
@@ -181,6 +185,23 @@ stepped and now mostly garden (the octagon is the cleaner of the two); no dock o
 about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98). The full circle was
 dropped because its stalls came out as small wedges, the curved walls taking much of the floor.
 
+## Seeing one furnished: the fit-out and the layout lab
+
+`assembleStation(def, id, size, seed, defs, recipe)` returns what `generateStation` does (a template, its rooms, its
+problems). The assembly's regions are the rooms: each keeps the role and the planned modules it was given, so the
+fit-out needs no builder or canvas in between.
+
+- Layout lab (`npm run dev`, `/tools/layout/`): Import, Generated station, Layout `assembly.bazaar` (every recipe is
+  listed after the kind's own grammars, for any kind and size). By URL:
+  `/tools/layout/?station=station.trading&size=station&layout=assembly.bazaar&seed=2`. The preview pane is the game's
+  renderer, and the checks panel runs the game's validators.
+- CLI: `node tools/shipgen/cli.js station.trading --size station --layout assembly.bazaar --count 4`.
+- What the handoff changed in the assembly: an airlock unit on a quay is three by three (the airlock module's own
+  floor, its walkway innermost) and its hatch becomes plain hull at the handoff, since the module is the door; airlocks
+  may face any way there (`airlocksAnyWay`; the arranger's hulls keep theirs off the stern); a gun bay in a ring's band
+  keeps its long side on the hull (`stripsFor`), or its second mount has no hull to stand against; the dock count the
+  station rules ask for is the assembly's own (`docksOf`).
+
 ## Ring stations: what was decided, and where they stand
 
 The record: the user's own messages in this work (the review that redirected it, the kit, the inventory, the assembly
@@ -285,8 +306,9 @@ differ little.
 
 ## Known limits
 
-- **Not furnished, not in the game.** Next: stamp the grid into a builder (`RegionGrid.stamp`, which does not carry
-  beams yet), run `finishLayout`, register a grammar, and validate finished stations.
+- **Not in the game.** `assembleStation` furnishes and validates one; registering a recipe as a grammar (so the game
+  spawns it) is the step left. Only the bazaar has been taken through the fit-out and seen in the layout lab; the
+  other families are untried there.
 - **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
   as drawn.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant

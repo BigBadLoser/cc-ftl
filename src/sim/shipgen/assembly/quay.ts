@@ -21,7 +21,7 @@ import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type 
 
 export interface QuayOpts {
   form: 'quay' | 'gatehouse' | 'basin';
-  /** The concourse: tiles across, the two an airlock unit takes included. */
+  /** The concourse: tiles across, the three an airlock unit takes included (the innermost of them is the unit's walkway). */
   wide: number;
   /** Tiles from one airlock to the next along a wall. */
   pitch: number;
@@ -155,23 +155,24 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
       if (!r.annexed) parent = id;
     }
   }
-  // The airlocks: a unit of three by two against its wall (part of the hall), and its hatch in the wall.
+  // The airlocks: a unit of three by three against its wall (part of the hall: the airlock module's own floor, its
+  // walkway innermost), and its hatch in the wall.
   const unit = (d: RoomSpec, box: [number, number, number, number], hatch: [number, number]): void => {
-    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 2 }), ...box);
+    g.rect(g.hall('dock', 'airlock', { ...d, w: 3, h: 3 }), ...box);
     g.gate(...hatch);
   };
   for (const [i, d] of docks.entries()) {
     if (form === 'basin') {
       // On the arms' inner walls, dealt to one arm and the other, the first four tiles out from the quay.
       const u = T + 4 + (i >> 1) * P;
-      if (i % 2 === 0) unit(d, rect(f, u, u + 3, q0 + Q - 2, q0 + Q), at(f, u + 1, q0 + Q));
-      else unit(d, rect(f, u, u + 3, q1 - Q, q1 - Q + 2), at(f, u + 1, q1 - Q - 1));
+      if (i % 2 === 0) unit(d, rect(f, u, u + 3, q0 + Q - 3, q0 + Q), at(f, u + 1, q0 + Q));
+      else unit(d, rect(f, u, u + 3, q1 - Q, q1 - Q + 3), at(f, u + 1, q1 - Q - 1));
       continue;
     }
     // Along the outer wall: evenly, or in a wing either side of the gatehouse, counted out from it.
     const lo = i < (wings[0] as number), k = lo ? i : i - (wings[0] as number);
     const v = tower ? (lo ? t0 - 5 - k * P : t1 + 2 + k * P) : q0 + i * P + ((q1 - q0 - ((N - 1) * P + 3)) >> 1);
-    unit(d, rect(f, T - 2, T, v, v + 3), at(f, T, v + 1));
+    unit(d, rect(f, T - 3, T, v, v + 3), at(f, T, v + 1));
   }
   for (const r of berths) for (let y = r[1]; y < r[3]; y++) for (let x = r[0]; x < r[2]; x++) c.reserved.add(key(x, y));
 

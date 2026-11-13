@@ -47,10 +47,13 @@ function shapes(R: number, outline: Outline, cut: number, round: boolean): { hul
   return { hull, inside };
 }
 
-/** Strips a band room needs: its shorter side across the strips when it fits the band's depth, else its longer. */
+/**
+ * Strips a band room needs: its shorter side across the strips when it fits the band's depth, else its longer. A gun
+ * bay keeps its longer side on the hull: its mounts stand side by side against it.
+ */
 export const stripsFor = (r: RoomSpec): number => {
   const depth = DEEP * K - 2;
-  const along = Math.max(r.w, r.h) <= depth ? Math.min(r.w, r.h) : Math.max(r.w, r.h);
+  const along = Math.max(r.w, r.h) <= depth && r.role !== 'weapons' ? Math.min(r.w, r.h) : Math.max(r.w, r.h);
   return Math.max(1, Math.ceil((along + 1) / K));
 };
 

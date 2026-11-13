@@ -15,7 +15,7 @@ import { salvage } from './topoSalvage';
 import { trimThin } from './salvage';
 import { validateTemplate } from './validate';
 import { thinWalls } from './thinWalls';
-import { extractContainers } from './containerCells';
+import { extractContainers, type PlacedContainer } from './containerCells';
 import { openBareDocks } from './openDocks';
 import type { ArchetypeId, FactionDef, GenResult, GenRoom, HullFamilyDef, RoomRole, ShipRoleDef } from './types';
 
@@ -61,7 +61,7 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES,
+  recipes = RECIPES, airlocksAnyWay = false,
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), drones: new Map() };
@@ -82,7 +82,7 @@ function fitOut(
     }
     return draws.get(room) as RoomDraw;
   };
-  const rots = (id: string): number[] => rotsOf(id, defs[id] as ModuleDef);
+  const rots = (id: string): number[] => (airlocksAnyWay && defs[id]?.airlock ? [0, 1, 2, 3] : rotsOf(id, defs[id] as ModuleDef));
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
@@ -107,7 +107,7 @@ function fitOut(
     if (share !== undefined && (done.get(k) ?? 0) >= Math.max(1, Math.ceil((planned.get(k) ?? 0) * share))) { wanted[j.def] = (wanted[j.def] ?? 1) - 1; continue; }
     done.set(k, (done.get(k) ?? 0) + 1);
     const pm = (d && si >= 0 ? placeStep(lay, rng, j.room, d, si, rots(j.def)) : null)
-      ?? placeOne(lay, rng, j.def, [j.room], { spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
+      ?? placeOne(lay, rng, j.def, [j.room], { rots: rots(j.def), spread: !!defs[j.def]?.weapon, ...(j.spec.sealed ? { sealed: true } : {}) });
     if (!pm) continue;
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
@@ -166,7 +166,7 @@ function fitOut(
   return out;
 }
 
-function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: number, plan: ShipPlan, rows: string[], d: Fitted): ShipTemplate {
+function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: number, plan: Pick<ShipPlan, 'crew'>, rows: string[], d: Fitted): ShipTemplate {
   const tag = (seed >>> 0).toString(16).toUpperCase().padStart(8, '0').slice(-4);
   const modules: NonNullable<ShipTemplate['modules']> = d.lay.modules.map((m, i) => {
     const stock = d.stock.get(i);
@@ -245,6 +245,12 @@ export function generateAttempt(
 
 /** Extra validation of a finished template (stations add their own rules), returning problems. */
 export type ExtraCheck = (t: ShipTemplate, defs: Record<string, ModuleDef>) => string[];
+export interface FinishOpts {
+  immobile?: boolean;
+  check?: ExtraCheck;
+  /** Airlocks may face any way (the station assembly; the arranger's hulls keep theirs off the stern). */
+  airlocksAnyWay?: boolean;
+}
 
 /**
  * Crop the built structure, fit it out, make the template, validate it and take metrics: the shared back half of a
@@ -280,23 +286,53 @@ export function finishLayout(
   const rows = pruneDoors(framed, roomOf, width, roles);
   const byKey = new Map(b.parts.map((p) => [p.key, p.spec]));
   const specs = labels.map((l) => byKey.get(l.chunk) ?? b.chunkSpecs.get(`${l.chunk}:${l.letter}`));
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES);
+  return {
+    ...fitShell(rng, f, factionId, seed, role, archetype, plan, { rows, roomOf, width, height, roles, specs, containers }, topology, defs, n, opts,
+      comp ? (hall) => comp.debug(ox, oy, width, height, rows, hall, profile) : undefined),
+    thin,
+  };
+}
+
+/** A built structure, cropped: its tiles, the room of each floor tile, and each room's role and planned contents. */
+export interface Shell {
+  rows: string[];
+  roomOf: Int16Array;
+  width: number;
+  height: number;
+  roles: RoomRole[];
+  specs: (RoomSpec | undefined)[];
+  /** Cargo containers standing outside the hull, already placed. */
+  containers?: readonly PlacedContainer[];
+}
+
+/**
+ * Fit a shell out, make the template, validate it and take metrics. The arranger's structures come here through
+ * `finishLayout`; the station assembly (`assembly/station.ts`) hands its shell over directly.
+ */
+export function fitShell(
+  rng: Rng, f: FactionDef, factionId: string, seed: number, role: ShipRoleDef, archetype: ArchetypeId, plan: Pick<ShipPlan, 'crew'>, shell: Shell,
+  topology: string, defs: Record<string, ModuleDef>, n: number, opts: FinishOpts = {},
+  debug?: (hall: (x: number, y: number) => boolean) => GenResult['debug'],
+): GenResult {
+  const { rows, roomOf, width, height, roles, specs } = shell;
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, opts.airlocksAnyWay);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };
   const dockTile = new Set(opened.tiles);
   const fitted = opened.merged > 0 ? rows.map((r, y) => d.lay.cells.slice(y * d.lay.w, y * d.lay.w + r.length).join('')) : rows;
   const template = toTemplate(f, role, factionId, seed, plan, fitted, d);
-  template.modules = [...(template.modules ?? []), ...containers.map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
+  template.modules = [...(template.modules ?? []), ...(shell.containers ?? []).map((k) => ({ ...k, ...stockOf(rng, f, defs[k.def]) }))];
   const problems = d.error ? [d.error] : validateTemplate(template, defs, opts.immobile ? { immobile: true } : {});
   if (problems.length === 0 && opts.check) problems.push(...opts.check(template, defs));
-  const metrics = layoutMetrics(template, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x), defs);
+  const hall = (x: number, y: number): boolean => roles[roomOf[y * width + x] ?? -1] === 'hall' && !dockTile.has(y * width + x);
+  const metrics = layoutMetrics(template, hall, defs);
   const bad = metricViolation(metrics, f.metrics);
   if (bad && problems.length === 0) problems.push(bad);
   const rooms: GenRoom[] = roles.map((r, id) => ({ id, role: r, tiles: d.lay.roomTiles(id) }));
   return {
-    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, thin, docks,
-    ...(comp ? { debug: comp.debug(ox, oy, width, height, rows, (x, y) => roles[roomOf[y * width + x] ?? -1] === 'hall', profile) } : {}),
+    template, rooms, roomOf, width, height, role: role.id, archetype, topology, attempts: n + 1, problems, failures: [], metrics, docks,
+    ...(debug ? { debug: debug(hall) } : {}),
   };
 }
 

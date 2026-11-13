@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { assembleStation, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { modules } from './modules';
 import { assembled, programOf } from './stationRecipeFixture';
 import { stationRecipes } from './stationRecipes';
 import { stations } from './stations';
@@ -7,7 +8,8 @@ import { stations } from './stations';
 describe('station program', () => {
   it('merges crate rooms into warehouses that hold every crate', () => {
     const { rooms } = programOf('station.trading', 'hub', 1);
-    const cargo = rooms.filter((r) => r.role === 'cargo');
+    // The market's stalls are small stores of their own, not warehouses.
+    const cargo = rooms.filter((r) => r.role === 'cargo' && r.dept !== 'market');
     expect(cargo.length).toBeGreaterThan(0);
     expect(cargo.every((r) => r.warehouse && r.mods.length <= 24)).toBe(true);
     const crates = [{ role: 'cargo' as const, mods: Array<string>(6).fill('module.storage'), w: 4, h: 3 }, { role: 'cargo' as const, mods: Array<string>(5).fill('module.storage'), w: 4, h: 3 }];
@@ -58,6 +60,14 @@ describe('station recipes', () => {
       ],
     };
     expect(assembled(trunk, 'station.mining', 'station', 1)).toEqual([]);
+  });
+
+  it('fits a bazaar out through the shared fit-out with no problems: three airlocks, every gun mounted', () => {
+    const g = assembleStation(stations['station.trading'], 'station.trading', 'station', 1, modules, stationRecipes.bazaar[0] as Recipe);
+    expect(g.problems).toEqual([]);
+    expect(g.station.docks).toBe(3);
+    expect(g.station.guns).toBeGreaterThanOrEqual(4);
+    expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
   });
 
   it('rejects a recipe that leaves a department out, and says which', () => {

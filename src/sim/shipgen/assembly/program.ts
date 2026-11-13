@@ -22,6 +22,9 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
   return r.w >= r.h ? { ...r, w: r.w + along, h: r.h + across } : { ...r, w: r.w + across, h: r.h + along };
 }
 
+/** The airlock docks an assembled station of this kind has at a size: its own count where the kind gives one, two at least. */
+export const docksOf = (def: StationDef, size: StationSize): number => Math.max(2, def.assemblyDocks?.[size] ?? def.tiers[size].docks);
+
 /** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
 const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
@@ -103,7 +106,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
       support.push(r.dept === 'market' ? spec : grown(rng, spec, space));
     }
   }
-  const docks = Array.from({ length: Math.max(2, def.assemblyDocks?.[size] ?? t.docks) }, dockSpec);
+  const docks = Array.from({ length: docksOf(def, size) }, dockSpec);
   const cargo: RoomSpec[] = [];
   for (let left = t.crates; left > 0; left -= 6) cargo.push(grown(rng, cargoSpec(Math.min(6, left)), space));
   const hangars: RoomSpec[] = Array.from({ length: t.bays ?? 0 }, (): RoomSpec => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
