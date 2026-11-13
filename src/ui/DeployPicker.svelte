@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
-  import { Frame, tip } from './kit';
+  import { ActionButton, Frame, tip } from './kit';
   import type { UiDeploy } from './starmapApi';
 
   let { api, deploy }: { api: UiApi; deploy: UiDeploy } = $props();
@@ -101,8 +101,8 @@
       <li><i class="k you"></i>Your ship</li><li><i class="k ship"></i>Ship</li><li><i class="k hostile"></i>Hostile</li><li><i class="k keep"></i>Keep clear</li>
     </ul>
     <div class="actions">
-      <button onclick={useBest} disabled={!best} data-testid="deploy-auto"><Icon name="recenter" size={18} />Best spot</button>
-      <button class="go" onclick={go} disabled={!!error} data-testid="deploy-go"><Icon name="ship" size={18} />Deploy here</button>
+      <ActionButton disabled={!best} testid="deploy-auto" onclick={useBest}><Icon name="recenter" size={18} />Best spot</ActionButton>
+      <ActionButton tone="go" disabled={!!error} testid="deploy-go" onclick={go}><Icon name="ship" size={18} />Deploy here</ActionButton>
     </div>
   </div>
   </Frame>
@@ -137,7 +137,5 @@
   .k { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line-hi); }
   .k.you { background: color-mix(in srgb, var(--green) 35%, transparent); border-color: var(--green); }
   .k.ship { background: var(--dim); } .k.hostile { background: var(--red); } .k.keep { background: color-mix(in srgb, var(--red) 25%, transparent); }
-  .actions { display: flex; gap: 6px; }
-  .actions button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 38px; }
 </style>

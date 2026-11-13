@@ -13,7 +13,7 @@
     warnings: UiJumpWarnings | null; taking?: Set<number>; onToggle?: (id: number) => void; onConfirm: () => void; onCancel: () => void;
   } = $props();
   const decisions: DecisionOption[] = [
-    { id: 'cancel', label: 'Cancel', testId: 'jump-confirm-cancel' },
+    { id: 'cancel', label: 'Cancel', cancel: true, testId: 'jump-confirm-cancel' },
     { id: 'go', label: 'Jump anyway', primary: true, testId: 'jump-confirm-go' },
   ];
   // While open, game shortcuts (the combat HUD's Tab, weapon keys and so on) stand aside.

@@ -3,7 +3,7 @@
   import EventPanel from '../../src/ui/EventPanel.svelte';
   import FightReportCard from '../../src/ui/combat/FightReportCard.svelte';
   import Icon from '../../src/ui/Icon.svelte';
-  import { Chip, DecisionBar, Dialog, Frame, TipHost } from '../../src/ui/kit';
+  import { ActionButton, Chip, DecisionBar, Dialog, Frame, TipHost } from '../../src/ui/kit';
   import type { UiApi, UiFightReport } from '../../src/ui/api';
   import type { UiEventGrid } from '../../src/ui/starmapApi';
 
@@ -23,7 +23,7 @@
   } as unknown as UiFightReport;
   // The dialog is portalled to the body, so its spot is page-absolute: put it at the top of its own stage.
   $effect(() => { const st = document.querySelector<HTMLElement>('[data-cell=dialog]'); if (st) { const r = st.getBoundingClientRect(); document.documentElement.style.setProperty('--dlg-top', `${r.top + window.scrollY + 24}px`); } });
-  const two = [{ id: 'a', label: 'Cancel' }, { id: 'b', label: 'Jump anyway', primary: true }];
+  const two = [{ id: 'a', label: 'Cancel', cancel: true }, { id: 'b', label: 'Jump anyway', primary: true }];
   const three = [{ id: 'a', label: 'Offer help', note: 'Board as guests', primary: true }, { id: 'b', label: 'Drop out', note: 'No promises made' }, { id: 'c', label: 'Fly on', note: 'Continue the trip' }];
   const cells = [
     { id: 'floating', label: 'Floating window (Ship overview)' },
@@ -57,7 +57,7 @@
         {:else if c.id === 'deploy'}
           <div class="deploy" data-testid="lab-deploy"><Frame title="Deploy" style="background:var(--panel);padding:var(--sp-3) 0 0;box-shadow:var(--shadow-window)">
             {#snippet right()}<span class="node">Kestrel Reach</span>{/snippet}
-            <div class="dsheet"><span class="cell"><Icon name="target" size={18} /><b>Spot is clear.</b></span><div class="map"></div><div class="actions"><button>Best spot</button><button class="go">Deploy here</button></div></div>
+            <div class="dsheet"><span class="cell"><Icon name="target" size={18} /><b>Spot is clear.</b></span><div class="map"></div><div class="actions"><ActionButton onclick={() => {}}><Icon name="recenter" size={18} />Best spot</ActionButton><ActionButton tone="go" onclick={() => {}}><Icon name="ship" size={18} />Deploy here</ActionButton></div></div>
           </Frame></div>
         {:else if c.id === 'fight'}
           <FightReportCard {api} {report} />
@@ -90,7 +90,7 @@
   .dsheet { display: grid; gap: 8px; padding: 10px; }
   .map { height: 170px; border: 1px solid var(--line-hi); background: var(--panel-2); }
   .node { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 0 4px; }
-  .actions { display: flex; gap: 6px; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 38px; }
   .who { font-weight: 600; }
   .pad { padding: 14px; color: var(--dim); }
   .bars { position: absolute; left: 24px; top: 24px; width: 900px; display: grid; gap: 16px; background: var(--panel); }
