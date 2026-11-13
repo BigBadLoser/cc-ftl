@@ -3701,6 +3701,8 @@
   "gymRedD": {"hex": "#76302b", "set": "gym"},
   "gymGlass": {"hex": "#a9c9d3", "set": "gym"},
   "gymWater": {"hex": "#3d8aa3", "set": "gym"},
+  "gymLivery": {"hex": "#bab6a6", "set": "gym"},
+  "gymAmber": {"hex": "#cd8c28", "set": "gym"},
   "gymLit": {"hex": "#9ad8f0", "emissive": 0.9, "set": "gym"},
   "gymEyeR": {"hex": "#ff5a4a", "emissive": 1.2, "set": "gym"},
   "gymEyeA": {"hex": "#ffb347", "emissive": 1.2, "set": "gym"},
