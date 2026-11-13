@@ -135,8 +135,9 @@ CART_OVERLAYS = {"c11": [(single(cradle_floor, (1, 2), "fl"), 120), (single(crad
 
 # ---- rendering ------------------------------------------------------------------------------------------------------
 def tables():
-    from . import slab_load, slab_wheel
-    return {**slab_wheel.DESIGNS, **slab_load.DESIGNS, **CARTS}, {**slab_wheel.OVERLAYS, **CART_OVERLAYS}
+    from . import slab_fill, slab_load, slab_wheel
+    return ({**slab_wheel.DESIGNS, **slab_load.DESIGNS, **slab_fill.DESIGNS, **CARTS},
+            {**slab_wheel.OVERLAYS, **slab_fill.OVERLAYS, **CART_OVERLAYS})
 
 
 def build(v):
@@ -144,8 +145,8 @@ def build(v):
     k = K(f"slab_{v}", fp)
     slabs = fn(k)
     objs = k.build()
-    from . import slab_load, slab_wheel
-    pit = {**slab_wheel.PIT, **slab_load.PIT}.get(v)
+    from . import slab_fill, slab_load, slab_wheel
+    pit = {**slab_wheel.PIT, **slab_load.PIT, **slab_fill.PIT}.get(v)
     if pit:                                         # sunk in the floor: a holdout floor round the pit's mouth hides
         from .slab_kit import corner_fill, floor_fill   # what is under the floor outside it (the game's floor shows;
         #                                             wide: the iso camera sees under-floor parts past the footprint)
@@ -192,6 +193,8 @@ def scene_items(v):
             x, y = core.screen_xy(GV(*k.p(u, vv), z))
             px.append((round(x, 2), round(-y, 2)))
         corners.append(px)
+        if sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(px, px[1:] + px[:1])) >= 0:
+            continue                                # the face looks away: a mask would show it through an empty slot
         core.clear_scene_meshes()
         post.select(PAL)
         _, holdout, _ = build(v)

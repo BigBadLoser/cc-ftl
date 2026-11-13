@@ -69,14 +69,17 @@ def pit(k, deck, trim, gap=0.0):
         hazard(k, RP + 0.055, 0.05, w=0.08)
 
 
-def wheel(k, body, trim, skip=()):
-    """The slabs on the deck, each in a foot socket and a head clamp to the canopy's head ring (but those in `skip`)."""
+def wheel(k, body, trim, skip=(), empty=()):
+    """The slabs on the deck, each in a foot socket and a head clamp to the canopy's head ring (but those in `skip`;
+    those in `empty` keep their socket and clamp, the slab gone: a fill level's base)."""
     out = []
     for i, th in enumerate(angles()):
         if i in skip:
             continue
-        s = cassette(k, frame(th, Z0))
-        out.append(s)
+        s = frame(th, Z0)
+        if i not in empty:
+            cassette(k, s)
+            out.append(s)
         cup(k, s, body)
         s.box(k, L - 0.06, L + 0.08, -0.14, 0.14, -0.28, 0.08, body, face="steelD")   # the head clamp
         s.box(k, L - 0.03, L + 0.01, -0.14, 0.14, 0.08, 0.09, trim)
@@ -335,12 +338,12 @@ SCHEMES = {
 }
 
 
-def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0):
+def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0, empty=()):
     """s49 (and its paint schemes, s49a-c)."""
     P = P or scheme("navy", "hivis")
     ol, orr = 1.15, 0.45
     pit(k, P["deck"], P["guard"], gap)
-    out = wheel(k, P["clamp"], P["accent"], skip)
+    out = wheel(k, P["clamp"], P["accent"], skip, empty)
     skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
     jamb(k, FRONT + ol, P["wall"], P["stripe"])
     jamb(k, FRONT - orr, P["wall"], P["stripe"])
