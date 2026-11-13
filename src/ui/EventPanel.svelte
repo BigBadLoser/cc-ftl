@@ -88,7 +88,7 @@
 
 <style>
   /* Top centre, clear of the crew bar; the combat panel (left) and the right column keep their space. */
-  .card { position: fixed; top: calc(var(--hdr) + var(--sat) + 10px); left: 50%; transform: translateX(-50%); width: min(380px, calc(100vw - 16px)); z-index: 6; pointer-events: none; }
+  .card { position: fixed; top: calc(var(--hdr) + var(--sat) + 10px); left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 16px)); z-index: 6; pointer-events: none; }
   .body { display: grid; gap: 8px; padding: 6px 10px 10px; }
   .roster { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
   .row { width: 100%; min-height: 36px; display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: var(--panel-2); border: 1px solid var(--line); text-align: left; }
