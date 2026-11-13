@@ -6,6 +6,9 @@ three are bigger; they try the pot's stance and the plant.
   pl1b upright blades: the same taller pot with tall upright sword blades (yellow edged) instead of the bush
   pl1c footed: the pot on three short steel feet with a steel band at the waist, a looser drooping bush
 
+Approved (user, 2026-11-13): PL1A (`pl1a`), the planter's art: a tall tapered deep-blue glazed ceramic pot with a
+lighter blue rim and a full broad-leaf bush (two greens); palette set planter, 1 x 1.
+
 All in px of the tile (u, v -16..16, z up)."""
 import math
 import random
