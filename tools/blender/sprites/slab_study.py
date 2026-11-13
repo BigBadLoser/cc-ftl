@@ -15,7 +15,8 @@ import json
 import math
 import os
 
-from . import core, env_build as E, post
+from . import core, post
+from . import env_build as E
 from .core import G as GV
 from .modkit import K
 from .recovery_study import layer
@@ -47,7 +48,7 @@ class Slab:
         return add(self.O, (l, self.U), (w, self.Wd), (n, self.N))
 
     def box(self, k, l0, l1, w0, w1, n0, n1, col, face=None):
-        c = lambda l, w, n: self.p(l, w, n)                                  # noqa: E731
+        c = lambda l, w, n: self.p(l, w, n)
         quad(k, [c(l0, w0, n1), c(l0, w1, n1), c(l1, w1, n1), c(l1, w0, n1)], face or col, self.N)
         if face == "slbFace":                       # the face is a screen: unlit, its palette tone exact (a lit face
             idx, alb, _, glow = k.m.f[-1]           # sits on a shade step and breaks up into ragged specks)
@@ -94,10 +95,12 @@ def beam(k, a, b, w, h, col, top=None):
 
 
 # ---- the cart (hover B: a floating cradle) --------------------------------------------------------------------------
-def cradle(k):
-    """c11: two emitter clamps hold the slab's ends in the air, a push bar on the foot clamp."""
-    z = 0.62
-    for v, h in ((-1.05, z - 0.06), (1.05, z + 0.14)):
+def cradle(k, deg=6.0):
+    """c11: two emitter clamps hold the slab's ends in the air, a push bar on the foot clamp; the slab tipped `deg`
+    head up (round 35: the user found 6 deg looked wrong; c11f carries it level, c11t clearly tipped)."""
+    z, a = 0.62, math.radians(deg)
+    for v in (-1.05, 1.05):
+        h = z + (v + 0.98) * math.tan(a) - 0.06
         k.box(0, v, h - 0.16, 0.98, 0.2, 0.34, "dark", top="steelD")          # the clamp
         k.cyl(0, v, h - 0.2, 0.16, 0.04, "steelD", top="steel", sides=14)    # its emitter
         k.cyl(0, v, h - 0.21, 0.13, 0.012, "slbCy", sides=14)
@@ -105,12 +108,12 @@ def cradle(k):
     for u in (-0.4, 0.4):                                                    # the push bar
         k.box(u, -1.2, z - 0.1, 0.05, 0.05, 0.6, "steel", top="steelL")
     k.box(0, -1.2, z + 0.48, 0.86, 0.06, 0.06, "steelL")
-    a = math.radians(6)
     return [cassette(k, Slab((0.0, -0.98, z), (0.0, math.cos(a), math.sin(a)), (0.0, -math.sin(a), math.cos(a))))]
 
 
-def cradle_beams(k):
-    for v, h in ((-1.05, 0.56), (1.05, 0.76)):
+def cradle_beams(k, deg=6.0):
+    for v in (-1.05, 1.05):
+        h = 0.62 + (v + 0.98) * math.tan(math.radians(deg)) - 0.06
         k.cyl(0, v, 0.0, 0.22, h - 0.37, "slbFilm", sides=14, rtop=0.13)
 
 
@@ -132,9 +135,11 @@ def single(build, fp, name):
     return go
 
 
-CARTS = {"c11": (cradle, (1, 2))}
-CART_OVERLAYS = {"c11": [(single(cradle_floor, (1, 2), "fl"), 120), (single(cradle_beams, (1, 2), "bm"), 55),
-                         (single(cradle_sheet, (1, 2), "st"), 60)]}
+CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0}
+CARTS = {v: ((lambda k, d=d: cradle(k, d)), (1, 2)) for v, d in CART_TIP.items()}
+CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120),
+                     (single(lambda k, d=d: cradle_beams(k, d), (1, 2), "bm"), 55),
+                     (single(cradle_sheet, (1, 2), "st"), 60)] for v, d in CART_TIP.items()}
 
 
 # ---- rendering ------------------------------------------------------------------------------------------------------
@@ -152,7 +157,10 @@ def build(v):
     from . import slab_fill, slab_load, slab_wheel
     pit = {**slab_wheel.PIT, **slab_load.PIT, **slab_fill.PIT}.get(v)
     if pit:                                         # sunk in the floor: a holdout floor round the pit's mouth hides
-        from .slab_kit import corner_fill, floor_fill   # what is under the floor outside it (the game's floor shows;
+        from .slab_kit import (  # what is under the floor outside it (the game's floor shows;
+            corner_fill,
+            floor_fill,
+        )
         #                                             wide: the iso camera sees under-floor parts past the footprint)
         f = K(f"slab_{v}_floor", fp)
         if callable(pit):                           # a mouth that isn't round (radius by angle)
@@ -170,6 +178,7 @@ def build(v):
 def job(v):
     def run(v=v):
         import bpy
+
         from .recovery_study import SAMPLES
         bpy.context.scene.cycles.samples = SAMPLES
         try:
