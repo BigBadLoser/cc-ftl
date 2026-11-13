@@ -51,7 +51,7 @@ def body(k, torso=True):
            cap0=SHELL_D)
 
 
-def head(k, shell, z=49, face=None, eye="slit", r=5):
+def head(k, shell, z=49, face=None, eye="slit", r=5, eyecol=LIT):
     sw(k, [(0, 0, z - 3, 2), (0, 0, z, 2)], FRAME_D)                               # neck
     sw(k, [(0, 0, z, r - 1, r - 1.5), (0, 0, z + 4, r, r - 0.5), (0, 0, z + 8, r - 2, r - 2), (0, 0, z + 9, 1)],
        shell, p=2.4)
@@ -63,7 +63,7 @@ def head(k, shell, z=49, face=None, eye="slit", r=5):
         pass
     elif eye == "slit":
         sw(k, [(r * 1.1 * math.sin(t), r * 0.98 * math.cos(t), zc + 0.5, 0.5, 0.7) for t in (-0.8, -0.4, 0, 0.4, 0.8)],
-           LIT, p=2.0)
+           eyecol, p=2.0)
     else:
         sw(k, [(0, r - 0.8, zc, 1.6), (0, r + 0.3, zc, 1.4)], LIT, p=2.0)
 
@@ -212,9 +212,9 @@ def head_cap(k):
     t_visor(k, SHELL)
 
 
-def head_plates(k):
+def head_plates(k, eyecol=LIT):
     """Dark head, white ear plates either side, a white T."""
-    head(k, FRAME_D)
+    head(k, FRAME_D, eyecol=eyecol)
     for s in (-1, 1):
         sw(k, [(s * 4.4, -0.5, 53, 3, 3.4), (s * 5.6, -0.5, 53, 2.6, 3)], SHELL, p=2.6)
     t_visor(k, SHELL)
@@ -241,3 +241,8 @@ def boxer3(face, name):
 
 for _n, _face in (("v3p", head_cap), ("v3q", head_plates), ("v3r", head_white)):
     DESIGNS[_n] = turned(boxer3(_face, f"ex_{_n}"), 0.0, f"ex_{_n}")
+
+
+# ---- round 12: v3q (white ear plates) with other eye colours ----------------------------------------------------------
+for _n, _c in (("v3qr", "gymEyeR"), ("v3qa", "gymEyeA"), ("v3qg", "gymEyeG")):
+    DESIGNS[_n] = turned(boxer3(lambda k, c=_c: head_plates(k, c), f"ex_{_n}"), 0.0, f"ex_{_n}")
