@@ -412,7 +412,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
             const o = first;
-            return o ? [{ layer, art: { s: o, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
+            return o ? [{ layer, art: { s: o, tint: layer.tint ?? 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
           }
           if (def.container && !first) {
             // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
