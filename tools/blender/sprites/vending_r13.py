@@ -84,9 +84,12 @@ def stroke(line, w0, w1, seed):
 
 
 def scribble(line, half=0.7):
-    line = spline(line, 8)
+    line = line if len(line) > 40 else spline(line, 8)                     # (dense lines are already smooth)
+    lo_s, hi_s = min(p[0] for p in line) - half, max(p[0] for p in line) + half
 
     def hit(s, z):
+        if not lo_s <= s <= hi_s:
+            return False
         t, d = along(line, s, z)
         return abs(d) <= half and 0.0 < t < 1.0 or math.dist((s, z), line[0]) <= half or \
             math.dist((s, z), line[-1]) <= half
