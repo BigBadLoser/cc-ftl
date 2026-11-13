@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AllegianceC, CrewC, DraftedC, ModuleC, NeedsC, PositionC, ShipC, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
+import { AllegianceC, AssignmentC, CrewC, DraftedC, ModuleC, NeedsC, PositionC, ShipC, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
 import { JobC, type Job } from '../sim/crew/components';
 import { CarryingC } from '../sim/items/components';
 import { performStasis } from '../sim/stasis/jobs';
+import { parkCart } from '../sim/stasis/cart';
+import { floorTiles } from '../sim/stasis/place';
+import { isTileWalkable } from '../sim/modules/walk';
 import { Struct, writeStruct } from '../sim/structure';
 import { shipGrid } from '../sim/regions';
 import { abortTask } from '../sim/ai/task';
@@ -13,7 +16,7 @@ import { accessTile, footprintTiles } from '../sim/modules/footprint';
 import { footprintBlockedByCrew, removeModule } from '../sim/modules/spawn';
 import { deserialize, serialize } from '../sim/save';
 import { SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
-import { isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { cartRest, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
 import { RESERVE_TICKS, SLAB_ITEM } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
@@ -205,5 +208,57 @@ describe('stasis wheel', () => {
     expect(wheelSlots(sim.world, wheel).filter((s) => s.kind === 'empty')).toHaveLength(10);
     expect(sim.world.query(JobC).some((j) => sim.world.get(j, JobC)?.kind === 'stasis')).toBe(false);
     expect(isFrozen(sim, prisoner)).toBe(false);
+  });
+
+  it('a stopped carrier\'s cart parks beside them on free floor, toward the prisoner, and stays put until they walk', () => {
+    const { sim, prisoner } = prisonGame();
+    const sealing = (): number => sim.world.query(CarryingC).find((id) => {
+      const job = sim.world.get(sim.world.get(id, AssignmentC)?.jobId ?? 0, JobC);
+      return job?.stasis?.phase === 'seal' && !walking(sim.world, id) && !!cartRest(sim.world, id);
+    }) ?? 0;
+    until(sim, () => sealing() !== 0);
+    const crew = sealing();
+    expect(crew).not.toBe(0);
+    const at = sim.world.get(crew, PositionC)!;
+    const rest = cartRest(sim.world, crew)!;
+    const [a, b] = floorTiles(rest.x, rest.y, rest.rot);
+    const near = [a, b].find((t) => Math.abs(t.x - at.x) + Math.abs(t.y - at.y) === 1);
+    const far = [a, b].find((t) => Math.abs(t.x - at.x) + Math.abs(t.y - at.y) === 2);
+    expect(near && far).toBeTruthy(); // straight out from the carrier, the bar end beside them
+    const grid = shipGrid(sim, playerShip(sim) as number)!;
+    for (const t of [a, b]) expect(isTileWalkable(sim, grid, t.x, t.y)).toBe(true);
+    const p = sim.world.get(prisoner, PositionC)!;
+    expect([a, b].some((t) => t.x === p.x && t.y === p.y)).toBe(false);
+    // Toward the prisoner where there is room: no other side is closer to them.
+    const side = { x: near!.x - at.x, y: near!.y - at.y };
+    const best = parkCart(sim, crew, { x: at.x, y: at.y }, { x: p.x, y: p.y });
+    expect(best).toEqual(rest);
+    expect(side.x * (p.x - at.x) + side.y * (p.y - at.y)).toBeGreaterThanOrEqual(0);
+    // Stable while they stand and work.
+    for (let i = 0; i < 5 && !walking(sim.world, crew); i++) {
+      run(sim, 1);
+      if (!walking(sim.world, crew) && cartRest(sim.world, crew)) expect(cartRest(sim.world, crew)).toEqual(rest);
+    }
+    // Walking: no rest.
+    until(sim, () => walking(sim.world, crew));
+    expect(cartRest(sim.world, crew)).toBeNull();
+  });
+
+  it('parks on the side toward the target, never on it, and finds none when boxed in', () => {
+    const { sim } = prisonGame();
+    const crew = playerCrew(sim)[1] as number;
+    sim.world.add(crew, CarryingC, { item: SLAB_ITEM, count: 1 });
+    const at = sim.world.get(crew, PositionC)!;
+    const grid = shipGrid(sim, playerShip(sim) as number)!;
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
+      const near = { x: at.x + dx, y: at.y + dy }, far = { x: at.x + 2 * dx, y: at.y + 2 * dy };
+      if (!isTileWalkable(sim, grid, near.x, near.y) || !isTileWalkable(sim, grid, far.x, far.y)) continue;
+      const r = parkCart(sim, crew, at, { x: at.x + 5 * dx, y: at.y + 5 * dy })!;
+      expect(floorTiles(r.x, r.y, r.rot)).toEqual(expect.arrayContaining([near, far])); // the side toward a far target
+      const onTarget = parkCart(sim, crew, at, near); // the target beside them: never parked on it
+      expect(onTarget && floorTiles(onTarget.x, onTarget.y, onTarget.rot).some((t) => t.x === near.x && t.y === near.y)).toBeFalsy();
+    }
+    for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) writeStruct(grid, at.x + dx, at.y + dy, Struct.Wall);
+    expect(parkCart(sim, crew, at, null)).toBeNull();
   });
 });

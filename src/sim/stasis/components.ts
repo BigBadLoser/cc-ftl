@@ -37,6 +37,18 @@ export interface Stasis {
 }
 export const StasisC = defineComponent<Stasis>('stasis');
 
+/**
+ * On a crew member pushing a slab on a hover cart while they stand still: where the cart is parked, on (x, y) and the next tile along +x (`rot` 0)
+ * or +y (`rot` 1), its push bar end beside them. Set by the stasis system when they stop, kept until they walk again or the cart is gone. Read it
+ * through `cartRest` (stasis/query.ts).
+ */
+export interface CartRest {
+  x: number;
+  y: number;
+  rot: 0 | 1;
+}
+export const CartRestC = defineComponent<CartRest>('cartRest');
+
 /** Where a seal job takes its empty slab from: a wheel slot, a storage module, or a loose stack on the floor (entity ids). */
 export interface SlabSource {
   kind: 'wheel' | 'storage' | 'floor';

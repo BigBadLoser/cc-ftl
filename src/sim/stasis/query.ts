@@ -1,4 +1,4 @@
-import { AssignmentC, JobC, PositionC } from '../crew/components';
+import { AssignmentC, JobC, PathC, PositionC } from '../crew/components';
 import type { Tile } from '../crew/pathfind';
 import { CarryingC } from '../items/components';
 import { ModuleC, type Module } from '../modules/components';
@@ -7,7 +7,7 @@ import type { ModuleDef } from '../registry';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { World } from '../ecs';
 import type { Sim } from '../sim';
-import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from './components';
+import { CartRestC, SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from './components';
 import { floorTiles } from './place';
 import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
@@ -102,6 +102,24 @@ export function carriedSlabOf(world: World, crew: number): number {
 /** True if the crew member is pushing a slab on a hover cart: a full one (a prisoner's) or an empty one they fetched. The renderer draws the cart from this. */
 export function onCart(world: World, crew: number): boolean {
   return world.get(crew, CarryingC)?.item === SLAB_ITEM || carriedSlabOf(world, crew) !== 0;
+}
+
+/** True while the crew member is on the move: mid-step or with steps left to walk. */
+export function walking(world: World, crew: number): boolean {
+  const p = world.get(crew, PositionC);
+  return !!p && (p.toX !== p.x || p.toY !== p.y || p.progress > 0 || (world.get(crew, PathC)?.steps.length ?? 0) > 0);
+}
+
+/**
+ * Where the hover cart of a crew member pushing a slab (`onCart`) stands while they are not walking: its two tiles, (x, y) and the next along +x
+ * (`rot` 0) or +y (`rot` 1), as `floorTiles`. One tile is beside the carrier and the cart lies straight out from them, so its push bar touches
+ * them; it is on free walkable floor (no floor slab, no other parked cart), toward the job's target where it can be but never on it. Chosen once
+ * when they stop and kept until they walk again (`CartRestC`, set by the stasis system). Null while walking, when not carting, or when no side
+ * had room (then no cart is drawn).
+ */
+export function cartRest(world: World, crew: number): { x: number; y: number; rot: 0 | 1 } | null {
+  const r = world.get(crew, CartRestC);
+  return r && onCart(world, crew) && !walking(world, crew) ? { x: r.x, y: r.y, rot: r.rot } : null;
 }
 
 /** True if the crew member has the prisoner's slab on their cart for the stasis job they hold (anything else is a carry that ended). */
