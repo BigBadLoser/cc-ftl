@@ -59,7 +59,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "bn18g": "BN18G  four frames", "bn18h": "BN18H  splayed ends", "bn18i": "BN18I  stretcher",
          "bn18j": "BN18J  plinth", "bn18k": "BN18K  sled legs", "bn18l": "BN18L  back spine",
          "bn18m": "BN18M  end T-legs", "bn18n": "BN18N  panel ends", "bn18o": "BN18O  posts",
-         "pl1": "PL1  glazed pot", "pl2": "PL2  grow trough", "pl3": "PL3  bio-dome"}
+         "pl1": "PL1  glazed pot", "pl2": "PL2  grow trough", "pl3": "PL3  bio-dome",
+         "pl1a": "PL1A  taller", "pl1b": "PL1B  upright blades", "pl1c": "PL1C  footed"}
 CW, CH = 200, 220
 
 

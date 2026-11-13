@@ -3765,5 +3765,8 @@
   "plSuccD": {"hex": "#4f7a73", "set": "planter"},
   "plFrond": {"hex": "#557d5c", "set": "planter"},
   "plGlass": {"hex": "#b9d6d8", "set": "planter"},
-  "plLamp": {"hex": "#ffd9a0", "emissive": 0.7, "set": "planter"}
+  "plLamp": {"hex": "#ffd9a0", "emissive": 0.7, "set": "planter"},
+  "plSteel": {"hex": "#9aa3ab", "set": "planter"},
+  "plBlade": {"hex": "#5d8a4a", "set": "planter"},
+  "plBladeE": {"hex": "#b9b46a", "set": "planter"}
 }

@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "planter2":      # look study, preview only (not in RENDERED): PL1 refined, r2
+        from . import planter_r2
+        return planter_r2.jobs(), "only:planter"
     if name == "planter":       # look study, preview only (not in RENDERED): planter designs, r1
         from . import planter_study
         return planter_study.jobs(), "only:planter"
