@@ -224,8 +224,12 @@ program; sheets with `--family crescent`.
 - At hub size (crew 44, twelve guns): 12 of 12 assemble at R 44 to 52: 117 to 129 by 106 (freight pier), 153 to 165
   by 90 (pier foot), 173 to 187 by 90 (market street). The pier doubles in length and runs far past the ring; the old
   trade hubs are 107 to 126 by 105. A ring may now grow past R 48 (its grid grows with it).
+- Per-size recipes: `Recipe.sizes` replaces fields at a size tier (`recipeAt`). At hub size the pier-foot crescent puts
+  its warehouses on the basin floor against the east side, either side of the pier (ring option `inboard`; the user
+  picked mock P2), and the pier carries the stalls and the harbour: 124 to 129 by 98 to 106, every seed fitted out
+  with no problems (six airlocks, twelve guns, crew of 44).
 
-Open: at hub size the pier is too long (pier foot and market street); the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
+Open: at hub size the market street's pier is still too long (173 to 187 wide); the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
 head is one open hall with three airlocks; the market street's warehouses open onto the ring, not the market; seeds
 differ little; no stall module exists.
 
