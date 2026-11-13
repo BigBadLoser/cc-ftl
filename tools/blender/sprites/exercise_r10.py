@@ -69,7 +69,7 @@ def shell_head(p, c, s, eye_r):
 
 
 def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH, sh_f=0.0, pose=None,
-         mitts=False, glove_k=1.0, limb=MID):
+         mitts=False, glove_k=1.0, limb=MID, plate_k=1.0, fore=None):
     """Guard arms: a hinge disc and a livery shoulder plate, a dark strut with a grey plate to a big dark elbow hinge,
     a grey forearm plate to the red glove held up in front of the face."""
     for sx in (1, -1):
@@ -78,12 +78,13 @@ def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=
         e = (sx * el_[0], el_[1] + sh_f * 0.5, el_[2])                             #  elbow and glove follow half as far)
         w = (sx * wr_[0], wr_[1] + sh_f * 0.5, wr_[2])
         hinge(p, sh, 0.06 * k, 0.09 * k)
-        p.rbox((sx * (sh_x + 0.02), sh_f, sh_z + 0.04), (0.15 * k, 0.19 * k, 0.14 * k), plate, r=0.03, taper=0.8,
+        pk = k * plate_k
+        p.rbox((sx * (sh_x + 0.02), sh_f, sh_z + 0.04), (0.15 * pk, 0.19 * pk, 0.14 * pk), plate, r=0.03, taper=0.8,
                rot=(0, sx * 12, 0))                                                # shoulder plate
         p.strut(sh, e, 0.03 * k, DARK)
         p.plate(along(sh, e, 0.06), along(e, sh, 0.05), 0.085 * k, 0.09 * k, limb, taper=1.1, r=0.02)  # upper arm
         hinge(p, e, 0.055 * k, 0.13 * k)                                           # elbow
-        p.plate(along(e, w, 0.04), along(w, e, 0.04), 0.1 * k, 0.11 * k, limb, taper=0.8, r=0.02)      # forearm
+        p.plate(along(e, w, 0.04), along(w, e, 0.04), 0.1 * k, 0.11 * k, fore or limb, taper=0.8, r=0.02)   # forearm
         p.rbox(along(w, e, 0.01), (0.07 * k, 0.07 * k, 0.05 * k), DARK_L, r=0.015)                    # wrist
         if mitts:                                                                  # a focus mitt held up, facing out
             p.ball((w[0], w[1] + 0.03, w[2] + 0.04), (0.07 * k, 0.04 * k, 0.085 * k), DARK_L)
@@ -183,4 +184,16 @@ ARMS = {
     "v4l": dict(el=(0.5, 0.04, 1.06), wr=(0.48, 0.1, 1.34), glove_k=0.85, limb="gymRail"),  # goalpost guard: upper
 }                                                                                  # arms out level, forearms up
 for _n, _kw in ARMS.items():
+    DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, lean=0.0, **kw))
+
+
+# ---- round 21: v4b upright, the guard kept, its arms tuned ---------------------------------------------------------------
+GUARD = {
+    "v4m": dict(el=(0.34, 0.1, 0.82), wr=(0.24, 0.28, 1.08), glove_k=0.75, limb="gymRail"),   # smaller gloves held
+                                                                                   # higher and apart, light limbs
+    "v4n": dict(el=(0.34, 0.08, 0.74), wr=(0.24, 0.28, 1.04), glove_k=0.75, limb="gymRail", plate_k=0.8),  # + smaller
+                                                                                   # shoulder plates, longer upper arms
+    "v4o": dict(el=(0.34, 0.1, 0.82), wr=(0.24, 0.28, 1.08), glove_k=0.75, fore=CLOTH),   # forearms armoured in
+}                                                                                  # the livery, like the body
+for _n, _kw in GUARD.items():
     DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, lean=0.0, **kw))

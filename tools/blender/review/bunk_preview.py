@@ -39,7 +39,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "v4b1": "V4b1  shoulders +1.6 px", "v4b2": "V4b2  shoulders +2.9 px", "v4b3": "V4b3  shoulders +4.2 px",
          "v4d": "V4d  high guard", "v4e": "V4e  boxer stance", "v4f": "V4f  focus mitts",
          "v4g": "V4g  upright, high guard", "v4h": "V4h  slight lean, high guard", "v4i": "V4i  upright, first guard",
-         "v4j": "V4j  arms at rest", "v4k": "V4k  elbows wide", "v4l": "V4l  goalpost guard"}
+         "v4j": "V4j  arms at rest", "v4k": "V4k  elbows wide", "v4l": "V4l  goalpost guard",
+         "v4m": "V4m  guard, small gloves", "v4n": "V4n  + small shoulders", "v4o": "V4o  + livery forearms"}
 CW, CH = 200, 220
 
 
