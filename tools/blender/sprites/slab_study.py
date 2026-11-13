@@ -125,15 +125,20 @@ def cradle_beams(k, deg=6.0):
         k.cyl(0, v, 0.0, 0.22, 0.62 + tip(v, deg) - 0.43, "slbFilm", sides=14, rtop=0.13)
 
 
-def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85)):
+def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85), end=None):
     """Round 37: the lift field as rings under each emitter (not the solid cone), widening to the floor; fs: each
-    ring's place down from the emitter (0) to the floor (1)."""
+    ring's place down from the emitter (0) to the floor (1). end (round 41, how a ring finishes): "floor" dims in two
+    palette steps to the floor, "air" dims out two thirds of the way down, "ripple" spreads fast and dims at the floor;
+    None: full bright all the way."""
     from .slab_wheel import annulus
     for v in (-CV, CV):
         top = 0.62 + tip(v, deg) - 0.29                 # just under the emitter
         for f in fs:
-            z, r = top * (1 - f), 0.15 + 0.09 * f
-            annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, "slbCy", n=28)
+            z, r = top * (1 - (0.65 if end == "air" else 1.0) * f), 0.15 + 0.09 * f
+            if end == "ripple":
+                r += 0.3 * max(0.0, (f - 0.6) / 0.4) ** 2
+            col = "slbCy" if end is None or f < 0.6 else "slbCyM" if f < 0.8 else "slbCyD"
+            annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, col, n=28)
 
 
 class _Shift:
@@ -195,22 +200,25 @@ CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d
 HOVER_N, RINGS = 6, 3
 
 
-def hover_frame(n, rings=RINGS):
+def hover_frame(n, rings=RINGS, floor=True):
     fs = [(i + n / HOVER_N) / rings for i in range(rings)]
-    return tuple(f for f in fs if f > 0.04) + (1.0,)        # (one just out of the emitter is still inside it; the
-                                                            # one on the floor stays, so a ring landing merges in)
+    return tuple(f for f in fs if f > 0.04) + ((1.0,) if floor else ())    # (one just out of the emitter is still
+                                                            # inside it; one on the floor stays: a ring landing merges)
 
 
-def hover_design(n, rings=RINGS):
+def hover_design(n, rings=RINGS, end=None):
     def go(k):
-        hover_rings(k, 0.0, fs=hover_frame(n, rings))
+        hover_rings(k, 0.0, fs=hover_frame(n, rings, floor=end is None), end=end)
         return cradle(k, 0.0)
     return go
 
 
-for _n, (_id, _r) in ((n, x) for n in range(HOVER_N) for x in (("c11h", 3), ("c11g", 2))):
-    CARTS[f"{_id}{_n}"] = (hover_design(_n, _r), (1, 2))                   # c11h: three rings, c11g: two
-    CART_OVERLAYS[f"{_id}{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120), (single(cradle_sheet, (1, 2), "st"), 60)]
+HOVERS = {"c11h": (3, None), "c11g": (2, None), "c11a": (2, "floor"), "c11b": (2, "air"), "c11c": (2, "ripple")}
+for _id, (_r, _e) in HOVERS.items():                        # c11h/g: three/two rings and the floor ring (round 40)
+    for _n in range(HOVER_N):
+        CARTS[f"{_id}{_n}"] = (hover_design(_n, _r, _e), (1, 2))
+        CART_OVERLAYS[f"{_id}{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120),
+                                        (single(cradle_sheet, (1, 2), "st"), 60)]
 
 
 # ---- rendering ------------------------------------------------------------------------------------------------------

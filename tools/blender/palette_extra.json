@@ -4147,6 +4147,16 @@
     "emissive": 2.0,
     "set": "slab"
   },
+  "slbCyM": {
+    "hex": "#4fb4c4",
+    "emissive": 1.0,
+    "set": "slab"
+  },
+  "slbCyD": {
+    "hex": "#2c6874",
+    "emissive": 0.5,
+    "set": "slab"
+  },
   "slbFilm": {
     "hex": "#9fe6ff",
     "set": "slab"
