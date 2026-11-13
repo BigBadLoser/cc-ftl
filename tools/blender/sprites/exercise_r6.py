@@ -11,7 +11,7 @@ import math
 
 from .bunk_study import _px
 from .exercise_r4 import FRAME, FRAME_D, LIT, PAD, PAD_D, RAIL, RUBBER_D, SHELL, SHELL_D, build, sweep
-from .exercise_r5 import loop
+from .exercise_r5 import loop, v3
 from .exercise_study import FP
 from .research_kit import Bench
 
@@ -96,7 +96,10 @@ def v3c():
     return build(k)
 
 
-DESIGNS = {"v3a": v3a, "v3b": v3b, "v3c": v3c}
+DESIGNS = {"v3a": v3a, "v3b": v3b, "v3c": v3c,                                   # (round 7, v3 picked again:)
+           "v3d": lambda: v3(chest=False, name="ex_v3d"),                          # no chest pad
+           "v3e": lambda: v3(mat=False, name="ex_v3e"),                            # no floor mat
+           "v3f": lambda: v3(chest=False, mat=False, name="ex_v3f")}               # neither
 
 
 def jobs():

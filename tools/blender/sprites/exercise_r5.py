@@ -67,15 +67,16 @@ def v2():
     return build(k)
 
 
-def v3():
-    k = Bench("ex_v3", FP)
+def v3(chest=True, mat=True, name="ex_v3"):
+    k = Bench(name, FP)
     V = -18                                                                        # the droid's v
     sweep(k, [(0, V, 0, 11, 11), (0, V, 3, 10, 10), (0, V, 6, 6, 6), (0, V, 8, 3, 3)], FRAME_D, p=2.0)   # weighted base
     sweep(k, [(0, V, 8, 2, 2), (0, V, 24, 2, 2)], RAIL)                            # post
     loop(k, 0, V, 24, 6, 1, FRAME, plane="uv")                                     # gimbal ring
     sweep(k, [(0, V, 24, 5, 3.5), (0, V, 30, 8, 5), (0, V, 40, 9, 5.5), (0, V, 46, 6, 4)], SHELL, p=2.6,
           cap0=SHELL_D)                                                            # torso
-    sweep(k, [(0, V + 3, 30, 5, 2), (0, V + 4, 42, 6, 2.2)], PAD, p=3)             # chest pad
+    if chest:
+        sweep(k, [(0, V + 3, 30, 5, 2), (0, V + 4, 42, 6, 2.2)], PAD, p=3)         # chest pad
     sweep(k, [(0, V, 46, 2, 2), (0, V, 49, 2, 2)], FRAME_D)                        # neck
     sweep(k, [(0, V, 49, 4, 4), (0, V, 53, 5, 4.5), (0, V, 57, 3, 3), (0, V, 58, 1, 1)], SHELL, p=2.4)   # head
     sweep(k, [(-3, V + 4, 53, 1, 0.8), (3, V + 4, 53, 1, 0.8)], LIT)               # visor slit
@@ -83,9 +84,10 @@ def v3():
         sweep(k, [(s * 9, V, 42, 2.5, 2.5), (s * 12, V + 4, 34, 2.2, 2.2), (s * 8, V + 10, 42, 2.2, 2.2)], FRAME)
         sweep(k, [(s * 8, V + 9, 40, 3, 3), (s * 7, V + 12, 44, 4, 4), (s * 6, V + 14, 47, 3, 3)], PAD, p=2.2)
         sweep(k, [(s * 9, V, 43, 3.5, 3.5), (s * 10, V, 44, 3, 3)], SHELL, p=2.2)  # shoulders
-    _px(k, -14, 14, -4, 30, 0, 1, RUBBER_D)                                        # mat
-    _px(k, -14, 14, 28, 30, 0, 2, PAD_D)                                           # its red edge
-    _px(k, -14, 14, -4, -2, 0, 2, PAD_D)
+    if mat:
+        _px(k, -14, 14, -4, 30, 0, 1, RUBBER_D)                                    # mat
+        _px(k, -14, 14, 28, 30, 0, 2, PAD_D)                                       # its red edge
+        _px(k, -14, 14, -4, -2, 0, 2, PAD_D)
     return build(k)
 
 
