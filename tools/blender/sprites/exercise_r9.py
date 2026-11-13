@@ -1,0 +1,114 @@
+"""Exercise look study round 9 (family `exercise9`, palette set gym, preview only, r0): the sparring droid turned to
+face the camera square (45 degrees on the footprint), so both arms and the face show. Built in the droid's own frame
+(x to its left-right on screen, y toward the camera, z up) and turned onto the footprint by `D`.
+
+  v3j boxer: a dark head with a lit visor; white armoured upper arms on dark pins, dark forearms, red gloves up in guard
+  v3k faceplate: a white head with a dark faceplate and lit slit; the arms on a dark yoke across the shoulders, bare
+     twin-rod forearms
+  v3l heavy: broad white pauldrons over a narrow waist, a dark head sunk between them with one lit eye, long arms
+     reaching forward with the gloves toward the camera
+
+All in px of the footprint (u -16..16, v -32..32, z up); crew are about 59 px tall."""
+import math
+
+from .exercise_r4 import FRAME, FRAME_D, LIT, PAD, RAIL, SHELL, SHELL_D, build, sweep
+from .exercise_r5 import loop
+from .exercise_study import FP
+from .research_kit import Bench
+
+V = -16                                                                            # the droid's centre on the footprint
+R2 = math.sqrt(0.5)
+SIDE = (R2, -R2, 0.0)                                                              # the droid's x on the footprint
+
+
+def D(x, y, z, a=1.0, b=None):
+    """Droid frame -> a sweep control point on the footprint."""
+    return ((x + y) * R2, V + (y - x) * R2, z, a, a if b is None else b)
+
+
+def sw(k, pts, col, **kw):
+    sweep(k, [D(*p) for p in pts], col, side=SIDE, **kw)
+
+
+def body(k, torso=True):
+    sweep(k, [(0, V, 0, 11, 11), (0, V, 3, 10, 10), (0, V, 6, 6, 6), (0, V, 8, 3, 3)], FRAME_D, p=2.0)   # base
+    sweep(k, [(0, V, 8, 2, 2), (0, V, 24, 2, 2)], RAIL)                            # post
+    loop(k, 0, V, 24, 6, 1, FRAME, plane="uv")                                     # gimbal ring
+    if torso:
+        sw(k, [(0, 0, 24, 5, 3.5), (0, 0, 30, 8, 5), (0, 0, 40, 9, 5.5), (0, 0, 46, 6, 4)], SHELL, p=2.6,
+           cap0=SHELL_D)
+
+
+def head(k, shell, z=49, face=None, eye="slit", r=5):
+    sw(k, [(0, 0, z - 3, 2), (0, 0, z, 2)], FRAME_D)                               # neck
+    sw(k, [(0, 0, z, r - 1, r - 1.5), (0, 0, z + 4, r, r - 0.5), (0, 0, z + 8, r - 2, r - 2), (0, 0, z + 9, 1)],
+       shell, p=2.4)
+    zc = z + 4
+    if face:
+        sw(k, [(r * 1.04 * math.sin(t), (r - 0.4) * math.cos(t), zc, 0.8, 2.6) for t in (-1.1, -0.55, 0, 0.55, 1.1)],
+           face, p=3)
+    if eye == "slit":
+        sw(k, [(r * 1.1 * math.sin(t), r * 0.98 * math.cos(t), zc + 0.5, 0.5, 0.7) for t in (-0.8, -0.4, 0, 0.4, 0.8)],
+           LIT, p=2.0)
+    else:
+        sw(k, [(0, r - 0.8, zc, 1.6), (0, r + 0.3, zc, 1.4)], LIT, p=2.0)
+
+
+def pin(k, x, y, z, r=2.2, w=1.6):
+    sw(k, [(x - w, y, z, r), (x + w, y, z, r)], FRAME_D, p=2.0)
+
+
+def glove(k, x, y, z, r=4):
+    sw(k, [(x, y - 2, z - 1, r * 0.7), (x, y, z, r), (x, y + 2.5, z + 1, r * 0.6)], PAD, p=2.2)
+
+
+def v3j():
+    k = Bench("ex_v3j", FP)
+    body(k)
+    head(k, FRAME_D)
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)                                                   # shoulder
+        sw(k, [(s * 11, 0, 43, 3.2), (s * 12.5, 2, 38, 3), (s * 13, 4, 34, 2.4)], SHELL, p=2.4)   # armoured upper arm
+        pin(k, s * 13, 4, 34)                                                      # elbow
+        sw(k, [(s * 13, 4, 34, 1.8), (s * 10, 8, 40, 1.8)], FRAME_D)               # forearm
+        glove(k, s * 8, 10, 43)
+    return build(k)
+
+
+def v3k():
+    k = Bench("ex_v3k", FP)
+    body(k)
+    head(k, SHELL, face=FRAME_D)
+    sw(k, [(-13, 0, 43, 2), (13, 0, 43, 2)], FRAME_D, p=2.0)                       # yoke across the shoulders
+    for s in (-1, 1):
+        sw(k, [(s * 12.5, 0, 43, 3.4), (s * 14, 0, 43, 3.4)], FRAME, p=2.0, cap0=FRAME_D, cap1=FRAME_D)   # pivot disc
+        sw(k, [(s * 13, 0, 42, 2.2), (s * 13, 4, 34, 2.2)], SHELL)                 # upper arm
+        pin(k, s * 13, 4, 34)                                                      # elbow
+        for d in (-1, 1):                                                          # twin-rod forearm
+            sw(k, [(s * 13 + d, 4, 34, 0.8), (s * 9 + d, 8, 40, 0.8)], RAIL)
+        sw(k, [(s * 9.5, 7.5, 39, 2.2), (s * 9, 8.5, 41, 2.2)], FRAME_D)            # wrist collar
+        glove(k, s * 8, 10, 43)
+    return build(k)
+
+
+def v3l():
+    k = Bench("ex_v3l", FP)
+    body(k, torso=False)
+    sw(k, [(0, 0, 24, 4, 3), (0, 0, 30, 5, 4), (0, 0, 38, 8, 5), (0, 0, 44, 10, 5.5), (0, 0, 47, 6, 4)], SHELL,
+       p=2.6, cap0=SHELL_D)                                                        # narrow waist, broad chest
+    head(k, FRAME_D, z=46, eye="round", r=4.5)
+    for s in (-1, 1):
+        sw(k, [(s * 8, 0, 49, 2), (s * 11, 0, 49, 5), (s * 14, 0, 46, 4), (s * 15, 0, 42, 2)], SHELL, p=2.4)  # pauldron
+        pin(k, s * 12, 0, 42, 2.6)                                                 # shoulder
+        sw(k, [(s * 12, 0, 42, 2), (s * 12, 5, 33, 2)], FRAME)                     # upper arm
+        pin(k, s * 12, 5, 33)                                                      # elbow
+        sw(k, [(s * 12, 5, 33, 1.8), (s * 9, 12, 38, 1.8)], FRAME_D)               # forearm, reaching forward
+        glove(k, s * 8, 14, 39, 4.2)
+    return build(k)
+
+
+DESIGNS = {"v3j": v3j, "v3k": v3k, "v3l": v3l}
+
+
+def jobs():
+    return [(f"module.exercise.{v}", FP, "prop", f) for v, f in DESIGNS.items()]

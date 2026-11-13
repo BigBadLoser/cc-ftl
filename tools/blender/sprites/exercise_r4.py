@@ -47,16 +47,17 @@ def _cross(a, b):
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
-def sweep(k, ctrl, col, p=2.4, n=20, cap0=None, cap1=None, steps=8):
+def sweep(k, ctrl, col, p=2.4, n=20, cap0=None, cap1=None, steps=8, side=(1.0, 0.0, 0.0)):
     """Loft a superellipse section along a Catmull-Rom curve. ctrl: (u, v, z, a, b) in px, a the half size across
-    (horizontal, square to the path), b the other. Ends capped in cap0 / cap1 (default col)."""
+    (horizontal, square to the path), b the other. Where the path runs straight up, a lies along `side`. Ends capped
+    in cap0 / cap1 (default col)."""
     pts = spline(ctrl, steps)
     rings = []
     for i, (u, v, z, a, b) in enumerate(pts):
         q0, q1 = pts[max(i - 1, 0)], pts[min(i + 1, len(pts) - 1)]
         T = _norm((q1[0] - q0[0], q1[1] - q0[1], q1[2] - q0[2]))
         S = _cross(T, (0, 0, 1))
-        S = _norm(S) if math.hypot(S[0], S[1]) > 1e-3 else (1.0, 0.0, 0.0)
+        S = _norm(S) if math.hypot(S[0], S[1]) > 1e-3 else side
         N = _cross(T, S)
         ring = []
         for j in range(n):
