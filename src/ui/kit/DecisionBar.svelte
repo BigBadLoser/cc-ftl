@@ -2,7 +2,7 @@
   import { tip } from './tip';
   import type { DecisionOption } from './types';
 
-  /** The one decision bar of every window (comms, jump confirm, event card): up to 3 options, each option a button side by side (label left, a short note right); a lone option sits on the right at half width (wider if its label needs it), so it never stretches the full width. The `primary` one has the cyan edge. Calls `onpick(id)`. */
+  /** The one decision bar of every window (comms, jump confirm, event card): up to 3 options, each option a button side by side (label left, a short note right); a lone option sits on the left at half width, where the confirm goes (wider if its label needs it), so it never stretches the full width. The `primary` one has the cyan edge. Calls `onpick(id)`. */
   let { options, onpick, busy = false }: { options: DecisionOption[] /* at most 3 */; onpick: (id: string) => void; busy?: boolean } = $props();
   /** Cancel is always the right-hand button: `cancel`-flagged options go last, the rest keep their order. */
   const ordered = $derived([...options.filter((o) => !o.cancel), ...options.filter((o) => o.cancel)]);
@@ -19,7 +19,7 @@
 <style>
   .decisions { display: grid; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); }
   .decisions:first-child { border-top: 0; }
-  .lone { justify-content: end; }
+  .lone { justify-content: start; }
   button { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 12px; min-height: 0; border: 1px solid var(--line-hi); border-radius: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
   button.primary { border-color: var(--cyan); color: var(--cyan); background: rgba(54, 212, 255, 0.08); }
   button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.05); }
