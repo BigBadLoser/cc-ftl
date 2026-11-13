@@ -68,13 +68,15 @@ def shell_head(p, c, s, eye_r):
     p.ball((x, f + s[1] * 1.04, z - s[2] * 0.08), (eye_r, eye_r * 0.5, eye_r), EYE)
 
 
-def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH):
+def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH, sh_f=0.0):
     """Guard arms: a hinge disc and a livery shoulder plate, a dark strut with a grey plate to a big dark elbow hinge,
     a grey forearm plate to the red glove held up in front of the face."""
     for sx in (1, -1):
-        sh, e, w = (sx * sh_x, 0, sh_z), (sx * el[0], el[1], el[2]), (sx * wr[0], wr[1], wr[2])
+        sh = (sx * sh_x, sh_f, sh_z)                                               # (sh_f: shoulders forward; the
+        e = (sx * el[0], el[1] + sh_f * 0.5, el[2])                                #  elbow and glove follow half as far)
+        w = (sx * wr[0], wr[1] + sh_f * 0.5, wr[2])
         hinge(p, sh, 0.06 * k, 0.09 * k)
-        p.rbox((sx * (sh_x + 0.02), 0, sh_z + 0.04), (0.15 * k, 0.19 * k, 0.14 * k), plate, r=0.03, taper=0.8,
+        p.rbox((sx * (sh_x + 0.02), sh_f, sh_z + 0.04), (0.15 * k, 0.19 * k, 0.14 * k), plate, r=0.03, taper=0.8,
                rot=(0, sx * 12, 0))                                                # shoulder plate
         p.strut(sh, e, 0.03 * k, DARK)
         p.plate(along(sh, e, 0.06), along(e, sh, 0.05), 0.085 * k, 0.09 * k, MID, taper=1.1, r=0.02)   # upper arm
@@ -118,7 +120,7 @@ def v4a(p):
     arms(p)
 
 
-def v4b(p):
+def v4b(p, sh_f=0.0):
     p.cyl((0, 0, 0.66), 0.08, 0.1, DARK)
     p.rbox((0, 0, 0.77), (0.2, 0.14, 0.16), DARK, r=0.03)                          # abdomen
     for sx in (1, -1):                                                             # side pistons, waist to chest
@@ -127,7 +129,7 @@ def v4b(p):
     p.rbox((0, 0.05, 1.0), (0.34, 0.31, 0.3), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # sloped broad chest
     p.rbox((0, 0.2, 1.04), (0.2, 0.06, 0.15), DARK_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
     sensor_head(p, 0.12, 1.2, 1.0, pitch=-12, brow=1.15)
-    arms(p, sh_x=0.3, sh_z=1.04, el=(0.36, 0.12, 0.8), wr=(0.2, 0.3, 1.0), k=1.2)
+    arms(p, sh_x=0.3, sh_z=1.04, el=(0.36, 0.12, 0.8), wr=(0.2, 0.3, 1.0), k=1.2, sh_f=sh_f)
 
 
 def v4c(p):
@@ -138,6 +140,8 @@ def v4c(p):
 
 
 DESIGNS = {"v4a": droid("ex_v4a", v4a), "v4b": droid("ex_v4b", v4b), "v4c": droid("ex_v4c", v4c)}
+for _i, _df in enumerate((0.05, 0.09, 0.13), 1):                                   # v4b, shoulders moved forward
+    DESIGNS[f"v4b{_i}"] = droid(f"ex_v4b{_i}", lambda p, df=_df: v4b(p, df))
 
 
 def jobs():
