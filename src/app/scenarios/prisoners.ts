@@ -31,19 +31,24 @@ function keepsReach(sim: Sim, ship: number, x: number, y: number, rot: number, m
 }
 
 /**
- * A free spot (and turn) for the stasis wheel nearest the ship's middle: off the crew, its hatch still reaching every crew member (a wheel in front of
- * a room's only door would wall the prisoners off from it), and off every other module's access tile where the ship has room for that.
+ * A free spot (and turn) for the stasis wheel nearest the ship's middle: off the crew, its hatch still reaching every crew member and every other
+ * module's access tile (a wheel in front of a room's only door would wall the prisoners or the room off), and off those access tiles where the ship
+ * has room for that.
  */
 function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number } | null {
   const s = sim.world.get(ship, ShipC);
   const def = sim.content.modules[WHEEL];
   if (!s || !def) return null;
+  const grid = shipGrid(sim, ship);
   const access = new Set<string>();
+  const doors: { x: number; y: number }[] = [];
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC)!;
     const d = sim.content.modules[m.def];
     const a = d && accessTile(d, m.x, m.y, m.rot);
-    if (a) access.add(`${a.x},${a.y}`);
+    if (!a || access.has(`${a.x},${a.y}`)) continue;
+    access.add(`${a.x},${a.y}`);
+    if (grid && isTileWalkable(sim, grid, a.x, a.y)) doors.push(a);
   }
   const crew = playerCrew(sim).map((id) => sim.world.get(id, PositionC)).filter((p) => !!p).map((p) => ({ x: p!.x, y: p!.y }));
   const cx = s.x + s.width / 2, cy = s.y + s.height / 2;
@@ -55,7 +60,14 @@ function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number 
   }
   // A packed starter (the Wayfarer) has no 3x3 spot clear of every access tile that leaves its rooms joined: covering a module's access tile is the lesser evil.
   spots.sort((a, b) => Number(a.covers) - Number(b.covers) || a.d - b.d || a.rot - b.rot);
-  return spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
+  // Its hatch reaches every crew member and every module it leaves an access tile to (a wheel in a storage room's doorway walls the racks off, and the
+  // crew pick slabs up for them and drop them forever); failing that, the crew alone.
+  const open = (p: { x: number; y: number; rot: number }): { x: number; y: number }[] => {
+    const under = new Set(footprintTiles(def, p.x, p.y, p.rot).map((t) => `${t.x},${t.y}`));
+    return doors.filter((t) => !under.has(`${t.x},${t.y}`));
+  };
+  return spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, [...crew, ...open(p)]))
+    ?? spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
 }
 
 /** The commands of the start: the wheel, two hostile crew (by the second and third crew members) and two spare empty slabs on the floor. */

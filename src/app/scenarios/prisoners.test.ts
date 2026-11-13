@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, newGame } from '../../sim';
+import { CrewC, ModuleC, PositionC, newGame, playerShip } from '../../sim';
+import { findPath } from '../../sim/crew/pathfind';
+import { playerCrew } from '../../sim/story/world';
 import { fullSlabs, slabPlace } from '../../sim/stasis/query';
 import { heldItems } from '../../sim/items/held';
 import { SLAB_ITEM } from '../../sim/stasis/tuning';
@@ -37,4 +39,23 @@ describe('?scenario=prisoners', () => {
     }
     expect(caught.map((id) => slabPlace(sim, id)?.kind)).toEqual(['wheel', 'wheel']);
   });
+
+  it('in the app\'s start (the Wayfarer, seed 1) sets the wheel where it walls no rack off (a packed hull may have no such spot on other seeds)', () => {
+    for (const seed of [1]) {
+      const sim = newGame(seed, content, 'ship.wayfarer', true, 'rolled');
+      const ship = playerShip(sim)!;
+      const from = sim.world.get(playerCrew(sim)[0]!, PositionC)!;
+      const racks = sim.world.query(ModuleC).filter((id) => sim.world.get(id, ModuleC)!.def === 'module.storage_rack');
+      const reach = (): boolean[] => racks.map((id) => {
+        const m = sim.world.get(id, ModuleC)!;
+        const [w, h] = sim.content.modules[m.def]!.footprint;
+        return findPath(sim, ship, { x: from.x, y: from.y }, { x: m.x, y: m.y, adjacent: true, w, h }) !== null;
+      });
+      const before = reach();
+      for (const cmd of prisonerCommands(sim).filter((c) => c.type === 'debug.spawnModule')) sim.enqueue(cmd);
+      sim.step();
+      expect(reach(), `seed ${seed}`).toEqual(before);
+    }
+  });
 });
+
