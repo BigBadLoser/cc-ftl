@@ -8,7 +8,7 @@ you want when one side is on fire or open to space, and a nuisance when you only
 
 ## Door vents
 
-Every door has a **vent**. Select a door and press **Open vent** in its panel (press **Close vent** to seal it again).
+Every door has a **vent**. Select a door to open its inspector, which names the two sides it joins, shows its state (open, shut, jammed) and whether the air on each side is breathable, and offers **Open vent** (press **Close vent** to seal it again).
 With the vent open, air and pressure pass between the two sides even while the door is shut, slower than through an open
 door. Fire, heat and smoke do not travel through it.
 
