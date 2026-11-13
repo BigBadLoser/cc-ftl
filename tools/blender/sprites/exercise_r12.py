@@ -141,3 +141,15 @@ ARMS2 = {
 }
 for _n, _kw in ARMS2.items():
     DESIGNS[_n] = turned(leaned(round_lean(_kw), 12, f"ex_{_n}"), 0.0, f"ex_{_n}")
+
+
+# ---- round 27: light grey arms, dark joints --------------------------------------------------------------------------
+_D, _F = ARMS2["v6d"], ARMS2["v6f"]
+_POSE = {k: _D[k] for k in ("sh", "el", "wr", "fist")}
+ARMS3 = {
+    "v6g": dict(_POSE, up_col=RAIL, fore_col=RAIL, joint_col=DARK),                # elbow out, light grey arms
+    "v6h": dict({k: _F[k] for k in _POSE}, up_col=RAIL, fore_col=RAIL, joint_col=DARK),   # elbows down, forearms up
+    "v6i": dict(_POSE, up_col=SHELL_D, fore_col=SHELL_D, joint_col="gymRubber"),   # a warmer grey, darkest joints
+}
+for _n, _kw in ARMS3.items():
+    DESIGNS[_n] = turned(leaned(round_lean(_kw), 12, f"ex_{_n}"), 0.0, f"ex_{_n}")
