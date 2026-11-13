@@ -68,13 +68,15 @@ def shell_head(p, c, s, eye_r):
     p.ball((x, f + s[1] * 1.04, z - s[2] * 0.08), (eye_r, eye_r * 0.5, eye_r), EYE)
 
 
-def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH, sh_f=0.0):
+def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=1.0, plate=CLOTH, sh_f=0.0, pose=None,
+         mitts=False):
     """Guard arms: a hinge disc and a livery shoulder plate, a dark strut with a grey plate to a big dark elbow hinge,
     a grey forearm plate to the red glove held up in front of the face."""
     for sx in (1, -1):
+        el_, wr_ = pose[sx] if pose else (el, wr)                                  # (pose: per side (elbow, wrist))
         sh = (sx * sh_x, sh_f, sh_z)                                               # (sh_f: shoulders forward; the
-        e = (sx * el[0], el[1] + sh_f * 0.5, el[2])                                #  elbow and glove follow half as far)
-        w = (sx * wr[0], wr[1] + sh_f * 0.5, wr[2])
+        e = (sx * el_[0], el_[1] + sh_f * 0.5, el_[2])                             #  elbow and glove follow half as far)
+        w = (sx * wr_[0], wr_[1] + sh_f * 0.5, wr_[2])
         hinge(p, sh, 0.06 * k, 0.09 * k)
         p.rbox((sx * (sh_x + 0.02), sh_f, sh_z + 0.04), (0.15 * k, 0.19 * k, 0.14 * k), plate, r=0.03, taper=0.8,
                rot=(0, sx * 12, 0))                                                # shoulder plate
@@ -83,7 +85,11 @@ def arms(p, sh_x=0.245, sh_z=1.02, el=(0.3, 0.1, 0.8), wr=(0.17, 0.27, 0.98), k=
         hinge(p, e, 0.055 * k, 0.13 * k)                                           # elbow
         p.plate(along(e, w, 0.04), along(w, e, 0.04), 0.1 * k, 0.11 * k, MID, taper=0.8, r=0.02)       # forearm
         p.rbox(along(w, e, 0.01), (0.07 * k, 0.07 * k, 0.05 * k), DARK_L, r=0.015)                    # wrist
-        p.ball((w[0], w[1] + 0.05, w[2] + 0.03), (0.075 * k, 0.085 * k, 0.08 * k), GLOVE)
+        if mitts:                                                                  # a focus mitt held up, facing out
+            p.ball((w[0], w[1] + 0.03, w[2] + 0.04), (0.07 * k, 0.04 * k, 0.085 * k), DARK_L)
+            p.ball((w[0], w[1] + 0.055, w[2] + 0.04), (0.08 * k, 0.03 * k, 0.095 * k), GLOVE)
+        else:
+            p.ball((w[0], w[1] + 0.05, w[2] + 0.03), (0.075 * k, 0.085 * k, 0.08 * k), GLOVE)
 
 
 def worker_chest(p):
@@ -120,7 +126,7 @@ def v4a(p):
     arms(p)
 
 
-def v4b(p, sh_f=0.0):
+def v4b(p, sh_f=0.0, **kw):
     p.cyl((0, 0, 0.66), 0.08, 0.1, DARK)
     p.rbox((0, 0, 0.77), (0.2, 0.14, 0.16), DARK, r=0.03)                          # abdomen
     for sx in (1, -1):                                                             # side pistons, waist to chest
@@ -129,7 +135,8 @@ def v4b(p, sh_f=0.0):
     p.rbox((0, 0.05, 1.0), (0.34, 0.31, 0.3), CLOTH, r=0.04, taper=1.4, rot=(-12, 0, 0))   # sloped broad chest
     p.rbox((0, 0.2, 1.04), (0.2, 0.06, 0.15), DARK_L, r=0.03, taper=1.15, rot=(-12, 0, 0))  # chest inset
     sensor_head(p, 0.12, 1.2, 1.0, pitch=-12, brow=1.15)
-    arms(p, sh_x=0.3, sh_z=1.04, el=(0.36, 0.12, 0.8), wr=(0.2, 0.3, 1.0), k=1.2, sh_f=sh_f)
+    kw = {"el": (0.36, 0.12, 0.8), "wr": (0.2, 0.3, 1.0), **kw}
+    arms(p, sh_x=0.3, sh_z=1.04, k=1.2, sh_f=sh_f, **kw)
 
 
 def v4c(p):
@@ -146,3 +153,16 @@ for _i, _df in enumerate((0.05, 0.09, 0.13), 1):                                
 
 def jobs():
     return [(f"module.exercise.{v}", FP, "prop", f) for v, f in DESIGNS.items()]
+
+
+# ---- round 18: v4b, shoulders 0.07 forward, other stances -------------------------------------------------------------
+SH_F = 0.07
+POSES = {
+    "v4d": dict(el=(0.3, 0.1, 0.86), wr=(0.15, 0.24, 1.16)),                       # high guard: gloves by the face,
+                                                                                   # elbows down and in
+    "v4e": dict(pose={1: ((0.32, 0.2, 0.9), (0.13, 0.46, 1.06)),                    # boxer's stance: lead hand out,
+                      -1: ((0.33, 0.06, 0.84), (0.16, 0.2, 1.12))}),                # rear hand by the chin
+    "v4f": dict(el=(0.44, 0.1, 0.88), wr=(0.27, 0.34, 1.02), mitts=True),          # holding focus mitts out
+}
+for _n, _kw in POSES.items():
+    DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, **kw))
