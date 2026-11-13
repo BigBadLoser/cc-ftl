@@ -5,7 +5,7 @@
 import { content } from '../../src/content';
 import { stationRecipes } from '../../src/content/stationRecipes';
 import {
-  accessTile, adjacencyDistance, assembleStation, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
+  accessTile, adjacencyDistance, assembleStation, adjacencySignature, footprintTiles, generateShip, meanPairwise, profileDistance, rotatedSize, silhouetteDistance, silhouetteMask, generateStation, type GenResult, type Recipe, type StationDef, type StationGrammar, type StationSize, type ModuleDef, type RoomRole,
 } from '../../src/sim';
 import { drawAssemblies, drawSilhouette, drawStructure } from './views';
 
@@ -149,7 +149,7 @@ export function genStation(spec: string, seed: number): GenResult {
   // `@assembly.bazaar` (or `@assembly.tree.2`: that family's third recipe): the station assembly, not a station grammar.
   if (layout?.startsWith(ASSEMBLY)) {
     const [family, n] = layout.slice(ASSEMBLY.length).split('.') as [string, string | undefined];
-    const recipe = stationRecipes[family]?.[Number(n ?? 0)];
+    const recipe = (stationRecipes as Record<string, readonly Recipe[]>)[family]?.[Number(n ?? 0)];
     if (!recipe) throw new Error(`unknown assembly recipe ${layout}; try ${assemblyLayouts().join(', ')}`);
     return assembleStation(def0, id, size, seed, defs, recipe);
   }
