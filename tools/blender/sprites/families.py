@@ -195,6 +195,9 @@ def jobs(name):
     if name == "vending21":     # look study, preview only (not in RENDERED): picks from 20, keypad off the corner
         from . import vending_r21
         return vending_r21.jobs(), "only:vending"
+    if name == "vending22":     # look study, preview only (not in RENDERED): 21a with three roof treatments
+        from . import vending_r22
+        return vending_r22.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
