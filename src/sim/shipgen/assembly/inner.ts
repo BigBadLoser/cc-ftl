@@ -61,12 +61,14 @@ export const innerRoom = (r: RoomSpec): boolean => !!r.cabin || (Math.min(r.w, r
 
 /**
  * Place rooms on the ring's inner side, each on the run nearest its angle. `asks` in order of who chooses first.
- * `within`: a room stands only on a run this near its angle (the rest find no place).
+ * `within`: a room stands only on a run this near its angle (the rest find no place). `rows`: longest runs first.
  * Returns the rooms that found no place.
  */
-export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity): RoomSpec[] {
+export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity, rows = false): RoomSpec[] {
   const { g } = s;
-  const runs = runsOf(s);
+  // `rows`: the longest runs first, so what stands inboard is a row along a straight (an arc's arms), not rooms
+  // scattered on the short runs by the axes.
+  const runs = rows ? runsOf(s).sort((p, q) => q.a1 - q.a0 - (p.a1 - p.a0)) : runsOf(s);
   const left = [...asks];
   for (const run of runs) {
     if (left.length === 0) break;

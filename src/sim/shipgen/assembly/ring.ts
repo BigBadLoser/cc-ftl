@@ -15,7 +15,7 @@ import { at, type Built, type Dir, type Frame } from './model';
 /** A piece cut away: everything on the far side of a lattice line (`from` tiles from the centre on side `side`). */
 export interface Gap { side: Dir; from: number }
 
-export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean; gap?: Gap; round?: boolean; shoulders?: boolean }
+export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean | 'rows'; gap?: Gap; round?: boolean; shoulders?: boolean }
 
 const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
 const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0, dir: 'e' }, s: { x: 0, y: 0, dir: 's' }, w: { x: -1, y: 0, dir: 'w' } };
@@ -57,7 +57,7 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
 }
 
 /** Fill the ring with its rooms: corners, then the band, then its inner side. Returns the rooms it could not hold. */
-export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean, front?: (r: RoomSpec) => boolean): RoomSpec[] {
+export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'rows', front?: (r: RoomSpec) => boolean): RoomSpec[] {
   // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: the common rooms
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
@@ -76,7 +76,7 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean, fron
   if (band.left.length === 0 || !inner) return band.left;
   // A room with an annex stands in the band, where its annex can stand against it.
   const small = band.left.filter((r) => innerRoom(r) && !r.annex);
-  const out = placeInner(s, rest.filter((a) => small.includes(a.spec)));
+  const out = placeInner(s, rest.filter((a) => small.includes(a.spec)), Infinity, inner === 'rows');
   const left = band.left.filter((r) => !small.includes(r) || out.includes(r));
   // A cabin or two still over: they double up, as in the band, with cabins that found a place on either side.
   const stood = specs.filter((r) => r.cabin && !left.includes(r));

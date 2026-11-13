@@ -104,7 +104,7 @@ const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number };
   const pier = o.freight === 'pier' ? [sheds] : o.freight === 'foot' ? [sheds, stalls] : [stalls];
   return {
     name,
-    root: { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works', 'habitation'] : ['commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: true, ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } },
+    root: { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works', 'habitation'] : ['commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: 'rows', ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } },
     quarters: { barracks: [2, 2] },
     spacing: 2,
     branches: [
