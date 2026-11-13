@@ -3706,5 +3706,21 @@
   "gymLit": {"hex": "#9ad8f0", "emissive": 0.9, "set": "gym"},
   "gymEyeR": {"hex": "#ff5a4a", "emissive": 1.2, "set": "gym"},
   "gymEyeA": {"hex": "#ffb347", "emissive": 1.2, "set": "gym"},
-  "gymEyeG": {"hex": "#7dff8a", "emissive": 1.0, "set": "gym"}
+  "gymEyeG": {"hex": "#7dff8a", "emissive": 1.0, "set": "gym"},
+  "bnGraph": {"hex": "#3b4048", "set": "bench5"},
+  "bnGraphD": {"hex": "#2a2e34", "set": "bench5"},
+  "bnOchre": {"hex": "#a97f3f", "set": "bench5"},
+  "bnOchreD": {"hex": "#7d5d2e", "set": "bench5"},
+  "bnSteel": {"hex": "#9aa3ab", "set": "bench5"},
+  "bnSage": {"hex": "#9db7a3", "set": "bench5"},
+  "bnSageD": {"hex": "#77907d", "set": "bench5"},
+  "bnPlum": {"hex": "#6a4a5e", "set": "bench5"},
+  "bnPlumD": {"hex": "#4c3444", "set": "bench5"},
+  "bnCopper": {"hex": "#b06a45", "set": "bench5"},
+  "bnNavy": {"hex": "#2e3c5c", "set": "bench5"},
+  "bnNavyD": {"hex": "#212a40", "set": "bench5"},
+  "bnCream": {"hex": "#e0d6bc", "set": "bench5"},
+  "bnCreamD": {"hex": "#b8ad92", "set": "bench5"},
+  "bnTeal": {"hex": "#5f9894", "set": "bench5"},
+  "bnTealL": {"hex": "#8cc2bd", "set": "bench5"}
 }
