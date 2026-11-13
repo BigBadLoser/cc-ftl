@@ -6,7 +6,7 @@ round (rot 2, `...b`) so the back and the other side show. One shared back; thre
   vm1c2 can: a big blue can graphic on the side, cream highlight and wine top, with a cream ring label
   vm1c3 inset panel: a recessed dark grey panel with a cream logo disc up top and vent slots low down
 
-Back: a cream back between the cheeks with a vent grille of dark slots, a screwed service panel, a small label plate
+Back (locked by the user, 2026-11-13): a cream back between the cheeks with a vent grille of dark slots, a screwed service panel, a small label plate
 and a power cable curling down to the floor.
 
 All in px of the tile (u, v -16..16, z up); the front (+v) faces the camera."""
