@@ -65,7 +65,7 @@
 </script>
 
 {#if shown || pinned}
-<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} width={tabWidth} padded bind:pinned>
+<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} docked width={tabWidth} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
   {:else if selShuttle !== null}
