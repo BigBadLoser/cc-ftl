@@ -178,6 +178,9 @@ field systems read.
 - A haul job moves goods from a source (`floor` stack, `storage`, `vehicle` hold) to a destination (`storage`, `vehicle`, a `job`,
   or a staging `zone`). Planners post them (`haulJobsSystem` clears the floor into storage; cargo, construction, trade and away sites
   post their own); reservations are never stored, they are derived from the pending haul jobs, so a job that ends releases its claims.
+- **Reach** (#476): `nearestStorageFor` only offers storage a load at its source can be carried to (`canCarry` in `items/stock.ts`, the
+  suited walk's labelling, no search). At pickup the hauler checks its own way (`performHaul`); with none, it leaves the stack and stamps
+  `ItemStack.stuckAt`, and `haulJobsSystem` leaves that stack alone for `WARN_DEBOUNCE` ticks. A load nobody can deliver stays put.
 - **Gathering** (#286 slice 3, every ship): at a loose stack, a hauler with room left in hand takes the nearest unheld haul of another
   loose stack to the same destination, same work category, within `GATHER_RADIUS` and in their reach (labelling, no search) into the
   same trip (`HaulData.gathered`: what is in hand meanwhile, counted as on its way to the destination), until their carry capacity is
