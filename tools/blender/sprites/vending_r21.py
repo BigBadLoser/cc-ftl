@@ -6,6 +6,9 @@ looked bad), in three steps:
 
   vm1c21a bags 18% darker · vm1c21b 30% darker · vm1c21c 42% darker
 
+The user picked 21a and asked for the glints on the snack window to go (they read as a white stain): no glass
+marks at all now.
+
 Uses round 20's front pieces, r10's body with its holes swapped while building, r15's painter and 19e's look."""
 from . import vending_r10 as R
 from . import vending_r15 as V
@@ -54,7 +57,6 @@ def make(name):
             W.cans(k)
             keypad(k)
             W.tray(k, "a")
-            W.glass(k)
             R.back(k)
             out = R.build(k)
             V.ramp(k, out[0], -0.12, 0.35, 0.40, pick=lambda r, g, b: True)
