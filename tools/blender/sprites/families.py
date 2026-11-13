@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "bench8":        # look study, preview only (not in RENDERED): BN18 refined, r8
+        from . import bench_r8
+        return bench_r8.jobs(), "only:bench7"
     if name == "bench7":        # look study, preview only (not in RENDERED): normal benches, r7
         from . import bench_r7
         return bench_r7.jobs(), "only:bench7"

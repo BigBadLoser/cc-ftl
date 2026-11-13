@@ -53,7 +53,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "bn7": "BN7  seat row", "bn8": "BN8  crescent", "bn9": "BN9  jump seats",
          "bn10": "BN10  hoop", "bn11": "BN11  monoliths", "bn12": "BN12  glass back",
          "bn13": "BN13  fuel tank", "bn14": "BN14  pebbles", "bn15": "BN15  truss",
-         "bn16": "BN16  locker room", "bn17": "BN17  park bench", "bn18": "BN18  waiting room"}
+         "bn16": "BN16  locker room", "bn17": "BN17  park bench", "bn18": "BN18  waiting room",
+         "bn18a": "BN18A  pad arms", "bn18b": "BN18B  end loops", "bn18c": "BN18C  with table"}
 CW, CH = 200, 220
 
 
