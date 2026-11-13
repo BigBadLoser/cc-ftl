@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
-  import { ActionButton, Frame, tip } from './kit';
+  import { DecisionBar, Frame, tip } from './kit';
   import type { UiDeploy } from './starmapApi';
 
   let { api, deploy }: { api: UiApi; deploy: UiDeploy } = $props();
@@ -68,9 +68,6 @@
   const go = () => {
     if (!error) api.dispatch({ type: 'sector.deploy', x: tile.x, y: tile.y });
   };
-  const useBest = () => {
-    if (best) cell = best;
-  };
   function key(e: KeyboardEvent) {
     if (!modalOpen() && !isTypingTarget(e) && keymap.matches(e, 'ui.confirm')) go();
   }
@@ -100,11 +97,8 @@
     <ul class="legend" aria-label="Key">
       <li><i class="k you"></i>Your ship</li><li><i class="k ship"></i>Ship</li><li><i class="k hostile"></i>Hostile</li><li><i class="k keep"></i>Keep clear</li>
     </ul>
-    <div class="actions">
-      <ActionButton disabled={!best} testid="deploy-auto" onclick={useBest}><Icon name="recenter" size={18} />Best spot</ActionButton>
-      <ActionButton tone="go" disabled={!!error} testid="deploy-go" onclick={go}><Icon name="ship" size={18} />Deploy here</ActionButton>
-    </div>
   </div>
+  <DecisionBar options={[{ id: 'go', label: 'Deploy here', primary: true, disabled: !!error, testId: 'deploy-go' }]} onpick={go} />
   </Frame>
   </div>
 </div>
@@ -137,5 +131,4 @@
   .k { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line-hi); }
   .k.you { background: color-mix(in srgb, var(--green) 35%, transparent); border-color: var(--green); }
   .k.ship { background: var(--dim); } .k.hostile { background: var(--red); } .k.keep { background: color-mix(in srgb, var(--red) 25%, transparent); }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 38px; }
 </style>

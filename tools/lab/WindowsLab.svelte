@@ -3,7 +3,7 @@
   import EventPanel from '../../src/ui/EventPanel.svelte';
   import FightReportCard from '../../src/ui/combat/FightReportCard.svelte';
   import Icon from '../../src/ui/Icon.svelte';
-  import { ActionButton, Chip, DecisionBar, Dialog, Frame, TipHost } from '../../src/ui/kit';
+  import { Chip, DecisionBar, Dialog, Frame, TipHost } from '../../src/ui/kit';
   import type { UiApi, UiFightReport } from '../../src/ui/api';
   import type { UiEventGrid } from '../../src/ui/starmapApi';
 
@@ -57,7 +57,8 @@
         {:else if c.id === 'deploy'}
           <div class="deploy" data-testid="lab-deploy"><Frame title="Deploy" style="background:var(--panel);padding:var(--sp-3) 0 0;box-shadow:var(--shadow-window)">
             {#snippet right()}<span class="node">Kestrel Reach</span>{/snippet}
-            <div class="dsheet"><span class="cell"><Icon name="target" size={18} /><b>Spot is clear.</b></span><div class="map"></div><div class="actions"><ActionButton onclick={() => {}}><Icon name="recenter" size={18} />Best spot</ActionButton><ActionButton tone="go" onclick={() => {}}><Icon name="ship" size={18} />Deploy here</ActionButton></div></div>
+            <div class="dsheet"><span class="cell"><Icon name="target" size={18} /><b>Spot is clear.</b></span><div class="map"></div></div>
+<DecisionBar options={[{ id: 'go', label: 'Deploy here', primary: true }]} onpick={() => {}} />
           </Frame></div>
         {:else if c.id === 'fight'}
           <FightReportCard {api} {report} />
@@ -90,7 +91,6 @@
   .dsheet { display: grid; gap: 8px; padding: 10px; }
   .map { height: 170px; border: 1px solid var(--line-hi); background: var(--panel-2); }
   .node { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 0 4px; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 38px; }
   .who { font-weight: 600; }
   .pad { padding: 14px; color: var(--dim); }
   .bars { position: absolute; left: 24px; top: 24px; width: 900px; display: grid; gap: 16px; background: var(--panel); }
