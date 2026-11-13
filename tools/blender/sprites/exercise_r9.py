@@ -302,3 +302,62 @@ def boxer4(arms, name):
 
 for _n, _a in (("v3s", arms_tucked), ("v3t", arms_hinge), ("v3u", arms_piston)):
     DESIGNS[_n] = turned(boxer4(_a, f"ex_{_n}"), 0.0, f"ex_{_n}")
+
+
+# ---- round 14: v3t refined (dark arms, white elbow joint) --------------------------------------------------------------
+EL = (13, 3, 33.5)                                                                 # the elbow (droid frame, s = +1)
+
+
+def dark_arm(k, s, elbow, glove_at=(8, 11, 44)):
+    e = (s * elbow[0], elbow[1], elbow[2])
+    sw(k, [(s * 11, 0, 43, 2.4), (s * 12.5, 1.5, 38, 2.3), (e[0], e[1] - 0.5, e[2] + 1.5, 2.2)], FRAME_D)   # upper arm
+    sw(k, [(e[0], e[1] + 1, e[2], 2.1), (s * 11.5, 6, 37, 2), (s * 10, 8, 40, 2)], FRAME_D)                 # forearm
+    sw(k, [(s * 10, 8.2, 40.3, 2.6), (s * 9.3, 9.2, 41.8, 2.6)], SHELL)                                     # wrist collar
+    glove(k, s * glove_at[0], glove_at[1], glove_at[2])
+
+
+def v3t1(k):
+    """A rounded white hinge capsule across the arm, dark pin heads both ends; the shoulder pin capped white to match."""
+    for s in (-1, 1):
+        sw(k, [(s * 8.5, 0, 43, 3), (s * 11.5, 0, 43, 3)], FRAME_D, p=2.0, cap0=SHELL, cap1=SHELL)   # shoulder
+        dark_arm(k, s, EL)
+        sw(k, [(s * 11.6, 3, 33.5, 2.6, 2.6), (s * 14.4, 3, 33.5, 2.6, 2.6)], SHELL, p=2.6, cap0=SHELL_D, cap1=SHELL_D)
+        for x in (11.1, 14.9):
+            sw(k, [(s * (x - 0.4), 3, 33.5, 1.1), (s * (x + 0.4), 3, 33.5, 1.1)], FRAME_D, p=2.0)   # pin heads
+
+
+def v3t2(k):
+    """Joint discs: a white disc with a dark hub at the elbow and the shoulder, turned square to the arm's swing."""
+    for s in (-1, 1):
+        sw(k, [(s * 10, 0, 43, 3.6), (s * 12, 0, 43, 3.6)], SHELL, p=2.0, cap0=SHELL_D, cap1=SHELL_D)   # shoulder disc
+        sw(k, [(s * 12, 0, 43, 1.3), (s * 12.6, 0, 43, 1.3)], FRAME_D, p=2.0)
+        dark_arm(k, s, EL)
+        sw(k, [(s * 13.6, 3, 33.5, 3.2), (s * 15.2, 3, 33.5, 3.2)], SHELL, p=2.0, cap0=SHELL_D, cap1=SHELL_D)  # elbow disc
+        sw(k, [(s * 15.2, 3, 33.5, 1.2), (s * 15.8, 3, 33.5, 1.2)], FRAME_D, p=2.0)   # its hub
+
+
+def v3t3(k):
+    """A white clevis: two white cheek plates either side of the dark arm, a dark pin through them, and a short white
+    guard pointing back off the elbow."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)
+        dark_arm(k, s, EL)
+        for x in (10.8, 15.2):
+            sw(k, [(s * (x - 0.6), 3, 33.5, 2.8, 3.2), (s * (x + 0.6), 3, 33.5, 2.8, 3.2)], SHELL, p=3, cap0=SHELL_D,
+               cap1=SHELL_D)                                                       # cheek plates
+        sw(k, [(s * 10, 3, 33.5, 1), (s * 16, 3, 33.5, 1)], FRAME_D, p=2.0)       # the pin through them
+        sw(k, [(s * 13, 1.5, 32, 2.2, 1.6), (s * 13, -1, 30.5, 1.2, 1), (s * 13, -2, 30, 0.4)], SHELL, p=2.4)  # guard
+
+
+def boxer5(arms, name):
+    def f(nm=name):
+        k = Bench(nm, FP)
+        body(k)
+        head_plates(k, "gymEyeG")
+        arms(k)
+        return build(k)
+    return f
+
+
+for _n, _a in (("v3t1", v3t1), ("v3t2", v3t2), ("v3t3", v3t3)):
+    DESIGNS[_n] = turned(boxer5(_a, f"ex_{_n}"), 0.0, f"ex_{_n}")
