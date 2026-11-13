@@ -15,7 +15,7 @@
   const event = {
     id: 1, kind: 'scene', title: 'Deep space: Distress call', who: 'Free Traders freighter', tone: 'amber', ships: 1, hostiles: 0, deploying: false, canLeave: true, why: null, fleeing: false, resumeTo: 'Kestrel Reach', hopsLeft: 1,
     roster: [{ ship: 1, name: 'Gilded Magpie', owner: 'Free Traders', status: 'Helpless', tone: 'amber' }],
-    dockRequest: null, aid: { ship: 1, name: 'Gilded Magpie', action: 'offer', status: 'Its reactor is failing.', clock: 112, failing: 'Reactor' }, pod: null,
+    dockRequest: null, aid: { ship: 1, name: 'Gilded Magpie', action: 'offer', status: null, clock: 112, failing: 'Reactor' }, pod: null,
   } as unknown as UiEventGrid;
   const dockEvent = { ...event, kind: 'scene', aid: null, dockRequest: { ship: 1, name: 'Skiff', text: 'Skiff asks to dock so its crew can come aboard and settle the debt.' }, roster: [{ ship: 1, name: 'Skiff', owner: 'Pirates', status: 'Asks to dock', tone: 'amber' }] } as unknown as UiEventGrid;
   const report = {
