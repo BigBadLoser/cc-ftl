@@ -157,7 +157,11 @@ placement of any specific department, but to me that has a decent trading identi
   a step and build a thick wall. The
   north and south spokes are gated at both ends and carry the machinery as a slab of one depth either side; the east
   and west spokes (the main axis) carry rows of cabins, as many of the quarters as fit, and what does not fit goes to
-  the ring's band (`Built.left`). The ground between the spokes stays open.
+  the ring's band (`Built.left`). The cabins on those spokes are one pool laid at one size (the user: "the cabins
+  being different sizes on either side of the street is odd, and the size distribution could probably be more
+  equal"): the widest that lets the lanes hold them all, the same number either side of a street where the count
+  allows, a lane's spare length shared along its row, its other rooms (the shop) at its head by the market. An odd
+  count leaves one lane a cabin short, so its cabins come out wider than those across the street. The ground between the spokes stays open.
 - A `market` department: stalls in the trade station's assembly program (`assemblyAlso`; racks and a console as
   placeholder fittings, no stall module exists).
 - The harbour on one side of the main axis (shape `face`, above), the warehouses as a wing on the other.

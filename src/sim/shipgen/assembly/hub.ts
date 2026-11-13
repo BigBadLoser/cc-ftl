@@ -163,9 +163,41 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   // ring's inner side is not straight across the room, it stays as it was.
   const plan = lanes.map((l) => l.done);
   g.reset(laid);
+  // The cabins on the open spokes are one pool, all one size: the widest that lets the lanes hold them all, the same
+  // number either side of a street where the count allows, and what length a lane has over is shared along its row.
+  // A lane's other rooms head it, by the market.
+  const rows = open.map((l) => {
+    const all = (plan[lanes.indexOf(l)] as Lane['done']).flatMap((r) => r.specs), others = all.filter((r) => !r.cabin);
+    return { l, others, cabins: all.filter((r) => r.cabin), room: s.reach - l.u0 - 1 - others.reduce((n, r) => n + r.w + 1, 0), n: 0 };
+  });
+  const pool = rows.flatMap((r) => r.cabins), holds = (w: number, room: number): number => Math.max(0, Math.floor(room / (w + 1)));
+  const wide = [5, 4, 3, 2].find((w) => rows.reduce((n, r) => n + holds(w, r.room), 0) >= pool.length);
+  const even = new Map<Lane, RoomSpec[]>();
+  if (pool.length > 0 && wide) {
+    for (const r of rows) r.n = holds(wide, r.room);
+    let over = rows.reduce((n, r) => n + r.n, 0) - pool.length;
+    const streetsOf = [...new Set(rows.map((r) => `${r.l.axis}${r.l.dir}`))].map((k) => rows.filter((r) => `${r.l.axis}${r.l.dir}` === k));
+    const count = (pair: typeof rows): number => pair.reduce((n, r) => n + r.n, 0);
+    for (; over >= 2; over -= 2) {
+      const pair = streetsOf.filter((p) => p.length === 2 && p.every((r) => r.n > 0)).sort((p, q) => count(q) - count(p))[0];
+      if (!pair) break;
+      for (const r of pair) r.n--;
+    }
+    for (; over > 0; over--) (rows.reduce((p, q) => (q.n > p.n ? q : p)) as (typeof rows)[number]).n--;
+    const deep = Math.min(...pool.map((r) => r.h));
+    for (const r of rows) {
+      const mine = pool.splice(0, r.n), spare = r.room - r.n * (wide + 1), last = r.others.map((q) => !q.annexed).lastIndexOf(true);
+      even.set(r.l, [
+        ...r.others.map((q, j) => (r.n === 0 && j === last ? { ...q, w: q.w + spare } : q)),
+        ...mine.map((q, j) => ({ ...q, h: deep, w: wide + Math.floor(spare / r.n) + (j >= r.n - (spare % r.n) ? 1 : 0) })),
+      ]);
+    }
+  }
   for (const [i, l] of lanes.entries()) {
     l.at = l.from + l.dir * l.u0;
     l.done = [];
+    const row = even.get(l);
+    if (row && (row.length === 0 || put(l, row, { access: [streets] }))) continue;
     for (const [k, rec] of (plan[i] as Lane['done']).entries()) {
       const end = (l.at - l.from) * l.dir + rec.specs.reduce((n, r) => n + r.w + 1, 1), extra = s.reach - end;
       let grown: RoomSpec[] | null = null;
