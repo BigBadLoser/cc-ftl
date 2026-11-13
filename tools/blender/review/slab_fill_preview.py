@@ -21,9 +21,9 @@ def floor_canvas():
 
 
 def press(c, ox, oy, v, i):
-    f = faces[v]["faces"][i]
-    if f"slab.study.{v}.face{i}" not in G.m["assets"]:            # that face is hidden at this slot
+    if f"slab.study.{v}.face{i}" not in G.m["assets"]:            # that face is hidden at this slot (or no masks)
         return
+    f = faces[v]["faces"][i]
     img, _, an = G.static(f"slab.study.{v}.face{i}")
     SP.press(c, [(ox + x, oy + y) for x, y in f], img, ox - an["x"], oy - an["y"], SP.TINT, SP.body)
 
@@ -47,18 +47,23 @@ def reference():
     return np.array(c.px[..., :3])
 
 
-ref, ten = reference(), layered(set(range(10)))
-diff = np.abs(ref.astype(int) - ten.astype(int)).max(-1)
-mark = ten.copy(); mark[diff > 24] = (255, 0, 255)
-n = int((diff > 24).sum())
-panels = [("reference: all ten in one render", ref), ("layers: all ten", ten), (f"difference ({n} px off)", mark),
-          ("layers: 7 full", layered({0, 1, 2, 4, 6, 7, 9})), ("layers: 3 full", layered({0, 3, 8})),
-          ("layers: empty", layered(set()))]
+ten = layered(set(range(10)))
+if "slab.study.ff" in G.m["assets"]:
+    ref = reference()
+    diff = np.abs(ref.astype(int) - ten.astype(int)).max(-1)
+    mark = ten.copy(); mark[diff > 24] = (255, 0, 255)
+    n = int((diff > 24).sum())
+    print("px off:", n)
+    top = [("reference: all ten in one render", ref), ("layers: all ten", ten), (f"difference ({n} px off)", mark)]
+else:                                               # no reference rendered: fill levels only
+    top = [("layers: empty", layered(set())), ("layers: 3 full", layered({0, 3, 8})), ("layers: all ten", ten)]
+panels = top + [("layers: 7 full", layered({0, 1, 2, 4, 6, 7, 9})), ("layers: 3 full", layered({0, 3, 8})),
+                ("layers: empty", layered(set()))][: 6 - len(top) if "slab.study.ff" in G.m["assets"] else 1]
 Z = 3
-sheet = Image.new("RGB", (3 * (260 * Z + 10), 2 * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
+rows = (len(panels) + 2) // 3
+sheet = Image.new("RGB", (3 * (260 * Z + 10), rows * (290 * Z + 30)), (40, 40, 40)); d = ImageDraw.Draw(sheet)
 for j, (name, px) in enumerate(panels):
     x, y = (j % 3) * (260 * Z + 10), (j // 3) * (290 * Z + 30)
     sheet.paste(Image.fromarray(px.astype(np.uint8)).resize((260 * Z, 290 * Z), Image.NEAREST), (x, y + 30))
     d.text((x + 8, y + 8), name, fill=(230, 230, 230))
 sheet.save(sys.argv[3])
-print("px off:", n)

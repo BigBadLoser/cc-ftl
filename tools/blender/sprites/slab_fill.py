@@ -12,11 +12,11 @@ composites and checks them). Slabs never overlap at rest, so a fixed back-to-fro
 
 Round 28 (the empty state "just looks like blocks"): every socket is a recess with a docking pad, the deck is seamed
 and bolted, and a spindle runs from the deck up to the crown (the rotor in one piece). What the base draws must read
-right with or without the slab, since a slab layer only covers it where the slab is in front. Three takes on a bay:
-  e1  sockets only
-  e2  marked: a striped front lip on each socket, an amber vacancy lamp on its back wall (hidden behind a slab)
-  e3  plumbed: each bay's umbilical hangs from a coupling on the spindle and plugs into the socket's back wall
-      (behind a slab it reads as plugged into the slab's back)"""
+right with or without the slab, since a slab layer only covers it where the slab is in front. Round 29 (e3 picked, with
+heavier hoses and the amber lamp): each bay's umbilical hangs from a coupling on the spindle to a plug bracket on the
+socket's inner cheek, against the slab's inner end (behind a slab is the next slab's room: a hose there would run
+through it). The same hose reads parked when the bay is empty and connected when it is full. An empty bay's amber
+vacancy lamp sits on the socket's back wall, behind the slab when one stands there."""
 import math
 
 from . import slab_load as LD
@@ -30,12 +30,12 @@ FP = (3, 3)
 def spindle(k):
     """The rotor's spindle, from the deck up into the canopy's plug: bands and seams so it reads as turned steel."""
     z0, z1 = W.Z0 - 0.02, W.ZC + 0.1
-    k.cyl(0, 0, z0, 0.42, z1 - z0, "steelD", sides=40)
+    k.cyl(0, 0, z0, 0.34, z1 - z0, "steelD", sides=40)
     for z in (z0, z0 + 0.55, z0 + 1.1):
-        ring(k, 0.425, z, 0.06, 0.03, "steel", top="steelL", n=40)
+        ring(k, 0.345, z, 0.06, 0.03, "steel", top="steelL", n=40)
     for i in range(10):
         a = (i + 0.5) * math.tau / 10 + math.radians(45)
-        k.box(*at(0.425, a)[:2], z0 + 0.06, 0.045, 0.02, 1.0, "dark", rz=a + math.pi / 2)
+        k.box(*at(0.345, a)[:2], z0 + 0.06, 0.045, 0.02, 1.0, "dark", rz=a + math.pi / 2)
 
 
 def deck(k):
@@ -47,37 +47,35 @@ def deck(k):
     bolts(k, 0.5, z + 0.005, 20, s=0.05, col="steel")
 
 
-def bay(k, i, style):
+def bay(k, i, vacant):
     s = frame(angles()[i], W.Z0)
-    if style == "e2":
-        for j in range(8):                                                   # a striped front lip
-            w0 = -0.45 + j * 0.1125
-            s.box(k, 0.0, 0.042, w0, w0 + 0.1125, 0.07, 0.102, "hazY" if j % 2 else "hazK")
+    e = min((-1, 1), key=lambda e: math.hypot(*s.p(0.0, e, 0.0)[:2]))        # the slab's inner end (toward the spindle)
+    plug = s.p(0.3, e * 0.5, -0.11)                                           # the hose's end, over the plug bracket
+    a = math.atan2(plug[1], plug[0])
+    top = (*at(0.38, a)[:2], W.Z0 + 0.98)
+    k.box(*at(0.355, a)[:2], W.Z0 + 0.9, 0.07, 0.17, 0.17, "sole", top="sole", rz=a + math.pi / 2)    # the coupling
+    k.box(*at(0.395, a)[:2], W.Z0 + 0.935, 0.03, 0.12, 0.1, "hazY", rz=a + math.pi / 2)              # its collar
+    sag = ((top[0] + plug[0]) / 2, (top[1] + plug[1]) / 2, W.Z0 + 0.5)
+    tube(k, top, sag, 0.045, "plate")
+    tube(k, sag, plug, 0.045, "plate")
+    s.box(k, 0.16, 0.3, *sorted((e * 0.53, e * 0.46)), -0.17, -0.05, "hazY")                 # the plug in its bracket
+    s.box(k, 0.0, 0.16, *sorted((e * 0.53, e * 0.5)), -0.19, -0.03, "steel", face="steelL")  # the bracket on the inner cheek
+    if vacant:
         s.box(k, 0.14, 0.17, -0.07, 0.07, -0.32, -0.28, "slbAmb")              # the vacancy lamp
-    elif style == "e3":
-        back = s.p(0.12, 0.0, -0.3)
-        a = math.atan2(back[1], back[0])
-        c = (*at(0.44, a)[:2], W.Z0 + 0.95)
-        k.box(*at(0.44, a)[:2], W.Z0 + 0.88, 0.07, 0.16, 0.16, "steel", top="steelL", rz=a + math.pi / 2)
-        k.box(*at(0.48, a)[:2], W.Z0 + 0.91, 0.03, 0.1, 0.1, "hazY", rz=a + math.pi / 2)
-        sag = ((c[0] + back[0]) / 2, (c[1] + back[1]) / 2, W.Z0 + 0.35)
-        tube(k, (*at(0.5, a)[:2], c[2]), sag, 0.03, "dark")
-        tube(k, sag, (back[0], back[1], back[2] + 0.06), 0.03, "dark")
-        s.box(k, 0.12, 0.2, -0.06, 0.06, -0.33, -0.25, "hazY")                  # the plug
 
 
-def module(k, empty, style="e1"):
+def module(k, empty):
     out = W.geneva_over_tyres(k, LD.P, lights=LD.LAMP, empty=empty, gap=LD.GAP)
     LD.hatch(k, LD.DEEP, 1.0)
     spindle(k)
     deck(k)
-    for i in empty:
-        bay(k, i, style)
+    for i in range(10):
+        bay(k, i, i in empty)
     return out
 
 
-def base(k, style="e1"):
-    module(k, tuple(range(10)), style)
+def base(k):
+    module(k, tuple(range(10)))
     return [frame(th, W.Z0) for th in angles()]
 
 
@@ -93,7 +91,6 @@ def slot(i):
     return go
 
 
-DESIGNS = {"fb": (base, FP), "ff": (full, FP),
-           **{v: ((lambda k, v=v: base(k, v)), FP) for v in ("e1", "e2", "e3")}}
+DESIGNS = {"fb": (base, FP), "ff": (full, FP)}
 OVERLAYS = {"fb": [(slot(i), 255) for i in range(10)]}
 PIT = {v: LD.r_hole for v in DESIGNS}
