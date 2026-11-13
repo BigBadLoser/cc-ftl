@@ -134,9 +134,9 @@ export const stationRecipes = {
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
   crescent: [
-    crescent('freight pier, stalls on the waterfront', { cut: { flat: 4 }, from: 20, freight: 'pier' }),
-    crescent('warehouses at the pier foot, stalls beyond', { cut: { flat: 4 }, from: 20, freight: 'foot' }),
-    crescent('market street, a warehouse behind the stalls either side', { cut: { flat: 4 }, from: 20, freight: 'behind' }),
+    crescent('freight pier, stalls on the waterfront', { cut: 5, from: 20, freight: 'pier' }),
+    crescent('warehouses at the pier foot, stalls beyond', { cut: 5, from: 20, freight: 'foot' }),
+    crescent('market street, a warehouse behind the stalls either side', { cut: 5, from: 20, freight: 'behind' }),
   ],
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),
