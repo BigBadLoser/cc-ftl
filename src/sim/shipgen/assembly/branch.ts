@@ -42,7 +42,8 @@ function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpe
   const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   // A rule with a quay builds its docks and this section's rooms as one.
   if (rule.quay && o.docks?.length) {
-    const plain: BlockOpts = { ...base };
+    // (A pier head's rooms are the street's last rows: at the section's own depth.)
+    const plain: BlockOpts = { ...base, ...(rule.quay.form === 'head' && rule.section.rowDepth ? { rowDepth: rule.section.rowDepth } : {}) };
     delete plain.docks;
     return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain));
   }

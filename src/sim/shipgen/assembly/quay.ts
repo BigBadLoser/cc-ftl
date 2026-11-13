@@ -1,6 +1,7 @@
 import type { RoomSpec } from '../plan';
 import { block, type BlockOpts } from './elements';
 import { K } from './lattice';
+import { pierHead } from './pierhead';
 import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type Port } from './model';
 
 /**
@@ -9,7 +10,7 @@ import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type 
  * customs: an open hall the quay runs into, with the harbour's only gate on its far side, where the street leaves. The
  * harbour's rooms stand along the quay's inner side, either side of customs, and open onto the quay.
  *
- * Three forms of it:
+ * Three forms of it (a fourth, `head`, is the end of a pier: pierhead.ts):
  *   quay       the airlocks along the outer wall at an even pitch
  *   gatehouse  the control room stands out in front of the quay, in the middle, the airlocks in a wing either side of it
  *   basin      two arms of concourse run out from the quay's ends, the airlocks in their inner walls facing each other:
@@ -20,7 +21,7 @@ import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type 
  */
 
 export interface QuayOpts {
-  form: 'quay' | 'gatehouse' | 'basin';
+  form: 'quay' | 'gatehouse' | 'basin' | 'head';
   /** The concourse: tiles across, the three an airlock unit takes included (the innermost of them is the unit's walkway). */
   wide: number;
   /** Tiles from one airlock to the next along a wall. */
@@ -50,7 +51,9 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   const g = c.g, near = port.hall < 0, n0 = g.regions.length, N = docks.length, P = o.pitch;
   // The gatehouse is the control room; without one the harbour is a plain quay.
   const tower = o.form === 'gatehouse' ? rooms.find((r) => r.role === 'bridge') : undefined;
-  const form = o.form === 'gatehouse' && !tower ? 'quay' : o.form;
+  // A pier head needs a street to end; with nothing behind the port the harbour is a plain quay.
+  if (o.form === 'head' && !near) return pierHead(c, port, rooms, docks, o, b);
+  const form = (o.form === 'gatehouse' && !tower) || o.form === 'head' ? 'quay' : o.form;
   if (N === 0) return null;
   const width = Math.max(2, b.width ?? port.width ?? 2), X = width - 2;
   // Which rooms line the quay, by side; the rest stand along the street.
