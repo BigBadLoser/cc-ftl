@@ -13,7 +13,20 @@ right jamb (near the front) round to the left; the canopy's middle sunk into a w
   s51  crown well (machine green, yellow): the crown with its clamp rams and two tyre drives down in the well"""
 import math
 
-from .slab_kit import BACK, FRONT, NS, R0, angles, at, cassette, frame, hazard, links, loop, prism, ring, spring, tube
+from .slab_kit import (
+    BACK,
+    FRONT,
+    NS,
+    R0,
+    angles,
+    at,
+    cassette,
+    frame,
+    prism,
+    ring,
+    spring,
+    tube,
+)
 from .slab_study import L, beam
 
 D = 0.55                                            # the pit's depth
@@ -75,13 +88,14 @@ def pit(k, deck, trim, gap=0.0):
         k.box(*at(1.44, a)[:2], -D + 0.02, 0.12, 0.36, 0.42, trim, rz=a)
         for dz in (0.1, 0.18, 0.26):
             k.box(*at(1.38, a)[:2], -D + 0.02 + dz, 0.012, 0.28, 0.03, "dark", rz=a)
-    if gap:                                          # the lip, broken where a hatch at the front opens into the pit
-        arc_wall(k, FRONT + gap, FRONT + math.tau - gap, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")
-        ring(k, RP + 0.055, 0.05, 0.012, 0.08, None, n=40, colf=lambda i: "hazY" if i % 2 else "hazK",
-             skip=lambda i: abs(math.remainder((i + 0.5) * math.tau / 40 - FRONT, math.tau)) < gap + 0.05)
-    else:
-        annulus(k, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")         # the lip
-        hazard(k, RP + 0.055, 0.05, w=0.08)
+    a0, a1 = (FRONT + gap, FRONT + math.tau - gap) if gap else (0.0, math.tau)   # the lip, broken where a hatch
+    arc_wall(k, a0, a1, RP, RP + 0.11, 0.0, 0.05, "steelD", top="steel")             # at the front opens the pit
+    for i in range(40):                             # its stripes: exact wedges outside the skirt, none overlapping
+        b0, b1 = i * math.tau / 40, (i + 1) * math.tau / 40     # (overlapping boxes z-fought at their seams)
+        if gap and abs(math.remainder((b0 + b1) / 2 - FRONT, math.tau)) < gap + 0.05:
+            continue
+        prism(k, [at(1.51, b0)[:2], at(RP + 0.11, b0)[:2], at(RP + 0.11, b1)[:2], at(1.51, b1)[:2]], 0.05, 0.058,
+              "hazY" if i % 2 else "hazK")
 
 
 def wheel(k, body, trim, skip=(), empty=()):
@@ -296,7 +310,7 @@ def jamb(k, a, body, trim, screen=False):
 
 def panel(k, a, body, trim):
     """The control face set into the housing's wall: a framed screen, the cell selector (one lit), the release key."""
-    c = lambda r, t, z, sr, st, sz, col: k.box(                              # noqa: E731
+    c = lambda r, t, z, sr, st, sz, col: k.box(
         at(r, a)[0] - math.sin(a) * t, at(r, a)[1] + math.cos(a) * t, z, sr, st, sz, col, rz=a)
     c(1.49, 0.0, 0.42, 0.03, 0.46, 0.56, trim)
     c(1.505, 0.0, 0.62, 0.012, 0.36, 0.26, "dark")
