@@ -1158,6 +1158,28 @@ are unchanged. After the answer the window stays open with how it ended and the 
 - **Holding prisoners:** they go into **cryo pods** (`module.cryo_pod`; only its sprite exists so far, no module def or system, see docs/catalog/modules.md), not a brig. Frozen, they need no food and can't
   escape. If a pod loses power, its prisoner thaws and turns hostile inside your ship. A shuttle or the boarding party
   escorts prisoners over.
+- **Look study: stasis slab and stasis wheel (user decisions, November 2026; art only, not built).** The
+  sprites are a preview-only Blender family (`slab`, `tools/blender/sprites/slab_*.py`), not in the manifest.
+  - **The slab:** a prisoner travels as a stasis slab, a two-tile item crew cart around. A steel-framed face (unlit,
+    a screen) with the prisoner's crew sprite pressed into it by a shader, cyan field lines in the side channels, heavy
+    end caps with docking sockets, a status strip on the head cap.
+  - **The hover cart:** level, an emitter clamp on each end cap, a push bar at one end. Its lift field is two rings per
+    emitter that leave it, run down and dim out before the floor (a twelve-frame loop; the dimming is palette steps, no
+    transparency).
+  - **The stasis wheel (3x3 module):** ten slabs stand upright round a spindle, turned 40 degrees off radial so the near
+    faces fan toward the room, sunk in a pit in the floor. A wrapped housing with an asymmetric front window, the
+    control panel just round from its right edge, a canopy whose middle is sunk, with a Geneva drive on top (it indexes
+    the wheel in whole 36-degree steps) and three tyre drives down in the well. Paint by role: warm grey housing, dark
+    steel machinery band, yellow on guards over moving parts, bare steel on what turns, cyan only for the stasis field.
+    A station lamp (five amber lights) over the window.
+  - **Empty bays:** each socket is a recess open at its outer end, with a docking pad; each bay's umbilical (red) hangs
+    from a coupling on the spindle to a plug at the slab's inner end, and an empty bay shows an amber vacancy lamp.
+  - **Loading:** through a corner hatch merged into the pit's mouth. The cart sets the slab face up on a cradle that
+    rises from under two sliding leaves; the cradle tips the slab upright, a shuttle runs it into the wheel (turning it
+    40 degrees on the way) while the cradle sinks clear, and the leaves shut.
+  - **Fill levels from layers:** a base with every socket empty, one layer per slot (its slab, the base held out) and
+    one face mask per slot, composited back to front. Because the Geneva drive stops in whole steps, ten rest positions
+    cover every fill level. Only faces turned toward the camera get a mask.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).
