@@ -43,7 +43,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "v4m": "V4m  guard, small gloves", "v4n": "V4n  + small shoulders", "v4o": "V4o  + livery forearms",
          "v4p": "V4p  shoulders out a little", "v4q": "V4q  shoulders out more", "v4r": "V4r  shoulders out most",
          "v4s": "V4s  guard forward", "v4t": "V4t  guard further", "v4u": "V4u  guard furthest",
-         "v5a": "V5a  discs + robot details", "v5b": "V5b  clevis + robot details", "v5c": "V5c  robot hinge, guard forward"}
+         "v5a": "V5a  discs + robot details", "v5b": "V5b  clevis + robot details", "v5c": "V5c  robot hinge, guard forward",
+         "v6a": "V6a  round, leaning", "v6b": "V6b  athletic, leaning", "v6c": "V6c  heavy + ear plates"}
 CW, CH = 200, 220
 
 

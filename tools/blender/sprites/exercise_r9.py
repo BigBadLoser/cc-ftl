@@ -21,8 +21,15 @@ TURN = [math.pi / 4]                                                            
                                                                                    # 0 faces +v (round 5's way)
 
 
+LEAN = [0.0]                                                                       # forward tip of everything above the
+WAIST = 24                                                                         # waist (radians), about the gimbal
+
+
 def D(x, y, z, a=1.0, b=None):
     """Droid frame -> a sweep control point on the footprint."""
+    if LEAN[0] and z > WAIST:
+        cl, sl, h = math.cos(LEAN[0]), math.sin(LEAN[0]), z - WAIST
+        y, z = y * cl + h * sl, WAIST + h * cl - y * sl
     c, s = math.cos(TURN[0]), math.sin(TURN[0])
     return (x * c + y * s, V + y * c - x * s, z, a, a if b is None else b)
 

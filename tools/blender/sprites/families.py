@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "exercise12":    # look study, preview only (not in RENDERED): sparring droid, lean + round head mixes
+        from . import exercise_r12
+        return exercise_r12.jobs(), "only:gym"
     if name == "exercise11":    # look study, preview only (not in RENDERED): round droid with robot-crew details
         from . import exercise_r11
         return exercise_r11.jobs(), "only:gym"
