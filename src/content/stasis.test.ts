@@ -80,7 +80,7 @@ describe('stasis wheel', () => {
     const def = content.modules['module.stasis_wheel'];
     expect(def.footprint).toEqual([3, 3]);
     expect(def.stasisWheel?.slots).toBe(10);
-    expect(wheelSlots(sim, wheel)).toEqual(new Array(10).fill({ kind: 'empty' }));
+    expect(wheelSlots(sim.world, wheel)).toEqual(new Array(10).fill({ kind: 'empty' }));
     expect(sim.world.get(wheel, ModuleC)!.powered).toBe(false); // idle: nothing to hold
     expect(heldItems(sim).filter((h) => h.where === 'slotted').reduce((n, h) => n + h.count, 0)).toBe(10);
   });
@@ -92,7 +92,7 @@ describe('stasis wheel', () => {
     expect(events.some((e) => e.type === 'stasis.stowed' && e.crew === prisoner && e.wheel === wheel)).toBe(true);
     expect(isFrozen(sim, prisoner)).toBe(true);
     expect(sim.world.has(prisoner, PositionC)).toBe(false); // out of the world
-    const slots = wheelSlots(sim, wheel);
+    const slots = wheelSlots(sim.world, wheel);
     expect(slots.filter((s) => s.kind === 'full')).toEqual([{ kind: 'full', prisoner }]);
     expect(slots.filter((s) => s.kind === 'empty')).toHaveLength(9); // its own empty slab was used
     run(sim, 2);
@@ -156,7 +156,7 @@ describe('stasis wheel', () => {
     const hatch = accessTile(content.modules['module.stasis_wheel'], m.x, m.y, m.rot)!;
     expect(Math.abs(pos.x - hatch.x) + Math.abs(pos.y - hatch.y)).toBeLessThanOrEqual(6);
     expect(isHostile(sim, prisoner, playerCrew(sim)[0] as number)).toBe(true);
-    expect(wheelSlots(sim, wheel).filter((s) => s.kind === 'empty')).toHaveLength(10); // the slab is left empty in its slot
+    expect(wheelSlots(sim.world, wheel).filter((s) => s.kind === 'empty')).toHaveLength(10); // the slab is left empty in its slot
   });
 
   it('a wheel taken down sets its full slabs on the floor and spills its empty ones', () => {
@@ -172,7 +172,7 @@ describe('stasis wheel', () => {
     const { sim, wheel, prisoner } = prisonGame();
     until(sim, stowed(sim, prisoner));
     const copy = deserialize(serialize(sim), content);
-    expect(wheelSlots(copy, wheel)).toEqual(wheelSlots(sim, wheel));
+    expect(wheelSlots(copy.world, wheel)).toEqual(wheelSlots(sim.world, wheel));
     expect(copy.world.get(prisoner, StasisC)).toEqual(sim.world.get(prisoner, StasisC));
     expect(slabPlace(copy, prisoner)).toEqual(slabPlace(sim, prisoner));
     expect(copy.world.get(prisoner, CrewC)?.name).toBe(sim.world.get(prisoner, CrewC)?.name);

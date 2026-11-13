@@ -12,7 +12,7 @@ import { steady } from './vehicleBayArt';
 const ids = new Set(Object.keys((JSON.parse(raw) as { assets: Record<string, unknown> }).assets));
 
 /** Planned modules whose sheets are not in the manifest yet (the card shows a placeholder icon). Remove an id when its art lands. */
-const ART_PENDING = new Set(['module.cargo_container', 'module.stasis_wheel']);
+const ART_PENDING = new Set(['module.cargo_container']);
 
 describe('build catalog thumbnails', () => {
   // The catalog, popover preview and placement ghost all draw a def through `layersOf` in its preview state: every buildable

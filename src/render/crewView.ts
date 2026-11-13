@@ -25,6 +25,9 @@ import type { CrewAtlas, CrewCell } from './crewAtlas';
 import type { CrewPalette } from './assets/palette';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
+import { createCart, type CartSprite } from './cartView';
+import { CART_FRAMES, cartAnchor, cartFrame, cartRot } from './stasisArt';
+import { onCart } from '../sim/stasis/query';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
@@ -90,6 +93,9 @@ interface Slot {
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
   carryBack: Sprite;
+  /** The hover cart a stasis slab rides on, ahead of the carrier (its own depth key), and the rotation it last ran at. */
+  cart: CartSprite;
+  cartRot: number;
   barBg: Sprite;
   barFill: Sprite;
   x: number;
@@ -194,7 +200,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, cell, pal, filter: null, shrunk: false, tint: 0xffffff, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    const cart = createCart(L.sorted);
+    return { root, parts, glows, ring, shadow, cell, pal, filter: null, shrunk: false, tint: 0xffffff, carry, carryBack, cart, cartRot: 0, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -259,6 +266,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     for (const g of s.glows) g.halo?.destroy();
     s.filter?.destroy();
     s.cell.release();
+    s.cart.destroy();
     s.root.destroy({ children: true });
   }
 
@@ -396,7 +404,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
-        showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
+        // A stasis slab rides a hover cart run ahead of the carrier, not in their hands.
+        const carting = !hurtLying && onCart(world, id);
+        if (carting) {
+          s.cartRot = cartRot(dir, s.cartRot);
+          const a = cartAnchor(s.cartRot);
+          const q = iso(lx + a.dx, ly + a.dy);
+          s.cart.show(atlas, cartFrame(s.cartRot, now, id % CART_FRAMES), Math.round(q.x), Math.round(q.y), depthKey(lx + a.dx, ly + a.dy), s.tint);
+        } else s.cart.hide();
+        showHeld(s, carting ? undefined : carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
         const hp = world.get(id, HealthC);
         const showBar = !dead && !pod && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;

@@ -1,13 +1,15 @@
 import { AssignmentC, JobC, PositionC } from '../crew/components';
 import type { Tile } from '../crew/pathfind';
+import { CarryingC } from '../items/components';
 import { ModuleC, type Module } from '../modules/components';
 import { accessTile } from '../modules/footprint';
 import type { ModuleDef } from '../registry';
 import { shipIdAt, shipIdOf } from '../regions';
+import type { World } from '../ecs';
 import type { Sim } from '../sim';
 import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from './components';
 import { floorTiles } from './place';
-import { RESERVE_TICKS } from './tuning';
+import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /**
  * The owning reads of prisoner holding (#116): every system, the renderer and the UI ask these, never the components directly.
@@ -21,8 +23,8 @@ export type WheelSlot = { kind: 'none' } | { kind: 'empty' } | { kind: 'full'; p
  * A stasis wheel's slots in order (empty array for a module that is not a wheel). Slot 0 is the one at the wheel's access (hatch) corner; the
  * rest follow counter-clockwise seen from above, in the module's own unrotated frame.
  */
-export function wheelSlots(sim: Sim, wheel: number): WheelSlot[] {
-  return (sim.world.get(wheel, StasisWheelC)?.slots ?? []).map((s) => (s === SLOT_NONE ? { kind: 'none' } : s === SLOT_EMPTY ? { kind: 'empty' } : { kind: 'full', prisoner: s }));
+export function wheelSlots(world: World, wheel: number): WheelSlot[] {
+  return (world.get(wheel, StasisWheelC)?.slots ?? []).map((s) => (s === SLOT_NONE ? { kind: 'none' } : s === SLOT_EMPTY ? { kind: 'empty' } : { kind: 'full', prisoner: s }));
 }
 
 /** Where a full slab is: in a wheel slot, on a crew member's hover cart, or lying on the floor (its two tiles and which way it lies). */
@@ -79,12 +81,17 @@ export function slabDraining(sim: Sim, prisoner: number): boolean {
 }
 
 /** The prisoner whose slab the crew member has on their cart, or 0. */
-export function carriedSlabOf(sim: Sim, crew: number): number {
-  for (const id of sim.world.query(StasisC)) {
-    const s = sim.world.get(id, StasisC);
+export function carriedSlabOf(world: World, crew: number): number {
+  for (const id of world.query(StasisC)) {
+    const s = world.get(id, StasisC);
     if (s?.at === 'carried' && s.carrier === crew) return id;
   }
   return 0;
+}
+
+/** True if the crew member is pushing a slab on a hover cart: a full one (a prisoner's) or an empty one they fetched. The renderer draws the cart from this. */
+export function onCart(world: World, crew: number): boolean {
+  return world.get(crew, CarryingC)?.item === SLAB_ITEM || carriedSlabOf(world, crew) !== 0;
 }
 
 /** True if the crew member has the prisoner's slab on their cart for the stasis job they hold (anything else is a carry that ended). */
