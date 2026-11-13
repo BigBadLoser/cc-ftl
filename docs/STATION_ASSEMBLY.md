@@ -148,11 +148,13 @@ Reference: the faceted bazaar mock (`docs/refs/station-mocks/tradingB-*.png`). T
 placement of any specific department, but to me that has a decent trading identity". Recipe family `bazaar`
 (`stationRecipes.ts`), on the trade station's program; sheets with `--family bazaar`.
 
-- `hub.ts`: what stands inside the ring. A round market at the centre (a square court, the stalls round it out to a
-  circular rim, a ring road round the lot; the user: "might as well make the center round too") and a spoke on each
-  axis from the court through the road to the ring. The first room of each line on a spoke runs in to the road, so its
-  near side follows the curve; at the room's far wall the road widens to a flat, or that wall would run into a step
-  and build a thick wall. The
+- `hub.ts`: what stands inside the ring. A market at the centre, a square with round corners like the outline (the
+  user: "might as well make the center round too", then, of the full circle tried first, "we could do a rounded
+  square like the outline"): a square court, the stalls round it one depth all the way, so the rim is straight along
+  the court's sides and an arc about each of its corners, and a road round the lot. A spoke runs on each axis from the
+  court through the road to the ring. The first room of each line on a spoke runs in to the road where it is deep
+  enough to reach past the straight; at such a room's far wall the road widens to a flat, or that wall would run into
+  a step and build a thick wall. The
   north and south spokes are gated at both ends and carry the machinery as a slab of one depth either side; the east
   and west spokes (the main axis) carry rows of cabins, as many of the quarters as fit, and what does not fit goes to
   the ring's band (`Built.left`). The ground between the spokes stays open.
@@ -169,11 +171,11 @@ placement of any specific department, but to me that has a decent trading identi
   common rooms on the diagonals. No rooms on the ring's inner side.
 
 The user's verdicts so far: first prototype "really ugly", the centre "square and not as nicely cohesive" (then an
-octagon, now round), the harbour's join to the stepped ring "so bad" (now `face`). Then, asked for: machinery behind gates,
+octagon, a circle, now the rounded square), the harbour's join to the stepped ring "so bad" (now `face`). Then, asked for: machinery behind gates,
 cabins off the ring's inner side, the octagon's gardens, the ragged band. Open: on the stepped ring the band is still
 stepped and now mostly garden (the octagon is the cleaner of the two); no dock on the warehouse wing; the ring is
-about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98); the stalls round the court
-are small wedges, their curved walls taking much of the floor.
+about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98). The full circle was
+dropped because its stalls came out as small wedges, the curved walls taking much of the floor.
 
 ## Ring stations: what was decided, and where they stand
 

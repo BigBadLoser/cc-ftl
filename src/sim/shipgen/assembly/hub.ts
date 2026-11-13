@@ -6,8 +6,9 @@ import { cabinsWithin } from './quarters';
 import { SOLID, SPACE } from './regions';
 
 /**
- * The hub: what stands inside a ring. A market at the centre, a disc: a square court, the market's rooms round it
- * (one either side of each spoke, out to the disc's rim), and a ring road round the lot. A spoke runs from each side of
+ * The hub: what stands inside a ring. A market at the centre, a square with round corners: a square court, the
+ * market's rooms round it (one either side of each spoke, one depth all the way round, so the corners are arcs about
+ * the court's corners), and a road round the lot. A spoke runs from each side of
  * the court through the market and the road to the ring, and the other rooms the hub takes line the spokes beyond the
  * road: the gated ones on the north and south spokes, a gate at either end of each, the rest on the east and west
  * spokes (the main axis). The first room of each line runs in to the road, so its near side follows the curve. The
@@ -47,21 +48,20 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   const gated = (f: Frame): boolean => rooms.gated.length > 0 && (f.dir === 'n' || f.dir === 's');
   for (const f of SPOKE) g.street(streets, ...rect(f, h, gated(f) ? s.reach - 1 : s.reach, -1, 1));
   // The market, a quadrant at a time, in the north-east one's terms: n tiles north of the middle and e east of it.
-  // The market's rim is a circle of radius H about the middle: a row n runs east to rim(n), never fewer than three
-  // tiles, so the wall along a spoke meets a flat. North of the court stands one room; east of it a second (with
-  // fewer rooms than eight, that ground is the first one's too).
-  const rim = (n: number): number => Math.max(3, Math.floor(Math.sqrt(H * H - (n + 0.5) ** 2) - 0.5));
+  // The market's rim stands `arm` off the court all the way round: straight along the court's sides, an arc about each
+  // of its corners. North of the court stands one room, with the corner; east of it a second (with fewer rooms than
+  // eight, that ground is the first one's too).
+  const within = (n: number, e: number): boolean => n < h || e < h || Math.hypot(n + 0.5 - h, e + 0.5 - h) <= o.arm - 0.2;
   const sold: [number, number][] = [];
   const stalls = [...market], own = Math.max(0, Math.min(4, stalls.length - 4));
   for (const [i, k] of shuffle(c.rng, [0, 1, 2, 3]).entries()) {
     const big = stalls.shift(), small = i < own ? stalls.shift() : undefined;
-    // The second room first: the wall between the two is its own, in line with the court's side. The two rows of the
-    // first room above that wall run as far as it does, so the wall never runs into a step of the rim.
+    // The second room first: the wall between the two is its own, in line with the court's side, and meets the rim
+    // on its straight.
     const b = small ? g.room(small.role, { spec: small, access: [court, streets] }) : -1;
     const a = big ? g.room(big.role, { spec: big, access: [court, streets] }) : g.room('garden', { dept: 'market', access: [court, streets] });
     for (let n = 1; n < H; n++) for (let e = 1; e < H; e++) {
-      if (n < h && e < h) continue;
-      if (!(e <= rim(n) || n <= rim(e) || (b >= 0 && (n === h || n === h + 1) && e <= rim(h - 1)))) continue;
+      if ((n < h && e < h) || !within(n, e)) continue;
       const [x, y] = turn(k, e, -1 - n);
       if (!c.free(x, y)) return null;
       g.set(x, y, n >= h || b < 0 ? a : b);
