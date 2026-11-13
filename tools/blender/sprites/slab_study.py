@@ -74,7 +74,8 @@ def cassette(k, s, body="slbGr", caps="dark"):
     docking sockets, a status strip on the head cap."""
     s.box(k, 0.12, L - 0.12, -W / 2, W / 2, -T, 0.0, body, face="slbFace")
     for w in (-1, 1):                                                        # the steel lip round the face
-        s.box(k, 0.12, L - 0.12, w * (W / 2 - 0.07), w * W / 2, 0.0, 0.004, "steel", face="steelL")
+        s.box(k, 0.12, L - 0.12, w * (W / 2 - 0.1), w * W / 2, 0.0, 0.004, "steel", face="steelL")   # (0.1: lying
+                                                                             # face up, 0.07 foreshortened to 1.5 px)
         s.box(k, 0.3, L - 0.3, w * (W / 2 + 0.001) - 0.012, w * (W / 2 + 0.001) + 0.012, -T / 2 - 0.02, -T / 2 + 0.02,
               "slbCy")                                                       # field line in the grip channel
     for l0, l1 in ((0.0, 0.16), (L - 0.16, L)):                              # the heavy end caps
