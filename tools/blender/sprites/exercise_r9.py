@@ -183,3 +183,61 @@ R10 = {"v3m": boxer2(face_t, "ex_v3m"), "v3n": boxer2(face_eyes, "ex_v3n"), "v3o
 for _n, _f in R10.items():                                                         # at round 5's turn, as asked,
     DESIGNS[_n] = turned(_f, 0.0, f"ex_{_n}")
     DESIGNS[_n + "c"] = _f                                                         # and facing the camera
+
+
+# ---- round 11: v3m (T visor) at round 5's turn, more white on the head, elbows flared out ----------------------------
+def boxer_arms2(k):
+    """As boxer_arms, the elbows pushed out to the sides so the pin and its white guard stand clear of the body."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)                                                   # shoulder
+        sw(k, [(s * 11, 0, 43, 3.2), (s * 13.5, 1.5, 38.5, 3), (s * 15, 3, 35.5, 2.2)], SHELL, p=2.4)  # upper arm
+        sw(k, [(s * 13.2, 4, 34, 2.9), (s * 16.8, 4, 34, 2.9)], FRAME_D, p=2.0, cap0=RAIL, cap1=RAIL)   # elbow pin
+        sw(k, [(s * 15.5, 3, 33, 2.4), (s * 16.5, 1, 30.5, 1.6), (s * 16.8, 0, 29.5, 0.5)], SHELL, p=2.2)  # guard
+        sw(k, [(s * 15, 5, 35, 2.2), (s * 10.5, 9, 40, 2)], FRAME)                 # forearm
+        sw(k, [(s * 10.3, 9.2, 40.3, 2.5), (s * 9.5, 10.2, 41.8, 2.5)], FRAME_D)    # wrist collar
+        glove(k, s * 8, 11, 44)
+
+
+def t_visor(k, ridge):
+    z = 53
+    sw(k, [(5.4 * math.sin(t), 5.1 * math.cos(t), z + 2.2, 0.8, 0.7) for t in (-0.9, -0.45, 0, 0.45, 0.9)], ridge,
+       p=2.5)                                                                      # brow ridge
+    sw(k, [(0, 5.2, z + 1.5, 0.7, 0.6), (0, 5.4, z - 3, 0.9, 0.6)], ridge, p=2.5)  # nose ridge
+
+
+def head_cap(k):
+    """Dark head, a white cap over its crown down to the brow; the T in white."""
+    head(k, FRAME_D)
+    sw(k, [(0, 0, 54.5, 5.3, 4.8), (0, 0, 57, 4.3, 3.8), (0, 0, 58.6, 2.4, 2), (0, 0, 59.2, 0.6)], SHELL, p=2.4)
+    t_visor(k, SHELL)
+
+
+def head_plates(k):
+    """Dark head, white ear plates either side, a white T."""
+    head(k, FRAME_D)
+    for s in (-1, 1):
+        sw(k, [(s * 4.4, -0.5, 53, 3, 3.4), (s * 5.6, -0.5, 53, 2.6, 3)], SHELL, p=2.6)
+    t_visor(k, SHELL)
+
+
+def head_white(k):
+    """White head, a dark visor band round its front carrying the lit slit, a dark T over it."""
+    head(k, SHELL, eye=None)
+    sw(k, [(5.3 * math.sin(t), 4.95 * math.cos(t), 53.3, 0.8, 1.5) for t in (-1.0, -0.5, 0, 0.5, 1.0)], FRAME_D,
+       p=3)                                                                        # visor band
+    sw(k, [(5.6 * math.sin(t), 5.25 * math.cos(t), 53.5, 0.5, 0.6) for t in (-0.8, -0.4, 0, 0.4, 0.8)], LIT, p=2.0)
+    t_visor(k, FRAME_D)
+
+
+def boxer3(face, name):
+    def f(nm=name):
+        k = Bench(nm, FP)
+        body(k)
+        face(k)
+        boxer_arms2(k)
+        return build(k)
+    return f
+
+
+for _n, _face in (("v3p", head_cap), ("v3q", head_plates), ("v3r", head_white)):
+    DESIGNS[_n] = turned(boxer3(_face, f"ex_{_n}"), 0.0, f"ex_{_n}")
