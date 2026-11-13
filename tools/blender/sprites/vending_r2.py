@@ -7,6 +7,11 @@ packets tall) with proper rows, and widened and deepened to fill most of its til
   vm1b curved glass: the glass front bows out between the cheeks, the pickup tray set into a wine kick panel
   vm1c split: snacks above, a chilled can section below behind its own glass, keypad with a small card slot
 
+Approved (user, 2026-11-13): VM1C (`vm1c`), the vending machine's art: a cream body with wine side cheeks and a flat
+wine header with a dim warm sign strip, snack packets behind the upper glass, a wine divider, a chilled can section
+behind its own dark glass below, a keypad with a card slot and a pickup tray; full height (66 px), filling most of
+its tile; palette set vending, 1 x 1.
+
 All in px of the tile (u, v -16..16, z up); the front (+v) faces the camera."""
 import math
 
