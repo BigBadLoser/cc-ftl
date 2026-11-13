@@ -69,6 +69,7 @@ export const TRANSLATE: Record<string, Shift | null> = {
   },
   station: (c, dx, dy) => [...(c.courts as Xy[]), ...(c.posts as Xy[])].forEach((t) => point(t, dx, dy)),
   stasis: xy, // a frozen prisoner's slab: its last tile (floor head, carrier or wheel hatch)
+  cartRest: xy, // where a stopped carrier's hover cart is parked
   // No coordinates:
   airlock: null, deploy: null, combat: null, weapon: null, pointDefense: null, ion: null, captureProgress: null, prize: null,
   container: null, allegiance: null, equip: null, equipOrder: null, background: null, interests: null, wontDo: null, surrendered: null, prisoner: null, skillXp: null, traits: null, rolledSkills: null,

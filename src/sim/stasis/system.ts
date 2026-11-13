@@ -9,6 +9,7 @@ import { playerShips } from '../story/world';
 import { PLAN_INTERVAL } from '../tuning';
 import { StasisC } from './components';
 import { dropSlab, thawPrisoner } from './freeze';
+import { keepCartRests } from './cart';
 import { aimFetch, pickWheel, stasisRoom } from './jobs';
 import { cartsFor, fullSlabs, slabDraining, slabHeld, wheelHatch, wheelOf } from './query';
 import { REFILL_PER_TICK, RESERVE_TICKS } from './tuning';
@@ -45,6 +46,7 @@ export function stasisSystem(sim: Sim): void {
       s.reserve = Math.min(RESERVE_TICKS, s.reserve + REFILL_PER_TICK);
     }
   }
+  keepCartRests(sim);
   if (sim.tick % PLAN_INTERVAL === 0) planJobs(sim);
 }
 
