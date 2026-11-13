@@ -375,13 +375,20 @@ SCHEMES = {
 }
 
 
-def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0, empty=()):
-    """s49 (and its paint schemes, s49a-c)."""
+def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0, empty=(), windows=1, lamps=False):
+    """s49 (and its paint schemes, s49a-c). `windows` 2 cuts a second window opposite the first (seen at the half
+    turn); `lamps` sets a dark slot lamp into the top rim over each slot (rim_lamp lights it)."""
     P = P or scheme("navy", "hivis")
     ol, orr = 1.15, 0.45
     pit(k, P["deck"], P["guard"], gap)
     out = wheel(k, P["clamp"], P["accent"], skip, empty)
-    skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
+    if windows == 2:
+        skin(k, FRONT + ol, BACK - orr, P["wall"], P["stripe"], strip=lights == "ring")
+        skin(k, BACK + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
+        jamb(k, BACK + ol, P["wall"], P["stripe"])
+        jamb(k, BACK - orr, P["wall"], P["stripe"])
+    else:
+        skin(k, FRONT + ol, FRONT + math.tau - orr, P["wall"], P["stripe"], strip=lights == "ring")
     jamb(k, FRONT + ol, P["wall"], P["stripe"])
     jamb(k, FRONT - orr, P["wall"], P["stripe"])
     panel(k, FRONT - orr - 0.27, P["wall"], P["panel"])
@@ -392,7 +399,23 @@ def geneva_over_tyres(k, P=None, lights="ring", skip=(), gap=0.0, empty=()):
     for a in (LEFT, BACK + 0.2, RIGHT - 0.45):
         top_tyres(k, a, 0.74, P["guard"], P["guard_top"], z=zf)
     geneva(k, BACK + 0.55 - math.pi / 2, P["cap"], P["guard"], rs=0.7, bridge=1.25, pad=False, star=P["star"])
+    if lamps:
+        for th in angles():
+            rim_lamp(k, th, None)
     return out
+
+
+LAMP_R = 1.27                                       # the slot lamps' radius on the top rim (lip 1.0-1.06, edge ~1.5)
+
+
+def rim_lamp(k, th, col):
+    """The slot lamp over the slot at angle th: a dark bezel set in the rim (col None), or its lit lens (col)."""
+    u, v, _ = at(LAMP_R, th)
+    if col is None:
+        k.box(u, v, ZT, 0.13, 0.13, 0.012, "steelD", rz=th)
+        k.box(u, v, ZT + 0.012, 0.09, 0.09, 0.004, "dark", rz=th)
+    else:
+        k.box(u, v, ZT + 0.012, 0.09, 0.09, 0.008, col, rz=th)
 
 
 def geneva_well(k):

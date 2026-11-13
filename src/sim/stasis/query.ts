@@ -37,9 +37,11 @@ export type SlabPlace =
 export const isFrozen = (sim: Sim, crew: number): boolean => sim.world.has(crew, StasisC);
 
 /** The wheel and slot holding the prisoner's slab, or null when it is in none. */
-export function wheelOf(sim: Sim, prisoner: number): { wheel: number; slot: number } | null {
-  for (const wheel of sim.world.query(StasisWheelC)) {
-    const slot = sim.world.get(wheel, StasisWheelC)?.slots.indexOf(prisoner) ?? -1;
+export const wheelOf = (sim: Sim, prisoner: number): { wheel: number; slot: number } | null => wheelIn(sim.world, prisoner);
+
+function wheelIn(world: World, prisoner: number): { wheel: number; slot: number } | null {
+  for (const wheel of world.query(StasisWheelC)) {
+    const slot = world.get(wheel, StasisWheelC)?.slots.indexOf(prisoner) ?? -1;
     if (slot >= 0) return { wheel, slot };
   }
   return null;
@@ -78,16 +80,22 @@ export function slabInfo(sim: Sim, prisoner: number): { prisoner: number; reserv
 export const fullSlabs = (sim: Sim): number[] => [...sim.world.query(StasisC)].sort((a, b) => a - b);
 
 /** True while the slab stands in a powered wheel (so it holds its prisoner and refills its reserve). */
-export function slabHeld(sim: Sim, prisoner: number): boolean {
-  if (sim.world.get(prisoner, StasisC)?.at !== 'wheel') return false;
-  const w = wheelOf(sim, prisoner);
-  return !!w && !!sim.world.get(w.wheel, ModuleC)?.powered;
+export const slabHeld = (sim: Sim, prisoner: number): boolean => slabHeldIn(sim.world, prisoner);
+
+/** slabHeld from the World alone (the renderer's read). */
+export function slabHeldIn(world: World, prisoner: number): boolean {
+  if (world.get(prisoner, StasisC)?.at !== 'wheel') return false;
+  const w = wheelIn(world, prisoner);
+  return !!w && !!world.get(w.wheel, ModuleC)?.powered;
 }
 
 /** True while the slab runs on its reserve: out of a powered wheel and not on a hover cart (the cart's field keeps it). The alert reads this. */
-export function slabDraining(sim: Sim, prisoner: number): boolean {
-  const s = sim.world.get(prisoner, StasisC);
-  return !!s && s.at !== 'carried' && !slabHeld(sim, prisoner);
+export const slabDraining = (sim: Sim, prisoner: number): boolean => slabDrainingIn(sim.world, prisoner);
+
+/** slabDraining from the World alone (the renderer's read: the wheel's slot lamp pulses red). */
+export function slabDrainingIn(world: World, prisoner: number): boolean {
+  const s = world.get(prisoner, StasisC);
+  return !!s && s.at !== 'carried' && !slabHeldIn(world, prisoner);
 }
 
 /** The prisoner whose slab the crew member has on their cart, or 0. */

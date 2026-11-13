@@ -8,7 +8,11 @@ const A = 'module.stasis_wheel';
 const TW = 64;
 const TH = 32;
 const PAD = 12;
-const FILLS: readonly [string, readonly number[]][] = [['empty', []], ['3 full', [0, 3, 8]], ['7 full', [0, 1, 2, 4, 6, 7, 9]], ['all 10', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]];
+/** [label, slots holding a prisoner, slots with no slab at all, prisoners on their reserve]; every other slot holds an empty slab. */
+const FILLS: readonly [string, readonly number[], readonly number[], boolean][] = [
+  ['no slabs', [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], false], ['stocked (10 empty)', [], [], false], ['3 held', [0, 3, 8], [], false],
+  ['7 held, 2 gone', [0, 1, 2, 4, 6, 7, 9], [3, 5], false], ['3 on reserve (red pulses)', [0, 3, 8], [], true],
+];
 
 /** A sprite that shows `id(t)` each frame, placed by that frame's own anchor (and its glow). */
 function playing(root: Container, atlas: Atlas, id: (t: number) => string, ox: number, oy: number): (t: number) => void {
@@ -28,8 +32,8 @@ function playing(root: Container, atlas: Atlas, id: (t: number) => string, ox: n
 }
 
 /**
- * `?panel=stasis`: the stasis wheel (#116) at fill levels, stacked as the game draws it (the base, then each full slot's
- * slab back to front), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop); then
+ * `?panel=stasis`: the stasis wheel (#116) at fill levels, stacked as the game draws it (the base, then each slot's slab
+ * back to front, then the lit rim lamps), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop); then
  * an empty slab as a floor stack and a full one set down on the floor along x and along y.
  * `rots=0,1,2,3` (default all).
  */
@@ -54,13 +58,17 @@ export const stasisPanel: LabPanel = {
     const oy = PAD + Math.round(top);
     const cells: LabCell[] = [];
     for (const rot of rots) {
-      FILLS.forEach(([label, full], j) => {
+      FILLS.forEach(([label, full, none, reserve], j) => {
         cells.push({
           label, note: `r${rot}`, w, h, newRow: j === 0,
           mount(root) {
             root.addChild(floor(3, 3, ox, oy));
             put(root, atlas, `${A}.r${rot}`, ox, oy);
-            for (const i of slotOrder(rot)) if (full.includes(i)) put(root, atlas, `${A}.slot${i}.r${rot}`, ox, oy);
+            for (const i of slotOrder(rot)) if (!none.includes(i)) put(root, atlas, `${A}.slot${i}.r${rot}`, ox, oy);
+            for (let i = 0; i < 10; i++) {
+              if (none.includes(i)) continue;
+              put(root, atlas, `${A}.lamp${i}.${full.includes(i) ? (reserve ? 'red' : 'cy') : 'amb'}.r${rot}`, ox, oy);
+            }
             return () => {};
           },
         });

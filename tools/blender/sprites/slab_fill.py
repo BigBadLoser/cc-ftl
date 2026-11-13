@@ -26,8 +26,8 @@ from .slab_kit import angles, cassette, frame
 FP = (3, 3)
 
 
-def module(k, empty):
-    out = W.geneva_over_tyres(k, LD.P, lights=LD.LAMP, empty=empty, gap=LD.GAP)
+def module(k, empty, windows=1, lamps=False):
+    out = W.geneva_over_tyres(k, LD.P, lights=LD.LAMP, empty=empty, gap=LD.GAP, windows=windows, lamps=lamps)
     LD.hatch(k, LD.DEEP, 1.0)
     B.fittings(k, empty)
     return out

@@ -1,7 +1,7 @@
 import type { World } from '../sim/ecs';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
-import { wheelSlots } from '../sim/stasis/query';
+import { slabDrainingIn, wheelSlots, type WheelSlot } from '../sim/stasis/query';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
 
 /**
@@ -24,10 +24,29 @@ export function cartFrame(rot: number, now: number, offset = 0): string {
 }
 
 const DZ = 0.001;                                   // per slab, over the wheel's key (all under FRONT_DZ)
+const LAMP_DZ = 0.02;                               // the rim lamps, over every slab
 
-/** What the wheel's art depends on besides the module itself (moduleMemo's inputs): which slots hold a slab. */
-export function stasisInputs(world: World, id: number): string {
-  return wheelSlots(world, id).map((s) => (s.kind === 'none' ? '0' : '1')).join('');
+/** Each slot's rim lamp: off (no slab), amber (an empty slab ready), cyan (a prisoner held) or red (their slab on its reserve). */
+export type Lamp = 'off' | 'amb' | 'cy' | 'red';
+/** The red lamp's pulse: lit this many ms, then dark as long. */
+export const PULSE_MS = 500;
+
+export function lampOf(world: World, slot: WheelSlot | undefined): Lamp {
+  if (!slot || slot.kind === 'none') return 'off';
+  if (slot.kind === 'empty') return 'amb';
+  return slabDrainingIn(world, slot.prisoner) ? 'red' : 'cy';
+}
+
+/** True in the lit half of the red lamp's pulse. */
+export const pulseLit = (now: number): boolean => Math.floor(Math.max(0, now) / PULSE_MS) % 2 === 0;
+
+/**
+ * What the wheel's art depends on besides the module itself (moduleMemo's inputs): each slot's lamp, and the pulse's phase
+ * while a lamp is red (the only time the wheel's art moves with the clock).
+ */
+export function stasisInputs(world: World, id: number, now: number): string {
+  const lamps = wheelSlots(world, id).map((s) => lampOf(world, s));
+  return lamps.join(',') + (lamps.includes('red') ? `|${pulseLit(now) ? 1 : 0}` : '');
 }
 
 /** Slots back to front for rotation `rot`: the order full slots are drawn in (fixed: the wheel rests in whole steps). */
@@ -48,6 +67,13 @@ export function stasisLayers(
     if ((slots[i]?.kind ?? 'none') === 'none') return;
     const sid = `${def.asset}.slot${i}.r${m.rot}`;
     out.push({ chain: [sid], key: `${def.asset}.slot${i}`, tiles: 'all', dz: DZ * (k + 1), optional: true });
+  });
+  // The rim lamps, on the canopy's top over everything inside: lit per slot (dark in the base), red pulsing.
+  const lit = pulseLit(look?.now ?? 0);
+  slots.forEach((s, i) => {
+    const lamp = lampOf(world, s);
+    if (lamp === 'off' || (lamp === 'red' && !lit)) return;
+    out.push({ chain: [`${def.asset}.lamp${i}.${lamp}.r${m.rot}`], key: `${def.asset}.lamp${i}`, tiles: 'all', dz: LAMP_DZ, optional: true });
   });
   return out;
 }

@@ -52,10 +52,10 @@ export interface ModuleMemo {
 }
 
 /** The module's own components its chains read, as one string ('' for most modules). */
-export function worldInputs(world: World, id: number, def: ModuleDef): string {
+export function worldInputs(world: World, id: number, def: ModuleDef, now = 0): string {
   let out = '';
   if (def.storage) out += storageState(world, id, def);
-  if (def.stasisWheel) out += `|${stasisInputs(world, id)}`;
+  if (def.stasisWheel) out += `|${stasisInputs(world, id, now)}`;
   if (def.container) out += `|${world.get(id, ContainerC)?.clamp ?? ''}`;
   if (def.plot) {
     const p = world.get(id, PlotC);

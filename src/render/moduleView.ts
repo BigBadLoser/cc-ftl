@@ -365,7 +365,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id) || played.has(id));
-        const extra = worldInputs(world, id, def);
+        const extra = worldInputs(world, id, def, now);
         const memo = memos.get(id);
         let e = mods.get(id);
         if (e && memo && sameInputs(memo, m, def, active, extra, gen, clock)) {
