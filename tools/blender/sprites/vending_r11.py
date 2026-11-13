@@ -3,12 +3,13 @@
 down the side by accident (bent normals from the old geometry); the user liked it, so here it is on purpose: the
 side walls' shading normals lean down near the top and up near the bottom, so the side runs from dark under the roof
 to a lighter wine at the floor. The user preferred the eased ramp to a linear one and wanted the dark part bigger
-(2026-11-13), so the dark holds over a top share of the wall before easing down; then the top 40%, lighter.
+(2026-11-13), so the dark holds over a top share of the wall before easing down; the near-black top won
+(user, 2026-11-13), tried over the top 35% and 40%.
 Only the shading changes; the mesh is round 10's, and the front and back stay flat.
 The lean fades in round the vertical corners (by how much a normal faces sideways), so the front stays one tone,
 and only the wine faces take it (on the cream it streaked).
 
-  dark top 40%, lighter in steps: vm1c11a a little · vm1c11b more · vm1c11c most (top lean -0.2, -0.1, 0)
+  near-black top (lean -0.3): vm1c11a over the top 35% · vm1c11b over the top 40%
 
 All in px of the tile (u, v -16..16, z up); the front (+v) faces the camera."""
 import math
@@ -20,9 +21,8 @@ from .research_kit import Bench
 from .vending_study import FP
 
 RAMPS = {  # lean of the side normal (tan, + towards up) at the top of the wall and at the floor, and the share of
-    "vm1c11a": (-0.20, 0.50, 0.40),     # the wall from the top that holds the dark before the ramp eases to the floor
-    "vm1c11b": (-0.10, 0.50, 0.40),
-    "vm1c11c": (0.00, 0.50, 0.40),
+    "vm1c11a": (-0.30, 0.50, 0.35),     # the wall from the top that holds the dark before the ramp eases to the floor
+    "vm1c11b": (-0.30, 0.50, 0.40),
 }
 
 
