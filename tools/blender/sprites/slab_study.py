@@ -95,35 +95,43 @@ def beam(k, a, b, w, h, col, top=None):
 
 
 # ---- the cart (hover B: a floating cradle) --------------------------------------------------------------------------
+CV = L / 2 + 0.02                                    # the clamps' centres: on the slab's end caps (round 36: they
+                                                    # sat at 1.05, spaced for the old longer slab, one hung off its end)
+
+
+def tip(v, deg):
+    """A clamp's height offset at v along the cart, the slab tipped `deg` head up about its foot."""
+    return (v + L / 2) * math.tan(math.radians(deg))
+
+
 def cradle(k, deg=6.0):
     """c11: two emitter clamps hold the slab's ends in the air, a push bar on the foot clamp; the slab tipped `deg`
     head up (round 35: the user found 6 deg looked wrong; c11f carries it level, c11t clearly tipped)."""
     z, a = 0.62, math.radians(deg)
-    for v in (-1.05, 1.05):
-        h = z + (v + 0.98) * math.tan(a) - 0.06
+    for v in (-CV, CV):
+        h = z + tip(v, deg) - 0.06
         k.box(0, v, h - 0.16, 0.98, 0.2, 0.34, "dark", top="steelD")          # the clamp
         k.cyl(0, v, h - 0.2, 0.16, 0.04, "steelD", top="steel", sides=14)    # its emitter
         k.cyl(0, v, h - 0.21, 0.13, 0.012, "slbCy", sides=14)
         k.box(0, v + (0.1 if v > 0 else -0.1), h, 0.6, 0.012, 0.05, "slbCy")
     for u in (-0.4, 0.4):                                                    # the push bar
-        k.box(u, -1.2, z - 0.1, 0.05, 0.05, 0.6, "steel", top="steelL")
-    k.box(0, -1.2, z + 0.48, 0.86, 0.06, 0.06, "steelL")
-    return [cassette(k, Slab((0.0, -0.98, z), (0.0, math.cos(a), math.sin(a)), (0.0, -math.sin(a), math.cos(a))))]
+        k.box(u, -CV - 0.16, z - 0.1, 0.05, 0.05, 0.6, "steel", top="steelL")
+    k.box(0, -CV - 0.16, z + 0.48, 0.86, 0.06, 0.06, "steelL")
+    return [cassette(k, Slab((0.0, -L / 2, z), (0.0, math.cos(a), math.sin(a)), (0.0, -math.sin(a), math.cos(a))))]
 
 
 def cradle_beams(k, deg=6.0):
-    for v in (-1.05, 1.05):
-        h = 0.62 + (v + 0.98) * math.tan(math.radians(deg)) - 0.06
-        k.cyl(0, v, 0.0, 0.22, h - 0.37, "slbFilm", sides=14, rtop=0.13)
+    for v in (-CV, CV):
+        k.cyl(0, v, 0.0, 0.22, 0.62 + tip(v, deg) - 0.43, "slbFilm", sides=14, rtop=0.13)
 
 
 def cradle_sheet(k):
-    k.box(0, 0.0, 0.42, 0.7, 1.9, 0.01, "slbFilm")
+    k.box(0, 0.0, 0.42, 0.7, 2 * CV - 0.1, 0.01, "slbFilm")
 
 
 def cradle_floor(k):
-    k.box(0, 0.0, 0.003, 0.7, 1.7, 0.003, "dark")
-    for v in (-1.05, 1.05):
+    k.box(0, 0.0, 0.003, 0.7, 2 * CV - 0.2, 0.003, "dark")
+    for v in (-CV, CV):
         k.cyl(0, v, 0.0, 0.26, 0.004, "slbFilm", sides=16)
 
 
