@@ -37,6 +37,7 @@ move in a browser).
 - `comms`: not a Pixi panel but a DOM one (`tools/lab/commsLab.ts`, `CommsLab.svelte`): every piece of `src/ui/comms` on its own in its
   states (static, video, flicker and stutter held on, caller card, transcript, sensor panel with the real ship picture, decision bar), then
   composed as the signal window. Flickers are held with `force` so a still shows the glitch frame.
+- `windows`: a DOM panel (`tools/lab/windowsLab.ts`, `WindowsLab.svelte`): each window the shared frame covers (a floating window, the jump dialog, the event card, the deploy shell, the fight report, a title chip, the decision bar with 2 and 3 options) with mock data, each in a 1920px stage so it sits as on a screen.
 - `kit`: a DOM panel (`tools/lab/kitLab.ts`, `KitLab.svelte`): every shared `Chip` tone and size and every `Meter` tone and height, plus base marker and thresholds.
 - `hydroponics`: the grow beds (#59), small and large, dark and lit, each crop layer stacked on its lit bed as the game draws
   them (`sizes=small,large`, `rots=0,1,2,3`, `crops=`, `stages=sprout,grow,ripe`; default r0, ripe).
