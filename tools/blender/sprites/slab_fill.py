@@ -56,8 +56,8 @@ def bay(k, i, vacant):
     k.box(*at(0.355, a)[:2], W.Z0 + 0.9, 0.07, 0.17, 0.17, "sole", top="sole", rz=a + math.pi / 2)    # the coupling
     k.box(*at(0.395, a)[:2], W.Z0 + 0.935, 0.03, 0.12, 0.1, "hazY", rz=a + math.pi / 2)              # its collar
     sag = ((top[0] + plug[0]) / 2, (top[1] + plug[1]) / 2, W.Z0 + 0.5)
-    tube(k, top, sag, 0.045, "medRed")
-    tube(k, sag, plug, 0.045, "medRed")
+    tube(k, top, sag, 0.045, "slbHose")
+    tube(k, sag, plug, 0.045, "slbHose")
     s.box(k, 0.16, 0.3, *sorted((e * 0.53, e * 0.46)), -0.17, -0.05, "hazY")                 # the plug in its bracket
     s.box(k, 0.0, 0.16, *sorted((e * 0.53, e * 0.5)), -0.19, -0.03, "steel", face="steelL")  # the bracket on the inner cheek
     if vacant:

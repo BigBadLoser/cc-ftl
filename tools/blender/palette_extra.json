@@ -4130,6 +4130,10 @@
     "hex": "#555b66",
     "set": "slab"
   },
+  "slbHose": {
+    "hex": "#a0202e",
+    "set": "slab"
+  },
   "slbFace": {
     "hex": "#8a9098",
     "flat": true,
