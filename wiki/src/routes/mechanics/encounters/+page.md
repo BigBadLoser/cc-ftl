@@ -193,7 +193,7 @@ Look for the tells. Some only show on screen:
 
 > **Tip:** keep a good gunner, pilot and hacker aboard on the lane.
 
-**Let them dock** and **Refuse** are the buttons on the panel.
+**Let them dock** is a button on the panel's decision bar, beside **Resume travel**. Resuming travel turns them down.
 
 ### Patrol hails
 

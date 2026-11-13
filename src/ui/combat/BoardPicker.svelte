@@ -102,10 +102,10 @@
       options={plan.airlocks.map((a) => ({ value: String(a.id), label: `Airlock ${a.x},${a.y}`, testId: `board-airlock-${a.id}` }))} />
 
     <div class="two">
-      <button class="act" data-testid="board-cancel" onclick={onClose}>Cancel</button>
       <ActionButton tone="go" disabled={!!why} title={why ?? 'Launch the boarding party'} testid="board-go" onclick={go}>
         <Icon name="shuttle" size={18} />Launch<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'ui.confirm')}</KeyBadge>
       </ActionButton>
+      <button class="act" data-testid="board-cancel" onclick={onClose}>Cancel</button>
     </div>
     {#if why}<p class="why" data-testid="board-why">{why}</p>{/if}
   </div>

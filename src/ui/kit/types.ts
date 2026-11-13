@@ -15,6 +15,8 @@ export interface DecisionOption {
   label: string;
   note?: string;
   primary?: boolean;
+  /** A cancel / back / decline choice next to a confirming one: the bar always puts it rightmost. */
+  cancel?: boolean;
   disabled?: boolean;
   /** Why it is disabled (a tooltip). */
   reason?: string;
