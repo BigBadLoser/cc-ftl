@@ -4,6 +4,7 @@ import type { Outline } from './lattice';
 import type { Dir } from './model';
 import type { QuayOpts } from './quay';
 import type { Gap } from './ring';
+import type { StationSize } from '../stationTypes';
 import type { RoomRole } from '../types';
 
 /**
@@ -72,11 +73,13 @@ export interface Recipe {
      * axis (rounder as the number falls). With `round` the cut corners are arcs; with `shoulders` the ends of each arc
      * are the band's (rooms stand there) and only its steep middle is one corner room. `waterfront`: rooms of these
      * departments stand on the ring's inner side first, shared between the two faces beside an arc's gap. `inner`: what
-     * the band cannot hold stands on the ring's inner side; `'rows'` fills the longest straights first (an arc's arms). `hub`: a market court at its centre with spokes to the ring (hub.ts); the
+     * the band cannot hold stands on the ring's inner side; `'rows'` fills the longest straights first (an arc's arms).
+     * `inboard`: rooms of these departments (the ring must take them) stand on the inner side of that face first,
+     * whatever their size: warehouses on the basin floor either side of a pier's foot. `hub`: a market court at its centre with spokes to the ring (hub.ts); the
      * `market` departments stand round the court, the `gated` ones line the north and south spokes behind gates, and
      * of the `spokes` ones (which the ring takes too) as many line the east and west spokes as fit.
      */
-    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows'; waterfront?: readonly Dept[]; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
+    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows'; waterfront?: readonly Dept[]; inboard?: { takes: readonly Dept[]; face: Dir }; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
   branches: readonly BranchRule[];
   /**
    * How the crew sleeps, when not in quarters cut into cabins where they stand:
@@ -93,4 +96,9 @@ export interface Recipe {
   braces?: number;
   /** Clear ground kept between sections that are not joined; 0: they may stand wall to wall, but never a tile apart. */
   spacing: number;
+  /** What changes at a size tier: these fields replace the recipe's own there (`recipeAt`). */
+  sizes?: Partial<Record<StationSize, Partial<Omit<Recipe, 'name' | 'sizes'>>>>;
 }
+
+/** The recipe as it stands at a size tier: its own fields with that tier's replacements. */
+export const recipeAt = (r: Recipe, size: StationSize): Recipe => ({ ...r, ...r.sizes?.[size] });

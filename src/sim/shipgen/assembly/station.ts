@@ -7,7 +7,7 @@ import type { StationDef, StationSize } from '../stationTypes';
 import type { HullFamilyDef, ShipRoleDef } from '../types';
 import { assemble } from './assemble';
 import { docksOf, stationProgram } from './program';
-import type { Recipe } from './recipe';
+import { recipeAt, type Recipe } from './recipe';
 
 /**
  * A station of `def`'s kind at a size tier, assembled by `recipe` and fitted out as the station grammars' structures
@@ -17,7 +17,7 @@ import type { Recipe } from './recipe';
  */
 export function assembleStation(def: StationDef, id: string, size: StationSize, seed: number, defs: Record<string, ModuleDef>, recipe: Recipe): StationResult {
   const rng = new Rng(seedOf(seed, 0));
-  const { ok, rejected } = assemble(rng, recipe, stationProgram(rng, def, size, defs));
+  const { ok, rejected } = assemble(rng, recipeAt(recipe, size), stationProgram(rng, def, size, defs));
   if (!ok) throw new Error(`assembleStation: ${recipe.name} does not stand for ${id} ${size} seed ${seed}: ${rejected[rejected.length - 1] ?? 'no reason given'}`);
   const g = ok.ctx.g, snap = g.snapshot();
   // A hatch in the outer wall is the airlock's own door: the fit-out stands an airlock module in plain hull.

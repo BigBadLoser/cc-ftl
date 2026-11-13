@@ -121,9 +121,11 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     // the two faces on it; common rooms on the diagonals. Otherwise: habitation away from the first branch, guns all
     // round, the rest between.
     // Waterfront rooms are shared between the two faces beside the gap (or the two across the main axis).
-    const front = (r: RoomSpec): boolean => !!root.waterfront?.includes(r.dept as Dept);
+    const sent = (r: RoomSpec): boolean => !!root.inboard?.takes.includes(r.dept as Dept);
+    const front = (r: RoomSpec): boolean => !!root.waterfront?.includes(r.dept as Dept) || sent(r);
     const fronts = own.filter(front), faces = root.gap && (root.gap.side === 'n' || root.gap.side === 's') ? [Math.PI / 2, 1.5 * Math.PI] : [0, Math.PI];
     const angle = (spec: RoomSpec): number => {
+      if (root.inboard && sent(spec)) return ANGLE[root.inboard.face];
       if (front(spec)) return faces[fronts.indexOf(spec) % 2] as number;
       if (root.hub && spec.cabin) return (beds.indexOf(spec) % 2) * Math.PI;
       if (root.hub && spec.dept === 'defence') { const k = guns.indexOf(spec); return (k % 2 ? 1.5 : 0.5) * Math.PI + ((k >> 1) % 2 ? 0.6 : -0.6); }
@@ -137,7 +139,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
       ...a.spill.flatMap((sp) => whole(sp.spec).map((spec) => ({ spec: copy(spec), angle: ANGLE[sp.dir] }))),
     ];
     const band = site.g.regions.length;
-    const left = fillRing(site, asks, root.inner, root.waterfront ? front : undefined);
+    const left = fillRing(site, asks, root.inner, root.waterfront || root.inboard ? front : undefined);
     if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms (${left.map((r) => `${r.role} ${r.w}x${r.h}`).join(", ")})`; continue; }
     // The band is filled last, round everything joined to the rim: no thick wall may come of it.
     mend(site.g, band, [-R - 60, -R - 60, R + 60, R + 60]);

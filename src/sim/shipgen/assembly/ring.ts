@@ -69,7 +69,7 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
   const cornered = placeCorners(s, [0, 1, 2, 3].map((k) => (order.includes(k) ? given[order.indexOf(k)] : undefined)));
   // The waterfront: rooms that stand on the inner side first. What finds no place there goes to the band with the rest.
-  const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && innerRoom(a.spec) && !a.spec.annex) : [];
+  const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && !a.spec.annex) : [];
   const ashore = fronted.length > 0 ? placeInner(s, fronted, Math.PI / 4) : [];
   const rest = asks.filter((a) => !cornered.includes(a.spec) && (!fronted.includes(a) || ashore.includes(a.spec)));
   const band = placeBand(s, rest);

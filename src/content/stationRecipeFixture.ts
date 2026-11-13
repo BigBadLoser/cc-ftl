@@ -1,4 +1,4 @@
-import { Rng, assemble, hullProblems, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
+import { Rng, assemble, hullProblems, recipeAt, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
 import { seedOf } from '../sim/shipgen/generate';
 import { content } from './index';
 import { stations } from './stations';
@@ -38,6 +38,6 @@ export function problemsOf(a: Assembly | null, rooms: readonly RoomSpec[], rejec
 
 export function assembled(recipe: Recipe, kind: keyof typeof stations, size: StationSize, seed: number): string[] {
   const { rng, rooms } = programOf(kind, size, seed);
-  const { ok, rejected } = assemble(rng, recipe, rooms);
+  const { ok, rejected } = assemble(rng, recipeAt(recipe, size), rooms);
   return problemsOf(ok, rooms, rejected);
 }

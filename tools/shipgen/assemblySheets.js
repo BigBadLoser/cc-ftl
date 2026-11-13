@@ -46,10 +46,10 @@ function encodePng({ width, height, data }) {
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error', optimizeDeps: { noDiscovery: true } });
 try {
   const L = (p) => server.ssrLoadModule(p);
-  const [{ content }, { stationRecipes }, sg, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }] = await Promise.all([
+  const [{ content }, { stationRecipes }, sg, { Rng }, gen, { deptOf }, { stationProgram }, { assemble }, views, { hullProblems }, { Raster }, { drawStructure, drawSilhouette }, { recipeAt }] = await Promise.all([
     '/src/content/index.ts', '/src/content/stationRecipes.ts', '/src/sim/shipgen/stationGen.ts', '/src/sim/rng.ts', '/src/sim/shipgen/generate.ts',
     '/src/sim/shipgen/assembly/dept.ts', '/src/sim/shipgen/assembly/program.ts', '/src/sim/shipgen/assembly/assemble.ts', '/tools/shipgen/assemblyViews.ts',
-    '/src/sim/shipgen/assembly/hull.ts', '/tools/shipgen/draw.ts', '/tools/shipgen/views.ts'].map(L));
+    '/src/sim/shipgen/assembly/hull.ts', '/tools/shipgen/draw.ts', '/tools/shipgen/views.ts', '/src/sim/shipgen/assembly/recipe.ts'].map(L));
   const { roomCores, drawDepartments, drawDeptKey, wallBlocks } = views;
   const roomsFor = (kind, size, seed) => {
     const rng = new Rng(gen.seedOf(seed, 0));
@@ -107,7 +107,7 @@ try {
       for (const seed of seeds) {
         const { rng, rooms } = roomsFor(kind, size, seed);
         const t0 = performance.now();
-        const { ok, rejected } = assemble(rng, recipe, rooms);
+        const { ok, rejected } = assemble(rng, recipeAt(recipe, size), rooms);
         const ms = Math.round(performance.now() - t0);
         if (!ok) { console.log(`${family} | ${recipe.name} | seed ${seed}: REJECTED after ${rejected.length} tries, ${ms} ms\n   ${rejected.join('\n   ')}`); row.push({ title: `REJECTED seed ${seed}: ${rejected[rejected.length - 1]}`, g: null }); continue; }
         const g = asResult(ok);
