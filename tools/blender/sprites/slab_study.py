@@ -189,25 +189,28 @@ CARTS = {v: (cart_design(v, d), (1, 2)) for v, d in CART_TIP.items()}
 CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d),
                      (single(cradle_sheet, (1, 2), "st"), 60)] for v, d in CART_TIP.items()}
 
-# Round 39: the hover loop. Rings leave the emitter and run down to the floor, widening and fading as they go:
-# c11h<n>, n of HOVER_N frames, RINGS rings evenly spaced along the run (each ring its own overlay, its alpha its fade).
+# Round 39: the hover loop. Rings leave the emitter and run down into the floor glow, widening as they go:
+# c11h<n>, n of HOVER_N frames, RINGS rings evenly spaced along the run, drawn into the cart's own sprite (as layers
+# each ring was cut by the cart differently frame to frame, and the loop jumped).
 HOVER_N, RINGS = 6, 3
 
 
-def ring_alpha(f):
-    return int(255 * min(1.0, f / 0.15) * (1.0 if f < 0.55 else 1.0 - 0.85 * (f - 0.55) / 0.45))
+def hover_frame(n, rings=RINGS):
+    fs = [(i + n / HOVER_N) / rings for i in range(rings)]
+    return tuple(f for f in fs if f > 0.04) + (1.0,)        # (one just out of the emitter is still inside it; the
+                                                            # one on the floor stays, so a ring landing merges in)
 
 
-def hover_frame(n):
-    fs = [(i + n / HOVER_N) / RINGS for i in range(RINGS)]
-    return [(single(lambda k, f=f: hover_rings(k, 0.0, fs=(f,)), (1, 2), f"r{j}"), max(1, ring_alpha(f)))
-            for j, f in enumerate(fs)]
+def hover_design(n, rings=RINGS):
+    def go(k):
+        hover_rings(k, 0.0, fs=hover_frame(n, rings))
+        return cradle(k, 0.0)
+    return go
 
 
-for _n in range(HOVER_N):
-    CARTS[f"c11h{_n}"] = ((lambda k: cradle(k, 0.0)), (1, 2))
-    CART_OVERLAYS[f"c11h{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120), *hover_frame(_n),
-                                  (single(cradle_sheet, (1, 2), "st"), 60)]
+for _n, (_id, _r) in ((n, x) for n in range(HOVER_N) for x in (("c11h", 3), ("c11g", 2))):
+    CARTS[f"{_id}{_n}"] = (hover_design(_n, _r), (1, 2))                   # c11h: three rings, c11g: two
+    CART_OVERLAYS[f"{_id}{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120), (single(cradle_sheet, (1, 2), "st"), 60)]
 
 
 # ---- rendering ------------------------------------------------------------------------------------------------------

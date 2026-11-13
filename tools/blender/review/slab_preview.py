@@ -52,10 +52,9 @@ def scene(v):
             continue
         img, _, an = G.static(aid)
         press(c, [(ox + x, oy + y) for x, y in quad], img, ox - an["x"], oy - an["y"], TINT, HEAD if kind == "head" else body)
-    j = 0
-    while f"slab.study.{v}.ov{j}" in G.m["assets"]:                 # translucent layers (light, shadow, glass)
-        c.static(G, f"slab.study.{v}.ov{j}", ox, oy)
-        j += 1
+    ovs = sorted(int(a.rsplit(".ov", 1)[1]) for a in G.m["assets"] if a.startswith(f"slab.study.{v}.ov"))
+    for j in ovs:                                   # translucent layers (light, shadow, glass); one wholly hidden has
+        c.static(G, f"slab.study.{v}.ov{j}", ox, oy)  # no asset, and the rest still draw
     return Image.fromarray(c.px[..., :3])
 if __name__ == "__main__":
     CW = int(os.environ.get("SLAB_CANVAS_W", 260))         # the canvas width (wider for the loading frames)
