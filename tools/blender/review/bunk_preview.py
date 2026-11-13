@@ -56,7 +56,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "bn16": "BN16  locker room", "bn17": "BN17  park bench", "bn18": "BN18  waiting room",
          "bn18a": "BN18A  pad arms", "bn18b": "BN18B  end loops", "bn18c": "BN18C  with table",
          "bn18d": "BN18D  three legs", "bn18e": "BN18E  gap legs", "bn18f": "BN18F  floor rail",
-         "bn18g": "BN18G  four frames", "bn18h": "BN18H  splayed ends", "bn18i": "BN18I  stretcher"}
+         "bn18g": "BN18G  four frames", "bn18h": "BN18H  splayed ends", "bn18i": "BN18I  stretcher",
+         "bn18j": "BN18J  plinth", "bn18k": "BN18K  sled legs", "bn18l": "BN18L  back spine"}
 CW, CH = 200, 220
 
 

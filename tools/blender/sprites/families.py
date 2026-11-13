@@ -159,6 +159,9 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "bench11":       # look study, preview only (not in RENDERED): BN18 supports, plinth/sled/spine, r11
+        from . import bench_r11
+        return bench_r11.jobs(), "only:bench7"
     if name == "bench10":       # look study, preview only (not in RENDERED): BN18E with end legs, r10
         from . import bench_r10
         return bench_r10.jobs(), "only:bench7"
