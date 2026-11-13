@@ -17,6 +17,7 @@
     roster: [{ ship: 1, name: 'Gilded Magpie', owner: 'Free Traders', status: 'Helpless', tone: 'amber' }],
     dockRequest: null, aid: { ship: 1, name: 'Gilded Magpie', action: 'offer', status: 'Its reactor is failing.', clock: 112, failing: 'Reactor' }, pod: null,
   } as unknown as UiEventGrid;
+  const dockEvent = { ...event, kind: 'scene', aid: null, dockRequest: { ship: 1, name: 'Skiff', text: 'Skiff asks to dock so its crew can come aboard and settle the debt.' }, roster: [{ ship: 1, name: 'Skiff', owner: 'Pirates', status: 'Asks to dock', tone: 'amber' }] } as unknown as UiEventGrid;
   const report = {
     outcome: 'destroyed', enemy: 'Raider', seconds: 94, hullBefore: 1, hullAfter: 0.71, enemyHull: 0, enemyCrew: 3,
     lost: [{ name: 'Burst laser', subject: null }], damaged: [], down: [{ name: 'Mara', subject: null }], dead: [], enemyLost: [{ name: 'Engine', subject: null }], ammo: [{ name: 'Missiles', n: 2 }], prize: null,
@@ -28,7 +29,7 @@
   const cells = [
     { id: 'floating', label: 'Floating window (Ship overview)' },
     { id: 'dialog', label: 'Dialog (jump confirm)' },
-    { id: 'event', label: 'Event card' },
+    { id: 'event', label: 'Event card (aid, dock request)' },
     { id: 'deploy', label: 'Deploy picker shell' },
     { id: 'fight', label: 'Fight report' },
     { id: 'trade', label: 'Window with a title chip (Trade)' },
@@ -54,6 +55,7 @@
           </Dialog></div>
         {:else if c.id === 'event'}
           <EventPanel {api} {event} result={null} />
+          <div class="second"><EventPanel {api} event={dockEvent} result={null} /></div>
         {:else if c.id === 'deploy'}
           <div class="deploy" data-testid="lab-deploy"><Frame title="Deploy" style="background:var(--panel);padding:var(--sp-3) 0 0;box-shadow:var(--shadow-window)">
             {#snippet right()}<span class="node">Kestrel Reach</span>{/snippet}
@@ -91,6 +93,7 @@
   .dsheet { display: grid; gap: 8px; padding: 10px; }
   .map { height: 170px; border: 1px solid var(--line-hi); background: var(--panel-2); }
   .node { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 0 4px; }
+  .second :global(.card) { left: calc(50% + 500px); }
   .who { font-weight: 600; }
   .pad { padding: 14px; color: var(--dim); }
   .bars { position: absolute; left: 24px; top: 24px; width: 900px; display: grid; gap: 16px; background: var(--panel); }
