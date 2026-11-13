@@ -3792,5 +3792,6 @@
   "vmDark": {"hex": "#1d1f22", "set": "vending"},
   "vmSign": {"hex": "#f2d6a0", "emissive": 0.5, "set": "vending"},
   "vmScreen": {"hex": "#6b9c94", "emissive": 0.2, "set": "vending"},
-  "vmCreamL": {"hex": "#fbf5e8", "set": "vending"}
+  "vmCreamL": {"hex": "#fbf5e8", "set": "vending"},
+  "vmPane": {"hex": "#a9c3cc", "set": "vending"}
 }
