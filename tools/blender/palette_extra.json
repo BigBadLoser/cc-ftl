@@ -3690,5 +3690,14 @@
   "b4Glass": {"hex": "#9fb3bd", "set": "bar4"},
   "b4Copper": {"hex": "#a5643c", "set": "bar4"},
   "b4Wood": {"hex": "#6e4b33", "set": "bar4"},
-  "b4Lamp": {"hex": "#ffd38a", "emissive": 1.2, "set": "bar4"}
+  "b4Lamp": {"hex": "#ffd38a", "emissive": 1.2, "set": "bar4"},
+  "gymShell": {"hex": "#d4cfc2", "set": "gym"},
+  "gymShellD": {"hex": "#a9a99f", "set": "gym"},
+  "gymSlate": {"hex": "#56616e", "set": "gym"},
+  "gymSlateD": {"hex": "#3c434d", "set": "gym"},
+  "gymRail": {"hex": "#97a2ae", "set": "gym"},
+  "gymRubber": {"hex": "#2a3038", "set": "gym"},
+  "gymRed": {"hex": "#a3423a", "set": "gym"},
+  "gymRedD": {"hex": "#76302b", "set": "gym"},
+  "gymLit": {"hex": "#9ad8f0", "emissive": 0.9, "set": "gym"}
 }

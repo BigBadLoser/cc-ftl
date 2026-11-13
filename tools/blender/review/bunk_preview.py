@@ -21,7 +21,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "s3k": "S3k  cap + slots",
          "x1": "X1  treadmill", "x2": "X2  exercise bike", "x3": "X3  cable station",
          "y1": "Y1  omni pad", "y2": "Y2  mag rower", "y3": "Y3  field station",
-         "z1": "Z1  gyro hoop", "z2": "Z2  hover bike", "z3": "Z3  climb wall"}
+         "z1": "Z1  gyro hoop", "z2": "Z2  hover bike", "z3": "Z3  climb wall",
+         "w1": "W1  swoop bike", "w2": "W2  arc treadmill", "w3": "W3  press chair"}
 CW, CH = 200, 220
 
 
