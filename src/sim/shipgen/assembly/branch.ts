@@ -39,7 +39,7 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * slab of one depth (the rooms keep their floor).
  */
 function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, ...(rule.section.evenCabins ? { evenCabins: true } : {}), cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   // A rule with a quay builds its docks and this section's rooms as one.
   if (rule.quay && o.docks?.length) {
     const plain: BlockOpts = { ...base };

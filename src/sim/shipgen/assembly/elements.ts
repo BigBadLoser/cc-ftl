@@ -124,8 +124,6 @@ export interface BlockOpts {
    * the host's hall at the block's foot. More than two: the rest stand in the rows.
    */
   behind?: readonly RoomSpec[];
-  /** Its cabins are one width and shared out so both rows end together (the last few a tile wider to close the gap). */
-  evenCabins?: boolean;
 }
 
 /**
@@ -151,16 +149,6 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // A room's annex stands right after it in its row and opens into it. Quarters are cut into cabins where they stand,
   // a bed each, inside the room's own length: the row is no longer for it and the station no heavier.
   const rows = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, { ...shape(r.annex), annexed: true }] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
-  if (o.evenCabins) {
-    const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
-    const cabins = rows.flatMap((row) => row.filter((r) => r.cabin));
-    const wide = Math.max(2, Math.floor(cabins.reduce((n, r) => n + r.w, 0) / Math.max(1, cabins.length)));
-    for (const k of [0, 1] as const) rows[k] = rows[k].filter((r) => !r.cabin);
-    for (const cabin of cabins) (len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1]).push({ ...cabin, w: wide });
-    // The shorter row's cabins take up the difference, a tile each from its far end.
-    const short = len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1], own = short.map((r, i) => (r.cabin ? i : -1)).filter((i) => i >= 0);
-    for (let over = Math.abs(len(rows[0]) - len(rows[1])), j = own.length - 1; over > 0 && own.length > 0; over--, j = (j - 1 + own.length) % own.length) short[own[j] as number] = { ...(short[own[j] as number] as RoomSpec), w: (short[own[j] as number] as RoomSpec).w + 1 };
-  }
   // Bunks: each goes into the shorter row, somewhere among its rooms.
   const bunks = o.bunks ?? [];
   for (const b of bunks) {

@@ -49,9 +49,8 @@ export interface BranchRule {
    * Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the
    * last one's end (the biggest, or the first of a role), and the street's width (default 2), and roles that stand at the far end of its rows.
    * `behind`: rooms of these departments stand behind the rows, one a side and as long as the street (sheds behind shops).
-   * `evenCabins`: its cabins are one width and shared out so both rows end together.
    */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any' | 'end' | 'inner' | readonly ('end' | 'inner')[]; width?: number; far?: readonly RoomRole[]; behind?: readonly Dept[]; evenCabins?: boolean };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any' | 'end' | 'inner' | readonly ('end' | 'inner')[]; width?: number; far?: readonly RoomRole[]; behind?: readonly Dept[] };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */
