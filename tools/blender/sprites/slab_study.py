@@ -138,6 +138,9 @@ def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85), end=None):
             if end == "ripple":
                 r += 0.3 * max(0.0, (f - 0.6) / 0.4) ** 2
             col = "slbCy" if end is None or f < 0.6 else "slbCyM" if f < 0.8 else "slbCyD"
+            if end == "air":                        # round 43: a ring under the emitter's disc hid half the run, so
+                z, r = top - 0.04 - 0.23 * f, 0.2 + 0.07 * f    # it starts wider than the emitter, just below it,
+                col = "slbCy" if f < 0.45 else "slbCyM" if f < 0.75 else "slbCyD"   # and dims over the whole run
             annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, col, n=28)
 
 
@@ -208,7 +211,10 @@ def hover_frame(n, rings=RINGS, floor=True, frames=HOVER_N):
 
 def hover_design(n, rings=RINGS, end=None, frames=HOVER_N):
     def go(k):
-        hover_rings(k, 0.0, fs=hover_frame(n, rings, floor=end is None, frames=frames), end=end)
+        fs = hover_frame(n, rings, floor=end is None, frames=frames)
+        if end == "air" and n == 0:                 # (its rings show from the start: keep the one just out)
+            fs = (0.0, *fs)
+        hover_rings(k, 0.0, fs=fs, end=end)
         return cradle(k, 0.0)
     return go
 
