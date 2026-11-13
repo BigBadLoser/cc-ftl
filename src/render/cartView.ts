@@ -2,6 +2,7 @@ import { Container, Sprite } from 'pixi.js';
 import { batchAdditive } from './batch';
 import type { World } from '../sim/ecs';
 import { PathC, PositionC } from '../sim/crew/components';
+import { cartRest, walking } from '../sim/stasis/query';
 import type { Atlas } from './assets/loader';
 import { cartAhead, restPose, type CartPose, type Pt } from './stasisArt';
 
@@ -50,15 +51,19 @@ export function createCart(parent: Container): CartSprite {
 }
 
 /**
- * Where the cart of a carrier drawn at (x, y) should be now: ahead along the route they walk (the tile they are stepping to,
- * then their path's steps), or, standing, at rest (`rest`, the sim's spot) or where it last was (`last`). Null: no cart to draw.
+ * Where the cart of a carrier drawn at (x, y) should be now: walking, ahead along their route (the tile they are stepping
+ * to, then their path's steps); standing, on the sim's rest tiles (cartRest). Where it last was while neither answers (a
+ * stop with no room beside them keeps it where it came to); null: no cart to draw.
  */
-export function cartTarget(world: World, id: number, x: number, y: number, last: CartPose | null, rest: { x: number; y: number; rot: 0 | 1 } | null): CartPose | null {
+export function cartTarget(world: World, id: number, x: number, y: number, last: CartPose | null): CartPose | null {
+  if (!walking(world, id)) {
+    const rest = cartRest(world, id);
+    return rest ? restPose(x, y, rest) : last;
+  }
   const pos = world.get(id, PositionC);
   const steps = world.get(id, PathC)?.steps ?? [];
-  const moving = !!pos && (pos.toX !== pos.x || pos.toY !== pos.y);
-  const route: Pt[] = moving && pos ? [{ x: pos.toX, y: pos.toY }, ...steps] : steps;
-  return cartAhead(x, y, route, last?.rot ?? 0) ?? (rest ? restPose(x, y, rest) : last);
+  const route: Pt[] = pos ? [{ x: pos.toX, y: pos.toY }, ...steps] : steps;
+  return cartAhead(x, y, route, last?.rot ?? 0) ?? last;
 }
 
 /** Ease the drawn cart toward `next` (`k` of the way; a turn snaps), so a corner or a stop slides rather than jumps. */

@@ -408,7 +408,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // A stasis slab rides a hover cart pushed ahead of the carrier, not in their hands.
         const carting = !hurtLying && onCart(world, id);
         if (carting) {
-          const want = cartTarget(world, id, s.x, s.y, s.cartAt, null);
+          const want = cartTarget(world, id, s.x, s.y, s.cartAt);
           s.cartAt = want ? easeCart(s.cartAt, want, k) : null;
           const c = s.cartAt;
           if (c) {
