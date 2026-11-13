@@ -207,3 +207,13 @@ SLANT = {
 }
 for _n, _kw in SLANT.items():
     DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, lean=0.0, **kw))
+
+
+# ---- round 23: v4b (lean kept), the guard pushed forward off the chest -------------------------------------------------
+REACH = {
+    "v4s": dict(el=(0.35, 0.2, 0.84), wr=(0.2, 0.42, 1.02)),
+    "v4t": dict(el=(0.35, 0.26, 0.86), wr=(0.2, 0.5, 1.03)),
+    "v4u": dict(el=(0.35, 0.32, 0.88), wr=(0.2, 0.58, 1.04)),
+}
+for _n, _kw in REACH.items():
+    DESIGNS[_n] = droid(f"ex_{_n}", lambda p, kw=_kw: v4b(p, SH_F, **kw))
