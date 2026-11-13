@@ -30,6 +30,8 @@ import type { UiDeploy, UiJumpWarnings, UiStarmap, UiStarRoute, UiSellGood } fro
 import { buildDeploy, buildJumpWarnings, deployError, deployKey as deployKeyOf } from './deploySnapshot';
 import { createStore, type Readable, type Writable } from './store';
 import { shipGrid } from '../sim/regions';
+import { ventableDoor } from '../sim/vents';
+import { doorInfo, type DoorInfo } from '../sim/doorInfo';
 import { findJobAt } from '../sim/crew/helpers';
 import { crateInfo } from './jobsSnapshot';
 import { buildResearch } from './researchSnapshot';
@@ -74,6 +76,10 @@ export interface InspectSnapshot extends TileRef {
   fields: { name: string; value: number }[];
   /** A player job on the tile (building, forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
+  /** True when this tile is a door that can have a vent (`ventableDoor`: not an airlock's door). */
+  ventable: boolean;
+  /** The door's words and sides (`doorInfo`), or null when the tile is not a door. */
+  door: DoorInfo | null;
   /** True when this is the selected tile (false = hovered). */
   selected: boolean;
 }
@@ -273,6 +279,8 @@ export function createBridge(sim: Sim, getProbe: () => Probe = () => NOOP_PROBE)
         structName: STRUCT_NAMES[struct] ?? `Unknown(${struct})`,
         room: fields.find((f) => f.name === 'room')?.value ?? 0,
         fields,
+        ventable: ventableDoor(sim, grid, ref.x, ref.y),
+        door: doorInfo(sim, grid, ref.x, ref.y),
         selected: selected !== null,
       };
     }

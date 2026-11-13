@@ -3,7 +3,7 @@ import { hasSuitAir } from '../eva/suit';
 import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import {
-  CO2_HARM_ABOVE, CO2_HARM_PER_SEC, COLD_BELOW, FIRE_CREW_DAMAGE, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, SUIT_HEAT_MAX, TEMP_HARM_PER_SEC,
+  CO2_HARM_ABOVE, CO2_HARM_PER_SEC, COLD_BELOW, FIRE_CREW_DAMAGE, HOT_ABOVE, O2_HARM_BELOW, O2_HARM_PER_SEC, SUIT_HEAT_MAX, TEMP_HARM_PER_SEC, VENT_SMOKE_SHUT,
 } from '../tuning';
 import { CrewC, PositionC, type Crew } from './components';
 
@@ -61,4 +61,13 @@ export function hazardsHere(sim: Sim, id: number): number {
   if (!pos || !grid) return 0;
   const { suited, airless } = exposure(sim, id);
   return tileHazards(grid, pos.x, pos.y, suited, airless);
+}
+
+/**
+ * True if a tile is hazardous to someone breathing it unprotected: fire, smoke, vacuum or thin air, bad CO2, dangerous heat or
+ * cold. The one answer a door's vent asks of each side before it may stay open (systems/vents.ts); crew hazards above are its
+ * source. Smoke counts here (`VENT_SMOKE_SHUT`) though it is not a crew-harm bit.
+ */
+export function airHazardAt(grid: Grid, x: number, y: number): boolean {
+  return tileHazards(grid, x, y, false, false) !== 0 || grid.get('smoke', x, y) >= VENT_SMOKE_SHUT;
 }

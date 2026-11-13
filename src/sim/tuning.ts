@@ -67,6 +67,10 @@ export const LIGHT_FALLOFF = 0.55;
 export const WRECK_LIGHT_SCALE = 0.35;
 /** Door openness lost per tick once nobody is in the doorway (closes in ~3 s). */
 export const DOOR_CLOSE_PER_TICK = 4;
+/** Gas conductance of a shut door whose vent is open, as a fraction of a fully open door (air and pressure only). */
+export const VENT_CONDUCTANCE = 0.25;
+/** Smoke density (0..255) on a side of a vent above which it shuts. */
+export const VENT_SMOKE_SHUT = 1;
 /** Hp repaired per second at workSpeed 1. */
 export const REPAIR_PER_SEC = 3;
 /** Fire intensity removed per second at workSpeed 1. */
