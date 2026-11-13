@@ -200,23 +200,24 @@ CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d
 HOVER_N, RINGS = 6, 3
 
 
-def hover_frame(n, rings=RINGS, floor=True):
-    fs = [(i + n / HOVER_N) / rings for i in range(rings)]
+def hover_frame(n, rings=RINGS, floor=True, frames=HOVER_N):
+    fs = [(i + n / frames) / rings for i in range(rings)]
     return tuple(f for f in fs if f > 0.04) + ((1.0,) if floor else ())    # (one just out of the emitter is still
                                                             # inside it; one on the floor stays: a ring landing merges)
 
 
-def hover_design(n, rings=RINGS, end=None):
+def hover_design(n, rings=RINGS, end=None, frames=HOVER_N):
     def go(k):
-        hover_rings(k, 0.0, fs=hover_frame(n, rings, floor=end is None), end=end)
+        hover_rings(k, 0.0, fs=hover_frame(n, rings, floor=end is None, frames=frames), end=end)
         return cradle(k, 0.0)
     return go
 
 
-HOVERS = {"c11h": (3, None), "c11g": (2, None), "c11a": (2, "floor"), "c11b": (2, "air"), "c11c": (2, "ripple")}
-for _id, (_r, _e) in HOVERS.items():                        # c11h/g: three/two rings and the floor ring (round 40)
-    for _n in range(HOVER_N):
-        CARTS[f"{_id}{_n}"] = (hover_design(_n, _r, _e), (1, 2))
+HOVERS = {"c11h": (3, None, 6), "c11g": (2, None, 6), "c11a": (2, "floor", 6), "c11b": (2, "air", 6),
+          "c11c": (2, "ripple", 6), "c11w": (2, "air", 12)}    # c11w: B slower (twelve frames; six flickered)
+for _id, (_r, _e, _f) in HOVERS.items():                    # c11h/g: three/two rings and the floor ring (round 40)
+    for _n in range(_f):
+        CARTS[f"{_id}{_n}"] = (hover_design(_n, _r, _e, _f), (1, 2))
         CART_OVERLAYS[f"{_id}{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120),
                                         (single(cradle_sheet, (1, 2), "st"), 60)]
 
