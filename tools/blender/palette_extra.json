@@ -3801,5 +3801,11 @@
   "jzMagenta": {"hex": "#93369c", "set": "vending"},
   "jzIndigo": {"hex": "#2b2747", "set": "vending"},
   "jzIndigoD": {"hex": "#1e1b33", "set": "vending"},
-  "jzLilac": {"hex": "#c7a6d6", "set": "vending"}
+  "jzLilac": {"hex": "#c7a6d6", "set": "vending"},
+  "vmChipO": {"hex": "#d9822b", "set": "vending"},
+  "vmChipG": {"hex": "#6a9f3e", "set": "vending"},
+  "vmChipR": {"hex": "#c4392d", "set": "vending"},
+  "vmChipP": {"hex": "#8a55b0", "set": "vending"},
+  "vmChipB": {"hex": "#3f7fc8", "set": "vending"},
+  "vmChipY": {"hex": "#e8c440", "set": "vending"}
 }

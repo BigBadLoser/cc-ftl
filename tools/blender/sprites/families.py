@@ -189,6 +189,9 @@ def jobs(name):
     if name == "vending19":     # look study, preview only (not in RENDERED): 18a with pen line variants
         from . import vending_r19
         return vending_r19.jobs(), "only:vending"
+    if name == "vending20":     # look study, preview only (not in RENDERED): 19e with the front's details reworked
+        from . import vending_r20
+        return vending_r20.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
