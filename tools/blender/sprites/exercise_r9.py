@@ -246,3 +246,59 @@ for _n, _face in (("v3p", head_cap), ("v3q", head_plates), ("v3r", head_white)):
 # ---- round 12: v3q (white ear plates) with other eye colours ----------------------------------------------------------
 for _n, _c in (("v3qr", "gymEyeR"), ("v3qa", "gymEyeA"), ("v3qg", "gymEyeG")):
     DESIGNS[_n] = turned(boxer3(lambda k, c=_c: head_plates(k, c), f"ex_{_n}"), 0.0, f"ex_{_n}")
+
+
+# ---- round 13: v3q, green eyes, three elbow builds ---------------------------------------------------------------------
+def arms_tucked(k):
+    """A boxer's guard: elbows down and tucked at the sides, forearms rising almost straight to gloves at the chin.
+    White upper arm, a round dark elbow hub with a white cap, a mid-slate forearm."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)                                                   # shoulder
+        sw(k, [(s * 11, 0, 43, 3.2), (s * 12, 1, 37, 2.8), (s * 12, 2, 32, 2.4)], SHELL, p=2.4)   # upper arm
+        sw(k, [(s * 12, 2, 28.5, 0.5), (s * 12, 2, 29.5, 2.4), (s * 12, 2, 31, 3), (s * 12, 2, 32.5, 2.4),
+               (s * 12, 2, 33.5, 0.5)], FRAME_D, p=2.0)                            # round elbow hub
+        sw(k, [(s * 13.2, 2, 31, 1.6), (s * 14.4, 2, 31, 1.2)], SHELL, p=2.0)      # its cap, out to the side
+        sw(k, [(s * 12, 3, 31, 2), (s * 10, 6, 38, 2), (s * 8.5, 8, 42, 2)], FRAME)   # forearm, rising
+        sw(k, [(s * 8.6, 8, 42, 2.5), (s * 8, 8.8, 43.6, 2.5)], FRAME_D)            # wrist collar
+        glove(k, s * 7.5, 10, 46)
+
+
+def arms_hinge(k):
+    """Inverse contrast: dark slate upper arm and forearm, the elbow a chunky white hinge block with a dark pin."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)
+        sw(k, [(s * 11, 0, 43, 2.4), (s * 13, 2, 35, 2.2)], FRAME_D)               # upper arm
+        sw(k, [(s * 11.3, 3, 33.5, 3.4, 3), (s * 14.7, 3, 33.5, 3.4, 3)], SHELL, p=3.2, cap0=SHELL_D, cap1=SHELL_D)  # hinge
+        sw(k, [(s * 14.8, 3, 33.5, 1.3), (s * 15.6, 3, 33.5, 1.3)], FRAME_D, p=2.0)  # its pin head
+        sw(k, [(s * 13, 4, 33, 2), (s * 10, 8, 40, 2)], FRAME_D)                   # forearm
+        sw(k, [(s * 10, 8.2, 40.3, 2.5), (s * 9.3, 9.2, 41.8, 2.5)], SHELL)          # white wrist collar
+        glove(k, s * 8, 11, 44)
+
+
+def arms_piston(k):
+    """White upper arm and forearm, a dark ball at the elbow, a bare piston bridging it on the outside."""
+    for s in (-1, 1):
+        pin(k, s * 10, 0, 43, 3)
+        sw(k, [(s * 11, 0, 43, 3), (s * 13, 2, 35, 2.4)], SHELL, p=2.4)            # upper arm
+        e = (s * 13.5, 3, 33)
+        sw(k, [(e[0], e[1], e[2] - 3, 0.5), (e[0], e[1], e[2] - 2, 2.4), (*e, 3), (e[0], e[1], e[2] + 2, 2.4),
+               (e[0], e[1], e[2] + 3, 0.5)], FRAME_D, p=2.0)                       # elbow ball
+        sw(k, [(s * 13, 4, 34, 2.2), (s * 10, 8, 40, 2.2)], SHELL, p=2.4)          # forearm
+        sw(k, [(s * 15.5, 0.5, 39, 0.9), (s * 16, 3, 34, 0.9), (s * 13.5, 6.5, 37, 0.9)], RAIL, p=2.0)   # piston rod
+        sw(k, [(s * 15.5, 0.5, 39, 1.5), (s * 15.8, 1.7, 36.5, 1.5)], FRAME_D, p=2.0)   # its cylinder
+        sw(k, [(s * 10, 8.2, 40.3, 2.5), (s * 9.3, 9.2, 41.8, 2.5)], FRAME_D)
+        glove(k, s * 8, 11, 44)
+
+
+def boxer4(arms, name):
+    def f(nm=name):
+        k = Bench(nm, FP)
+        body(k)
+        head_plates(k, "gymEyeG")
+        arms(k)
+        return build(k)
+    return f
+
+
+for _n, _a in (("v3s", arms_tucked), ("v3t", arms_hinge), ("v3u", arms_piston)):
+    DESIGNS[_n] = turned(boxer4(_a, f"ex_{_n}"), 0.0, f"ex_{_n}")
