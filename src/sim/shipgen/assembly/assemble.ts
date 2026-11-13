@@ -88,9 +88,9 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
 
   const root = recipe.root;
   let why = '';
-  for (let cells = 5; cells <= 12; cells++) {
+  for (let cells = 5; cells <= 18; cells++) {
     const R = cells * K;
-    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : typeof root.cut === 'object' ? cells - root.cut.flat : root.cut, inner: root.inner, ...(root.round ? { round: true } : {}), ...(root.shoulders ? { shoulders: true } : {}), ...(root.gap ? { gap: root.gap } : {}) }, 120);
+    const { site, kept } = ringSite({ R, outline: root.outline, cut: root.cut === 'octagon' ? Math.round(0.59 * cells) : typeof root.cut === 'object' ? cells - root.cut.flat : root.cut, inner: root.inner, ...(root.round ? { round: true } : {}), ...(root.shoulders ? { shoulders: true } : {}), ...(root.gap ? { gap: root.gap } : {}) }, Math.max(120, 2 * R + 48));
     const ctx = context(site.g, site, rng);
     // Ground kept open inboard of the ring (the berths of a harbour inside an arc) is not the inner rooms' to take.
     const inboard = site.free;
