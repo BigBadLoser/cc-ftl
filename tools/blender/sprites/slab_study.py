@@ -189,6 +189,26 @@ CARTS = {v: (cart_design(v, d), (1, 2)) for v, d in CART_TIP.items()}
 CART_OVERLAYS = {v: [(single(cradle_floor, (1, 2), "fl"), 120), *cart_field(v, d),
                      (single(cradle_sheet, (1, 2), "st"), 60)] for v, d in CART_TIP.items()}
 
+# Round 39: the hover loop. Rings leave the emitter and run down to the floor, widening and fading as they go:
+# c11h<n>, n of HOVER_N frames, RINGS rings evenly spaced along the run (each ring its own overlay, its alpha its fade).
+HOVER_N, RINGS = 6, 3
+
+
+def ring_alpha(f):
+    return int(255 * min(1.0, f / 0.15) * (1.0 if f < 0.55 else 1.0 - 0.85 * (f - 0.55) / 0.45))
+
+
+def hover_frame(n):
+    fs = [(i + n / HOVER_N) / RINGS for i in range(RINGS)]
+    return [(single(lambda k, f=f: hover_rings(k, 0.0, fs=(f,)), (1, 2), f"r{j}"), max(1, ring_alpha(f)))
+            for j, f in enumerate(fs)]
+
+
+for _n in range(HOVER_N):
+    CARTS[f"c11h{_n}"] = ((lambda k: cradle(k, 0.0)), (1, 2))
+    CART_OVERLAYS[f"c11h{_n}"] = [(single(cradle_floor, (1, 2), "fl"), 120), *hover_frame(_n),
+                                  (single(cradle_sheet, (1, 2), "st"), 60)]
+
 
 # ---- rendering ------------------------------------------------------------------------------------------------------
 def tables():
