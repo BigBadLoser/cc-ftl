@@ -61,13 +61,18 @@ export function cartTarget(world: World, id: number, x: number, y: number, last:
     return rest ? restPose(x, y, rest) : last;
   }
   const pos = world.get(id, PositionC);
+  if (!pos) return last;
   const steps = world.get(id, PathC)?.steps ?? [];
-  const route: Pt[] = pos ? [{ x: pos.toX, y: pos.toY }, ...steps] : steps;
-  return cartAhead(x, y, route, last?.rot ?? 0) ?? last;
+  const route: Pt[] = [{ x: pos.x, y: pos.y }, { x: pos.toX, y: pos.toY }, ...steps];
+  return cartAhead(route, pos.x === pos.toX && pos.y === pos.toY ? 0 : pos.progress) ?? last;
 }
 
-/** Ease the drawn cart toward `next` (`k` of the way; a turn snaps), so a corner or a stop slides rather than jumps. */
+/**
+ * Ease the drawn cart toward `next` (`k` of the way) along its own axis, so a stop slides rather than jumps. A turn, or a
+ * move off that axis (a short run skipped between frames), snaps: sliding sideways would cut through a wall.
+ */
 export function easeCart(cur: CartPose | null, next: CartPose, k: number): CartPose {
-  if (!cur || cur.rot !== next.rot || Math.hypot(next.x - cur.x, next.y - cur.y) > 3) return next;
+  const side = cur && (cur.rot % 2 === 1 ? Math.abs(next.y - cur.y) : Math.abs(next.x - cur.x));
+  if (!cur || cur.rot !== next.rot || (side ?? 0) > 0.01 || Math.hypot(next.x - cur.x, next.y - cur.y) > 3) return next;
   return { x: cur.x + (next.x - cur.x) * k, y: cur.y + (next.y - cur.y) * k, rot: next.rot };
 }

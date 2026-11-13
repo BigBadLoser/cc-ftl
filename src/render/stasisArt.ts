@@ -86,8 +86,8 @@ export function stasisLayers(
  * (stasis/query cartRest). The sprite at rotation r is pushed toward PUSH[r], its bar at the other end.
  */
 const PUSH: readonly (readonly [number, number])[] = [[0, 1], [-1, 0], [0, -1], [1, 0]];
-/** Tiles from the carrier to the cart's middle. */
-export const CART_GAP = 1.3;
+/** Tiles along the route from the carrier to the cart's middle (its rear end half a tile ahead of them). */
+export const CART_GAP = 1.5;
 
 export interface Pt {
   x: number;
@@ -110,30 +110,61 @@ function poseFrom(x: number, y: number, cx: number, cy: number, prev: number): C
     const want: readonly [number, number] = alongX ? [Math.sign(vx), 0] : [0, Math.sign(vy)];
     rot = PUSH.findIndex(([a, b]) => a === want[0] && b === want[1]);
   }
+  return anchored(cx, cy, rot);
+}
+
+/** The pose of a cart with its middle at (cx, cy) turned `rot`: anchored on its front-most tile. */
+function anchored(cx: number, cy: number, rot: number): CartPose {
   const [ux, uy] = rot % 2 === 1 ? [0.5, 0] : [0, 0.5];
   return { x: cx + ux, y: cy + uy, rot };
 }
 
 /**
- * The cart ahead of a carrier at (x, y) walking `route` (the tiles still ahead, next first): its middle CART_GAP along the
- * route, or at the route's end when less is left. Null with no route (they stand: the cart rests, see restPose).
+ * The walk as whole orthogonal steps: a diagonal step (the sim takes one only where both tiles beside it are open) becomes
+ * two, through the side tile that keeps the way it was already going. `first` is how many steps the first move became.
  */
-export function cartAhead(x: number, y: number, route: readonly Pt[], prev: number): CartPose | null {
-  if (route.length === 0) return null;
-  let px = x, py = y, left = CART_GAP;
-  for (const t of route) {
-    const d = Math.hypot(t.x - px, t.y - py);
-    if (d >= left) {
-      px += ((t.x - px) * left) / d;
-      py += ((t.y - py) * left) / d;
-      left = 0;
-      break;
+export function orthoSteps(tiles: readonly Pt[]): { tiles: Pt[]; first: number } {
+  const out: Pt[] = tiles.length > 0 ? [{ x: tiles[0]!.x, y: tiles[0]!.y }] : [];
+  let first = 1;
+  for (let i = 1; i < tiles.length; i++) {
+    const p = out[out.length - 1]!, q = tiles[i]!;
+    if (q.x === p.x && q.y === p.y) continue;
+    if (q.x !== p.x && q.y !== p.y) {
+      const b = out[out.length - 2];
+      const alongY = !!b && b.x === p.x && b.y !== p.y;
+      out.push(alongY ? { x: p.x, y: q.y } : { x: q.x, y: p.y });
+      if (i === 1) first = 2;
     }
-    left -= d;
-    px = t.x;
-    py = t.y;
+    out.push({ x: q.x, y: q.y });
   }
-  return poseFrom(x, y, px, py, prev);
+  return { tiles: out, first };
+}
+
+/**
+ * The cart pushed ahead of a carrier walking `tiles` (the tile they are leaving, the one they step to, then their path),
+ * `progress` (0..1) of the way through the first step. It always stands on two whole floor tiles of their way along one
+ * straight run, so it never pokes into a wall: its middle CART_GAP ahead of them, held on a run's last two tiles until
+ * they reach the turn, then pivoting onto the corner tile and the next. Null when they have nowhere left to walk.
+ */
+export function cartAhead(tiles: readonly Pt[], progress: number): CartPose | null {
+  const { tiles: t, first } = orthoSteps(tiles);
+  if (t.length < 2) return null;
+  const dir = (i: number): [number, number] => [t[i + 1]!.x - t[i]!.x, t[i + 1]!.y - t[i]!.y];
+  // Runs: straight stretches between turns (a corner tile ends one run and starts the next).
+  const ends: number[] = [0];
+  for (let i = 1; i < t.length - 1; i++) {
+    const [ax, ay] = dir(i - 1), [bx, by] = dir(i);
+    if (ax !== bx || ay !== by) ends.push(i);
+  }
+  ends.push(t.length - 1);
+  const m = Math.max(0, Math.min(1, progress)) * first + CART_GAP;
+  let r = 0;
+  while (r < ends.length - 2 && m >= ends[r + 1]!) r++;
+  const a = ends[r]!, b = ends[r + 1]!;
+  const c = Math.max(a + 0.5, Math.min(b - 0.5, m));
+  const [dx, dy] = dir(a);
+  const rot = PUSH.findIndex(([px, py]) => px === dx && py === dy);
+  return anchored(t[a]!.x + dx * (c - a), t[a]!.y + dy * (c - a), rot);
 }
 
 /** The cart resting on its two tiles (the sim's cartRest: the second at +1 along x for rot 0, along y for rot 1), its bar toward the carrier at (x, y). */
