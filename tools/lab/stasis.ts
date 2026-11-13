@@ -1,6 +1,7 @@
 import { Sprite, type Container } from 'pixi.js';
 import type { Atlas } from '../../src/render/assets/loader';
-import { CART_FPS, CART_FRAMES, LAMP_TINT, cartFrame, slotOrder } from '../../src/render/stasisArt';
+import { CART_FPS, CART_FRAMES, CART_HEADINGS, cartFrame } from '../../src/render/cartPose';
+import { LAMP_TINT, slotOrder } from '../../src/render/stasisArt';
 import { floor, put } from './hydroponics';
 import type { LabCell, LabPanel } from './panel';
 
@@ -15,25 +16,32 @@ const FILLS: readonly [string, readonly number[], readonly number[], boolean][] 
 ];
 
 /** A sprite that shows `id(t)` each frame, placed by that frame's own anchor (and its glow). */
-function playing(root: Container, atlas: Atlas, id: (t: number) => string, ox: number, oy: number): (t: number) => void {
+function playing(root: Container, atlas: Atlas, art: (t: number) => { id: string; flip: boolean }, ox: number, oy: number): (t: number) => void {
   const spr = new Sprite();
   const glow = new Sprite();
   glow.blendMode = 'add';
   root.addChild(spr, glow);
   return (t) => {
-    const s = atlas.stat(id(t));
+    const { id, flip } = art(t);
+    const s = atlas.stat(id);
     if (!s) return;
-    const x = Math.round(ox - s.ax);
+    // Flipped about the anchor like the game's cart (cartView).
+    const x = Math.round(flip ? ox + s.ax : ox - s.ax);
     const y = Math.round(oy - s.ay);
+    const sx = flip ? -1 : 1;
     Object.assign(spr, { texture: s.tex, x, y });
+    spr.scale.x = sx;
     glow.visible = !!s.glow;
-    if (s.glow) Object.assign(glow, { texture: s.glow, x, y });
+    if (s.glow) {
+      Object.assign(glow, { texture: s.glow, x, y });
+      glow.scale.x = sx;
+    }
   };
 }
 
 /**
  * `?panel=stasis`: the stasis wheel (#116) at fill levels, stacked as the game draws it (the base, then each slot's slab
- * back to front, then the lit rim lamps), one row per rotation; then the slab on its hover cart per rotation (`&play` runs the ring loop); then
+ * back to front, then the lit rim lamps), one row per rotation; then the slab on its hover cart at each of its 16 headings (`&play` runs the ring loop); then
  * an empty slab as a floor stack and a full one set down on the floor along x and along y.
  * `rots=0,1,2,3` (default all).
  */
@@ -76,18 +84,20 @@ export const stasisPanel: LabPanel = {
     }
     const cw = 3 * TW + PAD * 2;
     const ch = 3 * TH + PAD * 2;
-    rots.forEach((rot, j) => {
+    // The cart at all 16 headings, 8 to a row (headings outside h2..h10 are their mirror twin flipped), over a 2x2 floor.
+    for (let h = 0; h < CART_HEADINGS; h++) {
+      const angle = (h * 2 * Math.PI) / CART_HEADINGS;
       cells.push({
-        label: 'hover cart', note: `r${rot}, ${CART_FRAMES} frames`, w: cw, h: ch, newRow: j === 0, at: 0, loop: CART_FRAMES / CART_FPS,
+        label: `hover cart h${h}`, note: `${cartFrame(angle, 0).flip ? 'mirrored' : 'rendered'}, ${CART_FRAMES} frames`, w: cw, h: ch, newRow: h % 8 === 0, at: 0, loop: CART_FRAMES / CART_FPS,
         mount(root) {
           const x = Math.round(cw / 2);
           const y = ch - PAD - TH;
-          root.addChild(floor(1, 2, x, y));
-          const set = playing(root, atlas, (t) => cartFrame(rot, t * 1000), x, y);
+          root.addChild(floor(2, 2, x, y));
+          const set = playing(root, atlas, (t) => cartFrame(angle, t * 1000), x, Math.round(y - TH / 2));
           return (t) => set(t);
         },
       });
-    });
+    }
     // Off the wheel and the cart: [label, sprite, tiles back along x, along y].
     const loose: readonly [string, string, number, number][] = [['empty slab (item)', 'item.stasis_slab.l', 1, 1], ['floor slab, along x', 'slab.floor.x', 2, 1], ['floor slab, along y', 'slab.floor.y', 1, 2]];
     loose.forEach(([label, id, fx, fy], j) => {

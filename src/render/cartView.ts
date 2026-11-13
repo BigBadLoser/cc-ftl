@@ -4,7 +4,7 @@ import type { World } from '../sim/ecs';
 import { PathC, PositionC } from '../sim/crew/components';
 import { cartRest, walking } from '../sim/stasis/query';
 import type { Atlas } from './assets/loader';
-import { cartAhead, restPose, type CartPose, type Pt } from './stasisArt';
+import { cartAhead, restPose, turnToward, type CartPose, type Pt } from './cartPose';
 
 /**
  * The hover cart a crew member pushes a stasis slab on (#116; `slab.cart.r<n>[.fN]`, see stasisArt): one sprite and its
@@ -12,7 +12,7 @@ import { cartAhead, restPose, type CartPose, type Pt } from './stasisArt';
  * behind them by the way they face). A look only: the sim has no cart object.
  */
 export interface CartSprite {
-  show(atlas: Atlas, id: string, x: number, y: number, z: number, tint: number): void;
+  show(atlas: Atlas, id: string, flip: boolean, x: number, y: number, z: number, tint: number): void;
   hide(): void;
   destroy(): void;
 }
@@ -26,16 +26,19 @@ export function createCart(parent: Container): CartSprite {
   root.visible = false;
   parent.addChild(root);
   return {
-    show(atlas, id, x, y, z, tint) {
+    show(atlas, id, flip, x, y, z, tint) {
       const art = atlas.firstOf([id]);
       root.visible = !!art;
       if (!art) return;
       base.texture = art.tex;
       base.tint = tint;
-      base.position.set(-art.ax, -art.ay);
+      // Flipped left-right about the anchor (the cart's middle): a mirrored heading (cartPose headingArt).
+      base.scale.x = flip ? -1 : 1;
+      base.position.set(flip ? art.ax : -art.ax, -art.ay);
       glow.visible = !!art.glow;
       if (art.glow) {
         glow.texture = art.glow;
+        glow.scale.x = base.scale.x;
         glow.position.copyFrom(base.position);
       }
       root.position.set(x, y);
@@ -68,11 +71,10 @@ export function cartTarget(world: World, id: number, x: number, y: number, last:
 }
 
 /**
- * Ease the drawn cart toward `next` (`k` of the way) along its own axis, so a stop slides rather than jumps. A turn, or a
- * move off that axis (a short run skipped between frames), snaps: sliding sideways would cut through a wall.
+ * Ease the drawn cart toward `next`, `k` of the way, its middle and its angle together (the short way round), so a corner
+ * is a turn and a stop a slide rather than a jump; a cart more than 3 tiles off (a new carry) is put there at once.
  */
 export function easeCart(cur: CartPose | null, next: CartPose, k: number): CartPose {
-  const side = cur && (cur.rot % 2 === 1 ? Math.abs(next.y - cur.y) : Math.abs(next.x - cur.x));
-  if (!cur || cur.rot !== next.rot || (side ?? 0) > 0.01 || Math.hypot(next.x - cur.x, next.y - cur.y) > 3) return next;
-  return { x: cur.x + (next.x - cur.x) * k, y: cur.y + (next.y - cur.y) * k, rot: next.rot };
+  if (!cur || Math.hypot(next.x - cur.x, next.y - cur.y) > 3) return next;
+  return { x: cur.x + (next.x - cur.x) * k, y: cur.y + (next.y - cur.y) * k, angle: turnToward(cur.angle, next.angle, k) };
 }

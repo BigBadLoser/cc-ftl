@@ -26,7 +26,7 @@ import type { CrewPalette } from './assets/palette';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
 import { cartTarget, createCart, easeCart, type CartSprite } from './cartView';
-import { CART_FRAMES, cartFrame, type CartPose } from './stasisArt';
+import { CART_FRAMES, cartFrame, cartFront, type CartPose } from './cartPose';
 import { onCart } from '../sim/stasis/query';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
@@ -412,9 +412,10 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           s.cartAt = want ? easeCart(s.cartAt, want, k) : null;
           const c = s.cartAt;
           if (c) {
-            const cx = c.x - target.ox, cy = c.y - target.oy;
-            const q = iso(cx, cy);
-            s.cart.show(atlas, cartFrame(c.rot, now, id % CART_FRAMES), Math.round(q.x), Math.round(q.y), depthKey(cx, cy), s.tint);
+            const q = iso(c.x - target.ox, c.y - target.oy);
+            const f = cartFront(c);
+            const art = cartFrame(c.angle, now, id % CART_FRAMES);
+            s.cart.show(atlas, art.id, art.flip, Math.round(q.x), Math.round(q.y), depthKey(f.x - target.ox, f.y - target.oy), s.tint);
           } else s.cart.hide();
         } else {
           s.cart.hide();
