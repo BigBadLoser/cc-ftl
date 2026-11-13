@@ -92,8 +92,8 @@ const bazaar = (name: string, o: { outline: 'disc' | 'square'; cut: number | 'oc
 
 /**
  * PROTOTYPE. A harbour crescent: a rounded square open to the west, rooms in two rows along its promenade, and a pier
- * from the east side out through the basin with the harbour at its end. The machinery is gated off the back, and each
- * arm ends in a block of cabins on a private lane. Where the freight stands is the variation:
+ * from the east side out through the basin with the harbour at its end. The machinery is gated off the back, and the
+ * cabins stand in the band with the rest. Where the freight stands is the variation:
  *   pier    the pier is the two warehouses; the stalls stand on the promenade's inner side, facing the basin
  *   foot    the warehouses at the pier's foot, the stalls beyond them
  *   behind  the pier is a market street, a warehouse behind the stalls on either side
@@ -104,13 +104,12 @@ const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number };
   const pier = o.freight === 'pier' ? [sheds] : o.freight === 'foot' ? [sheds, stalls] : [stalls];
   return {
     name,
-    root: { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works'] : ['commons', 'defence', 'works'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: true, ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } },
+    root: { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works', 'habitation'] : ['commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: false, ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } },
     spacing: 2,
     branches: [
       ...pier,
       { takes: ['harbour'], per: 'together', host: { on: 'after', rule: pier.length - 1 }, neck: 3, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
       { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: 7, even: true, cap: true }, link: 0 },
-      { takes: ['habitation'], per: 'together', host: { on: 'tip' }, neck: 0, most: 1, section: { rooms: [3, 5], rowDepth: 5, even: true, evenCabins: true }, link: 0 },
     ],
   };
 };
