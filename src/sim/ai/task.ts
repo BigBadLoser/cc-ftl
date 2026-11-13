@@ -10,6 +10,7 @@ import { classOf } from './classes';
 import { machineOf, travelState } from './jobStates';
 import { IntentC, InterruptC, TaskC } from './components';
 import { setDownPatient } from './setDown';
+import { cartsFor } from '../stasis/query';
 import type { Blackboard, DriveId, Frame, Hold, MachineId, Task, TileRef } from './types';
 
 /**
@@ -320,9 +321,10 @@ export function abortTask(sim: Sim, crew: number, reason: AbortReason): void {
   syncTask(sim, crew);
 }
 
-/** True if the crew member is on a rescue job and holds the patient (they must not drop them to sleep or fight). */
+/** True if the crew member is on a rescue job and holds the patient, or carts a stasis slab for its job (they must not drop it to sleep or fight). */
 export function isCarrying(sim: Sim, crew: number): boolean {
   const a = sim.world.get(crew, AssignmentC);
   const job = a && sim.world.get(a.jobId, JobC);
+  if (job?.kind === 'stasis') return cartsFor(sim, crew, job.target ?? 0);
   return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === crew;
 }

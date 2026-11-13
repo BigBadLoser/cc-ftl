@@ -36,6 +36,7 @@ Sprites exist for many goods that have no item def (copper, alloy, nanites, stim
 | Missile | `item.missile` | ammo for the missile launcher | In game | src/content/items.ts:45; fabricator recipe; trade |
 | Cargo crate | `item.cargo_crate` | delivery-job crate, sim/galaxy/crate.ts | In game | src/content/items.ts:47; no shop entry, by design |
 | Shuttle | `item.shuttle` | fabricator makes it | In game | src/content/items.ts:49; vehicle bay turns it into a shuttle (vehicle.assign); sellable |
+| Stasis slab | `item.stasis_slab` | An empty stasis slab: crew seal a prisoner into one; a new stasis wheel holds ten; fabricator recipe, sold at trade stations and navy depots | Partial (no art yet) | src/content/items.ts; sim/stasis/jobs.ts (seal source), freeze.ts; recipe.stasis_slab |
 | Repair drone | `item.drone_repair` | needs research.drone.repair | In game | src/content/items.ts:51; fabricator -> drone bay; sold at research stations |
 | Medic drone | `item.drone_medic` | as repair drone | In game | src/content/items.ts:52 |
 | Defence drone | `item.drone_defence` | as repair drone | In game | src/content/items.ts:53 |
@@ -55,6 +56,7 @@ Sprites exist for many goods that have no item def (copper, alloy, nanites, stim
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
 | Machine spare parts | `recipe.parts` | Metal + electronics -> spare parts | In game | src/content/recipes.ts:12; sim/items/craft.ts, systems/craftJobs.ts |
+| Stasis slab | `recipe.stasis_slab` | Metal + electronics -> an empty stasis slab (fabricator) | In game | src/content/recipes.ts; sim/items/craft.ts |
 | Reclaim hull scrap | `recipe.scrap_hull` | Hull scrap -> metal | In game | src/content/recipes.ts:21; sim/items/craft.ts, systems/craftJobs.ts |
 | Reclaim tech scrap | `recipe.scrap_tech` | Tech scrap -> electronics, parts (5% drone tech) | In game | src/content/recipes.ts:28; sim/items/craft.ts, systems/craftJobs.ts |
 | Reclaim energy scrap | `recipe.scrap_energy` | Energy scrap -> parts, electronics, metal | In game | src/content/recipes.ts:36; sim/items/craft.ts, systems/craftJobs.ts |

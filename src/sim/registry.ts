@@ -542,8 +542,16 @@ export interface ModuleDef {
   recovery?: true;
   /** A hydroponics bed: carries a crop (farm/). `scale`: how many times a small bed's yield and planting water it takes (the large bed's 3). */
   plot?: { scale: number; waterScale?: number };
-  /** Draws its power (and shows as running) only while the rule holds, else it is idle: no draw, `powered` false (modules/draw.ts). 'planted': a bed with a crop in the soil. */
-  drawsWhen?: 'planted';
+  /**
+   * Draws its power (and shows as running) only while the rule holds, else it is idle: no draw, `powered` false (modules/draw.ts). 'planted': a bed
+   * with a crop in the soil. 'holding': a stasis wheel with a full slab in it.
+   */
+  drawsWhen?: 'planted' | 'holding';
+  /**
+   * A stasis wheel (#116, sim/stasis): `slots` upright stasis slabs round a spindle, built full of empty slabs. A full slab standing in it holds its
+   * prisoner frozen while the wheel is powered (`drawsWhen: 'holding'`); crew load and unload it at its `access` (hatch) tile.
+   */
+  stasisWheel?: { slots: number };
   /** A galley: hungry crew eat on its access tile (a hot meal lifts mood). Pairs with `crafting` for a food printer. */
   galley?: true;
   /**

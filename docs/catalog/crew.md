@@ -130,7 +130,7 @@ Name | id column holds the code path.
 | Skills and XP | ``sim/crew/xp.ts`` | Use trains skills 0-10 | In game | sim/crew/skills.ts, workSkill.ts |
 | Medical treatment | ``sim/crew/treatment.ts`` | Med beds and recovery pods heal faster with medicinal herbs; a medic tending a medical bed (`tend` job, `tendingOf`) adds their skill and earns the XP; downed crew bleed out unless rescued; hurt crew (under 70%) walk to a free medical bed, else a powered recovery pod (`recover` drive); the downed go to a pod first | In game | sim/systems/vitals.ts, autojobs.ts |
 | Hand-weapon fighting and cover | ``sim/fight/*`` | Crew shoot and melee; target cover lowers hit chance | Partial: no cover-seeking | sim/fight/los.ts gives targets cover; crew do not move to cover and the crouch/lean clips are unused (issue #50) |
-| Surrender and capture | ``sim/fight/surrender.ts`` | Hurt, outnumbered crew surrender | Partial: no prisoner holding | holding prisoners is issue #116 (cryo pods, not built) |
+| Surrender and capture | ``sim/fight/surrender.ts`` | Hurt, outnumbered crew surrender | Partial: prisoners are held in stasis on their own ship only | holding prisoners: sim/stasis/ (#116 slice 1); no escort from a prize, no ransom or sale |
 | Crew implants | ``-`` | Tiered augments as stat modifiers | Planned | issue #311 (phase 7) |
 | Workbench: personal gear | ``-`` | Crew make and repair gear | Planned | issue #320; module.workbench is sprite only |
 | Habits (drinker, stims) | ``-`` | Cravings and withdrawal | Planned | the two traits exist as non-rollable defs; no mechanic |

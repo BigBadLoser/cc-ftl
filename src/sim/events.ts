@@ -185,6 +185,10 @@ export type SimEvent =
   /** `by`'s crew took the ship on ship `ship` (it is now a prize if `by` is the player, else the loss is `game.lost`). */
   | { type: 'ship.captured'; ship: number; by: Faction; from: Faction }
   | { type: 'crew.imprisoned'; crew: number; ship: number }
+  /** Prisoner holding (#116): `by` sealed the prisoner `crew` into a stasis slab; the slab was stood in the wheel `wheel`; the slab's reserve ran out and they thawed at (x, y), hostile. */
+  | { type: 'stasis.sealed'; crew: number; by: number; ship: number }
+  | { type: 'stasis.stowed'; crew: number; wheel: number; ship: number }
+  | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number }
   /** Robots: stunned by ion/EMP until `until`; shut down (no live AI core) or back online; wrecked at 0 hp; wreck salvaged. */
   | { type: 'robot.stunned'; crew: number; until: number }
   | { type: 'robot.inert'; crew: number }

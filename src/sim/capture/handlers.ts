@@ -5,9 +5,9 @@ import type { Command } from '../commands';
 import { CrewC, PositionC } from '../crew/components';
 import { AllegianceC, SurrenderedC } from '../fight/components';
 import type { Sim } from '../sim';
-import { capturePrize, scuttle } from './prize';
+import { capturePrize, imprison, scuttle } from './prize';
 
-type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'debug.capture'>;
+type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'debug.capture' | 'debug.imprison'>;
 
 export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extract<Command, { type: T }>) => void } = {
   'ship.scuttle': (sim, cmd) => {
@@ -23,5 +23,10 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
       }
     }
     capturePrize(sim, cmd.ship);
+  },
+  'debug.imprison': (sim, cmd) => {
+    const pos = sim.world.get(cmd.crew, PositionC);
+    if (!pos || !sim.world.has(cmd.crew, CrewC) || sim.world.get(cmd.crew, AllegianceC)?.faction === 'player') return;
+    imprison(sim, cmd.crew, shipIdOf(sim, pos));
   },
 };

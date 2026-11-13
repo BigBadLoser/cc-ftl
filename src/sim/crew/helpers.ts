@@ -5,6 +5,7 @@ import {
 } from './components';
 
 import { InertC, StunC } from '../robots/components';
+import { StasisC } from '../stasis/components';
 import { BreakdownC } from './breakTypes';
 import type { Tile } from './pathfind';
 import { FighterC } from '../fight/components';
@@ -67,7 +68,7 @@ export function refusesWork(sim: Sim, crew: number): boolean {
 
 export function isIncapacitated(sim: Sim, crew: number): boolean {
   return sim.world.has(crew, DownedC) || sim.world.has(crew, RecoveringC) || sim.world.has(crew, DeadC) || sim.world.has(crew, CarriedC)
-    || sim.world.has(crew, InertC) || sim.world.has(crew, StunC);
+    || sim.world.has(crew, InertC) || sim.world.has(crew, StunC) || sim.world.has(crew, StasisC);
 }
 
 /** True if any living crew member stands on, or is stepping onto, the tile. */

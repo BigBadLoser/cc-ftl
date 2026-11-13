@@ -75,11 +75,12 @@ given up as a derelict instead and the chance to take it is gone. So keep your p
 ### Prisoners
 
 Enemy crew who surrendered or were downed when you took the ship are held as **prisoners** on the prize, listed on the
-Prize panel with their health.
+Prize panel with their health. Crew seal prisoners into stasis slabs and hold them in a stasis wheel on the same ship:
+see [Prisoners and stasis](../prisoners/).
 
 <ComingLater>
 
-Doing anything with prisoners. For now they just stay where they are: there is no brig, ransom, sale or recruiting.
+Bringing prisoners from the prize to your own ship, and ransom, sale or recruiting.
 
 </ComingLater>
 

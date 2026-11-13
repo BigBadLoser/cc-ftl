@@ -29,7 +29,7 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 ## Art-only sprites (no def, no system)
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Cryo pod | `module.cryo_pod` | Prisoner holding sprite; planned (#116) | Art only | manifest; DESIGN.md wrongly says "already in the game" |
+| Cryo pod | `module.cryo_pod` | Sprite only; not used for prisoners (they go in the stasis wheel, #116) | Art only | manifest |
 | Stasis slab, hover cart, stasis wheel | `-` | Prisoner holding look study (#116): the slab item, its cart, the 3x3 wheel with loading and fill levels | Art only (preview, not in the manifest) | tools/blender/sprites/slab_*.py; DESIGN.md "Prisoners and prizes" |
 | Comms console | `module.comms_console` | Sprite only | Art only | manifest |
 | Medical console | `module.med_console` | Sprite only | Art only | manifest |
