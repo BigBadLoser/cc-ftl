@@ -48,23 +48,37 @@ N = 256
 GAP = max(abs(math.remainder(i * math.tau / N - ST, math.tau)) for i in range(N) if r_hole(i * math.tau / N) > W.RP + 1e-6)
 
 
-def sectors(k, r0f, r1f, z0, z1, colf):
+def sectors(k, r0f, r1f, z0, z1, colf, side=0, shift=(0.0, 0.0)):
     """Thin sectors over the hatch's angles, r0f(a) to r1f(a); colf(i) their colours."""
     from .slab_kit import prism
     for i in range(N):
         a0, a1 = i * math.tau / N, (i + 1) * math.tau / N
-        if abs(math.remainder((a0 + a1) / 2 - ST, math.tau)) > GAP + 0.03:
+        d = math.remainder((a0 + a1) / 2 - ST, math.tau)
+        if abs(d) > GAP + 0.03 or (side and (d > 0) != (side > 0)):
             continue
         p0, p1, q0, q1 = r0f(a0), r0f(a1), r1f(a0), r1f(a1)
         if min(q0 - p0, q1 - p1) <= 0.002:
             continue
-        prism(k, [at(p0, a0)[:2], at(q0, a0)[:2], at(q1, a1)[:2], at(p1, a1)[:2]], z0, z1, colf(i))
+        pts = [at(p0, a0)[:2], at(q0, a0)[:2], at(q1, a1)[:2], at(p1, a1)[:2]]
+        prism(k, [(u + shift[0], v + shift[1]) for u, v in pts], z0, z1, colf(i))
 
 
-def hatch(k, pz):
-    """The hatch: its striped rim on the floor, the platform at height pz (0: flush)."""
+def hatch(k, pz, leaves=0.0):
+    """The hatch: its striped rim on the floor, the platform at height pz (0: flush), and its two leaves (1: shut over
+    it, flush; 0: slid apart under the floor, out of sight)."""
+    if leaves:
+        for side in (-1, 1):                        # each leaf: its half of the opening, slid out sideways
+            off = (1 - leaves) * 0.6 * side
+            z0, z1 = (-0.012, 0.004) if leaves >= 1 else (-0.03, -0.016)   # shut flush; else dropped under the floor
+            sectors(k, lambda a: W.RP, r_hole, z0, z1, lambda i: "steel", side=side,
+                    shift=(ET[0] * off, ET[1] * off))
+        c = at(HC, ST)                              # the seam between them
+        if leaves >= 1:
+            k.box(c[0], c[1], 0.004, 1.2, 0.03, 0.004, "dark", rz=ST)
     sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,               # the striped rim on the floor
             lambda i: "hazY" if (i // 2) % 2 else "hazK")
+    if leaves >= 1:
+        return
     if pz < -0.01:                                                           # the shaft's dark bottom
         sectors(k, lambda a: W.RP, r_hole, -1.75, -1.74, lambda i: "dark")
     sectors(k, lambda a: W.RP, r_hole, pz - 0.03, pz, lambda i: "steel")    # the platform
@@ -143,17 +157,22 @@ KEYS = [(0, 0, 0, None), (30, 0, 0, None), (60, 0, 0, None), (90, 0, 0, None),
         (0, 0, 0, ("cradle",)), (0, -0.15, 0, ("cradle",)), (0, -0.3, 0, ("cradle",)), (0, SINK, 0, ("cradle",))] + \
     [(0, SINK + (DEEP - SINK) * min(1.0, (j / 8) / 0.4), 0, ("slide", j / 8, max(0.0, (j / 8 - 0.4) / 0.6)))
      for j in range(1, 9)] + \
-    [(0, -1.2, 0, "home"), (0, -0.8, 0, "home"), (0, -0.4, 0, "home")]
+    []
+# round 26: the cradle stows down the shaft under two sliding leaves when not in use (it stood in the corner as a
+# loading stand). The loop: hd0-hd4 (shut; the leaves part; the cradle rises), hc00-hc25, he0-he1 (the leaves shut).
+KEYS_D = [(0, DEEP, 0, None, 1.0), (0, DEEP, 0, None, 0.5), (0, DEEP, 0, None, 0.0), (0, -1.1, 0, None, 0.0),
+          (0, -0.55, 0, None, 0.0)]
+KEYS_E = [(0, DEEP, 0, "home", 0.5), (0, DEEP, 0, "home", 1.0)]
 
 
-def frame_n(n):
-    tilt, pz, swing, sl = KEYS[n]
+def frame_n(n, key=None):
+    tilt, pz, swing, sl, leaves = (key or KEYS[n]) + ((0.0,) if len(key or KEYS[n]) == 4 else ())
     tilt, swing = math.radians(tilt), math.radians(swing)
 
     def build(k):
-        home = sl in (None, "home")
-        out = W.geneva_over_tyres(k, P, lights=LAMP, skip=() if home else (0,), gap=GAP)
-        hatch(k, pz)
+        home = sl in (None, "home")                 # None: the station's socket empty (a slab to come); "home": in
+        out = W.geneva_over_tyres(k, P, lights=LAMP, skip=() if sl == "home" else (0,), gap=GAP)
+        hatch(k, pz, leaves)
         bed = pose(pz + 0.12 + (BED - 0.12) * math.sin(tilt), tilt)       # the cradle's frame (a slab on it)
         cradle(k, swung(bed, swing), pz)
         if home:
@@ -177,4 +196,6 @@ def frame_n(n):
 
 
 DESIGNS = {f"hc{i:02d}": (frame_n(i), (3, 3)) for i in range(len(KEYS))}
+DESIGNS.update({f"hd{j}": (frame_n(0, kk), (3, 3)) for j, kk in enumerate(KEYS_D)})
+DESIGNS.update({f"he{j}": (frame_n(0, kk), (3, 3)) for j, kk in enumerate(KEYS_E)})
 PIT = {v: r_hole for v in DESIGNS}
