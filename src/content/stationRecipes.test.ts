@@ -66,7 +66,7 @@ describe('station recipes', () => {
     const g = assembleStation(stations['station.trading'], 'station.trading', 'station', 1, modules, stationRecipes.bazaar[0] as Recipe);
     expect(g.problems).toEqual([]);
     expect(g.station.docks).toBe(3);
-    expect(g.station.guns).toBeGreaterThanOrEqual(4);
+    expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
     expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
   });
 

@@ -61,9 +61,10 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, airlocksAnyWay = false,
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
+  lay.gunsOnHull = !o.gunsAnywhere;
   const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
@@ -82,7 +83,7 @@ function fitOut(
     }
     return draws.get(room) as RoomDraw;
   };
-  const rots = (id: string): number[] => (airlocksAnyWay && defs[id]?.airlock ? [0, 1, 2, 3] : rotsOf(id, defs[id] as ModuleDef));
+  const rots = (id: string): number[] => (o.airlocksAnyWay && defs[id]?.airlock ? [0, 1, 2, 3] : rotsOf(id, defs[id] as ModuleDef));
   const stockUp = (idx: number, spec: RoomSpec | undefined): void => {
     const id = lay.modules[idx]?.def as string;
     if (spec?.stock && defs[id]?.storage) {
@@ -250,6 +251,8 @@ export interface FinishOpts {
   check?: ExtraCheck;
   /** Airlocks may face any way (the station assembly; the arranger's hulls keep theirs off the stern). */
   airlocksAnyWay?: boolean;
+  /** Guns may stand anywhere in their bay, as the game allows (the arranger's hulls keep theirs beside the hull). */
+  gunsAnywhere?: boolean;
 }
 
 /**
@@ -315,7 +318,7 @@ export function fitShell(
   debug?: (hall: (x: number, y: number) => boolean) => GenResult['debug'],
 ): GenResult {
   const { rows, roomOf, width, height, roles, specs } = shell;
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, opts.airlocksAnyWay);
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, opts);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };

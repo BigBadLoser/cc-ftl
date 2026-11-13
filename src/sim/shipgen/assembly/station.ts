@@ -28,7 +28,7 @@ export function assembleStation(def: StationDef, id: string, size: StationSize, 
   const made = fitShell(
     rng, f, id, seed, role, 'sections', { crew: stationCrew(rng, def, size) },
     { rows, roomOf: snap.roomOf, width: snap.width, height: snap.height, roles: g.regions.map((r) => r.role), specs: g.regions.map((r) => r.spec) },
-    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, check: (t, d) => stationProblems(t, d, docksOf(def, size)) },
+    `assembly ${recipe.name}`, defs, 0, { immobile: true, airlocksAnyWay: true, gunsAnywhere: true, check: (t, d) => stationProblems(t, d, docksOf(def, size)) },
   );
   made.template.name = `${def.name} ${size === 'station' ? '' : `${size} `}${(seed >>> 0).toString(16).toUpperCase().padStart(4, '0').slice(-4)}`;
   return { ...made, failures: rejected, station: infoOf(def, size, made.template, defs) };

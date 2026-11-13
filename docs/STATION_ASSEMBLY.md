@@ -198,9 +198,11 @@ fit-out needs no builder or canvas in between.
 - CLI: `node tools/shipgen/cli.js station.trading --size station --layout assembly.bazaar --count 4`.
 - What the handoff changed in the assembly: an airlock unit on a quay is three by three (the airlock module's own
   floor, its walkway innermost) and its hatch becomes plain hull at the handoff, since the module is the door; airlocks
-  may face any way there (`airlocksAnyWay`; the arranger's hulls keep theirs off the stern); a gun bay in a ring's band
-  keeps its long side on the hull (`stripsFor`), or its second mount has no hull to stand against; the dock count the
-  station rules ask for is the assembly's own (`docksOf`).
+  may face any way there (`airlocksAnyWay`; the arranger's hulls keep theirs off the stern); guns may stand anywhere in
+  their bay (`gunsAnywhere`): the game has no rule that a gun touches the hull, only the ship generator's fit-out
+  chose to put them there, and in a ring's band a two-gun bay stands end on to the hull with room for one beside it
+  (the user: "a gun does not have that rule"); the dock count the station rules ask for is the assembly's own
+  (`docksOf`).
 
 ## Ring stations: what was decided, and where they stand
 
