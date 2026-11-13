@@ -70,6 +70,14 @@ describe('station recipes', () => {
     expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
   });
 
+  it('fits a crescent out with no problems: the pier head holds every airlock', () => {
+    const g = assembleStation(stations['station.trading'], 'station.trading', 'station', 1, modules, stationRecipes.crescent[2] as Recipe);
+    expect(g.problems).toEqual([]);
+    expect(g.station.docks).toBe(3);
+    expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
+    expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
+  });
+
   it('rejects a recipe that leaves a department out, and says which', () => {
     const short: Recipe = { ...stationRecipes.tree[0], branches: stationRecipes.tree[0].branches.filter((b) => !b.takes.includes('secure')) };
     expect(assembled(short, 'station.mining', 'station', 1)[0]).toMatch(/no part of the recipe takes secure/);

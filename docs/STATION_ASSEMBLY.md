@@ -18,7 +18,7 @@ them.
 | Recipes (data) | `src/content/stationRecipes.ts` |
 | Recipe types | `src/sim/shipgen/assembly/recipe.ts` |
 | The assembler: candidates, roots, the hard checks | `assemble.ts`, `asm.ts` (placing and taking back), `branch.ts` (rules into branches), `finish.ts` (trim, braces, the room check) |
-| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `ring.ts` (ring or arc with its band) |
+| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `ring.ts` (ring or arc with its band) |
 | Frames and ports | `model.ts` |
 | The wall writer | `regions.ts` (`RegionGrid`) |
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
@@ -62,11 +62,18 @@ A recipe has a root, branch rules, and a few settings.
 
 - Root: `trunk` (a corridor everything hangs off), `core` (no root: the first branch stands at the centre and the rest
   grow from the sections, a cluster), or `ring` (a ring or arc that takes some departments in its band; `outline` disc
-  or square, `gap` cuts an arc, `inner` lines the ring's inner side too).
+  or square, `gap` cuts an arc, `inner` lines the ring's inner side too). On a square outline: `cut` is how far the
+  corners are cut (cells of the lattice, `'octagon'` for eight even sides, `{ flat: n }` to leave flats of n cells),
+  `round` makes them arcs, `shoulders` lets the band run on into a round corner as far as its side walls can meet both
+  curves (found by trial, `shoulderCells` in `corners.ts`), so the corner room is only the steep middle. `waterfront`
+  names departments whose rooms stand on the ring's inner side by an arc's gap, split between its two arms. An arc's
+  corners on its open side are not cut: its arms run straight to their ends.
 - A branch rule takes departments (each as its own branch, or together), names a host (trunk, a ring's rim by
-  direction, an arc's tip, the end of another rule's branch, or any section already standing) and describes its
+  direction, an arc's tip, a `spoke` (a port on the ring's inner side at an axis, heading for the centre: a pier in an
+  arc's basin), the end of another rule's branch, or any section already standing) and describes its
   sections: rooms in each, `rowDepth` for a slab of one depth, `cap` for a room across the far end, `cross` for a passage
-  across it with a port on each flank. `gated` puts a gate at its foot. `docks` makes its first section the dock block,
+  across it with a port on each flank, `behind` for departments whose rooms stand behind its rows as sheds (one a
+  side, as long as the street, their doors onto the hall the section grows from). `gated` puts a gate at its foot. `docks` makes its first section the dock block,
   or with `quay` the harbour (below).
   `mix` deals rooms to sections across departments.
 - Off-centre joins, for a scrapper's tree: `jog` on a rule bends its neck into a dogleg (it steps a few tiles sideways
@@ -123,13 +130,14 @@ rejected). Behind the concourse, in the middle, customs: an open hall the quay r
 on its far side, where the street leaves. The harbour's rooms stand along the quay's inner side and open onto it.
 The ground off a wall with airlocks in it is kept clear (shuttles dock at airlocks, not ships: a berth is 4 by 5).
 
-Three forms, all chosen by the user from mock sheets (`form`):
+Four forms, all chosen by the user from mock sheets (`form`):
 
 | Form | What it is |
 |---|---|
 | `quay` | the airlocks along the outer wall at an even pitch |
 | `gatehouse` | the control room stands out in front of the quay, in the middle, the airlocks in a wing either side |
 | `basin` | two arms of concourse run out from the quay's ends, the airlocks in their inner walls facing each other |
+| `head` | the end of a street (`pierhead.ts`): the harbour's rooms are the street's last rooms, then customs across it, then a head the street's own width with an airlock in its end wall and the rest alternately in its two side walls |
 
 `shape`: `taper` (one room either side of customs, the rest on the street inland; stations that are not round) or
 `block` (every room in one row along the quay, the harbour one rectangle; round stations, the user's call).
@@ -184,6 +192,36 @@ cabins off the ring's inner side, the octagon's gardens, the ragged band. Open: 
 stepped and now mostly garden (the octagon is the cleaner of the two); no dock on the warehouse wing; the ring is
 about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98). The full circle was
 dropped because its stalls came out as small wedges, the curved walls taking much of the floor.
+
+## The crescent (trade stations): prototype
+
+The user liked the old arc grammar as a concept ("this just reminds me of the arc grammar which i liked"; a concept
+from the assembly's own parts, not a port). Recipe family `crescent` (`stationRecipes.ts`), on the trade station's
+program; sheets with `--family crescent`.
+
+- Outline: a rounded square open to the west (`cut: { flat: 4 }`, `round`, `shoulders`, `gap` on the west). The two
+  east corners are arcs, the arms run straight west. A true circle was tried first and dropped: room dividers that meet
+  a curve build thick walls nearly everywhere, and the stepped lattice arc before it was "just so ugly".
+- A pier on the main axis from the ring's east side into the basin (host `spoke`), the harbour as its head (form
+  `head`; the user: the harbour block was "wide and on a stick", then picked "docks round the head" from a mock
+  sheet). The machinery is a gated wing on the rim, east.
+- Three freight arrangements, all kept as variations (the user: "keep all 3"):
+
+  | Recipe | Freight and market |
+  |---|---|
+  | freight pier, stalls on the waterfront | the pier is the warehouses; the stalls stand on the ring's inner side by the arm ends (`waterfront`) |
+  | warehouses at the pier foot, stalls beyond | warehouses first, then a market street, then the harbour |
+  | market street, a warehouse behind the stalls either side | the pier is a market street, one long warehouse behind each row of stalls (`behind`) |
+
+- The crew sleeps two to a cabin in the band (`quarters: { barracks: [2, 2] }`; the user: crew blocks on the arms
+  "are odd", cabins belong in the band, and cabins for two are fine). One-bed cabins did not fit: the straight band
+  does not grow with the ring.
+- At station size: 79 to 92 by 74 (freight pier), 102 to 116 by 74 (pier foot), 94 to 101 by 74 (market street).
+  12 of 12 assemble and pass the shared fit-out with no problems (three airlocks, six guns, crew of twenty).
+
+Open: the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
+head is one open hall with three airlocks; the market street's warehouses open onto the ring, not the market; seeds
+differ little; no stall module exists.
 
 ## Seeing one furnished: the fit-out and the layout lab
 
@@ -285,7 +323,8 @@ a grow bed draws power on `main`.
 ## Results
 
 Eight recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compound: the mining station's, 28 or 29):
-32 of 32 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes.
+32 of 32 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes. The three crescents on the
+trade station's rooms: 12 of 12, the same checks.
 `stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
 which has 43 to 56 solid wall blocks.
 
@@ -309,8 +348,8 @@ differ little.
 ## Known limits
 
 - **Not in the game.** `assembleStation` furnishes and validates one; registering a recipe as a grammar (so the game
-  spawns it) is the step left. Only the bazaar has been taken through the fit-out and seen in the layout lab; the
-  other families are untried there.
+  spawns it) is the step left. Only the bazaar and the crescent have been taken through the fit-out (the bazaar also
+  seen in the layout lab); the other families are untried there.
 - **Barracks need a double bunk module** (a bed's footprint, two beds). There is none, so a barracks cannot be furnished
   as drawn.
 - The mess and the rec room have no room recipe of their own (`support` furnishes as a mess), and medbays and plant
