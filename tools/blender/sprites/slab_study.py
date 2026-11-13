@@ -125,12 +125,13 @@ def cradle_beams(k, deg=6.0):
         k.cyl(0, v, 0.0, 0.22, 0.62 + tip(v, deg) - 0.43, "slbFilm", sides=14, rtop=0.13)
 
 
-def hover_rings(k, deg=0.0):
-    """Round 37: the lift field as three rings under each emitter (not the solid cone), widening to the floor."""
+def hover_rings(k, deg=0.0, fs=(0.25, 0.55, 0.85)):
+    """Round 37: the lift field as rings under each emitter (not the solid cone), widening to the floor; fs: each
+    ring's place down from the emitter (0) to the floor (1)."""
     from .slab_wheel import annulus
     for v in (-CV, CV):
         top = 0.62 + tip(v, deg) - 0.29                 # just under the emitter
-        for f in (0.25, 0.55, 0.85):
+        for f in fs:
             z, r = top * (1 - f), 0.15 + 0.09 * f
             annulus(_Shift(k, 0, v), r - 0.045, r, z, z + 0.025, "slbCy", n=28)
 
@@ -163,19 +164,21 @@ def single(build, fp, name):
     return go
 
 
-CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0, "c11r": 0.0, "c11s": 0.0}   # c11r: solid rings, c11s: see-through
+CART_TIP = {"c11": 6.0, "c11f": 0.0, "c11t": 14.0, "c11r": 0.0, "c11s": 0.0, "c11r2": 0.0}   # c11r: solid rings, c11s: see-through
 
 
 def cart_design(v, d):
     def go(k):
         if v == "c11r":
             hover_rings(k, d)
+        if v == "c11r2":                            # two rings
+            hover_rings(k, d, fs=(0.35, 0.8))
         return cradle(k, d)
     return go
 
 
 def cart_field(v, d):
-    if v == "c11r":
+    if v in ("c11r", "c11r2"):
         return []
     if v == "c11s":
         return [(single(lambda k: hover_rings(k, d), (1, 2), "rg"), 150)]
