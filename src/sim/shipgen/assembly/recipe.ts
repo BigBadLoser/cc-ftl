@@ -75,11 +75,12 @@ export interface Recipe {
      * departments stand on the ring's inner side first, shared between the two faces beside an arc's gap. `inner`: what
      * the band cannot hold stands on the ring's inner side; `'rows'` fills the longest straights first (an arc's arms).
      * `inboard`: rooms of these departments (the ring must take them) stand on the inner side of that face first,
-     * whatever their size: warehouses on the basin floor either side of a pier's foot. `hub`: a market court at its centre with spokes to the ring (hub.ts); the
+     * whatever their size: warehouses on the basin floor either side of a pier's foot. `noses`: each arm of an arc
+     * ends in a round-nosed room of this role, of the ring's own (noses.ts). `hub`: a market court at its centre with spokes to the ring (hub.ts); the
      * `market` departments stand round the court, the `gated` ones line the north and south spokes behind gates, and
      * of the `spokes` ones (which the ring takes too) as many line the east and west spokes as fit.
      */
-    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows'; waterfront?: readonly Dept[]; inboard?: { takes: readonly Dept[]; face: Dir }; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
+    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows'; waterfront?: readonly Dept[]; inboard?: { takes: readonly Dept[]; face: Dir }; noses?: RoomRole; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
   branches: readonly BranchRule[];
   /**
    * How the crew sleeps, when not in quarters cut into cabins where they stand:

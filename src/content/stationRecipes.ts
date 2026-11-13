@@ -102,7 +102,7 @@ const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number };
   const stalls: BranchRule = { takes: o.freight === 'behind' ? ['market', 'freight'] : ['market'], per: 'together', host: o.freight === 'foot' ? { on: 'after', rule: 0 } : { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [8, 30], rowDepth: o.freight === 'behind' ? 3 : 4, even: true, ...(o.freight === 'behind' ? { behind: ['freight'] } : {}) }, link: 0 };
   const sheds: BranchRule = { takes: ['freight'], per: 'together', host: { on: 'spoke', side: ['e'] }, neck: 0, section: { rooms: [2, 4], rowDepth: 8, even: true }, link: 0 };
   const pier = o.freight === 'pier' ? [sheds] : o.freight === 'foot' ? [sheds, stalls] : [stalls];
-  const root: Extract<Recipe['root'], { kind: 'ring' }> = { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works', 'habitation'] : ['commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: 'rows', ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } };
+  const root: Extract<Recipe['root'], { kind: 'ring' }> = { kind: 'ring', takes: o.freight === 'pier' ? ['market', 'commons', 'defence', 'works', 'habitation'] : ['commons', 'defence', 'works', 'habitation'], outline: 'square', cut: o.cut, round: true, shoulders: true, inner: 'rows', noses: 'weapons', ...(o.freight === 'pier' ? { waterfront: ['market'] } : {}), gap: { side: 'w', from: o.from } };
   const branches = (pier: BranchRule[]): BranchRule[] => [
     ...pier,
     { takes: ['harbour'], per: 'together', host: { on: 'after', rule: pier.length - 1 }, neck: 0, docks: true, quay: harbour('head'), section: { rooms: [2, 6], rowDepth: 4 }, link: 0 },

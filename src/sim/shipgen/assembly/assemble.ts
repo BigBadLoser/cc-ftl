@@ -12,6 +12,7 @@ import { key, type Ctx, type Dir, type Port } from './model';
 import { cabinsOf, house } from './quarters';
 import type { Recipe } from './recipe';
 import { RegionGrid, SOLID, SPACE } from './regions';
+import { noses } from './noses';
 import { fillRing, ringPorts, ringSite } from './ring';
 
 /**
@@ -115,7 +116,10 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const whole = (r: RoomSpec): RoomSpec[] => (r.cabins === false ? [r] : cabinsOf(r));
     // Its own copies: a cabin that takes a second bed must not change the program's room.
     const copy = (r: RoomSpec): RoomSpec => ({ ...r, mods: [...r.mods] });
-    const own = [...rooms.filter((r) => root.takes.includes(r.dept as Dept) && !inHub.has(r)).flatMap(whole), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))].map(copy);
+    const ours = [...rooms.filter((r) => root.takes.includes(r.dept as Dept) && !inHub.has(r)).flatMap(whole), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))].map(copy);
+    // An arc's arms end in round noses, the biggest rooms of the role asked for.
+    const nosed = root.noses ? noses(site, a.ports.filter((p) => p.kind === 'tip' && !p.used), ours.filter((r) => r.role === root.noses).sort((p, q) => q.w * q.h - p.w * p.h), (x, y) => !ctx.reserved.has(key(x, y))) : [];
+    const own = ours.filter((r) => !nosed.includes(r));
     const guns = own.filter((r) => r.dept === 'defence'), beds = own.filter((r) => r.cabin), halls = own.filter((r) => r.dept === 'commons');
     // The band by sectors. Round a hub: cabins on the faces across the main axis, half to each; guns either side of
     // the two faces on it; common rooms on the diagonals. Otherwise: habitation away from the first branch, guns all
