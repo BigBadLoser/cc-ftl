@@ -38,8 +38,8 @@ def cart_items(h, frames):
         hover_cart(k, s, n)
         cassette(k, s)
         objs = k.build()
-        for o in objs:                                   # turned about the cart's middle (the footprint's centre: the origin)
-            o.data.transform(Matrix.Rotation(h * 2 * math.pi / HEADINGS, 4, "Z"))
+        for o in objs:                                   # its middle (built half a tile up +y by the footprint offset) to the origin, then turned
+            o.data.transform(Matrix.Rotation(h * 2 * math.pi / HEADINGS, 4, "Z") @ Matrix.Translation((0.0, -0.5, 0.0)))
             o.data.update()
         c, op, g, ox, oy, _ = E.render_sprite("x", "prop", objs)
         out.append(named(E.crop_item("x", (2, 2), c, op, g, ox, oy), f"slab.cart.h{h}" + (f".f{n}" if n else ""), (2, 2)))

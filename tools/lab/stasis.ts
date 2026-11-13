@@ -82,8 +82,8 @@ export const stasisPanel: LabPanel = {
         });
       });
     }
-    const cw = 3 * TW + PAD * 2;
-    const ch = 3 * TH + PAD * 2;
+    const cw = 4 * TW + PAD * 2;
+    const ch = 5 * TH + PAD * 2;
     // The cart at all 16 headings, 8 to a row (headings outside h2..h10 are their mirror twin flipped), over a 2x2 floor.
     for (let h = 0; h < CART_HEADINGS; h++) {
       const angle = (h * 2 * Math.PI) / CART_HEADINGS;
