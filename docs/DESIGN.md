@@ -1303,7 +1303,7 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
 8. **One window frame and one decision bar (2026-11-12, #336).**
    - Every window uses the rail frame (`kit/Frame`): a thin border with the title in a gap in the top line, pin and close as small tiles on that line, and a context label or chip on the line's right. Floating panels (`FloatingWindow`) and modals (`kit/Dialog`) are built on it. The build menu and the research screen keep their own look.
    - Every decision uses the shared `kit/DecisionBar`: a row of at most 3 buttons, label left, note right, the primary choice on a cyan edge.
-   - The one exception is the inspector (the selection panel, and its enemy-side counterpart, the foe module inspector): they keep `FloatingWindow`'s bare mode, a plain bordered window whose content draws its own tabs or heading, which drag the window.
+   - The one exception is the inspector (the selection panel, and its enemy-side counterpart, the foe module inspector): they keep `FloatingWindow`'s bare mode, a plain bordered window whose content draws its own tabs or heading. They are `docked`: a panel, not a popup, sized to fit its content, which the player can't move or resize.
    - Info actions (hail, scan, hack a core) are not choices. They live in the window's panels or as small buttons in its body, never as a bar option.
 
 ### Trade window and station panel (user decisions, 2026-11-05; built)
