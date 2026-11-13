@@ -3793,5 +3793,13 @@
   "vmSign": {"hex": "#f2d6a0", "emissive": 0.5, "set": "vending"},
   "vmScreen": {"hex": "#6b9c94", "emissive": 0.2, "set": "vending"},
   "vmCreamL": {"hex": "#fbf5e8", "set": "vending"},
-  "vmPane": {"hex": "#a9c3cc", "set": "vending"}
+  "vmPane": {"hex": "#a9c3cc", "set": "vending"},
+  "jzWhite": {"hex": "#e8e5de", "set": "vending"},
+  "jzGrey": {"hex": "#b9b6b0", "set": "vending"},
+  "jzTeal": {"hex": "#2aa3a4", "set": "vending"},
+  "jzPurple": {"hex": "#3e2775", "set": "vending"},
+  "jzMagenta": {"hex": "#93369c", "set": "vending"},
+  "jzIndigo": {"hex": "#2b2747", "set": "vending"},
+  "jzIndigoD": {"hex": "#1e1b33", "set": "vending"},
+  "jzLilac": {"hex": "#c7a6d6", "set": "vending"}
 }

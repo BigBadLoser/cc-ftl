@@ -72,7 +72,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "vm1c9a": "VM1C9A  narrow wrap", "vm1c9b": "VM1C9B  rising sweep", "vm1c9c": "VM1C9C  pinstripe",
          "vm1c10a": "VM1C10A  narrow wrap", "vm1c10b": "VM1C10B  rising sweep", "vm1c10c": "VM1C10C  pinstripe",
          "vm1c11a": "VM1C11A  dark 35%", "vm1c11b": "VM1C11B  dark 40%",
-         "vm1c12a": "VM1C12A  diagonal swoosh", "vm1c12b": "VM1C12B  arrowhead", "vm1c12c": "VM1C12C  fin"}
+         "vm1c12a": "VM1C12A  diagonal swoosh", "vm1c12b": "VM1C12B  arrowhead", "vm1c12c": "VM1C12C  fin",
+         "vm1c13a": "VM1C13A  cup", "vm1c13b": "VM1C13B  swoosh", "vm1c13c": "VM1C13C  night"}
 CW, CH = 200, 220
 
 

@@ -26,7 +26,8 @@ RAMPS = {  # lean of the side normal (tan, + towards up) at the top of the wall 
 }
 
 
-def ramp(k, ob, top, bot, dark):
+def ramp(k, ob, top, bot, dark, pick=None):
+    """pick(r, g, b) chooses the faces that take the lean (default: the wine, red-dominant)."""
     me = ob.data
     inv = ob.matrix_world.inverted()
     o = inv @ R.G(k, 0, R.CY, 0)
@@ -38,7 +39,7 @@ def ramp(k, ob, top, bot, dark):
     col = me.color_attributes["Col"].data
     for p in me.polygons:
         r, g, _, _ = col[p.loop_start].color
-        if r < 2 * g:                                        # wine is red-dominant; cream is not
+        if not (pick(r, g, _) if pick else r >= 2 * g):     # wine is red-dominant; cream is not
             continue                                         # the cream wrap keeps its flat tone
         for li in p.loop_indices:
             P = me.vertices[me.loops[li].vertex_index].co

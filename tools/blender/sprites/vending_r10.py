@@ -120,7 +120,8 @@ def colour(side, u, v, z, vb, stripe, kick):
     return "vmWine"
 
 
-def body(k, wave, stripe=False, kick=False):
+def body(k, wave, stripe=False, kick=False, paint=None):
+    """paint(side, u, v, z): a colour for an outer face, or None to colour it by the wave (later rounds)."""
     pts = spline(wave, 12)
 
     def vb(z):
@@ -140,15 +141,19 @@ def body(k, wave, stripe=False, kick=False):
                 continue
             quad = [(r0[i][0], r0[i][1], z0), (r0[j][0], r0[j][1], z0), (r1[j][0], r1[j][1], z1),
                     (r1[i][0], r1[i][1], z1)]
-            k.m.poly([G(k, *p) for p in quad], colour(side, uc, vc, zc, vb, stripe, kick), flip=True)
+            col = (paint and paint(side, uc, vc, zc)) or colour(side, uc, vc, zc, vb, stripe, kick)
+            k.m.poly([G(k, *p) for p in quad], col, flip=True)
     top = rs[-1]
     cu, cv = 0.0, CY
-    inner = [(cu + (u - cu) * 0.9, cv + (v - cv) * 0.9) for u, v, _ in top[1]]
-    for i in range(len(inner)):                                                    # a flat rim round the top...
-        j = (i + 1) % len(inner)
-        face(k, [(top[1][i][0], top[1][i][1], top[0]), (top[1][j][0], top[1][j][1], top[0]),
-                 (inner[j][0], inner[j][1], top[0]), (inner[i][0], inner[i][1], top[0])], "vmWine", (0, 0, 1))
-    face(k, [(u, v, top[0]) for u, v in inner], "vmWine", (0, 0, 1))              # ...so the cap's normals stay up
+    loops = [[(u, v) for u, v, _ in top[1]]]
+    for f in (0.9, 0.75, 0.6, 0.45, 0.3, 0.15):                                    # the flat top in rings: a rim
+        loops.append([(cu + (u - cu) * f, cv + (v - cv) * f) for u, v, _ in top[1]])   # keeps the cap's normals
+    for a, b in zip(loops, loops[1:]):                                             # up, and no long thin
+        for i in range(len(a)):                                                    # triangles (shadow acne)
+            j = (i + 1) % len(a)
+            face(k, [(a[i][0], a[i][1], top[0]), (a[j][0], a[j][1], top[0]), (b[j][0], b[j][1], top[0]),
+                     (b[i][0], b[i][1], top[0])], "vmWine", (0, 0, 1))
+    face(k, [(u, v, top[0]) for u, v in loops[-1]], "vmWine", (0, 0, 1))
     face(k, [(u, v, 0.0) for u, v, _ in rs[0][1]], "vmWineD", (0, 0, -1))                  # bottom
     for side, u0, u1, z0, z1, dep, col in HOLES:                                           # recesses
         p, s = (VF, -1) if side == "F" else (VB, 1)
