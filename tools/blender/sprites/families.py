@@ -163,6 +163,8 @@ def jobs(name):
         import os
         from . import slab_cart, slab_floor, slab_game
         rots = range(int(os.environ.get("MODPACK_ROTS", 4)))
+        if os.environ.get("CART_ALL"):      # the cart's mirror check alone (slab_cart)
+            return slab_cart.jobs(), "slab"
         return slab_game.jobs(rots) + slab_cart.jobs(rots) + slab_floor.jobs(), "slab"
     if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
         from . import slab_study
