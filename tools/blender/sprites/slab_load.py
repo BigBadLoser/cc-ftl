@@ -18,9 +18,10 @@ The hatch is a round turntable merged into the pit's mouth by a channel as wide 
 the wheel's centre, so the holdout floor follows it (PIT: a radius by angle)."""
 import math
 
+from . import slab_bay as B
 from . import slab_wheel as W
 from .slab_kit import FRONT, at, cassette, rot, tube
-from .slab_study import T, Slab
+from .slab_study import Slab, T
 
 P = W.SCHEMES["s49a"]
 ST = FRONT                                          # the loading station: the wheel's slab 0 stands there
@@ -127,7 +128,7 @@ def cradle(k, s, pz):
     if math.dist(a, b) > 0.3:
         m = tuple(a[i] + (b[i] - a[i]) * 0.55 for i in range(3))
         tube(k, a, m, 0.055, "hazY", sides=10)
-        tube(k, m, b, 0.028, "steelL", sides=8)
+        tube(k, m, b, 0.042, "steelL", sides=8)       # (rods >= 2 px)
 
 
 def cart(k, s):
@@ -138,8 +139,8 @@ def cart(k, s):
         k.cyl(c[0], c[1], c[2] - 0.25, 0.14, 0.03, "slbCy", sides=12)
     a, b = s.p(1.75, -0.4, -T), s.p(1.75, 0.4, -T)
     for e in (a, b):
-        tube(k, e, (e[0], e[1], e[2] + 0.55), 0.025, "steel", sides=6)
-    tube(k, (a[0], a[1], a[2] + 0.55), (b[0], b[1], b[2] + 0.55), 0.03, "steelL", sides=6)
+        tube(k, e, (e[0], e[1], e[2] + 0.55), 0.045, "steel", sides=8)
+    tube(k, (a[0], a[1], a[2] + 0.55), (b[0], b[1], b[2] + 0.55), 0.045, "steelL", sides=8)
 
 
 BED = 0.12 + T + 0.05                               # a flat slab's face height on the cradle
@@ -172,7 +173,8 @@ def frame_n(n, key=None):
 
     def build(k):
         home = sl in (None, "home")                 # None: the station's socket empty (a slab to come); "home": in
-        out = W.geneva_over_tyres(k, P, lights=LAMP, skip=() if sl == "home" else (0,), gap=GAP)
+        out = W.geneva_over_tyres(k, P, lights=LAMP, empty=() if sl == "home" else (0,), gap=GAP)
+        B.fittings(k, () if sl == "home" else (0,))
         hatch(k, pz, leaves)
         bed = pose(pz + 0.12 + (BED - 0.12) * math.sin(tilt), tilt)       # the cradle's frame (a slab on it)
         cradle(k, swung(bed, swing), pz)

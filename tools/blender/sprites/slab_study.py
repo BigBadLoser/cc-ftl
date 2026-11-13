@@ -49,6 +49,9 @@ class Slab:
     def box(self, k, l0, l1, w0, w1, n0, n1, col, face=None):
         c = lambda l, w, n: self.p(l, w, n)                                  # noqa: E731
         quad(k, [c(l0, w0, n1), c(l0, w1, n1), c(l1, w1, n1), c(l1, w0, n1)], face or col, self.N)
+        if face == "slbFace":                       # the face is a screen: unlit, its palette tone exact (a lit face
+            idx, alb, _, glow = k.m.f[-1]           # sits on a shade step and breaks up into ragged specks)
+            k.m.f[-1] = (idx, (0, 0, 0), alb, glow)
         quad(k, [c(l0, w0, n0), c(l0, w1, n0), c(l1, w1, n0), c(l1, w0, n0)], col, neg(self.N))
         quad(k, [c(l1, w0, n0), c(l1, w1, n0), c(l1, w1, n1), c(l1, w0, n1)], col, self.U)
         quad(k, [c(l0, w0, n0), c(l0, w1, n0), c(l0, w1, n1), c(l0, w0, n1)], col, neg(self.U))
@@ -65,11 +68,12 @@ class Slab:
 
 
 def cassette(k, s, body="slbGr", caps="dark"):
-    """The slab: a recessed face in a steel lip, cyan field lines in grip channels down its sides, heavy end caps with
+    """The slab: its face (unlit, a screen) framed in a flush steel lip (a proud lip's 1-px inner wall broke up),
+    cyan field lines in grip channels down its sides, heavy end caps with
     docking sockets, a status strip on the head cap."""
     s.box(k, 0.12, L - 0.12, -W / 2, W / 2, -T, 0.0, body, face="slbFace")
     for w in (-1, 1):                                                        # the steel lip round the face
-        s.box(k, 0.12, L - 0.12, w * (W / 2 - 0.07), w * W / 2, 0.0, 0.03, "steel", face="steelL")
+        s.box(k, 0.12, L - 0.12, w * (W / 2 - 0.07), w * W / 2, 0.0, 0.004, "steel", face="steelL")
         s.box(k, 0.3, L - 0.3, w * (W / 2 + 0.001) - 0.012, w * (W / 2 + 0.001) + 0.012, -T / 2 - 0.02, -T / 2 + 0.02,
               "slbCy")                                                       # field line in the grip channel
     for l0, l1 in ((0.0, 0.16), (L - 0.16, L)):                              # the heavy end caps

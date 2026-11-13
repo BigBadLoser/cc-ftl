@@ -27,18 +27,18 @@ LR, LC = 0.32, 1.8                                  # a lobe's radius and its ce
 
 
 def cup(k, s, col, lever="hazY"):
-    """A bolted socket round the slab's foot cap: a recess (cheeks, back wall, low front lip) with a docking pad where
-    the cap's socket lands, so an empty bay reads as a socket and not a block."""
+    """A bolted socket round the slab's foot cap: a recess (inner cheek, back wall, low front lip; open at the outer end,
+    where the slab slides in) with a docking pad where the cap's socket lands."""
+    e = min((-1, 1), key=lambda e: math.hypot(*s.p(0.0, e, 0.0)[:2]))       # the inner end (toward the spindle)
     s.box(k, -0.1, 0.0, -0.5, 0.5, -0.32, 0.1, col, face="steelL")                # the base
     s.box(k, 0.0, 0.006, -0.45, 0.45, -0.27, 0.07, "steelD")                       # the recess floor
     s.box(k, 0.006, 0.012, -0.16, 0.16, -0.2, 0.0, "dark")                         # the docking pad
     s.box(k, 0.012, 0.02, -0.08, 0.08, -0.14, -0.06, "steelL")                     # its contact
-    for w in (-1, 1):                                                              # the cheeks
-        s.box(k, 0.0, 0.14, w * 0.45, w * 0.5, -0.32, 0.1, col, face="steelL")
-        s.box(k, 0.14, 0.16, w * 0.475 - 0.022, w * 0.475 + 0.022, -0.12, -0.075, "steelL")   # a bolt
+    s.box(k, 0.0, 0.14, *sorted((e * 0.45, e * 0.5)), -0.32, 0.1, col, face="steelL")   # the inner cheek (the stop)
+    s.box(k, 0.14, 0.16, *sorted((e * 0.453, e * 0.497)), -0.12, -0.075, "steelL")      # a bolt
     s.box(k, 0.0, 0.14, -0.45, 0.45, -0.32, -0.27, col)                            # the back wall
     s.box(k, 0.0, 0.04, -0.45, 0.45, 0.07, 0.1, col, face="steelL")                # the front lip
-    s.box(k, 0.03, 0.1, 0.45, 0.5, 0.1, 0.125, lever)                              # the release lever
+    s.box(k, 0.03, 0.1, *sorted((-e * 0.45, -e * 0.5)), 0.1, 0.125, lever)         # the release lever, outer end
 
 
 def annulus(k, r0, r1, z0, z1, col, top=None, n=48):
