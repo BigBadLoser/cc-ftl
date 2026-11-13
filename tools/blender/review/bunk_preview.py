@@ -67,7 +67,8 @@ NAMES = {"b1": "B1  steel frame", "b2": "B2  berth cabinet", "b3": "B3  locker f
          "vm1c3": "VM1C3  inset panel", "vm1c3b": "VM1C3  back",
          "vm1c4": "VM1C4  can on sweep", "vm1c5": "VM1C5  wave", "vm1c6": "VM1C6  tilted can",
          "vm1c5a": "VM1C5A  ribbons", "vm1c5b": "VM1C5B  tapered", "vm1c5c": "VM1C5C  bold",
-         "vm1c5r": "VM1C5  wave, clean"}
+         "vm1c5r": "VM1C5  wave, clean",
+         "vm1c7": "VM1C7  split side"}
 CW, CH = 200, 220
 
 
