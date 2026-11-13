@@ -138,7 +138,7 @@
   .l1 { display: flex; align-items: center; gap: 6px; }
   .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pr { color: var(--dim); font-size: 12px; white-space: nowrap; }
-  .l2 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; justify-content: space-between; }
+  .l2 { display: flex; align-items: center; gap: 6px; margin-top: 2px; justify-content: space-between; }
   .l2 button, .form button, .picker .cancel { min-height: 36px; min-width: 36px; padding: 0 8px; }
   .mode { min-width: 56px; }
   .mv { display: flex; gap: 4px; }
