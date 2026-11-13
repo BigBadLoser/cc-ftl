@@ -180,6 +180,9 @@ def jobs(name):
     if name == "vending16":     # look study, preview only (not in RENDERED): zigzag ribbon and switchback pen line
         from . import vending_r16
         return vending_r16.jobs(), "only:vending"
+    if name == "vending17":     # look study, preview only (not in RENDERED): r16c with taller teeth, wider hairpins
+        from . import vending_r17
+        return vending_r17.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
