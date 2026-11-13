@@ -24,7 +24,7 @@
 </script>
 
 {#if m}
-  <FloatingWindow id="inspector" title="Inspector" min={{ w: 200, h: 120 }} defaultRect={(b) => ({ x: b.left, y: 0, w: 232, h: 0, anchor: 'bottom' })} onClose={() => api.cancel()} testId="foe-inspector" pinnable={false} padded>
+  <FloatingWindow id="inspector" title="Inspector" min={{ w: 200, h: 120 }} defaultRect={(b) => ({ x: b.left, y: 0, w: 232, h: 0, anchor: 'bottom' })} onClose={() => api.cancel()} testId="foe-inspector" bare pinnable={false} padded>
     <div class="body">
       <div class="name"><b>{m.name}</b><small>{m.ship}</small></div>
       <div class="row"><span class="dim">Health</span><span>{m.hp}/{m.maxHp}</span></div>
