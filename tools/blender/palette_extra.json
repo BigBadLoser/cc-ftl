@@ -4132,6 +4132,7 @@
   },
   "slbFace": {
     "hex": "#8a9098",
+    "flat": true,
     "set": "slab"
   },
   "slbFaceL": {

@@ -72,9 +72,10 @@ def hatch(k, pz, leaves=0.0):
             z0, z1 = (-0.012, 0.004) if leaves >= 1 else (-0.03, -0.016)   # shut flush; else dropped under the floor
             sectors(k, lambda a: W.RP, r_hole, z0, z1, lambda i: "steel", side=side,
                     shift=(ET[0] * off, ET[1] * off))
-        c = at(HC, ST)                              # the seam between them
+        r0, r1 = W.RP + 0.06, HC + HR - 0.02        # the seam between them: over the leaves only, not the pit mouth
+        c = at((r0 + r1) / 2, ST)
         if leaves >= 1:
-            k.box(c[0], c[1], 0.004, 1.2, 0.03, 0.004, "dark", rz=ST)
+            k.box(c[0], c[1], 0.004, r1 - r0, 0.045, 0.004, "steelD", rz=ST)
     sectors(k, r_hole, lambda a: r_hole(a) + 0.07, 0.0, 0.012,               # the striped rim on the floor
             lambda i: "hazY" if (i // 2) % 2 else "hazK")
     if leaves >= 1:
