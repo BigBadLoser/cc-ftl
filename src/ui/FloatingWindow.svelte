@@ -182,7 +182,7 @@
   :global(.frame.fw .rail button.tile:hover) { background: var(--panel-3); }
   :global(.frame.fw .rail button.tile.pin) { color: var(--pin-ink); }
   :global(.frame.fw .rail button.tile.pin.on) { background: var(--cyan); border-color: var(--cyan); color: #04202c; }
-  .fwbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+  .fwbody { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
   .fw.bare:not(.docked) :global(.ph) { cursor: move; touch-action: none; }
   .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: var(--pin-ink); cursor: pointer; position: absolute; top: 0; z-index: 3; }
   .barepin:hover { background: var(--panel-3); }
