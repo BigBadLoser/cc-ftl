@@ -117,8 +117,9 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     // Its own copies: a cabin that takes a second bed must not change the program's room.
     const copy = (r: RoomSpec): RoomSpec => ({ ...r, mods: [...r.mods] });
     const ours = [...rooms.filter((r) => root.takes.includes(r.dept as Dept) && !inHub.has(r)).flatMap(whole), ...pool.map((r) => ({ ...r, w: 3, h: 6 }))].map(copy);
-    // An arc's arms end in round noses, the biggest rooms of the role asked for.
-    const nosed = root.noses ? noses(site, a.ports.filter((p) => p.kind === 'tip' && !p.used), ours.filter((r) => r.role === root.noses).sort((p, q) => q.w * q.h - p.w * p.h), (x, y) => !ctx.reserved.has(key(x, y))) : [];
+    // An arc's arms end in noses: the biggest rooms of the role asked for, one an arm, kept out of the band.
+    const tips = a.ports.filter((p) => p.kind === 'tip' && !p.used);
+    const nosed = root.noses ? ours.filter((r) => r.role === root.noses).sort((p, q) => q.w * q.h - p.w * p.h).slice(0, tips.length) : [];
     const own = ours.filter((r) => !nosed.includes(r));
     const guns = own.filter((r) => r.dept === 'defence'), beds = own.filter((r) => r.cabin), halls = own.filter((r) => r.dept === 'commons');
     // The band by sectors. Round a hub: cabins on the faces across the main axis, half to each; guns either side of
@@ -144,6 +145,8 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     ];
     const band = site.g.regions.length;
     const left = fillRing(site, asks, root.inner, root.waterfront || root.inboard ? front : undefined);
+    // The noses go on once the band stands, so each takes the band's last tiles before its cut as well.
+    if (nosed.length > 0) { const stood = noses(site, tips, nosed, (x, y) => !ctx.reserved.has(key(x, y))); left.push(...nosed.filter((r) => !stood.includes(r))); }
     if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms (${left.map((r) => `${r.role} ${r.w}x${r.h}`).join(", ")})`; continue; }
     // The band is filled last, round everything joined to the rim: no thick wall may come of it.
     mend(site.g, band, [-R - 60, -R - 60, R + 60, R + 60]);
