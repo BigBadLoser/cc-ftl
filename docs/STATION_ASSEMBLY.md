@@ -344,8 +344,8 @@ a grow bed draws power on `main`.
 
 ## Results
 
-Six recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compound: the mining station's, 28 or 29):
-24 of 24 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes. The three crescents on the
+Eight recipes on four seeds each (tree: the pirate hub's rooms, 30 to 32; compound: the mining station's, 28 or 29):
+32 of 32 assemble, every room and bed stands, no solid 2x2 wall block, the hull check passes. The three crescents on the
 trade station's rooms: 12 of 12, the same checks.
 `stationRecipes.slow.test.ts` asserts it. Trees are 1,150 to 1,280 floor tiles against 1,270 to 1,420 for the old Tree,
 which has 43 to 56 solid wall blocks.
