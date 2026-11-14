@@ -8,6 +8,7 @@ import { ModuleC, type Module } from '../sim/modules/components';
 import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
+import type { SlabFaces } from './slabFace';
 import { cut, STRIP_W, stripFrame, type StripCrop } from './moduleStrips';
 import type { Art } from './assets/fallback';
 import { pickParts } from './partPick';
@@ -56,6 +57,8 @@ export interface ModuleViewHost {
   paints?: PaintAtlas | null;
   /** Asked before a module without parts is built (buildBudget.ts); a refused one is built on a later update. Default: always. */
   gate?: BuildGate;
+  /** The prisoners pressed into a stasis wheel's full slabs (slabFace.ts). */
+  faces?: SlabFaces;
 }
 
 export interface ModuleView {
@@ -337,7 +340,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
 
   /** Bumps when a view input of every module's art changes (moduleMemo.ts). */
   function hostGeneration(grid: Grid, roofed: boolean, level: WallLevel): number {
-    const key = [roofed, level, host.livery?.(), host.ruin?.(), host.hullPaint?.(), host.paints?.enabled, atlas.busy(), grid.revision('struct')];
+    const key = [host.faces?.version(), roofed, level, host.livery?.(), host.ruin?.(), host.hullPaint?.(), host.paints?.enabled, atlas.busy(), grid.revision('struct')];
     if (key.length !== hostKey.length || key.some((v, i) => v !== hostKey[i])) {
       hostKey = key;
       hostGen++;
@@ -411,7 +414,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           }
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
-            const o = first;
+            const look = layer.face && host.faces ? host.faces.face(layer.chain[0] as string, first as StaticSprite, layer.face) : null;
+            const o = first && look ? { ...first, tex: look.full } : first;
             return o ? [{ layer, art: { s: o, tint: layer.tint ?? 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
           }
           if (def.container && !first) {

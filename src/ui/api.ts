@@ -168,6 +168,8 @@ export interface UiCrew {
   prisoner: boolean;
   /** A prisoner's seal order (stasis/order.ts): marked for sealing, and why they cannot be (no wheel with room...). Null for anyone else. */
   seal: { marked: boolean; refusal: string | null } | null;
+  /** A frozen prisoner's slab: where it is, who carts it and where to, its reserve. Null for anyone not in stasis. */
+  stasis: UiStasis | null;
   inert: boolean;
   fight: UiFight | null;
   /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is outside on the hull. Null when not suited. */
@@ -229,6 +231,22 @@ export interface UiReserve {
   low: boolean;
 }
 
+/** A stasis wheel slot: no slab, an empty slab ready for sealing, or a prisoner's full slab (their name and the slab's reserve, 0..100). */
+export type UiWheelSlot =
+  | { kind: 'none' }
+  | { kind: 'empty' }
+  | { kind: 'full'; crew: number; name: string; reserve: number; draining: boolean };
+
+/** A frozen prisoner's slab for their inspector: where it is (text), the wheel or carrier to jump to, where a cart is taking it, its reserve (0..100). */
+export interface UiStasis {
+  where: string;
+  wheel: number | null;
+  carrier: { id: number; name: string } | null;
+  to: string | null;
+  reserve: number;
+  draining: boolean;
+}
+
 export interface UiModule {
   id: number;
   /** The ship it is on (ShipC entity id): the `ship` of module commands. */
@@ -251,6 +269,8 @@ export interface UiModule {
   power: number;
   /** A reactor's fuel store or a battery bank's charge (null for other modules). */
   reserve: UiReserve | null;
+  /** A stasis wheel's slots in order, slot 0 at the hatch (null for other modules). */
+  wheel: UiWheelSlot[] | null;
   /** Holds items (has a storage panel). */
   storage: boolean;
   /** Crafts recipes (has a production panel). */

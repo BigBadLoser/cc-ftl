@@ -11,6 +11,7 @@ import { createFxView } from './fxView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { createItemView } from './itemView';
 import { createSlabView } from './slabView';
+import type { SlabFaces } from './slabFace';
 import { createJobView } from './jobView';
 import { createSiteView } from './siteView';
 import type { RegionLayers } from './worldLayers';
@@ -53,6 +54,8 @@ export interface ShipSceneOptions {
   hullPaint?: HullPaint;
   /** The renderer's shared crew composite (crewAtlas.ts). */
   crews: CrewAtlas;
+  /** The prisoners pressed into full slabs' faces (slabFace.ts); none = plain slabs. */
+  faces?: SlabFaces;
   /** The renderer's shared livery paints (paintAtlas.ts); none = a mesh per paint. */
   liveries?: PaintAtlas;
   /** Asked before each piece of the build (buildBudget.ts): tile and roof chunks, modules. Default: always (built in one update). */
@@ -121,15 +124,16 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     light: (x, y) => (grid.inBounds(x, y) ? grid.get('light', x, y) : 0),
     suitAirSec: o.suitAirSec,
     weaponArt: (item) => items[item]?.hand?.art,
+    faces: o.faces,
   }, o.crews);
   const jobView = createJobView(world, atlas, L, { target: inside });
   const siteView = createSiteView(world, atlas, L, modules, { target: inside });
-  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null, gate });
+  const moduleView = createModuleView(world, atlas, L, modules, { target: () => ({ grid }), emergency: () => emergency, roofed: () => roofed, level: () => wallLevel(roofed ? 'up' : cutaway), ruin: () => world.get(grid.id, ShipC)?.ruin, livery: () => o.livery ?? null, hullPaint: () => o.hullPaint ?? PLAIN_PAINT, hullDrawn: (x, y) => view.hullDrawn(x, y), paints: o.liveries ?? null, gate, faces: o.faces });
   const ruinView = createRuinView(grid, atlas, L, world, modules, () => wreckEmergency, view);
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
-  const slabView = createSlabView(world, atlas, L, { target: inside, emergency: () => emergency });
+  const slabView = createSlabView(world, atlas, L, { target: inside, emergency: () => emergency, faces: o.faces });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
@@ -213,9 +217,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     crewPos: (id) => crewView.spritePos(id),
     pickCrew: (ax, ay) => {
       // Crew (aliens included) and live egg sacs (attack targets): the one nearest the viewer wins. Hidden when roofed.
+      // A floor slab picks the prisoner frozen in it.
       const c = crewView.pick(ax, ay);
       const s = roofed ? null : sacView.pick(ax, ay);
-      return c && s ? (s.y > c.y ? s : c) : (c ?? s);
+      const f = slabView.pick(ax, ay);
+      return [c, s, f].reduce<{ id: number; y: number } | null>((b, h) => (h && (!b || h.y > b.y) ? h : b), null);
     },
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     setSites: (blocked, selected) => siteView.setMarks(blocked, selected),

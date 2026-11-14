@@ -10,6 +10,7 @@
   import PlotPanel from './PlotPanel.svelte';
   import UpgradePanel from './UpgradePanel.svelte';
   import { moduleState } from './state';
+  import WheelRing from './WheelRing.svelte';
 
   /** The module Overview tab: state, power and health, the module's own panel (production, storage, bay, drive) and the orders. */
   let { api, m, ftl, onResearch, onPower }: { api: UiApi; m: UiModule; ftl: UiFtl | null; onResearch?: () => void; onPower: () => void } = $props();
@@ -27,6 +28,7 @@
     <Meter value={hpPct(m)} max={100} tone="auto" height={6} title="{m.hp}/{m.maxHp}" />
     {#if m.reserve}<Meter value={m.reserve.have} max={m.reserve.max} tone={m.reserve.low ? 'bad' : 'good'} height={6} title="{m.reserve.note}" />
       <p class="note" class:bad={m.reserve.low}>{m.reserve.note}</p>{/if}
+    {#if m.wheel}<WheelRing {api} slots={m.wheel} />{/if}
     {#if m.def === 'module.helm' && ftl && ftl.ship === m.ship}<div class="drive"><FtlCharge {ftl} testid="helm-ftl" onCharge={() => api.dispatch({ type: 'ftl.charge', ship: m.ship })} onCancel={() => api.dispatch({ type: 'ftl.cancelCharge', ship: m.ship })} /></div>{/if}
     {#if m.crafting}<FabPanel {api} id={m.id} def={m.def} />{/if}
     {#if m.plot}<PlotPanel {api} {m} />{/if}
