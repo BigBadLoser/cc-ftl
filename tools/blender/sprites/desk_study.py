@@ -39,7 +39,8 @@ BAND = zpx(11)                               # the lit band's height on the drum
 # 1 px line along the top's front edge, or None), well (the holo well's ring)
 MATS = {
     "steel": dict(top="plate", edge="steelL", body="gm", cap="plate", panel="blueGrey", dark="steelD",
-                  struct="steel", band="steelD", trim=None, well="dkSeam"),
+                  struct="steel", band="steelD", trim=None, well="dkSeam",
+                  chair={"navy": "blueGrey", "brass": "steelL"}),
     "brass": dict(top="gm", edge="steel", body="steelD", cap="steel", panel="steel", dark="dark", struct="steel",
                   band="brass", trim="brass", well="dkSeam"),
     "white": dict(top="medWhite", edge="sole", body="sole", cap="medWhite", panel="pocket", dark="steelD",
@@ -50,7 +51,7 @@ M = MATS["steel"]
 
 class _Chair(Frame):
     def poly(self, pts, color, flip=False):
-        super().poly(pts, {"navy": "dkTeal"}.get(color, color), flip)
+        super().poly(pts, M.get("chair", {}).get(color, color), flip)
 
 
 def chair(rot=0):
