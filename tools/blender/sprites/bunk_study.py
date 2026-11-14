@@ -1,0 +1,389 @@
+"""Double bunk bed look study (family `bunk`, preview only): a 1x2 module, two sleeping decks one over the other, r0.
+Approved (user, 2026-11-12): B1h with 2 px pillows (`b1h`), the slate frame a shade down on the pixel grid.
+The single bed (module.bed) to match, approved: S3 (`s3`), B1h's lower deck alone, a 24 px mattress, plain boards.
+
+Local frame modkit.K, footprint (1, 2): u across (the bunk's open long side is +u, which faces the camera at r0), v
+along it (the head end is -v, the foot end +v, the module's front). Crew are 1.5 tall: the lower mattress tops out
+about where the single bed's does (0.22), the upper deck leaves a seated crew member room under it."""
+import math
+
+from . import core
+from .modkit import K
+
+FP = (1, 2)
+PXG = 1 / 32                                            # a px along u or v
+ZPX = 32 * math.sqrt(2) * math.cos(math.radians(30))   # px per unit of height
+
+
+def zpx(n):
+    return n / ZPX
+
+
+L, W = 1.9, 0.86                                        # the decks' length (v) and width (u)
+LOW, HIGH = 0.12, 0.98                                  # each deck's top (the mattress sits on it)
+MAT = 0.1                                               # mattress thickness
+
+
+def mattress(k, z, col="navy", top="blueGrey", blanket="steelL", stripe="orange"):
+    """A mattress on a deck at z, its pillow at the head (-v) and a blanket over the foot two thirds."""
+    k.box(0, 0, z, W - 0.04, L - 0.04, MAT, col, top=top, bevel=0.02)
+    k.box(0, -0.66, z + MAT, 0.6, 0.38, 0.07, "medWhite", top="medWhite", bevel=0.025)
+    k.box(0, 0.22, z + MAT, W - 0.06, 1.06, 0.03, blanket)
+    k.box(0, 0.22, z + MAT + 0.03, W - 0.08, 1.02, 0.008, top)
+    k.box(0, -0.31, z + MAT, W - 0.06, 0.05, 0.035, stripe)
+
+
+def ladder(k, u, v, z0, z1, rails="steelL", rungs="steel", n=4):
+    """A ladder against the +u side at v: two rails and n rungs, standing from z0 to z1."""
+    for dv in (-0.13, 0.13):
+        k.box(u, v + dv, z0, 0.04, 0.04, z1 - z0, rails, top=rails)
+    for i in range(n):
+        k.box(u, v, z0 + (i + 1) * (z1 - z0) / (n + 1), 0.04, 0.26, 0.035, rungs)
+
+
+def b1():
+    """B1 steel frame: four corner posts, two slung decks, a ladder at the foot of the open side, a rail along the
+    upper deck's open side, a reading light under the upper deck."""
+    k = K("bunk_b1", FP)
+    post = "steelD"
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, post, top="steel")
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, "steelD", top="steel", bevel=0.01)       # the deck frame
+        mattress(k, z)
+    for sv in (-1, 1):                                                             # head and foot boards
+        k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, "steel", top="steelL")
+        k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, "steel", top="steelL")
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, 0.3, "steel", top="steelL")    # the back rail (wall side)
+    k.box(W / 2 - 0.03, -0.3, HIGH + MAT + 0.1, 0.04, 1.2, 0.05, "steelL", top="steelL")   # the open side's rail
+    for v in (-0.88, 0.28):
+        k.box(W / 2 - 0.03, v, HIGH, 0.035, 0.035, MAT + 0.12, "steelL")
+    ladder(k, W / 2 + 0.01, 0.62, 0, HIGH + MAT + 0.15)
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")                            # reading light under the deck
+    return k.build()
+
+
+def _frame(k):
+    """B1's frame without its open-side rail: posts, both decks and mattresses, head and foot boards, the back rail."""
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, "steelD", top="steel")
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, "steelD", top="steel", bevel=0.01)
+        mattress(k, z)
+    for sv in (-1, 1):
+        k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, "steel", top="steelL")
+        k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, "steel", top="steelL")
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+
+
+def _rail(k, z, v0, v1, h, posts):
+    """A rail along the open side (+u) from v0 to v1, its top h over the deck at z, with uprights at `posts`."""
+    u = W / 2 - 0.03
+    k.box(u, (v0 + v1) / 2, z + h - 0.07, 0.06, v1 - v0, 0.07, "steelD", top="steel")   # top bar
+    k.box(u, (v0 + v1) / 2, z + h * 0.5, 0.05, v1 - v0, 0.045, "steelD", top="steel")   # mid bar
+    for v in posts:
+        k.box(u, v, z, 0.05, 0.05, h - 0.07, "steelD", top="steel")
+
+
+def b1a():
+    """B1a: the upper deck railed the whole length of its open side, the ladder hooked over the rail at the foot."""
+    k = K("bunk_b1a", FP)
+    _frame(k)
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, 0.3, "steel", top="steelL")
+    _rail(k, HIGH, -L / 2 + 0.03, L / 2 - 0.03, 0.4, (-0.5, 0.0, 0.5))
+    ladder(k, W / 2 + 0.04, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1b():
+    """B1b: both decks railed along the open side, the upper the whole length, the lower with a gap in the middle to
+    get in (the ladder stands in front of the lower rail at the foot)."""
+    k = K("bunk_b1b", FP)
+    _frame(k)
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, 0.3, "steel", top="steelL")
+    k.box(-(W / 2 - 0.03), 0, LOW, 0.04, L - 0.06, 0.26, "steel", top="steelL")
+    _rail(k, HIGH, -L / 2 + 0.03, L / 2 - 0.03, 0.4, (-0.5, 0.0, 0.5))
+    _rail(k, LOW, -L / 2 + 0.03, -0.3, 0.34, (-0.6,))
+    _rail(k, LOW, 0.4, L / 2 - 0.03, 0.34, ())
+    ladder(k, W / 2 + 0.04, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1c():
+    """B1c: the upper deck walled on every side by low panels as tall as the head board, a gap at the ladder."""
+    k = K("bunk_b1c", FP)
+    _frame(k)
+    H = 0.34
+    k.box(-(W / 2 - 0.03), 0, HIGH, 0.04, L - 0.06, H, "steel", top="steelL")
+    u = W / 2 - 0.03
+    k.box(u, -0.2, HIGH, 0.04, 1.36, H, "steel", top="steelL")                    # open side, head to the ladder
+    k.box(u, -0.2, HIGH + H - 0.06, 0.045, 1.3, 0.02, "steelL")                     # its top trim
+    k.box(0, L / 2 - 0.03, HIGH, W - 0.06, 0.04, H, "steel", top="steelL")        # foot board raised to match
+    ladder(k, W / 2 + 0.01, 0.7, 0, HIGH + H)
+    return k.build()
+
+
+RAIL = {"thin": (0.04, 0.035, "steelL", "steelL"), "thick": (0.06, 0.05, "steelD", "steel")}   # bar, upright, colours
+
+
+def _rails(k, z, h, side, a0, a1, posts, weight, mid=True):
+    """A rail h over the deck at z along one side: side 'u+' / 'u-' (a long side, a0..a1 along v) or 'v+' / 'v-' (an
+    end, a0..a1 along u), uprights at `posts`, a mid bar unless mid is False."""
+    bar, up, col, top = RAIL[weight]
+    e = (W / 2 - 0.03) if side[0] == "u" else (L / 2 - 0.03)
+    e = e if side[1] == "+" else -e
+    c, n = (a0 + a1) / 2, a1 - a0
+
+    def box(a, zz, sa, sz, w):
+        if side[0] == "u":
+            k.box(e, a, zz, w, sa, sz, col, top=top)
+        else:
+            k.box(a, e, zz, sa, w, sz, col, top=top)
+    box(c, z + h - bar, n, bar, bar)
+    if mid:
+        box(c, z + h * 0.5, n, bar * 0.75, bar * 0.85)
+    for a in posts:
+        box(a, z, up, h - bar, up)
+
+
+def _railed(name, weight):
+    """B1 with every solid board turned to a rail: head and foot on both decks, the upper deck's back (wall side), and
+    the open side's rail as B1's (the head two thirds, the ladder at the foot)."""
+    k = K(name, FP)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, "steelD", top="steel")
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, "steelD", top="steel", bevel=0.01)
+        mattress(k, z)
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+    eu = W / 2 - 0.06
+    for z, h in ((LOW, 0.3), (HIGH, 0.36)):
+        for side in ("v-", "v+"):
+            _rails(k, z, h, side, -eu, eu, (0.0,), weight)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), weight)
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3,), weight)
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+def b1f():
+    """B1f: B1's solid head and foot boards; thin rails on the wall side of both decks and along the upper deck's open
+    side (its head two thirds, the ladder at the foot)."""
+    k = K("bunk_b1f", FP)
+    _frame(k)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "thin")
+    _rails(k, LOW, 0.3, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "thin")
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3,), "thin")
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4)
+    return k.build()
+
+
+# B1g colour schemes: frame (posts, deck sides, boards), rails and ladder, mattress, blanket, pillow, stripe; each a
+# (side, top) pair where it has a lit top.
+SCHEMES = {
+    "g1": dict(post=("c3W4", "c3W2"), deck=("c3W5", "c3W3"), board=("c3W3", "c3W1"), rail="c3W1",
+               mat=("dnW2", "dnW1"), blanket=("c3T4", "c3T2"), pillow="medWhite", stripe="orange"),
+    "g2": dict(post=("steelD", "steel"), deck=("steelD", "steel"), board=("steel", "steelL"), rail="medWhite",
+               mat=("dnW3", "dnW2"), blanket=("c3T4", "c3T2"), pillow="medWhite", stripe="cyan"),
+    "g3": dict(post=("nvW5", "nvW3"), deck=("nvW6", "nvW4"), board=("nvW4", "nvW2"), rail="nvW1",
+               mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+    "g3a": dict(post=("nvW6", "nvW4"), deck=("dnW1", "nvW5"), board=("nvW5", "nvW3"), rail="nvW2",   # g3 a shade down
+                mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+    "g3b": dict(post=("dnW2", "nvW5"), deck=("dnW3", "nvW6"), board=("nvW6", "nvW4"), rail="nvW3",   # two shades down
+                mat=("dnW3", "dnW2"), blanket=("lvRS", "lvR"), pillow="lvWL", stripe="lvW"),
+}
+
+
+# The space inside the frame: posts (0.07) and rails (0.04) stand on the deck's edge, the boards (0.04) at its ends.
+MW, ML = W - 2 * 0.07 - 0.02, L - 2 * 0.06 - 0.02
+
+
+def _b1g(name, c):
+    """B1f in a colour scheme, with an upright at the open-side rail's foot end (by the ladder)."""
+    k = K(name, FP)
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            k.box(su * (W / 2 - 0.03), sv * (L / 2 - 0.03), 0, 0.07, 0.07, HIGH + 0.42, c["post"][0], top=c["post"][1])
+    for z in (LOW, HIGH):
+        k.box(0, 0, z - 0.08, W, L, 0.08, c["deck"][0], top=c["deck"][1], bevel=0.01)
+        k.box(0, 0, z, MW, ML, MAT, c["mat"][0], top=c["mat"][1], bevel=0.02)   # inside the posts, rails, boards
+        k.box(0, -0.66, z + MAT, 0.6, 0.38, 0.07, c["pillow"], top=c["pillow"], bevel=0.025)
+        b0, b1 = -0.31, ML / 2 + 0.01                                              # the blanket: the fold to the foot
+        k.box(0, (b0 + b1) / 2, z + 0.03, MW + 0.02, b1 - b0, MAT + 0.005, c["blanket"][0], top=c["blanket"][1])
+        k.box(0, b0 + 0.03, z + 0.03, MW + 0.02, 0.06, MAT + 0.02, c["stripe"], top=c["stripe"])   # turned-down hem
+    for sv in (-1, 1):
+        k.box(0, sv * (L / 2 - 0.03), HIGH, W - 0.06, 0.04, 0.34 if sv < 0 else 0.26, c["board"][0], top=c["board"][1])
+        k.box(0, sv * (L / 2 - 0.03), LOW, W - 0.06, 0.04, 0.3 if sv < 0 else 0.2, c["board"][0], top=c["board"][1])
+    k.box(0, -0.5, HIGH - 0.1, 0.5, 0.06, 0.02, "cyan")
+    r = c["rail"]
+    RAIL["scheme"] = (0.04, 0.035, r, r)
+    _rails(k, HIGH, 0.36, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "scheme")
+    _rails(k, LOW, 0.3, "u-", -L / 2 + 0.06, L / 2 - 0.06, (-0.45, 0.0, 0.45), "scheme")
+    _rails(k, HIGH, 0.36, "u+", -L / 2 + 0.06, 0.3, (-0.3, 0.3), "scheme")
+    ladder(k, W / 2 + 0.03, 0.62, 0, HIGH + 0.4, rails=r, rungs=r)
+    return k.build()
+
+
+def b1d():
+    return _railed("bunk_b1d", "thin")
+
+
+def b1e():
+    return _railed("bunk_b1e", "thick")
+
+
+def b2():
+    """B2 berth cabinet: a white shell round both berths (the open side faces the camera), each berth lit along its
+    ceiling, a privacy curtain drawn halfway on the upper one, a ladder by the foot."""
+    k = K("bunk_b2", FP)
+    sh, shT = "medWhite", "medWhite"
+    T = 0.06                                                                       # shell thickness
+    top = HIGH + 0.62
+    k.box(-(W / 2 - T / 2), 0, 0, T, L, top, sh, top=shT)                          # back panel (wall side)
+    for sv in (-1, 1):                                                             # end panels
+        k.box(0, sv * (L / 2 - T / 2), 0, W, T, top, sh, top=shT, bevel=0.01)
+    k.box(0, 0, top - T, W, L, T, sh, top=shT, bevel=0.01)                         # roof
+    k.box(0, 0, 0, W, L - 2 * T, LOW, "steel", top="steel")                        # plinth under the lower berth
+    k.box(W / 2 - 0.02, 0, 0, 0.04, L - 2 * T, 0.05, "cyan")                       # kick light
+    k.box(0, 0, HIGH - 0.1, W, L - 2 * T, 0.1, sh, top="steelL")                   # the middle deck
+    k.box(W / 2 - 0.03, 0, HIGH - 0.1, 0.06, L - 2 * T, 0.1, "steelL")             # its front edge
+    for z in (LOW, HIGH):
+        mattress(k, z, col="navy", top="blueGrey", blanket="steel", stripe="cyan")
+    for z in (HIGH - 0.13, top - T - 0.03):                                        # each berth's ceiling light
+        k.box(-0.1, 0, z, 0.06, L - 0.4, 0.02, "cyan")
+    k.box(W / 2 - 0.05, -0.4, HIGH + MAT + 0.02, 0.03, 0.85, 0.48, "navy", top="navy")   # curtain, half drawn
+    k.box(W / 2 - 0.02, 0, top - T - 0.02, 0.02, L - 2 * T, 0.02, "steelL")        # curtain track
+    ladder(k, W / 2 + 0.01, 0.62, LOW, HIGH + MAT + 0.12, n=3)                      # up the open side, by the foot
+    return k.build()
+
+
+def b3():
+    """B3 locker frame: a tall locker column at the head carries both decks (no posts at the open side), a
+    cantilevered upper deck with a low lip, a ladder in the middle of the open side."""
+    k = K("bunk_b3", FP)
+    col = "steel"
+    D = 0.34                                                                       # the locker column's depth (v)
+    hv = -L / 2 + D / 2
+    top = HIGH + 0.55
+    k.box(0, hv, 0, W, D, top, col, top="steelL", bevel=0.01)                       # the column
+    for i, z in enumerate((0.1, 0.55, HIGH + 0.15)):                               # its locker doors (front face +v)
+        k.box(0.0, hv + D / 2 + 0.005, z, W - 0.12, 0.01, 0.36 if i < 2 else 0.32, "steelD")
+        k.box(W / 2 - 0.14, hv + D / 2 + 0.012, z + 0.14, 0.04, 0.01, 0.08, "cyan")
+    dl = L - D                                                                     # decks run from the column
+    dv = hv + D / 2 + dl / 2
+    for z in (LOW, HIGH):
+        k.box(0, dv, z - 0.08, W, dl, 0.08, "steelD", top="steel", bevel=0.01)
+        k.box(0, dv + 0.0, z - 0.11, W - 0.2, dl - 0.1, 0.03, "dark")               # the deck's underside
+    k.box(0, L / 2 - 0.04, 0, W, 0.08, LOW, "steelD", top="steel")                  # lower deck's foot
+    k.box(-(W / 2 - 0.04), L / 2 - 0.04, 0, 0.08, 0.08, HIGH, "steelD", top="steel")   # one post at the far foot
+    k.box(-(W / 2 - 0.03), dv, HIGH, 0.04, dl, 0.24, "steelD", top="steel")         # wall-side lip, upper
+    k.box(W / 2 - 0.03, dv - 0.25, HIGH, 0.04, dl - 0.55, 0.14, "steelD", top="steel")   # open side lip, upper
+    for z in (LOW, HIGH):
+        mattress(k, z, col="rust", top="rustD", blanket="steelL", stripe="cyan")
+    ladder(k, W / 2 + 0.01, 0.62, 0, HIGH + MAT + 0.1, rails="steelL", rungs="steelL", n=3)
+    k.box(0, hv + D / 2 + 0.01, HIGH + 0.38, 0.5, 0.01, 0.04, "cyan")               # reading light on the column
+    k.box(0, hv + D / 2 + 0.01, LOW + 0.34, 0.5, 0.01, 0.04, "cyan")
+    return k.build()
+
+
+def _px(k, u0, u1, v0, v1, z0, z1, col, top=None):
+    """A box between pixel edges: u and v in px of the tile (32 a tile, 0 the footprint's middle), z in px of height.
+    Whole px only, so every edge draws as a clean stair and nothing thinner than a px breaks into dots."""
+    k.box((u0 + u1) / 64, (v0 + v1) / 64, z0 / ZPX, (u1 - u0) / 32, (v1 - v0) / 32, (z1 - z0) / ZPX, col, top=top)
+
+
+def b1h(ph=2, name="bunk_b1h"):
+    """B1h: B1g3a (slate frame a shade down, red blanket) rebuilt on the pixel grid, no bevels. Footprint 32 x 64 px;
+    the bunk 28 x 60 (u -14..14, v -30..30). Heights in px: lower deck top 5, upper 38, mattress 4, posts 54."""
+    c = SCHEMES["g3a"]
+    k = K(name, FP)
+    kp = K(name + "_pillows", FP)
+    kp.m = core.Mesh(name + "_pillows", flat=True)
+    lo, hi = 5, 38                                     # deck tops
+    for su in (-1, 1):                                 # posts, 2 x 2 px at the corners
+        for sv in (-1, 1):
+            u, v = (12, 14) if su > 0 else (-14, -12), (28, 30) if sv > 0 else (-30, -28)
+            _px(k, *u, *v, 0, 54, c["post"][0], c["post"][1])
+    for z in (lo, hi):
+        _px(k, -14, 14, -28, 28, z - 3, z, c["deck"][0], c["deck"][1])          # deck, between the posts
+        _px(k, -12, 12, -30, -28, z - 3, z, c["deck"][0], c["deck"][1])
+        _px(k, -12, 12, 28, 30, z - 3, z, c["deck"][0], c["deck"][1])
+        _px(k, -10, 10, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])             # mattress
+        _px(kp, -8, 8, -25, -14, z + 4, z + 4 + ph, "lvW2", "lvWL")               # pillow, ph px (unlit: no speckle)
+        _px(k, -11, 11, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])  # blanket, over the sides and foot
+        _px(k, -11, 11, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])          # its turned-down hem
+    for z, head, foot in ((lo, 12, 8), (hi, 13, 10)):                            # solid head and foot boards
+        _px(k, -12, 12, -29, -28, z, z + head, c["board"][0], c["board"][1])
+        _px(k, -12, 12, 28, 29, z, z + foot, c["board"][0], c["board"][1])
+    _px(k, -8, 8, -6, -4, hi - 4, hi - 3, "cyan")                                 # reading light under the deck
+    r = c["rail"]
+
+    def rail(u, z, h, v0, v1, posts):
+        """A rail on the long side at u (the px column u..u+1): a 2 px top bar, a 1 px mid bar, 1 px uprights."""
+        _px(k, u, u + 1, v0, v1, z + h - 2, z + h, r, r)
+        _px(k, u, u + 1, v0, v1, z + h // 2, z + h // 2 + 1, r, r)
+        for v in posts:
+            _px(k, u, u + 1, v, v + 1, z, z + h - 2, r, r)
+    rail(-13, hi, 14, -28, 28, (-14, 0, 14))                                     # wall side, both decks
+    rail(-13, lo, 12, -28, 28, (-14, 0, 14))
+    rail(12, hi, 14, -28, 10, (-10, 9))                                           # open side, head to the ladder
+    for v in (15, 24):                                                            # ladder: rails and four rungs
+        _px(k, 14, 15, v, v + 1, 0, hi + 14, r, r)
+    for i in range(1, 5):
+        z = round(i * (hi + 14) / 5)
+        _px(k, 14, 15, 16, 24, z, z + 1, r, r)
+    return k.build() + kp.build()
+
+
+def bed_s(wall_rail, name, mw=10, foot_style=None):
+    """The single bed (module.bed, 1x2) in the bunk's look: B1h's lower deck on its own, posts only as tall as the
+    boards they carry, optionally the bunk's wall-side rail. Mattress top 9 px (0.23, as the old bed's 0.22, so sleeping
+    crew sit at the same height)."""
+    c = SCHEMES["g3a"]
+    k = K(name, FP)
+    kp = K(name + "_pillows", FP)
+    kp.m = core.Mesh(name + "_pillows", flat=True)
+    z, head, foot = 5, 12, 8
+    for su in (-1, 1):
+        for sv in (-1, 1):
+            u, v = (12, 14) if su > 0 else (-14, -12), (28, 30) if sv > 0 else (-30, -28)
+            _px(k, *u, *v, 0, z + (head if sv < 0 else foot) + 2, c["post"][0], c["post"][1])
+    _px(k, -14, 14, -28, 28, z - 3, z, c["deck"][0], c["deck"][1])
+    _px(k, -12, 12, -30, -28, z - 3, z, c["deck"][0], c["deck"][1])
+    _px(k, -12, 12, 28, 30, z - 3, z, c["deck"][0], c["deck"][1])
+    _px(k, -mw, mw, -26, 26, z, z + 4, c["mat"][0], c["mat"][1])                 # mattress, 2 mw px wide
+    _px(kp, -(mw - 2), mw - 2, -25, -14, z + 4, z + 6, "lvW2", "lvWL")
+    _px(k, -(mw + 1), mw + 1, -10, 27, z + 1, z + 5, c["blanket"][0], c["blanket"][1])
+    _px(k, -(mw + 1), mw + 1, -10, -8, z + 1, z + 6, c["stripe"], c["stripe"])
+    _px(k, -12, 12, -29, -28, z, z + head, c["board"][0], c["board"][1])
+    _px(k, -12, 12, 28, 29, z, z + foot, c["board"][0], c["board"][1])
+    if foot_style:                                    # the footboard's outer face is v 29 (toward the camera at r0)
+        ft = z + foot
+        _px(k, -12, 12, 27, 30, ft, ft + 1, c["post"][1], c["rail"])               # a cap rail, 3 px deep
+        if foot_style == "panel":                                                  # a raised panel
+            _px(k, -9, 9, 29, 30, z + 2, ft - 2, c["board"][0], c["board"][1])
+        elif foot_style == "stripe":                                               # a band in the blanket's red
+            _px(k, -12, 12, 29, 30, z + 3, z + 5, c["blanket"][0], c["blanket"][1])
+        elif foot_style == "slots":                                                # three dark slots
+            for u in (-8, -2, 4):
+                _px(k, u, u + 4, 29, 30, z + 2, ft - 2, "dnW4", "dnW3")
+    if wall_rail:
+        r = c["rail"]
+        _px(k, -13, -12, -28, 28, z + 10, z + 12, r, r)
+        _px(k, -13, -12, -28, 28, z + 6, z + 7, r, r)
+        for v in (-14, 0, 14):
+            _px(k, -13, -12, v, v + 1, z, z + 10, r, r)
+    return k.build() + kp.build()
+
+
+DESIGNS = {"s3": lambda: bed_s(False, "bed_s3", 12), "s3p": lambda: bed_s(False, "bed_s3p", 12, "panel"),
+           "s3s": lambda: bed_s(False, "bed_s3s", 12, "stripe"), "s3k": lambda: bed_s(False, "bed_s3k", 12, "slots"),
+           "s1": lambda: bed_s(False, "bed_s1"), "s2": lambda: bed_s(True, "bed_s2"), "b1h": b1h, "b1h1": lambda: b1h(1, "bunk_b1h1"), "b1h3": lambda: b1h(3, "bunk_b1h3"), "b1": b1, "b2": b2, "b3": b3, "b1a": b1a, "b1b": b1b, "b1c": b1c, "b1d": b1d, "b1e": b1e, "b1f": b1f,
+           **{f"b1{g}": (lambda g=g: _b1g(f"bunk_b1{g}", SCHEMES[g])) for g in SCHEMES}}
+
+
+def jobs():
+    return [(f"module.bunk.{v}", FP, "prop", f) for v, f in DESIGNS.items()]

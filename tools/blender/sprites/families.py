@@ -33,6 +33,11 @@
   recovery_pod  the recovery pod module.recovery (2x2): idle, .unpowered, .active bubble frames, the patient's front
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
+  bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
+            module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench
+            module.bench (2x1, bench.py: with the overlay over its three sitters), the planter
+            module.planter, the vending machines module.vending and module.vending_red, four rotations, art only but
+            the bed (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -159,6 +164,179 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "bench_module":
+        import os
+        from . import bench
+        return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
+    if name in ("bunk_module", "exercise_module", "planter_module", "vending_module"):
+        import os
+        from . import leisure
+        return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
+    if name == "vending10":     # look study, preview only (not in RENDERED): one generated body, recessed front, r10
+        from . import vending_r10
+        return vending_r10.jobs(), "only:vending"
+    if name == "vending11":     # look study, preview only (not in RENDERED): r10's rising sweep with a side gradient
+        from . import vending_r11
+        return vending_r11.jobs(), "only:vending"
+    if name == "vending12":     # look study, preview only (not in RENDERED): new cream edge shapes on the r11 body
+        from . import vending_r12
+        return vending_r12.jobs(), "only:vending"
+    if name == "vending13":     # look study, preview only (not in RENDERED): 90s paper-cup livery on the r11 body
+        from . import vending_r13
+        return vending_r13.jobs(), "only:vending"
+    if name == "vending14":     # look study, preview only (not in RENDERED): cup variants, one wrapping the front
+        from . import vending_r14
+        return vending_r14.jobs(), "only:vending"
+    if name == "vending15":     # look study, preview only (not in RENDERED): bold cup wrapped round the whole machine
+        from . import vending_r15
+        return vending_r15.jobs(), "only:vending"
+    if name == "vending16":     # look study, preview only (not in RENDERED): zigzag ribbon and switchback pen line
+        from . import vending_r16
+        return vending_r16.jobs(), "only:vending"
+    if name == "vending17":     # look study, preview only (not in RENDERED): r16c with taller teeth, wider hairpins
+        from . import vending_r17
+        return vending_r17.jobs(), "only:vending"
+    if name == "vending18":     # look study, preview only (not in RENDERED): clean spike tops, sharp pen line
+        from . import vending_r18
+        return vending_r18.jobs(), "only:vending"
+    if name == "vending19":     # look study, preview only (not in RENDERED): 18a with pen line variants
+        from . import vending_r19
+        return vending_r19.jobs(), "only:vending"
+    if name == "vending20":     # look study, preview only (not in RENDERED): 19e with the front's details reworked
+        from . import vending_r20
+        return vending_r20.jobs(), "only:vending"
+    if name == "vending21":     # look study, preview only (not in RENDERED): picks from 20, keypad off the corner
+        from . import vending_r21
+        return vending_r21.jobs(), "only:vending"
+    if name == "vending22":     # look study, preview only (not in RENDERED): 21a with three roof treatments
+        from . import vending_r22
+        return vending_r22.jobs(), "only:vending"
+    if name == "vending23":     # look study, preview only (not in RENDERED): 21a, the livery carried over the roof
+        from . import vending_r23
+        return vending_r23.jobs(), "only:vending"
+    if name == "vending24":     # look study, preview only (not in RENDERED): the red machine with 23a's front details
+        from . import vending_r24
+        return vending_r24.jobs(), "only:vending"
+    if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
+        from . import vending_r9
+        return vending_r9.jobs(), "only:vending"
+    if name == "vending8":      # look study, preview only (not in RENDERED): one continuous ribbon, r8
+        from . import vending_r8
+        return vending_r8.jobs(), "only:vending"
+    if name == "vending7":      # look study, preview only (not in RENDERED): split side, r7
+        from . import vending_r7
+        return vending_r7.jobs(), "only:vending"
+    if name == "vending6":      # look study, preview only (not in RENDERED): VM1C5 wave without broken pixels, r6
+        from . import vending_r6
+        return vending_r6.jobs(), "only:vending"
+    if name == "vending5":      # look study, preview only (not in RENDERED): VM1C5 wave cleaned up, r5
+        from . import vending_r5
+        return vending_r5.jobs(), "only:vending"
+    if name == "vending4":      # look study, preview only (not in RENDERED): VM1C side-art variants, r4
+        from . import vending_r4
+        return vending_r4.jobs(), "only:vending"
+    if name == "vending3":      # look study, preview only (not in RENDERED): VM1C side art + back, r3
+        from . import vending_r3
+        return vending_r3.jobs(), "only:vending"
+    if name == "vending2":      # look study, preview only (not in RENDERED): VM1 refined at full height, r2
+        from . import vending_r2
+        return vending_r2.jobs(), "only:vending"
+    if name == "vending":       # look study, preview only (not in RENDERED): vending machine designs, r1
+        from . import vending_study
+        return vending_study.jobs(), "only:vending"
+    if name == "planter2":      # look study, preview only (not in RENDERED): PL1 refined, r2
+        from . import planter_r2
+        return planter_r2.jobs(), "only:planter"
+    if name == "planter":       # look study, preview only (not in RENDERED): planter designs, r1
+        from . import planter_study
+        return planter_study.jobs(), "only:planter"
+    if name == "bench13":       # look study, preview only (not in RENDERED): BN18O raised for sitting, r13
+        from . import bench_r13
+        return bench_r13.jobs(), "only:bench7"
+    if name == "bench12":       # look study, preview only (not in RENDERED): BN18 beam on end legs, r12
+        from . import bench_r12
+        return bench_r12.jobs(), "only:bench7"
+    if name == "bench11":       # look study, preview only (not in RENDERED): BN18 supports, plinth/sled/spine, r11
+        from . import bench_r11
+        return bench_r11.jobs(), "only:bench7"
+    if name == "bench10":       # look study, preview only (not in RENDERED): BN18E with end legs, r10
+        from . import bench_r10
+        return bench_r10.jobs(), "only:bench7"
+    if name == "bench9":        # look study, preview only (not in RENDERED): BN18 middle seat carried, r9
+        from . import bench_r9
+        return bench_r9.jobs(), "only:bench7"
+    if name == "bench8":        # look study, preview only (not in RENDERED): BN18 refined, r8
+        from . import bench_r8
+        return bench_r8.jobs(), "only:bench7"
+    if name == "bench7":        # look study, preview only (not in RENDERED): normal benches, r7
+        from . import bench_r7
+        return bench_r7.jobs(), "only:bench7"
+    if name == "bench6":        # look study, preview only (not in RENDERED): fuel tank, pebbles, truss, r6
+        from . import bench_r6
+        return bench_r6.jobs(), "only:bench6"
+    if name == "bench5":        # look study, preview only (not in RENDERED): three concepts, own materials each, r5
+        from . import bench_r5
+        return bench_r5.jobs(), "only:bench5"
+    if name == "bench4":        # look study, preview only (not in RENDERED): three unique bench concepts, r4
+        from . import bench_r4
+        return bench_r4.jobs(), "only:gym"
+    if name == "bench3":        # look study, preview only (not in RENDERED): benches, not couches, r3
+        from . import bench_r3
+        return bench_r3.jobs(), "only:gym"
+    if name == "bench2":        # look study, preview only (not in RENDERED): BN2 grounded, r2
+        from . import bench_r2
+        return bench_r2.jobs(), "only:gym"
+    if name == "bench":         # look study, preview only (not in RENDERED): bench designs, r0
+        from . import bench_study
+        return bench_study.jobs(), "only:gym"
+    if name == "exercise12":    # look study, preview only (not in RENDERED): sparring droid, lean + round head mixes
+        from . import exercise_r12
+        return exercise_r12.jobs(), "only:gym"
+    if name == "exercise11":    # look study, preview only (not in RENDERED): round droid with robot-crew details
+        from . import exercise_r11
+        return exercise_r11.jobs(), "only:gym"
+    if name == "exercise10":    # look study, preview only (not in RENDERED): sparring droid in the robot crew's style
+        from . import exercise_r10
+        return exercise_r10.jobs(), "only:gym"
+    if name == "exercise9":     # look study, preview only (not in RENDERED): sparring droid facing the camera
+        from . import exercise_r9
+        return exercise_r9.jobs(), "only:gym"
+    if name == "exercise8":     # look study, preview only (not in RENDERED): sparring droid, heads and joints
+        from . import exercise_r8
+        return exercise_r8.jobs(), "only:gym"
+    if name == "exercise6":     # look study, preview only (not in RENDERED): sparring droid takes
+        from . import exercise_r6
+        return exercise_r6.jobs(), "only:gym"
+    if name == "exercise5":     # look study, preview only (not in RENDERED): exercise machines round 5
+        from . import exercise_r5
+        return exercise_r5.jobs(), "only:gym"
+    if name == "exercise4":     # look study, preview only (not in RENDERED): exercise machines round 4, swept
+        from . import exercise_r4
+        return exercise_r4.jobs(), "only:gym"
+    if name == "exercise3":     # look study, preview only (not in RENDERED): exercise machines round 3
+        from . import exercise_r3
+        return exercise_r3.jobs(), True
+    if name == "exercise2":     # look study, preview only (not in RENDERED): exercise machines round 2, sci-fi
+        from . import exercise_r2
+        return exercise_r2.jobs(), True
+    if name == "exercise":      # look study, preview only (not in RENDERED): exercise machine designs, r0
+        from . import exercise_study
+        return exercise_study.jobs(), True
+    if name == "barcounter5":   # look study, preview only (not in RENDERED): bar counter round 5, new designs
+        from . import barcounter_r5
+        return barcounter_r5.jobs(), "only:bar4"
+    if name == "barcounter4":   # look study, preview only (not in RENDERED): bar counter round 4, muted
+        from . import barcounter_r4
+        return barcounter_r4.jobs(), "only:bar4"
+    if name == "barcounter3":   # look study, preview only (not in RENDERED): bar counter round 3, its own ramps
+        from . import barcounter_r3
+        return barcounter_r3.jobs(), "only:bar3"
+    if name == "barcounter":    # look study, preview only (not in RENDERED): bar counter designs, r0
+        from . import barcounter_study
+        return barcounter_study.jobs(), "only:bar"
+    if name == "bunk":          # look study, preview only (not in RENDERED): double bunk bed designs, r0
+        from . import bunk_study
+        return bunk_study.jobs(), True
     if name == "recovery":      # look study, preview only (not in RENDERED): the 2x2 recovery pod, r0, pod + .front
         from . import recovery_study
         return recovery_study.jobs(), "recovery"
@@ -276,5 +454,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod")
+            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")
