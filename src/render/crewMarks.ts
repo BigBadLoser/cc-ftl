@@ -73,7 +73,8 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         const shipId = pos ? shipIdAtTile(world, pos.x, pos.y) : 0;
         if (!pos || !host.ship(shipId) || !host.visible(shipId, pos.x, pos.y) || world.has(id, DeadC)) continue;
         if (foes.has(id)) {
-          const p = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress); // sector tiles
+          // At the drawn figure's feet (smoothed, and in a seat or bed), like the overhead icons; the sim tile when it isn't drawn.
+          const p = host.figure(id) ?? iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress); // sector tiles
           g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: 0xff4a3a, alpha: 0.8 });
         }
         // No health bar here: the crew view draws one on the figure itself (in bed, seated or standing). A second one at the
