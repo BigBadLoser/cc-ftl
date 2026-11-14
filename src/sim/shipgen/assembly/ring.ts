@@ -1,5 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { placeBand, type BandAsk } from './band';
+import { batteries } from './battery';
 import { cornersOf, placeCorners } from './corners';
 import { innerRoom, placeInner } from './inner';
 import { placeStreets } from './street';
@@ -58,7 +59,7 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
 }
 
 /** Fill the ring with its rooms: corners, then the band, then its inner side. Returns the rooms it could not hold. */
-export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'rows' | 'street', front?: (r: RoomSpec) => boolean, streetFirst?: (r: RoomSpec) => boolean): RoomSpec[] {
+export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'rows' | 'street', front?: (r: RoomSpec) => boolean, streetFirst?: (r: RoomSpec) => boolean, battery = false): RoomSpec[] {
   // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: the common rooms
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
@@ -71,8 +72,15 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   const halls = specs.filter((r) => !r.cabin && !front?.(r) && (s.shoulders ? !r.annex && !r.annexed && r.role !== 'weapons' && r.role !== 'quarters' && !r.vehicle : r.dept === 'commons')).sort(s.shoulders ? commonsFirst : bySize);
   // The corners the outline has (an arc lacks some), in the order they are given rooms: halls to opposite corners first.
   const order = (s.cut > 2 ? [1, 3, 0, 2] : [0, 1, 2, 3]).filter((k) => cornersOf(s).includes(k));
-  const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
-  const cornered = placeCorners(s, [0, 1, 2, 3].map((k) => (order.includes(k) ? given[order.indexOf(k)] : undefined)));
+  const given = s.cut > 2 || battery ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);
+  // Batteries: the guns take the corners, a bay each as big as the curve; a corner with none takes a hall as before.
+  // A hall too big for anywhere else (a station's main mess) keeps its corner, the first in order.
+  const big = battery ? halls.filter((r) => r.w * r.h >= 50) : [];
+  const gunned = order.slice(Math.min(big.length, order.length));
+  const bat = battery ? batteries(s, gunned, specs.filter((r) => r.role === 'weapons' && !front?.(r))) : null;
+  const spare = [...big, ...given.filter((r) => !big.includes(r))];
+  const cornered = placeCorners(s, [0, 1, 2, 3].map((k) => bat?.specs[k] ?? (order.includes(k) ? (bat ? spare.shift() : given[order.indexOf(k)]) : undefined)));
+  if (bat) cornered.push(...bat.used);
   // The waterfront: rooms that stand on the inner side first. What finds no place there goes to the band with the rest.
   const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && !a.spec.annex) : [];
   const ashore = fronted.length > 0 ? placeInner(s, fronted, Math.PI / 4) : [];

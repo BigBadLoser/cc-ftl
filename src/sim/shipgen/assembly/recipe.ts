@@ -81,7 +81,7 @@ export interface Recipe {
      * `market` departments stand round the court, the `gated` ones line the north and south spokes behind gates, and
      * of the `spokes` ones (which the ring takes too) as many line the east and west spokes as fit.
      */
-    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows' | 'street'; street?: readonly Dept[]; waterfront?: readonly Dept[]; inboard?: { takes: readonly Dept[]; face: Dir }; noses?: RoomRole; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
+    | { kind: 'ring'; takes: readonly Dept[]; outline: Outline; cut: number | 'octagon' | { flat: number }; round?: boolean; shoulders?: boolean; inner: boolean | 'rows' | 'street'; street?: readonly Dept[]; waterfront?: readonly Dept[]; inboard?: { takes: readonly Dept[]; face: Dir }; noses?: RoomRole; battery?: boolean; gap?: Gap; hub?: HubOpts & { market: readonly Dept[]; spokes: readonly Dept[]; gated?: readonly Dept[] } };
   branches: readonly BranchRule[];
   /**
    * How the crew sleeps, when not in quarters cut into cabins where they stand:

@@ -43,12 +43,14 @@ const compound = (name: string, o: {
   spine?: ('works' | 'freight')[];
   /** What the works block takes (default the works and the freight): a habitation block instead, its crew's quarters, when the works are on the spine. */
   block?: ('works' | 'freight' | 'habitation')[];
+  /** Gun batteries in the corners: one bay a corner, as big as the curve. */
+  battery?: boolean;
 }): Recipe => ({
   name,
   ...(o.quarters ? { quarters: o.quarters } : {}),
   // A 'disc' is no longer the stepped lattice ring (the user: "it's the lattice and the gaps it's leaving"): a square
   // cut to eight sides with its corners rounded, as the bazaar's.
-  root: { kind: 'ring', takes: [...(o.block?.includes('habitation') ? [] : ['habitation' as const]), 'defence', 'commons', 'market', ...(o.spine ?? [])], ...(o.outline === 'disc' ? { outline: 'square', cut: 'octagon', round: true } : { outline: 'square', cut: o.cut ?? 2 }), inner: o.inner, ...(o.spine ? { street: o.spine } : {}), ...(o.gap ? { gap: o.gap } : {}) },
+  root: { kind: 'ring', takes: [...(o.block?.includes('habitation') ? [] : ['habitation' as const]), 'defence', 'commons', 'market', ...(o.spine ?? [])], ...(o.outline === 'disc' ? { outline: 'square', cut: 'octagon', round: true } : { outline: 'square', cut: o.cut ?? 2 }), inner: o.inner, ...(o.spine ? { street: o.spine } : {}), ...(o.battery ? { battery: true } : {}), ...(o.gap ? { gap: o.gap } : {}) },
   spacing: 2,
   branches: [
     { takes: (o.block ?? ['works', 'freight']).filter((d) => !o.spine?.includes(d as 'works')), per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
@@ -142,9 +144,9 @@ export const stationRecipes = {
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: harbour('head') }),
     compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: 'street', gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('head') }),
     compound('half ring: works down the spine, quarters on one tip, machinery on the other', { outline: 'disc', inner: 'street', spine: ['works'], block: ['habitation', 'freight'], gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('head') }),
-    compound('ring with barracks (a works crew)', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('head') }),
+    compound('ring with barracks (a works crew)', { outline: 'disc', inner: 'street', battery: true, works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('head') }),
     // The faces as wide as the wings, so a wing meets the bastions either side of it with no gap.
-    compound('square with bastions', { outline: 'square', cut: { flat: 3 }, inner: 'street', works: ['e'], secure: ['w'], dock: ['n', 's'], neck: 0, rowDepth: 7, quay: harbour('head') }),
+    compound('square with bastions', { outline: 'square', cut: { flat: 3 }, inner: 'street', battery: true, works: ['e'], secure: ['w'], dock: ['n', 's'], neck: 0, rowDepth: 7, quay: harbour('head') }),
   ],
   crescent: [
     crescent('freight pier, stalls on the waterfront', { cut: 5, from: 20, freight: 'pier' }),

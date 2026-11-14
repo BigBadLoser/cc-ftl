@@ -12,6 +12,7 @@ export { generateStation, stationFaction, stationProblems, type StationResult } 
 export { planStation, stationCrew, SECURITY_ROLE } from './stationPlan';
 export { assemble, type Assembly } from './assembly/assemble';
 export { deptOf, type Dept } from './assembly/dept';
+export { missing as missingRooms } from './assembly/finish';
 export { hullProblems } from './assembly/hull';
 export { stationProgram, warehoused, withCommons } from './assembly/program';
 export { assembleStation } from './assembly/station';

@@ -193,7 +193,15 @@ held six rooms and a hub's harbour has seven; the seventh went to a second secti
 branch, and was dropped without a word. A branch now fails when a section ends it with rooms left over, and the
 compound's harbour section holds ten.
 
-Still open: military's guns crowding the street; the square at military hub size is 161 wide (cap 160).
+Gun batteries (`battery: true` on a ring root; the barracks ring and the square): each corner is one gun bay holding
+several guns instead of many small bays crowding the street (the user: "expand the gun bays as far as they can go in
+the curve instead of multiple small ones"). A corner takes guns, biggest first, while their bays' floor stays within
+35% of its own (at half, the fit-out could not mount every gun at hub size); a hall too big for the band (the main
+mess) keeps the first corner. The room check counts guns by mount, so a battery counts for every gun in it; the
+recipe test fixture now uses that same check (`missingRooms`) instead of its own count.
+
+Still open: the square reports hull slivers narrower than three tiles (it did before batteries); the fit-out drops a
+gun it cannot mount without reporting it (the square without batteries lost one or two at station size).
 
 ## The bazaar ring (trade stations): prototype
 

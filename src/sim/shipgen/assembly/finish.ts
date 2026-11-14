@@ -120,7 +120,7 @@ export function trim(a: Asm): void {
 
 /**
  * The hard check, read from the compiled grid and nothing else: every room of the program stands as a region with
- * floor. Counted by role; quarters by beds, since a block of quarters may stand as several cabins.
+ * floor. Counted by role; quarters by beds, since a block of quarters may stand as several cabins; guns by mount.
  */
 export function missing(ctx: Ctx, rooms: readonly RoomSpec[]): string {
   const g = ctx.g, snap = g.snapshot();
@@ -128,7 +128,8 @@ export function missing(ctx: Ctx, rooms: readonly RoomSpec[]): string {
   for (const id of snap.roomOf) if (id >= 0) floored.add(id);
   const beds = (r: RoomSpec): number => r.mods.filter((m) => m === 'module.bed').length;
   const have = new Map<string, number>(), want = new Map<string, number>();
-  const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? beds(r) : 1)); };
+  // Guns by mount: a battery is one bay holding several.
+  const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role === 'weapons' ? 'guns' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? beds(r) : r.role === 'weapons' ? r.mods.length : 1)); };
   for (const r of rooms) { count(want, r); if (r.annex) count(want, r.annex); }
   for (const id of floored) { const spec = g.regions[id]?.spec; if (spec) count(have, spec); }
   const short = [...want].filter(([k, n]) => (have.get(k) ?? 0) < n).map(([k, n]) => `${k} ${have.get(k) ?? 0}/${n}`);
