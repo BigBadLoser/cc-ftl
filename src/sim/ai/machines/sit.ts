@@ -79,6 +79,9 @@ export function seatedOn(world: World, modules: Readonly<Record<string, ModuleDe
   return m && def?.seats && p ? { m, def, index: t?.bb.n as number, kind: def.seats.kind, x: p.x, y: p.y } : null;
 }
 
+/** Look for a seat once a second (staggered by crew id), not every tick: the look scans every module of the ship. */
+const LOOK_EVERY = 20;
+
 /** The idle drive: true while the crew member walks to a seat or sits (the idle turn goes no further), false to idle as usual. */
 export function sitTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
   const task = sim.world.get(id, TaskC);
@@ -104,11 +107,12 @@ export function sitTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolea
     clearJoblessTask(sim, id);
     return false;
   }
-  if (!isSettled(pos) || path.steps.length > 0 || !sim.rng.chance(SIT_CHANCE)) return false;
+  if (!isSettled(pos) || path.steps.length > 0 || (sim.tick + id) % LOOK_EVERY !== 0) return false;
   const ship = shipIdOf(sim, pos), from = origin(pos);
-  const near = freeSeats(sim, id, ship)
-    .filter((s) => Math.max(Math.abs(s.tile.x - from.x), Math.abs(s.tile.y - from.y)) <= SIT_MAX_STEPS)
-    .sort((a, b) => Math.max(Math.abs(a.tile.x - from.x), Math.abs(a.tile.y - from.y)) - Math.max(Math.abs(b.tile.x - from.x), Math.abs(b.tile.y - from.y)) || a.module - b.module || a.index - b.index);
+  const near = freeSeats(sim, id, ship).filter((s) => Math.max(Math.abs(s.tile.x - from.x), Math.abs(s.tile.y - from.y)) <= SIT_MAX_STEPS);
+  // The roll only when a free seat is near: a ship without one draws nothing from the rng, so its runs play out as before benches.
+  if (near.length === 0 || !sim.rng.chance(SIT_CHANCE)) return false;
+  near.sort((a, b) => Math.max(Math.abs(a.tile.x - from.x), Math.abs(a.tile.y - from.y)) - Math.max(Math.abs(b.tile.x - from.x), Math.abs(b.tile.y - from.y)) || a.module - b.module || a.index - b.index);
   for (const s of near.slice(0, 3)) {
     if (unsafeFor(sim, id, ship, s.tile.x, s.tile.y)) continue;
     const steps = findPath(sim, ship, from, s.tile, walkOpts(sim, id));
