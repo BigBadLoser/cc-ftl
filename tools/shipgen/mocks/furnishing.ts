@@ -7,10 +7,10 @@ import { content } from '../../../src/content';
 import type { ModuleDef, RoomRole, ShipTemplate } from '../../../src/sim';
 import { accessTiles, footprintTiles } from '../../../src/sim/modules/footprint';
 
-type Rot = 0 | 1 | 2 | 3;
+export type Rot = 0 | 1 | 2 | 3;
 /** A piece in room coordinates (0, 0 the room's top-left floor tile). Rot 0 faces south, 1 west, 2 north, 3 east. */
-type Piece = [def: string, x: number, y: number, rot?: Rot];
-interface RoomMock { caption: string; role?: RoomRole; w: number; h: number; door: number; pieces: Piece[] }
+export type Piece = [def: string, x: number, y: number, rot?: Rot];
+export interface RoomMock { caption: string; role?: RoomRole; w: number; h: number; door: number; pieces: Piece[] }
 
 const defs = content.modules as Record<string, ModuleDef>;
 const B = 'module.bed', L = 'module.storage_locker', T = 'module.mess_table', C = 'module.chair', G = 'module.galley';
@@ -103,7 +103,12 @@ const reactors: RoomMock[] = [
 export const ROWS: RoomMock[][] = [barracks, messes, guns, [...medbays, ...shields, ...reactors]];
 
 /** The sheet as one template, the captions and roles at their rooms, and every placement problem found. */
-export function mock(): { template: ShipTemplate; captions: { x: number; y: number; text: string; cx: number; cy: number }[]; roles: { x: number; y: number; role: RoomRole }[]; problems: string[] } {
+export function mock(): Sheet { return sheet(ROWS, 'Furnishing mock'); }
+
+export interface Sheet { template: ShipTemplate; captions: { x: number; y: number; text: string; cx: number; cy: number }[]; roles: { x: number; y: number; role: RoomRole }[]; problems: string[] }
+
+/** Rooms in rows as one template (see `mock`). */
+export function sheet(ROWS: RoomMock[][], name: string): Sheet {
   // Rooms in rows, GAP tiles apart, a caption row above each and a corridor along under each row, its doors onto it;
   // one corridor down the left joins them. Open space between.
   const GAP = 3, X0 = 4, rowsH = ROWS.map((row) => Math.max(...row.map((r) => r.h)));
@@ -180,5 +185,5 @@ export function mock(): { template: ShipTemplate; captions: { x: number; y: numb
     }
   }
   const rows = grid.map((r) => r.join(''));
-  return { template: { name: 'Furnishing mock', rows, modules } as ShipTemplate, captions, roles, problems };
+  return { template: { name, rows, modules } as ShipTemplate, captions, roles, problems };
 }
