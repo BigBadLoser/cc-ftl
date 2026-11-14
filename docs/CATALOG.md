@@ -23,7 +23,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 
 | Area | Covers | In game | Partial | Art only | Defined, unused | Debug only | Planned |
 |---|---|---|---|---|---|---|---|
-| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 44 | 13 | 8 | 0 | 0 | 0 |
+| [modules](catalog/modules.md) | Modules, furniture, containers, tiers; module art with no def | 44 | 16 | 5 | 0 | 0 | 0 |
 | [items](catalog/items.md) | Items, recipes, ship weapons, hand weapons, crops, ores; item sprites with no def | 69 | 8 | 32 | 0 | 0 | 0 |
 | [crew](catalog/crew.md) | Species, roles, skills, backgrounds, traits, needs, mood, breaks, bonds, schedules | 95 | 8 | 0 | 0 | 0 | 4 |
 | [ships-factions](catalog/ships-factions.md) | Ship templates, generator styles, galaxy factions, hull families, derelicts | 36 | 5 | 0 | 0 | 5 | 2 |
@@ -37,8 +37,8 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 0 | 0 | 0 | 0 | 4 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
-| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 12 | 0 | 0 | 3 |
-| **Total** | | 465 | 56 | 65 | 2 | 42 | 30 |
+| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 9 | 0 | 0 | 3 |
+| **Total** | | 465 | 59 | 59 | 2 | 42 | 30 |
 
 ## Commonly confused
 
@@ -59,10 +59,12 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
-- **Leisure furniture** (`module.bunk` 1x2 double bunk, `module.exercise` sparring droid, `module.bench` 2x1, `module.planter`,
-  `module.vending` and `module.vending_red`): art only, four rotations each (`tools/blender/sprites/leisure.py`). No defs; comfort
-  values on modules and decor are the next step of #441. The in-game single bed (`module.bed`) now uses the same family's matching
-  art (four rotations, damaged and destroyed per rotation).
+- **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
+  `module.bench` 2x1 (three seat positions in its def, `sim/modules/seats.ts`, and the `sit_bench` crew clip
+  and front overlays are ready; nothing sends crew to sit yet; front tiles kept clear), `module.bunk` 1x2 (a bed like `module.bed` with `berths: 2`: two crew sleep in it, lower deck and upper deck; `crew/berths.ts` owns who holds which berth,
+  bed ownership is per berth, the upper sleeper is drawn a deck higher), `module.exercise` sparring droid, `module.planter`, `module.vending` and `module.vending_red` (decor only,
+  no effect; the vending machines draw 1 power). Comfort values on modules and decor are the next step of #441. The single bed
+  (`module.bed`) uses the same family's matching art (four rotations, damaged and destroyed per rotation).
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
 - **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.debug` (a roomy hull; `?scenario=stasis` and `?starter=debug` start on it), `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
 - **Hyperlane gates, mining/farming/pirate "structures":** the map has gateway nodes and port kinds, not separate gate or structure objects for these.

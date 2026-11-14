@@ -71635,6 +71635,78 @@
     2
    ]
   },
+  "module.bed.front.b0.r0": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1406,
+    "y": 1,
+    "w": 2,
+    "h": 1
+   },
+   "anchor": {
+    "x": 2,
+    "y": 14
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.front.b0.r1": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1390,
+    "y": 1,
+    "w": 5,
+    "h": 4
+   },
+   "anchor": {
+    "x": -4,
+    "y": 9
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.front.b0.r2": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1342,
+    "y": 1,
+    "w": 47,
+    "h": 9
+   },
+   "anchor": {
+    "x": 13,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.front.b0.r3": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1396,
+    "y": 1,
+    "w": 9,
+    "h": 4
+   },
+   "anchor": {
+    "x": 23,
+    "y": 10
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
   "module.bed.r0": {
    "kind": "static",
    "sheet": "bunk_module",
@@ -72029,6 +72101,150 @@
    "footprint": [
     1,
     2
+   ]
+  },
+  "module.bunk.front.b0.r0": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 978,
+    "y": 1,
+    "w": 53,
+    "h": 43
+   },
+   "anchor": {
+    "x": 9,
+    "y": 46
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.front.b0.r1": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 911,
+    "y": 1,
+    "w": 66,
+    "h": 44
+   },
+   "anchor": {
+    "x": 57,
+    "y": 49
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bunk.front.b0.r2": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1032,
+    "y": 1,
+    "w": 52,
+    "h": 43
+   },
+   "anchor": {
+    "x": 13,
+    "y": 50
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.front.b0.r3": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1085,
+    "y": 1,
+    "w": 52,
+    "h": 43
+   },
+   "anchor": {
+    "x": 44,
+    "y": 47
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bunk.front.b1.r0": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1305,
+    "y": 1,
+    "w": 36,
+    "h": 18
+   },
+   "anchor": {
+    "x": 6,
+    "y": 53
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.front.b1.r1": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1206,
+    "y": 1,
+    "w": 44,
+    "h": 20
+   },
+   "anchor": {
+    "x": 35,
+    "y": 58
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bunk.front.b1.r2": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1138,
+    "y": 1,
+    "w": 67,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 65
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.front.b1.r3": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1251,
+    "y": 1,
+    "w": 53,
+    "h": 20
+   },
+   "anchor": {
+    "x": 35,
+    "y": 57
+   },
+   "footprint": [
+    2,
+    1
    ]
   },
   "module.bunk.r0": {

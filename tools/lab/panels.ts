@@ -14,7 +14,8 @@ import { stasisPanel } from './stasis';
 import { stasisLoadPanel } from './stasisLoad';
 import { leisurePanel } from './leisure';
 import { benchPanel } from './bench';
+import { bunkPanel } from './bunk';
 import { stasisFacePanel } from './stasisFace';
 
 /** Every lab page. A new visual gets a panel here (a file of its own in tools/lab/), so it can be seen and shot on its own. */
-export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel, recoveryPanel, leisurePanel, benchPanel, stasisPanel, stasisFacePanel, stasisLoadPanel];
+export const PANELS: readonly LabPanel[] = [spritesPanel, shieldPanel, dronesPanel, droneLaunchPanel, marksPanel, shotsPanel, upgradesPanel, podsPanel, hydroponicsPanel, orePanel, recoveryPanel, leisurePanel, benchPanel, bunkPanel, stasisPanel, stasisFacePanel, stasisLoadPanel];

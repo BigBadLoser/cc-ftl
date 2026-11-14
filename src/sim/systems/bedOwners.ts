@@ -1,5 +1,6 @@
 import { AlienC } from '../aliens/components';
 import { isIntactBed } from '../crew/beds';
+import { berthCount } from '../crew/berths';
 import { bedSocialCost, bondedPeers } from '../crew/bondSpot';
 import { BedOwnerC, CrewC, DeadC, NeedsC, PositionC } from '../crew/components';
 import { isInvader } from '../fight/relations';
@@ -26,14 +27,17 @@ function wantsBed(sim: Sim, id: number): boolean {
  */
 export function bedOwnersSystem(sim: Sim): void {
   if (sim.tick % BED_PASS_TICKS !== 0) return;
-  const owned = new Set<number>();
+  const owned = new Map<number, Set<number>>(); // bed -> its berths that have an owner
   for (const id of sim.world.query(BedOwnerC)) {
-    const bed = (sim.world.get(id, BedOwnerC) as { bed: number }).bed;
+    const { bed, berth = 0 } = sim.world.get(id, BedOwnerC) as { bed: number; berth?: number };
     const pos = sim.world.get(id, PositionC);
-    if (!pos || owned.has(bed) || !wantsBed(sim, id) || !isIntactBed(sim, bed, shipIdOf(sim, pos))) sim.world.remove(id, BedOwnerC);
-    else owned.add(bed);
+    const taken = owned.get(bed);
+    const bm = sim.world.get(bed, ModuleC);
+    if (!pos || taken?.has(berth) || !bm || berth >= berthCount(sim.content.modules[bm.def]) || !wantsBed(sim, id) || !isIntactBed(sim, bed, shipIdOf(sim, pos))) sim.world.remove(id, BedOwnerC);
+    else if (taken) taken.add(berth);
+    else owned.set(bed, new Set([berth]));
   }
-  let free: Map<number, { id: number; x: number; y: number }[]> | undefined; // free beds by ship, built when someone needs one
+  let free: Map<number, { id: number; x: number; y: number; berths: number[] }[]> | undefined; // beds with an unowned berth by ship, built when someone needs one
   for (const id of sim.world.query(CrewC, NeedsC, PositionC)) {
     if (sim.world.has(id, BedOwnerC) || !wantsBed(sim, id)) continue;
     if (!free) {
@@ -41,11 +45,13 @@ export function bedOwnersSystem(sim: Sim): void {
       for (const bedId of sim.world.query(ModuleC)) {
         const m = sim.world.get(bedId, ModuleC) as { x: number; y: number; hp: number; def: string };
         const bd = sim.content.modules[m.def];
-        if (owned.has(bedId) || m.hp <= 0 || !bd?.bed || bd.medical) continue;
+        if (m.hp <= 0 || !bd?.bed || bd.medical) continue;
+        const berths = Array.from({ length: berthCount(bd) }, (_, i) => i).filter((i) => !owned.get(bedId)?.has(i));
+        if (berths.length === 0) continue;
         const ship = shipIdOf(sim, m);
         const list = free.get(ship);
-        if (list) list.push({ id: bedId, x: m.x, y: m.y });
-        else free.set(ship, [{ id: bedId, x: m.x, y: m.y }]);
+        if (list) list.push({ id: bedId, x: m.x, y: m.y, berths });
+        else free.set(ship, [{ id: bedId, x: m.x, y: m.y, berths }]);
       }
     }
     const pos = sim.world.get(id, PositionC) as { x: number; y: number };
@@ -60,7 +66,9 @@ export function bedOwnersSystem(sim: Sim): void {
       if (d < pickD) { pick = i; pickD = d; } // beds are listed by ascending id, so the first of equals wins
     }
     if (pick < 0) continue;
-    const [bed] = list.splice(pick, 1);
-    sim.world.add(id, BedOwnerC, { bed: (bed as { id: number }).id });
+    const bed = list[pick] as { id: number; berths: number[] };
+    const berth = bed.berths.shift() as number; // the lowest unowned berth
+    if (bed.berths.length === 0) list.splice(pick, 1);
+    sim.world.add(id, BedOwnerC, berth === 0 ? { bed: bed.id } : { bed: bed.id, berth });
   }
 }
