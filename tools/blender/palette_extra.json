@@ -3757,6 +3757,8 @@
   "r9Tan": {"hex": "#8f7a5c", "set": "bar9"},
   "r9Pad": {"hex": "#86735a", "set": "bar9"},
   "r9PadL": {"hex": "#a38f70", "set": "bar9"},
+  "r9Soot": {"hex": "#3e3934", "set": "bar9"},
+  "r9Core": {"hex": "#e0a050", "emissive": 0.8, "set": "bar9"},
   "r9PadD": {"hex": "#5f5040", "set": "bar9"},
   "r9Grey": {"hex": "#82858a", "set": "bar9"},
   "r9GreyD": {"hex": "#56595e", "set": "bar9"},
