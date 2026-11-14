@@ -36,6 +36,9 @@ export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock
   return best;
 }
 
+/** The eight neighbours, the four orthogonal ones first. */
+const RING = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
+
 /**
  * A dug station: the rock is its hull. Hull fill that borders outside and touches no room becomes '.' (the asteroid's rock mass
  * fills it); every wall beside a room stays (a finished rock wall once stamped), so rooms are carved into rock and every wall,
@@ -43,8 +46,11 @@ export function pickDock(t: ShipTemplate, defs: Record<string, ModuleDef>): Dock
  * frames and containers hanging outside the hull are dropped.
  */
 export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>): ShipTemplate {
-  // Outside cargo frames and the crates on them have no place in rock: the cargo rooms inside stay.
-  const t: ShipTemplate = { ...src, rows: src.rows.map((r) => r.replace(/=/g, '.')), modules: (src.modules ?? []).filter((m) => !defs[m.def]?.container) };
+  // Outside cargo frames and the crates on them have no place in rock: the cargo rooms inside stay. A frame tile that touches the
+  // inside (a diagonal past a hull corner) becomes wall, not rock mass, so it is dressed as that room's face like any other.
+  const near = (x: number, y: number): boolean => RING.some(([dx, dy]) => { const c = src.rows[y + dy]?.[x + dx] ?? '.'; return c !== '#' && c !== '.' && c !== '='; });
+  const frames = src.rows.map((row, y) => Array.from(row, (c, x) => (c === '=' ? (near(x, y) ? '#' : '.') : c)).join(''));
+  const t: ShipTemplate = { ...src, rows: frames, modules: (src.modules ?? []).filter((m) => !defs[m.def]?.container) };
   const keep = new Set<string>();
   for (const m of t.modules ?? []) {
     const def = defs[m.def];
@@ -58,10 +64,9 @@ export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>):
   const at = (x: number, y: number): string => t.rows[y]?.[x] ?? '.';
   // A wall that touches the inside (any neighbour, diagonals too) stays: it is the room's face, dressed rock once stamped, so
   // no raw rock pokes up where two wall runs meet. Only hull fill with no inside beside it goes back to rock mass.
-  const ring = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const;
-  const inside = (x: number, y: number): boolean => ring.some(([dx, dy]) => { const c = at(x + dx, y + dy); return c !== '#' && c !== '.'; });
+  const inside = (x: number, y: number): boolean => RING.some(([dx, dy]) => { const c = at(x + dx, y + dy); return c !== '#' && c !== '.'; });
   const rows = t.rows.map((row, y) => Array.from(row, (c, x) => (
-    c === '#' && !keep.has(`${x},${y}`) && !inside(x, y) && ring.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
+    c === '#' && !keep.has(`${x},${y}`) && !inside(x, y) && RING.slice(0, 4).some(([dx, dy]) => at(x + dx, y + dy) === '.') ? '.' : c)).join(''));
   return { ...t, rows };
 }
 
