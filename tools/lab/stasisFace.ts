@@ -120,13 +120,16 @@ function frame(q: V[]): { p0: V; u: V; v: V } {
 const FACE_ASPECT = 2;                              // the slab's face is 1.6 long by 0.8 wide (slab_study.py L, W)
 const FILL = 0.94;                                  // how much of the face's length the figure takes
 
-interface Field { a: Float32Array; l: Float32Array; w: number; h: number }
+/** a, l: coverage and luminance, supersampled; n, c: the figure's own pixel at the centre (coverage, rgb), pixel-sharp. */
+interface Field { a: Float32Array; l: Float32Array; n: Float32Array; c: Float32Array; w: number; h: number }
 
 /** Sample the figure into the face: coverage `a` and luminance `l` per sprite pixel (0 where the figure isn't). */
 function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>): Field {
   const { w, h } = sp;
   const a = new Float32Array(w * h);
   const l = new Float32Array(w * h);
+  const n = new Float32Array(w * h);
+  const cc = new Float32Array(w * h * 3);
   const det = fr.u[0] * fr.v[1] - fr.u[1] * fr.v[0];
   const hf = FILL;                                  // the figure's height as a fraction of the face's length
   const wf = (por.w / por.h) * FILL * FACE_ASPECT;  // and its width as a fraction of the face's width
@@ -144,13 +147,17 @@ function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>)
       if (px < 0 || py < 0 || px >= por.w || py >= por.h) continue;
       const k = (py * por.w + px) * 4;
       const al = por.d[k + 3]! / 255;
+      if (i === (SS >> 1) && j === (SS >> 1)) {
+        n[y * w + x] = al;
+        for (let ch = 0; ch < 3; ch++) cc[(y * w + x) * 3 + ch] = por.d[k + ch]!;
+      }
       sa += al;
       sl += al * (0.3 * por.d[k]! + 0.59 * por.d[k + 1]! + 0.11 * por.d[k + 2]!) / 255;
     }
     a[y * w + x] = sa / (SS * SS);
     l[y * w + x] = sa ? sl / sa : 0;
   }
-  return { a, l, w, h };
+  return { a, l, n, c: cc, w, h };
 }
 
 /** Box blur of a field over the face, `r` px, so the edge of the figure goes soft (as seen through frost or ice). */
@@ -233,12 +240,38 @@ const original: Variant = (o, i, _x, _y, { f }) => {
   for (let c = 0; c < 3; c++) o[c] = Math.min(255, o[c]! * sh) * 0.85 + tint[c]! * 0.15;
 };
 
-const VARIANTS: readonly [string, string, Variant][] = [
+/** Carbonite that keeps the sprite: a relief from the figure's sharp outline (lit top-left), and inside it the crew
+ * sprite's own pixels, their luminance at full range in the slab's cold tone; `keep` of the crew's own colour stays. */
+const sharpCarbonite = (keep: number, tone: number[], contrast: number): Variant => (o, i, _x, _y, { f }) => {
+  const w = f.w;
+  const on = (k: number): number => ((f.n[k] ?? 0) > 0.5 ? 1 : 0);
+  const tinted = [0, 1, 2].map((c) => mix(o[c]!, tone[c]!, 0.32));
+  if (!on(i)) {                                     // the slab round the figure: its shadow falls bottom-right
+    const sh = on(i - w - 1) ? 0.72 : 1;
+    for (let c = 0; c < 3; c++) o[c] = tinted[c]! * sh;
+    return;
+  }
+  const r = f.c[i * 3]!, g = f.c[i * 3 + 1]!, b = f.c[i * 3 + 2]!;
+  const lum = (0.3 * r + 0.59 * g + 0.11 * b) / 255;
+  let sh = 1 + (lum - 0.45) * contrast;
+  if (!on(i - w - 1) || !on(i - w)) sh += 0.32;      // the raised edge catches the light
+  else if (!on(i + w + 1) || !on(i + 1)) sh -= 0.28;
+  const grey = [r, g, b].map((v) => mix(lum * 255, v, 0.5));
+  for (let c = 0; c < 3; c++) o[c] = mix(tinted[c]! * sh, grey[c]! * (0.55 + 0.45 * sh), keep);
+};
+const ALL_VARIANTS: readonly [string, string, Variant][] = [
   ['O original study', 'shade + cut outline + field tint', original],
   ['A frosted glass', 'haze + soft shadow', frosted],
   ['B carbonite relief', 'tinted slab, raised, lit top-left', relief],
   ['C pressed under ice', 'dark deep, frozen rim, sheen', ice],
   ['D haze + rim', 'A haze with C rim and sheen', mixed],
+];
+const VARIANTS: readonly [string, string, Variant][] = [
+  ALL_VARIANTS[2]!,
+  ['E carbonite, sharp', "B's relief, the sprite's own shading pixel for pixel", sharpCarbonite(0, [88, 160, 190], 1.3)],
+  ['F carbonite, a little colour', 'E keeping 30% of the crew colours', sharpCarbonite(0.3, [88, 160, 190], 1.3)],
+  ['G carbonite, more colour', 'E keeping 55% of the crew colours', sharpCarbonite(0.55, [88, 160, 190], 1.3)],
+  ['H dark carbonite', 'E in a darker, greener slab tone', sharpCarbonite(0.15, [70, 110, 120], 1.6)],
 ];
 
 /** A new texture: the slab with every face pixel replaced by the press, or the sprite itself with no variant. */
@@ -321,7 +354,7 @@ export const stasisFacePanel: LabPanel = {
       const mask = faceMask(sp);
       const fr = frame(corners(mask, sp.w, sp.h));
       const fld = params.has('noface') ? null : sample(sp, mask, figs[row.look]!, fr);
-      const opts: [string, string, Variant | null][] = [['empty slab', 'as the sprite is', null], ...VARIANTS];
+      const opts: [string, string, Variant | null][] = [['empty slab', 'as the sprite is', null], ...(params.has('all') ? ALL_VARIANTS : VARIANTS)];
       const w = sp.w + PAD * 2;
       const h = sp.h + PAD * 2;
       opts.forEach(([label, note, v], j) => {
