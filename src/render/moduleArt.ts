@@ -1,4 +1,5 @@
 import type { World } from '../sim/ecs';
+import type { CrewLook } from './loadout';
 import { playingAt } from '../sim/ai/machines/leisureSpots';
 import { JobC, PositionC } from '../sim/crew/components';
 import { isSettled } from '../sim/crew/helpers';
@@ -223,6 +224,8 @@ export interface ModuleLayer {
   bed?: { lit: boolean };
   /** A hydroponics bed's crop layer: drawn from the art when it has the id, else from a code-drawn stand-in (render/cropOverlay.ts). */
   crop?: { crop: string; stage: 'sprout' | 'grow' | 'ripe' };
+  /** A full stasis slab's layer: the prisoner whose figure is pressed into its face (slabFace.ts). */
+  face?: CrewLook;
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
   /** A colour multiplied into this layer's art and glow (a status lamp drawn white, lit in the colour of its state). */
   tint?: number;

@@ -12,6 +12,7 @@ import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './compon
 import { dropSlab, liftSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
 import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
+import { turnsToLoad, stowWork } from './ring';
 import { SEAL_WORK, SLAB_ITEM } from './tuning';
 
 /**
@@ -160,6 +161,10 @@ function toWheel(sim: Sim, job: Job, st: StasisJob, prisoner: number, ship: numb
   st.wheel = wheel;
   delete st.from;
   aim(job, wheelHatch(sim, m));
+  const turns = Math.max(0, turnsToLoad(sim.world.get(wheel, StasisWheelC)?.slots ?? []));
+  st.turns = turns;
+  job.work = stowWork(turns);
+  job.progress = 0;
   return 'working';
 }
 
@@ -202,6 +207,10 @@ export function performStasis(sim: Sim, crew: number, job: Job, speed: number): 
     return toWheel(sim, job, st, prisoner, ship, me);
   }
   if (!cartsFor(sim, crew, prisoner)) return 'done';
+  if (st.wheel && wheelTakes(sim, st.wheel)) {
+    job.progress = Math.min(job.work, job.progress + speed);                    // the loading animation (render/stasisLoad.ts)
+    if (job.progress < job.work) return 'working';
+  }
   if (st.wheel && wheelTakes(sim, st.wheel) && stowSlab(sim, prisoner, st.wheel) >= 0) {
     sim.events.emit({ type: 'stasis.stowed', crew: prisoner, wheel: st.wheel, ship });
     return 'done';

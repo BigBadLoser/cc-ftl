@@ -6,6 +6,8 @@ import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 import { blockNow, hoursOf } from '../sim/crew/schedule';
+import { sealOf } from './sealSnapshot';
+import { stasisOf } from './stasisSnapshot';
 import { StunC } from '../sim/robots/components';
 import { guestHere, lodgingHere } from '../sim/consent/guests';
 
@@ -212,6 +214,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     arms: loc.shipId ? armsOn(sim, ctx, loc.shipId) : [],
     surrendered: sim.world.has(id, SurrenderedC),
     prisoner: sim.world.has(id, PrisonerC),
+    seal: sealOf(sim, id),
+    stasis: stasisOf(sim, id),
     inert: sim.world.has(id, InertC),
     fight: fightOf(sim, id),
     airless: !needsAir(sim, id),

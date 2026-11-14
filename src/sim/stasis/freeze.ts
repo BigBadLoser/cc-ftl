@@ -13,6 +13,7 @@ import type { Sim } from '../sim';
 import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC, type SlabSource } from './components';
 import { floorSpot, standSpot } from './place';
 import { slabPlace, wheelHatch, wheelOf } from './query';
+import { turnRing, turnsToLoad } from './ring';
 import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /** Take one empty slab out of a source. True if one was there. A wheel gives up its lowest slot holding one. */
@@ -91,22 +92,25 @@ export function dropSlab(sim: Sim, prisoner: number, ship: number, near: Tile): 
 }
 
 /**
- * Stand the slab in a slot of `wheel`: the lowest free slot, else the lowest one holding an empty slab (that slab is set out on the floor at the
- * hatch, for the haulers). Returns the slot, or -1 when the wheel is full.
+ * Stand the slab in a slot of `wheel`: the first slot holding nothing, else the first one holding an empty slab (that slab is set out on the floor at the
+ * hatch, for the haulers), after turning the wheel to bring it to the hatch (ring.ts). Once it is in, the wheel steps on once (the loading animation's
+ * closing star step), bringing the next slot to the hatch: the slab ends in the last slot. Returns that slot, or -1 when the wheel is full.
  */
 export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   const slots = sim.world.get(wheel, StasisWheelC)?.slots;
   const m = sim.world.get(wheel, ModuleC);
   const s = sim.world.get(prisoner, StasisC);
   if (!slots || !m || !s) return -1;
-  let slot = slots.indexOf(SLOT_NONE);
-  if (slot < 0) slot = slots.indexOf(SLOT_EMPTY);
-  if (slot < 0) return -1;
+  const turns = turnsToLoad(slots);
+  if (turns < 0) return -1;
+  turnRing(slots, turns);                                // the wheel turned: the slot comes to the hatch, slot 0
+  const slot = 0;
   const hatch = wheelHatch(sim, m);
   if (slots[slot] === SLOT_EMPTY) spillItems(sim, shipIdOf(sim, m), hatch.x, hatch.y, SLAB_ITEM, 1);
   slots[slot] = prisoner;
   Object.assign(s, { at: 'wheel', carrier: 0, x: hatch.x, y: hatch.y });
-  return slot;
+  turnRing(slots, 1);                                    // the closing star step: the next slot to the hatch
+  return slots.length - 1;
 }
 
 /** A wheel is built: every slot holds an empty slab. */

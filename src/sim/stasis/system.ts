@@ -1,7 +1,6 @@
 import { CarriedC, CrewC, DeadC, JobC, PositionC, type Job } from '../crew/components';
 import { isIncapacitated, origin } from '../crew/helpers';
 import { PrisonerC } from '../fight/components';
-import { destroyJob } from '../items/stacks';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
@@ -11,6 +10,7 @@ import { StasisC } from './components';
 import { dropSlab, thawPrisoner } from './freeze';
 import { keepCartRests } from './cart';
 import { aimFetch, pickWheel, stasisRoom } from './jobs';
+import { scrapSealJob, sealMarked } from './order';
 import { cartsFor, fullSlabs, slabDraining, slabHeld, wheelHatch, wheelOf } from './query';
 import { REFILL_PER_TICK, RESERVE_TICKS } from './tuning';
 
@@ -24,7 +24,7 @@ const ACT_WORK = 1;
  *  - reserve: a slab out of a powered wheel and off a cart drains one tick a tick, and its prisoner thaws, hostile, at 0; a slab in a powered
  *    wheel refills REFILL_PER_TICK a tick;
  *  - every PLAN_INTERVAL ticks the 'stasis' jobs (hauling) are kept or dropped, slabs on the floor get a pickup job and prisoners on the player's
- *    ships get a seal job, while the ship's wheels have room (`stasisRoom`) and, for a seal, an empty slab is to be had.
+ *    ships the player marked (stasis/order.ts) get a seal job, while the ship's wheels have room (`stasisRoom`) and, for a seal, an empty slab is to be had.
  */
 export function stasisSystem(sim: Sim): void {
   for (const id of fullSlabs(sim)) {
@@ -57,7 +57,7 @@ function planJobs(sim: Sim): void {
     const job = sim.world.get(jid, JobC) as Job;
     if (job.kind !== 'stasis') continue;
     if (keep(sim, job) && !handled.has(job.target ?? 0)) handled.add(job.target ?? 0);
-    else destroyJob(sim, jid);
+    else scrapSealJob(sim, jid);
   }
   const ships = playerShips(sim);
   const room = new Map<number, number>();
@@ -79,7 +79,7 @@ function planJobs(sim: Sim): void {
   for (const id of [...sim.world.query(PrisonerC, PositionC, CrewC)].sort((a, b) => a - b)) {
     const pos = sim.world.get(id, PositionC);
     const ship = shipIdOf(sim, pos);
-    if (!pos || handled.has(id) || !ships.has(ship) || !sealable(sim, id) || roomOf(ship) <= 0) continue;
+    if (!pos || handled.has(id) || !ships.has(ship) || !sealMarked(sim, id) || !sealable(sim, id) || roomOf(ship) <= 0) continue;
     const job: Job = { category: 'hauling', kind: 'stasis', x: pos.x, y: pos.y, struct: 0, work: ACT_WORK, progress: 0, reservedBy: 0, target: id, stasis: { phase: 'fetch' } };
     if (!aimFetch(sim, job, job.stasis!, ship, origin(pos))) continue; // no empty slab on this ship
     take(ship);
@@ -102,7 +102,7 @@ function keep(sim: Sim, job: Job): boolean {
   if (!st || !sim.world.has(prisoner, CrewC) || sim.world.has(prisoner, DeadC)) return false;
   if (st.phase === 'fetch' || st.phase === 'seal') {
     const pos = sim.world.get(prisoner, PositionC);
-    if (!pos || !sealable(sim, prisoner) || !playerShips(sim).has(shipIdOf(sim, pos))) return false;
+    if (!pos || !sealMarked(sim, prisoner) || !sealable(sim, prisoner) || !playerShips(sim).has(shipIdOf(sim, pos))) return false;
     if (job.reservedBy) {
       if (st.phase === 'seal') Object.assign(job, origin(pos));
       return true;

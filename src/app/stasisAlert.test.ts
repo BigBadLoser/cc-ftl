@@ -14,6 +14,7 @@ describe('stasis alert', () => {
     sim.step();
     const [prisoner] = newHostiles(sim, before);
     sim.enqueue({ type: 'debug.imprison', crew: prisoner as number });
+    sim.enqueue({ type: 'prisoner.seal', crew: prisoner as number, on: true });
     for (let i = 0; i < 4000 && slabPlace(sim, prisoner as number)?.kind !== 'wheel'; i++) sim.step();
     for (let i = 0; i < 3; i++) sim.step();
     expect(deriveAlerts(sim, () => false).has('sf')).toBe(false);

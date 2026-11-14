@@ -7,9 +7,10 @@ import { AllegianceC, SurrenderedC } from '../fight/components';
 import { surrender } from '../fight/surrender';
 import type { Sim } from '../sim';
 import { capturePrize, imprison, scuttle } from './prize';
+import { setSealOrder } from '../stasis/order';
 import { releasePrisoner, settleYielded } from './settle';
 
-type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'ship.settle' | 'prisoner.release' | 'debug.surrender' | 'debug.capture' | 'debug.imprison'>;
+type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'ship.settle' | 'prisoner.release' | 'prisoner.seal' | 'debug.surrender' | 'debug.capture' | 'debug.imprison'>;
 
 export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extract<Command, { type: T }>) => void } = {
   'ship.scuttle': (sim, cmd) => {
@@ -22,6 +23,10 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
   },
   'prisoner.release': (sim, cmd) => {
     const err = releasePrisoner(sim, cmd.crew);
+    if (err) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: err });
+  },
+  'prisoner.seal': (sim, cmd) => {
+    const err = setSealOrder(sim, cmd.crew, cmd.on);
     if (err) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: err });
   },
   'debug.surrender': (sim, cmd) => {

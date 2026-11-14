@@ -4,6 +4,8 @@ import type { World } from '../sim/ecs';
 import { PathC, PositionC } from '../sim/crew/components';
 import { cartRest, walking } from '../sim/stasis/query';
 import type { Atlas } from './assets/loader';
+import type { CrewLook } from './loadout';
+import type { SlabFaces } from './slabFace';
 import { cartAhead, restPose, turnToward, type CartPose, type Pt } from './cartPose';
 
 /**
@@ -12,21 +14,26 @@ import { cartAhead, restPose, turnToward, type CartPose, type Pt } from './cartP
  * behind them by the way they face). A look only: the sim has no cart object.
  */
 export interface CartSprite {
-  show(atlas: Atlas, id: string, flip: boolean, x: number, y: number, z: number, tint: number): void;
+  /** `prisoner`: the look of who is in the slab on it (their figure is pressed into its face), none for an empty slab. */
+  show(atlas: Atlas, id: string, flip: boolean, x: number, y: number, z: number, tint: number, prisoner?: CrewLook): void;
   hide(): void;
+  /** Whether the art point (ax, ay), in the parent's frame, is on the shown cart's sprite box; the y it sorts by when so. */
+  hit(ax: number, ay: number): number | null;
   destroy(): void;
 }
 
-export function createCart(parent: Container): CartSprite {
+export function createCart(parent: Container, faces?: SlabFaces): CartSprite {
   const root = new Container();
   const base = new Sprite();
   const glow = new Sprite();
   batchAdditive(glow);
-  root.addChild(base, glow);
+  const face = new Sprite();
+  face.visible = false;
+  root.addChild(base, face, glow);
   root.visible = false;
   parent.addChild(root);
   return {
-    show(atlas, id, flip, x, y, z, tint) {
+    show(atlas, id, flip, x, y, z, tint, prisoner) {
       const art = atlas.firstOf([id]);
       root.visible = !!art;
       if (!art) return;
@@ -35,6 +42,16 @@ export function createCart(parent: Container): CartSprite {
       // Flipped left-right about the anchor (the cart's middle): a mirrored heading (cartPose headingArt).
       base.scale.x = flip ? -1 : 1;
       base.position.set(flip ? art.ax : -art.ax, -art.ay);
+      // The prisoner's face, over the ring frame showing: baked once per heading from its first frame (slabFace.ts), and
+      // flipped with the cart (a mirrored heading shows the figure mirrored too).
+      const over = prisoner && faces?.face(id.replace(/\.f\d+$/, ''), art, prisoner)?.over;
+      face.visible = !!over;
+      if (over) {
+        face.texture = over;
+        face.tint = tint;
+        face.scale.x = base.scale.x;
+        face.position.copyFrom(base.position);
+      }
       glow.visible = !!art.glow;
       if (art.glow) {
         glow.texture = art.glow;
@@ -43,6 +60,12 @@ export function createCart(parent: Container): CartSprite {
       }
       root.position.set(x, y);
       root.zIndex = z;
+    },
+    hit(ax, ay) {
+      if (!root.visible || !base.texture) return null;
+      const lx = ax - root.x, ly = ay - root.y;
+      const w = base.texture.width, x0 = base.scale.x < 0 ? base.x - w : base.x;
+      return lx >= x0 && lx <= x0 + w && ly >= base.y && ly <= base.y + base.texture.height ? root.y : null;
     },
     hide() {
       root.visible = false;
