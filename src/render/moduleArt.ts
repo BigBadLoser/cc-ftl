@@ -328,7 +328,7 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
   if (def.leisure) return leisureLayers(main, a, r, active, look);
-  if (!def.console && !def.seated) return [main];
+  if (!def.console && !def.seated && !def.seats) return [main]; // a bench's front overlay (armrests, backrest) goes over its sitters too
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
 }

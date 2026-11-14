@@ -158,6 +158,15 @@ doesn't count.
 Build both from the **Life** tab. Each needs its play tiles clear (the arcade's front, the table's two stools), as with any
 module's access tile.
 
+### Furniture with no mood effect
+
+These are all built from the **Life** tab and change no mood yet:
+
+- **Bench:** three seats. Idle crew with nothing to do sit down on one now and then and get up after a few minutes; any job
+  calls them off it. Sitting is only for show: it is not a break and lifts no mood. Crew can walk across a bench like a bed.
+- **Bunk bed:** a bed with a lower and an upper deck. One crew member sleeps in it, like a bed.
+- **Sparring droid, planter and vending machines (two liveries):** decoration. The vending machines draw 1 power.
+
 <ComingLater>
 
 Comfort. Furniture and decor will add a fourth input to room quality. Until then no room rises above Decent.

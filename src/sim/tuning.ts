@@ -634,3 +634,10 @@ export const BOND_RIVAL_SPACE = 4;
 /** Working within BOND_FRIEND_WORK_RADIUS tiles of a friend who is working too: work speed x BOND_FRIEND_WORK_MULT. */
 export const BOND_FRIEND_WORK_RADIUS = 3;
 export const BOND_FRIEND_WORK_MULT = 1.05;
+
+/** Per-tick chance an idle crew member with a free bench seat in reach sits down (about once per 100 s of idling). */
+export const SIT_CHANCE = 0.0005;
+/** Longest walk (steps) to a bench seat an idle crew member will take. */
+export const SIT_MAX_STEPS = 8;
+/** How long a crew member stays seated: seconds, drawn evenly between the two (a few game minutes). */
+export const SIT_SEC: readonly [number, number] = [60, 180];

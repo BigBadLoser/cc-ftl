@@ -58,10 +58,12 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Zealot "augmented" crews:** a stand-in body; real implants are phase 7 (issue #311).
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
-- **Leisure furniture** (`module.bunk` 1x2 double bunk, `module.exercise` sparring droid, `module.bench` 2x1, `module.planter`,
-  `module.vending` and `module.vending_red`): art only, four rotations each (`tools/blender/sprites/leisure.py`). No defs; comfort
-  values on modules and decor are the next step of #441. The in-game single bed (`module.bed`) now uses the same family's matching
-  art (four rotations, damaged and destroyed per rotation).
+- **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
+  `module.bench` 2x1 (three seats; idle crew sit on it now and then, `sim/ai/machines/sit.ts`; a seat only, no mood and not a leisure
+  spot), `module.bunk` 1x2 (a bed like `module.bed`; sleeps ONE crew member, the lower deck: two sleepers need a per-bed capacity in
+  `crew/beds.ts`, open), `module.exercise` sparring droid, `module.planter`, `module.vending` and `module.vending_red` (decor only,
+  no effect; the vending machines draw 1 power). Comfort values on modules and decor are the next step of #441. The single bed
+  (`module.bed`) uses the same family's matching art (four rotations, damaged and destroyed per rotation).
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
 - **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
 - **Hyperlane gates, mining/farming/pirate "structures":** the map has gateway nodes and port kinds, not separate gate or structure objects for these.

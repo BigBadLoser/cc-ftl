@@ -12,6 +12,7 @@ import type { Task } from '../types';
 import { clearJoblessTask, derivable, setJoblessTask, syncTask } from '../task';
 import { stowSuit } from './eva';
 import { waitBySite } from './return';
+import { sitTurn } from './sit';
 
 /**
  * Jobless walks (generic machine, no job: `Navigate`): with nothing to do a crew member stows a worn suit, steps off a site
@@ -40,6 +41,7 @@ export function idleTurn(sim: Sim, id: number, crew: Crew, pos: Position, idleDr
   if (waitBySite(sim, id, pos)) return; // on an away site: wait by the shuttle, suited
   if (stowSuit(sim, id, pos)) return;
   if (idleDrives?.()) return;
+  if (sitTurn(sim, id, crew, pos)) return; // a seat on a bench, now and then
   if (strollTurn(sim, id, pos)) return setJoblessTask(sim, id, 'leisure', 'generic', 'Navigate');
   wander(sim, id, pos, crew, t);
 }

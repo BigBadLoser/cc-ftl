@@ -35,6 +35,7 @@ import { BED_LIFT, bedPose } from './bedPose';
 import { POD_LIFT, podPose } from './podPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 import { playSpot } from '../sim/ai/machines/leisureSpots';
+import { seatedOn } from '../sim/ai/machines/sit';
 
 export interface CrewViewHost {
   /** True when the ship has no running power source (emergency lighting). */
@@ -125,6 +126,8 @@ const HAND: readonly (readonly [number, number])[] = ([[7, 3], [0, 5], [-7, 3], 
 const HAND_Y = -19 * S;
 /** Seated operator direction per console rotation (faces the desk: r0 -y, r1 +x, r2 +y, r3 -x; consoles.py SEAT_DIR). */
 const SEAT_DIR = [6, 0, 2, 4];
+/** Crew direction facing a bench's front (+v) per bench rotation (bench.py facing; tools/lab/bench.ts FACING). */
+const BENCH_DIR = [2, 4, 6, 0];
 /** A robot docked in a bay cradle faces away from the tower (robot_bay.py: r0 6, r1 0, r2 2, r3 4): same table. */
 
 export function createCrewView(world: World, atlas: Atlas, L: Layers, host: CrewViewHost, crews: CrewAtlas): CrewView {
@@ -289,6 +292,9 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         }
         let tx = pos.x + (pos.toX - pos.x) * pos.progress;
         let ty = pos.y + (pos.toY - pos.y) * pos.progress;
+        // Seated on a bench: at the seat's exact sub-tile point (sim/ai/machines/sit.ts owns where it is), not the tile's centre.
+        const bench = host.modules && !world.has(id, DeadC) && !world.has(id, DownedC) ? seatedOn(world, host.modules, id) : null;
+        if (bench) [tx, ty] = [bench.x, bench.y];
         // Drifting between a hovering shuttle and this hull: along the line to the shuttle's hatch (EvaFloat, sector tiles,
         // whose tile centres are at +0.5), facing the way it goes.
         const drift = world.get(id, EvaFloatC);
@@ -337,7 +343,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         const play = !hurtLying && host.modules ? playSpot(world, host.modules, id, mx, my) : null; // on a leisure spot's tile, playing
         const stool = play?.seat ? { ...play, seat: play.seat } : null; // a game table's stool: seated, facing the table
         const playing = !!play && !stool && speed <= 0.3; // an arcade cabinet: standing at it, at work, facing it
-        const sitting = ((!!chair && chair.x === mx && chair.y === my) || !!stool) && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips[stool ? SEAT_CLIP[stool.seat] : 'sit_idle']);
+        const seatKind = stool?.seat ?? bench?.kind;
+        const sitting = ((!!chair && chair.x === mx && chair.y === my) || !!stool || !!bench) && !hurtLying && speed <= 0.3 && s.parts.some((q) => q.layer.def.clips[seatKind ? SEAT_CLIP[seatKind] : 'sit_idle']);
         // Creature sheets (aliens) carry `attack`, `hurt` and `dead`: an attack (the fight cooldown restarting) or a hit
         // (hp dropping) plays its clip once; a dead one lies as its `dead` corpse.
         const has = (c: string) => s.parts.some((q) => q.layer.def.clips[c]);
@@ -361,11 +368,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.lastHp = hpNow;
         s.lastCooldown = cd;
         if (s.shot && (hurtLying || s.t >= s.shot.until)) s.shot = null;
-        const clipName = pod ? 'idle' : hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (stool ? SEAT_CLIP[stool.seat] : crew.activity === 'working' ? 'sit_work' : 'sit_idle') : playing ? 'work' : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
+        const clipName = pod ? 'idle' : hurtLying ? (dead && has('dead') ? 'dead' : has('wreck') ? 'wreck' : 'sleep') : sitting ? (seatKind ? SEAT_CLIP[seatKind] : crew.activity === 'working' ? 'sit_work' : 'sit_idle') : playing ? 'work' : s.shot?.clip ?? (gun ? stanceClip(gun.family, { engaged: nowSec < s.engagedUntil, moving: speed > 0.3 }) : null) ?? clipFor(crew.activity, speed > 0.3, flight);
         const docked = crew.activity === 'charging' && !!at?.def.robotBay && !hurtLying;
         // A sleeper in a bed lies along it, head on the pillow, centred on its footprint and raised to the mattress.
         const bed = clipName === 'sleep' && !carried && !dead && !downed && speed <= 0.3 && at?.def.bed ? bedPose(at.def, at.m.x, at.m.y, at.m.rot, !!atlas.manifest.assets[`${at.def.asset}.r${at.m.rot % 4}`]) : null;
-        const dir = pod ? pod.dir : bed ? bed.dir : sitting && stool ? (SEAT_DIR[(stool.m.rot + (stool.index === 0 ? 0 : 2)) % 4] as number) : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : playing && play ? (SEAT_DIR[play.m.rot % 4] as number) : facing; // a console's operator and an arcade player face the module alike
+        const dir = pod ? pod.dir : bed ? bed.dir : sitting && bench ? (BENCH_DIR[bench.m.rot % 4] as number) : sitting && stool ? (SEAT_DIR[(stool.m.rot + (stool.index === 0 ? 0 : 2)) % 4] as number) : (sitting || docked) && at ? (SEAT_DIR[at.m.rot % 4] as number) : playing && play ? (SEAT_DIR[play.m.rot % 4] as number) : facing; // a console's operator and an arcade player face the module alike
         s.shadow.visible = !sitting && !bed && !pod; // a sleeper in a bed lies on the mattress: no floor shadow under the bed
         if (clipName !== s.clip) {
           if (s.shot && clipName === s.shot.clip) s.shot.until -= s.t;
@@ -392,6 +399,11 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           // A seated player of a game table sorts at the table's seat depth like a console's operator (not by their own tile): the table body is under them and the front overlay, the stool back and table edge, is over them.
           const f = footprintTiles(stool.def, stool.m.x, stool.m.y, stool.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
           z = moduleKey(stool.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ;
+        }
+        if (bench && sitting) {
+          // Seated on a bench: at the bench's seat depth (its body is under them, its front overlay over them), the three sitters ordered by their own point.
+          const f = footprintTiles(bench.def, bench.m.x, bench.m.y, bench.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
+          z = moduleKey(bench.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ + 0.004 * (bench.x + bench.y - f.x - f.y);
         }
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);

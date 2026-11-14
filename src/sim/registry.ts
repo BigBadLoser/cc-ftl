@@ -470,7 +470,7 @@ export interface AirlockLayout {
 export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 
 /** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
-export type SeatKind = 'stool';
+export type SeatKind = 'stool' | 'bench';
 
 export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
 
@@ -552,6 +552,12 @@ export interface ModuleDef {
    */
   /** A leisure spot: one crew member plays at each of its access tiles (`accessTiles`). */
   leisure?: { kind: 'social' | 'solo'; seat?: SeatKind };
+  /**
+   * Seats idle crew sit on (sim/ai/machines/sit.ts, the one owner): `at` are the seat points in local tiles at rotation 0, as offsets (u along the footprint's
+   * long side, v towards its front) from the footprint's centre; they rotate with the module. A seat takes one sitter and has no mood effect.
+   * `kind` names the crew clip (render/loadout.ts SEAT_CLIP).
+   */
+  seats?: { kind: SeatKind; at: [number, number][] };
   workstation?: true;
   /** A research module: crew work the ship's active research project here (sim/research). Several on a ship speed the one project up. */
   research?: true;

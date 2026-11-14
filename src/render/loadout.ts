@@ -94,7 +94,7 @@ export function clipFor(activity: string, moving: boolean, floating = false): st
 }
 
 /** The sit clip of a seat kind. Consoles and seated modules use `sit_idle`/`sit_work`, cut against the console chair; a seat of another shape has a work clip cut against that shape (players are always at work) (tools/blender/sprites/human_stool.py). */
-export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool_work' };
+export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool_work', bench: 'sit_bench' };
 
 /**
  * Clips to try, after the requested one, when a layer has no sheet for it. A layer lacking a clip is normal (sheets are

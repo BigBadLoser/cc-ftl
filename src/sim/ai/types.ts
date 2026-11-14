@@ -8,7 +8,7 @@
 export type DriveId = 'work' | 'sleep' | 'eat' | 'recharge' | 'leisure' | 'air' | 'return' | 'idle' | 'recover';
 
 /** The executor machines (section 6). `generic` covers simple jobs and jobless walks. */
-export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge' | 'escape' | 'leisure' | 'return' | 'break';
+export type MachineId = 'generic' | 'haul' | 'rescue' | 'eva' | 'eat' | 'sleep' | 'charge' | 'escape' | 'leisure' | 'return' | 'break' | 'sit';
 
 /** How a task may be interrupted (section 5): abandon now, at a safe point, only when done, or only by hard reasons. */
 export type TaskClass = 'any' | 'safe' | 'finish' | 'hold';
