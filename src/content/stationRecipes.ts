@@ -42,7 +42,9 @@ const compound = (name: string, o: {
 }): Recipe => ({
   name,
   ...(o.quarters ? { quarters: o.quarters } : {}),
-  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'market'], outline: o.outline, cut: 2, inner: o.inner, ...(o.gap ? { gap: o.gap } : {}) },
+  // A 'disc' is no longer the stepped lattice ring (the user: "it's the lattice and the gaps it's leaving"): a square
+  // cut to eight sides with its corners rounded, as the bazaar's.
+  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'market'], ...(o.outline === 'disc' ? { outline: 'square', cut: 'octagon', round: true } : { outline: 'square', cut: 2 }), inner: o.inner, ...(o.gap ? { gap: o.gap } : {}) },
   spacing: 2,
   branches: [
     { takes: ['works', 'freight'], per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
