@@ -156,7 +156,7 @@ export const stations = {
     weapons: { light: LIGHT, heavy: HEAVY }, shields: [{ value: 'module.shieldGen', weight: 1 }],
     transition: { slope: 2, max: 4, jitter: 0, label: 'taper' },
     stock: [{ item: 'item.metal', min: 2, max: 6 }, { item: 'item.missile', min: 2, max: 6 }, { item: 'item.electronics', min: 0, max: 3 }],
-    tiers: tiers({ bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 2, 2), shapes: SHAPES.military }),
+    tiers: tiers({ bays: per(0, 1, 2), guns: per(4, 12, 24), heavyPct: 50, shields: per(2, 4, 6), pd: per(2, 4, 6), crates: per(6, 14, 28), docks: per(2, 3, 3), shapes: SHAPES.military }),
     rooms: [armoury(per(1, 2, 4), 6)],
     // Drone bays (two drones a bay) in rooms of two: the depot's own patrol. Defence, not works.
     assemblyAlso: [{ ...room('hangar', n(2, 'module.droneBay'), 6, 4, per(1, 2, 3)), dept: 'defence' }],
