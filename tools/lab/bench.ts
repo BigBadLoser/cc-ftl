@@ -2,6 +2,9 @@ import { Container, Sprite } from 'pixi.js';
 import type { ClipDef } from '../../src/render/assets/manifest';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
 import { drawLayers } from '../../src/render/crewSprites';
+import { content } from '../../src/content';
+import { rotatedSize } from '../../src/sim/modules/footprint';
+import { seatPoints } from '../../src/sim/ai/machines/sit';
 import { iso } from '../../src/render/iso';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
@@ -9,17 +12,18 @@ import type { LabCell, LabCtx, LabPanel } from './panel';
 
 const A = 'module.bench';
 const CLIP = 'sit_bench';
-/** Seats in local tiles (tools/blender/sprites/bench.py SEATS: bench_r13 SEATS / 32, SIT_V). */
-const SEATS = [[-0.6, -0.11], [0, -0.11], [0.6, -0.11]] as const;
+/** Seats in local tiles (tools/blender/sprites/bench.py SEATS: bench_r13 SEATS / 32, SIT_V): the game's own def (content/modules.ts), so the lab and the game cannot drift. */
+const BENCH = content.modules['module.bench'];
+const SEATS = BENCH.seats!.at;
 /** Crew direction facing the bench's front (+v) per rotation (bench.py facing). */
 const FACING = [2, 4, 6, 0] as const;
 const CAST = [{ seed: 11, role: 'role.engineer' }, { seed: 22, role: 'role.medic' }, { seed: 33, role: 'role.gunner' }];
 
-/** modkit.K.p for the 2x1 footprint, relative to the front-most tile (the sprite's anchor). */
-function seatAt(rot: number, u: number, v: number): { x: number; y: number } {
-  const [x, y] = ([[u, v], [-v, u], [-u, -v], [v, -u]] as const)[rot] as readonly [number, number];
-  const [w, d] = rot % 2 === 0 ? [2, 1] : [1, 2];
-  return { x: x - (w - 1) / 2, y: y - (d - 1) / 2 };
+/** The seat point relative to the front-most tile (the sprite's anchor): the game's `seatPoints` (sim/ai/machines/sit.ts), which crewView draws sitters at. */
+function seatAt(rot: number, k: number): { x: number; y: number } {
+  const [w, d] = rotatedSize(BENCH, rot);
+  const p = seatPoints(BENCH, { x: 0, y: 0, rot })[k] as { x: number; y: number };
+  return { x: p.x - (w - 1), y: p.y - (d - 1) };
 }
 
 function sprite(ctx: LabCtx, root: Container, id: string, x: number, y: number): void {
@@ -64,7 +68,7 @@ export const benchPanel: LabPanel = {
           }
           sprite(ctx, root, `${A}.r${rot}`, ox, oy);
           if (!seated) return () => {};
-          const seats = SEATS.map(([u, v], k) => ({ ...seatAt(rot, u, v), k })).sort((a, b) => a.x + a.y - (b.x + b.y));
+          const seats = SEATS.map((_, k) => ({ ...seatAt(rot, k), k })).sort((a, b) => a.x + a.y - (b.x + b.y));
           const figures = seats.map(({ x, y, k }) => {
             const p = iso(x, y);
             const body = new Container();

@@ -43,9 +43,32 @@ function put(sim: Sim, x: number, y: number, rot = 0): number {
   sim.world.add(id, ModuleC, { def: 'module.bench', x, y, rot, hp: 10, enabled: true, powered: false, powerPriority: 0, reservedBy: 0 } as never);
   return id;
 }
+/** render/iso.ts `iso` (a sim test cannot import render): 2:1 projection, 128x64 tiles. */
+const iso = (gx: number, gy: number): { x: number; y: number } => ({ x: (gx - gy) * 64, y: (gx + gy) * 32 });
 const near = (a: number, b: number): void => expect(a).toBeCloseTo(b, 6);
 
 describe('bench seats', () => {
+  it('lands sitters where the lab panel puts them: the screen offset from the bench sprite anchor (its front tile) at every rotation', () => {
+    // The lab's own formula (tools/lab/bench.ts, verified against the sprites): local (u, v) turned by rotation, relative to the front-most tile.
+    const SEATS = [[-0.6, -0.11], [0, -0.11], [0.6, -0.11]] as const;
+    const lab = (rot: number, u: number, v: number) => {
+      const [x, y] = ([[u, v], [-v, u], [-u, -v], [v, -u]] as const)[rot] as readonly [number, number];
+      const [w, d] = rot % 2 === 0 ? [2, 1] : [1, 2];
+      return iso(x - (w - 1) / 2, y - (d - 1) / 2);
+    };
+    for (let rot = 0; rot < 4; rot++) {
+      const [w, d] = rot % 2 === 0 ? [2, 1] : [1, 2];
+      const m = { x: 7, y: 3, rot };
+      const front = { x: m.x + w - 1, y: m.y + d - 1 }; // moduleView anchors the sprite at tile (front.x, front.y), crewView draws a sitter at iso(seat point)
+      SEATS.forEach(([u, v], k) => {
+        const p = seatPoints(bench, m)[k]!;
+        const got = iso(p.x - front.x, p.y - front.y), want = lab(rot, u, v);
+        near(got.x, want.x);
+        near(got.y, want.y);
+      });
+    }
+  });
+
   it('puts the three seats where the lab panel does, at all four rotations (offsets from the footprint centre, rotated)', () => {
     const at = (rot: number) => seatPoints(bench, { x: 4, y: 2, rot });
     // r0: footprint 2x1 at (4,2): centre (4.5, 2).
