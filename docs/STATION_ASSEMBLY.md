@@ -186,8 +186,14 @@ ring"). `street: Dept[]` on a ring root puts those departments on the street fir
 (`half ring: works down the spine, quarters on one tip, machinery on the other`) has its labs on the spine and its
 cabins in a block on the tip (the user: "labs should be on the center spine, not cabins").
 
-Still open: harbours in narrower, longer arrangements to fit the parts they join (the user: "we need different harbor
-arrangement support"); military's guns crowding the street; military hubs (the harbour block has two armouries' room).
+Harbours: the compound rings take the pier (`harbour('head')`, the crescent's pier head on a rim port): a street out
+from the face with the harbour rooms down both sides at one depth, customs and the airlock hall at its head. Picked
+by the user from zoomed mocks (block, pier, long quay, side pier). Military hubs failed because the harbour section
+held six rooms and a hub's harbour has seven; the seventh went to a second section after a pier head, which ends its
+branch, and was dropped without a word. A branch now fails when a section ends it with rooms left over, and the
+compound's harbour section holds ten.
+
+Still open: military's guns crowding the street; the square at military hub size is 161 wide (cap 160).
 
 ## The bazaar ring (trade stations): prototype
 

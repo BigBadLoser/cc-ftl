@@ -100,7 +100,9 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
       taken();
       a.sections++;
       end = ps.find((p) => p.kind === 'end') ?? null;
-      if (last || !end) break;
+      if (last) break;
+      // Rooms are left for further sections but this one ends the branch (a pier head): never drop them quietly.
+      if (!end) return fail();
       const from = end, len = roll(rng, rule.link);
       end = null;
       if (len === 0) { port = from; continue; } // joined directly: the next section starts where this one's street ends
