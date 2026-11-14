@@ -16,6 +16,11 @@ stacked little zigzags). Here:
   vm1c23b wider strokes
   vm1c23c the pen line as a looser S
 
+APPROVED (user, 2026-11-14): vm1c23a is the vending machine. 21a's machine (19e livery: rising zigzag teal wrap
+with taller teeth, the switchback pen line shifted half a tooth, soft side gradient; 18% darker bright snack bags,
+two rows of cans one flavour per column, keypad B off the corner, pickup slot A; round 3's locked back) with this
+roof. A final render needs SPRITE_SAMPLES=64 (pale tops mottle at fewer).
+
 Uses round 21's machine (r20/r21 front pieces, r10 body, r15 painter, 19e look). SPRITE_SAMPLES=64."""
 from . import vending_r10 as R
 from . import vending_r15 as V
