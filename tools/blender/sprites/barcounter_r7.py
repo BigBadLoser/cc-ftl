@@ -21,12 +21,12 @@ FP3, FP2 = (3, 2), (2, 2)
 BOTTLES = ("r7Amber", "r7Ruby", "r7Mint", "r7Glass")
 
 
-def hcyl(k, u0, u1, v, zc, r, col):
-    """A cylinder lying along u from u0 to u1 px, axis at depth v and height zc px, radius r px: three square boxes
-    turned 30 deg apart about the axis (a dodecagon)."""
+def hcyl(k, u0, u1, v, zc, r, col, n=3):
+    """A cylinder lying along u from u0 to u1 px, axis at depth v and height zc px, radius r px: n square boxes turned
+    90/n deg apart about the axis (n = 3: a dodecagon)."""
     R = r / 32
-    for i in range(3):
-        k.box((u0 + u1) / 64, v / 32, zc / ZPX - R, (u1 - u0) / 32, 2 * R, 2 * R, col, rx=i * math.pi / 6)
+    for i in range(n):
+        k.box((u0 + u1) / 64, v / 32, zc / ZPX - R, (u1 - u0) / 32, 2 * R, 2 * R, col, rx=i * math.pi / 2 / n)
 
 
 def cask(k, u0, u1, v, zc, r):

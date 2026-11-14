@@ -16,7 +16,8 @@ NAMES = {"c1": "C1  diner", "c2": "C2  lounge", "c3": "C3  neon",
          "g1": "G1  galley bar", "g2": "G2  brew bar", "g3": "G3  rack bar",
          "h1": "H1  island bar", "h2": "H2  container bar", "h3": "H3  robot bar",
          "j1": "J1  still bar", "j2": "J2  pod bar", "j3": "J3  garden bar",
-         "k1": "K1  cryo bar", "k2": "K2  lab bar", "k3": "K3  fuel bar"}
+         "k1": "K1  cryo bar", "k2": "K2  lab bar", "k3": "K3  fuel bar",
+         "l1": "L1  arc bar", "l2": "L2  galley bar", "l3": "L3  tank bar"}
 CW, CH = 280, 220
 
 
