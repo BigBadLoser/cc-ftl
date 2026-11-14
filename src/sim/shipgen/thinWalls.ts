@@ -153,15 +153,21 @@ export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
   }
 
   // 2. Double (and triple) partitions and double hulls: floor A | wall | wall (| wall) | floor B (or space) in a straight
-  // line. One wall per round folds into the room beside it; three rounds thin a triple seam to one wall.
+  // line. One wall per round folds into the room beside it; three rounds thin a triple seam to one wall. A tile folded in an
+  // earlier round only folds on along its own line (the rest of that seam), never sideways into a second seam: a room
+  // grows one wall deep across a seam and stays the box it was drawn, not an L wrapping round a neighbour's corner.
+  const along = new Map<number, number>();
   for (let round = 0; round < 3; round++) {
-    const fold: [number, number][] = [];
+    const fold: [number, number, number][] = [];
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         if (c[y * S + x] !== '_') continue;
         const A = lab[y * S + x] as number;
         if (A < 0 || !o.canGrow(A)) continue;
-        for (const [dx, dy] of N4) {
+        const line = along.get(y * S + x);
+        for (let d = 0; d < N4.length; d++) {
+          if (line !== undefined && line !== d) continue;
+          const [dx, dy] = N4[d]!;
           const w = at(x + dx, y + dy);
           const w2 = at(x + 2 * dx, y + 2 * dy);
           if ((w !== '#' && w !== 'D') || (w2 !== '#' && w2 !== 'D') || nearSpace(x + dx, y + dy)) continue;
@@ -170,7 +176,7 @@ export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
           const k = at(x + 3 * dx, y + 3 * dy) === '#' && w2 === '#' ? 4 : 3;
           const b = at(x + k * dx, y + k * dy);
           // A double hull (floor | wall | hull | space): the inner wall becomes floor, the outline stays.
-          if (b === '.' && k === 3 && w === '#') { fold.push([(y + dy) * S + x + dx, A]); continue; }
+          if (b === '.' && k === 3 && w === '#') { fold.push([(y + dy) * S + x + dx, A, d]); continue; }
           if (b !== '_') continue;
           const B = lab[(y + k * dy) * S + x + k * dx] as number;
           if (B === A) continue;
@@ -181,12 +187,12 @@ export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
             if (dy !== 0 && (off(y) < off(y + k * dy) || (off(y) === off(y + k * dy) && dy < 0))) continue;
             if (dx !== 0 && dx < 0) continue;
           }
-          fold.push([(y + dy) * S + x + dx, A]);
+          fold.push([(y + dy) * S + x + dx, A, d]);
         }
       }
     }
     let n = 0;
-    for (const [kk, A] of fold) {
+    for (const [kk, A, d] of fold) {
       const kx = kk % S;
       const ky = (kk - kx) / S;
       let ok = c[kk] === '#' || c[kk] === 'D';
@@ -197,6 +203,7 @@ export function thinWalls(cv: Canvas, o: ThinOpts): ThinStats {
       if (!ok) continue;
       c[kk] = '_';
       lab[kk] = A;
+      along.set(kk, d);
       n++;
     }
     out.folded += n;
