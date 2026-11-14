@@ -11,10 +11,16 @@ Then (user: "something like a with a little more coverage"):
   vm1c22e the same three strokes wider still
   vm1c22f four strokes over the right and front edges, a longer pen line across the whole roof
 
+Then (user: the purple is a little sharp, and the teal reads as three triangles rather than a zigzag): the roof's
+teal becomes one zigzag ribbon like the side's (long wide legs one way, thinner legs back, overlapping), and the pen
+line is splined so its turns are rounded:
+  vm1c22g three teeth · vm1c22h four smaller teeth · vm1c22i three bigger teeth, the pen line further forward
+
 Uses round 21's machine (r20/r21 front pieces, r10 body, r15 painter, 19e look). SPRITE_SAMPLES=64."""
 import math
 
 from . import vending_r10 as R
+from .exercise_r4 import spline
 from . import vending_r15 as V
 from . import vending_r20 as W
 from . import vending_r21 as X
@@ -59,8 +65,50 @@ ROOFS = {  # teal strokes (points, start width, end width) and the pen line, in 
 }
 
 
+def zig_roof(a, b, n, amp, fwd):
+    """A zigzag along the roof from a to b: n teeth, each a long leg across to the far side of the base line then a
+    shorter one back (fwd > 1: the next tooth starts behind where this leg ended, as on the side)."""
+    du, dv = b[0] - a[0], b[1] - a[1]
+    L = math.hypot(du, dv)
+    tu, tv, nu, nv = du / L, dv / L, -dv / L, du / L
+    step = L / n
+
+    def at(t, side):
+        u, v = a[0] + tu * t + nu * amp * side, a[1] + tv * t + nv * amp * side
+        return (max(-11.8, min(12.7, u)), max(-10.8, min(7.8, v)))
+    pts = [at(0, 1)]
+    for k in range(n):
+        pts += [at(k * step + fwd * step, -1), at((k + 1) * step, 1)]
+    return pts
+
+
+def zig_strokes(pts, wd, wu):
+    """The zigzag as brush legs: wide tapering legs one way, thinner legs back, each run on a little past its ends
+    so the joints close."""
+    out = []
+    for i, (p, q) in enumerate(zip(pts, pts[1:])):
+        du, dv = q[0] - p[0], q[1] - p[1]
+        L = math.hypot(du, dv) or 1.0
+        e = 1.2 / L
+        p2, q2 = (p[0] - du * e, p[1] - dv * e), (q[0] + du * e, q[1] + dv * e)
+        out.append(([p2, q2], wd, wd * 0.35) if i % 2 == 0 else ([p2, q2], wu * 0.6, wu))
+    return out
+
+
+ZIGS = {  # base line start and end, teeth, amplitude, forward reach (in steps), leg widths; and the pen line
+    "g": ((12.0, 3.0), (-11.0, -9.0), 3, 6.0, 1.3, 9.0, 4.5, [(12.7, -1.0), (2, -3), (6, -6.5), (-5, -8.5), (-2, -11)]),
+    "h": ((12.0, 3.0), (-11.0, -9.0), 4, 5.5, 1.3, 7.5, 3.5, [(12.7, -1.0), (2, -3), (6, -6.5), (-5, -8.5), (-2, -11)]),
+    "i": ((12.0, 2.0), (-11.0, -8.5), 3, 7.5, 1.35, 11.0, 5.0, [(12.7, 5.5), (1, 1), (5, -3), (-6, -5.5), (-3, -9)]),
+}
+
+
 def livery_top(k, roof="a"):
-    strokes, pen = ROOFS[roof]
+    if roof in ZIGS:
+        a, b, n, amp, fwd, wd, wu, pen = ZIGS[roof]
+        strokes = zig_strokes(zig_roof(a, b, n, amp, fwd), wd, wu)
+        pen = spline(pen, 6)                                                       # rounded turns
+    else:
+        strokes, pen = ROOFS[roof]
     for pts, w0, w1 in strokes:
         ribbon(k, pts, w0, w1, "jzTeal")
     ribbon(k, [(u + 0.6, v - 0.6) for u, v in pen], 1.2, 1.2, "jzMagenta", ZT + 0.02)   # over the teal
@@ -105,7 +153,7 @@ def make(name):
             W.cans(k)
             X.keypad(k)
             W.tray(k, "a")
-            if style in ROOFS:
+            if style in ROOFS or style in ZIGS:
                 livery_top(k, style)
             if style == "c":
                 hardware(k)
@@ -119,7 +167,8 @@ def make(name):
     return f
 
 
-DESIGNS = {n: make(n) for n in ("vm1c22a", "vm1c22b", "vm1c22c", "vm1c22d", "vm1c22e", "vm1c22f")}
+DESIGNS = {n: make(n) for n in ("vm1c22a", "vm1c22b", "vm1c22c", "vm1c22d", "vm1c22e", "vm1c22f",
+                                 "vm1c22g", "vm1c22h", "vm1c22i")}
 
 
 def jobs():
