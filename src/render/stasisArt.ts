@@ -1,4 +1,5 @@
 import type { World } from '../sim/ecs';
+import { CrewC } from '../sim/crew/components';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { slabDrainingIn, wheelSlots, type WheelSlot } from '../sim/stasis/query';
@@ -37,8 +38,10 @@ export const pulseLit = (now: number): boolean => Math.floor(Math.max(0, now) / 
  * while a lamp is red (the only time the wheel's art moves with the clock).
  */
 export function stasisInputs(world: World, id: number, now: number): string {
-  const lamps = wheelSlots(world, id).map((s) => lampOf(world, s));
-  return lamps.join(',') + (lamps.includes('red') ? `|${pulseLit(now) ? 1 : 0}` : '');
+  const slots = wheelSlots(world, id);
+  const lamps = slots.map((s) => lampOf(world, s));
+  // Who is in each full slab: a different prisoner is a different face.
+  return lamps.join(',') + '|' + slots.map((s) => (s.kind === 'full' ? s.prisoner : 0)).join(',') + (lamps.includes('red') ? `|${pulseLit(now) ? 1 : 0}` : '');
 }
 
 /** Slots back to front for rotation `rot`: the order full slots are drawn in (fixed: the wheel rests in whole steps). */
@@ -58,7 +61,9 @@ export function stasisLayers(
   slotOrder(m.rot).forEach((i, k) => {
     if ((slots[i]?.kind ?? 'none') === 'none') return;
     const sid = `${def.asset}.slot${i}.r${m.rot}`;
-    out.push({ chain: [sid], key: `${def.asset}.slot${i}`, tiles: 'all', dz: DZ * (k + 1), optional: true });
+    const s = slots[i];
+    const face = s?.kind === 'full' ? world.get(s.prisoner, CrewC) : undefined;
+    out.push({ chain: [sid], key: `${def.asset}.slot${i}`, tiles: 'all', dz: DZ * (k + 1), optional: true, face });
   });
   // The rim gauge, on the canopy's top over everything inside: one segment per slot, lit in its state's colour (dark in the base), red pulsing.
   const lit = pulseLit(look?.now ?? 0);
