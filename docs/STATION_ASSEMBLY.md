@@ -211,10 +211,11 @@ middle, 124 to 134 tiles wide at hub size. Its replacement, picked from a mock o
 ends, or on the hall's corners) as F2: a `fort` root (`assembly/fort.ts`). A parade hall at the centre (the drill hall,
 later), and an arm off each side on a four-tile neck: the harbour pier north, the works, freight and drone bays east,
 the barracks and messes south, the machinery west behind its gate. In each corner between two arms a gun battery,
-one room holding a quarter of the guns (shared out by floor): a 45-degree diamond on the corner's diagonal, its inner
-point in the hall's corner so it opens onto the hall, its outer point the bastion's, cut off by the arms either side.
-It grows a tile at a time until its floor is twice its guns' bays plus 20 tiles, and keeps no tile that only a corner
-holds. It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
+one room holding a quarter of the guns (shared out by floor): a point on the corner's diagonal whose sides fall back
+a tile and a half for every tile across, so it reaches out between the arms and wraps the hall's corner, opening onto
+the hall (the user picked this from three shapes: a round fan filling the corner, this sharp point, a 45-degree
+diamond). It grows until its floor is twice its guns' bays plus 20 tiles, and keeps no tile with fewer than two
+neighbours in it (the tips left lone tiles that broke the hull). It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
 4 singles). Sizes, seeds 1 to 4: outpost 62 to 64 by 73 to 76, station 74 to 79 by 87 to 91, hub 94 to 100 by 116
 to 123, with every gun and shield generator mounted.
 

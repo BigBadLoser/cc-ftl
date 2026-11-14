@@ -6,13 +6,15 @@ import { SPACE } from './regions';
 /**
  * A fort (the user's pick, "F2": a star fort): a parade hall at the centre, an arm off each side of it (the recipe's
  * branches, each on the hall's port that heads its way), and in each corner between two arms a gun battery, one room
- * holding that corner's guns, pointing out along the diagonal. The arms leave the hall by a neck, so the batteries
+ * holding that corner's guns, a sharp point out along the diagonal. The arms leave the hall by a neck, so the batteries
  * stand against the hall's corners and open onto it.
  */
 
 /** Of a battery's floor, the share its guns' bays take (as battery.ts). */
 const SHARE = 0.5;
 const SLACK = 20;
+/** How far a battery's side falls back from its point, for every tile across: above one, the point is sharp. */
+const TAPER = 1.5;
 const QUADS: readonly [1 | -1, 1 | -1][] = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
 
 /** The parade hall: x and y from -h to h. A port on each side, at its middle, heading out. */
@@ -52,15 +54,15 @@ export function batteries(a: Asm, hall: number, h: number, guns: readonly RoomSp
     // The open ground of the corner within reach of the hall's corner, in the corner's own frame (p, q from the centre).
     const tile = (p: number, q: number): [number, number] => [sx * p, sy * q];
     const open = (p: number, q: number): boolean => { const [x, y] = tile(p, q); return g.at(x, y) === SPACE && !reserved.has(key(x, y)) };
-    // A diamond on the corner's diagonal, its inner point inside the hall's corner (so it opens onto the hall) and its
-    // outer point the bastion's: 45-degree sides, cut off by the arms either side of it.
-    const inside = (p: number, q: number, r: number): boolean => { const m = h + Math.floor(r / 2) - 1; return Math.abs(p - m) + Math.abs(q - m) <= r; };
+    // A point on the corner's diagonal: its sides fall back from the point a tile and a half for every tile across, so
+    // it reaches out between the arms and wraps the hall's corner (it opens onto the hall).
+    const inside = (p: number, q: number, T: number): boolean => p + q + TAPER * Math.abs(p - q) <= T;
     const spec: RoomSpec = { ...(list[0] as RoomSpec), dept: 'defence', mods: list.flatMap((r) => r.mods) };
     let placed = false;
-    for (let r = 4; r <= 48 && !placed; r++) {
-      const m = h + Math.floor(r / 2) - 1, set = new Set<string>();
-      for (let q = 1; q <= m + r; q++) for (let p = 1; p <= m + r; p++) if (inside(p, q, r) && open(p, q)) set.add(`${p},${q}`);
-      // No tile held by a corner alone (the diamond's points): each keeps two neighbours in the set along a side.
+    for (let T = 2 * h + 4; T <= 2 * h + 60 && !placed; T += 2) {
+      const set = new Set<string>();
+      for (let q = 1; q <= T; q++) for (let p = 1; p <= T; p++) if (inside(p, q, T) && open(p, q)) set.add(`${p},${q}`);
+      // No tile held by a corner alone (the tips): each keeps two neighbours in the set along a side.
       for (let pruned = true; pruned;) {
         pruned = false;
         for (const t of [...set]) {
