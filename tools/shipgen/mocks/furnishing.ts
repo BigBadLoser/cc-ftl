@@ -5,7 +5,7 @@
  */
 import { content } from '../../../src/content';
 import type { ModuleDef, RoomRole, ShipTemplate } from '../../../src/sim';
-import { accessTiles, footprintTiles } from '../../../src/sim/modules/footprint';
+import { accessTiles, footprintTiles, openTilesOf } from '../../../src/sim/modules/footprint';
 
 export type Rot = 0 | 1 | 2 | 3;
 /** A piece in room coordinates (0, 0 the room's top-left floor tile). Rot 0 faces south, 1 west, 2 north, 3 east. */
@@ -140,8 +140,10 @@ export function sheet(ROWS: RoomMock[][], name: string): Sheet {
       for (const [def, px, py, rot = 0] of r.pieces) {
         const d = defs[def];
         if (!d) { problems.push(`${r.caption}: no module ${def}`); continue; }
+        const open = new Set(openTilesOf(d, fx + px, fy + py, rot).map((t) => `${t.x},${t.y}`));
         for (const t of footprintTiles(d, fx + px, fy + py, rot)) {
           const k = `${t.x},${t.y}`;
+          if (open.has(k)) continue;
           if (t.x < fx || t.y < fy || t.x >= fx + r.w || t.y >= fy + r.h) problems.push(`${r.caption}: ${def} at ${px},${py} leaves the room`);
           if (taken.has(k)) problems.push(`${r.caption}: ${def} at ${px},${py} overlaps ${taken.get(k)}`);
           taken.set(k, def);
