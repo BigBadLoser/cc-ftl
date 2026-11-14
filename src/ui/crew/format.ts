@@ -34,7 +34,7 @@ export function crewState(c: StateOf): { chip: string | null; text: string; bad:
   const chip = c.dead ? null : c.prisoner ? 'Prisoner' : c.surrendered ? 'Surrendered' : null;
   if (c.dead) return { chip, text: 'Dead', bad: true };
   if (c.downed) return { chip, text: c.downed.stabilized ? 'Downed, stabilized' : `Downed, bleeding out in ${c.downed.bleed} s`, bad: true };
-  if (chip) return { chip, text: c.stasis ? 'Frozen in stasis' : c.prisoner ? 'Held captive' : 'Out of the fight', bad: false };
+  if (chip) return { chip, text: c.stasis ? (c.stasis.draining ? 'Slab draining' : 'Frozen in stasis') : c.prisoner ? 'Held captive' : 'Out of the fight', bad: !!c.stasis?.draining };
   const fight = c.fight ? fightText(c.fight) : null;
   if (c.broke) return { chip, text: c.broke, bad: true };
   return { chip, text: fight ?? (c.drafted ? 'Drafted' : (c.job ?? c.activity)), bad: false };

@@ -7,7 +7,6 @@
   import ItemCard from '../inspector/ItemCard.svelte';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
-  import StasisCard from './StasisCard.svelte';
   import { attackBlocked, crewState, moodWord } from './format';
   import { healthTone } from '../inspector/health';
 
@@ -34,21 +33,27 @@
 </script>
 
 <div data-testid="crew-overview">
-  {#if c.stasis}
-    <!-- A frozen prisoner (selected from their slab, a cart or the wheel): the slab card stands in for the portrait and vitals. -->
-    <StasisCard {api} name={c.name} face={pic} st={c.stasis} />
-  {:else}
+  {#snippet doing()}<p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>{/snippet}
   <div class="top">
-    <span class="face" class:dead={c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
+    <!-- A frozen prisoner's portrait is frosted with a snowflake badge (selected from their slab, a cart or the wheel). -->
+    <span class="face" class:dead={c.dead} class:frost={!!c.stasis}>{#if pic}<img src={pic} alt="" />{/if}{#if c.stasis}<span class="fx"></span><span class="badge"><Icon name="snowflake" size={12} /></span>{/if}</span>
     <div class="vitals">
+      <!-- A prisoner's or surrendered foe's state chip heads the column, above health. -->
+      {#if now.chip}{@render doing()}{/if}
       <div class="v" use:tip={{ text: 'Health' }} data-testid="crew-health"><span class="ic"><Icon name="heart" size={16} /></span><StatBar value={(c.hp / c.maxHp) * 100} health /><span class="n {healthTone(c.hp / c.maxHp)}">{c.dead ? 'dead' : `${c.hp}/${c.maxHp}`}</span></div>
+      {#if c.stasis}<div class="v" use:tip={{ text: "The slab's reserve: drains away from a powered wheel; at 0 they thaw" }} data-testid="crew-stasis"><span class="ic"><Icon name="snowflake" size={16} /></span><StatBar value={c.stasis.reserve} color={c.stasis.draining ? 'var(--red)' : '#7fdcf0'} low={c.stasis.draining} /><span class="n" class:bad={c.stasis.draining}>{c.stasis.reserve}% reserve</span></div>{/if}
       {#if c.mood && !enemy}<div class="v" use:tip={{ text: 'Mood' }} data-testid="crew-mood"><span class="ic"><Icon name="smile" size={16} /></span><StatBar value={c.mood.value} color="#b58cff" low={c.mood.value < 35} /><span class="n">{c.mood.value} {moodWord(c.mood.value)}{#if c.mood.strain}<span class="strain" use:tip={{ text: `Under strain (${c.mood.strain}): a break can come at any mood` }} data-testid="crew-strain">, strained</span>{/if}</span></div>{/if}
       {#if c.hunger !== null && !enemy}<div class="v" use:tip={{ text: 'Hunger' }} data-testid="crew-hunger"><span class="ic"><Icon name="food" size={16} /></span><StatBar value={c.hunger} color="var(--hunger)" low={c.hunger < 35} /><span class="n" class:bad={c.hunger < 35}>{c.hunger <= 0 ? 'starving' : `${c.hunger}% fed`}</span></div>{/if}
       {#if !enemy}<div class="v" use:tip={{ text: 'Rest' }} data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
   </div>
+  {#if !now.chip}{@render doing()}{/if}
+  {#if c.stasis}
+    {@const st = c.stasis}
+    <p class="where" data-testid="crew-slab"><span class="ic"><Icon name="pin" size={14} /></span>
+      {#if st.carrier}<span>On <button class="lk" onclick={() => st.carrier && api.selectCrew(st.carrier.id, true)}>{st.carrier.name}</button>'s cart{#if st.to}, to the {st.to.toLowerCase()}{/if}</span>
+      {:else if st.wheel}<button class="lk" onclick={() => st.wheel && api.selectModule(st.wheel)}>{st.where}</button>{:else}<span>{st.where}</span>{/if}</p>
   {/if}
-  {#if !c.stasis}<p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>{/if}
   {#if c.weapon && !c.stasis}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
@@ -118,6 +123,13 @@
   .top { display: grid; grid-template-columns: 64px 1fr; gap: 10px; margin-bottom: 10px; }
   .face { width: 64px; height: 68px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
+  .face { position: relative; }
+  .face.frost { border-color: #7fdcf0; } .face.frost img { filter: saturate(.45) brightness(1.05); }
+  .fx { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(160,225,240,.35), rgba(80,150,170,.1) 60%, rgba(180,235,245,.25)); }
+  .badge { position: absolute; right: 2px; bottom: 2px; display: inline-flex; padding: 1px; background: #061a22; color: #7fdcf0; border: 1px solid #2c6878; }
+  .vitals .doing { margin: 0 0 4px; }
+  .where { display: flex; gap: 6px; align-items: center; margin: 0 0 10px; font-size: 13px; }
+  .lk { background: none; border: none; padding: 0; min-height: 0; font: inherit; color: var(--cyan); cursor: pointer; } .lk:hover { text-decoration: underline; }
   .face.dead img { filter: grayscale(1) brightness(0.6); }
   .vitals { display: grid; gap: 0; align-content: center; min-width: 0; }
   .v { display: grid; grid-template-columns: 18px 1fr 84px; gap: 8px; align-items: center; min-height: 18px; font-size: 13px; }
