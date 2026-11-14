@@ -162,14 +162,15 @@ module's access tile.
 
 These are all built from the **Life** tab and change no mood yet:
 
-- **Bench:** three seats. Idle crew with nothing to do sit down on one now and then and get up after a few minutes; any job
-  calls them off it. Sitting is only for show: it is not a break and lifts no mood. Crew can walk across a bench like a bed.
+- **Bench:** three seats. It needs the floor in front of its seats clear, so it can't face a wall. Crew can walk across it like a
+  bed; nobody sits on it yet.
 - **Bunk bed:** a bed with a lower and an upper deck. One crew member sleeps in it, like a bed.
 - **Sparring droid, planter and vending machines (two liveries):** decoration. The vending machines draw 1 power.
 
 <ComingLater>
 
-Comfort. Furniture and decor will add a fourth input to room quality. Until then no room rises above Decent.
+Comfort. Furniture and decor will add a fourth input to room quality. Until then no room rises above Decent. Crew will also
+sit down on benches.
 
 </ComingLater>
 

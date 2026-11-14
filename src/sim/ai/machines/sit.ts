@@ -1,24 +1,17 @@
-import { PathC, type Crew, type Path, type Position } from '../../crew/components';
-import { clearPath, isSettled, origin } from '../../crew/helpers';
-import { findPath, type Tile } from '../../crew/pathfind';
-import { walkOpts } from '../../eva/route';
+import type { Tile } from '../../crew/pathfind';
 import { ModuleC, type Module } from '../../modules/components';
 import { rotatedSize } from '../../modules/footprint';
 import type { World } from '../../ecs';
 import type { ModuleDef, SeatKind } from '../../registry';
 import { shipIdOf } from '../../regions';
 import type { Sim } from '../../sim';
-import { TICK_HZ } from '../../time';
-import { SIT_CHANCE, SIT_MAX_STEPS, SIT_SEC } from '../../tuning';
 import { TaskC } from '../components';
-import { unsafeFor } from '../hazard';
-import { clearJoblessTask, setJoblessTask, setState } from '../task';
 
 /**
  * Seats (`ModuleDef.seats`: the bench). The owner of "where is seat i of this module", "which seats are free" and "is this crew member sitting".
  * A seat has no mood effect. The reservation is the sit task itself: a crew member on the `sit` machine with `bb.target` = the module and
- * `bb.n` = the seat index holds that seat from the moment they set off. Nothing is stored on the module. Idle crew sit now and then
- * (`sitTurn`, wired in the idle turn); any job found later replaces the walk and the sit (both class `any`).
+ * `bb.n` = the seat index holds that seat from the moment they set off. Nothing is stored on the module. No drive sends crew to sit yet
+ * (an idle one was tried and taken out); a drive that does sets that task, and any job found later replaces it (both states class `any`).
  */
 
 /** Seats of a module in seat points: the sub-tile world position (tile centres are whole numbers) of each. */
@@ -78,51 +71,3 @@ export function seatedOn(world: World, modules: Readonly<Record<string, ModuleDe
   const p = m && def?.seats && t?.bb.n !== undefined ? seatPoints(def, m)[t.bb.n] : undefined;
   return m && def?.seats && p ? { m, def, index: t?.bb.n as number, kind: def.seats.kind, x: p.x, y: p.y } : null;
 }
-
-/** Look for a seat once a second (staggered by crew id), not every tick: the look scans every module of the ship. */
-const LOOK_EVERY = 20;
-
-/** The idle drive: true while the crew member walks to a seat or sits (the idle turn goes no further), false to idle as usual. */
-export function sitTurn(sim: Sim, id: number, crew: Crew, pos: Position): boolean {
-  const task = sim.world.get(id, TaskC);
-  const path = sim.world.get(id, PathC) as Path;
-  if (task?.machine === 'sit') {
-    if (!task.bb.target || !usableSeats(sim, task.bb.target, shipIdOf(sim, pos))) { // the bench is gone or wrecked
-      clearPath(sim, id);
-      clearJoblessTask(sim, id);
-      return false;
-    }
-    if (path.steps.length > 0 || !isSettled(pos)) return true; // still walking
-    if (task.state === 'Walk') {
-      const at = origin(pos), goal = task.bb.tile;
-      if (goal && (at.x !== goal.x || at.y !== goal.y)) { // the walk ended short of the seat
-        clearJoblessTask(sim, id);
-        return false;
-      }
-      setState(sim, id, task, 'Sit');
-      task.bb.deadline = sim.tick + Math.round(sim.rng.int(SIT_SEC[0] * TICK_HZ, SIT_SEC[1] * TICK_HZ));
-      return true;
-    }
-    if (sim.tick < (task.bb.deadline ?? 0)) return true;
-    clearJoblessTask(sim, id);
-    return false;
-  }
-  if (!isSettled(pos) || path.steps.length > 0 || (sim.tick + id) % LOOK_EVERY !== 0) return false;
-  const ship = shipIdOf(sim, pos), from = origin(pos);
-  const near = freeSeats(sim, id, ship).filter((s) => Math.max(Math.abs(s.tile.x - from.x), Math.abs(s.tile.y - from.y)) <= SIT_MAX_STEPS);
-  // The roll only when a free seat is near: a ship without one draws nothing from the rng, so its runs play out as before benches.
-  if (near.length === 0 || !sim.rng.chance(SIT_CHANCE)) return false;
-  near.sort((a, b) => Math.max(Math.abs(a.tile.x - from.x), Math.abs(a.tile.y - from.y)) - Math.max(Math.abs(b.tile.x - from.x), Math.abs(b.tile.y - from.y)) || a.module - b.module || a.index - b.index);
-  for (const s of near.slice(0, 3)) {
-    if (unsafeFor(sim, id, ship, s.tile.x, s.tile.y)) continue;
-    const steps = findPath(sim, ship, from, s.tile, walkOpts(sim, id));
-    if (!steps || steps.length > SIT_MAX_STEPS) continue;
-    if (crew.activity !== 'idle') crew.activity = 'idle';
-    if (steps.length === 0) clearPath(sim, id);
-    else path.steps = steps;
-    setJoblessTask(sim, id, 'idle', 'sit', 'Walk', { target: s.module, n: s.index, tile: { x: s.tile.x, y: s.tile.y } });
-    return true;
-  }
-  return false;
-}
-

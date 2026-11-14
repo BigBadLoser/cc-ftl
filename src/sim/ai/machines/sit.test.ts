@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, JobC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../../crew/components';
+import { CrewC, NeedsC, PathC, PositionC, PrioritiesC, type Priorities } from '../../crew/components';
 import { ModuleC } from '../../modules/components';
 import { stampShip } from '../../combat/ships';
 import type { ContentRegistry, ModuleDef } from '../../registry';
@@ -46,6 +46,7 @@ function put(sim: Sim, x: number, y: number, rot = 0): number {
 /** render/iso.ts `iso` (a sim test cannot import render): 2:1 projection, 128x64 tiles. */
 const iso = (gx: number, gy: number): { x: number; y: number } => ({ x: (gx - gy) * 64, y: (gx + gy) * 32 });
 const near = (a: number, b: number): void => expect(a).toBeCloseTo(b, 6);
+const shipOf = (sim: Sim, id: number): number => shipIdOf(sim, sim.world.get(id, PositionC)!);
 
 describe('bench seats', () => {
   it('lands sitters where the lab panel puts them: the screen offset from the bench sprite anchor (its front tile) at every rotation', () => {
@@ -105,40 +106,14 @@ describe('bench seats', () => {
     expect(b).toBeGreaterThan(0);
   });
 
-  it('an idle crew member next to a bench eventually sits, at the seat point, and later stands up; a job replaces the sit', () => {
+  it('says who sits where: a crew member holding a seat is drawn at its seat point', () => {
     const sim = make();
     const b = put(sim, 4, 2);
-    const c = crew(sim, 3, 2);
-    let sat = 0;
-    for (let i = 0; i < 20000 && !sat; i++) {
-      sim.step();
-      if (seatedOn(sim.world, content.modules, c)) sat = sim.tick;
-    }
-    expect(sat).toBeGreaterThan(0);
-    const on = seatedOn(sim.world, content.modules, c)!;
-    expect(on.m).toBe(sim.world.get(b, ModuleC));
-    expect(on.kind).toBe('bench');
-    // A job replaces the sit: the crew member is assigned it and no longer seated.
-    const j = sim.world.createEntity();
-    sim.world.add(j, JobC, { category: 'construction', kind: 'build', x: 8, y: 3, struct: 1, work: 40, progress: 0, reservedBy: 0 });
-    for (let i = 0; i < 40 && seatedOn(sim.world, content.modules, c); i++) sim.step();
-    expect(seatedOn(sim.world, content.modules, c)).toBeNull();
-    expect(sim.world.get(c, TaskC)?.machine).not.toBe('sit');
-  });
-
-  it('stands up again by itself after its time, with no job around', () => {
-    const sim = make();
-    put(sim, 4, 2);
-    const c = crew(sim, 3, 2);
-    let sitting = false, stood = false;
-    for (let i = 0; i < 60000 && !stood; i++) {
-      sim.step();
-      const now = !!seatedOn(sim.world, content.modules, c);
-      if (now) sitting = true;
-      else if (sitting) stood = true;
-    }
-    expect(sitting && stood).toBe(true);
+    const id = crew(sim, 5, 2);
+    expect(seatedOn(sim.world, content.modules, id)).toBeNull();
+    sim.world.add(id, TaskC, { job: 0, drive: 'idle', machine: 'sit', state: 'Sit', since: 0, class: 'any', stack: [], holds: [], bb: { target: b, n: 2 } } as never);
+    const at = seatedOn(sim.world, content.modules, id)!;
+    const p = seatPoints(bench, { x: 4, y: 2, rot: 0 })[2]!;
+    expect([at.index, at.kind, at.x, at.y]).toEqual([2, 'bench', p.x, p.y]);
   });
 });
-
-const shipOf = (sim: Sim, id: number): number => shipIdOf(sim, sim.world.get(id, PositionC));
