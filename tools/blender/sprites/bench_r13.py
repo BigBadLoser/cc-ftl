@@ -36,6 +36,10 @@ def raised(f, lift=LIFT):
 
 
 CUT = 3.0                                           # px off the front of each pan
+# Where a sitter sits, tiles from the seat line along v (bench.SEATS, human_bench): sit_idle's back is 0.10 behind the
+# pose origin at the shoulders (measured on the posed rig), 0.06 at the seat; the backrest's front face is 0.16 behind
+# the seat line at the seat, 0.22 at the shoulders.
+SIT_V = -0.11
 
 
 def seat(k, c, w=7.8, cut=CUT):

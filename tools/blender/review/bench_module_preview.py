@@ -9,9 +9,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-SEATS = ((-0.6, -0.11), (0.0, -0.11), (0.6, -0.11))     # sprites/bench.py SEATS
+SEATS = ((-0.6, -0.11), (0.0, -0.11), (0.6, -0.11))     # sprites/bench.py SEATS (bench_r13 SEATS, SIT_V)
 FACING = {0: 2, 1: 4, 2: 6, 3: 0}                    # bench.facing: consoles.SEAT_DIR turned half way
-CLIP = "sit_idle"
+CLIP = "sit_bench"
 
 
 def grid(rot, u, v):

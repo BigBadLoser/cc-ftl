@@ -3,7 +3,7 @@ sitters sit back against the backrest (bench_r13 bn18q), a 2x1 module, four rota
 it, one per seat, facing +v (SEATS: local tiles; src/content/modules.ts must match).
 
 Sprites per rotation r: `module.bench.r<r>` (`module.bench` is the r0 copy), and `module.bench.front.r<r>`, the overlay
-drawn over seated crew: the sprite's pixels where the bench hides a sitter on any seat in any sit_idle frame, grown 1 px
+drawn over seated crew: the sprite's pixels where the bench hides a sitter on any seat in any sit_bench frame, grown 1 px
 over the outline ring (as gametable.py). Layering: the bench at K, the sitters at K + 0.02, the front overlay at
 K + 0.03."""
 import math
@@ -19,11 +19,8 @@ from .modkit import K
 from .research_bench import drop
 
 PAL = "only:bench7"
-# Seats, local tiles: u bench_r9.SEATS (px -19.2, 0, 19.2); v puts the sitter's back on the backrest (sit_idle's back is
-# 0.10 behind the pose origin at the shoulders, 0.06 at the seat; the backrest's front face is at -0.16 at the seat and
-# -0.22 at the shoulders, bench_r13.seat).
-SEATS = ((-0.6, -0.11), (0.0, -0.11), (0.6, -0.11))
-CLIP = "sit_idle"                                      # (src/render: the bench's seat kind plays this clip)
+SEATS = tuple((c / 32, bench_r13.SIT_V) for c in bench_r13.SEATS)   # local tiles: the sitters' backs on the backrests
+CLIP = "sit_bench"                                     # sit_idle cut against a bench seat (human_bench; SEAT_CLIP.bench)
 
 
 def sid(rot, tag=""):

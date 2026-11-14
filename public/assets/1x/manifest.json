@@ -140,6 +140,10 @@
    "image": "sprites/crew.human.arm.L.cyber.ready_2m.png",
    "glow": "sprites/crew.human.arm.L.cyber.ready_2m.glow.png"
   },
+  "crew.human.arm.L.cyber.sit_bench": {
+   "image": "sprites/crew.human.arm.L.cyber.sit_bench.png",
+   "glow": "sprites/crew.human.arm.L.cyber.sit_bench.glow.png"
+  },
   "crew.human.arm.L.cyber.sit_idle": {
    "image": "sprites/crew.human.arm.L.cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.L.cyber.sit_idle.glow.png"
@@ -249,6 +253,9 @@
   },
   "crew.human.arm.L.eva.ready_2m": {
    "image": "sprites/crew.human.arm.L.eva.ready_2m.png"
+  },
+  "crew.human.arm.L.eva.sit_bench": {
+   "image": "sprites/crew.human.arm.L.eva.sit_bench.png"
   },
   "crew.human.arm.L.eva.sit_idle": {
    "image": "sprites/crew.human.arm.L.eva.sit_idle.png"
@@ -371,6 +378,10 @@
    "image": "sprites/crew.human.arm.L.eva_cyber.ready_2m.png",
    "glow": "sprites/crew.human.arm.L.eva_cyber.ready_2m.glow.png"
   },
+  "crew.human.arm.L.eva_cyber.sit_bench": {
+   "image": "sprites/crew.human.arm.L.eva_cyber.sit_bench.png",
+   "glow": "sprites/crew.human.arm.L.eva_cyber.sit_bench.glow.png"
+  },
   "crew.human.arm.L.eva_cyber.sit_idle": {
    "image": "sprites/crew.human.arm.L.eva_cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.L.eva_cyber.sit_idle.glow.png"
@@ -477,6 +488,9 @@
   },
   "crew.human.arm.L.flesh.ready_2m": {
    "image": "sprites/crew.human.arm.L.flesh.ready_2m.png"
+  },
+  "crew.human.arm.L.flesh.sit_bench": {
+   "image": "sprites/crew.human.arm.L.flesh.sit_bench.png"
   },
   "crew.human.arm.L.flesh.sit_idle": {
    "image": "sprites/crew.human.arm.L.flesh.sit_idle.png"
@@ -595,6 +609,10 @@
    "image": "sprites/crew.human.arm.R.cyber.ready_2m.png",
    "glow": "sprites/crew.human.arm.R.cyber.ready_2m.glow.png"
   },
+  "crew.human.arm.R.cyber.sit_bench": {
+   "image": "sprites/crew.human.arm.R.cyber.sit_bench.png",
+   "glow": "sprites/crew.human.arm.R.cyber.sit_bench.glow.png"
+  },
   "crew.human.arm.R.cyber.sit_idle": {
    "image": "sprites/crew.human.arm.R.cyber.sit_idle.png",
    "glow": "sprites/crew.human.arm.R.cyber.sit_idle.glow.png"
@@ -705,6 +723,9 @@
   "crew.human.arm.R.eva.ready_2m": {
    "image": "sprites/crew.human.arm.R.eva.ready_2m.png"
   },
+  "crew.human.arm.R.eva.sit_bench": {
+   "image": "sprites/crew.human.arm.R.eva.sit_bench.png"
+  },
   "crew.human.arm.R.eva.sit_idle": {
    "image": "sprites/crew.human.arm.R.eva.sit_idle.png"
   },
@@ -800,6 +821,9 @@
   },
   "crew.human.arm.R.flesh.ready_2m": {
    "image": "sprites/crew.human.arm.R.flesh.ready_2m.png"
+  },
+  "crew.human.arm.R.flesh.sit_bench": {
+   "image": "sprites/crew.human.arm.R.flesh.sit_bench.png"
   },
   "crew.human.arm.R.flesh.sit_idle": {
    "image": "sprites/crew.human.arm.R.flesh.sit_idle.png"
@@ -900,6 +924,9 @@
   "crew.human.body.ready_2m": {
    "image": "sprites/crew.human.body.ready_2m.png"
   },
+  "crew.human.body.sit_bench": {
+   "image": "sprites/crew.human.body.sit_bench.png"
+  },
   "crew.human.body.sit_idle": {
    "image": "sprites/crew.human.body.sit_idle.png"
   },
@@ -996,6 +1023,9 @@
   "crew.human.eyes.cyber.ready_2m": {
    "image": "sprites/crew.human.eyes.cyber.ready_2m.png"
   },
+  "crew.human.eyes.cyber.sit_bench": {
+   "image": "sprites/crew.human.eyes.cyber.sit_bench.png"
+  },
   "crew.human.eyes.cyber.sit_idle": {
    "image": "sprites/crew.human.eyes.cyber.sit_idle.png"
   },
@@ -1091,6 +1121,9 @@
   },
   "crew.human.eyes.organic.ready_2m": {
    "image": "sprites/crew.human.eyes.organic.ready_2m.png"
+  },
+  "crew.human.eyes.organic.sit_bench": {
+   "image": "sprites/crew.human.eyes.organic.sit_bench.png"
   },
   "crew.human.eyes.organic.sit_idle": {
    "image": "sprites/crew.human.eyes.organic.sit_idle.png"
@@ -1598,6 +1631,9 @@
   "crew.human.gear.belt.tool_belt.ready_2m": {
    "image": "sprites/crew.human.gear.belt.tool_belt.ready_2m.png"
   },
+  "crew.human.gear.belt.tool_belt.sit_bench": {
+   "image": "sprites/crew.human.gear.belt.tool_belt.sit_bench.png"
+  },
   "crew.human.gear.belt.tool_belt.sit_idle": {
    "image": "sprites/crew.human.gear.belt.tool_belt.sit_idle.png"
   },
@@ -1637,6 +1673,9 @@
   "crew.human.gear.hand.blade.ready_1m": {
    "image": "sprites/crew.human.gear.hand.blade.ready_1m.png"
   },
+  "crew.human.gear.hand.blade.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.blade.sit_bench.png"
+  },
   "crew.human.gear.hand.blade.sit_idle": {
    "image": "sprites/crew.human.gear.hand.blade.sit_idle.png"
   },
@@ -1651,6 +1690,9 @@
   },
   "crew.human.gear.hand.breach_axe.ready_2m": {
    "image": "sprites/crew.human.gear.hand.breach_axe.ready_2m.png"
+  },
+  "crew.human.gear.hand.breach_axe.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.breach_axe.sit_bench.png"
   },
   "crew.human.gear.hand.breach_axe.sit_idle": {
    "image": "sprites/crew.human.gear.hand.breach_axe.sit_idle.png"
@@ -1676,6 +1718,10 @@
    "image": "sprites/crew.human.gear.hand.flamethrower.fire_heavy.png",
    "glow": "sprites/crew.human.gear.hand.flamethrower.fire_heavy.glow.png"
   },
+  "crew.human.gear.hand.flamethrower.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.flamethrower.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.flamethrower.sit_bench.glow.png"
+  },
   "crew.human.gear.hand.flamethrower.sit_idle": {
    "image": "sprites/crew.human.gear.hand.flamethrower.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.flamethrower.sit_idle.glow.png"
@@ -1700,6 +1746,9 @@
   },
   "crew.human.gear.hand.heavy_repeater.fire_heavy": {
    "image": "sprites/crew.human.gear.hand.heavy_repeater.fire_heavy.png"
+  },
+  "crew.human.gear.hand.heavy_repeater.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_bench.png"
   },
   "crew.human.gear.hand.heavy_repeater.sit_idle": {
    "image": "sprites/crew.human.gear.hand.heavy_repeater.sit_idle.png"
@@ -1736,6 +1785,10 @@
   "crew.human.gear.hand.ion_pistol.lean_r_1h": {
    "image": "sprites/crew.human.gear.hand.ion_pistol.lean_r_1h.png",
    "glow": "sprites/crew.human.gear.hand.ion_pistol.lean_r_1h.glow.png"
+  },
+  "crew.human.gear.hand.ion_pistol.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.ion_pistol.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.ion_pistol.sit_bench.glow.png"
   },
   "crew.human.gear.hand.ion_pistol.sit_idle": {
    "image": "sprites/crew.human.gear.hand.ion_pistol.sit_idle.png",
@@ -1777,6 +1830,10 @@
    "image": "sprites/crew.human.gear.hand.laser_pistol.lean_r_1h.png",
    "glow": "sprites/crew.human.gear.hand.laser_pistol.lean_r_1h.glow.png"
   },
+  "crew.human.gear.hand.laser_pistol.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.laser_pistol.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.laser_pistol.sit_bench.glow.png"
+  },
   "crew.human.gear.hand.laser_pistol.sit_idle": {
    "image": "sprites/crew.human.gear.hand.laser_pistol.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.laser_pistol.sit_idle.glow.png"
@@ -1816,6 +1873,10 @@
   "crew.human.gear.hand.laser_rifle.lean_r_2h": {
    "image": "sprites/crew.human.gear.hand.laser_rifle.lean_r_2h.png",
    "glow": "sprites/crew.human.gear.hand.laser_rifle.lean_r_2h.glow.png"
+  },
+  "crew.human.gear.hand.laser_rifle.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.laser_rifle.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.laser_rifle.sit_bench.glow.png"
   },
   "crew.human.gear.hand.laser_rifle.sit_idle": {
    "image": "sprites/crew.human.gear.hand.laser_rifle.sit_idle.png",
@@ -1857,6 +1918,10 @@
    "image": "sprites/crew.human.gear.hand.plasma_cutter.lean_r_1h.png",
    "glow": "sprites/crew.human.gear.hand.plasma_cutter.lean_r_1h.glow.png"
   },
+  "crew.human.gear.hand.plasma_cutter.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.plasma_cutter.sit_bench.glow.png"
+  },
   "crew.human.gear.hand.plasma_cutter.sit_idle": {
    "image": "sprites/crew.human.gear.hand.plasma_cutter.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.plasma_cutter.sit_idle.glow.png"
@@ -1897,6 +1962,10 @@
    "image": "sprites/crew.human.gear.hand.rail_rifle.lean_r_2h.png",
    "glow": "sprites/crew.human.gear.hand.rail_rifle.lean_r_2h.glow.png"
   },
+  "crew.human.gear.hand.rail_rifle.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.rail_rifle.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.rail_rifle.sit_bench.glow.png"
+  },
   "crew.human.gear.hand.rail_rifle.sit_idle": {
    "image": "sprites/crew.human.gear.hand.rail_rifle.sit_idle.png",
    "glow": "sprites/crew.human.gear.hand.rail_rifle.sit_idle.glow.png"
@@ -1931,6 +2000,9 @@
   "crew.human.gear.hand.rifle.lean_r_2h": {
    "image": "sprites/crew.human.gear.hand.rifle.lean_r_2h.png"
   },
+  "crew.human.gear.hand.rifle.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.rifle.sit_bench.png"
+  },
   "crew.human.gear.hand.rifle.sit_idle": {
    "image": "sprites/crew.human.gear.hand.rifle.sit_idle.png"
   },
@@ -1950,6 +2022,10 @@
   "crew.human.gear.hand.shock_baton.ready_1m": {
    "image": "sprites/crew.human.gear.hand.shock_baton.ready_1m.png",
    "glow": "sprites/crew.human.gear.hand.shock_baton.ready_1m.glow.png"
+  },
+  "crew.human.gear.hand.shock_baton.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.shock_baton.sit_bench.png",
+   "glow": "sprites/crew.human.gear.hand.shock_baton.sit_bench.glow.png"
   },
   "crew.human.gear.hand.shock_baton.sit_idle": {
    "image": "sprites/crew.human.gear.hand.shock_baton.sit_idle.png",
@@ -1985,6 +2061,9 @@
   "crew.human.gear.hand.shotgun.lean_r_2h": {
    "image": "sprites/crew.human.gear.hand.shotgun.lean_r_2h.png"
   },
+  "crew.human.gear.hand.shotgun.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.shotgun.sit_bench.png"
+  },
   "crew.human.gear.hand.shotgun.sit_idle": {
    "image": "sprites/crew.human.gear.hand.shotgun.sit_idle.png"
   },
@@ -2015,6 +2094,9 @@
   "crew.human.gear.hand.sidearm.lean_r_1h": {
    "image": "sprites/crew.human.gear.hand.sidearm.lean_r_1h.png"
   },
+  "crew.human.gear.hand.sidearm.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.sidearm.sit_bench.png"
+  },
   "crew.human.gear.hand.sidearm.sit_idle": {
    "image": "sprites/crew.human.gear.hand.sidearm.sit_idle.png"
   },
@@ -2044,6 +2126,9 @@
   },
   "crew.human.gear.hand.smg.lean_r_2h": {
    "image": "sprites/crew.human.gear.hand.smg.lean_r_2h.png"
+  },
+  "crew.human.gear.hand.smg.sit_bench": {
+   "image": "sprites/crew.human.gear.hand.smg.sit_bench.png"
   },
   "crew.human.gear.hand.smg.sit_idle": {
    "image": "sprites/crew.human.gear.hand.smg.sit_idle.png"
@@ -2122,6 +2207,9 @@
   },
   "crew.human.gear.head.eva_helmet.ready_2m": {
    "image": "sprites/crew.human.gear.head.eva_helmet.ready_2m.png"
+  },
+  "crew.human.gear.head.eva_helmet.sit_bench": {
+   "image": "sprites/crew.human.gear.head.eva_helmet.sit_bench.png"
   },
   "crew.human.gear.head.eva_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.eva_helmet.sit_idle.png"
@@ -2219,6 +2307,9 @@
   "crew.human.gear.head.headset.ready_2m": {
    "image": "sprites/crew.human.gear.head.headset.ready_2m.png"
   },
+  "crew.human.gear.head.headset.sit_bench": {
+   "image": "sprites/crew.human.gear.head.headset.sit_bench.png"
+  },
   "crew.human.gear.head.headset.sit_idle": {
    "image": "sprites/crew.human.gear.head.headset.sit_idle.png"
   },
@@ -2314,6 +2405,9 @@
   },
   "crew.human.gear.head.heavy_helmet.ready_2m": {
    "image": "sprites/crew.human.gear.head.heavy_helmet.ready_2m.png"
+  },
+  "crew.human.gear.head.heavy_helmet.sit_bench": {
+   "image": "sprites/crew.human.gear.head.heavy_helmet.sit_bench.png"
   },
   "crew.human.gear.head.heavy_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.heavy_helmet.sit_idle.png"
@@ -2411,6 +2505,9 @@
   "crew.human.gear.head.tactical_helmet.ready_2m": {
    "image": "sprites/crew.human.gear.head.tactical_helmet.ready_2m.png"
   },
+  "crew.human.gear.head.tactical_helmet.sit_bench": {
+   "image": "sprites/crew.human.gear.head.tactical_helmet.sit_bench.png"
+  },
   "crew.human.gear.head.tactical_helmet.sit_idle": {
    "image": "sprites/crew.human.gear.head.tactical_helmet.sit_idle.png"
   },
@@ -2506,6 +2603,9 @@
   },
   "crew.human.gear.head.visor_cap.ready_2m": {
    "image": "sprites/crew.human.gear.head.visor_cap.ready_2m.png"
+  },
+  "crew.human.gear.head.visor_cap.sit_bench": {
+   "image": "sprites/crew.human.gear.head.visor_cap.sit_bench.png"
   },
   "crew.human.gear.head.visor_cap.sit_idle": {
    "image": "sprites/crew.human.gear.head.visor_cap.sit_idle.png"
@@ -2603,6 +2703,9 @@
   "crew.human.gear.head.welding_goggles.ready_2m": {
    "image": "sprites/crew.human.gear.head.welding_goggles.ready_2m.png"
   },
+  "crew.human.gear.head.welding_goggles.sit_bench": {
+   "image": "sprites/crew.human.gear.head.welding_goggles.sit_bench.png"
+  },
   "crew.human.gear.head.welding_goggles.sit_idle": {
    "image": "sprites/crew.human.gear.head.welding_goggles.sit_idle.png"
   },
@@ -2644,6 +2747,9 @@
   },
   "crew.human.gear.holster.blade.idle": {
    "image": "sprites/crew.human.gear.holster.blade.idle.png"
+  },
+  "crew.human.gear.holster.blade.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.blade.sit_bench.png"
   },
   "crew.human.gear.holster.blade.sit_idle": {
    "image": "sprites/crew.human.gear.holster.blade.sit_idle.png"
@@ -2735,6 +2841,10 @@
    "image": "sprites/crew.human.gear.holster.ion_pistol.idle.png",
    "glow": "sprites/crew.human.gear.holster.ion_pistol.idle.glow.png"
   },
+  "crew.human.gear.holster.ion_pistol.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.ion_pistol.sit_bench.png",
+   "glow": "sprites/crew.human.gear.holster.ion_pistol.sit_bench.glow.png"
+  },
   "crew.human.gear.holster.ion_pistol.sit_idle": {
    "image": "sprites/crew.human.gear.holster.ion_pistol.sit_idle.png",
    "glow": "sprites/crew.human.gear.holster.ion_pistol.sit_idle.glow.png"
@@ -2767,6 +2877,9 @@
   },
   "crew.human.gear.holster.laser_pistol.idle": {
    "image": "sprites/crew.human.gear.holster.laser_pistol.idle.png"
+  },
+  "crew.human.gear.holster.laser_pistol.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.laser_pistol.sit_bench.png"
   },
   "crew.human.gear.holster.laser_pistol.sit_idle": {
    "image": "sprites/crew.human.gear.holster.laser_pistol.sit_idle.png"
@@ -2821,6 +2934,10 @@
   "crew.human.gear.holster.plasma_cutter.idle": {
    "image": "sprites/crew.human.gear.holster.plasma_cutter.idle.png",
    "glow": "sprites/crew.human.gear.holster.plasma_cutter.idle.glow.png"
+  },
+  "crew.human.gear.holster.plasma_cutter.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_bench.png",
+   "glow": "sprites/crew.human.gear.holster.plasma_cutter.sit_bench.glow.png"
   },
   "crew.human.gear.holster.plasma_cutter.sit_idle": {
    "image": "sprites/crew.human.gear.holster.plasma_cutter.sit_idle.png",
@@ -2900,6 +3017,10 @@
    "image": "sprites/crew.human.gear.holster.shock_baton.idle.png",
    "glow": "sprites/crew.human.gear.holster.shock_baton.idle.glow.png"
   },
+  "crew.human.gear.holster.shock_baton.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.shock_baton.sit_bench.png",
+   "glow": "sprites/crew.human.gear.holster.shock_baton.sit_bench.glow.png"
+  },
   "crew.human.gear.holster.shock_baton.sit_idle": {
    "image": "sprites/crew.human.gear.holster.shock_baton.sit_idle.png",
    "glow": "sprites/crew.human.gear.holster.shock_baton.sit_idle.glow.png"
@@ -2950,6 +3071,9 @@
   },
   "crew.human.gear.holster.sidearm.idle": {
    "image": "sprites/crew.human.gear.holster.sidearm.idle.png"
+  },
+  "crew.human.gear.holster.sidearm.sit_bench": {
+   "image": "sprites/crew.human.gear.holster.sidearm.sit_bench.png"
   },
   "crew.human.gear.holster.sidearm.sit_idle": {
    "image": "sprites/crew.human.gear.holster.sidearm.sit_idle.png"
@@ -3050,6 +3174,9 @@
   "crew.human.gear.shoulder.pads.ready_2m": {
    "image": "sprites/crew.human.gear.shoulder.pads.ready_2m.png"
   },
+  "crew.human.gear.shoulder.pads.sit_bench": {
+   "image": "sprites/crew.human.gear.shoulder.pads.sit_bench.png"
+  },
   "crew.human.gear.shoulder.pads.sit_idle": {
    "image": "sprites/crew.human.gear.shoulder.pads.sit_idle.png"
   },
@@ -3145,6 +3272,9 @@
   },
   "crew.human.hair.bun.ready_2m": {
    "image": "sprites/crew.human.hair.bun.ready_2m.png"
+  },
+  "crew.human.hair.bun.sit_bench": {
+   "image": "sprites/crew.human.hair.bun.sit_bench.png"
   },
   "crew.human.hair.bun.sit_idle": {
    "image": "sprites/crew.human.hair.bun.sit_idle.png"
@@ -3242,6 +3372,9 @@
   "crew.human.hair.long.ready_2m": {
    "image": "sprites/crew.human.hair.long.ready_2m.png"
   },
+  "crew.human.hair.long.sit_bench": {
+   "image": "sprites/crew.human.hair.long.sit_bench.png"
+  },
   "crew.human.hair.long.sit_idle": {
    "image": "sprites/crew.human.hair.long.sit_idle.png"
   },
@@ -3337,6 +3470,9 @@
   },
   "crew.human.hair.mohawk.ready_2m": {
    "image": "sprites/crew.human.hair.mohawk.ready_2m.png"
+  },
+  "crew.human.hair.mohawk.sit_bench": {
+   "image": "sprites/crew.human.hair.mohawk.sit_bench.png"
   },
   "crew.human.hair.mohawk.sit_idle": {
    "image": "sprites/crew.human.hair.mohawk.sit_idle.png"
@@ -3434,6 +3570,9 @@
   "crew.human.hair.ponytail.ready_2m": {
    "image": "sprites/crew.human.hair.ponytail.ready_2m.png"
   },
+  "crew.human.hair.ponytail.sit_bench": {
+   "image": "sprites/crew.human.hair.ponytail.sit_bench.png"
+  },
   "crew.human.hair.ponytail.sit_idle": {
    "image": "sprites/crew.human.hair.ponytail.sit_idle.png"
   },
@@ -3530,6 +3669,9 @@
   "crew.human.hair.shaved.ready_2m": {
    "image": "sprites/crew.human.hair.shaved.ready_2m.png"
   },
+  "crew.human.hair.shaved.sit_bench": {
+   "image": "sprites/crew.human.hair.shaved.sit_bench.png"
+  },
   "crew.human.hair.shaved.sit_idle": {
    "image": "sprites/crew.human.hair.shaved.sit_idle.png"
   },
@@ -3625,6 +3767,9 @@
   },
   "crew.human.hair.short.ready_2m": {
    "image": "sprites/crew.human.hair.short.ready_2m.png"
+  },
+  "crew.human.hair.short.sit_bench": {
+   "image": "sprites/crew.human.hair.short.sit_bench.png"
   },
   "crew.human.hair.short.sit_idle": {
    "image": "sprites/crew.human.hair.short.sit_idle.png"
@@ -3743,6 +3888,10 @@
    "image": "sprites/crew.human.implant.temple.neural_jack.ready_2m.png",
    "glow": "sprites/crew.human.implant.temple.neural_jack.ready_2m.glow.png"
   },
+  "crew.human.implant.temple.neural_jack.sit_bench": {
+   "image": "sprites/crew.human.implant.temple.neural_jack.sit_bench.png",
+   "glow": "sprites/crew.human.implant.temple.neural_jack.sit_bench.glow.png"
+  },
   "crew.human.implant.temple.neural_jack.sit_idle": {
    "image": "sprites/crew.human.implant.temple.neural_jack.sit_idle.png",
    "glow": "sprites/crew.human.implant.temple.neural_jack.sit_idle.glow.png"
@@ -3850,6 +3999,9 @@
   "crew.human.legs.cargo_pants.ready_2m": {
    "image": "sprites/crew.human.legs.cargo_pants.ready_2m.png"
   },
+  "crew.human.legs.cargo_pants.sit_bench": {
+   "image": "sprites/crew.human.legs.cargo_pants.sit_bench.png"
+  },
   "crew.human.legs.cargo_pants.sit_idle": {
    "image": "sprites/crew.human.legs.cargo_pants.sit_idle.png"
   },
@@ -3949,6 +4101,9 @@
   "crew.human.legs.eva.ready_2m": {
    "image": "sprites/crew.human.legs.eva.ready_2m.png"
   },
+  "crew.human.legs.eva.sit_bench": {
+   "image": "sprites/crew.human.legs.eva.sit_bench.png"
+  },
   "crew.human.legs.eva.sit_idle": {
    "image": "sprites/crew.human.legs.eva.sit_idle.png"
   },
@@ -4045,6 +4200,9 @@
   "crew.human.torso.armor_heavy.ready_2m": {
    "image": "sprites/crew.human.torso.armor_heavy.ready_2m.png"
   },
+  "crew.human.torso.armor_heavy.sit_bench": {
+   "image": "sprites/crew.human.torso.armor_heavy.sit_bench.png"
+  },
   "crew.human.torso.armor_heavy.sit_idle": {
    "image": "sprites/crew.human.torso.armor_heavy.sit_idle.png"
   },
@@ -4140,6 +4298,9 @@
   },
   "crew.human.torso.armor_vest.ready_2m": {
    "image": "sprites/crew.human.torso.armor_vest.ready_2m.png"
+  },
+  "crew.human.torso.armor_vest.sit_bench": {
+   "image": "sprites/crew.human.torso.armor_vest.sit_bench.png"
   },
   "crew.human.torso.armor_vest.sit_idle": {
    "image": "sprites/crew.human.torso.armor_vest.sit_idle.png"
@@ -4240,6 +4401,9 @@
   "crew.human.torso.eva.ready_2m": {
    "image": "sprites/crew.human.torso.eva.ready_2m.png"
   },
+  "crew.human.torso.eva.sit_bench": {
+   "image": "sprites/crew.human.torso.eva.sit_bench.png"
+  },
   "crew.human.torso.eva.sit_idle": {
    "image": "sprites/crew.human.torso.eva.sit_idle.png"
   },
@@ -4335,6 +4499,9 @@
   },
   "crew.human.torso.flight_vest.ready_2m": {
    "image": "sprites/crew.human.torso.flight_vest.ready_2m.png"
+  },
+  "crew.human.torso.flight_vest.sit_bench": {
+   "image": "sprites/crew.human.torso.flight_vest.sit_bench.png"
   },
   "crew.human.torso.flight_vest.sit_idle": {
    "image": "sprites/crew.human.torso.flight_vest.sit_idle.png"
@@ -4432,6 +4599,9 @@
   "crew.human.torso.harness.ready_2m": {
    "image": "sprites/crew.human.torso.harness.ready_2m.png"
   },
+  "crew.human.torso.harness.sit_bench": {
+   "image": "sprites/crew.human.torso.harness.sit_bench.png"
+  },
   "crew.human.torso.harness.sit_idle": {
    "image": "sprites/crew.human.torso.harness.sit_idle.png"
   },
@@ -4527,6 +4697,9 @@
   },
   "crew.human.torso.medic_vest.ready_2m": {
    "image": "sprites/crew.human.torso.medic_vest.ready_2m.png"
+  },
+  "crew.human.torso.medic_vest.sit_bench": {
+   "image": "sprites/crew.human.torso.medic_vest.sit_bench.png"
   },
   "crew.human.torso.medic_vest.sit_idle": {
    "image": "sprites/crew.human.torso.medic_vest.sit_idle.png"
@@ -4624,6 +4797,9 @@
   "crew.human.torso.tee.ready_2m": {
    "image": "sprites/crew.human.torso.tee.ready_2m.png"
   },
+  "crew.human.torso.tee.sit_bench": {
+   "image": "sprites/crew.human.torso.tee.sit_bench.png"
+  },
   "crew.human.torso.tee.sit_idle": {
    "image": "sprites/crew.human.torso.tee.sit_idle.png"
   },
@@ -4719,6 +4895,9 @@
   },
   "crew.human.torso.work_shirt.ready_2m": {
    "image": "sprites/crew.human.torso.work_shirt.ready_2m.png"
+  },
+  "crew.human.torso.work_shirt.sit_bench": {
+   "image": "sprites/crew.human.torso.work_shirt.sit_bench.png"
   },
   "crew.human.torso.work_shirt.sit_idle": {
    "image": "sprites/crew.human.torso.work_shirt.sit_idle.png"
@@ -13897,6 +14076,17 @@
      "ox": 35,
      "oy": 51
     },
+    "sit_bench": {
+     "sheet": "crew.human.arm.L.cyber.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 35,
+     "ox": 38,
+     "oy": 51
+    },
     "aim_1h": {
      "sheet": "crew.human.arm.L.cyber.aim_1h",
      "start": 0,
@@ -14273,6 +14463,17 @@
      "cw": 58,
      "ch": 36,
      "ox": 35,
+     "oy": 50
+    },
+    "sit_bench": {
+     "sheet": "crew.human.arm.L.eva.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 36,
+     "ox": 38,
      "oy": 50
     },
     "aim_1h": {
@@ -14652,6 +14853,17 @@
      "ox": 35,
      "oy": 50
     },
+    "sit_bench": {
+     "sheet": "crew.human.arm.L.eva_cyber.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 36,
+     "ox": 38,
+     "oy": 50
+    },
     "aim_1h": {
      "sheet": "crew.human.arm.L.eva_cyber.aim_1h",
      "start": 0,
@@ -15019,6 +15231,17 @@
      "ox": 36,
      "oy": 52
     },
+    "sit_bench": {
+     "sheet": "crew.human.arm.L.flesh.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 50,
+     "ch": 33,
+     "ox": 39,
+     "oy": 52
+    },
     "aim_1h": {
      "sheet": "crew.human.arm.L.flesh.aim_1h",
      "start": 0,
@@ -15383,6 +15606,17 @@
      "cw": 48,
      "ch": 31,
      "ox": 40,
+     "oy": 51
+    },
+    "sit_bench": {
+     "sheet": "crew.human.arm.R.cyber.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 42,
+     "ch": 33,
+     "ox": 43,
      "oy": 51
     },
     "aim_1h": {
@@ -15763,6 +15997,17 @@
      "ox": 40,
      "oy": 51
     },
+    "sit_bench": {
+     "sheet": "crew.human.arm.R.eva.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 42,
+     "ch": 31,
+     "ox": 43,
+     "oy": 52
+    },
     "aim_1h": {
      "sheet": "crew.human.arm.R.eva.aim_1h",
      "start": 0,
@@ -16127,6 +16372,17 @@
      "cw": 46,
      "ch": 28,
      "ox": 41,
+     "oy": 52
+    },
+    "sit_bench": {
+     "sheet": "crew.human.arm.R.flesh.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 40,
+     "ch": 31,
+     "ox": 44,
      "oy": 52
     },
     "aim_1h": {
@@ -16506,6 +16762,17 @@
      "ox": 43,
      "oy": 39
     },
+    "sit_bench": {
+     "sheet": "crew.human.body.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 44,
+     "ch": 65,
+     "ox": 42,
+     "oy": 39
+    },
     "aim_1h": {
      "sheet": "crew.human.body.aim_1h",
      "start": 0,
@@ -16872,6 +17139,17 @@
      "ox": 52,
      "oy": 44
     },
+    "sit_bench": {
+     "sheet": "crew.human.eyes.cyber.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 22,
+     "ch": 15,
+     "ox": 53,
+     "oy": 44
+    },
     "aim_1h": {
      "sheet": "crew.human.eyes.cyber.aim_1h",
      "start": 0,
@@ -17236,6 +17514,17 @@
      "cw": 24,
      "ch": 15,
      "ox": 52,
+     "oy": 44
+    },
+    "sit_bench": {
+     "sheet": "crew.human.eyes.organic.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 22,
+     "ch": 15,
+     "ox": 53,
      "oy": 44
     },
     "aim_1h": {
@@ -18949,6 +19238,17 @@
      "ox": 55,
      "oy": 69
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.belt.tool_belt.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
+     "ch": 12,
+     "ox": 54,
+     "oy": 68
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.belt.tool_belt.aim_1h",
      "start": 0,
@@ -19833,6 +20133,163 @@
        [
         21.4,
         -35.4
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.blade.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 44,
+     "ch": 34,
+     "ox": 42,
+     "oy": 45,
+     "muzzle": [
+      [
+       [
+        7.2,
+        -29.9
+       ],
+       [
+        8.4,
+        -28.9
+       ],
+       [
+        7.9,
+        -28.6
+       ],
+       [
+        6.8,
+        -29.5
+       ]
+      ],
+      [
+       [
+        -7.8,
+        -30.0
+       ],
+       [
+        -7.9,
+        -28.8
+       ],
+       [
+        -7.7,
+        -28.5
+       ],
+       [
+        -7.6,
+        -29.6
+       ]
+      ],
+      [
+       [
+        -18.2,
+        -35.4
+       ],
+       [
+        -19.5,
+        -34.5
+       ],
+       [
+        -18.8,
+        -34.0
+       ],
+       [
+        -17.6,
+        -34.8
+       ]
+      ],
+      [
+       [
+        -18.0,
+        -42.9
+       ],
+       [
+        -19.8,
+        -42.6
+       ],
+       [
+        -18.9,
+        -41.8
+       ],
+       [
+        -17.2,
+        -42.1
+       ]
+      ],
+      [
+       [
+        -7.2,
+        -48.1
+       ],
+       [
+        -8.4,
+        -48.4
+       ],
+       [
+        -7.9,
+        -47.4
+       ],
+       [
+        -6.8,
+        -47.0
+       ]
+      ],
+      [
+       [
+        7.8,
+        -48.0
+       ],
+       [
+        7.9,
+        -48.6
+       ],
+       [
+        7.7,
+        -47.4
+       ],
+       [
+        7.6,
+        -46.9
+       ]
+      ],
+      [
+       [
+        18.2,
+        -42.6
+       ],
+       [
+        19.5,
+        -42.9
+       ],
+       [
+        18.8,
+        -41.9
+       ],
+       [
+        17.6,
+        -41.7
+       ]
+      ],
+      [
+       [
+        18.0,
+        -35.1
+       ],
+       [
+        19.8,
+        -34.7
+       ],
+       [
+        18.9,
+        -34.1
+       ],
+       [
+        17.2,
+        -34.5
        ]
       ]
      ]
@@ -20825,6 +21282,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.breach_axe.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 45,
+     "ox": 38,
+     "oy": 40,
+     "muzzle": [
+      [
+       [
+        1.5,
+        -34.9
+       ],
+       [
+        2.6,
+        -34.5
+       ],
+       [
+        2.3,
+        -33.9
+       ],
+       [
+        1.2,
+        -34.3
+       ]
+      ],
+      [
+       [
+        -9.0,
+        -36.5
+       ],
+       [
+        -9.0,
+        -35.9
+       ],
+       [
+        -8.9,
+        -35.3
+       ],
+       [
+        -8.9,
+        -35.9
+       ]
+      ],
+      [
+       [
+        -14.2,
+        -41.3
+       ],
+       [
+        -15.3,
+        -40.9
+       ],
+       [
+        -14.9,
+        -40.2
+       ],
+       [
+        -13.8,
+        -40.6
+       ]
+      ],
+      [
+       [
+        -11.0,
+        -46.5
+       ],
+       [
+        -12.7,
+        -46.7
+       ],
+       [
+        -12.2,
+        -45.8
+       ],
+       [
+        -10.6,
+        -45.6
+       ]
+      ],
+      [
+       [
+        -1.5,
+        -49.1
+       ],
+       [
+        -2.6,
+        -49.8
+       ],
+       [
+        -2.3,
+        -48.8
+       ],
+       [
+        -1.2,
+        -48.1
+       ]
+      ],
+      [
+       [
+        9.0,
+        -47.5
+       ],
+       [
+        9.0,
+        -48.5
+       ],
+       [
+        8.9,
+        -47.4
+       ],
+       [
+        8.9,
+        -46.5
+       ]
+      ],
+      [
+       [
+        14.2,
+        -42.7
+       ],
+       [
+        15.3,
+        -43.5
+       ],
+       [
+        14.9,
+        -42.5
+       ],
+       [
+        13.8,
+        -41.8
+       ]
+      ],
+      [
+       [
+        11.0,
+        -37.5
+       ],
+       [
+        12.7,
+        -37.7
+       ],
+       [
+        12.2,
+        -36.9
+       ],
+       [
+        10.6,
+        -36.7
+       ]
+      ]
+     ]
+    },
     "ready_2m": {
      "sheet": "crew.human.gear.hand.breach_axe.ready_2m",
      "start": 0,
@@ -21748,6 +22362,163 @@
        [
         39.4,
         -29.0
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.flamethrower.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 80,
+     "ch": 45,
+     "ox": 24,
+     "oy": 42,
+     "muzzle": [
+      [
+       [
+        23.4,
+        -17.3
+       ],
+       [
+        24.6,
+        -14.8
+       ],
+       [
+        23.6,
+        -15.1
+       ],
+       [
+        22.4,
+        -17.5
+       ]
+      ],
+      [
+       [
+        -4.5,
+        -13.4
+       ],
+       [
+        -4.9,
+        -10.7
+       ],
+       [
+        -4.5,
+        -11.1
+       ],
+       [
+        -4.1,
+        -13.7
+       ]
+      ],
+      [
+       [
+        -29.7,
+        -20.5
+       ],
+       [
+        -31.5,
+        -18.2
+       ],
+       [
+        -30.0,
+        -18.3
+       ],
+       [
+        -28.2,
+        -20.4
+       ]
+      ],
+      [
+       [
+        -37.6,
+        -34.4
+       ],
+       [
+        -39.7,
+        -33.0
+       ],
+       [
+        -37.9,
+        -32.3
+       ],
+       [
+        -35.8,
+        -33.7
+       ]
+      ],
+      [
+       [
+        -23.4,
+        -47.0
+       ],
+       [
+        -24.6,
+        -46.3
+       ],
+       [
+        -23.6,
+        -45.1
+       ],
+       [
+        -22.4,
+        -45.7
+       ]
+      ],
+      [
+       [
+        4.5,
+        -50.9
+       ],
+       [
+        4.9,
+        -50.4
+       ],
+       [
+        4.5,
+        -49.0
+       ],
+       [
+        4.1,
+        -49.5
+       ]
+      ],
+      [
+       [
+        29.7,
+        -43.8
+       ],
+       [
+        31.5,
+        -42.9
+       ],
+       [
+        30.0,
+        -41.9
+       ],
+       [
+        28.2,
+        -42.8
+       ]
+      ],
+      [
+       [
+        37.6,
+        -29.9
+       ],
+       [
+        39.7,
+        -28.1
+       ],
+       [
+        37.9,
+        -27.8
+       ],
+       [
+        35.8,
+        -29.6
        ]
       ]
      ]
@@ -23058,6 +23829,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.heavy_repeater.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 84,
+     "ch": 46,
+     "ox": 22,
+     "oy": 40,
+     "muzzle": [
+      [
+       [
+        24.9,
+        -17.1
+       ],
+       [
+        26.2,
+        -14.5
+       ],
+       [
+        25.2,
+        -14.8
+       ],
+       [
+        23.9,
+        -17.3
+       ]
+      ],
+      [
+       [
+        -4.3,
+        -12.8
+       ],
+       [
+        -4.7,
+        -10.0
+       ],
+       [
+        -4.2,
+        -10.5
+       ],
+       [
+        -3.9,
+        -13.2
+       ]
+      ],
+      [
+       [
+        -30.9,
+        -20.1
+       ],
+       [
+        -32.8,
+        -17.8
+       ],
+       [
+        -31.2,
+        -17.8
+       ],
+       [
+        -29.4,
+        -20.0
+       ]
+      ],
+      [
+       [
+        -39.5,
+        -34.7
+       ],
+       [
+        -41.8,
+        -33.2
+       ],
+       [
+        -39.9,
+        -32.5
+       ],
+       [
+        -37.7,
+        -33.9
+       ]
+      ],
+      [
+       [
+        -24.9,
+        -48.0
+       ],
+       [
+        -26.2,
+        -47.3
+       ],
+       [
+        -25.2,
+        -46.0
+       ],
+       [
+        -23.9,
+        -46.7
+       ]
+      ],
+      [
+       [
+        4.3,
+        -52.3
+       ],
+       [
+        4.7,
+        -51.8
+       ],
+       [
+        4.2,
+        -50.3
+       ],
+       [
+        3.9,
+        -50.9
+       ]
+      ],
+      [
+       [
+        30.9,
+        -45.0
+       ],
+       [
+        32.8,
+        -44.0
+       ],
+       [
+        31.2,
+        -43.0
+       ],
+       [
+        29.4,
+        -44.0
+       ]
+      ],
+      [
+       [
+        39.5,
+        -30.4
+       ],
+       [
+        41.8,
+        -28.6
+       ],
+       [
+        39.9,
+        -28.3
+       ],
+       [
+        37.7,
+        -30.1
+       ]
+      ]
+     ]
+    },
     "aim_heavy": {
      "sheet": "crew.human.gear.hand.heavy_repeater.aim_heavy",
      "start": 0,
@@ -24359,6 +25287,163 @@
        [
         29.9,
         -27.5
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.ion_pistol.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 58,
+     "ch": 34,
+     "ox": 35,
+     "oy": 49,
+     "muzzle": [
+      [
+       [
+        15.6,
+        -18.3
+       ],
+       [
+        16.5,
+        -16.5
+       ],
+       [
+        15.7,
+        -16.8
+       ],
+       [
+        14.8,
+        -18.5
+       ]
+      ],
+      [
+       [
+        -5.8,
+        -16.3
+       ],
+       [
+        -6.1,
+        -14.3
+       ],
+       [
+        -5.8,
+        -14.7
+       ],
+       [
+        -5.5,
+        -16.6
+       ]
+      ],
+      [
+       [
+        -23.7,
+        -22.4
+       ],
+       [
+        -25.0,
+        -20.8
+       ],
+       [
+        -23.8,
+        -20.8
+       ],
+       [
+        -22.6,
+        -22.4
+       ]
+      ],
+      [
+       [
+        -27.8,
+        -33.1
+       ],
+       [
+        -29.3,
+        -32.0
+       ],
+       [
+        -28.0,
+        -31.6
+       ],
+       [
+        -26.5,
+        -32.6
+       ]
+      ],
+      [
+       [
+        -15.6,
+        -42.0
+       ],
+       [
+        -16.5,
+        -41.5
+       ],
+       [
+        -15.7,
+        -40.6
+       ],
+       [
+        -14.8,
+        -41.1
+       ]
+      ],
+      [
+       [
+        5.8,
+        -44.1
+       ],
+       [
+        6.1,
+        -43.6
+       ],
+       [
+        5.8,
+        -42.7
+       ],
+       [
+        5.5,
+        -43.1
+       ]
+      ],
+      [
+       [
+        23.7,
+        -38.0
+       ],
+       [
+        25.0,
+        -37.2
+       ],
+       [
+        23.8,
+        -36.5
+       ],
+       [
+        22.6,
+        -37.3
+       ]
+      ],
+      [
+       [
+        27.8,
+        -27.3
+       ],
+       [
+        29.3,
+        -26.0
+       ],
+       [
+        28.0,
+        -25.8
+       ],
+       [
+        26.5,
+        -27.1
        ]
       ]
      ]
@@ -25884,6 +26969,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.laser_pistol.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 31,
+     "ox": 38,
+     "oy": 52,
+     "muzzle": [
+      [
+       [
+        13.4,
+        -18.6
+       ],
+       [
+        14.2,
+        -16.9
+       ],
+       [
+        13.5,
+        -17.2
+       ],
+       [
+        12.7,
+        -18.8
+       ]
+      ],
+      [
+       [
+        -6.1,
+        -17.1
+       ],
+       [
+        -6.4,
+        -15.3
+       ],
+       [
+        -6.1,
+        -15.6
+       ],
+       [
+        -5.8,
+        -17.4
+       ]
+      ],
+      [
+       [
+        -22.0,
+        -22.9
+       ],
+       [
+        -23.2,
+        -21.4
+       ],
+       [
+        -22.1,
+        -21.5
+       ],
+       [
+        -21.0,
+        -22.9
+       ]
+      ],
+      [
+       [
+        -25.0,
+        -32.7
+       ],
+       [
+        -26.4,
+        -31.7
+       ],
+       [
+        -25.2,
+        -31.3
+       ],
+       [
+        -23.8,
+        -32.2
+       ]
+      ],
+      [
+       [
+        -13.4,
+        -40.6
+       ],
+       [
+        -14.2,
+        -40.1
+       ],
+       [
+        -13.5,
+        -39.3
+       ],
+       [
+        -12.7,
+        -39.8
+       ]
+      ],
+      [
+       [
+        6.1,
+        -42.1
+       ],
+       [
+        6.4,
+        -41.7
+       ],
+       [
+        6.1,
+        -40.8
+       ],
+       [
+        5.8,
+        -41.2
+       ]
+      ],
+      [
+       [
+        22.0,
+        -36.3
+       ],
+       [
+        23.2,
+        -35.6
+       ],
+       [
+        22.1,
+        -35.0
+       ],
+       [
+        21.0,
+        -35.7
+       ]
+      ],
+      [
+       [
+        25.0,
+        -26.5
+       ],
+       [
+        26.4,
+        -25.3
+       ],
+       [
+        25.2,
+        -25.2
+       ],
+       [
+        23.8,
+        -26.4
+       ]
+      ]
+     ]
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.hand.laser_pistol.aim_1h",
      "start": 0,
@@ -27401,6 +28643,163 @@
        [
         34.9,
         -28.2
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.laser_rifle.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 70,
+     "ch": 37,
+     "ox": 29,
+     "oy": 46,
+     "muzzle": [
+      [
+       [
+        19.6,
+        -17.7
+       ],
+       [
+        20.7,
+        -15.5
+       ],
+       [
+        19.8,
+        -15.8
+       ],
+       [
+        18.8,
+        -17.9
+       ]
+      ],
+      [
+       [
+        -5.1,
+        -14.7
+       ],
+       [
+        -5.4,
+        -12.3
+       ],
+       [
+        -5.1,
+        -12.8
+       ],
+       [
+        -4.8,
+        -15.0
+       ]
+      ],
+      [
+       [
+        -26.9,
+        -21.3
+       ],
+       [
+        -28.4,
+        -19.4
+       ],
+       [
+        -27.0,
+        -19.4
+       ],
+       [
+        -25.5,
+        -21.3
+       ]
+      ],
+      [
+       [
+        -32.9,
+        -33.7
+       ],
+       [
+        -34.7,
+        -32.4
+       ],
+       [
+        -33.1,
+        -31.9
+       ],
+       [
+        -31.4,
+        -33.1
+       ]
+      ],
+      [
+       [
+        -19.6,
+        -44.6
+       ],
+       [
+        -20.7,
+        -43.9
+       ],
+       [
+        -19.8,
+        -42.8
+       ],
+       [
+        -18.8,
+        -43.5
+       ]
+      ],
+      [
+       [
+        5.1,
+        -47.6
+       ],
+       [
+        5.4,
+        -47.1
+       ],
+       [
+        5.1,
+        -45.9
+       ],
+       [
+        4.8,
+        -46.4
+       ]
+      ],
+      [
+       [
+        26.9,
+        -40.9
+       ],
+       [
+        28.4,
+        -40.1
+       ],
+       [
+        27.0,
+        -39.3
+       ],
+       [
+        25.5,
+        -40.1
+       ]
+      ],
+      [
+       [
+        32.9,
+        -28.6
+       ],
+       [
+        34.7,
+        -27.0
+       ],
+       [
+        33.1,
+        -26.8
+       ],
+       [
+        31.4,
+        -28.3
        ]
       ]
      ]
@@ -28926,6 +30325,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.plasma_cutter.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 60,
+     "ch": 34,
+     "ox": 34,
+     "oy": 49,
+     "muzzle": [
+      [
+       [
+        16.0,
+        -17.8
+       ],
+       [
+        16.9,
+        -15.9
+       ],
+       [
+        16.1,
+        -16.2
+       ],
+       [
+        15.3,
+        -18.0
+       ]
+      ],
+      [
+       [
+        -5.7,
+        -15.6
+       ],
+       [
+        -6.0,
+        -13.6
+       ],
+       [
+        -5.6,
+        -14.0
+       ],
+       [
+        -5.4,
+        -15.9
+       ]
+      ],
+      [
+       [
+        -24.0,
+        -21.8
+       ],
+       [
+        -25.3,
+        -20.1
+       ],
+       [
+        -24.1,
+        -20.2
+       ],
+       [
+        -22.9,
+        -21.8
+       ]
+      ],
+      [
+       [
+        -28.3,
+        -32.6
+       ],
+       [
+        -29.9,
+        -31.5
+       ],
+       [
+        -28.5,
+        -31.1
+       ],
+       [
+        -27.0,
+        -32.1
+       ]
+      ],
+      [
+       [
+        -16.0,
+        -41.8
+       ],
+       [
+        -16.9,
+        -41.2
+       ],
+       [
+        -16.1,
+        -40.3
+       ],
+       [
+        -15.3,
+        -40.9
+       ]
+      ],
+      [
+       [
+        5.7,
+        -43.9
+       ],
+       [
+        6.0,
+        -43.4
+       ],
+       [
+        5.6,
+        -42.5
+       ],
+       [
+        5.4,
+        -42.9
+       ]
+      ],
+      [
+       [
+        24.0,
+        -37.8
+       ],
+       [
+        25.3,
+        -37.0
+       ],
+       [
+        24.1,
+        -36.3
+       ],
+       [
+        22.9,
+        -37.1
+       ]
+      ],
+      [
+       [
+        28.3,
+        -26.9
+       ],
+       [
+        29.9,
+        -25.5
+       ],
+       [
+        28.5,
+        -25.4
+       ],
+       [
+        27.0,
+        -26.8
+       ]
+      ]
+     ]
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.hand.plasma_cutter.aim_1h",
      "start": 0,
@@ -30443,6 +31999,163 @@
        [
         43.3,
         -29.7
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.rail_rifle.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 88,
+     "ch": 46,
+     "ox": 20,
+     "oy": 40,
+     "muzzle": [
+      [
+       [
+        26.5,
+        -16.9
+       ],
+       [
+        27.9,
+        -14.2
+       ],
+       [
+        26.8,
+        -14.5
+       ],
+       [
+        25.4,
+        -17.1
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -12.3
+       ],
+       [
+        -4.4,
+        -9.3
+       ],
+       [
+        -4.0,
+        -9.8
+       ],
+       [
+        -3.6,
+        -12.6
+       ]
+      ],
+      [
+       [
+        -32.2,
+        -19.8
+       ],
+       [
+        -34.1,
+        -17.3
+       ],
+       [
+        -32.4,
+        -17.3
+       ],
+       [
+        -30.5,
+        -19.7
+       ]
+      ],
+      [
+       [
+        -41.5,
+        -35.0
+       ],
+       [
+        -43.8,
+        -33.5
+       ],
+       [
+        -41.8,
+        -32.7
+       ],
+       [
+        -39.6,
+        -34.2
+       ]
+      ],
+      [
+       [
+        -26.5,
+        -49.1
+       ],
+       [
+        -27.9,
+        -48.3
+       ],
+       [
+        -26.8,
+        -46.9
+       ],
+       [
+        -25.4,
+        -47.7
+       ]
+      ],
+      [
+       [
+        4.0,
+        -53.7
+       ],
+       [
+        4.4,
+        -53.2
+       ],
+       [
+        4.0,
+        -51.6
+       ],
+       [
+        3.6,
+        -52.2
+       ]
+      ],
+      [
+       [
+        32.2,
+        -46.2
+       ],
+       [
+        34.1,
+        -45.2
+       ],
+       [
+        32.4,
+        -44.1
+       ],
+       [
+        30.5,
+        -45.1
+       ]
+      ],
+      [
+       [
+        41.5,
+        -31.0
+       ],
+       [
+        43.8,
+        -29.0
+       ],
+       [
+        41.8,
+        -28.7
+       ],
+       [
+        39.6,
+        -30.6
        ]
       ]
      ]
@@ -31968,6 +33681,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.rifle.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 88,
+     "ch": 47,
+     "ox": 20,
+     "oy": 39,
+     "muzzle": [
+      [
+       [
+        26.1,
+        -17.1
+       ],
+       [
+        27.5,
+        -14.4
+       ],
+       [
+        26.4,
+        -14.8
+       ],
+       [
+        25.1,
+        -17.3
+       ]
+      ],
+      [
+       [
+        -4.1,
+        -12.6
+       ],
+       [
+        -4.5,
+        -9.7
+       ],
+       [
+        -4.0,
+        -10.1
+       ],
+       [
+        -3.7,
+        -12.9
+       ]
+      ],
+      [
+       [
+        -31.9,
+        -20.0
+       ],
+       [
+        -33.8,
+        -17.6
+       ],
+       [
+        -32.1,
+        -17.6
+       ],
+       [
+        -30.3,
+        -19.9
+       ]
+      ],
+      [
+       [
+        -41.0,
+        -35.1
+       ],
+       [
+        -43.4,
+        -33.6
+       ],
+       [
+        -41.4,
+        -32.9
+       ],
+       [
+        -39.1,
+        -34.3
+       ]
+      ],
+      [
+       [
+        -26.1,
+        -49.0
+       ],
+       [
+        -27.5,
+        -48.3
+       ],
+       [
+        -26.4,
+        -46.9
+       ],
+       [
+        -25.1,
+        -47.6
+       ]
+      ],
+      [
+       [
+        4.1,
+        -53.6
+       ],
+       [
+        4.5,
+        -53.0
+       ],
+       [
+        4.0,
+        -51.5
+       ],
+       [
+        3.7,
+        -52.1
+       ]
+      ],
+      [
+       [
+        31.9,
+        -46.1
+       ],
+       [
+        33.8,
+        -45.1
+       ],
+       [
+        32.1,
+        -44.0
+       ],
+       [
+        30.3,
+        -45.0
+       ]
+      ],
+      [
+       [
+        41.0,
+        -31.0
+       ],
+       [
+        43.4,
+        -29.1
+       ],
+       [
+        41.4,
+        -28.8
+       ],
+       [
+        39.1,
+        -30.6
+       ]
+      ]
+     ]
+    },
     "aim_2h": {
      "sheet": "crew.human.gear.hand.rifle.aim_2h",
      "start": 0,
@@ -33488,6 +35358,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.shock_baton.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 44,
+     "ch": 34,
+     "ox": 42,
+     "oy": 44,
+     "muzzle": [
+      [
+       [
+        7.8,
+        -29.9
+       ],
+       [
+        9.0,
+        -28.9
+       ],
+       [
+        8.5,
+        -28.6
+       ],
+       [
+        7.3,
+        -29.5
+       ]
+      ],
+      [
+       [
+        -7.7,
+        -29.9
+       ],
+       [
+        -7.8,
+        -28.7
+       ],
+       [
+        -7.6,
+        -28.4
+       ],
+       [
+        -7.5,
+        -29.6
+       ]
+      ],
+      [
+       [
+        -18.7,
+        -35.4
+       ],
+       [
+        -20.0,
+        -34.4
+       ],
+       [
+        -19.2,
+        -34.0
+       ],
+       [
+        -18.0,
+        -34.8
+       ]
+      ],
+      [
+       [
+        -18.7,
+        -43.1
+       ],
+       [
+        -20.5,
+        -42.8
+       ],
+       [
+        -19.6,
+        -42.0
+       ],
+       [
+        -17.9,
+        -42.3
+       ]
+      ],
+      [
+       [
+        -7.8,
+        -48.6
+       ],
+       [
+        -9.0,
+        -48.9
+       ],
+       [
+        -8.5,
+        -47.8
+       ],
+       [
+        -7.3,
+        -47.5
+       ]
+      ],
+      [
+       [
+        7.7,
+        -48.6
+       ],
+       [
+        7.8,
+        -49.2
+       ],
+       [
+        7.6,
+        -48.0
+       ],
+       [
+        7.5,
+        -47.4
+       ]
+      ],
+      [
+       [
+        18.7,
+        -43.1
+       ],
+       [
+        20.0,
+        -43.4
+       ],
+       [
+        19.2,
+        -42.4
+       ],
+       [
+        18.0,
+        -42.2
+       ]
+      ],
+      [
+       [
+        18.7,
+        -35.4
+       ],
+       [
+        20.5,
+        -35.0
+       ],
+       [
+        19.6,
+        -34.4
+       ],
+       [
+        17.9,
+        -34.7
+       ]
+      ]
+     ]
+    },
     "ready_1m": {
      "sheet": "crew.human.gear.hand.shock_baton.ready_1m",
      "start": 0,
@@ -34473,6 +36500,163 @@
        [
         36.7,
         -29.2
+       ]
+      ]
+     ]
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.shotgun.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 74,
+     "ch": 41,
+     "ox": 27,
+     "oy": 43,
+     "muzzle": [
+      [
+       [
+        21.0,
+        -18.2
+       ],
+       [
+        22.2,
+        -16.0
+       ],
+       [
+        21.3,
+        -16.2
+       ],
+       [
+        20.1,
+        -18.4
+       ]
+      ],
+      [
+       [
+        -4.9,
+        -14.9
+       ],
+       [
+        -5.3,
+        -12.5
+       ],
+       [
+        -4.9,
+        -12.8
+       ],
+       [
+        -4.6,
+        -15.2
+       ]
+      ],
+      [
+       [
+        -28.0,
+        -21.7
+       ],
+       [
+        -29.6,
+        -19.7
+       ],
+       [
+        -28.2,
+        -19.7
+       ],
+       [
+        -26.6,
+        -21.6
+       ]
+      ],
+      [
+       [
+        -34.6,
+        -34.7
+       ],
+       [
+        -36.6,
+        -33.4
+       ],
+       [
+        -35.0,
+        -32.8
+       ],
+       [
+        -33.0,
+        -34.0
+       ]
+      ],
+      [
+       [
+        -21.0,
+        -46.2
+       ],
+       [
+        -22.2,
+        -45.6
+       ],
+       [
+        -21.3,
+        -44.4
+       ],
+       [
+        -20.1,
+        -45.0
+       ]
+      ],
+      [
+       [
+        4.9,
+        -49.5
+       ],
+       [
+        5.3,
+        -49.1
+       ],
+       [
+        4.9,
+        -47.8
+       ],
+       [
+        4.6,
+        -48.2
+       ]
+      ],
+      [
+       [
+        28.0,
+        -42.7
+       ],
+       [
+        29.6,
+        -41.9
+       ],
+       [
+        28.2,
+        -41.0
+       ],
+       [
+        26.6,
+        -41.8
+       ]
+      ],
+      [
+       [
+        34.6,
+        -29.8
+       ],
+       [
+        36.6,
+        -28.1
+       ],
+       [
+        35.0,
+        -27.9
+       ],
+       [
+        33.0,
+        -29.4
        ]
       ]
      ]
@@ -35997,6 +38181,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.sidearm.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 52,
+     "ch": 32,
+     "ox": 38,
+     "oy": 51,
+     "muzzle": [
+      [
+       [
+        12.8,
+        -18.7
+       ],
+       [
+        13.5,
+        -17.0
+       ],
+       [
+        12.9,
+        -17.3
+       ],
+       [
+        12.1,
+        -18.9
+       ]
+      ],
+      [
+       [
+        -6.2,
+        -17.3
+       ],
+       [
+        -6.5,
+        -15.6
+       ],
+       [
+        -6.2,
+        -15.9
+       ],
+       [
+        -6.0,
+        -17.6
+       ]
+      ],
+      [
+       [
+        -21.5,
+        -23.0
+       ],
+       [
+        -22.7,
+        -21.6
+       ],
+       [
+        -21.6,
+        -21.7
+       ],
+       [
+        -20.5,
+        -23.1
+       ]
+      ],
+      [
+       [
+        -24.3,
+        -32.5
+       ],
+       [
+        -25.6,
+        -31.6
+       ],
+       [
+        -24.4,
+        -31.2
+       ],
+       [
+        -23.1,
+        -32.1
+       ]
+      ],
+      [
+       [
+        -12.8,
+        -40.2
+       ],
+       [
+        -13.5,
+        -39.7
+       ],
+       [
+        -12.9,
+        -38.9
+       ],
+       [
+        -12.1,
+        -39.4
+       ]
+      ],
+      [
+       [
+        6.2,
+        -41.6
+       ],
+       [
+        6.5,
+        -41.2
+       ],
+       [
+        6.2,
+        -40.3
+       ],
+       [
+        6.0,
+        -40.7
+       ]
+      ],
+      [
+       [
+        21.5,
+        -35.8
+       ],
+       [
+        22.7,
+        -35.1
+       ],
+       [
+        21.6,
+        -34.5
+       ],
+       [
+        20.5,
+        -35.2
+       ]
+      ],
+      [
+       [
+        24.3,
+        -26.3
+       ],
+       [
+        25.6,
+        -25.1
+       ],
+       [
+        24.4,
+        -25.0
+       ],
+       [
+        23.1,
+        -26.2
+       ]
+      ]
+     ]
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.hand.sidearm.aim_1h",
      "start": 0,
@@ -37517,6 +39858,163 @@
       ]
      ]
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.hand.smg.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 66,
+     "ch": 40,
+     "ox": 31,
+     "oy": 47,
+     "muzzle": [
+      [
+       [
+        18.7,
+        -18.0
+       ],
+       [
+        19.7,
+        -15.9
+       ],
+       [
+        18.9,
+        -16.2
+       ],
+       [
+        17.9,
+        -18.2
+       ]
+      ],
+      [
+       [
+        -5.3,
+        -15.2
+       ],
+       [
+        -5.6,
+        -13.0
+       ],
+       [
+        -5.3,
+        -13.4
+       ],
+       [
+        -4.9,
+        -15.5
+       ]
+      ],
+      [
+       [
+        -26.1,
+        -21.7
+       ],
+       [
+        -27.6,
+        -19.8
+       ],
+       [
+        -26.3,
+        -19.9
+       ],
+       [
+        -24.8,
+        -21.7
+       ]
+      ],
+      [
+       [
+        -31.7,
+        -33.7
+       ],
+       [
+        -33.5,
+        -32.5
+       ],
+       [
+        -31.9,
+        -31.9
+       ],
+       [
+        -30.2,
+        -33.1
+       ]
+      ],
+      [
+       [
+        -18.7,
+        -44.1
+       ],
+       [
+        -19.7,
+        -43.5
+       ],
+       [
+        -18.9,
+        -42.5
+       ],
+       [
+        -17.9,
+        -43.0
+       ]
+      ],
+      [
+       [
+        5.3,
+        -46.9
+       ],
+       [
+        5.6,
+        -46.4
+       ],
+       [
+        5.3,
+        -45.3
+       ],
+       [
+        4.9,
+        -45.7
+       ]
+      ],
+      [
+       [
+        26.1,
+        -40.4
+       ],
+       [
+        27.6,
+        -39.5
+       ],
+       [
+        26.3,
+        -38.7
+       ],
+       [
+        24.8,
+        -39.5
+       ]
+      ],
+      [
+       [
+        31.7,
+        -28.4
+       ],
+       [
+        33.5,
+        -26.9
+       ],
+       [
+        31.9,
+        -26.7
+       ],
+       [
+        30.2,
+        -28.1
+       ]
+      ]
+     ]
+    },
     "aim_2h": {
      "sheet": "crew.human.gear.hand.smg.aim_2h",
      "start": 0,
@@ -38526,6 +41024,17 @@
      "ox": 49,
      "oy": 36
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.eva_helmet.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 28,
+     "ch": 25,
+     "ox": 50,
+     "oy": 36
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.head.eva_helmet.aim_1h",
      "start": 0,
@@ -38890,6 +41399,17 @@
      "cw": 28,
      "ch": 23,
      "ox": 50,
+     "oy": 39
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.headset.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 22,
+     "ox": 51,
      "oy": 39
     },
     "aim_1h": {
@@ -39258,6 +41778,17 @@
      "ox": 48,
      "oy": 34
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.heavy_helmet.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 30,
+     "ch": 29,
+     "ox": 49,
+     "oy": 33
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.head.heavy_helmet.aim_1h",
      "start": 0,
@@ -39623,6 +42154,17 @@
      "ch": 19,
      "ox": 51,
      "oy": 38
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.tactical_helmet.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 19,
+     "ox": 51,
+     "oy": 37
     },
     "aim_1h": {
      "sheet": "crew.human.gear.head.tactical_helmet.aim_1h",
@@ -39990,6 +42532,17 @@
      "ox": 49,
      "oy": 38
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.visor_cap.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 28,
+     "ch": 18,
+     "ox": 50,
+     "oy": 38
+    },
     "aim_1h": {
      "sheet": "crew.human.gear.head.visor_cap.aim_1h",
      "start": 0,
@@ -40350,6 +42903,17 @@
      "start": 0,
      "frames": 6,
      "fps": 8,
+     "loop": true,
+     "cw": 26,
+     "ch": 17,
+     "ox": 51,
+     "oy": 37
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.head.welding_goggles.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
      "loop": true,
      "cw": 26,
      "ch": 17,
@@ -40722,6 +43286,17 @@
      "ox": 49,
      "oy": 68
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.blade.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 30,
+     "ch": 30,
+     "ox": 49,
+     "oy": 68
+    },
     "crouch_idle": {
      "sheet": "crew.human.gear.holster.blade.crouch_idle",
      "start": 0,
@@ -41076,6 +43651,17 @@
      "ox": 48,
      "oy": 67
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.ion_pistol.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 34,
+     "ch": 18,
+     "ox": 47,
+     "oy": 67
+    },
     "crouch_idle": {
      "sheet": "crew.human.gear.holster.ion_pistol.crouch_idle",
      "start": 0,
@@ -41186,6 +43772,17 @@
      "fps": 8,
      "loop": true,
      "cw": 30,
+     "ch": 18,
+     "ox": 49,
+     "oy": 67
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.laser_pistol.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 31,
      "ch": 18,
      "ox": 49,
      "oy": 67
@@ -41382,6 +43979,17 @@
      "cw": 32,
      "ch": 18,
      "ox": 48,
+     "oy": 67
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.plasma_cutter.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 34,
+     "ch": 18,
+     "ox": 47,
      "oy": 67
     },
     "crouch_idle": {
@@ -41659,6 +44267,17 @@
      "ox": 51,
      "oy": 69
     },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.shock_baton.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 29,
+     "ox": 51,
+     "oy": 68
+    },
     "crouch_idle": {
      "sheet": "crew.human.gear.holster.shock_baton.crouch_idle",
      "start": 0,
@@ -41849,6 +44468,17 @@
      "fps": 8,
      "loop": true,
      "cw": 30,
+     "ch": 18,
+     "ox": 49,
+     "oy": 67
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.holster.sidearm.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 31,
      "ch": 18,
      "ox": 49,
      "oy": 67
@@ -42044,6 +44674,17 @@
      "cw": 38,
      "ch": 30,
      "ox": 45,
+     "oy": 47
+    },
+    "sit_bench": {
+     "sheet": "crew.human.gear.shoulder.pads.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 36,
+     "ch": 29,
+     "ox": 46,
      "oy": 47
     },
     "aim_1h": {
@@ -42412,6 +45053,17 @@
      "ox": 53,
      "oy": 39
     },
+    "sit_bench": {
+     "sheet": "crew.human.hair.bun.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
+     "ch": 19,
+     "ox": 54,
+     "oy": 38
+    },
     "aim_1h": {
      "sheet": "crew.human.hair.bun.aim_1h",
      "start": 0,
@@ -42777,6 +45429,17 @@
      "ch": 23,
      "ox": 53,
      "oy": 39
+    },
+    "sit_bench": {
+     "sheet": "crew.human.hair.long.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
+     "ch": 23,
+     "ox": 54,
+     "oy": 38
     },
     "aim_1h": {
      "sheet": "crew.human.hair.long.aim_1h",
@@ -43144,6 +45807,17 @@
      "ox": 54,
      "oy": 32
     },
+    "sit_bench": {
+     "sheet": "crew.human.hair.mohawk.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
+     "ch": 20,
+     "ox": 54,
+     "oy": 31
+    },
     "aim_1h": {
      "sheet": "crew.human.hair.mohawk.aim_1h",
      "start": 0,
@@ -43510,6 +46184,17 @@
      "ox": 53,
      "oy": 39
     },
+    "sit_bench": {
+     "sheet": "crew.human.hair.ponytail.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
+     "ch": 23,
+     "ox": 54,
+     "oy": 38
+    },
     "aim_1h": {
      "sheet": "crew.human.hair.ponytail.aim_1h",
      "start": 0,
@@ -43872,6 +46557,17 @@
      "fps": 8,
      "loop": true,
      "cw": 21,
+     "ch": 18,
+     "ox": 54,
+     "oy": 39
+    },
+    "sit_bench": {
+     "sheet": "crew.human.hair.shaved.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 20,
      "ch": 18,
      "ox": 54,
      "oy": 39
@@ -44242,6 +46938,17 @@
      "ox": 53,
      "oy": 39
     },
+    "sit_bench": {
+     "sheet": "crew.human.hair.short.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 22,
+     "ch": 19,
+     "ox": 53,
+     "oy": 38
+    },
     "aim_1h": {
      "sheet": "crew.human.hair.short.aim_1h",
      "start": 0,
@@ -44605,6 +47312,17 @@
      "loop": true,
      "cw": 16,
      "ch": 11,
+     "ox": 55,
+     "oy": 44
+    },
+    "sit_bench": {
+     "sheet": "crew.human.implant.temple.neural_jack.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 17,
+     "ch": 10,
      "ox": 55,
      "oy": 44
     },
@@ -44974,6 +47692,17 @@
      "ch": 37,
      "ox": 42,
      "oy": 67
+    },
+    "sit_bench": {
+     "sheet": "crew.human.legs.cargo_pants.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 46,
+     "ch": 39,
+     "ox": 41,
+     "oy": 66
     },
     "aim_1h": {
      "sheet": "crew.human.legs.cargo_pants.aim_1h",
@@ -45352,6 +48081,17 @@
      "ox": 41,
      "oy": 66
     },
+    "sit_bench": {
+     "sheet": "crew.human.legs.eva.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 50,
+     "ch": 42,
+     "ox": 39,
+     "oy": 65
+    },
     "aim_1h": {
      "sheet": "crew.human.legs.eva.aim_1h",
      "start": 0,
@@ -45718,6 +48458,17 @@
      "ox": 49,
      "oy": 51
     },
+    "sit_bench": {
+     "sheet": "crew.human.torso.armor_heavy.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 29,
+     "ch": 28,
+     "ox": 50,
+     "oy": 51
+    },
     "aim_1h": {
      "sheet": "crew.human.torso.armor_heavy.aim_1h",
      "start": 0,
@@ -46078,6 +48829,17 @@
      "start": 0,
      "frames": 6,
      "fps": 8,
+     "loop": true,
+     "cw": 28,
+     "ch": 26,
+     "ox": 50,
+     "oy": 52
+    },
+    "sit_bench": {
+     "sheet": "crew.human.torso.armor_vest.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
      "loop": true,
      "cw": 28,
      "ch": 26,
@@ -46461,6 +49223,17 @@
      "ox": 49,
      "oy": 47
     },
+    "sit_bench": {
+     "sheet": "crew.human.torso.eva.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 30,
+     "ch": 36,
+     "ox": 49,
+     "oy": 47
+    },
     "aim_1h": {
      "sheet": "crew.human.torso.eva.aim_1h",
      "start": 0,
@@ -46827,6 +49600,17 @@
      "ox": 51,
      "oy": 53
     },
+    "sit_bench": {
+     "sheet": "crew.human.torso.flight_vest.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 25,
+     "ox": 51,
+     "oy": 53
+    },
     "aim_1h": {
      "sheet": "crew.human.torso.flight_vest.aim_1h",
      "start": 0,
@@ -47187,6 +49971,17 @@
      "start": 0,
      "frames": 6,
      "fps": 8,
+     "loop": true,
+     "cw": 26,
+     "ch": 24,
+     "ox": 51,
+     "oy": 53
+    },
+    "sit_bench": {
+     "sheet": "crew.human.torso.harness.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
      "loop": true,
      "cw": 26,
      "ch": 24,
@@ -47559,6 +50354,17 @@
      "ox": 51,
      "oy": 53
     },
+    "sit_bench": {
+     "sheet": "crew.human.torso.medic_vest.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 24,
+     "ox": 51,
+     "oy": 53
+    },
     "aim_1h": {
      "sheet": "crew.human.torso.medic_vest.aim_1h",
      "start": 0,
@@ -47919,6 +50725,17 @@
      "start": 0,
      "frames": 6,
      "fps": 8,
+     "loop": true,
+     "cw": 26,
+     "ch": 24,
+     "ox": 51,
+     "oy": 53
+    },
+    "sit_bench": {
+     "sheet": "crew.human.torso.tee.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
      "loop": true,
      "cw": 26,
      "ch": 24,
@@ -48288,6 +51105,17 @@
      "loop": true,
      "cw": 26,
      "ch": 23,
+     "ox": 51,
+     "oy": 53
+    },
+    "sit_bench": {
+     "sheet": "crew.human.torso.work_shirt.sit_bench",
+     "start": 0,
+     "frames": 4,
+     "fps": 3,
+     "loop": true,
+     "cw": 26,
+     "ch": 24,
      "ox": 51,
      "oy": 53
     },
@@ -69003,15 +71831,87 @@
     "x": 1,
     "y": 1,
     "w": 83,
-    "h": 63
+    "h": 66
    },
    "anchor": {
     "x": 56,
-    "y": 51
+    "y": 54
    },
    "footprint": [
     2,
     1
+   ]
+  },
+  "module.bench.front.r0": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 604,
+    "y": 1,
+    "w": 46,
+    "h": 25
+   },
+   "anchor": {
+    "x": 32,
+    "y": 33
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.front.r1": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 421,
+    "y": 1,
+    "w": 67,
+    "h": 46
+   },
+   "anchor": {
+    "x": 20,
+    "y": 43
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bench.front.r2": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 489,
+    "y": 1,
+    "w": 65,
+    "h": 46
+   },
+   "anchor": {
+    "x": 46,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.front.r3": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 555,
+    "y": 1,
+    "w": 48,
+    "h": 28
+   },
+   "anchor": {
+    "x": 14,
+    "y": 35
+   },
+   "footprint": [
+    1,
+    2
    ]
   },
   "module.bench.r0": {
@@ -69021,11 +71921,11 @@
     "x": 85,
     "y": 1,
     "w": 83,
-    "h": 63
+    "h": 66
    },
    "anchor": {
     "x": 56,
-    "y": 51
+    "y": 54
    },
    "footprint": [
     2,
@@ -69039,11 +71939,11 @@
     "x": 253,
     "y": 1,
     "w": 83,
-    "h": 58
+    "h": 61
    },
    "anchor": {
     "x": 24,
-    "y": 44
+    "y": 47
    },
    "footprint": [
     1,
@@ -69057,11 +71957,11 @@
     "x": 337,
     "y": 1,
     "w": 83,
-    "h": 58
+    "h": 61
    },
    "anchor": {
     "x": 59,
-    "y": 44
+    "y": 47
    },
    "footprint": [
     2,
@@ -69075,11 +71975,11 @@
     "x": 169,
     "y": 1,
     "w": 83,
-    "h": 63
+    "h": 66
    },
    "anchor": {
     "x": 27,
-    "y": 51
+    "y": 54
    },
    "footprint": [
     1,
