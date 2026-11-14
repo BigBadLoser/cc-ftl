@@ -68,10 +68,21 @@ export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]):
     // Its annex is the cell at one end of it, on the flat before the cut, and opens into it. The cell's last row is
     // where the ring steps in: that row is the corner room's, and its wall onto the annex.
     const nook = spec?.annex ? g.room(spec.annex.role, { spec: spec.annex, access: [id], rank: 2e5 + k }) : -1;
-    for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) {
+    const ours = (x: number, y: number): boolean => {
       const tx = (x + 0.5) * sx, ty = (y + 0.5) * sy;
-      if (tx < T || ty < T || g.at(x, y) !== SPACE || s.inside(x, y)) continue;
-      if (s.hull(x, y) || (!s.round && tx + ty <= line)) g.set(x, y, nook >= 0 && ty < T + K - 1 ? nook : id);
+      return tx >= T && ty >= T && g.at(x, y) === SPACE && !s.inside(x, y) && (s.hull(x, y) || (!s.round && tx + ty <= line));
+    };
+    // The annex's end: the flat along x unless an arc's cut took it, then the flat along y.
+    let alongX = true;
+    if (nook >= 0) {
+      let n = 0;
+      for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) if (ours(x, y) && (y + 0.5) * sy < T + K - 1) n++;
+      alongX = n >= K * K;
+    }
+    for (let y = -R; y < R; y++) for (let x = -R; x < R; x++) {
+      if (!ours(x, y)) continue;
+      const end = alongX ? (y + 0.5) * sy < T + K - 1 : (x + 0.5) * sx < T + K - 1;
+      g.set(x, y, nook >= 0 && end ? nook : id);
     }
   }
   return placed;

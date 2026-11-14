@@ -281,6 +281,13 @@ changing the ring recipes; do not redesign from scratch.
 - The mocks themselves are in `docs/refs/station-mocks/` (see `docs/refs/README.md`): the mining ring with the ore
   spine through it, the faceted trading hull.
 
+Reworked (the user: "it's not the concept itself, it's the lattice and the gaps it's leaving"): the round rings are
+the bazaar's rounded octagon, not the stepped lattice; the works and freight are one wing and the machinery another on
+the opposite side of the ring, each about half the old wing (the user: "split the one big wing into 2 half size wings
+either side"); the square with bastions gets the same two wings, its faces cut as wide as a wing (`cut: { flat: 3 }`,
+`rowDepth: 7`) so a wing meets the bastions either side with no gap. The arc open to the south is dropped: the
+crescent is that station. A corner whose annex end lies in an arc's cut puts the annex on its other end.
+
 **Regressed since, not redesigned:** the rooms added to the program after that review (ore store, pod deck, workshop,
 breaker shop, battery room) all went into the one works block, so it grew from about two thirds of the ring's width
 to the ring's full width and reads as a tail. The recipe was not rebalanced. Ring stations are parked at the user's
