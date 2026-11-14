@@ -1,3 +1,4 @@
+import { berthOf, holdBerth, releaseBerth } from './berths';
 import { releaseBedClaim } from '../ai/task';
 import { ModuleC, type Module } from '../modules/components';
 import { shipIdOf } from '../regions';
@@ -38,7 +39,7 @@ export function careAvailable(sim: Sim, crew: number): boolean {
   for (const id of sim.world.query(ModuleC)) {
     const m = sim.world.get(id, ModuleC) as Module;
     const def = sim.content.modules[m.def];
-    if (def?.medical && (bedUsable(def, m) || (m.reservedBy === crew && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
+    if (def?.medical && (bedUsable(def, m) || (berthOf(def, m, crew) >= 0 && m.hp > 0 && (!def.recovery || m.powered))) && shipIdOf(sim, m) === ship) return true;
   }
   return false;
 }
@@ -50,7 +51,7 @@ export function enterCare(sim: Sim, crew: number, bed: number, treated?: number)
   pos.x = pos.toX = m.x;
   pos.y = pos.toY = m.y;
   pos.progress = 0;
-  m.reservedBy = crew;
+  holdBerth(sim.content.modules[m.def], m, crew);
   clearPath(sim, crew);
   const rec: Recovering = treated ? { bed, treated } : { bed };
   sim.world.add(crew, RecoveringC, rec);
@@ -67,8 +68,8 @@ export function lieDownInCare(sim: Sim, crew: number, bed: number): void {
 /** Get out: onto the pod's access tile, the pod free again. */
 export function leaveCare(sim: Sim, crew: number, rec: Recovering): void {
   const m = sim.world.get(rec.bed, ModuleC);
-  if (m && m.reservedBy === crew) m.reservedBy = 0;
   const def = m && sim.content.modules[m.def];
+  if (m) releaseBerth(def, m, crew);
   const pos = sim.world.get(crew, PositionC);
   if (m && def && pos) {
     const at = bedStandTile(def, m);

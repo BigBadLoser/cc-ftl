@@ -164,7 +164,7 @@ These are all built from the **Life** tab and change no mood yet:
 
 - **Bench:** three seats. It needs the floor in front of its seats clear, so it can't face a wall. Crew can walk across it like a
   bed; nobody sits on it yet.
-- **Bunk bed:** a bed with a lower and an upper deck. One crew member sleeps in it, like a bed.
+- **Bunk bed:** a bed with a lower and an upper deck. Two crew sleep in it, one on each deck, like in two beds.
 - **Sparring droid, planter and vending machines (two liveries):** decoration. The vending machines draw 1 power.
 
 <ComingLater>

@@ -267,6 +267,8 @@ export const CarriedC = defineComponent<Carried>('carried');
  */
 export interface BedOwner {
   bed: number;
+  /** Which berth of the bed (`ModuleDef.berths`) is theirs; absent = 0. */
+  berth?: number;
 }
 export const BedOwnerC = defineComponent<BedOwner>('bedOwner');
 

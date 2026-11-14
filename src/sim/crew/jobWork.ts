@@ -1,3 +1,4 @@
+import { berthOf, holdBerth } from './berths';
 import { performCraft } from '../items/craft';
 import { performRefuel } from '../modules/refuel';
 import { performFarm } from '../farm/work';
@@ -193,7 +194,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   const carried = sim.world.get(patient, CarriedC);
 
   if (!carried) {
-    let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
+    const held = sim.world.get(job.bed ?? 0, ModuleC);
+    let bed = held && berthOf(sim.content.modules[held.def], held, patient) >= 0 ? (job.bed as number) : 0;
     if (!bed) {
       const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, bedUseOf(sim, patient));
       const spot = plan ? null : rescueSpot(sim, patient);
@@ -208,7 +210,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
       }
       if (!plan) return 'wait';
       bed = plan.bed;
-      (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;
+      const taken = sim.world.get(bed, ModuleC) as Module;
+      holdBerth(sim.content.modules[taken.def], taken, patient);
     }
     const bedMod = sim.world.get(bed, ModuleC) as Module;
     const target = bedStandTile(sim.content.modules[bedMod.def] as ModuleDef, bedMod); // a pod is entered from its access tile

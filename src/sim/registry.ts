@@ -533,6 +533,8 @@ export interface ModuleDef {
   /** Construction work in ticks at workSpeed 1. */
   buildWork: number;
   bed?: true;
+  /** Sleepers a bed takes at once (default 1): the double bunk 2, lower deck first (crew/berths.ts holds who lies where). Only with `bed`. */
+  berths?: number;
   /** A medical bed: only patients lie in it (never sleepers), and it heals the way a bed does, faster with medicinal herbs in stock. */
   medical?: true;
   /**

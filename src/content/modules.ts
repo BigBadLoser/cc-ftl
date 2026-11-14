@@ -101,7 +101,7 @@ export const modules = {
     scrap: 'comfort',
     name: 'Bunk bed',
     category: 'life',
-    description: "A two-deck bunk. A crew member sleeps in the lower bunk and recovers rest.",
+    description: "A two-deck bunk. Two crew sleep in it, one on each deck, and recover rest.",
     asset: 'module.bunk',
     footprint: [1, 2],
     solid: false,
@@ -111,6 +111,7 @@ export const modules = {
     buildWork: 110,
     cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 6 }],
     bed: true,
+    berths: 2, // lower and upper deck
   },
   'module.exercise': {
     scrap: 'comfort',

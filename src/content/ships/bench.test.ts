@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { homeShip, newGame, placementError, shipGrid, type Sim } from '../../sim';
+import { ModuleC, CrewC, NeedsC, PositionC, PrioritiesC, homeShip, newGame, placementError, removeModule, shipGrid, spawnModule, type Sim } from '../../sim';
+import { berthHolders, berthOf } from '../../sim/crew/berths';
+import { auditReservations } from '../../sim/ai/audit';
 import { accessTiles, footprintTiles } from '../../sim/modules/footprint';
 import { content } from '../index';
 
@@ -46,5 +48,25 @@ describe('leisure furniture defs', () => {
       if (placementError(sim, ship, 'module.bench', x, y, rot) === 'noAccess') walled++;
     }
     expect(walled).toBeGreaterThan(0); // somewhere on the starter ship it would face a wall, and is refused
+  });
+});
+
+describe('double bunk', () => {
+  it('sleeps two crew at once, one on each berth, with the ship\'s other beds gone', () => {
+    const s = newGame(1, content, 'ship.starter', false);
+    for (const id of s.world.query(ModuleC)) if (content.modules[s.world.get(id, ModuleC)!.def as 'module.bed'].bed) removeModule(s, id);
+    for (let i = 0; i < 40; i++) s.step();
+    const ship = homeShip(s);
+    const at = freeSpot(s, 'module.bunk');
+    const bunk = spawnModule(s, 'module.bunk', at.x, at.y, 0);
+    expect(placementError(s, ship, 'module.bunk', at.x, at.y, 0)).not.toBeNull(); // it is there now
+    const crew = s.world.query(CrewC).filter((id) => s.world.has(id, PrioritiesC)).slice(0, 2);
+    for (const id of crew) { const n = s.world.get(id, NeedsC)!; n.rest = 2; const p = s.world.get(id, PositionC)!; p.x = p.toX = at.x; p.y = p.toY = at.y; }
+    const def = content.modules['module.bunk'];
+    for (let i = 0; i < 2400 && berthHolders(def, s.world.get(bunk, ModuleC)!).length < 2; i++) s.step();
+    const m = s.world.get(bunk, ModuleC)!;
+    expect(berthHolders(def, m).sort()).toEqual([...crew].sort());
+    expect(crew.map((id) => berthOf(def, m, id)).sort()).toEqual([0, 1]);
+    expect(auditReservations(s).problems).toEqual([]);
   });
 });

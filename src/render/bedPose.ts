@@ -12,6 +12,16 @@ const HEAD_DIR = { negY: 2, posX: 4, posY: 6, negX: 0 } as const;
  */
 export const BED_LIFT = 4;
 
+/**
+ * Art px each berth above the first sits higher (the double bunk's upper deck over its lower one). Measured on `module.bunk.r0` (centre column, mattress top
+ * midpoints against the footprint centre's floor point): lower 8.5 art px, upper 41.5, so the upper deck is 33 higher (tools/blender/sprites/bunk_study.py b1h:
+ * deck tops 5 and 38 px, art px 1:1).
+ */
+export const BERTH_RISE = 33;
+
+/** The lift (art px) of a sleeper in berth `berth` of a bed: the mattress top over the `sleep` frames' rest height. */
+export const berthLift = (berth: number): number => BED_LIFT + Math.max(0, berth) * BERTH_RISE;
+
 export interface BedPose {
   /** Where the sleeper lies: the centre of the bed's footprint, in sector tiles. */
   x: number;

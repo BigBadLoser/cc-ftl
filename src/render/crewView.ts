@@ -31,7 +31,8 @@ import type { Layers } from './layers';
 import { SEAT_CLIP, clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
-import { BED_LIFT, bedPose } from './bedPose';
+import { berthLift, bedPose } from './bedPose';
+import { berthOf } from '../sim/crew/berths';
 import { POD_LIFT, podPose } from './podPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 import { playSpot } from '../sim/ai/machines/leisureSpots';
@@ -379,7 +380,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // Region-local art position and depth (the region's containers sit at its sector offset).
         const lx = (pod ?? bed ?? s).x - target.ox, ly = (pod ?? bed ?? s).y - target.oy;
         const p = iso(lx, ly);
-        if (bed) p.y -= BED_LIFT * S;
+        if (bed) p.y -= berthLift(at ? berthOf(at.def, at.m, id) : 0) * S; // the bunk's upper sleeper lies a deck higher
         if (pod) p.y -= POD_LIFT * S;
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
