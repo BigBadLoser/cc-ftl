@@ -61,10 +61,10 @@ const guns: RoomMock[] = [
     ],
   },
   {
-    role: 'weapons', caption: 'G2 guns in one row along the back', w: 17, h: 7, door: 8,
+    role: 'weapons', caption: 'G2 two rows, three columns', w: 15, h: 8, door: 4,
     pieces: [
-      ['module.massDriver', 0, 1], ['module.burstLaser', 4, 2], ['module.massDriver', 7, 1], ['module.burstLaser', 11, 2], ['module.pointDefense', 14, 2],
-      ['module.battery', 0, 6], ['module.battery', 0, 5],
+      ['module.massDriver', 1, 1], ['module.burstLaser', 6, 1], ['module.massDriver', 10, 1],
+      ['module.burstLaser', 1, 5], ['module.battery', 6, 5], ['module.battery', 7, 5], ['module.pointDefense', 11, 5],
     ],
   },
   {
