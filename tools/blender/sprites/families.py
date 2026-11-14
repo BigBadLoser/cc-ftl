@@ -166,6 +166,9 @@ def jobs(name):
         if os.environ.get("CART_ALL"):      # the cart's mirror check alone (slab_cart)
             return slab_cart.jobs(), "slab"
         return slab_game.jobs(rots) + slab_cart.jobs(rots) + slab_floor.jobs(), "slab"
+    if name == "stasisload":    # the stasis wheel's loading animation, a prototype (slab_loadanim.py), preview only
+        from . import slab_loadanim
+        return slab_loadanim.jobs(), "slab"
     if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
         from . import slab_study
         return slab_study.jobs(), "slab"
