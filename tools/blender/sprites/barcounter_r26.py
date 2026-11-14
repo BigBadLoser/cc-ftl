@@ -7,10 +7,10 @@ Pieces (each runs to its tiles' edges along the run, so neighbours butt flush; t
   o1s straight (3x1): front +v padded
   o1c corner (1x1): front +v and right +u padded; joins the straight on its left and the arm behind it
   o1a arm (1x2): the run going back from the corner along v; its right +u side padded
+No drinks on the top: those can come later as a conditional overlay.
 An L: o1s, then o1c at its right end, then o1a behind o1c. The bartender stands inside the L.
 
 All in px of the tile (u across, v deep, front +v toward the camera, z up)."""
-from .barcounter_r13 import mug
 from .barcounter_r22 import OX
 from .barcounter_study import TOP
 from .bunk_study import _px
@@ -61,8 +61,6 @@ def run(k, ax, a0, a1, tiles):
 def o1s():
     k = Bench("bar_o1s", (3, 1))
     run(k, "v", -48, 48, (-32, 0, 32))
-    for u, col in ((-26, "r9Amber"), (14, "r9Blue")):
-        mug(k, u, 3, col)
     return k.build()
 
 
@@ -84,7 +82,6 @@ def o1c():
 def o1a():
     k = Bench("bar_o1a", (1, 2))
     run(k, "u", -32, 32, (-16, 16))
-    mug(k, 3, 10, "r9Ruby")
     return k.build()
 
 
