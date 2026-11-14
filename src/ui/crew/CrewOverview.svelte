@@ -49,7 +49,7 @@
   </div>
   {/if}
   {#if !c.stasis}<p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>{/if}
-  {#if c.weapon}
+  {#if c.weapon && !c.stasis}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
       <span class="wl" use:tip={{ text: `${c.weapon.name}: ${c.weapon.damage} damage, ${c.weapon.ranged ? `range ${c.weapon.range}` : 'melee'}`, rich: wcard ? card : undefined, side: 'right', focus: true }}><span class="ic"><Icon name={c.weapon.ranged ? 'target' : 'sword'} size={14} /></span><b>{c.weapon.name}</b><span class="dim">{c.weapon.ranged ? 'ranged' : 'melee'} · {c.weapon.damage} dmg{c.weapon.ranged ? ` · ${c.weapon.range} tiles` : ''}</span></span>
