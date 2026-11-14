@@ -33,6 +33,10 @@
   recovery_pod  the recovery pod module.recovery (2x2): idle, .unpowered, .active bubble frames, the patient's front
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
+  bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
+            module.bunk (1x2), the sparring droid module.exercise, the bench module.bench (2x1), the planter
+            module.planter, the vending machines module.vending and module.vending_red, four rotations, art only
+            (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)
@@ -159,6 +163,10 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name in ("bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module"):
+        import os
+        from . import leisure
+        return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
     if name == "vending10":     # look study, preview only (not in RENDERED): one generated body, recessed front, r10
         from . import vending_r10
         return vending_r10.jobs(), "only:vending"
@@ -438,5 +446,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod")
+            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

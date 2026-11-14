@@ -20,6 +20,12 @@
    "image": "sprites/battery.png",
    "glow": "sprites/battery.glow.png"
   },
+  "bench_module": {
+   "image": "sprites/bench_module.png"
+  },
+  "bunk_module": {
+   "image": "sprites/bunk_module.png"
+  },
   "cargo": {
    "image": "sprites/cargo.png",
    "glow": "sprites/cargo.glow.png"
@@ -4798,6 +4804,10 @@
    "image": "sprites/escape_pod.png",
    "glow": "sprites/escape_pod.glow.png"
   },
+  "exercise_module": {
+   "image": "sprites/exercise_module.png",
+   "glow": "sprites/exercise_module.glow.png"
+  },
   "fx": {
    "image": "sprites/fx.png",
    "glow": "sprites/fx.glow.png"
@@ -4851,6 +4861,9 @@
   "ops_consoles": {
    "image": "sprites/ops_consoles.png",
    "glow": "sprites/ops_consoles.glow.png"
+  },
+  "planter_module": {
+   "image": "sprites/planter_module.png"
   },
   "pod_bay": {
    "image": "sprites/pod_bay.png",
@@ -4944,6 +4957,10 @@
   "vehicle_bay": {
    "image": "sprites/vehicle_bay.png",
    "glow": "sprites/vehicle_bay.glow.png"
+  },
+  "vending_module": {
+   "image": "sprites/vending_module.png",
+   "glow": "sprites/vending_module.glow.png"
   },
   "wallprops": {
    "image": "sprites/wallprops.png",
@@ -68801,6 +68818,186 @@
     2
    ]
   },
+  "module.bench": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 83,
+    "h": 63
+   },
+   "anchor": {
+    "x": 56,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.idle": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 85,
+    "y": 1,
+    "w": 83,
+    "h": 63
+   },
+   "anchor": {
+    "x": 56,
+    "y": 51
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r1.idle": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 253,
+    "y": 1,
+    "w": 83,
+    "h": 58
+   },
+   "anchor": {
+    "x": 24,
+    "y": 44
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bench.r2.idle": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 337,
+    "y": 1,
+    "w": 83,
+    "h": 58
+   },
+   "anchor": {
+    "x": 59,
+    "y": 44
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bench.r3.idle": {
+   "kind": "static",
+   "sheet": "bench_module",
+   "frame": {
+    "x": 169,
+    "y": 1,
+    "w": 83,
+    "h": 63
+   },
+   "anchor": {
+    "x": 27,
+    "y": 51
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 90,
+    "h": 100
+   },
+   "anchor": {
+    "x": 29,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.idle": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 92,
+    "y": 1,
+    "w": 90,
+    "h": 100
+   },
+   "anchor": {
+    "x": 29,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.r1.idle": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 183,
+    "y": 1,
+    "w": 90,
+    "h": 100
+   },
+   "anchor": {
+    "x": 61,
+    "y": 85
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bunk.r2.idle": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 274,
+    "y": 1,
+    "w": 90,
+    "h": 100
+   },
+   "anchor": {
+    "x": 29,
+    "y": 85
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bunk.r3.idle": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 365,
+    "y": 1,
+    "w": 90,
+    "h": 100
+   },
+   "anchor": {
+    "x": 61,
+    "y": 85
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
   "module.burst_laser.bay.r0": {
    "kind": "static",
    "sheet": "weapons",
@@ -71934,6 +72131,101 @@
     5,
     4
    ]
+  },
+  "module.exercise": {
+   "kind": "static",
+   "sheet": "exercise_module",
+   "frame": {
+    "x": 99,
+    "y": 1,
+    "w": 48,
+    "h": 66
+   },
+   "anchor": {
+    "x": 0,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.exercise.idle": {
+   "kind": "static",
+   "sheet": "exercise_module",
+   "frame": {
+    "x": 148,
+    "y": 1,
+    "w": 48,
+    "h": 66
+   },
+   "anchor": {
+    "x": 0,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.exercise.r1.idle": {
+   "kind": "static",
+   "sheet": "exercise_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 48,
+    "h": 72
+   },
+   "anchor": {
+    "x": 32,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.exercise.r2.idle": {
+   "kind": "static",
+   "sheet": "exercise_module",
+   "frame": {
+    "x": 50,
+    "y": 1,
+    "w": 48,
+    "h": 72
+   },
+   "anchor": {
+    "x": 16,
+    "y": 63
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.exercise.r3.idle": {
+   "kind": "static",
+   "sheet": "exercise_module",
+   "frame": {
+    "x": 197,
+    "y": 1,
+    "w": 48,
+    "h": 66
+   },
+   "anchor": {
+    "x": 48,
+    "y": 73
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
   },
   "module.fabricator": {
    "kind": "static",
@@ -79745,6 +80037,96 @@
    "footprint": [
     3,
     3
+   ]
+  },
+  "module.planter": {
+   "kind": "static",
+   "sheet": "planter_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 44,
+    "h": 45
+   },
+   "anchor": {
+    "x": 22,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.idle": {
+   "kind": "static",
+   "sheet": "planter_module",
+   "frame": {
+    "x": 46,
+    "y": 1,
+    "w": 44,
+    "h": 45
+   },
+   "anchor": {
+    "x": 22,
+    "y": 39
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r1.idle": {
+   "kind": "static",
+   "sheet": "planter_module",
+   "frame": {
+    "x": 183,
+    "y": 1,
+    "w": 46,
+    "h": 39
+   },
+   "anchor": {
+    "x": 22,
+    "y": 33
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r2.idle": {
+   "kind": "static",
+   "sheet": "planter_module",
+   "frame": {
+    "x": 138,
+    "y": 1,
+    "w": 44,
+    "h": 43
+   },
+   "anchor": {
+    "x": 22,
+    "y": 37
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.planter.r3.idle": {
+   "kind": "static",
+   "sheet": "planter_module",
+   "frame": {
+    "x": 91,
+    "y": 1,
+    "w": 46,
+    "h": 44
+   },
+   "anchor": {
+    "x": 24,
+    "y": 38
+   },
+   "footprint": [
+    1,
+    1
    ]
   },
   "module.pod_bay.r0": {
@@ -98926,6 +99308,192 @@
    "footprint": [
     5,
     4
+   ],
+   "glow": true
+  },
+  "module.vending": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 217,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.vending.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 271,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.vending.r1.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 53,
+    "h": 97
+   },
+   "anchor": {
+    "x": 25,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.vending.r2.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 55,
+    "y": 1,
+    "w": 53,
+    "h": 97
+   },
+   "anchor": {
+    "x": 28,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.vending.r3.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 325,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 28,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.vending_red": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 379,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.vending_red.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 433,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 25,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "module.vending_red.r1.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 109,
+    "y": 1,
+    "w": 53,
+    "h": 97
+   },
+   "anchor": {
+    "x": 25,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.vending_red.r2.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 163,
+    "y": 1,
+    "w": 53,
+    "h": 97
+   },
+   "anchor": {
+    "x": 28,
+    "y": 82
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "module.vending_red.r3.idle": {
+   "kind": "static",
+   "sheet": "vending_module",
+   "frame": {
+    "x": 487,
+    "y": 1,
+    "w": 53,
+    "h": 96
+   },
+   "anchor": {
+    "x": 28,
+    "y": 83
+   },
+   "footprint": [
+    1,
+    1
    ],
    "glow": true
   },
