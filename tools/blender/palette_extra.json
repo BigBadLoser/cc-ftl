@@ -3848,5 +3848,14 @@
   "slbHaz": {"hex": "#e0a020", "set": "slab"},
   "slbTeal": {"hex": "#2f6b72", "set": "slab"},
   "slbMach": {"hex": "#4f6a5c", "set": "slab"},
-  "slbHull": {"hex": "#8a877f", "set": "slab"}
+  "slbHull": {"hex": "#8a877f", "set": "slab"},
+  "dkHolo": {"hex": "#8ff0ff", "emissive": 2.0, "set": "desk"},
+  "dkHoloF": {"hex": "#4aa6bb", "set": "desk"},
+  "dkSeam": {"hex": "#62e0f8", "emissive": 1.4, "set": "desk"},
+  "dkGlass": {"hex": "#17222b", "set": "desk"},
+  "dkGraph": {"hex": "#454b55", "set": "desk"},
+  "dkGraphD": {"hex": "#2c3038", "set": "desk"},
+  "dkTeal": {"hex": "#2f7f86", "set": "desk"},
+  "dkTealD": {"hex": "#235e64", "set": "desk"},
+  "dkMug": {"hex": "#c2553d", "set": "desk"}
 }
