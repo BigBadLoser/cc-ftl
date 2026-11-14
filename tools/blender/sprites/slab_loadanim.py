@@ -37,7 +37,13 @@ TOL = 14                                            # a pixel counts as changed 
 # hc00-hc25 (KEYS: the cradle folds flat, the cart slides in and lowers the slab, pulls away, the cradle tips it up, the
 # platform sinks, the shuttle runs it in and turns it), he0-he1 (KEYS_E: the leaves shut). Each entry: (name, key, n).
 # n is the frame's index in the original (the cart's ring loop frame).
-HATCH = [(f"hd{j}", k, 0) for j, k in enumerate(LD.KEYS_D)] + [(f"hc{i:02d}", k, i) for i, k in enumerate(LD.KEYS)] + \
+# Round 2: the cart's arrival (hc04) and pull-away (hc08) are gone: the game's own cart sprite docks and leaves at walking pace.
+# The cart is in the patches only for the hand-off hh0-hh6: docked (out 0), the slab lowering from the cart's height onto
+# the cradle in 6 steps (the original hc05 -> hc07); the game hides its own cart sprite for those ticks.
+HH = [(0, 0, 0, ("cart", 0.0, LD.CART + (LD.BED - LD.CART) * i / 6)) for i in range(7)]
+HATCH = [(f"hd{j}", k, 0) for j, k in enumerate(LD.KEYS_D)] + [(f"hc{i:02d}", LD.KEYS[i], i) for i in range(4)] + \
+    [(f"hh{i}", (90, 0, 0, k[3]), 5 + i) for i, k in enumerate(HH)] + \
+    [(f"hc{i:02d}", LD.KEYS[i], i) for i in range(9, len(LD.KEYS))] + \
     [(f"he{j}", k, 0) for j, k in enumerate(LD.KEYS_E)]
 # Star frames: the crank's angle (deg) from mid-step. The pin is in the star's slot for |phi| < 72, where the star turns
 # (up to 18 deg either way); out of it the star stands locked while the crank swings on round to the next slot.
@@ -256,6 +262,9 @@ def render(kind, n, rot=0):
 def jobs(rots=None):
     rots = rots if rots is not None else range(4)
     out = []
+    only = __import__("os").environ.get("STASISLOAD_ONLY")      # a name prefix: re-render just those hatch frames
+    if only:
+        return [job("h", n, r) for r in rots for n, h in enumerate(HATCH) if h[0].startswith(only)]
     for r in rots:
         out += [job("base", 0, r), job("slot0", 0, r), job("lamp0", 0, r)]
         out += [job("h", n, r) for n in range(len(HATCH))] + [job("s", n, r) for n in range(len(STAR))]
