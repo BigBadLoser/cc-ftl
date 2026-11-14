@@ -28,16 +28,17 @@ const sidePairs = (left: boolean, w: number, y0: number, y1: number): Piece[] =>
   return out;
 };
 /** A wall's run of bed pairs, from one end toward the other, and a game table at a given tile of it: end on to the wall, or along it a tile off. */
-interface Run { from: number; to: number; at: (v: number, end: boolean) => Piece }
+interface Run { from: number; to: number; at: (v: number, end: boolean) => Piece; door?: boolean }
 /**
  * Each stretch a run of pairs leaves free at its far end takes a game table: end on to the wall where the stretch (with
- * the tile clear of the last bed) is three tiles or more, so a player sits either side; else along the wall, a tile off.
+ * the tile clear of the last bed) is three tiles or more, so a player sits either side (beside the door when the run ends
+ * there, the user's pick); else along the wall, a tile off.
  */
 const leftover = (runs: Run[]): Piece[] => runs.flatMap((run) => {
   const dir = run.to >= run.from ? 1 : -1, len = Math.abs(run.to - run.from) + 1, n = Math.floor((len + 1) / 4);
   const lo = n > 0 ? 4 * n : 0, free = len - lo, tile = (o: number): number => run.from + dir * o;
   const r0 = n > 0 ? lo - 1 : 0, span = len - r0;
-  if (span >= 3) return [run.at(tile(r0 + Math.floor((span - 1) / 2)), true)];
+  if (span >= 3) return [run.at(tile(run.door ? len - 1 : r0 + Math.floor((span - 1) / 2)), true)];
   if (free < 2) return [];
   const start = lo + Math.floor((free - 2) / 2);
   return [run.at(run.from + dir * (dir > 0 ? start : start + 1), false)];
@@ -93,8 +94,8 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
       const runs: Run[] = w >= h
         ? [
           { from: 0, to: w - 1, at: (v, end) => (end ? [GT, v, 0, 1] : [GT, v, 1, 0]) },
-          { from: 0, to: d - 2, at: (v, end) => (end ? [GT, v, h - 2, 1] : [GT, v, h - 2, 2]) },
-          { from: w - 1, to: d + 2, at: (v, end) => (end ? [GT, v, h - 2, 1] : [GT, v, h - 2, 2]) },
+          { from: 0, to: d - 2, door: true, at: (v, end) => (end ? [GT, v, h - 2, 1] : [GT, v, h - 2, 2]) },
+          { from: w - 1, to: d + 2, door: true, at: (v, end) => (end ? [GT, v, h - 2, 1] : [GT, v, h - 2, 2]) },
         ]
         : [
           { from: 0, to: h - 1, at: (v, end) => (end ? [GT, 0, v, 0] : [GT, 1, v, 3]) },
