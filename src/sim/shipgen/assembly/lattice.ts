@@ -140,7 +140,7 @@ export function line(s: Site, specs: RoomSpec[], axis: 'x' | 'y', dir: 1 | -1, f
   let at = from, before = -1;
   for (const [i, room] of specs.entries()) {
     let spec = o.deep && room.w > room.h ? { ...room, w: room.h, h: room.w } : room;
-    if (o.floorDepth && spec.role !== 'dock') spec = { ...spec, w: Math.max(3, Math.ceil((spec.w * spec.h) / o.floorDepth)), h: o.floorDepth };
+    if (o.floorDepth && spec.role !== 'dock') spec = { ...spec, w: Math.max(spec.vehicle ? 5 : 3, Math.ceil((spec.w * spec.h) / o.floorDepth)), h: o.floorDepth };
     const across = spec.h + 2, c0 = Math.min(edge, edge + side * (across - 1)), c1 = Math.max(edge, edge + side * (across - 1)) + 1;
     // Its own near wall when what stands before it would take a tile from it: a hall, or open space.
     let ownWall = false;

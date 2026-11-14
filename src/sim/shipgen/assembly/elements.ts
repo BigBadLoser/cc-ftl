@@ -144,7 +144,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
   const depth = docks.length > 0 ? DOCK_DEPTH - 2 : o.rowDepth;
   const farther = (r: RoomSpec): number => (o.far?.includes(r.role) ? 1 : 0);
-  const shape = (r: RoomSpec): RoomSpec => (depth ? { ...r, w: Math.max(3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w });
+  // A hangar keeps width for its bay (a 4x5 pit and the tile crew board from beside it).
+  const shape = (r: RoomSpec): RoomSpec => (depth ? { ...r, w: Math.max(r.vehicle ? 5 : 3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w });
   const body = rooms.filter((r) => r !== capOf).sort((p, q) => farther(p) - farther(q)).map(shape);
   // A room's annex stands right after it in its row and opens into it. Quarters are cut into cabins where they stand,
   // a bed each, inside the room's own length: the row is no longer for it and the station no heavier.
