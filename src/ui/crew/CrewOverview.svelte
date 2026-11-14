@@ -60,7 +60,20 @@
     </div>
   {/if}
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
-  {#if enemy && c.seal}
+  {#if c.stasis}
+    <!-- A frozen prisoner (selected from their slab, a cart or the wheel): where the slab is and who is moving it. -->
+    <div class="stasis" data-testid="crew-stasis">
+      <p class="sh">In stasis</p>
+      <dl>
+        <dt>Slab</dt><dd>{#if c.stasis.wheel && !c.stasis.carrier}<button class="link" onclick={() => c.stasis?.wheel && api.selectModule(c.stasis.wheel)}>{c.stasis.where}</button>{:else}{c.stasis.where}{/if}</dd>
+        {#if c.stasis.carrier}<dt>Carted by</dt><dd><button class="link" onclick={() => c.stasis?.carrier && api.selectCrew(c.stasis.carrier.id, true)}>{c.stasis.carrier.name}</button></dd>{/if}
+        {#if c.stasis.to}<dt>Going to</dt><dd>{c.stasis.to}</dd>{/if}
+        <dt>Reserve</dt><dd class:bad={c.stasis.draining}>{c.stasis.reserve}%{c.stasis.draining ? ', draining' : ''}</dd>
+      </dl>
+      <StatBar value={c.stasis.reserve} color={c.stasis.draining ? 'var(--red)' : 'var(--green)'} low={c.stasis.draining} />
+    </div>
+  {/if}
+  {#if enemy && c.seal && !c.stasis}
     <!-- A prisoner is sealed in stasis only on the player's say (stasis/order.ts); the reason it cannot be shows under the button. -->
     <div class="btns one">
       <button class:on={c.seal.marked} data-testid="seal-prisoner" disabled={!c.seal.marked && !!c.seal.refusal} use:tip={{ text: c.seal.marked ? 'Call off the seal: crew stop and set any slab down' : (c.seal.refusal ?? 'Crew seal them into a stasis slab and cart it to a wheel') }}
@@ -69,7 +82,9 @@
     {#if !c.seal.marked && c.seal.refusal}<p class="hint" data-testid="seal-refusal">{c.seal.refusal}</p>{/if}
     {#if c.seal.marked}<p class="hint" data-testid="seal-marked">Marked: crew will seal them as hauling work.</p>{/if}
   {/if}
-  {#if enemy}
+  {#if enemy && c.stasis}
+    <!-- (Frozen: out of the world, nothing to order.) -->
+  {:else if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack' }} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else if c.side === 'visitor' && c.visit === 'Inspector'}
     <!-- Attacking an inspector is a choice with a price: their faction turns hostile and the ship that sent them fights (#138 step 3). -->
@@ -107,6 +122,10 @@
 </div>
 
 <style>
+  .stasis { margin: 6px 0 8px; } .stasis .sh { margin: 0 0 4px; color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .stasis dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; } .stasis dt { color: var(--dim); } .stasis dd { margin: 0; text-align: right; }
+  .stasis dd.bad { color: var(--red); }
+  .link { background: none; border: none; padding: 0; min-height: 0; color: var(--cyan, #7fe9ff); text-decoration: underline dotted; cursor: pointer; font: inherit; }
   .top { display: grid; grid-template-columns: 64px 1fr; gap: 10px; margin-bottom: 10px; }
   .face { width: 64px; height: 68px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }

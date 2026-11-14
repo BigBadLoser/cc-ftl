@@ -13,7 +13,7 @@ export const SKILL_ICON: Record<string, string> = {
 export const SOURCE_COLOR = { rolled: '#8b939a', xp: 'var(--cyan)', trait: 'var(--green)', lost: 'var(--red)' } as const;
 
 /** The fields of a crew card that decide the state line. */
-type StateOf = Pick<UiCrew, 'dead' | 'downed' | 'surrendered' | 'prisoner' | 'drafted' | 'job' | 'activity' | 'broke'> & { fight?: UiCrew['fight'] };
+type StateOf = Pick<UiCrew, 'dead' | 'downed' | 'surrendered' | 'prisoner' | 'drafted' | 'job' | 'activity' | 'broke'> & { fight?: UiCrew['fight']; stasis?: UiCrew['stasis'] };
 
 const COVER = { none: 'no cover', partial: 'partial cover', full: 'full cover' } as const;
 
@@ -34,7 +34,7 @@ export function crewState(c: StateOf): { chip: string | null; text: string; bad:
   const chip = c.dead ? null : c.prisoner ? 'Prisoner' : c.surrendered ? 'Surrendered' : null;
   if (c.dead) return { chip, text: 'Dead', bad: true };
   if (c.downed) return { chip, text: c.downed.stabilized ? 'Downed, stabilized' : `Downed, bleeding out in ${c.downed.bleed} s`, bad: true };
-  if (chip) return { chip, text: c.prisoner ? 'Held captive' : 'Out of the fight', bad: false };
+  if (chip) return { chip, text: c.stasis ? 'Frozen in stasis' : c.prisoner ? 'Held captive' : 'Out of the fight', bad: false };
   const fight = c.fight ? fightText(c.fight) : null;
   if (c.broke) return { chip, text: c.broke, bad: true };
   return { chip, text: fight ?? (c.drafted ? 'Drafted' : (c.job ?? c.activity)), bad: false };
