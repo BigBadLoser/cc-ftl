@@ -2,10 +2,10 @@ import type { World } from '../sim/ecs';
 import { CrewC } from '../sim/crew/components';
 import type { Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
-import { slabDrainingIn, stowProgress, stowSlotIn, wheelSlots, type WheelSlot } from '../sim/stasis/query';
-import { StasisWheelC } from '../sim/stasis/components';
+import { slabDrainingIn, stowStage, wheelSlots, type WheelSlot } from '../sim/stasis/query';
+import { ringAfter } from '../sim/stasis/ring';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
-import { loadPlan, loadTick, patchId, RUN_IN_TICK, type LoadPlan } from './stasisLoad';
+import { loadPlan, loadTick, patchId, RUN_IN_TICK, turnPlan, type LoadPlan } from './stasisLoad';
 
 /**
  * The stasis wheel's layers (#116; sprites from tools/blender/sprites/slab_game.py, lab panel `stasis`). The base
@@ -41,20 +41,23 @@ export const pulseLit = (now: number): boolean => Math.floor(Math.max(0, now) / 
  * while a lamp is red (the only time the wheel's art moves with the clock).
  */
 export function stasisInputs(world: World, id: number, now: number): string {
-  const slots = wheelSlots(world, id);
-  const load = loadingAt(world, id);
+  const { slots, load } = wheelView(world, id);
   const lamps = slots.map((s) => lampOf(world, s));
   // Who is in each full slab: a different prisoner is a different face.
-  return lamps.join(',') + '|' + slots.map((s) => (s.kind === 'full' ? s.prisoner : 0)).join(',') + (lamps.includes('red') ? `|${pulseLit(now) ? 1 : 0}` : '') + (load ? `|L${load.tick}` : '');
+  return lamps.join(',') + '|' + slots.map((s) => (s.kind === 'full' ? s.prisoner : 0)).join(',') + (lamps.includes('red') ? `|${pulseLit(now) ? 1 : 0}` : '') + (load ? `|${load.key}` : '');
 }
 
 /**
- * The loading animation's frame while a crew member stows a slab at this wheel's hatch (sim stowProgress), or null. It plays only when
- * the slab goes to slot 0: it ends there, as the slot's own layer. An empty slab standing in slot 0 is gone from the run-in on.
+ * The wheel as drawn while a crew member stows a slab at its hatch (sim stowStage): its slots as the ring stands then (turned the steps done so far
+ * while it turns, the whole turn once it loads, so the slot layers snap round at each star step's end) and the animation's frame; the plain slots
+ * and no frame when nobody is stowing.
  */
-export function loadingAt(world: World, id: number): LoadPlan | null {
-  const stow = stowSlotIn(world.get(id, StasisWheelC)?.slots ?? []) === 0 ? stowProgress(world, id) : null;
-  return stow ? loadPlan(loadTick(stow.progress)) : null;
+export function wheelView(world: World, id: number): { slots: WheelSlot[]; load: LoadPlan | null } {
+  const slots = wheelSlots(world, id);
+  const st = stowStage(world, id);
+  if (!st) return { slots, load: null };
+  if (st.stage.turning) return { slots: ringAfter(slots, st.stage.step), load: turnPlan(st.stage.step, st.stage.frac) };
+  return { slots: ringAfter(slots, st.turns), load: loadPlan(loadTick(st.stage.load)) };
 }
 
 /** Slots back to front for rotation `rot`: the order full slots are drawn in (fixed: the wheel rests in whole steps). */
@@ -70,8 +73,7 @@ export function stasisLayers(
   if (look?.hp !== undefined && look.hp <= 0) return [main];
   const out: ModuleLayer[] = [main];
   // A slot with a slab in it, empty or full, shows the slab (a full one's prisoner face is a later layer); a slot with none shows the bare socket.
-  const slots = wheelSlots(world, id);
-  const load = loadingAt(world, id);
+  const { slots, load } = wheelView(world, id);
   const gone0 = !!load && (load.home || load.tick >= RUN_IN_TICK);          // slot 0's old empty slab is out of the way
   slotOrder(m.rot).forEach((i, k) => {
     if ((slots[i]?.kind ?? 'none') === 'none' || (i === 0 && gone0)) return;

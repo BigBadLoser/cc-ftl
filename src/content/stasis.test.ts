@@ -15,10 +15,10 @@ import { StorageC } from '../sim/items/components';
 import { accessTile, footprintTiles } from '../sim/modules/footprint';
 import { footprintBlockedByCrew, removeModule } from '../sim/modules/spawn';
 import { deserialize, serialize } from '../sim/save';
-import { SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
-import { CART_PARK_STEPS, cartRest, fullSlabs, onCart, stowProgress, stowingNow, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
+import { CART_PARK_STEPS, cartRest, fullSlabs, onCart, stowStage, stowingNow, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
 import { sealMarked, sealRefusal } from '../sim/stasis/order';
-import { RESERVE_TICKS, SLAB_ITEM, STOW_WORK } from '../sim/stasis/tuning';
+import { RESERVE_TICKS, SLAB_ITEM, STOW_WORK, TURN_STEP_WORK } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
 import { newGame } from '../sim';
@@ -101,20 +101,45 @@ describe('stasis wheel', () => {
     for (let i = 0; i < 3000 && !stowed(sim, prisoner)(); i++) {
       sim.step();
       sim.events.drain();
-      const st = stowProgress(sim.world, wheel);
-      if (st) {
-        seen.push(st.progress);
+      const st = stowStage(sim.world, wheel);
+      if (st && !st.stage.turning) {
+        seen.push(st.stage.load);
         stowing = st.crew;
         expect(stowingNow(sim.world, st.crew)).toBe(true);
       }
     }
     expect(slabPlace(sim, prisoner)?.kind).toBe('wheel');
-    expect(stowProgress(sim.world, wheel)).toBeNull();
+    expect(stowStage(sim.world, wheel)).toBeNull();
     expect(seen.length).toBeGreaterThan(STOW_WORK / 4);
     expect(seen.length).toBeLessThanOrEqual(STOW_WORK + 2);
     expect(seen).toEqual([...seen].sort((a, b) => a - b));
     expect(seen[seen.length - 1]!).toBeGreaterThan(0.9);
     expect(stowing).not.toBe(0);
+  });
+
+  it('turns the wheel to bring a free slot to the hatch first: k star steps, then the load, the slab ending in slot 0', () => {
+    const { sim, wheel, prisoner } = prisonGame();
+    const slots = sim.world.get(wheel, StasisWheelC)!.slots;
+    let set = false;
+    let turned = 0;
+    let loaded = 0;
+    for (let i = 0; i < 4000 && !stowed(sim, prisoner)(); i++) {
+      sim.step();
+      sim.events.drain();
+      if (!set && sim.world.query(JobC).some((c) => sim.world.get(c, JobC)?.stasis?.phase === 'seal')) {
+        slots.fill(SLOT_EMPTY);
+        slots[3] = SLOT_NONE; // the fetched slab came from elsewhere: slots 0-2 hold empty slabs, so the wheel turns 3 steps
+        set = true;
+      }
+      const st = stowStage(sim.world, wheel);
+      if (st?.stage.turning) turned++;
+      else if (st) loaded++;
+    }
+    expect(slabPlace(sim, prisoner)).toMatchObject({ kind: 'wheel', wheel, slot: 0 });
+    expect(turned).toBeGreaterThan(2 * TURN_STEP_WORK);
+    expect(turned).toBeLessThanOrEqual(3 * TURN_STEP_WORK + 1);
+    expect(loaded).toBeGreaterThan(STOW_WORK / 2);
+    expect(wheelSlots(sim.world, wheel).filter((x) => x.kind === 'empty')).toHaveLength(9); // the ring kept its slabs, in order
   });
 
   it('crew seal a prisoner where they stand and cart the slab to the wheel', () => {

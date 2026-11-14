@@ -1,6 +1,6 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from 'pixi.js';
 import { LAMP_TINT } from '../../src/render/stasisArt';
-import { LOAD_TICKS, loadPlan, loadTick, patchId, planHasCart } from '../../src/render/stasisLoad';
+import { LOAD_TICKS, STAR_FRAMES, loadPlan, loadTick, patchId, planHasCart, turnPlan } from '../../src/render/stasisLoad';
 import { STOW_SECONDS } from '../../src/sim/stasis/tuning';
 import { floor } from './hydroponics';
 import type { LabCell, LabPanel } from './panel';
@@ -69,12 +69,12 @@ export const stasisLoadPanel: LabPanel = {
     ids.forEach((id) => atlas.stat(id));
     await atlas.whenIdle();
     const cells: LabCell[] = [];
-    const scene = (root: Container): ((p: number) => void) => {
+    const scene = (root: Container, turn = false): ((p: number) => void) => {
       root.addChild(floor(3, 3, ox, oy));
       const dyn = new Container();
       root.addChild(dyn);
       return (p) => {
-        const plan = loadPlan(loadTick(p));
+        const plan = turn ? turnPlan(0, p) : loadPlan(loadTick(p));
         dyn.removeChildren().forEach((c) => c.destroy());
         draw(dyn, art(ids[0] as string), ox, oy);
         if (plan.home) draw(dyn, art(ids[1] as string), ox, oy);
@@ -91,6 +91,17 @@ export const stasisLoadPanel: LabPanel = {
         mount(root) {
           const set = scene(root);
           return (s) => set(Math.min(0.9999, s / STOW_SECONDS));
+        },
+      });
+    }
+    // One turn step of the wheel before a load (the slabs snap round at its end): the star patches s0-s5.
+    for (let f = 0; f < STAR_FRAMES; f++) {
+      const p = (f + 0.5) / STAR_FRAMES;
+      cells.push({
+        label: `turn step, frame ${f}`, note: `s${f}  frac=${p.toFixed(3)}`, w, h, newRow: f === 0, at: p * 0.75, loop: 0.75,
+        mount(root) {
+          const set = scene(root, true);
+          return (s) => set(Math.min(0.9999, s / 0.75));
         },
       });
     }

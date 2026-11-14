@@ -9,6 +9,7 @@ import type { World } from '../ecs';
 import type { Sim } from '../sim';
 import { CartRestC, SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from './components';
 import { floorTiles } from './place';
+import { stowStageAt, type StowStage } from './ring';
 import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /**
@@ -186,29 +187,25 @@ export const emptySlabsIn = (sim: Sim, wheel: number): number => (sim.world.get(
 export const wheelHolding = (sim: Sim, wheel: number): boolean => (sim.world.get(wheel, StasisWheelC)?.slots ?? []).some((s) => s > 0);
 
 /**
- * How far along the stow at a wheel's hatch is, 0..1, or null when nobody is stowing there (or they have not started): the progress of
- * a stasis job in its stow phase at this wheel. The loading animation plays over it (render/stasisLoad.ts).
+ * Where the stow at a wheel's hatch stands, or null when nobody is stowing there (or they have not started): the progress of a stasis job in its
+ * stow phase at this wheel, split into the wheel's turn and the load (ring.ts). The loading animation plays over it (render/stasisLoad.ts).
  */
-export function stowProgress(world: World, wheel: number): { crew: number; progress: number } | null {
+export function stowStage(world: World, wheel: number): { crew: number; turns: number; stage: StowStage } | null {
   for (const crew of world.query(JobC)) {
     const j = world.get(crew, JobC);
     if (j?.kind === 'stasis' && j.stasis?.phase === 'stow' && j.stasis.wheel === wheel && j.progress > 0 && j.work > 0) {
-      return { crew, progress: Math.min(1, j.progress / j.work) };
+      const turns = j.stasis.turns ?? 0;
+      return { crew, turns, stage: stowStageAt(j.progress, turns) };
     }
   }
   return null;
 }
 
-/** The slot a slab stowed in the wheel goes to: the lowest free (none) one, else the lowest holding an empty slab (stowSlab sets that slab out); -1 when full. */
-export function stowSlotIn(slots: readonly number[]): number {
-  const free = slots.indexOf(SLOT_NONE);
-  return free >= 0 ? free : slots.indexOf(SLOT_EMPTY);
-}
-
-/** True while the wheel's loading animation draws this crew member's cart (it is in the animation's frames): they are stowing at a wheel whose slab goes to slot 0 (where the animation ends). */
+/** True while the wheel's loading animation draws this crew member's cart (it is in the animation's frames): they are loading, the wheel's turn done. */
 export function stowingNow(world: World, crew: number): boolean {
   const j = world.get(crew, JobC);
   const w = j?.kind === 'stasis' && j.stasis?.phase === 'stow' ? j.stasis.wheel : undefined;
   if (!w) return false;
-  return stowProgress(world, w)?.crew === crew && stowSlotIn(world.get(w, StasisWheelC)?.slots ?? []) === 0;
+  const st = stowStage(world, w);
+  return st?.crew === crew && !st.stage.turning;
 }

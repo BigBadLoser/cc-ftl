@@ -18,5 +18,9 @@ export const PLACE_STEPS = 6;
  * (render/stasisLoad.ts plays its 63 frames over the job's progress, so they pause and speed up with the game).
  */
 export const STOW_SECONDS = 7.9;
-/** Work (ticks at work speed 1) to stow a slab; the one owner of the animation's length. */
+/** Seconds one Geneva star step of the wheel takes (6 frames at 8 fps, render/stasisLoad.ts): the wheel turns k steps before a slab is loaded. */
+export const TURN_STEP_SECONDS = 0.75;
+/** Work (ticks at work speed 1) of one turn step. */
+export const TURN_STEP_WORK = Math.round(TURN_STEP_SECONDS * TICK_HZ);
+/** Work (ticks at work speed 1) to load a slab once its slot is at the hatch; the one owner of the animation's length. */
 export const STOW_WORK = Math.round(STOW_SECONDS * TICK_HZ);

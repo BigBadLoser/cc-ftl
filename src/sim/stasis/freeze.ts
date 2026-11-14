@@ -11,7 +11,8 @@ import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC, type SlabSource } from './components';
 import { floorSpot, standSpot } from './place';
-import { slabPlace, stowSlotIn, wheelHatch, wheelOf } from './query';
+import { slabPlace, wheelHatch, wheelOf } from './query';
+import { turnRing, turnsToLoad } from './ring';
 import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /** Take one empty slab out of a source. True if one was there. A wheel gives up its lowest slot holding one. */
@@ -88,16 +89,18 @@ export function dropSlab(sim: Sim, prisoner: number, ship: number, near: Tile): 
 }
 
 /**
- * Stand the slab in a slot of `wheel`: the lowest free slot, else the lowest one holding an empty slab (that slab is set out on the floor at the
- * hatch, for the haulers). Returns the slot, or -1 when the wheel is full.
+ * Stand the slab in a slot of `wheel`: the first slot holding nothing, else the first one holding an empty slab (that slab is set out on the floor at the
+ * hatch, for the haulers), after turning the wheel to bring it to the hatch (ring.ts): the slab ends in slot 0. Returns 0, or -1 when the wheel is full.
  */
 export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   const slots = sim.world.get(wheel, StasisWheelC)?.slots;
   const m = sim.world.get(wheel, ModuleC);
   const s = sim.world.get(prisoner, StasisC);
   if (!slots || !m || !s) return -1;
-  const slot = stowSlotIn(slots);
-  if (slot < 0) return -1;
+  const turns = turnsToLoad(slots);
+  if (turns < 0) return -1;
+  turnRing(slots, turns);                                // the wheel turned: the slot comes to the hatch, slot 0
+  const slot = 0;
   const hatch = wheelHatch(sim, m);
   if (slots[slot] === SLOT_EMPTY) spillItems(sim, shipIdOf(sim, m), hatch.x, hatch.y, SLAB_ITEM, 1);
   slots[slot] = prisoner;

@@ -66,4 +66,6 @@ export interface StasisJob {
   phase: 'fetch' | 'seal' | 'pickup' | 'stow';
   from?: SlabSource;
   wheel?: number;
+  /** Stow: steps the wheel turns before the slab is loaded (ring.ts); the job's work is the turn then the load. */
+  turns?: number;
 }

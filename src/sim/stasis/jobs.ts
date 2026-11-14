@@ -12,7 +12,8 @@ import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './compon
 import { dropSlab, liftSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
 import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
-import { SEAL_WORK, SLAB_ITEM, STOW_WORK } from './tuning';
+import { turnsToLoad, stowWork } from './ring';
+import { SEAL_WORK, SLAB_ITEM } from './tuning';
 
 /**
  * The 'stasis' job (#116): seal a prisoner into a stasis slab where they stand and cart the slab to a stasis wheel, or cart a slab lying on the
@@ -160,7 +161,9 @@ function toWheel(sim: Sim, job: Job, st: StasisJob, prisoner: number, ship: numb
   st.wheel = wheel;
   delete st.from;
   aim(job, wheelHatch(sim, m));
-  job.work = STOW_WORK;
+  const turns = Math.max(0, turnsToLoad(sim.world.get(wheel, StasisWheelC)?.slots ?? []));
+  st.turns = turns;
+  job.work = stowWork(turns);
   job.progress = 0;
   return 'working';
 }

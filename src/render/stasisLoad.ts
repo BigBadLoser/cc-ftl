@@ -1,10 +1,10 @@
 /**
  * The stasis wheel's loading animation (#116; patches from tools/blender/sprites/slab_loadanim.py, lab panel `stasisload`).
- * A stow at the hatch (sim stasis/jobs.ts, STOW_WORK) plays 63 ticks over the job's progress 0..1, so it pauses with the game and runs
+ * A stow at the hatch first turns the wheel (sim stasis/ring.ts: k Geneva star steps, each the star patches s0-s5 with the slabs snapping round at
+ * its end), then loads: the slab goes in slot 0, the ring turned to bring a free slot there. The load (sim stasis/jobs.ts, STOW_WORK) plays 63 ticks over its progress 0..1, so it pauses with the game and runs
  * at game speed. Each hatch tick is a PATCH, `stasisload.<name>.r<rot>`: the pixels of the wheel that differ from the shut, empty
  * wheel, anchored on its origin and drawn over the wheel (and its other slabs) under the rim lamps. The cart in the patches ha0-hl9
- * is the crew member's own: the game hides its cart sprite while the animation runs (stowingNow). The slab ends in slot 0, so it
- * plays only when slot 0 is free (the slab then shows as the slot's own layer from the star steps on).
+ * is the crew member's own: the game hides its cart sprite while the load runs (stowingNow). The slab shows as slot 0's own layer from the star steps on.
  */
 
 const range = (n: number, f: (i: number) => string): string[] => Array.from({ length: n }, (_, i) => f(i));
@@ -29,6 +29,8 @@ export const CART_TICKS: readonly [number, number] = [HATCH_FRAMES.indexOf('ha0'
 /** What one tick of the animation draws over the wheel. */
 export interface LoadPlan {
   tick: number;
+  /** Changes whenever the picture does (the wheel's art memo keys on it). */
+  key: string;
   /** The patch's name (`stasisload.<patch>.r<rot>`), none while the wheel itself shows all (the hold). */
   patch: string | null;
   /** Slot 0's slab and its lamp (cyan: a prisoner held) are drawn as the wheel's own layers: the slab is home. */
@@ -41,7 +43,13 @@ export const loadTick = (progress: number): number => Math.max(0, Math.min(LOAD_
 export function loadPlan(tick: number): LoadPlan {
   const t = Math.max(0, Math.min(LOAD_TICKS - 1, Math.floor(tick)));
   const n = HATCH_FRAMES.length;
-  return { tick: t, patch: t < n ? (HATCH_FRAMES[t] as string) : t < n + STAR_FRAMES ? `s${t - n}` : null, home: t >= n };
+  return { tick: t, key: `L${t}`, patch: t < n ? (HATCH_FRAMES[t] as string) : t < n + STAR_FRAMES ? `s${t - n}` : null, home: t >= n };
+}
+
+/** The wheel turning: step `step` of the ring done, `frac` (0..1) through the next star step (its frames s0-s5); the hatch stays shut. */
+export function turnPlan(step: number, frac: number): LoadPlan {
+  const f = Math.min(STAR_FRAMES - 1, Math.floor(frac * STAR_FRAMES));
+  return { tick: -1, key: `T${step}.${f}`, patch: `s${f}`, home: false };
 }
 
 /** True while the plan's patches draw the crew member's cart. */
