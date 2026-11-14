@@ -15,9 +15,9 @@ export const SEAL_WORK = 60;
 export const PLACE_STEPS = 6;
 /**
  * Seconds a crew member at work speed 1 takes to stow a slab at the wheel's hatch (game speed 1): the loading animation's length
- * (render/stasisLoad.ts plays its 63 frames over the job's progress, so they pause and speed up with the game).
+ * (render/stasisLoad.ts plays its 61 frames over the job's progress, so they pause and speed up with the game).
  */
-export const STOW_SECONDS = 7.9;
+export const STOW_SECONDS = 7.6;
 /** Seconds one Geneva star step of the wheel takes (6 frames at 8 fps, render/stasisLoad.ts): the wheel turns k steps before a slab is loaded. */
 export const TURN_STEP_SECONDS = 0.75;
 /** Work (ticks at work speed 1) of one turn step. */

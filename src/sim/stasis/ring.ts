@@ -3,7 +3,7 @@ import { STOW_WORK, TURN_STEP_WORK } from './tuning';
 
 /**
  * The stasis wheel's slots are a ring (#116): slot 0 is always the one at the hatch, and the wheel turns, a Geneva star step at a time, to bring
- * another slot there before a slab is loaded. Turning is a rotation of `StasisWheelC.slots`; this file owns that and the way a stow's work is
+ * another slot there before a slab is loaded, and one step more once it is in (stowSlab). Turning is a rotation of `StasisWheelC.slots`; this file owns that and the way a stow's work is
  * split into the turn and the load (the loading animation plays over it, render/stasisLoad.ts). Pure functions over the slot array.
  */
 

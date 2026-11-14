@@ -4,8 +4,8 @@ import { STOW_SECONDS, STOW_WORK, TURN_STEP_SECONDS, TURN_STEP_WORK } from '../s
 import { TICK_HZ } from '../sim/time';
 
 describe('stasis loading animation', () => {
-  it('has the 63 designed ticks, the cart in ha0..hl9', () => {
-    expect(LOAD_TICKS).toBe(63);
+  it('has the 61 designed ticks, the cart in ha0..hl9', () => {
+    expect(LOAD_TICKS).toBe(61);
     expect(HATCH_FRAMES).toHaveLength(55);
     expect(new Set(HATCH_FRAMES).size).toBe(55);
     expect(HATCH_FRAMES[CART_TICKS[0]]).toBe('ha0');
@@ -23,12 +23,12 @@ describe('stasis loading animation', () => {
     expect(new Set(seen).size).toBe(LOAD_TICKS);
   });
 
-  it('plays the hatch patches, then the star steps with the slab home, then holds', () => {
+  it('plays the hatch patches, then the closing star step with the slab home, ending on its last frame', () => {
     expect(loadPlan(0)).toEqual({ tick: 0, key: 'L0', patch: 'hd0', home: false });
     expect(loadPlan(54)).toEqual({ tick: 54, key: 'L54', patch: 'he1', home: false });
     expect(loadPlan(55)).toEqual({ tick: 55, key: 'L55', patch: 's0', home: true });
     expect(loadPlan(60)).toEqual({ tick: 60, key: 'L60', patch: 's5', home: true });
-    expect(loadPlan(62)).toEqual({ tick: 62, key: 'L62', patch: null, home: true });
+    expect(loadPlan(62)).toEqual(loadPlan(60)); // past the end: the last frame (the sim turns the ring as the stow ends)
     expect(patchId('hc09', 2)).toBe('stasisload.hc09.r2');
   });
 

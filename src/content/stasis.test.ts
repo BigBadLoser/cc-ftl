@@ -119,7 +119,7 @@ describe('stasis wheel', () => {
     expect(stowing).not.toBe(0);
   });
 
-  it('turns the wheel to bring a free slot to the hatch first: k star steps, then the load, the slab ending in slot 0', () => {
+  it('turns the wheel to bring a free slot to the hatch first: k star steps, then the load, then one closing step: the slab ends in the last slot, the next slot at the hatch', () => {
     const { sim, wheel, prisoner } = prisonGame();
     const slots = sim.world.get(wheel, StasisWheelC)!.slots;
     let set = false;
@@ -137,7 +137,8 @@ describe('stasis wheel', () => {
       if (st?.stage.turning) turned++;
       else if (st) loaded++;
     }
-    expect(slabPlace(sim, prisoner)).toMatchObject({ kind: 'wheel', wheel, slot: 0 });
+    expect(slabPlace(sim, prisoner)).toMatchObject({ kind: 'wheel', wheel, slot: 9 }); // in at the hatch, then the wheel stepped on once
+    expect(slots[0]).toBe(SLOT_EMPTY);                                                  // the old slot 4 now waits at the hatch
     expect(turned).toBeGreaterThan(2 * TURN_STEP_WORK);
     expect(turned).toBeLessThanOrEqual(3 * TURN_STEP_WORK + 1);
     expect(loaded).toBeGreaterThan(STOW_WORK / 2);

@@ -1,7 +1,7 @@
 /**
  * The stasis wheel's loading animation (#116; patches from tools/blender/sprites/slab_loadanim.py, lab panel `stasisload`).
  * A stow at the hatch first turns the wheel (sim stasis/ring.ts: k Geneva star steps, each the star patches s0-s5 with the slabs snapping round at
- * its end), then loads: the slab goes in slot 0, the ring turned to bring a free slot there. The load (sim stasis/jobs.ts, STOW_WORK) plays 63 ticks over its progress 0..1, so it pauses with the game and runs
+ * its end), then loads: the slab goes in slot 0, the ring turned to bring a free slot there, and a closing star step turns the next slot to the hatch. The load (sim stasis/jobs.ts, STOW_WORK) plays 61 ticks over its progress 0..1, so it pauses with the game and runs
  * at game speed. Each hatch tick is a PATCH, `stasisload.<name>.r<rot>`: the pixels of the wheel that differ from the shut, empty
  * wheel, anchored on its origin and drawn over the wheel (and its other slabs) under the rim lamps. The cart in the patches ha0-hl9
  * is the crew member's own: the game hides its cart sprite while the load runs (stowingNow). The slab shows as slot 0's own layer from the star steps on.
@@ -15,10 +15,9 @@ export const HATCH_FRAMES: readonly string[] = [
   ...range(5, (i) => `hd${i}`), ...range(4, (i) => `hc${two(i)}`), ...range(10, (i) => `ha${i}`), ...range(7, (i) => `hh${i}`),
   ...range(10, (i) => `hl${i}`), ...range(17, (i) => `hc${two(i + 9)}`), ...range(2, (i) => `he${i}`),
 ];
-/** The Geneva star's steps, then a short hold, once the slab is home. */
+/** The Geneva star's step once the slab is home: the wheel turns the next slot to the hatch, its slabs snapping round as the stow ends (sim stowSlab). */
 export const STAR_FRAMES = 6;
-export const HOLD_FRAMES = 2;
-export const LOAD_TICKS = HATCH_FRAMES.length + STAR_FRAMES + HOLD_FRAMES;
+export const LOAD_TICKS = HATCH_FRAMES.length + STAR_FRAMES;
 /** Ticks per second the animation was designed at (the lab strip); the sim's STOW_SECONDS sets the real pace. */
 export const LOAD_FPS = 8;
 /** The tick the shuttle takes the new slab in toward slot 0 (hc18): an empty slab standing there is out of its way by then. */

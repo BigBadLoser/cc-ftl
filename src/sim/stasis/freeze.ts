@@ -93,7 +93,8 @@ export function dropSlab(sim: Sim, prisoner: number, ship: number, near: Tile): 
 
 /**
  * Stand the slab in a slot of `wheel`: the first slot holding nothing, else the first one holding an empty slab (that slab is set out on the floor at the
- * hatch, for the haulers), after turning the wheel to bring it to the hatch (ring.ts): the slab ends in slot 0. Returns 0, or -1 when the wheel is full.
+ * hatch, for the haulers), after turning the wheel to bring it to the hatch (ring.ts). Once it is in, the wheel steps on once (the loading animation's
+ * closing star step), bringing the next slot to the hatch: the slab ends in the last slot. Returns that slot, or -1 when the wheel is full.
  */
 export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   const slots = sim.world.get(wheel, StasisWheelC)?.slots;
@@ -108,7 +109,8 @@ export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   if (slots[slot] === SLOT_EMPTY) spillItems(sim, shipIdOf(sim, m), hatch.x, hatch.y, SLAB_ITEM, 1);
   slots[slot] = prisoner;
   Object.assign(s, { at: 'wheel', carrier: 0, x: hatch.x, y: hatch.y });
-  return slot;
+  turnRing(slots, 1);                                    // the closing star step: the next slot to the hatch
+  return slots.length - 1;
 }
 
 /** A wheel is built: every slot holds an empty slab. */
