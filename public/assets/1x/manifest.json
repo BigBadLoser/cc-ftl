@@ -71612,14 +71612,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1380,
+    "x": 1406,
     "y": 1,
-    "w": 53,
-    "h": 27
+    "w": 2,
+    "h": 1
    },
    "anchor": {
-    "x": 3,
-    "y": 39
+    "x": 2,
+    "y": 14
    },
    "footprint": [
     1,
@@ -71630,14 +71630,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1538,
+    "x": 1390,
     "y": 1,
-    "w": 8,
-    "h": 7
+    "w": 5,
+    "h": 4
    },
    "anchor": {
     "x": -4,
-    "y": 11
+    "y": 9
    },
    "footprint": [
     2,
@@ -71648,14 +71648,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1486,
+    "x": 1342,
     "y": 1,
-    "w": 51,
-    "h": 15
+    "w": 47,
+    "h": 9
    },
    "anchor": {
-    "x": 16,
-    "y": 21
+    "x": 13,
+    "y": 16
    },
    "footprint": [
     1,
@@ -71666,14 +71666,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1273,
+    "x": 1396,
     "y": 1,
-    "w": 34,
-    "h": 35
+    "w": 9,
+    "h": 4
    },
    "anchor": {
-    "x": 45,
-    "y": 41
+    "x": 23,
+    "y": 10
    },
    "footprint": [
     2,
@@ -72080,9 +72080,9 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1037,
+    "x": 978,
     "y": 1,
-    "w": 59,
+    "w": 53,
     "h": 43
    },
    "anchor": {
@@ -72100,8 +72100,8 @@
    "frame": {
     "x": 911,
     "y": 1,
-    "w": 69,
-    "h": 45
+    "w": 66,
+    "h": 44
    },
    "anchor": {
     "x": 57,
@@ -72116,13 +72116,13 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 981,
+    "x": 1032,
     "y": 1,
-    "w": 55,
-    "h": 44
+    "w": 52,
+    "h": 43
    },
    "anchor": {
-    "x": 16,
+    "x": 13,
     "y": 50
    },
    "footprint": [
@@ -72134,13 +72134,13 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1097,
+    "x": 1085,
     "y": 1,
-    "w": 53,
+    "w": 52,
     "h": 43
    },
    "anchor": {
-    "x": 45,
+    "x": 44,
     "y": 47
    },
    "footprint": [
@@ -72152,14 +72152,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1151,
+    "x": 1305,
     "y": 1,
-    "w": 56,
-    "h": 38
+    "w": 36,
+    "h": 18
    },
    "anchor": {
     "x": 6,
-    "y": 73
+    "y": 53
    },
    "footprint": [
     1,
@@ -72170,13 +72170,13 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1434,
+    "x": 1206,
     "y": 1,
-    "w": 51,
-    "h": 21
+    "w": 44,
+    "h": 20
    },
    "anchor": {
-    "x": 39,
+    "x": 35,
     "y": 58
    },
    "footprint": [
@@ -72188,14 +72188,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1308,
+    "x": 1138,
     "y": 1,
-    "w": 71,
-    "h": 31
+    "w": 67,
+    "h": 25
    },
    "anchor": {
-    "x": 16,
-    "y": 70
+    "x": 13,
+    "y": 65
    },
    "footprint": [
     1,
@@ -72206,14 +72206,14 @@
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
-    "x": 1208,
+    "x": 1251,
     "y": 1,
-    "w": 64,
-    "h": 38
+    "w": 53,
+    "h": 20
    },
    "anchor": {
-    "x": 45,
-    "y": 75
+    "x": 35,
+    "y": 57
    },
    "footprint": [
     2,

@@ -18,6 +18,7 @@ from . import core, post
 from . import crew_clips as clips
 from .bunk_study import ZPX
 from .modkit import K
+from mathutils import Vector
 
 BED_LIFT, BERTH_RISE = 4, 33          # art px: src/render/bedPose.ts
 HEAD_DIR = (2, 4, 6, 0)               # bedPose: the head toward the pillow per rotation (r0 -y, r1 +x, r2 +y, r3 -x)
@@ -31,15 +32,22 @@ def grow(m):
     return out
 
 
+SINK = 0.1                            # units: how far a sleeper may sink into what lies under it and not count as hidden
+
+
 def occluders(objs, fp, rot, berths, W, H):
-    """[hit per berth]: pixels where the bed (`objs`, already built at `rot`) hides a sleeper in that berth."""
+    """[(hit, seen) per berth]: hit, pixels where the bed (`objs`, already built at `rot`) hides a sleeper in that berth,
+    not counting what lies within SINK in front of it (the mattress the body sinks into); seen, where the sleeper shows.
+    The sleeper is moved SINK toward the camera for these renders: the camera is orthographic, so its outline stays put."""
     hr, (arm, items) = CO._rig()
     by = {it.id: it for it in items}
     cx, cy = K("bed_xy", fp, rot).p(0, 0)
     frames = [(i, name, f) for c, i, name, f in clips.clip_frames() if c == "sleep"]
+    view = core._state["cam"].matrix_world.to_3x3() @ Vector((0, 0, 1))    # toward the camera
     hits = []
     for b in range(berths):
         hit = np.zeros((H + 2, W + 2), bool)
+        seen = np.zeros_like(hit)
         for i, name, f in frames:
             th = math.radians(hr.THETA[HEAD_DIR[rot]])
             arm.rotation_euler = (0, 0, th)
@@ -47,6 +55,7 @@ def occluders(objs, fp, rot, berths, W, H):
             lx, ly, lz = arm.location
             hx, hy = -math.sin(th), math.cos(th)                               # toward the head (Blender axes)
             arm.location = (lx + cx - hx * SLEEP_SHIFT, ly - cy - hy * SLEEP_SHIFT, lz + (BED_LIFT + b * BERTH_RISE) / ZPX)
+            arm.location += view.normalized() * SINK
             for cast in CO.SIT_CAST:
                 hr.set_state(items, [by["crew.human." + c] for c in cast], [])
                 vis = []
@@ -56,18 +65,20 @@ def occluders(objs, fp, rot, berths, W, H):
                     rgb, a = core.render(W, H, "color")
                     vis.append(np.pad(post.downsample(rgb, a > 0.5, core.SS, 6, False)[1], 1))
                 hit |= vis[0] & ~vis[1]
-        hits.append(hit)
+                seen |= vis[1]
+        hits.append((hit, seen))
     arm.location = (0, 0, 0)
     hr.set_state(items, [], [])
     return hits
 
 
 def split(op, hits):
-    """The overlay masks: berth b's is the sprite's pixels (grown 1 px) where the bed hides its sleeper and no higher
-    berth's."""
+    """The overlay masks from occluders' (hit, seen) per berth: berth b's is the sprite's pixels where the bed hides its
+    sleeper and no higher berth's, grown 1 px (the crew sprite's outline) but never onto a pixel where the sleeper shows
+    in front of the bed in any frame (`seen`)."""
     masks, taken = [], np.zeros_like(op)
-    for hit in reversed(hits):
-        m = op & grow(hit) & ~taken
+    for hit, seen in reversed(hits):
+        m = op & (hit | (grow(hit) & ~(seen & ~hit))) & ~taken
         masks.append(m)
         taken |= m
     return masks[::-1]
