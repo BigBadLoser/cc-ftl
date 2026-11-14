@@ -34,7 +34,15 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
   'B1 bunk pairs on both walls': { role: 'quarters', rule: (w, h, d) => [...bunks(0, w - 1, 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)] },
   'B2 alcoves, game table': {
     role: 'quarters',
-    rule: (w, h) => [...range(0, h - 3, 4).flatMap((y): Piece[] => [[B, 0, y, 1], [L, 0, y + 1, 3], [B, 0, y + 2, 1], [B, w - 2, y, 1], [L, w - 1, y + 1, 1], [B, w - 2, y + 2, 1]]), ...((n) => range(0, n - 1, 1).map((i): Piece => [GT, Math.floor((w - (4 * n - 2)) / 2) + 4 * i, Math.floor((h - 1) / 2), 0]))(Math.max(1, Math.floor((w - 4) / 5))), [L, Math.floor(w / 2), 0, 0]],
+    // Pairs down both side walls, more pairs along the back wall between them (a tile clear of the sides), game tables below.
+    rule: (w, h) => {
+      const n = Math.floor((w - 6 + 1) / 4), x0 = 3 + Math.floor((w - 6 - (4 * n - 1)) / 2);
+      return [
+        ...range(0, h - 3, 4).flatMap((y): Piece[] => [[B, 0, y, 1], [L, 0, y + 1, 3], [B, 0, y + 2, 1], [B, w - 2, y, 1], [L, w - 1, y + 1, 1], [B, w - 2, y + 2, 1]]),
+        ...(n > 0 ? bunks(x0, x0 + 4 * n - 2, 0, 0) : []),
+        ...((k) => range(0, k - 1, 1).map((i): Piece => [GT, Math.floor((w - (4 * k - 2)) / 2) + 4 * i, h - 3, 0]))(Math.max(1, Math.floor((w - 4) / 5))),
+      ];
+    },
   },
   'B3 two bays, shared tables': {
     role: 'quarters',
