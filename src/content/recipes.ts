@@ -16,6 +16,14 @@ export const recipes = {
     outputs: [{ item: 'item.parts', count: 2 }],
     work: 100,
   },
+  // Restocks stasis wheels after full slabs leave (#116).
+  'recipe.stasis_slab': {
+    name: 'Stasis slab',
+    station: 'module.fabricator',
+    inputs: [{ item: 'item.metal', count: 4 }, { item: 'item.electronics', count: 2 }],
+    outputs: [{ item: 'item.stasis_slab', count: 1 }],
+    work: 200,
+  },
   // Scrapper recipes (DESIGN.md "Salvaging derelicts"): one per scrap type, 10 scrap a batch. Stripping a part yields scrap worth
   // ~40% of its build cost, and a unit of scrap makes about one unit of material, so salvage never beats mining and trade. Rare extras ~5% a batch.
   'recipe.scrap_hull': {

@@ -9,6 +9,8 @@ export interface ItemStack {
   y: number;
   /** Tick of the last 'storage.full' warning for this stack (debounce). */
   warnedAt?: number;
+  /** Tick a hauler at this stack found its destination out of reach and left it (#476): the planner waits WARN_DEBOUNCE before trying again. */
+  stuckAt?: number;
   /** A delivery crate: the StationJob id it belongs to. */
   job?: number;
 }

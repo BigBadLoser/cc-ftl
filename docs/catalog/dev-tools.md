@@ -27,6 +27,7 @@ Nothing here is part of the shipped game loop; "Debug only" is the status for al
 | patrol | `?scenario=patrol` | Navy patrol hails you to stop | Debug only | src/app/scenarios/patrol.ts; registry in src/app/scenarios/index.ts |
 | pirates | `?scenario=pirates` | Pirate fleet waits at the next node; `&hunt` | Debug only | src/app/scenarios/pirates.ts; registry in src/app/scenarios/index.ts |
 | farm | `?scenario=farm` | Three hydroponics beds near a galley (#59) | Debug only | src/app/scenarios/farm.ts; registry in src/app/scenarios/index.ts |
+| prisoners | `?scenario=prisoners` | A stasis wheel, two hostile prisoners and two spare empty slabs (#116); `&unpowered` switches the wheel off once both are in | Debug only | src/app/scenarios/prisoners.ts; registry in src/app/scenarios/index.ts |
 | busy | `?scenario=busy` | Civilian ship, derelict and station: the profiling scene | Debug only | src/app/scenarios/busy.ts; registry in src/app/scenarios/index.ts |
 
 ## Debug commands (`debug.*` in `src/sim/commands.ts`)
@@ -35,7 +36,7 @@ Nothing here is part of the shipped game loop; "Debug only" is the status for al
 |---|---|---|---|---|
 | Spawn things | ``debug.spawnCrew, spawnEnemy, spawnGenerated, spawnDerelict, spawnStation, spawnOutpost, spawnAsteroid, spawnModule, spawnItems, giveItems, spawnMarker`` | Place ships, stations, crew, modules, items | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 | Set state | ``debug.setCredits, setCrew, setCharge, setField, setModuleHp, setPlot, setStruct, setUpgrade, notoriety, chargeFtl, ignite`` | Edit values and fields | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
-| Scenario helpers | ``debug.ambush, pirates, patrol, capture, bond, breakCrew, jobScenario, sceneArrivals`` | Stage encounters and crew states | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
+| Scenario helpers | ``debug.ambush, pirates, patrol, capture, imprison, bond, breakCrew, jobScenario, sceneArrivals`` | Stage encounters and crew states | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 | Galaxy | ``debug.galaxyReveal, galaxyTeleport`` | Reveal the map and teleport | Debug only | src/sim/commands.ts; handlers in sim/*/handlers.ts; ui/DebugPanel.svelte |
 
 ## Tools

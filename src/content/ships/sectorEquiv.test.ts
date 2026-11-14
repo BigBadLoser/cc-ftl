@@ -44,6 +44,8 @@ function legacyWorld(sim: Sim): unknown {
   // Drones (#318) came later: the drone system and the doors query the `drone` store every tick, which makes it exist empty. A run with no
   // drones in it is unchanged, so an empty one is left out (as it was absent in the pinned runs).
   if (merged.drone?.length === 0) delete merged.drone;
+  // Prisoner holding (#116) came later too: the stasis system queries its stores every tick, which makes them exist empty; a run with no prisoners is unchanged.
+  for (const k of ['stasis', 'stasisWheel', 'prisoner', 'cartRest']) if (merged[k]?.length === 0) delete merged[k];
   for (const [k, rows] of Object.entries(folded)) if (rows.length > 0) merged[k] = rows; // in the pinned runs an empty one was absent
   const stores = Object.fromEntries(Object.keys(merged).sort().map((k) => [k, merged[k]])) as typeof data.stores;
   const bodies = new Map((stores.body ?? []) as [number, Body][]);

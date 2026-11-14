@@ -32,14 +32,14 @@ export function floor(w: number, h: number, ox: number, oy: number): Graphics {
 }
 
 /** Draw the sprite `id` with its glow at the origin (ox, oy). */
-export function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number): void {
+export function put(root: Container, atlas: Atlas, id: string, ox: number, oy: number, tint = 0xffffff): void {
   const s = atlas.stat(id);
   if (!s) return;
   const x = Math.round(ox - s.ax);
   const y = Math.round(oy - s.ay);
-  root.addChild(Object.assign(new Sprite(s.tex), { x, y }));
+  root.addChild(Object.assign(new Sprite(s.tex), { x, y, tint }));
   if (s.glow) {
-    const g = Object.assign(new Sprite(s.glow), { x, y });
+    const g = Object.assign(new Sprite(s.glow), { x, y, tint });
     g.blendMode = 'add';
     root.addChild(g);
   }

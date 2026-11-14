@@ -82,11 +82,12 @@ Crews that never surrender (the zealots) offer no choice: their ship is given up
 Enemy crew who surrendered or were downed when you took the ship are held as **prisoners** on the prize, listed on the
 Prize panel with their health. Your medics rescue and tend a downed prisoner, but only after your own crew; an enemy who is
 still fighting is never rescued. **Release** lets a prisoner go (**Release all** frees every one): they leave at once and
-their faction thinks a little better of you.
+their faction thinks a little better of you. Crew seal prisoners into stasis slabs and hold them in a stasis wheel on the
+same ship: see [Prisoners and stasis](../prisoners/).
 
 <ComingLater>
 
-Holding prisoners somewhere safe, ransom, sale and recruiting them. For now they stay where they are.
+Bringing prisoners from the prize to your own ship, and ransom, sale or recruiting.
 
 </ComingLater>
 

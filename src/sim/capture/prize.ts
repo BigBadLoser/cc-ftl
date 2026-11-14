@@ -33,7 +33,7 @@ export function prizeValue(sim: Sim, shipId: number): number {
 }
 
 /** Hold a surrendered or downed crew member in place as a prisoner (they stay subdued even if they recover). */
-function imprison(sim: Sim, crew: number, ship: number): void {
+export function imprison(sim: Sim, crew: number, ship: number): void {
   abortTask(sim, crew, 'imprisoned');
   sim.world.remove(crew, DraftedC);
   const f = sim.world.get(crew, FighterC);

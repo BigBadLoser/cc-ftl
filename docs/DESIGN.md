@@ -28,7 +28,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Where blueprints are sold (user decision, 2026-10-26)](#where-blueprints-are-sold-user-decision-2026-10-26): Each station type has its own reason to visit:
   - [Pirate factions and the black market (user decisions, 2026-10-26 and 2026-10-27; the factions (slice 1, #135) and the black-market services (slice 2, #136) are built; spawning the named markets is not)](#pirate-factions-and-the-black-market-user-decisions-2026-10-26-and-2026-10-27-the-factions-slice-1-135-and-the-black-market-services-slice-2-136-are-built-spawning-the-named-markets-is-not): Today there is one pirate faction (the Scrappers) and the pirate den, a hostile station built to be...
   - [Contraband inspections in the world (user decisions, 2026-11-08; issue #138, built)](#contraband-inspections-in-the-world-user-decisions-2026-11-08-issue-138-built): navy and corporation inspectors board by shuttle (or EVA), search the hold, carry contraband off, and the fine or bribe is settled with the lead inspector through an alert; a patrol hails you mid-jump to stop for them; refusing turns a patrol hostile, and fighting them turns their side on you.
-  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners".
+  - [Prisoners and prizes (user decisions, 2026-10-27; issue #116)](#prisoners-and-prizes-user-decisions-2026-10-27-issue-116): End of a fight with every enemy crew member subdued: you choose "let them go" or "take prisoners". Prisoners are sealed into stasis slabs and held in a stasis wheel (2026-11-13).
   - [Faction specialities (phase 2 stock)](#faction-specialities-phase-2-stock): Station kind still decides what a station sells (see "Where blueprints are sold"); the owner faction...
   - [Ship growth](#ship-growth): Early: expanding the hull needs a refit at a station (a shipyard service): pay, dock, and the station...
   - [Money](#money): No crew wages. Credits are mostly for buying things: gear, upgrades, materials, fuel, station repairs,...
@@ -1155,9 +1155,44 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - Let them go: the ship becomes a derelict and the crew are gone.
   - Take prisoners: the ship becomes a prize, and its surrendered crew stay put as prisoners until moved.
   - Zealots never surrender, so they never offer this choice.
-- **Holding prisoners:** they go into **cryo pods** (`module.cryo_pod`; only its sprite exists so far, no module def or system, see docs/catalog/modules.md), not a brig. Frozen, they need no food and can't
-  escape. If a pod loses power, its prisoner thaws and turns hostile inside your ship. A shuttle or the boarding party
-  escorts prisoners over.
+- **Holding prisoners (user decisions, 2026-11-13; replaces the cryo pod for prisoners):** they are sealed into
+  **stasis slabs** and stored in a **stasis wheel** (a 3x3 module, ten slots), not a brig. Frozen, they need no food
+  and can't escape. **Built (slice 1, #116):** sealing, carting, the wheel, the empty-slab item, the reserve and thawing (sim
+  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=stasis`). The
+  prisoner, the slab and the wheel must be on the same ship; the wheel and slab sprites are not wired into the game yet.
+  - **Sealing:** on the spot. Crew bring an empty slab to the prisoner (on the hover cart), seal them in where they
+    are, and cart the full slab to a wheel with a free slot. A full slab is a sealed package: it can later travel by
+    shuttle or be handed over at a station without escorting anyone.
+  - **Empty slabs:** a new wheel comes with ten empty slabs in its slots, and an empty slab is also an item that can be
+    made and bought, to restock after full slabs leave (sold or handed over).
+  - **Power:** a slab runs on a short reserve (about a game hour) when its wheel loses power, with an urgent alert;
+    when the reserve runs out the prisoner thaws and turns hostile inside your ship.
+  - **The hover cart** is how a carried slab looks, not an object to build or manage.
+  - A slab on the hover cart keeps its charge (it does not drain); one lying on the floor or in an unpowered wheel drains. Power back refills a
+    reserve in about a quarter of a game hour. A thawed prisoner leaves an empty slab behind (in the wheel slot, or on the floor).
+  - A shuttle or the boarding party escorts prisoners over (not built), so prisoners on a prize stay there unless it has a wheel.
+- **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim is built, the art not yet wired in).** The
+  sprites are a preview-only Blender family (`slab`, `tools/blender/sprites/slab_*.py`), not in the manifest.
+  - **The slab:** a prisoner travels as a stasis slab, a two-tile item crew cart around. A steel-framed face (unlit,
+    a screen) with the prisoner's crew sprite pressed into it by a shader, cyan field lines in the side channels, heavy
+    end caps with docking sockets, a status strip on the head cap.
+  - **The hover cart:** level, an emitter clamp on each end cap, a push bar at one end. Its lift field is two rings per
+    emitter that leave it, run down and dim out before the floor (a twelve-frame loop; the dimming is palette steps, no
+    transparency).
+  - **The stasis wheel (3x3 module):** ten slabs stand upright round a spindle, turned 40 degrees off radial so the near
+    faces fan toward the room, sunk in a pit in the floor. A wrapped housing with an asymmetric front window, the
+    control panel just round from its right edge, a canopy whose middle is sunk, with a Geneva drive on top (it indexes
+    the wheel in whole 36-degree steps) and three tyre drives down in the well. Paint by role: warm grey housing, dark
+    steel machinery band, yellow on guards over moving parts, bare steel on what turns, cyan only for the stasis field.
+    A station lamp (five amber lights) over the window.
+  - **Empty bays:** each socket is a recess open at its outer end, with a docking pad; each bay's umbilical (red) hangs
+    from a coupling on the spindle to a plug at the slab's inner end, and an empty bay shows an amber vacancy lamp.
+  - **Loading:** through a corner hatch merged into the pit's mouth. The cart sets the slab face up on a cradle that
+    rises from under two sliding leaves; the cradle tips the slab upright, a shuttle runs it into the wheel (turning it
+    40 degrees on the way) while the cradle sinks clear, and the leaves shut.
+  - **Fill levels from layers:** a base with every socket empty, one layer per slot (its slab, the base held out) and
+    one face mask per slot, composited back to front. Because the Geneva drive stops in whole steps, ten rest positions
+    cover every fill level. Only faces turned toward the camera get a mask.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).

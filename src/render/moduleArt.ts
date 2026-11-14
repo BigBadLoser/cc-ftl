@@ -224,6 +224,8 @@ export interface ModuleLayer {
   /** A hydroponics bed's crop layer: drawn from the art when it has the id, else from a code-drawn stand-in (render/cropOverlay.ts). */
   crop?: { crop: string; stage: 'sprout' | 'grow' | 'ripe' };
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
+  /** A colour multiplied into this layer's art and glow (a status lamp drawn white, lit in the colour of its state). */
+  tint?: number;
   optional?: boolean;
   /** The chain's head is a frame of this looping animation (an `.active` base id): the view swaps the texture as frames advance instead of rebuilding. */
   anim?: string;

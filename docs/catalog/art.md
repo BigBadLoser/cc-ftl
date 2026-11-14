@@ -29,7 +29,8 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 ## Art-only sprites (no def, no system)
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Cryo pod | `module.cryo_pod` | Prisoner holding sprite; planned (#116) | Art only | manifest; DESIGN.md wrongly says "already in the game" |
+| Cryo pod | `module.cryo_pod` | Sprite only; not used for prisoners (they go in the stasis wheel, #116) | Art only | manifest |
+| Stasis wheel, slab, hover cart | `module.stasis_wheel`, `item.stasis_slab`, `slab.cart`, `slab.floor` | Prisoner holding (#116): the 3x3 wheel (4 rotations) with a slab layer per slot seen through its window, the empty slab as a floor stack, a full slab set down on the floor, the hover cart's 12-frame ring loop. The loading animation, the prisoner's face on a full slab and an unpowered wheel are not rendered yet | Partial | tools/blender/sprites/slab_game.py, slab_floor.py (family `stasis`); render/stasisArt.ts, cartView.ts, slabView.ts; lab panel `stasis` |
 | Comms console | `module.comms_console` | Sprite only | Art only | manifest |
 | Medical console | `module.med_console` | Sprite only | Art only | manifest |
 | Sensor console | `module.sensor_console` | Sprite only | Art only | manifest |

@@ -22,6 +22,7 @@ import { EVA_AIR_LOW_FRAC, O2_ALERT_BELOW, O2_ALERT_CLEAR_ABOVE } from '../sim/t
 import type { UiAlert, UiAlertKind, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { crewSubject, enemyShip, roomOf, shipSubject, tileAt } from './subjects';
+import { stasisFailing } from './stasisAlert';
 
 /** An alert whose condition holds in the sim right now, keyed as the event-born one is (so the two never double up). */
 export interface Wanted { kind: UiAlertKind; key: string; text: string; subject: UiSubject | null; notice?: UiAlert['notice']; actions?: UiAlert['actions']; sticky?: true }
@@ -30,7 +31,7 @@ export interface Wanted { kind: UiAlertKind; key: string; text: string; subject:
 export const DERIVED_KINDS: ReadonlySet<UiAlertKind> = new Set<UiAlertKind>([
   'fire.started', 'hull.breach', 'o2.low', 'power.shortage', 'crew.downed', 'suit.airLow', 'suit.airOut', 'crew.airUnreachable',
   'away.stranded', 'crew.break', 'crew.starving', 'combat.started', 'story.lead', 'inspect.waiting', 'inspect.blocked', 'ship.yielded',
-  'ship.disabled', 'fuel.low', 'fuel.out', 'core.lost', 'creatures.aboard', 'boarders.stranded',
+  'ship.disabled', 'fuel.low', 'fuel.out', 'core.lost', 'creatures.aboard', 'boarders.stranded', 'stasis.failing',
 ]);
 
 /**
@@ -238,6 +239,8 @@ export function deriveAlerts(sim: Sim, held: (key: string) => boolean): Map<stri
     if (!alive(id) || !player(id) || (sim.world.get(id, NeedsC)?.hunger ?? 1) > 0) continue;
     add({ kind: 'crew.starving', key: `st${id}`, text: `Starving: ${name(id)}`, subject: crewSubject(sim, id) });
   }
+  const failing = stasisFailing(sim);
+  if (failing) add({ kind: 'stasis.failing', key: 'sf', text: failing.text, subject: failing.subject });
   if (shipHelpless(sim, home)) add({ kind: 'ship.disabled', key: `sd${home}`, text: 'Ship disabled: no able crew or power', subject: shipSubject(sim, home) });
   addFuel(sim, home, add);
   for (const core of aiCores(sim, home)) {

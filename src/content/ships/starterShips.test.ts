@@ -3,6 +3,7 @@ import type { ModuleDef, ShipTemplate } from '../../sim';
 import { CrewC, ModuleC, PositionC, homeShip, hullLoad, newGame, shipGrid, type Sim } from '../../sim';
 import { validateTemplate } from '../../sim/shipgen';
 import { content } from '../index';
+import { debugShip } from './debugShip';
 import { starterShips } from './starterShips';
 
 const mods: Record<string, ModuleDef> = content.modules;
@@ -104,5 +105,18 @@ describe('starter ship identities', () => {
     expect(k.t.crew).toHaveLength(4);
     expect(k.n((d) => !!d.storage)).toBeLessThanOrEqual(4);
     expect(k.def('module.vehicle_bay')).toBe(0);
+  });
+});
+
+describe('debug hull (#475)', () => {
+  it('is a valid template that is not offered in the picker, with the Wayfarer systems and room to spare', () => {
+    expect(validateTemplate(debugShip, mods)).toEqual([]);
+    expect(starterShips.map((s) => s.template)).not.toContain(debugShip);
+    expect(ships['ship.debug']).toBe(debugShip);
+    const sim = newGame(1, content, 'ship.debug');
+    run(sim, 20 * 60);
+    expect(sim.world.query(CrewC)).toHaveLength(4);
+    expect(defsOf(sim, (d) => !!d.engine)).toBe(2);
+    expect(sim.world.query(ModuleC).map((i) => sim.world.get(i, ModuleC)!).filter((m) => !m.powered).map((m) => m.def)).toEqual([]);
   });
 });
