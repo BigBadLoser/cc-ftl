@@ -154,6 +154,22 @@ carried over). The old dock block (`docks` without
 Open: which station gets which form is set per recipe for the sheets, not rolled; customs is empty (no furniture);
 rooms beside customs are stretched to the quay's length.
 
+## Which family for which station kind
+
+The user's call: a kind has its own family (its look), and the recipes inside a family are the seed's variations. Each
+still to be discussed and tweaked one by one.
+
+| Kind | Family |
+|---|---|
+| Mining | the spine only |
+| Trading | the bazaar (designed for it), and maybe the crescent |
+| Pirate | the tree |
+| Military | the square with bastions and the ring with barracks (from the compound) |
+| Research | the crescent and the half ring (arcs) |
+| Farming | a family of its own, not built: like the spine, one main street with long wings off it |
+
+The compound stops being a family of its own once its recipes move to military and research.
+
 ## The bazaar ring (trade stations): prototype
 
 Reference: the faceted bazaar mock (`docs/refs/station-mocks/tradingB-*.png`). The user: "not necessarily the
