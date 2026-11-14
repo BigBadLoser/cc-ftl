@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  Rng, SECURITY_ROLE, STATION_MAX, STATION_SIZES, generateStation, planStation, stationCrew, structureParts,
+  Rng, SECURITY_ROLE, STATION_MAX, crewSize, STATION_SIZES, generateStation, planStation, stationCrew, structureParts,
   rotatedSize, type ItemDef, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize,
 } from '../sim';
 import { content } from './index';
@@ -173,7 +173,8 @@ describe('station crew and defence', () => {
       const n = STATION_SIZES.map((s) => stationCrew(new Rng(5), stations[id] as StationDef, s).length);
       expect(n[0], id).toBeLessThan(n[1] as number);
       expect(n[1], id).toBeLessThan(n[2] as number);
-      expect(n[2], id).toBeGreaterThanOrEqual(30);
+      // As many as the posts the station's rooms make (no fixed floor: the user found the old numbers inflated).
+      expect(n, id).toEqual(STATION_SIZES.map((s) => crewSize(stations[id] as StationDef, s)));
     }
     for (const size of ['station', 'hub'] as StationSize[]) {
       for (const id of ids.filter((x) => x !== 'station.military')) expect(share('station.military', size), `${id} ${size}`).toBeGreaterThan(share(id, size));

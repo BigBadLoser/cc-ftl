@@ -2,6 +2,7 @@ import type { ModuleDef } from '../../registry';
 import type { Rng } from '../../rng';
 import { shuffle } from '../civilKit';
 import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type StationDept } from '../plan';
+import { docksOf } from '../stationCrew';
 import { stationCrew } from '../stationPlan';
 import type { StationDef, StationSize } from '../stationTypes';
 import { barracksOf, cabinOf } from './quarters';
@@ -23,7 +24,7 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
 }
 
 /** The airlock docks an assembled station of this kind has at a size: its own count where the kind gives one, two at least. */
-export const docksOf = (def: StationDef, size: StationSize): number => Math.max(2, def.assemblyDocks?.[size] ?? def.tiers[size].docks);
+export { docksOf };
 
 /** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
 const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];

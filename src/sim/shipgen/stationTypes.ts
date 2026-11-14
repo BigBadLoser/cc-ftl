@@ -31,7 +31,6 @@ export interface StationRoomDef {
 
 /** What one size tier of a kind carries. */
 export interface StationTier {
-  crew: number;
   guns: number;
   /** Chance (0..100) per gun of drawing from the heavy pool. */
   heavyPct: number;

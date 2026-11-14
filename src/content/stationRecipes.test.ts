@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assembleStation, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
+import { assembleStation, crewSize, deptOf, warehoused, type Recipe, type StationSize } from '../sim';
 import { modules } from './modules';
 import { assembled, programOf } from './stationRecipeFixture';
 import { stationRecipes } from './stationRecipes';
@@ -26,7 +26,7 @@ describe('station program', () => {
     for (const kind of ['station.pirate', 'station.military', 'station.farming'] as const) {
       const { rooms } = programOf(kind, 'station', 2);
       const beds = rooms.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
-      expect(beds).toBe(stations[kind].tiers.station.crew);
+      expect(beds).toBe(crewSize(stations[kind], 'station'));
       expect(rooms.some((r) => r.role === 'medbay')).toBe(true);
       expect(rooms.filter((r) => r.role === 'plant').length).toBeGreaterThanOrEqual(2);
     }
@@ -69,7 +69,7 @@ describe('station recipes', () => {
     expect(g.problems).toEqual([]);
     expect(g.station.docks).toBe(3);
     expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
-    expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
+    expect(g.template.crew).toHaveLength(crewSize(stations['station.trading'], 'station'));
   });
 
   it('fits a crescent out with no problems: the pier head holds every airlock', () => {
@@ -77,7 +77,7 @@ describe('station recipes', () => {
     expect(g.problems).toEqual([]);
     expect(g.station.docks).toBe(3);
     expect(g.station.guns).toBe(stations['station.trading'].tiers.station.guns);
-    expect(g.template.crew).toHaveLength(stations['station.trading'].tiers.station.crew);
+    expect(g.template.crew).toHaveLength(crewSize(stations['station.trading'], 'station'));
   });
 
   it('rejects a recipe that leaves a department out, and says which', () => {

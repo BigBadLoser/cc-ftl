@@ -1,6 +1,7 @@
 import type { Rng } from '../rng';
 import type { ModuleDef } from '../registry';
 import { allRooms, cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type ShipPlan } from './plan';
+import { crewPosts, crewSize } from './stationCrew';
 import type { StationDef, StationSize } from './stationTypes';
 import type { ShipRoleDef } from './types';
 
@@ -12,10 +13,9 @@ import type { ShipRoleDef } from './types';
 
 export const SECURITY_ROLE = 'role.security';
 
-/** Crew roles: security share by kind (at least one), the rest from the kind's pool after its required roles. */
+/** Crew roles: as many as the station's posts (`crewSize`), the security among them by kind, the rest from the kind's pool after its required roles. */
 export function stationCrew(rng: Rng, def: StationDef, size: StationSize): string[] {
-  const n = def.tiers[size].crew;
-  const sec = Math.max(1, Math.round(n * def.security));
+  const n = crewSize(def, size), sec = crewPosts(def, size).security;
   const crew = [...def.crew.required].slice(0, Math.max(0, n - sec));
   while (crew.length < n - sec) crew.push(pickWeighted(rng, def.crew.pool));
   for (let i = 0; i < sec; i++) crew.push(SECURITY_ROLE);
