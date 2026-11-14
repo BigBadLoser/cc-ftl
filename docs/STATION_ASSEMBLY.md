@@ -217,7 +217,8 @@ the hall (the user picked this from three shapes: a round fan filling the corner
 diamond). The four are one shape (the user: "make them equal, and bigger"): the open ground every corner has, mirrored
 across both axes and each corner's diagonal, grown until its floor is the biggest corner's gun bays over 0.3 plus 20
 tiles. The arms' streets are three wide on the hall's centre lines, so the arms are as wide either side. It keeps no
-tile with fewer than two neighbours in it (the tips left lone tiles that broke the hull). It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
+tile with fewer than two neighbours in it (the tips left lone tiles that broke the hull). Where a corner's arm stops
+short of the others', the battery there takes the open strip a tile or two from the arm, so no gap shows. It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
 4 singles). Sizes, seeds 1 to 4: outpost 62 to 64 by 73 to 76, station 74 to 79 by 87 to 91, hub 94 to 100 by 116
 to 123, with every gun and shield generator mounted.
 

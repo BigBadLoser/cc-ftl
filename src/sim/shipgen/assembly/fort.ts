@@ -84,6 +84,19 @@ export function batteries(a: Asm, hall: number, h: number, guns: readonly RoomSp
       const id = g.room(spec.role, { spec, access: [hall], rank: 1e5 + k });
       ids.push(id);
       for (const [p, q] of pq) g.set(...tile(k, p, q), id);
+      // Where this corner's arm stops short of the others', the shape leaves open ground between the battery and the
+      // arm: the battery takes that strip (open ground of its own outline, a tile or two from the arm), so no gap shows.
+      const arm = (p: number, q: number): boolean => { const o = g.at(...tile(k, p, q)); return o !== SPACE && o !== id; };
+      const near = (p: number, q: number): boolean => { for (let d = -2; d <= 2; d++) for (let e = -2; e <= 2; e++) if (arm(p + d, q + e)) return true; return false; };
+      const by = (p: number, q: number): boolean => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dp, dq]) => g.at(...tile(k, p + (dp as number), q + (dq as number))) === id);
+      for (let grew = true; grew;) {
+        grew = false;
+        for (let q = 1; q <= T; q++) for (let p = 1; p <= T; p++) {
+          if (!inside(p, q, T) || !open(k, p, q) || !near(p, q) || !by(p, q)) continue;
+          g.set(...tile(k, p, q), id);
+          grew = true;
+        }
+      }
     }
     const cell = g.compile();
     if (g.blocks(...box) > before || g.stranded(cell).some(([, , o]) => ids.includes(o))) { g.reset(mark); continue; }
