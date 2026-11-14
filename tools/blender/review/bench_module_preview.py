@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-SEATS = ((-0.6, 0.03), (0.0, 0.03), (0.6, 0.03))     # sprites/bench.py SEATS
+SEATS = ((-0.6, -0.11), (0.0, -0.11), (0.6, -0.11))     # sprites/bench.py SEATS
 FACING = {0: 2, 1: 4, 2: 6, 3: 0}                    # bench.facing: consoles.SEAT_DIR turned half way
 CLIP = "sit_idle"
 
@@ -36,8 +36,24 @@ def scene(cv, G, pub, ox, oy, rot, crew):
         cv.static(G, fid, *iso(ox, oy, 0, 0))
 
 
+HIDDEN_A = 12                                        # sprites/human_render.HIDDEN_A: the runtime draws it as nothing
+
+
+def as_game(pub):
+    """Crew frames as the runtime draws them: the sit clips' chair-cut pixels (alpha HIDDEN_A) left out."""
+    frame = pub.frame
+
+    def f(*a, **kw):
+        img, g, an = frame(*a, **kw)
+        img = img.copy()
+        img[img[..., 3] == HIDDEN_A] = 0
+        return img, g, an
+    pub.frame = f
+    return pub
+
+
 def main():
-    G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
+    G, pub, out = Assets(sys.argv[1]), as_game(Assets(ROOT / "public/assets/1x")), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(200 * 4, 170 * 2)
     for row, crew in enumerate((False, True)):
