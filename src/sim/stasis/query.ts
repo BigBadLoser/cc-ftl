@@ -188,14 +188,14 @@ export const wheelHolding = (sim: Sim, wheel: number): boolean => (sim.world.get
 
 /**
  * Where the stow at a wheel's hatch stands, or null when nobody is stowing there (or they have not started): the progress of a stasis job in its
- * stow phase at this wheel, split into the wheel's turn and the load (ring.ts). The loading animation plays over it (render/stasisLoad.ts).
+ * stow phase at this wheel, split into the wheel's turn and the load (ring.ts); `crew` is the crew member doing it (the job's reservedBy). The loading animation plays over it (render/stasisLoad.ts).
  */
 export function stowStage(world: World, wheel: number): { crew: number; turns: number; stage: StowStage } | null {
-  for (const crew of world.query(JobC)) {
-    const j = world.get(crew, JobC);
-    if (j?.kind === 'stasis' && j.stasis?.phase === 'stow' && j.stasis.wheel === wheel && j.progress > 0 && j.work > 0) {
+  for (const job of world.query(JobC)) {
+    const j = world.get(job, JobC);
+    if (j?.kind === 'stasis' && j.stasis?.phase === 'stow' && j.stasis.wheel === wheel && j.progress > 0 && j.work > 0 && j.reservedBy) {
       const turns = j.stasis.turns ?? 0;
-      return { crew, turns, stage: stowStageAt(j.progress, turns) };
+      return { crew: j.reservedBy, turns, stage: stowStageAt(j.progress, turns) };
     }
   }
   return null;
@@ -203,7 +203,8 @@ export function stowStage(world: World, wheel: number): { crew: number; turns: n
 
 /** True while the wheel's loading animation draws this crew member's cart (it is in the animation's frames): they are loading, the wheel's turn done. */
 export function stowingNow(world: World, crew: number): boolean {
-  const j = world.get(crew, JobC);
+  const a = world.get(crew, AssignmentC);
+  const j = a && world.get(a.jobId, JobC);
   const w = j?.kind === 'stasis' && j.stasis?.phase === 'stow' ? j.stasis.wheel : undefined;
   if (!w) return false;
   const st = stowStage(world, w);

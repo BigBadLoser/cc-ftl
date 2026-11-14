@@ -414,7 +414,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           }
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
-            const look = layer.face && host.faces ? host.faces.face(layer.chain[0] as string, first as StaticSprite, layer.face) : null;
+            // The prisoner's face is baked only once the slot's sprite has loaded (a bake of a missing sprite would cache "no face").
+            const look = first && layer.face && host.faces ? host.faces.face(layer.chain[0] as string, first, layer.face) : null;
             const o = first && look ? { ...first, tex: look.full } : first;
             return o ? [{ layer, art: { s: o, tint: layer.tint ?? 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
           }

@@ -105,6 +105,7 @@ describe('stasis wheel', () => {
       if (st && !st.stage.turning) {
         seen.push(st.stage.load);
         stowing = st.crew;
+        expect(sim.world.has(st.crew, CrewC)).toBe(true);   // the carrier, not the job entity
         expect(stowingNow(sim.world, st.crew)).toBe(true);
       }
     }
