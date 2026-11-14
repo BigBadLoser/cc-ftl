@@ -281,6 +281,10 @@ changing the ring recipes; do not redesign from scratch.
 - The mocks themselves are in `docs/refs/station-mocks/` (see `docs/refs/README.md`): the mining ring with the ore
   spine through it, the faceted trading hull.
 
+Dropped (the user, on their sheets: "ring and half ring are insanely ugly, completely useless"): the ring with
+the works block behind a gate, and the half ring with the works on one tip and the machinery on the other. The
+compound family keeps the arc open to the south, the ring with barracks and the square with bastions.
+
 **Regressed since, not redesigned:** the rooms added to the program after that review (ore store, pod deck, workshop,
 breaker shop, battery room) all went into the one works block, so it grew from about two thirds of the ring's width
 to the ring's full width and reads as a tail. The recipe was not rebalanced. Ring stations are parked at the user's

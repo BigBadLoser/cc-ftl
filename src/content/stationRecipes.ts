@@ -132,9 +132,7 @@ export const stationRecipes = {
     spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: harbour('basin') }),
   ],
   compound: [
-    compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: true, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: harbour('quay', 'block') }),
     compound('arc open to the south, works off its back', { outline: 'disc', inner: true, gap: { side: 's', from: 12 }, works: ['n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 8, quay: harbour('gatehouse', 'block') }),
-    compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: true, gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('basin', 'block') }),
     compound('ring with barracks (a works crew)', { outline: 'disc', inner: false, works: ['s', 'n'], secure: 'behind', dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('gatehouse', 'block') }),
     compound('square with bastions', { outline: 'square', inner: true, works: ['e', 'w'], secure: 'behind', dock: ['w', 'n', 's', 'e'], neck: 0, rowDepth: 8, quay: harbour('basin', 'block') }),
   ],
