@@ -3857,5 +3857,8 @@
   "dkGraphD": {"hex": "#2c3038", "set": "desk"},
   "dkTeal": {"hex": "#2f7f86", "set": "desk"},
   "dkTealD": {"hex": "#235e64", "set": "desk"},
-  "dkMug": {"hex": "#c2553d", "set": "desk"}
+  "dkMug": {"hex": "#c2553d", "set": "desk"},
+  "dkAlert": {"hex": "#ff5a4a", "emissive": 1.8, "set": "desk"},
+  "dkAmber": {"hex": "#ffb547", "emissive": 1.6, "set": "desk"},
+  "dkGo": {"hex": "#6cf08a", "emissive": 1.6, "set": "desk"}
 }

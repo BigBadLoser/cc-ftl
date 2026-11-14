@@ -1,7 +1,7 @@
 """Office desk look study preview (plain python3 + numpy + PIL): each desk at r0, active, empty and with an operator in
 its chair (the sit_work clip, as the game draws a console's operator), on a floor, a crew member standing beside for scale.
 
-  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default f1,f2,f3]
+  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default o,g,c]
     -> desk-3x.png"""
 import sys
 from pathlib import Path
@@ -10,14 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"f1": "F1  purser's desk", "f2": "F2  navigator's desk", "f3": "F3  executive desk"}
+NAMES = {"o": "office", "g": "guard station", "c": "customs post"}
 CHAIR = (-1.0, 0.0)                 # consoles.meta(desk, 0)["chair_rel_origin"]: the chair from the sprite origin
 SEAT_DIR, CW, CH = 6, 260, 210      # consoles.SEAT_DIR[0]
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), as_game(Assets(ROOT / "public/assets/1x")), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "f1,f2,f3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "o,g,c").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(CW * len(names), CH * 2)
     for i, v in enumerate(names):
