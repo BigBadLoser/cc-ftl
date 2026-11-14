@@ -46,11 +46,16 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   // A station that is not tight gives its shield rooms and its core floor round the machine: a generator with four
   // tiles beside it and three before it, a core vault with two either end and a row to walk.
   const roomy = space >= 0.95;
-  const shields: RoomSpec[] = Array.from({ length: t.shields }, (): RoomSpec => {
-    const g = pickWeighted(rng, def.shields);
-    // 4x4 at least whatever the tier: room for a Mk III generator (3x3) and the walkway to it.
-    return { role: 'shields', mods: [g], w: roomy ? Math.max(3, fp(g)[0]) + 4 : 4, h: roomy ? Math.max(3, fp(g)[1]) + 3 : 4 };
-  });
+  // The generators stand together, up to three to a room in a row (the user: "multiple can go in one bigger room").
+  const gens = Array.from({ length: t.shields }, () => pickWeighted(rng, def.shields));
+  const shields: RoomSpec[] = [];
+  for (let i = 0; i < gens.length; i += 3) {
+    const mods = gens.slice(i, i + 3);
+    // 4x4 a generator at least whatever the tier: room for a Mk III (3x3) and the walkway to it.
+    const w = roomy ? mods.reduce((n, g) => n + Math.max(3, fp(g)[0]) + 1, 0) + 3 : 4 * mods.length;
+    const h = roomy ? Math.max(...mods.map((g) => Math.max(3, fp(g)[1]))) + 3 : 4;
+    shields.push({ role: 'shields', mods, w, h });
+  }
   const consoles = ['module.helm', 'module.weaponsConsole', ...(shields.length > 0 ? ['module.shieldConsole'] : [])];
   const command: RoomSpec = { role: 'bridge', mods: consoles, w: size === 'hub' ? 9 : 7, h: size === 'outpost' ? 4 : 5 };
   const core: RoomSpec = { role: 'core', mods: ['module.aiCore', ...Array<string>(t.pointDefense).fill('module.pointDefense')], w: 3 + 3 * t.pointDefense, h: 3 };
