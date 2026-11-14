@@ -4,6 +4,7 @@ import { homeShip, newGame, placementError, shipGrid, spawnModule, type Sim } fr
 import { ensureMood, moodFactors } from '../../sim/crew/mood';
 import { seatedOn } from '../../sim/ai/machines/sit';
 import { TaskC } from '../../sim/ai/components';
+import { accessTiles, footprintTiles } from '../../sim/modules/footprint';
 import { content } from '../index';
 
 /** The leisure furniture of #441 that is buildable without an effect yet: bench (a seat), bunk (a bed), sparring droid, planter, vending machines. */
@@ -34,6 +35,21 @@ describe('leisure furniture defs', () => {
     expect(content.modules['module.bench']).not.toHaveProperty('leisure');
     expect(content.modules['module.bunk'].bed).toBe(true);
     for (const id of ['module.exercise', 'module.planter', 'module.vending', 'module.vending_red'] as const) expect(content.modules[id]).not.toHaveProperty('leisure');
+  });
+
+  it.each([0, 1, 2, 3])('keeps the two tiles in front of the bench clear at rotation %i', (rot) => {
+    const def = content.modules['module.bench'];
+    const ship = homeShip(sim), grid = shipGrid(sim, ship)!;
+    // The front (+v) turned with the module: r0 +y, r1 -x, r2 -y, r3 +x.
+    const [fx, fy] = ([[0, 1], [-1, 0], [0, -1], [1, 0]] as const)[rot] as readonly [number, number];
+    const front = accessTiles(def, 0, 0, rot);
+    expect(front).toHaveLength(2);
+    for (const t of front) expect(footprintTiles(def, 0, 0, rot).some((f) => f.x === t.x - fx && f.y === t.y - fy)).toBe(true);
+    let walled = 0;
+    for (let y = grid.y0; y < grid.y0 + grid.height; y++) for (let x = grid.x0; x < grid.x0 + grid.width; x++) {
+      if (placementError(sim, ship, 'module.bench', x, y, rot) === 'noAccess') walled++;
+    }
+    expect(walled).toBeGreaterThan(0); // somewhere on the starter ship it would face a wall, and is refused
   });
 
   it('sitting on a bench changes no mood factor', () => {

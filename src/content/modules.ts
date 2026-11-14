@@ -91,6 +91,9 @@ export const modules = {
     maxHp: 40,
     buildWork: 60,
     cost: [{ item: 'item.metal', count: 3 }, { item: 'item.polymer', count: 3 }],
+    // Both tiles in front of the seats (+v) must be walkable floor at placement, so it can't go in with its seats facing a wall.
+    access: [0, 1],
+    extraAccess: [[1, 1]],
     // Three seats along the bench, backs against the backrest (tools/lab/bench.ts SEATS).
     seats: { kind: 'bench', at: [[-0.6, -0.11], [0, -0.11], [0.6, -0.11]] },
   },
