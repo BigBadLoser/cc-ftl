@@ -73,29 +73,32 @@ def profile(k, u0, u1, v, z, steps):
 
 
 # ---- padding ------------------------------------------------------------------------------------------------------
-ROLL = ((1, "r9PadL"), (2, "r9Pad"), (1, "r9PadD"))                                  # a roll: lit, body, groove
+ROLL = ((1, "r9PadL"), (4, "r9Pad"), (1, "r9PadD"))                                  # a roll: lit, body, groove
 
 
 def pad_rolls(k, u0, u1, v, z0, z1):
-    """Tuck-and-roll: vertical rolls 4 px apart, each lit at its left."""
+    """Tuck-and-roll: vertical rolls 6 px apart, each lit at its left."""
     bands(k, panel(k, u0, u1, v, z0, z1), ROLL, "u")
 
 
 def pad_channels(k, u0, u1, v, z0, z1):
-    """Channel quilting: horizontal rolls 4 px apart, each lit on top."""
+    """Channel quilting: horizontal rolls 6 px apart, each lit on top."""
     bands(k, panel(k, u0, u1, v, z0, z1), ROLL, "z")
 
 
-def pad_biscuit(k, u0, u1, v, z0, z1, cw=6, ch=5):
-    """Biscuit tufting: soft squares, lit along their top and left, on dark seams."""
+def pad_biscuit(k, u0, u1, v, z0, z1, cw=8, ch=7):
+    """Biscuit tufting: soft squares, lit along their top and left, on dark seams; cells sized to fill the panel."""
+    nu, nz = max(1, round((u1 - u0 + 1) / (cw + 1))), max(1, round((z1 - z0 + 1) / (ch + 1)))
+    cw, ch = (u1 - u0 + 1) // nu - 1, (z1 - z0 + 1) // nz - 1
+    u1, z0 = u0 + nu * (cw + 1) - 1, z1 - nz * (ch + 1) + 1
     grid(k, panel(k, u0, u1, v, z0, z1), cw, ch, lambda i, j: (
         (0, cw, 0, 1, "r9PadL"), (0, 1, 1, ch, "r9PadL"), (1, cw, 1, ch, "r9Pad")))
 
 
 def pad_rollband(k, u0, u1, v, z0, z1):
     """Roll and pleat: a horizontal roll band along the top over tuck-and-roll below."""
-    bands(k, panel(k, u0, u1, v, z1 - 4, z1, d=1.5), ((1, "r9PadL"), (2, "r9Pad"), (1, "r9PadD")), "z")
-    bands(k, panel(k, u0, u1, v, z0, z1 - 4), ROLL, "u")
+    bands(k, panel(k, u0, u1, v, z1 - 7, z1, d=2), ((1, "r9PadL"), (5, "r9Pad"), (1, "r9PadD")), "z")
+    bands(k, panel(k, u0, u1, v, z0, z1 - 7), ROLL, "u")
 
 
 def pad_cushion(k, u0, u1, v, z0, z1):
@@ -107,8 +110,8 @@ def pad_cushion(k, u0, u1, v, z0, z1):
 
 def pad_bolster(k, u0, u1, v, z):
     """A rolled bolster along a face, its bottom at z: a stepped round profile, lit on top."""
-    profile(k, u0, u1, v, z, ((0, 1, 1, "r9PadD"), (1, 2, 2, "r9Pad"), (2, 4, 3, "r9Pad"), (4, 5, 2, "r9PadL"),
-                              (5, 6, 1, "r9PadL")))
+    profile(k, u0, u1, v, z, ((0, 1, 1, "r9PadD"), (1, 2, 3, "r9PadD"), (2, 7, 4, "r9Pad"), (7, 8, 3, "r9PadL"),
+                              (8, 9, 1, "r9PadL")))
 
 
 # ---- panels -------------------------------------------------------------------------------------------------------
@@ -272,7 +275,7 @@ SAMPLES = (
     ("p3", "P3 biscuit", lambda k: pad_biscuit(k, *FACE)),
     ("p4", "P4 roll and pleat", lambda k: pad_rollband(k, *FACE)),
     ("p5", "P5 cushion, piped", lambda k: pad_cushion(k, *FACE)),
-    ("p6", "P6 bolster", lambda k: pad_bolster(k, U0, UF, V1, H - 8)),
+    ("p6", "P6 bolster", lambda k: pad_bolster(k, U0, UF, V1, H - 11)),
     ("s1", "S1 seams, bolts", lambda k: panel_seams(k, U0, UF, V1, 0, H)),
     ("s2", "S2 inset", lambda k: panel_inset(k, U0, UF, V1, 0, H)),
     ("s3", "S3 ribs", lambda k: panel_ribs(k, U0, UF, V1, 0, H)),

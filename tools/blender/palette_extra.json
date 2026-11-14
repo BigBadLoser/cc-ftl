@@ -3770,7 +3770,7 @@
   "r9LedR": {"hex": "#e0503c", "emissive": 1.0, "set": "bar9"},
   "r9LedG": {"hex": "#86d276", "emissive": 1.0, "set": "bar9"},
   "r9Metal": {"hex": "#9ca1a5", "set": "bar9"},
-  "r9Warm": {"hex": "#c99260", "emissive": 0.35, "set": "bar9"},
+  "r9Warm": {"hex": "#a8835e", "emissive": 0.18, "set": "bar9"},
   "gymShell": {"hex": "#d4cfc2", "set": "gym"},
   "gymShellD": {"hex": "#a9a99f", "set": "gym"},
   "gymSlate": {"hex": "#56616e", "set": "gym"},
