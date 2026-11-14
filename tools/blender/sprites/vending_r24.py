@@ -12,7 +12,9 @@ on the body's own faces (round 3's was stuck-on geometry), drawn as a cylinder s
 back edge, a broad gently waving label band, no highlight stripe (a first take, a plain rounded rectangle with a
 wide label, read as a blue and white card; any vertical highlight crossing the label read as a window frame).
   vm1c24b upright, in the upper wine · vm1c24c tilted, as if poured · vm1c24d upright with fizz bubbles above
-  vm1c24e (user: "C, moved down, with D's bubbles") the tilted can lower, bigger bubbles rising off its top
+  vm1c24e (user: "C, moved down, with D's bubbles") the tilted can lower, bigger bubbles rising off its top;
+          then (user: "instead of cutting off at the back corner, wrap it") painted in the side's coordinate
+          unrolled round the corners, so it carries on round the back corner onto the back
 Uses r10's body (holes as round 21), r11's gradient, r20/r21's front pieces. SPRITE_SAMPLES=64 for previews."""
 import math
 
@@ -21,6 +23,7 @@ from . import vending_r15 as V
 from . import vending_r20 as W
 from . import vending_r21 as X
 from .vending_r11 import ramp
+from .vending_r13 import ARC, FVF, wrap
 from .vending_study import FP
 
 CANS = {  # centre v, centre z, half width, half height, tilt (degrees, + leans the top to the back), bubbles
@@ -44,8 +47,10 @@ def can_paint(style):
         fizz = BUBBLES
 
     def paint(side, u, v, z):
-        if side not in "RL":
+        if side == "F":
             return None
+        v = FVF - (abs(wrap(u, v)) - R.FU - ARC)                               # v unrolled round the corners, so
+                                                                               # the can wraps onto the back
         if bubbles and any(math.hypot(v - bv, z - bz) <= r for bv, bz, r in fizz):
             return "vmCreamL"
         dx, dz = v - cv, z - cz
@@ -73,7 +78,7 @@ def can_paint(style):
     return paint
 
 
-def make(name):
+def make(name, rot=0):
     style = name[-1]
     paint = can_paint(style) if style in CANS else None
 
@@ -81,7 +86,7 @@ def make(name):
         old = R.HOLES
         R.HOLES = X.HOLES
         try:
-            k = V.Bench(f"vending_{name}", FP)
+            k = V.Bench(f"vending_{name}", FP, rot)
             R.body(k, R.WAVES["vm1c10b"], paint=paint)
             X.snacks(k, "D1")
             W.cans(k)
@@ -98,6 +103,7 @@ def make(name):
 
 
 DESIGNS = {n: make(n) for n in ("vm1c24a", "vm1c24b", "vm1c24c", "vm1c24d", "vm1c24e")}
+DESIGNS.update({f"vm1c24e{r}": make("vm1c24e", r) for r in (1, 2, 3)})          # turned, to check the wrap
 
 
 def jobs():
