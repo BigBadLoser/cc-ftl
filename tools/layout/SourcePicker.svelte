@@ -39,6 +39,11 @@
 	async function open(slug: string) {
 		try { await lab.loadCaseNamed(slug); done(); } catch (e) { caseError = e instanceof Error ? e.message : String(e); }
 	}
+	async function openFile(e: Event) {
+		const f = (e.currentTarget as HTMLInputElement).files?.[0];
+		if (!f) return;
+		try { await lab.loadCaseFile(f); done(); } catch (err) { caseError = err instanceof Error ? err.message : String(err); }
+	}
 	function go() {
 		lab.import({ ...s });
 		done();
@@ -77,6 +82,10 @@
 	<Separator />
 	<div class="flex flex-col gap-1.5">
 		<Label>Saved cases</Label>
+		<label class="cursor-pointer rounded-md border px-2 py-1 text-xs hover:bg-muted">
+			Open a case file...
+			<input type="file" accept=".json,application/json" class="hidden" onchange={openFile} />
+		</label>
 		<div class="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
 			{#each cases as c (c)}
 				<button class="rounded-md px-1.5 py-1 text-left font-mono text-xs break-all hover:bg-muted" onclick={() => open(c)}>{c}</button>

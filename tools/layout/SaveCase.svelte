@@ -12,6 +12,10 @@
 	let failed = $state(false);
 	const path = $derived(lab.casePath(name));
 
+	function download() {
+		try { status = `Downloaded ${lab.downloadCase(name)}`; failed = false; } catch (e) { status = e instanceof Error ? e.message : String(e); failed = true; }
+	}
+
 	async function save(images: boolean) {
 		status = images ? 'Saving, then shooting the images...' : '';
 		try {
@@ -34,7 +38,7 @@
 	<Dialog.Content class="sm:max-w-md">
 		<Dialog.Header>
 			<Dialog.Title>Save a feedback case</Dialog.Title>
-			<Dialog.Description>The original design, your edit, the notes and the change list go into one JSON file in the repo.</Dialog.Description>
+			<Dialog.Description>The original design, your edit, the notes and the change list go into one JSON file: saved in the repo, or downloaded to attach in a chat.</Dialog.Description>
 		</Dialog.Header>
 		<div class="flex flex-col gap-3">
 			<div class="flex flex-col gap-1.5">
@@ -49,6 +53,7 @@
 			{#if status}<p class="text-sm break-words whitespace-pre-line {failed ? 'text-destructive' : ''}">{status}</p>{/if}
 		</div>
 		<Dialog.Footer>
+			<Button variant="outline" disabled={!name.trim()} onclick={download}>Download</Button>
 			<Button variant="outline" disabled={!name.trim()} onclick={() => save(true)}>Save with images</Button>
 			<Button disabled={!name.trim()} onclick={() => save(false)}>Save</Button>
 		</Dialog.Footer>

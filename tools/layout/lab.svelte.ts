@@ -321,6 +321,23 @@ class Lab {
     if (!res.ok || !body.path) throw new Error(body.error ?? `save failed (${res.status})`);
     return body.path;
   }
+  /** The case as a file the browser saves (to attach in a chat, no repo round trip); returns its file name. */
+  downloadCase(name: string): string {
+    const file = this.caseFile(name);
+    if (!file || !this.provenance) throw new Error('nothing to save');
+    const fileName = `${caseSlug(this.provenance, name)}.json`;
+    const url = URL.createObjectURL(new Blob([serializeCase(file)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return fileName;
+  }
+  /** Open a case from a file the user picked (a case JSON saved here or sent back from a chat). */
+  async loadCaseFile(f: File): Promise<void> {
+    this.loadCase(parseCase(await f.text()));
+  }
   /**
    * Write the case's images beside its JSON: the original, edited and overlay grids (a fixed modest scale, one frame) and a still of the
    * preview for the original and for the edited design (skipped when the preview is not on screen). Returns the repo-relative paths.
