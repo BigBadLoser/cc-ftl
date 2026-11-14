@@ -1,10 +1,11 @@
 /*
  * Crew status marks: the overhead icons (`crew.mark.*`, sheet `marks`, tools/blender/sprites/crew_marks.py) over a crew
  * member's head (a red cross on the downed, a white flag on those who surrendered, a break's symbol in its tier's thought
- * bubble, a chat's speech bubble). Nothing is drawn under the feet: only selected crew get a floor mark, the selection ring (orderFx.ts).
+ * bubble, a chat's speech bubble), and a red foot diamond under each active foe of the player (the app passes their ids). Selected crew
+ * get the selection ring (orderFx.ts) instead.
  */
 import { shipIdAtTile } from './regionRules';
-import { Container, Sprite } from 'pixi.js';
+import { Container, Graphics, Sprite } from 'pixi.js';
 import type { World } from '../sim/ecs';
 import type { Atlas } from './assets/loader';
 import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
@@ -26,6 +27,8 @@ export interface CrewMarksHost {
 
 export interface CrewMarks {
   update(dt: number): void;
+  /** The crew who get a red foot diamond (`playerFoes`). */
+  setFoes(ids: readonly number[]): void;
   dispose(): void;
 }
 
@@ -49,20 +52,30 @@ export function markId(world: World, id: number): string | null {
 }
 
 export function createCrewMarks(world: World, parent: Container, host: CrewMarksHost): CrewMarks {
+  const g = new Graphics();
   const icons = new Container();
-  parent.addChild(icons);
+  parent.addChild(g, icons);
+  let foes: ReadonlySet<number> = new Set();
   const sprites = new Map<number, Sprite>();
   /** Frame ids per icon id (the sheet's `<id>.0` .. `<id>.n-1`), looked up once. */
   const frames = new Map<string, string[]>();
   let clock = 0;
   return {
+    setFoes(ids) {
+      foes = new Set(ids);
+    },
     update(dt) {
       clock += dt;
+      g.clear();
       const seen = new Set<number>();
       for (const id of world.query(CrewC, PositionC)) {
         const pos = world.get(id, PositionC);
         const shipId = pos ? shipIdAtTile(world, pos.x, pos.y) : 0;
         if (!pos || !host.ship(shipId) || !host.visible(shipId, pos.x, pos.y) || world.has(id, DeadC)) continue;
+        if (foes.has(id)) {
+          const p = iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress); // sector tiles
+          g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: 0xff4a3a, alpha: 0.8 });
+        }
         // No health bar here: the crew view draws one on the figure itself (in bed, seated or standing). A second one at the
         // sim tile floated over beds, apart from its sleeper, and stayed when the figure did not draw.
         const mark = markId(world, id);
@@ -94,6 +107,7 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
       }
     },
     dispose() {
+      g.destroy();
       icons.destroy({ children: true });
       sprites.clear();
     },

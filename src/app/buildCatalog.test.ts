@@ -147,7 +147,7 @@ describe('combat start', () => {
     const sim2 = newGame(1, content);
     const bridge = { setSelected: () => undefined, setHovered: () => undefined, sites: createStore([]), yard: createStore({ plan: { ship: 0, tiles: [], connected: [], loose: [], blocked: [], floor: [], bad: [], hull: { now: 0, afterAll: 0, capacity: 0, max: 0 } }, quote: null, order: null }) } as unknown as Bridge;
     const c = createController(sim2, bridge);
-    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setCutaway: () => undefined } as unknown as Renderer);
+    const h = c.attach({ setPreview: () => undefined, setAreas: () => undefined, setWorldGrid: () => undefined, setCutLine: () => undefined, setHover: () => undefined, setSites: () => undefined, setModuleGhost: () => undefined, setCutaway: () => undefined, setFoes: () => undefined } as unknown as Renderer);
     c.setTool({ tool: 'deconstruct' });
     c.upkeep();
     expect(toolOf(c).tool).toBe('deconstruct'); // no fight: untouched
