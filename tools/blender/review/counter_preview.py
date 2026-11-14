@@ -9,7 +9,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
-NAMES = {"n1": "N1  K1, no glow", "n2": "N2  tucked foot rail", "n3": "N3  bone legs + rail",
+NAMES = {"o1": "O1  K1 at the edge", "o2": "O2  + tucked rail", "o3": "O3  + bone legs, rail",
+         "n1": "N1  K1, no glow", "n2": "N2  tucked foot rail", "n3": "N3  bone legs + rail",
          "m1": "M1  wide verticals", "m2": "M2  rolls + foot rail", "m3": "M3  tan top, brass caps",
          "k1": "K1  oxide leather", "k2": "K2  teal + bone slab", "k3": "K3  two-tone tan band",
          "t1": "T1  padded counter", "t2": "T2  plated counter", "t3": "T3  display counter",
