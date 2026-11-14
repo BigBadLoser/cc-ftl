@@ -8,7 +8,7 @@
   import CallerCard from './comms/CallerCard.svelte';
   import Transcript from './comms/Transcript.svelte';
   import SensorPanel from './comms/SensorPanel.svelte';
-  import DecisionBar from './comms/DecisionBar.svelte';
+  import { DecisionBar } from './kit';
   import type { CommsLine, DecisionOption, UiHolo } from './comms/types';
   import type { UiEncounter, UiEncounterChoice, UiEncounterResult } from './starmapApi';
   import { holdModal } from './keys';

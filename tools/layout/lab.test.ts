@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./previewHost', () => ({ preview: {} })); // the preview needs a DOM
 import { exists, liveRoom } from './design';
-import { addRoom, moduleIndex, type Layout } from './layout';
+import { addRoom, moduleIndex, shapeTiles, stroke, type Layout } from './layout';
 import { describeChanges, changeItems } from './changes';
 import { caseOf, decodeLayout, encodeLayout, marksOf, parseCase, serializeCase } from './cases';
 import { diffLayouts } from './diff';
@@ -187,5 +187,19 @@ describe('the ship name', () => {
     expect(lab.design?.label).toBe('Hauler');
     lab.undo();
     expect(lab.design?.label).toBe('Blank grid');
+  });
+});
+
+describe('a shape stroke is one undo step (#464)', () => {
+  it('a wall line and a floor rectangle each undo in one step', () => {
+    start();
+    const before = lab.layout as Layout;
+    lab.edit((cur) => stroke(cur, 'wall', false, shapeTiles('wall', [22, 2], [28, 2])));
+    lab.edit((cur) => stroke(cur, 'floor', false, shapeTiles('floor', [22, 10], [26, 12])));
+    expect((lab.layout as Layout).cells[2]?.slice(22, 29)).toBe('#######');
+    lab.undo();
+    expect((lab.layout as Layout).cells[10]?.[22]).toBe('.');
+    lab.undo();
+    expect((lab.layout as Layout).cells).toEqual(before.cells);
   });
 });

@@ -6,9 +6,9 @@ import { fullSlabs, slabPlace } from '../../sim/stasis/query';
 import { heldItems } from '../../sim/items/held';
 import { SLAB_ITEM } from '../../sim/stasis/tuning';
 import { content } from '../../content';
-import { newHostiles, prisonerCommands } from './prisoners';
+import { newHostiles, prisonerCommands } from './stasis';
 
-describe('?scenario=prisoners', () => {
+describe('?scenario=stasis', () => {
   it('sets a wheel and two prisoners, and the crew hold both in the wheel', () => {
     const sim = newGame(3, content);
     sim.step();

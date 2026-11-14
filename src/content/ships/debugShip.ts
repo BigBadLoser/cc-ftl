@@ -4,7 +4,7 @@ import type { ShipTemplate } from '../../sim';
  * Debug hull (#475), never offered in the new-game picker: 55x33, three columns of rooms either side of a 2-wide corridor along y = 15..16, doors two
  * tiles wide. It carries the Wayfarer's systems (helm, gun and shield consoles, a laser, airlock, galley, two hydroponics beds, med bay, four bunks,
  * workshop, shuttle hangar, three racks, reactors, shield, life support, engines) and leaves the rest of each room bare, so a debug scenario that
- * spawns modules or crew (the stasis wheel of `?scenario=prisoners`) never squeezes into a real layout. NW: cockpit and lounge; N: med bay, workshop
+ * spawns modules or crew (the stasis wheel of `?scenario=stasis`) never squeezes into a real layout. NW: cockpit and lounge; N: med bay, workshop
  * and the hangar; NE: engineering and the north engine; SW: the hold; S: quarters; SE: the south engine and open floor.
  */
 export const debugShip = {

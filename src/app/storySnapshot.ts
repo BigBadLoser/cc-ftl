@@ -1,4 +1,4 @@
-import { checkOdds, unmetReasons, type SceneSpec, type Sim } from '../sim';
+import { checkOdds, opensComms, remotesDone, unmetReasons, type SceneSpec, type Sim } from '../sim';
 import type { SceneDerelict } from '../sim/scene/types';
 import type { UiIntel, UiStory } from '../ui/api';
 import { ambushRows } from './ambushIntel';
@@ -8,6 +8,9 @@ import { commsOf } from './comms/storyComms';
 
 const itemName = (sim: Sim, id: string): string => sim.content.items[id]?.name ?? id;
 const ownerName = (sim: Sim, id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
+
+/** A stable seed from an event id (the face and name of a caller with no scene ship). */
+const hashOf = (s: string): number => [...s].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7);
 
 /** Wrecks worked before (`derelicts_found`) after which a scan of a derelict reads counts, not just signs. */
 const PRACTISED = 2;
@@ -72,7 +75,7 @@ function intelOf(sim: Sim, spec: SceneSpec | null, done: readonly string[], remo
 export function buildStory(sim: Sim): UiStory {
   const { active, last } = sim.story;
   const def = active && sim.content.events?.[active.event];
-  const done = active?.done ?? [];
+  const done = active && def ? remotesDone(def, active) : [];
   const lastDef = last && sim.content.events?.[last.event];
   const signal = sim.galaxy.signal?.event === active?.event ? sim.galaxy.signal : null;
   const intel = def ? intelOf(sim, signal, done, (id) => def.choices?.find((c) => c.id === id)?.remote) : [];
@@ -90,10 +93,11 @@ export function buildStory(sim: Sim): UiStory {
           title: def.title,
           text: def.text,
           intel,
-          comms: def && commsOf(sim, {
+          comms: def && opensComms(def) ? commsOf(sim, {
             text: def.text, signal, done: { hail: didRemote('hail'), scan: didRemote('scan', 'probe') }, remotes: { hail: remoteChoice('hail'), scan: remoteChoice('scan', 'probe'), scanKind: remoteLeft('scan', 'probe')?.remote === 'probe' ? 'probe' : remoteLeft('scan', 'probe') ? 'scan' : null },
             scanRows: scan ? scan.rows : null, hailQuote: hail?.quote ?? null, goods: wares ? hail?.stock ?? [] : [], credits: wares ? hail?.credits : undefined,
-          }),
+            ...(def.comms?.caller ? { voice: { ...def.comms.caller, seed: hashOf(active.event) } } : {}),
+          }) : null,
           choices: (def.choices ?? []).map((c) => {
             const taken = done.includes(c.id);
             const reasons = taken ? [] : unmetReasons(sim, c);

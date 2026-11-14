@@ -2784,7 +2784,7 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   turns into a pickup); reserves drain one tick a tick while `slabDraining` and refill `REFILL_PER_TICK` in a powered wheel; at 0 the prisoner thaws
   (no PrisonerC or SurrenderedC, drafted where the slab was, hostile). The "Stasis failing" alert is derived from state (`app/stasisAlert.ts`).
 - Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
-  (`items/held.ts`, 'slotted'). Debug: `?scenario=prisoners[&unpowered]`, `debug.imprison`. Save v116.
+  (`items/held.ts`, 'slotted'). Debug: `?scenario=stasis[&unpowered]`, `debug.imprison`. Save v118.
 - **Hover cart rest** (`cartRest`, `cart.ts`): when a carrier (an empty slab as `CarryingC`, or a full slab's `StasisC.carrier`) stops, the
   system parks their cart once (`CartRestC`): two free floor tiles (walkable, not a door, not under a floor slab or another cart) straight out
   from them, the near one beside them, on the side most toward the job's target and never on it, else any side; none when boxed in. Kept

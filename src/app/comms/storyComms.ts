@@ -34,25 +34,29 @@ export interface CommsInput {
   hailQuote: string | null;
   goods: UiComms['goods'];
   credits: number | undefined;
+  /** The voice of an event with no scene ship (`EventDef.comms.caller`). */
+  voice?: { name: string; faction: string; seed: number };
 }
 
 export function commsOf(sim: Sim, i: CommsInput): UiComms | null {
   const { text, signal, done, remotes, scanRows, hailQuote, goods, credits } = i;
-  if (!signal) return null;
-  const ship = signal.ships[0];
-  const derelict = signal.derelicts[0];
-  if (!ship && !derelict) return null;
-  const hailed = done.hail && !!ship;
+  const ship = signal?.ships[0];
+  if (!ship) {
+    // A call with no scene ship behind it (a checkpoint cutter, a surrendering scout): just the caller and what they say, nothing to scan.
+    if (!i.voice) return null;
+    const v = i.voice;
+    const kind = sim.content.galaxy?.factions[v.faction]?.kind;
+    const sp = speakerOf({ contact: { seed: v.seed } }, undefined, kind);
+    const base = { hailed: true, scanned: false, hailChoice: null, scanChoice: null, scanKind: null, goods: [] };
+    return {
+      ...base, look: sp.look, stutter: false, transcript: transcriptOf(text, { name: sp.name }, sp.name), hint: null, holo: null, hullTitle: null, scanHint: null, callouts: [], readout: [],
+      caller: { name: sp.name, role: 'Calling from the', ship: v.name, faction: sim.content.galaxy?.factions[v.faction]?.name ?? v.faction, swatch: FACTION_COLOUR[kind ?? ''] ?? 'var(--dim)', status: { label: 'Connected', tone: 'green' } },
+    };
+  }
+  const hailed = done.hail;
   const scanned = done.scan;
   const factionName = (id: string): string => sim.content.galaxy?.factions[id]?.name ?? id;
   const base = { hailed, scanned, hailChoice: remotes.hail, scanChoice: remotes.scan, scanKind: remotes.scanKind, goods, ...(credits !== undefined ? { credits } : {}) };
-  if (!ship) {
-    const rows = scanView(scanRows ?? []);
-    return {
-      ...base, hailed: false, caller: null, look: null, stutter: false, transcript: transcriptOf(text, { name: 'Signal' }), hint: null, holo: null,
-      hullTitle: 'DERELICT', scanHint: 'Scan for hull, air and signs of life.', callouts: rows.callouts, readout: rows.readout,
-    };
-  }
   const c = ship.contact;
   const kind = sim.content.galaxy?.factions[c.faction]?.kind;
   warmContact(sim, c);

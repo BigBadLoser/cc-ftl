@@ -12,6 +12,7 @@
   import SiteInspector from './SiteInspector.svelte';
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
+  import DoorInspector from './DoorInspector.svelte';
 
   let { api, onPriorities, onHail, onResearch }: { api: UiApi; onPriorities: () => void; onHail: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
@@ -79,6 +80,8 @@
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
     <ModuleInspector {api} onBack={back} {onResearch} />
+  {:else if tile?.door}
+    <DoorInspector {api} onBack={back} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
   {:else}

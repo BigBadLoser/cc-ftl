@@ -69,14 +69,21 @@ A taken ship becomes your **prize**. Its weapons are dead, its AI off, and some 
 panel shows its value, how many of your crew are aboard, and its prisoners. You can **Scuttle** it into a wreck (not with
 your crew aboard) or strip it; see [Salvage](../salvage/).
 
-If its crew all give up and you can't reach the ship (no one of yours aboard, no shuttle docked or flying to dock), it is
-given up as a derelict instead and the chance to take it is gone. So keep your party there until the hold completes.
+If its crew all give up and you can't reach the ship (no one of yours aboard, no shuttle docked or flying to dock), the
+fight holds and a **Surrendered** alert asks you to choose:
+
+- **Take prisoners.** The ship becomes your prize and its surrendered and downed crew are held as prisoners.
+- **Let them go.** The crew leave alive and the ship is left a derelict, with its loot and modules for salvage.
+
+Crews that never surrender (the zealots) offer no choice: their ship is given up as a derelict.
 
 ### Prisoners
 
 Enemy crew who surrendered or were downed when you took the ship are held as **prisoners** on the prize, listed on the
-Prize panel with their health. Crew seal prisoners into stasis slabs and hold them in a stasis wheel on the same ship:
-see [Prisoners and stasis](../prisoners/).
+Prize panel with their health. Your medics rescue and tend a downed prisoner, but only after your own crew; an enemy who is
+still fighting is never rescued. **Release** lets a prisoner go (**Release all** frees every one): they leave at once and
+their faction thinks a little better of you. Crew seal prisoners into stasis slabs and hold them in a stasis wheel on the
+same ship: see [Prisoners and stasis](../prisoners/).
 
 <ComingLater>
 

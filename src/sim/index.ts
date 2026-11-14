@@ -65,7 +65,7 @@ export * from './vehicles/components';
 export * from './fight/components';
 export { prizeValue } from './capture/prize';
 export { cargoCount, cargoSpace, cargoOf, cargoAdd } from './vehicles/cargo';
-export { isHostile, isSubdued, isCombatReady, isInvader } from './fight/relations';
+export { isHostile, isSubdued, isCombatReady, isInvader, isOnOurSide } from './fight/relations';
 export { sightLine, rayCells, type Cover } from './fight/los';
 export { wielded, hitChance, handDefOf } from './fight/weapons';
 export { shipIdAt, shipIdOf, shipGrid, shipIds, regions, shipAt, shipFrame, shipRect, inRect, inShip, padded, type Region } from './regions';
@@ -88,7 +88,7 @@ export {
   CREW_KIND, CREW_ROLL_SALT, SKILLS, crewRollRng, defaultPicks, roleHint, rollCrewMember, rollCrewWith, rollStartingCrew, type CrewPick, type RolledCrew,
 } from './crew/roll';
 export type { StoryState, ActiveEvent, Notice, Resolution, PhysicalEntry } from './story/state';
-export { choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
+export { opensComms, remotesDone, choiceRequirements, unmetReasons, checkOdds, describeRequirement, meets, type Odds } from './story/requirements';
 export { poolFor, startEvent } from './story/engine';
 export type * from './scene/types';
 export { createCrew } from './crew/spawn';

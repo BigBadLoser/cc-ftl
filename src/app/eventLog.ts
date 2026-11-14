@@ -1,5 +1,6 @@
 import { TraderC, type Sim, type SimEvent } from '../sim';
 import type { UiLogEntry } from '../ui/api';
+import { logged } from './eventRoute';
 import { createDescriber, type LogEntry } from './logText';
 import { shipSubject } from './subjects';
 import { TICK_HZ } from '../sim/time';
@@ -88,7 +89,7 @@ export function createEventLog(sim: Sim): EventLog {
     onEvents(events) {
       let list = store.get();
       for (const e of events) {
-        const d = describe(e);
+        const d = logged(e.type) ? describe(e) : null;
         if (d) list = add(list, d, sim.tick);
       }
 

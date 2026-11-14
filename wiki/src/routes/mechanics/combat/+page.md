@@ -254,8 +254,9 @@ You can also charge the drive outside combat with a pilot at the helm, ready for
   as a derelict you can salvage. See [Salvage](../salvage/).
 - **Surrender.** A hostile ship whose hull is below <Stat kind="tuning" id="HOPELESS_HULL" percent />, with its
   weapons dead, its drive uncharged and its crew cut off or outnumbered by your boarders, gives up. When every enemy crew
-  member is down, surrendered or dead, the ship is given up as a derelict, unless your people can still reach it. Keep
-  boarders aboard or a shuttle docked to take it as a prize; see [Boarding and crew fights](../boarding/).
+  member is down, surrendered or dead and your people can't reach it, you choose to take prisoners (the ship becomes a prize) or let them
+  go (a derelict); a zealot ship is simply given up as a derelict. Keep boarders aboard or a shuttle docked to take it as a prize
+  yourself; see [Boarding and crew fights](../boarding/).
 - **Enemy flees.** Below <Stat kind="tuning" id="FLEE_BELOW" percent /> hull, a ship with a charged drive jumps away.
 - **You lose.** Your own ship can be disabled or wrecked the same way.
 

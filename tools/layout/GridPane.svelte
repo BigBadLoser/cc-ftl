@@ -1,19 +1,19 @@
 <script lang="ts">
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { onWheel } from './attach';
-	import { panned, scaleOf, toTile, zoomed, type Box } from './camera';
+	import { panned, percentOf, scaleOf, toTile, zoomed, type Box } from './camera';
 	import { sameTarget, targetAt, tilesOf } from './design';
 	import { diffMarks, drawMoves } from './diffDraw';
-	import { drawGrid, type Mark } from './gridDraw';
+	import { drawGrid, type HullEdge, type Mark } from './gridDraw';
 	import { dpr, lab } from './lab.svelte';
 	import ShipSettings from './ShipSettings.svelte';
 	import PinMarkers from './PinMarkers.svelte';
-	import { moduleIndex, moveModule, paint, resizeRoom, roomRect, type Layout, type Rect, type Tile } from './layout';
+	import { moduleCues, moduleIndex, moveModule, PAINT_CHAR, resizeRoom, roomRect, shapeTiles, stroke, type Layout, type PaintTool, type Rect, type StrokeTool, type Tile } from './layout';
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
 		| { k: 'pan'; x: number; y: number }
-		| { k: 'paint'; last: Tile; ch: '_' | '#' | 'D' | '=' | '.'; base: Layout; tiles: Tile[]; room: number | undefined }
+		| { k: 'paint'; a: Tile; tool: StrokeTool; erase: boolean; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
 		| { k: 'move'; id: number; grab: Tile; x: number; y: number; moved: boolean };
@@ -27,17 +27,27 @@
 	$effect(() => { lab.gridBox = paneBox; });
 	let cursor = $state('crosshair');
 	let space = $state(false);
+	/** The tile under the pointer (null when it is off the grid or a gesture other than a stroke is under way), and whether the right button is held. */
+	let pointer = $state.raw<Tile | null>(null);
+	let erasing = $state(false);
+	/** The shape a stroke in progress will apply on release (nothing is committed before). */
+	let shape = $state.raw<Tile[] | null>(null);
 
 	const marks = $derived.by((): Mark[] => {
 		const d = lab.design;
 		if (!d) return [];
 		if (lab.compare) return [...(lab.tab === 'overlay' && lab.diff ? diffMarks(d, lab.diff) : []), { tiles: lab.flag, color: 'rgba(255,70,70,1)' }];
+		// the hovered-room overlay is for picking: it stays out of the way of a paint tool
 		const out: Mark[] = [
 			{ tiles: tilesOf(d, lab.selected), color: 'rgba(255,196,64,1)' },
-			{ tiles: tilesOf(d, lab.hover), color: 'rgba(80,220,255,1)' },
+			{ tiles: lab.showsHover ? tilesOf(d, lab.hover) : [], color: 'rgba(80,220,255,1)' },
 			{ tiles: lab.flag, color: 'rgba(255,70,70,1)' },
 		];
+		// the tile the active tool will affect under the pointer (a room drag shows its rectangle instead; a module its ghost)
+		if ((shape || pointer) && lab.tool !== 'select' && lab.tool !== 'note' && !lab.drag && (shape || lab.tool !== 'module')) out.push({ tiles: shape ?? [pointer as Tile], color: erasing ? 'rgba(255,90,90,1)' : 'rgba(255,255,255,1)', fill: false });
 		if (lab.ghost) out.push({ tiles: lab.ghostTiles(), color: lab.ghost.error ? 'rgba(255,70,70,1)' : 'rgba(90,255,120,1)' });
+		const cue = cues();
+		if (cue) out.push({ tiles: cue.access, color: 'rgba(240,177,58,1)', shape: 'square' });
 		const r = lab.drag;
 		if (r) {
 			const t: Tile[] = [];
@@ -45,6 +55,19 @@
 			out.push({ tiles: t, color: r.ok ? 'rgba(80,220,255,1)' : 'rgba(255,70,70,1)' });
 		}
 		return out;
+	});
+
+	/** The module whose needs are shown: the ghost being placed, else the selected module. */
+	const cueModule = $derived.by(() => {
+		const g = lab.ghost, l = lab.layout, s = lab.selected;
+		if (g) return { def: g.def, x: g.x, y: g.y, rot: g.rot, bad: !!g.error };
+		const m = s?.kind === 'module' && l ? l.modules[moduleIndex(l, s.id)] : undefined;
+		return m ? { ...m, bad: false } : null;
+	});
+	const cues = () => (cueModule ? moduleCues(cueModule) : null);
+	const edges = $derived.by((): HullEdge[] => {
+		const h = cueModule && !lab.compare ? moduleCues(cueModule).hull : null;
+		return h ? [{ tiles: h.tiles, out: h.out, color: cueModule?.bad ? 'rgba(255,70,70,1)' : 'rgba(240,177,58,1)' }] : [];
 	});
 
 	$effect(() => {
@@ -70,14 +93,14 @@
 			ctx.beginPath();
 			ctx.rect(0, 0, half, box.h);
 			ctx.clip();
-			drawGrid(ctx, d, lab.view, r, paneBox, lab.layers, marks);
+			drawGrid(ctx, d, lab.view, r, paneBox, lab.layers, marks, edges);
 			ctx.restore();
 			ctx.fillStyle = 'rgba(255,255,255,0.25)';
 			ctx.fillRect(half - 0.5, 0, 1, box.h);
 			return;
 		}
 		const shown = lab.compare && lab.tab === 'generated' && lab.originalDesign ? lab.originalDesign : d;
-		drawGrid(ctx, shown, lab.view, r, box, lab.layers, marks);
+		drawGrid(ctx, shown, lab.view, r, box, lab.layers, marks, edges);
 		if (lab.compare && lab.tab === 'overlay' && lab.diff) drawMoves(ctx, lab.diff, lab.view, r, box);
 	});
 
@@ -127,28 +150,22 @@
 		if (edge === 'n') { const y = Math.min(ty, r.y + r.h - 1); return { ...r, y, h: r.y + r.h - y }; }
 		return { ...r, h: Math.max(1, ty - r.y + 1) };
 	}
-	function line(a: Tile, b: Tile): Tile[] {
-		const out: Tile[] = [];
-		const n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), 1);
-		for (let i = 0; i <= n; i++) out.push([Math.round(a[0] + ((b[0] - a[0]) * i) / n), Math.round(a[1] + ((b[1] - a[1]) * i) / n)]);
-		return out;
-	}
-	const PAINT: Record<string, '_' | '#' | 'D' | '=' | '.'> = { floor: '_', wall: '#', door: 'D', beam: '=', space: '.' };
+	const isPaint = (t: string): t is PaintTool => t in PAINT_CHAR;
 	const room = (): number | undefined => (lab.selected?.kind === 'room' ? lab.selected.id : undefined);
 
 	function down(e: PointerEvent) {
 		canvas.setPointerCapture(e.pointerId);
 		const { tile, fx, fy } = at(e);
 		const l = lab.layout;
-		if (e.button !== 0 || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		const tool = lab.tool;
-		if (PAINT[tool]) {
-			const ch = PAINT[tool] as '_' | '#' | 'D' | '=' | '.';
-			lab.begin();
-			// A stroke is painted from the layout it began on, with every tile so far (not tile by tile on the last result): the hull it frees is judged once.
-			const first = room();
-			lab.step(() => paint(l, [tile], ch, first));
-			mode = { k: 'paint', last: tile, ch, base: l, tiles: [tile], room: first };
+		// the right button erases what the active tool paints (a note: the one under the pointer); the select tool pans with it
+		const erase = e.button === 2 && tool !== 'select';
+		if ((e.button !== 0 && !erase) || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
+		erasing = erase;
+		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
+		if (isPaint(tool) || (erase && (tool === 'room' || tool === 'module'))) {
+			mode = { k: 'paint', a: tile, tool: tool as StrokeTool, erase, room: room() };
+			shape = shapeTiles(mode.tool, tile, tile);
 		} else if (tool === 'note') {
 			// a note goes where the pointer is (Alt: free, not attached to what is there)
 			lab.addPin(fx, fy, e.altKey);
@@ -172,6 +189,7 @@
 	function move(e: PointerEvent) {
 		const { tile, fx, fy } = at(e);
 		const m = mode;
+		pointer = !lab.compare && (!m || m.k === 'paint') ? tile : null;
 		if (m?.k === 'pan') {
 			lab.view = panned('grid', lab.view, dpr(), e.clientX - m.x, e.clientY - m.y);
 			m.x = e.clientX;
@@ -179,11 +197,7 @@
 			return;
 		}
 		if (m?.k === 'paint') {
-			const ch = m.ch;
-			const tiles = line(m.last, tile);
-			m.last = tile;
-			m.tiles.push(...tiles);
-			lab.step(() => paint(m.base, m.tiles, ch, m.room));
+			shape = shapeTiles(m.tool, m.a, tile);
 			return;
 		}
 		if (m?.k === 'room') {
@@ -219,7 +233,13 @@
 	function up() {
 		const m = mode;
 		mode = null;
-		if (m?.k === 'paint' || m?.k === 'edge') lab.end();
+		erasing = false;
+		if (m?.k === 'paint') {
+			const tiles = shape;
+			shape = null;
+			const { tool, erase, room: first } = m;
+			if (tiles) lab.edit((cur) => stroke(cur, tool, erase, tiles, first)); // one undo step per stroke
+		} else if (m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
 			lab.drag = null;
@@ -236,7 +256,10 @@
 		}
 	}
 	function cancel() {
-		if (mode?.k === 'paint' || mode?.k === 'edge') lab.end();
+		pointer = null;
+		erasing = false;
+		shape = null;
+		if (mode?.k === 'edge') lab.end();
 		mode = null;
 		lab.drag = null;
 		lab.ghost = null;
@@ -282,4 +305,6 @@
 	{/if}
 	<div class="pointer-events-none absolute inset-y-0" style="left:{side ? paneBox.w : 0}px;width:{paneBox.w}px"><PinMarkers space="grid" box={paneBox} /></div>
 	<div class="absolute top-2 left-3"><ShipSettings /></div>
+	<div class="pointer-events-none absolute right-3 bottom-2 text-xs text-muted-foreground tabular-nums" aria-label="Grid zoom">{percentOf(lab.view.zoom, dpr())}%</div>
+	{#if lab.ghost?.error && !lab.compare}<div class="pointer-events-none absolute bottom-2 left-3 rounded bg-destructive/85 px-2 py-1 text-xs text-white">Cannot go here: {lab.ghost.error}</div>{/if}
 </div>

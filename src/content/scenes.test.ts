@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, type Sim } from '../sim';
+import { CombatC, FTL_CHARGE_SEC, START_NODE, ShipC, deserialize, galaxyIndex, newGame, playerShip, serialize, remotesDone, type Sim } from '../sim';
 import { CrewC, PositionC } from '../sim/crew/components';
 import { AllegianceC } from '../sim/fight/components';
 import { leaveBlocker } from '../sim/galaxy/eventGrid';
@@ -99,12 +99,27 @@ describe('scene signal', () => {
     expect(ship?.crew).toBeLessThanOrEqual(3);
     expect(ship?.cargo?.length).toBeGreaterThanOrEqual(2);
     expect(ship?.contact.name).toBeTruthy();
-    const out = choose(sim, 'hail');
-    expect(out).toContainEqual({ type: 'story.remote', event: 'event.trader_swap', choice: 'hail', action: 'hail' });
-    expect(sim.story.active?.done).toEqual(['hail']);
-    expect(choose(sim, 'hail')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'done' });
+    const answered = () => remotesDone(content.events['event.trader_swap'], sim.story.active ?? {});
+    expect(answered()).toEqual(['hail']); // a call is answered by definition (nothing stored, so an older save answers too)
+    sim.story.active!.done = []; // a restored save from before: still answered
+    expect(answered()).toEqual(['hail']);
+    const out = choose(sim, 'scan');
+    expect(out).toContainEqual({ type: 'story.remote', event: 'event.trader_swap', choice: 'scan', action: 'scan' });
+    expect(answered().sort()).toEqual(['hail', 'scan']);
+    expect(choose(sim, 'scan')).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'done' });
     expect(sim.galaxy.travel?.phase).toBe('story');
     expect(sim.world.query(ShipC).length).toBe(0); // nothing spawned: the ship waits in hyperspace
+  });
+
+  it('a comms call holds its ship at once: hailed when the signal opens, and still so when dropped out of with no tick between', () => {
+    const sim = signalled(3);
+    expect(sim.galaxy.signal?.ships[0]?.hailed).toBe(true); // no tick has run since it opened
+    sim.enqueue({ type: 'story.choose', choice: 'approach' });
+    const spec = sim.galaxy.signal;
+    if (spec) delete spec.ships[0]!.hailed; // as if no hail had been marked yet
+    step(sim, 2);
+    deploy(sim);
+    expect(sim.galaxy.event?.scene.ships[0]?.hailed).toBe(true);
   });
 
   it('is the same scene for the same signal (seed, event, hop)', () => {
@@ -126,8 +141,8 @@ describe('scene signal', () => {
     step(sim, 2);
     expect(sim.story.active?.event).toBe('event.trader_swap');
     expect(sim.galaxy.signal).toBeNull();
-    for (const c of ['hail', 'scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
-    expect(sim.story.active?.done ?? []).toEqual([]);
+    for (const c of ['scan', 'approach']) expect(choose(sim, c)).toContainEqual({ type: 'command.rejected', command: 'story.choose', reason: 'unmet' });
+    expect(remotesDone(content.events['event.trader_swap'], sim.story.active ?? {})).toEqual(['hail']); // a comms event is answered by definition; nothing else was taken
     choose(sim, 'ignore');
     expect(sim.story.active).toBeNull();
     expect(sim.galaxy.event).toBeNull();
@@ -267,9 +282,10 @@ describe('scene observer', () => {
 });
 
 describe('scene departures', () => {
-  it('an unhailed neutral jumps out when its business is done, and the observer logs it', () => {
+  it('a neutral not holding station jumps out when its business is done, and the observer logs it', () => {
     const { sim, skiff } = inScene(3);
     const s = sim.galaxy.event?.scene.ships[0];
+    delete s?.hailed; // (a comms call holds it; here the hail is taken back)
     expect(s?.stay).toBeGreaterThanOrEqual(100);
     const out = step(sim, Math.round(((s?.stay ?? 0) + 60) * 20));
     expect(out.some((e) => e.type === 'ship.fled' && e.ship === skiff)).toBe(true);
@@ -281,9 +297,8 @@ describe('scene departures', () => {
     expect(sim.galaxy.event).toBeNull();
   });
 
-  it('a skiff hailed from the signal holds station', () => {
+  it('a skiff that called holds station', () => {
     const sim = signalled(3);
-    choose(sim, 'hail');
     choose(sim, 'approach');
     deploy(sim);
     const s = sim.galaxy.event?.scene.ships[0];

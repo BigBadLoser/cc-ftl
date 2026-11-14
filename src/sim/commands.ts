@@ -21,6 +21,8 @@ export type Command =
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
   /** Drafted crew force a jammed door at (x, y): the one nearest by path walks beside it and does the forceDoor work, staying drafted. */
   | { type: 'crew.forceDoor'; ids: number[]; ship: number; x: number; y: number }
+  /** Set a door's vent open or closed (the player's setting; the vent still shuts itself on a hazard or without power). */
+  | { type: 'door.vent'; ship: number; x: number; y: number; open: boolean }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }
@@ -193,6 +195,10 @@ export type Command =
   | { type: 'combat.overcharge'; ship: number; system: 'weapons' | 'shields' | 'engines' }
   /** Turn a captured (prize) ship into a derelict wreck. Needs no player crew aboard. */
   | { type: 'ship.scuttle'; ship: number }
+  /** Answer a beaten ship (`Ship.yielded`: every crew member subdued, none of yours can reach it): 'letGo' (the crew leave, the ship is a derelict) or 'takePrisoners' (it is a prize, its crew prisoners). */
+  /** Release a prisoner (capture/settle.ts): they leave and their faction thinks a little better of the player. */
+  | { type: 'prisoner.release'; crew: number }
+  | { type: 'ship.settle'; ship: number; choice: 'letGo' | 'takePrisoners' }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
   | { type: 'crew.hack'; id: number; module: number }
   /** Boarders (player crew on a hostile ship) walk to `module` of that ship and wreck it over time, until it falls, they are interrupted or cancelled. */
@@ -223,6 +229,8 @@ export type Command =
   | { type: 'debug.spawnModule'; ship: number; x: number; y: number; def: string; rot: number }
   /** Set the battery (0..100) of every battery robot (the debug panel). */
   | { type: 'debug.setCharge'; value: number }
+  /** Make every enemy crew member of the ship `ship` surrender at once, so it yields (the debug scenarios). */
+  | { type: 'debug.surrender'; ship: number }
   /** Take the ship `ship` as a prize at once, its crew surrendering (the debug panel). */
   | { type: 'debug.capture'; ship: number }
   /** Debug (the prisoners scenario): make a crew member who is not the player's a prisoner where they stand, as a capture does. */

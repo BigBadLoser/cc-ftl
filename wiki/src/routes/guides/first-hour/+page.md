@@ -53,7 +53,7 @@ and a shuttle first (see [Trading](#Trading)).
 
 1. **Screens:** the starmap, ship overview, the Crew window (priorities and schedules), ship stock, jobs and, once you have a lab, research.
 2. **Crew bar:** one card per crew member, with their role and status. Click a card to select them.
-3. **Time:** the clock, pause and three speeds, sharing a frame with the **ship's log**. A game hour is <Stat kind="tuning" id="GAME_HOUR_SEC" unit="seconds" />, and the ship clock matters for crew schedules.
+3. **Time:** the clock, pause and three speeds, sharing a frame with the **ship's log**. The log records everything that happens; only emergencies (fire, a breach, thin air, a downed crew member of yours, a disabled ship, a lost shuttle, a lost AI core, creatures or stranded boarders aboard) also raise an urgent alert, and when the list is full the emergencies keep their place while join requests and arrival warnings give way. A game hour is <Stat kind="tuning" id="GAME_HOUR_SEC" unit="seconds" />, and the ship clock matters for crew schedules.
 4. **Goals:** what to do next (see Goals below).
 5. **Tools:** Select, Build, Deconstruct and Cancel jobs, plus wall and roof views, overlays and the bug reporter.
 
@@ -185,7 +185,7 @@ Two things to watch as you grow:
 
 - **Engine capacity.** Your engines can only move so much hull. Build bigger than they can carry and the jump is
   blocked; **Overcharge** forces it, at the risk of damaging an engine and starting fires. More engines carry more.
-- **Running dry.** If you can't afford any jump, an **Out of fuel** banner appears (this is jump fuel; a ship out of crystals shows a **Low power** alert instead). It points you to a trader's
+- **Running dry.** If you can't afford any jump, an **Out of fuel** banner appears (this is jump fuel; a ship whose reactor crystals run low gets a **Reactor running low** alert while the stores are empty, then **Reactor out of fuel** at zero, before **Low power**). It points you to a trader's
   **Refuel** if there is one, or lets you send a distress call for a tug.
 
 ## The menu and saving

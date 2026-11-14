@@ -76,6 +76,8 @@ export interface YardOrder {
   ejected: number[];
   /** Escrow still held: all of the price at first; the unbuilt share goes back at the end, the built share to the station. */
   held: YardMoney;
+  /** Metal refunded to the player that found no room aboard yet: theirs, apart from the escrow (never paid to the station); `retryRefund` tries again. */
+  pending?: number;
   /** The price of the whole order, planning fee included (for the share maths and the readout). */
   price: YardMoney;
   /** The nearest row with open work (`Job.yardRank`); the crew may work this row and the next. Kept up to date while at work. */

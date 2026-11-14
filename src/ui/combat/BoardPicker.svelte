@@ -102,18 +102,17 @@
       options={plan.airlocks.map((a) => ({ value: String(a.id), label: `Airlock ${a.x},${a.y}`, testId: `board-airlock-${a.id}` }))} />
 
     <div class="two">
-      <button class="act" data-testid="board-cancel" onclick={onClose}>Cancel</button>
       <ActionButton tone="go" disabled={!!why} title={why ?? 'Launch the boarding party'} testid="board-go" onclick={go}>
         <Icon name="shuttle" size={18} />Launch<KeyBadge tone="dim" size="sm" padX={5}>{keyLabel($keymap, 'ui.confirm')}</KeyBadge>
       </ActionButton>
+      <button class="act" data-testid="board-cancel" onclick={onClose}>Cancel</button>
     </div>
     {#if why}<p class="why" data-testid="board-why">{why}</p>{/if}
   </div>
 </Dialog>
 
 <style>
-  :global(.kit-card[data-testid='board-picker']) { background: #0b0e11; border-color: #3a424a; border-radius: 0; width: min(420px, calc(100vw - 32px)); }
-  :global(.kit-card[data-testid='board-picker'] .kit-card-title) { font: 700 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
+  :global(.kit-card[data-testid='board-picker']) { --card-bg: #0b0e11; width: min(420px, calc(100vw - 32px)); }
   .body { display: grid; gap: 8px; margin-top: 8px; background: transparent; }
   .sec { font: 600 11px/1 var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); margin-top: 4px; display: flex; gap: 8px; align-items: baseline; }
   .sec .n { color: var(--text); }

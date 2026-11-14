@@ -4,6 +4,7 @@ import type { CreateStarmapGpu } from './starmapGpu';
 import type { UiCrewDetail, UiOpinionHover } from './crewDetailApi';
 export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
+import type { DoorInfo } from '../sim/doorInfo';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
 export interface Subscribable<T> {
@@ -106,6 +107,10 @@ export interface UiInspect {
   fields: { name: string; value: number }[];
   /** A player job on the tile (forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
+  /** True when the tile is a door that can have a vent (the sim's answer; an airlock's door cannot). */
+  ventable: boolean;
+  /** The door's state and the two sides it joins (the sim's `doorInfo`), or null on a tile that is not a door. */
+  door: DoorInfo | null;
   selected: boolean;
 }
 
@@ -688,11 +693,11 @@ export type UiSubject =
   | { kind: 'ship'; id: number }
   | { kind: 'node'; id: string };
 
-/** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
+/** Alerts are urgent things only (see EVENT_ROUTE in app/eventRoute.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked' | 'stasis.failing';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -798,6 +803,8 @@ export interface UiEnemyWeapon {
   stalled: boolean;
   /** The module is destroyed. */
   destroyed: boolean;
+  /** Its ship has yielded (`shipCanAct`): nothing charges or fires until the player answers. */
+  standDown: boolean;
   /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
   eta: number | null;
   /** One of its shots is in flight to your ship and it has no new aim yet. */

@@ -5,7 +5,8 @@ import { Struct, isAirless, isSolidRock } from '../structure';
 import { GAS_DIFFUSION, GAS_EPSILON, GAS_SUBSTEPS, GAS_VENT } from '../tuning';
 
 /** Every field the solve reads. */
-const INPUTS = ['o2', 'co2', 'struct', 'door'] as const;
+const INPUTS = ['o2', 'co2', 'struct', 'door'] as const
+const INPUTS_VENT = [...INPUTS, 'vent'] as const;
 const steady = new SteadyState();
 /** Tiles that hold no gas: airless (Space, rock ground), walls and solid rock. */
 const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct.Wall || isSolidRock(kind);
@@ -21,10 +22,10 @@ const holdsNoGas = (kind: number): boolean => isAirless(kind) || kind === Struct
 export function atmosphereSystem(sim: Sim): void {
   for (const { grid } of regions(sim)) {
     if (!grid.has('o2') || !grid.has('struct')) continue;
-    const key = inputKey(grid, INPUTS);
+    const key = inputKey(grid, grid.has('vent') ? INPUTS_VENT : INPUTS);
     if (steady.quiet(grid, key)) continue;
     const frame = fieldFrame(grid);
-    const cond = conductanceMap(grid, frame);
+    const cond = conductanceMap(grid, frame, true);
     const o2Before = fieldMirror(grid, 'o2'), co2Before = fieldMirror(grid, 'co2');
     const o2 = scratchOf(grid, 'gas.o2'), co2 = scratchOf(grid, 'gas.co2');
     o2.set(o2Before);

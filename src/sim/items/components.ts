@@ -32,6 +32,8 @@ export interface Carrying {
   count: number;
   /** The rest of a construction bundle (see HaulData.extra). */
   extra?: ItemQty[];
+  /** The station deal this load belongs to (from the haul's tag): the ledger (trade/dockCount.ts) counts it while it is in hand and when it is put down. */
+  deal?: { id: number; dir: 'get' | 'give' };
 }
 export const CarryingC = defineComponent<Carrying>('carrying');
 
@@ -75,6 +77,9 @@ export interface HaulRef {
  * reserves the same room at its destination.
  */
 export interface HaulData {
+  /** The station deal this haul serves and which way (set where the haul is made, stationDock.ts): its pickups and deposits are counted on `Deal.dock.units`.
+   * `get`: bought goods from station storage into the shuttle; `give`: the player's goods from the shuttle into station storage. */
+  deal?: { id: number; dir: 'get' | 'give' };
   item: string;
   count: number;
   phase: 'pickup' | 'deliver';

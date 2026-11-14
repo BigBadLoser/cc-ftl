@@ -82,7 +82,7 @@ const POST_ROLES: readonly string[] = ['armoury', 'dock', 'plaza', 'garden', 'dr
 function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): void {
   const toSector = (i: number): { x: number; y: number } => ({ x: x + (i % gen.width), y: y + Math.floor(i / gen.width) });
   const floor = (i: number): boolean => gen.template.rows[Math.floor(i / gen.width)]?.[i % gen.width] === '_';
-  // A patrol stop is a tile a guard stands on: not under a solid module (a room's centre can be a mess table), or no guard reaches it (#107).
+  // A patrol stop or court is a tile a person stands on: not under a solid module (a room's centre can be a mess table), or no guard reaches it (#107).
   const grid = shipGrid(sim, id);
   const standable = (i: number): boolean => {
     const t = toSector(i);
@@ -99,7 +99,8 @@ function settleIn(sim: Sim, id: number, gen: GenResult, x: number, y: number): v
   for (const r of gen.rooms) {
     const ft = r.tiles.filter(floor);
     if (ft.length === 0) continue;
-    if (COURT_ROLES.includes(r.role)) for (let k = 0; k < Math.min(6, ft.length); k++) courts.push(toSector(ft[Math.floor((k * ft.length) / 6)] as number));
+    const open = ft.filter(standable); // courts are stood on too, so never under furniture (#379)
+    if (COURT_ROLES.includes(r.role)) for (let k = 0; k < Math.min(6, open.length); k++) courts.push(toSector(open[Math.floor((k * open.length) / 6)] as number));
     const c = centre(ft.filter(standable));
     if (POST_ROLES.includes(r.role) && c >= 0) posts.push(toSector(c));
   }

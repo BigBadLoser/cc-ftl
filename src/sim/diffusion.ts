@@ -1,7 +1,7 @@
 import { CHUNK_SIZE, type GridLike } from './grid';
 import { ShipGrid } from './shipGrid';
 import { loadChunkInto } from './sectorGridBulk';
-import { Struct, gasConductance, isAirless } from './structure';
+import { Struct, VentState, gasConductance, isAirless } from './structure';
 
 /**
  * A region's structure as the field systems see it, rebuilt only when its `struct` revision changes. `active` lists the
@@ -48,30 +48,43 @@ export function fieldFrame(grid: GridLike): FieldFrame {
 
 const CHUNK_SHIFT = Math.log2(CHUNK_SIZE);
 
-const conds = new WeakMap<GridLike, { frame: FieldFrame; door: number; cond: Float64Array; doors: Int32Array }>();
+type CondCache = { frame: FieldFrame; door: number; vent: number; cond: Float64Array; doors: Int32Array };
+const conds = new WeakMap<GridLike, CondCache>();
+const ventConds = new WeakMap<GridLike, CondCache>();
 
 /**
  * Per-tile gas conductance (0 walls / closed doors, 1 floor and space, fraction for doors), filled on active tiles only.
- * Cached per grid until its `struct` frame or `door` revision changes, so the three diffusion solvers of a tick share one
+ * Cached per grid until its `struct` frame or `door` revision changes, so the diffusion solvers of a tick share one
  * map. Only door tiles read the `door` field, so a `door` write alone refreshes just them. The result is read-only.
+ * With `vents`, an open vent (`vent` field) also passes air through a shut door: only the atmosphere solver asks (a vent
+ * passes air and pressure, not heat or smoke), and it has its own cache.
  */
-export function conductanceMap(grid: GridLike, frame: FieldFrame): Float64Array {
+export function conductanceMap(grid: GridLike, frame: FieldFrame, vents = false): Float64Array {
   const doorRev = grid.revision('door');
-  const hit = conds.get(grid);
+  const useVents = vents && grid.has('vent');
+  const ventRev = useVents ? grid.revision('vent') : 0;
+  const cache = vents ? ventConds : conds;
+  const open = (x: number, y: number): boolean => useVents && grid.get('vent', x, y) === VentState.Open;
+  const hit = cache.get(grid);
   if (hit && hit.frame === frame) {
-    if (hit.door === doorRev) return hit.cond;
+    if (hit.door === doorRev && hit.vent === ventRev) return hit.cond;
     const { width, x0, y0 } = grid;
     for (const i of hit.doors) {
-      const x = i % width;
-      hit.cond[i] = gasConductance(Struct.Door, grid.get('door', x0 + x, y0 + (i - x) / width));
+      const x = i % width, y = (i - x) / width;
+      hit.cond[i] = gasConductance(Struct.Door, grid.get('door', x0 + x, y0 + y), open(x0 + x, y0 + y));
     }
     hit.door = doorRev;
+    hit.vent = ventRev;
     return hit.cond;
   }
+  const { width, x0, y0 } = grid;
   const door = grid.load('door');
   const out = new Float64Array(frame.struct.length);
-  for (const i of frame.active) out[i] = gasConductance(frame.struct[i] as number, door[i] as number);
-  conds.set(grid, { frame, door: doorRev, cond: out, doors: tilesOf(frame, isDoor) });
+  for (const i of frame.active) {
+    const x = i % width, y = (i - x) / width;
+    out[i] = gasConductance(frame.struct[i] as number, door[i] as number, frame.struct[i] === Struct.Door && open(x0 + x, y0 + y));
+  }
+  cache.set(grid, { frame, door: doorRev, vent: ventRev, cond: out, doors: tilesOf(frame, isDoor) });
   return out;
 }
 

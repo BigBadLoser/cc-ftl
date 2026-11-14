@@ -90,13 +90,13 @@ export const furniture = {
     asset: 'module.storage_scrap_large', footprint: [2, 3], solid: true, access: [0, 3], power: 0,
     flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageAccepts: SCRAP_IDS, storageArt: SCRAP_ART,
   },
-  // A freight container, opened from the doors on one long side. Cargo holds pack them around their walkway.
+  // A freight container, opened from the doors on its short end (rotation 0: the +y end). Cargo holds pack them end-on to their walkway.
   'module.cargo_container': {
     scrap: 'comfort',
     name: 'Freight container',
     category: 'storage',
-    description: "A freight container opened from one long side. Cargo holds pack them around a walkway.",
-    asset: 'module.cargo_container', footprint: [3, 2], solid: true, access: [1, 2], power: 0,
+    description: "A freight container with doors on one end. Cargo holds pack them end-on to a walkway.",
+    asset: 'module.storage_container', footprint: [2, 3], solid: true, access: [0, 3], power: 0,
     flammability: 0.2, maxHp: 160, buildWork: 120, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 },
   },
   // A sickbay cot (walkable, like a bed): patients lie in it before any ordinary bed, and heal faster with medicinal herbs in stock. Sleepers never use it.

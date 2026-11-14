@@ -36,7 +36,6 @@ export function startAmbushScenario(
         if (opts.raiders) dispatch({ type: 'debug.sceneArrivals', mode: opts.raiders });
         if (opts.signal) return;
         if (opts.help) {
-          dispatch({ type: 'story.choose', choice: 'hail' });
           dispatch({ type: 'story.choose', choice: 'help' });
         } else dispatch({ type: 'story.choose', choice: 'approach' });
         setSpeed(); // the decision paused the game; answered here, not in its window, so the speed is put back here too

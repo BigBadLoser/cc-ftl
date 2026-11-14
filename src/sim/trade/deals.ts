@@ -12,6 +12,8 @@ import { undock } from '../vehicles/lifecycle';
 import { destroyJob } from '../items/stacks';
 import { JobC } from '../crew/components';
 import { addCredits } from './credits';
+import { noteHelp } from '../galaxy/eventGrid';
+import { lostInHold, reclaim } from './dockLedger';
 import { grant, revoke } from '../consent/guests';
 
 /**
@@ -148,6 +150,7 @@ export function settleDeal(sim: Sim, d: Deal): boolean {
   } else if (d.balance < 0 && !d.barter) addCredits(sim, d.held);
   const amount = d.barter ? 0 : d.balance;
   d.held = 0;
+  noteHelp(sim, d.ship);
   sim.events.emit({ type: 'trade.settled', deal: d.id, ship: d.ship, credits: amount });
   if (d.get.some((q) => q.item === FUEL_ITEM && q.count > 0)) bumpStat(sim, 'fuelBought');
   const next = d.trip?.rest[0];
@@ -193,7 +196,9 @@ export function failDeal(sim: Sim, d: Deal, reason: string, lost = false): void 
   const trader = sim.world.get(d.ship, TraderC);
   if (d.balance > 0 && !d.barter) addCredits(sim, d.held);
   else if (d.balance < 0 && !d.barter && trader) trader.credits += d.held;
-  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count);
+  const gone = new Map(d.get.map((l) => [l.item, lostInHold(sim, d, l.item)]));
+  reclaim(sim, d);
+  if (trader && !lost) for (const l of d.get) addStock(trader.stock, l.item, l.count - Math.min(l.count, gone.get(l.item) ?? 0));
   touchMarket(sim, trader);
   d.held = 0;
   d.reason = reason;

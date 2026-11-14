@@ -1158,7 +1158,7 @@ are unchanged. After the answer the window stays open with how it ended and the 
 - **Holding prisoners (user decisions, 2026-11-13; replaces the cryo pod for prisoners):** they are sealed into
   **stasis slabs** and stored in a **stasis wheel** (a 3x3 module, ten slots), not a brig. Frozen, they need no food
   and can't escape. **Built (slice 1, #116):** sealing, carting, the wheel, the empty-slab item, the reserve and thawing (sim
-  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=prisoners`). The
+  `src/sim/stasis/`, `module.stasis_wheel`, `item.stasis_slab`, the `stasis` hauling job, the "Stasis failing" alert, `?scenario=stasis`). The
   prisoner, the slab and the wheel must be on the same ship; the wheel and slab sprites are not wired into the game yet.
   - **Sealing:** on the spot. Crew bring an empty slab to the prisoner (on the hover cart), seal them in where they
     are, and cart the full slab to a wheel with a free slot. A full slab is a sealed package: it can later travel by
@@ -1335,6 +1335,11 @@ breaking one, or to ask whether it should apply in a given case. Say why, and le
    - **Amber** means warning.
    - **Gold** is for credits and rewards.
    - The build menu and the research screen keep their own black-and-amber look on purpose.
+8. **One window frame and one decision bar (2026-11-12, #336).**
+   - Every window uses the rail frame (`kit/Frame`): a thin border with the title in a gap in the top line, pin and close as small tiles on that line, and a context label or chip on the line's right. Floating panels (`FloatingWindow`) and modals (`kit/Dialog`) are built on it. The build menu and the research screen keep their own look.
+   - Every decision uses the shared `kit/DecisionBar`: a row of at most 3 buttons, label left, note right, the primary choice on a cyan edge.
+   - The one exception is the inspector (the selection panel, and its enemy-side counterpart, the foe module inspector): they keep `FloatingWindow`'s bare mode, a plain bordered window whose content draws its own tabs or heading, which drag the window.
+   - Info actions (hail, scan, hack a core) are not choices. They live in the window's panels or as small buttons in its body, never as a bar option.
 
 ### Trade window and station panel (user decisions, 2026-11-05; built)
 

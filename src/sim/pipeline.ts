@@ -24,6 +24,7 @@ import { scheduleSystem } from './ai/schedule';
 import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
+import { ventsSystem } from './systems/vents';
 import { draftedSystem } from './systems/drafted';
 import { crewCombatSystem } from './systems/crewCombat';
 import { equipSystem } from './systems/equip';
@@ -116,6 +117,8 @@ export const pipeline: readonly System[] = [
   doorsSystem,
   // Airlock doors and chamber air, right after the doors system (which skips them) and before diffusion.
   airlockSystem,
+  // Vents on doors: open or held shut by hazard or no power, before the gas solver reads them.
+  ventsSystem,
   // Gas diffusion runs on the doors and module output of this tick.
   atmosphereSystem,
   // Fire reads the settled air (O2) and writes its o2/co2/smoke/heat back for next tick.

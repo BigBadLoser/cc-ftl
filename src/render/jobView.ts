@@ -1,9 +1,11 @@
-import { Sprite } from "pixi.js";
+import { Sprite, type Container } from "pixi.js";
 import type { World } from "../sim/ecs";
 import { JobC } from "../sim/crew/components";
 import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
 import type { Atlas } from "./assets/loader";
+import { keepsOldPiece, pendingHull, pendingHullKeys } from "./jobHull";
+import type { HullKeys } from "./hullArt";
 import { depthKey, iso } from "./iso";
 import type { Layers } from "./layers";
 import {
@@ -38,14 +40,16 @@ export function createJobView(
 ): JobView {
   const pool: Sprite[] = [];
   let used = 0;
+  /** The pending hull, kept until the struct grid or the pending builds change. */
+  let hullMemo: { key: string; keys: HullKeys | null } | undefined;
 
-  const sprite = (): Sprite => {
+  const sprite = (layer: Container): Sprite => {
     let s = pool[used];
     if (!s) {
       s = new Sprite();
-      L.sorted.addChild(s);
       pool[used] = s;
     }
+    if (s.parent !== layer) layer.addChild(s);
     used++;
     s.visible = true;
     return s;
@@ -58,11 +62,12 @@ export function createJobView(
     tint: number,
     alpha: number,
     key: number,
+    layer: Container = L.sorted,
   ): void {
     for (const chain of chains) {
       const a = atlas.firstOf(chain);
       if (!a) continue;
-      const s = sprite();
+      const s = sprite(layer);
       const p = iso(x, y);
       s.texture = a.tex;
       s.position.set(Math.round(p.x - a.ax), Math.round(p.y - a.ay));
@@ -97,6 +102,20 @@ export function createJobView(
           const k = p === Struct.Wall || p === Struct.Door || p === Struct.RockWall ? p : grid.get("struct", x0 + x, y0 + y);
           return k === Struct.RockWall ? k : artKind(k); // a rock wall stays one (never hull), see tiles.ts
         };
+        // The hull as it will stand once every pending build is done, so ghosts on it show the new hull art.
+        const final: KindAt = (x, y) => {
+          if (!grid.inBounds(x0 + x, y0 + y)) return Struct.Space;
+          const p = pending.get(y * grid.width + x);
+          const k = p ?? grid.get("struct", x0 + x, y0 + y);
+          return k === Struct.RockWall ? k : artKind(k);
+        };
+        let hull: HullKeys | null = null;
+        if (pending.size) {
+          const key = `${grid.revision("struct")}|${[...pending].join(",")}`;
+          if (hullMemo?.key !== key) hullMemo = { key, keys: pendingHullKeys(final, grid.width, grid.height) };
+          hull = hullMemo.keys;
+        }
+        const has = (id: string) => !!atlas.stat(id);
         for (const j of jobs) {
           const build = j.kind === "build";
           const kind = artKind(build ? j.struct : grid.get("struct", j.x, j.y));
@@ -105,7 +124,15 @@ export function createJobView(
           const alpha = build ? 0.3 + 0.5 * frac : 0.65;
           const lx = j.x - x0, ly = j.y - y0;
           const key = depthKey(lx, ly) + 0.02;
-          if (kind === Struct.Floor)
+          const hg = build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
+          if (hg) {
+            if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
+            if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under);
+            if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001);
+            if (kind === Struct.Door)
+              for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))
+                if (keepsOldPiece(kind, true, pc.under)) draw([pc.chain], lx, ly, tint, alpha, key + pc.order * 0.001);
+          } else if (kind === Struct.Floor)
             draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
           else if (kind === Struct.Wall || kind === Struct.Door) {
             for (const pc of wallPieces(kindAt, lx, ly, kind, "down", false))

@@ -1,9 +1,7 @@
-import { IonC } from '../combat/components';
 import { ModuleC, type Module } from '../modules/components';
-import { isIdle } from '../modules/draw';
 import { TICK_HZ } from '../time';
 import { chargeOf, fuelOf, hasFuel } from '../modules/energy';
-import { isHeldOffline } from '../modules/hold';
+import { powerLive } from '../modules/gridPower';
 import { networkOf } from '../modules/network';
 import type { ModuleDef } from '../registry';
 import type { Sim } from '../sim';
@@ -66,7 +64,7 @@ export function allocate(sim: Sim, members: Member[]): void {
   const suppliers: Member[] = [];
   const banks: Member[] = [];
   for (const mem of members) {
-    const live = mem.m.enabled && mem.m.hp > 0 && !sim.world.has(mem.id, IonC) && !isHeldOffline(sim, mem.m) && !isIdle(sim, mem.id, mem.def);
+    const live = powerLive(sim, mem.id, mem.m, mem.def);
     if (mem.def.battery && mem.m.hp <= 0) mem.m.charge = 0; // a destroyed bank loses its charge
     if (!live) {
       mem.m.powered = false;

@@ -1,3 +1,4 @@
+import { jobCareFits } from '../crew/care';
 import { AssignmentC, JobC, PrioritiesC, type Position, type Priorities } from '../crew/components';
 import { reserveJob } from '../ai/task';
 import { jobGoal, origin, refusesWork } from '../crew/helpers';
@@ -33,7 +34,7 @@ export function claimHiddenRescue(sim: Sim, grid: Grid, id: number, pos: Positio
   let best: { job: number; steps: Tile[] } | null = null;
   for (const jobId of sim.world.query(JobC)) {
     const job = sim.world.get(jobId, JobC);
-    if (!job || job.kind !== 'rescue' || job.reservedBy !== 0 || job.target === id || shipIdOf(sim, job) !== shipId) continue;
+    if (!job || job.kind !== 'rescue' || job.reservedBy !== 0 || job.target === id || shipIdOf(sim, job) !== shipId || !jobCareFits(sim, id, job)) continue;
     const goal = jobGoal(job);
     if (!hiddenFrom(sim, grid, goal, threats)) continue;
     const plan = planWalk(sim, id, shipId, origin(pos), goal);

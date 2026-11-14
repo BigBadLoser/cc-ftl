@@ -7,7 +7,7 @@
   import SensorPanel from '../../src/ui/comms/SensorPanel.svelte';
   import StaticFeed from '../../src/ui/comms/StaticFeed.svelte';
   import FlickerText from '../../src/ui/comms/FlickerText.svelte';
-  import DecisionBar from '../../src/ui/comms/DecisionBar.svelte';
+  import DecisionBar from '../../src/ui/kit/DecisionBar.svelte';
   import type { UiHolo, CallerInfo, CommsLine, DecisionOption, ReadoutRow } from '../../src/ui/comms/types';
 
   let { face, holo }: { face: string | null; holo: UiHolo | null } = $props();

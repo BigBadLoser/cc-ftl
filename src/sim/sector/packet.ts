@@ -150,12 +150,17 @@ export function packetTake(packet: ShipPacket, item: string, count: number): num
     }
   }
   for (const e of [...packet.entities]) {
-    const loose = e.c['itemStack'] as { item: string; count: number } | undefined;
+    const loose = e.c['itemStack'] as { item: string; count: number; x: number; y: number } | undefined;
     if (left <= 0 || !loose || loose.item !== item) continue;
     const take = Math.min(left, loose.count);
     loose.count -= take;
     left -= take;
-    if (loose.count === 0) packet.entities.splice(packet.entities.indexOf(e), 1);
+    if (loose.count === 0) {
+      packet.entities.splice(packet.entities.indexOf(e), 1);
+      const tiles = packet.tiles['item'];
+      const at = loose.y * packet.w + loose.x; // the stack is gone: so is its id on the item grid
+      if (tiles && tiles[at] === e.id) tiles[at] = 0;
+    }
   }
   return count - left;
 }
