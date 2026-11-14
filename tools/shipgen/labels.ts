@@ -5,7 +5,7 @@
  *   node tools/shipgen/cli.js station.trading --size station --layout stationWheel --views labels --count 2
  * writes <base>-labels-s<seed>.png per seed.
  */
-import type { ModuleDef, RoomRole } from '../../src/sim';
+import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';
 import { content } from '../../src/content';
 import { rotatedSize } from '../../src/sim/modules/footprint';
 import { gen, Raster, ROLE_TINT, type RGB } from './draw';
@@ -25,7 +25,7 @@ export const CODES: Record<string, string> = {
   'Storage crate': 'CR', 'Storage rack': 'RK', 'Cargo pallet': 'PA', 'Freight container': 'FC', 'Holo column': 'HO', Planter: 'PL',
   'Tree planter': 'TR', Bench: 'BE', Console: 'CO', Helm: 'HE', 'Weapons console': 'WC', 'Shield console': 'SC',
   'Shield generator': 'SG', 'AI core': 'AI', 'Point defence': 'PD', 'Burst laser': 'BL', 'Mass driver': 'MD', 'Ion cannon': 'IC',
-  'Missile launcher': 'ML', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY',
+  'Missile launcher': 'ML', 'Game table': 'GT', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY',
 };
 /** Lamps (floor lights, cage lamps, light masts) are dots, not coded pieces. */
 export const isLamp = (d: ModuleDef | undefined): boolean => !!d && !!d.light && /lamp|light/i.test(d.name);
@@ -50,13 +50,17 @@ function outlined(r: Raster, s: string, x: number, y: number, c: RGB, ts: number
 
 /** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right. */
 export function labelView(spec: string, seed: number, depth = 4, t = 16): Raster {
-  const g = gen(spec, seed, depth);
+  return labelOf(gen(spec, seed, depth), `${spec} seed ${seed}`, t);
+}
+
+/** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
+export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = []): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
   const KEY = 320, TOP = 40;
   const r = new Raster(W * t + KEY, Math.max(H * t + TOP + 10, 760));
-  r.text(`${spec} seed ${seed}`, 8, 12, INK, 3);
+  r.text(title, 8, 12, INK, 3);
   const mid = new Map<number, [number, number, number]>();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = rows[y]?.[x] ?? '.';
@@ -90,6 +94,7 @@ export function labelView(spec: string, seed: number, depth = 4, t = 16): Raster
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);
     outlined(r, name, Math.round(cx - name.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
   }
+  for (const c of captions) outlined(r, c.text, c.x * t, TOP + c.y * t + 2, [255, 230, 120], 2);
   // The key: room colours, then the furniture codes in use.
   const kx = W * t + 16;
   let ky = TOP + 10;
