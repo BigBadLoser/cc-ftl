@@ -214,8 +214,10 @@ the barracks and messes south, the machinery west behind its gate. In each corne
 one room holding a quarter of the guns (shared out by floor): a point on the corner's diagonal whose sides fall back
 a tile and a half for every tile across, so it reaches out between the arms and wraps the hall's corner, opening onto
 the hall (the user picked this from three shapes: a round fan filling the corner, this sharp point, a 45-degree
-diamond). It grows until its floor is twice its guns' bays plus 20 tiles, and keeps no tile with fewer than two
-neighbours in it (the tips left lone tiles that broke the hull). It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
+diamond). The four are one shape (the user: "make them equal, and bigger"): the open ground every corner has, mirrored
+across both axes and each corner's diagonal, grown until its floor is the biggest corner's gun bays over 0.3 plus 20
+tiles. The arms' streets are three wide on the hall's centre lines, so the arms are as wide either side. It keeps no
+tile with fewer than two neighbours in it (the tips left lone tiles that broke the hull). It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
 4 singles). Sizes, seeds 1 to 4: outpost 62 to 64 by 73 to 76, station 74 to 79 by 87 to 91, hub 94 to 100 by 116
 to 123, with every gun and shield generator mounted.
 

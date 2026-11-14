@@ -11,7 +11,7 @@ import { SPACE } from './regions';
  */
 
 /** Of a battery's floor, the share its guns' bays take (as battery.ts). */
-const SHARE = 0.5;
+const SHARE = 0.3;
 const SLACK = 20;
 /** How far a battery's side falls back from its point, for every tile across: above one, the point is sharp. */
 const TAPER = 1.5;
@@ -44,50 +44,50 @@ function share(guns: readonly RoomSpec[]): RoomSpec[][] {
 }
 
 /**
- * The batteries, once the arms stand. Each is the open ground of its corner within a bastion's outline, grown out
- * along the diagonal until its floor holds its guns. It opens onto the hall alone, so it may stand against a gated arm.
- * Returns the guns that found no battery.
+ * The batteries, once the arms stand: one shape in all four corners, mirrored across both axes and across each
+ * corner's diagonal (the user: "make them equal, and bigger"). It is the open ground every corner has, within a
+ * point on the diagonal whose sides fall back a tile and a half for every tile across, so it reaches out between the
+ * arms and wraps the hall's corner (it opens onto the hall). It grows until its floor holds the biggest corner's guns.
+ * It opens onto the hall alone, so it may stand against a gated arm. Returns the guns that found no battery.
  */
 export function batteries(a: Asm, hall: number, h: number, guns: readonly RoomSpec[]): RoomSpec[] {
   const { g, reserved } = a.ctx;
   const key = (x: number, y: number): number => (y + 2048) * 4096 + x + 2048;
-  const left: RoomSpec[] = [];
-  for (const [k, list] of share(guns).entries()) {
-    if (list.length === 0) continue;
-    const [sx, sy] = QUADS[k] as [1 | -1, 1 | -1];
-    // (With slack: a small battery's walls and door take a bigger share of it.)
-    const need = list.reduce((n, r) => n + r.w * r.h, 0) / SHARE + SLACK;
-    // The open ground of the corner within reach of the hall's corner, in the corner's own frame (p, q from the centre).
-    const tile = (p: number, q: number): [number, number] => [sx * p, sy * q];
-    const open = (p: number, q: number): boolean => { const [x, y] = tile(p, q); return g.at(x, y) === SPACE && !reserved.has(key(x, y)) };
-    // A point on the corner's diagonal: its sides fall back from the point a tile and a half for every tile across, so
-    // it reaches out between the arms and wraps the hall's corner (it opens onto the hall).
-    const inside = (p: number, q: number, T: number): boolean => p + q + TAPER * Math.abs(p - q) <= T;
-    const spec: RoomSpec = { ...(list[0] as RoomSpec), dept: 'defence', mods: list.flatMap((r) => r.mods) };
-    let placed = false;
-    for (let T = 2 * h + 4; T <= 2 * h + 60 && !placed; T += 2) {
-      const set = new Set<string>();
-      for (let q = 1; q <= T; q++) for (let p = 1; p <= T; p++) if (inside(p, q, T) && open(p, q)) set.add(`${p},${q}`);
-      // No tile held by a corner alone (the tips): each keeps two neighbours in the set along a side.
-      for (let pruned = true; pruned;) {
-        pruned = false;
-        for (const t of [...set]) {
-          const [p, q] = t.split(',').map(Number) as [number, number];
-          const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dp, dq]) => set.has(`${p + (dp as number)},${q + (dq as number)}`)).length;
-          if (n < 2) { set.delete(t); pruned = true; }
-        }
+  const lists = share(guns);
+  // (With slack: a small battery's walls and door take a bigger share of it.)
+  const need = Math.max(...lists.map((list) => list.reduce((n, r) => n + r.w * r.h, 0))) / SHARE + SLACK;
+  // A tile in a corner's own frame (p, q out from the centre), and whether that corner has it open.
+  const tile = (k: number, p: number, q: number): [number, number] => { const [sx, sy] = QUADS[k] as [1 | -1, 1 | -1]; return [sx * p, sy * q]; };
+  const open = (k: number, p: number, q: number): boolean => { const [x, y] = tile(k, p, q); return g.at(x, y) === SPACE && !reserved.has(key(x, y)); };
+  const everywhere = (p: number, q: number): boolean => [0, 1, 2, 3].every((k) => open(k, p, q) && open(k, q, p));
+  const inside = (p: number, q: number, T: number): boolean => p + q + TAPER * Math.abs(p - q) <= T;
+  const box = [-h - 120, -h - 120, h + 120, h + 120] as const;
+  for (let T = 2 * h + 4; T <= 2 * h + 100; T += 2) {
+    const set = new Set<string>();
+    for (let q = 1; q <= T; q++) for (let p = 1; p <= T; p++) if (inside(p, q, T) && everywhere(p, q)) set.add(`${p},${q}`);
+    // No tile held by a corner alone (the tips): each keeps two neighbours in the set along a side.
+    for (let pruned = true; pruned;) {
+      pruned = false;
+      for (const t of [...set]) {
+        const [p, q] = t.split(',').map(Number) as [number, number];
+        const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dp, dq]) => set.has(`${p + (dp as number)},${q + (dq as number)}`)).length;
+        if (n < 2) { set.delete(t); pruned = true; }
       }
-      const tiles = [...set].map((t) => { const [p, q] = t.split(',').map(Number) as [number, number]; return tile(p, q); });
-      // Floor is what is not wall: roughly the tiles less one ring of them.
-      if (tiles.length - 2 * Math.sqrt(tiles.length) * 2 < need) continue;
-      const mark = g.mark(), before = g.blocks(-h - 80, -h - 80, h + 80, h + 80);
-      const id = g.room(spec.role, { spec, access: [hall], rank: 1e5 + k });
-      for (const [x, y] of tiles) g.set(x, y, id);
-      const cell = g.compile();
-      if (g.blocks(-h - 80, -h - 80, h + 80, h + 80) > before || g.stranded(cell).some(([, , o]) => o === id)) { g.reset(mark); continue; }
-      placed = true;
     }
-    if (!placed) left.push(...list);
+    // Floor is what is not wall: roughly the tiles less one ring of them.
+    if (set.size - 4 * Math.sqrt(set.size) < need) continue;
+    const pq = [...set].map((t) => t.split(',').map(Number) as [number, number]);
+    const mark = g.mark(), before = g.blocks(...box), ids: number[] = [];
+    for (const [k, list] of lists.entries()) {
+      if (list.length === 0) continue;
+      const spec: RoomSpec = { ...(list[0] as RoomSpec), dept: 'defence', mods: list.flatMap((r) => r.mods) };
+      const id = g.room(spec.role, { spec, access: [hall], rank: 1e5 + k });
+      ids.push(id);
+      for (const [p, q] of pq) g.set(...tile(k, p, q), id);
+    }
+    const cell = g.compile();
+    if (g.blocks(...box) > before || g.stranded(cell).some(([, , o]) => ids.includes(o))) { g.reset(mark); continue; }
+    return [];
   }
-  return left;
+  return [...guns];
 }
