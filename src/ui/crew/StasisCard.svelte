@@ -1,16 +1,20 @@
 <script lang="ts">
-  import type { UiStasis } from '../../../src/ui/api';
-  import { Chip, Meter } from '../../../src/ui/kit';
-  /** Option S1: a frozen prisoner's top block becomes a slab card: their portrait behind frost, where the slab is, the reserve as the one bar. */
-  let { name, face, st }: { name: string; face: string | null; st: UiStasis } = $props();
+  import type { UiApi, UiStasis } from '../api';
+  import { Chip, Meter } from '../kit';
+
+  /**
+   * A frozen prisoner's top block on their crew Overview (in place of the portrait and vitals): their portrait behind frost, where the slab is
+   * (the wheel or the crew member carting it, each a link), and the slab's reserve as the one bar.
+   */
+  let { api, name, face, st }: { api: UiApi; name: string; face: string | null; st: UiStasis } = $props();
 </script>
 
-<div class="card" class:bad={st.draining}>
+<div class="card" class:bad={st.draining} data-testid="crew-stasis">
   <span class="slab">{#if face}<img src={face} alt="" />{/if}<span class="frost"></span></span>
   <div class="txt">
     <div class="nm"><b>{name}</b><Chip tone="bad">Prisoner</Chip></div>
     <div class="state">{st.draining ? 'Slab on its reserve' : 'Frozen in stasis'}</div>
-    <div class="where">{#if st.carrier}<span class="dim">Carted by</span> <button class="lk">{st.carrier.name}</button>{#if st.to}<span class="dim">&nbsp;to&nbsp;</span>{st.to}{/if}{:else if st.wheel}<button class="lk">{st.where}</button>{:else}{st.where}{/if}</div>
+    <div class="where">{#if st.carrier}<span class="dim">Carted by</span> <button class="lk" onclick={() => st.carrier && api.selectCrew(st.carrier.id, true)}>{st.carrier.name}</button>{#if st.to}<span class="dim">&nbsp;to&nbsp;</span>{st.to}{/if}{:else if st.wheel}<button class="lk" onclick={() => st.wheel && api.selectModule(st.wheel)}>{st.where}</button>{:else}{st.where}{/if}</div>
     <Meter value={st.reserve} max={100} tone={st.draining ? 'bad' : 'good'} height={8} label="Reserve {st.reserve}%" blink={st.draining} />
   </div>
 </div>
@@ -25,6 +29,6 @@
   .nm { display: flex; align-items: center; gap: 6px; justify-content: space-between; } .nm b { font-weight: 600; }
   .state { color: #9fe7f5; font-size: 12px; } .card.bad .state { color: var(--red); }
   .where { font-size: 12px; } .dim { color: var(--dim); }
-  .lk { background: none; border: none; padding: 0; min-height: 0; font: inherit; color: var(--cyan, #7fe9ff); cursor: pointer; }
+  .lk { background: none; border: none; padding: 0; min-height: 0; font: inherit; color: var(--cyan); cursor: pointer; }
   .lk:hover { text-decoration: underline; }
 </style>

@@ -7,6 +7,7 @@
   import ItemCard from '../inspector/ItemCard.svelte';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
+  import StasisCard from './StasisCard.svelte';
   import { attackBlocked, crewState, moodWord } from './format';
   import { healthTone } from '../inspector/health';
 
@@ -33,6 +34,10 @@
 </script>
 
 <div data-testid="crew-overview">
+  {#if c.stasis}
+    <!-- A frozen prisoner (selected from their slab, a cart or the wheel): the slab card stands in for the portrait and vitals. -->
+    <StasisCard {api} name={c.name} face={pic} st={c.stasis} />
+  {:else}
   <div class="top">
     <span class="face" class:dead={c.dead}>{#if pic}<img src={pic} alt="" />{/if}</span>
     <div class="vitals">
@@ -42,7 +47,8 @@
       {#if !enemy}<div class="v" use:tip={{ text: 'Rest' }} data-testid="crew-rest"><span class="ic"><Icon name="sleep" size={16} /></span><StatBar value={c.rest} color="var(--rest)" low={c.rest < 10} /><span class="n" class:bad={c.rest < 10}>{c.rest}% rest</span></div>{/if}
     </div>
   </div>
-  <p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>
+  {/if}
+  {#if !c.stasis}<p class="doing" class:bad={now.bad} data-testid="crew-activity">{#if now.chip}<Chip tone="bad" testId="crew-state">{now.chip}</Chip>{:else}<span class="ic"><Icon name="wrench" size={14} /></span>{/if}<span title={now.text}>{now.text}</span></p>{/if}
   {#if c.weapon}
     {#snippet card()}{#if wcard}<ItemCard card={wcard} />{/if}{/snippet}
     <div class="weapon" data-testid="crew-weapon">
@@ -60,19 +66,6 @@
     </div>
   {/if}
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
-  {#if c.stasis}
-    <!-- A frozen prisoner (selected from their slab, a cart or the wheel): where the slab is and who is moving it. -->
-    <div class="stasis" data-testid="crew-stasis">
-      <p class="sh">In stasis</p>
-      <dl>
-        <dt>Slab</dt><dd>{#if c.stasis.wheel && !c.stasis.carrier}<button class="link" onclick={() => c.stasis?.wheel && api.selectModule(c.stasis.wheel)}>{c.stasis.where}</button>{:else}{c.stasis.where}{/if}</dd>
-        {#if c.stasis.carrier}<dt>Carted by</dt><dd><button class="link" onclick={() => c.stasis?.carrier && api.selectCrew(c.stasis.carrier.id, true)}>{c.stasis.carrier.name}</button></dd>{/if}
-        {#if c.stasis.to}<dt>Going to</dt><dd>{c.stasis.to}</dd>{/if}
-        <dt>Reserve</dt><dd class:bad={c.stasis.draining}>{c.stasis.reserve}%{c.stasis.draining ? ', draining' : ''}</dd>
-      </dl>
-      <StatBar value={c.stasis.reserve} color={c.stasis.draining ? 'var(--red)' : 'var(--green)'} low={c.stasis.draining} />
-    </div>
-  {/if}
   {#if enemy && c.seal && !c.stasis}
     <!-- A prisoner is sealed in stasis only on the player's say (stasis/order.ts); the reason it cannot be shows under the button. -->
     <div class="btns one">
@@ -122,10 +115,6 @@
 </div>
 
 <style>
-  .stasis { margin: 6px 0 8px; } .stasis .sh { margin: 0 0 4px; color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
-  .stasis dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; } .stasis dt { color: var(--dim); } .stasis dd { margin: 0; text-align: right; }
-  .stasis dd.bad { color: var(--red); }
-  .link { background: none; border: none; padding: 0; min-height: 0; color: var(--cyan, #7fe9ff); text-decoration: underline dotted; cursor: pointer; font: inherit; }
   .top { display: grid; grid-template-columns: 64px 1fr; gap: 10px; margin-bottom: 10px; }
   .face { width: 64px; height: 68px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
   .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }

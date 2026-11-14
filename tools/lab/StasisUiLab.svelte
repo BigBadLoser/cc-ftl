@@ -2,11 +2,6 @@
   import type { UiApi, UiCrew, UiModule, UiWheelSlot } from '../../src/ui/api';
   import ModuleOverview from '../../src/ui/module/ModuleOverview.svelte';
   import CrewOverview from '../../src/ui/crew/CrewOverview.svelte';
-  import WheelDisc from './stasisUi/WheelDisc.svelte';
-  import WheelRoster from './stasisUi/WheelRoster.svelte';
-  import WheelBank from './stasisUi/WheelBank.svelte';
-  import StasisCard from './stasisUi/StasisCard.svelte';
-  import StasisRows from './stasisUi/StasisRows.svelte';
 
   /** The stasis UI pieces with mock data (#116): see stasisUiLab.ts. `faces` are real portraits for crew ids 1..n. */
   let { faces }: { faces: (string | null)[] } = $props();
@@ -38,8 +33,6 @@
   ];
 </script>
 
-{#snippet stats()}<dl><dt>State</dt><dd>Running</dd><dt>Power</dt><dd>2 draw</dd><dt>Health</dt><dd>200/200</dd></dl>{/snippet}
-{#if new URLSearchParams(location.search).has('current')}
 <div class="lab">
   {#each wheels as [label, w] (label)}
     <section><h4>{label}</h4><div class="insp"><ModuleOverview {api} m={mod(w)} ftl={null} onPower={() => {}} /></div></section>
@@ -48,26 +41,9 @@
     <section><h4>{label}</h4><div class="insp"><CrewOverview {api} {c} onPriorities={() => {}} /></div></section>
   {/each}
 </div>
-{:else}
-<div class="lab">
-  {#each [['W1 wheel from above', WheelDisc], ['W2 lamp ring + roster', WheelRoster], ['W3 slab bank', WheelBank]] as const as [label, W] (label)}
-    <section class="col"><h4>{label}</h4>
-      {#each wheels.slice(0, 2) as [, w], j (j)}<div class="insp">{@render stats()}<W slots={w} face={(id: number) => api.portrait(id)} /></div>{/each}
-    </section>
-  {/each}
-  <section class="col"><h4>S1 slab card (replaces the portrait block)</h4>
-    {#each crews as [, c] (c.id)}{#if c.stasis}<div class="insp"><StasisCard name={c.name} face={api.portrait(c.id)} st={c.stasis} /></div>{/if}{/each}
-  </section>
-  <section class="col"><h4>S2 tidy rows (under the portrait)</h4>
-    {#each crews as [, c] (c.id)}{#if c.stasis}<div class="insp"><StasisRows st={c.stasis} /></div>{/if}{/each}
-  </section>
-</div>
-{/if}
 
 <style>
   .lab { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; align-items: flex-start; }
   h4 { margin: 0 0 6px; color: var(--dim); font: 12px monospace; }
   .insp { width: 300px; padding: 12px; background: var(--panel); border: 1px solid var(--line); }
-  .col { display: grid; gap: 10px; }
-  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0 0 6px; font-size: 14px; } dt { color: var(--dim); } dd { margin: 0; text-align: right; }
 </style>

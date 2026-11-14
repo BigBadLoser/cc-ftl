@@ -22,6 +22,10 @@ The wheel draws power only while it holds a prisoner. A wheel with no prisoners 
 is ready. **Red, blinking**: that slab is running on its reserve (below). **Dark**: the slot has no slab. The window in
 its housing shows the slabs inside.
 
+Select the wheel to see the same lamps as a ring on its **Overview** tab, with a list of who is held and how much of each
+slab's reserve is left; click a name to select that prisoner. A frozen prisoner's own panel shows their slab: in which wheel
+slot, or who is carting it and where to, and its reserve.
+
 ## Sealing a prisoner
 
 Nobody is sealed until you say so. Select a prisoner and press **Seal in stasis**, or press **Seal** beside their name
