@@ -1,10 +1,11 @@
 import type { RoomSpec } from '../plan';
 import type { Rng } from '../../rng';
-import { Asm } from './asm';
+import { Asm, roll } from './asm';
 import type { BandAsk } from './band';
 import { grow } from './branch';
 import { deptOf, type Dept } from './dept';
 import { corridor } from './elements';
+import { batteries, parade } from './fort';
 import { brace, mend, missing, trim } from './finish';
 import { hub } from './hub';
 import { K, type Site } from './lattice';
@@ -56,7 +57,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const docks = all.filter((r) => r.role === 'dock'), housed = house(rng, recipe, all.filter((r) => r.role !== 'dock'));
   const rooms = housed.rooms, pool = housed.pool;
   const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
-  const takers = new Set<string>([...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
+  const takers = new Set<string>([...(recipe.root.kind === 'fort' ? recipe.root.takes : []), ...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
 
@@ -85,6 +86,22 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const why = grow(a, recipe, rooms, docks, null, core, pool);
     if (!why) finish(a);
     return { asm: a, why };
+  }
+
+  if (recipe.root.kind === 'fort') {
+    const fort = recipe.root, ctx = context(new RegionGrid(HALF), null, rng);
+    const a = new Asm(ctx, recipe.spacing);
+    // The hall a little bigger each try: the arms stand further apart.
+    const h = roll(rng, fort.hall) + 2 * attempt, made = parade(ctx, h);
+    a.add(made);
+    a.sections++;
+    const guns = rooms.filter((r) => r.role === 'weapons' && fort.takes.includes(r.dept as Dept));
+    const why = grow(a, recipe, rooms.filter((r) => !guns.includes(r)), docks, null, null, pool);
+    if (why) return { asm: a, why: `hall ${h}: ${why}` };
+    const left = batteries(a, made.hall, h, guns);
+    if (left.length > 0) return { asm: a, why: `hall ${h}: no battery for ${left.length} guns` };
+    finish(a);
+    return { asm: a, why: '' };
   }
 
   const root = recipe.root;

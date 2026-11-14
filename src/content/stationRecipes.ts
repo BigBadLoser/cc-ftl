@@ -1,4 +1,4 @@
-import type { BranchRule, Recipe } from '../sim/shipgen/assembly/recipe';
+import type { BranchRule, Recipe, Roll } from '../sim/shipgen/assembly/recipe';
 
 /**
  * Station recipes for the assembly model (docs/STATION_ASSEMBLY.md): what a station is composed of and how its parts
@@ -129,6 +129,24 @@ const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number };
   };
 };
 
+/**
+ * A star fort (the military's: the square with bastions did not hold up at size): a parade hall at the centre, four
+ * arms off it on short necks (the harbour north, the works and freight east, the barracks south, the machinery west
+ * behind a gate) and a gun battery in each corner between two arms, pointing out (fort.ts).
+ */
+const fort = (name: string, o: { hall: Roll; neck: Roll; rowDepth: number }): Recipe => ({
+  name,
+  root: { kind: 'fort', takes: ['defence'], hall: o.hall },
+  quarters: { barracks: [6, 8], singles: 4 },
+  spacing: 2,
+  branches: [
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['n'] }, neck: o.neck, docks: true, quay: harbour('head'), section: { rooms: [2, 10] }, link: 0 },
+    { takes: ['works', 'freight', 'defence', 'market'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
+    { takes: ['habitation', 'commons'], per: 'together', host: { on: 'rim', prefer: ['s'] }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
+    { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['w'] }, neck: o.neck, gated: true, section: { rooms: [3, 8], rowDepth: o.rowDepth, even: true, cap: true }, link: 0 },
+  ],
+});
+
 export const stationRecipes = {
   tree: [
     scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
@@ -147,6 +165,9 @@ export const stationRecipes = {
     compound('ring with barracks (a works crew)', { outline: 'disc', inner: 'street', battery: true, works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('head') }),
     // The faces as wide as the wings, so a wing meets the bastions either side of it with no gap.
     compound('square with bastions', { outline: 'square', cut: { flat: 3 }, inner: 'street', battery: true, works: ['e'], secure: ['w'], dock: ['n', 's'], neck: 0, rowDepth: 7, quay: harbour('head') }),
+  ],
+  fort: [
+    fort('star fort: parade hall, four arms, a battery in each corner', { hall: 7, neck: 4, rowDepth: 6 }),
   ],
   crescent: [
     crescent('freight pier, stalls on the waterfront', { cut: 5, from: 20, freight: 'pier' }),

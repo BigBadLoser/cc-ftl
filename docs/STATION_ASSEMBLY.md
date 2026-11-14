@@ -164,7 +164,7 @@ still to be discussed and tweaked one by one.
 | Mining | the spine only |
 | Trading | the bazaar (designed for it), and maybe the crescent |
 | Pirate | the tree |
-| Military | the square with bastions and the ring with barracks (from the compound) |
+| Military | the star fort (`fort`), and the ring with barracks (from the compound); not the square |
 | Research | the crescent and the half ring (arcs), the labs down the half ring's spine; never the square |
 | Farming | a family of its own, not built: like the spine, one main street with long wings off it |
 
@@ -202,6 +202,21 @@ recipe test fixture now uses that same check (`missingRooms`) instead of its own
 
 Still open: the square reports hull slivers narrower than three tiles (it did before batteries); the fit-out drops a
 gun it cannot mount without reporting it (the square without batteries lost one or two at station size).
+
+### The star fort (military)
+
+The square with bastions did not hold up at size (the user: "military square is just not working out at those
+sizes"): its corners were cut so deep that it came out a diamond, thin rooms on long stepped faces round an empty
+middle, 124 to 134 tiles wide at hub size. Its replacement, picked from a mock of two cross forts (bastions on the arm
+ends, or on the hall's corners) as F2: a `fort` root (`assembly/fort.ts`). A parade hall at the centre (the drill hall,
+later), and an arm off each side on a four-tile neck: the harbour pier north, the works, freight and drone bays east,
+the barracks and messes south, the machinery west behind its gate. In each corner between two arms a gun battery,
+one room holding a quarter of the guns (shared out by floor): a 45-degree diamond on the corner's diagonal, its inner
+point in the hall's corner so it opens onto the hall, its outer point the bastion's, cut off by the arms either side.
+It grows a tile at a time until its floor is twice its guns' bays plus 20 tiles, and keeps no tile that only a corner
+holds. It opens onto the hall alone, so it may stand against the gated arm. The fort keeps barracks (6 to 8 beds,
+4 singles). Sizes, seeds 1 to 4: outpost 62 to 64 by 73 to 76, station 74 to 79 by 87 to 91, hub 94 to 100 by 116
+to 123, with every gun and shield generator mounted.
 
 ## The bazaar ring (trade stations): prototype
 

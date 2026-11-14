@@ -46,6 +46,16 @@ describe('station recipes', () => {
     expect(assembled(stationRecipes.compound[0], 'station.mining', 'station', 1)).toEqual([]);
   });
 
+  it('assembles the military star fort at every size, every gun mounted in its corner batteries', () => {
+    const def = stations['station.military'];
+    for (const size of ['outpost', 'station', 'hub'] as const) {
+      expect(assembled(stationRecipes.fort[0], 'station.military', size, 1), size).toEqual([]);
+      const made = assembleStation(def, 'fort', size, 1, modules, stationRecipes.fort[0]);
+      expect(made.problems, size).toEqual([]);
+      expect(made.station?.guns, size).toBe(def.tiers[size].guns);
+    }
+  });
+
   it('assembles the spine, with its ore store in the works', () => {
     const { rooms } = programOf('station.mining', 'station', 3);
     expect(rooms.filter((r) => r.role === 'cargo' && deptOf(r) === 'works')).toHaveLength(1);
