@@ -13,7 +13,7 @@ export interface BandAsk { spec: RoomSpec; angle: number }
 const TAU = 2 * Math.PI;
 const apart = (a: number, b: number): number => { const d = Math.abs(a - b) % TAU; return Math.min(d, TAU - d); };
 
-export function placeBand(s: Site, asks: readonly BandAsk[]): { left: RoomSpec[]; spare: number } {
+export function placeBand(s: Site, asks: readonly BandAsk[], first?: (r: RoomSpec) => number): { left: RoomSpec[]; spare: number } {
   const { g } = s;
   const units = bandUnits(s);
   const n = units.length;
@@ -32,7 +32,9 @@ export function placeBand(s: Site, asks: readonly BandAsk[]): { left: RoomSpec[]
   // Bigger rooms choose first; a room with an annex counts as both and goes before a plain one its size, since it
   // needs a run of two units.
   const size = (r: RoomSpec): number => (r.cabin ? 0 : stripsFor(r)) + (r.annex ? 1.5 : 0);
-  const order = [...asks].sort((a, c) => (size(a.spec) < size(c.spec) ? 1 : -1));
+  // `first`: a rank; higher choose before the rest whatever their size (rooms that must stand in the band).
+  const ahead = (r: RoomSpec): number => first?.(r) ?? 0;
+  const order = [...asks].sort((a, c) => ahead(c.spec) - ahead(a.spec) || (size(a.spec) < size(c.spec) ? 1 : -1));
   const left: RoomSpec[] = [];
   const bunks: RoomSpec[] = [];
   for (const ask of order) {

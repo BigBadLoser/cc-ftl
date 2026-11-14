@@ -2,6 +2,7 @@ import type { RoomSpec } from '../plan';
 import { placeBand, type BandAsk } from './band';
 import { cornersOf, placeCorners } from './corners';
 import { innerRoom, placeInner } from './inner';
+import { placeStreets } from './street';
 import { site, type Outline, type Site } from './lattice';
 import { at, type Built, type Dir, type Frame } from './model';
 
@@ -15,7 +16,7 @@ import { at, type Built, type Dir, type Frame } from './model';
 /** A piece cut away: everything on the far side of a lattice line (`from` tiles from the centre on side `side`). */
 export interface Gap { side: Dir; from: number }
 
-export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean | 'rows'; gap?: Gap; round?: boolean; shoulders?: boolean }
+export interface RingOpts { R: number; outline: Outline; cut: number; inner: boolean | 'rows' | 'street'; gap?: Gap; round?: boolean; shoulders?: boolean }
 
 const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
 const AXIS: Record<Dir, Frame> = { n: { x: 0, y: -1, dir: 'n' }, e: { x: 0, y: 0, dir: 'e' }, s: { x: 0, y: 0, dir: 's' }, w: { x: -1, y: 0, dir: 'w' } };
@@ -57,7 +58,7 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
 }
 
 /** Fill the ring with its rooms: corners, then the band, then its inner side. Returns the rooms it could not hold. */
-export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'rows', front?: (r: RoomSpec) => boolean): RoomSpec[] {
+export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'rows' | 'street', front?: (r: RoomSpec) => boolean): RoomSpec[] {
   // Bastions hold the biggest guns. A corner cut deeper than a bastion is a whole face of the hull: the common rooms
   // take those, biggest first and opposite each other, and a face with none is a garden gallery.
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
@@ -75,8 +76,15 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && !a.spec.annex) : [];
   const ashore = fronted.length > 0 ? placeInner(s, fronted, Math.PI / 4) : [];
   const rest = asks.filter((a) => !cornered.includes(a.spec) && (!fronted.includes(a) || ashore.includes(a.spec)));
-  const band = placeBand(s, rest);
+  const band = placeBand(s, rest, inner === 'street' ? (r) => (r.annex ? 2 : r.role === 'weapons' ? 1 : 0) : undefined);
   if (band.left.length === 0 || !inner) return band.left;
+  // Streets through the middle take whatever the band could not hold. A room with an annex and the guns chose first in
+  // the band; a gun stands inside only when the hull has no place left for it.
+  if (inner === 'street') {
+    const lone = band.left.filter((r) => !r.annex && !r.annexed);
+    const out = placeStreets(s, lone);
+    return band.left.filter((r) => !lone.includes(r) || out.includes(r));
+  }
   // A room with an annex stands in the band, where its annex can stand against it.
   const small = band.left.filter((r) => innerRoom(r) && !r.annex);
   const out = placeInner(s, rest.filter((a) => small.includes(a.spec)), Infinity, inner === 'rows');
