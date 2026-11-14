@@ -60,6 +60,15 @@
     </div>
   {/if}
   {#if !enemy && c.traits.length}<div class="traits"><TraitChips traits={c.traits} small fit={278} testId="crew-traits" /></div>{/if}
+  {#if enemy && c.seal}
+    <!-- A prisoner is sealed in stasis only on the player's say (stasis/order.ts); the reason it cannot be shows under the button. -->
+    <div class="btns one">
+      <button class:on={c.seal.marked} data-testid="seal-prisoner" disabled={!c.seal.marked && !!c.seal.refusal} use:tip={{ text: c.seal.marked ? 'Call off the seal: crew stop and set any slab down' : (c.seal.refusal ?? 'Crew seal them into a stasis slab and cart it to a wheel') }}
+        onclick={() => api.dispatch({ type: 'prisoner.seal', crew: c.id, on: !c.seal?.marked })}>{c.seal.marked ? 'Cancel seal' : 'Seal in stasis'}</button>
+    </div>
+    {#if !c.seal.marked && c.seal.refusal}<p class="hint" data-testid="seal-refusal">{c.seal.refusal}</p>{/if}
+    {#if c.seal.marked}<p class="hint" data-testid="seal-marked">Marked: crew will seal them as hauling work.</p>{/if}
+  {/if}
   {#if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack' }} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else if c.side === 'visitor' && c.visit === 'Inspector'}

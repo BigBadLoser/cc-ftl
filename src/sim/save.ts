@@ -145,8 +145,9 @@ import { newYard, type YardState } from './yard/types';
  * v117 (door vents, #393): tile field `vent` (VentState) and command 'door.vent'.
  * v118 (prisoner holding, #116): `StasisWheelC` on stasis wheels, `StasisC` on frozen prisoners (no Position), job kind 'stasis' with `Job.stasis`,
  *   `CartRestC` (where a carrier's hover cart is parked, `at` when parked ahead of their stop).
+ * v119 (seal order, #116): `Prisoner.seal` (the player marked them for stasis; command 'prisoner.seal'): crew seal only marked prisoners.
  */
-export const SAVE_VERSION = 118;
+export const SAVE_VERSION = 119;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

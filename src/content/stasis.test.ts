@@ -16,7 +16,8 @@ import { accessTile, footprintTiles } from '../sim/modules/footprint';
 import { footprintBlockedByCrew, removeModule } from '../sim/modules/spawn';
 import { deserialize, serialize } from '../sim/save';
 import { SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
-import { CART_PARK_STEPS, cartRest, onCart, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { CART_PARK_STEPS, cartRest, fullSlabs, onCart, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { sealMarked, sealRefusal } from '../sim/stasis/order';
 import { RESERVE_TICKS, SLAB_ITEM } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
@@ -61,7 +62,7 @@ function place(sim: Sim, def: string): number {
 }
 
 /** The starter game, crew fed and rested, a stasis wheel placed (unless `wheel` is false) and one hostile prisoner standing by the first crew member. */
-function prisonGame(wheel = true): { sim: Sim; wheel: number; prisoner: number } {
+function prisonGame(wheel = true, mark = true): { sim: Sim; wheel: number; prisoner: number } {
   const sim = newGame(3, content);
   run(sim, 5);
   const w = wheel ? place(sim, 'module.stasis_wheel') : 0;
@@ -75,6 +76,7 @@ function prisonGame(wheel = true): { sim: Sim; wheel: number; prisoner: number }
   run(sim, 1);
   const prisoner = sim.world.query(CrewC).find((id) => sim.world.get(id, AllegianceC)?.faction === 'hostile') as number;
   sim.enqueue({ type: 'debug.imprison', crew: prisoner });
+  if (mark) sim.enqueue({ type: 'prisoner.seal', crew: prisoner, on: true });
   run(sim, 1);
   return { sim, wheel: w, prisoner };
 }
@@ -271,5 +273,52 @@ describe('stasis wheel', () => {
     }
     for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) writeStruct(grid, at.x + dx, at.y + dy, Struct.Wall);
     expect(parkCart(sim, crew, at, null)).toBeNull();
+  });
+});
+
+describe('seal order', () => {
+  const slabs = (sim: Sim): number => heldItems(sim).filter((h) => h.item === SLAB_ITEM).reduce((n, h) => n + h.count, 0) + fullSlabs(sim).length;
+  const stasisJobs = (sim: Sim): number => sim.world.query(JobC).filter((j) => sim.world.get(j, JobC)?.kind === 'stasis').length;
+
+  it('never seals a prisoner nobody marked', () => {
+    const { sim, prisoner } = prisonGame(true, false);
+    run(sim, 600);
+    expect(stasisJobs(sim)).toBe(0);
+    expect(isFrozen(sim, prisoner)).toBe(false);
+    expect(sealMarked(sim, prisoner)).toBe(false);
+  });
+
+  it('marking starts the seal, and the mark is saved', () => {
+    const { sim, prisoner } = prisonGame(true, false);
+    sim.enqueue({ type: 'prisoner.seal', crew: prisoner, on: true });
+    run(sim, 1);
+    expect(sealMarked(sim, prisoner)).toBe(true);
+    expect(sealMarked(deserialize(serialize(sim), content), prisoner)).toBe(true);
+    until(sim, stowed(sim, prisoner));
+    expect(isFrozen(sim, prisoner)).toBe(true);
+  });
+
+  it('unmarking mid-fetch cancels the job and keeps every slab', () => {
+    const { sim, prisoner } = prisonGame();
+    const total = slabs(sim);
+    until(sim, () => sim.world.query(CrewC).some((id) => sim.world.get(id, CarryingC)?.item === SLAB_ITEM));
+    expect(stasisJobs(sim)).toBe(1);
+    sim.enqueue({ type: 'prisoner.seal', crew: prisoner, on: false });
+    run(sim, 1);
+    expect(stasisJobs(sim)).toBe(0);
+    expect(sim.world.query(CrewC).some((id) => sim.world.get(id, CarryingC)?.item === SLAB_ITEM)).toBe(false);
+    expect(slabs(sim)).toBe(total);
+    run(sim, 600);
+    expect(isFrozen(sim, prisoner)).toBe(false);
+    expect(slabs(sim)).toBe(total);
+  });
+
+  it('refuses a mark with a reason when no wheel can take the prisoner', () => {
+    const { sim, prisoner } = prisonGame(false, false);
+    expect(sealRefusal(sim, prisoner)).toBe('noWheel');
+    sim.enqueue({ type: 'prisoner.seal', crew: prisoner, on: true });
+    const events = run(sim, 1);
+    expect(events).toContainEqual(expect.objectContaining({ type: 'command.rejected', command: 'prisoner.seal', reason: 'noWheel' }));
+    expect(sealMarked(sim, prisoner)).toBe(false);
   });
 });

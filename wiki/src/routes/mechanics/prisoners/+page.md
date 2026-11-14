@@ -24,8 +24,13 @@ its housing shows the slabs inside.
 
 ## Sealing a prisoner
 
-Your crew do this on their own, as **Hauling** work (set it in the work priorities like any other hauling). For each
-prisoner on a ship that has a wheel with room:
+Nobody is sealed until you say so. Select a prisoner and press **Seal in stasis**, or press **Seal** beside their name
+on the prize panel (**Seal all** marks every prisoner on the ship). The button says why when it cannot be used, for
+example when the ship has no stasis wheel with room that the prisoner can be carted to. **Cancel seal** calls the order
+off: a crew member already on the way sets the empty slab down where they stand, and nothing is lost.
+
+Once a prisoner is marked, your crew do the rest on their own, as **Hauling** work (set it in the work priorities like
+any other hauling), as long as the ship has a wheel with room:
 
 1. A crew member takes an empty slab, from a wheel slot or from storage.
 2. They walk to the prisoner and seal them into it where they stand.
