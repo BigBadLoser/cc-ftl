@@ -142,7 +142,7 @@ describe('slab press through the UV pass', () => {
     };
     const { sp, uv } = uvSlab(tilt);
     const m = uvMask(sp, uv);
-    const fld = sampleUv(sp, uv, m, head(), false);
+    const fld = sampleUv(sp, uv, m, head());
     const top = (y: number): number => { let s = 0, n = 0; for (let x = 0; x < 40; x++) if (m[y * 40 + x]) { s += fld.a[y * 40 + x]!; n++; } return s / n; };
     // the figure's head (its top quarter) reaches 1 - v < 0.265, i.e. t^2 < 0.265, t < 0.51: down to row y 20 (a face as even as its mask
     // would stop at t = 0.265, y 14): the UV's squeeze is what puts it there
@@ -151,26 +151,10 @@ describe('slab press through the UV pass', () => {
     expect(top(23)).toBe(0);
   });
 
-  it('turns a head-down face half way round on screen, unless told not to', () => {
+  it('never turns the figure: a face seen head-down shows its prisoner head-down (the figure turns with the slab)', () => {
     const down = (x: number, y: number): [number, number] | null => { const p = upright(x, y); return p && [1 - p[0], 1 - p[1]]; };   // the face turned 180 deg: head at the bottom
-    const { sp, uv } = uvSlab(down);
-    const auto = pressSlabUv(sp, uv, head())!;
-    const same = pressSlabUv(uvSlab(upright).sp, uvSlab(upright).uv, head())!;
-    expect(Array.from(auto.pressed)).toEqual(Array.from(same.pressed));                       // feet lowest either way: the same picture
-    const kept = pressSlabUv(sp, uv, head(), false)!;
-    expect(kept.pressed[(27 * 40 + 20) * 4]).toBeGreaterThan(kept.pressed[(12 * 40 + 20) * 4]!);   // slab-true: the head is at the bottom
-  });
-
-  it('reads the head end along the slab, not along the gradient of v, on a sheared (tipping) face', () => {
-    // a slab lying almost level and tipping: v runs along x only, but each column is lifted as x grows, so the head end (v high, right)
-    // rises up the screen; the gradient of v points flat right (a level, head-right face would turn), the slab's own length points up-right
-    const tip = (x: number, y: number): [number, number] | null => {
-      if (x < 5 || x >= 35) return null;
-      const y0 = 22 - 0.6 * (x - 5);
-      return y >= y0 && y < y0 + 10 ? [inU((y - y0 + 0.5) / 10), inV((x - 5 + 0.5) / 30)] : null;
-    };
-    const { sp, uv } = uvSlab(tip);
-    expect(Array.from(pressSlabUv(sp, uv, head())!.pressed)).toEqual(Array.from(pressSlabUv(sp, uv, head(), false)!.pressed));   // head up: kept
+    const r = pressSlabUv(uvSlab(down).sp, uvSlab(down).uv, head())!;
+    expect(r.pressed[(27 * 40 + 20) * 4]).toBeGreaterThan(r.pressed[(12 * 40 + 20) * 4]!);   // the lit head is at the bottom
   });
 
   it('is null without a face', () => {

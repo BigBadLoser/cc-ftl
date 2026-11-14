@@ -10,7 +10,7 @@ import type { LabCell, LabPanel } from './panel';
  * the empty sprite, the press as the game did it before (the face found by its colour, four fitted corners, an affine map),
  * the press through the UV pass (what the game does now), the UV pass itself (u red, v green), and where the two face masks
  * differ (white: both, red: the UV pass only, blue: the colour key only). The same figure and the same R2 look in both.
- * `&ids=a,b` picks sprites by id prefix; `&over` draws each loading patch over the shut wheel as the game does.
+ * `&ids=a,b` picks sprites by id prefix (a cart's ring frames f1.. only with `&frames`); `&over` draws each loading patch over the shut wheel as the game does.
  */
 
 const PAD = 14;
@@ -59,7 +59,7 @@ export const slabUvPanel: LabPanel = {
   help: 'rows: slab sprites with a UV sheet (ids=prefix,...); columns: empty, colour-keyed press, UV press, the UV pass, mask difference; &over: loading patches over the wheel',
   async cells({ atlas, renderer, params }) {
     const want = params.get('ids')?.split(',');
-    const ids = want ? want.flatMap((p) => atlas.ids(p)) : DEFAULT_IDS;
+    const ids = want ? want.flatMap((p) => atlas.ids(p)).filter((id) => params.has('frames') || !/\.f\d+$/.test(id)) : DEFAULT_IDS;   // a cart's ring frames only with &frames
     ids.forEach((id) => atlas.stat(id));
     atlas.stat(`${WHEEL}.r0`);
     await atlas.whenIdle();

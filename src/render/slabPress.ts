@@ -203,45 +203,18 @@ export function uvMask(sp: Px, uv: Px): Uint8Array {
 }
 
 /**
- * True if the figure must turn half way round on screen: the head end of the face lies lower than the foot end (the press keeps the figure's feet lowest,
- * as the colour-keyed frame did). The head's screen direction is the slab's lengthwise direction, d(screen)/dv at constant u: the second column of the
- * inverse of the face's mean UV Jacobian, so a sheared (tipping) face is read right (the gradient of v alone points across the shear).
- */
-function headDown(mask: Uint8Array, uv: Px): boolean {
-  const { w, h } = uv;
-  let ux = 0, uy = 0, vx = 0, vy = 0;
-  for (let y = 0; y < h; y++) for (let x = 1; x < w - 1; x++) {
-    const i = y * w + x;
-    if (!mask[i] || !mask[i - 1] || !mask[i + 1]) continue;
-    ux += uv.d[(i + 1) * 4]! - uv.d[(i - 1) * 4]!;
-    vx += uv.d[(i + 1) * 4 + 1]! - uv.d[(i - 1) * 4 + 1]!;
-  }
-  for (let y = 1; y < h - 1; y++) for (let x = 0; x < w; x++) {
-    const i = y * w + x;
-    if (!mask[i] || !mask[i - w] || !mask[i + w]) continue;
-    uy += uv.d[(i + w) * 4]! - uv.d[(i - w) * 4]!;
-    vy += uv.d[(i + w) * 4 + 1]! - uv.d[(i - w) * 4 + 1]!;
-  }
-  const det = ux * vy - uy * vx;
-  if (!det) return false;
-  const px = -uy / det, py = ux / det;                // d(screen)/dv: toward the head
-  const n = Math.hypot(px, py) || 1;
-  return -py / n + 0.2 * (-px / n) < 0;               // the head runs down the screen (a level face: toward the left keeps it, as before)
-}
-
-/**
  * Sample the figure into the face through the UV pass: the same field `sample` gives (coverage and luminance supersampled, the
  * figure's own pixel at the centre), with each pixel's sub-samples placed by that pixel's UV and its neighbours' (the local
  * Jacobian), so a tipped or foreshortened face keeps the figure square on the slab. The figure's head goes to the slab's head
- * end (v high), its right to u, never mirrored; `turn` (default: `headDown`) flips both for a face seen head-down.
+ * end (v high), its right to u, never mirrored and never turned: the figure is printed on the slab, so it turns with the slab (a slab seen
+ * head-down shows its prisoner head-down; the colour key's "feet lowest" guess is not needed now the slab's head end is known).
  */
-export function sampleUv(sp: Px, uv: Px, mask: Uint8Array, por: Px, turn?: boolean): Field {
+export function sampleUv(sp: Px, uv: Px, mask: Uint8Array, por: Px): Field {
   const { w, h } = sp;
   const a = new Float32Array(w * h);
   const l = new Float32Array(w * h);
   const n = new Float32Array(w * h);
   const cc = new Float32Array(w * h * 3);
-  const flip = turn ?? headDown(mask, uv);
   const W = UV_WINDOW;
   const U = (i: number): number => uv.d[i * 4]! / 255;
   const V = (i: number): number => uv.d[i * 4 + 1]! / 255;
@@ -258,9 +231,8 @@ export function sampleUv(sp: Px, uv: Px, mask: Uint8Array, por: Px, turn?: boole
     for (let j = 0; j < SS; j++) for (let k = 0; k < SS; k++) {
       const ox = (k + 0.5) / SS - 0.5;
       const oy = (j + 0.5) / SS - 0.5;
-      let fx = (U(i) + dux * ox + duy * oy - W.u0) / (W.u1 - W.u0);       // 0..1 across the bare window, to the viewer's right
-      let ft = 1 - (V(i) + dvx * ox + dvy * oy - W.v0) / (W.v1 - W.v0);  // 0..1 down it, head (v high) at 0
-      if (flip) { fx = 1 - fx; ft = 1 - ft; }
+      const fx = (U(i) + dux * ox + duy * oy - W.u0) / (W.u1 - W.u0);       // 0..1 across the bare window, to the viewer's right
+      const ft = 1 - (V(i) + dvx * ox + dvy * oy - W.v0) / (W.v1 - W.v0);  // 0..1 down it, head (v high) at 0
       const px = Math.floor(((fx - 0.5) / 0.94 + 0.5) * por.w);
       const py = Math.floor(((ft - 0.5) / 0.94 + 0.5) * por.h);
       if (px < 0 || py < 0 || px >= por.w || py >= por.h) continue;
@@ -281,10 +253,10 @@ export function sampleUv(sp: Px, uv: Px, mask: Uint8Array, por: Px, turn?: boole
 }
 
 /** The press (R2) through the UV pass: `slab` pressed with `figure`, the face found by `uv` (the slab's UV sprite, same frame). Null if no face pixel. */
-export function pressSlabUv(slab: Px, uv: Px, figure: Px, turn?: boolean): { pressed: Uint8ClampedArray; mask: Uint8Array } | null {
+export function pressSlabUv(slab: Px, uv: Px, figure: Px): { pressed: Uint8ClampedArray; mask: Uint8Array } | null {
   const mask = uvMask(slab, uv);
   if (!mask.some((m) => m)) return null;
-  const fld = sampleUv(slab, uv, mask, figure, turn);
+  const fld = sampleUv(slab, uv, mask, figure);
   return { pressed: pressPx(slab, mask, fld, originalLight(0.5), false), mask };
 }
 
