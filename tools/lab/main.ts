@@ -58,6 +58,11 @@ async function run(): Promise<void> {
     lab.__labReady = true;
     return;
   }
+  if (id === 'stasisui') {
+    bar.innerHTML = '<a href="?">Render lab</a> <b>Stasis UI</b> &nbsp; the wheel slot ring (module Overview) and a frozen prisoner\'s In stasis section, mock data';
+    (await import('./stasisUiLab')).mountStasisUiLab(stageEl).then(() => setTimeout(() => (lab.__labReady = true), 800), (e) => { lab.__labError = String(e); lab.__labReady = true; });
+    return;
+  }
   if (id === 'kit') {
     bar.innerHTML = '<a href="?">Render lab</a> <b>UI kit</b> &nbsp; every Chip tone and size, every Meter tone and height';
     (await import('./kitLab')).mountKitLab(stageEl);

@@ -118,6 +118,17 @@ export const furniture = {
     asset: 'module.recovery', footprint: [2, 2], solid: true, access: [0, 2], power: -3, flammability: 0.2, bed: true, medical: true, recovery: true,
     maxHp: 120, buildWork: 180, cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
   },
+  // A stasis wheel (#116): prisoners sealed in stasis slabs stand in its ten slots, frozen while it is powered (it draws only while it holds one). Built with
+  // ten empty slabs. Crew load it at the hatch, the tile beyond the footprint's front corner. Unpowered or destroyed, each slab runs on its reserve.
+  'module.stasis_wheel': {
+    scrap: 'tech',
+    name: 'Stasis wheel',
+    category: 'utility',
+    description: "Holds prisoners sealed in stasis slabs, frozen while it has power. Comes with ten empty slabs. Without power a slab lasts about an hour before its prisoner thaws.",
+    asset: 'module.stasis_wheel', footprint: [3, 3], solid: true, access: [2, 3], power: -4, powerPriority: 2, drawsWhen: 'holding', stasisWheel: { slots: 10 },
+    flammability: 0.2, maxHp: 140, buildWork: 240, cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
+    blueprint: { tier: 1, minDanger: 1, price: 300 },
+  },
   // A power cell bank: charges from spare supply on its network and covers a shortfall before anything is cut (systems/power.ts). Damaged or switched off, it holds its charge but neither charges nor drains.
   'module.battery': {
     scrap: 'energy',

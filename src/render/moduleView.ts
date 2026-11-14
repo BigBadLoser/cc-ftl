@@ -8,6 +8,7 @@ import { ModuleC, type Module } from '../sim/modules/components';
 import { footprintTiles, hullRow, openTilesOf, rotatedSize } from '../sim/modules/footprint';
 import type { ModuleDef } from '../sim/registry';
 import type { Atlas, StaticSprite } from './assets/loader';
+import type { SlabFaces } from './slabFace';
 import { cut, STRIP_W, stripFrame, type StripCrop } from './moduleStrips';
 import type { Art } from './assets/fallback';
 import { pickParts } from './partPick';
@@ -56,6 +57,8 @@ export interface ModuleViewHost {
   paints?: PaintAtlas | null;
   /** Asked before a module without parts is built (buildBudget.ts); a refused one is built on a later update. Default: always. */
   gate?: BuildGate;
+  /** The prisoners pressed into a stasis wheel's full slabs (slabFace.ts). */
+  faces?: SlabFaces;
 }
 
 export interface ModuleView {
@@ -201,6 +204,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         halo.zIndex = glowKey + 0.005;
         L.sorted.addChild(halo);
       }
+      // A tinted part glows in its colour (a white lamp lens tinted cyan glows cyan).
+      if (art !== 0xffffff) for (const g of [glow, halo]) if (g) g.tint = art;
     }
     const x0 = flip ? x - w : x;
     return { spr, glow, halo, rect: { x0, y0: y, x1: x0 + w, y1: y + h }, key, flip, art, paint: painting };
@@ -335,7 +340,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
 
   /** Bumps when a view input of every module's art changes (moduleMemo.ts). */
   function hostGeneration(grid: Grid, roofed: boolean, level: WallLevel): number {
-    const key = [roofed, level, host.livery?.(), host.ruin?.(), host.hullPaint?.(), host.paints?.enabled, atlas.busy(), grid.revision('struct')];
+    const key = [host.faces?.version(), roofed, level, host.livery?.(), host.ruin?.(), host.hullPaint?.(), host.paints?.enabled, atlas.busy(), grid.revision('struct')];
     if (key.length !== hostKey.length || key.some((v, i) => v !== hostKey[i])) {
       hostKey = key;
       hostGen++;
@@ -365,7 +370,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         if (!m || !def || !grid.inBounds(m.x, m.y)) continue;
         const on = m.powered && m.enabled && m.hp > 0;
         const active = showsActive(def, on, !!def.crafting && crafting(progress, id, now), manned.has(id) || worked.has(id) || played.has(id));
-        const extra = worldInputs(world, id, def);
+        const extra = worldInputs(world, id, def, now);
         const memo = memos.get(id);
         let e = mods.get(id);
         if (e && memo && sameInputs(memo, m, def, active, extra, gen, clock)) {
@@ -409,8 +414,10 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
           }
           if (def.container && !first && atlas.loading(layer.chain)) return [];
           if (layer.optional) {
-            const o = first;
-            return o ? [{ layer, art: { s: o, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
+            // The prisoner's face is baked only once the slot's sprite has loaded (a bake of a missing sprite would cache "no face").
+            const look = first && layer.face && host.faces ? host.faces.face(layer.chain[0] as string, first, layer.face) : null;
+            const o = first && look ? { ...first, tex: look.full } : first;
+            return o ? [{ layer, art: { s: o, tint: layer.tint ?? 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }] : [];
           }
           if (def.container && !first) {
             // PLACEHOLDER until the container sheets land: a drawn box (with its own clamp mark) for the shell, no clamp layer.
@@ -419,7 +426,9 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
             const box = containerBox(bw, bh, boxState(m.hp, def.maxHp), world.get(id, ContainerC)?.clamp ?? 'n');
             return [{ layer, art: { s: box, tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
           }
-          const art = resolveArt(atlas, layer.chain, layer.key);
+          const found = resolveArt(atlas, layer.chain, layer.key);
+          // A layer's own colour (a status lamp's lens, drawn white) multiplies into its art like a stand-in's tint.
+          const art = found && layer.tint !== undefined ? { ...found, tint: mulColor(found.tint, layer.tint) } : found;
           if (!art && layer.bed && !atlas.loading(layer.chain)) {
             const [bw, bh] = rotatedSize(def, m.rot);
             return [{ layer, art: { s: bedBox(bw, bh, layer.bed.lit), tint: 0xffffff, scale: 1, fallback: false, lift: 0, perTile: false, rise: 1 } as Art }];
@@ -433,7 +442,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
         // Only a module that will draw something asks: one with nothing to draw (yet) never holds the scene back.
         if (!e && host.gate && !host.gate.take()) continue;
         live.add(id);
-        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => (l.layer.anim ? `~${l.layer.anim}` : l.art.s.tex.uid)).join(',')}`;
+        const sig = `${m.def}|${m.x}|${m.y}|${m.rot}|${roofed ? 1 : 0}|${level}|${layers.map((l) => (l.layer.anim ? `~${l.layer.anim}` : l.art.s.tex.uid) + (l.layer.tint !== undefined ? `#${l.layer.tint}` : '')).join(',')}`;
         if (e && e.sig !== sig) {
           dropEntry(e);
           e = undefined;
