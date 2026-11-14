@@ -16,6 +16,7 @@ import { InertC } from '../robots/components';
 import type { Sim } from '../sim';
 import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
+import { factionOfShip } from '../galaxy/heat';
 
 /** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. For a future ship broker. */
 export function prizeValue(sim: Sim, shipId: number): number {
@@ -42,7 +43,9 @@ export function imprison(sim: Sim, crew: number, ship: number): void {
   const path = sim.world.get(crew, PathC);
   if (path) path.steps = [];
   if (!sim.world.has(crew, SurrenderedC)) sim.world.add(crew, SurrenderedC, { tick: sim.tick });
-  sim.world.add(crew, PrisonerC, { tick: sim.tick });
+  const s = sim.world.get(ship, ShipC);
+  const from = s ? factionOfShip(sim, ship, s, sim.world.get(ship, PrizeC)?.from ?? s.faction) : null;
+  sim.world.add(crew, PrisonerC, { tick: sim.tick, ...(from && from !== 'player' ? { from } : {}) });
   (sim.world.get(crew, CrewC) as Crew).activity = sim.world.has(crew, DownedC) ? 'downed' : sim.world.has(crew, InertC) ? 'inert' : 'idle';
   sim.events.emit({ type: 'crew.imprisoned', crew, ship });
 }

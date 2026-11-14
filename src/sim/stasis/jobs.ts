@@ -9,11 +9,13 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { PrisonerC } from '../fight/components';
 import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './components';
-import { dropSlab, liftSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
+import { dropSlab, liftSlab, rackSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
+import { rackEmpty, rackFree, rackFull, rackHere, rackTile, siteShuttle } from './rack';
+import { VehicleC } from '../vehicles/components';
 import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
 import { turnsToLoad, stowWork } from './ring';
-import { SEAL_WORK, SLAB_ITEM } from './tuning';
+import { RACK_SLOTS, SEAL_WORK, SLAB_ITEM } from './tuning';
 
 /**
  * The 'stasis' job (#116): seal a prisoner into a stasis slab where they stand and cart the slab to a stasis wheel, or cart a slab lying on the
@@ -36,6 +38,10 @@ function sourceSite(sim: Sim, from: SlabSource): Site | null {
     const st = sim.world.get(from.id, ItemStackC);
     return st ? { x: st.x, y: st.y } : null;
   }
+  if (from.kind === 'rack') {
+    const t = rackTile(sim, from.id);
+    return t ? { x: t.x, y: t.y } : null;
+  }
   const m = sim.world.get(from.id, ModuleC);
   if (!m) return null;
   return from.kind === 'wheel' ? wheelHatch(sim, m) : moduleSite(sim.content.modules[m.def], m);
@@ -51,7 +57,7 @@ function fetchClaims(sim: Sim): Map<string, number> {
   return out;
 }
 
-/** Every place on a ship an empty slab can be taken from now, with how many are not yet claimed: wheel slots, storage, loose stacks. */
+/** Every place on a ship an empty slab can be taken from now, with how many are not yet claimed: wheel slots, a shuttle's rack, storage, loose stacks. */
 export function slabSources(sim: Sim, ship: number, reach?: Tile): (Site & { from: SlabSource; avail: number })[] {
   const claims = fetchClaims(sim);
   const claimed = (f: SlabSource): number => claims.get(`${f.kind}:${f.id}`) ?? 0;
@@ -62,6 +68,13 @@ export function slabSources(sim: Sim, ship: number, reach?: Tile): (Site & { fro
     const avail = emptySlabsIn(sim, id) - claimed(from);
     const site = m && wheelHatch(sim, m);
     if (m && site && m.hp > 0 && shipIdOf(sim, m) === ship && avail > 0 && (!reach || reachable(sim, ship, reach, site))) out.push({ ...site, from, avail });
+  }
+  const rack = rackHere(sim, ship);
+  if (rack) {
+    const from: SlabSource = { kind: 'rack', id: rack };
+    const avail = rackEmpty(sim, rack) - claimed(from);
+    const site = sourceSite(sim, from);
+    if (avail > 0 && site && (!reach || reachable(sim, ship, reach, site))) out.push({ ...site, from, avail });
   }
   for (const s of sourcesOf(sim, ship, SLAB_ITEM, reservations(sim))) {
     if (s.ref.kind !== 'floor' && s.ref.kind !== 'storage') continue;
@@ -104,25 +117,54 @@ export function pickWheel(sim: Sim, ship: number, at: { x: number; y: number }):
   return best;
 }
 
-/**
- * Wheel room on a ship not yet spoken for: slots of intact wheels not holding a full slab, minus slabs already headed for one (on a cart, or
- * with a pickup job) and seal jobs that will make one. The stasis system posts a job only while this is above 0.
- */
-export function stasisRoom(sim: Sim, ship: number): number {
+/** Slots of the intact wheels on a ship not holding a full slab. */
+function wheelRoom(sim: Sim, ship: number): number {
   let room = 0;
   for (const id of sim.world.query(StasisWheelC, ModuleC)) {
     const m = sim.world.get(id, ModuleC);
     if (m && m.hp > 0 && shipIdOf(sim, m) === ship) room += freeSlots(sim, id);
   }
+  return room;
+}
+
+/**
+ * Room a prize's shuttle has for full slabs (#116): free places in its rack once the empty slab a seal uses has come out of it, as far as the
+ * wheels of its home ship have room for them on top of what they wait for already (`stasisRoom` there, less the slabs in the rack). 0 for a
+ * ship no shuttle carries slabs for (`siteShuttle`).
+ */
+export function shuttleRoom(sim: Sim, ship: number): number {
+  const v = siteShuttle(sim, ship);
+  const home = sim.world.get(v, VehicleC)?.homeShip ?? 0;
+  if (!v || !home) return 0;
+  const full = rackFull(sim, v).length;
+  return Math.max(0, Math.min(RACK_SLOTS - full, stasisRoom(sim, home) - full));
+}
+
+/**
+ * Room on a ship not yet spoken for: slots of intact wheels not holding a full slab, plus the room of a prize's shuttle (`shuttleRoom`), minus
+ * slabs already headed for one (on a cart, or with a pickup job) and seal jobs that will make one. The stasis system posts a job only while
+ * this is above 0.
+ */
+export function stasisRoom(sim: Sim, ship: number): number {
+  let room = wheelRoom(sim, ship) + shuttleRoom(sim, ship);
   for (const id of fullSlabs(sim)) {
     const p = slabPlace(sim, id);
     if (p?.kind === 'carried' && p.ship === ship) room--;
   }
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
-    if (j?.kind === 'stasis' && j.stasis?.phase !== 'stow' && shipIdOf(sim, j) === ship) room--;
+    if (j?.kind === 'stasis' && j.stasis?.phase !== 'stow' && j.stasis?.phase !== 'ship' && shipIdOf(sim, j) === ship) room--;
   }
   return room;
+}
+
+/** Where a slab on a cart at `at` goes: a wheel on the ship (`pickWheel`), else the rack of the prize's shuttle while it is there and has room. */
+export function slabDestination(sim: Sim, ship: number, at: { x: number; y: number }): { wheel: number } | { rack: number } | null {
+  const wheel = pickWheel(sim, ship, at);
+  if (wheel) return { wheel };
+  const rack = rackHere(sim, ship);
+  const t = rack && rackTile(sim, rack);
+  return rack && t && rackFree(sim, rack) > 0 && reachable(sim, ship, { x: at.x, y: at.y }, t) ? { rack } : null;
 }
 
 /** Aim the job at a stop (clears the footprint size of the last one). */
@@ -135,12 +177,13 @@ function aim(job: Job, site: Site): void {
 
 /**
  * Point a fetch at the nearest unclaimed source from `at` that the prisoner's tile reaches (the slab is carried there next). False when there is
- * none, or when no wheel that can take the slab is reachable from the prisoner either (it would be sealed only to be dropped).
+ * none, or when nowhere to take the full slab (a wheel, a shuttle's rack: `slabDestination`) is reachable from the prisoner either (it would be
+ * sealed only to be dropped).
  */
 export function aimFetch(sim: Sim, job: Job, st: StasisJob, ship: number, at: { x: number; y: number }): boolean {
   delete st.from; // not a claim of its own while it looks
   const pos = sim.world.get(job.target ?? 0, PositionC);
-  if (!pos || !pickWheel(sim, ship, origin(pos))) return false;
+  if (!pos || !slabDestination(sim, ship, origin(pos))) return false;
   const src = nearestSlabSource(sim, ship, at, origin(pos));
   if (!src) return false;
   st.phase = 'fetch';
@@ -149,23 +192,52 @@ export function aimFetch(sim: Sim, job: Job, st: StasisJob, ship: number, at: { 
   return true;
 }
 
-/** On to a wheel with the slab now on the cart; with none to take it, the slab is set down here and the job ends. */
+/**
+ * On to a wheel with the slab now on the cart, else to the rack of the prize's shuttle (`slabDestination`); with neither to take it, the slab is
+ * set down here and the job ends.
+ */
 function toWheel(sim: Sim, job: Job, st: StasisJob, prisoner: number, ship: number, me: Position): WorkResult {
-  const wheel = pickWheel(sim, ship, origin(me));
-  const m = sim.world.get(wheel, ModuleC);
-  if (!m) {
+  const dest = slabDestination(sim, ship, origin(me));
+  delete st.from;
+  if (dest && 'rack' in dest) {
+    const t = rackTile(sim, dest.rack)!;
+    st.phase = 'ship';
+    st.rack = dest.rack;
+    aim(job, t);
+    job.work = 1;
+    job.progress = 0;
+    return 'working';
+  }
+  const m = sim.world.get(dest?.wheel ?? 0, ModuleC);
+  if (!dest || !m) {
     dropSlab(sim, prisoner, ship, origin(me));
     return 'done';
   }
+  const wheel = dest.wheel;
   st.phase = 'stow';
   st.wheel = wheel;
-  delete st.from;
   aim(job, wheelHatch(sim, m));
   const turns = Math.max(0, turnsToLoad(sim.world.get(wheel, StasisWheelC)?.slots ?? []));
   st.turns = turns;
   job.work = stowWork(turns);
   job.progress = 0;
   return 'working';
+}
+
+/** At the shuttle's rack tile: hand the slab in while the shuttle is still there with room; else on to wherever it can go now. */
+function shipSlab(sim: Sim, crew: number, job: Job, st: StasisJob, prisoner: number, ship: number, me: Position): WorkResult {
+  if (!cartsFor(sim, crew, prisoner)) return 'done';
+  const t = st.rack ? rackTile(sim, st.rack) : null;
+  if (st.rack && t && t.shipId === ship && rackFree(sim, st.rack) > 0) {
+    if (t.x !== job.x || t.y !== job.y) {
+      aim(job, t);
+      return 'working';
+    }
+    rackSlab(sim, prisoner, st.rack, t);
+    sim.events.emit({ type: 'stasis.shipped', crew: prisoner, vehicle: st.rack, ship });
+    return 'done';
+  }
+  return toWheel(sim, job, st, prisoner, ship, me); // the shuttle left or filled up meanwhile
 }
 
 /** One tick of a stasis job at its stop. `speed` is the crew member's work speed (it times the sealing). */
@@ -206,6 +278,7 @@ export function performStasis(sim: Sim, crew: number, job: Job, speed: number): 
     liftSlab(sim, prisoner, crew);
     return toWheel(sim, job, st, prisoner, ship, me);
   }
+  if (st.phase === 'ship') return shipSlab(sim, crew, job, st, prisoner, ship, me);
   if (!cartsFor(sim, crew, prisoner)) return 'done';
   if (st.wheel && wheelTakes(sim, st.wheel)) {
     job.progress = Math.min(job.work, job.progress + speed);                    // the loading animation (render/stasisLoad.ts)

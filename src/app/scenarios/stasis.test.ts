@@ -6,7 +6,7 @@ import { fullSlabs, slabPlace } from '../../sim/stasis/query';
 import { heldItems } from '../../sim/items/held';
 import { SLAB_ITEM } from '../../sim/stasis/tuning';
 import { content } from '../../content';
-import { newHostiles, prisonerCommands } from './stasis';
+import { newHostiles, prisonerCommands, sealPrizeCommands } from './stasis';
 
 describe('?scenario=stasis', () => {
   it('sets a wheel and two prisoners, and the crew hold both in the wheel', () => {
@@ -86,5 +86,24 @@ describe('?scenario=stasis', () => {
       expect(caught.map((id) => slabPlace(sim, id)?.kind), `seed ${seed}`).toEqual(['wheel', 'wheel']);
     }
   });
-});
 
+  it('?scenario=prisoners&taken&seal: the raider\'s crew, taken as prisoners and marked, are fetched by shuttle and end in the home wheel', () => {
+    const sim = newGame(3, content);
+    sim.step();
+    const home = playerShip(sim)!;
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 100, y: 50 });
+    for (let i = 0; i < 3; i++) sim.step();
+    const raider = sim.world.query(ShipC).find((id) => id !== home && sim.world.get(id, ShipC)?.faction === 'hostile')!;
+    expect(raider).toBeDefined();
+    sim.enqueue({ type: 'debug.capture', ship: raider });
+    sim.step();
+    expect(sim.world.get(raider, ShipC)?.state).toBe('prize');
+    const cmds = sealPrizeCommands(sim, raider);
+    const marked = cmds.flatMap((c) => (c.type === 'prisoner.seal' ? [c.crew] : []));
+    expect(cmds[0]?.type).toBe('debug.spawnModule');
+    expect(marked.length).toBeGreaterThan(0);
+    for (const cmd of cmds) sim.enqueue(cmd);
+    for (let i = 0; i < 20 * 600 && !marked.every((id) => slabPlace(sim, id)?.kind === 'wheel'); i++) sim.step();
+    expect(marked.map((id) => slabPlace(sim, id)?.kind)).toEqual(marked.map(() => 'wheel'));
+  });
+});

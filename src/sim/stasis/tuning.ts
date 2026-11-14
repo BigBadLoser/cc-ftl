@@ -24,3 +24,7 @@ export const TURN_STEP_SECONDS = 0.75;
 export const TURN_STEP_WORK = Math.round(TURN_STEP_SECONDS * TICK_HZ);
 /** Work (ticks at work speed 1) to load a slab once its slot is at the hatch; the one owner of the animation's length. */
 export const STOW_WORK = Math.round(STOW_SECONDS * TICK_HZ);
+/** Slabs (empty and full together) a shuttle's rack holds: what one run carries out to a prize and home again. */
+export const RACK_SLOTS = 4;
+/** Seconds the shuttle takes to put one empty slab from the ship's stock into its rack at home (the crated loot's pace). */
+export const RACK_LOAD_SEC = 2;

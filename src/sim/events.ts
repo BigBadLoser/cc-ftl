@@ -188,6 +188,12 @@ export type SimEvent =
   /** Prisoner holding (#116): `by` sealed the prisoner `crew` into a stasis slab; the slab was stood in the wheel `wheel`; the slab's reserve ran out and they thawed at (x, y), hostile. */
   | { type: 'stasis.sealed'; crew: number; by: number; ship: number }
   | { type: 'stasis.stowed'; crew: number; wheel: number; ship: number }
+  /** A full slab was handed into a prize's shuttle (its rack) to ride home (#116). */
+  | { type: 'stasis.shipped'; crew: number; vehicle: number; ship: number }
+  /** A shuttle home from a prize set its full slabs down by its bay, for the crew to cart to a wheel. */
+  | { type: 'stasis.unloaded'; vehicle: number; ship: number; crew: number[] }
+  /** A full slab went with its shuttle (destroyed): the prisoner is gone. */
+  | { type: 'stasis.lost'; crew: number; name: string; vehicle: number }
   | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number }
   /** The player let a beaten crew go: `crew` of them left, and the ship is a derelict (capture/settle.ts). */
   /** A prisoner was released and left (capture/settle.ts); `faction` is the galaxy faction whose standing it raised ('' for none). */

@@ -52,7 +52,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Pirate factions (phase 2b slice 1)](#pirate-factions-phase-2b-slice-1): Galaxy factions pirates (Scrappers), raiders, cartel, zealots, mercenaries, each with its own reputation...
 - [Hull width rule and the hull plan brushes (#143)](#hull-width-rule-and-the-hull-plan-brushes-143): The rule. No part of a ship may be narrower than 3 tiles. The footprint (every struct tile except Space...
 - [Station jobs by station type (issue #178)](#station-jobs-by-station-type-issue-178): Offers (galaxy/jobOffers.ts) are still a pure function of (seed, port, window, slot). The port's station...
-- [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw; the owning reads render uses.
+- [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw, slabs by shuttle from a prize (rack), release of a frozen prisoner; the owning reads render uses.
 
 
 The previous attempt (`bigbadloser/space-web-game`, **reference only, nothing is copied**) bloated
@@ -2777,8 +2777,8 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   storage or a floor stack), seal (`SEAL_WORK`, beside the prisoner), pickup (a floor slab) and stow (beside the wheel's hatch). `stasisRoom` (wheel
   slots not holding a full slab, minus slabs on carts and stasis jobs that will make or move one) gates posting. A seal job is posted only when
   a wheel that can take the slab and an empty-slab source are both reachable on foot from the prisoner (`pickWheel`, `slabSources`), and
-  `takeSlabFor` is the one way a crew member comes to hold an empty slab: one already in hand is used, never a second taken. Same ship only: crew take jobs on
-  the ship they stand on, so a prize's prisoners need a wheel on the prize until the escort slice. `isCarrying` counts a cart, so its carrier is not
+  `takeSlabFor` is the one way a crew member comes to hold an empty slab: one already in hand is used, never a second taken. Crew take jobs on the ship they stand
+  on; a prize's prisoners reach a wheel on another ship by shuttle (below). `isCarrying` counts a cart, so its carrier is not
   preempted or sent to fight.
 - **Stow work.** The stow phase takes `STOW_WORK` (`tuning.ts`, from `STOW_SECONDS` = 7.9 s at game speed 1 and work speed 1) at the hatch: `job.progress`
   rises while the crew member stands there, and the slab goes in the wheel only at the end. `stowProgress(world, wheel)` and `stowingNow` are the reads
@@ -2787,6 +2787,19 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
 - **The system** (`stasisSystem`, after power and autojobs): a cart whose carrier no longer holds the slab's job is set down on the floor (the job
   turns into a pickup); reserves drain one tick a tick while `slabDraining` and refill `REFILL_PER_TICK` in a powered wheel; at 0 the prisoner thaws
   (no PrisonerC or SurrenderedC, drafted where the slab was, hostile). The "Stasis failing" alert is derived from state (`app/stasisAlert.ts`).
+- **Slabs by shuttle** (`stasis/rack.ts`, `stasis/shuttle.ts`, #116): `StasisC.at` 'vehicle' (`carrier` = the shuttle) and `SlabRackC { empty }`
+  on the shuttle; `RACK_SLOTS` (4) for empty and full together. `siteShuttle(prize)` is the shuttle of the prize's away site (any owner) when it is
+  the player's; `rackTile` is where slabs change hands (boarding tile when stowed or docked; hovering, the staging zone's first tile). The job gains a
+  rack source (fetch) and a 'ship' phase (cart to `rackTile`, `rackSlab`); `slabDestination` (a wheel, else the rack while the shuttle is there)
+  replaces `pickWheel` in posting and after a seal; `stasisRoom` adds `shuttleRoom` (rack room, capped by the home ship's room). `tendShuttles`
+  (from the stasis system): a slab whose shuttle is gone is lost (`stasis.lost`, the crew entity removed); at home the rack's full slabs are set
+  down by the bay (`stasis.unloaded`, then ordinary pickups), the rack is stocked one empty slab every `RACK_LOAD_SEC` during 'board' from the
+  home ship's sources (no crew, like `unloadStep`) and spare empties spill as items; each PLAN_INTERVAL a prize with shuttle work (`shuttleWork`:
+  marked prisoners and loose slabs no wheel there takes) and no site gets one (`openSite(..., 'stasis')`, `demand: { hauling }`), closed once the
+  work is done. Away reads: `board` waits while `stocking`, `tripDue` adds `slabTripDue`. `sealRefusal` refuses on a prize only for no player
+  shuttle ('noShuttle') or no wheel room on a shuttle's home ship ('noWheel'); `sealWait` is the waiting state the panels show. Release of a frozen
+  prisoner goes through `openSlab` (shared with `thawPrisoner`; refused 'inTransit' on a cart or in a rack), and `Prisoner.from` holds the faction
+  for the standing. Debug: `?scenario=prisoners&taken&seal`. Save v121.
 - Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
   (`items/held.ts`, 'slotted'). Debug: `?scenario=stasis[&unpowered]`, `debug.imprison`. Save v118.
 - **Hover cart rest** (`cartRest`, `cart.ts`): when a carrier (an empty slab as `CarryingC`, or a full slab's `StasisC.carrier`) stops, the

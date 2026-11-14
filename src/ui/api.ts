@@ -167,7 +167,7 @@ export interface UiCrew {
   surrendered: boolean;
   prisoner: boolean;
   /** A prisoner's seal order (stasis/order.ts): marked for sealing, and why they cannot be (no wheel with room...). Null for anyone else. */
-  seal: { marked: boolean; refusal: string | null } | null;
+  seal: { marked: boolean; refusal: string | null; wait: string | null } | null;
   /** A frozen prisoner's slab: where it is, who carts it and where to, its reserve. Null for anyone not in stasis. */
   stasis: UiStasis | null;
   inert: boolean;
@@ -245,6 +245,8 @@ export interface UiStasis {
   to: string | null;
   reserve: number;
   draining: boolean;
+  /** On its way (on a hover cart or in a shuttle): a release waits until it is set down. */
+  inTransit: boolean;
 }
 
 export interface UiModule {
@@ -994,7 +996,7 @@ export interface UiPrize {
   name: string;
   from: string;
   value: number;
-  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered'; seal: { marked: boolean; refusal: string | null } }[];
+  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered'; seal: { marked: boolean; refusal: string | null; wait: string | null } }[];
   crewAboard: number;
 }
 
