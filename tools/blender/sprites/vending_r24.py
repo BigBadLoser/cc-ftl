@@ -15,6 +15,10 @@ wide label, read as a blue and white card; any vertical highlight crossing the l
   vm1c24e (user: "C, moved down, with D's bubbles") the tilted can lower, bigger bubbles rising off its top;
           then (user: "instead of cutting off at the back corner, wrap it") painted in the side's coordinate
           unrolled round the corners, so it carries on round the back corner onto the back
+APPROVED (user, 2026-11-14): vm1c24e is the vending machine's second variant, beside vm1c23a: the red machine
+(11b livery with the 40% near-black side gradient, 23a's front details) with the tilted blue can and its fizz
+painted low on each side, wrapping round the back corner.
+
 Uses r10's body (holes as round 21), r11's gradient, r20/r21's front pieces. SPRITE_SAMPLES=64 for previews."""
 import math
 
