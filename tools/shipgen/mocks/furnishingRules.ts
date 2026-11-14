@@ -27,6 +27,39 @@ const sidePairs = (left: boolean, w: number, y0: number, y1: number): Piece[] =>
   for (let p = y0; p + 2 <= y1; p += 4) out.push([B, x, p, 1], [L, lx, p + 1, rot], [B, x, p + 2, 1]);
   return out;
 };
+/** A block of furniture: its size and its pieces from its top-left corner. */
+interface Block { w: number; h: number; at: (x: number, y: number) => Piece[] }
+const BLOCKS: Block[] = [
+  { w: 3, h: 2, at: (x, y) => [[T, x + 1, y, 1], [C, x, y, 3], [C, x, y + 1, 3], [C, x + 2, y, 1], [C, x + 2, y + 1, 1]] },
+  { w: 2, h: 3, at: (x, y) => [[T, x, y + 1, 0], [C, x, y, 0], [C, x + 1, y, 0], [C, x, y + 2, 2], [C, x + 1, y + 2, 2]] },
+];
+const GAMES: Block[] = [{ w: 1, h: 2, at: (x, y) => [[GT, x, y, 1]] }, { w: 2, h: 1, at: (x, y) => [[GT, x, y, 0]] }];
+/**
+ * Blocks spread evenly through the free area x0..x1, y0..y1 along its long axis (`wide`: along x), centred across it,
+ * a clear tile at least on every side: as many mess tables as fit with equal gaps, else one game table; when no count
+ * gives equal gaps, the nearest (gaps a tile apart at most).
+ */
+const middle = (x0: number, y0: number, x1: number, y1: number, wide: boolean): Piece[] => {
+  const m = wide ? x1 - x0 + 1 : y1 - y0 + 1, c = wide ? y1 - y0 + 1 : x1 - x0 + 1;
+  for (const exact of [true, false]) for (const set of [BLOCKS, GAMES]) {
+    let best: Piece[] | null = null, most = 0;
+    for (const b of set) {
+      const ba = wide ? b.w : b.h, bc = wide ? b.h : b.w;
+      if (c - bc < 2 || (exact && (c - bc) % 2 !== 0)) continue;
+      for (let n = Math.floor((m - 1) / (ba + 1)); n > most; n--) {
+        const free = m - n * ba, g = Math.floor(free / (n + 1));
+        if (g < 1 || (exact && free % (n + 1) !== 0)) continue;
+        const extra = free - g * (n + 1), cross = Math.floor((c - bc) / 2);
+        best = range(0, n - 1, 1).flatMap((i) => { const a = g + i * (ba + g) + Math.min(i + 1, Math.floor(extra / 2)) * (extra > 0 ? 1 : 0); return wide ? b.at(x0 + a, y0 + cross) : b.at(x0 + cross, y0 + a); });
+        most = n;
+        break;
+      }
+      if (set === GAMES && best) break;
+    }
+    if (best) return best;
+  }
+  return [];
+};
 /** Tables of two with their chairs, centred along y, `per` tables to a block, blocks two tiles apart, from x0 to x1. */
 const tables = (x0: number, x1: number, y: number, per: number): Piece[] => {
   const block = 3 * per - 1, n = Math.floor((x1 - x0 + 1 + 2) / (block + 2));
@@ -47,17 +80,10 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
   // A pair in each corner of the long walls, tables between.
   'B3 two bays, shared tables': {
     role: 'quarters',
-    // Between the bays: mess tables with chairs where they have a clear tile round them, else a game table, else nothing.
-    rule: (w, h) => {
-      if (w >= h) {
-        const m = w - 6, y = Math.floor(h / 2) - 1;
-        return [...bunks(0, 2, 0, 0), ...bunks(0, 2, h - 2, 2), ...bunks(w - 1, w - 3, 0, 0), ...bunks(w - 1, w - 3, h - 2, 2),
-          ...(m >= 4 ? tables(4, w - 5, y, 1) : m >= 2 ? [[GT, Math.floor(w / 2) - 1, y + 1, 0] as Piece] : [])];
-      }
-      const m = h - 6, x = Math.floor(w / 2) - 1;
-      return [...sidePairs(true, w, 0, 2), ...sidePairs(false, w, 0, 2), ...sidePairs(true, w, h - 3, h - 1), ...sidePairs(false, w, h - 3, h - 1),
-        ...(m >= 5 ? range(4, h - 6, 4).flatMap((y): Piece[] => [[T, x, y + 1, 0], ...seats(x, y + 1)]) : m >= 1 ? [[GT, x, Math.floor(h / 2), 0] as Piece] : [])];
-    },
+    // Between the bays: mess tables with chairs where they have a clear tile round them, else a game table, spaced evenly.
+    rule: (w, h) => (w >= h
+      ? [...bunks(0, 2, 0, 0), ...bunks(0, 2, h - 2, 2), ...bunks(w - 1, w - 3, 0, 0), ...bunks(w - 1, w - 3, h - 2, 2), ...middle(3, 0, w - 4, h - 1, true)]
+      : [...sidePairs(true, w, 0, 2), ...sidePairs(false, w, 0, 2), ...sidePairs(true, w, h - 3, h - 1), ...sidePairs(false, w, h - 3, h - 1), ...middle(0, 3, w - 1, h - 4, false)]),
   },
   'C1 cabin': { role: 'quarters', rule: (w) => [[B, 0, 0, 0], [L, w - 1, 0, 0]] },
   'M1 table grid': { role: 'support', rule: (w, h) => [[G, 0, 0, 0], [G, 2, 0, 0], [LS, 0, h - 2, 0], ...rowsOf(h).flatMap((y) => tables(5, w - 1, y + (h <= 5 ? 1 : 0), 1))] },
@@ -114,7 +140,7 @@ const at = (name: string, sizes: [number, number][]): RoomMock[] => { const r = 
 const GUNS5 = [MD, BL, MD, BL, PD];
 export const RULE_ROWS: RoomMock[][] = [
   at('B1 bunk pairs on the long walls', [[8, 6], [11, 6], [15, 6], [5, 9], [6, 12]]),
-  at('B3 two bays, shared tables', [[9, 6], [11, 6], [15, 6], [7, 10], [8, 14]]),
+  at('B3 two bays, shared tables', [[9, 6], [11, 6], [15, 6], [7, 10], [8, 15]]),
   [...at('C1 cabin', [[3, 6], [4, 5], [5, 4], [3, 4]]), ...at('D1 beds along a wall', [[7, 4], [9, 4], [13, 5]])],
   at('M1 table grid', [[11, 5], [14, 5], [18, 6], [14, 9]]),
   at('M2 tables in pairs', [[11, 5], [14, 5], [18, 6], [14, 9]]),
