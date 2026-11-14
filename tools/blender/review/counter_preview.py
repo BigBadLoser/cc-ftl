@@ -14,7 +14,9 @@ NAMES = {"t1": "T1  padded counter", "t2": "T2  plated counter", "t3": "T3  disp
          "v1": "V1  hull counter", "v2": "V2  cantilever counter", "v3": "V3  rack counter",
          "w1": "W1 saddle", "w2": "W2 tripod", "w3": "W3 backed",
          "x1": "X1  faceted counter", "x2": "X2  case counter", "x3": "X3  prow counter",
-         "y1": "Y1 brass", "y2": "Y2 olive", "y3": "Y3 gunmetal"}
+         "y1": "Y1 brass", "y2": "Y2 olive", "y3": "Y3 gunmetal",
+         "z1": "Z1  fluted counter", "z2": "Z2  pill counter", "z3": "Z3  tray counter",
+         "a1": "A1 slate", "a2": "A2 orange", "a3": "A3 seafoam"}
 CW, CH = 280, 200
 
 

@@ -322,6 +322,12 @@ def jobs(name):
     if name == "exercise":      # look study, preview only (not in RENDERED): exercise machine designs, r0
         from . import exercise_study
         return exercise_study.jobs(), True
+    if name == "barcounter18":  # look study, preview only (not in RENDERED): bar round 18, more colours and shapes
+        from . import barcounter_r18
+        return barcounter_r18.jobs(), "only:bar18+bar9"
+    if name == "barstool18":    # look study, preview only (not in RENDERED): bar round 18, stools
+        from . import barcounter_r18
+        return barcounter_r18.stool_jobs(), "only:bar18+bar9"
     if name == "barcounter17":  # look study, preview only (not in RENDERED): bar round 17, new colours and shapes
         from . import barcounter_r17
         return barcounter_r17.jobs(), "only:bar17+bar9"
