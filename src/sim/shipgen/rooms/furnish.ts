@@ -11,6 +11,8 @@ export interface RoomDraw {
   arr: Arrangement;
   mirror: boolean;
   picks: string[];
+  /** Flush companions already set beside each planned host (`hostCompanions`). */
+  seeded?: Map<PlacedModule, number>;
 }
 
 export function drawRoom(rng: Rng, recipe: RoomRecipe): RoomDraw {
@@ -357,6 +359,17 @@ export function flank(lay: Layout, rng: Rng, room: number, host: PlacedModule, i
   return placed;
 }
 
+/**
+ * A planned module's first flush companion (a big ore bin where it fits, else a small one beside a refinery), set as
+ * soon as it is placed, so the room's next planned module cannot take all the floor beside it; `furnish` adds the rest.
+ */
+export function hostCompanions(lay: Layout, rng: Rng, room: number, d: RoomDraw, si: number, host: PlacedModule): void {
+  const w = d.arr.steps[si]?.with;
+  if (!w) return;
+  const n = (w.big ? flank(lay, rng, room, host, w.big, 1) : 0) || flank(lay, rng, room, host, w.mod, 1);
+  (d.seeded ??= new Map()).set(host, n);
+}
+
 /** True if the step should be skipped in this room. */
 function skip(lay: Layout, room: number, s: Step, id: string): boolean {
   if (s.minFloor && lay.roomTiles(room).length < s.minFloor) return true;
@@ -370,16 +383,10 @@ export function furnish(
 ): void {
   keepDoorApproach(lay, room);
   d.arr.steps.forEach((s, si) => {
+    // The planned modules are all in, each with its first flush companion (`hostCompanions`): now the rest.
     if (s.count === 'spec') {
-      // The planned modules are all in: set each one's flush companions (ore bins beside a refinery).
       const w = s.with;
-      if (w) {
-        for (const host of roomModules(lay, room).filter((m) => m.def === d.picks[si])) {
-          // One big piece first where it fits, then the small ones for the rest.
-          const big = w.big ? flank(lay, rng, room, host, w.big, 1) : 0;
-          if (big < w.n) flank(lay, rng, room, host, w.mod, w.n - big);
-        }
-      }
+      if (w) for (const host of roomModules(lay, room).filter((m) => m.def === d.picks[si])) flank(lay, rng, room, host, w.mod, w.n - (d.seeded?.get(host) ?? 0));
       return;
     }
     const id = d.picks[si] as string;

@@ -5,7 +5,7 @@ import { cargoSpec, dockSpec, pickWeighted, weaponSpec, type RoomSpec, type Stat
 import { docksOf } from '../stationCrew';
 import { stationCrew } from '../stationPlan';
 import type { StationDef, StationSize } from '../stationTypes';
-import { barracksOf, cabinOf } from './quarters';
+import { barracksOf, cabinOf, sleepersIn } from './quarters';
 
 /**
  * A station's rooms as the assembly takes them: the kind's doctrine (`StationDef`) at a size tier, as a list of rooms.
@@ -169,7 +169,7 @@ export function warehoused(rooms: readonly RoomSpec[]): RoomSpec[] {
  */
 function medbays(rooms: readonly RoomSpec[]): RoomSpec[] {
   // Counted in fours of the crew, however they are housed.
-  const quarters = Math.ceil(rooms.filter((r) => r.role === 'quarters').flatMap((r) => r.mods).filter((m) => m === 'module.bed').length / 4);
+  const quarters = Math.ceil(sleepersIn(rooms.filter((r) => r.role === 'quarters').flatMap((r) => r.mods)) / 4);
   if (quarters === 0) return [];
   const room = (cots: number): RoomSpec => ({ role: 'medbay', mods: Array<string>(cots).fill('module.med_bed'), w: 2 * cots + 1, h: 4 });
   // From 16 crew a trauma room beside the ward (its annex): the recovery pod and a cot. The ward gives up a cot for it.
@@ -199,15 +199,15 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
   const out = rooms.map((r) => ({ ...r, mods: [...r.mods] }));
   const common = out.filter((r) => r.role === 'support' && !r.dept);
   const messes = size === 'hub' ? 2 : 1, rec = size === 'outpost' ? 0 : 1;
-  const crew = out.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
+  const crew = sleepersIn(out.flatMap((r) => r.mods));
   const tables = Math.max(1, Math.ceil(crew / 8 / messes));
   for (const [i, r] of common.slice(0, messes + rec).entries()) {
     const mess = i < messes;
     r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
-    // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle, or a wall of
-    // cabinets and a table.
-    const long = Math.max(r.w, r.h, mess ? 3 + 3 * tables : 5), short = Math.max(Math.min(r.w, r.h), mess ? 5 : 4);
+    // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
+    // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
+    const long = Math.max(r.w, r.h, mess ? 7 * Math.ceil(tables / 2) + 2 : 5), short = Math.max(Math.min(r.w, r.h), mess ? 5 : 4);
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
   }

@@ -80,7 +80,7 @@ export function batteries(a: Asm, hall: number, h: number, guns: readonly RoomSp
     const mark = g.mark(), before = g.blocks(...box), ids: number[] = [];
     for (const [k, list] of lists.entries()) {
       if (list.length === 0) continue;
-      const spec: RoomSpec = { ...(list[0] as RoomSpec), dept: 'defence', mods: list.flatMap((r) => r.mods) };
+      const spec: RoomSpec = { ...(list[0] as RoomSpec), dept: 'defence', mods: list.flatMap((r) => r.mods), bastion: true };
       const id = g.room(spec.role, { spec, access: [hall], rank: 1e5 + k });
       ids.push(id);
       for (const [p, q] of pq) g.set(...tile(k, p, q), id);

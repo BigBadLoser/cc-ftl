@@ -22,17 +22,38 @@ export function cabinsWithin(r: RoomSpec): RoomSpec[] {
 }
 
 /**
- * Barracks for so many beds, each room holding a number of beds in `size`: double bunks (a bed's footprint, two beds)
- * in two rows, heads to the walls, an aisle between, and a tile along for lockers.
+ * The barracks' sleeper piece and how many sleep in one: a bed today; switching to a bunk (two sleepers in a bed's
+ * footprint) halves the pieces a barracks holds and shrinks the rooms, with this line alone.
+ */
+export const SLEEPER: { readonly def: string; readonly sleepers: number } = { def: 'module.bed', sleepers: 1 };
+
+/** Sleepers a room's planned modules hold: a bed one, a SLEEPER piece its count. */
+export const sleepersIn = (mods: readonly string[]): number =>
+  mods.reduce((n, m) => n + (m === SLEEPER.def ? SLEEPER.sleepers : m === 'module.bed' ? 1 : 0), 0);
+
+/**
+ * Floor for a barracks of `pieces` sleeper pieces, as the furnishing rules (rooms/rules) lay them: in pairs (a locker
+ * between) on both long walls, the far wall's pairs and the door wall's either side of the door, five deep (a pair,
+ * an aisle, a pair), and a few tiles over for the door's off-centre and the room's life support.
+ */
+export function barracksSize(pieces: number): { w: number; h: number } {
+  const pairs = Math.ceil(pieces / 2), far = Math.ceil(pairs / 2), near = pairs - far;
+  return { w: Math.max(3, 4 * far - 1, near > 0 ? 4 * near + 1 : 0) + 3, h: 5 };
+}
+
+/**
+ * Barracks for so many sleepers, each room holding a number of them in `size`: their pieces (SLEEPER) in pairs, the
+ * sleepers shared out so that every room but one holds whole pairs.
  */
 export function barracksOf(rng: Rng, like: RoomSpec, beds: number, size: readonly [number, number]): RoomSpec[] {
   if (beds <= 0) return [];
-  // As many rooms as the beds need at a size in the range, the beds shared out evenly: no room of two beds left over.
+  // As many rooms as the sleepers need at a size in the range, the pairs shared out evenly: no room of one pair left over.
   const count = Math.max(1, Math.round(beds / rng.int(size[0], size[1])));
+  const pieces = Math.ceil(beds / SLEEPER.sleepers), pairs = Math.floor(pieces / 2);
   return Array.from({ length: count }, (_, i): RoomSpec => {
-    const n = Math.floor(beds / count) + (i < beds % count ? 1 : 0), bunks = Math.ceil(n / 2);
-    return { ...like, mods: Array<string>(n).fill('module.bed'), w: Math.max(3, Math.ceil(bunks / 2) + 1), h: 5, cabins: false };
-  });
+    const n = 2 * (Math.floor(pairs / count) + (i < pairs % count ? 1 : 0)) + (i === count - 1 ? pieces % 2 : 0);
+    return { ...like, mods: Array<string>(n).fill(SLEEPER.def), ...barracksSize(n), cabins: false };
+  }).filter((r) => r.mods.length > 0);
 }
 
 /** A cabin for one, two wide. */

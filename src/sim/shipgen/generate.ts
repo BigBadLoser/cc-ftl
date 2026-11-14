@@ -6,7 +6,8 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { RECIPES, STATION_RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { furnishByRule, ruleRoom } from './rooms/rules/place';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -61,7 +62,7 @@ interface Fitted {
 /** Place every room's planned modules in that room; a reason string when something essential does not fit. */
 function fitOut(
   rng: Rng, f: FactionDef, rows: string[], roomOf: Int16Array, roles: RoomRole[], specs: (RoomSpec | undefined)[], defs: Record<string, ModuleDef>,
-  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere'> = {},
+  recipes = RECIPES, o: Pick<FinishOpts, 'airlocksAnyWay' | 'gunsAnywhere' | 'immobile'> = {},
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
@@ -73,9 +74,11 @@ function fitOut(
   const wanted: Record<string, number> = {};
   // Rooms with a recipe draw their arrangement once; their planned modules go where the recipe says.
   const draws = new Map<number, RoomDraw>();
+  // Station rooms furnished by rule (rooms/rules), and those no rule fits, which get their planned modules plainly.
+  const ruled = new Set<number>(), furnished = new Set<number>();
   const drawOf = (room: number): RoomDraw | null => {
     const recipe = recipes[roles[room] as RoomRole];
-    if (!recipe || specs[room]?.sealed) return null;
+    if (!recipe || specs[room]?.sealed || ruled.has(room)) return null;
     if (!draws.has(room)) {
       const d = drawRoom(rng, recipe);
       draws.set(room, d);
@@ -99,8 +102,23 @@ function fitOut(
   const planned = new Map<string, number>();
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
+  if (o.immobile) {
+    specs.forEach((spec, room) => {
+      const role = roles[room] as RoomRole;
+      if (!spec || spec.sealed || !ruleRoom(role, spec.mods)) return;
+      ruled.add(room);
+      const got = furnishByRule(lay, rng, room, role, spec.mods, rots, spec.bastion ? { bastion: true } : {});
+      if (got) furnished.add(room);
+      for (const idx of got ?? []) {
+        const id = lay.modules[idx]?.def as string;
+        placed[id] = (placed[id] ?? 0) + 1;
+        stockUp(idx, spec);
+      }
+    });
+  }
   for (const j of jobs) {
     wanted[j.def] = (wanted[j.def] ?? 0) + 1;
+    if (furnished.has(j.room)) continue;
     const d = drawOf(j.room);
     const si = d ? specStep(d, j.def) : -1;
     const share = d && si >= 0 ? d.arr.steps[si]?.share : undefined;
@@ -113,6 +131,11 @@ function fitOut(
     placed[j.def] = (placed[j.def] ?? 0) + 1;
     const idx = lay.modules.length - 1;
     stockUp(idx, j.spec);
+    if (d && si >= 0) {
+      const n = lay.modules.length;
+      hostCompanions(lay, rng, j.room, d, si, pm);
+      for (let i = n; i < lay.modules.length; i++) stockUp(i, j.spec);
+    }
     if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
     if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
   }

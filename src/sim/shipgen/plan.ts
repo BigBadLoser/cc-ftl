@@ -46,6 +46,8 @@ export interface RoomSpec {
   h: number;
   /** Crates get starting stock; a vehicle bay gets a shuttle. */
   stock?: boolean;
+  /** A star fort's corner battery (assembly/fort.ts): a pointed room furnished along its diagonal (rooms/rules/bastion.ts). */
+  bastion?: true;
   vehicle?: boolean;
   /** A drone bay here is filled with this many drones of this DroneDef id. */
   drones?: { def: string; count: number };

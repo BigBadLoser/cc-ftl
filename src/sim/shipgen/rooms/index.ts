@@ -15,15 +15,20 @@ export const RECIPES: Partial<Record<RoomRole, RoomRecipe>> = {
 
 /** Modules stations never get, whatever the room recipe says (rows of hydroponics beds everywhere read as clutter). */
 const STATION_BANNED: readonly string[] = ['module.hydroponics'];
+/**
+ * Extras stations never add (a room's planned ones stay): lockers stand only between the beds of a pair in quarters
+ * (rules/), and consoles only on the bridge (the user: no locker or console spam).
+ */
+const STATION_NO_EXTRA = (role: string): readonly string[] => (role === 'bridge' ? ['module.storage_locker'] : ['module.storage_locker', 'module.console']);
 
-/** A recipe without the banned modules: a step of only banned modules is dropped, a choice list loses them. */
-function without(recipe: RoomRecipe, banned: readonly string[]): RoomRecipe {
+/** A recipe without the banned modules (and these extras): a step left with none is dropped, a choice list loses them. */
+function without(recipe: RoomRecipe, banned: readonly string[], extras: readonly string[] = []): RoomRecipe {
   return {
     ...recipe,
     arrangements: recipe.arrangements.map((a) => ({
       ...a,
       steps: a.steps.flatMap((st) => {
-        const mods = (typeof st.mod === 'string' ? [st.mod] : st.mod).filter((m) => !banned.includes(m));
+        const mods = (typeof st.mod === 'string' ? [st.mod] : st.mod).filter((m) => !banned.includes(m) && (st.count === 'spec' || !extras.includes(m)));
         if (!mods.length) return [];
         return [{ ...st, mod: mods.length === 1 ? (mods[0] as string) : mods }];
       }),
@@ -31,11 +36,11 @@ function without(recipe: RoomRecipe, banned: readonly string[]): RoomRecipe {
   };
 }
 
-/** Room recipes for stations (immobile hulls): the ship recipes without the station-banned modules. */
+/** Room recipes for stations (immobile hulls): the ship recipes without the station-banned modules and extras. */
 export const STATION_RECIPES: Partial<Record<RoomRole, RoomRecipe>> = Object.fromEntries(
-  Object.entries(RECIPES).map(([role, r]) => [role, without(r as RoomRecipe, STATION_BANNED)]),
+  Object.entries(RECIPES).map(([role, r]) => [role, without(r as RoomRecipe, STATION_BANNED, STATION_NO_EXTRA(role))]),
 );
 
 export { pruneDoors } from './doors';
-export { drawRoom, furnish, reserveWalkway, placeStep, specStep, roomFill, type RoomDraw } from './furnish';
+export { drawRoom, furnish, hostCompanions, reserveWalkway, placeStep, specStep, roomFill, type RoomDraw } from './furnish';
 export type { RoomRecipe, Arrangement, Step } from './types';

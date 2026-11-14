@@ -1,6 +1,7 @@
 import type { RoomSpec } from '../plan';
 import type { Asm } from './asm';
 import { at, key, type Ctx } from './model';
+import { sleepersIn } from './quarters';
 import { SOLID, SPACE, type RegionGrid } from './regions';
 
 /** The last steps of an assembly: corridor tails cut back, bracing beams, and the hard check that every room stands. */
@@ -126,10 +127,9 @@ export function missing(ctx: Ctx, rooms: readonly RoomSpec[]): string {
   const g = ctx.g, snap = g.snapshot();
   const floored = new Set<number>();
   for (const id of snap.roomOf) if (id >= 0) floored.add(id);
-  const beds = (r: RoomSpec): number => r.mods.filter((m) => m === 'module.bed').length;
   const have = new Map<string, number>(), want = new Map<string, number>();
   // Guns by mount: a battery is one bay holding several.
-  const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role === 'weapons' ? 'guns' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? beds(r) : r.role === 'weapons' ? r.mods.length : 1)); };
+  const count = (m: Map<string, number>, r: RoomSpec): void => { const k = r.role === 'quarters' ? 'beds' : r.role === 'weapons' ? 'guns' : r.role; m.set(k, (m.get(k) ?? 0) + (r.role === 'quarters' ? sleepersIn(r.mods) : r.role === 'weapons' ? r.mods.length : 1)); };
   for (const r of rooms) { count(want, r); if (r.annex) count(want, r.annex); }
   for (const id of floored) { const spec = g.regions[id]?.spec; if (spec) count(have, spec); }
   const short = [...want].filter(([k, n]) => (have.get(k) ?? 0) < n).map(([k, n]) => `${k} ${have.get(k) ?? 0}/${n}`);
