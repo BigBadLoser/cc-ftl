@@ -4,6 +4,7 @@ import type { CreateStarmapGpu } from './starmapGpu';
 import type { UiCrewDetail, UiOpinionHover } from './crewDetailApi';
 export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
+import type { DoorInfo } from '../sim/doorInfo';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
 export interface Subscribable<T> {
@@ -106,6 +107,10 @@ export interface UiInspect {
   fields: { name: string; value: number }[];
   /** A player job on the tile (forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
+  /** True when the tile is a door that can have a vent (the sim's answer; an airlock's door cannot). */
+  ventable: boolean;
+  /** The door's state and the two sides it joins (the sim's `doorInfo`), or null on a tile that is not a door. */
+  door: DoorInfo | null;
   selected: boolean;
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CombatC, FTL_CHARGE_SEC, ModuleC, START_NODE, applyOvercharge, galaxyIndex, homeShip, hullLoad, newGame, riskOf, shipGrid, type ModuleDef, type Sim, type SimEvent,
+  CombatC, FTL_CHARGE_SEC, ModuleC, START_NODE, engineFuelFactor, fuelStock, jumpFuel, applyOvercharge, galaxyIndex, homeShip, hullLoad, newGame, riskOf, shipGrid, type ModuleDef, type Sim, type SimEvent,
 } from '../../sim';
 import { giveItems } from '../../sim/story/effects';
 import { content } from '../index';
@@ -157,6 +157,29 @@ describe('the jump rule', () => {
     expect(log).not.toContain('rejected:galaxy.jump:overweight');
     expect(log).toContain('ftl.overcharged');
     expect(sim.sector.state).toBe('hyperspace');
+  });
+
+  it('burns the fuel it was checked against, though the overcharge destroys the efficient engine (#160)', () => {
+    const engine = content.modules['module.engine']!;
+    const thrifty = { ...content, modules: { ...content.modules, 'module.engine': { ...engine, engine: { ...engine.engine!, hullCapacity: 1, fuelFactor: 0.5 } } } } as typeof content;
+    for (let seed = 1; seed <= 60; seed++) {
+      const sim = newGame(seed, thrifty);
+      run(sim, 2);
+      const ship = homeShip(sim);
+      const to = neighbour(sim);
+      const base = galaxyIndex(sim.galaxy).adjacent.get(START_NODE)!.find((e) => e.a === to || e.b === to)!.fuel;
+      const price = jumpFuel(sim, base, ship);
+      if (price >= base) continue; // no discount to lose on this edge
+      sim.world.get(ship, CombatC)!.ftl = FTL_CHARGE_SEC;
+      giveItems(sim, 'item.fuel', price + 5 - fuelStock(sim, ship)); // the discounted price, and some spare
+      expect(fuelStock(sim, ship)).toBe(price + 5);
+      sim.enqueue({ type: 'galaxy.jump', ship, route: [to], overcharge: true });
+      run(sim, 2);
+      expect(sim.sector.state).toBe('hyperspace');
+      expect(fuelStock(sim)).toBe(5); // paid the checked price, not the dearer one
+      if (engineFuelFactor(sim) === 1) return; // the discount engines were destroyed on the jump: the case under test
+    }
+    throw new Error('no seed destroyed the efficient engines');
   });
 
   it('a queued jump over capacity is refused up front unless it overcharges', () => {

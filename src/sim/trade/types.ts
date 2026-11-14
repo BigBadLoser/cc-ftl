@@ -157,7 +157,7 @@ export interface Deal {
   /** How the goods change hands at the trader: docked at a station airlock, or the hover swap (no free station airlock). */
   via?: 'dock' | 'hover';
   /** Docking at a station: the station airlock (reserved by the dock order) and the bought goods staged in its storage. */
-  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[] };
+  dock?: { airlock: number; staged: { storage: number; item: string; count: number }[]; units?: Record<string, { shelf: number; hold: number; floor: number }> };
   /**
    * An order bigger than one hold runs as several trips, one after another (settled trip by trip: each trip's credits and goods are held
    * only while it runs). `n` of `of` is the trip now running (the deal's give/get/balance/held are that trip's) and `rest` the trips still to
@@ -177,7 +177,7 @@ export interface Deal {
 export interface TradeState {
   /** The player's credits. NPC wallets live on their `TraderC`. */
   credits: number;
-  /** The most credits the player has held at once (the game-over summary). Optional: older saves start it at 0 and it catches up at once. */
+  /** The most credits the player has held at once (the game-over summary). Optional: reads as 0 when unset, and `addCredits` raises it. Load leaves it as saved, so a reload replays exactly. */
   bestCredits?: number;
   hails: Hail[];
   offers: Offer[];

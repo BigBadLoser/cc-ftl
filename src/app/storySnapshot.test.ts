@@ -24,6 +24,6 @@ describe('buildStory', () => {
     sim.step();
     sim.enqueue({ type: 'story.choose', choice: 'skip' });
     sim.step();
-    expect(buildStory(sim).last).toMatchObject({ title: 'Derelict sighted', choice: 'Leave it', success: null });
+    expect(buildStory(sim).last).toMatchObject({ title: 'Derelict sighted', choice: 'Skip', success: null });
   });
 });

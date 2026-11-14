@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { commit, fresh, live, redo, undo } from './history';
 import {
-  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, removeModule, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
+  addModule, addRoom, deleteRoom, hullOf, moveModule, newModule, paint, moduleCues, removeModule, shapeTiles, stroke, resizeRoom, roomRect, rotateModule, setRole, splitRoom, toTemplate,
   type Layout, type Tile,
 } from './layout';
 import { designFromLayout, labelSpot } from './design';
@@ -327,5 +327,108 @@ describe('generated designs are stamped the way the game spawns them', () => {
     const w = worldOf(paint(blank(), rect(4, 4, 5, 5), '_'));
     expect(w?.sim.world.get(w.ship, ShipC)).toMatchObject({ faction: 'player' });
     expect(w?.sim.world.get(w.ship, ShipC)?.gen).toBeUndefined();
+  });
+});
+
+describe('a room holds floor only (#464)', () => {
+  it('drawn across an existing wall, door and beam it leaves them as they are and gives them no room', () => {
+    let l = blank();
+    for (const [x, y, c] of [[7, 6, '#'], [7, 7, 'D'], [7, 8, '=']] as const) l = paint(l, [[x, y]], c);
+    const { layout, id } = addRoom(l, { x: 5, y: 5, w: 6, h: 5 }, 'cargo');
+    expect([layout.cells[6]?.[7], layout.cells[7]?.[7], layout.cells[8]?.[7]]).toEqual(['#', 'D', '=']);
+    for (const y of [6, 7, 8]) expect(layout.roomOf[y * layout.width + 7]).toBe(-1);
+    for (let i = 0; i < layout.roomOf.length; i++) if (layout.roomOf[i] === id) expect(layout.cells[Math.floor(i / layout.width)]?.[i % layout.width]).toBe('_');
+  });
+  it('resizing a room over a wall does not turn the wall into room floor', () => {
+    const { layout, id } = addRoom(blank(), { x: 5, y: 5, w: 4, h: 4 }, 'cargo');
+    const wide = resizeRoom(layout, id, { x: 5, y: 5, w: 6, h: 4 }); // the ring wall at x=9 is inside the new rectangle
+    expect(wide.cells[6]?.[9]).toBe('_');
+    const walled = paint(layout, [[10, 6]], '#');
+    const over = resizeRoom(walled, id, { x: 5, y: 5, w: 6, h: 4 });
+    expect(over.cells[6]?.[10]).toBe('#');
+    expect(over.roomOf[6 * over.width + 10]).toBe(-1);
+  });
+});
+
+describe('right-click erases what the tool paints (#464)', () => {
+  const t = (...p: Tile[]): Tile[] => p;
+  it('floor goes to space, wall and door to floor, beam to space, the Erase tool clears to space (never lays floor); other kinds are left', () => {
+    const { layout } = addRoom(blank(), { x: 5, y: 5, w: 4, h: 4 }, 'cargo');
+    expect(stroke(layout, 'floor', true, t([6, 6])).cells[6]?.[6]).toBe('.');
+    expect(stroke(layout, 'floor', true, t([4, 4])).cells[4]?.[4]).toBe('#'); // a wall is not floor
+    expect(stroke(layout, 'wall', true, t([4, 6])).cells[6]?.[4]).toBe('_');
+    expect(stroke(paint(layout, [[6, 6]], 'D'), 'door', true, t([6, 6])).cells[6]?.[6]).toBe('_');
+    expect(stroke(paint(layout, [[2, 2]], '='), 'beam', true, t([2, 2])).cells[2]?.[2]).toBe('.');
+    expect(stroke(layout, 'space', true, t([6, 6])).cells[6]?.[6]).toBe('.');
+    expect(stroke(layout, 'space', true, t([1, 1])).cells[1]?.[1]).toBe('.'); // space stays space, never floor
+  });
+  it('room unassigns floor and keeps it; module removes the module under the pointer', () => {
+    const made = addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'support');
+    const id = made.id;
+    const layout = addModule(made.layout, { def: 'module.chair', x: 6, y: 6, rot: 0 });
+    const un = stroke(layout, 'room', true, t([8, 8]));
+    expect(un.cells[8]?.[8]).toBe('_');
+    expect(un.roomOf[8 * un.width + 8]).toBe(-1);
+    expect(un.roomOf[9 * un.width + 8]).toBe(id);
+    expect(stroke(layout, 'module', true, t([9, 9]))).toBe(layout);
+    const gone = stroke(layout, 'module', true, t([6, 6]));
+    expect(gone.modules).toHaveLength(0);
+    expect(gone.moduleIds).toHaveLength(0);
+  });
+});
+
+describe('drag shapes (#464)', () => {
+  it('wall and beam are an axis-snapped line, either direction; floor and erase a rectangle; door one tile', () => {
+    expect(shapeTiles('wall', [2, 3], [5, 4])).toEqual([[2, 3], [3, 3], [4, 3], [5, 3]]);
+    expect(shapeTiles('beam', [2, 3], [3, 0])).toEqual([[2, 3], [2, 2], [2, 1], [2, 0]]);
+    expect(shapeTiles('wall', [4, 4], [4, 4])).toEqual([[4, 4]]);
+    expect(shapeTiles('floor', [3, 2], [1, 3])).toEqual([[1, 2], [2, 2], [3, 2], [1, 3], [2, 3], [3, 3]]);
+    expect(shapeTiles('space', [0, 0], [1, 1])).toHaveLength(4);
+    expect(shapeTiles('door', [1, 1], [5, 5])).toEqual([[1, 1]]);
+  });
+  it('a line and a rectangle apply through stroke, and erase uses the same shape', () => {
+    const l = stroke(blank(), 'wall', false, shapeTiles('wall', [3, 3], [8, 3]));
+    expect(l.cells[3]?.slice(3, 9)).toBe('######');
+    const r = stroke(blank(), 'floor', false, shapeTiles('floor', [3, 3], [5, 4]));
+    expect(r.cells[4]?.slice(3, 6)).toBe('___');
+    expect(stroke(r, 'floor', true, shapeTiles('floor', [3, 3], [5, 4])).cells[3]?.slice(3, 6)).toBe('...');
+  });
+});
+
+describe('module cues: access tiles and the hull side (#464)', () => {
+  const at = (def: string, rot: number) => moduleCues({ def, x: 10, y: 10, rot });
+  it('an airlock names its hull side and the way out, turning with the module', () => {
+    const outs = [0, 1, 2, 3].map((r) => at('module.airlock', r).hull?.out);
+    expect(outs).toEqual([[0, -1], [1, 0], [0, 1], [-1, 0]]);
+    const north = at('module.airlock', 0).hull;
+    expect(north?.tiles).toEqual([[10, 10], [11, 10], [12, 10]]); // its three hull tiles, along the north edge
+    expect(at('module.airlock', 1).hull?.tiles.every(([x]) => x === at('module.airlock', 1).hull?.tiles[0]?.[0])).toBe(true); // a column once turned
+  });
+  it('a module with no hull rule has none, and access tiles follow the rotation (game table: two)', () => {
+    expect(at('module.chair', 0).hull).toBeNull();
+    const t0 = at('module.gametable', 0).access, t1 = at('module.gametable', 1).access;
+    expect(t0).toHaveLength(2);
+    expect(t1).toHaveLength(2);
+    expect(t1).not.toEqual(t0);
+  });
+});
+
+describe('erase peels one layer at a time (#464)', () => {
+  const room = (): Layout => addModule(addRoom(blank(), { x: 5, y: 5, w: 6, h: 6 }, 'support').layout, { def: 'module.chair', x: 6, y: 6, rot: 0 });
+  it('the Erase tool and a floor erase over a module remove only the module; the next erase takes the floor', () => {
+    for (const [tool, erase] of [['space', false], ['space', true], ['floor', true]] as const) {
+      const l = room();
+      const once = stroke(l, tool, erase, [[6, 6]]);
+      expect(once.modules).toHaveLength(0);
+      expect(once.cells[6]?.[6]).toBe('_');
+      const twice = stroke(once, tool, erase, [[6, 6]]);
+      expect(twice.cells[6]?.[6]).toBe('.');
+    }
+  });
+  it('one stroke over a module and bare floor clears the bare floor, judged from the stroke start', () => {
+    const once = stroke(room(), 'space', false, [[6, 6], [9, 9]]);
+    expect(once.modules).toHaveLength(0);
+    expect(once.cells[6]?.[6]).toBe('_');
+    expect(once.cells[9]?.[9]).toBe('.');
   });
 });

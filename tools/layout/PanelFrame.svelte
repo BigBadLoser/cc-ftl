@@ -7,7 +7,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { TITLES, type Dock, type PanelId } from './dock';
+	import { growOf, TITLES, type Dock, type PanelId } from './dock';
 	import { docks } from './dock.svelte';
 
 	let { id, children, drag }: { id: PanelId; children: Snippet; drag?: (e: PointerEvent) => void } = $props();
@@ -20,7 +20,7 @@
 	];
 </script>
 
-<section class="flex min-h-0 min-w-0 flex-col bg-card text-card-foreground {p.collapsed ? 'flex-none' : 'flex-1'}" data-panel={id}>
+<section class="flex min-h-0 min-w-0 flex-col bg-card text-card-foreground {p.collapsed ? 'flex-none' : 'flex-1'}" style={p.collapsed ? '' : `flex-grow:${growOf(docks.state, id)}`} data-panel={id}>
 	<header role="presentation" class="flex h-8 shrink-0 items-center gap-1 px-1.5 {drag ? 'cursor-grab touch-none active:cursor-grabbing' : ''}" onpointerdown={drag}>
 		<Button variant="ghost" size="icon-xs" aria-label={p.collapsed ? 'Expand' : 'Collapse'} onclick={() => docks.dispatch({ type: 'collapse', id })} onpointerdown={(e) => e.stopPropagation()}>
 			{#if p.collapsed}<ChevronRight />{:else}<ChevronDown />{/if}

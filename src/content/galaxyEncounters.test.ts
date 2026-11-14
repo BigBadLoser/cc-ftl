@@ -6,6 +6,7 @@ import { fleetStrength } from '../sim/galaxy/encounterOdds';
 import { eventNodeId } from '../sim/galaxy/eventGrid';
 import type { Fleet } from '../sim/galaxy/types';
 import { giveItems } from '../sim/story/effects';
+import { noteHelp } from '../sim/galaxy/eventGrid';
 import { content } from '.';
 
 const step = (sim: Sim, n = 1) => {
@@ -412,7 +413,7 @@ describe('alerts: hail, scan, distress', () => {
     return { sim, f, to, next };
   }
 
-  it('respond: an event grid with the damaged ship as a neutral; leaving carries the trip on, the helped fleet is no longer adrift', () => {
+  it('respond: an event grid with the damaged ship as a neutral; helping it (a deal settles) pays on leaving, and the helped fleet is no longer adrift', () => {
     const { sim, f, next } = distress();
     expect(sim.galaxy.encounters[0]?.kind).toBe('distress');
     const rep = sim.story.reputation.traders ?? 0;
@@ -422,12 +423,28 @@ describe('alerts: hail, scan, distress', () => {
     deploy(sim);
     step(sim, 100);
     expect(sim.sector.inCombat).toBe(false);
+    noteHelp(sim, enemies(sim)[0] as number); // a deal with the damaged ship settles
     sim.enqueue({ type: 'galaxy.leaveEvent' });
     step(sim);
     expect(sim.galaxy.event).toBeNull();
     expect(sim.story.reputation.traders).toBeGreaterThan(rep);
     expect(f.damaged).toBeUndefined();
     expect(sim.galaxy.fleets.includes(f)).toBe(true);
+    flyOn(sim);
+    expect(sim.galaxy.current).toBe(next);
+  }, 60000);
+
+  it('respond, then leave without helping: free to go, but no reward and the ship stays adrift (#160)', () => {
+    const { sim, f, next } = distress();
+    const rep = sim.story.reputation.traders ?? 0;
+    respond(sim, 'respond');
+    deploy(sim);
+    step(sim, 100);
+    sim.enqueue({ type: 'galaxy.leaveEvent' });
+    step(sim);
+    expect(sim.galaxy.event).toBeNull();
+    expect(sim.story.reputation.traders ?? 0).toBe(rep);
+    expect(f.damaged).toBe(true);
     flyOn(sim);
     expect(sim.galaxy.current).toBe(next);
   }, 60000);

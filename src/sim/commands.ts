@@ -21,6 +21,8 @@ export type Command =
   | { type: 'job.forceDoor'; ship: number; x: number; y: number }
   /** Drafted crew force a jammed door at (x, y): the one nearest by path walks beside it and does the forceDoor work, staying drafted. */
   | { type: 'crew.forceDoor'; ids: number[]; ship: number; x: number; y: number }
+  /** Set a door's vent open or closed (the player's setting; the vent still shuts itself on a hazard or without power). */
+  | { type: 'door.vent'; ship: number; x: number; y: number; open: boolean }
   | { type: 'job.cancel'; ship: number; x: number; y: number }
   /** Blueprint a module; (x, y) is the top-left of the rotated footprint, rot = quarter turns clockwise. */
   | { type: 'job.buildModule'; ship: number; x: number; y: number; def: string; rot: number }

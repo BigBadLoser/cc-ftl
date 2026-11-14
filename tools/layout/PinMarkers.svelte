@@ -22,7 +22,7 @@
 				<Popover.Root open={lab.openPin === p.id} onOpenChange={(o) => { if (o) lab.openPin = p.id; else if (lab.openPin === p.id) lab.openPin = null; }}>
 					<Popover.Trigger>
 						{#snippet child({ props })}
-							<button {...props} aria-label="Note {p.id}" class="block {tone(p.orphan, lab.openPin === p.id)}"><MapPin class="size-6 fill-current stroke-black" /></button>
+							<button {...props} aria-label="Note {p.id}" class="block {tone(p.orphan, lab.openPin === p.id)}" oncontextmenu={(e) => { e.preventDefault(); if (lab.tool === 'note') lab.removePin(p.id); }}><MapPin class="size-6 fill-current stroke-black" /></button>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content class="w-72">
