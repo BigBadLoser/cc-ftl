@@ -90,25 +90,6 @@ def life_support():
     return [m.build()]
 
 
-def bed():
-    """1 wide (x) by 2 long (y): footprint [1, 2]; mattress top is at 0.22 (sleeping crew are lifted by that)."""
-    m = core.Mesh("bed")
-    cy = -0.5
-    m.box((0, cy, 0), (0.88, 1.9, 0.12), "steelD", top="steel", base=True, bevel=0.015)
-    for sx in (-1, 1):
-        for y in (cy - 0.85, cy + 0.85):
-            m.box((sx * 0.38, y, 0), (0.1, 0.1, 0.1), "dark", base=True)
-    m.box((0, cy, 0.1), (0.84, 1.86, 0.12), "navy", top="blueGrey", base=True, bevel=0.02)
-    m.box((0, cy - 0.68, 0.22), (0.62, 0.42, 0.08), "medWhite", top="medWhite", base=True, bevel=0.03)   # pillow
-    m.box((0, cy + 0.2, 0.22), (0.82, 1.1, 0.035), "steelL", base=True)                                    # blanket
-    m.box((0, cy + 0.2, 0.255), (0.8, 1.06, 0.01), "blueGrey", base=True)
-    m.box((0, cy - 0.34, 0.22), (0.82, 0.05, 0.04), "orange", base=True)
-    m.box((0, cy + 0.93, 0.0), (0.88, 0.05, 0.38), "steelD", top="steel", base=True, bevel=0.01)          # footboard
-    m.box((0, cy - 0.93, 0.0), (0.88, 0.05, 0.5), "steelD", top="steel", base=True, bevel=0.01)           # headboard
-    m.box((0, cy - 0.9, 0.34), (0.5, 0.02, 0.05), "cyan")
-    return [m.build()]
-
-
 def _crate(m, c, s, body, top, post, rz=0.0, z0=0.0):
     m.box((c[0], c[1], z0), (s, s, s * 0.8), body, top=top, base=True, rz=rz, bevel=0.015)
     h = s * 0.8
@@ -196,7 +177,6 @@ SPRITES += [
     ("module.reactor", (2, 2), "prop", reactor),
     ("module.life_support", (1, 2), "prop", life_support),
     ("module.light", (1, 1), "prop", lamp),
-    ("module.bed", (1, 2), "prop", bed),
     ("module.console", (1, 1), "prop", console),
 ]
 SPRITES += [(f"fx.fire.{_k}", (1, 1), "fx", lambda k=_k: fire(k)) for _k in range(FIRE_FRAMES)]

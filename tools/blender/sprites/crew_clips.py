@@ -31,7 +31,7 @@ class Pose:
     before: Optional[Callable] = None       # (arm, i, clip) -> breathing amount: poses bones after the action, before torso scaling
     after: Optional[Callable] = None        # (arm, i): final touches
     puffs: Optional[Callable] = None        # (i) -> nozzle indices puffing in frame i (glow only)
-    chair: object = False                   # render against a seat as holdout: True = the console chair, or a seat kind ("stool": human_stool)
+    chair: object = False                   # render against a seat as holdout: True = the console chair, or a seat kind ("stool": human_stool, "bench": human_bench)
     items: Optional[Callable] = None        # (item) -> bool: which items get this clip (default all)
 
 
@@ -135,6 +135,7 @@ POSES = {
     "sit_idle": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "sit_work": Pose(action="idle_Armature", hold="first", before=_sit, chair=True, items=_sit_items),
     "sit_stool_work": Pose(action="idle_Armature", hold="first", before=_sit, chair="stool", items=_sit_items),   # sit_work against the game-table stool
+    "sit_bench": Pose(action="idle_Armature", hold="first", before=_sit, chair="bench", items=_sit_items),        # sit_idle against a bench seat
     "eva_float": Pose(action="idle_Armature", hold="first", before=_float, puffs=suit.puffs, items=_float_items),
 }
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "ready_1m", "swing_1m", "ready_2m",

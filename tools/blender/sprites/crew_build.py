@@ -21,6 +21,7 @@ from . import core, crew_cache as cc, crew_digest as dg, crew_pack
 from . import crew_spec as cs
 from . import crew_clips as clips
 from . import human_render as hr
+from .human_bench import bench_holdout
 from .human_stool import stool_holdout
 
 SRC = Path(__file__).resolve().parent
@@ -29,6 +30,8 @@ REPO = BL.parents[1]
 GLOBAL_FILES = [SRC / "core.py", SRC / "post.py", SRC / "human_render.py",
                 BL / "lib/palette.py", REPO / "palette.json", BL / "palette_extra.json", BL / "source/base_cc0.glb"]
 CLIP_FILES = {"sit_stool_work": ["human_sit.py", "human_stool.py", "gametable_kit.py", "modkit.py"],
+              "sit_bench": ["human_sit.py", "human_bench.py", "bench_r13.py", "bench_r12.py", "bench_r9.py",
+                            "bench_r8.py", "bench_r7.py", "bench_study.py", "exercise_r4.py", "modkit.py"],
               "sit_idle": ["human_sit.py", "console_proto.py", "cmbkit.py"], "sit_work": ["human_sit.py", "console_proto.py", "cmbkit.py"],
               "eva_float": ["human_suit.py", "human_sit.py"]}      # files a clip's pose/chair code leans on (hashed for that clip only)
 for _c in ("aim_1h", "fire_1h", "aim_2h", "fire_2h", "aim_heavy", "fire_heavy", "walk_aim_1h", "walk_aim_2h",
@@ -82,6 +85,7 @@ def build(out, opts, log=_log):
     # pixels depends on what else is in the scene, so the scene must not depend on which clips this run renders.
     hr.chair_holdout()
     stool_holdout()
+    bench_holdout()
     sc = bpy.context.scene
     rig = dg.rig_digest(arm)
     idig = {it.id: dg.item_digest(it) for it in items}
@@ -147,7 +151,7 @@ def _render(arm, items, miss, log):
     frames = {(c, i): (name, f) for c, i, name, f in clips.clip_frames()}
     order = {c: n for n, (c, _, _, _) in enumerate(cs.CLIPS)}
     chair = hr.chair_holdout()
-    seats = {True: chair, "stool": stool_holdout()}      # Pose.chair -> the holdout it renders against
+    seats = {True: chair, "stool": stool_holdout(), "bench": bench_holdout()}   # Pose.chair -> the holdout it renders against
     done, last_d = 0, None
     for d, clip, i in sorted(todo, key=lambda k: (k[0], order[k[1]], k[2])):
         if d != last_d:

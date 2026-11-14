@@ -104,7 +104,7 @@ export const SEAT_CLIP: Readonly<Record<SeatKind, string>> = { stool: 'sit_stool
  * - `sit_idle`: nothing, so the layer is hidden. Seated poses are fitted to the chair; a standing pose would clip through
  *   it. The engineer rig and EVA pack have no sit sheets for exactly this reason;
  * - `sit_work`: the layer's sit_idle;
- * - `sit_stool_work`: nothing, like sit_idle (it is sit_work cut against another seat);
+ * - `sit_stool_work`, `sit_bench`: nothing, like sit_idle (each is a sit pose cut against another seat);
  * - `walk`: `run` (creature sheets), then idle.
  */
 const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
@@ -113,6 +113,7 @@ const CLIP_FALLBACK: Readonly<Record<string, readonly string[]>> = {
   sit_idle: [],
   sit_work: ['sit_idle'],
   sit_stool_work: [],
+  sit_bench: [],
   ...weaponFallbacks(),
 };
 
