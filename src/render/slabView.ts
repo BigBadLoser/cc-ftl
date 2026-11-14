@@ -2,6 +2,8 @@ import { Container, Sprite } from 'pixi.js';
 import { batchAdditive } from './batch';
 import { animNow } from './animClock';
 import type { World } from '../sim/ecs';
+import { CrewC } from '../sim/crew/components';
+import type { SlabFaces } from './slabFace';
 import { floorSlabs } from '../sim/stasis/query';
 import type { Atlas, StaticSprite } from './assets/loader';
 import { depthKey, iso } from './iso';
@@ -25,7 +27,7 @@ interface Entry {
   src: StaticSprite;
 }
 
-export function createSlabView(world: World, atlas: Atlas, L: Layers, host: ItemViewHost): SlabView {
+export function createSlabView(world: World, atlas: Atlas, L: Layers, host: ItemViewHost & { faces?: SlabFaces }): SlabView {
   const entries = new Map<number, Entry>();
 
   function build(src: StaticSprite): Entry {
@@ -52,7 +54,8 @@ export function createSlabView(world: World, atlas: Atlas, L: Layers, host: Item
       for (const s of floorSlabs(world)) {
         const f = s.tiles[1];
         if (!grid.inBounds(f.x, f.y)) continue;
-        const src = atlas.firstOf([s.rot === 0 ? 'slab.floor.x' : 'slab.floor.y']);
+        const id = s.rot === 0 ? 'slab.floor.x' : 'slab.floor.y';
+        const src = atlas.firstOf([id]);
         if (!src) continue;
         live.add(s.prisoner);
         let e = entries.get(s.prisoner);
@@ -64,6 +67,9 @@ export function createSlabView(world: World, atlas: Atlas, L: Layers, host: Item
         const p = iso(f.x - grid.x0, f.y - grid.y0);
         e.root.position.set(Math.round(p.x), Math.round(p.y));
         e.root.zIndex = depthKey(f.x - grid.x0, f.y - grid.y0) - 0.4;
+        // The prisoner pressed into the face (slabFace.ts): the plain slab until it is baked.
+        const look = host.faces && world.get(s.prisoner, CrewC);
+        e.spr.texture = (look && host.faces?.face(id, src, look)?.full) || src.tex;
         e.spr.tint = lightTint(grid.get('light', f.x, f.y), false, pulse);
       }
     }

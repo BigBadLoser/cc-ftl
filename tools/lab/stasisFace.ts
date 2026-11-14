@@ -1,9 +1,6 @@
-import { Container, Rectangle, Sprite, Texture, type Renderer } from 'pixi.js';
-import type { Atlas } from '../../src/render/assets/loader';
-import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
-import { drawLayers } from '../../src/render/crewSprites';
-import { ART_SCALE } from '../../src/render/iso';
-import { crewLoadout, preloadLayers, type CrewLook } from '../../src/render/loadout';
+import { Container, Sprite, Texture, type Renderer } from 'pixi.js';
+import { figurePx } from '../../src/render/slabFace';
+import { corners, faceMask, frame, mix, noise, original, originalLight, pressPx, q, sample, type Field, type Px, type Variant } from '../../src/render/slabPress';
 import type { LabCell, LabPanel } from './panel';
 
 /*
@@ -11,16 +8,13 @@ import type { LabCell, LabPanel } from './panel';
  * area is found from the sprite itself: the face is the palette tone `slbFace` unlit (#8c9697 after the render's
  * colour step), a clean parallelogram, so a colour key gives the mask and its four corners give the affine map from
  * the figure to the face. No Blender mask. The press is baked on the CPU here (one-off per sprite and prisoner) to
- * look at it; in the game it would be a pixi filter doing the same per pixel (see the report).
+ * look at it. The press itself (mask, corners, frame, sample, R2) lives in src/render/slabPress.ts and slabFace.ts, which
+ * the game uses; this panel draws the other variants from the same code.
  */
 
 const A = 'module.stasis_wheel';
-const FACE = [140, 150, 151];
 const PAD = 14;
-const SS = 3;                                       // supersamples per axis when reading the figure
 
-interface Px { w: number; h: number; d: Uint8ClampedArray }
-type V = [number, number];
 
 /** The look of each prisoner: who is in the slab. */
 const LOOKS = [
@@ -36,158 +30,7 @@ function read(renderer: Renderer, tex: Texture): Px {
   return { w: c.width, h: c.height, d: im.data };
 }
 
-/** The prisoner's whole crew sprite (a standing idle frame, every layer of their loadout, their palette), trimmed to its opaque pixels. */
-async function figurePx(atlas: Atlas, renderer: Renderer, look: CrewLook, dir: number): Promise<Px> {
-  const layers = crewLoadout(atlas, look);
-  preloadLayers(layers);
-  await atlas.whenIdle();
-  const body = new Container();
-  const parts = layers.map((layer) => { const sprite = new Sprite(); body.addChild(sprite); return { layer, sprite }; });
-  drawLayers({ parts, glows: [] }, 'idle', dir, 0);
-  await atlas.whenIdle();
-  drawLayers({ parts, glows: [] }, 'idle', dir, 0);
-  const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(look.appearanceSeed));
-  setFilterZoom(filter, ART_SCALE);
-  setFilterTint(filter, 0xffffff);
-  body.filters = [filter];
-  const root = new Container();
-  root.addChild(body);
-  const c = renderer.extract.canvas({ target: root, frame: new Rectangle(-80, -150, 160, 170), resolution: 1, antialias: false }) as HTMLCanvasElement;
-  const d = (c.getContext('2d') as CanvasRenderingContext2D).getImageData(0, 0, c.width, c.height);
-  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
-  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d.data[(y * c.width + x) * 4 + 3]! > 8) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-  const w = x1 - x0 + 1;
-  const h = y1 - y0 + 1;
-  const out = new Uint8ClampedArray(w * h * 4);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let k = 0; k < 4; k++) out[(y * w + x) * 4 + k] = d.data[((y + y0) * c.width + x + x0) * 4 + k]!;
-  return { w, h, d: out };
-}
 
-/** Face pixels: the exact face tone, opaque. */
-function faceMask(s: Px): Uint8Array {
-  const m = new Uint8Array(s.w * s.h);
-  for (let i = 0; i < m.length; i++) m[i] = s.d[i * 4 + 3]! > 200 && s.d[i * 4]! === FACE[0] && s.d[i * 4 + 1]! === FACE[1] && s.d[i * 4 + 2]! === FACE[2] ? 1 : 0;
-  return m;
-}
-
-/** The face's four corners, clockwise from the top one: the extremes of the mask along x and y with tie-breaks, the best-area four. */
-function corners(m: Uint8Array, w: number, h: number): V[] {
-  const pts: V[] = [];
-  const dirs: V[] = [[1, 0.01], [1, -0.01], [-1, 0.01], [-1, -0.01], [0.01, 1], [-0.01, 1], [0.01, -1], [-0.01, -1]];
-  for (const [dx, dy] of dirs) {
-    let best = -Infinity;
-    let p: V = [0, 0];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (m[y * w + x]) { const k = x * dx + y * dy; if (k > best) { best = k; p = [x + 0.5, y + 0.5]; } }
-    if (!pts.some((q) => q[0] === p[0] && q[1] === p[1])) pts.push(p);
-  }
-  let top: V[] = [];
-  let bestA = -1;
-  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-  const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-  const ang = (p: V): number => Math.atan2(p[1] - cy, p[0] - cx);
-  const n = pts.length;
-  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
-    const q = [pts[a]!, pts[b]!, pts[c]!, pts[d]!].sort((p, r) => ang(p) - ang(r));
-    let area = 0;
-    for (let i = 0; i < 4; i++) { const p = q[i]!; const r = q[(i + 1) % 4]!; area += p[0] * r[1] - r[0] * p[1]; }
-    if (Math.abs(area) > bestA) { bestA = Math.abs(area); top = q; }
-  }
-  return top;                                       // sorted by angle: clockwise on screen (y down) from the left
-}
-
-/**
- * The map from a face pixel to figure coordinates: the figure lies lengthwise, head to feet along the face's long edge
- * (v), its right along u; of the choices, the one with the feet lowest on screen (head at the upper end), never mirrored.
- */
-function frame(q: V[]): { p0: V; u: V; v: V } {
-  let best = -Infinity;
-  let out = { p0: q[0]!, u: [1, 0] as V, v: [0, 1] as V };
-  for (let i = 0; i < 4; i++) {
-    const p0 = q[i]!;
-    const p1 = q[(i + 1) % 4]!;
-    const p3 = q[(i + 3) % 4]!;
-    const u: V = [p1[0] - p0[0], p1[1] - p0[1]];
-    const v: V = [p3[0] - p0[0], p3[1] - p0[1]];
-    const lu = Math.hypot(...u);
-    const lv = Math.hypot(...v);
-    if (u[0] * v[1] - u[1] * v[0] <= 0 || lv < lu) continue;     // no mirror; v is the long edge
-    const score = v[1] / lv + 0.2 * (v[0] / lv);
-    if (score > best) { best = score; out = { p0, u, v }; }
-  }
-  return out;
-}
-
-const FACE_ASPECT = 2;                              // the slab's face is 1.6 long by 0.8 wide (slab_study.py L, W)
-const FILL = 0.94;                                  // how much of the face's length the figure takes
-
-/** a, l: coverage and luminance, supersampled; n, c: the figure's own pixel at the centre (coverage, rgb), pixel-sharp. */
-interface Field { a: Float32Array; l: Float32Array; n: Float32Array; c: Float32Array; w: number; h: number }
-
-/** Sample the figure into the face: coverage `a` and luminance `l` per sprite pixel (0 where the figure isn't). */
-function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>, stretch = false): Field {
-  const { w, h } = sp;
-  const a = new Float32Array(w * h);
-  const l = new Float32Array(w * h);
-  const n = new Float32Array(w * h);
-  const cc = new Float32Array(w * h * 3);
-  const det = fr.u[0] * fr.v[1] - fr.u[1] * fr.v[0];
-  const hf = stretch ? 0.94 : FILL;                 // the figure's height as a fraction of the face's length
-  const wf = stretch ? 0.94 : (por.w / por.h) * FILL * FACE_ASPECT;  // and its width (stretch: the whole window, as the round-1 study)
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (!mask[y * w + x]) continue;
-    let sa = 0;
-    let sl = 0;
-    for (let j = 0; j < SS; j++) for (let i = 0; i < SS; i++) {
-      const dx = x + (i + 0.5) / SS - fr.p0[0];
-      const dy = y + (j + 0.5) / SS - fr.p0[1];
-      const s = (dx * fr.v[1] - dy * fr.v[0]) / det;
-      const t = (dy * fr.u[0] - dx * fr.u[1]) / det;
-      const px = Math.floor(((s - 0.5) / wf + 0.5) * por.w);
-      const py = Math.floor(((t - 0.5) / hf + 0.5) * por.h);
-      if (px < 0 || py < 0 || px >= por.w || py >= por.h) continue;
-      const k = (py * por.w + px) * 4;
-      const al = por.d[k + 3]! / 255;
-      if (i === (SS >> 1) && j === (SS >> 1)) {
-        n[y * w + x] = al;
-        for (let ch = 0; ch < 3; ch++) cc[(y * w + x) * 3 + ch] = por.d[k + ch]!;
-      }
-      sa += al;
-      sl += al * (0.3 * por.d[k]! + 0.59 * por.d[k + 1]! + 0.11 * por.d[k + 2]!) / 255;
-    }
-    a[y * w + x] = sa / (SS * SS);
-    l[y * w + x] = sa ? sl / sa : 0;
-  }
-  if (stretch) {                                    // the figure's tones spread over 0.15..0.95, so a dark loadout still reads
-    let lo = 1, hi = 0;
-    for (let k = 0; k < l.length; k++) if (a[k]! > 0.5) { lo = Math.min(lo, l[k]!); hi = Math.max(hi, l[k]!); }
-    for (let k = 0; k < l.length; k++) if (a[k]! > 0) l[k] = 0.15 + 0.8 * (l[k]! - lo) / Math.max(0.05, hi - lo);
-  }
-  return { a, l, n, c: cc, w, h };
-}
-
-/** Box blur of a field over the face, `r` px, so the edge of the figure goes soft (as seen through frost or ice). */
-function blur(f: Float32Array, w: number, h: number, r: number): Float32Array {
-  const o = new Float32Array(f.length);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    let s = 0;
-    let n = 0;
-    for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) {
-      const xx = x + i;
-      const yy = y + j;
-      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
-      s += f[yy * w + xx]!;
-      n++;
-    }
-    o[y * w + x] = s / n;
-  }
-  return o;
-}
-
-const mix = (a: number, b: number, t: number): number => a + (b - a) * t;
-const q = (v: number, n: number): number => Math.round(v * n) / n;       // quantise to n steps, for a pixel-art read
-const noise = (x: number, y: number): number => { const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453; return s - Math.floor(s); };
-
-type Variant = (o: number[], i: number, x: number, y: number, ctx: { f: Field; bl: Float32Array; bl2: Float32Array; edge: number }) => void;
 
 /** A: frosted glass. The face hazes cold white and the prisoner shows through as a soft blue-grey shadow. */
 const frosted: Variant = (o, i, x, y, { bl2, f }) => {
@@ -232,18 +75,6 @@ const mixed: Variant = (o, i, x, y, ctx) => {
   for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, [225, 245, 255][c]!, white);
 };
 
-/** O: the original study's press (tools/blender/review/slab_preview.py): the crew's shading carried into the face colour,
- * its outline cut in (lit top-left, shadowed bottom-right), a 15% tint of the field. */
-const original: Variant = (o, i, _x, _y, { f }) => {
-  const w = f.w;
-  const on = (k: number): boolean => (f.a[k] ?? 0) > 0.5;
-  if (!on(i)) return;
-  let sh = 0.78 + 0.6 * (f.l[i]! - 0.45);
-  if (!on(i - w - 1)) sh *= 1.22;
-  else if (!on(i + w + 1)) sh *= 0.62;
-  const tint = [127, 240, 255];
-  for (let c = 0; c < 3; c++) o[c] = Math.min(255, o[c]! * sh) * 0.85 + tint[c]! * 0.15;
-};
 
 /** Carbonite that keeps the sprite: a relief from the figure's sharp outline (lit top-left), and inside it the crew
  * sprite's own pixels, their luminance at full range in the slab's cold tone; `keep` of the crew's own colour stays. */
@@ -271,12 +102,6 @@ const ALL_VARIANTS: readonly [string, string, Variant][] = [
   ['C pressed under ice', 'dark deep, frozen rim, sheen', ice],
   ['D haze + rim', 'A haze with C rim and sheen', mixed],
 ];
-/** O on a lighter face (the round-1 slabs' face was a pale blue-grey; the game's is darker), `lift` toward it. */
-const originalLight = (lift: number): Variant => (o, i, x, y, ctx) => {
-  const pale = [176, 196, 202];
-  for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, pale[c]!, lift);
-  original(o, i, x, y, ctx);
-};
 /** Stretched variants sample the figure over the whole window (round 1), with its tones spread. */
 const STRETCHED = new Set<Variant>();
 const st = (v: Variant): Variant => { STRETCHED.add(v); return v; };
@@ -298,19 +123,7 @@ function press(sp: Px, mask: Uint8Array, fld: Field | null, v: Variant | null): 
   const x = out.getContext('2d') as CanvasRenderingContext2D;
   const im = x.createImageData(sp.w, sp.h);
   im.data.set(sp.d);
-  if (fld && v) {
-    const bl = blur(fld.a, sp.w, sp.h, 1);
-    const bl2 = blur(fld.a, sp.w, sp.h, 2);
-    for (let yy = 0; yy < sp.h; yy++) for (let xx = 0; xx < sp.w; xx++) {
-      const i = yy * sp.w + xx;
-      if (!mask[i]) continue;
-      let edge = 9;                                 // distance in px from the face's border (to the first non-face pixel)
-      for (let r = 1; r <= 3 && edge === 9; r++) if (!mask[i - r] || !mask[i + r] || !mask[i - r * sp.w] || !mask[i + r * sp.w]) edge = r;
-      const o = [sp.d[i * 4]!, sp.d[i * 4 + 1]!, sp.d[i * 4 + 2]!];
-      v(o, i, xx, yy, { f: fld, bl, bl2, edge });
-      for (let c = 0; c < 3; c++) im.data[i * 4 + c] = Math.max(0, Math.min(255, Math.round(o[c]!)));
-    }
-  }
+  if (fld && v) im.data.set(pressPx(sp, mask, fld, v));
   x.putImageData(im, 0, 0);
   const tex = Texture.from(out);
   tex.source.scaleMode = 'nearest';
