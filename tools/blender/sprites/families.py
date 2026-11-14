@@ -364,6 +364,9 @@ def jobs(name):
         import os
         from . import workbench
         return workbench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), True
+    if name == "desk":          # look study, preview only (not in RENDERED): office desks with a chair, r0
+        from . import desk_study
+        return desk_study.jobs(), "desk"
     if name == "ops_consoles":
         import os
         from . import consoles
