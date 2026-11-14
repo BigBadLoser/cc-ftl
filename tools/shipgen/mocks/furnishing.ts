@@ -108,8 +108,8 @@ const medbays: RoomMock[] = [
 
 const shields: RoomMock[] = [
   {
-    role: 'shields', caption: 'S1 generators in a row', w: 12, h: 4, door: 10,
-    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 5, 0], ['module.shieldGen', 10, 0], ['module.shieldConsole', 4, 2, 2], ['module.battery', 0, 3], ['module.battery', 11, 3]],
+    role: 'shields', caption: 'S1 generators in a row', w: 12, h: 5, door: 10,
+    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 5, 0], ['module.shieldGen', 10, 0], ['module.shieldConsole', 4, 2, 2], ['module.battery', 0, 4], ['module.battery', 11, 4]],
   },
   {
     role: 'shields', caption: 'S2 generators at the ends', w: 12, h: 5, door: 8,
@@ -117,7 +117,14 @@ const shields: RoomMock[] = [
   },
 ];
 
-export const ROWS: RoomMock[][] = [barracks, messes, [...guns, ...medbays], shields];
+const reactors: RoomMock[] = [
+  {
+    role: 'reactor', caption: 'R1 reactors in a row', w: 12, h: 6, door: 6,
+    pieces: [['module.reactor.mk3', 0, 0], ['module.reactor.mk3', 5, 0], ['module.reactor.mk3', 10, 0], ['module.console', 3, 5, 2], ['module.console', 8, 5, 2], [L, 0, 5, 2], [L, 11, 5, 2]],
+  },
+];
+
+export const ROWS: RoomMock[][] = [barracks, messes, [...guns, ...medbays], [...shields, ...reactors]];
 
 /** The sheet as one template, the captions and roles at their rooms, and every placement problem found. */
 export function mock(): { template: ShipTemplate; captions: { x: number; y: number; text: string; cx: number; cy: number }[]; roles: { x: number; y: number; role: RoomRole }[]; problems: string[] } {
