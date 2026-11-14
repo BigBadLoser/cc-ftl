@@ -3,9 +3,9 @@ sitters sit back against the backrest (bench_r13 bn18q), a 2x1 module, four rota
 it, one per seat, facing +v (SEATS: local tiles; src/content/modules.ts must match).
 
 Sprites per rotation r: `module.bench.r<r>` (`module.bench` is the r0 copy), and `module.bench.front.r<r>`, the overlay
-drawn over seated crew: the sprite's pixels where the bench hides a sitter on any seat in any sit_bench frame, grown 1 px
-over the outline ring (as gametable.py). Layering: the bench at K, the sitters at K + 0.02, the front overlay at
-K + 0.03."""
+drawn over seated crew: the sprite's pixels where the bench hides a sitter on any seat in any sit_bench frame, grown 1 px,
+less every pixel where any sitter shows in front of the bench. Layering: the bench at K, the sitters at K + 0.02, the
+front overlay at K + 0.03."""
 import math
 
 import numpy as np
@@ -82,11 +82,12 @@ def items(rot):
     objs = body(rot)
     c, op, g, ox, oy, al = E.render_sprite("x", "prop", objs)
     W, H = op.shape[1] - 2, op.shape[0] - 2
-    rgb, a = core.render(W, H, "color")
-    ring = op & ~np.pad(post.downsample(rgb, a > 0.5, core.SS, 8, False)[1], 1)      # the sprite's outline px
     drop(objs)
     hit, seen = occluders(rot, W, H)
-    fr = op & (hit | (grow(hit) & (ring | ~seen)))
+    # One overlay serves all three seats, so a pixel where the bench hides one sitter but another sitter shows in front of
+    # the bench is left out (else an armrest between two seats is drawn over the nearer sitter's lap); a sitter's own
+    # seat (pan, backrest, both armrests) is already cut out of its sprite by the sit_bench clip.
+    fr = op & grow(hit) & ~seen
     gb, gf = g.copy(), g.copy()
     gb[fr] = 0
     gf[~fr] = 0
