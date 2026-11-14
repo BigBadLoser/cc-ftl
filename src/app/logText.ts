@@ -186,6 +186,12 @@ export function createDescriber(sim: Sim) {
       case 'scene.aid': return { kind: 'story', tone: e.state === 'broken' ? 'bad' : 'good', text: e.state === 'agreed' ? `${shipName(e.ship)} accepts your help: a repair party can go aboard` : e.state === 'done' ? `The repairs on ${shipName(e.ship)} are done: your party comes home` : `${shipName(e.ship)} calls off your help`, ...onShip(e.ship) };
       case 'scene.observed': return e.text ? { kind: 'story', tone: e.tone, text: e.text, ...(e.ship ? onShip(e.ship) : {}) } : null;
       case 'game.lost': return { kind: 'lost', tone: 'bad', text: 'Game over' };
+      case 'stasis.sealed': return { kind: 'crew', tone: 'info', text: `${crewName(e.by)} sealed ${crewName(e.crew)} in a stasis slab`, ...sub(crewSubject(sim, e.by)) };
+      case 'stasis.stowed': {
+        const m = sim.world.get(e.wheel, ModuleC);
+        return { kind: 'crew', tone: 'good', text: `${crewName(e.crew)} is held in the stasis wheel`, ...(m ? { subject: tileAt(m.x, m.y) } : {}) };
+      }
+      case 'stasis.thawed': return { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) };
       case 'ship.letGo': return { kind: 'ship.captured', tone: 'warn', text: `${shipName(e.ship)}: ${e.crew} crew let go, the ship is left a derelict`, ...onShip(e.ship) };
       case 'crew.released': return { kind: 'crew', tone: 'good', text: `${e.name} released${e.faction ? `: ${factionName(e.faction)} thinks better of you` : ''}` };
       default: return describeBoarding(sim, e);

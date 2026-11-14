@@ -5,11 +5,11 @@ import { makeHaul, warnDue } from '../items/plan';
 import { isCargo } from '../items/stacks';
 import { nearestStorageFor, refKey, reservations } from '../items/stock';
 import type { Sim } from '../sim';
-import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
+import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL, WARN_DEBOUNCE } from '../tuning';
 
 /**
  * Clears the floor: every loose stack not already claimed gets a haul job to the nearest storage
- * module that accepts the item and has room (counting space already promised to other hauls).
+ * module that accepts the item, has room (counting space already promised to other hauls) and can be carried to from the stack (`canCarry`).
  * With nowhere to put it, a debounced 'storage.full' event is emitted for that stack. Loot on an away site is not for the
  * site's own storage: the site's party hauls it into the site's staging zone (away/haul.ts `planCarry`).
  */
@@ -19,6 +19,7 @@ export function haulJobsSystem(sim: Sim): void {
   for (const id of sim.world.query(ItemStackC)) {
     const stack = sim.world.get(id, ItemStackC);
     if (!stack || isCargo(sim, stack.item) || partyLoot(sim, shipIdAt(sim, stack.x, stack.y))) continue;
+    if (stack.stuckAt !== undefined && sim.tick - stack.stuckAt < WARN_DEBOUNCE) continue; // its last hauler could not get it anywhere (#476)
     const avail = stack.count - (res.out.get(refKey('floor', id, stack.item)) ?? 0);
     if (avail <= 0) continue;
     const dest = nearestStorageFor(sim, shipIdAt(sim, stack.x, stack.y), stack.item, stack, res);

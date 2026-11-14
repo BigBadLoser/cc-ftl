@@ -1,6 +1,7 @@
 import { defineComponent } from '../ecs';
 import type { HaulData } from '../items/components';
 import type { ItemQty, ScrapType } from '../registry';
+import type { StasisJob } from '../stasis/components';
 
 /**
  * Shared contract for M2 (crew & jobs). Sim systems write these; render/ui only read them.
@@ -157,6 +158,8 @@ export interface Job {
   assemble?: { role?: string; vehicle?: string };
   /** For 'craft' jobs: the recipe being made. */
   craft?: { recipe: string };
+  /** For 'stasis' jobs: the phase and its stops (stasis/components.ts); `target` is the prisoner. */
+  stasis?: StasisJob;
   /** For 'plant' jobs: the crop (CropDef id) going into the bed `target`. */
   crop?: string;
   /** For suitUp: the job the crew member reserved first and picks up again once the suit is on. */
@@ -213,7 +216,9 @@ export type JobKind =
   /** passage: a seat on the shuttle `target` serving the away site `site`, taken at its boarding tile (x, y) (away/passage.ts). */
   | 'passage'
   /** search: an inspector searches the module `target` for contraband from beside it (inspect/search.ts). */
-  | 'search';
+  | 'search'
+  /** stasis: seal the prisoner `target` into a stasis slab and cart it to a stasis wheel, or cart a slab off the floor (stasis/jobs.ts). */
+  | 'stasis';
 
 /** Hit points of a crew member. At 0 they are downed (see DownedC). */
 export interface Health {

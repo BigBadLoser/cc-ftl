@@ -9,9 +9,16 @@ import { CarryingC, ItemStackC, StorageC } from './components';
 import { destroyJob } from './stacks';
 import { storageTake } from './storage';
 import { takeFromStack } from './stacks';
+import { StasisWheelC } from '../stasis/components';
+import { emptySlabsIn } from '../stasis/query';
+import { takeEmptySlabs } from '../stasis/freeze';
+import { SLAB_ITEM } from '../stasis/tuning';
 
-/** Where a held item is: cargo storage, a loose stack, a wielded weapon, a carried load, a module's fitted upgrade or an upgrade handed to a fit job. */
-export type HeldWhere = 'storage' | 'stack' | 'wielded' | 'carried' | 'fitted' | 'fitting';
+/**
+ * Where a held item is: cargo storage, a loose stack, a wielded weapon, a carried load, a module's fitted upgrade, an upgrade handed to a fit job,
+ * or empty stasis slabs standing in a wheel's slots.
+ */
+export type HeldWhere = 'storage' | 'stack' | 'wielded' | 'carried' | 'fitted' | 'fitting' | 'slotted';
 
 export interface Held {
   item: string;
@@ -91,6 +98,10 @@ export function heldItems(sim: Sim, opts: HeldOptions = {}): Held[] {
           sim.events.emit({ type: 'module.upgradeFitted', moduleId: id, item: null, ship: shipIdOf(sim, m) });
         },
       });
+    }
+    for (const id of w.query(StasisWheelC, ModuleC)) {
+      const n = emptySlabsIn(sim, id);
+      if (n > 0 && ships.has(shipIdOf(sim, w.get(id, ModuleC)))) out.push({ item: SLAB_ITEM, count: n, where: 'slotted', holder: id, remove: (k) => void takeEmptySlabs(sim, id, k ?? n) });
     }
     for (const id of w.query(JobC)) {
       const j = w.get(id, JobC);

@@ -1,4 +1,5 @@
 import { content } from '../content';
+import { debugShipId } from '../content/ships/debugShip';
 import { starterShips } from '../content/ships/starterShips';
 import { deserialize, homeShip, newGame, nodeOf, SAVE_VERSION, serialize, ShipC, startingRoles, type CrewPick, type Sim } from '../sim';
 import { AUTO_ID, AUTO_IDS, BROKEN_ID, PRECOMBAT_ID, isAutoId, saveStore, type SaveMeta } from './saveStore';
@@ -223,9 +224,15 @@ export function titleWanted(params: URLSearchParams): boolean {
   return !skip && !params.has('scenario') && !params.has('seed') && !starterOf(params.get('starter'));
 }
 
-/** The starter ship a `?starter=` debug start names (`wayfarer` or `ship.wayfarer`), or undefined when it names none. */
+/**
+ * The starter ship a `?starter=` debug start names (`wayfarer` or `ship.wayfarer`), or undefined when it names none. The debug hull (`?starter=debug`)
+ * is named here but is not in `starterShips`, so the new-game picker never offers it.
+ */
 export function starterOf(param: string | null) {
-  return param ? starterShips.find((s) => s.id === `ship.${param}` || s.id === param) : undefined;
+  if (!param) return undefined;
+  const id = param.startsWith('ship.') ? param : `ship.${param}`;
+  if (id === debugShipId) return { id };
+  return starterShips.find((s) => s.id === id);
 }
 
 function skipTitleOnce(): void {

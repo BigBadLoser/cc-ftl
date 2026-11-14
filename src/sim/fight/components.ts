@@ -50,5 +50,7 @@ export const SurrenderedC = defineComponent<Surrendered>('surrendered');
 /** A captured enemy crew member: surrendered or downed when their ship was taken, and held in place (also carries SurrenderedC). */
 export interface Prisoner {
   tick: number;
+  /** The player marked them for sealing in stasis (`prisoner.seal`): crew seal only marked prisoners (stasis/order.ts). */
+  seal?: true;
 }
 export const PrisonerC = defineComponent<Prisoner>('prisoner');

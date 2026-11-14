@@ -6,6 +6,7 @@ import { costsOf } from './logisticsSnapshot';
 import { buildFood } from './foodSnapshot';
 import { buildPlot } from './plotSnapshot';
 import { buildReserve, buildReserves } from './reserveSnapshot';
+import { buildWheel } from './stasisSnapshot';
 import { hasFuel } from '../sim/modules/energy';
 import { isIdle } from '../sim/modules/draw';
 import { buildHeat } from './heatSnapshot';
@@ -36,7 +37,7 @@ export function buildModuleList(sim: Sim): UiModule[] {
     out.push({
       id, ship: home, def: m.def, name: moduleNameOf(sim, id), x: m.x, y: m.y, local: localOf(sim, shipIdOf(sim, m), m.x, m.y), hp: Math.round(m.hp), maxHp: def.maxHp, repairFirst: !!m.repairFirst,
       powerPriority: m.powerPriority, enabled: m.enabled, powered: m.powered && m.enabled && m.hp > 0, power: def.power,
-      reserve: buildReserve(sim, id), storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, plot: def.plot ? buildPlot(sim, id) : null, idle: isIdle(sim, id, def), bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
+      reserve: buildReserve(sim, id), wheel: def.stasisWheel ? buildWheel(sim, id) : null, storage: !!def.storage, crafting: !!def.crafting, research: !!def.research, plot: def.plot ? buildPlot(sim, id) : null, idle: isIdle(sim, id, def), bay: def.robotBay ? buildRobotBay(sim, id) : null, droneBay: def.droneBay ? buildDroneBay(sim, id) : null,
       upgradeSlot: def.upgradeSlot ? upgradeSlotOf(sim, id) : null,
     });
   }

@@ -34,7 +34,7 @@ import { BodyC, ModuleC, shipRoomQuality, ROOM_QUALITY_EVERY, footprintTiles, NO
 import { shipGrid } from './sim/regions';
 import { homeShip } from './sim/index';
 import { buildFoeModule } from './app/foeModule';
-import { startScenario as scenarioStart } from './app/scenarios';
+import { startScenario as scenarioStart, scenarioStarters } from './app/scenarios';
 import { createSignalFeed } from './app/signals';
 import { keymap } from './ui/keymap';
 import { isTypingTarget, modalOpen } from './ui/keys';
@@ -64,7 +64,9 @@ let gameCanvas: HTMLCanvasElement | undefined;
 let artReadyResolve: () => void = () => {};
 const artReady = new Promise<void>((res) => (artReadyResolve = res));
 // The saved game if there is one (`?seed=` forces a new game of that seed), else a new one.
-const start = await startGame(new URLSearchParams(location.search).get('seed'), new URLSearchParams(location.search).get('starter'));
+const startParams = new URLSearchParams(location.search);
+const scenarioName = startParams.get('scenario');
+const start = await startGame(startParams.get('seed'), startParams.get('starter') ?? (scenarioName === null ? null : scenarioStarters[scenarioName] ?? null));
 const sim = start.sim;
 const bridge = createBridge(sim, () => probe);
 const controller = createController(sim, bridge);

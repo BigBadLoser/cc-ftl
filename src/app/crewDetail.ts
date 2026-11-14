@@ -5,6 +5,7 @@ import {
   statBreakdown, suitAir, TraitsC, suitDef, traitDefs, wielded, xpProgress, type Sim, type StatBreakdown, type StatName,
 } from '../sim';
 import { CarryingC } from '../sim/items/components';
+import { slabDraining, slabInfo } from '../sim/stasis/query';
 import { TICK_HZ } from '../sim/time';
 import { breakNow, strainOf } from './breakText';
 import { buildBonds } from './bondSnapshot';
@@ -88,6 +89,8 @@ function conditionsOf(sim: Sim, id: number): UiCondition[] {
   const downed = sim.world.get(id, DownedC);
   if (downed) out.push({ key: 'downed', label: 'Downed', text: downed.stabilized ? 'stabilized in a bed' : `bleeding out in ${Math.round(downed.bleed)} s`, pct: null, tone: downed.stabilized ? 'warn' : 'bad' });
   if (sim.world.has(id, SurrenderedC)) out.push({ key: 'surrendered', label: sim.world.has(id, PrisonerC) ? 'Prisoner' : 'Surrendered', text: 'out of the fight', pct: null, tone: 'bad' });
+  const slab = slabInfo(sim, id);
+  if (slab) out.push({ key: 'stasis', label: 'In stasis', text: slabDraining(sim, id) ? 'on its reserve' : 'frozen', pct: Math.round(slab.reserve * 100), tone: slabDraining(sim, id) ? 'bad' : 'ok' });
   if (sim.world.has(id, SuitC)) {
     const max = suitDef(sim).airSec;
     const air = suitAir(sim, id);
