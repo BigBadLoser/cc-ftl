@@ -334,7 +334,6 @@
       {"def":"module.med_bed","x":15,"y":56,"rot":0},
       {"def":"module.med_bed","x":17,"y":56,"rot":0},
       {"def":"module.med_bed","x":19,"y":56,"rot":0},
-      {"def":"module.med_bed","x":21,"y":56,"rot":0},
       {"def":"module.recovery","x":22,"y":58,"rot":2},
       {"def":"module.med_bed","x":29,"y":56,"rot":1},
       {"def":"module.med_bed","x":29,"y":58,"rot":1},
@@ -500,10 +499,9 @@
       140,
       141,
       142,
-      143,
-      144
+      143
     ],
-    "nextModuleId": 145,
+    "nextModuleId": 144,
     "extra": {}
   },
   "edited": {
@@ -827,7 +825,6 @@
       {"def":"module.med_bed","x":15,"y":56,"rot":0},
       {"def":"module.med_bed","x":17,"y":56,"rot":0},
       {"def":"module.med_bed","x":19,"y":56,"rot":0},
-      {"def":"module.med_bed","x":21,"y":56,"rot":0},
       {"def":"module.recovery","x":22,"y":58,"rot":2},
       {"def":"module.med_bed","x":29,"y":56,"rot":1},
       {"def":"module.med_bed","x":29,"y":58,"rot":1},
@@ -993,10 +990,9 @@
       140,
       141,
       142,
-      143,
-      144
+      143
     ],
-    "nextModuleId": 145,
+    "nextModuleId": 144,
     "extra": {}
   },
   "notes": [],

@@ -15,10 +15,11 @@ const SIZE: Record<string, number> = { [MD]: 3, [BL]: 2, [PD]: 2 };
 type Rule = (w: number, h: number, d: number) => Piece[];
 const seats = (x: number, y: number): Piece[] => [[C, x, y - 1, 0], [C, x + 1, y - 1, 0], [C, x, y + 1, 2], [C, x + 1, y + 1, 2]];
 const range = (from: number, to: number, step: number): number[] => { const out: number[] = []; for (let v = from; step > 0 ? v <= to : v >= to; v += step) out.push(v); return out; };
-/** Beds a tile apart along a wall from x0 to x1, a locker in each gap between two of them. */
+/** Beds in pairs along a wall from x0 toward x1, a locker between the two of a pair, a tile between pairs. */
 const bunks = (x0: number, x1: number, y: number, rot: 0 | 2): Piece[] => {
-  const beds = range(x0, x1, x1 >= x0 ? 2 : -2);
-  return [...beds.map((x): Piece => [B, x, y, rot]), ...beds.slice(1).map((x, i): Piece => [L, (x + (beds[i] as number)) / 2, rot === 0 ? y : y + 1, rot])];
+  const dir = x1 >= x0 ? 1 : -1, out: Piece[] = [];
+  for (let p = x0; dir * (x1 - (p + 2 * dir)) >= 0; p += 4 * dir) out.push([B, p, y, rot], [L, p + dir, rot === 0 ? y : y + 1, rot], [B, p + 2 * dir, y, rot]);
+  return out;
 };
 /** Tables of two with their chairs, centred along y, `per` tables to a block, blocks two tiles apart, from x0 to x1. */
 const tables = (x0: number, x1: number, y: number, per: number): Piece[] => {
@@ -30,10 +31,10 @@ const tables = (x0: number, x1: number, y: number, per: number): Piece[] => {
 const rowsOf = (h: number): number[] => range(1, h - 3, 4);
 
 const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
-  'B1 bunks on both walls': { role: 'quarters', rule: (w, h, d) => [...bunks(0, w - 1 - ((w - 1) % 2), 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)] },
+  'B1 bunk pairs on both walls': { role: 'quarters', rule: (w, h, d) => [...bunks(0, w - 1, 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)] },
   'B2 alcoves, game table': {
     role: 'quarters',
-    rule: (w, h) => [...range(0, h - 1, 2).flatMap((y): Piece[] => [[B, 0, y, 1], [B, w - 2, y, 1]]), ...((n) => range(0, n - 1, 1).map((i): Piece => [GT, Math.floor((w - (4 * n - 2)) / 2) + 4 * i, Math.floor((h - 1) / 2), 0]))(Math.max(1, Math.floor((w - 4) / 5))), [L, Math.floor(w / 2), 0, 0]],
+    rule: (w, h) => [...range(0, h - 3, 4).flatMap((y): Piece[] => [[B, 0, y, 1], [L, 0, y + 1, 3], [B, 0, y + 2, 1], [B, w - 2, y, 1], [L, w - 1, y + 1, 1], [B, w - 2, y + 2, 1]]), ...((n) => range(0, n - 1, 1).map((i): Piece => [GT, Math.floor((w - (4 * n - 2)) / 2) + 4 * i, Math.floor((h - 1) / 2), 0]))(Math.max(1, Math.floor((w - 4) / 5))), [L, Math.floor(w / 2), 0, 0]],
   },
   'B3 two bays, shared tables': {
     role: 'quarters',
@@ -46,16 +47,17 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
     role: 'support',
     rule: (w, h) => [[G, 0, 0, 3], [G, 0, 2, 3], [LS, 0, h - 1, 1], [GT, 4, 1, 0], ...tables(7, w - 1, 1, 1), ['module.arcade', w - 1, h - 1, 2]],
   },
-  'D1 beds along a wall': { role: 'medbay', rule: (w, h) => [...range(0, w - 3, 2).map((x): Piece => [MB, x, 0, 0]), [RP, w - 2, h - 2, 2]] },
+  'D1 beds along a wall': { role: 'medbay', rule: (w, h) => [...range(0, w - 4, 2).map((x): Piece => [MB, x, 0, 0]), [RP, w - 2, h - 2, 2]] },
   'D2 bays, pod in the middle': { role: 'medbay', rule: (w, h) => [...range(0, h - 2, 2).flatMap((y): Piece[] => [[MB, 0, y, 1], [MB, w - 2, y, 1]]), [RP, Math.floor(w / 2) - 1, 0, 0]] },
 };
 
 /** Units (gens, reactors) of width s spread across the room, two batteries in the middle of each gap between two. */
-const spread = (def: string, k: number, s: number): Rule => (w) => {
+const spread = (def: string, k: number, s: number, along = false): Rule => (w) => {
   const gap = k > 1 ? Math.floor((w - k * s) / (k - 1)) : 0;
   return range(0, k - 1, 1).flatMap((i): Piece[] => {
     const x = i * (s + gap), mid = x + s + Math.floor((gap - 1) / 2);
-    return [[def, x, 0], ...(i < k - 1 ? [[BT, mid, 0], [BT, mid, 1]] as Piece[] : [])];
+    const bats: Piece[] = along ? range(0, 2, 1).map((j): Piece => [BT, x + s + Math.floor((gap - 3) / 2) + j, 0]) : [[BT, mid, 0], [BT, mid, 1]];
+    return [[def, x, 0], ...(i < k - 1 ? bats : [])];
   });
 };
 /** G1: guns in a row across the middle, a tile apart; batteries in two corners. */
@@ -92,18 +94,18 @@ const at = (name: string, sizes: [number, number][]): RoomMock[] => { const r = 
 
 const GUNS5 = [MD, BL, MD, BL, PD];
 export const RULE_ROWS: RoomMock[][] = [
-  at('B1 bunks on both walls', [[8, 6], [11, 6], [15, 6], [11, 8]]),
+  at('B1 bunk pairs on both walls', [[8, 6], [11, 6], [15, 6], [11, 8]]),
   at('B2 alcoves, game table', [[8, 6], [11, 6], [15, 6], [11, 8]]),
   at('B3 two bays, shared tables', [[9, 6], [11, 6], [15, 6], [11, 8]]),
   [...at('C1 cabin', [[3, 6], [4, 5], [5, 4], [3, 4]]), ...at('D1 beds along a wall', [[7, 4], [9, 4], [13, 5]])],
   at('M1 table grid', [[11, 5], [14, 5], [18, 6], [14, 9]]),
   at('M2 tables in pairs', [[11, 5], [14, 5], [18, 6], [14, 9]]),
-  [...at('M3 galley corner, tables in line', [[11, 5], [14, 5], [18, 6]]), ...at('D2 bays, pod in the middle', [[7, 4], [9, 4], [11, 6]])],
+  [...at('M3 galley corner, tables in line', [[11, 5], [14, 5], [18, 6]]), ...at('D2 bays, pod in the middle', [[9, 4], [11, 4], [11, 6]])],
   [room('G1', 'weapons', g1([MD, BL, PD]), 12, 7), room('G1', 'weapons', g1(GUNS5), 18, 7), room('G1', 'weapons', g1([MD, MD, BL, BL, PD, PD]), 22, 8)],
   [room('G2', 'weapons', g2([MD, BL, PD]), 10, 8), room('G2', 'weapons', g2(GUNS5), 15, 8), room('G2', 'weapons', g2([MD, BL, MD, BL, PD, PD]), 15, 8), room('G2', 'weapons', g2([MD, MD, BL, BL, PD, PD, BL]), 19, 8)],
   [room('G3', 'weapons', g3([MD, MD, BL, PD]), 13, 8), room('G3', 'weapons', g3([MD, MD, BL, PD]), 15, 10), room('G3', 'weapons', g3([BL, PD, BL, PD]), 9, 7)],
   [room('S1', 'shields', spread('module.shieldGen', 2, 2), 9, 5), room('S1', 'shields', spread('module.shieldGen', 3, 2), 12, 5), room('S1', 'shields', spread('module.shieldGen', 4, 2), 17, 5)],
-  [room('R1', 'reactor', spread('module.reactor.mk3', 2, 2), 9, 6), room('R1', 'reactor', spread('module.reactor.mk3', 3, 2), 12, 6), room('R1', 'reactor', spread('module.reactor.mk3', 4, 2), 17, 6)],
+  [room('R1', 'reactor', spread('module.reactor.mk3', 2, 2, true), 9, 6), room('R1', 'reactor', spread('module.reactor.mk3', 3, 2, true), 12, 6), room('R1', 'reactor', spread('module.reactor.mk3', 4, 2, true), 17, 6)],
 ];
 
 export function mock(): Sheet { return sheet(RULE_ROWS, 'Furnishing rules'); }

@@ -78,7 +78,7 @@ const guns: RoomMock[] = [
 const medbays: RoomMock[] = [
   {
     role: 'medbay', caption: 'D1 beds along a wall', w: 9, h: 4, door: 4,
-    pieces: [...[0, 2, 4, 6].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2]],
+    pieces: [...[0, 2, 4].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2]],
   },
   {
     role: 'medbay', caption: 'D2 bays, pod in the middle', w: 9, h: 4, door: 4,
@@ -159,6 +159,22 @@ export function sheet(ROWS: RoomMock[][], name: string): Sheet {
         }
       }
       if (taken.has(`${fx + r.door},${fy + r.h - 1}`)) problems.push(`${r.caption}: the door is blocked`);
+      // Reach: open floor from the door, not across furniture (beds included); every piece used from a tile in it.
+      const reach = new Set<string>(), todo: [number, number][] = [[fx + r.door, fy + r.h - 1]];
+      while (todo.length > 0) {
+        const [x0, y0] = todo.pop() as [number, number], k = `${x0},${y0}`;
+        if (reach.has(k) || taken.has(k) || x0 < fx || y0 < fy || x0 >= fx + r.w || y0 >= fy + r.h) continue;
+        reach.add(k);
+        todo.push([x0 + 1, y0], [x0 - 1, y0], [x0, y0 + 1], [x0, y0 - 1]);
+      }
+      for (const [def, px, py, rot = 0] of r.pieces) {
+        const d = defs[def];
+        if (!d) continue;
+        const at = accessTiles(d, fx + px, fy + py, rot);
+        const near = at.length > 0 ? at : footprintTiles(d, fx + px, fy + py, rot).flatMap((t) => [{ x: t.x + 1, y: t.y }, { x: t.x - 1, y: t.y }, { x: t.x, y: t.y + 1 }, { x: t.x, y: t.y - 1 }]);
+        if (!near.some((t) => reach.has(`${t.x},${t.y}`))) problems.push(`${r.caption}: ${def} at ${px},${py} can't be reached from the door`);
+      }
+      if (reach.size + taken.size < r.w * r.h) problems.push(`${r.caption}: ${r.w * r.h - reach.size - taken.size} floor tile(s) cut off`);
       // The door, and a spur from it down to the corridor.
       const dx = fx + r.door, dy = fy + r.h;
       for (let y = dy + 1; y < hallTop; y++) { set(dx - 1, y, '#'); set(dx, y, '_'); set(dx + 1, y, '#'); }
