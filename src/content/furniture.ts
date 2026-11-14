@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../sim';
+import { items } from './items';
 
 /**
  * Room furniture the ship generator's room recipes lay out (src/sim/shipgen/rooms). Mess tables and chairs have art
@@ -11,6 +12,9 @@ const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': '
 /** Scrap cages hold only scrap. Their sprite has no per-kind variants (art kind '': `module.storage_scrap.<fill>`). */
 const SCRAP_IDS = ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_weapons', 'item.scrap_comfort'];
 const SCRAP_ART = Object.fromEntries(SCRAP_IDS.map((i) => [i, '']));
+
+/** Item ids carrying any of these tags (the special stores' filters follow the item list as it grows). */
+const tagged = (...tags: string[]): string[] => Object.entries(items).filter(([, d]) => d.tags.some((t) => tags.includes(t))).map(([id]) => id);
 
 export const furniture = {
   // 2x1 table; crew sit on chairs beside its long sides. Not in the sim yet: eating at a table.
@@ -89,6 +93,31 @@ export const furniture = {
     description: "A large barred cage. Takes only scrap.",
     asset: 'module.storage_scrap_large', footprint: [2, 3], solid: true, access: [0, 3], power: 0,
     flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageAccepts: SCRAP_IDS, storageArt: SCRAP_ART,
+  },
+  // The storage set's special stores (art: storage_set.py, front = +v, the side crew work them from). Each takes only its own goods.
+  'module.storage_armory': {
+    scrap: 'comfort',
+    name: 'Armory locker',
+    category: 'storage',
+    description: "A secure locker behind a grille. Takes only weapons and ammunition.",
+    asset: 'module.storage_armory', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 100, cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 2 }], storage: { capacity: 12 }, storageAccepts: tagged('weapon', 'ammo'),
+  },
+  'module.storage_cold': {
+    scrap: 'comfort',
+    name: 'Cold store',
+    category: 'storage',
+    description: "Glass-doored shelves for food. Takes only food and crops.",
+    asset: 'module.storage_cold', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
+    flammability: 0.2, maxHp: 80, buildWork: 90, cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 2 }, { item: 'item.polymer', count: 2 }], storage: { capacity: 16 }, storageAccepts: tagged('food', 'crop'),
+  },
+  'module.storage_tank': {
+    scrap: 'comfort',
+    name: 'Storage tank',
+    category: 'storage',
+    description: "An upright pressure tank. Takes only water and oxygen.",
+    asset: 'module.storage_tank', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
+    flammability: 0.3, maxHp: 140, buildWork: 110, cost: [{ item: 'item.metal', count: 14 }], storage: { capacity: 20 }, storageAccepts: ['item.water', 'item.oxygen'],
   },
   // A freight container, opened from the doors on its short end (rotation 0: the +y end). Cargo holds pack them end-on to their walkway.
   'module.cargo_container': {
