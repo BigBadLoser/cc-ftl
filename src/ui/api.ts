@@ -166,6 +166,8 @@ export interface UiCrew {
   arms: { item: string; name: string; count: number }[];
   surrendered: boolean;
   prisoner: boolean;
+  /** A prisoner's seal order (stasis/order.ts): marked for sealing, and why they cannot be (no wheel with room...). Null for anyone else. */
+  seal: { marked: boolean; refusal: string | null } | null;
   inert: boolean;
   fight: UiFight | null;
   /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is outside on the hull. Null when not suited. */
@@ -972,7 +974,7 @@ export interface UiPrize {
   name: string;
   from: string;
   value: number;
-  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered' }[];
+  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered'; seal: { marked: boolean; refusal: string | null } }[];
   crewAboard: number;
 }
 

@@ -20,6 +20,7 @@
           <li>
             <span>{c.name} <small>{c.role}</small></span>
             <span class="dim">{c.state}, {c.hp}/{c.maxHp}</span>
+            <button data-testid="seal-{c.id}" disabled={!c.seal.marked && !!c.seal.refusal} title={c.seal.marked ? 'Call off the seal' : (c.seal.refusal ?? 'Seal them in a stasis slab')} onclick={() => api.dispatch({ type: 'prisoner.seal', crew: c.id, on: !c.seal.marked })}>{c.seal.marked ? 'Cancel seal' : 'Seal'}</button>
             <button data-testid="release-{c.id}" title="Let them go: their faction thinks better of you" onclick={() => api.dispatch({ type: 'prisoner.release', crew: c.id })}>Release</button>
           </li>
         {:else}
@@ -27,6 +28,8 @@
         {/each}
       </ul>
       {#if p.prisoners.length > 1}
+        {@const sealable = p.prisoners.filter((c) => !c.seal.marked && !c.seal.refusal)}
+        <button class="full" data-testid="seal-all" disabled={sealable.length === 0} title={sealable.length === 0 ? 'Every prisoner is marked or cannot be sealed' : 'Mark every prisoner for sealing in stasis'} onclick={() => { for (const c of sealable) api.dispatch({ type: 'prisoner.seal', crew: c.id, on: true }); }}>Seal all</button>
         <button class="full" data-testid="release-all" onclick={() => { for (const c of p.prisoners) api.dispatch({ type: 'prisoner.release', crew: c.id }); }}>Release all</button>
       {/if}
       {#if confirm === p.ship}
@@ -49,7 +52,7 @@
   .dim { color: var(--dim); }
   .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-  li { display: grid; grid-template-columns: 1fr auto 76px; align-items: center; gap: 8px; }
+  li { display: grid; grid-template-columns: 1fr auto 96px 76px; align-items: center; gap: 8px; }
   li .dim { white-space: nowrap; }
   li small { color: var(--dim); }
   .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }

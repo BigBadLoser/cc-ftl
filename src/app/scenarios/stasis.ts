@@ -93,7 +93,7 @@ export const newHostiles = (sim: Sim, before: ReadonlySet<number>): number[] =>
 
 /**
  * `?scenario=stasis` (#116): a stasis wheel (ten empty slabs) near the middle of the ship and two hostile prisoners standing by the crew, plus two
- * spare empty slabs on the floor. The crew seal each prisoner where they stand and cart the slab to the wheel on their own. `&unpowered`: once both
+ * spare empty slabs on the floor. Both are marked for sealing, so the crew seal each prisoner where they stand and cart the slab to the wheel on their own. `&unpowered`: once both
  * are in, the wheel is switched off, so the stasis alert runs and, a game hour later, the prisoners thaw (switch it back on in time to stop it).
  */
 export const stasis: Scenario = ({ sim, params, dispatch, setSpeed }) => {
@@ -104,7 +104,10 @@ export const stasis: Scenario = ({ sim, params, dispatch, setSpeed }) => {
   const imprison = (): void => {
     const caught = newHostiles(sim, before);
     if (caught.length === 0) return void setTimeout(imprison, 200);
-    for (const id of caught) dispatch({ type: 'debug.imprison', crew: id });
+    for (const id of caught) {
+      dispatch({ type: 'debug.imprison', crew: id });
+      dispatch({ type: 'prisoner.seal', crew: id, on: true }); // crew seal only a marked prisoner
+    }
     if (!params.has('unpowered')) return;
     const wheel = sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === WHEEL);
     const cut = (): void => {

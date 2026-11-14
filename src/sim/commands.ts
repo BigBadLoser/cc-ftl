@@ -198,6 +198,8 @@ export type Command =
   /** Answer a beaten ship (`Ship.yielded`: every crew member subdued, none of yours can reach it): 'letGo' (the crew leave, the ship is a derelict) or 'takePrisoners' (it is a prize, its crew prisoners). */
   /** Release a prisoner (capture/settle.ts): they leave and their faction thinks a little better of the player. */
   | { type: 'prisoner.release'; crew: number }
+  /** Mark a prisoner for sealing in stasis (`on`) or call the mark off (stasis/order.ts): crew seal and cart only marked prisoners. Refused with a reason when it cannot be. */
+  | { type: 'prisoner.seal'; crew: number; on: boolean }
   | { type: 'ship.settle'; ship: number; choice: 'letGo' | 'takePrisoners' }
   /** Order a drafted (or about to be) crew member with the hacking skill to hack an enemy AI core: a job of HACK_SEC. */
   | { type: 'crew.hack'; id: number; module: number }
