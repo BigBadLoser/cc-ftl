@@ -64,10 +64,11 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   const specs = asks.map((a) => a.spec), bySize = (a: RoomSpec, b: RoomSpec): number => b.w * b.h - a.w * a.h;
   // A corner with shoulders is all curve, with no straight end for an annex to stand on: it takes the biggest rooms
   // without one, whatever their department, so no corner is left a gallery while the band is short.
-  // A gun bay or crew quarters never: stretched over a whole curve they are a hall with a gun or two beds in it.
+  // A gun bay or crew quarters never: stretched over a whole curve they are a hall with a gun or two beds in it. Nor a
+  // hangar: its bay is a straight pit.
   // Common rooms first.
   const commonsFirst = (a: RoomSpec, b: RoomSpec): number => Number(b.dept === 'commons') - Number(a.dept === 'commons') || bySize(a, b);
-  const halls = specs.filter((r) => !r.cabin && !front?.(r) && (s.shoulders ? !r.annex && !r.annexed && r.role !== 'weapons' && r.role !== 'quarters' : r.dept === 'commons')).sort(s.shoulders ? commonsFirst : bySize);
+  const halls = specs.filter((r) => !r.cabin && !front?.(r) && (s.shoulders ? !r.annex && !r.annexed && r.role !== 'weapons' && r.role !== 'quarters' && !r.vehicle : r.dept === 'commons')).sort(s.shoulders ? commonsFirst : bySize);
   // The corners the outline has (an arc lacks some), in the order they are given rooms: halls to opposite corners first.
   const order = (s.cut > 2 ? [1, 3, 0, 2] : [0, 1, 2, 3]).filter((k) => cornersOf(s).includes(k));
   const given = s.cut > 2 ? halls : specs.filter((r) => r.role === 'weapons').sort(bySize);

@@ -32,8 +32,10 @@ describe('station program', () => {
     }
     expect(programOf('station.farming', 'station', 1).rooms.some((r) => r.role === 'farm')).toBe(true);
     expect(programOf('station.military', 'hub', 1).rooms.filter((r) => r.mods.includes('module.vehicle_bay'))).toHaveLength(2);
+    // Every station keeps a shuttle.
+    for (const id of Object.keys(stations)) for (const size of ['outpost', 'station', 'hub'] as const) expect(programOf(id, size, 1).rooms.some((r) => r.mods.includes('module.vehicle_bay')), `${id} ${size}`).toBe(true);
     // A mining station's pod deck: one hangar with a bay for every pod of its tier.
-    const decks = programOf('station.mining', 'station', 1).rooms.filter((r) => r.role === 'hangar');
+    const decks = programOf('station.mining', 'station', 1).rooms.filter((r) => r.mods.includes('module.pod_bay'));
     expect(decks.map((r) => r.mods)).toEqual([Array<string>(stations['station.mining'].tiers.station.pods ?? 0).fill('module.pod_bay')]);
   });
 });
