@@ -21,7 +21,6 @@ from .cmbkit import Frame
 
 IDS = {"helm": "module.helm", "weapons": "module.weapons_console", "shield": "module.shield_console",
        "comms": "module.comms_console", "sensor": "module.sensor_console"}
-PAL = {}                                  # a console's palette selection (post.select) when not the default (True)
 BRIDGE = ("helm", "weapons", "shield")                # the `consoles` family; comms and sensor are `ops_consoles`
 SEAT_DIR = {0: 6, 1: 0, 2: 2, 3: 4}      # seated crew direction per rotation (faces +u: r0 -y, r1 +x, r2 +y, r3 -x)
 SIT_CAST = (("body", "legs.cargo_pants", "gear.belt.tool_belt", "eyes.cyber", "hair.mohawk", "arm.L.cyber", "arm.R.cyber",
@@ -85,7 +84,7 @@ def _occluders(name, rot, W, H):
 
 
 def _full(name, rot, st):
-    post.select(PAL.get(name, True))
+    post.select(True)
     objs = C.console(name, rot, st)
     c, op, g, ox, oy, _ = env_build.render_sprite("x", "prop", objs)
     W, H = op.shape[1] - 2, op.shape[0] - 2

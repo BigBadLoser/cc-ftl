@@ -1,7 +1,7 @@
 """Office desk look study preview (plain python3 + numpy + PIL): each desk at r0, active, empty and with an operator in
 its chair (the sit_work clip, as the game draws a console's operator), on a floor, a crew member standing beside for scale.
 
-  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default d1,d2,d3]
+  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default e1,e2,e3]
     -> desk-3x.png"""
 import sys
 from pathlib import Path
@@ -10,14 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"d1": "D1  holo desk", "d2": "D2  workstation", "d3": "D3  paper desk"}
+NAMES = {"e1": "E1  hutch desk", "e2": "E2  drafting desk", "e3": "E3  records desk"}
 CHAIR = (-1.0, 0.0)                 # consoles.meta(desk, 0)["chair_rel_origin"]: the chair from the sprite origin
 SEAT_DIR, CW, CH = 6, 260, 210      # consoles.SEAT_DIR[0]
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), as_game(Assets(ROOT / "public/assets/1x")), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "d1,d2,d3").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "e1,e2,e3").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(CW * len(names), CH * 2)
     for i, v in enumerate(names):
@@ -26,7 +26,7 @@ def main():
             for gx in range(-2, 2):
                 for gy in range(-2, 2):
                     cv.static(pub, "tile.floor.a", *iso(ox, oy, gx, gy))
-            cv.static(G, f"module.desk.{v}.r0.active", *iso(ox, oy, 0, 0))
+            cv.static(G, f"module.desk.{v}", *iso(ox, oy, 0, 0))
             if seated:
                 cv.char(human(pub, SEAT_DIR, "sit_work"), *map(round, iso(ox, oy, *CHAIR)))
             fid = f"module.desk.{v}.front.r0.active"

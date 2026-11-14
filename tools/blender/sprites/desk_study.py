@@ -1,129 +1,145 @@
-"""Office desk look study (family `desk`, palette set `desk`, preview only): three generic desks, r0, in the console_proto
-frame and parts, registered into its tables like console_ops, so consoles.console_items renders each with its chair and
-the desk-front overlay over a seated operator.
+"""Office desk look study, round 2 (family `desk`, palette set research, preview only): three 2x2 desks in the research
+bench's style and kit (research_r6: the cream cabinetry on the px grid, drawer banks with label plates, the shelf hutch,
+books, the console chair with its rust cushion), r0.
 
-Footprint 2x2 like the ops consoles: the desk along the back row (two tiles wide), the chair in the front-left tile facing
-it, the front-right tile open floor. Each desk keeps a drawer pedestal under its right end (the end with no chair) and
-knee room under the left. Frame: u depth (+u the desk's back, away from the operator), v across, z up, in tiles.
+Local frame modkit.K, footprint (2, 2): u across, v deep, the front +v toward the camera at r0. The desk runs along the
+back row (v from BACK to FRONT, as the research bench's cabinet), the chair sits in the front-left tile (u -0.5,
+v +0.5) facing it, the front-right tile is open floor. A drawer bank fills the right half under the top, the left
+half is the knee bay in front of the chair.
 
-  d1 holo desk     a pale slab on one sculpted leg and the pedestal; an emitter bar along the back edge projects a
-                   screen of light, and a key field glows on the bare top
-  d2 workstation   a steel office desk: two monitors on a shared arm, a keyboard, a mug, a cable tray on the back
-  d3 paper desk    a wooden top on a steel frame: a tilted drafting slate, stacked folders and tablets, a desk lamp,
-                   a mug"""
+  e1 hutch desk     a two-shelf hutch over the back (books, binders, a plant, a clock), a terminal and keyboard
+                    in front of the chair, a desk lamp and a stack of files on the drawer bank
+  e2 drafting desk  a low back rail instead of the hutch; the research bench's tilted light table over the knee
+                    bay with a plan on it, a terminal on the drawer bank, rolled charts in a bin
+  e3 records desk   a tall pigeonhole hutch over the drawer bank (filed slates and folders), a low shelf over the
+                    knee bay with a terminal, an in-tray and a slate on the desk"""
 from . import console_proto as C
-from . import consoles
-from .console_proto import _g, ybox
+from . import core
+from .cmbkit import Frame
+from .modkit import K
+from .research_kit import PXG, Bench, snap, zpx
+from .research_r4 import keyboard, lamp, monitor, slate
+from .research_r6 import BACK, FRONT, HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT, SHELVES, TOP, Table, books, drawers
 
-H = 0.5                                     # desktop height (the comms desk is 0.55; the chair's armrests top 0.59)
-DU, DD, DW = 0.52, 0.8, 1.9                 # the desk's centre depth, its depth and width
-
-
-def pedestal(f, body, face, handle, v=0.55, w=0.62):
-    """A drawer pedestal under the right end: three drawers facing the operator side (-u), pull handles."""
-    ybox(f, DU, v, 0.0, DD - 0.06, w, H - 0.04, body, top=body)
-    for k in range(3):
-        z = 0.04 + k * 0.145
-        ybox(f, DU - (DD - 0.06) / 2 - 0.005, v, z, 0.02, w - 0.08, 0.125, face, top=face)
-        ybox(f, DU - (DD - 0.06) / 2 - 0.02, v, z + 0.085, 0.02, 0.22, 0.02, handle, top=handle)
+FP = (2, 2)
+CHAIR = (-0.5, 0.5)                          # the chair tile (local u, v)
+BINDERS = ("navy", "rust", "pcb", "ochM")
 
 
-def mug(f, u, v, col):
-    f.vcyl(u, v, H + 0.02, 0.05, 0.1, col, top="dkCoffee", sides=10)
+class _Chair(Frame):
+    """console_proto's chair with the research bench's rust cushion."""
+    def poly(self, pts, color, flip=False):
+        super().poly(pts, {"navy": "rust"}.get(color, color), flip)
 
 
-# ---- d1 holo desk -------------------------------------------------------------------------------------------------
-def d1(f, st):
-    _g("desk")
-    ybox(f, DU, 0, H - 0.05, DD, DW, 0.05, "dkWhiteD", top="dkWhite")                 # the slab
-    ybox(f, DU - DD / 2 + 0.02, 0, H - 0.07, 0.04, DW - 0.04, 0.02, "dkTeal")         # a teal lip under the front edge
-    ybox(f, DU + 0.1, -0.8, 0.0, 0.5, 0.12, H - 0.05, "dkWhiteD", top="dkWhite")       # the sculpted leg at the left end
-    ybox(f, DU + 0.1, -0.8, 0.0, 0.6, 0.18, 0.04, "dkGrey")
-    pedestal(f, "dkWhiteD", "dkWhite", "dkTeal")
-    _g("holo")
-    ybox(f, DU + 0.32, -0.3, H, 0.1, 1.2, 0.06, "dkGrey", top="dkGreyL")                  # the emitter bar
-    ybox(f, DU + 0.3, -0.3, H + 0.03, 0.02, 1.1, 0.02, "dkHolo" if st else "dkTeal")      # its lens strip
-    for dv in (-0.88, 0.28):                                                         # projector posts framing the screen
-        ybox(f, DU + 0.32, dv, H, 0.06, 0.05, 0.68, "dkGrey", top="dkGreyL")
-        ybox(f, DU + 0.29, dv, H + 0.6, 0.02, 0.03, 0.04, "dkHolo" if st else "dkTeal")
-    if st:
-        ybox(f, DU + 0.3, -0.3, H + 0.12, 0.01, 1.1, 0.45, "dkHoloD", lean=0.06)      # the projected screen
-        for k, (dv, w, z) in enumerate(((-0.5, 0.5, 0.45), (-0.55, 0.4, 0.33), (0.0, 0.3, 0.45), (0.0, 0.3, 0.25))):
-            ybox(f, DU + 0.29, dv, H + 0.12 + z * 0.9, 0.012, w, 0.03, "dkHolo")      # its lines of content
-        ybox(f, DU + 0.29, 0.0, H + 0.18, 0.012, 0.3, 0.1, "dkHolo")
-        ybox(f, DU - 0.18, -0.5, H, 0.24, 0.5, 0.008, "dkHoloD")                       # the key field on the top
-        for k in range(3):
-            ybox(f, DU - 0.26 + k * 0.08, -0.5, H + 0.004, 0.02, 0.44, 0.008, "dkHolo")
-    else:
-        ybox(f, DU - 0.18, -0.5, H, 0.24, 0.5, 0.004, "dkWhiteD")
-    C.chair(f, *C.CHAIR["desk_d1"], st)
+def chair():
+    m = core.Mesh("desk_chair")
+    C.chair(_Chair(m, 0, centre=K("desk_chair_xy", FP, 0).p(*CHAIR)), 0.0, 0.0, False)
+    return m.build()
 
 
-# ---- d2 workstation -----------------------------------------------------------------------------------------------
-def monitor(f, u, v, st, glow):
-    ybox(f, u, v, H + 0.24, 0.05, 0.5, 0.32, "dkCharcoal", top="dkCharcoal", lean=-0.04)
-    ybox(f, u - 0.03, v, H + 0.27, 0.01, 0.44, 0.26, glow if st else "dkScreen", lean=-0.04)
-    if st:
-        for k in range(3):
-            ybox(f, u - 0.038, v - 0.08 + 0.04 * (k % 2), H + 0.31 + k * 0.07, 0.005, 0.24 - 0.06 * k, 0.025, "dkScreenL")
+def base(k):
+    """The desk: the drawer bank (right half, three drawers), the top over the knee bay on the left, its end panel and
+    a modesty panel at the back of the bay, all flush with the bank and on the px grid."""
+    drawers(k, 0.49, n=3)
+    v0, v1 = BACK, FRONT
+    k.box(-0.5, (v0 + v1) / 2, TOP - zpx(2), 1.0, v1 - v0, zpx(2), "lvW2", top="lvW")          # the top over the bay
+    k.box(-0.97, (v0 + v1) / 2, 0.0, 2 * PXG, v1 - v0, TOP - zpx(2), "lvW2", top="lvW")      # the left end panel
+    k.box(-0.5, v0 + 2 * PXG, zpx(6), 0.92, 2 * PXG, TOP - zpx(8), "lvWS")                 # modesty panel
 
 
-def d2(f, st):
-    _g("desk")
-    ybox(f, DU, 0, H - 0.04, DD, DW, 0.04, "dkOliveD", top="dkOlive")                 # the top
-    ybox(f, DU + DD / 2 - 0.04, -0.4, 0.06, 0.04, 1.0, H - 0.12, "dkSteelD")          # modesty panel at the back
-    for dv in (-0.9,):                                                                # the left leg frame
-        ybox(f, DU, dv, 0.0, DD - 0.08, 0.06, H - 0.04, "dkSteelD", top="dkSteel")
-    pedestal(f, "dkSteelD", "dkSteel", "dkCharcoal")
-    ybox(f, DU + 0.34, 0, H - 0.1, 0.1, 1.5, 0.06, "dkCharcoal")                      # cable tray under the back edge
-    _g("screens")
-    f.vcyl(DU + 0.25, -0.45, H, 0.09, 0.02, "dkCharcoal", sides=10)                        # the shared arm: a foot, a post,
-    ybox(f, DU + 0.25, -0.45, H, 0.04, 0.04, 0.3, "dkSteel")                               # a cross bar
-    ybox(f, DU + 0.24, -0.45, H + 0.3, 0.05, 1.0, 0.04, "dkSteel")
-    monitor(f, DU + 0.2, -0.71, st, "dkScreenA")
-    monitor(f, DU + 0.2, -0.19, st, "dkScreenB")
-    _g("keys")
-    ybox(f, DU - 0.2, -0.45, H, 0.16, 0.5, 0.025, "dkCharcoal", top="dkGreyL")         # keyboard
-    ybox(f, DU - 0.2, -0.1, H, 0.1, 0.07, 0.025, "dkCharcoal", top="dkGreyL")         # mouse
-    mug(f, DU - 0.1, 0.62, "dkRed")
-    C.chair(f, *C.CHAIR["desk_d2"], st)
+def binders(k, u0, z, n, c0=0):
+    """Ring binders standing at z against the hutch back, from u0 along +u: 4 px wide, 7 deep, 14 tall, a label."""
+    for i in range(n):
+        u = u0 + (4 * i + 2) * PXG
+        k.box(u, HUTCH_BACK + 3.5 * PXG, z, 4 * PXG, 7 * PXG, zpx(14), BINDERS[(c0 + i) % len(BINDERS)])
+        k.box(u, HUTCH_BACK + 7 * PXG + 0.002, z + zpx(8), 2 * PXG, 0.004, zpx(3), "lvW")
 
 
-# ---- d3 paper desk ------------------------------------------------------------------------------------------------
-def d3(f, st):
-    _g("desk")
-    ybox(f, DU, 0, H - 0.05, DD, DW, 0.05, "dkWoodD", top="dkWood")                   # the wooden top
-    ybox(f, DU, -0.9, 0.0, DD - 0.1, 0.05, H - 0.05, "dkSteelD", top="dkSteel")      # a steel frame end
-    ybox(f, DU, -0.9, 0.0, DD - 0.1, 0.12, 0.04, "dkSteelD")
-    pedestal(f, "dkWoodD", "dkWood", "dkBrass")
-    _g("slate")
-    ybox(f, DU + 0.05, -0.35, H, 0.42, 0.62, 0.06, "dkCharcoal", top="dkCharcoal", lean=0.18)   # tilted drafting slate
-    ybox(f, DU + 0.04, -0.35, H + 0.06, 0.36, 0.56, 0.01, "dkSlateL" if st else "dkScreen", lean=0.18)
-    if st:
-        for k in range(3):
-            ybox(f, DU + 0.0 + 0.06 * k, -0.4 + 0.05 * k, H + 0.075, 0.015, 0.3, 0.008, "dkSlateLine", lean=0.18)
-    _g("paper")
-    for k, (z, col) in enumerate(((0.0, "dkFolderA"), (0.03, "dkPaper"), (0.045, "dkFolderB"), (0.075, "dkPaper"))):
-        ybox(f, DU + 0.08, 0.35 + 0.02 * (k % 2), H + z, 0.28, 0.34, 0.03, col, top=col)   # a stack of folders
-    ybox(f, DU - 0.22, 0.3, H, 0.16, 0.22, 0.015, "dkCharcoal", top="dkSlateL" if st else "dkScreen")  # a tablet
-    _g("lamp")
-    f.vcyl(DU + 0.3, 0.75, H, 0.08, 0.02, "dkBrass", sides=10)                         # desk lamp: base, stem, shade
-    ybox(f, DU + 0.3, 0.75, H, 0.025, 0.025, 0.36, "dkBrass")
-    ybox(f, DU + 0.22, 0.75, H + 0.3, 0.2, 0.06, 0.025, "dkBrass")
-    f.vcyl(DU + 0.13, 0.75, H + 0.23, 0.07, 0.08, "dkGreen", top="dkGreen", rtop=0.04, sides=10)
-    f.vcyl(DU + 0.13, 0.75, H + 0.21, 0.04, 0.02, "dkLamp" if st else "dkPaper", sides=8)
-    mug(f, DU - 0.15, 0.68, "dkRed")
-    C.chair(f, *C.CHAIR["desk_d3"], st)
+def hutch(k, u0, u1, shelves=SHELVES):
+    """Uprights at both ends and the middle, shelves at `shelves`, a back panel; u0..u1 on the grid."""
+    b, uf, sf = HUTCH_BACK, HUTCH_UPRIGHT, SHELF_FRONT
+    top = shelves[-1] + zpx(2)
+    for u in (u0 + PXG, (u0 + u1) / 2, u1 - PXG):
+        k.box(snap(u - PXG) + PXG, (b + uf) / 2, TOP, 2 * PXG, uf - b, top - TOP, "lvW2", top="lvW")
+    for z in shelves:
+        k.box((u0 + u1) / 2, (b + sf) / 2, z, u1 - u0, sf - b, zpx(2), "lvW2", top="lvW")
+    k.box((u0 + u1) / 2, (BACK + b) / 2, TOP, u1 - u0, b - BACK, top - TOP, "lvW2", top="lvW")
 
 
-NAMES = ("desk_d1", "desk_d2", "desk_d3")
-C.FOOT.update({n: (2, 2) for n in NAMES})
-C.CHAIR.update({n: (-0.5, -0.5) for n in NAMES})
-C.EMPTY.update({n: [(-0.5, 0.5)] for n in NAMES})
-C.BUILD.update(desk_d1=d1, desk_d2=d2, desk_d3=d3)
-consoles.IDS.update({n: f"module.desk.{n[5:]}" for n in NAMES})
-consoles.PAL.update({n: "desk" for n in NAMES})
+def plant(k, u, v, z):
+    k.cyl(u, v, z, 0.07, 0.1, "rust", top="dark", sides=10)
+    for i, (du, dv, h) in enumerate(((0.0, 0.0, 0.2), (0.04, 0.02, 0.15), (-0.04, -0.01, 0.16))):
+        k.box(u + du, v + dv, z + 0.1, 0.05, 0.05, h, ("pcb", "resLimeF", "pcb")[i])
+
+
+def files(k, u, v, z, n=4):
+    for i in range(n):
+        k.box(u + 0.01 * (i % 2), v, z + zpx(i), 0.3, 0.22, zpx(1), ("ochM", "lvW", "navy", "lvW")[i % 4])
+
+
+# ---- e1 hutch desk ------------------------------------------------------------------------------------------------
+def e1():
+    k = Bench("desk_e1", FP)
+    base(k)
+    hutch(k, -0.98, 0.98)
+    s0, s1 = SHELVES[0] + zpx(2), SHELVES[1] + zpx(2)
+    books(k, -0.94, TOP, (12, 14, 11, 13), 0)                         # under the shelves, at the left end
+    binders(k, 0.4, TOP, 3)
+    books(k, -0.9, s0, (11, 12, 10, 12, 11), 2)
+    plant(k, 0.6, -0.86, s0)
+    k.box(0.3, -0.84, s1, 0.16, 0.08, 0.16, "lvWS", top="lvW")                         # a clock
+    k.box(0.3, -0.8 + 0.001, s1 + 0.04, 0.1, 0.004, 0.08, "resLamp")
+    monitor(k, -0.5, -0.6, TOP, 0.42, 0.28, "resWork", ((0.0, 0.85, 0.2), (0.0, 0.5, 0.26), (0.0, 0.15, 0.14)))
+    keyboard(k, -0.5, -0.28, TOP)
+    lamp(k, 0.82, -0.36, TOP, "resLamp")
+    files(k, 0.4, -0.3, TOP)
+    slate(k, -0.1, -0.28, TOP, "resGold", rz=-0.2)
+    return k.build() + [chair()]
+
+
+# ---- e2 drafting desk ---------------------------------------------------------------------------------------------
+def e2():
+    k = Bench("desk_e2", FP)
+    base(k)
+    k.box(0.0, (BACK + HUTCH_BACK) / 2, TOP, 1.96, HUTCH_BACK - BACK, zpx(10), "lvW2", top="lvW")   # a low back rail
+    T = Table(k, (-0.5, -0.3, 0.82), 0.45)
+    T.build(w=0.9)
+    T.put(0.0, 0.0, 0.002, 0.6, 0.4, 0.004, "resScanF")                               # a plan on the light table
+    for a, b, w in ((-0.1, 0.1, 0.4), (0.12, -0.08, 0.3)):
+        T.put(a, b, 0.006, w, 0.01, 0.004, "resGold")
+    T.put(0.0, -0.02, 0.006, 0.01, 0.3, 0.004, "resGold")
+    monitor(k, 0.55, -0.62, TOP, 0.36, 0.26, "resWork", ((0.0, 0.8, 0.18), (0.0, 0.3, 0.12)), rz=0.3)
+    keyboard(k, 0.5, -0.3, TOP)
+    k.cyl(0.85, -0.25, TOP, 0.08, 0.2, "gm", top="dark", sides=12)                     # a bin of rolled charts
+    for du, dv, col in ((0.0, 0.0, "lvW"), (0.03, -0.02, "resScanF"), (-0.03, 0.02, "ochL")):
+        k.cyl(0.85 + du, -0.25 + dv, TOP + 0.1, 0.02, 0.24, col, sides=8)
+    return k.build() + [chair()]
+
+
+# ---- e3 records desk ----------------------------------------------------------------------------------------------
+def e3():
+    k = Bench("desk_e3", FP)
+    base(k)
+    hi = (SHELVES[0] - zpx(8), SHELVES[0] + zpx(6), SHELVES[1] + zpx(6))
+    hutch(k, 0.0, 0.98, hi)                                                          # pigeonholes over the bank
+    for j, z in enumerate((TOP,) + tuple(s + zpx(2) for s in hi[:-1])):
+        for i, u in enumerate((0.2, 0.5, 0.78)):
+            k.box(u, -0.86, z, 0.2, 0.16, zpx(4 + 2 * (i % 2)), ("lvW", "ochM", "navy")[(i + j) % 3])
+    hutch(k, -0.98, 0.0, (SHELVES[0],))                                             # a low shelf over the knee bay
+    monitor(k, -0.5, -0.62, SHELVES[0] + zpx(2), 0.4, 0.26, "resWork", ((0.0, 0.8, 0.2), (0.0, 0.3, 0.14)))
+    books(k, -0.92, TOP, (11, 12, 10), 3)
+    keyboard(k, -0.5, -0.3, TOP)
+    k.box(0.5, -0.3, TOP, 0.32, 0.24, zpx(3), "steelD", top="gm")                     # an in-tray of folders
+    files(k, 0.5, -0.3, TOP + zpx(1), 2)
+    slate(k, -0.1, -0.25, TOP, "resGold", rz=0.2)
+    lamp(k, 0.86, -0.3, TOP, "resLamp")
+    return k.build() + [chair()]
+
+
+DESIGNS = {"e1": e1, "e2": e2, "e3": e3}
 
 
 def jobs():
-    return consoles.jobs(NAMES, [0])
+    print("DESK chair from origin", K("desk_chair_xy", FP, 0).p(*CHAIR), flush=True)
+    return [(f"module.desk.{v}", FP, "prop", f) for v, f in DESIGNS.items()]
