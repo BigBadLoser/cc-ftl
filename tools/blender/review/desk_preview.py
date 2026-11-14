@@ -1,7 +1,7 @@
 """Office desk look study preview (plain python3 + numpy + PIL): each desk at r0, active, empty and with an operator in
 its chair (the sit_work clip, as the game draws a console's operator), on a floor, a crew member standing beside for scale.
 
-  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default b1..b4 in steel]
+  python3 -I tools/blender/review/desk_preview.py <desk out dir> <out dir> [designs, default office,guard,customs]
     -> desk-3x.png"""
 import sys
 from pathlib import Path
@@ -17,7 +17,7 @@ SEAT_DIR, CW, CH = 6, 260, 210      # consoles.SEAT_DIR[0]
 
 def main():
     G, pub, out = Assets(sys.argv[1]), as_game(Assets(ROOT / "public/assets/1x")), Path(sys.argv[2])
-    names = (sys.argv[3] if len(sys.argv) > 3 else "b1.steel,b2.steel,b3.steel,b4.steel").split(",")
+    names = (sys.argv[3] if len(sys.argv) > 3 else "office,guard,customs").split(",")
     out.mkdir(parents=True, exist_ok=True)
     cv = Canvas(CW * len(names), CH * 2)
     for i, v in enumerate(names):
