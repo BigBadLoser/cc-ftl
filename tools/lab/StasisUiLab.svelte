@@ -2,6 +2,8 @@
   import type { UiApi, UiCrew, UiModule, UiWheelSlot } from '../../src/ui/api';
   import ModuleOverview from '../../src/ui/module/ModuleOverview.svelte';
   import CrewOverview from '../../src/ui/crew/CrewOverview.svelte';
+  import { PaneHead } from '../../src/ui/kit';
+  import PrisonerAlt from './stasisUi/PrisonerAlt.svelte';
 
   /** The stasis UI pieces with mock data (#116): see stasisUiLab.ts. `faces` are real portraits for crew ids 1..n. */
   let { faces }: { faces: (string | null)[] } = $props();
@@ -37,8 +39,15 @@
   {#each wheels as [label, w] (label)}
     <section><h4>{label}</h4><div class="insp"><ModuleOverview {api} m={mod(w)} ftl={null} onPower={() => {}} /></div></section>
   {/each}
-  {#each crews as [label, c] (label)}
-    <section><h4>{label}</h4><div class="insp"><CrewOverview {api} {c} onPriorities={() => {}} /></div></section>
+</div>
+{#snippet head(c: UiCrew)}<PaneHead icon="skull" title={c.name} sub="Security · hostile" foe />{/snippet}
+<div class="lab">
+  {#each [['P1 slab card (current)', 0], ['P2 crew layout, frosted portrait', 1], ['P3 crew layout, portrait as is', 2]] as const as [label, v] (label)}
+    <section class="col"><h4>{label}</h4>
+      {#each crews as [, c] (c.id)}
+        <div class="win">{@render head(c)}<div class="body">{#if v === 0}<CrewOverview {api} {c} onPriorities={() => {}} />{:else}<PrisonerAlt {c} face={api.portrait(c.id)} frost={v === 1} />{/if}</div></div>
+      {/each}
+    </section>
   {/each}
 </div>
 
@@ -46,4 +55,7 @@
   .lab { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; align-items: flex-start; }
   h4 { margin: 0 0 6px; color: var(--dim); font: 12px monospace; }
   .insp { width: 300px; padding: 12px; background: var(--panel); border: 1px solid var(--line); }
+  .col { display: grid; gap: 12px; }
+  .win { width: 300px; background: var(--panel); border: 1px solid var(--line); }
+  .body { padding: 10px 12px 4px; }
 </style>
