@@ -17,7 +17,9 @@ from .bunk_study import _px
 from .research_kit import Bench
 
 OFF = 0.3                                                                            # min standoff on a face, px
-U0, U1, V0, V1, H = -20, 20, -7, 7, 26                                               # the sample block (2x1)
+U0, U1, V0, V1, H = -20, 20.5, -7, 7, 26                                             # the sample block (2x1)
+# U1 sits half a px off the grid: a vertical corner whose screen x (u - v) falls exactly on a pixel boundary renders
+# dotted (the supersample's mode ties along it); the front face's own u stays whole so its patterns stay crisp.
 
 
 def box(k, u, v, z, su, sv, sz, col, **kw):
@@ -25,119 +27,134 @@ def box(k, u, v, z, su, sv, sz, col, **kw):
     k.box(u / 32, v / 32, z / ZPX, su / 32, sv / 32, sz / ZPX, col, **kw)
 
 
-# ---- padding (on a face at depth v, facing +v, over u0..u1, z0..z1) -----------------------------------------------
-def backing(k, u0, u1, v, z0, z1):
-    _px(k, u0, u1, v, v + OFF, z0, z1, "r9PadD")
-    return v + OFF
+# ---- pixel helpers ------------------------------------------------------------------------------------------------
+# One px across (u) is one screen px and one px of height (z) is one screen px, so whole-px edges land on the pixel
+# grid. Patterns are inlaid: flush bands of colour in one raised panel, never thin plates or sub-px parts (those
+# snap unevenly and leave dotted outlines).
+def panel(k, u0, u1, v, z0, z1, d=1):
+    """A raised panel's footprint, returned for the pattern helpers: they fill it with flush, non-overlapping boxes
+    from v to v + d."""
+    return (u0, u1, v, v + d, z0, z1)
 
 
-def pad_rolls(k, u0, u1, v, z0, z1, pitch=4, r=1.7):
-    """Tuck-and-roll: vertical rolls."""
-    b = backing(k, u0, u1, v, z0, z1)
-    n = int((u1 - u0) // pitch)
-    for i in range(n):
-        cyl(k, u0 + (u1 - u0) * (i + 0.5) / n, b, z0 + 0.3, z1 - 0.3, r, "r9Pad", sides=10)
+def bands(k, pnl, seq, axis="u", phase=0):
+    """Fill a panel with repeating bands of (width px, colour) along u (vertical stripes) or z (horizontal, laid
+    from the top down so a band's first colour is its lit top)."""
+    u0, u1, v0, v1, z0, z1 = pnl
+    a, end = (u0, u1) if axis == "u" else (z0, z1)
+    pos, i = a, phase
+    while pos < end:
+        w, col = seq[i % len(seq)]
+        b = min(pos + w, end)
+        if axis == "u":
+            _px(k, pos, b, v0, v1, z0, z1, col)
+        else:
+            _px(k, u0, u1, v0, v1, z1 - (b - a), z1 - (pos - a), col)
+        pos, i = b, i + 1
 
 
-def pad_channels(k, u0, u1, v, z0, z1, pitch=4, r=1.7):
-    """Channel quilting: horizontal rolls."""
-    b = backing(k, u0, u1, v, z0, z1)
-    n = int((z1 - z0) // pitch)
-    for i in range(n):
-        hcyl(k, u0 + 0.3, u1 - 0.3, b, z0 + (z1 - z0) * (i + 0.5) / n, r, "r9Pad", n=6)
-
-
-def pad_biscuit(k, u0, u1, v, z0, z1, s=5):
-    """Biscuit tufting: soft squares on a dark ground."""
-    b = backing(k, u0, u1, v, z0, z1)
-    nu, nz = int((u1 - u0) // s), int((z1 - z0) // s)
+def grid(k, pnl, cw, ch, cell, gap="r9PadD", g=1):
+    """Fill a panel with a grid of cells cw x ch px with g px gaps; cell(i, j) returns [(du0, du1, dz0, dz1, col)]
+    in px within the cell (from its top-left), filling it exactly."""
+    u0, u1, v0, v1, z0, z1 = pnl
+    _px(k, u0, u1, v0, v0 + 0.5, z0, z1, gap)                                        # the gap colour behind
+    nu, nz = int((u1 - u0 + g) // (cw + g)), int((z1 - z0 + g) // (ch + g))
     for i in range(nu):
         for j in range(nz):
-            cu, cz = u0 + (u1 - u0) * (i + 0.5) / nu, z0 + (z1 - z0) * j / nz
-            box(k, cu, b + 0.5, cz + 0.35, (u1 - u0) / nu - 0.7, 1, (z1 - z0) / nz - 0.7, "r9Pad", bevel=0.012)
+            cu, cz = u0 + i * (cw + g), z1 - j * (ch + g)
+            for a, b, c, d, col in cell(i, j):
+                _px(k, cu + a, cu + b, v0, v1, cz - d, cz - c, col)
 
 
-def pad_diamond(k, u0, u1, v, z0, z1, s=7):
-    """Diamond tufting: squares turned 45 deg, buttons where their corners meet."""
-    b = backing(k, u0, u1, v, z0, z1)
-    d = s / math.sqrt(2)
-    for i in range(int((u1 - u0) // s) + 1):
-        for j in range(int((z1 - z0) // s) + 1):
-            for cu, cz in ((u0 + i * s, z0 + j * s), (u0 + (i + 0.5) * s, z0 + (j + 0.5) * s)):
-                if u0 + d / 2 <= cu <= u1 - d / 2 and z0 + d / 2 <= cz <= z1 - d / 2:
-                    box(k, cu, b + 0.5, cz - d / 2 + 0.3, d - 0.5, 1, d - 0.5, "r9Pad", ry=math.pi / 4)
-    for i in range(int((u1 - u0) // s)):
-        for j in range(int((z1 - z0) // s)):
-            cu, cz = u0 + (i + 0.5) * s, z0 + j * s + s
-            if cz < z1 - 1:
-                _px(k, cu - 0.4, cu + 0.4, b + 1, b + 1.4, cz - 0.4, cz + 0.4, "r9PadD")   # buttons
+def profile(k, u0, u1, v, z, steps):
+    """A stepped rounded profile running along u on a face at depth v: steps are (z0, z1, depth, colour) from z."""
+    for a, b, d, col in steps:
+        _px(k, u0, u1, v, v + d, z + a, z + b, col)
+
+
+# ---- padding ------------------------------------------------------------------------------------------------------
+ROLL = ((1, "r9PadL"), (2, "r9Pad"), (1, "r9PadD"))                                  # a roll: lit, body, groove
+
+
+def pad_rolls(k, u0, u1, v, z0, z1):
+    """Tuck-and-roll: vertical rolls 4 px apart, each lit at its left."""
+    bands(k, panel(k, u0, u1, v, z0, z1), ROLL, "u")
+
+
+def pad_channels(k, u0, u1, v, z0, z1):
+    """Channel quilting: horizontal rolls 4 px apart, each lit on top."""
+    bands(k, panel(k, u0, u1, v, z0, z1), ROLL, "z")
+
+
+def pad_biscuit(k, u0, u1, v, z0, z1, cw=6, ch=5):
+    """Biscuit tufting: soft squares, lit along their top and left, on dark seams."""
+    grid(k, panel(k, u0, u1, v, z0, z1), cw, ch, lambda i, j: (
+        (0, cw, 0, 1, "r9PadL"), (0, 1, 1, ch, "r9PadL"), (1, cw, 1, ch, "r9Pad")))
+
+
+def pad_rollband(k, u0, u1, v, z0, z1):
+    """Roll and pleat: a horizontal roll band along the top over tuck-and-roll below."""
+    bands(k, panel(k, u0, u1, v, z1 - 4, z1, d=1.5), ((1, "r9PadL"), (2, "r9Pad"), (1, "r9PadD")), "z")
+    bands(k, panel(k, u0, u1, v, z0, z1 - 4), ROLL, "u")
 
 
 def pad_cushion(k, u0, u1, v, z0, z1):
-    """A smooth cushion panel, piped round its edge."""
-    b = backing(k, u0, u1, v, z0, z1)
-    box(k, (u0 + u1) / 2, b + 0.9, z0 + 0.8, u1 - u0 - 1.6, 1.8, z1 - z0 - 1.6, "r9Pad", bevel=0.02)
-    for z in (z0 + 0.8, z1 - 0.8):
-        hcyl(k, u0 + 0.8, u1 - 0.8, b + 1.8, z, 0.5, "r9PadD", n=3)
-    for u in (u0 + 0.8, u1 - 0.8):
-        cyl(k, u, b + 1.8, z0 + 0.8, z1 - 0.8, 0.5, "r9PadD", sides=6)
+    """A smooth cushion, piped: a dark piping frame, a lit top edge, a plain field, 2 px proud."""
+    _px(k, u0, u1, v, v + 1, z0, z1, "r9PadD")
+    _px(k, u0 + 1, u1 - 1, v + 1, v + 2, z1 - 2, z1 - 1, "r9PadL")
+    _px(k, u0 + 1, u1 - 1, v + 1, v + 2, z0 + 1, z1 - 2, "r9Pad")
 
 
-def pad_bolster(k, u0, u1, v, z, r=2.2):
-    """A rolled bolster along a face at height z."""
-    hcyl(k, u0, u1, v + r * 0.6, z, r, "r9Pad", n=6)
+def pad_bolster(k, u0, u1, v, z):
+    """A rolled bolster along a face, its bottom at z: a stepped round profile, lit on top."""
+    profile(k, u0, u1, v, z, ((0, 1, 1, "r9PadD"), (1, 2, 2, "r9Pad"), (2, 4, 3, "r9Pad"), (4, 5, 2, "r9PadL"),
+                              (5, 6, 1, "r9PadL")))
 
 
 # ---- panels -------------------------------------------------------------------------------------------------------
-def panel_seams(k, u0, u1, v, z0, z1, cols=2, bolts=True):
-    """Seam lines splitting the face into panels, a bolt at each panel corner."""
-    for i in range(1, cols):
-        u = u0 + (u1 - u0) * i / cols
-        _px(k, u - 0.5, u + 0.5, v, v + OFF, z0, z1, "r9Char")
-    if bolts:
-        for i in range(cols):
-            a, c = u0 + (u1 - u0) * i / cols, u0 + (u1 - u0) * (i + 1) / cols
-            for u in (a + 1.5, c - 1.5):
-                for z in (z0 + 1.5, z1 - 1.5):
-                    _px(k, u - 0.4, u + 0.4, v, v + 0.6, z - 0.4, z + 0.4, "r9Grey")
+def panel_seams(k, u0, u1, v, z0, z1, cols=2):
+    """Flush panels split by 1 px dark seams, with a 2 px fastener in each panel's top corners."""
+    w = (u1 - u0 - (cols - 1)) / cols
+    for i in range(cols):
+        a = round(u0 + i * (w + 1))
+        b = round(a + w)
+        _px(k, a, b, v, v + 1, z0, z1, "r9Bone")
+        for u in (a + 1, b - 3):
+            _px(k, u, u + 2, v + 1, v + 1.5, z1 - 3, z1 - 1, "r9Grey")
+        if i < cols - 1:
+            _px(k, b, b + 1, v, v + 1, z0, z1, "r9Char")
 
 
-def panel_inset(k, u0, u1, v, z0, z1, m=2, w=1.2):
-    """An inset panel: a raised frame round the face."""
-    for a, b, c, d in ((u0 + m, u1 - m, z0 + m, z0 + m + w), (u0 + m, u1 - m, z1 - m - w, z1 - m),
-                       (u0 + m, u0 + m + w, z0 + m + w, z1 - m - w), (u1 - m - w, u1 - m, z0 + m + w, z1 - m - w)):
-        _px(k, a, b, v, v + 0.8, c, d, "r9Sand")
+def panel_inset(k, u0, u1, v, z0, z1, m=2):
+    """An inset panel: a 1 px lit frame top and left, shaded bottom and right, round a recessed field."""
+    pnl = (u0 + m, u1 - m, v, v + 1, z0 + m, z1 - m)
+    a, b, _, d, c, e = pnl
+    _px(k, a, b, v, d, e - 1, e, "r9Sand")
+    _px(k, a, a + 1, v, d, c, e - 1, "r9Sand")
+    _px(k, a + 1, b, v, d, c, c + 1, "r9Tan")
+    _px(k, b - 1, b, v, d, c + 1, e - 1, "r9Tan")
+    _px(k, a + 1, b - 1, v, v + 0.5, c + 1, e - 1, "r9Sand")
 
 
-def panel_ribs(k, u0, u1, v, z0, z1, pitch=4):
-    """Horizontal ribs."""
-    for z in range(int(z0) + 2, int(z1) - 1, pitch):
-        _px(k, u0 + 0.5, u1 - 0.5, v, v + 1, z, z + 1.6, "r9Sand")
+def panel_ribs(k, u0, u1, v, z0, z1):
+    """Horizontal ribs 4 px apart: lit top, body, shaded underside."""
+    bands(k, panel(k, u0, u1, v, z0, z1), ((1, "r9Bone"), (2, "r9Sand"), (1, "r9Tan")), "z")
 
 
-def panel_corrugated(k, u0, u1, v, z0, z1, pitch=3, r=1.2):
-    """Vertical corrugated metal on a dark ground."""
-    _px(k, u0, u1, v, v + OFF, z0, z1, "r9GreyD")
-    n = int((u1 - u0) // pitch)
-    for i in range(n):
-        cyl(k, u0 + (u1 - u0) * (i + 0.5) / n, v + OFF, z0 + 0.3, z1 - 0.3, r, "r9Grey", sides=6)
+def panel_corrugated(k, u0, u1, v, z0, z1):
+    """Corrugated metal: vertical bands, lit, body, shade."""
+    bands(k, panel(k, u0, u1, v, z0, z1), ((1, "r9Metal"), (1, "r9Grey"), (1, "r9GreyD")), "u")
 
 
-def panel_grille(k, u0, u1, v, z0, z1, pitch=3):
-    """A perforated grille: dark holes in a grey plate."""
-    _px(k, u0, u1, v, v + 0.5, z0, z1, "r9Grey")
-    for u in range(int(u0) + 1, int(u1) - 1, pitch):
-        for z in range(int(z0) + 1, int(z1) - 1, pitch):
-            _px(k, u + 0.3, u + 1.8, v + 0.5, v + 0.5 + OFF, z + 0.3, z + 1.8, "r9Char")
+def panel_grille(k, u0, u1, v, z0, z1):
+    """A grille: 2 px dark holes on a 4 px pitch in a grey plate."""
+    grid(k, panel(k, u0, u1, v, z0, z1), 3, 3, lambda i, j: ((0, 3, 0, 3, "r9Grey"),), gap="r9Char")
 
 
-def panel_louvre(k, u0, u1, v, z0, z1, pitch=3):
-    """A louvred vent: tilted slats over a dark ground."""
-    _px(k, u0, u1, v, v + OFF, z0, z1, "r9Char")
-    _px(k, u0, u0 + 0.8, v, v + 1.6, z0, z1, "r9GreyD")
-    _px(k, u1 - 0.8, u1, v, v + 1.6, z0, z1, "r9GreyD")
-    for z in range(int(z0) + 1, int(z1) - 1, pitch):
-        box(k, (u0 + u1) / 2, v + 1, z, u1 - u0 - 1.8, 1.6, 0.6 * 32 / ZPX, "r9Grey", rx=-0.6)
+def panel_louvre(k, u0, u1, v, z0, z1):
+    """A louvred vent: a grey frame round slats, each a lit lip over a dark slot."""
+    _px(k, u0, u1, v, v + 1.5, z0, z1, "r9GreyD")
+    bands(k, panel(k, u0 + 2, u1 - 2, v + 1, z0 + 2, z1 - 2), ((1, "r9Metal"), (2, "r9Char")), "z")
 
 
 # ---- edges and trims (on a block u0..u1, v0..v1, height h) --------------------------------------------------------
@@ -147,11 +164,10 @@ def top_lip(k, u0, u1, v0, v1, h, over=1.5):
     _px(k, u0 - over + 0.5, u1 + over - 0.5, v0 - over + 0.5, v1 + over - 0.5, h + 2, h + 3, "r9Tan")
 
 
-def top_bullnose(k, u0, u1, v0, v1, h, r=1.5):
-    """A tan top with a rounded front edge."""
-    rz = r * ZPX / 32                                                                # the radius in z px
-    _px(k, u0 - 1, u1 + 1, v0 - 1, v1, h, h + 2 * rz, "r9Tan")
-    hcyl(k, u0 - 1, u1 + 1, v1, h + rz, r, "r9Tan", n=6)
+def top_bullnose(k, u0, u1, v0, v1, h):
+    """A tan top with a rounded front edge: a slab and a stepped round nosing, lit on top."""
+    _px(k, u0 - 1, u1 + 1, v0 - 1, v1, h, h + 3, "r9Tan")
+    profile(k, u0 - 1, u1 + 1, v1, h, ((0, 1, 1, "r9GreyD"), (1, 2, 2, "r9Tan"), (2, 3, 1, "r9Bone")))
 
 
 def stepped(k, u0, u1, v0, v1, h, c=2, col="r9Bone", step="r9Sand"):
@@ -193,44 +209,50 @@ def porthole(k, u, v, zc, r, face="r9Warm"):
 
 def hatch(k, u0, u1, v, z0, z1):
     """A service hatch with a pull."""
-    _px(k, u0, u1, v, v + 0.5, z0, z1, "r9GreyD")
-    um, zm = (u0 + u1) / 2, (z0 + z1) / 2
-    _px(k, um - 2, um + 2, v + 0.5, v + 1.2, zm - 0.5, zm + 0.5, "r9Grey")
+    _px(k, u0, u1, v, v + 1, z0, z1, "r9GreyD")
+    um, zm = round((u0 + u1) / 2), round((z0 + z1) / 2)
+    _px(k, um - 2, um + 2, v + 1, v + 2, zm - 1, zm + 1, "r9Grey")
 
 
 def indicators(k, u, v, z, cols=("r9LedR", "r9LedG", "r9Lamp")):
     """A small dark plate with a row of lights."""
-    _px(k, u - 1, u + 3 * len(cols), v, v + OFF, z - 1, z + 2.5, "r9Char")
+    _px(k, u - 1, u + 3 * len(cols), v, v + 1, z - 1, z + 3, "r9Char")
     for i, c in enumerate(cols):
-        _px(k, u + 3 * i, u + 3 * i + 1.6, v + OFF, v + 0.8, z, z + 1.6, c)
+        _px(k, u + 3 * i, u + 3 * i + 2, v + 1, v + 1.5, z, z + 2, c)
 
 
-def pipe(k, u0, u1, v, z, r=1.4, clamps=2):
-    """A pipe along u standing off a face at depth v, with clamps."""
-    vc = v + r + 0.4
-    hcyl(k, u0, u1, vc, z, r, "r9Grey", n=6)
-    for i in range(clamps):
-        u = u0 + (u1 - u0) * (i + 1) / (clamps + 1)
-        hcyl(k, u - 0.8, u + 0.8, vc, z, r + 0.5, "r9GreyD", n=6)
-        _px(k, u - 0.8, u + 0.8, v, vc, z - 0.6, z + 0.6, "r9GreyD")
+def pipe(k, u0, u1, v, z):
+    """A pipe along u standing 1 px off a face at depth v, its bottom at z: a stepped round profile, with two clamps."""
+    steps = ((0, 1, 2, "r9GreyD"), (1, 3, 3, "r9Grey"), (3, 4, 2, "r9Metal"))
+    profile(k, u0, u1, v + 1, z, steps)
+    for i in (1, 2):
+        u = round(u0 + (u1 - u0) * i / 3)
+        _px(k, u - 1, u + 1, v, v + 4, z - 1, z + 5, "r9GreyD")
 
 
-def rivets(k, u0, u1, v, z, pitch=4):
-    for u in [u0 + i * pitch for i in range(int((u1 - u0) / pitch) + 1)]:
-        _px(k, u - 0.4, u + 0.4, v, v + 0.6, z - 0.4, z + 0.4, "r9Grey")
+def rivets(k, u0, u1, v, z, pitch=6):
+    """A row of 2 px fasteners."""
+    for u in range(int(u0), int(u1) - 1, pitch):
+        _px(k, u, u + 2, v, v + 0.8, z, z + 2, "r9Grey")
 
 
 def stencil(k, u0, u1, v, z0, z1):
     """A painted plate: an orange field with a bone band."""
-    _px(k, u0, u1, v, v + OFF, z0, z1, "r9Orange")
-    zm = (z0 + z1) / 2
-    _px(k, u0 + 1, u1 - 1, v + OFF, v + 0.5, zm - 0.6, zm + 0.6, "r9Bone")
+    zm = round((z0 + z1) / 2)
+    _px(k, u0, u1, v, v + 1, zm + 1, z1, "r9Orange")
+    _px(k, u0, u1, v, v + 1, zm - 1, zm + 1, "r9Bone")
+    _px(k, u0, u1, v, v + 1, z0, zm - 1, "r9Orange")
 
 
 # ---- the kit sheet: each treatment on the sample block ------------------------------------------------------------
+def body(k, u0, u1, v0, v1, z0, z1, col):
+    """A block body, hard-edged (a bevel catches specular blips on its top at this size)."""
+    _px(k, u0, u1, v0, v1, z0, z1, col)
+
+
 def block(name, col="r9Bone"):
     k = Bench(name, (2, 1))
-    _px(k, U0, U1, V0, V1, 0, H, col)
+    body(k, U0, U1, V0, V1, 0, H, col)
     return k
 
 
@@ -242,32 +264,33 @@ def sample(name, fn, col="r9Bone"):
     return run
 
 
-FACE = (U0 + 1, U1 - 1, V1, 2, H - 2)                                                # the front face's usable area
+UF = 20                                                                              # the front face's whole-px end
+FACE = (U0 + 2, UF - 2, V1, 2, H - 2)                                                # the front face's usable area
 SAMPLES = (
     ("p1", "P1 tuck and roll", lambda k: pad_rolls(k, *FACE)),
     ("p2", "P2 channels", lambda k: pad_channels(k, *FACE)),
     ("p3", "P3 biscuit", lambda k: pad_biscuit(k, *FACE)),
-    ("p4", "P4 diamond", lambda k: pad_diamond(k, *FACE)),
+    ("p4", "P4 roll and pleat", lambda k: pad_rollband(k, *FACE)),
     ("p5", "P5 cushion, piped", lambda k: pad_cushion(k, *FACE)),
-    ("p6", "P6 bolster", lambda k: pad_bolster(k, U0, U1, V1, H - 4)),
-    ("s1", "S1 seams, bolts", lambda k: panel_seams(k, U0, U1, V1, 0, H)),
-    ("s2", "S2 inset", lambda k: panel_inset(k, U0, U1, V1, 0, H)),
-    ("s3", "S3 ribs", lambda k: panel_ribs(k, U0, U1, V1, 0, H)),
+    ("p6", "P6 bolster", lambda k: pad_bolster(k, U0, UF, V1, H - 8)),
+    ("s1", "S1 seams, bolts", lambda k: panel_seams(k, U0, UF, V1, 0, H)),
+    ("s2", "S2 inset", lambda k: panel_inset(k, U0, UF, V1, 0, H)),
+    ("s3", "S3 ribs", lambda k: panel_ribs(k, U0, UF, V1, 0, H)),
     ("s4", "S4 corrugated", lambda k: panel_corrugated(k, *FACE)),
-    ("s5", "S5 grille", lambda k: panel_grille(k, U0 + 6, U1 - 6, V1, 5, H - 5)),
-    ("s6", "S6 louvre", lambda k: panel_louvre(k, U0 + 6, U1 - 6, V1, 5, H - 5)),
+    ("s5", "S5 grille", lambda k: panel_grille(k, U0 + 6, UF - 6, V1, 5, H - 5)),
+    ("s6", "S6 louvre", lambda k: panel_louvre(k, U0 + 6, UF - 6, V1, 5, H - 5)),
     ("e1", "E1 lip and top", lambda k: top_lip(k, U0, U1, V0, V1, H)),
     ("e2", "E2 bullnose", lambda k: top_bullnose(k, U0, U1, V0, V1, H)),
     ("e3", "E3 stepped edge", None),
     ("e4", "E4 lit kick", None),
     ("e5", "E5 edge band", lambda k: edge_band(k, U0, U1, V0, V1, H)),
     ("e6", "E6 round end", lambda k: round_end(k, U1, V0, V1, 0, H)),
-    ("d1", "D1 porthole", lambda k: porthole(k, 0, V1, H / 2, 6)),
-    ("d2", "D2 hatch", lambda k: hatch(k, U0 + 10, U1 - 10, V1, 4, H - 4)),
-    ("d3", "D3 indicators", lambda k: indicators(k, -3, V1, H / 2)),
-    ("d4", "D4 pipe, clamps", lambda k: pipe(k, U0, U1, V1, H / 2)),
-    ("d5", "D5 rivets", lambda k: [rivets(k, U0 + 2, U1 - 2, V1, z) for z in (3, H - 3)]),
-    ("d6", "D6 stencil plate", lambda k: stencil(k, U0 + 8, U1 - 8, V1, 8, 18)),
+    ("d1", "D1 porthole", lambda k: porthole(k, 0, V1, 13, 6)),
+    ("d2", "D2 hatch", lambda k: hatch(k, U0 + 10, UF - 10, V1, 4, H - 4)),
+    ("d3", "D3 indicators", lambda k: indicators(k, -4, V1, 12)),
+    ("d4", "D4 pipe, clamps", lambda k: pipe(k, U0 + 2, UF - 2, V1, 12)),
+    ("d5", "D5 rivets", lambda k: [rivets(k, U0 + 2, UF - 2, V1, z) for z in (2, H - 4)]),
+    ("d6", "D6 stencil plate", lambda k: stencil(k, U0 + 8, UF - 8, V1, 8, 18)),
 )
 
 

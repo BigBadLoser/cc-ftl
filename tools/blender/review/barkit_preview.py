@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, iso  # noqa: E402
 
 PARTS = tuple((v, (2, 1), name) for v, name in (
-    ("p1", "P1 tuck and roll"), ("p2", "P2 channels"), ("p3", "P3 biscuit"), ("p4", "P4 diamond"),
+    ("p1", "P1 tuck and roll"), ("p2", "P2 channels"), ("p3", "P3 biscuit"), ("p4", "P4 roll and pleat"),
     ("p5", "P5 cushion, piped"), ("p6", "P6 bolster"),
     ("s1", "S1 seams, bolts"), ("s2", "S2 inset"), ("s3", "S3 ribs"), ("s4", "S4 corrugated"), ("s5", "S5 grille"),
     ("s6", "S6 louvre"),
