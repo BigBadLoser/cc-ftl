@@ -10,7 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, floor, human, iso  # noqa: E402
 
 NAMES = {"t1": "T1  padded counter", "t2": "T2  plated counter", "t3": "T3  display counter",
-         "u1": "U1 pedestal", "u2": "U2 square", "u3": "U3 drum"}
+         "u1": "U1 pedestal", "u2": "U2 square", "u3": "U3 drum",
+         "v1": "V1  hull counter", "v2": "V2  cantilever counter", "v3": "V3  rack counter",
+         "w1": "W1 saddle", "w2": "W2 tripod", "w3": "W3 backed"}
 CW, CH = 280, 200
 
 
