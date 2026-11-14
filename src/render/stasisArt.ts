@@ -88,7 +88,7 @@ export function stasisLayers(
     const face = prisoner !== undefined ? world.get(prisoner, CrewC) : undefined;
     if (load.patch) out.push({ chain: [patchId(load.patch, m.rot)], key: `${def.asset}.load`, tiles: 'all', dz: LOAD_DZ, optional: true, face });
     if (load.home) {
-      out.push({ chain: [`${def.asset}.slot0.r${m.rot}`], key: `${def.asset}.slot0`, tiles: 'all', dz: DZ * 0.5, optional: true });
+      out.push({ chain: [`${def.asset}.slot0.r${m.rot}`], key: `${def.asset}.slot0`, tiles: 'all', dz: DZ * 0.5, optional: true, face }); // the new prisoner stays pressed through the star step
       out.push({ chain: [`${def.asset}.lamp0.r${m.rot}`], key: `${def.asset}.lamp0`, tiles: 'all', dz: LAMP_DZ, optional: true, tint: LAMP_TINT.cy });
     }
   }
