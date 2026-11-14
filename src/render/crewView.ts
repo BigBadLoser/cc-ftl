@@ -17,7 +17,7 @@ import type { ModuleDef } from '../sim/registry';
 import type { Module } from '../sim/modules/components';
 import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprint';
 import { moduleKey } from './moduleView';
-import { SEAT_DZ } from './moduleArt';
+import { SEAT_DZ, berthDz } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
@@ -387,7 +387,10 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
         if (at && (onOpen || bed || pod)) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
-          z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
+          // A sleeper sorts at its berth's depth alone (not their own tile, which bedPose moves toward the foot): over the bed body,
+          // under the overlay of the frame in front of it (moduleArt bedFronts).
+          const key = moduleKey(at.def, f.x - target.ox, f.y - target.oy);
+          z = bed ? key + berthDz(berthOf(at.def, at.m, id)) : Math.max(z, key + SEAT_DZ);
         }
         if (stool && sitting) {
           // A seated player of a game table sorts at the table's seat depth like a console's operator (not by their own tile): the table body is under them and the front overlay, the stool back and table edge, is over them.
