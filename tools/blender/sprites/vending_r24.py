@@ -12,6 +12,7 @@ on the body's own faces (round 3's was stuck-on geometry), drawn as a cylinder s
 back edge, a broad gently waving label band, no highlight stripe (a first take, a plain rounded rectangle with a
 wide label, read as a blue and white card; any vertical highlight crossing the label read as a window frame).
   vm1c24b upright, in the upper wine · vm1c24c tilted, as if poured · vm1c24d upright with fizz bubbles above
+  vm1c24e (user: "C, moved down, with D's bubbles") the tilted can lower, bigger bubbles rising off its top
 Uses r10's body (holes as round 21), r11's gradient, r20/r21's front pieces. SPRITE_SAMPLES=64 for previews."""
 import math
 
@@ -26,20 +27,26 @@ CANS = {  # centre v, centre z, half width, half height, tilt (degrees, + leans 
     "b": (-4.5, 42.0, 5.0, 15.0, 0, False),
     "c": (-4.0, 41.0, 5.0, 15.0, 18, False),
     "d": (-4.5, 38.0, 5.0, 13.5, 0, True),
+    "e": (-5.5, 33.0, 5.0, 15.0, 18, True),
 }
 BUBBLES = [(-2.5, 55.0, 1.7), (-6.5, 58.0, 1.3), (-3.5, 61.5, 1.0)]
 
 
 def can_paint(style):
-    """A can drawn as a cylinder seen side on: curved rims top and bottom, dark at its back edge, a highlight near
-    its front, a wavy cream label band."""
+    """A can drawn as a cylinder seen side on: curved rims top and bottom, dark at its back edge, a broad wavy cream
+    label band; fizz bubbles off its top if asked."""
     cv, cz, hw, hh, tilt, bubbles = CANS[style]
     c, sn = math.cos(math.radians(tilt)), math.sin(math.radians(tilt))
+    if tilt:                                                                   # fizz rising off the can's top
+        tv, tz = cv + hh * sn, cz + hh * c
+        fizz = [(tv + 0.5, tz + 3.0, 1.9), (tv - 2.8, tz + 6.5, 1.5), (tv + 0.8, tz + 10.0, 1.1)]
+    else:
+        fizz = BUBBLES
 
     def paint(side, u, v, z):
         if side not in "RL":
             return None
-        if bubbles and any(math.hypot(v - bv, z - bz) <= r for bv, bz, r in BUBBLES):
+        if bubbles and any(math.hypot(v - bv, z - bz) <= r for bv, bz, r in fizz):
             return "vmCreamL"
         dx, dz = v - cv, z - cz
         x, y = dx * c - dz * sn, dx * sn + dz * c                              # into the can's own frame
@@ -90,7 +97,7 @@ def make(name):
     return f
 
 
-DESIGNS = {n: make(n) for n in ("vm1c24a", "vm1c24b", "vm1c24c", "vm1c24d")}
+DESIGNS = {n: make(n) for n in ("vm1c24a", "vm1c24b", "vm1c24c", "vm1c24d", "vm1c24e")}
 
 
 def jobs():
