@@ -169,11 +169,12 @@ def wheel(hatch=None, phi=0.0, rot=0):
     return objs
 
 
-def shot(build):
+def shot(build, uv=False):
+    """The scene's colour, opacity, glow and anchor (+ its uv pass, the slab face's surface coordinates, if `uv`)."""
     core.clear_scene_meshes()
     post.select(PAL)
-    c, op, g, ox, oy, _ = E.render_sprite("x", "prop", build())
-    return c, op, g, ox, oy
+    c, op, g, ox, oy, _, *u = E.render_sprite("x", "prop", build(), want_uv=uv)
+    return (c, op, g, ox, oy) + tuple(u)
 
 
 _BASE = {}
@@ -212,12 +213,13 @@ def real(d):
 def patch(aid, build, rot=0):
     """The pixels of `objs`' wheel that differ from the base, as an item anchored on the wheel's origin, with a report."""
     bc, bop, bg, bx, by = base_shot(rot)
-    c, op, g, ox, oy = shot(build)
+    c, op, g, ox, oy, uv = shot(build, True)
     left, top = max(bx, ox), max(by, oy)
     w = left + max(bop.shape[1] - bx, op.shape[1] - ox)
     h = top + max(bop.shape[0] - by, op.shape[0] - oy)
     B = [onto(a, bx, by, left, top, w, h) for a in (bc, bop, bg)]
     F = [onto(a, ox, oy, left, top, w, h) for a in (c, op, g)]
+    UV = onto(uv, ox, oy, left, top, w, h)
     d = np.abs(B[0].astype(int) - F[0].astype(int)).max(-1) > TOL
     d |= B[1] != F[1]
     d |= np.abs(B[2].astype(int) - F[2].astype(int)).max(-1) > TOL
@@ -227,7 +229,7 @@ def patch(aid, build, rot=0):
     if not keep.any():
         return None, {"changed": 0, "holes": holes}
     gl = np.where(keep[..., None], F[2], 0).astype(F[2].dtype)
-    it = E.crop_item(aid, FP, F[0], keep, gl, left, top)
+    it = E.crop_item(aid, FP, F[0], keep, gl, left, top, uv=np.where(keep[..., None], UV, 0).astype(np.uint8))
     return it, {"changed": int(keep.sum()), "holes": holes}
 
 

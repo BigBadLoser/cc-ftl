@@ -11,6 +11,10 @@ Per rotation r (`module.stasis_wheel` is the r0 copy):
                                       On the top rim, so the fill shows at every rotation.
 The wheel has a window front and back (the back one is seen at the half turn). The hover cart is slab_cart.py.
 The prisoner's face is pressed into a slab by a shader (a later slice), so one slab sprite serves empty and full."""
+import math
+
+import numpy as np
+
 from . import core, post
 from . import env_build as E
 from . import slab_load as LD
@@ -51,6 +55,24 @@ def slot_objs(rot, i):
     return k.build()
 
 
+def slot_layer(mask, objs):
+    """recovery_study.layer(mask, objs, 255) with the slab face's uv pass: `objs` alone with `mask` (the wheel) as holdout, so a
+    face the wheel hides is hidden in the uv pass too."""
+    for o in mask:
+        o.is_holdout = True
+    xmin, xmax, ymin, ymax = core.extent_px(objs + mask)
+    W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+    H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    rgb, a = core.render(W, H, "color")
+    c, op = post.downsample(rgb, a > 0.5, E.SS, 8, True)
+    grgb, _ = core.render(W, H, "glow")
+    g = post.glow_down(grgb, E.SS, 3)
+    urgb, ua = core.render(W, H, "uv")
+    uv = post.uv_down(urgb, ua, E.SS)
+    al = np.where(op, 255, 0).astype(np.uint8)
+    return E.crop_item("x", FP, E._pad1(c), E._pad1(op), E._pad1(g), (W + 2) // 2, (H + 2) // 2, np.pad(al, 1), E._pad1(uv))
+
+
 def lamp_objs(rot, i, col):
     k = K(f"stasis_lamp{i}_r{rot}", FP, rot)
     W.rim_lamp(k, angles()[i], col)
@@ -66,7 +88,7 @@ def wheel_items(rot):
     for i in range(10):
         core.clear_scene_meshes()
         post.select(PAL)
-        it = layer(wheel_objs(rot), slot_objs(rot, i), 255)
+        it = slot_layer(wheel_objs(rot), slot_objs(rot, i))
         if it is not None:
             out.append(named(it, f"{A}.slot{i}.r{rot}", FP))
     for i in range(10):

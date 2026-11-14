@@ -169,6 +169,9 @@ def jobs(name):
     if name == "stasisload":    # the stasis wheel's loading animation, patches over the stasis wheel (slab_loadanim.py)
         from . import slab_loadanim
         return slab_loadanim.jobs(tuple(int(r) for r in __import__("os").environ.get("STASISLOAD_ROTS", "0,1,2,3").split(","))), "slab"
+    if name == "slabuv":        # the slab face's uv pass, a small prototype set, preview only (slab_uv.py; issue #481)
+        from . import slab_uv
+        return slab_uv.jobs(), "slab"
     if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
         from . import slab_study
         return slab_study.jobs(), "slab"

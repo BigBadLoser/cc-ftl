@@ -1,0 +1,249 @@
+{
+ "sheets": {
+  "slabuv": {
+   "image": "sprites/slabuv.png",
+   "glow": "sprites/slabuv.glow.png",
+   "uv": "sprites/slabuv.uv.png"
+  }
+ },
+ "assets": {
+  "module.stasis_wheel.slot0.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 982,
+    "y": 1,
+    "w": 36,
+    "h": 55
+   },
+   "anchor": {
+    "x": 14,
+    "y": 54
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "slab.cart.h2": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 628,
+    "y": 1,
+    "w": 46,
+    "h": 87
+   },
+   "anchor": {
+    "x": 23,
+    "y": 69
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "slab.cart.h6": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 883,
+    "y": 1,
+    "w": 98,
+    "h": 56
+   },
+   "anchor": {
+    "x": 49,
+    "y": 56
+   },
+   "footprint": [
+    2,
+    2
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "slab.floor.x": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 1019,
+    "y": 1,
+    "w": 82,
+    "h": 54
+   },
+   "anchor": {
+    "x": 57,
+    "y": 41
+   },
+   "footprint": [
+    1,
+    2
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hc09.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 87,
+    "y": 1,
+    "w": 106,
+    "h": 128
+   },
+   "anchor": {
+    "x": 32,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hc12.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 85,
+    "h": 129
+   },
+   "anchor": {
+    "x": 32,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hc16.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 675,
+    "y": 1,
+    "w": 48,
+    "h": 71
+   },
+   "anchor": {
+    "x": 27,
+    "y": 54
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "stasisload.hc20.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 724,
+    "y": 1,
+    "w": 78,
+    "h": 71
+   },
+   "anchor": {
+    "x": 57,
+    "y": 54
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "stasisload.hc25.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 803,
+    "y": 1,
+    "w": 79,
+    "h": 71
+   },
+   "anchor": {
+    "x": 57,
+    "y": 54
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hh0.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 194,
+    "y": 1,
+    "w": 144,
+    "h": 128
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hh3.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 339,
+    "y": 1,
+    "w": 144,
+    "h": 128
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  },
+  "stasisload.hh6.r0": {
+   "kind": "static",
+   "sheet": "slabuv",
+   "frame": {
+    "x": 484,
+    "y": 1,
+    "w": 143,
+    "h": 128
+   },
+   "anchor": {
+    "x": 57,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true,
+   "uv": true
+  }
+ }
+}

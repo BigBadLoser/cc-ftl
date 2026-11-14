@@ -84,6 +84,8 @@ def store(path, items):
     for k, it in enumerate(items):
         arrs.update({f"id{k}": np.array(it["id"]), f"fp{k}": np.array(it["fp"]), f"rgba{k}": it["rgba"], f"g{k}": it["g"],
                      f"a{k}": np.array([it["ax"], it["ay"]])})
+        if "uv" in it:                                                   # (the uv pass: only the sprites that have one)
+            arrs[f"uv{k}"] = it["uv"]
     tmp = path.with_suffix(".tmp.npz")
     np.savez_compressed(tmp, **arrs)
     os.replace(tmp, path)
@@ -92,4 +94,5 @@ def store(path, items):
 def load(path):
     with np.load(path) as z:
         return [{"id": str(z[f"id{k}"]), "fp": tuple(int(v) for v in z[f"fp{k}"]), "rgba": z[f"rgba{k}"], "g": z[f"g{k}"],
-                 "ax": int(z[f"a{k}"][0]), "ay": int(z[f"a{k}"][1])} for k in range(int(z["n"]))]
+                 "ax": int(z[f"a{k}"][0]), "ay": int(z[f"a{k}"][1]), **({"uv": z[f"uv{k}"]} if f"uv{k}" in z.files else {})}
+                for k in range(int(z["n"]))]

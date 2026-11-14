@@ -25,8 +25,8 @@ def named(it, aid, fp):
 
 
 def render(k, aid, fp):
-    c, op, g, ox, oy, _ = E.render_sprite("x", "prop", k.build())
-    return named(E.crop_item("x", fp, c, op, g, ox, oy), aid, fp)
+    c, op, g, ox, oy, _, uv = E.render_sprite("x", "prop", k.build(), want_uv=True)
+    return named(E.crop_item("x", fp, c, op, g, ox, oy, uv=uv), aid, fp)
 
 
 def item_items():
