@@ -183,12 +183,23 @@ function stripsOf(s: Site): Strip[] {
   }
   // A strip that is not full joins the strip beside it on its face: the one towards the axis (corner strips fold
   // inward one after another, farthest first, until they reach a full one), else the one away from it (the pieces a
-  // concourse or a spine leaves either side of itself). One with no neighbour at all stays open space, a notch.
+  // concourse or a spine leaves either side of itself). One with no neighbour joins the room it touches.
   for (const st of [...strips.values()].filter((q) => !q.full).sort((p, q) => Math.abs(q.off) - Math.abs(p.off))) {
     const step = Math.sign(st.off) * K;
     const towards = strips.get(`${st.face}${st.off - step}`), away = strips.get(`${st.face}${st.off + step}`);
     const host = towards && Math.sign(towards.off) === Math.sign(st.off) ? towards : away?.full ? away : undefined;
     if (host) host.tiles.push(...st.tiles);
+    else {
+      // None either side (a pier on one, a corner room on the other): it joins the room it touches, a corner first,
+      // so no notch is left beside a part crossing the band.
+      const touching = new Set<number>();
+      for (const [x, y] of st.tiles) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const id = g.at(x + dx, y + dy);
+        if (id >= 0 && !g.regions[id]?.hall) touching.add(id);
+      }
+      const rooms = [...touching].sort((p, q) => (g.regions[q]?.rank ?? 0) - (g.regions[p]?.rank ?? 0));
+      if (rooms[0] !== undefined) for (const [x, y] of st.tiles) g.set(x, y, rooms[0]);
+    }
     strips.delete(`${st.face}${st.off}`);
   }
   // A tongue: a tile with the ring on one side and another strip straight across from it. Where the ring turns a
