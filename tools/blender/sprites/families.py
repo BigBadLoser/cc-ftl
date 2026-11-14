@@ -34,7 +34,8 @@
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
   bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
-            module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench module.bench (2x1), the planter
+            module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench
+            module.bench (2x1, bench.py: with the overlay over its three sitters), the planter
             module.planter, the vending machines module.vending and module.vending_red, four rotations, art only but
             the bed (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
@@ -163,7 +164,11 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
-    if name in ("bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module"):
+    if name == "bench_module":
+        import os
+        from . import bench
+        return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
+    if name in ("bunk_module", "exercise_module", "planter_module", "vending_module"):
         import os
         from . import leisure
         return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
@@ -245,6 +250,9 @@ def jobs(name):
     if name == "planter":       # look study, preview only (not in RENDERED): planter designs, r1
         from . import planter_study
         return planter_study.jobs(), "only:planter"
+    if name == "bench13":       # look study, preview only (not in RENDERED): BN18O raised for sitting, r13
+        from . import bench_r13
+        return bench_r13.jobs(), "only:bench7"
     if name == "bench12":       # look study, preview only (not in RENDERED): BN18 beam on end legs, r12
         from . import bench_r12
         return bench_r12.jobs(), "only:bench7"
