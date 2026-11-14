@@ -57,7 +57,7 @@ function attempt(s: Site, rooms: readonly RoomSpec[], axis: Axis, cross: boolean
     const start = cross ? 2 : 0;
     for (const side of [-1, 1] as const) for (const dir of [1, -1] as const) rows.push({ axis: ax, dir, from: dir > 0 ? start : -1 - start, edge: side < 0 ? -2 : 1, side });
   }
-  let left = [...rooms].sort((p, q) => q.w * q.h - p.w * p.h);
+  const left = [...rooms].sort((p, q) => q.w * q.h - p.w * p.h);
   const at = rows.map((r) => r.from);
   // Deal: each row in turn takes the next room that fits it; a row that takes nothing is closed.
   const open = rows.map(() => true);
