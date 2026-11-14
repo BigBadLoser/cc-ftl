@@ -25,7 +25,7 @@ from . import slab_wheel as W
 from .modkit import K
 from .slab_bay import fittings
 from .slab_kit import angles, at, cassette, floor_fill, frame, prism, tube
-from .slab_study import PAL, Slab, beam
+from .slab_study import PAL, Slab, beam, hover_cart
 from .recovery_study import SAMPLES, layer
 
 FP = (3, 3)
@@ -33,20 +33,12 @@ A = "stasisload"
 ALL = tuple(range(10))
 TOL = 14                                            # a pixel counts as changed when a channel moves by more than this
 
-# Hatch frames: (cradle tilt deg, platform z, leaves shut 0..1, slab). slab: None | "home" | ("cradle",) | ("slide", t, f)
-HATCH = [
-    (0, LD.DEEP, 0.5, None),                        # h0  the leaves part
-    (90, -0.55, 0.0, None),                         # h1  the cradle rises out of the shaft, folded flat
-    (90, 0.0, 0.0, ("cradle",)),                    # h2  flush: the slab is on it (the cart's slab is gone: stowSlab)
-    (60, 0.0, 0.0, ("cradle",)),                    # h3  the cradle tips it up
-    (30, 0.0, 0.0, ("cradle",)),                    # h4
-    (0, 0.0, 0.0, ("cradle",)),                     # h5  upright
-    (0, -0.3, 0.0, ("cradle",)),                    # h6  the platform sinks
-    (0, LD.SINK, 0.0, ("cradle",)),                 # h7  the slab's foot at the ring's
-] + [(0, LD.SINK + (LD.DEEP - LD.SINK) * min(1.0, (j / 8) / 0.4), 0.0, ("slide", j / 8, max(0.0, (j / 8 - 0.4) / 0.6)))
-     for j in (2, 4, 6, 8)] + [                     # h8-h11 the shuttle runs it in and turns it
-    (0, LD.DEEP, 0.5, "home"),                      # h12 the leaves close over it (then the base and slot 0's layer)
-]
+# Hatch frames: the ORIGINAL sequence of slab_load.py, every frame of it: hd0-hd4 (KEYS_D: the leaves part, the cradle rises),
+# hc00-hc25 (KEYS: the cradle folds flat, the cart slides in and lowers the slab, pulls away, the cradle tips it up, the
+# platform sinks, the shuttle runs it in and turns it), he0-he1 (KEYS_E: the leaves shut). Each entry: (name, key, n).
+# n is the frame's index in the original (the cart's ring loop frame).
+HATCH = [(f"hd{j}", k, 0) for j, k in enumerate(LD.KEYS_D)] + [(f"hc{i:02d}", k, i) for i, k in enumerate(LD.KEYS)] + \
+    [(f"he{j}", k, 0) for j, k in enumerate(LD.KEYS_E)]
 # Star frames: the crank's angle (deg) from mid-step. The pin is in the star's slot for |phi| < 72, where the star turns
 # (up to 18 deg either way); out of it the star stands locked while the crank swings on round to the next slot.
 STAR = [36, 72, 144, 216, -72, -36]
@@ -113,11 +105,15 @@ def geneva_phase(phi):
     return geneva
 
 
-def wheel(hatch=None, phi=0.0):
-    """The wheel (every socket empty, as slab_game's base) with the hatch in pose `hatch`, the star's crank at `phi`."""
-    tilt, pz, leaves, sl = hatch or (0, LD.DEEP, 1.0, None)
-    t = math.radians(tilt)
-    k = K("stasis_load", FP, 0)
+def wheel(hatch=None, phi=0.0, rot=0):
+    """The wheel (every socket empty, as slab_game's base) at rotation `rot`, with the hatch in frame `hatch` (a
+    (name, key, n) of HATCH: slab_load.frame_n's poses, the cart's own geometry included), the star's crank at `phi`."""
+    key = hatch[1] if hatch else (0, LD.DEEP, 0, None, 1.0)
+    n = hatch[2] if hatch else 0
+    tilt, pz, swing, sl, leaves = key + ((0.0,) if len(key) == 4 else ())
+    tilt = math.radians(tilt)
+    W.VIEW[0] = rot
+    k = K(f"stasis_load_r{rot}", FP, rot)
     old = W.geneva
     W.geneva = geneva_phase(phi) if phi else old
     try:
@@ -126,20 +122,27 @@ def wheel(hatch=None, phi=0.0):
         W.geneva = old
     fittings(k, ALL)
     LD.hatch(k, pz, leaves)
-    if leaves < 1:
-        bed = LD.pose(pz + 0.12 + (LD.BED - 0.12) * math.sin(t), t)
-        LD.cradle(k, bed, pz)
-        if sl == "home":
-            cassette(k, frame(angles()[0], W.Z0))
-        elif sl and sl[0] == "cradle":
-            cassette(k, bed)
-        elif sl:
-            o = at(LD.HC + (W.R0 - LD.HC) * sl[1], LD.ST, W.Z0)
-            s = Slab(o, LD.UP, LD.rot(LD.ET, LD.UP, math.radians(-40) * sl[2]))
+    bed = LD.pose(pz + 0.12 + (LD.BED - 0.12) * math.sin(tilt), tilt)
+    LD.cradle(k, LD.swung(bed, math.radians(swing)), pz)
+    if sl == "home":
+        cassette(k, frame(angles()[0], W.Z0))
+    elif sl:
+        if sl[0] in ("cart", "left"):
+            s = LD.pose(sl[2], math.radians(90))
+            s = Slab(tuple(s.O[i] - LD.ET[i] * sl[1] for i in range(3)), s.U, s.N)
+            hover_cart(k, s, n, bar=1)               # the game's cart is slab_cart.py: the same hover_cart(), same geometry
+            if sl[0] == "left":
+                s = bed
+        elif sl[0] == "cradle":
+            s = bed
+        else:
+            t, f = sl[1], sl[2]
+            o = at(LD.HC + (W.R0 - LD.HC) * t, LD.ST, W.Z0)
+            s = Slab(o, LD.UP, LD.rot(LD.ET, LD.UP, math.radians(-40) * f))
             s.box(k, -0.12, 0.0, -0.42, 0.42, -LD.T - 0.06, 0.06, "steelD", face="hazY")
-            cassette(k, s)
+        cassette(k, s)
     objs = k.build()
-    f = K("stasis_load_floor", FP, 0)
+    f = K(f"stasis_load_floor_r{rot}", FP, rot)
     floor_fill(f, LD.r_hole, -0.04, 0.0, "dark", half=4.0)
     for o in f.build():
         o.is_holdout = True
@@ -154,13 +157,13 @@ def shot(build):
     return c, op, g, ox, oy
 
 
-_BASE = []
+_BASE = {}
 
 
-def base_shot():
-    if not _BASE:
-        _BASE.append(shot(wheel))
-    return _BASE[0]
+def base_shot(rot=0):
+    if rot not in _BASE:
+        _BASE[rot] = shot(lambda: wheel(rot=rot))
+    return _BASE[rot]
 
 
 def onto(b, ox, oy, left, top, w, h):
@@ -187,9 +190,9 @@ def real(d):
     return d & (box(dense, 2) > 0)
 
 
-def patch(aid, build):
+def patch(aid, build, rot=0):
     """The pixels of `objs`' wheel that differ from the base, as an item anchored on the wheel's origin, with a report."""
-    bc, bop, bg, bx, by = base_shot()
+    bc, bop, bg, bx, by = base_shot(rot)
     c, op, g, ox, oy = shot(build)
     left, top = max(bx, ox), max(by, oy)
     w = left + max(bop.shape[1] - bx, op.shape[1] - ox)
@@ -202,6 +205,8 @@ def patch(aid, build):
     d = real(d)
     holes = int((d & B[1] & ~F[1]).sum())            # opaque in the base, empty now (a patch cannot erase)
     keep = d & F[1]
+    if not keep.any():
+        return None, {"changed": 0, "holes": holes}
     gl = np.where(keep[..., None], F[2], 0).astype(F[2].dtype)
     it = E.crop_item(aid, FP, F[0], keep, gl, left, top)
     return it, {"changed": int(keep.sum()), "holes": holes}
@@ -213,38 +218,45 @@ def named(it, aid):
     return it
 
 
-def job(kind, n):
-    def run(kind=kind, n=n):
+def job(kind, n, rot=0):
+    def run(kind=kind, n=n, rot=rot):
         import bpy
         bpy.context.scene.cycles.samples = core.SAMPLES if core.PREVIEW else SAMPLES
         try:
-            return render(kind, n)
+            return render(kind, n, rot)
         finally:
             W.VIEW[0] = 0
             bpy.context.scene.cycles.samples = core.SAMPLES
     return run
 
 
-def render(kind, n):
+def render(kind, n, rot=0):
+    sfx = f".r{rot}"
     if kind == "base":
-        c, op, g, ox, oy = base_shot()
-        return [named(E.crop_item("x", FP, c, op, g, ox, oy), f"{A}.base")]
-    if kind == "slot0":
+        c, op, g, ox, oy = base_shot(rot)
+        return [named(E.crop_item("x", FP, c, op, g, ox, oy), f"{A}.base{sfx}")]
+    if kind in ("slot0", "lamp0"):
         core.clear_scene_meshes()
         post.select(PAL)
-        k = K("stasis_load_slot0", FP, 0)
-        cassette(k, frame(angles()[0], W.Z0))
-        return [named(layer(wheel(), k.build(), 255), f"{A}.slot0")]
-    if kind == "lamp0":
-        core.clear_scene_meshes()
-        post.select(PAL)
-        k = K("stasis_load_lamp0", FP, 0)
-        W.rim_lamp(k, angles()[0], "slbLmp")
-        return [named(layer(wheel(), k.build(), 255), f"{A}.lamp0")]
-    it, rep = patch(f"{A}.{kind}{n}", (lambda: wheel(HATCH[n])) if kind == "h" else (lambda: wheel(phi=STAR[n])))
-    print("PATCH", kind, n, rep, it["rgba"].shape if it else None, flush=True)
-    return [named(it, f"{A}.{kind}{n}")]
+        k = K(f"stasis_load_{kind}_r{rot}", FP, rot)
+        if kind == "slot0":
+            cassette(k, frame(angles()[0], W.Z0))
+        else:
+            W.rim_lamp(k, angles()[0], "slbLmp")
+        return [named(layer(wheel(rot=rot), k.build(), 255), f"{A}.{kind}{sfx}")]
+    if kind == "h":
+        name, build = HATCH[n][0], (lambda: wheel(HATCH[n], rot=rot))
+    else:
+        name, build = f"s{n}", (lambda: wheel(phi=STAR[n], rot=rot))
+    it, rep = patch(f"{A}.{name}{sfx}", build, rot)
+    print("PATCH", name, rot, rep, it["rgba"].shape if it else None, flush=True)
+    return [named(it, f"{A}.{name}{sfx}")]
 
 
-def jobs():
-    return [job("base", 0), job("slot0", 0), job("lamp0", 0)] + [job("h", n) for n in range(len(HATCH))] + [job("s", n) for n in range(len(STAR))]
+def jobs(rots=None):
+    rots = rots if rots is not None else range(4)
+    out = []
+    for r in rots:
+        out += [job("base", 0, r), job("slot0", 0, r), job("lamp0", 0, r)]
+        out += [job("h", n, r) for n in range(len(HATCH))] + [job("s", n, r) for n in range(len(STAR))]
+    return out
