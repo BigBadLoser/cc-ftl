@@ -1,6 +1,7 @@
 import { abortTask } from '../ai/task';
 import { releaseBed } from '../crew/beds';
-import { CarriedC, CrewC, DownedC, DraftedC, PathC, PositionC, type Crew } from '../crew/components';
+import { CarriedC, CrewC, DownedC, DraftedC, PathC, PositionC, RecoveringC, type Crew } from '../crew/components';
+import { leaveCare } from '../crew/recovery';
 import type { Tile } from '../crew/pathfind';
 import { FighterC, PrisonerC, SurrenderedC } from '../fight/components';
 import { CarryingC, ItemStackC } from '../items/components';
@@ -69,6 +70,8 @@ export function sealPrisoner(sim: Sim, prisoner: number, carrier: number): void 
     releaseBed(sim, downed.bed, prisoner);
     downed.bed = 0;
   }
+  const rec = sim.world.get(prisoner, RecoveringC);
+  if (rec) leaveCare(sim, prisoner, rec); // out of a recovery pod: the pod is free again
   for (const key of [PositionC, PathC, CarriedC, DraftedC]) sim.world.remove(prisoner, key);
   sim.world.add(prisoner, StasisC, { reserve: RESERVE_TICKS, at: 'carried', carrier, x: at?.x ?? 0, y: at?.y ?? 0, rot: 0 });
   sim.events.emit({ type: 'stasis.sealed', crew: prisoner, by: carrier, ship: shipIdOf(sim, at) });

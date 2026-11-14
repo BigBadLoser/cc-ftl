@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AllegianceC, AssignmentC, CrewC, DraftedC, ModuleC, NeedsC, PositionC, ShipC, placementError, playerShip, spawnModule, type Sim, type SimEvent } from '../sim';
-import { JobC, type Job } from '../sim/crew/components';
+import { JobC, RecoveringC, type Job } from '../sim/crew/components';
+import { sealPrisoner } from '../sim/stasis/freeze';
 import { CarryingC } from '../sim/items/components';
 import { performStasis } from '../sim/stasis/jobs';
 import { parkCart } from '../sim/stasis/cart';
@@ -141,6 +142,17 @@ describe('stasis wheel', () => {
     expect(turned).toBeLessThanOrEqual(3 * TURN_STEP_WORK + 1);
     expect(loaded).toBeGreaterThan(STOW_WORK / 2);
     expect(wheelSlots(sim.world, wheel).filter((x) => x.kind === 'empty')).toHaveLength(9); // the ring kept its slabs, in order
+  });
+
+  it('sealing a prisoner resting in a recovery pod frees the pod', () => {
+    const { sim, prisoner } = prisonGame();
+    const pod = place(sim, 'module.recovery');
+    sim.world.get(pod, ModuleC)!.reservedBy = prisoner;
+    sim.world.add(prisoner, RecoveringC, { bed: pod });
+    sealPrisoner(sim, prisoner, playerCrew(sim)[0] as number);
+    expect(sim.world.get(pod, ModuleC)!.reservedBy).toBe(0);
+    expect(sim.world.has(prisoner, RecoveringC)).toBe(false);
+    expect(isFrozen(sim, prisoner)).toBe(true);
   });
 
   it('crew seal a prisoner where they stand and cart the slab to the wheel', () => {
