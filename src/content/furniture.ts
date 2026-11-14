@@ -115,9 +115,9 @@ export const furniture = {
     scrap: 'comfort',
     name: 'Storage tank',
     category: 'storage',
-    description: "An upright pressure tank. Takes only water, oxygen and fuel.",
+    description: "An upright pressure tank. Takes only water and oxygen.",
     asset: 'module.storage_tank', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
-    flammability: 0.3, maxHp: 140, buildWork: 110, cost: [{ item: 'item.metal', count: 14 }], storage: { capacity: 20 }, storageAccepts: ['item.water', 'item.oxygen', 'item.fuel'],
+    flammability: 0.3, maxHp: 140, buildWork: 110, cost: [{ item: 'item.metal', count: 14 }], storage: { capacity: 20 }, storageAccepts: ['item.water', 'item.oxygen'],
   },
   // A freight container, opened from the doors on its short end (rotation 0: the +y end). Cargo holds pack them end-on to their walkway.
   'module.cargo_container': {

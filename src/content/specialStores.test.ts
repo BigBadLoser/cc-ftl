@@ -25,11 +25,12 @@ describe('special stores', () => {
     const armory = filter('module.storage_armory'), cold = filter('module.storage_cold'), tank = filter('module.storage_tank');
     for (const i of ['item.rifle', 'item.sidearm', 'item.blade', 'item.missile']) expect(accepts(armory, i)).toBe(true);
     for (const i of ['item.ration', 'item.meal_good', 'item.greens', 'item.herbs']) expect(accepts(cold, i)).toBe(true);
-    for (const i of ['item.water', 'item.oxygen', 'item.fuel']) expect(accepts(tank, i)).toBe(true);
+    for (const i of ['item.water', 'item.oxygen']) expect(accepts(tank, i)).toBe(true);
     for (const i of ['item.metal', 'item.iron_ore', 'item.scrap_hull']) for (const f of [armory, cold, tank]) expect(accepts(f, i)).toBe(false);
     expect(accepts(armory, 'item.ration')).toBe(false);
     expect(accepts(cold, 'item.fuel')).toBe(false);
     expect(accepts(tank, 'item.rifle')).toBe(false);
+    expect(accepts(tank, 'item.fuel')).toBe(false); // fuel is solid (fuel cells): a rack or crate holds it
   });
 
   it.each(STORES)('%s has its fill sprites at every rotation', (id) => {
