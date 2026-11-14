@@ -1,8 +1,8 @@
 /*
  * The stasis press (#116): a full slab shows its prisoner's whole crew sprite pressed into the slab's face. The face is found
- * from the slab sprite itself: it is the palette tone `slbFace` unlit (#8c9697 after the render's colour step), a clean
- * parallelogram, so a colour key gives the mask and its four corners the affine map from the figure to the face. No Blender
- * mask. The game's look is R2 of the render lab's `stasisface` panel (the original press on a face lifted 50% toward pale
+ * through the sprite's Blender UV pass (#481: `pressSlabUv`, tilt, foreshortening and occlusion come out right), or, for a sprite
+ * without one, from the sprite itself: the palette tone `slbFace` unlit (#8c9697 after the render's colour step), a clean
+ * parallelogram, so a colour key gives the mask and its four corners the affine map from the figure to the face. The game's look is R2 of the render lab's `stasisface` panel (the original press on a face lifted 50% toward pale
  * grey, the figure stretched over the whole face window with its tones spread). Pure pixel maths over RGBA buffers; slabFace.ts
  * bakes it for the game, and the lab panel draws its other variants from the same code.
  */

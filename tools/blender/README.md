@@ -110,6 +110,18 @@ Atlas `sprites/env.png` (+ `env.glow.png`); anchors = floor-diamond centre of th
   exterior slopes), straight variants `.m5.v1/.v2`, `.m10.v1/.v2`, ghosts `tile.hull.ghost.m<0-15>` (near-black, ~55%
   alpha, light edge). Doors `tile.door.x|y` (+ `.open`), tall frame; doors count as wall neighbours for masks.
 - Floors `tile.floor.a..h`, seamless plated deck variants.
+- **UV pass** (#481; `core.render(.., "uv")`, `post.uv_down`): a sprite whose geometry carries surface coordinates
+  (`Mesh.uv`, vertex index -> (u, v); today the stasis slab's face, `slab_study.Slab.box`) gets a third twin sheet
+  `<family>.uv.png` beside `.glow.png` (manifest sheet `uv`, asset `uv: true`; `env_build.render_sprite(.., want_uv=True)`,
+  `crop_item(.., uv=)`, `pack.pack`, cache entries carry it). The pass emits (u, v, 1) from the face's "Uv" corner colours, every
+  other surface black (so it occludes), rendered Raw (no colour transform) at 16 bit and 1 sample (the 4x4 sub-pixels
+  are the antialiasing). `post.uv_down` is never palette-quantised or mode-voted: a pixel is a face pixel when at least half
+  its samples are face; its (u, v) is the mean over those samples (R/B decode, so edge samples are clean). RGBA8:
+  R = u, G = v (0..255), B = face coverage, A = 255 on a face pixel. u runs across the face to the viewer's right, v up it
+  toward the slab's head, over the whole face polygon (the steel lip hides the outer 0.1 each side; `slabPress.UV_WINDOW`).
+  Cost: about 1 s per wheel-sized frame (the colour pass 11 s). The game reads it in `slabPress.pressSlabUv`
+  (`slabFace.ts`); sprites without a UV entry fall back to the colour key. A new UV family gives its meshes `Mesh.uv`, the
+  rest is automatic. Lab: `npm run lab -- --panel slabuv`.
 - Economy (`logistics.py`, `items.py`): `module.fabricator` (2x1; `.active` = crafting glow and sparks; `.r1/.r2/.r3` are the
   rotations, front = access side) and `module.storage.empty|partial|full` (`module.storage` = partial). Items: floor stacks
   `item.<id>.s|m|l` (renderer picks by count / stack size) and carried `item.<id>.held`, for scrap, metal, electronics, polymer,
