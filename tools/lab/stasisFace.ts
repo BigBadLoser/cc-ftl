@@ -220,7 +220,21 @@ const mixed: Variant = (o, i, x, y, ctx) => {
   for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, [225, 245, 255][c]!, white);
 };
 
+/** O: the original study's press (tools/blender/review/slab_preview.py): the crew's shading carried into the face colour,
+ * its outline cut in (lit top-left, shadowed bottom-right), a 15% tint of the field. */
+const original: Variant = (o, i, _x, _y, { f }) => {
+  const w = f.w;
+  const on = (k: number): boolean => (f.a[k] ?? 0) > 0.5;
+  if (!on(i)) return;
+  let sh = 0.78 + 0.6 * (f.l[i]! - 0.45);
+  if (!on(i - w - 1)) sh *= 1.22;
+  else if (!on(i + w + 1)) sh *= 0.62;
+  const tint = [127, 240, 255];
+  for (let c = 0; c < 3; c++) o[c] = Math.min(255, o[c]! * sh) * 0.85 + tint[c]! * 0.15;
+};
+
 const VARIANTS: readonly [string, string, Variant][] = [
+  ['O original study', 'shade + cut outline + field tint', original],
   ['A frosted glass', 'haze + soft shadow', frosted],
   ['B carbonite relief', 'tinted slab, raised, lit top-left', relief],
   ['C pressed under ice', 'dark deep, frozen rim, sheen', ice],
