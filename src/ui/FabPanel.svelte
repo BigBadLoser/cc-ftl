@@ -127,7 +127,7 @@
   .bad { color: var(--red); }
   h3 { margin: 10px 0 4px; font-size: 13px; color: var(--ink-accent); }
   h3 small { color: var(--dim); font-weight: normal; margin-left: 6px; }
-  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .orders li { background: var(--track); border: 1px solid var(--line); border-radius: 0; padding: 4px 6px; }
   .orders li.active { border-color: var(--amber); }
   .orders li.done { opacity: 0.6; }
