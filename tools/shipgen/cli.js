@@ -65,7 +65,7 @@ try {
     for (const p of m.problems) console.log(`problem: ${p}`);
     const g = tv.templateResult(m.template.name, m.template);
     for (const { x, y, role } of m.roles ?? []) { const room = g.roomOf[y * g.width + x]; if (room >= 0 && g.rooms[room]) g.rooms[room].role = role; }
-    const r = lv.labelOf(g, m.template.name, Number(opt('scale', 16)), m.captions);
+    const r = lv.labelOf(g, m.template.name, Number(opt('scale', 16)), m.captions, false);
     const f = join(out, `${name}-labels.png`);
     writeFileSync(f, png(r.width, r.height, r.data));
     console.log(f);

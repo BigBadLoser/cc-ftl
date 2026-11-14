@@ -25,7 +25,7 @@ export const CODES: Record<string, string> = {
   'Storage crate': 'CR', 'Storage rack': 'RK', 'Cargo pallet': 'PA', 'Freight container': 'FC', 'Holo column': 'HO', Planter: 'PL',
   'Tree planter': 'TR', Bench: 'BE', Console: 'CO', Helm: 'HE', 'Weapons console': 'WC', 'Shield console': 'SC',
   'Shield generator': 'SG', 'AI core': 'AI', 'Point defence': 'PD', 'Burst laser': 'BL', 'Mass driver': 'MD', 'Ion cannon': 'IC',
-  'Missile launcher': 'ML', 'Game table': 'GT', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY',
+  'Missile launcher': 'ML', 'Game table': 'GT', 'Recovery pod': 'RP', 'Battery bank': 'BT', 'Medical bed': 'MB', Airlock: 'AK', Refinery: 'RF', Hydroponics: 'HY',
 };
 /** Lamps (floor lights, cage lamps, light masts) are dots, not coded pieces. */
 export const isLamp = (d: ModuleDef | undefined): boolean => !!d && !!d.light && /lamp|light/i.test(d.name);
@@ -54,7 +54,7 @@ export function labelView(spec: string, seed: number, depth = 4, t = 16): Raster
 }
 
 /** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
-export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = []): Raster {
+export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
@@ -88,7 +88,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     r.text(code, x0 + ((w * t - 2) >> 1) - 7, y0 + ((h * t - 2) >> 1) - 5, INK, 2);
   }
   // Room names at the middle of every room big enough to carry one.
-  for (const [room, [sx, sy, n]] of mid) {
+  for (const [room, [sx, sy, n]] of names ? mid : []) {
     const name = NAMES[roles[room] as string];
     if (!name || n < 10) continue;
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);

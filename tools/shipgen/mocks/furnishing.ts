@@ -1,6 +1,5 @@
 /**
- * Furnishing mock (dev tool, not shipped): rooms of a military station, each furnished in two or three arrangements, and a
- * pirate barracks and mess for the kind's mood, laid out as one template of real modules so the labelled view and the
+ * Furnishing mock (dev tool, not shipped): rooms of a military station, each furnished in two or three arrangements, laid out as one template of real modules so the labelled view and the
  * layout lab's game renderer can both draw it. Rooms stand in rows, a door in each one's bottom wall onto a corridor.
  *   node tools/shipgen/cli.js --mock tools/shipgen/mocks/furnishing.ts --out <dir>  (then /tools/layout/?case=mock-furnishing)
  */
@@ -14,8 +13,8 @@ type Piece = [def: string, x: number, y: number, rot?: Rot];
 interface RoomMock { caption: string; role?: RoomRole; w: number; h: number; door: number; pieces: Piece[] }
 
 const defs = content.modules as Record<string, ModuleDef>;
-const B = 'module.bed', L = 'module.storage_locker', T = 'module.mess_table', C = 'module.chair', G = 'module.galley', K = 'module.storage_rack';
-const CR = 'module.storage', LS = 'module.lifeSupport';
+const B = 'module.bed', L = 'module.storage_locker', T = 'module.mess_table', C = 'module.chair', G = 'module.galley';
+const LS = 'module.lifeSupport';
 
 /** Chairs either side of a table along x (rot 0) at (x, y): above facing down, below facing up. */
 const seats = (x: number, y: number, w = 2): Piece[] => Array.from({ length: w }, (_, i) => [[C, x + i, y - 1, 0], [C, x + i, y + 1, 2]] as Piece[]).flat();
@@ -45,14 +44,6 @@ const barracks: RoomMock[] = [
       [T, 4, 2, 0], ...seats(4, 2),
     ],
   },
-  {
-    role: 'quarters', caption: 'P pirate bunks', w: 11, h: 6, door: 5,
-    pieces: [
-      [B, 0, 0, 1], [B, 3, 0, 0], [B, 0, 3, 0], [B, 9, 0, 1], [B, 9, 2, 1], [B, 8, 4, 0],
-      [CR, 2, 1, 0], [CR, 5, 0, 0], [CR, 6, 0, 0], [CR, 1, 5, 2], ['module.arcade', 10, 5, 2],
-      ['module.storage_pallet', 5, 3, 0], [L, 10, 3, 1], [C, 4, 3, 1],
-    ],
-  },
 ];
 
 const messes: RoomMock[] = [
@@ -68,29 +59,28 @@ const messes: RoomMock[] = [
     role: 'support', caption: 'M3 galley corner, booths', w: 14, h: 5, door: 6,
     pieces: [[G, 0, 0, 3], [G, 0, 2, 3], [LS, 0, 4, 1], [T, 8, 1, 0], ...seats(8, 1), [T, 11, 1, 0], ...seats(11, 1), ['module.arcade', 13, 4, 2], ['module.gametable', 4, 2, 0]],
   },
-  {
-    role: 'support', caption: 'P pirate mess', w: 14, h: 5, door: 6,
-    pieces: [
-      [G, 0, 0, 0], [T, 3, 2, 1], [C, 2, 2, 3], [C, 4, 3, 1], [T, 8, 1, 0], [C, 8, 0, 0], [C, 10, 1, 1], [C, 9, 2, 2],
-      [CR, 12, 0, 0], [CR, 13, 0, 0], [CR, 13, 2, 0], ['module.gametable', 10, 3, 0], ['module.arcade', 0, 4, 2], [CR, 2, 0, 0],
-    ],
-  },
 ];
 
 const guns: RoomMock[] = [
   {
-    role: 'weapons', caption: 'G1 guns on the hull, racks behind', w: 13, h: 6, door: 6,
+    role: 'weapons', caption: 'G1 guns in a row down the middle', w: 15, h: 7, door: 4,
     pieces: [
-      ['module.massDriver', 0, 0], ['module.massDriver', 4, 0], ['module.burstLaser', 8, 0], ['module.pointDefense', 11, 0],
-      [K, 0, 5, 2], [K, 2, 5, 2], [K, 9, 5, 2], [K, 11, 5, 2], ['module.battery', 4, 5], ['module.battery', 8, 5],
+      ['module.massDriver', 1, 2], ['module.massDriver', 5, 2], ['module.burstLaser', 9, 3], ['module.pointDefense', 12, 3],
+      ['module.weaponsConsole', 10, 5, 2], ['module.battery', 0, 6], ['module.battery', 1, 6], ['module.battery', 14, 0], ['module.battery', 14, 1],
     ],
   },
   {
-    role: 'weapons', caption: 'G2 guns paired, ammo between', w: 13, h: 6, door: 6,
+    role: 'weapons', caption: 'G2 guns staggered in two rows', w: 15, h: 7, door: 7,
     pieces: [
-      ['module.massDriver', 0, 0], ['module.battery', 3, 0], ['module.battery', 3, 1], ['module.massDriver', 4, 0],
-      ['module.burstLaser', 8, 0], ['module.battery', 10, 0], ['module.battery', 10, 1], ['module.burstLaser', 11, 0],
-      ['module.weaponsConsole', 9, 4, 2], [L, 0, 5, 2], [L, 1, 5, 2],
+      ['module.massDriver', 1, 1], ['module.burstLaser', 6, 1], ['module.massDriver', 10, 1], ['module.burstLaser', 5, 5], ['module.pointDefense', 9, 5],
+      ['module.weaponsConsole', 12, 5, 2], ['module.battery', 0, 6], ['module.battery', 0, 5],
+    ],
+  },
+  {
+    role: 'weapons', caption: 'G3 guns round the fire control', w: 13, h: 8, door: 6,
+    pieces: [
+      ['module.massDriver', 1, 1], ['module.massDriver', 9, 1], ['module.burstLaser', 1, 5], ['module.pointDefense', 10, 5], ['module.weaponsConsole', 5, 3, 0],
+      ['module.battery', 6, 0], ['module.battery', 0, 7], ['module.battery', 12, 7],
     ],
   },
 ];
@@ -124,7 +114,7 @@ const reactors: RoomMock[] = [
   },
 ];
 
-export const ROWS: RoomMock[][] = [barracks, messes, [...guns, ...medbays], [...shields, ...reactors]];
+export const ROWS: RoomMock[][] = [barracks, messes, guns, [...medbays, ...shields, ...reactors]];
 
 /** The sheet as one template, the captions and roles at their rooms, and every placement problem found. */
 export function mock(): { template: ShipTemplate; captions: { x: number; y: number; text: string; cx: number; cy: number }[]; roles: { x: number; y: number; role: RoomRole }[]; problems: string[] } {
