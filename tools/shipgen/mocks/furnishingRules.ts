@@ -135,31 +135,23 @@ const spread = (def: string, k: number, s: number, along = false): Rule => (w) =
     return [[def, x, 0], ...(i < k - 1 ? bats : [])];
   });
 };
-/** G1: guns in a row across the middle, a tile apart; batteries in two corners. */
-const g1 = (guns: string[]): Rule => (w, h) => {
-  let x = Math.max(1, Math.floor((w - guns.reduce((n, g) => n + (SIZE[g] as number) + 1, -1)) / 2));
-  const out = guns.map((g): Piece => { const s = SIZE[g] as number, p: Piece = [g, x, Math.floor((h - s) / 2)]; x += s + 1; return p; });
-  return [...out, [BT, w - 1, 0], [BT, w - 1, 1], [BT, 0, h - 1], [BT, 1, h - 1]];
+/** Guns in a row across the room at y, a tile apart, centred. */
+const gunRow = (guns: string[], w: number, y: (s: number) => number): Piece[] => {
+  let x = Math.floor((w - guns.reduce((n, g) => n + (SIZE[g] as number) + 1, -1)) / 2);
+  return guns.map((g): Piece => { const s = SIZE[g] as number, p: Piece = [g, x, y(s)]; x += s + 1; return p; });
 };
-/** G2: two rows of columns; the bottom row under the outer columns first, batteries under any column left empty. */
+/** G1: guns in a row across the middle, a tile apart. No batteries in gun rooms (the user: power storage is the battery room's). */
+const g1 = (guns: string[]): Rule => (w, h) => gunRow(guns, w, (s) => Math.floor((h - s) / 2));
+/** G2: two rows of columns; the bottom row's guns centred under them. */
 const g2 = (guns: string[]): Rule => (w) => {
   const cols = Math.ceil(guns.length / 2), top = guns.slice(0, cols), bottom = guns.slice(cols);
   const gap = Math.floor((w - 3 * cols) / (cols + 1));
   const colX = (c: number): number => gap + c * (3 + gap);
-  const order = range(0, cols - 1, 1).sort((p, q) => Math.abs(q - (cols - 1) / 2) - Math.abs(p - (cols - 1) / 2) || p - q);
   const place = (g: string, c: number, y: number): Piece => { const s = SIZE[g] as number, x = colX(c); return [g, c < (cols - 1) / 2 ? x : c > (cols - 1) / 2 ? x + 3 - s : x + Math.floor((3 - s) / 2), y]; };
-  const under = new Map(bottom.map((g, i) => [order[i] as number, g]));
-  return [
-    ...top.map((g, c) => place(g, c, 1)),
-    ...range(0, cols - 1, 1).flatMap((c): Piece[] => { const g = under.get(c); return g ? [place(g, c, 5)] : [[BT, colX(c) + 1, 5], [BT, colX(c) + 1, 6]]; }),
-  ];
+  return [...top.map((g, c) => place(g, c, 1)), ...gunRow(bottom, w, () => 5)];
 };
-/** G3: guns in the corners, a column of batteries down the middle. */
-const g3 = (guns: string[]): Rule => (w, h) => {
-  const corner = (g: string, i: number): Piece => { const s = SIZE[g] as number; return [g, i % 2 === 0 ? 1 : w - 1 - s, i < 2 ? 1 : h - 1 - s]; };
-  const m = Math.floor(w / 2);
-  return [...guns.slice(0, 4).map(corner), [BT, m, 0], ...range(2, h - 3, 1).map((y): Piece => [BT, m, y])];
-};
+/** G3: guns in the corners. */
+const g3 = (guns: string[]): Rule => (w, h) => guns.slice(0, 4).map((g, i): Piece => { const s = SIZE[g] as number; return [g, i % 2 === 0 ? 1 : w - 1 - s, i < 2 ? 1 : h - 1 - s]; });
 
 const room = (caption: string, role: RoomRole, rule: Rule, w: number, h: number): RoomMock => {
   const door = Math.floor(w / 2);

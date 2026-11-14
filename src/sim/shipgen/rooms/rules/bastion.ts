@@ -2,16 +2,12 @@
  * A star fort's corner battery (assembly/fort.ts `batteries`): a pointed room, mirrored across the corner's diagonal,
  * its door(s) onto the hall at the inner end. Guns step along the diagonal from the point inward, each centred on it,
  * a tile apart (roof-mounted guns need a clear tile between them); guns the diagonal cannot hold stand in pairs either
- * side of it, mirrored (the same gun both sides where there are two); batteries along the inner walls near the door,
- * mirrored too. The room must pass `roomProblems`. Prototype (#460): the user steers it from the room sample.
+ * side of it, mirrored (the same gun both sides where there are two), spread out toward the sides with a walkway kept
+ * along the walls. No batteries: power storage lives in the battery room. The room must pass `roomProblems`. Prototype (#460): the user steers it from the room sample.
  */
 import type { Tile } from '../../../modules/footprint';
 import type { Layout } from '../../layout';
 import { roomProblems, type Piece } from './check';
-
-const BT = 'module.battery';
-/** Batteries a battery room keeps by its door. */
-const CELLS = 4;
 
 export function furnishBastion(lay: Layout, room: number, need: readonly string[], entries: readonly Tile[]): number[] | null {
   const floor = (x: number, y: number): boolean => lay.inBounds(x, y) && lay.at(x, y) === '_' && lay.roomOf[y * lay.w + x] === room;
@@ -45,6 +41,15 @@ export function furnishBastion(lay: Layout, room: number, need: readonly string[
     }
     if (!placed) left.push(g);
   }
+  // Tiles from the nearest wall (1: against it), counted over the room's floor.
+  const dist = new Map<number, number>(), key = (x: number, y: number): number => y * lay.w + x;
+  let ring = tiles.filter((t) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !floor(t.x + (dx as number), t.y + (dy as number))));
+  for (let d = 1; ring.length > 0; d++) {
+    for (const t of ring) dist.set(key(t.x, t.y), d);
+    ring = ring.flatMap((t) => [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: t.x + (dx as number), y: t.y + (dy as number) })))
+      .filter((t, i, all) => floor(t.x, t.y) && !dist.has(key(t.x, t.y)) && all.findIndex((u) => u.x === t.x && u.y === t.y) === i);
+  }
+  const clearOfWalls = (p: Piece): boolean => { const s = size(p.def); for (let y = p.y; y < p.y + s; y++) for (let x = p.x; x < p.x + s; x++) if ((dist.get(key(x, y)) ?? 0) < 2) return false; return true; };
   // Either side of the diagonal, in mirrored pairs (the same gun both sides where two are left), from the point inward.
   const mirrored = (p: Piece): Piece => {
     const s = size(p.def), a = mirror({ x: p.x, y: p.y }), b = mirror({ x: p.x + s - 1, y: p.y + s - 1 });
@@ -53,29 +58,18 @@ export function furnishBastion(lay: Layout, room: number, need: readonly string[
   while (left.length > 0) {
     const g = left.shift() as string, twin = left.indexOf(g);
     let done = false;
-    for (let a = 0; a <= reach && !done; a++) for (let o = 2; o <= reach && !done; o++) {
-      const p = square(g, { x: P.x - v.x * a + v.x * o, y: P.y - v.y * a - v.y * o });
-      if (!fits(p)) continue;
+    // Out toward the sides, a walkway off the walls, the farthest spot first; where
+    // none is that clear, the nearest the diagonal that fits.
+    for (const strict of [true, false]) for (let a = 0; a <= reach && !done; a++) for (let o = strict ? reach : 2; strict ? o >= 2 : o <= reach; o += strict ? -1 : 1) {
+      if (done) break;
+      const p = square(g, { x: P.x - v.x * a + v.x * o, y: P.y - v.y * a - v.y * o }), q = mirrored(p);
+      if (!fits(p) || (strict && (!clearOfWalls(p) || !clearOfWalls(q) || !fits(q)))) continue;
       lay.push(p);
-      const q = mirrored(p);
       if (twin >= 0 && fits(q)) { lay.push(q); left.splice(twin, 1); }
       done = true;
     }
     if (!done) return undo();
   }
-  // Batteries on the inner walls near the door, in mirrored pairs.
-  const wall = (t: Tile): boolean => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const c = lay.at(t.x + (dx as number), t.y + (dy as number)); return c === '#'; });
-  const door = (t: Tile): number => Math.min(...entries.map((e) => Math.abs(e.x - t.x) + Math.abs(e.y - t.y)));
-  const spots = tiles.filter((x) => wall(x) && door(x) >= 2 && door(x) <= 7).sort((a, b) => door(a) - door(b));
-  let cells = 0;
   const works = (): boolean => roomProblems(floor, entries, lay.modules.slice(start), lay.defs).length === 0;
-  for (const s of spots) {
-    if (cells >= CELLS) break;
-    const m = mirror(s), pair: Piece[] = [{ def: BT, x: s.x, y: s.y, rot: 0 }, ...(m.x !== s.x || m.y !== s.y ? [{ def: BT, x: m.x, y: m.y, rot: 0 }] : [])];
-    const n = lay.modules.length;
-    for (const p of pair) if (lay.fitError(p.def, p.x, p.y, 0, room) === null) lay.push(p);
-    if (lay.modules.length - n !== pair.length || !works()) { while (lay.modules.length > n) lay.pop(); continue; }
-    cells += pair.length;
-  }
   return works() ? lay.modules.slice(start).map((_, i) => start + i) : undo();
 }

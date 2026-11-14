@@ -78,11 +78,11 @@ const GAMES: Block[] = [{ w: 1, h: 2, at: (x, y) => [P(GT, x, y, 1)] }, { w: 2, 
 /**
  * Blocks spread evenly through the free area x0..x1, y0..y1 along its long axis (`wide`: along x), centred across it,
  * a clear tile at least on every side: as many mess tables as fit with equal gaps, else one game table; when no count
- * gives equal gaps, the nearest (gaps a tile apart at most).
+ * gives equal gaps, the nearest (gaps a tile apart at most). `most`: as many tables as fit, gaps as near equal as they go.
  */
-export function middle(x0: number, y0: number, x1: number, y1: number, wide: boolean): Piece[] {
+export function middle(x0: number, y0: number, x1: number, y1: number, wide: boolean, most = false): Piece[] {
   const m = wide ? x1 - x0 + 1 : y1 - y0 + 1, c = wide ? y1 - y0 + 1 : x1 - x0 + 1;
-  for (const exact of [true, false]) for (const set of [BLOCKS, GAMES]) {
+  for (const exact of most ? [false] : [true, false]) for (const set of [BLOCKS, GAMES]) {
     let best: Piece[] | null = null, most = 0;
     for (const b of set) {
       const ba = wide ? b.w : b.h, bc = wide ? b.h : b.w;

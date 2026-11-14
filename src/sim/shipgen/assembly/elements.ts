@@ -106,7 +106,7 @@ export interface BlockOpts {
   width?: number;
   /** Rooms of these roles stand at the far end of the rows (by the end room, when there is one). */
   far?: readonly RoomSpec['role'][];
-  /** Both rows end together as near as they can (the shorter one's rooms are stretched, each by half its length at most). */
+  /** Both rows end together as near as they can (the shorter one's rooms are stretched, each by a quarter of its length at most). */
   even?: boolean;
   dept?: string;
   /** Docks stand in its rows at the far end, on the sides an airlock may face, with the space off them kept clear. */
@@ -141,7 +141,10 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const sheds = (o.behind ?? []).slice(0, 2);
   rooms = [...rooms, ...(o.behind ?? []).slice(2)];
   const bySize = [...rooms].sort((a, b) => b.w * b.h - a.w * a.h);
-  const capOf = o.cap && rooms.length >= 3 ? (typeof o.cap === 'string' ? bySize.find((r) => r.role === o.cap) : undefined) ?? bySize[0] : undefined;
+  // The end room spans the block, back wall to back wall: not a room built round its machines (a strip with a shield
+  // generator or a reactor in it), unless the block has nothing else.
+  const fixed: readonly RoomSpec['role'][] = ['shields', 'reactor', 'weapons', 'quarters', 'medbay'];
+  const capOf = o.cap && rooms.length >= 3 ? (typeof o.cap === 'string' ? bySize.find((r) => r.role === o.cap) : undefined) ?? bySize.find((r) => !fixed.includes(r.role)) ?? bySize[0] : undefined;
   // The street runs v = -1 up to X: two tiles and what a wider one adds, on its +v side.
   const X = Math.max(2, o.width ?? 2) - 2;
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
@@ -165,10 +168,10 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);
   const L0 = Math.max(run(rows[0]), run(rows[1]), 4);
   // Evening: the shorter row's ordinary rooms (not docks, cabins or annexes) share the slack a tile at a time from the
-  // far end, none past half again its own length, so no room is drawn out into a strip; the rest is left, a shorter row.
+  // far end, none past a quarter again its own length, so no room is drawn out into a strip; the rest is left, a shorter row.
   if (o.even || docks.length > 0) for (const row of rows) {
     const grow = row.map((r, i) => (r.role !== 'dock' && !r.cabin && !r.annexed ? i : -1)).filter((i) => i >= 0).reverse();
-    const cap = new Map(grow.map((i) => [i, Math.floor(1.5 * (row[i] as RoomSpec).w)]));
+    const cap = new Map(grow.map((i) => [i, Math.floor(1.25 * (row[i] as RoomSpec).w)]));
     for (let slack = L0 - run(row), moved = true; slack > 0 && moved;) {
       moved = false;
       for (const i of grow) {

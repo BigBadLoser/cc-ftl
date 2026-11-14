@@ -2,7 +2,7 @@
  * Furnishing rules for station rooms: each arrangement of the signed-off mock (tools/shipgen/mocks/furnishingRules.ts)
  * as a function of the room's size and main door, in the room frame of parts.ts. A rule places the room's planned
  * beds, guns, generators and reactors itself and decides the extras (lockers between paired beds, tables and chairs,
- * batteries); place.ts sets any other planned module (life support, a fabricator) and checks the result.
+ * batteries between generators and reactors, never in gun rooms); place.ts sets any other planned module (life support, a fabricator) and checks the result.
  */
 import type { ModuleDef } from '../../../registry';
 import type { RoomRole } from '../../types';
@@ -72,6 +72,26 @@ function d2(c: Ctx): Piece[] {
   return [...bays, ...(count(c.need, RP) > 0 ? [P(RP, Math.floor(c.w / 2) - 1, 0, 0)] : [])];
 }
 
+/** D3: a narrow ward seen from its end: med beds down the long wall away from the door, lying across it, the pod at the far end. */
+function d3(c: Ctx): Piece[] {
+  const pod = count(c.need, RP) > 0, right = c.d < c.w / 2, x = right ? c.w - 2 : 0;
+  const last = c.h - (Math.abs(c.d - (x + 0.5)) <= 1.5 ? 3 : 2);
+  const beds = range(pod ? 3 : 0, last, 2).slice(0, count(c.need, MB)).map((y) => P(MB, x, y, 1));
+  return [...(pod ? [P(RP, x, 0, 0)] : []), ...beds];
+}
+
+/**
+ * M4: a long mess: the galleys on a short wall, tables with their chairs down the long axis in a line (two where the
+ * room is wide enough across), evenly spaced and centred (`middle`).
+ */
+function m4(c: Ctx): Piece[] {
+  const tall = c.h > c.w, across = tall ? c.w : c.h, lines = across >= 9 ? 2 : 1, span = Math.floor(across / lines);
+  const galleys = tall ? [P(G, 0, 0, 0), ...(c.w >= 5 ? [P(G, c.w - 2, 0, 0)] : [])] : [P(G, 0, 0, 3), ...(c.h >= 5 ? [P(G, 0, c.h - 2, 3)] : [])];
+  return [...galleys, ...range(0, lines - 1, 1).flatMap((k) => (tall
+    ? middle(k * span, 2, k * span + span - 1, c.h - 1, false, true)
+    : middle(2, k * span, c.w - 1, k * span + span - 1, true, true)).filter((p) => p.def !== GT))];
+}
+
 /** Units (gens, reactors) spread across the back wall, batteries in each gap: two stacked, or three in a row (`along`). */
 function spread(c: Ctx, units: string[], along: boolean): Piece[] {
   const k = units.length, s = units.map((u) => size(c, u)), total = s.reduce((a, b) => a + b, 0);
@@ -86,39 +106,35 @@ function spread(c: Ctx, units: string[], along: boolean): Piece[] {
   });
 }
 
+/** Guns in a row across the room at y, a tile apart, centred. */
+function row(c: Ctx, list: readonly string[], y: (s: number) => number): Piece[] {
+  let x = Math.floor((c.w - list.reduce((n, g) => n + size(c, g) + 1, -1)) / 2);
+  return list.map((g) => { const s = size(c, g), p = P(g, x, y(s)); x += s + 1; return p; });
+}
+
 /**
  * G1: guns in a row across the middle, a tile apart, centred, clear of the door row when the room is deeper than a gun;
- * down the far side from the door, a tile apart, when the row does not fit across. Batteries in two corners.
+ * down the far side from the door, a tile apart, when the row does not fit across. No batteries in gun rooms (power
+ * storage is the battery room's).
  */
 function g1(c: Ctx): Piece[] {
-  const list = guns(c), span = list.reduce((n, g) => n + size(c, g) + 1, -1);
-  const bats = [P(BT, c.w - 1, 0), P(BT, c.w - 1, 1), P(BT, 0, c.h - 1), P(BT, 1, c.h - 1)];
-  if (span <= c.w) {
-    let x = Math.floor((c.w - span) / 2);
-    return [...list.map((g) => { const s = size(c, g), p = P(g, x, Math.max(0, Math.min(Math.floor((c.h - s) / 2), c.h - 1 - s))); x += s + 1; return p; }), ...bats];
-  }
+  const list = guns(c);
+  if (list.reduce((n, g) => n + size(c, g) + 1, -1) <= c.w) return row(c, list, (s) => Math.max(0, Math.min(Math.floor((c.h - s) / 2), c.h - 1 - s)));
   let y = 0;
   return list.map((g) => { const s = size(c, g), p = P(g, c.w - s >= 1 ? (c.d < c.w / 2 ? c.w - s : 0) : Math.floor((c.w - s) / 2), y); y += s + 1; return p; });
 }
 
-/** G2: two rows of three-wide columns; the bottom row under the outer columns first, batteries under any column left empty. */
+/** G2: two rows of three-wide columns, the top row's guns in the columns, the bottom row's centred under them. */
 function g2(c: Ctx): Piece[] {
   const list = guns(c), cols = Math.ceil(list.length / 2), top = list.slice(0, cols), bottom = list.slice(cols);
   const gap = Math.floor((c.w - 3 * cols) / (cols + 1)), colX = (k: number): number => gap + k * (3 + gap), mid = (cols - 1) / 2;
-  const order = range(0, cols - 1, 1).sort((p, q) => Math.abs(q - mid) - Math.abs(p - mid) || p - q);
   const place = (g: string, k: number, y: number): Piece => { const s = size(c, g), x = colX(k); return P(g, k < mid ? x : k > mid ? x + 3 - s : x + Math.floor((3 - s) / 2), y); };
-  const under = new Map(bottom.map((g, i) => [order[i] as number, g]));
-  return [
-    ...top.map((g, k) => place(g, k, 1)),
-    ...range(0, cols - 1, 1).flatMap((k): Piece[] => { const g = under.get(k); return g ? [place(g, k, 5)] : [P(BT, colX(k) + 1, 5), P(BT, colX(k) + 1, 6)]; }),
-  ];
+  return [...top.map((g, k) => place(g, k, 1)), ...row(c, bottom, () => 5)];
 }
 
-/** G3: guns in the corners, a column of batteries down the middle. */
+/** G3: guns in the corners. */
 function g3(c: Ctx): Piece[] {
-  const corner = (g: string, i: number): Piece => { const s = size(c, g); return P(g, i % 2 === 0 ? 1 : c.w - 1 - s, i < 2 ? 1 : c.h - 1 - s); };
-  const m = Math.floor(c.w / 2);
-  return [...guns(c).map(corner), P(BT, m, 0), ...range(2, c.h - 3, 1).map((y) => P(BT, m, y))];
+  return guns(c).map((g, i): Piece => { const s = size(c, g); return P(g, i % 2 === 0 ? 1 : c.w - 1 - s, i < 2 ? 1 : c.h - 1 - s); });
 }
 
 const has = (id: string) => (need: readonly string[]): boolean => need.includes(id);
@@ -137,10 +153,12 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
       name: 'M3 galley corner, tables in line', weight: 1, when: has(G),
       rule: (c) => [P(G, 0, 0, 3), P(G, 0, 2, 3), P(LS, 0, c.h - 1, 1), P(GT, 4, 1, 0), ...tables(7, c.w - 1, 1, 1), P('module.arcade', c.w - 1, c.h - 1, 2)],
     },
+    { name: 'M4 tables down the long axis', weight: 2, when: has(G), rule: m4 },
   ],
   medbay: [
     { name: 'D1 beds along a wall', weight: 1, rule: d1 },
     { name: 'D2 bays, pod in the middle', weight: 1, when: (_, r) => r.w >= 9, rule: d2 },
+    { name: 'D3 beds down the long wall', weight: 1, when: (_, r) => r.h > r.w, rule: d3 },
   ],
   weapons: [
     { name: 'G1 guns in a row', weight: 1, rule: g1 },

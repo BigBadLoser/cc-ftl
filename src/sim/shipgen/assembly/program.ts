@@ -77,17 +77,17 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   if (chief) quarters.push({ role: 'quarters', dept: 'harbour', mods: ['module.bed', 'module.mess_table', 'module.chair', 'module.storage_locker'], w: 4, h: 4, cabins: false });
   const housed = crew.length - chief;
   if (def.barracks) {
-    // Barracks, and a few cabins for those who rate one. Life support as before: one for every four of the crew.
+    // Barracks, and a few cabins for those who rate one. No life support in quarters (the user: door vents even the air
+    // out); a unit keeps twenty breathing, and the common and plant rooms' units cover the crew.
     const like: RoomSpec = { role: 'quarters', mods: [], w: 3, h: 5 }, cabins = Math.max(0, Math.min(housed, (def.barracks.cabins ?? 0) - chief));
     const made = barracksOf(rng, like, housed - cabins, def.barracks.beds);
     for (let i = 0; i < cabins; i++) made.push(cabinOf(like));
-    for (let i = 0; i < Math.ceil(crew.length / 4) && made.length > 0; i++) { const r = made[i % made.length] as RoomSpec; made[i % made.length] = { ...r, mods: [...r.mods, 'module.lifeSupport'] }; }
     quarters.push(...made);
   } else for (let i = 0; i < housed; i += 4) {
     const beds = Math.min(4, housed - i);
     // A block of one-bed cabins: two wide each and a dividing wall between, three deep behind a wall, and a hallway.
     const cabins = beds > 1;
-    quarters.push(grown(rng, { role: 'quarters', mods: [...Array<string>(beds).fill('module.bed'), 'module.lifeSupport'], w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
+    quarters.push(grown(rng, { role: 'quarters', mods: Array<string>(beds).fill('module.bed'), w: cabins ? 3 * beds - 1 : 6, h: cabins ? 5 : 3, ...(cabins ? { cabins: true } : {}) }, space));
   }
   const support: RoomSpec[] = [];
   // Common rooms: about one for every 12 crew.
@@ -207,7 +207,7 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
     r.dept = 'commons';
     // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
     // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
-    const long = Math.max(r.w, r.h, mess ? 7 * Math.ceil(tables / 2) + 2 : 5), short = Math.max(Math.min(r.w, r.h), mess ? 5 : 4);
+    const long = Math.max(r.w, r.h, mess ? 7 * Math.ceil(tables / 2) + 2 : 5), short = Math.max(Math.min(r.w, r.h), mess ? 6 : 4);
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
   }

@@ -23,6 +23,8 @@ const CASES: { role: RoomRole; name: string; need: string[]; sizes: [number, num
   { role: 'support', name: 'M2', need: ['module.galley', 'module.mess_table', 'module.mess_table'], sizes: [[11, 5], [14, 5], [18, 6], [14, 9]] },
   { role: 'support', name: 'M3', need: ['module.galley', 'module.mess_table'], sizes: [[11, 5], [14, 5], [18, 6]] },
   { role: 'medbay', name: 'D1', need: ['module.med_bed', 'module.med_bed', 'module.med_bed', 'module.recovery'], sizes: [[9, 4], [10, 4], [13, 5]] },
+  { role: 'medbay', name: 'D3', need: ['module.med_bed', 'module.med_bed', 'module.med_bed', 'module.recovery'], sizes: [[3, 10], [3, 12], [4, 11]] },
+  { role: 'support', name: 'M4', need: ['module.galley', 'module.mess_table', 'module.mess_table'], sizes: [[6, 14], [6, 15], [5, 12], [16, 6], [17, 6]] },
   { role: 'medbay', name: 'D2', need: ['module.med_bed', 'module.med_bed', 'module.med_bed', 'module.med_bed', 'module.recovery'], sizes: [[9, 4], [11, 4], [11, 6]] },
   { role: 'weapons', name: 'G1', need: [MD, BL, PD], sizes: [[12, 7], [13, 7], [12, 8]] },
   { role: 'weapons', name: 'G1', need: [BL, BL], sizes: [[5, 3], [6, 4], [3, 6]], small: true },
@@ -62,6 +64,8 @@ describe('furnishing rules', () => {
           const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h;
           if (!c.small) expect(roomProblems(inside, [{ x: d, y: h - 1 }], pieces, defs), label).toEqual([]);
           const got = tally(pieces.map((p) => p.def));
+          // No batteries in gun rooms: power storage is the battery room's.
+          if (c.role === 'weapons') expect(got['module.battery'] ?? 0, label).toBe(0);
           // The rule's own kinds (beds, guns, gens, reactors, tables) all there; the rest the placer sets beside it.
           for (const [id, n] of Object.entries(tally(c.need))) if (got[id]) expect(got[id], `${label} ${id}`).toBeGreaterThanOrEqual(n);
           // On a layout: furnished by rule, every planned module in, and the room still works.

@@ -35,6 +35,21 @@ const turn = (k: number, x: number, y: number): [number, number] => { for (; k >
 /** Road tiles round a market tile: within two tiles of it, so the road is two wide on the straight and on the curve. */
 const ROAD: readonly (readonly [number, number])[] = [[1, 0], [2, 0], [-1, 0], [-2, 0], [0, 1], [0, 2], [0, -1], [0, -2], [1, 1], [1, -1], [-1, 1], [-1, -1]];
 
+/**
+ * A lane's last rooms run on to the ring by `extra` tiles: shared a tile at a time over the rooms (not annexes), none
+ * past a quarter again its own length, so none becomes a strip; what is left over (four tiles or more) is a garden gallery
+ * after them, the band's filler, else the lane ends that much short.
+ */
+function runOnto(specs: readonly RoomSpec[], extra: number): RoomSpec[] {
+  const out = specs.map((r) => ({ ...r })), grow = out.filter((r) => !r.annexed), cap = new Map(grow.map((r) => [r, Math.floor(1.25 * r.w)]));
+  for (let moved = true; extra > 0 && moved;) {
+    moved = false;
+    for (const r of grow) if (extra > 0 && r.w < (cap.get(r) as number)) { r.w++; extra--; moved = true; }
+  }
+  const deep = Math.max(3, ...out.map((r) => r.h));
+  return extra >= 4 ? [...out, { role: 'garden', dept: 'commons', mods: [], w: extra - 1, h: deep }] : out;
+}
+
 const long = (r: RoomSpec): RoomSpec => (r.w >= r.h ? r : { ...r, w: r.h, h: r.w });
 
 export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open: readonly RoomSpec[]; gated: readonly RoomSpec[] }, o: HubOpts): Built | null {
@@ -186,9 +201,9 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
     for (; over > 0; over--) (rows.reduce((p, q) => (q.n > p.n ? q : p)) as (typeof rows)[number]).n--;
     const deep = Math.min(...pool.map((r) => r.h));
     for (const r of rows) {
-      const mine = pool.splice(0, r.n), spare = r.room - r.n * (wide + 1), last = r.others.map((q) => !q.annexed).lastIndexOf(true);
+      const mine = pool.splice(0, r.n), spare = r.room - r.n * (wide + 1);
       even.set(r.l, [
-        ...r.others.map((q, j) => (r.n === 0 && j === last ? { ...q, w: q.w + spare } : q)),
+        ...(r.n === 0 ? runOnto(r.others, spare) : r.others),
         ...mine.map((q, j) => ({ ...q, h: deep, w: wide + Math.floor(spare / r.n) + (j >= r.n - (spare % r.n) ? 1 : 0) })),
       ]);
     }
@@ -202,8 +217,8 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
       const end = (l.at - l.from) * l.dir + rec.specs.reduce((n, r) => n + r.w + 1, 1), extra = s.reach - end;
       let grown: RoomSpec[] | null = null;
       if (k === (plan[i] as Lane['done']).length - 1 && extra > 0) {
-        const cabins = rec.specs.every((r) => r.cabin), last = rec.specs.map((r) => !r.annexed).lastIndexOf(true);
-        grown = rec.specs.map((r, j) => ({ ...r, w: r.w + (cabins ? Math.floor(extra / rec.specs.length) + (j < extra % rec.specs.length ? 1 : 0) : j === last ? extra : 0) }));
+        const cabins = rec.specs.every((r) => r.cabin);
+        grown = cabins ? rec.specs.map((r, j) => ({ ...r, w: r.w + Math.floor(extra / rec.specs.length) + (j < extra % rec.specs.length ? 1 : 0) })) : runOnto(rec.specs, extra);
       }
       if (!(grown && put(l, grown, { access: rec.access })) && !put(l, rec.specs, { access: rec.access })) return null;
     }
