@@ -3789,6 +3789,7 @@
   "x7Gun": {"hex": "#4a4f56", "set": "bar17"},
   "x7White": {"hex": "#d7d3c6", "set": "bar17"},
   "x7Lit": {"hex": "#e8cf8a", "set": "bar17"},
+  "x7Bone": {"hex": "#c4bdac", "set": "bar17"},
   "z8Slate": {"hex": "#3f5672", "set": "bar18"},
   "z8SlateL": {"hex": "#5a7392", "set": "bar18"},
   "z8SlateD": {"hex": "#2c3d52", "set": "bar18"},
