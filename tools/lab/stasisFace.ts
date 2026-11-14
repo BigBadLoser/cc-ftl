@@ -124,15 +124,15 @@ const FILL = 0.94;                                  // how much of the face's le
 interface Field { a: Float32Array; l: Float32Array; n: Float32Array; c: Float32Array; w: number; h: number }
 
 /** Sample the figure into the face: coverage `a` and luminance `l` per sprite pixel (0 where the figure isn't). */
-function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>): Field {
+function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>, stretch = false): Field {
   const { w, h } = sp;
   const a = new Float32Array(w * h);
   const l = new Float32Array(w * h);
   const n = new Float32Array(w * h);
   const cc = new Float32Array(w * h * 3);
   const det = fr.u[0] * fr.v[1] - fr.u[1] * fr.v[0];
-  const hf = FILL;                                  // the figure's height as a fraction of the face's length
-  const wf = (por.w / por.h) * FILL * FACE_ASPECT;  // and its width as a fraction of the face's width
+  const hf = stretch ? 0.94 : FILL;                 // the figure's height as a fraction of the face's length
+  const wf = stretch ? 0.94 : (por.w / por.h) * FILL * FACE_ASPECT;  // and its width (stretch: the whole window, as the round-1 study)
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (!mask[y * w + x]) continue;
     let sa = 0;
@@ -156,6 +156,11 @@ function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>)
     }
     a[y * w + x] = sa / (SS * SS);
     l[y * w + x] = sa ? sl / sa : 0;
+  }
+  if (stretch) {                                    // the figure's tones spread over 0.15..0.95, so a dark loadout still reads
+    let lo = 1, hi = 0;
+    for (let k = 0; k < l.length; k++) if (a[k]! > 0.5) { lo = Math.min(lo, l[k]!); hi = Math.max(hi, l[k]!); }
+    for (let k = 0; k < l.length; k++) if (a[k]! > 0) l[k] = 0.15 + 0.8 * (l[k]! - lo) / Math.max(0.05, hi - lo);
   }
   return { a, l, n, c: cc, w, h };
 }
@@ -266,12 +271,22 @@ const ALL_VARIANTS: readonly [string, string, Variant][] = [
   ['C pressed under ice', 'dark deep, frozen rim, sheen', ice],
   ['D haze + rim', 'A haze with C rim and sheen', mixed],
 ];
+/** O on a lighter face (the round-1 slabs' face was a pale blue-grey; the game's is darker), `lift` toward it. */
+const originalLight = (lift: number): Variant => (o, i, x, y, ctx) => {
+  const pale = [176, 196, 202];
+  for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, pale[c]!, lift);
+  original(o, i, x, y, ctx);
+};
+/** Stretched variants sample the figure over the whole window (round 1), with its tones spread. */
+const STRETCHED = new Set<Variant>();
+const st = (v: Variant): Variant => { STRETCHED.add(v); return v; };
 const VARIANTS: readonly [string, string, Variant][] = [
+  ['O original (true proportions)', 'as before', original],
+  ['R1 round-1 press', 'O stretched over the window, tones spread', st((o, i, x, y, c) => original(o, i, x, y, c))],
+  ['R2 round-1, paler face', 'R1 on a face lifted 50% toward round 1 grey', st(originalLight(0.5))],
+  ['R3 round-1, pale face', 'R1 on round 1 grey', st(originalLight(1))],
   ALL_VARIANTS[2]!,
-  ['E carbonite, sharp', "B's relief, the sprite's own shading pixel for pixel", sharpCarbonite(0, [88, 160, 190], 1.3)],
   ['F carbonite, a little colour', 'E keeping 30% of the crew colours', sharpCarbonite(0.3, [88, 160, 190], 1.3)],
-  ['G carbonite, more colour', 'E keeping 55% of the crew colours', sharpCarbonite(0.55, [88, 160, 190], 1.3)],
-  ['H dark carbonite', 'E in a darker, greener slab tone', sharpCarbonite(0.15, [70, 110, 120], 1.6)],
 ];
 
 /** A new texture: the slab with every face pixel replaced by the press, or the sprite itself with no variant. */
@@ -354,11 +369,12 @@ export const stasisFacePanel: LabPanel = {
       const mask = faceMask(sp);
       const fr = frame(corners(mask, sp.w, sp.h));
       const fld = params.has('noface') ? null : sample(sp, mask, figs[row.look]!, fr);
+      const fls = params.has('noface') ? null : sample(sp, mask, figs[row.look]!, fr, true);
       const opts: [string, string, Variant | null][] = [['empty slab', 'as the sprite is', null], ...(params.has('all') ? ALL_VARIANTS : VARIANTS)];
       const w = sp.w + PAD * 2;
       const h = sp.h + PAD * 2;
       opts.forEach(([label, note, v], j) => {
-        const { tex, ms } = press(sp, mask, fld, v);
+        const { tex, ms } = press(sp, mask, v && STRETCHED.has(v) ? fls : fld, v);
         if (v) stats.push(`${row.name}/${label}: ${ms.toFixed(1)}ms`);
         cells.push({
           label: j ? label : row.name, note: j ? note : `${row.id} (empty)`, w, h, newRow: j === 0,
