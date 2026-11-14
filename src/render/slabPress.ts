@@ -202,20 +202,31 @@ export function uvMask(sp: Px, uv: Px): Uint8Array {
   return m;
 }
 
-/** True if the figure must turn half way round on screen: the head end of the face lies lower than the foot end (the press keeps the figure's feet lowest, as the colour-keyed frame did). */
+/**
+ * True if the figure must turn half way round on screen: the head end of the face lies lower than the foot end (the press keeps the figure's feet lowest,
+ * as the colour-keyed frame did). The head's screen direction is the slab's lengthwise direction, d(screen)/dv at constant u: the second column of the
+ * inverse of the face's mean UV Jacobian, so a sheared (tipping) face is read right (the gradient of v alone points across the shear).
+ */
 function headDown(mask: Uint8Array, uv: Px): boolean {
   const { w, h } = uv;
-  let gx = 0, gy = 0;
+  let ux = 0, uy = 0, vx = 0, vy = 0;
   for (let y = 0; y < h; y++) for (let x = 1; x < w - 1; x++) {
     const i = y * w + x;
-    if (mask[i] && mask[i - 1] && mask[i + 1]) gx += uv.d[(i + 1) * 4 + 1]! - uv.d[(i - 1) * 4 + 1]!;
+    if (!mask[i] || !mask[i - 1] || !mask[i + 1]) continue;
+    ux += uv.d[(i + 1) * 4]! - uv.d[(i - 1) * 4]!;
+    vx += uv.d[(i + 1) * 4 + 1]! - uv.d[(i - 1) * 4 + 1]!;
   }
   for (let y = 1; y < h - 1; y++) for (let x = 0; x < w; x++) {
     const i = y * w + x;
-    if (mask[i] && mask[i - w] && mask[i + w]) gy += uv.d[(i + w) * 4 + 1]! - uv.d[(i - w) * 4 + 1]!;
+    if (!mask[i] || !mask[i - w] || !mask[i + w]) continue;
+    uy += uv.d[(i + w) * 4]! - uv.d[(i - w) * 4]!;
+    vy += uv.d[(i + w) * 4 + 1]! - uv.d[(i - w) * 4 + 1]!;
   }
-  const n = Math.hypot(gx, gy) || 1;
-  return -gy / n + 0.2 * (-gx / n) < 0;               // the figure's feet (low v) run down the screen: dir of falling v
+  const det = ux * vy - uy * vx;
+  if (!det) return false;
+  const px = -uy / det, py = ux / det;                // d(screen)/dv: toward the head
+  const n = Math.hypot(px, py) || 1;
+  return -py / n + 0.2 * (-px / n) < 0;               // the head runs down the screen (a level face: toward the left keeps it, as before)
 }
 
 /**

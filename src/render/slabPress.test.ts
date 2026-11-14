@@ -161,6 +161,18 @@ describe('slab press through the UV pass', () => {
     expect(kept.pressed[(27 * 40 + 20) * 4]).toBeGreaterThan(kept.pressed[(12 * 40 + 20) * 4]!);   // slab-true: the head is at the bottom
   });
 
+  it('reads the head end along the slab, not along the gradient of v, on a sheared (tipping) face', () => {
+    // a slab lying almost level and tipping: v runs along x only, but each column is lifted as x grows, so the head end (v high, right)
+    // rises up the screen; the gradient of v points flat right (a level, head-right face would turn), the slab's own length points up-right
+    const tip = (x: number, y: number): [number, number] | null => {
+      if (x < 5 || x >= 35) return null;
+      const y0 = 22 - 0.6 * (x - 5);
+      return y >= y0 && y < y0 + 10 ? [inU((y - y0 + 0.5) / 10), inV((x - 5 + 0.5) / 30)] : null;
+    };
+    const { sp, uv } = uvSlab(tip);
+    expect(Array.from(pressSlabUv(sp, uv, head())!.pressed)).toEqual(Array.from(pressSlabUv(sp, uv, head(), false)!.pressed));   // head up: kept
+  });
+
   it('is null without a face', () => {
     const { sp, uv } = uvSlab(() => null);
     expect(pressSlabUv(sp, uv, head())).toBeNull();
