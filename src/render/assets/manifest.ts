@@ -26,6 +26,9 @@ export interface SheetDef {
   image: string;
   /** Glow sheet (additive), same size and layout as `image`. */
   glow?: string;
+  /** Surface-coordinate (uv) sheet, same size and layout as `image`: R, G = u, v of the slab face (0..255), B = face coverage,
+   * A = 255 on a face pixel (post.uv_down). Never palette-mapped. Read by the slab press (slabPress.ts). */
+  uv?: string;
   /** Composed manifests only: texture resolution of the sheet (0.5: the sheet is drawn at twice its pixel size). */
   resolution?: number;
 }
@@ -40,6 +43,8 @@ export interface StaticAsset {
   footprint: [number, number];
   /** True if the glow sheet has non-empty pixels for this frame. */
   glow?: boolean;
+  /** True if the uv sheet has face pixels for this frame (a slab face: slabPress.ts reads it). */
+  uv?: boolean;
   /** A tool's tip in sprite px from the anchor (the mining pod's laser barrel in its `mine` frames; pod_muzzle.py). */
   muzzle?: [number, number];
 }

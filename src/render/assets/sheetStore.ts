@@ -4,12 +4,14 @@ import { ByteBudget } from './budget';
 export interface Loaded<T> {
   image: T;
   glow: T | null;
+  /** The slab face's surface-coordinate twin (manifest `uv`, #481): loaded and freed with the image, read once when a face is baked. */
+  uv?: T | null;
 }
 
 /** How the store gets a sheet into memory and out again. `bytes` is the decoded size of everything `load` returned. */
 export interface SheetIO<T> {
-  load(image: string, glow: string | undefined): Promise<{ sheet: Loaded<T>; bytes: number }>;
-  unload(name: string, sheet: Loaded<T>, image: string, glow: string | undefined): void;
+  load(image: string, glow: string | undefined, uv?: string): Promise<{ sheet: Loaded<T>; bytes: number }>;
+  unload(name: string, sheet: Loaded<T>, image: string, glow: string | undefined, uv?: string): void;
 }
 
 export interface PoolDef {
@@ -25,6 +27,7 @@ export interface PoolDef {
 export interface SheetSpec {
   image: string;
   glow?: string;
+  uv?: string;
   pool: string;
   /** Loaded at start and never evicted. */
   pinned?: boolean;
@@ -257,7 +260,7 @@ export class SheetStore<T> {
   }
 
   private startLoad(name: string, r: Rec<T>): void {
-    const { image, glow } = r.spec;
+    const { image, glow, uv } = r.spec;
     const ms = this.o.loadTimeoutMs ?? 45_000;
     let settled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -283,13 +286,13 @@ export class SheetStore<T> {
         this.pump();
       }, ms);
     }
-    this.o.io.load(image, glow).then(
+    this.o.io.load(image, glow, uv).then(
       ({ sheet, bytes }) => {
         // Timed out already: nothing else can have started (see `stale`), so keep the late success.
         if (!finish()) {
           r.stale = false;
           if (r.state !== 'failed') {
-            this.o.io.unload(name, sheet, image, glow);
+            this.o.io.unload(name, sheet, image, glow, uv);
             return;
           }
         }
@@ -341,7 +344,7 @@ export class SheetStore<T> {
   flush(): void {
     const dead = this.dying;
     this.dying = [];
-    for (const d of dead) this.o.io.unload(d.name, d.sheet, d.spec.image, d.spec.glow);
+    for (const d of dead) this.o.io.unload(d.name, d.sheet, d.spec.image, d.spec.glow, d.spec.uv);
   }
 
   /** Visit every ready sheet. */

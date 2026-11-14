@@ -56,7 +56,7 @@ def _show(objs, on):
         ob.hide_render = not on
 
 
-def render_sprite(sid, kind, objs):
+def render_sprite(sid, kind, objs, want_uv=False):
     if kind == "ghost":
         xs = core.extent_px(objs)
         xmin, xmax, ymin, ymax = xs
@@ -104,11 +104,14 @@ def render_sprite(sid, kind, objs):
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")
     g = _pad1(post.glow_down(grgb, SS, 3))
+    if want_uv:                                         # the uv pass (slab faces; #481), cropped like the sprite: 7th value
+        urgb, ua = core.render(W, H, "uv")
+        return c, op, g, (W + 2) // 2, (H + 2) // 2, None, _pad1(post.uv_down(urgb, ua, SS))
     return c, op, g, (W + 2) // 2, (H + 2) // 2, None
 
 
-def crop_item(sid, fp, c, op, g, ox, oy, al=None):
-    """Cropped manifest item {id, fp, rgba, g, ax, ay} of a rendered sprite."""
+def crop_item(sid, fp, c, op, g, ox, oy, al=None, uv=None):
+    """Cropped manifest item {id, fp, rgba, g, ax, ay} of a rendered sprite (+ uv, the same crop of its uv pass, if given)."""
     vis = op | (g[..., 3] > 0)
     if not vis.any():
         return None                                     # nothing visible (e.g. a corner ghost with no belly)
@@ -116,7 +119,10 @@ def crop_item(sid, fp, c, op, g, ox, oy, al=None):
     rgba = post.to_rgba(c, op)
     if al is not None:
         rgba[..., 3] = al
-    return {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
+    it = {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
+    if uv is not None:
+        it["uv"] = uv[y0:y1, x0:x1]
+    return it
 
 
 def global_digest():

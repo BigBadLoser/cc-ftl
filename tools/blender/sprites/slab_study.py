@@ -49,10 +49,14 @@ class Slab:
 
     def box(self, k, l0, l1, w0, w1, n0, n1, col, face=None):
         c = lambda l, w, n: self.p(l, w, n)
+        v0 = len(k.m.v)
         quad(k, [c(l0, w0, n1), c(l0, w1, n1), c(l1, w1, n1), c(l1, w0, n1)], face or col, self.N)
         if face == "slbFace":                       # the face is a screen: unlit, its palette tone exact (a lit face
             idx, alb, _, glow = k.m.f[-1]           # sits on a shade step and breaks up into ragged specks)
             k.m.f[-1] = (idx, (0, 0, 0), alb, glow)
+            for i, (w, l) in enumerate(((w0, l0), (w1, l0), (w1, l1), (w0, l1))):    # and it carries its own surface
+                k.m.uv[v0 + i] = ((w - w0) / (w1 - w0), (l - l0) / (l1 - l0))        # coordinates for the "uv" pass:
+                                                                                     # u across (the viewer's right), v up it
         quad(k, [c(l0, w0, n0), c(l0, w1, n0), c(l1, w1, n0), c(l1, w0, n0)], col, neg(self.N))
         quad(k, [c(l1, w0, n0), c(l1, w1, n0), c(l1, w1, n1), c(l1, w0, n1)], col, self.U)
         quad(k, [c(l0, w0, n0), c(l0, w1, n0), c(l0, w1, n1), c(l0, w0, n1)], col, neg(self.U))

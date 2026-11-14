@@ -31,7 +31,9 @@ from .recovery_study import SAMPLES, layer
 FP = (3, 3)
 A = "stasisload"
 ALL = tuple(range(10))
-TOL = 14                                            # a pixel counts as changed when a channel moves by more than this
+TOL = 24                                            # a pixel counts as changed when a channel moves by more than this (above one palette step
+#                                                     of the yellow trim ramp, about 21: a sample flipping the tone is not a change)
+FLIP = 40                                           # a changed region whose every pixel is opaque both ways and within this of the base is a tone flip
 
 # Hatch frames: the ORIGINAL sequence of slab_load.py, every frame of it: hd0-hd4 (KEYS_D: the leaves part, the cradle rises),
 # hc00-hc25 (KEYS: the cradle folds flat, the cart slides in and lowers the slab, pulls away, the cradle tips it up, the
@@ -169,11 +171,12 @@ def wheel(hatch=None, phi=0.0, rot=0):
     return objs
 
 
-def shot(build):
+def shot(build, uv=False):
+    """The scene's colour, opacity, glow and anchor (+ its uv pass, the slab face's surface coordinates, if `uv`)."""
     core.clear_scene_meshes()
     post.select(PAL)
-    c, op, g, ox, oy, _ = E.render_sprite("x", "prop", build())
-    return c, op, g, ox, oy
+    c, op, g, ox, oy, _, *u = E.render_sprite("x", "prop", build(), want_uv=uv)
+    return (c, op, g, ox, oy) + tuple(u)
 
 
 _BASE = {}
@@ -209,25 +212,54 @@ def real(d):
     return d & (box(dense, 2) > 0)
 
 
+def tone_flips(d, hard):
+    """Of the changed pixels `d`, the 8-connected regions with no `hard` pixel (one that is opaque in only one of the two, moves by
+    more than FLIP, or whose glow changes): the render's tone flips (a sample landing on the next palette step of a trim ramp),
+    not a moved part. A region with any real change in it stays whole, whatever its size or distance."""
+    out = np.zeros(d.shape, bool)
+    seen = np.zeros(d.shape, bool)
+    h, w = d.shape
+    for y0, x0 in zip(*np.nonzero(d)):
+        if seen[y0, x0]:
+            continue
+        todo, comp, real_ = [(y0, x0)], [], False
+        seen[y0, x0] = True
+        while todo:
+            y, x = todo.pop()
+            comp.append((y, x))
+            real_ = real_ or bool(hard[y, x])
+            for yy in range(max(0, y - 1), min(h, y + 2)):
+                for xx in range(max(0, x - 1), min(w, x + 2)):
+                    if d[yy, xx] and not seen[yy, xx]:
+                        seen[yy, xx] = True
+                        todo.append((yy, xx))
+        if not real_:
+            for y, x in comp:
+                out[y, x] = True
+    return out
+
+
 def patch(aid, build, rot=0):
     """The pixels of `objs`' wheel that differ from the base, as an item anchored on the wheel's origin, with a report."""
     bc, bop, bg, bx, by = base_shot(rot)
-    c, op, g, ox, oy = shot(build)
+    c, op, g, ox, oy, uv = shot(build, True)
     left, top = max(bx, ox), max(by, oy)
     w = left + max(bop.shape[1] - bx, op.shape[1] - ox)
     h = top + max(bop.shape[0] - by, op.shape[0] - oy)
     B = [onto(a, bx, by, left, top, w, h) for a in (bc, bop, bg)]
     F = [onto(a, ox, oy, left, top, w, h) for a in (c, op, g)]
-    d = np.abs(B[0].astype(int) - F[0].astype(int)).max(-1) > TOL
-    d |= B[1] != F[1]
-    d |= np.abs(B[2].astype(int) - F[2].astype(int)).max(-1) > TOL
+    UV = onto(uv, ox, oy, left, top, w, h)
+    dc = np.abs(B[0].astype(int) - F[0].astype(int)).max(-1)
+    dg = np.abs(B[2].astype(int) - F[2].astype(int)).max(-1)
+    d = (dc > TOL) | (B[1] != F[1]) | (dg > TOL)
     d = real(d)
+    d &= ~tone_flips(d, (B[1] != F[1]) | (dc > FLIP) | (dg > TOL))
     holes = int((d & B[1] & ~F[1]).sum())            # opaque in the base, empty now (a patch cannot erase)
     keep = d & F[1]
     if not keep.any():
         return None, {"changed": 0, "holes": holes}
     gl = np.where(keep[..., None], F[2], 0).astype(F[2].dtype)
-    it = E.crop_item(aid, FP, F[0], keep, gl, left, top)
+    it = E.crop_item(aid, FP, F[0], keep, gl, left, top, uv=np.where(keep[..., None], UV, 0).astype(np.uint8))
     return it, {"changed": int(keep.sum()), "holes": holes}
 
 

@@ -4,10 +4,10 @@ import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from './a
 import { drawLayers } from './crewSprites';
 import { ART_SCALE } from './iso';
 import { crewLoadout, preloadLayers, type CrewLook } from './loadout';
-import { pressSlab, type Px } from './slabPress';
+import { pressSlab, pressSlabUv, type Px } from './slabPress';
 
 /**
- * The prisoner pressed into a full slab's face (#116; the maths is slabPress.ts). Baked once per (slab sprite, prisoner look) on
+ * The prisoner pressed into a full slab's face (#116; the maths is slabPress.ts: through the sprite's UV pass when its sheet has one, #481, else by the face's colour). Baked once per (slab sprite, prisoner look) on
  * the CPU, lazily: `face` returns null while the figure's sheets load and the bake runs (a frame or a few), so callers draw the
  * plain slab and ask again; `version` bumps when a bake lands. The cart's 12 ring frames share one face: the cart is drawn from its
  * frame-0 heading sprite's `over` texture, the face pixels alone, laid over whichever ring frame is showing (the rings never touch
@@ -87,7 +87,9 @@ export function createSlabFaces(atlas: Atlas, renderer: Renderer): SlabFaces {
       const figure = await fig;
       if (dead) return;
       const slab = read(renderer, src.tex);
-      const res = figure.w > 1 || figure.h > 1 ? pressSlab(slab, figure) : null;
+      // The face through the sprite's UV pass when it has one (#481: tilt, foreshortening and occlusion come out right), else found by its colour.
+      const uv = src.uv ? read(renderer, src.uv) : null;
+      const res = figure.w > 1 || figure.h > 1 ? (uv ? pressSlabUv(slab, uv, figure) : pressSlab(slab, figure)) : null;
       if (!res) { faces.set(key, 'none'); return; }
       const over = new Uint8ClampedArray(res.pressed.length);
       for (let i = 0; i < res.mask.length; i++) if (res.mask[i]) for (let k = 0; k < 4; k++) over[i * 4 + k] = res.pressed[i * 4 + k]!;

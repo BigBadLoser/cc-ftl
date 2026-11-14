@@ -301,6 +301,29 @@ def glow_down(rgb, S, thresh=3):
     return out
 
 
+def uv_down(rgb, alpha, S, share=0.5):
+    """The uv pass (core.render "uv": rgb 0..255 = (u, v, 1) on a uv face, black elsewhere; alpha 0..1) -> (h,w,4) uint8
+    [u, v, coverage, face]. Never quantised or mode-voted like the colour: a px is a face px (face 255) when at least
+    `share` of its S*S samples are the face (a sample is: covered, and mostly blue, so an antialiased edge sample counts
+    by its majority), its (u, v) the MEAN over those samples (a planar face's uv is affine, so the mean is the uv at the
+    samples' centre of mass), coverage = the share of its samples that are the face (blue, 0..255; the face's edge
+    antialiasing for a reader that wants it). Other px are all zero."""
+    bl = rgb[..., 2] / 255.0
+    face = (alpha > 0.5) & (bl > 0.5)
+    u = np.where(face, rgb[..., 0] / np.maximum(rgb[..., 2], 1e-6), 0.0)
+    v = np.where(face, rgb[..., 1] / np.maximum(rgb[..., 2], 1e-6), 0.0)
+    fb = blocks(face, S)
+    cnt = fb.sum(-1)
+    on = cnt >= max(1, int(np.ceil(share * S * S)))
+    n = np.maximum(cnt, 1)
+    out = np.zeros(on.shape + (4,), np.uint8)
+    out[..., 0] = np.where(on, np.clip(np.round(blocks(u, S).sum(-1) / n * 255), 0, 255), 0)
+    out[..., 1] = np.where(on, np.clip(np.round(blocks(v, S).sum(-1) / n * 255), 0, 255), 0)
+    out[..., 2] = np.where(on, np.round(cnt / (S * S) * 255), 0)
+    out[..., 3] = np.where(on, 255, 0)
+    return out
+
+
 def write_png(path, rgba):
     h, w = rgba.shape[:2]
     raw = b"".join(b"\x00" + rgba[y].tobytes() for y in range(h))

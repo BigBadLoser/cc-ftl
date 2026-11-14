@@ -5116,11 +5116,13 @@
   },
   "stasis": {
    "image": "sprites/stasis.png",
-   "glow": "sprites/stasis.glow.png"
+   "glow": "sprites/stasis.glow.png",
+   "uv": "sprites/stasis.uv.png"
   },
   "stasisload": {
    "image": "sprites/stasisload.png",
-   "glow": "sprites/stasisload.glow.png"
+   "glow": "sprites/stasisload.glow.png",
+   "uv": "sprites/stasisload.uv.png"
   },
   "storage_ore": {
    "image": "sprites/storage_ore.png",
@@ -66950,7 +66952,8 @@
     1,
     1
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "item.stim.held": {
    "kind": "static",
@@ -97422,7 +97425,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot0.r1": {
    "kind": "static",
@@ -97477,7 +97481,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot1.r0": {
    "kind": "static",
@@ -97496,7 +97501,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot1.r2": {
    "kind": "static",
@@ -97534,7 +97540,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot2.r0": {
    "kind": "static",
@@ -97663,7 +97670,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot4.r2": {
    "kind": "static",
@@ -97682,7 +97690,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot5.r0": {
    "kind": "static",
@@ -97719,7 +97728,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot5.r2": {
    "kind": "static",
@@ -97738,7 +97748,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot5.r3": {
    "kind": "static",
@@ -97794,7 +97805,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot6.r2": {
    "kind": "static",
@@ -97813,7 +97825,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot7.r0": {
    "kind": "static",
@@ -97924,7 +97937,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.stasis_wheel.slot9.r2": {
    "kind": "static",
@@ -97961,7 +97975,8 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "module.storage": {
    "kind": "static",
@@ -145042,7 +145057,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f1": {
    "kind": "static",
@@ -145061,7 +145077,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f10": {
    "kind": "static",
@@ -145080,7 +145097,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f11": {
    "kind": "static",
@@ -145099,7 +145117,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f2": {
    "kind": "static",
@@ -145118,7 +145137,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f3": {
    "kind": "static",
@@ -145137,7 +145157,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f4": {
    "kind": "static",
@@ -145156,7 +145177,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f5": {
    "kind": "static",
@@ -145175,7 +145197,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f6": {
    "kind": "static",
@@ -145194,7 +145217,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f7": {
    "kind": "static",
@@ -145213,7 +145237,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f8": {
    "kind": "static",
@@ -145232,7 +145257,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h10.f9": {
    "kind": "static",
@@ -145251,7 +145277,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2": {
    "kind": "static",
@@ -145270,7 +145297,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f1": {
    "kind": "static",
@@ -145289,7 +145317,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f10": {
    "kind": "static",
@@ -145308,7 +145337,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f11": {
    "kind": "static",
@@ -145327,7 +145357,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f2": {
    "kind": "static",
@@ -145346,7 +145377,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f3": {
    "kind": "static",
@@ -145365,7 +145397,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f4": {
    "kind": "static",
@@ -145384,7 +145417,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f5": {
    "kind": "static",
@@ -145403,7 +145437,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f6": {
    "kind": "static",
@@ -145422,7 +145457,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f7": {
    "kind": "static",
@@ -145441,7 +145477,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f8": {
    "kind": "static",
@@ -145460,7 +145497,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h2.f9": {
    "kind": "static",
@@ -145479,7 +145517,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3": {
    "kind": "static",
@@ -145498,7 +145537,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f1": {
    "kind": "static",
@@ -145517,7 +145557,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f10": {
    "kind": "static",
@@ -145536,7 +145577,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f11": {
    "kind": "static",
@@ -145555,7 +145597,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f2": {
    "kind": "static",
@@ -145574,7 +145617,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f3": {
    "kind": "static",
@@ -145593,7 +145637,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f4": {
    "kind": "static",
@@ -145612,7 +145657,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f5": {
    "kind": "static",
@@ -145631,7 +145677,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f6": {
    "kind": "static",
@@ -145650,7 +145697,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f7": {
    "kind": "static",
@@ -145669,7 +145717,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f8": {
    "kind": "static",
@@ -145688,7 +145737,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h3.f9": {
    "kind": "static",
@@ -145707,7 +145757,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4": {
    "kind": "static",
@@ -145726,7 +145777,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f1": {
    "kind": "static",
@@ -145745,7 +145797,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f10": {
    "kind": "static",
@@ -145764,7 +145817,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f11": {
    "kind": "static",
@@ -145783,7 +145837,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f2": {
    "kind": "static",
@@ -145802,7 +145857,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f3": {
    "kind": "static",
@@ -145821,7 +145877,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f4": {
    "kind": "static",
@@ -145840,7 +145897,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f5": {
    "kind": "static",
@@ -145859,7 +145917,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f6": {
    "kind": "static",
@@ -145878,7 +145937,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f7": {
    "kind": "static",
@@ -145897,7 +145957,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f8": {
    "kind": "static",
@@ -145916,7 +145977,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h4.f9": {
    "kind": "static",
@@ -145935,7 +145997,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5": {
    "kind": "static",
@@ -145954,7 +146017,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f1": {
    "kind": "static",
@@ -145973,7 +146037,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f10": {
    "kind": "static",
@@ -145992,7 +146057,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f11": {
    "kind": "static",
@@ -146011,7 +146077,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f2": {
    "kind": "static",
@@ -146030,7 +146097,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f3": {
    "kind": "static",
@@ -146049,7 +146117,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f4": {
    "kind": "static",
@@ -146068,7 +146137,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f5": {
    "kind": "static",
@@ -146087,7 +146157,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f6": {
    "kind": "static",
@@ -146106,7 +146177,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f7": {
    "kind": "static",
@@ -146125,7 +146197,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f8": {
    "kind": "static",
@@ -146144,7 +146217,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h5.f9": {
    "kind": "static",
@@ -146163,7 +146237,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6": {
    "kind": "static",
@@ -146182,7 +146257,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f1": {
    "kind": "static",
@@ -146201,7 +146277,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f10": {
    "kind": "static",
@@ -146220,7 +146297,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f11": {
    "kind": "static",
@@ -146239,7 +146317,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f2": {
    "kind": "static",
@@ -146258,7 +146337,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f3": {
    "kind": "static",
@@ -146277,7 +146357,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f4": {
    "kind": "static",
@@ -146296,7 +146377,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f5": {
    "kind": "static",
@@ -146315,7 +146397,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f6": {
    "kind": "static",
@@ -146334,7 +146417,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f7": {
    "kind": "static",
@@ -146353,7 +146437,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f8": {
    "kind": "static",
@@ -146372,7 +146457,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h6.f9": {
    "kind": "static",
@@ -146391,7 +146477,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7": {
    "kind": "static",
@@ -146410,7 +146497,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f1": {
    "kind": "static",
@@ -146429,7 +146517,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f10": {
    "kind": "static",
@@ -146448,7 +146537,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f11": {
    "kind": "static",
@@ -146467,7 +146557,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f2": {
    "kind": "static",
@@ -146486,7 +146577,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f3": {
    "kind": "static",
@@ -146505,7 +146597,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f4": {
    "kind": "static",
@@ -146524,7 +146617,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f5": {
    "kind": "static",
@@ -146543,7 +146637,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f6": {
    "kind": "static",
@@ -146562,7 +146657,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f7": {
    "kind": "static",
@@ -146581,7 +146677,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f8": {
    "kind": "static",
@@ -146600,7 +146697,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h7.f9": {
    "kind": "static",
@@ -146619,7 +146717,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8": {
    "kind": "static",
@@ -146638,7 +146737,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f1": {
    "kind": "static",
@@ -146657,7 +146757,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f10": {
    "kind": "static",
@@ -146676,7 +146777,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f11": {
    "kind": "static",
@@ -146695,7 +146797,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f2": {
    "kind": "static",
@@ -146714,7 +146817,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f3": {
    "kind": "static",
@@ -146733,7 +146837,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f4": {
    "kind": "static",
@@ -146752,7 +146857,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f5": {
    "kind": "static",
@@ -146771,7 +146877,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f6": {
    "kind": "static",
@@ -146790,7 +146897,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f7": {
    "kind": "static",
@@ -146809,7 +146917,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f8": {
    "kind": "static",
@@ -146828,7 +146937,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h8.f9": {
    "kind": "static",
@@ -146847,7 +146957,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9": {
    "kind": "static",
@@ -146866,7 +146977,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f1": {
    "kind": "static",
@@ -146885,7 +146997,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f10": {
    "kind": "static",
@@ -146904,7 +147017,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f11": {
    "kind": "static",
@@ -146923,7 +147037,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f2": {
    "kind": "static",
@@ -146942,7 +147057,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f3": {
    "kind": "static",
@@ -146961,7 +147077,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f4": {
    "kind": "static",
@@ -146980,7 +147097,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f5": {
    "kind": "static",
@@ -146999,7 +147117,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f6": {
    "kind": "static",
@@ -147018,7 +147137,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f7": {
    "kind": "static",
@@ -147037,7 +147157,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f8": {
    "kind": "static",
@@ -147056,7 +147177,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.cart.h9.f9": {
    "kind": "static",
@@ -147075,7 +147197,8 @@
     2,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.floor.x": {
    "kind": "static",
@@ -147094,7 +147217,8 @@
     1,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "slab.floor.y": {
    "kind": "static",
@@ -147113,7 +147237,8 @@
     1,
     2
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "starmap.backdrop": {
    "kind": "static",
@@ -150324,48 +150449,50 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3503,
-    "y": 541,
-    "w": 251,
-    "h": 77
+    "x": 505,
+    "y": 152,
+    "w": 247,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
+    "x": 53,
     "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha0.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2286,
+    "x": 842,
     "y": 1,
     "w": 155,
-    "h": 139
+    "h": 117
    },
    "anchor": {
     "x": 99,
-    "y": 78
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha0.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2725,
-    "y": 308,
+    "x": 3570,
+    "y": 310,
     "w": 244,
-    "h": 108
+    "h": 58
    },
    "anchor": {
     "x": 194,
@@ -150375,73 +150502,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha0.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1229,
+    "x": 1,
     "y": 1,
-    "w": 147,
+    "w": 46,
     "h": 150
    },
    "anchor": {
-    "x": 48,
+    "x": -53,
     "y": 174
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha1.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3755,
-    "y": 541,
-    "w": 248,
-    "h": 77
+    "x": 753,
+    "y": 152,
+    "w": 244,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
+    "x": 53,
     "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha1.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2442,
+    "x": 998,
     "y": 1,
     "w": 155,
-    "h": 138
+    "h": 116
    },
    "anchor": {
     "x": 99,
-    "y": 78
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha1.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2970,
-    "y": 308,
+    "x": 3815,
+    "y": 310,
     "w": 241,
-    "h": 108
+    "h": 58
    },
    "anchor": {
     "x": 191,
@@ -150451,73 +150582,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha1.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1377,
+    "x": 48,
     "y": 1,
-    "w": 149,
+    "w": 47,
     "h": 150
    },
    "anchor": {
-    "x": 49,
+    "x": -53,
     "y": 172
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha2.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 637,
-    "w": 240,
-    "h": 77
+    "x": 998,
+    "y": 152,
+    "w": 236,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
+    "x": 53,
     "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha2.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2414,
-    "y": 308,
+    "x": 1407,
+    "y": 1,
     "w": 155,
-    "h": 113
+    "h": 112
    },
    "anchor": {
     "x": 99,
-    "y": 57
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha2.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3212,
-    "y": 308,
-    "w": 161,
-    "h": 108
+    "x": 3225,
+    "y": 310,
+    "w": 99,
+    "h": 59
    },
    "anchor": {
     "x": 183,
@@ -150527,73 +150662,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha2.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1527,
+    "x": 96,
     "y": 1,
-    "w": 148,
+    "w": 49,
     "h": 146
    },
    "anchor": {
-    "x": 49,
+    "x": -50,
     "y": 168
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha3.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3341,
-    "y": 179,
-    "w": 228,
-    "h": 127
+    "x": 1235,
+    "y": 152,
+    "w": 224,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha3.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 157,
+    "x": 1770,
     "y": 1,
     "w": 155,
-    "h": 174
+    "h": 106
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha3.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3374,
-    "y": 308,
-    "w": 173,
-    "h": 108
+    "x": 1607,
+    "y": 233,
+    "w": 131,
+    "h": 74
    },
    "anchor": {
     "x": 171,
@@ -150603,73 +150742,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha3.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2598,
+    "x": 242,
     "y": 1,
-    "w": 103,
+    "w": 49,
     "h": 138
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 162
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha4.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3702,
-    "y": 1,
-    "w": 214,
-    "h": 128
+    "x": 1460,
+    "y": 152,
+    "w": 210,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha4.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 781,
+    "x": 2181,
     "y": 1,
     "w": 155,
-    "h": 154
+    "h": 99
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha4.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3548,
-    "y": 308,
-    "w": 161,
-    "h": 108
+    "x": 3325,
+    "y": 310,
+    "w": 92,
+    "h": 59
    },
    "anchor": {
     "x": 157,
@@ -150679,73 +150822,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha4.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2750,
+    "x": 340,
     "y": 1,
-    "w": 103,
+    "w": 46,
     "h": 131
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 155
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha5.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 179,
-    "w": 199,
-    "h": 128
+    "x": 1671,
+    "y": 152,
+    "w": 194,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha5.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 469,
+    "x": 3070,
     "y": 1,
     "w": 155,
-    "h": 160
+    "h": 92
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha5.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3710,
-    "y": 308,
+    "x": 1739,
+    "y": 233,
     "w": 191,
-    "h": 108
+    "h": 74
    },
    "anchor": {
     "x": 141,
@@ -150755,73 +150902,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha5.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3903,
-    "y": 179,
-    "w": 103,
+    "x": 435,
+    "y": 1,
+    "w": 46,
     "h": 123
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 147
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha6.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 201,
-    "y": 179,
-    "w": 183,
-    "h": 128
+    "x": 1866,
+    "y": 152,
+    "w": 178,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha6.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1083,
-    "y": 1,
-    "w": 145,
-    "h": 152
+    "x": 1931,
+    "y": 233,
+    "w": 46,
+    "h": 74
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 46
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha6.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3902,
-    "y": 308,
-    "w": 129,
-    "h": 108
+    "x": 1978,
+    "y": 233,
+    "w": 77,
+    "h": 74
    },
    "anchor": {
     "x": 125,
@@ -150831,73 +150982,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha6.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1978,
-    "y": 308,
-    "w": 104,
+    "x": 1154,
+    "y": 1,
+    "w": 50,
     "h": 115
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 139
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha7.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 385,
-    "y": 179,
-    "w": 165,
-    "h": 128
+    "x": 2045,
+    "y": 152,
+    "w": 161,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha7.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2130,
-    "y": 1,
+    "x": 2622,
+    "y": 233,
     "w": 155,
-    "h": 140
+    "h": 72
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha7.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 432,
-    "w": 112,
-    "h": 108
+    "x": 294,
+    "y": 380,
+    "w": 42,
+    "h": 56
    },
    "anchor": {
     "x": 108,
@@ -150907,73 +151062,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha7.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 445,
-    "y": 432,
-    "w": 104,
+    "x": 1719,
+    "y": 1,
+    "w": 50,
     "h": 107
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 131
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha8.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 551,
-    "y": 179,
-    "w": 153,
-    "h": 128
+    "x": 2207,
+    "y": 152,
+    "w": 149,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha8.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 418,
-    "y": 308,
+    "x": 1,
+    "y": 310,
     "w": 155,
-    "h": 121
+    "h": 69
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 59
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha8.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 114,
-    "y": 432,
-    "w": 100,
-    "h": 108
+    "x": 337,
+    "y": 380,
+    "w": 30,
+    "h": 56
    },
    "anchor": {
     "x": 96,
@@ -150983,73 +151142,77 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha8.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1359,
-    "y": 432,
-    "w": 104,
+    "x": 2130,
+    "y": 1,
+    "w": 50,
     "h": 101
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 125
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha9.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 705,
-    "y": 179,
-    "w": 145,
-    "h": 128
+    "x": 2357,
+    "y": 152,
+    "w": 141,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha9.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1354,
-    "y": 308,
+    "x": 3104,
+    "y": 233,
     "w": 155,
-    "h": 118
+    "h": 70
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 63
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha9.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 215,
-    "y": 432,
-    "w": 92,
-    "h": 108
+    "x": 2056,
+    "y": 233,
+    "w": 47,
+    "h": 74
    },
    "anchor": {
     "x": 88,
@@ -151059,39 +151222,41 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.ha9.r3": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1757,
-    "y": 432,
-    "w": 104,
+    "x": 2337,
+    "y": 1,
+    "w": 50,
     "h": 99
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 121
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc00.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3129,
-    "y": 1,
-    "w": 47,
-    "h": 129
+    "x": 1380,
+    "y": 310,
+    "w": 35,
+    "h": 65
    },
    "anchor": {
-    "x": 27,
-    "y": 111
+    "x": 16,
+    "y": 47
    },
    "footprint": [
     3,
@@ -151103,14 +151268,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1548,
-    "y": 541,
-    "w": 135,
-    "h": 89
+    "x": 1893,
+    "y": 380,
+    "w": 36,
+    "h": 51
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 73
    },
    "footprint": [
     3,
@@ -151121,14 +151286,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 211,
-    "y": 541,
-    "w": 59,
-    "h": 93
+    "x": 800,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
@@ -151139,14 +151304,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1684,
-    "y": 541,
-    "w": 103,
-    "h": 89
+    "x": 2197,
+    "y": 310,
+    "w": 49,
+    "h": 64
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -50,
+    "y": 86
    },
    "footprint": [
     3,
@@ -151157,14 +151322,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3177,
-    "y": 1,
-    "w": 72,
-    "h": 129
+    "x": 2247,
+    "y": 310,
+    "w": 61,
+    "h": 62
    },
    "anchor": {
-    "x": 27,
-    "y": 111
+    "x": 16,
+    "y": 44
    },
    "footprint": [
     3,
@@ -151176,14 +151341,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1788,
-    "y": 541,
-    "w": 135,
-    "h": 89
+    "x": 2672,
+    "y": 380,
+    "w": 40,
+    "h": 35
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 57
    },
    "footprint": [
     3,
@@ -151194,14 +151359,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 271,
-    "y": 541,
-    "w": 59,
-    "h": 93
+    "x": 812,
+    "y": 439,
+    "w": 12,
+    "h": 8
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
@@ -151212,14 +151377,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2824,
-    "y": 541,
-    "w": 103,
-    "h": 87
+    "x": 926,
+    "y": 310,
+    "w": 49,
+    "h": 67
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -50,
+    "y": 91
    },
    "footprint": [
     3,
@@ -151231,14 +151396,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 851,
-    "y": 179,
-    "w": 75,
-    "h": 128
+    "x": 2085,
+    "y": 380,
+    "w": 64,
+    "h": 43
    },
    "anchor": {
-    "x": 27,
-    "y": 111
+    "x": 16,
+    "y": 27
    },
    "footprint": [
     3,
@@ -151249,14 +151414,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1924,
-    "y": 541,
-    "w": 136,
-    "h": 89
+    "x": 559,
+    "y": 439,
+    "w": 41,
+    "h": 21
    },
    "anchor": {
     "x": 100,
-    "y": 111
+    "y": 43
    },
    "footprint": [
     3,
@@ -151267,14 +151432,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 331,
-    "y": 541,
-    "w": 59,
-    "h": 93
+    "x": 825,
+    "y": 439,
+    "w": 12,
+    "h": 8
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
@@ -151285,14 +151450,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2928,
-    "y": 541,
-    "w": 103,
-    "h": 87
+    "x": 1,
+    "y": 380,
+    "w": 49,
+    "h": 58
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -50,
+    "y": 82
    },
    "footprint": [
     3,
@@ -151303,14 +151468,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3570,
-    "y": 179,
-    "w": 76,
-    "h": 127
+    "x": 428,
+    "y": 439,
+    "w": 65,
+    "h": 24
    },
    "anchor": {
-    "x": 27,
-    "y": 111
+    "x": 16,
+    "y": 8
    },
    "footprint": [
     3,
@@ -151322,14 +151487,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1601,
-    "y": 432,
-    "w": 155,
-    "h": 100
+    "x": 1930,
+    "y": 380,
+    "w": 154,
+    "h": 45
    },
    "anchor": {
-    "x": 99,
-    "y": 111
+    "x": 98,
+    "y": 56
    },
    "footprint": [
     3,
@@ -151340,14 +151505,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 391,
-    "y": 541,
-    "w": 59,
-    "h": 93
+    "x": 838,
+    "y": 439,
+    "w": 12,
+    "h": 8
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
@@ -151358,14 +151523,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3032,
-    "y": 541,
-    "w": 102,
-    "h": 87
+    "x": 2409,
+    "y": 380,
+    "w": 40,
+    "h": 38
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -58,
+    "y": 62
    },
    "footprint": [
     3,
@@ -151376,52 +151541,54 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 927,
-    "y": 179,
-    "w": 106,
-    "h": 128
+    "x": 624,
+    "y": 380,
+    "w": 90,
+    "h": 55
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 39
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc09.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2570,
-    "y": 308,
+    "x": 368,
+    "y": 380,
     "w": 154,
-    "h": 111
+    "h": 56
    },
    "anchor": {
     "x": 98,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc09.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 451,
-    "y": 541,
-    "w": 76,
-    "h": 93
+    "x": 2713,
+    "y": 380,
+    "w": 7,
+    "h": 35
    },
    "anchor": {
     "x": 74,
-    "y": 111
+    "y": 99
    },
    "footprint": [
     3,
@@ -151433,67 +151600,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2061,
-    "y": 541,
-    "w": 104,
-    "h": 89
+    "x": 1416,
+    "y": 310,
+    "w": 44,
+    "h": 65
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -56,
+    "y": 87
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc10.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3250,
-    "y": 1,
-    "w": 106,
-    "h": 129
+    "x": 51,
+    "y": 380,
+    "w": 90,
+    "h": 58
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 40
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc10.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 528,
-    "y": 541,
+    "x": 2450,
+    "y": 380,
     "w": 156,
-    "h": 93
+    "h": 38
    },
    "anchor": {
     "x": 100,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc10.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1862,
-    "y": 432,
-    "w": 76,
-    "h": 99
+    "x": 1461,
+    "y": 310,
+    "w": 32,
+    "h": 65
    },
    "anchor": {
     "x": 74,
@@ -151509,52 +151679,54 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2166,
-    "y": 541,
-    "w": 104,
-    "h": 89
+    "x": 3861,
+    "y": 1,
+    "w": 49,
+    "h": 82
    },
    "anchor": {
-    "x": 4,
-    "y": 111
+    "x": -50,
+    "y": 104
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc11.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3357,
-    "y": 1,
-    "w": 100,
-    "h": 129
+    "x": 2104,
+    "y": 233,
+    "w": 82,
+    "h": 74
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc11.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2271,
-    "y": 541,
-    "w": 155,
-    "h": 89
+    "x": 2721,
+    "y": 380,
+    "w": 154,
+    "h": 35
    },
    "anchor": {
-    "x": 99,
-    "y": 111
+    "x": 98,
+    "y": 57
    },
    "footprint": [
     3,
@@ -151566,10 +151738,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2083,
-    "y": 308,
-    "w": 69,
-    "h": 115
+    "x": 3981,
+    "y": 1,
+    "w": 18,
+    "h": 81
    },
    "anchor": {
     "x": 67,
@@ -151585,52 +151757,54 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1104,
-    "y": 541,
-    "w": 103,
+    "x": 3375,
+    "y": 1,
+    "w": 49,
     "h": 90
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 114
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc12.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3458,
+    "x": 3911,
     "y": 1,
-    "w": 85,
-    "h": 129
+    "w": 69,
+    "h": 82
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 64
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc12.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1066,
-    "y": 432,
+    "x": 820,
+    "y": 380,
     "w": 155,
-    "h": 102
+    "h": 54
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 76
    },
    "footprint": [
     3,
@@ -151642,10 +151816,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3793,
-    "y": 179,
-    "w": 55,
-    "h": 126
+    "x": 678,
+    "y": 439,
+    "w": 18,
+    "h": 18
    },
    "anchor": {
     "x": 53,
@@ -151661,8 +151835,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3901,
-    "y": 432,
+    "x": 2632,
+    "y": 1,
     "w": 128,
     "h": 95
    },
@@ -151674,39 +151848,41 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc13.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3544,
+    "x": 3632,
     "y": 1,
-    "w": 78,
-    "h": 129
+    "w": 62,
+    "h": 87
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 69
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc13.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2427,
-    "y": 541,
+    "x": 3260,
+    "y": 233,
     "w": 155,
-    "h": 89
+    "h": 70
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 92
    },
    "footprint": [
     3,
@@ -151718,13 +151894,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2854,
+    "x": 2439,
     "y": 1,
-    "w": 60,
-    "h": 131
+    "w": 37,
+    "h": 97
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 149
    },
    "footprint": [
@@ -151737,33 +151913,34 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 790,
-    "y": 541,
-    "w": 103,
+    "x": 3226,
+    "y": 1,
+    "w": 49,
     "h": 92
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 114
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc14.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3623,
+    "x": 3695,
     "y": 1,
-    "w": 78,
-    "h": 129
+    "w": 35,
+    "h": 85
    },
    "anchor": {
-    "x": 32,
-    "y": 111
+    "x": 16,
+    "y": 67
    },
    "footprint": [
     3,
@@ -151775,14 +151952,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2583,
-    "y": 541,
-    "w": 135,
-    "h": 89
+    "x": 4000,
+    "y": 1,
+    "w": 37,
+    "h": 80
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 102
    },
    "footprint": [
     3,
@@ -151794,13 +151971,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2915,
+    "x": 2477,
     "y": 1,
-    "w": 108,
-    "h": 131
+    "w": 103,
+    "h": 97
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 149
    },
    "footprint": [
@@ -151813,32 +151990,33 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1208,
-    "y": 541,
+    "x": 3731,
+    "y": 1,
     "w": 129,
-    "h": 90
+    "h": 85
    },
    "anchor": {
     "x": 30,
-    "y": 111
+    "y": 106
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc15.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3184,
-    "y": 541,
-    "w": 79,
+    "x": 49,
+    "y": 152,
+    "w": 74,
     "h": 78
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 61
    },
    "footprint": [
@@ -151851,10 +152029,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1355,
-    "y": 637,
+    "x": 2423,
+    "y": 233,
     "w": 153,
-    "h": 74
+    "h": 73
    },
    "anchor": {
     "x": 97,
@@ -151870,10 +152048,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3849,
-    "y": 179,
+    "x": 3578,
+    "y": 1,
     "w": 53,
-    "h": 125
+    "h": 88
    },
    "anchor": {
     "x": 49,
@@ -151888,33 +152066,34 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3135,
-    "y": 541,
-    "w": 48,
+    "x": 4038,
+    "y": 1,
+    "w": 47,
     "h": 80
    },
    "anchor": {
-    "x": -49,
+    "x": -50,
     "y": 101
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc16.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1622,
-    "y": 637,
-    "w": 48,
-    "h": 71
+    "x": 157,
+    "y": 310,
+    "w": 43,
+    "h": 69
    },
    "anchor": {
-    "x": 27,
-    "y": 54
+    "x": 22,
+    "y": 53
    },
    "footprint": [
     3,
@@ -151926,8 +152105,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2411,
-    "y": 637,
+    "x": 689,
+    "y": 310,
     "w": 35,
     "h": 68
    },
@@ -151945,13 +152124,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1114,
-    "y": 637,
-    "w": 108,
-    "h": 76
+    "x": 2150,
+    "y": 380,
+    "w": 103,
+    "h": 42
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 94
    },
    "footprint": [
@@ -151963,10 +152142,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 242,
-    "y": 637,
+    "x": 2187,
+    "y": 233,
     "w": 127,
-    "h": 77
+    "h": 74
    },
    "anchor": {
     "x": 30,
@@ -151976,19 +152155,20 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc17.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3264,
-    "y": 541,
-    "w": 79,
-    "h": 78
+    "x": 280,
+    "y": 152,
+    "w": 74,
+    "h": 77
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 61
    },
    "footprint": [
@@ -152001,10 +152181,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2447,
-    "y": 637,
+    "x": 2309,
+    "y": 310,
     "w": 153,
-    "h": 63
+    "h": 62
    },
    "anchor": {
     "x": 97,
@@ -152020,13 +152200,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 196,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 851,
+    "y": 439,
+    "w": 10,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152038,32 +152218,33 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1898,
-    "y": 637,
-    "w": 48,
+    "x": 3416,
+    "y": 233,
+    "w": 47,
     "h": 70
    },
    "anchor": {
-    "x": -49,
+    "x": -50,
     "y": 88
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc18.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3344,
-    "y": 541,
-    "w": 78,
-    "h": 78
+    "x": 355,
+    "y": 152,
+    "w": 74,
+    "h": 77
    },
    "anchor": {
-    "x": 57,
+    "x": 53,
     "y": 61
    },
    "footprint": [
@@ -152076,10 +152257,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2601,
-    "y": 637,
+    "x": 2463,
+    "y": 310,
     "w": 152,
-    "h": 63
+    "h": 62
    },
    "anchor": {
     "x": 96,
@@ -152095,13 +152276,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 233,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 862,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152113,32 +152294,33 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1947,
-    "y": 637,
-    "w": 47,
+    "x": 3464,
+    "y": 233,
+    "w": 46,
     "h": 70
    },
    "anchor": {
-    "x": -49,
+    "x": -50,
     "y": 88
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc19.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3423,
-    "y": 541,
-    "w": 79,
-    "h": 78
+    "x": 430,
+    "y": 152,
+    "w": 74,
+    "h": 77
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 61
    },
    "footprint": [
@@ -152151,10 +152333,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2754,
-    "y": 637,
+    "x": 2616,
+    "y": 310,
     "w": 152,
-    "h": 63
+    "h": 62
    },
    "anchor": {
     "x": 96,
@@ -152170,13 +152352,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 270,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 874,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152188,33 +152370,34 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1995,
-    "y": 637,
-    "w": 49,
+    "x": 3511,
+    "y": 233,
+    "w": 46,
     "h": 70
    },
    "anchor": {
-    "x": -47,
+    "x": -50,
     "y": 88
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc20.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1671,
-    "y": 637,
-    "w": 78,
-    "h": 71
+    "x": 201,
+    "y": 310,
+    "w": 43,
+    "h": 69
    },
    "anchor": {
-    "x": 57,
-    "y": 54
+    "x": 22,
+    "y": 53
    },
    "footprint": [
     3,
@@ -152226,8 +152409,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2907,
-    "y": 637,
+    "x": 2769,
+    "y": 310,
     "w": 151,
     "h": 62
    },
@@ -152245,13 +152428,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 307,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 886,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152263,46 +152446,48 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1568,
-    "y": 637,
-    "w": 53,
-    "h": 72
+    "x": 3558,
+    "y": 233,
+    "w": 50,
+    "h": 70
    },
    "anchor": {
-    "x": -43,
+    "x": -46,
     "y": 88
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc21.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2045,
-    "y": 637,
-    "w": 78,
-    "h": 70
+    "x": 245,
+    "y": 310,
+    "w": 43,
+    "h": 69
    },
    "anchor": {
-    "x": 57,
-    "y": 54
+    "x": 22,
+    "y": 53
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc21.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3059,
-    "y": 637,
+    "x": 2921,
+    "y": 310,
     "w": 151,
     "h": 61
    },
@@ -152320,13 +152505,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 344,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 898,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152338,46 +152523,48 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1509,
-    "y": 637,
-    "w": 58,
-    "h": 73
+    "x": 2778,
+    "y": 233,
+    "w": 56,
+    "h": 71
    },
    "anchor": {
-    "x": -38,
+    "x": -40,
     "y": 89
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc22.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2362,
-    "y": 637,
-    "w": 48,
+    "x": 289,
+    "y": 310,
+    "w": 43,
     "h": 69
    },
    "anchor": {
-    "x": 27,
+    "x": 22,
     "y": 53
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc22.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3211,
-    "y": 637,
+    "x": 3073,
+    "y": 310,
     "w": 151,
     "h": 60
    },
@@ -152395,13 +152582,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 381,
-    "y": 715,
-    "w": 36,
-    "h": 42
+    "x": 910,
+    "y": 439,
+    "w": 11,
+    "h": 8
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152413,10 +152600,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1223,
-    "y": 637,
-    "w": 62,
-    "h": 75
+    "x": 2315,
+    "y": 233,
+    "w": 61,
+    "h": 74
    },
    "anchor": {
     "x": -36,
@@ -152426,33 +152613,35 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc23.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2124,
-    "y": 637,
-    "w": 78,
+    "x": 3609,
+    "y": 233,
+    "w": 43,
     "h": 70
    },
    "anchor": {
-    "x": 57,
+    "x": 22,
     "y": 54
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc23.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3363,
-    "y": 637,
+    "x": 3418,
+    "y": 310,
     "w": 151,
     "h": 59
    },
@@ -152470,13 +152659,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 418,
-    "y": 715,
-    "w": 35,
-    "h": 42
+    "x": 937,
+    "y": 439,
+    "w": 5,
+    "h": 4
    },
    "anchor": {
-    "x": 57,
+    "x": 47,
     "y": 60
    },
    "footprint": [
@@ -152488,9 +152677,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1286,
-    "y": 637,
-    "w": 68,
+    "x": 1092,
+    "y": 233,
+    "w": 67,
     "h": 75
    },
    "anchor": {
@@ -152501,33 +152690,35 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc24.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2203,
-    "y": 637,
-    "w": 78,
-    "h": 70
+    "x": 333,
+    "y": 310,
+    "w": 43,
+    "h": 69
    },
    "anchor": {
-    "x": 57,
-    "y": 54
+    "x": 22,
+    "y": 53
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc24.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3515,
-    "y": 637,
+    "x": 142,
+    "y": 380,
     "w": 151,
     "h": 57
    },
@@ -152545,13 +152736,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 454,
-    "y": 715,
-    "w": 35,
-    "h": 42
+    "x": 943,
+    "y": 439,
+    "w": 5,
+    "h": 4
    },
    "anchor": {
-    "x": 57,
+    "x": 47,
     "y": 60
    },
    "footprint": [
@@ -152563,8 +152754,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1750,
-    "y": 637,
+    "x": 2835,
+    "y": 233,
     "w": 67,
     "h": 71
    },
@@ -152576,33 +152767,35 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc25.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1818,
-    "y": 637,
-    "w": 79,
-    "h": 71
+    "x": 3653,
+    "y": 233,
+    "w": 44,
+    "h": 70
    },
    "anchor": {
-    "x": 57,
+    "x": 22,
     "y": 54
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hc25.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3891,
-    "y": 637,
+    "x": 976,
+    "y": 380,
     "w": 151,
     "h": 54
    },
@@ -152619,13 +152812,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 538,
-    "y": 715,
-    "w": 35,
-    "h": 41
+    "x": 949,
+    "y": 439,
+    "w": 1,
+    "h": 1
    },
    "anchor": {
-    "x": 57,
+    "x": 48,
     "y": 59
    },
    "footprint": [
@@ -152637,10 +152830,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3772,
-    "y": 637,
-    "w": 68,
-    "h": 56
+    "x": 715,
+    "y": 380,
+    "w": 67,
+    "h": 55
    },
    "anchor": {
     "x": -30,
@@ -152650,14 +152843,15 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hd0.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2691,
-    "y": 715,
+    "x": 951,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152674,8 +152868,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2693,
-    "y": 715,
+    "x": 953,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152692,8 +152886,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2695,
-    "y": 715,
+    "x": 955,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152710,8 +152904,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2697,
-    "y": 715,
+    "x": 957,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152728,14 +152922,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2586,
-    "y": 715,
-    "w": 32,
-    "h": 16
+    "x": 769,
+    "y": 439,
+    "w": 30,
+    "h": 14
    },
    "anchor": {
     "x": 15,
-    "y": 0
+    "y": -2
    },
    "footprint": [
     3,
@@ -152746,14 +152940,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2557,
-    "y": 715,
+    "x": 697,
+    "y": 439,
     "w": 28,
-    "h": 17
+    "h": 16
    },
    "anchor": {
     "x": 96,
-    "y": 41
+    "y": 40
    },
    "footprint": [
     3,
@@ -152764,8 +152958,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2699,
-    "y": 715,
+    "x": 959,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152782,14 +152976,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1390,
-    "y": 715,
-    "w": 47,
-    "h": 33
+    "x": 3588,
+    "y": 380,
+    "w": 46,
+    "h": 32
    },
    "anchor": {
-    "x": -49,
-    "y": 57
+    "x": -50,
+    "y": 56
    },
    "footprint": [
     3,
@@ -152800,14 +152994,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2619,
-    "y": 715,
+    "x": 726,
+    "y": 439,
     "w": 42,
-    "h": 16
+    "h": 15
    },
    "anchor": {
     "x": 21,
-    "y": 0
+    "y": -1
    },
    "footprint": [
     3,
@@ -152818,8 +153012,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2412,
-    "y": 715,
+    "x": 494,
+    "y": 439,
     "w": 29,
     "h": 22
    },
@@ -152836,8 +153030,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2701,
-    "y": 715,
+    "x": 961,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152854,14 +153048,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 805,
-    "y": 715,
-    "w": 47,
-    "h": 35
+    "x": 3006,
+    "y": 380,
+    "w": 46,
+    "h": 34
    },
    "anchor": {
-    "x": -49,
-    "y": 57
+    "x": -50,
+    "y": 56
    },
    "footprint": [
     3,
@@ -152872,8 +153066,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2514,
-    "y": 715,
+    "x": 635,
+    "y": 439,
     "w": 42,
     "h": 20
    },
@@ -152890,14 +153084,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2442,
-    "y": 715,
+    "x": 601,
+    "y": 439,
     "w": 33,
-    "h": 22
+    "h": 21
    },
    "anchor": {
     "x": 96,
-    "y": 44
+    "y": 43
    },
    "footprint": [
     3,
@@ -152908,8 +153102,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2703,
-    "y": 715,
+    "x": 963,
+    "y": 439,
     "w": 1,
     "h": 1
    },
@@ -152926,13 +153120,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2476,
-    "y": 715,
-    "w": 37,
+    "x": 524,
+    "y": 439,
+    "w": 34,
     "h": 22
    },
    "anchor": {
-    "x": -59,
+    "x": -62,
     "y": 44
    },
    "footprint": [
@@ -152944,10 +153138,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 153,
-    "y": 715,
+    "x": 2254,
+    "y": 380,
     "w": 42,
-    "h": 43
+    "h": 42
    },
    "anchor": {
     "x": 21,
@@ -152963,10 +153157,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2378,
-    "y": 715,
+    "x": 394,
+    "y": 439,
     "w": 33,
-    "h": 31
+    "h": 30
    },
    "anchor": {
     "x": 96,
@@ -152981,13 +153175,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2662,
-    "y": 715,
-    "w": 17,
-    "h": 11
+    "x": 922,
+    "y": 439,
+    "w": 10,
+    "h": 8
    },
    "anchor": {
-    "x": 57,
+    "x": 53,
     "y": 60
    },
    "footprint": [
@@ -152999,13 +153193,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 490,
-    "y": 715,
-    "w": 47,
+    "x": 2297,
+    "y": 380,
+    "w": 46,
     "h": 42
    },
    "anchor": {
-    "x": -49,
+    "x": -50,
     "y": 64
    },
    "footprint": [
@@ -153017,27 +153211,28 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2282,
-    "y": 637,
-    "w": 79,
+    "x": 3698,
+    "y": 233,
+    "w": 37,
     "h": 70
    },
    "anchor": {
-    "x": 57,
+    "x": 15,
     "y": 54
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.he0.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 715,
+    "x": 1741,
+    "y": 380,
     "w": 151,
     "h": 52
    },
@@ -153054,13 +153249,13 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 574,
-    "y": 715,
-    "w": 35,
-    "h": 41
+    "x": 965,
+    "y": 439,
+    "w": 1,
+    "h": 1
    },
    "anchor": {
-    "x": 57,
+    "x": 48,
     "y": 59
    },
    "footprint": [
@@ -153072,10 +153267,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3667,
-    "y": 637,
+    "x": 523,
+    "y": 380,
     "w": 67,
-    "h": 57
+    "h": 56
    },
    "anchor": {
     "x": -30,
@@ -153085,34 +153280,36 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.he1.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3841,
-    "y": 637,
-    "w": 49,
+    "x": 783,
+    "y": 380,
+    "w": 36,
     "h": 55
    },
    "anchor": {
-    "x": 27,
+    "x": 14,
     "y": 54
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.he1.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2680,
-    "y": 715,
-    "w": 4,
+    "x": 933,
+    "y": 439,
+    "w": 3,
     "h": 7
    },
    "anchor": {
@@ -153128,14 +153325,14 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2685,
-    "y": 715,
-    "w": 5,
-    "h": 4
+    "x": 967,
+    "y": 439,
+    "w": 1,
+    "h": 1
    },
    "anchor": {
-    "x": 27,
-    "y": 22
+    "x": 0,
+    "y": 0
    },
    "footprint": [
     3,
@@ -153146,10 +153343,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3735,
-    "y": 637,
-    "w": 36,
-    "h": 57
+    "x": 591,
+    "y": 380,
+    "w": 32,
+    "h": 56
    },
    "anchor": {
     "x": -30,
@@ -153159,54 +153356,57 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh0.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1034,
-    "y": 179,
-    "w": 144,
-    "h": 128
+    "x": 2499,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh0.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1822,
-    "y": 308,
+    "x": 2903,
+    "y": 233,
     "w": 155,
-    "h": 117
+    "h": 71
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 65
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh0.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 308,
-    "y": 432,
-    "w": 136,
-    "h": 108
+    "x": 2377,
+    "y": 233,
+    "w": 45,
+    "h": 74
    },
    "anchor": {
     "x": 86,
@@ -153222,67 +153422,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3796,
-    "y": 432,
-    "w": 104,
+    "x": 2581,
+    "y": 1,
+    "w": 50,
     "h": 96
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 120
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh1.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1179,
-    "y": 179,
-    "w": 143,
-    "h": 128
+    "x": 2639,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh1.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1510,
-    "y": 308,
+    "x": 3736,
+    "y": 233,
     "w": 155,
-    "h": 118
+    "h": 70
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 63
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh1.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 550,
-    "y": 432,
-    "w": 136,
-    "h": 107
+    "x": 2577,
+    "y": 233,
+    "w": 44,
+    "h": 73
    },
    "anchor": {
     "x": 86,
@@ -153298,67 +153501,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 106,
-    "y": 541,
-    "w": 104,
+    "x": 2812,
+    "y": 1,
+    "w": 50,
     "h": 94
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 118
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh2.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1323,
-    "y": 179,
-    "w": 144,
-    "h": 128
+    "x": 2779,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh2.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1198,
-    "y": 308,
+    "x": 3892,
+    "y": 233,
     "w": 155,
-    "h": 119
+    "h": 70
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 62
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh2.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 792,
-    "y": 432,
-    "w": 136,
-    "h": 105
+    "x": 3059,
+    "y": 233,
+    "w": 44,
+    "h": 71
    },
    "anchor": {
     "x": 86,
@@ -153374,67 +153580,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 541,
-    "w": 104,
+    "x": 2761,
+    "y": 1,
+    "w": 50,
     "h": 95
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 117
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh3.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1468,
-    "y": 179,
-    "w": 144,
-    "h": 128
+    "x": 2919,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh3.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 886,
-    "y": 308,
+    "x": 377,
+    "y": 310,
     "w": 155,
-    "h": 120
+    "h": 69
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh3.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 929,
-    "y": 432,
-    "w": 136,
-    "h": 104
+    "x": 4048,
+    "y": 233,
+    "w": 44,
+    "h": 70
    },
    "anchor": {
     "x": 86,
@@ -153450,67 +153659,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 685,
-    "y": 541,
-    "w": 104,
+    "x": 3019,
+    "y": 1,
+    "w": 50,
     "h": 93
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 115
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh4.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1613,
-    "y": 179,
-    "w": 144,
-    "h": 128
+    "x": 3059,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh4.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 574,
-    "y": 308,
+    "x": 533,
+    "y": 310,
     "w": 155,
-    "h": 121
+    "h": 69
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 59
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh4.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1222,
-    "y": 432,
-    "w": 136,
-    "h": 102
+    "x": 725,
+    "y": 310,
+    "w": 44,
+    "h": 68
    },
    "anchor": {
     "x": 86,
@@ -153526,67 +153738,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 894,
-    "y": 541,
-    "w": 104,
+    "x": 3276,
+    "y": 1,
+    "w": 47,
     "h": 92
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 114
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh5.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1758,
-    "y": 179,
-    "w": 144,
-    "h": 128
+    "x": 3199,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh5.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 730,
-    "y": 308,
+    "x": 976,
+    "y": 310,
     "w": 155,
-    "h": 121
+    "h": 67
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 57
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh5.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1464,
-    "y": 432,
-    "w": 136,
-    "h": 101
+    "x": 1132,
+    "y": 310,
+    "w": 44,
+    "h": 67
    },
    "anchor": {
     "x": 86,
@@ -153602,67 +153817,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1338,
-    "y": 541,
-    "w": 104,
+    "x": 3425,
+    "y": 1,
+    "w": 50,
     "h": 90
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 112
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh6.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1903,
-    "y": 179,
-    "w": 143,
-    "h": 128
+    "x": 3339,
+    "y": 152,
+    "w": 139,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh6.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 157,
-    "y": 308,
+    "x": 1177,
+    "y": 310,
     "w": 155,
-    "h": 122
+    "h": 67
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hh6.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1939,
-    "y": 432,
-    "w": 136,
-    "h": 99
+    "x": 1128,
+    "y": 380,
+    "w": 19,
+    "h": 53
    },
    "anchor": {
     "x": 86,
@@ -153678,67 +153896,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2719,
-    "y": 541,
-    "w": 104,
+    "x": 3527,
+    "y": 1,
+    "w": 50,
     "h": 89
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 111
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl0.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2047,
-    "y": 179,
-    "w": 146,
-    "h": 128
+    "x": 3479,
+    "y": 152,
+    "w": 142,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl0.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
-    "y": 308,
+    "x": 770,
+    "y": 310,
     "w": 155,
-    "h": 123
+    "h": 68
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl0.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2076,
-    "y": 432,
-    "w": 93,
-    "h": 99
+    "x": 1494,
+    "y": 310,
+    "w": 47,
+    "h": 65
    },
    "anchor": {
     "x": 89,
@@ -153754,67 +153975,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1443,
-    "y": 541,
-    "w": 104,
+    "x": 3476,
+    "y": 1,
+    "w": 50,
     "h": 90
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 112
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl1.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2194,
-    "y": 179,
-    "w": 154,
-    "h": 128
+    "x": 3622,
+    "y": 152,
+    "w": 150,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl1.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3647,
-    "y": 179,
-    "w": 145,
-    "h": 127
+    "x": 1333,
+    "y": 310,
+    "w": 46,
+    "h": 67
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 51
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl1.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2170,
-    "y": 432,
-    "w": 101,
-    "h": 99
+    "x": 1542,
+    "y": 310,
+    "w": 55,
+    "h": 65
    },
    "anchor": {
     "x": 97,
@@ -153830,67 +154054,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 999,
-    "y": 541,
-    "w": 104,
+    "x": 3324,
+    "y": 1,
+    "w": 50,
     "h": 92
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 116
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl2.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2349,
-    "y": 179,
-    "w": 166,
-    "h": 128
+    "x": 3773,
+    "y": 152,
+    "w": 162,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl2.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1676,
-    "y": 1,
+    "x": 124,
+    "y": 152,
     "w": 155,
-    "h": 146
+    "h": 78
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl2.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2272,
-    "y": 432,
-    "w": 113,
-    "h": 99
+    "x": 1598,
+    "y": 310,
+    "w": 67,
+    "h": 65
    },
    "anchor": {
     "x": 109,
@@ -153906,67 +154133,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3691,
-    "y": 432,
-    "w": 104,
+    "x": 2388,
+    "y": 1,
+    "w": 50,
     "h": 98
    },
    "anchor": {
-    "x": 4,
+    "x": -50,
     "y": 122
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl3.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2516,
-    "y": 179,
-    "w": 181,
-    "h": 128
+    "x": 1,
+    "y": 233,
+    "w": 177,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl3.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 937,
-    "y": 1,
-    "w": 145,
-    "h": 153
+    "x": 1,
+    "y": 152,
+    "w": 47,
+    "h": 80
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 51
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl3.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2386,
-    "y": 432,
-    "w": 128,
-    "h": 99
+    "x": 1666,
+    "y": 310,
+    "w": 82,
+    "h": 65
    },
    "anchor": {
     "x": 124,
@@ -153982,67 +154212,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 687,
-    "y": 432,
-    "w": 104,
+    "x": 1926,
+    "y": 1,
+    "w": 47,
     "h": 106
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 130
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl4.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2698,
-    "y": 179,
-    "w": 197,
-    "h": 128
+    "x": 179,
+    "y": 233,
+    "w": 193,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl4.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 313,
+    "x": 2863,
     "y": 1,
     "w": 155,
-    "h": 162
+    "h": 94
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl4.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2515,
-    "y": 432,
+    "x": 1749,
+    "y": 310,
     "w": 190,
-    "h": 99
+    "h": 65
    },
    "anchor": {
     "x": 140,
@@ -154058,67 +154291,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2309,
-    "y": 308,
-    "w": 104,
+    "x": 1205,
+    "y": 1,
+    "w": 45,
     "h": 114
    },
    "anchor": {
-    "x": 4,
+    "x": -55,
     "y": 138
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl5.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2896,
-    "y": 179,
-    "w": 214,
-    "h": 128
+    "x": 1160,
+    "y": 233,
+    "w": 210,
+    "h": 75
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 59
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl5.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 625,
+    "x": 1974,
     "y": 1,
     "w": 155,
-    "h": 157
+    "h": 102
    },
    "anchor": {
     "x": 99,
-    "y": 111
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl5.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2706,
-    "y": 432,
-    "w": 161,
-    "h": 99
+    "x": 1940,
+    "y": 310,
+    "w": 115,
+    "h": 65
    },
    "anchor": {
     "x": 157,
@@ -154134,67 +154370,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 313,
-    "y": 308,
-    "w": 104,
+    "x": 482,
+    "y": 1,
+    "w": 47,
     "h": 122
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 146
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl6.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3111,
-    "y": 179,
-    "w": 229,
-    "h": 128
+    "x": 373,
+    "y": 233,
+    "w": 225,
+    "h": 76
    },
    "anchor": {
-    "x": 57,
-    "y": 111
+    "x": 53,
+    "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl6.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1,
+    "x": 1563,
     "y": 1,
     "w": 155,
-    "h": 177
+    "h": 109
    },
    "anchor": {
     "x": 99,
-    "y": 124
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl6.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2868,
-    "y": 432,
-    "w": 174,
-    "h": 99
+    "x": 1148,
+    "y": 380,
+    "w": 105,
+    "h": 53
    },
    "anchor": {
     "x": 172,
@@ -154210,67 +154449,70 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3024,
+    "x": 387,
     "y": 1,
-    "w": 104,
+    "w": 47,
     "h": 131
    },
    "anchor": {
-    "x": 4,
+    "x": -53,
     "y": 153
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl7.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 370,
-    "y": 637,
-    "w": 240,
-    "h": 77
+    "x": 1371,
+    "y": 233,
+    "w": 235,
+    "h": 75
    },
    "anchor": {
-    "x": 58,
-    "y": 60
+    "x": 53,
+    "y": 59
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl7.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2153,
-    "y": 308,
+    "x": 1251,
+    "y": 1,
     "w": 155,
-    "h": 115
+    "h": 114
    },
    "anchor": {
     "x": 99,
-    "y": 57
+    "y": 56
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl7.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3043,
-    "y": 432,
-    "w": 160,
-    "h": 99
+    "x": 2056,
+    "y": 310,
+    "w": 140,
+    "h": 65
    },
    "anchor": {
     "x": 182,
@@ -154286,7 +154528,7 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2702,
+    "x": 292,
     "y": 1,
     "w": 47,
     "h": 137
@@ -154299,33 +154541,35 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl8.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 611,
-    "y": 637,
-    "w": 249,
-    "h": 77
+    "x": 599,
+    "y": 233,
+    "w": 244,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl8.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1666,
-    "y": 308,
+    "x": 686,
+    "y": 1,
     "w": 155,
     "h": 118
    },
@@ -154337,16 +154581,17 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl8.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3204,
-    "y": 432,
+    "x": 1254,
+    "y": 380,
     "w": 241,
-    "h": 99
+    "h": 53
    },
    "anchor": {
     "x": 191,
@@ -154362,46 +154607,48 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1981,
+    "x": 194,
     "y": 1,
-    "w": 148,
+    "w": 47,
     "h": 141
    },
    "anchor": {
-    "x": 48,
+    "x": -53,
     "y": 163
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl9.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 861,
-    "y": 637,
-    "w": 252,
-    "h": 77
+    "x": 844,
+    "y": 233,
+    "w": 247,
+    "h": 76
    },
    "anchor": {
-    "x": 58,
+    "x": 53,
     "y": 60
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl9.r1": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1042,
-    "y": 308,
+    "x": 530,
+    "y": 1,
     "w": 155,
     "h": 120
    },
@@ -154413,16 +154660,17 @@
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.hl9.r2": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 3446,
-    "y": 432,
+    "x": 1496,
+    "y": 380,
     "w": 244,
-    "h": 99
+    "h": 53
    },
    "anchor": {
     "x": 194,
@@ -154438,27 +154686,28 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1832,
+    "x": 146,
     "y": 1,
-    "w": 148,
+    "w": 47,
     "h": 143
    },
    "anchor": {
-    "x": 48,
+    "x": -53,
     "y": 165
    },
    "footprint": [
     3,
     3
    ],
-   "glow": true
+   "glow": true,
+   "uv": true
   },
   "stasisload.s0.r0": {
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1633,
-    "y": 715,
+    "x": 3635,
+    "y": 380,
     "w": 67,
     "h": 32
    },
@@ -154475,8 +154724,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 853,
-    "y": 715,
+    "x": 2876,
+    "y": 380,
     "w": 64,
     "h": 35
    },
@@ -154493,9 +154742,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1701,
-    "y": 715,
-    "w": 82,
+    "x": 3703,
+    "y": 380,
+    "w": 65,
     "h": 32
    },
    "anchor": {
@@ -154511,8 +154760,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1438,
-    "y": 715,
+    "x": 3182,
+    "y": 380,
     "w": 64,
     "h": 33
    },
@@ -154529,10 +154778,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1048,
-    "y": 715,
+    "x": 3247,
+    "y": 380,
     "w": 67,
-    "h": 34
+    "h": 33
    },
    "anchor": {
     "x": 34,
@@ -154547,10 +154796,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 740,
-    "y": 715,
+    "x": 2941,
+    "y": 380,
     "w": 64,
-    "h": 36
+    "h": 35
    },
    "anchor": {
     "x": 32,
@@ -154565,8 +154814,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1784,
-    "y": 715,
+    "x": 3769,
+    "y": 380,
     "w": 65,
     "h": 32
    },
@@ -154583,10 +154832,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1116,
-    "y": 715,
+    "x": 3835,
+    "y": 380,
     "w": 64,
-    "h": 34
+    "h": 32
    },
    "anchor": {
     "x": 32,
@@ -154601,10 +154850,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1181,
-    "y": 715,
+    "x": 3315,
+    "y": 380,
     "w": 73,
-    "h": 34
+    "h": 33
    },
    "anchor": {
     "x": 40,
@@ -154619,10 +154868,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 610,
-    "y": 715,
+    "x": 2344,
+    "y": 380,
     "w": 64,
-    "h": 40
+    "h": 39
    },
    "anchor": {
     "x": 32,
@@ -154637,8 +154886,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1850,
-    "y": 715,
+    "x": 3900,
+    "y": 380,
     "w": 82,
     "h": 32
    },
@@ -154655,10 +154904,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1503,
-    "y": 715,
+    "x": 3983,
+    "y": 380,
     "w": 64,
-    "h": 33
+    "h": 32
    },
    "anchor": {
     "x": 32,
@@ -154673,10 +154922,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1255,
-    "y": 715,
+    "x": 3389,
+    "y": 380,
     "w": 68,
-    "h": 34
+    "h": 33
    },
    "anchor": {
     "x": 35,
@@ -154691,10 +154940,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 675,
-    "y": 715,
+    "x": 2607,
+    "y": 380,
     "w": 64,
-    "h": 37
+    "h": 36
    },
    "anchor": {
     "x": 32,
@@ -154709,9 +154958,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1933,
-    "y": 715,
-    "w": 82,
+    "x": 1,
+    "y": 439,
+    "w": 65,
     "h": 32
    },
    "anchor": {
@@ -154727,8 +154976,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2016,
-    "y": 715,
+    "x": 67,
+    "y": 439,
     "w": 64,
     "h": 32
    },
@@ -154745,10 +154994,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1324,
-    "y": 715,
+    "x": 3458,
+    "y": 380,
     "w": 65,
-    "h": 34
+    "h": 33
    },
    "anchor": {
     "x": 32,
@@ -154763,10 +155012,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 918,
-    "y": 715,
+    "x": 3053,
+    "y": 380,
     "w": 64,
-    "h": 35
+    "h": 34
    },
    "anchor": {
     "x": 32,
@@ -154781,9 +155030,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2081,
-    "y": 715,
-    "w": 82,
+    "x": 132,
+    "y": 439,
+    "w": 64,
     "h": 32
    },
    "anchor": {
@@ -154799,8 +155048,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2164,
-    "y": 715,
+    "x": 197,
+    "y": 439,
     "w": 64,
     "h": 32
    },
@@ -154817,8 +155066,8 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2229,
-    "y": 715,
+    "x": 262,
+    "y": 439,
     "w": 66,
     "h": 32
    },
@@ -154835,10 +155084,10 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 983,
-    "y": 715,
-    "w": 64,
-    "h": 35
+    "x": 3118,
+    "y": 380,
+    "w": 63,
+    "h": 34
    },
    "anchor": {
     "x": 32,
@@ -154853,9 +155102,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 2296,
-    "y": 715,
-    "w": 81,
+    "x": 329,
+    "y": 439,
+    "w": 64,
     "h": 32
    },
    "anchor": {
@@ -154871,9 +155120,9 @@
    "kind": "static",
    "sheet": "stasisload",
    "frame": {
-    "x": 1568,
-    "y": 715,
-    "w": 64,
+    "x": 3524,
+    "y": 380,
+    "w": 63,
     "h": 33
    },
    "anchor": {

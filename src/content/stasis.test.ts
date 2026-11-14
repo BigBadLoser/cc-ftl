@@ -107,6 +107,7 @@ describe('stasis wheel', () => {
         seen.push(st.stage.load);
         stowing = st.crew;
         expect(sim.world.has(st.crew, CrewC)).toBe(true);   // the carrier, not the job entity
+        expect(st.prisoner).toBe(prisoner);                  // whose face the patches carry (render/stasisArt.ts)
         expect(stowingNow(sim.world, st.crew)).toBe(true);
       }
     }

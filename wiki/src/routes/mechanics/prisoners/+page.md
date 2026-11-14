@@ -40,6 +40,10 @@ any other hauling), as long as the ship has a wheel with room:
 2. They walk to the prisoner and seal them into it where they stand.
 3. They cart the full slab to a wheel with a free slot and stand it in. The slab rides a **hover cart** they push
    ahead of them; when they stop, the cart is parked beside them.
+4. At the wheel's hatch, the wheel first turns a free slot round to it. The hatch opens, the cart docks and sets the slab
+   on a cradle, and the cradle tips the slab up and runs it in, about eight seconds in all. The wheel then steps on
+   one slot. The sealed prisoner shows pressed into the slab's face the whole way, on the cart, during the loading and
+   in the wheel's window.
 
 If the crew member carting a slab is called away (downed, drafted, sent off by a fire), the slab is set down on the
 floor and another crew member picks it up later. A slab lying on the floor runs on its reserve (below), so it shows up
