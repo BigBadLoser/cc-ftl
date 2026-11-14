@@ -52,8 +52,8 @@ const messes: RoomMock[] = [
     pieces: [[G, 0, 0, 0], [G, 2, 0, 0], [LS, 0, 3, 0], ...[5, 8, 11].flatMap((x): Piece[] => [[T, x, 2, 0], ...seats(x, 2)])],
   },
   {
-    role: 'support', caption: 'M2 long table', w: 14, h: 5, door: 6,
-    pieces: [[G, 0, 4, 2], [G, 12, 4, 2], ...[2, 4, 6, 8, 10].flatMap((x): Piece[] => [[T, x, 2, 0], ...seats(x, 2)])],
+    role: 'support', caption: 'M2 two long tables', w: 14, h: 5, door: 7,
+    pieces: [[G, 0, 0, 3], [G, 0, 3, 3], ...[3, 5, 9, 11].flatMap((x): Piece[] => [[T, x, 2, 0], ...seats(x, 2)])],
   },
   {
     role: 'support', caption: 'M3 galley corner, booths', w: 14, h: 5, door: 6,
@@ -66,20 +66,20 @@ const guns: RoomMock[] = [
     role: 'weapons', caption: 'G1 guns in a row down the middle', w: 15, h: 7, door: 4,
     pieces: [
       ['module.massDriver', 1, 2], ['module.massDriver', 5, 2], ['module.burstLaser', 9, 3], ['module.pointDefense', 12, 3],
-      ['module.weaponsConsole', 10, 5, 2], ['module.battery', 0, 6], ['module.battery', 1, 6], ['module.battery', 14, 0], ['module.battery', 14, 1],
+      ['module.battery', 0, 6], ['module.battery', 1, 6], ['module.battery', 14, 0], ['module.battery', 14, 1],
     ],
   },
   {
     role: 'weapons', caption: 'G2 guns staggered in two rows', w: 15, h: 7, door: 7,
     pieces: [
       ['module.massDriver', 1, 1], ['module.burstLaser', 6, 1], ['module.massDriver', 10, 1], ['module.burstLaser', 5, 5], ['module.pointDefense', 9, 5],
-      ['module.weaponsConsole', 12, 5, 2], ['module.battery', 0, 6], ['module.battery', 0, 5],
+      ['module.battery', 0, 6], ['module.battery', 0, 5],
     ],
   },
   {
-    role: 'weapons', caption: 'G3 guns round the fire control', w: 13, h: 8, door: 6,
+    role: 'weapons', caption: 'G3 guns round the room, batteries in the middle', w: 13, h: 8, door: 6,
     pieces: [
-      ['module.massDriver', 1, 1], ['module.massDriver', 9, 1], ['module.burstLaser', 1, 5], ['module.pointDefense', 10, 5], ['module.weaponsConsole', 5, 3, 0],
+      ['module.massDriver', 1, 1], ['module.massDriver', 9, 1], ['module.burstLaser', 1, 5], ['module.pointDefense', 10, 5], ['module.battery', 6, 3], ['module.battery', 6, 4],
       ['module.battery', 6, 0], ['module.battery', 0, 7], ['module.battery', 12, 7],
     ],
   },
@@ -88,29 +88,29 @@ const guns: RoomMock[] = [
 const medbays: RoomMock[] = [
   {
     role: 'medbay', caption: 'D1 beds along a wall', w: 9, h: 4, door: 4,
-    pieces: [...[0, 2, 4, 6].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2], ['module.console', 0, 3, 2], [L, 1, 3, 2]],
+    pieces: [...[0, 2, 4, 6].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2], [L, 0, 3, 2], [L, 1, 3, 2]],
   },
   {
     role: 'medbay', caption: 'D2 bays, pod in the middle', w: 9, h: 4, door: 4,
-    pieces: [['module.med_bed', 0, 0, 1], ['module.med_bed', 0, 2, 1], ['module.med_bed', 7, 0, 1], ['module.med_bed', 7, 2, 1], ['module.recovery', 3, 0, 0], ['module.console', 6, 0, 0], [L, 2, 0, 0]],
+    pieces: [['module.med_bed', 0, 0, 1], ['module.med_bed', 0, 2, 1], ['module.med_bed', 7, 0, 1], ['module.med_bed', 7, 2, 1], ['module.recovery', 3, 0, 0], [L, 6, 0, 0], [L, 2, 0, 0]],
   },
 ];
 
 const shields: RoomMock[] = [
   {
     role: 'shields', caption: 'S1 generators in a row', w: 12, h: 5, door: 10,
-    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 5, 0], ['module.shieldGen', 10, 0], ['module.shieldConsole', 4, 2, 2], ['module.battery', 0, 4], ['module.battery', 11, 4]],
+    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 5, 0], ['module.shieldGen', 10, 0], ['module.battery', 0, 4], ['module.battery', 11, 4]],
   },
   {
     role: 'shields', caption: 'S2 generators at the ends', w: 12, h: 5, door: 8,
-    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 10, 0], ['module.shieldGen', 5, 3], ['module.shieldConsole', 4, 0, 0], ['module.battery', 0, 4], ['module.battery', 11, 4]],
+    pieces: [['module.shieldGen', 0, 0], ['module.shieldGen', 10, 0], ['module.shieldGen', 5, 2], ['module.battery', 0, 4], ['module.battery', 11, 4]],
   },
 ];
 
 const reactors: RoomMock[] = [
   {
     role: 'reactor', caption: 'R1 reactors in a row', w: 12, h: 6, door: 6,
-    pieces: [['module.reactor.mk3', 0, 0], ['module.reactor.mk3', 5, 0], ['module.reactor.mk3', 10, 0], ['module.console', 3, 5, 2], ['module.console', 8, 5, 2], [L, 0, 5, 2], [L, 11, 5, 2]],
+    pieces: [['module.reactor.mk3', 0, 0], ['module.reactor.mk3', 5, 0], ['module.reactor.mk3', 10, 0], [L, 0, 5, 2], [L, 11, 5, 2]],
   },
 ];
 
