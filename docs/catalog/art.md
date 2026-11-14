@@ -34,9 +34,6 @@ Method: an id counts as art-only when its `family.name` string appears nowhere i
 | Medical console | `module.med_console` | Sprite only | Art only | manifest |
 | Sensor console | `module.sensor_console` | Sprite only | Art only | manifest |
 | Workbench | `module.workbench` | Sprite only (#320 planned) | Art only | manifest |
-| Armory storage | `module.storage_armory` | Sprite only | Art only | manifest; tools/blender/sprites/storage_set.py |
-| Cold storage | `module.storage_cold` | Sprite only | Art only | manifest |
-| Storage tank | `module.storage_tank` | Sprite only | Art only | manifest |
 | Freight container art | `module.storage_container` | Used by `module.cargo_container` (2x3, doors on the short end) | In game | manifest; see modules.md |
 | Wall props (11) | `wallprop.beacon, cable, conduit, grille, panel, pipe, pipes, sign, terminal, tray, vent` | Wall decorations; no code places them | Art only | manifest; tools/blender/sprites/wallprops.py |
 | Floor props (7) | `prop.barrel, barrels, cable, chair, crates, plant, toolcart` | Floor decoration; only `prop.crate` is used (item held fallback) | Art only | manifest; render/itemView.ts uses prop.crate |
