@@ -44,19 +44,20 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
       ? [...bunks(0, w - 1, 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)]
       : [...sidePairs(true, w, 0, h - 1), ...sidePairs(false, w, 0, h - 1)]),
   },
-  // A pair in each corner of the short walls (the ends), a game table between.
-  'B2 corner pairs on the ends': {
-    role: 'quarters',
-    rule: (w, h, d) => (w >= h
-      ? [...sidePairs(true, w, 0, 2), ...sidePairs(true, w, h - 3, h - 1), ...sidePairs(false, w, 0, 2), ...sidePairs(false, w, h - 3, h - 1), [GT, Math.floor(w / 2) - 1, Math.floor((h - 1) / 2), 0]]
-      : [...bunks(0, 2, 0, 0), ...bunks(w - 1, w - 3, 0, 0), ...bunks(0, Math.min(2, d - 2), h - 2, 2), ...bunks(w - 1, Math.max(w - 3, d + 2), h - 2, 2), [GT, Math.floor(w / 2) - 1, Math.floor((h - 1) / 2), 0]]),
-  },
   // A pair in each corner of the long walls, tables between.
   'B3 two bays, shared tables': {
     role: 'quarters',
-    rule: (w, h) => (w >= h
-      ? [...bunks(0, 2, 0, 0), ...bunks(0, 2, h - 2, 2), ...bunks(w - 1, w - 3, 0, 0), ...bunks(w - 1, w - 3, h - 2, 2), ...tables(4, w - 5, Math.floor(h / 2) - 1, 1)]
-      : [...sidePairs(true, w, 0, 2), ...sidePairs(false, w, 0, 2), ...sidePairs(true, w, h - 3, h - 1), ...sidePairs(false, w, h - 3, h - 1), ...range(4, h - 6, 4).map((y): Piece[] => [[T, Math.floor(w / 2) - 1, y + 1, 0], ...seats(Math.floor(w / 2) - 1, y + 1)]).flat()]),
+    // Between the bays: mess tables with chairs where they have a clear tile round them, else a game table, else nothing.
+    rule: (w, h) => {
+      if (w >= h) {
+        const m = w - 6, y = Math.floor(h / 2) - 1;
+        return [...bunks(0, 2, 0, 0), ...bunks(0, 2, h - 2, 2), ...bunks(w - 1, w - 3, 0, 0), ...bunks(w - 1, w - 3, h - 2, 2),
+          ...(m >= 4 ? tables(4, w - 5, y, 1) : m >= 2 ? [[GT, Math.floor(w / 2) - 1, y + 1, 0] as Piece] : [])];
+      }
+      const m = h - 6, x = Math.floor(w / 2) - 1;
+      return [...sidePairs(true, w, 0, 2), ...sidePairs(false, w, 0, 2), ...sidePairs(true, w, h - 3, h - 1), ...sidePairs(false, w, h - 3, h - 1),
+        ...(m >= 5 ? range(4, h - 6, 4).flatMap((y): Piece[] => [[T, x, y + 1, 0], ...seats(x, y + 1)]) : m >= 1 ? [[GT, x, Math.floor(h / 2), 0] as Piece] : [])];
+    },
   },
   'C1 cabin': { role: 'quarters', rule: (w) => [[B, 0, 0, 0], [L, w - 1, 0, 0]] },
   'M1 table grid': { role: 'support', rule: (w, h) => [[G, 0, 0, 0], [G, 2, 0, 0], [LS, 0, h - 2, 0], ...rowsOf(h).flatMap((y) => tables(5, w - 1, y + (h <= 5 ? 1 : 0), 1))] },
@@ -113,7 +114,6 @@ const at = (name: string, sizes: [number, number][]): RoomMock[] => { const r = 
 const GUNS5 = [MD, BL, MD, BL, PD];
 export const RULE_ROWS: RoomMock[][] = [
   at('B1 bunk pairs on the long walls', [[8, 6], [11, 6], [15, 6], [5, 9], [6, 12]]),
-  at('B2 corner pairs on the ends', [[9, 7], [11, 7], [15, 8], [9, 11], [10, 13]]),
   at('B3 two bays, shared tables', [[9, 6], [11, 6], [15, 6], [7, 10], [8, 14]]),
   [...at('C1 cabin', [[3, 6], [4, 5], [5, 4], [3, 4]]), ...at('D1 beds along a wall', [[7, 4], [9, 4], [13, 5]])],
   at('M1 table grid', [[11, 5], [14, 5], [18, 6], [14, 9]]),
