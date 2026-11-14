@@ -160,7 +160,35 @@ def b4(rot=0):
     return k
 
 
-DESIGNS = {"b1": b1, "b2": b2, "b3": b3, "b4": b4}
+def flow_outline(r, thk, u0, grow=0.0):
+    """The back and the drum as one outline: the back's back face on the drum's back tangent (so it runs into the
+    drum without a step), round the drum, and back along the back's front face; grow pushes it out (a band)."""
+    R, t = r + grow, thk + 2 * grow
+    vb = VM - R
+    a = math.pi + math.asin((R - t) / R)                     # where the back's front face meets the drum
+    pts = [(u0, vb)] + arc(WU, VM, R, -math.pi / 2, a, 24)
+    return pts + [(u0, vb + t)]
+
+
+def d1(rot=0):
+    """Solid side, solid back flowing into the drum."""
+    k = Bench(f"desk_d1_{rot}", FP, rot)
+    r, thk, h = 0.3, 4 * PXG, TOP - SLAB - zpx(1)
+    k.cyl(WU, VM, TOP, 0.24, zpx(1), "dkGraph", top="dkGlass", sides=24)                     # the holo well
+    ring(k, "z", WU, VM, TOP + zpx(1), 0.215, 24, 0.008, 0.03, M["well"])
+    top(k)
+    su = U0 + 2 * PXG                                                                    # the solid side
+    sv0, sv1 = VM - r, FRONT - 2 * PXG
+    k.box(su, (sv0 + sv1) / 2, zpx(2), 4 * PXG, sv1 - sv0, h - zpx(2), M["body"], top=M["cap"])
+    k.box(su, (sv0 + sv1) / 2, 0.0, 4 * PXG - 2 * PXG, sv1 - sv0 - 2 * PXG, zpx(2), M["dark"])   # its kick
+    u0 = su + 2 * PXG                                                                    # the back and the drum
+    prism(k, flow_outline(r - 0.04, thk - 0.04, u0), 0.0, zpx(2), M["dark"])               # (a kick under them)
+    prism(k, flow_outline(r, thk, u0), zpx(2), h - zpx(2), M["body"], M["cap"])
+    prism(k, flow_outline(r, thk, u0, PXG / 2), BAND, zpx(1), M["band"])                  # the band, along both
+    return k
+
+
+DESIGNS = {"d1": d1}
 
 
 def build(v, mat, rot):
@@ -172,4 +200,4 @@ def build(v, mat, rot):
 def jobs():
     print("DESK chair from origin", K("desk_chair_xy", FP, 0).p(*CHAIR), flush=True)
     return [(f"module.desk.{v}.{mat}" + (f".r{r}" if r else ""), FP, "prop", lambda v=v, mat=mat, r=r: build(v, mat, r))
-            for v in DESIGNS for mat in MATS for r in (0, 1)]
+            for v in DESIGNS for mat in MATS for r in (0, 1, 2, 3)]
