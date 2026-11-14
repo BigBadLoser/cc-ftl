@@ -10,7 +10,7 @@
    * outside click and Esc, see outsideClick.ts), remembered per `id` for the browser session, and kept on screen.
    * It is always a positioned window, clamped to the viewport at any width (desktop only; no phone layout).
    */
-  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
+  let { id, title, icon, min, defaultRect, onClose, onLayout, closeLabel = 'Close', testId, closeTestId, titleTestId, bg = true, padded = false, bare = false, pinRight = 0, pinnable = true, docked = false, width, z = 6, pinned = $bindable(false), class: cls = '', titleExtra, actions, children }: {
     id: string; title: string; icon?: IconName;
     /** The smallest size this panel can be dragged to. */
     min: Size;
@@ -28,6 +28,8 @@
     bare?: boolean; pinRight?: number;
     /** False hides the pin tile (a panel that belongs to another and closes with it). */
     pinnable?: boolean;
+    /** A docked panel (the inspector), not a popup: it sits where its default puts it and fits its content; the player can't move or resize it. */
+    docked?: boolean;
     /** The title keeps its own width, so what `titleExtra` adds follows it instead of sitting at the far right. */
     titleFit?: boolean;
     /** Forces the width (a window whose content sets its size, like the inspector growing for a tab); the player's moves keep it. */
@@ -66,8 +68,8 @@
   pinned = saved.pinned && pinnable;
   let live = $state<Rect | null>(null);
   let elH = $state(0);
-  const base = $derived.by<DefaultRect>(() => { const r = stored ?? defaultRect(defBounds); return width ? { ...r, w: width } : r; });
-  const auto = $derived(stored === null && base.h === 0);
+  const base = $derived.by<DefaultRect>(() => { const r = (docked ? null : stored) ?? defaultRect(defBounds); return width ? { ...r, w: width } : r; });
+  const auto = $derived((docked || stored === null) && base.h === 0);
   const bottomAnchored = $derived(auto && base.anchor === 'bottom');
   const rect = $derived.by((): Rect => {
     if (live) return live;
@@ -85,7 +87,7 @@
 
   let gesture: { kind: 'move' | Edge; x: number; y: number; start: Rect } | null = null;
   function begin(e: PointerEvent, kind: 'move' | Edge) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || docked) return;
     if (kind === 'move' && (e.target as HTMLElement).closest('button, input, select, a')) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     gesture = { kind, x: e.clientX, y: e.clientY, start: rect };
@@ -125,13 +127,13 @@
 <svelte:window bind:innerWidth={vw} bind:innerHeight={vh} />
 
 {#snippet grips()}
-  {#each EDGES as edge (edge)}
+  {#each docked ? [] : EDGES as edge (edge)}
     <div class="grip {edge}" data-edge={edge} onpointerdown={(e) => begin(e, edge)} role="presentation"></div>
   {/each}
 {/snippet}
 
 {#if bare}
-  <section class="fw {cls}" class:bg class:pinned class:bare data-testid={testId} data-pinned={pinned} aria-label={title}
+  <section class="fw {cls}" class:bg class:pinned class:bare class:docked data-testid={testId} data-pinned={pinned} aria-label={title}
     style="{style ? style + ';' : ''}--fw-z:{z};--fw-pin:{pinRight + 38}px" bind:clientHeight={elH}
     onpointerdown={bareDown} onpointermove={drag} onpointerup={end} onpointercancel={end} ondblclick={(e) => { if ((e.target as HTMLElement).closest('.ph') && !(e.target as HTMLElement).closest('button')) reset(); }}>
     {#if pinnable}<button class="tile pin barepin" class:on={pinned} style="right:{pinRight}px" use:tip={{ text: pinTitle }} aria-label={pinned ? 'Unpin' : 'Pin'} aria-pressed={pinned} data-testid={testId ? `${testId}-pin` : undefined} onclick={togglePin}>
@@ -180,8 +182,8 @@
   :global(.frame.fw .rail button.tile:hover) { background: var(--panel-3); }
   :global(.frame.fw .rail button.tile.pin) { color: var(--pin-ink); }
   :global(.frame.fw .rail button.tile.pin.on) { background: var(--cyan); border-color: var(--cyan); color: #04202c; }
-  .fwbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
-  .fw.bare :global(.ph) { cursor: move; touch-action: none; }
+  .fwbody { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; }
+  .fw.bare:not(.docked) :global(.ph) { cursor: move; touch-action: none; }
   .barepin { width: 32px; height: 32px; border-width: 0 0 0 1px; background: var(--band-tile); color: var(--pin-ink); cursor: pointer; position: absolute; top: 0; z-index: 3; }
   .barepin:hover { background: var(--panel-3); }
   .barepin.on { background: var(--cyan); color: #04202c; }
