@@ -25,7 +25,7 @@ describe('a surrendered ship stays capturable while the player can reach it', ()
     expect(ship(sim, 2).state).toBe('active'); // used to become a wreck here
   });
 
-  it('keeps it for a shuttle that hovers beside it, then wrecks it once the player is gone', () => {
+  it('keeps it for a shuttle that hovers beside it, then offers the choice once the player is gone', () => {
     const { sim, shuttle, party } = surrendered();
     for (const c of party) sim.enqueue({ type: 'vehicle.embark', crew: c, vehicle: shuttle });
     run(sim, 400, () => party.every((c) => sim.world.has(c, AboardC)));
@@ -36,8 +36,8 @@ describe('a surrendered ship stays capturable while the player can reach it', ()
     expect(sim.world.get(shuttle, VehicleC)!.hover).toBe(nth(sim, 2));
     expect(ship(sim, 2).state).toBe('active');
     sim.enqueue({ type: 'vehicle.return', vehicle: shuttle });
-    run(sim, 1500, () => ship(sim, 2).state === 'wreck');
-    expect(ship(sim, 2).state).toBe('wreck'); // nothing of ours can reach it any more: given up as a derelict
+    run(sim, 1500, () => !!ship(sim, 2).yielded);
+    expect(ship(sim, 2).yielded).toBe(true); // nothing of ours can reach it any more: the player chooses (let go or take prisoners)
   });
 
   it('is still taken when the party steps back out and holds the bridge', () => {

@@ -1,9 +1,9 @@
 # Catalog: modules
 
-Every ship module, furniture piece and sealed container. 55 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
+Every ship module, furniture piece and sealed container. 56 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
 the build catalog test (`src/app/buildCatalog.test.ts`) requires every def to be reachable from a build tab, so any def here can be built by the player
 (Mk II/III and the flak cannon first need a blueprint). "Buildable only" means nothing places it on a ship, so it appears only if the player builds it.
-Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workbench and three storage variants.
+Nine sprite families have no def: cryo pod (not the prisoner holding: that is the stasis wheel), comms/medical/sensor consoles, workbench and three storage variants.
 
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
@@ -50,8 +50,12 @@ Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workb
 | Large ore bin | `module.storage_ore_large` | A large ore bin. | In game | src/content/furniture.ts:68; Prospector, shipgen |
 | Scrap bin | `module.storage_scrap` | A barred cage that takes only scrap. | Partial: buildable only | src/content/furniture.ts:77; nothing places one; art and `storageAccepts` scrap exist; scrapper reads stock anywhere |
 | Large scrap bin | `module.storage_scrap_large` | A large barred cage. | Partial: buildable only | src/content/furniture.ts:85; nothing places one; no test other than art |
-| Freight container | `module.cargo_container` | A freight container opened from one long side. | Partial: placeholder art | src/content/furniture.ts:94; def asset `module.cargo_container` is not in the manifest (sprite exists as `module.storage_container`); listed ART_PENDING in render/moduleThumb.test.ts:15; shipgen places it |
+| Armory locker | `module.storage_armory` | A secure locker; takes only weapons and ammunition (items tagged `weapon` or `ammo`). | Partial: buildable only | src/content/furniture.ts; nothing places one; art storage_set (fill states, four rotations) |
+| Cold store | `module.storage_cold` | Glass-doored food shelves; takes only food and crops. No power. | Partial: buildable only | src/content/furniture.ts; nothing places one; art storage_set |
+| Storage tank | `module.storage_tank` | An upright pressure tank; takes only water and oxygen. | Partial: buildable only | src/content/furniture.ts; nothing places one; art storage_set |
+| Freight container | `module.cargo_container` | A freight container with doors on one end. | In game | src/content/furniture.ts:94; asset `module.storage_container` (2x3, doors on the short end, empty/partial/full and damaged/destroyed art); shipgen places it in cargo holds and market stalls |
 | Recovery pod | `module.recovery` | A powered tank: hurt crew walk to it and heal to full with no medic, out of action meanwhile; downed crew carried there are stabilised and heal. Critical (downed) patients take it before a med bed; walking ones take a med bed first and the pod only when none is free; herbs x2. | Partial (first pass: buildable, no ship starts with one; HP only, no injuries) | src/content/furniture.ts; sim/crew/recovery.ts, beds.ts, ai/machines/sleep.ts (`recover` drive); render/recoveryArt.ts, podPose.ts |
+| Stasis wheel | `module.stasis_wheel` | Holds up to ten prisoners frozen in stasis slabs while powered (draws only while it holds one); built with ten empty slabs; crew seal prisoners on the spot and cart the slabs here (`stasis` hauling job); unpowered or wrecked, each slab runs on a one-hour reserve, then the prisoner thaws hostile | Partial (art in game: the wheel with its slabs, the hover cart; no loading animation or unpowered look yet; same-ship only; blueprint at research stations) | src/content/furniture.ts; sim/stasis/*; app/stasisAlert.ts |
 | Medical bed | `module.med_bed` | A sickbay cot for patients. | In game | src/content/furniture.ts:103; Wayfarer, Lancer, shipgen medbay; sim/crew/treatment.ts |
 | Battery bank | `module.battery` | A bank of power cells. | In game | src/content/furniture.ts:112; shipgen engineering, starters; sim/systems/power.ts |
 | Hydroponics bed | `module.hydroponics` | A grow bed. | In game | src/content/furniture.ts:121; shipgen, starters; sim/farm/* |
@@ -63,12 +67,8 @@ Nine sprite families have no def: cryo pod, comms/medical/sensor consoles, workb
 | Shield gen Mk III | `module.shieldGen.mk3` | 3x3 shield, 7 layers. Blueprint. | In game | src/content/tiers.ts:82-88; research.ts; sim/galaxy/blueprintShop.ts; sim/modules/blueprints.ts |
 | Engine Mk II | `module.engine.mk2` | Stronger engine, bigger footprint. Blueprint. | Partial: placeholder art | src/content/tiers.ts:82-88; research.ts; sim/galaxy/blueprintShop.ts; sim/modules/blueprints.ts; render/tierArt.ts tint only |
 | Engine Mk III | `module.engine.mk3` | Strongest engine. Blueprint; placeholder tint outline art. | Partial: placeholder art | src/content/tiers.ts:82-88; research.ts; sim/galaxy/blueprintShop.ts; sim/modules/blueprints.ts; render/tierArt.ts tint only |
-| Cryo pod | `module.cryo_pod` | Sprite only. Planned prisoner holding (issue #116). DESIGN.md says "already in the game": it is not. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
+| Cryo pod | `module.cryo_pod` | Sprite only. Not the prisoner holding (prisoners go in the stasis wheel, #116). | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
 | Comms console | `module.comms_console` | Sprite only; no def, no system. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
 | Medical console | `module.med_console` | Sprite only. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
 | Sensor console | `module.sensor_console` | Sprite only. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
 | Workbench | `module.workbench` | Sprite only. Only a role/priority label `workbench` in code (sim/crew/components.ts), not a module. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
-| Armory storage | `module.storage_armory` | Sprite only (tools/blender/sprites/storage_set.py). | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
-| Cold storage | `module.storage_cold` | Sprite only. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
-| Storage tank | `module.storage_tank` | Sprite only. | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |
-| Freight container (alt) | `module.storage_container` | Sprite only under this id; the def `module.cargo_container` should use it (see above). | Art only | public/assets/1x/manifest.json; no def (rg finds no reference outside tools/blender and docs) |

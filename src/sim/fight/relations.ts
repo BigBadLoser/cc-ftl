@@ -107,6 +107,20 @@ export function isInvader(sim: Sim, crew: number): boolean {
   return !!faction && !!ship && ship.faction !== faction && !guestOn(sim, crew, id);
 }
 
+/**
+ * True if the crew member is on the player's side: the player's own crew anywhere, or a friendly guest aboard a player ship (a passenger).
+ * Enemy boarders, prisoners, creatures and the crews of other ships are not. The one answer for "does this crew member's trouble matter
+ * to the player" (the ship's log and the alerts ask it).
+ */
+export function isOnOurSide(sim: Sim, crew: number): boolean {
+  const faction = sim.world.get(crew, AllegianceC)?.faction;
+  if (!faction) return false;
+  if (faction === 'player') return true;
+  if (factionsHostile('player', faction)) return false;
+  const pos = sim.world.get(crew, PositionC);
+  return !!pos && shipById(sim, shipIdOf(sim, pos))?.faction === 'player';
+}
+
 /** True if the player directs this crew member in combat: player side and drafted. */
 export function isPlayerControlled(sim: Sim, crew: number): boolean {
   return sim.world.get(crew, AllegianceC)?.faction === 'player' && sim.world.has(crew, DraftedC);

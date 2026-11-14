@@ -1,5 +1,5 @@
 import { ModuleC, type Sim } from '../sim';
-import { chargeOf, fuelOf } from '../sim/modules/energy';
+import { chargeOf, fuelLow, fuelOf } from '../sim/modules/energy';
 import { shipStoreCount } from '../sim/items/stock';
 import { shipIdOf } from '../sim/regions';
 import type { UiReserve } from '../ui/api';
@@ -17,8 +17,8 @@ export function buildReserve(sim: Sim, id: number): UiReserve | null {
     const name = sim.content.items[def.fuel.item]?.name ?? def.fuel.item;
     const stock = shipStoreCount(sim, ship, def.fuel.item);
     const note = have <= 0 ? (stock > 0 ? `Out of ${name.toLowerCase()}: supplies nothing until crew load more` : `Out of ${name.toLowerCase()}: supplies nothing, none in the stores`)
-      : have < def.fuel.refillBelow ? (stock > 0 ? 'Running low: crew will refill it' : `Running low, none in the stores`) : 'Burns with the load it carries';
-    return { kind: 'fuel', label: name, have: r1(have), max: def.fuel.store, note, low: have < def.fuel.refillBelow };
+      : fuelLow(m, def) ? (stock > 0 ? 'Running low: crew will refill it' : `Running low, none in the stores`) : 'Burns with the load it carries';
+    return { kind: 'fuel', label: name, have: r1(have), max: def.fuel.store, note, low: fuelLow(m, def) };
   }
   if (def.battery) {
     const have = chargeOf(m, def);

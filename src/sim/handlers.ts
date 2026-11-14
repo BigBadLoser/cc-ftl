@@ -12,6 +12,7 @@ import { combatHandlers } from './combat/handlers';
 import { containerHandlers } from './containers/handlers';
 import { crewHandlers } from './crew/handlers';
 import { forceDoorHandlers } from './crew/forceDoor';
+import { ventHandlers } from './ventCommand';
 import { repairHandlers } from './crew/priorityRepair';
 import { scheduleHandlers } from './crew/scheduleHandlers';
 import { evaHandlers } from './eva/handlers';
@@ -52,6 +53,7 @@ export const commandHandlers: { [T in Command['type']]: Handler<T> } = {
   ...repairHandlers,
   ...scheduleHandlers,
   ...forceDoorHandlers,
+  ...ventHandlers,
   ...fightHandlers,
   ...combatHandlers,
   ...captureHandlers,

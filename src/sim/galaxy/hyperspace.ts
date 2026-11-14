@@ -89,11 +89,12 @@ export function jump(sim: Sim, ship: number, route: readonly string[], withDocke
   const first = edges[0] as EdgeData;
   const charge = routeCharge(edges);
   spendCharge(sim, charge, ship);
+  const fuel = jumpFuel(sim, first.fuel, ship); // the price that passed `routeBlocker`: an engine the overcharge destroys does not raise it
   if (overcharged) applyOvercharge(sim, ship);
   abortYards(sim, 'left');
   abortInspections(sim);
   abortPatrolStop(sim);
-  burnFuel(sim, jumpFuel(sim, first.fuel, ship), ship);
+  burnFuel(sim, fuel, ship);
   settleLosses(sim);
   unbindMarkets(sim);
   liftFleetsAt(sim, g.current);

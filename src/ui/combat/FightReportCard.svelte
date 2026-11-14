@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { UiApi, UiFightReport } from '../api';
   import FloatingWindow from '../FloatingWindow.svelte';
-  import Icon from '../Icon.svelte';
   import { centerTop } from '../floatingWindow';
-  import { Frame, tip } from '../kit';
+  import { tip } from '../kit';
   import { lossRows } from './lossRows';
   import './steel.css';
 
@@ -38,14 +37,10 @@
   const rows = $derived(lossRows(report));
 </script>
 
-<FloatingWindow id="fightReport" title="Fight report" min={{ w: 320, h: 140 }} defaultRect={(b) => centerTop(b, 360, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" bare bg={false} class="fr-card">
+<FloatingWindow id="fightReport" title="Fight report" min={{ w: 320, h: 140 }} defaultRect={(b) => centerTop(b, 360, 0, 40)} onClose={() => api.closeFightReport()} testId="fight-report" closeTestId="fight-report-close" closeLabel="Close">
+  {#snippet titleExtra()}<span class="time" use:tip={{ text: 'How long the fight lasted' }}>{clock(report.seconds)}</span>{/snippet}
   <div class="steel card">
-    <Frame title="Fight report">
-      <div class="ph head">
-        <h2 class={title.tone}>{title.text}</h2>
-        <span class="time" use:tip={{ text: 'How long the fight lasted' }}>{clock(report.seconds)}</span>
-        <button class="x" aria-label="Close" use:tip={{ text: 'Close', key: 'ui.menu' }} data-testid="fight-report-close" onclick={() => api.closeFightReport()}><Icon name="close" size={12} /></button>
-      </div>
+    <div class="head"><h2 class={title.tone}>{title.text}</h2></div>
       <div class="cols">
         <div class="col">
           <span class="who">You</span>
@@ -79,30 +74,18 @@
           </ul>
         </div>
       {/if}
-    </Frame>
   </div>
 </FloatingWindow>
 
 <style>
   .card { color: var(--text); background: var(--panel); }
-  .card :global(.frame) { padding: 8px 0 0; }
-  .ph.head {
-    margin: 0;
-    padding: 4px 8px 8px 12px !important; /* the window reserves room for a pin; this card has none */
-    background: transparent;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    min-height: 0;
-  }
-  h2 { flex: 1; margin: 0; font: 700 24px/1 var(--head-font); letter-spacing: 0.04em; }
+  .head { padding: 8px 12px 8px; }
+  h2 { margin: 0; font: 700 24px/1 var(--head-font); letter-spacing: 0.04em; }
   h2.good { color: var(--green); }
   h2.warn { color: var(--amber); }
   h2.bad { color: var(--red); }
   h2.dim { color: var(--dim); }
-  .time { margin-left: auto; font: 600 13px/1 var(--head-font); color: var(--dim); }
-  .x { flex: none; align-self: center; min-width: 0; min-height: 0; width: 20px; height: 20px; padding: 0; display: grid; place-items: center; background: transparent; border: 0; color: var(--dim); }
-  .x:hover { color: var(--text); background: var(--panel-2); }
+  .time { font: 600 13px/1 var(--head-font); color: var(--dim); padding: 0 4px; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--frame-line); }
   .col { padding: 8px 12px 10px; display: grid; gap: 3px; align-content: start; min-width: 0; }
   .col + .col { border-left: 1px solid var(--frame-line); }

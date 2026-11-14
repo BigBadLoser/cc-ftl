@@ -1,4 +1,5 @@
 
+import { shipCanAct } from '../combat/ships';
 import { pickAirlock, startParty } from '../boarding/party';
 import { ShipC } from '../combat/components';
 import { isAiFaction } from '../combat/factions';
@@ -23,7 +24,7 @@ export function boardingAiSystem(sim: Sim): void {
   for (const id of sim.world.query(BoarderC, ShipC)) {
     const b = sim.world.get(id, BoarderC) as Boarder;
     const ship = sim.world.get(id, ShipC)!;
-    if (b.state === 'done' || (!isAiFaction(ship.faction) && !hasLeaveFrom(sim, id)) || ship.state !== 'active') continue;
+    if (b.state === 'done' || (!isAiFaction(ship.faction) && !hasLeaveFrom(sim, id)) || !shipCanAct(ship)) continue;
     const v = b.vehicle ? sim.world.get(b.vehicle, VehicleC) : undefined;
     if (b.state === 'idle') {
       if (!sim.sector.inCombat) continue;

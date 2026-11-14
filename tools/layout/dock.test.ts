@@ -1,7 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DOCK, MIN_RECT, dockOpen, dockReducer, floating, panelsIn, parseDock } from './dock';
+import { DEFAULT_DOCK, growOf, MIN_RECT, dockOpen, dockReducer, floating, panelsIn, parseDock } from './dock';
 
 describe('dock reducer', () => {
+  it('a shrunk panel still fills its dock once alone, floating, or when the shared weights sum below 1', () => {
+    let s = dockReducer(DEFAULT_DOCK, { type: 'grow', weights: { inspector: 0.3, notes: 0.3 } });
+    expect(growOf(s, 'inspector') + growOf(s, 'notes')).toBeCloseTo(2 * 0.5 + 0, 6); // normalised to sum 1
+    expect(growOf(s, 'inspector')).toBeCloseTo(0.5, 6);
+    s = dockReducer(s, { type: 'collapse', id: 'notes', collapsed: true });
+    expect(growOf(s, 'inspector')).toBe(1);
+    s = dockReducer(s, { type: 'float', id: 'inspector' });
+    expect(growOf(s, 'inspector')).toBe(1);
+    const t = dockReducer(DEFAULT_DOCK, { type: 'grow', weights: { inspector: 3, notes: 1 } });
+    expect(growOf(t, 'inspector')).toBe(3);
+  });
+  it('stores panel height weights, clamped, and they survive a save', () => {
+    const s = dockReducer(DEFAULT_DOCK, { type: 'grow', weights: { inspector: 3, notes: 0 } });
+    expect(s.panels.inspector.grow).toBe(3);
+    expect(s.panels.notes.grow).toBeGreaterThan(0);
+    expect(parseDock(JSON.stringify(s)).panels.inspector.grow).toBe(3);
+  });
   it('opens with the preview docked at the bottom', () => {
     expect(panelsIn(DEFAULT_DOCK, 'bottom')).toEqual(['preview']);
   });

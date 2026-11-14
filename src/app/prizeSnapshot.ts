@@ -1,5 +1,6 @@
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, prizeValue, type Sim } from '../sim';
+import { sealOf } from './sealSnapshot';
 import type { UiPrize } from '../ui/api';
 
 /** Plain-data list of captured ships (prizes) with their prisoners and the player's crew still aboard. Reads the sim only. */
@@ -18,7 +19,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
         const hp = sim.world.get(c, HealthC);
         prisoners.push({
           id: c, name: crew.name, role: sim.content.roles[crew.role]?.name ?? crew.role, hp: Math.round(hp?.hp ?? 0), maxHp: hp?.max ?? 0,
-          state: sim.world.has(c, DownedC) ? 'downed' : 'surrendered',
+          state: sim.world.has(c, DownedC) ? 'downed' : 'surrendered', seal: sealOf(sim, c) as NonNullable<ReturnType<typeof sealOf>>,
         });
       } else if (sim.world.get(c, AllegianceC)?.faction === 'player') aboard++;
     }

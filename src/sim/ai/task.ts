@@ -1,6 +1,7 @@
 import { releaseBed } from '../crew/beds';
-import { AssignmentC, CarriedC, CrewC, DeadC, JobC, PathC, type Crew, type Job } from '../crew/components';
-import { ModuleC } from '../modules/components';
+import { AssignmentC, BedOwnerC, CarriedC, CrewC, DeadC, JobC, PathC, type Crew, type Job } from '../crew/components';
+import { ModuleC, type Module } from '../modules/components';
+import { holdBerth } from '../crew/berths';
 import { clearPath } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { isErrand } from '../eva/errands';
@@ -10,6 +11,7 @@ import { classOf } from './classes';
 import { machineOf, travelState } from './jobStates';
 import { IntentC, InterruptC, TaskC } from './components';
 import { setDownPatient } from './setDown';
+import { cartsFor } from '../stasis/query';
 import type { Blackboard, DriveId, Frame, Hold, MachineId, Task, TileRef } from './types';
 
 /**
@@ -130,7 +132,9 @@ export function claimedBed(sim: Sim, crew: number): number {
 
 /** Claim a bed for one sleep: the bed is reserved to the sleeper, and their task becomes the walk to it, holding it. */
 export function claimBed(sim: Sim, crew: number, bed: number): void {
-  (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = crew;
+  const m = sim.world.get(bed, ModuleC) as Module;
+  const own = sim.world.get(crew, BedOwnerC);
+  holdBerth(sim.content.modules[m.def], m, crew, own?.bed === bed ? own.berth ?? 0 : -1); // their own berth when it is free, else the lowest free one
   putTask(sim, crew, newTask(sim, 0, 'sleep', 'sleep', 'Walk', { aux: bed }, [{ kind: 'bed', id: bed }]));
 }
 
@@ -320,9 +324,10 @@ export function abortTask(sim: Sim, crew: number, reason: AbortReason): void {
   syncTask(sim, crew);
 }
 
-/** True if the crew member is on a rescue job and holds the patient (they must not drop them to sleep or fight). */
+/** True if the crew member is on a rescue job and holds the patient, or carts a stasis slab for its job (they must not drop it to sleep or fight). */
 export function isCarrying(sim: Sim, crew: number): boolean {
   const a = sim.world.get(crew, AssignmentC);
   const job = a && sim.world.get(a.jobId, JobC);
+  if (job?.kind === 'stasis') return cartsFor(sim, crew, job.target ?? 0);
   return !!job && job.kind === 'rescue' && sim.world.get(job.target ?? 0, CarriedC)?.carrier === crew;
 }

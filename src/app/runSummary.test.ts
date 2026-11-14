@@ -30,16 +30,14 @@ describe('run summary', () => {
 });
 
 describe('best credits from the start', () => {
-  it('a new game and an old save count what they hold, so a purchase before any tick cannot lower the best', () => {
+  it('a new game and a reloaded save count what they hold, so a purchase before any tick cannot lower the best', () => {
     const fresh = newGame(3, content);
     const start = fresh.trade.credits;
     expect(start).toBeGreaterThan(0);
     fresh.trade.credits -= start; // spent while paused
     expect(runSummary(fresh).bestCredits).toBe(start);
 
-    const old = newGame(3, content);
-    delete old.trade.bestCredits;
-    const loaded = deserialize(serialize(old), content);
+    const loaded = deserialize(serialize(newGame(3, content)), content); // newGame sets the best; load keeps it as saved
     loaded.trade.credits -= start;
     expect(runSummary(loaded).bestCredits).toBe(start);
   });

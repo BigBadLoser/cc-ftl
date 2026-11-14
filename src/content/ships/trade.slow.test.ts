@@ -1,26 +1,47 @@
 import { describe, expect, it } from 'vitest';
 import {
   destroyVehicle, AirlockC, CarryingC, CrewC, JobC, ModuleC, PositionC, ShipC, StorageC, TraderC, VehicleC, deserialize, newGame, playerItems, serialize,
-  storageCount, storageAdd, type Deal, type Sim, type SimEvent,
+  storageCount, storageAdd, storageSpace, storageTake, type Deal, type Sim, type SimEvent,
 } from '../../sim';
 import { content } from '../index';
 import { shipIdOf } from '../../sim/regions';
 import { shipIds } from '../../sim/regions';
+import { dropCarried } from '../../sim/items/stacks';
+import { shipIdAt } from '../../sim/regions';
+import { ItemStackC } from '../../sim/items/components';
+import { cargoAdd, cargoOf, cargoSpace } from '../../sim/vehicles/cargo';
+import { handOf } from '../../sim/trade/dockLedger';
 
 const run = (sim: Sim, n: number): SimEvent[] => {
   const out: SimEvent[] = [];
   for (let i = 0; i < n; i++) {
     sim.step();
     out.push(...sim.events.drain());
+    ledgerHolds(sim);
   }
   return out;
 };
+/** The ledger invariant (#160): no bucket of a docked deal is negative, and its hold count is what the shuttle's hold really holds. */
+function ledgerHolds(sim: Sim): void {
+  for (const c of sim.world.query(CarryingC)) {
+    const load = sim.world.get(c, CarryingC)!;
+    if (load.deal && load.extra?.length) throw new Error('a deal load carries a second item the ledger does not count');
+  }
+  for (const d of sim.trade.deals) {
+    if (d.phase !== 'stationWork' || !d.dock?.units || !sim.world.has(d.vehicle, VehicleC)) continue;
+    for (const [item, u] of Object.entries(d.dock.units)) {
+      if (u.shelf < 0 || u.hold < 0 || u.floor < 0) throw new Error(`ledger negative for ${item}: ${JSON.stringify(u)}`);
+      if (u.hold !== cargoOf(sim, d.vehicle, item)) throw new Error(`ledger hold ${u.hold} != hold ${cargoOf(sim, d.vehicle, item)} for ${item}`);
+    }
+  }
+}
 /** Run until the deal is settled (or `max` ticks pass), then `tail` more ticks for the shuttle to fly home and stow; stops early instead of running a fixed length. */
 const runSettled = (sim: Sim, max: number, tail = 600): SimEvent[] => {
   const out: SimEvent[] = [];
   let left = -1;
   for (let i = 0; i < max && left !== 0; i++) {
     sim.step();
+    ledgerHolds(sim);
     const ev = sim.events.drain();
     out.push(...ev);
     if (left < 0 && ev.some((e) => e.type === 'trade.settled')) left = tail;
@@ -209,6 +230,214 @@ describe('trade, end to end', () => {
     expect(JSON.parse(JSON.stringify(t.stock)).sort((a: { item: string }, b: { item: string }) => a.item.localeCompare(b.item)))
       .toEqual(JSON.parse(before.stock).sort((a: { item: string }, b: { item: string }) => a.item.localeCompare(b.item)));
     expect(stored(sim, 'item.electronics')).toBe(before.elec);
+  });
+
+  it('a shuttle lost while docked at the station leaves no staged goods behind: they are the trader\'s again, once (#160)', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const t = sim.world.get(station, TraderC)!;
+    const metalStock = t.stock.find((s) => s.item === 'item.metal')?.count ?? 0;
+    const physical = (item: string): number =>
+      sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+    const physicalBefore = physical('item.metal');
+    const credits = sim.trade.credits;
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    expect(deal().phase).toBe('stationWork');
+    expect(physical('item.metal')).toBeGreaterThan(physicalBefore); // staged
+    destroyVehicle(sim, deal().vehicle);
+    expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
+    expect(sim.trade.credits).toBe(credits);
+    expect((t.stock.find((s) => s.item === 'item.metal')?.count ?? 0) + physical('item.metal') - physicalBefore).toBe(metalStock);
+  });
+
+  it('a shuttle lost on the way back leaves unrelated shelf stock of the bought item alone (#160)', () => {
+    const { sim, station } = atStation();
+    const physical = (item: string): number =>
+      sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+    const shelf = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station)!;
+    storageAdd(sim, shelf, 'item.metal', 20); // the station's own, unrelated to the deal
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'back'; i++) run(sim, 1);
+    expect(deal().phase).toBe('back');
+    const shelfAfter = physical('item.metal');
+    destroyVehicle(sim, deal().vehicle);
+    expect(ofType(run(sim, 3), 'trade.failed')[0]).toMatchObject({ reason: 'lost' });
+    expect(physical('item.metal')).toBe(shelfAfter);
+  });
+
+  /** Run a docked station deal tick by tick until crew carry some of `item` for it, then lose the shuttle; returns the carried and in-hold units at that moment. */
+  function loseWhenCarried(sim: Sim, deal: () => Deal, item: string): { hand: number; hold: number } {
+    for (let i = 0; i < 6000; i++) {
+      run(sim, 1);
+      const hand = handOf(sim, deal(), item);
+      if (deal().phase === 'stationWork' && hand > 0) {
+        const at = { hand, hold: deal().dock?.units?.[item]?.hold ?? 0 };
+        destroyVehicle(sim, deal().vehicle);
+        run(sim, 3);
+        return at;
+      }
+      if (!['dockStation', 'stationWork', 'out', 'dispatch', 'load'].includes(deal().phase)) break;
+    }
+    throw new Error('the deal never reached that state');
+  }
+  const stationHolds = (sim: Sim, station: number, item: string): number =>
+    sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station).reduce((n, i) => n + storageCount(sim, i, item), 0);
+
+  it('a shuttle lost while crew carry bought goods to it: the shelf ends as it began, whatever the timing (#160)', () => {
+    const { sim, station } = atStation();
+    const shelf = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station)!;
+    storageAdd(sim, shelf, 'item.metal', 20); // unrelated stock of the same item
+    const base = stationHolds(sim, station, 'item.metal');
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    const at = loseWhenCarried(sim, deal, 'item.metal');
+    expect(at.hand).toBeGreaterThan(0);
+    expect(stationHolds(sim, station, 'item.metal')).toBe(base);
+  });
+
+  it('a shuttle lost while crew carry the player\'s goods in: nothing taken from unrelated shelf stock, the player gets back what the hold did not keep (#160)', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const shelf = sim.world.query(StorageC).find((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station)!;
+    storageAdd(sim, shelf, 'item.electronics', 20);
+    const theirs = stationHolds(sim, station, 'item.electronics');
+    const mine = stored(sim, 'item.electronics');
+    const deal = accept(sim, station, [{ item: 'item.electronics', count: 10 }], [{ item: 'item.metal', count: 10 }]);
+    const at = loseWhenCarried(sim, deal, 'item.electronics');
+    expect(at.hand).toBeGreaterThan(0);
+    expect(stationHolds(sim, station, 'item.electronics')).toBe(theirs);
+    expect(stored(sim, 'item.electronics')).toBe(mine - at.hold); // only what was still in the lost hold is gone
+  });
+
+  it('storage fits only part of a purchase, the rest goes straight into the hold: a lost shuttle returns exactly the staged units (#160)', () => {
+    const { sim, station } = atStation();
+    const t = sim.world.get(station, TraderC)!;
+    const stores = sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station);
+    // Fill every shelf with the station's own metal, then free room for just 5 units: only 5 of the 10 bought fit on the shelf.
+    for (const id of stores) for (let k = 0; k < 50 && storageSpace(sim, id, 'item.metal') > 0; k++) storageAdd(sim, id, 'item.metal', storageSpace(sim, id, 'item.metal'));
+    storageTake(sim, stores[0]!, 'item.metal', 5);
+    const base = stationHolds(sim, station, 'item.metal');
+    const stock = t.stock.find((x) => x.item === 'item.metal')?.count ?? 0;
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    const u = deal().dock!.units!['item.metal']!;
+    expect(u.hold).toBeGreaterThan(0); // some went straight into the hold
+    expect(u.shelf).toBeGreaterThan(0);
+    const direct = u.hold;
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 3);
+    expect(stationHolds(sim, station, 'item.metal')).toBe(base); // the staged units left the shelf; the station's own metal stays
+    expect(t.stock.find((x) => x.item === 'item.metal')?.count ?? 0).toBe(stock - direct); // restocked: bought minus what was lost in the hold, once
+  });
+
+  it('a shuttle lost at the player\'s airlock while player crew carry purchased goods: those goods are not lost to the deal rollback (#160)', () => {
+    const { sim, station } = atStation();
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    const carrier = (): number | undefined =>
+      sim.world.query(CarryingC).find((c) => sim.world.get(c, CarryingC)!.item === 'item.metal' && deal().phase !== 'stationWork');
+    let who: number | undefined;
+    for (let i = 0; i < 12000 && who === undefined; i++) {
+      run(sim, 1);
+      if (['back', 'unload'].includes(deal().phase)) who = carrier();
+    }
+    expect(who).toBeDefined();
+    const carried = sim.world.get(who!, CarryingC)!.count;
+    const before = stored(sim, 'item.metal');
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 1);
+    expect(sim.world.get(who!, CarryingC)?.count).toBe(carried); // untouched by the rollback
+    run(sim, 900);
+    expect(stored(sim, 'item.metal')).toBeGreaterThanOrEqual(before + carried);
+  });
+
+  it('selling at a station: the trader\'s stock rises by exactly what was sold (#160)', () => {
+    const { sim, station, crate } = atStation();
+    storageAdd(sim, crate, 'item.electronics', 10);
+    const t = sim.world.get(station, TraderC)!;
+    const stock = (): number => t.stock.find((x) => x.item === 'item.electronics')?.count ?? 0;
+    const before = stock();
+    const mine = stored(sim, 'item.electronics');
+    accept(sim, station, [{ item: 'item.electronics', count: 10 }], []);
+    const ev = runSettled(sim, 6000);
+    expect(ofType(ev, 'trade.settled')).toHaveLength(1);
+    expect(stock()).toBe(before + 10);
+    expect(stored(sim, 'item.electronics')).toBe(mine - 10);
+  });
+
+  it('a hauler interrupted mid-carry drops the deal\'s goods on the deck: a later shuttle loss still returns each unit once (#160)', () => {
+    const { sim, station } = atStation();
+    const t = sim.world.get(station, TraderC)!;
+    const metal = (): number => t.stock.find((x) => x.item === 'item.metal')?.count ?? 0;
+    const deckAndShelf = (): number =>
+      stationHolds(sim, station, 'item.metal') +
+      sim.world.query(ItemStackC).filter((i) => {
+        const st = sim.world.get(i, ItemStackC)!;
+        return st.item === 'item.metal' && shipIdAt(sim, st.x, st.y) === station;
+      }).reduce((n, i) => n + sim.world.get(i, ItemStackC)!.count, 0);
+    const base = deckAndShelf();
+    const stock = metal();
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    let hauler: number | undefined;
+    for (let i = 0; i < 6000 && hauler === undefined; i++) {
+      run(sim, 1);
+      hauler = sim.world.query(CarryingC).find((c) => sim.world.get(c, CarryingC)!.deal?.id === deal().id);
+      if (!['dockStation', 'stationWork', 'out', 'dispatch', 'load'].includes(deal().phase)) break;
+    }
+    expect(hauler).toBeDefined();
+    dropCarried(sim, hauler!); // off duty, a hazard: the haul is called off and the load lands on the deck
+    destroyVehicle(sim, deal().vehicle);
+    run(sim, 3);
+    expect(deal().phase).toBe('failed');
+    expect(deckAndShelf()).toBe(base);
+    expect(metal()).toBe(stock - (deal().dock?.units?.['item.metal']?.hold ?? 0));
+  });
+
+  it('a shuttle hold that takes only part of the direct goods: the ledger records what went in (#160)', () => {
+    const { sim, station } = atStation();
+    const stores = sim.world.query(StorageC).filter((i) => shipIdOf(sim, sim.world.get(i, ModuleC)) === station);
+    for (const id of stores) for (let k = 0; k < 50 && storageSpace(sim, id, 'item.metal') > 0; k++) storageAdd(sim, id, 'item.metal', storageSpace(sim, id, 'item.metal'));
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    for (let i = 0; i < 6000 && deal().phase !== 'dockStation'; i++) run(sim, 1);
+    const v = sim.world.get(deal().vehicle, VehicleC)!;
+    cargoAdd(sim, deal().vehicle, 'item.ice', cargoSpace(sim, v) - 3); // room for 3 units in the hold, and none on the shelves
+    for (let i = 0; i < 6000 && deal().phase !== 'stationWork'; i++) run(sim, 1);
+    expect(deal().phase).toBe('stationWork');
+    expect(deal().dock!.units!['item.metal']!.hold).toBe(cargoOf(sim, deal().vehicle, 'item.metal'));
+    expect(cargoOf(sim, deal().vehicle, 'item.metal')).toBeLessThan(10);
+  });
+
+  it('a dropped load on the deck is picked up again by a later haul of the deal: the ledger buckets stay true through to settlement (#160)', () => {
+    const { sim, station } = atStation();
+    const t = sim.world.get(station, TraderC)!;
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 10 }]);
+    let hauler: number | undefined;
+    for (let i = 0; i < 6000 && hauler === undefined; i++) {
+      run(sim, 1);
+      hauler = sim.world.query(CarryingC).find((c) => sim.world.get(c, CarryingC)!.deal?.id === deal().id);
+    }
+    dropCarried(sim, hauler!);
+    const events = runSettled(sim, 8000, 10);
+    expect(ofType(events, 'trade.settled').length + ofType(events, 'trade.failed').length).toBeGreaterThan(0);
+    void t;
+  });
+
+  it('two bought items dropped on the deck are not gathered into one load: every unit stays counted to settlement (#160)', () => {
+    const { sim, station } = atStation();
+    const deal = accept(sim, station, [], [{ item: 'item.metal', count: 3 }, { item: 'item.ice', count: 3 }]);
+    const dropped = new Set<string>();
+    for (let i = 0; i < 6000 && dropped.size < 2; i++) {
+      run(sim, 1);
+      for (const c of sim.world.query(CarryingC)) {
+        const load = sim.world.get(c, CarryingC)!;
+        if (load.deal?.id === deal().id && !dropped.has(load.item)) {
+          dropped.add(load.item);
+          dropCarried(sim, c);
+        }
+      }
+    }
+    expect(dropped.size).toBe(2);
+    const events = runSettled(sim, 9000, 10);
+    expect(ofType(events, 'trade.settled').length + ofType(events, 'trade.failed').length).toBeGreaterThan(0);
   });
 
   it('a trade run with no crew aboard completes end to end', () => {

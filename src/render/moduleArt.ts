@@ -1,4 +1,5 @@
 import type { World } from '../sim/ecs';
+import type { CrewLook } from './loadout';
 import { playingAt } from '../sim/ai/machines/leisureSpots';
 import { JobC, PositionC } from '../sim/crew/components';
 import { isSettled } from '../sim/crew/helpers';
@@ -223,7 +224,11 @@ export interface ModuleLayer {
   bed?: { lit: boolean };
   /** A hydroponics bed's crop layer: drawn from the art when it has the id, else from a code-drawn stand-in (render/cropOverlay.ts). */
   crop?: { crop: string; stage: 'sprout' | 'grow' | 'ripe' };
+  /** A full stasis slab's layer: the prisoner whose figure is pressed into its face (slabFace.ts). */
+  face?: CrewLook;
   /** Drawn only if the art has it (never a stand-in): container paint, lv and logo layers. */
+  /** A colour multiplied into this layer's art and glow (a status lamp drawn white, lit in the colour of its state). */
+  tint?: number;
   optional?: boolean;
   /** The chain's head is a frame of this looping animation (an `.active` base id): the view swaps the texture as frames advance instead of rebuilding. */
   anim?: string;
@@ -328,9 +333,21 @@ export function moduleLayers(world: World, id: number, m: Module, def: ModuleDef
   if (def.weapon || def.pointDefense) return [{ chain: [`${a}.bay${r}`, `${a}.bay`], key: `${a}.bay`, tiles: 'all' }];
   const main: ModuleLayer = { chain: moduleAssets(world, id, m, def, active, look), key: a, tiles: 'all', anim: stateArt(def, m.rot, active, look).anim };
   if (def.leisure) return leisureLayers(main, a, r, active, look);
+  if (def.bed) return [main, ...bedFronts(a, r, def.berths ?? 1)];
   if (!def.console && !def.seated) return [main];
   const front = active ? [`${a}.front${r}.active`, `${a}.front${r}`] : [`${a}.front${r}`];
   return [main, { chain: front, key: `${a}.front`, tiles: 'all', dz: FRONT_DZ }];
+}
+
+/** Depth offset of the sleeper in each berth of a bed over the bed body: berth 0 at SEAT_DZ, each higher one a step over the overlay below it. */
+export const berthDz = (berth: number): number => SEAT_DZ + berth * 0.004;
+
+/**
+ * A bed's front overlays (tools/blender/sprites/bed_front.py): `<asset>.front.b<b>.r{n}`, the frame, rails and upper deck that hide berth b's sleeper,
+ * drawn just over that sleeper and under the next berth's. Optional: a bed without them draws its body alone.
+ */
+function bedFronts(a: string, r: string, berths: number): ModuleLayer[] {
+  return Array.from({ length: berths }, (_, b) => ({ chain: [`${a}.front.b${b}${r}`], key: `${a}.front.b${b}`, tiles: 'all' as const, dz: berthDz(b) + 0.002, optional: true }));
 }
 
 /** Depth offset of a game table's hologram over its players (the front overlay is at FRONT_DZ). */

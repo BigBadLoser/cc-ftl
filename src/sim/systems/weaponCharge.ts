@@ -12,7 +12,7 @@ import { SKILL_STEP, XP_PER_WORK_SEC } from '../tuning';
 import { weaponDefOf } from '../upgrades/stats';
 import { grantXp } from '../crew/xp';
 import { shipIdOf } from '../regions';
-import { shipById } from '../combat/ships';
+import { shipById, shipCanAct } from '../combat/ships';
 
 /**
  * Weapons charge only while powered, intact, not ion-disabled, with ammo (if they use any) and with the weapons
@@ -28,7 +28,7 @@ export function weaponChargeSystem(sim: Sim): void {
     const def = m && weaponDefOf(sim, id);
     if (!m || !w || !def || w.charge >= 1) continue;
     if (!m.powered || m.hp <= 0 || sim.world.has(id, IonC) || !isDeployed(sim, id)) continue;
-    if (shipById(sim, shipIdOf(sim, m))?.state !== 'active') continue;
+    if (!shipCanAct(shipById(sim, shipIdOf(sim, m)))) continue;
     const combat = sim.world.get(shipIdOf(sim, m), CombatC);
     if (combat && lockedOut(combat)) continue;
     let skill = gunnery.get(shipIdOf(sim, m));

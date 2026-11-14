@@ -79,7 +79,6 @@ export const ACTIONS = [
 
   a('ui.confirm', 'menus', 'Confirm (Got it, Deploy)', ['Enter']),
   // The signal window is a modal over the map: H and S there never meet combat's hold-all or the camera's pan-down.
-  a('ui.hail', 'menus', 'Hail (signal window)', ['KeyH'], 'modal'),
   a('ui.scan', 'menus', 'Scan (signal window)', ['KeyS'], 'modal'),
   a('ui.menu', 'menus', 'Cancel / menu', ['Escape'], 'global', { fixed: true }),
 

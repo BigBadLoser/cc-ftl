@@ -22,7 +22,7 @@ const KITS: Record<string, readonly string[]> = {
   pirates: ['role.gunner'], civilian: ['role.engineer', 'role.pilot'], government: ['role.pilot', 'role.security'], corporation: ['role.engineer', 'role.pilot'],
 };
 
-export function speakerOf(s: Pick<SceneShip, 'contact'>, shipName: string | undefined, factionKind: string | undefined): Speaker {
+export function speakerOf(s: { contact: Pick<SceneShip['contact'], 'seed'> }, shipName: string | undefined, factionKind: string | undefined): Speaker {
   const rng = new Rng((s.contact.seed ^ 0x5bd1e995) >>> 0);
   const name = rng.pick(crewNames);
   const rest = crewNames.filter((n) => n !== name);

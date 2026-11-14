@@ -28,6 +28,11 @@ export function hasFuel(m: Pick<Module, 'fuel'>, def: Pick<ModuleDef, 'fuel'>): 
   return !def.fuel || fuelOf(m, def) > 0;
 }
 
+/** Whether a reactor's store is below the line where crew refill it (an empty one is low too); false for a module with no fuel store. */
+export function fuelLow(m: Pick<Module, 'fuel'>, def: Pick<ModuleDef, 'fuel'>): boolean {
+  return !!def.fuel && fuelOf(m, def) < def.fuel.refillBelow;
+}
+
 /** Days of typical draw an NPC ship carries when it spawns (its crew refuel from it), and a station keeps (refilled by the restock). */
 export const NPC_FUEL_DAYS = 3;
 export const STATION_FUEL_DAYS = 12;

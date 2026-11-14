@@ -49,16 +49,7 @@ export interface ReadoutRow {
   wide?: boolean;
 }
 
-/** One footer button: the label, a short note on the right, and whether it is the primary one. */
-export interface DecisionOption {
-  id: string;
-  label: string;
-  note?: string;
-  primary?: boolean;
-  disabled?: boolean;
-  /** Why it is disabled (a tooltip). */
-  reason?: string;
-}
+export type { DecisionOption } from '../kit/types';
 
 /** Who is on the other end: names, ship, faction and a status pill. `alt` is a second name it flickers to. */
 export interface CallerInfo {

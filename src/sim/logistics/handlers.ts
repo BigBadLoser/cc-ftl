@@ -20,8 +20,12 @@ export function queueTransfer(sim: Sim, from: number, to: number, lines: { item:
   const items: { item: string; count: number }[] = [];
   for (const l of lines) {
     if (!sim.content.items[l.item] || !Number.isInteger(l.count) || l.count <= 0) return 'badLine';
-    const n = Math.min(l.count, regionItems(sim, from, l.item) - (items.find((x) => x.item === l.item)?.count ?? 0));
-    if (n > 0) items.push({ item: l.item, count: n });
+    // One line per item: the cargo accounting (loaded, settle) works on lines, so repeated ids are summed here.
+    const line = items.find((x) => x.item === l.item);
+    const n = Math.min(l.count, regionItems(sim, from, l.item) - (line?.count ?? 0));
+    if (n <= 0) continue;
+    if (line) line.count += n;
+    else items.push({ item: l.item, count: n });
   }
   if (items.length === 0) return 'nothing';
   const total = items.reduce((n, l) => n + l.count, 0);

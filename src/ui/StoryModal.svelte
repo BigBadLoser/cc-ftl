@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { UiApi, UiStory } from './api';
-  import { Chip, Dialog } from './kit';
+  import { Chip, DecisionBar, Dialog } from './kit';
+  import { storyOptions } from './storyOptions';
+  import { storyKeys } from './storyKeys';
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
   import SignalWindow from './SignalWindow.svelte';
@@ -14,6 +16,10 @@
   let busy = $state(false);
   /** Which choices were open: a remote action (scan, hail) keeps the decision up, and marking it done frees the other buttons again. */
   let openSig = '';
+
+  // The scan key and the held game keys, while a decision is open (the same handling as the comms window).
+  const plain = $derived(!hold && !!story.active && !story.active.comms);
+  $effect(() => (plain ? storyKeys(() => ({ active: story.active!, busy, pick })) : undefined));
 
   onMount(() =>
     api.story.subscribe((s) => {
@@ -29,6 +35,9 @@
   // A choice with nothing to report (no text, no effects shown: dropping out into a scene) needs no card.
   const result = $derived(!active && story.last && story.last.tick !== seenTick && (story.last.text || story.last.lines.length) ? story.last : null);
 
+  /** Info actions (scan, probe, hail): small buttons that fill in a readout below; not choices. */
+  const remotes = $derived((active?.choices ?? []).filter((c) => c.remote));
+
   function pick(id: string) {
     if (busy) return;
     busy = true;
@@ -43,6 +52,15 @@
 {:else if active}
   <Dialog open title={active.title} dismissable={false} testId="story-modal">
     <p class="text">{active.text}</p>
+    {#if remotes.length}
+      <div class="remotes">
+        {#each remotes as r (r.id)}
+          <button class="remote" class:done={r.done} disabled={!r.enabled || busy} data-testid="story-remote" data-choice={r.id} onclick={() => pick(r.id)}>
+            <Icon name={r.remote === 'scan' ? 'target' : r.remote === 'probe' ? 'target' : 'hail'} size={13} />{r.label}{#if r.done}<Icon name="check" size={12} />{/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
     {#each active.intel as it, i (i)}
       <section class="intel {it.kind}" data-testid="story-intel" data-kind={it.kind}>
         <header><Icon name={it.kind === 'scan' ? 'target' : 'hail'} size={14} /><span class="tag">{it.kind === 'scan' ? 'Scan' : 'Hail answered'}</span><b>{it.ship}</b></header>
@@ -56,18 +74,7 @@
         {/if}
       </section>
     {/each}
-    <div class="choices">
-      {#each active.choices as c (c.id)}
-        <button class="choice" class:locked={!c.enabled && !c.done} class:done={c.done} disabled={!c.enabled || busy} data-testid="story-choice" data-choice={c.id} onclick={() => pick(c.id)}>
-          <span class="label">{c.label}</span>
-          {#if c.hint}<span class="hint">{c.hint}</span>{/if}
-          {#if c.odds}<span class="odds" data-testid="story-odds">{c.odds.label}</span>{/if}
-          {#if c.cost.length}<span class="cost">Costs {c.cost.join(', ')}</span>{/if}
-          {#each c.reasons as r (r)}<span class="reason">{r}</span>{/each}
-          {#if c.done}<span class="did"><Icon name="check" size={12} />Done</span>{/if}
-        </button>
-      {/each}
-    </div>
+    <div class="decide"><DecisionBar options={storyOptions(active.choices, 'story-choice')} onpick={pick} {busy} /></div>
   </Dialog>
 {:else if result}
   <div class="result sheet" data-testid="story-result">
@@ -94,19 +101,10 @@
   .quote { margin: 0; font-size: 13px; font-style: italic; color: var(--text); line-height: 1.4; }
   .stock { display: flex; flex-wrap: wrap; gap: 4px; }
   .stock em { font-style: normal; color: var(--dim); }
-  .choice.done:not(.locked) { background: transparent; border-style: solid; border-color: var(--line); color: var(--dim); opacity: 1; }
-  .choice.done:not(.locked) .label { color: var(--dim); }
-  .did { display: inline-flex; align-items: center; gap: 4px; color: var(--green); font-size: 12px; }
-  .choices { display: grid; gap: 8px; }
-  .choice { display: grid; gap: 2px; text-align: left; padding: 9px 12px; min-height: 44px; }
-  .label { font-weight: 600; }
-  .hint { color: var(--dim); font-size: 12px; }
-  .odds { color: var(--ink-accent); font-size: 12px; font-weight: 600; }
-  .cost { color: var(--amber); font-size: 12px; }
-  .reason { color: var(--red); font-size: 12px; }
-  .choice:not(.locked) { border-color: var(--act-edge); }
-  .choice.locked { opacity: 1; background: var(--panel-3); border-style: dashed; color: var(--dim); }
-  .choice.locked .label { color: var(--dim); }
+  .remotes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .remote { display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 4px 10px; font-size: 12px; border-color: var(--act-edge); }
+  .remote.done { border-color: var(--line); color: var(--dim); }
+  .decide { margin: 12px -16px -16px; }
   .result { left: 50%; transform: translateX(-50%); bottom: 12px; width: min(420px, calc(100vw - 24px)); display: grid; gap: 4px; z-index: 12; touch-action: pan-y; }
   .result b { color: var(--ink-accent); }
   .chose { color: var(--dim); font-size: 12px; }

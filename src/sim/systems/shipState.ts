@@ -2,6 +2,7 @@ import { CrewC, DeadC, DownedC, HealthC, PositionC } from '../crew/components';
 import { ShipC } from '../combat/components';
 import { wreckShip } from '../combat/wreck';
 import { hullSum } from '../combat/hull';
+import { neverSurrenders } from '../combat/factions';
 import { crewSubdued } from '../combat/subdued';
 import { hopeless } from '../combat/hopeless';
 import { AllegianceC } from '../fight/components';
@@ -18,7 +19,7 @@ import { shipIdOf, shipGrid } from '../regions';
  * maxima. A ship is a WRECK (terminal) when integrity < WRECK_BELOW or every power source is destroyed: its
  * crew dies, its weapons and shields go dead, but the grid stays as a derelict. It is DISABLED while no crew
  * member can act or no power flows (no reactor runs and no bank feeds a consumer), and recovers when that clears. An enemy ship whose whole crew is subdued or dead (and
- * none of the player's stand aboard) is wrecked too: the fight ends in a derelict, see `crewSubdued`. A hostile ship whose fight is hopeless
+ * none of the player's can reach it) is wrecked too if it is a zealots' ship, else it waits as `yielded` for the player to let them go (a derelict) or take prisoners (a prize); see `crewSubdued`. A hostile ship whose fight is hopeless
  * (combat/hopeless.ts) surrenders first: its crew give up through the ordinary surrender path. Fled ships are left alone.
  */
 export function shipStateSystem(sim: Sim): void {
@@ -66,11 +67,15 @@ export function shipStateSystem(sim: Sim): void {
       }
       if (gaveUp) sim.events.emit({ type: 'ship.surrendered', ship: id });
     }
-    // an enemy ship whose whole crew is down, surrendered or dead has nothing left to fight with: it is given up as a derelict
+    // an enemy ship whose whole crew is down, surrendered or dead has nothing left to fight with: the zealots' is given up as a derelict (they never surrender),
+    // any other waits for the player's answer, let them go or take prisoners (`Ship.yielded`, capture/settle.ts)
     if (crewSubdued(sim, id, ship)) {
-      wreckShip(sim, id);
-      continue;
-    }
+      if (neverSurrenders(sim, id)) {
+        wreckShip(sim, id);
+        continue;
+      }
+      ship.yielded = true;
+    } else delete ship.yielded;
     // outposts are immobile by nature and have no crew yet: never 'disabled' for that
     const disabled = !ship.outpost && (ableCrew(sim, id) === 0 || (sources > 0 && running === 0));
     if (disabled && ship.state === 'active') {

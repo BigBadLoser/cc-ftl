@@ -18,6 +18,7 @@ export { default as Chip } from './Chip.svelte';
 export { default as KeyBadge } from './KeyBadge.svelte';
 export { default as ActionButton } from './ActionButton.svelte';
 export { default as StatusTag } from './StatusTag.svelte';
-export type { KitOption } from './types';
+export { default as DecisionBar } from './DecisionBar.svelte';
+export type { KitOption, DecisionOption } from './types';
 export type { StepSpec } from './numberStepper';
 export { chipTone, type ChipTone } from './chipTone';

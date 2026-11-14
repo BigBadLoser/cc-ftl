@@ -7,6 +7,7 @@ import { evaFloatSystem } from './systems/evaFloat';
 import { alertsSystem } from './systems/alerts';
 import { atmosphereSystem } from './systems/atmosphere';
 import { autoJobsSystem } from './systems/autojobs';
+import { stasisSystem } from './stasis/system';
 import { droneSystem } from './systems/drones';
 import { carrySystem } from './systems/carry';
 import { combatStateSystem } from './systems/combatState';
@@ -23,6 +24,7 @@ import { scheduleSystem } from './ai/schedule';
 import { interruptSystem } from './ai/interrupt';
 import { deploySystem } from './systems/deploy';
 import { doorsSystem } from './systems/doors';
+import { ventsSystem } from './systems/vents';
 import { draftedSystem } from './systems/drafted';
 import { crewCombatSystem } from './systems/crewCombat';
 import { equipSystem } from './systems/equip';
@@ -115,6 +117,8 @@ export const pipeline: readonly System[] = [
   doorsSystem,
   // Airlock doors and chamber air, right after the doors system (which skips them) and before diffusion.
   airlockSystem,
+  // Vents on doors: open or held shut by hazard or no power, before the gas solver reads them.
+  ventsSystem,
   // Gas diffusion runs on the doors and module output of this tick.
   atmosphereSystem,
   // Fire reads the settled air (O2) and writes its o2/co2/smoke/heat back for next tick.
@@ -137,6 +141,9 @@ export const pipeline: readonly System[] = [
   vitalsSystem,
   // Auto jobs after vitals, so a crew member who just went down gets a rescue job this tick.
   autoJobsSystem,
+  // Prisoner holding after power (a wheel's power is fresh) and autojobs: carts that ended are set down, reserves drain or refill, thawed prisoners
+  // step out, and the stasis jobs are kept and posted (sim/stasis).
+  stasisSystem,
   // Drones after vitals (fresh patients) and power (live cores): they charge, fly and work on their own, never through the job board.
   droneSystem,
   // Console operating jobs (combat): after vitals so downed operators are already released.

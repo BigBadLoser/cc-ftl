@@ -35,7 +35,7 @@ function meetsNow(sim: Sim, req: Requirement): boolean {
     case 'remote': {
       const a = story.active;
       const def = a ? sim.content.events?.[a.event] : undefined;
-      return !!a && (a.done ?? []).some((id) => def?.choices?.find((c) => c.id === id)?.remote === req.action);
+      return !!a && !!def && remotesDone(def, a).some((id) => def.choices?.find((c) => c.id === id)?.remote === req.action);
     }
   }
 }
@@ -116,3 +116,16 @@ function checkOddsNow(sim: Sim, check: SkillCheck): Odds | null {
 }
 
 export { qty as describeQty };
+
+/** True when the event opens the comms window (someone is talking to you), not the plain decision window: it has a `comms` block. The one answer; the view and the engine ask it. */
+export const opensComms = (def: EventDef): boolean => def.comms !== undefined;
+
+/**
+ * The remote actions of the open decision that count as done: what was taken (`ActiveEvent.done`), and for a comms event its hail, by definition (the
+ * call is already connected; nothing is stored, so an older save answers too). The one answer for "is this call answered / was this action taken".
+ */
+export function remotesDone(def: EventDef, active: { done?: string[] }): string[] {
+  const done = active.done ?? [];
+  if (!opensComms(def)) return done;
+  return [...new Set([...done, ...(def.choices ?? []).filter((c) => c.remote === 'hail').map((c) => c.id)])];
+}

@@ -39,7 +39,7 @@ function drop(sim: Sim, jobId: number, job: Job): void {
  *  - breach: a wall build (category firefighting) on each hole in a player ship's hull, once the stock can pay for a wall; never on a wreck;
  *  - repair (repair): one per damaged module, removed at full hp or when the module is gone; never on a wreck (nobody keeps one up: its
  *    modules are for stripping, and crew working aboard one would otherwise mend it part by part);
- *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists;
+ *  - rescue (medical): one per downed, unstabilized crew member while a free bed exists (a prisoner ranks last and a still-fighting enemy is never taken by the other side's crew: crew/care.ts);
  *  - tend (medical): one per medical bed with a patient in it, dropped when they leave it (crew/treatment.ts `bedsToTend`);
  *  - robots (robots/jobs): mend damaged robots, salvage wrecks; ordered hacks are dropped once their hacker lets go.
  * Jobs are keyed by (kind, tile) or (kind, target) so none is duplicated.

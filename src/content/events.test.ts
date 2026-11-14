@@ -9,6 +9,10 @@ const effects = (): EventEffect[] => [...outcomes().flatMap((o) => o.effects ?? 
 const requirements = (): Requirement[] => defs.flatMap(([, d]) => [...(d.eligible ?? []), ...(d.choices ?? []).flatMap((c) => c.requires ?? [])]);
 
 describe('event content', () => {
+  it('holds at most 3 real choices per decision (hail, scan and probe are info actions, not choices)', () => {
+    for (const [id, d] of defs) expect((d.choices ?? []).filter((c) => !c.remote).length, id).toBeLessThanOrEqual(3);
+  });
+
   it('has the starter set covering the mechanics', () => {
     expect(defs.length).toBeGreaterThanOrEqual(10);
     expect(defs.some(([, d]) => d.choices?.some((c) => c.check))).toBe(true);

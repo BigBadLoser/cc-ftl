@@ -233,16 +233,19 @@ describe('crew combat', () => {
     expect(sim.world.has(fighter, DownedC)).toBe(false);
   });
 
-  it('downs crew at 0 hp and the downed can still be rescued', () => {
+  it('downs crew at 0 hp; a downed enemy still fighting is not rescued, one who surrendered is', () => {
     const sim = make(hall({ modules: [{ def: 'bed', x: 20, y: 2, rot: 0 }] }));
     person(sim, 3, 2, 'player', 'role.sec', 'item.rifle');
     const boarder = person(sim, 14, 1, 'hostile', 'role.brave');
     const medic = person(sim, 21, 3, 'player', 'role.medic', undefined, { ...flat(4), medical: 1 });
     sim.world.get(boarder, HealthC)!.hp = 20;
-    const ev = run(sim, 20 * 60, () => sim.world.get(boarder, DownedC)?.stabilized === true);
+    const ev = run(sim, 20 * 10, () => sim.world.has(boarder, DownedC));
     expect(of(ev, 'crew.downed').map((e) => e.crew)).toContain(boarder);
-    expect(of(ev, 'crew.rescued').map((e) => e.crew)).toContain(boarder);
-    expect(of(ev, 'crew.rescued')[0]!.by).toBe(medic);
+    expect(of(run(sim, 20 * 5), 'crew.rescued')).toEqual([]); // still an enemy: the medic leaves them
+    sim.world.add(boarder, SurrenderedC, { tick: sim.tick });
+    const after = run(sim, 20 * 60, () => sim.world.get(boarder, DownedC)?.stabilized === true);
+    expect(of(after, 'crew.rescued').map((e) => e.crew)).toContain(boarder);
+    expect(of(after, 'crew.rescued')[0]!.by).toBe(medic);
     expect(sim.world.has(boarder, DeadC)).toBe(false);
   });
 

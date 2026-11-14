@@ -46,10 +46,13 @@ describe('the yard crew', () => {
     const back = deserialize(serialize(sim), content);
     expect(back.yard.orders[0]).toEqual(order);
     const o = back.yard.orders[0]!;
+    const timer = order.timer;
     run(back, 200);
+    run(sim, 200);
+    expect(serialize(back)).toBe(serialize(sim)); // save and load is exact: both games replay identically
     expect(isLiveOrder(o)).toBe(true); // the reloaded order carries on (to its end: yardCrew.slow.test.ts)
     expect(o.reason).toBeUndefined();
-    expect(o.timer).toBeGreaterThan(order.timer);
+    expect(o.timer).toBeGreaterThan(timer);
   });
 
   it('the contractors are aboard by a working consent grant (not invaders, on duty); the grant goes with the order', () => {

@@ -9,7 +9,7 @@ import { VehicleC } from '../vehicles/components';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { alive, dismiss, launchShuttle, yardRun } from './crew';
-import { payStation, refund } from './money';
+import { payStation, refund, retryRefund } from './money';
 import { builtCount, dropJobs, earned, jobsOf, totalTiles } from './progress';
 import { postHullJobs } from './jobs';
 import { openInnerWalls } from './open';
@@ -61,7 +61,7 @@ function close(sim: Sim, o: YardOrder, reason: string): void {
   if (reason) o.reason = reason;
   sim.events.emit({ type: 'yard.ended', order: o.id, reason: o.reason ?? '', built, total: totalTiles(o) });
   const done = sim.yard.orders.filter((x) => !isLiveOrder(x));
-  for (const x of done.slice(0, Math.max(0, done.length - YARD_HISTORY))) sim.yard.orders.splice(sim.yard.orders.indexOf(x), 1);
+  for (const x of done.filter((y) => !y.pending).slice(0, Math.max(0, done.length - YARD_HISTORY))) sim.yard.orders.splice(sim.yard.orders.indexOf(x), 1);
 }
 
 /** End an order on the spot: jobs dropped, crew and shuttle gone, money settled. For when the station, the ship or the node is lost. */
@@ -205,5 +205,8 @@ function step(sim: Sim, o: YardOrder): void {
 
 /** Advance every live shipyard order one tick. */
 export function yardSystem(sim: Sim): void {
-  for (const o of [...sim.yard.orders]) if (isLiveOrder(o)) step(sim, o);
+  for (const o of [...sim.yard.orders]) {
+    if (isLiveOrder(o)) step(sim, o);
+    else if (o.pending && sim.tick % 60 === 0) retryRefund(sim, o);
+  }
 }

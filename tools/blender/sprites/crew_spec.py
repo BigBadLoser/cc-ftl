@@ -19,6 +19,7 @@ ORDER = {"body": 0, "eyes": 10, "legs": 20, "torso": 30, "gear.belt": 40, "arm.R
 # (clip, frames, fps, loop). Every clip gets its own sheet per item (crew_build.item_clips says which items get it).
 CLIPS = [("idle", 4, 4, True), ("walk", 8, 10, True), ("work", 6, 8, True), ("sleep", 3, 2, True), ("sit_idle", 4, 3, True),
          ("sit_work", 6, 8, True), ("eva_float", 4, 4, True), ("sit_stool_work", 6, 8, True),
+         ("sit_bench", 4, 3, True),
          ("aim_1h", 2, 3, True), ("fire_1h", 3, 12, False), ("aim_2h", 2, 3, True), ("fire_2h", 3, 12, False),
          ("aim_heavy", 2, 3, True), ("fire_heavy", 4, 12, True), ("walk_aim_1h", 8, 10, True),
          ("walk_aim_2h", 8, 10, True), ("walk_heavy", 8, 7, True), ("ready_1m", 2, 3, True),

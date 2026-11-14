@@ -11,7 +11,8 @@ import { AwaySiteC } from '../sim/away/components';
 import { Struct } from '../sim/structure';
 import type { UiAlert, UiAlertKind } from '../ui/api';
 import { createAlerts } from './alerts';
-import { shortOnPower } from './alertsDerived';
+import { deriveAlerts, shortOnPower } from './alertsDerived';
+import { wreckShip } from '../sim/combat/wreck';
 import { ConsentC, type Carry } from '../sim/consent/components';
 import { deserialize, serialize } from '../sim/save';
 import { playerShip } from '../sim/trade/player';
@@ -313,6 +314,19 @@ describe('alerts', () => {
       return { sim, a, b, add };
     }
 
+    it('an arrival warning skipped for a full list appears once a slot frees, with no galaxy change', () => {
+      const { sim, a, b, add } = setup();
+      const alerts = createAlerts(sim);
+      for (let i = 0; i < 6; i++) alerts.post({ kind: 'fight.report', key: `r${i}`, text: 'report', report: true });
+      add('pirates', 'pirate', b, [a, START_NODE]);
+      sim.galaxy.rev++;
+      alerts.syncIncoming();
+      expect(current(alerts).some((x) => x.kind === 'galaxy.incomingHostile')).toBe(false);
+      alerts.dismiss(current(alerts)[0]!.id);
+      alerts.syncIncoming();
+      expect(current(alerts).some((x) => x.kind === 'galaxy.incomingHostile')).toBe(true);
+    });
+
     it('says how many turns until a fleet drops out, in danger styling for hostiles, and follows the fleet', () => {
       const { sim, a, b, add } = setup();
       const alerts = createAlerts(sim);
@@ -364,5 +378,42 @@ describe('alerts', () => {
       alerts.syncIncoming();
       expect(current(alerts)).toHaveLength(1); // it changed course and came back: a new trip, a new warning
     });
+  });
+});
+
+describe('a beaten ship waits for the answer', () => {
+  it('raises "<ship> surrendered" with both answers and no "Under attack" alert beside it', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 90 });
+    for (let i = 0; i < 10; i++) sim.step();
+    const alerts = createAlerts(sim);
+    alerts.onEvents(sim.events.drain());
+    alerts.sync();
+    expect(current(alerts).map((a) => a.kind)).toContain('combat.started');
+    const enemy = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.faction === 'hostile')!;
+    sim.enqueue({ type: 'debug.surrender', ship: enemy });
+    for (let i = 0; i < 40; i++) sim.step();
+    expect(sim.world.get(enemy, ShipC)!.yielded).toBe(true);
+    expect(sim.sector.inCombat).toBe(true); // the fight holds until the answer
+    alerts.onEvents(sim.events.drain());
+    alerts.sync();
+    const kinds = current(alerts).map((a) => a.kind);
+    expect(kinds).toContain('ship.yielded');
+    expect(kinds).not.toContain('combat.started');
+    const a = current(alerts).find((x) => x.kind === 'ship.yielded')!;
+    expect(a.text).toBe(`${sim.world.get(enemy, ShipC)!.name} surrendered`);
+    expect(a.actions?.map((x) => x.label)).toEqual(['Take prisoners', 'Let them go']);
+  });
+
+  it('is no longer offered once the ship is destroyed before the answer', () => {
+    const sim = newGame(1, content);
+    sim.enqueue({ type: 'debug.spawnEnemy', template: 'ship.raider', x: 20, y: 90 });
+    for (let i = 0; i < 10; i++) sim.step();
+    const enemy = sim.world.query(ShipC).find((id) => sim.world.get(id, ShipC)!.faction === 'hostile')!;
+    sim.enqueue({ type: 'debug.surrender', ship: enemy });
+    for (let i = 0; i < 40; i++) sim.step();
+    expect(deriveAlerts(sim, () => false).has(`sy${enemy}`)).toBe(true);
+    wreckShip(sim, enemy);
+    expect(deriveAlerts(sim, () => false).has(`sy${enemy}`)).toBe(false);
   });
 });

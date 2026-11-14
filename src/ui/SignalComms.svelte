@@ -8,8 +8,9 @@
   import CallerCard from './comms/CallerCard.svelte';
   import Transcript from './comms/Transcript.svelte';
   import SensorPanel from './comms/SensorPanel.svelte';
-  import DecisionBar from './comms/DecisionBar.svelte';
-  import type { Callout, DecisionOption, ReadoutRow, UiHolo } from './comms/types';
+  import { DecisionBar } from './kit';
+  import { storyOptions } from './storyOptions';
+  import type { Callout, ReadoutRow, UiHolo } from './comms/types';
   import { keyLabel, type Bindings } from './keymap';
 
   /**
@@ -57,16 +58,14 @@
   });
   const readout = $derived([...c.readout.slice(0, 1), ...pinned.loose, ...c.readout.slice(1)]);
 
-  const decisions = $derived<DecisionOption[]>(active.choices.filter((x) => !x.remote).map((x, i) => ({
-    id: x.id, label: x.label, primary: i === 0, disabled: !x.enabled,
-    note: [x.hint, x.odds?.label, x.cost.length ? `Costs ${x.cost.join(', ')}` : ''].filter(Boolean).join(' · ') || undefined,
-    ...(x.reasons.length ? { reason: x.reasons.join('. ') } : {}),
-  })));
+  const decisions = $derived(storyOptions(active.choices));
+  /** A call with no scene ship (a checkpoint cutter) has nothing to scan. */
+  const hasSensors = $derived(!!c.holo || !!c.scanChoice || c.scanned);
 
 </script>
 
 {#snippet videoCol()}
-  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} action={c.hailChoice ? { label: 'HAIL', key: keyLabel(binds, 'ui.hail'), onclick: () => pick(c.hailChoice!), disabled: busy } : undefined} testId="signal-hail" />
+  <PaneHeader label="Video" done={c.hailed ? 'CONNECTED' : undefined} />
   <div class="col">
     <VideoFeed src={c.hailed ? face : null} stutter={c.stutter} />
     {#if c.caller}<CallerCard caller={c.caller} />{/if}
@@ -93,8 +92,7 @@
   <DecisionBar options={decisions} onpick={pick} {busy} />
 {/snippet}
 
-<!-- A scene with no ship (a derelict) has no one to call: the video column goes. -->
-<CommsWindow title="Incoming signal" subtitle={active.title} video={c.caller ? videoCol : undefined} comms={commsCol} sensors={sensorsCol} footer={decisionBar} />
+<CommsWindow title="Incoming signal" subtitle={active.title} video={c.caller ? videoCol : undefined} comms={commsCol} sensors={hasSensors ? sensorsCol : undefined} footer={decisionBar} />
 
 <style>
   .col { padding: 12px; display: grid; gap: 12px; align-content: start; }

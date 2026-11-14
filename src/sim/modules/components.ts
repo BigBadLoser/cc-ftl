@@ -16,8 +16,10 @@ export interface Module {
   enabled: boolean;
   /** Derived by the power system each tick: running (supplied / allocated). */
   powered: boolean;
-  /** Crew entity that has reserved this bed (0 = free). Only used by bed modules. */
+  /** Crew entity that has reserved this bed (0 = free), or berth 0 of one with several. Only used by bed modules; ask crew/berths.ts. */
   reservedBy: number;
+  /** Crew holding berths 1.. of a bed with several (`ModuleDef.berths`; the bunk's upper deck): crew/berths.ts is the one reader and writer. Absent while none. */
+  reservedMore?: number[];
   /** Set when hp hits 0 and cleared once repaired past half: a wrecked module that is patched and shot again does not announce its destruction again. */
   wrecked?: boolean;
   /** Reactor (ModuleDef.fuel): units of fuel in its store, fractional while burning; absent = a full store (modules/energy.ts `fuelOf`). */

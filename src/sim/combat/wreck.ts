@@ -28,6 +28,7 @@ export function wreckShip(sim: Sim, shipId: number): void {
   if (ship.faction !== 'player' && playerTargets(sim, shipId)) ship.killedBy = 'player';
   reportDeparted(sim, shipId, 'wrecked');
   ship.state = 'wreck';
+  delete ship.yielded; // nobody is left to answer for it
   ship.integrity = Math.min(ship.integrity, WRECK_BELOW);
   for (const id of sim.world.query(CrewC, PositionC)) {
     if (shipIdOf(sim, sim.world.get(id, PositionC)) === shipId && !guestOn(sim, id, shipId)) killCrew(sim, id);

@@ -129,7 +129,7 @@ function settleFleet(sim: Sim, ev: EventGrid, f: Fleet): Fleet {
   strandIfCrippled(sim, f, sim.galaxy.turn);
   for (const c of f.ships) c.ship = undefined;
   f.met = sim.galaxy.turn;
-  if (ev.kind === 'rescue' && f.ships.length) {
+  if (ev.kind === 'rescue' && ev.helped && f.ships.length) {
     delete f.damaged;
     f.dwell = 1;
     const key = repKey(sim, f.faction);
@@ -137,6 +137,12 @@ function settleFleet(sim: Sim, ev: EventGrid, f: Fleet): Fleet {
     sim.events.emit({ type: 'galaxy.rescued', id: ev.id, faction: f.faction });
   }
   return f;
+}
+
+/** A deal with `ship` settled: in a rescue grid that is the help the damaged fleet was waiting for (`EventGrid.helped`). */
+export function noteHelp(sim: Sim, ship: number): void {
+  const ev = sim.galaxy.event;
+  if (ev?.kind === 'rescue' && ev.fleet?.ships.some((c) => c.ship === ship)) ev.helped = true;
 }
 
 /**
@@ -171,7 +177,7 @@ export function leaveEvent(sim: Sim, resume: (sim: Sim, held: 'interdicted' | 'h
   const hostile = hostilesPresent(sim) > 0;
   const fleet = ev.fleet ? settleFleet(sim, ev, ev.fleet) : null;
   // The outcome line moves on from "fighting" / "answering": cleared, escaped or helped.
-  if (fleet && g.lastResult?.id === ev.id) g.lastResult.outcome = ev.kind === 'rescue' ? 'helped' : hostile ? 'escaped' : fleet.ships.length ? 'left' : 'cleared';
+  if (fleet && g.lastResult?.id === ev.id) g.lastResult.outcome = ev.kind === 'rescue' && ev.helped ? 'helped' : hostile ? 'escaped' : fleet.ships.length ? 'left' : 'cleared';
   if (sim.sector.inCombat) sim.events.emit({ type: 'combat.ended' });
   for (const id of sim.world.ids()) sim.world.destroyEntity(id);
   sim.sector.grid = newSectorGrid();

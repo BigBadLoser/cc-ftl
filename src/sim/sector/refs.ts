@@ -7,6 +7,7 @@
  * undefined until then.
  */
 
+import { clearGoneBerths } from '../crew/berths';
 type Data = Record<string, unknown>;
 type Target = { ship: number; moduleId: number; vehicle?: number; tile?: { x: number; y: number } } | null;
 
@@ -29,8 +30,8 @@ export function cutLeaving(data: Data, inSet: (id: number) => boolean): Data {
   if (fighter && gone(fighter.ordered)) fighter.ordered = 0;
   const job = data.job as { reservedBy: number } | undefined;
   if (job && gone(job.reservedBy)) job.reservedBy = 0;
-  const module = data.module as { reservedBy: number } | undefined;
-  if (module && gone(module.reservedBy)) module.reservedBy = 0;
+  const module = data.module as { reservedBy: number; reservedMore?: number[] } | undefined;
+  if (module) clearGoneBerths(module, gone);
   const drone = data.drone as { bay: number; target: { kind: string; id: number } | null } | undefined;
   if (drone && gone(drone.bay)) drone.bay = 0;
   if (drone?.target && drone.target.kind !== 'extinguish' && gone(drone.target.id)) drone.target = null;

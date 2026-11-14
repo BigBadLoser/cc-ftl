@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { Dialog } from 'bits-ui';
+  import Frame from './Frame.svelte';
+  import Icon from '../Icon.svelte';
 
   /**
-   * A modal: dim veil, card centred on desktop and a bottom sheet on phones. `dismissable` false = only your own buttons close it. Focus moves
+   * A modal: dim veil, a rail frame (kit/Frame: the title in the top line, a close tile when dismissable) centred on desktop and a bottom sheet on phones. `dismissable` false = only your own buttons close it. Focus moves
    * in and is trapped while it is open. `bare`: no card, the children bring their own panel (the Esc menu); the title is for screen readers
    * only. `initialFocus`: a selector focused on open instead of the first control. `onCloseFocus`: where focus goes on close (default: back to
    * whatever had it before).
@@ -30,20 +32,27 @@
   <Dialog.Portal>
     <Dialog.Overlay class="kit-veil" />
     <Dialog.Content class={bare ? 'kit-bare' : 'kit-card'} data-testid={testId} interactOutsideBehavior={guard} escapeKeydownBehavior={guard} onOpenAutoFocus={openFocus} onCloseAutoFocus={closeFocus}>
-      <Dialog.Title class={bare ? 'kit-sr' : 'kit-card-title'}>{title}</Dialog.Title>
-      {@render children()}
+      <Dialog.Title class="kit-sr">{title}</Dialog.Title>
+      {#if bare}
+        {@render children()}
+      {:else}
+        <Frame {title} style="background: var(--card-bg, var(--panel-2)); max-height: calc(100dvh - 32px); padding: var(--sp-3) 0 0; box-shadow: var(--shadow-window);">
+          {#snippet right()}
+            {#if dismissable}<Dialog.Close class="kit-card-x" aria-label="Close"><Icon name="close" size={12} /></Dialog.Close>{/if}
+          {/snippet}
+          <div class="kit-card-body">{@render children()}</div>
+        </Frame>
+      {/if}
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
 
 <style>
   :global(.kit-veil) { position: fixed; inset: 0; z-index: 30; background: var(--veil); touch-action: none; }
-  :global(.kit-card) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(520px, calc(100% - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; touch-action: pan-y; background: var(--panel-2); border: 1px solid var(--line-hi); border-radius: var(--kit-dialog-radius); padding: 16px; box-shadow: var(--shadow-window); outline: none; }
+  :global(.kit-card) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(520px, calc(100% - 32px)); outline: none; }
+  :global(.kit-card-body) { padding: 12px 16px 16px; overflow-y: auto; min-height: 0; }
+  :global(.kit-card-x) { width: 18px; height: 18px; min-width: 0; min-height: 0; margin-left: 4px; padding: 0; display: grid; place-items: center; border: 1px solid var(--frame-line); border-radius: 0; background: var(--band-tile); color: #fff; cursor: pointer; }
+  :global(.kit-card-x:hover) { background: var(--panel-3); }
   :global(.kit-bare) { position: fixed; z-index: 31; left: 50%; top: 50%; transform: translate(-50%, -50%); outline: none; }
   :global(.kit-sr) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-  :global(.kit-card-title) { margin: 0 0 6px; font-size: 18px; font-weight: 700; line-height: 1.2; color: var(--text); }
-  /* Phone: a bottom sheet instead of a centred card. */
-  @media (max-width: 600px) {
-    :global(.kit-card) { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; max-height: 88dvh; border-radius: var(--kit-dialog-radius) var(--kit-dialog-radius) 0 0; border-width: 1px 0 0; padding: 14px 14px calc(14px + var(--sab)); }
-  }
 </style>

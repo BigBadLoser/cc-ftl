@@ -1,3 +1,4 @@
+import { haulDeposited, haulPicked } from '../trade/dockCount';
 import { JobC, PositionC, type Job } from '../crew/components';
 import { jobGoal, origin } from '../crew/helpers';
 import { reaches, startLabels, viewOf } from '../ai/navView';
@@ -57,14 +58,20 @@ function addToHand(sim: Sim, crew: number, item: string, n: number): void {
   else (c.extra ??= []).push({ item, count: n });
 }
 
-/** True if the crew member can walk to the goal now, the way they walk (components labelling, no search). */
-function reachable(sim: Sim, crew: number, goal: { x: number; y: number; adjacent: boolean }): boolean {
+/**
+ * True if the crew member can walk to the goal now, the way they walk (components labelling, no search). `anyMode`: also the ways that need a
+ * suit fetched first (`siteWalkModes`' thin modes), as the haul's travel step (`navigateTurn`) would plan them.
+ */
+function reachable(sim: Sim, crew: number, goal: { x: number; y: number; adjacent: boolean; w?: number; h?: number }, anyMode = false): boolean {
   const pos = sim.world.get(crew, PositionC);
-  const mode = pos && siteWalkModes(sim, crew, shipIdOf(sim, pos))[0];
-  const v = mode && viewOf(sim, shipIdOf(sim, pos), mode.opts);
-  if (!pos || !v) return false;
+  if (!pos) return false;
+  const ship = shipIdOf(sim, pos);
   const from = origin(pos);
-  return reaches(v, from, startLabels(v, from), goal);
+  const modes = siteWalkModes(sim, crew, ship);
+  return (anyMode ? modes : modes.slice(0, 1)).some((m) => {
+    const v = viewOf(sim, ship, m.opts);
+    return !!v && reaches(v, from, startLabels(v, from), goal);
+  });
 }
 
 /**
@@ -81,6 +88,7 @@ function nextGather(sim: Sim, crew: number, job: Job): number {
     const j = sim.world.get(id, JobC)!;
     const o = j.haul;
     if (!o || j.reservedBy !== 0 || j.category !== job.category || o.phase !== 'pickup' || o.src.kind !== 'floor' || o.then || o.extra || o.gathered) continue;
+    if (h.deal || o.deal) continue; // a station deal's load is counted per item (trade/dockCount.ts): it neither gathers nor is gathered, so a load never mixes deals or items
     if (o.dst.kind !== h.dst.kind || o.dst.id !== h.dst.id) continue;
     const st = sim.world.get(o.src.id, ItemStackC);
     const d = st ? Math.hypot(st.x - pos.toX, st.y - pos.toY) : Infinity;
@@ -107,6 +115,12 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     if (!h.gathered) dropCarried(sim, crew); // a fresh trip starts empty-handed
     const dest = destinationTile(sim, job);
     if (!dest) return 'done';
+    // A load nobody here can deliver stays where it is: lifting it only to drop it when the way fails would churn (#476).
+    if (!h.gathered && !reachable(sim, crew, jobGoal({ kind: job.kind, ...dest }), true)) {
+      const st = h.src.kind === 'floor' ? sim.world.get(h.src.id, ItemStackC) : undefined;
+      if (st) st.stuckAt = sim.tick;
+      return 'done';
+    }
     const cap = Math.max(1, Math.floor(stat(sim, crew, 'carryCapacity')));
     const room = Math.max(0, cap - inHand(sim, crew));
     const want = Math.min(h.count, room);
@@ -115,6 +129,7 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
       : h.src.kind === 'vehicle' ? cargoTake(sim, h.src.id, h.item, want)
       : storageTake(sim, h.src.id, h.item, want);
     if (taken <= 0 && !h.gathered) return 'done';
+    haulPicked(sim, h, taken);
     if (h.src.kind === 'storage') {
       const extra: ItemQty[] = [];
       for (const q of h.extra ?? []) {
@@ -123,6 +138,8 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
       }
       sim.world.add(crew, CarryingC, { item: h.item, count: taken, ...(extra.length > 0 ? { extra } : {}) });
     } else if (taken > 0) addToHand(sim, crew, h.item, taken);
+    const load = sim.world.get(crew, CarryingC);
+    if (load && h.deal && taken > 0) load.deal = h.deal; // the load is the deal's (haulPicked counted it out of its place)
     if (taken < asked) delete h.then; // the source held less than planned: no more stops
     if (h.src.kind === 'floor' && !h.then && !h.extra && inHand(sim, crew) < cap) {
       const next = nextGather(sim, crew, job);
@@ -185,7 +202,8 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     else delete job.size;
     return 'working';
   }
-  if (left > 0) spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left);
+  const spilled = left > 0 ? left - spillItems(sim, shipIdOf(sim, pos), pos.toX, pos.toY, h.item, left) : 0;
+  haulDeposited(sim, h, moved, spilled);
   sim.world.remove(crew, CarryingC);
   return 'done';
 }

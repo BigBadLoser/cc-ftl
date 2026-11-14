@@ -1,11 +1,9 @@
 import type { Sim } from '../sim';
 import { reputationOf } from '../story/state';
-import { spillItems } from '../items/stacks';
-import { storageAdd } from '../items/storage';
-import { ModuleC } from '../modules/components';
+import { stowOrDrop } from '../items/deck';
 import { playerShip } from '../trade/player';
 import { repKeyOf } from '../trade/traders';
-import { FUEL_ITEM, fuelStock, jumpFuel, storagesOf } from './fuel';
+import { FUEL_ITEM, fuelStock, jumpFuel } from './fuel';
 import { econOf, stockAt, valueAt } from './market';
 import { portsAt } from './portIndex';
 import { galaxyIndex } from './state';
@@ -41,16 +39,6 @@ function wouldTrade(sim: Sim, t: { faction: string; profile: string; owner?: str
   const fac = cfg?.factions[t.faction];
   const score = (fac?.relation ?? 0) + (cfg?.traders[t.profile]?.relation ?? 0) + (fac ? reputationOf(sim.story, repKeyOf(sim, t) ?? fac.reputation) : 0);
   return score >= 0;
-}
-
-/** Put fuel in the flown ship's own storage (what `fuelStock` and jumps read); what does not fit lands on the floor of that ship. Returns units that found no room. */
-function deliver(sim: Sim, ship: number, count: number): number {
-  let left = count;
-  const stores = storagesOf(sim, ship);
-  for (const id of stores) left -= storageAdd(sim, id, FUEL_ITEM, left);
-  const first = stores[0] === undefined ? undefined : sim.world.get(stores[0], ModuleC);
-  if (left > 0 && first) left = spillItems(sim, ship, first.x, first.y, FUEL_ITEM, left);
-  return left;
 }
 
 /**
@@ -114,10 +102,11 @@ export function stepDistress(sim: Sim, turn: number): void {
   g.rev++;
   if (sim.sector.state !== 'active' || g.current !== call.node) return;
   const q = tugQuote(sim);
-  const paid = Math.min(Math.max(0, sim.trade.credits), q.total);
+  // The bill is for the fuel actually set down: a ship with no room (or no storage left) is never charged for what the tug took away again.
+  const fuel = q.fuel - stowOrDrop(sim, playerShip(sim), FUEL_ITEM, q.fuel);
+  const total = fuel * q.unit;
+  const paid = Math.min(Math.max(0, sim.trade.credits), total);
   sim.trade.credits -= paid;
-  const left = deliver(sim, playerShip(sim), q.fuel);
-  const owed = paid < q.total;
-  if (owed) sim.story.reputation['traders'] = reputationOf(sim.story, 'traders') - DISTRESS_UNPAID_REP;
-  sim.events.emit({ type: 'galaxy.towArrived', fuel: q.fuel - left, paid, owed: q.total - paid });
+  if (paid < total) sim.story.reputation['traders'] = reputationOf(sim.story, 'traders') - DISTRESS_UNPAID_REP;
+  sim.events.emit({ type: 'galaxy.towArrived', fuel, paid, owed: total - paid });
 }

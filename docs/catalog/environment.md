@@ -1,7 +1,7 @@
 # Catalog: environment and ship systems
 
 The physical simulation of a ship: air, power, fire, heat, light, rooms, hull and roof. These are grid-field systems that run first in the pipeline
-(`src/sim/pipeline.ts`, in order: rooms, power, modules, doors, airlock, atmosphere, fire, itemFire, temperature, smoke, lighting, alerts, suits, airStores, vitals).
+(`src/sim/pipeline.ts`, in order: rooms, power, modules, doors, airlock, vents, atmosphere, fire, itemFire, temperature, smoke, lighting, alerts, suits, airStores, vitals).
 Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`). Overlay views for the field-based ones are in `src/render/overlayDefs.ts`.
 
 | Name | id | What it does | Status | Where |
@@ -26,7 +26,7 @@ Each owns its question (see "One answer per question" in `docs/ARCHITECTURE.md`)
 | Building and hull plan | `-` | Build modules and hull from the catalog; hull plan brushes; shipyard planning | In game | sim/modules/handlers.ts; app/hullBrush.ts, hullPlanTool.ts; ui/BuildCatalog.svelte, HullPlanBar.svelte |
 | Rock digging | `-` | Dig and carve asteroid rock for outposts | In game | sim/rock/dig.ts |
 | Overlays | `-` | Nine field views: o2, co2, temp, fire, smoke, light, power, room quality, rooms | In game | render/overlayDefs.ts; ui/OverlayPicker.svelte |
-| Toggleable vents on doors | `-` | Per-door venting control | Planned | issue #393 |
+| Door vents | `ventsSystem` | Every door has a vent the player opens in the tile inspector; open, it passes air and pressure (not fire, heat or smoke) through a shut door; shuts itself on a hazard either side or no power, reopens when clear | In game | sim/systems/vents.ts, ventCommand.ts, diffusion.ts; ui/TileInspector.svelte; `?scenario=vents` |
 | Water purifier module | `-` | Ice to water module | Planned | issue #321 |
 | Arcade module | `-` | New recreation module | Art only | issue #319 |
 | Recovery pod module | `module.recovery` | Recovery module | Partial (built, first pass; see catalog/modules.md) | issue #319 |

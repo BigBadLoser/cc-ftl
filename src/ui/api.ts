@@ -4,6 +4,7 @@ import type { CreateStarmapGpu } from './starmapGpu';
 import type { UiCrewDetail, UiOpinionHover } from './crewDetailApi';
 export type * from './crewDetailApi';
 import type { Command, SimEvent, WorkCategory } from '../sim';
+import type { DoorInfo } from '../sim/doorInfo';
 
 /** Minimal store contract (Svelte-compatible) so ui need not import app internals. */
 export interface Subscribable<T> {
@@ -106,6 +107,10 @@ export interface UiInspect {
   fields: { name: string; value: number }[];
   /** A player job on the tile (forcing a door...), with its progress, or null. */
   job: { kind: string; progress: number; work: number } | null;
+  /** True when the tile is a door that can have a vent (the sim's answer; an airlock's door cannot). */
+  ventable: boolean;
+  /** The door's state and the two sides it joins (the sim's `doorInfo`), or null on a tile that is not a door. */
+  door: DoorInfo | null;
   selected: boolean;
 }
 
@@ -161,6 +166,10 @@ export interface UiCrew {
   arms: { item: string; name: string; count: number }[];
   surrendered: boolean;
   prisoner: boolean;
+  /** A prisoner's seal order (stasis/order.ts): marked for sealing, and why they cannot be (no wheel with room...). Null for anyone else. */
+  seal: { marked: boolean; refusal: string | null } | null;
+  /** A frozen prisoner's slab: where it is, who carts it and where to, its reserve. Null for anyone not in stasis. */
+  stasis: UiStasis | null;
   inert: boolean;
   fight: UiFight | null;
   /** The EVA suit being worn: seconds of air left of `max`, and whether the tank is low or the wearer is outside on the hull. Null when not suited. */
@@ -222,6 +231,22 @@ export interface UiReserve {
   low: boolean;
 }
 
+/** A stasis wheel slot: no slab, an empty slab ready for sealing, or a prisoner's full slab (their name and the slab's reserve, 0..100). */
+export type UiWheelSlot =
+  | { kind: 'none' }
+  | { kind: 'empty' }
+  | { kind: 'full'; crew: number; name: string; reserve: number; draining: boolean };
+
+/** A frozen prisoner's slab for their inspector: where it is (text), the wheel or carrier to jump to, where a cart is taking it, its reserve (0..100). */
+export interface UiStasis {
+  where: string;
+  wheel: number | null;
+  carrier: { id: number; name: string } | null;
+  to: string | null;
+  reserve: number;
+  draining: boolean;
+}
+
 export interface UiModule {
   id: number;
   /** The ship it is on (ShipC entity id): the `ship` of module commands. */
@@ -244,6 +269,8 @@ export interface UiModule {
   power: number;
   /** A reactor's fuel store or a battery bank's charge (null for other modules). */
   reserve: UiReserve | null;
+  /** A stasis wheel's slots in order, slot 0 at the hatch (null for other modules). */
+  wheel: UiWheelSlot[] | null;
   /** Holds items (has a storage panel). */
   storage: boolean;
   /** Crafts recipes (has a production panel). */
@@ -688,11 +715,11 @@ export type UiSubject =
   | { kind: 'ship'; id: number }
   | { kind: 'node'; id: string };
 
-/** Alerts are urgent things only (see ALERT_URGENCY in app/alerts.ts); everything else is log-only. */
+/** Alerts are urgent things only (see EVENT_ROUTE in app/eventRoute.ts); everything else is log-only. */
 export type UiAlertKind =
   | 'fire.started' | 'hull.breach' | 'power.shortage' | 'o2.low' | 'crew.downed' | 'suit.airLow' | 'suit.airOut' | 'crew.airUnreachable' | 'away.stranded' | 'crew.starving' | 'crew.break'
   | 'combat.started' | 'creatures.aboard' | 'galaxy.incomingHostile' | 'story.lead' | 'fight.report' | 'boarders.stranded' | 'save.failed' | 'crew.asksToJoin'
-  | 'inspect.waiting' | 'inspect.blocked';
+  | 'inspect.waiting' | 'inspect.blocked' | 'ship.disabled' | 'fuel.low' | 'fuel.out' | 'core.lost' | 'vehicle.lost' | 'ship.yielded' | 'stasis.failing';
 
 export type UiLogKind =
   | 'fire' | 'breach' | 'crew.downed' | 'crew.died' | 'crew.rescued' | 'module.destroyed' | 'combat' | 'ship.disabled' | 'ship.destroyed'
@@ -798,6 +825,8 @@ export interface UiEnemyWeapon {
   stalled: boolean;
   /** The module is destroyed. */
   destroyed: boolean;
+  /** Its ship has yielded (`shipCanAct`): nothing charges or fires until the player answers. */
+  standDown: boolean;
   /** Seconds until its committed shot lands on your ship (charge left plus flight), or null while it has none. */
   eta: number | null;
   /** One of its shots is in flight to your ship and it has no new aim yet. */
@@ -965,7 +994,7 @@ export interface UiPrize {
   name: string;
   from: string;
   value: number;
-  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered' }[];
+  prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered'; seal: { marked: boolean; refusal: string | null } }[];
   crewAboard: number;
 }
 

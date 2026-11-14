@@ -53,36 +53,40 @@ node. Mid-hop it takes effect when the hop ends.
 
 ## Signals on the lane
 
-During a trip, a hop can draw a signal. A window opens: **Incoming signal**. It holds three panes.
+During a trip, a hop can draw a signal. There are two kinds of window, by who is on the line.
+
+**Someone is calling you** (a distress call, a trader skiff, a surrendering pirate scout, a Meridian checkpoint, the pirate you spared): the **Incoming signal**
+comms window opens, with the call already connected. It holds three panes.
 
 | Pane | What it shows |
 |---|---|
-| **Video** | The caller's face and details, once you've hailed. Before that: an unknown transponder. |
-| **Comms** | A transcript, and what they carry and have in their wallet once hailed. |
-| **Sensors** | A hologram of the ship with a readout, once you've scanned. Before that: **NO SCAN**. |
+| **Video** | The caller's face and details. You are already talking, so there is no call to answer. |
+| **Comms** | A transcript, and what they carry and have in their wallet. |
+| **Sensors** | A hologram of the ship with a readout, once you press **Scan**. Before that: **NO SCAN**. Not shown when there is nothing to scan (a checkpoint). |
 
-<GamePanel title="Incoming signal" bare width="1080px" zoom={0.74} caption="A returning pirate skiff after a hail and a scan: the caller on video and in the transcript, the ship as a hologram with its readings, and the decisions along the bottom.">
+<GamePanel title="Incoming signal" bare width="1080px" zoom={0.74} caption="A returning pirate skiff after a scan: the caller on video and in the transcript, the ship as a hologram with its readings, and the decisions along the bottom.">
   <SignalSample />
 </GamePanel>
 
-The buttons along the bottom are your decisions.
+**Nobody is calling** (a derelict, a pod beacon, a maintenance terminal): a plain decision window opens with the event's text. Its **Scan** (and **Hack its
+data core**, for a derelict) are small buttons in the window. Each fills in a readout below the text.
 
-### Hail and scan
+The bar along the bottom holds your real choices, never more than three.
 
-You can read a signal without leaving the lane. Both are free and stay open until you decide.
+### Scan
 
-- **Hail (H)** opens the line. The caller speaks, and you see their cargo and what they can pay.
-- **Scan (S)** fills in the sensor panel. The rows depend on what the signal is. A scan can be a deeper **probe** if the
-  event offers one.
+You can read a signal without leaving the lane. A scan is free and stays open until you decide.
 
-You can change both keys in the settings. Hail and scan are always safe: nothing is spawned and nothing changes until you
-pick a real choice.
+- **Scan (S)** fills in the sensor panel (or the readout in a plain decision window). The rows depend on what the signal is. A scan can be a deeper **probe** if
+  the event offers one.
+
+You can change the key in the settings. A scan is always safe: nothing is spawned and nothing changes until you pick a real choice.
 
 Then you decide:
 
 - **Drop out** (the button's label varies) takes you out of the lane into a pocket of empty space beside the signal. The
   trip waits there.
-- **Fly on** or **Leave it** ignores the signal and the trip continues.
+- **Fly on** or **Skip** ignores the signal and the trip continues.
 
 ## Off the lane
 
@@ -103,7 +107,7 @@ you didn't strip, goods you didn't buy.
 
 ### Trader skiff
 
-A small trader drifting along the lane with its transponder on. Hail it to see its stock, scan it for its hull, crew and
+A small trader drifting along the lane with its transponder on. The call opens with its stock on the screen. Scan it for its hull, crew and
 whether its drive is warm. Drop out beside it, then select it and press **Hail ship** to trade (see
 [Stations and trading](../trading/)).
 
@@ -123,9 +127,9 @@ covered in [Salvage and derelicts](../salvage/).
 
 A crippled freighter with its reactor failing. Its crew can't repair it themselves.
 
-1. **Answer the call** to hear the crew's story.
-2. **Scan it** to see the failing system, how long it has, the cargo, and whether raiders are on it or coming.
-3. **Offer help** needs the hail first, and a shuttle that can fly a suited party. It drops you out beside the ship, and your repair party goes aboard as invited
+1. The call is already open: the crew's story is in the transcript.
+2. **Scan** to see the failing system, how long it has, the cargo, and whether raiders are on it or coming.
+3. **Offer help** is open from the start, since you are already talking, and needs a shuttle that can fly a suited party. It drops you out beside the ship, and your repair party goes aboard as invited
    guests. They don't provoke anyone.
 4. Your engineers repair the reactor through the usual repair work. Fires break out in its last <Stat kind="tuning" id="events.event.distress_call.scene.timers.0.fires.leadSec" /> seconds.
 
@@ -171,7 +175,7 @@ A hunter fleet that you bribe calls off the hunt.
 
 ### Pirate ambush
 
-If you once let a pirate scout go, he may come back. A skiff hails you and says it owes you a debt. Hail and scan to
+If you once let a pirate scout go, he may come back. A skiff hails you and says it owes you a debt. Listen and scan to
 judge whether it's honest.
 
 - **Honest**: let it dock and it hands over four missiles at your airlock, and pirates think better of you. Refusing is
@@ -189,7 +193,7 @@ Look for the tells. Some only show on screen:
 
 > **Tip:** keep a good gunner, pilot and hacker aboard on the lane.
 
-**Let them dock** and **Refuse** are the buttons on the panel.
+**Let them dock** is a button on the panel's decision bar, beside **Resume travel**. Resuming travel turns them down.
 
 ### Patrol hails
 
@@ -199,5 +203,4 @@ That's covered in [Contraband and inspections](../inspections/).
 ### Ships you cross
 
 Other ships on the lane sometimes hail or scan you in passing. If they are friendly, there's nothing to decide beyond
-**Acknowledge**. A crippled fleet can send a distress call. **Respond** drops you out to help, and helping raises
-standing.
+**Acknowledge**. A crippled fleet can send a distress call. **Respond** drops you out to help. You can leave again at any time without a penalty, but standing only rises if you actually helped: a deal with the damaged ship has to go through before you leave. Leave early and the ship stays adrift.

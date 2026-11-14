@@ -46,7 +46,7 @@ describe('hopeless enemies surrender (issue #225)', () => {
     expect(s.integrity).toBeGreaterThan(WRECK_BELOW); // well above the wreck line: when it gives up below, it was not shot apart
   });
 
-  it('a disarmed, crippled ship whose crew cannot reach the player gives up: every crew member surrenders and the ship is given up', () => {
+  it('a disarmed, crippled ship whose crew cannot reach the player gives up: every crew member surrenders and the ship yields', () => {
     const { sim, them } = crippled();
     const crew = enemyCrew(sim, them);
     expect(crew.length).toBeGreaterThan(0);
@@ -62,7 +62,7 @@ describe('hopeless enemies surrender (issue #225)', () => {
     events.push(...run(sim, 20));
     const s = sim.world.get(them, ShipC)!;
     for (const id of crew) expect(sim.world.has(id, SurrenderedC)).toBe(true);
-    expect(s.state).toBe('wreck'); // every crew member subdued and no player crew to take it: given up as a derelict
+    expect(s.yielded).toBe(true); // every crew member subdued and no player crew to take it: it waits for the player's answer
   });
 
   it('fights on while its guns still work', () => {

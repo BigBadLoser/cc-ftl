@@ -10,7 +10,7 @@
   import { onMount } from 'svelte';
   import type { UiApi } from './api';
   import Icon from './Icon.svelte';
-  import { PaneHead, tip } from './kit';
+  import { DecisionBar, Frame, tip } from './kit';
   import type { UiDeploy } from './starmapApi';
 
   let { api, deploy }: { api: UiApi; deploy: UiDeploy } = $props();
@@ -68,9 +68,6 @@
   const go = () => {
     if (!error) api.dispatch({ type: 'sector.deploy', x: tile.x, y: tile.y });
   };
-  const useBest = () => {
-    if (best) cell = best;
-  };
   function key(e: KeyboardEvent) {
     if (!modalOpen() && !isTypingTarget(e) && keymap.matches(e, 'ui.confirm')) go();
   }
@@ -80,8 +77,10 @@
 
 <div class="veil" data-testid="deploy-picker">
   <div class="streaks" aria-hidden="true"></div>
-  <div class="sheet panel">
-    <PaneHead icon="ship" title="Deploy" sub={deploy.nodeName} />
+  <div class="deploy">
+  <Frame title="Deploy" style="background:var(--panel);padding:var(--sp-3) 0 0;box-shadow:var(--shadow-window)">
+    {#snippet right()}<span class="node">{deploy.nodeName}</span>{/snippet}
+  <div class="dsheet">
     <div class="cells">
       <span class="cell" class:bad={!!error} data-testid="deploy-state"><Icon name={error ? 'alert' : 'target'} size={18} /><b>{error ? REASONS[error] ?? error : 'Spot is clear.'}</b></span>
       <span class="cell" use:tip={{ text: 'Cell and tile' }}><Icon name="grid" size={18} /><b>{cell.x},{cell.y}</b><small>tile {tile.x},{tile.y}</small></span>
@@ -98,10 +97,9 @@
     <ul class="legend" aria-label="Key">
       <li><i class="k you"></i>Your ship</li><li><i class="k ship"></i>Ship</li><li><i class="k hostile"></i>Hostile</li><li><i class="k keep"></i>Keep clear</li>
     </ul>
-    <div class="actions">
-      <button onclick={useBest} disabled={!best} data-testid="deploy-auto"><Icon name="recenter" size={18} />Best spot</button>
-      <button class="go" onclick={go} disabled={!!error} data-testid="deploy-go"><Icon name="ship" size={18} />Deploy here</button>
-    </div>
+  </div>
+  <DecisionBar options={[{ id: 'go', label: 'Deploy here', primary: true, disabled: !!error, testId: 'deploy-go' }]} onpick={go} />
+  </Frame>
   </div>
 </div>
 
@@ -111,8 +109,9 @@
   .streaks { position: absolute; inset: -50%; background: repeating-linear-gradient(100deg, transparent 0 46px, color-mix(in srgb, var(--cyan) 22%, transparent) 46px 48px, transparent 48px 120px, color-mix(in srgb, var(--cyan) 10%, transparent) 120px 121px); animation: rush 0.9s linear infinite; }
   @keyframes rush { to { transform: translateX(-120px); } }
   @media (prefers-reduced-motion: reduce) { .streaks { animation: none; } }
-  .panel { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); box-sizing: border-box; background: linear-gradient(var(--panel), var(--panel)), var(--bg); }
-  @media (min-width: 601px) { .panel { left: 50%; top: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); border-width: 1px; } }
+  .deploy { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); }
+  .dsheet { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); box-sizing: border-box; padding: 10px; }
+  .node { font: 600 12px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); padding: 0 4px; }
   .cells { display: flex; gap: 4px; flex-wrap: wrap; }
   .cell { display: flex; align-items: center; gap: 6px; padding: 6px 8px; min-height: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-accent); }
   .cell b { color: var(--text); font-weight: 600; }
@@ -132,7 +131,4 @@
   .k { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--line-hi); }
   .k.you { background: color-mix(in srgb, var(--green) 35%, transparent); border-color: var(--green); }
   .k.ship { background: var(--dim); } .k.hostile { background: var(--red); } .k.keep { background: color-mix(in srgb, var(--red) 25%, transparent); }
-  .actions { display: flex; gap: 6px; }
-  .actions button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px var(--head-font); letter-spacing: 0.08em; text-transform: uppercase; }
-  .go { border-color: var(--go-edge); background: var(--go-fill); color: var(--text); }
 </style>

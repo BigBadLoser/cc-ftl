@@ -70,6 +70,8 @@ class Lab {
   private timer = 0;
 
   get layout(): Layout | null { return this.hist?.present ?? null; }
+  /** The hover highlight (grid and preview) is for picking: only the select tool shows it. */
+  get showsHover(): boolean { return this.tool === 'select'; }
   get canUndo(): boolean { return !!this.hist && this.hist.past.length > 0; }
   get canRedo(): boolean { return !!this.hist && this.hist.future.length > 0; }
 
@@ -274,6 +276,15 @@ class Lab {
     const pin = newPin(this.nextPin++, '', fx, fy, anchorFor(l, d, fx, fy, free), l, d);
     this.pins = [...this.pins, pin];
     this.openPin = pin.id;
+  }
+  /** Right-click with the note tool: remove the nearest note within about a tile of a position (tile units). */
+  erasePinAt(fx: number, fy: number): void {
+    let best: Pin | null = null, d = 1;
+    for (const p of this.pins) {
+      const k = Math.hypot(p.x - fx, p.y - fy);
+      if (k < d) { d = k; best = p; }
+    }
+    if (best) this.removePin(best.id);
   }
   setPinText(id: number, text: string): void {
     this.pins = this.pins.map((p) => (p.id === id ? { ...p, text } : p));

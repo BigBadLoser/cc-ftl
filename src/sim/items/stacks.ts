@@ -1,3 +1,4 @@
+import { loadDropped } from '../trade/dockCount';
 import { shipIdAt, shipGrid } from '../regions';
 import { abortTask } from '../ai/task';
 import { CrewC, JobC, PositionC } from '../crew/components';
@@ -120,7 +121,8 @@ export function dropCarried(sim: Sim, crew: number): void {
   sim.world.remove(crew, CarryingC);
   const p = sim.world.get(crew, PositionC);
   if (p && sim.world.has(crew, CrewC)) {
-    spillItems(sim, shipIdOf(sim, p), p.toX, p.toY, c.item, c.count);
+    const unplaced = spillItems(sim, shipIdOf(sim, p), p.toX, p.toY, c.item, c.count);
+    loadDropped(sim, c, c.count - unplaced);
     for (const q of c.extra ?? []) spillItems(sim, shipIdOf(sim, p), p.toX, p.toY, q.item, q.count);
   }
 }

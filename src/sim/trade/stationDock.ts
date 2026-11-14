@@ -1,10 +1,9 @@
 import { ShipC } from '../combat/components';
 import { makeHaul } from '../items/plan';
 import { nearestSource, nearestStorageFor, refKey, reservations } from '../items/stock';
-import { storageAdd, storageTake } from '../items/storage';
+import { storageAdd } from '../items/storage';
 import { AirlockC, airlockWorking } from '../modules/airlock';
 import { ModuleC } from '../modules/components';
-import { JobC } from '../crew/components';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { DEFAULT_CARRY_CAPACITY, PLAN_INTERVAL } from '../tuning';
@@ -13,6 +12,8 @@ import { VehicleC, type Vehicle } from '../vehicles/components';
 import { cargoTile } from '../vehicles/geometry';
 import { dockError } from '../vehicles/handlers';
 import { addStock, touchMarket } from './deals';
+import { unitsOf } from './dockCount';
+import { dockDone, deliverGiven, reclaim, startUnits } from './dockLedger';
 import { TraderC, type Deal } from './types';
 
 /**
@@ -38,6 +39,7 @@ export const isStation = (sim: Sim, ship: number): boolean => sim.world.get(ship
 export function stageGoods(sim: Sim, d: Deal): void {
   const dock = d.dock;
   if (!dock || dock.staged.length > 0) return;
+  startUnits(sim, d);
   const stand = cargoTile(sim, d.vehicle);
   const res = reservations(sim);
   for (const l of d.get) {
@@ -49,9 +51,12 @@ export function stageGoods(sim: Sim, d: Deal): void {
       if (n <= 0) break;
       left -= n;
       dock.staged.push({ storage: s.ref.id, item: l.item, count: n });
+      unitsOf(d, l.item).shelf += n;
     }
     // No room in station storage: the rest goes straight into the hold (a crate on the dock).
-    if (left > 0) cargoAdd(sim, d.vehicle, l.item, left);
+    if (left > 0) {
+      unitsOf(d, l.item).hold += cargoAdd(sim, d.vehicle, l.item, left); // what the hold took, not what was meant for it
+    }
   }
 }
 
@@ -62,9 +67,7 @@ export function stageGoods(sim: Sim, d: Deal): void {
 export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
   const res = reservations(sim);
   const stand = cargoTile(sim, d.vehicle);
-  const giveLeft = d.give.some((l) => cargoOf(sim, d.vehicle, l.item) > 0 && !d.get.some((g) => g.item === l.item));
-  const getLeft = d.get.some((l) => cargoOf(sim, d.vehicle, l.item) < l.count);
-  if (!giveLeft && !getLeft) return true;
+  if (dockDone(sim, d)) return true;
   if (sim.tick % PLAN_INTERVAL !== 0 || v.state !== 'docked' || !stand) return false;
   for (const l of d.give) {
     if (d.get.some((g) => g.item === l.item)) continue;
@@ -73,7 +76,7 @@ export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
     const dest = nearestStorageFor(sim, d.ship, l.item, stand, res);
     if (!dest) continue;
     const src = { ref: { kind: 'vehicle' as const, id: d.vehicle }, x: stand.x, y: stand.y, avail };
-    makeHaul(sim, res, 'hauling', d.ship, src, dest.ref, l.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY));
+    makeHaul(sim, res, 'hauling', d.ship, src, dest.ref, l.item, Math.min(avail, dest.room, DEFAULT_CARRY_CAPACITY), [], [], { id: d.id, dir: 'give' });
   }
   for (const l of d.get) {
     let need = l.count - cargoOf(sim, d.vehicle, l.item) - (res.incoming.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
@@ -81,7 +84,7 @@ export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
       const s = nearestSource(sim, d.ship, l.item, stand, res);
       if (!s) break;
       const n = Math.min(need, s.avail, DEFAULT_CARRY_CAPACITY);
-      makeHaul(sim, res, 'hauling', d.ship, s, { kind: 'vehicle', id: d.vehicle }, l.item, n);
+      makeHaul(sim, res, 'hauling', d.ship, s, { kind: 'vehicle', id: d.vehicle }, l.item, n, [], [], { id: d.id, dir: 'get' });
       need -= n;
     }
   }
@@ -92,19 +95,8 @@ export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
 export function takeDelivery(sim: Sim, d: Deal): void {
   const trader = sim.world.get(d.ship, TraderC);
   if (!trader) return;
-  for (const l of d.give) {
-    if (d.get.some((g) => g.item === l.item)) {
-      addStock(trader.stock, l.item, cargoTake(sim, d.vehicle, l.item, l.count));
-      continue;
-    }
-    let left = l.count;
-    for (const id of sim.world.query(ModuleC)) {
-      if (left <= 0) break;
-      if (shipIdOf(sim, sim.world.get(id, ModuleC)) !== d.ship) continue;
-      left -= storageTake(sim, id, l.item, left);
-    }
-    addStock(trader.stock, l.item, l.count - left);
-  }
+  for (const l of d.give) if (d.get.some((g) => g.item === l.item)) addStock(trader.stock, l.item, cargoTake(sim, d.vehicle, l.item, l.count));
+  for (const q of deliverGiven(sim, d)) addStock(trader.stock, q.item, q.count);
   touchMarket(sim, trader);
 }
 
@@ -114,29 +106,8 @@ export function takeDelivery(sim: Sim, d: Deal): void {
  * player's goods the station crew already carried in go back into the hold.
  */
 export function unwindStation(sim: Sim, d: Deal): void {
-  const dock = d.dock;
-  if (!dock) return;
-  for (const id of [...sim.world.query(JobC)]) {
-    const h = sim.world.get(id, JobC)?.haul;
-    if (!h) continue;
-    const touches = (r: { kind: string; id: number }): boolean => r.kind === 'vehicle' && r.id === d.vehicle;
-    if (touches(h.src) || touches(h.dst)) sim.world.destroyEntity(id);
-  }
-  for (const l of d.get) cargoTake(sim, d.vehicle, l.item, l.count);
-  for (const s of dock.staged) storageTake(sim, s.storage, s.item, s.count);
-  dock.staged = [];
-  for (const l of d.give) {
-    if (d.get.some((g) => g.item === l.item)) continue;
-    const missing = l.count - cargoOf(sim, d.vehicle, l.item);
-    if (missing <= 0) continue;
-    let left = missing;
-    for (const id of sim.world.query(ModuleC)) {
-      if (left <= 0) break;
-      if (shipIdOf(sim, sim.world.get(id, ModuleC)) !== d.ship) continue;
-      left -= storageTake(sim, id, l.item, left);
-    }
-    cargoAdd(sim, d.vehicle, l.item, missing - left);
-  }
+  if (!d.dock) return;
+  reclaim(sim, d);
   const v = sim.world.get(d.vehicle, VehicleC);
   if (v?.state === 'docked') sim.enqueue({ type: 'vehicle.undock', vehicle: d.vehicle });
 }

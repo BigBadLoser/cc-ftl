@@ -194,6 +194,8 @@ export const EVADE_MIN = 0.05;
 export const EVADE_MAX = 0.9;
 /** Reputation a rescued distress fleet gives (on its faction's key). */
 export const RESCUE_REPUTATION = 2;
+/** Reputation a released prisoner gives on their faction's key (capture/settle.ts): a little, against KILL_REPUTATION for a taking. */
+export const RELEASE_REPUTATION = 1;
 
 /** Fuel per jump: ceil(length / units per fuel). Hyperlanes are cheaper per distance. */
 export const ROUTE_UNITS_PER_FUEL = 90;

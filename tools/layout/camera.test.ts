@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FOCUS_BIAS, fitRect, fitted, ladder, panned, previewView, scaleOf, toScreen, toTile, zoomed, type Space, type View } from './camera';
+import { FOCUS_BIAS, fitRect, fitted, gridLadder, ladder, panned, percentOf, previewView, scaleOf, toScreen, toTile, zoomed, type Space, type View } from './camera';
 
 const box = { w: 900, h: 600 };
 const v: View = { cx: 30.5, cy: 18, zoom: 1 };
@@ -22,11 +22,12 @@ describe('layout lab camera', () => {
       // The renderer centres FOCUS_BIAS art px above the floor diamond, so the iso tile centre sits a little below the middle.
       expect(s.y).toBeCloseTo(space === 'grid' ? 300 : 300 + (FOCUS_BIAS * v.zoom) / 2, 6);
     });
-    it(`${space}: zooming keeps the tile under the cursor`, () => {
-      const before = toTile(space, v, 2, box, 200, 150);
+    it(`${space}: zooming keeps the tile under the cursor (the preview at its snapped level)`, () => {
+      const shown = (x: View): View => (space === 'iso' ? previewView(x, 2) : x);
+      const before = toTile(space, shown(v), 2, box, 200, 150);
       const z = zoomed(space, v, 2, box, 200, 150, 1);
       expect(z.zoom).toBeGreaterThan(v.zoom);
-      const after = toTile(space, z, 2, box, 200, 150);
+      const after = toTile(space, shown(z), 2, box, 200, 150);
       expect(after.x).toBeCloseTo(before.x, 6);
       expect(after.y).toBeCloseTo(before.y, 6);
     });
@@ -47,15 +48,15 @@ describe('layout lab camera', () => {
     expect(b.x - 450).toBeCloseTo(scaleOf(v.zoom, 2), 6);
   });
 
-  it('zoom stops at the ends of the ladder', () => {
-    const levels = ladder(2);
+  it('zoom stops at the ends of the grid ladder', () => {
+    const levels = gridLadder(2);
     const lo = { ...v, zoom: levels[0] as number };
     expect(zoomed('grid', lo, 2, box, 10, 10, -1)).toBe(lo);
     const hi = { ...v, zoom: levels[levels.length - 1] as number };
     expect(zoomed('iso', hi, 2, box, 10, 10, 1)).toBe(hi);
   });
 
-  it('fitted picks the largest level that fits and centres the design', () => {
+  it('fitted picks the largest step that fits and centres the design', () => {
     const f = fitted(100, 60, 2, box);
     expect(100 * scaleOf(f.zoom, 2)).toBeLessThanOrEqual(box.w);
     expect(f.cx).toBe(49.5);
@@ -63,43 +64,37 @@ describe('layout lab camera', () => {
   });
 });
 
-describe('fit view', () => {
-  it('fits the rectangle at a zoom between ladder steps, centred, inside the box with a margin', () => {
-    const dpr = 2;
-    const f = fitRect(10, 8, 69, 47, dpr, box);
+describe('grid zoom steps', () => {
+  it('every step is a whole-pixel tile side, in 100% = 16 px percentages', () => {
+    for (const dpr of [1, 2]) for (const z of gridLadder(dpr)) expect(Number.isInteger(Math.round(scaleOf(z, dpr) * 1e6) / 1e6)).toBe(true);
+    expect(gridLadder(2).map((z) => percentOf(z, 2))).toEqual([19, 25, 38, 50, 75, 100, 150, 200, 300, 400]);
+  });
+  it('fit picks the largest step that fits, any size, never blown past the top', () => {
+    const f = fitRect(10, 8, 69, 47, 2, box);
+    expect(gridLadder(2)).toContain(f.zoom);
+    expect(62 * scaleOf(f.zoom, 2)).toBeLessThanOrEqual(box.w);
+    expect(42 * scaleOf(f.zoom, 2)).toBeLessThanOrEqual(box.h);
+    const bigger = gridLadder(2).find((l) => l > f.zoom);
+    if (bigger) expect(62 * scaleOf(bigger, 2) > box.w || 42 * scaleOf(bigger, 2) > box.h).toBe(true);
+    expect(fitRect(0, 0, 3, 3, 2, box).zoom).toBe(gridLadder(2).at(-1));
     expect(f.cx).toBe(39.5);
-    expect(f.cy).toBe(27.5);
-    expect(ladder(dpr)).not.toContain(f.zoom);
-    const s = scaleOf(f.zoom, dpr);
-    expect(62 * s).toBeLessThanOrEqual(box.w + 1e-6);
-    expect(42 * s).toBeLessThanOrEqual(box.h + 1e-6);
-    // the tight axis is filled (to within the margin)
-    expect(Math.max(62 * s / box.w, 42 * s / box.h)).toBeCloseTo(1, 6);
-    const top = toScreen('grid', f, dpr, box, 10 - 0.5, 8 - 0.5);
-    expect(top.x).toBeGreaterThanOrEqual(0);
-    expect(top.y).toBeGreaterThanOrEqual(0);
   });
-  it('does not blow a small design up past the ladder top', () => {
-    expect(fitRect(0, 0, 3, 3, 2, box).zoom).toBe(ladder(2).at(-1));
+  it('the preview snaps the shared zoom to the nearest renderer level, at the same centre; pan stays exact', () => {
+    for (const dpr of [1, 2]) for (const z of gridLadder(dpr)) {
+      const p = previewView({ cx: 5, cy: 6, zoom: z }, dpr);
+      expect(ladder(dpr)).toContain(p.zoom);
+      expect([p.cx, p.cy]).toEqual([5, 6]);
+      for (const l of ladder(dpr)) expect(Math.abs(Math.log(p.zoom / z))).toBeLessThanOrEqual(Math.abs(Math.log(l / z)) + 1e-12);
+    }
+    const p = previewView({ cx: 5, cy: 6, zoom: gridLadder(2)[3] as number }, 2);
+    expect(toScreen('iso', panned('iso', p, 2, 40, -25), 2, box, 5, 6).x).toBeCloseTo(450 + 40, 6);
   });
-  it('the preview takes the nearest ladder step at the same centre; pan and selection maths stay exact', () => {
-    const f = fitRect(10, 8, 69, 47, 2, box);
-    const p = previewView(f, 2);
-    expect(ladder(2)).toContain(p.zoom);
-    expect(p.cx).toBe(f.cx);
-    expect(p.cy).toBe(f.cy);
-    for (const l of ladder(2)) expect(Math.abs(Math.log(p.zoom / f.zoom))).toBeLessThanOrEqual(Math.abs(Math.log(l / f.zoom)) + 1e-12);
-    const back = panned('iso', p, 2, 40, -25);
-    expect(back.zoom).toBe(p.zoom);
-    expect(toScreen('iso', back, 2, box, f.cx, f.cy).x).toBeCloseTo(450 + 40, 6);
-  });
-  it('a wheel step from between steps lands on the next ladder step in that direction, in both panes', () => {
-    const f = fitRect(10, 8, 69, 47, 2, box);
-    const L = ladder(2);
-    const up = zoomed('grid', f, 2, box, 300, 200, 1);
-    const down = zoomed('grid', f, 2, box, 300, 200, -1);
-    expect(up.zoom).toBe(L.find((l) => l > f.zoom));
-    expect(down.zoom).toBe([...L].reverse().find((l) => l < f.zoom));
-    expect(toTile('grid', up, 2, box, 300, 200).x).toBeCloseTo(toTile('grid', f, 2, box, 300, 200).x, 6);
+  it('a wheel step moves to the next grid step in that direction, from a step or between steps, keeping the tile under the pointer', () => {
+    const L = gridLadder(2);
+    const between = { ...v, zoom: (L[4] as number) * 1.1 };
+    expect(zoomed('grid', between, 2, box, 300, 200, 1).zoom).toBe(L[5]);
+    expect(zoomed('grid', between, 2, box, 300, 200, -1).zoom).toBe(L[4]);
+    const up = zoomed('grid', between, 2, box, 300, 200, 1);
+    expect(toTile('grid', up, 2, box, 300, 200).x).toBeCloseTo(toTile('grid', between, 2, box, 300, 200).x, 6);
   });
 });

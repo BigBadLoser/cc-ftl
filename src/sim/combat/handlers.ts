@@ -11,7 +11,7 @@ import { CombatC, ShipC, WeaponC, type Target } from './components';
 import { VehicleC } from '../vehicles/components';
 import { placementGapError, shipGrid, shipIdOf } from '../regions';
 import { Struct } from '../structure';
-import { shipById, spawnShip } from './ships';
+import { shipById, shipCanAct, spawnShip } from './ships';
 import { weaponAntiVehicle } from './targets';
 import { battleStations, holdAll } from './stations';
 import { factionsHostile } from './factions';
@@ -152,6 +152,7 @@ export const combatHandlers: { [T in CombatCommandType]: Handler<T> } = {
     const combat = sim.world.get(entity, CombatC);
     if (!ship || !combat) return reject(sim, cmd.type, 'noShip');
     if (ship.state !== 'active') return reject(sim, cmd.type, 'notActive');
+    if (!shipCanAct(ship)) return reject(sim, cmd.type, 'yielded');
     if (ship.immobile) return reject(sim, cmd.type, 'immobile');
     // The player's ship leaves through the galaxy: charge the drive, then jump (`to`, else the cheapest affordable neighbour).
     if (ship.faction === 'player') return void (sim.galaxy.event ? leave(sim, cmd.type) : flee(sim, entity));

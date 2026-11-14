@@ -12,6 +12,7 @@
   import SiteInspector from './SiteInspector.svelte';
   import ShuttlePanel from './ShuttlePanel.svelte';
   import TileInspector from './TileInspector.svelte';
+  import DoorInspector from './DoorInspector.svelte';
 
   let { api, onPriorities, onHail, onResearch }: { api: UiApi; onPriorities: () => void; onHail: (ship: number) => void; onResearch: () => void } = $props();
   let crew = $state<UiCrew[]>([]);
@@ -64,7 +65,7 @@
 </script>
 
 {#if shown || pinned}
-<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 340 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} width={tabWidth} padded bind:pinned>
+<FloatingWindow id="inspector" title="Inspector" min={{ w: 260, h: 140 }} defaultRect={(b) => ({ x: b.left, y: 0, w: wide ? 352 : 300, h: 0, anchor: 'bottom' })} onClose={back} testId="selection-panel" bare pinnable={false} docked width={tabWidth} padded bind:pinned>
   {#if selAst !== null}
     <AsteroidPanel {api} asteroid={selAst} onBack={back} />
   {:else if selShuttle !== null}
@@ -79,6 +80,8 @@
     <ShuttlePanel {api} onBack={back} />
   {:else if mod}
     <ModuleInspector {api} onBack={back} {onResearch} />
+  {:else if tile?.door}
+    <DoorInspector {api} onBack={back} />
   {:else if tile}
     <TileInspector {api} onBack={back} />
   {:else}

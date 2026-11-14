@@ -111,13 +111,15 @@ describe('derelict signal', () => {
     expect(rows.find((r) => r.label === 'Signs')?.value).toMatch(/^Egg sacs, about \d+$/);
   });
 
-  it('after a scan the comms window still offers the probe, and the sensor action is the probe once both are done', () => {
+  it('after a scan the decision still offers the probe, and each remote action is taken once (a derelict has no comms window)', () => {
     const sim = signalled(3, (s) => applyEffect(s, { type: 'skillXp', skill: 'hacking', amount: 300, who: 'all' }, { event: 'test', actor: null }));
-    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: false, scanChoice: 'scan', scanKind: 'scan' });
+    const state = () => Object.fromEntries((buildStory(sim).active?.choices ?? []).filter((c) => c.remote).map((c) => [c.id, !!c.done]));
+    expect(buildStory(sim).active?.comms).toBeNull();
+    expect(state()).toEqual({ scan: false, probe: false });
     choose(sim, 'scan');
-    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: true, scanChoice: 'probe', scanKind: 'probe' });
+    expect(state()).toEqual({ scan: true, probe: false });
     choose(sim, 'probe');
-    expect(buildStory(sim).active?.comms).toMatchObject({ scanned: true, scanChoice: null, scanKind: null });
+    expect(state()).toEqual({ scan: true, probe: true });
   });
 
   it('dropping out needs an EVA shuttle in its bay', () => {

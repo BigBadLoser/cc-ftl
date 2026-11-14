@@ -20,9 +20,9 @@
   {#snippet titleExtra()}
     <span class="who" data-testid="trade-title">{p?.name ?? ''}</span>
     <span class="role">{p?.role ?? ''}{p && p.kind === 'ship' && p.distance ? ` · ${p.distance} tiles away` : ''}</span>
-    {#if p?.market?.truce}<Chip tone={p.market.banned ? 'bad' : 'good'} title={truceTip} testId="market-truce">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
-    {#if p?.market}<Chip tone="warn" title={marketTip} testId="black-market">BLACK MARKET</Chip>{/if}
-    <span class="credits"><Chip tone="gold" size="md" caps={false} outline={false} title="Your credits" testId="trade-credits">₵ {fmt(trade.credits)}</Chip></span>
+    {#if p?.market?.truce}<Chip plate tone={p.market.banned ? 'bad' : 'good'} title={truceTip} testId="market-truce">{p.market.banned ? 'TRUCE BROKEN' : 'TRUCE'}</Chip>{/if}
+    {#if p?.market}<Chip plate tone="warn" title={marketTip} testId="black-market">BLACK MARKET</Chip>{/if}
+    <span class="credits"><Chip tone="gold" plate caps={false} outline={false} title="Your credits" testId="trade-credits">₵ {fmt(trade.credits)}</Chip></span>
   {/snippet}
   <TradeView {api} partner={id} />
 </FloatingWindow>

@@ -47,9 +47,11 @@ export function startFerry(sim: Sim, req: FerryRequest): string | null {
   if ((req.items?.length ?? 0) > 0 && cargoCount(v) > 0) return 'holdBusy';
   for (const l of req.items ?? []) {
     if (!sim.content.items[l.item] || !Number.isInteger(l.count) || l.count <= 0) return 'badLine';
-    const n = Math.min(l.count, regionItems(sim, req.from, l.item) - (items.find((x) => x.item === l.item)?.count ?? 0), room);
+    const line = items.find((x) => x.item === l.item);
+    const n = Math.min(l.count, regionItems(sim, req.from, l.item) - (line?.count ?? 0), room);
     if (n <= 0) continue;
-    items.push({ item: l.item, count: n });
+    if (line) line.count += n; // one line per item (loaded and settle work on lines)
+    else items.push({ item: l.item, count: n });
     room -= n;
   }
   if (items.length === 0 && crew.length === 0) return 'nothing';

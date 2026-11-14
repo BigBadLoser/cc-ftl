@@ -76,34 +76,41 @@ export function nearestLevel(zoom: number, dpr: number): number {
 /** The view the preview shows for a shared view: the same centre at the nearest ladder step (the grid may sit between steps after a fit). */
 export const previewView = (v: View, dpr: number): View => ({ ...v, zoom: nearestLevel(v.zoom, dpr) });
 
-/** The view one ladder step in (dir > 0) or out, keeping the tile under (sx, sy) where it is. From a zoom between steps, the next step in that direction. */
+/** The grid's tile sides in css px, one step each (whole pixels, so the grid lines stay crisp); 16 px is 100%. */
+export const GRID_SIDES: readonly number[] = [3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
+export const SIDE_100 = 16;
+/** The grid's zoom steps as shared-view zooms (iso-equivalent: tile side x dpr / TILE_H), smallest first. */
+export const gridLadder = (dpr: number): number[] => GRID_SIDES.map((s) => (s * dpr) / TILE_H);
+/** The grid's zoom as a percentage (a tile of 16 css px is 100%). */
+export const percentOf = (zoom: number, dpr: number): number => Math.round((scaleOf(zoom, dpr) / SIDE_100) * 100);
+
+/** The view one grid step in (dir > 0) or out, keeping the tile under (sx, sy) where it is in the pane asked (the preview shows the nearest renderer level of the shared zoom). From a zoom between steps, the next step in that direction. */
 export function zoomed(space: Space, v: View, dpr: number, box: Box, sx: number, sy: number, dir: number): View {
-  const levels = ladder(dpr);
+  const levels = gridLadder(dpr);
   const eps = 1e-9;
   const next = dir > 0 ? levels.find((l) => l > v.zoom + eps) : [...levels].reverse().find((l) => l < v.zoom - eps);
   const zoom = next ?? (dir > 0 ? (levels[levels.length - 1] as number) : (levels[0] as number));
   if (zoom === v.zoom) return v;
-  const under = toTile(space, v, dpr, box, sx, sy);
-  const moved = { ...v, zoom };
-  const after = toTile(space, moved, dpr, box, sx, sy);
-  return { ...moved, cx: v.cx + (under.x - after.x), cy: v.cy + (under.y - after.y) };
+  const shown = (z: number): number => (space === 'iso' ? nearestLevel(z, dpr) : z);
+  const under = toTile(space, { ...v, zoom: shown(v.zoom) }, dpr, box, sx, sy);
+  const after = toTile(space, { ...v, zoom: shown(zoom) }, dpr, box, sx, sy);
+  return { ...v, zoom, cx: v.cx + (under.x - after.x), cy: v.cy + (under.y - after.y) };
 }
 
-/**
- * A view that fits a tile rectangle (`x0`..`x1` inclusive, in tiles) in the grid pane with a margin, at any zoom (not a ladder
- * step), capped at the ladder's top so a small design is not blown up. The grid pane shows it exactly; the preview takes the nearest step.
- */
-export function fitRect(x0: number, y0: number, x1: number, y1: number, dpr: number, box: Box, margin = 1): View {
-  const w = x1 - x0 + 1 + 2 * margin, h = y1 - y0 + 1 + 2 * margin;
-  const side = Math.min(box.w / w, box.h / h);
-  const top = ladder(dpr).at(-1) as number;
-  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, zoom: Math.min(top, (side * dpr) / TILE_H) };
-}
-
-/** A view centred on a design of w x h tiles at the largest level that fits it in the grid pane (with a margin). */
-export function fitted(w: number, h: number, dpr: number, box: Box): View {
-  const levels = ladder(dpr);
+/** The largest grid step at which a w x h tile area fits the pane (the smallest step when none does), capped at the top step. */
+function stepFitting(w: number, h: number, dpr: number, box: Box): number {
+  const levels = gridLadder(dpr);
   let zoom = levels[0] as number;
-  for (const l of levels) if (w * scaleOf(l, dpr) <= box.w * 0.92 && h * scaleOf(l, dpr) <= box.h * 0.92) zoom = l;
-  return { cx: (w - 1) / 2, cy: (h - 1) / 2, zoom };
+  for (const l of levels) if (w * scaleOf(l, dpr) <= box.w && h * scaleOf(l, dpr) <= box.h) zoom = l;
+  return zoom;
+}
+
+/** A view that fits a tile rectangle (`x0`..`x1` inclusive, in tiles) in the grid pane with a margin, at the largest grid step that fits. */
+export function fitRect(x0: number, y0: number, x1: number, y1: number, dpr: number, box: Box, margin = 1): View {
+  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, zoom: stepFitting(x1 - x0 + 1 + 2 * margin, y1 - y0 + 1 + 2 * margin, dpr, box) };
+}
+
+/** A view centred on a design of w x h tiles at the largest grid step that fits it in the grid pane (with a margin). */
+export function fitted(w: number, h: number, dpr: number, box: Box): View {
+  return { cx: (w - 1) / 2, cy: (h - 1) / 2, zoom: stepFitting(w / 0.92, h / 0.92, dpr, box) };
 }
