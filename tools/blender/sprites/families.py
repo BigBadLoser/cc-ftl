@@ -201,6 +201,9 @@ def jobs(name):
     if name == "vending23":     # look study, preview only (not in RENDERED): 21a, the livery carried over the roof
         from . import vending_r23
         return vending_r23.jobs(), "only:vending"
+    if name == "vending24":     # look study, preview only (not in RENDERED): the red machine with 23a's front details
+        from . import vending_r24
+        return vending_r24.jobs(), "only:vending"
     if name == "vending9":      # look study, preview only (not in RENDERED): one shell, cream skin wrap, r9
         from . import vending_r9
         return vending_r9.jobs(), "only:vending"
