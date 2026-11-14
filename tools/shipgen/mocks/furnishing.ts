@@ -21,28 +21,16 @@ const seats = (x: number, y: number, w = 2): Piece[] => Array.from({ length: w }
 
 const barracks: RoomMock[] = [
   {
-    role: 'quarters', caption: 'B1 bunk rows, aisle', w: 11, h: 6, door: 5,
-    pieces: [
-      ...[0, 1, 3, 4, 6, 7, 9, 10].map((x): Piece => [B, x, 0, 0]),
-      ...[2, 5, 8].map((x): Piece => [L, x, 0, 0]),
-      ...[0, 1, 2, 3, 7, 8, 9, 10].map((x): Piece => [L, x, 5, 2]),
-    ],
+    role: 'quarters', caption: 'B1 bunk row, aisle', w: 11, h: 6, door: 5,
+    pieces: [...[0, 2, 4, 6, 8, 10].map((x): Piece => [B, x, 0, 0]), [L, 0, 5, 2], [L, 10, 5, 2]],
   },
   {
     role: 'quarters', caption: 'B2 alcoves, game table', w: 11, h: 6, door: 5,
-    pieces: [
-      ...[0, 1, 3, 4].flatMap((y): Piece[] => [[B, 0, y, 1], [B, 9, y, 1]]),
-      [L, 0, 2, 3], [L, 10, 2, 1], [L, 0, 5, 3], [L, 10, 5, 1],
-      ['module.gametable', 4, 2, 0], [L, 4, 0, 0], [L, 6, 0, 0],
-    ],
+    pieces: [...[0, 2, 4].flatMap((y): Piece[] => [[B, 0, y, 1], [B, 9, y, 1]]), ['module.gametable', 4, 2, 0], [L, 5, 0, 0]],
   },
   {
     role: 'quarters', caption: 'B3 two bays, shared table', w: 11, h: 6, door: 5,
-    pieces: [
-      ...[0, 1, 9, 10].flatMap((x): Piece[] => [[B, x, 0, 0], [B, x, 4, 2]]),
-      [L, 3, 0, 0], [L, 7, 0, 0], [L, 3, 5, 2], [L, 7, 5, 2],
-      [T, 4, 2, 0], ...seats(4, 2),
-    ],
+    pieces: [...[0, 2, 8, 10].flatMap((x): Piece[] => [[B, x, 0, 0], [B, x, 4, 2]]), [T, 4, 2, 0], ...seats(4, 2), [L, 3, 0, 0], [L, 7, 5, 2]],
   },
 ];
 
@@ -88,11 +76,11 @@ const guns: RoomMock[] = [
 const medbays: RoomMock[] = [
   {
     role: 'medbay', caption: 'D1 beds along a wall', w: 9, h: 4, door: 4,
-    pieces: [...[0, 2, 4, 6].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2], [L, 0, 3, 2], [L, 1, 3, 2]],
+    pieces: [...[0, 2, 4, 6].map((x): Piece => ['module.med_bed', x, 0, 0]), ['module.recovery', 7, 2, 2]],
   },
   {
     role: 'medbay', caption: 'D2 bays, pod in the middle', w: 9, h: 4, door: 4,
-    pieces: [['module.med_bed', 0, 0, 1], ['module.med_bed', 0, 2, 1], ['module.med_bed', 7, 0, 1], ['module.med_bed', 7, 2, 1], ['module.recovery', 3, 0, 0], [L, 6, 0, 0], [L, 2, 0, 0]],
+    pieces: [['module.med_bed', 0, 0, 1], ['module.med_bed', 0, 2, 1], ['module.med_bed', 7, 0, 1], ['module.med_bed', 7, 2, 1], ['module.recovery', 3, 0, 0]],
   },
 ];
 
@@ -110,7 +98,7 @@ const shields: RoomMock[] = [
 const reactors: RoomMock[] = [
   {
     role: 'reactor', caption: 'R1 reactors in a row', w: 12, h: 6, door: 6,
-    pieces: [['module.reactor.mk3', 0, 0], ['module.reactor.mk3', 5, 0], ['module.reactor.mk3', 10, 0], [L, 0, 5, 2], [L, 11, 5, 2]],
+    pieces: [['module.reactor.mk3', 0, 0], ['module.reactor.mk3', 5, 0], ['module.reactor.mk3', 10, 0]],
   },
 ];
 
