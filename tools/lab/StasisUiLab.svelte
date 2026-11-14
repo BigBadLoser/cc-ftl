@@ -42,6 +42,10 @@
 </div>
 {#snippet head(c: UiCrew)}<PaneHead icon="skull" title={c.name} sub="Security · hostile" foe />{/snippet}
 <div class="lab">
+  <section class="col"><h4>P0 default: the same prisoner, not frozen</h4>
+    <div class="win">{@render head(crews[0][1])}<div class="body"><CrewOverview {api} c={{ ...crews[0][1], stasis: null, seal: { marked: false, refusal: null } }} onPriorities={() => {}} /></div></div>
+    <div class="win">{@render head(crews[0][1])}<div class="body"><CrewOverview {api} c={{ ...crews[0][1], stasis: null, seal: { marked: true, refusal: null } }} onPriorities={() => {}} /></div></div>
+  </section>
   {#each [['P1 slab card (current)', 0], ['P2 crew layout, frosted portrait', 1], ['P3 crew layout, portrait as is', 2]] as const as [label, v] (label)}
     <section class="col"><h4>{label}</h4>
       {#each crews as [, c] (c.id)}
