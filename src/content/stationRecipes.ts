@@ -39,15 +39,19 @@ const scrap = (name: string, o: { rooms: [number, number]; stub: [number, number
 const compound = (name: string, o: {
   outline: 'disc' | 'square'; cut?: { flat: number }; inner: boolean | 'street'; gap?: { side: 'n' | 'e' | 's' | 'w'; from: number };
   works: ('n' | 'e' | 's' | 'w')[] | 'tip'; secure: 'behind' | 'tip' | ('n' | 'e' | 's' | 'w')[]; dock: ('n' | 'e' | 's' | 'w')[]; neck: number; rowDepth: number; quarters?: Recipe['quarters']; quay?: BranchRule['quay'];
+  /** Departments that stand on the street through the ring's middle (the labs down a research arc's spine), not in the works block. */
+  spine?: ('works' | 'freight')[];
+  /** What the works block takes (default the works and the freight): a habitation block instead, its crew's quarters, when the works are on the spine. */
+  block?: ('works' | 'freight' | 'habitation')[];
 }): Recipe => ({
   name,
   ...(o.quarters ? { quarters: o.quarters } : {}),
   // A 'disc' is no longer the stepped lattice ring (the user: "it's the lattice and the gaps it's leaving"): a square
   // cut to eight sides with its corners rounded, as the bazaar's.
-  root: { kind: 'ring', takes: ['habitation', 'defence', 'commons', 'market'], ...(o.outline === 'disc' ? { outline: 'square', cut: 'octagon', round: true } : { outline: 'square', cut: o.cut ?? 2 }), inner: o.inner, ...(o.gap ? { gap: o.gap } : {}) },
+  root: { kind: 'ring', takes: [...(o.block?.includes('habitation') ? [] : ['habitation' as const]), 'defence', 'commons', 'market', ...(o.spine ?? [])], ...(o.outline === 'disc' ? { outline: 'square', cut: 'octagon', round: true } : { outline: 'square', cut: o.cut ?? 2 }), inner: o.inner, ...(o.spine ? { street: o.spine } : {}), ...(o.gap ? { gap: o.gap } : {}) },
   spacing: 2,
   branches: [
-    { takes: ['works', 'freight'], per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
+    { takes: (o.block ?? ['works', 'freight']).filter((d) => !o.spine?.includes(d as 'works')), per: 'together', host: o.works === 'tip' ? { on: 'tip' } : { on: 'rim', prefer: o.works }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
     // `secure` as sides: the machinery is a wing of its own on the rim there, so the one long wing is two shorter ones.
     { takes: ['secure'], per: 'together', host: o.secure === 'tip' ? { on: 'tip' } : o.secure === 'behind' ? { on: 'after', rule: 0 } : { on: 'rim', prefer: o.secure }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: o.secure === 'tip' ? 6 : o.rowDepth, even: true, cap: true }, link: 0 },
     { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: o.dock, roll: true }, neck: 0, docks: true, ...(o.quay ? { quay: o.quay } : {}), section: { rooms: [2, 6] }, link: 0 },
@@ -137,6 +141,7 @@ export const stationRecipes = {
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: harbour('quay', 'block') }),
     compound('half ring: works on one tip, machinery on the other', { outline: 'disc', inner: 'street', gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('basin', 'block') }),
+    compound('half ring: works down the spine, quarters on one tip, machinery on the other', { outline: 'disc', inner: 'street', spine: ['works'], block: ['habitation', 'freight'], gap: { side: 'e', from: 4 }, works: 'tip', secure: 'tip', dock: ['w'], neck: 0, rowDepth: 7, quay: harbour('basin', 'block') }),
     compound('ring with barracks (a works crew)', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quarters: { barracks: [6, 8], singles: 4 }, quay: harbour('gatehouse', 'block') }),
     // The faces as wide as the wings, so a wing meets the bastions either side of it with no gap.
     compound('square with bastions', { outline: 'square', cut: { flat: 3 }, inner: 'street', works: ['e'], secure: ['w'], dock: ['n', 's'], neck: 0, rowDepth: 7, quay: harbour('basin', 'block') }),

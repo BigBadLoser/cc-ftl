@@ -144,7 +144,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
       ...a.spill.flatMap((sp) => whole(sp.spec).map((spec) => ({ spec: copy(spec), angle: ANGLE[sp.dir] }))),
     ];
     const band = site.g.regions.length;
-    const left = fillRing(site, asks, root.inner, root.waterfront || root.inboard ? front : undefined);
+    const left = fillRing(site, asks, root.inner, root.waterfront || root.inboard ? front : undefined, root.street ? (r) => !!root.street?.includes(r.dept as Dept) : undefined);
     // The noses go on once the band stands, so each takes the band's last tiles before its cut as well.
     if (nosed.length > 0) { const stood = noses(site, tips, nosed, (x, y) => !ctx.reserved.has(key(x, y))); left.push(...nosed.filter((r) => !stood.includes(r))); }
     if (left.length > 0) { why = `R ${R}: the ring is short of ${left.length} rooms (${left.map((r) => `${r.role} ${r.w}x${r.h}`).join(", ")})`; continue; }

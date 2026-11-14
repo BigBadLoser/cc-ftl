@@ -165,10 +165,29 @@ still to be discussed and tweaked one by one.
 | Trading | the bazaar (designed for it), and maybe the crescent |
 | Pirate | the tree |
 | Military | the square with bastions and the ring with barracks (from the compound) |
-| Research | the crescent and the half ring (arcs) |
+| Research | the crescent and the half ring (arcs), the labs down the half ring's spine; never the square |
 | Farming | a family of its own, not built: like the spine, one main street with long wings off it |
 
 The compound stops being a family of its own once its recipes move to military and research.
+
+### Ring interiors: a street down the middle
+
+The user: "basically all the variations that do it look haphazard and scattered. if we need rooms on the inside of
+the wing, i'd say we run a street down the middle". `inner: 'street'` (`assembly/street.ts`), on every compound ring:
+what the band cannot hold stands in rows either side of one straight street through the middle, promenade to
+promenade. Rows keep three tiles off the ring, so bracing crosses the open ground behind them. Tried in order until
+every room stands: one street, rooms short side on; one street, rooms long side across (deeper rows); two streets
+crossing at the first one's middle (hubs). A department keeps one depth along a side of a street: its first room sets
+it and the rest grow to meet it (the user: the odd thin room "could grow to meet the others"). Guns and rooms with an
+annex choose first in the band, so a gun stands inside only when the hull has no place left.
+
+An arc's street is its spine, from the ring to the open side, and nothing else (the user: "we don't need cross on half
+ring"). `street: Dept[]` on a ring root puts those departments on the street first: the research half ring
+(`half ring: works down the spine, quarters on one tip, machinery on the other`) has its labs on the spine and its
+cabins in a block on the tip (the user: "labs should be on the center spine, not cabins").
+
+Still open: harbours in narrower, longer arrangements to fit the parts they join (the user: "we need different harbor
+arrangement support"); military's guns crowding the street; military hubs (the harbour block has two armouries' room).
 
 ## The bazaar ring (trade stations): prototype
 
