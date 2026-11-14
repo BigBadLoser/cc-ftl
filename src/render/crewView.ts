@@ -494,6 +494,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
           bestY = py;
           best = id;
         }
+        // A hover cart picks the prisoner frozen in the slab on it (their inspector says where the slab is going).
+        const cy = s.cart.hit(ax, ay);
+        if (cy !== null && cy > bestY) {
+          const prisoner = carriedSlabOf(world, id);
+          if (prisoner) {
+            bestY = cy;
+            best = prisoner;
+          }
+        }
       }
       return best === null ? null : { id: best, y: bestY };
     },

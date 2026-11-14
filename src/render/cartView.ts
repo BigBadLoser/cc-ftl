@@ -17,6 +17,8 @@ export interface CartSprite {
   /** `prisoner`: the look of who is in the slab on it (their figure is pressed into its face), none for an empty slab. */
   show(atlas: Atlas, id: string, flip: boolean, x: number, y: number, z: number, tint: number, prisoner?: CrewLook): void;
   hide(): void;
+  /** Whether the art point (ax, ay), in the parent's frame, is on the shown cart's sprite box; the y it sorts by when so. */
+  hit(ax: number, ay: number): number | null;
   destroy(): void;
 }
 
@@ -58,6 +60,12 @@ export function createCart(parent: Container, faces?: SlabFaces): CartSprite {
       }
       root.position.set(x, y);
       root.zIndex = z;
+    },
+    hit(ax, ay) {
+      if (!root.visible || !base.texture) return null;
+      const lx = ax - root.x, ly = ay - root.y;
+      const w = base.texture.width, x0 = base.scale.x < 0 ? base.x - w : base.x;
+      return lx >= x0 && lx <= x0 + w && ly >= base.y && ly <= base.y + base.texture.height ? root.y : null;
     },
     hide() {
       root.visible = false;

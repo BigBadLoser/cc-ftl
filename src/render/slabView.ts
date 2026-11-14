@@ -18,6 +18,8 @@ import { lightTint, pulsePhase } from './lightTint';
  */
 export interface SlabView {
   update(): void;
+  /** The prisoner in the floor slab under the art point (ax, ay), nearest the viewer, and the y it sorts by; null for none. */
+  pick(ax: number, ay: number): { id: number; y: number } | null;
   dispose(): void;
 }
 
@@ -82,6 +84,15 @@ export function createSlabView(world: World, atlas: Atlas, L: Layers, host: Item
 
   return {
     update,
+    pick(ax, ay) {
+      let best: { id: number; y: number } | null = null;
+      for (const [id, e] of entries) {
+        const lx = ax - e.root.x - e.spr.x, ly = ay - e.root.y - e.spr.y;
+        if (lx < 0 || ly < 0 || lx > e.spr.texture.width || ly > e.spr.texture.height) continue;
+        if (!best || e.root.y > best.y) best = { id, y: e.root.y };
+      }
+      return best;
+    },
     dispose() {
       for (const e of entries.values()) e.root.destroy({ children: true });
       entries.clear();

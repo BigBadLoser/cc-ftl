@@ -217,9 +217,11 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
     crewPos: (id) => crewView.spritePos(id),
     pickCrew: (ax, ay) => {
       // Crew (aliens included) and live egg sacs (attack targets): the one nearest the viewer wins. Hidden when roofed.
+      // A floor slab picks the prisoner frozen in it.
       const c = crewView.pick(ax, ay);
       const s = roofed ? null : sacView.pick(ax, ay);
-      return c && s ? (s.y > c.y ? s : c) : (c ?? s);
+      const f = slabView.pick(ax, ay);
+      return [c, s, f].reduce<{ id: number; y: number } | null>((b, h) => (h && (!b || h.y > b.y) ? h : b), null);
     },
     pickModule: (ax, ay) => moduleView.pick(ax, ay),
     setSites: (blocked, selected) => siteView.setMarks(blocked, selected),
