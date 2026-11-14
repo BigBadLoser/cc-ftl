@@ -9,18 +9,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-MODULES = ("module.bunk", "module.exercise", "module.bench", "module.planter", "module.vending", "module.vending_red")
+MODULES = ("module.bunk", "module.bed", "module.exercise", "module.bench", "module.planter", "module.vending",
+           "module.vending_red")
 CW, CH = 200, 170
 
 
 def main():
     G, pub, out = Assets(sys.argv[1]), Assets(ROOT / "public/assets/1x"), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
-    rows = [m for m in MODULES if f"{m}.idle" in G.m["assets"]]
+    rows = [m for m in MODULES if f"{m}.r0" in G.m["assets"]]
     cv = Canvas(CW * 4, CH * len(rows))
     for row, m in enumerate(rows):
         for r in range(4):
-            aid = f"{m}.idle" if r == 0 else f"{m}.r{r}.idle"
+            aid = f"{m}.r{r}"
             if aid not in G.m["assets"]:
                 continue
             ox, oy = CW // 2 + r * CW, 105 + row * CH

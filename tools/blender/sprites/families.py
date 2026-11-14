@@ -34,9 +34,9 @@
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
   bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
-            module.bunk (1x2), the sparring droid module.exercise, the bench module.bench (2x1), the planter
-            module.planter, the vending machines module.vending and module.vending_red, four rotations, art only
-            (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
+            module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench module.bench (2x1), the planter
+            module.planter, the vending machines module.vending and module.vending_red, four rotations, art only but
+            the bed (leisure.py, built from their approved look studies; MODPACK_ROTS as storage_set)
   research_bench  the research bench module.research (3x2, c1), idle and .active (hologram baked in), four rotations (research_bench.py)
   medbay    the med bed and the med console, idle and .active (medbay.py; MODPACK_ROTS as storage_set)
   battery   the battery bank, .charge0 .. .charge3 (battery.py; MODPACK_ROTS as storage_set)

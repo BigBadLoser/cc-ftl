@@ -68764,58 +68764,236 @@
   },
   "module.bed": {
    "kind": "static",
-   "sheet": "env",
+   "sheet": "bunk_module",
    "frame": {
-    "x": 891,
+    "x": 456,
     "y": 1,
     "w": 90,
-    "h": 66
+    "h": 65
    },
    "anchor": {
     "x": 29,
-    "y": 51
+    "y": 50
    },
    "footprint": [
     1,
     2
-   ],
-   "glow": true
+   ]
   },
-  "module.bed.damaged": {
+  "module.bed.r0": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 547,
+    "y": 1,
+    "w": 90,
+    "h": 65
+   },
+   "anchor": {
+    "x": 29,
+    "y": 50
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.r0.damaged": {
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1667,
+    "x": 1959,
     "y": 653,
     "w": 90,
-    "h": 68
+    "h": 65
    },
    "anchor": {
     "x": 29,
-    "y": 51
+    "y": 50
    },
    "footprint": [
     1,
     2
-   ],
-   "glow": true
+   ]
   },
-  "module.bed.destroyed": {
+  "module.bed.r0.destroyed": {
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2163,
+    "x": 2948,
     "y": 653,
-    "w": 93,
+    "w": 94,
+    "h": 60
+   },
+   "anchor": {
+    "x": 33,
+    "y": 45
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.r1": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 729,
+    "y": 1,
+    "w": 90,
     "h": 61
    },
    "anchor": {
-    "x": 32,
+    "x": 61,
+    "y": 46
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.r1.damaged": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 2445,
+    "y": 653,
+    "w": 94,
+    "h": 61
+   },
+   "anchor": {
+    "x": 61,
+    "y": 46
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.r1.destroyed": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 3323,
+    "y": 653,
+    "w": 101,
+    "h": 58
+   },
+   "anchor": {
+    "x": 72,
+    "y": 43
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.r2": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 820,
+    "y": 1,
+    "w": 90,
+    "h": 61
+   },
+   "anchor": {
+    "x": 29,
     "y": 46
    },
    "footprint": [
     1,
     2
+   ]
+  },
+  "module.bed.r2.damaged": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 2245,
+    "y": 653,
+    "w": 94,
+    "h": 62
+   },
+   "anchor": {
+    "x": 29,
+    "y": 47
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.r2.destroyed": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 3043,
+    "y": 653,
+    "w": 91,
+    "h": 60
+   },
+   "anchor": {
+    "x": 29,
+    "y": 45
+   },
+   "footprint": [
+    1,
+    2
+   ]
+  },
+  "module.bed.r3": {
+   "kind": "static",
+   "sheet": "bunk_module",
+   "frame": {
+    "x": 638,
+    "y": 1,
+    "w": 90,
+    "h": 65
+   },
+   "anchor": {
+    "x": 61,
+    "y": 50
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.r3.damaged": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 1460,
+    "y": 653,
+    "w": 89,
+    "h": 69
+   },
+   "anchor": {
+    "x": 61,
+    "y": 54
+   },
+   "footprint": [
+    2,
+    1
+   ]
+  },
+  "module.bed.r3.destroyed": {
+   "kind": "static",
+   "sheet": "damage",
+   "frame": {
+    "x": 2148,
+    "y": 653,
+    "w": 96,
+    "h": 63
+   },
+   "anchor": {
+    "x": 64,
+    "y": 48
+   },
+   "footprint": [
+    2,
+    1
    ]
   },
   "module.bench": {
@@ -68836,7 +69014,7 @@
     1
    ]
   },
-  "module.bench.idle": {
+  "module.bench.r0": {
    "kind": "static",
    "sheet": "bench_module",
    "frame": {
@@ -68854,7 +69032,7 @@
     1
    ]
   },
-  "module.bench.r1.idle": {
+  "module.bench.r1": {
    "kind": "static",
    "sheet": "bench_module",
    "frame": {
@@ -68872,7 +69050,7 @@
     2
    ]
   },
-  "module.bench.r2.idle": {
+  "module.bench.r2": {
    "kind": "static",
    "sheet": "bench_module",
    "frame": {
@@ -68890,7 +69068,7 @@
     1
    ]
   },
-  "module.bench.r3.idle": {
+  "module.bench.r3": {
    "kind": "static",
    "sheet": "bench_module",
    "frame": {
@@ -68926,7 +69104,7 @@
     2
    ]
   },
-  "module.bunk.idle": {
+  "module.bunk.r0": {
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
@@ -68944,7 +69122,7 @@
     2
    ]
   },
-  "module.bunk.r1.idle": {
+  "module.bunk.r1": {
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
@@ -68962,7 +69140,7 @@
     1
    ]
   },
-  "module.bunk.r2.idle": {
+  "module.bunk.r2": {
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
@@ -68980,7 +69158,7 @@
     2
    ]
   },
-  "module.bunk.r3.idle": {
+  "module.bunk.r3": {
    "kind": "static",
    "sheet": "bunk_module",
    "frame": {
@@ -69684,7 +69862,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3068,
+    "x": 3640,
     "y": 653,
     "w": 50,
     "h": 57
@@ -69703,7 +69881,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3119,
+    "x": 3691,
     "y": 653,
     "w": 50,
     "h": 57
@@ -69722,7 +69900,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3367,
+    "x": 3939,
     "y": 653,
     "w": 48,
     "h": 49
@@ -72151,7 +72329,7 @@
    ],
    "glow": true
   },
-  "module.exercise.idle": {
+  "module.exercise.r0": {
    "kind": "static",
    "sheet": "exercise_module",
    "frame": {
@@ -72170,7 +72348,7 @@
    ],
    "glow": true
   },
-  "module.exercise.r1.idle": {
+  "module.exercise.r1": {
    "kind": "static",
    "sheet": "exercise_module",
    "frame": {
@@ -72189,7 +72367,7 @@
    ],
    "glow": true
   },
-  "module.exercise.r2.idle": {
+  "module.exercise.r2": {
    "kind": "static",
    "sheet": "exercise_module",
    "frame": {
@@ -72208,7 +72386,7 @@
    ],
    "glow": true
   },
-  "module.exercise.r3.idle": {
+  "module.exercise.r3": {
    "kind": "static",
    "sheet": "exercise_module",
    "frame": {
@@ -72418,7 +72596,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1960,
+    "x": 2050,
     "y": 653,
     "w": 97,
     "h": 64
@@ -72530,7 +72708,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1460,
+    "x": 1550,
     "y": 653,
     "w": 92,
     "h": 69
@@ -78904,7 +79082,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3459,
+    "x": 4031,
     "y": 653,
     "w": 22,
     "h": 46
@@ -78923,7 +79101,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3482,
+    "x": 4054,
     "y": 653,
     "w": 18,
     "h": 46
@@ -78942,8 +79120,8 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3611,
-    "y": 653,
+    "x": 111,
+    "y": 726,
     "w": 31,
     "h": 38
    },
@@ -79218,7 +79396,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2257,
+    "x": 2540,
     "y": 653,
     "w": 88,
     "h": 61
@@ -79273,7 +79451,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2346,
+    "x": 2629,
     "y": 653,
     "w": 88,
     "h": 61
@@ -79292,7 +79470,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2435,
+    "x": 2718,
     "y": 653,
     "w": 88,
     "h": 61
@@ -79310,7 +79488,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2524,
+    "x": 2807,
     "y": 653,
     "w": 98,
     "h": 61
@@ -79494,7 +79672,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2726,
+    "x": 3196,
     "y": 653,
     "w": 42,
     "h": 59
@@ -79513,7 +79691,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2769,
+    "x": 3239,
     "y": 653,
     "w": 41,
     "h": 59
@@ -79531,7 +79709,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3326,
+    "x": 3898,
     "y": 653,
     "w": 40,
     "h": 50
@@ -79568,7 +79746,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2853,
+    "x": 3425,
     "y": 653,
     "w": 37,
     "h": 58
@@ -79587,7 +79765,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2891,
+    "x": 3463,
     "y": 653,
     "w": 33,
     "h": 58
@@ -79605,8 +79783,8 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3501,
-    "y": 653,
+    "x": 1,
+    "y": 726,
     "w": 43,
     "h": 43
    },
@@ -79660,7 +79838,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3170,
+    "x": 3742,
     "y": 653,
     "w": 45,
     "h": 54
@@ -79679,7 +79857,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3216,
+    "x": 3788,
     "y": 653,
     "w": 41,
     "h": 54
@@ -79698,7 +79876,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3416,
+    "x": 3988,
     "y": 653,
     "w": 42,
     "h": 48
@@ -79753,7 +79931,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2623,
+    "x": 2906,
     "y": 653,
     "w": 41,
     "h": 61
@@ -79772,7 +79950,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2811,
+    "x": 3281,
     "y": 653,
     "w": 41,
     "h": 59
@@ -79791,7 +79969,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2925,
+    "x": 3497,
     "y": 653,
     "w": 35,
     "h": 58
@@ -80057,7 +80235,7 @@
     1
    ]
   },
-  "module.planter.idle": {
+  "module.planter.r0": {
    "kind": "static",
    "sheet": "planter_module",
    "frame": {
@@ -80075,7 +80253,7 @@
     1
    ]
   },
-  "module.planter.r1.idle": {
+  "module.planter.r1": {
    "kind": "static",
    "sheet": "planter_module",
    "frame": {
@@ -80093,7 +80271,7 @@
     1
    ]
   },
-  "module.planter.r2.idle": {
+  "module.planter.r2": {
    "kind": "static",
    "sheet": "planter_module",
    "frame": {
@@ -80111,7 +80289,7 @@
     1
    ]
   },
-  "module.planter.r3.idle": {
+  "module.planter.r3": {
    "kind": "static",
    "sheet": "planter_module",
    "frame": {
@@ -93252,7 +93430,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3258,
+    "x": 3830,
     "y": 653,
     "w": 67,
     "h": 54
@@ -93271,8 +93449,8 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 3545,
-    "y": 653,
+    "x": 45,
+    "y": 726,
     "w": 65,
     "h": 43
    },
@@ -94754,7 +94932,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2665,
+    "x": 3135,
     "y": 653,
     "w": 60,
     "h": 60
@@ -97111,7 +97289,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1852,
+    "x": 1851,
     "y": 653,
     "w": 107,
     "h": 66
@@ -97219,7 +97397,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1553,
+    "x": 1643,
     "y": 653,
     "w": 113,
     "h": 69
@@ -97237,7 +97415,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2961,
+    "x": 3533,
     "y": 653,
     "w": 106,
     "h": 58
@@ -97327,7 +97505,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 2058,
+    "x": 2340,
     "y": 653,
     "w": 104,
     "h": 62
@@ -99330,7 +99508,7 @@
    ],
    "glow": true
   },
-  "module.vending.idle": {
+  "module.vending.r0": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99349,7 +99527,7 @@
    ],
    "glow": true
   },
-  "module.vending.r1.idle": {
+  "module.vending.r1": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99367,7 +99545,7 @@
     1
    ]
   },
-  "module.vending.r2.idle": {
+  "module.vending.r2": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99385,7 +99563,7 @@
     1
    ]
   },
-  "module.vending.r3.idle": {
+  "module.vending.r3": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99423,7 +99601,7 @@
    ],
    "glow": true
   },
-  "module.vending_red.idle": {
+  "module.vending_red.r0": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99442,7 +99620,7 @@
    ],
    "glow": true
   },
-  "module.vending_red.r1.idle": {
+  "module.vending_red.r1": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99460,7 +99638,7 @@
     1
    ]
   },
-  "module.vending_red.r2.idle": {
+  "module.vending_red.r2": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -99478,7 +99656,7 @@
     1
    ]
   },
-  "module.vending_red.r3.idle": {
+  "module.vending_red.r3": {
    "kind": "static",
    "sheet": "vending_module",
    "frame": {
@@ -100192,7 +100370,7 @@
    "kind": "static",
    "sheet": "damage",
    "frame": {
-    "x": 1758,
+    "x": 1757,
     "y": 653,
     "w": 93,
     "h": 67

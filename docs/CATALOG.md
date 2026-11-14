@@ -60,7 +60,8 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (`module.bunk` 1x2 double bunk, `module.exercise` sparring droid, `module.bench` 2x1, `module.planter`,
   `module.vending` and `module.vending_red`): art only, four rotations each (`tools/blender/sprites/leisure.py`). No defs; comfort
-  values on modules and decor are the next step of #441.
+  values on modules and decor are the next step of #441. The in-game single bed (`module.bed`) now uses the same family's matching
+  art (four rotations, damaged and destroyed per rotation).
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
 - **Starter ships:** the picker offers Wayfarer, Prospector and Lancer. `ship.starter`, `ship.raider` and `ship.rogueShipyard` are test or debug hulls; real enemies are generated.
 - **Hyperlane gates, mining/farming/pirate "structures":** the map has gateway nodes and port kinds, not separate gate or structure objects for these.
