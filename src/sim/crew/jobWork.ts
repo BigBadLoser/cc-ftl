@@ -18,6 +18,7 @@ import { finishFit } from '../upgrades/fit';
 import { holdOffline } from '../modules/hold';
 import { performSabotage } from '../boarding/sabotage';
 import { finishSearch } from '../inspect/search';
+import { performStasis } from '../stasis/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DoorJam, Struct, writeStruct } from '../structure';
@@ -80,6 +81,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'passage': return 'wait'; // the holder waits at the boarding tile until the site's run boards them (away/passage.ts)
     case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one
     case 'search': return timed(job, speed, () => { finishSearch(sim, job); return 'done'; });
+    case 'stasis': return performStasis(sim, crew, job, speed);
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);

@@ -34,7 +34,7 @@ the player's crew man consoles, boarders cross by shuttle, and the enemy AI issu
 | Capture a ship (prize) | `captureSystem` | Hold a subdued ship; claim it as a prize and strip loot | In game | sim/capture/prize.ts, control.ts; ui/PrizePanel.svelte |
 | AI core raid | `coreRaidSystem` | Zealots tear out a core; the player can hold a core to capture robots | In game | sim/capture/coreRaid.ts |
 | Surrender | `-` | Hurt or outnumbered crew surrender (cowards sooner; brave never) | In game | sim/fight/surrender.ts |
-| Prisoners | `-` | Surrendered enemy crew get a `PrisonerC` on capture | Partial: no holding or use | sim/capture/prize.ts:45 sets it; nowhere to put prisoners (cryo pods are art only), no ransom or sale; issue #116 |
+| Prisoners | `-` | Surrendered enemy crew get a `PrisonerC` on capture; crew seal them into stasis slabs and hold them in a stasis wheel (`stasis` hauling job; reserve and thaw) | Partial: held only on the ship they are on; no escort, ransom or sale | sim/capture/prize.ts sets it; sim/stasis/* holds them (#116 slice 1); app/stasisAlert.ts |
 | Derelict boarding and salvage | `salvageSystem` | Strip wrecks into scrap by type; hostile egg sacs | In game | sim/salvage/*; ui/SalvagePanel.svelte |
 
 ## Hand weapons and personal combat

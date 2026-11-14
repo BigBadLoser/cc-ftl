@@ -5,6 +5,7 @@ import { airlockLayers, type AirlockView } from './airlockArt';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
 import { recoveryLayers } from './recoveryArt';
 import { robotBayLayers } from './robotBayArt';
+import { stasisLayers } from './stasisArt';
 import { vehicleBayLayers, type BayStep } from './vehicleBayArt';
 import type { WallLevel } from './tiles';
 
@@ -22,12 +23,13 @@ export interface LayerState {
 
 /**
  * The sprite layers of a module, bottom first: the one place that picks the layer builder (robot bay, vehicle bay, docking
- * airlock, or the generic chain). The world view and the catalog thumbnails / placement ghost all draw from it.
+ * airlock, recovery pod, stasis wheel, or the generic chain). The world view and the catalog thumbnails / placement ghost all draw from it.
  */
 export function layersOf(world: World, id: number, m: Module, def: ModuleDef, s: LayerState): ModuleLayer[] {
   if (def.robotBay) return robotBayLayers(world, id, m, def, s.now);
   if (def.vehicleBay) return vehicleBayLayers(m, def, s.bay);
   if (def.airlock?.layout) return airlockLayers(world, id, m, def, s.airlock);
+  if (def.stasisWheel) return stasisLayers(world, id, m, def, s.active, s.look);
   if (def.recovery) return recoveryLayers(world, id, m, def, s.active, s.look);
   return moduleLayers(world, id, m, def, s.active, true, s.livery, s.look);
 }

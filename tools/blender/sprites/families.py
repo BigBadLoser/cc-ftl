@@ -159,6 +159,16 @@ def jobs(name):
         import os
         from . import recovery
         return recovery.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), "recovery"
+    if name == "stasis":        # the stasis wheel and the slab on its hover cart (issue #116)
+        import os
+        from . import slab_cart, slab_floor, slab_game
+        rots = range(int(os.environ.get("MODPACK_ROTS", 4)))
+        if os.environ.get("CART_ALL"):      # the cart's mirror check alone (slab_cart)
+            return slab_cart.jobs(), "slab"
+        return slab_game.jobs(rots) + slab_cart.jobs(rots) + slab_floor.jobs(), "slab"
+    if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
+        from . import slab_study
+        return slab_study.jobs(), "slab"
     if name == "recovery":      # look study, preview only (not in RENDERED): the 2x2 recovery pod, r0, pod + .front
         from . import recovery_study
         return recovery_study.jobs(), "recovery"
@@ -276,5 +286,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod")
+            "recovery_pod", "stasis")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

@@ -58,14 +58,20 @@ function addToHand(sim: Sim, crew: number, item: string, n: number): void {
   else (c.extra ??= []).push({ item, count: n });
 }
 
-/** True if the crew member can walk to the goal now, the way they walk (components labelling, no search). */
-function reachable(sim: Sim, crew: number, goal: { x: number; y: number; adjacent: boolean }): boolean {
+/**
+ * True if the crew member can walk to the goal now, the way they walk (components labelling, no search). `anyMode`: also the ways that need a
+ * suit fetched first (`siteWalkModes`' thin modes), as the haul's travel step (`navigateTurn`) would plan them.
+ */
+function reachable(sim: Sim, crew: number, goal: { x: number; y: number; adjacent: boolean; w?: number; h?: number }, anyMode = false): boolean {
   const pos = sim.world.get(crew, PositionC);
-  const mode = pos && siteWalkModes(sim, crew, shipIdOf(sim, pos))[0];
-  const v = mode && viewOf(sim, shipIdOf(sim, pos), mode.opts);
-  if (!pos || !v) return false;
+  if (!pos) return false;
+  const ship = shipIdOf(sim, pos);
   const from = origin(pos);
-  return reaches(v, from, startLabels(v, from), goal);
+  const modes = siteWalkModes(sim, crew, ship);
+  return (anyMode ? modes : modes.slice(0, 1)).some((m) => {
+    const v = viewOf(sim, ship, m.opts);
+    return !!v && reaches(v, from, startLabels(v, from), goal);
+  });
 }
 
 /**
@@ -109,6 +115,12 @@ export function performHaul(sim: Sim, crew: number, job: Job): WorkResult {
     if (!h.gathered) dropCarried(sim, crew); // a fresh trip starts empty-handed
     const dest = destinationTile(sim, job);
     if (!dest) return 'done';
+    // A load nobody here can deliver stays where it is: lifting it only to drop it when the way fails would churn (#476).
+    if (!h.gathered && !reachable(sim, crew, jobGoal({ kind: job.kind, ...dest }), true)) {
+      const st = h.src.kind === 'floor' ? sim.world.get(h.src.id, ItemStackC) : undefined;
+      if (st) st.stuckAt = sim.tick;
+      return 'done';
+    }
     const cap = Math.max(1, Math.floor(stat(sim, crew, 'carryCapacity')));
     const room = Math.max(0, cap - inHand(sim, crew));
     const want = Math.min(h.count, room);

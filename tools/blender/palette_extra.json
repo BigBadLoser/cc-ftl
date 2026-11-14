@@ -3645,5 +3645,22 @@
   "ecM": {"hex": "#2a9aa6", "set": "crystal"},
   "ecD": {"hex": "#1b4a55", "set": "crystal"},
   "ecG": {"hex": "#36e2f2", "emissive": 2.5, "set": "crystal"},
-  "ecW": {"hex": "#e8ffff", "emissive": 2.5, "set": "crystal"}
+  "ecW": {"hex": "#e8ffff", "emissive": 2.5, "set": "crystal"},
+  "slbGr": {"hex": "#3b4049", "set": "slab"},
+  "slbGrL": {"hex": "#555b66", "set": "slab"},
+  "slbHose": {"hex": "#a0202e", "set": "slab"},
+  "slbFace": {"hex": "#8a9098", "set": "slab"},
+  "slbFaceL": {"hex": "#b3b8bf", "set": "slab"},
+  "slbCy": {"hex": "#7ff0ff", "emissive": 2.0, "set": "slab"},
+  "slbCyM": {"hex": "#4fb4c4", "emissive": 1.0, "set": "slab"},
+  "slbCyD": {"hex": "#2c6874", "emissive": 0.5, "set": "slab"},
+  "slbFilm": {"hex": "#9fe6ff", "set": "slab"},
+  "slbAmb": {"hex": "#ffb04a", "emissive": 2.0, "set": "slab"},
+  "slbLmp": {"hex": "#f2f2f2", "emissive": 0.7, "set": "slab"},
+  "slbCon": {"hex": "#8f8a80", "set": "slab"},
+  "slbConL": {"hex": "#b5b0a5", "set": "slab"},
+  "slbHaz": {"hex": "#e0a020", "set": "slab"},
+  "slbTeal": {"hex": "#2f6b72", "set": "slab"},
+  "slbMach": {"hex": "#4f6a5c", "set": "slab"},
+  "slbHull": {"hex": "#8a877f", "set": "slab"}
 }

@@ -34,6 +34,7 @@ function jobLabel(sim: Sim, j: Job): string {
     case 'haul': return 'Hauling';
     case 'craft': return 'Crafting';
     case 'research': return 'Researching';
+    case 'stasis': return j.stasis?.phase === 'fetch' || j.stasis?.phase === 'seal' ? 'Sealing a prisoner' : 'Carting a stasis slab';
     default: return j.kind;
   }
 }

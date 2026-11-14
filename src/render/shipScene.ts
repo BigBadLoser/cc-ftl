@@ -10,6 +10,7 @@ import { createParticles } from './fx/particles';
 import { createFxView } from './fxView';
 import { createGridView, type CutawayMode, type GridView } from './gridView';
 import { createItemView } from './itemView';
+import { createSlabView } from './slabView';
 import { createJobView } from './jobView';
 import { createSiteView } from './siteView';
 import type { RegionLayers } from './worldLayers';
@@ -128,6 +129,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
   const jamMarks = createJamMarks(grid, atlas, L);
   const sacView = createEggSacView(grid, world, atlas, L, (x, y, wall) => view.tintAt(x, y, wall));
   const itemView = createItemView(world, atlas, L, items, { target: inside, emergency: () => emergency });
+  const slabView = createSlabView(world, atlas, L, { target: inside, emergency: () => emergency });
   const fxView = createFxView(atlas, L, { target: inside });
   const particles = createParticles(atlas, L);
   const atmosphere = createAtmosphere(world, particles, modules, { target: () => ({ grid }) });
@@ -178,6 +180,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       moduleView.update();
       siteView.update();
       itemView.update();
+      slabView.update();
       fxView.update();
       atmosphere.update(dt);
       particles.update(dt);
@@ -231,6 +234,7 @@ export function createShipScene(grid: Grid, o: ShipSceneOptions): ShipScene {
       moduleView.dispose();
       siteView.dispose();
       itemView.dispose();
+      slabView.dispose();
       fxView.dispose();
       particles.dispose();
       jobView.dispose();
