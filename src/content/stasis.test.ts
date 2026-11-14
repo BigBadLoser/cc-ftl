@@ -16,9 +16,9 @@ import { accessTile, footprintTiles } from '../sim/modules/footprint';
 import { footprintBlockedByCrew, removeModule } from '../sim/modules/spawn';
 import { deserialize, serialize } from '../sim/save';
 import { SLOT_NONE, StasisC, StasisWheelC } from '../sim/stasis/components';
-import { CART_PARK_STEPS, cartRest, fullSlabs, onCart, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
+import { CART_PARK_STEPS, cartRest, fullSlabs, onCart, stowProgress, stowingNow, walkLeft, walking, isFrozen, slabDraining, slabInfo, slabPlace, wheelSlots } from '../sim/stasis/query';
 import { sealMarked, sealRefusal } from '../sim/stasis/order';
-import { RESERVE_TICKS, SLAB_ITEM } from '../sim/stasis/tuning';
+import { RESERVE_TICKS, SLAB_ITEM, STOW_WORK } from '../sim/stasis/tuning';
 import { playerCrew } from '../sim/story/world';
 import { heldItems } from '../sim/items/held';
 import { newGame } from '../sim';
@@ -92,6 +92,29 @@ describe('stasis wheel', () => {
     expect(wheelSlots(sim.world, wheel)).toEqual(new Array(10).fill({ kind: 'empty' }));
     expect(sim.world.get(wheel, ModuleC)!.powered).toBe(false); // idle: nothing to hold
     expect(heldItems(sim).filter((h) => h.where === 'slotted').reduce((n, h) => n + h.count, 0)).toBe(10);
+  });
+
+  it('stowing takes STOW_WORK, its progress rising 0..1 while the crew member stands at the hatch (the loading animation)', () => {
+    const { sim, wheel, prisoner } = prisonGame();
+    const seen: number[] = [];
+    let stowing = 0;
+    for (let i = 0; i < 3000 && !stowed(sim, prisoner)(); i++) {
+      sim.step();
+      sim.events.drain();
+      const st = stowProgress(sim.world, wheel);
+      if (st) {
+        seen.push(st.progress);
+        stowing = st.crew;
+        expect(stowingNow(sim.world, st.crew)).toBe(true);
+      }
+    }
+    expect(slabPlace(sim, prisoner)?.kind).toBe('wheel');
+    expect(stowProgress(sim.world, wheel)).toBeNull();
+    expect(seen.length).toBeGreaterThan(STOW_WORK / 4);
+    expect(seen.length).toBeLessThanOrEqual(STOW_WORK + 2);
+    expect(seen).toEqual([...seen].sort((a, b) => a - b));
+    expect(seen[seen.length - 1]!).toBeGreaterThan(0.9);
+    expect(stowing).not.toBe(0);
   });
 
   it('crew seal a prisoner where they stand and cart the slab to the wheel', () => {

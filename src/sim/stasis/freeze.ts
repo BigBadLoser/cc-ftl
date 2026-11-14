@@ -11,7 +11,7 @@ import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC, type SlabSource } from './components';
 import { floorSpot, standSpot } from './place';
-import { slabPlace, wheelHatch, wheelOf } from './query';
+import { slabPlace, stowSlotIn, wheelHatch, wheelOf } from './query';
 import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /** Take one empty slab out of a source. True if one was there. A wheel gives up its lowest slot holding one. */
@@ -96,8 +96,7 @@ export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   const m = sim.world.get(wheel, ModuleC);
   const s = sim.world.get(prisoner, StasisC);
   if (!slots || !m || !s) return -1;
-  let slot = slots.indexOf(SLOT_NONE);
-  if (slot < 0) slot = slots.indexOf(SLOT_EMPTY);
+  const slot = stowSlotIn(slots);
   if (slot < 0) return -1;
   const hatch = wheelHatch(sim, m);
   if (slots[slot] === SLOT_EMPTY) spillItems(sim, shipIdOf(sim, m), hatch.x, hatch.y, SLAB_ITEM, 1);

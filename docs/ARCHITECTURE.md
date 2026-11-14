@@ -2780,6 +2780,10 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   `takeSlabFor` is the one way a crew member comes to hold an empty slab: one already in hand is used, never a second taken. Same ship only: crew take jobs on
   the ship they stand on, so a prize's prisoners need a wheel on the prize until the escort slice. `isCarrying` counts a cart, so its carrier is not
   preempted or sent to fight.
+- **Stow work.** The stow phase takes `STOW_WORK` (`tuning.ts`, from `STOW_SECONDS` = 7.9 s at game speed 1 and work speed 1) at the hatch: `job.progress`
+  rises while the crew member stands there, and the slab goes in the wheel only at the end. `stowProgress(world, wheel)` and `stowingNow` are the reads
+  render uses: `render/stasisLoad.ts` plays the 63-tick loading animation (`stasisload.<patch>.r<rot>` patches over the wheel, `stasisArt.loadingAt`)
+  over that progress, only when the slab goes to slot 0 (`stowSlotIn`), and `crewView` hides the crew member's own cart while it plays (the patches draw it).
 - **The system** (`stasisSystem`, after power and autojobs): a cart whose carrier no longer holds the slab's job is set down on the floor (the job
   turns into a pickup); reserves drain one tick a tick while `slabDraining` and refill `REFILL_PER_TICK` in a powered wheel; at 0 the prisoner thaws
   (no PrisonerC or SurrenderedC, drafted where the slab was, hostile). The "Stasis failing" alert is derived from state (`app/stasisAlert.ts`).

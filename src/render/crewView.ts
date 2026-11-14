@@ -27,7 +27,7 @@ import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
 import { cartTarget, createCart, easeCart, type CartSprite } from './cartView';
 import { CART_FRAMES, cartFrame, cartFront, type CartPose } from './cartPose';
-import { carriedSlabOf, onCart } from '../sim/stasis/query';
+import { carriedSlabOf, onCart, stowingNow } from '../sim/stasis/query';
 import type { SlabFaces } from './slabFace';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
@@ -409,7 +409,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
         // A stasis slab rides a hover cart pushed ahead of the carrier, not in their hands.
-        const carting = !hurtLying && onCart(world, id);
+        const carting = !hurtLying && onCart(world, id) && !stowingNow(world, id);   // (the wheel's loading animation draws its cart)
         if (carting) {
           const want = cartTarget(world, id, s.x, s.y, s.cartAt);
           s.cartAt = want ? easeCart(s.cartAt, want, k) : null;

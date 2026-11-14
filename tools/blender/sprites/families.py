@@ -166,7 +166,7 @@ def jobs(name):
         if os.environ.get("CART_ALL"):      # the cart's mirror check alone (slab_cart)
             return slab_cart.jobs(), "slab"
         return slab_game.jobs(rots) + slab_cart.jobs(rots) + slab_floor.jobs(), "slab"
-    if name == "stasisload":    # the stasis wheel's loading animation, a prototype (slab_loadanim.py), preview only
+    if name == "stasisload":    # the stasis wheel's loading animation, patches over the stasis wheel (slab_loadanim.py)
         from . import slab_loadanim
         return slab_loadanim.jobs(tuple(int(r) for r in __import__("os").environ.get("STASISLOAD_ROTS", "0,1,2,3").split(","))), "slab"
     if name == "slab":          # look study, preview only (not in RENDERED): the stasis slab, its storage and carts
@@ -289,5 +289,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod", "stasis")
+            "recovery_pod", "stasis", "stasisload")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

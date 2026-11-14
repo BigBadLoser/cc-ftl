@@ -1,4 +1,4 @@
-"""Stasis wheel loading animation, prototype (family `stasisload`, preview only; issue #116).
+"""Stasis wheel loading animation (family `stasisload`; issue #116).
 
 A slab stowed at the hatch is a short strip of PATCHES drawn over the wheel's base, not a re-render of the whole wheel:
 every frame renders the whole wheel in that pose once and keeps only the pixels that differ from the shut, empty
@@ -7,10 +7,10 @@ sinks, the shuttle runs it in and turns it to the ring's angle, the leaves shut)
 that moved, anchored on the wheel's origin like the slot layers (`module.stasis_wheel.slot<i>`), and the game draws it
 between the slabs and the rim lamps.
 
-  stasisload.base       the shut, empty wheel (as slab_game's base, the reference the patches are cut from)
-  stasisload.slot0      slot 0's slab alone (as slab_game's slot layer), where the run-in ends
-  stasisload.h<n>       the hatch frame n: leaves, platform, cradle, slab on its way in
-  stasisload.s<n>       the Geneva star's index frame n (the crank swings round once, the star steps 36 deg)
+  stasisload.<name>.r<r>   hatch frame `name` of HATCH (hd, hc, ha, hh, hl, he; see there), rotation r
+  stasisload.s<n>.r<r>     the Geneva star's index frame n (the crank swings round once, the star steps 36 deg)
+The reference the patches are cut from is the shut, empty wheel of the stasis family (module.stasis_wheel.r<r>): the same
+build as slab_game's base, so the game draws a patch over that, with its slot and lamp layers.
 
 The star's art is `geneva` of slab_wheel.py with a crank phase added here (`geneva_phase`), so the stasis family's
 cached sprites stay untouched."""
@@ -279,6 +279,5 @@ def jobs(rots=None):
     if only:
         return [job("h", n, r) for r in rots for n, h in enumerate(HATCH) if h[0].startswith(tuple(only.split(",")))]
     for r in rots:
-        out += [job("base", 0, r), job("slot0", 0, r), job("lamp0", 0, r)]
         out += [job("h", n, r) for n in range(len(HATCH))] + [job("s", n, r) for n in range(len(STAR))]
     return out

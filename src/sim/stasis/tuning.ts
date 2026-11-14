@@ -1,4 +1,5 @@
 import { HOUR_TICKS } from '../clock';
+import { TICK_HZ } from '../time';
 
 /** The item an empty stasis slab is (made at a fabricator, bought, or standing empty in a wheel slot). */
 export const SLAB_ITEM = 'item.stasis_slab';
@@ -12,3 +13,10 @@ export const REFILL_PER_TICK = 4;
 export const SEAL_WORK = 60;
 /** How far (steps over walkable tiles) a dropped slab or a thawed prisoner is placed from where it should be, at most. */
 export const PLACE_STEPS = 6;
+/**
+ * Seconds a crew member at work speed 1 takes to stow a slab at the wheel's hatch (game speed 1): the loading animation's length
+ * (render/stasisLoad.ts plays its 63 frames over the job's progress, so they pause and speed up with the game).
+ */
+export const STOW_SECONDS = 7.9;
+/** Work (ticks at work speed 1) to stow a slab; the one owner of the animation's length. */
+export const STOW_WORK = Math.round(STOW_SECONDS * TICK_HZ);
