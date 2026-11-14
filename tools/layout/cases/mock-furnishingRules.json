@@ -537,6 +537,7 @@
       {"def":"module.bed","x":15,"y":17,"rot":2},
       {"def":"module.storage_locker","x":16,"y":18,"rot":2},
       {"def":"module.bed","x":17,"y":17,"rot":2},
+      {"def":"module.gametable","x":21,"y":17,"rot":2},
       {"def":"module.bed","x":28,"y":13,"rot":0},
       {"def":"module.storage_locker","x":29,"y":13,"rot":0},
       {"def":"module.bed","x":30,"y":13,"rot":0},
@@ -570,6 +571,8 @@
       {"def":"module.bed","x":58,"y":17,"rot":2},
       {"def":"module.storage_locker","x":57,"y":18,"rot":2},
       {"def":"module.bed","x":56,"y":17,"rot":2},
+      {"def":"module.gametable","x":48,"y":17,"rot":2},
+      {"def":"module.gametable","x":53,"y":17,"rot":2},
       {"def":"module.bed","x":64,"y":13,"rot":1},
       {"def":"module.storage_locker","x":64,"y":14,"rot":3},
       {"def":"module.bed","x":64,"y":15,"rot":1},
@@ -1551,9 +1554,12 @@
       507,
       508,
       509,
-      510
+      510,
+      511,
+      512,
+      513
     ],
-    "nextModuleId": 511,
+    "nextModuleId": 514,
     "extra": {}
   },
   "edited": {
@@ -2080,6 +2086,7 @@
       {"def":"module.bed","x":15,"y":17,"rot":2},
       {"def":"module.storage_locker","x":16,"y":18,"rot":2},
       {"def":"module.bed","x":17,"y":17,"rot":2},
+      {"def":"module.gametable","x":21,"y":17,"rot":2},
       {"def":"module.bed","x":28,"y":13,"rot":0},
       {"def":"module.storage_locker","x":29,"y":13,"rot":0},
       {"def":"module.bed","x":30,"y":13,"rot":0},
@@ -2113,6 +2120,8 @@
       {"def":"module.bed","x":58,"y":17,"rot":2},
       {"def":"module.storage_locker","x":57,"y":18,"rot":2},
       {"def":"module.bed","x":56,"y":17,"rot":2},
+      {"def":"module.gametable","x":48,"y":17,"rot":2},
+      {"def":"module.gametable","x":53,"y":17,"rot":2},
       {"def":"module.bed","x":64,"y":13,"rot":1},
       {"def":"module.storage_locker","x":64,"y":14,"rot":3},
       {"def":"module.bed","x":64,"y":15,"rot":1},
@@ -3094,9 +3103,12 @@
       507,
       508,
       509,
-      510
+      510,
+      511,
+      512,
+      513
     ],
-    "nextModuleId": 511,
+    "nextModuleId": 514,
     "extra": {}
   },
   "notes": [],

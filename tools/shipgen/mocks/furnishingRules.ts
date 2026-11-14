@@ -27,6 +27,16 @@ const sidePairs = (left: boolean, w: number, y0: number, y1: number): Piece[] =>
   for (let p = y0; p + 2 <= y1; p += 4) out.push([B, x, p, 1], [L, lx, p + 1, rot], [B, x, p + 2, 1]);
   return out;
 };
+/** A wall's run of bed pairs, from one end toward the other, and a game table along it at a given tile. */
+interface Run { from: number; to: number; at: (v: number) => Piece }
+/** Each stretch a run of pairs leaves free at its far end (a tile clear of the last bed) takes a game table, centred in it. */
+const leftover = (runs: Run[]): Piece[] => runs.flatMap((run) => {
+  const dir = run.to >= run.from ? 1 : -1, len = Math.abs(run.to - run.from) + 1, n = Math.floor((len + 1) / 4);
+  const lo = n > 0 ? 4 * n : 0, free = len - lo;
+  if (free < 2) return [];
+  const start = lo + Math.floor((free - 2) / 2);
+  return [run.at(run.from + dir * (dir > 0 ? start : start + 1))];
+});
 /** A block of furniture: its size and its pieces from its top-left corner. */
 interface Block { w: number; h: number; at: (x: number, y: number) => Piece[] }
 const BLOCKS: Block[] = [
@@ -73,9 +83,16 @@ const RULES: Record<string, { role: RoomRole; rule: Rule }> = {
   // Bed rows on the long walls: across the top and bottom when the room is wide, down the sides when it is tall.
   'B1 bunk pairs on the long walls': {
     role: 'quarters',
-    rule: (w, h, d) => (w >= h
-      ? [...bunks(0, w - 1, 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)]
-      : [...sidePairs(true, w, 0, h - 1), ...sidePairs(false, w, 0, h - 1)]),
+    // Where a wall's run of pairs leaves a stretch too short for another pair, a game table stands in it, a tile off the wall.
+    rule: (w, h, d) => {
+      const runs: Run[] = w >= h
+        ? [{ from: 0, to: w - 1, at: (v) => [GT, v, 1, 0] }, { from: 0, to: d - 2, at: (v) => [GT, v, h - 2, 2] }, { from: w - 1, to: d + 2, at: (v) => [GT, v, h - 2, 2] }]
+        : [{ from: 0, to: h - 1, at: (v) => [GT, 1, v, 3] }, { from: 0, to: h - 1, at: (v) => [GT, w - 2, v, 1] }];
+      const beds = w >= h
+        ? [...bunks(0, w - 1, 0, 0), ...bunks(0, d - 2, h - 2, 2), ...bunks(w - 1, d + 2, h - 2, 2)]
+        : [...sidePairs(true, w, 0, h - 1), ...sidePairs(false, w, 0, h - 1)];
+      return [...beds, ...leftover(runs)];
+    },
   },
   // A pair in each corner of the long walls, tables between.
   'B3 two bays, shared tables': {
