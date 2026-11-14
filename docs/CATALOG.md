@@ -59,8 +59,8 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Recovery pod:** built as a first pass (#319): buildable, heals HP to full; no ship starts with one, no injuries or surgery yet.
 - **Construction pods and drones, logistics robot, water purifier, arcade:** planned only, even though `module.pod_bay` text mentions construction pods.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
-  `module.bench` 2x1 (three seats wired: positions, reservation, `sit_bench` drawing, `sim/ai/machines/sit.ts`; no drive sends crew to
-  sit yet, an idle one was taken out; front tiles kept clear), `module.bunk` 1x2 (a bed like `module.bed`; sleeps ONE crew member, the lower deck: two sleepers need a per-bed capacity in
+  `module.bench` 2x1 (three seat positions in its def, `sim/modules/seats.ts`, and the `sit_bench` crew clip
+  and front overlays are ready; nothing sends crew to sit yet; front tiles kept clear), `module.bunk` 1x2 (a bed like `module.bed`; sleeps ONE crew member, the lower deck: two sleepers need a per-bed capacity in
   `crew/beds.ts`, open), `module.exercise` sparring droid, `module.planter`, `module.vending` and `module.vending_red` (decor only,
   no effect; the vending machines draw 1 power). Comfort values on modules and decor are the next step of #441. The single bed
   (`module.bed`) uses the same family's matching art (four rotations, damaged and destroyed per rotation).

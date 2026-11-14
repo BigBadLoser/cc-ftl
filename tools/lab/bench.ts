@@ -4,7 +4,7 @@ import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, set
 import { drawLayers } from '../../src/render/crewSprites';
 import { content } from '../../src/content';
 import { rotatedSize } from '../../src/sim/modules/footprint';
-import { seatPoints } from '../../src/sim/ai/machines/sit';
+import { seatPoints } from '../../src/sim/modules/seats';
 import { iso } from '../../src/render/iso';
 import { lightTint } from '../../src/render/lightTint';
 import { crewLoadout, preloadLayers } from '../../src/render/loadout';
@@ -19,7 +19,7 @@ const SEATS = BENCH.seats!.at;
 const FACING = [2, 4, 6, 0] as const;
 const CAST = [{ seed: 11, role: 'role.engineer' }, { seed: 22, role: 'role.medic' }, { seed: 33, role: 'role.gunner' }];
 
-/** The seat point relative to the front-most tile (the sprite's anchor): the game's `seatPoints` (sim/ai/machines/sit.ts), which crewView draws sitters at. */
+/** The seat point relative to the front-most tile (the sprite's anchor): the game's `seatPoints` (sim/modules/seats.ts). */
 function seatAt(rot: number, k: number): { x: number; y: number } {
   const [w, d] = rotatedSize(BENCH, rot);
   const p = seatPoints(BENCH, { x: 0, y: 0, rot })[k] as { x: number; y: number };

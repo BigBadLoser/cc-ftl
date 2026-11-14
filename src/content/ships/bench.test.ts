@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrewC, PrioritiesC, PositionC } from '../../sim/crew/components';
-import { homeShip, newGame, placementError, shipGrid, spawnModule, type Sim } from '../../sim';
-import { ensureMood, moodFactors } from '../../sim/crew/mood';
-import { seatedOn } from '../../sim/ai/machines/sit';
-import { TaskC } from '../../sim/ai/components';
+import { homeShip, newGame, placementError, shipGrid, type Sim } from '../../sim';
 import { accessTiles, footprintTiles } from '../../sim/modules/footprint';
 import { content } from '../index';
 
@@ -30,7 +26,7 @@ describe('leisure furniture defs', () => {
     expect(freeSpot(sim, id)).toBeDefined();
   });
 
-  it('keeps the bench a seat only (no leisure spot) and the bunk a bed', () => {
+  it('keeps the bench decor (no leisure spot) and the bunk a bed', () => {
     expect(content.modules['module.bench'].seats?.at).toHaveLength(3);
     expect(content.modules['module.bench']).not.toHaveProperty('leisure');
     expect(content.modules['module.bunk'].bed).toBe(true);
@@ -50,18 +46,5 @@ describe('leisure furniture defs', () => {
       if (placementError(sim, ship, 'module.bench', x, y, rot) === 'noAccess') walled++;
     }
     expect(walled).toBeGreaterThan(0); // somewhere on the starter ship it would face a wall, and is refused
-  });
-
-  it('sitting on a bench changes no mood factor', () => {
-    const s = newGame(1, content, 'ship.starter', false);
-    for (let i = 0; i < 40; i++) s.step();
-    const c = s.world.query(CrewC).find((id) => s.world.has(id, PrioritiesC))!;
-    const keys = () => moodFactors(s, c, ensureMood(s, c)).map((f) => `${f.key}:${f.value}`);
-    const before = keys();
-    const p = s.world.get(c, PositionC)!;
-    const b = spawnModule(s, 'module.bench', Math.round(p.x), Math.round(p.y), 0);
-    s.world.add(c, TaskC, { job: 0, drive: 'idle', machine: 'sit', state: 'Sit', since: 0, class: 'any', stack: [], holds: [], bb: { target: b, n: 0, deadline: s.tick + 1000 } } as never);
-    expect(seatedOn(s.world, content.modules, c)).not.toBeNull();
-    expect(keys()).toEqual(before);
   });
 });

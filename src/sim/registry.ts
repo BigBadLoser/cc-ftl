@@ -553,8 +553,8 @@ export interface ModuleDef {
   /** A leisure spot: one crew member plays at each of its access tiles (`accessTiles`). */
   leisure?: { kind: 'social' | 'solo'; seat?: SeatKind };
   /**
-   * Seats idle crew sit on (sim/ai/machines/sit.ts, the one owner): `at` are the seat points in local tiles at rotation 0, as offsets (u along the footprint's
-   * long side, v towards its front) from the footprint's centre; they rotate with the module. A seat takes one sitter and has no mood effect.
+   * Seats crew sit on (sim/modules/seats.ts, the one owner; nothing sends crew to sit yet): `at` are the seat points in local tiles at rotation 0, as offsets (u along the footprint's
+   * long side, v towards its front) from the footprint's centre; they rotate with the module. A seat takes one sitter.
    * `kind` names the crew clip (render/loadout.ts SEAT_CLIP).
    */
   seats?: { kind: SeatKind; at: [number, number][] };

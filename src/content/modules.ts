@@ -82,7 +82,7 @@ export const modules = {
     scrap: 'comfort',
     name: 'Bench',
     category: 'life',
-    description: "A bench with room for three. Idle crew sit down on it now and then.",
+    description: "A bench with room for three.",
     asset: 'module.bench',
     footprint: [2, 1],
     solid: false,
