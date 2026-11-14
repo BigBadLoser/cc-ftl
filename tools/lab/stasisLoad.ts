@@ -15,16 +15,23 @@ const HD = 5; // hd0-hd4: the leaves part, the cradle rises
 const HE = 2; // he0-he1: the leaves shut
 const STAR = 6;
 const HH = 7; // hh0-hh6: the cart docked, the slab lowering from it onto the cradle
-const HATCH = HD + 4 + HH + 17 + HE;
+const NG = 10; // ha0-ha9: the cart glides in with the slab; hl0-hl9: the empty cart glides out
+const HATCH = HD + 4 + NG + HH + NG + 17 + HE;
 const TICKS = HATCH + STAR + 2; // then the star steps and the lamp lights, and a short hold
-const CART_FROM = HD + 4; // hh0-hh6: the cart is in the patch, the game hides its own cart sprite here
-const CART_TO = HD + 4 + HH - 1;
+const CART_FROM = HD + 4; // (now the cart is in every tick from ha0 to hl9) // hh0-hh6: the cart is in the patch, the game hides its own cart sprite here
+const CART_TO = HD + 4 + NG + HH + NG - 1;
 const hatchName = (i: number): string => {
   if (i < HD) return `hd${i}`;
-  if (i < HD + 4) return `hc${String(i - HD).padStart(2, '0')}`;
-  if (i < HD + 4 + HH) return `hh${i - HD - 4}`;
-  if (i < HATCH - HE) return `hc${String(i - HD - 4 - HH + 9).padStart(2, '0')}`;
-  return `he${i - HATCH + HE}`;
+  let j = i - HD;
+  if (j < 4) return `hc${String(j).padStart(2, '0')}`;
+  j -= 4;
+  if (j < NG) return `ha${j}`;
+  j -= NG;
+  if (j < HH) return `hh${j}`;
+  j -= HH;
+  if (j < NG) return `hl${j}`;
+  j -= NG;
+  return j < 17 ? `hc${String(j + 9).padStart(2, '0')}` : `he${j - 17}`;
 };
 const hatchAt = (t: number): number => (t < HATCH ? t : -1);
 const starAt = (t: number): number => (t >= HATCH && t < HATCH + STAR ? t - HATCH : -1);
@@ -68,7 +75,7 @@ export const stasisLoadPanel: LabPanel = {
   help: 'src=/.cache/stasis-load-preview/ ; &play loops the strip',
   async cells({ params }) {
     const fr = await frames(params.get('src') ?? '/.cache/stasis-load-preview/');
-    for (const [k, v] of await frames(params.get('src2') ?? '/.cache/stasis-load-hh/')) fr.set(k, v); // the re-rendered hand-off frames
+    for (const d of ['/.cache/stasis-load-hh/', '/.cache/stasis-load-ahl/']) for (const [k, v] of await frames(params.get('src2') ?? d)) fr.set(k, v); // the re-rendered hand-off frames
     const rot = Number(params.get('rot') ?? 0);
     const g = (n: string): Fr | undefined => fr.get(`${n}.r${rot}`);
     const w = 230;

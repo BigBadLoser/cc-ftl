@@ -41,8 +41,21 @@ TOL = 14                                            # a pixel counts as changed 
 # The cart is in the patches only for the hand-off hh0-hh6: docked (out 0), the slab lowering from the cart's height onto
 # the cradle in 6 steps (the original hc05 -> hc07); the game hides its own cart sprite for those ticks.
 HH = [(0, 0, 0, ("cart", 0.0, LD.CART + (LD.BED - LD.CART) * i / 6)) for i in range(7)]
+# Round 3: the cart is in the patches the whole way: ha0-ha9 glide it in (slab on it) from OUT0 (past the cell's edge) to docked,
+# eased in and out; hl0-hl9 glide the empty cart out again (the slab on the cradle) to OUT0.
+OUT0, NG = 2.4, 10
+
+
+def ease(u):
+    return u * u * (3 - 2 * u)
+
+
+HA = [(90, 0, 0, ("cart", OUT0 * (1 - ease(i / NG)), LD.CART)) for i in range(NG)]
+HL = [(90, 0, 0, ("left", OUT0 * ease((j + 1) / NG), LD.BED)) for j in range(NG)]
 HATCH = [(f"hd{j}", k, 0) for j, k in enumerate(LD.KEYS_D)] + [(f"hc{i:02d}", LD.KEYS[i], i) for i in range(4)] + \
+    [(f"ha{i}", k, 5 + i) for i, k in enumerate(HA)] + \
     [(f"hh{i}", (90, 0, 0, k[3]), 5 + i) for i, k in enumerate(HH)] + \
+    [(f"hl{j}", k, 5 + j) for j, k in enumerate(HL)] + \
     [(f"hc{i:02d}", LD.KEYS[i], i) for i in range(9, len(LD.KEYS))] + \
     [(f"he{j}", k, 0) for j, k in enumerate(LD.KEYS_E)]
 # Star frames: the crank's angle (deg) from mid-step. The pin is in the star's slot for |phi| < 72, where the star turns
@@ -264,7 +277,7 @@ def jobs(rots=None):
     out = []
     only = __import__("os").environ.get("STASISLOAD_ONLY")      # a name prefix: re-render just those hatch frames
     if only:
-        return [job("h", n, r) for r in rots for n, h in enumerate(HATCH) if h[0].startswith(only)]
+        return [job("h", n, r) for r in rots for n, h in enumerate(HATCH) if h[0].startswith(tuple(only.split(",")))]
     for r in rots:
         out += [job("base", 0, r), job("slot0", 0, r), job("lamp0", 0, r)]
         out += [job("h", n, r) for n in range(len(HATCH))] + [job("s", n, r) for n in range(len(STAR))]
