@@ -1,20 +1,23 @@
-import { Sprite, Texture, type Container, type Renderer } from 'pixi.js';
-import { World } from '../../src/sim/ecs';
-import { createPortraits } from '../../src/render/portrait';
+import { Container, Rectangle, Sprite, Texture, type Renderer } from 'pixi.js';
+import type { Atlas } from '../../src/render/assets/loader';
+import { createCrewFilter, crewPalette, setFilterTint, setFilterZoom } from '../../src/render/assets/palette';
+import { drawLayers } from '../../src/render/crewSprites';
+import { ART_SCALE } from '../../src/render/iso';
+import { crewLoadout, preloadLayers, type CrewLook } from '../../src/render/loadout';
 import type { LabCell, LabPanel } from './panel';
 
 /*
  * Prototype of the stasis "crew shader" (#116): a full slab shows its prisoner pressed into the slab's face. The face
  * area is found from the sprite itself: the face is the palette tone `slbFace` unlit (#8c9697 after the render's
  * colour step), a clean parallelogram, so a colour key gives the mask and its four corners give the affine map from
- * the portrait to the face. No Blender mask. The press is baked on the CPU here (one-off per sprite and prisoner) to
+ * the figure to the face. No Blender mask. The press is baked on the CPU here (one-off per sprite and prisoner) to
  * look at it; in the game it would be a pixi filter doing the same per pixel (see the report).
  */
 
 const A = 'module.stasis_wheel';
 const FACE = [140, 150, 151];
 const PAD = 14;
-const SS = 3;                                       // supersamples per axis when reading the portrait
+const SS = 3;                                       // supersamples per axis when reading the figure
 
 interface Px { w: number; h: number; d: Uint8ClampedArray }
 type V = [number, number];
@@ -33,16 +36,31 @@ function read(renderer: Renderer, tex: Texture): Px {
   return { w: c.width, h: c.height, d: im.data };
 }
 
-async function portraitPx(url: string): Promise<Px> {
-  const img = new Image();
-  img.src = url;
-  await img.decode();
-  const c = document.createElement('canvas');
-  c.width = img.width;
-  c.height = img.height;
-  const x = c.getContext('2d') as CanvasRenderingContext2D;
-  x.drawImage(img, 0, 0);
-  return { w: c.width, h: c.height, d: x.getImageData(0, 0, c.width, c.height).data };
+/** The prisoner's whole crew sprite (a standing idle frame, every layer of their loadout, their palette), trimmed to its opaque pixels. */
+async function figurePx(atlas: Atlas, renderer: Renderer, look: CrewLook, dir: number): Promise<Px> {
+  const layers = crewLoadout(atlas, look);
+  preloadLayers(layers);
+  await atlas.whenIdle();
+  const body = new Container();
+  const parts = layers.map((layer) => { const sprite = new Sprite(); body.addChild(sprite); return { layer, sprite }; });
+  drawLayers({ parts, glows: [] }, 'idle', dir, 0);
+  await atlas.whenIdle();
+  drawLayers({ parts, glows: [] }, 'idle', dir, 0);
+  const filter = createCrewFilter(atlas.manifest.keyColors, crewPalette(look.appearanceSeed));
+  setFilterZoom(filter, ART_SCALE);
+  setFilterTint(filter, 0xffffff);
+  body.filters = [filter];
+  const root = new Container();
+  root.addChild(body);
+  const c = renderer.extract.canvas({ target: root, frame: new Rectangle(-80, -150, 160, 170), resolution: 1, antialias: false }) as HTMLCanvasElement;
+  const d = (c.getContext('2d') as CanvasRenderingContext2D).getImageData(0, 0, c.width, c.height);
+  let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d.data[(y * c.width + x) * 4 + 3]! > 8) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  const w = x1 - x0 + 1;
+  const h = y1 - y0 + 1;
+  const out = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) for (let k = 0; k < 4; k++) out[(y * w + x) * 4 + k] = d.data[((y + y0) * c.width + x + x0) * 4 + k]!;
+  return { w, h, d: out };
 }
 
 /** Face pixels: the exact face tone, opaque. */
@@ -78,12 +96,12 @@ function corners(m: Uint8Array, w: number, h: number): V[] {
 }
 
 /**
- * The map from a face pixel to portrait coordinates in [0,1]²: the portrait's top-left sits at the corner and the two
- * edges from it are its axes, chosen so the figure reads upright on screen; the portrait is a square at the head end.
+ * The map from a face pixel to figure coordinates: the figure lies lengthwise, head to feet along the face's long edge
+ * (v), its right along u; of the choices, the one with the feet lowest on screen (head at the upper end), never mirrored.
  */
-function frame(q: V[]): { p0: V; u: V; v: V; su: number; sv: number } {
+function frame(q: V[]): { p0: V; u: V; v: V } {
   let best = -Infinity;
-  let out = { p0: q[0]!, u: [1, 0] as V, v: [0, 1] as V, su: 1, sv: 1 };
+  let out = { p0: q[0]!, u: [1, 0] as V, v: [0, 1] as V };
   for (let i = 0; i < 4; i++) {
     const p0 = q[i]!;
     const p1 = q[(i + 1) % 4]!;
@@ -92,25 +110,26 @@ function frame(q: V[]): { p0: V; u: V; v: V; su: number; sv: number } {
     const v: V = [p3[0] - p0[0], p3[1] - p0[1]];
     const lu = Math.hypot(...u);
     const lv = Math.hypot(...v);
-    const cross = u[0] * v[1] - u[1] * v[0];
-    if (cross <= 0) continue;                       // keep the handedness: no mirrored figure
-    const score = v[1] / lv + 0.5 * (u[0] / lu);
-    if (score > best) { best = score; out = { p0, u, v, su: lu >= lv ? lv / lu : 1, sv: lu >= lv ? 1 : lu / lv }; }
+    if (u[0] * v[1] - u[1] * v[0] <= 0 || lv < lu) continue;     // no mirror; v is the long edge
+    const score = v[1] / lv + 0.2 * (v[0] / lv);
+    if (score > best) { best = score; out = { p0, u, v }; }
   }
   return out;
 }
 
+const FACE_ASPECT = 2;                              // the slab's face is 1.6 long by 0.8 wide (slab_study.py L, W)
+const FILL = 0.94;                                  // how much of the face's length the figure takes
+
 interface Field { a: Float32Array; l: Float32Array; w: number; h: number }
 
-/** Sample the portrait into the face: coverage `a` and luminance `l` per sprite pixel (0 where the figure isn't). */
+/** Sample the figure into the face: coverage `a` and luminance `l` per sprite pixel (0 where the figure isn't). */
 function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>): Field {
   const { w, h } = sp;
   const a = new Float32Array(w * h);
   const l = new Float32Array(w * h);
   const det = fr.u[0] * fr.v[1] - fr.u[1] * fr.v[0];
-  const fit = Math.min(1 / por.w, 1 / por.h);       // the portrait inside its unit cell, aspect kept
-  const pw = por.w * fit * 1.0;
-  const ph = por.h * fit * 1.0;
+  const hf = FILL;                                  // the figure's height as a fraction of the face's length
+  const wf = (por.w / por.h) * FILL * FACE_ASPECT;  // and its width as a fraction of the face's width
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (!mask[y * w + x]) continue;
     let sa = 0;
@@ -118,10 +137,10 @@ function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof frame>)
     for (let j = 0; j < SS; j++) for (let i = 0; i < SS; i++) {
       const dx = x + (i + 0.5) / SS - fr.p0[0];
       const dy = y + (j + 0.5) / SS - fr.p0[1];
-      const s = (dx * fr.v[1] - dy * fr.v[0]) / det / fr.su;       // 0..1 across the portrait's cell
-      const t = (dy * fr.u[0] - dx * fr.u[1]) / det / fr.sv;
-      const px = Math.floor(((s - 0.5) / pw + 0.5) * por.w);
-      const py = Math.floor(((t - 0.5) / ph + 0.5) * por.h);
+      const s = (dx * fr.v[1] - dy * fr.v[0]) / det;
+      const t = (dy * fr.u[0] - dx * fr.u[1]) / det;
+      const px = Math.floor(((s - 0.5) / wf + 0.5) * por.w);
+      const py = Math.floor(((t - 0.5) / hf + 0.5) * por.h);
       if (px < 0 || py < 0 || px >= por.w || py >= por.h) continue;
       const k = (py * por.w + px) * 4;
       const al = por.d[k + 3]! / 255;
@@ -167,7 +186,7 @@ const frosted: Variant = (o, i, x, y, { bl2, f }) => {
   for (let c = 0; c < 3; c++) o[c] = mix(haze[c]!, body[c]!, fig * 0.78) + (noise(x, y) - 0.5) * 7;
 };
 
-/** B: set in carbonite. Cold-tinted slab, the figure raised as a relief lit from the top left, its shading from the portrait. */
+/** B: set in carbonite. Cold-tinted slab, the figure raised as a relief lit from the top left, its shading from the figure. */
 const relief: Variant = (o, i, x, y, { f, bl, edge }) => {
   const w = f.w;
   const h = (k: number): number => bl[k]! * 0.8 + f.l[k]! * f.a[k]! * 0.5;
@@ -192,10 +211,20 @@ const ice: Variant = (o, i, x, y, { f, bl2, edge }) => {
   for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, [225, 245, 255][c]!, white);
 };
 
+/** D: A's haze with C's frozen rim, glass sheen and speckle. */
+const mixed: Variant = (o, i, x, y, ctx) => {
+  frosted(o, i, x, y, ctx);
+  const band = ((x * 0.7 + y * 1.1) % 26) / 26;
+  const rim = ctx.edge < 1.5 ? 0.55 : ctx.edge < 2.5 ? 0.22 : 0;
+  const white = Math.max(band < 0.12 ? 0.18 : 0, rim, noise(x * 3.1, y * 1.7) > 0.95 ? 0.25 : 0);
+  for (let c = 0; c < 3; c++) o[c] = mix(o[c]!, [225, 245, 255][c]!, white);
+};
+
 const VARIANTS: readonly [string, string, Variant][] = [
   ['A frosted glass', 'haze + soft shadow', frosted],
   ['B carbonite relief', 'tinted slab, raised, lit top-left', relief],
   ['C pressed under ice', 'dark deep, frozen rim, sheen', ice],
+  ['D haze + rim', 'A haze with C rim and sheen', mixed],
 ];
 
 /** A new texture: the slab with every face pixel replaced by the press, or the sprite itself with no variant. */
@@ -235,7 +264,7 @@ function stamp(root: Container, tex: Texture, ox: number, oy: number, ax: number
 }
 
 /**
- * `?panel=stasisface`: prototype of the crew shader for stasis slabs (#116). Three prisoners pressed into three slab
+ * `?panel=stasisface`: prototype of the crew shader for stasis slabs (#116). Prisoners pressed into three slab
  * sprites (the floor slab, the slab on its cart at heading h4, the wheel slot) in three styles, beside the empty slab.
  * `&noface` leaves out the press (the empty slabs only).
  */
@@ -243,26 +272,32 @@ export const stasisFacePanel: LabPanel = {
   id: 'stasisface',
   title: 'Stasis slab face (prototype)',
   zoom: 2.5,
-  help: 'the prisoner pressed into the slab face, 3 styles beside the empty slab; rows: floor slab, hover cart h4, wheel slot 0',
+  help: 'the prisoner (whole crew sprite) pressed into the slab face, 4 styles beside the empty slab; rows: floor slab, hover cart h4 and h7, wheel slot 0; dir=5 (facing the camera), &dirs shows the figure at each direction',
   async cells({ atlas, renderer, params }) {
-    const portraits = createPortraits(renderer.extract, atlas, new World(), {});
-    const ids = ['slab.floor.x', 'slab.cart.h4', `${A}.slot0.r0`];
+    const dir = Number(params.get('dir') ?? 5);
+    const ids = ['slab.floor.x', 'slab.cart.h4', 'slab.cart.h7', `${A}.slot0.r0`];
     ids.forEach((id) => atlas.stat(id));
     await atlas.whenIdle();
-    const urls: string[] = [];
-    for (const look of LOOKS) {
-      let url: string | null = null;
-      for (let k = 0; k < 10 && !url; k++) { url = portraits.lookUrl(look); if (!url) await atlas.whenIdle(); }
-      urls.push(url ?? '');
-    }
-    const pors = await Promise.all(urls.map(portraitPx));
+    const figs = [];
+    for (const look of LOOKS) figs.push(await figurePx(atlas, renderer, look, dir));
     const cells: LabCell[] = [];
+    if (params.has('dirs')) {                       // debug: the figure at each of the 8 directions
+      for (let d = 0; d < 8; d++) {
+        const f = await figurePx(atlas, renderer, LOOKS[0]!, d);
+        const c = document.createElement('canvas'); c.width = f.w; c.height = f.h;
+        (c.getContext('2d') as CanvasRenderingContext2D).putImageData(new ImageData(new Uint8ClampedArray(f.d), f.w, f.h), 0, 0);
+        const tex = Texture.from(c);
+        cells.push({ label: `dir ${d}`, w: f.w + 8, h: f.h + 8, mount(root) { const sp = new Sprite(tex); sp.position.set(4, 4); root.addChild(sp); return () => {}; } });
+      }
+      return cells;
+    }
     const rows: { name: string; id: string; look: number }[] = [
       { name: 'floor slab, along x', id: 'slab.floor.x', look: 0 },
+      { name: 'floor slab, 2nd prisoner', id: 'slab.floor.x', look: 1 },
       { name: 'on the hover cart, h4', id: 'slab.cart.h4', look: 1 },
-      { name: 'wheel slot 0, r0', id: `${A}.slot0.r0`, look: 2 },
-      { name: 'floor slab, 2nd prisoner', id: 'slab.floor.x', look: 2 },
-      { name: 'floor slab, 3rd prisoner', id: 'slab.floor.x', look: 1 },
+      { name: 'on the hover cart, h7 (diagonal)', id: 'slab.cart.h7', look: 0 },
+      { name: 'wheel slot 0, r0', id: `${A}.slot0.r0`, look: 0 },
+      { name: 'wheel slot 0, 2nd prisoner', id: `${A}.slot0.r0`, look: 1 },
     ];
     const stats: string[] = [];
     for (const row of rows) {
@@ -271,7 +306,7 @@ export const stasisFacePanel: LabPanel = {
       const sp = read(renderer, st.tex);
       const mask = faceMask(sp);
       const fr = frame(corners(mask, sp.w, sp.h));
-      const fld = params.has('noface') ? null : sample(sp, mask, pors[row.look]!, fr);
+      const fld = params.has('noface') ? null : sample(sp, mask, figs[row.look]!, fr);
       const opts: [string, string, Variant | null][] = [['empty slab', 'as the sprite is', null], ...VARIANTS];
       const w = sp.w + PAD * 2;
       const h = sp.h + PAD * 2;
