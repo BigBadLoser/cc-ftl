@@ -20,8 +20,7 @@
 </div>
 
 <style>
-  .card { display: grid; grid-template-columns: 58px 1fr; gap: 10px; padding: 8px; background: linear-gradient(135deg, #0f1a1f, #0b0e11); border: 1px solid #24414a; }
-  .card.bad { border-color: #5a2a2a; background: linear-gradient(135deg, #1f1111, #0b0e11); }
+  .card { display: grid; grid-template-columns: 58px 1fr; gap: 10px; margin: 0 0 8px; }
   .slab { position: relative; width: 58px; height: 64px; border: 2px solid #c9d6d9;  overflow: hidden; background: #6e8288; }
   .slab img { width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; filter: grayscale(.75) brightness(.95) contrast(1.1); }
   .frost { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(190,235,245,.35), rgba(120,170,185,.15) 55%, rgba(200,240,250,.3)); mix-blend-mode: screen; }
