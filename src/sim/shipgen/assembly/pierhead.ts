@@ -32,8 +32,10 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
     from = { ...end, owner: -1, used: false };
   }
   const f: Frame = from.frame;
-  // Customs and the head as wide as the rows: their outer walls run on as theirs (the user's call).
-  const c0 = -(deep + 2), c1 = deep + 2, v0 = c0, v1 = c1;
+  // Customs and the head as wide as the rows: their outer walls run on as theirs (the user's call). The street runs
+  // v = -1 up to X (two tiles, and what a wider one adds on its +v side), and the rows on from there.
+  const X = Math.max(2, b.width ?? port.width ?? 2) - 2;
+  const c0 = -(deep + 2), c1 = deep + 2 + X, v0 = c0, v1 = c1;
   // One airlock in the end wall; the rest along the two sides, a pitch apart, two tiles clear of customs and of the end unit.
   const pairs = Math.ceil((docks.length - 1) / 2), L = CUSTOMS + 2 + Math.max(0, pairs - 1) * o.pitch + 3 + 2 + 3;
   const free = (box: readonly [number, number, number, number], open = false): boolean => {
@@ -43,7 +45,7 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   if (!free(rect(f, 0, CUSTOMS, c0 - 1, c1 + 1)) || !free(rect(f, CUSTOMS, L + 1, v0 - 1, v1 + 1))) return null;
   // Where each airlock stands: its unit of three by three (the airlock module's own floor), its hatch, its berth.
   const units = docks.map((d, i) => {
-    if (i === 0) return { d, box: rect(f, L - 3, L, -2, 1), hatch: at(f, L, -1), berth: rect(f, L + 1, L + 1 + BERTH, v0 - 1, v1 + 1) };
+    if (i === 0) return { d, box: rect(f, L - 3, L, X - 2, X + 1), hatch: at(f, L, X - 1), berth: rect(f, L + 1, L + 1 + BERTH, v0 - 1, v1 + 1) };
     const k = (i - 1) >> 1, u = CUSTOMS + 2 + k * o.pitch, north = i % 2 === 1;
     return north
       ? { d, box: rect(f, u, u + 3, v0, v0 + 3), hatch: at(f, u + 1, v0 - 1), berth: rect(f, u - 2, u + 5, v0 - 1 - BERTH, v0 - 1) }
@@ -55,7 +57,7 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   g.street(customs, ...rect(f, 0, CUSTOMS, c0, c1));
   g.street(hall, ...rect(f, CUSTOMS, L, v0, v1));
   // The gate: across the street, in line with the last rooms' end walls.
-  for (const v of [-1, 0]) g.set(...at(f, -1, v), SOLID);
+  for (let v = -1; v <= X; v++) g.set(...at(f, -1, v), SOLID);
   g.gate(...at(f, -1, 0));
   for (const un of units) {
     g.rect(g.hall('dock', 'airlock', { ...un.d, w: 3, h: 3 }), ...un.box);
