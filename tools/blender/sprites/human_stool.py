@@ -5,7 +5,7 @@ armrests are nearer the camera (human_render.chair_holdout), and the cut pixels 
 armrests, a thinner back and a different seat, so seating a crew member on one with the console cut leaves holes in the
 lap. `sit_stool_work` is the sit_work pose rendered against the stool itself: the module's own seat shape, chosen per module by
 `ModuleDef.seat` (src/sim/registry.ts). Add another seat kind the same way: a holdout builder here, a `Pose(chair=<kind>)`
-row in crew_clips, a clip row in crew_spec.CLIPS."""
+row in crew_clips, a clip row in crew_spec.CLIPS (human_bench.py is the bench's)."""
 from . import gametable_kit as GK
 from .modkit import K
 

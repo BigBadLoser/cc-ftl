@@ -1,6 +1,7 @@
 import { releaseBed } from '../crew/beds';
-import { AssignmentC, CarriedC, CrewC, DeadC, JobC, PathC, type Crew, type Job } from '../crew/components';
-import { ModuleC } from '../modules/components';
+import { AssignmentC, BedOwnerC, CarriedC, CrewC, DeadC, JobC, PathC, type Crew, type Job } from '../crew/components';
+import { ModuleC, type Module } from '../modules/components';
+import { holdBerth } from '../crew/berths';
 import { clearPath } from '../crew/helpers';
 import type { Tile } from '../crew/pathfind';
 import { isErrand } from '../eva/errands';
@@ -131,7 +132,9 @@ export function claimedBed(sim: Sim, crew: number): number {
 
 /** Claim a bed for one sleep: the bed is reserved to the sleeper, and their task becomes the walk to it, holding it. */
 export function claimBed(sim: Sim, crew: number, bed: number): void {
-  (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = crew;
+  const m = sim.world.get(bed, ModuleC) as Module;
+  const own = sim.world.get(crew, BedOwnerC);
+  holdBerth(sim.content.modules[m.def], m, crew, own?.bed === bed ? own.berth ?? 0 : -1); // their own berth when it is free, else the lowest free one
   putTask(sim, crew, newTask(sim, 0, 'sleep', 'sleep', 'Walk', { aux: bed }, [{ kind: 'bed', id: bed }]));
 }
 

@@ -5,6 +5,7 @@ import type { Sim } from '../sim';
 import { BedOwnerC, CarriedC, DownedC } from './components';
 import { findPath, type Tile } from './pathfind';
 import { shipIdOf } from '../regions';
+import { berthHolder, freeBerth, releaseBerth } from './berths';
 
 /** A bed tile a planner must not use (a hazard there for this sleeper). */
 export type BedSkip = (x: number, y: number) => boolean;
@@ -48,7 +49,7 @@ export function bedStandTile(def: ModuleDef, m: Module): Tile {
 
 /** A bed the planners may pick now: intact, free and (a pod) powered. The one answer to "can a patient be sent to this bed". */
 export function bedUsable(def: ModuleDef | undefined, m: Module): boolean {
-  return !!def?.bed && m.reservedBy === 0 && m.hp > 0 && (!def.recovery || (m.powered && m.enabled));
+  return !!def?.bed && freeBerth(def, m) >= 0 && m.hp > 0 && (!def.recovery || (m.powered && m.enabled));
 }
 
 /**
@@ -99,7 +100,7 @@ function searchBeds(sim: Sim, shipId: number, from: Tile, adjacent: boolean, ski
 /** Free a bed reserved by `crew` (no-op if it is not theirs). */
 export function releaseBed(sim: Sim, bed: number, crew: number): void {
   const m = sim.world.get(bed, ModuleC);
-  if (m && m.reservedBy === crew) m.reservedBy = 0;
+  if (m) releaseBerth(sim.content.modules[m.def], m, crew);
 }
 
 /** Drop a crew member's owned bed (the next bed-owner pass may give them another). */
@@ -123,8 +124,8 @@ export function ownedBedPlan(sim: Sim, crew: number, shipId: number, from: Tile,
     releaseBedOwner(sim, crew);
     return null;
   }
-  const m = sim.world.get(owner.bed, ModuleC) as { x: number; y: number; reservedBy: number };
-  if (m.reservedBy !== 0 || skip?.(m.x, m.y)) return null;
+  const m = sim.world.get(owner.bed, ModuleC) as Module;
+  if (berthHolder(m, owner.berth ?? 0) !== 0 || skip?.(m.x, m.y)) return null; // their own berth is taken by someone else
   const steps = findPath(sim, shipId, from, { x: m.x, y: m.y });
   return steps ? { bed: owner.bed, steps } : null;
 }

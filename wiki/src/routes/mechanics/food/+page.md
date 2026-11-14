@@ -19,6 +19,8 @@ They take food from any storage on the ship and eat it where they are served:
 - **At a powered galley.** The meal counts as a hot meal and lifts mood for a while (see [Mood](../mood/)).
 - **Beside a storage crate** if there is no working galley. It feeds them, but gives no mood.
 
+A **cold store** (Storage tab) holds only food and crops, so a pantry can't fill up with ore or parts. It needs no power.
+
 A meal takes <Stat kind="tuning" id="EAT_SEC" unit="seconds" /> once the crew member is in place. If you draft them
 mid-meal, the food they took is lost.
 
