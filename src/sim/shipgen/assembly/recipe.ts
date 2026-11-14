@@ -68,11 +68,11 @@ export interface Recipe {
     /** No root of its own: the first branch stands at the centre and the rest grow from the sections. */
     | { kind: 'core' }
     /**
-     * A fort (fort.ts): a parade hall `hall` tiles either side of the centre, a port on each side of it for the arms
-     * (branches on the `rim`, by the way they head), and a gun battery in each corner between two arms, holding the
-     * guns of the departments it takes.
+     * A fort (fort.ts): a parade hall `hall` tiles either side of the centre, a three-wide neck `neck` long off each
+     * side with a port at its end for an arm (branches on the `rim`, by the way they head; their streets three wide),
+     * and a gun battery in each corner between two arms, holding the guns of the departments it takes.
      */
-    | { kind: 'fort'; takes: readonly Dept[]; hall: Roll }
+    | { kind: 'fort'; takes: readonly Dept[]; hall: Roll; neck: number }
     /**
      * A ring or an arc with its band: it takes these departments itself. `cut` 'octagon': a square outline cut to
      * eight even sides, whatever its size; `{ flat }`: cut so each side keeps that many cells of flat either side of its

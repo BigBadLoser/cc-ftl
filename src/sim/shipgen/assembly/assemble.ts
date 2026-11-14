@@ -92,7 +92,7 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
     const fort = recipe.root, ctx = context(new RegionGrid(HALF), null, rng);
     const a = new Asm(ctx, recipe.spacing);
     // The hall a little bigger each try: the arms stand further apart.
-    const h = roll(rng, fort.hall) + 2 * attempt, made = parade(ctx, h);
+    const h = roll(rng, fort.hall) + 2 * attempt, made = parade(ctx, h, fort.neck);
     a.add(made);
     a.sections++;
     const guns = rooms.filter((r) => r.role === 'weapons' && fort.takes.includes(r.dept as Dept));

@@ -131,19 +131,19 @@ const crescent = (name: string, o: { cut: number | 'octagon' | { flat: number };
 
 /**
  * A star fort (the military's: the square with bastions did not hold up at size): a parade hall at the centre, four
- * arms off it on short necks (the harbour north, the works and freight east, the barracks south, the machinery west
+ * arms off it on short necks, their streets three wide (the harbour north, the works and freight east, the barracks south, the machinery west
  * behind a gate) and a gun battery in each corner between two arms, pointing out (fort.ts).
  */
-const fort = (name: string, o: { hall: Roll; neck: Roll; rowDepth: number }): Recipe => ({
+const fort = (name: string, o: { hall: Roll; neck: number; rowDepth: number }): Recipe => ({
   name,
-  root: { kind: 'fort', takes: ['defence'], hall: o.hall },
+  root: { kind: 'fort', takes: ['defence'], hall: o.hall, neck: o.neck },
   quarters: { barracks: [6, 8], singles: 4 },
   spacing: 2,
   branches: [
-    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['n'] }, neck: o.neck, docks: true, quay: harbour('head'), section: { rooms: [2, 10] }, link: 0 },
-    { takes: ['works', 'freight', 'defence', 'market'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
-    { takes: ['habitation', 'commons'], per: 'together', host: { on: 'rim', prefer: ['s'] }, neck: o.neck, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true }, link: 0 },
-    { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['w'] }, neck: o.neck, gated: true, section: { rooms: [3, 8], rowDepth: o.rowDepth, even: true, cap: true }, link: 0 },
+    { takes: ['harbour'], per: 'together', host: { on: 'rim', prefer: ['n'] }, neck: 0, docks: true, quay: harbour('head'), section: { rooms: [2, 10], width: 3 }, link: 0 },
+    { takes: ['works', 'freight', 'defence', 'market'], per: 'together', host: { on: 'rim', prefer: ['e'] }, neck: 0, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true, width: 3 }, link: 0 },
+    { takes: ['habitation', 'commons'], per: 'together', host: { on: 'rim', prefer: ['s'] }, neck: 0, section: { rooms: [4, 8], rowDepth: o.rowDepth, even: true, width: 3 }, link: 0 },
+    { takes: ['secure'], per: 'together', host: { on: 'rim', prefer: ['w'] }, neck: 0, gated: true, section: { rooms: [3, 8], rowDepth: o.rowDepth, even: true, width: 3, cap: true }, link: 0 },
   ],
 });
 

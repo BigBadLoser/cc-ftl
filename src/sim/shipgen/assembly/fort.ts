@@ -17,13 +17,19 @@ const SLACK = 20;
 const TAPER = 1.5;
 const QUADS: readonly [1 | -1, 1 | -1][] = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
 
-/** The parade hall: x and y from -h to h. A port on each side, at its middle, heading out. */
-export function parade(ctx: Ctx, h: number): Built & { hall: number } {
+/**
+ * The parade hall: x and y from -h to h, with a neck `neck` tiles long and three wide out of the middle of each side.
+ * A port at the end of each neck, heading out: the arms' streets are three wide too, on the hall's centre lines, so
+ * an arm is as wide either side and the batteries between them come out alike.
+ */
+export function parade(ctx: Ctx, h: number, neck: number): Built & { hall: number } {
   const { g } = ctx;
   const hall = g.hall('hall');
   g.rect(hall, -h, -h, h + 1, h + 1);
-  const port = (x: number, y: number, dir: 'n' | 'e' | 's' | 'w'): Built['ports'][number] => ({ frame: { x, y, dir }, kind: 'rim', hall, along: 0, side: 0 });
-  return { hall, regions: [hall], box: [-h, -h, h + 1, h + 1], ports: [port(0, -h - 1, 'n'), port(h + 1, 0, 'e'), port(0, h + 1, 's'), port(-h - 1, 0, 'w')] };
+  const e = h + neck;
+  for (const [x0, y0, x1, y1] of [[-1, -e, 2, -h], [h + 1, -1, e + 1, 2], [-1, h + 1, 2, e + 1], [-e, -1, -h, 2]] as const) g.street(hall, x0, y0, x1, y1);
+  const port = (x: number, y: number, dir: 'n' | 'e' | 's' | 'w'): Built['ports'][number] => ({ frame: { x, y, dir }, kind: 'rim', hall, along: 0, side: 0, width: 3 });
+  return { hall, regions: [hall], box: [-e, -e, e + 1, e + 1], ports: [port(0, -e - 1, 'n'), port(e + 1, 0, 'e'), port(0, e + 1, 's'), port(-e - 1, 0, 'w')] };
 }
 
 /** Guns shared out over the corners, biggest first, each to the corner with least floor asked of it so far. */
