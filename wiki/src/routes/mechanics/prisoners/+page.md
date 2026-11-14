@@ -18,6 +18,10 @@ stations. A newly built wheel comes with **ten empty slabs** already in its slot
 
 The wheel draws power only while it holds a prisoner. A wheel with no prisoners in it is idle and costs nothing.
 
+**Reading the wheel:** a lamp on its rim marks each slot. **Green**: a prisoner is held there. **Amber**: an empty slab
+is ready. **Red, blinking**: that slab is running on its reserve (below). **Dark**: the slot has no slab. The window in
+its housing shows the slabs inside.
+
 ## Sealing a prisoner
 
 Your crew do this on their own, as **Hauling** work (set it in the work priorities like any other hauling). For each
@@ -25,7 +29,8 @@ prisoner on a ship that has a wheel with room:
 
 1. A crew member takes an empty slab, from a wheel slot or from storage.
 2. They walk to the prisoner and seal them into it where they stand.
-3. They cart the full slab to a wheel with a free slot and stand it in.
+3. They cart the full slab to a wheel with a free slot and stand it in. The slab rides a **hover cart** they push
+   ahead of them; when they stop, the cart is parked beside them.
 
 If the crew member carting a slab is called away (downed, drafted, sent off by a fire), the slab is set down on the
 floor and another crew member picks it up later. A slab lying on the floor runs on its reserve (below), so it shows up
@@ -53,7 +58,8 @@ in is left empty.
 <ComingLater>
 
 What you can do with prisoners once they are held: shipping full slabs over by shuttle, handing them over at a station
-for ransom or a bounty, selling them at a black market, recruiting one, or releasing them. Escorting prisoners from a
-captured ship to your own is not built yet either.
+for ransom or a bounty, selling them at a black market, recruiting one, or releasing one who is already frozen (you can
+release a prisoner before they are sealed, from the Prize panel). Escorting prisoners from a captured ship to your own
+is not built yet either.
 
 </ComingLater>

@@ -3,7 +3,7 @@ import { CrewC, ModuleC, newGame } from '../sim';
 import { slabPlace } from '../sim/stasis/query';
 import { content } from '../content';
 import { deriveAlerts } from './alertsDerived';
-import { newHostiles, prisonerCommands } from './scenarios/prisoners';
+import { newHostiles, prisonerCommands } from './scenarios/stasis';
 
 describe('stasis alert', () => {
   it('is up while a slab runs on its reserve and gone once the wheel has power again', () => {
