@@ -229,7 +229,15 @@ program; sheets with `--family crescent`.
   picked mock P2), and the pier carries the stalls and the harbour: 124 to 129 by 98 to 106, every seed fitted out
   with no problems (six airlocks, twelve guns, crew of 44).
 
-Open: at hub size the market street's pier is still too long (173 to 187 wide); the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
+- Arm ends: each arm ends in a gun bay past its cut (`noses: 'weapons'`, `noses.ts`; the user: "rounded ends, and
+  make them gun bays"), as wide as the arm (band, promenade and its inner wall) and rounded off in a half disc. A few
+  radii and straight lengths are tried and the first that builds no thick wall is kept. The two biggest guns go there.
+- Corners: no gun bay or crew quarters takes a crescent's corner (stretched over a curve they are halls with a gun or
+  two beds in them); common rooms first. With nothing big left, a corner is a garden gallery (the north-east one).
+- The pier head is as wide as customs and the pier's rows (the user's call, after a narrower head was tried).
+- The market street fails the game's size limit at hub size (173 to 187 wide, over 160): it should not roll at hub.
+
+Open: the north-east corner is a garden gallery; the arm ends are plain (the promenade stops at a wall); the north-east corner arc is one big gun room; the
 head is one open hall with three airlocks; the market street's warehouses open onto the ring, not the market; seeds
 differ little; no stall module exists.
 
