@@ -177,14 +177,14 @@ def d1(rot=0):
     k.cyl(WU, VM, TOP, 0.24, zpx(1), "dkGraph", top="dkGlass", sides=24)                     # the holo well
     ring(k, "z", WU, VM, TOP + zpx(1), 0.215, 24, 0.008, 0.03, M["well"])
     top(k)
-    su = U0 + 2 * PXG                                                                    # the solid side
-    sv0, sv1 = VM - r, FRONT - 2 * PXG
-    k.box(su, (sv0 + sv1) / 2, zpx(2), 4 * PXG, sv1 - sv0, h - zpx(2), M["body"], top=M["cap"])
-    k.box(su, (sv0 + sv1) / 2, 0.0, 4 * PXG - 2 * PXG, sv1 - sv0 - 2 * PXG, zpx(2), M["dark"])   # its kick
+    su = U0 + 2 * PXG                                                                    # the solid side, flush
+    sv0, sv1 = VM - r, FRONT                                                             # with the top's edges,
+    k.box(su, (sv0 + sv1) / 2, zpx(2), 4 * PXG, sv1 - sv0, TOP - SLAB - zpx(2), M["body"], top=M["cap"])  # up to it
+    k.box(su, (sv0 + sv1) / 2, 0.0, 2 * PXG, sv1 - sv0 - 2 * PXG, zpx(2), M["dark"])           # its kick
     u0 = su + 2 * PXG                                                                    # the back and the drum
     prism(k, flow_outline(r - 0.04, thk - 0.04, u0), 0.0, zpx(2), M["dark"])               # (a kick under them)
     prism(k, flow_outline(r, thk, u0), zpx(2), h - zpx(2), M["body"], M["cap"])
-    prism(k, flow_outline(r, thk, u0, PXG / 2), BAND, zpx(1), M["band"])                  # the band, along both
+    prism(k, flow_outline(r, thk, U0 + 0.004, PXG / 2), BAND, zpx(1), M["band"])           # the band, to the side's edge
     return k
 
 
@@ -200,4 +200,4 @@ def build(v, mat, rot):
 def jobs():
     print("DESK chair from origin", K("desk_chair_xy", FP, 0).p(*CHAIR), flush=True)
     return [(f"module.desk.{v}.{mat}" + (f".r{r}" if r else ""), FP, "prop", lambda v=v, mat=mat, r=r: build(v, mat, r))
-            for v in DESIGNS for mat in MATS for r in (0, 1, 2, 3)]
+            for v in DESIGNS for mat in ("steel",) for r in (0, 1, 2, 3)]
