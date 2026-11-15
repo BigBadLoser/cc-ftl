@@ -25,8 +25,8 @@ export function crewPosts(def: StationDef, size: StationSize): CrewPosts {
   const t = def.tiers[size], k = SIZE[size];
   const kindRooms = [...(def.assemblyRooms ?? def.rooms), ...(def.assemblyAlso ?? [])];
   const count = (pred: (r: (typeof kindRooms)[number]) => boolean): number => kindRooms.filter(pred).reduce((n, r) => n + r.count[size], 0);
-  // A worker for each lab, refinery, breaker or farm, and for each workshop; one for every two market stalls.
-  const work = count((r) => (r.role === 'industry' || r.role === 'farm') && r.dept !== 'defence');
+  // A worker for each lab, refinery or breaker, and for each workshop; one for every two greenhouses (narrow farms) and every two market stalls.
+  const work = count((r) => r.role === 'industry' && r.dept !== 'defence') + Math.ceil(count((r) => r.role === 'farm') / 2);
   const stalls = count((r) => r.dept === 'market');
   const workshops = size === 'hub' ? 2 : 1;
   const posts = {

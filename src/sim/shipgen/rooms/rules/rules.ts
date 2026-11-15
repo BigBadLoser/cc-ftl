@@ -7,6 +7,7 @@
 import type { ModuleDef } from '../../../registry';
 import type { RoomRole } from '../../types';
 import type { Piece } from './check';
+import { f1 } from './farm';
 import { B, BT, G, GT, LS, MB, P, RP, bunks, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 
 /** What a rule is given: the room (frame), the planned modules, and the module defs. */
@@ -166,5 +167,6 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'G3 guns in the corners', weight: 1, when: (n, r) => n.filter((m) => r.defs[m]?.weapon || r.defs[m]?.pointDefense).length <= 4, rule: g3 },
   ],
   shields: [{ name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
+  farm: [{ name: 'F1 greenhouse: beds on end down both long walls', weight: 1, when: (_, r) => r.h > r.w && r.w >= 4, rule: f1 }],
   reactor: [{ name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => (c.defs[m]?.power ?? 0) > 0), true) }],
 };

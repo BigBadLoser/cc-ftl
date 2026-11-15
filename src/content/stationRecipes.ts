@@ -85,6 +85,24 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
 });
 
 /**
+ * PROTOTYPE. An agri station: the spine's main street (the harbour at its head, habitation and the commons along it,
+ * the machinery gated at its tail), with greenhouse wings off its flanks: each a street of long, narrow farm rooms
+ * standing end-on to it, two rows of hydroponics down each room's length. The works and the freight are wings too.
+ */
+const agri = (name: string, o: { street: number; body: [number, number]; greenhouse: number; wing: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; quay?: BranchRule['quay'] }): Recipe => {
+  const base = spine(name, { street: o.street, body: o.body, wings: [3, 4], stub: o.stub, ...(o.hall ? { hall: o.hall } : {}), braces: 0.9, ...(o.quay ? { quay: o.quay } : {}) });
+  return {
+    ...base,
+    // The greenhouses before the works and the freight, so they take the main street's flanks first.
+    branches: [
+      ...base.branches.slice(0, 3),
+      { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: o.stub, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true, width: 3 }, link: 0 },
+      ...base.branches.slice(3),
+    ],
+  };
+};
+
+/**
  * A bazaar: a ring with a market court at its centre, a spoke from the court to the ring on each axis, the stalls
  * round the court and the machinery along the spokes, open ground between them. On the main axis the
  * harbour stands on one side of the ring and the warehouses with the workshop on the other; the ring's band is cabins, the mess, guns.
@@ -157,6 +175,9 @@ export const stationRecipes = {
     spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quay: harbour('quay') }),
     spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9, quay: harbour('gatehouse') }),
     spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: harbour('basin') }),
+  ],
+  agri: [
+    agri('greenhouse wings off one straight street', { street: 3, body: [6, 8], greenhouse: 9, wing: [2, 4], stub: [2, 4], quay: harbour('basin') }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: harbour('head') }),

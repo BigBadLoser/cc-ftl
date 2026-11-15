@@ -141,9 +141,9 @@ export const stations = {
       room('support', ['module.lifeSupport'], 6, 3, per(2, 4, 8)),
       armoury(per(1, 1, 1)),
     ],
-    // The station assembly gives it farms (hydroponics in rows) and half as many extra common rooms.
+    // The station assembly gives it greenhouses (long, narrow farms: hydroponics in two rows down their length) and half as many extra common rooms.
     assemblyRooms: [
-      room('farm', ['module.lifeSupport', ...n(10, 'module.hydroponics')], 11, 7, per(1, 2, 4)),
+      room('farm', n(6, 'module.hydroponics'), 5, 9, per(2, 4, 8)),
       room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
       armoury(per(1, 1, 1)),
     ],

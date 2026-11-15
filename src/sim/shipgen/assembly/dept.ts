@@ -12,7 +12,8 @@ export function deptOf(r: Pick<RoomSpec, 'role' | 'dept'>): Dept {
     case 'quarters': case 'support': case 'medbay': return 'habitation';
     case 'reactor': case 'shields': case 'core': case 'plant': return 'secure';
     case 'weapons': return 'defence';
-    case 'industry': case 'farm': case 'hangar': return 'works';
+    case 'industry': case 'hangar': return 'works';
+    case 'farm': return 'farm'; // the agri station's greenhouses: wings of their own
     default: return 'commons';
   }
 }
