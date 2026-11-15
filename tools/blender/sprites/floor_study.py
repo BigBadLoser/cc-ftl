@@ -365,6 +365,55 @@ def g12(i, j):
 DESIGNS.update({"g10": g10, "g11": g11, "g12": g12})
 
 
+# Heavy plate (tread plate), round 1 (grating skipped; calm, low contrast, even tiling):
+#   h1 diamond tread: raised lozenges two ways in a staggered grid, a step lighter than the plate, a soft shadow
+#   h2 bolted slab: one thick plate a tile, a bevelled edge, a heavy bolt in each corner, nothing else
+#   h3 dimple plate: rows of round raised studs, low and sparse, on a plate framed by its seam
+
+
+def h1(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    u, v = (i - 2) % 12, (j - 2) % 12
+    flip = ((i - 2) // 12 + (j - 2) // 12) % 2
+    a, b = (u - 6 + v - 6, u - v) if flip else (u - v, u - 6 + v - 6)
+    if abs(a) <= 5 and abs(b) <= 1:
+        return "steelL" if b <= 0 else "steel"
+    if abs(a) <= 5 and b == 2:
+        return "steelD"
+    return "steel"
+
+
+def h2(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    b = _bolt(i, j, ((7, 7), (7, 54), (54, 7), (54, 54)))
+    if b:
+        return "steelL" if b == "plate" else b
+    if i < 5 or j < 5:
+        return "steelL"
+    if i > 58 or j > 58:
+        return "steelD"
+    return "steel"
+
+
+def h3(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 4 or j < 4:
+        return "steelL"
+    u, v = (i - 4) % 10, (j - 4 + (5 if ((i - 4) // 10) % 2 else 0)) % 10
+    d = (u - 4.5) ** 2 + (v - 4.5) ** 2
+    if d <= 4:
+        return "steelL" if u + v < 9 else "steel"
+    if d <= 6.5 and u + v > 9:
+        return "steelD"
+    return "steel"
+
+
+DESIGNS.update({"h1": h1, "h2": h2, "h3": h3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
