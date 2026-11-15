@@ -18,7 +18,7 @@ import { PRIZE_VALUE_PER_COST, PRIZE_VALUE_PER_WALL_HP } from '../tuning';
 import { shipIdOf, shipGrid } from '../regions';
 import { factionOfShip } from '../galaxy/heat';
 
-/** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. For a future ship broker. */
+/** Hull value estimate of a grid: module build costs scaled by hp, plus wall integrity. Sizes the loot stocked on a prize. */
 export function prizeValue(sim: Sim, shipId: number): number {
   let value = 0;
   for (const id of sim.world.query(ModuleC)) {
@@ -75,9 +75,8 @@ export function capturePrize(sim: Sim, entity: number): void {
   delete ship.banned;
   ship.state = 'prize';
   sim.world.remove(entity, CaptureProgressC);
-  const hullValue = prizeValue(sim, entity);
-  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from, hullValue });
-  stockLoot(sim, entity, hullValue);
+  sim.world.add(entity, PrizeC, { capturedTick: sim.tick, from });
+  stockLoot(sim, entity, prizeValue(sim, entity));
   for (const id of sim.world.query(WeaponC)) {
     const w = sim.world.get(id, WeaponC);
     if (w && shipIdOf(sim, sim.world.get(id, ModuleC)) === entity) Object.assign(w, { once: false, charge: 0, shotsLeft: 0, target: null, volleyTarget: null });
