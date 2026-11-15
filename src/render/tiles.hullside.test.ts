@@ -56,6 +56,23 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(replacesFloor(k, 2, 2)).toBe(false);
     expect(first(k, 2, 2)).toBe("tile.wall.m10");
   });
+  it("a step one tile deep in the near hull makes its corner near hull, not a full-height pillar (#494)", () => {
+    // The east hull steps out one tile at row 3: (4, 3) is boxed in by near hull at N, E and S, space only at its NE.
+    const e = ship(["      ", " #### ", " #__# ", " #__##", " #___#", " #####", "      "]);
+    expect(hullSide(e, 4, 3)).toBe(HullSide.Near);
+    expect(hullSide(e, 4, 2)).toBe(HullSide.Near);
+    expect(hullSide(e, 5, 3)).toBe(HullSide.Near);
+    // The same step on the south hull (transposed): space only at the corner's SW.
+    const t = (x: number, y: number) => e(y, x);
+    expect(hullSide(t, 3, 4)).toBe(HullSide.Near);
+    expect(hullSide(t, 3, 5)).toBe(HullSide.Near);
+  });
+  it("a step three tiles deep keeps its back wall and corner far", () => {
+    const k = ship(["         ", " ####    ", " #__#    ", " #__#### ", " #_____# ", " #_____# ", " #_____# ", " ####### "]);
+    expect(hullSide(k, 4, 3)).toBe(HullSide.Far);
+    expect(hullSide(k, 5, 3)).toBe(HullSide.Far);
+    expect(hullSide(k, 7, 4)).toBe(HullSide.Near);
+  });
   it("thick hull keeps its outer ring as hull and its inside as wall", () => {
     const k = ship(["      ", " #### ", " #### ", " #__# ", " #### ", "      "]);
     expect(hullSide(k, 2, 1)).toBe(HullSide.Far);

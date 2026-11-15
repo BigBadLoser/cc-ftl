@@ -117,23 +117,42 @@ export const HullSide = { None: 0, Far: 1, Near: 2 } as const;
  * and thick hull keep their outline.
  */
 export function hullSide(kindAt: KindAt, x: number, y: number): number {
-  if (kindAt(x, y) === Struct.RockWall) return HullSide.None;
-  if (!touchesSpace(kindAt, x, y)) return HullSide.None;
+  if (isNear(kindAt, x, y)) return HullSide.Near;
+  if (kindAt(x, y) === Struct.RockWall || !touchesSpace(kindAt, x, y)) return HullSide.None;
   const m = wallMask(kindAt, x, y);
   const alongX = (m & 10) !== 0 || (m & 5) === 0;
   const alongY = (m & 5) !== 0 || (m & 10) === 0;
-  const o = outward(kindAt, x, y);
-  // Near: the run's front side (+y of a run along x, +x of a run along y) is clear of ship floor. That holds for the
-  // diagonal-only case too (o 4, space only at +x+y): a ray toward that known space proves nothing about the front.
-  if (o && ((alongX && clearTo(kindAt, x, y, 0, 1)) || (alongY && clearTo(kindAt, x, y, 1, 0)))) return HullSide.Near;
   // Far: space right behind the run (-y of a run along x, -x of a run along y), or diagonally behind with nothing of
   // the ship between (the outline's corners and steps). Space only beside the run (a breach, a notch) does not count.
+  // A corner with space only diagonally behind it is the end of the back run it turns into (+x of it for space at
+  // +x -y, +y of it for space at -x +y); where that tile is near hull (a step one tile deep: a 45 degree staircase,
+  // a nub) there is no back run, and the corner, boxed in by near hull, is near hull with it instead of standing full
+  // height. (It faces no space itself: `outward` 0.)
   const sp = (dx: number, dy: number) => kindAt(x + dx, y + dy) === Struct.Space;
+  const nearWall = (i: number, j: number) => kindAt(i, j) !== Struct.Floor && kindAt(i, j) !== Struct.Space && isNear(kindAt, i, j);
   const backY = alongX && clearTo(kindAt, x, y, 0, -1);
   const backX = alongY && clearTo(kindAt, x, y, -1, 0);
-  if ((sp(0, -1) && alongX) || (sp(-1, 0) && alongY) || (sp(-1, -1) && (backY || backX)) || (sp(1, -1) && backY) || (sp(-1, 1) && backX))
-    return HullSide.Far;
+  const behind = (sp(0, -1) && alongX) || (sp(-1, 0) && alongY);
+  const stepY = sp(1, -1) && backY;
+  const stepX = sp(-1, 1) && backX;
+  if (!behind && !sp(-1, -1) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
+  if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return HullSide.Far;
   return HullSide.None;
+}
+
+/**
+ * Whether the wall at (x, y) is near hull: it faces space toward the camera, and the run's front side (+y of a run along
+ * x, +x of a run along y) is clear of ship floor. That holds for the diagonal-only case too (o 4, space only at +x+y): a
+ * ray toward that known space proves nothing about the front.
+ */
+function isNear(kindAt: KindAt, x: number, y: number): boolean {
+  if (kindAt(x, y) === Struct.RockWall || !touchesSpace(kindAt, x, y)) return false;
+  const o = outward(kindAt, x, y);
+  if (!o) return false;
+  const m = wallMask(kindAt, x, y);
+  const alongX = (m & 10) !== 0 || (m & 5) === 0;
+  const alongY = (m & 5) !== 0 || (m & 10) === 0;
+  return (alongX && clearTo(kindAt, x, y, 0, 1)) || (alongY && clearTo(kindAt, x, y, 1, 0));
 }
 
 /** `outward` of the near hull only (0 for the far hull and for partitions that touch space). */
