@@ -457,6 +457,61 @@ def h6(i, j):
 DESIGNS.update({"h4": h4, "h5": h5, "h6": h6})
 
 
+# Diamond tread, round 3: lozenges as raised lens shapes (fat in the middle, pointed ends) with a lit edge on the side
+# facing the light (grid -i, -j, the screen top), a body a step above the plate, and a cast shadow on the far side,
+# so they read as bumps rather than dashes; alternating direction in a checker, the body a clear step above the plate.
+#   h7 grid-axis lozenges: three a tile side, long axes along the grid (screen diagonals), slanting with the floor
+#   h8 classic lozenges: three a tile side, long axes at 45 degrees to the grid (screen level / upright)
+#   h9 big grid-axis lozenges: two a tile side, the boldest and calmest
+
+
+def _bump(a, b, half, width):
+    """-> 'lit' | 'body' | 'shadow' | None for the point (a along the long axis, b across, + toward the light) of a lens
+    lozenge: the lit rim on the light side, the cast shadow off the far side."""
+    if abs(a) > half:
+        return None
+    w = width * (1 - (a / half) ** 2)
+    if abs(b) <= w:
+        return "lit" if b > 0 and b > w - 1.2 else "body"
+    if -(w + 1.5) <= b < 0:
+        return "shadow"
+    return None
+
+
+def _lozenges(i, j, axes, half, width, pitch=16, o=2, body="boot", lit="steelL"):
+    """A checker of lens lozenges at `pitch` from cell `o`; `axes` gives the long axis (unit, grid) of the two checker
+    colours. The across vector is the axis turned so that positive b faces the light (grid -i, -j)."""
+    if i < 2 or j < 2:
+        return "seam"
+    ci, cj = (i - o) // pitch, (j - o) // pitch
+    c = (pitch - 1) / 2
+    u, v = (i - o) % pitch - c, (j - o) % pitch - c
+    ax = axes[(ci + cj) % 2]
+    nx, ny = -ax[1], ax[0]
+    if nx + ny > 0 or (nx + ny == 0 and nx > 0):
+        nx, ny = -nx, -ny
+    k = _bump(u * ax[0] + v * ax[1], u * nx + v * ny, half, width)
+    return {"lit": lit, "body": body, "shadow": "steelD"}.get(k, "steel")
+
+
+R2 = 0.7071
+
+
+def h7(i, j):
+    return _lozenges(i, j, ((1, 0), (0, 1)), 8.5, 3.2, 21, 1, "steelL", "plate")
+
+
+def h8(i, j):
+    return _lozenges(i, j, ((R2, R2), (R2, -R2)), 8.5, 3.2, 21, 1, "steelL", "plate")
+
+
+def h9(i, j):
+    return _lozenges(i, j, ((1, 0), (0, 1)), 13, 4.5, 32, 0, "steelL", "plate")
+
+
+DESIGNS.update({"h7": h7, "h8": h8, "h9": h9})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
