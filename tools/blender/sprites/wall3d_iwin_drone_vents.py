@@ -21,6 +21,7 @@ FACE_PITS = 3               # the slot block's front: equal recesses between the
 FACE_BORDER = 1             # legs, each other and the face's top and foot, px (the user)
 FACE_DEPTH = 2              # px: their depth
 HANDLE = 2                  # px: the slot's handle bar's thickness
+HANDLE_UP = 2               # art px: over the face's mid height (the user)
 HANDLE_IN = 1               # px: its legs in from the slot's sides
 HANDLE_BEND = 2             # px: its corners' radius (its centre line)
 PIPE_TOP = 4                # art px: their flat run's top under the pocket's top (1, then 3 lower: the two runs nearer
@@ -195,7 +196,7 @@ def handle(k, yface, zlo, zhi):
     xa, xb = D._x(D.SLOT[0] + HANDLE_IN) + r, D._x(D.SLOT[1] - HANDLE_IN) - r
     if xa - r < -0.5 - 1e-9 or xb + r > 0.5 + 1e-9:
         return
-    zh, yc = (zlo + zhi) / 2, 0.5 + D.BOX_OUT * D.PX - r
+    zh, yc = (zlo + zhi) / 2 + HANDLE_UP / W.ZART, 0.5 + D.BOX_OUT * D.PX - r
     q = [i * math.pi / 2 / BEND_STEPS for i in range(BEND_STEPS + 1)]
     path = ([(xa, yface - r)] + [(xa + R - R * math.cos(a), yc - R + R * math.sin(a)) for a in q] +
             [(xb - R + R * math.sin(a), yc - R + R * math.cos(a)) for a in q] + [(xb, yface - r)])

@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d31)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d32)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -777,3 +777,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the pipes and handle in drone's pipes' colour; the recesses' backs the colour behind drone's pipes. d29: `tube` polys toned as drone's own pipes (`faction.drone.handle`: the "rose" family, level 2, by facing; LIGHT / PIPE_TONES dropped); the vents' and the slot's recess backs `T.tone("rose", 0, +y)` (drone's dark bands behind its pipes). Asked the user what "the toe under the slot should match the walls" means: its upright foot is already pixel-identical to the plain wall's; the plain wall shows a lit lip over it (its ramp outline's lower edge) where the slot's flat floor is. Renders: scratchpad `dr29`, run `drone_run29.png` (`scripts/dr_run.py`).
 - 2026-11-15: the user (interrupting d29): the other way round: drone's wall pipes in the window pipes' colour. d30: `faction.drone.pipe_tone` (PIPE_LIGHT, PIPE_TONES: the window pipes' fDS1-4 by facing) used by the window's `tube` and by drone's wall handles (`faction.drone.handle`; `faction.parts.pipe` gains `col=`, every other caller unchanged). The recess backs stay rose 0 (d29). This changes the plain drone walls' pixels (their handles): the shipped sheets in `public/assets` are not re-rendered (waits on the user's go). Drone's thin square pipes in its designs (`flat=`) unchanged. Renders: scratchpad `dr30`, run `drone_run30.png`.
 - 2026-11-15: the user: the toe under the slot to match the walls: option 2 (the slope kept in front). d31: SLOT_LIP 2 px: `_notch` gains an outer bound (`yo`): the slot's cut stops SLOT_LIP in from the toe, so the ramp's slope runs on down to the toe there (`_lip()`); the slot's floor ends at it, an upright back on the lip (slot_side), the slot's sides follow the slope down to the lip then drop to the floor. Lip ~4 art px tall; the handle bar clears it. Renders: scratchpad `dr31`, run `drone_run31.png`.
+- 2026-11-15: the user: the handle bar up a bit. d32: HANDLE_UP 2 art px over the slot block face's mid height. Renders: scratchpad `dr32`, run `drone_run32.png`.
