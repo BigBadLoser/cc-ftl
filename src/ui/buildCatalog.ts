@@ -84,7 +84,7 @@ export function filterEntries(entries: Entry[], cat: CategoryId, query: string, 
 
 /** True when the card's module is the one being placed; for a group card (`members` given: the group's entries) when any member is. */
 export const isSelected = (e: Entry, st: UiToolState, members?: Entry[]): boolean =>
-  st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && (members ? members.some((m) => m.id === st.moduleDef) : st.moduleDef === e.id) : st.build === e.id);
+  st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && (members?.length ? members.some((m) => m.id === st.moduleDef) : st.moduleDef === e.id) : st.build === e.id);
 
 /** Items the stock is short of for a cost list. */
 export const shortOf = (cost: UiCost[], have: (item: string) => number): UiCost[] => cost.filter((c) => have(c.item) < c.count);

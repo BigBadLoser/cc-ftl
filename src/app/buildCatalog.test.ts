@@ -90,6 +90,9 @@ describe('build catalog', () => {
     const st = { tool: 'build', build: 'module', moduleDef: 'module.bar_corner', rot: 0 } as UiToolState;
     expect(isSelected(ms[0]!, st, ms)).toBe(true);
     expect(isSelected(ms[0]!, st)).toBe(false);
+    // An ungrouped card (no members) is selected by its own id.
+    const chair = entries.find((e) => e.id === 'module.chair')!;
+    expect(isSelected(chair, { ...st, moduleDef: 'module.chair' }, [])).toBe(true);
     expect(isSelected(entries.find((e) => e.id === 'module.bar_stool')!, st)).toBe(false);
   });
 
