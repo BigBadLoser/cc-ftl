@@ -48,7 +48,11 @@ for (const [fam, kind] of Object.entries(kinds)) for (const [ri, recipe] of stat
   }
   for (const [o, r] of Object.entries(rooms)) {
     const reg = g.regions[o], sp = reg.spec; if (!sp) continue;
-    const label = `${reg.role}${reg.dept ? '/' + reg.dept : ''}${sp.warehouse ? '/wh' : ''}`;
+    // Shaped by the hull, kept apart from the rest: a star fort's bastions, the bazaar centre's rooms round its court,
+    // and a ring's corners (corners.ts, fort.ts and battery.ts rank them from 1e5).
+    const court = (reg.access ?? []).some((a) => g.regions[a]?.hall && g.regions[a]?.role === 'plaza');
+    const shaped = sp.bastion ? ' (bastion)' : court ? ' (court rim)' : reg.rank >= 1e5 && reg.rank < 2e5 ? ' (corner)' : '';
+    const label = `${reg.role}${reg.dept ? '/' + reg.dept : ''}${sp.warehouse ? '/wh' : ''}${shaped}`;
     // Planned floor: the spec's w x h (its interior).
     const ratio = r[4] / (sp.w * sp.h);
     const t = (roles[label] ??= { n: 0, sum: 0, max: 0, over: 0 }); t.n++; t.sum += ratio; t.max = Math.max(t.max, ratio); if (ratio > 1.25) t.over++;
