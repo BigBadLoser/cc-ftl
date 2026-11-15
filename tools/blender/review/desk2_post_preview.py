@@ -11,8 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"j1": "J1  reception counter", "j2": "J2  monitoring desk", "j3": "J3  open desk, scanner"}
-CHAIR, VISITOR = (-1.0, -1.0), (-1.0, 1.05)
+NAMES = {"k1": "K1  holo screen and keys", "k2": "K2  holo wrap", "k3": "K3  holo table",
+         "j1": "J1  reception counter", "j2": "J2  monitoring desk", "j3": "J3  open desk, scanner"}
+CHAIR, VISITOR = (-1.0, -1.0), (0.35, 1.3)               # officer behind the left tile, visitor at the right
 FACE_FRONT, FACE_BACK, CW, CH = 2, 6, 280, 230       # crew directions: +y (the camera side) and -y
 
 
