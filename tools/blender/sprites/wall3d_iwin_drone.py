@@ -13,6 +13,7 @@ from . import wall3d as T
 from . import walls as W
 from .faction import drone as DR
 from .wall3d_iwin import _clip
+from . import wall3d_iwin_drone_vents as VT
 
 PX = 1 / 32                 # an art px across or along the wall
 POST = 11                   # px: a post, in from the window's end
@@ -38,7 +39,7 @@ SLOT_BLOCK = 1              # art px: a block filling the slot's back, its top t
                             # where the slope starts (the sill's front edge) (the user)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
                              # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
-VENTS = ((2, 11), (85, 94))  # the end blocks' vents: dark panels down their slope, VENT_GAP clear of the window's end,
+VENTS = ((2, 11), (85, 94))  # the end blocks' vents: dark pockets in their slope (wall3d_iwin_drone_vents), VENT_GAP clear of the window's end,
 VENT_GAP = 2                 # the rib, the slope's top and its foot on every side (the user)
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "slot_floor": "fDW3", "slot_back": "fDX3",
          "slot_side": "fDX2", "sblock_top": "fDW2", "sblock_front": "fDW3",
@@ -192,8 +193,8 @@ def _front_parts(k):
     """The near ramp's dressing: the end blocks' vents, the red boxes and their ribs."""
     run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
     dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
-    for a, b in VENTS:
-        _slope(k, a, b, VENT_GAP * PX, dz - VENT_GAP * PX, FRONT["vent"])
+    VT.recess(k)                                        # (the vents recessed, pipes out of them: the user)
+    VT.pipes(k)
     zb = _zf() - BOX_DOWN / W.ZART
     for a, b in BOXES:
         _block(k, a, b, 0.5 + BOX_OUT * PX, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"], False, _front())
