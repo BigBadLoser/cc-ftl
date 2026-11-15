@@ -1092,6 +1092,43 @@ def z2b_jobs():
             for name, rows in MM.MAPS.items() for y, row in enumerate(rows) for x, _ in enumerate(row)]
 
 
+# ---- Keep-clear, round 1 (the brief: yellow outline, thin diagonal hatching inside at low opacity, inset ~1/10): a
+# box over a group of tiles ('K' in floor_marks_maps "keep"), hatched along x + y like the z2 hazard band.
+#   q1 outline and faint hatch: a 4-cell yellow outline 6 in, 2-cell dim-ochre hatch lines every 16
+#   q2 outline and dense hatch: q1's outline, 3-cell dim-ochre hatch lines every 10
+#   q3 framed hatch: no yellow outline; z2's dark frame lines round a field of dim yellow and dark hatch
+
+
+def _keep_tile(style, rows, x, y):
+    t = rows[y][x]
+
+    def fn(i, j):
+        if t == "#":
+            return "dark"
+        gx, gy = x * MM.N + i, y * MM.N + j
+        e = MM.keep(rows, gx, gy)
+        if e is None or e < 6:
+            return _deck(i, j)
+        k = e - 6
+        if style == "q3":
+            if k < 2:
+                return "dnW3"
+            return "ochD" if (gx + gy) % 32 < 16 else "hazK"
+        if k < 4:
+            return "hazY"
+        if style == "q1":
+            return "ochD" if (gx + gy) % 16 < 2 else _deck(i, j)
+        return "ochD" if (gx + gy) % 10 < 3 else _deck(i, j)
+    return fn
+
+
+def keep_jobs():
+    rows = MM.MAPS["keep"]
+    return [(f"tile.mark.{st}.keep.{x}_{y}", (1, 1), "floor",
+             lambda st=st, x=x, y=y: _tile(f"{st}_{x}_{y}", _keep_tile(st, rows, x, y)))
+            for st in ("q1", "q2", "q3") for y, row in enumerate(rows) for x, _ in enumerate(row)]
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
@@ -1101,4 +1138,4 @@ def _tile(name, fn):
 def jobs():
     out = [("tile.floor.deck", (1, 1), "floor", lambda: floor("a"))]
     out += [(f"tile.floor.{k}", (1, 1), "floor", lambda f=f, k=k: _tile(k, f)) for k, f in DESIGNS.items()]
-    return out + map_jobs() + haz_jobs() + z2b_jobs()
+    return out + map_jobs() + haz_jobs() + z2b_jobs() + keep_jobs()

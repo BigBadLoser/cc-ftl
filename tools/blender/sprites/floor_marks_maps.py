@@ -14,6 +14,15 @@ MAPS = {
         "######..####",
         "######D#####",
     ],
+    # keep-clear boxes ('K' tiles, floor under a box): one free in a room, one against a wall
+    "keep": [
+        "#########",
+        "#.......#",
+        "#.KKK..KK",
+        "#.KKK..KK",
+        "#......##",
+        "#########",
+    ],
     # a corridor two wide stepping diagonally
     "stairs": [
         "########",
@@ -28,6 +37,22 @@ MAPS = {
 }
 
 N = 64          # cells a tile side (floors.py N)
+
+
+def keep(rows, gx, gy):
+    """Cells from global cell (gx, gy), inside a keep-clear box, to the box's edge (Chebyshev), or None outside it."""
+    tx, ty = gx // N, gy // N
+    if kind(rows, tx, ty) != "K":
+        return None
+    best = 10 ** 9
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if kind(rows, tx + dx, ty + dy) != "K":
+                x0, y0 = (tx + dx) * N, (ty + dy) * N
+                ddx = max(x0 - gx, 0, gx - (x0 + N - 1))
+                ddy = max(y0 - gy, 0, gy - (y0 + N - 1))
+                best = min(best, max(ddx, ddy) - 1)
+    return best
 
 
 def kind(rows, x, y):

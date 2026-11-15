@@ -1,7 +1,8 @@
 """Edge-line look study preview (plain python3 + PIL): each style's test shapes (tools/blender/sprites/floor_marks_maps.py)
 laid out from its per-tile sprites (tile.mark.<style>.<map>.<x>_<y>), one row per style, one column per map.
 
-  python3 -I tools/blender/review/mark_preview.py <study assets dir> <out.png> <label=style,...> [scale, default 2]"""
+  python3 -I tools/blender/review/mark_preview.py <study assets dir> <out.png> <label=style[@map+map],...> [scale, default 2]
+(without @, the maps "run" and "stairs")"""
 import json
 import sys
 from pathlib import Path
@@ -33,14 +34,21 @@ def extent(rows):
     return (w + h) * TW // 2 + 16, (w + h) * TH // 2 + 16
 
 
-styles = [s.split("=", 1) for s in spec.split(",")]
-cols = list(MAPS)
+styles = []
+for s in spec.split(","):
+    label, st = s.split("=", 1)
+    st, _, ms = st.partition("@")
+    styles.append((label, st, ms.split("+") if ms else ["run", "stairs"]))
+cols = list(dict.fromkeys(m for _, _, ms in styles for m in ms))
 CW = [extent(MAPS[m])[0] for m in cols]
 RH = max(extent(MAPS[m])[1] for m in cols) + 20
 canvas = Image.new("RGBA", (sum(CW), RH * len(styles)), (22, 25, 31, 255))
-for r, (label, style) in enumerate(styles):
+for r, (label, style, maps) in enumerate(styles):
     x0 = 0
     for c, m in enumerate(cols):
+        if m not in maps:
+            x0 += CW[c]
+            continue
         rows = MAPS[m]
         h = len(rows)
         for y in range(h):
@@ -53,7 +61,7 @@ for r, (label, style) in enumerate(styles):
 big = canvas.resize((canvas.width * SC, canvas.height * SC), Image.NEAREST)
 d = ImageDraw.Draw(big)
 font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26)
-for r, (label, _) in enumerate(styles):
+for r, (label, _, _) in enumerate(styles):
     d.text((12, r * RH * SC + 8), label, fill=(225, 230, 238), font=font)
 big.convert("RGB").save(out)
 print(out, big.size)
