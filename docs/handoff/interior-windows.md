@@ -7,8 +7,8 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
 - Per look: slate and default teal done and approved; tan built; bastion no window; navy parked at nw13 and flagged
-  ugly (its wall set wants a rethink); **drone parked at d15** (below); civil not started.
-- Drone (style 423) at d15: `tools/blender/sprites/wall3d_iwin_drone.py`, jobs `tools/blender/preview/jobs_drwin.py`.
+  ugly (its wall set wants a rethink); **drone approved at d32** (below); civil not started.
+- Drone (style 423), approved at d32 (built up from d15): `tools/blender/sprites/wall3d_iwin_drone.py`, jobs `tools/blender/preview/jobs_drwin.py`.
   Built: the cut to a flat floor 6 art px under the ramp's top out to where the slope falls to it; end blocks (flat
   top 12 px in, slope to the floor at 16); blank posts at 11; drone's header rail kept (faction.drone.BLANK = the
   rail's foot; NO_CENTRE drops the middle tile's centre block); the near ramp bare (no seams/outline/slots) with vents,
