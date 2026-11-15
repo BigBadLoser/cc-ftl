@@ -55,7 +55,7 @@ function jump(sim: Sim, node: string, withDocked?: number[], ship = homeShip(sim
 /** The k-th node (ascending id) one edge away from the start node. */
 function near(sim: Sim, k: number): string {
   const nodes = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort();
-  return (k === 0 ? emptyNeighbour(sim) : nodes[k]) as string;
+  return nodes[k] as string;
 }
 
 const vehicleOf = (sim: Sim, ship: number): number => sim.world.query(VehicleC).find((v) => sim.world.get(v, VehicleC)?.homeShip === ship) ?? 0;
@@ -140,15 +140,16 @@ describe('galaxy.jump, archives and sector.deploy', () => {
   it('jumps, archives the rest, deploys, and restores the archive on return', () => {
     const sim = newGame(3, content);
     sim.galaxy.fleets = []; // this test is about archives: no NPC fleet waits at the node it drops into
+    const empty = emptyNeighbour(sim); // an empty node: this test is about archives, so nothing is populated there
     const raider = stampShip(sim, content.ships['ship.raider']!, { faction: 'hostile', x: 160, y: 40, state: 'wreck' });
     run(sim, 20);
     const player = homeShip(sim);
     const raiderIds = sim.world.ids().filter((id) => !liftSet(sim, player).includes(id));
     const raiderTiles = Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }));
-    jump(sim, near(sim, 0));
+    jump(sim, empty);
     const log = land(sim);
     expect(log).toContain('sector.jumped');
-    expect(sim.sector).toMatchObject({ node: near(sim, 0), state: 'deploying' });
+    expect(sim.sector).toMatchObject({ node: empty, state: 'deploying' });
     expect(sim.world.entityCount).toBe(0);
     expect(sim.archives.map((a) => a.node)).toEqual([START_NODE]);
     expect(sim.archives[0]!.entities.map((e) => e.id)).toEqual(raiderIds);
@@ -163,7 +164,7 @@ describe('galaxy.jump, archives and sector.deploy', () => {
     // Back to node 0: the raider wreck returns as it was, and node 7 is archived (all archives are kept).
     jump(sim, START_NODE);
     expect(land(sim)).toContain('sector.jumped');
-    expect(sim.archives.map((a) => a.node)).toEqual([near(sim, 0)]);
+    expect(sim.archives.map((a) => a.node)).toEqual([empty]);
     expect(sim.world.ids()).toEqual(raiderIds);
     expect(Array.from(sim.sector.grid.load('struct', { x: 160, y: 40, w: 40, h: 30 }))).toEqual(raiderTiles);
     sim.enqueue({ type: 'sector.deploy', x: 30, y: 40 });
