@@ -1,7 +1,7 @@
 """Floor look study preview (plain python3 + PIL): each design tiled as a 3x3 patch, labelled, side by side, the plain
 deck first for comparison. Designs whose name starts with `m:` sit alone in the middle of a plain-deck patch (marks).
 
-  python3 -I tools/blender/review/floor_preview.py <study assets dir> <out.png> <label=id,...> [scale, default 4]"""
+  python3 -I tools/blender/review/floor_preview.py <study assets dir> <out.png> <label=id,...> [scale, default 4] [patch size, default 3]"""
 import json
 import sys
 from pathlib import Path
@@ -10,6 +10,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 src, out, spec = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 SC = int(sys.argv[4]) if len(sys.argv) > 4 else 4
+G = int(sys.argv[5]) if len(sys.argv) > 5 else 3
 man = json.loads((src / "manifest.json").read_text())
 A, SH = man["assets"], man["sheets"]
 TW, TH = man["tile"]["w"], man["tile"]["h"]
@@ -30,14 +31,14 @@ def sprite(aid):
 
 
 items = [s.split("=", 1) for s in spec.split(",")]
-PW, PH = 3 * TW + 16, 3 * TH + 24
+PW, PH = G * TW + 16, G * TH + 24
 canvas = Image.new("RGBA", (PW * len(items), PH), (22, 25, 31, 255))
 for n, (label, aid) in enumerate(items):
     mark = aid.startswith("m:")
     aid = aid[2:] if mark else aid
-    for gy in range(3):
-        for gx in range(3):
-            use = aid if not mark or (gx, gy) == (1, 1) else "tile.floor.deck"
+    for gy in range(G):
+        for gx in range(G):
+            use = aid if not mark or (gx, gy) == (G // 2, G // 2) else "tile.floor.deck"
             im, an = sprite(use)
             cx = n * PW + PW // 2 + (gx - gy) * TW // 2
             cy = 12 + TH // 2 + (gx + gy) * TH // 2
