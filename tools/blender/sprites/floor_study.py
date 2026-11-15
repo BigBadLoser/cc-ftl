@@ -1055,6 +1055,43 @@ def haz_jobs():
     return out
 
 
+# Hazard band picked: z2. Round 2 (the user's review): z2b = z2 with a square cut at a door (the band stops where the
+# door tile's edge line crosses it, closed by z2's dark frame line across its end) instead of a Chebyshev wedge.
+
+
+def _z2b_tile(rows, x, y):
+    t = rows[y][x]
+
+    def gap(gx, gy):
+        """True where the band would lie in the doorway: a door square on along the same axis as the band's wall."""
+        r = MM.door_reach(rows, gx, gy)
+        return r is not None and r[0] < 24 and MM.wall_axis(rows, gx, gy) in (r[1], "d")
+
+    def fn(i, j):
+        if t != ".":
+            return "dark" if t == "#" else _deck(i, j)
+        gx, gy = x * MM.N + i, y * MM.N + j
+        d, _ = MM.wall_dist(rows, gx, gy, door_too=False)
+        k = d - 6
+        if not 0 <= k < 18:
+            return _deck(i, j)
+        if gap(gx, gy):
+            return _deck(i, j)
+        r = MM.door_reach(rows, gx, gy)
+        if any(gap(gx + a, gy + b) for a, b in ((2, 0), (-2, 0), (0, 2), (0, -2))) or (r is not None and r[0] < 2):
+            return "dnW3"
+        if k < 2 or k >= 16:
+            return "dnW3"
+        return "hazY" if (gx + gy) % 32 < 16 else "hazK"
+    return fn
+
+
+def z2b_jobs():
+    return [(f"tile.mark.z2b.{name}.{x}_{y}", (1, 1), "floor",
+             lambda r=rows, x=x, y=y: _tile(f"z2b_{x}_{y}", _z2b_tile(r, x, y)))
+            for name, rows in MM.MAPS.items() for y, row in enumerate(rows) for x, _ in enumerate(row)]
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
@@ -1064,4 +1101,4 @@ def _tile(name, fn):
 def jobs():
     out = [("tile.floor.deck", (1, 1), "floor", lambda: floor("a"))]
     out += [(f"tile.floor.{k}", (1, 1), "floor", lambda f=f, k=k: _tile(k, f)) for k, f in DESIGNS.items()]
-    return out + map_jobs() + haz_jobs()
+    return out + map_jobs() + haz_jobs() + z2b_jobs()

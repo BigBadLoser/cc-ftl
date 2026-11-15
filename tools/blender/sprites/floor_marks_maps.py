@@ -52,3 +52,41 @@ def wall_dist(rows, gx, gy, door_too=True):
                 if d < best or (d == best and k == "#"):
                     best, door = d, k == "D"
     return best, door
+
+
+def wall_axis(rows, gx, gy):
+    """The axis ('x' or 'y') along which the nearest wall tile (doors not counted) lies from global cell (gx, gy), or 'd'
+    when it lies diagonally (round a wall's outer corner)."""
+    tx, ty = gx // N, gy // N
+    best, axis = 10 ** 9, "x"
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if kind(rows, tx + dx, ty + dy) != "#":
+                continue
+            x0, y0 = (tx + dx) * N, (ty + dy) * N
+            ddx = max(x0 - gx, 0, gx - (x0 + N - 1))
+            ddy = max(y0 - gy, 0, gy - (y0 + N - 1))
+            if max(ddx, ddy) < best:
+                best, axis = max(ddx, ddy), "d" if ddx and ddy else ("x" if ddx else "y")
+    return axis
+
+
+def door_reach(rows, gx, gy):
+    """(distance in cells, axis) from global cell (gx, gy) to a door tile it faces square on (the cell's column or row
+    runs through the door; axis 'y' for a door above or below, 'x' for one beside), or None."""
+    tx, ty = gx // N, gy // N
+    best = None
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            if kind(rows, tx + dx, ty + dy) != "D":
+                continue
+            x0, y0 = (tx + dx) * N, (ty + dy) * N
+            if x0 <= gx < x0 + N:
+                d, ax = max(y0 - gy, gy - (y0 + N - 1), 0), "y"
+            elif y0 <= gy < y0 + N:
+                d, ax = max(x0 - gx, gx - (x0 + N - 1), 0), "x"
+            else:
+                continue
+            if best is None or d < best[0]:
+                best = (d, ax)
+    return best
