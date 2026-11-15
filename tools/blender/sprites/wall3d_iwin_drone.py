@@ -38,7 +38,8 @@ SLOT_BLOCK = 1              # art px: a block filling the slot's back, its top t
                             # where the slope starts (the sill's front edge) (the user)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
                              # from where the slope falls to it; its front in the toe's tone, OUT past it (the user)
-VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slope
+VENTS = ((2, 11), (85, 94))  # the end blocks' vents: dark panels down their slope, VENT_GAP clear of the window's end,
+VENT_GAP = 2                 # the rib, the slope's top and its foot on every side (the user)
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "slot_floor": "fDW3", "slot_back": "fDX3",
          "slot_side": "fDX2", "sblock_top": "fDW2", "sblock_front": "fDW3",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
@@ -48,7 +49,7 @@ RED_GAP = 2                 # art px: the sleeve's top under the header's foot (
 RED_H = 14                  # art px: the sleeve's height (the ref's 12)
 RED_OUT = 1                 # art px: proud of the post (front, back, inner side)
 FLARE = 5                   # px: the foot's reach into the opening at its bottom (on the end block, down its slope)
-FLARE_H = 14                # art px: the flare's height over the end block's flat top
+FLARE_H = 11                # art px: the flare's height over the end block's flat top (3 down from 14: the user)
 POSTS = {"red": "fDM2", "red_side": "fDM3", "red_top": "fDM1", "foot": "fDW3", "flare": "fDW2"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
@@ -192,7 +193,7 @@ def _front_parts(k):
     run, d0 = W.skirt_run(), (_zt() - _zf()) / _fall()
     dz = (_zt() - W.foot()) / _fall()                   # (where the slope meets the foot)
     for a, b in VENTS:
-        _slope(k, a, b, 1 * PX, dz - 1 * PX, FRONT["vent"])
+        _slope(k, a, b, VENT_GAP * PX, dz - VENT_GAP * PX, FRONT["vent"])
     zb = _zf() - BOX_DOWN / W.ZART
     for a, b in BOXES:
         _block(k, a, b, 0.5 + BOX_OUT * PX, zb, FRONT["box"], FRONT["box_top"], FRONT["box_side"], False, _front())
