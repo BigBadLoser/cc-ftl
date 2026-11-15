@@ -667,6 +667,49 @@ def _brighter(fn):
 DESIGNS.update({f"{k}u": _brighter(f) for k, f in (("c1", c1), ("c1a", c1a), ("c1b", c1b), ("c1c", c1c))})
 
 
+# Clean tile picked: c1u and its siblings (c1au, c1bu, c1cu), one palette step brighter than c1.
+# Soft floor, round 1 (quarters, lounges; calm over a room, even tiling, fine texture, a faint seam):
+#   s1 carpet tiles: four muted blue carpet squares a tile, their pile turned in a checker (a shade apart), fine fleck
+#   s2 loop carpet: one warm grey-taupe carpet, an even fine loop fleck, no squares, a faint seam
+#   s3 quilted pads: four soft teal pads a tile, a lit puff on the light side, stitched seams between
+
+
+def s1(i, j):
+    if i < 2 or j < 2:
+        return "bD"
+    q = (i // 32 + j // 32) % 2
+    h = _hash(i // 2, j // 2, 41)
+    if h < 0.10:
+        return "bD" if q else "bM"
+    if h > 0.93:
+        return "bT" if q else "bL"
+    return "bM" if q else "bT"
+
+
+def s2(i, j):
+    if i < 2 or j < 2:
+        return "swM"
+    h = _hash(i // 2, j // 2, 43)
+    return "swM" if h < 0.18 else ("swL" if h > 0.86 else "swS")
+
+
+def s3(i, j):
+    u, v = i % 32, j % 32
+    if u < 2 or v < 2:
+        return "wD"
+    if u < 4 or v < 4:
+        return "wM"
+    if (u in (5, 6) and v % 6 < 3) or (v in (5, 6) and u % 6 < 3):
+        return "wM"
+    d = max(abs(u - 15), abs(v - 15))
+    if d <= 7 and u + v < 30:
+        return "wL"
+    return "wS" if d <= 12 else "wM"
+
+
+DESIGNS.update({"s1": s1, "s2": s2, "s3": s3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
