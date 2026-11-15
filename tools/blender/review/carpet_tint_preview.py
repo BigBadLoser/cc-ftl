@@ -2,7 +2,12 @@
 the way src/render/containerPaint.ts recolours container paint: a grey pixel -> P * lum(px) / lum(#6f7b87); a key pixel
 (red mkP / green mkS, any shade) -> P / S flat. The first column is the untinted grey art.
 
-  python3 -I tools/blender/review/carpet_tint_preview.py <study assets dir> <out.png> <label=id,...> [patch, default 4] [scale, default 3]"""
+A row `label=id@rule` uses the hull paint instead (src/render/hullPaint.ts: s = lum(px) / lum(art mid tone), lighter shades
+lift at HULL_HIGHLIGHT 0.5, the mid tone lands on the paint) with the paint picked by `rule`: raw (the scheme's P),
+armour (P * 0.55, hullArt.ts ARMOUR_SHADE) or muted (P's hue at a fixed calm lightness and saturation).
+
+  python3 -I tools/blender/review/carpet_tint_preview.py <study assets dir> <out.png> <label=id[@rule],...> [patch, default 4] [scale, default 3]"""
+import colorsys
 import json
 import sys
 from pathlib import Path
@@ -53,6 +58,41 @@ def tint(im, P, S):
     return out
 
 
+MID = lum((0x48, 0x49, 0x45))     # the carpets' mid grey (palette_extra c4H5)
+
+
+def paint(P, rule):
+    if rule == "raw":
+        return P
+    if rule == "armour":
+        return tuple(round(v * 0.55) for v in P)
+    h, l, sat = colorsys.rgb_to_hls(*(v / 255 for v in P))
+    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, 0.30, min(sat, 0.45) * (1 if sat > 0.12 else 0)))
+
+
+def hull(im, P, S, rule):
+    if P is None:
+        return im
+    P, S = paint(rgb(P), rule), rgb(S)
+    px = im.load()
+    out = im.copy()
+    po = out.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            if r > 2 * (g + b) + 20 or g > 2 * (r + b) + 20:
+                c = P if r > g else S
+            else:
+                k = lum((r, g, b)) / MID
+                if k > 1:
+                    k = 1 + (k - 1) * 0.5
+                c = tuple(min(255, round(v * k)) for v in P)
+            po[x, y] = (*c, a)
+    return out
+
+
 def sprite(aid):
     a = A[aid]
     f = a["frame"]
@@ -65,9 +105,10 @@ PW, PH = G * TW + 12, G * TH + 12
 LW = 90
 canvas = Image.new("RGBA", (LW + PW * len(SCHEMES), 14 + PH * len(rows)), (22, 25, 31, 255))
 for r, (label, aid) in enumerate(rows):
+    aid, _, rule = aid.partition("@")
     base, an = sprite(aid)
     for c, (_, P, S) in enumerate(SCHEMES):
-        im = tint(base, P, S)
+        im = hull(base, P, S, rule) if rule else tint(base, P, S)
         for gy in range(G):
             for gx in range(G):
                 cx = LW + c * PW + PW // 2 + (gx - gy) * TW // 2
