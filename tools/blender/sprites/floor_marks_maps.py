@@ -16,12 +16,12 @@ MAPS = {
     ],
     # keep-clear boxes ('K' tiles, floor under a box): one free in a room, one against a wall
     "keep": [
-        "#########",
-        "#.......#",
-        "#.KKK..KK",
-        "#.KKK..KK",
-        "#......##",
-        "#########",
+        "##########",
+        "#........#",
+        "#.KKK..KK#",
+        "#.KKK..KK#",
+        "#........#",
+        "##########",
     ],
     # a corridor two wide stepping diagonally
     "stairs": [

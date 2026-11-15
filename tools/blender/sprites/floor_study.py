@@ -969,6 +969,8 @@ DESIGNS.update({"a7d": _diag(a7), "a8d": _diag(a8), "a9d": _diag(a9)})
 #   e3 double line: two 2-cell cream lines with a 2-cell gap (runway lines)
 from . import floor_marks_maps as MM
 
+_LINE_MAPS = [(k, MM.MAPS[k]) for k in ("run", "stairs")]
+
 EDGE_INSET, EDGE_W = 16, 4
 
 
@@ -1000,7 +1002,7 @@ def _map_tile(style, rows, x, y):
 def map_jobs():
     out = []
     for style in ("e1", "e2", "e3"):
-        for name, rows in MM.MAPS.items():
+        for name, rows in _LINE_MAPS:
             for y, row in enumerate(rows):
                 for x, _ in enumerate(row):
                     out.append((f"tile.mark.{style}.{name}.{x}_{y}", (1, 1), "floor",
@@ -1047,7 +1049,7 @@ def _haz_tile(style, rows, x, y):
 def haz_jobs():
     out = []
     for style in ("z1", "z2", "z3"):
-        for name, rows in MM.MAPS.items():
+        for name, rows in _LINE_MAPS:
             for y, row in enumerate(rows):
                 for x, _ in enumerate(row):
                     out.append((f"tile.mark.{style}.{name}.{x}_{y}", (1, 1), "floor",
@@ -1089,7 +1091,7 @@ def _z2b_tile(rows, x, y):
 def z2b_jobs():
     return [(f"tile.mark.z2b.{name}.{x}_{y}", (1, 1), "floor",
              lambda r=rows, x=x, y=y: _tile(f"z2b_{x}_{y}", _z2b_tile(r, x, y)))
-            for name, rows in MM.MAPS.items() for y, row in enumerate(rows) for x, _ in enumerate(row)]
+            for name, rows in _LINE_MAPS for y, row in enumerate(rows) for x, _ in enumerate(row)]
 
 
 # ---- Keep-clear, round 1 (the brief: yellow outline, thin diagonal hatching inside at low opacity, inset ~1/10): a
