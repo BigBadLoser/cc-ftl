@@ -87,22 +87,6 @@ function order(rng: Rng, list: readonly RuleArrangement[], need: readonly string
 const tally = (ids: readonly string[]): Map<string, number> => { const m = new Map<string, number>(); for (const id of ids) m.set(id, (m.get(id) ?? 0) + 1); return m; };
 
 /**
- * Rooms a rule may furnish on stations: a support room only when it is a mess (a galley), a suit-up room (lockers) or a gym
- * (sparring droids); every other role with a rule. A room no rule fits is left to its room recipe, except where `ruleOwns`.
- */
-export function ruleRoom(role: RoomRole, need: readonly string[]): boolean {
-  if (role === 'support') return need.some((m) => m === 'module.galley' || m === 'module.storage_locker' || m === 'module.exercise');
-  return !!RULES[role];
-}
-
-/** Roles whose rooms keep their room recipe when no rule fits (the stores, works, bays and social rooms with a rule of their own). */
-const RECIPE_FALLBACK: readonly RoomRole[] = ['bridge', 'cargo', 'armoury', 'industry', 'hangar', 'hall', 'plaza'];
-
-/** Rooms the rules own outright: when none fits, the room's planned modules are set plainly, not by its room recipe. */
-export const ruleOwns = (role: RoomRole, need: readonly string[]): boolean =>
-  role === 'support' ? need.includes('module.galley') : !RECIPE_FALLBACK.includes(role) && !!RULES[role];
-
-/**
  * Furnish a room by rule: its planned modules (`need`) all placed, the extras the arrangement brings. Leaves the layout
  * as it was and returns null when no arrangement works in any frame; else the indices of the modules it placed.
  */
@@ -126,7 +110,14 @@ export function furnishByRule(
   for (const arr of order(rng, list, need, { ...(frames[0] as Frame), defs: lay.defs })) {
     for (const f of frames) {
       if (arr.when && !arr.when(need, { ...f, defs: lay.defs })) continue;
-      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need, defs: lay.defs });
+      const doors: { x: number; y: number }[] = [];
+      for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) {
+        const t = f.map(x, y);
+        if ((x !== f.d || y !== f.h - 1) && at.some((e) => e.x === t.x && e.y === t.y)) doors.push({ x, y });
+      }
+      const pieces = arr.rule({ w: f.w, h: f.h, d: f.d, need, defs: lay.defs, doors });
+      // A rule with nothing to place for a planned room does not fit this frame.
+      if (pieces.length === 0 && need.length > 0) continue;
       const got = tally(pieces.map((p) => p.def));
       // The rule's own planned modules all there (it places every one of a kind, or none and leaves it to the placer).
       if ([...want].some(([id, n]) => (got.get(id) ?? 0) > 0 && (got.get(id) ?? 0) < n)) continue;
@@ -161,6 +152,37 @@ export function furnishByRule(
         }
         undo();
       }
+    }
+  }
+  return null;
+}
+
+/** What a plainly placed module brings flush against it on a station: a refinery its ore bin (its feed). */
+const FEEDS: Readonly<Record<string, string>> = { 'module.refinery': 'module.storage_ore' };
+
+/**
+ * A module set plainly (no rule fit its room) with its feed flush against it, where one fits and the room is no worse:
+ * the first free spot round its sides. Returns the feed's index, or null.
+ */
+export function placeFeed(lay: Layout, room: number, idx: number): number | null {
+  const m = lay.modules[idx], feed = m && FEEDS[m.def], def = m && lay.defs[m.def], fd = feed && lay.defs[feed];
+  if (!m || !feed || !def || !fd) return null;
+  const [w, h] = rotatedSize(def, m.rot);
+  const floor = (x: number, y: number): boolean => lay.inBounds(x, y) && lay.at(x, y) === '_' && lay.roomOf[y * lay.w + x] === room;
+  const at = entriesOf(lay, room).map((e) => e.at);
+  const problems = (): number => roomProblems(floor, at, lay.modules.filter((q) => lay.roomOf[q.y * lay.w + q.x] === room), lay.defs).length;
+  // An odd-shaped room may have problems of its own already: the feed only must not add one.
+  const before = problems();
+  for (const rot of [0, 1, 2, 3]) {
+    const [fw, fh] = rotatedSize(fd, rot);
+    const spots: [number, number][] = [];
+    for (let y = m.y - fh + 1; y < m.y + h; y++) spots.push([m.x - fw, y], [m.x + w, y]);
+    for (let x = m.x - fw + 1; x < m.x + w; x++) spots.push([x, m.y - fh], [x, m.y + h]);
+    for (const [x, y] of spots) {
+      if (lay.fitError(feed, x, y, rot, room) !== null) continue;
+      lay.push({ def: feed, x, y, rot });
+      if (problems() <= before) return lay.modules.length - 1;
+      lay.pop();
     }
   }
   return null;

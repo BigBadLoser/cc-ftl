@@ -4,7 +4,7 @@
  * wall at column d. Corner pieces that would stand on the door's column are left out.
  */
 import type { Piece } from './check';
-import { BE, CD, CN, FB, L, PL, PT, RK, RS, SB, SP, P, count, range } from './parts';
+import { BE, CD, CN, FB, L, OB, PL, PT, RF, RK, RS, SB, SP, P, count, range } from './parts';
 import type { Ctx } from './rules';
 
 /** Whether a two-wide piece at x leaves the door's column free. */
@@ -49,4 +49,55 @@ export function su(c: Ctx): Piece[] {
   const xs = (want > 0 ? [...open].sort((a, b) => Math.min(a, w - 1 - a) - Math.min(b, w - 1 - b) || a - b).slice(0, want) : open).sort((a, b) => a - b);
   const benches = h >= 3 && w >= 6 ? [0, w - 2].filter((x) => clear(x, d)).map((x) => P(BE, x, h - 1, 2)) : [];
   return [...xs.map((x) => P(L, x, 0, 0)), ...benches];
+}
+
+/**
+ * RF slot columns: where n refineries stand along the back wall, each four wide (its three and its working tile's
+ * column), none over the tiles inside the room's other doors, spread as evenly as the room allows; null when they do not fit.
+ */
+export function rfSlots(w: number, n: number, doors: readonly { x: number; y: number }[] = []): number[] | null {
+  let best: number[] | null = null, bestGap = -1;
+  const pick = (from: number, got: number[]): void => {
+    if (got.length === n) {
+      const edges = [got[0] as number, ...got.slice(1).map((x, i) => x - (got[i] as number) - 4), w - (got[n - 1] as number) - 4];
+      const gap = Math.min(...edges);
+      if (gap > bestGap) { bestGap = gap; best = [...got]; }
+      return;
+    }
+    for (let x = from; x + 4 * (n - got.length) <= w; x++) {
+      if (doors.some((t) => t.y <= 5 && t.x >= x && t.x <= x + 2)) continue;
+      pick(x + 4, [...got, x]);
+    }
+  };
+  pick(0, []);
+  return best;
+}
+
+/**
+ * RF: the refineries along the back wall, each with its ore bin flush under it (its feed), the working tile at the
+ * refinery's foot beside the bin and a row of floor below the bins kept clear; spread evenly, clear of any door in the
+ * room's other doors. Needs seven rows: four of refinery, two of bin, one to walk.
+ */
+export function rf(c: Ctx): Piece[] {
+  const xs = rfSlots(c.w, Math.max(1, count(c.need, RF)), c.doors) ?? [];
+  return xs.flatMap((x) => [P(RF, x, 0, 0), P(OB, x, 4, 0)]);
+}
+
+/** RF2 slots: refinery-and-bin pairs (five wide, four deep) a room holds, in rows five tiles apart from the back wall. */
+export const rf2Fits = (w: number, h: number): number => Math.floor(w / 5) * (h >= 5 ? Math.floor((h - 5) / 5) + 1 : 0);
+
+/**
+ * RF2, for a deep narrow room: the refineries in rows from the back wall, each with its ore bin flush beside it (the
+ * bin at its shoulder, the working tile below the bin), a row of floor under each row of them; rows centred, and any
+ * pair over the tiles inside another door left out (the rule then does not fit, and the room is tried another way).
+ */
+export function rf2(c: Ctx): Piece[] {
+  const n = Math.max(1, count(c.need, RF)), per = Math.max(1, Math.floor(c.w / 5)), out: Piece[] = [];
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / per), inRow = Math.min(per, n - row * per), gap = Math.floor((c.w - 5 * inRow) / (inRow + 1));
+    const x = gap + (i % per) * (5 + gap), y = 5 * row;
+    if ((c.doors ?? []).some((t) => t.y >= y && t.y <= y + 4 && t.x >= x && t.x <= x + 4)) return [];
+    out.push(P(RF, x, y, 0), P(OB, x + 3, y, 0));
+  }
+  return out;
 }

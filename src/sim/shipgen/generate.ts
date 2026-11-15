@@ -6,8 +6,9 @@ import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
-import { RECIPES, STATION_RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
-import { furnishByRule, ruleOwns, ruleRoom } from './rooms/rules/place';
+import { RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
+import { furnishByRule, placeFeed } from './rooms/rules/place';
+import { RULES } from './rooms/rules/rules';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -103,12 +104,13 @@ function fitOut(
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
   if (o.immobile) {
+    // Stations are furnished by rule alone: no room recipe runs. A room no rule fits gets its planned modules set plainly.
     // Halls and plazas have no spec (nothing planned in them): a rule may still dress them.
     roles.forEach((role, room) => {
       const spec = specs[room], mods = spec?.mods ?? [];
-      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !ruleRoom(role, mods)) return;
+      ruled.add(room);
+      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !RULES[role]) return;
       const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
-      if (got || ruleOwns(role, mods)) ruled.add(room);
       if (got) furnished.add(room);
       for (const idx of got ?? []) {
         const id = lay.modules[idx]?.def as string;
@@ -136,6 +138,28 @@ function fitOut(
       const n = lay.modules.length;
       hostCompanions(lay, rng, j.room, d, si, pm);
       for (let i = n; i < lay.modules.length; i++) stockUp(i, j.spec);
+    }
+    // A station room no rule fit: what the module feeds from goes flush against it all the same (a refinery's ore bin).
+    if (o.immobile && !d) {
+      let fi = placeFeed(lay, j.room, idx);
+      // No room for it there: the module tries the room's other spots in turn until its feed fits beside it.
+      const was = lay.modules[idx];
+      if (fi === null && was && lay.modules.length - 1 === idx) {
+        lay.pop();
+        for (const t of lay.roomTiles(j.room)) {
+          for (const rot of rots(j.def)) {
+            const x = t % lay.w, y = Math.floor(t / lay.w);
+            if (lay.fitError(j.def, x, y, rot, j.room) !== null) continue;
+            lay.push({ def: j.def, x, y, rot });
+            fi = placeFeed(lay, j.room, idx);
+            if (fi !== null) break;
+            lay.pop();
+          }
+          if (fi !== null) break;
+        }
+        if (fi === null) lay.push(was);
+      }
+      if (fi !== null) stockUp(fi, j.spec);
     }
     if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
     if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
@@ -166,9 +190,10 @@ function fitOut(
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores (never a mess or other living room).
-  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' ? i : -1)).filter((i) => i >= 0);
-  // Station courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort.
-  const courts = roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
+  // A station plans its reactors (assembly/program.ts) and squeezes one in only where reactors stand.
+  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || (r === 'cargo' && !o.immobile) ? i : -1)).filter((i) => i >= 0);
+  // Courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort; not on a station.
+  const courts = o.immobile ? [] : roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
   for (let k = 0; k < (courts.length > 0 ? 6 : 3) && supply < demand + margin && reactor; k++) {
     if (!(k < 3 && placeOne(lay, rng, 'module.reactor', spare)) && !(courts.length > 0 && placeOne(lay, rng, 'module.reactor', courts))) break;
@@ -342,7 +367,7 @@ export function fitShell(
   debug?: (hall: (x: number, y: number) => boolean) => GenResult['debug'],
 ): GenResult {
   const { rows, roomOf, width, height, roles, specs } = shell;
-  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? STATION_RECIPES : RECIPES, opts);
+  const d = fitOut(rng, f, rows, roomOf, roles, specs, defs, opts.immobile ? {} : RECIPES, opts);
   // Airlock-only docks open into the corridor they border (wall and door go; openDocks.ts).
   const opened = d.error ? { merged: 0, walled: 0, tiles: [] } : openBareDocks(d.lay);
   const docks = { merged: opened.merged, walled: opened.walled };

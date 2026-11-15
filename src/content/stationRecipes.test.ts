@@ -22,13 +22,14 @@ describe('station program', () => {
     expect((['outpost', 'station', 'hub'] as const).map((s) => count(s, 'module.arcade'))).toEqual([0, 1, 1]);
   });
 
-  it('houses the whole crew, with a medbay and plant rooms', () => {
+  it('houses the whole crew, with a medbay, no filler plant rooms, every common room a mess or a rec room', () => {
     for (const kind of ['station.pirate', 'station.military', 'station.farming'] as const) {
       const { rooms } = programOf(kind, 'station', 2);
       const beds = rooms.flatMap((r) => r.mods).filter((m) => m === 'module.bed').length;
       expect(beds).toBe(crewSize(stations[kind], 'station'));
       expect(rooms.some((r) => r.role === 'medbay')).toBe(true);
-      expect(rooms.filter((r) => r.role === 'plant').length).toBeGreaterThanOrEqual(2);
+      expect(rooms.filter((r) => r.role === 'plant' && r.mods.every((m) => m === 'module.lifeSupport'))).toHaveLength(0);
+      for (const r of rooms.filter((q) => q.role === 'support' && q.dept === 'commons')) expect(r.mods.some((m) => m === 'module.galley' || m === 'module.arcade'), kind).toBe(true);
     }
     expect(programOf('station.farming', 'station', 1).rooms.some((r) => r.role === 'farm')).toBe(true);
     expect(programOf('station.military', 'hub', 1).rooms.filter((r) => r.mods.includes('module.vehicle_bay'))).toHaveLength(2);

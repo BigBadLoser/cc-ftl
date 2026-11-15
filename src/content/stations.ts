@@ -136,7 +136,7 @@ export const stations = {
     name: 'Agri station', kind: 'farming', side: 'neutral', motif: 'motif.civilian', security: 0.2, space: [1, 1.4], crew: CIVIL_CREW,
     weapons: { light: LIGHT, heavy: HEAVY }, shields: SMALL_SHIELD, transition: FAIRING,
     stock: [{ item: 'item.ration', min: 4, max: 12 }, { item: 'item.polymer', min: 0, max: 4 }],
-    tiers: tiers({ guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(6, 14, 28), docks: per(2, 2, 3), shapes: SHAPES.farming }),
+    tiers: tiers({ guns: per(2, 4, 8), heavyPct: 15, shields: per(0, 1, 2), pd: per(1, 1, 2), crates: per(12, 24, 40), docks: per(2, 2, 3), shapes: SHAPES.farming }),
     rooms: [
       room('support', ['module.lifeSupport'], 6, 3, per(2, 4, 8)),
       armoury(per(1, 1, 1)),
@@ -144,6 +144,8 @@ export const stations = {
     // The station assembly gives it greenhouses (long, narrow farms: hydroponics in two rows down their length) and half as many extra common rooms.
     assemblyRooms: [
       room('farm', n(6, 'module.hydroponics'), 5, 9, per(2, 4, 8)),
+      // The produce store: cold stores of what the greenhouses grow, beside the cargo.
+      room('cargo', n(4, 'module.storage_cold'), 7, 3, per(1, 2, 3), [{ item: 'item.ration', min: 6, max: 16 }]),
       room('support', ['module.lifeSupport'], 6, 3, per(1, 2, 4)),
       armoury(per(1, 1, 1)),
     ],

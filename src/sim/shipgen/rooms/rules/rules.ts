@@ -9,13 +9,17 @@ import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { AC, B, BT, CD, DR, EX, FB, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, BT, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { co, cu, gy, hl, pz } from './social';
 import { bg, pa, qm, shelfSlots } from './stores';
-import { bk, lb, su, ws } from './works';
+import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
 
 /** What a rule is given: the room (frame), the planned modules, and the module defs. */
-export interface Ctx { w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef> }
+/**
+ * What a rule sees: the room's frame size, the door's column under the bottom wall (d), the planned modules, and the
+ * floor tiles just inside the room's other doors, in frame tiles (a through room: what stands there would block them).
+ */
+export interface Ctx { w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef>; doors?: readonly { x: number; y: number }[] }
 
 export interface RuleArrangement {
   name: string;
@@ -195,6 +199,8 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },
   ],
   industry: [
+    { name: 'RF refinery, an ore bin flush under each', weight: 1, when: (n, r) => n.includes(RF) && r.h >= 7 && r.w >= 4 * count(n, RF), rule: rf },
+    { name: 'RF2 refineries in rows, an ore bin flush beside each (deep rooms)', weight: 1, when: (n, r) => n.includes(RF) && rf2Fits(r.w, r.h) >= count(n, RF), rule: rf2 },
     { name: 'WS workshop, fabricator between the racks', weight: 1, when: (n, r) => n.includes(FB) && !n.includes(SP) && !n.includes(RS) && r.h >= 4 && r.w >= 4 + 2 * count(n, FB), rule: ws },
     { name: 'BK breaker, scrapper between the bins', weight: 1, when: (n, r) => count(n, SP) === 1 && r.w >= 8 && r.h >= 5 && (count(n, SB) === 0 || count(n, SB) === 2), rule: bk },
     { name: 'LB lab, research modules along the back wall', weight: 1, when: (n, r) => n.includes(RS) && r.h >= 4 && r.w >= 3 * count(n, RS), rule: lb },
@@ -202,7 +208,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   hangar: [{ name: 'DB drone bay, bays spread across', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === DR) && r.h >= 4 && r.w >= 2 * n.length, rule: db }],
   hall: [{ name: 'HL hall street, planters and benches on the wall', weight: 1, when: (n, r) => n.length === 0 && r.w >= 8 && r.h >= 3 && r.h <= 4, rule: hl }],
   plaza: [
-    { name: 'CU customs, a desk and chairs', weight: 1, when: (n, r) => n.length === 0 && r.w >= 7 && r.h >= 3 && r.h <= 4, rule: cu },
+    { name: 'CU customs (a harbour customs hall), a desk and chairs', weight: 1, when: (n, r) => n.includes('module.mess_table') && r.w >= 7 && r.h >= 3, rule: cu },
     { name: 'PZ parade hall, benches round the planters', weight: 1, when: (n, r) => n.length === 0 && r.w >= 9 && r.h >= 7, rule: pz },
   ],
   reactor: [{ name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => (c.defs[m]?.power ?? 0) > 0), true) }],

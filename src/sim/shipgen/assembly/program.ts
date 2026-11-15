@@ -32,7 +32,7 @@ const LAMP_AREA = 10;
 const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
 /** The planned rooms: command, guns, shields, the core, quarters, messes, the kind's rooms, docks, holds, bays, reactors. */
-function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>): { command: RoomSpec; rest: RoomSpec[] } {
+function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>): { command: RoomSpec; rest: RoomSpec[]; docks: RoomSpec[]; space: number } {
   const t = def.tiers[size];
   const space = def.space ? def.space[0] + rng.next() * (def.space[1] - def.space[0]) : 1;
   const fp = (id: string | undefined): readonly [number, number] => defs[id ?? '']?.footprint ?? [2, 2];
@@ -125,11 +125,18 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   // The ore store beside it: two ore bins a pod, in a row along each long wall with an aisle between. It is the works'.
   if (pods > 0) support.push({ role: 'cargo', dept: 'works', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 });
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];
-  // Power: every room's draw, the lamps (the fit-out lights about one tile of floor in 22, halls included, so a lamp
-  // to every LAMP_AREA tiles of planned room), and a margin for the fittings a fit-out adds; then the smallest reactor
-  // tier the size allows that powers the station from one room of two, else the largest. Planned here, the reactors
-  // stand in plant rooms; short, the fit-out would squeeze spares into whatever room has floor.
-  const drawing = [command, ...rest, ...docks.slice(2)];
+  return { command, rest, docks, space };
+}
+
+/**
+ * The reactor rooms for a station's rooms (everything else planned, the commons' galleys and cabinets included).
+ * Power: every room's draw, the lamps (the fit-out lights about one tile of floor in 22, halls included, so a lamp
+ * to every LAMP_AREA tiles of planned room), and a margin for the fittings a fit-out adds; then the smallest reactor
+ * tier the size allows that powers the station from one room of two, else the largest. Planned here, the reactors
+ * stand in reactor rooms; the fit-out never squeezes one in elsewhere.
+ */
+function reactorsFor(drawing: readonly RoomSpec[], def: StationDef, size: StationSize, defs: Record<string, ModuleDef>, space: number): RoomSpec[] {
+  const fp = (id: string | undefined): readonly [number, number] => defs[id ?? '']?.footprint ?? [2, 2];
   let demand = 2 + Math.ceil(drawing.reduce((n, r) => n + r.w * r.h, 0) / LAMP_AREA);
   for (const r of drawing) for (const m of r.mods) demand += Math.max(0, -(defs[m]?.power ?? 0));
   if (def.atrium) demand *= 1.15;
@@ -144,7 +151,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
     const m = Math.min(2, k);
     reactors.push({ role: 'reactor', mods: Array<string>(m).fill(id), w: fp(id)[0] * m + margin, h: fp(id)[1] + margin });
   }
-  return { command, rest: [...rest, ...reactors, ...docks] };
+  return reactors;
 }
 
 /** Crates a warehouse holds at most; more make a second one. */
@@ -187,11 +194,6 @@ function medbays(rooms: readonly RoomSpec[]): RoomSpec[] {
   return wards;
 }
 
-/** Plant rooms: one for every reactor room, two at least, so the machinery has working rooms round it. */
-function plant(rooms: readonly RoomSpec[]): RoomSpec[] {
-  const reactors = rooms.filter((r) => r.role === 'reactor').length;
-  return reactors === 0 ? [] : Array.from({ length: Math.max(2, reactors) }, (): RoomSpec => ({ role: 'plant', mods: ['module.lifeSupport'], w: 5, h: 4 }));
-}
 
 /**
  * The common rooms as a mess and a rec room: the first one (two at hub size) is a mess with a galley and mess tables
@@ -202,16 +204,19 @@ function plant(rooms: readonly RoomSpec[]): RoomSpec[] {
 export function withCommons(rooms: readonly RoomSpec[], size: StationSize): RoomSpec[] {
   const out = rooms.map((r) => ({ ...r, mods: [...r.mods] }));
   const common = out.filter((r) => r.role === 'support' && !r.dept);
-  const messes = size === 'hub' ? 2 : 1, rec = size === 'outpost' ? 0 : 1;
+  // Every common room is a mess or a rec room (none is left a bare life-support room): half of them messes (two at hub
+  // size at least), the crew shared between those, the rest rec rooms.
+  const messes = Math.min(common.length, Math.max(size === 'hub' ? 2 : 1, Math.ceil(common.length / 2))), rec = common.length - messes;
   const crew = sleepersIn(out.flatMap((r) => r.mods));
   const tables = Math.max(1, Math.ceil(crew / 8 / messes));
-  for (const [i, r] of common.slice(0, messes + rec).entries()) {
+  for (const [i, r] of common.entries()) {
     const mess = i < messes;
     r.mods.push(...(mess ? ['module.galley', ...Array<string>(tables).fill('module.mess_table'), ...(rec ? [] : ['module.gametable'])] : ['module.arcade', 'module.arcade', 'module.gametable']));
     r.dept = 'commons';
     // Floor for what it holds: a counter and a row of tables with chairs either side and an aisle (the furnishing
     // rules' tables in pairs: seven tiles a pair, three for the galleys), or a wall of cabinets and a table.
-    const long = Math.max(r.w, r.h, mess ? 7 * Math.ceil(tables / 2) + 2 : 5), short = Math.max(Math.min(r.w, r.h), mess ? 6 : 4);
+    // Sized to what it holds, not grown with the station's spaciousness: a big mess with one table reads as empty.
+    const long = mess ? 7 * Math.ceil(tables / 2) + 2 : 6, short = mess ? 6 : 5;
     [r.w, r.h] = r.w >= r.h ? [long, short] : [short, long];
     if (mess) r.annex = { role: 'cargo', dept: 'commons', mods: Array<string>(Math.max(2, tables)).fill('module.storage_rack'), w: 5, h: 3 };
   }
@@ -220,8 +225,9 @@ export function withCommons(rooms: readonly RoomSpec[], size: StationSize): Room
 
 /** Every room of a station of `def`'s kind at a size tier, for `assemble`. `commons` false leaves the common rooms plain. */
 export function stationProgram(rng: Rng, def: StationDef, size: StationSize, defs: Record<string, ModuleDef>, o: { commons?: boolean } = {}): RoomSpec[] {
-  const { command, rest } = planned(rng, def, size, defs);
+  const { command, rest, docks, space } = planned(rng, def, size, defs);
   const base = warehoused([command, ...shuffle(rng, rest)]);
-  const rooms = [...base, ...medbays(base), ...plant(base)];
-  return o.commons === false ? rooms : withCommons(rooms, size);
+  const rooms = o.commons === false ? [...base, ...medbays(base)] : withCommons([...base, ...medbays(base)], size);
+  // Docks beyond the first two draw (their airlocks' lamps); the reactors come last, sized to all of it.
+  return [...rooms, ...reactorsFor([...rooms, ...docks.slice(2)], def, size, defs, space), ...docks];
 }

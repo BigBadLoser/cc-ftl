@@ -28,6 +28,8 @@ export function roomKind(role: string, mods: readonly string[]): string {
   const has = (m: string): boolean => mods.includes(`module.${m}`);
   const sleepers = mods.filter((m) => m === 'module.bed').length + 2 * mods.filter((m) => m === 'module.bunk').length;
   if (role === 'hall') return 'corridor';
+  if (role === 'bridge') return 'office';
+  if (role === 'plaza' && has('mess_table')) return 'customs';
   if (has('galley')) return 'mess';
   if (has('bed') && has('mess_table')) return 'chief';
   if (role === 'quarters') return sleepers > 1 ? 'barracks' : 'cabin';

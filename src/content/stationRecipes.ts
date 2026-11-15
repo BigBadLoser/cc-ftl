@@ -98,7 +98,8 @@ const agri = (name: string, o: { street: number; body: [number, number]; greenho
     { ...harbour, section: { ...harbour.section, cross: false } },
     { ...body, takes: [...body.takes, 'works', 'freight'], section: { ...body.section, cross: true, crosses: Math.ceil(wings / 2) } },
     // The main street is one width from the harbour to the machinery at its tail; the wings' streets are side streets (two).
-    { ...secure, section: { ...secure.section, width: o.street } },
+    // No end room across the tail: the core stands in the rows at its own size, not stretched across the street.
+    { ...secure, section: { ...secure.section, width: o.street, cap: false } },
     { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: 4, clear: 3, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true }, link: 0 },
   ];
   return { ...base, branches: branches(2), sizes: { outpost: { branches: branches(1) }, hub: { branches: branches(4) } } };

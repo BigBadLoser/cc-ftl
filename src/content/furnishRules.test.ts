@@ -59,7 +59,7 @@ const CASES: { role: RoomRole; name: string; need: string[]; sizes: [number, num
   { role: 'hangar', name: 'DB', need: k(2, 'module.droneBay'), sizes: [[8, 4], [6, 4], [7, 4], [10, 5]] },
   { role: 'hangar', name: 'DB', need: k(3, 'module.droneBay'), sizes: [[8, 4], [10, 4]] },
   { role: 'hall', name: 'HL', need: [], sizes: [[17, 3], [10, 3], [8, 3], [25, 4], [12, 3]] },
-  { role: 'plaza', name: 'CU', need: [], sizes: [[11, 3], [9, 3], [7, 3], [13, 4]] },
+  { role: 'plaza', name: 'CU', need: ['module.mess_table', 'module.chair', 'module.chair'], sizes: [[11, 3], [9, 3], [7, 3], [13, 4], [7, 8]] },
   { role: 'plaza', name: 'PZ', need: [], sizes: [[11, 9], [9, 7], [13, 9], [15, 11]] },
 ];
 
