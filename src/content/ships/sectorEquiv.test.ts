@@ -343,4 +343,6 @@ describe('sector refactor equivalence', () => {
 // Repinned again for the starter's battery bank (#421): one more module (80 hp, a charge field) and its power bookkeeping; the ids after it shift by one.
 // Repinned for NPC fuel (#425): the raider's reactors burn too, so `Module.fuel` appears on them; with that field left out the run hashes as before (event log and every other field unchanged).
 // Repinned for medic tending (#319): a patient in a medical bed gets a `tend` job (a medic stands beside it and speeds the healing) instead of the old ambient medic bonus; a job entity shifts the ids after it.
-const EXPECTED = { combat: 'c7f409b2', disaster: 'de482b42' };
+// Repinned for the battery bank's 1x2 footprint (#488): the starter's battery moved (27,6 -> 26,6, laid east-west) to fit and covers two tiles, which moves crew
+// routes and the fire's spread. Hauls that stop beside any side of a storage module (`storageStop`, same PR) leave both hashes as they were.
+const EXPECTED = { combat: '53a6a81d', disaster: '09807dc0' };
