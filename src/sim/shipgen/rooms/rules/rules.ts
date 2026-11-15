@@ -10,6 +10,7 @@ import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
 import { AC, B, BT, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
 import { co, cu, gy, hl, pz } from './social';
 import { bg, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
@@ -193,7 +194,9 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
     rule: pa,
-  }],
+  }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }],
+  core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
+  plant: [{ name: 'BA battery room, the cells in a bank round the console', weight: 1, when: (n, r) => n.includes(BT) && r.w >= 3 && r.h >= 3, rule: bank }],
   armoury: [
     { name: 'QM quartermaster, armoury lockers round a desk', weight: 1, when: (n, r) => !n.includes(SW) && r.w >= 7 && r.h >= 5, rule: qm },
     { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },
@@ -205,7 +208,11 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     { name: 'BK breaker, scrapper between the bins', weight: 1, when: (n, r) => count(n, SP) === 1 && r.w >= 8 && r.h >= 5 && (count(n, SB) === 0 || count(n, SB) === 2), rule: bk },
     { name: 'LB lab, research modules along the back wall', weight: 1, when: (n, r) => n.includes(RS) && r.h >= 4 && r.w >= 3 * count(n, RS), rule: lb },
   ],
-  hangar: [{ name: 'DB drone bay, bays spread across', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === DR) && r.h >= 4 && r.w >= 2 * n.length, rule: db }],
+  hangar: [
+    { name: 'SH shuttle hangar, the bay at the back', weight: 1, when: (n, r) => count(n, VB) === 1 && r.w >= 5 && r.h >= 5, rule: shuttle },
+    { name: 'PB pod deck, bays in rows', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === PB) && podsFit(n.length, r.w, r.h), rule: pods },
+    { name: 'DB drone bay, bays spread across', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === DR) && r.h >= 4 && r.w >= 2 * n.length, rule: db },
+  ],
   hall: [{ name: 'HL hall street, planters and benches on the wall', weight: 1, when: (n, r) => n.length === 0 && r.w >= 8 && r.h >= 3 && r.h <= 4, rule: hl }],
   plaza: [
     { name: 'CU customs (a harbour customs hall), a desk and chairs', weight: 1, when: (n, r) => n.includes('module.mess_table') && r.w >= 7 && r.h >= 3, rule: cu },

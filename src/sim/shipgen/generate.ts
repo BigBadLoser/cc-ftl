@@ -116,6 +116,8 @@ function fitOut(
         const id = lay.modules[idx]?.def as string;
         placed[id] = (placed[id] ?? 0) + 1;
         stockUp(idx, spec);
+        if (spec?.vehicle && defs[id]?.vehicleBay) out.vehicles.add(idx);
+        if (spec?.drones && defs[id]?.droneBay) out.drones.set(idx, Array<string>(Math.min(spec.drones.count, defs[id]?.droneBay?.slots ?? 0)).fill(spec.drones.def));
       }
     });
   }
