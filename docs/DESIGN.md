@@ -1224,8 +1224,9 @@ are unchanged. After the answer the window stays open with how it ended and the 
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).
-- **What to do with a prize:** strip it (your crew deconstruct its modules and take its cargo), sell the hull at a
-  shipyard or black market (`prizeValue`), or scuttle it. Keeping a prize as a second ship waits for a fleet system.
+- **What to do with a prize:** strip it with the salvage panel (your crew deconstruct its modules, take its cargo and
+  can take the hull apart too), or scuttle it. There is no hull sale: salvage already turns a prize into goods. Keeping a
+  prize as a second ship waits for a fleet system.
 
 ### Faction specialities (phase 2 stock)
 
