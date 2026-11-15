@@ -82,8 +82,16 @@ function distToModules(lay: Layout, cx: number, cy: number): number {
   return best;
 }
 
-/** Light radius the generator plans with (inside the module's 7). */
-const LIGHT_REACH = 4.5;
+/**
+ * Light radius the generator plans with, in small rooms and open ones alike: every floor tile within this of a lamp
+ * (inside the floor grate's radius of 7).
+ */
+const LIGHT_REACH = 6;
+/**
+ * The grate's own radius: a few corner tiles past LIGHT_REACH but within this of a lamp are left as they are (dimmer),
+ * rather than each taking a lamp beside one already there.
+ */
+const LAMP_EDGE = 7;
 /** A lamp's spot: of the tiles that light at least this share of what the best one lights, the most central. */
 const NEARLY = 0.75;
 
@@ -127,6 +135,36 @@ function openTo(lay: Layout, room: number, tiles: readonly number[]): Set<number
 }
 
 /**
+ * One lamp, else a pair, that lights every tile of `dark` (the most central such: the pair whose lamps are most central
+ * together). Placed with `put`; false when neither does, and the room is lit a lamp at a time. A greedy first lamp
+ * takes the middle and leaves both ends wanting more than one more.
+ */
+function fewest(lay: Layout, room: number, dark: readonly number[], depth: Map<number, number>, covers: (a: number, b: number) => boolean, put: (c: number) => void): boolean {
+  if (dark.length === 0) return true;
+  const spots = lay.roomTiles(room).filter((c) => lay.occ[c] === -1 && !lay.fitError('module.light', c % lay.w, Math.floor(c / lay.w), 0, room));
+  const sets = spots.map((c) => dark.map((d) => covers(c, d)));
+  const n = sets.map((m) => m.filter(Boolean).length), D = dark.length, dep = (c: number): number => depth.get(c) ?? 0;
+  let one = -1;
+  for (let i = 0; i < spots.length; i++) if (n[i] === D && (one < 0 || dep(spots[i] as number) > dep(spots[one] as number))) one = i;
+  if (one >= 0) { put(spots[one] as number); return true; }
+  let pair: [number, number] | null = null, best = -1;
+  for (let i = 0; i < spots.length; i++) {
+    for (let j = i + 1; j < spots.length; j++) {
+      if ((n[i] as number) + (n[j] as number) < D) continue;
+      const a = sets[i] as boolean[], b = sets[j] as boolean[];
+      let all = true;
+      for (let k = 0; k < D && all; k++) all = (a[k] as boolean) || (b[k] as boolean);
+      const score = dep(spots[i] as number) + dep(spots[j] as number);
+      if (all && score > best) { best = score; pair = [i, j]; }
+    }
+  }
+  if (!pair) return false;
+  put(spots[pair[0]] as number);
+  put(spots[pair[1]] as number);
+  return true;
+}
+
+/**
  * Lights until every floor tile of the room is within reach of one (a lamp in a room open onto it counts). Floor lights stand centred where they can: of the
  * tiles that light something still dark, the most central ones (`depthOf`), then the one that lights the most.
  */
@@ -143,9 +181,18 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
     const li = m.y * lay.w + m.x;
     if (open.has(lay.roomOf[li] as number)) for (const t of tiles) if (covers(li, t)) lit[t] = 1;
   }
+  const lamps: number[] = [];
+  for (const m of lay.modules) if (m.def === 'module.light' && open.has(lay.roomOf[m.y * lay.w + m.x] as number)) lamps.push(m.y * lay.w + m.x);
+  const edge = (t: number): boolean => lamps.some((l) => Math.hypot((l % lay.w) - (t % lay.w), Math.floor(l / lay.w) - Math.floor(t / lay.w)) <= LAMP_EDGE);
+  const put = (c: number): void => {
+    lay.push({ def: 'module.light', x: c % lay.w, y: Math.floor(c / lay.w), rot: 0 });
+    lamps.push(c);
+    for (const t of tiles) if (covers(c, t)) lit[t] = 1;
+  };
+  if (fewest(lay, room, tiles.filter((t) => !lit[t] && !edge(t)), depth, covers, put)) return;
   for (let guard = 0; guard < 12; guard++) {
     const dark = tiles.filter((t) => !lit[t]);
-    if (dark.length === 0) return;
+    if (dark.length === 0 || dark.every(edge)) return;
     // Coverage first, so each lamp lights as much of what is still dark as any (not the next central tile, which can
     // stand beside the last lamp and light a corner); of the tiles that light nearly as much, the most central.
     const scored: { c: number; lights: number }[] = [];
@@ -162,16 +209,15 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
       if (dc > bestDepth || (dc === bestDepth && score > bestScore)) { bestDepth = dc; bestScore = score; best = c; }
     }
     if (best < 0) return;
-    lay.push({ def: 'module.light', x: best % lay.w, y: Math.floor(best / lay.w), rot: 0 });
-    for (const t of tiles) if (covers(best, t)) lit[t] = 1;
+    put(best);
   }
 }
 
 /** Rooms this big (courtyards: plazas, gardens, drill halls) are lit by `lightOpen`, with no lamp cap. */
 export const BIG_ROOM = 120;
-/** Lamp grid pitch in big rooms, and the reach every floor tile is kept within (inside the module's radius of 7). */
+/** Lamp grid pitch in big rooms, and the reach every floor tile is kept within there (`LIGHT_REACH`). */
 const GRID = 9;
-export const OPEN_REACH = 6;
+export const OPEN_REACH = LIGHT_REACH;
 
 /**
  * Big open rooms: a lamp grid scaled to the area (one lamp near every grid point, so the count grows with the room),
@@ -190,7 +236,8 @@ function lightOpen(lay: Layout, room: number, tiles: number[]): void {
       }
     }
   };
-  for (const m of lay.modules) if (m.def === 'module.light' && lay.roomOf[m.y * W + m.x] === room) mark(m.y * W + m.x);
+  const open = openTo(lay, room, tiles);
+  for (const m of lay.modules) if (m.def === 'module.light' && open.has(lay.roomOf[m.y * W + m.x] as number)) mark(m.y * W + m.x);
   const fits = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < W && y < lay.h && lay.roomOf[y * W + x] === room
     && lay.cells[y * W + x] === '_' && lay.occ[y * W + x] === -1 && !lay.fitError('module.light', x, y, 0, room);
   const depth = depthOf(lay, room, tiles);
@@ -216,9 +263,28 @@ function lightOpen(lay: Layout, room: number, tiles: number[]): void {
       if (i >= 0 && !lit[i]) put(i);
     }
   }
+  // What is still dark: a lamp within reach of each dark tile, the one that lights the most of what is dark (not the
+  // most central, which for every corner of a hall is the same few middle tiles, so lamps would stand in pairs); of
+  // those that light nearly as much, the most central, then the nearest.
+  const darkNear = (x: number, y: number): number => {
+    let n = 0;
+    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+      const i = (y + dy) * W + x + dx;
+      if (dx * dx + dy * dy <= OPEN_REACH * OPEN_REACH && y + dy >= 0 && y + dy < lay.h && x + dx >= 0 && x + dx < W && lay.roomOf[i] === room && !lit[i]) n++;
+    }
+    return n;
+  };
   for (const t of tiles) {
     if (lit[t]) continue;
-    const i = near(t % W, Math.floor(t / W), R - 1);
-    if (i >= 0) put(i);
+    const tx = t % W, ty = Math.floor(t / W), r = R - 1;
+    const cands: { i: number; n: number; dep: number; e: number }[] = [];
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r || !fits(tx + dx, ty + dy)) continue;
+      const i = (ty + dy) * W + tx + dx;
+      cands.push({ i, n: darkNear(tx + dx, ty + dy), dep: Math.min(depth.get(i) ?? 0, r + 1), e: dx * dx + dy * dy });
+    }
+    const most = Math.max(0, ...cands.map((c) => c.n));
+    const best = cands.filter((c) => c.n >= NEARLY * most).sort((a, b) => b.dep - a.dep || a.e - b.e)[0];
+    if (best) put(best.i);
   }
 }
