@@ -104,7 +104,7 @@ function keep(sim: Sim, job: Job): boolean {
   if (!st || !sim.world.has(prisoner, CrewC) || sim.world.has(prisoner, DeadC)) return false;
   // A handover's job (capture/delivery.ts) lasts while its shuttle waits sealed for the slab; the run posts it again when it is gone.
   if (st.deliver && !sim.world.get(st.deliver, VehicleC)?.outbound) return false;
-  if (st.phase === 'unstow') return sim.world.get(prisoner, StasisC)?.at === 'wheel';
+  if (st.phase === 'unstow') return st.lifted ? !!job.reservedBy && cartsFor(sim, job.reservedBy, prisoner) : sim.world.get(prisoner, StasisC)?.at === 'wheel';
   if (st.phase === 'fetch' || st.phase === 'seal') {
     const pos = sim.world.get(prisoner, PositionC);
     if (!pos || !sealMarked(sim, prisoner) || !sealable(sim, prisoner) || !playerShips(sim).has(shipIdOf(sim, pos))) return false;

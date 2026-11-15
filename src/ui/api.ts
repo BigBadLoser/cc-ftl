@@ -1196,7 +1196,7 @@ export interface UiPrisonerDeal {
   wanted: boolean;
   /**
    * The station's offer: the button's label ("Ransom ₵240") and the line under it ("+2 Free Traders"); when not `ok`, no button (empty label) and one
-   * line of where to take them or what has to happen first. `status`: a handover under way ("Collecting…", "On the way to the station") in place of the
+   * line of where to take them or what has to happen first. `status`: a handover under way ("Loading your shuttle…" or, the station's shuttle, "Collecting…"; then "On the way to the station") in place of the
    * button, with `cancel` the deal to call off while it still can be.
    */
   offer: { ok: boolean; label: string; note: string; status?: string; cancel?: number };

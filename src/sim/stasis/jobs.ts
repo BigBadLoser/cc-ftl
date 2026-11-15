@@ -16,8 +16,8 @@ import { vehicleDefOf } from '../vehicles/lifecycle';
 import { isFerryRegion } from '../ferry/pick';
 import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
-import { turnsToLoad, stowWork } from './ring';
-import { SEAL_WORK, SLAB_ITEM } from './tuning';
+import { turnRing, turnsToLoad, turnsToUnload, stowWork } from './ring';
+import { SEAL_WORK, SLAB_ITEM, TURN_STEP_WORK, UNSTOW_LIFT, UNSTOW_WORK } from './tuning';
 
 /**
  * The 'stasis' job (#116): seal a prisoner into a stasis slab where they stand and cart the slab to a stasis wheel, or cart a slab lying on the
@@ -187,8 +187,8 @@ export function slabDestination(sim: Sim, ship: number, at: { x: number; y: numb
 }
 
 /** Post a stasis job for a full slab (a pickup off the floor, or a handover's unstow from a wheel) with its first stop at `at`. */
-export function postSlabJob(sim: Sim, at: { x: number; y: number }, prisoner: number, stasis: StasisJob): void {
-  sim.world.add(sim.world.createEntity(), JobC, { category: 'hauling', kind: 'stasis', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: prisoner, stasis });
+export function postSlabJob(sim: Sim, at: { x: number; y: number }, prisoner: number, stasis: StasisJob, work = 1): void {
+  sim.world.add(sim.world.createEntity(), JobC, { category: 'hauling', kind: 'stasis', x: at.x, y: at.y, struct: 0, work, progress: 0, reservedBy: 0, target: prisoner, stasis });
 }
 
 /** Aim the job at a stop (clears the footprint size of the last one). */
@@ -264,6 +264,38 @@ function shipSlab(sim: Sim, crew: number, job: Job, st: StasisJob, prisoner: num
   return toWheel(sim, job, st, prisoner, ship, me); // the shuttle left or filled up meanwhile
 }
 
+/**
+ * At the wheel's hatch for a handover: the wheel turns the prisoner's slot to the hatch, the slab comes out (the loading animation backwards,
+ * render/stasisLoad.ts `unloadPlan`) and onto the cart, then on to the shuttle. The turn is worked out on arrival, from the ring as it stands then.
+ */
+function unstow(sim: Sim, crew: number, job: Job, st: StasisJob, prisoner: number, ship: number, me: Position, speed: number): WorkResult {
+  const slots = sim.world.get(st.wheel ?? 0, StasisWheelC)?.slots;
+  if (!slots) return 'done';
+  // Lifted already (on this crew member's cart): the hatch shuts behind them, then on to the shuttle.
+  if (st.lifted) {
+    if (!cartsFor(sim, crew, prisoner)) return 'done';
+    job.progress = Math.min(job.work, job.progress + speed);
+    return job.progress < job.work ? 'working' : toWheel(sim, job, st, prisoner, ship, me);
+  }
+  const turns = turnsToUnload(slots, prisoner);
+  if (turns < 0 || sim.world.get(prisoner, StasisC)?.at !== 'wheel') return 'done';
+  if (job.progress === 0 || st.turns !== turns) {
+    st.turns = turns;
+    job.work = stowWork(turns, true);
+    job.progress = 0;
+  }
+  job.progress = Math.min(job.work, job.progress + speed);
+  if (job.progress < turns * TURN_STEP_WORK + UNSTOW_LIFT * UNSTOW_WORK) return 'working';
+  turnRing(slots, turns);
+  // The ring stands turned now: the job's work left is the unload's alone (render reads it through stowStage, turning the ring by `turns`).
+  st.turns = 0;
+  job.progress -= turns * TURN_STEP_WORK;
+  job.work -= turns * TURN_STEP_WORK;
+  if (!unstowSlab(sim, prisoner, crew)) return 'done';
+  st.lifted = true;
+  return 'working';
+}
+
 /** One tick of a stasis job at its stop. `speed` is the crew member's work speed (it times the sealing). */
 export function performStasis(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
   const st = job.stasis;
@@ -302,10 +334,7 @@ export function performStasis(sim: Sim, crew: number, job: Job, speed: number): 
     liftSlab(sim, prisoner, crew);
     return toWheel(sim, job, st, prisoner, ship, me);
   }
-  if (st.phase === 'unstow') {
-    if (sim.world.get(prisoner, StasisC)?.at !== 'wheel' || !unstowSlab(sim, prisoner, crew)) return 'done';
-    return toWheel(sim, job, st, prisoner, ship, me);
-  }
+  if (st.phase === 'unstow') return unstow(sim, crew, job, st, prisoner, ship, me, speed);
   if (st.phase === 'ship') return shipSlab(sim, crew, job, st, prisoner, ship, me);
   if (!cartsFor(sim, crew, prisoner)) return 'done';
   if (st.wheel && wheelTakes(sim, st.wheel)) {

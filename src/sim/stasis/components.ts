@@ -77,6 +77,8 @@ export interface SlabSource {
  */
 export interface StasisJob {
   phase: 'fetch' | 'seal' | 'pickup' | 'stow' | 'ship' | 'unstow';
+  /** Unstow: the slab is on the cart already (the hatch shuts behind it before the job moves on). */
+  lifted?: boolean;
   /** A handover: the shuttle whose rack the slab is carted to (capture/delivery.ts). */
   deliver?: number;
   from?: SlabSource;

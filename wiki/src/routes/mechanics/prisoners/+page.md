@@ -104,9 +104,9 @@ aboard your own ship, not on a captured one, and a shuttle must be able to come 
 and a shuttle.
 
 Nothing is handed over by hand. When you accept, your shuttle docks at your airlock (or the station sends its own
-shuttle, if it has one). Your crew take the slab out of the wheel and cart it aboard, and the shuttle takes it to the
+shuttle, if it has one). The wheel turns the prisoner's slot to its hatch and runs the slab out onto a crew member's hover cart. They cart it aboard, and the shuttle takes it to the
 station. You are paid when the slab **reaches the station**. The station keeps the slab: it is part of the price. While
-this is going on the row says **Collecting…** (with **Cancel**) or **On the way to the station**, and you can't jump
+this is going on the row says **Loading your shuttle…** (with **Cancel**), then **On the way to the station**, and you can't jump
 until it is done.
 
 If the hand-over falls through (a fight breaks out, the shuttle can't dock, you cancel, or the prisoner thaws), the log

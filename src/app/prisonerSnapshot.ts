@@ -46,7 +46,8 @@ export function prisonerDeals(sim: Sim, station: number): UiPrisonerDeal[] {
     if (o.ok) return { ...base, wanted, offer: { ok: true, label: `${DEAL[o.kind]} ₵${o.credits}`, note: `+${o.standing} ${factionName(sim, o.faction)}` } };
     if (o.run) {
       const to = o.run.station === station ? '' : ` (to ${sim.world.get(o.run.station, TraderC)?.name ?? 'another station'})`;
-      const status = o.run.stage === 'collecting' ? `Collecting…${to}` : `On the way to the station${to}`;
+      // The player's shuttle is loaded at the airlock; the station's own comes to collect.
+      const status = o.run.stage === 'toStation' ? `On the way to the station${to}` : o.run.via === 'own' ? `Loading your shuttle…${to}` : `Collecting…${to}`;
       return { ...base, wanted, offer: { ok: false, label: '', note: `${DEAL[o.kind ?? 'ransom']} ₵${o.credits ?? 0}`, status, ...(o.run.cancel ? { cancel: o.run.deal } : {}) } };
     }
     // No deal: no button, one line. A deal waiting on where they are names its price ("... (ransom ₵240 here)").

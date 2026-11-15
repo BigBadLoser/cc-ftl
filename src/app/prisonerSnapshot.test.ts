@@ -40,7 +40,7 @@ describe('prisoner deals snapshot', () => {
     expect(row?.offer.label).toMatch(/^Ransom ₵\d+$/);
     sim.enqueue({ type: 'prisoner.handOver', crew: prisoner, station });
     sim.step();
-    expect(prisonerDeals(sim, station)[0]?.offer).toMatchObject({ ok: false, status: 'Collecting…', cancel: expect.any(Number) });
+    expect(prisonerDeals(sim, station)[0]?.offer).toMatchObject({ ok: false, status: 'Loading your shuttle…', cancel: expect.any(Number) });
     expect(sim.world.get(prisoner, PrisonerC)).toBeDefined();
   });
 });

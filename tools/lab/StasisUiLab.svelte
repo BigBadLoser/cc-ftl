@@ -39,7 +39,7 @@
     ({ id, name, faction, tier, frozen, where, wanted: true, offer });
   const deals: UiPrisonerDeal[] = [
     deal(1, 'Vasska Orr', 'Navy', 'neutral', 'Stasis wheel, slot 1', { ok: true, label: 'Ransom ₵240', note: '+2 Navy' }),
-    deal(2, 'Dree Malk', 'Red Talon', 'hostile', 'Stasis wheel, slot 3', { ok: false, label: '', note: 'Bounty ₵175', status: 'Collecting…', cancel: 4 }),
+    deal(2, 'Dree Malk', 'Red Talon', 'hostile', 'Stasis wheel, slot 3', { ok: false, label: '', note: 'Bounty ₵175', status: 'Loading your shuttle…', cancel: 4 }),
     deal(3, 'Ostin Pell', 'Navy', 'neutral', 'in a shuttle', { ok: false, label: '', note: 'Ransom ₵200', status: 'On the way to the station' }),
     deal(4, 'Kell Ashe', 'Meridian', 'neutral', 'Stasis wheel, slot 6', { ok: false, label: '', note: 'Ransom at Meridian stations' }),
     deal(1, 'Ira Voln', 'Navy', 'neutral', 'not sealed', { ok: false, label: '', note: 'Seal them in stasis first (ransom ₵180 here)' }, false),

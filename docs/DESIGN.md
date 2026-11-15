@@ -1212,10 +1212,10 @@ are unchanged. After the answer the window stays open with how it ended and the 
   market 80 + 12/level, +1; "fine for now"). Only a sealed slab in a wheel or on the floor of the player's ship is handed over.
   - **Real delivery, never instant ("all such deliveries need to be real"):** accepting opens a handover run like a delivery crate's
     (galaxy/handover.ts, `Deal.handover.prisoner`): the station's own shuttle comes to the airlock (a trader kind with a shuttle; no station has one
-    in today's content) or the player's shuttle docks at the airlock. Crew take the slab out of its wheel (or off the floor) and cart it into the
+    in today's content) or the player's shuttle docks at the airlock. Crew take the slab out of its wheel (it turns their slot to the hatch and the loading animation plays backwards, the slab ending on the cart), or off the floor, and cart it into the
     shuttle's rack (capture/delivery.ts). The credits and standing are paid when the slab **reaches the station** (the player's shuttle beside it,
     or the station's back home), on the terms agreed at the click. The station keeps the slab (it is in the price, as a crate goes with its goods).
-    With no shuttle or no working airlock the row says so and there is no button. While a run is under way the row shows "Collecting…" (with
+    With no shuttle or no working airlock the row says so and there is no button. While a run is under way the row shows "Loading your shuttle…" ("Collecting…" for a station's shuttle; with
     Cancel) or "On the way to the station" in place of the button. Jumping is blocked while it runs, as for any live deal.
   - **When it falls through:** a fight, no dock in time, a cancel, or the prisoner thawing calls the run off and logs why. The slab is set down by
     the airlock and carted back to a wheel; one already out in the player's shuttle rides home and is set down by the bay. A shuttle destroyed with

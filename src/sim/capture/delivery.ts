@@ -6,6 +6,7 @@ import type { Sim } from '../sim';
 import { StasisC } from '../stasis/components';
 import { dropSlab } from '../stasis/freeze';
 import { postSlabJob } from '../stasis/jobs';
+import { stowWork } from '../stasis/ring';
 import { scrapSealJob } from '../stasis/order';
 import { slabPlace, wheelHatch } from '../stasis/query';
 import { rackTile } from '../stasis/rack';
@@ -60,7 +61,7 @@ export function slabLoaded(sim: Sim, d: Deal, v: Vehicle): boolean {
   if (!place || !playerShips(sim).has(place.ship)) return false;
   if (place.kind === 'wheel') {
     const m = sim.world.get(place.wheel, ModuleC);
-    if (m) postSlabJob(sim, wheelHatch(sim, m), prisoner, { phase: 'unstow', deliver: d.vehicle });
+    if (m) postSlabJob(sim, wheelHatch(sim, m), prisoner, { phase: 'unstow', deliver: d.vehicle, wheel: place.wheel, turns: place.slot }, stowWork(place.slot, true));
   } else if (place.kind === 'floor') {
     const s = sim.world.get(prisoner, StasisC)!;
     postSlabJob(sim, s, prisoner, { phase: 'pickup', deliver: d.vehicle });

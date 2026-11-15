@@ -4,7 +4,9 @@ import { heldPrisoners, handOverPrisoner, prisonerOffer, prisonerWorth, stationW
 import { PRISONER_DEALS } from '../sim/capture/tuning';
 import { PrisonerC } from '../sim/fight/components';
 import { repKey } from '../sim/galaxy/standing';
-import { SLOT_EMPTY, StasisWheelC } from '../sim/stasis/components';
+import { SLOT_EMPTY, SLOT_NONE, StasisWheelC } from '../sim/stasis/components';
+import { stowStage } from '../sim/stasis/query';
+import { TURN_STEP_WORK, UNSTOW_LIFT, UNSTOW_WORK } from '../sim/stasis/tuning';
 import { sealPrisoner, stowSlab } from '../sim/stasis/freeze';
 import { reputationOf } from '../sim/story/state';
 import { playerCrew } from '../sim/story/world';
@@ -161,6 +163,23 @@ describe('prisoner deals: the slab is delivered for real', () => {
     step(sim, 2);
     expect(sim.world.has(shuttle, VehicleC)).toBe(false); // gone home, slab and all
     expect(ev.some((e) => e.type === 'stasis.lost')).toBe(false);
+  });
+
+  it('the wheel turns the slot to the hatch and the slab comes out over the unload (the load backwards), onto the cart before the hatch shuts', () => {
+    const { sim, station, prisoner, wheel } = game('navy', 'navy');
+    accept(sim, station, prisoner);
+    until(sim, () => stowStage(sim.world, wheel)?.out === true, 120);
+    const start = sim.tick;
+    const turns = stowStage(sim.world, wheel)!.turns;
+    expect(turns).toBeGreaterThan(0); // stowSlab left the prisoner one step past the hatch
+    until(sim, () => sim.world.get(prisoner, StasisC)?.at === 'carried', 30);
+    const lifted = sim.tick - start;
+    expect(lifted).toBeGreaterThanOrEqual(turns * TURN_STEP_WORK + Math.floor(UNSTOW_LIFT * UNSTOW_WORK) - 2);
+    expect(sim.world.get(wheel, StasisWheelC)!.slots[0]).toBe(SLOT_NONE); // the ring stands turned, the slot at the hatch emptied
+    expect(stowStage(sim.world, wheel)).toMatchObject({ out: true, turns: 0 }); // the hatch still shutting
+    until(sim, () => stowStage(sim.world, wheel) === null, 10);
+    expect(sim.tick - start).toBeGreaterThanOrEqual(turns * TURN_STEP_WORK + UNSTOW_WORK - 2);
+    expect(sim.world.get(prisoner, StasisC)?.at).toBe('carried');
   });
 
   it('cancelled while collecting: the slab comes back out and goes back into a wheel, nothing paid', () => {

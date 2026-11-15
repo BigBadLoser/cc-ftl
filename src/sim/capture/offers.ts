@@ -35,7 +35,7 @@ export type PrisonerOffer =
     ok: false; reason: 'notStation' | 'noBuyer' | 'noBounty' | 'notSealed' | 'inTransit' | 'notAboard' | 'notPrisoner' | 'busy' | 'noWay' | 'underWay';
     kind?: PrisonerDealKind; credits?: number;
     /** 'underWay': the run (its deal id, the station it goes to), 'collecting' until the slab leaves the ship, then 'toStation'; `cancel` while it can be called off. */
-    run?: { deal: number; station: number; stage: 'collecting' | 'toStation'; cancel: boolean };
+    run?: { deal: number; station: number; stage: 'collecting' | 'toStation'; cancel: boolean; via: 'station' | 'own' };
   };
 
 const SKILLS: SkillName[] = ['gunnery', 'piloting', 'shielding', 'melee', 'construction', 'hacking', 'medicine', 'science', 'cooking', 'botany', 'industry'];
@@ -80,7 +80,7 @@ export function prisonerOffer(sim: Sim, station: number, prisoner: number): Pris
   if (run?.handover?.prisoner) {
     const out = run.phase === 'out' || run.phase === 'exchange';
     const { kind, credits } = run.handover.prisoner;
-    return { ok: false, reason: 'underWay', kind, credits, run: { deal: run.id, station: run.ship, stage: out ? 'toStation' : 'collecting', cancel: !out } };
+    return { ok: false, reason: 'underWay', kind, credits, run: { deal: run.id, station: run.ship, stage: out ? 'toStation' : 'collecting', cancel: !out, via: run.handover.via } };
   }
   if (!sim.world.get(station, TraderC)?.station) return { ok: false, reason: 'notStation' };
   const deal = dealFor(sim, station, prisoner);

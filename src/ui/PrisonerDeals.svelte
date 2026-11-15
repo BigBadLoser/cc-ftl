@@ -5,7 +5,7 @@
   /**
    * The channel's Prisoners service (#116): every prisoner the player holds, frozen or not, with this station's offer as a button (ransom, bounty,
    * black market; capture/offers.ts) only where it makes one; any other row has one dim line of where to take them. Accepting sends 'prisoner.handOver':
-   * a shuttle comes for the slab, and the row shows the run ("Collecting…", "On the way to the station", with Cancel while it can be) in place of the button.
+   * a shuttle comes for the slab, and the row shows the run ("Loading your shuttle…" or "Collecting…", then "On the way to the station"; Cancel while it can be) in place of the button.
    */
   let { api, station, deals }: { api: UiApi; station: number; deals: UiPrisonerDeal[] } = $props();
 </script>

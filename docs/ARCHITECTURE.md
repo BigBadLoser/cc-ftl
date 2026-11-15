@@ -2805,7 +2805,7 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   what a station offers and whether it can be accepted now (reasons include 'busy' and 'noWay' from `slabRoute`, galaxy/handover.ts, and 'underWay'
   with the run); `stationWants` (the Prisoners service's visibility) asks it. 'prisoner.handOver' opens a delivery handover run
   (`startSlabRun`: `Deal.handover.prisoner` holds the agreed terms, `job` is absent), stepped by `stepHandover` like a crate's, with the slab as the
-  goods: `slabLoaded` posts a stasis job with `deliver` (the shuttle; phase 'unstow' takes a full slab out of a wheel, `unstowSlab`; `slabDestination`
+  goods: `slabLoaded` posts a stasis job with `deliver` (the shuttle; phase 'unstow' turns the ring (`turnsToUnload`) and takes a full slab out of a wheel over `UNSTOW_WORK`, onto the cart at `UNSTOW_LIFT` (`unstowSlab`; `stowStage` reports it with `out`, render plays the load's hatch frames backwards, `unloadPlan`); `slabDestination`
   sends it to that rack), `slabBack` on a call-off, `slabDelivered` pays when the slab reaches the station (the station's shuttle flies home first,
   phase 'out'). A shuttle with `outbound` set keeps its rack (`tendRacks` skips it). Cancel goes through 'trade.cancel' (`cancelSlabRun`). Save v122.
 - Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
