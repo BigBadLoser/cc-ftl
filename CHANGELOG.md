@@ -95,6 +95,7 @@ Player-facing changes, newest first. Each dated entry is a deploy of the live ga
 
 ### Fixed
 
+- Hull: odd hull outlines (a one-tile step or nub, as damage and wrecks leave) no longer show the old dark hull underside in cutaway; they take the new hull's underside like the rest of the ship. ([#496](https://github.com/BigBadLoser/cc-ftl/pull/496))
 - Goods and credits stay consistent across systems: a lost trade shuttle no longer duplicates or destroys goods (each station deal now tracks its own units), duplicate transfer lines no longer cause a second trip, a jump charges the fuel price it checked, tug and shipyard refunds with no room wait for space instead of vanishing or going to the station, and seized or burned items no longer leave ghost entries. Answering a distress call raises standing only if a deal with the damaged ship goes through. ([#467](https://github.com/BigBadLoser/cc-ftl/pull/467))
 - Shipyard: the see-through build ghosts of new hull tiles show the new hull art instead of the old wall blocks, and hull doors keep their door in the preview. ([#466](https://github.com/BigBadLoser/cc-ftl/pull/466))
 - Station courts are always on open floor, never under furniture, so civilians can reach every one. ([#465](https://github.com/BigBadLoser/cc-ftl/pull/465))
