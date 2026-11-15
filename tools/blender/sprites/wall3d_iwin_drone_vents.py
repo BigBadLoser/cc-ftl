@@ -1,7 +1,7 @@
 """The drone window's end vents (wall3d_iwin_drone): each a pocket cut RECESS px straight back into the near ramp's
 slope (its back the dark panel, parallel to the slope; a dark ledge along its foot; its sides in the ramp's cut tone),
-VENT_GAP clear of the window's end, the rib, the slope's top and its foot; dark pipes coming out of it that follow the
-rib's profile beside it, inside the pocket from its top to its bottom (the user).
+VENT_GAP clear of the window's end, the rib, the slope's top and its foot; dark pipes coming out of it, centred,
+flat out then straight down, inside the pocket from its top to its bottom (the user).
 Coordinates as the drone module's: here +y is the near side, the mesh's -y (core.G)."""
 import math
 
@@ -13,7 +13,9 @@ from .wall3d_iwin import _clip
 RECESS = 3                  # px: the pocket's depth, straight back into the slope
 BELOW = 2                   # sprite px: the slope left between the pocket's bottom edge and the ramp's edge (where the
                             # slope meets the foot) (the user)
-PIPES = ((6, 8), (9, 11), (85, 87), (88, 90))   # px along the window: 2 px pipes, in from the ribs (13-17, 79-83)
+PIPES = ((3, 6), (7, 10), (86, 89), (90, 93))   # px along the window: PIPE px pipes, centred in each vent (2-11, 85-94)
+PIPE = 3                    # px: the pipes' thickness (the user: larger)
+PIPE_GAP = 1                # art px: their ends clear of the pocket's top and bottom
 SIDES = 8                   # the pipes' section
 COL = {"back": "fDS3", "ledge": "fDS2", "side": "fDX2",
        "pipe_top": "fDS2", "pipe_front": "fDS3", "pipe_side": "fDS4"}
@@ -122,14 +124,15 @@ def _ring(c, nrm, x0, x1, r):
 
 
 def pipes(k):
-    """Each pipe along the rib's profile, inside the pocket: out of the back under its top, flat out to over the
-    pocket's bottom edge, down, then back under (the rib's slant: OUT back over the foot's height) onto the ledge."""
+    """Each pipe in two straight runs inside the pocket: out of the back PIPE_GAP under its top, flat out to over the
+    pocket's bottom edge, then straight down to PIPE_GAP over its bottom (the user). Its bottom end is left open (it
+    faces down, out of the camera's sight)."""
     D = _d()
-    r = D.PX
+    r = PIPE / 2 * D.PX
     z0, z1 = _heights()
-    zc = z0 - r
+    zc = z0 - PIPE_GAP / W.ZART - r
     yf = _surface(z0, z1)[-1][0] - r
-    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + r + W.foot()), (yf - D.OUT * D.PX, z1 + r)]
+    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + PIPE_GAP / W.ZART)]
     rings = []
     for i, p in enumerate(path):                        # (mitred: each bend's section on its bisector)
         ns = []
