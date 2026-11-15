@@ -15,7 +15,9 @@ BELOW = 2                   # sprite px: the slope left between the pocket's bot
                             # slope meets the foot) (the user)
 PIPES = ((3, 6), (7, 10), (86, 89), (90, 93))   # px along the window: PIPE px pipes, centred in each vent (2-11, 85-94)
 PIPE = 3                    # px: the pipes' thickness (the user: larger)
-PIPE_GAP = 1                # art px: their ends clear of the pocket's top and bottom
+PIPE_GAP = 1                # art px: their ends clear of the pocket's bottom
+PIPE_TOP = 4                # art px: their flat run's top under the pocket's top (1, then 3 lower: the two runs nearer
+                            # equal, the user)
 SIDES = 16                  # the pipes' section (round: the user)
 BEND = 3                    # px: the elbow's radius (the pipe's centre line; curved: the user)
 BEND_STEPS = 6
@@ -127,13 +129,13 @@ def _ring(c, nrm, x0, x1, r):
 
 
 def pipes(k):
-    """Each pipe inside the pocket: out of the back PIPE_GAP under its top, flat out to over the pocket's bottom edge,
+    """Each pipe inside the pocket: out of the back PIPE_TOP under its top, flat out to over the pocket's bottom edge,
     round a BEND elbow, then straight down to PIPE_GAP over its bottom (the user). Its bottom end is left open (it
     faces down, out of the camera's sight)."""
     D = _d()
     r = PIPE / 2 * D.PX
     z0, z1 = _heights()
-    zc = z0 - PIPE_GAP / W.ZART - r
+    zc = z0 - PIPE_TOP / W.ZART - r
     yf = _surface(z0, z1)[-1][0] - r
     R = BEND * D.PX                                     # (the elbow: a quarter circle round (yf - R, zc - R))
     arc = [(yf - R + R * math.sin(a), zc - R + R * math.cos(a))
