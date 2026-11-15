@@ -16,9 +16,12 @@ BELOW = 2                   # sprite px: the slope left between the pocket's bot
 PIPES = ((3, 6), (7, 10), (86, 89), (90, 93))   # px along the window: PIPE px pipes, centred in each vent (2-11, 85-94)
 PIPE = 3                    # px: the pipes' thickness (the user: larger)
 PIPE_GAP = 1                # art px: their ends clear of the pocket's top and bottom
-SIDES = 8                   # the pipes' section
-COL = {"back": "fDS3", "ledge": "fDS2", "side": "fDX2",
-       "pipe_top": "fDS2", "pipe_front": "fDS3", "pipe_side": "fDS4"}
+SIDES = 16                  # the pipes' section (round: the user)
+BEND = 3                    # px: the elbow's radius (the pipe's centre line; curved: the user)
+BEND_STEPS = 6
+LIGHT = (0.3, 0.5, 0.8)     # the pipes' tones by their faces' turn to this (x, y near, z up)
+PIPE_TONES = ((0.85, "fDS1"), (0.6, "fDS2"), (0.3, "fDS3"), (-2.0, "fDS4"))
+COL = {"back": "fDS3", "ledge": "fDS2", "side": "fDX2"}
 
 
 def _d():
@@ -124,15 +127,18 @@ def _ring(c, nrm, x0, x1, r):
 
 
 def pipes(k):
-    """Each pipe in two straight runs inside the pocket: out of the back PIPE_GAP under its top, flat out to over the
-    pocket's bottom edge, then straight down to PIPE_GAP over its bottom (the user). Its bottom end is left open (it
+    """Each pipe inside the pocket: out of the back PIPE_GAP under its top, flat out to over the pocket's bottom edge,
+    round a BEND elbow, then straight down to PIPE_GAP over its bottom (the user). Its bottom end is left open (it
     faces down, out of the camera's sight)."""
     D = _d()
     r = PIPE / 2 * D.PX
     z0, z1 = _heights()
     zc = z0 - PIPE_GAP / W.ZART - r
     yf = _surface(z0, z1)[-1][0] - r
-    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + PIPE_GAP / W.ZART)]
+    R = BEND * D.PX                                     # (the elbow: a quarter circle round (yf - R, zc - R))
+    arc = [(yf - R + R * math.sin(a), zc - R + R * math.cos(a))
+           for a in (i * math.pi / 2 / BEND_STEPS for i in range(BEND_STEPS + 1))]
+    path = [(_back_y(zc) - r, zc)] + arc + [(yf, z1 + PIPE_GAP / W.ZART)]
     rings = []
     for i, p in enumerate(path):                        # (mitred: each bend's section on its bisector)
         ns = []
@@ -156,8 +162,8 @@ def pipes(k):
                 pts = [ra[i], ra[j], rb[j], rb[i]]
                 mid = sum(pts, Vector()) / 4
                 out = mid - Vector(((u0 + u1) / 2, *_axis_point(ra, rb, mid)))
-                col = COL["pipe_top"] if out.z > 0.6 * out.length else \
-                    COL["pipe_front"] if out.y > 0.4 * out.length else COL["pipe_side"]
+                lt = Vector(LIGHT).normalized().dot(out.normalized())
+                col = next(c for t, c in PIPE_TONES if lt > t)
                 k.poly(pts, "wall", 2, out, fixed=col)
 
 

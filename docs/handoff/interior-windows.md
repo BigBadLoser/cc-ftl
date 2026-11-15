@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d21)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d22)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -14,7 +14,7 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
   rail's foot; NO_CENTRE drops the middle tile's centre block); the near ramp bare (no seams/outline/slots) with vents,
   red boxes (17-30, 66-79, at the toe, tops 2 px under the sill, back to it), ribs (13-17, 79-83, 2 px past the toe,
   underside sloping back), the middle slot (34-62, floor at the toe's top, 4 px into the sill) with a block in its
-  back (top 1 px under the sill). d16-d17 (2026-11-15): the posts' red sleeves and flared feet (`_posts`); the vents 2 px clear all round; d18-d21 the vents recessed with pipes (`sprites/wall3d_iwin_drone_vents.py`). Not started:
+  back (top 1 px under the sill). d16-d17 (2026-11-15): the posts' red sleeves and flared feet (`_posts`); the vents 2 px clear all round; d18-d22 the vents recessed with pipes (`sprites/wall3d_iwin_drone_vents.py`). Not started:
   the ref's pipe beam with clamps (drone's header rail stands in for it); real colours (blockout tones from drone's palette; the ref's red-box top is a lighter pink).
 - Navy: also carries the shade-side work (Navy.paint `<name>x` tones, restyle.Poly.n) and Style.seamless; see the
   2026-11-08/09 log lines.
@@ -767,3 +767,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: only 2 px of ramp under the recess; the pipes come out of the recess's top and end at its bottom edge. d19: the pocket's foot BELOW 2 art px over the floor (cut down through the ramp's upright foot; its sides follow the slope, then the foot's face; the ledge out to the toe); the pipes from under the pocket's top (out of its back) flat out to OUT past the toe, down, then back under (the rib's slant over the foot's height) onto the ledge's front edge. Renders: scratchpad `dr19`.
 - 2026-11-15: the user: no: the recess's edge 2 px from the ramp's edge (where the slope meets the foot, not the floor); the pipes start and end inside the recess. d20: the pocket's bottom edge BELOW 2 sprite px up the slope from that edge (z1 = foot + 2 / (ZART + GN / 2 / fall)), the foot whole again; the ledge dark (fDS2: lit, it read as part of the gap); the pipes out of the back under the pocket's top, flat out to over its bottom edge (no further), down, the rib's slant back onto the ledge. Renders: scratchpad `dr20`.
 - 2026-11-15: the user asked why the two vents' pipes looked different (each pair hugged its rib, so they sat at opposite ends of their pockets, and the camera sees only a pocket's +x-facing side wall). The user: centred and larger; two straight runs (no slant at the end); their ends 1 px from the pocket's top and bottom. d21: PIPE 3 px at 3-6, 7-10 and 86-89, 90-93 (centred in 2-11, 85-94); out of the back PIPE_GAP 1 art px under the pocket's top, flat out to over its bottom edge, straight down to PIPE_GAP over its bottom (the end left open: it faces down). Both vents now render alike. Renders: scratchpad `dr21`.
+- 2026-11-15: the user: the pipes round, the elbow curved. d22: SIDES 16; the corner a quarter circle BEND 3 px (centre line) in BEND_STEPS 6 (mitred rings); tones by each face's turn to LIGHT (0.3, 0.5, 0.8): > 0.85 fDS1, > 0.6 fDS2, > 0.3 fDS3, else fDS4. Renders: scratchpad `dr22`.
