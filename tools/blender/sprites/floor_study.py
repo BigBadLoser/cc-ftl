@@ -2,9 +2,8 @@
 piece a round, three variants each, reviewed as 3x3 patches (tools/blender/review/floor_preview.py).
 
 Decisions so far (the user's list): deck plate = the default floor (no new art); grating = skipped for now; heavy plate =
-h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = the
-tintable carpet k1 (k3's secondary-colour accent optional), painted with the hull paint (src/render/hullPaint.ts) in a
-muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
+h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = a tintable
+carpet (pattern not picked yet), painted with the hull paint (src/render/hullPaint.ts) in a muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
 Markings next: keep-clear (reuse the airlock's), door apron, hazard chevron, edge line (autotiling straight, corner, T,
 end).
 
@@ -788,6 +787,39 @@ def k3(i, j):
 
 
 DESIGNS.update({"k1": k1, "k2": k2, "k3": k3})
+
+
+# Tintable carpet, round 2 (patterns for the muted hull paint; K1-K3 shown alongside):
+#   k4 tonal carpet tiles: k1's fleck in four squares a tile, their pile a shade apart in a checker
+#   k5 tonal lattice: a quiet lighter-loop lattice, two squares a tile side, over k1's fleck
+#   k6 accent fleck: k1 with a sparse fleck of the secondary colour woven through
+
+
+def k4(i, j):
+    if i < 2 or j < 2:
+        return "c4H6"
+    q = (i // 32 + j // 32) % 2
+    h = _hash(i // 2, j // 2, 61)
+    if q:
+        return "c4H6" if h < 0.18 else ("c4H5" if h > 0.86 else "c4F3")
+    return "c4H6" if h < 0.18 else ("c4H4" if h > 0.86 else "c4H5")
+
+
+def k5(i, j):
+    if i < 2 or j < 2:
+        return "c4H6"
+    if (i % 32) in (15, 16) or (j % 32) in (15, 16):
+        return "c4H4"
+    return k1(i, j)
+
+
+def k6(i, j):
+    if i >= 2 and j >= 2 and _hash(i // 2, j // 2, 67) > 0.965:
+        return "mkS"
+    return k1(i, j)
+
+
+DESIGNS.update({"k4": k4, "k5": k5, "k6": k6})
 
 
 def _tile(name, fn):
