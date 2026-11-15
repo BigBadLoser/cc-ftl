@@ -1,4 +1,4 @@
-"""The drone window's end vents (wall3d_iwin_drone): each a pocket cut RECESS px straight back into the near ramp's
+"""The drone window's end vents and the slot's handle (wall3d_iwin_drone): each a pocket cut RECESS px straight back into the near ramp's
 slope (its back the dark panel, parallel to the slope; a dark ledge along its foot; its sides in the ramp's cut tone),
 VENT_GAP clear of the window's end, the rib, the slope's top and its foot; dark pipes coming out of it, centred,
 flat out then straight down, inside the pocket from its top to its bottom (the user).
@@ -16,6 +16,9 @@ BELOW = 2                   # sprite px: the slope left between the pocket's bot
 PIPES = ((3, 6), (7, 10), (86, 89), (90, 93))   # px along the window: PIPE px pipes, centred in each vent (2-11, 85-94)
 PIPE = 3                    # px: the pipes' thickness (the user: larger)
 PIPE_GAP = 1                # art px: their ends clear of the pocket's bottom
+HANDLE = 2                  # px: the slot's handle bar's thickness
+HANDLE_IN = 1               # px: its legs in from the slot's sides
+HANDLE_BEND = 2             # px: its corners' radius (its centre line)
 PIPE_TOP = 4                # art px: their flat run's top under the pocket's top (1, then 3 lower: the two runs nearer
                             # equal, the user)
 SIDES = 16                  # the pipes' section (round: the user)
@@ -118,16 +121,6 @@ def recess(k):
                 D._quad(k, [(u, yb0, z0)] + [(u, y, z) for y, z in sf] + [(u, yb1, z1)], (sd, 0, 0), COL["side"])
 
 
-def _ring(c, nrm, x0, x1, r):
-    """A pipe's section at c (y, z) on the plane spanned by x and nrm (y, z): its centre x (x0 + x1) / 2."""
-    xc = (x0 + x1) / 2
-    out = []
-    for i in range(SIDES):
-        t = (i + 0.5) * 2 * math.pi / SIDES
-        out.append(Vector((xc + r * math.cos(t), c[0] + nrm[0] * math.sin(t), c[1] + nrm[1] * math.sin(t))))
-    return out
-
-
 def pipes(k):
     """Each pipe inside the pocket: out of the back PIPE_TOP under its top, flat out to over the pocket's bottom edge,
     round a BEND elbow, then straight down to PIPE_GAP over its bottom (the user). Its bottom end is left open (it
@@ -141,39 +134,49 @@ def pipes(k):
     arc = [(yf - R + R * math.sin(a), zc - R + R * math.cos(a))
            for a in (i * math.pi / 2 / BEND_STEPS for i in range(BEND_STEPS + 1))]
     path = [(_back_y(zc) - r, zc)] + arc + [(yf, z1 + PIPE_GAP / W.ZART)]
-    rings = []
-    for i, p in enumerate(path):                        # (mitred: each bend's section on its bisector)
-        ns = []
-        segs = ([(path[i - 1], p)] if i else []) + ([(p, path[i + 1])] if i + 1 < len(path) else [])
-        for a, b in segs:
-            ty, tz = b[0] - a[0], b[1] - a[1]
-            L = math.hypot(ty, tz)
-            ns.append((-tz / L, ty / L))
-        ny, nz = sum(n[0] for n in ns) / len(ns), sum(n[1] for n in ns) / len(ns)
-        L = math.hypot(ny, nz)
-        cos = (ny * ns[0][0] + nz * ns[0][1]) / L
-        rings.append((p, (r * ny / L / cos, r * nz / L / cos)))
     for a, b in PIPES:
         u0, u1 = D._x(a), D._x(b)
         if u0 < -0.5 - 1e-9 or u1 > 0.5 + 1e-9:
             continue
-        rs = [_ring(c, n, u0, u1, r) for c, n in rings]
-        for ra, rb in zip(rs, rs[1:]):
-            for i in range(SIDES):
-                j = (i + 1) % SIDES
-                pts = [ra[i], ra[j], rb[j], rb[i]]
-                mid = sum(pts, Vector()) / 4
-                out = mid - Vector(((u0 + u1) / 2, *_axis_point(ra, rb, mid)))
-                lt = Vector(LIGHT).normalized().dot(out.normalized())
-                col = next(c for t, c in PIPE_TONES if lt > t)
-                k.poly(pts, "wall", 2, out, fixed=col)
+        xc = (u0 + u1) / 2
+        tube(k, [(xc, y, z) for y, z in path], r, (1.0, 0.0, 0.0))
 
 
-def _axis_point(ra, rb, mid):
-    """The pipe's centre line nearest mid (y, z): the segment between the two rings' centres."""
-    ca = sum(ra, Vector()) / len(ra)
-    cb = sum(rb, Vector()) / len(rb)
-    d = cb - ca
-    t = max(0.0, min(1.0, (mid - ca).dot(d) / d.dot(d)))
-    c = ca + d * t
-    return c.y, c.z
+def handle(k, yface, zlo, zhi):
+    """The slot block's handle bar (its front at yface, zlo..zhi): a round bar out of the face from HANDLE_IN in from
+    the slot's sides, out to level with the red boxes' fronts, across, rounded corners (the user)."""
+    D = _d()
+    r, R = HANDLE / 2 * D.PX, HANDLE_BEND * D.PX
+    xa, xb = D._x(D.SLOT[0] + HANDLE_IN) + r, D._x(D.SLOT[1] - HANDLE_IN) - r
+    if xa - r < -0.5 - 1e-9 or xb + r > 0.5 + 1e-9:
+        return
+    zh, yc = (zlo + zhi) / 2, 0.5 + D.BOX_OUT * D.PX - r
+    q = [i * math.pi / 2 / BEND_STEPS for i in range(BEND_STEPS + 1)]
+    path = ([(xa, yface - r)] + [(xa + R - R * math.cos(a), yc - R + R * math.sin(a)) for a in q] +
+            [(xb - R + R * math.sin(a), yc - R + R * math.cos(a)) for a in q] + [(xb, yface - r)])
+    tube(k, [(x, y, zh) for x, y in path], r, (0.0, 0.0, 1.0))
+
+
+def tube(k, path, r, up):
+    """A round tube (SIDES) along a path lying in the plane square to up, mitred at each bend (its section on the
+    bisector); its faces in PIPE_TONES by their turn to LIGHT. Its ends are left open."""
+    up = Vector(up).normalized()
+    P = [Vector(p) for p in path]
+    rings = []
+    for i, p in enumerate(P):
+        ns = [up.cross(b - a).normalized() for a, b in ([(P[i - 1], p)] if i else []) +
+              ([(p, P[i + 1])] if i + 1 < len(P) else [])]
+        n = sum(ns, Vector()).normalized()
+        n = n / n.dot(ns[0])
+        rings.append([p + up * r * math.cos(t) + n * r * math.sin(t)
+                      for t in ((j + 0.5) * 2 * math.pi / SIDES for j in range(SIDES))])
+    light = Vector(LIGHT).normalized()
+    for (ra, rb), (pa, pb) in zip(zip(rings, rings[1:]), zip(P, P[1:])):
+        for i in range(SIDES):
+            j = (i + 1) % SIDES
+            pts = [ra[i], ra[j], rb[j], rb[i]]
+            mid = sum(pts, Vector()) / 4
+            d = pb - pa
+            out = mid - (pa + d * max(0.0, min(1.0, (mid - pa).dot(d) / d.dot(d))))
+            col = next(c for t, c in PIPE_TONES if light.dot(out.normalized()) > t)
+            k.poly(pts, "wall", 2, out, fixed=col)

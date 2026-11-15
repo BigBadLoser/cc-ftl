@@ -35,6 +35,7 @@ OUT = 2                     # art px: the ribs' fronts past the toe, upright dow
 SLOT = (34, 62)             # the middle slot (in place of the console): its sides 4 px in from the red boxes, its
 SLOT_BACK = 4               # floor flat at the toe's top (the foot's height), from the toe back past the slope's top
                             # end SLOT_BACK px into the sill (the user)
+SLOT_OUT = 2                # px: the block's front out past the sill's front edge (the user)
 SLOT_BLOCK = 1              # art px: a block filling the slot's back, its top this far under the sill, its front upright
                             # where the slope starts (the sill's front edge) (the user)
 RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top flat, level with the window's floor, out
@@ -42,7 +43,7 @@ RIBS = ((13, 17), (79, 83))  # a 4 px rib on each red box's outside: its top fla
 VENTS = ((2, 11), (85, 94))  # the end blocks' vents: dark pockets in their slope (wall3d_iwin_drone_vents), VENT_GAP clear of the window's end,
 VENT_GAP = 2                 # the rib, the slope's top and its foot on every side (the user)
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "slot_floor": "fDW3", "slot_back": "fDX3",
-         "slot_side": "fDX2", "sblock_top": "fDW2", "sblock_front": "fDW3",
+         "slot_side": "fDX2", "sblock_top": "fDW2", "sblock_front": "fDW3", "sblock_side": "fDW4",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
 # The posts (the ref's upper layer, its 29 px post scaled to our 34): a red sleeve under the header, a foot flaring into
 # the opening down onto the end block (the ref's 5 px over its bottom 12 rows).
@@ -232,8 +233,14 @@ def _slot(k):
         if -0.5 < u < 0.5:
             _quad(k, [(u, yk, zf), (u, 0.5, zf), (u, yf, zs), (u, yk, zs)], (sd, 0, 0), FRONT["slot_side"])
     zb = zs - SLOT_BLOCK / W.ZART                       # the block in its back: top, then front down to its floor
-    _quad(k, [(a, yk, zb), (b, yk, zb), (b, yf, zb), (a, yf, zb)], (0, 0, 1), FRONT["sblock_top"])
-    _quad(k, [(a, yf, zf), (b, yf, zf), (b, yf, zb), (a, yf, zb)], (0, 1, 0), FRONT["sblock_front"])
+    yo = yf + SLOT_OUT * PX
+    _quad(k, [(a, yk, zb), (b, yk, zb), (b, yo, zb), (a, yo, zb)], (0, 0, 1), FRONT["sblock_top"])
+    _quad(k, [(a, yo, zf), (b, yo, zf), (b, yo, zb), (a, yo, zb)], (0, 1, 0), FRONT["sblock_front"])
+    yc, zo = yf + (zs - zb) / _fall(), zs - SLOT_OUT * PX * _fall()   # (its sides over the slope's line)
+    for u, sd in ((pa, -1), (pb, 1)):
+        if -0.5 < u < 0.5 and zo < zb:
+            _quad(k, [(u, yc, zb), (u, yo, zb), (u, yo, zo)], (sd, 0, 0), FRONT["sblock_side"])
+    VT.handle(k, yo, zf, zb)
 
 
 def _notch(k, pa, pb, ye, zb):

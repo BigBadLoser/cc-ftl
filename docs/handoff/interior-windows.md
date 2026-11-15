@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d24)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d25)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -770,3 +770,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the pipes round, the elbow curved. d22: SIDES 16; the corner a quarter circle BEND 3 px (centre line) in BEND_STEPS 6 (mitred rings); tones by each face's turn to LIGHT (0.3, 0.5, 0.8): > 0.85 fDS1, > 0.6 fDS2, > 0.3 fDS3, else fDS4. Renders: scratchpad `dr22`.
 - 2026-11-15: the user: the pipes' start down a bit, the two runs nearer equal. d23: PIPE_TOP 4 art px (the flat run's top under the pocket's top; was PIPE_GAP 1): on screen the flat run ~9 -> ~8 px, the drop ~12.5 -> ~9.5 px. The bottom gap stays PIPE_GAP 1. Renders: scratchpad `dr23`.
 - 2026-11-15: the user: the flat floor under the glass too dark. d24: COL floor fDW4 -> fDW3 (#566269 -> #6b7a82, the end blocks' slopes' tone). The half behind the pane still takes the glass's tint. Renders: scratchpad `dr24`.
+- 2026-11-15: the user: the centre slot's block front 2 px further out; a round handle bar 1 px in from either edge, out level with the red boxes' fronts. d25: SLOT_OUT 2 (the block's top and front out to the sill's front edge + 2 px; its sides where it stands over the slope's line, fDW4); `wall3d_iwin_drone_vents.handle`: HANDLE 2 px, legs HANDLE_IN 1 px in from the slot's sides, out of the block's face at mid-height to the boxes' front (toe + BOX_OUT), across, HANDLE_BEND 2 px corners; pipe tones. The pipes' sweep moved into a shared `tube(k, path, r, up)` (piece l pixel-identical, so the pipes are unchanged). Renders: scratchpad `dr25`.
