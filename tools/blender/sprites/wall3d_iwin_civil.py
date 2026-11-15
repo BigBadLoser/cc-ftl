@@ -19,8 +19,11 @@ POST = 11                   # px: a post, in from the window's end (the ref's 11
 BLOCK = 12                  # px: an end block's flat top, in from the window's end
 END = 16                    # px: the end block's slope reaches the floor
 FLOOR_DOWN = 6              # art px: the floor under the ramp's top
-ROUND = 3                   # px: the opening's top corners' radius (the ref's posts curve into the beam)
-ROUND_STEPS = 4
+ROUND = 6                   # px: the opening's top corners' radius (the user: a little curved slope there; the ref's
+                            # posts curve into the beam's white front)
+ROUND_STEPS = 6
+BEAM = 3                    # art px: the opening's top under the colour band's foot (a strip of white beam under
+                            # the red, as the ref's: the corners' curves join it; at the band's foot they didn't read)
 LVL = {"floor": 3, "top": 3, "slope": 3, "post": 3, "side": 1, "under": 1}   # the wall family's levels (toned by facing, so each
                                                                    # civil variant takes its own)
 OFF = {"l": 0, "m": 1, "r": 2}
@@ -166,7 +169,7 @@ def _corners(k, x0, x1, z1):
 
 def hook(k, sp, own=True):
     x0, x1 = _span(PART)
-    z1 = CV.band_foot()
+    z1 = CV.band_foot() - BEAM / W.ZART
     cells = _cells(x0, x1)
     k.side = None
     _cut(k, x0, x1, z1, cells)
@@ -194,6 +197,17 @@ def hook(k, sp, own=True):
         _quad(k, [(a, -h, za + e), (b, -h, zb + e), (b, h, zb + e), (a, h, za + e)], (0, 0, 1), PANE_EDGE)
         GLASS.poly([Vector((a, 0.0, za)), Vector((b, 0.0, zb)), Vector((b, 0.0, z1)), Vector((a, 0.0, z1))],
                    "wall", 2, Vector((0, 1, 0)), fixed="glassL")
+    zt = _zt()
+    for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):       # the pane's edge up the posts and round the top
+        if not on:                                                    # corners' curve to the beam (as drone's, the user)
+            continue
+        v = u + sd * e
+        _quad(k, [(v, -h, zt), (v, h, zt), (v, h, z1 - ROUND * PX), (v, -h, z1 - ROUND * PX)], (sd, 0, 0), PANE_EDGE)
+        arc = _arc(u, sd, z1)
+        for (xa, za), (xb, zb) in zip(arc, arc[1:]):
+            n = (Vector((-(zb - za), 0.0, xb - xa)) * (-sd)).normalized()
+            _quad(k, [Vector(p) + n * e for p in ((xa, -h, za), (xb, -h, zb), (xb, h, zb), (xa, h, za))], n,
+                  PANE_EDGE)
 
 
 def window(fn, part):
