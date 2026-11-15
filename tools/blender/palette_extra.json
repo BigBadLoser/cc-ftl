@@ -3997,5 +3997,13 @@
   "pfBody": {"hex": "#8a929a", "set": "purifier"},
   "pfBodyD": {"hex": "#626a73", "set": "purifier"},
   "pfHeat": {"hex": "#ff7a3a", "emissive": 1.4, "set": "purifier"},
-  "pfLamp": {"hex": "#6cf08a", "emissive": 1.4, "set": "purifier"}
+  "pfLamp": {"hex": "#6cf08a", "emissive": 1.4, "set": "purifier"},
+  "pfHull": {"hex": "#b8c3c6", "set": "purifier"},
+  "pfHullM": {"hex": "#8d9fa6", "set": "purifier"},
+  "pfTray": {"hex": "#566e80", "set": "purifier"},
+  "pfTrayL": {"hex": "#718594", "set": "purifier"},
+  "pfFrame": {"hex": "#303e49", "set": "purifier"},
+  "pfRecess": {"hex": "#222e36", "set": "purifier"},
+  "pfAmber": {"hex": "#cdb86c", "emissive": 0.9, "set": "purifier"},
+  "pfCyan": {"hex": "#76c5dc", "emissive": 1.0, "set": "purifier"}
 }
