@@ -55,7 +55,7 @@ export const armoury = {
   ],
 } as const satisfies RoomRecipe;
 
-/** Concourse (trading courtyards): stalls (pallets and lockers) and benches (tables with chairs) in open space. */
+/** Concourse (trading courtyards): stalls (pallets and lockers) and benches (tables with chairs) in open space, round a holo column. */
 export const plaza = {
   fill: 0.12,
   arrangements: [
@@ -64,6 +64,10 @@ export const plaza = {
       name: 'market', weight: 2, walkway: 'long', steps: [
         { mod: 'module.cargo_container', count: 'fill', upTo: 0.1, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.storage_pallet', n: 2 } },
         { mod: 'module.mess_table', count: 'fill', upTo: 0.14, clear: 1, grid: [7, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
+        { mod: 'module.holo_sign', count: 1, centre: 'xy', clear: 2, rots: [0], minFloor: 300 },
+        { mod: 'module.planter_large', count: 2, clear: 1, rots: [0], minFloor: 300 },
+        { mod: 'module.planter', count: 6, wall: 'any' },
+        { mod: 'module.deck_inlay', count: 2, near: 'module.holo_sign' },
         { mod: 'module.hydroponics', count: 4, wall: 'any' },
       ],
     },
@@ -71,18 +75,23 @@ export const plaza = {
       name: 'food court', weight: 1, steps: [
         { mod: 'module.galley', count: 2, wall: 'any' },
         { mod: 'module.mess_table', count: 'fill', upTo: 0.12, clear: 2, grid: [6, 5], rots: [0], with: { mod: 'module.chair', n: 4 } },
+        { mod: 'module.planter_large', count: 1, clear: 1, rots: [0], minFloor: 300 },
+        { mod: 'module.planter', count: 4, wall: 'any' },
         { mod: 'module.storage_locker', count: 4, wall: 'any' },
       ],
     },
   ],
 } as const satisfies RoomRecipe;
 
-/** Garden deck (farming courtyards): hydroponics beds in rows, a few benches. */
+/** Garden deck (farming courtyards): a great tree and tree beds, hydroponics beds in rows, a few benches. */
 export const garden = {
   fill: 0.18,
   arrangements: [
     {
       name: 'garden', weight: 1, steps: [
+        { mod: 'module.tree_large', count: 1, centre: 'xy', clear: 2, rots: [0], minFloor: 300 },
+        { mod: 'module.planter_large', count: 3, clear: 1, rots: [0], minFloor: 200 },
+        { mod: 'module.planter', count: 4, wall: 'any' },
         { mod: 'module.hydroponics', count: 'fill', upTo: 0.16, clear: 1, grid: [3, 3], rots: [0] },
         { mod: 'module.mess_table', count: 3, clear: 1, rots: [0], with: { mod: 'module.chair', n: 2 } },
       ],
@@ -90,12 +99,14 @@ export const garden = {
   ],
 } as const satisfies RoomRecipe;
 
-/** Drill hall (military courtyards): open floor, racks and lockers on the walls. */
+/** Drill hall (military courtyards): open floor, banner posts, a hazard line, racks and lockers on the walls. */
 export const drill = {
   fill: 0.06,
   arrangements: [
     {
       name: 'drill hall', weight: 1, steps: [
+        { mod: 'module.banner', count: 3, wall: 'any', row: true, minFloor: 200 },
+        { mod: 'module.deck_hazard', count: 8, centre: 'xy', row: true },
         { mod: 'module.storage_rack', count: 'fill', wall: 'any', row: true },
         { mod: 'module.storage_locker', count: 6, wall: 'any', row: true },
       ],

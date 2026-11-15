@@ -29,7 +29,7 @@ export { NOOP_PROBE, type Probe } from './probe';
 export { MarkerC, type Marker } from './components';
 export { SAVE_VERSION, serialize, deserialize, migrate, type SaveData } from './save';
 export { runSummary, type RunSummary } from './runSummary';
-export { Struct, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind } from './structure';
+export { Struct, Finish, SHIP_FIELDS, isWalkable, isEvaWalkable, writeStruct, type StructKind, type FinishKind } from './structure';
 export * from './crew/components';
 export { findPath, type Tile, type PathGoal } from './crew/pathfind';
 export { stat, statBase, statBreakdown, modifierSources, type Modifier, type ModifierOrigin, type ModifierSource, type StatBreakdown, type StatName } from './stats';

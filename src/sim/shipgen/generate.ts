@@ -5,9 +5,11 @@ import type { Arranger } from './arranger';
 import { arrangeHull } from './navyLayouts';
 import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
-import { lightRoom, placeOne, rotsOf } from './fit';
+import { LAMP, lightRoom, placeOne, rotsOf } from './fit';
 import { RECIPES, STATION_RECIPES, drawRoom, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
 import { Layout } from './layout';
+import { paintCourts } from './courtFloors';
+import { FINISH_CHARS } from '../structure';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
 import { ring, spine } from './topoNavy';
@@ -129,15 +131,13 @@ function fitOut(
   for (const m of lay.modules) { const p = (defs[m.def] as ModuleDef).power; if (p > 0) supply += p; else demand -= p; }
   // Lamps the furnished rooms will need (a trial lighting, taken back: they are lit after furnishing), plus a margin.
   const recipeRooms = roles.map((_, i) => i).filter((i) => drawOf(i));
-  let lamps = 0;
   for (const room of recipeRooms) {
     const n = lay.modules.length;
     lightRoom(lay, rng, room);
-    lamps += lay.modules.length - n;
+    for (let i = n; i < lay.modules.length; i++) demand -= Math.min(0, (defs[lay.modules[i]!.def] as ModuleDef).power);
     while (lay.modules.length > n) lay.pop();
   }
-  const lampPower = -((defs['module.light'] as ModuleDef | undefined)?.power ?? 0);
-  demand += lamps * lampPower;
+  const lampPower = -((defs[LAMP] as ModuleDef | undefined)?.power ?? 0);
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
   // Short of power after lighting: squeeze extra reactors into engineering or stores.
@@ -163,6 +163,7 @@ function fitOut(
   let draw = 0;
   for (const m of lay.modules) draw -= Math.min(0, (defs[m.def] as ModuleDef).power);
   if (supply < draw) return { ...out, error: 'not enough power' };
+  paintCourts(lay);
   return out;
 }
 
@@ -177,12 +178,16 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
       ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
     };
   });
+  // Floor finishes (courts), as template `floors` rows: only when some tile has one.
+  const code = Object.fromEntries(Object.entries(FINISH_CHARS).map(([c, k]) => [k, c])) as Record<number, string>;
+  const floors = d.lay.finish.some((k) => k > 0) ? rows.map((r, y) => Array.from(r, (_, x) => code[d.lay.finish[y * d.lay.w + x] as number] ?? '.').join('')) : null;
   return {
     name: `${f.name} ${role.id} ${factionId.replace(/^faction\./, '').slice(0, 2).toUpperCase()}-${tag}`,
     faction: 'hostile',
     doctrine: f.doctrine.targeting,
     crew: plan.crew,
     rows,
+    ...(floors ? { floors } : {}),
     modules,
     ...(f.doctrine.boarding ? { boarding: { ...f.doctrine.boarding } } : {}),
   };

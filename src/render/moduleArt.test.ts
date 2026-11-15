@@ -2,7 +2,7 @@ import type { World } from '../sim/ecs';
 import { describe, expect, it } from 'vitest';
 import type { Module } from '../sim/modules/components';
 import { content } from '../content';
-import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers, glowKey, SEAT_DZ, FRONT_DZ, HOLO_DZ } from './moduleArt';
+import { mergeRuinChain, ANIM_FPS, DAMAGED_BELOW, FLICKER_DARK_MS, FLICKER_LIT_MS, stateArt, animFrame, diagonalFront, frameCount, layerKey, engineBlock, moduleAssets, moduleLayers, glowKey, SEAT_DZ, FRONT_DZ, HOLO_DZ, schemeEmblem } from './moduleArt';
 import { depthKey } from './iso';
 
 const engine = content.modules['module.engine'];
@@ -39,6 +39,21 @@ describe('module layer depth', () => {
     expect(engineBlock(engine, 1) && engineBlock(engine, 2)).toBe(true);
     expect(engineBlock(engine, 0) || engineBlock(engine, 3)).toBe(false);
     expect(moduleLayers(null as never, 1, { ...m, rot: 3 } as Module, engine, false).some((l) => l.key === 'module.engine.block' || l.key === 'module.engine.end')).toBe(false);
+  });
+});
+
+describe('livery modules', () => {
+  const banner = content.modules['module.banner'];
+  const mb = { def: 'module.banner', x: 3, y: 4, rot: 2, hp: 30 } as unknown as Module;
+  it('fly the scheme\'s roof emblem as a recoloured mask, plain bars for a scheme without one', () => {
+    expect(schemeEmblem('verdant')).toBe('star');
+    expect(schemeEmblem('crimson')).toBe('plain');
+    const layers = moduleLayers(null as never, 1, mb, banner, false, true, { seed: 1, scheme: 'ivory' });
+    expect(layers[1]).toMatchObject({ chain: ['module.banner.r2.lv.dot'], overlay: 'lv', optional: true });
+  });
+  it('drop the mask with no livery or when wrecked', () => {
+    expect(moduleLayers(null as never, 1, mb, banner, false, true, null)).toHaveLength(1);
+    expect(moduleLayers(null as never, 1, { ...mb, hp: 0 } as Module, banner, false, true, { seed: 1, scheme: 'ivory' })).toHaveLength(1);
   });
 });
 

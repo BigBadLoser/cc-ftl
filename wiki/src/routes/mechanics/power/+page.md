@@ -73,6 +73,16 @@ Beds, storage and containers need no power and always work.
 
 Doors don't need power.
 
+## Lamps
+
+Three lamps light a ship, and each draws only a fraction of a power unit. The **floor light** is a lit grate set into the deck;
+crew walk over it. The **cage lamp** and the **light mast** are solid, with a longer reach: the mast lights a whole hall, so
+generated stations raise a few of them in a big open court instead of dotting it with lamps. Stations also dress their courts with planters, tree
+beds, a holo column in plazas, a great tree in gardens, banner posts in the station's colours in drill halls and paved or
+tread-plated floors. All of it is decoration, except that the holo column also gives light and draws a little power.
+
+<ModuleTable ids="module.light, module.light_cage, module.light_mast, module.holo_sign" columns="power:Power:signed, maxHp:Hull points" />
+
 ## Reactors
 
 <ModuleTable ids="module.reactor, module.reactor.mk2, module.reactor.mk3" columns="power:Power:signed, heatPerSec:Heat / s, maxHp:Hull points" />

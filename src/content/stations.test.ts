@@ -60,6 +60,40 @@ describe('research stations', () => {
   }, 120000);
 });
 
+describe('court decor and floors', () => {
+  it('plazas raise a holo column, gardens a great tree and drill halls banners, most of the time', () => {
+    let holo = 0, tree = 0, banner = 0;
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+      holo += count(gen('station.trading', 'station', seed), 'module.holo_sign');
+      tree += count(gen('station.research', 'station', seed), 'module.tree_large');
+      banner += count(gen('station.military', 'station', seed), 'module.banner');
+    }
+    expect(holo).toBeGreaterThanOrEqual(2);
+    expect(tree).toBeGreaterThanOrEqual(2);
+    expect(banner).toBeGreaterThanOrEqual(2);
+  }, 120000);
+
+  it('court floors are painted on floor tiles only: walkways and market tile in plazas, tread in drill halls', () => {
+    const seen = new Map<string, Set<string>>();
+    for (const id of ['station.trading', 'station.military'] as const) {
+      const got = new Set<string>();
+      for (const seed of [1, 2, 3, 4]) {
+        const g = gen(id, 'station', seed);
+        (g.template.floors ?? []).forEach((r, y) => {
+          for (let x = 0; x < r.length; x++) {
+            if (r[x] === '.') continue;
+            got.add(r[x] as string);
+            expect(g.template.rows[y]?.[x], `${id} ${seed} ${x},${y}`).toBe('_');
+          }
+        });
+      }
+      seen.set(id, got);
+    }
+    expect([...(seen.get('station.trading') ?? [])]).toEqual(expect.arrayContaining(['w']));
+    expect([...(seen.get('station.military') ?? [])]).toEqual(expect.arrayContaining(['t']));
+  }, 120000);
+});
+
 describe('station generator', () => {
   it('every kind builds a valid outpost, station and hub: one structure, docks, no engines, inside the limit', () => {
     for (const id of ids) {

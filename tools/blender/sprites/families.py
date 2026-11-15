@@ -64,6 +64,10 @@
   backdrop  the node's central body drawn large behind the main view: backdrop.body.<kind>.v<n>, 320 px frame (backdrop_bodies.py,
             backdrop_pulsar.py)
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
+  decor     station dressing: a tree bed, walkable deck marks (decor.py; the bench and planter ship as bench_module / planter_module)
+  landmarks court landmarks: the holo column, the big tree, the banner post and its livery masks (landmarks.py)
+  court_floors  the floor finishes the station generator paints courts with: walk, soil, market, tread (floors.py COURT)
+  lights    the lamps: tall mast, short cage lamp, floor grate, 4 rotations x lit / unpowered / damage states (lights.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
   salvage   the scrap crates of derelict salvage and cloth: .unit (the game stacks units on a slot grid) and .held
@@ -458,6 +462,18 @@ def jobs(name):
     if name == "hull":
         from . import hulltiles
         return hulltiles.jobs(), "hull"                 # (its own palette set: palette_extra "set": "hull")
+    if name == "court_floors":
+        from . import floors
+        return floors.SPRITES, False
+    if name == "decor":
+        from . import decor
+        return decor.SPRITES, True
+    if name == "landmarks":
+        from . import landmarks
+        return landmarks.SPRITES, True
+    if name == "lights":
+        from . import lights
+        return lights.SPRITES, True
     raise KeyError(name)
 
 
@@ -468,5 +484,5 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
             "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module",
-            "stasis", "stasisload")
+            "stasis", "stasisload", "decor", "lights", "court_floors", "landmarks")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

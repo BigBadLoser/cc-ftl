@@ -221,6 +221,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const r = tiles.chunkRect(c);
     const gapAt = (x: number, y: number): boolean => mode === "up" && tiles.inside(x, y) && replaced.has(y * width + x);
     const struct = tiles.data("struct", c);
+    const finish = tiles.data("floor", c);
     const x0 = Math.max(0, r.x0), x1 = Math.min(width, r.x1);
     const y0 = Math.max(0, r.y0), y1 = Math.min(height, r.y1);
     if (struct)
@@ -264,7 +265,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
-          const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y));
+          const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, finish?.[ci] ?? 0));
           if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
@@ -438,7 +439,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
-        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
+        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
         if (chunks.pending > 0) builtKey = ""; // the rest on a later update
         if (n > 0) frameKey = "";
       }

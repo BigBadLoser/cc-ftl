@@ -35,6 +35,50 @@ export const furniture = {
     asset: 'module.chair', footprint: [1, 1], solid: false, power: 0, flammability: 0.4,
     maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
   },
+  // Station decor (art: tools/blender/sprites/decor.py and landmarks.py): a big tree bed, walkable deck marks and court
+  // landmarks. Dressing only, no mechanic (the holo column's light aside).
+  'module.planter_large': {
+    name: 'Tree planter',
+    category: 'life',
+    description: "A raised bed with a small tree.",
+    asset: 'module.planter_large', footprint: [2, 2], solid: true, power: 0, flammability: 0.5,
+    maxHp: 80, buildWork: 90, cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 4 }],
+  },
+  'module.deck_inlay': {
+    name: 'Deck inlay',
+    category: 'structure',
+    description: "A brass medallion set in the deck. Walkable.",
+    asset: 'module.deck_inlay', footprint: [1, 1], solid: false, power: 0, flammability: 0,
+    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 2 }],
+  },
+  'module.deck_hazard': {
+    name: 'Hazard plate',
+    category: 'structure',
+    description: "Yellow and black deck striping. Walkable.",
+    asset: 'module.deck_hazard', footprint: [1, 1], solid: false, power: 0, flammability: 0,
+    maxHp: 40, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }],
+  },
+  'module.holo_sign': {
+    name: 'Holo column',
+    category: 'life',
+    description: "A column ringed with advertising light. Plazas gather round it.",
+    asset: 'module.holo_sign', footprint: [2, 2], solid: true, power: -0.5, powerPriority: 3, light: { radius: 8, level: 210 },
+    flammability: 0.1, maxHp: 80, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 4 }],
+  },
+  'module.tree_large': {
+    name: 'Great tree',
+    category: 'life',
+    description: "A tall tree in a raised bed with a seat ledge.",
+    asset: 'module.tree_large', footprint: [3, 3], solid: true, power: 0, flammability: 0.5,
+    maxHp: 120, buildWork: 160, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 8 }],
+  },
+  'module.banner': {
+    name: 'Banner post',
+    category: 'life',
+    description: "A banner in the ship's colours on a post.",
+    asset: 'module.banner', livery: true, footprint: [1, 1], solid: true, power: 0, flammability: 0.6,
+    maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 2 }],
+  },
   'module.storage_locker': {
     scrap: 'comfort',
     name: 'Locker',
