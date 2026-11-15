@@ -86,11 +86,21 @@ function order(rng: Rng, list: readonly RuleArrangement[], need: readonly string
 
 const tally = (ids: readonly string[]): Map<string, number> => { const m = new Map<string, number>(); for (const id of ids) m.set(id, (m.get(id) ?? 0) + 1); return m; };
 
-/** Rooms of these roles are furnished by rule on stations. A support room only when it is a mess (it has a galley). */
+/**
+ * Rooms a rule may furnish on stations: a support room only when it is a mess (a galley), a suit-up room (lockers) or a gym
+ * (sparring droids); every other role with a rule. A room no rule fits is left to its room recipe, except where `ruleOwns`.
+ */
 export function ruleRoom(role: RoomRole, need: readonly string[]): boolean {
-  if (role === 'support') return need.includes('module.galley');
+  if (role === 'support') return need.some((m) => m === 'module.galley' || m === 'module.storage_locker' || m === 'module.exercise');
   return !!RULES[role];
 }
+
+/** Roles whose rooms keep their room recipe when no rule fits (the stores, works, bays and social rooms with a rule of their own). */
+const RECIPE_FALLBACK: readonly RoomRole[] = ['bridge', 'cargo', 'armoury', 'industry', 'hangar', 'hall', 'plaza'];
+
+/** Rooms the rules own outright: when none fits, the room's planned modules are set plainly, not by its room recipe. */
+export const ruleOwns = (role: RoomRole, need: readonly string[]): boolean =>
+  role === 'support' ? need.includes('module.galley') : !RECIPE_FALLBACK.includes(role) && !!RULES[role];
 
 /**
  * Furnish a room by rule: its planned modules (`need`) all placed, the extras the arrangement brings. Leaves the layout
@@ -105,6 +115,9 @@ export function furnishByRule(
   const pointed = o.bastion ? furnishBastion(lay, room, need, entries.map((e) => e.at)) : null;
   if (pointed) return pointed;
   const floor = (x: number, y: number): boolean => lay.inBounds(x, y) && lay.at(x, y) === '_' && lay.roomOf[y * lay.w + x] === room;
+  // No arrangement suits any frame's size: nothing to try (and no draw from the seed, so such a room leaves the rest as it was).
+  const sizes = entries.flatMap((e) => [frameOf(floor, e, false)]);
+  if (!list.some((a) => !a.when || sizes.some((f) => a.when?.(need, { ...f, defs: lay.defs })))) return null;
   const flip = rng.chance(0.5);
   const frames = entries.flatMap((e) => [frameOf(floor, e, flip), frameOf(floor, e, !flip)]);
   const want = tally(need), at = entries.map((e) => e.at);

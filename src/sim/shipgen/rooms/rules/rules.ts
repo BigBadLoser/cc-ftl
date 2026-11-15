@@ -7,8 +7,12 @@
 import type { ModuleDef } from '../../../registry';
 import type { RoomRole } from '../../types';
 import type { Piece } from './check';
+import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { B, BT, G, GT, LS, MB, P, RP, bunks, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, BT, CD, DR, EX, FB, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { co, cu, gy, hl, pz } from './social';
+import { bg, pa, qm, shelfSlots } from './stores';
+import { bk, lb, su, ws } from './works';
 
 /** What a rule is given: the room (frame), the planned modules, and the module defs. */
 export interface Ctx { w: number; h: number; d: number; need: readonly string[]; defs: Record<string, ModuleDef> }
@@ -21,7 +25,6 @@ export interface RuleArrangement {
   rule: (c: Ctx) => Piece[];
 }
 
-const count = (need: readonly string[], id: string): number => need.filter((m) => m === id).length;
 /** The room's sleeper piece (the first planned module that is a bed, not a med bed) and how many of it. */
 const sleeper = (need: readonly string[], defs: Record<string, ModuleDef>): string => need.find((m) => defs[m]?.bed) ?? B;
 const beds = (c: Ctx): Beds => { const def = sleeper(c.need, c.defs); return { left: count(c.need, def), def }; };
@@ -48,6 +51,15 @@ function b1(c: Ctx): Piece[] {
     { from: 0, to: h - 1, n: r.pairs, at: (v, end) => (end ? P(GT, w - 2, v, 0) : P(GT, w - 2, v, 1)) },
   ];
   return [...l.pieces, ...r.pieces, ...(bank.left > 0 ? [] : leftover(runs.filter((q) => q.n > 0)))];
+}
+
+/** Pairs the back wall of a w-wide room holds (a bed, a locker, a bed, a tile between). */
+const pairsAcross = (w: number): number => (w >= 3 ? Math.floor((w - 3) / 4) + 1 : 0);
+
+/** B4: bunk pairs along the back wall, a rec corner at the door wall: an arcade in the corner by the door's far side, a game table on the other. */
+function b4(c: Ctx): Piece[] {
+  const { w, h, d } = c, left = d >= w >> 1;
+  return [...bunks(beds(c), 0, w - 1, 0, 0).pieces, P(AC, left ? 0 : w - 1, h - 1, 2), P(GT, left ? w - 2 : 0, Math.max(3, h - 3), 0)];
 }
 
 /** B3: a pair in each corner of the long walls, tables (or a game table) evenly spaced between. */
@@ -145,6 +157,7 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   quarters: [
     { name: 'B1 bunk pairs on the long walls', weight: 2, when: (n, r) => pieces(n, r.defs) >= 2, rule: b1 },
     { name: 'B3 two bays, shared tables', weight: 1, when: (n, r) => pieces(n, r.defs) >= 2 && pieces(n, r.defs) <= 8, rule: b3 },
+    { name: 'B4 bunks on the back wall, a rec corner', weight: 1, when: (n, r) => { const k = pieces(n, r.defs); return k >= 2 && k <= 2 * pairsAcross(r.w) && r.w >= 6 && r.h >= 5; }, rule: b4 },
     { name: 'C1 cabin', weight: 1, when: (n, r) => pieces(n, r.defs) === 1, rule: (c) => [P(sleeper(c.need, c.defs), 0, 0, 0), P('module.storage_locker', c.w - 1, 0, 0)] },
   ],
   support: [
@@ -155,11 +168,14 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
       rule: (c) => [P(G, 0, 0, 3), P(G, 0, 2, 3), P(LS, 0, c.h - 1, 1), P(GT, 4, 1, 0), ...tables(7, c.w - 1, 1, 1), P('module.arcade', c.w - 1, c.h - 1, 2)],
     },
     { name: 'M4 tables down the long axis', weight: 2, when: has(G), rule: m4 },
+    { name: 'SU suit-up, lockers on the back wall', weight: 1, when: (n, r) => !n.includes(G) && n.includes(L) && count(n, L) <= r.w, rule: su },
+    { name: 'GY gym, sparring droids in a row', weight: 1, when: (n, r) => n.includes(EX) && r.h >= 4 && r.w >= 3 * count(n, EX), rule: gy },
   ],
   medbay: [
     { name: 'D1 beds along a wall', weight: 1, rule: d1 },
     { name: 'D2 bays, pod in the middle', weight: 1, when: (_, r) => r.w >= 9, rule: d2 },
     { name: 'D3 beds down the long wall', weight: 1, when: (_, r) => r.h > r.w, rule: d3 },
+    { name: 'TR trauma, pod and cots along the back wall', weight: 2, when: (n, r) => n.includes(RP) && count(n, RP) === 1 && r.h >= 4 && traumaFits(n, r.w), rule: tr },
   ],
   weapons: [
     { name: 'G1 guns in a row', weight: 1, rule: g1 },
@@ -168,5 +184,26 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
   ],
   shields: [{ name: 'S1 gens, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => c.defs[m]?.shieldGen), false) }],
   farm: [{ name: 'F1 greenhouse: beds on end down both long walls', weight: 1, when: (_, r) => r.h > r.w && r.w >= 4, rule: f1 }],
+  bridge: [{ name: "CO chief's office, desk and planters", weight: 1, when: (n, r) => !n.includes('module.helm') && r.w >= 5 && r.w <= 10 && r.h >= 4 && r.h <= 6, rule: co }],
+  cargo: [{
+    name: 'PA pantry, cold stores along the back wall', weight: 1,
+    when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
+    rule: pa,
+  }],
+  armoury: [
+    { name: 'QM quartermaster, armoury lockers round a desk', weight: 1, when: (n, r) => !n.includes(SW) && r.w >= 7 && r.h >= 5, rule: qm },
+    { name: 'BG brig, stasis wheel at the back', weight: 1, when: (n, r) => count(n, SW) === 1 && r.w >= 7 && r.h >= 6, rule: bg },
+  ],
+  industry: [
+    { name: 'WS workshop, fabricator between the racks', weight: 1, when: (n, r) => n.includes(FB) && !n.includes(SP) && !n.includes(RS) && r.h >= 4 && r.w >= 4 + 2 * count(n, FB), rule: ws },
+    { name: 'BK breaker, scrapper between the bins', weight: 1, when: (n, r) => count(n, SP) === 1 && r.w >= 8 && r.h >= 5 && (count(n, SB) === 0 || count(n, SB) === 2), rule: bk },
+    { name: 'LB lab, research modules along the back wall', weight: 1, when: (n, r) => n.includes(RS) && r.h >= 4 && r.w >= 3 * count(n, RS), rule: lb },
+  ],
+  hangar: [{ name: 'DB drone bay, bays spread across', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === DR) && r.h >= 4 && r.w >= 2 * n.length, rule: db }],
+  hall: [{ name: 'HL hall street, planters and benches on the wall', weight: 1, when: (n, r) => n.length === 0 && r.w >= 8 && r.h >= 3 && r.h <= 4, rule: hl }],
+  plaza: [
+    { name: 'CU customs, a desk and chairs', weight: 1, when: (n, r) => n.length === 0 && r.w >= 7 && r.h >= 3 && r.h <= 4, rule: cu },
+    { name: 'PZ parade hall, benches round the planters', weight: 1, when: (n, r) => n.length === 0 && r.w >= 9 && r.h >= 7, rule: pz },
+  ],
   reactor: [{ name: 'R1 reactors, batteries between', weight: 1, rule: (c) => spread(c, c.need.filter((m) => (c.defs[m]?.power ?? 0) > 0), true) }],
 };
