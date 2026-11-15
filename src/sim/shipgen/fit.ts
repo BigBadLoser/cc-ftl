@@ -84,6 +84,8 @@ function distToModules(lay: Layout, cx: number, cy: number): number {
 
 /** Light radius the generator plans with (inside the module's 7). */
 const LIGHT_REACH = 4.5;
+/** A lamp's spot: of the tiles that light at least this share of what the best one lights, the most central. */
+const NEARLY = 0.75;
 
 /**
  * How central each tile of a room is: the shortest straight run from it to the room's edge, along a row or a column
@@ -107,7 +109,25 @@ function depthOf(lay: Layout, room: number, tiles: readonly number[]): Map<numbe
 }
 
 /**
- * Lights until every floor tile of the room is within reach of one. Floor lights stand centred where they can: of the
+ * The room and the rooms its floor opens straight onto, with no wall between (a hall and the airlock bays off it): a
+ * lamp in any of them lights this room's floor too.
+ */
+function openTo(lay: Layout, room: number, tiles: readonly number[]): Set<number> {
+  const W = lay.w, out = new Set<number>([room]);
+  for (const t of tiles) {
+    const x = t % W, y = (t - x) / W;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= lay.h || lay.cells[ny * W + nx] !== '_') continue;
+      const r = lay.roomOf[ny * W + nx] as number;
+      if (r >= 0) out.add(r);
+    }
+  }
+  return out;
+}
+
+/**
+ * Lights until every floor tile of the room is within reach of one (a lamp in a room open onto it counts). Floor lights stand centred where they can: of the
  * tiles that light something still dark, the most central ones (`depthOf`), then the one that lights the most.
  */
 export function lightRoom(lay: Layout, rng: Rng, room: number): void {
@@ -117,20 +137,27 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
   const lit = new Uint8Array(lay.cells.length);
   const covers = (a: number, b: number): boolean =>
     Math.hypot((a % lay.w) - (b % lay.w), Math.floor(a / lay.w) - Math.floor(b / lay.w)) <= LIGHT_REACH;
+  const open = openTo(lay, room, tiles);
   for (const m of lay.modules) {
     if (m.def !== 'module.light') continue;
     const li = m.y * lay.w + m.x;
-    if (lay.roomOf[li] === room) for (const t of tiles) if (covers(li, t)) lit[t] = 1;
+    if (open.has(lay.roomOf[li] as number)) for (const t of tiles) if (covers(li, t)) lit[t] = 1;
   }
   for (let guard = 0; guard < 12; guard++) {
     const dark = tiles.filter((t) => !lit[t]);
     if (dark.length === 0) return;
-    let best = -1;
-    let bestScore = -1, bestDepth = 0;
+    // Coverage first, so each lamp lights as much of what is still dark as any (not the next central tile, which can
+    // stand beside the last lamp and light a corner); of the tiles that light nearly as much, the most central.
+    const scored: { c: number; lights: number }[] = [];
     for (const c of tiles) {
       if (lay.occ[c] !== -1 || lay.fitError('module.light', c % lay.w, Math.floor(c / lay.w), 0, room)) continue;
       const lights = dark.filter((d) => covers(c, d)).length;
-      if (lights === 0) continue;
+      if (lights > 0) scored.push({ c, lights });
+    }
+    const most = Math.max(0, ...scored.map((s) => s.lights));
+    let best = -1, bestScore = -1, bestDepth = 0;
+    for (const { c, lights } of scored) {
+      if (lights < NEARLY * most) continue;
       const dc = depth.get(c) ?? 0, score = lights + rng.next();
       if (dc > bestDepth || (dc === bestDepth && score > bestScore)) { bestDepth = dc; bestScore = score; best = c; }
     }
