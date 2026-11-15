@@ -1176,7 +1176,8 @@ are unchanged. After the answer the window stays open with how it ended and the 
     boarding party's, a salvage run's, or one sent for the prisoners, with hauling seats). At home the shuttle takes empty slabs into its rack
     (four slabs), the party seals the prisoners on the prize and hands the full slabs into the rack, and back home they are set down by the bay
     for the crew to cart to a wheel. In the rack a slab keeps its charge; a shuttle destroyed with slabs aboard loses those prisoners. While a
-    marked prisoner waits, the panel says on what (a free shuttle, crew, the shuttle on its way).
+    marked prisoner waits, the panel says on what (a free shuttle, crew, the shuttle on its way, or no way aboard: a sealed hull with no working
+    airlock, where no shuttle is sent).
   - **Releasing a frozen prisoner (built, #116):** the slab is opened (the empty slab stays in its slot or on the floor) and the release is the same
     as before sealing: they leave, and the faction they were taken from gains standing. A slab on a cart or in a shuttle is released once it is set down.
 - **Look study: stasis slab and stasis wheel (user decisions, November 2026; the sim is built, the art not yet wired in).** The

@@ -13,6 +13,7 @@ const REASONS: Record<string, string> = {
 const WAITS: Record<string, string> = {
   noShuttle: 'Marked: waiting for a free shuttle to fly out with empty slabs',
   noCrew: 'Marked: the shuttle waits for crew with hauling work to go along',
+  noWay: 'Marked: no way aboard for a shuttle party (a sealed hull with no working airlock)',
   shuttle: 'Marked: a shuttle brings empty slabs and carries the full one home',
   noSlab: 'Marked: waiting for an empty stasis slab',
   noRoom: 'Marked: waiting for room in a stasis wheel',

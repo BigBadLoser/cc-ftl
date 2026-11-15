@@ -4,7 +4,10 @@ import { isFerryRegion } from '../ferry/pick';
 import { atHome, hovering } from '../away/phase';
 import { StagingC } from '../items/components';
 import { zoneTilesNear } from '../items/staging';
-import { hatchSpot } from '../eva/shuttle';
+import { exteriorTiles, hatchSpot } from '../eva/shuttle';
+import { AirlockC, airlockWorking } from '../modules/airlock';
+import { ModuleC } from '../modules/components';
+import { shipGrid, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { VehicleC } from '../vehicles/components';
 import { boardingTile } from '../vehicles/geometry';
@@ -27,7 +30,13 @@ export function rackFull(sim: Sim, vehicle: number): number[] {
   }).sort((a, b) => a - b);
 }
 
-/** Free places in a shuttle's rack (empty and full slabs share RACK_SLOTS). */
+/**
+ * Room in a shuttle's rack for full slabs: every place not holding one. An empty slab in the rack makes way (it is there to be sealed into, and one
+ * that is not is set out at the rack tile when a full slab comes in: `rackSlab`), so empty slabs never block a seal.
+ */
+export const rackRoom = (sim: Sim, vehicle: number): number => Math.max(0, RACK_SLOTS - rackFull(sim, vehicle).length);
+
+/** Free places in a shuttle's rack (empty and full slabs share RACK_SLOTS): what it can still be stocked with. */
 export const rackFree = (sim: Sim, vehicle: number): number => Math.max(0, RACK_SLOTS - rackEmpty(sim, vehicle) - rackFull(sim, vehicle).length);
 
 /**
@@ -64,6 +73,17 @@ export function siteShuttle(sim: Sim, ship: number): number {
 export function rackHere(sim: Sim, ship: number): number {
   const v = siteShuttle(sim, ship);
   return v && rackTile(sim, v)?.shipId === ship ? v : 0;
+}
+
+/**
+ * True if a shuttle's party can get aboard a ship: it has a working airlock to dock at, or its floor can be walked to from outside its hull (a
+ * breach: the party floats over from a hovering shuttle). False for a sealed hull with no working airlock: prisoners there cannot be fetched.
+ */
+export function wayAboard(sim: Sim, ship: number): boolean {
+  if (sim.world.query(AirlockC, ModuleC).some((id) => shipIdOf(sim, sim.world.get(id, ModuleC)) === ship && airlockWorking(sim, id))) return true;
+  const grid = shipGrid(sim, ship);
+  const ext = grid ? exteriorTiles(grid) : null;
+  return !!ext && ext.length >= 2 && zoneTilesNear(sim, ship, { x: ext[0]!, y: ext[1]! }, 1).length > 0;
 }
 
 /** True once the shuttle is at its home ship (in its bay, or docked there). */

@@ -10,12 +10,14 @@ import type { Sim } from '../sim';
 import { PrisonerC } from '../fight/components';
 import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './components';
 import { dropSlab, liftSlab, rackSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
-import { rackEmpty, rackFree, rackFull, rackHere, rackTile, siteShuttle } from './rack';
+import { rackEmpty, rackFull, rackHere, rackRoom, rackTile, siteShuttle } from './rack';
 import { VehicleC } from '../vehicles/components';
+import { vehicleDefOf } from '../vehicles/lifecycle';
+import { isFerryRegion } from '../ferry/pick';
 import { findPath, type Tile } from '../crew/pathfind';
 import { cartsFor, emptySlabsIn, freeSlots, fullSlabs, slabPlace, wheelHatch, wheelTakes } from './query';
 import { turnsToLoad, stowWork } from './ring';
-import { RACK_SLOTS, SEAL_WORK, SLAB_ITEM } from './tuning';
+import { SEAL_WORK, SLAB_ITEM } from './tuning';
 
 /**
  * The 'stasis' job (#116): seal a prisoner into a stasis slab where they stand and cart the slab to a stasis wheel, or cart a slab lying on the
@@ -134,10 +136,21 @@ function wheelRoom(sim: Sim, ship: number): number {
  */
 export function shuttleRoom(sim: Sim, ship: number): number {
   const v = siteShuttle(sim, ship);
-  const home = sim.world.get(v, VehicleC)?.homeShip ?? 0;
-  if (!v || !home) return 0;
-  const full = rackFull(sim, v).length;
-  return Math.max(0, Math.min(RACK_SLOTS - full, stasisRoom(sim, home) - full));
+  return v ? Math.min(rackRoom(sim, v), Math.max(0, homeRoom(sim, v, ship) - rackFull(sim, v).length)) : 0;
+}
+
+/** True for a shuttle that could carry a prize's slabs home: fit to serve an away site (EVA) and based on a ship of the player's other than the prize. */
+export function slabCarrier(sim: Sim, vehicle: number, prize: number): boolean {
+  const v = sim.world.get(vehicle, VehicleC);
+  return !!v && v.homeShip !== prize && isFerryRegion(sim, v.homeShip) && !!vehicleDefOf(sim, v)?.eva;
+}
+
+/**
+ * Wheel room at the home ship of a shuttle that could carry slabs from `prize` (`stasisRoom` there; 0 for one that is not a `slabCarrier`). The
+ * one answer to "can this shuttle take a prize's slabs home": the seal refusal, the shuttle's room and the pick of a shuttle to send all ask it.
+ */
+export function homeRoom(sim: Sim, vehicle: number, prize: number): number {
+  return slabCarrier(sim, vehicle, prize) ? stasisRoom(sim, sim.world.get(vehicle, VehicleC)!.homeShip) : 0;
 }
 
 /**
@@ -164,7 +177,7 @@ export function slabDestination(sim: Sim, ship: number, at: { x: number; y: numb
   if (wheel) return { wheel };
   const rack = rackHere(sim, ship);
   const t = rack && rackTile(sim, rack);
-  return rack && t && rackFree(sim, rack) > 0 && reachable(sim, ship, { x: at.x, y: at.y }, t) ? { rack } : null;
+  return rack && t && rackRoom(sim, rack) > 0 && reachable(sim, ship, { x: at.x, y: at.y }, t) ? { rack } : null;
 }
 
 /** Aim the job at a stop (clears the footprint size of the last one). */
@@ -228,7 +241,7 @@ function toWheel(sim: Sim, job: Job, st: StasisJob, prisoner: number, ship: numb
 function shipSlab(sim: Sim, crew: number, job: Job, st: StasisJob, prisoner: number, ship: number, me: Position): WorkResult {
   if (!cartsFor(sim, crew, prisoner)) return 'done';
   const t = st.rack ? rackTile(sim, st.rack) : null;
-  if (st.rack && t && t.shipId === ship && rackFree(sim, st.rack) > 0) {
+  if (st.rack && t && t.shipId === ship && rackRoom(sim, st.rack) > 0) {
     if (t.x !== job.x || t.y !== job.y) {
       aim(job, t);
       return 'working';

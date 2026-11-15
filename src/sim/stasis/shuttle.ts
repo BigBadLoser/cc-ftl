@@ -1,5 +1,5 @@
 import { AwaySiteC, SiteRunC } from '../away/components';
-import { openSite } from '../away/handlers';
+import { openSite, siteShuttleOk } from '../away/handlers';
 import { ShipC } from '../combat/components';
 import { CarriedC, CrewC, DeadC, PositionC } from '../crew/components';
 import { origin } from '../crew/helpers';
@@ -16,9 +16,9 @@ import { TICK_HZ } from '../time';
 import { VehicleC } from '../vehicles/components';
 import { SlabRackC, StasisC } from './components';
 import { dropSlab, rackEmptySlab, takeEmptySlab } from './freeze';
-import { pickWheel, slabSources } from './jobs';
+import { homeRoom, pickWheel, slabSources } from './jobs';
 import { sealMarked } from './order';
-import { rackEmpty, rackFree, rackFull, rackHome, siteShuttle } from './rack';
+import { rackEmpty, rackFree, rackFull, rackHome, siteShuttle, wayAboard } from './rack';
 import { boardingTile } from '../vehicles/geometry';
 import { RACK_LOAD_SEC, RACK_SLOTS, SLAB_ITEM } from './tuning';
 
@@ -98,20 +98,29 @@ export function slabTripDue(sim: Sim, vehicle: number, site: number): boolean {
   return shuttleSeals(sim, site).length > 0 && rackEmpty(sim, vehicle) === 0 && emptiesOn(sim, site) === 0;
 }
 
-/** Keep each prize's away site in step with its shuttle work: open one ('stasis') where none is, write its demand, close it once the work is done. */
+/** The free shuttle to send for a prize's slabs: the lowest id that can serve a site and whose home has wheel room for them (`homeRoom`), or 0. */
+function shuttleToSend(sim: Sim, prize: number): number {
+  return [...sim.world.query(VehicleC)].sort((a, b) => a - b).find((v) => siteShuttleOk(sim, v) && homeRoom(sim, v, prize) > 0) ?? 0;
+}
+
+/**
+ * Keep the prizes' away sites in step with their shuttle work: open one ('stasis', with a shuttle whose home can hold the slabs) where none is and
+ * a way aboard is (`wayAboard`), and write its demand. The stasis system is the one owner of 'stasis' sites, on whatever ship: one with no shuttle
+ * work left (done, the ship no longer a prize, no way aboard) is closed; the slabs in its rack ride home with the party. Sites of other owners are
+ * left to them (a boarding party does the sealing; its shuttle carries the slabs).
+ */
 function tendSites(sim: Sim): void {
   for (const ship of [...playerShips(sim)].sort((a, b) => a - b)) {
-    if (sim.world.get(ship, ShipC)?.state !== 'prize') continue;
-    const work = shuttleWork(sim, ship);
-    const site = sim.world.get(ship, AwaySiteC);
-    if (!site) {
-      // No free shuttle: the prisoners wait (sealWait 'noShuttle') and it is tried again next time.
-      if (work > 0 && openSite(sim, ship, 'stasis') !== 'noShuttle') sim.world.get(ship, AwaySiteC)!.demand = { hauling: work };
-      continue;
-    }
+    if (sim.world.get(ship, ShipC)?.state !== 'prize' || sim.world.has(ship, AwaySiteC) || shuttleWork(sim, ship) === 0 || !wayAboard(sim, ship)) continue;
+    const v = shuttleToSend(sim, ship);
+    if (v && openSite(sim, ship, 'stasis', v) === v) sim.world.get(ship, AwaySiteC)!.demand = { hauling: shuttleWork(sim, ship) };
+  }
+  for (const ship of [...sim.world.query(AwaySiteC)].sort((a, b) => a - b)) {
+    const site = sim.world.get(ship, AwaySiteC)!;
     if (site.owner !== 'stasis' || site.status !== 'open') continue;
+    const work = wayAboard(sim, ship) ? shuttleWork(sim, ship) : 0;
     if (work > 0) site.demand = { hauling: work };
-    else site.status = 'closing'; // the party comes home, and the slabs in the rack with them
+    else site.status = 'closing';
   }
 }
 

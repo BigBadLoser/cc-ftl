@@ -58,13 +58,14 @@ rest:
 1. If no shuttle is serving the prize yet (your boarding party's, or a salvage run's), a free shuttle is sent. Crew who
    do hauling take its seats.
 2. Before it leaves your ship, it takes **empty slabs** into its rack, one for each marked prisoner, from your wheel or
-   storage. The rack holds four slabs.
+   storage. The rack holds four slabs. The shuttle sent is one whose home ship has wheel room for them.
 3. On the prize, the crew seal each prisoner where they stand and cart the full slab back to the shuttle.
 4. When the work is done the party flies home with the slabs. In the rack a slab **keeps its charge**. By your shuttle
    bay the slabs are set down, and your crew cart them to the wheel as usual.
 
 While a marked prisoner waits, the line under the button says on what: a free shuttle, crew for the seats, or the
-shuttle on its way. If the shuttle is destroyed with slabs aboard, those prisoners are lost with it.
+shuttle on its way. A captured ship with its hull sealed and no working airlock has **no way aboard**: no shuttle is
+sent until there is one (power its airlock, or cut a way in). If the shuttle is destroyed with slabs aboard, those prisoners are lost with it.
 
 ## Releasing a prisoner
 

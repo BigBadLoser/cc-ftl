@@ -14,7 +14,7 @@ import { SLOT_EMPTY, SLOT_NONE, SlabRackC, StasisC, StasisWheelC, type SlabSourc
 import { floorSpot, standSpot } from './place';
 import { slabPlace, wheelHatch, wheelOf } from './query';
 import { turnRing, turnsToLoad } from './ring';
-import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
+import { RACK_SLOTS, RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /** Take one empty slab out of a source. True if one was there. A wheel gives up its lowest slot holding one. */
 export function takeEmptySlab(sim: Sim, from: SlabSource): boolean {
@@ -120,9 +120,19 @@ export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   return slots.length - 1;
 }
 
-/** Hand the slab into the rack of the shuttle `vehicle` (on `at`, its rack tile): it keeps its charge there, and rides where the shuttle goes. */
+/**
+ * Hand the slab into the rack of the shuttle `vehicle` (on `at`, its rack tile): it keeps its charge there, and rides where the shuttle goes. A rack
+ * with no free place sets one of its empty slabs out first (`rackRoom`: empty slabs make way).
+ */
 export function rackSlab(sim: Sim, prisoner: number, vehicle: number, at: Tile): void {
   const s = sim.world.get(prisoner, StasisC);
+  const rack = sim.world.get(vehicle, SlabRackC);
+  const full = sim.world.query(StasisC).filter((id) => sim.world.get(id, StasisC)?.at === 'vehicle' && sim.world.get(id, StasisC)?.carrier === vehicle).length;
+  if (rack && rack.empty > 0 && rack.empty + full >= RACK_SLOTS) {
+    // The rack is full of empty slabs: one makes way, set out on the floor (it is stock again).
+    rack.empty--;
+    spillItems(sim, shipIdAt(sim, at.x, at.y), at.x, at.y, SLAB_ITEM, 1);
+  }
   if (s) Object.assign(s, { at: 'vehicle', carrier: vehicle, x: at.x, y: at.y, rot: 0 });
 }
 

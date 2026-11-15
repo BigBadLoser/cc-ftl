@@ -7,13 +7,11 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { playerShips } from '../story/world';
 import { StasisC } from './components';
-import { pickWheel, slabSources, stasisRoom } from './jobs';
-import { rackHere } from './rack';
+import { homeRoom, pickWheel, slabCarrier, slabSources, stasisRoom } from './jobs';
+import { rackHere, wayAboard } from './rack';
 import { AwaySiteC } from '../away/components';
 import { ShipC } from '../combat/components';
-import { isFerryRegion } from '../ferry/pick';
 import { VehicleC } from '../vehicles/components';
-import { vehicleDefOf } from '../vehicles/lifecycle';
 import { SLAB_ITEM } from './tuning';
 
 /**
@@ -36,25 +34,22 @@ export function sealRefusal(sim: Sim, crew: number): string | null {
   if (!playerShips(sim).has(ship)) return 'notYours';
   if (pickWheel(sim, ship, origin(pos))) return null;
   if (sim.world.get(ship, ShipC)?.state !== 'prize') return 'noWheel';
-  const homes = new Set<number>();
-  for (const id of sim.world.query(VehicleC)) {
-    const v = sim.world.get(id, VehicleC)!;
-    if (v.homeShip !== ship && isFerryRegion(sim, v.homeShip) && vehicleDefOf(sim, v)?.eva) homes.add(v.homeShip);
-  }
-  if (homes.size === 0) return 'noShuttle';
-  return [...homes].some((h) => stasisRoom(sim, h) > 0) ? null : 'noWheel';
+  const carriers = sim.world.query(VehicleC).filter((v) => slabCarrier(sim, v, ship));
+  if (carriers.length === 0) return 'noShuttle';
+  return carriers.some((v) => homeRoom(sim, v, ship) > 0) ? null : 'noWheel';
 }
 
 /**
  * What a marked prisoner waits on while no crew member is on their seal yet, or null (a stasis job is posted for them, or they are not marked):
- * 'noShuttle' (a prize, no shuttle free to fly out), 'noCrew' (its shuttle waits for crew to take the hauling seats), 'shuttle' (the shuttle is on
+ * 'noWay' (a prize with no way aboard for a shuttle's party: a sealed hull, no working airlock), 'noShuttle' (a prize, no shuttle free to fly out), 'noCrew' (its shuttle waits for crew to take the hauling seats), 'shuttle' (the shuttle is on
  * its way with empty slabs, or on a trip), 'noSlab' (no empty slab on their ship), 'noRoom' (every wheel that could take them is spoken for).
  */
-export function sealWait(sim: Sim, crew: number): 'noShuttle' | 'noCrew' | 'shuttle' | 'noSlab' | 'noRoom' | null {
+export function sealWait(sim: Sim, crew: number): 'noWay' | 'noShuttle' | 'noCrew' | 'shuttle' | 'noSlab' | 'noRoom' | null {
   const pos = sim.world.get(crew, PositionC);
   if (!sealMarked(sim, crew) || !pos || hasStasisJob(sim, crew)) return null;
   const ship = shipIdOf(sim, pos);
   if (!pickWheel(sim, ship, origin(pos)) && sim.world.get(ship, ShipC)?.state === 'prize') {
+    if (!wayAboard(sim, ship)) return 'noWay';
     const site = sim.world.get(ship, AwaySiteC);
     if (!site) return 'noShuttle';
     if (site.block === 'noCrew') return 'noCrew';

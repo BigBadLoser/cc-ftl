@@ -55,6 +55,7 @@ export function tendSite(sim: Sim, ship: number, o: SalvageOrder, wanted: boolea
     return unblock(sim, ship, o);
   }
   if (site.status !== 'open') return; // closing (recalled): a new one opens once it is gone
+  if (site.owner === 'stasis') return; // the prisoners' run, its owner's to close (stasis/shuttle.ts): salvage opens its own once it is gone
   site.demand = salvageDemand(sim, ship);
   if (site.block === 'noCrew') block(sim, ship, o, 'noCrew');
   else unblock(sim, ship, o);

@@ -2791,13 +2791,14 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   on the shuttle; `RACK_SLOTS` (4) for empty and full together. `siteShuttle(prize)` is the shuttle of the prize's away site (any owner) when it is
   the player's; `rackTile` is where slabs change hands (boarding tile when stowed or docked; hovering, the staging zone's first tile). The job gains a
   rack source (fetch) and a 'ship' phase (cart to `rackTile`, `rackSlab`); `slabDestination` (a wheel, else the rack while the shuttle is there)
-  replaces `pickWheel` in posting and after a seal; `stasisRoom` adds `shuttleRoom` (rack room, capped by the home ship's room). `tendShuttles`
+  replaces `pickWheel` in posting and after a seal, and counts `rackRoom` (places not holding a full slab: empty slabs make way, one is set out at the rack tile when the rack is full); `stasisRoom` adds `shuttleRoom` (rack room, capped by `homeRoom`, the one answer to whether a shuttle can take a prize's slabs home, also used by `sealRefusal` and the pick of the shuttle to send). `tendShuttles`
   (from the stasis system): a slab whose shuttle is gone is lost (`stasis.lost`, the crew entity removed); at home the rack's full slabs are set
   down by the bay (`stasis.unloaded`, then ordinary pickups), the rack is stocked one empty slab every `RACK_LOAD_SEC` during 'board' from the
   home ship's sources (no crew, like `unloadStep`) and spare empties spill as items; each PLAN_INTERVAL a prize with shuttle work (`shuttleWork`:
-  marked prisoners and loose slabs no wheel there takes) and no site gets one (`openSite(..., 'stasis')`, `demand: { hauling }`), closed once the
-  work is done. Away reads: `board` waits while `stocking`, `tripDue` adds `slabTripDue`. `sealRefusal` refuses on a prize only for no player
-  shuttle ('noShuttle') or no wheel room on a shuttle's home ship ('noWheel'); `sealWait` is the waiting state the panels show. Release of a frozen
+  marked prisoners and loose slabs no wheel there takes), no site and a way aboard (`wayAboard`: a working airlock, or floor reachable from outside)
+  gets one (`openSite(..., 'stasis', shuttle)`, `demand: { hauling }`). The stasis system is the one owner of 'stasis' sites on any ship: it closes one
+  with no work left (done, no longer a prize, no way aboard), and salvage leaves such a site alone and opens its own once it is gone. Away reads: `board` waits while `stocking`, `tripDue` adds `slabTripDue`. `sealRefusal` refuses on a prize only for no player
+  shuttle ('noShuttle') or no wheel room on a shuttle's home ship ('noWheel'); `sealWait` is the waiting state the panels show (`noWay` for a prize with no way aboard). Release of a frozen
   prisoner goes through `openSlab` (shared with `thawPrisoner`; refused 'inTransit' on a cart or in a rack), and `Prisoner.from` holds the faction
   for the standing. Debug: `?scenario=prisoners&taken&seal`. Save v121.
 - Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
