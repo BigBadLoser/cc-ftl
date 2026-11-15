@@ -85,10 +85,35 @@ function distToModules(lay: Layout, cx: number, cy: number): number {
 /** Light radius the generator plans with (inside the module's 7). */
 const LIGHT_REACH = 4.5;
 
-/** Lights until every floor tile of the room is within reach of one, preferring wall-side tiles. */
+/**
+ * How central each tile of a room is: the shortest straight run from it to the room's edge, along a row or a column
+ * (1 on a tile against the wall; a corridor's centre line, or a room's middle, the most). Furniture does not count as an
+ * edge: a lamp is a grate in the deck, the plan of the room is what it is centred in.
+ */
+function depthOf(lay: Layout, room: number, tiles: readonly number[]): Map<number, number> {
+  const W = lay.w, inRoom = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < W && y < lay.h && lay.roomOf[y * W + x] === room;
+  const out = new Map<number, number>();
+  for (const t of tiles) {
+    const x = t % W, y = (t - x) / W;
+    let d = Infinity;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      let k = 1;
+      while (k < d && inRoom(x + k * dx, y + k * dy)) k++;
+      d = Math.min(d, k);
+    }
+    out.set(t, d);
+  }
+  return out;
+}
+
+/**
+ * Lights until every floor tile of the room is within reach of one. Floor lights stand centred where they can: of the
+ * tiles that light something still dark, the most central ones (`depthOf`), then the one that lights the most.
+ */
 export function lightRoom(lay: Layout, rng: Rng, room: number): void {
   const tiles = lay.roomTiles(room);
   if (tiles.length >= BIG_ROOM) { lightOpen(lay, room, tiles); return; }
+  const depth = depthOf(lay, room, tiles);
   const lit = new Uint8Array(lay.cells.length);
   const covers = (a: number, b: number): boolean =>
     Math.hypot((a % lay.w) - (b % lay.w), Math.floor(a / lay.w) - Math.floor(b / lay.w)) <= LIGHT_REACH;
@@ -101,12 +126,13 @@ export function lightRoom(lay: Layout, rng: Rng, room: number): void {
     const dark = tiles.filter((t) => !lit[t]);
     if (dark.length === 0) return;
     let best = -1;
-    let bestScore = -1;
+    let bestScore = -1, bestDepth = 0;
     for (const c of tiles) {
       if (lay.occ[c] !== -1 || lay.fitError('module.light', c % lay.w, Math.floor(c / lay.w), 0, room)) continue;
-      const wallSide = lay.neighbours(c).some((n) => lay.cells[n] === '#') ? 1.5 : 0;
-      const score = dark.filter((d) => covers(c, d)).length + wallSide + rng.next();
-      if (score > bestScore) { bestScore = score; best = c; }
+      const lights = dark.filter((d) => covers(c, d)).length;
+      if (lights === 0) continue;
+      const dc = depth.get(c) ?? 0, score = lights + rng.next();
+      if (dc > bestDepth || (dc === bestDepth && score > bestScore)) { bestDepth = dc; bestScore = score; best = c; }
     }
     if (best < 0) return;
     lay.push({ def: 'module.light', x: best % lay.w, y: Math.floor(best / lay.w), rot: 0 });
@@ -140,18 +166,16 @@ function lightOpen(lay: Layout, room: number, tiles: number[]): void {
   for (const m of lay.modules) if (m.def === 'module.light' && lay.roomOf[m.y * W + m.x] === room) mark(m.y * W + m.x);
   const fits = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < W && y < lay.h && lay.roomOf[y * W + x] === room
     && lay.cells[y * W + x] === '_' && lay.occ[y * W + x] === -1 && !lay.fitError('module.light', x, y, 0, room);
-  /** The free tile nearest (x, y) within `r` (rings outward), or -1. */
+  const depth = depthOf(lay, room, tiles);
+  /** The most central free tile within `r` of (x, y) (a circle, so it lights (x, y)) (`depthOf`), the nearest of those; -1 when none is free. */
   const near = (x: number, y: number, r: number): number => {
-    for (let d = 0; d <= r; d++) {
-      let best = -1, bd = Infinity;
-      for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) !== d || !fits(x + dx, y + dy)) continue;
-        const e = dx * dx + dy * dy;
-        if (e < bd) { bd = e; best = (y + dy) * W + x + dx; }
-      }
-      if (best >= 0) return best;
+    let best = -1, bd = Infinity, bdep = 0;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r * r || !fits(x + dx, y + dy)) continue;
+      const i = (y + dy) * W + x + dx, dep = Math.min(depth.get(i) ?? 0, r + 1), e = dx * dx + dy * dy;
+      if (dep > bdep || (dep === bdep && e < bd)) { bdep = dep; bd = e; best = i; }
     }
-    return -1;
+    return best;
   };
   const put = (i: number): void => { lay.push({ def: 'module.light', x: i % W, y: Math.floor(i / W), rot: 0 }); mark(i); };
   let x0 = W, y0 = lay.h, x1 = 0, y1 = 0;
