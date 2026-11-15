@@ -3988,5 +3988,14 @@
   "dkMug": {"hex": "#c2553d", "set": "desk"},
   "dkAlert": {"hex": "#ff5a4a", "emissive": 1.8, "set": "desk"},
   "dkAmber": {"hex": "#ffb547", "emissive": 1.6, "set": "desk"},
-  "dkGo": {"hex": "#6cf08a", "emissive": 1.6, "set": "desk"}
+  "dkGo": {"hex": "#6cf08a", "emissive": 1.6, "set": "desk"},
+  "pfWater": {"hex": "#3d8aa3", "set": "purifier"},
+  "pfWaterD": {"hex": "#2a6377", "set": "purifier"},
+  "pfWaterL": {"hex": "#6fb4c8", "set": "purifier"},
+  "pfIce": {"hex": "#d4ecf4", "set": "purifier"},
+  "pfIceD": {"hex": "#a3cad9", "set": "purifier"},
+  "pfBody": {"hex": "#8a929a", "set": "purifier"},
+  "pfBodyD": {"hex": "#626a73", "set": "purifier"},
+  "pfHeat": {"hex": "#ff7a3a", "emissive": 1.4, "set": "purifier"},
+  "pfLamp": {"hex": "#6cf08a", "emissive": 1.4, "set": "purifier"}
 }
