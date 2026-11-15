@@ -5,9 +5,9 @@ import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from '../../src/render/deck
 import { E, MARK_FILL, N, S, W, type EdgeMarking } from '../../src/sim/marks';
 import type { LabCell, LabPanel } from './panel';
 
-const TW = 64;
-const TH = 32;
-const PAD = 16;
+const TW = 128; // the world tile (iso.ts TILE_W x TILE_H); the art is 64x32 drawn doubled
+const TH = 64;
+const PAD = 32;
 
 /**
  * Test shapes (tools/blender/sprites/floor_marks_maps.py has the same ones): '#' wall, '.' floor, 'D' door, 'K' floor under a

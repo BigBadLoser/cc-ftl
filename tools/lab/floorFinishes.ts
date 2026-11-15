@@ -8,9 +8,9 @@ import { floorChain } from '../../src/render/tiles';
 import { Finish } from '../../src/sim/structure';
 import type { LabCell, LabPanel } from './panel';
 
-const TW = 64;
-const TH = 32;
-const PAD = 12;
+const TW = 128; // the world tile (iso.ts TILE_W x TILE_H); the art is 64x32 drawn doubled
+const TH = 64;
+const PAD = 24;
 
 /** An n x n patch of floor tiles as gridView lays them: `floorChain` picks each tile's sprite, a carpet takes `paint` (times `light`). */
 function patch(root: Container, atlas: Atlas, n: number, finish: number, paint: number, light = 0xffffff): void {

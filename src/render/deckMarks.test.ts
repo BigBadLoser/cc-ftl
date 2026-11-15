@@ -65,4 +65,33 @@ describe("markPieces", () => {
     expect(ids("keepClear", rows, 1, 1)).toContain("tile.mark.keep.n.f.nw");
     expect(ids("keepClear", [[0, W], [N, 0]], 1, 1)).toEqual([]);
   });
+
+  it("outlines every edge of a keep-clear box and hatches all its tiles", () => {
+    const f = MARK_FILL;
+    const rows = [[N | W | f, N | f, N | E | f], [S | W | f, S | f, S | E | f]];
+    const all = rows.flatMap((r, y) => r.map((_, x) => ids("keepClear", rows, x, y)));
+    expect(all.every((p) => p.length === 4 && p.every((id) => id.includes(".f.")))).toBe(true);
+    const edge = (x: number, y: number, quad: string) => all[y * 3 + x]!.find((id) => id.endsWith(quad))!;
+    // every quarter on the box's edges carries a line piece (i, j or ij), the inner ones are hatch only
+    for (const [x, y, quad] of [[2, 0, "ne"], [2, 0, "se"], [2, 1, "ne"], [2, 1, "se"], [0, 1, "sw"], [0, 1, "se"], [1, 1, "sw"], [1, 1, "se"], [0, 0, "nw"], [0, 0, "sw"], [1, 0, "nw"], [1, 0, "ne"]] as const)
+      expect(edge(x, y, quad)).toMatch(/keep\.(i|j|ij)\.f\./);
+    expect(edge(1, 0, "se")).toBe("tile.mark.keep.f.se");
+  });
+
+  it("joins a staircase corridor: a turn round every wall step, and a line along each side", () => {
+    // the 'stairs' test shape: '#' wall, '.' floor; masks are the outline of the floor toward walls
+    const map = ["########", "#..#####", "#...####", "##...###", "###...##", "####...#", "#####..#", "########"];
+    const bit = (x: number, y: number) => (map[y]?.[x] ?? "#") === "#";
+    const rows = map.map((r, y) => [...r].map((c, x) => (c !== "." ? 0 : (bit(x, y - 1) ? N : 0) | (bit(x + 1, y) ? E : 0) | (bit(x, y + 1) ? S : 0) | (bit(x - 1, y) ? W : 0))));
+    // (2,2) has floor all round but the wall steps at (3,1) and (1,3): its north-east and south-west quarters turn round them
+    expect(rows[2]![2]).toBe(0);
+    expect(ids("walkway", rows, 2, 2)).toEqual(["tile.mark.walkway.n.ne", "tile.mark.walkway.n.sw"]);
+    // the tile west of the step has the east bit, the one below it the north bit: straight lines that meet that turn
+    expect(ids("walkway", rows, 2, 1)).toContain("tile.mark.walkway.ij.ne");
+    expect(ids("walkway", rows, 3, 2)).toContain("tile.mark.walkway.j.nw");
+    // hazard: same turn, and no end cap on the band where it turns
+    expect(ids("hazard", rows, 2, 2)).toEqual(["tile.mark.hazard.n.ne", "tile.mark.hazard.n.sw"]);
+    expect(ids("hazard", rows, 2, 1).some((id) => id.includes(".ic."))).toBe(false);
+    expect(ids("hazard", rows, 3, 2).some((id) => id.includes(".jc."))).toBe(false);
+  });
 });
