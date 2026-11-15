@@ -8,6 +8,7 @@
 import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';
 import { content } from '../../src/content';
 import { rotatedSize } from '../../src/sim/modules/footprint';
+import { E, edgeMarkings, MARK_INSET, N, S, W, type EdgeMarkings } from '../../src/sim/shipgen/markings';
 import { gen, Raster, ROLE_TINT, type RGB } from './draw';
 
 export const defs = content.modules as Record<string, ModuleDef>;
@@ -78,13 +79,35 @@ function outlined(r: Raster, s: string, x: number, y: number, c: RGB, ts: number
   r.text(s, x, y, c, ts);
 }
 
-/** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right. */
-export function labelView(spec: string, seed: number, depth = 4, t = 16): Raster {
-  return labelOf(gen(spec, seed, depth), `${spec} seed ${seed}`, t);
+/** One layout as a labelled image: tiles `t` pixels square, the key in a column on the right; with `marks`, its edge markings drawn on the floor. */
+export function labelView(spec: string, seed: number, depth = 4, t = 16, marks = false): Raster {
+  const g = gen(spec, seed, depth);
+  return labelOf(g, `${spec} seed ${seed}`, t, [], true, marks ? edgeMarkings(g, defs) : undefined);
+}
+
+/** Line colour of each edge marking on the view (the hazard band alternates with black, as chevrons would). */
+const MARK_INK: Record<keyof EdgeMarkings, RGB> = { walkway: [235, 235, 235], apron: [90, 200, 255], keepClear: [255, 210, 0], hazard: [255, 170, 0] };
+
+/** Draw edge-marking masks: a line along each set edge of a tile, its kind's inset in from that edge. */
+function drawMarks(r: Raster, marks: EdgeMarkings, W0: number, t: number, top: number): void {
+  for (const [kind, mask] of Object.entries(marks) as [keyof EdgeMarkings, Uint8Array][]) {
+    mask.forEach((m, i) => {
+      if (!m) return;
+      const px = (i % W0) * t, py = top + Math.floor(i / W0) * t;
+      const c: RGB = kind === 'hazard' && ((i % W0) + Math.floor(i / W0)) % 2 ? [20, 20, 20] : MARK_INK[kind];
+      const k = kind === 'keepClear' || kind === 'hazard' ? 3 : 2, o = Math.max(1, Math.round(MARK_INSET[kind] * t - k / 2));
+      // a line runs the tile's full length so lines on neighbouring tiles join, and stops at the line it meets at a corner
+      const x0 = m & W ? px + o : px, x1 = m & E ? px + t - o : px + t, y0 = m & N ? py + o : py, y1 = m & S ? py + t - o : py + t;
+      if (m & N) r.rect(x0, py + o, x1 - x0, k, c);
+      if (m & S) r.rect(x0, py + t - o - k, x1 - x0, k, c);
+      if (m & W) r.rect(px + o, y0, k, y1 - y0, c);
+      if (m & E) r.rect(px + t - o - k, y0, k, y1 - y0, c);
+    });
+  }
 }
 
 /** Any layout as a labelled image (a generated one, or a hand-made mock), with captions at tiles when given. */
-export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true): Raster {
+export function labelOf(g: GenResult, title: string, t = 16, captions: readonly { x: number; y: number; text: string }[] = [], names = true, marks?: EdgeMarkings): Raster {
   const rows = g.template.rows;
   const H = rows.length, W = Math.max(...rows.map((row) => row.length));
   const roles = g.rooms.map((rm) => rm.role as RoomRole);
@@ -107,6 +130,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
     r.rect(px, py, t, t, roleTint(role));
     if (room >= 0) { const m = mid.get(room) ?? [0, 0, 0]; m[0] += x; m[1] += y; m[2]++; mid.set(room, m); }
   }
+  if (marks) drawMarks(r, marks, g.width, t, TOP);
   const used = new Map<string, string>();
   let lamps = false;
   for (const m of g.template.modules ?? []) {
@@ -141,5 +165,6 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   r.text('furniture', kx, ky, INK, 3); ky += 26;
   for (const [code, name] of [...used].sort((a, b) => a[1].localeCompare(b[1]))) { r.text(`${code} ${name}`, kx, ky, INK, 2); ky += 16; }
   if (lamps) { r.rect(kx + 4, ky + 3, 5, 5, LAMP); r.text('lamp', kx + 26, ky, INK, 2); }
+  if (marks) { ky += 26; r.text('markings', kx, ky, INK, 3); ky += 26; for (const [k, c] of Object.entries(MARK_INK)) swatch(c, k); }
   return r;
 }
