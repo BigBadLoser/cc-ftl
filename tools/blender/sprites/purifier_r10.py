@@ -2,7 +2,7 @@
 e1 (embedded column) taken further (user: do #1, with a porthole like round 4's z1, and the ice tray on top chamfered so
 it reads like life support's top). The melt chamber in the body gets a round porthole on its front (a raised bezel,
 the heater glowing round its rim, the ice inside); the ice tray becomes a raised blue-grey tray with chamfered corners
-and one solid rim, like life support's trays; the porthole sits under the ice tray; the melt line runs over the top into the column.
+and one solid rim, like life support's trays; the porthole sits under the ice tray; the column is as deep as the body, their sides tangent.
 
   f1 the body at round 9's height, a small porthole, one chamfered ice tray
   f2 a taller body, a big porthole, the ice tray beside a smaller chamfered vent tray (slots), life support's pair
@@ -20,7 +20,7 @@ from .research_kit import PXG, Bench, zpx
 
 PAL = "purifier"
 FP = (2, 1)
-CU, CV, CR = 0.5, 0.0, 0.4                     # the column
+CU, CV, CR = 0.5, (V0 + V1) / 2, (V1 - V0) / 2   # the column: as deep as the body, its sides tangent to the body's
 
 
 def disc(cu, cz, r, n=24):
@@ -61,24 +61,31 @@ def rod(k, axis, a0, a1, p, q, r, col, n=16):
             col, top="pfTrayL" if col in ("pfHullM", "pfTray") else col)
 
 
-def plumbing(k, h):
-    """The melt line over the top: a riser out of the body's top beside the tray, a valve and gauge on it, an elbow,
-    a run into the column's flank, flanged at both walls."""
-    u0, pv, r = 0.0, 0.27, 0.05
-    zt = h + zpx(9)
-    u1 = CU - math.sqrt(CR * CR - (pv - CV) ** 2)                                                        # column flank
-    k.cyl(u0, pv, h, r * 1.8, zpx(1.2), "pfTray", top="pfTrayL", sides=16)                              # base flange
-    k.cyl(u0, pv, h, r, zt - h, "pfHullM", top="pfTrayL", sides=16)                                        # the riser
-    k.cyl(u0, pv, h + zpx(3), r * 1.6, zpx(2.5), "pfFrame", top="pfFrame", sides=16)                     # valve body
-    rod(k, "v", pv, pv + r * 1.6 + 0.03, u0, h + zpx(4.2), 0.016, "pfHullM")                              # its stem
-    rod(k, "v", pv + r * 1.6 + 0.03, pv + r * 1.6 + 0.045, u0, h + zpx(4.2), 0.05, "medRed")               # hand wheel
-    k.box(u0, pv, zt - r * 1.1, r * 2.5, r * 2.5, r * 2.4, "pfHullM", top="pfHull", bevel=0.01)           # elbow
-    rod(k, "u", u0, u1 + 0.01, pv, zt, r, "pfHullM")                                                        # the run
-    rod(k, "u", u1 - 0.005, u1 + 0.022, pv, zt, r * 1.75, "pfTray")                                       # wall flange
-    rod(k, "u", (u0 + u1) / 2 - 0.012, (u0 + u1) / 2 + 0.012, pv, zt, r * 1.45, "pfTray")                    # joint
-    k.cyl(u0, pv, zt + r * 1.2, 0.012, zpx(2), "pfHullM", sides=8)                                        # gauge
-    rod(k, "v", pv - 0.012, pv + 0.012, u0, zt + r * 1.2 + zpx(2) + 0.035, 0.035, "pfFrame")
-    rod(k, "v", pv + 0.012, pv + 0.016, u0, zt + r * 1.2 + zpx(2) + 0.035, 0.026, "pfIce")
+def plumbing(k, u0, fv, z):
+    """The melt line along the front: out of the body beside the porthole, a valve and gauge on it, into the column."""
+    pv, r = V1 + 0.075, 0.05
+    u1 = CU - 0.2
+    cvf = CV + math.sqrt(CR * CR - (u1 - CU) ** 2)                                                      # column face
+    rod(k, "v", fv - 0.01, pv + r, u0, z, r, "pfTray")                                                    # out of the body
+    rod(k, "u", u0 - r, u1 + r, pv, z, r, "pfTray")                                                       # along
+    rod(k, "v", cvf - 0.01, pv + r, u1, z, r, "pfTray")                                                   # into column
+    for u, v0, v1 in ((u0, fv - 0.005, fv + 0.022), (u1, cvf - 0.005, cvf + 0.022)):                      # wall flanges
+        rod(k, "v", v0, v1, u, z, r * 1.7, "pfFrame")
+    for u in (u0, u1):                                                                                    # elbows
+        k.box(u, pv, z - r * 1.15, r * 2.4, r * 2.4, r * 2.3, "pfTray", top="pfTrayL", bevel=0.008)
+    vu = u0 + (u1 - u0) * 0.42                                                                            # the valve
+    for d in (-0.045, 0.045):
+        rod(k, "u", vu + d - 0.012, vu + d + 0.012, pv, z, r * 1.6, "pfFrame")
+    k.box(vu, pv, z - r * 1.2, 0.07, r * 2.6, r * 2.4, "pfFrame", top="pfFrame")
+    k.box(vu, pv, z + r * 1.2, 0.016, 0.016, zpx(3), "pfHullM")
+    wheel = [(vu + 0.045 * math.cos(t), pv + 0.045 * math.sin(t)) for t in (math.tau * i / 12 for i in range(12))]
+    prism(k, wheel, z + r * 1.2 + zpx(3), zpx(0.8), "medRed", "medRed")
+    gu = u0 + (u1 - u0) * 0.72                                                                            # the gauge
+    k.box(gu, pv, z + r * 0.8, 0.014, 0.014, zpx(2.5), "pfHullM")
+    rod(k, "v", pv - 0.012, pv + 0.012, gu, z + r * 0.8 + zpx(2.5) + 0.04, 0.04, "pfFrame")
+    rod(k, "v", pv + 0.012, pv + 0.016, gu, z + r * 0.8 + zpx(2.5) + 0.04, 0.03, "pfIce")
+    for u in (u0 + (u1 - u0) * 0.2, u0 + (u1 - u0) * 0.9):                                                # clamps
+        span(k, u - 0.012, u + 0.012, V1 - 0.005, pv + r + 0.006, z - r - 0.006, z + r + 0.006, "pfFrame", top="pfFrame")
 
 
 def build(name, h, pr, pair=False, panel=False):
@@ -100,12 +107,12 @@ def build(name, h, pr, pair=False, panel=False):
     porthole(k, pu, pz, pr, fv)
     k.cyl(CU, CV, zpx(1), CR, BAND - zpx(1), "pfFrame", top="pfFrame", sides=28)                         # the column
     ch = h + zpx(18)
-    k.cyl(CU, CV, BAND, CR - 0.5 * PXG, ch - BAND, "pfHull", top="pfHull", sides=28)
+    k.cyl(CU, CV, BAND, CR, ch - BAND, "pfHull", top="pfHull", sides=28)
     tz = h - zpx(4)                                                                                       # trim line
     prism(k, chamfered(-0.94 - 0.5 * PXG, 0.4, V0 - 0.5 * PXG, V1 + 0.5 * PXG), tz, zpx(2), "pfTrayL", "pfTrayL")
     for z in (tz, ch - zpx(8)):
         k.cyl(CU, CV, z, CR + 0.5 * PXG, zpx(2), "pfTrayL", top="pfTrayL", sides=28)
-    k.cyl(CU, CV, ch, CR - 0.5 * PXG, zpx(5), "pfHullM", top="pfTrayL", sides=28, rtop=0.2)
+    k.cyl(CU, CV, ch, CR, zpx(5), "pfHullM", top="pfTrayL", sides=28, rtop=0.2)
     k.cyl(CU, CV, ch + zpx(5), 0.1, zpx(2), "pfFrame", top="pfTray", sides=16)
     k.cyl(CU, CV, ch + zpx(7), 0.04, zpx(2), "pfCyan", sides=10)
     sv = CV + CR                                                                                          # sight slot
@@ -117,7 +124,7 @@ def build(name, h, pr, pair=False, panel=False):
         tray(k, -0.14, 0.14, -0.32, 0.16, h, "vent")
     else:
         tray(k, *ice, -0.34, 0.3, h)
-    plumbing(k, h)
+    plumbing(k, pu + pr + 0.1, fv, pz - pr * 0.75)
     lamp(k, 0.07, h - zpx(9), V1)
     spout(k, CU + CR - 0.06, 0.16, zpx(6))
     return k.build()
