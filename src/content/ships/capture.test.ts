@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC, PrisonerC, PrizeC, ShipC, shipIdAt, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, storageCount, StorageC, type ModuleDef, type Sim, type SimEvent } from '../../sim';
+import { AboardC, AllegianceC, CaptureProgressC, CombatC, CrewC, DeadC, DownedC, DraftedC, EquipC, HealthC, ItemStackC, ModuleC, PathC, PositionC, PrisonerC, PrizeC, prizeValue, ShipC, shipIdAt, SurrenderedC, VehicleC, WeaponC, accessTile, cargoCount, deserialize, newGame, serialize, storageCount, StorageC, type ModuleDef, type Sim, type SimEvent } from '../../sim';
 import { content } from '../index';
 import { shipIdOf, shipIds } from '../../sim/regions';
 
@@ -87,7 +87,7 @@ describe('capturing a ship', () => {
     expect(of(out, 'ship.captured')).toEqual([{ type: 'ship.captured', ship: nth(sim, 2), by: 'player', from: 'hostile' }]);
     expect(ship(sim, 2)).toMatchObject({ state: 'prize', faction: 'player' });
     for (const c of raiders) expect(sim.world.has(c, DeadC) || sim.world.has(c, PrisonerC)).toBe(true);
-    expect(sim.world.get(nth(sim, 2), PrizeC)!.hullValue).toBeGreaterThan(0);
+    expect(prizeValue(sim, nth(sim, 2))).toBeGreaterThan(0);
   });
 
   it('needs the hold time: progress builds, and breaks when the helm is left', () => {

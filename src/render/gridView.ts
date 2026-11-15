@@ -367,7 +367,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const solid = k !== Struct.Floor;
     const z = depthKey(x, y);
     if (bellyOnly) {
-      const b = bellyIds(h, x, y, has);
+      const b = bellyIds(h, x, y, has, k !== Struct.Floor);
       if (b?.under) put(b.under, z, L.under, solid);
       return !!b?.under;
     }
@@ -381,7 +381,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       return true;
     }
     if (k !== Struct.Floor && hullSide(wallAt, x, y) !== HullSide.Near) return false;
-    const b = bellyIds(h, x, y, has);
+    const b = bellyIds(h, x, y, has, k !== Struct.Floor);
     if (!b) return false;
     if (b.under) put(b.under, z, L.under, solid);
     // Behind the thruster block the engine's hull sprite carries the wall's lower section: the belly's cut top would cover it.

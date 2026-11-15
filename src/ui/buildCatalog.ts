@@ -8,6 +8,7 @@ export const CATEGORIES = [
   { id: 'power', label: 'Power' },
   { id: 'systems', label: 'Systems' },
   { id: 'life', label: 'Life support' },
+  { id: 'furniture', label: 'Furniture' },
   { id: 'production', label: 'Production' },
   { id: 'storage', label: 'Storage' },
   { id: 'defence', label: 'Defence' },
@@ -50,17 +51,40 @@ export function buildEntries(api: UiApi, defs: UiModuleDef[]): Entry[] {
 
 /** Visible tabs: non-empty ones in the stable order (`mining` only when relevant). */
 export function visibleCategories(entries: Entry[], miningRelevant: boolean): { id: CategoryId; label: string; count: number }[] {
-  return CATEGORIES.map((c) => ({ ...c, count: entries.filter((e) => e.category === c.id).length })).filter((c) => c.count > 0 && (c.id !== 'mining' || miningRelevant));
+  // A group counts as one card (its first member stands for it).
+  const cards = entries.filter((e) => !e.def?.group || groupMembers(entries, e.def.group)[0] === e);
+  return CATEGORIES.map((c) => ({ ...c, count: cards.filter((e) => e.category === c.id).length })).filter((c) => c.count > 0 && (c.id !== 'mining' || miningRelevant));
 }
 
-/** A search across every category (name, then description), else the cards of the tab. */
-export function filterEntries(entries: Entry[], cat: CategoryId, query: string, miningRelevant: boolean): Entry[] {
+const TIER_RANK = ['Mk I', 'Mk II', 'Mk III'];
+
+/** The members of `group` (a tier family or a content build group), in tier order, else content order. */
+export function groupMembers(entries: Entry[], group: string): Entry[] {
+  const rank = (e: Entry) => TIER_RANK.indexOf(e.def?.tier ?? '');
+  return entries.filter((e) => e.def?.group === group).sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * A search across every category (name, then description), which lists every module on its own card, else the cards of the tab: one card per group,
+ * showing the member `chosen` names for the group (the first member by default).
+ */
+export function filterEntries(entries: Entry[], cat: CategoryId, query: string, miningRelevant: boolean, chosen: Readonly<Record<string, string>> = {}): Entry[] {
   const q = query.trim().toLowerCase();
-  if (!q) return entries.filter((e) => e.category === cat);
+  if (!q) {
+    return entries.filter((e) => {
+      if (e.category !== cat) return false;
+      const g = e.def?.group;
+      if (!g) return true;
+      const members = groupMembers(entries, g);
+      return e.id === (members.some((m) => m.id === chosen[g]) ? chosen[g] : members[0]?.id);
+    });
+  }
   return entries.filter((e) => (e.category !== 'mining' || miningRelevant) && (e.name.toLowerCase().includes(q) || e.description.toLowerCase().includes(q)));
 }
 
-export const isSelected = (e: Entry, st: UiToolState): boolean => st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && st.moduleDef === e.id : st.build === e.id);
+/** True when the card's module is the one being placed; for a group card (`members` given: the group's entries) when any member is. */
+export const isSelected = (e: Entry, st: UiToolState, members?: Entry[]): boolean =>
+  st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && (members?.length ? members.some((m) => m.id === st.moduleDef) : st.moduleDef === e.id) : st.build === e.id);
 
 /** Items the stock is short of for a cost list. */
 export const shortOf = (cost: UiCost[], have: (item: string) => number): UiCost[] => cost.filter((c) => have(c.item) < c.count);

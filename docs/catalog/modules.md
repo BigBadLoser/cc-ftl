@@ -47,6 +47,8 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Game table | `module.gametable` | A holographic game table for two: a break spot (social, two stools). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; crew sit on its stools |
 | Mess table | `module.mess_table` | A table for the mess. | In game | src/content/furniture.ts:17; shipgen, starters; sim/crew/eating.ts |
 | Chair | `module.chair` | A seat. | In game | src/content/furniture.ts:26; shipgen, starters |
+| Bar counter, short bar counter, bar corner | `module.bar_counter`, `module.bar_counter_short`, `module.bar_corner` | Padded counter pieces that join into runs and an L. | Partial: buildable, furniture only | src/content/furniture.ts; art `bar_module` (leisure.py), #441 |
+| Bar stool | `module.bar_stool` | A tall stool for the counter. Walkable. | Partial: buildable, furniture only | src/content/furniture.ts; art `bar_module`, #441 |
 | Locker | `module.storage_locker` | A tall locker. | In game | src/content/furniture.ts:34; shipgen, starters; sim/items/storage.ts |
 | Storage rack | `module.storage_rack` | Shelving along an aisle, worked from its front side. | In game | src/content/furniture.ts:43; shipgen, starters |
 | Cargo pallet | `module.storage_pallet` | An open cargo pallet. | Partial: buildable, shipgen only | src/content/furniture.ts:51; no starter ship has one |

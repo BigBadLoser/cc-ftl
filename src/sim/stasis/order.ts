@@ -7,7 +7,11 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { playerShips } from '../story/world';
 import { StasisC } from './components';
-import { pickWheel } from './jobs';
+import { homeRoom, pickWheel, slabCarrier, slabSources, stasisRoom } from './jobs';
+import { rackHere, wayAboard } from './rack';
+import { AwaySiteC } from '../away/components';
+import { ShipC } from '../combat/components';
+import { VehicleC } from '../vehicles/components';
 import { SLAB_ITEM } from './tuning';
 
 /**
@@ -15,14 +19,52 @@ import { SLAB_ITEM } from './tuning';
  * The order sits on the prisoner, so it is saved with them and ends with the prisoner (thawed, released, dead).
  */
 
-/** Why a prisoner cannot be marked for sealing: 'notPrisoner', 'frozen' (already sealed), 'notYours' (not on one of the player's ships) or 'noWheel' (no stasis wheel on their ship that can take a slab and that a walk from them reaches). Null when they can. */
+/**
+ * Why a prisoner cannot be marked for sealing: 'notPrisoner', 'frozen' (already sealed), 'notYours' (not on one of the player's ships), 'noWheel'
+ * (nowhere to hold them: on their ship no stasis wheel that can take a slab and that a walk from them reaches, and, on a prize, no wheel with room
+ * on a ship of the player's with a shuttle to carry the slab there) or 'noShuttle' (a prize, and the player has no shuttle at all to carry it).
+ * Null when they can. Only these impossibilities refuse a mark: a prize without a shuttle there yet is the crew's to see to (stasis/shuttle.ts),
+ * shown by `sealWait`.
+ */
 export function sealRefusal(sim: Sim, crew: number): string | null {
   const pos = sim.world.get(crew, PositionC);
   if (sim.world.has(crew, StasisC)) return 'frozen';
   if (!sim.world.has(crew, PrisonerC) || !pos) return 'notPrisoner';
   const ship = shipIdOf(sim, pos);
   if (!playerShips(sim).has(ship)) return 'notYours';
-  return pickWheel(sim, ship, origin(pos)) ? null : 'noWheel';
+  if (pickWheel(sim, ship, origin(pos))) return null;
+  if (sim.world.get(ship, ShipC)?.state !== 'prize') return 'noWheel';
+  const carriers = sim.world.query(VehicleC).filter((v) => slabCarrier(sim, v, ship));
+  if (carriers.length === 0) return 'noShuttle';
+  return carriers.some((v) => homeRoom(sim, v, ship) > 0) ? null : 'noWheel';
+}
+
+/**
+ * What a marked prisoner waits on while no crew member is on their seal yet, or null (a stasis job is posted for them, or they are not marked):
+ * 'noWay' (a prize with no way aboard for a shuttle's party: a sealed hull, no working airlock), 'noShuttle' (a prize, no shuttle free to fly out), 'noCrew' (its shuttle waits for crew to take the hauling seats), 'shuttle' (the shuttle is on
+ * its way with empty slabs, or on a trip), 'noSlab' (no empty slab on their ship), 'noRoom' (every wheel that could take them is spoken for).
+ */
+export function sealWait(sim: Sim, crew: number): 'noWay' | 'noShuttle' | 'noCrew' | 'shuttle' | 'noSlab' | 'noRoom' | null {
+  const pos = sim.world.get(crew, PositionC);
+  if (!sealMarked(sim, crew) || !pos || hasStasisJob(sim, crew)) return null;
+  const ship = shipIdOf(sim, pos);
+  if (!pickWheel(sim, ship, origin(pos)) && sim.world.get(ship, ShipC)?.state === 'prize') {
+    if (!wayAboard(sim, ship)) return 'noWay';
+    const site = sim.world.get(ship, AwaySiteC);
+    if (!site) return 'noShuttle';
+    if (site.block === 'noCrew') return 'noCrew';
+    if (!rackHere(sim, ship)) return 'shuttle';
+  }
+  if (stasisRoom(sim, ship) <= 0) return 'noRoom';
+  return slabSources(sim, ship).length === 0 ? (rackHere(sim, ship) ? 'shuttle' : 'noSlab') : null;
+}
+
+/** True if a stasis job (any phase) is posted for the prisoner: the crew are on it. */
+function hasStasisJob(sim: Sim, prisoner: number): boolean {
+  return sim.world.query(JobC).some((j) => {
+    const job = sim.world.get(j, JobC);
+    return job?.kind === 'stasis' && job.target === prisoner;
+  });
 }
 
 /** True if the player has marked this prisoner for sealing. */

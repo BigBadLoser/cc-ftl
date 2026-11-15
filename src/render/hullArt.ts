@@ -108,12 +108,18 @@ export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, B
 
 /**
  * The belly sprites of a tile: below the deck (`under`) and its cut top over it (`low`, cutaway views), in the tile's
- * look where that differs from the plain one. Null if the key has neither.
+ * look where that differs from the plain one. A near hull wall or door (`hull`) whose key has no art takes the catch-all
+ * (`fallbackBelly`); a floor never does (its edge on a breach has no belly). Null if the tile shows no belly.
  */
-export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean): { under?: string; low?: string } | null {
+export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false): { under?: string; low?: string } | null {
+  if (!h.ship(x, y)) return null;
   const k = h.at(x, y);
-  if (!k) return null;
-  const n = hullKeyName(k);
+  return (k ? keyBelly(hullKeyName(k), x, y, has) : null) ?? (hull ? keyBelly(fallbackBelly(h, x, y), x, y, has) : null);
+}
+
+/** The belly pieces of key name `n` in the tile's look, or null if the art has neither. */
+function keyBelly(n: string | undefined, x: number, y: number, has: (id: string) => boolean): { under?: string; low?: string } | null {
+  if (!n) return null;
   const look = tileLook(x, y);
   const pick = (layer: string) => {
     const base = `tile.hull.belly.${layer}.${n}`;
@@ -123,6 +129,18 @@ export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) =>
   const low = pick("low");
   return under || low ? { under, low } : null;
 }
+
+/**
+ * The catch-all belly of a tile whose key the catalog has no art for, or that has none (outlines thinner than ships are
+ * built to: damage, wrecks):
+ * the straight run's or the convex corner's, by which way the tile faces space toward the camera, so it never falls
+ * back to the old hull's belly. Undefined where no belly shows (space toward the camera on neither side).
+ */
+function fallbackBelly(h: HullKeys, x: number, y: number): string | undefined {
+  const o = (h.ship(x, y + 1) ? 0 : 1) | (h.ship(x + 1, y) ? 0 : 2);
+  return o ? FALLBACK_BELLY[o] : undefined;
+}
+const FALLBACK_BELLY: Record<number, string> = { 1: hullKeyName("0,1,15"), 2: hullKeyName("1,0,15"), 3: hullKeyName("1,0,15;0,1,15") };
 
 /** A ship's hull colours, multiplied over its hull pieces: the armour over the piece, the deco over its deco layer. */
 export interface HullPaint {

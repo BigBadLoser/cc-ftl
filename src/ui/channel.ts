@@ -5,7 +5,7 @@ import type { CommsLine } from './comms/types';
  * The services an open comms channel offers, each with its own contact. Every partner (station or ship) has the channel itself ('station':
  * dock control on a station, the bridge on a ship); the rest come from what the partner really has.
  */
-export type ServiceId = 'station' | 'trade' | 'jobs' | 'crew' | 'blueprints' | 'yard';
+export type ServiceId = 'station' | 'trade' | 'jobs' | 'crew' | 'prisoners' | 'blueprints' | 'yard';
 
 export interface Service {
   id: ServiceId;
@@ -22,7 +22,7 @@ const FIRST = ['Hana', 'Orin', 'Mira', 'Tove', 'Dax', 'Ines', 'Kofi', 'Lena', 'B
 const LAST = ['Voss', 'Kade', 'Lund', 'Okoro', 'Reyes', 'Hale', 'Tran', 'Ivanov', 'Quill', 'Mbeki', 'Arden', 'Sato'];
 const TITLE: Record<ServiceId, { title: string; role: string }> = {
   station: { title: 'Dock control', role: 'role.security' }, trade: { title: 'Quartermaster', role: 'role.engineer' }, jobs: { title: 'Job broker', role: 'role.pilot' },
-  crew: { title: 'Recruiter', role: 'role.medic' }, blueprints: { title: 'Archivist', role: 'role.scientist' }, yard: { title: 'Yard master', role: 'role.engineer' },
+  crew: { title: 'Recruiter', role: 'role.medic' }, prisoners: { title: 'Dock control', role: 'role.security' }, blueprints: { title: 'Archivist', role: 'role.scientist' }, yard: { title: 'Yard master', role: 'role.engineer' },
 };
 const ORDER: ServiceId[] = ['station', 'trade', 'jobs', 'crew', 'blueprints', 'yard'];
 
@@ -31,6 +31,7 @@ const BRIDGE = { title: 'Captain', role: 'role.pilot' };
 
 /** The person at a service: the same one every time for this partner (name and face come from its id). */
 export function contactFor(partner: number, id: ServiceId, ship = false): Contact {
+  if (id === 'prisoners') id = 'station'; // dock control handles the prisoners: the same person
   const k = partner * 31 + ORDER.indexOf(id) * 7 + 3;
   const t = ship && id === 'station' ? BRIDGE : TITLE[id];
   return { name: `${FIRST[k % FIRST.length]} ${LAST[(k >> 2) % LAST.length]}`, title: t.title, look: { species: 'species.human', role: t.role, appearanceSeed: k } };
@@ -49,6 +50,13 @@ export function servicesFor(p: UiTradePartner, jobs: number, hire: number): Serv
   if (p.trades) out.push({ id: 'trade', label: 'Trade', note: 'opens trade', opens: true });
   if (p.station) out.push({ id: 'jobs', label: 'Jobs', note: jobs ? `${jobs} posted` : 'none posted' });
   if (p.station || hire) out.push({ id: 'crew', label: 'Crew', note: hire ? `${hire} for hire` : 'nobody' });
+  // Only where this station has a deal for a prisoner the player holds, ready to hand over or not yet.
+  const held = p.prisoners ?? [];
+  if (p.station && held.some((x) => x.wanted)) {
+    const offers = held.filter((x) => x.offer.ok).length;
+    const going = held.filter((x) => x.offer.status).length;
+    out.push({ id: 'prisoners', label: 'Prisoners', note: going ? `${going} under way` : offers ? plural(offers, 'offer') : 'not ready yet' });
+  }
   if (i?.services.includes('Blueprints')) out.push({ id: 'blueprints', label: 'Blueprints', note: `${i.blueprints.filter((b) => !b.known).length} new` });
   if (i?.yard) out.push({ id: 'yard', label: 'Shipyard', note: 'hull expansion' });
   return out;
@@ -69,6 +77,15 @@ export function linesFor(id: ServiceId, p: UiTradePartner, c: Contact, jobs: num
       return [nar(`${p.name} routes you to the job board.`), say(jobs ? `${plural(jobs, 'run')} on the board. Read the terms before you take one.` : 'Nothing posted. Check back when the traffic turns over.')];
     case 'crew':
       return [nar('The recruiter looks up from a stack of files.'), say(hire ? `${plural(hire, 'hand')} looking for a berth. Pay up front, shuttle brings them over.` : 'Nobody on the roster today.')];
+    case 'prisoners': {
+      const held = p.prisoners ?? [];
+      const offers = held.filter((x) => x.offer.ok).length;
+      const going = held.filter((x) => x.offer.status).length;
+      if (going && !offers) return [nar('Dock control looks over your manifest.'), say(`${going === 1 ? 'That slab is' : 'Those slabs are'} on the way. You get paid when ${going === 1 ? 'it docks' : 'they dock'} with us.`)];
+      return [nar('Dock control looks over your manifest.'), say(offers
+        ? `${offers === 1 ? 'One of them' : `${offers} of them`} we'll take off your hands. We send for the slab sealed, and the slab stays with us: it's in the price.`
+        : `We'd take some of them${held.some((x) => x.wanted && !x.frozen) ? ', sealed in stasis' : ''}. Bring them aboard your ship and we'll send for them.`)];
+    }
     case 'blueprints':
       return [nar('The archivist keeps one eye on the vault door.'), say((i?.blueprints.length ?? 0) ? 'Plans for sale. Not many places still have these.' : 'The vault is empty for now.')];
     default:

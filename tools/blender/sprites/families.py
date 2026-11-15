@@ -33,6 +33,7 @@
   recovery_pod  the recovery pod module.recovery (2x2): idle, .unpowered, .active bubble frames, the patient's front
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
+  bar_module (module.bar_counter, bar_counter_short, bar_corner, bar_stool: art only so far)
   bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
             module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench
             module.bench (2x1, bench.py: with the overlay over its three sitters), the planter
@@ -174,7 +175,7 @@ def jobs(name):
         import os
         from . import bench
         return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
-    if name in ("bunk_module", "exercise_module", "planter_module", "vending_module"):
+    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module"):
         import os
         from . import leisure
         return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
@@ -331,6 +332,105 @@ def jobs(name):
     if name == "exercise":      # look study, preview only (not in RENDERED): exercise machine designs, r0
         from . import exercise_study
         return exercise_study.jobs(), True
+    if name == "barcounter32":  # look study, preview only (not in RENDERED): bar round 32, g1 with cabinets and goods
+        from . import barcounter_r32
+        return barcounter_r32.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
+        from . import barcounter_r30
+        return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
+    if name == "booth29":  # look study, preview only (not in RENDERED): booth round 29, refinements of e1
+        from . import booth_r29
+        return booth_r29.jobs(), "only:bar22+bar17+bar9"
+    if name == "booth28":  # look study, preview only (not in RENDERED): booth round 28, in the o1 counter's materials
+        from . import booth_r28
+        return booth_r28.jobs(), "only:bar22+bar17+bar9"
+    if name == "barstool27":  # look study, preview only (not in RENDERED): bar round 27, stools for o1
+        from . import barstool_r27
+        return barstool_r27.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter26":  # look study, preview only (not in RENDERED): bar round 26, o1 as L pieces
+        from . import barcounter_r26
+        return barcounter_r26.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter25":  # look study, preview only (not in RENDERED): bar round 25, round 24 at the tile edge
+        from . import barcounter_r25
+        return barcounter_r25.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter24":  # look study, preview only (not in RENDERED): bar round 24, k1 + tucked foot rail
+        from . import barcounter_r24
+        return barcounter_r24.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter23":  # look study, preview only (not in RENDERED): bar round 23, takes on k1
+        from . import barcounter_r23
+        return barcounter_r23.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter22":  # look study, preview only (not in RENDERED): bar round 22, t1 straight colour splits
+        from . import barcounter_r22
+        return barcounter_r22.jobs(), "only:bar22+bar17+bar9"
+    if name == "barcounter21":  # look study, preview only (not in RENDERED): bar round 21, t1 as L pieces
+        from . import barcounter_r21
+        return barcounter_r21.jobs(), "only:bar17+bar9"
+    if name == "barcounter20":  # look study, preview only (not in RENDERED): bar round 20, the picks refined
+        from . import barcounter_r20
+        return barcounter_r20.jobs(), "only:bar17+bar9"
+    if name == "barstool20":    # look study, preview only (not in RENDERED): the stools paired with round 20
+        from . import barcounter_r20
+        return barcounter_r20.stool_jobs(), "only:bar17+bar9"
+    if name == "barcounter19":  # look study, preview only (not in RENDERED): bar round 19, more colours and shapes
+        from . import barcounter_r19
+        return barcounter_r19.jobs(), "only:bar19+bar9"
+    if name == "barstool19":    # look study, preview only (not in RENDERED): bar round 19, stools
+        from . import barcounter_r19
+        return barcounter_r19.stool_jobs(), "only:bar19+bar9"
+    if name == "barcounter18":  # look study, preview only (not in RENDERED): bar round 18, more colours and shapes
+        from . import barcounter_r18
+        return barcounter_r18.jobs(), "only:bar18+bar9"
+    if name == "barstool18":    # look study, preview only (not in RENDERED): bar round 18, stools
+        from . import barcounter_r18
+        return barcounter_r18.stool_jobs(), "only:bar18+bar9"
+    if name == "barcounter17":  # look study, preview only (not in RENDERED): bar round 17, new colours and shapes
+        from . import barcounter_r17
+        return barcounter_r17.jobs(), "only:bar17+bar9"
+    if name == "barstool17":    # look study, preview only (not in RENDERED): bar round 17, stools
+        from . import barcounter_r17
+        return barcounter_r17.stool_jobs(), "only:bar17+bar9"
+    if name == "barcounter16":  # look study, preview only (not in RENDERED): bar round 16, counters (3x1)
+        from . import barcounter_r16
+        return barcounter_r16.jobs(), "only:bar9"
+    if name == "barstool16":    # look study, preview only (not in RENDERED): bar round 16, stools
+        from . import barcounter_r16
+        return barcounter_r16.stool_jobs(), "only:bar9"
+    if name == "barcounter15":  # look study, preview only (not in RENDERED): bar round 15, counters alone (3x1)
+        from . import barcounter_r15
+        return barcounter_r15.jobs(), "only:bar9"
+    if name == "barstool15":    # look study, preview only (not in RENDERED): bar round 15, stools as their own module
+        from . import barcounter_r15
+        return barcounter_r15.stool_jobs(), "only:bar9"
+    if name == "barcounter14":  # look study, preview only (not in RENDERED): bar round 14, salvage ideas
+        from . import barcounter_r14
+        return barcounter_r14.jobs(), "only:bar9"
+    if name == "barcounter13":  # look study, preview only (not in RENDERED): bar round 13, built per the kit
+        from . import barcounter_r13
+        return barcounter_r13.jobs(), "only:bar9"
+    if name == "barkit":        # style kit, preview only (not in RENDERED): the bar parts, each on its own
+        from . import barkit
+        return barkit.jobs(), "only:bar9"
+    if name == "barcounter12":  # look study, preview only (not in RENDERED): bar round 12, a new kit
+        from . import barcounter_r12
+        return barcounter_r12.jobs(), "only:bar9"
+    if name == "barcounter11":  # look study, preview only (not in RENDERED): bar round 11, freestanding
+        from . import barcounter_r11
+        return barcounter_r11.jobs(), "only:bar9"
+    if name == "barcounter10":  # look study, preview only (not in RENDERED): bar round 10, round 9's look
+        from . import barcounter_r10
+        return barcounter_r10.jobs(), "only:bar9"
+    if name == "barcounter9":   # look study, preview only (not in RENDERED): bar round 9, used freighter look
+        from . import barcounter_r9
+        return barcounter_r9.jobs(), "only:bar9"
+    if name == "barcounter8":   # look study, preview only (not in RENDERED): bar round 8, shipboard formats
+        from . import barcounter_r8
+        return barcounter_r8.jobs(), "only:bar8"
+    if name == "barcounter7":   # look study, preview only (not in RENDERED): bar round 7, new formats
+        from . import barcounter_r7
+        return barcounter_r7.jobs(), "only:bar7"
+    if name == "barcounter6":   # look study, preview only (not in RENDERED): bar round 6, new formats
+        from . import barcounter_r6
+        return barcounter_r6.jobs(), "only:bar6"
     if name == "barcounter5":   # look study, preview only (not in RENDERED): bar counter round 5, new designs
         from . import barcounter_r5
         return barcounter_r5.jobs(), "only:bar4"
@@ -491,6 +591,6 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module",
+            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload", "decor", "lights", "deck_finishes", "deck_marks", "landmarks")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

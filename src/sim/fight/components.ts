@@ -52,5 +52,7 @@ export interface Prisoner {
   tick: number;
   /** The player marked them for sealing in stasis (`prisoner.seal`): crew seal only marked prisoners (stasis/order.ts). */
   seal?: true;
+  /** The galaxy faction whose ship they were taken from (`factionOfShip` when imprisoned): the standing a release earns goes to it wherever they are held. */
+  from?: string;
 }
 export const PrisonerC = defineComponent<Prisoner>('prisoner');
