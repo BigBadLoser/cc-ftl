@@ -41,9 +41,10 @@ export function systemsStage(c: RuinCtx): void {
   c.meta.power = reactorAlive && c.rng.chance(combat ? 0.65 : 0.12) ? 'emergency' : 'off';
   for (const r of c.meta.modules) {
     if (r.def !== 'module.light') continue;
-    if (r.state === 'destroyed') r.art = 'module.light.broken';
-    else if (c.meta.power === 'off') r.art = 'module.light.off';
-    else if (r.state === 'damaged') { r.art = 'module.light.off'; r.flicker = true; }
+    const asset = c.defs[r.def]?.asset ?? r.def; // the light's own sheet (its art id is not its def id)
+    if (r.state === 'destroyed') r.art = `${asset}.broken`;
+    else if (c.meta.power === 'off') r.art = `${asset}.off`;
+    else if (r.state === 'damaged') { r.art = `${asset}.off`; r.flicker = true; }
   }
   doors(c);
 }
