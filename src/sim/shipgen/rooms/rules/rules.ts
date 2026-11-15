@@ -9,10 +9,10 @@ import type { RoomRole } from '../../types';
 import type { Piece } from './check';
 import { db, tr, traumaFits } from './bays';
 import { f1 } from './farm';
-import { AC, B, BT, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
+import { AC, B, BT, OB, CD, DR, EX, FB, RF, G, GT, L, LS, MB, P, RK, RP, RS, SB, SP, SW, bunks, count, leftover, middle, range, rowsOf, sidePairs, tables, type Beds, type Run } from './parts';
 import { PB, VB, AI, CR, bank, core, crates, podsFit, pods, shuttle } from './plant';
 import { co, cu, gy, hl, pz } from './social';
-import { bg, pa, qm, shelfSlots } from './stores';
+import { bg, ore, pa, qm, shelfSlots } from './stores';
 import { bk, lb, rf, rf2, rf2Fits, su, ws } from './works';
 
 /** What a rule is given: the room (frame), the planned modules, and the module defs. */
@@ -194,7 +194,11 @@ export const RULES: Partial<Record<RoomRole, readonly RuleArrangement[]>> = {
     name: 'PA pantry, cold stores along the back wall', weight: 1,
     when: (n, r) => n.length > 0 && n.every((m) => m === RK || m === CD) && r.h >= 3 && r.h <= 4 && count(n, RK) + count(n, CD) <= shelfSlots(r.w).length,
     rule: pa,
-  }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }],
+  }, { name: 'CG warehouse, crates in aisles', weight: 1, when: (n, r) => n.length > 0 && n.every((m) => m === CR) && r.h >= 3, rule: crates }, {
+    name: 'OS ore store, bins down both long walls round an aisle', weight: 1,
+    when: (n, r) => n.length > 0 && n.every((m) => m === OB) && Math.min(r.w, r.h) >= 5 && Math.max(r.w, r.h) >= n.length + 1,
+    rule: ore,
+  }],
   core: [{ name: 'CR core vault, the AI core between its point defence', weight: 1, when: (n, r) => count(n, AI) === 1 && r.w >= 3 * n.length - 1, rule: core }],
   plant: [{ name: 'BA battery room, the cells in a bank round the console', weight: 1, when: (n, r) => n.includes(BT) && r.w >= 3 && r.h >= 3, rule: bank }],
   armoury: [
