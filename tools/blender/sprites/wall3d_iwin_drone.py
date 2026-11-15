@@ -240,7 +240,7 @@ def _slot(k):
     for u, sd in ((pa, -1), (pb, 1)):
         if -0.5 < u < 0.5 and zo < zb:
             _quad(k, [(u, yc, zb), (u, yo, zb), (u, yo, zo)], (sd, 0, 0), FRONT["sblock_side"])
-    VT.handle(k, yo - VT.FACE_DEPTH * PX, zf, zb)    # (its legs back to the recesses' backs)
+    VT.handle(k, yo, zf, zb)
 
 
 def _notch(k, pa, pb, ye, zb):
