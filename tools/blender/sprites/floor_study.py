@@ -903,6 +903,47 @@ def a6(i, j):
 DESIGNS.update({"a4": a4, "a5": a5, "a6": a6})
 
 
+# Door apron, round 3 (A2 liked, it only looked glitched: the wear gaps and the band stopping short), A2 made clean:
+# the band seam to seam, crisp stripes on the screen diagonal, no wear.
+#   a7 clean band: a hazard band 12 deep along the door edge, a solid steel line behind it, plain deck beyond
+#   a8 deep band: the band 20 deep, a dark edge line closing it, no steel line
+#   a9 band and rails: a7's band with thin steel rails down both sides of the tile, a lane into the door
+
+
+def _band(i, j, depth):
+    if 2 <= j < 2 + depth:
+        return "hazY" if (i // 8) % 2 == 0 else "hazK"
+    return None
+
+
+def a7(i, j):
+    b = _band(i, j, 12)
+    if b:
+        return b
+    if 17 <= j <= 18 and i >= 2:
+        return "steelL"
+    return _deck(i, j)
+
+
+def a8(i, j):
+    b = _band(i, j, 20)
+    if b:
+        return b
+    if 22 <= j <= 23 and i >= 2:
+        return "hazK"
+    return _deck(i, j)
+
+
+def a9(i, j):
+    v = a7(i, j)
+    if j > 18 and (5 <= i <= 6 or 57 <= i <= 58):
+        return "steelL"
+    return v
+
+
+DESIGNS.update({"a7": a7, "a8": a8, "a9": a9})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
