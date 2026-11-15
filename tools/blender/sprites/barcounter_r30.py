@@ -6,6 +6,10 @@ and shelves stands flush with the top's back edge. Rendered at rotation 2, so th
   c1 open grid: two rows of square cubbies, nine across
   c2 tall bays: one row of tall cubbies, a gunmetal shelf halfway up each
   c3 mixed: open cubbies over a row of gunmetal drawer fronts with bone pulls
+Round 31 (same family), fewer and bigger:
+  g1 six tall bays, two per tile
+  g2 one wide cubby per tile, two rows
+  g3 one big bay per tile with a gunmetal shelf across it
 
 All in px of the tile at rotation 0 (u across, v deep, front +v toward the stools, z up)."""
 from .barcounter_r22 import OX  # noqa: F401  (palette set bar22 is the study's)
@@ -82,7 +86,35 @@ def c3():
     return k.build()
 
 
-VARIANTS = {"c1": c1, "c2": c2, "c3": c3}
+# round 31: fewer, bigger cubbies
+def g1():
+    """Six tall bays, two per tile."""
+    k = Bench("bar_g1", (3, 1))
+    body(k)
+    frame(k, 6, 1)
+    return k.build()
+
+
+def g2():
+    """One wide cubby per tile, two rows."""
+    k = Bench("bar_g2", (3, 1))
+    body(k)
+    frame(k, 3, 2)
+    return k.build()
+
+
+def g3():
+    """One big bay per tile with a gunmetal shelf across it."""
+    k = Bench("bar_g3", (3, 1))
+    body(k)
+    cs, _ = frame(k, 3, 1)
+    zm = round((Z0 + Z1) / 2)
+    for a, b in cs:
+        _px(k, a, b, I + 0.5, I + R - 0.5, zm - 1, zm + 1, "x7Gun")
+    return k.build()
+
+
+VARIANTS = {"c1": c1, "c2": c2, "c3": c3, "g1": g1, "g2": g2, "g3": g3}
 
 
 def jobs():
