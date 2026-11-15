@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d23)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d24)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -769,3 +769,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user asked why the two vents' pipes looked different (each pair hugged its rib, so they sat at opposite ends of their pockets, and the camera sees only a pocket's +x-facing side wall). The user: centred and larger; two straight runs (no slant at the end); their ends 1 px from the pocket's top and bottom. d21: PIPE 3 px at 3-6, 7-10 and 86-89, 90-93 (centred in 2-11, 85-94); out of the back PIPE_GAP 1 art px under the pocket's top, flat out to over its bottom edge, straight down to PIPE_GAP over its bottom (the end left open: it faces down). Both vents now render alike. Renders: scratchpad `dr21`.
 - 2026-11-15: the user: the pipes round, the elbow curved. d22: SIDES 16; the corner a quarter circle BEND 3 px (centre line) in BEND_STEPS 6 (mitred rings); tones by each face's turn to LIGHT (0.3, 0.5, 0.8): > 0.85 fDS1, > 0.6 fDS2, > 0.3 fDS3, else fDS4. Renders: scratchpad `dr22`.
 - 2026-11-15: the user: the pipes' start down a bit, the two runs nearer equal. d23: PIPE_TOP 4 art px (the flat run's top under the pocket's top; was PIPE_GAP 1): on screen the flat run ~9 -> ~8 px, the drop ~12.5 -> ~9.5 px. The bottom gap stays PIPE_GAP 1. Renders: scratchpad `dr23`.
+- 2026-11-15: the user: the flat floor under the glass too dark. d24: COL floor fDW4 -> fDW3 (#566269 -> #6b7a82, the end blocks' slopes' tone). The half behind the pane still takes the glass's tint. Renders: scratchpad `dr24`.

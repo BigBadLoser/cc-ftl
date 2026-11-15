@@ -21,7 +21,7 @@ BLOCK = 12                  # px: an end block's flat top, in from the window's 
 END = 16                    # px: the end block's slope reaches the floor (the ref's 3-4 px slope along the wall)
 FLOOR_DOWN = 6              # art px: the floor under the ramp's top (the ref's 4-5 of its ~17 px slope; ours 22: deeper,
                             # the user)
-COL = {"floor": "fDW4", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
+COL = {"floor": "fDW3", "top": "fDW2", "slope": "fDW3", "side": "fDX2", "post": "fDW3", "under": "fDF3"}
 OFF = {"l": 0, "m": 1, "r": 2}
 # The front (the near ramp), in px along the window from its -x end (96: the ref's, measured on its deskewed front):
 BOXES = ((17, 30), (66, 79))   # the red boxes: upright fronts at the toe, tops BOX_DOWN under the sill, back to it
