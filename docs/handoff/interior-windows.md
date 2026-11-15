@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c17: the beam at 5 px)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil approved at c17)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c17, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | approved (c17, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -796,3 +796,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the bench is fine. c15 (the user: the grey on the glass's outside up the post; a little curved slope at the window's top corners): the pane's edge (PANE_EDGE) now runs up each post's side from the end block's top and round the top corner's curve to the beam (as drone's d28). The corners' curve hadn't read (a fillet's front is a 2-3 px sliver squeezed between the post's side and the red band; checked with a debug render in loud colours): the opening's top now BEAM 3 art px under the band's foot (a white strip of beam under the red, as the ref's), ROUND 3 -> 6 (ROUND_STEPS 6), the post's white front curving into it. The plain wall pixel-identical. Renders: scratchpad `cv15`, corner before/after `corner_cmp.png`.
 - 2026-11-15: c16 (the user: drop it further; the corners' and drop's white differ from the wall's): BEAM 3 -> 8 (about 2 px of it go under the band's painted edge: 6 showed 3 rows; 8 shows about 5, the ref's beam); the corners' fronts in the look's wall face step (FACE 3: civil paints its faces W3; toned by level they came out W2, a step lighter); the strip itself is the wall's own face (ccd1d5 as the plain wall). The plain wall pixel-identical. Renders: scratchpad `cv16`, corner `corner_cmp16.png`.
 - 2026-11-15: c17 (the user: about 5 px): BEAM 8 -> 5. The plain wall pixel-identical. Renders: scratchpad `cv17`.
+- 2026-11-15: the user: civil looks fine at c17 (approved).
