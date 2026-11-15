@@ -1,8 +1,7 @@
 """The drone window's end vents (wall3d_iwin_drone): each a pocket cut RECESS px straight back into the near ramp's
-slope (its back the dark panel, parallel to the slope; a lit ledge along its foot; its sides in the ramp's cut tone),
+slope (its back the dark panel, parallel to the slope; a dark ledge along its foot; its sides in the ramp's cut tone),
 VENT_GAP clear of the window's end, the rib, the slope's top and its foot; dark pipes coming out of it that follow the
-rib's profile beside it from the pocket's top to its bottom edge (the user). The pocket runs down through the foot to
-BELOW over the floor.
+rib's profile beside it, inside the pocket from its top to its bottom (the user).
 Coordinates as the drone module's: here +y is the near side, the mesh's -y (core.G)."""
 import math
 
@@ -12,10 +11,11 @@ from . import walls as W
 from .wall3d_iwin import _clip
 
 RECESS = 3                  # px: the pocket's depth, straight back into the slope
-BELOW = 2                   # art px: the ramp left under the pocket, over the floor (its foot cut through: the user)
+BELOW = 2                   # sprite px: the slope left between the pocket's bottom edge and the ramp's edge (where the
+                            # slope meets the foot) (the user)
 PIPES = ((6, 8), (9, 11), (85, 87), (88, 90))   # px along the window: 2 px pipes, in from the ribs (13-17, 79-83)
 SIDES = 8                   # the pipes' section
-COL = {"back": "fDS3", "ledge": "fDW2", "side": "fDX2",
+COL = {"back": "fDS3", "ledge": "fDS2", "side": "fDX2",
        "pipe_top": "fDS2", "pipe_front": "fDS3", "pipe_side": "fDS4"}
 
 
@@ -30,9 +30,11 @@ def _span(a, b):
 
 
 def _heights():
-    """(z0, z1): the pocket's top (VENT_GAP down the slope from its top) and foot (BELOW over the floor)."""
+    """(z0, z1): the pocket's top (VENT_GAP down the slope from its top) and foot (BELOW sprite px up the slope from the
+    ramp's edge: down the slope a unit of height is ZART rows, plus GN / 2 a unit out over its fall)."""
     D = _d()
-    return D._zt() - D.VENT_GAP * D.PX * D._fall(), BELOW / W.ZART
+    f = D._fall()
+    return D._zt() - D.VENT_GAP * D.PX * f, W.foot() + BELOW / (W.ZART + W.GN / 2 / f)
 
 
 def _surface(z0, z1):
@@ -120,16 +122,14 @@ def _ring(c, nrm, x0, x1, r):
 
 
 def pipes(k):
-    """Each pipe along the rib's profile, from the pocket's top to its bottom edge: out of the back under its top, flat
-    out to the rib's front (OUT past the toe), down it, then back under (the rib's slant: OUT back over the foot's
-    height) onto the ledge's front edge."""
+    """Each pipe along the rib's profile, inside the pocket: out of the back under its top, flat out to over the
+    pocket's bottom edge, down, then back under (the rib's slant: OUT back over the foot's height) onto the ledge."""
     D = _d()
     r = D.PX
     z0, z1 = _heights()
     zc = z0 - r
-    toe = _surface(z0, z1)[-1][0]
-    yf = toe + D.OUT * D.PX - r
-    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + r + W.foot()), (toe - r, z1 + r)]
+    yf = _surface(z0, z1)[-1][0] - r
+    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + r + W.foot()), (yf - D.OUT * D.PX, z1 + r)]
     rings = []
     for i, p in enumerate(path):                        # (mitred: each bend's section on its bisector)
         ns = []
