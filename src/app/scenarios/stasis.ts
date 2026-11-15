@@ -1,9 +1,11 @@
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
+import { PrisonerC } from '../../sim/fight/components';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { footprintBlockedByCrew } from '../../sim/modules/spawn';
 import { isTileWalkable } from '../../sim/modules/walk';
-import { shipGrid } from '../../sim/regions';
+import { shipGrid, shipIdOf } from '../../sim/regions';
 import { slabPlace } from '../../sim/stasis/query';
+import { TraderC } from '../../sim/trade/types';
 import { playerCrew } from '../../sim/story/world';
 import type { Scenario } from './types';
 
@@ -70,13 +72,28 @@ function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number 
     ?? spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
 }
 
+/** The command that sets a stasis wheel on the player's ship (`wheelSpot`), or none when there is no room. */
+export function wheelCommand(sim: Sim): Command[] {
+  const ship = playerShip(sim);
+  const spot = ship ? wheelSpot(sim, ship) : null;
+  return ship && spot ? [{ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot }] : [];
+}
+
+/**
+ * `?scenario=prisoners&taken&seal` (#116): a wheel at home and every prisoner on the prize marked for sealing. The prize has no wheel, so a
+ * shuttle flies out with empty slabs, the party seals them there, and the slabs ride home to the wheel.
+ */
+export function sealPrizeCommands(sim: Sim, prize: number): Command[] {
+  const marks: Command[] = sim.world.query(PrisonerC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)!) === prize).sort((a, b) => a - b)
+    .map((crew) => ({ type: 'prisoner.seal', crew, on: true }));
+  return [...wheelCommand(sim), ...marks];
+}
+
 /** The commands of the start: the wheel, two hostile crew (by the second and third crew members) and two spare empty slabs on the floor. */
 export function prisonerCommands(sim: Sim): Command[] {
   const ship = playerShip(sim);
   if (!ship) return [];
-  const out: Command[] = [];
-  const spot = wheelSpot(sim, ship);
-  if (spot) out.push({ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot });
+  const out: Command[] = wheelCommand(sim);
   const crew = playerCrew(sim);
   for (const c of [crew[1] ?? crew[0], crew[2] ?? crew[0]]) {
     const at = sim.world.get(c ?? 0, PositionC);
@@ -91,23 +108,42 @@ export function prisonerCommands(sim: Sim): Command[] {
 export const newHostiles = (sim: Sim, before: ReadonlySet<number>): number[] =>
   sim.world.query(CrewC).filter((id) => !before.has(id) && sim.world.get(id, AllegianceC)?.faction === 'hostile');
 
+/** `&deals`: the factions the second and third prisoners were taken from (the first is of the node's first station's owner, who ransoms them). */
+const DEAL_FROM = ['', 'raiders', 'meridian'];
+
+/** The galaxy faction that owns the node's first station (lowest id) with an owner, or null. */
+function nearestOwner(sim: Sim): string | null {
+  const id = [...sim.world.query(TraderC)].sort((a, b) => a - b).find((t) => sim.world.get(t, TraderC)?.station && sim.world.get(t, TraderC)?.owner);
+  return id === undefined ? null : sim.world.get(id, TraderC)!.owner ?? null;
+}
+
 /**
- * `?scenario=stasis` (#116): a stasis wheel (ten empty slabs) near the middle of the ship and two hostile prisoners standing by the crew, plus two
+ * `?scenario=stasis[&deals]` (#116): a stasis wheel (ten empty slabs) near the middle of the ship and two hostile prisoners standing by the crew, plus two
  * spare empty slabs on the floor. Both are marked for sealing, so the crew seal each prisoner where they stand and cart the slab to the wheel on their own. `&unpowered`: once both
  * are in, the wheel is switched off, so the stasis alert runs and, a game hour later, the prisoners thaw (switch it back on in time to stop it).
+ * `&deals`: a third prisoner, left unsealed; the prisoners were taken from the node's first station's owner, a raider clan and Meridian, so that
+ * station's Prisoners service (hail it) shows a ransom, a bounty or a refusal for the raider, and a refusal for the unsealed one.
  */
 export const stasis: Scenario = ({ sim, params, dispatch, setSpeed }) => {
   setSpeed(1);
+  const deals = params.has('deals');
   const before = new Set(sim.world.query(CrewC));
   for (const cmd of prisonerCommands(sim)) dispatch(cmd);
+  if (deals) {
+    // A third prisoner, left unsealed.
+    const third = sim.world.get(playerCrew(sim)[3] ?? playerCrew(sim)[0] ?? 0, PositionC);
+    const ship = playerShip(sim);
+    if (third && ship) dispatch({ type: 'debug.spawnCrew', ship, x: third.x, y: third.y, role: 'role.engineer', faction: 'hostile' });
+  }
   // The spawns land on the next sim step, which on a slow page can be well after any fixed delay: wait until they are there.
   const imprison = (): void => {
     const caught = newHostiles(sim, before);
-    if (caught.length === 0) return void setTimeout(imprison, 200);
-    for (const id of caught) {
-      dispatch({ type: 'debug.imprison', crew: id });
-      dispatch({ type: 'prisoner.seal', crew: id, on: true }); // crew seal only a marked prisoner
-    }
+    if (caught.length < (deals ? 3 : 1)) return void setTimeout(imprison, 200);
+    caught.forEach((id, i) => {
+      const from = i === 0 ? nearestOwner(sim) ?? 'navy' : DEAL_FROM[i];
+      dispatch({ type: 'debug.imprison', crew: id, ...(deals && from ? { from } : {}) });
+      if (!deals || i < 2) dispatch({ type: 'prisoner.seal', crew: id, on: true }); // crew seal only a marked prisoner
+    });
     if (!params.has('unpowered')) return;
     const wheel = sim.world.query(ModuleC).find((id) => sim.world.get(id, ModuleC)?.def === WHEEL);
     const cut = (): void => {

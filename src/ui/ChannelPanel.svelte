@@ -8,6 +8,7 @@
   import { centerTop } from './floatingWindow';
   import JobCards from './JobCards.svelte';
   import RecruitList from './RecruitList.svelte';
+  import PrisonerDeals from './PrisonerDeals.svelte';
   import PaneHeader from './comms/PaneHeader.svelte';
   import Transcript from './comms/Transcript.svelte';
   import StationDock from './StationDock.svelte';
@@ -75,7 +76,8 @@
             <p class="note">You hold {jobs.active.length}/{jobs.max} jobs. The jobs button in the top bar lists them.</p>
           {:else if shown === 'yard' && p.info?.yard}<YardPane {api} {station} yard={p.info.yard} credits={trade.credits} {metal} />
           {:else if shown === 'blueprints' && p.info}<BlueprintList {api} port={p.info.blueprintPort} blueprints={p.info.blueprints} credits={trade.credits} />
-          {:else if shown === 'crew'}<RecruitList {api} partner={p} credits={trade.credits} deal={hiring} />{/if}
+          {:else if shown === 'crew'}<RecruitList {api} partner={p} credits={trade.credits} deal={hiring} />
+          {:else if shown === 'prisoners'}<PrisonerDeals {api} station={p.id} deals={p.prisoners ?? []} />{/if}
         </div>
       </div>
       <div class="pane sensors">

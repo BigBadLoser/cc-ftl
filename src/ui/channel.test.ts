@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { UiTradePartner } from './api';
+import type { UiPrisonerDeal, UiTradePartner } from './api';
 import { contactFor, linesFor, servicesFor } from './channel';
 
 const partner = (info: Partial<NonNullable<UiTradePartner['info']>> = {}): UiTradePartner =>
@@ -16,6 +16,15 @@ describe('comms channel', () => {
     const full = partner({ services: ['Blueprints'], yard: { size: 'hub', cap: 40, price: { credits: 5, metal: 1 }, hull: { tiles: 1, capacity: 2 } } });
     expect(servicesFor(full, 0, 0).map((s) => s.id)).toEqual(['station', 'trade', 'jobs', 'crew', 'blueprints', 'yard']);
     expect(servicesFor(partner(), 2, 3).find((s) => s.id === 'trade')?.opens).toBe(true);
+  });
+  it('lists Prisoners only while this station has a deal for one of them, and counts runs under way', () => {
+    const row = (wanted: boolean, offer: Partial<UiPrisonerDeal['offer']> = {}): UiPrisonerDeal =>
+      ({ id: 1, name: 'Lyra', faction: 'Navy', tier: 'neutral', frozen: true, where: 'floor', wanted, offer: { ok: false, label: '', note: '', ...offer } });
+    const p = partner();
+    expect(servicesFor({ ...p, prisoners: [row(false)] }, 0, 0).map((s) => s.id)).not.toContain('prisoners');
+    expect(servicesFor({ ...p, prisoners: [row(false), row(true)] }, 0, 0).find((s) => s.id === 'prisoners')?.note).toBe('not ready yet');
+    expect(servicesFor({ ...p, prisoners: [row(true, { ok: true })] }, 0, 0).find((s) => s.id === 'prisoners')?.note).toBe('1 offer');
+    expect(servicesFor({ ...p, prisoners: [row(true, { status: 'Collecting…' })] }, 0, 0).find((s) => s.id === 'prisoners')?.note).toBe('1 under way');
   });
   it('draws the quote from the real state', () => {
     const p = partner();
