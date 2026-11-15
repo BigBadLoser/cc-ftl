@@ -7,8 +7,8 @@ and one solid rim, like life support's trays; the porthole sits under the ice tr
   f1 the body at round 9's height, a small porthole, one chamfered ice tray
   f2 a taller body, a big porthole, the ice tray beside a smaller chamfered vent tray (slots), life support's pair
   f3 as f2, the porthole set in a chamfered panel sunk into the front
-  g1 (user pick) f2's big porthole and height, f1's one tray, the pipe further from the porthole, ending on the middle
-     of the column as the camera sees it
+  g1 (user pick) f2's big porthole and height, f1's one tray, the pipe further from the porthole, entering square on the
+     middle of the column's front (its axis line)
 
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
 import math
@@ -135,7 +135,7 @@ VARIANTS = {
     "f1": lambda: build("purifier_f1", zpx(22), 0.15),
     "f2": lambda: build("purifier_f2", zpx(27), 0.2, pair=True),
     "f3": lambda: build("purifier_f3", zpx(27), 0.2, pair=True, panel=True),
-    "g1": lambda: build("purifier_g1", zpx(27), 0.2, gap=0.17, end=CU + CR * math.sqrt(0.5)),
+    "g1": lambda: build("purifier_g1", zpx(27), 0.2, gap=0.17, end=CU),
 }
 
 
