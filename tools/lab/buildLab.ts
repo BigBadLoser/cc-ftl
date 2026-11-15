@@ -58,7 +58,7 @@ export async function mountBuildLab(target: HTMLElement, params: URLSearchParams
   await new Promise((r) => setTimeout(r, 1200));                                    // thumbs retry every 250 ms
   const hover = params.get('hover');
   if (hover) {
-    const name = content.modules[hover]?.name;
+    const name = (content.modules as Record<string, { name?: string }>)[hover]?.name;
     const card = [...document.querySelectorAll<HTMLElement>('[data-testid="build-catalog"] .card')].find((c) => name && c.textContent?.trim().toUpperCase().startsWith(name.toUpperCase()));
     card?.scrollIntoView({ inline: 'center' });
     card?.focus();
