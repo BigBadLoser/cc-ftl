@@ -52,7 +52,7 @@ One line per section; read the index, then only the sections your task touches.
   - [Pirate factions (phase 2b slice 1)](#pirate-factions-phase-2b-slice-1): Galaxy factions pirates (Scrappers), raiders, cartel, zealots, mercenaries, each with its own reputation...
 - [Hull width rule and the hull plan brushes (#143)](#hull-width-rule-and-the-hull-plan-brushes-143): The rule. No part of a ship may be narrower than 3 tiles. The footprint (every struct tile except Space...
 - [Station jobs by station type (issue #178)](#station-jobs-by-station-type-issue-178): Offers (galaxy/jobOffers.ts) are still a pure function of (seed, port, window, slot). The port's station...
-- [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw, slabs by shuttle from a prize (rack), release of a frozen prisoner; the owning reads render uses.
+- [Prisoner holding (stasis), `src/sim/stasis/` (#116)](#prisoner-holding-stasis-srcsimstasis-116): Full slab = frozen prisoner entity (StasisC), wheel slots, the stasis job, reserve and thaw, slabs by shuttle from a prize (rack), release of a frozen prisoner, prisoner deals at stations (slab delivered by shuttle); the owning reads render uses.
 
 
 The previous attempt (`bigbadloser/space-web-game`, **reference only, nothing is copied**) bloated
@@ -2801,6 +2801,13 @@ Design: DESIGN.md "Prisoners and prizes". Slice 1 is sim, content and app only; 
   shuttle ('noShuttle') or no wheel room on a shuttle's home ship ('noWheel'); `sealWait` is the waiting state the panels show (`noWay` for a prize with no way aboard). Release of a frozen
   prisoner goes through `openSlab` (shared with `thawPrisoner`; refused 'inTransit' on a cart or in a rack), and `Prisoner.from` holds the faction
   for the standing. Debug: `?scenario=prisoners&taken&seal`. Save v121.
+- **Prisoner deals at stations** (`capture/offers.ts`, `capture/delivery.ts`, #116): `prisonerOffer(sim, station, prisoner)` is the one answer to
+  what a station offers and whether it can be accepted now (reasons include 'busy' and 'noWay' from `slabRoute`, galaxy/handover.ts, and 'underWay'
+  with the run); `stationWants` (the Prisoners service's visibility) asks it. 'prisoner.handOver' opens a delivery handover run
+  (`startSlabRun`: `Deal.handover.prisoner` holds the agreed terms, `job` is absent), stepped by `stepHandover` like a crate's, with the slab as the
+  goods: `slabLoaded` posts a stasis job with `deliver` (the shuttle; phase 'unstow' takes a full slab out of a wheel, `unstowSlab`; `slabDestination`
+  sends it to that rack), `slabBack` on a call-off, `slabDelivered` pays when the slab reaches the station (the station's shuttle flies home first,
+  phase 'out'). A shuttle with `outbound` set keeps its rack (`tendRacks` skips it). Cancel goes through 'trade.cancel' (`cancelSlabRun`). Save v122.
 - Frozen prisoners lift with their ship on a jump (`sector/members.ts` reads `slabPlace`); empty slabs in wheel slots are a held-items place
   (`items/held.ts`, 'slotted'). Debug: `?scenario=stasis[&unpowered]`, `debug.imprison`. Save v118.
 - **Hover cart rest** (`cartRest`, `cart.ts`): when a carrier (an empty slab as `CarryingC`, or a full slab's `StasisC.carrier`) stops, the

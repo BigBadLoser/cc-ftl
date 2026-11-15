@@ -80,6 +80,8 @@ export function linesFor(id: ServiceId, p: UiTradePartner, c: Contact, jobs: num
     case 'prisoners': {
       const held = p.prisoners ?? [];
       const offers = held.filter((x) => x.offer.ok).length;
+      const going = held.filter((x) => x.offer.status).length;
+      if (going && !offers) return [nar('Dock control looks over your manifest.'), say(`${going === 1 ? 'That slab is' : 'Those slabs are'} on the way. You get paid when ${going === 1 ? 'it docks' : 'they dock'} with us.`)];
       return [nar('Dock control looks over your manifest.'), say(offers
         ? `${offers === 1 ? 'One of them' : `${offers} of them`} we'll take off your hands. We send for the slab sealed, and the slab stays with us: it's in the price.`
         : `We'd take some of them${held.some((x) => x.wanted && !x.frozen) ? ', sealed in stasis' : ''}. Bring them aboard your ship and we'll send for them.`)];

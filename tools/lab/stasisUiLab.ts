@@ -5,7 +5,7 @@ import { startStage } from '../../src/app/title/stage';
 
 /**
  * The stasis UI panel (`?panel=stasisui`, #116): the stasis wheel's slot ring on the module Overview tab, and a frozen prisoner's "In stasis"
- * section on their crew Overview (in the wheel, and on a hover cart), as DOM with mock data. Portraits are real (the title stage's renderer).
+ * section on their crew Overview (in the wheel, and on a hover cart), and a station's Prisoners service (offers and runs under way), as DOM with mock data. Portraits are real (the title stage's renderer).
  */
 export async function mountStasisUiLab(target: HTMLElement): Promise<void> {
   for (const e of [document.documentElement, document.body]) { e.style.height = 'auto'; e.style.overflow = 'visible'; e.style.position = 'static'; }
