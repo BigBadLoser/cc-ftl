@@ -95,10 +95,11 @@ const agri = (name: string, o: { street: number; body: [number, number]; greenho
   // The works and the freight stand in the main street's rows; the only wings are the greenhouses, joined straight onto
   // it at the street's only crosses, a wing either side of each (the first sections; the rest of the street runs through).
   const branches = (wings: number): BranchRule[] => [
-    harbour,
+    { ...harbour, section: { ...harbour.section, cross: false } },
     { ...body, takes: [...body.takes, 'works', 'freight'], section: { ...body.section, cross: true, crosses: Math.ceil(wings / 2) } },
-    secure,
-    { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: 0, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true, width: o.street }, link: 0 },
+    // The main street is one width from the harbour to the machinery at its tail; the wings' streets are side streets (two).
+    { ...secure, section: { ...secure.section, width: o.street } },
+    { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: 0, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true }, link: 0 },
   ];
   return { ...base, branches: branches(2), sizes: { outpost: { branches: branches(1) }, hub: { branches: branches(4) } } };
 };
