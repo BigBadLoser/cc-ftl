@@ -27,6 +27,8 @@ function grown(rng: Rng, r: RoomSpec, s: number): RoomSpec {
 export { docksOf };
 
 /** Reactor tiers, Mk I to Mk III (50, 100 and 180 power; 2x2, 2x3 and 2x4). */
+/** Tiles of planned room a lamp, halls' share included (measured on generated stations). */
+const LAMP_AREA = 10;
 const REACTOR_TIERS = ['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3'];
 
 /** The planned rooms: command, guns, shields, the core, quarters, messes, the kind's rooms, docks, holds, bays, reactors. */
@@ -123,10 +125,12 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   // The ore store beside it: two ore bins a pod, in a row along each long wall with an aisle between. It is the works'.
   if (pods > 0) support.push({ role: 'cargo', dept: 'works', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 });
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];
-  // Power: every room's draw, a lamp a room, and a margin for the fittings a fit-out adds; then the smallest reactor
-  // tier the size allows that powers the station from one room of two, else the largest.
+  // Power: every room's draw, the lamps (the fit-out lights about one tile of floor in 22, halls included, so a lamp
+  // to every LAMP_AREA tiles of planned room), and a margin for the fittings a fit-out adds; then the smallest reactor
+  // tier the size allows that powers the station from one room of two, else the largest. Planned here, the reactors
+  // stand in plant rooms; short, the fit-out would squeeze spares into whatever room has floor.
   const drawing = [command, ...rest, ...docks.slice(2)];
-  let demand = 2 + drawing.length;
+  let demand = 2 + Math.ceil(drawing.reduce((n, r) => n + r.w * r.h, 0) / LAMP_AREA);
   for (const r of drawing) for (const m of r.mods) demand += Math.max(0, -(defs[m]?.power ?? 0));
   if (def.atrium) demand *= 1.15;
   if (def.atrium?.role === 'garden') demand += 30;
