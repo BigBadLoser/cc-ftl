@@ -1,6 +1,7 @@
 import type { RoomSpec } from '../plan';
 import { DOCK_DEPTH, line } from './lattice';
 import { cabinsWithin } from './quarters';
+import { stretchOf } from './sizing';
 import { SOLID, SPACE } from './regions';
 import { at, facing, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type Port } from './model';
 
@@ -94,8 +95,14 @@ export function concourse(c: Ctx, port: Port, o: { length: number; wide: number;
   return { ports, regions: [hall], box: rect(f, 0, L + 1, lo - 1, hi + 1) };
 }
 
-/** How far a row's last room may run on to meet a passage or the end room: half its own length, so it never becomes a strip. */
-const runOn = (spec: RoomSpec | undefined): number => Math.floor((spec?.w ?? 3) / 2);
+/**
+ * How far a row's last room may run on to meet a passage or the end room: half its own length, so it never becomes a
+ * strip, and never past what the room may take over its planned floor `plan` (`stretchOf`; evening may have grown it).
+ */
+const runOn = (spec: RoomSpec | undefined, plan?: number): number => {
+  const w = spec?.w ?? 3, h = spec?.h ?? 3;
+  return Math.max(0, Math.min(Math.floor(w / 2), spec ? Math.floor((stretchOf(spec) * (plan ?? w * h)) / h) - w : Infinity));
+};
 
 export interface BlockOpts {
   /** One floor depth for both rows (a slab); the rooms' own when not given (staggered bays). */
@@ -144,7 +151,6 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   // The end room spans the block, back wall to back wall: not a room built round its machines (a strip with a shield
   // generator or a reactor in it), unless the block has nothing else.
   const fixed: readonly RoomSpec['role'][] = ['shields', 'reactor', 'weapons', 'quarters', 'medbay'];
-  const capOf = o.cap && rooms.length >= 3 ? (typeof o.cap === 'string' ? bySize.find((r) => r.role === o.cap) : undefined) ?? bySize.find((r) => !fixed.includes(r.role)) ?? bySize[0] : undefined;
   // The street runs v = -1 up to X: two tiles and what a wider one adds, on its +v side.
   const X = Math.max(2, o.width ?? 2) - 2;
   // Long side to the street; one depth for the slab when asked (a room keeps its area). A dock block is a dock deep.
@@ -152,23 +158,41 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
   const farther = (r: RoomSpec): number => (o.far?.includes(r.role) ? 1 : 0);
   // A hangar keeps width for its bay (a 4x5 pit and the tile crew board from beside it).
   const shape = (r: RoomSpec): RoomSpec => (depth ? { ...r, w: Math.max(r.vehicle ? 5 : 3, Math.ceil((r.w * r.h) / depth)), h: depth } : r.w >= r.h ? r : { ...r, w: r.h, h: r.w });
-  const body = rooms.filter((r) => r !== capOf).sort((p, q) => farther(p) - farther(q)).map(shape);
-  // A room's annex stands right after it in its row and opens into it. Quarters are cut into cabins where they stand,
-  // a bed each, inside the room's own length: the row is no longer for it and the station no heavier.
-  const rows = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, { ...shape(r.annex), annexed: true }] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
-  // Bunks: each goes into the shorter row, somewhere among its rooms.
+  // The rows without `cap`. A room's annex stands right after it in its row and opens into it. Quarters are cut into
+  // cabins where they stand, a bed each, inside the room's own length: the row is no longer for it and the station no
+  // heavier. Bunks: each goes into the shorter row, at `pick` among its rooms. Docks at the far end.
   const bunks = o.bunks ?? [];
-  for (const b of bunks) {
-    const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
-    const row = len(rows[0]) <= len(rows[1]) ? rows[0] : rows[1];
-    const k = c.rng.int(0, row.length);
-    row.splice(row[k]?.annexed ? k + 1 : k, 0, depth ? { ...b, h: depth } : b);
-  }
-  docks.forEach((d, i) => (rows[i % 2] as RoomSpec[]).push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
+  const arrange = (cap: RoomSpec | undefined, pick: (row: RoomSpec[]) => number): [RoomSpec[], RoomSpec[]] => {
+    const body = rooms.filter((r) => r !== cap).sort((p, q) => farther(p) - farther(q)).map(shape);
+    const out = sides(body).map((row) => row.flatMap((r) => (r.annex ? [r, { ...shape(r.annex), annexed: true }] : [r])).flatMap(cabinsWithin)) as [RoomSpec[], RoomSpec[]];
+    for (const b of bunks) {
+      const len = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 0);
+      const row = len(out[0]) <= len(out[1]) ? out[0] : out[1];
+      const k = pick(row);
+      row.splice(row[k]?.annexed ? k + 1 : k, 0, depth ? { ...b, h: depth } : b);
+    }
+    docks.forEach((d, i) => (out[i % 2] as RoomSpec[]).push({ ...d, w: 3, h: DOCK_DEPTH - 2 }));
+    return out;
+  };
+  // How far each row's rooms reach back from the street, walls included.
+  const backOf = (rows: [RoomSpec[], RoomSpec[]]): [number, number] => [Math.max(3, ...rows[0].map((r) => r.h)) + 3, Math.max(3, ...rows[1].map((r) => r.h)) + 2 + X];
+  // The head's length along the street for a cap (walls included): its floor and its annex's over the block's width.
+  const headOf = (cap: RoomSpec, width: number): number => Math.max(3, Math.ceil((cap.w * cap.h + (cap.annex ? cap.annex.w * cap.annex.h : 0)) / (width - (cap.annex ? 1 : 0)))) + 2;
+  // A cap only where its head is not drawn out past what the room may take (`stretchOf`): a small core across a wide
+  // block is a strip. With none that fits, the street runs through to a port.
+  const fits = (cap: RoomSpec): boolean => {
+    const back = backOf(arrange(cap, () => 0)), width = back[0] + back[1] - 1;
+    return (headOf(cap, width) - 2) * width <= stretchOf(cap) * (cap.w * cap.h + (cap.annex ? cap.annex.w * cap.annex.h : 0));
+  };
+  const named = typeof o.cap === 'string' ? bySize.filter((r) => r.role === o.cap) : [];
+  const capOf = o.cap && rooms.length >= 3 ? [...named, ...bySize.filter((r) => !fixed.includes(r.role) && !named.includes(r)), ...bySize.filter((r) => fixed.includes(r.role)).slice(0, 1)].find(fits) : undefined;
+  const rows = arrange(capOf, (row) => c.rng.int(0, row.length));
   const run = (row: RoomSpec[]): number => row.reduce((n, r) => n + r.w + 1, 1);
   const L0 = Math.max(run(rows[0]), run(rows[1]), 4);
   // Evening: the shorter row's ordinary rooms (not docks, cabins or annexes) share the slack a tile at a time from the
   // far end, none past a quarter again its own length, so no room is drawn out into a strip; the rest is left, a shorter row.
+  // Each row room's planned floor, kept through evening: what run-on may grow it to is measured from this.
+  const plan = new Map<RoomSpec, number>(rows.flat().map((r) => [r, r.w * r.h]));
   if (o.even || docks.length > 0) for (const row of rows) {
     const grow = row.map((r, i) => (r.role !== 'dock' && !r.cabin && !r.annexed ? i : -1)).filter((i) => i >= 0).reverse();
     const cap = new Map(grow.map((i) => [i, Math.floor(1.25 * (row[i] as RoomSpec).w)]));
@@ -178,6 +202,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
         const r = row[i] as RoomSpec;
         if (slack <= 0 || r.w >= (cap.get(i) as number)) continue;
         row[i] = { ...r, w: r.w + 1 };
+        plan.set(row[i] as RoomSpec, plan.get(r) ?? r.w * r.h);
         slack--;
         moved = true;
       }
@@ -196,7 +221,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     made.push({ side, from: first, to: g.regions.length });
     return r.rest.length > 0 ? null : list.length > 0 ? (r.at - from) * dir : u;
   };
-  const back = [Math.max(3, ...rows[0].map((r) => r.h)) + 3, Math.max(3, ...rows[1].map((r) => r.h)) + 2 + X];
+  const back = backOf(rows);
   // On the flank of another block the rows start a tile out: the first tile is that block's back wall.
   const u0 = port.flank ? 1 : 0;
   // The street is as long as the rows turn out, so it never runs on alone past the last room.
@@ -227,7 +252,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     if (mode === 'end' || mode === 'inner') for (const [k, side] of ([-1, 1] as const).entries()) {
       const last = made.filter((m) => m.side === side && m.to > m.from).pop(), from = k === 0 ? e0 : e1;
       if (!last || from >= e || through[k]) continue;
-      const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3, to = Math.min(e, from + runOn(g.regions[id]?.spec));
+      const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3, to = Math.min(e, from + runOn(g.regions[id]?.spec, plan.get(g.regions[id]?.spec as RoomSpec)));
       const box = side < 0 ? rect(f, from, to, -(h + 3), -1) : rect(f, from, to, 1 + X, h + 3 + X);
       let open = true;
       for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
@@ -270,7 +295,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     const last = made.filter((m) => m.side === side && m.to > m.from).pop();
     const end = ends[k] as number;
     if (!last || end >= L || !whole[k]) continue;
-    const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3, to = Math.min(L, end + runOn(g.regions[id]?.spec));
+    const id = last.to - 1, h = g.regions[id]?.spec?.h ?? 3, to = Math.min(L, end + runOn(g.regions[id]?.spec, plan.get(g.regions[id]?.spec as RoomSpec)));
     const box = side < 0 ? rect(f, end, to, -(h + 3), -1) : rect(f, end, to, 1 + X, h + 3 + X);
     let open = true;
     for (let y = box[1]; y < box[3] && open; y++) for (let x = box[0]; x < box[2] && open; x++) open = c.free(x, y);
@@ -290,7 +315,7 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     // Its annex is cut from one end of it: the head is that much longer, the wall between them is the end room's,
     // and the annex opens into the end room.
     const nook = capOf.annex, nookArea = nook ? nook.w * nook.h : 0;
-    const along = Math.max(3, Math.ceil((capOf.w * capOf.h + nookArea) / (v1 - v0 - 2 - (nook ? 1 : 0)))) + 2;
+    const along = headOf(capOf, v1 - v0 - 2);
     const box = rect(f, L, L + along, v0, v1);
     for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y)) return null;
     const head = g.room(capOf.role, { spec: capOf, access: [hall] });
