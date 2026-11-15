@@ -8,7 +8,7 @@
 import type { GenResult, ModuleDef, RoomRole } from '../../src/sim';
 import { content } from '../../src/content';
 import { rotatedSize } from '../../src/sim/modules/footprint';
-import { E, edgeMarkings, N, S, W, type EdgeMarkings } from '../../src/sim/shipgen/markings';
+import { E, edgeMarkings, MARK_INSET, N, S, W, type EdgeMarkings } from '../../src/sim/shipgen/markings';
 import { gen, Raster, ROLE_TINT, type RGB } from './draw';
 
 export const defs = content.modules as Record<string, ModuleDef>;
@@ -88,18 +88,20 @@ export function labelView(spec: string, seed: number, depth = 4, t = 16, marks =
 /** Line colour of each edge marking on the view (the hazard band alternates with black, as chevrons would). */
 const MARK_INK: Record<keyof EdgeMarkings, RGB> = { walkway: [235, 235, 235], apron: [90, 200, 255], keepClear: [255, 210, 0], hazard: [255, 170, 0] };
 
-/** Draw edge-marking masks: a 2 px line just inside each set edge of a tile. */
+/** Draw edge-marking masks: a line along each set edge of a tile, its kind's inset in from that edge. */
 function drawMarks(r: Raster, marks: EdgeMarkings, W0: number, t: number, top: number): void {
   for (const [kind, mask] of Object.entries(marks) as [keyof EdgeMarkings, Uint8Array][]) {
     mask.forEach((m, i) => {
       if (!m) return;
       const px = (i % W0) * t, py = top + Math.floor(i / W0) * t;
       const c: RGB = kind === 'hazard' && ((i % W0) + Math.floor(i / W0)) % 2 ? [20, 20, 20] : MARK_INK[kind];
-      const k = kind === 'keepClear' || kind === 'hazard' ? 3 : 2, o = 1;
-      if (m & N) r.rect(px + o, py + o, t - 2 * o, k, c);
-      if (m & S) r.rect(px + o, py + t - o - k, t - 2 * o, k, c);
-      if (m & W) r.rect(px + o, py + o, k, t - 2 * o, c);
-      if (m & E) r.rect(px + t - o - k, py + o, k, t - 2 * o, c);
+      const k = kind === 'keepClear' || kind === 'hazard' ? 3 : 2, o = Math.max(1, Math.round(MARK_INSET[kind] * t - k / 2));
+      // a line runs the tile's full length so lines on neighbouring tiles join, and stops at the line it meets at a corner
+      const x0 = m & W ? px + o : px, x1 = m & E ? px + t - o : px + t, y0 = m & N ? py + o : py, y1 = m & S ? py + t - o : py + t;
+      if (m & N) r.rect(x0, py + o, x1 - x0, k, c);
+      if (m & S) r.rect(x0, py + t - o - k, x1 - x0, k, c);
+      if (m & W) r.rect(px + o, y0, k, y1 - y0, c);
+      if (m & E) r.rect(px + t - o - k, y0, k, y1 - y0, c);
     });
   }
 }

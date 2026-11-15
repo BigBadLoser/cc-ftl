@@ -18,26 +18,15 @@ describe('edge markings', () => {
     expect([m[5], m[6]]).toEqual([N | S | W, N | E | S]);
   });
 
-  it('runs walkway lines a tile in from a 5-wide corridor wall, broken where a door opens', () => {
-    const rows = ['###D###', '#_____#', '#_____#', '#_____#', '#_____#', '#_____#', '#######'];
-    const rooms = ['.......', '.hhhhh.', '.hhhhh.', '.hhhhh.', '.hhhhh.', '.hhhhh.', '.......'];
-    const { walkway, apron } = edgeMarkings(gen(rows, rooms), {});
-    // the lane is x 2..4, y 2..4: its west side carries the line all the way down, and nothing runs inside it
-    expect([2, 3, 4].map((y) => mask(walkway, 7, 2, y) & W)).toEqual([W, W, W]);
-    expect(mask(walkway, 7, 3, 3)).toBe(0);
-    // its north side breaks under the door: (3,2) faces the margin tile in front of the door (3,1)
-    expect(mask(walkway, 7, 2, 2) & N).toBe(N);
-    expect(mask(walkway, 7, 3, 2) & N).toBe(0);
-    // the apron sits on the floor tile facing the door
-    expect(mask(apron, 7, 3, 1)).toBe(N);
-  });
-
-  it('runs a centre line down a 2-wide corridor, over its doors', () => {
+  it('runs walkway lines along corridor walls, stopping at doors', () => {
     const rows = ['##D###', '#____#', '#____#', '######'];
     const rooms = ['......', '.hhhh.', '.hhhh.', '......'];
-    const { walkway } = edgeMarkings(gen(rows, rooms), {});
-    expect([1, 2, 3, 4].map((x) => mask(walkway, 6, x, 1))).toEqual([S, S, S, S]);
-    expect([1, 2, 3, 4].map((x) => mask(walkway, 6, x, 2))).toEqual([0, 0, 0, 0]);
+    const { walkway, apron } = edgeMarkings(gen(rows, rooms), {});
+    expect([1, 2, 3, 4].map((x) => mask(walkway, 6, x, 1) & N)).toEqual([N, 0, N, N]);
+    expect([1, 2, 3, 4].map((x) => mask(walkway, 6, x, 2) & S)).toEqual([S, S, S, S]);
+    expect(mask(walkway, 6, 1, 1) & W).toBe(W);
+    expect(mask(walkway, 6, 2, 1) & S).toBe(0); // nothing down the middle
+    expect(mask(apron, 6, 2, 1)).toBe(N);
   });
 
   it('boxes the open access tiles of machines and bands a reactor along its walls, not across its door', () => {
