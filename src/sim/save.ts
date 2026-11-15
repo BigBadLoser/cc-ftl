@@ -152,8 +152,9 @@ import { newYard, type YardState } from './yard/types';
  *   'stasis', and `Prisoner.from` (the galaxy faction a prisoner's release counts with).
  * v122 (prisoner deals, #116): `Deal.handover.prisoner` (a prisoner's slab sold at a station, `job` optional), `StasisJob.phase` 'unstow' with `deliver` and `lifted`.
  * v123: `Prize.hullValue` removed (no hull sale; the value only sizes the loot at capture).
+ * v124 (deck finishes and markings, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, heavy plate, clean tile, carpet) and the deck marking masks `markWalkway`, `markApron`, `markKeepClear`, `markHazard` (sim/marks.ts).
  */
-export const SAVE_VERSION = 123;
+export const SAVE_VERSION = 124;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {
