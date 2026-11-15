@@ -9,6 +9,7 @@ from mathutils import Vector
 
 from . import walls as W
 from .wall3d_iwin import _clip
+from .faction import drone as DR
 
 RECESS = 3                  # px: the pocket's depth, straight back into the slope
 BELOW = 2                   # sprite px: the slope left between the pocket's bottom edge and the ramp's edge (where the
@@ -203,8 +204,8 @@ def handle(k, yface, zlo, zhi):
 
 def tube(k, path, r, up):
     """A round tube (SIDES) along a path lying in the plane square to up, mitred at each bend (its section on the
-    bisector); its faces toned as drone's own pipes (the "rose" family, level 2, by facing: the user). Its ends are left
-    open."""
+    bisector); its faces in drone's pipe tones (faction.drone.pipe_tone, its walls' handles too: the user). Its ends are
+    left open."""
     up = Vector(up).normalized()
     P = [Vector(p) for p in path]
     rings = []
@@ -222,4 +223,4 @@ def tube(k, path, r, up):
             mid = sum(pts, Vector()) / 4
             d = pb - pa
             out = mid - (pa + d * max(0.0, min(1.0, (mid - pa).dot(d) / d.dot(d))))
-            k.poly(pts, "rose", 2, out)                 # (toned as drone's own pipes: faction.drone.handle)
+            k.poly(pts, "wall", 2, out, fixed=DR.pipe_tone(out))   # (drone's pipe tones, its walls' handles too)

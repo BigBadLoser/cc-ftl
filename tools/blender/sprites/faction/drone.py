@@ -11,6 +11,17 @@ from .parts import LINE, PAINT, PX, PZ, bezier, body, corner_piece, glow, pipe, 
 from .shell import NO, Feature, FloorDrop, FootTone, FreeEnds, LookShell, SlotHoles, _end_section, _ends
 
 
+PIPE_LIGHT = (0.3, 0.5, 0.8)        # drone's round pipes: each facet's tone by its turn to this (x, y near, z up),
+PIPE_TONES = ((0.85, "fDS1"), (0.6, "fDS2"), (0.3, "fDS3"), (-2.0, "fDS4"))     # (the interior window's pipes' tones,
+                                                                                 # the walls' handles too: the user)
+
+
+def pipe_tone(out):
+    """A round pipe's facet's palette name from its outward normal."""
+    lt = Vector(PIPE_LIGHT).normalized().dot(Vector(out).normalized())
+    return next(c for t, c in PIPE_TONES if lt > t)
+
+
 def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
     """A pull handle: one smooth round bar out of the wall at u0, along d out, and back in at u1, its bends curved."""
     rr = min(d, 0.06)
@@ -19,7 +30,7 @@ def handle(k, ax, plane, u0, u1, zc, d, r=0.045):
         return T.P(ax, plane, u, zc, dd)
     pts = bezier(W_(u0, -0.01), W_(u0, d), W_(u0 + rr, d), 6)
     pts += bezier(W_(u1 - rr, d), W_(u1, d), W_(u1, -0.01), 6)
-    pipe(k, pts, r, "rose", 2, n=8)                     # (dark conduits, in their dark bands)
+    pipe(k, pts, r, "rose", 2, n=8, col=pipe_tone)      # (dark conduits, in their dark bands)
 
 
 DRONE_S = 7 / 32                    # the outer corner is cut off this far along each axis (on the shell's grid)

@@ -100,10 +100,11 @@ def _slab(z0, z1, d):
     return [(0.0, z0), (d, z0), (d, z1), (0.0, z1)]
 
 
-def pipe(k, pts, r, fam, lvl, n=6, flat=None):
+def pipe(k, pts, r, fam, lvl, n=6, flat=None, col=None):
     """A round pipe along a horizontal polyline (one height), r its radius. flat = (top, sides): a thin pipe drawn
     square in section, its top one palette name and its sides another, so it reads as a clean lit line at the art's
-    size (round facets each take their own shade and speckle)."""
+    size (round facets each take their own shade and speckle). col: a facet's palette name from its outward normal (a
+    look's own pipe tones) instead of fam's ramp."""
     up = Vector((0, 0, 1))
     off = math.pi / n if flat else 0.0
     rings = []
@@ -117,7 +118,8 @@ def pipe(k, pts, r, fam, lvl, n=6, flat=None):
         for j in range(n):
             q = [a_[j], b_[j], b_[(j + 1) % n], a_[(j + 1) % n]]
             o = sum(q, Vector()) / 4 - c
-            k.poly(q, fam, lvl, o, fixed=(flat[0] if o.normalized().z > 0.5 else flat[1]) if flat else None)
+            k.poly(q, fam, lvl, o, fixed=col(o) if col else (flat[0] if o.normalized().z > 0.5 else flat[1]) if flat
+                   else None)
 
 
 def bezier(p0, p1, p2, n=8):
