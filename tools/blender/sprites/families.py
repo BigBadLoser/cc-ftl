@@ -329,6 +329,9 @@ def jobs(name):
     if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
         from . import barcounter_r30
         return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
+    if name == "purifier6":  # look study, preview only (not in RENDERED): water purifier round 6 (#321)
+        from . import purifier_r6
+        return purifier_r6.jobs(), purifier_r6.PAL
     if name == "purifier5":  # look study, preview only (not in RENDERED): water purifier round 5, form over paint (#321)
         from . import purifier_r5
         return purifier_r5.jobs(), purifier_r5.PAL
