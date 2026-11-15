@@ -81,7 +81,7 @@ export function stationWork(sim: Sim, d: Deal, v: Vehicle): boolean {
   for (const l of d.get) {
     let need = l.count - cargoOf(sim, d.vehicle, l.item) - (res.incoming.get(refKey('vehicle', d.vehicle, l.item)) ?? 0);
     for (let guard = 0; need > 0 && guard < 20; guard++) {
-      const s = nearestSource(sim, d.ship, l.item, stand, res);
+      const s = nearestSource(sim, d.ship, l.item, stand, res, true);
       if (!s) break;
       const n = Math.min(need, s.avail, DEFAULT_CARRY_CAPACITY);
       makeHaul(sim, res, 'hauling', d.ship, s, { kind: 'vehicle', id: d.vehicle }, l.item, n, [], [], { id: d.id, dir: 'get' });
