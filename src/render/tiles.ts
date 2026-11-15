@@ -135,7 +135,7 @@ export function hullSide(kindAt: KindAt, x: number, y: number): number {
   const behind = (sp(0, -1) && alongX) || (sp(-1, 0) && alongY);
   const stepY = sp(1, -1) && backY;
   const stepX = sp(-1, 1) && backX;
-  if (!behind && !sp(-1, -1) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
+  if (!behind && !sp(-1, -1) && !outward(kindAt, x, y) && ((stepY && nearWall(x + 1, y)) || (stepX && nearWall(x, y + 1)))) return HullSide.Near;
   if (behind || (sp(-1, -1) && (backY || backX)) || stepY || stepX) return HullSide.Far;
   return HullSide.None;
 }

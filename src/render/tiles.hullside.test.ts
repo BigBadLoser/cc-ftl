@@ -70,6 +70,12 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(hullSide(t, 3, 4)).toBe(HullSide.Near);
     expect(hullSide(t, 3, 5)).toBe(HullSide.Near);
   });
+  it("a corner with floor in front stays far even beside a near step (it faces space itself only diagonally)", () => {
+    // (3, 3): floor right in front (+y) and two tiles east, space at its NE and SE diagonals; its east neighbour is near.
+    const k = ship(["       ", " ######", " #_# _#", " #_##_#", " #__ _#", " ######", "       "]);
+    expect(hullSide(k, 3, 3)).toBe(HullSide.Far);
+    expect(replacesFloor(k, 3, 3)).toBe(false);
+  });
   it("a step three tiles deep keeps its back wall and corner far", () => {
     const k = ship(["         ", " ####    ", " #__#    ", " #__#### ", " #_____# ", " #_____# ", " #_____# ", " ####### "]);
     expect(hullSide(k, 4, 3)).toBe(HullSide.Far);
