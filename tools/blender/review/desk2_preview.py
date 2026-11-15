@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"g1": "G1  waterfall, office", "g2": "G2  podium, customs", "g3": "G3  salvage, guard",
+NAMES = {"h1": "H1  scanner arch, customs", "h2": "H2  hover, office", "h3": "H3  retro, guard",
+         "g1": "G1  waterfall, office", "g2": "G2  podium, customs", "g3": "G3  salvage, guard",
          "f1": "F1  flight cases, guard", "f2": "F2  glass top, office", "f3": "F3  twin fins, customs",
          "e1": "E1  arc, office", "e2": "E2  trestle, guard", "e3": "E3  cantilever, customs",
          "d1": "D1  slab, office", "d2": "D2  console, guard", "d3": "D3  counter, customs"}

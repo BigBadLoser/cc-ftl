@@ -329,6 +329,9 @@ def jobs(name):
     if name == "barcounter30":  # look study, preview only (not in RENDERED): bar round 30, cubby shelves on the back
         from . import barcounter_r30
         return barcounter_r30.jobs(), "only:bar22+bar17+bar9"
+    if name == "desk2e":  # look study, preview only (not in RENDERED): 2x1 desks round 5 (#485)
+        from . import desk2_r5
+        return desk2_r5.jobs(), desk2_r5.PAL
     if name == "desk2d":  # look study, preview only (not in RENDERED): 2x1 desks round 4 (#485)
         from . import desk2_r4
         return desk2_r4.jobs(), desk2_r4.PAL
