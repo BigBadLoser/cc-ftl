@@ -55,21 +55,24 @@ export const barPanel: LabPanel = {
         },
       }));
     }
-    // The L at r0: the 3x1 along u with its padded face on +v, the corner at its right end, the 2x1 turned (r1)
-    // running back along v from the corner; stools on the customer side. Front-most tiles are the anchors.
+    // The L at r0: the 3x1 along u with its padded face on +v, the corner at its right end, the 2x1 turned (r3, its
+    // padded face on +u) running back along v from the corner; stools on the customer side. Front-most tiles are the
+    // anchors, drawn back to front by depth (gx + gy).
     cells.push({
-      label: 'L: 3x1 + corner + 2x1 r1, stools in front',
+      label: 'L: 3x1 + corner + 2x1 r3, stools along both padded sides',
       w: 560,
       h: 380,
       newRow: true,
       mount(root) {
         const ox = 250, oy = 100;
         floor(ctx, root, ox, oy, -1, 5, -1, 4);
-        // Back-to-front draw order: arm, corner, straight, stools.
-        put(ctx, root, `${SHORT}.r1`, ox, oy, 3, 1);
-        put(ctx, root, `${CORNER}.r0`, ox, oy, 3, 2);
-        put(ctx, root, `${COUNTER}.r0`, ox, oy, 2, 2);
-        for (const gx of [0, 1, 2]) put(ctx, root, `${STOOL}.r0`, ox, oy, gx, 3);
+        const items: [string, number, number][] = [
+          [`${SHORT}.r3`, 3, 1], [`${COUNTER}.r0`, 2, 2], [`${CORNER}.r0`, 3, 2],
+          ...[0, 1, 2, 3].map((gx): [string, number, number] => [`${STOOL}.r0`, gx, 3]),
+          ...[0, 1, 2].map((gy): [string, number, number] => [`${STOOL}.r0`, 4, gy]),
+        ];
+        items.sort((a, b) => a[1] + a[2] - (b[1] + b[2]) || a[1] - b[1]);
+        for (const [id, gx, gy] of items) put(ctx, root, id, ox, oy, gx, gy);
         return () => {};
       },
     });
