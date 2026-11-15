@@ -12,6 +12,7 @@ import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './compon
 import { dropSlab, liftSlab, rackSlab, sealPrisoner, stowSlab, takeSlabFor, unstowSlab } from './freeze';
 import { rackEmpty, rackFull, rackHere, rackRoom, rackTile, siteShuttle } from './rack';
 import { VehicleC } from '../vehicles/components';
+import { AwaySiteC } from '../away/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
 import { isFerryRegion } from '../ferry/pick';
 import { findPath, type Tile } from '../crew/pathfind';
@@ -148,28 +149,62 @@ export function slabCarrier(sim: Sim, vehicle: number, prize: number): boolean {
 /**
  * Wheel room at the home ship of a shuttle that could carry slabs from `prize` (`stasisRoom` there; 0 for one that is not a `slabCarrier`). The
  * one answer to "can this shuttle take a prize's slabs home": the seal refusal, the shuttle's room and the pick of a shuttle to send all ask it.
+ * The home's room already counts every slab bound for it (`inbound`); when this shuttle serves `prize`, its own (its rack and the prize's slabs
+ * on the way) are given back, as `shuttleRoom` and the prize's `stasisRoom` count those themselves.
  */
 export function homeRoom(sim: Sim, vehicle: number, prize: number): number {
-  return slabCarrier(sim, vehicle, prize) ? stasisRoom(sim, sim.world.get(vehicle, VehicleC)!.homeShip) : 0;
+  if (!slabCarrier(sim, vehicle, prize)) return 0;
+  const home = sim.world.get(vehicle, VehicleC)!.homeShip;
+  const own = homeBound(sim, vehicle, home) && siteShuttle(sim, prize) === vehicle ? rackFull(sim, vehicle).length + pending(sim, prize) : 0;
+  return stasisRoom(sim, home) + own;
+}
+
+/** True for a shuttle whose slabs go to the wheels of `home`: based there, and not sealed for a run out (a prisoner's handover, `outbound`). */
+const homeBound = (sim: Sim, vehicle: number, home: number): boolean => {
+  const v = sim.world.get(vehicle, VehicleC);
+  return !!v && v.homeShip === home && !v.outbound;
+};
+
+/** Slabs on a ship that will want a wheel slot: on a cart there, or with a stasis job there that will make or move one (not a stow, a hand-in to a rack, or a handover's). */
+function pending(sim: Sim, ship: number): number {
+  // A handover's slab (a job with `deliver`, capture/delivery.ts) is leaving the ship for a station: it wants no slot.
+  const leaving = new Set<number>();
+  let n = 0;
+  for (const id of sim.world.query(JobC)) {
+    const j = sim.world.get(id, JobC);
+    if (j?.kind !== 'stasis') continue;
+    if (j.stasis?.deliver) leaving.add(j.target ?? 0);
+    else if (j.stasis?.phase !== 'stow' && j.stasis?.phase !== 'ship' && shipIdOf(sim, j) === ship) n++;
+  }
+  for (const id of fullSlabs(sim)) {
+    const p = slabPlace(sim, id);
+    if (p?.kind === 'carried' && p.ship === ship && !leaving.has(id)) n++;
+  }
+  return n;
+}
+
+/**
+ * Slabs bound for the wheels of `home` from elsewhere (Codex P2): full slabs in the racks of its shuttles, and the slabs on the way on each prize a
+ * shuttle of its serves (`pending` there). Every shuttle counts, so two prizes served from one home never both count on its last slot.
+ */
+function inbound(sim: Sim, home: number): number {
+  let n = 0;
+  for (const v of sim.world.query(VehicleC)) if (homeBound(sim, v, home)) n += rackFull(sim, v).length;
+  for (const prize of sim.world.query(AwaySiteC)) {
+    const v = siteShuttle(sim, prize);
+    if (v && prize !== home && homeBound(sim, v, home)) n += pending(sim, prize);
+  }
+  return n;
 }
 
 /**
  * Room on a ship not yet spoken for: slots of intact wheels not holding a full slab, plus the room of a prize's shuttle (`shuttleRoom`), minus
- * slabs already headed for one (on a cart, or with a pickup job) and seal jobs that will make one. The stasis system posts a job only while
+ * slabs already headed for one (on a cart, or with a pickup job), seal jobs that will make one (`pending`) and slabs bound for it from prizes by
+ * shuttle (`inbound`). The stasis system posts a job only while
  * this is above 0.
  */
 export function stasisRoom(sim: Sim, ship: number): number {
-  let room = wheelRoom(sim, ship) + shuttleRoom(sim, ship);
-  for (const id of fullSlabs(sim)) {
-    const p = slabPlace(sim, id);
-    if (p?.kind === 'carried' && p.ship === ship) room--;
-  }
-  for (const id of sim.world.query(JobC)) {
-    const j = sim.world.get(id, JobC);
-    // A handover's job (`deliver`) takes the slab off the ship: it needs no room here.
-    if (j?.kind === 'stasis' && j.stasis?.phase !== 'stow' && j.stasis?.phase !== 'ship' && !j.stasis?.deliver && shipIdOf(sim, j) === ship) room--;
-  }
-  return room;
+  return wheelRoom(sim, ship) + shuttleRoom(sim, ship) - pending(sim, ship) - inbound(sim, ship);
 }
 
 /**

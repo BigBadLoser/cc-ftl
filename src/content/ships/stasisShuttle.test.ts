@@ -7,13 +7,17 @@ import { footprintBlockedByCrew } from '../../sim/modules/spawn';
 import { isTileWalkable } from '../../sim/modules/walk';
 import { shipGrid } from '../../sim/regions';
 import { deserialize, serialize } from '../../sim/save';
-import { StasisC } from '../../sim/stasis/components';
+import { StasisC, StasisWheelC } from '../../sim/stasis/components';
+import { openSite } from '../../sim/away/handlers';
+import { rackSlab, sealPrisoner } from '../../sim/stasis/freeze';
+import { JobC, PositionC } from '../../sim/crew/components';
+import { shipIdOf } from '../../sim/regions';
 import { destroyVehicle } from '../../sim/vehicles/lifecycle';
 import { sealRefusal, sealWait } from '../../sim/stasis/order';
 import { slabPlace, wheelSlots } from '../../sim/stasis/query';
 import { rackEmpty, rackFull } from '../../sim/stasis/rack';
 import { shuttleWork } from '../../sim/stasis/shuttle';
-import { shuttleRoom } from '../../sim/stasis/jobs';
+import { shuttleRoom, stasisRoom } from '../../sim/stasis/jobs';
 import { spawnVehicle } from '../../sim/vehicles/lifecycle';
 import { wreckShip } from '../../sim/combat/wreck';
 import { PrizeC } from '../../sim/combat/components';
@@ -279,5 +283,64 @@ describe('slabs by shuttle: Codex findings and edge cases', () => {
       closed = !site || site.owner !== 'stasis' || site.status !== 'open';
     }
     expect(closed).toBe(true);
+  });
+});
+
+describe('slabs by shuttle: home wheel room across shuttles (Codex P2)', () => {
+  /** A second captured prize (the same sealed hull as prizeGame's) further east, with one prisoner. */
+  function secondPrize(sim: Sim, home: number): { prize: number; prisoner: number } {
+    const h = sim.world.get(home, ShipC)!;
+    const rows = ['..........', '.########.', '.#______#.', '.#______#.', '.#______#.', '.########.', '..........'];
+    const prize = stampShip(sim, { name: 'Taken too', rows, modules: [] }, { faction: 'hostile', state: 'active', x: h.x + h.width + 16, y: h.y + h.height + 20 });
+    const g = shipGrid(sim, prize)!;
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Floor) g.set('o2', x, y, 21);
+    airlockOn(sim, prize);
+    const before = new Set(sim.world.query(PrisonerC));
+    let at = { x: 0, y: 0 };
+    for (let y = g.y0; y < g.y0 + g.height; y++) for (let x = g.x0; x < g.x0 + g.width; x++) if (g.get('struct', x, y) === Struct.Floor && isTileWalkable(sim, g, x, y)) at = { x, y };
+    sim.enqueue({ type: 'debug.spawnCrew', ship: prize, x: at.x, y: at.y, role: 'role.security', faction: 'hostile' });
+    sim.step();
+    sim.enqueue({ type: 'debug.capture', ship: prize });
+    sim.step();
+    sim.events.drain();
+    return { prize, prisoner: sim.world.query(PrisonerC).find((id) => !before.has(id))! };
+  }
+
+  /** prizeGame with the home wheel down to one free slot, a second shuttle of the home ship (out flying) and a second prize served by the first shuttle. */
+  function twoPrizes(): { sim: Sim; home: number; prizeA: number; pA: number; prizeB: number; pB: number; vA: number; shuttle: number } {
+    const { sim, home, prize: prizeA, wheel, prisoners, shuttle } = prizeGame(1);
+    const slots = sim.world.get(wheel, StasisWheelC)!.slots;
+    for (let i = 1; i < slots.length; i++) slots[i] = sim.world.createEntity(); // nine slots spoken for: one free
+    const { prize: prizeB, prisoner: pB } = secondPrize(sim, home);
+    // (Set up after the steps above: the stasis system closes a 'stasis' site with no work.)
+    const vA = sim.world.createEntity();
+    sim.world.add(vA, VehicleC, { ...structuredClone(sim.world.get(shuttle, VehicleC)!), state: 'flying', dock: 0 });
+    sim.world.add(prizeA, AwaySiteC, { owner: 'stasis', status: 'open', vehicle: vA, since: sim.tick });
+    expect(openSite(sim, prizeB, 'stasis', shuttle)).toBe(shuttle);
+    return { sim, home, prizeA, pA: prisoners[0]!, prizeB, pB, vA, shuttle };
+  }
+
+  it("a slab in another shuttle's rack, bound for the same home, takes that home's last slot", () => {
+    const { sim, home, pA, prizeB, pB, vA } = twoPrizes();
+    expect(stasisRoom(sim, home)).toBe(1);
+    expect(shuttleRoom(sim, prizeB)).toBe(1);
+    sealPrisoner(sim, pA, playerCrew(sim)[0]!);
+    rackSlab(sim, pA, vA, { x: 0, y: 0 });
+    expect(stasisRoom(sim, home)).toBe(0); // the slab on its way home has the slot
+    expect(shuttleRoom(sim, prizeB)).toBe(0);
+    expect(sealRefusal(sim, pB)).toBe('noWheel');
+  });
+
+  it("a seal under way on another prize served from the same home takes that home's last slot too", () => {
+    const { sim, home, prizeA, pA, prizeB, pB } = twoPrizes();
+    const pos = sim.world.get(pA, PositionC)!;
+    sim.world.add(sim.world.createEntity(), JobC, { category: 'hauling', kind: 'stasis', x: pos.x, y: pos.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: pA, stasis: { phase: 'fetch' } });
+    expect(shipIdOf(sim, pos)).toBe(prizeA);
+    expect(stasisRoom(sim, home)).toBe(0);
+    expect(shuttleRoom(sim, prizeB)).toBe(0);
+    expect(sealRefusal(sim, pB)).toBe('noWheel');
+    // Prize A's own shuttle keeps the slot for its own seal, counted once: room for it, none left over.
+    expect(shuttleRoom(sim, prizeA)).toBe(1);
+    expect(stasisRoom(sim, prizeA)).toBe(0);
   });
 });

@@ -6,6 +6,7 @@ import { PrisonerC } from '../sim/fight/components';
 import { repKey } from '../sim/galaxy/standing';
 import { SLOT_EMPTY, SLOT_NONE, StasisWheelC } from '../sim/stasis/components';
 import { stowStage } from '../sim/stasis/query';
+import { stasisRoom } from '../sim/stasis/jobs';
 import { TURN_STEP_WORK, UNSTOW_LIFT, UNSTOW_WORK } from '../sim/stasis/tuning';
 import { sealPrisoner, stowSlab } from '../sim/stasis/freeze';
 import { reputationOf } from '../sim/story/state';
@@ -180,6 +181,17 @@ describe('prisoner deals: the slab is delivered for real', () => {
     until(sim, () => stowStage(sim.world, wheel) === null, 10);
     expect(sim.tick - start).toBeGreaterThanOrEqual(turns * TURN_STEP_WORK + UNSTOW_WORK - 2);
     expect(sim.world.get(prisoner, StasisC)?.at).toBe('carried');
+  });
+
+  it("a slab on its way out to a station takes no wheel room: neither on the cart nor in your shuttle's rack (not inbound)", () => {
+    const { sim, station, prisoner, wheel } = game('navy', 'navy');
+    const ship = playerShip(sim)!;
+    const free = (): number => sim.world.get(wheel, StasisWheelC)!.slots.filter((x) => x <= 0).length;
+    accept(sim, station, prisoner);
+    until(sim, () => sim.world.get(prisoner, StasisC)?.at === 'carried', 120);
+    expect(stasisRoom(sim, ship)).toBe(free());
+    until(sim, () => inShuttle(sim, prisoner), 120);
+    expect(stasisRoom(sim, ship)).toBe(free());
   });
 
   it('cancelled while collecting: the slab comes back out and goes back into a wheel, nothing paid', () => {
