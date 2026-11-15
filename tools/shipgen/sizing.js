@@ -30,7 +30,7 @@ const { Rng } = await s.ssrLoadModule('/src/sim/rng.ts');
 const { seedOf } = await s.ssrLoadModule('/src/sim/shipgen/generate.ts');
 const { content } = await s.ssrLoadModule('/src/content/index.ts');
 const { stationRecipes } = await s.ssrLoadModule('/src/content/stationRecipes.ts');
-const kinds = { tree: 'pirate', spine: 'mining', agri: 'farming', compound: 'mining', fort: 'military', crescent: 'trading', bazaar: 'trading', tradepost: 'trading' };
+const kinds = { tree: 'pirate', spine: 'mining', agri: 'farming', compound: 'mining', fort: 'military', crescent: 'trading', bazaar: 'trading', tradepost: 'trading', prefab: 'trading' };
 const SEEDS = Number(process.env.SEEDS ?? 4);
 const roles = {}, prints = {}, rows = [];
 for (const [fam, kind] of Object.entries(kinds)) for (const [ri, recipe] of stationRecipes[fam].entries()) for (const size of ['outpost', 'station', 'hub']) for (let seed = 1; seed <= SEEDS; seed++) {

@@ -135,10 +135,12 @@ export class RegionGrid {
   }
 
   /** The compiled floor cropped to its extent, with the region of every floor tile: for sheets and the plan class. */
-  snapshot(cell: string[] = this.compile()): { rows: string[]; roomOf: Int16Array; width: number; height: number; x0: number; y0: number } {
+  snapshot(cell: string[] = this.compile(), include?: readonly [number, number, number, number]): { rows: string[]; roomOf: Int16Array; width: number; height: number; x0: number; y0: number } {
     const { size, half } = this;
     let x0 = size, y0 = size, x1 = -1, y1 = -1;
     for (let k = 0; k < cell.length; k++) if (cell[k] !== '.') { x0 = Math.min(x0, k % size); x1 = Math.max(x1, k % size); y0 = Math.min(y0, Math.floor(k / size)); y1 = Math.max(y1, Math.floor(k / size)); }
+    // Open ground that belongs to it (a prefab base's shuttle pad) is inside its extent too.
+    if (include) { x0 = Math.min(x0, include[0] + half); y0 = Math.min(y0, include[1] + half); x1 = Math.max(x1, include[2] - 1 + half); y1 = Math.max(y1, include[3] - 1 + half); }
     x0--; y0--; x1++; y1++; // a tile of space all round, as the generator's templates have
     const width = x1 - x0 + 1, height = y1 - y0 + 1;
     const rows: string[] = [];

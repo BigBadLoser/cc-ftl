@@ -103,12 +103,19 @@ export function carveInRock(src: ShipTemplate, defs: Record<string, ModuleDef>):
   return { ...t, rows };
 }
 
-/** Template tiles (the non-'.' ones) as a lookup, with the template size. */
-export function builtOf(t: ShipTemplate): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
-  const w = Math.max(...t.rows.map((r) => r.length));
+/**
+ * Template tiles (the non-'.' ones) as a lookup, with the template size. With `site` (a base of separate modules on
+ * open ground) the whole site: every tile of the template from the dock's face row inward, the ground between the
+ * modules included.
+ */
+export function builtOf(t: ShipTemplate, site?: Pick<Dock, 'face' | 'dir'>): { w: number; h: number; has: (x: number, y: number) => boolean; count: number } {
+  const w = Math.max(...t.rows.map((r) => r.length)), h = t.rows.length;
+  const has = site
+    ? (x: number, y: number): boolean => x >= 0 && x < w && y >= 0 && y < h && (site.dir < 0 ? y >= site.face : y <= site.face)
+    : (x: number, y: number): boolean => (t.rows[y]?.[x] ?? '.') !== '.';
   let count = 0;
-  for (const r of t.rows) for (const c of r) if (c !== '.') count++;
-  return { w, h: t.rows.length, has: (x, y) => (t.rows[y]?.[x] ?? '.') !== '.', count };
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (has(x, y)) count++;
+  return { w, h, has, count };
 }
 
 /**
@@ -117,8 +124,8 @@ export function builtOf(t: ShipTemplate): { w: number; h: number; has: (x: numbe
  * the one that leaves the fewest base tiles over empty space (they would be filled with ground or rock, bulging the outline),
  * then the most central. Null if none keeps that share at or below `maxBulge`.
  */
-export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulge: number): { x: number; y: number; face: number } | null {
-  const b = builtOf(t);
+export function placeAt(plan: AsteroidPlan, t: ShipTemplate, dock: Dock, maxBulge: number, site = false): { x: number; y: number; face: number } | null {
+  const b = builtOf(t, site ? dock : undefined);
   const space = (x: number, y: number): boolean => plan.struct[y * plan.w + x] === Struct.Space;
   let best: { x: number; y: number; face: number; bulge: number; off: number } | null = null;
   for (let x0 = 0; x0 + b.w <= plan.w; x0++) {

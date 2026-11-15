@@ -11,7 +11,7 @@ export { Arranger, mirrorBlock, flipId, type Block, type BlockPort, type AttachO
 export { generateStation, stationFaction, stationProblems, type StationResult } from './stationGen';
 export { planStation, stationCrew, SECURITY_ROLE } from './stationPlan';
 export { crewPosts, crewSize, type CrewPosts } from './stationCrew';
-export { assemble, type Assembly } from './assembly/assemble';
+export { assemble, recipeRooms, type Assembly } from './assembly/assemble';
 export { deptOf, type Dept } from './assembly/dept';
 export { missing as missingRooms } from './assembly/finish';
 export { hullProblems } from './assembly/hull';

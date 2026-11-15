@@ -18,7 +18,7 @@ them.
 | Recipes (data) | `src/content/stationRecipes.ts` |
 | Recipe types | `src/sim/shipgen/assembly/recipe.ts` |
 | The assembler: candidates, roots, the hard checks | `assemble.ts`, `asm.ts` (placing and taking back), `branch.ts` (rules into branches), `finish.ts` (trim, braces, the room check) |
-| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `across.ts` (a cross street: a T, the trade post's), `ring.ts` (ring or arc with its band) |
+| Elements | `prefab.ts` (a prefab base: modules and tubes on open ground), `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `across.ts` (a cross street: a T, the trade post's), `ring.ts` (ring or arc with its band) |
 | Frames and ports | `model.ts` |
 | The wall writer | `regions.ts` (`RegionGrid`) |
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
@@ -162,7 +162,7 @@ still to be discussed and tweaked one by one.
 | Kind | Family |
 |---|---|
 | Mining | the spine only |
-| Trading | the bazaar (designed for it), and maybe the crescent; on a rock (an asteroid outpost) the trade post |
+| Trading | the bazaar (designed for it), and maybe the crescent; on a rock (an asteroid outpost) the prefab base |
 | Pirate | the tree |
 | Military | the star fort (`fort`), and the ring with barracks (from the compound); not the square |
 | Research | the crescent and the half ring (arcs), the labs down the half ring's spine; never the square |
@@ -261,9 +261,26 @@ stepped and now mostly garden (the octagon is the cleaner of the two); no dock o
 about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98). The full circle was
 dropped because its stalls came out as small wedges, the curved walls taking much of the floor.
 
+## The prefab base (`prefab`): prototype
+
+The asteroid trading outpost's family since the user's pick of mock sheet "prefab" (P1, "node"; issue #508): the trade
+posts below read as "one big building". A root of its own (`{ kind: 'prefab' }`, `prefab.ts`), not grown by rules:
+standard modules (six tiles inside, corners cut, a straight run of rooms with a partition and a door between each, as
+long as its rooms' floor at six deep) joined by tubes (one tile wide inside, three long, a door at each end). The dock
+module on the rock face (office | arrivals | armoury, the airlocks in its outer wall over arrivals), a tube to the
+customs node, the market west of it (four stalls and a market court), the habitat east (a barracks, the mess, the
+medbay), command south (core, shields), and off their ends the stores, the other beds with the chief's cabin, and the
+power beside command; a small gun module off the market's end. Crew in barracks. No hangar (`recipeRooms`): a small
+airlock module off the dock module and a 9x9 pad on the ground beside it (`StationResult.site.pad`; the pad itself is
+#509). The outpost fitter levels the whole site, the ground between the modules included.
+
+A cut corner is a stair of wall: the seal rule allows no floor diagonal to space, so the floor's corner tile is wall
+too (gas is four-way, the wall art already draws such stairs on the rings' round corners). Open: only the outpost
+tier stands (station and hub sizes have more guns than gun modules); rock outcrops in the gaps.
+
 ## The trade outposts (`tradepost`): prototype
 
-An asteroid trading outpost's family (`outpostAssembly`; used nowhere else), from the user's pick of mock sheet
+Superseded by the prefab base; kept for the sheets. From the user's pick of mock sheet
 "trade-post" (B and C; A, one street inland, was dropped). Both are wide along the rock face and shallow into it, their
 harbour on the face. The piece they share is a cross street (`across.ts`, section option `across`): at the end of a
 street, a street three wide runs across it both ways. Rooms of the `near` roles stand on the host's side of it, either

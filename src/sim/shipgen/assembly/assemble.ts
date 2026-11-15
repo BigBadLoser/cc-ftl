@@ -14,6 +14,7 @@ import { cabinsOf, house } from './quarters';
 import type { Recipe } from './recipe';
 import { RegionGrid, SOLID, SPACE } from './regions';
 import { noses } from './noses';
+import { prefab } from './prefab';
 import { fillRing, ringPorts, ringSite } from './ring';
 
 /**
@@ -36,13 +37,15 @@ export interface Assembly {
   rooms: number;
   /** Why earlier candidates were rejected. */
   rejected: string[];
+  /** A prefab base's shuttle pad: ground kept clear, x0, y0, x1, y1 on the grid. */
+  pad?: [number, number, number, number];
 }
 
 /** Half the side of the grid a trunk station is assembled on. */
 const HALF = 230;
 const ANGLE: Record<Dir, number> = { n: 0, e: Math.PI / 2, s: Math.PI, w: (3 * Math.PI) / 2 };
 
-interface Outcome { asm: Asm; why: string }
+interface Outcome { asm: Asm; why: string; pad?: [number, number, number, number] }
 
 const tagged = (rooms: readonly RoomSpec[]): RoomSpec[] => rooms.map((r) => (r.dept ? r : { ...r, dept: deptOf(r) }));
 
@@ -58,6 +61,11 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
   const rooms = housed.rooms, pool = housed.pool;
   const finish = (a: Asm): void => { trim(a); if (recipe.braces) brace(a, recipe.braces); };
   const takers = new Set<string>([...(recipe.root.kind === 'fort' ? recipe.root.takes : []), ...(recipe.root.kind === 'ring' ? [...recipe.root.takes, ...(recipe.root.hub ? [...recipe.root.hub.market, ...recipe.root.hub.spokes, ...(recipe.root.hub.gated ?? [])] : [])] : []), ...recipe.branches.flatMap((b) => b.takes)]);
+  if (recipe.root.kind === 'prefab') {
+    const ctx = context(new RegionGrid(HALF), null, rng);
+    const made = prefab(ctx, rooms, docks, pool);
+    return { asm: new Asm(ctx, recipe.spacing), why: made.why, ...(made.pad ? { pad: made.pad } : {}) };
+  }
   const orphans = rooms.filter((r) => !takers.has(r.dept as string));
   if (orphans.length > 0) return { asm: new Asm(context(new RegionGrid(8), null, rng), 0), why: `no part of the recipe takes ${[...new Set(orphans.map((r) => r.dept))].join(', ')}` };
 
@@ -177,11 +185,18 @@ function tryOnce(rng: Rng, recipe: Recipe, all: readonly RoomSpec[], attempt: nu
 }
 
 /**
+ * The rooms of a station's programme a recipe stands: all of them, but a prefab base keeps its shuttle on a pad on the
+ * ground, so it has no vehicle bay.
+ */
+export const recipeRooms = (recipe: Recipe, rooms: readonly RoomSpec[]): readonly RoomSpec[] =>
+  recipe.root.kind === 'prefab' ? rooms.filter((r) => !r.mods.includes('module.vehicle_bay')) : rooms;
+
+/**
  * Assemble a station from a recipe and its rooms. A candidate that cannot stand every room is rejected and another is
  * tried (more slack, other rolls); the reasons come back either way.
  */
 export function assemble(rng: Rng, recipe: Recipe, rooms: readonly RoomSpec[], tries = 5): { ok: Assembly | null; rejected: string[] } {
-  const all = tagged(rooms), rejected: string[] = [];
+  const all = tagged(recipeRooms(recipe, rooms)), rejected: string[] = [];
   // A cluster has no outline to hold it together, so of several that stand the most compact is kept: proportion is a
   // rule here, not an accident of the seed. Every other root takes the first candidate that stands.
   const several = recipe.root.kind === 'core' ? 8 : 1;
@@ -195,7 +210,7 @@ export function assemble(rng: Rng, recipe: Recipe, rooms: readonly RoomSpec[], t
     }
     if (r.why) { rejected.push(r.why); continue; }
     const snap = r.asm.ctx.g.snapshot();
-    const a: Assembly = { ctx: r.asm.ctx, recipe, ...(r.R ? { R: r.R } : {}), sections: r.asm.sections, corridors: r.asm.corridors, rooms: all.length, rejected };
+    const a: Assembly = { ctx: r.asm.ctx, recipe, ...(r.R ? { R: r.R } : {}), ...(r.pad ? { pad: r.pad } : {}), sections: r.asm.sections, corridors: r.asm.corridors, rooms: all.length, rejected };
     if (!best || Math.max(snap.width, snap.height) < best.span) best = { a, span: Math.max(snap.width, snap.height) };
   }
   return { ok: best?.a ?? null, rejected };

@@ -80,6 +80,11 @@ export interface Recipe {
      */
     | { kind: 'fort'; takes: readonly Dept[]; hall: Roll; neck: number }
     /**
+     * A prefab base on open ground (prefab.ts): standard modules joined by short tubes, laid out round a customs node,
+     * the ground between them open; no hangar (the shuttle stands on a pad on the ground).
+     */
+    | { kind: 'prefab' }
+    /**
      * A ring or an arc with its band: it takes these departments itself. `cut` 'octagon': a square outline cut to
      * eight even sides, whatever its size; `{ flat }`: cut so each side keeps that many cells of flat either side of its
      * axis (rounder as the number falls). With `round` the cut corners are arcs; with `shoulders` the ends of each arc

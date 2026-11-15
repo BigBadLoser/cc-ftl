@@ -1,4 +1,4 @@
-import { Rng, assemble, hullProblems, missingRooms, recipeAt, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
+import { Rng, assemble, hullProblems, missingRooms, recipeAt, recipeRooms, stationProgram, type Assembly, type ModuleDef, type Recipe, type RoomSpec, type StationDef, type StationSize } from '../sim';
 import { seedOf } from '../sim/shipgen/generate';
 import { content } from './index';
 import { stations } from './stations';
@@ -24,7 +24,7 @@ export function problemsOf(a: Assembly | null, rooms: readonly RoomSpec[], rejec
   // Beams are open structure: for the hull they are space.
   out.push(...hullProblems({ rows: snap.rows.map((r) => r.replace(/=/g, '.')) }));
   // Every room of the program stands: the assembler's own check (guns by mount, quarters by beds).
-  const short = missingRooms(a.ctx, rooms);
+  const short = missingRooms(a.ctx, recipeRooms(a.recipe, rooms));
   if (short) out.push(short);
   if (g.stranded().length > 0) out.push('floor that cannot be walked to');
   return out;

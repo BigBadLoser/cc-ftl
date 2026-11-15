@@ -64,9 +64,12 @@ function recount(plan: AsteroidPlan): void {
   plan.mass = rock ? mass / rock : 0;
 }
 
-/** Level (surface) or pack (dug) the base and the ring round it, and open the dock's notch to space. */
-function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: Dock, at: { x: number; y: number; face: number }): void {
-  const b = builtOf(t);
+/**
+ * Level (surface) or pack (dug) the base and the ring round it, and open the dock's notch to space. A base on open ground
+ * (`site`: separate modules) is levelled across its whole site, the ground between its modules included.
+ */
+function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: Dock, at: { x: number; y: number; face: number }, site = false): void {
+  const b = builtOf(t, site ? dock : undefined);
   const fill = style === 'surface' ? Struct.Ground : Struct.Rock;
   const clear = (i: number) => { plan.ore[i] = 0; plan.amt[i] = 0; };
   for (let ly = -OUTPOST.ring; ly < b.h + OUTPOST.ring; ly++) {
@@ -119,12 +122,12 @@ export function generateOutpost(style: OutpostStyle, seed: number, content: Outp
     }
     if (!dock) continue;
     const template = { ...(style === 'dug' ? carveInRock(station.template, content.modules) : station.template), name: `${k} outpost` };
-    const b = builtOf(template);
+    const site = !!station.site && style === 'surface', b = builtOf(template, site ? dock : undefined);
     for (let t = 0; t < OUTPOST.tries; t++) {
       const plan = generateAsteroid('big', (seed + (s * OUTPOST.tries + t) * 7919) >>> 0, content.ores, { coverage: style === 'surface' ? 'open' : 'dense', minSize: Math.max(b.w, b.h) + 12 });
-      const at = placeAt(plan, template, dock, OUTPOST.bulge);
+      const at = placeAt(plan, template, dock, OUTPOST.bulge, site);
       if (!at) continue;
-      shape(plan, style, template, dock, at);
+      shape(plan, style, template, dock, at, site);
       recount(plan);
       // Airlocks whose outside is rock mass go (a dug base keeps only its dock; the dock's notch is the one open side).
       const open = (o: { x: number; y: number }): boolean => style === 'surface' && plan.struct[(at.y + o.y) * plan.w + at.x + o.x] !== Struct.Rock;

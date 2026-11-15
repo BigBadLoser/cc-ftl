@@ -20,5 +20,8 @@ export function rotateLayout<T extends GenResult>(r: T, defs: Record<string, Mod
     return { ...m, x: H - m.y - h, y: m.x, rot: (m.rot + 1) % 4, ...(m.clamp ? { clamp: CLAMP[m.clamp] } : {}) };
   });
   const template = { ...r.template, rows: turn(r.template.rows), ...(r.template.floors ? { floors: turn(r.template.floors) } : {}), modules };
-  return { ...r, template, roomOf, rooms: r.rooms.map((room) => ({ ...room, tiles: room.tiles.map(at) })), width: H, height: W, debug: undefined };
+  // A prefab base's pad turns with it.
+  const site = (r as { site?: { pad?: { x: number; y: number; w: number; h: number } } }).site;
+  const turned = site ? { site: site.pad ? { pad: { x: H - site.pad.y - site.pad.h, y: site.pad.x, w: site.pad.h, h: site.pad.w } } : {} } : {};
+  return { ...r, ...turned, template, roomOf, rooms: r.rooms.map((room) => ({ ...room, tiles: room.tiles.map(at) })), width: H, height: W, debug: undefined };
 }
