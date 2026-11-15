@@ -128,6 +128,8 @@ function tendSites(sim: Sim): void {
 function tendRacks(sim: Sim): void {
   const every = Math.max(1, Math.round(RACK_LOAD_SEC * TICK_HZ));
   for (const vehicle of [...sim.world.query(VehicleC)].sort((a, b) => a - b)) {
+    // A shuttle sealed for a run (a prisoner's handover, capture/delivery.ts) keeps the slab it was loaded with, at home or not.
+    if (sim.world.get(vehicle, VehicleC)?.outbound) continue;
     const full = rackFull(sim, vehicle);
     const prize = servedPrize(sim, vehicle);
     if (full.length === 0 && !sim.world.has(vehicle, SlabRackC) && !prize) continue;

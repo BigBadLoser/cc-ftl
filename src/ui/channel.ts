@@ -50,10 +50,12 @@ export function servicesFor(p: UiTradePartner, jobs: number, hire: number): Serv
   if (p.trades) out.push({ id: 'trade', label: 'Trade', note: 'opens trade', opens: true });
   if (p.station) out.push({ id: 'jobs', label: 'Jobs', note: jobs ? `${jobs} posted` : 'none posted' });
   if (p.station || hire) out.push({ id: 'crew', label: 'Crew', note: hire ? `${hire} for hire` : 'nobody' });
+  // Only where this station has a deal for a prisoner the player holds, ready to hand over or not yet.
   const held = p.prisoners ?? [];
-  if (p.station && held.length) {
+  if (p.station && held.some((x) => x.wanted)) {
     const offers = held.filter((x) => x.offer.ok).length;
-    out.push({ id: 'prisoners', label: 'Prisoners', note: offers ? plural(offers, 'offer') : 'no offers' });
+    const going = held.filter((x) => x.offer.status).length;
+    out.push({ id: 'prisoners', label: 'Prisoners', note: going ? `${going} under way` : offers ? plural(offers, 'offer') : 'not ready yet' });
   }
   if (i?.services.includes('Blueprints')) out.push({ id: 'blueprints', label: 'Blueprints', note: `${i.blueprints.filter((b) => !b.known).length} new` });
   if (i?.yard) out.push({ id: 'yard', label: 'Shipyard', note: 'hull expansion' });
@@ -79,8 +81,8 @@ export function linesFor(id: ServiceId, p: UiTradePartner, c: Contact, jobs: num
       const held = p.prisoners ?? [];
       const offers = held.filter((x) => x.offer.ok).length;
       return [nar('Dock control looks over your manifest.'), say(offers
-        ? `${offers === 1 ? 'One of them' : `${offers} of them`} we'll take off your hands. The slab comes over sealed, and you keep the empty one.`
-        : `Nobody on your list is worth anything to us${held.some((x) => !x.frozen) ? ', and we only take them sealed' : ''}.`)];
+        ? `${offers === 1 ? 'One of them' : `${offers} of them`} we'll take off your hands. We send for the slab sealed, and the slab stays with us: it's in the price.`
+        : `We'd take some of them${held.some((x) => x.wanted && !x.frozen) ? ', sealed in stasis' : ''}. Bring them aboard your ship and we'll send for them.`)];
     }
     case 'blueprints':
       return [nar('The archivist keeps one eye on the vault door.'), say((i?.blueprints.length ?? 0) ? 'Plans for sale. Not many places still have these.' : 'The vault is empty for now.')];

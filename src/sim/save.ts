@@ -150,8 +150,9 @@ import { newYard, type YardState } from './yard/types';
  *   slots are a ring with slot 0 at the hatch.
  * v121 (slabs by shuttle, #116): `SlabRackC` on shuttles, `Stasis.at` 'vehicle', `StasisJob.phase` 'ship' with `rack`, slab source 'rack', away site owner
  *   'stasis', and `Prisoner.from` (the galaxy faction a prisoner's release counts with).
+ * v122 (prisoner deals, #116): `Deal.handover.prisoner` (a prisoner's slab sold at a station, `job` optional), `StasisJob.phase` 'unstow' and `deliver`.
  */
-export const SAVE_VERSION = 121;
+export const SAVE_VERSION = 122;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

@@ -1,3 +1,4 @@
+import { cancelSlabRun } from '../galaxy/handover';
 import { dockScan, scanPending } from '../blackmarket/scan';
 import type { Command } from '../commands';
 import type { Sim } from '../sim';
@@ -74,6 +75,10 @@ export const tradeHandlers: { [T in TradeCommandType]: Handler<T> } = {
     const deal = sim.trade.deals.find((d) => d.id === cmd.id);
     if (!deal || !isLive(deal)) return reject(sim, cmd.type, 'noDeal');
     if (deal.phase === 'queued') return dropQueued(sim, deal, 'cancelled'); // nothing was held yet
+    if (deal.handover?.prisoner) {
+      const err = cancelSlabRun(sim, deal); // a prisoner's handover: the slab goes back aboard (galaxy/handover.ts)
+      return err ? reject(sim, cmd.type, err) : undefined;
+    }
     // Once the shuttle has left with the goods there is nothing to call back, except at a station dock: the run is
     // unwound there (goods back where they were) and the shuttle flies home.
     const atStation = deal.phase === 'dockStation' || deal.phase === 'stationWork';

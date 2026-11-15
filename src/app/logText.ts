@@ -2,6 +2,7 @@ import { factionsHostile, homeShip, isOnOurSide } from '../sim/index';
 import { shipIdOf } from '../sim/regions';
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, TraderC, nodeOf, type Sim, type SimEvent } from '../sim';
 import { moduleNameOf } from '../sim/upgrades/stats';
+import { StasisC } from '../sim/stasis/components';
 import type { UiLogEntry, UiSubject } from '../ui/api';
 import { breakWhat } from './breakText';
 import { describeBoarding } from './boardingText';
@@ -9,6 +10,11 @@ import { crewSubject, crewTile, enemyShip, roomOf, shipSubject, tileAt } from '.
 
 export type LogEntry = Pick<UiLogEntry, 'kind' | 'tone' | 'text' | 'fold'> & { subject?: UiSubject };
 
+/** Why a prisoner's handover run was called off (galaxy/handover.ts reasons), as the log line says it. */
+const SLAB_WHY: Record<string, string> = {
+  combat: 'a fight broke out', cancelled: 'you called it off', prisonerGone: 'the prisoner is out of the slab', stationGone: 'the station is gone', lost: 'the shuttle was lost',
+  noDock: 'the shuttle could not dock', loadTimeout: 'the crew did not load the slab in time', flightTimeout: 'the shuttle could not reach the station', noCourier: 'no shuttle came',
+};
 const BLOCKED = { noShuttle: 'no free shuttle', noPilot: 'no free pilot', noAirlock: 'no working airlock', noStock: 'nothing left to take', failed: 'trips keep failing' } as const;
 
 /** The ship's log wording for sim events: every notable event, with the subject a click jumps to. Read-only. */
@@ -138,6 +144,13 @@ export function createDescriber(sim: Sim) {
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
       case 'trade.failed': {
         const hire = hireOf(e.deal);
+        const slab = handoverOf(e.deal)?.prisoner;
+        if (slab) {
+          // A prisoner's handover fell through: say why and where the slab is (capture/delivery.ts); a slab lost with a shuttle logs stasis.lost.
+          const why = SLAB_WHY[e.reason ?? ''] ?? 'the shuttle could not take the slab';
+          const where = !sim.world.has(slab.crew, StasisC) ? '' : sim.world.get(slab.crew, StasisC)?.at === 'vehicle' ? ': the slab rides home in your shuttle' : ': the slab stays aboard';
+          return { kind: 'trade', tone: 'warn', text: `The hand-over of ${slab.name} to ${trader(e.ship)} fell through (${why})${where}` };
+        }
         if (handoverOf(e.deal)) {
           const why = e.reason === 'combat' ? 'combat' : e.reason === 'asking' ? 'your passenger asked to join' : 'it could not collect the crate';
           return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)} called its shuttle back (${why})` };
@@ -193,7 +206,8 @@ export function createDescriber(sim: Sim) {
       }
       case 'stasis.shipped': return { kind: 'crew', tone: 'info', text: `${crewName(e.crew)}'s stasis slab is aboard the shuttle for home` };
       case 'stasis.unloaded': return { kind: 'crew', tone: 'info', text: `${e.crew.length === 1 ? 'A stasis slab' : `${e.crew.length} stasis slabs`} unloaded from the shuttle, to be carted to a wheel` };
-      case 'prisoner.handedOver': return { kind: 'crew', tone: 'good', text: `${e.name} ${e.kind === 'ransom' ? 'ransomed' : e.kind === 'bounty' ? 'handed over for the bounty' : 'sold on the black market'}: +${e.credits} credits` };
+      case 'prisoner.collecting': return { kind: 'trade', tone: 'info', text: e.via === 'own' ? `Your shuttle takes ${e.name} over to ${trader(e.station)}, sealed in stasis` : `${trader(e.station)} sends a shuttle for ${e.name}'s stasis slab`, ...onShip(e.station) };
+      case 'prisoner.handedOver': return { kind: 'crew', tone: 'good', text: `${e.name} ${e.kind === 'ransom' ? 'ransomed to' : e.kind === 'bounty' ? 'handed over for the bounty to' : 'sold on the black market to'} ${trader(e.station)}: +${e.credits} credits` };
       case 'stasis.lost': return { kind: 'crew', tone: 'bad', text: `${e.name} was lost with the shuttle, sealed in stasis` };
       case 'stasis.thawed': return { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) };
       case 'ship.letGo': return { kind: 'ship.captured', tone: 'warn', text: `${shipName(e.ship)}: ${e.crew} crew let go, the ship is left a derelict`, ...onShip(e.ship) };

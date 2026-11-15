@@ -168,9 +168,23 @@ export interface Deal {
   crew?: number[];
   /**
    * A delivery handover (galaxy/handover.ts): the station's shuttle comes to the player's airlock for the crate of job `job`. No goods and no escrow; the
-   * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again.
+   * deal's `ship` is the station. `retryAt` is the tick after which a called-off run may be tried again. A prisoner's handover (capture/delivery.ts) has
+   * no `job` but `prisoner`: the sealed slab of that prisoner goes instead of a crate, on the terms agreed when the deal was accepted.
    */
-  handover?: { job: number; via: 'station' | 'own'; retryAt?: number };
+  handover?: { job?: number; prisoner?: PrisonerHandover; via: 'station' | 'own'; retryAt?: number };
+}
+
+/**
+ * A prisoner handed over at a station (#116, capture/delivery.ts): the prisoner (a frozen crew entity), their name for the log, and the deal agreed at
+ * the click: its kind, the credits paid and the standing given to `faction` once the slab reaches the station.
+ */
+export interface PrisonerHandover {
+  crew: number;
+  name: string;
+  kind: 'ransom' | 'bounty' | 'market';
+  credits: number;
+  faction: string;
+  standing: number;
 }
 
 /** All trade state. Plain data on the Sim, saved with it (optional in old saves). */

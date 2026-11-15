@@ -1192,8 +1192,14 @@ export interface UiPrisonerDeal {
   tier: 'friendly' | 'neutral' | 'hostile';
   frozen: boolean;
   where: string;
-  /** The station's offer: the button's label ("Ransom ₵240") and the line under it ("+2 Free Traders"); when not `ok`, no button (empty label) and one line of where to take them or what has to happen first. */
-  offer: { ok: boolean; label: string; note: string };
+  /** This station makes a deal for them (now, or once they are sealed and aboard), or has one under way: the Prisoners service shows only then. */
+  wanted: boolean;
+  /**
+   * The station's offer: the button's label ("Ransom ₵240") and the line under it ("+2 Free Traders"); when not `ok`, no button (empty label) and one
+   * line of where to take them or what has to happen first. `status`: a handover under way ("Collecting…", "On the way to the station") in place of the
+   * button, with `cancel` the deal to call off while it still can be.
+   */
+  offer: { ok: boolean; label: string; note: string; status?: string; cancel?: number };
 }
 
 export interface UiTradePartner {

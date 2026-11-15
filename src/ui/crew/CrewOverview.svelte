@@ -7,6 +7,7 @@
   import ItemCard from '../inspector/ItemCard.svelte';
   import StatBar from '../inspector/StatBar.svelte';
   import TraitChips from '../inspector/TraitChips.svelte';
+  import Face from './Face.svelte';
   import { attackBlocked, crewState, moodWord } from './format';
   import { healthTone } from '../inspector/health';
 
@@ -19,16 +20,12 @@
   const wcard = $derived(d?.gear.find((g) => g.slot === 'weapon')?.item?.card ?? null);
   const enemy = $derived(c.side === 'enemy');
   let shuttles = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
-  let rev = $state(0);
-  const pic = $derived((void rev, api.portrait(c.id)));
   const now = $derived(crewState(c));
   const blocked = $derived(attackBlocked(c));
 
   onMount(() => {
     const e = api.shuttles.subscribe((v) => (shuttles = v));
-    // The portrait appears once its sprite sheets load.
-    const t = setInterval(() => { if (!pic) rev++; }, 500);
-    return () => (e(), clearInterval(t));
+    return e;
   });
 </script>
 
@@ -36,7 +33,7 @@
   {#snippet doing()}<p class="doing" class:bad={now.bad} data-testid="crew-activity"><span class="ic"><Icon name={c.stasis ? 'snowflake' : now.chip ? 'lock' : 'wrench'} size={14} /></span><span title={now.text}>{now.text}</span></p>{/snippet}
   <div class="top">
     <!-- A frozen prisoner's portrait is frosted with a snowflake badge (selected from their slab, a cart or the wheel). -->
-    <span class="face" class:dead={c.dead} class:frost={!!c.stasis}>{#if pic}<img src={pic} alt="" />{/if}{#if c.stasis}<span class="fx"></span><span class="badge"><Icon name="snowflake" size={12} /></span>{/if}</span>
+    <Face {api} id={c.id} size={64} frozen={!!c.stasis} dead={c.dead} />
     <div class="vitals">
       <!-- A prisoner's or surrendered foe's tag heads the column, above health; what is happening to them goes under the portrait. -->
       {#if now.chip}<span class="tag"><Chip tone="bad" testId="crew-state">{now.chip}</Chip></span>{/if}
@@ -122,16 +119,9 @@
 
 <style>
   .top { display: grid; grid-template-columns: 64px 1fr; gap: 10px; margin-bottom: 10px; }
-  .face { width: 64px; height: 68px; background: var(--track); border: 1px solid var(--line); overflow: hidden; box-sizing: border-box; }
-  .face img { display: block; width: 100%; height: 100%; image-rendering: pixelated; object-fit: cover; }
-  .face { position: relative; }
-  .face.frost { border-color: #7fdcf0; } .face.frost img { filter: saturate(.45) brightness(1.05); }
-  .fx { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(160,225,240,.35), rgba(80,150,170,.1) 60%, rgba(180,235,245,.25)); }
-  .badge { position: absolute; right: 2px; bottom: 2px; display: inline-flex; padding: 1px; background: #061a22; color: #7fdcf0; border: 1px solid #2c6878; }
   .tag { display: flex; margin: 0 0 4px; }
   .where { display: flex; gap: 6px; align-items: center; margin: 0 0 10px; font-size: 13px; }
   .lk { background: none; border: none; padding: 0; min-height: 0; font: inherit; color: var(--cyan); cursor: pointer; } .lk:hover { text-decoration: underline; }
-  .face.dead img { filter: grayscale(1) brightness(0.6); }
   .vitals { display: grid; gap: 0; align-content: center; min-width: 0; }
   .v { display: grid; grid-template-columns: 18px 1fr 84px; gap: 8px; align-items: center; min-height: 18px; font-size: 13px; }
   .n.good { color: var(--text); } .n.warn { color: var(--amber); } .n.bad { color: var(--red); }

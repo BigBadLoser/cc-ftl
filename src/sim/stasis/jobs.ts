@@ -9,7 +9,7 @@ import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { PrisonerC } from '../fight/components';
 import { StasisC, StasisWheelC, type SlabSource, type StasisJob } from './components';
-import { dropSlab, liftSlab, rackSlab, sealPrisoner, stowSlab, takeSlabFor } from './freeze';
+import { dropSlab, liftSlab, rackSlab, sealPrisoner, stowSlab, takeSlabFor, unstowSlab } from './freeze';
 import { rackEmpty, rackFull, rackHere, rackRoom, rackTile, siteShuttle } from './rack';
 import { VehicleC } from '../vehicles/components';
 import { vehicleDefOf } from '../vehicles/lifecycle';
@@ -166,18 +166,29 @@ export function stasisRoom(sim: Sim, ship: number): number {
   }
   for (const id of sim.world.query(JobC)) {
     const j = sim.world.get(id, JobC);
-    if (j?.kind === 'stasis' && j.stasis?.phase !== 'stow' && j.stasis?.phase !== 'ship' && shipIdOf(sim, j) === ship) room--;
+    // A handover's job (`deliver`) takes the slab off the ship: it needs no room here.
+    if (j?.kind === 'stasis' && j.stasis?.phase !== 'stow' && j.stasis?.phase !== 'ship' && !j.stasis?.deliver && shipIdOf(sim, j) === ship) room--;
   }
   return room;
 }
 
-/** Where a slab on a cart at `at` goes: a wheel on the ship (`pickWheel`), else the rack of the prize's shuttle while it is there and has room. */
-export function slabDestination(sim: Sim, ship: number, at: { x: number; y: number }): { wheel: number } | { rack: number } | null {
+/**
+ * Where a slab on a cart at `at` goes: for a handover (`deliver`), the rack of that shuttle while it is at the ship; else a wheel on the ship
+ * (`pickWheel`), else the rack of the prize's shuttle while it is there and has room.
+ */
+export function slabDestination(sim: Sim, ship: number, at: { x: number; y: number }, deliver = 0): { wheel: number } | { rack: number } | null {
+  const out = deliver && rackTile(sim, deliver);
+  if (deliver && out && out.shipId === ship && rackRoom(sim, deliver) > 0 && reachable(sim, ship, { x: at.x, y: at.y }, out)) return { rack: deliver };
   const wheel = pickWheel(sim, ship, at);
   if (wheel) return { wheel };
   const rack = rackHere(sim, ship);
   const t = rack && rackTile(sim, rack);
   return rack && t && rackRoom(sim, rack) > 0 && reachable(sim, ship, { x: at.x, y: at.y }, t) ? { rack } : null;
+}
+
+/** Post a stasis job for a full slab (a pickup off the floor, or a handover's unstow from a wheel) with its first stop at `at`. */
+export function postSlabJob(sim: Sim, at: { x: number; y: number }, prisoner: number, stasis: StasisJob): void {
+  sim.world.add(sim.world.createEntity(), JobC, { category: 'hauling', kind: 'stasis', x: at.x, y: at.y, struct: 0, work: 1, progress: 0, reservedBy: 0, target: prisoner, stasis });
 }
 
 /** Aim the job at a stop (clears the footprint size of the last one). */
@@ -210,7 +221,7 @@ export function aimFetch(sim: Sim, job: Job, st: StasisJob, ship: number, at: { 
  * set down here and the job ends.
  */
 function toWheel(sim: Sim, job: Job, st: StasisJob, prisoner: number, ship: number, me: Position): WorkResult {
-  const dest = slabDestination(sim, ship, origin(me));
+  const dest = slabDestination(sim, ship, origin(me), st.deliver);
   delete st.from;
   if (dest && 'rack' in dest) {
     const t = rackTile(sim, dest.rack)!;
@@ -247,7 +258,7 @@ function shipSlab(sim: Sim, crew: number, job: Job, st: StasisJob, prisoner: num
       return 'working';
     }
     rackSlab(sim, prisoner, st.rack, t);
-    sim.events.emit({ type: 'stasis.shipped', crew: prisoner, vehicle: st.rack, ship });
+    if (!st.deliver) sim.events.emit({ type: 'stasis.shipped', crew: prisoner, vehicle: st.rack, ship }); // a handover logs its own way
     return 'done';
   }
   return toWheel(sim, job, st, prisoner, ship, me); // the shuttle left or filled up meanwhile
@@ -289,6 +300,10 @@ export function performStasis(sim: Sim, crew: number, job: Job, speed: number): 
   if (st.phase === 'pickup') {
     if (sim.world.get(prisoner, StasisC)?.at !== 'floor') return 'done';
     liftSlab(sim, prisoner, crew);
+    return toWheel(sim, job, st, prisoner, ship, me);
+  }
+  if (st.phase === 'unstow') {
+    if (sim.world.get(prisoner, StasisC)?.at !== 'wheel' || !unstowSlab(sim, prisoner, crew)) return 'done';
     return toWheel(sim, job, st, prisoner, ship, me);
   }
   if (st.phase === 'ship') return shipSlab(sim, crew, job, st, prisoner, ship, me);

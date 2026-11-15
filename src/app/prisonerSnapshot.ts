@@ -1,10 +1,11 @@
 import { CrewC, PositionC, ShipC, type Sim } from '../sim';
-import { heldPrisoners, prisonerOffer } from '../sim/capture/offers';
+import { heldPrisoners, prisonerOffer, stationWants } from '../sim/capture/offers';
 import { PrisonerC } from '../sim/fight/components';
 import { tierOf } from '../sim/galaxy/standing';
 import { shipIdOf } from '../sim/regions';
 import { slabPlace } from '../sim/stasis/query';
 import { moduleNameOf } from '../sim/upgrades/stats';
+import { TraderC } from '../sim/trade/types';
 import type { UiPrisonerDeal } from '../ui/api';
 
 const DEAL: Record<string, string> = { ransom: 'Ransom', bounty: 'Bounty', market: 'Sell' };
@@ -14,7 +15,9 @@ const WHY: Record<string, string> = {
   noBounty: 'Bounty at navy or corp stations',
   notSealed: 'Seal them in stasis first',
   inTransit: 'On the way: wait until the slab is set down',
-  notAboard: 'On a prize: bring them home',
+  notAboard: 'Bring them to your ship first',
+  busy: 'No shuttle free just now',
+  noWay: 'No shuttle can come: a working airlock and a shuttle are needed',
 };
 
 const factionName = (sim: Sim, id: string | undefined): string => (id ? sim.content.galaxy?.factions[id]?.name ?? id : 'Unknown');
@@ -39,10 +42,16 @@ export function prisonerDeals(sim: Sim, station: number): UiPrisonerDeal[] {
     const from = sim.world.get(id, PrisonerC)?.from;
     const o = prisonerOffer(sim, station, id);
     const base = { id, name: sim.world.get(id, CrewC)?.name ?? 'Prisoner', faction: factionName(sim, from), tier: from ? tierOf(sim, from) : 'neutral' as const, frozen: !!slabPlace(sim, id), where: whereOf(sim, id) };
-    if (o.ok) return { ...base, offer: { ok: true, label: `${DEAL[o.kind]} ₵${o.credits}`, note: `+${o.standing} ${factionName(sim, o.faction)}` } };
+    const wanted = stationWants(sim, station, id);
+    if (o.ok) return { ...base, wanted, offer: { ok: true, label: `${DEAL[o.kind]} ₵${o.credits}`, note: `+${o.standing} ${factionName(sim, o.faction)}` } };
+    if (o.run) {
+      const to = o.run.station === station ? '' : ` (to ${sim.world.get(o.run.station, TraderC)?.name ?? 'another station'})`;
+      const status = o.run.stage === 'collecting' ? `Collecting…${to}` : `On the way to the station${to}`;
+      return { ...base, wanted, offer: { ok: false, label: '', note: `${DEAL[o.kind ?? 'ransom']} ₵${o.credits ?? 0}`, status, ...(o.run.cancel ? { cancel: o.run.deal } : {}) } };
+    }
     // No deal: no button, one line. A deal waiting on where they are names its price ("... (ransom ₵240 here)").
     const later = o.kind && o.credits !== undefined ? ` (${DEAL[o.kind]?.toLowerCase()} ₵${o.credits} here)` : '';
     const note = o.reason === 'noBuyer' ? `Ransom at ${factionName(sim, from)} stations` : `${WHY[o.reason] ?? o.reason}${later}`;
-    return { ...base, offer: { ok: false, label: '', note } };
+    return { ...base, wanted, offer: { ok: false, label: '', note } };
   });
 }
