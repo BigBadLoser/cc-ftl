@@ -79,7 +79,8 @@ export function buildModuleDefs(sim: Sim): UiModuleDef[] {
       access: d.access ? [d.access, ...(d.extraAccess ?? [])].map(([x, y]) => [x, y] as [number, number]) : [],
       facts: moduleFacts(d),
       tier: tiered ? TIER_NAME[d.blueprint?.tier ?? 1] ?? null : null,
-      family: tiered ? family : null,
+      group: d.buildGroup ?? (tiered ? family : null),
+      variantLabel: d.variantLabel ?? null,
       locked: !isBlueprintKnown(sim, id),
       lockHint: d.blueprint ? `Blueprint: ${blueprintVenue(d) === 'military' ? 'military' : 'research'} stations` : null,
     };

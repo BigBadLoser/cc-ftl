@@ -478,6 +478,10 @@ export interface ModuleDef {
   name: string;
   /** Build catalog tab. Absent = Utility. */
   category?: ModuleCategory;
+  /** Build catalog: modules sharing a group fold into one card (a chip row in its popover picks the member). Tier families group by themselves. */
+  buildGroup?: string;
+  /** Build catalog: the short chip label of a member in its group ("3×1", "Corner"). */
+  variantLabel?: string;
   /** One or two sentences for the build catalog's popover. */
   description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */

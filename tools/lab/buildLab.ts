@@ -15,7 +15,7 @@ import BuildCatalog from '../../src/ui/BuildCatalog.svelte';
 /**
  * The build menu panel (`?panel=build`): the game's own BuildCatalog (and its hover popover) on a fresh game's module defs, with real
  * thumbnails from the atlas and a mock api (no stock, no mining, nothing placed). `tab=<category>` opens a tab (default life),
- * `hover=<module id>` opens that card's popover (it is scrolled into view), `query=<text>` fills the search box.
+ * `hover=<module id>` opens that card's popover (it is scrolled into view), `pick=<module id>` then clicks that chip of the popover's variant row, `query=<text>` fills the search box.
  */
 export async function mountBuildLab(target: HTMLElement, params: URLSearchParams): Promise<void> {
   for (const e of [document.documentElement, document.body]) { e.style.height = '100%'; e.style.overflow = 'hidden'; }
@@ -59,9 +59,14 @@ export async function mountBuildLab(target: HTMLElement, params: URLSearchParams
   const hover = params.get('hover');
   if (hover) {
     const name = (content.modules as Record<string, { name?: string }>)[hover]?.name;
-    const card = [...document.querySelectorAll<HTMLElement>('[data-testid="build-catalog"] .card')].find((c) => name && c.textContent?.trim().toUpperCase().startsWith(name.toUpperCase()));
+    const card = [...document.querySelectorAll<HTMLElement>('[data-testid="build-catalog"] .card')].find((c) => name && c.querySelector('.nm')?.textContent?.trim().toUpperCase() === name.toUpperCase());
     card?.scrollIntoView({ inline: 'center' });
     card?.focus();
     await new Promise((r) => setTimeout(r, 900));
+    const pick = params.get('pick');                                                // a chip of the popover's variant row
+    if (pick) {
+      document.querySelector<HTMLElement>(`[data-testid="variant-${pick}"]`)?.click();
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
 }

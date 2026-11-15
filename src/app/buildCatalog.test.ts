@@ -3,7 +3,7 @@ import { newGame } from '../sim';
 import { content } from '../content';
 import type { Renderer } from '../render/scene';
 import type { UiApi, UiToolState } from '../ui/api';
-import { CATEGORIES, buildEntries, filterEntries, visibleCategories } from '../ui/buildCatalog';
+import { CATEGORIES, buildEntries, filterEntries, groupMembers, isSelected, visibleCategories } from '../ui/buildCatalog';
 import { createStore } from './store';
 import type { Bridge } from './bridge';
 import { createController } from './controller';
@@ -24,7 +24,10 @@ describe('build catalog', () => {
       const e = entries.find((x) => x.id === id && x.kind === 'module');
       expect(e, id).toBeDefined();
       expect(known.has(e!.category), `${id} category`).toBe(true);
-      expect(tabs.some((t) => filterEntries(entries, t.id, '', true).some((x) => x.key === id)), `${id} reachable`).toBe(true);
+      // Reachable: on a card of some tab, or as a member behind its group's card (the chips of the popover).
+      const card = e!.def?.group ? groupMembers(entries, e!.def.group)[0]! : e!;
+      expect(tabs.some((t) => filterEntries(entries, t.id, '', true).some((x) => x.key === card.key)), `${id} reachable`).toBe(true);
+      expect(groupMembers(entries, e!.def?.group ?? '').concat(e!).some((m) => m.id === id)).toBe(true);
     }
   });
 
@@ -57,9 +60,36 @@ describe('build catalog', () => {
     expect(e('module.reactor.mk2').def!.lockHint).toBe('Blueprint: research stations');
     expect(e('module.shieldGen.mk2').def!.lockHint).toBe('Blueprint: military stations');
     expect(e('module.reactor').def!.lockHint).toBeNull();
-    const fam = entries.filter((x) => x.def?.family === 'module.reactor').map((x) => x.def!.tier);
+    const fam = entries.filter((x) => x.def?.group === 'module.reactor').map((x) => x.def!.tier);
     expect(fam.sort()).toEqual(['Mk I', 'Mk II', 'Mk III']);
-    expect(e('module.bed').def!.family).toBeNull();
+    expect(e('module.bed').def!.group).toBeNull();
+  });
+
+  it('folds tier families, the bar counters and the vending machines into one card each, ×N members behind it', () => {
+    const members = (g: string) => groupMembers(entries, g).map((m) => m.id);
+    expect(members('module.reactor')).toEqual(['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3']);
+    expect(members('bar')).toEqual(['module.bar_counter', 'module.bar_counter_short', 'module.bar_corner']);
+    expect(members('vending')).toEqual(['module.vending', 'module.vending_red']);
+    expect(entries.find((e) => e.id === 'module.bar_stool')!.def!.group).toBeNull();
+    for (const g of ['bar', 'vending']) for (const m of groupMembers(entries, g)) expect(m.def!.variantLabel, m.id).toBeTruthy();
+    const life = (chosen: Record<string, string> = {}) => filterEntries(entries, 'life', '', false, chosen).map((e) => e.id);
+    expect(life().filter((id) => id.startsWith('module.bar_') && id !== 'module.bar_stool')).toEqual(['module.bar_counter']);
+    expect(life({ bar: 'module.bar_corner' })).toContain('module.bar_corner');
+    expect(life({ bar: 'module.bar_corner' })).not.toContain('module.bar_counter');
+    expect(life().filter((id) => id.startsWith('module.vending'))).toEqual(['module.vending']);
+    expect(filterEntries(entries, 'power', '', false).filter((e) => e.def?.group === 'module.reactor').length).toBe(1);
+    // A search lists each module on its own card.
+    expect(filterEntries(entries, 'life', 'bar ', false).map((e) => e.id)).toEqual(expect.arrayContaining(['module.bar_counter', 'module.bar_counter_short', 'module.bar_corner']));
+    // The tab count is cards, not modules.
+    expect(visibleCategories(entries, false).find((t) => t.id === 'power')!.count).toBe(filterEntries(entries, 'power', '', false).length);
+  });
+
+  it('marks a group card selected when any member is being placed', () => {
+    const ms = groupMembers(entries, 'bar');
+    const st = { tool: 'build', build: 'module', moduleDef: 'module.bar_corner', rot: 0 } as UiToolState;
+    expect(isSelected(ms[0]!, st, ms)).toBe(true);
+    expect(isSelected(ms[0]!, st)).toBe(false);
+    expect(isSelected(entries.find((e) => e.id === 'module.bar_stool')!, st)).toBe(false);
   });
 
   it('keeps card names to two short lines', () => {

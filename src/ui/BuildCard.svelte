@@ -5,8 +5,8 @@
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { api, entry, thumb, selected, have, onpick, onhover, onleave, onpress }: {
-    api: UiApi; entry: Entry; thumb?: UiThumb; selected: boolean; have: (item: string) => number;
+  let { api, entry, thumb, selected, count = 0, have, onpick, onhover, onleave, onpress }: {
+    api: UiApi; entry: Entry; thumb?: UiThumb; selected: boolean; /** Members of the card's group, when it stands for more than one module. */ count?: number; have: (item: string) => number;
     onpick: () => void; onhover: (el: HTMLElement) => void; onleave: () => void; onpress: (el: HTMLElement) => void;
   } = $props();
   const missing = $derived(new Set(shortOf(entry.cost, have).map((c) => c.item)));
@@ -25,9 +25,10 @@
   };
 </script>
 
-<button bind:this={btn} class="card" class:sel={selected} class:short={missing.size > 0} class:lock={entry.locked} data-testid="card-{entry.key}" aria-pressed={selected}
+<button bind:this={btn} class="card" class:grp={count > 1} class:sel={selected} class:short={missing.size > 0} class:lock={entry.locked} data-testid="card-{entry.key}" aria-pressed={selected}
   onclick={click} onpointerdown={down} onpointerup={cancel} onpointercancel={cancel} onpointermove={(e) => e.pointerType !== 'mouse' && Math.abs(e.movementX) + Math.abs(e.movementY) > 6 && cancel()}
   onmouseenter={() => onhover(btn)} onmouseleave={onleave} onfocus={() => onhover(btn)} onblur={onleave} oncontextmenu={(e) => e.preventDefault()}>
+  {#if count > 1}<span class="stack" aria-hidden="true"><i></i><i></i></span>{/if}
   {#if selected}<span class="tag">PLACING</span>{/if}
   <span class="art">
     {#if thumb && thumb.w}<img src={thumb.url} alt="" draggable="false" />
@@ -35,6 +36,7 @@
     {:else if thumb}<Icon name="module" size={36} />{/if}
   </span>
   {#if entry.locked}<span class="lockb" aria-label="Locked"><Icon name="lock" size={14} /></span>{/if}
+  {#if count > 1 && !entry.locked}<span class="badge" data-testid="group-count" aria-label="{count} variants">×{count}</span>{/if}
   <span class="nm">{entry.name}</span>
   <span class="cost" class:many={entry.cost.length > 2}>
     {#each entry.cost as c (c.item)}
@@ -62,5 +64,11 @@
   .tag { position: absolute; top: 0; left: 0; right: 0; font: 700 10px var(--head-font); letter-spacing: 0.1em; text-align: center; padding: 1px 0; background: var(--build-on-amber); color: var(--amber); }
   .card.lock { opacity: 0.55; }
   .card.lock img { filter: grayscale(1) brightness(0.6); }
+  .badge { position: absolute; top: 4px; right: 5px; background: #000; border: 1px solid var(--amber); color: var(--amber); font: 800 10px var(--head-font); padding: 1px 4px; border-radius: 2px; }
+  .card.sel .badge { background: var(--build-on-amber); }
+  .stack { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+  .stack i { position: absolute; box-sizing: border-box; width: 100%; height: 100%; border: 1px solid #b8862c; background: var(--build-bg-solid); }
+  .stack i:nth-child(1) { left: 6px; top: -5px; }
+  .stack i:nth-child(2) { left: 3px; top: -2px; border-color: #d39b35; }
   .lockb { position: absolute; top: 4px; right: 5px; font-size: 12px; }
 </style>

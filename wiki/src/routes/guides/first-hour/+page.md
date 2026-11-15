@@ -111,6 +111,9 @@ Pick **Build** in the tools (bottom right) to open the build menu. Choose a tab,
 over your ship to see where it will go; press **R** to rotate. Click to place it, and your crew bring the materials
 from storage and build it. Walls, floors and doors are dragged out instead.
 
+A card with a **×3** badge and a stacked edge stands for a group of related modules (the Mk tiers of a reactor, the pieces of a
+bar counter). Hover it and pick a piece from the row under the preview.
+
 A card with a lock is a module you don't have the blueprint for yet. Stations sell blueprints, and research unlocks
 better tiers. Use **Deconstruct** to take something down and get some of its materials back, and **Cancel jobs** to call off
 construction you haven't finished.
