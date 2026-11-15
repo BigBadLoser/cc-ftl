@@ -13,7 +13,7 @@ const SIZE: Record<string, number> = { [MD]: 3, [BL]: 2, [PD]: 2 };
 
 /** A rule: the pieces for a w x h room whose door is at (d, h) under the bottom wall. */
 type Rule = (w: number, h: number, d: number) => Piece[];
-const seats = (x: number, y: number): Piece[] => [[C, x, y - 1, 0], [C, x + 1, y - 1, 0], [C, x, y + 1, 2], [C, x + 1, y + 1, 2]];
+const seats = (x: number, y: number): Piece[] => [[C, x, y - 1, 2], [C, x + 1, y - 1, 2], [C, x, y + 1, 0], [C, x + 1, y + 1, 0]];
 const range = (from: number, to: number, step: number): number[] => { const out: number[] = []; for (let v = from; step > 0 ? v <= to : v >= to; v += step) out.push(v); return out; };
 /** Beds in pairs along a wall from x0 toward x1, a locker between the two of a pair, a tile between pairs. */
 const bunks = (x0: number, x1: number, y: number, rot: 0 | 2): Piece[] => {
@@ -46,8 +46,8 @@ const leftover = (runs: Run[]): Piece[] => runs.flatMap((run) => {
 /** A block of furniture: its size and its pieces from its top-left corner. */
 interface Block { w: number; h: number; at: (x: number, y: number) => Piece[] }
 const BLOCKS: Block[] = [
-  { w: 3, h: 2, at: (x, y) => [[T, x + 1, y, 1], [C, x, y, 3], [C, x, y + 1, 3], [C, x + 2, y, 1], [C, x + 2, y + 1, 1]] },
-  { w: 2, h: 3, at: (x, y) => [[T, x, y + 1, 0], [C, x, y, 0], [C, x + 1, y, 0], [C, x, y + 2, 2], [C, x + 1, y + 2, 2]] },
+  { w: 3, h: 2, at: (x, y) => [[T, x + 1, y, 1], [C, x, y, 1], [C, x, y + 1, 1], [C, x + 2, y, 3], [C, x + 2, y + 1, 3]] },
+  { w: 2, h: 3, at: (x, y) => [[T, x, y + 1, 0], [C, x, y, 2], [C, x + 1, y, 2], [C, x, y + 2, 0], [C, x + 1, y + 2, 0]] },
 ];
 const GAMES: Block[] = [{ w: 1, h: 2, at: (x, y) => [[GT, x, y, 1]] }, { w: 2, h: 1, at: (x, y) => [[GT, x, y, 0]] }];
 /**

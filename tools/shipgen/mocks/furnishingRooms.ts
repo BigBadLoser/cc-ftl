@@ -16,14 +16,14 @@ const botPairs = (xs: number[], y: number): Piece[] => xs.flatMap((x): Piece[] =
 const quarters: RoomMock[] = [
   { role: 'quarters', caption: 'B1 bunks 11x6 (20 crew)', w: 11, h: 6, door: 5, pieces: [...topPairs(0, 3), ...botPairs([0, 8], 4)] },
   { role: 'quarters', caption: 'B1 bunks 7x6 (8)', w: 7, h: 6, door: 3, pieces: [...topPairs(0, 2), ['module.arcade', 0, 5, 2], ['module.gametable', 5, 3, 0]] },
-  { role: 'bridge', caption: "CO chief's office 6x4", w: 6, h: 4, door: 3, pieces: [[C, 2, 0, 0], [T, 2, 1, 0], [C, 3, 2, 2], [PL, 0, 0, 0], [PL, 5, 0, 0], ['module.storage_rack', 0, 3, 2]] },
+  { role: 'bridge', caption: "CO chief's office 6x4", w: 6, h: 4, door: 3, pieces: [[C, 2, 0, 2], [T, 2, 1, 0], [C, 3, 2, 0], [PL, 0, 0, 0], [PL, 5, 0, 0], ['module.storage_rack', 0, 3, 2]] },
 ];
 
 const stores: RoomMock[] = [
   { role: 'cargo', caption: 'PA pantry 7x3', w: 7, h: 3, door: 3, pieces: [['module.storage_cold', 0, 0, 0], ['module.storage_cold', 2, 0, 0], ['module.storage_cold', 5, 0, 0], ['module.storage_rack', 0, 2, 2]] },
-  { role: 'armoury', caption: 'QM quartermaster 9x5', w: 9, h: 5, door: 4, pieces: [['module.storage_armory', 0, 0, 0], ['module.storage_armory', 2, 0, 0], ['module.storage_armory', 5, 0, 0], ['module.storage_armory', 7, 0, 0], [T, 3, 2, 0], [C, 3, 1, 0], ['module.storage_armory', 0, 4, 2], ['module.storage_armory', 7, 4, 2]] },
+  { role: 'armoury', caption: 'QM quartermaster 9x5', w: 9, h: 5, door: 4, pieces: [['module.storage_armory', 0, 0, 0], ['module.storage_armory', 2, 0, 0], ['module.storage_armory', 5, 0, 0], ['module.storage_armory', 7, 0, 0], [T, 3, 2, 0], [C, 3, 1, 2], ['module.storage_armory', 0, 4, 2], ['module.storage_armory', 7, 4, 2]] },
   { role: 'cargo', caption: 'TF tank farm 10x6', w: 10, h: 6, door: 5, pieces: [...[0, 2, 4, 6, 8].map((x): Piece => ['module.storage_tank', x, 0, 0]), ['module.storage_tank', 0, 4, 2], ['module.storage_tank', 2, 4, 2], ['module.storage_tank', 7, 4, 2]] },
-  { role: 'armoury', caption: 'BG brig 7x6', w: 7, h: 6, door: 3, pieces: [['module.stasis_wheel', 2, 0, 0], [C, 0, 4, 3], [L, 0, 0, 3]] },
+  { role: 'armoury', caption: 'BG brig 7x6', w: 7, h: 6, door: 3, pieces: [['module.stasis_wheel', 2, 0, 0], [C, 0, 4, 1], [L, 0, 0, 3]] },
 ];
 
 const works: RoomMock[] = [
@@ -43,7 +43,7 @@ const power: RoomMock[] = [
 const social: RoomMock[] = [
   { role: 'support', caption: 'GY gym 9x5', w: 9, h: 5, door: 4, pieces: [['module.exercise', 1, 1, 0], ['module.exercise', 4, 1, 0], ['module.exercise', 7, 1, 0], [BE, 0, 4, 2], [BE, 7, 4, 2], [V, 8, 0, 0]] },
   { role: 'hall', caption: 'HL hall street 17x3', w: 17, h: 3, door: 8, pieces: [[PL, 0, 0, 0], [BE, 1, 0, 0], [PL, 3, 0, 0], [V, 6, 0, 0], [VR, 7, 0, 0], [PL, 10, 0, 0], [BE, 11, 0, 0], [PL, 13, 0, 0], [V, 16, 0, 0]] },
-  { role: 'hall', caption: 'CU customs 11x3', w: 11, h: 3, door: 5, pieces: [[T, 3, 0, 0], [C, 3, 1, 2], [C, 4, 1, 2], [BE, 8, 0, 0], [PL, 10, 0, 0], [PL, 0, 0, 0]] },
+  { role: 'hall', caption: 'CU customs 11x3', w: 11, h: 3, door: 5, pieces: [[T, 3, 0, 0], [C, 3, 1, 0], [C, 4, 1, 0], [BE, 8, 0, 0], [PL, 10, 0, 0], [PL, 0, 0, 0]] },
   {
     role: 'plaza', caption: 'PZ parade hall 11x9', w: 11, h: 9, door: 5,
     pieces: [[PL, 0, 0, 0], [PL, 10, 0, 0], [PL, 4, 4, 0], [PL, 6, 4, 0], [BE, 4, 2, 0], [BE, 5, 6, 2], [BE, 2, 4, 3], [BE, 8, 4, 1], [V, 0, 8, 2], [VR, 10, 8, 2]],

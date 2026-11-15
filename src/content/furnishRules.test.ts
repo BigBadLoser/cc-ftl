@@ -6,6 +6,7 @@ import { furnishByRule } from '../sim/shipgen/rooms/rules/place';
 import { RULES } from '../sim/shipgen/rooms/rules/rules';
 import type { RoomRole } from '../sim/shipgen/types';
 import { Rng } from '../sim/rng';
+import { footprintTiles } from '../sim/modules/footprint';
 import { content } from './index';
 
 const defs = content.modules as Record<string, ModuleDef>;
@@ -63,6 +64,12 @@ describe('furnishing rules', () => {
           const pieces = rule!.rule({ w, h, d, need: c.need, defs });
           const inside = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h;
           if (!c.small) expect(roomProblems(inside, [{ x: d, y: h - 1 }], pieces, defs), label).toEqual([]);
+          // A seated crew member faces r0 -y, r1 +x, r2 +y, r3 -x (furniture.ts): every chair a rule places faces a table beside it.
+          const tableTiles = new Set(pieces.filter((p) => p.def === 'module.mess_table').flatMap((p) => footprintTiles(defs[p.def]!, p.x, p.y, p.rot)).map((t) => `${t.x},${t.y}`));
+          for (const ch of pieces.filter((p) => p.def === 'module.chair')) {
+            const [dx, dy] = ([[0, -1], [1, 0], [0, 1], [-1, 0]] as const)[ch.rot % 4] as readonly [number, number];
+            expect(tableTiles.has(`${ch.x + dx},${ch.y + dy}`), `${label} chair ${ch.x},${ch.y} r${ch.rot} faces a table`).toBe(true);
+          }
           const got = tally(pieces.map((p) => p.def));
           // No batteries in gun rooms: power storage is the battery room's.
           if (c.role === 'weapons') expect(got['module.battery'] ?? 0, label).toBe(0);

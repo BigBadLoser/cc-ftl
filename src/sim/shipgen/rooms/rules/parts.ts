@@ -21,7 +21,7 @@ export const range = (from: number, to: number, step: number): number[] => {
 export interface Beds { left: number; def: string }
 
 /** Two chairs above and two below a table of two along x at (x, y). */
-export const seats = (x: number, y: number): Piece[] => [P(C, x, y - 1, 0), P(C, x + 1, y - 1, 0), P(C, x, y + 1, 2), P(C, x + 1, y + 1, 2)];
+export const seats = (x: number, y: number): Piece[] => [P(C, x, y - 1, 2), P(C, x + 1, y - 1, 2), P(C, x, y + 1, 0), P(C, x + 1, y + 1, 0)];
 
 /** Beds in pairs along a wall from x0 toward x1, a locker between the two of a pair, a tile between pairs. Returns the pieces and the pairs made. */
 export function bunks(beds: Beds, x0: number, x1: number, y: number, rot: 0 | 2): { pieces: Piece[]; pairs: number } {
@@ -70,8 +70,8 @@ export const leftover = (runs: Run[]): Piece[] => runs.flatMap((run) => {
 /** A block of furniture: its size and its pieces from its top-left corner. */
 interface Block { w: number; h: number; at: (x: number, y: number) => Piece[] }
 const BLOCKS: Block[] = [
-  { w: 3, h: 2, at: (x, y) => [P(T, x + 1, y, 1), P(C, x, y, 3), P(C, x, y + 1, 3), P(C, x + 2, y, 1), P(C, x + 2, y + 1, 1)] },
-  { w: 2, h: 3, at: (x, y) => [P(T, x, y + 1, 0), P(C, x, y, 0), P(C, x + 1, y, 0), P(C, x, y + 2, 2), P(C, x + 1, y + 2, 2)] },
+  { w: 3, h: 2, at: (x, y) => [P(T, x + 1, y, 1), P(C, x, y, 1), P(C, x, y + 1, 1), P(C, x + 2, y, 3), P(C, x + 2, y + 1, 3)] },
+  { w: 2, h: 3, at: (x, y) => [P(T, x, y + 1, 0), P(C, x, y, 2), P(C, x + 1, y, 2), P(C, x, y + 2, 0), P(C, x + 1, y + 2, 0)] },
 ];
 const GAMES: Block[] = [{ w: 1, h: 2, at: (x, y) => [P(GT, x, y, 1)] }, { w: 2, h: 1, at: (x, y) => [P(GT, x, y, 0)] }];
 

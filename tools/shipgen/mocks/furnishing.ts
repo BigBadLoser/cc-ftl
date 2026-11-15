@@ -17,7 +17,7 @@ const B = 'module.bed', L = 'module.storage_locker', T = 'module.mess_table', C 
 const LS = 'module.lifeSupport';
 
 /** Chairs either side of a table along x (rot 0) at (x, y): above facing down, below facing up. */
-const seats = (x: number, y: number, w = 2): Piece[] => Array.from({ length: w }, (_, i) => [[C, x + i, y - 1, 0], [C, x + i, y + 1, 2]] as Piece[]).flat();
+const seats = (x: number, y: number, w = 2): Piece[] => Array.from({ length: w }, (_, i) => [[C, x + i, y - 1, 2], [C, x + i, y + 1, 0]] as Piece[]).flat();
 
 const barracks: RoomMock[] = [
   {
