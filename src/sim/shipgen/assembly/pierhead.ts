@@ -3,7 +3,7 @@ import type { BlockOpts } from './elements';
 import { K, RING_STREET, RING_WALL } from './lattice';
 import { at, key, rect, sides, type Built, type Ctx, type Frame, type Port } from './model';
 import type { QuayOpts } from './quay';
-import { SOLID } from './regions';
+import { SOLID, SPACE } from './regions';
 import { stretchOf } from './sizing';
 
 /**
@@ -24,6 +24,8 @@ import { stretchOf } from './sizing';
 
 /** Open ground kept off a wall with an airlock in it: where the shuttle lies. */
 const BERTH = 7;
+/** Floor kept round an airlock in the arrivals hall, where the hall's corners are cut. */
+const MARGIN = 1;
 /** The street's last line across: it runs v = -1 to LAST, the ring's width. */
 const LAST = RING_STREET - 2;
 
@@ -91,14 +93,14 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   if (ring) for (let v = V0; v <= V1; v++) if (g.at(...at(f, -1, v)) !== port.hall) return null;
   // The airlocks: one in the end wall on the avenue's line, the rest along the sides a pitch apart, starting two tiles
   // into the hall or further out, where their berths are clear of the station.
-  const lay = (A: number): { L: number; units: { d: RoomSpec; box: [number, number, number, number]; hatch: [number, number]; berth: [number, number, number, number] }[] } => {
+  const lay = (A: number): { L: number; units: { d: RoomSpec; at: number; box: [number, number, number, number]; hatch: [number, number]; berth: [number, number, number, number] }[] } => {
     const L = sidePairs > 0 ? A + (sidePairs - 1) * P + 8 : S2 + 5;
     const units = docks.map((d, i) => {
-      if (i === 0) return { d, box: rect(f, L - 3, L, -1, LAST + 1), hatch: at(f, L, 0), berth: rect(f, L + 1, L + 1 + BERTH, V0, V1 + 1) };
+      if (i === 0) return { d, at: L - 3, box: rect(f, L - 3, L, -1, LAST + 1), hatch: at(f, L, 0), berth: rect(f, L + 1, L + 1 + BERTH, V0, V1 + 1) };
       const k = (i - 1) >> 1, u = A + k * P;
       return i % 2 === 1
-        ? { d, box: rect(f, u, u + 3, V0 + 1, V0 + 4), hatch: at(f, u + 1, V0), berth: rect(f, u - 2, u + 5, V0 - BERTH, V0) }
-        : { d, box: rect(f, u, u + 3, V1 - 3, V1), hatch: at(f, u + 1, V1), berth: rect(f, u - 2, u + 5, V1 + 1, V1 + 1 + BERTH) };
+        ? { d, at: u, box: rect(f, u, u + 3, V0 + 1, V0 + 4), hatch: at(f, u + 1, V0), berth: rect(f, u - 2, u + 5, V0 - BERTH, V0) }
+        : { d, at: u, box: rect(f, u, u + 3, V1 - 3, V1), hatch: at(f, u + 1, V1), berth: rect(f, u - 2, u + 5, V1 + 1, V1 + 1 + BERTH) };
     });
     return { L, units };
   };
@@ -115,7 +117,25 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   const hall = street ? g.hall('hall', 'harbour') : -1, customs = g.hall('plaza', 'customs'), arrivals = g.hall('hall', 'harbour');
   if (street) g.rect(hall, ...rect(f, 0, S1, -1, LAST + 1));
   g.rect(customs, ...rect(f, Math.max(S1, 0), S2 + 1, -1, LAST + 1));
-  g.rect(arrivals, ...rect(f, S2 + 1, L, V0 + 1, V1));
+  // The arrivals hall hugs its airlocks: the avenue runs on to the end airlock with a tile either side of it, each side
+  // is open from customs to a tile past its last airlock, and the corners past that are cut away (the hull follows the
+  // cut, a wall one tile thick round the floor). On a ring nothing is cut inside the hull: the band's ground stays whole.
+  const out = rect(f, S2 + 1, L + 1, V0, V1 + 1), within = (x: number, y: number): boolean => x >= out[0] && x < out[2] && y >= out[1] && y < out[3];
+  g.rect(SPACE, ...out);
+  g.rect(arrivals, ...rect(f, S2 + 1, L, -1 - MARGIN, LAST + 1 + MARGIN));
+  for (const north of [true, false]) {
+    const mine = units.filter((_u, i) => i > 0 && i % 2 === (north ? 1 : 0));
+    if (mine.length === 0) continue;
+    const end = Math.max(...mine.map((un) => un.at)) + 3 + MARGIN;
+    g.rect(arrivals, ...(north ? rect(f, S2 + 1, end, V0 + 1, -1 - MARGIN) : rect(f, S2 + 1, end, LAST + 1 + MARGIN, V1)));
+  }
+  if (c.site.hull) g.rect(arrivals, ...rect(f, S2 + 1, L, V0 + 1, V1), (x, y) => !!c.site.hull?.(x, y));
+  for (let y = out[1]; y < out[3]; y++) for (let x = out[0]; x < out[2]; x++) {
+    if (g.at(x, y) !== SPACE) continue;
+    let by = false;
+    for (let dy = -1; dy <= 1 && !by; dy++) for (let dx = -1; dx <= 1 && !by; dx++) by = within(x + dx, y + dy) && g.at(x + dx, y + dy) === arrivals;
+    if (by) g.set(x, y, SOLID);
+  }
   // The rooms: floor only, the block's solid between them.
   const stand = (spec: RoomSpec, k: 0 | 1, u: number, len: number, access: number): number => {
     const id = g.room(spec.role, { spec: { ...spec, w: lengthAt(spec, depth[k]), h: depth[k] }, access: [access] });
