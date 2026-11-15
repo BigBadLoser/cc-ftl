@@ -1097,7 +1097,8 @@ def z2b_jobs():
 # ---- Keep-clear, round 1 (the brief: yellow outline, thin diagonal hatching inside at low opacity, inset ~1/10): a
 # box over a group of tiles ('K' in floor_marks_maps "keep"), hatched along x + y like the z2 hazard band.
 #   q1 outline and faint hatch: a 4-cell yellow outline 6 in, 2-cell dim-ochre hatch lines every 16
-#   q2 outline and dense hatch: q1's outline, 3-cell dim-ochre hatch lines every 10
+#   q2 outline and wash (round 1's dense hatch only aliased into q1): q1's outline over a flat dim-ochre wash, wider
+#      hatch lines (4 every 16, whole pixels on screen) a step lighter, the seams painted over
 #   q3 framed hatch: no yellow outline; z2's dark frame lines round a field of dim yellow and dark hatch
 
 
@@ -1120,6 +1121,8 @@ def _keep_tile(style, rows, x, y):
             return "hazY"
         if style == "q1":
             return "ochD" if (gx + gy) % 16 < 2 else _deck(i, j)
+        if style == "q2":
+            return "ochD" if (gx + gy) % 16 < 4 else "ochK"
         return "ochD" if (gx + gy) % 10 < 3 else _deck(i, j)
     return fn
 
