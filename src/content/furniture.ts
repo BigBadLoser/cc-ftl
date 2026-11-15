@@ -235,4 +235,14 @@ export const furniture = {
     flammability: 0.1, maxHp: 220, buildWork: 300, workstation: true, crafting: true,
     cost: [{ item: 'item.metal', count: 30 }, { item: 'item.electronics', count: 8 }, { item: 'item.parts', count: 4 }],
   },
+  // Water purifier 2x1: crew melt and filter ice into water at the access tile in front. A small alternative to the refinery's split-ice recipe.
+  'module.waterPurifier': {
+    scrap: 'tech',
+    name: 'Water purifier',
+    category: 'production',
+    description: 'Melts and filters ice into clean water. Crew work it from the access tile.',
+    asset: 'module.water_purifier', footprint: [2, 1], solid: true, access: [0, 1], power: -3, powerPriority: 3,
+    flammability: 0.1, maxHp: 80, buildWork: 120, workstation: true, crafting: true,
+    cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 3 }, { item: 'item.parts', count: 1 }],
+  },
 } satisfies Record<string, ModuleDef>;

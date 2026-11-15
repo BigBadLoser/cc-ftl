@@ -107,7 +107,7 @@ farms before anything else. See [Power](../power/).
 
 ### Water
 
-Water is the only input. It comes from ice split at a refinery, or from stations (see below). Each sowing uses water
+Water is the only input. It comes from ice split at a refinery, from ice melted and filtered at a water purifier (a small 2x1 module that turns 4 ice into 4 water, with no oxygen), or from stations (see below). Each sowing uses water
 (table above, doubled for a large bed), and each cooked batch uses 2 more. Watch the water stock if you run several beds.
 
 ## Cooking
