@@ -6,6 +6,8 @@ import { PrisonerC } from '../sim/fight/components';
 import { repKey } from '../sim/galaxy/standing';
 import { SLOT_EMPTY, SLOT_NONE, StasisWheelC } from '../sim/stasis/components';
 import { stowStage } from '../sim/stasis/query';
+import { rackTile } from '../sim/stasis/rack';
+import { floorSpot } from '../sim/stasis/place';
 import { stasisRoom } from '../sim/stasis/jobs';
 import { TURN_STEP_WORK, UNSTOW_LIFT, UNSTOW_WORK } from '../sim/stasis/tuning';
 import { sealPrisoner, stowSlab } from '../sim/stasis/freeze';
@@ -199,10 +201,15 @@ describe('prisoner deals: the slab is delivered for real', () => {
     const before = sim.trade.credits;
     const run = accept(sim, station, prisoner);
     until(sim, () => inShuttle(sim, prisoner), 120);
+    const t = rackTile(sim, run.vehicle)!;
+    const spot = floorSpot(sim, prisoner, t.shipId, t); // the free floor by the airlock it comes out onto
     sim.enqueue({ type: 'trade.cancel', id: run.id });
     const ev = step(sim);
     expect(failed(ev)).toBe('cancelled');
-    expect(sim.world.get(prisoner, StasisC)?.at).toBe('floor'); // set down by the airlock
+    // Set down by the airlock: on the floor there, or already lifted off that spot by a crew member standing beside it (a pickup takes no time).
+    const s = sim.world.get(prisoner, StasisC)!;
+    expect(['floor', 'carried']).toContain(s.at);
+    expect({ x: s.x, y: s.y }).toEqual({ x: spot.x, y: spot.y });
     until(sim, () => sim.world.get(prisoner, StasisC)?.at === 'wheel', 120);
     expect(sim.trade.credits).toBe(before);
     expect(prisonerOffer(sim, station, prisoner).ok).toBe(true); // it can be accepted again
