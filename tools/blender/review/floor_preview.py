@@ -1,5 +1,7 @@
 """Floor look study preview (plain python3 + PIL): each design tiled as a 3x3 patch, labelled, side by side, the plain
-deck first for comparison. Designs whose name starts with `m:` sit alone in the middle of a plain-deck patch (marks).
+deck first for comparison. Designs whose name starts with `m:` sit alone in the middle of a plain-deck patch (marks). `mix:a+b+c` scatters
+siblings the way the game does the plain deck's (src/render/tiles.ts floorChain): b, c, ... each on one tile in 20.
+`on:base|x` puts x alone in the middle of a patch of base.
 
   python3 -I tools/blender/review/floor_preview.py <study assets dir> <out.png> <label=id,...> [scale, default 4] [patch size, default 3]"""
 import json
@@ -34,11 +36,20 @@ items = [s.split("=", 1) for s in spec.split(",")]
 PW, PH = G * TW + 16, G * TH + 24
 canvas = Image.new("RGBA", (PW * len(items), PH), (22, 25, 31, 255))
 for n, (label, aid) in enumerate(items):
+    mix = aid[4:].split("+") if aid.startswith("mix:") else None
+    base = "tile.floor.deck"
+    if aid.startswith("on:"):
+        base, aid = aid[3:].split("|")
+        aid = "m:" + aid
     mark = aid.startswith("m:")
     aid = aid[2:] if mark else aid
     for gy in range(G):
         for gx in range(G):
-            use = aid if not mark or (gx, gy) == (G // 2, G // 2) else "tile.floor.deck"
+            use = aid if not mark or (gx, gy) == (G // 2, G // 2) else base
+            if mix:
+                h = ((gx * 73856093) ^ (gy * 19349663)) & 0xFFFFFFFF
+                r = ((h ^ (h >> 15)) >> 8) % 20
+                use = mix[r + 1] if r + 1 < len(mix) else mix[0]
             im, an = sprite(use)
             cx = n * PW + PW // 2 + (gx - gy) * TW // 2
             cy = 12 + TH // 2 + (gx + gy) * TH // 2

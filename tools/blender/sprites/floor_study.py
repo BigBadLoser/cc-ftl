@@ -616,6 +616,46 @@ def c3(i, j):
 DESIGNS.update({"c1": c1, "c2": c2, "c3": c3})
 
 
+# Clean tile picked: c1 (ceramic quarters). Its subtle siblings, scattered the way the plain deck's c and h are
+# (src/render/tiles.ts floorChain: one tile in 20 each):
+#   c1a replaced tile: one quarter a shade lighter, a newer tile
+#   c1b hairline crack: a fine crack across one quarter
+#   c1c drain: a small slotted drain set in one quarter
+
+
+def c1a(i, j):
+    g = c1(i, j)
+    return "c4W1" if g == "c4W2" and i >= 32 and j < 32 else g
+
+
+def c1b(i, j):
+    g = c1(i, j)
+    if g != "c4W2" or not (34 <= i <= 61 and 34 <= j <= 61):
+        return g
+    pts = ((36, 41), (44, 45), (49, 44), (58, 52))
+    for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
+        n = max(abs(a1 - a0), abs(b1 - b0))
+        for t in range(n + 1):
+            a, b = a0 + (a1 - a0) * t // n, b0 + (b1 - b0) * t // n
+            if a <= i <= a + 1 and b <= j <= b + 1:
+                return "c4W3"
+    return g
+
+
+def c1c(i, j):
+    g = c1(i, j)
+    if 41 <= i <= 54 and 41 <= j <= 54:
+        if i <= 42 or j <= 42:
+            return "c4W4"
+        if i >= 53 or j >= 53:
+            return "c4W1"
+        return "c4F2" if (i - 43) % 4 < 2 else "c4W3"
+    return g
+
+
+DESIGNS.update({"c1a": c1a, "c1b": c1b, "c1c": c1c})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
