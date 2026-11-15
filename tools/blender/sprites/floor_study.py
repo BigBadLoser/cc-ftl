@@ -865,6 +865,44 @@ def a3(i, j):
 DESIGNS.update({"a1": a1, "a2": a2, "a3": a3})
 
 
+# Door apron, round 2 (round 1 looked half painted): clean solid paint over the whole tile, bold shapes, no wear.
+#   a4 chevron tile: the tile painted dark, two bold solid yellow chevrons across its full width pointing through the door
+#   a5 hazard tile: the whole tile in crisp yellow and black stripes (screen diagonals), a thin dark frame
+#   a6 yellow apron: the whole tile solid safety yellow with one bold dark chevron pointing through the door
+
+
+def _frame_seam(i, j):
+    return i < 2 or j < 2 or i > 61 or j > 61
+
+
+def a4(i, j):
+    if _frame_seam(i, j):
+        return "seam"
+    for c0 in (22, 44):
+        d = c0 - j + abs(i - 31.5) * 0.55
+        if 0 <= d <= 9:
+            return "hazY"
+    return "hazK"
+
+
+def a5(i, j):
+    if _frame_seam(i, j):
+        return "seam"
+    return "hazY" if (i // 8) % 2 == 0 else "hazK"
+
+
+def a6(i, j):
+    if _frame_seam(i, j):
+        return "seam"
+    d = 44 - j + abs(i - 31.5) * 0.55
+    if 0 <= d <= 11 and 6 <= i <= 57:
+        return "hazK"
+    return "hazY"
+
+
+DESIGNS.update({"a4": a4, "a5": a5, "a6": a6})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
