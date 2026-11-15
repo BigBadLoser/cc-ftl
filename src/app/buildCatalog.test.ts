@@ -70,13 +70,14 @@ describe('build catalog', () => {
     expect(members('module.reactor')).toEqual(['module.reactor', 'module.reactor.mk2', 'module.reactor.mk3']);
     expect(members('bar')).toEqual(['module.bar_counter', 'module.bar_counter_short', 'module.bar_corner']);
     expect(members('vending')).toEqual(['module.vending', 'module.vending_red']);
+    expect(members('hydroponics')).toEqual(['module.hydroponics', 'module.hydroponics_large']);
     expect(entries.find((e) => e.id === 'module.bar_stool')!.def!.group).toBeNull();
-    for (const g of ['bar', 'vending']) for (const m of groupMembers(entries, g)) expect(m.def!.variantLabel, m.id).toBeTruthy();
-    const life = (chosen: Record<string, string> = {}) => filterEntries(entries, 'life', '', false, chosen).map((e) => e.id);
-    expect(life().filter((id) => id.startsWith('module.bar_') && id !== 'module.bar_stool')).toEqual(['module.bar_counter']);
-    expect(life({ bar: 'module.bar_corner' })).toContain('module.bar_corner');
-    expect(life({ bar: 'module.bar_corner' })).not.toContain('module.bar_counter');
-    expect(life().filter((id) => id.startsWith('module.vending'))).toEqual(['module.vending']);
+    for (const g of ['bar', 'vending', 'hydroponics']) for (const m of groupMembers(entries, g)) expect(m.def!.variantLabel, m.id).toBeTruthy();
+    const furn = (chosen: Record<string, string> = {}) => filterEntries(entries, 'furniture', '', false, chosen).map((e) => e.id);
+    expect(furn().filter((id) => id.startsWith('module.bar_') && id !== 'module.bar_stool')).toEqual(['module.bar_counter']);
+    expect(furn({ bar: 'module.bar_corner' })).toContain('module.bar_corner');
+    expect(furn({ bar: 'module.bar_corner' })).not.toContain('module.bar_counter');
+    expect(furn().filter((id) => id.startsWith('module.vending'))).toEqual(['module.vending']);
     expect(filterEntries(entries, 'power', '', false).filter((e) => e.def?.group === 'module.reactor').length).toBe(1);
     // A search lists each module on its own card.
     expect(filterEntries(entries, 'life', 'bar ', false).map((e) => e.id)).toEqual(expect.arrayContaining(['module.bar_counter', 'module.bar_counter_short', 'module.bar_corner']));

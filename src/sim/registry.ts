@@ -472,7 +472,7 @@ export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 /** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
 export type SeatKind = 'stool' | 'bench';
 
-export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'furniture' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
   name: string;

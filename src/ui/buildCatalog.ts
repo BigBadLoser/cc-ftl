@@ -8,6 +8,7 @@ export const CATEGORIES = [
   { id: 'power', label: 'Power' },
   { id: 'systems', label: 'Systems' },
   { id: 'life', label: 'Life support' },
+  { id: 'furniture', label: 'Furniture' },
   { id: 'production', label: 'Production' },
   { id: 'storage', label: 'Storage' },
   { id: 'defence', label: 'Defence' },

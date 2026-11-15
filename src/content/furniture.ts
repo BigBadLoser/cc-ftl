@@ -21,7 +21,7 @@ export const furniture = {
   'module.mess_table': {
     scrap: 'comfort',
     name: 'Mess table',
-    category: 'life',
+    category: 'furniture',
     description: "A table for the mess. Crew sit on chairs beside it.",
     asset: 'module.mess_table', footprint: [2, 1], solid: true, power: 0, flammability: 0.3,
     maxHp: 50, buildWork: 60, cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 2 }],
@@ -30,7 +30,7 @@ export const furniture = {
   'module.chair': {
     scrap: 'comfort',
     name: 'Chair',
-    category: 'life',
+    category: 'furniture',
     description: "A seat. Walkable.",
     asset: 'module.chair', footprint: [1, 1], solid: false, power: 0, flammability: 0.4,
     maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
@@ -40,7 +40,7 @@ export const furniture = {
   'module.bar_counter': {
     scrap: 'comfort',
     name: 'Bar counter',
-    category: 'life',
+    category: 'furniture',
     description: "A long padded counter. Join the pieces into a run.",
     buildGroup: 'bar', variantLabel: '3×1',
     asset: 'module.bar_counter', footprint: [3, 1], solid: true, power: 0, flammability: 0.3,
@@ -49,7 +49,7 @@ export const furniture = {
   'module.bar_counter_short': {
     scrap: 'comfort',
     name: 'Short bar counter',
-    category: 'life',
+    category: 'furniture',
     description: "A short padded counter, for fitting a run to the room.",
     buildGroup: 'bar', variantLabel: '2×1',
     asset: 'module.bar_counter_short', footprint: [2, 1], solid: true, power: 0, flammability: 0.3,
@@ -58,7 +58,7 @@ export const furniture = {
   'module.bar_corner': {
     scrap: 'comfort',
     name: 'Bar corner',
-    category: 'life',
+    category: 'furniture',
     description: "Turns a counter run through a corner.",
     buildGroup: 'bar', variantLabel: 'Corner',
     asset: 'module.bar_corner', footprint: [1, 1], solid: true, power: 0, flammability: 0.3,
@@ -67,7 +67,7 @@ export const furniture = {
   'module.bar_stool': {
     scrap: 'comfort',
     name: 'Bar stool',
-    category: 'life',
+    category: 'furniture',
     description: "A tall stool for the counter. Walkable.",
     asset: 'module.bar_stool', footprint: [1, 1], solid: false, power: 0, flammability: 0.3,
     maxHp: 20, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }, { item: 'item.polymer', count: 1 }],
@@ -210,6 +210,7 @@ export const furniture = {
     name: 'Hydroponics bed',
     category: 'life',
     description: "A grow bed. Pick a crop; crew sow it with water, it grows while the bed is powered, and they harvest it.",
+    buildGroup: 'hydroponics', variantLabel: 'Small',
     asset: 'module.hydroponics', footprint: [2, 1], solid: true, access: [0, 1], power: -2, powerPriority: 5, plot: { scale: 1 }, drawsWhen: 'planted',
     flammability: 0.4, maxHp: 60, buildWork: 120, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 4 }],
   },
@@ -219,6 +220,7 @@ export const furniture = {
     name: 'Large hydroponics bed',
     category: 'life',
     description: "A wide grow bed with three times the yield of the small one. Pick a crop; crew sow it with water, it grows while the bed is powered, and they harvest it.",
+    buildGroup: 'hydroponics', variantLabel: 'Large',
     asset: 'module.hydroponics_large', footprint: [3, 2], solid: true, access: [1, 2], power: -4, powerPriority: 5, plot: { scale: 3, waterScale: 2 }, drawsWhen: 'planted',
     flammability: 0.4, maxHp: 150, buildWork: 300, cost: [{ item: 'item.metal', count: 18 }, { item: 'item.polymer', count: 12 }],
   },

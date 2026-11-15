@@ -24,7 +24,7 @@ describe('leisure furniture defs', () => {
     expect(def.cost?.length).toBeGreaterThan(0);
     expect(def.buildWork).toBeGreaterThan(0);
     expect(def.asset).toBe(id);
-    expect(def.category).toBe('life');
+    expect(def.category).toBe('furniture');
     expect(freeSpot(sim, id)).toBeDefined();
   });
 
