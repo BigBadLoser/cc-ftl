@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"p1": "P1  ribbon", "p2": "P2  columns", "p3": "P3  mats and icon",
+NAMES = {"q1": "Q1  ID wall", "q2": "Q2  orbit", "q3": "Q3  open book",
+         "p1": "P1  ribbon", "p2": "P2  columns", "p3": "P3  mats and icon",
          "o1": "O1  U padded, ID card", "o2": "O2  D bone, bust and ring", "o3": "O3  D bone, scan fan",
          "n1": "N1  padded", "n2": "N2  D pod", "n3": "N3  two-tone, glass ledge",
          "l1": "L1  curved pod", "l2": "L2  split level", "l3": "L3  light curtain",
