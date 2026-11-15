@@ -38,8 +38,8 @@ interface Chain { end: Port | null; dir: Dir; took: number }
  * One block section at a port: as the rule draws it, and when staggered bays build a thick wall or will not fit, as a
  * slab of one depth (the rooms keep their floor).
  */
-function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[] }): Port[] | null {
-  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
+function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpec[], rule: BranchRule, o: { cap: boolean | RoomSpec['role']; docks?: readonly RoomSpec[]; gate?: boolean; bunks?: readonly RoomSpec[]; noCross?: boolean }): Port[] | null {
+  const { ctx } = a, base = { cap: o.cap, even: !!rule.section.even, cross: o.noCross ? false : typeof rule.section.cross === 'object' ? a.ctx.rng.pick(rule.section.cross) : rule.section.cross ?? false, ...(rule.section.width ? { width: rule.section.width } : {}), ...(rule.section.far ? { far: rule.section.far } : {}), ...(o.docks ? { docks: o.docks } : {}), ...(o.gate ? { gate: true } : {}), ...(o.bunks ? { bunks: o.bunks } : {}) };
   // A rule with a quay builds its docks and this section's rooms as one.
   if (rule.quay && o.docks?.length) {
     // (A pier head's rooms are the street's last rows: at the section's own depth.)
@@ -95,7 +95,7 @@ function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[]
   {
     for (const [i, part] of parts.entries()) {
       const last = i === parts.length - 1, here = port;
-      const ps = section(a, here, joined, part, rule, { cap: last ? rule.section.cap ?? false : false, ...(i === 0 ? first : {}), ...offer() });
+      const ps = section(a, here, joined, part, rule, { cap: last ? rule.section.cap ?? false : false, ...(i === 0 ? first : {}), ...offer(), ...(rule.section.crosses !== undefined && i >= rule.section.crosses ? { noCross: true } : {}) });
       if (!ps) return fail();
       taken();
       a.sections++;

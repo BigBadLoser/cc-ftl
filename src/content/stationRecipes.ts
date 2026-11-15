@@ -89,17 +89,18 @@ const spine = (name: string, o: { street: number; body: [number, number]; rowDep
  * the machinery gated at its tail), with greenhouse wings off its flanks: each a street of long, narrow farm rooms
  * standing end-on to it, two rows of hydroponics down each room's length. The works and the freight are wings too.
  */
-const agri = (name: string, o: { street: number; body: [number, number]; greenhouse: number; wing: [number, number]; stub: [number, number]; hall?: { length: [number, number]; wide: [number, number]; shift: [number, number] }; quay?: BranchRule['quay'] }): Recipe => {
-  const base = spine(name, { street: o.street, body: o.body, wings: [3, 4], stub: o.stub, ...(o.hall ? { hall: o.hall } : {}), braces: 0.9, ...(o.quay ? { quay: o.quay } : {}) });
-  return {
-    ...base,
-    // The greenhouses before the works and the freight, so they take the main street's flanks first.
-    branches: [
-      ...base.branches.slice(0, 3),
-      { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: o.stub, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true, width: 3 }, link: 0 },
-      ...base.branches.slice(3),
-    ],
-  };
+const agri = (name: string, o: { street: number; body: [number, number]; greenhouse: number; wing: [number, number]; quay?: BranchRule['quay'] }): Recipe => {
+  const base = spine(name, { street: o.street, body: o.body, wings: [3, 4], stub: [0, 0], braces: 0.9, ...(o.quay ? { quay: o.quay } : {}) });
+  const [harbour, body, secure] = base.branches as [BranchRule, BranchRule, BranchRule];
+  // The works and the freight stand in the main street's rows; the only wings are the greenhouses, joined straight onto
+  // it at the street's only crosses, a wing either side of each (the first sections; the rest of the street runs through).
+  const branches = (wings: number): BranchRule[] => [
+    harbour,
+    { ...body, takes: [...body.takes, 'works', 'freight'], section: { ...body.section, cross: true, crosses: Math.ceil(wings / 2) } },
+    secure,
+    { takes: ['farm'], per: 'together', most: 1, host: { on: 'flank' }, neck: 0, section: { rooms: o.wing, rowDepth: o.greenhouse, even: true, width: o.street }, link: 0 },
+  ];
+  return { ...base, branches: branches(2), sizes: { outpost: { branches: branches(1) }, hub: { branches: branches(4) } } };
 };
 
 /**
@@ -177,7 +178,7 @@ export const stationRecipes = {
     spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: harbour('basin') }),
   ],
   agri: [
-    agri('greenhouse wings off one straight street', { street: 3, body: [6, 8], greenhouse: 9, wing: [2, 4], stub: [2, 4], quay: harbour('basin') }),
+    agri('greenhouse wings off one straight street', { street: 3, body: [6, 8], greenhouse: 9, wing: [2, 2], quay: harbour('basin') }),
   ],
   compound: [
     compound('ring, works block with the machinery behind a gate', { outline: 'disc', inner: 'street', works: ['s'], secure: ['n'], dock: ['w', 'e'], neck: 0, rowDepth: 9, quay: harbour('head') }),
