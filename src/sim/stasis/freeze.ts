@@ -10,11 +10,11 @@ import { storageCount, storageTake } from '../items/storage';
 import { ModuleC } from '../modules/components';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { Sim } from '../sim';
-import { SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC, type SlabSource } from './components';
+import { SLOT_EMPTY, SLOT_NONE, SlabRackC, StasisC, StasisWheelC, type SlabSource } from './components';
 import { floorSpot, standSpot } from './place';
 import { slabPlace, wheelHatch, wheelOf } from './query';
 import { turnRing, turnsToLoad } from './ring';
-import { RESERVE_TICKS, SLAB_ITEM } from './tuning';
+import { RACK_SLOTS, RESERVE_TICKS, SLAB_ITEM } from './tuning';
 
 /** Take one empty slab out of a source. True if one was there. A wheel gives up its lowest slot holding one. */
 export function takeEmptySlab(sim: Sim, from: SlabSource): boolean {
@@ -26,6 +26,12 @@ export function takeEmptySlab(sim: Sim, from: SlabSource): boolean {
     return true;
   }
   if (from.kind === 'storage') return storageTake(sim, from.id, SLAB_ITEM, 1) === 1;
+  if (from.kind === 'rack') {
+    const rack = sim.world.get(from.id, SlabRackC);
+    if (!rack || rack.empty <= 0) return false;
+    rack.empty--;
+    return true;
+  }
   return sim.world.get(from.id, ItemStackC)?.item === SLAB_ITEM && takeFromStack(sim, from.id, 1) === 1;
 }
 
@@ -46,6 +52,7 @@ export function takeSlabFor(sim: Sim, crew: number, from: SlabSource | undefined
 function sourceHasSlab(sim: Sim, from: SlabSource): boolean {
   if (from.kind === 'wheel') return (sim.world.get(from.id, StasisWheelC)?.slots ?? []).includes(SLOT_EMPTY);
   if (from.kind === 'storage') return storageCount(sim, from.id, SLAB_ITEM) > 0;
+  if (from.kind === 'rack') return (sim.world.get(from.id, SlabRackC)?.empty ?? 0) > 0;
   const st = sim.world.get(from.id, ItemStackC);
   return st?.item === SLAB_ITEM && st.count > 0;
 }
@@ -113,6 +120,29 @@ export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   return slots.length - 1;
 }
 
+/**
+ * Hand the slab into the rack of the shuttle `vehicle` (on `at`, its rack tile): it keeps its charge there, and rides where the shuttle goes. A rack
+ * with no free place sets one of its empty slabs out first (`rackRoom`: empty slabs make way).
+ */
+export function rackSlab(sim: Sim, prisoner: number, vehicle: number, at: Tile): void {
+  const s = sim.world.get(prisoner, StasisC);
+  const rack = sim.world.get(vehicle, SlabRackC);
+  const full = sim.world.query(StasisC).filter((id) => sim.world.get(id, StasisC)?.at === 'vehicle' && sim.world.get(id, StasisC)?.carrier === vehicle).length;
+  if (rack && rack.empty > 0 && rack.empty + full >= RACK_SLOTS) {
+    // The rack is full of empty slabs: one makes way, set out on the floor (it is stock again).
+    rack.empty--;
+    spillItems(sim, shipIdAt(sim, at.x, at.y), at.x, at.y, SLAB_ITEM, 1);
+  }
+  if (s) Object.assign(s, { at: 'vehicle', carrier: vehicle, x: at.x, y: at.y, rot: 0 });
+}
+
+/** Put one empty slab into a shuttle's rack. */
+export function rackEmptySlab(sim: Sim, vehicle: number): void {
+  const rack = sim.world.get(vehicle, SlabRackC);
+  if (rack) rack.empty++;
+  else sim.world.add(vehicle, SlabRackC, { empty: 1 });
+}
+
 /** A wheel is built: every slot holds an empty slab. */
 export function initWheel(sim: Sim, wheel: number, slots: number): void {
   sim.world.add(wheel, StasisWheelC, { slots: new Array<number>(slots).fill(SLOT_EMPTY) });
@@ -132,25 +162,38 @@ export function releaseWheel(sim: Sim, wheel: number): void {
 }
 
 /**
- * The slab's reserve ran out: the prisoner thaws and is back in the world, hostile. They step out where the slab is (by the wheel's hatch, or
- * beside a slab on the floor), no longer a prisoner, and stand drafted (like a boarder who lands) so they fight rather than take jobs. The slab
- * is left empty: back in its wheel slot, or as an item on the floor.
+ * Open a full slab: the prisoner is out of it (no `StasisC`) and the slab is left empty where it was: back in its wheel slot, as an item on the
+ * floor, or back in its shuttle's rack. A slab on a hover cart is left on the floor where the cart is. Returns where the prisoner steps out (the ship
+ * and the slab's tile), or null when they are not frozen. The one way out of a slab: a thaw and a release both go through it.
  */
-export function thawPrisoner(sim: Sim, prisoner: number): void {
+export function openSlab(sim: Sim, prisoner: number): { ship: number; x: number; y: number } | null {
   const place = slabPlace(sim, prisoner);
   const s = sim.world.get(prisoner, StasisC);
-  if (!place || !s) return;
+  if (!place || !s) return null;
   const from = { x: s.x, y: s.y };
   if (place.kind === 'wheel') {
     const w = wheelOf(sim, prisoner);
     const slots = w && sim.world.get(w.wheel, StasisWheelC)?.slots;
     if (slots && w) slots[w.slot] = SLOT_EMPTY;
-  } else if (place.kind === 'floor') {
-    spillItems(sim, place.ship, from.x, from.y, SLAB_ITEM, 1);
+  } else if (place.kind === 'shuttle') {
+    rackEmptySlab(sim, place.vehicle);
+  } else {
+    spillItems(sim, place.ship || shipIdAt(sim, from.x, from.y), from.x, from.y, SLAB_ITEM, 1);
   }
-  const ship = place.ship || shipIdAt(sim, from.x, from.y);
-  const at = standSpot(sim, ship, from);
   sim.world.remove(prisoner, StasisC);
+  return { ship: place.ship || shipIdAt(sim, from.x, from.y), ...from };
+}
+
+/**
+ * The slab's reserve ran out: the prisoner thaws and is back in the world, hostile. They step out where the slab is (by the wheel's hatch, or
+ * beside a slab on the floor), no longer a prisoner, and stand drafted (like a boarder who lands) so they fight rather than take jobs. The slab
+ * is left empty (`openSlab`).
+ */
+export function thawPrisoner(sim: Sim, prisoner: number): void {
+  const out = openSlab(sim, prisoner);
+  if (!out) return;
+  const ship = out.ship;
+  const at = standSpot(sim, ship, out);
   sim.world.remove(prisoner, PrisonerC);
   sim.world.remove(prisoner, SurrenderedC);
   sim.world.add(prisoner, PositionC, { x: at.x, y: at.y, toX: at.x, toY: at.y, progress: 0, facing: 0 });

@@ -25,12 +25,13 @@
   }) as unknown as UiModule;
   const crew = (id: number, stasis: UiCrew['stasis']): UiCrew => ({
     id, name: 'Vasska Orr', side: 'enemy', dead: false, downed: null, hp: 70, maxHp: 100, mood: null, hunger: null, rest: 60, prisoner: true, surrendered: true,
-    seal: { marked: true, refusal: 'Already sealed in stasis' }, stasis, weapon: null, traits: [], fight: null, broke: null, job: null, activity: '', drafted: false,
+    seal: { marked: true, refusal: 'Already sealed in stasis', wait: null }, stasis, weapon: null, traits: [], fight: null, broke: null, job: null, activity: '', drafted: false,
   }) as unknown as UiCrew;
   const crews: [string, UiCrew][] = [
-    ['Selected from the wheel', crew(1, { where: 'Stasis wheel, slot 1', wheel: 9, carrier: null, to: null, reserve: 100, draining: false })],
-    ['Selected from the hover cart', crew(2, { where: 'On a hover cart', wheel: 9, carrier: { id: 4, name: 'Ada Kerrow' }, to: 'Stasis wheel', reserve: 100, draining: false })],
-    ['Left on the floor', crew(3, { where: 'On the floor, waiting to be carted', wheel: null, carrier: null, to: null, reserve: 64, draining: true })],
+    ['Selected from the wheel', crew(1, { where: 'Stasis wheel, slot 1', wheel: 9, carrier: null, to: null, reserve: 100, draining: false, inTransit: false })],
+    ['Selected from the hover cart', crew(2, { where: 'On a hover cart', wheel: 9, carrier: { id: 4, name: 'Ada Kerrow' }, to: 'Stasis wheel', reserve: 100, draining: false, inTransit: true })],
+    ['Left on the floor', crew(3, { where: 'On the floor, waiting to be carted', wheel: null, carrier: null, to: null, reserve: 64, draining: true, inTransit: false })],
+    ['In the shuttle', crew(5, { where: 'In the shuttle, on the way to a stasis wheel', wheel: null, carrier: null, to: null, reserve: 90, draining: false, inTransit: true })],
   ];
 </script>
 
@@ -41,11 +42,12 @@
 </div>
 {#snippet head(c: UiCrew)}<PaneHead icon="skull" title={c.name} sub="Security · hostile" foe />{/snippet}
 <div class="lab">
-  <section class="col"><h4>Not frozen: unmarked, marked for sealing</h4>
-    <div class="win">{@render head(crews[0]![1])}<div class="body"><CrewOverview {api} c={{ ...crews[0]![1], stasis: null, seal: { marked: false, refusal: null } }} onPriorities={() => {}} /></div></div>
-    <div class="win">{@render head(crews[0]![1])}<div class="body"><CrewOverview {api} c={{ ...crews[0]![1], stasis: null, seal: { marked: true, refusal: null } }} onPriorities={() => {}} /></div></div>
+  <section class="col"><h4>Not frozen: unmarked, marked for sealing, marked on a prize (shuttle)</h4>
+    <div class="win">{@render head(crews[0]![1])}<div class="body"><CrewOverview {api} c={{ ...crews[0]![1], stasis: null, seal: { marked: false, refusal: null, wait: null } }} onPriorities={() => {}} /></div></div>
+    <div class="win">{@render head(crews[0]![1])}<div class="body"><CrewOverview {api} c={{ ...crews[0]![1], stasis: null, seal: { marked: true, refusal: null, wait: null } }} onPriorities={() => {}} /></div></div>
+    <div class="win">{@render head(crews[0]![1])}<div class="body"><CrewOverview {api} c={{ ...crews[0]![1], stasis: null, seal: { marked: true, refusal: null, wait: 'Marked: a shuttle brings empty slabs and carries the full one home' } }} onPriorities={() => {}} /></div></div>
   </section>
-  <section class="col"><h4>Frozen: in the wheel, on a cart, on the floor</h4>
+  <section class="col"><h4>Frozen: in the wheel, on a cart, on the floor, in a shuttle</h4>
     {#each crews as [, c] (c.id)}<div class="win">{@render head(c)}<div class="body"><CrewOverview {api} {c} onPriorities={() => {}} /></div></div>{/each}
   </section>
 </div>

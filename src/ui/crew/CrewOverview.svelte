@@ -78,10 +78,11 @@
         onclick={() => api.dispatch({ type: 'prisoner.seal', crew: c.id, on: !c.seal?.marked })}>{c.seal.marked ? 'Cancel seal' : 'Seal in stasis'}</button>
     </div>
     {#if !c.seal.marked && c.seal.refusal}<p class="hint" data-testid="seal-refusal">{c.seal.refusal}</p>{/if}
-    {#if c.seal.marked}<p class="hint" data-testid="seal-marked">Marked: crew will seal them as hauling work.</p>{/if}
+    {#if c.seal.marked}<p class="hint" data-testid="seal-marked">{c.seal.wait ?? 'Marked: crew will seal them as hauling work.'}</p>{/if}
   {/if}
   {#if enemy && c.stasis}
-    <!-- (Frozen: out of the world, nothing to order.) -->
+    <!-- Frozen: a release opens the slab and lets them go (refused while the slab is on its way: a cart or a shuttle). -->
+    <div class="btns one"><button data-testid="release-frozen" disabled={c.stasis.inTransit} use:tip={{ text: c.stasis.inTransit ? 'The slab is on its way: release them once it is set down' : 'Let them go: the slab is opened, they leave, and their faction thinks better of you' }} onclick={() => api.dispatch({ type: 'prisoner.release', crew: c.id })}>Release</button></div>
   {:else if enemy}
     <div class="btns one"><button class="warn" data-testid="attack-hostile" disabled={!!blocked} use:tip={{ text: blocked ?? 'Order the selected drafted crew to attack' }} onclick={() => api.attack(c.id)}>Attack</button></div>
   {:else if c.side === 'visitor' && c.visit === 'Inspector'}

@@ -9,7 +9,8 @@ import { PLAN_INTERVAL } from '../tuning';
 import { StasisC } from './components';
 import { dropSlab, thawPrisoner } from './freeze';
 import { keepCartRests } from './cart';
-import { aimFetch, pickWheel, stasisRoom } from './jobs';
+import { aimFetch, slabDestination, stasisRoom } from './jobs';
+import { tendShuttles } from './shuttle';
 import { scrapSealJob, sealMarked } from './order';
 import { cartsFor, fullSlabs, slabDraining, slabHeld, wheelHatch, wheelOf } from './query';
 import { REFILL_PER_TICK, RESERVE_TICKS } from './tuning';
@@ -23,6 +24,8 @@ const ACT_WORK = 1;
  *    on the floor where they stand; a slab whose wheel is gone lies by where the wheel's hatch was;
  *  - reserve: a slab out of a powered wheel and off a cart drains one tick a tick, and its prisoner thaws, hostile, at 0; a slab in a powered
  *    wheel refills REFILL_PER_TICK a tick;
+ *  - slabs by shuttle (shuttle.ts): a slab whose shuttle is gone is lost, a shuttle home from a prize sets its full slabs down and stocks its rack,
+ *    and a prize with prisoners marked and no wheel of its own gets a shuttle run;
  *  - every PLAN_INTERVAL ticks the 'stasis' jobs (hauling) are kept or dropped, slabs on the floor get a pickup job and prisoners on the player's
  *    ships the player marked (stasis/order.ts) get a seal job, while the ship's wheels have room (`stasisRoom`) and, for a seal, an empty slab is to be had.
  */
@@ -47,6 +50,7 @@ export function stasisSystem(sim: Sim): void {
     }
   }
   keepCartRests(sim);
+  tendShuttles(sim, sim.tick % PLAN_INTERVAL === 0);
   if (sim.tick % PLAN_INTERVAL === 0) planJobs(sim);
 }
 
@@ -73,7 +77,7 @@ function planJobs(sim: Sim): void {
   for (const id of fullSlabs(sim)) {
     const s = sim.world.get(id, StasisC);
     const ship = s ? shipIdAt(sim, s.x, s.y) : 0;
-    if (!s || s.at !== 'floor' || handled.has(id) || !ships.has(ship) || !pickWheel(sim, ship, s) || !take(ship)) continue;
+    if (!s || s.at !== 'floor' || handled.has(id) || !ships.has(ship) || !slabDestination(sim, ship, s) || !take(ship)) continue;
     post(sim, { kind: 'stasis', x: s.x, y: s.y, target: id, stasis: { phase: 'pickup' } });
   }
   for (const id of [...sim.world.query(PrisonerC, PositionC, CrewC)].sort((a, b) => a - b)) {
@@ -114,9 +118,10 @@ function keep(sim: Sim, job: Job): boolean {
   if (s?.at === 'floor') {
     st.phase = 'pickup';
     delete st.wheel;
+    delete st.rack;
     Object.assign(job, { x: s.x, y: s.y, work: ACT_WORK });
     delete job.size;
     return true;
   }
-  return st.phase === 'stow' && !!job.reservedBy && cartsFor(sim, job.reservedBy, prisoner);
+  return (st.phase === 'stow' || st.phase === 'ship') && !!job.reservedBy && cartsFor(sim, job.reservedBy, prisoner);
 }

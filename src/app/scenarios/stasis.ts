@@ -1,8 +1,9 @@
 import { AllegianceC, CrewC, ModuleC, PositionC, ShipC, placementError, playerShip, type Command, type Sim } from '../../sim';
+import { PrisonerC } from '../../sim/fight/components';
 import { accessTile, footprintTiles } from '../../sim/modules/footprint';
 import { footprintBlockedByCrew } from '../../sim/modules/spawn';
 import { isTileWalkable } from '../../sim/modules/walk';
-import { shipGrid } from '../../sim/regions';
+import { shipGrid, shipIdOf } from '../../sim/regions';
 import { slabPlace } from '../../sim/stasis/query';
 import { playerCrew } from '../../sim/story/world';
 import type { Scenario } from './types';
@@ -70,13 +71,28 @@ function wheelSpot(sim: Sim, ship: number): { x: number; y: number; rot: number 
     ?? spots.find((p) => keepsReach(sim, ship, p.x, p.y, p.rot, crew)) ?? null;
 }
 
+/** The command that sets a stasis wheel on the player's ship (`wheelSpot`), or none when there is no room. */
+export function wheelCommand(sim: Sim): Command[] {
+  const ship = playerShip(sim);
+  const spot = ship ? wheelSpot(sim, ship) : null;
+  return ship && spot ? [{ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot }] : [];
+}
+
+/**
+ * `?scenario=prisoners&taken&seal` (#116): a wheel at home and every prisoner on the prize marked for sealing. The prize has no wheel, so a
+ * shuttle flies out with empty slabs, the party seals them there, and the slabs ride home to the wheel.
+ */
+export function sealPrizeCommands(sim: Sim, prize: number): Command[] {
+  const marks: Command[] = sim.world.query(PrisonerC, PositionC).filter((id) => shipIdOf(sim, sim.world.get(id, PositionC)!) === prize).sort((a, b) => a - b)
+    .map((crew) => ({ type: 'prisoner.seal', crew, on: true }));
+  return [...wheelCommand(sim), ...marks];
+}
+
 /** The commands of the start: the wheel, two hostile crew (by the second and third crew members) and two spare empty slabs on the floor. */
 export function prisonerCommands(sim: Sim): Command[] {
   const ship = playerShip(sim);
   if (!ship) return [];
-  const out: Command[] = [];
-  const spot = wheelSpot(sim, ship);
-  if (spot) out.push({ type: 'debug.spawnModule', ship, x: spot.x, y: spot.y, def: WHEEL, rot: spot.rot });
+  const out: Command[] = wheelCommand(sim);
   const crew = playerCrew(sim);
   for (const c of [crew[1] ?? crew[0], crew[2] ?? crew[0]]) {
     const at = sim.world.get(c ?? 0, PositionC);

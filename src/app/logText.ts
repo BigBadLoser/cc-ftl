@@ -191,6 +191,9 @@ export function createDescriber(sim: Sim) {
         const m = sim.world.get(e.wheel, ModuleC);
         return { kind: 'crew', tone: 'good', text: `${crewName(e.crew)} is held in the stasis wheel`, ...(m ? { subject: tileAt(m.x, m.y) } : {}) };
       }
+      case 'stasis.shipped': return { kind: 'crew', tone: 'info', text: `${crewName(e.crew)}'s stasis slab is aboard the shuttle for home` };
+      case 'stasis.unloaded': return { kind: 'crew', tone: 'info', text: `${e.crew.length === 1 ? 'A stasis slab' : `${e.crew.length} stasis slabs`} unloaded from the shuttle, to be carted to a wheel` };
+      case 'stasis.lost': return { kind: 'crew', tone: 'bad', text: `${e.name} was lost with the shuttle, sealed in stasis` };
       case 'stasis.thawed': return { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) };
       case 'ship.letGo': return { kind: 'ship.captured', tone: 'warn', text: `${shipName(e.ship)}: ${e.crew} crew let go, the ship is left a derelict`, ...onShip(e.ship) };
       case 'crew.released': return { kind: 'crew', tone: 'good', text: `${e.name} released${e.faction ? `: ${factionName(e.faction)} thinks better of you` : ''}` };
