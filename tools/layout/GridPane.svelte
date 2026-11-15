@@ -12,7 +12,7 @@
 
 	type Edge = 'n' | 's' | 'e' | 'w';
 	type Mode =
-		| { k: 'pan'; x: number; y: number }
+		| { k: 'pan'; x: number; y: number; pick?: Tile; moved?: boolean }
 		| { k: 'paint'; a: Tile; tool: StrokeTool; erase: boolean; room: number | undefined }
 		| { k: 'room'; a: Tile }
 		| { k: 'edge'; id: number; edge: Edge; base: Layout; rect: Rect }
@@ -160,6 +160,8 @@
 		const tool = lab.tool;
 		// the right button erases what the active tool paints (a note: the one under the pointer); the select tool pans with it
 		const erase = e.button === 2 && tool !== 'select';
+		// the middle button pans on a drag and, on a click, picks the brush that paints what is under it
+		if (e.button === 1 && l && !lab.compare) { e.preventDefault(); mode = { k: 'pan', x: e.clientX, y: e.clientY, pick: tile, moved: false }; return; }
 		if ((e.button !== 0 && !erase) || space || !l || lab.compare) { mode = { k: 'pan', x: e.clientX, y: e.clientY }; return; }
 		erasing = erase;
 		if (erase && tool === 'note') { lab.erasePinAt(fx, fy); return; }
@@ -191,6 +193,7 @@
 		const m = mode;
 		pointer = !lab.compare && (!m || m.k === 'paint') ? tile : null;
 		if (m?.k === 'pan') {
+			if (Math.abs(e.clientX - m.x) + Math.abs(e.clientY - m.y) > 0) m.moved = true;
 			lab.view = panned('grid', lab.view, dpr(), e.clientX - m.x, e.clientY - m.y);
 			m.x = e.clientX;
 			m.y = e.clientY;
@@ -239,7 +242,8 @@
 			shape = null;
 			const { tool, erase, room: first } = m;
 			if (tiles) lab.edit((cur) => stroke(cur, tool, erase, tiles, first)); // one undo step per stroke
-		} else if (m?.k === 'edge') lab.end();
+		} else if (m?.k === 'pan' && m.pick && !m.moved) lab.pickBrush(m.pick);
+		else if (m?.k === 'edge') lab.end();
 		else if (m?.k === 'room') {
 			const r = lab.drag;
 			lab.drag = null;
@@ -282,6 +286,7 @@
 		style="width:{box.w}px;height:{box.h}px;cursor:{space ? 'grab' : cursor}"
 		{@attach onWheel(wheel)}
 		oncontextmenu={(e) => e.preventDefault()}
+		onmousedown={(e) => { if (e.button === 1) e.preventDefault(); }}
 		onpointerdown={down}
 		onpointermove={move}
 		onpointerup={up}

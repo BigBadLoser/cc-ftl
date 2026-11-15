@@ -179,6 +179,20 @@ class Lab {
     this.armed = def;
     this.setTool('module');
   }
+  /**
+   * The picker (a middle click on the grid): arm the brush that paints what is at a tile. A module arms the module tool with that module
+   * at its turn; a wall, door, beam or floor tile arms that paint tool (floor also takes its room's role for new rooms); space, the Erase tool.
+   */
+  pickBrush([x, y]: Tile): void {
+    const l = this.layout;
+    if (!l || x < 0 || y < 0 || x >= l.width || y >= l.height) return;
+    const m = l.modules.find((mm) => moduleTiles(mm).some(([tx, ty]) => tx === x && ty === y));
+    if (m) { this.rot = m.rot ?? 0; this.arm(m.def); return; }
+    const c = l.cells[y]?.[x] ?? '.';
+    const role = l.rooms[l.roomOf[y * l.width + x] ?? -1]?.role;
+    if (c === '_' && role && role !== 'hall') this.role = role;
+    this.setTool(({ '#': 'wall', D: 'door', '=': 'beam', _: 'floor' } as Record<string, Tool>)[c] ?? 'space');
+  }
   /** A module being dragged (its stable id): the ghost shows where it would land, checked with the module itself set aside. */
   moving = $state<number | null>(null);
   /** The ghost of a module with its top-left at (x, y): the game's placement owner's reason it cannot stand there, if any. */

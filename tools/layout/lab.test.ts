@@ -203,3 +203,19 @@ describe('a shape stroke is one undo step (#464)', () => {
     expect((lab.layout as Layout).cells).toEqual(before.cells);
   });
 });
+
+describe('the picker (middle click)', () => {
+  it('arms the brush that paints what is under the tile', () => {
+    start();
+    lab.setTool('select');
+    lab.pickBrush([7, 7]);
+    expect([lab.tool, lab.armed]).toEqual(['module', 'module.chair']);
+    lab.role = 'quarters';
+    lab.pickBrush([12, 12]);
+    expect([lab.tool, lab.role]).toEqual(['floor', 'cargo']);
+    lab.pickBrush([4, 7]);
+    expect(lab.tool).toBe('wall');
+    lab.pickBrush([1, 1]);
+    expect(lab.tool).toBe('space');
+  });
+});
