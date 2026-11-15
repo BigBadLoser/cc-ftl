@@ -32,7 +32,7 @@ export function tileHash(x: number, y: number): number {
 }
 
 /** Floor finish art by `Finish` code (the sim's `floor` field): the paving the station generator gives a court. */
-const FINISH_ART: Readonly<Record<number, string>> = { [Finish.Walk]: "walk", [Finish.Soil]: "soil", [Finish.Market]: "market", [Finish.Tread]: "tread" };
+const FINISH_ART: Readonly<Record<number, string>> = { [Finish.Walk]: "walk", [Finish.Market]: "market", [Finish.Tread]: "tread" };
 
 /** One main plate; two very subtle variants on ~10% of tiles. Grates, hatches and the rest stay unused in the manifest.
  * A tile with a floor finish shows that instead (the plain deck while its sheet is missing). Keep in sync with

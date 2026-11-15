@@ -2,7 +2,6 @@
 (courts, lounges, corridor junctions). Local frame and placement: modkit.K (front = +v). Four rotations each.
 
 - module.planter: a 1x1 cream pot with a steel rim and a leafy shrub (solid).
-- module.planter_large: a 2x2 raised bed (steel frame, cream panels) with a small tree and ground cover (solid).
 - module.bench: a 2x1 backless bench, slatted top on two steel pedestals (solid: dressing, nobody sits yet).
 - module.deck_inlay: a 1x1 brass-and-steel medallion set flush in the deck (walkable, drawn under crew).
 - module.deck_hazard: a 1x1 deck plate of yellow and black stripes (walkable, drawn under crew)."""
@@ -36,30 +35,6 @@ def planter(rot):
     k.box(0, 0.282, 0.16, 0.3, 0.012, 0.05, "navy")                                      # a trim stripe on the front
     k.box(0, 0, 0.42, 0.52, 0.52, 0.03, "rustD", top="leather")                          # soil
     _foliage(k, 0, 0, 0.45, 0.36, 0.6, 18, 11)
-    return k.build()
-
-
-def planter_large(rot):
-    k = K(f"planter_large_{rot}", (2, 2), rot)
-    k.box(0, 0, 0.0, 1.84, 1.84, 0.08, "gmD")                                            # base
-    for su in (-1, 1):                                                                 # steel corner posts
-        for sv in (-1, 1):
-            k.box(su * 0.86, sv * 0.86, 0.08, 0.1, 0.1, 0.42, "steelD", top="steel")
-    k.box(0, 0, 0.08, 1.7, 1.7, 0.38, "lvW2", top="lvW", bevel=0.02)                    # cream panels
-    k.box(0, 0, 0.46, 1.86, 1.86, 0.05, "steel", top="steelL", bevel=0.015)              # the rim, a seat ledge
-    k.box(0, 0.85, 0.2, 1.4, 0.012, 0.06, "navy")                                        # front trim stripe
-    k.box(0, 0, 0.48, 1.66, 1.66, 0.03, "rustD", top="leather")                          # soil
-    rnd = random.Random(5)
-    k.cyl(0.08, -0.05, 0.5, 0.08, 1.0, "rustD", top="ochD", sides=8, rtop=0.05)          # trunk
-    for a in (0.6, 2.4, 4.3):                                                          # three boughs
-        k.box(0.08 + 0.18 * math.cos(a), -0.05 + 0.18 * math.sin(a), 1.25, 0.05, 0.4, 0.05, "rustD", rz=a, rx=0.7)
-    for i in range(5):                                                                 # the canopy: leaf clumps
-        a = i * 1.26 + 0.3
-        d = 0.0 if i == 0 else 0.34
-        _foliage(k, 0.08 + d * math.cos(a), -0.05 + d * math.sin(a), 1.25 + (0.25 if i == 0 else 0.0), 0.42, 0.55, 12, 40 + i)
-    for i in range(6):                                                                 # ground cover round the trunk
-        a = i * math.tau / 6 + rnd.uniform(-0.3, 0.3)
-        _foliage(k, 0.62 * math.cos(a), 0.62 * math.sin(a), 0.5, 0.2, 0.22, 6, 70 + i)
     return k.build()
 
 
@@ -100,8 +75,7 @@ def deck_hazard(rot):
 SPRITES = []
 for _r in range(4):
     _flip = _r % 2 == 1
-    for _name, _fp, _fn in (("planter_large", (2, 2), planter_large),
-                            ("deck_inlay", (1, 1), deck_inlay), ("deck_hazard", (1, 1), deck_hazard)):
+    for _name, _fp, _fn in (("deck_inlay", (1, 1), deck_inlay), ("deck_hazard", (1, 1), deck_hazard)):
         fp = (_fp[1], _fp[0]) if _flip else _fp
         SPRITES.append((f"module.{_name}.r{_r}", fp, "prop", lambda r=_r, fn=_fn: fn(r)))
         if _r == 0:

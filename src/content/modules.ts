@@ -47,6 +47,7 @@ export const modules = {
     cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 6 }],
   },
   // A floor light: a lit grate set into the deck. Not solid: crew walk over it. (Art: tools/blender/sprites/lights.py.)
+  // Keeps the full unit of power the old light drew: the starter's lamps set its reactor load, which crew refuelling timing follows.
   'module.light': {
     scrap: 'hull',
     name: 'Floor light',
@@ -55,7 +56,7 @@ export const modules = {
     asset: 'module.light_grate',
     footprint: [1, 1],
     solid: false,
-    power: -0.25,
+    power: -1,
     powerPriority: 2,
     light: { radius: 7, level: 230 },
     flammability: 0.1,

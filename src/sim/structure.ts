@@ -5,10 +5,10 @@ import { SPACE_TEMP, VENT_CONDUCTANCE } from './tuning';
  * Floor finish of a tile, stored in the `floor` field: how a court's deck is paved (the station generator paints its
  * walkways and zones). Looks only; nothing in the sim reads it. Template `floors` rows spell it with FINISH_CHARS.
  */
-export const Finish = { Plain: 0, Walk: 1, Soil: 2, Market: 3, Tread: 4 } as const;
+export const Finish = { Plain: 0, Walk: 1, Market: 2, Tread: 3 } as const;
 export type FinishKind = (typeof Finish)[keyof typeof Finish];
 /** Template `floors` characters: anything else (a space, '.') is the plain deck. */
-export const FINISH_CHARS: Readonly<Record<string, FinishKind>> = { w: Finish.Walk, s: Finish.Soil, m: Finish.Market, t: Finish.Tread };
+export const FINISH_CHARS: Readonly<Record<string, FinishKind>> = { w: Finish.Walk, m: Finish.Market, t: Finish.Tread };
 
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {

@@ -66,7 +66,7 @@
   cargo     a delivery job's sealed hard case: item.cargo_crate.l on the deck and .held (cargo.py)
   decor     station dressing: a tree bed, walkable deck marks (decor.py; the bench and planter ship as bench_module / planter_module)
   landmarks court landmarks: the holo column, the big tree, the banner post and its livery masks (landmarks.py)
-  court_floors  the floor finishes the station generator paints courts with: walk, soil, market, tread (floors.py COURT)
+  court_floors  the floor finishes the station generator paints courts with: walk, market, tread (floors.py COURT)
   lights    the lamps: tall mast, short cage lamp, floor grate, 4 rotations x lit / unpowered / damage states (lights.py)
   items     the item pack: .s/.m/.l floor stacks and .held for the items env (items.py) does not draw (items_now.py), and
             for planned items (items_tech.py, items_materials.py, items_parts.py, items_goods.py)
@@ -251,6 +251,9 @@ def jobs(name):
     if name == "planter2":      # look study, preview only (not in RENDERED): PL1 refined, r2
         from . import planter_r2
         return planter_r2.jobs(), "only:planter"
+    if name == "floor_study":   # look study, preview only (not in RENDERED): floor finishes and deck marks
+        from . import floor_study
+        return floor_study.jobs(), True
     if name == "planter":       # look study, preview only (not in RENDERED): planter designs, r1
         from . import planter_study
         return planter_study.jobs(), "only:planter"

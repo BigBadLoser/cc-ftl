@@ -17,7 +17,7 @@ export interface ShipTemplate {
   modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
-  /** Floor finishes, row for row with `rows`: 'w' walkway paving, 's' soil, 'm' market tile, 't' tread plate, anything
+  /** Floor finishes, row for row with `rows`: 'w' walkway paving, 'm' market tile, 't' tread plate, anything
    *  else the plain deck (structure.ts FINISH_CHARS). Absent: every floor plain. */
   floors?: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */

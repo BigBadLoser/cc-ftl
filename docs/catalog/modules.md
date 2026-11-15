@@ -1,6 +1,6 @@
 # Catalog: modules
 
-Every ship module, furniture piece and sealed container. 64 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
+Every ship module, furniture piece and sealed container. 61 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
 the build catalog test (`src/app/buildCatalog.test.ts`) requires every def to be reachable from a build tab, so any def here can be built by the player
 (Mk II/III and the flak cannon first need a blueprint). "Buildable only" means nothing places it on a ship, so it appears only if the player builds it.
 Nine sprite families have no def: cryo pod (not the prisoner holding: that is the stasis wheel), comms/medical/sensor consoles, workbench and three storage variants.
@@ -9,14 +9,11 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 |---|---|---|---|---|
 | Reactor | `module.reactor` | Burns energy crystals for the ship's main power: more load burns more, an empty store supplies nothing, and c… | In game | src/content/modules.ts:12; shipgen rooms/engineering.ts, all starters; sim/systems/power.ts, modules.ts, refuel.ts |
 | Life support | `module.lifeSupport` | Makes breathable air and scrubs CO2 for the room it sits in. | In game | src/content/modules.ts:30; shipgen, starters; sim/systems/modules.ts, atmosphere.ts |
-| Floor light | `module.light` | A lit grate set into the deck, walkable; draws a quarter power. Art `module.light_grate` (family `lights`) | In game | src/content/modules.ts; shipgen fit.ts, starters; sim/systems/lighting.ts |
-| Cage lamp | `module.light_cage` | A solid work lamp, radius 10, half a power. Generated in engine, reactor, cargo and industry rooms | In game | src/content/modules.ts; shipgen fit.ts lightRoom; art lights.py |
-| Light mast | `module.light_mast` | A solid tall lamp, radius 15, one power. Lights big open rooms on a staggered grid | In game | src/content/modules.ts; shipgen fit.ts lightOpen; art lights.py |
-| Tree planter | `module.planter_large` | 2x2 raised bed with a tree; dressing only | In game (stations only) | src/content/furniture.ts; rooms/station.ts; art decor.py |
-| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only | In game (stations only) | src/content/furniture.ts; rooms/station.ts (plaza, drill hall); art decor.py |
-| Holo column | `module.holo_sign` | 2x2 court landmark with a light (radius 8, half a power) | In game (stations only) | src/content/furniture.ts; rooms/station.ts plaza; art landmarks.py |
-| Great tree | `module.tree_large` | 3x3 garden landmark; dressing only | In game (stations only) | src/content/furniture.ts; rooms/station.ts garden; art landmarks.py |
-| Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | In game (stations only) | src/content/furniture.ts; rooms/station.ts drill; render/moduleArt.ts schemeEmblem |
+| Floor light | `module.light` | A lit grate set into the deck, walkable. Art `module.light_grate` (family `lights`) | In game | src/content/modules.ts; shipgen fit.ts, starters; sim/systems/lighting.ts |
+| Cage lamp | `module.light_cage` | A solid work lamp, radius 10, half a power | Buildable only | src/content/modules.ts; art lights.py |
+| Light mast | `module.light_mast` | A solid tall lamp, radius 15, one power | Buildable only | src/content/modules.ts; art lights.py |
+| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only (art to be redesigned) | Buildable only | src/content/furniture.ts; art decor.py |
+| Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | Buildable only | src/content/furniture.ts; render/moduleArt.ts schemeEmblem; art landmarks.py |
 | Bed | `module.bed` | Somewhere for a crew member to sleep and recover rest. | In game | src/content/modules.ts:66; shipgen, starters; sim/systems/bedOwners.ts, needs.ts; render/bedPose.ts |
 | Console | `module.console` | A general console. | In game | src/content/modules.ts:81; shipgen bridge/engineering; render/assets/fallback.ts |
 | Research module | `module.research` | Crew study the ship's active research project here, faster with science. | Partial: buildable only | src/content/modules.ts:101; no ship template or shipgen room places one; sim/research/*, systems/researchJobs.ts use it; 3x2 art |

@@ -7,7 +7,7 @@ corners and a light lip (the way RimWorld and Space Haven decks tile); a stays p
 every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look.
 
 Court floors (family court_floors, `court`): finishes the station generator paints a court with, tile by tile (the sim's
-`floor` field): walkway paving, garden soil, market tile, drill-hall tread plate."""
+`floor` field): walkway paving, market tile, drill-hall tread plate."""
 from . import core
 
 N = 64
@@ -71,7 +71,7 @@ def _hash(i, j, seed):
 
 def court(variant, i, j):
     """Court floors (family court_floors; the station generator paints them, not the hash): walk (promenade paving),
-    soil (garden beds), market (plaza tiles), tread (drill-hall diamond plate). Each tiles seamlessly, its seams on the
+    market (plaza tiles), tread (drill-hall diamond plate). Each tiles seamlessly, its seams on the
     low sides as a's."""
     if variant == "walk":                         # pale composite pavers, two by two, with dark joints and a worn lip
         pi, pj = i % 32, j % 32
@@ -80,15 +80,6 @@ def court(variant, i, j):
         if pi < 4 or pj < 4:
             return "c4W5"
         return "c4F1" if _hash(i // 32, j // 32, 3) < 0.5 else "c4F0"
-    if variant == "soil":                         # dark earth with moss tufts and a few pebbles
-        r = _hash(i // 2, j // 2, 7)
-        if r < 0.07:
-            return "xnFL" if r < 0.025 else "xnF"
-        if r < 0.10:
-            return "alG"
-        if r < 0.115:
-            return "rkL"
-        return "gdD" if _hash(i // 4, j // 4, 9) < 0.55 else "rkDM"
     if variant == "market":                       # small muted terracotta tiles, a darker one at random, dark grout
         ti, tj = i % 16, j % 16
         if ti < 2 or tj < 2:
@@ -107,7 +98,7 @@ def court(variant, i, j):
     return "steel"
 
 
-COURT = ("walk", "soil", "market", "tread")
+COURT = ("walk", "market", "tread")
 SPRITES = [(f"tile.floor.{v}", (1, 1), "floor", lambda v=v: floor(v)) for v in COURT]
 
 

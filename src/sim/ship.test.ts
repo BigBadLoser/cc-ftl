@@ -13,8 +13,8 @@ describe('gridFromTemplate', () => {
     expect(g.get('struct', 2, 2)).toBe(Struct.Space);
   });
   it('reads floor finishes onto floor tiles only', () => {
-    const g = gridFromTemplate({ name: 't', rows: ['#__D', '_._'], floors: ['.wsm', 't.'] });
-    expect([g.get('floor', 0, 0), g.get('floor', 1, 0), g.get('floor', 2, 0)]).toEqual([0, Finish.Walk, Finish.Soil]);
+    const g = gridFromTemplate({ name: 't', rows: ['#__D', '_._'], floors: ['.wmt', 't.'] });
+    expect([g.get('floor', 0, 0), g.get('floor', 1, 0), g.get('floor', 2, 0)]).toEqual([0, Finish.Walk, Finish.Market]);
     expect(g.get('floor', 3, 0)).toBe(0); // a door keeps the plain deck
     expect([g.get('floor', 0, 1), g.get('floor', 2, 1)]).toEqual([Finish.Tread, 0]);
   });

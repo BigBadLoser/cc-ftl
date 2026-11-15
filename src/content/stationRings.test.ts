@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAST, generateStation, isLamp, reachOf, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize } from '../sim';
+import { generateStation, type ModuleDef, type StationDef, type StationGrammar, type StationResult, type StationSize } from '../sim';
 import { content } from './index';
 import { stations } from './stations';
 
@@ -49,25 +49,21 @@ describe('round station rings', () => {
     }
   }, 120000);
 
-  it('courtyards are lit to scale by masts: every court floor tile is within reach of a lamp', () => {
+  it('courtyards are lit to scale: no court floor tile is more than 6 tiles from a lamp', () => {
     let courts = 0;
     for (const [id, size, layout] of [['station.trading', 'station', 'stationWheel'], ['station.farming', 'hub', 'stationConcentric'], ['station.military', 'station', 'stationRing']] as [Id, StationSize, StationGrammar][]) {
       const g = forced(id, size, layout, 1);
-      const lamps = (g.template.modules ?? []).filter((m) => isLamp(m.def));
+      const lamps = (g.template.modules ?? []).filter((m) => m.def === 'module.light');
       for (const r of g.rooms.filter((q) => COURTS.includes(q.role))) {
         courts++;
         const mine = lamps.filter((m) => g.roomOf[m.y * g.width + m.x] === r.id);
-        // A big court is lit mostly by masts, a few of them, not a lamp per stall.
-        if (r.tiles.length > 800) {
-          const masts = mine.filter((m) => m.def === MAST).length;
-          expect(masts, `${id} court ${r.id}`).toBeGreaterThan(0);
-          expect(masts, `${id} court ${r.id}`).toBeLessThan(r.tiles.length / 60);
-        }
+        // More lamps than the old cap of 12 a room once a court is big.
+        if (r.tiles.length > 800) expect(mine.length, `${id} court ${r.id}`).toBeGreaterThan(12);
         for (const t of r.tiles) {
           const x = t % g.width;
           const y = Math.floor(t / g.width);
-          const lit = mine.some((m) => Math.hypot(m.x - x, m.y - y) <= Math.max(reachOf(m.def), 6));
-          expect(lit, `${id} ${r.role} tile ${x},${y}`).toBe(true);
+          const d = Math.min(...mine.map((m) => Math.hypot(m.x - x, m.y - y)));
+          expect(d, `${id} ${r.role} tile ${x},${y}`).toBeLessThanOrEqual(6);
         }
       }
     }
