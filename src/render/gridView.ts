@@ -1,10 +1,10 @@
-import { Container, type Sprite } from "pixi.js";
+import { Container, type Sprite, type Texture } from "pixi.js";
 import { animNow } from './animClock';
 import type { Atlas, StaticSprite } from "./assets/loader";
 import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { airlockDoorTiles, airlockRowTiles } from "./airlockArt";
-import { Struct, STRUCT_MAX_HP } from "../sim/structure";
+import { Finish, Struct, STRUCT_MAX_HP } from "../sim/structure";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
@@ -16,6 +16,7 @@ import { haloTex } from "./haloTex";
 import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
+import { CarpetSprite } from "./carpetPaint";
 import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
@@ -71,7 +72,7 @@ interface Tinted {
   wall: boolean;
   /** Walls and doors darken as their integrity drops. */
   solid: boolean;
-  /** Hull paint multiplied over the light (the armour, or the deco on a deco layer). */
+  /** Paint multiplied over the light: the hull's armour, or its deco on a deco layer, or the carpet's. */
   paint?: number;
 }
 
@@ -265,8 +266,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
           // Under an engine's bulkhead (walls up / roofed) the hull's belly still runs below the deck.
           if (hull && gapAt(x, y) && !drew) drawHull(hull, x, y, k, ci, v, true);
           // Roofed, a tile with the hull from outside has no floor plate (its edge showed below the hull's foot).
-          const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, finish?.[ci] ?? 0));
-          if (f) {
+          const fin = finish?.[ci] ?? 0;
+          const f = (ghosts && !engineUp && replacesFloor(wallAt, x, y, mode)) || (drew && !ghosts) ? undefined : atlas.firstOf(floorChain(x, y, fin));
+          if (f && fin === Finish.Carpet && f === atlas.stat("tile.floor.carpet")) {
+            // The carpet is grey art the hull-paint step recolours: the ship's carpet paint times the light.
+            const spr = addPaintSprite(f, x, y, 0, v.floor, CarpetSprite);
+            owned.push(spr);
+            tinted.push({ spr, x, y, ci, wall: false, solid: false, paint: host.hullPaint?.().carpet ?? PLAIN_PAINT.carpet });
+          } else if (f) {
             const made = addStatic(L, f, x, y, 0, v.floor);
             owned.push(...made);
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
@@ -300,10 +307,10 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     return v;
   }
 
-  /** A hull piece (hullPaint.ts: recoloured by its tint, the paint times the light), anchored like `addStatic`. */
-  function addHullSprite(s: StaticSprite, x: number, y: number, key: number, parent: Container): HullSprite {
+  /** A sprite recoloured by its tint (hullPaint.ts, carpetPaint.ts: the paint times the light), anchored like `addStatic`. */
+  function addPaintSprite<T extends Sprite>(s: StaticSprite, x: number, y: number, key: number, parent: Container, Make: new (t: Texture) => T): T {
     const p = iso(x, y);
-    const spr = new HullSprite(s.tex);
+    const spr = new Make(s.tex);
     spr.position.set(Math.round(p.x - s.ax), Math.round(p.y - s.ay));
     spr.zIndex = key;
     parent.addChild(spr);
@@ -325,7 +332,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       for (const [pid, col] of [[id, paint.armour], [`${id}.tint`, paint.deco]] as const) {
         const ps = pid === id ? s : atlas.stat(pid);
         if (!ps) continue;
-        const spr = addHullSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent);
+        const spr = addPaintSprite(ps, x, y, z + (pid === id ? 0 : 0.0005), parent, HullSprite);
         v.owned.push(spr);
         v.tinted.push({ spr, x, y, ci, wall: true, solid, paint: col });
       }
@@ -432,7 +439,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
       const paint = host.hullPaint?.() ?? PLAIN_PAINT;
-      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}`;
+      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
       const built = `${base}|${grid.revision("struct")}|${mr}`;

@@ -31,17 +31,22 @@ export function tileHash(x: number, y: number): number {
   return (h ^ (h >>> 15)) >>> 0;
 }
 
-/** Floor finish art by `Finish` code (the sim's `floor` field): the paving the station generator gives a court. */
-const FINISH_ART: Readonly<Record<number, string>> = { [Finish.Walk]: "walk", [Finish.Market]: "market", [Finish.Tread]: "tread" };
+/** Floor finish art by `Finish` code (the sim's `floor` field; sheet `deck_finishes`). */
+const FINISH_ART: Readonly<Record<number, string>> = { [Finish.Heavy]: "heavy", [Finish.Clean]: "clean", [Finish.Carpet]: "carpet" };
+/** How many sibling sprites a finish has (`tile.floor.<art>.1` ...), each on one tile in 20 like the deck's c and h. */
+const FINISH_SIBLINGS: Readonly<Record<number, number>> = { [Finish.Clean]: 3 };
 
 /** One main plate; two very subtle variants on ~10% of tiles. Grates, hatches and the rest stay unused in the manifest.
- * A tile with a floor finish shows that instead (the plain deck while its sheet is missing). Keep in sync with
- * contact_sheet.py. */
+ * A tile with a floor finish shows that instead (the plain deck while its sheet is missing); a finish with siblings
+ * (the clean tile's newer quarter, crack and drain) scatters them the same way. Keep in sync with contact_sheet.py. */
 export function floorChain(x: number, y: number, finish = 0): Chain {
   const r = (tileHash(x, y) >>> 8) % 20;
   const v = r === 0 ? "c" : r === 1 ? "h" : "a";
+  const deck = [`tile.floor.${v}`, "tile.floor.a"];
   const f = FINISH_ART[finish];
-  return f ? [`tile.floor.${f}`, `tile.floor.${v}`, "tile.floor.a"] : [`tile.floor.${v}`, "tile.floor.a"];
+  if (!f) return deck;
+  const sibling = r < (FINISH_SIBLINGS[finish] ?? 0) ? [`tile.floor.${f}.${r + 1}`] : [];
+  return [...sibling, `tile.floor.${f}`, ...deck];
 }
 
 /** One sprite of a wall tile: the first existing asset id of the chain, plus its draw order inside the tile. */

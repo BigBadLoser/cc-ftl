@@ -23,12 +23,14 @@ import {
  *   normal blend. Only the destination's alpha differs (add raises it, this keeps it), which is invisible on an opaque target:
  *   only world sprites opt in, never art drawn into a transparent texture whose alpha is read later (a filter's input, a portrait).
  * - **Hull paint** (`FLAG_PAINT`, set by `HullSprite`): the hull recolour (see hullPaint.ts) runs at the end of the shader.
+ * - **Carpet paint** (`FLAG_CARPET`, set by `CarpetSprite`): the same recolour against the carpet art's own mid tone (carpetPaint.ts).
  *
  * The flags share the 16 bits pixi keeps for the round-pixels switch (bit 0); the texture id stays in the high 16 bits.
  */
 export const FLAG_ROUND = 1;
 export const FLAG_ADD = 2;
 export const FLAG_PAINT = 4;
+export const FLAG_CARPET = 8;
 
 /** Extra fragment code run last (after `finalColor = outColor * vColor`) for sprites with the flag. */
 export interface FlagStep {

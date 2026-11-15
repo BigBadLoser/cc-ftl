@@ -13,16 +13,16 @@ export const HULL_HIGHLIGHT = 0.5;
  * HULL_HIGHLIGHT of their ratio, darker ones darken in full. Unlike a multiply tint it brightens, so light and warm
  * paints reach their colour over the cool grey art.
  */
-const hullPaintGlsl = /* glsl */ `
+export const paintGlsl = (refLum: number): string => /* glsl */ `
         if (outColor.a > 0.0 && vColor.a > 0.0) {
-            float s = dot(outColor.rgb / outColor.a, vec3(0.299, 0.587, 0.114)) / ${HULL_REF_LUM.toFixed(3)};
+            float s = dot(outColor.rgb / outColor.a, vec3(0.299, 0.587, 0.114)) / ${refLum.toFixed(3)};
             if (s > 1.0) s = 1.0 + (s - 1.0) * ${HULL_HIGHLIGHT.toFixed(3)};
             vec3 c = clamp(vColor.rgb / vColor.a * s, 0.0, 1.0);
             finalColor = vec4(c, 1.0) * outColor.a * vColor.a;
         }
 `;
 
-registerFlagStep({ flag: FLAG_PAINT, glsl: hullPaintGlsl });
+registerFlagStep({ flag: FLAG_PAINT, glsl: paintGlsl(HULL_REF_LUM) });
 
 /** A hull piece recoloured by its tint (the paint times the light): a sprite whose batch flag runs the step above. */
 export class HullSprite extends Sprite {

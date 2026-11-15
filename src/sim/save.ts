@@ -148,7 +148,7 @@ import { newYard, type YardState } from './yard/types';
  * v119 (seal order, #116): `Prisoner.seal` (the player marked them for stasis; command 'prisoner.seal'): crew seal only marked prisoners.
  * v120 (wheel turns, #116): `StasisJob.turns` (Geneva steps before a stow); a stow's job work is the turn plus the load, and the wheel's
  *   slots are a ring with slot 0 at the hatch.
- * v121 (court floors, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, walkway, market tile, tread plate).
+ * v121 (court floors, station-generator port): the `floor` grid field (a floor tile's finish: plain deck, heavy plate, clean tile, carpet).
  */
 export const SAVE_VERSION = 121;
 

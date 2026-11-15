@@ -44,9 +44,6 @@
   "corpse": {
    "image": "sprites/corpse.png"
   },
-  "court_floors": {
-   "image": "sprites/court_floors.png"
-  },
   "crew.alien.body.brute": {
    "image": "sprites/crew.alien.body.brute.png",
    "glow": "sprites/crew.alien.body.brute.glow.png"
@@ -4961,6 +4958,9 @@
   },
   "decay": {
    "image": "sprites/decay.png"
+  },
+  "deck_finishes": {
+   "image": "sprites/deck_finishes.png"
   },
   "decor": {
    "image": "sprites/decor.png"
@@ -159214,6 +159214,96 @@
     1
    ]
   },
+  "tile.floor.carpet": {
+   "kind": "static",
+   "sheet": "deck_finishes",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.clean": {
+   "kind": "static",
+   "sheet": "deck_finishes",
+   "frame": {
+    "x": 64,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.clean.1": {
+   "kind": "static",
+   "sheet": "deck_finishes",
+   "frame": {
+    "x": 127,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.clean.2": {
+   "kind": "static",
+   "sheet": "deck_finishes",
+   "frame": {
+    "x": 190,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "tile.floor.clean.3": {
+   "kind": "static",
+   "sheet": "deck_finishes",
+   "frame": {
+    "x": 253,
+    "y": 1,
+    "w": 62,
+    "h": 32
+   },
+   "anchor": {
+    "x": 31,
+    "y": 16
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
   "tile.floor.d": {
    "kind": "static",
    "sheet": "walls",
@@ -159304,47 +159394,11 @@
     1
    ]
   },
-  "tile.floor.market": {
+  "tile.floor.heavy": {
    "kind": "static",
-   "sheet": "court_floors",
+   "sheet": "deck_finishes",
    "frame": {
-    "x": 1,
-    "y": 1,
-    "w": 62,
-    "h": 32
-   },
-   "anchor": {
-    "x": 31,
-    "y": 16
-   },
-   "footprint": [
-    1,
-    1
-   ]
-  },
-  "tile.floor.tread": {
-   "kind": "static",
-   "sheet": "court_floors",
-   "frame": {
-    "x": 127,
-    "y": 1,
-    "w": 62,
-    "h": 32
-   },
-   "anchor": {
-    "x": 31,
-    "y": 16
-   },
-   "footprint": [
-    1,
-    1
-   ]
-  },
-  "tile.floor.walk": {
-   "kind": "static",
-   "sheet": "court_floors",
-   "frame": {
-    "x": 190,
+    "x": 316,
     "y": 1,
     "w": 62,
     "h": 32
