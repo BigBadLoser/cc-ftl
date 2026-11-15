@@ -368,13 +368,22 @@ tier. The station grammars keep theirs (`planStation`), which goes when they do.
 where `main` has something better or new (the arcade cabinet and game table, power-drawing grow beds) it is wired in.
 
 - Rooms grow past what their contents need by the kind's spaciousness (`space` on the def: a navy depot and a pirate
-  den are tight, a trade station roomy).
+  den are tight, a trade station roomy). Messes and rec rooms do not: they are sized to what they hold.
+- How far the building may stretch a room past its plan has one answer, `stretchOf` (`assembly/sizing.ts`): a quarter
+  again for a room sized by what it holds (core, shields, reactor, medbay, gun bay, cabins), half again for a variable
+  room (mess, rec room, stores, barracks), three times for a garden or plaza, and any amount for a fort's bastion. A
+  block's end room spans the block only when its floor keeps to that (else the street runs through), and a row's last
+  room runs on to a passage or the end room no further than it allows. Ring corners and the band's fixed strips still
+  size the rooms in them by the hull's shape.
+- `node tools/shipgen/sizing.js OUT.json` reports every assembled room's built floor against its plan by room type,
+  with a fingerprint of every layout; `node tools/shipgen/sizing.js A.json B.json` diffs two runs (which layouts moved,
+  which room types grew or shrank).
 - Quarters are blocks of one-bed cabins (four beds a block), or, where the kind sets `barracks` (the mining station,
   the navy depot), barracks of 6 to 8 beds each (3 or 4 double bunks) with a few one-bed cabins beside them.
-- Common rooms: one for every 12 crew. The first (two at hub size) is a mess with a galley and mess tables, one
-  for every eight crew (a table seats four on its chairs, which come with it at fit-out); from station size up the
-  next is a rec room with arcade cabinets and a game table (`withCommons`). With no rec room the game table stands in
-  the mess. Each mess has a pantry (racks) beside it.
+- Common rooms: one for every 12 crew. Half of them are messes (two at hub size at least), each with a galley and
+  mess tables for its share of the crew, a table for every eight (a table seats four on its chairs, which come with it
+  at fit-out); the rest are rec rooms with arcade cabinets and a game table (`withCommons`). With no rec room the game
+  table stands in the mess. Each mess has a pantry (racks) beside it.
 - A workshop on every station (two at hub size): the fabricator with racks and lockers, in the works.
 - From station size up: a battery room behind the gate (a bank and a console), and a suit-up room by the docks
   (lockers and a bench). A pod deck has its own suit-up room beside it.
@@ -386,11 +395,12 @@ where `main` has something better or new (the arcade cabinet and game table, pow
   the wall they share, and a passage across the block never parts them. An end room's annex is cut from one end of
   it. In a ring's band it is the last strip of the room's run.
 - Shield rooms and the core get floor round the machine on a station that is not tight. Gun bays keep the mount size.
-- Reactors: the smallest tier the size allows that powers the station from one room of two; rooms of two at most.
+- Reactors: planned last (`reactorsFor`), sized to every other room's draw, the commons' galleys and cabinets
+  included, plus a lamp for every 10 tiles of planned room; the smallest tier the size allows that powers the station
+  from one room of two; rooms of two at most. Reactors stand only in reactor rooms.
 - Crate rooms merge into warehouses of up to 24 crates.
-- Medbays: one for every 20 crew; a large station has a clinic (a ward and a treatment room). From 16 crew the ward
-  has a trauma room beside it: the recovery pod and a cot.
-- Plant rooms: one for every reactor room, two at least.
+- Medbays: one for every 20 crew (at least one), two to four cots each; from 32 crew a clinic instead (a ward of four
+  and a one-cot treatment room). From 16 crew the first ward has a trauma room beside it: the recovery pod and a cot.
 - A pod deck where the tier has mining pods (`pods`: the mining station, 2 / 4 / 6 bays): one hangar, the bays in a row
   (two rows past four) with an aisle.
 - An ore store with it: two ore bins a pod, a works room (not merged into the warehouses).
