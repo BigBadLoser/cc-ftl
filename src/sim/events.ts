@@ -281,6 +281,8 @@ export type SimEvent =
   /** The deal's credits were paid out (`credits`: positive = the player paid, negative = the player was paid, 0 = barter). */
   | { type: 'trade.settled'; deal: number; ship: number; credits: number }
   | { type: 'trade.failed'; deal: number; ship: number; reason: string }
+  /** The station crew never worked the docked shuttle in time: it undocks and the deal goes on as a hover swap beside the hull. */
+  | { type: 'trade.rerouted'; deal: number; ship: number }
   /**
    * A deal's phase changed (`from` null: the deal was just opened). `ship` is the trading partner, `vehicle` the shuttle (0: none yet), `dock` the airlock
    * the deal holds at the station (0: none), `trip` the order's trip n of `of` (null: a single trip). `give`/`get` are the goods of the current trip.

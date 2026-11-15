@@ -44,7 +44,9 @@ A hail can be refused. You'll see the reason and a **Hail again** button:
 
 When you buy or sell, your shuttle docks at a **free, working airlock** on the station and the station's crew carry the
 goods across. With a trading ship it hovers beside the hull instead. For this you need a shuttle in a bay, a working
-airlock of your own, and that shuttle not being busy with another run. The slip tells you when something is missing.
+airlock of your own, and that shuttle not being busy with another run. The slip tells you when something is missing. If
+the station's crew don't get the goods across within five minutes, the shuttle undocks and trades from alongside the hull
+instead; the ship's log says so.
 
 ## The channel
 

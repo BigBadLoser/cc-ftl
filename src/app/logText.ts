@@ -136,6 +136,7 @@ export function createDescriber(sim: Sim) {
       case 'trade.delivered': return { kind: 'trade', tone: 'good', text: e.to === 'player' ? `Cargo from ${trader(e.ship)} arrived` : `Cargo delivered to ${trader(e.ship)}` };
       // A payment to the player is the credit-gain entry (see eventLog.ts); one the player made is logged here.
       case 'trade.settled': return e.credits > 0 ? { kind: 'trade', tone: 'info', text: `Paid ${e.credits} ₵ to ${trader(e.ship)}` } : e.credits === 0 ? { kind: 'trade', tone: 'good', text: `Trade with ${trader(e.ship)} completed` } : null;
+      case 'trade.rerouted': return { kind: 'trade', tone: 'warn', text: `${trader(e.ship)}'s dock crew never loaded your shuttle: it trades from alongside instead` };
       case 'trade.failed': {
         const hire = hireOf(e.deal);
         if (handoverOf(e.deal)) {
