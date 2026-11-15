@@ -4,8 +4,10 @@ piece a round, three variants each, reviewed as 3x3 patches (tools/blender/revie
 Decisions so far (the user's list): deck plate = the default floor (no new art); grating = skipped for now; heavy plate =
 h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = the tintable
 ribbed carpet k2, painted with the hull paint (src/render/hullPaint.ts) in a muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
-Markings next: keep-clear (reuse the airlock's), hazard chevron, edge line (autotiling straight, corner, T, end). Door
-apron dropped: doors already carry hazard striping.
+Markings: edge line = e1 (solid cream line, 1/4 tile in, ~1/16 wide; a tint mask in the end); hazard band = z2 with
+z2b's square end at doors (yellow and near-black stripes along x + y, two repeats a tile, dark frame lines); keep-clear
+= q1 (yellow outline, thin dim-ochre hatch along x + y). Door apron dropped: doors already carry hazard striping.
+Hazard chevron: open.
 
 Round 1, walkway (promenade paving), drawn on floors.py's 64x64 cell grid, seams on the low sides:
   w1 honed pavers: one pale composite slab a tile, fine aggregate, a dark joint and a chamfered corner
