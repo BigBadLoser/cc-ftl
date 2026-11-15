@@ -210,7 +210,8 @@ export class RegionGrid {
   private wallOwner(x: number, y: number): number {
     const a = this.at(x, y);
     if (a !== SPACE) return a;
-    for (const dx of [-1, 1]) for (const dy of [-1, 1]) {
+    if (this.at(x - 1, y) === SPACE && this.at(x + 1, y) === SPACE && this.at(x, y - 1) === SPACE && this.at(x, y + 1) === SPACE) return SPACE;
+    for (let dx = -1; dx <= 1; dx += 2) for (let dy = -1; dy <= 1; dy += 2) {
       if (this.at(x + dx, y) === SPACE || this.at(x, y + dy) === SPACE || this.at(x - dx, y) !== SPACE || this.at(x, y - dy) !== SPACE) continue;
       // Only where the tile across the corner is floor but for this one: a corner it shares with walls anyway stays open.
       const cx = x + dx, cy = y + dy, c = this.at(cx, cy);
@@ -229,6 +230,25 @@ export class RegionGrid {
     return SPACE;
   }
 
+  /** `wallOwner` over the window of w x h tiles from (ox, oy), row-major: tiles with no ground beside them skip the corner test. */
+  private owners(ox: number, oy: number, w: number, h: number): Int32Array {
+    const rw = w + 2, raw = new Int32Array(rw * (h + 2));
+    raw.fill(SPACE);
+    const { size, half, own } = this;
+    const i0 = Math.max(0, ox - 1 + half), i1 = Math.min(size, ox + w + 1 + half);
+    for (let j = 0; j < h + 2; j++) {
+      const gj = oy - 1 + j + half;
+      if (gj < 0 || gj >= size) continue;
+      for (let gi = i0; gi < i1; gi++) raw[j * rw + gi - (ox - 1 + half)] = own[gj * size + gi] as number;
+    }
+    const wo = new Int32Array(w * h);
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const k = (j + 1) * rw + i + 1, a = raw[k] as number;
+      wo[j * w + i] = a !== SPACE || (raw[k - 1] === SPACE && raw[k + 1] === SPACE && raw[k - rw] === SPACE && raw[k + rw] === SPACE) ? a : this.wallOwner(ox + i, oy + j);
+    }
+    return wo;
+  }
+
   private prio(id: number): number {
     if (id === SPACE) return Infinity;
     if (id === SOLID) return -Infinity;
@@ -240,13 +260,29 @@ export class RegionGrid {
   compile(): string[] {
     const { size, half } = this;
     const cell = new Array<string>(size * size).fill('.');
-    for (let y = -half; y < half; y++) for (let x = -half; x < half; x++) {
-      const a = this.wallOwner(x, y);
+    // Only the painted extent (a tile round it, for inner-corner walls) can hold floor or wall: scan that, not the grid.
+    let bx0 = size, by0 = size, bx1 = -1, by1 = -1;
+    for (let k = 0; k < this.own.length; k++) {
+      if (this.own[k] === SPACE) continue;
+      const i = k % size, j = (k - i) / size;
+      if (i < bx0) bx0 = i;
+      if (i > bx1) bx1 = i;
+      if (j < by0) by0 = j;
+      if (j > by1) by1 = j;
+    }
+    if (bx1 < 0) return cell;
+    // Wall owners over the extent plus two tiles; beyond it the owner is space.
+    const ox = bx0 - 2 - half, oy = by0 - 2 - half, w = bx1 - bx0 + 5, h = by1 - by0 + 5;
+    const wo = this.owners(ox, oy, w, h);
+    const ownerAt = (x: number, y: number): number => { const i = x - ox, j = y - oy; return i < 0 || j < 0 || i >= w || j >= h ? SPACE : (wo[j * w + i] as number); };
+    for (let y = oy + 1; y < oy + h - 1; y++) for (let x = ox + 1; x < ox + w - 1; x++) {
+      if (x < -half || y < -half || x >= half || y >= half) continue;
+      const a = ownerAt(x, y);
       if (a === SPACE) continue;
       let wall = a === SOLID;
       const hallA = a >= 0 && (this.regions[a] as Region).hall;
       for (let dy = -1; dy <= 1 && !wall; dy++) for (let dx = -1; dx <= 1 && !wall; dx++) {
-        const b = this.wallOwner(x + dx, y + dy);
+        const b = ownerAt(x + dx, y + dy);
         if (b === a || b === SOLID) continue;
         if (b !== SPACE && hallA && (this.regions[b] as Region).hall) continue;
         if (this.over(b, a)) wall = true;
@@ -279,11 +315,30 @@ export class RegionGrid {
 
   /** Solid 2x2 wall blocks in the box x0 <= x < x1, y0 <= y < y1 as the grid stands, doors not counted. */
   blocks(x0: number, y0: number, x1: number, y1: number): number {
+    // The wall rule over the box once (owners cached with a tile's margin), then the 2x2 count over the flags.
+    const w = x1 - x0 + 3, h = y1 - y0 + 3, ox = x0 - 1, oy = y0 - 1;
+    const wo = this.owners(ox, oy, w, h);
+    const fw = x1 - x0 + 1, fh = y1 - y0 + 1;
+    const wall = new Uint8Array(fw * fh);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const a = wo[(y - oy) * w + x - ox] as number;
+      if (a === SPACE) continue;
+      let is = a === SOLID;
+      const hallA = a >= 0 && (this.regions[a] as Region).hall;
+      for (let dy = -1; dy <= 1 && !is; dy++) for (let dx = -1; dx <= 1 && !is; dx++) {
+        const b = wo[(y + dy - oy) * w + x + dx - ox] as number;
+        if (b === a || b === SOLID) continue;
+        if (b !== SPACE && hallA && (this.regions[b] as Region).hall) continue;
+        if (this.over(b, a)) is = true;
+      }
+      if (is) wall[(y - y0) * fw + x - x0] = 1;
+    }
     let n = 0;
     for (let y = y0; y < y1; y++) {
-      let left = this.wallAt(x0, y) && this.wallAt(x0, y + 1);
+      let left = wall[(y - y0) * fw] === 1 && wall[(y + 1 - y0) * fw] === 1;
       for (let x = x0 + 1; x <= x1; x++) {
-        const here = this.wallAt(x, y) && this.wallAt(x, y + 1);
+        const k = (y - y0) * fw + x - x0;
+        const here = wall[k] === 1 && wall[k + fw] === 1;
         if (left && here) n++;
         left = here;
       }
@@ -319,7 +374,11 @@ export class RegionGrid {
     const floor = (x: number, y: number): number => (c(x, y) === '_' ? this.at(x, y) : -3);
     const ok = (b: number): boolean => b >= 0 && b !== id && (rg.access ? rg.access.includes(b) : (this.regions[b] as Region).hall);
     const cands: [number, number][] = [];
-    for (let y = -half + 1; y < half - 1; y++) for (let x = -half + 1; x < half - 1; x++) {
+    const sh = this.shapes[id];
+    if (!sh) return;
+    // Wall beside this room's floor lies within a tile of its painted extent.
+    const ya = Math.max(-half + 1, sh.y0 - 1), yb = Math.min(half - 2, sh.y1 + 1), xa = Math.max(-half + 1, sh.x0 - 1), xb = Math.min(half - 2, sh.x1 + 1);
+    for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) {
       if (c(x, y) !== '#') continue;
       const n = floor(x, y - 1), s = floor(x, y + 1), e = floor(x + 1, y), w = floor(x - 1, y);
       const alongX = c(x - 1, y) === '#' && c(x + 1, y) === '#', alongY = c(x, y - 1) === '#' && c(x, y + 1) === '#';

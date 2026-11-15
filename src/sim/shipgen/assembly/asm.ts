@@ -31,10 +31,10 @@ export class Asm {
   }
 
   /** Everything needed to take a run of placements back. */
-  checkpoint(): () => void {
+  checkpoint(): (() => void) & { was: Int16Array } {
     const { g } = this.ctx;
     const m = g.mark(), held = [...this.ctx.reserved], aloof = [...this.aloof], np = this.ports.length, ne = this.elements.length, used = this.ports.map((p) => p.used), s = this.sections, c = this.corridors, ns = this.spill.length;
-    return () => {
+    const undo = (): void => {
       g.reset(m);
       this.ctx.reserved.clear();
       for (const k of held) this.ctx.reserved.add(k);
@@ -46,6 +46,7 @@ export class Asm {
       this.aloof = new Map(aloof);
       this.corridors = c;
     };
+    return Object.assign(undo, { was: m.own });
   }
 
   /**
@@ -55,7 +56,7 @@ export class Asm {
    */
   place(port: Port, joined: Set<number>, make: () => Built | null, clear = 0): Port[] | null {
     const { g } = this.ctx;
-    const undo = this.checkpoint(), was = g.mark().own;
+    const undo = this.checkpoint(), was = undo.was;
     const W = 72, px = port.frame.x, py = port.frame.y;
     const before = g.blocks(px - W, py - W, px + W, py + W);
     const b = make();
