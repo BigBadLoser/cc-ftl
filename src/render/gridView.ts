@@ -225,7 +225,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const gapAt = (x: number, y: number): boolean => mode === "up" && tiles.inside(x, y) && replaced.has(y * width + x);
     const struct = tiles.data("struct", c);
     const finish = tiles.data("floor", c);
-    const anyMarks = DRAWN_MARKINGS.some((kind) => tiles.rev(MARK_FIELDS[kind], c, 1) > 0); // (a neighbour chunk's masks can turn a line into this one)
+    const anyMarks = marksNear(c); // (a neighbour chunk's masks can turn a line into this one)
     const x0 = Math.max(0, r.x0), x1 = Math.min(width, r.x1);
     const y0 = Math.max(0, r.y0), y1 = Math.min(height, r.y1);
     if (struct)
@@ -315,6 +315,20 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
    * The deck markings of floor tile (x, y): one decal per quarter of each kind (deckMarks.ts), over the floor plate and under
    * everything else. The walkway line is grey art painted with the carpet's step: cream, or the ship's walkway colour.
    */
+  /**
+   * Whether chunk `c` or a neighbour holds any drawn marking. Read from the masks themselves: a loaded grid restores the
+   * fields without moving their revisions, so a revision says nothing about whether marks exist.
+   */
+  function marksNear(c: { cx: number; cy: number }): boolean {
+    for (const kind of DRAWN_MARKINGS)
+      for (let cy = c.cy - 1; cy <= c.cy + 1; cy++)
+        for (let cx = c.cx - 1; cx <= c.cx + 1; cx++) {
+          const d = tiles.data(MARK_FIELDS[kind], { cx, cy });
+          if (d && d.some((m) => m !== 0)) return true;
+        }
+    return false;
+  }
+
   function drawMarks(x: number, y: number, ci: number, v: TileChunk): void {
     for (const kind of DRAWN_MARKINGS) {
       const field = MARK_FIELDS[kind];
@@ -469,7 +483,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
-      const built = `${base}|${grid.revision("struct")}|${mr}`;
+      const built = `${base}|${grid.revision("struct")}|${mr}|${grid.revision("floor")}|${DRAWN_MARKINGS.map((kind) => grid.revision(MARK_FIELDS[kind])).join(",")}`;
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
