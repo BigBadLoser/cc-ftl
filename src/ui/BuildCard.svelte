@@ -28,7 +28,6 @@
 <button bind:this={btn} class="card" class:grp={count > 1} class:sel={selected} class:short={missing.size > 0} class:lock={entry.locked} data-testid="card-{entry.key}" aria-pressed={selected}
   onclick={click} onpointerdown={down} onpointerup={cancel} onpointercancel={cancel} onpointermove={(e) => e.pointerType !== 'mouse' && Math.abs(e.movementX) + Math.abs(e.movementY) > 6 && cancel()}
   onmouseenter={() => onhover(btn)} onmouseleave={onleave} onfocus={() => onhover(btn)} onblur={onleave} oncontextmenu={(e) => e.preventDefault()}>
-  {#if count > 1}<span class="stack" aria-hidden="true"><i></i><i></i></span>{/if}
   {#if selected}<span class="tag">PLACING</span>{/if}
   <span class="art">
     {#if thumb && thumb.w}<img src={thumb.url} alt="" draggable="false" />
@@ -66,9 +65,11 @@
   .card.lock img { filter: grayscale(1) brightness(0.6); }
   .badge { position: absolute; top: 4px; right: 5px; background: #000; border: 1px solid var(--amber); color: var(--amber); font: 800 10px var(--head-font); padding: 1px 4px; border-radius: 2px; }
   .card.sel .badge { background: var(--build-on-amber); }
-  .stack { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
-  .stack i { position: absolute; box-sizing: border-box; width: 100%; height: 100%; border: 1px solid #b8862c; background: var(--build-bg-solid); }
-  .stack i:nth-child(1) { left: 6px; top: -5px; }
-  .stack i:nth-child(2) { left: 3px; top: -2px; border-color: #d39b35; }
+  /* A group card: two cards stacked behind it, peeking out top-right. Box shadows paint behind the card (each pair: a solid
+     fill inset 2 px over a gold outline), and the margin keeps the next card clear of them. */
+  .card.grp {
+    margin: 0 6px 0 0;
+    box-shadow: 3px -3px 0 -2px var(--build-bg-solid), 3px -3px 0 0 #d39b35, 6px -6px 0 -2px var(--build-bg-solid), 6px -6px 0 0 #9a7026;
+  }
   .lockb { position: absolute; top: 4px; right: 5px; font-size: 12px; }
 </style>
