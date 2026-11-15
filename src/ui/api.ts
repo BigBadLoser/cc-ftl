@@ -991,13 +991,12 @@ export interface UiShuttleAirlock {
   y: number;
 }
 
-/** A captured ship. `value` is the hull value estimate (prizeValue); `crewAboard` counts the player's crew still on it (scuttling needs none). */
+/** A captured ship. `crewAboard` counts the player's crew still on it (scuttling needs none). */
 export interface UiPrize {
   /** ShipC entity id. */
   ship: number;
   name: string;
   from: string;
-  value: number;
   prisoners: { id: number; name: string; role: string; hp: number; maxHp: number; state: 'downed' | 'surrendered'; seal: { marked: boolean; refusal: string | null; wait: string | null } }[];
   crewAboard: number;
 }
