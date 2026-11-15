@@ -301,12 +301,10 @@ export interface CaptureProgress {
 }
 export const CaptureProgressC = defineComponent<CaptureProgress>('captureProgress');
 
-/** On a captured ship's entity: the record a future ship broker prices. */
+/** On a captured ship's entity: when and from whom it was taken. */
 export interface Prize {
   capturedTick: number;
   /** Faction it belonged to. */
   from: Faction;
-  /** Hull value estimate at capture, from module build costs x hp and wall integrity. Refresh with `prizeValue`. */
-  hullValue: number;
 }
 export const PrizeC = defineComponent<Prize>('prize');

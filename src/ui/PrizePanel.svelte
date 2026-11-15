@@ -12,7 +12,6 @@
   {#each prizes.filter((x) => x.ship === ship) as p (p.ship)}
     <section data-testid="prize-{p.ship}">
       <h3>{p.name} <small>taken from {p.from}</small></h3>
-      <div class="row"><span class="dim">Prize value</span><span data-testid="prize-value">{p.value}</span></div>
       <div class="row"><span class="dim">Your crew aboard</span><span>{p.crewAboard}</span></div>
       <div class="sub">Prisoners ({p.prisoners.length})</div>
       <ul data-testid="prisoners">
