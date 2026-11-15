@@ -7,6 +7,12 @@ import type { Piece } from './check';
 export const B = 'module.bed', L = 'module.storage_locker', T = 'module.mess_table', C = 'module.chair', G = 'module.galley';
 export const LS = 'module.lifeSupport', GT = 'module.gametable', BT = 'module.battery', MB = 'module.med_bed', RP = 'module.recovery';
 
+/** Furniture the station rooms' rules place (rooms with a rule of their own: stores, works, bays, social rooms). */
+export const PL = 'module.planter', BE = 'module.bench', VM = 'module.vending', VR = 'module.vending_red', AC = 'module.arcade', CN = 'module.console';
+export const RK = 'module.storage_rack', CD = 'module.storage_cold', AR = 'module.storage_armory', PT = 'module.storage_pallet', SB = 'module.storage_scrap';
+export const FB = 'module.fabricator', SP = 'module.scrapper', RS = 'module.research', EX = 'module.exercise', DR = 'module.droneBay', SW = 'module.stasis_wheel';
+
+export const count = (need: readonly string[], id: string): number => need.filter((m) => m === id).length;
 export const P = (def: string, x: number, y: number, rot = 0): Piece => ({ def, x, y, rot });
 export const range = (from: number, to: number, step: number): number[] => {
   const out: number[] = [];

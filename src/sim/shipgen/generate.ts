@@ -7,7 +7,7 @@ import { layoutMetrics, metricViolation } from './metrics';
 import { roleOfLetter } from './canvas';
 import { lightRoom, placeOne, rotsOf } from './fit';
 import { RECIPES, STATION_RECIPES, drawRoom, hostCompanions, pruneDoors, reserveWalkway, furnish, placeStep, specStep, type RoomDraw } from './rooms';
-import { furnishByRule, ruleRoom } from './rooms/rules/place';
+import { furnishByRule, ruleOwns, ruleRoom } from './rooms/rules/place';
 import { Layout } from './layout';
 import { hullChoices, pickWeighted, planShip, type RoomSpec, type ShipPlan } from './plan';
 import { clusters, hub, rails } from './topoDrone';
@@ -103,11 +103,12 @@ function fitOut(
   for (const j of jobs) planned.set(`${j.room} ${j.def}`, (planned.get(`${j.room} ${j.def}`) ?? 0) + 1);
   const done = new Map<string, number>();
   if (o.immobile) {
-    specs.forEach((spec, room) => {
-      const role = roles[room] as RoomRole;
-      if (!spec || spec.sealed || !ruleRoom(role, spec.mods)) return;
-      ruled.add(room);
-      const got = furnishByRule(lay, rng, room, role, spec.mods, rots, spec.bastion ? { bastion: true } : {});
+    // Halls and plazas have no spec (nothing planned in them): a rule may still dress them.
+    roles.forEach((role, room) => {
+      const spec = specs[room], mods = spec?.mods ?? [];
+      if (spec?.sealed || (!spec && role !== 'hall' && role !== 'plaza') || !ruleRoom(role, mods)) return;
+      const got = furnishByRule(lay, rng, room, role, mods, rots, spec?.bastion ? { bastion: true } : {});
+      if (got || ruleOwns(role, mods)) ruled.add(room);
       if (got) furnished.add(room);
       for (const idx of got ?? []) {
         const id = lay.modules[idx]?.def as string;
