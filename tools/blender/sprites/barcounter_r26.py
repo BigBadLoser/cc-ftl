@@ -12,6 +12,8 @@ No drinks on the top: those can come later as a conditional overlay.
 An L: o1s, then o1c at its right end, then o1a behind o1c. The bartender stands inside the L.
 
 All in px of the tile (u across, v deep, front +v toward the camera, z up)."""
+import math
+
 from .barcounter_r22 import OX
 from .barcounter_study import TOP
 from .bunk_study import _px
@@ -38,8 +40,8 @@ def field(k, ax, a, b, d):
     w = (b - a - 1) / n - 1
     rows, h = 2, (TOP - 10) / 2 - 1
     for i in range(n):
-        p0 = round(a + 1 + i * (w + 1))
-        p1 = round(p0 + w)
+        p0 = a + 1 + math.floor(i * (w + 1))                                        # whole px, so a 1 px seam always shows
+        p1 = p0 + math.floor(w)
         for j in range(rows):
             c = round(TOP - 5 - j * (h + 1))
             dd = round(c - h)
