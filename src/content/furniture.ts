@@ -164,7 +164,7 @@ export const furniture = {
     name: 'Battery bank',
     category: 'power',
     description: "A bank of power cells. Charges from spare power and covers a shortfall (an empty reactor, a spike in draw) before any module is cut off.",
-    asset: 'module.battery', footprint: [1, 1], solid: true, power: 0, flammability: 0.2, battery: { capacity: 4000 },
+    asset: 'module.battery', footprint: [1, 2], solid: true, power: 0, flammability: 0.2, battery: { capacity: 4000 },
     maxHp: 80, buildWork: 80, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.electronics', count: 6 }],
   },
   // A grow bed: pick a crop, a crew member sows it (the water comes from stock), it grows while powered and is harvested as an item.
