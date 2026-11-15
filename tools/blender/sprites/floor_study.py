@@ -822,6 +822,49 @@ def k6(i, j):
 DESIGNS.update({"k4": k4, "k5": k5, "k6": k6})
 
 
+# ---- Markings. Door apron, round 1: paint on the deck tile in front of a door (the door beyond the tile's low-j edge,
+# the top-right edge on screen), drawn here over the plain deck panel (a decal in the end). Muted paint like the
+# airlock's inboard marks (steel outlines, rust or worn hazard yellow), not loud.
+#   a1 chevron apron: two shallow worn-yellow chevrons pointing through the door
+#   a2 threshold band: a hazard band (yellow and black, worn) along the door edge, a steel line behind it
+#   a3 lane box: a pale steel box open on the door side, rust ticks at its far corners
+
+
+def _deck(i, j):
+    return _panel(i, j) or "steel"
+
+
+def a1(i, j):
+    for k, c0 in enumerate((34, 52)):
+        d = c0 - j + abs(i - 31.5) * 0.45
+        if 0 <= d <= 5:
+            return "hazY" if _hash(i // 2, j // 2, 71 + k) > 0.18 else _deck(i, j)
+    return _deck(i, j)
+
+
+def a2(i, j):
+    if 4 <= j <= 15 and 4 <= i <= 59:
+        if _hash(i // 2, j // 2, 73) < 0.12:
+            return _deck(i, j)
+        return "hazY" if ((i + j) // 6) % 2 else "hazK"
+    if 19 <= j <= 20 and 4 <= i <= 59:
+        return "steelL"
+    return _deck(i, j)
+
+
+def a3(i, j):
+    lo, hi = 8, 55
+    inside = lo <= i <= hi and 2 <= j <= hi
+    if inside and (i in (lo, lo + 1, hi - 1, hi) or j in (hi - 1, hi)):
+        if j >= hi - 9 and (i <= lo + 9 or i >= hi - 9):
+            return "rust"
+        return "steelL"
+    return _deck(i, j)
+
+
+DESIGNS.update({"a1": a1, "a2": a2, "a3": a3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
