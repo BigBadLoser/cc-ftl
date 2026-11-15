@@ -4,8 +4,8 @@ piece a round, three variants each, reviewed as 3x3 patches (tools/blender/revie
 Decisions so far (the user's list): deck plate = the default floor (no new art); grating = skipped for now; heavy plate =
 h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = the tintable
 ribbed carpet k2, painted with the hull paint (src/render/hullPaint.ts) in a muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
-Markings next: keep-clear (reuse the airlock's), door apron, hazard chevron, edge line (autotiling straight, corner, T,
-end).
+Markings next: keep-clear (reuse the airlock's), hazard chevron, edge line (autotiling straight, corner, T, end). Door
+apron dropped: doors already carry hazard striping.
 
 Round 1, walkway (promenade paving), drawn on floors.py's 64x64 cell grid, seams on the low sides:
   w1 honed pavers: one pale composite slab a tile, fine aggregate, a dark joint and a chamfered corner
@@ -912,7 +912,7 @@ DESIGNS.update({"a4": a4, "a5": a5, "a6": a6})
 
 def _band(i, j, depth, diag=False):
     if 2 <= j < 2 + depth:
-        k = (i + j) // 10 if diag else i // 8
+        k = (i + j) // 8 if diag else i // 8
         return "hazY" if k % 2 == 0 else "hazK"
     return None
 
@@ -931,7 +931,7 @@ def a8(i, j):
     if b:
         return b
     if 22 <= j <= 23 and i >= 2:
-        return "hazK"
+        return "steelL"
     return _deck(i, j)
 
 
@@ -945,7 +945,8 @@ def a9(i, j):
 DESIGNS.update({"a7": a7, "a8": a8, "a9": a9})
 
 
-# Door apron, round 4: round 3's three with the stripes at 45 degrees to the band (on the floor, so level on screen).
+# Door apron, round 4: round 3's three with the stripes at 45 degrees to the band (on the floor, so level on screen),
+# yellow and black equal (period 16 along i + j, so four pairs a tile and the tiles match up); a8's edge line steel.
 
 
 def _diag(fn):
