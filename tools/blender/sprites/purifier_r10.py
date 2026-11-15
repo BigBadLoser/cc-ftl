@@ -25,7 +25,7 @@ FP = (2, 1)
 CU, CV, CR = 0.5, (V0 + V1) / 2, (V1 - V0) / 2   # the column: as deep as the body, its sides tangent to the body's
 
 
-def disc(cu, cz, r, n=24):
+def disc(cu, cz, r, n=40):
     return [(cu + r * math.cos(a), cz + r * math.sin(a)) for a in (math.tau * i / n for i in range(n))]
 
 
@@ -54,7 +54,7 @@ def porthole(k, pu, pz, r, fv=V1):
         k.box(pu + du * r, fv + 2.4 * PXG, pz + dz * r, s * r, 0.012, s * r * 0.8, "pfIce" if i % 2 else "pfIceD")
     extrude(k.part("glass"), disc(pu, pz, r - 0.03), "v", fv + 2.7 * PXG, fv + 2.9 * PXG, "pfIce")
     span(k, pu - r - 0.1, pu - r - 0.04, fv, fv + 2 * PXG, pz - 0.06, pz + 0.06, "pfFrame")              # hinge
-    span(k, pu + r + 0.03, pu + r + 0.07, fv, fv + 2.5 * PXG, pz - 0.035, pz + 0.035, "pfAmber")          # latch
+    span(k, pu + r + 0.035, pu + r + 0.06, fv, fv + 2 * PXG, pz - 0.025, pz + 0.025, "pfAmber")          # latch
 
 
 def rod(k, axis, a0, a1, p, q, r, col, n=16):
