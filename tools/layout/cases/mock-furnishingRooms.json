@@ -271,6 +271,8 @@
       {"def":"module.bunk","x":35,"y":13,"rot":0},
       {"def":"module.storage_locker","x":36,"y":13,"rot":0},
       {"def":"module.bunk","x":37,"y":13,"rot":0},
+      {"def":"module.arcade","x":31,"y":18,"rot":2},
+      {"def":"module.gametable","x":36,"y":16,"rot":0},
       {"def":"module.bed","x":43,"y":13,"rot":0},
       {"def":"module.mess_table","x":45,"y":13,"rot":0},
       {"def":"module.chair","x":45,"y":14,"rot":2},
@@ -493,9 +495,11 @@
       117,
       118,
       119,
-      120
+      120,
+      121,
+      122
     ],
-    "nextModuleId": 121,
+    "nextModuleId": 123,
     "extra": {}
   },
   "edited": {
@@ -756,6 +760,8 @@
       {"def":"module.bunk","x":35,"y":13,"rot":0},
       {"def":"module.storage_locker","x":36,"y":13,"rot":0},
       {"def":"module.bunk","x":37,"y":13,"rot":0},
+      {"def":"module.arcade","x":31,"y":18,"rot":2},
+      {"def":"module.gametable","x":36,"y":16,"rot":0},
       {"def":"module.bed","x":43,"y":13,"rot":0},
       {"def":"module.mess_table","x":45,"y":13,"rot":0},
       {"def":"module.chair","x":45,"y":14,"rot":2},
@@ -978,9 +984,11 @@
       117,
       118,
       119,
-      120
+      120,
+      121,
+      122
     ],
-    "nextModuleId": 121,
+    "nextModuleId": 123,
     "extra": {}
   },
   "notes": [],

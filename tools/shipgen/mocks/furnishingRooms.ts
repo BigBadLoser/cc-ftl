@@ -15,7 +15,7 @@ const botPairs = (xs: number[], y: number): Piece[] => xs.flatMap((x): Piece[] =
 
 const quarters: RoomMock[] = [
   { role: 'quarters', caption: 'B1 bunks 11x6 (20 crew)', w: 11, h: 6, door: 5, pieces: [...topPairs(0, 3), ...botPairs([0, 8], 4)] },
-  { role: 'quarters', caption: 'B1 bunks 7x6 (8)', w: 7, h: 6, door: 3, pieces: topPairs(0, 2) },
+  { role: 'quarters', caption: 'B1 bunks 7x6 (8)', w: 7, h: 6, door: 3, pieces: [...topPairs(0, 2), ['module.arcade', 0, 5, 2], ['module.gametable', 5, 3, 0]] },
   { role: 'quarters', caption: 'CC chief 5x5', w: 5, h: 5, door: 2, pieces: [['module.bed', 0, 0, 0], [T, 2, 0, 0], [C, 2, 1, 2], [L, 4, 0, 0], [PL, 4, 3, 1]] },
 ];
 
