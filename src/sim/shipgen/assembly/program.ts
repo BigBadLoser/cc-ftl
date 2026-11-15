@@ -121,7 +121,7 @@ function planned(rng: Rng, def: StationDef, size: StationSize, defs: Record<stri
   const hangars: RoomSpec[] = Array.from({ length: Math.max(1, t.bays ?? 0) }, (): RoomSpec => ({ role: 'hangar', mods: ['module.vehicle_bay'], w: 5, h: 7, vehicle: true }));
   // The pod deck: mining pod bays in a row (two rows past four), each with the tile beside it crew unload at, and an aisle.
   const pods = t.pods ?? 0, podRows = pods > 4 ? 2 : 1, perRow = Math.ceil(pods / podRows);
-  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8, annex: suits('works', Math.min(6, pods + 2)) });
+  if (pods > 0) hangars.push({ role: 'hangar', mods: Array<string>(pods).fill('module.pod_bay'), w: 4 * perRow + 1, h: podRows === 1 ? 5 : 8, vehicle: true, annex: suits('works', Math.min(6, pods + 2)) });
   // The ore store beside it: two ore bins a pod, in a row along each long wall with an aisle between. It is the works'.
   if (pods > 0) support.push({ role: 'cargo', dept: 'works', mods: Array<string>(2 * pods).fill('module.storage_ore'), w: Math.max(5, 2 * pods + 1), h: 6 });
   const rest = [...weapons, ...pdRooms, ...shields, core, ...quarters, ...cargo, ...hangars, ...support];

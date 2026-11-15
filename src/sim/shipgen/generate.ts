@@ -55,7 +55,8 @@ interface Fitted {
   error?: string;
   lay: Layout;
   stock: Map<number, { item: string; count: number }[]>;
-  vehicles: Set<number>;
+  /** Bays with a vehicle in them: the module index and the vehicle (the bay's own `builtWith`, else a shuttle). */
+  vehicles: Map<number, string>;
   /** Drone defs docked in the bay at this module index. */
   drones: Map<number, string[]>;
 }
@@ -67,7 +68,7 @@ function fitOut(
 ): Fitted {
   const lay = new Layout(rows, roomOf, roles, defs);
   lay.gunsOnHull = !o.gunsAnywhere;
-  const out: Fitted = { lay, stock: new Map(), vehicles: new Set(), drones: new Map() };
+  const out: Fitted = { lay, stock: new Map(), vehicles: new Map(), drones: new Map() };
   const jobs: { room: number; def: string; spec: RoomSpec }[] = [];
   specs.forEach((spec, room) => { for (const def of spec?.mods ?? []) jobs.push({ room, def, spec: spec as RoomSpec }); });
   jobs.sort((a, b) => (a.spec.sealed ? 0 : 1) - (b.spec.sealed ? 0 : 1) || rank(a.def, defs[a.def] as ModuleDef) - rank(b.def, defs[b.def] as ModuleDef));
@@ -116,7 +117,7 @@ function fitOut(
         const id = lay.modules[idx]?.def as string;
         placed[id] = (placed[id] ?? 0) + 1;
         stockUp(idx, spec);
-        if (spec?.vehicle && defs[id]?.vehicleBay) out.vehicles.add(idx);
+        if (spec?.vehicle && defs[id]?.vehicleBay) out.vehicles.set(idx, defs[id]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
         if (spec?.drones && defs[id]?.droneBay) out.drones.set(idx, Array<string>(Math.min(spec.drones.count, defs[id]?.droneBay?.slots ?? 0)).fill(spec.drones.def));
       }
     });
@@ -163,7 +164,7 @@ function fitOut(
       }
       if (fi !== null) stockUp(fi, j.spec);
     }
-    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.add(idx);
+    if (j.spec.vehicle && defs[j.def]?.vehicleBay) out.vehicles.set(idx, defs[j.def]?.vehicleBay?.builtWith ?? 'vehicle.shuttle');
     if (j.spec.drones && defs[j.def]?.droneBay) out.drones.set(idx, Array<string>(Math.min(j.spec.drones.count, defs[j.def]?.droneBay?.slots ?? 0)).fill(j.spec.drones.def));
   }
   const missing = (id: string): boolean => (wanted[id] ?? 0) > 0 && (placed[id] ?? 0) === 0;
@@ -225,7 +226,7 @@ function toTemplate(f: FactionDef, role: ShipRoleDef, factionId: string, seed: n
     return {
       def: m.def, x: m.x, y: m.y, rot: m.rot,
       ...(stock && stock.length > 0 ? { stock } : {}),
-      ...(d.vehicles.has(i) ? { vehicle: 'vehicle.shuttle' } : {}),
+      ...(d.vehicles.has(i) ? { vehicle: d.vehicles.get(i) } : {}),
       ...(d.drones.has(i) ? { drones: d.drones.get(i) } : {}),
     };
   });
