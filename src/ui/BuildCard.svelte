@@ -36,7 +36,7 @@
   </span>
   {#if entry.locked}<span class="lockb" aria-label="Locked"><Icon name="lock" size={14} /></span>{/if}
   {#if count > 1 && !entry.locked}<span class="badge" data-testid="group-count" aria-label="{count} variants">×{count}</span>{/if}
-  <span class="nm">{entry.name}</span>
+  <span class="nm" class:long={entry.name.length > 18 || entry.name.split(' ').some((w) => w.length > 10)}>{entry.name}</span>
   <span class="cost" class:many={entry.cost.length > 2}>
     {#each entry.cost as c (c.item)}
       <span class="c" class:miss={missing.has(c.item)}><ItemIcon {api} item={c.item} size={entry.cost.length > 2 ? 13 : 16} />{c.count}</span>
@@ -50,7 +50,8 @@
   .art { width: 100%; height: 76px; display: flex; align-items: flex-end; justify-content: center; color: var(--amber); background: radial-gradient(ellipse at 50% 80%, var(--build-line) 0, transparent 70%); }
   .art :global(svg) { align-self: center; fill: none; stroke: currentColor; }
   img { max-width: 92px; max-height: 72px; image-rendering: pixelated; margin-bottom: 2px; }
-  .nm { font: 600 12px/1.05 var(--head-font); text-transform: uppercase; letter-spacing: 0.03em; color: var(--amber); text-align: center; padding: 0 4px; }
+  .nm { width: 100%; box-sizing: border-box; white-space: normal; overflow-wrap: break-word; font: 600 12px/1.05 var(--head-font); text-transform: uppercase; letter-spacing: 0.03em; color: var(--amber); text-align: center; padding: 0 4px; }
+  .nm.long { font-size: 10.5px; letter-spacing: 0.01em; }
   .cost { display: flex; gap: 3px; font-size: 11px; white-space: nowrap; color: var(--build-dim); }
   .cost.many { gap: 2px; font-size: 10.5px; }
   .c { display: inline-flex; align-items: center; gap: 1px; }
@@ -64,12 +65,16 @@
   .card.lock { opacity: 0.55; }
   .card.lock img { filter: grayscale(1) brightness(0.6); }
   .badge { position: absolute; top: 4px; right: 5px; background: #000; border: 1px solid var(--amber); color: var(--amber); font: 800 10px var(--head-font); padding: 1px 4px; border-radius: 2px; }
-  .card.sel .badge { background: var(--build-on-amber); }
-  /* A group card: two cards stacked behind it, peeking out top-right. Box shadows paint behind the card (each pair: a solid
-     fill inset 2 px over a gold outline), and the margin keeps the next card clear of them. */
+  .card.sel .badge { top: 19px; background: var(--build-on-amber); }
+  /* A group card: two cards stacked behind it, peeking out top-right. Box shadows paint behind the card (each pair: the card's fill
+     inset 1 px over an outline in the card's own border colour, so they follow it: plain, short of stock, selected), and the margin
+     keeps the next card clear of them. */
   .card.grp {
+    --stk: var(--build-line);
     margin: 0 6px 0 0;
-    box-shadow: 3px -3px 0 -2px var(--build-bg-solid), 3px -3px 0 0 #d39b35, 6px -6px 0 -2px var(--build-bg-solid), 6px -6px 0 0 #9a7026;
+    box-shadow: 3px -3px 0 -1px var(--build-fill-2), 3px -3px 0 0 var(--stk), 6px -6px 0 -1px var(--build-fill-2), 6px -6px 0 0 var(--stk);
   }
+  .card.grp.short { --stk: #4a2420; }
+  .card.grp.sel { --stk: var(--amber); }
   .lockb { position: absolute; top: 4px; right: 5px; font-size: 12px; }
 </style>
