@@ -1,7 +1,8 @@
 """The drone window's end vents (wall3d_iwin_drone): each a pocket cut RECESS px straight back into the near ramp's
 slope (its back the dark panel, parallel to the slope; a lit ledge along its foot; its sides in the ramp's cut tone),
 VENT_GAP clear of the window's end, the rib, the slope's top and its foot; dark pipes coming out of it that follow the
-rib's profile beside it (flat out at the rib's top, down its front past the toe, back under to the floor) (the user).
+rib's profile beside it from the pocket's top to its bottom edge (the user). The pocket runs down through the foot to
+BELOW over the floor.
 Coordinates as the drone module's: here +y is the near side, the mesh's -y (core.G)."""
 import math
 
@@ -11,6 +12,7 @@ from . import walls as W
 from .wall3d_iwin import _clip
 
 RECESS = 3                  # px: the pocket's depth, straight back into the slope
+BELOW = 2                   # art px: the ramp left under the pocket, over the floor (its foot cut through: the user)
 PIPES = ((6, 8), (9, 11), (85, 87), (88, 90))   # px along the window: 2 px pipes, in from the ribs (13-17, 79-83)
 SIDES = 8                   # the pipes' section
 COL = {"back": "fDS3", "ledge": "fDW2", "side": "fDX2",
@@ -28,11 +30,21 @@ def _span(a, b):
 
 
 def _heights():
-    """(z0, z1): the pocket's top and foot (VENT_GAP down the slope from its top, up from its foot)."""
+    """(z0, z1): the pocket's top (VENT_GAP down the slope from its top) and foot (BELOW over the floor)."""
     D = _d()
-    f, zt = D._fall(), D._zt()
-    dz = (zt - W.foot()) / f
-    return zt - D.VENT_GAP * D.PX * f, zt - (dz - D.VENT_GAP * D.PX) * f
+    return D._zt() - D.VENT_GAP * D.PX * D._fall(), BELOW / W.ZART
+
+
+def _surface(z0, z1):
+    """The near ramp's outline from z0 down to z1 (y, z): down the slope, then the foot's upright face."""
+    D = _d()
+    yl, zt, f, zk = D._line(), D._zt(), D._fall(), W.foot()
+    toe = yl + (zt - zk) / f
+    pts = [(yl + (zt - z0) / f, z0)]
+    if z1 < zk < z0:
+        pts.append((toe, zk))
+    pts.append((toe if z1 <= zk else yl + (zt - z1) / f, z1))
+    return pts
 
 
 def _back_y(z):
@@ -88,12 +100,13 @@ def recess(k):
         back = ((0.0, -f, 1.0), zt + f * yl - RECESS * D.PX * f)
         _carve(k, [(0, u0, 1), (0, u1, -1), (2, z1, 1), (2, z0, -1), back])
         yb0, yb1 = _back_y(z0), _back_y(z1)
-        ys0, ys1 = yb0 + RECESS * D.PX, yb1 + RECESS * D.PX
+        sf = _surface(z0, z1)
+        ys1 = sf[-1][0]
         D._quad(k, [(u0, yb0, z0), (u1, yb0, z0), (u1, yb1, z1), (u0, yb1, z1)], (0, f, 1), COL["back"])
         D._quad(k, [(u0, yb1, z1), (u1, yb1, z1), (u1, ys1, z1), (u0, ys1, z1)], (0, 0, 1), COL["ledge"])
         for u, sd in ((u0, 1), (u1, -1)):
             if -0.5 < u < 0.5:
-                D._quad(k, [(u, yb0, z0), (u, ys0, z0), (u, ys1, z1), (u, yb1, z1)], (sd, 0, 0), COL["side"])
+                D._quad(k, [(u, yb0, z0)] + [(u, y, z) for y, z in sf] + [(u, yb1, z1)], (sd, 0, 0), COL["side"])
 
 
 def _ring(c, nrm, x0, x1, r):
@@ -107,13 +120,16 @@ def _ring(c, nrm, x0, x1, r):
 
 
 def pipes(k):
-    """Each pipe along the rib's profile: out of the pocket's back flat at the rib's top (less its radius), out to the
-    rib's front, down it to the foot's height, then back under to the floor at the toe."""
+    """Each pipe along the rib's profile, from the pocket's top to its bottom edge: out of the back under its top, flat
+    out to the rib's front (OUT past the toe), down it, then back under (the rib's slant: OUT back over the foot's
+    height) onto the ledge's front edge."""
     D = _d()
     r = D.PX
-    zc = D._zf() - r
-    yf = 0.5 + D.OUT * D.PX - r
-    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, W.foot()), (0.5 - r, r)]
+    z0, z1 = _heights()
+    zc = z0 - r
+    toe = _surface(z0, z1)[-1][0]
+    yf = toe + D.OUT * D.PX - r
+    path = [(_back_y(zc) - r, zc), (yf, zc), (yf, z1 + r + W.foot()), (toe - r, z1 + r)]
     rings = []
     for i, p in enumerate(path):                        # (mitred: each bend's section on its bisector)
         ns = []
