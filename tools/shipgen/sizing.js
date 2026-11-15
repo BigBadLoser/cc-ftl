@@ -50,7 +50,7 @@ for (const [fam, kind] of Object.entries(kinds)) for (const [ri, recipe] of stat
     const reg = g.regions[o], sp = reg.spec; if (!sp) continue;
     // Shaped by the hull, kept apart from the rest: a star fort's bastions, the bazaar centre's rooms round its court,
     // and a ring's corners (corners.ts, fort.ts and battery.ts rank them from 1e5).
-    const court = (reg.access ?? []).some((a) => g.regions[a]?.hall && g.regions[a]?.role === 'plaza');
+    const court = (reg.access ?? []).some((a) => g.regions[a]?.hall && g.regions[a]?.role === 'plaza' && g.regions[a]?.dept === 'market');
     const shaped = sp.bastion ? ' (bastion)' : court ? ' (court rim)' : reg.rank >= 1e5 && reg.rank < 2e5 ? ' (corner)' : '';
     const label = `${reg.role}${reg.dept ? '/' + reg.dept : ''}${sp.warehouse ? '/wh' : ''}${shaped}`;
     // Planned floor: the spec's w x h (its interior).
