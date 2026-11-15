@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c13: a window bench in the notch, red cushions)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c14: the window bench polished)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c13, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c14, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -792,3 +792,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: c10 still reads as boxes in the notch, not intentional detailing; asked for all three directions as quick mocks. c11: `wall3d_iwin_civil_boxes.MOCK` (env CIVIL_NOTCH_MOCK, default B; drop it once one is picked): A one built-in console 12-84 (each side five 4 px recessed panels, 1 px borders; the ramped middle), B c10's boxes with a 2 px navy pipe along the notch's back (shade ramp toned by light, `wall3d_iwin_drone_vents.tube` takes a col now) into the middle box, dropping into the low and small boxes' tops, C a lip on the ledge's front edge and three identical 6 px units a side (2 px apart, a screen each). Fixed: a right-hand box's mirrored pits came out in descending order and its face strips covered them (c10's right low box lost its vents). The plain wall pixel-identical in all three. Renders: scratchpad `cv11A/B/C`, side by side `c11_mocks.png`.
 - 2026-11-15: the user: all three mocks still just cubes; asked what the notch holds, chose a window bench. c12: `sprites/wall3d_iwin_civil_bench.py` (the boxes module and the mock switch gone; drone vents' tube back as it was): a white plinth 12-84 (6 px deep, 3 art px high, wall ramp W3/W2/W4), three seat cushions (14-36, 37-59, 60-82: 1 px seams, 7 px deep, 3 art px thick, front top edge rounded 2 px) and three back cushions against the notch's back (3 px thick, 5 art px high, top front edge rounded 2 px), extruded profiles toned by facing in the look's shade ramp (fC1X0-3, civil's muted navy). The plain wall pixel-identical. Renders: scratchpad `cv12`.
 - 2026-11-15: c13 (the user: no backrests; the cushions red): the back cushions gone; the seat cushions in the look's trim ramp toned by facing (fC1T1-4). The plain wall pixel-identical. Renders: scratchpad `cv13`.
+- 2026-11-15: c14 (the user: close, not quite; my suggestions 1-4, the user's go): the notch's back white again (W2; ledge W4, end walls W5); the cushions soft pads (`_cushion`: plan front corners chamfered 1 px, top edges bevelled 1 px but along the back: a flat top T2, a T1 highlight, the front T3; clipped to the tile with `_clip`), 6 px deep on a 7 px plinth (a white edge in front of them). Left for later if wanted: a 1-2 art px taller plinth. The plain wall pixel-identical. Renders: scratchpad `cv14`, before/after `c14_vs_c13.png`.

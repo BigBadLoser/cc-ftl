@@ -12,9 +12,9 @@ from . import wall3d_iwin_civil_bench as BN
 from .wall3d_iwin_drone_vents import _carve
 
 BELOW = 7                   # sprite px: the slope left under it, over the ramp's edge (the ref's 8)
-STEP = {"back": 5, "ledge": 6, "side": 6}  # steps of the look's wall ramp (civil v1: the slope is fC1W2; the ref's
-                                            # back, floor and end wall c1cac8, 9ea9ad, 68737f; the polish pass two steps
-                                            # darker, a shadowed pocket the light boxes stand out against)
+STEP = {"back": 2, "ledge": 4, "side": 5}  # steps of the look's wall ramp (civil v1: the slope is fC1W2; the ref's
+                                            # back, floor and end wall c1cac8, 9ea9ad, 68737f; the back white with the
+                                            # bench's red cushions in it, the user's go)
 
 
 def _col(part):
