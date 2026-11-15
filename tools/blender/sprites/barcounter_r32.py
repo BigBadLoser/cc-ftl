@@ -104,11 +104,12 @@ def h3():
         _px(k, a + 2, b - 2, I + 0.1, I + 0.2, F0 + 2, F0 + 3, "x7OxideD")
     v = I + 1.5
     (a1, _), (a2, _), (a3, _), (a4, _) = bays[1:5]
-    box(k, a1 + 1, v, F0, 11, 5, 6, "x7Khaki", "r9Bone")                             # crates, a stencil band
-    _px(k, a1 + 1, a1 + 12, v - 0.1, v, F0 + 2, F0 + 3, "x7Yellow")
-    box(k, a2 + 1, v, F0, 10, 4.5, 2, "x7Teal", "k2TealL")                            # folded cloths, stacked
-    box(k, a2 + 1, v, F0 + 2, 10, 4.5, 2, "x7Cream", "x7White")
-    box(k, a2 + 1, v, F0 + 4, 10, 4.5, 2, "x7Teal", "k2TealL")
+    _px(k, a1 + 1, a1 + 12, v, v + 5, F0, F0 + 2, "r9Orange")                         # two boxes, stacked off-centre;
+    _px(k, a1 + 1, a1 + 12, v, v + 5, F0 + 2, F0 + 3, "x7Black")                      # the lower one banded dark
+    box(k, a1 + 1, v, F0 + 3, 11, 5, 2, "r9Orange", "r9Amber")
+    box(k, a1 + 4, v + 0.5, F0 + 5, 6, 4, 4, "x7Teal", "k2TealL")
+    box(k, a2 + 1, v, F0, 10, 4.5, 3, "x7Teal", "k2TealL")                            # folded cloths: two thick folds
+    box(k, a2 + 2, v + 0.5, F0 + 3, 9, 4, 3, "x7Yellow", "x7Lit")
     for i, col in enumerate(("r9Orange", "x7Steel")):
         cyl(k, a3 + 4 + i * 6, I + 3.5, F0, F0 + 8, 2.4, col, sides=12)
         cyl(k, a3 + 4 + i * 6, I + 3.5, F0 + 8, F0 + 9, 1.4, "r9GreyD", sides=10)
