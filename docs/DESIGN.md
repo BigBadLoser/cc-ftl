@@ -1202,6 +1202,15 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - **Fill levels from layers:** a base with every socket empty, one layer per slot (its slab, the base held out) and
     one face mask per slot, composited back to front. Because the Geneva drive stops in whole steps, ten rest positions
     cover every fill level. Only faces turned toward the camera get a mask.
+- **Cashing in prisoners at stations (prototype, #116, 2026-11-15; mock A):** a station's channel gets a **Prisoners** service while the player
+  holds any prisoner ("2 offers" / "no offers"). The COMMS pane lists every prisoner held (portrait frosted when frozen, faction, where). A row has
+  a button only when this station makes a deal; otherwise one dim line says where to take them. One deal per station and prisoner
+  (`prisonerOffer`, capture/offers.ts): **ransom** at a station of their own faction (`Prisoner.from`), else a **bounty** for a pirate at a navy or
+  corporate station, else a **black market** set on the station takes anyone (standing with the set's owner, else the station's). Credits are a
+  base plus a step per level of the prisoner's best skill (`capture/tuning.ts`: ransom 140 + 20/level, +2 standing; bounty 100 + 15/level, +2;
+  market 80 + 12/level, +1). Only a sealed slab in a wheel or on the floor of a ship of the player's that is not a prize is handed over; the slab
+  is opened and the empty one stays. The prototype hands over at once (no station shuttle collects it yet). Recruiting is not in this slice: it
+  happens over time aboard.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).

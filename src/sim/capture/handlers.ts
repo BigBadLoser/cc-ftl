@@ -3,14 +3,15 @@ import { shipIdOf } from '../regions';
 import { ShipC } from '../combat/components';
 import type { Command } from '../commands';
 import { CrewC, PositionC } from '../crew/components';
-import { AllegianceC, SurrenderedC } from '../fight/components';
+import { AllegianceC, PrisonerC, SurrenderedC } from '../fight/components';
 import { surrender } from '../fight/surrender';
 import type { Sim } from '../sim';
 import { capturePrize, imprison, scuttle } from './prize';
 import { setSealOrder } from '../stasis/order';
 import { releasePrisoner, settleYielded } from './settle';
+import { handOverPrisoner } from './offers';
 
-type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'ship.settle' | 'prisoner.release' | 'prisoner.seal' | 'debug.surrender' | 'debug.capture' | 'debug.imprison'>;
+type CaptureCommandType = Extract<Command['type'], 'ship.scuttle' | 'ship.settle' | 'prisoner.release' | 'prisoner.handOver' | 'prisoner.seal' | 'debug.surrender' | 'debug.capture' | 'debug.imprison'>;
 
 export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extract<Command, { type: T }>) => void } = {
   'ship.scuttle': (sim, cmd) => {
@@ -23,6 +24,10 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
   },
   'prisoner.release': (sim, cmd) => {
     const err = releasePrisoner(sim, cmd.crew);
+    if (err) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: err });
+  },
+  'prisoner.handOver': (sim, cmd) => {
+    const err = handOverPrisoner(sim, cmd.crew, cmd.station);
     if (err) sim.events.emit({ type: 'command.rejected', command: cmd.type, reason: err });
   },
   'prisoner.seal': (sim, cmd) => {
@@ -48,5 +53,7 @@ export const captureHandlers: { [T in CaptureCommandType]: (sim: Sim, cmd: Extra
     const pos = sim.world.get(cmd.crew, PositionC);
     if (!pos || !sim.world.has(cmd.crew, CrewC) || sim.world.get(cmd.crew, AllegianceC)?.faction === 'player') return;
     imprison(sim, cmd.crew, shipIdOf(sim, pos));
+    const p = sim.world.get(cmd.crew, PrisonerC);
+    if (p && cmd.from && sim.content.galaxy?.factions[cmd.from]) p.from = cmd.from;
   },
 };

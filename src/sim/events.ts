@@ -194,6 +194,8 @@ export type SimEvent =
   | { type: 'stasis.unloaded'; vehicle: number; ship: number; crew: number[] }
   /** A full slab went with its shuttle (destroyed): the prisoner is gone. */
   | { type: 'stasis.lost'; crew: number; name: string; vehicle: number }
+  /** A prisoner was handed over to a station (capture/offers.ts): ransomed, sold for a bounty, or to a black market. */
+  | { type: 'prisoner.handedOver'; crew: number; name: string; station: number; kind: 'ransom' | 'bounty' | 'market'; credits: number; faction: string }
   | { type: 'stasis.thawed'; crew: number; ship: number; x: number; y: number }
   /** The player let a beaten crew go: `crew` of them left, and the ship is a derelict (capture/settle.ts). */
   /** A prisoner was released and left (capture/settle.ts); `faction` is the galaxy faction whose standing it raised ('' for none). */

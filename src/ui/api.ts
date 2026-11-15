@@ -1183,6 +1183,19 @@ export interface UiYard {
   order: UiYardOrder | null;
 }
 
+/** A held prisoner and what a station offers for them (the channel's Prisoners service; capture/offers.ts). */
+export interface UiPrisonerDeal {
+  id: number;
+  name: string;
+  /** The faction they were taken from, and how it regards the player (colours the name). */
+  faction: string;
+  tier: 'friendly' | 'neutral' | 'hostile';
+  frozen: boolean;
+  where: string;
+  /** The station's offer: the button's label ("Ransom ₵240") and the line under it ("+2 Free Traders"); when not `ok`, no button (empty label) and one line of where to take them or what has to happen first. */
+  offer: { ok: boolean; label: string; note: string };
+}
+
 export interface UiTradePartner {
   /** The trader entity: the ShipC entity of a ship, a plain trader entity for a station (no ship). Also the UI key of the node. */
   id: number;
@@ -1213,6 +1226,8 @@ export interface UiTradePartner {
   info?: UiStationInfo;
   /** Black-market services the station carries, or absent. */
   market?: UiMarketServices;
+  /** Stations only: every prisoner the player holds and this station's offer for each. */
+  prisoners?: UiPrisonerDeal[];
 }
 
 export interface UiTradeDeal {

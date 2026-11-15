@@ -193,6 +193,7 @@ export function createDescriber(sim: Sim) {
       }
       case 'stasis.shipped': return { kind: 'crew', tone: 'info', text: `${crewName(e.crew)}'s stasis slab is aboard the shuttle for home` };
       case 'stasis.unloaded': return { kind: 'crew', tone: 'info', text: `${e.crew.length === 1 ? 'A stasis slab' : `${e.crew.length} stasis slabs`} unloaded from the shuttle, to be carted to a wheel` };
+      case 'prisoner.handedOver': return { kind: 'crew', tone: 'good', text: `${e.name} ${e.kind === 'ransom' ? 'ransomed' : e.kind === 'bounty' ? 'handed over for the bounty' : 'sold on the black market'}: +${e.credits} credits` };
       case 'stasis.lost': return { kind: 'crew', tone: 'bad', text: `${e.name} was lost with the shuttle, sealed in stasis` };
       case 'stasis.thawed': return { kind: 'crew', tone: 'bad', text: `${crewName(e.crew)} thawed out of stasis and is loose aboard`, subject: tileAt(e.x, e.y) };
       case 'ship.letGo': return { kind: 'ship.captured', tone: 'warn', text: `${shipName(e.ship)}: ${e.crew} crew let go, the ship is left a derelict`, ...onShip(e.ship) };
