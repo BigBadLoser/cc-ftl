@@ -79,8 +79,10 @@ export class RegionGrid {
   /**
    * Whether region `b` outranks region `a` where they touch: the one that gives way takes the wall between them. Space
    * outranks everything and halls outrank rooms. Between two rectangular rooms side by side, the one whose shared side
-   * is longer gives way: it walls that side against open space past the other's end anyway, so the wall runs straight
-   * and neither room is left with a notch. Otherwise (and on a tie) the lower rank gives way.
+   * runs on past the other's end into open space gives way: it walls that stretch anyway, so its wall runs straight,
+   * where the other giving way would leave it a lip of floor beside the other room. When neither (or both) does, the
+   * one whose shared side is longer gives way: it walls that side against open space past the other's end anyway, so
+   * the wall runs straight and neither room is left with a notch. Otherwise (and on a tie) the lower rank gives way.
    */
   private over(b: number, a: number): boolean {
     const pb = this.prio(b), pa = this.prio(a);
@@ -89,10 +91,25 @@ export class RegionGrid {
     if (A && B) {
       const sideBySide = (A.x1 + 1 === B.x0 || B.x1 + 1 === A.x0) && A.y0 <= B.y1 && B.y0 <= A.y1;
       const stacked = (A.y1 + 1 === B.y0 || B.y1 + 1 === A.y0) && A.x0 <= B.x1 && B.x0 <= A.x1;
+      if (sideBySide || stacked) {
+        const ea = this.bare(A, B, stacked), eb = this.bare(B, A, stacked);
+        if (ea !== eb) return ea;
+      }
       const la = sideBySide ? A.y1 - A.y0 : stacked ? A.x1 - A.x0 : 0, lb = sideBySide ? B.y1 - B.y0 : stacked ? B.x1 - B.x0 : 0;
       if (la !== lb) return la > lb;
     }
     return pb > pa;
+  }
+
+  /**
+   * Whether room P's side against Q (stacked: P's row facing Q's; else its column) runs on past Q's end into open
+   * space: a tile of it beyond Q, P's own corners aside, with space straight across.
+   */
+  private bare(P: Shape, Q: Shape, stacked: boolean): boolean {
+    const [p0, p1, q0, q1] = stacked ? [P.x0, P.x1, Q.x0, Q.x1] : [P.y0, P.y1, Q.y0, Q.y1];
+    const out = stacked ? (P.y1 < Q.y0 ? P.y1 + 1 : P.y0 - 1) : P.x1 < Q.x0 ? P.x1 + 1 : P.x0 - 1;
+    for (let t = p0 + 1; t < p1; t++) if ((t < q0 || t > q1) && (stacked ? this.at(t, out) : this.at(out, t)) === SPACE) return true;
+    return false;
   }
 
   room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string } = {}): number {
