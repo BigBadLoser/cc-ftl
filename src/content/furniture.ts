@@ -150,6 +150,7 @@ export const furniture = {
   // A stasis wheel (#116): prisoners sealed in stasis slabs stand in its ten slots, frozen while it is powered (it draws only while it holds one). Built with
   // ten empty slabs. Crew load it at the hatch, the tile beyond the footprint's front corner. Unpowered or destroyed, each slab runs on its reserve.
   'module.stasis_wheel': {
+    keepClear: true,
     scrap: 'tech',
     name: 'Stasis wheel',
     category: 'utility',
@@ -188,6 +189,7 @@ export const furniture = {
   // Ore refinery 3x4: crew refine raw ore at the access tile (east of the last row, beside the console, at rotation 0). Player-buildable
   // and laid out on mining stations' processing floors.
   'module.refinery': {
+    keepClear: true,
     scrap: 'tech',
     name: 'Ore refinery',
     category: 'production',

@@ -32,7 +32,7 @@ describe('edge markings', () => {
   it('boxes the open access tiles of machines and bands a reactor along its walls, not across its door', () => {
     const rows = ['#####', '#___#', '#___#', '##D##'];
     const rooms = ['.....', '.rrr.', '.rrr.', '.....'];
-    const defs = { 'module.box': { footprint: [1, 1], access: [0, 1], category: 'production' } as unknown as ModuleDef };
+    const defs = { 'module.box': { footprint: [1, 1], access: [0, 1], keepClear: true } as unknown as ModuleDef };
     const g = gen(rows, rooms, [{ def: 'module.box', x: 2, y: 1 }]);
     const { keepClear, hazard } = edgeMarkings(g, defs);
     expect(mask(keepClear, 5, 2, 2)).toBe(N | E | S | W);

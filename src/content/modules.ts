@@ -10,6 +10,7 @@ import { furniture } from './furniture';
  */
 export const modules = {
   'module.reactor': {
+    keepClear: true,
     scrap: 'energy',
     name: 'Reactor',
     category: 'power',
@@ -217,6 +218,7 @@ export const modules = {
   },
   // Crew work at the access tile (below, at rotation 0). Draws power; crafts recipes with this station.
   'module.fabricator': {
+    keepClear: true,
     scrap: 'tech',
     name: 'Fabricator',
     category: 'production',
@@ -237,6 +239,7 @@ export const modules = {
   // Scrapper: crew reclaim scrap into materials at the front tile (recipes.ts). Buildable from the start; the starter ship has none.
   // Art: tools/blender/sprites/scrapper.py (idle, unpowered, and the drum turning while active).
   'module.scrapper': {
+    keepClear: true,
     scrap: 'tech',
     name: 'Scrapper',
     category: 'production',
@@ -435,6 +438,7 @@ export const modules = {
   //   row 3   (1,3)       walkable;  (0,3) (2,3) keep-out tiles: walkable, where crew work the chutes, nothing else builds here
   // Cycles in 4 s, pumping the outer door tile's air back into the ship. Has a suit for whoever needs one (#416: no count; crew put it on at the inside tile).
   'module.airlock': {
+    keepClear: true,
     scrap: 'hull',
     name: 'Airlock',
     category: 'structure',
@@ -456,6 +460,7 @@ export const modules = {
   },
   // Mk I shield generator (2x2): 6 power -> 2 layers, one back every 10 s. Sits anywhere inside the ship. Mk II (2x3) and Mk III (3x3) are in tiers.ts.
   'module.shieldGen': {
+    keepClear: true,
     scrap: 'tech',
     name: 'Shield generator',
     category: 'defence',
@@ -562,6 +567,7 @@ export const modules = {
   // the normal floor beside the long side: the access tile is outside the footprint, east of the pit in the hatch row
   // (rotation 0: tile (4, 3)), and turns with the module. Pod bays (3x3, class 'pod') come later.
   'module.vehicle_bay': {
+    keepClear: true,
     scrap: 'hull',
     name: 'Shuttle bay',
     category: 'utility',
@@ -573,6 +579,7 @@ export const modules = {
   // Small 3x3 bay for one pod (class 'pod'), placed like the shuttle bay: solid pit, crew unload it at the access tile beside
   // the middle of its east side.
   'module.pod_bay': {
+    keepClear: true,
     scrap: 'hull',
     name: 'Pod bay',
     category: 'utility',

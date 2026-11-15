@@ -16,9 +16,6 @@ export type EdgeMarking = 'walkway' | 'apron' | 'keepClear' | 'hazard';
 /** One mask per marking kind, row-major over the layout (0 = no line on that tile). */
 export type EdgeMarkings = Record<EdgeMarking, Uint8Array>;
 
-/** Module categories that get a keep-clear box in front of them: machines crew service, not storage or living furniture. */
-export const KEEP_CLEAR: ReadonlySet<string> = new Set(['power', 'systems', 'production', 'defence']);
-
 /**
  * How far in from its edge each kind's line is drawn, as a fraction of a tile (0 on the edge, 0.5 the tile's middle): the masks say which
  * edge, the renderer offsets toward the tile's centre by this. Tuned by eye; a wall's base hides a line drawn right on the edge.
@@ -63,7 +60,7 @@ export function edgeMarkings(g: GenResult, defs: Record<string, ModuleDef>): Edg
     if (!def) continue;
     const rot = m.rot ?? 0;
     for (const t of footprintTiles(def, m.x, m.y, rot)) { const i = at(t.x, t.y); if (i >= 0) blocked[i] = 1; }
-    if (KEEP_CLEAR.has(def.category ?? '')) for (const t of accessTiles(def, m.x, m.y, rot)) { const i = at(t.x, t.y); if (i >= 0) access[i] = 1; }
+    if (def.keepClear) for (const t of accessTiles(def, m.x, m.y, rot)) { const i = at(t.x, t.y); if (i >= 0) access[i] = 1; }
   }
 
   // Walkway: edge lines along a corridor's walls (drawn `MARK_INSET.walkway` in from them), stopping at its doors and openings.
@@ -72,7 +69,7 @@ export function edgeMarkings(g: GenResult, defs: Record<string, ModuleDef>): Edg
   // Apron: a threshold line on each floor tile's edge that faces a door.
   const apron = outline(Wd, Ht, floor, (j) => ch(j) === 'D');
 
-  // Keep clear: boxes round the open access tiles of machines (adjacent ones merge into one box).
+  // Keep clear: boxes round the open access tiles of modules flagged `keepClear` (adjacent ones merge into one box).
   const keepClear = outline(Wd, Ht, (i) => !!access[i] && floor(i) && !blocked[i]);
 
   // Hazard: a band along the walls of a dangerous room's floor (not across its doors or into the corridor).
