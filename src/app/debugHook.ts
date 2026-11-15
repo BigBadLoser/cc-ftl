@@ -14,6 +14,7 @@ import { AsteroidC } from '../sim/asteroids/components';
 import { addHeat } from '../sim/combat/heat';
 import { explainAll, explainCrew } from '../sim/ai/explain';
 import { auditReservations } from '../sim/ai/audit';
+import { stowStage } from '../sim/stasis/query';
 import { stageBondHistory } from './bondStage';
 import { begin as beginInteraction } from '../sim/crew/interact';
 import { parkCrew } from './parkCrew';
@@ -114,6 +115,8 @@ export function installDebugHook(sim: Sim, r: Renderer, loop?: Loop): { onEvents
       }
       return out;
     },
+    /** The stow under way at a stasis wheel (the loading animation's stage: turning, or load 0..1), or null (render screenshots of the patches). */
+    stow: (wheel: number) => stowStage(sim.world, wheel),
     /** Burning tiles of a ship, and the floor tiles that touch open space (damage-control screenshots). */
     hazards(shipId: number) {
       const grid = shipGrid(sim, shipId);

@@ -63,14 +63,19 @@ def pack(family, items, out, log=print):
         W = 1 << (W - 1).bit_length()
         atlas = np.zeros((H, W, 4), np.uint8)
         glow = np.zeros_like(atlas)
+        uv = np.zeros_like(atlas)
         for it in page:
             h, w = it["rgba"].shape[:2]
             atlas[it["y"]:it["y"] + h, it["x"]:it["x"] + w] = it["rgba"]
             glow[it["y"]:it["y"] + h, it["x"]:it["x"] + w] = it["g"]
+            if "uv" in it:
+                uv[it["y"]:it["y"] + h, it["x"]:it["x"] + w] = it["uv"]
             a = {"kind": "static", "sheet": name, "frame": {"x": int(it["x"]), "y": int(it["y"]), "w": int(w), "h": int(h)},
                  "anchor": {"x": int(it["ax"]), "y": int(it["ay"])}, "footprint": [int(v) for v in it["fp"]]}
             if it["g"][..., 3].any():
                 a["glow"] = True
+            if "uv" in it and it["uv"][..., 3].any():
+                a["uv"] = True
             mz = pod_muzzle.muzzle_px(it["id"])          # the mining pod's laser tip (sprite px from the anchor)
             if mz is not None:
                 a["muzzle"] = mz
@@ -80,6 +85,9 @@ def pack(family, items, out, log=print):
         if glow[..., 3].any():
             write_png(out / f"sprites/{name}.glow.png", glow)
             sd["glow"] = f"sprites/{name}.glow.png"
+        if uv[..., 3].any():                       # the uv pass: u, v, face coverage, face (post.uv_down), never palette-mapped
+            write_png(out / f"sprites/{name}.uv.png", uv)
+            sd["uv"] = f"sprites/{name}.uv.png"
         sheets[name] = sd
         log(f"PACK {name} {W}x{H}, {len(page)} sprites")
     return sheets, assets

@@ -5,6 +5,7 @@ import { PlotC } from '../sim/farm/components';
 import { ModuleC, type Module } from '../sim/modules/components';
 import type { ModuleDef } from '../sim/registry';
 import { cropStage } from './cropStage';
+import { stasisInputs } from './stasisArt';
 import { animFrame, FLICKER_DARK_MS, FLICKER_LIT_MS, storageState } from './moduleArt';
 
 /**
@@ -51,9 +52,10 @@ export interface ModuleMemo {
 }
 
 /** The module's own components its chains read, as one string ('' for most modules). */
-export function worldInputs(world: World, id: number, def: ModuleDef): string {
+export function worldInputs(world: World, id: number, def: ModuleDef, now = 0): string {
   let out = '';
   if (def.storage) out += storageState(world, id, def);
+  if (def.stasisWheel) out += `|${stasisInputs(world, id, now)}`;
   if (def.container) out += `|${world.get(id, ContainerC)?.clamp ?? ''}`;
   if (def.plot) {
     const p = world.get(id, PlotC);

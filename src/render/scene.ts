@@ -2,6 +2,7 @@ import { autoDetectRenderer, Container, RenderTexture, Sprite, type Texture } fr
 import { applyPixiFixes } from './pixiFixes';
 import './batch';
 import { createCrewAtlas } from './crewAtlas';
+import { createSlabFaces } from './slabFace';
 import { createPaintAtlas } from './paintAtlas';
 import { artZoom } from './assets/palette'; // the renderer's batcher (installed before the renderer is built)
 import { animNow } from './animClock';
@@ -237,6 +238,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
   const portraits = createPortraits(gl.extract, atlas, world, content.items);
   const thumbs = createModuleThumbs(gl.extract, atlas, content.modules);
   const crews = createCrewAtlas(atlas.manifest);
+  const faces = createSlabFaces(atlas, gl);
   const liveries = createPaintAtlas();
   const stage = new Container();
   const cam = createCamera(high ? 3 : 2);
@@ -450,7 +452,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     // eslint-disable-next-line prefer-const -- the gate reads the scene it is built into
     let sc: ShipScene;
     const gate = budget.gate(() => rush || sc.ready());
-    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, roomTiers: () => roomTiers(grid.id), crews, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
+    sc = createShipScene(grid, { world, atlas, modules: content.modules, items: content.items, layers, roofed: roofFor(grid.id, s), livery, beamLook: beamLookFor(s.gen?.faction), hullPaint, roomTiers: () => roomTiers(grid.id), crews, faces, liveries, gate, idle: budgetOn ? budget.idle() : undefined, ...evaHost() });
     sc.setCutaway(cutaway);
     if (grid.id === refId) {
       sc.view.setOverlay(overlay);
@@ -957,6 +959,7 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
       inset.dispose();
       dropAll();
       liveries.dispose();
+      faces.dispose();
       // The whole scene graph goes too: its 'destroyed' events unregister the render groups and depth bands from their
       // module-level registries (renderGroups.ts, depthBands.ts), which would otherwise keep a disposed renderer's graph alive.
       stage.destroy({ children: true });

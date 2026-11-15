@@ -1,4 +1,5 @@
 import type { ModuleDef } from '../sim';
+import { items } from './items';
 
 /**
  * Room furniture the ship generator's room recipes lay out (src/sim/shipgen/rooms). Mess tables and chairs have art
@@ -11,6 +12,9 @@ const ORE_ART = { 'item.iron_ore': 'iron', 'item.ice': 'ice', 'item.rare_ore': '
 /** Scrap cages hold only scrap. Their sprite has no per-kind variants (art kind '': `module.storage_scrap.<fill>`). */
 const SCRAP_IDS = ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.scrap_weapons', 'item.scrap_comfort'];
 const SCRAP_ART = Object.fromEntries(SCRAP_IDS.map((i) => [i, '']));
+
+/** Item ids carrying any of these tags (the special stores' filters follow the item list as it grows). */
+const tagged = (...tags: string[]): string[] => Object.entries(items).filter(([, d]) => d.tags.some((t) => tags.includes(t))).map(([id]) => id);
 
 export const furniture = {
   // 2x1 table; crew sit on chairs beside its long sides. Not in the sim yet: eating at a table.
@@ -90,6 +94,31 @@ export const furniture = {
     asset: 'module.storage_scrap_large', footprint: [2, 3], solid: true, access: [0, 3], power: 0,
     flammability: 0.1, maxHp: 180, buildWork: 130, cost: [{ item: 'item.metal', count: 16 }], storage: { capacity: 40 }, storageAccepts: SCRAP_IDS, storageArt: SCRAP_ART,
   },
+  // The storage set's special stores (art: storage_set.py, front = +v, the side crew work them from). Each takes only its own goods.
+  'module.storage_armory': {
+    scrap: 'comfort',
+    name: 'Armory locker',
+    category: 'storage',
+    description: "A secure locker behind a grille. Takes only weapons and ammunition.",
+    asset: 'module.storage_armory', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
+    flammability: 0.1, maxHp: 120, buildWork: 100, cost: [{ item: 'item.metal', count: 12 }, { item: 'item.electronics', count: 2 }], storage: { capacity: 12 }, storageAccepts: tagged('weapon', 'ammo'),
+  },
+  'module.storage_cold': {
+    scrap: 'comfort',
+    name: 'Cold store',
+    category: 'storage',
+    description: "Glass-doored shelves for food. Takes only food and crops.",
+    asset: 'module.storage_cold', footprint: [2, 1], solid: true, access: [0, 1], power: 0,
+    flammability: 0.2, maxHp: 80, buildWork: 90, cost: [{ item: 'item.metal', count: 8 }, { item: 'item.electronics', count: 2 }, { item: 'item.polymer', count: 2 }], storage: { capacity: 16 }, storageAccepts: tagged('food', 'crop'),
+  },
+  'module.storage_tank': {
+    scrap: 'comfort',
+    name: 'Storage tank',
+    category: 'storage',
+    description: "An upright pressure tank. Takes only water and oxygen.",
+    asset: 'module.storage_tank', footprint: [2, 2], solid: true, access: [0, 2], power: 0,
+    flammability: 0.3, maxHp: 140, buildWork: 110, cost: [{ item: 'item.metal', count: 14 }], storage: { capacity: 20 }, storageAccepts: ['item.water', 'item.oxygen'],
+  },
   // A freight container, opened from the doors on its short end (rotation 0: the +y end). Cargo holds pack them end-on to their walkway.
   'module.cargo_container': {
     scrap: 'comfort',
@@ -117,6 +146,17 @@ export const furniture = {
     description: "A powered tank of healing fluid. A hurt crew member lies in it and heals to full with no medic, out of action meanwhile. Downed crew carried here are stabilised and heal. Heals faster with medicinal herbs in stock.",
     asset: 'module.recovery', footprint: [2, 2], solid: true, access: [0, 2], power: -3, flammability: 0.2, bed: true, medical: true, recovery: true,
     maxHp: 120, buildWork: 180, cost: [{ item: 'item.metal', count: 10 }, { item: 'item.electronics', count: 8 }],
+  },
+  // A stasis wheel (#116): prisoners sealed in stasis slabs stand in its ten slots, frozen while it is powered (it draws only while it holds one). Built with
+  // ten empty slabs. Crew load it at the hatch, the tile beyond the footprint's front corner. Unpowered or destroyed, each slab runs on its reserve.
+  'module.stasis_wheel': {
+    scrap: 'tech',
+    name: 'Stasis wheel',
+    category: 'utility',
+    description: "Holds prisoners sealed in stasis slabs, frozen while it has power. Comes with ten empty slabs. Without power a slab lasts about an hour before its prisoner thaws.",
+    asset: 'module.stasis_wheel', footprint: [3, 3], solid: true, access: [2, 3], power: -4, powerPriority: 2, drawsWhen: 'holding', stasisWheel: { slots: 10 },
+    flammability: 0.2, maxHp: 140, buildWork: 240, cost: [{ item: 'item.metal', count: 16 }, { item: 'item.electronics', count: 10 }],
+    blueprint: { tier: 1, minDanger: 1, price: 300 },
   },
   // A power cell bank: charges from spare supply on its network and covers a shortfall before anything is cut (systems/power.ts). Damaged or switched off, it holds its charge but neither charges nor drains.
   'module.battery': {

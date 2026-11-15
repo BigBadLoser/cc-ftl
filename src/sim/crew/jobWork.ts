@@ -1,3 +1,4 @@
+import { berthOf, holdBerth } from './berths';
 import { performCraft } from '../items/craft';
 import { performRefuel } from '../modules/refuel';
 import { performFarm } from '../farm/work';
@@ -18,6 +19,7 @@ import { finishFit } from '../upgrades/fit';
 import { holdOffline } from '../modules/hold';
 import { performSabotage } from '../boarding/sabotage';
 import { finishSearch } from '../inspect/search';
+import { performStasis } from '../stasis/jobs';
 import type { Sim } from '../sim';
 import { TICK_HZ } from '../time';
 import { DoorJam, Struct, writeStruct } from '../structure';
@@ -80,6 +82,7 @@ function work(sim: Sim, crew: number, job: Job, speed: number): WorkResult {
     case 'passage': return 'wait'; // the holder waits at the boarding tile until the site's run boards them (away/passage.ts)
     case 'patrol': return timed(job, 1, () => 'done'); // stand watch at the stop, then the director posts the next one
     case 'search': return timed(job, speed, () => { finishSearch(sim, job); return 'done'; });
+    case 'stasis': return performStasis(sim, crew, job, speed);
     case 'mend': return performMend(sim, crew, job, speed);
     case 'salvage': return performSalvage(sim, job, speed);
     case 'hack': return performHack(sim, crew, job, speed);
@@ -193,7 +196,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
   const carried = sim.world.get(patient, CarriedC);
 
   if (!carried) {
-    let bed = sim.world.get(job.bed ?? 0, ModuleC)?.reservedBy === patient ? (job.bed as number) : 0;
+    const held = sim.world.get(job.bed ?? 0, ModuleC);
+    let bed = held && berthOf(sim.content.modules[held.def], held, patient) >= 0 ? (job.bed as number) : 0;
     if (!bed) {
       const plan = findFreeBed(sim, shipIdOf(sim, me), origin(me), false, undefined, bedUseOf(sim, patient));
       const spot = plan ? null : rescueSpot(sim, patient);
@@ -208,7 +212,8 @@ function rescue(sim: Sim, crew: number, job: Job): WorkResult {
       }
       if (!plan) return 'wait';
       bed = plan.bed;
-      (sim.world.get(bed, ModuleC) as { reservedBy: number }).reservedBy = patient;
+      const taken = sim.world.get(bed, ModuleC) as Module;
+      holdBerth(sim.content.modules[taken.def], taken, patient);
     }
     const bedMod = sim.world.get(bed, ModuleC) as Module;
     const target = bedStandTile(sim.content.modules[bedMod.def] as ModuleDef, bedMod); // a pod is entered from its access tile

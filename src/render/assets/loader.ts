@@ -30,6 +30,8 @@ export function assetBase(): string {
 export interface StaticSprite {
   tex: Texture;
   glow: Texture | null;
+  /** The face's surface-coordinate cut (slab sprites with a UV pass; #481), or null. */
+  uv?: Texture | null;
   /** Anchor in art px inside the frame. */
   ax: number;
   ay: number;
@@ -181,6 +183,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   for (const s of Object.values(manifest.sheets)) {
     resOf.set(s.image, s.resolution ?? 1);
     if (s.glow) resOf.set(s.glow, s.resolution ?? 1);
+    if (s.uv) resOf.set(s.uv, s.resolution ?? 1);
   }
 
   let smooth = false;
@@ -246,23 +249,23 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
   const frames = new Map<string, Map<string, Texture>>();
 
   const io: SheetIO<Texture> = {
-    async load(image, glow) {
-      // Settle both: when one half fails, the other is freed (each load allocates its own GPU texture, so a retry would leak it).
-      const [a, b] = await Promise.allSettled([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null]);
-      if (a.status === 'rejected' || b.status === 'rejected') {
-        if (a.status === 'fulfilled') a.value.destroy(true);
-        if (b.status === 'fulfilled') b.value?.destroy(true);
-        throw a.status === 'rejected' ? a.reason : (b as PromiseRejectedResult).reason;
+    async load(image, glow, uv) {
+      // Settle all: when one part fails, the others are freed (each load allocates its own GPU texture, so a retry would leak it).
+      const parts = await Promise.allSettled([loadTex(image, isCrewImage(image), pickable.has(image)), glow ? loadTex(glow) : null, uv ? loadTex(uv, true) : null]);
+      const bad = parts.find((p) => p.status === 'rejected') as PromiseRejectedResult | undefined;
+      if (bad) {
+        for (const p of parts) if (p.status === 'fulfilled') p.value?.destroy(true);
+        throw bad.reason;
       }
-      const img = a.value;
-      const gl = b.value;
-      return { sheet: { image: img, glow: gl }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) };
+      const [img, gl, uvt] = parts.map((p) => (p as PromiseFulfilledResult<Texture | null>).value) as [Texture, Texture | null, Texture | null];
+      return { sheet: { image: img, glow: gl, uv: uvt }, bytes: bytesOf(img) + (gl ? bytesOf(gl) : 0) + (uvt ? bytesOf(uvt) : 0) };
     },
     unload(name, sheet) {
       for (const t of detached.get(name) ?? []) t.destroy(false);
       detached.delete(name);
       sheet.image.destroy(true);
       sheet.glow?.destroy(true);
+      sheet.uv?.destroy(true);
     },
   };
   const store = new SheetStore<Texture>({
@@ -293,7 +296,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     const crew = /^(\dx:)?crew\./.test(name);
     // Load order for sheets being drawn: eager, then environment art, then what crew stand in (idle), then what they walk in, then other clips.
     const rank = pinned ? 0 : !crew ? 1 : /\.idle$/.test(name) ? 2 : /\.walk$/.test(name) ? 3 : 4;
-    store.register(name, { image: def.image, glow: def.glow, pool: pinned ? 'core' : crew ? 'crew' : 'env', pinned, rank });
+    store.register(name, { image: def.image, glow: def.glow, uv: def.uv, pool: pinned ? 'core' : crew ? 'crew' : 'env', pinned, rank });
   }
   for (const name of EAGER_SHEETS) if (store.has(name)) store.request(name);
   await store.idle();
@@ -310,6 +313,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     return {
       tex: sub(sheet, s.image, x, y, w, h),
       glow: a.glow && s.glow ? sub(sheet, s.glow, x, y, w, h) : null,
+      uv: a.uv && s.uv ? sub(sheet, s.uv, x, y, w, h) : null,
       ax: a.anchor.x,
       ay: a.anchor.y,
       footprint: a.footprint,
@@ -457,6 +461,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
         if (!def) return;
         jobs.push(redecode(base + def.image, s.image.source));
         if (s.glow && def.glow) jobs.push(redecode(base + def.glow, s.glow.source));
+        if (s.uv && def.uv) jobs.push(redecode(base + def.uv, s.uv.source));
       });
       const done = await Promise.allSettled(jobs);
       for (const d of done) if (d.status === 'rejected') console.warn('Sheet re-decode failed', d.reason);
@@ -474,7 +479,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
     touchSources(sources) {
       const hit: string[] = [];
       store.forEachReady((name, sh) => {
-        if (sources.has(sh.image.source) || (sh.glow && sources.has(sh.glow.source))) hit.push(name);
+        if (sources.has(sh.image.source) || (sh.glow && sources.has(sh.glow.source)) || (sh.uv && sources.has(sh.uv.source))) hit.push(name);
       });
       for (const name of hit) store.get(name); // a ready sheet: `get` only touches it
     },
@@ -488,6 +493,7 @@ export async function loadAtlas(base = assetBase(), hooks?: AtlasHooks): Promise
       store.forEachReady((_name, sheet) => {
         sheet.image.destroy(true);
         sheet.glow?.destroy(true);
+        sheet.uv?.destroy(true);
       });
     },
     stats() {

@@ -72,6 +72,10 @@ def _material(kind, alpha=None, rim=0.0):
         d = nt.nodes.new("ShaderNodeBsdfDiffuse")
         d.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1.0)
         nt.links.new(d.outputs[0], out.inputs["Surface"])
+    elif kind == "uv":                                  # a surface's own coordinates (u, v, 1) as emission: see render()
+        e = nt.nodes.new("ShaderNodeEmission")
+        nt.links.new(attr("Uv"), e.inputs["Color"])
+        nt.links.new(e.outputs[0], out.inputs["Surface"])
     elif kind == "color":
         d = nt.nodes.new("ShaderNodeBsdfDiffuse")
         nt.links.new(attr("Col"), d.inputs["Color"])
@@ -171,6 +175,20 @@ def set_attr(me, name, per_face_rgb):
     me.color_attributes[name].data.foreach_set("color", arr.ravel())
 
 
+def set_uv(me, uv):
+    """The "Uv" corner attribute: (u, v, 1) on the corners of vertices in `uv` (vertex index -> (u, v)), black elsewhere. The
+    blue 1 marks "this is a UV face" (render "uv": an occluder, or no face at all, is black there)."""
+    vi = np.empty(len(me.loops), np.int32)
+    me.loops.foreach_get("vertex_index", vi)
+    lut = np.zeros((len(me.vertices), 4), np.float32)
+    lut[:, 3] = 1.0
+    for i, (u, v) in uv.items():
+        lut[i] = (u, v, 1.0, 1.0)
+    if "Uv" not in me.color_attributes:
+        me.color_attributes.new("Uv", "FLOAT_COLOR", "CORNER")
+    me.color_attributes["Uv"].data.foreach_set("color", lut[vi].ravel())
+
+
 SHADOWS = {}            # the builder's request for the sprite being built: {"on": True} shades what the sun's
                         # shadows fall on (render_shadow, post.shade), "L": that sun's direction (towards it,
                         # Blender space; else SHADOW_L), "ramp" and "steps": the tones it steps down (post.shade),
@@ -208,6 +226,7 @@ class Mesh:
         self.name, self.selflit, self.flat = name, selflit, flat
         self.dz = 0.0             # whole-mesh z shift applied at build (modules drop their old floor slab by this much)
         self.v, self.f = [], []   # verts (blender space), faces (idx list, col, self, glow)
+        self.uv = {}              # vertex index -> (u, v): a face's own surface coordinates, drawn by the "uv" pass
 
     def _cols(self, color):
         c = lin(color)
@@ -294,6 +313,8 @@ class Mesh:
         set_attr(me, "Col", [f[1] for f in self.f])
         set_attr(me, "Self", [f[2] for f in self.f])
         set_attr(me, "Glow", [f[3] for f in self.f])
+        if self.uv:
+            set_uv(me, self.uv)
         return ob
 
 
@@ -301,8 +322,13 @@ class Mesh:
 
 def _set_pass(which):
     sun = _state["sun"]
-    sun.hide_render = which == "glow"
-    kind = which if which in ("color", "shade") else "glow"
+    sun.hide_render = which in ("glow", "uv")
+    kind = which if which in ("color", "shade", "uv") else "glow"
+    if which == "uv":                                   # (a mesh with no uv face: black, so it still occludes)
+        for ob in bpy.data.objects:
+            if ob.type == "MESH" and "Uv" not in ob.data.color_attributes:
+                a = ob.data.color_attributes.new("Uv", "FLOAT_COLOR", "CORNER")
+                a.data.foreach_set("color", np.tile([0, 0, 0, 1.0], len(ob.data.loops)).astype(np.float32))
     for ob in bpy.data.objects:
         if ob.type == "MESH" and ob.data.materials:
             a = ob.get("alpha")
@@ -354,14 +380,34 @@ def _glows():
     return False
 
 
+def _has_uv():
+    """True if a visible mesh has a uv face (a Uv corner with blue > 0)."""
+    for ob in bpy.context.scene.objects:
+        if ob.type != "MESH" or ob.hide_render or "Uv" not in ob.data.color_attributes:
+            continue
+        d = ob.data.color_attributes["Uv"].data
+        if len(d):
+            buf = np.empty(len(d) * 4, np.float32)
+            d.foreach_get("color", buf)
+            if buf.reshape(-1, 4)[:, 2].max() > 0:
+                return True
+    return False
+
+
 def render(W, H, which="color", origin=None):
     """Render the scene; the world origin lands at pixel `origin` = (x, y from the top) of the WxH canvas (default:
     centre). Returns (rgb float 0..255 (H*SS,W*SS,3), alpha float 0..1). A glow pass of a scene with no Glow colour
-    anywhere is all black, so it is not rendered (the alpha of a glow pass is not used)."""
-    if which == "glow" and not _glows():
+    anywhere is all black, so it is not rendered (the alpha of a glow pass is not used). The "uv" pass is rendered raw (no
+    colour transform, 16 bit): rgb = (u, v, 1) of a uv face (Mesh.uv; a hit of anything else is black, so it occludes), and
+    a px's alpha its geometry coverage; see post.uv_down."""
+    if (which == "glow" and not _glows()) or (which == "uv" and not _has_uv()):
         return np.zeros((H * SS, W * SS, 3), np.float32), np.zeros((H * SS, W * SS), np.float32)
     sc, cam = _state["scene"], _state["cam"]
     _set_pass(which)
+    if which == "uv":                                   # (put back right after the render: scene_digest keys on it)
+        sc.view_settings.view_transform = "Raw"
+        sc.render.image_settings.color_depth = "16"
+        samples, sc.cycles.samples = sc.cycles.samples, 1       # (a flat emission: the S*S sub-pixels are the antialiasing)
     sc.render.resolution_x, sc.render.resolution_y = W * SS, H * SS
     sc.render.resolution_percentage = 100
     cam.data.ortho_scale = max(W, H) / PXU
@@ -373,6 +419,10 @@ def render(W, H, which="color", origin=None):
     tmp = str(Path(tempfile.gettempdir()) / f"spr_render_{os.getpid()}.png")
     sc.render.filepath = tmp
     bpy.ops.render.render(write_still=True)
+    sc.view_settings.view_transform = "Standard"
+    sc.render.image_settings.color_depth = "8"
+    if which == "uv":
+        sc.cycles.samples = samples
     img = bpy.data.images.load(tmp)
     img.colorspace_settings.name = "Non-Color"
     img.alpha_mode = "STRAIGHT"

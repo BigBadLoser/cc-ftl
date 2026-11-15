@@ -95,7 +95,7 @@
   - Only the cartel has a fence.
   - Three named markets wait on station generation.
 - **Dropped:** teleporters.
-- **Prisoners** go in the existing cryo pods (#116, planned). Wrecks still kill everyone aboard.
+- **Prisoners** are sealed into stasis slabs and held in a stasis wheel (#116; slice 1 built: same-ship holding, reserve, thaw). Not the cryo pods. Wrecks still kill everyone aboard.
 - **Hunger and events** are good enough for now. They grow with content.
 - **UI direction:**
   - Desktop first, with cohesion as the priority.

@@ -17,7 +17,7 @@ import type { ModuleDef } from '../sim/registry';
 import type { Module } from '../sim/modules/components';
 import { accessTile, footprintTiles, openTilesOf } from '../sim/modules/footprint';
 import { moduleKey } from './moduleView';
-import { SEAT_DZ } from './moduleArt';
+import { SEAT_DZ, berthDz } from './moduleArt';
 import type { Atlas, LayerSprite } from './assets/loader';
 import { artZoom, createCrewFilter, crewFilters, crewPalette, setFilterTint, setFilterZoom } from './assets/palette';
 import type { Filter } from 'pixi.js';
@@ -25,18 +25,25 @@ import type { CrewAtlas, CrewCell } from './crewAtlas';
 import type { CrewPalette } from './assets/palette';
 import { diamondTextures } from './diamonds';
 import { heldAssets } from './itemView';
+import { cartTarget, createCart, easeCart, type CartSprite } from './cartView';
+import { CART_FRAMES, cartFrame, cartFront, type CartPose } from './cartPose';
+import { carriedSlabOf, onCart, stowingNow } from '../sim/stasis/query';
+import type { SlabFaces } from './slabFace';
 import { lightTint, mulColor, pulsePhase } from './lightTint';
 import { ART_SCALE as S, depthKey, iso } from './iso';
 import type { Layers } from './layers';
 import { SEAT_CLIP, clipFor, crewLoadout, preloadLayers } from './loadout';
 import type { ClipDef } from './assets/manifest';
 import { drawLayers } from './crewSprites';
-import { BED_LIFT, bedPose } from './bedPose';
+import { berthLift, bedPose } from './bedPose';
+import { berthOf } from '../sim/crew/berths';
 import { POD_LIFT, podPose } from './podPose';
 import { FAMILY, fireClip, prefetchClips, stanceClip } from './handWeapon';
 import { playSpot } from '../sim/ai/machines/leisureSpots';
 
 export interface CrewViewHost {
+  /** The prisoner pressed into the slab on a carrier's hover cart (slabFace.ts); none = a plain slab. */
+  faces?: SlabFaces;
   /** True when the ship has no running power source (emergency lighting). */
   emergency?(): boolean;
   /** Light level at a sector tile of the shown grid (0 outside it). */
@@ -90,6 +97,10 @@ interface Slot {
   /** The item held in the hands while hauling: one sprite drawn over the body, one under it (when facing away). */
   carry: Sprite;
   carryBack: Sprite;
+  /** The hover cart a stasis slab rides on, ahead of the carrier (its own depth key), and the rotation it last ran at. */
+  cart: CartSprite;
+  /** Where the cart is drawn (eased toward where it should be), null while there is none. */
+  cartAt: CartPose | null;
   barBg: Sprite;
   barFill: Sprite;
   x: number;
@@ -194,7 +205,8 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         return { layer, sprite, halo };
       });
     L.sorted.addChild(root);
-    return { root, parts, glows, ring, shadow, cell, pal, filter: null, shrunk: false, tint: 0xffffff, carry, carryBack, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
+    const cart = createCart(L.sorted, host.faces);
+    return { root, parts, glows, ring, shadow, cell, pal, filter: null, shrunk: false, tint: 0xffffff, carry, carryBack, cart, cartAt: null, barBg, barFill, x: 0, y: 0, placed: false, clip: '', t: 0, height: Math.max(20 * S, first.def.anchor.y - 6 * S), lying: false, suited, airBg, airFill, shot: null, lastHp: -1, lastCooldown: 0, art, engagedUntil: 0, warm: false };
   }
 
   function applyLight(s: Slot, tx: number, ty: number, dead: boolean): void {
@@ -259,6 +271,7 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
     for (const g of s.glows) g.halo?.destroy();
     s.filter?.destroy();
     s.cell.release();
+    s.cart.destroy();
     s.root.destroy({ children: true });
   }
 
@@ -379,14 +392,17 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         // Region-local art position and depth (the region's containers sit at its sector offset).
         const lx = (pod ?? bed ?? s).x - target.ox, ly = (pod ?? bed ?? s).y - target.oy;
         const p = iso(lx, ly);
-        if (bed) p.y -= BED_LIFT * S;
+        if (bed) p.y -= berthLift(at ? berthOf(at.def, at.m, id) : 0) * S; // the bunk's upper sleeper lies a deck higher
         if (pod) p.y -= POD_LIFT * S;
         // A carried body hangs at the carrier's side, drawn just over them.
         s.root.position.set(Math.round(p.x) + (carried ? 9 * S : 0), Math.round(p.y) + (carried ? -13 * S : 0));
         let z = depthKey(lx, ly) + (carried ? 0.02 : 0);
         if (at && (onOpen || bed || pod)) {
           const f = footprintTiles(at.def, at.m.x, at.m.y, at.m.rot).reduce((a, t) => (t.x + t.y > a.x + a.y ? t : a));
-          z = Math.max(z, moduleKey(at.def, f.x - target.ox, f.y - target.oy) + SEAT_DZ);
+          // A sleeper sorts at its berth's depth alone (not their own tile, which bedPose moves toward the foot): over the bed body,
+          // under the overlay of the frame in front of it (moduleArt bedFronts).
+          const key = moduleKey(at.def, f.x - target.ox, f.y - target.oy);
+          z = bed ? key + berthDz(berthOf(at.def, at.m, id)) : Math.max(z, key + SEAT_DZ);
         }
         if (stool && sitting) {
           // A seated player of a game table sorts at the table's seat depth like a console's operator (not by their own tile): the table body is under them and the front overlay, the stool back and table edge, is over them.
@@ -396,7 +412,23 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         s.root.zIndex = z;
         applyLight(s, pos.x, pos.y, dead);
         const carrying = world.get(id, CarryingC);
-        showHeld(s, carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
+        // A stasis slab rides a hover cart pushed ahead of the carrier, not in their hands.
+        const carting = !hurtLying && onCart(world, id) && !stowingNow(world, id);   // (the wheel's loading animation draws its cart)
+        if (carting) {
+          const want = cartTarget(world, id, s.x, s.y, s.cartAt);
+          s.cartAt = want ? easeCart(s.cartAt, want, k) : null;
+          const c = s.cartAt;
+          if (c) {
+            const q = iso(c.x - target.ox, c.y - target.oy);
+            const f = cartFront(c);
+            const art = cartFrame(c.angle, now, id % CART_FRAMES);
+            s.cart.show(atlas, art.id, art.flip, Math.round(q.x), Math.round(q.y), depthKey(f.x - target.ox, f.y - target.oy), s.tint, world.get(carriedSlabOf(world, id), CrewC));
+          } else s.cart.hide();
+        } else {
+          s.cart.hide();
+          s.cartAt = null;
+        }
+        showHeld(s, carting ? undefined : carrying?.item, dir, !hurtLying, s.clip === 'walk' ? Math.round(Math.abs(Math.sin(s.t * 9))) * S : 0);
         const hp = world.get(id, HealthC);
         const showBar = !dead && !pod && (!!downed || (!!hp && hp.hp < hp.max));
         s.barBg.visible = s.barFill.visible = showBar;
@@ -465,6 +497,15 @@ export function createCrewView(world: World, atlas: Atlas, L: Layers, host: Crew
         if (Math.abs(ax - px) <= hw && ay >= py - h && ay <= py + 4 * S && py > bestY) {
           bestY = py;
           best = id;
+        }
+        // A hover cart picks the prisoner frozen in the slab on it (their inspector says where the slab is going).
+        const cy = s.cart.hit(ax, ay);
+        if (cy !== null && cy > bestY) {
+          const prisoner = carriedSlabOf(world, id);
+          if (prisoner) {
+            bestY = cy;
+            best = prisoner;
+          }
         }
       }
       return best === null ? null : { id: best, y: bestY };

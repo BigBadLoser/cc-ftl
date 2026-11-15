@@ -17,6 +17,8 @@ piece goes through K.p exactly as a module built with `rot` would. Each family k
 so its pixels match what was approved. The vending machines render with 64 samples (their pale tops mottle at the
 pipeline's 4), set on the scene for their jobs only, as recovery.py does. Each job renders one module at one rotation
 itself (r0 also gives the plain id), so a job is keyed by this module's source and what it imports."""
+import numpy as np
+
 from . import bunk_study, core, env_build as E, exercise_r12, modkit, planter_r2, post, vending_r23, vending_r24
 
 FAMILIES = {  # family: [(module id, footprint at r0, (study module, design)), ...], palette selection
@@ -28,6 +30,7 @@ FAMILIES = {  # family: [(module id, footprint at r0, (study module, design)), .
                         ("module.vending_red", (1, 1), ("vending_r24", "vm1c24e"))], "only:vending"),
 }
 SAMPLES = {"vending_module": 64}
+BERTHS = {"module.bunk": 2, "module.bed": 1}   # beds: front overlays per berth over their sleepers (bed_front.py)
 
 
 def turned(build, rot):
@@ -52,6 +55,9 @@ def job(family, sid, fp, study, name, rot):
     def run(family=family, sid=sid, fp=fp, study=study, name=name, rot=rot):
         import bpy
         build = STUDIES[study].DESIGNS[name]
+        base = sid.rsplit(".r", 1)[0]
+        if base in BERTHS:                       # (before the scene is read: building the crew rig replaces it)
+            return bed_items(family, sid, fp, build, rot, BERTHS[base])
         sc = bpy.context.scene
         sc.cycles.samples = SAMPLES.get(family, core.SAMPLES)
         try:
@@ -68,6 +74,38 @@ def job(family, sid, fp, study, name, rot):
         finally:
             sc.cycles.samples = core.SAMPLES
     return run
+
+
+def bed_items(family, sid, fp, build, rot, berths):
+    """A bed's sprite and its front overlays `<asset>.front.b<b>.r<r>` (bed_front.py). The crew rig is built first
+    (building it clears the scene) and hidden, and the bed is dropped after each render instead of clearing the scene."""
+    from . import bed_front as BF
+    from . import consoles as CO
+    from .research_bench import drop
+    hr, (_, rig) = CO._rig()
+    hr.set_state(rig, [], [])
+    post.select(palette(family))
+    f = fp if rot % 2 == 0 else (fp[1], fp[0])
+    objs = turned(build, rot)
+    c, op, g, ox, oy, al = E.render_sprite(sid, "prop", objs)
+    drop(objs)
+    W, H = op.shape[1] - 2, op.shape[0] - 2
+    objs = turned(build, rot)
+    masks = BF.split(op, BF.occluders(objs, fp, rot, berths, W, H))
+    drop(objs)
+    front = np.zeros_like(op)
+    for m in masks:
+        front |= m
+    gb = g.copy()
+    gb[front] = 0
+    base = sid.rsplit(".r", 1)[0]
+    out = [E.crop_item(aid, f, c, op, gb, ox, oy, al) for aid in ([sid] if rot else [sid, base])]
+    for b, m in enumerate(masks):
+        if m.any():
+            gm = g.copy()
+            gm[~m] = 0
+            out.append(E.crop_item(f"{base}.front.b{b}.r{rot}", f, c, m, gm, ox, oy, np.where(m, al, 0) if al is not None else None))
+    return [it for it in out if it]
 
 
 def jobs(family, rots=range(4)):

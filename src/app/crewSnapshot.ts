@@ -6,6 +6,8 @@ import { localOf } from './moduleSnapshot';
 import { shipIdOf, shipGrid } from '../sim/regions';
 import { homeShip } from '../sim/index';
 import { blockNow, hoursOf } from '../sim/crew/schedule';
+import { sealOf } from './sealSnapshot';
+import { stasisOf } from './stasisSnapshot';
 import { StunC } from '../sim/robots/components';
 import { guestHere, lodgingHere } from '../sim/consent/guests';
 
@@ -34,6 +36,7 @@ function jobLabel(sim: Sim, j: Job): string {
     case 'haul': return 'Hauling';
     case 'craft': return 'Crafting';
     case 'research': return 'Researching';
+    case 'stasis': return j.stasis?.phase === 'fetch' || j.stasis?.phase === 'seal' ? 'Sealing a prisoner' : 'Carting a stasis slab';
     default: return j.kind;
   }
 }
@@ -211,6 +214,8 @@ function card(sim: Sim, ctx: Ctx, id: number, side: UiCrew['side']): UiCrew | nu
     arms: loc.shipId ? armsOn(sim, ctx, loc.shipId) : [],
     surrendered: sim.world.has(id, SurrenderedC),
     prisoner: sim.world.has(id, PrisonerC),
+    seal: sealOf(sim, id),
+    stasis: stasisOf(sim, id),
     inert: sim.world.has(id, InertC),
     fight: fightOf(sim, id),
     airless: !needsAir(sim, id),
