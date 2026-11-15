@@ -37,7 +37,7 @@ const power: RoomMock[] = [
   { role: 'reactor', caption: 'BR batts 7x4', w: 7, h: 4, door: 3, pieces: [[BT, 0, 0], [BT, 1, 0], [CO, 3, 0, 0], [BT, 5, 0], [BT, 6, 0]] },
   { role: 'reactor', caption: 'BR batts 11x4 hub', w: 11, h: 4, door: 5, pieces: [[BT, 0, 0], [BT, 1, 0], [BT, 2, 0], [BT, 3, 0], [CO, 5, 0, 0], [BT, 7, 0], [BT, 8, 0], [BT, 9, 0], [BT, 10, 0]] },
   { role: 'medbay', caption: 'TR trauma 7x4', w: 7, h: 4, door: 3, pieces: [['module.recovery', 0, 0, 0], ['module.med_bed', 4, 0, 0], ['module.med_bed', 6, 0, 0]] },
-  { role: 'hangar', caption: 'DB drone bay 8x4', w: 8, h: 4, door: 4, pieces: [['module.droneBay', 0, 0, 0], ['module.droneBay', 6, 0, 0]] },
+  { role: 'hangar', caption: 'DB drone bay 8x4', w: 8, h: 4, door: 4, pieces: [['module.droneBay', 1, 1, 0], ['module.droneBay', 5, 1, 0]] },
 ];
 
 const social: RoomMock[] = [
