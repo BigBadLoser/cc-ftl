@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil started, c6 the ramp notch)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c6: the ramp notch approved)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -784,3 +784,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: c4 (the user: the notch reaches where the end blocks' slopes start, their top edge, and runs all the way up): its ends at BLOCK 12 px (NOTCH_IN gone), no top gap (TOP gone): the pocket open from BELOW up to the surface over it (the floor in front of the pane, the end blocks' slopes and tops; carved under zt), the back's top edge following the cells' tops, the end walls up to the end blocks' tops. The plain wall pixel-identical. Renders: scratchpad `cv4`.
 - 2026-11-15: c5 (the user: the back wall's top edge is where the ramp ends, and the back is upright, not slanted): the back an upright face at the floor's front (`_front()`, where the slope starts), straight down from zf to the ledge at BELOW; the carve everything in front of it (RECESS gone: the depth is the slope's run from zf to the ledge, about 5 px); the floor in front of the pane whole again; the end walls triangles. The plain wall pixel-identical. Renders: scratchpad `cv5`.
 - 2026-11-15: c6 (the user: the back goes a little further, to where the ramp itself ends, not where the window's floor starts): the back upright at the ramp's top line (`_line()`, where it meets the wall), its top following the surface over it (the window's floor zf; over the end blocks' slopes, their slope up to zt at BLOCK); the window floor cut away in front of it across the notch; the end walls from the back out to the slope. The plain wall pixel-identical. Renders: scratchpad `cv6`.
+- 2026-11-15: the user: the notch looks right at c6. Still open on civil: the modules inside the notch, the ref's dark blue end blocks (ours white), the corner radius.
