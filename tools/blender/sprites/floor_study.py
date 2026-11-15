@@ -478,10 +478,10 @@ def _bump(a, b, half, width):
     return None
 
 
-def _lozenges(i, j, axes, half, width, pitch=16, o=2, body="boot", lit="steelL"):
+def _lozenges(i, j, axes, half, width, pitch=16, o=2, body="boot", lit="steelL", seam=True):
     """A checker of lens lozenges at `pitch` from cell `o`; `axes` gives the long axis (unit, grid) of the two checker
     colours. The across vector is the axis turned so that positive b faces the light (grid -i, -j)."""
-    if i < 2 or j < 2:
+    if seam and (i < 2 or j < 2):
         return "seam"
     ci, cj = (i - o) // pitch, (j - o) // pitch
     c = (pitch - 1) / 2
@@ -510,6 +510,33 @@ def h9(i, j):
 
 
 DESIGNS.update({"h7": h7, "h8": h8, "h9": h9})
+
+
+# Diamond tread, round 4 (round 3 not sitting right; the dark tile seams draw a hard grid): H7 with lighter seams
+#   h10 faint seam: the seam a soft tone just under the plate
+#   h11 lit seam: the seam a light line, a raised lip rather than a groove
+#   h12 no seam: the tread runs on from tile to tile
+
+
+def _h7_seam(i, j, seam):
+    if i < 2 or j < 2:
+        return seam
+    return _lozenges(i, j, ((1, 0), (0, 1)), 8.5, 3.2, 21, 1, "steelL", "plate")
+
+
+def h10(i, j):
+    return _h7_seam(i, j, "plateB")
+
+
+def h11(i, j):
+    return _h7_seam(i, j, "steelL")
+
+
+def h12(i, j):
+    return _lozenges(i, j, ((1, 0), (0, 1)), 8.5, 3.2, 21, 1, "steelL", "plate", seam=False)
+
+
+DESIGNS.update({"h10": h10, "h11": h11, "h12": h12})
 
 
 def _tile(name, fn):
