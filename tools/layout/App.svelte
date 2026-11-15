@@ -4,6 +4,8 @@
 	import Undo from '@lucide/svelte/icons/undo-2';
 	import GitCompare from '@lucide/svelte/icons/git-compare';
 	import Maximize from '@lucide/svelte/icons/maximize';
+	import PopOut from '@lucide/svelte/icons/picture-in-picture-2';
+	import { popOut } from './popout.svelte';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -76,6 +78,7 @@
 				<Popover.Content align="end" class="w-auto"><SourcePicker done={() => (open = false)} /></Popover.Content>
 			</Popover.Root>
 			<SaveCase />
+			<Button variant="outline" size="sm" disabled={!lab.design} onclick={popOut} title="Open the preview in a window of its own (a second monitor)"><PopOut /> Pop out preview</Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Undo" disabled={!lab.canUndo} onclick={() => lab.undo()}><Undo /></Button>
 			<Button variant="ghost" size="icon-sm" aria-label="Redo" disabled={!lab.canRedo} onclick={() => lab.redo()}><Redo /></Button>
 			<Tooltip.Root>

@@ -1,13 +1,13 @@
 /**
  * Dev-server endpoint for the layout lab's feedback cases (never part of the build: `apply: 'serve'`). It lists, reads and writes
- * `tools/layout/cases/<slug>.json`; a slug is letters, digits and dashes only, so no request can leave that folder.
+ * `tools/layout/cases/<slug>.json`; a slug is letters, digits and dashes only (the mock cases keep their camel-case file names), so no request can leave that folder.
  */
 import { Buffer } from 'node:buffer';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIR = join(import.meta.dirname, 'cases');
-const SLUG = /^[a-z0-9][a-z0-9-]{0,120}$/;
+const SLUG = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,120}$/;
 /** `<slug>.<what>.png`: the images saved beside a case. */
 const IMAGE = /^([a-z0-9][a-z0-9-]{0,120})\.(original|edited|overlay|preview-original|preview-edited)\.png$/;
 
