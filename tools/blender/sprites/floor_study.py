@@ -910,9 +910,10 @@ DESIGNS.update({"a4": a4, "a5": a5, "a6": a6})
 #   a9 band and rails: a7's band with thin steel rails down both sides of the tile, a lane into the door
 
 
-def _band(i, j, depth):
+def _band(i, j, depth, diag=False):
     if 2 <= j < 2 + depth:
-        return "hazY" if (i // 8) % 2 == 0 else "hazK"
+        k = (i + j) // 10 if diag else i // 8
+        return "hazY" if k % 2 == 0 else "hazK"
     return None
 
 
@@ -942,6 +943,20 @@ def a9(i, j):
 
 
 DESIGNS.update({"a7": a7, "a8": a8, "a9": a9})
+
+
+# Door apron, round 4: round 3's three with the stripes at 45 degrees to the band (on the floor, so level on screen).
+
+
+def _diag(fn):
+    def f(i, j):
+        v = fn(i, j)
+        b = _band(i, j, 20 if fn is a8 else 12, diag=True)
+        return b if b and v in ("hazY", "hazK") else v
+    return f
+
+
+DESIGNS.update({"a7d": _diag(a7), "a8d": _diag(a8), "a9d": _diag(a9)})
 
 
 def _tile(name, fn):
