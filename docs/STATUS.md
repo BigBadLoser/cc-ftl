@@ -70,7 +70,7 @@ under `tools/shipgen/starters` are stale against them (they were already behind 
 ## In progress
 
 **Priority (user, 2026-11-15): the core loop.** "Make it playable first" (2026-11-08) is met: the playtest batch #384-#390 shipped
-in #392. Next are danger bands (#382) and fewer empty hops (#171), starting with an audit and a design discussion. #380 research,
+in #392. Next is more to find per node (#171; danger bands #382 folded in: no visible bands, physical finds, plan in the #171 comment of 2026-11-15). #380 research,
 #383 story arcs and #172/#52 goals queue behind them. The test harness (#371) may run alongside.
 
 - **Open PR:** #501 station assembly (#460), ready.

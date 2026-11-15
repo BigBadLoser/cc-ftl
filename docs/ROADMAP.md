@@ -14,7 +14,7 @@ These aren't features. They're the aims we use to choose which features to build
 
 Shipped and no longer listed: physical encounters, the UI consistency pass and prisoners ([#116](https://github.com/BigBadLoser/cc-ftl/issues/116)); see the [changelog](../CHANGELOG.md).
 
-- **Core loop: danger bands and fewer empty hops.** Danger bands across the map and more to find per node, so hops are not dead waiting. Starts with an audit and a design discussion. ([#382](https://github.com/BigBadLoser/cc-ftl/issues/382), [#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
+- **Core loop: more to find per node.** One node-content table weighted by distance tier (no visible bands), with physical finds (small wrecks, probes, cargo pods, beacons, anomalies) that crew reach by shuttle or EVA, and some nodes left quiet on purpose. Loot and ore quality then scale with tier, and deep-only content follows later. Danger bands (#382) are folded in. ([#171](https://github.com/BigBadLoser/cc-ftl/issues/171))
 - **Station assembly.** One modular assembly system for station generation; the PR is open. ([#460](https://github.com/BigBadLoser/cc-ftl/issues/460))
 
 ## Next
