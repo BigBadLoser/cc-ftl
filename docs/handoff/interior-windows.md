@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil started, c2)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil started, c3 the ramp notch)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c2, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c3, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -780,3 +780,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the handle bar up a bit. d32: HANDLE_UP 2 art px over the slot block face's mid height. Renders: scratchpad `dr32`, run `drone_run32.png`.
 - 2026-11-15: the user: "good enough": drone approved at d32 (the header rail kept as the beam; the ref's pipe beam not built). Open: drone's walls' handles changed tone (d30), so the shipped drone sheets want a re-render (the user's go); civil not started; #49 pipeline wiring waits on the user.
 - 2026-11-15: the user: civil next. c0: plain civil.v1 beside ref 428 (upper layer: white posts, 11 px fronts, curving into a thin white beam with a red line under the cap, the beam ~7 rows of the post's ~39; lower layer: a white ramp, a long recessed panel, a red stripe low, dark blue end blocks). c1/c2: `sprites/wall3d_iwin_civil.py` set up as drone's d0/d1 (shared shape: posts POST 11, end blocks BLOCK 12 / END 16, floor FLOOR_DOWN 6 under the ramp's top, the pane on it); the opening up to civil's colour band's foot (`faction.civil.band_foot`: the band is the beam); its top corners rounded ROUND 3 px (a fan on the near face, the curve across the wall); `faction.civil.BLANK` while a window piece builds: no drawers, no seam under the band, no risers through it, the ramp bare (skirt None, seamless; its red toe band kept). Faces toned by the wall family's levels (not fixed names: each civil variant takes its own); the posts' sides and the curve level 1 (at the face's level they were as light as the fronts and the curve didn't read). The plain wall pixel-identical. `preview/jobs_cvwin.py`; run sheet `scripts/dr_run.py` takes LOOK=civil.v1. Renders: scratchpad `cv2`.
+- 2026-11-15: c3, the ramp notch (the user): `sprites/wall3d_iwin_civil_notch.py`, called from the civil hook. A pocket cut RECESS 5 px straight back into the near slope (drone vents' `_carve`), NOTCH_IN 8 px in from the window's ends, TOP 2 sprite px down the slope from the floor's front, BELOW 7 over the slope/foot crease (the ref's 2 and 8 of a 24 row slope; ours 21): back parallel to the slope, ledge along its foot, end walls. Wall-family levels all come out the slope's white in civil, so its faces take the look's own wall ramp by step (`restyle._LOOK[-1][0].ramps['wall']` + STEP: back 3, ledge 5, sides 6; civil v1's slope is fC1W2; the ref's back / floor / end wall c1cac8 / 9ea9ad / 68737f). The plain wall pixel-identical. Renders: scratchpad `cv3`. Open: the modules inside it, its depth and inset.

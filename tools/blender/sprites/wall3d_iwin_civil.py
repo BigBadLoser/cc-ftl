@@ -11,6 +11,7 @@ from mathutils import Vector
 from . import wall3d as T
 from . import walls as W
 from .faction import civil as CV
+from . import wall3d_iwin_civil_notch as NT
 from .wall3d_iwin import _clip
 
 PX = 1 / 32                 # an art px across or along the wall
@@ -179,6 +180,7 @@ def hook(k, sp, own=True):
     if b > a:
         _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), LVL["under"])
     _corners(k, x0, x1, z1)
+    NT.notch(k, PART)                                                   # (ref 428's ramp notch)
     if not own:
         return
     h, e = PANE_T / 2, PANE_OUT
