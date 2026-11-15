@@ -96,6 +96,10 @@ Bringing prisoners from the prize to your own ship, and ransom, sale or recruiti
 Enemy ships can launch boarding parties at you in the same way. The first sign is the **Under attack** alert and an enemy
 shuttle docking at an airlock, or intruders appearing aboard.
 
+Anyone fighting you right now, boarders, creatures, or station guards once you're wanted there, stands on a **red diamond**.
+It goes once they surrender, go down or die. Neutral crew, guests and your own crew have no mark; selected crew get the
+selection ring.
+
 Your crew defend themselves:
 
 - **Armed crew fight** anything hostile they see. Crew with strong melee or gunnery skill (6 or more) also **hunt

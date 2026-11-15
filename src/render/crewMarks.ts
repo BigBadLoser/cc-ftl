@@ -1,7 +1,8 @@
 /*
  * Crew status marks: the overhead icons (`crew.mark.*`, sheet `marks`, tools/blender/sprites/crew_marks.py) over a crew
  * member's head (a red cross on the downed, a white flag on those who surrendered, a break's symbol in its tier's thought
- * bubble, a chat's speech bubble), and a red (hostile) or green (yours) foot diamond, still drawn in code.
+ * bubble, a chat's speech bubble), and a red foot diamond under each active foe of the player (the app passes their ids). Selected crew
+ * get the selection ring (orderFx.ts) instead.
  */
 import { shipIdAtTile } from './regionRules';
 import { Container, Graphics, Sprite } from 'pixi.js';
@@ -10,7 +11,7 @@ import type { Atlas } from './assets/loader';
 import { CrewC, DeadC, DownedC, PositionC } from '../sim/crew/components';
 import { BreakdownC } from '../sim/crew/breakTypes';
 import { InteractionC } from '../sim/crew/interactionTypes';
-import { AllegianceC, SurrenderedC } from '../sim/fight/components';
+import { SurrenderedC } from '../sim/fight/components';
 import type { Ship } from '../sim/combat/components';
 import { Z_PX } from './heights';
 import { ART_SCALE as S, iso } from './iso';
@@ -26,6 +27,8 @@ export interface CrewMarksHost {
 
 export interface CrewMarks {
   update(dt: number): void;
+  /** The crew who get a red foot diamond (`playerFoes`). */
+  setFoes(ids: readonly number[]): void;
   dispose(): void;
 }
 
@@ -52,11 +55,15 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
   const g = new Graphics();
   const icons = new Container();
   parent.addChild(g, icons);
+  let foes: ReadonlySet<number> = new Set();
   const sprites = new Map<number, Sprite>();
   /** Frame ids per icon id (the sheet's `<id>.0` .. `<id>.n-1`), looked up once. */
   const frames = new Map<string, string[]>();
   let clock = 0;
   return {
+    setFoes(ids) {
+      foes = new Set(ids);
+    },
     update(dt) {
       clock += dt;
       g.clear();
@@ -65,11 +72,11 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         const pos = world.get(id, PositionC);
         const shipId = pos ? shipIdAtTile(world, pos.x, pos.y) : 0;
         if (!pos || !host.ship(shipId) || !host.visible(shipId, pos.x, pos.y) || world.has(id, DeadC)) continue;
-        const gx = pos.x + (pos.toX - pos.x) * pos.progress;
-        const gy = pos.y + (pos.toY - pos.y) * pos.progress;
-        const p = iso(gx, gy); // sector tiles
-        const mine = world.get(id, AllegianceC)?.faction === 'player';
-        g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: mine ? 0x4cd964 : 0xff4a3a, alpha: 0.8 });
+        if (foes.has(id)) {
+          // At the drawn figure's feet (smoothed, and in a seat or bed), like the overhead icons; the sim tile when it isn't drawn.
+          const p = host.figure(id) ?? iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress); // sector tiles
+          g.poly([p.x, p.y - 5 * S, p.x + 10 * S, p.y, p.x, p.y + 5 * S, p.x - 10 * S, p.y]).stroke({ width: S, color: 0xff4a3a, alpha: 0.8 });
+        }
         // No health bar here: the crew view draws one on the figure itself (in bed, seated or standing). A second one at the
         // sim tile floated over beds, apart from its sleeper, and stayed when the figure did not draw.
         const mark = markId(world, id);
@@ -86,7 +93,7 @@ export function createCrewMarks(world: World, parent: Container, host: CrewMarks
         }
         // Over the drawn figure (it is smoothed and sits in beds and seats; the sim tile is not): the icon's bottom (its anchor) just over a
         // standing head, a little over a lying figure, and above the figure's health and air bars when they show.
-        const fig = host.figure(id) ?? { ...p, bars: 0 };
+        const fig = host.figure(id) ?? { ...iso(pos.x + (pos.toX - pos.x) * pos.progress, pos.y + (pos.toY - pos.y) * pos.progress), bars: 0 }; // sector tiles
         const head = world.has(id, DownedC) ? 0.55 * Z_PX : MARK_HEAD;
         const bottom = fig.y - Math.max(head, fig.bars > 0 ? fig.bars + 2 * S : 0);
         s.texture = st.tex;
