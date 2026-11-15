@@ -149,6 +149,100 @@ def w9(i, j):
 DESIGNS.update({"w7": w7, "w8": w8, "w9": w9})
 
 
+# ---- New set (the user's list): deck plate, grating, heavy plate, clean tile, soft floor; markings later ----------
+# Deck plate, round 1 (the base floor everywhere, so detail stays quiet; it repeats on every tile):
+#   d1 chamfered panel: one mid-steel panel, chamfered corners, a lit lip on the near sides
+#   d2 split panel: two long plates a tile, a fine seam between, a short recessed grip slot on each
+#   d3 rivet border: one panel with a row of small rivets just inside its seam
+
+
+def d1(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if _cham(i, j, 8):
+        return "seam"
+    if i < 4 or j < 4:
+        return "steelL"
+    if i > 61 or j > 61:
+        return "steelD"
+    return "blueGrey"
+
+
+def d2(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if 31 <= j <= 32:
+        return "steelD"
+    if i < 4 or j < 4 or 33 <= j <= 34:
+        return "steelL"
+    jj = j % 32
+    if 26 <= i <= 37 and 14 <= jj <= 17:
+        return "dark" if jj <= 15 else "steelD"
+    return "steel"
+
+
+def d3(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 4 or j < 4:
+        return "steelL"
+    ci, cj = min(i, 63 - i), min(j, 63 - j)
+    for a, b in ((ci, cj), (cj, ci)):
+        if 6 <= a <= 9 and b >= 6 and (b - 6) % 13 < 4:
+            return "sole" if a <= 7 else "steelD"
+    return "steel"
+
+
+DESIGNS.update({"d1": d1, "d2": d2, "d3": d3})
+
+
+# Grating, round 1 (deck plate skipped: it is the default floor):
+#   g1 bar grating: bars along one axis over a dark void, a cross bar every quarter, a steel frame at the seam
+#   g2 square mesh: a framed grid of square openings, open and light-weight
+#   g3 underlit grating: g1's bars with a dim cyan glow from below through the gaps
+
+
+def _frame(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 5 or j < 5 or i > 60 or j > 60:
+        return "plate" if (i < 5 or j < 5) else "steelD"
+    return None
+
+
+def _bars(i, j, gap):
+    f = _frame(i, j)
+    if f:
+        return f
+    if (j - 5) % 16 < 3:
+        return "steelL" if (j - 5) % 16 == 0 else "steel"
+    k = (i - 5) % 9
+    if k < 4:
+        return "plate" if k == 0 else ("steelL" if k < 3 else "steel")
+    return gap(k) if callable(gap) else gap
+
+
+def g1(i, j):
+    return _bars(i, j, "dark")
+
+
+def g2(i, j):
+    f = _frame(i, j)
+    if f:
+        return f
+    u, v = (i - 5) % 8, (j - 5) % 8
+    if u < 3 or v < 3:
+        return "plate" if (u == 0 or v == 0) else "steelL"
+    return "dark"
+
+
+def g3(i, j):
+    return _bars(i, j, lambda k: "fxH2" if 5 <= k <= 7 and (j - 5) % 16 > 4 and (j - 5) % 16 < 15 else "dark")
+
+
+DESIGNS.update({"g1": g1, "g2": g2, "g3": g3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
