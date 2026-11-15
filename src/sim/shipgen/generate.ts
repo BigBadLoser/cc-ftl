@@ -164,8 +164,8 @@ function fitOut(
   demand += lamps * lampPower;
   // Furniture can push a lamp off its first-choice tile: keep a lamp per furnished room in hand.
   const margin = recipeRooms.length * lampPower;
-  // Short of power after lighting: squeeze extra reactors into engineering or stores.
-  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' || r === 'support' ? i : -1)).filter((i) => i >= 0);
+  // Short of power after lighting: squeeze extra reactors into engineering or stores (never a mess or other living room).
+  const spare = roles.map((r, i) => (r === 'reactor' || r === 'engine' || r === 'cargo' ? i : -1)).filter((i) => i >= 0);
   // Station courts (lit to scale, so lamp-hungry) can take a reactor on their open floor as a last resort.
   const courts = roles.map((r, i) => (r === 'plaza' || r === 'garden' || r === 'drill' ? i : -1)).filter((i) => i >= 0);
   const reactor = defs['module.reactor'];
