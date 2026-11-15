@@ -1008,6 +1008,53 @@ def map_jobs():
     return out
 
 
+# Edge line picked: e1 (solid cream line, inset 16, 4 wide).
+# ---- Hazard band, round 1 (the brief: yellow and dark-grey stripes, ~1/4 tile, hugging the wall at ~1/10, two stripe
+# repeats a tile so tiles join whichever way the band runs; the black is dark grey paint, not a hole). Same test shapes.
+#   z1 plain band: 16 wide from inset 6, 45-degree stripes (period 32 along x + y)
+#   z2 framed band: z1 with a thin dark-grey line along both its edges
+#   z3 narrow band and line: a 10-wide band from inset 6, an e1-style cream line along its inner edge
+
+
+def _haz(style, d, door, gx, gy):
+    if door and d < 30:
+        return None
+    k = d - 6
+    stripe = "hazY" if (gx + gy) % 32 < 16 else "hazK"
+    if style == "z1":
+        return stripe if 0 <= k < 16 else None
+    if style == "z2":
+        if 0 <= k < 2 or 16 <= k < 18:
+            return "dnW3"
+        return stripe if 2 <= k < 16 else None
+    if 0 <= k < 10:
+        return stripe
+    return "lvW" if 12 <= k < 15 else None
+
+
+def _haz_tile(style, rows, x, y):
+    t = rows[y][x]
+
+    def fn(i, j):
+        if t == "#":
+            return "dark"
+        gx, gy = x * MM.N + i, y * MM.N + j
+        d, door = MM.wall_dist(rows, gx, gy)
+        return _haz(style, d, door, gx, gy) or _deck(i, j)
+    return fn
+
+
+def haz_jobs():
+    out = []
+    for style in ("z1", "z2", "z3"):
+        for name, rows in MM.MAPS.items():
+            for y, row in enumerate(rows):
+                for x, _ in enumerate(row):
+                    out.append((f"tile.mark.{style}.{name}.{x}_{y}", (1, 1), "floor",
+                                lambda s=style, r=rows, x=x, y=y: _tile(f"{s}_{x}_{y}", _haz_tile(s, r, x, y))))
+    return out
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
@@ -1017,4 +1064,4 @@ def _tile(name, fn):
 def jobs():
     out = [("tile.floor.deck", (1, 1), "floor", lambda: floor("a"))]
     out += [(f"tile.floor.{k}", (1, 1), "floor", lambda f=f, k=k: _tile(k, f)) for k, f in DESIGNS.items()]
-    return out + map_jobs()
+    return out + map_jobs() + haz_jobs()
