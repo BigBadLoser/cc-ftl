@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AsteroidC, ShipC, asteroidAt, deserialize, galaxyIndex, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
+  AsteroidC, ShipC, asteroidAt, deserialize, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
   serialize, shipAt, shipIdAt, type OreDef, type Sim,
 } from '../../sim';
 import { emptyNeighbour } from './nodeFixture';

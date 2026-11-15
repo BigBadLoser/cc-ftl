@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, START_NODE, ShipC, VehicleC, deserialize, galaxyIndex, homeShip, serialize, type Sim } from '../../sim';
+import { AboardC, CombatC, CrewC, DraftedC, FTL_CHARGE_SEC, JobC, NeedsC, PathC, PositionC, PrioritiesC, ShipC, VehicleC, deserialize, homeShip, serialize, type Sim } from '../../sim';
 import { giveItems } from '../../sim/story/effects';
 import { ModuleC, Struct, placementError, shipGrid, spawnModule, writeStruct } from '../../sim';
 import { AirlockC } from '../../sim/modules/airlock';
