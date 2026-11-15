@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { UiApi, UiCrew, UiModule, UiWheelSlot } from '../../src/ui/api';
+  import type { UiApi, UiCrew, UiModule, UiPrisonerDeal, UiWheelSlot } from '../../src/ui/api';
+  import PrisonerDeals from '../../src/ui/PrisonerDeals.svelte';
   import ModuleOverview from '../../src/ui/module/ModuleOverview.svelte';
   import CrewOverview from '../../src/ui/crew/CrewOverview.svelte';
   import { PaneHead } from '../../src/ui/kit';
@@ -33,6 +34,16 @@
     ['Left on the floor', crew(3, { where: 'On the floor, waiting to be carted', wheel: null, carrier: null, to: null, reserve: 64, draining: true, inTransit: false })],
     ['In the shuttle', crew(5, { where: 'In the shuttle, on the way to a stasis wheel', wheel: null, carrier: null, to: null, reserve: 90, draining: false, inTransit: true })],
   ];
+  // The station's Prisoners service (#116): an offer, runs under way, and rows with no deal here.
+  const deal = (id: number, name: string, faction: string, tier: UiPrisonerDeal['tier'], where: string, offer: UiPrisonerDeal['offer'], frozen = true): UiPrisonerDeal =>
+    ({ id, name, faction, tier, frozen, where, wanted: true, offer });
+  const deals: UiPrisonerDeal[] = [
+    deal(1, 'Vasska Orr', 'Navy', 'neutral', 'Stasis wheel, slot 1', { ok: true, label: 'Ransom ₵240', note: '+2 Navy' }),
+    deal(2, 'Dree Malk', 'Red Talon', 'hostile', 'Stasis wheel, slot 3', { ok: false, label: '', note: 'Bounty ₵175', status: 'Loading your shuttle…', cancel: 4 }),
+    deal(3, 'Ostin Pell', 'Navy', 'neutral', 'in a shuttle', { ok: false, label: '', note: 'Ransom ₵200', status: 'On the way to the station' }),
+    deal(4, 'Kell Ashe', 'Meridian', 'neutral', 'Stasis wheel, slot 6', { ok: false, label: '', note: 'Ransom at Meridian stations' }),
+    deal(1, 'Ira Voln', 'Navy', 'neutral', 'not sealed', { ok: false, label: '', note: 'Seal them in stasis first (ransom ₵180 here)' }, false),
+  ].map((d, i) => ({ ...d, id: i + 1 }));
 </script>
 
 <div class="lab">
@@ -52,6 +63,12 @@
   </section>
 </div>
 
+<div class="lab">
+  <section><h4>Station Prisoners service: an offer, a run collecting, a run on the way, no deal here, not sealed</h4>
+    <div class="win wide"><div class="body"><PrisonerDeals {api} station={7} {deals} /></div></div>
+  </section>
+</div>
+
 <style>
   .lab { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; align-items: flex-start; }
   h4 { margin: 0 0 6px; color: var(--dim); font: 12px monospace; }
@@ -59,4 +76,5 @@
   .col { display: grid; gap: 12px; }
   .win { width: 300px; background: var(--panel); border: 1px solid var(--line); }
   .body { padding: 10px 12px 4px; }
+  .win.wide { width: 520px; }
 </style>

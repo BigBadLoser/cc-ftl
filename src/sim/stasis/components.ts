@@ -71,10 +71,16 @@ export interface SlabSource {
  * A 'stasis' job's state (`Job.stasis`; `Job.target` is the prisoner). Phases, each with the job's tile at its stop:
  *  - 'fetch': take an empty slab from `from`;  - 'seal': seal the prisoner in where they are;
  *  - 'pickup': lift a full slab off the floor;  - 'stow': stand the slab on the cart in a slot of `wheel`;
- *  - 'ship': hand the slab on the cart into the rack of the shuttle `rack` serving the ship (a prize with no wheel that takes it).
+ *  - 'ship': hand the slab on the cart into the rack of the shuttle `rack` serving the ship (a prize with no wheel that takes it);
+ *  - 'unstow': take a full slab out of its wheel onto the cart (a prisoner handed over at a station: `deliver`).
+ * `deliver` is set on a job posted for a prisoner's handover (capture/delivery.ts): the shuttle at the airlock the slab goes into, in place of a wheel.
  */
 export interface StasisJob {
-  phase: 'fetch' | 'seal' | 'pickup' | 'stow' | 'ship';
+  phase: 'fetch' | 'seal' | 'pickup' | 'stow' | 'ship' | 'unstow';
+  /** Unstow: the slab is on the cart already (the hatch shuts behind it before the job moves on). */
+  lifted?: boolean;
+  /** A handover: the shuttle whose rack the slab is carted to (capture/delivery.ts). */
+  deliver?: number;
   from?: SlabSource;
   wheel?: number;
   /** Ship: the shuttle whose rack the slab goes into. */

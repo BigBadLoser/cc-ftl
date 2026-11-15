@@ -1202,6 +1202,25 @@ are unchanged. After the answer the window stays open with how it ended and the 
   - **Fill levels from layers:** a base with every socket empty, one layer per slot (its slab, the base held out) and
     one face mask per slot, composited back to front. Because the Geneva drive stops in whole steps, ten rest positions
     cover every fill level. Only faces turned toward the camera get a mask.
+- **Cashing in prisoners at stations (built, #116, user decisions 2026-11-15; mock A):** a station's channel gets a **Prisoners** service only
+  while that station has a deal for a prisoner the player holds, ready to hand over or not yet (`stationWants`; "1 offer" / "not ready yet" / "1 under
+  way"). The COMMS pane lists every prisoner held (the crew panel's frozen portrait, `ui/crew/Face.svelte`; faction; where). A row has a button only
+  when this station makes a deal now; otherwise one dim line says where to take them or what has to happen first. One deal per station and prisoner
+  (`prisonerOffer`, capture/offers.ts): **ransom** at a station of their own faction (`Prisoner.from`), else a **bounty** for a pirate at a navy or
+  corporate station, else a **black market** set on the station takes anyone (standing with the set's owner, else the station's). Credits are a
+  base plus a step per level of the prisoner's best skill (`capture/tuning.ts`: ransom 140 + 20/level, +2 standing; bounty 100 + 15/level, +2;
+  market 80 + 12/level, +1; "fine for now"). Only a sealed slab in a wheel or on the floor of the player's ship is handed over.
+  - **Real delivery, never instant ("all such deliveries need to be real"):** accepting opens a handover run like a delivery crate's
+    (galaxy/handover.ts, `Deal.handover.prisoner`): the station's own shuttle comes to the airlock (a trader kind with a shuttle; no station has one
+    in today's content) or the player's shuttle docks at the airlock. Crew take the slab out of its wheel (it turns their slot to the hatch and the loading animation plays backwards, the slab ending on the cart), or off the floor, and cart it into the
+    shuttle's rack (capture/delivery.ts). The credits and standing are paid when the slab **reaches the station** (the player's shuttle beside it,
+    or the station's back home), on the terms agreed at the click. The station keeps the slab (it is in the price, as a crate goes with its goods).
+    With no shuttle or no working airlock the row says so and there is no button. While a run is under way the row shows "Loading your shuttle…" ("Collecting…" for a station's shuttle; with
+    Cancel) or "On the way to the station" in place of the button. Jumping is blocked while it runs, as for any live deal.
+  - **When it falls through:** a fight, no dock in time, a cancel, or the prisoner thawing calls the run off and logs why. The slab is set down by
+    the airlock and carted back to a wheel; one already out in the player's shuttle rides home and is set down by the bay. A shuttle destroyed with
+    the slab aboard loses the prisoner (logged). A run called off is not retried on its own: accept the deal again.
+  - Recruiting is not in this slice: it happens over time aboard.
 - **What to do with prisoners:** recruit one over time (odds by faction and mood), ransom them to their faction (credits
   and a little standing), hand pirate prisoners to navy or corporation stations for a bounty (credits and standing), hand
   them over at a black market (credits, and cartel standing), or release them (standing with their faction).

@@ -5,7 +5,7 @@ import type { ModuleDef } from '../sim/registry';
 import { slabDrainingIn, stowStage, wheelSlots, type WheelSlot } from '../sim/stasis/query';
 import { ringAfter } from '../sim/stasis/ring';
 import { moduleLayers, type ModuleLayer, type ModuleLook } from './moduleArt';
-import { loadPlan, loadTick, patchId, RUN_IN_TICK, turnPlan, type LoadPlan } from './stasisLoad';
+import { loadPlan, loadTick, patchId, RUN_IN_TICK, turnPlan, unloadPlan, type LoadPlan } from './stasisLoad';
 
 /**
  * The stasis wheel's layers (#116; sprites from tools/blender/sprites/slab_game.py, lab panel `stasis`). The base
@@ -57,7 +57,7 @@ export function wheelView(world: World, id: number): { slots: WheelSlot[]; load:
   const st = stowStage(world, id);
   if (!st) return { slots, load: null };
   if (st.stage.turning) return { slots: ringAfter(slots, st.stage.step), load: turnPlan(st.stage.step, st.stage.frac) };
-  return { slots: ringAfter(slots, st.turns), load: loadPlan(loadTick(st.stage.load)), prisoner: st.prisoner };
+  return { slots: ringAfter(slots, st.turns), load: st.out ? unloadPlan(st.stage.load) : loadPlan(loadTick(st.stage.load)), prisoner: st.prisoner };
 }
 
 /** Slots back to front for rotation `rot`: the order full slots are drawn in (fixed: the wheel rests in whole steps). */
@@ -74,7 +74,8 @@ export function stasisLayers(
   const out: ModuleLayer[] = [main];
   // A slot with a slab in it, empty or full, shows the slab (a full one's prisoner face is a later layer); a slot with none shows the bare socket.
   const { slots, load, prisoner } = wheelView(world, id);
-  const gone0 = !!load && (load.home || load.tick >= RUN_IN_TICK);          // slot 0's old empty slab is out of the way
+  // Slot 0's old empty slab is out of the way, or (an unload) its slab is the one the patches take out.
+  const gone0 = !!load && (load.home || !!load.out || load.tick >= RUN_IN_TICK);
   slotOrder(m.rot).forEach((i, k) => {
     if ((slots[i]?.kind ?? 'none') === 'none' || (i === 0 && gone0)) return;
     const sid = `${def.asset}.slot${i}.r${m.rot}`;
@@ -96,7 +97,7 @@ export function stasisLayers(
   const lit = pulseLit(look?.now ?? 0);
   slots.forEach((s, i) => {
     const lamp = lampOf(world, s);
-    if ((i === 0 && load?.home) || lamp === 'off' || (lamp === 'red' && !lit)) return;
+    if ((i === 0 && (load?.home || (load?.out && load.tick < RUN_IN_TICK))) || lamp === 'off' || (lamp === 'red' && !lit)) return;
     out.push({ chain: [`${def.asset}.lamp${i}.r${m.rot}`], key: `${def.asset}.lamp${i}`, tiles: 'all', dz: LAMP_DZ, optional: true, tint: LAMP_TINT[lamp] });
   });
   return out;

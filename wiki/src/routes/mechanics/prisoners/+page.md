@@ -89,9 +89,33 @@ the reserves.
 When a reserve runs out, that prisoner **thaws out inside your ship, hostile**, and fights your crew. The slab they were
 in is left empty.
 
+## Handing prisoners over at a station
+
+Stations pay for sealed prisoners. When you talk to a station, its list of services shows **Prisoners** only when that
+station would take one of yours. It lists every prisoner you hold, with what this station offers:
+
+- **Ransom:** a station of the faction the prisoner was taken from buys them back.
+- **Bounty:** a navy or corporate station pays for a pirate.
+- **Black market:** a station with a black market takes anyone.
+
+The price rises with the prisoner's best skill, and the deal also raises your standing with the faction that pays. A row
+without a button says why: where to take them instead, or what has to happen first. A prisoner must be sealed in a slab
+aboard your own ship, not on a captured one, and a shuttle must be able to come for the slab: you need a working airlock
+and a shuttle.
+
+Nothing is handed over by hand. When you accept, your shuttle docks at your airlock (or the station sends its own
+shuttle, if it has one). The wheel turns the prisoner's slot to its hatch and runs the slab out onto a crew member's hover cart. They cart it aboard, and the shuttle takes it to the
+station. You are paid when the slab **reaches the station**. The station keeps the slab: it is part of the price. While
+this is going on the row says **Loading your shuttle…** (with **Cancel**), then **On the way to the station**, and you can't jump
+until it is done.
+
+If the hand-over falls through (a fight breaks out, the shuttle can't dock, you cancel, or the prisoner thaws), the log
+says why and nothing is paid. The slab is set down by the airlock and your crew cart it back to a wheel; if it was
+already out in your shuttle, it comes home with it. A shuttle destroyed with the slab aboard loses the prisoner. To try
+again, accept the deal again.
+
 <ComingLater>
 
-What you can do with prisoners once they are held: handing them over at a station for ransom or a bounty, selling them
-at a black market, or recruiting one.
+Recruiting a prisoner into your crew.
 
 </ComingLater>

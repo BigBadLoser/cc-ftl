@@ -9,11 +9,12 @@ import { PLAN_INTERVAL } from '../tuning';
 import { StasisC } from './components';
 import { dropSlab, thawPrisoner } from './freeze';
 import { keepCartRests } from './cart';
-import { aimFetch, slabDestination, stasisRoom } from './jobs';
+import { aimFetch, postSlabJob, slabDestination, stasisRoom } from './jobs';
 import { tendShuttles } from './shuttle';
 import { scrapSealJob, sealMarked } from './order';
 import { cartsFor, fullSlabs, slabDraining, slabHeld, wheelHatch, wheelOf } from './query';
 import { REFILL_PER_TICK, RESERVE_TICKS } from './tuning';
+import { VehicleC } from '../vehicles/components';
 
 /** Work value of the phases that end by an act, not by progress (the seal phase sets its own). */
 const ACT_WORK = 1;
@@ -78,7 +79,7 @@ function planJobs(sim: Sim): void {
     const s = sim.world.get(id, StasisC);
     const ship = s ? shipIdAt(sim, s.x, s.y) : 0;
     if (!s || s.at !== 'floor' || handled.has(id) || !ships.has(ship) || !slabDestination(sim, ship, s) || !take(ship)) continue;
-    post(sim, { kind: 'stasis', x: s.x, y: s.y, target: id, stasis: { phase: 'pickup' } });
+    postSlabJob(sim, s, id, { phase: 'pickup' });
   }
   for (const id of [...sim.world.query(PrisonerC, PositionC, CrewC)].sort((a, b) => a - b)) {
     const pos = sim.world.get(id, PositionC);
@@ -91,9 +92,6 @@ function planJobs(sim: Sim): void {
   }
 }
 
-function post(sim: Sim, job: Pick<Job, 'kind' | 'x' | 'y' | 'target' | 'stasis'>): void {
-  sim.world.add(sim.world.createEntity(), JobC, { category: 'hauling', struct: 0, work: ACT_WORK, progress: 0, reservedBy: 0, ...job });
-}
 
 /** A prisoner who can be sealed now: alive, in the world, not being carried. */
 const sealable = (sim: Sim, id: number): boolean =>
@@ -104,6 +102,9 @@ function keep(sim: Sim, job: Job): boolean {
   const st = job.stasis;
   const prisoner = job.target ?? 0;
   if (!st || !sim.world.has(prisoner, CrewC) || sim.world.has(prisoner, DeadC)) return false;
+  // A handover's job (capture/delivery.ts) lasts while its shuttle waits sealed for the slab; the run posts it again when it is gone.
+  if (st.deliver && !sim.world.get(st.deliver, VehicleC)?.outbound) return false;
+  if (st.phase === 'unstow') return st.lifted ? !!job.reservedBy && cartsFor(sim, job.reservedBy, prisoner) : sim.world.get(prisoner, StasisC)?.at === 'wheel';
   if (st.phase === 'fetch' || st.phase === 'seal') {
     const pos = sim.world.get(prisoner, PositionC);
     if (!pos || !sealMarked(sim, prisoner) || !sealable(sim, prisoner) || !playerShips(sim).has(shipIdOf(sim, pos))) return false;

@@ -5,6 +5,7 @@
  * at game speed. Each hatch tick is a PATCH, `stasisload.<name>.r<rot>`: the pixels of the wheel that differ from the shut, empty
  * wheel, anchored on its origin and drawn over the wheel (and its other slabs) under the rim lamps. The cart in the patches ha0-hl9
  * is the crew member's own: the game hides its cart sprite while the load runs (stowingNow). The slab shows as slot 0's own layer from the star steps on.
+ * `unloadPlan` plays the hatch frames backwards to take a slab out.
  */
 
 const range = (n: number, f: (i: number) => string): string[] => Array.from({ length: n }, (_, i) => f(i));
@@ -34,6 +35,8 @@ export interface LoadPlan {
   patch: string | null;
   /** Slot 0's slab and its lamp (cyan: a prisoner held) are drawn as the wheel's own layers: the slab is home. */
   home: boolean;
+  /** An unload (`unloadPlan`): the patches draw the slab leaving slot 0, so slot 0's own layer is not drawn. */
+  out?: boolean;
 }
 
 /** The animation's tick for a stow's progress 0..1. */
@@ -43,6 +46,17 @@ export function loadPlan(tick: number): LoadPlan {
   const t = Math.max(0, Math.min(LOAD_TICKS - 1, Math.floor(tick)));
   const n = HATCH_FRAMES.length;
   return { tick: t, key: `L${t}`, patch: t < n ? (HATCH_FRAMES[t] as string) : t < n + STAR_FRAMES ? `s${t - n}` : null, home: t >= n };
+}
+
+/**
+ * Taking a slab out (a handover, sim phase 'unstow'): the load's hatch frames backwards over the unload's progress 0..1. The leaves part, the
+ * shuttle runs the slab out onto the cradle and tips it flat, the cart glides in empty, the slab is lifted onto it and the cart leaves; the
+ * cradle folds and the leaves shut. No star step: the wheel turned the prisoner's slot to the hatch first (`turnPlan`).
+ */
+export function unloadPlan(progress: number): LoadPlan {
+  const n = HATCH_FRAMES.length;
+  const t = Math.max(0, Math.min(n - 1, Math.floor(progress * n)));
+  return { tick: n - 1 - t, key: `U${t}`, patch: HATCH_FRAMES[n - 1 - t] as string, home: false, out: true };
 }
 
 /** The wheel turning: step `step` of the ring done, `frac` (0..1) through the next star step (its frames s0-s5); the hatch stays shut. */

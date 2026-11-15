@@ -197,14 +197,15 @@ export const wheelHolding = (sim: Sim, wheel: number): boolean => (sim.world.get
 
 /**
  * Where the stow at a wheel's hatch stands, or null when nobody is stowing there (or they have not started): the progress of a stasis job in its
- * stow phase at this wheel, split into the wheel's turn and the load (ring.ts); `crew` is the crew member doing it (the job's reservedBy), `prisoner` the one in the slab (the job's target). The loading animation plays over it (render/stasisLoad.ts).
+ * stow phase at this wheel (or its unstow: `out`, the load played backwards), split into the wheel's turn and the load (ring.ts); `crew` is the crew member doing it (the job's reservedBy), `prisoner` the one in the slab (the job's target). The loading animation plays over it (render/stasisLoad.ts).
  */
-export function stowStage(world: World, wheel: number): { crew: number; prisoner: number | undefined; turns: number; stage: StowStage } | null {
+export function stowStage(world: World, wheel: number): { crew: number; prisoner: number | undefined; turns: number; out: boolean; stage: StowStage } | null {
   for (const job of world.query(JobC)) {
     const j = world.get(job, JobC);
-    if (j?.kind === 'stasis' && j.stasis?.phase === 'stow' && j.stasis.wheel === wheel && j.progress > 0 && j.work > 0 && j.reservedBy) {
+    const out = j?.stasis?.phase === 'unstow';
+    if (j?.kind === 'stasis' && (j.stasis?.phase === 'stow' || out) && j.stasis?.wheel === wheel && j.progress > 0 && j.work > 0 && j.reservedBy) {
       const turns = j.stasis.turns ?? 0;
-      return { crew: j.reservedBy, prisoner: j.target, turns, stage: stowStageAt(j.progress, turns) };
+      return { crew: j.reservedBy, prisoner: j.target, turns, out, stage: stowStageAt(j.progress, turns, out) };
     }
   }
   return null;

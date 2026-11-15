@@ -120,6 +120,16 @@ export function stowSlab(sim: Sim, prisoner: number, wheel: number): number {
   return slots.length - 1;
 }
 
+/** Take a full slab out of its wheel slot onto `crew`'s hover cart (a handover: the slot is left empty, the slab goes with the prisoner). */
+export function unstowSlab(sim: Sim, prisoner: number, crew: number): boolean {
+  const w = wheelOf(sim, prisoner);
+  const slots = w && sim.world.get(w.wheel, StasisWheelC)?.slots;
+  if (!w || !slots) return false;
+  slots[w.slot] = SLOT_NONE;
+  liftSlab(sim, prisoner, crew);
+  return true;
+}
+
 /**
  * Hand the slab into the rack of the shuttle `vehicle` (on `at`, its rack tile): it keeps its charge there, and rides where the shuttle goes. A rack
  * with no free place sets one of its empty slabs out first (`rackRoom`: empty slabs make way).
