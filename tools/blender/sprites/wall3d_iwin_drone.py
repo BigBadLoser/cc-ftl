@@ -333,8 +333,12 @@ def hook(k, sp, own=True):
                    "wall", 2, Vector((0, 1, 0)), fixed="glassL")
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):
         if on:
-            v = u + sd * e
-            _quad(k, [(v, -h, zt), (v, h, zt), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+            v = u + sd * e                              # (down the post to its flare, then down the flare's
+            za, xf, zf = _flare(u, sd, cells)           # face to the floor: the user)
+            _quad(k, [(v, -h, za), (v, h, za), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+            nf = Vector((sd * (za - zf), 0.0, abs(xf - u))).normalized()
+            _quad(k, [Vector((x, y, z)) + nf * e for x, y, z in ((u, -h, za), (u, h, za), (xf, h, zf), (xf, -h, zf))],
+                  nf, PANE_EDGE)
 
 
 def _posts(k, x0, x1, z1, cells):
@@ -346,11 +350,6 @@ def _posts(k, x0, x1, z1, cells):
     ztop = z1 - RED_GAP / W.ZART
     zbot = ztop - RED_H / W.ZART
 
-    def zc(x):
-        for xa, xb, z in cells:
-            if xa - 1e-9 <= x <= xb + 1e-9:
-                return z(x)
-        return zt
     for u, sd, ue, on in ((x0, 1, -0.5, x0 > -0.5), (x1, -1, 0.5, x1 < 0.5)):
         if not on:
             continue
@@ -361,8 +360,8 @@ def _posts(k, x0, x1, z1, cells):
         _quad(k, [(xi, -Y, zbot), (xi, Y, zbot), (xi, Y, ztop), (xi, -Y, ztop)], (sd, 0, 0), POSTS["red_side"])
         _quad(k, [(xa, yl, ztop), (xb, yl, ztop), (xb, Y, ztop), (xa, Y, ztop)], (0, 0, 1), POSTS["red_top"])
         _quad(k, [(u, -Y, ztop), (xi, -Y, ztop), (xi, yl, ztop), (u, yl, ztop)], (0, 0, 1), POSTS["red_top"])
-        za, xf = zt + FLARE_H / W.ZART, u + sd * FLARE * PX
-        zf = zc(xf)
+        za, xf, zf = _flare(u, sd, cells)
+        zc = _zcell(cells)
         prof = [(u, za), (xf, zf)]                      # (the flare's face, then back along the block's top)
         b0, c0, c1, b1 = _marks(PART)
         for xm in (b0, b1):
@@ -372,6 +371,22 @@ def _posts(k, x0, x1, z1, cells):
         _quad(k, [(x, yl, z) for x, z in prof], (0, 1, 0), POSTS["foot"])
         nf = Vector((sd * (za - zf), 0.0, abs(xf - u))).normalized()
         _quad(k, [(u, -yl, za), (u, yl, za), (xf, yl, zf), (xf, -yl, zf)], nf, POSTS["flare"])
+
+
+def _zcell(cells):
+    """The cut's floor height at x (the end blocks' flat tops, their slopes, the floor)."""
+    def zc(x):
+        for xa, xb, z in cells:
+            if xa - 1e-9 <= x <= xb + 1e-9:
+                return z(x)
+        return _zt()
+    return zc
+
+
+def _flare(u, sd, cells):
+    """A post's flared foot (its inner side at u, facing sd): (za, xf, zf): its face from (u, za) down to (xf, zf)."""
+    xf = u + sd * FLARE * PX
+    return _zt() + FLARE_H / W.ZART, xf, _zcell(cells)(xf)
 
 
 def _header_foot():

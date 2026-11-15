@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d27)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d28)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -773,3 +773,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the centre slot's block front 2 px further out; a round handle bar 1 px in from either edge, out level with the red boxes' fronts. d25: SLOT_OUT 2 (the block's top and front out to the sill's front edge + 2 px; its sides where it stands over the slope's line, fDW4); `wall3d_iwin_drone_vents.handle`: HANDLE 2 px, legs HANDLE_IN 1 px in from the slot's sides, out of the block's face at mid-height to the boxes' front (toe + BOX_OUT), across, HANDLE_BEND 2 px corners; pipe tones. The pipes' sweep moved into a shared `tube(k, path, r, up)` (piece l pixel-identical, so the pipes are unchanged). Renders: scratchpad `dr25`.
 - 2026-11-15: the user: behind the handle bar, 3 equal recesses with 1 px borders. d26: `wall3d_iwin_drone_vents.slot_face` builds the slot block's front as a FACE_BORDER 1 px frame round FACE_PITS 3 recesses (8 x 13 px on the 28 x 15 face), FACE_DEPTH 2 px (depth my pick, unasked); backs fDS3, ledges fDS2, sides fDX2 (the vents' tones); the handle's legs run back to the recesses' backs. Renders: scratchpad `dr26`.
 - 2026-11-15: the user: the recesses start after the handle's base, 1 px from it. d27: the recesses between the handle's legs (38-58 px along the window: HANDLE_IN + HANDLE + FACE_BORDER in from the slot's sides), 6 px wide, FACE_BORDER 1 px between them and under the face's top and over its foot; the face solid outside them (the legs back on it). Renders: scratchpad `dr27`.
+- 2026-11-15: the user: the pane's edge strip (fTX6) on the window's sides should follow the flared feet's profile. d28: the side edge runs down the post to the flare's top (FLARE_H), then down the flare's face (PANE_OUT proud along its normal) to the floor; `_flare` / `_zcell` shared with `_posts`. Only piece l changes on screen (the r post's flare faces away from the camera). Renders: scratchpad `dr28`.
