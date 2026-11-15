@@ -1,4 +1,5 @@
 import type { Faction } from '../combat/components';
+import type { Recipe } from './assembly/recipe';
 import type { StationDept } from './plan';
 import type { TransitionStyle, Weighted } from './types';
 
@@ -82,6 +83,16 @@ export interface StationDef {
   assemblyDocks?: Readonly<Record<StationSize, number>>;
   /** Enclosed centres (ring courtyards, sectors between spokes) become open rooms of this role, with this chance. */
   atrium?: { role: 'plaza' | 'garden' | 'drill'; chance: number };
+  /**
+   * The station assembly's recipes for this kind: its families (its look), each a list of recipes that are the seed's
+   * variations. A station of the kind is built from these (`buildStation`); without them, by the station grammars.
+   */
+  assembly?: readonly (readonly Recipe[])[];
+  /**
+   * The families an asteroid outpost of this kind is built from, when they differ from the station's (`assembly`): a
+   * station in space may take shapes that don't sit on a rock. Empty: outposts are built by the station grammars.
+   */
+  outpostAssembly?: readonly (readonly Recipe[])[];
 }
 
 /** Largest template a station may have (tiles per side): a hub is much bigger than any ship but stays one region. */

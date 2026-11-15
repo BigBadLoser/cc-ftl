@@ -16,6 +16,7 @@ import { spillItems } from '../sim/items/stacks';
 import { ModuleC } from '../sim/modules/components';
 import { playerStorages } from '../sim/story/world';
 import { reputationOf } from '../sim/story/state';
+import { regions } from '../sim/regions';
 import { content } from './index';
 
 const STOLEN = 'item.stolen_goods';
@@ -258,7 +259,9 @@ describe('truce', () => {
   function market(): { sim: Sim; station: number; foe: number } {
     const w = withStation();
     attachServices(w.sim, w.station, 'bm.cartel');
-    w.sim.enqueue({ type: 'debug.spawnEnemy', template: Object.keys(content.ships)[1] as string, x: 150, y: 60 });
+    // Above the player's ship: open space whatever the station's shape.
+    const mine = regions(w.sim).find((r) => r.ship === playerShip(w.sim))!;
+    w.sim.enqueue({ type: 'debug.spawnEnemy', template: Object.keys(content.ships)[1] as string, x: mine.bbox.x, y: 2 });
     run(w.sim, 2);
     const foe = w.sim.world.query(ShipC).find((i) => w.sim.world.get(i, ShipC)!.faction === 'hostile')!;
     return { ...w, foe };

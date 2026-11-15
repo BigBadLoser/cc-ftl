@@ -12,7 +12,9 @@ import { generateAsteroid } from '../asteroids/gen';
 import type { AsteroidPlan, OreDef } from '../asteroids/types';
 import type { ModuleDef, ShipTemplate } from '../registry';
 import { Rng } from '../rng';
-import { generateStation, type StationResult } from '../shipgen/stationGen';
+import { rotateLayout } from '../shipgen/rotate';
+import { buildStation } from '../shipgen/stationBuild';
+import type { StationResult } from '../shipgen/stationGen';
 import type { StationDef } from '../shipgen/stationTypes';
 import { isAsteroidRock, Struct } from '../structure';
 import { builtOf, carveInRock, dropBuriedAirlocks, pickDock, placeAt, type Dock } from './site';
@@ -79,9 +81,9 @@ function shape(plan: AsteroidPlan, style: OutpostStyle, t: ShipTemplate, dock: D
       if (style === 'surface' || b.has(lx, ly)) clear(i);
     }
   }
-  // the notch: three columns of open space from the dock's collar out to the plan's edge
-  for (let cx = at.x + dock.outer.x - 1; cx <= at.x + dock.outer.x + 1; cx++) {
-    for (let py = at.y + dock.collar.y; py >= 0 && py < plan.h; py += dock.dir) {
+  // the notch: the dock's columns open to space from its outer door's row out to the plan's edge
+  for (let cx = at.x + dock.cols[0]; cx <= at.x + dock.cols[1]; cx++) {
+    for (let py = at.y + dock.outer.y; py >= 0 && py < plan.h; py += dock.dir) {
       if (b.has(cx - at.x, py - at.y)) continue;
       const i = py * plan.w + cx;
       plan.struct[i] = Struct.Space;
@@ -104,11 +106,17 @@ export function generateOutpost(style: OutpostStyle, seed: number, content: Outp
   for (let s = 0; s < OUTPOST.stations; s++) {
     let station: StationResult;
     try {
-      station = generateStation(def, stationKind, 'outpost', (seed + s * 104729) >>> 0, content.modules);
+      station = buildStation(def, stationKind, 'outpost', (seed + s * 104729) >>> 0, content.modules, def.outpostAssembly ?? def.assembly);
     } catch {
       continue;
     }
-    const dock = station.problems.length === 0 ? pickDock(station.template, content.modules) : null;
+    if (station.problems.length > 0) continue;
+    // An assembled station's harbour may face east or west: turn it a quarter at a time until a dock faces north or south.
+    let dock = pickDock(station.template, content.modules);
+    for (let q = 1; q < 4 && !dock; q++) {
+      station = rotateLayout(station, content.modules);
+      dock = pickDock(station.template, content.modules);
+    }
     if (!dock) continue;
     const template = { ...(style === 'dug' ? carveInRock(station.template, content.modules) : station.template), name: `${k} outpost` };
     const b = builtOf(template);

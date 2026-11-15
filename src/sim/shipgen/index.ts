@@ -17,6 +17,7 @@ export { missing as missingRooms } from './assembly/finish';
 export { hullProblems } from './assembly/hull';
 export { stationProgram, warehoused, withCommons } from './assembly/program';
 export { assembleStation } from './assembly/station';
+export { buildStation } from './stationBuild';
 export { recipeAt, type BranchRule, type Recipe } from './assembly/recipe';
 export type { RoomSpec, StationDept } from './plan';
 export { STATION_MAX, STATION_SIZES, type StationDef, type StationGrammar, type StationInfo, type StationKind, type StationRoomDef, type StationSize, type StationTier } from './stationTypes';

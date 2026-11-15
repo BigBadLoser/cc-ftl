@@ -2,7 +2,7 @@ import { ShipC, type Faction } from '../combat/components';
 import { shipById, spawnShip } from '../combat/ships';
 import { placeAt, placementGapError, regions, shipGrid, shipIdOf, type Place } from '../regions';
 import { isTileWalkable } from '../modules/walk';
-import { generateStation } from '../shipgen/stationGen';
+import { buildStation } from '../shipgen/stationBuild';
 import type { StationSize } from '../shipgen/stationTypes';
 import type { Sim } from '../sim';
 import { ensureTrader } from '../trade/traders';
@@ -30,7 +30,7 @@ const STATION_GAP = 2 * REGION_PAD + MIN_SHIP_GAP + 8;
 export function spawnStation(sim: Sim, kind: string, size: StationSize, seed: number, at?: Place, name?: string, side?: Faction): number | string {
   const def = sim.content.stations?.[kind];
   if (!def) return 'badKind';
-  const gen = generateStation(def, kind, size, seed >>> 0, sim.content.modules);
+  const gen = buildStation(def, kind, size, seed >>> 0, sim.content.modules);
   if (gen.problems.length > 0) return 'noLayout';
   let { x, y } = at ? placeAt(at, gen.width, gen.height) : { x: 0, y: 0 };
   if (!at) {
