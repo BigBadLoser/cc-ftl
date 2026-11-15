@@ -1,14 +1,13 @@
-"""The civil window's ramp notch (wall3d_iwin_civil; ref 428's lower layer): a long pocket cut RECESS px straight back into
-the near ramp's slope, across the window from where the end blocks' slopes start (their top edge, BLOCK in from its
-ends), from BELOW sprite px over the ramp's edge (where the slope meets the foot) open all the way up to the top (the
-floor in front of the pane, the end blocks' slopes and tops over its ends) (the user). Its back parallel to the slope,
-a ledge along its foot, its end walls up to the end blocks' tops; in the look's own wall ramp, darker than the slope
-(the wall family's levels all come out the slope's white in civil). Coordinates as the civil module's: +y is the near side, the mesh's -y (core.G)."""
+"""The civil window's ramp notch (wall3d_iwin_civil; ref 428's lower layer): a long pocket cut into the near ramp's slope,
+across the window from where the end blocks' slopes start (their top edge, BLOCK in from its ends), from BELOW sprite px
+over the ramp's edge (where the slope meets the foot) up to where the ramp ends (the floor's front): its back upright,
+straight down from the floor's front edge to a ledge along its foot, its end walls triangles (the user); in the look's
+own wall ramp, darker than the slope (the wall family's levels all come out the slope's white in civil). Coordinates as
+the civil module's: +y is the near side, the mesh's -y (core.G)."""
 from . import walls as W
 from .wall3d_iwin_drone_vents import _carve
 
 BELOW = 7                   # sprite px: the slope left under it, over the ramp's edge (the ref's 8)
-RECESS = 5                  # px: its depth, straight back into the slope
 STEP = {"back": 3, "ledge": 5, "side": 6}  # steps of the look's wall ramp (civil v1: the slope is fC1W2; the ref's
                                             # back, floor and end wall c1cac8, 9ea9ad, 68737f)
 
@@ -37,29 +36,18 @@ def _foot_z():
     return W.foot() + BELOW / _rows(_c()._fall())
 
 
-def _back_y(z):
+def notch(k, part):
     C = _c()
-    return C._out(z) - RECESS * C.PX
-
-
-def notch(k, part, cells):
-    """cells: the window's floor under the opening (wall3d_iwin_civil._cells): the notch's top at each x."""
-    C = _c()
-    f, zt, yl = C._fall(), C._zt(), C._line()
+    zf, zt, yf = C._zf(), C._zt(), C._front()
     z1 = _foot_z()
     u0, u1 = _span(part)
-    back = ((0.0, -f, 1.0), zt + f * yl - RECESS * C.PX * f)    # (mesh y: in front of the back plane)
-    _carve(k, [(0, u0, 1), (0, u1, -1), (2, z1, 1), (2, zt + 1e-4, -1), back])
-    ys1, yb1 = C._out(z1), _back_y(z1)
-    for xa, xb, z in cells:
-        a, b = max(xa, u0, -0.5), min(xb, u1, 0.5)
-        if b - a < 1e-9:
-            continue
-        za, zb = z(a), z(b)
-        C._quad(k, [(a, _back_y(za), za), (b, _back_y(zb), zb), (b, yb1, z1), (a, yb1, z1)], (0, f, 1), _col("back"))
-        C._quad(k, [(a, yb1, z1), (b, yb1, z1), (b, ys1, z1), (a, ys1, z1)], (0, 0, 1), _col("ledge"))
+    _carve(k, [(0, u0, 1), (0, u1, -1), (2, z1, 1), (2, zt + 1e-4, -1), (1, -yf, -1)])   # (mesh y: in front of the back)
+    a, b = max(u0, -0.5), min(u1, 0.5)
+    if b - a < 1e-9:
+        return
+    ys1 = C._out(z1)
+    C._quad(k, [(a, yf, zf), (b, yf, zf), (b, yf, z1), (a, yf, z1)], (0, 1, 0), _col("back"))
+    C._quad(k, [(a, yf, z1), (b, yf, z1), (b, ys1, z1), (a, ys1, z1)], (0, 0, 1), _col("ledge"))
     for u, sd in ((u0, 1), (u1, -1)):
-        if not -0.5 < u < 0.5:
-            continue
-        zu = next(z(u) for xa, xb, z in cells if xa - 1e-9 <= u <= xb + 1e-9)
-        C._quad(k, [(u, _back_y(zu), zu), (u, C._out(zu), zu), (u, ys1, z1), (u, yb1, z1)], (sd, 0, 0), _col("side"))
+        if -0.5 < u < 0.5:
+            C._quad(k, [(u, yf, zf), (u, ys1, z1), (u, yf, z1)], (sd, 0, 0), _col("side"))

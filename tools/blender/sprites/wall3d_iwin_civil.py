@@ -180,7 +180,7 @@ def hook(k, sp, own=True):
     if b > a:
         _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), LVL["under"])
     _corners(k, x0, x1, z1)
-    NT.notch(k, PART, cells)                                                 # (ref 428's ramp notch)
+    NT.notch(k, PART)                                                        # (ref 428's ramp notch)
     if not own:
         return
     h, e = PANE_T / 2, PANE_OUT
