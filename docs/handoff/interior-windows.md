@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c8: the notch's modules)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c9: the notch's details)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c8, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c9, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -787,3 +787,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the notch looks right at c6. Still open on civil: the modules inside the notch, the ref's dark blue end blocks (ours white), the corner radius.
 - 2026-11-15: the user: skip the blue end blocks and the corner radius. c7: the notch's modules, a first pass: MODULES in `wall3d_iwin_civil_notch.py`, plain boxes on its ledge against its back ((14-30, 5 deep, 4 high), (32-41, 4, 6), (44-66, 4, 8), (68-82, 4, 6): px along the window, depth px, height art px; each inside the slope's line), ref 428's long low one, small one, big middle one, right one; top fC1W1, front W2, sides W5. The plain wall pixel-identical. Renders: scratchpad `cv7`.
 - 2026-11-15: c8 (the user: the ref is symmetric; the middle box's front is a ramp, its top 1 px higher than the window's floor (asked: higher, not further out)): MODULES symmetric about px 48 with 1 px gaps: outer 13-27 / 69-83 (5 deep, 4 high), small 28-37 / 59-68 (4, 6), middle 38-58: top RISE 1 art px over zf, 3 px deep, its front a ramp down to 6 px out on the ledge. The plain wall pixel-identical. Renders: scratchpad `cv8`.
+- 2026-11-15: c9, a detail pass on the notch's boxes (the user: a little visual interest): the low boxes a 2 px seam across the top's middle (W4) and three 2 px vent slits 1 px apart on the front (W6, 2 art px high, 1 over the ledge); the small boxes a 3x2 indicator in the look's trim ramp (fC1T2) 1 art px under the top; the middle box's ramp a step darker (W3) and split into three 6 px panels by 1 px seams (px 44, 51). Everything centred on the px grid and mirror-symmetric. Details are decals DECAL 0.002 off their faces. The plain wall pixel-identical. Renders: scratchpad `cv9`.
