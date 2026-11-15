@@ -331,6 +331,40 @@ def g9(i, j):
 DESIGNS.update({"g7": g7, "g8": g8, "g9": g9})
 
 
+# Grating, round 4 (round 3 still busy: the busyness is contrast, so two close tones, no highlights, a quiet frame):
+#   g10 quiet G7: G7's frame and four bars, bars steel on steelD gaps, the frame one plain band
+#   g11 quiet G9: G9's two wide bars in the same two tones
+#   g12 shadow slots: a plain deck panel whose field is cut by four soft slots, a step darker, nothing lit
+
+
+def _quiet_ring(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 6 or j < 6 or i > 57 or j > 57:
+        return "steel"
+    return None
+
+
+def g10(i, j):
+    return _quiet_ring(i, j) or ("steel" if (i - 6) % 13 < 7 else "steelD")
+
+
+def g11(i, j):
+    return _quiet_ring(i, j) or ("steel" if (i - 6) % 26 < 14 else "steelD")
+
+
+def g12(i, j):
+    p = _panel(i, j)
+    if p:
+        return p
+    if 12 <= j <= 51 and 10 <= i <= 53 and (i - 10) % 12 < 8:
+        return "steelD" if (i - 10) % 12 < 7 else "seam"
+    return "steel"
+
+
+DESIGNS.update({"g10": g10, "g11": g11, "g12": g12})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
