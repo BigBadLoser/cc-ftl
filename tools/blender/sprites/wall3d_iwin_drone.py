@@ -42,6 +42,14 @@ VENTS = ((3, 13), (83, 93))  # the end blocks' vents: dark panels down their slo
 FRONT = {"box": "fDM2", "box_top": "fDM1", "box_side": "fDM3", "slot_floor": "fDW3", "slot_back": "fDX3",
          "slot_side": "fDX2", "sblock_top": "fDW2", "sblock_front": "fDW3",
          "vent": "fDS3", "rib_top": "fDW2", "rib_side": "fDW4", "step": "fDW3"}
+# The posts (the ref's upper layer, its 29 px post scaled to our 34): a red sleeve under the header, a foot flaring into
+# the opening down onto the end block (the ref's 5 px over its bottom 12 rows).
+RED_GAP = 2                 # art px: the sleeve's top under the header's foot (the ref's dark band under the pipe)
+RED_H = 14                  # art px: the sleeve's height (the ref's 12)
+RED_OUT = 1                 # art px: proud of the post (front, back, inner side)
+FLARE = 5                   # px: the foot's reach into the opening at its bottom (on the end block, down its slope)
+FLARE_H = 14                # art px: the flare's height over the end block's flat top
+POSTS = {"red": "fDM2", "red_side": "fDM3", "red_top": "fDM1", "foot": "fDW3", "flare": "fDW2"}
 PANE_EDGE = "fTX6"
 PANE_T = 1 / 32
 PANE_OUT = 0.003
@@ -294,6 +302,7 @@ def hook(k, sp, own=True):
     for u, sd, on in ((x0, 1, x0 > -0.5), (x1, -1, x1 < 0.5)):          # the posts' sides, the block's top up
         if on:
             _quad(k, [(u, -yl, zt), (u, yl, zt), (u, yl, z1), (u, -yl, z1)], (sd, 0, 0), COL["post"])
+    _posts(k, x0, x1, z1, cells)
     a, b = max(x0, -0.5), min(x1, 0.5)
     _quad(k, [(a, -yl, z1), (b, -yl, z1), (b, yl, z1), (a, yl, z1)], (0, 0, -1), COL["under"])
     _box_cuts(k)
@@ -317,6 +326,43 @@ def hook(k, sp, own=True):
         if on:
             v = u + sd * e
             _quad(k, [(v, -h, zt), (v, h, zt), (v, h, z1), (v, -h, z1)], (sd, 0, 0), PANE_EDGE)
+
+
+def _posts(k, x0, x1, z1, cells):
+    """Each post's red sleeve (RED_OUT proud, RED_GAP under the header's foot) and its flared foot (its inner side
+    sloping out FLARE into the opening from FLARE_H over the end block down onto it). Near faces only (+y here: a far
+    face showed through a lone piece's open end)."""
+    yl, zt = _line(), _zt()
+    o = RED_OUT * PX
+    ztop = z1 - RED_GAP / W.ZART
+    zbot = ztop - RED_H / W.ZART
+
+    def zc(x):
+        for xa, xb, z in cells:
+            if xa - 1e-9 <= x <= xb + 1e-9:
+                return z(x)
+        return zt
+    for u, sd, ue, on in ((x0, 1, -0.5, x0 > -0.5), (x1, -1, 0.5, x1 < 0.5)):
+        if not on:
+            continue
+        xi = u + sd * o
+        xa, xb = min(ue, xi), max(ue, xi)
+        Y = yl + o
+        _quad(k, [(xa, Y, zbot), (xb, Y, zbot), (xb, Y, ztop), (xa, Y, ztop)], (0, 1, 0), POSTS["red"])
+        _quad(k, [(xi, -Y, zbot), (xi, Y, zbot), (xi, Y, ztop), (xi, -Y, ztop)], (sd, 0, 0), POSTS["red_side"])
+        _quad(k, [(xa, yl, ztop), (xb, yl, ztop), (xb, Y, ztop), (xa, Y, ztop)], (0, 0, 1), POSTS["red_top"])
+        _quad(k, [(u, -Y, ztop), (xi, -Y, ztop), (xi, yl, ztop), (u, yl, ztop)], (0, 0, 1), POSTS["red_top"])
+        za, xf = zt + FLARE_H / W.ZART, u + sd * FLARE * PX
+        zf = zc(xf)
+        prof = [(u, za), (xf, zf)]                      # (the flare's face, then back along the block's top)
+        b0, c0, c1, b1 = _marks(PART)
+        for xm in (b0, b1):
+            if min(u, xf) < xm < max(u, xf):
+                prof.append((xm, zc(xm)))
+        prof.append((u, zc(u)))
+        _quad(k, [(x, yl, z) for x, z in prof], (0, 1, 0), POSTS["foot"])
+        nf = Vector((sd * (za - zf), 0.0, abs(xf - u))).normalized()
+        _quad(k, [(u, -yl, za), (u, yl, za), (xf, yl, zf), (xf, -yl, zf)], nf, POSTS["flare"])
 
 
 def _header_foot():

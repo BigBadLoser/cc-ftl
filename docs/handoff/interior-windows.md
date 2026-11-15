@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-10: windows parked by the user, "sick of windows")
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d16)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -14,8 +14,8 @@ Branch `art/hull-windows`. Read this before touching interior windows. Keep it c
   rail's foot; NO_CENTRE drops the middle tile's centre block); the near ramp bare (no seams/outline/slots) with vents,
   red boxes (17-30, 66-79, at the toe, tops 2 px under the sill, back to it), ribs (13-17, 79-83, 2 px past the toe,
   underside sloping back), the middle slot (34-62, floor at the toe's top, 4 px into the sill) with a block in its
-  back (top 1 px under the sill). Not started: the ref's upper layer (pipe beam with clamps; posts with a red block
-  and a flared foot); real colours (blockout tones from drone's palette; the ref's red-box top is a lighter pink).
+  back (top 1 px under the sill). d16 (2026-11-15): the posts' red sleeves and flared feet (`_posts`). Not started:
+  the ref's pipe beam with clamps (drone's header rail stands in for it); real colours (blockout tones from drone's palette; the ref's red-box top is a lighter pink).
 - Navy: also carries the shade-side work (Navy.paint `<name>x` tones, restyle.Poly.n) and Style.seamless; see the
   2026-11-08/09 log lines.
 - Waiting on the user's go (don't start unasked): #49 (window pieces into the sprite pipeline, the "window" palette
@@ -75,7 +75,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
-| 423 (set 5) | drone | 2765 / 2764 / 2863 | parked at d15 (the user, 2026-11-10: sick of windows): `sprites/wall3d_iwin_drone.py`, upper layer not started |
+| 423 (set 5) | drone | 2765 / 2764 / 2863 | upper layer under way (d16, 2026-11-15): `sprites/wall3d_iwin_drone.py`; posts done, the pipe beam not started |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
@@ -761,3 +761,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-09: the user: the window wants drone's header (a good starting point). d14: faction.drone.BLANK is now a height (None: off): on a window piece drone's face is drawn, then its new polygons dropped under the header's foot (wall3d.Relief.drop_below gains start, the default unchanged): the header's detail kept, the posts bare; the ramp still bare. The plain wall pixel-identical.
 - 2026-11-09: the user: the header's bars off, and its centre white block. d15: faction.drone.BLANK at the rail's foot (rail_foot(): face0's rl), so the dark bars under the rail drop off (the plain band between the opening's top and the rail is the wall's own face); faction.drone.NO_CENTRE skips the rail's centre block, set by wall3d_iwin_drone's PRE_HOOK for the middle piece only (the two outer blocks stay, cut at the rail's foot). The plain wall pixel-identical.
 - 2026-11-09: the user: sick of windows; parked. Drone parked at d15 (`sprites/wall3d_iwin_drone.py`, `preview/jobs_drwin.py`): flat floor 6 px under the ramp top, end blocks, blank posts, drone's header rail with its two outer blocks, the near ramp bare with vents, red boxes, ribs 2 px past the toe and the middle slot with its block. Not started: the ref's upper layer (pipe beam, clamps, posts' red blocks and flared feet), civil and the other looks, pipeline wiring (#49, the user's go).
+- 2026-11-15: the user: back to windows, the drone's upper layer. d16 (measured on the deskewed ref's upper layer: pipe 13 rows, under it a 2-row dark band, a 12-row red block, a 14-row grey foot flaring ~5 px into the opening; its post 29 rows to our 34): `_posts`: a red sleeve (fDM2 front, fDM3 inner side, fDM1 top) RED_OUT 1 px proud, RED_GAP 2 under the header's foot, RED_H 14 tall; a foot flaring FLARE 5 px into the opening from FLARE_H 14 over the end block's flat top down onto its slope (front fDW3, the flare's face fDW2). Near faces only: far ones showed through a lone piece's open end. The plain wall pixel-identical. Renders in this session's scratchpad `dr16c`.
