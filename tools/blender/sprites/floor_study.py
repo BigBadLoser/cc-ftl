@@ -656,6 +656,17 @@ def c1c(i, j):
 DESIGNS.update({"c1a": c1a, "c1b": c1b, "c1c": c1c})
 
 
+# C1 a shade brighter (the user: brighten overall just a bit): every C1 tone one palette step up.
+_UP = {"c4W4": "c4W3", "c4W3": "c4W2", "c4W2": "c4W1", "c4W1": "c4W0", "c4F2": "c4F1"}
+
+
+def _brighter(fn):
+    return lambda i, j: _UP.get(fn(i, j), fn(i, j))
+
+
+DESIGNS.update({f"{k}u": _brighter(f) for k, f in (("c1", c1), ("c1a", c1a), ("c1b", c1b), ("c1c", c1c))})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
