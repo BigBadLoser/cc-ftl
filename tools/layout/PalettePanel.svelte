@@ -45,6 +45,8 @@
 		const rooms = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0).reduce((m, r) => m.set(r.role, (m.get(r.role) ?? 0) + 1), new Map<string, number>()));
 	const placed = $derived((lab.design?.modules ?? []).reduce((m, x) => m.set(x.def, (m.get(x.def) ?? 0) + 1), new Map<string, number>()));
 	const roleTypes = $derived(allRoles());
+	/** The design's rooms by what they are (a pantry, a brig: by role and contents), to find and select one. */
+	const here = $derived((lab.design?.rooms ?? []).filter((r) => r.tiles > 0 && r.role !== 'hall').map((r) => ({ id: r.id, name: r.name || r.role, tiles: r.tiles, color: css(roleTint(r.role)) })).sort((p, q) => p.name.localeCompare(q.name) || p.id - q.id));
 
 	/** Every room type the lab knows, with its colour: the new-room type, and what a selected room can become. */
 	function allRoles() {
@@ -123,5 +125,21 @@
 				</div>
 			</Collapsible.Content>
 		</Collapsible.Root>
+
+		<Separator />
+		<div class="flex flex-col gap-1">
+			<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Rooms here</span>
+			<div class="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
+				{#each here as r (r.id)}
+					<button class="flex items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted {lab.selected?.kind === 'room' && lab.selected.id === r.id ? 'bg-muted' : ''}" onclick={() => lab.select({ kind: 'room', id: r.id })}>
+						<span class="size-3 shrink-0 rounded-sm" style="background:{r.color}"></span>
+						<span class="flex-1 truncate">{r.name}</span>
+						<span class="text-xs text-muted-foreground tabular-nums">{r.tiles}</span>
+					</button>
+				{:else}
+					<span class="text-sm text-muted-foreground">No rooms.</span>
+				{/each}
+			</div>
+		</div>
 	</div>
 </ScrollArea>

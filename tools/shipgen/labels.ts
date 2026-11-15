@@ -15,9 +15,39 @@ export const defs = content.modules as Record<string, ModuleDef>;
 /** Room names on the view (corridors stay unnamed). Keyed by role id, so roles a branch adds later (shop, medbay, plant) are named already. */
 export const NAMES: Record<string, string> = {
   quarters: 'cabin', support: 'mess', cargo: 'cargo', dock: 'dock', bridge: 'office', armoury: 'armoury', plaza: 'court',
-  garden: 'garden', drill: 'drill hall', shop: 'shop', medbay: 'medbay', reactor: 'reactor', shields: 'shields', core: 'ai core',
-  weapons: 'gun bay', plant: 'plant', industry: 'industry', farm: 'farm', hangar: 'hangar', engine: 'engine',
+  garden: 'garden', drill: 'drill', shop: 'shop', medbay: 'medbay', reactor: 'reactor', shields: 'shields', core: 'core',
+  weapons: 'guns', plant: 'plant', industry: 'industry', farm: 'farm', hangar: 'hangar', engine: 'engine',
 };
+
+/**
+ * What a room is, by its role and what it holds, in one word: the one place a tool names a room ("pantry", "brig", "barracks"),
+ * since one role covers several kinds (a cargo room is a hold, a pantry or a tank farm). `mods` are module ids.
+ */
+export function roomKind(role: string, mods: readonly string[]): string {
+  const has = (m: string): boolean => mods.includes(`module.${m}`);
+  const sleepers = mods.filter((m) => m === 'module.bed').length + 2 * mods.filter((m) => m === 'module.bunk').length;
+  if (role === 'hall') return 'corridor';
+  if (has('galley')) return 'mess';
+  if (has('bed') && has('mess_table')) return 'chief';
+  if (role === 'quarters') return sleepers > 1 ? 'barracks' : 'cabin';
+  if (has('stasis_wheel')) return 'brig';
+  if (has('storage_armory')) return 'quartermaster';
+  if (has('research')) return 'lab';
+  if (has('scrapper')) return 'breaker';
+  if (has('fabricator')) return 'workshop';
+  if (has('storage_tank')) return 'tanks';
+  if (has('storage_cold') || (role === 'cargo' && has('storage_rack'))) return 'pantry';
+  if (has('battery') && !has('reactor') && !has('reactor.mk2') && !has('reactor.mk3') && !has('shieldGen')) return 'batteries';
+  if (has('recovery') && mods.filter((m) => m === 'module.med_bed').length <= 1) return 'trauma';
+  if (has('droneBay')) return 'drones';
+  if (has('vehicle_bay')) return 'shuttle';
+  if (has('pod_bay')) return 'pods';
+  if (has('storage_ore')) return 'ore';
+  if (has('exercise')) return 'gym';
+  if (has('arcade')) return 'rec';
+  if (role === 'support' && has('storage_locker')) return 'suits';
+  return NAMES[role] ?? role;
+}
 
 /** Two-letter codes for furniture by module name; anything else takes its name's first two letters. */
 export const CODES: Record<string, string> = {
@@ -62,6 +92,10 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   const r = new Raster(W * t + KEY, Math.max(H * t + TOP + 10, 760));
   r.text(title, 8, 12, INK, 3);
   const mid = new Map<number, [number, number, number]>();
+  // What each room holds, by the tile a module stands on (for its name: roomKind).
+  const mods: string[][] = roles.map(() => []);
+  for (const m of g.template.modules ?? []) mods[g.roomOf[m.y * g.width + m.x] ?? -1]?.push(m.def);
+  const kinds = new Map<string, RoomRole>(roles.map((role, i) => [roomKind(role, mods[i] ?? []), role]));
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const c = rows[y]?.[x] ?? '.';
     if (c === '.') continue;
@@ -89,7 +123,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   }
   // Room names at the middle of every room big enough to carry one.
   for (const [room, [sx, sy, n]] of names ? mid : []) {
-    const name = NAMES[roles[room] as string];
+    const name = roomKind(roles[room] as string, mods[room] ?? []);
     if (!name || n < 10) continue;
     const cx = (sx / n) * t + (t >> 1), cy = TOP + (sy / n) * t + (t >> 1);
     outlined(r, name, Math.round(cx - name.length * 4), Math.round(cy - 5), [255, 255, 255], 2);
@@ -100,7 +134,7 @@ export function labelOf(g: GenResult, title: string, t = 16, captions: readonly 
   let ky = TOP + 10;
   r.text('rooms', kx, ky, INK, 3); ky += 26;
   const swatch = (c: RGB, label: string): void => { r.rect(kx, ky, 18, 14, c); r.text(label, kx + 26, ky + 2, INK, 2); ky += 20; };
-  for (const role of [...new Set(roles)].sort()) if (role !== 'hall') swatch(roleTint(role), NAMES[role] ?? role);
+  for (const [kind, role] of [...kinds].sort((p, q) => p[0].localeCompare(q[0]))) if (role !== 'hall') swatch(roleTint(role), kind);
   swatch(HALL, 'corridor');
   swatch(DOOR, 'door');
   ky += 10;
