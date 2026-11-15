@@ -8,7 +8,7 @@ Station crews run on the shared crew AI with a director that posts patrol jobs (
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
 | Trade station | `station.trading` | Market core, big holds, many docks; recruits, jobs, yard | In game | src/content/stations.ts:84; trading hubs; trader profiles in content/trade.ts |
-| Research station | `station.research` | Consoles and fabricator benches; sells blueprints | In game | src/content/stations.ts:93; structure.station_research (10% chance per node, lower with danger) |
+| Research station | `station.research` | Consoles and fabricator benches; sells blueprints | In game | src/content/stations.ts:93; structure.station_research (node content table: 10% per node, lower with danger) |
 | Mining station | `station.mining` | Refineries, ore stores; built as a surface mining outpost | In game | src/content/stations.ts:107; sim/outposts/gen.ts; trade profile; no structure.station_mining |
 | Agri station | `station.farming` | Quarters, messes, plazas, ration stock | Partial: no hydroponics | src/content/stations.ts:120; chosen by a market profile (populateSpawn.ts:41); the room list has no hydroponics ("No hydroponics beds on stations") |
 | Navy depot | `station.military` | Heavy guns, armouries, shipyard (with trade stations); sells defence blueprints | In game | src/content/stations.ts:132; structure.station_military; port kind depot |

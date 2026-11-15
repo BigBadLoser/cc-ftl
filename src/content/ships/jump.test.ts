@@ -6,6 +6,7 @@ import {
 import { giveItems } from '../../sim/story/effects';
 import { ContainerC } from '../../sim/containers/components';
 import { translated } from '../../sim/sector/translate';
+import { emptyNeighbour } from './nodeFixture';
 import { content } from '../index';
 import { factions } from '../factions/index';
 
@@ -54,7 +55,7 @@ function jump(sim: Sim, node: string, withDocked?: number[], ship = homeShip(sim
 /** The k-th node (ascending id) one edge away from the start node. */
 function near(sim: Sim, k: number): string {
   const nodes = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort();
-  return nodes[k] as string;
+  return (k === 0 ? emptyNeighbour(sim) : nodes[k]) as string;
 }
 
 const vehicleOf = (sim: Sim, ship: number): number => sim.world.query(VehicleC).find((v) => sim.world.get(v, VehicleC)?.homeShip === ship) ?? 0;

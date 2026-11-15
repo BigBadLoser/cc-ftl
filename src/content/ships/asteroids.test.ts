@@ -3,6 +3,7 @@ import {
   AsteroidC, ShipC, asteroidAt, deserialize, galaxyIndex, generateAsteroid, homeShip, isAsteroidRock, newGame, ownerAt,
   serialize, shipAt, shipIdAt, type OreDef, type Sim,
 } from '../../sim';
+import { emptyNeighbour } from './nodeFixture';
 import { content } from '../index';
 
 const ORES = Object.values(content.ores) as OreDef[];
@@ -94,7 +95,7 @@ describe('asteroids in the sector', () => {
     const s = sim.world.get(ship, ShipC)!;
     const home = { x: s.x, y: s.y };
     const start = sim.sector.node;
-    const away = (galaxyIndex(sim.galaxy).adjacent.get(start) ?? []).map((e) => (e.a === start ? e.b : e.a)).sort()[0]!;
+    const away = emptyNeighbour(sim, start);
     sim.enqueue({ type: 'debug.galaxyTeleport', node: away });
     run(sim, 1);
     expect(asteroids(sim)).toEqual([]);

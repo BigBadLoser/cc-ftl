@@ -7,11 +7,11 @@ Fleets of every faction persist, follow agendas, fight each other off-screen and
 ## Node structures (`content.galaxy.structures`)
 | Name | id | What it does | Status | Where |
 |---|---|---|---|---|
-| Asteroid field | `structure.asteroids` | Ore and ice rock field; can host a mining outpost | In game | src/content/galaxy.ts:130; sim/asteroids/*, galaxy/populateSpawn.ts |
+| Asteroid field | `structure.asteroids` | Ore and ice rock field; can host a mining outpost (node content table, 30% of nodes) | In game | src/content/galaxy.ts:130; sim/asteroids/*, galaxy/populateSpawn.ts |
 | Trade station | `structure.station_trade` | Station with fuel, trade, recruit | In game | src/content/galaxy.ts:20 |
 | Military station | `structure.station_military` | Navy depot; blueprints and yard | In game | src/content/galaxy.ts:20 |
-| Research station | `structure.station_research` | Blueprints and trade; rare | In game | src/content/galaxy.ts:31 |
-| Old derelict | `structure.derelict` | Wreck to salvage; may host a nest | In game | src/content/galaxy.ts:134 |
+| Research station | `structure.station_research` | Blueprints and trade; rare (node content table, 10% falling with danger, never in pirate or rogue space) | In game | src/content/galaxy.ts:31 |
+| Old derelict | `structure.derelict` | Wreck to salvage; may host a nest (node content table, 5% rising with danger) | In game | src/content/galaxy.ts:134 |
 | Mining, farming and pirate stations as map structures | `-` | Appear only as port kinds, outposts or trader profiles, not as structures | Partial: no structure def | station.mining, station.farming, station.pirate are built through populateSpawn.ts and outposts |
 
 ## Map and world features

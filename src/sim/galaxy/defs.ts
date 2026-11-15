@@ -169,11 +169,41 @@ export interface StructureDef {
   badge: string;
   /** Items the node is a source of: a hint for the UI and for later mining, salvage and stores. */
   resources: readonly string[];
-  /** Chance per node of holding one (asteroids, derelicts), plus `perDanger` per danger tier. A station with a chance is an extra one (research), rolled per node outside hostile space; the others are placed per sector. */
-  chance?: number;
-  perDanger?: number;
   /** Services a station offers ('fuel', 'trade', 'repair', 'recruit'); the trade layer reads them. */
   services?: readonly string[];
+}
+
+/** A weight (or share) that moves linearly with the danger tier: `base + perTier x tier`, never below 0. */
+export interface TierCurve {
+  base: number;
+  perTier?: number;
+}
+
+/** Where a node-content entry puts its structure's owner: nobody, the node's territory faction, or that with the civilians as fallback. */
+export type NodeContentOwner = 'none' | 'territory' | 'territoryOrCivilian';
+
+/**
+ * One kind of thing a node can hold (nodeContent.ts rolls the table). Adding a kind is one entry: the structure it places, the tier range it
+ * exists in and its weight over the tier. Weights are shares relative to the table's `quiet` curve and the other entries.
+ */
+export interface NodeContentDef {
+  /** `GalaxyContent.structures` id placed on the node. */
+  structure: string;
+  /** Tiers the entry exists in. Outside it the weight is 0. */
+  danger: DangerRange;
+  weight: TierCurve;
+  owner: NodeContentOwner;
+  /** Territory faction kinds where it never turns up (a draw that lands on it leaves the node quiet). */
+  notIn?: readonly GalaxyFactionDef['kind'][];
+  /** Not on the start node (the first node of the start sector). */
+  notAtStart?: true;
+}
+
+/** What a node holds beyond the sector's own station: a single weighted draw per node over `quiet` and `entries`. */
+export interface NodeContentTable {
+  /** Weight of an empty node, by tier. */
+  quiet: TierCurve;
+  entries: Record<string, NodeContentDef>;
 }
 
 /** Standing tiers on top of reputation. */
@@ -209,6 +239,8 @@ export interface GalaxyContent {
   relations: readonly FactionRelationDef[];
   /** By StructureDef id (`structure.*`). */
   structures: Record<string, StructureDef>;
+  /** What nodes hold besides faction stations (see `NodeContentTable`). */
+  nodeContents: NodeContentTable;
   /** Name parts for sectors: a prefix plus a suffix ("Kessa Reach"). Nodes add a Greek letter. */
   names: { prefix: readonly string[]; suffix: readonly string[] };
   fleet: FleetContent;

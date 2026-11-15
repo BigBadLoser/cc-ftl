@@ -1,4 +1,4 @@
-import type { GalaxyContent, GalaxyFactionDef, StructureDef } from '../sim';
+import type { GalaxyContent, GalaxyFactionDef, NodeContentTable, StructureDef } from '../sim';
 import { factionFleets, fleetContent } from './galaxyFleets';
 import { market } from './galaxyMarket';
 import { relations } from './galaxyRelations';
@@ -127,12 +127,32 @@ const factions = {
 
 /** Fixed structures a node can hold. Descriptors only until node grids can place them (sector refactor). */
 const structures = {
-  'structure.asteroids': { name: 'Asteroid field', kind: 'asteroids', badge: 'A', resources: ['item.metal', 'item.ice'], chance: 0.3 },
+  'structure.asteroids': { name: 'Asteroid field', kind: 'asteroids', badge: 'A', resources: ['item.metal', 'item.ice'] },
   'structure.station_trade': { name: 'Trade station', kind: 'station', station: 'trade', badge: 'T', resources: ['item.fuel'], services: ['fuel', 'trade', 'repair', 'recruit'] },
   'structure.station_military': { name: 'Military station', kind: 'station', station: 'military', badge: 'M', resources: [], services: ['fuel', 'repair', 'blueprints'] },
-  'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'], chance: 0.1, perDanger: -0.01 },
-  'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.parts'], chance: 0.05, perDanger: 0.012 },
+  'structure.station_research': { name: 'Research station', kind: 'station', station: 'research', badge: 'R', resources: ['item.electronics'], services: ['trade', 'blueprints'] },
+  'structure.derelict': { name: 'Old derelict', kind: 'derelict', badge: 'D', resources: ['item.scrap_hull', 'item.scrap_tech', 'item.scrap_energy', 'item.parts'] },
 } satisfies Record<string, StructureDef>;
+
+/**
+ * What a node holds besides the sector's faction station, the open trade station and the start node's free one: one weighted draw per node
+ * over `quiet` and these entries (sim/galaxy/nodeContent.ts). Weights are shares of one whole, so a new kind either takes its share from
+ * `quiet` (lower the quiet curve by the same) or accepts that the others thin out. At tier t the old independent odds were asteroids 0.30,
+ * derelicts 0.05 + 0.012 t, research 0.10 - 0.01 t, and these curves match them. Ship contacts stay outside: they are ships present, not
+ * a place, and they sit on top of whatever the node holds.
+ */
+// Order matters: one draw walks the entries in order, so `research` stays first (its placement is the old research roll's, see ARCHITECTURE.md).
+const nodeContents = {
+  quiet: { base: 0.55, perTier: -0.002 },
+  entries: {
+    research: {
+      structure: 'structure.station_research', danger: { min: 0 }, weight: { base: 0.1, perTier: -0.01 }, owner: 'territoryOrCivilian',
+      notIn: ['pirates', 'rogue'],
+    },
+    asteroids: { structure: 'structure.asteroids', danger: { min: 0 }, weight: { base: 0.3 }, owner: 'territory' },
+    derelict: { structure: 'structure.derelict', danger: { min: 0 }, weight: { base: 0.05, perTier: 0.012 }, owner: 'none', notAtStart: true },
+  },
+} satisfies NodeContentTable;
 
 const names = {
   prefix: [
@@ -146,4 +166,4 @@ const names = {
   suffix: ['Reach', 'Expanse', 'Drift', 'Verge', 'Hollow', 'Spur', 'Gate', 'Shoals', 'March', 'Deep', 'Rim', 'Belt'],
 };
 
-export const galaxy = { factions, relations, structures, names, fleet: fleetContent, market } satisfies GalaxyContent;
+export const galaxy = { factions, relations, structures, nodeContents, names, fleet: fleetContent, market } satisfies GalaxyContent;

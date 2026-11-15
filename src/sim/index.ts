@@ -153,7 +153,7 @@ export { DISCOVER_RANGE } from './systems/outposts';
 export * from './galaxy/types';
 export { stanceBetween, spillSources } from './galaxy/relations';
 export type {
-  FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
+  FactionRelationDef, FactionSpecialityDef, Stance, GalaxyFactionDef, StructureDef, NodeContentTable, NodeContentDef, TierCurve, GalaxyContent, StandingTier, DangerRange, FactionFleetDef, FleetContent, FleetGroupDef, MarketContent, MarketRates, PortKind, PortKindDef, ShipClassDef,
 } from './galaxy/defs';
 export { galaxyIndex, nodeOf, currentNode, START_NODE, type GalaxyIndex } from './galaxy/state';
 export { edgeBetween, planStarRoute } from './galaxy/route';

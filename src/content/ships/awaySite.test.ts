@@ -15,6 +15,7 @@ import { ferryFree } from '../../sim/ferry/pick';
 import { shipIdOf } from '../../sim/regions';
 import { AWAY_HOME_HUNGER, AWAY_HOME_REST, AWAY_LIFT_SEC } from '../../sim/tuning';
 import { policies } from '../policies';
+import { emptyNeighbour } from './nodeFixture';
 import { shuttleOf } from './ferryFixture';
 import { of, setup } from './salvageEvaFixture';
 import { crewOn, landed, play, siteWork } from './awayFixture';
@@ -303,7 +304,7 @@ describe('away sites', () => {
       const ship = homeShip(sim);
       sim.world.get(ship, CombatC)!.ftl = FTL_CHARGE_SEC;
       giveItems(sim, 'item.fuel', 50);
-      const node = (galaxyIndex(sim.galaxy).adjacent.get(START_NODE) ?? []).map((e) => (e.a === START_NODE ? e.b : e.a)).sort()[0]!;
+      const node = emptyNeighbour(sim);
       sim.enqueue({ type: 'galaxy.jump', ship, route: [node] });
       play(sim, 1);
       for (let i = 0; i < 20000 && sim.sector.state === 'hyperspace' && (sim.galaxy.travel?.phase === 'hop' || sim.galaxy.travel?.phase === 'story'); i++) {
