@@ -414,6 +414,49 @@ def h3(i, j):
 DESIGNS.update({"h1": h1, "h2": h2, "h3": h3})
 
 
+# Diamond tread, round 2 (H1 picked), each changing one thing:
+#   h4 big lozenges: H1 at pitch 16 (four a tile side), longer and bolder lozenges, fewer of them
+#   h5 dark tread: H1's layout on a darker plate, the lozenges the old plate tone, a lit ridge
+#   h6 panelled tread: H1's field inset in a plain border band, so every tile reads as one tread panel
+
+
+def _tread(i, j, o, pitch, half, base, lit, mid, shade):
+    u, v = (i - o) % pitch, (j - o) % pitch
+    c = pitch / 2
+    flip = ((i - o) // pitch + (j - o) // pitch) % 2
+    a, b = (u - c + v - c, u - v) if flip else (u - v, u - c + v - c)
+    if abs(a) <= half and abs(b) <= 1:
+        return lit if b <= 0 else mid
+    if abs(a) <= half and b == 2:
+        return shade
+    return base
+
+
+def h4(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    return _tread(i, j, 2, 16, 8, "steel", "steelL", "steel", "steelD")
+
+
+def h5(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    return _tread(i, j, 2, 12, 5, "steelD", "steelL", "steel", "seam")
+
+
+def h6(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 4 or j < 4:
+        return "steelL"
+    if i < 8 or j < 8 or i > 57 or j > 57:
+        return "steelD" if (i > 59 or j > 59) else "steel"
+    return _tread(i, j, 8, 10, 4, "steel", "steelL", "steel", "steelD")
+
+
+DESIGNS.update({"h4": h4, "h5": h5, "h6": h6})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
