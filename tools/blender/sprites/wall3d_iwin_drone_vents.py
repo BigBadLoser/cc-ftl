@@ -27,9 +27,14 @@ PIPE_TOP = 4                # art px: their flat run's top under the pocket's to
 SIDES = 16                  # the pipes' section (round: the user)
 BEND = 3                    # px: the elbow's radius (the pipe's centre line; curved: the user)
 BEND_STEPS = 6
-LIGHT = (0.3, 0.5, 0.8)     # the pipes' tones by their faces' turn to this (x, y near, z up)
-PIPE_TONES = ((0.85, "fDS1"), (0.6, "fDS2"), (0.3, "fDS3"), (-2.0, "fDS4"))
-COL = {"back": "fDS3", "ledge": "fDS2", "side": "fDX2"}
+COL = {"ledge": "fDS2", "side": "fDX2"}
+
+
+def _back_col():
+    """The recesses' backs: the tone behind drone's own pipes (its dark bands: "rose" level 0 on an upright face, the
+    user)."""
+    from . import wall3d as T
+    return T.tone("rose", 0, Vector((0.0, 1.0, 0.0)))
 
 
 def _d():
@@ -117,7 +122,7 @@ def recess(k):
         yb0, yb1 = _back_y(z0), _back_y(z1)
         sf = _surface(z0, z1)
         ys1 = sf[-1][0]
-        D._quad(k, [(u0, yb0, z0), (u1, yb0, z0), (u1, yb1, z1), (u0, yb1, z1)], (0, f, 1), COL["back"])
+        D._quad(k, [(u0, yb0, z0), (u1, yb0, z0), (u1, yb1, z1), (u0, yb1, z1)], (0, f, 1), _back_col())
         D._quad(k, [(u0, yb1, z1), (u1, yb1, z1), (u1, ys1, z1), (u0, ys1, z1)], (0, 0, 1), COL["ledge"])
         for u, sd in ((u0, 1), (u1, -1)):
             if -0.5 < u < 0.5:
@@ -174,7 +179,7 @@ def slot_face(k, yo, zlo, zhi, col):
     for i in range(FACE_PITS):
         x0 = r0 + i * (w + e)
         x1 = x0 + w
-        quad([(x0, yb, za), (x1, yb, za), (x1, yb, zb), (x0, yb, zb)], (0, 1, 0), COL["back"])
+        quad([(x0, yb, za), (x1, yb, za), (x1, yb, zb), (x0, yb, zb)], (0, 1, 0), _back_col())
         quad([(x0, yb, za), (x1, yb, za), (x1, yo, za), (x0, yo, za)], (0, 0, 1), COL["ledge"])
         for u, sd in ((x0, 1), (x1, -1)):
             if -0.5 < u < 0.5:
@@ -198,7 +203,8 @@ def handle(k, yface, zlo, zhi):
 
 def tube(k, path, r, up):
     """A round tube (SIDES) along a path lying in the plane square to up, mitred at each bend (its section on the
-    bisector); its faces in PIPE_TONES by their turn to LIGHT. Its ends are left open."""
+    bisector); its faces toned as drone's own pipes (the "rose" family, level 2, by facing: the user). Its ends are left
+    open."""
     up = Vector(up).normalized()
     P = [Vector(p) for p in path]
     rings = []
@@ -209,7 +215,6 @@ def tube(k, path, r, up):
         n = n / n.dot(ns[0])
         rings.append([p + up * r * math.cos(t) + n * r * math.sin(t)
                       for t in ((j + 0.5) * 2 * math.pi / SIDES for j in range(SIDES))])
-    light = Vector(LIGHT).normalized()
     for (ra, rb), (pa, pb) in zip(zip(rings, rings[1:]), zip(P, P[1:])):
         for i in range(SIDES):
             j = (i + 1) % SIDES
@@ -217,5 +222,4 @@ def tube(k, path, r, up):
             mid = sum(pts, Vector()) / 4
             d = pb - pa
             out = mid - (pa + d * max(0.0, min(1.0, (mid - pa).dot(d) / d.dot(d))))
-            col = next(c for t, c in PIPE_TONES if light.dot(out.normalized()) > t)
-            k.poly(pts, "wall", 2, out, fixed=col)
+            k.poly(pts, "rose", 2, out)                 # (toned as drone's own pipes: faction.drone.handle)

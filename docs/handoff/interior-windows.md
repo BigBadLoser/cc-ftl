@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d28)
+## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d29)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -774,3 +774,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: behind the handle bar, 3 equal recesses with 1 px borders. d26: `wall3d_iwin_drone_vents.slot_face` builds the slot block's front as a FACE_BORDER 1 px frame round FACE_PITS 3 recesses (8 x 13 px on the 28 x 15 face), FACE_DEPTH 2 px (depth my pick, unasked); backs fDS3, ledges fDS2, sides fDX2 (the vents' tones); the handle's legs run back to the recesses' backs. Renders: scratchpad `dr26`.
 - 2026-11-15: the user: the recesses start after the handle's base, 1 px from it. d27: the recesses between the handle's legs (38-58 px along the window: HANDLE_IN + HANDLE + FACE_BORDER in from the slot's sides), 6 px wide, FACE_BORDER 1 px between them and under the face's top and over its foot; the face solid outside them (the legs back on it). Renders: scratchpad `dr27`.
 - 2026-11-15: the user: the pane's edge strip (fTX6) on the window's sides should follow the flared feet's profile. d28: the side edge runs down the post to the flare's top (FLARE_H), then down the flare's face (PANE_OUT proud along its normal) to the floor; `_flare` / `_zcell` shared with `_posts`. Only piece l changes on screen (the r post's flare faces away from the camera). Renders: scratchpad `dr28`.
+- 2026-11-15: the user: the pipes and handle in drone's pipes' colour; the recesses' backs the colour behind drone's pipes. d29: `tube` polys toned as drone's own pipes (`faction.drone.handle`: the "rose" family, level 2, by facing; LIGHT / PIPE_TONES dropped); the vents' and the slot's recess backs `T.tone("rose", 0, +y)` (drone's dark bands behind its pipes). Asked the user what "the toe under the slot should match the walls" means: its upright foot is already pixel-identical to the plain wall's; the plain wall shows a lit lip over it (its ramp outline's lower edge) where the slot's flat floor is. Renders: scratchpad `dr29`, run `drone_run29.png` (`scripts/dr_run.py`).
