@@ -960,6 +960,54 @@ def _diag(fn):
 DESIGNS.update({"a7d": _diag(a7), "a8d": _diag(a8), "a9d": _diag(a9)})
 
 
+# ---- Edge line (walkway line), round 1: a line a tile in from the walls along any corridor, judged on test shapes
+# (floor_marks_maps.py). Here the line is computed over the whole shape (cells at a Chebyshev distance inset..inset+w
+# from the nearest wall, stopping short of doors), the target look; the segment / corner / end-cap sprites follow
+# from the pick. Cream paint (a tint mask in the end), inset 1/4 tile (16 cells), width about 1/16 (4 cells).
+#   e1 solid line: one cream line, 4 cells
+#   e2 dashed line: e1 in dashes, 20 on 12 off along the run
+#   e3 double line: two 2-cell cream lines with a 2-cell gap (runway lines)
+from . import floor_marks_maps as MM
+
+EDGE_INSET, EDGE_W = 16, 4
+
+
+def _edge_paint(style, d, door, gx, gy):
+    if door and d < EDGE_INSET + EDGE_W + 8:
+        return False
+    k = d - EDGE_INSET
+    if style == "e1":
+        return 0 <= k < EDGE_W
+    if style == "e2":
+        return 0 <= k < EDGE_W and (gx + gy) % 32 < 20
+    return 0 <= k < 2 or 4 <= k < 6
+
+
+def _map_tile(style, rows, x, y):
+    t = rows[y][x]
+
+    def fn(i, j):
+        if t == "#":
+            return "dark"
+        gx, gy = x * MM.N + i, y * MM.N + j
+        d, door = MM.wall_dist(rows, gx, gy)
+        if _edge_paint(style, d, door, gx, gy):
+            return "lvW"
+        return _deck(i, j)
+    return fn
+
+
+def map_jobs():
+    out = []
+    for style in ("e1", "e2", "e3"):
+        for name, rows in MM.MAPS.items():
+            for y, row in enumerate(rows):
+                for x, _ in enumerate(row):
+                    out.append((f"tile.mark.{style}.{name}.{x}_{y}", (1, 1), "floor",
+                                lambda s=style, r=rows, x=x, y=y: _tile(f"{s}_{x}_{y}", _map_tile(s, r, x, y))))
+    return out
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
@@ -969,4 +1017,4 @@ def _tile(name, fn):
 def jobs():
     out = [("tile.floor.deck", (1, 1), "floor", lambda: floor("a"))]
     out += [(f"tile.floor.{k}", (1, 1), "floor", lambda f=f, k=k: _tile(k, f)) for k, f in DESIGNS.items()]
-    return out
+    return out + map_jobs()
