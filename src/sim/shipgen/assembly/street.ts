@@ -114,7 +114,6 @@ function attempt(s: Site, rooms: readonly RoomSpec[], axis: Axis, cross: boolean
 
 /** Stand `rooms` on streets through the ring's inside. Returns the rooms that found no place. */
 export function placeStreets(s: Site, rooms: readonly RoomSpec[]): RoomSpec[] {
-  if (rooms.length === 0) return [];
   const { g } = s;
   const box = [-s.R, -s.R, s.R, s.R] as const;
   const blocks = g.blocks(...box);

@@ -3,6 +3,7 @@ import { placeBand, type BandAsk } from './band';
 import { batteries } from './battery';
 import { cornersOf, placeCorners } from './corners';
 import { innerRoom, placeInner } from './inner';
+import { isBarracks } from './quarters';
 import { placeStreets } from './street';
 import { RING_STREET, RING_WALL, site, type Outline, type Site } from './lattice';
 import { at, type Built, type Dir, type Frame } from './model';
@@ -87,25 +88,35 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   const fronted = front ? asks.filter((a) => !cornered.includes(a.spec) && front(a.spec) && !a.spec.annex) : [];
   const ashore = fronted.length > 0 ? placeInner(s, fronted, Math.PI / 4) : [];
   const all = asks.filter((a) => !cornered.includes(a.spec) && (!fronted.includes(a) || ashore.includes(a.spec)));
-  // Rooms the streets take first never ask the band.
+  // Rooms the streets take first never ask the band: the departments a recipe puts on its spine.
   const streeted = inner === 'street' && streetFirst ? all.filter((a) => streetFirst(a.spec) && !a.spec.annex && !a.spec.annexed).map((a) => a.spec) : [];
   const rest = all.filter((a) => !streeted.includes(a.spec));
-  // With streets inside, habitation stands in the band before what the streets hold as well (a cabin or a barracks is a
-  // rectangle in a strip as anywhere), after the rooms that must.
+  // With streets inside, habitation stands in the band before the rest (a cabin is a rectangle in a strip as anywhere),
+  // after the rooms that must.
   const band = placeBand(s, rest, inner === 'street' ? (r) => (r.annex ? 2 : r.role === 'weapons' ? 1 : r.dept === 'habitation' ? 0.5 : 0) : undefined);
-  if ((band.left.length === 0 && streeted.length === 0) || !inner) return band.left;
+  if ((band.left.length === 0 && inner !== 'street') || !inner) return band.left;
   // Streets through the middle take whatever the band could not hold. A room with an annex and the guns chose first in
-  // the band; a gun stands inside only when the hull has no place left for it.
+  // the band; a gun stands inside only when the hull has no place left for it. But a cabin over puts its bed in the
+  // barracks, which has floor for more (the user: "a few solo cabins in the middle looks odd"). A ring whose band holds
+  // the rest still has its middle street, with nothing along it.
   if (inner === 'street') {
-    const lone = [...streeted, ...band.left.filter((r) => !r.annex && !r.annexed)];
+    const barracks = specs.find((r) => isBarracks(r) && !band.left.includes(r));
+    const bunked = barracks ? band.left.filter((r) => r.cabin) : [];
+    for (const c of bunked) barracks?.mods.push(...c.mods);
+    const over = band.left.filter((r) => !bunked.includes(r));
+    const lone = [...streeted, ...over.filter((r) => !r.annex && !r.annexed)];
     const out = placeStreets(s, lone);
-    return [...band.left.filter((r) => !lone.includes(r)), ...out];
+    return doubled([...over.filter((r) => !lone.includes(r)), ...out], specs);
   }
   // A room with an annex stands in the band, where its annex can stand against it.
   const small = band.left.filter((r) => innerRoom(r) && !r.annex);
   const out = placeInner(s, rest.filter((a) => small.includes(a.spec)), Infinity, inner === 'rows');
   const left = band.left.filter((r) => !small.includes(r) || out.includes(r));
-  // A cabin or two still over: they double up, as in the band, with cabins that found a place on either side.
+  return doubled(left, specs);
+}
+
+/** A cabin or two still over: they double up, as in the band, with cabins that found a place. Returns what is still over. */
+function doubled(left: RoomSpec[], specs: readonly RoomSpec[]): RoomSpec[] {
   const stood = specs.filter((r) => r.cabin && !left.includes(r));
   if (left.length <= 2 && left.every((r) => r.cabin) && stood.length >= left.length) for (const [k, extra] of left.splice(0).entries()) (stood[k] as RoomSpec).mods.push(...extra.mods);
   return left;

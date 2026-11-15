@@ -4,6 +4,9 @@ import type { Recipe } from './recipe';
 
 /** How the crew's beds are housed: quarters as planned, cut into one-bed cabins, or as barracks with a few singles. */
 
+/** A barracks: crew quarters kept as one room of beds (a single cabin is `cabin`, and is not one). */
+export const isBarracks = (r: RoomSpec): boolean => r.role === 'quarters' && r.cabins === false && !r.cabin;
+
 /** A quarters block as one-bed cabins (the first takes the block's other pieces). */
 export function cabinsOf(r: RoomSpec): RoomSpec[] {
   const beds = r.mods.filter((m) => m === 'module.bed').length;

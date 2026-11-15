@@ -1,4 +1,5 @@
 import type { RoomSpec } from '../plan';
+import { isBarracks } from './quarters';
 
 /**
  * How far a station room may grow past its planned floor, as a multiple of it: the one answer to "may this room take
@@ -15,6 +16,6 @@ export const SLACK = 1.25;
 export function stretchOf(r: RoomSpec): number {
   if (r.bastion) return Infinity;
   if (r.role === 'garden' || r.role === 'plaza') return 3;
-  if (r.role === 'cargo' || (r.role === 'support' && r.dept === 'commons') || (r.role === 'quarters' && r.cabins === false)) return 1.5;
+  if (r.role === 'cargo' || (r.role === 'support' && r.dept === 'commons') || isBarracks(r)) return 1.5;
   return SLACK;
 }
