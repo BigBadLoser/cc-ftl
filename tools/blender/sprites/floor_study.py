@@ -749,6 +749,40 @@ def s6(i, j):
 DESIGNS.update({"s4": s4, "s5": s5, "s6": s6})
 
 
+# Tintable carpet, round 1 (carpets take faction tints): drawn in greys for the container-paint recolour
+# (src/render/containerPaint.ts: out = P * lum(px) / lum(#6f7b87)), so only each grey's lightness matters and the carpet
+# comes out a darker shade of the faction's primary P (greys about 0.6 of the reference, so about 60% of P); an accent in key green (mkS) takes its secondary S, flat.
+# Previewed per scheme with tools/blender/review/carpet_tint_preview.py.
+#   k1 loop carpet: S2's even loop fleck in greys (the liked one, tintable)
+#   k2 ribbed carpet: S5's fine ribs in greys
+#   k3 accent carpet: k1 with a small accent diamond in S on every tile, a quiet repeat
+
+
+def k1(i, j):
+    if i < 2 or j < 2:
+        return "c4H6"
+    h = _hash(i // 2, j // 2, 43)
+    return "c4H6" if h < 0.18 else ("c4H4" if h > 0.86 else "c4H5")
+
+
+def k2(i, j):
+    if i < 2 or j < 2:
+        return "c4H6"
+    h = _hash(i // 2, j // 2, 53)
+    if j % 6 < 2:
+        return "c4H6" if h < 0.6 else "c4H5"
+    return "c4H4" if h > 0.9 else "c4H5"
+
+
+def k3(i, j):
+    if abs(i - 31.5) + abs(j - 31.5) <= 9:
+        return "mkS"
+    return k1(i, j)
+
+
+DESIGNS.update({"k1": k1, "k2": k2, "k3": k3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
