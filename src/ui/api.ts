@@ -533,7 +533,7 @@ export interface UiModuleDef {
   power: number;
   cost: UiCost[];
   /** Build catalog tab. */
-  category: 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+  category: 'structure' | 'power' | 'systems' | 'life' | 'furniture' | 'production' | 'storage' | 'defence' | 'utility';
   description: string;
   /** Access tiles (offsets from the footprint's top-left at rotation 0): `access` then `extraAccess`, empty for none. */
   access: [number, number][];
@@ -541,8 +541,10 @@ export interface UiModuleDef {
   facts: { label: string; value: string; tone?: 'warn' }[];
   /** Tier name ("Mk I", "Mk II", "Mk III") of a module that comes in tiers, else null. */
   tier: string | null;
-  /** The tier family's id (the Mk I id) for a tiered module, else null. */
-  family: string | null;
+  /** The build card group the module folds into (a tier family's Mk I id, or a content `buildGroup`), else null: one card per group. */
+  group: string | null;
+  /** The short chip label of the module in its group's popover (content `variantLabel`), else null (tiers use their Mk name). */
+  variantLabel: string | null;
   /** Locked: its blueprint is not known yet. */
   locked?: boolean;
   /** Where to get the blueprint ("Blueprint: research stations"), or null for a basic module. */

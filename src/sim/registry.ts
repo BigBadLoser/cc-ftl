@@ -472,12 +472,16 @@ export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 /** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
 export type SeatKind = 'stool' | 'bench';
 
-export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'furniture' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
   name: string;
   /** Build catalog tab. Absent = Utility. */
   category?: ModuleCategory;
+  /** Build catalog: modules sharing a group fold into one card (a chip row in its popover picks the member). Tier families group by themselves. */
+  buildGroup?: string;
+  /** Build catalog: the short chip label of a member in its group ("3×1", "Corner"). */
+  variantLabel?: string;
   /** One or two sentences for the build catalog's popover. */
   description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */

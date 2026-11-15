@@ -5,6 +5,9 @@ them yet, except module.bed).
   module.bunk          bunk_study b1h: the double bunk bed, 1x2 (approved 2026-11-12)
   module.bed           bunk_study s3: the single bed to match, B1h's lower deck alone, 1x2 (approved 2026-11-12); it
                        replaces props.py's bed (the mattress top stays at 9 px, 0.23, so sleeping crew lie as before)
+  module.bar_counter / bar_counter_short  barcounter_r32 o1s (3x1), o1t (2x1): O1 with H3's stocked back (cubbies)
+  module.bar_corner    barcounter_r26 o1c (1x1 corner, padded +v and +u)
+  module.bar_stool     barstool_r27 s1, 1x1 (a walkable seat)
   module.exercise      exercise_r12 v6g: the sparring droid, 1x1, crew stand in front on +v (approved 2026-11-13)
   (module.bench, bench_module: bench.py, as it has a front overlay for seated crew)
   module.planter       planter_r2 pl1a: the deep-blue glazed pot with a broad-leaf bush, 1x1 (approved 2026-11-13)
@@ -19,11 +22,15 @@ pipeline's 4), set on the scene for their jobs only, as recovery.py does. Each j
 itself (r0 also gives the plain id), so a job is keyed by this module's source and what it imports."""
 import numpy as np
 
-from . import bunk_study, core, env_build as E, exercise_r12, modkit, planter_r2, post, vending_r23, vending_r24
+from . import bunk_study, core, env_build as E, barcounter_r26, barcounter_r32, barstool_r27, exercise_r12, modkit, planter_r2, post, vending_r23, vending_r24
 
 FAMILIES = {  # family: [(module id, footprint at r0, (study module, design)), ...], palette selection
     "bunk_module": ([("module.bunk", (1, 2), ("bunk_study", "b1h")),
                      ("module.bed", (1, 2), ("bunk_study", "s3"))], True),
+    "bar_module": ([("module.bar_counter", (3, 1), ("barcounter_r32", "o1s")),
+                    ("module.bar_counter_short", (2, 1), ("barcounter_r32", "o1t")),
+                    ("module.bar_corner", (1, 1), ("barcounter_r26", "o1c")),
+                    ("module.bar_stool", (1, 1), ("barstool_r27", "s1"))], "only:bar22+bar17+bar9"),
     "exercise_module": ([("module.exercise", (1, 1), ("exercise_r12", "v6g"))], "only:gym"),
     "planter_module": ([("module.planter", (1, 1), ("planter_r2", "pl1a"))], "only:planter"),
     "vending_module": ([("module.vending", (1, 1), ("vending_r23", "vm1c23a")),
@@ -48,6 +55,10 @@ def turned(build, rot):
 
 STUDIES = {m.__name__.rsplit(".", 1)[1]: m for m in (bunk_study, exercise_r12, planter_r2, vending_r23,
                                                      vending_r24)}
+for _m, _d in ((barcounter_r26, {k: f for k, (_, f) in barcounter_r26.PIECES.items()}),
+               (barcounter_r32, {"o1s": barcounter_r32.o1s, "o1t": barcounter_r32.o1t}),
+               (barstool_r27, barstool_r27.VARIANTS)):
+    STUDIES[_m.__name__.rsplit(".", 1)[1]] = type("Study", (), {"DESIGNS": _d})
 
 
 def job(family, sid, fp, study, name, rot):

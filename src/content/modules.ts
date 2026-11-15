@@ -66,7 +66,7 @@ export const modules = {
   'module.bed': {
     scrap: 'comfort',
     name: 'Bed',
-    category: 'life',
+    category: 'furniture',
     description: "Somewhere for a crew member to sleep and recover rest.",
     asset: 'module.bed',
     footprint: [1, 2],
@@ -81,7 +81,7 @@ export const modules = {
   'module.bench': {
     scrap: 'comfort',
     name: 'Bench',
-    category: 'life',
+    category: 'furniture',
     description: "A bench with room for three.",
     asset: 'module.bench',
     footprint: [2, 1],
@@ -100,7 +100,7 @@ export const modules = {
   'module.bunk': {
     scrap: 'comfort',
     name: 'Bunk bed',
-    category: 'life',
+    category: 'furniture',
     description: "A two-deck bunk. Two crew sleep in it, one on each deck, and recover rest.",
     asset: 'module.bunk',
     footprint: [1, 2],
@@ -116,7 +116,7 @@ export const modules = {
   'module.exercise': {
     scrap: 'comfort',
     name: 'Sparring droid',
-    category: 'life',
+    category: 'furniture',
     description: "A sparring droid on a stand. Decoration for now: it has no effect yet.",
     asset: 'module.exercise',
     footprint: [1, 1],
@@ -131,7 +131,7 @@ export const modules = {
   'module.planter': {
     scrap: 'comfort',
     name: 'Planter',
-    category: 'life',
+    category: 'furniture',
     description: "A small decorative planter. It has no effect yet.",
     asset: 'module.planter',
     footprint: [1, 1],
@@ -146,8 +146,9 @@ export const modules = {
   'module.vending': {
     scrap: 'comfort',
     name: 'Vending machine',
-    category: 'life',
+    category: 'furniture',
     description: "A snack and drink vending machine. Decoration for now: it has no effect yet.",
+    buildGroup: 'vending', variantLabel: 'Cup',
     asset: 'module.vending',
     footprint: [1, 1],
     solid: true,
@@ -162,8 +163,9 @@ export const modules = {
   'module.vending_red': {
     scrap: 'comfort',
     name: 'Vending machine (red)',
-    category: 'life',
+    category: 'furniture',
     description: "A vending machine in red livery. Decoration for now: it has no effect yet.",
+    buildGroup: 'vending', variantLabel: 'Red',
     asset: 'module.vending_red',
     footprint: [1, 1],
     solid: true,
@@ -280,7 +282,7 @@ export const modules = {
   'module.arcade': {
     scrap: 'comfort',
     name: 'Arcade cabinet',
-    category: 'life',
+    category: 'furniture',
     description: "An arcade cabinet for one. Crew on a break play a round here, which lifts their mood more than a rest in the mess.",
     asset: 'module.arcade',
     footprint: [1, 1],
@@ -297,7 +299,7 @@ export const modules = {
   'module.gametable': {
     scrap: 'comfort',
     name: 'Game table',
-    category: 'life',
+    category: 'furniture',
     description: "A holographic game table for two. Crew on a break play here together, which lifts their mood more than a rest in the mess.",
     asset: 'module.gametable',
     footprint: [2, 1],
