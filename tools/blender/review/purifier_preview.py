@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"b1": "B1  coil still", "b2": "B2  filter press", "b3": "B3  sphere",
+NAMES = {"c1": "C1  conveyor and centrifuge", "c2": "C2  cascade", "c3": "C3  UV rack",
+         "b1": "B1  coil still", "b2": "B2  filter press", "b3": "B3  sphere",
          "a1": "A1  column and basin", "a2": "A2  twin drums", "a3": "A3  chute and still",
          "z1": "Z1  porthole", "z2": "Z2  drawer", "z3": "Z3  wedge",
          "y1": "Y1  twin bay", "y2": "Y2  low and tall", "y3": "Y3  cartridge bank",
