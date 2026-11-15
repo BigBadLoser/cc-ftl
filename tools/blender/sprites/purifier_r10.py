@@ -7,6 +7,8 @@ and one solid rim, like life support's trays; the porthole sits under the ice tr
   f1 the body at round 9's height, a small porthole, one chamfered ice tray
   f2 a taller body, a big porthole, the ice tray beside a smaller chamfered vent tray (slots), life support's pair
   f3 as f2, the porthole set in a chamfered panel sunk into the front
+  g1 (user pick) f2's big porthole and height, f1's one tray, the pipe further from the porthole, ending on the middle
+     of the column as the camera sees it
 
 Local frame modkit.K, footprint (2, 1): u -1..1 across, v -0.5..0.5 deep, front +v, z up; all sizes in tiles."""
 import math
@@ -61,10 +63,9 @@ def rod(k, axis, a0, a1, p, q, r, col, n=16):
             col, top="pfTrayL" if col in ("pfHullM", "pfTray") else col)
 
 
-def plumbing(k, u0, fv, z):
+def plumbing(k, u0, fv, z, u1=CU - 0.2):
     """The melt line along the front: out of the body beside the porthole, a valve and gauge on it, into the column."""
     pv, r = V1 + 0.075, 0.05
-    u1 = CU - 0.2
     cvf = CV + math.sqrt(CR * CR - (u1 - CU) ** 2)                                                      # column face
     rod(k, "v", fv - 0.01, pv + r, u0, z, r, "pfTray")                                                    # out of the body
     rod(k, "u", u0 - r, u1 + r, pv, z, r, "pfTray")                                                       # along
@@ -88,7 +89,7 @@ def plumbing(k, u0, fv, z):
         span(k, u - 0.012, u + 0.012, V1 - 0.005, pv + r + 0.006, z - r - 0.006, z + r + 0.006, "pfFrame", top="pfFrame")
 
 
-def build(name, h, pr, pair=False, panel=False):
+def build(name, h, pr, pair=False, panel=False, gap=0.1, end=CU - 0.2):
     k = Bench(name, FP)
     ice = (-0.78, -0.2) if pair else (-0.86, -0.12)
     pu, pz = (ice[0] + ice[1]) / 2, BAND + (h - BAND) * 0.56
@@ -124,7 +125,7 @@ def build(name, h, pr, pair=False, panel=False):
         tray(k, -0.14, 0.14, -0.32, 0.16, h, "vent")
     else:
         tray(k, *ice, -0.34, 0.3, h)
-    plumbing(k, pu + pr + 0.1, fv, pz - pr * 0.75)
+    plumbing(k, pu + pr + gap, fv, pz - pr * 0.75, end)
     lamp(k, 0.07, h - zpx(9), V1)
     spout(k, CU + CR - 0.06, 0.16, zpx(6))
     return k.build()
@@ -134,6 +135,7 @@ VARIANTS = {
     "f1": lambda: build("purifier_f1", zpx(22), 0.15),
     "f2": lambda: build("purifier_f2", zpx(27), 0.2, pair=True),
     "f3": lambda: build("purifier_f3", zpx(27), 0.2, pair=True, panel=True),
+    "g1": lambda: build("purifier_g1", zpx(27), 0.2, gap=0.17, end=CU + CR * math.sqrt(0.5)),
 }
 
 
