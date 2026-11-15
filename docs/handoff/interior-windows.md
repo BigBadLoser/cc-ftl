@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: back on the drone window's upper layer, d32)
+## Pick up here (state at 2026-11-15: drone approved at d32, "good enough")
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -75,7 +75,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 3168 (set 7) | default teal (`tile.wall.full.m10`) | 3173 / 3174 / 3175 | done: `sprites/wall3d_iwin_def.py` + `wall3d_iwin_ramp.py` `TEAL` (approved at dp16, the user: "good enough") |
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
-| 423 (set 5) | drone | 2765 / 2764 / 2863 | upper layer under way (d16, 2026-11-15): `sprites/wall3d_iwin_drone.py`; posts done, the pipe beam not started |
+| 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
@@ -778,3 +778,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user (interrupting d29): the other way round: drone's wall pipes in the window pipes' colour. d30: `faction.drone.pipe_tone` (PIPE_LIGHT, PIPE_TONES: the window pipes' fDS1-4 by facing) used by the window's `tube` and by drone's wall handles (`faction.drone.handle`; `faction.parts.pipe` gains `col=`, every other caller unchanged). The recess backs stay rose 0 (d29). This changes the plain drone walls' pixels (their handles): the shipped sheets in `public/assets` are not re-rendered (waits on the user's go). Drone's thin square pipes in its designs (`flat=`) unchanged. Renders: scratchpad `dr30`, run `drone_run30.png`.
 - 2026-11-15: the user: the toe under the slot to match the walls: option 2 (the slope kept in front). d31: SLOT_LIP 2 px: `_notch` gains an outer bound (`yo`): the slot's cut stops SLOT_LIP in from the toe, so the ramp's slope runs on down to the toe there (`_lip()`); the slot's floor ends at it, an upright back on the lip (slot_side), the slot's sides follow the slope down to the lip then drop to the floor. Lip ~4 art px tall; the handle bar clears it. Renders: scratchpad `dr31`, run `drone_run31.png`.
 - 2026-11-15: the user: the handle bar up a bit. d32: HANDLE_UP 2 art px over the slot block face's mid height. Renders: scratchpad `dr32`, run `drone_run32.png`.
+- 2026-11-15: the user: "good enough": drone approved at d32 (the header rail kept as the beam; the ref's pipe beam not built). Open: drone's walls' handles changed tone (d30), so the shipped drone sheets want a re-render (the user's go); civil not started; #49 pipeline wiring waits on the user.
