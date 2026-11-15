@@ -2,8 +2,8 @@
 piece a round, three variants each, reviewed as 3x3 patches (tools/blender/review/floor_preview.py).
 
 Decisions so far (the user's list): deck plate = the default floor (no new art); grating = skipped for now; heavy plate =
-h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = a tintable
-carpet (pattern not picked yet), painted with the hull paint (src/render/hullPaint.ts) in a muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
+h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = the tintable
+ribbed carpet k2, painted with the hull paint (src/render/hullPaint.ts) in a muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
 Markings next: keep-clear (reuse the airlock's), door apron, hazard chevron, edge line (autotiling straight, corner, T,
 end).
 
