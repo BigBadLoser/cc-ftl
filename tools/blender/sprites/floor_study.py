@@ -7,7 +7,7 @@ ribbed carpet k2, painted with the hull paint (src/render/hullPaint.ts) in a mut
 Markings: edge line = e1 (solid cream line, 1/4 tile in, ~1/16 wide; a tint mask in the end); hazard band = z2 with
 z2b's square end at doors (yellow and near-black stripes along x + y, two repeats a tile, dark frame lines); keep-clear
 = q1 (yellow outline, thin dim-ochre hatch along x + y). Door apron dropped: doors already carry hazard striping.
-Hazard chevron: open.
+Hazard chevron: skipped for now (user, 2026-11-15).
 
 Round 1, walkway (promenade paving), drawn on floors.py's 64x64 cell grid, seams on the low sides:
   w1 honed pavers: one pale composite slab a tile, fine aggregate, a dark joint and a chamfered corner
