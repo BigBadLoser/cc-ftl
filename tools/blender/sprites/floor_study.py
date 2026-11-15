@@ -710,6 +710,45 @@ def s3(i, j):
 DESIGNS.update({"s1": s1, "s2": s2, "s3": s3})
 
 
+# Soft floor, round 2 (s2 loop carpet liked; three more):
+#   s4 cool loop carpet: s2's loop fleck in a muted station blue-grey
+#   s5 ribbed carpet: s2's warm taupe in fine soft ribs along one axis, a low fleck between
+#   s6 hotel carpet: a muted mauve loop carpet with a small quiet diamond motif repeating on every tile
+
+
+def s4(i, j):
+    if i < 2 or j < 2:
+        return "hbD"
+    h = _hash(i // 2, j // 2, 47)
+    return "hbK" if h < 0.16 else ("hbM" if h > 0.86 else "hbD")
+
+
+def s5(i, j):
+    if i < 2 or j < 2:
+        return "swM"
+    k = j % 6
+    h = _hash(i // 2, j // 2, 53)
+    if k < 2:
+        return "swM" if h < 0.6 else "swS"
+    return "swL" if h > 0.9 else "swS"
+
+
+def s6(i, j):
+    if i < 2 or j < 2:
+        return "rK"
+    u, v = i % 32 - 15.5, j % 32 - 15.5
+    d = abs(u) + abs(v)
+    if 7 <= d <= 9:
+        return "rM"
+    if d <= 3:
+        return "rXM"
+    h = _hash(i // 2, j // 2, 59)
+    return "rK" if h < 0.15 else ("rXD" if h < 0.85 else "rD")
+
+
+DESIGNS.update({"s4": s4, "s5": s5, "s6": s6})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
