@@ -6,6 +6,7 @@ import { content } from '../../src/content';
 import { ModuleC, Sim, removeModule as despawn, shipGrid, spawnModule, spawnShip, validateTemplate, type ModuleDef, type ShipTemplate } from '../../src/sim';
 import { removeWreck } from '../../src/sim/salvage/remove';
 import { placementError } from '../../src/sim/modules/spawn';
+import { isIdle } from '../../src/sim/modules/draw';
 import { roomsSystem } from '../../src/sim/systems/rooms';
 import { lightingSystem } from '../../src/sim/systems/lighting';
 import { powerSystem } from '../../src/sim/systems/power';
@@ -120,7 +121,8 @@ export function unpowered(l: Layout): number[] {
   for (const id of w.sim.world.query(ModuleC)) {
     const m = w.sim.world.get(id, ModuleC);
     const def = m && content.modules[m.def as keyof typeof content.modules];
-    if (!m || !def || m.powered || (def as { power: number }).power >= 0) continue;
+    // A module idle by its draw rule (a bed with nothing growing) draws nothing and is not short of power.
+    if (!m || !def || m.powered || (def as { power: number }).power >= 0 || isIdle(w.sim, id, def as ModuleDef)) continue;
     const i = l.modules.findIndex((x) => x.def === m.def && x.x === m.x - ORIGIN && x.y === m.y - ORIGIN);
     if (i >= 0) out.push(i);
   }
