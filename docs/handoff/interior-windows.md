@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c6: the ramp notch approved)
+## Pick up here (state at 2026-11-15: drone approved at d32; civil under way, c7: the notch's modules, first pass)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c6, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c7, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -785,3 +785,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: c5 (the user: the back wall's top edge is where the ramp ends, and the back is upright, not slanted): the back an upright face at the floor's front (`_front()`, where the slope starts), straight down from zf to the ledge at BELOW; the carve everything in front of it (RECESS gone: the depth is the slope's run from zf to the ledge, about 5 px); the floor in front of the pane whole again; the end walls triangles. The plain wall pixel-identical. Renders: scratchpad `cv5`.
 - 2026-11-15: c6 (the user: the back goes a little further, to where the ramp itself ends, not where the window's floor starts): the back upright at the ramp's top line (`_line()`, where it meets the wall), its top following the surface over it (the window's floor zf; over the end blocks' slopes, their slope up to zt at BLOCK); the window floor cut away in front of it across the notch; the end walls from the back out to the slope. The plain wall pixel-identical. Renders: scratchpad `cv6`.
 - 2026-11-15: the user: the notch looks right at c6. Still open on civil: the modules inside the notch, the ref's dark blue end blocks (ours white), the corner radius.
+- 2026-11-15: the user: skip the blue end blocks and the corner radius. c7: the notch's modules, a first pass: MODULES in `wall3d_iwin_civil_notch.py`, plain boxes on its ledge against its back ((14-30, 5 deep, 4 high), (32-41, 4, 6), (44-66, 4, 8), (68-82, 4, 6): px along the window, depth px, height art px; each inside the slope's line), ref 428's long low one, small one, big middle one, right one; top fC1W1, front W2, sides W5. The plain wall pixel-identical. Renders: scratchpad `cv7`.

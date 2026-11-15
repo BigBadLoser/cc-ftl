@@ -11,7 +11,10 @@ from . import walls as W
 from .wall3d_iwin_drone_vents import _carve
 
 BELOW = 7                   # sprite px: the slope left under it, over the ramp's edge (the ref's 8)
-STEP = {"back": 3, "ledge": 5, "side": 6}  # steps of the look's wall ramp (civil v1: the slope is fC1W2; the ref's
+MODULES = ((14, 30, 5, 4), (32, 41, 4, 6), (44, 66, 4, 8), (68, 82, 4, 6))  # boxes on its ledge against its back
+                            # (ref 428's: a long low one, a small one, the big one mid, one right): px along the window
+                            # (0 its left end), depth px, height art px (each kept inside the slope's line)
+STEP = {"back": 3, "ledge": 5, "side": 6, "m_top": 1, "m_front": 2, "m_side": 5}  # steps of the look's wall ramp (civil v1: the slope is fC1W2; the ref's
                                             # back, floor and end wall c1cac8, 9ea9ad, 68737f)
 
 
@@ -53,6 +56,7 @@ def notch(k, part, cells):
             continue
         C._quad(k, [(a, yl, z(a)), (b, yl, z(b)), (b, yl, z1), (a, yl, z1)], (0, 1, 0), _col("back"))
         C._quad(k, [(a, yl, z1), (b, yl, z1), (b, ys1, z1), (a, ys1, z1)], (0, 0, 1), _col("ledge"))
+    _modules(k, part, yl, z1)
     for u, sd in ((u0, 1), (u1, -1)):
         if not -0.5 < u < 0.5:
             continue
@@ -60,3 +64,20 @@ def notch(k, part, cells):
         pts = [(u, yl, zu), (u, C._out(zu), zu), (u, ys1, z1), (u, yl, z1)]
         pts = [p for i, p in enumerate(pts) if (Vector(p) - Vector(pts[i - 1])).length > 1e-9]
         C._quad(k, pts, (sd, 0, 0), _col("side"))
+
+
+def _modules(k, part, yl, z1):
+    """MODULES: boxes standing on the ledge, their backs on the notch's back."""
+    C = _c()
+    o = {"l": -0.5, "m": -1.5, "r": -2.5}[part]
+    for pa, pb, d, h in MODULES:
+        xa, xb = o + pa * C.PX, o + pb * C.PX
+        a, b = max(xa, -0.5), min(xb, 0.5)
+        if b - a < 1e-9:
+            continue
+        yf, zh = yl + d * C.PX, z1 + h / W.ZART
+        C._quad(k, [(a, yf, z1), (b, yf, z1), (b, yf, zh), (a, yf, zh)], (0, 1, 0), _col("m_front"))
+        C._quad(k, [(a, yl, zh), (b, yl, zh), (b, yf, zh), (a, yf, zh)], (0, 0, 1), _col("m_top"))
+        for u, sd in ((xa, -1), (xb, 1)):
+            if -0.5 < u < 0.5:
+                C._quad(k, [(u, yl, z1), (u, yf, z1), (u, yf, zh), (u, yl, zh)], (sd, 0, 0), _col("m_side"))
