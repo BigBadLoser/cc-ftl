@@ -90,7 +90,9 @@ export function fillRing(s: Site, asks: readonly BandAsk[], inner: boolean | 'ro
   // Rooms the streets take first never ask the band.
   const streeted = inner === 'street' && streetFirst ? all.filter((a) => streetFirst(a.spec) && !a.spec.annex && !a.spec.annexed).map((a) => a.spec) : [];
   const rest = all.filter((a) => !streeted.includes(a.spec));
-  const band = placeBand(s, rest, inner === 'street' ? (r) => (r.annex ? 2 : r.role === 'weapons' ? 1 : 0) : undefined);
+  // With streets inside, habitation stands in the band before what the streets hold as well (a cabin or a barracks is a
+  // rectangle in a strip as anywhere), after the rooms that must.
+  const band = placeBand(s, rest, inner === 'street' ? (r) => (r.annex ? 2 : r.role === 'weapons' ? 1 : r.dept === 'habitation' ? 0.5 : 0) : undefined);
   if ((band.left.length === 0 && streeted.length === 0) || !inner) return band.left;
   // Streets through the middle take whatever the band could not hold. A room with an annex and the guns chose first in
   // the band; a gun stands inside only when the hull has no place left for it.

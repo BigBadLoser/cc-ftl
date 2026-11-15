@@ -16,6 +16,8 @@ import type { RoomRole } from '../types';
 export const SPACE = -1;
 /** Always wall: a margin that keeps a hall its width where it runs beside open space. */
 export const SOLID = -2;
+/** Tiles a band room may lack from its extent (where the hull's steps clip it) and still count as a rectangle beside another room. */
+const CLIPPED = 4;
 
 export interface Region {
   role: RoomRole;
@@ -81,8 +83,8 @@ export class RegionGrid {
 
   /**
    * Whether region `b` outranks region `a` where they touch: the one that gives way takes the wall between them. Space
-   * outranks everything and halls outrank rooms. Between two rooms side by side (rectangles, or but for a corner or two
-   * the hull clips), the one whose shared side runs on past the other's end into open space gives way: it walls that
+   * outranks everything and halls outrank rooms. Between two rooms side by side (rectangles, or but for a few tiles the
+   * hull's steps clip), the one whose shared side runs on past the other's end into open space gives way: it walls that
    * stretch anyway, so its wall runs straight, where the other giving way would leave it a lip of floor beside the
    * other room. When neither (or both) does, between rectangles the one whose shared side is longer gives way: it walls
    * that side against open space past the other's end anyway, so the wall runs straight and neither room is left with a
@@ -92,7 +94,7 @@ export class RegionGrid {
     const pb = this.prio(b), pa = this.prio(a);
     if (a < 0 || b < 0 || (this.regions[a] as Region).hall || (this.regions[b] as Region).hall) return pb > pa;
     const near = (P: Shape, Q: Shape): [boolean, boolean] => [(P.x1 + 1 === Q.x0 || Q.x1 + 1 === P.x0) && P.y0 <= Q.y1 && Q.y0 <= P.y1, (P.y1 + 1 === Q.y0 || Q.y1 + 1 === P.y0) && P.x0 <= Q.x1 && Q.x0 <= P.x1];
-    const Ar = this.boxOf(a, 2), Br = this.boxOf(b, 2);
+    const Ar = this.boxOf(a, CLIPPED), Br = this.boxOf(b, CLIPPED);
     if (Ar && Br) {
       const [sbs, st] = near(Ar, Br);
       if (sbs || st) {

@@ -54,10 +54,15 @@ function attempt(s: Site, rooms: readonly RoomSpec[], axis: Axis, cross: boolean
   if (cross && !second) return null;
   const halls = [paint(s, axis, main)];
   if (cross && second) halls.push(paint(s, other, second, mid));
-  // Free ground with CLEAR tiles of it all round: nothing stands against the ring.
+  // Free ground with CLEAR tiles of it all round: nothing stands against the ring. Nor against a room that stood
+  // before the streets (a section at an arc's tip): two tiles of open ground at least, never a wall stepped against its
+  // wall, which would leave one of the two a lip.
+  const n0 = s.g.regions.length;
+  const foreign = (x: number, y: number): boolean => { const id = s.g.at(x, y); return id >= 0 && id < n0 && !s.g.regions[id]?.hall; };
   const free = (x: number, y: number): boolean => {
     if (!s.free(x, y)) return false;
     for (let d = -CLEAR; d <= CLEAR; d++) for (let e = -CLEAR; e <= CLEAR; e++) if (s.depth(x + d, y + e) <= RING_WALL) return false;
+    for (let d = -2; d <= 2; d++) for (let e = -2; e <= 2; e++) if (foreign(x + d, y + e)) return false;
     return true;
   };
   // Rows: either side of each street, from the centre outward both ways. Off a crossing they start past the other

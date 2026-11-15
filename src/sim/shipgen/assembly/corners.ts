@@ -42,6 +42,44 @@ function shoulderCells(s: Site, [sx, sy]: readonly [number, number]): number {
   return 0;
 }
 
+/**
+ * How far the band runs on straight into a corner from where the corner starts (`T` tiles out along both axes): along
+ * the face across the x axis (the band's lines across x hold the same tiles as the line before the corner) and along
+ * the face across the y axis, in tiles. The curve begins where a line first differs.
+ */
+function straight(s: Site, sx: 1 | -1, sy: 1 | -1, T: number): [number, number] {
+  const band = (x: number, y: number): boolean => s.hull(x, y) && !s.inside(x, y);
+  // The band's tiles on the line `t` tiles out (t = T - 1 is the last line before the corner), across x or across y.
+  const at = (sign: 1 | -1, t: number): number => (sign > 0 ? t : -t - 1);
+  const line = (acrossX: boolean, t: number): string => {
+    const out: number[] = [];
+    for (let o = 0; o <= s.R; o++) if (acrossX ? band(at(sx, t), at(sy, o)) : band(at(sx, o), at(sy, t))) out.push(o);
+    return out.join(',');
+  };
+  const run = (acrossX: boolean): number => {
+    const ref = line(acrossX, T - 1);
+    let n = 0;
+    while (n < s.R - T && line(acrossX, T + n) === ref) n++;
+    return n;
+  };
+  // Whole lattice strips only: a part strip would fold into the one before it and stand a room wider than a strip.
+  const whole = (n: number): number => Math.max(0, Math.floor((T + n) / K) * K - T);
+  // And only open ground with no room beside it: a strip stepped against a section's room would leave one of the two a
+  // lip (the corner keeps it, as before).
+  const { g } = s;
+  const clear = (acrossX: boolean, n: number): boolean => {
+    for (let t = T; t < T + n; t++) for (let o = 0; o <= s.R; o++) {
+      const [x, y] = acrossX ? [at(sx, t), at(sy, o)] : [at(sx, o), at(sy, t)];
+      if (!band(x, y)) continue;
+      if (g.at(x, y) !== SPACE) return false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) { const id = g.at(x + dx, y + dy); if (id >= 0 && !g.regions[id]?.hall) return false; }
+    }
+    return true;
+  };
+  const [nx, ny] = [whole(run(true)), whole(run(false))];
+  return [clear(true, nx) ? nx : 0, clear(false, ny) ? ny : 0];
+}
+
 /** The corners an outline has (indices into the four, clockwise from north-east): an arc lacks those cut away. */
 export function cornersOf(s: Site): number[] {
   if (s.outline !== 'square') return [];
@@ -68,9 +106,13 @@ export function placeCorners(s: Site, rooms: readonly (RoomSpec | undefined)[]):
     // Its annex is the cell at one end of it, on the flat before the cut, and opens into it. The cell's last row is
     // where the ring steps in: that row is the corner room's, and its wall onto the annex.
     const nook = spec?.annex ? g.room(spec.annex.role, { spec: spec.annex, access: [id], rank: 2e5 + k }) : -1;
+    // A round corner is only its curve: where the band runs on straight past the corner's start, on either face, it
+    // stays the band's, whole strips of it a plain rectangle (a room with an annex keeps its straight end for that).
+    // Shoulders already leave a corner's ends to the band.
+    const [Sx, Sy] = s.round && !s.shoulders && nook < 0 ? straight(s, sx, sy, T) : [0, 0];
     const ours = (x: number, y: number): boolean => {
       const tx = (x + 0.5) * sx, ty = (y + 0.5) * sy;
-      return tx >= T && ty >= T && g.at(x, y) === SPACE && !s.inside(x, y) && (s.hull(x, y) || (!s.round && tx + ty <= line));
+      return tx >= T + Sx && ty >= T + Sy && g.at(x, y) === SPACE && !s.inside(x, y) && (s.hull(x, y) || (!s.round && tx + ty <= line));
     };
     // The annex's end: the flat along x unless an arc's cut took it, then the flat along y.
     let alongX = true;
