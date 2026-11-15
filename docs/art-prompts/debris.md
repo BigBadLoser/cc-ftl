@@ -52,7 +52,7 @@ Script: `tools/blender/sprites/debris.py`, with the pieces built in functions pe
 **First preview:**
 - A labelled sheet in the render lab (`npm run lab -- --panel <id>`, see `docs/RENDER_LAB.md`), one rotation (r0 only), low samples (`--preview`: SS 2, 1 sample), with:
   - one variant of every kind from the table;
-  - a test scene: a pile of five or six pieces of mixed sizes on empty space, with a 1x1 floor tile and a crew member (in EVA suit if one exists on `main`, else a standard one) for scale, at 1x and 3x;
+  - a test scene: a pile of five or six pieces of mixed sizes on empty space, with a 1x1 floor tile and a crew member in the EVA spacesuit (`tools/blender/sprites/human_suit.py`) for scale, at 1x and 3x;
   - the large plate and the truss beside real `tile.hull.*` and `struct.beam.*` sprites, so the family match can be judged.
 - Send me the sheet and stop. Don't build the other rotations or variants until I've approved the look.
 
