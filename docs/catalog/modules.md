@@ -1,6 +1,6 @@
 # Catalog: modules
 
-Every ship module, furniture piece and sealed container. 56 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
+Every ship module, furniture piece and sealed container. 61 module defs are registered (`content.modules` = `modules.ts` + `furniture.ts` + `tiers.ts`);
 the build catalog test (`src/app/buildCatalog.test.ts`) requires every def to be reachable from a build tab, so any def here can be built by the player
 (Mk II/III and the flak cannon first need a blueprint). "Buildable only" means nothing places it on a ship, so it appears only if the player builds it.
 Nine sprite families have no def: cryo pod (not the prisoner holding: that is the stasis wheel), comms/medical/sensor consoles, workbench and three storage variants.
@@ -9,7 +9,11 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 |---|---|---|---|---|
 | Reactor | `module.reactor` | Burns energy crystals for the ship's main power: more load burns more, an empty store supplies nothing, and c… | In game | src/content/modules.ts:12; shipgen rooms/engineering.ts, all starters; sim/systems/power.ts, modules.ts, refuel.ts |
 | Life support | `module.lifeSupport` | Makes breathable air and scrubs CO2 for the room it sits in. | In game | src/content/modules.ts:30; shipgen, starters; sim/systems/modules.ts, atmosphere.ts |
-| Light | `module.light` | A lamp for a floor tile beside a wall. | In game | src/content/modules.ts:50; shipgen, starters; sim/systems/lighting.ts |
+| Floor light | `module.light` | A lit grate set into the deck, walkable. Art `module.light_grate` (family `lights`) | In game | src/content/modules.ts; shipgen fit.ts, starters; sim/systems/lighting.ts |
+| Cage lamp | `module.light_cage` | A solid work lamp, radius 10, half a power | Buildable only | src/content/modules.ts; art lights.py |
+| Light mast | `module.light_mast` | A solid tall lamp, radius 15, one power | Buildable only | src/content/modules.ts; art lights.py |
+| Deck inlay, Hazard plate | `module.deck_inlay`, `module.deck_hazard` | Walkable deck marks; dressing only (art to be redesigned) | Buildable only | src/content/furniture.ts; art decor.py |
+| Banner post | `module.banner` | Banner in the ship's livery (`livery: true`, emblem mask per roof scheme); dressing only | Buildable only | src/content/furniture.ts; render/moduleArt.ts schemeEmblem; art landmarks.py |
 | Bed | `module.bed` | Somewhere for a crew member to sleep and recover rest. | In game | src/content/modules.ts:66; shipgen, starters; sim/systems/bedOwners.ts, needs.ts; render/bedPose.ts |
 | Console | `module.console` | A general console. | In game | src/content/modules.ts:81; shipgen bridge/engineering; render/assets/fallback.ts |
 | Research module | `module.research` | Crew study the ship's active research project here, faster with science. | Partial: buildable only | src/content/modules.ts:101; no ship template or shipgen room places one; sim/research/*, systems/researchJobs.ts use it; 3x2 art |
@@ -43,6 +47,8 @@ Nine sprite families have no def: cryo pod (not the prisoner holding: that is th
 | Game table | `module.gametable` | A holographic game table for two: a break spot (social, two stools). | In game | src/content/modules.ts; sim/ai/machines/leisureSpots.ts; buildable only; crew sit on its stools |
 | Mess table | `module.mess_table` | A table for the mess. | In game | src/content/furniture.ts:17; shipgen, starters; sim/crew/eating.ts |
 | Chair | `module.chair` | A seat. | In game | src/content/furniture.ts:26; shipgen, starters |
+| Bar counter, short bar counter, bar corner | `module.bar_counter`, `module.bar_counter_short`, `module.bar_corner` | Padded counter pieces that join into runs and an L. | Partial: buildable, furniture only | src/content/furniture.ts; art `bar_module` (leisure.py), #441 |
+| Bar stool | `module.bar_stool` | A tall stool for the counter. Walkable. | Partial: buildable, furniture only | src/content/furniture.ts; art `bar_module`, #441 |
 | Locker | `module.storage_locker` | A tall locker. | In game | src/content/furniture.ts:34; shipgen, starters; sim/items/storage.ts |
 | Storage rack | `module.storage_rack` | Shelving along an aisle, worked from its front side. | In game | src/content/furniture.ts:43; shipgen, starters |
 | Cargo pallet | `module.storage_pallet` | An open cargo pallet. | Partial: buildable, shipgen only | src/content/furniture.ts:51; no starter ship has one |

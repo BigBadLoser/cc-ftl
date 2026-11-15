@@ -4,7 +4,7 @@
   import type { UiApi, UiMining, UiModuleDef, UiStock, UiToolState } from './api';
   import BuildCard from './BuildCard.svelte';
   import BuildPopover from './BuildPopover.svelte';
-  import { buildEntries, filterEntries, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
+  import { buildEntries, filterEntries, groupMembers, isSelected, visibleCategories, type CategoryId, type Entry } from './buildCatalog';
   import { createThumbs } from './buildThumbs';
   import HullPlanBar from './HullPlanBar.svelte';
   import Icon from './Icon.svelte';
@@ -43,7 +43,15 @@
   const entries = $derived(buildEntries(api, defs));
   const miningRelevant = $derived(mining.asteroids.length > 0 || mining.pods.length > 0 || (st.tool === 'build' && ['dig', 'level', 'finish', 'mine', 'claim'].includes(st.build)));
   const cats = $derived(visibleCategories(entries, miningRelevant));
-  const shown = $derived(filterEntries(entries, cats.some((c) => c.id === cat) ? cat : (cats[0]?.id ?? 'structure'), query, miningRelevant));
+  // The member each group card shows: the one picked last (by card, chip or hotkey), else the group's first.
+  let chosen = $state<Record<string, string>>({});
+  $effect(() => {
+    const g = entries.find((e) => e.def && e.id === st.moduleDef)?.def?.group;
+    if (g && st.moduleDef && chosen[g] !== st.moduleDef) chosen = { ...chosen, [g]: st.moduleDef };
+  });
+  const shown = $derived(filterEntries(entries, cats.some((c) => c.id === cat) ? cat : (cats[0]?.id ?? 'structure'), query, miningRelevant, chosen));
+  /** The members of a card's group, or none for a lone card or while searching (a search hit is the module's own card). */
+  const membersOf = (e: Entry): Entry[] => (!query && e.def?.group ? groupMembers(entries, e.def.group) : []);
   // Following the selection: picking a card by other means (the asteroid panel's Mine) shows its tab.
   $effect(() => {
     const sel = entries.find((e) => isSelected(e, st));
@@ -55,11 +63,8 @@
     if (e.kind === 'module') api.setTool({ tool: 'build', build: 'module', moduleDef: e.id });
     else api.setTool({ tool: 'build', build: e.id as UiToolState['build'] });
   };
-  /** The tiers of a module's family, lowest first. */
-  const variantsOf = (e: Entry): Entry[] => {
-    const fam = e.def?.family;
-    return fam ? entries.filter((o) => o.def?.family === fam).sort((a, b) => a.id.length - b.id.length || (a.id < b.id ? -1 : 1)) : [];
-  };
+  /** The members of a module's group (tiers lowest first). */
+  const variantsOf = (e: Entry): Entry[] => (e.def?.group ? groupMembers(entries, e.def.group) : []);
   const showVariant = (v: Entry) => {
     pick(v);
     if (pop) pop = { entry: v, rect: pop.rect };
@@ -95,7 +100,7 @@
     <div class="strip" onscroll={dismiss}>
       <div class="cards">
         {#each shown as e (e.key)}
-          <BuildCard {api} entry={e} thumb={e.def ? thumbOf(e.id, 0) : undefined} selected={isSelected(e, st)} {have} onpick={() => pick(e)} onhover={(el) => hover(e, el)} onleave={leave} onpress={(el) => press(e, el)} />
+          <BuildCard {api} entry={e} thumb={e.def ? thumbOf(e.id, 0) : undefined} selected={isSelected(e, st, membersOf(e))} count={membersOf(e).length} {have} onpick={() => pick(e)} onhover={(el) => hover(e, el)} onleave={leave} onpress={(el) => press(e, el)} />
         {:else}
           <p class="none">Nothing matches “{query}”.</p>
         {/each}
@@ -116,7 +121,7 @@
 
 {#if st.build === 'hull'}<HullPlanBar {api} />{/if}
 {#if pop}
-  <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} onvariant={showVariant}
+  <BuildPopover {api} entry={pop.entry} rect={pop.rect} rot={st.rot} thumb={pop.entry.def ? thumbOf(pop.entry.id, st.rot) : undefined} {have} {pinned} variants={variantsOf(pop.entry)} {thumbOf} onvariant={showVariant}
     onpin={() => (pinned = !pinned)} onenter={() => clearTimeout(closeT)} onleave={leave} />
 {/if}
 {#if hint}<div class="hint" class:ok={hint.ok} role="status" data-testid="place-hint" style:left="{hint.x}px" style:top="{hint.y}px">{hint.text}</div>{/if}

@@ -404,4 +404,18 @@ describe('SheetStore changes', () => {
     expect(r.store.changesSince(0, 'env')).toBeNull();
     expect(r.store.changesSince(r.store.generationOf('env') - 5, 'env')?.arrived).toHaveLength(5);
   });
+
+  it('passes a sheet\'s uv twin to the loader', async () => {
+    const seen: (string | undefined)[] = [];
+    const io: SheetIO<string> = {
+      async load(image, _glow, uv) { seen.push(uv); return { sheet: { image, glow: null, uv: uv ?? null } as Loaded<string>, bytes: 10 }; },
+      unload: () => undefined,
+    };
+    const store = new SheetStore<string>({ io, pools: { env: { budget: 100 } }, concurrency: 1, now: () => 0 });
+    store.register('a', { image: 'a.png', uv: 'a.uv.png', pool: 'env' });
+    store.request('a');
+    await store.idle();
+    expect(seen).toEqual(['a.uv.png']);
+    expect(store.get('a')?.uv).toBe('a.uv.png');
+  });
 });

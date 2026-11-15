@@ -1,8 +1,8 @@
 /*
  * The stasis press (#116): a full slab shows its prisoner's whole crew sprite pressed into the slab's face. The face is found
- * from the slab sprite itself: it is the palette tone `slbFace` unlit (#8c9697 after the render's colour step), a clean
- * parallelogram, so a colour key gives the mask and its four corners the affine map from the figure to the face. No Blender
- * mask. The game's look is R2 of the render lab's `stasisface` panel (the original press on a face lifted 50% toward pale
+ * through the sprite's Blender UV pass (#481: `pressSlabUv`, tilt, foreshortening and occlusion come out right), or, for a sprite
+ * without one, from the sprite itself: the palette tone `slbFace` unlit (#8c9697 after the render's colour step), a clean
+ * parallelogram, so a colour key gives the mask and its four corners the affine map from the figure to the face. The game's look is R2 of the render lab's `stasisface` panel (the original press on a face lifted 50% toward pale
  * grey, the figure stretched over the whole face window with its tones spread). Pure pixel maths over RGBA buffers; slabFace.ts
  * bakes it for the game, and the lab panel draws its other variants from the same code.
  */
@@ -109,12 +109,15 @@ export function sample(sp: Px, mask: Uint8Array, por: Px, fr: ReturnType<typeof 
     a[y * w + x] = sa / (SS * SS);
     l[y * w + x] = sa ? sl / sa : 0;
   }
-  if (stretch) {                                    // the figure's tones spread over 0.15..0.95, so a dark loadout still reads
-    let lo = 1, hi = 0;
-    for (let k = 0; k < l.length; k++) if (a[k]! > 0.5) { lo = Math.min(lo, l[k]!); hi = Math.max(hi, l[k]!); }
-    for (let k = 0; k < l.length; k++) if (a[k]! > 0) l[k] = 0.15 + 0.8 * (l[k]! - lo) / Math.max(0.05, hi - lo);
-  }
+  if (stretch) spreadTones(a, l);
   return { a, l, n, c: cc, w, h };
+}
+
+/** The figure's tones spread over 0.15..0.95, so a dark loadout still reads. */
+function spreadTones(a: Float32Array, l: Float32Array): void {
+  let lo = 1, hi = 0;
+  for (let k = 0; k < l.length; k++) if (a[k]! > 0.5) { lo = Math.min(lo, l[k]!); hi = Math.max(hi, l[k]!); }
+  for (let k = 0; k < l.length; k++) if (a[k]! > 0) l[k] = 0.15 + 0.8 * (l[k]! - lo) / Math.max(0.05, hi - lo);
 }
 /** Box blur of a field over the face, `r` px, so the edge of the figure goes soft (as seen through frost or ice). */
 export function blur(f: Float32Array, w: number, h: number, r: number): Float32Array {
@@ -181,6 +184,80 @@ export function pressPx(sp: Px, mask: Uint8Array, fld: Field, v: Variant, blurs 
     for (let c = 0; c < 3; c++) out[i * 4 + c] = Math.max(0, Math.min(255, Math.round(o[c]!)));
   }
   return out;
+}
+
+/**
+ * The UV pass (#481): the slab's own surface coordinates, rendered by Blender beside the sprite (post.uv_down): per pixel R, G =
+ * u, v of the face (0..255), B = the share of the pixel that is face, A = 255 on a face pixel. u runs across the face to the
+ * viewer's right, v up it toward the slab's head (the status strip's end), both over the face polygon; the lip hides its
+ * outer 0.1 each side, so the bare window is UV_WINDOW. Tilt, foreshortening and occlusion are in the buffer, so the press
+ * needs no colour key, corners or affine frame.
+ */
+export const UV_WINDOW = { u0: 0.125, u1: 0.875, v0: 0, v1: 1 };
+
+/** Face pixels by the UV pass: its face flag, on an opaque sprite pixel. */
+export function uvMask(sp: Px, uv: Px): Uint8Array {
+  const m = new Uint8Array(sp.w * sp.h);
+  for (let i = 0; i < m.length; i++) m[i] = uv.d[i * 4 + 3]! > 200 && sp.d[i * 4 + 3]! > 200 ? 1 : 0;
+  return m;
+}
+
+/**
+ * Sample the figure into the face through the UV pass: the same field `sample` gives (coverage and luminance supersampled, the
+ * figure's own pixel at the centre), with each pixel's sub-samples placed by that pixel's UV and its neighbours' (the local
+ * Jacobian), so a tipped or foreshortened face keeps the figure square on the slab. The figure's head goes to the slab's head
+ * end (v high), its right to u, never mirrored and never turned: the figure is printed on the slab, so it turns with the slab (a slab seen
+ * head-down shows its prisoner head-down; the colour key's "feet lowest" guess is not needed now the slab's head end is known).
+ */
+export function sampleUv(sp: Px, uv: Px, mask: Uint8Array, por: Px): Field {
+  const { w, h } = sp;
+  const a = new Float32Array(w * h);
+  const l = new Float32Array(w * h);
+  const n = new Float32Array(w * h);
+  const cc = new Float32Array(w * h * 3);
+  const W = UV_WINDOW;
+  const U = (i: number): number => uv.d[i * 4]! / 255;
+  const V = (i: number): number => uv.d[i * 4 + 1]! / 255;
+  /** Slope of f at pixel i along `step` (1: x, w: y), from the face neighbours (central, else one-sided, else none). */
+  const slope = (f: (j: number) => number, i: number, step: number, lo: boolean, hi: boolean): number =>
+    lo && hi ? (f(i + step) - f(i - step)) / 2 : hi ? f(i + step) - f(i) : lo ? f(i) - f(i - step) : 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!mask[i]) continue;
+    const L = x > 0 && mask[i - 1] === 1, R = x < w - 1 && mask[i + 1] === 1, T = y > 0 && mask[i - w] === 1, B = y < h - 1 && mask[i + w] === 1;
+    const dux = slope(U, i, 1, L, R), dvx = slope(V, i, 1, L, R), duy = slope(U, i, w, T, B), dvy = slope(V, i, w, T, B);
+    let sa = 0;
+    let sl = 0;
+    for (let j = 0; j < SS; j++) for (let k = 0; k < SS; k++) {
+      const ox = (k + 0.5) / SS - 0.5;
+      const oy = (j + 0.5) / SS - 0.5;
+      const fx = (U(i) + dux * ox + duy * oy - W.u0) / (W.u1 - W.u0);       // 0..1 across the bare window, to the viewer's right
+      const ft = 1 - (V(i) + dvx * ox + dvy * oy - W.v0) / (W.v1 - W.v0);  // 0..1 down it, head (v high) at 0
+      const px = Math.floor(((fx - 0.5) / 0.94 + 0.5) * por.w);
+      const py = Math.floor(((ft - 0.5) / 0.94 + 0.5) * por.h);
+      if (px < 0 || py < 0 || px >= por.w || py >= por.h) continue;
+      const q4 = (py * por.w + px) * 4;
+      const al = por.d[q4 + 3]! / 255;
+      if (j === (SS >> 1) && k === (SS >> 1)) {
+        n[i] = al;
+        for (let ch = 0; ch < 3; ch++) cc[i * 3 + ch] = por.d[q4 + ch]!;
+      }
+      sa += al;
+      sl += al * (0.3 * por.d[q4]! + 0.59 * por.d[q4 + 1]! + 0.11 * por.d[q4 + 2]!) / 255;
+    }
+    a[i] = sa / (SS * SS);
+    l[i] = sa ? sl / sa : 0;
+  }
+  spreadTones(a, l);
+  return { a, l, n, c: cc, w, h };
+}
+
+/** The press (R2) through the UV pass: `slab` pressed with `figure`, the face found by `uv` (the slab's UV sprite, same frame). Null if no face pixel. */
+export function pressSlabUv(slab: Px, uv: Px, figure: Px): { pressed: Uint8ClampedArray; mask: Uint8Array } | null {
+  const mask = uvMask(slab, uv);
+  if (!mask.some((m) => m)) return null;
+  const fld = sampleUv(slab, uv, mask, figure);
+  return { pressed: pressPx(slab, mask, fld, originalLight(0.5), false), mask };
 }
 
 /** The game's press (R2): `slab` pressed with `figure`. Null if the slab has no face (fewer than 4 corners found). */

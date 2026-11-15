@@ -7,6 +7,7 @@ import type { ModuleDef } from '../registry';
 import { shipIdAt, shipIdOf } from '../regions';
 import type { World } from '../ecs';
 import type { Sim } from '../sim';
+import { VehicleC } from '../vehicles/components';
 import { CartRestC, SLOT_EMPTY, SLOT_NONE, StasisC, StasisWheelC } from './components';
 import { floorTiles } from './place';
 import { stowStageAt, type StowStage } from './ring';
@@ -28,10 +29,14 @@ export function wheelSlots(world: World, wheel: number): WheelSlot[] {
   return (world.get(wheel, StasisWheelC)?.slots ?? []).map((s) => (s === SLOT_NONE ? { kind: 'none' } : s === SLOT_EMPTY ? { kind: 'empty' } : { kind: 'full', prisoner: s }));
 }
 
-/** Where a full slab is: in a wheel slot, on a crew member's hover cart, or lying on the floor (its two tiles and which way it lies). */
+/**
+ * Where a full slab is: in a wheel slot, on a crew member's hover cart, in a shuttle's rack (`ship` is the grid the shuttle is at, 0 while it flies),
+ * or lying on the floor (its two tiles and which way it lies).
+ */
 export type SlabPlace =
   | { kind: 'wheel'; ship: number; wheel: number; slot: number }
   | { kind: 'carried'; ship: number; crew: number }
+  | { kind: 'shuttle'; ship: number; vehicle: number }
   | { kind: 'floor'; ship: number; tiles: [Tile, Tile]; rot: 0 | 1 };
 
 /** True if the crew member is frozen in a stasis slab (out of the world until they thaw). */
@@ -58,6 +63,10 @@ export function slabPlace(sim: Sim, prisoner: number): SlabPlace | null {
     if (w && m) return { kind: 'wheel', ship: shipIdOf(sim, m), ...w };
   }
   if (s.at === 'carried') return { kind: 'carried', ship: shipIdOf(sim, sim.world.get(s.carrier, PositionC) ?? s), crew: s.carrier };
+  if (s.at === 'vehicle') {
+    const v = sim.world.get(s.carrier, VehicleC);
+    return { kind: 'shuttle', ship: v && (v.state === 'stowed' || v.state === 'docked' || v.hover) ? shipIdAt(sim, s.x, s.y) : 0, vehicle: s.carrier };
+  }
   return { kind: 'floor', ship: shipIdAt(sim, s.x, s.y), tiles: floorTiles(s.x, s.y, s.rot), rot: s.rot };
 }
 
@@ -90,13 +99,13 @@ export function slabHeldIn(world: World, prisoner: number): boolean {
   return !!w && !!world.get(w.wheel, ModuleC)?.powered;
 }
 
-/** True while the slab runs on its reserve: out of a powered wheel and not on a hover cart (the cart's field keeps it). The alert reads this. */
+/** True while the slab runs on its reserve: out of a powered wheel, not on a hover cart (the cart's field keeps it) and not in a shuttle's rack (the shuttle's power does). The alert reads this. */
 export const slabDraining = (sim: Sim, prisoner: number): boolean => slabDrainingIn(sim.world, prisoner);
 
 /** slabDraining from the World alone (the renderer's read: the wheel's slot lamp pulses red). */
 export function slabDrainingIn(world: World, prisoner: number): boolean {
   const s = world.get(prisoner, StasisC);
-  return !!s && s.at !== 'carried' && !slabHeldIn(world, prisoner);
+  return !!s && s.at !== 'carried' && s.at !== 'vehicle' && !slabHeldIn(world, prisoner);
 }
 
 /** The prisoner whose slab the crew member has on their cart, or 0. */
@@ -188,14 +197,15 @@ export const wheelHolding = (sim: Sim, wheel: number): boolean => (sim.world.get
 
 /**
  * Where the stow at a wheel's hatch stands, or null when nobody is stowing there (or they have not started): the progress of a stasis job in its
- * stow phase at this wheel, split into the wheel's turn and the load (ring.ts); `crew` is the crew member doing it (the job's reservedBy). The loading animation plays over it (render/stasisLoad.ts).
+ * stow phase at this wheel (or its unstow: `out`, the load played backwards), split into the wheel's turn and the load (ring.ts); `crew` is the crew member doing it (the job's reservedBy), `prisoner` the one in the slab (the job's target). The loading animation plays over it (render/stasisLoad.ts).
  */
-export function stowStage(world: World, wheel: number): { crew: number; turns: number; stage: StowStage } | null {
+export function stowStage(world: World, wheel: number): { crew: number; prisoner: number | undefined; turns: number; out: boolean; stage: StowStage } | null {
   for (const job of world.query(JobC)) {
     const j = world.get(job, JobC);
-    if (j?.kind === 'stasis' && j.stasis?.phase === 'stow' && j.stasis.wheel === wheel && j.progress > 0 && j.work > 0 && j.reservedBy) {
+    const out = j?.stasis?.phase === 'unstow';
+    if (j?.kind === 'stasis' && (j.stasis?.phase === 'stow' || out) && j.stasis?.wheel === wheel && j.progress > 0 && j.work > 0 && j.reservedBy) {
       const turns = j.stasis.turns ?? 0;
-      return { crew: j.reservedBy, turns, stage: stowStageAt(j.progress, turns) };
+      return { crew: j.reservedBy, prisoner: j.target, turns, out, stage: stowStageAt(j.progress, turns, out) };
     }
   }
   return null;

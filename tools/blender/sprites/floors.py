@@ -4,7 +4,9 @@ are picked by the renderer (a on ~90% of tiles, c and h on ~5% each); the rest a
 Drawn on a 64x64 cell grid (a cell is about 2 px across, 1 px down at the 128x64 tile, so every line and dot is at
 least 2 cells: thinner ones vanish in the downsample): a, c and h are one panel a tile with a soft seam, chamfered
 corners and a light lip (the way RimWorld and Space Haven decks tile); a stays plain, since anything on it repeats on
-every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look."""
+every tile, and the occasional c and h carry the wear and detail. The unused variants keep their own plate style. Colours are the deck keys structure_looks.FLOOR_STEP remaps per ship look.
+
+The floor finishes (heavy plate, clean tile, carpet) live in deck_finishes.py."""
 from . import core
 
 N = 64
@@ -57,6 +59,13 @@ def _bolt(i, j, at):
 
 def _corners(k0, k1):
     return ((k0, k0), (k1, k0), (k0, k1), (k1, k1))
+
+
+def _hash(i, j, seed):
+    """A stable 0..1 value per cell (for scattered detail that tiles: callers wrap i, j)."""
+    h = (i * 73856093 ^ j * 19349663 ^ seed * 83492791) & 0xFFFFFFFF
+    h = (h ^ (h >> 13)) * 1274126177 & 0xFFFFFFFF
+    return ((h ^ (h >> 16)) & 0xFFFF) / 65535
 
 
 def floor(variant):

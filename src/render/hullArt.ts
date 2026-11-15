@@ -108,12 +108,18 @@ export const tileLook = (x: number, y: number) => BELLY_LOOKS[pickDesign(x, y, B
 
 /**
  * The belly sprites of a tile: below the deck (`under`) and its cut top over it (`low`, cutaway views), in the tile's
- * look where that differs from the plain one. Null if the key has neither.
+ * look where that differs from the plain one. A near hull wall or door (`hull`) whose key has no art takes the catch-all
+ * (`fallbackBelly`); a floor never does (its edge on a breach has no belly). Null if the tile shows no belly.
  */
-export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean): { under?: string; low?: string } | null {
+export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) => boolean, hull = false): { under?: string; low?: string } | null {
+  if (!h.ship(x, y)) return null;
   const k = h.at(x, y);
-  if (!k) return null;
-  const n = hullKeyName(k);
+  return (k ? keyBelly(hullKeyName(k), x, y, has) : null) ?? (hull ? keyBelly(fallbackBelly(h, x, y), x, y, has) : null);
+}
+
+/** The belly pieces of key name `n` in the tile's look, or null if the art has neither. */
+function keyBelly(n: string | undefined, x: number, y: number, has: (id: string) => boolean): { under?: string; low?: string } | null {
+  if (!n) return null;
   const look = tileLook(x, y);
   const pick = (layer: string) => {
     const base = `tile.hull.belly.${layer}.${n}`;
@@ -124,10 +130,26 @@ export function bellyIds(h: HullKeys, x: number, y: number, has: (id: string) =>
   return under || low ? { under, low } : null;
 }
 
+/**
+ * The catch-all belly of a tile whose key the catalog has no art for, or that has none (outlines thinner than ships are
+ * built to: damage, wrecks):
+ * the straight run's or the convex corner's, by which way the tile faces space toward the camera, so it never falls
+ * back to the old hull's belly. Undefined where no belly shows (space toward the camera on neither side).
+ */
+function fallbackBelly(h: HullKeys, x: number, y: number): string | undefined {
+  const o = (h.ship(x, y + 1) ? 0 : 1) | (h.ship(x + 1, y) ? 0 : 2);
+  return o ? FALLBACK_BELLY[o] : undefined;
+}
+const FALLBACK_BELLY: Record<number, string> = { 1: hullKeyName("0,1,15"), 2: hullKeyName("1,0,15"), 3: hullKeyName("1,0,15;0,1,15") };
+
 /** A ship's hull colours, multiplied over its hull pieces: the armour over the piece, the deco over its deco layer. */
 export interface HullPaint {
   armour: number;
   deco: number;
+  /** The ship's carpet paint (`carpetPaintFor`); absent (a debug override) = the plain ship's. */
+  carpet?: number;
+  /** The walkway line's paint (deck marks, deckMarks.ts): absent = cream. A faction or district colour goes here. */
+  walkway?: number;
 }
 
 
@@ -139,6 +161,37 @@ const ARMOUR_SHADE = 0.55;
 
 const shade = (c: number, k: number): number => [16, 8, 0].reduce((out, sh) => out | (Math.round(((c >> sh) & 255) * k) << sh), 0);
 
+/** The carpet's lightness (HLS) and the saturation it is capped at: a calm, dark floor whatever the livery. */
+const CARPET_LIGHTNESS = 0.3;
+const CARPET_SATURATION = 0.45;
+/** Below this saturation the livery colour counts as grey (black, white, steel) and the carpet is a plain grey. */
+const CARPET_GREY_BELOW = 0.12;
+
+/**
+ * A ship's carpet paint from its roof livery: the scheme's main colour P (SCHEMES, any scheme, coat or not), muted. The
+ * hue of P is kept, the lightness is fixed at CARPET_LIGHTNESS and the saturation capped at CARPET_SATURATION; a P with
+ * less saturation than CARPET_GREY_BELOW gives a grey. No livery: the roof plating's blue, muted like the rest. The art is
+ * recoloured by the hull-paint step with its own reference tone (carpetPaint.ts), so its mid tone lands on this colour.
+ */
+export function carpetPaintFor(scheme: string): number {
+  const p = SCHEMES[scheme]?.P ?? PLATE_BLUE;
+  const [r, g, b] = [16, 8, 0].map((sh) => ((p >> sh) & 255) / 255) as [number, number, number];
+  const hi = Math.max(r, g, b);
+  const lo = Math.min(r, g, b);
+  const l = (hi + lo) / 2;
+  const d = hi - lo;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d !== 0) h = hi === r ? ((g - b) / d + (g < b ? 6 : 0)) / 6 : hi === g ? ((b - r) / d + 2) / 6 : ((r - g) / d + 4) / 6;
+  const sat = s < CARPET_GREY_BELOW ? 0 : Math.min(s, CARPET_SATURATION);
+  const c = (1 - Math.abs(2 * CARPET_LIGHTNESS - 1)) * sat;
+  const ch = (n: number): number => {
+    const k = (n + h * 12) % 12;
+    return CARPET_LIGHTNESS - (c / 2) * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  return [ch(0), ch(8), ch(4)].reduce((out, v) => (out << 8) | Math.round(v * 255), 0);
+}
+
 /**
  * A ship's hull paint from its roof livery: the deco takes the roof's main colour (a faction scheme's coat, else the
  * plating's blue), the armour a dark tone of it. The pieces are recoloured with it (hullPaint.ts), their mid faces
@@ -146,7 +199,7 @@ const shade = (c: number, k: number): number => [16, 8, 0].reduce((out, sh) => o
  */
 export function hullPaintFor(scheme: string): HullPaint {
   const main = SCHEMES[scheme]?.motifs.includes("coat") ? motifColours(scheme, "coat")[0] : PLATE_BLUE;
-  return { armour: shade(main, ARMOUR_SHADE), deco: main };
+  return { armour: shade(main, ARMOUR_SHADE), deco: main, carpet: carpetPaintFor(scheme) };
 }
 
 /** A ship without a livery: the plating's blue. */

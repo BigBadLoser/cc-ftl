@@ -48,6 +48,16 @@ describe("hullArt", () => {
     expect(bellyIds(keys, 4, 6, () => false)).toBeNull();
   });
 
+  it("gives a hull tile whose key has no art the run's or the corner's belly, never the old one", () => {
+    // A one-tile nub on the box's +x side (thinner than ships are built to, as damage leaves): its key has no art.
+    const { keys } = box(8, 6, (x, y) => (x === 9 && y === 6 ? Struct.Wall : undefined));
+    const plain = (id: string) => !/\.l\d+$/.test(id) && /\.(0_1_15|1_0_15|1_0_15~0_1_15)$/.test(id);
+    expect(keys.at(9, 6)).not.toBe("");
+    expect(bellyIds(keys, 9, 6, plain, true)).toEqual({ under: "tile.hull.belly.under.1_0_15~0_1_15", low: "tile.hull.belly.low.1_0_15~0_1_15" });
+    // A floor (its edge on a breach) takes no catch-all.
+    expect(bellyIds(keys, 9, 6, plain)).toBeNull();
+  });
+
   it("takes the default design on half the tiles and the others alike on the rest", () => {
     for (const n of [4, 6]) {
       const counts = new Array<number>(n).fill(0);

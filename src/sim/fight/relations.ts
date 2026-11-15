@@ -26,6 +26,27 @@ export function isHostile(sim: Sim, a: number, b: number): boolean {
   return wanted(a, b) || wanted(b, a);
 }
 
+/** The player's living crew (the player faction's side of every `isHostile` question about "us"). */
+export function playerCrew(sim: Sim): number[] {
+  return sim.world.query(CrewC, AllegianceC).filter((id) => sim.world.get(id, AllegianceC)?.faction === 'player' && !sim.world.has(id, DeadC));
+}
+
+/**
+ * True if this crew member is an active foe of the player right now: hostile to some player crew member (`isHostile`: opposing
+ * factions, creatures, rogues, station crew once the player's crew is wanted there) and still in the fight (`isCombatReady`: not
+ * surrendered, downed, dead, inert or stunned). Neutral crew (station crew, traders, guests) are not. Pass `players` (`playerCrew`)
+ * when asking about many crew.
+ */
+export function isPlayerFoe(sim: Sim, crew: number, players: readonly number[] = playerCrew(sim)): boolean {
+  return isCombatReady(sim, crew) && players.some((p) => p !== crew && isHostile(sim, p, crew));
+}
+
+/** Every active foe of the player (`isPlayerFoe`). */
+export function playerFoes(sim: Sim): number[] {
+  const players = playerCrew(sim);
+  return players.length ? sim.world.query(CrewC, PositionC).filter((id) => isPlayerFoe(sim, id, players)) : [];
+}
+
 /**
  * True if `isHostile` could hold for some ordered pair of these crew: two of them on factions that are hostile to each other,
  * or any of them wanted (a `WantedC` makes hostility depend on the other's station). False proves `isHostile(a, b)` is false

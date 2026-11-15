@@ -22,7 +22,7 @@ export function pendingHullKeys(kindAt: KindAt, W: number, H: number): HullKeys 
 export function pendingHull(h: HullKeys | null, kindAt: KindAt, x: number, y: number, kind: number, has: (id: string) => boolean): PendingHull | null {
   if (!h) return null;
   if (kind !== Struct.Floor && hullSide(kindAt, x, y) !== HullSide.Near) return null;
-  const b = bellyIds(h, x, y, has);
+  const b = bellyIds(h, x, y, has, kind !== Struct.Floor);
   return b ? { ...b, replacesWall: kind !== Struct.Floor } : null;
 }
 

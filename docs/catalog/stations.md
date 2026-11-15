@@ -29,7 +29,7 @@ Station crews run on the shared crew AI with a director that posts patrol jobs (
 | Contraband inspections | `inspect` | Patrols board, search holds, seize contraband | In game | sim/inspect/*; scenarios inspect, patrol |
 | Station alarm and guards | `alarm` | Intruders and attacks turn station crews hostile | In game | sim/systems/stationAlarm.ts, stationDirector.ts |
 | Station food and fuel upkeep | `upkeep` | Station stocks of rations and fuel replenish over time | In game | sim/stations/food.ts, modules/energy.ts |
-| Station districts, landmarks, hangar decks | `-` | Zoned rooms, set pieces, shuttle bays on stations | Planned | issues #131, #132, #130, #133; #379 (courts under furniture) is a bug |
+| Station districts, landmarks, hangar decks | `-` | Zoned rooms, set pieces, shuttle bays on stations. Lamps, banner, deck marks and the floor-finish field exist as content, but the station generator does not place them yet | Planned | issues #131, #132, #130, #133; #379 (courts under furniture) is a bug |
 
 ## Black markets (`content.blackMarkets`)
 

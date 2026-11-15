@@ -82,12 +82,13 @@ Crews that never surrender (the zealots) offer no choice: their ship is given up
 Enemy crew who surrendered or were downed when you took the ship are held as **prisoners** on the prize, listed on the
 Prize panel with their health. Your medics rescue and tend a downed prisoner, but only after your own crew; an enemy who is
 still fighting is never rescued. **Release** lets a prisoner go (**Release all** frees every one): they leave at once and
-their faction thinks a little better of you. Crew seal prisoners into stasis slabs and hold them in a stasis wheel on the
-same ship: see [Prisoners and stasis](../prisoners/).
+their faction thinks a little better of you. Crew seal prisoners into stasis slabs and hold them in a stasis wheel; a
+shuttle carries them home from a prize with no wheel, and stations pay to take them off your hands: see
+[Prisoners and stasis](../prisoners/).
 
 <ComingLater>
 
-Bringing prisoners from the prize to your own ship, and ransom, sale or recruiting.
+Recruiting a prisoner into your crew.
 
 </ComingLater>
 
@@ -95,6 +96,10 @@ Bringing prisoners from the prize to your own ship, and ransom, sale or recruiti
 
 Enemy ships can launch boarding parties at you in the same way. The first sign is the **Under attack** alert and an enemy
 shuttle docking at an airlock, or intruders appearing aboard.
+
+Anyone fighting you right now, boarders, creatures, or station guards once you're wanted there, stands on a **red diamond**.
+It goes once they surrender, go down or die. Neutral crew, guests and your own crew have no mark; selected crew get the
+selection ring.
 
 Your crew defend themselves:
 

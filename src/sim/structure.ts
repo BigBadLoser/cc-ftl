@@ -1,6 +1,16 @@
 import type { FieldSpec, GridLike } from './grid';
 import { SPACE_TEMP, VENT_CONDUCTANCE } from './tuning';
 
+/**
+ * Floor finish of a tile, stored in the `floor` field: what a floor is paved with instead of the plain deck. Looks only;
+ * nothing in the sim reads it. Heavy is the tread plate, Clean the pale ceramic tile (medbay, lab, galley), Carpet the
+ * soft floor (painted with the ship's livery, render/carpetPaint.ts). Template `floors` rows spell it with FINISH_CHARS.
+ */
+export const Finish = { Plain: 0, Heavy: 1, Clean: 2, Carpet: 3 } as const;
+export type FinishKind = (typeof Finish)[keyof typeof Finish];
+/** Template `floors` characters: anything else (a space, '.') is the plain deck. */
+export const FINISH_CHARS: Readonly<Record<string, FinishKind>> = { h: Finish.Heavy, c: Finish.Clean, k: Finish.Carpet };
+
 /** Structural kind of a tile, stored in the `struct` field. Materials/variants come later. */
 export const Struct = {
   Space: 0,
@@ -68,6 +78,13 @@ export const SHIP_FIELDS = {
   ore: 'u8',
   /** Units of ore left on the tile (0..255); 0 with `ore` 0. */
   oreAmt: 'u8',
+  /** Floor finish of a floor tile (`Finish`, 0 = the plain deck): what it is paved with. Looks only; set by stamping. */
+  floor: 'u8',
+  /** Deck markings, one edge mask per kind (N 1, E 2, S 4, W 8; keep-clear also `MARK_FILL` 16): see sim/marks.ts. Looks only. */
+  markWalkway: 'u8',
+  markApron: 'u8',
+  markKeepClear: 'u8',
+  markHazard: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -92,6 +109,11 @@ export const SHIP_EMPTY = {
   ship: 0,
   ore: 0,
   oreAmt: 0,
+  floor: 0,
+  markWalkway: 0,
+  markApron: 0,
+  markKeepClear: 0,
+  markHazard: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */

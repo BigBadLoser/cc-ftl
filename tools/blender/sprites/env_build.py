@@ -22,6 +22,15 @@ def diamond_mask(W, H):
     return np.abs(x) / (core.TILE_W / 2) + np.abs(y) / (core.TILE_H / 2) < 1.0
 
 
+def quarter_mask(W, H, qi, qj):
+    """The px of the tile diamond whose centre lies in one quarter of the tile: qi 1 = the +x half, qj 1 = the +y half. The
+    four quarters partition the diamond, so decals drawn a quarter at a time meet with no gap and no double px."""
+    ys, xs = np.mgrid[0:H, 0:W]
+    x, y = xs + 0.5 - W / 2, ys + 0.5 - H / 2
+    gx, gy = x / core.TILE_W + y / core.TILE_H, y / core.TILE_H - x / core.TILE_W
+    return diamond_mask(W, H) & ((gx >= 0) == bool(qi)) & ((gy >= 0) == bool(qj))
+
+
 def _pad1(a):
     return np.pad(a, ((1, 1), (1, 1)) + ((0, 0),) * (a.ndim - 2))
 
@@ -56,7 +65,7 @@ def _show(objs, on):
         ob.hide_render = not on
 
 
-def render_sprite(sid, kind, objs):
+def render_sprite(sid, kind, objs, want_uv=False):
     if kind == "ghost":
         xs = core.extent_px(objs)
         xmin, xmax, ymin, ymax = xs
@@ -98,17 +107,23 @@ def render_sprite(sid, kind, objs):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
+    elif kind.startswith("decal:"):                     # a quarter-tile decal ("decal:<qi><qj>"): only its quarter's px,
+        op = op & quarter_mask(W, H, int(kind[6]), int(kind[7]))     # the rest of the mesh is margin for the px on its edge
+        c, op = _pad1(c), _pad1(op)
     elif kind in ("block", "wide", "over", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:
         c, op = post.outline(c, op, True)
     grgb, _ = core.render(W, H, "glow")
     g = _pad1(post.glow_down(grgb, SS, 3))
+    if want_uv:                                         # the uv pass (slab faces; #481), cropped like the sprite: 7th value
+        urgb, ua = core.render(W, H, "uv")
+        return c, op, g, (W + 2) // 2, (H + 2) // 2, None, _pad1(post.uv_down(urgb, ua, SS))
     return c, op, g, (W + 2) // 2, (H + 2) // 2, None
 
 
-def crop_item(sid, fp, c, op, g, ox, oy, al=None):
-    """Cropped manifest item {id, fp, rgba, g, ax, ay} of a rendered sprite."""
+def crop_item(sid, fp, c, op, g, ox, oy, al=None, uv=None):
+    """Cropped manifest item {id, fp, rgba, g, ax, ay} of a rendered sprite (+ uv, the same crop of its uv pass, if given)."""
     vis = op | (g[..., 3] > 0)
     if not vis.any():
         return None                                     # nothing visible (e.g. a corner ghost with no belly)
@@ -116,7 +131,10 @@ def crop_item(sid, fp, c, op, g, ox, oy, al=None):
     rgba = post.to_rgba(c, op)
     if al is not None:
         rgba[..., 3] = al
-    return {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
+    it = {"id": sid, "fp": fp, "rgba": rgba[y0:y1, x0:x1], "g": g[y0:y1, x0:x1], "ax": ox - x0, "ay": oy - y0}
+    if uv is not None:
+        it["uv"] = uv[y0:y1, x0:x1]
+    return it
 
 
 def global_digest():

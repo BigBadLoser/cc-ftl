@@ -1,5 +1,5 @@
 import { shipIdOf } from '../sim/regions';
-import { AllegianceC, CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, prizeValue, type Sim } from '../sim';
+import { AllegianceC, CrewC, DeadC, DownedC, HealthC, PositionC, PrisonerC, PrizeC, ShipC, type Sim } from '../sim';
 import { sealOf } from './sealSnapshot';
 import type { UiPrize } from '../ui/api';
 
@@ -23,7 +23,7 @@ export function buildPrizes(sim: Sim): UiPrize[] {
         });
       } else if (sim.world.get(c, AllegianceC)?.faction === 'player') aboard++;
     }
-    out.push({ ship: id, name: ship.name, from: prize.from, value: prizeValue(sim, id), prisoners, crewAboard: aboard });
+    out.push({ ship: id, name: ship.name, from: prize.from, prisoners, crewAboard: aboard });
   }
   return out;
 }

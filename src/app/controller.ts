@@ -1,6 +1,6 @@
 import { asteroidAt, shipIdOf, shipGrid } from '../sim/regions';
 import { AsteroidC } from '../sim/asteroids/components';
-import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, type Sim, type SimEvent } from '../sim';
+import { AboardC, AllegianceC, BodyC, DraftedC, ModuleC, PositionC, ShipC, Struct, VehicleC, footprintTiles, playerFoes, type Sim, type SimEvent } from '../sim';
 import type { Renderer } from '../render/scene';
 import type { UiFightReport, UiSubject, UiToolState } from '../ui/api';
 import type { Bridge } from './bridge';
@@ -287,6 +287,7 @@ export function createController(sim: Sim, bridge: Bridge): Controller {
       wasFighting = fighting;
       alerts.sync();
       log.sync();
+      r?.setFoes(playerFoes(sim)); // the red foot marks (upkeep already runs a few times a second)
     },
     toast,
     setTool,

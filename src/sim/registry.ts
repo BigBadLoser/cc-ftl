@@ -17,6 +17,9 @@ export interface ShipTemplate {
   modules?: { def: string; x: number; y: number; rot: number; stock?: ItemQty[]; /** Standing production orders of a crafting module (e.g. keep 10 rations). */ orders?: { recipe: string; mode: 'count' | 'keep'; target: number }[]; /** Vehicle def stowed in this module (a vehicle bay). */ vehicle?: string; /** Drone defs docked in this module's slots, in order (a drone bay). */ drones?: string[]; /** Container modules: the side of the footprint clamped to the frame (default 'n'). */ clamp?: 'n' | 'e' | 's' | 'w'; /** A hydroponics bed: the crop (CropDef id) it is set to sow. */ crop?: string; /** A hydroponics bed: starts this many seconds into growing its crop (debug scenarios). */ grown?: number; /** A hydroponics bed: starts with its crop ready to harvest. */ ready?: true }[];
   /** '.' space, '#' wall, '_' floor, 'D' door, '=' beam. Rows may differ in length; short rows pad with space. */
   rows: string[];
+  /** Floor finishes, row for row with `rows`: 'h' heavy plate, 'c' clean tile, 'k' carpet, anything
+   *  else the plain deck (structure.ts FINISH_CHARS). Absent: every floor plain. */
+  floors?: string[];
   /** Faction of the ship (default 'player' for newGame, 'hostile' for debug.spawnEnemy). */
   faction?: Faction;
   /** Role ids of the crew to spawn. */
@@ -472,16 +475,22 @@ export type ScrapType = 'hull' | 'tech' | 'energy' | 'weapons' | 'comfort';
 /** What a seated leisure spot seats its players on. It picks the crew clip (render/loadout.ts SEAT_CLIP): each kind has its own seat shape the sitter is cut against. Console seats are the default and need no kind. */
 export type SeatKind = 'stool' | 'bench';
 
-export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'production' | 'storage' | 'defence' | 'utility';
+export type ModuleCategory = 'structure' | 'power' | 'systems' | 'life' | 'furniture' | 'production' | 'storage' | 'defence' | 'utility';
 
 export interface ModuleDef {
   name: string;
   /** Build catalog tab. Absent = Utility. */
   category?: ModuleCategory;
+  /** Build catalog: modules sharing a group fold into one card (a chip row in its popover picks the member). Tier families group by themselves. */
+  buildGroup?: string;
+  /** Build catalog: the short chip label of a member in its group ("3×1", "Corner"). */
+  variantLabel?: string;
   /** One or two sentences for the build catalog's popover. */
   description?: string;
   /** Render asset id, e.g. 'module.reactor' (resolved through the asset manifest). */
   asset: string;
+  /** Wears its ship's livery: the art has a key-colour mask per roof emblem (`<asset>.r{n}.lv.<emblem>`), recoloured. Looks only. */
+  livery?: true;
   footprint: readonly [number, number];
   /** Solid modules block walking on their tiles. */
   solid: boolean;

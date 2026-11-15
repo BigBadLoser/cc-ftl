@@ -14,7 +14,7 @@ export function composeManifest(m: Manifest, dir: string, worldW = 128): Manifes
   const k = worldW / m.tile.w;
   const sheets: Record<string, SheetDef> = {};
   for (const [name, s] of Object.entries(m.sheets)) {
-    sheets[name] = { image: `${dir}/${s.image}`, ...(s.glow ? { glow: `${dir}/${s.glow}` } : {}), resolution: 1 / k };
+    sheets[name] = { image: `${dir}/${s.image}`, ...(s.glow ? { glow: `${dir}/${s.glow}` } : {}), ...(s.uv ? { uv: `${dir}/${s.uv}` } : {}), resolution: 1 / k };
   }
   const mul = (n: number): number => n * k;
   const pt = (p: [number, number]): [number, number] => [r1(p[0] * k), r1(p[1] * k)];

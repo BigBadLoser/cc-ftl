@@ -49,6 +49,12 @@ move in a browser).
 - `leisure`: the arcade cabinet and game table (#441) as `moduleLayers` stacks them (body, seat overlay, hologram): unpowered, idle and each
   in-use frame, with the stand tiles marked (`ids=module.arcade,module.gametable`, `rots=0,1,2,3`, default r0).
 
+- `floor-finishes`: the floor finishes as gridView draws them: plain deck, heavy plate, clean tile and carpet as 3x3 and 8x8 patches, the
+  carpet under a sample of livery schemes (`schemes=crimson,tide`, `none` = no livery) and under dimmed light.
+- `deck-marks`: the deck markings joined from their quarter pieces on test shapes (a room with a T corridor and a door gap, a diagonal
+  staircase, a hazard room beside a hall, keep-clear boxes), the masks set the way the generator will; `kinds=walkway,hazard,keepClear`,
+  `paint=b0443a` tints the walkway line.
+
 ## Add a panel
 
 A panel (`tools/lab/panel.ts`) is `{ id, title, help, zoom?, bg?, cells(ctx) }`. `cells` returns `LabCell`s: a label, a
