@@ -243,6 +243,52 @@ def g3(i, j):
 DESIGNS.update({"g1": g1, "g2": g2, "g3": g3})
 
 
+# Grating, round 2 (round 1 too busy over a big room: fewer, bolder shapes, less contrast):
+#   g4 wide slots: four broad slots a tile, no cross bars, a plain frame
+#   g5 grate panel: a solid plate with one inset grate window in its middle
+#   g6 soft bars: g1's layout at twice the pitch, the gaps a deep steel rather than black
+
+
+def g4(i, j):
+    f = _frame(i, j)
+    if f:
+        return f
+    k = (i - 5) % 14
+    if k < 5:
+        return "plate" if k == 0 else ("steelL" if k < 4 else "steel")
+    return "dark" if 7 <= j <= 57 else "steel"
+
+
+def g5(i, j):
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 4 or j < 4:
+        return "steelL"
+    if 14 <= i <= 49 and 14 <= j <= 49:
+        if i <= 15 or j <= 15:
+            return "dark"
+        if i >= 48 or j >= 48:
+            return "steelL"
+        k = (i - 16) % 8
+        return "steelL" if k < 3 else "dark"
+    return "steel"
+
+
+def g6(i, j):
+    f = _frame(i, j)
+    if f:
+        return f
+    if (j - 5) % 28 < 3:
+        return "steelL" if (j - 5) % 28 == 0 else "steel"
+    k = (i - 5) % 12
+    if k < 6:
+        return "plate" if k == 0 else ("steelL" if k < 4 else "steel")
+    return "steelD" if k < 11 else "seam"
+
+
+DESIGNS.update({"g4": g4, "g5": g5, "g6": g6})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
