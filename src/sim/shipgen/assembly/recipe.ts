@@ -1,3 +1,4 @@
+import type { AcrossOpts } from './across';
 import type { Dept } from './dept';
 import type { HubOpts } from './hub';
 import type { Outline } from './lattice';
@@ -24,9 +25,9 @@ export interface BranchRule {
    * Where a branch starts: off the trunk's sides, on a ring's rim (directions in order of preference), at an arc's cut
    * end, on a ring's inner side heading for its centre (`spoke`, from the sides named), at the far end of another rule's branch (its index in `branches`), or on the end or side of any section
    * already standing, the newest first (a cluster that grows), or on a flank along the street as the seed picks it, a hall's
-   * more often than a section's.
+   * more often than a section's, or behind the section the station started with (`foot`: its street heading back).
    */
-  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'spoke'; side: readonly Dir[] } | { on: 'after'; rule: number } | { on: 'section' } | { on: 'flank' };
+  host: { on: 'trunk' } | { on: 'rim'; prefer: readonly Dir[]; roll?: boolean } | { on: 'tip' } | { on: 'spoke'; side: readonly Dir[] } | { on: 'after'; rule: number } | { on: 'section' } | { on: 'flank' } | { on: 'foot' };
   /** Corridor before the first section (0: joined directly). On a ring's rim the band's depth is added. */
   neck: Roll;
   /**
@@ -53,8 +54,10 @@ export interface BranchRule {
    * last one's end (the biggest, or the first of a role), and the street's width (default 2), and roles that stand at the far end of its rows.
    * `behind`: rooms of these departments stand behind the rows, one a side and as long as the street (sheds behind shops).
    * `crosses`: only this many sections get the `cross` passage, the first ones (as many as wings will join; the rest run through).
+   * `across`: the section is a cross street (across.ts): its street runs across the port's heading both ways, the `near`
+   * roles' rooms either side of the host, the rest across from them, and the `back` roles' behind those on a gated back street.
    */
-  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any' | 'end' | 'inner' | readonly ('end' | 'inner')[]; crosses?: number; width?: number; far?: readonly RoomRole[]; behind?: readonly Dept[] };
+  section: { rooms: readonly [number, number]; rowDepth?: number; cap?: boolean | RoomRole; even?: boolean; cross?: boolean | 'any' | 'end' | 'inner' | readonly ('end' | 'inner')[]; crosses?: number; width?: number; far?: readonly RoomRole[]; behind?: readonly Dept[]; across?: AcrossOpts };
   /** Corridor between one section and the next (0: joined directly). */
   link: Roll;
   /** The station's docks stand in this branch's first section (a dock block). Hard: every dock must stand. */

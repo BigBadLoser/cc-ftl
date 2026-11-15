@@ -18,7 +18,7 @@ them.
 | Recipes (data) | `src/content/stationRecipes.ts` |
 | Recipe types | `src/sim/shipgen/assembly/recipe.ts` |
 | The assembler: candidates, roots, the hard checks | `assemble.ts`, `asm.ts` (placing and taking back), `branch.ts` (rules into branches), `finish.ts` (trim, braces, the room check) |
-| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `ring.ts` (ring or arc with its band) |
+| Elements | `elements.ts` (corridor, block, single room), `quay.ts` (the harbour), `pierhead.ts` (the harbour as the head of a street), `across.ts` (a cross street: a T, the trade post's), `ring.ts` (ring or arc with its band) |
 | Frames and ports | `model.ts` |
 | The wall writer | `regions.ts` (`RegionGrid`) |
 | The lattice ring and band | `lattice.ts`, `band.ts`, `inner.ts`, `corners.ts` |
@@ -162,7 +162,7 @@ still to be discussed and tweaked one by one.
 | Kind | Family |
 |---|---|
 | Mining | the spine only |
-| Trading | the bazaar (designed for it), and maybe the crescent |
+| Trading | the bazaar (designed for it), and maybe the crescent; on a rock (an asteroid outpost) the trade post |
 | Pirate | the tree |
 | Military | the star fort (`fort`), and the ring with barracks (from the compound); not the square |
 | Research | the crescent and the half ring (arcs), the labs down the half ring's spine; never the square |
@@ -260,6 +260,27 @@ cabins off the ring's inner side, the octagon's gardens, the ragged band. Open: 
 stepped and now mostly garden (the octagon is the cleaner of the two); no dock on the warehouse wing; the ring is
 about 107x90 at station size, and some seeds come out one ring size bigger (about 120x98). The full circle was
 dropped because its stalls came out as small wedges, the curved walls taking much of the floor.
+
+## The trade outposts (`tradepost`): prototype
+
+An asteroid trading outpost's family (`outpostAssembly`; used nowhere else), from the user's pick of mock sheet
+"trade-post" (B and C; A, one street inland, was dropped). Both are wide along the rock face and shallow into it, their
+harbour on the face. The piece they share is a cross street (`across.ts`, section option `across`): at the end of a
+street, a street three wide runs across it both ways. Rooms of the `near` roles stand on the host's side of it, either
+side of the host (beside its widest part, no deeper than the host runs back); the rest across from them, one depth,
+filling the street's length; with `back` roles a back street behind those, joined at both ends by a leg through a gate,
+the machinery and the guns on its far side. Painted solid first, floor cut out (like the pier head).
+
+- `court`: the market court (a block eleven wide, two stalls a side) is the section the station starts with; the pier
+  head stands on the middle of its far end (on a street wider than its own the head centres itself, its foot wall the
+  court's last line), and the cross street on its foot (a block a station starts with has a `foot` port; host
+  `{ on: 'foot' }`): the warehouse and the workshop either side of the court, the crew and the commons across.
+- `waterfront`: the quay (`block` shape) with office, customs and armoury in one row; the cross street behind customs'
+  gate, the stalls and the warehouse either side of the harbour, the crew, the commons and the workshop across.
+
+Open: the pier head's chief's cabin stands on a short street (a garden across from it) between the court and customs;
+two of the head's three airlocks are in its side walls, not the face; the far row's quarters are cut into cabins, so
+it is the longest row and the cross street is as long as it.
 
 ## The crescent (trade stations): prototype
 

@@ -62,13 +62,16 @@ function level(rows: readonly [RoomSpec[], RoomSpec[]], depth: readonly [number,
 const filler = (d: number): RoomSpec => ({ role: 'garden', dept: 'commons', mods: [], w: 3, h: d });
 
 export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], o: QuayOpts, b: BlockOpts): Built | null {
-  const g = c.g, n0 = g.regions.length, f: Frame = port.frame, deep = Math.max(4, b.rowDepth ?? 4);
+  const g = c.g, n0 = g.regions.length, deep = Math.max(4, b.rowDepth ?? 4);
   if (docks.length === 0 || port.hall < 0) return null;
   // Across the block (v): its outer walls V0 and V1, the street v = -1 to LAST, the rows' floor either side. On a ring's
-  // rim the outer walls stand on lattice lines; elsewhere they run on from the host street's rows.
-  const ring = port.kind === 'rim' && !!c.site.hull;
+  // rim the outer walls stand on lattice lines; elsewhere they run on from the host street's rows. At the end of a street
+  // wider than its own (a market court) it stands on the middle of it, its rows its own depth, and the host's last line
+  // beside its street is its foot wall.
+  const ring = port.kind === 'rim' && !!c.site.hull, hw = Math.max(2, port.width ?? 2), wider = !ring && hw > RING_STREET;
+  const f: Frame = wider ? { ...port.frame, x: at(port.frame, 0, (hw - RING_STREET) >> 1)[0], y: at(port.frame, 0, (hw - RING_STREET) >> 1)[1] } : port.frame;
   const V0 = ring ? -K * Math.ceil((deep + 3) / K) : -(deep + 3);
-  const V1 = ring ? K * Math.ceil((deep + LAST + 3) / K) - 1 : deep + 2 + Math.max(2, port.width ?? 2) - 2;
+  const V1 = ring ? K * Math.ceil((deep + LAST + 3) / K) - 1 : deep + 2 + (wider ? RING_STREET : hw) - 2;
   const depth: [number, number] = [-3 - V0, V1 - LAST - 2];
   const span: [[number, number], [number, number]] = [[V0 + 1, -2], [LAST + 2, V1]];
   // The rooms: the office and an armoury either side of customs, the rest in pairs along the street before it.
@@ -114,6 +117,7 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   const { L, units } = plan;
 
   g.rect(SOLID, ...rect(f, U0, L + 1, V0, V1 + 1), (x, y) => { const id = g.at(x, y); return id < 0 || !g.regions[id]?.hall; });
+  if (wider) for (const [v0, v1] of [[V0, -1], [LAST + 1, V1 + 1]] as const) g.rect(SOLID, ...rect(f, -1, 0, v0, v1));
   const hall = street ? g.hall('hall', 'harbour') : -1, customs = g.hall('plaza', 'customs'), arrivals = g.hall('hall', 'harbour');
   if (street) g.rect(hall, ...rect(f, 0, S1, -1, LAST + 1));
   g.rect(customs, ...rect(f, Math.max(S1, 0), S2 + 1, -1, LAST + 1));

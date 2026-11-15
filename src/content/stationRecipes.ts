@@ -168,6 +168,34 @@ const fort = (name: string, o: { hall: Roll; neck: number; rowDepth: number }): 
   ],
 });
 
+/**
+ * PROTOTYPE. A trade post on a rock (the asteroid trading outpost's; mock sheet "trade-post", B and C): the harbour on
+ * the rock face, a cross street the full width behind it (across.ts) with the warehouse and works or the stalls on the
+ * harbour's side of it either side of the harbour, the crew and the commons across it, and the machinery and the guns on
+ * a gated back street behind them.
+ *   court       the pier head's customs opens straight into a market court, the stalls round it, the cross street behind
+ *   waterfront  the airlocks along a quay the width of the harbour, customs the one gate into the cross street
+ */
+const tradepost = (name: string, o: { front: 'court' | 'waterfront' }): Recipe => {
+  const back = ['reactor', 'core', 'shields', 'plant', 'weapons', 'hangar'] as const;
+  const rest = ['freight', 'works', 'habitation', 'commons', 'secure', 'defence'] as const;
+  return {
+    name,
+    root: { kind: 'core' },
+    spacing: 2,
+    branches: o.front === 'court'
+      ? [
+        { takes: ['market'], per: 'together', host: { on: 'section' }, neck: 0, section: { rooms: [4, 8], rowDepth: 4, even: true, width: 11 }, link: 0 },
+        { takes: ['harbour'], per: 'together', host: { on: 'after', rule: 0 }, neck: 0, docks: true, quay: harbour('head'), section: { rooms: [2, 6], rowDepth: 4 }, link: 0 },
+        { takes: rest, per: 'together', host: { on: 'foot' }, neck: 0, section: { rooms: [1, 60], across: { near: ['cargo', 'industry'], back } }, link: 0 },
+      ]
+      : [
+        { takes: ['harbour'], per: 'together', host: { on: 'section' }, neck: 0, docks: true, quay: harbour('quay', 'block'), section: { rooms: [2, 6] }, link: 0 },
+        { takes: ['market', ...rest], per: 'together', host: { on: 'after', rule: 0 }, neck: 0, section: { rooms: [1, 60], across: { near: ['cargo'], back } }, link: 0 },
+      ],
+  };
+};
+
 export const stationRecipes = {
   tree: [
     scrap('off centre: jogged stubs, passages anywhere', { rooms: [2, 4], stub: [3, 5], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, jog: [0, 5], cross: 'any' }),
@@ -201,5 +229,9 @@ export const stationRecipes = {
   ],
   bazaar: [
     bazaar('market court and spokes, round corners', { outline: 'square', cut: 'octagon', round: true, court: 14 }),
+  ],
+  tradepost: [
+    tradepost('court post: the pier head on a market court, a cross street behind', { front: 'court' }),
+    tradepost('waterfront: a quay along the face, a cross street behind customs', { front: 'waterfront' }),
   ],
 } as const satisfies Record<string, readonly Recipe[]>;

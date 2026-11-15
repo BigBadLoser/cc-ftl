@@ -37,9 +37,10 @@ export interface Port {
   frame: Frame;
   /**
    * end: where a street stops; side: off the side of a corridor; rim: the outside of a ring; tip: the cut end of an
-   * arc; spoke: the inner side of a ring, heading for its centre.
+   * arc; spoke: the inner side of a ring, heading for its centre; foot: behind the section a station starts with, heading
+   * back the way it came.
    */
-  kind: 'end' | 'side' | 'rim' | 'tip' | 'spoke';
+  kind: 'end' | 'side' | 'rim' | 'tip' | 'spoke' | 'foot';
   /** The hall behind it (what a room placed here opens onto). */
   hall: number;
   /** The element that owns it, and how far along that element it is. */

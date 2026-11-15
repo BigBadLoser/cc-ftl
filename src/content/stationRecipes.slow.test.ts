@@ -19,6 +19,11 @@ describe('station recipes, every variation', () => {
       for (const seed of [1, 2, 3, 4]) expect(assembled(recipe, 'station.trading', 'station', seed), `seed ${seed}`).toEqual([]);
     });
   }
+  for (const recipe of stationRecipes.tradepost) {
+    it(`tradepost: ${recipe.name}`, () => {
+      for (const seed of [1, 2, 3, 4]) expect(assembled(recipe, 'station.trading', 'outpost', seed), `seed ${seed}`).toEqual([]);
+    });
+  }
   for (const recipe of stationRecipes.compound) {
     it(`compound: ${recipe.name}`, () => {
       for (const seed of [1, 2, 3, 4]) expect(assembled(recipe, 'station.mining', 'station', seed), `seed ${seed}`).toEqual([]);

@@ -12,6 +12,7 @@ import { at, facing, key, rect, sides, type Built, type Ctx, type Dir, type Fram
  */
 
 const SIDE_DIR = (f: Frame, side: -1 | 1): Dir => facing(f, side);
+const BACK: Record<Dir, Dir> = { n: 's', e: 'w', s: 'n', w: 'e' };
 
 /** Whether a two-wide street can run u0 <= u < u1 from a frame: open ground, but for the host's margin at the start. */
 function clear(c: Ctx, f: Frame, u0: number, u1: number, v0 = -1, v1 = 1): boolean {
@@ -326,6 +327,8 @@ export function block(c: Ctx, port: Port, rooms: readonly RoomSpec[], o: BlockOp
     }
     far = L + along;
   } else ports.push({ frame: { x: at(f, L, 0)[0], y: at(f, L, 0)[1], dir: f.dir }, kind: 'end', hall, along: L, side: 0, ...(X > 0 ? { width: X + 2 } : {}) });
+  // A block a station starts with has nothing behind it: its foot is a port too, the street heading back from it.
+  if (port.hall < 0 && !o.gate) ports.push({ frame: { x: at(f, -1, 0)[0], y: at(f, -1, 0)[1], dir: BACK[f.dir] }, kind: 'foot', hall, along: 0, side: 0, ...(X > 0 ? { width: X + 2 } : {}) });
   for (let id = n0; id < g.regions.length; id++) regions.push(id);
   const deep = Math.max(back[0] as number, back[1] as number) + 1 + shedDeep;
   const bounds = rect(f, 0, far + 1, -deep - 1, deep + 1);

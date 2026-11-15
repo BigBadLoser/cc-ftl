@@ -3,6 +3,7 @@ import type { RoomRole } from '../types';
 import { shuffle } from '../civilKit';
 import { roll, type Asm } from './asm';
 import type { Dept } from './dept';
+import { across } from './across';
 import { block, concourse, corridor, single, type BlockOpts } from './elements';
 import { K } from './lattice';
 import { quay } from './quay';
@@ -46,6 +47,11 @@ function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpe
     const plain: BlockOpts = { ...base, ...(rule.quay.form === 'head' && rule.section.rowDepth ? { rowDepth: rule.section.rowDepth } : {}) };
     delete plain.docks;
     return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain), rule.clear);
+  }
+  // A cross street: its street runs across the port's heading, its rows either side of the host and across from it.
+  if (rule.section.across) {
+    const across0 = rule.section.across, host = new Set(a.elements[port.owner]?.regions ?? []);
+    return a.place(port, joined, () => across(ctx, port, part, across0, host), rule.clear);
   }
   // Rooms of the departments that stand behind the rows (sheds) are not row rooms.
   const sheds = part.filter((r) => rule.section.behind?.includes(r.dept as Dept)), front = sheds.length > 0 ? part.filter((r) => !sheds.includes(r)) : part;
@@ -167,6 +173,8 @@ export function grow(a: Asm, recipe: Recipe, rooms: readonly RoomSpec[], docks: 
       } else if (rule.host.on === 'spoke') {
         const side = rule.host.side;
         hosts = a.ports.filter((p) => p.kind === 'spoke' && !p.used && side.includes(BACK[p.frame.dir]));
+      } else if (rule.host.on === 'foot') {
+        hosts = a.ports.filter((p) => p.kind === 'foot' && !p.used);
       } else if (rule.host.on === 'tip') {
         hosts = a.ports.filter((p) => p.kind === 'tip' && !p.used);
       } else if (rule.host.on === 'section' || rule.host.on === 'flank') {
