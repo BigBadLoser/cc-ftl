@@ -539,6 +539,48 @@ def h12(i, j):
 DESIGNS.update({"h10": h10, "h11": h11, "h12": h12})
 
 
+# Diamond tread, round 5 (faint seam kept, H10's; the layout still reads wrong), three layouts:
+#   h13 denser checker: H7's checker at four a tile side, slimmer lozenges
+#   h14 alternating rows: each row of lozenges runs along the other grid axis, rows offset half a step
+#   h15 brick pairs: lozenges in a staggered grid, the two in each brick along the two grid axes
+
+
+def _lens(u, v, ax, half, width, body="steelL", lit="plate"):
+    nx, ny = -ax[1], ax[0]
+    if nx + ny > 0 or (nx + ny == 0 and nx > 0):
+        nx, ny = -nx, -ny
+    k = _bump(u * ax[0] + v * ax[1], u * nx + v * ny, half, width)
+    return {"lit": lit, "body": body, "shadow": "steelD"}.get(k)
+
+
+def h13(i, j):
+    if i < 2 or j < 2:
+        return "plateB"
+    return _lozenges(i, j, ((1, 0), (0, 1)), 6, 2.4, 16, 0, "steelL", "plate", seam=False)
+
+
+def h14(i, j):
+    if i < 2 or j < 2:
+        return "plateB"
+    row = j // 16
+    u, v = (i + (8 if row % 2 else 0)) % 16 - 7.5, j % 16 - 7.5
+    ax = (0, 1) if row % 2 else (1, 0)
+    return _lens(u, v, ax, 6.5, 2.6) or "steel"
+
+
+def h15(i, j):
+    if i < 2 or j < 2:
+        return "plateB"
+    row = j // 16
+    x = (i + (16 if row % 2 else 0)) % 32
+    u, v = x % 16 - 7.5, j % 16 - 7.5
+    ax = (1, 0) if x < 16 else (0, 1)
+    return _lens(u, v, ax, 6.5, 2.6) or "steel"
+
+
+DESIGNS.update({"h13": h13, "h14": h14, "h15": h15})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
