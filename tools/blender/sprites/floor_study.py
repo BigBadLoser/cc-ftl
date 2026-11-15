@@ -581,6 +581,41 @@ def h15(i, j):
 DESIGNS.update({"h13": h13, "h14": h14, "h15": h15})
 
 
+# Picked so far: heavy plate = h13 (dense grid-axis lozenge checker, faint seam). Grating skipped for now.
+# Clean tile, round 1 (medbay, lab, galley; calm over a room, even tiling, a faint seam):
+#   c1 ceramic quarters: four pale tiles a tile, a thin soft-grey grout, the grout and seam alike
+#   c2 smooth panel: one pale panel a tile, a lit lip on the near sides, rounded corners
+#   c3 lined panel: c2 with a thin cool inset line a little in from its edge (a clinical trim)
+
+
+def c1(i, j):
+    if i % 32 < 2 or j % 32 < 2:
+        return "c4W4"
+    return "c4W2"
+
+
+def c2(i, j):
+    if i < 2 or j < 2 or _cham(i, j, 6):
+        return "c4W4"
+    if i < 4 or j < 4:
+        return "c4W1"
+    if i > 61 or j > 61:
+        return "c4W3"
+    return "c4W2"
+
+
+def c3(i, j):
+    if i < 2 or j < 2 or _cham(i, j, 6):
+        return "c4W4"
+    ci, cj = min(i, 63 - i), min(j, 63 - j)
+    if (6 <= ci <= 7 and cj >= 6) or (6 <= cj <= 7 and ci >= 6):
+        return "icG"
+    return "c4W2"
+
+
+DESIGNS.update({"c1": c1, "c2": c2, "c3": c3})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
