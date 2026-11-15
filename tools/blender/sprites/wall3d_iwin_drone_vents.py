@@ -203,7 +203,7 @@ def handle(k, yface, zlo, zhi):
     tube(k, [(x, y, zh) for x, y in path], r, (0.0, 0.0, 1.0))
 
 
-def tube(k, path, r, up, col=None):
+def tube(k, path, r, up):
     """A round tube (SIDES) along a path lying in the plane square to up, mitred at each bend (its section on the
     bisector); its faces in drone's pipe tones (faction.drone.pipe_tone, its walls' handles too: the user). Its ends are
     left open."""
@@ -224,5 +224,4 @@ def tube(k, path, r, up, col=None):
             mid = sum(pts, Vector()) / 4
             d = pb - pa
             out = mid - (pa + d * max(0.0, min(1.0, (mid - pa).dot(d) / d.dot(d))))
-            k.poly(pts, "wall", 2, out, fixed=(col or DR.pipe_tone)(out))   # (drone's pipe tones, its walls' handles
-                                                                            # too; col: another look's)
+            k.poly(pts, "wall", 2, out, fixed=DR.pipe_tone(out))   # (drone's pipe tones, its walls' handles too)

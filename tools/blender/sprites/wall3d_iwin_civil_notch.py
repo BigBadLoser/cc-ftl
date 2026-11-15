@@ -8,7 +8,7 @@ than the slope (the wall family's levels all come out the slope's white in civil
 from mathutils import Vector
 
 from . import walls as W
-from . import wall3d_iwin_civil_boxes as BX
+from . import wall3d_iwin_civil_bench as BN
 from .wall3d_iwin_drone_vents import _carve
 
 BELOW = 7                   # sprite px: the slope left under it, over the ramp's edge (the ref's 8)
@@ -55,7 +55,7 @@ def notch(k, part, cells):
             continue
         C._quad(k, [(a, yl, z(a)), (b, yl, z(b)), (b, yl, z1), (a, yl, z1)], (0, 1, 0), _col("back"))
         C._quad(k, [(a, yl, z1), (b, yl, z1), (b, ys1, z1), (a, ys1, z1)], (0, 0, 1), _col("ledge"))
-    BX.boxes(k, part, yl, z1)
+    BN.bench(k, part, yl, z1)
     for u, sd in ((u0, 1), (u1, -1)):
         if not -0.5 < u < 0.5:
             continue
