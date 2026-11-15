@@ -35,6 +35,40 @@ export const furniture = {
     asset: 'module.chair', footprint: [1, 1], solid: false, power: 0, flammability: 0.4,
     maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
   },
+  // Bar furniture (#441): furniture only, no drinking or seating behaviour yet. The counter pieces are solid and padded
+  // on the customer face (+v at r0); the stool is a walkable seat. The 1x2 arm is the 2x1 turned.
+  'module.bar_counter': {
+    scrap: 'comfort',
+    name: 'Bar counter',
+    category: 'life',
+    description: "A long padded counter. Join the pieces into a run.",
+    asset: 'module.bar_counter', footprint: [3, 1], solid: true, power: 0, flammability: 0.3,
+    maxHp: 70, buildWork: 80, cost: [{ item: 'item.metal', count: 6 }, { item: 'item.polymer', count: 3 }],
+  },
+  'module.bar_counter_short': {
+    scrap: 'comfort',
+    name: 'Short bar counter',
+    category: 'life',
+    description: "A short padded counter, for fitting a run to the room.",
+    asset: 'module.bar_counter_short', footprint: [2, 1], solid: true, power: 0, flammability: 0.3,
+    maxHp: 50, buildWork: 55, cost: [{ item: 'item.metal', count: 4 }, { item: 'item.polymer', count: 2 }],
+  },
+  'module.bar_corner': {
+    scrap: 'comfort',
+    name: 'Bar corner',
+    category: 'life',
+    description: "Turns a counter run through a corner.",
+    asset: 'module.bar_corner', footprint: [1, 1], solid: true, power: 0, flammability: 0.3,
+    maxHp: 30, buildWork: 30, cost: [{ item: 'item.metal', count: 2 }, { item: 'item.polymer', count: 1 }],
+  },
+  'module.bar_stool': {
+    scrap: 'comfort',
+    name: 'Bar stool',
+    category: 'life',
+    description: "A tall stool for the counter. Walkable.",
+    asset: 'module.bar_stool', footprint: [1, 1], solid: false, power: 0, flammability: 0.3,
+    maxHp: 20, buildWork: 20, cost: [{ item: 'item.metal', count: 1 }, { item: 'item.polymer', count: 1 }],
+  },
   'module.storage_locker': {
     scrap: 'comfort',
     name: 'Locker',

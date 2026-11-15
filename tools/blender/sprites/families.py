@@ -33,6 +33,7 @@
   recovery_pod  the recovery pod module.recovery (2x2): idle, .unpowered, .active bubble frames, the patient's front
             overlays and the scanner's frames, four rotations (recovery.py, parts in recovery_kit.py; MODPACK_ROTS as
             storage_set)
+  bar_module (module.bar_counter, bar_counter_short, bar_corner, bar_stool: art only so far)
   bunk_module / exercise_module / bench_module / planter_module / vending_module  leisure furniture: the double bunk
             module.bunk (1x2) and the single bed module.bed (1x2), the sparring droid module.exercise, the bench
             module.bench (2x1, bench.py: with the overlay over its three sitters), the planter
@@ -168,7 +169,7 @@ def jobs(name):
         import os
         from . import bench
         return bench.jobs(range(int(os.environ.get("MODPACK_ROTS", 4)))), bench.PAL
-    if name in ("bunk_module", "exercise_module", "planter_module", "vending_module"):
+    if name in ("bunk_module", "bar_module", "exercise_module", "planter_module", "vending_module"):
         import os
         from . import leisure
         return leisure.jobs(name, range(int(os.environ.get("MODPACK_ROTS", 4)))), leisure.palette(name)
@@ -560,6 +561,6 @@ RENDERED = ("env", "walls", "consoles", "weapons", "roof", "robot_bay", "drones"
             "ops_consoles", "cryo", "wallprops", "hazards", "clutter", "decay", "corpse", "damage", "rock", "rockwall",
             "pod_bay", "mining_pod", "escape_pod", "fx_mining", "fx_shield", "starmap", "backdrop", "cargo", "items", "salvage", "storage_ore",
             "hull", "scrapper", "upgrades", "research_bench", "arcade_cabinet", "gametable_module",
-            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module",
+            "recovery_pod", "bunk_module", "exercise_module", "bench_module", "planter_module", "vending_module", "bar_module",
             "stasis", "stasisload")
 ALL = RENDERED + ("sol", "damage_sol", "marks")

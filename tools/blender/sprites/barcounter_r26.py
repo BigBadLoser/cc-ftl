@@ -5,6 +5,7 @@ the padded faces; the padded faces sit on the tile edge by the stools.
 
 Pieces (each runs to its tiles' edges along the run, so neighbours butt flush; the customer face is padded):
   o1s straight (3x1): front +v padded
+  o1t short straight (2x1): o1s with two tiles
   o1c corner (1x1): front +v and right +u padded; joins the straight on its left and the arm behind it
   o1a arm (1x2): the run going back from the corner along v; its right +u side padded
 No drinks on the top: those can come later as a conditional overlay.
@@ -64,6 +65,12 @@ def o1s():
     return k.build()
 
 
+def o1t():
+    k = Bench("bar_o1t", (2, 1))
+    run(k, "v", -32, 32, (-16, 16))
+    return k.build()
+
+
 def o1c():
     k = Bench("bar_o1c", (1, 1))
     _px(k, -16, E - 4, I, E - 4, 0, 4, "r9Char")                                    # kick, both padded faces set back
@@ -85,7 +92,7 @@ def o1a():
     return k.build()
 
 
-PIECES = {"o1s": ((3, 1), o1s), "o1c": ((1, 1), o1c), "o1a": ((1, 2), o1a)}
+PIECES = {"o1s": ((3, 1), o1s), "o1t": ((2, 1), o1t), "o1c": ((1, 1), o1c), "o1a": ((1, 2), o1a)}
 
 
 def jobs():

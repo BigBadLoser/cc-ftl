@@ -63,7 +63,7 @@ Things people believe exist and do not (or only partly), and the reverse.
 - **Leisure furniture** (art in `tools/blender/sprites/leisure.py`, four rotations each; #441). Buildable from the Life tab, in game:
   `module.bench` 2x1 (three seat positions in its def, `sim/modules/seats.ts`, and the `sit_bench` crew clip
   and front overlays are ready; nothing sends crew to sit yet; front tiles kept clear), `module.bunk` 1x2 (a bed like `module.bed` with `berths: 2`: two crew sleep in it, lower deck and upper deck; `crew/berths.ts` owns who holds which berth,
-  bed ownership is per berth, the upper sleeper is drawn a deck higher), `module.exercise` sparring droid, `module.planter`, `module.vending` and `module.vending_red` (decor only,
+  bed ownership is per berth, the upper sleeper is drawn a deck higher), `module.bar_counter` 3x1, `module.bar_counter_short` 2x1, `module.bar_corner` 1x1 (solid, art `bar_module`: the 1x2 arm is the 2x1 turned) and `module.bar_stool` (walkable seat; furniture only, no drinking or sitting yet; no damaged art, like the mess table), `module.exercise` sparring droid, `module.planter`, `module.vending` and `module.vending_red` (decor only,
   no effect; the vending machines draw 1 power). Comfort values on modules and decor are the next step of #441. The single bed
   (`module.bed`) uses the same family's matching art (four rotations, damaged and destroyed per rotation).
 - **Trader profile `trader.corp`:** matches `faction.corp`, which nothing uses. The corporations trade through navy and civilian profiles.
