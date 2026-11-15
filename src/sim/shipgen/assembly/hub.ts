@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { shuffle } from '../civilKit';
-import { line, type Site } from './lattice';
+import { line, RING_STREET, type Site } from './lattice';
 import { at, rect, type Built, type Ctx, type Frame } from './model';
 import { cabinsWithin } from './quarters';
 import { SOLID, SPACE } from './regions';
@@ -28,7 +28,11 @@ export interface HubOpts {
   cabins?: number;
 }
 
-/** A spoke's frame at the centre: u runs out along its axis, and the tile at u is u tiles from the middle. */
+/**
+ * A spoke's frame at the centre: u runs out along its axis, and the tile at u is u tiles from the middle. A spoke is a
+ * ring street: its floor is v = -1 to LAST, and a gate across it stands on its middle line, v = 0.
+ */
+const LAST = RING_STREET - 2;
 const SPOKE: readonly Frame[] = [{ x: 0, y: -1, dir: 'n' }, { x: 0, y: 0, dir: 'e' }, { x: 0, y: 0, dir: 's' }, { x: -1, y: 0, dir: 'w' }];
 /** A quarter turn clockwise about the middle, `k` times: the north-east quadrant laid on each of the four. */
 const turn = (k: number, x: number, y: number): [number, number] => { for (; k > 0; k--) [x, y] = [-1 - y, x]; return [x, y]; };
@@ -61,11 +65,11 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   // wall. A gated spoke (north and south, when there are rooms to keep behind gates) stops at that wall.
   const streets = g.hall('hall');
   const gated = (f: Frame): boolean => rooms.gated.length > 0 && (f.dir === 'n' || f.dir === 's');
-  for (const f of SPOKE) g.street(streets, ...rect(f, h, gated(f) ? s.reach - 1 : s.reach, -1, 1));
+  for (const f of SPOKE) g.street(streets, ...rect(f, h, gated(f) ? s.reach - 1 : s.reach, -1, LAST + 1));
   // The market, a quadrant at a time, in the north-east one's terms: n tiles north of the middle and e east of it.
   // The market's rim stands `arm` off the court all the way round: straight along the court's sides, an arc about each
   // of its corners. North of the court stands one room, with the corner; east of it a second (with fewer rooms than
-  // eight, that ground is the first one's too).
+  // eight, that ground is the first one's too). A spoke wider than two takes its extra line from the rooms on its +v side.
   const within = (n: number, e: number): boolean => n < h || e < h || Math.hypot(n + 0.5 - h, e + 0.5 - h) <= o.arm - 0.2;
   const sold: [number, number][] = [];
   const stalls = [...market], own = Math.max(0, Math.min(4, stalls.length - 4));
@@ -78,6 +82,7 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
     for (let n = 1; n < H; n++) for (let e = 1; e < H; e++) {
       if ((n < h && e < h) || !within(n, e)) continue;
       const [x, y] = turn(k, e, -1 - n);
+      if (g.at(x, y) === streets) continue;
       if (!c.free(x, y)) return null;
       g.set(x, y, n >= h || b < 0 ? a : b);
       sold.push([x, y]);
@@ -95,7 +100,7 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   for (const [x, y] of road) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (g.at(x + dx, y + dy) === SPACE) g.set(x + dx, y + dy, SOLID);
   // A gate either end of a gated spoke: across it beyond the road, and in the ring's inner wall.
   for (const f of SPOKE.filter(gated)) {
-    for (const v of [-1, 0]) g.set(...at(f, H + 2, v), SOLID);
+    for (let v = -1; v <= LAST; v++) g.set(...at(f, H + 2, v), SOLID);
     g.gate(...at(f, H + 2, 0));
     g.gate(...at(f, s.reach - 1, 0));
   }
@@ -103,7 +108,7 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
   const lanes = shuffle(c.rng, SPOKE.flatMap((f) => ([-1, 1] as const).map((side) => {
     const axis: 'x' | 'y' = f.dir === 'e' || f.dir === 'w' ? 'x' : 'y', dir: 1 | -1 = f.dir === 'e' || f.dir === 's' ? 1 : -1, across = axis === 'x' ? f.y : f.x;
     const from = axis === 'x' ? f.x : f.y, u0 = H + (gated(f) ? 3 : 2);
-    return { axis, dir, side, gated: gated(f), from, u0, at: from + dir * u0, edge: side < 0 ? across - 2 : across + 1, len: 0, done: [] as { specs: RoomSpec[]; access: number[] }[] };
+    return { axis, dir, side, gated: gated(f), from, u0, at: from + dir * u0, edge: side < 0 ? across - 2 : across + LAST + 1, len: 0, done: [] as { specs: RoomSpec[]; access: number[] }[] };
   })));
   type Lane = (typeof lanes)[number];
   const laid = g.mark();
@@ -125,8 +130,12 @@ export function hub(c: Ctx, s: Site, market: readonly RoomSpec[], rooms: { open:
         while (n < l.u0 && c.free(...tile(l.at - l.dir * (n + 1), v))) n++;
         rows.push(n);
       }
+      // (And a step up at the far end is four rows at least, its two walls and two of floor: else the rows stop level
+      // with the one before it, so no single tile of floor pokes out.)
+      let level = rows.length - 3, cap = rows[level] ?? 0;
+      while (level > 0 && rows.length - level < 4 && (rows[level - 1] as number) < cap) cap = rows[--level] as number;
       for (const [i, n] of rows.entries()) {
-        const keep = i >= rows.length - 2 ? Math.min(n, rows[rows.length - 3] ?? 0) : n;
+        const keep = i > level ? Math.min(n, cap) : n;
         for (let k = 1; k <= n; k++) {
           const t = tile(l.at - l.dir * k, l.edge + l.side * i);
           g.set(...t, k <= keep ? first : streets);

@@ -1,6 +1,7 @@
 import type { RoomSpec } from '../plan';
 import { block, type BlockOpts } from './elements';
 import { at, key, rect, type Built, type Ctx, type Frame, type Port } from './model';
+import { RING_WALL } from './lattice';
 import { SOLID } from './regions';
 import type { QuayOpts } from './quay';
 
@@ -39,7 +40,7 @@ export function pierHead(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: 
   // One airlock in the end wall; the rest along the two sides, a pitch apart, two tiles clear of customs and of the end unit.
   const pairs = Math.ceil((docks.length - 1) / 2), L = CUSTOMS + 2 + Math.max(0, pairs - 1) * o.pitch + 3 + 2 + 3;
   const free = (box: readonly [number, number, number, number], open = false): boolean => {
-    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y) && !(c.site.depth?.(x, y) >= 4))) return false;
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y) && !(c.site.depth?.(x, y) > RING_WALL))) return false;
     return true;
   };
   if (!free(rect(f, 0, CUSTOMS, c0 - 1, c1 + 1)) || !free(rect(f, CUSTOMS, L + 1, v0 - 1, v1 + 1))) return null;

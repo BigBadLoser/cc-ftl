@@ -4,7 +4,7 @@ import { batteries } from './battery';
 import { cornersOf, placeCorners } from './corners';
 import { innerRoom, placeInner } from './inner';
 import { placeStreets } from './street';
-import { site, type Outline, type Site } from './lattice';
+import { RING_STREET, RING_WALL, site, type Outline, type Site } from './lattice';
 import { at, type Built, type Dir, type Frame } from './model';
 
 /**
@@ -39,20 +39,22 @@ export function ringPorts(s: Site, kept: (x: number, y: number) => boolean): Bui
     if (g.at(...at(f, u - 1, 0)) !== s.ring || !kept(x, y) || !kept(...at(f, s.R, 0))) continue;
     ports.push({ frame: { x, y, dir }, kind: 'rim', hall: s.ring, along: s.R - u, side: 0 });
     // And on its inner side there: from the ring's inner wall, heading for the centre.
-    const [ix, iy] = at(f, u - 3, 0);
+    const [ix, iy] = at(f, u - RING_WALL, 0);
     ports.push({ frame: { x: ix, y: iy, dir: BACK[dir] }, kind: 'spoke', hall: s.ring, along: 0, side: 0 });
   }
-  // Cut ends: the two ring tiles that face the cut, one port a pair.
-  const seen = new Set<string>();
+  // Cut ends: the ring tiles that face the cut, one port a street's width of them (v = -1 on the first), from the
+  // start of each run.
   for (let y = -s.R; y < s.R; y++) for (let x = -s.R; x < s.R; x++) {
-    if (g.at(x, y) !== s.ring) continue;
     for (const [dx, dy, dir] of [[0, 1, 's'], [0, -1, 'n'], [1, 0, 'e'], [-1, 0, 'w']] as const) {
-      if (kept(x + dx, y + dy)) continue;
-      const pair = dy !== 0 ? g.at(x + 1, y) === s.ring : g.at(x, y + 1) === s.ring;
-      const k = `${dir}${dy !== 0 ? Math.floor((x + 1) / 2) : Math.floor((y + 1) / 2)}:${dy !== 0 ? y : x}`;
-      if (!pair || seen.has(k)) continue;
-      seen.add(k);
-      ports.push({ frame: dy !== 0 ? { x: x + 1, y: y + dy, dir } : { x: x + dx, y: y + 1, dir }, kind: 'tip', hall: s.ring, along: 0, side: 0 });
+      // The k-th tile along the cut from this one, and whether it is ring facing the cut.
+      const tile = (k: number): [number, number] => (dy !== 0 ? [x + k, y] : [x, y + k]);
+      const faces = (k: number): boolean => { const [px, py] = tile(k); return g.at(px, py) === s.ring && !kept(px + dx, py + dy); };
+      if (!faces(0)) continue;
+      let start = 0;
+      while (faces(start - 1)) start--;
+      if ((-start) % RING_STREET !== 0 || !Array.from({ length: RING_STREET }, (_, k) => faces(k)).every(Boolean)) continue;
+      const [fx, fy] = tile(1);
+      ports.push({ frame: { x: fx + dx, y: fy + dy, dir }, kind: 'tip', hall: s.ring, along: 0, side: 0, width: RING_STREET });
     }
   }
   return ports;

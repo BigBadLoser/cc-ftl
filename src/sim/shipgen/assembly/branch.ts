@@ -56,7 +56,9 @@ function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpe
 }
 
 /** One branch at a port: neck, then sections in series. Null (and nothing kept) when any part of it does not fit. */
-function branch(a: Asm, rule: BranchRule, host: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], bunks: readonly RoomSpec[], each: number): Chain | null {
+function branch(a: Asm, given: BranchRule, host: Port, rooms: readonly RoomSpec[], docks: readonly RoomSpec[], bunks: readonly RoomSpec[], each: number): Chain | null {
+  // On a ring's cut end the branch carries the ring's street on, as wide, unless its rule says otherwise.
+  const rule = !given.section.width && host.kind === 'tip' && host.width ? { ...given, section: { ...given.section, width: host.width } } : given;
   const { ctx } = a, { rng } = ctx;
   const undo = a.checkpoint();
   const joined = new Set(a.elements[host.owner]?.regions ?? []), outside = new Set(joined);

@@ -70,31 +70,39 @@ export class RegionGrid {
   /** Each region's painted extent and tile count: a region is a plain rectangle when the two agree. */
   private shapes: Shape[] = [];
 
-  /** The region's extent when it is a plain rectangle (inclusive), else null. */
-  private boxOf(id: number): Shape | null {
+  /**
+   * The region's extent when it is a plain rectangle (inclusive), else null; with `clipped`, also when it lacks no more
+   * tiles than that (a band room whose corner the hull's step takes).
+   */
+  private boxOf(id: number, clipped = 0): Shape | null {
     const sh = this.shapes[id];
-    return sh && sh.n === (sh.x1 - sh.x0 + 1) * (sh.y1 - sh.y0 + 1) ? sh : null;
+    return sh && sh.n >= (sh.x1 - sh.x0 + 1) * (sh.y1 - sh.y0 + 1) - clipped ? sh : null;
   }
 
   /**
    * Whether region `b` outranks region `a` where they touch: the one that gives way takes the wall between them. Space
-   * outranks everything and halls outrank rooms. Between two rectangular rooms side by side, the one whose shared side
-   * runs on past the other's end into open space gives way: it walls that stretch anyway, so its wall runs straight,
-   * where the other giving way would leave it a lip of floor beside the other room. When neither (or both) does, the
-   * one whose shared side is longer gives way: it walls that side against open space past the other's end anyway, so
-   * the wall runs straight and neither room is left with a notch. Otherwise (and on a tie) the lower rank gives way.
+   * outranks everything and halls outrank rooms. Between two rooms side by side (rectangles, or but for a corner or two
+   * the hull clips), the one whose shared side runs on past the other's end into open space gives way: it walls that
+   * stretch anyway, so its wall runs straight, where the other giving way would leave it a lip of floor beside the
+   * other room. When neither (or both) does, between rectangles the one whose shared side is longer gives way: it walls
+   * that side against open space past the other's end anyway, so the wall runs straight and neither room is left with a
+   * notch. Otherwise (and on a tie) the lower rank gives way.
    */
   private over(b: number, a: number): boolean {
     const pb = this.prio(b), pa = this.prio(a);
     if (a < 0 || b < 0 || (this.regions[a] as Region).hall || (this.regions[b] as Region).hall) return pb > pa;
-    const A = this.boxOf(a), B = this.boxOf(b);
-    if (A && B) {
-      const sideBySide = (A.x1 + 1 === B.x0 || B.x1 + 1 === A.x0) && A.y0 <= B.y1 && B.y0 <= A.y1;
-      const stacked = (A.y1 + 1 === B.y0 || B.y1 + 1 === A.y0) && A.x0 <= B.x1 && B.x0 <= A.x1;
-      if (sideBySide || stacked) {
-        const ea = this.bare(A, B, stacked), eb = this.bare(B, A, stacked);
+    const near = (P: Shape, Q: Shape): [boolean, boolean] => [(P.x1 + 1 === Q.x0 || Q.x1 + 1 === P.x0) && P.y0 <= Q.y1 && Q.y0 <= P.y1, (P.y1 + 1 === Q.y0 || Q.y1 + 1 === P.y0) && P.x0 <= Q.x1 && Q.x0 <= P.x1];
+    const Ar = this.boxOf(a, 2), Br = this.boxOf(b, 2);
+    if (Ar && Br) {
+      const [sbs, st] = near(Ar, Br);
+      if (sbs || st) {
+        const ea = this.bare(Ar, Br, st), eb = this.bare(Br, Ar, st);
         if (ea !== eb) return ea;
       }
+    }
+    const A = this.boxOf(a), B = this.boxOf(b);
+    if (A && B) {
+      const [sideBySide, stacked] = near(A, B);
       const la = sideBySide ? A.y1 - A.y0 : stacked ? A.x1 - A.x0 : 0, lb = sideBySide ? B.y1 - B.y0 : stacked ? B.x1 - B.x0 : 0;
       if (la !== lb) return la > lb;
     }

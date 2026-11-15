@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { block, type BlockOpts } from './elements';
-import { K } from './lattice';
+import { K, RING_WALL } from './lattice';
 import { pierHead } from './pierhead';
 import { at, key, rect, sides, type Built, type Ctx, type Dir, type Frame, type Port } from './model';
 
@@ -123,7 +123,7 @@ export function quay(c: Ctx, port: Port, rooms: readonly RoomSpec[], docks: read
   // On a face the quay is as long as the face, and longer only when its airlocks need it.
   const q0 = Math.min(c0 - A, face ? c0 - face[0] : c0), q1 = Math.max(c1 + A, face ? c1 + face[1] : c1);
   const free = (box: readonly [number, number, number, number], open = false): boolean => {
-    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y) && !(c.site.depth?.(x, y) >= 4))) return false;
+    for (let y = box[1]; y < box[3]; y++) for (let x = box[0]; x < box[2]; x++) if (!c.free(x, y) || (open && c.site.hull?.(x, y) && !(c.site.depth?.(x, y) > RING_WALL))) return false;
     return true;
   };
   const boxes = rows.map((_row, k) => (k === 0 ? rect(f, 0, D + 2, c0 - span[0], c0) : rect(f, 0, D + 2, c1, c1 + span[1])));

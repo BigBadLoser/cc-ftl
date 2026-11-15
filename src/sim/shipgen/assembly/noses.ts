@@ -1,5 +1,5 @@
 import type { RoomSpec } from '../plan';
-import { K, type Site } from './lattice';
+import { K, RING_WALL, type Site } from './lattice';
 import { at, type Port } from './model';
 import { SOLID, SPACE } from './regions';
 
@@ -22,7 +22,7 @@ export function noses(s: Site, tips: readonly Port[], rooms: readonly RoomSpec[]
     while (arm(...at(f, -1, va - 1))) va--;
     while (arm(...at(f, -1, vb + 1))) vb++;
     // And the promenade's inner wall: the nose's side is flush with the arm's.
-    const wall = (v: number): boolean => { const [x, y] = at(f, -1, v); return g.at(x, y) === SOLID && s.depth(x, y) === 3; };
+    const wall = (v: number): boolean => { const [x, y] = at(f, -1, v); return g.at(x, y) === SOLID && s.depth(x, y) === RING_WALL; };
     if (wall(va - 1)) va--;
     if (wall(vb + 1)) vb++;
     const vc = (va + vb) / 2, half = (vb - va + 1) / 2;

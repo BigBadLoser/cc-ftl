@@ -1,6 +1,6 @@
 import type { RoomSpec } from '../plan';
 import { SOLID, SPACE } from './regions';
-import type { Site } from './lattice';
+import { RING_WALL, type Site } from './lattice';
 
 /**
  * The ring's inner side as frontage. The ring is a street like any other: its inner wall is cut into straight runs (the
@@ -29,8 +29,8 @@ const apart = (a: number, b: number): number => { const d = Math.abs(a - b) % TA
 /** The straight runs of the ring's inner wall that have the ring on one side and free ground on the other. */
 export function runsOf(s: Site): Run[] {
   const { g, R } = s;
-  const wall = (x: number, y: number): boolean => g.at(x, y) === SOLID && s.depth(x, y) === 3;
-  const ground = (x: number, y: number): boolean => s.depth(x, y) >= 4 && g.at(x, y) === SPACE;
+  const wall = (x: number, y: number): boolean => g.at(x, y) === SOLID && s.depth(x, y) === RING_WALL;
+  const ground = (x: number, y: number): boolean => s.depth(x, y) > RING_WALL && g.at(x, y) === SPACE;
   const out: Run[] = [];
   for (const axis of ['x', 'y'] as const) {
     const tile = (a: number, c: number): [number, number] => (axis === 'x' ? [a, c] : [c, a]);
@@ -82,7 +82,7 @@ export function placeInner(s: Site, asks: readonly InnerAsk[], within = Infinity
   for (const run of runs) {
     if (left.length === 0) break;
     const tile = (a: number, d: number): [number, number] => (run.axis === 'x' ? [a, run.at + run.inward * d] : [run.at + run.inward * d, a]);
-    const riser = (a: number): boolean => { const [x, y] = tile(a, 1); return g.at(x, y) === SOLID && s.depth(x, y) === 3; };
+    const riser = (a: number): boolean => { const [x, y] = tile(a, 1); return g.at(x, y) === SOLID && s.depth(x, y) === RING_WALL; };
     // The run with the riser column at either end: a room's end wall carries the riser straight on.
     const a0 = run.a0 - (riser(run.a0 - 1) ? 1 : 0), a1 = run.a1 + (riser(run.a1 + 1) ? 1 : 0);
     const open = (a: number, d: number): boolean => { const [x, y] = tile(a, d); return s.free(x, y); };

@@ -14,6 +14,13 @@ export const K = 4;
 export const DEEP = 2;
 /** A dock room's depth with its walls: hull row, six of floor, the inner wall. */
 export const DOCK_DEPTH = 8;
+/**
+ * A ring's streets' width in tiles: the ring hall itself, the streets through its inside and a hub's spokes. Three, so
+ * a door or a fitting can stand on a street's middle line.
+ */
+export const RING_STREET = 3;
+/** The ring's inner wall as `Site.depth` counts: the ring is depths 1 to RING_STREET, free ground lies past this. */
+export const RING_WALL = RING_STREET + 1;
 
 interface Strip { face: 'n' | 'e' | 's' | 'w'; off: number; tiles: [number, number][]; full: boolean; angle: number }
 
@@ -72,7 +79,7 @@ export interface Site {
   shoulders: boolean;
   hull: (x: number, y: number) => boolean;
   inside: (x: number, y: number) => boolean;
-  /** How far a tile is inside the inboard floor (0 outside it): 1-2 the ring, 3 its inner wall, more is free ground. */
+  /** How far a tile is inside the inboard floor (0 outside it): the ring to RING_STREET, RING_WALL its inner wall, more is free ground. */
   depth: (x: number, y: number) => number;
   ring: number;
   /** The last tile of free ground along an axis (the ring's inner wall). */
@@ -98,24 +105,25 @@ export function site(R: number, pad = 24, outline: Outline = 'disc', cut = 2, ke
     const key = (y + 512) * 1024 + x + 512;
     let d = memo.get(key);
     if (d !== undefined) return d;
-    d = 4;
+    const far = RING_WALL + 1;
+    d = far;
     if (!inside(x, y)) d = 0;
-    else for (let r = 1; r <= 3 && d === 4; r++) for (let dy = -r; dy <= r && d === 4; dy++) for (let dx = -r; dx <= r && d === 4; dx++) if (!inside(x + dx, y + dy)) d = r;
+    else for (let r = 1; r <= RING_WALL && d === far; r++) for (let dy = -r; dy <= r && d === far; dy++) for (let dx = -r; dx <= r && d === far; dx++) if (!inside(x + dx, y + dy)) d = r;
     memo.set(key, d);
     return d;
   };
   const ring = g.hall();
-  g.paint(ring, (x, y) => { const d = depth(x, y); return kept(x, y) && (d === 1 || d === 2); });
-  g.paint(SOLID, (x, y) => kept(x, y) && depth(x, y) === 3);
+  g.paint(ring, (x, y) => { const d = depth(x, y); return kept(x, y) && d >= 1 && d <= RING_STREET; });
+  g.paint(SOLID, (x, y) => kept(x, y) && depth(x, y) === RING_WALL);
   // The cut faces: a solid line across the band, the ring and its inner wall, one tile beyond the cut.
   if (keep) {
-    const built = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y) && depth(x, y) <= 3;
+    const built = (x: number, y: number): boolean => kept(x, y) && whole.hull(x, y) && depth(x, y) <= RING_WALL;
     g.paint(SOLID, (x, y) => !kept(x, y) && (built(x + 1, y) || built(x - 1, y) || built(x, y + 1) || built(x, y - 1)));
   }
   let reach = 0;
-  while (depth(0, -(reach + 1)) >= 3) reach++;
+  while (depth(0, -(reach + 1)) >= RING_WALL) reach++;
   const open = (x: number, y: number): boolean => g.at(x, y) === SPACE || g.at(x, y) === SOLID;
-  return { g, R, outline, cut, round, shoulders, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= 3 && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
+  return { g, R, outline, cut, round, shoulders, hull, inside, depth, ring, reach, free: (x, y) => kept(x, y) && depth(x, y) >= RING_WALL && open(x, y), freeOut: (x, y) => depth(x, y) === 0 && open(x, y) };
 }
 
 export interface LineOpts {

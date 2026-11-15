@@ -1,5 +1,5 @@
 import type { RoomSpec } from '../plan';
-import { line, type Site } from './lattice';
+import { line, RING_STREET, RING_WALL, type Site } from './lattice';
 
 /**
  * The ring's inside as streets: what the band cannot hold stands in rows either side of a straight street through the
@@ -13,29 +13,32 @@ const CLEAR = 3;
 
 type Axis = 'x' | 'y';
 
+/** The lines across a street at `off` that are its floor: `off - 1` and on, RING_STREET of them. */
+const FAR = RING_STREET - 2;
+
 /**
- * Where a street along `axis` can run, its floor on lines `off - 1` and `off` across: the free stretch from the centre
- * out each way.
+ * Where a street along `axis` can run, its floor on lines `off - 1` to `off + FAR` across: the free stretch from the
+ * centre out each way.
  */
 function span(s: Site, axis: Axis, off = 0): [number, number, boolean] | null {
   const tile = (a: number, c: number): [number, number] => (axis === 'x' ? [a, c + off] : [c + off, a]);
-  const open = (a: number): boolean => [-2, -1, 0, 1].every((c) => s.free(...tile(a, c)));
+  const open = (a: number): boolean => { for (let c = -2; c <= FAR + 1; c++) if (!s.free(...tile(a, c))) return false; return true; };
   if (!open(0) || !open(-1)) return null;
   let a1 = 0, a0 = -1;
   while (open(a1 + 1)) a1++;
   while (open(a0 - 1)) a0--;
   // It must meet the ring at one end at least.
-  const meets = (a: number): boolean => [-1, 0].every((c) => s.g.at(...tile(a, c)) === s.ring);
+  const meets = (a: number): boolean => { for (let c = -1; c <= FAR; c++) if (s.g.at(...tile(a, c)) !== s.ring) return false; return true; };
   if (!meets(a1 + 1) && !meets(a0 - 1)) return null;
   // And whether at both: an arc's spine meets it at one end only, running out to the open side.
   return [a0, a1, meets(a1 + 1) && meets(a0 - 1)];
 }
 
-/** Paint a street along `axis` over the stretch [a0, a1]: floor on lines off - 1 and off, a solid margin either side. */
+/** Paint a street along `axis` over the stretch [a0, a1]: floor on lines off - 1 to off + FAR, a solid margin either side. */
 function paint(s: Site, axis: Axis, [a0, a1]: readonly [number, number, ...boolean[]], off = 0): number {
   const id = s.g.hall();
-  if (axis === 'x') s.g.street(id, a0, off - 1, a1 + 1, off + 1);
-  else s.g.street(id, off - 1, a0, off + 1, a1 + 1);
+  if (axis === 'x') s.g.street(id, a0, off - 1, a1 + 1, off + FAR + 1);
+  else s.g.street(id, off - 1, a0, off + FAR + 1, a1 + 1);
   return id;
 }
 
@@ -54,17 +57,18 @@ function attempt(s: Site, rooms: readonly RoomSpec[], axis: Axis, cross: boolean
   // Free ground with CLEAR tiles of it all round: nothing stands against the ring.
   const free = (x: number, y: number): boolean => {
     if (!s.free(x, y)) return false;
-    for (let d = -CLEAR; d <= CLEAR; d++) for (let e = -CLEAR; e <= CLEAR; e++) if (s.depth(x + d, y + e) < 4) return false;
+    for (let d = -CLEAR; d <= CLEAR; d++) for (let e = -CLEAR; e <= CLEAR; e++) if (s.depth(x + d, y + e) <= RING_WALL) return false;
     return true;
   };
   // Rows: either side of each street, from the centre outward both ways. Off a crossing they start past the other
   // street's margin. Rooms are dealt round the rows in turn, biggest first, so each row fills from the middle.
   const rows: { axis: Axis; dir: 1 | -1; from: number; edge: number; side: 1 | -1 }[] = [];
-  const start = cross ? 2 : 0;
+  // (Past a street's far margin going up, past its near one going down: from `at`, a row starts that far out.)
+  const past = (at: number, dir: 1 | -1): number => (!cross ? (dir > 0 ? at : at - 1) : dir > 0 ? at + FAR + 2 : at - 3);
   for (const side of [-1, 1] as const) for (const dir of [1, -1] as const) {
-    rows.push({ axis, dir, from: dir > 0 ? mid + start : mid - 1 - start, edge: side < 0 ? -2 : 1, side });
+    rows.push({ axis, dir, from: past(mid, dir), edge: side < 0 ? -2 : FAR + 1, side });
     // Along the second street, from the first outward; its sides either side of `mid`.
-    if (cross) rows.push({ axis: other, dir, from: dir > 0 ? start : -1 - start, edge: side < 0 ? mid - 2 : mid + 1, side });
+    if (cross) rows.push({ axis: other, dir, from: past(0, dir), edge: side < 0 ? mid - 2 : mid + FAR + 1, side });
   }
   // Every room the same way round: its short side on the street, or (deep) its long side across.
   const turn = (r: RoomSpec): RoomSpec => ((deep ? r.w > r.h : r.h > r.w) && !r.cabin ? { ...r, w: r.h, h: r.w } : r);
