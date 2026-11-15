@@ -45,11 +45,11 @@ function section(a: Asm, port: Port, joined: Set<number>, part: readonly RoomSpe
     // (A pier head's rooms are the street's last rows: at the section's own depth.)
     const plain: BlockOpts = { ...base, ...(rule.quay.form === 'head' && rule.section.rowDepth ? { rowDepth: rule.section.rowDepth } : {}) };
     delete plain.docks;
-    return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain));
+    return a.place(port, joined, () => quay(ctx, port, part, o.docks ?? [], rule.quay as NonNullable<BranchRule['quay']>, plain), rule.clear);
   }
   // Rooms of the departments that stand behind the rows (sheds) are not row rooms.
   const sheds = part.filter((r) => rule.section.behind?.includes(r.dept as Dept)), front = sheds.length > 0 ? part.filter((r) => !sheds.includes(r)) : part;
-  const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, front, { ...base, ...(sheds.length > 0 ? { behind: sheds } : {}), ...(rowDepth ? { rowDepth } : {}) }));
+  const as = (rowDepth?: number): Port[] | null => a.place(port, joined, () => block(ctx, port, front, { ...base, ...(sheds.length > 0 ? { behind: sheds } : {}), ...(rowDepth ? { rowDepth } : {}) }), rule.clear);
   if (rule.section.rowDepth) return as(rule.section.rowDepth);
   const depths = part.map((r) => Math.min(r.w, r.h)).sort((p, q) => p - q);
   return as() ?? as(Math.max(4, depths[depths.length >> 1] ?? 4));

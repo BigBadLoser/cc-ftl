@@ -31,6 +31,8 @@ export interface Region {
   dept?: string;
 }
 
+interface Shape { x0: number; y0: number; x1: number; y1: number; n: number }
+
 export class RegionGrid {
   readonly size: number;
   readonly own: Int16Array;
@@ -54,7 +56,43 @@ export class RegionGrid {
 
   set(x: number, y: number, id: number): void {
     const k = this.idx(x, y);
-    if (k >= 0) this.own[k] = id;
+    if (k < 0) return;
+    const was = this.own[k] as number;
+    if (was === id) return;
+    if (was >= 0) (this.shapes[was] as Shape).n--;
+    this.own[k] = id;
+    if (id < 0) return;
+    const sh = (this.shapes[id] ??= { x0: x, y0: y, x1: x, y1: y, n: 0 });
+    sh.n++;
+    sh.x0 = Math.min(sh.x0, x); sh.y0 = Math.min(sh.y0, y); sh.x1 = Math.max(sh.x1, x); sh.y1 = Math.max(sh.y1, y);
+  }
+
+  /** Each region's painted extent and tile count: a region is a plain rectangle when the two agree. */
+  private shapes: Shape[] = [];
+
+  /** The region's extent when it is a plain rectangle (inclusive), else null. */
+  private boxOf(id: number): Shape | null {
+    const sh = this.shapes[id];
+    return sh && sh.n === (sh.x1 - sh.x0 + 1) * (sh.y1 - sh.y0 + 1) ? sh : null;
+  }
+
+  /**
+   * Whether region `b` outranks region `a` where they touch: the one that gives way takes the wall between them. Space
+   * outranks everything and halls outrank rooms. Between two rectangular rooms side by side, the one whose shared side
+   * is longer gives way: it walls that side against open space past the other's end anyway, so the wall runs straight
+   * and neither room is left with a notch. Otherwise (and on a tie) the lower rank gives way.
+   */
+  private over(b: number, a: number): boolean {
+    const pb = this.prio(b), pa = this.prio(a);
+    if (a < 0 || b < 0 || (this.regions[a] as Region).hall || (this.regions[b] as Region).hall) return pb > pa;
+    const A = this.boxOf(a), B = this.boxOf(b);
+    if (A && B) {
+      const sideBySide = (A.x1 + 1 === B.x0 || B.x1 + 1 === A.x0) && A.y0 <= B.y1 && B.y0 <= A.y1;
+      const stacked = (A.y1 + 1 === B.y0 || B.y1 + 1 === A.y0) && A.x0 <= B.x1 && B.x0 <= A.x1;
+      const la = sideBySide ? A.y1 - A.y0 : stacked ? A.x1 - A.x0 : 0, lb = sideBySide ? B.y1 - B.y0 : stacked ? B.x1 - B.x0 : 0;
+      if (la !== lb) return la > lb;
+    }
+    return pb > pa;
   }
 
   room(role: RoomRole, o: { spec?: RoomSpec; access?: number[]; doors?: number; rank?: number; dept?: string } = {}): number {
@@ -103,12 +141,13 @@ export class RegionGrid {
   private readonly gates: [number, number][] = [];
 
   /** The grid as it stands, to come back to with `reset` after a trial placement. */
-  mark(): { own: Int16Array; regions: number; gates: number; beams: number[] } {
-    return { own: this.own.slice(), regions: this.regions.length, gates: this.gates.length, beams: [...this.beams] };
+  mark(): { own: Int16Array; regions: number; gates: number; beams: number[]; shapes: Shape[] } {
+    return { own: this.own.slice(), regions: this.regions.length, gates: this.gates.length, beams: [...this.beams], shapes: this.shapes.map((sh) => ({ ...sh })) };
   }
 
-  reset(m: { own: Int16Array; regions: number; gates: number; beams: number[] }): void {
+  reset(m: { own: Int16Array; regions: number; gates: number; beams: number[]; shapes: Shape[] }): void {
     this.own.set(m.own);
+    this.shapes = m.shapes.map((sh) => ({ ...sh }));
     this.regions.length = m.regions;
     this.gates.length = m.gates;
     this.beams.clear();
@@ -138,6 +177,33 @@ export class RegionGrid {
     this.rect(id, x0, y0, x1, y1);
   }
 
+  /**
+   * The owner as the wall rule sees it: open space in an inner corner of the outline (ground on two sides at a right angle
+   * and between them, space on the other two) is wall. The corner is then walled square, where otherwise the floor tile
+   * across the corner would give way and leave a notch in its room.
+   */
+  private wallOwner(x: number, y: number): number {
+    const a = this.at(x, y);
+    if (a !== SPACE) return a;
+    for (const dx of [-1, 1]) for (const dy of [-1, 1]) {
+      if (this.at(x + dx, y) === SPACE || this.at(x, y + dy) === SPACE || this.at(x - dx, y) !== SPACE || this.at(x, y - dy) !== SPACE) continue;
+      // Only where the tile across the corner is floor but for this one: a corner it shares with walls anyway stays open.
+      const cx = x + dx, cy = y + dy, c = this.at(cx, cy);
+      if (c < 0) continue;
+      const hallC = (this.regions[c] as Region).hall;
+      let wall = false;
+      for (let ey = -1; ey <= 1 && !wall; ey++) for (let ex = -1; ex <= 1 && !wall; ex++) {
+        if (ex === -dx && ey === -dy) continue;
+        const b = this.at(cx + ex, cy + ey);
+        if (b === c || b === SOLID) continue;
+        if (b !== SPACE && hallC && (this.regions[b] as Region).hall) continue;
+        wall = this.over(b, c);
+      }
+      if (!wall) return SOLID;
+    }
+    return SPACE;
+  }
+
   private prio(id: number): number {
     if (id === SPACE) return Infinity;
     if (id === SOLID) return -Infinity;
@@ -150,15 +216,15 @@ export class RegionGrid {
     const { size, half } = this;
     const cell = new Array<string>(size * size).fill('.');
     for (let y = -half; y < half; y++) for (let x = -half; x < half; x++) {
-      const a = this.at(x, y);
+      const a = this.wallOwner(x, y);
       if (a === SPACE) continue;
       let wall = a === SOLID;
-      const pa = this.prio(a), hallA = a >= 0 && (this.regions[a] as Region).hall;
+      const hallA = a >= 0 && (this.regions[a] as Region).hall;
       for (let dy = -1; dy <= 1 && !wall; dy++) for (let dx = -1; dx <= 1 && !wall; dx++) {
-        const b = this.at(x + dx, y + dy);
+        const b = this.wallOwner(x + dx, y + dy);
         if (b === a || b === SOLID) continue;
         if (b !== SPACE && hallA && (this.regions[b] as Region).hall) continue;
-        if (this.prio(b) > pa) wall = true;
+        if (this.over(b, a)) wall = true;
       }
       cell[(y + half) * size + x + half] = wall ? '#' : '_';
     }
@@ -173,15 +239,15 @@ export class RegionGrid {
 
   /** Whether the tile compiles to wall (doors aside): the rule of `compile` for one tile. */
   private wallAt(x: number, y: number): boolean {
-    const a = this.at(x, y);
+    const a = this.wallOwner(x, y);
     if (a === SPACE) return false;
     if (a === SOLID) return true;
-    const pa = this.prio(a), hallA = (this.regions[a] as Region).hall;
+    const hallA = (this.regions[a] as Region).hall;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      const b = this.at(x + dx, y + dy);
+      const b = this.wallOwner(x + dx, y + dy);
       if (b === a || b === SOLID) continue;
       if (b !== SPACE && hallA && (this.regions[b] as Region).hall) continue;
-      if (this.prio(b) > pa) return true;
+      if (this.over(b, a)) return true;
     }
     return false;
   }
@@ -198,6 +264,27 @@ export class RegionGrid {
       }
     }
     return n;
+  }
+
+  /**
+   * Rooms in the box x0 <= x < x1, y0 <= y < y1 whose floor, as the grid stands, is not one rectangle (a notch or a
+   * bump where a wall took part of one edge), as region ids. Only rooms wholly inside the box are judged.
+   */
+  lumps(x0: number, y0: number, x1: number, y1: number): Set<number> {
+    const box = new Map<number, [number, number, number, number, number, boolean]>();
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const a = this.at(x, y);
+      if (a < 0 || (this.regions[a] as Region).hall) continue;
+      let b = box.get(a);
+      if (!b) box.set(a, (b = [x, y, x, y, 0, false]));
+      if (x === x0 || y === y0 || x === x1 - 1 || y === y1 - 1) b[5] = true;
+      if (this.wallAt(x, y)) continue;
+      if (b[4] === 0) { b[0] = x; b[1] = y; b[2] = x; b[3] = y; }
+      b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); b[4]++;
+    }
+    const out = new Set<number>();
+    for (const [id, [bx0, by0, bx1, by1, n, edge]] of box) if (!edge && n > 0 && n !== (bx1 - bx0 + 1) * (by1 - by0 + 1)) out.add(id);
+    return out;
   }
 
   /** Doors for one room: straight wall tiles with its floor on one side and an allowed region's floor opposite, spread along the frontage. */

@@ -46,6 +46,8 @@ export interface BranchRule {
   most?: number;
   /** A gate at the foot: a controlled department. Hard: nothing else joins a gated branch or stands against it. */
   gated?: boolean;
+  /** Open ground, in tiles, between this branch's rooms and every room that is not its own (its host's included). */
+  clear?: number;
   /**
    * Its sections: rooms in each, one floor depth for a slab or the rooms' own for staggered bays, a room across the
    * last one's end (the biggest, or the first of a role), and the street's width (default 2), and roles that stand at the far end of its rows.
