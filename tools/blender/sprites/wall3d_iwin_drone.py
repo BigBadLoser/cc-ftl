@@ -35,6 +35,7 @@ OUT = 2                     # art px: the ribs' fronts past the toe, upright dow
 SLOT = (34, 62)             # the middle slot (in place of the console): its sides 4 px in from the red boxes, its
 SLOT_BACK = 4               # floor flat at the toe's top (the foot's height), from the toe back past the slope's top
                             # end SLOT_BACK px into the sill (the user)
+SLOT_LIP = 2                # px: the ramp's slope kept in front of the slot down to the toe, as on the walls (the user)
 SLOT_OUT = 2                # px: the block's front out past the sill's front edge (the user)
 SLOT_BLOCK = 1              # art px: a block filling the slot's back, its top this far under the sill, its front upright
                             # where the slope starts (the sill's front edge) (the user)
@@ -211,8 +212,14 @@ def _box_cuts(k):
     """Take the near ramp away over each red box, out from the sill's front edge, down to the box's top; and over the
     slot, out from SLOT_BACK into the sill, down to the toe's top (mesh -y: the near side, core.G)."""
     zb = _zf() - BOX_DOWN / W.ZART
-    for a, b, ye, z in [(a, b, -_front(), zb) for a, b in BOXES] + [SLOT + (-_slot_back(), W.foot())]:
-        _notch(k, _x(a), _x(b), ye, z)
+    for a, b, ye, z, yo in [(a, b, -_front(), zb, None) for a, b in BOXES] + \
+            [SLOT + (-_slot_back(), W.foot(), -_lip())]:
+        _notch(k, _x(a), _x(b), ye, z, yo)
+
+
+def _lip():
+    """The slot's floor's front: SLOT_LIP in from the toe (the slope kept from there down to the toe)."""
+    return _line() + (_zt() - W.foot()) / _fall() - SLOT_LIP * PX
 
 
 def _slot_back():
@@ -220,18 +227,20 @@ def _slot_back():
 
 
 def _slot(k):
-    """The slot's faces: its floor at the toe's top from its back to the toe, its back up to the sill, its sides (the
-    sill's section, then the slope's, down to the toe's top)."""
+    """The slot's faces: its floor at the toe's top from its back to the lip (SLOT_LIP of the slope kept in front), its
+    back up to the sill, its sides (the sill's section, then the slope's down to the lip, then down to the floor)."""
     pa, pb = _x(SLOT[0]), _x(SLOT[1])
     a, b = max(pa, -0.5), min(pb, 0.5)
     if b - a < 1e-9:
         return
-    yk, yf, zf, zs = _slot_back(), _front(), W.foot(), _zf()
-    _quad(k, [(a, yk, zf), (b, yk, zf), (b, 0.5, zf), (a, 0.5, zf)], (0, 0, 1), FRONT["slot_floor"])
+    yk, yf, zf, zs, yl = _slot_back(), _front(), W.foot(), _zf(), _lip()
+    zl = zf + SLOT_LIP * PX * _fall()                   # (the lip: the slope kept in front, its back upright)
+    _quad(k, [(a, yk, zf), (b, yk, zf), (b, yl, zf), (a, yl, zf)], (0, 0, 1), FRONT["slot_floor"])
+    _quad(k, [(a, yl, zf), (b, yl, zf), (b, yl, zl), (a, yl, zl)], (0, -1, 0), FRONT["slot_side"])
     _quad(k, [(a, yk, zf), (b, yk, zf), (b, yk, zs), (a, yk, zs)], (0, 1, 0), FRONT["slot_back"])
     for u, sd in ((pa, 1), (pb, -1)):
         if -0.5 < u < 0.5:
-            _quad(k, [(u, yk, zf), (u, 0.5, zf), (u, yf, zs), (u, yk, zs)], (sd, 0, 0), FRONT["slot_side"])
+            _quad(k, [(u, yk, zf), (u, yl, zf), (u, yl, zl), (u, yf, zs), (u, yk, zs)], (sd, 0, 0), FRONT["slot_side"])
     zb = zs - SLOT_BLOCK / W.ZART                       # the block in its back: top, then front down to its floor
     yo = yf + SLOT_OUT * PX
     _quad(k, [(a, yk, zb), (b, yk, zb), (b, yo, zb), (a, yo, zb)], (0, 0, 1), FRONT["sblock_top"])
@@ -243,15 +252,17 @@ def _slot(k):
     VT.handle(k, yo, zf, zb)
 
 
-def _notch(k, pa, pb, ye, zb):
-    """Take everything out between pa and pb, out past mesh y ye (the near side), over zb and up to the sill (not the
-    header over it: the slot's cut took its face out)."""
+def _notch(k, pa, pb, ye, zb, yo=None):
+    """Take everything out between pa and pb, out past mesh y ye (the near side) (to mesh y yo: past it kept), over zb
+    and up to the sill (not the header over it: the slot's cut took its face out)."""
     zc = _zf() + 0.5 / W.ZART
     if pb <= -0.5 or pa >= 0.5:
         return
     inx = [(0, pa, 1), (0, pb, -1)]
-    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + [(1, ye, -1), (2, zb, -1)],
-               inx + [(1, ye, -1), (2, zc, 1)]]
+    iny = [(1, ye, -1)] + ([(1, yo, 1)] if yo is not None else [])
+    regions = [[(0, pa, -1)], [(0, pb, 1)], inx + [(1, ye, 1)], inx + iny + [(2, zb, -1)], inx + iny + [(2, zc, 1)]]
+    if yo is not None:
+        regions.append(inx + [(1, yo, -1)])
     for m in (k.m, k.ns):
         if m is None:
             continue
@@ -260,7 +271,7 @@ def _notch(k, pa, pb, ye, zb):
             pts = [m.v[i] for i in f[0]]
             xs, ys, zs = [p[0] for p in pts], [p[1] for p in pts], [p[2] for p in pts]
             if (max(xs) <= pa + 1e-9 or min(xs) >= pb - 1e-9 or min(ys) >= ye - 1e-9 or max(zs) <= zb + 1e-9 or
-                    min(zs) >= zc - 1e-9):
+                    min(zs) >= zc - 1e-9 or (yo is not None and max(ys) <= yo + 1e-9)):
                 out.append(f)
                 continue
             for r in regions:
