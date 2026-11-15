@@ -289,6 +289,48 @@ def g6(i, j):
 DESIGNS.update({"g4": g4, "g5": g5, "g6": g6})
 
 
+# Grating, round 3 (G6 picked; tile it evenly: same frame on all four sides, a bar pitch that divides the field):
+#   g7 framed soft bars: the same frame on all four sides (seam, steel band, dark line), four bars at pitch 13
+#   g8 continuous bars: no frame, the bars run on through the tiles, a light cross bar at each tile line
+#   g9 framed wide bars: g7's frame, two wide bars at pitch 26
+
+
+def _soft(k, pitch, bar):
+    if k < bar:
+        return "plate" if k == 0 else ("steelL" if k < bar - 1 else "steel")
+    return "steelD" if k < pitch - 1 else "seam"
+
+
+def _ring(i, j):
+    """The frame both ways alike: a dark seam, a steel band, a dark line before the field (field 6..57)."""
+    if i < 2 or j < 2:
+        return "seam"
+    if i < 4 or j < 4 or i > 59 or j > 59:
+        return "steel"
+    if i < 6 or j < 6 or i > 57 or j > 57:
+        return "seam"
+    return None
+
+
+def g7(i, j):
+    return _ring(i, j) or _soft((i - 6) % 13, 13, 7)
+
+
+def g8(i, j):
+    if j < 2:
+        return "steelD"
+    if j < 5:
+        return "steelL" if j < 4 else "steel"
+    return _soft(i % 8, 8, 4)
+
+
+def g9(i, j):
+    return _ring(i, j) or _soft((i - 6) % 26, 26, 14)
+
+
+DESIGNS.update({"g7": g7, "g8": g8, "g9": g9})
+
+
 def _tile(name, fn):
     m = core.Mesh(f"floor_study_{name}")
     m.pattern((-0.5, -0.5, 0), (1, 0, 0), (0, 1, 0), N, N, fn)
