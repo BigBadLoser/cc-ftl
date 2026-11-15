@@ -235,12 +235,12 @@ def _slot(k):
     zb = zs - SLOT_BLOCK / W.ZART                       # the block in its back: top, then front down to its floor
     yo = yf + SLOT_OUT * PX
     _quad(k, [(a, yk, zb), (b, yk, zb), (b, yo, zb), (a, yo, zb)], (0, 0, 1), FRONT["sblock_top"])
-    _quad(k, [(a, yo, zf), (b, yo, zf), (b, yo, zb), (a, yo, zb)], (0, 1, 0), FRONT["sblock_front"])
+    VT.slot_face(k, yo, zf, zb, FRONT["sblock_front"])  # (its front: three recesses behind the handle, the user)
     yc, zo = yf + (zs - zb) / _fall(), zs - SLOT_OUT * PX * _fall()   # (its sides over the slope's line)
     for u, sd in ((pa, -1), (pb, 1)):
         if -0.5 < u < 0.5 and zo < zb:
             _quad(k, [(u, yc, zb), (u, yo, zb), (u, yo, zo)], (sd, 0, 0), FRONT["sblock_side"])
-    VT.handle(k, yo, zf, zb)
+    VT.handle(k, yo - VT.FACE_DEPTH * PX, zf, zb)    # (its legs back to the recesses' backs)
 
 
 def _notch(k, pa, pb, ye, zb):

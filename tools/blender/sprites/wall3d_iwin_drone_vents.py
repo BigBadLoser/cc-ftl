@@ -16,6 +16,9 @@ BELOW = 2                   # sprite px: the slope left between the pocket's bot
 PIPES = ((3, 6), (7, 10), (86, 89), (90, 93))   # px along the window: PIPE px pipes, centred in each vent (2-11, 85-94)
 PIPE = 3                    # px: the pipes' thickness (the user: larger)
 PIPE_GAP = 1                # art px: their ends clear of the pocket's bottom
+FACE_PITS = 3               # the slot block's front: equal recesses behind the handle, FACE_BORDER round and between them
+FACE_BORDER = 1             # px (the user)
+FACE_DEPTH = 2              # px: their depth
 HANDLE = 2                  # px: the slot's handle bar's thickness
 HANDLE_IN = 1               # px: its legs in from the slot's sides
 HANDLE_BEND = 2             # px: its corners' radius (its centre line)
@@ -140,6 +143,34 @@ def pipes(k):
             continue
         xc = (u0 + u1) / 2
         tube(k, [(xc, y, z) for y, z in path], r, (1.0, 0.0, 0.0))
+
+
+def slot_face(k, yo, zlo, zhi, col):
+    """The slot block's front (at yo, zlo..zhi, across the slot) as a FACE_BORDER frame round FACE_PITS equal recesses
+    FACE_DEPTH deep (their backs, ledges and sides in the vents' tones)."""
+    D = _d()
+    e, ez = FACE_BORDER * D.PX, FACE_BORDER / W.ZART
+    p0, p1 = D._x(D.SLOT[0]), D._x(D.SLOT[1])
+    w = (p1 - p0 - (FACE_PITS + 1) * e) / FACE_PITS
+    za, zb, yb = zlo + ez, zhi - ez, yo - FACE_DEPTH * D.PX
+
+    def quad(pts, n, c):
+        a, b = max(min(p[0] for p in pts), -0.5), min(max(p[0] for p in pts), 0.5)
+        if b - a > 1e-9:
+            D._quad(k, [(min(max(p[0], -0.5), 0.5),) + tuple(p[1:]) for p in pts], n, c)
+    quad([(p0, yo, zlo), (p1, yo, zlo), (p1, yo, za), (p0, yo, za)], (0, 1, 0), col)
+    quad([(p0, yo, zb), (p1, yo, zb), (p1, yo, zhi), (p0, yo, zhi)], (0, 1, 0), col)
+    for i in range(FACE_PITS + 1):
+        x = p0 + i * (w + e)
+        quad([(x, yo, za), (x + e, yo, za), (x + e, yo, zb), (x, yo, zb)], (0, 1, 0), col)
+    for i in range(FACE_PITS):
+        x0 = p0 + e + i * (w + e)
+        x1 = x0 + w
+        quad([(x0, yb, za), (x1, yb, za), (x1, yb, zb), (x0, yb, zb)], (0, 1, 0), COL["back"])
+        quad([(x0, yb, za), (x1, yb, za), (x1, yo, za), (x0, yo, za)], (0, 0, 1), COL["ledge"])
+        for u, sd in ((x0, 1), (x1, -1)):
+            if -0.5 < u < 0.5:
+                D._quad(k, [(u, yb, za), (u, yo, za), (u, yo, zb), (u, yb, zb)], (sd, 0, 0), COL["side"])
 
 
 def handle(k, yface, zlo, zhi):
