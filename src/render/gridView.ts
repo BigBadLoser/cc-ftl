@@ -5,6 +5,7 @@ import { CHUNK_SIZE, type Grid } from "../sim/grid";
 import { ModuleC } from "../sim/modules/components";
 import { airlockDoorTiles, airlockRowTiles } from "./airlockArt";
 import { Finish, Struct, STRUCT_MAX_HP } from "../sim/structure";
+import { MARK_FIELDS } from "../sim/marks";
 import { depthKey } from "./iso";
 import type { Layers } from "./layers";
 import { lightTint, mulColor, pulsePhase } from "./lightTint";
@@ -17,6 +18,7 @@ import { beamIds, DEFAULT_BEAM_LOOK, type BeamLook } from "./beamArt";
 import { createChunkViews, regionTiles, type ChunkRef } from "./regionTiles";
 import { artKind, floorChain, ghostVertsIn, HULL_RAY, HullSide, hullSide, replacesFloor, wallPieces, type CutawayMode } from "./tiles";
 import { CarpetSprite } from "./carpetPaint";
+import { DRAWN_MARKINGS, markPieces, WALKWAY_PAINT } from "./deckMarks";
 import { HullSprite } from "./hullPaint";
 import { keepsOldPiece } from "./jobHull";
 import type { BuildGate } from "./buildBudget";
@@ -223,6 +225,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
     const gapAt = (x: number, y: number): boolean => mode === "up" && tiles.inside(x, y) && replaced.has(y * width + x);
     const struct = tiles.data("struct", c);
     const finish = tiles.data("floor", c);
+    const anyMarks = DRAWN_MARKINGS.some((kind) => tiles.rev(MARK_FIELDS[kind], c, 1) > 0); // (a neighbour chunk's masks can turn a line into this one)
     const x0 = Math.max(0, r.x0), x1 = Math.min(width, r.x1);
     const y0 = Math.max(0, r.y0), y1 = Math.min(height, r.y1);
     if (struct)
@@ -278,6 +281,7 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
             owned.push(...made);
             tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
           }
+          if (f && k === Struct.Floor && anyMarks) drawMarks(x, y, ci, v);
           if (k === Struct.Floor) continue;
           // The engine's hull row (walls up or roofed) is the engine's own bulkhead sprite: no hull wall on it.
           if (special) continue;
@@ -305,6 +309,29 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       if (vert) for (const t of ghostVertsIn(wallAt, r.x0, r.y0, r.x1, r.y1)) owned.push(...addStatic(L, vert, t.x, t.y, depthKey(t.x, t.y) + 0.001, L.sorted));
     }
     return v;
+  }
+
+  /**
+   * The deck markings of floor tile (x, y): one decal per quarter of each kind (deckMarks.ts), over the floor plate and under
+   * everything else. The walkway line is grey art painted with the carpet's step: cream, or the ship's walkway colour.
+   */
+  function drawMarks(x: number, y: number, ci: number, v: TileChunk): void {
+    for (const kind of DRAWN_MARKINGS) {
+      const field = MARK_FIELDS[kind];
+      for (const id of markPieces(kind, (dx, dy) => (tiles.inside(x + dx, y + dy) ? tiles.get(field, x + dx, y + dy) : 0))) {
+        const s = atlas.stat(id);
+        if (!s) continue;
+        if (kind === "walkway") {
+          const spr = addPaintSprite(s, x, y, 0, v.floor, CarpetSprite);
+          v.owned.push(spr);
+          v.tinted.push({ spr, x, y, ci, wall: false, solid: false, paint: host.hullPaint?.().walkway ?? WALKWAY_PAINT });
+        } else {
+          const made = addStatic(L, s, x, y, 0, v.floor);
+          v.owned.push(...made);
+          v.tinted.push({ spr: made[0] as Sprite, x, y, ci, wall: false, solid: false });
+        }
+      }
+    }
   }
 
   /** A sprite recoloured by its tint (hullPaint.ts, carpetPaint.ts: the paint times the light), anchored like `addStatic`. */
@@ -439,14 +466,14 @@ export function createGridView(grid: Grid, atlas: Atlas, L: Layers, host: GridVi
       }
       const look = host.beamLook?.() ?? DEFAULT_BEAM_LOOK;
       const paint = host.hullPaint?.() ?? PLAIN_PAINT;
-      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}`;
+      const base = `${mode}|${ghosts}|${look}|${paint.armour}/${paint.deco}/${paint.carpet}/${paint.walkway}`;
       // Per-chunk keys only when something in the region moved (tiles outside it read as Space, so its revision covers
       // every input). One chunk ring past the region: ghost verts sit a tile outside its -x / -y edges.
       const built = `${base}|${grid.revision("struct")}|${mr}`;
       if (built !== builtKey) {
         builtKey = built;
         hull = gridHullKeys(grid, wallAt, width, height);
-        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
+        const n = chunks.sync(tiles.chunks(1), (c) => `${base}|${tiles.key("struct", c, HULL_RAY)}|${tiles.rev("floor", c)}|${DRAWN_MARKINGS.map((kind) => tiles.rev(MARK_FIELDS[kind], c, 1)).join(",")}|${specialsNear(c)}|${hullKeysIn(c)}`, buildChunk, host.gate);
         if (chunks.pending > 0) builtKey = ""; // the rest on a later update
         if (n > 0) frameKey = "";
       }

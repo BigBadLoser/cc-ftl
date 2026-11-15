@@ -130,6 +130,8 @@ export interface HullPaint {
   deco: number;
   /** The ship's carpet paint (`carpetPaintFor`); absent (a debug override) = the plain ship's. */
   carpet?: number;
+  /** The walkway line's paint (deck marks, deckMarks.ts): absent = cream. A faction or district colour goes here. */
+  walkway?: number;
 }
 
 

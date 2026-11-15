@@ -22,6 +22,15 @@ def diamond_mask(W, H):
     return np.abs(x) / (core.TILE_W / 2) + np.abs(y) / (core.TILE_H / 2) < 1.0
 
 
+def quarter_mask(W, H, qi, qj):
+    """The px of the tile diamond whose centre lies in one quarter of the tile: qi 1 = the +x half, qj 1 = the +y half. The
+    four quarters partition the diamond, so decals drawn a quarter at a time meet with no gap and no double px."""
+    ys, xs = np.mgrid[0:H, 0:W]
+    x, y = xs + 0.5 - W / 2, ys + 0.5 - H / 2
+    gx, gy = x / core.TILE_W + y / core.TILE_H, y / core.TILE_H - x / core.TILE_W
+    return diamond_mask(W, H) & ((gx >= 0) == bool(qi)) & ((gy >= 0) == bool(qj))
+
+
 def _pad1(a):
     return np.pad(a, ((1, 1), (1, 1)) + ((0, 0),) * (a.ndim - 2))
 
@@ -98,6 +107,9 @@ def render_sprite(sid, kind, objs, want_uv=False):
     if kind == "floor":
         op = diamond_mask(W, H)
         c, op = np.pad(c, ((1, 1), (1, 1), (0, 0))), np.pad(op, 1)
+    elif kind.startswith("decal:"):                     # a quarter-tile decal ("decal:<qi><qj>"): only its quarter's px,
+        op = op & quarter_mask(W, H, int(kind[6]), int(kind[7]))     # the rest of the mesh is margin for the px on its edge
+        c, op = _pad1(c), _pad1(op)
     elif kind in ("block", "wide", "over", "fx", "ghost"):
         c, op = _pad1(c), _pad1(op)
     else:

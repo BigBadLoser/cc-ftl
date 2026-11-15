@@ -13,7 +13,7 @@ export const CARPET_REF_LUM = 0.295;
 registerFlagStep({ flag: FLAG_CARPET, glsl: paintGlsl(CARPET_REF_LUM) });
 
 /**
- * A carpet floor tile recoloured by its tint: the same step as a hull piece (hullPaint.ts), run against CARPET_REF_LUM. The
+ * A carpet floor tile (or deck marking in the carpet's grey, the walkway line) recoloured by its tint: the same step as a hull piece (hullPaint.ts), run against CARPET_REF_LUM. The
  * tint is the carpet paint (`carpetPaintFor`) times the light, set like any tile's, so the light still multiplies in.
  */
 export class CarpetSprite extends Sprite {

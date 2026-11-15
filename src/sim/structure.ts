@@ -80,6 +80,11 @@ export const SHIP_FIELDS = {
   oreAmt: 'u8',
   /** Floor finish of a floor tile (`Finish`, 0 = the plain deck): what it is paved with. Looks only; set by stamping. */
   floor: 'u8',
+  /** Deck markings, one edge mask per kind (N 1, E 2, S 4, W 8; keep-clear also `MARK_FILL` 16): see sim/marks.ts. Looks only. */
+  markWalkway: 'u8',
+  markApron: 'u8',
+  markKeepClear: 'u8',
+  markHazard: 'u8',
 } as const satisfies FieldSpec;
 
 /**
@@ -105,6 +110,10 @@ export const SHIP_EMPTY = {
   ore: 0,
   oreAmt: 0,
   floor: 0,
+  markWalkway: 0,
+  markApron: 0,
+  markKeepClear: 0,
+  markHazard: 0,
 } as const satisfies Record<keyof typeof SHIP_FIELDS, number>;
 
 /** True for rock mass: solid, airtight and unwalkable like a wall, with no integrity. */
