@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from bench_module_preview import as_game  # noqa: E402
 from robots_preview import ROOT, Assets, Canvas, human, iso  # noqa: E402
 
-NAMES = {"w1": "W1  tower", "w2": "W2  skid", "w3": "W3  cabinet"}
+NAMES = {"x1": "X1  capsule", "x2": "X2  stepped", "x3": "X3  barrel", "w1": "W1  tower", "w2": "W2  skid", "w3": "W3  cabinet"}
 ACCESS, FACE_BACK, CW, CH = (-1.0, 1.0), 6, 260, 200
 
 
