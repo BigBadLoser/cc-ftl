@@ -1,7 +1,7 @@
 import { Assets, Container, Rectangle, Sprite, Texture } from 'pixi.js';
 import { LAMP_TINT } from '../../src/render/stasisArt';
-import { LOAD_TICKS, STAR_FRAMES, loadPlan, loadTick, patchId, planHasCart, turnPlan } from '../../src/render/stasisLoad';
-import { STOW_SECONDS } from '../../src/sim/stasis/tuning';
+import { HATCH_FRAMES, LOAD_TICKS, RUN_IN_TICK, STAR_FRAMES, loadPlan, loadTick, patchId, planHasCart, turnPlan, unloadPlan } from '../../src/render/stasisLoad';
+import { STOW_SECONDS, UNSTOW_SECONDS } from '../../src/sim/stasis/tuning';
 import { floor } from './hydroponics';
 import type { LabCell, LabPanel } from './panel';
 
@@ -9,7 +9,8 @@ import type { LabCell, LabPanel } from './panel';
  * `?panel=stasisload`: the stasis wheel's loading animation (#116), `&rot=N` (0-3). Each cell is the game's drawing at one stow
  * progress 0..1 (render/stasisLoad.ts loadTick/loadPlan/patchId, the same calls stasisArt makes): the wheel and slot 0's layers from the
  * game's atlas, the patch over them. `&src=/.cache/stasis-load-preview/` reads the patches from a scratch sheet instead of the atlas
- * (`&src2=` adds more); `&play` runs one stow over STOW_SECONDS. The cart is the crew member's own: the game hides its cart sprite then.
+ * (`&src2=` adds more); `&play` runs one stow over STOW_SECONDS. `&unload`: taking a slab out (a handover), the hatch frames backwards
+ * (unloadPlan) over UNSTOW_SECONDS. The cart is the crew member's own: the game hides its cart sprite then.
  */
 interface Fr { tex: Texture; glow: Texture | null; ax: number; ay: number }
 interface Man {
@@ -49,12 +50,13 @@ export const stasisLoadPanel: LabPanel = {
   id: 'stasisload',
   title: 'Stasis wheel loading',
   zoom: 1,
-  help: 'rot=0..3 ; src=/.cache/stasis-load-preview/ (patch sheets, else the atlas) ; &play runs one stow',
+  help: 'rot=0..3 ; src=/.cache/stasis-load-preview/ (patch sheets, else the atlas) ; &play runs one stow ; &unload plays the unload',
   async cells({ params, atlas }) {
     const srcs = (params.get('src') ?? '').split(',').filter(Boolean);
     const fr = new Map<string, Fr>();
     for (const d of srcs) for (const [k, v] of await frames(d)) fr.set(`stasisload.${k}`, v);
     const rot = Number(params.get('rot') ?? 0);
+    const unload = params.has('unload');
     const w = 480;
     const h = 330;
     const ox = 200;
@@ -67,6 +69,8 @@ export const stasisLoadPanel: LabPanel = {
     };
     const ids = [`${A}.r${rot}`, `${A}.slot0.r${rot}`, `${A}.lamp0.r${rot}`];
     ids.forEach((id) => atlas.stat(id));
+    // The patches load on first use: ask for them all now, so the shot does not catch them still loading.
+    [...HATCH_FRAMES, ...Array.from({ length: STAR_FRAMES }, (_, i) => `s${i}`)].forEach((f) => atlas.stat(patchId(f, rot)));
     await atlas.whenIdle();
     const cells: LabCell[] = [];
     const scene = (root: Container, turn = false): ((p: number) => void) => {
@@ -74,14 +78,30 @@ export const stasisLoadPanel: LabPanel = {
       const dyn = new Container();
       root.addChild(dyn);
       return (p) => {
-        const plan = turn ? turnPlan(0, p) : loadPlan(loadTick(p));
+        const plan = turn ? turnPlan(0, p) : unload ? unloadPlan(p) : loadPlan(loadTick(p));
         dyn.removeChildren().forEach((c) => c.destroy());
         draw(dyn, art(ids[0] as string), ox, oy);
         if (plan.home) draw(dyn, art(ids[1] as string), ox, oy);
         if (plan.patch) draw(dyn, art(patchId(plan.patch, rot)), ox, oy);
-        if (plan.home) draw(dyn, art(ids[2] as string), ox, oy, LAMP_TINT.cy);
+        if (plan.home || (plan.out && plan.tick >= RUN_IN_TICK)) draw(dyn, art(ids[2] as string), ox, oy, LAMP_TINT.cy);
       };
     };
+    if (unload) {
+      const n = HATCH_FRAMES.length;
+      for (let t = 0; t < n; t++) {
+        const p = (t + 0.5) / n;
+        const plan = unloadPlan(p);
+        cells.push({
+          label: `unload ${t}`, note: `${plan.patch ?? '-'}${planHasCart(plan.tick) ? ' (cart)' : ''}  p=${p.toFixed(3)}`,
+          w, h, newRow: t % 11 === 0, at: p * UNSTOW_SECONDS, loop: UNSTOW_SECONDS,
+          mount(root) {
+            const set = scene(root);
+            return (s) => set(Math.min(0.9999, s / UNSTOW_SECONDS));
+          },
+        });
+      }
+      return cells;
+    }
     for (let t = 0; t < LOAD_TICKS; t++) {
       const p = (t + 0.5) / LOAD_TICKS;
       const plan = loadPlan(t);

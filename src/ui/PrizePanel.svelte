@@ -12,7 +12,6 @@
   {#each prizes.filter((x) => x.ship === ship) as p (p.ship)}
     <section data-testid="prize-{p.ship}">
       <h3>{p.name} <small>taken from {p.from}</small></h3>
-      <div class="row"><span class="dim">Prize value</span><span data-testid="prize-value">{p.value}</span></div>
       <div class="row"><span class="dim">Your crew aboard</span><span>{p.crewAboard}</span></div>
       <div class="sub">Prisoners ({p.prisoners.length})</div>
       <ul data-testid="prisoners">
@@ -20,8 +19,9 @@
           <li>
             <span>{c.name} <small>{c.role}</small></span>
             <span class="dim">{c.state}, {c.hp}/{c.maxHp}</span>
-            <button data-testid="seal-{c.id}" disabled={!c.seal.marked && !!c.seal.refusal} title={c.seal.marked ? 'Call off the seal' : (c.seal.refusal ?? 'Seal them in a stasis slab')} onclick={() => api.dispatch({ type: 'prisoner.seal', crew: c.id, on: !c.seal.marked })}>{c.seal.marked ? 'Cancel seal' : 'Seal'}</button>
+            <button data-testid="seal-{c.id}" disabled={!c.seal.marked && !!c.seal.refusal} title={c.seal.marked ? 'Call off the seal' : (c.seal.refusal ?? 'Seal them in a stasis slab: with no wheel aboard, a shuttle brings the slab and carries it home')} onclick={() => api.dispatch({ type: 'prisoner.seal', crew: c.id, on: !c.seal.marked })}>{c.seal.marked ? 'Cancel seal' : 'Seal'}</button>
             <button data-testid="release-{c.id}" title="Let them go: their faction thinks better of you" onclick={() => api.dispatch({ type: 'prisoner.release', crew: c.id })}>Release</button>
+            {#if c.seal.marked && c.seal.wait}<small class="dim" data-testid="seal-wait-{c.id}">{c.seal.wait}</small>{/if}
           </li>
         {:else}
           <li class="dim">None.</li>

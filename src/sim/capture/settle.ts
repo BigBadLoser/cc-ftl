@@ -11,6 +11,8 @@ import { guestOn } from '../consent/guests';
 import { shipIdOf } from '../regions';
 import type { Sim } from '../sim';
 import { capturePrize } from './prize';
+import { openSlab } from '../stasis/freeze';
+import { slabPlace } from '../stasis/query';
 
 /**
  * The player's answer to a beaten ship (`Ship.yielded`, set by systems/shipState.ts once every crew member is subdued and none of the player's can reach it);
@@ -39,16 +41,22 @@ export function settleYielded(sim: Sim, shipId: number, choice: 'letGo' | 'takeP
 }
 
 /**
- * Release a prisoner: they leave play alive at once (removed, no walk to a ship: a prize holds no shuttle of theirs) and the galaxy faction their ship flew for
- * (`factionOfShip`) thinks better of the player by RELEASE_REPUTATION. A reject reason, or null.
+ * Release a prisoner: they leave play alive at once (removed, no walk to a ship: a prize holds no shuttle of theirs) and the galaxy faction they were
+ * taken from (`Prisoner.from`, else the one their ship flies for, `factionOfShip`) thinks better of the player by RELEASE_REPUTATION. A frozen
+ * prisoner is let out of their slab first (`openSlab`: the empty slab stays in its wheel slot or on the floor), the same release; one whose slab is
+ * on its way (on a hover cart or in a shuttle) is refused 'inTransit'. A reject reason, or null.
  */
 export function releasePrisoner(sim: Sim, crew: number): string | null {
+  const p = sim.world.get(crew, PrisonerC);
+  const frozen = slabPlace(sim, crew);
   const pos = sim.world.get(crew, PositionC);
-  if (!sim.world.has(crew, PrisonerC) || !pos) return 'notPrisoner';
-  const shipId = shipIdOf(sim, pos);
+  if (!p || (!pos && !frozen)) return 'notPrisoner';
+  if (frozen && (frozen.kind === 'carried' || frozen.kind === 'shuttle')) return 'inTransit';
+  const shipId = frozen ? frozen.ship : shipIdOf(sim, pos);
   const ship = sim.world.get(shipId, ShipC);
-  const faction = ship ? factionOfShip(sim, shipId, ship, sim.world.get(shipId, PrizeC)?.from ?? ship.faction) : null;
+  const faction = p.from ?? (ship ? factionOfShip(sim, shipId, ship, sim.world.get(shipId, PrizeC)?.from ?? ship.faction) : null);
   const name = sim.world.get(crew, CrewC)?.name ?? 'Prisoner';
+  if (frozen) openSlab(sim, crew);
   removeCrew(sim, crew);
   if (faction) {
     const key = repKey(sim, faction);

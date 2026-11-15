@@ -148,8 +148,12 @@ import { newYard, type YardState } from './yard/types';
  * v119 (seal order, #116): `Prisoner.seal` (the player marked them for stasis; command 'prisoner.seal'): crew seal only marked prisoners.
  * v120 (wheel turns, #116): `StasisJob.turns` (Geneva steps before a stow); a stow's job work is the turn plus the load, and the wheel's
  *   slots are a ring with slot 0 at the hatch.
+ * v121 (slabs by shuttle, #116): `SlabRackC` on shuttles, `Stasis.at` 'vehicle', `StasisJob.phase` 'ship' with `rack`, slab source 'rack', away site owner
+ *   'stasis', and `Prisoner.from` (the galaxy faction a prisoner's release counts with).
+ * v122 (prisoner deals, #116): `Deal.handover.prisoner` (a prisoner's slab sold at a station, `job` optional), `StasisJob.phase` 'unstow' with `deliver` and `lifted`.
+ * v123: `Prize.hullValue` removed (no hull sale; the value only sizes the loot at capture).
  */
-export const SAVE_VERSION = 120;
+export const SAVE_VERSION = 123;
 
 /** The persisted shape. Content is never saved, only referenced by ID inside components. */
 export interface SaveData {

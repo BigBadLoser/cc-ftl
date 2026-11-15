@@ -6,10 +6,12 @@
   import Icon from './Icon.svelte';
   import ItemIcon from './ItemIcon.svelte';
 
-  let { api, entry, rect, rot, thumb, have, variants = [], onvariant, pinned, onpin, onenter, onleave }: {
+  let { api, entry, rect, rot, thumb, have, variants = [], onvariant, thumbOf, pinned, onpin, onenter, onleave }: {
     api: UiApi; entry: Entry; rect: DOMRect; rot: number; thumb?: UiThumb; have: (item: string) => number;
     /** The tiers of the module's family (itself included), lowest first; empty when it has none. */
     variants?: Entry[]; onvariant?: (v: Entry) => void;
+    /** A member's thumb (the art on a chip that has a `variantLabel`). */
+    thumbOf?: (id: string, rot: number) => UiThumb | undefined;
     pinned: boolean; onpin: () => void; onenter: () => void; onleave: () => void;
   } = $props();
 
@@ -38,7 +40,9 @@
           <div class="vars" data-testid="popover-variants">
             {#each variants as v (v.key)}
               <button class="v" class:on={v.id === entry.id} class:lock={v.locked} data-testid="variant-{v.id}" aria-pressed={v.id === entry.id} onclick={() => onvariant?.(v)}>
-                {#if v.locked}<Icon name="lock" size={12} />{/if}<span>{v.def?.tier ?? v.name}</span>
+                {#if v.locked}<Icon name="lock" size={12} />{/if}
+                {#if v.def?.variantLabel}{@const vt = thumbOf?.(v.id, 0)}{#if vt && vt.w}<img src={vt.url} alt="" draggable="false" />{/if}{/if}
+                <span>{v.def?.variantLabel ?? v.def?.tier ?? v.name}</span>
               </button>
             {/each}
           </div>
@@ -83,6 +87,8 @@
   .k.acc { background: rgba(240, 177, 58, 0.2); border: 1px dashed #f0b13a; }
   .vars { display: flex; gap: 4px; margin-top: 6px; }
   .v { flex: 1; height: 40px; min-height: 0; padding: 0 4px; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--build-line); background: var(--build-fill-2); font-size: 12px; color: var(--build-ink); }
+  .v img { max-width: 34px; max-height: 32px; image-rendering: pixelated; }
+  .v span { text-transform: uppercase; }
   .v.lock { color: #7a7a7a; border-style: dashed; }
   .v.on { border-color: var(--amber); background: var(--build-bg-solid); color: var(--amber); }
   .lockline { margin: 0 0 8px; display: flex; align-items: center; gap: 5px; color: var(--amber); font-size: 12.5px; }

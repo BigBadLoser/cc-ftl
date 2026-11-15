@@ -198,6 +198,8 @@ export type Command =
   /** Answer a beaten ship (`Ship.yielded`: every crew member subdued, none of yours can reach it): 'letGo' (the crew leave, the ship is a derelict) or 'takePrisoners' (it is a prize, its crew prisoners). */
   /** Release a prisoner (capture/settle.ts): they leave and their faction thinks a little better of the player. */
   | { type: 'prisoner.release'; crew: number }
+  /** Hand a sealed prisoner over to a station in the node for its offer (capture/offers.ts `prisonerOffer`: ransom, bounty or black market). */
+  | { type: 'prisoner.handOver'; crew: number; station: number }
   /** Mark a prisoner for sealing in stasis (`on`) or call the mark off (stasis/order.ts): crew seal and cart only marked prisoners. Refused with a reason when it cannot be. */
   | { type: 'prisoner.seal'; crew: number; on: boolean }
   | { type: 'ship.settle'; ship: number; choice: 'letGo' | 'takePrisoners' }
@@ -236,7 +238,7 @@ export type Command =
   /** Take the ship `ship` as a prize at once, its crew surrendering (the debug panel). */
   | { type: 'debug.capture'; ship: number }
   /** Debug (the prisoners scenario): make a crew member who is not the player's a prisoner where they stand, as a capture does. */
-  | { type: 'debug.imprison'; crew: number }
+  | { type: 'debug.imprison'; crew: number; /** The galaxy faction they were taken from (`Prisoner.from`): who ransoms them. */ from?: string }
   /** Event system: pick an option of the open decision. Rejected when none is open or its requirements are unmet. */
   | { type: 'story.choose'; choice: string }
   /** Drop the tutorial goal chain for this game. */

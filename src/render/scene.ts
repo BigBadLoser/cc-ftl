@@ -165,6 +165,8 @@ export interface Renderer {
   screenOf(shipId: number, x: number, y: number): { x: number; y: number };
   /** Draw a ring under this crew member (null clears). */
   setSelectedCrew(ids: readonly number[]): void;
+  /** The crew who are active foes of the player (`playerFoes`): each gets a red foot diamond. */
+  setFoes(ids: readonly number[]): void;
   /** The shuttle (vehicle entity) under a canvas-relative position, or null. */
   pickShuttle(screenX: number, screenY: number): number | null;
   /** Flash an order marker on a sector tile (centre x, y). */
@@ -926,6 +928,9 @@ export async function createRenderer(canvas: HTMLCanvasElement, quality: Quality
     setSites(blocked, selected) {
       siteMarks = { blocked, selected };
       for (const sc of allScenes()) sc.setSites(blocked, selected);
+    },
+    setFoes(ids) {
+      crewMarks.setFoes(ids);
     },
     setSelectedCrew(ids) {
       selectedCrew = ids;
