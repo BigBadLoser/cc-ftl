@@ -1,6 +1,13 @@
 """Floor look study (family `floor_study`, preview only, not in RENDERED): the court finishes and deck marks redone, one
 piece a round, three variants each, reviewed as 3x3 patches (tools/blender/review/floor_preview.py).
 
+Decisions so far (the user's list): deck plate = the default floor (no new art); grating = skipped for now; heavy plate =
+h13; clean tile = c1u with its siblings c1au, c1bu, c1cu (1 in 20 each, like the deck's c and h); soft floor = the
+tintable carpet k1 (k3's secondary-colour accent optional), painted with the hull paint (src/render/hullPaint.ts) in a
+muted colour: the scheme's P hue at a fixed lightness 0.30 and saturation capped at 0.45 (carpet_tint_preview.py "muted").
+Markings next: keep-clear (reuse the airlock's), door apron, hazard chevron, edge line (autotiling straight, corner, T,
+end).
+
 Round 1, walkway (promenade paving), drawn on floors.py's 64x64 cell grid, seams on the low sides:
   w1 honed pavers: one pale composite slab a tile, fine aggregate, a dark joint and a chamfered corner
   w2 coin rubber: a charcoal mat with raised coin studs, framed by a steel seam
