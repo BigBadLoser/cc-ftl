@@ -219,7 +219,9 @@ export function wallPieces(
     if (o < 4) out.push({ chain: [`tile.hull.belly.o${o}.m${mask}${v}`, `tile.hull.belly.o${o}.m${mask}`], order: 1, under: true });
     return out;
   }
-  if (selfGhost && hull && level === "low") {
+  // A near corner facing no space itself (a step one tile deep, hullSide) has no rim piece: the low ghost stands in at
+  // every level (where the new hull has no art), so it is never a full-height block and stays a ghost over no floor.
+  if (selfGhost && hull && (level === "low" || (side === HullSide.Near && !o))) {
     // The rear ghost traces its sloped skirt; `.r<1|8|9>` = which unconnected N / W sides face a room, not space.
     const room = (isRoom(kindAt(x, y - 1)) ? 1 : 0) | (isRoom(kindAt(x - 1, y)) ? 8 : 0);
     // `c2`: the SE diagonal is solid too (a thick block), so the slope does not dip toward it.

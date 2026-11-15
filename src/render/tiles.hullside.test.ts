@@ -62,6 +62,9 @@ describe("hull side (far hull stays full in cutaway, near hull is a ghost)", () 
     expect(hullSide(e, 4, 3)).toBe(HullSide.Near);
     expect(hullSide(e, 4, 2)).toBe(HullSide.Near);
     expect(hullSide(e, 5, 3)).toBe(HullSide.Near);
+    // Without the new hull's art it draws the hull ghost (no full-height block) and, like every near ghost, no floor plate.
+    for (const mode of ["up", "auto", "down"] as const) expect(first(e, 4, 3, mode)).toMatch(/^tile\.hull\.ghost\.m\d+$/);
+    expect(replacesFloor(e, 4, 3)).toBe(true);
     // The same step on the south hull (transposed): space only at the corner's SW.
     const t = (x: number, y: number) => e(y, x);
     expect(hullSide(t, 3, 4)).toBe(HullSide.Near);
