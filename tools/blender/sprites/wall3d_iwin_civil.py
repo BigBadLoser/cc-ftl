@@ -22,9 +22,9 @@ FLOOR_DOWN = 6              # art px: the floor under the ramp's top
 ROUND = 6                   # px: the opening's top corners' radius (the user: a little curved slope there; the ref's
                             # posts curve into the beam's white front)
 ROUND_STEPS = 6
-BEAM = 8                    # art px: the opening's top under the colour band's foot (a strip of white beam under
+BEAM = 5                    # art px: the opening's top under the colour band's foot (a strip of white beam under
                             # the red, as the ref's: the corners' curves join it; at the band's foot they didn't read;
-                            # the user: lower; about 2 px of it go under the band's painted edge)
+                            # the user: lower, then about 5 px; about 2 px of it go under the band's painted edge)
 FACE = 3                    # the look's wall ramp step its faces are painted in (civil: W3): the corners' fronts in it,
                             # so they match the wall (toned by level they came out a step lighter)
 LVL = {"floor": 3, "top": 3, "slope": 3, "side": 1, "under": 1}   # the wall family's levels (toned by facing, so each
