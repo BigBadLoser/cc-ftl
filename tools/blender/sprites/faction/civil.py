@@ -12,6 +12,16 @@ from .parts import LINE, PAINT, PX, PZ, _slab, body, corner_piece
 from .shell import FaceHoles, FloorDrop, FootTone, FreeEnds, LookShell, RampHoles, _end_section, _ends, _ramp_chamfer
 
 
+BLANK = False                       # a window's pieces (wall3d_iwin_civil): the faces bare under the colour band (no
+                                    # drawers, no seam under the band), the ramp one bare plate a run (no outline panel)
+
+
+def band_foot():
+    """The colour band's foot (face's zh) on a partition: an interior window's opening's top."""
+    zs, top = T.W.skirt_top(), T.W.wall_top("wall", "up")
+    return top - 0.13 * (top - zs)
+
+
 def civil(hull):
     def face(k, ax, plane, a, b, ends, zs, top, full, variant=0):
         F = body(hull)
@@ -27,7 +37,7 @@ def civil(hull):
             parts += [(zh, top - 0.02, PX, "ochre", 2),                                         # the colour band ...
                       (top - 0.045, top - 0.02, PX + PAINT, "ochre", 3),                        # ... lit on top,
                       (zh, zh + 0.025, PX + PAINT, "ochre", 1)]                                 # ... dark below
-        risers = _risers(a, b, zs, zh) if full and not endf else []     # (a design's seams up through the band:
+        risers = _risers(a, b, zs, zh) if full and not endf and not BLANK else []   # (a design's seams up through the band:
         cut = [(u - 1.5 * LINE, u + 3.5 * LINE) for u in risers]         # it is cut round each, a px of wall either
         for n, (z0, z1, d, fam, lvl) in enumerate(parts):              # side; the cut runs 2 px further along, as
             for p0, p1, ends in _pieces(a, b, pe, cut if n else []):   # the far piece's front overhangs it 2 px)
@@ -38,7 +48,7 @@ def civil(hull):
             _ramp_chamfer(k, X, plane, C, zs, F)
         if endf:
             _end_section(k, ax, plane, a, b, zs, zh, F)
-        if not full or endf:
+        if not full or endf or BLANK:
             return
         _top_seam(k, ax, plane, a, b, pe, zs, zh, F, risers, top)
         for s0, s1 in T.spans(a, b):
@@ -104,7 +114,8 @@ class Civil(Faction):
         super().__init__()
 
     def relief(self, sprite):
-        return _style(civil, skirt="outline", toe="ochre", seam=0, toe_at=0.66, foot=DRONE_FOOT,
+        bare = dict(skirt=None, seamless=True) if BLANK else dict(skirt="outline")    # (a window piece: its ramp bare)
+        return _style(civil, toe="ochre", seam=0, toe_at=0.66, foot=DRONE_FOOT, **bare,
                       tops=CIVIL_TOPS, outline_lvl=SEAM - 1, outline_round=True, outline_d=civil_panel(),
                       outline_t=CIVIL_OT,
                       ramp_solid=True, shell=LookShell,

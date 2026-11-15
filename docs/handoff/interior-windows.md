@@ -2,12 +2,12 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-15: drone approved at d32, "good enough")
+## Pick up here (state at 2026-11-15: drone approved at d32; civil started, c2)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
 - Per look: slate and default teal done and approved; tan built; bastion no window; navy parked at nw13 and flagged
-  ugly (its wall set wants a rethink); **drone approved at d32** (below); civil not started.
+  ugly (its wall set wants a rethink); **drone approved at d32** (below); **civil started** (c2: `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py`, civil.v1).
 - Drone (style 423), approved at d32 (built up from d15): `tools/blender/sprites/wall3d_iwin_drone.py`, jobs `tools/blender/preview/jobs_drwin.py`.
   Built: the cut to a flat floor 6 art px under the ramp's top out to where the slope falls to it; end blocks (flat
   top 12 px in, slope to the floor at 16); blank posts at 11; drone's header rail kept (faction.drone.BLANK = the
@@ -76,7 +76,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 44 (set 2) | slate | 2757 / 115 / 2861 | done: `sprites/wall3d_iwin_slate.py` (lower layer approved through sw46; upper kept as it renders now, the user) |
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
-| 428 (set 6) | civil | 2770 / 2769 / 2864 | to do |
+| 428 (set 6) | civil | 2770 / 2769 / 2864 | under way (c2, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
 | 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user) |
 | none | scrap | | no ref |
 
@@ -779,3 +779,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-15: the user: the toe under the slot to match the walls: option 2 (the slope kept in front). d31: SLOT_LIP 2 px: `_notch` gains an outer bound (`yo`): the slot's cut stops SLOT_LIP in from the toe, so the ramp's slope runs on down to the toe there (`_lip()`); the slot's floor ends at it, an upright back on the lip (slot_side), the slot's sides follow the slope down to the lip then drop to the floor. Lip ~4 art px tall; the handle bar clears it. Renders: scratchpad `dr31`, run `drone_run31.png`.
 - 2026-11-15: the user: the handle bar up a bit. d32: HANDLE_UP 2 art px over the slot block face's mid height. Renders: scratchpad `dr32`, run `drone_run32.png`.
 - 2026-11-15: the user: "good enough": drone approved at d32 (the header rail kept as the beam; the ref's pipe beam not built). Open: drone's walls' handles changed tone (d30), so the shipped drone sheets want a re-render (the user's go); civil not started; #49 pipeline wiring waits on the user.
+- 2026-11-15: the user: civil next. c0: plain civil.v1 beside ref 428 (upper layer: white posts, 11 px fronts, curving into a thin white beam with a red line under the cap, the beam ~7 rows of the post's ~39; lower layer: a white ramp, a long recessed panel, a red stripe low, dark blue end blocks). c1/c2: `sprites/wall3d_iwin_civil.py` set up as drone's d0/d1 (shared shape: posts POST 11, end blocks BLOCK 12 / END 16, floor FLOOR_DOWN 6 under the ramp's top, the pane on it); the opening up to civil's colour band's foot (`faction.civil.band_foot`: the band is the beam); its top corners rounded ROUND 3 px (a fan on the near face, the curve across the wall); `faction.civil.BLANK` while a window piece builds: no drawers, no seam under the band, no risers through it, the ramp bare (skirt None, seamless; its red toe band kept). Faces toned by the wall family's levels (not fixed names: each civil variant takes its own); the posts' sides and the curve level 1 (at the face's level they were as light as the fronts and the curve didn't read). The plain wall pixel-identical. `preview/jobs_cvwin.py`; run sheet `scripts/dr_run.py` takes LOOK=civil.v1. Renders: scratchpad `cv2`.
