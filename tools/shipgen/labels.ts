@@ -31,7 +31,7 @@ export function roomKind(role: string, mods: readonly string[]): string {
   if (role === 'bridge') return 'office';
   if (role === 'plaza' && has('mess_table')) return 'customs';
   if (has('galley')) return 'mess';
-  if (has('bed') && has('mess_table')) return 'chief';
+  if (has('bed') && has('mess_table') && sleepers === 1) return 'chief';
   if (role === 'quarters') return sleepers > 1 ? 'barracks' : 'cabin';
   if (has('stasis_wheel')) return 'brig';
   if (has('storage_armory')) return 'quartermaster';

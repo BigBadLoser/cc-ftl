@@ -175,9 +175,10 @@ export const stationRecipes = {
     scrap('before: straight stubs, passages midway', { rooms: [2, 4], stub: [2, 4], spacing: 2, mix: false, quarters: { barracks: [6, 8], singles: 3 }, braces: 0.9, harbour: 'basin' }),
   ],
   spine: [
+    // The mining station's: one straight street (first, so it is the family's default).
+    spine('one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: harbour('basin') }),
     spine('halls between the parts, the street stepping aside', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], hall: { length: [6, 8], wide: [8, 10], shift: [2, 4] }, braces: 0.9, quay: harbour('quay') }),
     spine('smaller halls, bigger steps', { street: 3, body: [5, 7], wings: [3, 4], stub: [2, 4], hall: { length: [4, 6], wide: [6, 8], shift: [3, 6] }, braces: 0.9, quay: harbour('gatehouse') }),
-    spine('before: one straight street', { street: 3, body: [6, 8], wings: [3, 4], stub: [2, 4], braces: 0.9, quay: harbour('basin') }),
   ],
   agri: [
     agri('greenhouse wings off one straight street', { street: 3, body: [6, 8], greenhouse: 9, wing: [2, 2], quay: harbour('basin') }),
