@@ -50,6 +50,7 @@ HANDLE = (1, 2)                     # a handle in it, a line in the darker seam 
                                     # top and foot
 LOW_LIT = "stL"                     # a faint lit px under the box's top edge and the seam across, and down inside its near
                                     # side (the ref's left on the face rising to the right)
+TOP_LIT = "stH"                     # (the near edge of the top box's top: a step over its tone)
 GAP_SHADE = SH.SEAM                    # the top box's shadow in the gap under it
 RECESS = (11, 21, 1)                # a recess in the face: px across, its top px under the groove (down to the seam where
                                     # the step meets the face)
@@ -116,6 +117,11 @@ def _plate(f, a, b, back, top, n=4):
         f.k.poly(q, F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or BOX_LINE)
 
 
+def recess(s0):
+    """The module's recess (u0, u1), or None."""
+    return _span(s0, *RECESS[:2])
+
+
 def blocks(f, s0, s1):
     """The face's armour on a whole span in the module design: the base's two blocks, the lower one round the recess,
     and the recess's inside."""
@@ -123,7 +129,8 @@ def blocks(f, s0, s1):
     f.block(s0, s1, SH.GROOVE, s.H)
     p0, p1, n = RECESS
     u0, u1 = _span(s0, p0, p1)
-    zt, zf = s.z_at(SH.GROOVE, n), s.z_at(SH.FOOT_H, -1)
+    zt, zf = s.z_at(SH.GROOVE, n), SH.FOOT_H                # (its foot on the step: the seam where the step meets the
+                                                            # face breaks across it)
     f.block(s0, u0, 0.0, SH.GROOVE)
     f.block(u1, s1, 0.0, SH.GROOVE)
     f.block(u0, u1, 0.0, zf)
@@ -169,15 +176,17 @@ def _module(f, s0, zk):
               out - c * LINE + e), (a + LINE, top - c * px + e, out + e), (a, top - c * px + e, out + e))],
              F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or BOX_LINE)
     d0 = back - PLATE_BACK * LINE + PLATE_R * LINE
-    for u, col in ((a, BOX_LINE), (b - LINE, LOW_LIT)):     # (its two edges along its top)
+    for u, col in ((a, BOX_LINE), (b - LINE, TOP_LIT)):     # (its two edges along its top)
         f.k.poly([T.P(f.ax, f.plane, v, top + T.PAINT, d) for v, d in ((u, d0), (u + LINE, d0),
                   (u + LINE, out - c * LINE), (u, out - c * LINE))], F, 3, core.Vector((0, 0, 1)),
                  fixed=T.SEAM_PASS or col)
-    _rect(f, a, b, z0 + c * px, z0 + (c + 1) * px, out + 0.001, BOX_LINE)  # a seam across, as far over its foot as
-                                                                            # the chamfer is under its top
     m = (a + b) / 2
-    for n in VENTS:                                         # its vent (px rows under its top on screen)
+    vn = VENTS[-1] + 1 + VENTS[0] - c                       # a seam across under its vent, as far under it as the
+    for n in VENTS + (vn,):                                 # chamfer is over it; the vent (px rows under its top)
         zv = zl + lift + round((top - zl) / px) * px - n * px
+        if n == vn:
+            _rect(f, a, b, zv - px, zv, out + 0.001, BOX_LINE)
+            continue
         _rect(f, m - VENT_W / 2 * LINE, m + VENT_W / 2 * LINE, zv - px, zv, out + 0.001, SH.GROOVE_D)
     # the gap under it in its shadow (under the line), then the lower box, down to a px over the groove's line
     zg = gap(s)[0]
