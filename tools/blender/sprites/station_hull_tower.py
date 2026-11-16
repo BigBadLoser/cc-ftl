@@ -11,6 +11,7 @@ from .wall3d_ext_geom import F, LINE, D
 TOWER_OUT = 4                       # px off the face
 TOWER_SLOPE = SH.GROOVE_D           # its foot, sloped back down to the face (and the block's to the box's front)
 STEEP = 2                           # (px down for every px out)
+SHADOW = (4, SH.FACE)               # a shadow on the face under it: px tall, tone (a shade under the face's lower band)
 VENT_CLEAR = 2                      # the vent's frame: px of the box's front clear round it (to its ends, the chamfer and
                                     # the block's top line)
 SLATS, SLAT_IN = 4, 1               # slats in it, spaced evenly down it; px clear of its frame at either end
@@ -67,6 +68,8 @@ def tower(f, s0, zk):
         SD._rect(f, w0 + w, w1 - w, row(k + 2) + dz, row(k + 1) + dz, vd, SLAT_LIT)
     _top_plate(f, a, b, top, out - c * LINE)
     _side(f, b, s0 + 1)
+    zb = z0 - STEEP * TOWER_OUT * px                        # (the slope's foot on the face; a shadow under it)
+    SD._rect(f, a, b, s.z_at(zb, SHADOW[0]), zb, D + 0.001, SHADOW[1])
     # the dark block, a seam across its middle; its top's line across the box's front
     q0 = (round((b - a) / LINE) - WIDE) // 2
     u0, u1 = across(q0 + WIDE), across(q0)
