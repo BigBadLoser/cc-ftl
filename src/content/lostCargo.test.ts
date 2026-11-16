@@ -2,13 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { ContainerC } from '../sim/containers/components';
 import { ShipC } from '../sim/combat/components';
 import { ItemStackC, StorageC } from '../sim/items/components';
-import { currentNode, newGame, playerShip, populateCargo, type Sim } from '../sim';
+import { currentNode, newGame, playerShip, populateCargo, type ModuleDef, type Sim } from '../sim';
 import { lostCargoFaction } from '../sim/galaxy/populateCargo';
 import { SalvageOrderC } from '../sim/salvage/components';
 import { salvageJobs } from '../sim/salvage/plan';
 import { performJob } from '../sim/crew/jobWork';
 import { JobC } from '../sim/crew/components';
 import { ModuleC } from '../sim/modules/components';
+import { rotatedSize } from '../sim/modules/footprint';
+import { BodyC } from '../sim/body';
 import { shipIdOf } from '../sim/regions';
 import { playerCrew } from '../sim/story/world';
 import { content } from '.';
@@ -97,6 +99,26 @@ describe('lost cargo', () => {
     expect(a.ticks).toBeGreaterThan(50);
     expect(a.lying).toBe(a.total);
     expect(run()).toEqual(a); // deterministic
+  });
+
+  it('keeps the box exactly where it floats, even beside a ship, from the order until the cut finishes', () => {
+    for (const seed of [4, 5, 6]) {
+      const { sim, ids } = setup(2, seed);
+      for (const id of ids) {
+        const c = sim.world.get(id, ContainerC)!;
+        const b = sim.world.get(id, BodyC)!;
+        const [w, h] = rotatedSize((content.modules as Record<string, ModuleDef>)[c.def]!, c.rot);
+        const want = { x: Math.round(b.x - w / 2), y: Math.round(b.y - h / 2) };
+        sim.enqueue({ type: 'container.open', id });
+        sim.step();
+        const box = sim.world.query(ContainerC).find((x) => sim.world.has(x, ModuleC) && sim.world.get(x, ContainerC)!.seed === c.seed)!;
+        expect(box).toBeDefined();
+        const at = () => ({ x: sim.world.get(box, ModuleC)!.x, y: sim.world.get(box, ModuleC)!.y });
+        expect(at()).toEqual(want);
+        for (let i = 0; i < 20; i++) sim.step();
+        expect(at()).toEqual(want);
+      }
+    }
   });
 
   it('refuses to open anything that is not a drifting container', () => {

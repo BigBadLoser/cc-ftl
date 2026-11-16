@@ -18,21 +18,6 @@ import { ContainerC } from './components';
  * only when the job finishes does the module come off and its stock spill onto the deck (`removeModule`), where the staging and shuttle loading fetch it.
  */
 
-/** Search outward (tiles) for a spot the gap rule allows when the box floats too near a ship or rock: the seat settles at the nearest one. */
-const SETTLE_MAX = 48;
-
-/** Where a w x h seat can stand: where the box floated, else the nearest legal spot within SETTLE_MAX tiles (rings of 16 directions, nearest first). */
-function seatSpot(sim: Sim, x: number, y: number, w: number, h: number): { x: number; y: number } | null {
-  for (let r = 0; r <= SETTLE_MAX; r += 2) {
-    for (let k = 0; k < (r === 0 ? 1 : 16); k++) {
-      const a = (k * Math.PI) / 8;
-      const at = { x: Math.max(0, Math.round(x + Math.cos(a) * r)), y: Math.max(0, Math.round(y + Math.sin(a) * r)) };
-      if (placementGapError(sim, { ...at, w, h }) === null) return at;
-    }
-  }
-  return null;
-}
-
 /** The one rule for whether a container may be marked for opening: a drifting container body whose def can be cut (has a scrap type). Returns the reason it may not, or null. */
 export function openRefusal(sim: Sim, id: number): string | null {
   const c = sim.world.get(id, ContainerC);
@@ -54,8 +39,7 @@ export function containerAt(sim: Sim, x: number, y: number): number | null {
 }
 
 /**
- * Mark container `id` for opening (see above). Returns the wreck's ship id, or null (nothing changes) when it may not be opened or no room is found for
- * the seat. The box keeps its stock, faction, rotation and hit points; it stays a sealed container until the cutting job is done.
+ * Mark container `id` for opening (see above). Returns the wreck's ship id, or null (nothing changes) when it may not be opened or the seat would overlap a ship or rock. The box keeps its stock, faction, rotation and hit points; it stays a sealed container until the cutting job is done.
  *
  * KNOWN LIMITATION (issue #522, "Crew work at off-grid bodies"): jobs and EVA only work on a ship grid, so a loose box gets a
  * minimal "seat" ship whose tiles are never drawn (`ShipC.unseen`: the scene draws the box only). The real fix is #522; drop the seat then.
@@ -67,8 +51,9 @@ export function markForOpening(sim: Sim, id: number): number | null {
   const def = c && sim.content.modules[c.def];
   if (!c || !b || !def?.scrap) return null;
   const [w, h] = rotatedSize(def, c.rot);
-  const at = seatSpot(sim, Math.round(b.x - w / 2) - 1, Math.round(b.y - h / 2) - 1, w + 2, h + 2);
-  if (!at) return null;
+  // The seat stands exactly under the box (its tile footprint, one tile of footing round it): the gap rule's 'tooClose' is waived, overlap still refuses.
+  const at = { x: Math.round(b.x - w / 2) - 1, y: Math.round(b.y - h / 2) - 1 };
+  if (placementGapError(sim, { ...at, w: w + 2, h: h + 2 }, { crowd: true })) return null;
   growSector(sim, at.x, at.y, w + 2, h + 2); // the sector grows to hold the seat, as it does for any structure
   // The seat is exactly the box's footprint in deck tiles under it (the art covers them), set in one tile of open space: that ring is the crew's footing, as
   // round any hull (a landing needs open space inside the ship's own bounds), and the goods spill onto the footprint when the box comes off. Nothing shows
@@ -78,7 +63,7 @@ export function markForOpening(sim: Sim, id: number): number | null {
   const ship = stampShip(sim, {
     name: `Container ${id}`, faction: 'neutral', rows,
     modules: [{ def: c.def, x: 1, y: 1, rot: c.rot, clamp, stock: (sim.world.get(id, StorageC)?.stacks ?? []).map((s) => ({ ...s })) }],
-  }, { x: at.x, y: at.y, state: 'wreck' });
+  }, { x: at.x, y: at.y, state: 'wreck', crowd: true });
   const box = sim.world.query(ModuleC).find((m) => shipIdOf(sim, sim.world.get(m, ModuleC)) === ship);
   const kept = box === undefined ? undefined : sim.world.get(box, ContainerC);
   const mod = box === undefined ? undefined : sim.world.get(box, ModuleC);
