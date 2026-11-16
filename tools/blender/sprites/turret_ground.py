@@ -173,7 +173,7 @@ def riser(f, top, ribs=0):
         obox(f, a, 0.78, 0.86, 0.04, 0.14, top - 0.1, "steel", top="steelL")
 
 
-def outrigger(f, a, top, heavy=False):
+def outrigger(f, a, top, heavy=False, strut=0):
     """One outrigger at angle a: a beam from the riser out and down to a jack and foot pad on the rock."""
     from . import detail as D
     c, s_ = math.cos(a), math.sin(a)
@@ -187,6 +187,12 @@ def outrigger(f, a, top, heavy=False):
         for z in (0.12, 0.2, 0.28):
             f.vcyl(jack[0], jack[1], z, 0.125, 0.025, "steelD", sides=12)
         f.vcyl(jack[0], jack[1], 0, 0.22, 0.05, "gm", top="steelD", sides=14)               # foot
+        if strut:                                                                           # cross struts under the arm
+            n = (-s_, c)
+            offs = (0.0,) if strut < 3 else (-0.07, 0.07)
+            r = 0.04 if strut == 1 else 0.06 if strut == 2 else 0.035
+            for o in offs:
+                D.seg(f, (0.86 * c + n[0] * o, 0.86 * s_ + n[1] * o, 0.16), (jack[0] * 0.8 + n[0] * o, jack[1] * 0.8 + n[1] * o, 0.3), r, "steel", 6)
     else:
         D.seg(f, hip, (jack[0], jack[1], 0.24), 0.07, "steelD", 6)
         D.seg(f, (0.86 * c, 0.86 * s_, 0.16), (jack[0] * 0.8, jack[1] * 0.8, 0.3), 0.04, "steel", 6)   # strut
@@ -194,31 +200,16 @@ def outrigger(f, a, top, heavy=False):
         f.vcyl(jack[0], jack[1], 0, 0.16, 0.05, "gm", top="steelD", sides=12)
 
 
-def out_four(f):
-    top = GV["O1"][0]
+def out_strut(f, k):
+    top = GV["S1"][0]
     riser(f, top)
-    for k in range(4):
-        outrigger(f, math.pi / 4 + k * math.pi / 2, top)
+    for j in range(4):
+        outrigger(f, math.pi / 4 + j * math.pi / 2, top, heavy=True, strut=k)
     port3(f, 0.0, 1.06)
 
 
-def out_heavy(f):
-    top = GV["O2"][0]
-    riser(f, top)
-    for k in range(4):
-        outrigger(f, math.pi / 4 + k * math.pi / 2, top, heavy=True)
-    port3(f, 0.0, 1.06)
-
-
-def out_three(f):
-    top = GV["O3"][0]
-    riser(f, top, ribs=12)
-    for k in range(3):
-        outrigger(f, math.pi + k * math.tau / 3, top, heavy=True)                           # none on the cable side
-    port3(f, 0.0, 1.06)
-
-
-GV = {"O1": (0.62, out_four), "O2": (0.78, out_heavy), "O3": (0.7, out_three)}
+# Round 11: O2 (heavy jacks, riser 0.78) with O1's cross struts: as O1 (S1), heavier (S2), a pair per arm (S3).
+GV = {"S1": (0.78, lambda f: out_strut(f, 1)), "S2": (0.78, lambda f: out_strut(f, 2)), "S3": (0.78, lambda f: out_strut(f, 3))}
 
 def ground_turret(key, d, variant):
     """The head with its turntable ring (no roof coaming), standing on the variant's base."""
