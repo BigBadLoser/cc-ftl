@@ -1,7 +1,8 @@
 """The station hull bay's machinery (station_hull_bay; design reference only): a coolant loop near the bay's mouth,
 every run ending in a wall, the floor or the machine (_run: a pipe swept along a path through rounded elbows; _lathe: a
 round body up the bay): a pump on the floor, an expansion tank lying across over it; the pump's line up off its top
-and back into the wall, the tank's return down out of it through a valve into the floor."""
+and back into the wall, two more up off the tank's top and back into it, the tank's return down out of it through a
+valve into the floor."""
 import math
 
 from . import core
@@ -122,6 +123,8 @@ def _coolant(f, u0, u1, zf, zl, back, px):
     _run(f, u0, zf, D - 6 * LINE, [(-1, zt), (W + 1, zt)], r=3.4)
     for p in (3, W - 2):                                    # (its straps)
         _run(f, u0, zf, D - 6 * LINE, [(p, zt), (p + 1, zt)], r=3.9)
+    for p, h in ((5, 6), (W - 5, 4)):                       # (lines up off its top and back into the wall)
+        _run(f, u0, zf, D - 6 * LINE, [(p, zt + 2), (p, zt + h), (p, zt + h, (back - D) / LINE + 7)], r=0.9, R=2)
     _run(f, u0, zf, dc, [(5.5, 16), (5.5, zt - 7), (5.5, zt - 7, (back - dc) / LINE + 1)], r=1.1, R=2)   # (the pump's
                                                             # line: up off its top, back into the wall)
     _run(f, u0, zf, D - 3 * LINE, [(W - 3, zt), (W - 3, -1)], r=1.1)        # (the return down into the floor)
