@@ -8,7 +8,7 @@
 
   let { api, onBack, only = null }: { api: UiApi; onBack: () => void; only?: number | null } = $props();
   let data = $state<UiShuttles>({ shuttles: [], airlocks: [], targets: [], roster: [], bays: [], regions: [], transfers: [], ferryReady: false });
-  let mining = $state<UiMining>({ asteroids: [], pods: [] });
+  let mining = $state<UiMining>({ asteroids: [], pods: [], containers: [] });
   onMount(() => {
     const u = [api.shuttles.subscribe((v) => (data = v)), api.mining.subscribe((v) => (mining = v))];
     return () => u.forEach((f) => f());

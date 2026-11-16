@@ -178,7 +178,8 @@ export { econOf, stockAt, factorAt, quoteAt, moveStock, advance, capOf, type Eco
 export { bindMarkets, bindStation, unbindMarkets } from './galaxy/marketLive';
 export { populateNode } from './galaxy/populate';
 export { populateCargo } from './galaxy/populateCargo';
-export { containerAt } from './containers/open';
+export { containerAt, openRefusal } from './containers/open';
+export { ContainerC } from './containers/components';
 export { newsFeed, report as reportNews } from './galaxy/news';
 export { clash, fleetPower, shipPower, atWar, wouldFight, type Clash } from './galaxy/clash';
 export { resolveMeetings, findMeetings } from './galaxy/meetings';

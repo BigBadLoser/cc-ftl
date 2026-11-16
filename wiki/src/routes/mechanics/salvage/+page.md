@@ -42,10 +42,10 @@ deeper **probe** (a hacker of skill 4) gives counts.
 Now and then a node holds one or two sealed containers adrift with no ship attached. Each one carries the colours of the
 faction that lost it and holds a single kind of goods. Deeper out the loads are richer, and a few are contraband.
 
-To open one, click it. The box is seated on a small wreck frame and a salvage order starts on it (Comfort scrap). A crew
-member takes the shuttle out, cuts the box open at the frame, and only when that job is finished do the goods spill out.
-The crew then stage them and the shuttle carries them home, as with any wreck. Cancel the order from the frame's panel if
-you change your mind: the box stays sealed.
+To open one, click it: its panel shows the faction livery it wears and says its contents are unknown until it is opened.
+Press Open. A salvage order starts on the box, a crew member takes the shuttle out and cuts it open where it floats, and
+only when that job is finished do the goods spill out. The crew then stage them and the shuttle carries them home, as
+with any wreck. While the cutting is under way the panel says so.
 
 <ComingLater>
 
