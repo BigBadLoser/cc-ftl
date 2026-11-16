@@ -3,6 +3,7 @@ import type { World } from "../sim/ecs";
 import { JobC } from "../sim/crew/components";
 import type { Grid } from "../sim/grid";
 import { Struct } from "../sim/structure";
+import { decodeWindow } from "../sim/windows";
 import type { Atlas } from "./assets/loader";
 import { keepsOldPiece, pendingHull, pendingHullKeys } from "./jobHull";
 import type { HullKeys } from "./hullArt";
@@ -27,6 +28,8 @@ export interface JobView {
 
 const BUILD = 0x22d3ee;
 const DECON = 0xff3b3b;
+/** A queued window: the Window tool's valid-preview tint (markers.ts CYAN), added over the wall it stands on (a multiply tint would vanish on the wall's own teal), so it reads as the pending window. */
+const WINDOW_GHOST = BUILD;
 
 /**
  * Blueprints: the target tile's own sprite, tinted cyan (build, alpha rises with progress) or red (deconstruct). A shipyard tile
@@ -63,6 +66,7 @@ export function createJobView(
     alpha: number,
     key: number,
     layer: Container = L.sorted,
+    blend: "normal" | "add" = "normal",
   ): void {
     for (const chain of chains) {
       const a = atlas.firstOf(chain);
@@ -73,6 +77,7 @@ export function createJobView(
       s.position.set(Math.round(p.x - a.ax), Math.round(p.y - a.ay));
       s.tint = tint;
       s.alpha = alpha;
+      s.blendMode = blend;
       s.zIndex = key;
     }
   }
@@ -124,8 +129,13 @@ export function createJobView(
           const alpha = build ? 0.3 + 0.5 * frac : 0.65;
           const lx = j.x - x0, ly = j.y - y0;
           const key = depthKey(lx, ly) + 0.02;
-          const hg = build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
-          if (hg) {
+          // A window build draws as the window piece (the wall is already there, so no new hull), a pending window not a plain wall ghost.
+          const win = build && j.window ? decodeWindow(j.window) : null;
+          const hg = !win && build && (kind === Struct.Floor || kind === Struct.Wall || kind === Struct.Door) ? pendingHull(hull, final, lx, ly, kind, has) : null;
+          if (win && kind === Struct.Wall) {
+            for (const pc of wallPieces(kindAt, lx, ly, kind, "up", false, undefined, win))
+              draw([pc.chain], lx, ly, WINDOW_GHOST, 0.5 + 0.4 * frac, key + pc.order * 0.001, L.sorted, "add");
+          } else if (hg) {
             if (kind === Struct.Floor) draw([floorChain(lx, ly)], lx, ly, tint, alpha, key - 0.9);
             if (hg.under) draw([[hg.under]], lx, ly, tint, alpha, key, L.under);
             if (hg.low) draw([[hg.low]], lx, ly, tint, alpha, key + 0.001);
