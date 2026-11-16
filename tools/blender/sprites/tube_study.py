@@ -170,52 +170,56 @@ def _job(look):
     return run
 
 
-def _port_job(o):
-    def run(o=o):
+def _port_job(o, door=None):
+    """tube.port.<e|s>: the bore open (the cut view: the game's door tile shows through it); .roof[.open]: roofed, the
+    hull's door tile cut through behind it, the corridor door (closed / open) and the room's dark in the bore."""
+    def run(o=o, door=door):
         import bpy
         from . import env_build as E, post, tube_port
-        aid = f"tube.port.{'e' if o == 2 else 's'}"
+        aid = f"tube.port.{'e' if o == 2 else 's'}" + ("" if door is None else ".roof.open" if door else ".roof")
         core.clear_scene_meshes()
-        post.select("tube+hull")
-        own, wide = tube_port.piece(o, at=(-1.0, 0.0) if o == 2 else (0.0, -1.0))   # (the door tile behind the tube's
-        sc = bpy.context.scene                                                     #  first tile, the sprite's origin)
+        post.select("tube+hull+walls")
+        at = (-1.0, 0.0) if o == 2 else (0.0, -1.0)     # (the door tile behind the tube's first tile, the origin)
+        own, wide = tube_port.piece(o, at=at)
+        inside, mouth = tube_port.through(o, at, door) if door is not None else ([], None)
+        extra = inside + ([mouth] if mouth else [])
+        for ob in extra:
+            ob.hide_render = True
+        sc = bpy.context.scene
         sc.cycles.samples = SAMPLES
         try:
-            it = E.crop_item(aid, (1, 1), *E.render_sprite(aid, "over", (own, wide))[:5])
+            c, op, g, ox, oy = E.render_sprite(aid, "over", (own, wide))[:5]
+            if mouth:
+                c, op = _mouth(own, wide, inside, mouth, c, op)
+            it = E.crop_item(aid, (1, 1), c, op, g, ox, oy)
         finally:
             sc.cycles.samples = core.SAMPLES
         return [it] if it else []
     return run
 
 
-def _hatch_job(axis, is_open):
-    def run(axis=axis, is_open=is_open):
-        from . import env_build as E, post, tube_hatch
-        aid = f"tube.hatch.{axis}{'.open' if is_open else ''}"
-        core.clear_scene_meshes()
-        post.select("walls+hull+tube")
-        c, *rest = E.render_sprite(aid, "block", tube_hatch.hatch(axis, is_open))[:5]
-        it = E.crop_item(aid, (1, 1), _tint(c), *rest)
-        return [it] if it else []
-    return run
-
-
-VIS = {"df": (232, 132, 40), "dl": (40, 190, 210)}   # study only: the hatch's frame orange, its leaf cyan (to see it)
-
-
-def _tint(c):
-    """The hatch's frame and leaf tones recoloured (VIS), each keeping its brightness relative to its ramp's face."""
-    from . import post
-    out = c.copy()
-    for pre, rgb in VIS.items():
-        base = post._name_rgb(f"{pre}Y").astype(float).mean()
-        for sfx in ("T", "Y", "X", "Td", "Yd", "Xd", "Tdd", "Ydd", "Xdd", "Yl", "Xl"):
-            tone = post._name_rgb(pre + sfx)
-            at = (c == tone).all(-1)
-            k = tone.astype(float).mean() / base
-            out[at] = np.clip(np.array(rgb, float) * k, 0, 255).astype(np.uint8)
-    return out
+def _mouth(own, wide, inside, mouth, c, op):
+    """The port's px where its mouth shows through to `inside` (rendered with the block, no hull): those px from it."""
+    from . import env_build as E, post
+    xmin, xmax, ymin, ymax = core.extent_px(own)        # (render_sprite's frame for these own)
+    W = 2 * (int(math.ceil(max(-xmin, xmax))) + 5)
+    H = 2 * (int(math.ceil(max(-ymin, ymax))) + 5)
+    every = list(wide) + list(inside) + [mouth]
+    def only(show):
+        for ob in every:
+            ob.hide_render, ob.is_holdout = ob not in show, False
+    only([mouth])
+    _, a = core.render(W, H, "color")
+    _, at = post.downsample(a[..., None].repeat(3, -1), a > 0.5, core.SS, 8, True)
+    only(list(own) + list(inside))
+    rgb, a = core.render(W, H, "color")
+    ci, oi = post.downsample(rgb, a > 0.5, core.SS, 8, True)
+    for ob in every:
+        ob.hide_render = True
+    at, ci, oi = E._pad1(at), E._pad1(ci), E._pad1(oi)
+    use = at & oi & ~op
+    return np.where(use[..., None], ci, c), op | use
 
 
 def jobs():
-    return [_job(look) for look in STUDY] + [_port_job(2)] + [_hatch_job(a, o) for a in ("x", "y") for o in (False, True)]
+    return [_job(look) for look in STUDY] + [_port_job(2, d) for d in (None, False, True)]

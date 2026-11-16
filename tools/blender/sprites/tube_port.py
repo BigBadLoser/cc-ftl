@@ -96,3 +96,29 @@ def piece(o, at=(0.0, 0.0)):
     own = housing(o)
     own.location = own.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)   # (its axis onto the door tile)
     return [own], [own] + hull
+
+
+def through(o, at=(0.0, 0.0), is_open=False):
+    """What the port shows roofed (the hull's door tile cut through behind it): (inside, mouth). inside: the bore's
+    walls on through the hull tile, the corridor door (closed or open) in the hull's wall line, the room's dark behind;
+    mouth: a disc over the collar's mouth, its px the ones the inside shows in."""
+    from . import door_block as DB
+    mask = 5 if o == 2 else 10
+    dx, dy = X.STRAIGHT[(mask, o)]
+    d = DB.door("y" if o == 2 else "x", is_open, leaf="halves", look="metal")
+    for ob in d:
+        ob.location = ob.location + core.G(at[0], at[1], 0.0)
+    b, m = HE._Builder(o, f"tube_port_bore_{o}"), HE._Builder(o, f"tube_port_mouth_{o}")
+    ts = [math.tau * i / N for i in range(N)]
+    ring = lambda d, t: (d, RS * math.cos(t), AXIS + RS * math.sin(t))   # noqa: E731
+    for t0, t1 in zip(ts, ts[1:] + ts[:1]):
+        b.face([ring(0.0, t0), ring(-0.5, t0), ring(-0.5, t1), ring(0.0, t1)],
+               (0, -(math.cos(t0) + math.cos(t1)), -(math.sin(t0) + math.sin(t1))), RAMP[0])
+    b.face([ring(-0.6, t) for t in ts], (1, 0, 0), "hsXK")
+    m.face([ring(DF + COLLAR[1], t) for t in ts], (1, 0, 0), "hsXK")
+    out = []
+    for x in (b, m):
+        ob = x.m.build()
+        ob.location = ob.location + core.G(at[0] + 0.5 * dx, at[1] + 0.5 * dy, 0.0)
+        out.append(ob)
+    return [*d, out[0]], out[1]
