@@ -18,10 +18,11 @@ def machinery(f, u0, u1, zf, zl, back):
     _under(f, u0, u1, zf, back, 1 / core.ZPX)
 
 
-UNDER_BOX = (7, 4, 13)              # the body under the bay: px wide, px out from the face, px tall (its top the bay's floor)
+UNDER_BOX = (7, 4, 11)              # the body under the bay: px wide, px out from the face, px tall (its top the bay's floor)
 UNDER_TONES = ("stL", "stM", "stD", "stDE")  # its top; its sides by facing: the near end (+u), out, the far end (in
                                     # the light: not the machinery's shade)
 UNDER_SEAM = 3                      # a seam round it this many px under its top (a step under its tones)
+UNDER_SHADOW = (3, "stS")           # a shadow on the face under it: px under its outline, tone (the tower's)
 
 
 def _under(f, u0, u1, zf, back, px):
@@ -35,6 +36,12 @@ def _under(f, u0, u1, zf, back, px):
     n = 16                                                  # (its top)
     f.k.poly([T.P(f.ax, f.plane, m + w / 2 * LINE * math.cos(math.pi * i / n), zf, D + out * LINE * math.sin(math.pi * i / n))
               for i in range(n + 1)], F, 3, core.Vector((0, 0, 1)), fixed=T.SEAM_PASS or UNDER_TONES[0])
+    zb = zf - h * px                                        # (a shadow on the face under it)
+    f.k.poly([T.P(f.ax, f.plane, m + w / 2 * LINE * math.cos(math.pi * i / n),    # (its outline on screen, carried
+                  zb - (UNDER_SHADOW[0] + out / 2 * math.sin(math.pi * i / n)) * px, D + 0.003)   # down onto the face)
+              for i in range(n + 1)] + [T.P(f.ax, f.plane, m - w / 2 * LINE, zb, D + 0.003),
+                                        T.P(f.ax, f.plane, m + w / 2 * LINE, zb, D + 0.003)],
+             F, 3, T.OUT(f.ax), fixed=T.SEAM_PASS or UNDER_SHADOW[1])
     p, dc = (m - u0) / LINE, D + out / 2 * LINE
     _run(f, u0, zf, dc, [(p, -1), (p, 3), (p, 3, (back - dc) / LINE + 1)], r=1.0, R=2)
 

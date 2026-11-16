@@ -33,7 +33,7 @@ DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS, MODULE: (), TOWER: (), BAY: ()}
 NO_TABS = {MODULE, TOWER, BAY}      # designs without the groove's tabs (the recess takes the middle slot's foot), the
                                     # plate on the line under the bullnose and that line's lit px (the boxes take the
                                     # middle slot)
-ONE_BLOCK = {TOWER}                 # designs whose step carries one block over both, its middle a px higher
+ONE_BLOCK = {TOWER: 1, BAY: 0}      # designs whose step carries one block over both: px its middle stands higher
 
 BOX_OUT, BOX_UP, BOX_GAP = 1, 1, 2   # the middle slot's boxes: px off the face, the top one's top px over the top's, the
                                     # gap between them (the line under the bullnose)

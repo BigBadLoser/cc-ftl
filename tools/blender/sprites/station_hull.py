@@ -231,10 +231,10 @@ def build(k, ax, plane, a, b, ends, H):
                                                                 # ends: it runs on; round an outer corner)
         if whole and DESIGN[0]:
             SD.dress(f, s0, DESIGN[0], zk)
-        if whole and DESIGN[0] in SD.ONE_BLOCK:                  # (one block over both, its middle a px higher)
-            u = s0 + FOOT_BLOCKS[0] * LINE
+        if whole and DESIGN[0] in SD.ONE_BLOCK:                  # (one block over both, its middle `up` px higher)
+            u, up = s0 + FOOT_BLOCKS[0] * LINE, SD.ONE_BLOCK[DESIGN[0]]
             for i, w in enumerate(FOOT_BLOCKS[1:-1]):
-                f.part(u, u + w * LINE, _block_prof(s, i % 2), BLOCK_COLS, GROOVE_D)
+                f.part(u, u + w * LINE, _block_prof(s, (i % 2) * up), BLOCK_COLS, GROOVE_D)
                 u += w * LINE
         elif whole:
             u = s0
