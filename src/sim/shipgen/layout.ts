@@ -10,8 +10,8 @@ export interface PlacedModule {
   rot: number;
 }
 
-/** Roof-mounted modules need a clear tile around them so their turrets, dishes and masts do not overlap. */
-export const roofMounted = (d: ModuleDef): boolean => !!(d.weapon || d.pointDefense || d.roofAsset);
+/** Roof-mounted modules need a clear tile around them so their turrets, dishes and masts do not overlap. A ground mount stands on open ground, under no roof. */
+export const roofMounted = (d: ModuleDef): boolean => !d.groundMount && !!(d.weapon || d.pointDefense || d.roofAsset);
 
 /**
  * A ship being fitted out: struct chars, room of each tile, module occupancy and tiles that must stay walkable.

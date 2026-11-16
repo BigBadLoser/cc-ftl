@@ -658,6 +658,11 @@ export interface ModuleDef {
   /** Point-defence turret: shoots down interceptable shots; needs a working AI core on the ship. */
   pointDefense?: true;
   /**
+   * A turret mount that stands out on open rock ground (#514), never under a roof: 3x3, wired to the hull by a ground cable that plugs into
+   * its port, the middle tile of its +x side at rotation 0 (turning clockwise with the rotation). The one owner is sim/modules/groundMount.ts.
+   */
+  groundMount?: true;
+  /**
    * Robot fabricator: while powered, intact and on a grid whose ship has a live AI core, it builds a robot of the
    * ship's faction every `intervalSec` (cycling through `roles`) next to itself, while fewer than `cap` it made live.
    */

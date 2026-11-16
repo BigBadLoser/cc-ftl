@@ -27,6 +27,9 @@ export function lightTint(light: number, vacuum: boolean, pulse: number): number
   return pack(c);
 }
 
+/** Light tint of pieces outside the hull (containers, ground turret mounts) that room lighting never reaches: lit by the sky. */
+export const EXTERIOR_TINT = 0xd8dce6;
+
 /** Scale a packed colour's brightness. */
 export function dim(color: number, f: number): number {
   const r = ((color >> 16) & 255) * f;

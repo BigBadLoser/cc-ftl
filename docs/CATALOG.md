@@ -37,7 +37,7 @@ Counts are table rows per status (each row is one entry, so a row that groups se
 | [environment](catalog/environment.md) | Air, power, fire, heat, light, rooms, hull, roof | 20 | 0 | 0 | 0 | 0 | 4 |
 | [ui](catalog/ui.md) | Windows, panels, menus, kit | 26 | 4 | 0 | 1 | 1 | 1 |
 | [dev-tools](catalog/dev-tools.md) | Scenarios, debug commands, labs, profilers, test tools | 0 | 0 | 0 | 0 | 37 | 0 |
-| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 9 | 0 | 0 | 3 |
+| [art](catalog/art.md) | Manifest families, art-only sprites, render systems | 9 | 1 | 10 | 0 | 0 | 3 |
 | **Total** | | 465 | 59 | 59 | 2 | 42 | 30 |
 
 ## Commonly confused

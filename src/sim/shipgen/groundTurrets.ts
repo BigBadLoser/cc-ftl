@@ -1,5 +1,6 @@
 import { airlockTiles } from '../modules/airlock';
 import { footprintTiles, rotatedSize } from '../modules/footprint';
+import { rotForPortDir } from '../modules/groundMount';
 import type { ModuleDef } from '../registry';
 import type { Layout } from './layout';
 
@@ -109,7 +110,7 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
   for (const id of plan.mods) {
     const def = lay.defs[id] as ModuleDef | undefined;
     if (!def) continue;
-    const [fw, fh] = rotatedSize(def, 0);
+    const [fw, fh] = rotatedSize(def, 0); // ground mounts are 3x3: the cable's side is the middle of one
     const reach = hullReach();
     const others = out.placed.map((k) => { const m = lay.modules[k]!, [pw, ph] = rotatedSize(lay.defs[m.def] as ModuleDef, m.rot); return { x: m.x + pw / 2, y: m.y + ph / 2 }; });
     // Inside the box first; past its edge only when nothing inside stands.
@@ -132,7 +133,9 @@ export function placeGroundTurrets(lay: Layout, plan: GroundPlan): GroundFit {
       for (const s of spots) {
         const run = s.run;
         if (run.some((c) => { const x = c % w, y = Math.floor(c / w); return x >= s.x && x < s.x + fw && y >= s.y && y < s.y + fh; })) continue;
-        lay.push({ def: id, x: s.x, y: s.y, rot: 0 });
+        // The port side faces the cable's first tile (the run starts on the middle tile of a side, square on).
+        const first = run[0] as number;
+        lay.push({ def: id, x: s.x, y: s.y, rot: rotForPortDir((first % w) - (s.x + 1), Math.floor(first / w) - (s.y + 1)) });
         for (const c of run) out.cable.add(c);
         if (opens()) { out.placed.push(lay.modules.length - 1); done = true; break; }
         for (const c of run) out.cable.delete(c);

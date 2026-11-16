@@ -29,6 +29,10 @@
   "bunk_module": {
    "image": "sprites/bunk_module.png"
   },
+  "cable": {
+   "image": "sprites/cable.png",
+   "glow": "sprites/cable.glow.png"
+  },
   "cargo": {
    "image": "sprites/cargo.png",
    "glow": "sprites/cargo.glow.png"
@@ -6152,6 +6156,3293 @@
     1
    ],
    "glow": true
+  },
+  "cable.duct.m0": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3790,
+    "y": 37,
+    "w": 26,
+    "h": 21
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m0.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3817,
+    "y": 37,
+    "w": 26,
+    "h": 21
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3322,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3359,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m1.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 960,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m1.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 997,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1034,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1079,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1124,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.v1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1169,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1214,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1259,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1304,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.v3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1349,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1394,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.v4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1439,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 48,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3657,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3704,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m10.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2303,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m10.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2348,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1484,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1531,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2393,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2440,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 95,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 142,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 189,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 236,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3751,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3798,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 283,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 330,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2487,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2534,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m11.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2581,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m11.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2628,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1578,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1615,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 377,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 414,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3845,
+    "y": 1,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3882,
+    "y": 1,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m12.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2675,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m12.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2712,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1652,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1699,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2749,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2796,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 451,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 498,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 545,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 592,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3919,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3966,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 639,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 686,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2843,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2890,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m13.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2937,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m13.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2984,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1746,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1791,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 733,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 780,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 827,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 872,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 917,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 964,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 4013,
+    "y": 1,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 48,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 93,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 138,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 185,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m14.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3031,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m14.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3076,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1836,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1883,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3121,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3168,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w10": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1011,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w10.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1058,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w11": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1105,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w11.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1152,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w12": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1199,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w12.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1246,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w13": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1293,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w13.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1340,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w14": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1387,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w14.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1434,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w15": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1481,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w15.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1528,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 232,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 279,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1575,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1622,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 326,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 373,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1669,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1716,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 420,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 467,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1763,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1810,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3215,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3262,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m15.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3309,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m15.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3356,
+    "y": 1,
+    "w": 46,
+    "h": 33
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3396,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3431,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m2.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2900,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m2.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2937,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 13,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1930,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1967,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3403,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3440,
+    "y": 1,
+    "w": 36,
+    "h": 33
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 514,
+    "y": 37,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 551,
+    "y": 37,
+    "w": 36,
+    "h": 31
+   },
+   "anchor": {
+    "x": 13,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m3.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1857,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m3.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1894,
+    "y": 1,
+    "w": 36,
+    "h": 35
+   },
+   "anchor": {
+    "x": 13,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3466,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3501,
+    "y": 37,
+    "w": 34,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m4.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2974,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m4.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3011,
+    "y": 37,
+    "w": 36,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2004,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2049,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2094,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.v1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2139,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2184,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2229,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2274,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.v3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2319,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2364,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.v4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2409,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3477,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3522,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 588,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 635,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m5.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1931,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m5.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 1978,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3536,
+    "y": 37,
+    "w": 42,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3579,
+    "y": 37,
+    "w": 42,
+    "h": 25
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3048,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3093,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 21,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3138,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3183,
+    "y": 37,
+    "w": 44,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m6.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3228,
+    "y": 37,
+    "w": 46,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m6.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3275,
+    "y": 37,
+    "w": 46,
+    "h": 27
+   },
+   "anchor": {
+    "x": 23,
+    "y": 15
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2454,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2499,
+    "y": 37,
+    "w": 44,
+    "h": 29
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3567,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3612,
+    "y": 1,
+    "w": 44,
+    "h": 33
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w2": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 682,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w2.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 727,
+    "y": 37,
+    "w": 44,
+    "h": 31
+   },
+   "anchor": {
+    "x": 21,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w3": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2025,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w3.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2070,
+    "y": 1,
+    "w": 44,
+    "h": 35
+   },
+   "anchor": {
+    "x": 21,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w4": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 772,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w4.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 819,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w5": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2115,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w5.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2162,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w6": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 866,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w6.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 913,
+    "y": 37,
+    "w": 46,
+    "h": 31
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m7.w7": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2209,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m7.w7.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2256,
+    "y": 1,
+    "w": 46,
+    "h": 35
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3622,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3659,
+    "y": 37,
+    "w": 36,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m8.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2544,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m8.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2581,
+    "y": 37,
+    "w": 36,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3696,
+    "y": 37,
+    "w": 46,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 3743,
+    "y": 37,
+    "w": 46,
+    "h": 25
+   },
+   "anchor": {
+    "x": 23,
+    "y": 19
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w1": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2618,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w1.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2665,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w8": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2712,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w8.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2759,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
+  },
+  "cable.duct.m9.w9": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2806,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ],
+   "glow": true
+  },
+  "cable.duct.m9.w9.off": {
+   "kind": "static",
+   "sheet": "cable",
+   "frame": {
+    "x": 2853,
+    "y": 37,
+    "w": 46,
+    "h": 29
+   },
+   "anchor": {
+    "x": 23,
+    "y": 23
+   },
+   "footprint": [
+    1,
+    1
+   ]
   },
   "container.2x4": {
    "kind": "static",
@@ -73235,8 +76526,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2669,
-    "y": 271,
+    "x": 953,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -73253,8 +76544,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2728,
-    "y": 271,
+    "x": 1012,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -73271,8 +76562,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2787,
-    "y": 271,
+    "x": 1071,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -73289,8 +76580,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2846,
-    "y": 271,
+    "x": 1130,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -73302,6 +76593,82 @@
     2,
     2
    ]
+  },
+  "module.burst_laser.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2445,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2630,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2815,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.burst_laser.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3000,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.chair.front.r0": {
    "kind": "static",
@@ -77093,8 +80460,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1409,
-    "y": 271,
+    "x": 2312,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -77111,8 +80478,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1480,
-    "y": 271,
+    "x": 2383,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -77129,8 +80496,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1551,
-    "y": 271,
+    "x": 2454,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -77147,8 +80514,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1622,
-    "y": 271,
+    "x": 2525,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -77160,6 +80527,82 @@
     2,
     2
    ]
+  },
+  "module.flak_cannon.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3185,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3370,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3555,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.flak_cannon.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3740,
+    "y": 152,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.galley": {
    "kind": "static",
@@ -82587,8 +86030,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1693,
-    "y": 271,
+    "x": 2596,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -82605,8 +86048,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1764,
-    "y": 271,
+    "x": 2667,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -82623,8 +86066,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1835,
-    "y": 271,
+    "x": 2738,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -82641,8 +86084,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1906,
-    "y": 271,
+    "x": 2809,
+    "y": 504,
     "w": 70,
     "h": 106
    },
@@ -82655,12 +86098,88 @@
     2
    ]
   },
+  "module.incendiary_launcher.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 186,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 371,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.incendiary_launcher.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 556,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "module.ion_cannon.bay.r0": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1977,
-    "y": 271,
+    "x": 2880,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -82677,8 +86196,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2042,
-    "y": 271,
+    "x": 2945,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -82695,8 +86214,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2107,
-    "y": 271,
+    "x": 3010,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -82713,8 +86232,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2172,
-    "y": 271,
+    "x": 3075,
+    "y": 504,
     "w": 64,
     "h": 106
    },
@@ -82726,6 +86245,82 @@
     2,
     2
    ]
+  },
+  "module.ion_cannon.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 741,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 926,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1111,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.ion_cannon.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1296,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.life_support": {
    "kind": "static",
@@ -84595,8 +88190,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 800,
-    "y": 152,
+    "x": 3701,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -84613,8 +88208,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 886,
-    "y": 152,
+    "x": 3787,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -84631,8 +88226,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 972,
-    "y": 152,
+    "x": 3873,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -84649,8 +88244,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1058,
-    "y": 152,
+    "x": 3959,
+    "y": 273,
     "w": 85,
     "h": 114
    },
@@ -84662,6 +88257,82 @@
     3,
     3
    ]
+  },
+  "module.mass_driver.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1481,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1666,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1851,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.mass_driver.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2036,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.med_bed": {
    "kind": "static",
@@ -85588,7 +89259,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1388,
+    "x": 2230,
     "y": 1,
     "w": 132,
     "h": 126
@@ -85606,7 +89277,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1521,
+    "x": 2363,
     "y": 1,
     "w": 132,
     "h": 126
@@ -85624,7 +89295,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1654,
+    "x": 2496,
     "y": 1,
     "w": 132,
     "h": 126
@@ -85642,7 +89313,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1787,
+    "x": 2629,
     "y": 1,
     "w": 132,
     "h": 126
@@ -85655,6 +89326,82 @@
     3,
     3
    ]
+  },
+  "module.missile_launcher.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2221,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2406,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2591,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.missile_launcher.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2776,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.planter": {
    "kind": "static",
@@ -86282,8 +90029,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2905,
-    "y": 271,
+    "x": 1189,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -86300,8 +90047,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2964,
-    "y": 271,
+    "x": 1248,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -86318,8 +90065,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3023,
-    "y": 271,
+    "x": 1307,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -86336,8 +90083,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3082,
-    "y": 271,
+    "x": 1366,
+    "y": 614,
     "w": 58,
     "h": 103
    },
@@ -86349,6 +90096,82 @@
     2,
     2
    ]
+  },
+  "module.point_defense.ground.r0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2961,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3146,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3331,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "module.point_defense.ground.r3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3516,
+    "y": 273,
+    "w": 184,
+    "h": 115
+   },
+   "anchor": {
+    "x": 92,
+    "y": 101
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
   },
   "module.reactor": {
    "kind": "static",
@@ -208484,8 +212307,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 516,
-    "y": 380,
+    "x": 916,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -208502,8 +212325,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 673,
-    "y": 380,
+    "x": 1073,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -208521,8 +212344,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1268,
-    "y": 479,
+    "x": 3748,
+    "y": 818,
     "w": 104,
     "h": 84
    },
@@ -208539,8 +212362,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1373,
-    "y": 479,
+    "x": 3853,
+    "y": 818,
     "w": 104,
     "h": 84
    },
@@ -208558,8 +212381,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 830,
-    "y": 380,
+    "x": 1230,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -208576,8 +212399,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 987,
-    "y": 380,
+    "x": 1387,
+    "y": 719,
     "w": 156,
     "h": 94
    },
@@ -208595,8 +212418,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2660,
-    "y": 380,
+    "x": 3878,
+    "y": 719,
     "w": 142,
     "h": 89
    },
@@ -208613,8 +212436,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2803,
-    "y": 380,
+    "x": 1,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -208632,8 +212455,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
-    "y": 271,
+    "x": 206,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -208650,8 +212473,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 158,
-    "y": 271,
+    "x": 363,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -208669,8 +212492,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 763,
-    "y": 271,
+    "x": 1666,
+    "y": 504,
     "w": 104,
     "h": 107
    },
@@ -208687,8 +212510,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 868,
-    "y": 271,
+    "x": 1771,
+    "y": 504,
     "w": 104,
     "h": 107
    },
@@ -208706,8 +212529,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 315,
-    "y": 271,
+    "x": 520,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -208724,8 +212547,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 472,
-    "y": 271,
+    "x": 677,
+    "y": 504,
     "w": 156,
     "h": 108
    },
@@ -208743,8 +212566,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2946,
-    "y": 380,
+    "x": 144,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -208761,8 +212584,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3089,
-    "y": 380,
+    "x": 287,
+    "y": 818,
     "w": 142,
     "h": 89
    },
@@ -208780,8 +212603,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2329,
-    "y": 479,
+    "x": 3654,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -208798,8 +212621,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2434,
-    "y": 479,
+    "x": 3759,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -208816,8 +212639,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1144,
-    "y": 380,
+    "x": 1544,
+    "y": 719,
     "w": 104,
     "h": 94
    },
@@ -208834,8 +212657,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 629,
-    "y": 271,
+    "x": 834,
+    "y": 504,
     "w": 133,
     "h": 108
    },
@@ -208852,8 +212675,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1846,
-    "y": 380,
+    "x": 2246,
+    "y": 719,
     "w": 156,
     "h": 93
    },
@@ -208866,12 +212689,308 @@
     2
    ]
   },
+  "turret.burst_laser.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 430,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 60,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 587,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 60,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2696,
+    "y": 908,
+    "w": 104,
+    "h": 77
+   },
+   "anchor": {
+    "x": 52,
+    "y": 87
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2801,
+    "y": 908,
+    "w": 104,
+    "h": 77
+   },
+   "anchor": {
+    "x": 52,
+    "y": 87
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 744,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 96,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 901,
+    "y": 818,
+    "w": 156,
+    "h": 88
+   },
+   "anchor": {
+    "x": 96,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 301,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 90,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 435,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 90,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2380,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 96,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2537,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 96,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3210,
+    "y": 614,
+    "w": 104,
+    "h": 99
+   },
+   "anchor": {
+    "x": 52,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3315,
+    "y": 614,
+    "w": 104,
+    "h": 99
+   },
+   "anchor": {
+    "x": 52,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2694,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 60,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2851,
+    "y": 614,
+    "w": 156,
+    "h": 100
+   },
+   "anchor": {
+    "x": 60,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.burst_laser.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 569,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 43,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.burst_laser.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 703,
+    "y": 908,
+    "w": 133,
+    "h": 82
+   },
+   "anchor": {
+    "x": 43,
+    "y": 93
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.burst_laser.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2539,
-    "y": 479,
+    "x": 3864,
+    "y": 908,
     "w": 104,
     "h": 56
    },
@@ -208888,8 +213007,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2120,
-    "y": 380,
+    "x": 2744,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -208906,8 +213025,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2228,
-    "y": 380,
+    "x": 2852,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -208926,7 +213045,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 207,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -208944,7 +213063,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 310,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -208962,8 +213081,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2336,
-    "y": 380,
+    "x": 2960,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -208980,8 +213099,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2444,
-    "y": 380,
+    "x": 3068,
+    "y": 719,
     "w": 107,
     "h": 92
    },
@@ -208999,8 +213118,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3438,
-    "y": 380,
+    "x": 1438,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -209017,8 +213136,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3554,
-    "y": 380,
+    "x": 1554,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -209036,8 +213155,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2237,
-    "y": 271,
+    "x": 3776,
+    "y": 504,
     "w": 107,
     "h": 104
    },
@@ -209054,8 +213173,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2345,
-    "y": 271,
+    "x": 3884,
+    "y": 504,
     "w": 107,
     "h": 104
    },
@@ -209073,8 +213192,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2588,
-    "y": 152,
+    "x": 2333,
+    "y": 389,
     "w": 102,
     "h": 111
    },
@@ -209091,8 +213210,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2691,
-    "y": 152,
+    "x": 2436,
+    "y": 389,
     "w": 102,
     "h": 111
    },
@@ -209110,8 +213229,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2453,
-    "y": 271,
+    "x": 1,
+    "y": 614,
     "w": 107,
     "h": 104
    },
@@ -209128,8 +213247,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2561,
-    "y": 271,
+    "x": 109,
+    "y": 614,
     "w": 107,
     "h": 104
    },
@@ -209147,8 +213266,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3670,
-    "y": 380,
+    "x": 1670,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -209165,8 +213284,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3786,
-    "y": 380,
+    "x": 1786,
+    "y": 818,
     "w": 115,
     "h": 87
    },
@@ -209184,8 +213303,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2644,
-    "y": 479,
+    "x": 3969,
+    "y": 908,
     "w": 102,
     "h": 56
    },
@@ -209202,8 +213321,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2747,
-    "y": 479,
+    "x": 1,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -209220,8 +213339,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1478,
-    "y": 479,
+    "x": 1011,
+    "y": 908,
     "w": 102,
     "h": 79
    },
@@ -209238,8 +213357,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 973,
-    "y": 271,
+    "x": 1876,
+    "y": 504,
     "w": 102,
     "h": 107
    },
@@ -209256,8 +213375,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2552,
-    "y": 380,
+    "x": 3176,
+    "y": 719,
     "w": 107,
     "h": 91
    },
@@ -209270,12 +213389,308 @@
     2
    ]
   },
+  "turret.flak_cannon.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3958,
+    "y": 818,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 43,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 43,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1058,
+    "y": 818,
+    "w": 86,
+    "h": 88
+   },
+   "anchor": {
+    "x": 43,
+    "y": 99
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1145,
+    "y": 818,
+    "w": 86,
+    "h": 88
+   },
+   "anchor": {
+    "x": 43,
+    "y": 99
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 101,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 56,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 201,
+    "y": 908,
+    "w": 99,
+    "h": 84
+   },
+   "anchor": {
+    "x": 56,
+    "y": 95
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1114,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 64,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1222,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 64,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 413,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 56,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 513,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 56,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1425,
+    "y": 614,
+    "w": 86,
+    "h": 103
+   },
+   "anchor": {
+    "x": 43,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1512,
+    "y": 614,
+    "w": 86,
+    "h": 103
+   },
+   "anchor": {
+    "x": 43,
+    "y": 114
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 613,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 43,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 713,
+    "y": 719,
+    "w": 99,
+    "h": 96
+   },
+   "anchor": {
+    "x": 43,
+    "y": 107
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.flak_cannon.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1330,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 43,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.flak_cannon.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1438,
+    "y": 908,
+    "w": 107,
+    "h": 79
+   },
+   "anchor": {
+    "x": 43,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.flak_cannon.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2850,
-    "y": 479,
+    "x": 104,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -209292,8 +213707,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 132,
-    "y": 479,
+    "x": 2164,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -209310,8 +213725,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 235,
-    "y": 479,
+    "x": 2267,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -209329,8 +213744,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3232,
-    "y": 380,
+    "x": 1232,
+    "y": 818,
     "w": 102,
     "h": 88
    },
@@ -209347,8 +213762,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3335,
-    "y": 380,
+    "x": 1335,
+    "y": 818,
     "w": 102,
     "h": 88
    },
@@ -209366,8 +213781,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 338,
-    "y": 479,
+    "x": 2370,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -209384,8 +213799,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 441,
-    "y": 479,
+    "x": 2473,
+    "y": 818,
     "w": 102,
     "h": 86
    },
@@ -209403,8 +213818,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3589,
-    "y": 271,
+    "x": 3420,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -209421,8 +213836,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3702,
-    "y": 271,
+    "x": 3533,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -209440,8 +213855,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1144,
-    "y": 152,
+    "x": 1,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -209458,8 +213873,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1247,
-    "y": 152,
+    "x": 104,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -209477,8 +213892,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2814,
-    "y": 1,
+    "x": 460,
+    "y": 152,
     "w": 102,
     "h": 119
    },
@@ -209495,8 +213910,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2917,
-    "y": 1,
+    "x": 563,
+    "y": 152,
     "w": 102,
     "h": 119
    },
@@ -209514,8 +213929,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1350,
-    "y": 152,
+    "x": 207,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -209532,8 +213947,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1453,
-    "y": 152,
+    "x": 310,
+    "y": 389,
     "w": 102,
     "h": 114
    },
@@ -209551,8 +213966,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3815,
-    "y": 271,
+    "x": 3646,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -209569,8 +213984,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3928,
-    "y": 271,
+    "x": 3759,
+    "y": 614,
     "w": 112,
     "h": 99
    },
@@ -209588,8 +214003,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2953,
-    "y": 479,
+    "x": 207,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -209606,8 +214021,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3056,
-    "y": 479,
+    "x": 310,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -209624,8 +214039,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1581,
-    "y": 479,
+    "x": 2906,
+    "y": 908,
     "w": 102,
     "h": 70
    },
@@ -209642,7 +214057,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 336,
+    "x": 1981,
     "y": 152,
     "w": 102,
     "h": 116
@@ -209660,8 +214075,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1165,
-    "y": 479,
+    "x": 3645,
+    "y": 818,
     "w": 102,
     "h": 85
    },
@@ -209674,12 +214089,308 @@
     2
    ]
   },
+  "turret.incendiary_launcher.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1808,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 48,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1908,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 48,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 837,
+    "y": 908,
+    "w": 86,
+    "h": 80
+   },
+   "anchor": {
+    "x": 43,
+    "y": 91
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 924,
+    "y": 908,
+    "w": 86,
+    "h": 80
+   },
+   "anchor": {
+    "x": 43,
+    "y": 91
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2008,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 51,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2108,
+    "y": 908,
+    "w": 99,
+    "h": 78
+   },
+   "anchor": {
+    "x": 51,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3284,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 61,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3389,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 61,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3140,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 51,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3240,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 51,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1901,
+    "y": 389,
+    "w": 86,
+    "h": 112
+   },
+   "anchor": {
+    "x": 43,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1988,
+    "y": 389,
+    "w": 86,
+    "h": 112
+   },
+   "anchor": {
+    "x": 43,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3340,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 48,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3440,
+    "y": 504,
+    "w": 99,
+    "h": 106
+   },
+   "anchor": {
+    "x": 48,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.incendiary_launcher.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3494,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.incendiary_launcher.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3599,
+    "y": 719,
+    "w": 104,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.incendiary_launcher.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3159,
-    "y": 479,
+    "x": 413,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -209696,8 +214407,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1249,
-    "y": 380,
+    "x": 1649,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -209714,8 +214425,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1366,
-    "y": 380,
+    "x": 1766,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -209734,7 +214445,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 1,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 98
    },
@@ -209752,7 +214463,7 @@
    "sheet": "weapons",
    "frame": {
     "x": 104,
-    "y": 380,
+    "y": 719,
     "w": 102,
     "h": 98
    },
@@ -209770,8 +214481,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1483,
-    "y": 380,
+    "x": 1883,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -209788,8 +214499,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1600,
-    "y": 380,
+    "x": 2000,
+    "y": 719,
     "w": 116,
     "h": 94
    },
@@ -209807,8 +214518,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 544,
-    "y": 479,
+    "x": 2576,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -209825,8 +214536,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 667,
-    "y": 479,
+    "x": 2699,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -209844,8 +214555,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3530,
-    "y": 152,
+    "x": 3449,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -209862,8 +214573,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3647,
-    "y": 152,
+    "x": 3566,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -209881,8 +214592,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3794,
-    "y": 1,
+    "x": 1440,
+    "y": 152,
     "w": 102,
     "h": 118
    },
@@ -209899,8 +214610,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3897,
-    "y": 1,
+    "x": 1543,
+    "y": 152,
     "w": 102,
     "h": 118
    },
@@ -209918,8 +214629,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3764,
-    "y": 152,
+    "x": 3683,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -209936,8 +214647,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3881,
-    "y": 152,
+    "x": 3800,
+    "y": 389,
     "w": 116,
     "h": 109
    },
@@ -209955,8 +214666,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 790,
-    "y": 479,
+    "x": 2822,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -209973,8 +214684,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 913,
-    "y": 479,
+    "x": 2945,
+    "y": 818,
     "w": 122,
     "h": 86
    },
@@ -209992,8 +214703,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3262,
-    "y": 479,
+    "x": 516,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -210010,8 +214721,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3365,
-    "y": 479,
+    "x": 619,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -210028,8 +214739,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 413,
-    "y": 380,
+    "x": 813,
+    "y": 719,
     "w": 102,
     "h": 96
    },
@@ -210046,7 +214757,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
+    "x": 1646,
     "y": 152,
     "w": 102,
     "h": 118
@@ -210064,8 +214775,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2003,
-    "y": 380,
+    "x": 2403,
+    "y": 719,
     "w": 116,
     "h": 93
    },
@@ -210078,12 +214789,308 @@
     2
    ]
   },
+  "turret.ion_cannon.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3068,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 46,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3180,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 46,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3704,
+    "y": 719,
+    "w": 86,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3791,
+    "y": 719,
+    "w": 86,
+    "h": 91
+   },
+   "anchor": {
+    "x": 43,
+    "y": 102
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3292,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 65,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3404,
+    "y": 818,
+    "w": 111,
+    "h": 86
+   },
+   "anchor": {
+    "x": 65,
+    "y": 97
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2208,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 71,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2330,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 71,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1702,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 65,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1814,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 65,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3275,
+    "y": 389,
+    "w": 86,
+    "h": 110
+   },
+   "anchor": {
+    "x": 43,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3362,
+    "y": 389,
+    "w": 86,
+    "h": 110
+   },
+   "anchor": {
+    "x": 43,
+    "y": 121
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1926,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 46,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2038,
+    "y": 614,
+    "w": 111,
+    "h": 101
+   },
+   "anchor": {
+    "x": 46,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.ion_cannon.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2452,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 50,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.ion_cannon.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2574,
+    "y": 908,
+    "w": 121,
+    "h": 78
+   },
+   "anchor": {
+    "x": 50,
+    "y": 89
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.ion_cannon.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3468,
-    "y": 479,
+    "x": 722,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -210100,7 +215107,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1920,
+    "x": 2762,
     "y": 1,
     "w": 152,
     "h": 126
@@ -210118,7 +215125,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2073,
+    "x": 2915,
     "y": 1,
     "w": 152,
     "h": 126
@@ -210137,7 +215144,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1130,
+    "x": 1360,
     "y": 1,
     "w": 128,
     "h": 133
@@ -210155,7 +215162,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1259,
+    "x": 1489,
     "y": 1,
     "w": 128,
     "h": 133
@@ -210174,7 +215181,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2226,
+    "x": 3068,
     "y": 1,
     "w": 152,
     "h": 126
@@ -210192,7 +215199,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2379,
+    "x": 3221,
     "y": 1,
     "w": 152,
     "h": 126
@@ -210211,8 +215218,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2794,
-    "y": 152,
+    "x": 2539,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -210229,8 +215236,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2978,
-    "y": 152,
+    "x": 2723,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -210248,7 +215255,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 518,
+    "x": 748,
     "y": 1,
     "w": 152,
     "h": 134
@@ -210266,7 +215273,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 671,
+    "x": 901,
     "y": 1,
     "w": 152,
     "h": 134
@@ -210322,7 +215329,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 824,
+    "x": 1054,
     "y": 1,
     "w": 152,
     "h": 134
@@ -210340,7 +215347,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 977,
+    "x": 1207,
     "y": 1,
     "w": 152,
     "h": 134
@@ -210359,8 +215366,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3162,
-    "y": 152,
+    "x": 2907,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -210377,8 +215384,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3346,
-    "y": 152,
+    "x": 3091,
+    "y": 389,
     "w": 183,
     "h": 111
    },
@@ -210396,8 +215403,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1684,
-    "y": 479,
+    "x": 3009,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -210414,8 +215421,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1717,
-    "y": 380,
+    "x": 2117,
+    "y": 719,
     "w": 128,
     "h": 94
    },
@@ -210468,7 +215475,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2532,
+    "x": 3604,
     "y": 1,
     "w": 152,
     "h": 125
@@ -210482,12 +215489,308 @@
     3
    ]
   },
+  "turret.mass_driver.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3886,
+    "y": 1,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 66,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 66,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3374,
+    "y": 1,
+    "w": 114,
+    "h": 126
+   },
+   "anchor": {
+    "x": 57,
+    "y": 130
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3489,
+    "y": 1,
+    "w": 114,
+    "h": 126
+   },
+   "anchor": {
+    "x": 57,
+    "y": 130
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 154,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 86,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 307,
+    "y": 152,
+    "w": 152,
+    "h": 120
+   },
+   "anchor": {
+    "x": 86,
+    "y": 123
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 217,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 111,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 401,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 111,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1618,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 86,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1771,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 86,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 518,
+    "y": 1,
+    "w": 114,
+    "h": 138
+   },
+   "anchor": {
+    "x": 57,
+    "y": 142
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 633,
+    "y": 1,
+    "w": 114,
+    "h": 138
+   },
+   "anchor": {
+    "x": 57,
+    "y": 142
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1924,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 66,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2077,
+    "y": 1,
+    "w": 152,
+    "h": 128
+   },
+   "anchor": {
+    "x": 66,
+    "y": 131
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.mass_driver.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 585,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 72,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.mass_driver.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 769,
+    "y": 614,
+    "w": 183,
+    "h": 104
+   },
+   "anchor": {
+    "x": 72,
+    "y": 108
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.mass_driver.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1813,
-    "y": 479,
+    "x": 3138,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -210504,8 +215807,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3020,
-    "y": 1,
+    "x": 666,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210522,8 +215825,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3149,
-    "y": 1,
+    "x": 795,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210541,8 +215844,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1556,
-    "y": 152,
+    "x": 413,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210559,8 +215862,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1685,
-    "y": 152,
+    "x": 542,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210578,8 +215881,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3278,
-    "y": 1,
+    "x": 924,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210596,8 +215899,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3407,
-    "y": 1,
+    "x": 1053,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210615,8 +215918,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2330,
-    "y": 152,
+    "x": 2075,
+    "y": 389,
     "w": 128,
     "h": 112
    },
@@ -210633,8 +215936,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2459,
-    "y": 152,
+    "x": 2204,
+    "y": 389,
     "w": 128,
     "h": 112
    },
@@ -210652,8 +215955,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1814,
-    "y": 152,
+    "x": 671,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210670,8 +215973,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1943,
-    "y": 152,
+    "x": 800,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210689,8 +215992,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2072,
-    "y": 152,
+    "x": 929,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210707,8 +216010,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2201,
-    "y": 152,
+    "x": 1058,
+    "y": 389,
     "w": 128,
     "h": 114
    },
@@ -210726,8 +216029,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3536,
-    "y": 1,
+    "x": 1182,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210744,8 +216047,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3665,
-    "y": 1,
+    "x": 1311,
+    "y": 152,
     "w": 128,
     "h": 119
    },
@@ -210763,7 +216066,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 439,
+    "x": 2084,
     "y": 152,
     "w": 128,
     "h": 116
@@ -210781,7 +216084,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 568,
+    "x": 2213,
     "y": 152,
     "w": 128,
     "h": 116
@@ -210800,8 +216103,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1942,
-    "y": 479,
+    "x": 3267,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -210818,8 +216121,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2071,
-    "y": 479,
+    "x": 3396,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -210836,8 +216139,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1036,
-    "y": 479,
+    "x": 3516,
+    "y": 818,
     "w": 128,
     "h": 86
    },
@@ -210854,7 +216157,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2685,
+    "x": 3757,
     "y": 1,
     "w": 128,
     "h": 123
@@ -210872,7 +216175,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 104,
+    "x": 1749,
     "y": 152,
     "w": 128,
     "h": 118
@@ -210886,12 +216189,308 @@
     3
    ]
   },
+  "turret.missile_launcher.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1187,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d0.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1306,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 60,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 968,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d1.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1083,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1425,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 58,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d2.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1544,
+    "y": 389,
+    "w": 118,
+    "h": 114
+   },
+   "anchor": {
+    "x": 58,
+    "y": 117
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3540,
+    "y": 504,
+    "w": 117,
+    "h": 105
+   },
+   "anchor": {
+    "x": 57,
+    "y": 109
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d3.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3658,
+    "y": 504,
+    "w": 117,
+    "h": 105
+   },
+   "anchor": {
+    "x": 57,
+    "y": 109
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1198,
+    "y": 504,
+    "w": 118,
+    "h": 108
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d4.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1317,
+    "y": 504,
+    "w": 118,
+    "h": 108
+   },
+   "anchor": {
+    "x": 58,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1436,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d5.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1551,
+    "y": 504,
+    "w": 114,
+    "h": 108
+   },
+   "anchor": {
+    "x": 57,
+    "y": 112
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1663,
+    "y": 389,
+    "w": 118,
+    "h": 113
+   },
+   "anchor": {
+    "x": 60,
+    "y": 116
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d6.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1782,
+    "y": 389,
+    "w": 118,
+    "h": 113
+   },
+   "anchor": {
+    "x": 60,
+    "y": 116
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
+  "turret.missile_launcher.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3917,
+    "y": 389,
+    "w": 117,
+    "h": 109
+   },
+   "anchor": {
+    "x": 60,
+    "y": 113
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.missile_launcher.ground.d7.charged": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1,
+    "y": 504,
+    "w": 117,
+    "h": 109
+   },
+   "anchor": {
+    "x": 60,
+    "y": 113
+   },
+   "footprint": [
+    3,
+    3
+   ],
+   "glow": true
+  },
   "turret.missile_launcher.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 2200,
-    "y": 479,
+    "x": 3525,
+    "y": 908,
     "w": 128,
     "h": 68
    },
@@ -210908,8 +216507,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3244,
-    "y": 271,
+    "x": 2150,
+    "y": 614,
     "w": 114,
     "h": 101
    },
@@ -210926,8 +216525,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1076,
-    "y": 271,
+    "x": 1979,
+    "y": 504,
     "w": 102,
     "h": 107
    },
@@ -210944,8 +216543,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3359,
-    "y": 271,
+    "x": 2265,
+    "y": 614,
     "w": 114,
     "h": 101
    },
@@ -210962,8 +216561,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3902,
-    "y": 380,
+    "x": 1902,
+    "y": 818,
     "w": 130,
     "h": 87
    },
@@ -210980,8 +216579,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1179,
-    "y": 271,
+    "x": 2082,
+    "y": 504,
     "w": 114,
     "h": 107
    },
@@ -210998,7 +216597,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 697,
+    "x": 2342,
     "y": 152,
     "w": 102,
     "h": 116
@@ -211016,8 +216615,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1294,
-    "y": 271,
+    "x": 2197,
+    "y": 504,
     "w": 114,
     "h": 107
    },
@@ -211034,8 +216633,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 1,
-    "y": 479,
+    "x": 2033,
+    "y": 818,
     "w": 130,
     "h": 87
    },
@@ -211052,8 +216651,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3571,
-    "y": 479,
+    "x": 825,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -211070,8 +216669,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3674,
-    "y": 479,
+    "x": 928,
+    "y": 993,
     "w": 102,
     "h": 56
    },
@@ -211088,8 +216687,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3141,
-    "y": 271,
+    "x": 1599,
+    "y": 614,
     "w": 102,
     "h": 102
    },
@@ -211106,7 +216705,7 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 233,
+    "x": 1878,
     "y": 152,
     "w": 102,
     "h": 118
@@ -211124,8 +216723,8 @@
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3474,
-    "y": 271,
+    "x": 3008,
+    "y": 614,
     "w": 114,
     "h": 100
    },
@@ -211138,12 +216737,156 @@
     2
    ]
   },
+  "turret.point_defense.ground.d0": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2520,
+    "y": 719,
+    "w": 111,
+    "h": 93
+   },
+   "anchor": {
+    "x": 48,
+    "y": 104
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d1": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3123,
+    "y": 614,
+    "w": 86,
+    "h": 100
+   },
+   "anchor": {
+    "x": 43,
+    "y": 111
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d2": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 2632,
+    "y": 719,
+    "w": 111,
+    "h": 93
+   },
+   "anchor": {
+    "x": 63,
+    "y": 104
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d3": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1546,
+    "y": 908,
+    "w": 130,
+    "h": 79
+   },
+   "anchor": {
+    "x": 77,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d4": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3872,
+    "y": 614,
+    "w": 111,
+    "h": 99
+   },
+   "anchor": {
+    "x": 63,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d5": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 119,
+    "y": 504,
+    "w": 86,
+    "h": 109
+   },
+   "anchor": {
+    "x": 43,
+    "y": 120
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d6": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 3984,
+    "y": 614,
+    "w": 111,
+    "h": 99
+   },
+   "anchor": {
+    "x": 48,
+    "y": 110
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
+  "turret.point_defense.ground.d7": {
+   "kind": "static",
+   "sheet": "weapons",
+   "frame": {
+    "x": 1677,
+    "y": 908,
+    "w": 130,
+    "h": 79
+   },
+   "anchor": {
+    "x": 53,
+    "y": 90
+   },
+   "footprint": [
+    3,
+    3
+   ]
+  },
   "turret.point_defense.stowed": {
    "kind": "static",
    "sheet": "weapons",
    "frame": {
-    "x": 3777,
-    "y": 479,
+    "x": 1031,
+    "y": 993,
     "w": 102,
     "h": 56
    },
