@@ -5038,6 +5038,10 @@
    "image": "sprites/items.png",
    "glow": "sprites/items.glow.png"
   },
+  "landing_pad": {
+   "image": "sprites/landing_pad.png",
+   "glow": "sprites/landing_pad.glow.png"
+  },
   "landmarks": {
    "image": "sprites/landmarks.png",
    "glow": "sprites/landmarks.glow.png"
@@ -86319,6 +86323,25 @@
    "footprint": [
     3,
     3
+   ],
+   "glow": true
+  },
+  "module.landing_pad": {
+   "kind": "static",
+   "sheet": "landing_pad",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 542,
+    "h": 280
+   },
+   "anchor": {
+    "x": 271,
+    "y": 272
+   },
+   "footprint": [
+    9,
+    9
    ],
    "glow": true
   },
