@@ -30,8 +30,8 @@ RAIL = 4 / 32                       # the line along the top's back: this far in
 TOP_SEAM = 5 / 32                   # the seam across the top this far in past the bullnose's top edge (the seams end on it)
 FOOT_OUT = 3 / 32                   # the step along the foot: how far proud
 FOOT_H = 4 / core.ZPX               # its top over the deck: its front (STEP_FRONT px) stands on the deck
-FOOT_BLOCKS = (7, 5, 8, 5, 7)       # the step's two blocks across a tile: gap, block, gap, block, gap (px; 32 px a tile
-                                    # cannot split in three equal whole gaps); a px proud of its top and front
+FOOT_BLOCKS = (6, 6, 8, 6, 6)       # the step's two blocks across a tile: gap, block, gap, block, gap (px); a px proud
+                                    # of its top and front
 CHAMFER_SEAM = 1                    # the corner's seams down its chamfer, this many px in from its edges
 
 FACE, FACE_LO, END, TOP = "stS", "stL", "stE", "stL"      # the face, its band under the groove, the shell, the top
@@ -53,7 +53,7 @@ BLOCK, BLOCK_LIT = FACE, "stH"      # its blocks: the face's tone, lit along the
 # as a shallow pit: its lit lower lip, a darker ring, its shaded upper inside
 DENTS = ((7, 0, 3, 1.7, (1.0, 1.25, 0.8, 0.9, 1.15, 0.7, 0.95, 1.05), 15),
          (13, 29.5, 2.6, 1.5, (1.0, 0.7, 1.05, 1.3, 0.9, 1.0, 0.75, 1.15), -12),
-         (25, 49, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
+         (25, 52, 2.4, 1.9, (0.8, 1.15, 1.2, 0.85, 0.7, 1.05, 1.3, 0.9), 35))
 GOUGE = (28, 25, 5, 1.0, (1.0, 0.75, 1.1, 1.0, 0.85, 1.25, 0.8, 1.0), 6)   # (run out to the tile's edge)                                  # a long shallow dent near the tile's end
 DESIGNS = {1: DENTS + (GOUGE,), 2: DENTS}   # (its outline: radius scales round it from +u, eased between; its tilt,
                                             # degrees on the face)
