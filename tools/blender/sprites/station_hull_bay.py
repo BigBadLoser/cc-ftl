@@ -8,7 +8,7 @@ from . import station_hull as SH
 from .wall3d_ext_geom import F, LINE
 
 BAY_FOOT, BAY_LIP = 15, 2           # its floor: px over the groove; the top's edge over it: px tall
-BAY_BACK, BAY_FLOOR, BAY_WALL = "stE", "stE", SH.GROOVE_D   # its back, its floor, its ends (in shadow)
+BAY_BACK, BAY_FLOOR, BAY_WALL = "stE", "stK", "stE"         # its back, its floor, its ends (in shadow)
 BAY_LIP_FACE = SH.FACE              # the top's edge over it
 
 
