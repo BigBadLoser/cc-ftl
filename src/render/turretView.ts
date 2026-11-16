@@ -12,7 +12,7 @@ import { createGhostFilter, setGhostZoom } from './ghost';
 import { ROOF_H } from './heights';
 import { depthKey, iso, TILE_H, TILE_W } from './iso';
 import type { Layers } from './layers';
-import { lightTint, mulColor } from './lightTint';
+import { EXTERIOR_TINT, lightTint, mulColor } from './lightTint';
 import type { ModuleDefs } from './moduleView';
 
 export interface TurretView {
@@ -95,7 +95,7 @@ export function createTurretView(world: World, atlas: Atlas, L: Layers, grid: Gr
         t.spr.position.set(Math.round(p.x - art.s.ax), Math.round(p.y - art.s.ay - lift + (1 - art.rise) * RISE_PX));
         const lx = Math.min(grid.width - 1, Math.max(0, Math.round(cx)));
         const ly = Math.min(grid.height - 1, Math.max(0, Math.round(cy)));
-        t.spr.tint = mulColor(lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
+        t.spr.tint = mulColor(ground ? EXTERIOR_TINT : lightTint(grid.get('light', grid.x0 + lx, grid.y0 + ly), false, -1), art.tint);
         // The front tile of the bay, +0.93: over the roof tiles of the footprint, behind the next tile row.
         // On a roofed ship the turret (hatch, opening or deployed) sits on the roof, and its base ring reaches two diagonal rows
         // past the bay's front tile, whose roof plating sorts at +1.9 and +2.9: it sorts above both so the grid lines and

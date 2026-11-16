@@ -16,7 +16,8 @@ import { iso, depthKey } from './iso';
 import { HullSprite } from './hullPaint';
 import type { HullPaint } from './hullArt';
 import type { Layers } from './layers';
-import { dim, lightTint, mulColor, pulsePhase } from './lightTint';
+import { dim, EXTERIOR_TINT, lightTint, mulColor, pulsePhase } from './lightTint';
+import { isGroundMount } from '../sim/modules/groundMount';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
@@ -122,9 +123,6 @@ const grey = (f: number): number => {
   const c = Math.round(255 * f);
   return (c << 16) | (c << 8) | c;
 };
-
-/** Light tint of exterior pieces (containers) that room lighting never reaches. */
-const EXTERIOR_TINT = 0xd8dce6;
 
 /** A craft job counts as running while its progress moved within this many ms. */
 const ACTIVE_MS = 400;
@@ -487,8 +485,8 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
   function tintParts(e: Entry, def: ModuleDefs[string], grid: Grid, memo: Memo, on: boolean, pulse: number, now: number): void {
     let lsum = 0;
     for (const f of memo.tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
-    // A container is outside, lit by the sky like the hull (no room light reaches it), and never "off".
-    const base = def.container ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, memo.tiles.length), false, pulse);
+    // A container or a ground turret mount is outside, lit by the sky like the hull (no room light reaches it); a container is never "off".
+    const base = def.container || isGroundMount(def) ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, memo.tiles.length), false, pulse);
     const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
     const tint = memo.dark < 1 ? mulColor(lit, grey(memo.dark)) : lit;
     const paint = host.hullPaint?.();
