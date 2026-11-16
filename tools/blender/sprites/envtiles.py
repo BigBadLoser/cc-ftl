@@ -26,18 +26,18 @@ from .wall3d_variants import PAIRS
 from .walls import corner_sets
 
 def _plain(fn):
-    """A default partition piece built in the plain look's relief (faction.base.plain_relief: its free ends stop square,
-    as every look's), unless a look's relief is already set (structure.py wraps the same builders)."""
+    """A default partition piece built in the plain look's relief, in the default walls' second look (wall3d_v2: its
+    plain_relief, its free ends stop square as every look's; wall3d.V2 on), unless a look's relief is already set
+    (structure.py wraps the same builders)."""
     def build():
-        from . import wall3d
+        from . import wall3d, wall3d_v2
         if wall3d.STYLE is not None:
             return fn()
-        from .faction.base import plain_relief
-        wall3d.STYLE = plain_relief()
+        wall3d.STYLE, wall3d.V2 = wall3d_v2.plain_relief(), True
         try:
             return fn()
         finally:
-            wall3d.STYLE = None
+            wall3d.STYLE, wall3d.V2 = None, False
     return build
 
 
@@ -107,6 +107,7 @@ for _ax in ("x", "y"):
 
 
 STEPS = {1: (0, -1), 2: (1, 0), 4: (0, 1), 8: (-1, 0)}    # a mask bit's neighbour (N1 E2 S4 W8)
+BEFORE = (1, 8)                                          # the neighbours the renderer draws first (lower x + y)
 _WALL = re.compile(r"^tile\.wall\.(full\.|low\.)?m(\d+)")
 
 
@@ -114,7 +115,10 @@ def _with_runs(fn, mask, level):
     """A wall piece as env_build "wide" (own, wide): the piece, and on each connected side the wall's straight run one
     tile on, so a px on a tile edge (anti-aliased: env_build.AA) resolves against the wall running on there, not the
     empty canvas, and the tiles meet without specks. The runs are built plain (no straight-run variant) and in the
-    look's style (a faction look wraps the whole build)."""
+    look's style (a faction look wraps the whole build). The default walls' second look (wall3d.V2) gets runs only
+    on the sides drawn before it (north, west: the renderer draws by x + y, back to front): the tile on a side drawn
+    after it is always in front where the two overlap and paints over this one, so cutting this one by a stand-in for
+    it (the plain run) only leaves a hole wherever the real tile's design stands less proud than the plain run's."""
     def build():
         from mathutils import Matrix
         from . import core, wall3d
@@ -123,7 +127,7 @@ def _with_runs(fn, mask, level):
         wall3d.VARIANT = (0, 0)
         try:
             for bit, (dx, dy) in STEPS.items():
-                if mask & bit:
+                if mask & bit and (bit in BEFORE or not wall3d.V2):
                     for o in block(10 if bit in (2, 8) else 5, "wall", level=level):
                         o.data.transform(Matrix.Translation(core.G(dx, dy, 0.0)))
                         o.data.update()
@@ -137,5 +141,5 @@ def _with_runs(fn, mask, level):
 for _k, (_sid, _fp, _kind, _fn) in enumerate(SPRITES):     # every wall piece by mask, at each level, with its runs
     _mm = _WALL.match(_sid)
     if _mm and _kind == "block":
-        SPRITES[_k] = (_sid, _fp, "wide", _with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
-            _mm.group(1) or "", "cut")))
+        SPRITES[_k] = (_sid, _fp, "wide", _plain(_with_runs(_fn, int(_mm.group(2)), {"full.": "up", "low.": "low"}.get(
+            _mm.group(1) or "", "cut"))))          # (the runs in the default look's relief too, as the piece)

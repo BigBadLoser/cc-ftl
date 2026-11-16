@@ -109,6 +109,14 @@ function timed(job: Job, speed: number, finish: () => WorkResult): WorkResult {
 export function finishStruct(sim: Sim, job: Job): WorkResult {
   if (job.kind === 'build' && isTileOccupied(sim, shipIdOf(sim, job), job.x, job.y)) return 'wait';
   const grid = shipGrid(sim, shipIdOf(sim, job));
+  if (job.window !== undefined) { // a window job only changes the wall's window state (windows.ts); a tile breached meanwhile is left alone
+    if (grid?.has('window') && grid.inBounds(job.x, job.y) && grid.get('struct', job.x, job.y) === Struct.Wall) {
+      if (job.kind === 'deconstruct') refundCost(sim, shipIdOf(sim, job), job.x, job.y, sim.content.structCosts['window']);
+      grid.set('window', job.x, job.y, job.window);
+    }
+    consumeDelivered(job);
+    return 'done';
+  }
   if (grid?.has('struct') && grid.inBounds(job.x, job.y)) {
     const next = job.kind === 'build' ? job.struct : job.struct === Struct.Space ? Struct.Space : Struct.Floor; // a truss comes down to open space
     const before = grid.get('struct', job.x, job.y);

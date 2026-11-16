@@ -35,6 +35,7 @@ const TOOLS: { id: UiBuildKind; name: string; category: CategoryId; icon: IconNa
   { id: 'wall', name: 'Wall', category: 'structure', icon: 'wall', description: 'Drag a line of wall. Walls hold air and block movement.' },
   { id: 'floor', name: 'Floor', category: 'structure', icon: 'floor', description: 'Drag out deck plating. Rooms need floor before they hold air.' },
   { id: 'door', name: 'Door', category: 'structure', icon: 'door', description: 'A door in a wall. Crew pass through, air does not while it is shut.' },
+  { id: 'window', name: 'Window', category: 'structure', icon: 'wall', description: 'A window of 2, 3 or 4 tiles on a straight run of existing wall, hull or partition, never on a corner. It holds air and blocks movement like the wall it replaces. Deconstruct it to get the plain wall back.' },
   { id: 'hull', name: 'Hull plan', category: 'structure', icon: 'hullPlan', description: 'Brush the ship\'s outer hull plan: drag rectangles (at least 3 × 3) or 45° staircases, add or erase, optionally mirrored. No part of the ship may be narrower than 3 tiles. A shipyard builds the plan; interior walls and doors are your own builds.' },
   { id: 'dig', name: 'Dig rock', category: 'mining', icon: 'pick', description: 'Drag over asteroid rock to dig it out to floor.' },
   { id: 'level', name: 'Level rock', category: 'mining', icon: 'floor', description: 'Drag over rock to level it to ground.' },
@@ -85,6 +86,38 @@ export function filterEntries(entries: Entry[], cat: CategoryId, query: string, 
 /** True when the card's module is the one being placed; for a group card (`members` given: the group's entries) when any member is. */
 export const isSelected = (e: Entry, st: UiToolState, members?: Entry[]): boolean =>
   st.tool === 'build' && (e.kind === 'module' ? st.build === 'module' && (members?.length ? members.some((m) => m.id === st.moduleDef) : st.moduleDef === e.id) : st.build === e.id);
+
+/** The sizes (tiles in the run) the Window tool offers; `UiToolState.windowSize` defaults to the middle one. */
+export const WINDOW_SIZES = [2, 3, 4] as const;
+export const DEFAULT_WINDOW_SIZE = 3;
+
+/** One chip of the popover's variant row: a tier or build of a module group, or a size of the Window tool. */
+export interface VariantChip {
+  /** Test id suffix and the id `onvariant` gets back: a module id, or `window-<tiles>`. */
+  id: string;
+  label: string;
+  locked?: boolean;
+  /** Module whose thumb the chip shows (a build variant with a `variantLabel`). */
+  thumbId?: string;
+  on: boolean;
+}
+
+/** The chips of a module group (`members`, tiers lowest first); `current` is the module being shown. */
+export const moduleChips = (members: Entry[], current: string): VariantChip[] =>
+  members.map((v) => ({ id: v.id, label: v.def?.variantLabel ?? v.def?.tier ?? v.name, locked: v.locked, thumbId: v.def?.variantLabel ? v.id : undefined, on: v.id === current }));
+
+/** The Window tool's size chips, `size` (tiles; the default when unset) highlighted. */
+export const windowChips = (size: number | undefined): VariantChip[] =>
+  WINDOW_SIZES.map((n) => ({ id: `window-${n}`, label: `${n} tiles`, on: n === (size ?? DEFAULT_WINDOW_SIZE) }));
+
+/** The size a `window-<tiles>` chip id stands for, else null. */
+export const windowSizeOf = (chipId: string): number | null => {
+  const n = /^window-(\d+)$/.exec(chipId)?.[1];
+  return n && (WINDOW_SIZES as readonly number[]).includes(+n) ? +n : null;
+};
+
+/** A per-tile cost for a run of `n` tiles. */
+export const costForRun = (perTile: UiCost[], n: number): UiCost[] => perTile.map((c) => ({ ...c, count: c.count * n }));
 
 /** Items the stock is short of for a cost list. */
 export const shortOf = (cost: UiCost[], have: (item: string) => number): UiCost[] => cost.filter((c) => have(c.item) < c.count);

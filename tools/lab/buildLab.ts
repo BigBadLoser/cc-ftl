@@ -15,7 +15,7 @@ import BuildCatalog from '../../src/ui/BuildCatalog.svelte';
 /**
  * The build menu panel (`?panel=build`): the game's own BuildCatalog (and its hover popover) on a fresh game's module defs, with real
  * thumbnails from the atlas and a mock api (no stock, no mining, nothing placed). `tab=<category>` opens a tab (default life),
- * `hover=<module id>` opens that card's popover (it is scrolled into view), `pick=<module id>` then clicks that chip of the popover's variant row, `query=<text>` fills the search box.
+ * `hover=<module id | window>` opens that card's popover (it is scrolled into view), `pick=<module id | window-2|3|4>` then clicks that chip of the popover's variant row, `query=<text>` fills the search box.
  */
 export async function mountBuildLab(target: HTMLElement, params: URLSearchParams): Promise<void> {
   for (const e of [document.documentElement, document.body]) { e.style.height = '100%'; e.style.overflow = 'hidden'; }
@@ -58,7 +58,8 @@ export async function mountBuildLab(target: HTMLElement, params: URLSearchParams
   await new Promise((r) => setTimeout(r, 1200));                                    // thumbs retry every 250 ms
   const hover = params.get('hover');
   if (hover) {
-    const name = (content.modules as Record<string, { name?: string }>)[hover]?.name;
+    // A module id, or a tool card by its name (`window`).
+    const name = (content.modules as Record<string, { name?: string }>)[hover]?.name ?? (hover === 'window' ? 'Window' : undefined);
     const card = [...document.querySelectorAll<HTMLElement>('[data-testid="build-catalog"] .card')].find((c) => name && c.querySelector('.nm')?.textContent?.trim().toUpperCase() === name.toUpperCase());
     card?.scrollIntoView({ inline: 'center' });
     card?.focus();

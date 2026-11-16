@@ -128,6 +128,8 @@ export interface Job {
   y: number;
   /** For build jobs: the StructKind to place. */
   struct: number;
+  /** A window job (windows.ts): the `window` code the tile takes when done (0 = deconstruct, back to plain wall). The struct stays Wall. */
+  window?: number;
   /** Ticks of work needed at base work speed. */
   work: number;
   /** Work done so far. */
