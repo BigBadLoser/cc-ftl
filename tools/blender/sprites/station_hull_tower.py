@@ -8,11 +8,11 @@ from . import station_hull_designs as SD
 from .wall3d_ext_geom import LINE, D
 
 TOWER_OUT = 4                       # px off the face
-TOWER_SLOPE = "stH"                 # its foot, sloped back down to the face (and the block's to the box's front)
-STEEP = 3                           # (px down for every px out)
+TOWER_SLOPE = SH.GROOVE_D           # its foot, sloped back down to the face (and the block's to the box's front)
+STEEP = 2                           # (px down for every px out)
 VENT_CLEAR = 2                      # the vent's frame: px of the box's front clear round it (to its ends, the chamfer and
                                     # the block's top line)
-SLATS = 2                           # a slat every this many rows inside it
+SLATS, SLAT_IN = 4, 1               # slats in it, spaced evenly down it; px clear of its frame at either end
 SLAT_LIT = "stL"
 WIDE = 11                           # the block: px across, centred on the box's front
 BLOCK = (54, 2)                     # the block: its bottom row, px proud of the box's front; a seam across its middle.
@@ -20,7 +20,7 @@ BLOCK = (54, 2)                     # the block: its bottom row, px proud of the
                                     # under the bullnose (the one with the plate) would show
 JOIN_UP = 3                         # (rows up: the box's front stands out, so its sloped line shows lower; measured)
 BLOCK_FACE, BLOCK_SIDE, BLOCK_SEAM = SH.SEAM, SH.GROOVE_D, SH.GROOVE_D   # its front and top; its ends; the seam
-BLOCK_SLOPE = "stL"                # its foot, sloped back down to the box's front
+BLOCK_SLOPE = "stE"                 # its foot, sloped back down to the box's front
 BLOCK_LIT, BLOCK_JOIN = "stL", SH.GROOVE_D   # a lit px along its front's top edge; a dark one on the box's front over
                                     # its top
 
@@ -53,9 +53,13 @@ def tower(f, s0, zk):
     e = (1 + VENT_CLEAR) * LINE                             # (inside the box's edge lines)
     v0, v1 = c + VENT_CLEAR, r0 - 2 - VENT_CLEAR
     _outline(f, a + e, b - e, row(v1), row(v0), fd, SD.BOX_LINE)
-    for k in range(v0 + 2, v1 - 1, SLATS):                  # (each a dark row over a lit one)
-        SD._rect(f, a + e + LINE, b - e - LINE, row(k + 1), row(k), fd, SH.GROOVE_D)
-        SD._rect(f, a + e + LINE, b - e - LINE, row(k + 2), row(k + 1), fd, SLAT_LIT)
+    inner = v1 - v0 - 2                                     # (rows inside the frame)
+    gap = (inner - 2 * SLATS) / (SLATS + 1)
+    w = (1 + SLAT_IN) * LINE
+    for i in range(SLATS):                                  # (each a dark row over a lit one, spaced evenly)
+        k = v0 + 1 + round(gap * (i + 1) + 2 * i)
+        SD._rect(f, a + e + w, b - e - w, row(k + 1), row(k), fd, SH.GROOVE_D)
+        SD._rect(f, a + e + w, b - e - w, row(k + 2), row(k + 1), fd, SLAT_LIT)
 
 
 def _raise(f, u0, u1, z0, z1, base, n, face, top, side, slope):
