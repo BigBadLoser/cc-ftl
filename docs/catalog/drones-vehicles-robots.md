@@ -10,6 +10,7 @@ that fly between ships and rocks. **Robots** are crew-like machines (species.rob
 | Medic drone | `drone.medic` | Patches the downed, slowly heals the wounded | In game | src/content/drones.ts:27; item.drone_medic |
 | Defence drone | `drone.defence` | Intercepts hostile drones and shuttles | In game | src/content/drones.ts:35; sim/drones/intercept.ts; item.drone_defence |
 | Drone bay | `module.droneBay` | Docks and recharges two drones | Partial: buildable, no starter has one | see modules.md; sim/drones/bay.ts; ui/DroneBayPanel.svelte; scenario `?scenario=drones` |
+| Landing pad | `module.landing_pad` | 9x9 ground pad a surface base keeps its shuttle on; visitors land on a free one; crew walk suited to the airlock | In game: prefab bases only, not buildable; art in | content/landingPads.ts; sim/modules/landingPad.ts; shipgen/assembly/station.ts |
 | Shadow sprite | `drone.shadow` | Drone ground-shadow art used by droneArt.ts | In game | render/droneArt.ts |
 | Logistics drone / construction drones | `-` | Hauling and construction drones | Planned | DESIGN.md phase 6; issue #322 (logistics robot) |
 

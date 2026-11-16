@@ -972,6 +972,8 @@ export interface UiShuttle {
   ferryFree: boolean;
   /** Module id of its home bay. */
   bay: number;
+  /** Its home is an open landing pad (a surface base's), not a hangar bay. */
+  pad: boolean;
   /** Crew can climb in or out here right now (stowed in the bay, or docked). */
   boardable: boolean;
   /** The ship whose floor crew board from (the boarding tile's): the home ship's bay, or the ship it is docked at. 0 if not boardable. */

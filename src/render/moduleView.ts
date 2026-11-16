@@ -18,6 +18,7 @@ import type { HullPaint } from './hullArt';
 import type { Layers } from './layers';
 import { dim, EXTERIOR_TINT, lightTint, mulColor, pulsePhase } from './lightTint';
 import { isGroundMount } from '../sim/modules/groundMount';
+import { isLandingPad } from '../sim/modules/landingPad';
 import { resolveArt } from './assets/fallback';
 import { boxState, containerBox } from './containerBox';
 import { ContainerC } from '../sim/containers/components';
@@ -486,7 +487,7 @@ export function createModuleView(world: World, atlas: Atlas, L: Layers, defs: Mo
     let lsum = 0;
     for (const f of memo.tiles) lsum += grid.inBounds(f.x, f.y) ? grid.get('light', f.x, f.y) : 0;
     // A container or a ground turret mount is outside, lit by the sky like the hull (no room light reaches it); a container is never "off".
-    const base = def.container || isGroundMount(def) ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, memo.tiles.length), false, pulse);
+    const base = def.container || isGroundMount(def) || isLandingPad(def) ? EXTERIOR_TINT : lightTint(lsum / Math.max(1, memo.tiles.length), false, pulse);
     const lit = on || def.container ? base : dim(mulColor(base, 0xc8c8d4), 0.78);
     const tint = memo.dark < 1 ? mulColor(lit, grey(memo.dark)) : lit;
     const paint = host.hullPaint?.();

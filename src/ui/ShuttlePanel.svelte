@@ -15,9 +15,9 @@
   });
 
   const where = (s: UiShuttles['shuttles'][number]) =>
-    s.state === 'stowed' ? 'Parked in bay'
+    s.state === 'stowed' ? (s.pad ? 'Parked on its pad' : 'Parked in bay')
       : s.state === 'docked' ? `Docked at ${s.dockShip ?? 'airlock'}`
-        : s.destination === 'hover' ? 'Flying to hover' : s.hoverShip ? `Hovering beside ${s.hoverShip}` : s.destination === 'dock' ? 'Flying to dock' : s.destination === 'bay' ? 'Returning to bay' : 'Hovering';
+        : s.destination === 'hover' ? 'Flying to hover' : s.hoverShip ? `Hovering beside ${s.hoverShip}` : s.destination === 'dock' ? 'Flying to dock' : s.destination === 'bay' ? (s.pad ? 'Returning to its pad' : 'Returning to bay') : 'Hovering';
   const seatsLeft = (s: UiShuttles['shuttles'][number]) => s.capacity + 1 - (s.pilot ? 1 : 0) - s.passengers.length;
   const embark = (crew: number, vehicle: number) => api.dispatch({ type: 'vehicle.embark', crew, vehicle });
   // Crew who can walk to the boarding tile: those on the ship it is on (the home ship, or the one it is docked at).
@@ -74,7 +74,7 @@
           <button disabled={!s.pilot} data-testid="shuttle-undock" onclick={() => api.dispatch({ type: 'vehicle.undock', vehicle: s.id })}>Undock</button>
         {/if}
         {#if s.state !== 'stowed'}
-          <button data-testid="shuttle-return" onclick={() => api.dispatch({ type: 'vehicle.return', vehicle: s.id })}>Return to bay</button>
+          <button data-testid="shuttle-return" onclick={() => api.dispatch({ type: 'vehicle.return', vehicle: s.id })}>{s.pad ? 'Return to pad' : 'Return to bay'}</button>
         {/if}
         {#if s.canEva}
           <button data-testid="shuttle-eva" onclick={() => api.dispatch({ type: 'eva.out', vehicle: s.id })}>Crew out (EVA)</button>

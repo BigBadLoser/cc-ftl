@@ -2,6 +2,7 @@ import { launchOf } from '../sim/boarding/launch';
 import { AllegianceC, FerryC, TransferC, regionStock, ferryFree, ferryRegions, pickFerryShuttle, AboardC, AirlockC, CrewC, DeadC, EmbarkOrderC, HealthC, ModuleC, PositionC, ShipC, VehicleBayC, airlockWorking, boardingTile, Struct, TraderC, vehicleViews, TICK_HZ, totalStock, type Sim } from '../sim';
 import { JobC } from '../sim/crew/components';
 import type { Command } from '../sim';
+import { isLandingPad } from '../sim/modules/landingPad';
 import { localOf } from './moduleSnapshot';
 import { costsOf } from './logisticsSnapshot';
 import { buildableFor } from '../sim/vehicles/assemble';
@@ -132,6 +133,7 @@ export function buildShuttles(sim: Sim): UiShuttles {
       id: v.id, name: def?.name ?? 'Shuttle', state: v.state, hp: Math.round(v.hp), maxHp: v.maxHp, capacity: def?.capacity ?? 0, cargo: def?.cargo ?? 0,
       pilot: crewRef(sim, v.pilot), passengers: v.passengers.map((c) => crewRef(sim, c)).filter((c): c is UiShuttleCrew => !!c),
       destination: v.destination, dockShip: dockM ? shipName(sim, shipIdOf(sim, dockM)) : null, bay: v.bay,
+      pad: isLandingPad(sim.content.modules[sim.world.get(v.bay, ModuleC)?.def ?? '']),
       boardable: boardingTile(sim, v.id) !== null,
       boardShip: boardingTile(sim, v.id)?.shipId ?? 0,
       trade: tradeRun(sim, v.id),
