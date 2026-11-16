@@ -2,7 +2,7 @@
 
 Branch `art/hull-windows`. Read this before touching interior windows. Keep it current: add a line at every step.
 
-## Pick up here (state at 2026-11-16: drone approved at d32; civil approved at c17; bastion revisited, b4)
+## Pick up here (state at 2026-11-16: drone approved at d32; civil approved at c17; bastion no window again after b4)
 - Branch `art/hull-windows` (worktree `/home/user/cc-ftl-windows`), everything committed and pushed; the dated log at
   the end of this file has every step. Nothing here is in the sprite pipeline yet: window pieces render only through
   the preview jobs files.
@@ -77,7 +77,7 @@ Uploads dir: `/root/.claude/uploads/d90bd30e-5bfe-51f0-9d45-019095d96471/`.
 | 122 (set 4) | navy | 2772 / 2771 / 2862 | parked at nw13, **flagged ugly** (the user, 2026-11-09): the navy set (walls and window) wants a rethink before shipping (see "Navy window") |
 | 423 (set 5) | drone | 2765 / 2764 / 2863 | done: approved at d32 (the user, 2026-11-15: "good enough"): `sprites/wall3d_iwin_drone.py` + `wall3d_iwin_drone_vents.py`; the header rail kept (no pipe beam) |
 | 428 (set 6) | civil | 2770 / 2769 / 2864 | approved (c17, 2026-11-15): `sprites/wall3d_iwin_civil.py`, jobs `preview/jobs_cvwin.py` (civil.v1) |
-| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | revisited (b4, 2026-11-16): `sprites/wall3d_iwin_bastion.py`, jobs `preview/jobs_bswin.py` |
+| 3295 (set 8) | bastion | 3296 / 3297 / 3298 | no window (the user, 2026-11-16, after the b0-b4 revisit; last in git at 2fb9e889) |
 | none | scrap | | no ref |
 
 Slate's ref (44) at a glance. T layer: grey posts with a stepped foot; a blue beam with a raised block over the
@@ -802,3 +802,4 @@ Marked ref (both layers, numbered): scratchpad
 - 2026-11-16: b2 (the user: not quite: the ramp drops further, then one strut, 3-4 px thick toward the window, sits above the floor; picked from two cross-sections: on the slope's edge, one strut): the b1 pocket gone; FLOOR_DOWN 6 -> 16 (12 put the strut 2-3 px from the pane, hiding the channel), the channel's floor level 1 (dark); one strut (`wall3d_iwin_bastion_front.py`) between the end blocks' tops (into them), its foot GAP 2 art px over the floor, HEIGHT 6 art px, DEPTH 4 px at its top, its front on the ramp's slope, its top front edge rounded 1 px, its top lit (level 4, face 3). The plain wall pixel-identical. Renders: scratchpad `bs2`.
 - 2026-11-16: b3 (the user on b2: "wtf is that"): at the 16 px drop the end blocks' 4 px slope became a steep wedge the strut ploughed through, and the right end stopped raggedly. The end blocks' inner faces now upright (END = BLOCK = 12, was 16) with their own face quads (level 1): a clean step down into the channel, the strut running between them and butting into each. The plain wall unchanged. Renders: scratchpad `bs3`.
 - 2026-11-16: b4 (the user, on a Blender model view: why is the strut so tall next to the wall's pipes; a flat top and a flat front): b3's strut was 6 art px on the ramp's slope plus a 4 px top, about 9 rows on screen against the pipes' ~5. Now a plain box: HEIGHT 4 art px, DEPTH 3 px, its front upright from its foot on the slope's line, no rounding. Renders: scratchpad `bs4`.
+- 2026-11-16: the user on b4: bastion gets no window after all (the revisit went poorly too). `wall3d_iwin_bastion.py`, `wall3d_iwin_bastion_front.py` and `preview/jobs_bswin.py` removed; b0-b4 are in git up to 2fb9e889. Left from it: the straight end faces show only on the left (the camera sees the left block's inner face, not the right's) and the channel, being in front of the wall's line, reads shifted left under the opening; a sloped end (as the ref's) shows on both sides.
